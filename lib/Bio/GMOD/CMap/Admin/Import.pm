@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::Import;
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.54 2004-08-04 04:26:58 mwz444 Exp $
+# $Id: Import.pm,v 1.55 2004-09-20 18:33:10 mwz444 Exp $
 
 =pod
 
@@ -28,7 +28,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.54 $)[-1];
+$VERSION  = (qw$Revision: 1.55 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -61,6 +61,7 @@ use vars '$LOG_FH';
     feature_aliases      => { is_required => 0, datatype => 'string' },
     feature_start        => { is_required => 1, datatype => 'number' },
     feature_stop         => { is_required => 0, datatype => 'number' },
+    feature_direction    => { is_required => 0, datatype => 'number' },
     feature_type_accession => { is_required => 1, datatype => 'string' },
     feature_note         => { is_required => 0, datatype => 'string' },
     is_landmark          => { is_required => 0, datatype => 'number' },
@@ -88,6 +89,7 @@ Imports tab-delimited file with the following fields:
     feature_aliases
     feature_start *
     feature_stop
+    feature_direction
     feature_type_accession *
     feature_note +
     is_landmark
@@ -430,6 +432,7 @@ sub import_tab {
         my $attributes      = $record->{'feature_attributes'}  || '';
         my $start           = $record->{'feature_start'};
         my $stop            = $record->{'feature_stop'};
+        my $direction       = $record->{'feature_direction'} || 1;
         my $is_landmark     = $record->{'is_landmark'} || 0;
         my $default_rank    = $record->{'default_rank'} ||
             $self->feature_type_data($feature_type_aid,'default_rank');
@@ -492,6 +495,7 @@ sub import_tab {
             $stop < $start 
         ) {
             ( $start, $stop ) = ( $stop, $start );
+            $direction*=-1;
         }
 
         my $feature_id='';
@@ -536,13 +540,13 @@ sub import_tab {
 		       update cmap_feature
 		       set    accession_id=?, map_id=?, feature_type_accession=?, 
 		       feature_name=?, start_position=?, stop_position=?,
-		       is_landmark=?, default_rank=?
+		       is_landmark=?, default_rank=?,direction=?
 		       where  feature_id=?
 		       ],
 		     {}, 
 		     ( $accession_id, $map_id, $feature_type_aid, 
 		       $feature_name, $start, $stop, $is_landmark,
-		       $feature_id,$default_rank
+		       $feature_id,$default_rank,$direction
 		       )
 		     );
 
@@ -570,14 +574,14 @@ sub import_tab {
 		       ( feature_id, accession_id, map_id,
 			 feature_type_accession, feature_name,
 			 start_position, stop_position,
-			 is_landmark, default_rank
+			 is_landmark, default_rank,direction
 			 )
 		       values ( ?, ?, ?, ?, ?, ?, ?, ?, ? )
 		       ],
 		     {},
 		     ( $feature_id, $accession_id, $map_id, $feature_type_aid,
 		       $feature_name, $start, $stop, $is_landmark, 
-		       $default_rank)
+		       $default_rank,$direction)
 		     );
 	    } 
 	    my $pos = join('-', map { defined $_ ? $_ : () } $start, $stop);
@@ -593,7 +597,7 @@ sub import_tab {
             
 	    $insert_features[++$#insert_features]=
 		[$accession_id, $map_id, $feature_type_aid, 
-		 $feature_name, $start, $stop, $is_landmark, $default_rank,
+		 $feature_name, $start, $stop, $is_landmark, $default_rank,$direction,
 		 ];
 	    @insert_features=@{$self->insert_features(
 				   feature_array => \@insert_features,
@@ -881,7 +885,7 @@ Imports an XML document containing CMap database objects.
                     object      => $feature,
                     field_names => [ qw/ map_id accession_id
                         feature_name start_position stop_position
-                        is_landmark feature_type_accession default_rank
+                        is_landmark feature_type_accession default_rank direction
                     / ],
                 ) or return;
 
@@ -1021,31 +1025,27 @@ sub insert_features{
             ) or die 'No feature id';
 
 
-    my $sql_str=
+    my $sth=$db->prepare(
 	    q[
 	      insert
 	      into   cmap_feature
 	      ( feature_id, accession_id, map_id,
 		feature_type_accession, feature_name, 
 		start_position, stop_position,
-		is_landmark, default_rank
+		is_landmark, default_rank,direction
 		)
-	      values 
-	      ];
+	      values (?,?,?,?,?,?,?,?,?,?)
+	      ]
+        );
     
     for (my $i=0;$i<$no_features; $i++){
-	my $feature_id=$base_feature_id+$i;
-	$feature_array->[$i][0] ||=$feature_id;
-	$sql_str.=", " if ($i);
-	$sql_str.="($feature_id,'".join("','",@{$feature_array->[$i]})."')"
+        my $feature_id=$base_feature_id+$i;
+        $feature_array->[$i][0] ||=$feature_id;
+        $sth->execute($feature_id,@{$feature_array->[$i]});
     }
     
     $self->Print(
-           "Inserting $no_features features.\n"
-        );
-    $db->do($sql_str);
-    $self->Print(
-           "Inserted.\n"
+           "Inserted $no_features features.\n"
         );
     $feature_array=[];
     return $feature_array;
