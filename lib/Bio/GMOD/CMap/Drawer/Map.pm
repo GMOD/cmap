@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.111 2004-08-27 07:05:01 mwz444 Exp $
+# $Id: Map.pm,v 1.112 2004-08-27 08:08:45 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.111 $)[-1];
+$VERSION = (qw$Revision: 1.112 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -339,7 +339,7 @@ such as the units.
         $drawer->add_drawing( STRING, $font, $x, $y, $full_str, 'grey' );
         my $code=qq[
             onMouseOver="window.status='Make map full sized';return true" 
-            onClick="crop($slot_no, $map_aid, '', 2);document.comparative_map_form.submit();"
+            onClick="crop($slot_no, '$map_aid', '', 2);document.comparative_map_form.submit();"
             ]; 
         push @$map_area_data,
           {
@@ -1364,6 +1364,10 @@ sub layout_map_foundation {
     my $font_height = $reg_font->height;
 
     my $column_width         = 70;
+    if ($self->aggregate){
+        $column_width        = 40;
+    }
+
     my $topper_height        = ( $font_height + 2 ) * 2;
     my $map_name             = $self->map_name($map_id);
     my $no_features          = $self->no_features($map_id);
@@ -1873,11 +1877,11 @@ sub add_tick_marks {
         my $up_command=$is_flipped ? '0' : '1';
         my $down_code=qq[ 
             onMouseOver="window.status='crop down';return true" 
-            onClick="crop($slot_no, $map_aid, $tick_pos, $down_command);document.comparative_map_form.submit();"
+            onClick="crop($slot_no, '$map_aid', $tick_pos, $down_command);document.comparative_map_form.submit();"
             ]; 
         my $up_code=qq[
             onMouseOver="window.status='crop up';return true" 
-            onClick="crop($slot_no, $map_aid, $tick_pos, $up_command);document.comparative_map_form.submit();"
+            onClick="crop($slot_no, '$map_aid', $tick_pos, $up_command);document.comparative_map_form.submit();"
             ]; 
         push @$map_area_data,
           {
