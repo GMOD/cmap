@@ -195,7 +195,17 @@ expanded_correspondence_lookup 1
 # Default is 'display'.
 # Other options: 'corr_only', 'ignore'
 feature_default_display=display
-                                                                                
+
+#
+# scalable_units
+# units (such as bp) that can be used to scale the maps
+# against each other.
+#
+<scalable>
+    bp 1
+    cm 0
+</scalable>
+
 #
 # ----------------------------------------------------
 #
