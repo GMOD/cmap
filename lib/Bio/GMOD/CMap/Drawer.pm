@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.32 2003-05-16 17:04:51 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.33 2003-05-16 19:54:38 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.32 $)[-1];
+$VERSION = (qw$Revision: 1.33 $)[-1];
 
 #use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils 'parse_words';
@@ -38,7 +38,7 @@ use base 'Bio::GMOD::CMap';
 use constant INIT_PARAMS => [ qw(
     apr slots highlight font_size image_size image_type 
     label_features include_feature_types include_evidence_types
-    data_source min_correspondences
+    data_source min_correspondences collapse_features
 ) ];
 
 # ----------------------------------------------------
@@ -249,6 +249,28 @@ Accepts a list of coordinates and a URL for hyperlinking a map area.
     my ( $self, %args ) = @_;
     push @{ $self->{'image_map_data'} }, { %args };
 }
+
+# ----------------------------------------------------
+sub collapse_features {
+
+=pod
+
+=head2 collapse_features
+
+Gets/sets whether to collapse features.
+
+=cut
+
+    my $self = shift;
+    my $arg  = shift;
+
+    if ( defined $arg ) {
+        $self->{'collapse_features'} = $arg;
+    }
+
+    return $self->{'collapse_features'} || 0;
+}
+
 
 # ----------------------------------------------------
 sub comparative_map {
@@ -543,7 +565,7 @@ Lays out the image and writes it to the file system, set the "image_name."
             push @feature_types, {
                 shape        => '',
                 color        => $corr_color,
-                feature_type => ucfirst($corr_color).' denotes correspondence',
+                feature_type => "Features in $corr_color have correspondences",
             };
         }
 
