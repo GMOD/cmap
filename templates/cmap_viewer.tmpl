@@ -258,7 +258,42 @@
     </map>
 [% END %]
 
-[% UNLESS apr.param('ref_map_aid') %]
+[% IF form_data.ref_map_set_info %]
+    <hr>
+    <table width="700">
+        <tr>
+            <th colspan="2" align="center">Reference Map Set Info</th>
+        </tr>
+        <tr>
+            <th align="right">Map&nbsp;Set:</th>
+            <td>
+                [% form_data.ref_map_set_info.map_set_name %]
+                ([% form_data.ref_map_set_info.short_name %])
+                <b>[</b>&nbsp;<a href="map_set_info?map_set_aid=[% form_data.ref_map_set_info.map_set_aid %]">View More Info</a>&nbsp;<b>]</b>
+            </td>
+        </tr>
+        <tr>
+            <th align="right">Species:</th>
+            <td>
+                [% form_data.ref_map_set_info.species_common_name %]
+                ([% form_data.ref_map_set_info.species_full_name %])
+            </td>
+        </tr>
+        <tr>
+            <th align="right">Map&nbsp;Type:</th>
+            <td>
+                [% form_data.ref_map_set_info.map_type %]
+                ([% form_data.ref_map_set_info.map_units %])
+            </td>
+        </tr>
+        <tr>
+            <th align="right" valign="top">Remarks:</th>
+            <td>[% form_data.ref_map_set_info.remarks %]</td>
+        </tr>
+    </table>
+[% END %]
+
+[% UNLESS apr.param('ref_map_aid') OR form_data.ref_map_set_info %]
     [% INCLUDE help_quick_start.tmpl %]
 [% END %]
 
