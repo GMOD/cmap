@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::FeatureTypeViewer;
 
-# $Id: FeatureTypeViewer.pm,v 1.2 2003-09-16 16:54:21 kycl4rk Exp $
+# $Id: FeatureTypeViewer.pm,v 1.3 2003-09-19 19:10:55 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Apache::Constants;
 use Data::Pageset;
@@ -43,8 +43,6 @@ sub handler {
         pages_per_set    => $MAX_PAGES,
     } );
     $feature_types = [ $pager->splice( $feature_types ) ] if $returned;
-
-    print STDERR Dumper($feature_types), "\n";
 
     my $html;
     my $t = $self->template;
