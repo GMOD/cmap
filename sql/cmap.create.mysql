@@ -150,6 +150,7 @@ CREATE TABLE cmap_feature_type (
   color varchar(20) character set latin1 default NULL,
   drawing_lane int(11) NOT NULL default '1',
   drawing_priority int(11) NOT NULL default '1',
+  description text character set latin1,
   PRIMARY KEY  (feature_type_id),
   UNIQUE KEY accession_id (accession_id)
 ) TYPE=MyISAM;

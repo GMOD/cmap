@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::Oracle
--- Created on Thu Sep  4 11:27:11 2003
+-- Created on Mon Sep  8 11:14:40 2003
 -- 
 -- We assume that default NLS_DATE_FORMAT has been changed
 -- but we set it here anyway to be self-consistent.
@@ -189,6 +189,7 @@ CREATE TABLE cmap_feature_type (
   color varchar2(20) DEFAULT NULL,
   drawing_lane number(11) DEFAULT '1' CONSTRAINT nn_cmap_feature_type_drawing_l NOT NULL,
   drawing_priority number(11) DEFAULT '1' CONSTRAINT nn_cmap_feature_type_drawing_p NOT NULL,
+  description clob,
   CONSTRAINT pk_cmap_feature_type PRIMARY KEY (feature_type_id),
   CONSTRAINT accession_id UNIQUE (accession_id)
 );
