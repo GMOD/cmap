@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.12 2003-02-03 22:01:08 kycl4rk Exp $
+# $Id: Import.pm,v 1.13 2003-02-10 21:28:19 kycl4rk Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.12 $)[-1];
+$VERSION  = (qw$Revision: 1.13 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -193,9 +193,10 @@ added.
 
         my %record;
         for my $i ( 0 .. $#columns_present ) {
-            my $field_name = $columns_present[ $i ]  or next;
-            my $field_attr = $COLUMNS{ $field_name } or next;
-            my $field_val  = $fields[ $i ];
+            my $field_name =  $columns_present[ $i ]  or next;
+            my $field_attr =  $COLUMNS{ $field_name } or next;
+            my $field_val  =  $fields[ $i ];
+               $field_val  =~ s/^\s+|\s+$//g; # remove leading/trailing space
 
             if ( $field_attr->{'is_required'} && !defined $field_val ) {
                 return $self->error("Field '$field_name' is required");
@@ -365,7 +366,7 @@ added.
         if ( 
             defined $start &&
             defined $stop  &&
-            $stop > $start 
+            $stop < $start 
         ) {
             ( $start, $stop ) = ( $stop, $start );
         }
