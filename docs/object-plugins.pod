@@ -1,0 +1,298 @@
+# vim: tw=70:
+
+=pod
+
+=head1 NAME
+
+Object Plugins
+
+=head1 SYNOPSIS
+
+Wherein we discuss how to extend the various "details" pages in CMap
+to add custom data drawn from various and sundry external resources.
+
+=head1 DESCRIPTION
+
+As has been discussed in the "attributes" document, CMap stores almost
+no biological information about the various objects (map sets,
+species, features, etc.).  The "attributes" system does allow the
+curator to define any number of arbitrary name/value pairs of data
+(e.g., a "GenBank ID" for a feature or an "NCBI Taxon ID" for a
+species), and these attributes can be used by the cross-reference
+system to create novel and powerful dbxrefs.  However, storing
+attributes such as these in all likelihood duplicates information
+stored elsewhere, which is almost never a Good Thing (tm).
+
+One solution is to define a way for CMap to execute user-defined code
+that can manipulate any of the objects for which there is a "details"
+page (e.g., map sets have the "map_set_info" page, features have the
+"feature" page).  As with most of the other user-configurable items in
+CMap, the user will define this code in the database-specific
+configuration files.  The code must be written in Perl (the language
+in which CMap is written).  Two methods for defining the code,
+"in-line" in the config file or in a separate module, follow and are
+illustrated in this example:
+
+  <object_plugin>
+      map_set_info <<EOF
+          sub {
+              my $map_set = shift;
+              $map_set->{'foo'} = 'bar';
+              push @{ $map_set->{'xrefs'} }, {
+                  xref_name => 'Google',
+                  xref_url  => "http://www.google.com/?q=".
+                      $map_set->{'short_name'}
+              };
+          
+              push @{ $map_set->{'attributes'} }, {
+                  attribute_name  => 'Favorite Color',
+                  attribute_value => 'Blue. No, red! Ahhhhh!',
+              };
+          }
+      EOF
+      feature Gramene::Marker::Marker2CMap::new
+  </object_plugin>
+
+As is shown above, the user has the ability to directly manipulate the
+given object (in this case, the map set).  In all cases, the "object"
+will be a Perl hash reference data structure -- the same one, in fact,
+that is given to the template for the "details" page.  This hashref
+will always be the first (and only) argument to the plugin code.  Your
+code should alter the hashref to add new cross-references ("xrefs"),
+attributes, or even new fields.
+
+The above example also shows adding a new field "foo" with the value
+"bar."  If you wish this value to be displayed on the "map_set_info"
+page, you would have to alter the "map_set_info.tmpl" template.  It's
+probably much easier to simply add to hashref's "attributes" or
+"xrefs" as all the templates are designed to show these and will have
+to be altered to display other fields (and your changes could be lost
+the next time you update CMap).
+
+The "attributes" and "xrefs" fields of the hashref are themselves
+arrayrefs of hashrefs.  If that sounds scary, it's really not.  In
+short, the thing you add to ("push") should be a hashref with the
+following fields:
+
+  attribute
+    attribute_name : The type of attribute, e.g., the phrase "GenBank ID"
+    attribute_value: The data, e.g., the actual GenBank ID
+
+  xref
+    xref_name: The text that user will click on for the link
+    xref_url : The location where the user will go after clicking
+
+As long as you define the "attributes" and "xrefs" with these fields
+and copy the above syntax for "push"ing them onto the appropriate
+fields (and all hashrefs will have these), your code should work just
+fine.
+
+Following is more discussion on defining the plugin code.
+
+=over 4
+
+=item 1 IN-LINE SUB
+
+The "map_set_info" example above show that you can define an anonymous
+subroutine "in-line" in the config file.  Note the use of the "HERE
+document" syntax ("<<EOF"..."EOF") to define a config value that spans
+multiple lines.
+
+=item 2 NAME OF EXTERNAL MODULE AND SUBROUTINE
+
+The "feature" example above shows how to reference an external module
+and subroutine, in this case "Gramene::Marker::Marker2CMap::new."
+"new" is the name of a defined subroutine in the module
+"Gramene::Marker::Marker2CMap.pm."  This module must live in some
+library path that CMap has access to.  (It's probably easiest to add a
+"use lib" statement to the Apache "perl.startup" file or to put your
+code into the standard Perl library path.)  Some advantages to defining
+code in external modules:
+
+=over 4
+
+=item *
+
+Keeps the config file lighter.
+
+=item *
+
+Allows for easy reuse of code for different object types and over
+different config files.
+
+=back
+
+Here is an example of the "Gramene::Marker::Marker2CMap" module:
+
+  package Gramene::Marker::Marker2CMap;
+  
+  use strict;
+  use Gramene::Marker::DB;
+  
+  sub new {
+      my $feature = shift;
+      my $mdb     = Gramene::Marker::DB->new;
+  
+      my @markers;
+      for my $name ( 
+          $feature->{'feature_name'}, 
+          ( map { $_->{'alias'} } @{ $feature->{'aliases'} } )
+      ) {
+          my $found = $mdb->marker_search( 
+              marker_name => $name 
+          ) or next;
+          push @markers, @$found;
+      }
+  
+      my $xref_url = '/db/markers/marker_view?marker_id=';
+      for my $m ( @markers ) {
+          push @{ $feature->{'xrefs'} }, {
+              xref_name => 
+                  "View &quot;$m->{'name'}&quot; in Marker DB",
+              xref_url  => $xref_url . $m->{'marker_id'},
+          };
+      }
+  }
+  
+  1;
+
+Notice that it's simply a standard Perl package, starting with the
+proper "package" declaration and returning a "true" value at the end,
+"1;" in this case.  The "Gramene::Marker::DB" module is used to search
+for the CMap feature in the marker name, looking with the feature's
+primary name and any aliases.  For each marker (if any) that are
+found, a new cross-reference is created using the a relative URL
+("/db/markers...") and defining an informative link text and proper
+URL.  If it were desired, CMap could define for the feature new
+attributes based upon the field names and data from the markers found
+in the marker database, thereby allowing the CMap user full access to
+the marker information without leaving the CMap interface and without
+duplicating the marker data as CMap attributes.
+
+=back
+
+=head1 PLUGIN NAMES AND FIELDS
+
+The following are the names to use for each object (they are the same
+as the "handler" for the object).  For each hashref, you can always
+add ("push") attributes and xrefs.  If you wish to have the specific
+"details" page display a visually structured dump of the object's data
+structure, you can use this snippet (here for a "feature"):
+
+  <object_plugin>
+      feature <<EOF
+          sub {
+              use Data::Dumper;
+              my $obj = shift;
+              push @{ $obj->{'attributes'} }, {
+                  attribute_name => 'Dump',
+                  attribute_value  => '<pre>'.Dumper($obj).'</pre>'
+              };
+          }
+      EOF
+  </object_plugin>
+
+This will cause a new attribute called "Dump" to be created with a
+value of the return of the standard Perl module Data::Dumper's
+"Dumper" method in "PRE"-formatted HTML tags.
+
+For each object type, following are the plugin names to use (in
+parentheses) and the hashref's fields you can use:
+
+=head2 Map Set (map_set_info)
+
+  can_be_reference_map
+  common_name
+  full_name
+  is_relational_map
+  map_set_aid
+  map_set_id
+  map_set_name
+  map_type
+  map_type_aid
+  map_units
+  object_id
+  published_on
+  short_name
+  species_aid
+  species_id
+
+=head2 Map (map_details)
+
+  map_aid
+  map_name
+  map_set_aid
+  map_set_name
+  map_type_aid
+  map_units
+  object_id
+  species_aid
+  species_name
+  start
+  start_position
+  stop
+  stop_position
+
+=head2 Feature (feature)
+
+  aliases
+  attributes
+  feature_aid
+  feature_id
+  feature_name
+  feature_type
+  feature_type_aid
+  is_landmark
+  map_aid
+  map_id
+  map_name
+  map_set_aid
+  map_set_id
+  map_set_name
+  map_type_aid
+  map_units
+  object_id
+  species_aid
+  species_id
+  species_name
+  start_position
+  stop_position
+
+=head2 Feature Type (feature_type_info)
+
+  color
+  feature_type
+  feature_type_aid
+  shape
+
+=head2 Map Type (map_type_info)
+
+  color
+  display_order
+  is_relational_map
+  map_type
+  map_type_aid
+  map_units
+  shape
+  width
+
+=head2 Evidence Type (evidence_type_info)
+
+  evidence_type
+  evidence_type_aid
+  line_color
+  rank
+
+=head2 Species (species_info)
+
+  common_name
+  display_order
+  full_name
+  species_aid
+  species_id
+
+=head1 AUTHOR
+
+Ken Youens-Clark E<lt>kclark@cshl.eduE<gt>.
+
+=cut
