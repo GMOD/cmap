@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.63 2003-10-01 23:18:51 kycl4rk Exp $
+# $Id: Data.pm,v 1.64 2003-10-14 23:56:10 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.63 $)[-1];
+$VERSION = (qw$Revision: 1.64 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -402,6 +402,7 @@ Returns the data for drawing comparative maps.
                                map.start_position,
                                map.stop_position,
                                map.display_order,
+                               map.image_name,
                                ms.map_set_id,
                                ms.accession_id as map_set_aid,
                                ms.short_name as map_set_name,
@@ -455,6 +456,7 @@ Returns the data for drawing comparative maps.
                                map.start_position,
                                map.stop_position,
                                map.display_order,
+                               map.image_name,
                                ms.map_set_id,
                                ms.accession_id as map_set_aid,
                                ms.short_name as map_set_name,
@@ -495,6 +497,7 @@ Returns the data for drawing comparative maps.
                            map.start_position,
                            map.stop_position,
                            map.display_order,
+                           map.image_name,
                            ms.map_set_id,
                            ms.accession_id as map_set_aid,
                            ms.short_name as map_set_name,
@@ -2126,6 +2129,21 @@ Given a feature acc. id, find out all the details on it.
             )
         }
     ];
+
+    $feature->{'attributes'} = $db->selectall_arrayref(
+        qq[
+            select   feature_attribute_id,
+                     feature_id,
+                     display_order,
+                     attribute_name,
+                     attribute_value
+            from     cmap_feature_attribute
+            where    feature_id=?
+            order by display_order, attribute_name
+        ],
+        { Columns => {} },
+        ( $feature->{'feature_id'} )
+    );
 
     my $correspondences = $db->selectall_arrayref(
         $sql->feature_correspondence_sql,
