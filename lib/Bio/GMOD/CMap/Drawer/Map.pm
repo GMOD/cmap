@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.151 2005-03-01 17:48:19 mwz444 Exp $
+# $Id: Map.pm,v 1.152 2005-03-01 22:01:06 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.151 $)[-1];
+$VERSION = (qw$Revision: 1.152 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -2958,7 +2958,7 @@ sub add_feature_to_map {
                 my $url  = $feature_details_url . $feature->{'accession_id'}; 
                 my $alt  = 'Feature Details: '
                       . $feature->{'feature_name'} . ' ['
-                      . $feature->{'accession_id'} . ']',
+                      . $feature->{'accession_id'} . ']';
                 eval $self->feature_type_data( $feature->{'feature_type_aid'},
                     'area_code' );
                 push @$map_area_data,
@@ -3063,9 +3063,8 @@ sub collect_labels_to_display {
         my $url  = $feature_details_url . $feature->{'accession_id'}; 
         my $alt  = 'Feature Details: '
               . $feature->{'feature_name'} . ' ['
-              . $feature->{'accession_id'} . ']',
-        eval $self->feature_type_data( $feature->{'feature_type_aid'},
-            'area_code' );
+              . $feature->{'accession_id'} . ']';
+        eval $self->feature_type_data( $feature->{'feature_type_aid'}, 'area_code' );
         my $even_label_key =
             $is_highlighted ? 'highlights'
           : $has_corr       ? 'correspondences'
