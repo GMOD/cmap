@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.165.2.4 2004-11-09 17:52:53 mwz444 Exp $
+# $Id: Data.pm,v 1.165.2.5 2004-11-11 05:55:57 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.165.2.4 $)[-1];
+$VERSION = (qw$Revision: 1.165.2.5 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -4308,9 +4308,8 @@ sub count_correspondences {
         $base_sql .= " group by map_id1,map_id2";
 
         $count_sql = sprintf( $base_sql,
-            'count(distinct cl.feature_correspondence_id) as no_corr, ' );
-        $position_sql = sprintf( $base_sql,
-                'min(cl.start_position1) as min_start, '
+                'count(distinct cl.feature_correspondence_id) as no_corr, '
+              . 'min(cl.start_position1) as min_start, '
               . 'max(cl.start_position1) as max_start , '
               . 'avg(((cl.stop_position1-cl.start_position1)/2)'
               . '+cl.start_position1) as avg_mid, '
@@ -4326,45 +4325,36 @@ sub count_correspondences {
     my %corr_lookup;
     if ($count_sql) {
 
-        my ( $map_corr_counts, $positions );
-        if (
-            my $arrayref = $self->get_cached_results(
-                4, $count_sql . $position_sql . join( ".", @query_args )
+        my ($map_corr_counts);
+        unless (
+            $map_corr_counts = $self->get_cached_results(
+                4, $count_sql . join( ".", @query_args )
             )
           )
         {
-            ( $map_corr_counts, $positions ) = @$arrayref;
-        }
-        else {
             $map_corr_counts =
               $db->selectall_arrayref( $count_sql, { Columns => {} },
                 @query_args );
-            $positions =
-              $db->selectall_hashref( $position_sql, 'map_id2', {},
-                @query_args );
-            $self->store_cached_results(
-                4,
-                $count_sql . $position_sql . join( ".", @query_args ),
-                [ $map_corr_counts, $positions ]
-            );
+            $self->store_cached_results( 4,
+                $count_sql . join( ".", @query_args ),
+                $map_corr_counts );
         }
         for my $count (@$map_corr_counts) {
             next unless $map_id_lookup{ $count->{'map_id2'} };
-            my $pos = $positions->{ $count->{'map_id2'} };
 
             $map_correspondences->{$this_slot_no}{ $count->{'map_id2'} }
               { $count->{'map_id1'} } = {
                 map_id     => $count->{'map_id2'},
                 ref_map_id => $count->{'map_id1'},
                 no_corr    => $count->{'no_corr'},
-                min_start  => $pos->{'min_start'},
-                max_start  => $pos->{'max_start'},
-                avg_mid    => $pos->{'avg_mid'},
-                min_start2 => $pos->{'min_start2'},
-                max_start2 => $pos->{'max_start2'},
-                avg_mid2   => $pos->{'avg_mid2'},
-                start_avg1 => $pos->{'start_avg1'},
-                start_avg2 => $pos->{'start_avg2'},
+                min_start  => $count->{'min_start'},
+                max_start  => $count->{'max_start'},
+                avg_mid    => $count->{'avg_mid'},
+                min_start2 => $count->{'min_start2'},
+                max_start2 => $count->{'max_start2'},
+                avg_mid2   => $count->{'avg_mid2'},
+                start_avg1 => $count->{'start_avg1'},
+                start_avg2 => $count->{'start_avg2'},
               };
             $corr_lookup{ $count->{'map_id2'} } += $count->{'no_corr'};
         }

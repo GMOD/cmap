@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.135.2.8 2004-11-10 17:26:26 mwz444 Exp $
+# $Id: Map.pm,v 1.135.2.9 2004-11-11 05:55:59 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.135.2.8 $)[-1];
+$VERSION = (qw$Revision: 1.135.2.9 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1150,6 +1150,9 @@ Variable Info:
         my $map_width  = $self->map_width($map_id);
         my $is_flipped = 0;
         my $max_x;
+        # must create these arrays otherwise they don't get passed by reference.
+        $map_drawing_data{$map_id} = [];
+        $map_area_data{$map_id} = [];
 
         my $actual_map_length = $self->map_length($map_id);
         my $map_length        = $actual_map_length || 1;
