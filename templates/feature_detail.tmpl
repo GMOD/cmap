@@ -49,7 +49,7 @@
         </td>
         <td>
             [% feature.species_name %]-[% feature.map_set_name %]-[% feature.map_name %]
-            (<a href="viewer?ref_map_set_aid=[% feature.map_set_aid %];ref_map_aid=[% feature.map_aid %];highlight=[% feature.feature_name %]">View on Map</a>)
+            (<a href="viewer?ref_map_set_aid=[% feature.map_set_aid %];ref_map_aid=[% feature.map_aid %];highlight=&quot;[% feature.feature_name %]&quot;">View on Map</a>)
         </td>
     </tr>
 
@@ -81,7 +81,7 @@
             [% IF feature.dbxrefs.size %]
                 [% FOREACH dbxref=feature.dbxrefs %]
                     [% IF dbxref.url %]
-                        <a href="[% dbxref.url %]">[% dbxref.dbxref_name OR 'Reference' %]</a><br>
+                        <a href="[% dbxref.url | uri %]">[% dbxref.dbxref_name OR 'Reference' %]</a><br>
                     [% ELSE %]
                         [% dbxref.dbxref_name %]<br>
                     [% END %]
@@ -128,10 +128,10 @@
                     <a href="feature?feature_aid=[% fc.feature_aid %]">Feature Details</a>
                 </td>
                 <td align="center">
-                    <a href="viewer?ref_map_set_aid=[% fc.map_set_aid %];ref_map_aid=[% fc.map_aid %];highlight=[% fc.feature_name %]">View On Map</a>
+                    <a href="viewer?ref_map_set_aid=[% fc.map_set_aid %];ref_map_aid=[% fc.map_aid %];highlight=&quot;[% fc.feature_name %]&quot;">View On Map</a>
                 </td>
                 <td align="center">
-                    <a href="viewer?ref_map_set_aid=[% feature.map_set_aid %];ref_map_aid=[% feature.map_aid %];highlight=[% feature.feature_name %],[% fc.feature_name %];comparative_maps=1%3dmap_aid%3d[% fc.map_aid %]">Show Maps</a>
+                    <a href="viewer?ref_map_set_aid=[% feature.map_set_aid %];ref_map_aid=[% feature.map_aid %];highlight=&quot;[% feature.feature_name %]&quot;,&quot;[% fc.feature_name %]&quot;;comparative_maps=1%3dmap_aid%3d[% fc.map_aid %]">Show Maps</a>
                 </td>
             </tr>
             [% SET i=i+1 %]
