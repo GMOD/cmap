@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.33 2003-03-05 01:52:37 kycl4rk Exp $
+# $Id: Map.pm,v 1.34 2003-03-13 01:21:22 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.33 $)[-1];
+$VERSION = (qw$Revision: 1.34 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -438,6 +438,7 @@ Lays out the map.
     # Some common things we'll need later on.
     #
     my $t                        = $drawer->template or return;
+    my $max_image_pixel_width    = $drawer->config('max_image_pixel_width');
     my $min_map_pixel_height     = $drawer->config('min_map_pixel_height');
     my $default_feature_color    = $drawer->config('feature_color');
     my $feature_details_template = $drawer->config('feature_details_url');
@@ -777,15 +778,19 @@ Lays out the map.
                         bottom       => $y_pos2,
                         buffer       => $buffer,
                     );
-                    my $offset       = ( $column_index + 1 ) * 6;
-                    my $vert_line_x1 = $label_side eq RIGHT
+                    my $offset            = ( $column_index + 1 ) * 6;
+                    my $vert_line_x1      = $label_side eq RIGHT
                         ? $tick_start : $tick_stop;
-                    my $vert_line_x2 = $label_side eq RIGHT 
-                        ? $tick_stop + $offset : $tick_start - $offset;
-                    $label_y = ( $y_pos1 + ( $y_pos2 - $y_pos1 ) / 2 ) -
-                        $reg_font->height/2;
+                    my $vert_line_x2      = $label_side eq RIGHT 
+                        ? $tick_stop + $offset 
+                        : $tick_start - $offset;
+                    my $shape_is_triangle = $feature_shape =~ /triangle$/;
 
-                    if ( $y_pos1 < $y_pos2 ) {
+                    $label_y = $shape_is_triangle
+                        ? $y_pos1 - $reg_font->height/2
+                        : ( ( $y_pos1 + $y_pos2 ) / 2 ) - $reg_font->height/2;
+
+                    if ( $y_pos1 < $y_pos2 && !$shape_is_triangle ) {
                         $drawer->add_drawing(
                             LINE, 
                             $vert_line_x2, $y_pos1, 
@@ -833,7 +838,7 @@ Lays out the map.
 
                         @coords = (
                             $vert_line_x2 - 2, $y_pos2,
-                            $vert_line_x2 + 2, $y_pos1, $color
+                            $vert_line_x2 + 2, $y_pos1,
                         );
                     }
                     elsif ( $feature_shape eq 'down-arrow' ) {
@@ -853,7 +858,7 @@ Lays out the map.
 
                         @coords = (
                             $vert_line_x2 - 2, $y_pos2,
-                            $vert_line_x2 + 2, $y_pos1, $color
+                            $vert_line_x2 + 2, $y_pos1,
                         );
                     }
                     elsif ( $feature_shape eq 'double-arrow' ) {
@@ -884,7 +889,7 @@ Lays out the map.
 
                         @coords = (
                             $vert_line_x2 - 2, $y_pos2,
-                            $vert_line_x2 + 2, $y_pos1, $color
+                            $vert_line_x2 + 2, $y_pos1,
                         );
                     }
                     elsif ( $feature_shape eq 'box' ) {
@@ -918,7 +923,7 @@ Lays out the map.
                             $vert_line_x2 + $width/2, $y_pos2
                         );
                     }
-                    elsif ( $feature_shape eq 'rectangle' ) {
+                    elsif ( $feature_shape eq 'filled-box' ) {
                         my $width = 3;
                         $drawer->add_drawing(
                             FILLED_RECT, 
@@ -935,6 +940,89 @@ Lays out the map.
                         @coords = (
                             $vert_line_x2 - $width/2, $y_pos1, 
                             $vert_line_x2 + $width/2, $y_pos2
+                        );
+                    }
+                    elsif ( 
+                        ( 
+                            $feature_shape eq 'in-triangle' &&
+                            $label_side eq LEFT
+                        )
+                        ||
+                        ( 
+                            $feature_shape eq 'out-triangle' &&
+                            $label_side eq RIGHT
+                        )
+                    ) {
+                        my $width = 3;
+                        $drawer->add_drawing(
+                            LINE,
+                            $vert_line_x2, $y_pos1 - $width,
+                            $vert_line_x2, $y_pos1 + $width,
+                            $color
+                        );
+                        $drawer->add_drawing(
+                            LINE,
+                            $vert_line_x2, $y_pos1 - $width,
+                            $vert_line_x2 + $width, $y_pos1,
+                            $color
+                        );
+                        $drawer->add_drawing(
+                            LINE,
+                            $vert_line_x2, $y_pos1 + $width,
+                            $vert_line_x2 + $width, $y_pos1,
+                            $color
+                        );
+
+                        $drawer->add_drawing(
+                            FILL,
+                            $vert_line_x2 + 1, $y_pos1 + 1,
+                            $color
+                        );
+
+                        @coords = (
+                            $vert_line_x2 - $width, $y_pos1 - $width,
+                            $vert_line_x2 + $width, $y_pos1 + $width,
+                        );
+                    }
+                    elsif (
+                        ( 
+                            $feature_shape eq 'in-triangle' &&
+                            $label_side eq RIGHT
+                        )
+                        ||
+                        ( 
+                            $feature_shape eq 'out-triangle' &&
+                            $label_side eq LEFT
+                        )
+                    ) {
+                        my $width = 3;
+                        $drawer->add_drawing(
+                            LINE,
+                            $vert_line_x2 + $width, $y_pos1 - $width,
+                            $vert_line_x2 + $width, $y_pos1 + $width,
+                            $color
+                        );
+                        $drawer->add_drawing(
+                            LINE,
+                            $vert_line_x2 + $width, $y_pos1 - $width,
+                            $vert_line_x2, $y_pos1,
+                            $color
+                        );
+                        $drawer->add_drawing(
+                            LINE,
+                            $vert_line_x2, $y_pos1,
+                            $vert_line_x2 + $width, $y_pos1 + $width,
+                            $color
+                        );
+                        $drawer->add_drawing(
+                            FILL,
+                            $vert_line_x2 + $width - 1, $y_pos1 + 1,
+                            $color
+                        );
+
+                        @coords = (
+                            $vert_line_x2 - $width, $y_pos1 - $width,
+                            $vert_line_x2 + $width, $y_pos1 + $width,
                         );
                     }
 
@@ -1165,14 +1253,14 @@ Lays out the map.
                 #
                 my @coords           = @{ $label->{'feature_coords'} || [] };
                 my $label_connect_x1 = $label_side eq RIGHT
-                    ? $coords[2]# + $buffer 
+                    ? $coords[2]
                     : $label_end + $buffer;
                 my $label_connect_y1 = $label_side eq RIGHT
                     ? ($coords[1] + $coords[3])/2 
                     : $label_y + $font->height/2;
                 my $label_connect_x2 = $label_side eq RIGHT
                     ? $label_x - $buffer 
-                    : $coords[0];# - $buffer;
+                    : $coords[0];
                 my $label_connect_y2 = $label_side eq RIGHT
                     ? $label_y + $font->height/2 
                     : ($coords[1] + $coords[3])/2;
@@ -1347,29 +1435,20 @@ Lays out the map.
             $max_x = $bounds[2] if $bounds[2] > $max_x;
         }
 
-#        #
-#        # Draw feature correspondences to reference map.
-#        # This could be moved into the Drawer and be done at the end (?).
-#        #
-#        for my $position_set ( 
-#            $drawer->feature_correspondence_positions( slot_no => $slot_no ) 
-#        ) {
-#            my @positions     = @{ $position_set->{'positions'} || [] } or next;
-#            my $evidence_info = $drawer->feature_correspondence_evidence(
-#                $position_set->{'feature_id1'},
-#                $position_set->{'feature_id2'}
-#            );
-#            $drawer->add_connection(
-#                @positions,
-#                $evidence_info->{'line_color'} || 
-#                    $self->config('connecting_line_color'),
-#            );
-#        }
-#
         $slot_min_x = $min_x unless defined $slot_min_x;
         $slot_min_x = $min_x if $min_x < $slot_min_x;
         $slot_max_x = $max_x unless defined $slot_max_x;
         $slot_max_x = $max_x if $max_x > $slot_max_x;
+
+        #
+        # See if we've exceeded the max width yet.
+        #
+        if ( $max_image_pixel_width ) {
+            return $self->error(
+                "Maximum image pixel width ($max_image_pixel_width) ".
+                "exceeded.  Please choose fewer maps."
+            ) if ( abs $drawer->min_x + $slot_max_x ) > $max_image_pixel_width;
+        }
     }
 
     #
@@ -1452,12 +1531,12 @@ Lays out the map.
     # Background color
     #
     my $buffer = 10;
-    return (
+    return [
         $slot_min_x - $buffer,
         $top_y      - $buffer,
         $slot_max_x + $buffer,
         $bottom_y   + $buffer,
-    );
+    ];
 }
 
 # ----------------------------------------------------
