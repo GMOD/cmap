@@ -18,14 +18,14 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.14 2004-05-12 17:51:51 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.15 2004-06-23 20:53:48 mwz444 Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.14 $)[-1];
+$VERSION = (qw$Revision: 1.15 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -573,6 +573,21 @@ use constant VALID => {
     },
 
 };
+
+#
+# Unit conversions
+#
+use constant UNITS      => {
+    p => 1e-12,
+    n => 1e-9,
+    u => 1e-6,
+    m => 0.001,
+    c => 0.01,
+    k => 1000,
+    M => 1_000_000,
+    G => 1_000_000_000
+};
+
 
 1;
 

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.95 2004-06-23 15:23:15 mwz444 Exp $
+# $Id: Map.pm,v 1.96 2004-06-23 20:53:49 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.95 $)[-1];
+$VERSION = (qw$Revision: 1.96 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -33,6 +33,8 @@ use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Utils qw[
   even_label_distribution
   simple_column_distribution
+  commify
+  presentable_number
 ];
 use Bio::GMOD::CMap::Drawer::Glyph;
 use base 'Bio::GMOD::CMap';
@@ -170,8 +172,9 @@ box.
       or $self->error('No drawer');
     my ( $x1, $y1, $y2 ) = @{ $args{'coords'} || [] }
       or $self->error('No coordinates');
-    my $color  = $self->color( $args{'map_id'} );
-    my $width  = $self->map_width( $args{'map_id'} );
+    my $map_id    = $args{'map_id'};
+    my $color     = $self->color( $map_id );
+    my $width     = $self->map_width( $map_id );
     my $x2     = $x1 + $width;
     my @coords = ( $x1, $y1, $x2, $y2 );
 
@@ -179,13 +182,14 @@ box.
     push @$drawing_data, [ RECTANGLE,   @coords, 'black' ];
 
     if ( my $map_units = $args{'map_units'} ) {
-        my $buf  = 2;
-        my $font = $drawer->regular_font;
-        my $x    = $x1 + ( ( $x2 - $x1 ) / 2 ) -
-          ( ( $font->width * length($map_units) ) / 2 );
-        my $y = $y2 + $buf;
-        $drawer->add_drawing( STRING, $font, $x, $y, $map_units, 'grey' );
-        $coords[3] += $font->height;
+        $coords[3] =$self->draw_map_bottom(
+            map_id  => $map_id,
+            map_x1  => $x1,
+            map_x2  => $x2,
+            map_y2  => $y2,
+            drawer  => $drawer,
+            map_units  => $map_units,
+        );
     }
 
     return @coords;
@@ -209,8 +213,9 @@ bounds of the image.
       or $self->error('No drawer');
     my ( $x1, $y1, $y2 ) = @{ $args{'coords'} || [] }
       or $self->error('No coordinates');
-    my $color     = $self->color( $args{'map_id'} );
-    my $width     = $self->map_width( $args{'map_id'} );
+    my $map_id    = $args{'map_id'};
+    my $color     = $self->color( $map_id );
+    my $width     = $self->map_width( $map_id );
     my $x2        = $x1 + $width;
     my $mid_x     = $x1 + $width / 2;
     my $arc_width = $width + 6;
@@ -224,13 +229,14 @@ bounds of the image.
     push @$drawing_data, [ FILLED_RECT,    $x1,    $y1, $x2,    $y2, $color ];
 
     if ( my $map_units = $args{'map_units'} ) {
-        my $buf  = 2;
-        my $font = $drawer->regular_font;
-        my $x    = $x1 + ( ( $x2 - $x1 ) / 2 ) -
-          ( ( $font->width * length($map_units) ) / 2 );
-        my $y = $y2 + $buf;
-        $drawer->add_drawing( STRING, $font, $x, $y, $map_units, 'grey' );
-        $y2 += $font->height;
+       $y2=$self->draw_map_bottom(
+            map_id  => $map_id,
+            map_x1  => $x1,
+            map_x2  => $x2,
+            map_y2  => $y2,
+            drawer  => $drawer,
+            map_units  => $map_units,
+        );
     }
 
     return (
@@ -258,8 +264,9 @@ Draws the map as an "I-beam."  Return the bounds of the image.
       or $self->error('No drawer');
     my ( $x1, $y1, $y2 ) = @{ $args{'coords'} || [] }
       or $self->error('No coordinates');
-    my $color = $self->color( $args{'map_id'} );
-    my $width = $self->map_width( $args{'map_id'} );
+    my $map_id= $args{'map_id'};
+    my $color = $self->color( $map_id );
+    my $width = $self->map_width( $map_id );
     my $x2    = $x1 + $width;
     my $x     = $x1 + $width / 2;
 
@@ -268,16 +275,49 @@ Draws the map as an "I-beam."  Return the bounds of the image.
     push @$drawing_data, [ LINE, $x1, $y2, $x2, $y2, $color ];
 
     if ( my $map_units = $args{'map_units'} ) {
-        my $buf  = 2;
-        my $font = $drawer->regular_font;
-        my $x    = $x1 + ( ( $x2 - $x1 ) / 2 ) -
-          ( ( $font->width * length($map_units) ) / 2 );
-        my $y = $y2 + $buf;
-        $drawer->add_drawing( STRING, $font, $x, $y, $map_units, 'grey' );
-        $y2 += $font->height;
+        $y2=$self->draw_map_bottom(
+            map_id  => $map_id,
+            map_x1  => $x1,
+            map_x2  => $x2,
+            map_y2  => $y2,
+            drawer  => $drawer,
+            map_units  => $map_units,
+        );
     }
 
     return ( $x1, $y1, $x2, $y2 );
+}
+
+# ----------------------------------------------------
+sub draw_map_bottom{
+
+=pod
+
+=head2 draw_map_bottom
+
+draws the information to be placed at the bottom of the map
+such as the units.
+
+=cut
+
+    my ($self,%args) = @_;
+    my $map_id       = $args{'map_id'};
+    my $x1           = $args{'map_x1'};
+    my $x2           = $args{'map_x2'};
+    my $y2           = $args{'map_y2'};
+    my $drawer       = $args{'drawer'};
+    my $map_units    = $args{'map_units'};
+
+    my $buf  = 2;
+    my $font = $drawer->regular_font;
+    my $map_length =$self->map_length($map_id);
+    my $end_str    = presentable_number($map_length).$map_units;
+    my $x    = $x1 + ( ( $x2 - $x1 ) / 2 ) -
+      ( ( $font->width * length($end_str) ) / 2 );
+    my $y = $y2 + $buf;
+    $drawer->add_drawing( STRING, $font, $x, $y, $end_str, 'grey' );
+    $y2 += $font->height;
+    return $y2;
 }
 
 # ----------------------------------------------------
@@ -1591,14 +1631,34 @@ sub add_tick_marks {
     my $font_width  = $reg_font->width;
     my $font_height = $reg_font->height;
 
-    my $interval      = $self->tick_mark_interval($map_id) || 1;
+    my ($interval,$map_scale)
+         = @{$self->tick_mark_interval($map_id,$pixel_height)};
     my $no_intervals  = int( $actual_map_length / $interval );
     my $tick_overhang = 5;
     my @intervals     =
       map { int( $map_start + ( $_ * $interval ) ) } 1 .. $no_intervals;
-
+    my $min_tick_distance= $self->config_data('min_tick_distance') || 40;
+    my $last_tick_rel_pos = undef;
     for my $tick_pos (@intervals) {
         my $rel_position = ( $tick_pos - $map_start ) / $map_length;
+        
+        if (
+            (
+             ($rel_position*$pixel_height) < $min_tick_distance)
+             or 
+                (defined($last_tick_rel_pos) 
+                 and (
+                  ($rel_position*$pixel_height)
+                  - ($last_tick_rel_pos*$pixel_height)
+                    < $min_tick_distance
+                 )
+            )
+           ){
+            next;
+        }
+            
+        
+        $last_tick_rel_pos = $rel_position;
 
         my $y_pos = $is_flipped
           ? $map_bounds->[3] - ( $pixel_height * $rel_position )
@@ -1621,11 +1681,11 @@ sub add_tick_marks {
             $label_side eq RIGHT
           ? $tick_start - $font_height - 2
           : $tick_stop + 2;
-
-        my $label_y = $y_pos + ( $font_width * length($tick_pos) ) / 2;
+        my $tick_pos_str = presentable_number($tick_pos);
+        my $label_y = $y_pos + ( $font_width * length($tick_pos_str) ) / 2;
 
         push @$drawing_data,
-          [ STRING_UP, $reg_font, $label_x, $label_y, $tick_pos, 'grey' ];
+          [ STRING_UP, $reg_font, $label_x, $label_y, $tick_pos_str, 'grey' ];
 
         my $right = $label_x + $font_height;
         $max_x = $right   if $right > $max_x;
@@ -2428,12 +2488,19 @@ Returns the map's tick mark interval.
 
     my $self   = shift;
     my $map_id = shift or return;
+    my $pixel_height = shift or return;
     my $map    = $self->map($map_id);
 
     unless ( defined $map->{'tick_mark_interval'} ) {
         my $map_length =
           $self->stop_position($map_id) - $self->start_position($map_id);
-        $map->{'tick_mark_interval'} = int( $map_length / 5 );
+        my $map_scale  = int(log($map_length)/log(10)); 
+        if (int(($map_length/(10**$map_scale))+.5)>=2){
+            push @{$map->{'tick_mark_interval'}}, (10**$map_scale, $map_scale);
+        }
+        else{
+            push @{$map->{'tick_mark_interval'}}, (10**($map_scale-1),$map_scale);
+        }
     }
 
     return $map->{'tick_mark_interval'};

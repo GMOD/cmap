@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.36 2004-06-22 03:05:34 mwz444 Exp $
+# $Id: Utils.pm,v 1.37 2004-06-23 20:53:48 mwz444 Exp $
 
 =head1 NAME
 
@@ -30,7 +30,7 @@ use Bio::GMOD::CMap::Constants;
 use POSIX;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.36 $)[-1];
+$VERSION = (qw$Revision: 1.37 $)[-1];
 
 use base 'Exporter';
 
@@ -38,6 +38,7 @@ my @subs = qw[
   column_distribution
   column_distribution2
   commify
+  presentable_number
   extract_numbers
   even_label_distribution
   label_distribution
@@ -1033,6 +1034,48 @@ sub sort_selectall_arrayref {
 
     return \@return;
 }
+
+# --------------------------
+# calculate_units() was swiped from Lincoln Steins
+# Bio::Graphics::Glyph::arrow which is distributed
+# with Bioperl
+# Modified slightly
+sub calculate_units {
+  my ($length) = @_;
+  return 'G' if $length >= 1e9;
+  return 'M' if $length >= 1e6;   
+  return 'K' if $length >= 1e3;
+  return ''  if $length >= 1;
+  return 'c' if $length >= 1e-2;
+  return 'm' if $length >= 1e-3;   
+  return 'u' if $length >= 1e-6;
+  return 'n' if $length >= 1e-9;
+  return 'p';
+}
+
+# ----------------------------------------------------
+sub presentable_number {
+                                                                                
+=pod
+                                                                                
+=head2 tick_mark_interval
+                                                                                
+Returns the map's tick mark interval.
+                                                                                
+=cut
+                                                                                
+    my $num = shift or return;
+    my $num_str; 
+    my $scale       = int(log($num)/log(10));
+    my $scaled_down = int($num/(10**($scale-($scale%3)))+.6);
+    my $unit        = calculate_units($num);
+    $num_str        = $scaled_down.$unit;
+                                                             
+    return $num_str;
+}
+
+
+
 
 1;
 
