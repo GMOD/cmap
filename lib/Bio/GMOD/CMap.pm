@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap;
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.46 2004-02-25 22:48:49 kycl4rk Exp $
+# $Id: CMap.pm,v 1.47 2004-03-10 20:11:45 kycl4rk Exp $
 
 =head1 NAME
 
@@ -28,7 +28,7 @@ itself based on Andy Wardley's Class::Base module.
 
 use strict;
 use vars '$VERSION';
-$VERSION = '0.10';
+$VERSION = '0.11';
 
 use Data::Dumper;
 use Class::Base;
