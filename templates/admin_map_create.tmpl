@@ -1,0 +1,62 @@
+[% INCLUDE admin_header.tmpl title="Create Map" %]
+
+<a href="admin">Home</a>
+
+<form action="admin" method="post">
+<table>
+    <tr>
+        <td align="right">
+            Map Set:
+        </td>
+        <td>
+            <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %]">[% map_set.species_name %]-[% map_set.map_set_name %]</a>
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Acc ID:
+        </td>
+        <td>
+            <input name="accession_id" value="">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Map Name:
+        </td>
+        <td>
+            <input name="map_name" value="">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Start:
+        </td>
+        <td>
+            <input name="start_position" value="">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Stop:
+        </td>
+        <td>
+            <input name="stop_position" value="">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="center" colspan="2">
+            <input type="hidden" name="map_set_id" value="[% map_set.map_set_id %]">
+            <input type="hidden" name="action"     value="map_insert">
+            <input type="reset"  value="Reset">
+            <input type="submit" value="Submit">
+        </td>
+    </tr>
+</table>
+</form>
+[% INCLUDE admin_footer.tmpl %]

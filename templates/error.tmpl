@@ -1,0 +1,32 @@
+<!--VERSION: $Id: error.tmpl,v 1.1.1.1 2002-07-31 23:27:29 kycl4rk Exp $ -->
+[% 
+    INCLUDE header.tmpl 
+    title='Error'
+    no_link=''
+    help_anchor=''
+%]
+
+<h1>Genetic &amp; Comparative Maps - Error</h1>
+
+<table width="100%">
+    <tr>
+        <th align="right">Error:</th>
+        <td>[% error.text | html %]</td>
+    </tr>
+    [% IF debug %]
+        <tr>
+            <th align="right">File:</th>
+            <td>[% error.file %]</td>
+        </tr>
+        <tr>
+            <th align="right">Line:</th>
+            <td>[% error.line %]</td>
+        </tr>
+        <tr>
+            <th align="right" valign="top">Stacktrace:</th>
+            <td>[% error.stacktrace | html %]</td>
+        </tr>
+    [% END %]
+</table>
+
+[% page.end_body OR '</body>' %]

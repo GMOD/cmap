@@ -1,0 +1,74 @@
+[% SET title='Map Set Info' %]
+[% 
+    INCLUDE header.tmpl 
+    title=title
+    no_link='map_set_info'
+    help_anchor=''
+%]
+<h1>[% title %]</h1>
+
+<p>
+[% IF map_sets.size %]
+
+    <table>
+        [% FOREACH ms=map_sets %]
+            <tr bgcolor="lightgrey">
+                <td align="right">Map Set Name:</td>
+                <td>
+                    <b>[% IF ms.can_be_reference_map %]<a href="/cmap/viewer?ref_map_set_aid=[% ms.map_set_aid %]">[% END %][% ms.map_set_name %][% IF ms.can_be_reference_map %]</a>[% END %]</b>
+                </td>
+            </tr> 
+
+            <tr>
+                <td align="right">Abbreviated Name:</td>
+                <td>[% ms.short_name %]</td>
+            </tr> 
+
+            <tr>
+                <td align="right">Species:</td>
+                <td>[% ms.full_name %] ([% ms.common_name %])</td>
+            </tr> 
+
+            <tr>
+                <td align="right">Map Type:</td>
+                <td>[% ms.map_type %]</td>
+            </tr> 
+
+            <tr>
+                <td align="right">Map Units:</td>
+                <td>[% ms.map_units %]</td>
+            </tr> 
+
+            <tr>
+                <td align="right" valign="top">Remarks:</td>
+                <td>[% ms.remarks%]</td>
+            </tr> 
+
+            [% IF s.maps.size %]
+                <tr>
+                    <td align="right">Maps:</td>
+                    <td>
+                        [% SET list=[] %]
+                        [% FOREACH map=ms.maps %]
+                          [% list.push("<a href=\"/cmap/viewer?ref_map_set_aid=$ms.map_set_aid;ref_map_aid=$map.map_aid\">$map.map_name</a>") %]
+                        [% END %]
+                        [% list.join(', ') %]
+                    </td>
+                </tr> 
+            [% END %]
+        [% END %]
+    </table>
+
+[% ELSE %]
+
+    No map sets.
+
+[% END %]
+
+<br>
+<br>
+<br>
+<br>
+<br>
+[% page.end_body OR '</body>' %]
+</html>

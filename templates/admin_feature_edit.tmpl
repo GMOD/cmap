@@ -1,0 +1,97 @@
+[% INCLUDE admin_header.tmpl title="Edit Feature &quot;$feature.feature_name&quot;" %]
+
+<a href="admin">Home</a> |
+<a href="admin?action=feature_view;feature_id=[% feature.feature_id %]">View Feature</a>
+
+<form action="admin" method="post">
+<table>
+    <tr>
+        <td align="right">
+            Map:
+        </td>
+        <td>
+            <a href="admin?action=map_view;map_id=[% feature.map_id %]">[% feature.species_name %]-[% feature.map_set_name %]-[% feature.map_name %]</a>
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Acc ID:
+        </td>
+        <td>
+            <input name="accession_id" value="[% feature.accession_id %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Feature Name:
+        </td>
+        <td>
+            <input name="feature_name" value="[% feature.feature_name %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Alternate Name:
+        </td>
+        <td>
+            <input name="alternate_name" value="[% feature.alternate_name %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Feature Type:
+        </td>
+        <td>
+            <select name="feature_type_id">
+                [% FOREACH ft=feature_types %]
+                    <option value="[% ft.feature_type_id %]"[% IF ft.feature_type_id==feature.feature_type_id %] selected[% END %]>[% ft.feature_type %]</option>
+                [% END %]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Is Landmark:
+        </td>
+        <td>
+            <select name="is_landmark">
+                <option value="1"[% IF feature.is_landmark; ' selected'; END %]">Yes</option>
+                <option value="0"[% IF !feature.is_landmark; ' selected'; END %]">No</option>
+            </select>
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Start:
+        </td>
+        <td>
+            <input name="start_position" value="[% feature.start_position %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Stop:
+        </td>
+        <td>
+            <input name="stop_position" value="[% feature.stop_position %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="center" colspan="2">
+            <input type="hidden" name="feature_id" value="[% feature.feature_id %]">
+            <input type="hidden" name="action"     value="feature_update">
+            <input type="reset"  value="Reset">
+            <input type="submit" value="Submit">
+        </td>
+    </tr>
+</table>
+</form>
+
+[% INCLUDE admin_footer.tmpl %]

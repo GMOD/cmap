@@ -1,0 +1,49 @@
+[% INCLUDE admin_header.tmpl title='Correspondence Evidence Create' %]
+<a href="admin">Home</a>
+<hr noshade>
+<form action="admin" metdod="post">
+<table>
+    <tr>
+        <td align="right">Feature Correspondence Acc. ID:</td>
+        <td>
+            <a href="admin?action=feature_corr_view;feature_correspondence_id=[% corr.feature_correspondence_id %]">[% corr.accession_id %]</a>
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Acc. ID:</td>
+        <td><input name="accession_id"></td>
+    </tr>
+
+    <tr>
+        <td align="right">Evidence Type(s):</td>
+        <td>
+            <select name="evidence_type_id">
+            [% FOREACH et=evidence_types %]
+                <option value="[% et.evidence_type_id %]">[% et.evidence_type %]([% et.rank %])</option>
+            [% END %]
+            </select>
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Score:</td>
+        <td><input name="score"></td>
+    </tr>
+
+    <tr>
+        <td align="right">Remark:</td>
+        <td><input name="remark"></td>
+    </tr>
+
+    <tr>
+        <td colspan="2" align="center">
+            <input type="hidden" name="feature_correspondence_id" value="[% corr.feature_correspondence_id %]">
+            <input type="hidden" name="action" value="corr_evidence_insert">
+            <input type="submit" value="Submit">
+        </td>
+    </tr>
+</table>
+</form>
+
+[% INCLUDE admin_footer.tmpl %]

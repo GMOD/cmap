@@ -1,0 +1,175 @@
+[% INCLUDE admin_header.tmpl title='Create Map Set' %]
+<a href="admin">Home</a> |
+<a href="admin?action=map_sets_view">View Map Sets</a>
+<hr noshade>
+
+[% IF errors.size %]
+    <b>There were errors:</b>
+    <ul>
+        [% FOREACH e=errors %] 
+          <li>[% e %]</li> 
+        [% END %]
+    </ul>
+[% END %]
+
+<form action="admin" method="post">
+<table>
+    <tr>
+        <td align="right">
+            Accession ID:
+        </td>
+        <td>
+            <input type="text" name="accession_id" value="[% apr.param('accession_id') %]" size="25" maxlength="20">
+        </td>
+    </tr>
+  
+    <tr>
+        <td align="right">
+            Map Set Name:
+        </td>
+        <td>
+            <input type="text" name="map_set_name" value="[% apr.param('map_set_name') %]" size="50" maxlength="64">
+        </td>
+    </tr>
+  
+    <tr>
+        <td align="right">
+            Short Name:
+        </td>
+        <td>
+            <input type="text" name="short_name" value="[% apr.param('short_name') %]" size="30" maxlength="30">
+        </td>
+    </tr>
+  
+    <tr>
+        <td align="right">
+            Species:
+        </td>
+        <td>
+            <select name="species_id">
+                <option value="">--Select--</option>
+                [% FOREACH s=specie %]
+                    <option value="[% s.species_id %]" 
+                      [% IF s.species_id==apr.param('species_id') %] selected [% END %]
+                    >
+                      [% s.common_name %] ( [% s.full_name %] )
+                    </option>
+                [% END %]
+            </select>
+        </td>
+    </tr>
+  
+    <tr>
+        <td align="right">
+            Map Type:
+        </td>
+        <td>
+            <select name="map_type_id">
+                <option value="">--Select--</option>
+                [% FOREACH mt=map_types %]
+                    <option value="[% mt.map_type_id %]"
+                      [% IF mt.map_type_id==apr.param('map_type_id') %] selected [% END %]
+                    >
+                      [% mt.map_type %]
+                    </option>
+                [% END %]
+            </select>
+        </td>
+    </tr>
+  
+    <tr>
+        <td align="right">
+            Published On:
+        </td>
+        <td>
+            <input name="published_on" value="[% apr.param('published_on') %]">
+        </td>
+    </tr>
+  
+    <tr>
+        <td align="right">
+            Display Order:
+        </td>
+        <td>
+            <input name="display_order" value="[% apr.param('display_order') %]">
+        </td>
+    </tr>
+  
+    <tr>
+        <td align="right">
+            Can Be Reference Map:
+        </td>
+        <td>
+            <select name="can_be_reference_map"> 
+                <option value="1"[% IF apr.param('can_be_reference_map')==1 %] selected[% END %]>Yes</option>
+                <option value="0"[% IF apr.param('can_be_reference_map')==0 %] selected[% END %]>No</option>
+            </select>
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Is Enabled:
+        </td>
+        <td>
+            <select name="is_enabled"> 
+                <option value="1"[% IF apr.param('is_enabled')==1 %] selected[% END %]>Yes</option>
+                <option value="0"[% IF apr.param('is_enabled')==0 %] selected[% END %]>No</option>
+            </select>
+        </td>
+    </tr>
+  
+    <tr>
+        <td align="right">
+            Remarks:
+        </td>
+        <td>
+            <textarea name="remarks" rows="10" cols="50" wrap="virtual">[% apr.param('remarks') %]</textarea>
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">How To Draw (opt):</td>
+        <td>
+            <select name="how_to_draw">
+                <option value="">--Default--</option>
+                [% FOREACH shape=shapes %]
+                    <option value="[% shape %]"[% IF apr.param('how_to_draw')==shape; ' selected'; END %]>[% shape %]</option>
+                [% END %]
+            </select>
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Width (opt):</td>
+        <td>
+            <select name="width">
+                <option value="">--Default--</option>
+                [% FOREACH width=widths %]
+                    <option value="[% width %]"[% IF apr.param('width')==width; ' selected'; END %]>[% width %]</option>
+                [% END %]
+            </select>
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Color (opt):</td>
+        <td>
+            <select name="color">
+                <option value="">--Default--</option>
+                [% FOREACH color=colors %]
+                    <option value="[% color %]"[% IF apr.param('color')==color; ' selected'; END %]>[% color %]</option>
+                [% END %]
+            </select>
+        </td>
+    </tr>
+  
+    <tr>
+        <td align="center" colspan="2">
+          <input type="hidden" name="action" value="map_set_insert">
+          <input type="submit" value="Submit">
+        </td>
+    </tr>
+</table>
+</form>
+[% INCLUDE admin_footer.tmpl %]
