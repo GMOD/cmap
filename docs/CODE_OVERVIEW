@@ -1,6 +1,6 @@
                            CMAP CODE OVERVIEW
 
-# $Revision: 1.7 $
+                            $Revision: 1.8 $
 
 The comparative and genetic maps application ("CMap") is written
 entirely in Perl and takes advantage of mod_perl, Apache's embedded
@@ -13,7 +13,7 @@ a comparative mapping resource for crop grasses, but much has been
 done to make the application generic enough to be used with many
 different types of data.
 
-1. ARCHITECTURE OVERVIEW
+1.      ARCHITECTURE OVERVIEW
 
 Care has been given to carefully separate functionally different parts
 of the code into different modules, roughly corresponding to a
@@ -24,7 +24,7 @@ the "logic" (the code that lays out the map components) in the
 Bio::GMOD::CMap::Drawer* modules, and all the HTML generation in the
 Bio::GMOD::CMap::Apache* modules.  
 
-2. DATA MODULES
+2.      DATA MODULES
 
 As stated above, all the database interaction happens in the
 Bio::GMOD::CMap::Data* modules.  One goal of this project has always
@@ -48,7 +48,7 @@ Bio::GMOD::CMap::Data::Generic (as noted in the perldocs), and then
 add a line to the Bio::GMOD::CMap::Constants to point to the new
 module.
 
-3. LOGIC MODULES
+3.      LOGIC MODULES
 
 All the modules that actually do something toward laying out the
 comparative maps live in the Bio::GMOD::CMap::Drawer* namespace.  The top
@@ -68,7 +68,7 @@ modules and the cmap_admin.pl script.  Eventually I hope to move all
 the logic into Bio::GMOD::CMap::Admin and have the web- and
 command-line interfaces simply invoke methods on this Admin object.
 
-4. PRESENTATION MODULES
+4.      PRESENTATION MODULES
 
 The modules in the Bio::GMOD::CMap::Apache namespace are responsible
 for actually displaying the maps through a web interface.  All of the
@@ -85,7 +85,7 @@ Toolkit is powerful and freely available Perl templating system, and
 the hope is that by using it, non-technical people who want to tweak
 the HTML to do so without interfering with the code.
 
-5. CONFIGURATION MODULES
+5.      CONFIGURATION MODULES
 
 All local configuration of CMap should be done through the "cmap.conf"
 file.  Of course, the file doesn't have to be called "cmap.conf."  It
@@ -100,7 +100,7 @@ installer.  If you comment out any of the options in "cmap.config"
 (except "database" and "template_dir"), there are defaults in the
 Bio::GMOD::CMap::Constants file.
 
-6. GENERAL FLOW FOR HANDLERS
+6.      GENERAL FLOW FOR HANDLERS
 
 The web presentation modules are all located under the
 Bio::GMOD::CMap::Apache namespace and are called as mod_perl handlers.
@@ -142,7 +142,7 @@ The above scenario is probably the most involved process in the
 comparative maps, but it shows the way that distinct pieces of the
 problem are split into specialized modules and objects.
 
-7. SQL CONVENTIONS
+7.      SQL CONVENTIONS
 
 The tables used by the comparative maps follow a fairly rigid naming
 convention so that they should be able to integrate easily with existing
@@ -209,14 +209,16 @@ databases.
     The advantages are numerous, the biggest being that the database
     ends up correctly quoting and escaping your parameters.
 
-8. TABLE DESCRIPTIONS
+8.      TABLE DESCRIPTIONS
 
 In the "docs" directory, you will find a schema diagram illustrating
 the structure and relationships of the tables.  In the "sql"
 directory, you will find create statements of the tables for MySQL,
 Oracle and PostgreSQL.  Following is a general description of each
 table, what kind of data it is supposed to hold, and how it fits in
-with the others:
+with the others.  Most of the fields in the tables are described more
+fully in the ADMINSTRATION document when discussing the forms
+presented in the web admin tool.
 
 *   cmap_map_set: Arguably the "base" table, a "map set" is a collection
     of "maps," which themselves are just points on a line. The map set
@@ -305,8 +307,26 @@ with the others:
     don't have to worry how (or even "if") a particular RDBMS supports
     a "one-up" field.
 
-9. AUTHOR
+9.      TIPS
+
+If you'd like to write a script to access the database directly, you
+can get a handle to the database quite easily using the
+Bio::GMOD::CMap modules.  Here's an example:
+
+    #!/usr/bin/perl
+
+    use strict;
+    use Bio::GMOD::CMap;
+
+    my $cmap = Bio::GMOD::CMap->new or die Bio::GMOD::CMap->error;
+
+    # optional, only if you have muliple data sources defined
+    # $cmap->data_source('Foo'); 
+
+    my $db = $cmap->db or die $cmap->error;
+
+10.     AUTHOR
 
 Ken Y. Clark, kclark@cshl.org
 
-Copyright (c) 2002 Cold Spring Harbor Laboratory
+Copyright (c) 2002-3 Cold Spring Harbor Laboratory

@@ -1,6 +1,6 @@
                 CMAP ADMINISTRATION AND DATA CURATION
 
-                          $Revision: 1.4 $
+                          $Revision: 1.5 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are two tools you will use:
@@ -745,8 +745,8 @@ Note: Deleting an object that has dependencies will cause the
       Basically, just be very sure that you want to delete something as
       it can have cascading effects, and, as noted earlier, THERE IS NO
       UNDO. There is, however, the option to dump your data before
-      messing with it giving you the ability to recover. This will be
-      discussed later.
+      messing with it giving you the ability to recover. This is 
+      discussed in section 13, "Export data." 
 
 12.3    VIEWING A MAP
 
@@ -765,7 +765,46 @@ the evidence types supporting the correspondences.  You can also add a
 new correspondence by clicking "Add Correspondence" and following the
 directions discussed earlier in section 9.
 
-12.5    SEARCHING FOR A FEATURE
+12.5    EDITING A FEATURE
+
+If you click on the "Edit" link from the feature view page, you'll be
+presented a form with the following fields:
+
+*   Map: The map (described by "species-map set name-map name") on
+    which the feature occurs;  also a link to return to the overall
+    view of that map.
+
+*   Acc ID (opt.): The accession ID.
+
+*   Feature Name: The feature's primary name.
+
+*   Alternate Name (opt.): The feature's alternate name.
+
+*   Feature Type: The feature's type.
+
+*   Is Landmark: Whether or not this feature is considerd a "landmark."
+    Landmarks can be used by the end user to show maps less dense with
+    feature labels, tagging only those that you as the curator have
+    decided are the most important.
+
+*   Start: The start position of the feature.  Must be less than the
+    stop position.
+
+*   Stop (opt.): The ending position of the feature, if any.
+
+*   DB Cross Reference Name (opt.): The dbxref name for this feature.
+
+*   DB Cross Reference URL (opt.): The dbxref URL for this feature.
+    Please see section 11 for more details about database cross
+    references.
+
+Note: If you wish to nullify a dbxref for a particular feature, you can
+      place a value in the dbxref name field for the feature of "Not
+      available" and leave the URL field empty. When a user views the
+      feature details page, they'll see that the dbxref field shows "Not
+      available" (with no <A HREF>, of course).
+
+12.6    SEARCHING FOR A FEATURE
 
 Often you will be interested in finding an individual feature in the
 database without having to navigate to the map set, then the map, then
@@ -773,46 +812,88 @@ page through until you find the feature.  From the home page of the
 web admin tool, you can choose the "Search for a Feature" link.  The
 "Feature Search" form gives you four fields:
 
-*   Name:
-*   Feature Type (opt.):
-*   Map Acc ID (opt.):
-*   Field:
+*   Name: The names of the features you wish to search for.  Separate
+    multiple features with spaces or commas.
 
-3. ESTABLISHING LANDMARKS
+*   Feature Type (opt.): You can restrict by feature type the features
+    which will be searched.
 
-You can define certain features on your maps to be "landmarks."  These
-can then be used by the end user to show maps less dense with feature
-labels, tagging only those that you as the curator have decided are
-the most important.  Simply set the "is_landmark" field to "1" to
-define a feature as a landmark.
+*   Map Acc. ID (opt.): You can restrict the search to only those
+    features falling on a particular map by specifying the maps
+    accession ID.
 
-4. LINKING IN
+*   Field: If you have a very large database, you may wish to only
+    search either the "feature_name" or "alternate_name" field rather
+    than both (which is the default option).
+
+13.     cmap_admin.pl and cmap_matrix_compare.pl
+
+The cmap_admin.pl and cmap_matrix_compare.pl scripts contain full
+documentation in POD format.  To read, please execute "perldoc
+<script_name>".
+
+14.     cmap.conf
+
+15.     LINKING IN
 
 Most likely, you'll want to link directly into the CMap viewer from
-some other part of your site.  To link to just one map, make it the
-"reference" map like so by using the accession IDs for the map's parent
-"set" and the map itself.  Give the feature (mutant) name to highlight
-it;  for more than one, separate with commas.  You'll want to make
-sure that the user can see all the feature labels, so include "all" as
-the "label_features" argument.
+some other part of your site.  Following is a list of the components
+of a CMap URL:
 
-    URI:  /cmap/viewer?
-    Args: ref_map_set_aid=<map_set_accession_id>
-          ref_map_aid=<map_accession_id>
-          highlight=<mutant_name>
-          label_features=<none, all, or landmarks>
-    E.g.:
+*   URI:  /cmap/viewer?
+
+*   Required Arguments: 
+
+    -   ref_map_set_aid: The accession ID of the reference map set
+
+    -   ref_map_aid: The accession ID of the reference map
+
+*   Optional Arguments:
+
+    -   ref_map_start: The start position of the reference map
+
+    -   ref_map_stop: The stop position of the reference map
+
+    -   highlight: A space-less, comma-separated list of feature_names
+        to highlight
+
+    -   label_features: Which features to label, legal values are
+        "none," "all," or "landmarks"
+
+    -   image_size: How large to make the image, legal values are
+        "small," "medium" or "large"
+
+    -   font_size: How large to make the font, legal values are "small,"
+        "medium" or "large"
+
+    -   image_type: The output type of the image, legal value are
+        whatever image libraries you've installed (usually at least
+        "png" or "jpeg")
+
+    -   feature_types: A space-less, comma-separated list of the
+        accession IDs of the feature types to display on the map
+
+    -   evidence_types: A space-less, comma-separated list of the
+        accession IDs of the evidence types to use in drawing
+        correspondence lines
+
+    -   comparative_maps: See below for a full discussion of how to
+        construct this argument
+
+To link to just one map, make it the "reference" map like so by using
+the accession IDs for the map's parent "set" and the map itself.
+Here's an example showing just one map on Gramene, showing all the
+feature labels and highlighting the feature "RM9":
+
 http://www.gramene.org/cmap/viewer?ref_map_aid=13&ref_map_set_aid=cu-dh-2001&highlight=RM9&label_features=all
 
-Note: I use the abbreviation "aid" to represent "accession_id."
-
-To further include some number of comparative maps, you provide them
-in the "comparative_maps" argument, which is a single structured
-string that lists all the comparative maps and their placement
-relative to the reference map.  Here I'd like to introduce the concept
-of "slots," where the maps (or map sets) fall into a slot moving in
-positive and negative direction away from the reference map, which is
-in slot "0," like so:
+To include some number of comparative maps, you provide them in the
+"comparative_maps" argument, which is a single structured string that
+lists all the comparative maps and their placement relative to the
+reference map.  Here I'd like to introduce the concept of "slots,"
+where the maps (or map sets) fall into a slot moving in positive and
+negative direction away from the reference map, which is in slot "0,"
+like so:
 
                 -      -        -         -
                 |      |        |         |
@@ -825,10 +906,10 @@ in slot "0," like so:
        <----negative --+---------positive----->
 
 
-The above would be representative of genetic maps in slots -1, 0, and
-2, and a physical map in slot 1.  Slots are separated in the string by
-URI-escaped colons and the integral parts of the slot by URI-escaped
-equal signs.  Like so
+The above drawing is representative of Gramene's genetic maps in slots
+-1, 0, and 2, and a physical map in slot 1.  Slots are separated in
+the string by URI-escaped colons and the integral parts of the slot by
+URI-escaped equal signs.  Like so
 
          "comparative_maps="
          +
@@ -886,3 +967,8 @@ self-explanatory.  If you can't figure out what to change on your own,
 then check out http://www.template-toolkit.com/ for the documentation
 (or type "perldoc Template" on your command line).
 
+10.     AUTHOR
+
+Ken Y. Clark, kclark@cshl.org
+
+Copyright (c) 2002-3 Cold Spring Harbor Laboratory
