@@ -1,6 +1,6 @@
                 CMAP ADMINISTRATION AND DATA CURATION
 
-                          $Revision: 1.9 $
+                          $Revision: 1.10 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are two tools you will use:
@@ -211,9 +211,12 @@ Create."  From here you can fill in the following fields:
 
     line: This a horizontal line just wider than the map's width
     intended to represent single-point features (e.g., SNPs or markers).
-    If the feature has a length (a defined stop), the feature is not
-    drawn differently, therefore it is only useful to denote single-point
-    features (or just the beginning of spanning features).
+    If the feature has a length (a defined stop), the line is drawn at
+    the *midpoint* of the feature. This shape is the most generic and
+    has the least tendency to look busy on very crowded maps. It is
+    mostly intended to represent single-point features, but is also
+    useful for spanning features when you aren't necessarily concerned
+    with showing the span.
 
     in-triangle: Like the "line," this is intended to represent
     single-point features or just the beginning of a spanning feature
@@ -977,6 +980,14 @@ of a CMap URL:
     -   evidence_types: A space-less, comma-separated list of the
         accession IDs of the evidence types to use in drawing
         correspondence lines
+
+    -   collapse_features: A "1" or "0" ("Yes" or "No," respectively) 
+        indicating whether to collapse spanning features of the same 
+        type and with the same coordinates to overlap rather than 
+        pushing out
+
+    -   min_correspondences: The minimum number of correspondences to 
+        require between two maps
 
     -   comparative_maps: See below for a full discussion of how to
         construct this argument

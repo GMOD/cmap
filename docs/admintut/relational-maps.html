@@ -1,0 +1,50 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//Dtd HTML//EN">
+<!-- vim: set ts=2 wm=10 shiftwidth=2: -->
+<html>
+<head>
+<title>CMap Admin Tutorial: Relational Maps</title>
+</head>
+
+<body>
+<h1>CMap Admin Tutorial: Relational Maps</h1>
+<a href="index.html">Index</a> |
+<a href="map-shapes.html">&lt; Map Shapes</a> |
+<a href="feature-shapes.html">Feature Shapes &gt;</a>
+<hr>
+<p>
+Maps can either stand on their own or must be shown <em>in relation
+to</em> some other map.  The latter are called &quot;relational&quot;
+maps in CMap.  When a map set is tagged as having &quot;relational
+only&quot; maps, then all the maps in the set are tagged as such.  In
+order to view them, the user must first select some &quot;reference
+map&quot; which has correspondences to some of the relational maps.
+The choice of exactly which maps are shown in the image is determined
+by CMap -- only maps with correspondences to the reference map are
+displayed.
+</p>
+
+<p>
+Normally, all maps are drawn to the full height available in the
+image.  No effort is made to somehow draw maps to a scale, even if
+they are in the same map units (e.g., one &quot;centimorgan&quot; can
+represent different distances in different studies).  When a
+relational map is drawn next to a reference map, however, it is drawn
+to a length in pixels equal to the distance covered by all the
+correspondences on the reference map.  
+</p>
+
+<p>
+You can determine the shape, color and width of the maps in a
+relational map set just as you would any other map.
+</p>
+
+<p>
+<img src="images/rel-map1.jpg">
+</p>
+
+<hr>
+<a href="index.html">Index</a> |
+<a href="map-shapes.html">&lt; Map Shapes</a> |
+<a href="feature-shapes.html">Feature Shapes &gt;</a>
+</body>
+</html>

@@ -1,6 +1,6 @@
                            CMAP CODE OVERVIEW
 
-                            $Revision: 1.8 $
+                            $Revision: 1.9 $
 
 The comparative and genetic maps application ("CMap") is written
 entirely in Perl and takes advantage of mod_perl, Apache's embedded
@@ -251,11 +251,27 @@ presented in the web admin tool.
     exit 3, a map says that it is some measure of distance long and that
     some "feature" can be found at some location.
 
+*   cmap_map_cache: This is a "permanent temp" table used only to
+    speed up the web queries.  It is used to remember which maps occur
+    in each of the "slots" while collating the data used to draw the
+    maps for each request.  The requests are identified by the PID
+    (process ID) of the Apache child serving the user, and the
+    requests *should* be deleted after the request has finished.
+    Records have a timestamp that indicates the age of the request.
+    If you see records in this table that are older than even a few
+    minutes, it should be safe to delete them.
+
 *   cmap_feature: This is the "something" that occurs on a map. It has a
     name and a starting position. The feature may span, in which case it
     will have a stop position, too. Certain features can be designated
     as being "landmarks," and the user can decide to only view landmarks
     so as to make the maps simpler.
+
+*   cmap_feature_note: This table allows you to attach a note to a
+    feature.  Only one note per feature is allowed, but this note can
+    be quite long.  The reason for placing the notes in a separate
+    table was to keep the "cmap_feature" table small as this is a
+    rather large field and may not ever be used.
 
 *   cmap_feature_type: Each feature is of some type. What particular
     types of features exist are completely determined by the data
