@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.43 2003-05-02 18:56:11 kycl4rk Exp $
+# $Id: Map.pm,v 1.44 2003-05-16 17:03:55 kycl4rk Exp $
 
 =pod
 
@@ -23,11 +23,10 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.43 $)[-1];
+$VERSION = (qw$Revision: 1.44 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
-use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Utils qw[ column_distribution label_distribution ];
 
@@ -88,10 +87,7 @@ Figure out where right-to-left this map belongs.
     my $self        = shift;
     my $slot_no     = $self->slot_no or return 0; # slot "0" is in the middle
     my $drawer      = $self->drawer;
-#    my $ref_slot_no = $drawer->reference_slot_no( $slot_no );
     my $buffer      = 15;
-#    my ( $ref_left, $ref_right ) = 
-#        $drawer->slot_sides( slot_no => $ref_slot_no );
 
     my $base_x;
     if ( 
@@ -100,11 +96,9 @@ Figure out where right-to-left this map belongs.
         ( $slot_no < 0 )
     ) {
         $base_x = $drawer->min_x - $buffer;
-#        $base_x = $ref_left - $buffer;
     }
     else {
         $base_x = $drawer->max_x + $buffer;
-#        $base_x = $ref_right + $buffer;
     }
 
     return $base_x;
@@ -324,39 +318,12 @@ in raw format as a hashref keyed on feature_id.
         ) {
             push @{ $map->{'feature_store'}{ $data->{'drawing_lane'} } }, 
                 $data
-#                Bio::GMOD::CMap::Drawer::Feature->new( 
-#                    map    => $self,
-#                    map_id => $map_id,
-#                    %$data,
-#                )
             ;
         }
     }
 
     return $map->{'feature_store'};
 }
-
-# ----------------------------------------------------
-#sub feature_positions {
-#
-#=pod
-#
-#=head2 feature_positions
-#
-#Returns the feature positions on the map.
-#
-#=cut
-#    my $self   = shift;
-#    my $map_id = shift or return;
-#    my $map    = $self->map( $map_id );
-#
-#    unless ( $map->{'feature_positions'} ) {
-#        $map->{'feature_positions'} = 
-#            [ sort { $a <=> $b } keys %{ $map->{'features'} } ];
-#    }
-#
-#    return @{ $map->{'feature_positions'} || [] };
-#}
 
 # ----------------------------------------------------
 sub shape {
@@ -700,12 +667,11 @@ Lays out the map.
         for my $lane ( sort { $a <=> $b } keys %$features ) {
             my %features_with_corr;           # features w/correspondences
             my (@north_labels,@south_labels); # holds label coordinates
-            my $lane_features       = $features->{ $lane };
-            my $midpoint            = (
+            my $lane_features = $features->{ $lane };
+            my $midpoint      = (
                 $lane_features->[ 0]->{'start_position'} +
                 $lane_features->[-1]->{'start_position'}
             ) / 2;
-
             my $prev_label_y;   # the y value of previous label
             my @fcolumns  = (); # for feature east-to-west
 
@@ -724,7 +690,8 @@ Lays out the map.
                     ? $label_side eq RIGHT
                         ? $lane->{'furthest'} + 2
                         : $lane->{'furthest'} - 2
-                    : $base_x;
+                    : $base_x
+                ;
             }
 
             for my $feature ( @$lane_features ) {
@@ -742,57 +709,63 @@ Lays out the map.
                     !$has_corr     && # it has no correspondences
                     !$show_labels;    # we're not showing labels
 
-                my $fstart = $feature->{'start_position'};
+                my $fstart = $feature->{'start_position'} || 0;
                 my $fstop  = $feature->{'stop_position'};
-                   $fstart = 0 unless defined $fstart;
-                   $fstop  = 0 unless defined $fstop;
-                   $fstop  = 0 if !defined $fstop || $fstop <= $fstart;
+#                   $fstart = 0 unless defined $fstart;
+#                   $fstop  = 0 unless defined $fstop;
+#                   $fstop  = 0 if !defined $fstop || $fstop <= $fstart;
                 my $rstart = sprintf( "%.2f", 
                     ( $fstart - $map_start ) / $map_length
                 );
                 $rstart    = $rstart > 1 ? 1 : $rstart < 0 ? 0 : $rstart;
-                my $rstop  = sprintf( "%.2f", 
-                    ( $fstop - $map_start ) / $map_length
-                );
-                $rstop     = $rstop > 1 ? 1 : $rstop < 0 ? 0 : $rstop;
+                my $rstop  = defined $fstop 
+                    ? sprintf( "%.2f", ( $fstop - $map_start ) / $map_length )
+                    : undef;
+                $rstop     = defined $rstop && $rstop > 1 
+                    ? 1 
+                    : defined $rstop && $rstop < 0 ? 0 : $rstop;
 
-                my $tick_overhang = 2;
-                my $y_pos1        = $base_y + ( $pixel_height * $rstart );
-                my $y_pos2        = $base_y + ( $pixel_height * $rstop  );
-                my $color         = $has_corr ? $feature_corr_color : '';
-                   $color       ||= $feature->{'color'} || 
-                                    $default_feature_color;
-                my $label         = $feature->{'feature_name'};
-                my $tick_start    = $base_x - $tick_overhang;
-                my $tick_stop     = $base_x + $map_width + $tick_overhang;
-                my $feature_shape = $feature->{'shape'} || 'line';
+                my $tick_overhang     = 2;
+                my $y_pos1            = $base_y + ( $pixel_height * $rstart );
+                my $y_pos2            = defined $rstop
+                                        ? $base_y + ( $pixel_height * $rstop  )
+                                        : undef;
+                   $y_pos2            = $y_pos1 unless 
+                                        defined $y_pos2 && $y_pos2 > $y_pos1;
+                my $color             = $has_corr ? $feature_corr_color : '';
+                   $color           ||= $feature->{'color'} || 
+                                        $default_feature_color;
+                my $label             = $feature->{'feature_name'};
+                my $tick_start        = $base_x - $tick_overhang;
+                my $tick_stop         = $base_x + $map_width + $tick_overhang;
+                my $feature_shape     = $feature->{'shape'} || LINE;
                 my $shape_is_triangle = $feature_shape =~ /triangle$/;
-                my $label_y;
-                my @coords;
 
+                my ( $label_y, @coords );
                 if ( 
+                    $shape_is_triangle     ||
                     $feature_shape eq LINE || 
                     $y_pos2 <= $y_pos1
                 ) {
-                    $label_y = $y_pos1 - $reg_font->height/2;
-                }
-                elsif ( 
-                    $shape_is_triangle ||
-                    !defined $y_pos2   ||
-                    $y_pos2 <= $y_pos1
-                ) {
-                    $label_y = $y_pos1 - $reg_font->height/2;
+                    $label_y               = $y_pos1 - $reg_font->height/2;
+                    $feature->{'midpoint'} = $fstart;
+                    $feature->{'mid_y'}    = $y_pos1;
                 }
                 else {
-                    $label_y = ( $y_pos1 + ( $y_pos2 - $y_pos1 ) / 2 ) 
-                        - $reg_font->height/2;
+                    $label_y = ( $y_pos1 + ( $y_pos2 - $y_pos1 ) / 2 ) -
+                        $reg_font->height/2;
+
+                    $feature->{'midpoint'} = ( $fstop > $fstart )
+                        ? ( $fstart + $fstop ) / 2 : $fstart;
+
+                    $feature->{'mid_y'} = ( $y_pos1 + $y_pos2 ) / 2;
                 }
 
                 if ( $feature_shape eq LINE ) {
                     $drawer->add_drawing(
                         LINE, $tick_start, $y_pos1, $tick_stop, $y_pos1, $color
                     );
-                    @coords  = ( $tick_start, $y_pos1, $tick_stop, $y_pos1 );
+                    @coords = ( $tick_start, $y_pos1, $tick_stop, $y_pos1 );
                 }
                 else {
                     my $buffer       = 2;
@@ -823,19 +796,21 @@ Lays out the map.
                     }
 
                     if ( $feature_shape eq 'span' ) {
+                        my $reverse = $label_side eq RIGHT ? -1 : 1;
                         $drawer->add_drawing(
                             LINE, 
-                            $vert_line_x1, $y_pos1, 
                             $vert_line_x2, $y_pos1, 
+                            $vert_line_x2 + ( 3 * $reverse ), $y_pos1, 
                             $color,
                         );
 
                         $drawer->add_drawing(
                             LINE, 
                             $vert_line_x2, $y_pos2, 
-                            $vert_line_x1, $y_pos2, 
+                            $vert_line_x2 + ( 3 * $reverse ), $y_pos2, 
                             $color,
                         );
+
                         @coords = (
                             $vert_line_x2, $y_pos1, $vert_line_x2, $y_pos2
                         );
@@ -1069,10 +1044,7 @@ Lays out the map.
                 );
 
                 if ( $has_corr ) {
-                    my $mid_feature = 
-                        ( !defined $coords[3] || $coords[3]<=$coords[3] )
-                        ? $coords[1]
-                        : ( $coords[1] + $coords[3] ) / 2;
+                    my $mid_feature = $coords[1] + (($coords[3]-$coords[1])/2);
                     $features_with_corr{ $feature->{'feature_id'} } = {
                         feature_id => $feature->{'feature_id'},
                         slot_no    => $slot_no,
@@ -1094,7 +1066,7 @@ Lays out the map.
                         )
                     )
                 ) {
-                    my $labels = $feature->{'start_position'} < $midpoint
+                    my $labels = $feature->{'midpoint'} < $midpoint
                         ? \@north_labels : \@south_labels;
 
                     push @$labels, {
@@ -1104,6 +1076,7 @@ Lays out the map.
                         color          => $color,
                         is_highlighted => $is_highlighted,
                         feature_coords => \@coords,
+                        feature_mid_y  => $feature->{'mid_y'},
                         feature_type   => $feature->{'feature_type'},
                         url            => 
                             $feature_details_url.$feature->{'accession_id'},
@@ -1167,11 +1140,10 @@ Lays out the map.
                     @south_labels
                 ;
 
-                my @used;
-                label_distribution( 
+                my $used = label_distribution( 
                     labels     => \@north_labels, 
                     accepted   => \@accepted_labels,
-                    used       => \@used,
+                    used       => [],
                     buffer     => $buffer,
                     direction  => NORTH,
                     row_height => $reg_font->height,
@@ -1180,7 +1152,7 @@ Lays out the map.
                 label_distribution( 
                     labels     => \@south_labels, 
                     accepted   => \@accepted_labels,
-                    used       => \@used,
+                    used       => $used,
                     buffer     => $buffer,
                     direction  => SOUTH,
                     row_height => $reg_font->height,
@@ -1219,24 +1191,6 @@ Lays out the map.
                 $rightmostf = $label_bounds[2] if $label_bounds[2]>$rightmostf;
 
                 #
-                # If the feature got a label, then update the right 
-                # or left connection points for linking up to 
-                # corresponding features.
-                #
-                if( defined $features_with_corr{ $label->{'feature_id'} } ) {
-                    if ( $label_side eq RIGHT ) {
-                        $features_with_corr{ $label->{'feature_id'} }{'right'} =
-                            [ $label_bounds[2], 
-                              ($label_bounds[1]+($label_bounds[3]-$label_bounds[1])/2) ];
-                    }
-                    else {
-                        $features_with_corr{ $label->{'feature_id'} }{'left'} = 
-                            [ $label_bounds[0], 
-                              ($label_bounds[1]+($label_bounds[3]-$label_bounds[1])/2) ];
-                    }
-                }
-
-                #
                 # Highlighting.
                 #
                 if ( $label->{'is_highlighted'} ) {
@@ -1269,32 +1223,27 @@ Lays out the map.
                 my $label_connect_x1 = $label_side eq RIGHT
                     ? $coords[2]
                     : $label_end + $buffer;
+
                 my $label_connect_y1 = $label_side eq RIGHT
-                    ? 
-                        ( !defined $coords[3] || $coords[3]<=$coords[1] )
-                        ? $coords[1]
-                        : $coords[1] + ($coords[3]-$coords[1])/2
+                    ? $label->{'feature_mid_y'}
                     : $label_y + $reg_font->height/2;
+
                 my $label_connect_x2 = $label_side eq RIGHT
                     ? $label_x - $buffer 
                     : $coords[0];
+
                 my $label_connect_y2 = $label_side eq RIGHT
                     ? $label_y + $reg_font->height/2 
-                    : 
-                        ( !defined $coords[3] || $coords[3]<=$coords[1] )
-                        ? $coords[1]
-                        : $coords[1] + ($coords[3]-$coords[1])/2;
+                    : $label->{'feature_mid_y'};
 
                 #
-                # If the feature is a horz. line, then back the connection off.
+                # Back the connection off.
                 #
-                if ( $label->{'shape'} eq LINE ) {
-                    if ( $label_side eq RIGHT ) {
-                        $label_connect_x1 += $buffer;
-                    }
-                    else {
-                        $label_connect_x2 -= $buffer;
-                    }
+                if ( $label_side eq RIGHT ) {
+                    $label_connect_x1 += $buffer;
+                }
+                else {
+                    $label_connect_x2 -= $buffer;
                 }
 
                 $drawer->add_connection(
@@ -1304,6 +1253,28 @@ Lays out the map.
                     $label_connect_y2,
                     $label->{'color'} || $connecting_line_color,
                 );
+
+                #
+                # If the feature got a label, then update the right 
+                # or left connection points for linking up to 
+                # corresponding features.
+                #
+                if ( defined $features_with_corr{ $label->{'feature_id'} } ) {
+                    if ( $label_side eq RIGHT ) {
+                        $features_with_corr{ $label->{'feature_id'} }{'right'} =
+                            [ $label_bounds[2], 
+                                ($label_bounds[1]+
+                                ($label_bounds[3]-$label_bounds[1])/2) 
+                            ];
+                    }
+                    else {
+                        $features_with_corr{ $label->{'feature_id'} }{'left'} = 
+                            [ $label_bounds[0], 
+                                ($label_bounds[1]+
+                                ($label_bounds[3]-$label_bounds[1])/2) 
+                            ];
+                    }
+                }
             }
 
             #
