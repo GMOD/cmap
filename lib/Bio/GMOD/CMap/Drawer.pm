@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.53.2.3 2004-06-15 19:59:38 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.53.2.4 2004-06-17 18:47:12 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.53.2.3 $)[-1];
+$VERSION = (qw$Revision: 1.53.2.4 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -820,6 +820,7 @@ Lays out the image and writes it to the file system, set the "image_name."
         my @buttons = (
             [ 'i' => 'Map Set Info' ],
             [ '?' => 'Map Details' ],
+            [ 'M' => 'Matrix View' ],
             [ 'X' => 'Delete Map' ],
             [ 'F' => 'Flip Map' ],
             [ 'N' => 'New Map View' ],
