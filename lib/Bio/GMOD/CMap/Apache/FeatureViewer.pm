@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::FeatureViewer;
 # vim: set ft=perl:
 
-# $Id: FeatureViewer.pm,v 1.11 2004-02-10 22:50:09 kycl4rk Exp $
+# $Id: FeatureViewer.pm,v 1.11.10.1 2005-02-01 22:18:22 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.11 $)[-1];
+$VERSION = (qw$Revision: 1.11.10.1 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Data;
@@ -24,6 +24,8 @@ sub handler {
     my $data           = $self->data_module;
     my $feature        = $data->feature_detail_data(feature_aid=>$feature_aid)
         or return $self->error( $data->error );
+
+    $self->object_plugin( 'feature', $feature );
 
     #
     # Make the subs in the URL.
