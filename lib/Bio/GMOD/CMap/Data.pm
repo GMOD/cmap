@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.122 2004-06-03 19:27:14 mwz444 Exp $
+# $Id: Data.pm,v 1.123 2004-06-07 15:01:48 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.122 $)[-1];
+$VERSION = (qw$Revision: 1.123 $)[-1];
 
 use Data::Dumper;
 use Regexp::Common;
@@ -45,7 +45,9 @@ sub init {
     $self->config( $config->{'config'} );
     $self->data_source( $config->{'data_source'} );
     $self->aggregate( $config->{'aggregate'} );
-    my %cache_params = ( 'namespace' => 'sql_results', );
+    my %cache_params = ( 
+        'namespace' => $self->config_data('database')->{'name'},
+         );
     $self->{'cache'} = new Cache::FileCache( \%cache_params );
     $self->{'expanded_correspondence_lookup'}=
         $self->config_data('expanded_correspondence_lookup');
