@@ -1,0 +1,57 @@
+[% SET title='Feature Type Info' %]
+[% 
+    INCLUDE header.tmpl 
+    title=title
+    no_link='feature_type_info'
+    help_anchor='feature_type_info'
+%]
+<h1>[% title %]</h1>
+
+<p>
+[% IF feature_types.size %]
+    <table>
+        <tr>
+            <td colspan="2" align="center">
+                [% SET pager_url="/cmap/feature_type_info?" %]
+                [% PROCESS pager.tmpl %]
+            </td>
+        </tr>
+        [% FOREACH ft=feature_types %]
+            <tr bgcolor="lightgrey">
+                <td align="right">Feature&nbsp;Type:</td>
+                <td>[% ft.feature_type %]</td>
+            </tr> 
+            <tr>
+                <td align="right">Accession&nbsp;ID:</td>
+                <td>[% ft.feature_type_aid %]</td>
+            </tr> 
+            <tr>
+                <td align="right">Color:</td>
+                <td>[% ft.color %]</td>
+            </tr> 
+            <tr>
+                <td align="right">Shape:</td>
+                <td>[% ft.shape %]</td>
+            </tr> 
+            <tr>
+                <td valign="top" align="right">Description:</td>
+                <td>[% ft.description %]</td>
+            </tr> 
+        [% END %]
+    </table>
+
+[% ELSE %]
+
+    <div align="center">
+    No feature types returned.
+    </div>
+
+[% END %]
+
+<br>
+<br>
+<br>
+<br>
+<br>
+[% page.end_body OR '</body>' %]
+</html>
