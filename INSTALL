@@ -1,6 +1,6 @@
                               CMAP INSTALL
 
-                            $Revision: 1.44 $
+                            $Revision: 1.45 $
 
 1.      QUICK START
 
@@ -15,7 +15,7 @@ the very abbreviated explanation of how to install CMap:
 *   Execute "perl Build.PL; ./Build; ./Build install"; install any other
     Perl modules reported missing by the build process
 *   Modify database information in "cmap.conf"
-*   Import data (sample data is included)
+*   Import your data or the sample data included in the "data" directory
 *   Compare maps
 
 If you need further instructions, read on.  Appendices at the end of
@@ -480,17 +480,27 @@ this file over manually and "diff" the two.  Most likely, you won't
 need to make too many changes to the new one to get things working the
 way you had them before.
 
-A small set of sample data is included in the "data" directory.
-Simply gunzip the file and then run it into your database (the file 
-simply contains SQL statements to empty each table and fill it with
-values -- so don't run this file into an existing database unless you
-don't mind losing all your data).  E.g., with MySQL you could do this:
+5.      IMPORT DATA
+
+If you're new to CMap, perhaps you will find it easiest simply to
+import the small set of sample data included in the "data" directory.
+Just "gunzip" the file and then run it into your database (the file
+contains SQL statements to empty each table and fill it with values --
+so don't run this file into an existing database unless you don't mind
+losing all your data).  E.g., with MySQL you could do this:
 
     $ cd data
     $ gunzip sample-dump.sql.gz
     $ mysql CMAP < sample-dump.sql
 
-5.      PROTECTING WEB ADMIN WITH A PASSWORD 
+You may wish to create a database just for this sample data and
+another for your own data so you can switch between the two to better
+understand how to manipulate map settings.  Once you have determined
+that CMap is working properly with the sample data, then you can read
+the "ADMINISTRATION" document in the "docs" directory to understand
+how to import your own data and create correspondences.
+
+6.      PROTECTING WEB ADMIN WITH A PASSWORD 
 
 You should protect the web admin tool (e.g., "/cgi-bin/cmap/admin")
 with a password.  To do this with Apache, use the "htpasswd" program
@@ -524,7 +534,7 @@ interface with a password like so:
 
 Restart Apache to make the change take effect.
 
-6.      VIEWING CMAP
+7.      VIEWING CMAP
 
 Once you have installed the CMap modules, templates, HTML files, and
 scripts (command-line and CGI), you should be able to view the CMap
@@ -537,7 +547,7 @@ for you, then you can just use the IP address instead of a name. You
 should see a page created during installation summarizing how CMap was
 installed and with links pointing to the CMap CGI script and tutorials.
 
-7.      CRONTAB TO REMOVE OLD IMAGES
+8.      CRONTAB TO REMOVE OLD IMAGES
 
 The map images will only be used for one request, so you'll need to
 include some way to clear out old images.  A simple cron job will do
@@ -624,7 +634,7 @@ whole command (starting with the "0") should go on one line.
 Note: Some UNIXs may have a slightly different cron format. Check
       your man page!
 
-8.      TEMPLATES
+9.      TEMPLATES
 
 All of the dynamic HTML in CMap is generated from templates and
 reference stylesheets in the hope that you will find it easy to
@@ -635,7 +645,7 @@ powerful syntax for creating displays.  In addition, you can specify
 site-specific introductions to most of the pages in your "cmap.conf"
 file.
 
-9.      COMMENTS
+10.     COMMENTS
 
 If you have questions or comments about this document, please write
 the CMap development mailing list at
@@ -644,13 +654,13 @@ in order to stay up on the latest in the development as well as to
 contribute your opinions as to the direction that CMap takes in the
 future.
 
-10.      LET US KNOW!
+11.      LET US KNOW!
 
 Please consider allowing the GMOD project advertise your use of our
 code.  If you have a publicly accessible installation of CMap, we
 would very much like to provide a link from the GMOD website to it!
 
-11.     APPENDICES
+12.     APPENDICES
 
 Depending on your comfort level with software installation on UNIX
 environments, you may find some of this document a bit tedious.
