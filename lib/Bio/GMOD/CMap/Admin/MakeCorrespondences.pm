@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.36 2004-04-20 17:40:07 mwz444 Exp $
+# $Id: MakeCorrespondences.pm,v 1.37 2004-04-23 17:34:14 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.36 $)[-1];
+$VERSION = (qw$Revision: 1.37 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -68,7 +68,7 @@ sub make_name_correspondences {
         for my $i ( 0 .. $#feature_type_aids ) {
             my $ft1    = $feature_type_aids[ $i ] or next;
 
-            for my $j ( 1 .. $#feature_type_aids ) {
+            for my $j ( $i+1 .. $#feature_type_aids ) {
                 my $ft2 = $feature_type_aids[ $j ];
                 next if $ft1 eq $ft2;
                 
@@ -141,12 +141,18 @@ sub make_name_correspondences {
     }   
 
     my %names = ();
+    ###Switch the commenting to use the name_regex
+    #my $name_regex='(\S+)\.\w\d$';
+    my $name_regex='';
     for my $f ( values %$features ) {
         for my $name ( 
             $f->{'feature_name'}, 
             @{ $alias_lookup{ $f->{'feature_id'} } || [] }
         ) {
             next unless $name;
+            if ($name_regex and $name=~/$name_regex/){
+                $name=$1;
+            }
             $names{ lc $name }{ $f->{'feature_id'} } = 0;
         }
     }
@@ -189,7 +195,7 @@ sub make_name_correspondences {
             my $fid1 = $feature_ids[ $i ]; 
             my $f1   = $features->{ $fid1 };
 
-            for my $j ( 1..$#feature_ids ) {
+            for my $j ( $i+1..$#feature_ids ) {
                 my $fid2 = $feature_ids[ $j ]; 
                 next if $fid1 == $fid2;          # same feature
                 next if $done{ $fid1 }{ $fid2 }; # already processed
