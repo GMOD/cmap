@@ -1,11 +1,9 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.59 2004-01-07 03:48:34 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.60 2004-02-10 22:45:11 kycl4rk Exp $
 
 use strict;
-use Apache::Constants qw[ :common M_GET REDIRECT ];
-use Apache::Request;
 use Data::Dumper;
 use Data::Pageset;
 use Template;
@@ -20,7 +18,7 @@ use Bio::GMOD::CMap::Utils;
 
 use base 'Bio::GMOD::CMap::Apache';
 
-use constant ADMIN_HOME_URI => '/cmap/admin';
+use constant ADMIN_HOME_URI => 'admin';
 
 use vars qw( 
     $VERSION $COLORS $MAP_SHAPES $FEATURE_SHAPES $WIDTHS $LINE_STYLES
@@ -34,7 +32,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.59 $)[-1];
+$VERSION        = (qw$Revision: 1.60 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -148,7 +146,7 @@ sub handler {
     my $action = $apr->param('action') || 'admin_home';
     my $return = eval { $self->$action() };
     return $self->error( $@ ) if $@;
-    return $return || OK;
+    return 1;
 }
 
 # ----------------------------------------------------
@@ -1562,27 +1560,20 @@ sub feature_search {
     # If given a feature to search for ...
     #
     if ( my $feature_name    = $apr->param('feature_name') ) {
-        my $features         =  $admin->feature_search(
+        my $result           =  $admin->feature_search(
             feature_name     => $feature_name,
             search_field     => $apr->param('search_field')    || '',
             map_aid          => $apr->param('map_aid')         ||  0,
             species_ids      => \@species_ids,
             feature_type_ids => \@feature_type_ids,
             order_by         => $apr->param('order_by')        || '', 
-        );
-
-        #
-        # Slice the results up into pages suitable for web viewing.
-        #
-        my $pager = Data::Pageset->new( {
-            total_entries    => scalar @$features, 
             entries_per_page => $PAGE_SIZE,
             current_page     => $page_no,
             pages_per_set    => $MAX_PAGES,
-        } );
-        $params->{'pager'}    = $pager;
-        $params->{'features'} = 
-            @$features ? [ $pager->splice( $features ) ] : [];
+        );
+
+        $params->{'pager'}    = $result->{'pager'};
+        $params->{'features'} = $result->{'results'};
     }
 
     return $self->process_template( TEMPLATE->{'feature_search'}, $params );
@@ -2676,14 +2667,8 @@ sub map_set_update {
 sub redirect_home {
     my ( $self, $uri ) = @_;
     my $apr            = $self->apr;
-
-    $apr->method_number( M_GET );
-    $apr->method( 'GET' );
-    $apr->headers_in->unset( 'Content-length' );
-    $apr->headers_out->add( Location => $uri );
-    $apr->status( REDIRECT );
-    $apr->send_http_header;
-    return DONE;
+    print $apr->redirect( $uri );
+    return 1;
 }
 
 # ----------------------------------------------------
@@ -2901,10 +2886,8 @@ sub process_template {
     $t->process( $template, $params, \$output ) or $output = $t->error;
 
     my $apr = $self->apr;
-    $apr->content_type('text/html');
-    $apr->send_http_header;
-    $apr->print( $output );
-    return OK;
+    print $apr->header('text/html'), $output;
+    return 1;
 }
 
 # ----------------------------------------------------
