@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap;
 
-# $Id: CMap.pm,v 1.3 2002-08-26 14:38:45 kycl4rk Exp $
+# $Id: CMap.pm,v 1.4 2002-08-27 12:42:29 kycl4rk Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ itself based on Andy Wardley's Class::Base module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Class::Base;
 use Config::General;
@@ -105,7 +105,7 @@ Returns a handle to the data module.
 
     unless ( $self->{'data_module'} ) { 
         $self->{'data_module'} = Bio::GMOD::CMap::Data->new or 
-            return $self->error( Bio::GMOD::CMap::Data->error );
+            $self->error( Bio::GMOD::CMap::Data->error );
     }
 
     return $self->{'data_module'};

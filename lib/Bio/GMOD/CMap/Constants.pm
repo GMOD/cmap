@@ -1,13 +1,13 @@
 package Bio::GMOD::CMap::Constants;
 
-# $Id: Constants.pm,v 1.3 2002-08-26 14:38:45 kycl4rk Exp $
+# $Id: Constants.pm,v 1.4 2002-08-27 12:42:29 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -19,11 +19,6 @@ $VERSION = (qw$Revision: 1.3 $)[-1];
     FILL_TO_BORDER
     LEFT
     LINE
-    MIN_MAP_PIXEL_HEIGHT
-    MAX_CHILD_ELEMENTS
-    MAX_FEATURE_COUNT
-    MAX_SEARCH_PAGES
-    MAP_TITLES
     NUMBER_RE
     PREFERENCE_FIELDS
     TEMPLATE_DIR
@@ -250,7 +245,7 @@ use constant DEFAULT => {
 
     #
     # The color of the line connecting things.
-    # Default: green
+    # Default: lightblue
     #
     connecting_line_color => 'lightblue',
 
@@ -304,6 +299,13 @@ use constant DEFAULT => {
     image_size => 'small',
 
     #
+    # What to show for feature labels on the maps.
+    # Values: none landmarks all
+    # Default: 'none'
+    #
+    include_features => 'none',
+
+    #
     # Color of a map (type) if not defined
     # Default: lightgrey
     #
@@ -316,10 +318,37 @@ use constant DEFAULT => {
     map_width => 8,
 
     #
-    # What to show for feature labels on the maps.
-    # Default: 'none'
+    # The titles to put atop the individual maps, e.g., "Wheat-2M."
+    # Your choices will be stacked in the order defined.
+    # Choices: species_name, map_set_name (short_name), map_name
+    # Default: species_name, map_name
     #
-    include_features => 'none',
+    map_titles => [ qw( species_name map_set_name map_name) ],
+
+    #
+    # The smallest any map can be drawn, in pixels.
+    # Default: 20
+    #
+    min_map_pixel_height => 20,
+
+    #
+    # The maximum number of features allowed on a map.
+    # Set to "0" (or a negative number) or undefined to disable.
+    # Default: 200
+    #
+    max_feature_count => 0,
+
+    #
+    # The maximum number of elements that can appear on a page 
+    # (like in search results).
+    #
+    max_child_elements => 25,
+
+    #
+    # How many pages of results to show in searches.
+    # Default: 10
+    #
+    max_search_pages => 10,
 
     #
     # The module to dispatch to when no path is given to "/cmap."
@@ -350,47 +379,9 @@ use constant DEFAULT => {
 };
 
 #
-# The smallest any map can be drawn, in pixels.
-# Default: 20
-#
-use constant MIN_MAP_PIXEL_HEIGHT => 20;
-
-#
-# The titles to put atop the individual maps, e.g., "Wheat-2M."
-# Your choices will be stacked in the order defined.
-# Choices: species_name, map_set_name (short_name), map_name
-# Default: species_name, map_name
-#
-use constant MAP_TITLES => [ qw(
-    species_name
-    map_set_name
-    map_name
-) ];
-
-#
-# The maximum number of features allowed on a map.
-# Set to "0" (or a negative number) or undefined to disable.
-# Default: 200
-#
-use constant MAX_FEATURE_COUNT => 0;
-
-#
-# The maximum number of elements that can appear on a page 
-# (like in search results).
-#
-use constant MAX_CHILD_ELEMENTS => 25;
-
-#
-# How many pages of results to show in searches.
-# Default: 10
-#
-use constant MAX_SEARCH_PAGES => 10;
-
-#
 # A regular expression for determining valid numbers.
 #
 use constant NUMBER_RE => qr{^\-?\d+(?:\.\d+)?$};
-
 
 #
 # The fields to remember between requests and sessions.

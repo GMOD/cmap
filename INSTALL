@@ -492,7 +492,7 @@ httpd.conf so you can intelligently edit you own entries.
 This is the location of the file that lists all your Perl modules.
 Generally the path would be "/usr/local/apache/conf/perlstartup.pl."
 
-* Alias /images/cmap /tmp/cmap_cache
+* Alias /cmap/images /tmp/cmap_cache
 
 This is the directory where the application will write the temporary
 images created for each request.  Apache will directly serve the

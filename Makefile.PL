@@ -94,7 +94,7 @@ PREAMBLE
     $OPTIONS{'STYLESHEET_DIR'} = get_path(
         prompt   => 'Where would you like the HTML stylesheet installed?',
         optional => 1,
-        default  => '/usr/local/apache/cmap',
+        default  => '/usr/local/apache/htdocs/stylesheets',
     );
 }
 
@@ -216,31 +216,27 @@ if ( my $conf_dir = $OPTIONS{'CONF_DIR'} ) {
 #
 # Write the makefile.
 #
-print "\nOK to write Makefile? [Y/n] ";
-chomp( my $answer = <STDIN> );
-if ( !$answer || $answer =~ /^[Yy]/ ) {
-   WriteMakefile(
-        NAME          => 'Bio::GMOD::CMap',
-        VERSION       => '0.03',
-        AUTHOR        => 'Ken Y. Clark <kclark@cshl.org>',
-        ABSTRACT      => 'Modules for drawing comparative and genetic maps.',
-        PREREQ_PM     => {
-            Apache          => 0,
-            Apache::Request => 0,
-            Class::Base     => 0,
-            DBI             => 1.21,
-            Error           => 0.15,
-            File::MkTemp    => 0,
-            GD              => 1.33,
-            Template        => 2.00,
-            Time::Object    => 0,
-            Time::ParseDate => 0,
-        },
-    );
+WriteMakefile(
+    NAME          => 'Bio::GMOD::CMap',
+    VERSION       => '0.03',
+    AUTHOR        => 'Ken Y. Clark <kclark@cshl.org>',
+    ABSTRACT      => 'Modules for drawing comparative and genetic maps.',
+    PREREQ_PM     => {
+        Apache          => 0,
+        Apache::Request => 0,
+        Class::Base     => 0,
+        DBI             => 1.21,
+        Error           => 0.15,
+        File::MkTemp    => 0,
+        GD              => 1.33,
+        Template        => 2.00,
+        Time::Object    => 0,
+        Time::ParseDate => 0,
+    },
+);
 
-    print qq[Now you must run "make" and "make install"\n];
-    print qq[Be sure to edit your "cmap.conf" file with your database info.\n];
-}
+print qq[Now you must run "make" and "make install"\n];
+print qq[Be sure to edit your "cmap.conf" file with your database info.\n];
 exit(0);
 
 # ----------------------------------------------------
