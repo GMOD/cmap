@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.184 2004-12-06 15:57:01 mwz444 Exp $
+# $Id: Data.pm,v 1.185 2004-12-09 16:05:30 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.184 $)[-1];
+$VERSION = (qw$Revision: 1.185 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -2179,8 +2179,8 @@ sub cmap_form_data {
     my ( $ref_maps, $ref_map_set_info );
 
     if ($ref_map_set_aid) {
-        unless ( ( %{ $ref_map->{'maps'} } or %{ $ref_map->{'map_sets'} } )
-            or $ref_map->{'map_names'} )
+        unless ( ( $ref_map->{'maps'} and %{ $ref_map->{'maps'} } ) 
+            or ( $ref_map->{'map_sets'} and %{ $ref_map->{'map_sets'} } ) )
         {
             $sql_str = $sql->form_data_ref_maps_sql;
             unless ( $ref_maps =
@@ -2240,7 +2240,7 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
 
     my @slot_nos = sort { $a <=> $b } keys %$slots;
     my ( $comp_maps_right, $comp_maps_left );
-    if ( $self->slot_info ) {
+    if ( $self->slot_info and @slot_nos) {
         $comp_maps_right = $self->get_comparative_maps(
             min_correspondences         => $min_correspondences,
             feature_type_aids           => $feature_type_aids,
