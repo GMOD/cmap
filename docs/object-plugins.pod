@@ -8,8 +8,9 @@ Object Plugins
 
 =head1 SYNOPSIS
 
-Wherein we discuss how to extend the various "details" pages in CMap
-to add custom data drawn from various and sundry external resources.
+This document discusses how to extend the various "details" pages in
+CMap (map_details, feature_details, etc) to add custom data drawn from
+external resources. 
 
 =head1 DESCRIPTION
 
@@ -23,15 +24,17 @@ system to create novel and powerful dbxrefs.  However, storing
 attributes such as these in all likelihood duplicates information
 stored elsewhere, which is almost never a Good Thing (tm).
 
-One solution is to define a way for CMap to execute user-defined code
-that can manipulate any of the objects for which there is a "details"
+As a solution, CMap includes a way to execute user-defined code that
+can manipulate the objects used in the construction of a "details"
 page (e.g., map sets have the "map_set_info" page, features have the
 "feature" page).  As with most of the other user-configurable items in
 CMap, the user will define this code in the database-specific
 configuration files.  The code must be written in Perl (the language
-in which CMap is written).  Two methods for defining the code,
-"in-line" in the config file or in a separate module, follow and are
-illustrated in this example:
+in which CMap is written).  
+
+There are two methods for defining the custom code, "in-line" in the
+config file or in a separate module.  The following example
+illustrates both of these methods.
 
   <object_plugin>
       map_set_info <<EOF
@@ -54,12 +57,12 @@ illustrated in this example:
   </object_plugin>
 
 As is shown above, the user has the ability to directly manipulate the
-given object (in this case, the map set).  In all cases, the "object"
-will be a Perl hash reference data structure -- the same one, in fact,
-that is given to the template for the "details" page.  This hashref
-will always be the first (and only) argument to the plugin code.  Your
-code should alter the hashref to add new cross-references ("xrefs"),
-attributes, or even new fields.
+given object (in this case, the map set object "$map_set").  In all
+cases, the "object" will be a Perl hash reference data structure.
+This object is used by the template for the "details" page.  This
+hashref will always be the first (and only) argument to the plugin
+code.  Your code should alter the hashref to add new cross-references
+("xrefs"), attributes, or even new fields.
 
 The above example also shows adding a new field "foo" with the value
 "bar."  If you wish this value to be displayed on the "map_set_info"
@@ -71,7 +74,7 @@ the next time you update CMap).
 
 The "attributes" and "xrefs" fields of the hashref are themselves
 arrayrefs of hashrefs.  If that sounds scary, it's really not.  In
-short, the thing you add to ("push") should be a hashref with the
+short, the thing you add to it (using "push") should be a hashref with the
 following fields:
 
   attribute
@@ -163,11 +166,13 @@ for the CMap feature in the marker name, looking with the feature's
 primary name and any aliases.  For each marker (if any) that are
 found, a new cross-reference is created using the a relative URL
 ("/db/markers...") and defining an informative link text and proper
-URL.  If it were desired, CMap could define for the feature new
-attributes based upon the field names and data from the markers found
-in the marker database, thereby allowing the CMap user full access to
-the marker information without leaving the CMap interface and without
-duplicating the marker data as CMap attributes.
+URL.  
+
+CMap could also define new attributes for the feature based upon the
+field names and data from the markers found in the marker database,
+thereby allowing the CMap user full access to the marker information
+without leaving the CMap interface and without duplicating the marker
+data as CMap attributes.
 
 =back
 
@@ -290,6 +295,30 @@ parentheses) and the hashref's fields you can use:
   full_name
   species_aid
   species_id
+
+=head1 Configuration File Tip
+
+To decrease the amount of redundant configuration information in the
+config files, an include statement is allowed.  This imports the
+contents of another file into the config file and is read as though it
+were a part of that config file.  An example of the syntax follows.
+
+  <<include common_types.cfg>>
+  <<include object_plugins.cfg>>
+
+In the above example, a file containing the common feature, map and
+evidence type configurations are stored in a file that can be used by
+multiple config files.  Likewise for object plugins.
+
+It is important to note that while additional feature, map and
+evidence types can be added in the individual config files, including
+an object plugin file AND defining object plugins in the file will
+cause CMap to break.  This is because the types are self contained XML
+entities whereas the all plugins must be defined in the
+<object_plugin> object.
+
+Also, be aware that it is posible to create infinite loops by
+including files that include each other.
 
 =head1 AUTHOR
 
