@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.13 2004-02-10 21:12:55 kycl4rk Exp $
+# $Id: Build.PL,v 1.14 2004-02-10 23:17:46 kycl4rk Exp $
 
 use strict;
 
@@ -197,6 +197,7 @@ my $builder   =  Module::Build->subclass(
     dist_version_from => 'lib/Bio/GMOD/CMap.pm',
     license           => 'gpl',
     script_files      => [ 'bin/cmap_admin.pl' ],
+    sign              => 1,
     requires          => {
         'Apache'             => 0,
         'Apache::Request'    => 0,
