@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::SpeciesViewer;
 # vim: set ft=perl:
 
-# $Id: SpeciesViewer.pm,v 1.3 2004-02-10 22:50:09 kycl4rk Exp $
+# $Id: SpeciesViewer.pm,v 1.3.2.1 2004-06-18 22:05:47 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.3.2.1 $)[-1];
 
 use Data::Pageset;
 use Bio::GMOD::CMap::Apache;
@@ -20,12 +20,13 @@ sub handler {
     my ( $self, $apr ) = @_;
     $self->data_source( $apr->param('data_source') ) or return;
 
-    my $page_no        = $apr->param('page_no') || 1;
-    my @species_aids   = split( /,/, $apr->param('species_aid') );
-    my $data_module    = $self->data_module;
-    my $species        = $data_module->species_viewer_data(
-        species_aids   => \@species_aids,
+    my $page_no      = $apr->param('page_no') || 1;
+    my @species_aids = split( /,/, $apr->param('species_aid') );
+    my $data_module  = $self->data_module;
+    my $data         = $data_module->species_viewer_data(
+        species_aids => \@species_aids,
     ) or return $self->error( $data_module->error );
+    my $species      = $data->{'species'};
 
     $PAGE_SIZE ||= $self->config('max_child_elements') || 0;
     $MAX_PAGES ||= $self->config('max_search_pages')   || 1;
@@ -63,6 +64,7 @@ sub handler {
             stylesheet   => $self->stylesheet,
             data_sources => $self->data_sources,
             species      => $species,
+            all_species  => $data->{'all_species'},
             pager        => $pager,
             intro        => $INTRO,
         },
