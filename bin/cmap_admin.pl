@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.76 2004-08-19 05:38:47 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.77 2004-09-20 19:27:43 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.76 $)[-1];
+$VERSION = (qw$Revision: 1.77 $)[-1];
 
 #
 # Get command-line options
@@ -364,6 +364,7 @@ sub create_map_set {
     chomp( my $answer = <STDIN> );
     return if $answer =~ m/^[Nn]/;
 
+    $is_relational_map||=0; #make sure this is set to something
     $db->do(
         q[
             insert
@@ -2139,19 +2140,19 @@ sub purge_query_cache {
         data    => [
             { 
                 level  => 1, 
-                display => 'Cache Level 1 (purge all)',
+                display => 'Cache Level 1 Purge All (Species/Map Sets changed)',
             },
             { 
                 level  => 2, 
-                display => 'Cache Level 2',
+                display => 'Cache Level 2 (purge map info)',
             },
             { 
                 level  => 3, 
-                display => 'Cache Level 3',
+                display => 'Cache Level 3 (purge feature info)',
             },
             { 
                 level  => 4, 
-                display => 'Cache Level 4',
+                display => 'Cache Level 4 (purge correspondence info)',
             },
             { 
                 level  => 0, 
