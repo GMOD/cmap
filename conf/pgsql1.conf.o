@@ -109,9 +109,9 @@ EOF
 #EOF
 
 matrix_intro <<EOF
-Each cell in the matrix shows the number of correspondences between
-apair of maps.  A correspondence is any relationship between
-two features. 
+Each cell in the matrix shows the number of correspondences (and maps)
+between each pair.  A correspondence is any relationship between
+two features.
 EOF
 
 #map_set_info_intro <<EOF

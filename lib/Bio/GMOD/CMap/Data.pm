@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.157 2004-09-10 19:02:47 mwz444 Exp $
+# $Id: Data.pm,v 1.158 2004-09-20 20:36:13 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.157 $)[-1];
+$VERSION = (qw$Revision: 1.158 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -1756,6 +1756,7 @@ Returns the data for the correspondence matrix.
     if ( $map_set_aid and $link_map_set_aid ) {
         $select_sql = qq[
             select   sum(cm.no_correspondences) as correspondences,
+                     count(cm.link_map_aid) as map_count,
                      cm.reference_map_aid,
                      cm.reference_map_set_aid,
                      cm.reference_species_aid,
@@ -1789,6 +1790,7 @@ Returns the data for the correspondence matrix.
     elsif ($map_set_aid) {
         $select_sql = qq[
             select   sum(cm.no_correspondences) as correspondences,
+                     count(cm.link_map_aid) as map_count,
                      cm.reference_map_aid,
                      cm.reference_map_set_aid,
                      cm.reference_species_aid,
@@ -1822,6 +1824,7 @@ Returns the data for the correspondence matrix.
         #
         $select_sql = q[
             select   sum(cm.no_correspondences) as correspondences,
+                     count(cm.link_map_aid) as map_count,
                      cm.reference_map_set_aid,
                      cm.reference_species_aid,
                      cm.link_map_set_aid,
@@ -1860,16 +1863,22 @@ Returns the data for the correspondence matrix.
             # Map sets that can't be references won't have a "link_map_id."
             #
             my $link_aid = $hr->{'link_map_aid'} || $hr->{'link_map_set_aid'};
-            $lookup{ $hr->{'reference_map_aid'} }{$link_aid} =
+            $lookup{ $hr->{'reference_map_aid'} }{$link_aid}[0] =
               $hr->{'correspondences'};
+            $lookup{ $hr->{'reference_map_aid'} }{$link_aid}[1] =
+              $hr->{'map_count'};
         }
         elsif ($map_set_aid) {
-            $lookup{ $hr->{'reference_map_aid'} }{ $hr->{'link_map_set_aid'} } =
+            $lookup{ $hr->{'reference_map_aid'} }{ $hr->{'link_map_set_aid'} }[0] =
               $hr->{'correspondences'};
+            $lookup{ $hr->{'reference_map_aid'} }{ $hr->{'link_map_set_aid'} }[1] =
+              $hr->{'map_count'};
         }
         else {
             $lookup{ $hr->{'reference_map_set_aid'} }
-              { $hr->{'link_map_set_aid'} } = $hr->{'correspondences'};
+              { $hr->{'link_map_set_aid'} }[0] = $hr->{'correspondences'};
+            $lookup{ $hr->{'reference_map_set_aid'} }
+              { $hr->{'link_map_set_aid'} }[1] = $hr->{'map_count'};
         }
     }
 
@@ -1881,10 +1890,9 @@ Returns the data for the correspondence matrix.
     if ( $link_map_set_aid ) {
         my $is_rel = $db->selectrow_array(
               q[
-                select mt.is_relational_map
-                from   cmap_map_set ms, cmap_map_type mt  
+                select ms.is_relational_map
+                from   cmap_map_set ms
                 where  ms.accession_id=?
-                and    ms.map_type_id=mt.map_type_id 
               ],
               {},
               ( $link_map_set_aid )
@@ -2012,16 +2020,23 @@ Returns the data for the correspondence matrix.
             my $comp_map_set_aid = $comp_map_set->{'map_set_aid'};
             my $comp_map_aid     = $comp_map_set->{'map_aid'} || '';
             my $comparative_aid  = $comp_map_aid || $comp_map_set_aid;
-            my $correspondences  =
-              ( $r_map_aid && $comp_map_aid && $r_map_aid eq $comp_map_aid )
-              ? 'N/A'
-              : $lookup{$reference_aid}{$comparative_aid} || 0;
+            my $correspondences; 
+            my $map_count;
+            if ( $r_map_aid && $comp_map_aid && $r_map_aid eq $comp_map_aid ){
+                $correspondences  = 'N/A';
+                $map_count  = 'N/A';
+            }
+            else{
+                $correspondences=$lookup{$reference_aid}{$comparative_aid}[0] || 0;
+                $map_count=$lookup{$reference_aid}{$comparative_aid}[1] || 0;
+            }
 
             push @{ $map_set->{'correspondences'} },
               {
                 map_set_aid => $comp_map_set_aid,
                 map_aid     => $comp_map_aid,
                 number      => $correspondences,
+                map_count   => $map_count,
               };
         }
 
@@ -2046,7 +2061,6 @@ Returns the data for the correspondence matrix.
         map_sets     => $map_sets,
         map_types    => $map_types,
         maps         => $maps,
-        lookup       => \%lookup,
     };
 }
 
