@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.41 2004-06-30 21:00:56 mwz444 Exp $
+# $Id: MakeCorrespondences.pm,v 1.42 2004-08-04 04:26:06 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.41 $)[-1];
+$VERSION = (qw$Revision: 1.42 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -252,30 +252,18 @@ print STDERR "$expanded_correspondence_lookup MAKE \n";
                     my $fc_id = $admin->add_feature_correspondence_to_list( 
                         feature_id1       => $f1->{'feature_id'},
                         feature_id2       => $f2->{'feature_id'},
-                        map_id1           => $f1->{'map_id'},
-                        map_id2           => $f2->{'map_id'},
-                        start_position1   => $f1->{'start_position'},
-                        start_position2   => $f2->{'start_position'},
-                        stop_position1    => $f1->{'stop_position'},
-                        stop_position2    => $f2->{'stop_position'},
-                        feature_type_aid1 => $f1->{'feature_type_aid'},
-                        feature_type_aid2 => $f2->{'feature_type_aid'},
                         evidence_type_aid => $evidence_type_aid,
 		                allow_update      => $allow_update,
 		                expanded_correspondence_lookup      
                             => $expanded_correspondence_lookup,
                     ) or return $self->error( $admin->error );
-		    $admin->insert_feature_correspondence_if_gt(1000);
-                    #$self->Print( 
-                    #    $fc_id > 0
-                    #    ? "Inserted correspondence ($fc_id) $s"
-                    #    : "Correspondence existed $s"
-                    #) unless $quiet;
 
-		    if ($allow_update){
-			$corr{ $fid1 }{ $fid2 } = $fc_id;
-			$corr{ $fid2 }{ $fid1 } = $fc_id;
-		    }
+                    $admin->insert_feature_correspondence_if_gt(1000);
+
+                    if ($allow_update){
+                        $corr{ $fid1 }{ $fid2 } = $fc_id;
+                        $corr{ $fid2 }{ $fid1 } = $fc_id;
+                    }
                     $done{ $fid1 }{ $fid2 } = 1;
                     $done{ $fid2 }{ $fid1 } = 1;
                 }

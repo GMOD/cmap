@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.48 2004-07-29 20:28:23 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.49 2004-08-04 04:26:06 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.48 $)[-1];
+$VERSION = (qw$Revision: 1.49 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -75,9 +75,18 @@ sub handler {
         if ($ref_map_aid =~/^(\S+)\[(.*)\*(.*)\]/){
             $ref_map_aid = $1;
             ($start,$stop)=($2,$3); 
-            $start = undef unless($start =~ $RE{num}{real});
-            $stop  = undef unless($stop  =~ $RE{num}{real});
-            if (defined($start) and defined($stop) 
+            $start = undef unless($start =~ /\S/);
+            $stop  = undef unless($stop  =~ /\S/);
+            my $start_stop_feature=0;
+            if ($start=~ /^$RE{'num'}{'real'}$/){
+                $highlight = join( ',', $highlight, $start );
+                $start_stop_feature=1;
+            }
+            if ($stop=~ /^$RE{'num'}{'real'}$/){
+                $highlight = join( ',', $highlight, $stop );
+                $start_stop_feature=1;
+            }
+            if ((not $start_stop_feature) and defined($start) and defined($stop) 
                 and $stop<$start){
                 ($start,$stop)= ($stop,$start); 
             }
@@ -85,11 +94,10 @@ sub handler {
         $ref_maps{$ref_map_aid} = {start=>$start,stop=>$stop};
     }
     if (scalar @ref_map_aids==1){
-        if ($ref_map_start =~ $RE{num}{real}
-             and not defined($ref_maps{$ref_map_aids[0]}{'start'})){
+        if (defined($ref_map_start) and not defined($ref_maps{$ref_map_aids[0]}{'start'})){
             $ref_maps{$ref_map_aids[0]}{'start'} =$ref_map_start;
         }
-        if ($ref_map_stop =~ $RE{num}{real}
+        if (defined($ref_map_stop)
              and not defined($ref_maps{$ref_map_aids[0]}{'stop'})){
             $ref_maps{$ref_map_aids[0]}{'stop'} =$ref_map_stop;
         }
@@ -178,9 +186,18 @@ sub handler {
             if ( $aid =~ m/^(.+)\[(.*)\*(.*)\]$/ ) {
                 $aid=$1;
                 ($start,$stop)=($2,$3); 
-                $start = undef unless($start =~ $RE{num}{real});
-                $stop  = undef unless($stop  =~ $RE{num}{real});
-                if (defined($start) and defined($stop) 
+                $start = undef unless($start =~ /\S/);
+                $stop  = undef unless($stop  =~ /\S/);
+                my $start_stop_feature=0;
+                if ($start=~ /^$RE{'num'}{'real'}$/){
+                    $highlight = join( ',', $highlight, $start );
+                    $start_stop_feature=1;
+                }
+                if ($stop=~ /^$RE{'num'}{'real'}$/){
+                    $highlight = join( ',', $highlight, $stop );
+                    $start_stop_feature=1;
+                }
+                if ((not $start_stop_feature) and defined($start) and defined($stop) 
                     and $stop<$start){
                     ($start,$stop)= ($stop,$start); 
                 }
@@ -218,8 +235,17 @@ sub handler {
                 $accession_id = $1;
                 $start        = $2;
                 $stop         = $3;
-                $start = undef unless($start =~ $RE{num}{real});
-                $stop  = undef unless($stop  =~ $RE{num}{real});
+                $start = undef unless($start =~ /\S/);
+                $stop  = undef unless($stop  =~ /\S/);
+                my $start_stop_feature=0;
+                if ($start=~ /^$RE{'num'}{'real'}$/){
+                    $highlight = join( ',', $highlight, $start );
+                    $start_stop_feature=1;
+                }
+                if ($stop=~ /^$RE{'num'}{'real'}$/){
+                    $highlight = join( ',', $highlight, $stop );
+                    $start_stop_feature=1;
+                }
             }
             if ($field eq 'map_aid'){
                 $slots{$slot_no}->{'maps'}{$accession_id} =  {

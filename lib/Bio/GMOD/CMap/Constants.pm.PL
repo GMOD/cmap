@@ -1,31 +1,31 @@
 #!perl
 
 use strict;
-use CMapBuildConfig;
+use CMapBuilder;
 use Cwd;
 use File::Basename qw(&basename &dirname);
 use File::Spec::Functions;
 
-my $conf_dir = catfile( $Build{'CONF'} );
+my $builder   = CMapBuilder->current;
+my $conf_dir = catfile( $builder->notes('CONF') );
 
 my $origdir = cwd;
 chdir dirname($0);
 my $file;
 ($file = basename($0)) =~ s/\.PL$//;
-open OUT, ">$file" or die "Can't write file '$file': $!\n";
+open OUT, ">$file" or die "Cannot write file '$file': $!\n";
 print "Extracting $file (with variable substitutions)\n";
 print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.16 2004-07-02 20:53:35 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.17 2004-08-04 04:26:05 mwz444 Exp $
 
 use strict;
-use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.16 $)[-1];
+$VERSION = (qw$Revision: 1.17 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -510,6 +510,7 @@ use constant VALID => {
         png     => 1, 
         jpeg    => 1,
         svg     => 1,
+        gif     => 1,
     },
 
     #

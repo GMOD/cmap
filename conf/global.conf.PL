@@ -1,9 +1,14 @@
 #!perl
 
 use strict;
-use CMapBuildConfig;
+use CMapBuilder;
 use Cwd;
 use File::Basename qw(&basename &dirname);
+
+
+my $builder      = CMapBuilder->current;
+my $template_dir = $builder->notes('TEMPLATES');
+my $cache_dir    = $builder->notes('CACHE');
 
 my $origdir = cwd;
 chdir dirname($0);
@@ -26,7 +31,7 @@ print OUT<<"!GROK!THIS!";
 # An absolute path to the directory holding the templates
 # Default: Set on install
 #   
-template_dir $Build{'TEMPLATES'}
+template_dir $template_dir
 
 #   
 # An absolute path to the directory where images are written I would
@@ -39,7 +44,7 @@ template_dir $Build{'TEMPLATES'}
 #
 # Default: /usr/local/apache/htdocs/cmap/tmp
 #
-cache_dir $Build{'CACHE'}
+cache_dir $cache_dir
 
 #
 # Which database should be the default

@@ -39,19 +39,22 @@ sub ACTION_install {
     #
     # Install config file.
     #
-    my $from_conf = 'conf/cmap.conf';
-    my $to_conf   = catfile( $self->notes('CONF'), 'cmap.conf' );
-    my $copy_conf = 1;
-    if ( -e $to_conf ) {
-        $copy_conf = $self->y_n( "'$to_conf' exists.  Overwrite?", 'n' );
+    shell("mkdir ".$self->notes('CONF')) unless (-d $self->notes('CONF'));
+
+    foreach my $conf_file ('global.conf', 'mysql1.conf', 'pgsql1.conf'){
+        my $from_conf = 'conf/'.$conf_file;
+        my $to_conf   = catfile( $self->notes('CONF'), $conf_file );
+        my $copy_conf = 1;
+        if ( -e $to_conf ) {
+            $copy_conf = $self->y_n( "'$to_conf' exists.  Overwrite?", 'n' );
+        }
+
+        $self->copy_if_modified(
+            from    => $from_conf,
+            to      => $to_conf,
+            flatten => 0,
+        ) if $copy_conf;
     }
-
-    $self->copy_if_modified(
-        from    => $from_conf,
-        to      => $to_conf,
-        flatten => 0,
-    ) if $copy_conf;
-
     #
     # Install the CGI script.
     #
