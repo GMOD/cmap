@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
-# $Id: MakeCorrespondences.pm,v 1.3 2002-09-13 05:28:49 kycl4rk Exp $
+# $Id: MakeCorrespondences.pm,v 1.4 2002-09-13 05:32:07 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils 'next_number';
@@ -104,8 +104,6 @@ sub make_name_correspondences {
                 ]
             ;
 
-            warn "sql =\n$corr_sql\n";
-            
             for my $feature ( 
                 @{ $db->selectall_arrayref(
                     q[
@@ -117,9 +115,7 @@ sub make_name_correspondences {
                     ( $map->{'map_id'} )
                 ) }
             ) {
-#                print "Feature: $feature->{'feature_name'}\n";
                 my $upper_name = uc $feature->{'feature_name'} or next;
-                print "Feature: '$upper_name'\n";
                 for my $corr_id ( 
                     @{ $db->selectcol_arrayref(
                         $corr_sql,
