@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.40 2003-04-16 18:51:47 kycl4rk Exp $
+# $Id: Map.pm,v 1.41 2003-05-02 18:35:28 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.40 $)[-1];
+$VERSION = (qw$Revision: 1.41 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -317,8 +317,8 @@ in raw format as a hashref keyed on feature_id.
                 $_, 
                 $_->{'drawing_lane'}, 
                 $_->{'drawing_priority'}, 
-                $_->{'start_position'},
-                $_->{'stop_position'}
+                defined $_->{'start_position'} ? $_->{'start_position'} : 0,
+                defined $_->{'stop_position'} ? $_->{'stop_position'} : 0,
             ] }
             values %{ $map->{'features'} } 
         ) {
@@ -413,7 +413,8 @@ Lays out the map.
         for my $length ( 
             map { length $self->$_($map_id) } @config_map_titles 
         ) {
-            $longest = $length if $length > $longest;
+            $length ||= 0;
+            $longest  = $length if $length > $longest;
         }
     }
     my $half_title_length = ( $reg_font->width * $longest ) / 2 + 10;
@@ -741,12 +742,17 @@ Lays out the map.
                     !$has_corr     && # it has no correspondences
                     !$show_labels;    # we're not showing labels
 
+                my $fstart = $feature->{'start_position'};
+                my $fstop  = $feature->{'stop_position'};
+                   $fstart = 0 unless defined $fstart;
+                   $fstop  = 0 unless defined $fstop;
+                   $fstop  = 0 if !defined $fstop || $fstop <= $fstart;
                 my $rstart = sprintf( "%.2f", 
-                    ( $feature->{'start_position'} - $map_start ) / $map_length
+                    ( $fstart - $map_start ) / $map_length
                 );
                 $rstart    = $rstart > 1 ? 1 : $rstart < 0 ? 0 : $rstart;
                 my $rstop  = sprintf( "%.2f", 
-                    ( $feature->{'stop_position'} - $map_start ) / $map_length
+                    ( $fstop - $map_start ) / $map_length
                 );
                 $rstop     = $rstop > 1 ? 1 : $rstop < 0 ? 0 : $rstop;
 
@@ -760,14 +766,34 @@ Lays out the map.
                 my $tick_start    = $base_x - $tick_overhang;
                 my $tick_stop     = $base_x + $map_width + $tick_overhang;
                 my $feature_shape = $feature->{'shape'} || 'line';
+                my $shape_is_triangle = $feature_shape =~ /triangle$/;
                 my $label_y;
                 my @coords;
+
+                if ( 
+                    $feature_shape eq LINE || 
+                    $y_pos2 <= $y_pos1
+                ) {
+                    $label_y = $y_pos1 - $reg_font->height/2;
+                }
+                elsif ( 
+                    $shape_is_triangle ||
+                    !defined $y_pos2   ||
+                    $y_pos2 <= $y_pos1
+                ) {
+                    $label_y = $y_pos1 - $reg_font->height/2;
+                }
+                else {
+                    $label_y = ( $y_pos1 + ( $y_pos2 - $y_pos1 ) / 2 ) 
+                        - $reg_font->height/2;
+                }
+#                warn $feature->{'feature_name'}, " label_y = '$label_y' : $fstart-$fstop ($y_pos1,$y_pos2)\n";
 
                 if ( $feature_shape eq LINE ) {
                     $drawer->add_drawing(
                         LINE, $tick_start, $y_pos1, $tick_stop, $y_pos1, $color
                     );
-                    $label_y = $y_pos1 - $reg_font->height/2;
+#                    $label_y = $y_pos1 - $reg_font->height/2;
                     @coords  = ( $tick_start, $y_pos1, $tick_stop, $y_pos1 );
                 }
                 else {
@@ -784,11 +810,11 @@ Lays out the map.
                     my $vert_line_x2      = $label_side eq RIGHT 
                         ? $tick_stop + $offset 
                         : $tick_start - $offset;
-                    my $shape_is_triangle = $feature_shape =~ /triangle$/;
-
-                    $label_y = $shape_is_triangle
-                        ? $y_pos1 - $reg_font->height/2
-                        : ( ( $y_pos1 + $y_pos2 ) / 2 ) - $reg_font->height/2;
+#                    my $shape_is_triangle = $feature_shape =~ /triangle$/;
+#
+#                    $label_y = $shape_is_triangle
+#                        ? $y_pos1 - $reg_font->height/2
+#                        : ( ( $y_pos1 + ( $y_pos2 - $y_pos1 ) / 2 ) ) - $reg_font->height/2;
 
                     if ( $y_pos1 < $y_pos2 && !$shape_is_triangle ) {
                         $drawer->add_drawing(
@@ -1047,7 +1073,10 @@ Lays out the map.
                 );
 
                 if ( $has_corr ) {
-                    my $mid_feature = ( $coords[1] + $coords[3] ) / 2;
+                    my $mid_feature = 
+                        ( !defined $coords[3] || $coords[3]<=$coords[3] )
+                        ? $coords[1]
+                        : ( $coords[1] + $coords[3] ) / 2;
                     $features_with_corr{ $feature->{'feature_id'} } = {
                         feature_id => $feature->{'feature_id'},
                         slot_no    => $slot_no,
@@ -1202,12 +1231,12 @@ Lays out the map.
                     if ( $label_side eq RIGHT ) {
                         $features_with_corr{ $label->{'feature_id'} }{'right'} =
                             [ $label_bounds[2], 
-                              ($label_bounds[1]+$label_bounds[3])/2 ];
+                              ($label_bounds[1]+($label_bounds[3]-$label_bounds[1])/2) ];
                     }
                     else {
                         $features_with_corr{ $label->{'feature_id'} }{'left'} = 
                             [ $label_bounds[0], 
-                              ($label_bounds[1]+$label_bounds[3])/2 ];
+                              ($label_bounds[1]+($label_bounds[3]-$label_bounds[1])/2) ];
                     }
                 }
 
@@ -1245,14 +1274,20 @@ Lays out the map.
                     ? $coords[2]
                     : $label_end + $buffer;
                 my $label_connect_y1 = $label_side eq RIGHT
-                    ? ($coords[1] + $coords[3])/2 
+                    ? 
+                        ( !defined $coords[3] || $coords[3]<=$coords[1] )
+                        ? $coords[1]
+                        : $coords[1] + ($coords[3]-$coords[1])/2
                     : $label_y + $reg_font->height/2;
                 my $label_connect_x2 = $label_side eq RIGHT
                     ? $label_x - $buffer 
                     : $coords[0];
                 my $label_connect_y2 = $label_side eq RIGHT
                     ? $label_y + $reg_font->height/2 
-                    : ($coords[1] + $coords[3])/2;
+                    : 
+                        ( !defined $coords[3] || $coords[3]<=$coords[1] )
+                        ? $coords[1]
+                        : $coords[1] + ($coords[3]-$coords[1])/2;
 
                 #
                 # If the feature is a horz. line, then back the connection off.
@@ -1348,7 +1383,7 @@ Lays out the map.
             $drawer->add_map_area(
                 coords => \@area,
                 url    => $url,
-                alt    => 'Details: '.$self->map_name,
+                alt    => 'Details: '.( $self->map_name || '' ),
             );
             $bottom_y = $area[3] if $area[3] > $bottom_y;
         }
