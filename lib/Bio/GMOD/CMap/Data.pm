@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.143 2004-08-20 15:32:49 mwz444 Exp $
+# $Id: Data.pm,v 1.144 2004-08-23 15:59:53 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.143 $)[-1];
+$VERSION = (qw$Revision: 1.144 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -681,7 +681,7 @@ sub slot_data {
     #
     # check to see if it is compressed 
     #
-    if (!$self->compress_maps($this_slot_no)){
+    if (!$self->{'aggregate'} or !$self->compress_maps($this_slot_no)){
         #
         # Figure out how many features are on each map.
         #
