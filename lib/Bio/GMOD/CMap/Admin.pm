@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.31 2003-10-22 00:23:12 kycl4rk Exp $
+# $Id: Admin.pm,v 1.32 2003-10-23 02:06:02 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,8 +24,9 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.31 $)[-1];
+$VERSION = (qw$Revision: 1.32 $)[-1];
 
+use Data::Dumper;
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils qw[ next_number parse_words ];
 use base 'Bio::GMOD::CMap';
@@ -1286,25 +1287,10 @@ Set the attributes for a database object.
 
     for my $attr ( @attributes ) {
         my $attribute_id  = $attr->{'attribute_id'}  || 0;
-        my $display_order = $attr->{'display_order'} || 0;
         my $attr_name     = $attr->{'name'}          or next;
         my $attr_value    = $attr->{'value'}         or next;
         my $is_public     = $attr->{'is_public'};
-        $is_public        = 1 unless defined $is_public;
-
-        unless ( $display_order ) {
-            $display_order = $db->selectrow_array(
-                q[
-                    select max(display_order)
-                    from   cmap_attribute
-                    where  table_name=?
-                    and    object_id=?
-                ],
-                {},
-                ( $table_name, $object_id )
-            );
-            $display_order++;
-        }
+        my $display_order = $attr->{'display_order'};
 
         next unless 
             defined $attr_name  && $attr_name  ne '' && 
@@ -1325,20 +1311,31 @@ Set the attributes for a database object.
         );
 
         if ( $attribute_id ) {
+            my @update_fields   =  (
+                [ object_id       => $object_id  ],
+                [ table_name      => $table_name ],
+                [ attribute_name  => $attr_name  ],
+                [ attribute_value => $attr_value ],
+            );
+
+            if ( defined $display_order ) {
+                push @update_fields, [ display_order => $display_order ];
+            }
+
+            if ( defined $is_public ) {
+                push @update_fields, [ is_public => $is_public ];
+            }
+
+            my $update_sql = 
+                'update cmap_attribute set ' .
+                join(', ', map { $_->[0].'=?' } @update_fields) .
+                'where attribute_id=?'
+            ;
+
             $db->do(
-                q[
-                    update cmap_attribute
-                    set    object_id=?, 
-                           table_name=?,
-                           display_order=?,
-                           is_public=?,
-                           attribute_name=?, 
-                           attribute_value=?
-                    where  attribute_id=?
-                ],
+                $update_sql,
                 {}, 
-                ($object_id, $table_name, $display_order, $is_public,
-                 $attr_name, $attr_value, $attribute_id)
+                ( ( map { $_->[1] } @update_fields ), $attribute_id )
             ); 
         }
         else {
@@ -1349,6 +1346,22 @@ Set the attributes for a database object.
             ) or return $self->error(
                 "Can't get next ID for 'cmap_attribute'"
             );
+
+            unless ( $display_order ) {
+                $display_order = $db->selectrow_array(
+                    q[
+                        select max(display_order)
+                        from   cmap_attribute
+                        where  table_name=?
+                        and    object_id=?
+                    ],
+                    {},
+                    ( $table_name, $object_id )
+                );
+                $display_order++;
+            }
+
+            $is_public = 1 unless defined $is_public;
 
             $db->do(
                 q[
@@ -1362,6 +1375,121 @@ Set the attributes for a database object.
                 {}, 
                 ($attribute_id, $object_id, $table_name, 
                  $display_order, $is_public, $attr_name, $attr_value)
+            );
+        }
+    }
+
+    return 1;
+}
+
+# ----------------------------------------------------
+sub set_xrefs {
+
+=pod
+
+=head2 set_xrefs
+
+Set the attributes for a database object.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $object_id       = $args{'object_id'} or 
+                          return $self->error('No object id');
+    my $table_name      = $args{'table_name'} or 
+                          return $self->error('No table name');
+    my @xrefs           = @{ $args{'xrefs'} || [] } or return;
+    my $overwrite       = $args{'overwrite'} || 0;
+    my $db              = $self->db or return;
+
+    if ( $overwrite ) {
+        $db->do(
+            'delete from cmap_xref where object_id=? and table_name=?',
+            {},
+            $object_id, $table_name
+        );
+    }
+
+    for my $attr ( @xrefs ) {
+        my $xref_id       = $attr->{'xref_id'} || 0;
+        my $xref_name     = $attr->{'name'}    or next;
+        my $xref_url      = $attr->{'url'}     or next;
+        my $display_order = $attr->{'display_order'};
+
+        next unless 
+            defined $xref_name && $xref_name ne '' && 
+            defined $xref_url  && $xref_url  ne ''
+        ;
+
+        $xref_id ||= $db->selectrow_array(
+            q[
+                select xref_id
+                from   cmap_xref
+                where  object_id=?
+                and    table_name=?
+                and    xref_name=?
+                and    xref_url=?
+            ],
+            {},
+            ( $object_id, $table_name, $xref_name, $xref_url )
+        );
+
+        if ( $xref_id ) {
+            my @update_fields =  (
+                [ object_id   => $object_id  ],
+                [ table_name  => $table_name ],
+                [ xref_name   => $xref_name  ],
+                [ xref_url    => $xref_url   ],
+            );
+
+            if ( defined $display_order ) {
+                push @update_fields, [ display_order => $display_order ];
+            }
+
+            my $update_sql = 
+                'update cmap_xref set ' .
+                join(', ', map { $_->[0].'=?' } @update_fields) .
+                'where xref_id=?'
+            ;
+
+            $db->do(
+                $update_sql,
+                {}, 
+                ( ( map { $_->[1] } @update_fields ), $xref_id )
+            ); 
+        }
+        else {
+            $xref_id       =  next_number( 
+                db         => $db,
+                table_name => 'cmap_xref',
+                id_field   => 'xref_id',
+            ) or return $self->error( "Can't get next ID for 'cmap_xref'" );
+
+            unless ( defined $display_order ) {
+                $display_order = $db->selectrow_array(
+                    q[
+                        select max(display_order)
+                        from   cmap_xref
+                        where  table_name=?
+                        and    object_id=?
+                    ],
+                    {},
+                    ( $table_name, $object_id )
+                );
+                $display_order++;
+            }
+
+            $db->do(
+                q[
+                    insert 
+                    into    cmap_xref
+                            (xref_id, object_id, table_name,
+                             display_order, xref_name, xref_url)
+                    values  (?, ?, ?, ?, ?, ?)
+                ],
+                {}, 
+                ($xref_id, $object_id, $table_name, 
+                 $display_order, $xref_name, $xref_url)
             );
         }
     }
@@ -1458,24 +1586,20 @@ Delete a cross reference.
 
 =cut
 
-    my ( $self, %args ) = @_;
-    my $xref_id         = $args{'xref_id'} or return $self->error(
-        'No xref id'
-    );
+    my $self       = shift;
+    my $table_name = shift     or return;
+    my $object_id  = shift     or return;
+    my $db         = $self->db or return;
 
-    my $db = $self->db or return;
     $db->do(
-        q[
-            delete
-            from   cmap_xref
-            where  xref_id=?
-        ], 
-        {}, 
-        ( $xref_id )
+        'delete from cmap_xref where table_name=? and object_id=?',
+        {},
+        ( $table_name, $object_id )
     );
 
     return 1;
 }
+
 1;
 
 # ----------------------------------------------------
