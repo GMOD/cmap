@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin;
 
-# $Id: Admin.pm,v 1.13 2003-01-30 02:51:35 kycl4rk Exp $
+# $Id: Admin.pm,v 1.14 2003-01-30 22:11:44 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.13 $)[-1];
+$VERSION = (qw$Revision: 1.14 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils qw[ next_number ];
@@ -278,8 +278,8 @@ Find all the features matching some criteria.
     my $db              = $self->db or return;
     my @results;
 
-    for my $feature_name ( @feature_names ) {
-        my $comparison      = $feature_name =~ m/%/ ? 'like' : '=';
+    for my $feature_name ( map { uc $_ } @feature_names ) {
+        my $comparison = $feature_name =~ m/%/ ? 'like' : '=';
 
         my $where = $field_name eq 'both'
             ? qq[
