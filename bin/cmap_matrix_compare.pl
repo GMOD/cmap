@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: cmap_matrix_compare.pl,v 1.2 2003-01-31 19:50:25 kycl4rk Exp $
+# $Id: cmap_matrix_compare.pl,v 1.3 2003-02-01 21:10:05 kycl4rk Exp $
 
 =head1 NAME
 
@@ -96,8 +96,22 @@ my $sql  = $data->sql           or die $data->error;
 #
 # Get the map sets that can act as reference maps.
 #
-my $ref_map_sets = $db->selectall_hashref(
-    $sql->form_data_ref_map_sets_sql,
+my $map_sets = $db->selectall_hashref(
+    q[
+        select   ms.accession_id, 
+                 ms.short_name as map_set_name,
+                 ms.can_be_reference_map,
+                 s.common_name as species_name
+        from     cmap_map_set ms,
+                 cmap_species s
+        where    ms.is_enabled=1
+        and      ms.species_id=s.species_id
+        order by s.display_order,
+                 species_name,
+                 ms.display_order,
+                 ms.published_on desc,
+                 ms.map_set_name
+    ],
     'accession_id',
     { Columns => {} }
 );
@@ -112,23 +126,23 @@ my $matrix     = $matrix_raw->{'data'};
 # Match up the matrix data with the reference map sets.
 #
 for my $rec ( @$matrix ) {
-    next unless exists $ref_map_sets->{ $rec->{'reference_map_set_aid'} };
+    next unless exists $map_sets->{ $rec->{'reference_map_set_aid'} };
     push @{ 
-        $ref_map_sets->{ $rec->{'reference_map_set_aid'} }{'correspondences'} 
+        $map_sets->{ $rec->{'reference_map_set_aid'} }{'correspondences'} 
     }, $rec;
 }
 
 if ( defined $store ) {
-    store_data( $ref_map_sets, $store );
+    store_data( $map_sets, $store );
 }
 elsif ( defined $retrieve ) {
     retrieve_data( $retrieve ); 
 }
 elsif ( @compare ) {
-    compare( $ref_map_sets, \@compare );
+    compare( $map_sets, \@compare );
 }
 else {
-    show_current( $ref_map_sets );
+    show_current( $map_sets );
 }
 
 exit(0);
@@ -141,8 +155,8 @@ sub compare {
 # file argument, then use what's passed for the current and retrieve
 # the old data from the file.
 #
-    my $ref_map_sets = shift;
-    my @files        = @{ shift() || [] };
+    my $map_sets = shift;
+    my @files    = @{ shift() || [] };
 
     my ( $file, $from, $to );
     if ( scalar @files > 1 ) {
@@ -151,20 +165,20 @@ sub compare {
         for ( $file1, $file2 ) {
             die "Can't read '$_'\n" unless -r $_;
         }
-        $ref_map_sets  = retrieve( $file1 ) or die "No data in '$file'\n";;
+        $map_sets      = retrieve( $file1 ) or die "No data in '$file'\n";;
         $file          = $file2;
         my @file1_stat = stat $file1;
         my @file2_stat = stat $file2;
-        $from          = qq["$file1" (Last Mod. ] . strftime( DATE_FORMAT,
+        $from          = qq["$file1" (] . strftime( DATE_FORMAT,
                          localtime( $file1_stat[9] ) ). ')';
-        $to            = qq["$file2" (Last Mod. ] . strftime( DATE_FORMAT,
+        $to            = qq["$file2" (] . strftime( DATE_FORMAT,
                          localtime( $file2_stat[9] ) ). ')';
     }
     else {
         $file = $files[0] || DEFAULT_STORE_FILE;
         die "Can't read '$file'\n" unless -r $file;
         my @file_stat = stat $file;
-        $to           = qq["$file" (Last Mod. ] . strftime( DATE_FORMAT,
+        $to           = qq["$file" (] . strftime( DATE_FORMAT,
                         localtime( $file_stat[9] ) ) . ')';
         $from         = 'Current Database ('.
                         strftime( DATE_FORMAT, localtime ). ')';
@@ -177,28 +191,31 @@ sub compare {
         map  { $_->[2] }
         sort { $a->[0] cmp $b->[0] || $a->[1] cmp $b->[1] }
         map  { [ $_->{'species_name'}, $_->{'map_set_name'}, $_ ] }
-        values %$ref_map_sets 
+        values %$map_sets 
     ) {
+        next unless $ms->{'can_be_reference_map'};
         my $map_set_name = join(
             '-', $ms->{'species_name'}, $ms->{'map_set_name'} 
         );
 
         my $table = Text::TabularDisplay->new(
-            $map_set_name, '# From.', '# To.'
+            $map_set_name, '# From.', '# To.', 'Change'
         );
 
         my @corr;
         for my $rec ( @{ $ms->{'correspondences'} } ) {
             my $link_ms_aid = $rec->{'link_map_set_aid'};
-            my $link_ms     = $ref_map_sets->{ $link_ms_aid } or next;
+            my $link_ms     = $map_sets->{ $link_ms_aid } or next;
+            my $cur         = $rec->{'correspondences'};
             my $old = $old_map_sets->{ $link_ms_aid }{'correspondence_lookup'}
                 { $ms->{'accession_id'} } || '-';
 
             push @corr, [
                 $link_ms->{'species_name'},
                 $link_ms->{'map_set_name'},
-                $rec->{'correspondences'},
+                $cur,
                 $old,
+                ( $cur - $old ) || '',
             ];
         }
 
@@ -207,7 +224,10 @@ sub compare {
             @corr 
         ) {
             $table->add( 
-                join( '-', $corr->[0], $corr->[1] ), $corr->[2], $corr->[3] 
+                join( '-', $corr->[0], $corr->[1] ), 
+                $corr->[2], 
+                $corr->[3],
+                $corr->[4] 
             );
         }
 
@@ -217,17 +237,18 @@ sub compare {
 
 # -------------------------------------------------------------------
 sub show_current {
-    my $ref_map_sets = shift;
-    my $source       = shift || 'Current Correspondence Matrix ('.
-                       strftime(DATE_FORMAT, localtime). ')';
+    my $map_sets = shift;
+    my $source   = shift || 'Current Correspondence Matrix ('.
+                   strftime(DATE_FORMAT, localtime). ')';
 
     print "Showing Data from $source\n";
     for my $ms ( 
         map  { $_->[2] }
         sort { $a->[0] cmp $b->[0] || $a->[1] cmp $b->[1] }
         map  { [ $_->{'species_name'}, $_->{'map_set_name'}, $_ ] }
-        values %$ref_map_sets 
+        values %$map_sets 
     ) {
+        next unless $ms->{'can_be_reference_map'};
         my $map_set_name = join(
             '-', $ms->{'species_name'}, $ms->{'map_set_name'} 
         );
@@ -236,7 +257,7 @@ sub show_current {
 
         my @corr;
         for my $rec ( @{ $ms->{'correspondences'} } ) {
-            my $link_ms = $ref_map_sets->{ $rec->{'link_map_set_aid'} } or next;
+            my $link_ms = $map_sets->{ $rec->{'link_map_set_aid'} } or next;
             push @corr, [
                 $link_ms->{'species_name'}, 
                 $link_ms->{'map_set_name'},
@@ -262,14 +283,14 @@ sub retrieve_data {
     die "Can't read '$file'\n" unless -r $file;
     my $old_map_sets = retrieve( $file ) or die "No data in '$file'\n";;
     my @file_stat    = stat $file;
-    my $source       = qq["$file" (Last Mod. ] . strftime( DATE_FORMAT,
+    my $source       = qq["$file" (] . strftime( DATE_FORMAT,
                        localtime( $file_stat[9] ) ) . ')';
     show_current( $old_map_sets, $source );
 }
 
 # -------------------------------------------------------------------
 sub store_data {
-    my ( $ref_map_sets, $file ) = @_;
+    my ( $map_sets, $file ) = @_;
     $file ||= DEFAULT_STORE_FILE;
     die "File '$file' exists\n" if -e $file;
 
@@ -277,14 +298,14 @@ sub store_data {
     # Turn the arrayref of correspondences into a hashref lookup
     # for use in future comparisons.
     #
-    for my $ms ( values %$ref_map_sets ) {
+    for my $ms ( values %$map_sets ) {
         my %corr = 
             map { $_->{'link_map_set_aid'}, $_->{'correspondences'} }
             @{ $ms->{'correspondences'} || [] };
         $ms->{'correspondence_lookup'} = \%corr;
     }
 
-    store $ref_map_sets, $file;
+    store $map_sets, $file;
     print "Data stored in '$file.'\n",
         "Run '$0 --compare $file' to compare.\n";
 }
