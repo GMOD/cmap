@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.60 2004-04-16 17:49:16 mwz444 Exp $
+# $Id: Drawer.pm,v 1.61 2004-04-19 14:58:30 mwz444 Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.60 $)[-1];
+$VERSION = (qw$Revision: 1.61 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -348,6 +348,20 @@ Returns whether or not there are any feature correspondences.
 
     my $self = shift;
     return %{ $self->{'data'}{'correspondences'} || {} } ? 1 : 0;
+}
+# ----------------------------------------------------
+sub intraslot_correspondences_exist {
+
+=pod
+
+=head2 intraslot_correspondence_exist
+
+Returns whether or not there are any intraslot correspondences.
+
+=cut
+
+    my $self = shift;
+    return %{ $self->{'data'}{'intraslot_correspondences'} || {} } ? 1 : 0;
 }
 
 # ----------------------------------------------------
@@ -993,6 +1007,24 @@ Given a feature correspondence ID, returns supporting evidence.
     return
         $self->{'data'}{'correspondence_evidence'}{$feature_correspondence_id};
 }
+# ----------------------------------------------------
+sub intraslot_correspondence_evidence {
+
+=pod
+
+=head2 intraslot_correspondence_evidence
+
+Given two feature ids, returns supporting evidence.
+
+=cut
+
+    my ( $self, $fid1, $fid2 )    = @_;
+    my $intraslot_correspondence_id = 
+        $self->{'data'}{'intraslot_correspondences'}{ $fid1 }{ $fid2 } or return;
+
+    return
+        $self->{'data'}{'intraslot_correspondence_evidence'}{$intraslot_correspondence_id};
+}
 
 # ----------------------------------------------------
 sub feature_types_seen {
@@ -1034,6 +1066,25 @@ Returns the correspondences for a given feature id.
     return unless @feature_ids;
 
     return map { keys %{ $self->{'data'}{'correspondences'}{ $_ } || {} } }
+        @feature_ids;
+}
+# ----------------------------------------------------
+sub intraslot_correspondences {
+
+=pod
+
+=head2 intraslot_correspondences
+
+Returns the correspondences for a given feature id.
+
+=cut
+
+    my $self        = shift;
+    my @feature_ids = ref $_[0] eq 'ARRAY' ? @{ shift() } : ( shift() );
+    return unless @feature_ids;
+
+    return map { keys %{ $self->{'data'}{'intraslot_correspondences'}{ $_ } 
+        || {} } }
         @feature_ids;
 }
 
@@ -1179,7 +1230,9 @@ Returns whether or not a feature has a correspondence.
 
     my $self       = shift;
     my $feature_id = shift or return;
-    return defined $self->{'data'}{'correspondences'}{ $feature_id };
+    return defined $self->{'data'}{'correspondences'}{ $feature_id }
+           or
+           defined $self->{'data'}{'intraslot_correspondences'}{ $feature_id };
 }
 
 # ----------------------------------------------------

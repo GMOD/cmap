@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.106 2004-04-16 17:49:16 mwz444 Exp $
+# $Id: Data.pm,v 1.107 2004-04-19 14:58:29 mwz444 Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.106 $)[-1];
+$VERSION = (qw$Revision: 1.107 $)[-1];
 
 use Data::Dumper;
 use Regexp::Common;
@@ -230,7 +230,8 @@ Organizes the data for drawing comparative maps.
     #
     $db->do("delete from cmap_map_cache where pid=$pid");
 
-    my ( $data, %feature_correspondences, %map_correspondences, 
+    my ( $data, %feature_correspondences, %intraslot_correspondences, 
+	 %map_correspondences, 
         %correspondence_evidence, %feature_types );
     for my $slot_no ( @ordered_slot_nos ) {
         my $cur_map     = $slots->{ $slot_no };
@@ -241,6 +242,7 @@ Organizes the data for drawing comparative maps.
         $data->{'slots'}{ $slot_no } =  $self->slot_data( 
             map                      => \$cur_map,                 # pass
             feature_correspondences  => \%feature_correspondences, # by
+            intraslot_correspondences  => \%intraslot_correspondences, #
             map_correspondences      => \%map_correspondences,     # ref
             correspondence_evidence  => \%correspondence_evidence, # "
             feature_types            => \%feature_types,           # "
@@ -265,6 +267,7 @@ Organizes the data for drawing comparative maps.
     }
 
     $data->{'correspondences'}         = \%feature_correspondences;
+    $data->{'intraslot_correspondences'} = \%intraslot_correspondences;
     $data->{'map_correspondences'}     = \%map_correspondences;
     $data->{'correspondence_evidence'} = \%correspondence_evidence;
     $data->{'feature_types'}           = \%feature_types;
@@ -274,8 +277,6 @@ Organizes the data for drawing comparative maps.
 }
 
 # ----------------------------------------------------
-sub slot_data {
-
 =pod
 
 =head2 slot_data
@@ -283,6 +284,8 @@ sub slot_data {
 Returns the feature and correspondence data for the maps in a slot.
 
 =cut
+
+sub slot_data {
 
     my ( $self, %args )         = @_;
     my $db                      = $self->db  or return;
@@ -295,6 +298,7 @@ Returns the feature and correspondence data for the maps in a slot.
     my $slot_map                = ${ $args{'map'} }; # hashref
     my $reference_map           = $args{'reference_map'};
     my $feature_correspondences = $args{'feature_correspondences'};
+    my $intraslot_correspondences=$args{'intraslot_correspondences'};
     my $map_correspondences     = $args{'map_correspondences'};
     my $correspondence_evidence = $args{'correspondence_evidence'};
     my $feature_types_seen      = $args{'feature_types'};
@@ -995,6 +999,10 @@ Returns the feature and correspondence data for the maps in a slot.
         }
     }
 
+    $self->get_intraslot_correspondences(
+		$intraslot_correspondences,$correspondence_evidence,
+    	        $pid, $ref_slot_no,
+	        $evidence_type_aids,$feature_type_aids,$map_start,$map_stop );
     return $return;
 
 #    #
@@ -1691,6 +1699,118 @@ sub get_feature_correspondences {
 }
 
 # ----------------------------------------------------
+=pod
+
+=head2 get_intraslot_correspondences
+
+inserts correspondence info into $intraslot_correspondence and 
+$correspondence_evidence based on corrs from the slot
+and the provided id.
+
+=cut
+sub get_intraslot_correspondences {
+    my ( $self,$intraslot_correspondences,$correspondence_evidence,
+	 $pid, $slot_no,
+	 $evidence_type_aids,$feature_type_aids,
+	 $map_start,$map_stop ) = @_;
+    my $db = $self->db;
+    my $to_restriction='';
+
+    $slot_no=0 unless $slot_no;
+    if ( defined $map_start && defined $map_stop ) {
+	$to_restriction = qq[
+	    and      (
+		      ( f2.start_position>=$map_start and 
+			f2.start_position<=$map_stop )
+		      or   (
+			    f2.stop_position is not null and
+			    f2.start_position<=$map_start and
+			    f2.stop_position>=$map_stop
+			    )
+		      )
+			     ];
+    }
+
+    my $corr_sql = qq[
+        select   f.feature_id as feature_id,
+                 f2.feature_id as ref_feature_id, 
+                 f2.feature_name as f2_name,
+                 f2.start_position as f2_start,
+                 map.map_id,
+                 cl.feature_correspondence_id,
+                 ce.evidence_type_accession as evidence_type_aid
+        from     cmap_feature f, 
+                 cmap_feature f2, 
+                 cmap_map map,
+                 cmap_map_cache mc,
+                 cmap_map_cache mc2,
+                 cmap_correspondence_lookup cl,
+                 cmap_feature_correspondence fc,
+                 cmap_correspondence_evidence ce
+        where    mc.pid=?
+        and      mc.slot_no=?
+        and      mc.map_id=f.map_id
+        and      f.feature_id=cl.feature_id1
+        and      cl.feature_correspondence_id=
+                 fc.feature_correspondence_id
+        and      fc.is_enabled=1
+        and      fc.feature_correspondence_id=
+                 ce.feature_correspondence_id
+        and      cl.feature_id2=f2.feature_id
+        and      f2.map_id=map.map_id
+        and      f2.map_id=mc2.map_id
+        and      mc.slot_no=mc2.slot_no
+        $to_restriction
+    ];
+    if ( @$evidence_type_aids ) {
+        $corr_sql .= "and ce.evidence_type_accession in ('".
+            join( "','", @$evidence_type_aids ).
+        "')";
+    }
+
+    if ( @$feature_type_aids ) {
+        $corr_sql .= "and f.feature_type_accession in ('".
+            join( "','", @$feature_type_aids ).
+        "')";
+    }
+
+    my $ref_correspondences= $db->selectall_arrayref(
+	 $corr_sql, { Columns => {} }, ( $pid, $slot_no )
+    );
+
+    foreach my $row ( @{$ref_correspondences } ) {
+	$row->{'evidence_rank'} = $self->evidence_type_data( 
+	     $row->{'evidence_type_aid'}, 'rank' 
+	);
+	$row->{'line_color'} = $self->evidence_type_data( 
+	     $row->{'evidence_type_aid'}, 'line_color' 
+	);
+        $row->{'evidence_type'} = $self->evidence_type_data( 
+              $row->{'evidence_type_aid'}, 'evidence_type' 
+        );
+    }
+			   
+    for my $corr ( @{ $ref_correspondences } ) {
+	$intraslot_correspondences->{
+            $corr->{'feature_id'}}{ $corr->{'ref_feature_id'} }
+	= $corr->{'feature_correspondence_id'};
+
+	$intraslot_correspondences->{
+	    $corr->{'ref_feature_id'} }{ $corr->{'feature_id'}}
+	= $corr->{'feature_correspondence_id'};
+
+	push @{ $correspondence_evidence->{
+	    $corr->{'feature_correspondence_id'}
+	} }, {
+                evidence_type_aid => $corr->{'evidence_type_aid'},
+                evidence_type     => $corr->{'evidence_type'},
+                evidence_rank     => $corr->{'evidence_rank'},
+                line_color        => $corr->{'line_color'},
+            };
+    }
+}
+
+# ----------------------------------------------------
 sub matrix_correspondence_data {
 
 =pod
@@ -1732,13 +1852,10 @@ Returns the data for the correspondence matrix.
     #
     my $map_types = $db->selectall_arrayref( 
         q[
-            select   distinct ms.map_type_accession as map_type_aid, 
-                     mt.map_type,
-                     mt.display_order 
+            select   distinct ms.map_type_accession as map_type_aid
             from     cmap_map_set ms
             where    ms.can_be_reference_map=1
             and      ms.is_enabled=1
-            order by mt.display_order, mt.map_type
         ],
         { Columns => {} } 
     );
@@ -1957,25 +2074,14 @@ Returns the data for the correspondence matrix.
             $map_set_sql .= 
                 "and ms.accession_id='$map_set_aid' "  if $map_set_aid;
 
-            $map_set_sql .= q[
-                order by map_type_display_order,
-                         map_type,
-                         species_display_order, 
-                         species_name,
-                         map_set_display_order,
-                         map_set_name,
-                         published_on desc,
-                         map_set_name
-            ];
-        }
+	}
 
-        my $tempMapSet = @{ 
-            $db->selectall_arrayref( $map_set_sql, { Columns => {} } )
-        };
-
+        my $tempMapSet =  
+            $db->selectall_arrayref( $map_set_sql, { Columns => {} } );
+	
         foreach my $row ( @{$tempMapSet} ) {
             $row->{'map_type_display_order'} = $self->map_type_data( 
-                $row->{'map_type_accession'}, 'display_order' 
+		$row->{'map_type_accession'}, 'display_order' 
             );
 
             $row->{'map_type'} = $self->map_type_data( 
@@ -2204,9 +2310,9 @@ Returns the data for the correspondence matrix.
         $tempMapSet=$db->selectall_arrayref( $link_map_set_sql, { Columns => {} } );
         foreach my $row (@{$tempMapSet}){
             $row->{'map_type'}=
-        	map_type_data($row->{'map_type_accession'},'map_type');
+        	$self->map_type_data($row->{'map_type_accession'},'map_type');
             $row->{'map_type_display_order'}=
-        	map_type_data($row->{'map_type_accession'},'display_order');
+        	$self->map_type_data($row->{'map_type_accession'},'display_order');
         }
         $tempMapSet=sort_selectall_arrayref($tempMapSet, 'map_type_display_order',
         				 'map_type',
