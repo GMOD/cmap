@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.83 2004-01-07 18:32:07 kycl4rk Exp $
+# $Id: Data.pm,v 1.84 2004-01-07 19:01:46 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.83 $)[-1];
+$VERSION = (qw$Revision: 1.84 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -1099,13 +1099,6 @@ Returns the data for the correspondence matrix.
         { Columns => {} } 
     );
 
-    unless ( $args{'show_matrix'} ) {
-        return {
-            species_aid => $species_aid,
-            species     => $species,
-        };
-    }
-
     #
     # And map types.
     #
@@ -1123,6 +1116,14 @@ Returns the data for the correspondence matrix.
         ],
         { Columns => {} } 
     );
+
+    unless ( $args{'show_matrix'} ) {
+        return {
+            species_aid => $species_aid,
+            map_types   => $map_types,
+            species     => $species,
+        };
+    }
 
     #
     # Make sure that species_aid is set if map_set_id is.
@@ -1159,41 +1160,57 @@ Returns the data for the correspondence matrix.
     }
 
     #
-    # Get all the map sets for a given species.
+    # Get all the map sets for a given species and/or map type.
     #
     my ( $maps, $map_sets );
-    if ( $species_aid ) {
-        $map_sets = $db->selectall_arrayref( 
-            q[
-                select   ms.accession_id as map_set_aid, 
-                         ms.short_name as map_set_name
-                from     cmap_map_set ms,
-                         cmap_species s
-                where    ms.can_be_reference_map=1
-                and      ms.is_enabled=1
-                and      ms.species_id=s.species_id
-                and      s.accession_id=?
-                order by ms.display_order, 
-                         ms.published_on desc, 
-                         ms.short_name
-            ],
-            { Columns => {} },
-            ( "$species_aid" )
-        );
+    if ( $species_aid || $map_type_aid ) {
+        my $sql = q[
+            select   mt.display_order,
+                     mt.map_type,
+                     s.display_order,
+                     s.common_name as species_name, 
+                     ms.accession_id as map_set_aid, 
+                     ms.display_order,
+                     ms.short_name as map_set_name
+            from     cmap_map_set ms,
+                     cmap_map_type mt,
+                     cmap_species s
+            where    ms.can_be_reference_map=1
+            and      ms.is_enabled=1
+            and      ms.map_type_id=mt.map_type_id
+            and      ms.species_id=s.species_id
+        ];
+
+        $sql .= "and s.accession_id='$species_aid' "   if $species_aid;
+        $sql .= "and mt.accession_id='$map_type_aid' " if $map_type_aid;
+        $sql .= q[
+            order by mt.display_order,
+                     mt.map_type,
+                     s.display_order,
+                     s.common_name,
+                     ms.display_order, 
+                     ms.published_on desc, 
+                     ms.short_name
+        ];
+
+        $map_sets = $db->selectall_arrayref( $sql, { Columns => {} } );
 
         my $map_sql = qq[
             select   distinct map.map_name,
                      map.display_order
             from     cmap_map map,
                      cmap_map_set ms,
+                     cmap_map_type mt,
                      cmap_species s
             where    map.map_set_id=ms.map_set_id
             and      ms.can_be_reference_map=1
             and      ms.is_enabled=1
+            and      ms.map_type_id=mt.map_type_id
             and      ms.species_id=s.species_id
-            and      s.accession_id='$species_aid'
         ];
-        $map_sql .= "and ms.accession_id='$map_set_aid' " if $map_set_aid;
+        $map_sql .= "and mt.accession_id='$map_type_aid' " if $map_type_aid;
+        $map_sql .= "and s.accession_id='$species_aid' "   if $species_aid;
+        $map_sql .= "and ms.accession_id='$map_set_aid' "  if $map_set_aid;
         $map_sql .= 'order by map.display_order, map.map_name';
         $maps     = $db->selectall_arrayref( $map_sql, { Columns=>{} } );
     }

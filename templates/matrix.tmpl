@@ -14,21 +14,13 @@
 [% UNLESS apr.param('show_matrix') %]
     <p>
     <em>
-    Please use the form below to display the matrix.  Note that choosing "All 
-    Species" may result in a very large table.
+    Please use the form below to display the matrix.  Note that not choosing
+    any restrictions may result in a very large table.
     </em>
     </p>
 [% END %]
 <form>
     Restrict Reference Sets By:
-    <select name="species_aid">
-        <option value="">--All Species--</option>
-        [% FOREACH s=species %]
-            <option [% IF s.species_aid==apr.param('species_aid'); 'selected'; END %] value="[% s.species_aid %]">[% s.common_name %]</option>
-        [% END %]
-    </select>
-
-    &nbsp;
 
     <select name="map_type_aid">
         <option value="">--All Map Types--</option>
@@ -39,10 +31,20 @@
 
     &nbsp;
 
+    <select name="species_aid">
+        <option value="">--All Species--</option>
+        [% FOREACH s=species %]
+            <option [% IF s.species_aid==apr.param('species_aid'); 'selected'; END %] value="[% s.species_aid %]">[% s.common_name %]</option>
+        [% END %]
+    </select>
+
+
+    &nbsp;
+
     <select name="map_set_aid">
         <option value="">--All Map Sets--</option>
         [% FOREACH ms=map_sets %]
-            <option [% IF ms.map_set_aid==apr.param('map_set_aid'); 'selected'; END %] value="[% ms.map_set_aid %]">[% ms.map_set_name %]</option>
+            <option [% IF ms.map_set_aid==apr.param('map_set_aid'); 'selected'; END %] value="[% ms.map_set_aid %]">[% ms.map_type %]-[% ms.species_name %]-[% ms.map_set_name %]</option>
         [% END %]
     </select>
 
@@ -199,7 +201,7 @@
                     </td>
 
                     [% UNLESS ms.species_aid==last_species_aid %]
-                        [% SET rowspan=no_ref_by_type_and_species.$map_type_aid.$species_aid %]
+                        [% SET rowspan=no_ref_by_species_and_type.$species_aid.$map_type_aid %]
                         <th[% IF rowspan > 1 %] rowspan="[% rowspan %]"[% END %]>
                             [% ms.species_name %]
                             [% IF apr.param('map_set_aid') %]
@@ -228,7 +230,7 @@
                 [% SET no_columns=0 %]
                 [% SET map_set_name="" %]
                 <tr>
-                    <td colspan="2">&nbsp;</td>
+                    <td colspan="3">&nbsp;</td>
                     [% FOREACH map=top_row.map_sets %]
                         <th>
                             [% map.map_name %]
@@ -236,24 +238,24 @@
                         [% SET no_columns=no_columns+1 %]
                         [% SET map_set_name=map.map_set_name %]
                     [% END %]
-                    <td colspan="2">&nbsp;</td>
+                    <td colspan="3">&nbsp;</td>
                 </tr>
 
                 <tr>
-                    <td colspan="2">&nbsp;</td>
+                    <td colspan="3">&nbsp;</td>
                     <th colspan="[% no_columns %]">[% map_set_name %]</th>
-                    <td colspan="2">&nbsp;</td>
+                    <td colspan="3">&nbsp;</td>
                 </tr>
 
             [% ELSE %]
                 <tr>
-                    <td colspan="2">&nbsp;</td>
+                    <td colspan="3">&nbsp;</td>
                     [% FOREACH ms=top_row.map_sets %]
                         <td>
                             <a href="/cmap/matrix?show_matrix=1;map_set_aid=[% apr.param('map_set_aid') %];species_aid=[% apr.param('species_aid') %];map_name=[% apr.param('map_name') %];link_map_set_aid=[% ms.map_set_aid %]">[% ms.map_set_name %][% IF ms.map_aid %][% END %]</a>
                         </td>
                     [% END %]
-                    <td colspan="2">&nbsp;</td>
+                    <td colspan="3">&nbsp;</td>
                 </tr>
             [% END %]
         </table>
