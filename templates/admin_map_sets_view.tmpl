@@ -15,7 +15,7 @@
         <tr>
             <td>
                 Map Type:
-                <select name="map_type_aids">
+                <select name="map_type_aid">
                     <option value="">--All--</option>
                     [% FOREACH mt=map_types %]
                         <option value="[% mt.map_type_aid %]"[% IF apr.param('map_type_aid') == mt.map_type_aid %] selected[% END %]>[% mt.map_type %]</option>
