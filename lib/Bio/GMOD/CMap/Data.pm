@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.147 2004-08-27 07:04:59 mwz444 Exp $
+# $Id: Data.pm,v 1.148 2004-08-27 08:11:14 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.147 $)[-1];
+$VERSION = (qw$Revision: 1.148 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -4947,7 +4947,8 @@ original start and stop.
              m.start_position,
              m.stop_position,
              m.start_position,
-             m.stop_position
+             m.stop_position,
+             m.accession_id
 	  from   cmap_map m
 	  ];
 
@@ -5040,9 +5041,9 @@ original start and stop.
                     }
                     if (scalar(keys(%{$slots->{$slot_no}{'maps'}}))>0){
                         foreach my $row (@$slot_results){
-                            if (defined($slots->{$slot_no}{'maps'}{$row->[0]}{'start'})){
+                            if (defined($slots->{$slot_no}{'maps'}{$row->[5]}{'start'})){
                                 $row->[1]=
-                                    $slots->{$slot_no}{'maps'}{$row->[0]}{'start'};
+                                    $slots->{$slot_no}{'maps'}{$row->[5]}{'start'};
                                 ### If start is a feature, get the positions 
                                 ### and store in both places.
                                 if (not $row->[1]=~ /^$RE{'num'}{'real'}$/){
@@ -5051,15 +5052,15 @@ original start and stop.
                                         map_id              => $row->[0],
                                         start_position_only => 1,
                                       ) || undef;
-                                    $slots->{$slot_no}{'maps'}{$row->[0]}{'start'}=$row->[1] ;
+                                    $slots->{$slot_no}{'maps'}{$row->[5]}{'start'}=$row->[1] ;
                                 }
                             }
                             else {
                                 $row->[1]=undef;
                             }
-                            if (defined($slots->{$slot_no}{'maps'}{$row->[0]}{'stop'})){
+                            if (defined($slots->{$slot_no}{'maps'}{$row->[5]}{'stop'})){
                                 $row->[2]=
-                                    $slots->{$slot_no}{'maps'}{$row->[0]}{'stop'};
+                                    $slots->{$slot_no}{'maps'}{$row->[5]}{'stop'};
                                 ### If stop is a feature, get the positions.
                                 ### and store in both places.
                                 if (not $row->[2]=~ /^$RE{'num'}{'real'}$/ ){
@@ -5068,7 +5069,7 @@ original start and stop.
                                         map_id              => $row->[0],
                                         start_position_only => 0,
                                       ) || undef;
-                                    $slots->{$slot_no}{'maps'}{$row->[0]}{'stop'}=$row->[2];
+                                    $slots->{$slot_no}{'maps'}{$row->[5]}{'stop'}=$row->[2];
                                 }
                             }
                             else {
