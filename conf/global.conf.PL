@@ -49,7 +49,7 @@ cache_dir $cache_dir
 #
 # Which database should be the default
 # Use the "name" from the specific conf file
-# Default: CMap
+# Default: CMAP
 # 
-default_db CMap
+default_db CMAP
 !GROK!THIS!
