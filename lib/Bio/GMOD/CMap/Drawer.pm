@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.56 2004-03-26 21:12:48 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.57 2004-03-30 02:24:41 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.56 $)[-1];
+$VERSION = (qw$Revision: 1.57 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -516,7 +516,7 @@ Lays out the image and writes it to the file system, set the "image_name."
             $self->add_connection(
                 @positions,
                 $evidence_info->{'line_color'} || 
-                    $self->config('connecting_line_color'),
+                    $self->config_data('connecting_line_color'),
                 $position_set->{'same_map'}    || 0,
                 $position_set->{'label_side'}  || '',
             );
@@ -526,8 +526,8 @@ Lays out the image and writes it to the file system, set the "image_name."
     #
     # Frame out the slots.
     #
-    my $bg_color     = $self->config('slot_background_color');
-    my $border_color = $self->config('slot_border_color');
+    my $bg_color     = $self->config_data('slot_background_color');
+    my $border_color = $self->config_data('slot_border_color');
     for my $slot_no ( $self->slot_numbers ) {
         my ( $left, $right ) = $self->slot_sides( slot_no => $slot_no );
         my @slot_bounds = (
@@ -557,9 +557,9 @@ Lays out the image and writes it to the file system, set the "image_name."
         my $end = $x + $font->width * length( $string );
         $max_x  = $end if $end > $max_x;
 
-        my $corr_color     = $self->config('feature_correspondence_color');
-        my $ft_details_url = $self->config('feature_type_details_url');
-        my $et_details_url = $self->config('evidence_type_details_url');
+        my $corr_color     = $self->config_data('feature_correspondence_color');
+        my $ft_details_url = $self->config_data('feature_type_details_url');
+        my $et_details_url = $self->config_data('evidence_type_details_url');
 
         if ( $corr_color && $self->correspondences_exist ) {
             push @feature_types, {
@@ -571,7 +571,7 @@ Lays out the image and writes it to the file system, set the "image_name."
         }
 
         for my $ft ( @feature_types ) {
-            my $color     = $ft->{'color'} || $self->config('feature_color');
+            my $color     = $ft->{'color'} || $self->config_data('feature_color');
             my $label     = $ft->{'feature_type'} or next;
             my $feature_x = $x;
             my $feature_y = $max_y;
@@ -785,7 +785,7 @@ Lays out the image and writes it to the file system, set the "image_name."
 
             for my $et ( @evidence_types ) {
                 my $color = $et->{'line_color'} || 
-                            $self->config('connecting_line_color');
+                            $self->config_data('connecting_line_color');
                 my $string = 
                     ucfirst($color) .' line denotes '.  $et->{'evidence_type'};
 
@@ -886,7 +886,7 @@ Lays out the image and writes it to the file system, set the "image_name."
     ;
     $img->interlaced( 'true' );
     $img->filledRectangle( 
-        0, 0, $width, $height, $colors{ $self->config('background_color') } 
+        0, 0, $width, $height, $colors{ $self->config_data('background_color') } 
     );
 
     #
@@ -1158,7 +1158,7 @@ Returns the font size.
     }
 
     unless ( $self->{'font_size'} ) {
-        $self->{'font_size'} = $self->config('font_size') 
+        $self->{'font_size'} = $self->config_data('font_size') 
             || DEFAULT->{'font_size'};
     }
 
@@ -1303,7 +1303,7 @@ Returns the set image size.
     }
 
     unless ( defined $self->{'image_size'} ) {
-        $self->{'image_size'} = $self->config('image_size') ||
+        $self->{'image_size'} = $self->config_data('image_size') ||
             DEFAULT->{'image_size'};
     }
 
@@ -1329,7 +1329,7 @@ Gets/sets the current image type.
     }
 
     unless ( defined $self->{'image_type'} ) {
-        $self->{'image_type'} = $self->config('image_type') ||
+        $self->{'image_type'} = $self->config_data('image_type') ||
             DEFAULT->{'image_type'};
     }
 
