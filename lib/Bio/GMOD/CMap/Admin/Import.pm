@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::Import;
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.47 2004-03-25 14:09:29 mwz444 Exp $
+# $Id: Import.pm,v 1.48 2004-03-26 20:42:11 mwz444 Exp $
 
 =pod
 
@@ -28,7 +28,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.47 $)[-1];
+$VERSION  = (qw$Revision: 1.48 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -541,7 +541,7 @@ appended to the list of xrefs.
                            ( feature_id, accession_id, map_id,
                              feature_type, feature_name, 
                              start_position, stop_position,
-                             is_landmark
+                             is_landmark, default_rank
                            )
                     values ( ?, ?, ?, ?, ?, ?, ?, ?, ? )
                 ],

@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.32 2004-03-25 14:09:29 mwz444 Exp $
+# $Id: MakeCorrespondences.pm,v 1.33 2004-03-26 20:42:11 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.32 $)[-1];
+$VERSION = (qw$Revision: 1.33 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -127,9 +127,9 @@ sub make_name_correspondences {
 
     if ( @skip_feature_types ) {
         for ( $feature_sql, $alias_sql ) {
-            $_ .= 'and f.feature_type not in (' .
-                join( ', ', @skip_feature_types ) .
-            ')';
+            $_ .= "and f.feature_type not in ('" .
+                join( "', '", @skip_feature_types ) .
+            "')";
         }
     }
 

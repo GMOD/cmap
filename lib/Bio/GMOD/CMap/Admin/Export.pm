@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::Export;
 # vim: set ft=perl:
 
-# $Id: Export.pm,v 1.7 2004-03-25 14:09:29 mwz444 Exp $
+# $Id: Export.pm,v 1.8 2004-03-26 20:42:11 mwz444 Exp $
 
 =pod
 
@@ -28,7 +28,7 @@ of data out of CMap.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.7 $)[-1];
+$VERSION  = (qw$Revision: 1.8 $)[-1];
 
 use Data::Dumper;
 use File::Spec::Functions;
@@ -445,8 +445,8 @@ sub get_cmap_map_set {
     return {
         cmap_map_set      => $map_sets,
         cmap_species      => \@species,
-        cmap_map_type     => \@map_type,
-        cmap_feature_type => \@feature_types,
+        #cmap_map_type     => \@map_type,
+        #cmap_feature_type => \@feature_types,
     };
 }
 

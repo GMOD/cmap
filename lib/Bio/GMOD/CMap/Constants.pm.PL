@@ -18,14 +18,14 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.12 2004-03-25 14:11:56 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.13 2004-03-26 20:42:10 mwz444 Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.12 $)[-1];
+$VERSION = (qw$Revision: 1.13 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -563,6 +563,15 @@ use constant VALID => {
         landmarks => 1,
         none      => 1,
     },
+    #
+    # The choices of map shape
+    #
+    map_shapes=>{
+      'box'      => 1,
+        'dumbbell' => 1,
+        'I-beam'   => 1,
+    },
+
 };
 
 1;

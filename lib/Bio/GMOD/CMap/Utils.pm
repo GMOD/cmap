@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Utils;
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.25 2004-02-10 23:06:44 kycl4rk Exp $
+# $Id: Utils.pm,v 1.26 2004-03-26 20:42:10 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.25 $)[-1];
+$VERSION = (qw$Revision: 1.26 $)[-1];
 
 use base 'Exporter';
 
@@ -38,6 +38,7 @@ my @subs   = qw[
     next_number 
     parse_words
     pk_name
+    fake_selectall_arrayref
 ];
 @EXPORT_OK = @subs;
 @EXPORT    = @subs;
@@ -458,6 +459,33 @@ sub pk_name {
     $table_name    =~ s/^cmap_//;
     $table_name   .=  '_id';
     return $table_name;
+}
+
+# ----------------------------------------------------
+sub fake_selectall_arrayref{
+=pod
+
+=head2 fake_selectall_arrayref
+
+takes a hash of hashes and makes it look like return from 
+the DBI selectall_arrayref()
+
+=cut 
+{
+    my $self    = shift;
+    my $hashref = shift;
+    my @columns = @_;
+    my @return_array;
+    my $i=0;
+    for my $key (keys(%$hashref)){
+     
+	%{$return_array[$i]}= map {$_=>$hashref->{$key}->{$_}} @columns;
+	$i++;
+    }
+    @return_array= 
+        sort {$a->{$columns[0]} cmp $b->{$columns[0]}} @return_array; 
+    return \@return_array;
+}
 }
 
 1;

@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Config;
 # vim: set ft=perl:
 
-# $Id: Config.pm,v 1.2 2004-03-25 14:11:56 mwz444 Exp $
+# $Id: Config.pm,v 1.3 2004-03-26 20:42:10 mwz444 Exp $
 
 =head1 NAME
 
@@ -189,7 +189,7 @@ optionally you can specify a set of config data to read from.
 	    }
 	}
         if ( $value ) {
-            return wantarray && ref $value ? @$value : $value;
+            return wantarray && ref $value eq 'ARRAY' ? @$value : $value;
         }
         else {
             return wantarray ? () : '';

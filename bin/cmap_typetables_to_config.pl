@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: cmap_typetables_to_config.pl,v 1.1 2004-03-19 18:48:36 mwz444 Exp $
+# $Id: cmap_typetables_to_config.pl,v 1.2 2004-03-26 20:42:10 mwz444 Exp $
 
 =head1 NAME
 
@@ -59,8 +59,8 @@ my $sth;
 $sth=$dbh->prepare("select * from cmap_feature_type;");
 $sth->execute;
 while (  my $row = $sth->fetchrow_hashref ) {
-    print "<feature_type>\n";
-    print "name ".$row->{'feature_type'}."\n" if $row->{'feature_type'};
+    print "<feature_type ".$row->{'feature_type'}.">\n";
+    print "feature_type ".$row->{'feature_type'}."\n" if $row->{'feature_type'};
     print "default_rank ".$row->{'default_rank'}."\n" if $row->{'default_rank'};
     print "color ".$row->{'color'}."\n" if $row->{'color'};
     print "shape ".$row->{'shape'}."\n" if $row->{'shape'};
@@ -72,8 +72,8 @@ while (  my $row = $sth->fetchrow_hashref ) {
 $sth=$dbh->prepare("select * from cmap_evidence_type;");
 $sth->execute;
 while (  my $row = $sth->fetchrow_hashref ) {
-    print "<evidence_type>\n";
-    print "name ".$row->{'evidence_type'}."\n" if $row->{'evidence_type'};
+    print "<evidence_type ".$row->{'evidence_type'}.">\n";
+    print "evidence_type ".$row->{'evidence_type'}."\n" if $row->{'evidence_type'};
     print "rank ".$row->{'rank'}."\n" if $row->{'rank'};
     print "color ".$row->{'line_color'}."\n" if $row->{'line_color'};
     print "</evidence_type>\n\n";
@@ -83,8 +83,8 @@ while (  my $row = $sth->fetchrow_hashref ) {
 $sth=$dbh->prepare("select * from cmap_map_type;");
 $sth->execute;
 while (  my $row = $sth->fetchrow_hashref ) {
-    print "<map_type>\n";
-    print "name ".$row->{'map_type'}."\n" if $row->{'map_type'};
+    print "<map_type ".$row->{'map_type'}.">\n";
+    print "map_type ".$row->{'map_type'}."\n" if $row->{'map_type'};
     print "map_units ".$row->{'map_units'}."\n" if $row->{'map_units'};
     print "is_relational_map ".$row->{'is_relational_map'}."\n" if $row->{'is_relational_map'};
     print "width ".$row->{'width'}."\n" if $row->{'width'};

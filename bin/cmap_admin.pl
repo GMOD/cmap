@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.62 2004-03-04 15:21:59 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.63 2004-03-26 20:42:10 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.62 $)[-1];
+$VERSION = (qw$Revision: 1.63 $)[-1];
 
 #
 # Get command-line options
@@ -80,6 +80,9 @@ $| = 1;
 sub init {
     my ( $self, $config ) = @_;
     $self->params( $config, qw[ file user no_log ] );
+    unless ($self->{'config'}){
+        $self->{'config'}=Bio::GMOD::CMap::Config->new();
+    }
 
     if ( $config->{'datasource'} ) {
         $self->data_source( $config->{'datasource'} ) or die $self->error;
@@ -267,23 +270,26 @@ sub create_map_set {
     my $self = shift;
     my $db   = $self->db or die $self->error;
     print "Creating new map set.\n";
-    
-    my ( $map_type_id, $map_type ) = $self->show_menu(
+ 
+    my $map_type = $self->show_menu(
         title   => 'Available Map Types',
         prompt  => 'What type of map?',
         display => 'map_type',
-        return  => 'map_type_id,map_type',
-        data     => $db->selectall_arrayref(
-            q[
-                select   mt.map_type_id, mt.map_type
-                from     cmap_map_type mt
-                order by map_type
-            ],
-            { Columns => {} },
-        ),
+        return  => 'map_type',
+	data    => $self->fake_selectall_arrayref(
+		$self->map_type_data(),
+		'map_type','map_type')
+        #data     => $db->selectall_arrayref(
+        #    q[
+        #        select   mt.map_type_id, mt.map_type
+        #        from     cmap_map_type mt
+        #        order by map_type
+        #    ],
+        #    { Columns => {} },
+        #),
     );
     die "No map types! Please use the web admin tool to create.\n" 
-        unless $map_type_id;
+        unless $map_type;
 
     my ( $species_id, $common_name ) = $self->show_menu(
         title   => 'Available Species',
@@ -311,6 +317,35 @@ sub create_map_set {
 
     print "Accession ID (optional): ";
     chomp( my $map_set_aid = <STDIN> );
+    
+    my $map_color=$self->map_type_data($map_type,'color') || 
+        $self->config_data("map_color");
+    
+    $map_color  = $self->show_question(
+        question   => 'What color should this map set be?',
+        default  => $map_color,
+        valid_hash => COLORS,
+    );
+    
+    my $map_shape=$self->map_type_data($map_type,'shape') || 
+        'box';
+
+    $map_shape  = $self->show_question(
+        question   => 'What shape should this map set be?',
+        default  => $map_shape,
+        valid_hash => VALID->{'map_shapes'},
+    );
+
+    my $map_width=$self->map_type_data($map_type,'width') || 
+        $self->config_data("map_width");
+
+    $map_width  = $self->show_question(
+        question   => 'What width should this map set be?',
+        default  => $map_width,
+    );
+
+    my $map_units=$self->map_type_data($map_type,'map_units');
+    my $is_relational_map=$self->map_type_data($map_type,'is_relational_map');
 
     my $map_set_id = next_number(
         db           => $db,
@@ -329,14 +364,16 @@ sub create_map_set {
             insert
             into   cmap_map_set
                    ( map_set_id, accession_id, map_set_name, short_name,
-                     species_id, map_type_id
+                     species_id, map_type, map_units, is_relational_map, 
+		     color, shape, width
                    )
-            values ( ?, ?, ?, ?, ?, ? )
+            values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
         ],
         {},
         (
             $map_set_id, $map_set_aid, $map_set_name, $short_name,
-            $species_id, $map_type_id
+            $species_id, $map_type, $map_units, $is_relational_map,
+	    $map_color, $map_shape, $map_width
         )
     );
 
@@ -428,37 +465,26 @@ sub delete_correspondences {
         : ()
     ;
 
-    my @evidence_type_ids = $self->show_menu(
+    my @evidence_types = $self->show_menu(
         title       => 'Select Evidence Type (Optional)',
         prompt      => 'Select evidence types',
         display     => 'evidence_type',
-        return      => 'evidence_type_id',
+        return      => 'evidence_type',
         allow_null  => 0,
         allow_mult  => 1,
         allow_all   => 1,
-        data        => $db->selectall_arrayref(
-            q[
-                select   et.evidence_type_id, et.evidence_type
-                from     cmap_evidence_type et
-                order by evidence_type
-            ],
-            { Columns => {} }
-        )
+	data        =>  $self->fake_selectall_arrayref(
+			     $self->evidence_type_data(),
+       		             'evidence_type','evidence_type')
+        #data        => $db->selectall_arrayref(
+        #    q[
+        #        select   et.evidence_type_id, et.evidence_type
+        #        from     cmap_evidence_type et
+        #        order by evidence_type
+        #    ],
+        #    { Columns => {} }
+        #)
     );
-
-    my @evidence_types;
-    if ( @evidence_type_ids ) {
-        @evidence_types = @{
-            $db->selectcol_arrayref(
-                q[
-                    select evidence_type
-                    from   cmap_evidence_type 
-                    where  evidence_type_id in (].
-                    join(', ', @evidence_type_ids).q[)
-                ]
-            )
-        };
-    }
 
     #
     # Confirm decisions.
@@ -479,8 +505,8 @@ sub delete_correspondences {
     chomp( my $answer = <STDIN> );
     return if $answer =~ /^[Nn]/;
 
-    my $evidence_type_ids = join( ',', @evidence_type_ids );
-    my %evidence_lookup   = map { $_, 1 } @evidence_type_ids;
+    my $evidence_types = "'".join( "','", @evidence_types )."'";
+    my %evidence_lookup   = map { $_, 1 } @evidence_types;
     my $admin             = $self->admin ;
     my $log_fh            = $self->log_fh;
     for my $map_set_id ( @map_set_ids ) {
@@ -497,7 +523,7 @@ sub delete_correspondences {
                 and    f.feature_id=cl.feature_id1
                 and    cl.feature_correspondence_id=fc.feature_correspondence_id
                 and    fc.feature_correspondence_id=ce.feature_correspondence_id
-                and    ce.evidence_type_id in ($evidence_type_ids)
+                and    ce.evidence_type in ($evidence_types)
             ],
             'feature_correspondence_id',
             {},
@@ -516,7 +542,7 @@ sub delete_correspondences {
             my $all_evidence = $db->selectall_arrayref(
                 qq[
                     select ce.correspondence_evidence_id,
-                           ce.evidence_type_id
+                           ce.evidence_type
                     from   cmap_correspondence_evidence ce
                     where  ce.feature_correspondence_id=?
                 ],
@@ -526,7 +552,7 @@ sub delete_correspondences {
 
             my $no_evidence_deleted = 0;
             for my $evidence ( @$all_evidence ) {
-                next unless $evidence_lookup{ $evidence->{'evidence_type_id'} };
+                next unless $evidence_lookup{ $evidence->{'evidence_type'} };
                 $admin->correspondence_evidence_delete(
                     correspondence_evidence_id => 
                         $evidence->{'correspondence_evidence_id'}
@@ -574,23 +600,14 @@ sub delete_map_set {
     #
     # Restrict by map type.
     #
-    my ( $map_type_id, $map_type ) = $self->show_menu(
+    my $map_type  = $self->show_menu(
         title   => "Available Map Types (for $common_name)",
         prompt  => 'What type of map?',
         display => 'map_type',
-        return  => 'map_type_id,map_type',
-        data     => $db->selectall_arrayref(
-            q[
-                select   distinct mt.map_type_id, mt.map_type
-                from     cmap_map_type mt,
-                         cmap_map_set ms
-                where    mt.map_type_id=ms.map_type_id
-                and      ms.species_id=?
-                order by map_type
-            ],
-            { Columns => {} },
-            ( $species_id )
-        ),
+        return  => 'map_type',
+	data    => $self->fake_selectall_arrayref(
+		$self->map_type_data(),
+		'map_type','map_type'),
     );
 
     #
@@ -609,11 +626,11 @@ sub delete_map_set {
                          ms.short_name as map_set_name
                 from     cmap_map_set ms
                 where    ms.species_id=?
-                and      ms.map_type_id=?
+                and      ms.map_type=?
                 order by map_set_name
             ],
             { Columns => {} },
-            ( $species_id, $map_type_id )
+            ( $species_id, $map_type )
         ),
     );
 
@@ -752,22 +769,18 @@ sub export_as_text {
         feature_attributes
     );
 
-    my $map_types = $db->selectall_arrayref(
-        q[
-            select   mt.map_type_id, mt.map_type
-            from     cmap_map_type mt
-            order by map_type
-        ],
-        { Columns => {} },
-    );
+    my $map_types = $self->fake_selectall_arrayref(
+		$self->map_type_data(),
+	       'map_type','map_type');
+
     die "No map types! Please use the web admin tool to create.\n" 
         unless @$map_types;
 
-    my @map_type_ids = $self->show_menu(
+    my @map_types = $self->show_menu(
         title        => 'Restrict by Map Types',
         prompt       => 'Limit export by which map types (optional)?',
         display      => 'map_type',
-        return       => 'map_type_id',
+        return       => 'map_type',
         allow_null   => 1,
         allow_mult   => 1,
         data         => $map_types,
@@ -780,8 +793,8 @@ sub export_as_text {
                  cmap_map_set ms
         where    s.species_id=ms.species_id
     ];
-    $species_sql .= 'and ms.map_type_id in ('.join(',', @map_type_ids).') '
-        if @map_type_ids;
+    $species_sql .= "and ms.map_type in ('".join("','", @map_types)."') "
+        if @map_types;
     $species_sql .= 'order by common_name';
     my $species   = $db->selectall_arrayref( $species_sql, { Columns => {} } );
     die "No species! Please use the web admin tool to create.\n" 
@@ -801,17 +814,15 @@ sub export_as_text {
         select   ms.map_set_id,
                  ms.short_name,
                  s.common_name,
-                 mt.map_type
+                 ms.map_type
         from     cmap_map_set ms,
-                 cmap_species s,
-                 cmap_map_type mt
+                 cmap_species s
         where    ms.species_id=s.species_id
-        and      ms.map_type_id=mt.map_type_id
     ];
     $map_set_sql .= 'and ms.species_id in ('.join(',', @species_ids).') '
         if @species_ids;
-    $map_set_sql .= 'and ms.map_type_id in ('.join(',', @map_type_ids).') '
-        if @map_type_ids;
+    $map_set_sql .= "and ms.map_type in ('".join("','", @map_types)."') "
+        if @map_types;
     $map_set_sql .= 'order by short_name';
     my $map_sets  = $db->selectall_arrayref( $map_set_sql, { Columns => {} } );
     
@@ -828,33 +839,37 @@ sub export_as_text {
     my $ft_sql;
     if ( @map_set_ids ) {
         $ft_sql = q[
-            select   distinct ft.feature_type_id, 
-                     ft.feature_type
+            select   distinct f.feature_type
             from     cmap_map map,
-                     cmap_feature f,
-                     cmap_feature_type ft
+                     cmap_feature f
             where    map.map_set_id in (].join( ',', @map_set_ids ).q[)
             and      map.map_id=f.map_id
-            and      f.feature_type_id=ft.feature_type_id
             order by feature_type
         ];
     }
     else {
-        $ft_sql = q[
-            select   ft.feature_type_id, 
-                     ft.feature_type
-            from     cmap_feature_type ft
-            order by feature_type
-        ];
+        $ft_sql = '';#q[
+            #select   ft.feature_type_id, 
+            #         ft.feature_type
+            #from     cmap_feature_type ft
+            #order by feature_type
+        #];
     }
 
-    my $feature_types = $db->selectall_arrayref( $ft_sql, { Columns => {} } );
-
-    my @feature_type_ids =  $self->show_menu(
+    my $feature_types;
+    if ($ft_sql){
+	$feature_types = $db->selectall_arrayref( $ft_sql, { Columns => {} } );
+    }
+    else{
+	$feature_types = $self->fake_selectall_arrayref(
+		$self->feature_type_data(),
+		'feature_type');
+    }
+    my @feature_types =  $self->show_menu(
         title            => 'Restrict by Feature Types',
         prompt           => 'Limit export to which feature types (optional)?',
         display          => 'feature_type',
-        return           => 'feature_type_id',
+        return           => 'feature_type',
         allow_null       => 1,
         allow_mult       => 1,
         data             => $feature_types,
@@ -887,8 +902,8 @@ sub export_as_text {
     ];
     $map_set_sql .= 'and ms.species_id in ('.join(',', @species_ids).') '
         if @species_ids;
-    $map_set_sql .= 'and ms.map_type_id in ('.join(',', @map_type_ids).') '
-        if @map_type_ids;
+    $map_set_sql .= "and ms.map_type in ('".join("','", @map_types)."') "
+        if @map_types;
     $map_set_sql .= 'and ms.map_set_id in ('.join(',', @map_set_ids).') '
         if @map_set_ids;
     $map_set_sql .= 'order by common_name, short_name';
@@ -905,19 +920,8 @@ sub export_as_text {
         @map_set_names = ('All');
     }
 
-    if ( @feature_type_ids ) {
-        $feature_types = $db->selectcol_arrayref(
-            q[
-                select   ft.feature_type
-                from     cmap_feature_type ft
-                where    ft.feature_type_id in (].
-                         join(',', @feature_type_ids).q[)
-                order by feature_type
-            ],
-        );
-    }
-    else {
-        $feature_types = [ 'All' ];
+    if ( !@feature_types ) {    
+        @feature_types = ('All',);
     }
 
     my $excluded_fields = 
@@ -930,7 +934,7 @@ sub export_as_text {
         'OK to export?',
         '  Data source     : '  . $self->data_source, 
         "  Map Sets        :\n" . join("\n", map { "    $_" } @map_set_names),
-        "  Feature Types   :\n" . join("\n", map { "    $_" } @$feature_types),
+        "  Feature Types   :\n" . join("\n", map { "    $_" } @feature_types),
         "  Exclude Fields  : $excluded_fields",
         "  Directory       : $dir",
         "[Y/n] "
@@ -948,20 +952,18 @@ sub export_as_text {
                  f.start_position as feature_start,
                  f.stop_position as feature_stop,
                  f.is_landmark,
-                 ft.feature_type,
+                 f.feature_type,
                  map.map_name, 
                  map.accession_id as map_accession_id,
                  map.start_position as map_start,
                  map.stop_position as map_stop
         from     cmap_feature f,
-                 cmap_feature_type ft,
                  cmap_map map
         where    f.map_id=?
         and      f.map_id=map.map_id
-        and      f.feature_type_id=ft.feature_type_id
     ];
-    $ft_sql .= 'and ft.feature_type_id in ('.join(',', @feature_type_ids).') '
-        if @feature_type_ids;
+    $ft_sql .= "and f.feature_type in ('".join("','", @feature_types)."') "
+        if @feature_types;
     $ft_sql .= 'order by f.start_position';
 
     for my $map_set ( @$map_sets ) {
@@ -1077,8 +1079,9 @@ sub export_as_sql {
                 correspondence_evidence_id => NUM,
                 accession_id               => STR,
                 feature_correspondence_id  => NUM,
-                evidence_type_id           => NUM,
+                evidence_type              => NUM,
                 score                      => NUM,
+                rank                       => NUM,
             }
         },
         {
@@ -1105,26 +1108,17 @@ sub export_as_sql {
             }
         },
         {
-            name   => 'cmap_evidence_type',
-            fields => {
-                evidence_type_id => NUM,
-                accession_id     => STR,
-                evidence_type    => STR,
-                rank             => NUM,
-                line_color       => STR,
-            }
-        },
-        {
             name   => 'cmap_feature',
             fields => {
                 feature_id      => NUM,
                 accession_id    => STR,
                 map_id          => NUM,
-                feature_type_id => NUM,
+                feature_type => NUM,
                 feature_name    => STR,
                 is_landmark     => NUM,
                 start_position  => NUM,
                 stop_position   => NUM,
+		default_rank    => NUM,
             }
         },
         {
@@ -1146,19 +1140,6 @@ sub export_as_sql {
             }
         },
         {
-            name   => 'cmap_feature_type',
-            fields => {
-                feature_type_id  => NUM,
-                accession_id     => STR,
-                feature_type     => STR,
-                default_rank     => NUM,
-                shape            => STR,
-                color            => STR,
-                drawing_lane     => NUM,
-                drawing_priority => NUM,
-            }
-        },
-        {
             name   => 'cmap_map',
             fields => {
                 map_id         => NUM,
@@ -1168,20 +1149,6 @@ sub export_as_sql {
                 display_order  => NUM,
                 start_position => NUM,
                 stop_position  => NUM,
-            }
-        },
-        {
-            name   => 'cmap_map_type',
-            fields => {
-                map_type_id       => NUM,
-                accession_id      => STR,
-                map_type          => STR,
-                map_units         => STR,
-                is_relational_map => NUM,
-                shape             => STR,
-                color             => STR,
-                width             => NUM,
-                display_order     => NUM,
             }
         },
         {
@@ -1208,7 +1175,7 @@ sub export_as_sql {
                 accession_id         => STR,
                 map_set_name         => STR,
                 short_name           => STR,
-                map_type_id          => NUM,
+                map_type             => NUM,
                 species_id           => NUM,
                 published_on         => STR,
                 can_be_reference_map => NUM,
@@ -1217,6 +1184,8 @@ sub export_as_sql {
                 shape                => STR,
                 color                => STR,
                 width                => NUM,
+		map_units            => STR,
+		is_relational_map    => NUM,
             },
         },
         {
@@ -1347,7 +1316,7 @@ sub export_as_sql {
                 if ( $fields{ $fld } eq STR ) {
                     # Escape existing single quotes.
                     $val =~ s/'/\\'/g if $quote_escape eq 'backslash'; 
-                    $val =~ s/'/''/g  if $quote_escape eq 'doubled'; 
+                    $val =~ s/'/''/g  if $quote_escape eq 'doubled'; #'
                     $val = defined $val ? qq['$val'] : qq[''];
                 }
                 else {
@@ -1411,20 +1380,8 @@ sub export_objects {
                 object_name => 'Map Sets',
             },
             {
-                object_type => 'cmap_map_type',
-                object_name => 'Map Types',
-            },
-            {
                 object_type => 'cmap_species',
                 object_name => 'Species',
-            },
-            {
-                object_type => 'cmap_evidence_type',
-                object_name => 'Evidence Types',
-            },
-            {
-                object_type => 'cmap_feature_type',
-                object_name => 'Feature Types',
             },
             {
                 object_type => 'cmap_feature_correspondence',
@@ -1451,7 +1408,7 @@ sub export_objects {
         my $hr            = $self->get_map_sets;
         $feature_types    = $hr->{'feature_types'};
         $map_sets         = $hr->{'map_sets'};
-        my @ft_names      = map { $_->{'feature_type'} } @$feature_types;
+        my @ft_names      = @$feature_types;
         my @map_set_names = 
             map { 
                 $_->{'species_name'}.'-'.$_->{'map_set_name'}.
@@ -1502,22 +1459,18 @@ sub get_map_sets {
     my $log_fh = $self->log_fh;
     my $return;
 
-    my $map_types = $db->selectall_arrayref(
-        q[
-            select   mt.map_type_id, mt.map_type
-            from     cmap_map_type mt
-            order by map_type
-        ],
-        { Columns => {} },
-    );
+    my $map_types = $self->fake_selectall_arrayref(
+		$self->map_type_data(),
+		'map_type','map_type');
+
     die "No map types! Please use the web admin tool to create.\n" 
         unless @$map_types;
 
-    my @map_type_ids = $self->show_menu(
+    my @map_types = $self->show_menu(
         title        => 'Restrict by Map Set Export by Map Types',
         prompt       => 'Limit export of map sets by which map types?',
         display      => 'map_type',
-        return       => 'map_type_id',
+        return       => 'map_type',
         allow_null   => 1,
         allow_mult   => 1,
         data         => $map_types,
@@ -1530,8 +1483,8 @@ sub get_map_sets {
                  cmap_map_set ms
         where    s.species_id=ms.species_id
     ];
-    $species_sql .= 'and ms.map_type_id in ('.join(',', @map_type_ids).') '
-        if @map_type_ids;
+    $species_sql .= "and ms.map_type in ('".join("','", @map_types)."') "
+        if @map_types;
     $species_sql .= 'order by common_name';
     my $species   = $db->selectall_arrayref( $species_sql, { Columns => {} } );
     die "No species! Please use the web admin tool to create.\n" 
@@ -1551,17 +1504,15 @@ sub get_map_sets {
         select   ms.map_set_id,
                  ms.short_name,
                  s.common_name,
-                 mt.map_type
+                 ms.map_type
         from     cmap_map_set ms,
-                 cmap_species s,
-                 cmap_map_type mt
+                 cmap_species s
         where    ms.species_id=s.species_id
-        and      ms.map_type_id=mt.map_type_id
     ];
     $map_set_sql .= 'and ms.species_id in ('.join(',', @species_ids).') '
         if @species_ids;
-    $map_set_sql .= 'and ms.map_type_id in ('.join(',', @map_type_ids).') '
-        if @map_type_ids;
+    $map_set_sql .= "and ms.map_type in ('".join("','", @map_types)."') "
+        if @map_types;
     $map_set_sql .= 'order by short_name';
     my $map_sets  = $db->selectall_arrayref( $map_set_sql, { Columns => {} } );
     
@@ -1578,8 +1529,8 @@ sub get_map_sets {
     my $where;
     $where .= 'and ms.species_id in  ('.join(',', @species_ids) .') '
         if @species_ids;
-    $where .= 'and ms.map_type_id in ('.join(',', @map_type_ids).') '
-        if @map_type_ids;
+    $where .= "and ms.map_type in ('".join("','", @map_types)."') "
+        if @map_types;
     $where .= 'and ms.map_set_id in  ('.join(',', @map_set_ids) .') '
         if @map_set_ids;
 
@@ -1587,12 +1538,10 @@ sub get_map_sets {
         select   ms.map_set_id, 
                  ms.short_name as map_set_name,
                  s.common_name as species_name,
-                 mt.map_type
+                 ms.map_type
         from     cmap_map_set ms,
-                 cmap_species s,
-                 cmap_map_type mt
+                 cmap_species s
         where    ms.species_id=s.species_id
-        and      ms.map_type_id=mt.map_type_id
         $where
     ];
     $map_set_sql .= 'order by common_name, short_name';
@@ -1601,52 +1550,38 @@ sub get_map_sets {
         $map_set_sql, { Columns => {} } 
     );
 
-    my $ft_sql;
+    my $ft_sql_data;
     if ( $where ) {
-        $ft_sql = qq[
-            select   distinct ft.feature_type_id, 
-                     ft.feature_type
+        $ft_sql_data = $db->selectall_arrayref(qq[
+            select   distinct  
+                     f.feature_type
             from     cmap_map_set ms,
                      cmap_map map,
-                     cmap_feature f,
-                     cmap_feature_type ft
+                     cmap_feature f
             where    ms.map_set_id=map.map_set_id
             and      map.map_id=f.map_id
-            and      f.feature_type_id=ft.feature_type_id
-            $where
+	    $where
             order by feature_type
-        ];
+	    ],{ Columns => {} });
     }
     else {
-        $ft_sql = q[
-            select   ft.feature_type_id, 
-                     ft.feature_type
-            from     cmap_feature_type ft
-            order by feature_type
-        ];
+        $ft_sql_data = $self->fake_selectall_arrayref(
+		$self->feature_type_data(),
+		'feature_type');
     }
 
-    my @feature_type_ids =  $self->show_menu(
+    my @feature_types =  $self->show_menu(
         title            => 'Restrict by Feature Types',
         prompt           => 'Limit export by feature types?',
         display          => 'feature_type',
-        return           => 'feature_type_id',
+        return           => 'feature_type',
         allow_null       => 1,
         allow_mult       => 1,
-        data             => $db->selectall_arrayref($ft_sql, { Columns => {} })
+        data             => $ft_sql_data,
     );
-
-    if ( @feature_type_ids ) {
-        $return->{'feature_types'} = $db->selectall_arrayref(
-            q[
-                select   feature_type_id, feature_type
-                from     cmap_feature_type
-                where    feature_type_id in (].
-                         join(',', @feature_type_ids).q[)
-                order by feature_type
-            ],
-            { Columns => {} },
-        );
+    
+    if ( @feature_types ) {
+        $return->{'feature_types'} = \@feature_types;
     }
 
     return $return;
@@ -1993,21 +1928,16 @@ sub import_tab_data {
     #
     # Get the map type.
     #
-    my ( $map_type_id, $map_type ) = $self->show_menu(
+    my $map_type = $self->show_menu(
         title   => 'Available Map Types',
         prompt  => 'Please select a map type',
         display => 'map_type',
-        return  => 'map_type_id,map_type',
-        data     => $db->selectall_arrayref(
-            q[
-                select   mt.map_type_id, mt.map_type
-                from     cmap_map_type mt
-                order by map_type
-            ],
-            { Columns => {} },
-        ),
+        return  => 'map_type',
+	data    => $self->fake_selectall_arrayref(
+		$self->map_type_data(),
+		'map_type','map_type'),
     );
-    do { print "No map types to select from.\n"; return } unless $map_type_id;
+    do { print "No map types to select from.\n"; return } unless $map_type;
 
     #
     # Get the species.
@@ -2023,11 +1953,11 @@ sub import_tab_data {
                 from     cmap_species s,
                          cmap_map_set ms
                 where    ms.species_id=s.species_id
-                and      ms.map_type_id=?
+                and      ms.map_type=?
                 order by common_name
             ],
             { Columns => {} },
-            ( $map_type_id )
+            ( $map_type )
         ),
     );
     do { print "No species to select from.\n"; return } unless $species_id;
@@ -2046,11 +1976,10 @@ sub import_tab_data {
                 from     cmap_map_set ms
                 where    ms.map_type_id=?
                 and      ms.species_id=?
-                and      ms.map_type_id=?
                 order by map_set_name
             ],
             { Columns => {} },
-            ( $map_type_id, $species_id, $map_type_id )
+            ( $map_type, $species_id )
         ),
     );
     do { print "There are no map sets for that map type!\n"; return }
@@ -2163,22 +2092,17 @@ sub make_name_correspondences {
     #
     # Get the evidence type id.
     #
-    my ( $evidence_type_id, $evidence_type ) = $self->show_menu(
+    my  $evidence_type = $self->show_menu(
         title   => 'Available evidence types',
         prompt  => 'Please select an evidence type',
         display => 'evidence_type',
-        return  => 'evidence_type_id,evidence_type',
-        data    => $db->selectall_arrayref(
-            q[
-                select   et.evidence_type_id, et.evidence_type
-                from     cmap_evidence_type et
-                order by evidence_type
-            ],
-            { Columns => {} },
-        ),
+        return  => 'evidence_type',
+        data    =>  $self->fake_selectall_arrayref(
+		$self->evidence_type_data(),
+		'evidence_type'),
     );
     die "No evidence types!  Please use the web admin tool to create.\n" 
-        unless $evidence_type_id;
+        unless $evidence_type;
 
     #
     # Get the target map sets.
@@ -2195,12 +2119,10 @@ sub make_name_correspondences {
                 select   ms.map_set_id, 
                          ms.short_name as map_set_name,
                          s.common_name as species_name,
-                         mt.map_type
+                         ms.map_type
                 from     cmap_map_set ms,
-                         cmap_species s,
-                         cmap_map_type mt
+                         cmap_species s
                 where    ms.species_id=s.species_id
-                and      ms.map_type_id=mt.map_type_id
                 order by map_type, common_name, map_set_name
             ],
             { Columns => {} },
@@ -2220,22 +2142,16 @@ sub make_name_correspondences {
         title       => 'Skip Feature Types (optional)',
         prompt      => 'Select any feature types to skip in check',
         display     => 'feature_type',
-        return      => 'feature_type_id,feature_type',
+        return      => 'feature_type',
         allow_null  => 1,
         allow_mult  => 1,
-        data        => $db->selectall_arrayref(
-            q[
-                select   ft.feature_type_id, 
-                         ft.feature_type
-                from     cmap_feature_type ft
-                order by feature_type
-            ],
-            { Columns => {} },
-        ),
+        data        => $self->fake_selectall_arrayref(
+		$self->feature_type_data(),
+		'feature_type'),
     );
-    my @skip_feature_type_ids = map { $_->[0] } @skip_features;
+    my @skip_feature_types = @skip_features;
     my $skip = @skip_features
-        ? join( "\n", map { "    $_->[1]" } @skip_features )
+        ? join( "\n     ", @skip_features )."\n"
         : '    None'
     ;
 
@@ -2256,9 +2172,9 @@ sub make_name_correspondences {
     );
 
     $corr_maker->make_name_correspondences(
-        evidence_type_id      => $evidence_type_id,
+        evidence_type         => $evidence_type,
         map_set_ids           => \@map_set_ids,
-        skip_feature_type_ids => \@skip_feature_type_ids,
+        skip_feature_types    => \@skip_feature_types,
         log_fh                => $self->log_fh,
         quiet                 => $Quiet,
     ) or do { print "Error: ", $corr_maker->error, "\n"; return; };
@@ -2283,6 +2199,28 @@ sub reload_correspondence_matrix {
     return 1;
 }
 
+# ----------------------------------------------------
+sub show_question {
+    my $self     = shift;
+    my %args     = @_;
+    my $question = $args{'question'}   or return;
+    my $default  = $args{'default'} || '';
+    my $validHashRef = $args{'valid_hash'} || [];
+
+    my $answer;
+    while(1){
+        print "$question <Default: $default>:";
+	chomp( $answer = <STDIN> );
+        if ($validHashRef and $answer and not $validHashRef->{$answer}){
+            print "Options:\n".join("\n",keys %{$validHashRef})."\n";
+            print "Your input was not valid, please choose from the above list\n";
+            print "$question <Default: $default>:";
+            next;
+        }
+        $answer=$answer||$default;
+        return $answer;
+    }
+}
 # ----------------------------------------------------
 sub show_menu {
     my $self    = shift;
@@ -2373,7 +2311,7 @@ sub show_menu {
         print $title ? "\n$title\n" : "\n";
         print "Using '$value'\n";
     }
-
+    
     return wantarray 
         ? defined $result 
             ? @$result : () 
