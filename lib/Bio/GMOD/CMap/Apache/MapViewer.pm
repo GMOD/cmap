@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.79.2.9 2005-03-23 21:52:29 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.79.2.10 2005-03-24 15:15:42 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.79.2.9 $)[-1];
+$VERSION = (qw$Revision: 1.79.2.10 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -56,7 +56,6 @@ sub handler {
     my $prev_ref_map_set_aid = $apr->param('prev_ref_map_set_aid') || '';
     my $ref_species_aid      = $apr->param('ref_species_aid')      || '';
     my $ref_map_set_aid      = $apr->param('ref_map_set_aid')      || '';
-    my $ref_map_names        = $apr->param('ref_map_names')        || '';
     my $ref_map_start        = $apr->param('ref_map_start');
     my $ref_map_stop         = $apr->param('ref_map_stop');
     my $comparative_maps     = $apr->param('comparative_maps')     || '';
@@ -263,7 +262,6 @@ sub handler {
         @ref_map_set_aids      = ();
         $ref_map_start         = undef;
         $ref_map_stop          = undef;
-        $ref_map_names         = '';
         $comparative_maps      = undef;
         @comparative_map_right = ();
         @comparative_map_left  = ();
@@ -278,7 +276,6 @@ sub handler {
             map_set_aid => $ref_map_set_aid,
             map_sets    => \%ref_map_sets,
             maps        => \%ref_maps,
-            map_names   => $ref_map_names,
         }
     );
 
@@ -393,7 +390,7 @@ sub handler {
     # Instantiate the drawer if there's at least one map to draw.
     #
     my ( $drawer, $extra_code, $extra_form );
-    if ( @ref_map_aids || $ref_map_names ) {
+    if ( @ref_map_aids ) {
         $drawer = Bio::GMOD::CMap::Drawer->new(
             apr                     => $apr,
             data_source             => $self->data_source,
