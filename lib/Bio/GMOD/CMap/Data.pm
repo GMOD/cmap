@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.215 2005-03-09 21:44:16 mwz444 Exp $
+# $Id: Data.pm,v 1.216 2005-03-14 15:40:09 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.215 $)[-1];
+$VERSION = (qw$Revision: 1.216 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -5973,6 +5973,7 @@ original start and stop.
                 $where .= join (' or ', @join_array). " ) ";
             }
             else {
+                $from  .= ", cmap_correspondence_evidence ce ";
                 $where .= " and ce.correspondence_evidence_id = -1 ";
             }
 
