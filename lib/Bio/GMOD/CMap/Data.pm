@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.87 2004-01-08 20:57:08 kycl4rk Exp $
+# $Id: Data.pm,v 1.88 2004-01-08 22:12:36 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.87 $)[-1];
+$VERSION = (qw$Revision: 1.88 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -2415,7 +2415,6 @@ Given a feature acc. id, find out all the details on it.
             q[
                 select   ce.accession_id,
                          ce.score,
-                         ce.remark,
                          et.rank,
                          et.accession_id as evidence_type_aid,
                          et.evidence_type
