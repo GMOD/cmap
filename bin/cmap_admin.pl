@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.89 2005-02-18 19:54:16 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.90 2005-03-04 06:13:59 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.89 $)[-1];
+$VERSION = (qw$Revision: 1.90 $)[-1];
 
 #
 # Get command-line options
@@ -2760,11 +2760,12 @@ sub copy_cmap_into_gbrowse {
 
 # ----------------------------------------------------
 sub show_question {
-    my $self         = shift;
     my %args         = @_;
     my $question     = $args{'question'} or return;
     my $default      = $args{'default'};
+    my $allow_null   = $args{'allow_null'};
     my $validHashRef = $args{'valid_hash'} || ();
+    $allow_null = 1 unless ( defined($allow_null));
 
     $question .= "<Default: $default>:" if ( defined $default );
     my $answer;
@@ -2778,7 +2779,8 @@ sub show_question {
             print $question;
             next;
         }
-        elsif ( $answer and $answer !~ /^\S+$/ ) {
+        elsif ( (!$allow_null and not defined($answer) )
+            or (defined($answer) and $answer =~ /\s+/) ) {
             print "Your input was not valid.\n";
             print $question;
             next;
@@ -2787,6 +2789,7 @@ sub show_question {
         return $answer;
     }
 }
+
 
 # ----------------------------------------------------
 sub show_menu {
