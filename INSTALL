@@ -1,6 +1,6 @@
                               CMAP INSTALL
 
-                            $Revision: 1.40 $
+                            $Revision: 1.41 $
 
 1.      QUICK START
 
@@ -14,6 +14,7 @@ the very abbreviated explanation of how to install CMap:
 *   Install Perl 5.6.1 or greater and Apache (1.3.x or 2.x)
 *   Execute "perl Build.PL; ./Build; ./Build install"; install any other
     Perl modules reported missing by the build process
+*   Modify database information in "cmap.conf"
 *   Import data (sample data is included)
 *   Compare maps
 
@@ -28,6 +29,18 @@ your database *after* performing the entire installation process (so
 the new CMap libraries will be in place).  Please read the
 directions in the "UPGRADE" instruction file in the "upgrade"
 directory before continuing with this installation.
+
+If you are upgrading from 0.09, you will notice that CMap no longers
+installs as a mod_perl handler -- it's now just a simple CGI
+application.  As such, you should remove the "<Location>" directives
+from your "httpd.conf" file after installing the "cmap" CGI script.
+If you want to automatically redirect your users from the old "/cmap"
+location to the new script, simply use mod_rewrite in Apache with
+these directives:
+
+    RewriteEngine on
+    RewriteRule   ^/cmap/(admin|correspondence|evidence_type_info|feature|feature_alias|feature_search|feature_type_info|help|map_details|map_set_info|map_type_info|matrix|species_info|view_feature_on_map|viewer)(\??.*)
+/cgi-bin/cmap/$1$2 [R]
 
 2.      REQUIREMENTS
 
@@ -449,10 +462,10 @@ Now you just need to tell Apache to protect the location of the admin
 interface with a password like so:
 
     <Location /cgi-bin/cmap/admin>
-        AuthType Basic
-        AuthName        "CMap Admin"
-        AuthUserFile    /usr/local/apache/passwd/cmap
-        Require         valid-user
+        AuthType     Basic
+        AuthName     "CMap Admin"
+        AuthUserFile /usr/local/apache/passwd/cmap
+        Require      valid-user
     </Location>
 
 Restart Apache to make the change take effect.
