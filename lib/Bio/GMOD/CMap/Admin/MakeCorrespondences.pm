@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
-# $Id: MakeCorrespondences.pm,v 1.17 2003-04-09 16:43:19 kycl4rk Exp $
+# $Id: MakeCorrespondences.pm,v 1.18 2003-04-14 19:55:52 kycl4rk Exp $
 
 =head1 NAME
 
@@ -30,7 +30,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.17 $)[-1];
+$VERSION = (qw$Revision: 1.18 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -82,8 +82,18 @@ sub make_name_correspondences {
         );
 
         next unless $ft_id1 && $ft_id2;
-        push @{ $add_name_correspondences{ $ft_id1 } }, $ft_id2;
-        push @{ $add_name_correspondences{ $ft_id2 } }, $ft_id1;
+        $add_name_correspondences{ $ft_id1 }{ $ft_id2 } = 1;
+        $add_name_correspondences{ $ft_id2 }{ $ft_id1 } = 1;
+
+    }
+
+    for my $ft_id1 ( keys %add_name_correspondences ) { 
+        for my $ft_id2 ( keys %{ $add_name_correspondences{ $ft_id1 } } ) { 
+            for my $ft_id3 ( keys %{ $add_name_correspondences{ $ft_id2 } } ) { 
+                next if $ft_id1 == $ft_id3;
+                $add_name_correspondences{ $ft_id1 }{ $ft_id3 } = 1;
+            }
+        }
     }
 
     #
@@ -159,9 +169,9 @@ sub make_name_correspondences {
                 ) }
             ) {
                 my @allowed_ft_ids = ( $feature->{'feature_type_id'} );
-                push @allowed_ft_ids, @{ $add_name_correspondences{
+                push @allowed_ft_ids, values %{ $add_name_correspondences{
                     $feature->{'feature_type_id'}
-                } || [] };
+                } || {} };
                 my $ft_ids = join(', ', @allowed_ft_ids);
 
                 #
@@ -197,8 +207,11 @@ sub make_name_correspondences {
                     ')';
                 }
 
+                my $last;
                 for my $field ( qw[ feature_name alternate_name ] ) {
                     my $upper_name = uc $feature->{ $field } or next;
+                    next if $last && $upper_name eq $last;
+                    $last = $upper_name;
                     $self->Print("    Checking $field = '$upper_name'\n");
                     for my $corr ( 
                         @{ $db->selectall_arrayref(
