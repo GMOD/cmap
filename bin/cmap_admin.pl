@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.83.2.2 2005-02-18 17:27:34 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.83.2.3 2005-03-03 17:20:37 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.83.2.2 $)[-1];
+$VERSION = (qw$Revision: 1.83.2.3 $)[-1];
 
 #
 # Get command-line options
@@ -783,7 +783,7 @@ sub export_as_text {
                  f.start_position as feature_start,
                  f.stop_position as feature_stop,
                  f.is_landmark,
-                 f.feature_type_accession as feature_type_aid,
+                 f.feature_type_accession,
                  map.map_name, 
                  map.accession_id as map_accession_id,
                  map.start_position as map_start,
