@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.24 2003-03-18 23:00:43 kycl4rk Exp $
+# $Id: Import.pm,v 1.25 2003-03-21 00:36:15 kycl4rk Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.24 $)[-1];
+$VERSION  = (qw$Revision: 1.25 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -124,9 +124,9 @@ have for the map set).
 
     my $map_info = $db->selectall_arrayref(
         q[
-            select upper(map.map_name), 
-                   map.accession_id,
-                   map.map_id
+            select map.map_name, 
+                   map.map_id,
+                   map.accession_id
             from   cmap_map map
             where  map.map_set_id=?
         ],
@@ -134,8 +134,8 @@ have for the map set).
         ( $map_set_id )
     );
 
-    my %maps     = map { $_->[0], { map_id => $_->[1] } } @$map_info;
-    my %map_aids = map { $_->[1], $_->[0]               } @$map_info;
+    my %maps     = map { uc $_->[0], { map_id => $_->[1] } } @$map_info;
+    my %map_aids = map { $_->[2], $_->[0]                  } @$map_info;
 
     $self->Print(
         "'$map_set_name' currently has ", scalar keys %maps, " maps.\n"
@@ -328,7 +328,7 @@ have for the map set).
         if ( 
             defined $map_start &&
             defined $map_stop  &&
-            $map_stop > $map_start 
+            $map_start > $map_stop 
         ) {
             ( $map_start, $map_stop ) = ( $map_stop, $map_start );
         }
@@ -336,17 +336,7 @@ have for the map set).
         #
         # If the map already exists, just remember stuff about it.
         #
-        if ( $map_id ) {
-            $map_info{ $map_id }{'map_id'}         ||= $map_id;
-            $map_info{ $map_id }{'map_set_id'}     ||= $map_set_id;
-            $map_info{ $map_id }{'map_name'}       ||= $map_name;
-            $map_info{ $map_id }{'start_position'} ||= $map_start;
-            $map_info{ $map_id }{'stop_position'}  ||= $map_stop;
-            $map_info{ $map_id }{'linkage_group'}  ||= $linkage_group;
-            $map_info{ $map_id }{'accession_id'}   ||= $map_aid;
-
-        }
-        else {
+        unless ( $map_id ) {
             $map_id          = next_number(
                 db           => $db, 
                 table_name   => 'cmap_map',
@@ -373,6 +363,14 @@ have for the map set).
             $self->Print("Created map $map_name ($map_id).\n");
             $maps{ uc $map_name }{'map_id'} = $map_id;
         }
+
+        $map_info{ $map_id }{'map_id'}         ||= $map_id;
+        $map_info{ $map_id }{'map_set_id'}     ||= $map_set_id;
+        $map_info{ $map_id }{'map_name'}       ||= $map_name;
+        $map_info{ $map_id }{'start_position'} ||= $map_start;
+        $map_info{ $map_id }{'stop_position'}  ||= $map_stop;
+        $map_info{ $map_id }{'linkage_group'}  ||= $linkage_group;
+        $map_info{ $map_id }{'accession_id'}   ||= $map_aid;
 
         #
         # See if the acc. id already exists.
@@ -503,8 +501,8 @@ have for the map set).
             ( 
                 $map->{'map_set_id'}, 
                 $map->{'map_name'}, 
-                $map->{'map_start'}, 
-                $map->{'map_stop'}, 
+                $map->{'start_position'}, 
+                $map->{'stop_position'}, 
                 $map->{'linkage_group'}, 
                 $map->{'map_id'},
             )
@@ -597,36 +595,29 @@ have for the map set).
         );
 
         #
-        # For now, I've decided to always do this.  2003-02-11
+        # Verify that the map start and stop coordinates at least
+        # take into account the extremes of the feature coordinates.
         #
-#        if ( 
-#            !defined $map_start      ||
-#            !defined $map_stop       ||
-#            $map_start <= $map_stop  ||
-#            $map_start > $min_start  ||
-#            $map_stop  < $max_start  ||
-#            ( defined $max_stop && $map_stop < $max_stop )
-#        ) {
-            $min_start ||= 0;
-            $max_start ||= 0;
-            $max_stop  ||= 0;
-            $map_start   = 0 unless defined $map_start;
-            $map_stop    = 0 unless defined $map_stop;
-            $max_stop    = $max_start > $max_stop ? $max_start : $max_stop;
-            $map_start   = $min_start if $min_start < $map_start;
-            $map_stop    = $max_stop  if $max_stop  > $map_stop;
+        $min_start = 0 unless defined $min_start;
+        $max_start = 0 unless defined $max_start;
+        $max_stop  = 0 unless defined $max_stop;
+        $map_start = 0 unless defined $map_start;
+        $map_stop  = 0 unless defined $map_stop;
 
-            $db->do(
-                q[
-                    update cmap_map
-                    set    start_position=?,
-                           stop_position=?
-                    where  map_id=?
-                ],
-                {},
-                ( $map_start, $map_stop, $map_id )
-            );
-#        }
+        $max_stop    = $max_start if $max_start > $max_stop;
+        $map_start   = $min_start if $min_start < $map_start;
+        $map_stop    = $max_stop  if $max_stop  > $map_stop;
+
+        $db->do(
+            q[
+                update cmap_map
+                set    start_position=?,
+                       stop_position=?
+                where  map_id=?
+            ],
+            {},
+            ( $map_start, $map_stop, $map_id )
+        );
 
         $self->Print(
             "Verified map $map_name ($map_id) ",
