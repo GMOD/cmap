@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.50 2004-02-11 14:52:24 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.51 2004-02-17 22:46:20 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.50 $)[-1];
+$VERSION = (qw$Revision: 1.51 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -1146,10 +1146,10 @@ Returns the font size.
 =cut
 
     my $self      = shift;
-    if ( my $font_size = shift ) {
-        $self->error(qq[Font size "$font_size" is not valid"])
-            unless defined VALID->{'font_size'}{ $font_size };
-        $self->{'font_size'} ||= $font_size;
+    my $font_size = shift;
+
+    if ( $font_size && defined VALID->{'font_size'}{ $font_size } ) {
+        $self->{'font_size'} = $font_size;
     }
 
     unless ( $self->{'font_size'} ) {
@@ -1290,16 +1290,16 @@ Returns the set image size.
 
 =cut
 
-    my $self = shift;
+    my $self       = shift;
+    my $image_size = shift;
 
-    if ( my $image_size = shift ) {
-        return $self->error( qq[Invalid image size ("$image_size")] )
-            unless VALID->{'image_size'}{ $image_size };
+    if ( $image_size && VALID->{'image_size'}{ $image_size } ) {
         $self->{'image_size'} = $image_size;
     }
 
     unless ( defined $self->{'image_size'} ) {
-        $self->{'image_size'} = $self->config('image_size');
+        $self->{'image_size'} = $self->config('image_size') ||
+            DEFAULT->{'image_size'};
     }
 
     return $self->{'image_size'};
@@ -1316,16 +1316,16 @@ Gets/sets the current image type.
 
 =cut
 
-    my $self = shift;
+    my $self       = shift;
+    my $image_type = shift;
 
-    if ( my $image_type = shift ) {
-        return $self->error( qq[Invalid image type ("$image_type")] )
-            unless VALID->{'image_type'}{ $image_type };
+    if ( $image_type && VALID->{'image_type'}{ $image_type } ) {
         $self->{'image_type'} = $image_type;
     }
 
     unless ( defined $self->{'image_type'} ) {
-        $self->{'image_type'} = $self->config('image_type');
+        $self->{'image_type'} = $self->config('image_type') ||
+            DEFAULT->{'image_type'};
     }
 
     return $self->{'image_type'};
