@@ -4,7 +4,7 @@ package Bio::GMOD::CMap::Apache::EntryViewer;
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.3.2.1 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -50,21 +50,21 @@ sub handler {
     if ( defined($apr->param('feature_types')) ) {
         @feature_types = ( $apr->param('feature_types') );
     }
-    elsif ( $apr->param('include_feature_types') ) {
-        @feature_types = split( /,/, $apr->param('include_feature_types') );
+    elsif ( $apr->param('included_feature_types') ) {
+        @feature_types = split( /,/, $apr->param('included_feature_types') );
     }
     my @corr_only_feature_types;
     if ( defined($apr->param('corr_only_feature_types')) ) {
         @corr_only_feature_types = ( $apr->param('corr_only_feature_types') );
     }
-    my %include_corr_only_features = map{$_=>1} @corr_only_feature_types;
+    my %included_corr_only_features = map{$_=>1} @corr_only_feature_types;
 
     my @evidence_types;
     if ( $apr->param('evidence_types') ) {
         @evidence_types = ( $apr->param('evidence_types') );
     }
-    elsif ( $apr->param('include_evidence_types') ) {
-        @evidence_types = split( /,/, $apr->param('include_evidence_types') );
+    elsif ( $apr->param('included_evidence_types') ) {
+        @evidence_types = split( /,/, $apr->param('included_evidence_types') );
     }
 
     #
@@ -101,8 +101,8 @@ sub handler {
     my $form_data              = $data->cmap_entry_data( 
         slots                  => \%slots,
         min_correspondence_maps    => $min_correspondence_maps,
-        include_feature_types  => \@feature_types,
-        include_evidence_types => \@evidence_types,
+        included_feature_types  => \@feature_types,
+        included_evidence_types => \@evidence_types,
         ref_species_aid        => $ref_species_aid,
         page_index_start       => $page_index_start,
         page_index_stop        => $page_index_stop,
@@ -147,7 +147,7 @@ sub handler {
             selected_maps       => { map { $_, 1 } @ref_map_aids   },
             included_features   => { map { $_, 1 } @feature_types  },
             included_evidence   => { map { $_, 1 } @evidence_types },
-            included_corr_only_features => \%include_corr_only_features,
+            included_corr_only_features => \%included_corr_only_features,
             feature_types       => join( ',', @feature_types ),
             evidence_types      => join( ',', @evidence_types ),
         },

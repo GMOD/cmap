@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap;
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.61.2.1 2004-10-28 23:30:04 mwz444 Exp $
+# $Id: CMap.pm,v 1.61.2.2 2004-11-01 14:58:57 mwz444 Exp $
 
 =head1 NAME
 
@@ -647,6 +647,8 @@ Given information about the link, creates a url to cmap_viewer.
     my $ignored_feature_type_aids 
                               = $args{'ignored_feature_type_aids'};
     my $evidence_type_aids    = $args{'evidence_type_aids'};
+    my $ignored_evidence_type_aids 
+                              = $args{'ignored_evidence_type_aids'};
     my $data_source           = $args{'data_source'} or return;
     my $url                   = $args{'url'};
     $url                     .= '?' unless $url =~ /\?$/;
@@ -699,7 +701,7 @@ Given information about the link, creates a url to cmap_viewer.
                 or defined($ref_map_aids->{'stop'})){
                 push @ref_strs, $ref_map_aid.'['
                     . $ref_map_aids->{'start'}.'*'
-                    . $ref_map_aids->{'stop'}.'*'
+                    . $ref_map_aids->{'stop'}.'x'
                     . $ref_map_aids->{'magnify'}
                     .']';
             }
@@ -725,7 +727,7 @@ Given information about the link, creates a url to cmap_viewer.
                             $slot_no
                           . '%3dmap_aid%3d'
                           . $aid.'['.$map->{$field}{$aid}{'start'}.'*'
-                          . $map->{$field}{$aid}{'stop'}.'*'
+                          . $map->{$field}{$aid}{'stop'}.'x'
                           . $map->{$field}{$aid}{'magnify'}
                           .']';
 
@@ -752,8 +754,11 @@ Given information about the link, creates a url to cmap_viewer.
     foreach my $aid (@$ignored_feature_type_aids){
         $url .= "feature_type_".$aid."=0;";
     }
-    if ($evidence_type_aids and @$evidence_type_aids){
-        $url .= "evidence_types=".join(',',@$evidence_type_aids);
+    foreach my $aid (@$evidence_type_aids){
+        $url .= "evidence_type_".$aid."=1;";
+    }
+    foreach my $aid (@$ignored_evidence_type_aids){
+        $url .= "evidence_type_".$aid."=0;";
     }
 
     return $url;

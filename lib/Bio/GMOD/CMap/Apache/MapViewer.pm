@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.71.2.1 2004-10-29 04:46:30 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.71.2.2 2004-11-01 14:59:03 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.71.2.1 $)[-1];
+$VERSION = (qw$Revision: 1.71.2.2 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -181,6 +181,8 @@ sub handler {
     my @feature_types;
     my @corr_only_feature_types;
     my @ignored_feature_types;
+    my @included_evidence_types;
+    my @ignored_evidence_types;
     foreach my $param ( $apr->param ) {
         if ( $param =~ /^feature_type_(\S+)/ ) {
             my $ft  = $1;
@@ -195,23 +197,21 @@ sub handler {
                 push @feature_types, $ft;
             }
         }
+        if ( $param =~ /^evidence_type_(\S+)/ ) {
+            my $et  = $1;
+            my $val = $apr->param($param);
+            if ( $val == 0 ) {
+                push @ignored_evidence_types, $et;
+            }
+            elsif ( $val == 1 ) {
+                push @included_evidence_types, $et;
+            }
+        }
     }
 
-    my %include_corr_only_features = map { $_ => 1 } @corr_only_feature_types;
+    my %included_corr_only_features = map { $_ => 1 } @corr_only_feature_types;
     my %ignored_feature_types      = map { $_ => 1 } @ignored_feature_types;
-
-    my @evidence_types;
-    if ( $apr->param('evidence_types') ) {
-        foreach my $et ($apr->param('evidence_types')){
-            push @evidence_types, split( /[:,]/, $et );
-        }
-        unless(@evidence_types){
-            @evidence_types = split( /,/, $apr->param('evidence_types') );
-        }
-    }
-    elsif ( $apr->param('include_evidence_types') ) {
-        @evidence_types = split( /,/, $apr->param('include_evidence_types') );
-    }
+    my %ignored_evidence_types      = map { $_ => 1 } @ignored_evidence_types;
 
     #
     # Set the data source.
@@ -375,10 +375,11 @@ sub handler {
             label_features          => $label_features,
             collapse_features       => $collapse_features,
             min_correspondences     => $min_correspondences,
-            include_feature_types   => \@feature_types,
+            included_feature_types   => \@feature_types,
             corr_only_feature_types => \@corr_only_feature_types,
             ignored_feature_types   => \@ignored_feature_types,
-            include_evidence_types  => \@evidence_types,
+            ignored_evidence_types  => \@ignored_evidence_types,
+            included_evidence_types  => \@included_evidence_types,
             config                  => $self->config,
             data_module             => $self->data_module,
             aggregate               => $self->aggregate,
@@ -391,11 +392,14 @@ sub handler {
         $extra_code = $drawer->{'data'}->{'extra_code'};
         $extra_form = $drawer->{'data'}->{'extra_form'};
 
-        @feature_types              = @{ $drawer->include_feature_types };
-        @corr_only_feature_types    = @{ $drawer->corr_only_feature_types };
-        @ignored_feature_types      = @{ $drawer->ignored_feature_types };
-        %include_corr_only_features = map { $_ => 1 } @corr_only_feature_types;
-        %ignored_feature_types      = map { $_ => 1 } @ignored_feature_types;
+        @feature_types               = @{ $drawer->included_feature_types };
+        @corr_only_feature_types     = @{ $drawer->corr_only_feature_types };
+        @ignored_feature_types       = @{ $drawer->ignored_feature_types };
+        @ignored_evidence_types      = @{ $drawer->ignored_evidence_types };
+        @included_evidence_types     = @{ $drawer->included_evidence_types };
+        %included_corr_only_features = map { $_ => 1 } @corr_only_feature_types;
+        %ignored_feature_types       = map { $_ => 1 } @ignored_feature_types;
+        %ignored_evidence_types      = map { $_ => 1 } @ignored_evidence_types;
     }
     
     #
@@ -405,9 +409,10 @@ sub handler {
     my $form_data              = $data->cmap_form_data(
         slots                  => \%slots,
         min_correspondences    => $min_correspondences,
-        include_feature_types  => \@feature_types,
+        included_feature_types  => \@feature_types,
         ignored_feature_types  => \@ignored_feature_types,
-        include_evidence_types => \@evidence_types,
+        ignored_evidence_types  => \@ignored_evidence_types,
+        included_evidence_types => \@included_evidence_types,
         ref_species_aid        => $ref_species_aid,
         ref_map_set_aid        => $ref_map_set_aid,
     ) or return $self->error( $data->error );
@@ -462,11 +467,12 @@ sub handler {
               stylesheet        => $self->stylesheet,
               selected_maps     => { map { $_, 1 } @ref_map_aids },
               included_features => { map { $_, 1 } @feature_types },
-              included_evidence => { map { $_, 1 } @evidence_types },
-              corr_only_features_types => \%include_corr_only_features,
+              included_evidence => { map { $_, 1 } @included_evidence_types },
+              corr_only_feature_types  => \%included_corr_only_features,
               ignored_feature_types    => \%ignored_feature_types,
+              ignored_evidence_types   => \%ignored_evidence_types,
               feature_types            => join( ',', @feature_types ),
-              evidence_types           => join( ',', @evidence_types ),
+              evidence_types           => join( ',', @included_evidence_types ),
               extra_code               => $extra_code,
               extra_form               => $extra_form,
               feature_default_display  => $feature_default_display,
@@ -483,8 +489,9 @@ sub handler {
             ref_map                => $drawer->{'data'}{'slots'}{0}{$map_id},
             map_id                 => $map_id,
             highlight              => $highlight,
-            include_feature_types  => \@feature_types,
-            include_evidence_types => \@evidence_types,
+            included_feature_types  => \@feature_types,
+            included_evidence_types => \@included_evidence_types,
+            ignored_evidence_types => \@ignored_evidence_types,
             order_by               => $apr->param('order_by') || '',
             comparative_map_field  => '',
             comparative_map_aid    => '',
@@ -534,7 +541,7 @@ sub handler {
             $apr->param('ref_map_start',  $ref_map->{'start'}         );
             $apr->param('ref_map_stop',   $ref_map->{'stop'}          );
             $apr->param('feature_types',  join(',', @feature_types )  );
-            $apr->param('evidence_types', join(',', @evidence_types ) );
+            $apr->param('evidence_types', join(',', @included_evidence_types ) );
             $apr->param('highlight_uri',  uri_escape($apr->param('highlight')));
 
             my $detail_html;
@@ -557,7 +564,7 @@ sub handler {
                     title                 => 'Reference Map Details',
                     stylesheet            => $self->stylesheet,
                     included_features     => { map { $_, 1 } @feature_types },
-                    included_evidence     => { map { $_, 1 } @evidence_types },
+                    included_evidence     => { map { $_, 1 } @included_evidence_types },
                     features              => $detail_data->{'features'},
                 },
                 \$detail_html 
@@ -586,7 +593,7 @@ sub parse_map_info {
     my ( $start, $stop, $magnification ) = ( undef, undef, 1 );
 
     # following matches map_id[1*200] and map_id[1*200x2]
-    if ( $aid =~ m/^(.+)\[(.*)\*(.*?)(?:x([\d\.]+)|)\]$/ ) {
+    if ( $aid =~ m/^(.+)\[(.*)\*(.*?)(?:x([\d\.]*)|)\]$/ ) {
         $aid = $1;
         ( $start, $stop ) = ( $2, $3 );
         $magnification = $4 if $4;
