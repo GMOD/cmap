@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.40 2003-12-20 02:28:29 kycl4rk Exp $
+# $Id: Admin.pm,v 1.41 2003-12-30 18:44:59 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,9 +24,11 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.40 $)[-1];
+$VERSION = (qw$Revision: 1.41 $)[-1];
 
 use Data::Dumper;
+use Time::ParseDate;
+use Time::Piece;
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils qw[ next_number parse_words ];
 use base 'Bio::GMOD::CMap';
@@ -127,6 +129,43 @@ Delete a database cross reference.
 }
 
 # ----------------------------------------------------
+sub evidence_type_create {
+    my ( $self, %args ) = @_;
+    my @missing         = ();
+    my $db              = $self->db or return $self->error;
+    my $evidence_type   = $args{'evidence_type'} or 
+                          push @missing, 'evidence type';
+    my $rank            = $args{'rank'} or
+                          push @missing, 'rank';
+    my $line_color      = $args{'line_color'} || '';
+
+    if ( @missing ) {
+        return $self->error('Missing required fields: ', join(', ', @missing));
+    }
+    my $evidence_id     = next_number(
+        db              => $db, 
+        table_name      => 'cmap_evidence_type',
+        id_field        => 'evidence_type_id',
+    ) or return $self->error('No next number for evidence type');
+    my $accession_id    = $args{'accession_id'}  || $evidence_id;
+
+    $db->do(
+        q[
+            insert
+            into    cmap_evidence_type
+                    ( evidence_type_id, accession_id, evidence_type, 
+                      rank, line_color )
+            values  ( ?, ?, ?, ?, ? )
+        ],
+        {},
+        ( $evidence_id, $accession_id, $evidence_type, 
+          $rank, $line_color )
+    );
+
+    return $evidence_id;
+}
+
+# ----------------------------------------------------
 sub evidence_type_delete {
 
 =pod
@@ -178,6 +217,61 @@ Delete an evidence type.
     }
 
     return 1;
+}
+
+# ----------------------------------------------------
+sub feature_create {
+    my ( $self, %args ) = @_;
+    my @missing         = ();
+    my $map_id          = $args{'map_id'} or push @missing, 'map_id';
+    my $feature_name    = $args{'feature_name'} or 
+                          push @missing, 'feature_name';
+    my $feature_type_id = $args{'feature_type_id'} 
+                          or push @missing, 'feature_type_id';
+    my $start_position  = $args{'start_position'};
+    push @missing, 'No start' unless $start_position =~ NUMBER_RE;
+    my $stop_position   = $args{'stop_position'};
+    my $is_landmark     = $args{'is_landmark'} || 0;
+    my $db              = $self->db or return $self->error;
+    my $feature_id      = next_number(
+        db              => $db, 
+        table_name      => 'cmap_feature',
+        id_field        => 'feature_id',
+    ) or die 'No feature id';
+    my $accession_id    = $args{'accession_id'} || $feature_id;
+
+    if ( @missing ) {
+        return $self->error('Missing required fields: ', join(', ', @missing));
+    }
+
+    my @insert_args = ( 
+        $feature_id, $accession_id, $map_id, $feature_name, 
+        $feature_type_id, $is_landmark, $start_position
+    );
+
+    my $stop_placeholder; 
+    if ( defined $stop_position && $stop_position =~ NUMBER_RE ) {
+        $stop_placeholder = '?';
+        push @insert_args, $stop_position;
+    }
+    else {
+        $stop_placeholder = 'NULL';
+    }
+
+    $db->do(
+        qq[
+            insert
+            into   cmap_feature
+                   ( feature_id, accession_id, map_id, feature_name, 
+                     feature_type_id, is_landmark,
+                     start_position, stop_position )
+            values ( ?, ?, ?, ?, ?, ?, ?, $stop_placeholder )
+        ],
+        {},
+        @insert_args
+    );
+
+    return $feature_id;
 }
 
 # ----------------------------------------------------
@@ -298,6 +392,253 @@ Delete a feature.
     );
 
     return $map_id;
+}
+
+# ----------------------------------------------------
+sub feature_correspondence_create {
+
+=pod
+
+=head2 feature_correspondence_create
+
+Inserts a correspondence.  Returns -1 if there is nothing to do.
+
+=cut
+
+    my ( $self, %args )  = @_;
+    my $feature_id1      = $args{'feature_id1'};
+    my $feature_id2      = $args{'feature_id2'};
+    my $feature_aid1     = $args{'feature_aid1'};
+    my $feature_aid2     = $args{'feature_aid2'};
+    my $evidence_type_id = $args{'evidence_type_id'};
+    my $evidence         = $args{'correspondence_evidence'};
+    my $accession_id     = $args{'accession_id'} || '';
+    my $is_enabled       = $args{'is_enabled'};
+       $is_enabled       = 1 unless defined $is_enabled;
+    my $db               = $self->db or return;
+    my $search_sth       = $db->prepare(
+        q[
+            select feature_id
+            from   cmap_feature
+            where  accession_id=?
+        ]
+    );
+
+    #
+    # See if we have only accession IDs and if we can find feature IDs.
+    #
+    if ( !$feature_id1 && $feature_aid1 ) {
+        $search_sth->execute( $feature_aid1 );
+        $feature_id1 = $search_sth->fetchrow_array;
+    }
+
+    if ( !$feature_id2 && $feature_aid2 ) {
+        $search_sth->execute( $feature_aid2 );
+        $feature_id2 = $search_sth->fetchrow_array;
+    }
+
+    #
+    # Bail if no feature IDs.
+    #
+    return -1 unless $feature_id1 && $feature_id2;
+
+    #
+    # Bail if features are the same.
+    #
+    return -1 if $feature_id1 == $feature_id2;
+
+    #
+    # Bail if no evidence.
+    #
+    return $self->error('No evidence') unless 
+        $evidence_type_id || @{ $evidence || [] };
+
+    my $feature_sth = $db->prepare(
+        q[
+            select f.feature_id,
+                   f.feature_name,
+                   map.accession_id as map_aid,
+                   map.map_name,
+                   map.map_set_id,
+                   mt.is_relational_map
+            from   cmap_feature f,
+                   cmap_map map,
+                   cmap_map_set ms,
+                   cmap_map_type mt
+            where  f.feature_id=?
+            and    f.map_id=map.map_id
+            and    map.map_set_id=ms.map_set_id
+            and    ms.map_type_id=mt.map_type_id
+        ]
+    );
+
+    $feature_sth->execute( $feature_id1 );
+    my $feature1 = $feature_sth->fetchrow_hashref;
+    $feature_sth->execute( $feature_id2 );
+    my $feature2 = $feature_sth->fetchrow_hashref;
+
+    #
+    # Don't create correspondences among relational maps.
+    #
+    return -1 if 
+        $feature1->{'map_set_id'} == $feature2->{'map_set_id'} 
+        &&
+        $feature1->{'is_relational_map'} == 1;
+
+    #
+    # Don't create correspondences among relational map sets.
+    #
+    return -1 if $feature1->{'is_relational_map'} && 
+        $feature2->{'is_relational_map'};
+
+    #
+    # Skip if a correspondence with this evidence type exists already.
+    #
+    my $count = $db->selectrow_array(
+        q[
+            select count(*)
+            from   cmap_correspondence_lookup cl,
+                   cmap_correspondence_evidence ce
+            where  cl.feature_id1=?
+            and    cl.feature_id2=?
+            and    cl.feature_correspondence_id=ce.feature_correspondence_id
+            and    ce.evidence_type_id=?
+        ],
+        {},
+        ( $feature_id1, $feature_id2, $evidence_type_id )
+    ) || 0;
+    return -1 if $count;
+
+    #
+    # See if a correspondence exists already.
+    #
+    my $feature_correspondence_id = $db->selectrow_array(
+        q[
+            select feature_correspondence_id
+            from   cmap_correspondence_lookup
+            where  feature_id1=?
+            and    feature_id2=?
+        ],
+        {},
+        ( $feature_id1, $feature_id2 )
+    ) || 0;
+
+    unless ( $feature_correspondence_id ) {
+        $feature_correspondence_id = next_number(
+            db               => $db,
+            table_name       => 'cmap_feature_correspondence',
+            id_field         => 'feature_correspondence_id',
+        ) or return $self->error('No next number for feature correspondence');
+        $accession_id ||= $feature_correspondence_id;
+
+        #
+        # Create the official correspondence record.
+        #
+        $db->do(
+            q[
+                insert
+                into   cmap_feature_correspondence
+                       ( feature_correspondence_id, accession_id,
+                         feature_id1, feature_id2, is_enabled )
+                values ( ?, ?, ?, ?, ? )
+            ],
+            {},
+            ( 
+                $feature_correspondence_id, 
+                $accession_id, 
+                $feature_id1, 
+                $feature_id2,
+                $is_enabled
+            )
+        );
+    }
+
+    #
+    # To be consistent, push any lone evidence types onto the optional
+    # evidence arrayref (of hashrefs).
+    #
+    if ( $evidence_type_id ) {
+        push @{ $evidence || [] }, {
+            evidence_type_id => $evidence_type_id
+        };
+    }
+
+    #
+    # Create the evidence.
+    #
+    for my $e ( @$evidence ) {
+        my $et_id            = $e->{'evidence_type_id'};
+        my $score            = $e->{'score'};
+        my $corr_evidence_id = next_number(
+            db               => $db,
+            table_name       => 'cmap_correspondence_evidence',
+            id_field         => 'correspondence_evidence_id',
+        ) or return $self->error('No next number for correspondence evidence');
+        my $accession_id     = $e->{'accession_id'} || $corr_evidence_id;
+        my @insert_args      = ( $corr_evidence_id, $accession_id,
+            $feature_correspondence_id, $et_id );
+
+        my $score_arg;
+        if ( defined $score ) {
+            push @insert_args, $score;
+            $score_arg = '?';
+        }
+        else {
+            $score_arg = 'NULL';
+        }
+
+        $db->do(
+            qq[
+                insert
+                into   cmap_correspondence_evidence
+                       ( correspondence_evidence_id, 
+                         accession_id,
+                         feature_correspondence_id,     
+                         evidence_type_id,
+                         score
+                       )
+                values ( ?, ?, ?, ?, $score_arg )
+            ],
+            {},
+            ( @insert_args )
+        );
+    }
+
+    #
+    # Create the lookup record.
+    #
+    my @insert = (
+        [ $feature_id1, $feature_id2 ],
+        [ $feature_id2, $feature_id1 ],
+    );
+
+    for my $vals ( @insert ) {
+        next if $db->selectrow_array(
+            q[
+                select count(*)
+                from   cmap_correspondence_lookup cl
+                where  cl.feature_id1=?
+                and    cl.feature_id2=?
+                and    cl.feature_correspondence_id=?
+            ],
+            {},
+            ( $vals->[0], $vals->[1], $feature_correspondence_id )
+        );
+
+        $db->do(
+            q[
+                insert
+                into   cmap_correspondence_lookup
+                       ( feature_id1, feature_id2,
+                         feature_correspondence_id )
+                values ( ?, ?, ? )
+            ],
+            {},
+            ( $vals->[0], $vals->[1], $feature_correspondence_id )
+        );
+    }
+    
+    return $feature_correspondence_id;
 }
 
 # ----------------------------------------------------
@@ -732,198 +1073,12 @@ Find all the feature types.
 }
 
 # ----------------------------------------------------
-sub insert_correspondence {
-
-=pod
-
-=head2 insert_correspondence
-
-Inserts a correspondence.  Returns -1 if there is nothing to do.
-
-=cut
-
-    my $self             = shift;
-    my $feature_id1      = shift;
-    my $feature_id2      = shift;
-    my $evidence_type_id = shift;
-    my $accession_id     = shift || '';
-    my $is_enabled       = shift;
-       $is_enabled       = 1 unless defined $is_enabled;
-    my $db               = $self->db or return;
-    return -1 if $feature_id1 == $feature_id2;
-
-    my $feature_sth = $db->prepare(
-        q[
-            select f.feature_id,
-                   f.feature_name,
-                   map.accession_id as map_aid,
-                   map.map_name,
-                   map.map_set_id,
-                   mt.is_relational_map
-            from   cmap_feature f,
-                   cmap_map map,
-                   cmap_map_set ms,
-                   cmap_map_type mt
-            where  f.feature_id=?
-            and    f.map_id=map.map_id
-            and    map.map_set_id=ms.map_set_id
-            and    ms.map_type_id=mt.map_type_id
-        ]
-    );
-
-    $feature_sth->execute( $feature_id1 );
-    my $feature1 = $feature_sth->fetchrow_hashref;
-    $feature_sth->execute( $feature_id2 );
-    my $feature2 = $feature_sth->fetchrow_hashref;
-
-    #
-    # Don't create correspondences among relational maps.
-    #
-    return -1 if 
-        $feature1->{'map_set_id'} == $feature2->{'map_set_id'} 
-        &&
-        $feature1->{'is_relational_map'} == 1;
-
-    #
-    # Don't create correspondences among relational map sets.
-    #
-    return -1 if $feature1->{'is_relational_map'} && 
-        $feature2->{'is_relational_map'};
-
-    #
-    # Skip if a correspondence with this evidence type exists already.
-    #
-    my $count = $db->selectrow_array(
-        q[
-            select count(*)
-            from   cmap_correspondence_lookup cl,
-                   cmap_correspondence_evidence ce
-            where  cl.feature_id1=?
-            and    cl.feature_id2=?
-            and    cl.feature_correspondence_id=ce.feature_correspondence_id
-            and    ce.evidence_type_id=?
-        ],
-        {},
-        ( $feature_id1, $feature_id2, $evidence_type_id )
-    ) || 0;
-    return -1 if $count;
-
-    #
-    # See if a correspondence exists already.
-    #
-    my $feature_correspondence_id = $db->selectrow_array(
-        q[
-            select feature_correspondence_id
-            from   cmap_correspondence_lookup
-            where  feature_id1=?
-            and    feature_id2=?
-        ],
-        {},
-        ( $feature_id1, $feature_id2 )
-    ) || 0;
-
-    unless ( $feature_correspondence_id ) {
-        $feature_correspondence_id = next_number(
-            db               => $db,
-            table_name       => 'cmap_feature_correspondence',
-            id_field         => 'feature_correspondence_id',
-        ) or return $self->error('No next number for feature correspondence');
-        $accession_id ||= $feature_correspondence_id;
-
-        #
-        # Create the official correspondence record.
-        #
-        $db->do(
-            q[
-                insert
-                into   cmap_feature_correspondence
-                       ( feature_correspondence_id, accession_id,
-                         feature_id1, feature_id2, is_enabled )
-                values ( ?, ?, ?, ?, ? )
-            ],
-            {},
-            ( 
-                $feature_correspondence_id, 
-                $accession_id, 
-                $feature_id1, 
-                $feature_id2,
-                $is_enabled
-            )
-        );
-    }
-
-    #
-    # Create the evidence.
-    #
-    my $correspondence_evidence_id = next_number(
-        db               => $db,
-        table_name       => 'cmap_correspondence_evidence',
-        id_field         => 'correspondence_evidence_id',
-    ) or return $self->error('No next number for correspondence evidence');
-
-    $db->do(
-        q[
-            insert
-            into   cmap_correspondence_evidence
-                   ( correspondence_evidence_id, accession_id,
-                     feature_correspondence_id,     
-                     evidence_type_id 
-                   )
-            values ( ?, ?, ?, ? )
-        ],
-        {},
-        ( 
-            $correspondence_evidence_id,  
-            $correspondence_evidence_id, 
-            $feature_correspondence_id,   
-            $evidence_type_id
-        )
-    );
-
-    #
-    # Create the lookup record.
-    #
-    my @insert = (
-        [ $feature_id1, $feature_id2 ],
-        [ $feature_id2, $feature_id1 ],
-    );
-
-    for my $vals ( @insert ) {
-        next if $db->selectrow_array(
-            q[
-                select count(*)
-                from   cmap_correspondence_lookup cl
-                where  cl.feature_id1=?
-                and    cl.feature_id2=?
-                and    cl.feature_correspondence_id=?
-            ],
-            {},
-            ( $vals->[0], $vals->[1], $feature_correspondence_id )
-        );
-
-        $db->do(
-            q[
-                insert
-                into   cmap_correspondence_lookup
-                       ( feature_id1, feature_id2,
-                         feature_correspondence_id )
-                values ( ?, ?, ? )
-            ],
-            {},
-            ( $vals->[0], $vals->[1], $feature_correspondence_id )
-        );
-    }
-    
-    return $feature_correspondence_id;
-}
-
-# ----------------------------------------------------
 sub map_create {
     my ( $self, %args ) = @_;
     my @missing         = ();
     my $map_set_id      = $args{'map_set_id'} or
-                         push @missing, 'map set id';
-    my $map_name       = $args{'map_name'};
+                         push @missing, 'map_set_id';
+    my $map_name        = $args{'map_name'};
     push @missing, 'map name' unless defined $map_name && $map_name ne '';
     my $start_position = $args{'start_position'};
     push @missing, 'start position' unless 
@@ -1019,6 +1174,65 @@ Delete a map.
         ],
         {},
         ( $map_id )
+    );
+
+    return $map_set_id;
+}
+
+# ----------------------------------------------------
+sub map_set_create {
+    my ( $self, %args )      = @_;
+    my $db                   = $self->db;
+    my @missing              = ();
+    my $map_set_name         = $args{'map_set_name'}
+        or push @missing, 'map_set_name';
+    my $short_name           = $args{'short_name'}
+        or push @missing, 'short_name';
+    my $species_id           = $args{'species_id'}
+        or push @missing, 'species';
+    my $map_type_id          = $args{'map_type_id'}
+        or push @missing, 'map_type';
+    my $accession_id         = $args{'accession_id'}         || '';
+    my $display_order        = $args{'display_order'}        ||  1;
+    my $can_be_reference_map = $args{'can_be_reference_map'} ||  0;
+    my $shape                = $args{'shape'}                || '';
+    my $color                = $args{'color'}                || '';
+    my $width                = $args{'width'}                ||  0;
+    my $published_on         = $args{'published_on'}    || 'today';
+
+    if ( @missing ) {
+        return $self->error('Missing required fields: ', join(', ', @missing));
+    }
+
+    if ( $published_on ) {
+        my $pub_date = parsedate($published_on, VALIDATE => 1) or return 
+            $self->error("Publication date '$published_on' is not valid");
+        my $t = localtime( $pub_date );
+        $published_on = $t->strftime( $self->data_module->sql->date_format );
+    }
+
+    my $map_set_id = next_number(
+        db           => $db, 
+        table_name   => 'cmap_map_set',
+        id_field     => 'map_set_id',
+    ) or die 'No map set id';
+    $accession_id ||= $map_set_id;
+
+    $db->do(
+        q[
+            insert
+            into   cmap_map_set
+                   ( map_set_id, accession_id, map_set_name, short_name,
+                     species_id, map_type_id, published_on, display_order, 
+                     can_be_reference_map, shape, width, color )
+            values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
+        ],
+        {}, 
+        ( 
+            $map_set_id, $accession_id, $map_set_name, $short_name,
+            $species_id, $map_type_id, $published_on, $display_order, 
+            $can_be_reference_map, $shape, $width, $color
+        )
     );
 
     return $map_set_id;
@@ -1585,7 +1799,7 @@ Set the attributes for a database object.
                 [ xref_url    => $xref_url   ],
             );
 
-            if ( defined $object_id ) {
+            if ( defined $object_id && $object_id ) {
                 push @update_fields, [ object_id => $object_id ];
             }
 
@@ -1754,6 +1968,32 @@ Delete a species.
     }
 
     return 1;
+}
+
+# ----------------------------------------------------
+sub xref_create {
+    my ( $self, %args ) = @_;
+    my $db              = $self->db or return $self->error;
+    my @missing         = ();
+    my $object_id       = $args{'object_id'}  || 0;
+    my $table_name      = $args{'table_name'} or
+                          push @missing, 'database object (table name0';
+    my $name            = $args{'xref_name'}  or push @missing, 'xref name';
+    my $url             = $args{'xref_url'}   or push @missing, 'xref URL';
+    my $display_order   = $args{'display_order'};
+    my $xref_id         = $self->set_xrefs(
+        object_id       => $object_id,
+        table_name      => $table_name,
+        xrefs           => [
+            { 
+                name          => $name, 
+                url           => $url,
+                display_order => $display_order,
+            },
+        ],
+    ) or return $self->error;
+
+    return $xref_id;
 }
 
 # ----------------------------------------------------
