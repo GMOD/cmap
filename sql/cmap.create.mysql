@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::MySQL
--- Created on Thu Jan  8 10:31:48 2004
+-- Created on Tue Feb 10 17:12:12 2004
 -- 
 SET foreign_key_checks=0;
 
@@ -15,6 +15,7 @@ CREATE TABLE cmap_attribute (
   is_public tinyint(4) NOT NULL DEFAULT '1',
   attribute_name varchar(200) NOT NULL DEFAULT '',
   attribute_value text NOT NULL,
+  INDEX table_name (table_name, object_id, display_order, attribute_name),
   PRIMARY KEY (attribute_id)
 );
 
@@ -27,7 +28,7 @@ CREATE TABLE cmap_correspondence_evidence (
   feature_correspondence_id integer(11) NOT NULL DEFAULT '0',
   evidence_type_id integer(11) NOT NULL DEFAULT '0',
   score double(8, 2) DEFAULT NULL,
-  INDEX feature_correspondence_id (feature_correspondence_id, evidence_type_id),
+  INDEX feature_correspondence_id (feature_correspondence_id),
   PRIMARY KEY (correspondence_evidence_id),
   UNIQUE (accession_id)
 );
@@ -95,7 +96,7 @@ CREATE TABLE cmap_feature (
   feature_type_id integer(11) NOT NULL DEFAULT '0',
   feature_name varchar(32) NOT NULL DEFAULT '',
   is_landmark tinyint(4) NOT NULL DEFAULT '0',
-  start_position double(11, 2) NOT NULL DEFAULT '0.00',
+  start_position double(11, 2) NOT NULL DEFAULT '0',
   stop_position double(11, 2) DEFAULT NULL,
   dbxref_name varchar(32) DEFAULT NULL,
   dbxref_url varchar(200) DEFAULT NULL,
@@ -103,6 +104,7 @@ CREATE TABLE cmap_feature (
   INDEX feature_id_map_id (feature_id, map_id),
   INDEX feature_id_map_id_start (feature_id, map_id, start_position),
   INDEX map_id (map_id),
+  INDEX map_id_feature_id (map_id, feature_id),
   PRIMARY KEY (feature_id),
   UNIQUE (accession_id)
 );
