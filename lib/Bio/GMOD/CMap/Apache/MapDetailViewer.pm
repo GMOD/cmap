@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapDetailViewer;
 # vim: set ft=perl:
 
-# $Id: MapDetailViewer.pm,v 1.21 2004-02-10 22:50:09 kycl4rk Exp $
+# $Id: MapDetailViewer.pm,v 1.22 2004-03-03 21:28:31 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES );
-$VERSION = (qw$Revision: 1.21 $)[-1];
+$VERSION = (qw$Revision: 1.22 $)[-1];
 
 use URI::Escape;
 use Data::Pageset;
@@ -74,18 +74,18 @@ sub handler {
     #
     my @feature_types;
     if ( $apr->param('feature_types') ) {
-        @feature_types = split(/,/, $apr->param('feature_types') );
+        @feature_types = ( $apr->param('feature_types') );
     }
-    else {
-        @feature_types = ( $apr->param('include_feature_types') );
+    elsif ( $apr->param('include_feature_types') ) {
+        @feature_types = split( /,/, $apr->param('include_feature_types') );
     }
 
     my @evidence_types;
     if ( $apr->param('evidence_types') ) {
-        @evidence_types = split(/,/, $apr->param('evidence_types') );
+        @evidence_types = ( $apr->param('evidence_types') );
     }
-    else {
-        @evidence_types = ( $apr->param('include_evidence_types') );
+    elsif ( $apr->param('include_evidence_types') ) {
+        @evidence_types = split( /,/, $apr->param('include_evidence_types') );
     }
 
     my %slots = (

@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.29 2004-02-10 22:50:09 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.30 2004-03-03 21:28:31 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.29 $)[-1];
+$VERSION = (qw$Revision: 1.30 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -41,15 +41,26 @@ sub handler {
     my $collapse_features     = $apr->param('collapse_features')     ||  0;
     my $flip                  = $apr->param('flip')                  || '';
     my $min_correspondences   = $apr->param('min_correspondences')   ||  0;
-    my @feature_types         = ( $apr->param('feature_types') );
-    my @evidence_types        = ( $apr->param('evidence_types') );
 
-    unless ( @feature_types ) {
-        @feature_types = split /,/, $apr->param('feature_types') || '';
+    #
+    # Take the feature types either from the query string (first
+    # choice, splitting the string on commas) or from the POSTed 
+    # form <select>.
+    #
+    my @feature_types;
+    if ( $apr->param('feature_types') ) {
+        @feature_types = ( $apr->param('feature_types') );
+    }
+    elsif ( $apr->param('include_feature_types') ) {
+        @feature_types = split( /,/, $apr->param('include_feature_types') );
     }
 
-    unless ( @evidence_types ) {
-        @evidence_types = split /,/, $apr->param('evidence_types') || '';
+    my @evidence_types;
+    if ( $apr->param('evidence_types') ) {
+        @evidence_types = ( $apr->param('evidence_types') );
+    }
+    elsif ( $apr->param('include_evidence_types') ) {
+        @evidence_types = split( /,/, $apr->param('include_evidence_types') );
     }
 
     #
