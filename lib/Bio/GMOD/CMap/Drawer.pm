@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.52 2004-02-25 22:37:17 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.53 2004-03-04 15:23:20 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.52 $)[-1];
+$VERSION = (qw$Revision: 1.53 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -1129,7 +1129,10 @@ region of corresponding features.
 
         for my $f2 ( $self->feature_correspondences( $f1 ) ) {
             next unless defined $comp_map->{'features'}{ $f2 };
-            push @return, $comp_map->{'features'}{ $f2 }{'start_position'};
+            push @return, [
+                $comp_map->{'features'}{ $f2 }{'start_position'},
+                $comp_map->{'features'}{ $f2 }{'stop_position'}
+            ];
         }
     }
 
