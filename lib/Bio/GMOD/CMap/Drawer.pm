@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.85 2004-11-05 16:08:48 mwz444 Exp $
+# $Id: Drawer.pm,v 1.86 2004-11-19 18:56:08 kycl4rk Exp $
 
 =head1 NAME
 
@@ -205,7 +205,7 @@ Set to 1 scale the maps with the same unit.  Default is 1.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.85 $)[-1];
+$VERSION = (qw$Revision: 1.86 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -976,7 +976,7 @@ Lays out the image and writes it to the file system, set the "image_name."
             foreach my $color_bound (@$corr_color_bounds) {
                 $self->add_drawing(
                     STRING, $font, $x, $max_y,
-                    $color_bound . ' or less correspondences',
+                    $color_bound . ' or fewer correspondences',
                     $corr_colors->{$color_bound}
                 );
                 $max_y += $font->height + 4;
