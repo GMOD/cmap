@@ -3,7 +3,13 @@
 <a href="admin?action=feature_type_create">Create New Feature Type</a>
 <hr noshade>
 [% IF feature_types.size %]
-    <table>
+    <table width="100%">
+        <tr>
+            <td colspan="6" align="center">
+                [% SET pager_url="admin?action=feature_types_view&order_by=${apr.param('order_by')}" %]
+                [% PROCESS pager.tmpl %]
+            </td>
+        </tr>
         <tr>
             <th><a href="admin?action=feature_types_view;order_by=accession_id">Acc. ID</a></th>
             <th><a href="admin?action=feature_types_view;order_by=feature_type">Feature Type</a></th>
@@ -23,11 +29,11 @@
 
                 <td>[% ft.color %]</td>
 
-                <td>
+                <td align="center">
                     <a href="admin?action=feature_type_edit;feature_type_id=[% ft.feature_type_id %]">Edit</a>
                 </td>
 
-                <td>
+                <td align="center">
                     <a href="admin?action=confirm_delete;entity_type=cmap_feature_type;entity_id=[% ft.feature_type_id %];entity_name_field=feature_type">Delete</a>
                 </td>
             </tr>

@@ -46,12 +46,18 @@
 
     <table width="100%">
         <tr>
+            <td colspan="7" align="center">
+                [% SET pager_url="admin?action=dbxrefs_view&species_id=${apr.param('species_id')}&feature_type_id=${apr.param('feature_type_id')}&order_by=${apr.param('order_by')}" %]
+                [% PROCESS pager.tmpl %]
+            </td>
+        </tr>
+        <tr>
             <th><a href="admin?action=dbxrefs_view;species_id=[% apr.param('species_id') %];feature_type_id=[% apr.param('feature_type_id') %];order_by=feature_type">Feature Type</a></th>
             <th><a href="admin?action=dbxrefs_view;species_id=[% apr.param('species_id') %];feature_type_id=[% apr.param('feature_type_id') %];order_by=species_name">Species</a></th>
             <th><a href="admin?action=dbxrefs_view;species_id=[% apr.param('species_id') %];feature_type_id=[% apr.param('feature_type_id') %];order_by=map_set_name">Map Set Name</a></th>
             <th><a href="admin?action=dbxrefs_view;species_id=[% apr.param('species_id') %];feature_type_id=[% apr.param('feature_type_id') %];order_by=dbxref_name">Name</a></th>
             <th><a href="admin?action=dbxrefs_view;species_id=[% apr.param('species_id') %];feature_type_id=[% apr.param('feature_type_id') %];order_by=url">URL</a></th>
-            <th colspan="2" align="center">Actions</th>
+            <th colspan="2" align="center">&nbsp;</th>
         </tr>
 
         [% SET i=0 %]
@@ -62,10 +68,10 @@
                 <td>[% ref.map_set_name %]</td>
                 <td>[% ref.dbxref_name %]</td>
                 <td>[% ref.url | truncate(25) %]</td>
-                <td>
+                <td align="center">
                     <a href="admin?action=dbxref_edit;dbxref_id=[% ref.dbxref_id %]">Edit</a>
                 </td>
-                <td>
+                <td align="center">
                     <a href="admin?action=confirm_delete;entity_type=cmap_dbxref;entity_id=[% ref.dbxref_id %];entity_name=[% ref.dbxref_name | uri%]">Delete</a>
                 </td>
             </tr>

@@ -77,22 +77,8 @@
         <table border="0">
             <tr>
                 <td colspan="8" align="center">
-                    [% result_set_size %] records matched criteria.
-                    [% IF no_pages %]
-                        [% SET pages=[] %]
-                        <br>
-                        [% FOREACH page=[1..no_pages] %]
-                            [% IF (page - 1)*page_size==limit_start %]
-                                [% pages.push( "<b>$page</b>" ) %]
-                            [% ELSE %]
-                                [% SET start=((page - 1)*page_size) + 1 %]
-                                [% SET end=page*page_size %]
-                                [% SET end=result_set_size IF end>result_set_size %]
-                                [% pages.push( "<a href=\"/cmap/feature_search?features=${apr.param('features')};order_by=${apr.param('order_by')};species_aid=${apr.param('species_aid')};limit_start=${start}\">$page</a>" ) %]
-                            [% END %]
-                        [% END %]
-                        [% pages.join( ' | ' ) %]
-                    [% END %]
+                    [% SET pager_url="/cmap/feature_search?features=${apr.param('features')}&order_by=${apr.param('order_by')}&species_aid=${apr.param('species_aid')}" %]
+                    [% PROCESS pager.tmpl %]
                 </td>
             </tr>
             <tr>

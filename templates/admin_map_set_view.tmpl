@@ -110,6 +110,12 @@
 
     <table width="100%">
         <tr>
+            <td colspan="7" align="center">
+                [% SET pager_url="/cmap/admin?action=map_set_view&map_set_id=${map_set.map_set_id}" %]
+                [% PROCESS pager.tmpl %]
+            </td>
+        </tr>
+        <tr>
             <th>Acc. ID</th>
             <th>Map Name</th>
             <th>Start</th>
@@ -121,15 +127,19 @@
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
                 <td>[% map.accession_id   OR '&nbsp;' %]</td>
                 <td>[% map.map_name       OR '&nbsp;' %]</td>
-                <td>[% map.start_position %]</td>
-                <td>[% map.stop_position  %]</td>
-                <td>
+                <td align="right">
+                    [% map.start_position %]
+                </td>
+                <td align="right">
+                    [% map.stop_position  %]
+                </td>
+                <td align="center">
                     <a href="admin?action=map_view;map_id=[% map.map_id %]">View</a>
                 </td>
-                <td>
+                <td align="center">
                     <a href="admin?action=map_edit;map_id=[% map.map_id %]">Edit</a>
                 </td>
-                <td>
+                <td align="center">
                     <a href="admin?action=confirm_delete;entity_type=cmap_map;entity_id=[% map.map_id %]">Delete</a>
                 </td>
             </tr>

@@ -94,29 +94,8 @@
     <table width="100%">
         <tr>
             <td colspan="9" align="center">
-                There are [% no_features %] features on this map.
-                [% IF pages %]
-                    [% SET list=[] %]
-                    [% pages.unshift('Prev') IF cur_page>1 %]
-                    [% pages.push('Next') IF cur_page<pages.last %]
-                    <br>
-                    [% FOREACH page=pages %]
-                        [% IF page==cur_page %]
-                            [% list.push("<b>$page$</b>") %]
-                        [% ELSE %]
-                            [% IF page=='Prev' %]
-                                [% SET page_no=cur_page - 1 %]
-                            [% ELSIF page=='Next' %]
-                                [% SET page_no=cur_page+1 %]
-                            [% ELSE %]
-                                [% SET page_no=page %]
-                            [% END %]
-                            [% SET start=((page_no - 1)*page_size) %]
-                            [% list.push("<a href=\"admin?action=map_view;map_id=$map.map_id;feature_type_id=${apr.param('feature_type_id')};order_by=${apr.param('order_by')};limit_start=$start\">$page</a>") %]
-                        [% END %]
-                    [% END %]
-                    [% list.join(' | ') %]
-                [% END %]
+                [% SET pager_url="admin?action=map_view&map_id=${map.map_id}&feature_type_id=${apr.param('feature_type_id')}&order_by=${apr.param('order_by')}" %]
+                [% PROCESS pager.tmpl %]
             </td>
         </tr>
 

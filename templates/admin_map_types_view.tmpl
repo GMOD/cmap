@@ -4,7 +4,13 @@
 <hr noshade>
 
 [% IF map_types.size %]
-    <table>
+    <table width="100%">
+        <tr>
+            <td colspan="9" align="center">
+                [% SET pager_url="admin?action=map_types_view&order_by=${apr.param('order_by')}" %]
+                [% PROCESS pager.tmpl %]
+            </td>
+        </tr>
         <tr>
             <th><a href="admin?action=map_types_view;order_by=map_type">Map Type</a></th>
             <th><a href="admin?action=map_types_view;order_by=map_units">Map Units</a></th>
@@ -13,7 +19,7 @@
             <th><a href="admin?action=map_types_view;order_by=shape">Shape</a></th>
             <th><a href="admin?action=map_types_view;order_by=width">Width</a></th>
             <th><a href="admin?action=map_types_view;order_by=color">Color</a></th>
-            <th colspan="2" align="center">Actions</th>
+            <th colspan="2" align="center">&nbsp;</th>
         </tr>
 
         [% SET i=0 %]
@@ -26,10 +32,10 @@
                 <td>[% mt.shape %]</td>
                 <td>[% mt.width %]</td>
                 <td>[% mt.color %]</td>
-                <td>
+                <td align="center">
                   <a href="admin?action=map_type_edit;map_type_id=[% mt.map_type_id %]">Edit</a>
                 </td>
-                <td>
+                <td align="center">
                   <a href="admin?action=confirm_delete;entity_type=cmap_map_type;entity_id=[% mt.map_type_id %];entity_name_field=map_type">Delete</a>
                 </td>
             </tr>
