@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.10 $
+$Revision: 1.11 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -293,18 +293,25 @@ website, you must include the "http://".  Here is an example entry:
 
 =item * area_code (map and feature types only)
 
-CMap now allows you to specify javascript to be included in the area box
-over the drawings of map and features.  The following example makes the
-map name appear in the status bar of the browser on mouse over.
+CMap allows you to change the url, the alternet message or specify javascript
+to be included in the area box over the drawings of map and features.  The
+following example makes the map name appear in the status bar of the browser on
+mouse over.  It also changes the alternate message to the map name and makes
+the url search google.
 
-$code=sprintf("onMouseOver=\"window.status='%s';return true\"",$map->{'map_name'});
+ $code=sprintf("onMouseOver=\"window.status='%s';return true\"",$map->{'map_name'});
+ $alt =sprintf("%s",$map->{'map_name'});
+ $url=sprintf("www.google.com/search?q=%s",$map->{'map_name'});
 
-This is Perl code that sets the value of $code to be the javascript 
-command.  This evaluated for each map of this type which enables access
-to the internal variable $map (or in the case of features, $feature).  
+This is Perl code that lets you change the values of three variables; $code,
+$alt and $url.  $code hold the javascript commands that the area will use.
+$alt holds the alternate message that will pop up when the mouse is hovered
+over the area box.  $url is the URL that the browser will go to when clicking
+the area box.  These are evaluated for each map of this type which enables
+access to the internal variable $map (or in the case of features, $feature).  
 
-This allows the administrator the freedom of using javascript to make 
-the page more versatile.
+This allows the administrator the freedom to make the page more versatile.
+Each variable has usable defaults. 
 
 Some useful keys in $map (which are used $map->{'key'}):
 
