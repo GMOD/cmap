@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.58 2004-04-01 08:04:24 mwz444 Exp $
+# $Id: Drawer.pm,v 1.59 2004-04-14 20:54:29 mwz444 Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.58 $)[-1];
+$VERSION = (qw$Revision: 1.59 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -38,8 +38,8 @@ use base 'Bio::GMOD::CMap';
 my @INIT_PARAMS = qw[
     apr flip slots highlight font_size image_size image_type 
     label_features include_feature_types include_evidence_types
-    data_source min_correspondences collapse_features cache_dir
-    map_view config
+    config data_source min_correspondences collapse_features cache_dir
+    map_view
 ];
 
 # ----------------------------------------------------
@@ -505,6 +505,7 @@ Lays out the image and writes it to the file system, set the "image_name."
         #
         # Draw feature correspondences to reference map.
         #
+	
         for my $position_set ( 
             $self->feature_correspondence_positions( slot_no => $slot_no ) 
         ) {
@@ -1067,7 +1068,6 @@ to connect corresponding features on two maps.
             $self->{'feature_position'}{ $slot_no }{ $f1 }{ $self_label_side }
             || []
         } or next;
-
         for my $f2 ( $self->feature_correspondences( $f1 ) ) {
             my @same_map = @{ 
                 $self->{'feature_position'}{ $slot_no }{$f2}{$self_label_side}
@@ -1753,7 +1753,6 @@ sub register_feature_position {
 Remembers the feature position on a map.
 
 =cut
-
     my ( $self, %args ) = @_;
     my $feature_id      = $args{'feature_id'} or return;
     my $slot_no         = $args{'slot_no'};

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.77 2004-04-14 13:38:15 mwz444 Exp $
+# $Id: Map.pm,v 1.78 2004-04-14 20:54:29 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.77 $)[-1];
+$VERSION = (qw$Revision: 1.78 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -697,8 +697,7 @@ Lays out the map.
         my %lanes;                  # associate priority with a lane
         my %features_with_corr;     # features w/correspondences
         my ( $leftmostf, $rightmostf );    # furthest features
-                                           #p#rint STDERR "here1\n";
-                                           #p#rint STDERR Dumper($features);
+	#p#rint STDERR Dumper($features);
         for my $lane ( sort { $a <=> $b } keys %$features ) {
 
             my ( @north_labels, @south_labels );    # holds label coordinates
@@ -765,16 +764,16 @@ Lays out the map.
                     midpoint          => $midpoint,
                     label_y           => $label_y,
                     feature_type_aids => \%feature_type_aids,
-                    feature_with_corr => \%features_with_corr,
+                    features_with_corr => \%features_with_corr,
                 );
                 ########################################
             }
-
             #
             # We have to wait until all the features for the lane are
             # drawn before placing the labels.
             ##############################################
-            $self->add_labels_to_map(
+            ( $base_x, $leftmostf, $rightmostf, $max_x, $min_x, $top_y,
+	      $bottom_y, $min_y )=$self->add_labels_to_map(
                 base_x        => $base_x,
                 north_labels  => \@north_labels,
                 south_labels  => \@south_labels,
@@ -785,7 +784,6 @@ Lays out the map.
                 slot_no       => $slot_no,
                 drawing_data  => \@drawing_data,
                 map_area_data => \@map_area_data,
-                ,
                 features_with_corr => \%features_with_corr,
                 max_x              => $max_x,
                 min_x              => $min_x,
@@ -1357,7 +1355,7 @@ sub layout_map_foundation {
             bottom   => $max_ref_y,
             buffer   => 4,
             col_span => 1,
-	    bins     => 4,
+	    bins     => int(($ref_bottom-$ref_top)/$min_map_pixel_height),
 	    col_top  => $ref_top,
             col_bottom => $ref_bottom,
         );
@@ -1389,10 +1387,7 @@ sub layout_map_foundation {
 
     for my $i ( 0 .. $#map_toppers ) {
         my $topper = $map_toppers[$i];
-        my $f_x    =
-            $label_side eq LEFT
-          ? $base_x
-          : $base_x - ( ( length($topper) * $font_width ) / 2 );
+        my $f_x    = $base_x - ( ( length($topper) * $font_width ) / 2 );
 
         my $topper_y;
         if ( $slot_no == 0 ) {
@@ -1407,8 +1402,7 @@ sub layout_map_foundation {
 
         push @$drawing_data,
           [ STRING, $reg_font, $f_x, $topper_y, $topper, 'black' ];
-
-        $min_x = $f_x if $f_x < $min_x;
+        $min_x = $f_x if ((not defined($min_x)) or $f_x < $min_x);
     }
     return ( $base_x, $min_x, $map_base_y, $area, $last_map_x, $last_map_y,
         $pixel_height );
@@ -1584,7 +1578,7 @@ sub add_feature_to_map {
 
         $feature->{'mid_y'} = ( $y_pos1 + $y_pos2 ) / 2;
     }
-
+    
     my ( %drawn_glyphs, @temp_drawing_data );
     if ( $feature_shape eq LINE ) {
         $y_pos1 = ( $y_pos1 + $y_pos2 ) / 2;
@@ -1603,7 +1597,7 @@ sub add_feature_to_map {
             buffer      => $buffer,
             collapse    => $collapse_features,
             collapse_on => $feature->{'feature_type'},
-	    bins        => 30,
+	    bins        => $pixel_height,
 	    col_top     => $map_base_y,
             col_bottom  => $map_base_y+$pixel_height,
         );
@@ -1916,7 +1910,6 @@ sub collect_labels_to_display {
         $feature->{'accession_id'},
     );
 
-    #p#rint STDERR "has corr $has_corr\n";
     if ($has_corr) {
         my $mid_feature =
           $coords->[1] + ( ( $coords->[3] - $coords->[1] ) / 2 );
@@ -1929,7 +1922,7 @@ sub collect_labels_to_display {
             tick_y     => $mid_feature,
         };
     }
-
+    
     if (
         $show_labels
         && (
@@ -1967,7 +1960,8 @@ sub collect_labels_to_display {
               . $feature->{'feature_name'} . ' ['
               . $feature->{'accession_id'} . ']',
           };
-    }
+    } 
+    
 }
 
 # ----------------------------------------------------
