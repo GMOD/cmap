@@ -6,6 +6,7 @@
     help_anchor='map_details'
 %]
 <h1>[% title %]</h1>
+[%- url=apr.url %]
 
 <table>
     <tr>
@@ -245,7 +246,7 @@
         </td>
         <td align="center" colspan="5">
             [%- SET comp_maps = "${apr.param('comparative_maps')}" -%]
-            [%- SET pager_url="/cmap/map_details?ref_map_set_aid=${apr.param('ref_map_set_aid')}&ref_map_aid=${apr.param('ref_map_aid')}&comparative_maps=${comp_maps.replace('=', '%3d')}&label_features=${apr.param('label_features')}&feature_types=${apr.param('feature_types')}&evidence_types=${apr.param('evidence_types')}&highlight=${apr.param('highlight_uri')}&order_by=${apr.param('order_by')}&comparative_map=${apr.param('comparative_map')}&flip=${apr.param('flip')}" -%]
+            [%- SET pager_url="$url/map_details?ref_map_set_aid=${apr.param('ref_map_set_aid')}&ref_map_aid=${apr.param('ref_map_aid')}&ref_map_start=${apr.param('ref_map_start')}&ref_map_stop=${apr.param('ref_map_stop')}&ccomparative_maps=${comp_maps.replace('=', '%3d')}&label_features=${apr.param('label_features')}&feature_types=${apr.param('feature_types')}&evidence_types=${apr.param('evidence_types')}&highlight=${apr.param('highlight_uri')}&order_by=${apr.param('order_by')}&comparative_map=${apr.param('comparative_map')}&flip=${apr.param('flip')}" -%]
             [ <a href="[% pager_url %]&action=download">Download Feature Data</a> ]
         </td>
     </tr>
