@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.55 2004-08-07 01:35:53 mwz444 Exp $
+# $Id: Admin.pm,v 1.56 2004-08-19 05:40:46 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.55 $)[-1];
+$VERSION = (qw$Revision: 1.56 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -1060,12 +1060,15 @@ sub purge_cache {
 Purge the query cache
 
 =cut
-    my ( $self, ) = @_;
-
-    my %params5=('namespace'=>$self->config_data('database')->{'name'},);
-    my $feature_type_cache=new Cache::FileCache(\%params5 );
-    $feature_type_cache->Clear;
-
+    my ( $self,$cache_level ) = @_;
+    $cache_level=1 unless $cache_level;
+    
+    my @level_names=$self->cache_level_names;
+    for (my $i=$cache_level-1;$i<=$#level_names;$i++){
+        my %params5=('namespace'=>$level_names[$i],);
+        my $cache=new Cache::FileCache(\%params5 );
+        $cache->clear;
+    }
 }
 
 # ----------------------------------------------------

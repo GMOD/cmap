@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap;
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.56 2004-08-18 21:52:00 mwz444 Exp $
+# $Id: CMap.pm,v 1.57 2004-08-19 05:40:34 mwz444 Exp $
 
 =head1 NAME
 
@@ -737,6 +737,20 @@ This is a consistant way of naming the link name space
     return 'imported_links_'.$self->data_source;
 }
 
+# ----------------------------------------------------
+sub cache_level_names{
+
+=pod
+
+=head2 cache_level_names
+
+This is a consistant way of naming the cache levels. 
+
+=cut
+
+    my $self = shift;
+    return map {$self->config_data('database')->{'name'}."_L".$_} (1..4);
+}
 # ----------------------------------------------------
 sub DESTROY {
 

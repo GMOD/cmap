@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.141 2004-08-18 21:53:33 mwz444 Exp $
+# $Id: Data.pm,v 1.142 2004-08-19 05:40:46 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.141 $)[-1];
+$VERSION = (qw$Revision: 1.142 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -52,22 +52,14 @@ sub init {
     ### For and explaination of the cache levels, see
     ### the comments above the cache subroutines 
     ### titled "Query Caching"
-    my %cache_params = ( 
-        'namespace' => $self->config_data('database')->{'name'}."_L1",
-         );
-    $self->{'L1_cache'} = new Cache::FileCache( \%cache_params );
-    %cache_params = ( 
-        'namespace' => $self->config_data('database')->{'name'}."_L2",
-         );
-    $self->{'L2_cache'} = new Cache::FileCache( \%cache_params );
-    %cache_params = ( 
-        'namespace' => $self->config_data('database')->{'name'}."_L3",
-         );
-    $self->{'L3_cache'} = new Cache::FileCache( \%cache_params );
-    %cache_params = ( 
-        'namespace' => $self->config_data('database')->{'name'}."_L4",
-         );
-    $self->{'L4_cache'} = new Cache::FileCache( \%cache_params );
+    my @level_names=$self->cache_level_names();
+    for (my $i=0;$i<=$#level_names;$i++){
+        my %cache_params = (
+            'namespace' => $level_names[$i],
+             );
+        $self->{'L'.($i+1).'_cache'} = new Cache::FileCache( \%cache_params );
+    }
+    
     $self->{'expanded_correspondence_lookup'}=
         $self->config_data('expanded_correspondence_lookup');
     return $self;
