@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.124 2004-09-13 20:55:07 mwz444 Exp $
+# $Id: Map.pm,v 1.125 2004-09-13 21:04:20 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.124 $)[-1];
+$VERSION = (qw$Revision: 1.125 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1091,7 +1091,7 @@ Variable Info:
         # Draw the actual Map
         my $mid_x = 0; 
         my $draw_sub_name = $SHAPE{ $self->shape($map_id) };
-        my ($bounds,$new_map_coords) = $self->$draw_sub_name(
+        my ($bounds,$map_coords) = $self->$draw_sub_name(
             map_id       => $map_id,
             slot_no      => $slot_no,
             map_units    => $self->map_units($map_id), 
@@ -1104,14 +1104,14 @@ Variable Info:
             drawing_data => $map_drawing_data{$map_id},
             map_area_data => $map_area_data{$map_id},
         );
-        $map_placement_data{$map_id}{'map_coords'}[0]=$new_map_coords->[0]
-            if ($map_placement_data{$map_id}{'map_coords'}[0]>$new_map_coords->[0]);
-        $map_placement_data{$map_id}{'map_coords'}[1]=$new_map_coords->[1]
-            if ($map_placement_data{$map_id}{'map_coords'}[1]>$new_map_coords->[1]);
-        $map_placement_data{$map_id}{'map_coords'}[2]=$new_map_coords->[2]
-            if ($map_placement_data{$map_id}{'map_coords'}[2]<$new_map_coords->[2]);
-        $map_placement_data{$map_id}{'map_coords'}[3]=$new_map_coords->[3]
-            if ($map_placement_data{$map_id}{'map_coords'}[3]<$new_map_coords->[3]);
+        $map_placement_data{$map_id}{'map_coords'}[0]=$map_coords->[0]
+            if ($map_placement_data{$map_id}{'map_coords'}[0]>$map_coords->[0]);
+        $map_placement_data{$map_id}{'map_coords'}[1]=$map_coords->[1]
+            if ($map_placement_data{$map_id}{'map_coords'}[1]>$map_coords->[1]);
+        $map_placement_data{$map_id}{'map_coords'}[2]=$map_coords->[2]
+            if ($map_placement_data{$map_id}{'map_coords'}[2]<$map_coords->[2]);
+        $map_placement_data{$map_id}{'map_coords'}[3]=$map_coords->[3]
+            if ($map_placement_data{$map_id}{'map_coords'}[3]<$map_coords->[3]);
         $map_placement_data{$map_id}{'bounds'}[0]=$bounds->[0]
             if ($map_placement_data{$map_id}{'bounds'}[0]>$bounds->[0]);
         $map_placement_data{$map_id}{'bounds'}[1]=$bounds->[1]
@@ -1131,8 +1131,8 @@ Variable Info:
             map_placement_data => \%map_placement_data,
             );
 
-        my $new_map_name = $self->map_name($map_id);
-        if ( $drawer->highlight_feature($new_map_name) ) {
+        my $map_name = $self->map_name($map_id);
+        if ( $drawer->highlight_feature($map_name) ) {
             push @{$map_drawing_data{$map_id}},
               [ RECTANGLE, @{$map_placement_data{$map_id}{'map_coords'}},
                 $feature_highlight_fg_color ];
@@ -1144,7 +1144,7 @@ Variable Info:
 
         # Tick marks.
         if ($show_ticks) {
-            $self->new_add_tick_marks(
+            $self->add_tick_marks(
                 map_coords        => $map_placement_data{$map_id}{'map_coords'},
                 bounds            => $map_placement_data{$map_id}{'bounds'},
                 drawer            => $drawer,
@@ -1167,7 +1167,7 @@ Variable Info:
         my %features_with_corr;     # features w/correspondences
         my ( $leftmostf, $rightmostf );    # furthest features
 
-        my $new_base_x = $map_placement_data{$map_id}{'map_coords'}[0];
+        my $map_base_x = $map_placement_data{$map_id}{'map_coords'}[0];
         
         for my $lane ( sort { $a <=> $b } keys %$features ) {
             my %even_labels;               # holds label coordinates
@@ -1189,12 +1189,12 @@ Variable Info:
                 };
 
                 my $lane = $lanes{$lane};
-                $new_base_x =
+                $map_base_x =
                     $lane->{'furthest'}
                   ? $label_side eq RIGHT
                   ? $lane->{'furthest'} + 2
                   : $lane->{'furthest'} - ( $map_width + 4 )
-                  : $new_base_x;
+                  : $map_base_x;
             }
             my %drawn_glyphs;
             for my $feature (@$lane_features) {
@@ -1205,7 +1205,7 @@ Variable Info:
 
                 ( $leftmostf, $rightmostf, $coords, $color, $label_y ) =
                   $self->add_feature_to_map(
-                    base_x            => $new_base_x,
+                    base_x            => $map_base_x,
                     map_base_y        => $map_placement_data{$map_id}{'map_coords'}[1],
                     drawer            => $drawer,
                     feature           => $feature,
@@ -1247,11 +1247,11 @@ Variable Info:
             ##############################################
             my $min_x=0;
             (
-                $new_base_x, $leftmostf, $rightmostf, $max_x, $min_x, $top_y,
+                $map_base_x, $leftmostf, $rightmostf, $max_x, $min_x, $top_y,
                 $bottom_y, $min_y
               )
               = $self->add_labels_to_map(
-                base_x             => $new_base_x,
+                base_x             => $map_base_x,
                 base_y             => $map_placement_data{$map_id}{'map_coords'}[1],
                 even_labels        => \%even_labels,
                 drawer             => $drawer,
@@ -1680,11 +1680,11 @@ Variable Info:
         $map_placement_data{$map_id}{'bounds'}[2]+=$offset;
 
 
-        my $new_map_start         = $self->start_position($map_id);
-        my $new_map_stop          = $self->stop_position($map_id);
+        my $map_start         = $self->start_position($map_id);
+        my $map_stop          = $self->stop_position($map_id);
 
         $drawer->register_map_coords(
-            $slot_no,  $map_id,  $new_map_start, $new_map_stop,
+            $slot_no,  $map_id,  $map_start, $map_stop,
             @{$map_placement_data{$map_id}{'map_coords'}}, 
         );
 
@@ -1957,7 +1957,7 @@ sub place_map_y {
         $return_y1  = $min_ref_y,
         $return_y2  = $max_ref_y,
     }
-    my $temp_hash = $self->new_enforce_boundaries(
+    my $temp_hash = $self->enforce_boundaries(
         return_y1       => $return_y1,
         return_y2       => $return_y2,
         top_boundary    => $top_boundary,
@@ -2148,394 +2148,9 @@ sub add_capped_mark {
     }
 }
 
-# ----------------------------------------
-
-=pod
-
-=head2 layout_map_foundation
-
-Lays out the base map
-
-=cut
-
-sub layout_map_foundation {
-
-    my ( $self, %args ) = @_;
-
-    my ( $min_x, $area );
-    my $base_x          = $args{'base_x'};
-    my $base_y          = $args{'base_y'};
-    my $map_base_y      = $args{'base_y'};
-    my $top_y           = $args{'top_y'};
-    my $map_id          = $args{'map_id'};
-    my $is_compressed   = $args{'is_compressed'};
-    my $slot_no         = $args{'slot_no'};
-    my $drawer          = $args{'drawer'};
-    my $map_columns     = $args{'map_columns'};
-    my $drawing_data    = $args{'drawing_data'};
-    my $map_area_data    = $args{'map_area_data'};
-    my $original_base_x = $args{'original_base_x'};
-    my $last_map_x      = $args{'last_map_x'};
-    my $last_map_y      = $args{'last_map_y'};
-    my $no_of_maps      = $args{'no_of_maps'};
-    my $map_length      = $args{'map_length'};
-
-    my $pixel_height = $drawer->pixel_height;
-    my $label_side   = $drawer->label_side($slot_no);
-    my $reg_font     = $drawer->regular_font
-      or return $self->error( $drawer->error );
-    my $magnify_all = $self->magnify_all;
-    my $font_width  = $reg_font->width;
-    my $font_height = $reg_font->height;
-
-    my $column_width         = 70;
-    if ($self->aggregate){
-        $column_width        = 40;
-    }
-    my @ref_connections;
-    my $topper_height        = ( $font_height + 2 ) * 2;
-    my $map_name             = $self->map_name($map_id);
-    my $no_features          = $self->no_features($map_id);
-    my $min_map_pixel_height = $drawer->config_data('min_map_pixel_height');
-    my $scaled_map_pixel_height = $min_map_pixel_height;
-    my $capped               = 0; #represents if the size of the map 
-                                  #was capped. Representation based on binary:
-                                  # 0 = not capped, 1 = top; 2 = bottom
-                                  # 3 = both 
-
-    #
-    # Set information used to scale.
-    #
-    if ($drawer->{'data'}{'ref_unit_size'}{$self->map_units($map_id)}){
-        $scaled_map_pixel_height
-            = ($self->stop_position($map_id)-$self->start_position($map_id))
-            * ($drawer->pixel_height()
-              / $drawer->{'data'}{'ref_unit_size'}{$self->map_units($map_id)});
-        $scaled_map_pixel_height = $min_map_pixel_height
-            if ($scaled_map_pixel_height < $min_map_pixel_height);
-        $scaled_map_pixel_height=$scaled_map_pixel_height*$drawer->data_module->magnification($slot_no,$map_id)
-            *$magnify_all;
-    }
-    #
-    # Get the information about the reference map.
-    #
-    my ($ref_y1,$ref_y2);
-    my $ref_slot_no = $drawer->reference_slot_no($slot_no);
-    my $ref_corrs = $drawer->map_correspondences( $slot_no, $map_id );
-    for my $ref_corr ( values %$ref_corrs ) {
-        my $ref_pos =
-            $drawer->reference_map_coords( $ref_slot_no,
-            $ref_corr->{'ref_map_id'} );
-        $ref_y1 = $ref_pos->{'y1'} 
-            if (!defined($ref_y1) or $ref_y1>$ref_pos->{'y1'}); 
-        $ref_y2 = $ref_pos->{'y2'} 
-            if (!defined($ref_y2) or $ref_y2<$ref_pos->{'y2'}); 
-    }
-    #
-    # Set the boundaries for the top and the bottom that no
-    # map shall be allowed to cross.
-    #
-    my $boundary_factor=0.5;
-#    my $top_boundary=$ref_y1 - (
-#        ($ref_y2 - $ref_y1) * $boundary_factor);
-#    my $bottom_boundary=$ref_y2 + (
-#        ($ref_y2 - $ref_y1) * $boundary_factor);
-    my $top_boundary=$base_y - (
-        ($drawer->pixel_height()) * $boundary_factor * $magnify_all);
-    my $bottom_boundary=$base_y+($drawer->pixel_height() * $magnify_all) + (
-        ($drawer->pixel_height()) * $boundary_factor * $magnify_all);
-
-    #
-    #Decide the dimentions of a compressed map
-    #
-    my $compressed_map_pix_height = int(
-        (
-            $drawer->pixel_height -
-              ( ( ( $font_height + 4 ) * 2 ) * $no_of_maps )
-        ) / $no_of_maps
-    );
-    $compressed_map_pix_height = $min_map_pixel_height
-      if $compressed_map_pix_height < $min_map_pixel_height;
-    my $compressed_map_pix_width = 4;
-
-    #
-    # Indicate total number of features on the map.
-    #
-    my @map_toppers = $is_compressed ? ($map_name) : ();
-    push @map_toppers, "[$no_features]" if defined $no_features;
-
-    #
-    # If drawing compressed maps in the first slot, then draw them
-    # in "display_order," else we'll try to line them up.
-    #
-    if ( $is_compressed && $slot_no == 0 ) {
-        my ( $this_map_y, $this_map_x );
-        if ( $last_map_y > $drawer->pixel_height ) {
-            $this_map_y = $base_y;
-            $this_map_x = $last_map_x + 50;
-        }
-        else {
-            $this_map_y = $last_map_y;
-            $this_map_x = $last_map_x;
-        }
-        $this_map_x = $original_base_x unless defined($this_map_x);
-        $last_map_x = $this_map_x;
-        my $half_label = ( ( $font_width * length($map_name) ) / 2 );
-        $base_x       = $this_map_x - $half_label;
-        $map_base_y   = $this_map_y;
-        $pixel_height = $scaled_map_pixel_height;
-        $area         = [
-            $base_x,
-            $this_map_y + $font_height,
-            $base_x + $font_width * length($map_name),
-            $this_map_y + $font_height + $pixel_height
-        ];
-    }
-    elsif ($is_compressed) {
-        my $ref_corrs = $drawer->map_correspondences( $slot_no, $map_id );
-        my ( $min_ref_y, $max_ref_y,  $ref_top, $ref_bottom );
-        for my $ref_corr ( values %$ref_corrs ) {
-
-            #
-            # Get the information about the reference map.
-            #
-            my $ref_pos =
-                $drawer->reference_map_coords( $ref_slot_no,
-                $ref_corr->{'ref_map_id'} );
-
-            my $avg_mid;
-            if (defined($ref_corr->{'avg_mid'})){
-                $avg_mid=$ref_corr->{'avg_mid'};
-            }
-            else{
-                $avg_mid=$ref_corr->{'start_avg1'}
-            }
-            my $avg_mid2;
-            if (defined($ref_corr->{'avg_mid2'})){
-                $avg_mid2=$ref_corr->{'avg_mid2'};
-            }
-            else{
-                $avg_mid2=$ref_corr->{'start_avg2'}
-            }
-
-
-            my $ref_map_pixel_len = $ref_pos->{'y2'} - $ref_pos->{'y1'};
-            my $ref_map_unit_len  = $ref_pos->{'map_stop'} - $ref_pos->{'map_start'};
-            $ref_top    = $ref_pos->{'y1'};
-            $ref_bottom = $ref_pos->{'y2'};
-
-            my $ref_map_y1 =
-              $ref_pos->{'y1'} +
-              ( ( $ref_corr->{'min_start'} - $ref_pos->{'map_start'} ) /
-                  $ref_map_unit_len ) * $ref_map_pixel_len;
-            my $ref_map_y2 =
-              $ref_pos->{'y1'} +
-              ( ( $ref_corr->{'max_start'} - $ref_pos->{'map_start'} ) /
-                  $ref_map_unit_len ) * $ref_map_pixel_len;
-            # Set the avg location of the corr on the ref map
-            my $ref_map_mid_y =
-                $ref_pos->{'y1'} +
-                (($avg_mid - $ref_pos->{'map_start'} ) /
-                  $ref_map_unit_len ) * $ref_map_pixel_len;
-
-            if (0){
-                # Single line to avg corr
-                push @ref_connections,
-                  [ $ref_pos->{'x1'}, $ref_map_mid_y, $ref_corr->{'no_corr'}
-                  ,($avg_mid2-$self->start_position($map_id))];
-            }
-            else{
-                # V showing span of corrs
-                push @ref_connections,
-                  [ $ref_pos->{'x1'}, $ref_map_y1, $ref_corr->{'no_corr'} 
-                  ,($ref_corr->{'min_start2'}-$self->start_position($map_id)) ];
-                push @ref_connections,
-                  [ $ref_pos->{'x1'}, $ref_map_y2, $ref_corr->{'no_corr'}
-                  ,($ref_corr->{'max_start2'}-$self->start_position($map_id)) ];
-            }
-
-            #
-            # If desired, draw maps to scale otherwise
-            #  keep the map a consistent height.
-            #
-            if ($self->scale_maps 
-                and $self->config_data('scalable')
-                and
-                $self->config_data('scalable')->{$self->map_units($map_id)}){
-                $min_ref_y = $ref_map_mid_y - ($scaled_map_pixel_height/2);
-                $max_ref_y = $ref_map_mid_y + ($scaled_map_pixel_height/2);
-            }
-            else{
-                $min_ref_y = $ref_map_mid_y - $min_map_pixel_height;
-                $max_ref_y = $ref_map_mid_y + $min_map_pixel_height;
-            }
-        }
-
-        my $map_pix_len = $max_ref_y - $min_ref_y;
-        if ( $map_pix_len < $min_map_pixel_height ) {
-            $pixel_height = $min_map_pixel_height;
-            my $mid_ref_y = $min_ref_y + ( $max_ref_y - $min_ref_y );
-            $min_ref_y = $mid_ref_y - ( $pixel_height / 2 );
-            $max_ref_y = $mid_ref_y + ( $pixel_height / 2 );
-        }
-        else {
-            $pixel_height = $map_pix_len;
-        }
-        $map_base_y = $min_ref_y;
-
-        my $map_lane;
-        my $buffer = 4;
-
-        if (@$map_columns) {
-            for my $i ( 0 .. $#{$map_columns} ) {
-                if ( $map_columns->[$i] < $min_ref_y - $topper_height ) {
-                    $map_lane = $i;
-                    last;
-                }
-            }
-        }
-        else {
-            $map_lane = 0;
-        }
-        $map_lane = scalar @$map_columns
-          unless defined $map_lane;
-        $map_columns->[$map_lane] = $max_ref_y + $buffer;
-
-        $base_x = $label_side eq RIGHT
-            ? $original_base_x + ( $column_width * $map_lane )
-            : $original_base_x - ( $column_width * $map_lane );
-        $area = [
-            $base_x,                                   $min_ref_y,
-            $base_x + $font_width * length($map_name), $max_ref_y,
-        ];
-
-
-        if (defined $ref_slot_no){
-            my $temp_hash = $self->enforce_boundaries(
-                map_base_y      => $map_base_y,
-                top_boundary    => $top_boundary,
-                bottom_boundary => $bottom_boundary,
-                pixel_height    => $pixel_height,
-                area            => $area,
-            );
-            $map_base_y      = $temp_hash->{'map_base_y'};
-            $top_boundary    = $temp_hash->{'top_boundary'};
-            $bottom_boundary = $temp_hash->{'bottom_boundary'};
-            $pixel_height    = $temp_hash->{'pixel_height'};
-            $capped          = $temp_hash->{'capped'};
-        }
-    }
-    else{
-        if ($self->scale_maps
-            and $self->config_data('scalable')
-            and
-            $self->config_data('scalable')->{$self->map_units($map_id)}){
-            $pixel_height = $scaled_map_pixel_height;
-            if (defined $ref_slot_no){
-                my $temp_hash = $self->enforce_boundaries(
-                    map_base_y      => $map_base_y,
-                    top_boundary    => $top_boundary,
-                    bottom_boundary => $bottom_boundary,
-                    pixel_height    => $pixel_height,
-                    area            => $area,
-                );
-                $map_base_y      = $temp_hash->{'map_base_y'};
-                $top_boundary    = $temp_hash->{'top_boundary'};
-                $bottom_boundary = $temp_hash->{'bottom_boundary'};
-                $pixel_height    = $temp_hash->{'pixel_height'};
-                $capped          = $temp_hash->{'capped'};
-            }
-        }
-    }
-
-    $top_y = $map_base_y unless defined $top_y;
-    $top_y = $map_base_y if $map_base_y < $top_y;
-
-    for my $i ( 0 .. $#map_toppers ) {
-        my $topper = $map_toppers[$i];
-        my $f_x    = $base_x - ( ( length($topper) * $font_width ) / 2 );
-
-        my $topper_y;
-        if ( $slot_no == 0 ) {
-            $topper_y = $map_base_y;
-            $map_base_y += $font_height + 2;
-            $last_map_y += $font_height + 2;
-        }
-        else {
-            $topper_y =
-              $map_base_y - ( $font_height * ( scalar @map_toppers - $i ) + 4 );
-        }
-
-        my @topper_bounds=($f_x, $topper_y,  
-            $f_x + ( length($topper) * $font_width ) ,
-            $topper_y+( $font_height * ( scalar @map_toppers - $i ))-4);
-        my $map             = $self->map($map_id);
-        my $map_details_url = DEFAULT->{'map_details_url'};
-        my $code            = '';
-        eval $self->map_type_data( $map->{'map_type_aid'}, 'area_code' );
-        push @$map_area_data,
-          {
-            coords => \@topper_bounds,
-            url  => $map_details_url."?ref_map_aids=".$map->{'accession_id'},
-            alt  => 'Map Details: ' . $map->{'map_name'},
-            code => $code,
-          };
-                                                                                
-
-        push @$drawing_data,
-          [ STRING, $reg_font, $f_x, $topper_y, $topper, 'black' ];
-        $min_x = $f_x if ( ( not defined($min_x) ) or $f_x < $min_x );
-    }
-    
-    return ( $base_x, $min_x, $map_base_y, $top_y, $area, 
-        $last_map_x, $last_map_y, $pixel_height, $capped, \@ref_connections );
-
-}
 
 # ----------------------------------------------------------
 sub enforce_boundaries {
-    #
-    # enforce the boundaries of maps
-    #
-    my ($self,%args)    = @_;
-    my $map_base_y      = $args{'map_base_y'};
-    my $top_boundary    =$args{'top_boundary'};
-    my $bottom_boundary =$args{'bottom_boundary'};
-    my $capped          = 0;
-    my $pixel_height    =$args{'pixel_height'};
-    my $area            =$args{'area'};
-     
-    if ($map_base_y<$top_boundary){
-        $capped        = 1; 
-        $pixel_height -= ($top_boundary-$map_base_y); 
-        $map_base_y    = $top_boundary;
-        if ($area and scalar @$area){
-            if ($area->[1]<$top_boundary){
-                $area->[1] = $top_boundary;
-            } 
-        }
-    }
-    if ($bottom_boundary and $pixel_height+$map_base_y>$bottom_boundary){
-        ###Assumes $bottom_boundary is not naturally 0 
-        $capped += 2;
-        $pixel_height=$bottom_boundary-$map_base_y;
-            if ($area and scalar @$area){
-                if ($area->[3]>$bottom_boundary){
-                $area->[3]     = $bottom_boundary;
-                } 
-        } 
-    }
-    return {
-        map_base_y      => $map_base_y,
-		top_boundary    => $top_boundary,
-		bottom_boundary => $bottom_boundary,
-		pixel_height    => $pixel_height,
-		capped          => $capped,
-    }
-}
-
-# ----------------------------------------------------------
-sub new_enforce_boundaries {
     #
     # enforce the boundaries of maps
     #
@@ -2567,202 +2182,6 @@ sub new_enforce_boundaries {
 
 # ---------------------------------------------------
 sub add_tick_marks {
-
-    my ( $self, %args )   = @_;
-    my $base_x            = $args{'base_x'};
-    my $map_base_y        = $args{'map_base_y'};
-    my $drawer            = $args{'drawer'};
-    my $map_id            = $args{'map_id'};
-    my $slot_no           = $args{'slot_no'};
-    my $drawing_data      = $args{'drawing_data'};
-    my $map_area_data     = $args{'map_area_data'};
-    my $pixel_height      = $args{'pixel_height'};
-    my $is_flipped        = $args{'is_flipped'};
-    my $map_start         = $self->start_position($map_id);
-    my $actual_map_length = $args{'actual_map_length'};
-    my $map_length        = $args{'map_length'};
-    my $map_width         = $self->map_width($map_id);
-    my $max_x             = $args{'max_x'};
-    my $min_x             = $args{'min_x'};
-    my $map_coords        = $args{'map_coords'};
-    my $map_aid           = $self->map_aid($map_id);
-
-    my $label_side = $drawer->label_side($slot_no);
-    my $reg_font   = $drawer->regular_font
-      or return $self->error( $drawer->error );
-    my $font_width  = $reg_font->width;
-    my $font_height = $reg_font->height;
-
-    my $array_ref     = $self->tick_mark_interval($map_id,$pixel_height);
-    my ($interval,$map_scale) =@$array_ref;
-    my $no_intervals  = int( $actual_map_length / $interval );
-    my $tick_overhang = 15;
-    my @intervals     =
-      map { int( $map_start + ( $_ * $interval ) ) } 1 .. $no_intervals;
-    my $min_tick_distance= $self->config_data('min_tick_distance') || 40;
-    my $last_tick_rel_pos = undef;
-
-    for my $tick_pos (@intervals) {
-        my $rel_position = ( $tick_pos - $map_start ) / $map_length;
-        
-        if (
-            (
-             ($rel_position*$pixel_height) < $min_tick_distance)
-             or 
-                (defined($last_tick_rel_pos) 
-                 and (
-                  ($rel_position*$pixel_height)
-                  - ($last_tick_rel_pos*$pixel_height)
-                    < $min_tick_distance
-                 )
-            )
-           ){
-            next;
-        }
-            
-        
-        $last_tick_rel_pos = $rel_position;
-
-        my $y_pos = $is_flipped
-          ? $map_coords->[3] - ( $pixel_height * $rel_position )
-          : $map_coords->[1] + ( $pixel_height * $rel_position );
-
-        my $tick_start =
-            $label_side eq RIGHT
-          ? $base_x - $tick_overhang
-          : $base_x;
-
-        my $tick_stop =
-            $label_side eq RIGHT
-          ? $base_x + $map_width
-          : $base_x + $map_width + $tick_overhang;
-
-        push @$drawing_data,
-          [ LINE, $tick_start, $y_pos, $tick_stop, $y_pos, 'grey' ];
-
-        my $clip_arrow_color='grey';
-        my $clip_arrow_width  = 6;
-        my $clip_arrow_y1_down = $y_pos+2;
-        my $clip_arrow_y1_up = $y_pos-2;
-        my $clip_arrow_y2_down = $clip_arrow_y1_down+3;
-        my $clip_arrow_y2_up = $clip_arrow_y1_up-3;
-        my $clip_arrow_y3_down = $clip_arrow_y2_down+5;
-        my $clip_arrow_y3_up = $clip_arrow_y2_up-5;
-        my $clip_arrow_x1 = 
-            $label_side eq LEFT 
-          ? $tick_stop-$clip_arrow_width
-          : $tick_start;
-        my $clip_arrow_x2 = $clip_arrow_x1 +$clip_arrow_width;
-        my $clip_arrow_xmid = ($clip_arrow_x1+$clip_arrow_x2)/2; 
-        # First line across
-        push @$drawing_data,
-          [ LINE, $clip_arrow_x1, $clip_arrow_y1_down, $clip_arrow_x2, $clip_arrow_y1_down, $clip_arrow_color ];
-        push @$drawing_data,
-          [ LINE, $clip_arrow_x1, $clip_arrow_y1_up, $clip_arrow_x2, $clip_arrow_y1_up, $clip_arrow_color ];
-        # line to arrow 
-        push @$drawing_data,
-          [ LINE, $clip_arrow_xmid, $clip_arrow_y1_down, $clip_arrow_xmid, $clip_arrow_y2_down, $clip_arrow_color ];
-        push @$drawing_data,
-          [ LINE, $clip_arrow_xmid, $clip_arrow_y1_up, $clip_arrow_xmid, $clip_arrow_y2_up, $clip_arrow_color ];
-        # base of arrow
-        push @$drawing_data,
-          [ LINE, $clip_arrow_x1, $clip_arrow_y2_down, $clip_arrow_x2, $clip_arrow_y2_down, $clip_arrow_color ];
-        push @$drawing_data,
-          [ LINE, $clip_arrow_x1, $clip_arrow_y2_up, $clip_arrow_x2, $clip_arrow_y2_up, $clip_arrow_color ];
-        # left side of arrow
-        push @$drawing_data,
-          [ LINE, $clip_arrow_x1, $clip_arrow_y2_down, $clip_arrow_xmid, $clip_arrow_y3_down, $clip_arrow_color ];
-        push @$drawing_data,
-          [ LINE, $clip_arrow_x1, $clip_arrow_y2_up, $clip_arrow_xmid, $clip_arrow_y3_up, $clip_arrow_color ];
-        # right side of arrow
-        push @$drawing_data,
-          [ LINE, $clip_arrow_x2, $clip_arrow_y2_down, $clip_arrow_xmid, $clip_arrow_y3_down, $clip_arrow_color ];
-        push @$drawing_data,
-          [ LINE, $clip_arrow_x2, $clip_arrow_y2_up, $clip_arrow_xmid, $clip_arrow_y3_up, $clip_arrow_color ];
-        # fill arrow
-        push @$drawing_data,
-          [ FILL, $clip_arrow_xmid, $clip_arrow_y2_down+1, $clip_arrow_color ];
-        push @$drawing_data,
-          [ FILL, $clip_arrow_xmid, $clip_arrow_y2_up-1, $clip_arrow_color ];
-
-        my $down_command=$is_flipped ? '1' : '0';
-        my $up_command=$is_flipped ? '0' : '1';
-        my ($up_start_pos,$up_stop_pos,$down_start_pos,$down_stop_pos);
-        my $slot_info=$drawer->data_module->slot_info->{$slot_no};
-        if ($is_flipped){
-            $up_start_pos    = $tick_pos;
-            $down_stop_pos = $tick_pos;
-            $down_start_pos   = defined($slot_info->{$map_id}->[0])
-                ? $slot_info->{$map_id}->[0]
-                : "''";
-            $up_stop_pos   = defined($slot_info->{$map_id}->[1])
-                ? $slot_info->{$map_id}->[1]
-                : "''";
-
-        }
-        else{
-            $up_stop_pos    = $tick_pos;
-            $down_start_pos = $tick_pos;
-            $up_start_pos   = defined($slot_info->{$map_id}->[0])
-                ? $slot_info->{$map_id}->[0]
-                : "''";
-            $down_stop_pos   = defined($slot_info->{$map_id}->[1])
-                ? $slot_info->{$map_id}->[1]
-                : "''";
-        }
-        my $magnification = defined($slot_info->{$map_id}->[4])
-            ? $slot_info->{$map_id}->[4]
-            : "'1'";
-
-        
-        my $down_code=qq[ 
-            onMouseOver="window.status='crop down';return true" 
-            onClick="mod_map_info($slot_no, '$map_aid', $down_start_pos, $down_stop_pos,$magnification);document.comparative_map_form.submit();"
-            ]; 
-        my $up_code=qq[
-            onMouseOver="window.status='crop up';return true" 
-            onClick="mod_map_info($slot_no, '$map_aid', $up_start_pos, $up_stop_pos,$magnification);document.comparative_map_form.submit();"
-            ]; 
-        push @$map_area_data,
-          {
-            coords => [$clip_arrow_x1,$clip_arrow_y1_down,
-                $clip_arrow_x2,$clip_arrow_y3_down],
-            url  => '#',
-            alt  => 'Crop from here down',
-            code => $down_code,
-          };
-        push @$map_area_data,
-          {
-            coords => [$clip_arrow_x1,$clip_arrow_y3_up,
-                $clip_arrow_x2,$clip_arrow_y1_up],
-            url  => '#',
-            alt  => 'Crop from here up',
-            code => $up_code,
-          };
-        my $label_x =
-            $label_side eq RIGHT
-          ? $tick_start - $font_height - 2
-          : $tick_stop + 2;
-        #
-        # Figure out how many signifigant figures the number needs by 
-        # going down to the $interval size.
-        #
-        my $sig_figs = int(''.(log(abs($tick_pos))/log(10)))-int(''.(log(abs($interval))/log(10))) + 1;
-        my $tick_pos_str = presentable_number($tick_pos,$sig_figs);
-        my $label_y = $y_pos + ( $font_width * length($tick_pos_str) ) / 2;
-
-        push @$drawing_data,
-          [ STRING_UP, $reg_font, $label_x, $label_y, $tick_pos_str, 'grey' ];
-
-        my $right = $label_x + $font_height;
-        $max_x = $right   if $right > $max_x;
-        $min_x = $label_x if $label_x < $min_x;
-    }
-    return ( $max_x, $min_x );
-}
-
-# ---------------------------------------------------
-sub new_add_tick_marks {
 
     my ( $self, %args )   = @_;
     my $map_coords        = $args{'map_coords'};
