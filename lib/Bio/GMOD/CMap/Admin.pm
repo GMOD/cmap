@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.43 2004-01-07 04:07:49 kycl4rk Exp $
+# $Id: Admin.pm,v 1.44 2004-01-08 20:54:04 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.43 $)[-1];
+$VERSION = (qw$Revision: 1.44 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -1595,7 +1595,6 @@ sub reload_correspondence_matrix {
         );
 
         for my $corr ( @$map_correspondences, @$map_set_correspondences ) {
-            next if $corr->{'map_set_aid'} eq $map->{'map_set_aid'};
             $db->do(
                 q[
                     insert
