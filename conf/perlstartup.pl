@@ -36,7 +36,6 @@ use Bio::GMOD::CMap::Data::MySQL();
 use Bio::GMOD::CMap::Data::Oracle();
 use Bio::GMOD::CMap::Drawer();
 use Bio::GMOD::CMap::Drawer::Map();
-use Bio::GMOD::CMap::Drawer::Feature();
 use Bio::GMOD::CMap::Utils();
 
 1;
