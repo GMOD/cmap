@@ -295,7 +295,7 @@ function addPosToStr(str, slot_no, matchStr, value, command){
                 <td valign="top" align="right">Ref. Map:</td>
       
                 <td>
-                  <select name="ref_map_aids" size="4" multiple
+                  <select name="ref_map_aids" size="14" multiple
                     [% IF apr.param('ref_map_aids') %]
                       onchange="javascript:if(document.ref_map_form.ref_map_aids.value!=document.ref_map_form.prev_ref_map_aids.value){document.comparative_map_form.start.value='';document.comparative_map_form.end.value='';document.ref_map_form.submit()}">
                     [% ELSE %]
