@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap;
 
-# $Id: CMap.pm,v 1.15 2002-10-11 21:39:47 kycl4rk Exp $
+# $Id: CMap.pm,v 1.16 2002-10-11 21:53:33 kycl4rk Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ $VERSION = 0.04;
 use Class::Base;
 use Config::General;
 use Bio::GMOD::CMap::Constants;
-use Bio::GMOD::CMap::DB;
+#use Bio::GMOD::CMap::DB;
 
 use base 'Class::Base';
 
@@ -112,7 +112,8 @@ Returns a database handle.  This is the only way into the database.
         };
 
         return $self->error( 
-            "Can't connect to database: ". $Bio::GMOD::CMap::DB::errstr 
+            "Can't connect to database: ". $DBI::errstr 
+#            "Can't connect to database: ". $Bio::GMOD::CMap::DB::errstr 
         ) unless $self->{'db'};
     }
 
