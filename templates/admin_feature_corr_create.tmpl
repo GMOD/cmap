@@ -13,7 +13,7 @@
 
 <table>
     <tr>
-        <td><em>From</em> Feature 1:</th>
+        <td align="right"><em>From</em> Feature 1:</th>
         <td>
             <a href="admin?action=map_view;map_id=[% feature1.map_id %]">[% feature1.species_name %]-[% feature1.map_set_name %]-[% feature1.map_name %]</a> : 
             <a href="admin?action=feature_view;feature_id=[% feature1.feature_id %]">[% feature1.feature_name %]</a>
@@ -21,7 +21,7 @@
     </tr>
 
     <tr>
-        <td><em>To</em> Feature 2:</td>
+        <td align="right"><em>To</em> Feature 2:</td>
         <td>
             [% IF feature2 %]
                 <a href="admin?action=map_view;map_id=[% feature2.map_id %]">[% feature2.species_name %]-[% feature2.map_set_name %]-[% feature2.map_name %]</a> : 
@@ -35,7 +35,7 @@
     [% IF feature1 AND feature2 %]
         <form action="admin" method="get">
             <tr>
-                <td>Evidence Type:</th>
+                <td align="right">Evidence Type:</th>
                 <td>
                     <select name="evidence_type_id">
                         <option value="">--Please Select--</option>
@@ -47,8 +47,10 @@
             </tr>
 
             <tr>
-                <td>Acc. ID (<em>Opt.</em>):</th>
-                <td><input name="accession_id"></td>
+                <td align="right">Acc. ID (<em>opt.</em>):</th>
+                <td>
+                    <input name="accession_id" value="[% apr.param('accession_id') %]">
+                </td>
             </tr>
 
             <tr>

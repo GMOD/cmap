@@ -1,5 +1,6 @@
 [% INCLUDE admin_header.tmpl title='Correspondence Evidence Create' %]
-<a href="admin">Home</a>
+<a href="admin">Home</a> |
+<a href="admin?action=feature_corr_view;feature_correspondence_id=[% corr.feature_correspondence_id %]">View Correspondence</a>
 <hr noshade>
 
 [% IF errors.size %]
@@ -21,7 +22,7 @@
     </tr>
 
     <tr>
-        <td align="right">Acc. ID:</td>
+        <td align="right">Acc. ID <em>(opt.)</em>:</td>
         <td><input name="accession_id"></td>
     </tr>
 
@@ -38,12 +39,12 @@
     </tr>
 
     <tr>
-        <td align="right">Score:</td>
+        <td align="right">Score <em>(opt.)</em>:</td>
         <td><input name="score"></td>
     </tr>
 
     <tr>
-        <td align="right">Remark:</td>
+        <td align="right">Remark <em>(opt.)</em>:</td>
         <td><input name="remark"></td>
     </tr>
 

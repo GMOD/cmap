@@ -1,6 +1,7 @@
 [% INCLUDE admin_header.tmpl title='Database Cross-References Edit' %]
 
 <a href="admin">Home</a> |
+<a href="admin?action=confirm_delete;entity_type=cmap_dbxref;entity_id=[% dbxref.dbxref_id %];entity_name=[% dbxref.dbxref_name | uri %]">Delete</a> |
 <a href="admin?action=dbxrefs_view">View All Database Cross-References</a>
 <hr noshade>
 

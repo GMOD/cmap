@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 
-# $Id: MapViewer.pm,v 1.6 2002-09-06 00:01:17 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.7 2002-10-03 05:37:33 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $TEMPLATE $PAGE );
-$VERSION = (qw$Revision: 1.6 $)[-1];
+$VERSION = (qw$Revision: 1.7 $)[-1];
 
 use Apache::Constants;
 use Apache::Request;
@@ -126,7 +126,7 @@ sub handler {
     #
     my $data = $self->data_module;
     my $form_data = $data->cmap_form_data( slots => \%slots ) or 
-        return $self->error( "Data: ".$data->error );
+        return $self->error( $data->error );
 
     #
     # The start and stop may have had to be moved as there 
@@ -147,7 +147,7 @@ sub handler {
     }
 
     my $html;
-    my $t = $self->template or return $self->error( 'No template' );
+    my $t = $self->template or return;
     $t->process( 
         TEMPLATE, 
         {

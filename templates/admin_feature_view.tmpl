@@ -1,7 +1,8 @@
 [% INCLUDE admin_header.tmpl title="View Feature &quot;$feature.feature_name&quot;" %]
 
 <a href="admin">Home</a> |
-<a href="admin?action=feature_edit;feature_id=[% feature.feature_id %]">Edit Feature</a>
+<a href="admin?action=confirm_delete;entity_type=cmap_feature;entity_id=[% feature.feature_id %]">Delete</a> |
+<a href="admin?action=feature_edit;feature_id=[% feature.feature_id %]">Edit</a>
 <hr noshade>
 
 <table>
@@ -10,7 +11,8 @@
             Map:
         </td>
         <td>
-            <a href="admin?action=map_view;map_id=[% feature.map_id %]">[% feature.species_name %]-[% feature.map_set_name %]-[% feature.map_name %]</a>
+            [% feature.species_name %]-[% feature.map_set_name %]-[% feature.map_name %]
+            (<a href="admin?action=map_view;map_id=[% feature.map_id %]">View Map</a>)
         </td>
     </tr>
 
@@ -113,19 +115,26 @@
             <th>Feature Name</th>
             <th>Alt. Name</th>
             <th>Evidence</th>
-            <th colspan="2">&nbsp;</th>
+            <th colspan="3">&nbsp;</th>
         </tr>
       
         [% SET i=0 %]
         [% FOREACH fc=feature.correspondences %]
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
                 <td>[% fc.accession_id %]</td>
-                <td>[% fc.species_name %]-[% fc.map_set_name %]-[% fc.map_name %]</td>
-                <td>[% fc.feature_name %]</td>
+                <td>
+                    <a href="admin?action=map_view;map_id=[% fc.map_id %]">[% fc.species_name %]-[% fc.map_set_name %]-[% fc.map_name %]</a>
+                </td>
+                <td>
+                    <a href="admin?action=feature_view;feature_id=[% fc.feature_id %]">[% fc.feature_name %]</a>
+                </td>
                 <td>[% fc.alternate_name %]</td>
                 <td>[% fc.evidence %]</td>
                 <td>
                     <a href="admin?action=feature_corr_view;feature_correspondence_id=[% fc.feature_correspondence_id %]">View</a>
+                </td>
+                <td>
+                    <a href="admin?action=feature_corr_edit;feature_correspondence_id=[% fc.feature_correspondence_id %]">Edit</a>
                 </td>
                 <td>
                     <a href="admin?action=confirm_delete;entity_type=cmap_feature_correspondence;entity_name_field=accession_id;entity_id=[% fc.feature_correspondence_id %]">Delete</a>

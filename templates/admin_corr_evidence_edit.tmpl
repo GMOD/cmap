@@ -1,5 +1,7 @@
-[% INCLUDE admin_header.tmpl title="Edit Correspondence &quot;$corr.accession_id&quot;" %]
-<a href="admin">Home</a>
+[% INCLUDE admin_header.tmpl title="Edit Correspondence Evidence &quot;$corr.accession_id&quot;" %]
+<a href="admin">Home</a> |
+<a href="admin?action=feature_corr_view;feature_correspondence_id=[% corr.feature_correspondence_id %]">View Correspondence</a> |
+<a href="admin?action=confirm_delete;entity_type=cmap_correspondence_evidence;entity_name_field=accession_id;entity_id=[% corr.correspondence_evidence_id %]">Delete</a>
 <hr noshade>
 
 [% IF errors.size %]
@@ -15,7 +17,7 @@
 <table>
     <tr>
         <td align="right">
-            Acc. ID:
+            Acc. ID <em>(opt.)</em>:
         </td>
         <td>
             <input name="accession_id" value="[% corr.accession_id %]">
@@ -37,12 +39,12 @@
     </tr>
 
     <tr>
-        <td align="right">Score:</td>
+        <td align="right">Score <em>(opt.)</em>:</td>
         <td><input name="score" value="[% corr.score %]"></td>
     </tr>
 
     <tr>
-        <td align="right">Remark:</td>
+        <td align="right">Remark <em>(opt.)</em>:</td>
         <td><input name="remark" value="[% corr.remark %]"></td>
     </tr>
 

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Feature;
 
-# $Id: Feature.pm,v 1.4 2002-09-06 22:15:51 kycl4rk Exp $
+# $Id: Feature.pm,v 1.5 2002-10-03 05:37:33 kycl4rk Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -97,7 +97,7 @@ Returns the URL for the details on the feature.
 
     my $url;
     if ( my $mini_template = $self->config('feature_details_url') ) {
-        my $t = $self->template;
+        my $t = $self->template or return;
         $t->process( 
             \$mini_template, 
             { feature => $self }, 

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.10 2002-10-01 18:42:06 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.11 2002-10-03 05:37:32 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -28,7 +28,7 @@ $COLORS         = [ sort keys %{ +COLORS } ];
 $FEATURE_SHAPES = [ qw( box dumbbell line span ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.10 $)[-1];
+$VERSION        = (qw$Revision: 1.11 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -44,6 +44,7 @@ use constant TEMPLATE         => {
     error                     => 'admin_error.tmpl',
     feature_corr_create       => 'admin_feature_corr_create.tmpl',
     feature_corr_view         => 'admin_feature_corr_view.tmpl',
+    feature_corr_edit         => 'admin_feature_corr_edit.tmpl',
     feature_edit              => 'admin_feature_edit.tmpl',
     feature_create            => 'admin_feature_create.tmpl',
     feature_view              => 'admin_feature_view.tmpl',
@@ -74,12 +75,14 @@ sub handler {
     my ( $self, $apr ) = @_;
     my $action         = $apr->param( 'action' ) || 'admin_home';
     my $return         = eval { $self->$action() };
+
     if ( my $err = $@ || $self->error ) {
         $self->process_template(
             $self->error_template,
             { error => $err }
         );
     }
+
     return $return || OK;
 }
 
@@ -170,6 +173,7 @@ sub corr_evidence_type_create {
     return $self->process_template( 
         TEMPLATE->{'corr_evidence_type_create'},
         { 
+            apr    => $self->apr,
             errors => $args{'errors'} 
         }
     );
@@ -533,249 +537,68 @@ sub entity_delete {
     my $self        = shift;
     my $db          = $self->db;
     my $apr         = $self->apr;
+    my $admin       = $self->admin;
     my $entity_type = $apr->param('entity_type') or die 'No entity type';
-    my $entity_id   = $apr->param('entity_id')   or die 'No entity id';
     my $uri_args;
 
     #
     # Map Set
     #
     if ( $entity_type eq 'cmap_map_set' ) {
-        my $map_set_id = $entity_id;
-
-        my @map_ids = @{
-            $db->selectcol_arrayref( 
-                q[
-                    select map_id 
-                    from   cmap_map
-                    where  map_set_id=?
-                ],
-                {}, 
-                ( $map_set_id ) 
-            )
-        };
-
-        for my $map_id ( @map_ids ) {
-            my $feature_ids = $db->selectcol_arrayref(
-                q[
-                    select f.feature_id
-                    from   cmap_feature f
-                    where  f.map_id=?
-                ],
-                {},
-                ( $map_id )
-            );
-
-            for my $feature_id ( @$feature_ids ) {
-                my $correspondences = $db->selectcol_arrayref(
-                    q[
-                        select cl.feature_correspondence_id
-                        from   cmap_correspondence_lookup cl
-                        where  cl.feature_id1=?
-                    ],
-                    {},
-                    ( $feature_id )
-                );
-
-                for my $corr_id ( @$correspondences ) {
-                    $db->do(
-                        q[
-                            delete
-                            from   cmap_correspondence_evidence ce
-                            where  ce.feature_correspondence_id=?
-                        ],
-                        {},
-                        ( $corr_id )
-                    );
-
-                    $db->do(
-                        q[
-                            delete
-                            from   cmap_feature_correspondence fc
-                            where  fc.feature_correspondence_id=?
-                        ],
-                        {},
-                        ( $corr_id )
-                    );
-                }
-#
-#                $db->do(
-#                    q[
-#                        delete
-#                        from   cmap_correspondence_lookup cl
-#                        where  (
-#                            cl.feature_id1=?
-#                            or
-#                            cl.feature_id2=?
-#                        )
-#                    ],
-#                    {},
-#                    ( $feature_id )
-#                );
-            }
-        }
-
-        for my $table ( qw[ cmap_map cmap_map_set ] ) {
-            $db->do(
-                qq[
-                    delete 
-                    from   $table
-                    where  map_set_id=?
-                ],
-                {}, 
-                ( $map_set_id )
-            );
-        }
+        $admin->map_set_delete( map_set_id => $apr->param('entity_id') )
+            or return $self->error( $admin->error );
+        $uri_args = '?action=map_sets_view';
     }
     #
     # Map Type
     #
     elsif ( $entity_type eq 'cmap_map_type' ) {
-        my $map_type_id = $apr->param('entity_id') or die 'No map type id';
-
-        my $sth = $db->prepare(
-            q[
-                select   count(ms.map_set_id) as count, mt.map_type
-                from     cmap_map_set ms, cmap_map_type mt
-                where    ms.map_type_id=?
-                and      ms.map_type_id=mt.map_type_id
-                group by map_type
-            ]
-        );
-        $sth->execute( $map_type_id );
-        my $hr = $sth->fetchrow_hashref;
-
-        if ( $hr->{'count'} > 0 ) {
-            die "Unable to delete map type &quot;", $hr->{'map_type'}, 
-                "&quot; as ", $hr->{'count'}, 
-                " map sets are linked to it.\n";
-        }
-        else {
-            $db->do(
-                q[
-                    delete
-                    from   cmap_map_type
-                    where  map_type_id=?
-                ], 
-                {}, ( $map_type_id ) 
-            );
-            $uri_args = '?action=map_types_view';
-        }
+        $admin->map_type_delete(
+            map_type_id => $apr->param('entity_id') 
+        ) or return $self->error( $admin->error );
+        $uri_args = '?action=map_types_view';
     }
     #
     # Species
     #
     elsif ( $entity_type eq 'cmap_species' ) {
-        my $species_id = $apr->param('entity_id') or die 'No map type id';
-
-        my $sth = $db->prepare(
-            q[
-                select   count(ms.map_set_id) as count, s.common_name
-                from     cmap_map_set ms, cmap_species s
-                where    s.species_id=?
-                and      ms.species_id=s.species_id
-                group by common_name
-            ]
-        );
-        $sth->execute( $species_id );
-        my $hr = $sth->fetchrow_hashref;
-
-        if ( $hr->{'count'} > 0 ) {
-            die "Unable to delete species &quot;", $hr->{'common_name'}, 
-                "&quot; as ", $hr->{'count'}, 
-                " map sets are linked to it.\n";
-        }
-        else {
-            $db->do(
-                q[
-                    delete
-                    from   cmap_species
-                    where  species_id=?
-                ], 
-                {}, ( $species_id ) 
-            );
-            $uri_args = '?action=species_view';
-        }
+        $admin->species_delete( species_id => $apr->param('entity_id') ) or
+            return $self->error( $admin->error );
+        $uri_args = '?action=species_view';
+    }
+    #
+    # Feature Correspondence
+    #
+    elsif ( $entity_type eq 'cmap_feature_correspondence' ) {
+        $admin->feature_correspondence_delete( 
+            feature_correspondence_id => $apr->param('entity_id') 
+        ) or return $self->error( $admin->error );
     }
     #
     # Feature Type
     #
     elsif ( $entity_type eq 'cmap_feature_type' ) {
-        my $feature_type_id = $apr->param('entity_id') 
-            or die 'No feature type id';
-
-        my $sth = $db->prepare(
-            q[
-                select   count(f.feature_type_id) as count, ft.feature_type
-                from     cmap_feature f, 
-                         cmap_feature_type ft
-                where    f.feature_type_id=?
-                and      f.feature_type_id=ft.feature_type_id
-                group by feature_type
-            ]
-        );
-        $sth->execute( $feature_type_id );
-        my $hr = $sth->fetchrow_hashref;
-
-        if ( $hr->{'count'} > 0 ) {
-            die "Unable to delete feature type &quot;", $hr->{'feature_type'}, 
-                "&quot; as ", $hr->{'count'}, 
-                " features are linked to it.\n";
-        }
-        else {
-            $db->do(
-                q[
-                    delete
-                    from   cmap_feature_type
-                    where  feature_type_id=?
-                ], 
-                {}, ( $feature_type_id ) 
-            );
-            $uri_args = '?action=feature_types_view';
-        }
+        $admin->feature_type_delete( 
+            feature_type_id => $apr->param('entity_id') 
+        ) or return $self->error( $admin->error );
+        $uri_args = '?action=feature_types_view';
     }
     #
     # Feature
     #
     elsif ( $entity_type eq 'cmap_feature' ) {
-        my $feature_id = $apr->param('entity_id') or die 'No feature id';
-        my $map_id = $db->selectrow_array(
-            q[
-                select map_id
-                from   cmap_feature
-                where  feature_id=?
-            ],
-            {},
-            ( $feature_id )
-        );
-
-        $db->do(
-            q[
-                delete
-                from    cmap_feature
-                where   feature_id=?
-            ],
-            {},
-            ( $feature_id )
-        );
-
+        my $map_id = $admin->feature_delete(
+            feature_id => $apr->param('entity_id')
+        ) or return $self->error( $admin->error );
         $uri_args = "?action=map_view;map_id=$map_id";
     }
     #
     # Evidence Type
     #
     elsif ( $entity_type eq 'cmap_evidence_type' ) {
-        my $evidence_type_id = $apr->param('entity_id') or die 'No map id';
-
-        $db->do(
-            q[
-                delete
-                from    cmap_evidence_type
-                where   evidence_type_id=?
-            ],
-            {},
-            ( $evidence_type_id )
-        );
+        $admin->evidence_type_delete(
+            evidence_type_id => $apr->param('entity_id')
+        ) or return $self->error( $admin->error );
 
         $uri_args = '?action=corr_evidence_types_view';
     }
@@ -783,47 +606,36 @@ sub entity_delete {
     # Map
     #
     elsif ( $entity_type eq 'cmap_map' ) {
-        my $map_id = $apr->param('entity_id') or die 'No map id';
+        my $map_set_id  = $admin->map_delete( 
+            map_id => $apr->param('entity_id') 
+        ) or return $self->error( $admin->error );
+        $uri_args = "?action=map_set_view;map_set_id=$map_set_id";
+    }
+    #
+    # Correspondence evidence
+    #
+    elsif ( $entity_type eq 'cmap_correspondence_evidence' ) {
+        my $feature_corr_id = $admin->correspondence_evidence_delete(
+            correspondence_evidence_id => $apr->param('entity_id') 
+        ) or return $self->error( $admin->error );
 
-        $db->do(
-            q[
-                delete
-                from    cmap_feature
-                where   map_id=?
-            ],
-            {},
-            ( $map_id )
-        );
-
-        $db->do(
-            q[
-                delete
-                from    cmap_map
-                where   map_id=?
-            ],
-            {},
-            ( $map_id )
-        );
+        $uri_args = 
+        "?action=feature_corr_view;feature_correspondence_id=$feature_corr_id";
     }
     #
     # DB Cross-References
     #
     elsif ( $entity_type eq 'cmap_dbxref' ) {
-        my $dbxref_id = $apr->param('entity_id') or die 'No dbxref id';
-        $db->do(
-            q[
-                delete
-                from   cmap_dbxref
-                where  dbxref_id=?
-            ], 
-            {}, 
-            ( $dbxref_id ) 
-        );
+        $admin->dbxref_delete(
+            dbxref_id => $apr->param('entity_id') 
+        ) or return $self->error( $admin->error );
 
         $uri_args = '?action=dbxrefs_view';
     }
     else {
-        die "You are not allowed to delete entities of type $entity_type.";
+        return $self->error(
+            "You are not allowed to delete entities of type '$entity_type.'"
+        );
     }
 
     return $self->redirect_home( ADMIN_HOME_URI.$uri_args ); 
@@ -969,7 +781,7 @@ sub map_view {
                    map.start_position, 
                    map.stop_position,
                    ms.map_set_id, 
-                   ms.map_set_name,
+                   ms.short_name as map_set_name,
                    mt.map_type,
                    s.common_name as species_name
             from   cmap_map map, 
@@ -1140,6 +952,7 @@ sub feature_create {
     return $self->process_template(
         TEMPLATE->{'feature_create'}, 
         { 
+            apr           => $apr,
             map           => $map,
             feature_types => $feature_types,
             errors        => $args{'errors'},
@@ -1361,8 +1174,10 @@ sub feature_view {
                    fc.accession_id,
                    fc.feature_id1,
                    fc.feature_id2,
+                   f.feature_id,
                    f.feature_name as feature_name,
                    f.alternate_name as alternate_name,
+                   map.map_id,
                    map.map_name,
                    ms.short_name as map_set_name,
                    s.common_name as species_name
@@ -1570,41 +1385,64 @@ sub feature_corr_insert {
     return $self->feature_corr_create( errors => \@errors ) if @errors;
 
     my $feature_correspondence_id = insert_correspondence(
-        $db, $feature_id1, $feature_id2, $evidence_type_id
+        $db, $feature_id1, $feature_id2, $evidence_type_id, $accession_id
     );
 
-#    my $feature_correspondence_id = $db->selectrow_array(
-#        q[
-#            select feature_correspondence_id
-#            from   cmap_feature_correspondence
-#            where  ( feature_id1=? and feature_id2=? )
-#            or     ( feature_id1=? and feature_id2=? )
-#        ],
-#        {},
-#        ( $feature_id1, $feature_id2, $feature_id2, $feature_id1 )
-#    ); 
-#
-#    unless ( $feature_correspondence_id ) {
-#        $feature_correspondence_id =  next_number(
-#            db                        => $db, 
-#            table_name                => 'cmap_feature_correspondence',
-#            id_field                  => 'feature_correspondence_id',
-#        ) or die 'No feature correspondence id';
-#        $accession_id ||= $feature_correspondence_id;
-#
-#        $db->do(
-#            q[
-#                insert
-#                into   cmap_feature_correspondence
-#                       ( feature_correspondence_id, accession_id, 
-#                         feature_id1, feature_id2 )
-#                values ( ?, ?, ?, ? )
-#            ],
-#            {},
-#            ( $feature_correspondence_id, $accession_id, 
-#              $feature_id1, $feature_id2 )
-#        );
-#    }
+    return $self->redirect_home( 
+        ADMIN_HOME_URI.'?action=feature_corr_view;'.
+            "feature_correspondence_id=$feature_correspondence_id"
+    ); 
+}
+
+# ----------------------------------------------------
+sub feature_corr_edit {
+    my $self                      = shift;
+    my $db                        = $self->db;
+    my $apr                       = $self->apr;
+    my $feature_correspondence_id = $apr->param('feature_correspondence_id')
+        or return $self->error('No feature correspondence id');
+
+    my $sth = $db->prepare(
+        q[
+            select fc.feature_correspondence_id,
+                   fc.accession_id,
+                   fc.feature_id1,
+                   fc.feature_id2
+            from   cmap_feature_correspondence fc
+            where  fc.feature_correspondence_id=?
+        ]
+    );
+    $sth->execute( $feature_correspondence_id ); 
+    my $corr = $sth->fetchrow_hashref or return $self->error(
+        "No record for feature correspondence ID '$feature_correspondence_id'"
+    );
+
+    return $self->process_template(
+        TEMPLATE->{'feature_corr_edit'},
+        { corr => $corr  }
+    );
+}
+
+# ----------------------------------------------------
+sub feature_corr_update {
+    my $self                      = shift;
+    my $db                        = $self->db;
+    my $apr                       = $self->apr;
+    my $order_by                  = $apr->param('order_by') || 'evidence_type';
+    my $feature_correspondence_id = $apr->param('feature_correspondence_id')
+        or return $self->error('No feature correspondence id');
+    my $accession_id              = $apr->param('accession_id') || 
+        $feature_correspondence_id;
+
+    $db->do(
+        q[
+            update cmap_feature_correspondence
+            set    accession_id=?
+            where  feature_correspondence_id=?
+        ],
+        {},
+        ( $accession_id, $feature_correspondence_id )
+    );
 
     return $self->redirect_home( 
         ADMIN_HOME_URI.'?action=feature_corr_view;'.
@@ -1648,6 +1486,7 @@ sub feature_corr_view {
                    f.stop_position,
                    ft.feature_type,
                    map.map_name,
+                   ms.map_set_id,
                    ms.short_name as map_set_name,
                    s.common_name as species_name
             from   cmap_feature f,
@@ -1802,7 +1641,7 @@ sub corr_evidence_insert {
     my $feature_correspondence_id = $apr->param('feature_correspondence_id') 
         or push @errors, 'No feature correspondence id';
     my $evidence_type_id          = $apr->param('evidence_type_id') 
-        or push @errors, 'No evidence type id';
+        or push @errors, 'No evidence type';
     my $score                     = $apr->param('score') || '';
     my $remark                    = $apr->param('remark') || '';
 
@@ -1814,7 +1653,8 @@ sub corr_evidence_insert {
 
     return $self->corr_evidence_create( errors => \@errors ) if @errors;
 
-    my $accession_id = $apr->param('accession_id')||$correspondence_evidence_id;
+    my $accession_id = $apr->param('accession_id') ||
+        $correspondence_evidence_id;
     
     $db->do(
         q[
@@ -1851,7 +1691,7 @@ sub corr_evidence_update {
     my $feature_correspondence_id  = $apr->param('feature_correspondence_id') 
         or push @errors, 'No feature correspondence id';
     my $evidence_type_id           = $apr->param('evidence_type_id') 
-        or push @errors, 'No evidence type id';
+        or push @errors, 'No evidence type';
     my $score                      = $apr->param('score') || '';
     my $remark                     = $apr->param('remark') || '';
 
@@ -1883,6 +1723,7 @@ sub feature_type_create {
     return $self->process_template( 
         TEMPLATE->{'feature_type_create'}, 
         {
+            apr    => $self->apr,
             colors => $COLORS,
             shapes => $FEATURE_SHAPES,
             errors => $args{'errors'},
@@ -2202,7 +2043,7 @@ sub map_set_insert {
     my $shape                = $apr->param('shape')                || '';
     my $color                = $apr->param('color')                || '';
     my $width                = $apr->param('width')                ||  0;
-    my $published_on         = $apr->param('published_on')         || '';
+    my $published_on         = $apr->param('published_on')  || localtime;
 
     if ( $published_on ) {{
         my $pub_date = parsedate($published_on, VALIDATE => 1)
@@ -2332,7 +2173,7 @@ sub map_set_update {
     my $shape                = $apr->param('shape')                || '';
     my $color                = $apr->param('color')                || '';
     my $width                = $apr->param('width')                ||  0;
-    my $published_on         = $apr->param('published_on')         || '';
+    my $published_on         = $apr->param('published_on')  || localtime;
 
     if ( $published_on ) {{
         my $pub_date = parsedate($published_on, VALIDATE => 1)
@@ -2389,15 +2230,14 @@ sub redirect_home {
 # ----------------------------------------------------
 sub map_type_create {
     my ( $self, %args ) = @_;
-    my $errors          = $args{'errors'};
-
     return $self->process_template( 
         TEMPLATE->{'map_type_create'},
         { 
+            apr    => $self->apr,
             colors => $COLORS,
             shapes => $MAP_SHAPES,
             widths => $WIDTHS,
-            errors => $errors,
+            errors => $args{'errors'},
         }
     );
 }
@@ -2558,7 +2398,7 @@ sub process_template {
     my ( $self, $template, $params ) = @_;
 
     my $output; 
-    my $t = $self->template or $self->error('No template');
+    my $t = $self->template or return; 
     $t->process( $template, $params, \$output ) or $output = $t->error;
 
     my $apr = $self->apr;
@@ -2619,8 +2459,8 @@ sub species_insert {
                         push @errors, 'No common name';
     my $full_name     = $apr->param('full_name')   or 
                         push @errors, 'No full name';
-    my $display_order = $apr->param('display_order')  || 1;
-    my $ncbi_taxon_id = $apr->param('ncbi_taxon_id ') || 1;
+    my $display_order = $apr->param('display_order') || 1;
+    my $ncbi_taxon_id = $apr->param('ncbi_taxon_id') || 1;
     my $species_id    = next_number(
         db            => $db, 
         table_name    => 'cmap_species',

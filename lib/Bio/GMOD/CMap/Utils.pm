@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Utils;
 
-# $Id: Utils.pm,v 1.8 2002-10-01 18:42:06 kycl4rk Exp $
+# $Id: Utils.pm,v 1.9 2002-10-03 05:37:32 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 use base 'Exporter';
 
@@ -203,7 +203,7 @@ Inserts a correspondence.
 
 =cut
     my ( $db, $feature_id1, $feature_id2, $evidence_type_id ) = @_;
-#    warn "  f1 = $feature_id1, f2 = $feature_id2, et = $evidence_type_id\n";
+    my $accession_id = shift || '';
     return if $feature_id1 == $feature_id2;
 
     #
@@ -222,7 +222,6 @@ Inserts a correspondence.
         {},
         ( $feature_id1, $feature_id2, $evidence_type_id )
     ) || 0;
-#    warn "  already exists, skipping\n";
     return 1 if $count;
 
     #
@@ -245,6 +244,7 @@ Inserts a correspondence.
             table_name       => 'cmap_feature_correspondence',
             id_field         => 'feature_correspondence_id',
         ) or die 'No next number for feature correspondence';
+        $accession_id ||= $feature_correspondence_id;
 
         #
         # Create the official correspondence record.
@@ -259,7 +259,7 @@ Inserts a correspondence.
             ],
             {},
             ( $feature_correspondence_id, 
-              $feature_correspondence_id, 
+              $accession_id, 
               $feature_id1, 
               $feature_id2
             )

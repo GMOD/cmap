@@ -1,9 +1,10 @@
 [% INCLUDE admin_header.tmpl title="View Map &quot;$map.map_name&quot;" %]
 
 <a href="admin">Home</a> |
-<a href="admin?action=map_edit;map_id=[% map.map_id %]">Edit Map</a>
+<a href="admin?action=confirm_delete;entity_type=cmap_map;entity_id=[% map.map_id %]">Delete</a> |
+<a href="admin?action=map_edit;map_id=[% map.map_id %]">Edit</a>
 [% IF map.can_be_reference_map %]
-  | <a href="/maps/viewer?reference_map_set_id=[% map.map_set_id %];reference_map_id=[% map.map_id %]">Map Viewer</a>
+  | <a href="/maps/viewer?reference_map_set_id=[% map.map_set_id %];reference_map_id=[% map.map_id %]">View in CMap Viewer</a>
 [% END %]
 
 <table>
@@ -12,7 +13,8 @@
             Map Set Name:
         </td>
         <td>
-            <a href="admin?action=map_set_view;map_set_id=[% map.map_set_id %]">[% map.species_name %]-[% map.map_set_name %]</a>
+            [% map.species_name %]-[% map.map_set_name %]
+            (<a href="admin?action=map_set_view;map_set_id=[% map.map_set_id %]">View Map Set</a>)
         </td>
     </tr>
 

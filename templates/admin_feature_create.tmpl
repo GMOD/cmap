@@ -12,23 +12,24 @@
     </ul>
 [% END %]
 
-<form action="admin" method="post">
+<form action="admin" method="get">
 <table>
     <tr>
         <td align="right">
             Map:
         </td>
         <td>
-            <a href="admin?action=map_view;map_id=[% map.map_id %]">[% map.species_name %]-[% map.map_set_name %]-[% map.map_name %]</a>
+            [% map.species_name %]-[% map.map_set_name %]-[% map.map_name %]
+            (<a href="admin?action=map_view;map_id=[% map.map_id %]">View Map</a>)
         </td>
     </tr>
 
     <tr>
         <td align="right">
-            Acc ID:
+            Acc ID <em>(opt.)</em>:
         </td>
         <td>
-            <input name="accession_id" value="">
+            <input name="accession_id" value="[% apr.param('accession_id') %]">
         </td>
     </tr>
 
@@ -37,16 +38,16 @@
             Feature Name:
         </td>
         <td>
-            <input name="feature_name" value="">
+            <input name="feature_name" value="[% apr.param('feature_name') %]">
         </td>
     </tr>
 
     <tr>
         <td align="right">
-            Alternate Name:
+            Alternate Name <em>(opt.)</em>:
         </td>
         <td>
-            <input name="alternate_name" value="">
+            <input name="alternate_name" value="[% apr.param('alternate_name') %]">
         </td>
     </tr>
 
@@ -56,8 +57,9 @@
         </td>
         <td>
             <select name="feature_type_id">
+                <option value="">--Please Select--</option>
                 [% FOREACH ft=feature_types %]
-                    <option value="[% ft.feature_type_id %]">[% ft.feature_type %]</option>
+                    <option value="[% ft.feature_type_id %]"[% IF ft.feature_type_id==apr.param('feature_type_id') %] selected[% END %]>[% ft.feature_type %]</option>
                 [% END %]
         </td>
     </tr>
@@ -68,8 +70,8 @@
         </td>
         <td>
             <select name="is_landmark">
-                <option value="0"">No</option>
-                <option value="1"">Yes</option>
+                <option value="0"[% IF ft.is_landmark==0 %] selected[% END %]>No</option>
+                <option value="1"[% IF ft.is_landmark==1 %] selected[% END %]>Yes</option>
             </select>
         </td>
     </tr>
@@ -79,16 +81,34 @@
             Start:
         </td>
         <td>
-            <input name="start_position" value="">
+            <input name="start_position" value="[% apr.param('start_position') %]">
         </td>
     </tr>
 
     <tr>
         <td align="right">
-            Stop:
+            Stop <em>(opt.)</em>:
         </td>
         <td>
-            <input name="stop_position" value="">
+            <input name="stop_position" value="[% apr.param('stop_position') %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            DB Cross Reference Name (opt.):
+        </td>
+        <td>
+            <input name="dbxref_name" value="[% apr.param('dbxref_name') %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            DB Cross Reference URL (opt.):
+        </td>
+        <td>
+            <input name="dbxref_url" value="[% apr.param('dbxref_url') %]">
         </td>
     </tr>
 

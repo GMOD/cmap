@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap;
 
-# $Id: CMap.pm,v 1.11 2002-09-26 19:31:34 kycl4rk Exp $
+# $Id: CMap.pm,v 1.12 2002-10-03 05:37:32 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,7 +31,6 @@ $VERSION = 0.03;
 
 use Class::Base;
 use Config::General;
-#use Exception::Class( 'CMapException' );
 use DBI;
 use Bio::GMOD::CMap::Constants;
 
@@ -51,7 +50,7 @@ Returns one or all options from the config file.
 
     unless ( $self->{'config'} ) {
         my $conf          = Config::General->new( CONFIG_FILE ) or
-            $self->error('Error reading config file: '.CONFIG_FILE);
+            return $self->error('Error reading config file: '.CONFIG_FILE);
         my %config        = $conf->getall or 
             $self->error('No configuration options');
         $self->{'config'} = \%config;
@@ -102,7 +101,7 @@ Returns a database handle.  This is the only way into the database.
                 DBI->connect( $datasource, $user, $password, $options );
         };
 
-        return $self->error( 'No db handle: '. $DBI::errstr )
+        return $self->error( "Can't connect to database: ". $DBI::errstr )
             unless $self->{'db'};
     }
 
@@ -158,6 +157,8 @@ Returns a Template Toolkit object.
 
     unless ( $self->{'template'} ) {
         my $template_dir = $self->config('template_dir') || '';
+        return $self->error("Template directory '$template_dir' doesn't exist")
+            unless -d $template_dir;
 
         $self->{'template'} = Template->new( 
             INCLUDE_PATH    => $template_dir,

@@ -1,12 +1,30 @@
 [% 
     INCLUDE header.tmpl 
-    title='Feature Detail'
+    title="Feature Detail &quot;$feature.feature_name&quot;"
     no_link='feature_detail'
     help_anchor='feature_detail'
 %]
-<h1>Feature Detail</h1>
+<h1>Feature Detail &quot;[% feature.feature_name %]&quot;</h1>
 
 <table>
+    <tr>
+        <td align="right">
+            Feature Name:
+        </td>
+        <td>
+            [% feature.feature_name %]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Alternate Name:
+        </td>
+        <td>
+            [% feature.alternate_name %]
+        </td>
+    </tr>
+
     <tr>
         <td align="right">
             Map:
@@ -38,24 +56,6 @@
             [% ELSE %]
                 No cross-references defined.
             [% END %]
-        </td>
-    </tr>
-
-    <tr>
-        <td align="right">
-            Feature Name:
-        </td>
-        <td>
-            [% feature.feature_name %]
-        </td>
-    </tr>
-
-    <tr>
-        <td align="right">
-            Alternate Name:
-        </td>
-        <td>
-            [% feature.alternate_name %]
         </td>
     </tr>
 

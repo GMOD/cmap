@@ -15,18 +15,24 @@
 <form action="admin" method="post">
     <table>
         <tr>
-            <td>Acc. ID:</th>
-            <td><input name="accession_id"></td>
+            <td align="right">Acc. ID <em>(opt.)</em>:</th>
+            <td>
+                <input name="accession_id" value="[% apr.param('accession_id') %]">
+            </td>
         </tr>
 
         <tr>
-            <td>Evidence Type:</th>
-            <td><input name="evidence_type"></td>
+            <td align="right">Evidence Type:</th>
+            <td>
+                <input name="evidence_type" value="[% apr.param('evidence_type') %]">
+            </td>
         </tr>
 
         <tr>
-            <td>Rank:</th>
-            <td><input name="rank"></td>
+            <td align="right">Rank:</th>
+            <td>
+                <input name="rank" value="[% apr.param('rank') %]">
+            </td>
         </tr>
 
         <tr>

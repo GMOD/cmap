@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::FeatureViewer;
 
-# $Id: FeatureViewer.pm,v 1.4 2002-09-11 14:46:13 kycl4rk Exp $
+# $Id: FeatureViewer.pm,v 1.5 2002-10-03 05:37:32 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Apache::Constants;
 use Apache::Request;
@@ -22,11 +22,11 @@ sub handler {
     # Make a jazz noise here...
     #
     my ( $self, $apr ) = @_;
-    my $t              = $self->template or die 'No template';
+    my $t              = $self->template or return;
     my $feature_aid    = $apr->param('feature_aid') or die 'No accession id';
     my $data           = Bio::GMOD::CMap::Data->new;
     my $feature        = $data->feature_detail_data(feature_aid=>$feature_aid)
-        or die $data->error;
+        or return $self->error( $data->error );
 
     #
     # Make the subs in the URL.
@@ -38,7 +38,7 @@ sub handler {
                 \$mini_template, 
                 { feature => $feature }, 
                 \$url
-            ) or die $t->error;
+            ) or return $self->error( $t->error );
             $dbxref->{'url'} = $url;
         }
     }
@@ -52,7 +52,7 @@ sub handler {
             stylesheet => $self->stylesheet,
         }, 
         \$html 
-    ) or die $t->error;
+    ) or return $self->error( $t->error );
 
     $apr->content_type('text/html');
     $apr->send_http_header;

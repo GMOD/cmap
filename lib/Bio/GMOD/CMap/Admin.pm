@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin;
 
-# $Id: Admin.pm,v 1.3 2002-09-06 22:15:51 kycl4rk Exp $
+# $Id: Admin.pm,v 1.4 2002-10-03 05:37:32 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,11 +23,231 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Bio::GMOD::CMap;
 use base 'Bio::GMOD::CMap';
 use Bio::GMOD::CMap::Constants;
+
+# ----------------------------------------------------
+sub correspondence_evidence_delete {
+
+=pod
+
+=head2 correspondence_evidence_delete
+
+Delete a correspondence evidence.
+
+=cut
+    my ( $self, %args ) = @_;
+    my $corr_evidence_id = $args{'correspondence_evidence_id'} 
+        or return $self->error('No correspondence evidence id');
+
+    my $db = $self->db or return;
+    my $feature_correspondence_id = $db->selectrow_array(
+        q[
+            select feature_correspondence_id
+            from   cmap_correspondence_evidence
+            where  correspondence_evidence_id=?
+        ],
+        {},
+        ( $corr_evidence_id )
+    ) or return $self->error('Invalid correspondence evidence id');
+
+    $db->do(
+        q[
+            delete
+            from   cmap_correspondence_evidence
+            where  correspondence_evidence_id=?
+        ],
+        {},
+        ( $corr_evidence_id )
+    );
+
+    return $feature_correspondence_id; 
+}
+
+# ----------------------------------------------------
+sub dbxref_delete {
+
+=pod
+
+=head2 dbxref_delete
+
+Delete a database cross reference.
+
+=cut
+    my ( $self, %args ) = @_;
+    my $dbxref_id       = $args{'dbxref_id'} or return $self->error(
+        'No dbxref id'
+    );
+
+    my $db = $self->db or return;
+    $db->do(
+        q[
+            delete
+            from   cmap_dbxref
+            where  dbxref_id=?
+        ], 
+        {}, 
+        ( $dbxref_id )
+    );
+
+    return 1;
+}
+
+# ----------------------------------------------------
+sub evidence_type_delete {
+
+=pod
+
+=head2 evidence_type_delete 
+
+Delete an evidence type.
+
+=cut
+    my ( $self, %args )  = @_;
+    my $evidence_type_id = $args{'evidence_type_id'} or return $self->error(
+        'No evidence type id'
+    );
+
+    my $db  = $self->db or return;
+    my $sth = $db->prepare(
+        q[
+            select   count(ce.evidence_type_id) as count, et.evidence_type
+            from     cmap_correspondence_evidence ce,
+                     cmap_evidence_type et
+            where    ce.evidence_type_id=?
+            and      ce.evidence_type_id=et.evidence_type_id
+            group by evidence_type
+        ]
+    );
+    $sth->execute( $evidence_type_id );
+    my $hr = $sth->fetchrow_hashref;
+
+    if ( $hr->{'count'} > 0 ) {
+        return $self->error(
+            "Unable to delete evidence type '", $hr->{'evidence_type'},
+            "' as ", $hr->{'count'},
+            " evidences are linked to it."
+        );
+    }
+    else {
+        $db->do(
+            q[
+                delete
+                from    cmap_evidence_type
+                where   evidence_type_id=?
+            ],
+            {},
+            ( $evidence_type_id )
+        );
+    }
+
+    return 1;
+}
+
+# ----------------------------------------------------
+sub feature_delete {
+
+=pod
+
+=head2 feature_delete
+
+Delete a feature.
+
+=cut
+    my ( $self, %args ) = @_;
+    my $feature_id      = $args{'feature_id'} or return $self->error(
+        'No feature id'
+    );
+
+    my $db     = $self->db or return;
+    my $map_id = $db->selectrow_array(
+        q[
+            select map_id
+            from   cmap_feature
+            where  feature_id=?
+        ],
+        {},
+        ( $feature_id )
+    ) or return $self->error("Invalid feature id ($feature_id)");
+
+    my $feature_correspondence_ids = $db->selectcol_arrayref(
+        q[
+            select feature_correspondence_id
+            from   cmap_correspondence_lookup
+            where  feature_id1=?
+        ],
+        {},
+        ( $feature_id )
+    );
+
+    for my $feature_correspondence_id ( @$feature_correspondence_ids ) {
+        $self->feature_correspondence_delete(
+            feature_correspondence_id => $feature_correspondence_id
+        ) or return;
+    }
+
+    $db->do(
+        q[
+            delete
+            from    cmap_feature
+            where   feature_id=?
+        ],
+        {},
+        ( $feature_id )
+    );
+
+    return $map_id;
+}
+
+# ----------------------------------------------------
+sub feature_correspondence_delete {
+
+=pod
+
+=head2 feature_correspondence_delete
+
+Delete a feature correspondence.
+
+=cut
+    my ( $self, %args ) = @_;
+    my $feature_corr_id = $args{'feature_correspondence_id'} or
+        return $self->error('No feature correspondence id');
+    my $db              = $self->db or return;
+    my $evidence_ids    = $db->selectcol_arrayref(
+        q[
+            select correspondence_evidence_id
+            from   cmap_correspondence_evidence
+            where  feature_correspondence_id=?
+        ],
+        {},
+        ( $feature_corr_id )
+    );
+    
+    for my $evidence_id ( @$evidence_ids ) {
+        $self->correspondence_evidence_delete(
+            correspondence_evidence_id => $evidence_id
+        ) or return;
+    }
+
+    for my $table ( 
+        qw[ cmap_correspondence_lookup cmap_feature_correspondence ]
+    ) {
+        $db->do(
+            qq[
+                delete
+                from   $table
+                where  feature_correspondence_id=?
+            ],
+            {},
+            ( $feature_corr_id )
+        );
+    }
+
+    return 1;
+}
 
 # ----------------------------------------------------
 sub feature_search {
@@ -48,7 +268,7 @@ Find all the features matching some criteria.
     my $field_name      = $args{'field_name'}      || 'feature_name';
     my $order_by        = $args{'order_by'}        || 'feature_name';
     my $limit_start     = $args{'limit_start'}     ||              0;
-    my $db              = $self->db;
+    my $db              = $self->db or return;
     my $comparison      = $feature_name =~ m/%/ ? 'like' : '=';
 
     my $where = $field_name eq 'both'
@@ -128,7 +348,8 @@ Find all feature types by the internal ID.
     my $feature_type_id = $args{'feature_type_id'} or 
         $self->error('No feature type id');
     
-    return $self->db->selectrow_array(
+    my $db = $self->db or return;
+    return $db->selectrow_array(
         q[
             select ft.feature_type
             from   cmap_feature_type ft
@@ -163,9 +384,225 @@ Find a feature's name by either its internal or accession ID.
         where  $search_field=?
     ];
 
-    return $self->db->selectrow_array(
+    my $db = $self->db or return;
+    return $db->selectrow_array(
         $sql, {}, ( $feature_id || $feature_aid )
     );
+}
+
+# ----------------------------------------------------
+sub feature_type_delete {
+
+=pod
+
+=head2 feature_type_delete
+
+Delete a feature type.
+
+=cut
+    my ( $self, %args ) = @_;
+    my $feature_type_id = $args{'feature_type_id'} or 
+        return $self->error('No feature type id');
+
+    my $db  = $self->db or return;
+    my $sth = $db->prepare(
+        q[
+            select   count(f.feature_type_id) as count, ft.feature_type
+            from     cmap_feature f,
+                     cmap_feature_type ft
+            where    f.feature_type_id=?
+            and      f.feature_type_id=ft.feature_type_id
+            group by feature_type
+        ]
+    );
+    $sth->execute( $feature_type_id );
+    my $hr = $sth->fetchrow_hashref;
+
+    if ( $hr->{'count'} > 0 ) {
+        return $self->error(
+            "Unable to delete feature type '", $hr->{'feature_type'},
+            "' as ", $hr->{'count'},
+            " features are linked to it."
+        );
+    }
+    else {
+        $db->do(
+            q[
+                delete
+                from   cmap_feature_type
+                where  feature_type_id=?
+            ],
+            {}, ( $feature_type_id )
+        );
+    }
+
+    return 1;
+}
+
+# ----------------------------------------------------
+sub feature_types {
+
+=pod
+
+=head2 feature_types
+
+Find all the feature types.
+
+=cut
+    my ( $self, %args ) = @_;
+    my $order_by        = $args{'order_by'} || 'feature_type';
+
+    my $db = $self->db or return;
+    return $db->selectall_arrayref(
+        qq[
+            select   ft.feature_type_id, 
+                     ft.feature_type, 
+                     ft.shape
+            from     cmap_feature_type ft
+            order by $order_by
+        ], 
+        { Columns => {} }
+    );
+}
+
+# ----------------------------------------------------
+sub map_delete {
+
+=pod
+
+=head2 map_delete
+
+Delete a map.
+
+=cut
+    my ( $self, %args ) = @_;
+    my $map_id          = $args{'map_id'} or return $self->error('No map id');
+    my $db              = $self->db or return;
+    my $map_set_id      = $db->selectrow_array(
+        q[
+            select map_set_id
+            from   cmap_map
+            where  map_id=?
+        ],
+        {},
+        ( $map_id )
+    );
+    
+    my $feature_ids = $db->selectcol_arrayref(
+        q[
+            select feature_id
+            from   cmap_feature
+            where  map_id=?
+        ],
+        {},
+        ( $map_id )
+    );
+
+    for my $feature_id ( @$feature_ids ) {
+        $self->feature_delete( feature_id => $feature_id ) or return;
+    }
+    
+    $db->do(
+        q[
+            delete
+            from    cmap_map
+            where   map_id=?
+        ],
+        {},
+        ( $map_id )
+    );
+
+    return $map_set_id;
+}
+
+# ----------------------------------------------------
+sub map_set_delete {
+
+=pod
+
+=head2 map_set_delete
+
+Delete a map set.
+
+=cut
+    my ( $self, %args ) = @_;
+    my $map_set_id      = $args{'map_set_id'} or return $self->error(
+        'No map set id'
+    );
+    my $db              = $self->db or return;
+    my $map_ids         = $db->selectcol_arrayref( 
+        q[          
+            select map_id
+            from   cmap_map
+            where  map_set_id=?
+        ],  
+        {},
+        ( $map_set_id )
+    );
+
+    for my $map_id ( @$map_ids ) {
+        $self->map_delete( map_id => $map_id ) or return;
+    }
+
+    $db->do(    
+        q[         
+            delete  
+            from   cmap_map_set
+            where  map_set_id=?
+        ],      
+        {},     
+        ( $map_set_id )
+    ); 
+
+    return 1;
+}
+
+# ----------------------------------------------------
+sub map_type_delete {
+
+=pod
+
+=head2 map_type_delete 
+
+Delete a map type.
+
+=cut
+    my ( $self, %args ) = @_;
+    my $map_type_id     = $args{'map_type_id'} or 
+        return $self->error('No map type id');
+
+    my $db  = $self->db or return;
+    my $sth = $db->prepare(
+        q[
+            select   count(ms.map_set_id) as count, mt.map_type
+            from     cmap_map_set ms, cmap_map_type mt
+            where    ms.map_type_id=?
+            and      ms.map_type_id=mt.map_type_id
+            group by map_type 
+        ]
+    );
+    $sth->execute( $map_type_id );
+    my $hr = $sth->fetchrow_hashref;
+
+    if ( $hr->{'count'} > 0 ) {
+        return $self->error(
+            "Unable to delete map type '", $hr->{'map_type'}, 
+            "' as ", $hr->{'count'},
+            " map sets are linked to it."
+        );
+    }       
+    else {  
+        $db->do(
+            q[
+                delete
+                from   cmap_map_type
+                where  map_type_id=?
+            ],
+            {}, ( $map_type_id )
+        );
+    }
+
+    return 1;
 }
 
 # ----------------------------------------------------
@@ -201,34 +638,10 @@ Find a map's basic info by either its internal or accession ID.
         and    ms.species_id=s.species_id
     ];
 
-    my $sth = $self->db->prepare( $sql );
+    my $db  = $self->db or return;
+    my $sth = $db->prepare( $sql );
     $sth->execute( $map_id || $map_aid );
     return $sth->fetchrow_hashref;
-}
-
-# ----------------------------------------------------
-sub feature_types {
-
-=pod
-
-=head2 feature_types
-
-Find all the feature types.
-
-=cut
-    my ( $self, %args ) = @_;
-    my $order_by        = $args{'order_by'} || 'feature_type';
-
-    return $self->db->selectall_arrayref(
-        qq[
-            select   ft.feature_type_id, 
-                     ft.feature_type, 
-                     ft.shape
-            from     cmap_feature_type ft
-            order by $order_by
-        ], 
-        { Columns => {} }
-    );
 }
 
 # ----------------------------------------------------
@@ -244,7 +657,8 @@ Return all the map sets.
     my ( $self, %args ) = @_;
     my $order_by        = $args{'order_by'} || 'species_name,map_set_name';
 
-    return $self->db->selectall_arrayref(
+    my $db  = $self->db or return;
+    return $db->selectall_arrayref(
         qq[
             select   ms.map_set_id, 
                      ms.short_name as map_set_name,
@@ -261,7 +675,7 @@ Return all the map sets.
 # ----------------------------------------------------
 sub reload_correspondence_matrix {
     my ( $self, %args ) = @_;
-    my $db              = $self->db or die 'No db handle';
+    my $db              = $self->db or return;
 
     #
     # Empty the table.
@@ -433,8 +847,9 @@ Return all the species.
 =cut
     my ( $self, %args ) = @_;
     my $order_by        = $args{'order_by'} || 'common_name';
+    my $db              = $self->db or return;
 
-    return $self->db->selectall_arrayref(
+    return $db->selectall_arrayref(
         qq[
             select   s.species_id, 
                      s.common_name, 
@@ -444,6 +859,53 @@ Return all the species.
         ], 
         { Columns => {} }
     );
+}
+
+# ----------------------------------------------------
+sub species_delete {
+
+=pod
+
+=head2 species_delete
+
+Delete a species.
+
+=cut
+    my ( $self, %args ) = @_;
+    my $species_id      = $args{'species_id'} or 
+        return $self->error('No species id');
+
+    my $db  = $self->db or return;
+    my $sth = $db->prepare(
+        q[
+            select   count(ms.map_set_id) as count, s.common_name
+            from     cmap_map_set ms, cmap_species s
+            where    s.species_id=?
+            and      ms.species_id=s.species_id
+            group by common_name
+        ]
+    );
+    $sth->execute( $species_id );
+    my $hr = $sth->fetchrow_hashref;
+
+    if ( $hr->{'count'} > 0 ) {
+        return $self->error(
+            'Unable to delete ', $hr->{'common_name'},
+            ' because ', $hr->{'count'}, ' map sets are linked to it.'
+        );
+    }
+    else {
+        $db->do(
+            q[
+                delete
+                from   cmap_species
+                where  species_id=?
+            ],
+            {}, ( $species_id )
+        );
+    }
+
+    return 1;
 }
 
 1;
