@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.70 2004-03-11 19:34:25 kycl4rk Exp $
+# $Id: Map.pm,v 1.70.2.1 2004-05-07 21:54:02 kycl4rk Exp $
 
 =pod
 
@@ -24,12 +24,14 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.70 $)[-1];
+$VERSION = (qw$Revision: 1.70.2.1 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
-use Bio::GMOD::CMap::Utils qw[ column_distribution label_distribution ];
+use Bio::GMOD::CMap::Utils qw[ 
+    column_distribution even_label_distribution label_distribution 
+];
 
 use base 'Bio::GMOD::CMap';
 
@@ -396,7 +398,6 @@ in raw format as a hashref keyed on feature_id.
     my $is_flipped = shift || 0;
 
     unless ( defined $map->{'feature_store'} ) {
-#        my $reverse = $is_flipped ? -1 : 1;
         for my $data ( 
             map  { $_->[0] }
             sort { 
@@ -404,7 +405,6 @@ in raw format as a hashref keyed on feature_id.
                 ||
                 $a->[2] <=> $b->[2]
                 ||
-#                $reverse * ( $a->[3] <=> $b->[3] )
                 $a->[3] <=> $b->[3]
                 ||
                 $a->[4] <=> $b->[4] 
@@ -761,6 +761,7 @@ Lays out the map.
                 ;
             }
 
+            my %even_labels;
             for my $feature ( @$lane_features ) {
                 #
                 # If the map isn't showing labeled features (e.g., it's a
@@ -1191,6 +1192,28 @@ Lays out the map.
                             'Feature Details: ' . $feature->{'feature_name'}.
                             ' [' . $feature->{'accession_id'} . ']',
                     };
+
+                    my $even_label_key = $is_highlighted ? 'highlights'
+                        : $has_corr ? 'correspondences' : 'normal';
+                    push @{ $even_labels{ $even_label_key } }, {
+                        priority       => $feature->{'drawing_priority'},
+                        text           => $label,
+                        target         => $label_y,
+                        color          => $color,
+                        is_highlighted => $is_highlighted,
+                        feature_coords => \@coords,
+                        feature_mid_y  => $feature->{'mid_y'},
+                        feature_type   => $feature->{'feature_type'},
+                        has_corr       => $has_corr,
+                        feature_id     => $feature->{'feature_id'},
+                        start_position => $feature->{'start_position'},
+                        shape          => $feature->{'shape'},
+                        url            => 
+                            $feature_details_url.$feature->{'accession_id'},
+                        alt            => 
+                            'Feature Details: ' . $feature->{'feature_name'}.
+                            ' [' . $feature->{'accession_id'} . ']',
+                    };
                 }
 
                 my $buffer  = 2;
@@ -1208,62 +1231,70 @@ Lays out the map.
             # must be reverse sorted by start position;  moving south,
             # they should be in ascending order.
             #
-            my @accepted_labels; # the labels we keep
             my $buffer    =  2;  # the space between things
-            if ( @north_labels || @south_labels ) {
-                @north_labels =
-                    map  { $_->[0] }
-                    sort { 
-                        $b->[1] <=> $a->[1] || 
-                        $a->[2] <=> $b->[2] ||
-                        $b->[3] <=> $a->[3] ||
-                        $b->[4] <=> $a->[4]
-                    }
-                    map  { [ 
-                        $_, 
-                        $_->{'target'},
-                        $_->{'priority'}, 
-                        $_->{'is_highlighted'} || 0, 
-                        $_->{'has_corr'}       || 0,
-                    ] }
-                    @north_labels;
+#            my @accepted_labels; # the labels we keep
+#            if ( @north_labels || @south_labels ) {
+#                @north_labels =
+#                    map  { $_->[0] }
+#                    sort { 
+#                        $b->[1] <=> $a->[1] || 
+#                        $a->[2] <=> $b->[2] ||
+#                        $b->[3] <=> $a->[3] ||
+#                        $b->[4] <=> $a->[4]
+#                    }
+#                    map  { [ 
+#                        $_, 
+#                        $_->{'target'},
+#                        $_->{'priority'}, 
+#                        $_->{'is_highlighted'} || 0, 
+#                        $_->{'has_corr'}       || 0,
+#                    ] }
+#                    @north_labels;
+#
+#                @south_labels =
+#                    map  { $_->[0] }
+#                    sort { 
+#                        $a->[1] <=> $b->[1] || 
+#                        $b->[2] <=> $a->[2] ||
+#                        $b->[3] <=> $a->[3] ||
+#                        $b->[4] <=> $a->[4]
+#                    }
+#                    map  { [ 
+#                        $_, 
+#                        $_->{'target'},
+#                        $_->{'priority'}, 
+#                        $_->{'is_highlighted'} || 0, 
+#                        $_->{'has_corr'}       || 0,
+#                    ] }
+#                    @south_labels
+#                ;
+#
+#                my $used = label_distribution( 
+#                    labels     => \@north_labels, 
+#                    accepted   => \@accepted_labels,
+#                    used       => [],
+#                    buffer     => $buffer,
+#                    direction  => NORTH,
+#                    row_height => $reg_font->height,
+#                );
+#
+#                label_distribution( 
+#                    labels     => \@south_labels, 
+#                    accepted   => \@accepted_labels,
+#                    used       => $used,
+#                    buffer     => $buffer,
+#                    direction  => SOUTH,
+#                    row_height => $reg_font->height,
+#                );
+#            }
 
-                @south_labels =
-                    map  { $_->[0] }
-                    sort { 
-                        $a->[1] <=> $b->[1] || 
-                        $b->[2] <=> $a->[2] ||
-                        $b->[3] <=> $a->[3] ||
-                        $b->[4] <=> $a->[4]
-                    }
-                    map  { [ 
-                        $_, 
-                        $_->{'target'},
-                        $_->{'priority'}, 
-                        $_->{'is_highlighted'} || 0, 
-                        $_->{'has_corr'}       || 0,
-                    ] }
-                    @south_labels
-                ;
-
-                my $used = label_distribution( 
-                    labels     => \@north_labels, 
-                    accepted   => \@accepted_labels,
-                    used       => [],
-                    buffer     => $buffer,
-                    direction  => NORTH,
-                    row_height => $reg_font->height,
-                );
-
-                label_distribution( 
-                    labels     => \@south_labels, 
-                    accepted   => \@accepted_labels,
-                    used       => $used,
-                    buffer     => $buffer,
-                    direction  => SOUTH,
-                    row_height => $reg_font->height,
-                );
-            }
+            my $font_height = $reg_font->height;
+            my $accepted_labels = even_label_distribution( 
+                labels          => \%even_labels,
+                map_height      => $pixel_height,
+                font_height     => $font_height,
+                start_y         => $base_y,
+            );
 
             my $label_offset = 15;
             $base_x          = $label_side eq RIGHT 
@@ -1271,8 +1302,7 @@ Lays out the map.
                 : $leftmostf  < $base_x ? $leftmostf  : $base_x;
 
             my $font_width  = $reg_font->width;
-            my $font_height = $reg_font->height;
-            for my $label ( @accepted_labels ) {
+            for my $label ( @$accepted_labels ) {
                 my $text      = $label->{'text'};
                 my $label_y   = $label->{'y'};
                 my $label_x   = $label_side eq RIGHT 
