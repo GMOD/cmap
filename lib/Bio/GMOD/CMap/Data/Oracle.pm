@@ -1,10 +1,25 @@
 package Bio::GMOD::CMap::Data::Oracle;
 
-# $Id: Oracle.pm,v 1.1 2002-08-23 16:07:21 kycl4rk Exp $
+# $Id: Oracle.pm,v 1.2 2002-09-11 16:31:50 kycl4rk Exp $
+
+=head1 NAME
+
+Bio::GMOD::CMap::Data::Oracle - Oracle module
+
+=head1 SYNOPSIS
+
+  use Bio::GMOD::CMap::Data::Oracle;
+  blah blah blah
+
+=head1 DESCRIPTION
+
+Blah blah blah.
+
+=cut
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Bio::GMOD::CMap::Data::Generic;
 use base 'Bio::GMOD::CMap::Data::Generic';
@@ -50,18 +65,7 @@ The strftime string for date format.
 # Henry David Thoreau
 # ----------------------------------------------------
 
-=head1 NAME
-
-Bio::GMOD::CMap::Data::Oracle - Oracle module
-
-=head1 SYNOPSIS
-
-  use Bio::GMOD::CMap::Data::Oracle;
-  blah blah blah
-
-=head1 DESCRIPTION
-
-Blah blah blah.
+=pod
 
 =head1 SEE ALSO
 

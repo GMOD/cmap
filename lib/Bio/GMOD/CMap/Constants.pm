@@ -1,13 +1,13 @@
 package Bio::GMOD::CMap::Constants;
 
-# $Id: Constants.pm,v 1.10 2002-09-06 22:15:51 kycl4rk Exp $
+# $Id: Constants.pm,v 1.11 2002-09-11 16:31:50 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.10 $)[-1];
+$VERSION = (qw$Revision: 1.11 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -227,9 +227,9 @@ use constant SHAPE_XY => {
 use constant DEFAULT => {
     #
     # The background color of the map image.
-    # Default: beige
+    # Default: lightgoldenrodyellow
     #
-    background_color => 'beige',
+    background_color => 'lightgoldenrodyellow',
 
     #
     # The directory to store the images.  Note that this directory must
@@ -402,6 +402,14 @@ use constant DEFAULT => {
     # Where to see more on a map type.
     #
     map_details_url => '/cmap/map_details',
+
+    #
+    # The colors of the slot background and border.
+    # Values: COLORS
+    # Default: background = beige, border = khaki
+    #
+    slot_background_color => 'beige',
+    slot_border_color     => 'khaki',
 
     #
     # The HTML stylesheet.

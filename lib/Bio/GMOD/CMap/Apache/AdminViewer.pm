@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.3 2002-09-06 22:15:51 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.4 2002-09-11 16:31:50 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -28,7 +28,7 @@ $COLORS         = [ sort keys %{ +COLORS } ];
 $FEATURE_SHAPES = [ qw( box dumbbell line span ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.3 $)[-1];
+$VERSION        = (qw$Revision: 1.4 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -73,7 +73,7 @@ sub handler {
 #
     my ( $self, $apr ) = @_;
     my $action         = $apr->param( 'action' ) || 'admin_home';
-    return $self->$action;
+    return $self->$action();
 }
 
 # ----------------------------------------------------

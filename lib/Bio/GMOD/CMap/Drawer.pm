@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.9 2002-09-11 14:46:12 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.10 2002-09-11 16:31:50 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.9 $)[-1];
+$VERSION = (qw$Revision: 1.10 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
@@ -440,6 +440,8 @@ Lays out the image and writes it to the file system, set the "image_name."
     #
     # Frame out the slots.
     #
+    my $bg_color     = $self->config('slot_background_color');
+    my $border_color = $self->config('slot_border_color');
     for my $slot_no ( $self->slot_numbers ) {
         my ( $left, $right ) = $self->slot_sides( slot_no => $slot_no );
         my @slot_bounds = (
@@ -449,8 +451,8 @@ Lays out the image and writes it to the file system, set the "image_name."
             $max_y,
         );
 
-        $self->add_drawing( FILLED_RECT, @slot_bounds, 'beige', -1 );
-        $self->add_drawing( RECTANGLE,   @slot_bounds, 'khaki', -1 );
+        $self->add_drawing( FILLED_RECT, @slot_bounds, $bg_color,     -1 );
+        $self->add_drawing( RECTANGLE,   @slot_bounds, $border_color, -1 );
     }
     $self->adjust_frame;
 
