@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache;
 # vim: set ft=perl:
 
-# $Id: Apache.pm,v 1.6 2003-10-16 22:20:22 kycl4rk Exp $
+# $Id: Apache.pm,v 1.7 2003-10-23 02:14:35 kycl4rk Exp $
 
 =head1 NAME
 
@@ -46,7 +46,7 @@ this class will catch errors and display them correctly.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.6 $)[-1];
+$VERSION = (qw$Revision: 1.7 $)[-1];
 
 use Apache;
 use Apache::Constants;
@@ -65,19 +65,20 @@ use constant ERROR_TEMPLATE => 'error.tmpl';
 
 use constant DISPATCH   => {
     admin               => __PACKAGE__.'::AdminViewer',
-    feature_search      => __PACKAGE__.'::FeatureSearch',
+    correspondence      => __PACKAGE__.'::CorrespondenceViewer',
+    evidence_type_info  => __PACKAGE__.'::EvidenceTypeViewer',
     feature             => __PACKAGE__.'::FeatureViewer',
+    feature_search      => __PACKAGE__.'::FeatureSearch',
+    feature_type_info   => __PACKAGE__.'::FeatureTypeViewer',
     help                => __PACKAGE__.'::HelpViewer',
     index               => __PACKAGE__.'::Index',
-    evidence_type_info  => __PACKAGE__.'::EvidenceTypeViewer',
+    map_details         => __PACKAGE__.'::MapDetailViewer',
     map_set_info        => __PACKAGE__.'::MapSetViewer',
     map_type_info       => __PACKAGE__.'::MapTypeViewer',
     matrix              => __PACKAGE__.'::MatrixViewer',
-    viewer              => __PACKAGE__.'::MapViewer',
-    map_details         => __PACKAGE__.'::MapDetailViewer',
-    feature_type_info   => __PACKAGE__.'::FeatureTypeViewer',
     species_info        => __PACKAGE__.'::SpeciesViewer',
     view_feature_on_map => __PACKAGE__.'::ViewFeatureOnMap',
+    viewer              => __PACKAGE__.'::MapViewer',
 };
 
 use constant FIELD_SEP  => '=';
