@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.128 2004-06-11 16:50:00 mwz444 Exp $
+# $Id: Data.pm,v 1.129 2004-06-16 17:31:27 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.128 $)[-1];
+$VERSION = (qw$Revision: 1.129 $)[-1];
 
 use Data::Dumper;
 use Regexp::Common;
@@ -3087,7 +3087,7 @@ Given a list of feature names, find any maps they occur on.
     my ( $self, %args ) = @_;
     my $db                = $self->db or return;
     my $species_aids      = $args{'species_aids'};
-    my $feature_type_aids = $args{'feature_type_aids'};
+    my $incoming_feature_type_aids = $args{'feature_type_aids'};
     my $feature_string    = $args{'features'};
     my $page_data         = $args{'page_data'};
     my $page_size         = $args{'page_size'};
@@ -3106,7 +3106,7 @@ Given a list of feature names, find any maps they occur on.
     my $order_by = $args{'order_by'}
       || 'feature_name,species_name,map_set_name,map_name,start_position';
     my $search_field = $args{'search_field'}
-      || $self->config('feature_search_field');
+      || $self->config_data('feature_search_field');
     $search_field = DEFAULT->{'feature_search_field'}
       unless VALID->{'feature_search_field'}{$search_field};
 
@@ -3119,10 +3119,10 @@ Given a list of feature names, find any maps they occur on.
         my $comparison = $feature_name =~ m/%/ ? 'like' : '=';
         $feature_name = uc $feature_name;
         my $where = '';
-        if (@$feature_type_aids) {
+        if (@$incoming_feature_type_aids) {
             $where .=
-              'and ft.accession_id in ('
-              . join( ', ', map { qq['$_'] } @$feature_type_aids ) . ') ';
+              'and f.accession_id in ('
+              . join( ', ', map { qq['$_'] } @$incoming_feature_type_aids ) . ') ';
         }
 
         if (@$species_aids) {
@@ -3219,7 +3219,7 @@ Given a list of feature names, find any maps they occur on.
         my $features = $db->selectall_arrayref( $sql, { Columns => {} } );
         foreach my $row ( @{$features} ) {
             $row->{'feature_type'} =
-              $self->map_type_data( $row->{'feature_type_aid'},
+              $self->feature_type_data( $row->{'feature_type_aid'},
                 'feature_type' );
         }
         for my $f (@$features) {
@@ -3302,7 +3302,7 @@ Given a list of feature names, find any maps they occur on.
     #
     # Get the feature types.
     #
-    my $feature_types = $self->fake_selectall_arrayref(
+    my $feature_type_aids = $self->fake_selectall_arrayref(
         $self->feature_type_data(),
         'feature_type_accession as feature_type_aid',
         'feature_type'
@@ -3311,7 +3311,7 @@ Given a list of feature names, find any maps they occur on.
     return {
         data          => \@found_features,
         species       => $species,
-        feature_types => $feature_types,
+        feature_type_aids => $feature_type_aids,
         pager         => $pager,
     };
 }
@@ -3927,7 +3927,7 @@ Returns the detail info for a map.
         {
             if ( $highlight_hash->{ uc $val } ) {
                 $feature->{'highlight_color'} =
-                  $self->config('feature_highlight_bg_color');
+                  $self->config_data('feature_highlight_bg_color');
             }
         }
     }

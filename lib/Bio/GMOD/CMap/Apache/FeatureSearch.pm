@@ -1,14 +1,15 @@
 package Bio::GMOD::CMap::Apache::FeatureSearch;
 # vim: set ft=perl:
 
-# $Id: FeatureSearch.pm,v 1.19 2004-03-25 14:11:57 mwz444 Exp $
+# $Id: FeatureSearch.pm,v 1.20 2004-06-16 17:31:28 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.19 $)[-1];
+$VERSION = (qw$Revision: 1.20 $)[-1];
 
 use Bio::GMOD::CMap::Data;
 use Data::Pageset;
+use Data::Dumper;
 use base 'Bio::GMOD::CMap::Apache';
 
 use constant TEMPLATE => 'feature_search.tmpl';
@@ -23,7 +24,7 @@ sub handler {
     my $page_no           = $apr->param('page_no')      ||  1;
     my $search_field      = $apr->param('search_field') || '';
     my @species_aids      = ( $apr->param('species_aid')      );
-    my @feature_types = ( $apr->param('feature_type') );
+    my @feature_type_aids = ( $apr->param('feature_type_aid') );
 
     $self->data_source( $apr->param('data_source') ) or return;
 
@@ -41,22 +42,22 @@ sub handler {
         @species_aids = split /,/, $apr->param('species_aids');
     }
 
-    unless ( @feature_types ) {
-        @feature_types = split /,/, $apr->param('feature_types');
+    unless ( @feature_type_aids ) {
+        @feature_type_aids = split /,/, $apr->param('feature_type_aids');
     }
 
     #
     # "-1" is a reserved value meaning "All."
     #
     @species_aids      = () if grep { /^-1$/ } @species_aids;
-    @feature_types = () if grep { /^-1$/ } @feature_types;
+    @feature_type_aids = () if grep { /^-1$/ } @feature_type_aids;
 
     #
     # Set the parameters in the request object.
     #
     $apr->param( features               => $features                         );
     $apr->param( species_aids           => join(',', @species_aids         ) );
-    $apr->param( feature_types      => join(',', @feature_types    ) );
+    $apr->param( feature_type_aids      => join(',', @feature_type_aids    ) );
 
     my $data              =  $self->data_module or return;
     my $results           =  $data->feature_search_data(
@@ -64,7 +65,7 @@ sub handler {
         order_by          => $order_by,
         search_field      => $search_field,
         species_aids      => \@species_aids,
-        feature_types => \@feature_types,
+        feature_type_aids => \@feature_type_aids,
         page_size         => $PAGE_SIZE,
         page_no           => $page_no,
         pages_per_set     => $MAX_PAGES,
@@ -73,6 +74,8 @@ sub handler {
 
     my $html;
     my $t = $self->template;
+print STDERR Dumper(\@feature_type_aids)."\n";
+print STDERR Dumper($results->{'feature_type_aids'})."\n";
     $t->process( 
         TEMPLATE, 
         { 
@@ -81,10 +84,10 @@ sub handler {
             stylesheet          => $self->stylesheet,
             pager               => $results->{'pager'},
             species             => $results->{'species'},
-            feature_types       => $results->{'feature_types'},
+            feature_type_aids       => $results->{'feature_type_aids'},
             search_results      => $results->{'data'},
             species_lookup      => { map { $_, 1 } @species_aids      },
-            feature_type_lookup => { map { $_, 1 } @feature_types },
+            feature_type_aid_lookup => { map { $_, 1 } @feature_type_aids },
             data_sources        => $self->data_sources,
             intro               => $INTRO,
         },
