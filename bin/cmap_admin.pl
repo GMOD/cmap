@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.93 2005-03-10 19:59:10 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.94 2005-03-11 21:07:21 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.93 $)[-1];
+$VERSION = (qw$Revision: 1.94 $)[-1];
 
 #
 # Get command-line options
@@ -2249,7 +2249,8 @@ sub purge_query_cache_menu {
     my $cache_level = $self->show_menu(
         title  => '  --= Cache Level =--  ',
         prompt =>
-'At which cache level would you like to start the purging?\n(The purges cascade down. ie selecting level 3 removes 3 and 4):',
+            "At which cache level would you like to start the purging?\n"
+          . "(The purges cascade down. ie selecting level 3 removes 3 and 4):",
         display => 'display',
         return  => 'level',
         data    => [
