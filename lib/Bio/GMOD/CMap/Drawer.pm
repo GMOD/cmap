@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.53 2004-03-04 15:23:20 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.53.2.1 2004-06-08 15:44:48 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.53 $)[-1];
+$VERSION = (qw$Revision: 1.53.2.1 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -637,13 +637,13 @@ Lays out the image and writes it to the file system, set the "image_name."
                 $self->add_drawing(
                     LINE, 
                     $feature_x, $feature_y + 8, 
-                    $feature_x - 2, $feature_y + 8,
+                    $feature_x - 2, $feature_y + 6,
                     $color
                 );
                 $self->add_drawing(
                     LINE, 
                     $feature_x, $feature_y + 8, 
-                    $feature_x + 2, $feature_y + 8,
+                    $feature_x + 2, $feature_y + 6,
                     $color
                 );
                 $label_y = $feature_y + 5;
@@ -658,13 +658,13 @@ Lays out the image and writes it to the file system, set the "image_name."
                 $self->add_drawing(
                     LINE, 
                     $feature_x, $feature_y + 8, 
-                    $feature_x - 2, $feature_y + 8,
+                    $feature_x - 2, $feature_y + 6,
                     $color
                 );
                 $self->add_drawing(
                     LINE, 
                     $feature_x, $feature_y + 8, 
-                    $feature_x + 2, $feature_y + 8,
+                    $feature_x + 2, $feature_y + 6,
                     $color
                 );
                 $self->add_drawing(
