@@ -3,7 +3,7 @@
   title=title
   cur_sec='map_viewer'
   help_anchor='map_viewer'
-  start_body='<body onLoad="setDivObjects();document.comparative_map_form.reset()">'
+  body_addendum='onLoad="setDivObjects();document.comparative_map_form.reset()"'
 %]
 <script language="javascript">
                                         
@@ -236,7 +236,7 @@ function changeCompMaps(sel,index,side){
 <table border="0"> 
   <tr>
     <td align="left" valign="top">
-      <div id="hiddenChangeMenu" >
+      <div id="hiddenChangeMenu">
         <span  
           onclick="toggleDiv(document.getElementById('hiddenChangeMenu'));
           setMenuObjects(
@@ -244,10 +244,10 @@ function changeCompMaps(sel,index,side){
           window.document.comparative_map_form.changeMenu,
           toggleDiv(document.getElementById('displayChangeMenu')));"
         >
-        <img src="/cmap/plus.png"> <b> Click to Show Change Menu</b>
+        <img src="/cmap/plus.png">&nbsp;<b>Click to Show Change Menu</b>
         </span>
       </div>
-      <div id="displayChangeMenu" >
+      <div id="displayChangeMenu">
         <span  
           onclick="setMenuObjects(
           window.document.ref_map_set_form.changeMenu,
@@ -255,15 +255,15 @@ function changeCompMaps(sel,index,side){
           toggleDiv(document.getElementById('displayChangeMenu')));
           toggleDiv(document.getElementById('hiddenChangeMenu'));"
         >
-        <img src="/cmap/minus.png"> <b> Hide Menu</b>
+        <img src="/cmap/minus.png">&nbsp;<b>Hide Menu</b>
         </span>
  
         <table border="0">
           <form name="ref_map_set_form">
-          <input type=hidden name=changeMenu id=changeMenu value=[% apr.param('changeMenu') %]>
-          <input type=hidden name=compMenu id=compMenu value=[% apr.param('compMenu') %]>
-          <input type=hidden name=optionMenu id=optionMenu value=[% apr.param('optionMenu') %]>
-          <input type=hidden name=imageMenu id=imageMenu value=[% apr.param('imageMenu') %]>
+          <input type="hidden" name="changeMenu" id="changeMenu" value="[% apr.param('changeMenu') %]">
+          <input type="hidden" name="compMenu" id="compMenu" value="[% apr.param('compMenu') %]">
+          <input type="hidden" name="optionMenu" id="optionMenu" value="[% apr.param('optionMenu') %]">
+          <input type="hidden" name="imageMenu" id="imageMenu" value="[% apr.param('imageMenu') %]">
           <tr>
             <td align="right">Ref. Species:</td>
   
@@ -320,10 +320,10 @@ function changeCompMaps(sel,index,side){
           [% IF form_data.ref_maps %]
             [% form_data.ref_maps.unshift({accession_id=>'-1',map_name=>'--All--'}) %]
             <form name="ref_map_form">
-              <input type=hidden name=changeMenu id=changeMenu value=[% apr.param('changeMenu') %]>
-              <input type=hidden name=compMenu id=compMenu value=[% apr.param('compMenu') %]>
-              <input type=hidden name=optionMenu id=optionMenu value=[% apr.param('optionMenu') %]>
-              <input type=hidden name=imageMenu id=imageMenu value=[% apr.param('imageMenu') %]>
+              <input type="hidden" name="changeMenu" id="changeMenu" value="[% apr.param('changeMenu') %]">
+              <input type="hidden" name="compMenu" id="compMenu" value="[% apr.param('compMenu') %]">
+              <input type="hidden" name="optionMenu" id="optionMenu" value="[% apr.param('optionMenu') %]">
+              <input type="hidden" name="imageMenu" id="imageMenu" value="[% apr.param('imageMenu') %]">
               <tr>
                 <td valign="top" align="right">Ref. Map:</td>
       
@@ -378,11 +378,11 @@ function changeCompMaps(sel,index,side){
     <form name="comparative_map_form">
       <tr>
         <td align=left valign=top>
-      <input type=hidden name=changeMenu id=changeMenu value=[% apr.param('changeMenu') %]>
-      <input type=hidden name=compMenu id=compMenu value=[% apr.param('compMenu') %]>
-      <input type=hidden name=optionMenu id=optionMenu value=[% apr.param('optionMenu') %]>
-      <input type=hidden name=imageMenu id=imageMenu value=[% apr.param('imageMenu') %]>
-          <div id="hiddenCompMenu" >
+          <input type="hidden" name="changeMenu" id="changeMenu" value="[% apr.param('changeMenu') %]">
+          <input type="hidden" name="compMenu" id="compMenu" value="[% apr.param('compMenu') %]">
+          <input type="hidden" name="optionMenu" id="optionMenu" value="[% apr.param('optionMenu') %]">
+          <input type="hidden" name="imageMenu" id="imageMenu" value="[% apr.param('imageMenu') %]">
+          <div id="hiddenCompMenu">
             <span  
               onclick="toggleDiv(document.getElementById('hiddenCompMenu'));
               setMenuObjects(
@@ -390,10 +390,10 @@ function changeCompMaps(sel,index,side){
               window.document.comparative_map_form.compMenu,
               toggleDiv(document.getElementById('displayCompMenu')));"
             >
-            <img src="/cmap/plus.png"> <b> Click to Show Comparison Menu</b>
+            <img src="/cmap/plus.png">&nbsp;<b>Click to Show Comparison Menu</b>
             </span>
           </div>
-          <div id="displayCompMenu" >
+          <div id="displayCompMenu">
             <span  
               onclick="setMenuObjects(
               window.document.ref_map_set_form.compMenu,
@@ -401,12 +401,12 @@ function changeCompMaps(sel,index,side){
               toggleDiv(document.getElementById('displayCompMenu')));
               toggleDiv(document.getElementById('hiddenCompMenu'));"
             >
-              <img src="/cmap/minus.png"> <b> Hide Menu</b>
+              <img src="/cmap/minus.png">&nbsp;<b>Hide Menu</b>
             </span>
             <table>
               <tr>
-                <td align=right valign=top>
-                  <table border=0>
+                <td align="right" valign="top">
+                  <table border="0">
                     <tr>
                       [% PROCESS 'cmap_viewer_comparative_map_select.tmpl'
                         side="Left"
@@ -415,8 +415,8 @@ function changeCompMaps(sel,index,side){
                     </tr>
                   </table>
                 </td> 
-                <td align=center valign=top>
-                  <table border=0>
+                <td align="center" valign="top">
+                  <table border="0">
                     <tr>
                       <td align="right">Start:</td>
   
@@ -479,7 +479,7 @@ function changeCompMaps(sel,index,side){
       </tr>
       <tr>
         <td align=left valign=top>
-          <div id="hiddenOptionMenu" >
+          <div id="hiddenOptionMenu">
             <span  
               onclick="toggleDiv(document.getElementById('hiddenOptionMenu'));
               setMenuObjects(
@@ -487,10 +487,10 @@ function changeCompMaps(sel,index,side){
               window.document.comparative_map_form.optionMenu,
               toggleDiv(document.getElementById('displayOptionMenu')));"
             >
-             <img src="/cmap/plus.png"> <b> Click to Show options Menu</b>
+             <img src="/cmap/plus.png">&nbsp;<b>Click to Show options Menu</b>
             </span>
           </div>
-          <div id="displayOptionMenu" >
+          <div id="displayOptionMenu">
             <span  
               onclick="setMenuObjects(
               window.document.ref_map_set_form.optionMenu,
@@ -498,15 +498,15 @@ function changeCompMaps(sel,index,side){
               toggleDiv(document.getElementById('displayOptionMenu')));
               toggleDiv(document.getElementById('hiddenOptionMenu'));"
             >
-              <img src="/cmap/minus.png"> <b> Hide Menu</b>
+              <img src="/cmap/minus.png">&nbsp;<b>Hide Menu</b>
             </span>
             <table>
               <tr>
-                <td align="left" valign="bottom" Colspan=2><b>Feature Types:</b></td>
+                <td align="left" valign="bottom" colspan="2"><b>Feature Types:</b></td>
               </tr>
               <tr>
-                <td colspan=2 align=left>
-                  <table border=1>
+                <td colspan="2" align="left">
+                  <table border="1">
                     <tr>
                       <td>Feature</td>
                       <td>Ignore</td>
@@ -517,33 +517,33 @@ function changeCompMaps(sel,index,side){
                       <tr>
                         <td>[% ft.feature_type %]</td>
                         <td>
-                          <input type=radio name=feature_type_[% ft.feature_type_aid %] value=0 [% IF (ignored_feature_types.${ft.feature_type_aid} OR (feature_default_display=='ignore' AND NOT included_features.${ft.feature_type_aid} AND NOT corr_only_feature_types.${ft.feature_type_aid})) ; ' checked'; END %]>
+                          <input type="radio" name="feature_type_[% ft.feature_type_aid %]" value="0" [% IF (ignored_feature_types.${ft.feature_type_aid} OR (feature_default_display=='ignore' AND NOT included_features.${ft.feature_type_aid} AND NOT corr_only_feature_types.${ft.feature_type_aid})) ; ' checked'; END %]>
                         </td>
                         <td>
-                          <input type=radio name=feature_type_[% ft.feature_type_aid %] value=1 [% IF (corr_only_feature_types.${ft.feature_type_aid} OR (feature_default_display=='corr_only' AND NOT included_features.${ft.feature_type_aid} AND NOT ignored_feature_types.${ft.feature_type_aid})); ' checked'; END %]>
+                          <input type="radio" name="feature_type_[% ft.feature_type_aid %]" value="1" [% IF (corr_only_feature_types.${ft.feature_type_aid} OR (feature_default_display=='corr_only' AND NOT included_features.${ft.feature_type_aid} AND NOT ignored_feature_types.${ft.feature_type_aid})); ' checked'; END %]>
                         </td>
                         <td>
-                          <input type=radio name=feature_type_[% ft.feature_type_aid %] value=2 [% IF (included_features.${ft.feature_type_aid} OR (feature_default_display=='display' AND NOT corr_only_features_types.${ft.feature_type_aid} AND NOT ignored_feature_types.${ft.feature_type_aid})); ' checked'; END %]>
+                          <input type="radio" name="feature_type_[% ft.feature_type_aid %]" value="2" [% IF (included_features.${ft.feature_type_aid} OR (feature_default_display=='display' AND NOT corr_only_features_types.${ft.feature_type_aid} AND NOT ignored_feature_types.${ft.feature_type_aid})); ' checked'; END %]>
                         </td>
                       </tr>
                     [% END %]
                     <tr>
-                      <td></td>
-                      <td><input type=button name=checkColumn value="Check All" onClick="selectFeatureRadio(0)"></td>
-                      <td><input type=button name=checkColumn value="Check All" onClick="selectFeatureRadio(1)"></td>
-                      <td><input type=button name=checkColumn value="Check All" onClick="selectFeatureRadio(2)"></td>
+                      <td>&nbsp;</td>
+                      <td><input type="button" name="checkColumn" value="Check All" onClick="selectFeatureRadio(0)"></td>
+                      <td><input type="button" name="checkColumn" value="Check All" onClick="selectFeatureRadio(1)"></td>
+                      <td><input type="button" name="checkColumn" value="Check All" onClick="selectFeatureRadio(2)"></td>
                     </tr>
                   </table> 
                 </td>
               </tr>
               <tr>
-                <td align="Left" valign="bottom"><b>Include Correspondence Types:</b></td>
+                <td align="left" valign="bottom"><b>Include Correspondence Types:</b></td>
               </tr>
               <tr>
                 <td>
                   [% IF form_data.evidence_types.size %]
                       [% FOREACH et=form_data.evidence_types %]
-                        <input type=checkbox name='evidence_types' value="[% et.evidence_type_aid %]"[% IF feature_types_undefined OR included_evidence.${et.evidence_type_aid}; ' checked'; END %]>[% et.evidence_type %]<br>
+                        <input type="checkbox" name="evidence_types" value="[% et.evidence_type_aid %]"[% IF feature_types_undefined OR included_evidence.${et.evidence_type_aid}; ' checked'; END %]>[% et.evidence_type %]<br>
                       [% END %]
                     </select>
     
@@ -601,7 +601,7 @@ function changeCompMaps(sel,index,side){
       </tr>
       <tr>
         <td align=left valign=top>
-          <div id="hiddenImageMenu" >
+          <div id="hiddenImageMenu">
             <span  
               onclick="toggleDiv(document.getElementById('hiddenImageMenu'));
               setMenuObjects(
@@ -609,10 +609,10 @@ function changeCompMaps(sel,index,side){
               window.document.comparative_map_form.imageMenu,
               toggleDiv(document.getElementById('displayImageMenu')));"
             >
-            <img src="/cmap/plus.png"> <b> Click to Show Additional Options Menu</b>
+            <img src="/cmap/plus.png">&nbsp;<b>Click to Show Additional Options Menu</b>
             </span>
           </div>
-          <div id="displayImageMenu" >
+          <div id="displayImageMenu">
             <span  
               onclick="setMenuObjects(
               window.document.ref_map_set_form.imageMenu,
@@ -620,10 +620,10 @@ function changeCompMaps(sel,index,side){
               toggleDiv(document.getElementById('displayImageMenu')));
               toggleDiv(document.getElementById('hiddenImageMenu'));"
             >
-              <img src="/cmap/minus.png"> <b> Hide Menu</b>
+              <img src="/cmap/minus.png">&nbsp;<b>Hide Menu</b>
             </span>
 
-            <table border=0>
+            <table border="0">
               <tr>
                 <td align="left" valign="top">Image Size:</td>
                 <td>
@@ -731,10 +731,10 @@ function changeCompMaps(sel,index,side){
     </form>
   [% ELSE %]
     <form name="comparative_map_form">
-      <input type=hidden name=changeMenu id=changeMenu value=[% apr.param('changeMenu') %]>
-      <input type=hidden name=compMenu id=compMenu value=[% apr.param('compMenu') %]>
-      <input type=hidden name=optionMenu id=optionMenu value=[% apr.param('optionMenu') %]>
-      <input type=hidden name=imageMenu id=imageMenu value=[% apr.param('imageMenu') %]>
+      <input type="hidden" name="changeMenu" id="changeMenu" value="[% apr.param('changeMenu') %]">
+      <input type="hidden" name="compMenu" id="compMenu" value="[% apr.param('compMenu') %]">
+      <input type="hidden" name="optionMenu" id="optionMenu" value="[% apr.param('optionMenu') %]">
+      <input type="hidden" name="imageMenu" id="imageMenu" value="[% apr.param('imageMenu') %]">
     </form>
   [% END %]    
 </table>

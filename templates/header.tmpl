@@ -82,14 +82,21 @@
         END;
     END;
 -%]
-<!DOCTYPE HTML PUBLIC "-//IETF//Dtd HTML//EN">
+<!DOCTYPE html
+        PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
 <head>
 <title>[% title %]</title>
 </head>
 [% IF stylesheet %]<link rel="stylesheet" href="[% stylesheet %]" type="text/css">[% END %]
 
-[% page.start_body OR start_body OR '<body>' %]
+[% body = page.start_body OR '<body>' %]
+[%- IF body_addendum;
+    body.replace('^<body ', "<body $body_addendum ");
+ELSE;
+    body;
+END -%]
 
 <table width="100%">
     <tr>
