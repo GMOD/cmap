@@ -1,0 +1,13 @@
+#!/usr/bin/perl
+
+use strict;
+use lib '/usr/local/apache/lib/perl';
+use Bio::GMOD::CMap::Apache;
+
+eval { Bio::GMOD::CMap::Apache::handler(); };
+
+if ( my $err = $@ ) {
+    print "Content-type: text/html\n\n";
+    print "Error: $err";
+}
+
