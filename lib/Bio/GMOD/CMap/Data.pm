@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.20 2002-12-06 01:43:39 kycl4rk Exp $
+# $Id: Data.pm,v 1.21 2002-12-12 14:11:30 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.20 $)[-1];
+$VERSION = (qw$Revision: 1.21 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -1785,7 +1785,7 @@ Returns the detail info for a map.
     # Figure out hightlighted features.
     #
     my $highlight_hash = {
-        map  { s/^\s+|\s+$//g; ( uc $_, 1 ) } split( /,/, $highlight )
+        map  { s/^\s+|\s+$//g; ( uc $_, 1 ) } split( /[,:;\s+]/, $highlight ) 
     };
 
     my $sth = $db->prepare(
