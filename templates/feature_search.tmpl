@@ -10,21 +10,36 @@
 <form>
 <table>
     <tr>
-        <td align="right" valign="top">
-            Enter the names of features<br> 
-            separating with commas or whitespace.<br>
-            Use &quot;*&quot; or &quot;%&quot; for wildcards:
-        </td>
-        <td>
-            <textarea name="features" rows="10" cols="20">[% apr.param('features') %]</textarea>
-        </td>
+        <td>Feature names*:</td>
+        <td>Restrict species:</td>
+        <td>Restrict feature types:</td>
+        <td>Search field:</td>
     </tr>
 
     <tr>
-        <td align="right">
-            Search Field:
+        <td valign="top">
+            <textarea name="features" rows="5" cols="20">[% apr.param('features') %]</textarea>
         </td>
-        <td>
+
+        <td valign="top">
+            <select name="species_aid" size="5" multiple>
+                <option value="">--All Species--</option>
+                [% FOREACH s=species %]
+                    <option value="[% s.species_aid %]"[% IF species_lookup.${s.species_aid} %] selected[% END %]>[% s.species_name %]</option>
+                [% END %]
+            </select>
+        </td>
+
+        <td valign="top">
+            <select name="feature_type_aid" size="5" multiple>
+                <option value="">--All Feature Types--</option>
+                [% FOREACH ft=feature_types %]
+                    <option value="[% ft.feature_type_aid %]"[% IF feature_type_lookup.${ft.feature_type_aid} %] selected[% END %]>[% ft.feature_type %]</option>
+                [% END %]
+            </select>
+        </td>
+
+        <td valign="top">
             <select name="search_field">
                 <option value="both"[% IF apr.param('search_field')=='both'; 'selected'; END %]>Both</option>
                 <option value="feature_name"[% IF apr.param('search_field')=='feature_name'; 'selected'; END %]>Feature Name</option>
@@ -34,35 +49,7 @@
     </tr>
 
     <tr>
-        <td align="right">
-            Restrict by Species:
-        </td>
-        <td>
-            <select name="species_aid">
-                <option value="">--All Species--</option>
-                [% FOREACH s=species %]
-                    <option value="[% s.species_aid %]"[% IF s.species_aid==apr.param('species_aid') %] selected[% END %]>[% s.species_name %]</option>
-                [% END %]
-            </select>
-        </td>
-    </tr>
-
-    <tr>
-        <td align="right">
-            Restrict by Feature Types:
-        </td>
-        <td>
-            <select name="feature_type_aid">
-                <option value="">--All Feature Types--</option>
-                [% FOREACH ft=feature_types %]
-                    <option value="[% ft.feature_type_aid %]"[% IF ft.feature_type_aid==apr.param('feature_type_aid') %] selected[% END %]>[% ft.feature_type %]</option>
-                [% END %]
-            </select>
-        </td>
-    </tr>
-
-    <tr>
-        <td colspan="2" align="center">
+        <td colspan="4" align="center">
             <input type="hidden" name="order_by" value="[% apr.param('order_by') %]">
             <input type="submit" value="Submit">&nbsp;
             <input type="reset"  value="Reset">
@@ -71,24 +58,30 @@
 </table>
 </form>
 
+<small>
+*<em>Separate multiple names with commas or whitespace.
+Use &quot;*&quot; or &quot;%&quot; for wildcards.
+</em></small>
+
+<p>
 [% IF apr.param('features') %]
     [% IF search_results.size %]
         [% SET i=0 %]
-        <table border="0">
+        <table border="0" width="100%">
             <tr>
                 <td colspan="8" align="center">
-                    [% SET pager_url="/cmap/feature_search?features=${apr.param('features')}&order_by=${apr.param('order_by')}&species_aid=${apr.param('species_aid')}" %]
+                    [% SET pager_url="/cmap/feature_search?features=${apr.param('features')}&order_by=${apr.param('order_by')}&species_aids=${apr.param('species_aids')}&feature_type_aids=${apr.param('feature_type_aids')}" %]
                     [% PROCESS pager.tmpl %]
                 </td>
             </tr>
             <tr>
-                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=feature_name;species_id=[% apr.param('species_id') %];search_field=[% apr.param('search_field') %];feature_type_aid=[% apr.param('feature_type_aid') %]">Feature Name</a></th>
-                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=feature_type;species_id=[% apr.param('species_id') %];search_field=[% apr.param('search_field') %];feature_type_aid=[% apr.param('feature_type_aid') %]">Feature Type</a></th>
-                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=species_name;species_id=[% apr.param('species_id') %];search_field=[% apr.param('search_field') %];feature_type_aid=[% apr.param('feature_type_aid') %]">Species</a></th>
-                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=map_set_name;species_id=[% apr.param('species_id') %];search_field=[% apr.param('search_field') %];feature_type_aid=[% apr.param('feature_type_aid') %]">Map Set</a></th>
-                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=map_name;species_id=[% apr.param('species_id') %];search_field=[% apr.param('search_field') %];feature_type_aid=[% apr.param('feature_type_aid') %]">Map Name</a></th>
-                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=alternate_name;species_id=[% apr.param('species_id') %];search_field=[% apr.param('search_field') %];feature_type_aid=[% apr.param('feature_type_aid') %]">Alt. Name</a></th>
-                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=start_position;species_id=[% apr.param('species_id') %];search_field=[% apr.param('search_field') %];feature_type_aid=[% apr.param('feature_type_aid') %]">Position</a></th>
+                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=feature_name;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %]">Feature Name</a></th>
+                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=feature_type;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %]">Feature Type</a></th>
+                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=species_name;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aid=[% apr.param('feature_type_aids') %]">Species</a></th>
+                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=map_set_name;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %]">Map Set</a></th>
+                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=map_name;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %]">Map Name</a></th>
+                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=alternate_name;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %]">Alt. Name</a></th>
+                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=start_position;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %]">Position</a></th>
                 <th>&nbsp;</th>
                 <th>&nbsp;</th>
             </tr>
@@ -101,7 +94,9 @@
                     <td><a href="map_set_info?map_set_aid=[% r.map_set_aid %]">[% r.map_set_name %]</a></td>
                     <td>[% r.map_name %]</td>
                     <td>[% r.alternate_name %]</td>
-                    <td>[% r.start_position %]</td>
+                    <td align="right">
+                        [% r.start_position %][% IF r.stop_position >= r.start_position %]-[% r.stop_position %][% END %]
+                    </td>
                     <td>
                         <b>[</b>&nbsp;<a href="/cmap/viewer?ref_map_set_aid=[% r.map_set_aid %];ref_map_aid=[% r.map_aid %];highlight=[% r.feature_name %]">View&nbsp;on&nbsp;Map</a>&nbsp;<b>]</b>
                     </td>
