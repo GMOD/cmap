@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.31 2003-04-15 02:01:49 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.32 2003-05-16 17:04:51 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,9 +22,9 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.31 $)[-1];
+$VERSION = (qw$Revision: 1.32 $)[-1];
 
-use Bio::GMOD::CMap;
+#use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
@@ -566,17 +566,18 @@ Lays out the image and writes it to the file system, set the "image_name."
             elsif ( $ft->{'shape'} eq 'span' ) {
                 $self->add_drawing(
                     LINE, 
-                    $feature_x, $feature_y, $feature_x + 5, $feature_y, 
+                    $feature_x + 3, $feature_y, $feature_x + 5, $feature_y, 
                     $color
                 );
                 $self->add_drawing(
                     LINE, 
-                    $feature_x, $feature_y, $feature_x, $feature_y + 10, 
+                    $feature_x + 3, $feature_y, 
+                    $feature_x + 3, $feature_y + 10, 
                     $color
                 );
                 $self->add_drawing(
                     LINE, 
-                    $feature_x, $feature_y + 10, 
+                    $feature_x + 3, $feature_y + 10, 
                     $feature_x + 5, $feature_y + 10, 
                     $color
                 );
@@ -731,7 +732,7 @@ Lays out the image and writes it to the file system, set the "image_name."
 
             $self->add_drawing( 
                 STRING, $font, $label_x, $label_y - $font->height/2, 
-                $label, $color 
+                $label, 'black'
             );
 
             my $furthest_x = $label_x + $font->width * length($label) + 5;
