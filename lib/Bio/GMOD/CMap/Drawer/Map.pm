@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.87 2004-06-03 19:27:14 mwz444 Exp $
+# $Id: Map.pm,v 1.88 2004-06-08 21:42:49 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.87 $)[-1];
+$VERSION = (qw$Revision: 1.88 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1804,18 +1804,10 @@ sub add_feature_to_map {
                   ( $vert_line_x2 - 2, $y_pos2, $vert_line_x2 + 2, $y_pos1, );
             }
             elsif ( $feature_shape eq 'box' ) {
-                $vert_line_x1 =
-                    $label_side eq RIGHT
-                  ? $tick_start - $offset
-                  : $tick_stop + $offset;
-                $vert_line_x2 =
-                    $label_side eq RIGHT
-                  ? $tick_stop + $offset
-                  : $tick_start - $offset;
-
                 @coords = ( $vert_line_x2, $y_pos2, $vert_line_x1, $y_pos1, );
 
                 push @temp_drawing_data, [ RECTANGLE, @coords, $color ];
+                @coords = ( $vert_line_x1, $y_pos2, $vert_line_x2, $y_pos1, );
             }
             elsif ( $feature_shape eq 'dumbbell' ) {
                 my $width = 4;
