@@ -1,11 +1,12 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.39 2003-07-01 17:40:29 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.40 2003-07-08 02:41:17 kycl4rk Exp $
 
 use strict;
 use Apache::Constants qw[ :common M_GET REDIRECT ];
 use Apache::Request;
 use Data::Dumper;
+use Data::Pageset;
 use Template;
 use Time::Object;
 use Time::ParseDate;
@@ -21,6 +22,7 @@ use constant ADMIN_HOME_URI => '/cmap/admin';
 
 use vars qw( 
     $VERSION $COLORS $MAP_SHAPES $FEATURE_SHAPES $WIDTHS $LINE_STYLES
+    $MAX_PAGES $PAGE_SIZE
 );
 
 $COLORS         = [ sort keys %{ +COLORS } ];
@@ -30,7 +32,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.39 $)[-1];
+$VERSION        = (qw$Revision: 1.40 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -78,6 +80,9 @@ sub handler {
     my ( $self, $apr ) = @_;
 
     $self->data_source( $apr->param('data_source') );
+
+    $PAGE_SIZE ||= $self->config('max_child_elements') || 0;
+    $MAX_PAGES ||= $self->config('max_search_pages')   || 1;    
 
     my $action = $apr->param('action') || 'admin_home';
     my $return = eval { $self->$action() };
@@ -147,7 +152,7 @@ sub colors_view {
     my $self        = shift;
     my $apr         = $self->apr;
     my $color_name  = lc $apr->param('color_name') || '';
-    my $limit_start = $apr->param('limit_start')   ||  0;
+    my $page_no     = $apr->param('page_no')       ||  1;
     my ( @colors, @errors );
 
     #
@@ -186,23 +191,20 @@ sub colors_view {
         sort keys %{ +COLORS };
     }
 
-    my $pager       =  paginate( 
-        self        => $self,
-        data        => \@colors,
-        limit_start => $limit_start,
-    );
+    my $pager = Data::Pageset->new( {
+        total_entries    => scalar @colors, 
+        entries_per_page => $PAGE_SIZE,
+        current_page     => $page_no,
+        pages_per_set    => $MAX_PAGES,
+    } );
+    @colors = $pager->splice( \@colors ); 
 
     return $self->process_template( 
         TEMPLATE->{'colors_view'}, 
         { 
             apr         => $self->apr,
-            colors      => $pager->{'data'},
-            no_elements => $pager->{'no_elements'},
-            page_size   => $pager->{'page_size'},
-            pages       => $pager->{'pages'},
-            cur_page    => $pager->{'cur_page'},
-            show_start  => $pager->{'show_start'},
-            show_stop   => $pager->{'show_stop'},
+            colors      => \@colors,
+            pager       => $pager,
             errors      => \@errors,
         }
     );
@@ -334,7 +336,7 @@ sub corr_evidence_types_view {
     my $db          = $self->db or return $self->error;
     my $apr         = $self->apr;
     my $order_by    = $apr->param('order_by') || 'rank,evidence_type';
-    my $limit_start = $apr->param('limit_start') ||          0;
+    my $page_no     = $apr->param('page_no')  ||  1;
 
     my $evidence_types = $db->selectall_arrayref(
         qq[
@@ -349,22 +351,19 @@ sub corr_evidence_types_view {
         { Columns => {} }
     );
 
-    my $pager       =  paginate( 
-        self        => $self,
-        data        => $evidence_types,
-        limit_start => $limit_start,
-    );
+    my $pager = Data::Pageset->new( {
+        total_entries    => scalar @$evidence_types, 
+        entries_per_page => $PAGE_SIZE,
+        current_page     => $page_no,
+        pages_per_set    => $MAX_PAGES,
+    } );
+    $evidence_types = [ $pager->splice( $evidence_types ) ]; 
 
     return $self->process_template( 
         TEMPLATE->{'corr_evidence_types_view'}, 
         { 
-            evidence_types => $pager->{'data'},
-            no_elements    => $pager->{'no_elements'},
-            page_size      => $pager->{'page_size'},
-            pages          => $pager->{'pages'},
-            cur_page       => $pager->{'cur_page'},
-            show_start     => $pager->{'show_start'},
-            show_stop      => $pager->{'show_stop'},
+            evidence_types => $evidence_types,
+            pager          => $pager,
         }
     );
 }
@@ -564,7 +563,7 @@ sub dbxrefs_view {
                           'feature_type,species_name';
     my $species_id      = $apr->param('species_id')      || 0;
     my $feature_type_id = $apr->param('feature_type_id') || 0;
-    my $limit_start     = $apr->param('limit_start')     || 0;
+    my $page_no         = $apr->param('page_no')         || 1;
 
     my $sql = qq[
         select     d.dbxref_id,
@@ -590,11 +589,13 @@ sub dbxrefs_view {
 
     my $refs = $db->selectall_arrayref( $sql, { Columns => {} } );
 
-    my $pager       =  paginate( 
-        self        => $self,
-        data        => $refs,
-        limit_start => $limit_start,
-    );
+    my $pager = Data::Pageset->new( {
+        total_entries    => scalar @$refs, 
+        entries_per_page => $PAGE_SIZE,
+        current_page     => $page_no,
+        pages_per_set    => $MAX_PAGES,
+    } );
+    $refs = [ $pager->splice( $refs ) ]; 
 
     return $self->process_template( 
         TEMPLATE->{'dbxrefs_view'}, 
@@ -602,13 +603,8 @@ sub dbxrefs_view {
             apr           => $apr,
             specie        => $admin->species,
             feature_types => $admin->feature_types,
-            dbxrefs       => $pager->{'data'},
-            no_elements   => $pager->{'no_elements'},
-            page_size     => $pager->{'page_size'},
-            pages         => $pager->{'pages'},
-            cur_page      => $pager->{'cur_page'},
-            show_start    => $pager->{'show_start'},
-            show_stop     => $pager->{'show_stop'},
+            dbxrefs       => $refs,
+            pager         => $pager,
         }
     );
 }
@@ -855,7 +851,7 @@ sub map_view {
     my $map_id          = $apr->param('map_id')          or die  'No map id';
     my $order_by        = $apr->param('order_by')        || 'start_position';
     my $feature_type_id = $apr->param('feature_type_id') ||                0;
-    my $limit_start     = $apr->param('limit_start')     ||                0;
+    my $page_no         = $apr->param('page_no')         || 1;
 
     my $sth = $db->prepare(
         q[
@@ -908,12 +904,13 @@ sub map_view {
     #
     # Slice the results up into pages suitable for web viewing.
     #
-    my $data        =  paginate( 
-        self        => $self,
-        data        => $features,
-        limit_start => $limit_start,
-    );
-    $map->{'features'} = $data->{'data'};
+    my $pager = Data::Pageset->new( {
+        total_entries    => scalar @$features, 
+        entries_per_page => $PAGE_SIZE,
+        current_page     => $page_no,
+        pages_per_set    => $MAX_PAGES,
+    } );
+    $map->{'features'} = [ $pager->splice( $features ) ]; 
 
     for my $feature ( @{ $map->{'features'} } ) {
         $feature->{'no_correspondences'} = $db->selectrow_array(
@@ -949,13 +946,7 @@ sub map_view {
             apr           => $apr,
             map           => $map,
             feature_types => $feature_types,
-            limit_start   => $limit_start,
-            no_elements   => $data->{'no_elements'},
-            page_size     => $data->{'page_size'},
-            pages         => $data->{'pages'},
-            cur_page      => $data->{'cur_page'},
-            show_start    => $data->{'show_start'},
-            show_stop     => $data->{'show_stop'},
+            pager         => $pager,
         }
     );
 }
@@ -1334,7 +1325,7 @@ sub feature_search {
     my $db               = $self->db or return $self->error;
     my $apr              = $self->apr;
     my $admin            = $self->admin;
-    my $limit_start      = $apr->param('limit_start')       ||    0;
+    my $page_no          = $apr->param('page_no')        || 1;
     my @species_ids      = ( $apr->param('species_id')      );
     my @feature_type_ids = ( $apr->param('feature_type_id') );
 
@@ -1362,13 +1353,14 @@ sub feature_search {
         #
         # Slice the results up into pages suitable for web viewing.
         #
-        my $data        =  paginate( 
-            self        => $self,
-            data        => $features,
-            limit_start => $limit_start,
-        );
-
-        $params->{ $_ } = $data->{ $_ } for keys %$data;
+        my $pager = Data::Pageset->new( {
+            total_entries    => scalar @$features, 
+            entries_per_page => $PAGE_SIZE,
+            current_page     => $page_no,
+            pages_per_set    => $MAX_PAGES,
+        } );
+        $params->{'pager'}    = $pager;
+        $params->{'features'} = [ $pager->splice( $features ) ];
     }
 
     return $self->process_template( TEMPLATE->{'feature_search'}, $params );
@@ -1982,8 +1974,8 @@ sub feature_types_view {
     my $self        = shift;
     my $db          = $self->db or return $self->error;
     my $apr         = $self->apr;
-    my $order_by    = $apr->param('order_by')    || 'feature_type';
-    my $limit_start = $apr->param('limit_start') ||              0;
+    my $order_by    = $apr->param('order_by') || 'feature_type';
+    my $page_no     = $apr->param('page_no')  || 1;
 
     $order_by = 'drawing_lane,drawing_priority' if $order_by eq 'drawing_lane';
 
@@ -2005,22 +1997,19 @@ sub feature_types_view {
     #
     # Slice the results up into pages suitable for web viewing.
     #
-    my $pager       =  paginate( 
-        self        => $self,
-        data        => $feature_types,
-        limit_start => $limit_start,
-    );
+    my $pager = Data::Pageset->new( {
+        total_entries    => scalar @$feature_types, 
+        entries_per_page => $PAGE_SIZE,
+        current_page     => $page_no,
+        pages_per_set    => $MAX_PAGES,
+    } );
+    $feature_types = [ $pager->splice( $feature_types ) ]; 
 
     return $self->process_template( 
         TEMPLATE->{'feature_types_view'}, 
         { 
-            feature_types => $pager->{'data'},
-            no_elements   => $pager->{'no_elements'},
-            page_size     => $pager->{'page_size'},
-            pages         => $pager->{'pages'},
-            cur_page      => $pager->{'cur_page'},
-            show_start    => $pager->{'show_start'},
-            show_stop     => $pager->{'show_stop'},
+            feature_types => $feature_types,
+            pager         => $pager,
         }
     );
 }
@@ -2033,7 +2022,7 @@ sub map_sets_view {
     my $map_type_id = $apr->param('map_type_id') || '';
     my $species_id  = $apr->param('species_id')  || '';
     my $is_enabled  = $apr->param('is_enabled');
-    my $limit_start = $apr->param('limit_start') ||  0;
+    my $page_no     = $apr->param('page_no')     ||  1;
     my $order_by    = $apr->param('order_by')    || '';
 
     if ( $order_by ) {
@@ -2088,11 +2077,13 @@ sub map_sets_view {
     #
     # Slice the results up into pages suitable for web viewing.
     #
-    my $data        =  paginate( 
-        self        => $self,
-        data        => $map_sets,
-        limit_start => $limit_start,
-    );
+    my $pager = Data::Pageset->new( {
+        total_entries    => scalar @$map_sets, 
+        entries_per_page => $PAGE_SIZE,
+        current_page     => $page_no,
+        pages_per_set    => $MAX_PAGES,
+    } );
+    $map_sets = [ $pager->splice( $map_sets ) ];
 
     my $specie = $db->selectall_arrayref(
         q[
@@ -2117,16 +2108,11 @@ sub map_sets_view {
     return $self->process_template( 
         TEMPLATE->{'map_sets_view'}, 
         { 
-            apr         => $apr,
-            specie      => $specie,
-            map_types   => $map_types,
-            map_sets    => $data->{'data'},
-            no_elements => $data->{'no_elements'},
-            page_size   => $data->{'page_size'},
-            pages       => $data->{'pages'},
-            cur_page    => $data->{'cur_page'},
-            show_start  => $data->{'show_start'},
-            show_stop   => $data->{'show_stop'},
+            apr       => $apr,
+            specie    => $specie,
+            map_types => $map_types,
+            map_sets  => $map_sets,
+            pager     => $pager,
         }
     );
 }
@@ -2325,8 +2311,8 @@ sub map_set_view {
     my $db          = $self->db;
     my $apr         = $self->apr;
     my $map_set_id  = $apr->param('map_set_id') or die 'No map set id';
-    my $order_by    = $apr->param('order_by')    || 'display_order,map_name';
-    my $limit_start = $apr->param('limit_start') || 0;
+    my $order_by    = $apr->param('order_by')   || 'display_order,map_name';
+    my $page_no     = $apr->param('page_no')    ||  1;
 
     my $sth = $db->prepare(
         q[
@@ -2385,26 +2371,22 @@ sub map_set_view {
     #
     # Slice the results up into pages suitable for web viewing.
     #
-    my $data        =  paginate( 
-        self        => $self,
-        data        => \@maps,
-        limit_start => $limit_start,
-    );
+    my $pager = Data::Pageset->new( {
+        total_entries    => scalar @maps,
+        entries_per_page => $PAGE_SIZE,
+        current_page     => $page_no,
+        pages_per_set    => $MAX_PAGES,
+    } );
 
-    $map_set->{'maps'} = $data->{'data'};
+    $map_set->{'maps'} = [ $pager->splice( \@maps ) ];
     $apr->param( order_by => $order_by );
 
     return $self->process_template( 
         TEMPLATE->{'map_set_view'}, 
         { 
-            map_set     => $map_set,
-            no_elements => $data->{'no_elements'},
-            page_size   => $data->{'page_size'},
-            pages       => $data->{'pages'},
-            cur_page    => $data->{'cur_page'},
-            show_start  => $data->{'show_start'},
-            show_stop   => $data->{'show_stop'},
-            apr         => $apr,
+            apr     => $apr,
+            map_set => $map_set,
+            pager   => $pager,
         }
     );
 }
@@ -2622,8 +2604,8 @@ sub map_types_view {
     my $self        = shift;
     my $db          = $self->db;
     my $apr         = $self->apr;
-    my $order_by    = $apr->param('order_by')    || 'display_order,map_type';
-    my $limit_start = $apr->param('limit_start') || 0;
+    my $order_by    = $apr->param('order_by') || 'display_order,map_type';
+    my $page_no     = $apr->param('page_no')  ||  1;
 
     my $map_types = $db->selectall_arrayref(
         qq[
@@ -2641,22 +2623,19 @@ sub map_types_view {
         { Columns => {} }
     );
 
-    my $pager       =  paginate( 
-        self        => $self,
-        data        => $map_types,
-        limit_start => $limit_start,
-    );
+    my $pager = Data::Pageset->new( {
+        total_entries    => scalar @$map_types, 
+        entries_per_page => $PAGE_SIZE,
+        current_page     => $page_no,
+        pages_per_set    => $MAX_PAGES,
+    } );
+    $map_types = [ $pager->splice( $map_types ) ]; 
 
     return $self->process_template( 
         TEMPLATE->{'map_types_view'},
         { 
-            map_types   => $pager->{'data'},
-            no_elements => $pager->{'no_elements'},
-            page_size   => $pager->{'page_size'},
-            pages       => $pager->{'pages'},
-            cur_page    => $pager->{'cur_page'},
-            show_start  => $pager->{'show_start'},
-            show_stop   => $pager->{'show_stop'},
+            map_types   => $map_types,
+            pager       => $pager,
         }
     );
 }
@@ -2803,8 +2782,8 @@ sub species_view {
     my $self        = shift;
     my $db          = $self->db;
     my $apr         = $self->apr;
-    my $order_by    = $apr->param('order_by')    || 'display_order,common_name';
-    my $limit_start = $apr->param('limit_start') || 0;
+    my $order_by    = $apr->param('order_by') || 'display_order,common_name';
+    my $page_no     = $apr->param('page_no')  ||  1;
 
     my $species = $db->selectall_arrayref(
         qq[
@@ -2820,22 +2799,19 @@ sub species_view {
         { Columns => {} }
     );
 
-    my $pager       =  paginate( 
-        self        => $self,
-        data        => $species,
-        limit_start => $limit_start,
-    );
+    my $pager = Data::Pageset->new( {
+        total_entries    => scalar @$species, 
+        entries_per_page => $PAGE_SIZE,
+        current_page     => $page_no,
+        pages_per_set    => $MAX_PAGES,
+    } );
+    $species = [ $pager->splice( $species ) ]; 
 
     return $self->process_template( 
         TEMPLATE->{'species_view'},
         { 
-            species     => $pager->{'data'},
-            no_elements => $pager->{'no_elements'},
-            page_size   => $pager->{'page_size'},
-            pages       => $pager->{'pages'},
-            cur_page    => $pager->{'cur_page'},
-            show_start  => $pager->{'show_start'},
-            show_stop   => $pager->{'show_stop'},
+            species => $species,
+            pager   => $pager,
         }
     );
 }
