@@ -329,7 +329,7 @@ function selectAllOptions(select){
             <td>
               [%- IF form_data.ref_species.size -%]
                 <select name="ref_species_aid" 
-                  onChange="window.document.ref_map_set_form.ref_map_set_aid.value='';javascript:ref_map_set_form.submit()">
+                  onChange="window.document.ref_map_set_form.ref_map_set_aid.value='';">
                 <option value="">--Select--</option>
                 [%- IF form_data.ref_species.size > 1; 
                   form_data.ref_species.unshift({ 
@@ -353,7 +353,7 @@ function selectAllOptions(select){
 
               <td>
                 [% SET last_map_type='' %]
-                <select name="ref_map_set_aid" onChange="javascript:ref_map_set_form.submit()">
+                <select name="ref_map_set_aid" >
                   <option value="">--Select--</option>
                   [%- FOREACH ms=form_data.ref_map_sets -%]
                     <option [% IF apr.param('ref_map_set_aid') == ms.accession_id OR form_data.ref_map_sets.size==1; apr.param('ref_map_set_aid') = ms.accession_id; ' selected'; END %] value="[% ms.accession_id %]">
@@ -385,9 +385,9 @@ function selectAllOptions(select){
                 <td>
                   <select name="ref_map_aids" size="14" multiple
                     [% IF apr.param('ref_map_aids') %]
-                      onchange="javascript:if(document.ref_map_form.ref_map_aids.value!=document.ref_map_form.prev_ref_map_aids.value){document.comparative_map_form.start.value='';document.comparative_map_form.end.value='';document.ref_map_form.submit()}">
+                      onchange="javascript:if(document.ref_map_form.ref_map_aids.value!=document.ref_map_form.prev_ref_map_aids.value){document.comparative_map_form.start.value='';document.comparative_map_form.end.value='';}">
                     [% ELSE %]
-                      onchange="javascript:if(document.ref_map_form.ref_map_aids.value!=document.ref_map_form.prev_ref_map_aids.value){document.ref_map_form.submit()}">
+                        >
                     [% END %]
     
                     [% IF form_data.ref_maps.size %]
