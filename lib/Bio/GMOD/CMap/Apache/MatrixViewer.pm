@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MatrixViewer;
 # vim: set ft=perl:
 
-# $Id: MatrixViewer.pm,v 1.8 2003-12-11 03:03:58 kycl4rk Exp $
+# $Id: MatrixViewer.pm,v 1.9 2004-01-07 17:37:00 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 use Apache::Constants;
 use Data::Dumper;
@@ -22,6 +22,7 @@ sub handler {
     my ( $self, $apr )   = @_;
     my $show_matrix      = $apr->param('show_matrix')      ||  0;
     my $species_aid      = $apr->param('species_aid')      || '';
+    my $map_type_aid     = $apr->param('map_type_aid')     || '';
     my $map_set_aid      = $apr->param('map_set_aid')      || '';
     my $map_name         = $apr->param('map_name')         || '';
     my $link_map_set_aid = $apr->param('link_map_set_aid') || '';
@@ -40,14 +41,16 @@ sub handler {
     my $data             =  $data_module->matrix_correspondence_data(
         show_matrix      => $show_matrix,
         species_aid      => $species_aid,
+        map_type_aid     => $map_type_aid,
         map_set_aid      => $map_set_aid,
         map_name         => $map_name,
         link_map_set_aid => $link_map_set_aid,
     ) or return $self->error( $data_module->error );
 
-    $apr->param( species_aid => $data->{'species_aid'} );
-    $apr->param( map_set_aid => $data->{'map_set_aid'} );
-    $apr->param( map_name    => $data->{'map_name'}    );
+    $apr->param( species_aid  => $data->{'species_aid'}  );
+    $apr->param( map_type_aid => $data->{'map_type_aid'} );
+    $apr->param( map_set_aid  => $data->{'map_set_aid'}  );
+    $apr->param( map_name     => $data->{'map_name'}     );
 
     $INTRO ||= $self->config('matrix_intro') || '';
 
@@ -62,6 +65,7 @@ sub handler {
             matrix       => $data->{'matrix'}, 
             title        => $self->config('matrix_title'),
             species      => $data->{'species'},
+            map_types    => $data->{'map_types'},
             map_sets     => $data->{'map_sets'},
             maps         => $data->{'maps'},
             stylesheet   => $self->stylesheet,
