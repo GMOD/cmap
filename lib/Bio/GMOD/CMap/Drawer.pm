@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.81.2.7 2004-11-17 19:08:34 mwz444 Exp $
+# $Id: Drawer.pm,v 1.81.2.8 2004-11-18 20:04:41 mwz444 Exp $
 
 =head1 NAME
 
@@ -226,7 +226,7 @@ is the list of map_aids in order, separated by commas
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.81.2.7 $)[-1];
+$VERSION = (qw$Revision: 1.81.2.8 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -1084,12 +1084,13 @@ Lays out the image and writes it to the file system, set the "image_name."
     # Extra symbols.
     #
     my @buttons = (
-        [ 'i' => 'Map Set Info' ],
-        [ '?' => 'Map Details' ],
-        [ 'M' => 'Matrix View' ],
-        [ 'X' => 'Delete Map' ],
-        [ 'F' => 'Flip Map' ],
-        [ 'N' => 'New Map View' ],
+        [ 'i'  => 'Map Set Info' ],
+        [ '?'  => 'Map Details' ],
+        [ 'M'  => 'Matrix View' ],
+        [ 'X'  => 'Delete Map' ],
+        [ 'F'  => 'Flip Map' ],
+        [ 'UF' => 'Unflip Map' ],
+        [ 'N'  => 'New Map View' ],
     );
     {
         $self->add_drawing( STRING, $font, $x, $max_y, 'Menu Symbols:',
@@ -1098,9 +1099,9 @@ Lays out the image and writes it to the file system, set the "image_name."
 
         for my $button (@buttons) {
             my ( $sym, $caption ) = @$button;
-            $self->add_drawing( STRING, $font, $x + 2, $max_y + 2, $sym,
+            $self->add_drawing( STRING, $font, $x + 3, $max_y + 2, $sym,
                 'grey' );
-            my $end = $x + $font->width + 4;
+            my $end = $x + ( $font->width * length($sym) ) + 4;
 
             $self->add_drawing( RECTANGLE, $x, $max_y, $end,
                 $max_y + $font->height + 4, 'grey' );
@@ -2286,6 +2287,7 @@ Creates default link parameters for CMap->create_viewer_link()
     my $aggregate                   = $args{'aggregate'};
     my $scale_maps                  = $args{'scale_maps'};
     my $stack_maps                  = $args{'stack_maps'};
+    my $ref_map_order               = $args{'ref_map_order'};
     my $show_intraslot_corr         = $args{'show_intraslot_corr'};
     my $clean_view                  = $args{'clean_view'};
     my $magnify_all                 = $args{'magnify_all'};
@@ -2356,6 +2358,9 @@ Creates default link parameters for CMap->create_viewer_link()
     unless ( defined($stack_maps) ) {
         $stack_maps = $self->stack_maps();
     }
+    unless ( defined($ref_map_order) ) {
+        $ref_map_order = $self->ref_map_order();
+    }
     unless ( defined($show_intraslot_corr) ) {
         $show_intraslot_corr = $self->show_intraslot_corr();
     }
@@ -2418,6 +2423,7 @@ Creates default link parameters for CMap->create_viewer_link()
         aggregate                   => $aggregate,
         scale_maps                  => $scale_maps,
         stack_maps                  => $stack_maps,
+        ref_map_order               => $ref_map_order,
         show_intraslot_corr         => $show_intraslot_corr,
         clean_view                  => $clean_view,
         magnify_all                 => $magnify_all,

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.61.2.7 2004-11-17 19:08:29 mwz444 Exp $
+# $Id: CMap.pm,v 1.61.2.8 2004-11-18 20:04:23 mwz444 Exp $
 
 =head1 NAME
 
@@ -732,6 +732,7 @@ Given information about the link, creates a url to cmap_viewer.
     my $aggregate                   = $args{'aggregate'};
     my $scale_maps                  = $args{'scale_maps'};
     my $stack_maps                  = $args{'stack_maps'};
+    my $ref_map_order               = $args{'ref_map_order'};
     my $show_intraslot_corr         = $args{'show_intraslot_corr'};
     my $clean_view                  = $args{'clean_view'};
     my $magnify_all                 = $args{'magnify_all'};
@@ -785,6 +786,8 @@ Given information about the link, creates a url to cmap_viewer.
       if defined($scale_maps);
     $url .= "stack_maps=$stack_maps;"
       if defined($stack_maps);
+    $url .= "ref_map_order=$ref_map_order;"
+      if defined($ref_map_order);
     $url .= "show_intraslot_corr=$show_intraslot_corr;"
       if defined($show_intraslot_corr);
     $url .= "clean_view=$clean_view;"

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.135.2.13 2004-11-17 19:08:35 mwz444 Exp $
+# $Id: Map.pm,v 1.135.2.14 2004-11-18 20:04:42 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.135.2.13 $)[-1];
+$VERSION = (qw$Revision: 1.135.2.14 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -889,7 +889,7 @@ Draws the map title.
             my $len  = $font->width * length( $button->{'label'} );
             my $end  = $label_x + $len;
             my @area =
-              ( $label_x - 2, $y - 2, $end + 2, $y + $font->height + 2 );
+              ( $label_x - 3, $y - 2, $end + 1, $y + $font->height + 2 );
             push @drawing_data,
               [ STRING, $font, $label_x, $y, $button->{'label'}, 'grey' ],
               [ RECTANGLE, @area, 'grey' ],;
@@ -1162,8 +1162,8 @@ Variable Info:
         # Find out if it flipped
         #
         for my $rec ( @{ $drawer->flip } ) {
-            if (   $rec->{'slot_no'} == $slot_no
-                && $rec->{'map_aid'} == $self->accession_id($map_id) )
+            if (    $rec->{'slot_no'} == $slot_no
+                and $rec->{'map_aid'} eq $self->accession_id($map_id) )
             {
                 $is_flipped = 1;
                 $flipped_maps{$map_id} = 1;
@@ -2313,9 +2313,9 @@ sub add_topper {
             my $len  = $font_width * length( $button->{'label'} );
             my $end  = $label_x + $len;
             my @area = (
-                $label_x - 2,
+                $label_x - 3,
                 $button_y - ( $button_y_buffer / 2 ),
-                $end + 2, $button_y + $font_height + ( $button_y_buffer / 2 )
+                $end + 1, $button_y + $font_height + ( $button_y_buffer / 2 )
             );
             push @{ $map_drawing_data->{$map_id} },
               [
@@ -3570,6 +3570,7 @@ Button options:
             $drawer->create_link_params(
                 ref_map_set_aid  => $self->map_set_aid($map_id),
                 ref_map_aids     => \%this_map_info,
+                ref_map_order    => '',
                 comparative_maps => \%detail_maps,
                 url              => $map_details_url,
             )
@@ -3660,7 +3661,7 @@ Button options:
         my $acc_id = $self->accession_id($map_id);
         for my $rec ( @{ $drawer->flip } ) {
             unless ( $rec->{'slot_no'} == $slot_no
-                && $rec->{'map_aid'} == $acc_id )
+                && $rec->{'map_aid'} eq $acc_id )
             {
                 push @flipping_flips,
                   $rec->{'slot_no'} . '%3d' . $rec->{'map_aid'};
@@ -3685,11 +3686,17 @@ Button options:
             )
         );
 
+        my $flip_label = 'F';
+        my $flip_alt   = 'Flip Map';
+        if ($is_flipped) {
+            $flip_label = 'UF';
+            $flip_alt   = 'Unflip Map';
+        }
         push @map_buttons,
           {
-            label => 'F',
+            label => $flip_label,
             url   => $flip_url,
-            alt   => 'Flip Map',
+            alt   => $flip_alt,
           };
     }
 
@@ -3708,6 +3715,7 @@ Button options:
             $drawer->create_link_params(
                 ref_map_set_aid => $self->map_set_aid($map_id),
                 ref_map_aids    => \%this_map_info,
+                ref_map_order   => '',
                 url             => $map_viewer_url,
             )
         );

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.165.2.9 2004-11-17 19:08:30 mwz444 Exp $
+# $Id: Data.pm,v 1.165.2.10 2004-11-18 20:04:23 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.165.2.9 $)[-1];
+$VERSION = (qw$Revision: 1.165.2.10 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -2162,6 +2162,10 @@ sub cmap_form_data {
         unless ( $ref_map_sets = $self->get_cached_results( 1, $sql_str ) ) {
             $ref_map_sets =
               $db->selectall_arrayref( $sql_str, { Columns => {} }, );
+            foreach my $row ( @{$ref_map_sets} ) {
+                $row->{'map_type'} =
+                  $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
+            }
             $self->store_cached_results( 1, $sql_str, $ref_map_sets );
         }
     }
@@ -2510,7 +2514,7 @@ out which maps have relationships.
             sort {
                      $a->{'display_order'} <=> $b->{'display_order'}
                   || $a->{'map_name'} cmp $b->{'map_name'}
-            } @{ $map_set->{'maps'} }
+            } @{ $map_set->{'maps'} || []}
           )
         {
             next
@@ -4411,6 +4415,10 @@ sub cmap_entry_data {
         unless ( $ref_map_sets = $self->get_cached_results( 1, $sql_str ) ) {
             $ref_map_sets =
               $db->selectall_arrayref( $sql_str, { Columns => {} }, );
+            foreach my $row ( @{$ref_map_sets} ) {
+                $row->{'map_type'} =
+                  $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
+            }
             $self->store_cached_results( 1, $sql_str, $ref_map_sets );
         }
     }
@@ -4796,8 +4804,8 @@ sub compress_maps {
 =head2 compress_maps
 
 Decide if the maps should be compressed.
-If it is aggregated, compress unless all the slots contain only 1 map.
-If it is not aggregated, compress unless this slot contains only 1 map.
+If it is aggregated, compress unless the slot contain only 1 map.
+If it is not aggregated, don't compress 
 
 =cut
 
@@ -4806,25 +4814,14 @@ If it is not aggregated, compress unless this slot contains only 1 map.
 
     return unless defined $this_slot_no;
 
-    if ( $self->aggregate ) {
-        if ( defined( $self->{'compress_aggregates'} ) ) {
-            return ( $self->{'compress_aggregates'} );
-        }
-
-        my $slot_info = $self->slot_info;
-
-        foreach my $slot_no ( keys(%$slot_info) ) {
-            if ( scalar( keys( %{ $slot_info->{$slot_no} } ) ) > 1 ) {
-                $self->{'compress_aggregates'} = 1;
-                return ( $self->{'compress_aggregates'} );
-            }
-        }
-
-        $self->{'compress_aggregates'} = 0;
-        return ( $self->{'compress_aggregates'} );
+    if ( scalar( keys( %{ $self->slot_info->{$this_slot_no} } ) ) > 1
+        and $self->aggregate )
+    {
+        return 1;  
     }
 
-    return ( scalar( keys( %{ $self->slot_info->{$this_slot_no} } ) ) > 1 );
+    return 0; # Don't compress if not aggregated
+    #return ( scalar( keys( %{ $self->slot_info->{$this_slot_no} } ) ) > 1 );
 }
 
 # ----------------------------------------------------
