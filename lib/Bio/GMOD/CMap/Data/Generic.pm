@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data::Generic;
 
-# $Id: Generic.pm,v 1.3 2002-09-04 02:25:46 kycl4rk Exp $
+# $Id: Generic.pm,v 1.4 2002-09-05 00:16:54 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Bio::GMOD::CMap;
 use base 'Bio::GMOD::CMap';
@@ -82,13 +82,21 @@ The SQL for finding all the features on a map.
                  ft.default_rank,
                  ft.is_visible,
                  ft.how_to_draw,
-                 ft.color
+                 ft.color,
+                 map.accession_id as map_aid,
+                 mt.map_units
         from     cmap_feature f,
-                 cmap_feature_type ft
+                 cmap_feature_type ft,
+                 cmap_map map,
+                 cmap_map_set ms,
+                 cmap_map_type mt
         where    f.map_id=?
         and      f.feature_type_id=ft.feature_type_id
         and      f.start_position>=?
         and      f.start_position<=?
+        and      f.map_id=map.map_id
+        and      map.map_set_id=ms.map_set_id
+        and      ms.map_type_id=mt.map_type_id
     ];
     $sql .= "and ft.accession_id='$restrict_by' " if $restrict_by;
     $sql .= "order by $order_by"
@@ -321,13 +329,60 @@ The strftime string for date format.
 }
 
 # ----------------------------------------------------
+sub feature_correspondence_sql {
+
+=pod
+
+=head2 feature_correspondence_sql
+
+The SQL for finding correspondences for a feature.
+
+=cut
+    my $self = shift;
+    return q[
+        select   f.feature_name,
+                 f.accession_id as feature_aid,
+                 f.start_position,
+                 f.stop_position,
+                 ft.feature_type,
+                 map.map_id,
+                 map.accession_id as map_aid,
+                 map.map_name,
+                 ms.map_set_id,
+                 ms.accession_id as map_set_aid,
+                 ms.short_name as map_set_name,
+                 mt.map_units,
+                 s.common_name as species_name,
+                 fc.feature_correspondence_id,
+                 fc.accession_id as feature_correspondence_aid
+        from     cmap_correspondence_lookup cl, 
+                 cmap_feature_correspondence fc,
+                 cmap_feature f,
+                 cmap_feature_type ft,
+                 cmap_map map,
+                 cmap_map_set ms,
+                 cmap_map_type mt,
+                 cmap_species s
+        where    cl.feature_correspondence_id=fc.feature_correspondence_id
+        and      cl.feature_id1=?
+        and      cl.feature_id2=f.feature_id
+        and      f.feature_type_id=ft.feature_type_id
+        and      f.map_id=map.map_id
+        and      map.map_set_id=ms.map_set_id
+        and      ms.species_id=s.species_id
+        and      ms.map_type_id=mt.map_type_id
+        order by map_set_name, map_name
+    ];
+}
+
+# ----------------------------------------------------
 sub feature_name_to_position_sql {
 
 =pod
 
-=head2 fill_out_maps_by_map_sql
+=head2 feature_name_to_position_sql
 
-The SQL for finding basic info on a map.
+The SQL for finding the position of a given feature name.
 
 =cut
     my $self = shift;

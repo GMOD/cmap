@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.5 2002-09-04 02:25:46 kycl4rk Exp $
+# $Id: Map.pm,v 1.6 2002-09-05 00:16:54 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -627,7 +627,7 @@ Lays out the map.
                 $drawer->add_map_area(
                     coords => \@coords,
                     url    => $self->config('feature_details_url').
-                              "?feature_aid=$feature->accession_id",
+                              '?feature_aid='.$feature->accession_id,
                     alt    => 'Details: '.$feature->feature_name,
                 );
 
@@ -701,7 +701,7 @@ Lays out the map.
                     $drawer->add_map_area(
                         coords => \@bounds,
                         url    => $self->config('feature_details_url').
-                                  "?feature_aid=$feature->accession_id",
+                                  '?feature_aid='.$feature->accession_id,
                         alt    => 'Details: '.$feature->feature_name,
                     );
 
@@ -766,6 +766,7 @@ Lays out the map.
 #        if ( $is_relational && $slot_no != 0 ) {
         if ( $slot_no != 0 ) {
             my $slots = $drawer->slots;
+            warn "map = ", $self->map_name($map_id), "\n";
 
             my @maps;
             for my $side ( qw[ left right ] ) {
@@ -791,7 +792,7 @@ Lays out the map.
                 push @maps, $link;
             }
 
-            my $url = $self->config('relational_map_url').
+            my $url = $self->config('map_details_url').
                 '?ref_map_set_aid='.$self->map_set_aid( $map_id ).
                 ';ref_map_aid='.$self->accession_id( $map_id ).
                 ';comparative_maps='.join( ':', @maps );

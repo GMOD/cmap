@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.4 2002-09-04 02:25:46 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.5 2002-09-05 00:16:54 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
@@ -493,7 +493,6 @@ region of corresponding features.
     my $slot_no         = $args{'slot_no'};
     my $map_id          = $args{'map_id'};
     my $ref_slot_no     = $args{'ref_slot_no'};
-#    warn "slot no = $slot_no, map_id = $map_id, ref slot no = $ref_slot_no\n";
        $ref_slot_no     = $self->reference_slot_no( $slot_no ) 
                           unless defined $ref_slot_no;
 
@@ -503,12 +502,16 @@ region of corresponding features.
     for my $f1 ( keys %{ $self->{'feature_position'}{ $slot_no } } ) {
         next if defined $map_id && 
             $self->{'feature_position'}{ $slot_no }{$f1}{'map_id'} != $map_id;
+
         for my $f2 ( $self->feature_correspondences( $f1 ) ) {
+            next unless defined 
+                $self->{'feature_position'}{ $ref_slot_no }{ $f2 }{'start'};
             push @return, 
-            $self->{'feature_position'}{ $ref_slot_no }{ $f2 }{'start'} || ();
+                $self->{'feature_position'}{ $ref_slot_no }{ $f2 }{'start'};
         }
     }
 
+    warn "returning ", Dumper( \@return ), "\n";
     return @return;
 }
 

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.5 2002-09-04 02:25:46 kycl4rk Exp $
+# $Id: Data.pm,v 1.6 2002-09-05 00:16:54 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -1270,29 +1270,7 @@ Given a feature acc. id, find out all the details on it.
     my $feature = $sth->fetchrow_hashref;
 
     my $correspondences = $db->selectall_arrayref(
-        q[
-            select   f.feature_name,
-                     f.accession_id as feature_aid,
-                     map.map_id,
-                     map.accession_id as map_aid,
-                     map.map_name,
-                     ms.map_set_id,
-                     ms.accession_id as map_set_aid,
-                     ms.short_name as map_set_name,
-                     fc.feature_correspondence_id,
-                     fc.accession_id as feature_correspondence_aid
-            from     cmap_correspondence_lookup cl, 
-                     cmap_feature_correspondence fc,
-                     cmap_feature f,
-                     cmap_map map,
-                     cmap_map_set ms
-            where    cl.feature_correspondence_id=fc.feature_correspondence_id
-            and      cl.feature_id1=?
-            and      cl.feature_id2=f.feature_id
-            and      f.map_id=map.map_id
-            and      map.map_set_id=ms.map_set_id
-            order by map_set_name, map_name
-        ],
+        $sql->feature_correspondence_sql,
         { Columns => {} },
         ( $feature->{'feature_id'} )
     );
@@ -1634,13 +1612,13 @@ Optionally finds the lowest start for a given feature type. (enhancement)
 }
 
 # ----------------------------------------------------
-sub relational_map_data {
+sub map_detail_data {
 
 =pod
 
-=head2 relational_map_data
+=head2 map_detail_data
 
-Returns the detail info for a relational map.
+Returns the detail info for a map.
 
 =cut
     my ( $self, %args ) = @_;
@@ -1663,6 +1641,37 @@ Returns the detail info for a relational map.
     my $highlight_hash = {
         map  { s/^\s+|\s+$//g; ( uc $_, 1 ) } split( /,/, $highlight )
     };
+
+    my $sth = $db->prepare(
+        q[
+            select s.accession_id as species_aid,
+                   s.common_name as species_name,
+                   ms.accession_id as map_set_aid,
+                   ms.short_name as map_set_name,
+                   map.accession_id as map_aid,
+                   map.map_name,
+                   map.start_position,
+                   map.stop_position,
+                   mt.map_units
+            from   cmap_map map,
+                   cmap_map_set ms,
+                   cmap_species s,
+                   cmap_map_type mt
+            where  map.map_id=?
+            and    map.map_set_id=ms.map_set_id
+            and    ms.species_id=s.species_id
+            and    ms.map_type_id=mt.map_type_id
+        ]
+    );
+    $sth->execute( $map_id );
+    my $reference_map = $sth->fetchrow_hashref;
+
+    $map_start = $reference_map->{'start_position'} 
+        unless defined $map_start and $map_start =~ NUMBER_RE;
+    $map_stop  = $reference_map->{'stop_position'} 
+        unless defined $map_stop and $map_stop =~ NUMBER_RE;
+    $reference_map->{'start'} = $map_start;
+    $reference_map->{'stop'}  = $map_stop;
 
     #
     # Get the reference map features.
@@ -1697,31 +1706,7 @@ Returns the detail info for a relational map.
     #
     for my $feature ( @$features ) {
         my $positions = $db->selectall_arrayref(
-            q[
-                select   f.feature_id,
-                         f.accession_id,
-                         f.feature_name,
-                         f.alternate_name,
-                         f.is_landmark,
-                         f.start_position,
-                         f.stop_position,
-                         ft.feature_type,
-                         map.map_name,
-                         ms.short_name as map_set_name,
-                         s.common_name as species_name
-                from     cmap_feature_correspondence cl,
-                         cmap_feature f,
-                         cmap_feature_type ft,
-                         cmap_map map,
-                         cmap_map_set ms,
-                         cmap_species s
-                where    cl.feature_id1=?
-                and      cl.feature_id2=f.feature_id
-                and      f.feature_type_id=ft.feature_type_id
-                and      f.map_id=map.map_id
-                and      map.map_set_id=ms.map_set_id
-                and      ms.species_id=s.species_id
-            ],
+            $sql->feature_correspondence_sql,
             { Columns => {} },
             ( $feature->{'feature_id'} )
         ); 
@@ -1737,6 +1722,7 @@ Returns the detail info for a relational map.
     return {
         features      => $features,
         feature_types => $feature_types,
+        reference_map => $reference_map,
     }
 }
 

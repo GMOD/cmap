@@ -12,7 +12,7 @@
             <table border="0">
                 <form name="ref_map_set_form">
                 <tr>
-                    <th colspan="3">Map Viewer</th>
+                    <th colspan="2">Map Viewer</th>
                 </tr>
               
                 <tr>
@@ -31,14 +31,12 @@
                         [% ELSE %]
                             No Map Sets
                         [% END %]
-                    </td>
                   
-                    <td align="center">
                         <input type="hidden" name="prev_ref_map_set_aid" value="[% apr.param('ref_map_set_aid') %]">
                         <input type="hidden" name="highlight"            value="[% apr.param('highlight') %]">
                         <input type="hidden" name="image_size"           value="[% apr.param('image_size') %]">
                         <input type="hidden" name="image_type"           value="[% apr.param('image_type') %]">
-                        <input type="submit" value="Change">
+                        <input type="submit" value="Submit">
                     </td>
                 </tr>
                 </form>
@@ -65,9 +63,7 @@
                                     <option value="">--No Maps Available--</option>
                                 [% END %]
                             </select>
-                        </td>
-                        
-                        <td align="center">
+
                             <input type="hidden" name="prev_ref_map_aid" value="[% apr.param('ref_map_aid') %]">
                             <input type="hidden" name="ref_map_set_aid"  value="[% apr.param('ref_map_set_aid') %]">
                             [% IF apr.param('comparative_map_field1') %]
@@ -75,7 +71,7 @@
                                 <input type="hidden" name="image_size"       value="[% apr.param('image_size') %]">
                                 <input type="hidden" name="image_type"       value="[% apr.param('image_type') %]">
                             [% END %]
-                            <input type="submit" value="Change">
+                            <input type="submit" value="Submit">
                         </td>
                     </tr>
                     </form>
@@ -85,14 +81,14 @@
                         <tr>
                             <td align="right">Start:</td>
 
-                            <td colspan="2">
+                            <td>
                                 <input name="ref_map_start" value="[% apr.param('ref_map_start') %]">
                             </td>
                         </tr>
                       
                         <tr>
                             <td align="right">End:</td>
-                            <td colspan="2">
+                            <td>
                                 <input name="ref_map_stop" value="[% apr.param('ref_map_stop') %]">
                             </td>
                         </tr>
@@ -100,7 +96,7 @@
                         <tr>
                             <td align="right">Highlight:</td>
 
-                            <td colspan="2">
+                            <td>
                                 <input name="highlight" value="[% apr.param('highlight') %]">
                             </td>
                         </tr>
@@ -135,7 +131,7 @@
                         <tr>
                             <td align="right" valign="top">Image Size:</td>
 
-                            <td colspan="2">
+                            <td>
                                 <input type="radio" name="image_size" value="small"[% IF apr.param('image_size') == 'small'; ' checked'; END %]>Small
                                 <input type="radio" name="image_size" value="medium"[% IF apr.param('image_size') == 'medium'; ' checked'; END %]>Medium
                                 <input type="radio" name="image_size" value="large"[% IF apr.param('image_size') == 'large'; ' checked'; END %]>Large
@@ -145,7 +141,7 @@
                         <tr>
                             <td align="right" valign="top">Font Size:</td>
 
-                            <td colspan="2">
+                            <td>
                                 <input type="radio" name="font_size" value="small"[% IF apr.param('font_size') == 'small'; ' checked'; END %]>Small
                                 <input type="radio" name="font_size" value="medium"[% IF apr.param('font_size') == 'medium'; ' checked'; END %]>Medium
                                 <input type="radio" name="font_size" value="large"[% IF apr.param('font_size') == 'large'; ' checked'; END %]>Large
@@ -155,7 +151,7 @@
                         <tr>
                             <td align="right" valign="top">Image Type:</td>
 
-                            <td colspan="2">
+                            <td>
                                 <input type="radio" name="image_type" value="png"[% IF apr.param('image_type') == 'png'; ' checked'; END %]>PNG
                                 <input type="radio" name="image_type" value="jpeg"[% IF apr.param('image_type') == 'jpeg'; ' checked'; END %]>JPEG
                             </td>
@@ -164,7 +160,7 @@
                         <tr>
                             <td align="right" valign="top">Include Features:</td>
 
-                            <td colspan="2">
+                            <td>
                                 <input type="radio" name="include_features" value="none"[% IF apr.param('include_features')=='none'; ' checked'; END %]>None
                                 <input type="radio" name="include_features" value="landmarks"[% IF apr.param('include_features')=='landmarks'; ' checked'; END %]>Landmarks
                                 <input type="radio" name="include_features" value="all"[% IF apr.param('include_features')=='all'; ' checked'; END %]>All
@@ -172,7 +168,7 @@
                         </tr>
 
                         <tr>
-                            <td colspan="3" align="center">
+                            <td colspan="2" align="center">
                                 <input type="hidden" name="ref_map_set_aid" value="[% apr.param('ref_map_set_aid') %]">
                                 <input type="hidden" name="ref_map_aid"     value="[% apr.param('ref_map_aid') %]">
                                 <input type="hidden" name="comparative_maps" value="[% comparative_maps %]">

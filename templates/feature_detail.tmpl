@@ -103,6 +103,7 @@
 [% IF feature.correspondences.size %]
     <table width="100%">
         <tr>
+            <th>Species</th>
             <th>Map Set Name</th>
             <th>Map Name</th>
             <th>Feature Name</th>
@@ -114,6 +115,7 @@
         [% SET i=0 %]
         [% FOREACH fc=feature.correspondences %]
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
+                <td>[% fc.species_name %]</td>
                 <td>[% fc.map_set_name %]</td>
                 <td>[% fc.map_name %]</td>
                 <td>[% fc.feature_name %]</td>

@@ -1,13 +1,13 @@
 package Bio::GMOD::CMap::Constants;
 
-# $Id: Constants.pm,v 1.7 2002-09-04 02:25:46 kycl4rk Exp $
+# $Id: Constants.pm,v 1.8 2002-09-05 00:16:54 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.7 $)[-1];
+$VERSION = (qw$Revision: 1.8 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -394,7 +394,7 @@ use constant DEFAULT => {
     #
     # Where to see more on a map type.
     #
-    relational_map_url => '/cmap/relational_map',
+    map_details_url => '/cmap/map_details',
 
     #
     # The HTML stylesheet.
