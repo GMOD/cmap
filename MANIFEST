@@ -233,6 +233,7 @@ lib/Bio/GMOD/CMap/Admin/Export.pm
 lib/Bio/GMOD/CMap/Admin/Import.pm
 lib/Bio/GMOD/CMap/Admin/ImportCorrespondences.pm
 lib/Bio/GMOD/CMap/Admin/MakeCorrespondences.pm
+lib/Bio/GMOD/CMap/Admin/ManageLinks.pm
 lib/Bio/GMOD/CMap/Apache.pm
 lib/Bio/GMOD/CMap/Apache/AdminViewer.pm
 lib/Bio/GMOD/CMap/Apache/CorrespondenceViewer.pm
@@ -245,6 +246,7 @@ lib/Bio/GMOD/CMap/Apache/FeatureTypeViewer.pm
 lib/Bio/GMOD/CMap/Apache/FeatureViewer.pm
 lib/Bio/GMOD/CMap/Apache/HelpViewer.pm
 lib/Bio/GMOD/CMap/Apache/Index.pm
+lib/Bio/GMOD/CMap/Apache/LinkViewer.pm
 lib/Bio/GMOD/CMap/Apache/MapDetailViewer.pm
 lib/Bio/GMOD/CMap/Apache/MapSetViewer.pm
 lib/Bio/GMOD/CMap/Apache/MapTypeViewer.pm
@@ -268,6 +270,7 @@ META.yml
 parsescripts/parseWashUSuperContigs.pl
 parsescripts/washUproblemReads.pl
 README
+SIGNATURE
 sql/cmap.create.mysql
 sql/cmap.create.oracle
 sql/cmap.create.postgresql
@@ -351,6 +354,7 @@ templates/help_matrix.tmpl
 templates/help_quick_start.tmpl
 templates/help_species_info.tmpl
 templates/index.tmpl
+templates/link_viewer.tmpl
 templates/map_detail.tmpl
 templates/map_detail_bottom.tmpl
 templates/map_set_info.tmpl
