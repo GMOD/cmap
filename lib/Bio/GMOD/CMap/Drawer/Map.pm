@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.2 2002-08-27 22:18:42 kycl4rk Exp $
+# $Id: Map.pm,v 1.3 2002-08-30 02:49:55 kycl4rk Exp $
 
 =pod
 
@@ -23,13 +23,13 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer::Feature;
-use Bio::GMOD::CMap::Utils 'column_distribution';
+use Bio::GMOD::CMap::Utils qw[ column_distribution label_distribution ];
 
 use base 'Bio::GMOD::CMap';
 
@@ -251,37 +251,13 @@ Draws the map as an "I-beam."  Return the bounds of the image.
                            $self->error('No coordinates');
     my $color            = $self->color( $args{'map_id'} );
     my $width            = $self->map_width( $args{'map_id'} );
-    my $half_width       = $width/2;
-#    my $qtr_width        = $width/4;
     my $x2               = $x1 + $width;
-    my @coords           = ( $x1, $y1, $x2, $y2 ); 
-    my $x                = $x1 + $half_width;
+    my $x                = $x1 + $width/2;
 
     $drawer->add_drawing( LINE, $x , $y1, $x , $y2, $color );
     $drawer->add_drawing( LINE, $x1, $y1, $x2, $y1, $color );
     $drawer->add_drawing( LINE, $x1, $y2, $x2, $y2, $color );
 
-#    $drawer->add_drawing( 
-#        FILLED_RECT, 
-#        $x - $qtr_width, $y1, 
-#        $x + $qtr_width, $y2, 
-#        $color 
-#    );
-#
-#    $drawer->add_drawing( 
-#        FILLED_RECT, 
-#        $x1, $y1,
-#        $x2, $y1 + $half_width, 
-#        $color 
-#    );
-#
-#    $drawer->add_drawing( 
-#        FILLED_RECT, 
-#        $x1, $y2 - $half_width,
-#        $x2, $y2,
-#        $color 
-#    );
-    
     if ( my $map_units = $args{'map_units'} ) {
         my $buf  = 2;
         my $font = $drawer->regular_font;
@@ -291,7 +267,7 @@ Draws the map as an "I-beam."  Return the bounds of the image.
         $drawer->add_drawing( STRING, $font, $x, $y, $map_units, 'grey' );
     }
 
-    return @coords;
+    return ( $x1, $y1, $x2, $y2 ); 
 }
 
 # ----------------------------------------------------
@@ -398,16 +374,16 @@ Lays out the map.
     my ( $is_relational, $top_y, $min_x, $max_x, @map_titles );
 
     for my $map_id ( @map_ids ) {
-        $is_relational       = $self->is_relational_map( $map_id );
-        my $base_x           = $self->base_x + 30;
-        my $show_labels      = $is_relational && $slot_no != 0 ? 0 :
-                               $include_features eq 'none' ? 0 : 1;
-        my $show_ticks       = $is_relational && $slot_no != 0 ? 0 : 1;
-        my $show_map_title   = $is_relational && $slot_no != 0 ? 0 : 1;
-        my $show_map_units   = $is_relational && $slot_no != 0 ? 0 : 1;
-        my $map_width        = $self->map_width( $map_id );
-        my $column_width     = $map_width + $reg_font->height + 10;
-        my @features         = $self->features( $map_id );
+        $is_relational     = $self->is_relational_map( $map_id );
+        my $base_x         = $self->base_x + 30;
+        my $show_labels    = $is_relational && $slot_no != 0 ? 0 :
+                             $include_features eq 'none' ? 0 : 1 ;
+        my $show_ticks     = $is_relational && $slot_no != 0 ? 0 : 1;
+        my $show_map_title = $is_relational && $slot_no != 0 ? 0 : 1;
+        my $show_map_units = $is_relational && $slot_no != 0 ? 0 : 1;
+        my $map_width      = $self->map_width( $map_id );
+        my $column_width   = $map_width + $reg_font->height + 10;
+        my @features       = $self->features( $map_id );
 
         #
         # The map.
@@ -434,12 +410,11 @@ Lays out the map.
 
             my $min_map_pixel_height = $self->config('min_map_pixel_height') 
                 || $self->config('min_map_pixel_height');
-            $pixel_height = $positions[-1] - $positions[0];
-            $pixel_height = $min_map_pixel_height
+            $pixel_height    = $positions[-1] - $positions[0];
+            $pixel_height    = $min_map_pixel_height
                 if $pixel_height < $min_map_pixel_height;
-            my $midpoint  = ( $positions[0] + $positions[-1] ) / 2;
-            $base_y       = $midpoint - $pixel_height/2;
-
+            my $midpoint     = ( $positions[0] + $positions[-1] ) / 2;
+            $base_y          = $midpoint - $pixel_height/2;
             my $map_name     = $self->map_name( $map_id );
             my $half_label   = ( $reg_font->width * length( $map_name ) ) / 2;
             my $label_top    = $midpoint - $half_label;
@@ -562,9 +537,10 @@ Lays out the map.
         );
         
         my $prev_label_y;
-        my $moving_up = 1;
+        my $direction = NORTH;
         my $min_y     = $base_y;
-        my @fcolumns  = ();
+        my @fcolumns  = (); # for feature east-to-west
+        my @rows      = (); # for labels north-to-south
         my $mid_y;
         for my $feature ( @sorted_features ) {
             my $y_pos1        = $base_y +
@@ -592,17 +568,17 @@ Lays out the map.
             my $tick_stop  = $base_x + $map_width + $tick_overhang;
             my $x_plane    =  $label_side eq RIGHT
                 ? $tick_stop  + 2 : $tick_start - 2;
+            my $label_y;
+            my @coords;
 
             if ( $feature->how_to_draw eq 'line' ) {
                 $drawer->add_drawing(
                     LINE, $tick_start, $y_pos1, $tick_stop, $y_pos1, $color
                 );
+                $label_y = $y_pos1 - $reg_font->height/2;
+                @coords  = ( $tick_start, $y_pos1, $tick_stop, $y_pos1 );
             }
-            elsif ( 
-                $feature->how_to_draw eq 'span' 
-                ||
-                $feature->how_to_draw eq 'dumbbell' 
-            ) {
+            else {
                 my $buffer       = 2;
                 my $column_index = column_distribution(
                     columns      => \@fcolumns,
@@ -612,9 +588,11 @@ Lays out the map.
                 );
                 my $offset       = ( $column_index + 1 ) * 4;
                 my $vert_line_x1 = $label_side eq RIGHT
-                    ? $tick_stop + 2 : $tick_start - 2;
+                    ? $tick_start : $tick_stop;
                 my $vert_line_x2 = $label_side eq RIGHT 
                     ? $tick_stop + $offset : $tick_start - $offset;
+                $label_y = ( $y_pos1 + ( $y_pos2 - $y_pos1 ) / 2 ) -
+                    $reg_font->height/2;
 
                 $drawer->add_drawing(
                     LINE, 
@@ -637,6 +615,21 @@ Lays out the map.
                         $vert_line_x1, $y_pos2, 
                         $color
                     );
+                    @coords = ($vert_line_x2, $y_pos1, $vert_line_x2, $y_pos2);
+                }
+                elsif ( $feature->how_to_draw eq 'box' ) {
+                    $vert_line_x1 = $label_side eq RIGHT
+                        ? $tick_start - $offset : $tick_stop + $offset;
+                    $vert_line_x2 = $label_side eq RIGHT 
+                        ? $tick_stop + $offset : $tick_start - $offset;
+
+                    $drawer->add_drawing(
+                        RECTANGLE, 
+                        $vert_line_x1, $y_pos1, 
+                        $vert_line_x2, $y_pos2, 
+                        $color
+                    );
+                    @coords = ($vert_line_x1, $y_pos1, $vert_line_x2, $y_pos2);
                 }
                 else {
                     my $width = 3;
@@ -651,32 +644,32 @@ Lays out the map.
                         $vert_line_x2, $y_pos2,
                         $width, $width, 0, 360, $color
                     );
+                    @coords = (
+                        $vert_line_x2 - $width/2, $y_pos1, 
+                        $vert_line_x2 + $width/2, $y_pos2
+                    );
                 }
 
                 $drawer->add_map_area(
-                    coords => [$vert_line_x1, $y_pos1, $vert_line_x2, $y_pos2], 
+                    coords => \@coords,
                     url    => URLS->{'feature_details'}.
                               $feature->accession_id,
                     alt    => 'Details: '.$feature->feature_name,
                 );
 
-                $x_plane = $vert_line_x2;
-            }
-            elsif ( $feature->how_to_draw eq 'box' ) {
-                $drawer->add_drawing(
-                    RECTANGLE, $tick_start, $y_pos1, $tick_stop, $y_pos2, $color
-                );
+                $x_plane = $label_side eq RIGHT 
+                    ? $vert_line_x2 + 2 : $vert_line_x2 - 2;
             }
 
             my ( $left_connection, $right_connection );
             if ( $show_labels ) {
-                my $label_y = $y_pos1 - $reg_font->height/2;
-                if ( $feature->feature_id == $midpoint_feature_id ) {
-                    $moving_up = 0;
-                }
-                else {
-                    $prev_label_y = $label_y unless defined $prev_label_y;
-                }
+#                my $label_y = $y_pos1 - $reg_font->height/2;
+#                if ( $feature->feature_id == $midpoint_feature_id ) {
+#                    $moving_up = 0;
+#                }
+#                else {
+#                    $prev_label_y = $label_y unless defined $prev_label_y;
+#                }
 
                 my $is_highlighted = 
                     $drawer->highlight_feature( $feature->feature_name );
@@ -687,6 +680,23 @@ Lays out the map.
                     next unless $has_corr || $is_highlighted;
                 }
 
+                if ( $feature->feature_id == $midpoint_feature_id ) {
+                    $direction = SOUTH;
+                }
+
+                my $debug        =  $is_highlighted; #$direction eq SOUTH;
+                warn "\n---------\n",$feature->feature_name,"\n---------\n"
+                    if $debug;
+                $label_y         = label_distribution(
+                    rows         => \@rows,
+                    target       => $label_y,
+                    row_height   => $reg_font->height,
+                    max_distance => $has_corr ? 10 : 5, 
+                    can_skip     => $is_highlighted ? 0 : 1,
+                    direction    => $direction,
+                    debug        => $debug,
+                );
+
                 #
                 # Feature label.
                 #
@@ -695,28 +705,38 @@ Lays out the map.
                     : $base_x - $label_offset - $reg_font->width*length($label)
                 ;
 
-                my $diff = 0;
-                if ( $moving_up ) {
-                    $diff-- while $label_y + $diff > $prev_label_y;
-                }
-                else {
-                    $diff++ while $label_y + $diff < $prev_label_y;
-                    $diff++ while $label_y + $diff < $mid_y;
-                }
+#                my $diff = 0;
+#                if ( $direction eq NORTH ) {
+#                    $diff-- while $label_y + $diff > $prev_label_y;
+#                }
+#                else {
+#                    $diff++ while $label_y + $diff < $prev_label_y;
+#                    $diff++ while $label_y + $diff < $mid_y;
+#                }
+
+#                my $diff = $row_height * $row_index;
+#                if ( $direction eq NORTH ) {
+#                    $label_y -= $diff;
+#                }
+#                else {
+#                    $label_y += $diff;
+#                }
 
                 my $buffer = 2;
-                if ( 
-                    $is_highlighted || 
-                    ( $has_corr && abs $diff < 10 ) ||
-                    ( $include_features =~ /^all|landmarks$/ && abs $diff < 5 )
-                ) {
-                    $label_y += $diff;
-                    $prev_label_y = $moving_up
-                        ? $label_y - $reg_font->height 
-                        : $label_y + $reg_font->height;
-                    $min_y = $prev_label_y if $prev_label_y < $min_y;
+#                if ( 
+#                    $is_highlighted || 
+#                    ( $has_corr && abs $diff < 10 ) ||
+#                    ( $include_features =~ /^all|landmarks$/ && abs $diff < 5 )
+#                ) {
 
-                    if ( $moving_up and !defined $mid_y ) {
+                if ( defined $label_y ) {
+#                    $label_y += $diff;
+#                    $prev_label_y = $direction eq NORTH
+#                        ? $label_y - $reg_font->height 
+#                        : $label_y + $reg_font->height;
+#                    $min_y = $prev_label_y if $prev_label_y < $min_y;
+
+                    if ( $direction eq NORTH and !defined $mid_y ) {
                         $mid_y = $label_y + $reg_font->height;
                     }
 
@@ -939,9 +959,6 @@ Returns the map's length (stop - start).
 =cut
     my $self   = shift;
     my $map_id = shift or return;
-#    warn "map length(): map_id = $map_id, stop = ", 
-#        $self->stop_position($map_id), ", start = ", 
-#        $self->start_position($map_id), "\n";
     return $self->stop_position($map_id) - $self->start_position($map_id);
 }
 
@@ -962,6 +979,54 @@ Returns a string describing how to draw the map.
         $map->{'width'}         || 
         $map->{'default_width'} || 
         $self->config('map_width');
+}
+
+# ----------------------------------------------------
+sub real_map_length {
+
+=pod
+
+=head2 map_length
+
+Returns the entiry map's length.
+
+=cut
+    my $self   = shift;
+    my $map_id = shift or return;
+    return $self->real_stop_position($map_id) - 
+        $self->real_start_position($map_id);
+}
+
+# ----------------------------------------------------
+sub real_start_position {
+
+=pod
+
+=head2 real_start_position
+
+Returns a map's start position.
+
+=cut
+    my $self   = shift;
+    my $map_id = shift or return;
+    my $map    = $self->map( $map_id );
+    return $map->{'start_position'};
+}
+
+# ----------------------------------------------------
+sub real_stop_position {
+
+=pod
+
+=head2 stop_position
+
+Returns a map's stop position.
+
+=cut
+    my $self   = shift;
+    my $map_id = shift or return;
+    my $map    = $self->map( $map_id );
+    return $map->{'stop_position'};
 }
 
 
@@ -986,20 +1051,13 @@ sub start_position {
 
 =head2 start_position
 
-Returns a map's start position.
+Returns a map's start position for the range selected.
 
 =cut
     my $self   = shift;
     my $map_id = shift or return;
     my $map    = $self->map( $map_id );
-#    warn "in start_pos, map = ", Dumper($map), "\n";
-    
-    unless ( defined $map->{'start_position'} ) {
-        my @positions = $self->feature_positions( $map_id );
-        $map->{'start_position'} = @positions ? $positions[0] : undef;
-    }
-
-    return $map->{'start_position'};
+    return $map->{'start'};
 }
 
 # ----------------------------------------------------
@@ -1009,19 +1067,13 @@ sub stop_position {
 
 =head2 stop_position
 
-Returns a map's stop position.
+Returns a map's stop position for the range selected.
 
 =cut
     my $self   = shift;
     my $map_id = shift or return;
     my $map    = $self->map( $map_id );
-    
-    unless ( defined $map->{'stop_position'} ) {
-        my @positions = $self->feature_positions( $map_id );
-        $map->{'stop_position'} = @positions ? $positions[-1] : undef;
-    }
-
-    return $map->{'stop_position'};
+    return $map->{'stop'};
 }
 
 # ----------------------------------------------------

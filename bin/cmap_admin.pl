@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.2 2002-08-23 16:02:37 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.3 2002-08-30 02:49:55 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION $BE_QUIET ];
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 #
 # Turn off output buffering.
@@ -35,29 +35,28 @@ if ( $show_version ) {
 #
 # Create a CLI object with the file arg (if any).
 #
-my $cli = CSHL::CMap::CLI::Admin->new( file => shift );
+my $cli = Bio::GMOD::CMap::CLI::Admin->new( file => shift );
 while ( 1 ) { 
     my $action = $cli->show_greeting;
     $cli->$action();
 }
 
 # ----------------------------------------------------
-package CSHL::CMap::CLI::Admin;
+package Bio::GMOD::CMap::CLI::Admin;
 
 use strict;
 use IO::File;
 use Data::Dumper;
 use Term::ReadLine;
-use CSHL::Config;
-use CSHL::CMap;
-use CSHL::CMap::Admin;
-use CSHL::CMap::Constants;
-use CSHL::CMap::Data;
-use CSHL::CMap::Utils;
-use CSHL::CMap::Admin::Import();
-use CSHL::CMap::Admin::MakeCorrespondences();
+use Bio::GMOD::CMap;
+use Bio::GMOD::CMap::Admin;
+use Bio::GMOD::CMap::Constants;
+use Bio::GMOD::CMap::Data;
+use Bio::GMOD::CMap::Utils;
+use Bio::GMOD::CMap::Admin::Import();
+use Bio::GMOD::CMap::Admin::MakeCorrespondences();
 
-use base 'CSHL::CMap';
+use base 'Bio::GMOD::CMap';
 
 # ----------------------------------------------------
 sub init {
@@ -262,7 +261,7 @@ sub import_correspondences {
 
     print "Importing data...\n";
 
-    my $importer = CSHL::CMap::Admin::FeatureCorrespondenceImport->new;
+    my $importer = Bio::GMOD::CMap::Admin::FeatureCorrespondenceImport->new;
     $importer->import(
         fh           => $fh,
         overwrite    => $overwrite,
@@ -400,7 +399,7 @@ sub import_data {
 
     print "Importing data...\n";
 
-    my $importer = CSHL::CMap::Admin::Import->new( db => $db );
+    my $importer = Bio::GMOD::CMap::Admin::Import->new( db => $db );
     $importer->import(
         map_set_id => $map_set_id,
         fh           => $fh,
@@ -460,7 +459,7 @@ sub make_name_correspondences {
     chomp( my $answer = <STDIN> );
     return if $answer =~ m/^[Nn]/;
 
-    my $corr_maker = CSHL::CMap::Admin::MakeCorrespondences->new( db => $db );
+    my $corr_maker = Bio::GMOD::CMap::Admin::MakeCorrespondences->new(db=>$db);
     $corr_maker->make_name_correspondences(
         evidence_type_id => $evidence_type_id,
         map_set_id       => $map_set_id,
@@ -477,7 +476,7 @@ sub reload_correspondence_matrix {
     chomp( my $answer = <STDIN> );
     return if $answer =~ m/^[Nn]/;
 
-    my $admin = CSHL::CMap::Admin->new( db => $self->db );
+    my $admin = Bio::GMOD::CMap::Admin->new( db => $self->db );
     $admin->reload_correspondence_matrix or do { 
         print "Error: ", $admin->error, "\n"; return; 
     };
@@ -565,7 +564,7 @@ web-based creation and importing of map set data.  Why this giant
 leap backwards?  These imports can take a *long* time, so it's awkward
 to handle them in a web interface.
 
-If the CSHL::* modules are not installed into your standard Perl
+If the Bio::GMOD::CMap::* modules are not installed into your standard Perl
 library path, be sure to have your PERL5LIB environment variable set
 to their location (e.g., "/usr/local/apache/lib/perl") or to supply
 that path to Perl when invoking the script, like so:

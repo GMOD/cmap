@@ -1,13 +1,13 @@
 package Bio::GMOD::CMap::Constants;
 
-# $Id: Constants.pm,v 1.5 2002-08-27 22:18:42 kycl4rk Exp $
+# $Id: Constants.pm,v 1.6 2002-08-30 02:49:55 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -20,11 +20,13 @@ $VERSION = (qw$Revision: 1.5 $)[-1];
     LEFT
     LINE
     NUMBER_RE
+    NORTH
     PREFERENCE_FIELDS
     TEMPLATE_DIR
     RECTANGLE
     RIGHT
     SHAPE_XY
+    SOUTH
     STRING
     STRING_UP
     URLS
@@ -203,6 +205,8 @@ use constant STRING_UP      => 'stringUp';
 #
 use constant RIGHT => 'right';
 use constant LEFT  => 'left';
+use constant NORTH => 'north';
+use constant SOUTH => 'south';
 
 #
 # Describes where the X and Y attributes of a shape are.

@@ -2,7 +2,7 @@
 
 =head1 NAME
 
-Comparative Maps Code Overview
+Comparative and Genetic Maps Code Overview
 
 =head1 DESCRIPTION
 
@@ -39,10 +39,10 @@ Much care has been given to carefully separate functionally different
 parts of the code into different modules, roughly corresponding to a
 traditional "three-tiered" structure of layers for the data, the
 logic, and the presentation layers (HTML).  You'll find all the
-database interaction encapusulated into the CSHL::CMap::Data* modules,
+database interaction encapusulated into the Bio::GMOD::CMap::Data* modules,
 all the "logic" (the code that lays out the map components) in the
-CSHL::CMap::Drawer* modules, and all the HTML generation in the
-CSHL::CMap::Apache* modules.  Additionally, there is no HTML mixed
+Bio::GMOD::CMap::Drawer* modules, and all the HTML generation in the
+Bio::GMOD::CMap::Apache* modules.  Additionally, there is no HTML mixed
 with Perl code as all the web pages are generated with the Template
 Toolkit by Andy Wardley (http://www.template-toolkit.com/), a very
 powerful and freely available Perl templating system.  This allows
@@ -52,29 +52,29 @@ interfering with the code.
 =head1 DATA MODULES
 
 As stated above, all the database interaction happens in the
-CSHL::CMap::Data* modules.  One goal of this project has always been
+Bio::GMOD::CMap::Data* modules.  One goal of this project has always been
 compatibility with multiple RDBMSs (perhaps if only from necessity, as
 the system was developed using MySQL but is deployed on Oracle).  As a
 consequence, all the SQL will be placed (eventually :-) into modules
 where the statements can be modified to run with a particular database
 without affecting any other SQL.
 
-The CSHL::CMap::Data module has as a component an "SQL" object, with
-the choices right now confined to CSHL::CMap::Data::[Generic|MySQL|Oracle].
+The Bio::GMOD::CMap::Data module has as a component an "SQL" object, with
+the choices right now confined to Bio::GMOD::CMap::Data::[Generic|MySQL|Oracle].
 The "Generic" module is the superclass of the other two (and
 conceivably any others, such as classes for PostgreSQL or Sybase).
 All SQL statement methods are defined in the Generic module, and any
 that don't work for a particular RDBMS can be overridden in a
 subclass.  This also allows users of other systems to create their own
 modules and drop them into place with very little effort.  All that
-need happen is to subclass CSHL::CMap::Data::Generic (as noted in the
-perldocs), and then add a line to the CSHL::CMap::Constants to point
+need happen is to subclass Bio::GMOD::CMap::Data::Generic (as noted in the
+perldocs), and then add a line to the Bio::GMOD::CMap::Constants to point
 to the new module.
 
 =head1 MAP LAYOUT MODULES
 
 All the modules that actually do something towards laying out the
-comparative maps live in the CSHL::CMap::Drawer* namespace.  The top
+comparative maps live in the Bio::GMOD::CMap::Drawer* namespace.  The top
 level, "Drawer.pm," is basically the coordinator of the objects it
 manipulates.  The Drawer creates a "Map" object for each map (or map
 set) that the user has requested.  It asks each Map to lay itself out,
@@ -84,29 +84,31 @@ height and width.
 
 =head1 PRESENTATION MODULES
 
-The modules in the CSHL::CMap::Apache namespace are responsible for
+The modules in the Bio::GMOD::CMap::Apache namespace are responsible for
 actually displaying the maps through a web interface.  Almost all of
 the modules here are basic mod_perl handlers and are objects
-inheriting from the CSHL::CMap::Apache superclass.  This superclass
+inheriting from the Bio::GMOD::CMap::Apache superclass.  This superclass
 creates the Template Toolkit object, the "page" object (see perldocs),
 and handles any errors thrown by the derived classes, reducing the
 amount of code to create a new handler.
 
 =head1 CONFIGURATION MODULES
 
-CSHL::Config is a general purpose configuration module used by many
-other CSHL::* modules. The only applicable options for comparative
-maps are related to the database connection information.  I wrestling
-with why this can't be somewhere else.  CSHL::CMap::Constants contains
-constants that control a lot of the default operations as well as some
-validation logic.  The hope is that people installing this application
-can make most of their changes to this module in order to customize
-the look and feel of their site.
+All local configuration of CMAP should be done through the "cmap.conf"
+file.  Of course, the file doesn't have to be called "cmap.conf."  It
+can be called whatever you like, so long as the absolute path to the
+file is in the Bio::GMOD::CMap::Constants file.  This path is
+automatically written during installtion if you do the standard "perl
+Makefile.PL; make; make install" process.  There are defaults provided
+for every option in the local config file with the exception of the
+database connection info and the template directory.  The latter
+should be set during installation, and the latter should be set by the
+installer.
 
 =head1 GENERAL FLOW FOR HANDLERS
 
 The "presentation modules" listed above are called as mod_perl
-handlers.  Let's take the CSHL::CMap::Apache::MapViewer module.  Here
+handlers.  Let's take the Bio::GMOD::CMap::Apache::MapViewer module.  Here
 is what it does in order to show the user something:
 
 =over 4
@@ -119,15 +121,15 @@ configuration files.
 =item 2  
 
 The module needs some data for the <form> elements it has, so it calls the
-appropriate methods CSHL::CMap::Data module for what it needs.
+appropriate methods Bio::GMOD::CMap::Data module for what it needs.
 
 =item 3  
 
 If there are enough arguments to display a map, it will create a
-CSHL::CMap::Drawer object. The drawer will call the CSHL::CMap::Data object for
-the data it needs to draw the map(s) (features, relationships, map titles,
-etc.), layout all the map elements, and finally write the image out to a
-temporary file.
+Bio::GMOD::CMap::Drawer object. The drawer will call the
+Bio::GMOD::CMap::Data object for the data it needs to draw the map(s)
+(features, relationships, map titles, etc.), layout all the map
+elements, and finally write the image out to a temporary file.
 
 =item 4  
 

@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 
-# $Id: MapViewer.pm,v 1.3 2002-08-27 22:18:42 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.4 2002-08-30 02:49:55 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $TEMPLATE $PAGE $DEBUG );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Apache::Constants;
 use Apache::Request;
@@ -85,9 +85,9 @@ sub handler {
     #
     # Add in our next chosen maps.
     #
-    for my $side ( qw[ right left ] ) {
-        my $slot_no = $side eq 'right' ? $max_right + 1 : $max_left - 1;
-        my $cmap    = $side eq 'right' 
+    for my $side ( ( RIGHT, LEFT ) ) {
+        my $slot_no = $side eq RIGHT ? $max_right + 1 : $max_left - 1;
+        my $cmap    = $side eq RIGHT 
             ? $comparative_map_right : $comparative_map_left;
         my ( $field, $accession_id ) = split( /=/, $cmap ) or next;
         $slots{ $slot_no } =  {

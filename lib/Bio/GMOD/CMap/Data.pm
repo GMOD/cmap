@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.2 2002-08-27 22:18:42 kycl4rk Exp $
+# $Id: Data.pm,v 1.3 2002-08-30 02:49:55 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -259,28 +259,23 @@ Returns the data for drawing comparative maps.
 #        warn "map data =\n", Dumper( $map_data ), "\n";
 
         #
-        # Confirm the start and stop.
-        #
-#        $map_data->{'begin'} = $self->map_start( map_id => $map_id );
-#        $map_data->{'end'}   = $self->map_stop ( map_id => $map_id );
-
-        #
         # If we're looking at more than one map (a whole map set), 
         # then we'll use the "start" and "stop" found for the current map.
         # Otherwise, we'll use the arguments supplied (if any).
         #
         if ( scalar @map_ids > 1 ) { 
-#            $map_start = $map_data->{'begin'};
-#            $map_stop  = $map_data->{'end'};
             $map_start = $map_data->{'start_position'};
             $map_stop  = $map_data->{'stop_position'};
         }
         else {
-#            $map_start = $map_data->{'begin'} unless defined $map_start;
-#            $map_stop  = $map_data->{'end'}   unless defined $map_stop;
             $map_start = $map_data->{'start_position'} 
                 unless defined $map_start;
-            $map_stop  = $map_data->{'stop_position'} unless defined $map_stop;
+            $map_start = $map_data->{'start_position'} 
+                if $map_start < $map_data->{'start_position'};
+            $map_stop  = $map_data->{'stop_position'} 
+                unless defined $map_stop;
+            $map_stop  = $map_data->{'stop_position'} 
+                if $map_stop > $map_data->{'stop_position'};
         }
 
         #
@@ -306,16 +301,11 @@ Returns the data for drawing comparative maps.
         #
         # Get the reference map features.
         #
-#        warn "slot_no = $slot_no, sql =\n",
-#            $sql->cmap_data_features_sql(include_features => $include_features),
-#            "\nargs = ( $map_id, $map_start, $map_stop )\n";
         my $features = $db->selectall_arrayref(
-            $sql->cmap_data_features_sql(include_features => $include_features),
+            $sql->cmap_data_features_sql(include_features=>$include_features),
             { Columns => {} },
             ( $map_id, $map_start, $map_stop )
         );
-
-#        warn "features =\n", Dumper( $features ), "\n";
 
         my %features;
         for my $feature ( @$features ) {
@@ -968,8 +958,9 @@ Returns the data for the main comparative map HTML form.
                 ( $map_id )
             );
 
-            $ref_map_start = $ref_map_start unless defined $ref_map_start;
-            $ref_map_stop  = $ref_map_stop  unless defined $ref_map_stop;
+            $ref_map_start = $ref_map_begin unless defined $ref_map_start;
+            $ref_map_start = $ref_map_begin if $ref_map_start < $ref_map_begin;
+            $ref_map_stop  = $ref_map_end   if $ref_map_stop  > $ref_map_stop;
         }
 
         #

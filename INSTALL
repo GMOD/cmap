@@ -629,12 +629,12 @@ IMPORTING YOUR DATA
 
 Now you've got some basic setup to do for your data.  First off, open
 up the web administration interface by going to the URL you set up for
-the CSHL::CMap::Apache::AdminViewer module ("/cmap/admin" by default).
+the admin interface ("/cmap/admin" by default).
 You'll need to set up what types of maps, features, species, and
 evidence types you'll be working with.  For each, go to the "View ..."
 choice from the main menu, then choose "Create New ..." and fill in
 the correct information.  For information on the correct format for
-data import, execute the command "perldoc CSHL::CMap::Admin::Import"
+data import, execute the command "perldoc Bio::GMOD::CMap::Admin::Import"
 on your command line.  When you have your data in the correct format,
 launch the "cmap_admin.pl" script and follow the instructions.
 
@@ -668,14 +668,14 @@ format of the data would be welcomed.
 
 CUSTOMIZING YOUR INSTALLATION
 
-You should edit CSHL::Config with the proper connection data for
-your database and CSHL::CMap::Constants to reflect your own
-preferences.  Each entry in the Constants file is commented to help
-you understand its purpose.  If you don't understand a constant, you
-can just leave it alone and use the default.  Remember to restart
-Apache whenever you make a change to this file as these are
-*constants* and therefore don't change for the life of the Apache
-process.
+You should edit "cmap.conf" with the proper connection data for your
+database and to reflect your own preferences for how maps are drawn.
+Each entry in the configuration file is commented to help you
+understand its purpose and the possible values and default values are
+also provided.  If you don't understand a configuration, you can just
+leave it alone and use the default.  Remember to restart Apache
+whenever you make a change to this file as these are constants and
+don't change for the life of the Apache process.
 
 You can change the way maps and features are drawn based on
 their types.  Use the web-based admin tool to edit each "map type"

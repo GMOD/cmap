@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.2 2002-08-27 22:18:42 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.3 2002-08-30 02:49:55 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
@@ -310,7 +310,6 @@ Returns the drawing data.
 
 =cut
     my $self = shift;
-#    return @{ $self->{'drawing_data'} };
     return 
         map   { @{ $self->{'drawing_data'}{ $_ } } }
         sort  { $a <=> $b } 
@@ -395,13 +394,11 @@ Uses the Bio::GMOD::CMap::Data module to retreive the necessary data for drawing
     my $self = shift;
 
     unless ( $self->{'data'} ) {
-        my $data =  Bio::GMOD::CMap::Data->new;
-
+        my $data             =  Bio::GMOD::CMap::Data->new;
         $self->{'data'}      =  $data->cmap_data( 
             slots            => $self->slots,
             include_features => $self->include_features,
         );
-#        warn "data =\n", Dumper( $self->{'data'} ), "\n";
     }
 
     return $self->{'data'};
