@@ -39,11 +39,14 @@ sub ACTION_install {
     #
     # Install config file.
     #
-    system("mkdir ".$self->notes('CONF')) unless (-d $self->notes('CONF'));
+    my $conf_dir = $self->notes('CONF');
+    unless ( -d $conf_dir ) {
+        mkdir $conf_dir or warn "Can't create image conf dir $conf_dir: $!\n";
+    }
 
-    foreach my $conf_file ('global.conf', 'example.conf'){
-        my $from_conf = 'conf/'.$conf_file;
-        my $to_conf   = catfile( $self->notes('CONF'), $conf_file );
+    foreach my $conf_file ( 'global.conf', 'example.conf' ) {
+        my $from_conf = catfile( 'conf',    $conf_file );
+        my $to_conf   = catfile( $conf_dir, $conf_file );
         my $copy_conf = 1;
         if ( -e $to_conf ) {
             $copy_conf = $self->y_n( "'$to_conf' exists.  Overwrite?", 'n' );
@@ -53,48 +56,48 @@ sub ACTION_install {
             from    => $from_conf,
             to      => $to_conf,
             flatten => 0,
-        ) if $copy_conf;
+          )
+          if $copy_conf;
     }
+
     #
     # Install the CGI script.
     #
     my $from_cgi = 'cgi-bin/cmap';
-    my $to_cgi   = catfile( $self->notes('CGIBIN'), 'cmap' );
+    my $to_cgi = catfile( $self->notes('CGIBIN'), 'cmap' );
     $self->copy_if_modified(
         from    => $from_cgi,
         to      => $to_cgi,
         flatten => 0,
     );
-    chmod 0755, $to_cgi or die "Cannot make '$to_cgi' executable: $!\n"; 
+    chmod 0755, $to_cgi or die "Cannot make '$to_cgi' executable: $!\n";
 
     #
     # Make the temp dir for the images
     #
     my $cache_dir = $self->notes('CACHE');
     unless ( -d $cache_dir ) {
-        mkdir $cache_dir or warn 
-            "Can't create image cache dir $cache_dir: $!\n";
+        mkdir $cache_dir
+          or warn "Can't create image cache dir $cache_dir: $!\n";
     }
 
-    chmod 0777, $cache_dir or warn
-        "Can't chmod image cache dir $cache_dir: $!\n";
+    chmod 0777, $cache_dir
+      or warn "Can't chmod image cache dir $cache_dir: $!\n";
 
     $self->SUPER::ACTION_install;
 
     chomp( my $host = `hostname` || 'localhost' );
-    print join("\n\n",
+    print join( "\n\n",
         '',
         'CMap has been installed.',
         "Be sure to edit the config files with database info!",
-        qq[Then go to "http://$host/cmap"],
-        ''       
-    );
+        qq[Then go to "http://$host/cmap"], '' );
 }
 
 # ----------------------------------------------------
 sub ACTION_realclean {
     my $self = shift;
-    $self->delete_filetree( 'cmap_install.conf' );
+    $self->delete_filetree('cmap_install.conf');
     $self->SUPER::ACTION_realclean;
 }
 
@@ -109,8 +112,8 @@ sub ACTION_build_html {
     my ( @pod_files, @cleanup );
     find(
         sub {
-            push @pod_files, $File::Find::name 
-                if -f $_ && $File::Find::name =~ /\.pod$/;
+            push @pod_files, $File::Find::name
+              if -f $_ && $File::Find::name =~ /\.pod$/;
         },
         $cwd
     );
@@ -120,25 +123,21 @@ sub ACTION_build_html {
     #
     my @html_links = (
         [ '/cgi-bin/cmap/viewer', 'CMap Viewer' ],
-        [ '/cgi-bin/cmap/admin', 'Web Admin Tool' ],
-        [ '/cmap/tutorial/', 'User Tutorial' ],
-        [ '/cmap/admintut/', 'Admin Tutorial' ],
+        [ '/cgi-bin/cmap/admin',  'Web Admin Tool' ],
+        [ '/cmap/tutorial/',      'User Tutorial' ],
+        [ '/cmap/admintut/',      'Admin Tutorial' ],
     );
 
-    for my $pod ( @pod_files ) {
-        my $filename =  basename $pod;
-        my $outfile  =  $filename;
-        $filename    =~ s/[_-]/ /g;
-        $filename    =~ s/\.pod$//;
-        $outfile     =~ s/\.pod$/\.html/;
-        my $outpath  =  catfile( $cwd, 'htdocs', $outfile );
+    for my $pod (@pod_files) {
+        my $filename = basename $pod;
+        my $outfile  = $filename;
+        $filename =~ s/[_-]/ /g;
+        $filename =~ s/\.pod$//;
+        $outfile  =~ s/\.pod$/\.html/;
+        my $outpath = catfile( $cwd, 'htdocs', $outfile );
         print "pod2html $pod -> $outpath\n";
-        pod2html( $pod,
-            "--outfile=$outpath",
-            "--backlink=Back to Top",
-            "--title=$filename",
-            "--css=/cmap/pod-style.css",
-        );
+        pod2html( $pod, "--outfile=$outpath", "--backlink=Back to Top",
+            "--title=$filename", "--css=/cmap/pod-style.css", );
         push @html_links, [ $outfile, $filename ];
         push @cleanup, $outpath;
     }
@@ -149,22 +148,22 @@ sub ACTION_build_html {
     my @doc_files;
     find(
         sub {
-            push @doc_files, $File::Find::name 
-                if -f $_ && $File::Find::name =~ /\.(png|html)$/;
+            push @doc_files, $File::Find::name
+              if -f $_ && $File::Find::name =~ /\.(png|html)$/;
         },
         'docs'
     );
 
-    for my $file ( @doc_files ) {
-        my $filename =  basename $file;
-        my $outpath  =  catfile( $cwd, 'htdocs', $filename );
+    for my $file (@doc_files) {
+        my $filename = basename $file;
+        my $outpath = catfile( $cwd, 'htdocs', $filename );
         print "$file -> $outpath\n";
         copy( $file, $outpath ) unless -e $outpath;
         push @html_links, [ $filename, $filename ];
         push @cleanup, $outpath;
     }
 
-    $self->add_to_cleanup( @cleanup );
+    $self->add_to_cleanup(@cleanup);
 
     #
     # Create the main CMap index page with a summary of the install.
@@ -173,9 +172,13 @@ sub ACTION_build_html {
     open INDEX, ">$index" or die "Can't write new index file '$index': $!\n";
     my $q      = CGI->new;
     my $title  = 'CMap Installation Summary';
-    my $navbar = join( '&nbsp;|&nbsp;', 
-        map { $_->[1] ? $q->a( {-href => $_->[1]}, $_->[0] ) : $q->b($_->[0]) }
-        (
+    my $navbar = join(
+        '&nbsp;|&nbsp;',
+        map {
+                $_->[1]
+              ? $q->a( { -href => $_->[1] }, $_->[0] )
+              : $q->b( $_->[0] )
+          } (
             [ 'CMap Home'      => '' ],
             [ 'Maps'           => '/cgi-bin/cmap/viewer?changeMenu=1' ],
             [ 'Map Search'     => '/cgi-bin/cmap/map_search' ],
@@ -189,51 +192,64 @@ sub ACTION_build_html {
             [ 'Imported Links' => '/cgi-bin/cmap/link_viewer' ],
             [ 'Help'           => '/cgi-bin/cmap/help' ],
             [ 'Tutorial'       => '/cmap/tutorial' ],
-        )
+          )
     );
 
     print "Creating htdocs/index.html\n";
-    print INDEX join("\n",
-        $q->start_html( { -title => $title, -style => 'cmap.css' } ), 
-        $q->h1( $title ),
+    print INDEX join(
+        "\n",
+        $q->start_html( { -title => $title, -style => 'cmap.css' } ),
+        $q->h1($title),
         $q->br,
         "<!-- Here's a sample navigation bar you may want to use. -->",
         $navbar,
         "<!-- End CMap navbar -->",
         $q->p('Congratulations!  CMap has been installed.'),
-        $q->p('Eventually you will want to create your own content '.
-            'for this intro page.'),
-        $q->p("At the top you'll see a sample navigation bar you may wish ".
-            'to keep on this page as it links to the major CMap sections.'),
-        $q->p('We would appreciate you would include an acknowlegement of CMap '.
-            'on this page, e.g.:'
+        $q->p(
+                'Eventually you will want to create your own content '
+              . 'for this intro page.'
+        ),
+        $q->p(
+                "At the top you'll see a sample navigation bar you may wish "
+              . 'to keep on this page as it links to the major CMap sections.'
+        ),
+        $q->p(
+            'We would appreciate you would include an acknowlegement of CMap '
+              . 'on this page, e.g.:'
         ),
         $q->p(
             $q->a(
-                { -href => 'http://www.gmod.org/cmap' }, 
+                { -href => 'http://www.gmod.org/cmap' },
                 'CMap is free software from the GMOD project'
             )
         ),
-        $q->p('For the mean time, here are some links to the installed '.
-            'application and supporting docs:'),
+        $q->p(
+                'For the mean time, here are some links to the installed '
+              . 'application and supporting docs:'
+        ),
         $q->ul(
-            ( map { $q->li( $q->a({ -href => $_->[0] }, $_->[1]) ) ."\n" } 
-            @html_links )
+            (
+                map { $q->li( $q->a( { -href => $_->[0] }, $_->[1] ) ) . "\n" }
+                  @html_links
+            )
         ),
         'CMap was installed on ' . scalar localtime,
         $q->br,
-        $q->a( { -href => 'http://www.gmod.org' }, 
-            $q->img( { 
-                -src  => 'gmod_logo.jpg', 
-                -alt  => 'Powered by GMOD', 
-            } )
+        $q->a(
+            { -href => 'http://www.gmod.org' },
+            $q->img(
+                {
+                    -src => 'gmod_logo.jpg',
+                    -alt => 'Powered by GMOD',
+                }
+            )
         ),
         '<hr>',
         'CMap is part of the <a href="http://www.gmod.org/">GMOD</a> project',
         $q->end_html,
         ''
     );
-    close INDEX; 
+    close INDEX;
 }
 
 # ----------------------------------------------------
@@ -241,8 +257,8 @@ sub ACTION_html {
     my $self   = shift;
     my $to_dir = $self->notes('HTDOCS');
     my $from   = 'htdocs';
-    my @htdocs = $self->read_dir( $from );
-    for my $file ( @htdocs ) {
+    my @htdocs = $self->read_dir($from);
+    for my $file (@htdocs) {
         my $to = $to_dir;
         if ( $file =~ /($from)(.*)/ ) {
             $to = catdir( $to, $2 );
@@ -265,15 +281,15 @@ sub ACTION_templates {
     my $self      = shift;
     my $to_dir    = $self->notes('TEMPLATES');
     my $from      = 'templates';
-    my @templates = $self->read_dir( $from );
+    my @templates = $self->read_dir($from);
 
-    for my $file ( @templates ) {
+    for my $file (@templates) {
         my $to = $to_dir;
         if ( $file =~ /($from)(.*)/ ) {
             $to = catdir( $to, $2 );
         }
 
-       $self->copy_if_modified(
+        $self->copy_if_modified(
             from    => $file,
             to      => $to,
             flatten => 0,
@@ -283,16 +299,16 @@ sub ACTION_templates {
 }
 
 # ----------------------------------------------------
-sub read_dir { 
+sub read_dir {
     my $self = shift;
     my $dir  = shift;
     die "Directory '$dir' does not exist\n" unless -d $dir;
 
     my @files;
-    find( 
+    find(
         sub {
             push @files, $File::Find::name
-                if -f $_ && $File::Find::name !~ /CVS/
+              if -f $_ && $File::Find::name !~ /CVS/;
         },
         $dir
     );
