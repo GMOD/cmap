@@ -1,6 +1,6 @@
                               CMAP INSTALL
 
-                             $Revision: 1.28 $
+                             $Revision: 1.29 $
 
 1.      QUICK START
 
@@ -20,7 +20,7 @@ the very abbreviated explanation of how to install CMap:
 
 If you need further instructions, read on.
 
-2.  GETTING STARTED
+2.      GETTING STARTED
 
 Depending on your comfort level with software installation on UNIX
 environments, you may find some of this document a bit tedious.
@@ -36,7 +36,55 @@ addition, you hope to install MySQL, you'll be required to install
 GNU tar as Sun's tar is broken and won't untar the MySQL packages
 properly.
 
-3.      CONVENTIONS FOR BUILDING SOFTWARE ON UNIX
+3.      OPERATING SYSTEM
+
+Since all of CMap is written in Perl, theoretically you should be able
+to install the application on any operating system (OS) that Perl
+runs on, including different versions of UNIX (Solaris, Linux, *BSD,
+Mac OS X) and Windows.  The easiest OSs to build CMap tend to be
+Linux and Solaris.  The author has little or no experience building on
+other platforms, though he would not discourage you from trying.  CMap
+itself is quite easy to install and run -- it's really all the
+dependent software (a database, system libraries like "gd," and some
+of the trickier Perl modules) that can cause problems.
+
+If you have a choice in the Linux distribution, I would give the
+following caveats.  
+
+    Debian:  Though I really like Debian for it's ease of installation
+    and package management ("apt-get"), I find that the package
+    management is too closely tied to their installed Perl for my
+    comforts.  No matter the system, I prefer to build Perl from source,
+    and this would really mean maintaining two Perl binaries on a Debian
+    system, which I see no reason to do.
+
+    RedHat:  RedHat is definitely one of the more popular distros in the
+    Linux world, but they have historically shipped with Perl binaries
+    that tend to be considered "broken" by many, including the author.
+    If you use RedHat, with no exception the first thing you should do
+    is to complete remove RedHat's Perl from the system via "rpm -e
+    --nodeps perl" and then build from the latest stable source (or
+    whichever version of Perl you prefer post 5.6.1).  The RedHat
+    Package Manager (RPM) can be frustrating at times (it won't
+    automatically satisfy dependencies a la apt-get or Fink), but
+    overall it can be quite handy for installing many of the other
+    pieces of the system you'll need (e.g., MySQL).
+
+I have little experience with other distros, but my general advice is
+to build as much from source as you feel comfortable doing (with the
+exception of MySQL, which you should use a precompiled binary as it's
+very difficult to compile a something more optimized for your OS than
+what they offer).  Solaris is a decent OS, but the first thing you'll
+want to do is to install all the GNU tools (gcc, tar [Sun's tar is
+broken and won't unpack MySQL], etc.) that make using Linux so easy.
+The one time I tried installing CMap on my Mac Powerbook (OS 10.2), I
+found myself completely stuck on things like libgd and mod_perl
+(something about "undefined symbols"), so I gave up.  As I said
+earlier, theoretically it should be possible to get CMap working on
+any system that Perl runs on, but the reality can be quite
+frustrating. 
+
+4.      CONVENTIONS FOR BUILDING SOFTWARE ON UNIX
 
 The standard way to install software on a UNIX-like system includes
 running something that figures out what your system looks like.
@@ -49,7 +97,7 @@ last step, usually "make install," almost always requires root
 privileges as it places the newly built files into sensitive
 system directories.
 
-4.      WHERE TO PUT SOURCES
+5.      WHERE TO PUT SOURCES
 
 As a convention, Linux users often unpack sources into one directory
 like "/usr/local/src." Additionally, I would recommend you place all the
@@ -87,7 +135,7 @@ basic triumvirate of commands:
     # make
     # make install
 
-5.      REQUIREMENTS
+6.      REQUIREMENTS
 
 There are quite a number of prerequisites to getting this running:
 
@@ -97,7 +145,11 @@ There are quite a number of prerequisites to getting this running:
     * Apache (version 1.3.27 suggested)
     * mod_perl (version 1.28 suggested)
 
-6.      LIBGD
+Note: Apache and mod_perl are updated often.  If there is a later
+      version of either (in the 1.x series) than that mentioned in this
+      document, please use the latest source.
+
+7.      LIBGD
 
 Unfortunately, you're pretty much on your own for installing libgd.
 With any luck, you may already have it on your system if you have a
@@ -137,7 +189,7 @@ Here are URLs to help you track down everything you need to install libgd:
     * zlib: http://www.gzip.org/zlib/
     * JGEP: http://www.ijg.org/
 
-7.      DATABASE
+8.      DATABASE
 
 The CMap application relies on a relational database management system
 (RDBMS) to store and retrieve data.  If you already have a database
@@ -183,7 +235,7 @@ command-line tools;  see the MySQL website for more information.  If
 you get really stuck, then MySQL AB, the company which develops and
 releases MySQL, offers commercial support.
 
-8.      CREATING DATABASE TABLES AND GRANTING PERMISSIONS
+9.      CREATING DATABASE TABLES AND GRANTING PERMISSIONS
 
 Once you've settled on your database of choice and have a working
 installation, you need to create the tables that will hold the data for
@@ -229,7 +281,7 @@ equivalent of creating the tables described in the create scripts in
 the "sql" directory and then granting the proper permissions to
 whatever user will connect to your database.
 
-9.      INSTALLING PERL 
+10.     INSTALLING PERL 
 
 It would be hard to imagine that a UNIX system wouldn't have some
 version of Perl installed.  We need a minimum of Perl 5.6.0 (but 5.6.1
@@ -299,7 +351,7 @@ find a mirror that's near you as long as that machine isn't overloaded.
 Just keep trying different machines until you find one with a good,
 fast connection to you.)
 
-10.     INSTALLING APACHE AND MOD_PERL
+11.     INSTALLING APACHE AND MOD_PERL
 
 Given that Apache is the most popular web server right now, it's
 also likely that you'll already have it installed on your system.
@@ -457,7 +509,7 @@ executing your new httpd binary with the "-l" flag as shown above and
 look for "mod_perl.c."  If all that is good, then move on to the next
 section.
 
-11.     INSTALLING PERL MODULES
+12.     INSTALLING PERL MODULES
 
 There are a number of CPAN modules required by the CMap application.
 You will likely need to install these prior to installing the CMap
@@ -579,7 +631,7 @@ Note: Don't forget that the versions of GD.pm and libgd need to match up
       have problems. In this case, it will be much easier to grab the
       source for version 1.x of GD.pm and install it by hand.
 
-12.     INSTALLING THE CMAP PERL MODULES
+13.     INSTALLING THE CMAP PERL MODULES
 
 To install the CMap modules included in this package, you can either
 use the normal installation routine to place the modules into Perl's
@@ -680,7 +732,7 @@ this file over manually and "diff" the two.  Most likely, you won't
 need to make too many changes to the new one to get things working the
 way you had them before.
 
-13.     CONFIGURING APACHE
+14.     CONFIGURING APACHE
 
 After installing Apache, mod_perl, and all the necessary modules,
 you're now ready to configure Apache.  Two fragments of files are
@@ -786,7 +838,7 @@ can intelligently edit you own entries.
     created by the "-c" argument.  If the file already exists, then don't
     use "-c."
 
-14.     STARTING APACHE
+15.     STARTING APACHE
 
 Now see if Apache like what you've done by typing the following commands:
 
@@ -811,7 +863,7 @@ application.  If you don't see anything or you get an error, check your
 error log (whatever your "ErrorLog" directive is set to in your
 httpd.conf), which is most likely "/usr/local/apache/logs/error_log."
 
-15.     STARTING APACHE ET AL. ON BOOT
+16.     STARTING APACHE ET AL. ON BOOT
 
 Should your system ever go down for any reason (e.g., crash or
 reboot), you'll probably want all your services to come back up when
@@ -844,7 +896,7 @@ the operating system sends out just before shutdown.
 MySQL has its own scripts to make sure it starts up on boot.  You
 should follow the directions appropriate for your system.
 
-16.     CRONTAB TO REMOVE OLD IMAGES
+17.     CRONTAB TO REMOVE OLD IMAGES
 
 The map images will only be used for one request, so you'll need to
 include some way to clear out old images.  A simple cron job will do
@@ -932,7 +984,7 @@ whole command (starting with the "0") should go on one line.
 Note: Some UNIXs may have a slightly different cron format. Check
       your man page!
 
-17.     TEMPLATES
+18.     TEMPLATES
 
 Some of the templates may contain language specific to the Gramene
 project (e.g., "matrix.tmpl").  You may wish to scan all your pages
@@ -940,7 +992,7 @@ and remove any language that doesn't pertain to your data.  In fact,
 it's a great idea for you to customize the templates to the types of
 data you wish to highlight or explain.
 
-18.     CVS ACCESS
+19.     CVS ACCESS
 
 If you'd like to install the very latest (which is not necessarily
 guaranteed to work!), then you'll want to checkout the "cmap" project
@@ -949,7 +1001,7 @@ homepage for instructions:
 
     http://gmod.sourceforge.net/cmap
 
-19.     COMMENTS
+20.     COMMENTS
 
 If you have questions or comments about this document, please write
 the CMap development mailing list at
@@ -958,7 +1010,7 @@ in order to stay up on the latest in the development as well as to
 contribute your opinions as to the direction that CMap takes in the
 future.
 
-20.     LET US KNOW!
+21.     LET US KNOW!
 
 Please consider allowing the GMOD project advertise your use of our
 code.  If you have a publicly accessible installation of CMap, we
