@@ -31,7 +31,7 @@
                                 <option value="[% s.species_aid %]"[% IF s.species_aid==apr.param('ref_species_aid') OR form_data.ref_species.size==1; ' selected'; END %]>[% s.species_common_name %][% IF s.species_full_name %] ([% s.species_full_name %])[% END %]</option>
                             [%- END -%]
                             </select>
-                            <input type="submit" value="Submit">
+                            <input type="submit" value="Change">
                         [%- ELSE -%]
                             No species.
                         [%- END -%]
@@ -55,7 +55,7 @@
                                     </option>
                                     [%- SET last_map_type=ms.map_type -%]
                                 [%- END -%]
-                            </select>&nbsp;<input type="submit" value="Submit">
+                            </select>&nbsp;<input type="submit" value="Change">
                             <input type="hidden" name="prev_ref_species_aid" value="[% apr.param('ref_species_aid') %]">
                             <input type="hidden" name="prev_ref_map_set_aid" value="[% apr.param('ref_map_set_aid') %]">
                             <input type="hidden" name="highlight"            value="[% apr.param('highlight') %]">
@@ -71,10 +71,10 @@
                     [% form_data.ref_maps.unshift({accession_id=>'-1',map_name=>'--All--'}) %]
                     <form name="ref_map_form">
                     <tr>
-                        <td align="right">Ref. Map:</td>
+                        <td valign="top" align="right">Ref. Map:</td>
   
                         <td>
-                            <select name="ref_map_aid" 
+                            <select name="ref_map_aids" size="4" multiple
                                 [% IF apr.param('ref_map_aid') %]
                                     onchange="javascript:if(document.ref_map_form.ref_map_aid.value!=document.ref_map_form.prev_ref_map_aid.value){document.comparative_map_form.start.value='';document.comparative_map_form.end.value='';document.ref_map_form.submit()}">
                                 [% ELSE %]
@@ -84,7 +84,7 @@
                                 [% IF form_data.ref_maps.size %]
                                     <option value="">--Select a Map--</option>
                                     [% FOREACH m=form_data.ref_maps %]
-                                        <option[% IF apr.param('ref_map_aid') == m.accession_id OR form_data.ref_maps.size==1;' selected'; END %] value="[% m.accession_id %]">[% m.map_name %]</option>
+                                        <option[% IF selected_maps.${m.accession_id} OR form_data.ref_maps.size==1;' selected'; END %] value="[% m.accession_id %]">[% m.map_name %]</option>
                                     [% END %]
                                 [% ELSE %]
                                     <option value="">--No Maps Available--</option>
@@ -101,12 +101,22 @@
                                 <input type="hidden" name="image_size"       value="[% apr.param('image_size') %]">
                                 <input type="hidden" name="image_type"       value="[% apr.param('image_type') %]">
                             [% END %]
-                            <input type="submit" value="Submit">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="right">Ref Map Names:</td>
+                        <td>
+                            <input name="ref_map_names" value="[% apr.param('ref_map_names') %]">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center" colspan="2">
+                            <input type="submit" value="Change Maps">
                         </td>
                     </tr>
                     </form>
                   
-                    [% IF apr.param('ref_map_aid') %]
+                    [% IF apr.param('ref_map_aid') OR apr.param('ref_map_aids') OR apr.param('ref_map_names') %]
                         <form name="comparative_map_form"> 
                         <tr>
                             <td align="right">Start:</td>
@@ -221,10 +231,10 @@
 
                             <td>
                                 [% IF form_data.feature_types.size %]
-                                    [% form_data.feature_types.unshift({feature_type=>'-1',feature_type=>'--All--'}) %]
+                                    [% form_data.feature_types.unshift({feature_type_aid=>'-1',feature_type=>'--All--'}) %]
                                     <select name="feature_types" size="4" multiple>
                                         [% FOREACH ft=form_data.feature_types %]
-                                            <option value="[% ft.feature_type %]"[% IF included_features.${ft.feature_type}; ' selected'; END %]>[% ft.feature_type %]</option>
+                                            <option value="[% ft.feature_type_aid %]"[% IF included_features.${ft.feature_type_aid}; ' selected'; END %]>[% ft.feature_type %]</option>
                                         [% END %]
                                     </select>
     
@@ -239,10 +249,10 @@
 
                             <td>
                                 [% IF form_data.evidence_types.size %]
-                                    [% form_data.evidence_types.unshift({evidence_type=>'-1',evidence_type=>'--All--'}) %]
+                                    [% form_data.evidence_types.unshift({evidence_type_aid=>'-1',evidence_type=>'--All--'}) %]
                                     <select name="evidence_types" size="4" multiple>
                                         [% FOREACH et=form_data.evidence_types %]
-                                            <option value="[% et.evidence_type %]"[% IF included_evidence.${et.evidence_type}; ' selected'; END %]>[% et.evidence_type %]</option>
+                                            <option value="[% et.evidence_type_aid %]"[% IF included_evidence.${et.evidence_type_aid}; ' selected'; END %]>[% et.evidence_type %]</option>
                                         [% END %]
                                     </select>
     
@@ -255,7 +265,8 @@
                         <tr>
                             <td colspan="2" align="center">
                                 <input type="hidden" name="ref_map_set_aid" value="[% apr.param('ref_map_set_aid') %]">
-                                <input type="hidden" name="ref_map_aid"     value="[% apr.param('ref_map_aid') %]">
+                                <input type="hidden" name="ref_map_aid"     value="[% apr.param('ref_map_aids').join(',') %]">
+                                <input type="hidden" name="ref_map_names"   value="[% apr.param('ref_map_names') %]">
                                 <input type="hidden" name="ref_species_aid"  value="[% apr.param('ref_species_aid') %]">
                                 <input type="hidden" name="comparative_maps" value="[% comparative_maps %]">
                                 <input type="hidden" name="flip"            value="[% apr.param('flip') %]">
@@ -323,7 +334,7 @@
             <td>
                 [% form_data.ref_map_set_info.map_type %]
                 ([% form_data.ref_map_set_info.map_units %])
-                <b>[</b>&nbsp;<a href="map_type_info?map_type=[% form_data.ref_map_set_info.map_type %]">View More Info</a>&nbsp;<b>]</b>
+                <b>[</b>&nbsp;<a href="map_type_info?map_type_aid=[% form_data.ref_map_set_info.map_type_aid %]">View More Info</a>&nbsp;<b>]</b>
             </td>
         </tr>
         [% FOREACH att=form_data.ref_map_set_info.attributes %]
@@ -356,7 +367,7 @@
     </table>
 [% END %]
 
-[% UNLESS apr.param('ref_map_aid') OR form_data.ref_map_set_info %]
+[% UNLESS apr.param('ref_map_aids') OR apr.param('ref_map_names') OR form_data.ref_map_set_info %]
     [% INCLUDE help_quick_start.tmpl %]
 [% END %]
 

@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.72 2004-03-25 14:11:58 mwz444 Exp $
+# $Id: Map.pm,v 1.73 2004-03-26 21:12:48 kycl4rk Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.72 $)[-1];
+$VERSION = (qw$Revision: 1.73 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -33,7 +33,7 @@ use Bio::GMOD::CMap::Utils qw[ column_distribution label_distribution ];
 
 use base 'Bio::GMOD::CMap';
 
-my @INIT_FIELDS = qw[ config drawer base_x base_y slot_no maps ];
+my @INIT_FIELDS = qw[ drawer base_x base_y slot_no maps ];
 
 my %SHAPE = (
     'default'  => 'draw_box',
@@ -49,7 +49,7 @@ BEGIN {
     my @AUTO_FIELDS = qw[
         map_set_id map_set_aid map_type accession_id species_id 
         map_id species_name map_units map_name map_set_name 
-        map_type is_relational_map begin end 
+        map_type_id begin end 
     ];
 
     foreach my $sub_name ( @AUTO_FIELDS ) {
@@ -69,21 +69,6 @@ sub init {
     my ( $self, $config ) = @_;
     $self->params( $config, @INIT_FIELDS );
     return $self;
-}
-# ----------------------------------------------------
-sub config {
-
-=pod
-
-=head2 apr
-
-Returns the Bio::GMOD::CMap::Config object.
-
-=cut
-
-    my $self       = shift;
-    $self->{'config'} = shift if @_;
-    return $self->{'config'} || undef;
 }
 
 # ----------------------------------------------------
@@ -142,11 +127,10 @@ Returns the color of the map.
     my $self   = shift;
     my $map_id = shift or return;
     my $map    = $self->map( $map_id );
-
     return 
         $map->{'color'}         || 
-        $self->map_type_data($map->{'map_type'},'color') || 
-        $self->config_data('map_color');
+        $map->{'default_color'} || 
+        $self->config('map_color');
 }
 
 # ----------------------------------------------------
@@ -401,8 +385,8 @@ sub features {
 
 =head2 features
 
-Returns all the features on the map (as objects).  Features are stored
-in raw format as a hashref keyed on feature_id.
+Returns all the features on the map.  Features are stored in raw format as 
+a hashref keyed on feature_id.
 
 =cut
 
@@ -412,7 +396,6 @@ in raw format as a hashref keyed on feature_id.
     my $is_flipped = shift || 0;
 
     unless ( defined $map->{'feature_store'} ) {
-#        my $reverse = $is_flipped ? -1 : 1;
         for my $data ( 
             map  { $_->[0] }
             sort { 
@@ -420,15 +403,14 @@ in raw format as a hashref keyed on feature_id.
                 ||
                 $a->[2] <=> $b->[2]
                 ||
-#                $reverse * ( $a->[3] <=> $b->[3] )
                 $a->[3] <=> $b->[3]
                 ||
                 $a->[4] <=> $b->[4] 
             }
             map  { [
                 $_, 
-                $self->feature_type_data($_->{'feature_type'},'drawing_lane'), 
-                $self->feature_type_data($_->{'feature_type'},'drawing_priority'), 
+                $_->{'drawing_lane'}, 
+                $_->{'drawing_priority'}, 
                 defined $_->{'start_position'} ? $_->{'start_position'} : 0,
                 defined $_->{'stop_position'} ? $_->{'stop_position'} : 0,
             ] }
@@ -441,6 +423,23 @@ in raw format as a hashref keyed on feature_id.
     }
 
     return $map->{'feature_store'};
+}
+
+# ----------------------------------------------------
+sub no_features {
+
+=pod
+
+=head2 no_features
+
+Returns the number features on the map.
+
+=cut
+
+    my $self   = shift;
+    my $map_id = shift or return;
+    my $map    = $self->map( $map_id );
+    return $map->{'no_features'};
 }
 
 # ----------------------------------------------------
@@ -457,8 +456,7 @@ Returns a string describing how to draw the map.
     my $self   = shift;
     my $map_id = shift or return;
     my $map    = $self->map( $map_id );
-    my $shape  = $map->{'shape'} ||
-	$self->map_type_data($map->{'map_type'},'shape')|| '';
+    my $shape  = $map->{'shape'} || $map->{'default_shape'} || '';
        $shape  = 'default' unless defined $SHAPE{ $shape };
     return $shape;
 }
@@ -484,8 +482,11 @@ Lays out the map.
                          return $self->error($drawer->error);
     my $slots          = $drawer->slots;
     my @map_ids        = $self->map_ids;
+    my $font_width     = $reg_font->width;
+    my $font_height    = $reg_font->height;
     my $no_of_maps     = scalar @map_ids;
-    my @columns        = ();
+    # if more than one map in slot, compress all
+    my $is_compressed  = $no_of_maps > 1;
     my $label_features = $drawer->label_features;
 
     #
@@ -493,7 +494,7 @@ Lays out the map.
     # to figure out which is the longest and take half its length
     # into account when deciding where to start with the map(s).
     #
-    my @config_map_titles = $self->config_data('map_titles');
+    my @config_map_titles = $self->config('map_titles');
     my $longest;
     for my $map_id ( @map_ids ) {
         for my $length ( 
@@ -503,7 +504,7 @@ Lays out the map.
             $longest  = $length if $length > $longest;
         }
     }
-    my $half_title_length = ( $reg_font->width * $longest ) / 2 + 10;
+    my $half_title_length = ( $font_width * $longest ) / 2 + 10;
     my $original_base_x = $label_side eq RIGHT
         ? $self->base_x + $half_title_length
         : $self->base_x - $half_title_length;
@@ -512,64 +513,74 @@ Lays out the map.
     # These are for drawing the map titles last if this is a relational map.
     #
     my ( 
-        $is_relational,    # if one map is relational, the whole map set is
         $top_y,            # northernmost coord for the slot
         $bottom_y,         # southernmost coord for the slot
         $slot_min_x,       # easternmost coord for the slot
         $slot_max_x,       # westernmost coord for the slot
         @map_titles,       # the titles to put above - for relational maps
         $map_set_aid,      # the map set acc. ID - for relational maps
-        %feature_types, # the distinct feature type IDs
+        %feature_type_ids, # the distinct feature type IDs
     );
 
     #
     # Some common things we'll need later on.
     #
     my $collapse_features      = $drawer->collapse_features;
-    my $max_image_pixel_width  = $drawer->config_data('max_image_pixel_width');
-    my $min_map_pixel_height   = $drawer->config_data('min_map_pixel_height');
-    my $default_feature_color  = $drawer->config_data('feature_color');
+    my $min_map_pixel_height   = $drawer->config('min_map_pixel_height');
+    my $default_feature_color  = $drawer->config('feature_color');
     my $feature_details_url    = DEFAULT->{'feature_details_url'};
-    my $connecting_line_color  = $drawer->config_data('connecting_line_color');
+    my $connecting_line_color  = $drawer->config('connecting_line_color');
     my $apr                    = $drawer->apr;
     my $url                    = $apr->url;
     my $map_viewer_url         = $url.'/viewer';
     my $map_details_url        = $url.'/map_details';
     my $map_set_info_url       = $url.'/map_set_info';
     my $rel_map_show_corr_only =
-        $drawer->config_data('relational_maps_show_only_correspondences') || 0;
+        $drawer->config('relational_maps_show_only_correspondences') || 0;
     my $feature_corr_color    =
-        $drawer->config_data('feature_correspondence_color') || '';
+        $drawer->config('feature_correspondence_color') || '';
     my $feature_highlight_fg_color = 
-        $drawer->config_data('feature_highlight_fg_color');
+        $drawer->config('feature_highlight_fg_color');
     my $feature_highlight_bg_color = 
-        $drawer->config_data('feature_highlight_bg_color');
+        $drawer->config('feature_highlight_bg_color');
 
     my $self_url = $drawer->map_view eq 'details' 
         ? $map_details_url : $map_viewer_url;
 
     my @ordered_slot_nos = sort { $a <=> $b } grep { $_ != 0 } keys %$slots;
 
-    my @map_buttons;
-    for my $map_id ( @map_ids ) {
-        $is_relational     = $self->is_relational_map( $map_id );
-        my $base_x         = $slot_no == 0 && $map_id == $map_ids[0]
-            ? $self->base_x 
-            : $label_side eq RIGHT
-                ? $self->base_x + $half_title_length + 10
-                : $self->base_x - $half_title_length - 20
-        ;
+    my ( @map_buttons, $last_map_x );
+    my $last_map_y     = $base_y;
+    my $show_labels    = $is_compressed ? 0 :
+                         $label_features eq 'none' ? 0 : 1 ;
+    my $show_ticks     = $is_compressed ? 0 : 1;
+    my $show_map_title = $is_compressed ? 0 : 1;
+    my $show_map_units = $is_compressed ? 0 : 1;
 
-        my $show_labels    = $is_relational && $slot_no != 0 ? 0 :
-                             $label_features eq 'none' ? 0 : 1 ;
-        my $show_ticks     = $is_relational && $slot_no != 0 ? 0 : 1;
-        my $show_map_title = $is_relational && $slot_no != 0 ? 0 : 1;
-        my $show_map_units = $is_relational && $slot_no != 0 ? 0 : 1;
+    my $compressed_map_pix_height = int(
+        ( $drawer->pixel_height - ((($font_height + 4) * 2) * $no_of_maps ) ) /
+        $no_of_maps
+    );
+    $compressed_map_pix_height    = $min_map_pixel_height
+        if $compressed_map_pix_height < $min_map_pixel_height;
+    my $compressed_map_pix_width  = 4;
+
+    my $base_x = $slot_no == 0
+        ? $self->base_x 
+        : $slot_no > 0
+            ? $self->base_x + $half_title_length + 10
+            : $self->base_x - $half_title_length - 20
+    ;
+
+    my @map_columns   = ();
+    my $topper_height = ( $font_height + 2 ) * 2;
+    MAP:
+    for my $map_id ( @map_ids ) {
         my $map_width      = $self->map_width( $map_id );
-        my $column_width   = $map_width + 10;
+        my $column_width   = 50;
         my $is_flipped     = 0;
 
-        if ( !$is_relational || ( $is_relational && $slot_no == 0 ) ) {
+        unless ( $is_compressed ) {
             for my $rec ( @{ $drawer->flip } ) {
                 if (
                     $rec->{'slot_no'} == $slot_no
@@ -599,68 +610,182 @@ Lays out the map.
         # The map.
         #
         my ( $min_x, $max_x, $area );
+        my $map_base_y    = $base_y;
         my $draw_sub_name = $SHAPE{ $self->shape( $map_id ) };
         my $map_name      = $self->map_name( $map_id );
+        my $no_features   = $self->no_features( $map_id );
         my ( @drawing_data, @map_area_data );
 
-        if ( $is_relational && $slot_no != 0 ) {
-            #
-            # Relational maps are drawn to a size relative to the distance
-            # their features correspond to features on the reference map.
-            # So, we need to find all the features with correspondences and
-            # find the "tick_y" position any have in the reference slot.
-            # Put them in ascending numerical order and use the first and last
-            # to find the height.
-            #
-            my @corr_feature_ids;
-            for my $lane ( keys %$features ) {
-                push @corr_feature_ids, map { 
-                    $drawer->has_correspondence( $_->{'feature_id'} ) 
-                    ? $_->{'feature_id'} : ()
-                } @{ $features->{ $lane } };
-            }
-            next unless @corr_feature_ids;
+        #
+        # Indicate total number of features on the map.
+        #
+        my @map_toppers = $is_compressed ? ($map_name) : ();
+        push @map_toppers, "[$no_features]" if defined $no_features;
 
-            my @positions   =  sort{ $a <=> $b } $drawer->tick_y_positions(
-                slot_no     => $drawer->reference_slot_no( $slot_no ),
-                feature_ids => \@corr_feature_ids,
+        #
+        # If drawing compressed maps in the first slot, then draw them
+        # in "display_order," else we'll try to line them up.
+        #
+        if ( $is_compressed && $slot_no == 0 ) {
+            my ( $this_map_y, $this_map_x );
+            if ( $last_map_y > $drawer->pixel_height ) {
+                $this_map_y = $base_y;
+                $this_map_x = $last_map_x + 50;
+            }
+            else {
+                $this_map_y = $last_map_y;
+                $this_map_x = $last_map_x;
+            }
+            $this_map_x   ||= $original_base_x;
+            $last_map_x     = $this_map_x;
+            my $half_label  = (($font_width*length($map_name))/2);
+            $base_x         = $this_map_x - $half_label;
+            $map_base_y     = $this_map_y;
+            $pixel_height   = $compressed_map_pix_height;
+            $area           = [ 
+                $base_x, 
+                $this_map_y + $font_height, 
+                $base_x + $font_width * length($map_name), 
+                $this_map_y + $font_height + $pixel_height 
+            ];
+        }
+        elsif ( $is_compressed ) {
+            my $ref_slot_no = $drawer->reference_slot_no( $slot_no );
+            my $ref_corrs   = $drawer->map_correspondences( $slot_no, $map_id );
+            my ( $min_ref_y, $max_ref_y, @ref_connections );
+            for my $ref_corr ( values %$ref_corrs ) {
+                my $pos = $drawer->reference_map_y_coords(
+                    $ref_slot_no, $ref_corr->{'ref_map_id'}
+                );
+                my $ref_map_pixel_len = $pos->{'y2'} - $pos->{'y1'};
+                my $ref_map_unit_len  = 
+                    $pos->{'map_stop'} - $pos->{'map_start'};
+
+                my $ref_map_y1 = $pos->{'y1'} + (
+                    ( $ref_corr->{'min_start'} - $pos->{'map_start'} ) /
+                    $ref_map_unit_len
+                ) * $ref_map_pixel_len;
+                my $ref_map_y2 = $pos->{'y1'} + (
+                    ( $ref_corr->{'max_start'} - $pos->{'map_start'} ) /
+                    $ref_map_unit_len
+                ) * $ref_map_pixel_len;
+
+                my $ref_map_mid_y = $ref_map_y1 + (($ref_map_y2-$ref_map_y1)/2);
+
+                push @ref_connections, [
+                    $pos->{'x'}, 
+                    $ref_map_mid_y,
+                    $ref_corr->{'no_corr'},
+                ];
+
+                #
+                # This causes the map to span the distance covered on the ref.
+                #
+                $min_ref_y = $ref_map_y1 unless defined $min_ref_y;
+                $min_ref_y = $ref_map_y1 if $ref_map_y1 < $min_ref_y;
+                $max_ref_y = $ref_map_y2 unless defined $min_ref_y;
+                $max_ref_y = $ref_map_y2 if $ref_map_y2 > $max_ref_y;
+
+                #
+                # This keeps the map a consistent height.
+                #
+#                $min_ref_y = $ref_map_mid_y - $min_map_pixel_height;
+#                $max_ref_y = $ref_map_mid_y + $min_map_pixel_height;
+            }
+
+            my $map_pix_len = $max_ref_y - $min_ref_y;
+            if ( $map_pix_len < $min_map_pixel_height ) {
+                $pixel_height = $min_map_pixel_height; 
+                my $mid_ref_y = $min_ref_y + ( $max_ref_y - $min_ref_y );
+                $min_ref_y    = $mid_ref_y - ( $pixel_height / 2 );
+                $max_ref_y    = $mid_ref_y + ( $pixel_height / 2 );
+            }
+            else {
+                $pixel_height = $map_pix_len;
+            }
+            $map_base_y = $min_ref_y;
+
+            my $map_lane =  column_distribution(
+                columns  => \@map_columns,
+                top      => $min_ref_y - $topper_height,
+                bottom   => $max_ref_y,
+                buffer   => 4,
+                col_span => 1,
             );
 
-            $pixel_height    = $positions[-1] - $positions[0];
-            $pixel_height    = $min_map_pixel_height
-                if $pixel_height < $min_map_pixel_height;
-            my $midpoint     = ( $positions[0] + $positions[-1] ) / 2;
-            $base_y          = $midpoint - $pixel_height/2;
-            my $half_label   = (($reg_font->width*length($map_name))/2);
-            $base_x = $label_side eq RIGHT 
-                ? $original_base_x + $half_label
-                : $original_base_x - $half_label;
 
-            my $top          = $base_y - $reg_font->height - 4;
-            my $bottom       = $base_y + $pixel_height + 4;
-            my $leftmost     = $base_x - $half_label;
-            my $rightmost    = $base_x + $half_label;
-
-            push @drawing_data, [
-                STRING, $reg_font, $leftmost, $top, $map_name, 'black'
+            $base_x = $original_base_x + ( $column_width * $map_lane );
+            $area          = [ 
+                $base_x, 
+                $min_ref_y,
+                $base_x + $font_width * length($map_name), 
+                $max_ref_y,
             ];
 
-            $min_x = $leftmost  unless defined $min_x;
-            $max_x = $rightmost unless defined $max_x;
-            $min_x = $leftmost  if $leftmost  < $min_x;
-            $max_x = $rightmost if $rightmost > $max_x;
-            $area  = [ $leftmost, $top, $rightmost, $bottom ];
+            my $map_mid_pix = [ 
+                $base_x, $min_ref_y + ( $pixel_height / 2 ) 
+            ];
+
+            for my $ref_connect ( @ref_connections ) {
+                my $line_color = $ref_connect->[2] <= 5 ? 'lightblue'
+                    : $ref_connect->[2] <= 25 ? 'grey'
+                    : $ref_connect->[2] <= 50 ? 'brown'
+                    : 'black'
+                ;
+                push @drawing_data, [
+                    LINE, $ref_connect->[0], $ref_connect->[1], 
+                    @$map_mid_pix, $line_color, 0 
+                ];
+            }
         }
 
-        $top_y = $base_y unless defined $top_y;
-        $top_y = $base_y if $base_y < $top_y;
+        $top_y = $map_base_y unless defined $top_y;
+        $top_y = $map_base_y if $map_base_y < $top_y;
 
+        for my $i ( 0 .. $#map_toppers ) {
+            my $topper = $map_toppers[ $i ];
+            my $f_x    = $label_side eq LEFT 
+                ? $base_x
+                : $base_x - ((length($topper) * $font_width)/2)
+            ;
+
+            my $topper_y;
+            if ( $slot_no == 0 ) {
+                $topper_y    = $map_base_y;
+                $map_base_y += $font_height + 2;
+                $last_map_y += $font_height + 2;
+            }
+            else {
+                $topper_y = 
+                $map_base_y - ($font_height * (scalar @map_toppers - $i) + 4);
+            }
+
+            push @drawing_data, [
+                STRING, $reg_font, $f_x, $topper_y, $topper, 'black'
+            ];
+
+            $min_x = $f_x if $f_x < $min_x;
+        }
+
+        my $map_y_end    =  $map_base_y + $pixel_height;
         my @map_bounds   =  $self->$draw_sub_name(
             map_id       => $map_id,
             map_units    => $show_map_units ? $self->map_units( $map_id ) : '',
             drawer       => $drawer,
-            coords       => [ $base_x, $base_y, $base_y + $pixel_height ],
+            coords       => [ $base_x, $map_base_y, $map_y_end ],
             drawing_data => \@drawing_data,
+        );
+
+        $last_map_y = $map_y_end + 2;
+
+        my $map_start         = $self->start_position( $map_id );
+        my $map_stop          = $self->stop_position ( $map_id );
+        my $actual_map_length = $self->map_length( $map_id );
+        my $map_length        = $actual_map_length || 1;
+
+        $drawer->register_map_y_coords( 
+            $slot_no, $map_id, $map_start, $map_stop, $map_base_y, $map_y_end,
+            $base_x
         );
 
         if ( @{ $area || [] } ) {
@@ -690,10 +815,6 @@ Lays out the map.
         #
         # Tick marks.
         #
-        my $map_start         = $self->start_position( $map_id );
-        my $map_stop          = $self->stop_position ( $map_id );
-        my $actual_map_length = $self->map_length    ( $map_id );
-        my $map_length        = $actual_map_length || 1;
         if ( $show_ticks ) {
             my $interval      = $self->tick_mark_interval( $map_id ) || 1;
             my $no_intervals  = int( $actual_map_length / $interval );
@@ -707,7 +828,7 @@ Lays out the map.
 
                 my $y_pos        = $is_flipped
                     ? $map_bounds[3] - ( $pixel_height * $rel_position )
-                    : $base_y + ( $pixel_height * $rel_position )
+                    : $map_base_y + ( $pixel_height * $rel_position )
                 ;
 
                 my $tick_start   = $label_side eq RIGHT
@@ -725,17 +846,17 @@ Lays out the map.
                 ];
 
                 my $label_x = $label_side eq RIGHT 
-                    ? $tick_start - $reg_font->height - 2
+                    ? $tick_start - $font_height - 2
                     : $tick_stop  + 2
                 ;
 
-                my $label_y = $y_pos + ($reg_font->width*length($tick_pos))/2;
+                my $label_y = $y_pos + ($font_width*length($tick_pos))/2;
 
                 push @drawing_data, [
                     STRING_UP, $reg_font, $label_x, $label_y, $tick_pos, 'grey'
                 ];
 
-                my $right = $label_x + $reg_font->height;
+                my $right = $label_x + $font_height;
                 $max_x    = $right   if $right  > $max_x;
                 $min_x    = $label_x if $label_x < $min_x;
             }
@@ -744,7 +865,7 @@ Lays out the map.
         #
         # Features.
         #
-        my $min_y = $base_y;          # remembers the northermost position
+        my $min_y = $map_base_y;      # remembers the northermost position
         my %lanes;                    # associate priority with a lane
         my %features_with_corr;       # features w/correspondences
         my ($leftmostf, $rightmostf); # furthest features
@@ -787,14 +908,14 @@ Lays out the map.
                 my $has_corr = 
                     $drawer->has_correspondence( $feature->{'feature_id'} );
 
-                next if 
-                    $is_relational &&          # a relational map
-                    $rel_map_show_corr_only && # showing only corr. only
-                    $slot_no != 0  &&          # isn't the reference map
-                    !$has_corr     &&          # feature has no correspondences
-                    !$show_labels;             # not showing labels
+#                next if 
+#                    $is_compressed &&          # a relational map
+#                    $rel_map_show_corr_only && # showing only corr. only
+#                    $slot_no != 0  &&          # isn't the reference map
+#                    !$has_corr     &&          # feature has no correspondences
+#                    !$show_labels;             # not showing labels
 
-                my $feature_shape     = $self->feature_type_data($feature->{'feature_type'},'shape') || LINE;
+                my $feature_shape     = $feature->{'shape'} || LINE;
                 my $shape_is_triangle = $feature_shape =~ /triangle$/;
                 my $fstart            = $feature->{'start_position'} || 0;
                 my $fstop             = $shape_is_triangle 
@@ -814,13 +935,13 @@ Lays out the map.
 
                 my $tick_overhang = 2;
                 my $y_pos1        = $is_flipped 
-                    ? $base_y + $pixel_height - ( $pixel_height * $rstart )
-                    : $base_y + ( $pixel_height * $rstart );
+                    ? $map_base_y + $pixel_height - ( $pixel_height * $rstart )
+                    : $map_base_y + ( $pixel_height * $rstart );
 
                 my $y_pos2        = defined $rstop
                     ? $is_flipped
-                        ? $base_y + $pixel_height - ( $pixel_height * $rstop  )
-                        : $base_y + ( $pixel_height * $rstop  )
+                        ? $map_base_y + $pixel_height - ($pixel_height*$rstop)
+                        : $map_base_y + ( $pixel_height * $rstop  )
                     : undef;
 
                 if ( $is_flipped && defined $y_pos2 ) {
@@ -829,22 +950,21 @@ Lays out the map.
                 $y_pos2 = $y_pos1 unless defined $y_pos2 && $y_pos2 > $y_pos1;
 
                 my $color         = $has_corr ? $feature_corr_color : '';
-                   $color       ||= 
-		       $self->feature_type_data($feature->{'feature_type'},'color') || 
-		       $default_feature_color;
+                   $color       ||= $feature->{'color'} || 
+                                    $default_feature_color;
                 my $label         = $feature->{'feature_name'};
                 my $tick_start    = $base_x - $tick_overhang;
                 my $tick_stop     = $base_x + $map_width + $tick_overhang;
 
                 my ( $label_y, @coords );
                 if ( $shape_is_triangle || $y_pos2 <= $y_pos1 ) {
-                    $label_y               = $y_pos1 - $reg_font->height/2;
+                    $label_y               = $y_pos1 - $font_height/2;
                     $feature->{'midpoint'} = $fstart;
                     $feature->{'mid_y'}    = $y_pos1;
                 }
                 else {
                     $label_y = ( $y_pos1 + ( $y_pos2 - $y_pos1 ) / 2 ) -
-                        $reg_font->height/2;
+                        $font_height/2;
 
                     $feature->{'midpoint'} = ( $fstop > $fstart )
                         ? ( $fstart + $fstop ) / 2 : $fstart;
@@ -1120,14 +1240,25 @@ Lays out the map.
                         );
                     }
                     
-                    push @map_area_data, {
-                        coords => \@coords,
-                        url    => 
-                            $feature_details_url . $feature->{'accession_id'},
-                        alt    => 
-                            'Feature Details: ' . $feature->{'feature_name'}.
-                            ' [' . $feature->{'accession_id'} . ']',
-                    };
+                    if ( $feature->{'feature_type'} eq 'chunk' ) {
+                        push @map_area_data, {
+                            coords => \@coords,
+                            url    => 'viewer?',
+                            alt    => 
+                                'Zoom: '.$feature->{'start_position'}.
+                                '-' . $feature->{'stop_position'}
+                        };
+                    }
+                    else {
+                        push @map_area_data, {
+                            coords => \@coords,
+                            url    => 
+                                $feature_details_url.$feature->{'accession_id'},
+                            alt    => 
+                                'Feature Details: '.$feature->{'feature_name'}.
+                                ' [' . $feature->{'accession_id'} . ']',
+                        };
+                    }
                 }
 
                 #
@@ -1149,7 +1280,7 @@ Lays out the map.
                 #
                 # Register that we saw this type of feature.
                 #
-                $feature_types{ $feature->{'feature_type'} } = 1;
+                $feature_type_ids{ $feature->{'feature_type_id'} } = 1;
 
                 my $is_highlighted = $drawer->highlight_feature( 
                     $feature->{'feature_name'},
@@ -1270,7 +1401,7 @@ Lays out the map.
                     used       => [],
                     buffer     => $buffer,
                     direction  => NORTH,
-                    row_height => $reg_font->height,
+                    row_height => $font_height,
                 );
 
                 label_distribution( 
@@ -1279,7 +1410,7 @@ Lays out the map.
                     used       => $used,
                     buffer     => $buffer,
                     direction  => SOUTH,
-                    row_height => $reg_font->height,
+                    row_height => $font_height,
                 );
             }
 
@@ -1288,8 +1419,8 @@ Lays out the map.
                 ? $rightmostf > $base_x ? $rightmostf : $base_x
                 : $leftmostf  < $base_x ? $leftmostf  : $base_x;
 
-            my $font_width  = $reg_font->width;
-            my $font_height = $reg_font->height;
+            my $font_width  = $font_width;
+            my $font_height = $font_height;
             for my $label ( @accepted_labels ) {
                 my $text      = $label->{'text'};
                 my $label_y   = $label->{'y'};
@@ -1351,14 +1482,14 @@ Lays out the map.
 
                 my $label_connect_y1 = $label_side eq RIGHT
                     ? $label->{'feature_mid_y'}
-                    : $label_y + $reg_font->height/2;
+                    : $label_y + $font_height/2;
 
                 my $label_connect_x2 = $label_side eq RIGHT
                     ? $label_x - $buffer 
                     : $coords[0];
 
                 my $label_connect_y2 = $label_side eq RIGHT
-                    ? $label_y + $reg_font->height/2 
+                    ? $label_y + $font_height/2 
                     : $label->{'feature_mid_y'};
 
                 #
@@ -1415,59 +1546,59 @@ Lays out the map.
         # Make sure that the lanes for the maps take into account
         # the span of all the features.
         #
-        if ( $is_relational && $slot_no != 0 ) {
-            my $last_feature_lane = ( sort { $a <=> $b } keys %lanes )[-1];
-            my $furthest_feature  = $lanes{ $last_feature_lane }{'furthest'};
-            my ( $leftmostf, $rightmostf );
-
-            if ( $label_side eq RIGHT ) {
-                $leftmostf  = $map_bounds[0];
-                $rightmostf = $furthest_feature > $map_bounds[2]
-                    ? $furthest_feature : $map_bounds[2];
-            }
-            else {
-                $rightmostf = $map_bounds[2];
-                $leftmostf  = $furthest_feature < $map_bounds[0]
-                    ? $furthest_feature : $map_bounds[0];
-            }
-
-            my $map_lane =  column_distribution(
-                columns  => \@columns,
-                top      => $map_bounds[1],
-                bottom   => $map_bounds[3],
-                buffer   => 4,
-                col_span => sprintf( "%.0f", 
-                    ( abs( $leftmostf - $rightmostf ) / $column_width ) + .5
-                ),
-            );
-
-            if ( $map_lane ) {
-                my $shift       = $column_width * $map_lane;
-                $shift         *= -1 if $label_side eq LEFT;
-                $map_bounds[0] += $shift;
-                $map_bounds[2] += $shift;
-                $leftmostf     += $shift;
-                $rightmostf    += $shift;
-                $slot_min_x = $leftmostf  if $leftmostf  < $slot_min_x;
-                $slot_max_x = $rightmostf if $rightmostf > $slot_max_x;
-
-                for my $rec ( @drawing_data ) {
-                    my $shape = $rec->[0];
-                    for my $x_field ( @{ SHAPE_XY->{ $shape }{'x'} } ) {
-                        $rec->[ $x_field ] += $shift;
-                    }
-                }
-
-                for my $rec ( @map_area_data ) {
-                    $rec->{'coords'}[ $_ ] += $shift for ( 1, 3 );
-                }
-
-                for my $rec ( values %features_with_corr ) {
-                    $rec->{'right'}[0] += $shift;
-                    $rec->{'left'}[0]  += $shift;
-                }
-            }
-        }
+#        if ( $is_compressed ) {
+#            my $last_feature_lane = ( sort { $a <=> $b } keys %lanes )[-1];
+#            my $furthest_feature  = $lanes{ $last_feature_lane }{'furthest'};
+#            my ( $leftmostf, $rightmostf );
+#
+#            if ( $label_side eq RIGHT ) {
+#                $leftmostf  = $map_bounds[0];
+#                $rightmostf = $furthest_feature > $map_bounds[2]
+#                    ? $furthest_feature : $map_bounds[2];
+#            }
+#            else {
+#                $rightmostf = $map_bounds[2];
+#                $leftmostf  = $furthest_feature < $map_bounds[0]
+#                    ? $furthest_feature : $map_bounds[0];
+#            }
+#
+#            my $map_lane =  column_distribution(
+#                columns  => \@columns,
+#                top      => $map_bounds[1],
+#                bottom   => $map_bounds[3],
+#                buffer   => 4,
+#                col_span => sprintf( "%.0f", 
+#                    ( abs( $leftmostf - $rightmostf ) / $column_width ) + .5
+#                ),
+#            );
+#
+#            if ( $map_lane ) {
+#                my $shift       = $column_width * $map_lane;
+#                $shift         *= -1 if $label_side eq LEFT;
+#                $map_bounds[0] += $shift;
+#                $map_bounds[2] += $shift;
+#                $leftmostf     += $shift;
+#                $rightmostf    += $shift;
+#                $slot_min_x = $leftmostf  if $leftmostf  < $slot_min_x;
+#                $slot_max_x = $rightmostf if $rightmostf > $slot_max_x;
+#
+#                for my $rec ( @drawing_data ) {
+#                    my $shape = $rec->[0];
+#                    for my $x_field ( @{ SHAPE_XY->{ $shape }{'x'} } ) {
+#                        $rec->[ $x_field ] += $shift;
+#                    }
+#                }
+#
+#                for my $rec ( @map_area_data ) {
+#                    $rec->{'coords'}[ $_ ] += $shift for ( 1, 3 );
+#                }
+#
+#                for my $rec ( values %features_with_corr ) {
+#                    $rec->{'right'}[0] += $shift;
+#                    $rec->{'left'}[0]  += $shift;
+#                }
+#            }
+#        }
 
         #
         # Register all the features that have correspondences.
@@ -1484,8 +1615,10 @@ Lays out the map.
             my $no      = $side eq 'left' ? $slot_no - 1 : $slot_no + 1;
             my $new_no  = $side eq 'left' ? -1 : 1;
             my $map     = $slots->{ $no } or next; 
-            my $link    = 
-                join( '%3d', $new_no, map { $map->{$_} } qw[ field aid ] );
+            my $field   = $map->{'field'};
+            my $aid     = ref $map->{'aid'} eq 'ARRAY' 
+                          ? join(',', @{ $map->{'aid'} }) : $map->{'aid'};
+            my $link    = join( '%3d', $new_no, $field, $aid );
 
             my @ref_positions = sort { $a->[0] <=> $b->[0] }
                 $drawer->feature_correspondence_map_positions(
@@ -1499,7 +1632,18 @@ Lays out the map.
                 my $first = $ref_positions[0]->[0];
                 my $last  = defined $ref_positions[-1]->[1]
                     ? $ref_positions[-1]->[1] : $ref_positions[-1]->[0];
-                $link    .= "[$first,$last]";
+                @ref_positions = ( $first, $last );
+            }
+            else {
+                my $ref_corrs = $drawer->map_correspondences( 
+                    $slot_no, $map_id
+                );
+                my ( $k, $v ) = each %$ref_corrs;
+                @ref_positions = ( $v->{'min_start'}, $v->{'max_start'} );
+            }
+
+            if ( @ref_positions ) {
+                $link .= '[' . join(',', @ref_positions) . ']';
             }
 
             push @maps, $link;
@@ -1519,7 +1663,7 @@ Lays out the map.
             ';image_type='.$drawer->image_type.
             ';data_source='.$drawer->data_source;
 
-        if ( $is_relational && $slot_no != 0 ) {
+        if ( $is_compressed ) {
             push @map_area_data, {
                 coords => \@map_bounds,
                 url    => $details_url,
@@ -1557,11 +1701,11 @@ Lays out the map.
                     $slots->{ $slot_no }{'aid'} 
                 );
                 if ( 
-                    defined $slots->{ $slot_no }{'start'} &&
-                    defined $slots->{ $slot_no }{'stop'} 
+                    defined $slots->{ $slot_no }{'show_start'} &&
+                    defined $slots->{ $slot_no }{'show_stop'} 
                 ) {
-                $s .= '[' . $slots->{ $slot_no }{'start'} . ',' .
-                      $slots->{ $slot_no }{'stop'} . ']';
+                $s .= '[' . $slots->{ $slot_no }{'show_start'} . ',' .
+                      $slots->{ $slot_no }{'show_stop'} . ']';
                 }
                 push @cmaps, $s;
             }
@@ -1569,8 +1713,8 @@ Lays out the map.
             my $delete_url = $self_url.
                 '?ref_map_set_aid='.$slots->{'0'}{'map_set_aid'}.
                 ';ref_map_aid='.$slots->{'0'}{'aid'}.
-                ';ref_map_start='.$slots->{'0'}{'start'}.
-                ';ref_map_stop='.$slots->{'0'}{'stop'}.
+                ';ref_map_start='.$slots->{'0'}{'show_start'}.
+                ';ref_map_stop='.$slots->{'0'}{'show_stop'}.
                 ';comparative_maps='.join( ':', @cmaps ).
                 ';label_features='.$drawer->label_features.
                 ';include_feature_types='.
@@ -1593,7 +1737,7 @@ Lays out the map.
         #
         # Flip button.
         # 
-        if ( !$is_relational || ( $is_relational && $slot_no == 0 ) ) {
+        unless ( $is_compressed ) {
             my @cmaps;
             for my $slot_no ( @ordered_slot_nos ) {
                 my $s = join( '%3d', 
@@ -1602,11 +1746,11 @@ Lays out the map.
                     $slots->{ $slot_no }{'aid'} 
                 );
                 if ( 
-                    defined $slots->{ $slot_no }{'start'} &&
-                    defined $slots->{ $slot_no }{'stop'} 
+                    defined $slots->{ $slot_no }{'show_start'} &&
+                    defined $slots->{ $slot_no }{'show_stop'} 
                 ) {
-                $s .= '[' . $slots->{ $slot_no }{'start'} . ',' .
-                      $slots->{ $slot_no }{'stop'} . ']';
+                $s .= '[' . $slots->{ $slot_no }{'show_start'} . ',' .
+                      $slots->{ $slot_no }{'show_stop'} . ']';
                 }
                 push @cmaps, $s;
             }
@@ -1629,8 +1773,8 @@ Lays out the map.
             my $flip_url = $self_url.
                 '?ref_map_set_aid='.$slots->{'0'}{'map_set_aid'}.
                 ";ref_map_aid=$ref_map_aid".
-                ';ref_map_start='.$slots->{'0'}{'start'}.
-                ';ref_map_stop='.$slots->{'0'}{'stop'}.
+                ';ref_map_start='.$slots->{'0'}{'show_start'}.
+                ';ref_map_stop='.$slots->{'0'}{'show_stop'}.
                 ';comparative_maps='.join( ':', @cmaps ).
                 ';label_features='.$drawer->label_features.
                 ';include_feature_types='.
@@ -1653,7 +1797,7 @@ Lays out the map.
         #
         # New View button.
         #
-        unless ( $is_relational ) {
+        unless ( $is_compressed ) {
             my $new_url = $map_viewer_url.
                 '?ref_map_set_aid='.$self->map_set_aid( $map_id ) .
                 ';ref_map_aid='.$self->accession_id( $map_id ) .
@@ -1678,7 +1822,7 @@ Lays out the map.
         #
         # The map title(s).
         #
-        if ( $is_relational && $slot_no != 0 ) {
+        if ( $is_compressed ) { #&& $slot_no != 0 ) {
             unless ( @map_titles ) {
                 push @map_titles,
                     map  { $self->$_( $map_id ) } 
@@ -1693,7 +1837,7 @@ Lays out the map.
             my ( $bounds, $drawing_data, $map_data ) = $self->draw_map_title(
                 left_x  => $min_x,
                 right_x => $max_x,
-                min_y   => $min_y - $reg_font->height - 8,
+                min_y   => $min_y - $font_height - 8,
                 lines   => \@lines,
                 buttons => \@map_buttons,
                 font    => $reg_font,
@@ -1713,25 +1857,15 @@ Lays out the map.
         $slot_max_x = $max_x unless defined $slot_max_x;
         $slot_max_x = $max_x if $max_x > $slot_max_x;
 
-        #
-        # See if we've exceeded the max width yet.
-        #
-        if ( $max_image_pixel_width ) {
-            return $self->error(
-                "Maximum image pixel width ($max_image_pixel_width) ".
-                "exceeded.  Please choose fewer maps."
-            ) if ( abs $drawer->min_x + $slot_max_x ) > $max_image_pixel_width;
-        }
-
         $drawer->add_drawing( @drawing_data );
         $drawer->add_map_area( @map_area_data );
     }
 
     #
-    # Draw the map titles last for relational maps, 
+    # Draw the map titles last for compressed maps, 
     # centered over all the maps.
     #
-    if ( $is_relational && $slot_no != 0 ) {
+    if ( $is_compressed ) {
         my $base_x  = $label_side eq RIGHT
                       ? $self->base_x + $half_title_length + 10
                       : $self->base_x - $half_title_length - 20;
@@ -1749,7 +1883,7 @@ Lays out the map.
         my ( $bounds, $drawing_data, $map_data ) = $self->draw_map_title(
             left_x  => $slot_min_x,
             right_x => $slot_max_x,
-            min_y   => $top_y - 10 - ( $reg_font->height + 8 ),
+            min_y   => $top_y - 10 - ( $font_height + 8 ),
             lines   => \@map_titles,
             buttons => \@map_buttons,
             font    => $reg_font,
@@ -1766,7 +1900,7 @@ Lays out the map.
     #
     # Register the feature types we saw.
     #
-    $drawer->register_feature_type( keys %feature_types );
+    $drawer->register_feature_type( keys %feature_type_ids );
 
     #
     # Background color
@@ -1895,7 +2029,7 @@ Returns a string describing how to draw the map.
     return 
         $map->{'width'}         || 
         $map->{'default_width'} || 
-        $self->config_data('map_width');
+        $self->config('map_width');
 }
 
 # ----------------------------------------------------
@@ -1979,7 +2113,7 @@ Returns a map's start position for the range selected.
     my $self   = shift;
     my $map_id = shift or return;
     my $map    = $self->map( $map_id );
-    return $map->{'start'};
+    return $map->{'start_position'};
 }
 
 # ----------------------------------------------------
@@ -1996,7 +2130,7 @@ Returns a map's stop position for the range selected.
     my $self   = shift;
     my $map_id = shift or return;
     my $map    = $self->map( $map_id );
-    return $map->{'stop'};
+    return $map->{'stop_position'};
 }
 
 # ----------------------------------------------------

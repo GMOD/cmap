@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.32 2004-03-18 22:01:00 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.33 2004-03-26 21:12:48 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.32 $)[-1];
+$VERSION = (qw$Revision: 1.33 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -27,7 +27,7 @@ sub handler {
     my $prev_ref_map_set_aid  = $apr->param('prev_ref_map_set_aid')  || '';
     my $ref_species_aid       = $apr->param('ref_species_aid')       || '';
     my $ref_map_set_aid       = $apr->param('ref_map_set_aid')       || '';
-    my $ref_map_aid           = $apr->param('ref_map_aid')           || '';
+    my $ref_map_names         = $apr->param('ref_map_names')         || '';
     my $ref_map_start         = $apr->param('ref_map_start');
     my $ref_map_stop          = $apr->param('ref_map_stop');
     my $comparative_maps      = $apr->param('comparative_maps')      || '';
@@ -47,6 +47,14 @@ sub handler {
     # choice, splitting the string on commas) or from the POSTed 
     # form <select>.
     #
+    my @ref_map_aids;
+    if ( $apr->param('ref_map_aid') ) {
+        @ref_map_aids = split( /,/,  $apr->param('ref_map_aid') );
+    }
+    elsif ( $apr->param('ref_map_aids') ) {
+        @ref_map_aids = ( $apr->param('ref_map_aids') );
+    }
+
     my @feature_types;
     if ( $apr->param('feature_types') ) {
         @feature_types = ( $apr->param('feature_types') );
@@ -77,22 +85,33 @@ sub handler {
     if ( 
         $prev_ref_map_set_aid && $prev_ref_map_set_aid ne $ref_map_set_aid 
     ) {
-        $ref_map_aid           = undef;
+        @ref_map_aids          = ();
         $ref_map_start         = undef;
         $ref_map_stop          = undef;
+        $ref_map_names         = '';
         $comparative_maps      = undef;
         $comparative_map_right = undef;
         $comparative_map_left  = undef;
     }
 
+    my ( $ref_field, $ref_value );
+    if ( grep {/^-1$/} @ref_map_aids ) {
+        $ref_field = 'map_set_aid';
+        $ref_value = $ref_map_set_aid;
+    }
+    else {
+        $ref_field = 'map_aid';
+        $ref_value = \@ref_map_aids;
+    }
+
     my %slots = (
         0 => {
-            field       => $ref_map_aid eq '-1' ? 'map_set_aid' : 'map_aid',
-            aid         => $ref_map_aid eq '-1' 
-                           ? $ref_map_set_aid : $ref_map_aid,
+            field       => $ref_field,
+            aid         => $ref_value,
             start       => $ref_map_start,
             stop        => $ref_map_stop,
             map_set_aid => $ref_map_set_aid,
+            map_names   => $ref_map_names,
         },
     );
 
@@ -145,7 +164,7 @@ sub handler {
     # Instantiate the drawer if there's at least one map to draw.
     #
     my $drawer;
-    if ( $ref_map_aid ) {    
+    if ( @ref_map_aids || $ref_map_names ) {
         $drawer                    =  Bio::GMOD::CMap::Drawer->new(
             apr                    => $apr,
             data_source            => $self->data_source,
@@ -160,8 +179,7 @@ sub handler {
             min_correspondences    => $min_correspondences,
             include_feature_types  => \@feature_types,
             include_evidence_types => \@evidence_types,
-            debug                  => $self->config_data('debug'),
-            config                 => $self->{'config'},
+            debug                  => $self->config('debug'),
         ) or return $self->error( Bio::GMOD::CMap::Drawer->error );
 
         %slots = %{ $drawer->{'slots'} };
@@ -194,6 +212,8 @@ sub handler {
     #
     $apr->param( ref_map_start   => $form_data->{'ref_map_start'}   );
     $apr->param( ref_map_stop    => $form_data->{'ref_map_stop'}    );
+    $apr->param( ref_map_names   => $ref_map_names                  );
+    $apr->param( ref_map_aids    => join(',', @ref_map_aids)        );
     $apr->param( ref_species_aid => $form_data->{'ref_species_aid'} );
     $apr->param( ref_map_set_aid => $form_data->{'ref_map_set_aid'} );
 
@@ -208,7 +228,7 @@ sub handler {
         );
     }
 
-    $INTRO ||= $self->config_data('map_viewer_intro') || '';
+    $INTRO ||= $self->config('map_viewer_intro') || '';
 
     my $html;
     my $t = $self->template or return;
@@ -226,7 +246,8 @@ sub handler {
             comparative_maps  => join( ':', @comp_maps ),
             title             => 'Comparative Maps',
             stylesheet        => $self->stylesheet,
-            included_features => { map { $_, 1 } @feature_types },
+            selected_maps     => { map { $_, 1 } @ref_map_aids   },
+            included_features => { map { $_, 1 } @feature_types  },
             included_evidence => { map { $_, 1 } @evidence_types },
             feature_types     => join( ',', @feature_types ),
             evidence_types    => join( ',', @evidence_types ),
