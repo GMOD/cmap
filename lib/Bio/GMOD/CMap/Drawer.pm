@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.67 2004-06-09 15:02:39 mwz444 Exp $
+# $Id: Drawer.pm,v 1.68 2004-06-10 12:56:20 mwz444 Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.67 $)[-1];
+$VERSION = (qw$Revision: 1.68 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -641,7 +641,7 @@ Lays out the image and writes it to the file system, set the "image_name."
             }
             elsif ( $ft->{'shape'} eq 'span' ) {
                 my @temp_drawing_data;
-                span(
+                Bio::GMOD::CMap::Drawer::Glyph->span(
                     drawing_data => \@temp_drawing_data,
                     x_pos2 => $feature_x + 5,
                     x_pos1 => $feature_x + 3,
@@ -655,7 +655,7 @@ Lays out the image and writes it to the file system, set the "image_name."
             }
             elsif ( $ft->{'shape'} eq 'up-arrow' ) {
                 my @temp_drawing_data;
-                up_arrow(
+                Bio::GMOD::CMap::Drawer::Glyph->up_arrow(
                     drawing_data => \@temp_drawing_data,
                     x_pos2 => $feature_x + 5,
                     x_pos1 => $feature_x + 3,
@@ -669,7 +669,7 @@ Lays out the image and writes it to the file system, set the "image_name."
             }
             elsif ( $ft->{'shape'} eq 'down-arrow' ) {
                 my @temp_drawing_data;
-                down_arrow(
+                Bio::GMOD::CMap::Drawer::Glyph->down_arrow(
                     drawing_data => \@temp_drawing_data,
                     x_pos2 => $feature_x + 5,
                     x_pos1 => $feature_x + 3,
@@ -683,7 +683,7 @@ Lays out the image and writes it to the file system, set the "image_name."
             }
             elsif ( $ft->{'shape'} eq 'double-arrow' ) {
                 my @temp_drawing_data;
-                down_arrow(
+                Bio::GMOD::CMap::Drawer::Glyph->down_arrow(
                     drawing_data => \@temp_drawing_data,
                     x_pos2 => $feature_x + 5,
                     x_pos1 => $feature_x + 3,
@@ -697,7 +697,7 @@ Lays out the image and writes it to the file system, set the "image_name."
             }
             elsif ( $ft->{'shape'} eq 'box' ) {
                 my @temp_drawing_data;
-                box(
+                Bio::GMOD::CMap::Drawer::Glyph->box(
                     drawing_data => \@temp_drawing_data,
                     x_pos2 => $feature_x + 10,
                     x_pos1 => $feature_x ,
@@ -711,7 +711,7 @@ Lays out the image and writes it to the file system, set the "image_name."
             }
             elsif ( $ft->{'shape'} eq 'dumbbell' ) {
                 my @temp_drawing_data;
-                dumbell(
+                Bio::GMOD::CMap::Drawer::Glyph->dumbell(
                     drawing_data => \@temp_drawing_data,
                     x_pos2 => $feature_x + 5,
                     x_pos1 => $feature_x + 3,
@@ -725,7 +725,7 @@ Lays out the image and writes it to the file system, set the "image_name."
             }
             elsif ( $ft->{'shape'} eq 'filled-box' ) {
                 my @temp_drawing_data;
-                filled_box(
+                Bio::GMOD::CMap::Drawer::Glyph->filled_box(
                     drawing_data => \@temp_drawing_data,
                     x_pos2 => $feature_x + 7,
                     x_pos1 => $feature_x + 3,
@@ -739,7 +739,7 @@ Lays out the image and writes it to the file system, set the "image_name."
             }
             elsif ( $ft->{'shape'} eq 'in-triangle' ) {
                 my @temp_drawing_data;
-                in_triangle(
+                Bio::GMOD::CMap::Drawer::Glyph->in_triangle(
                     drawing_data => \@temp_drawing_data,
                     x_pos2 => $feature_x + 6,
                     x_pos1 => $feature_x + 3,
@@ -753,7 +753,7 @@ Lays out the image and writes it to the file system, set the "image_name."
             }
             elsif ( $ft->{'shape'} eq 'out-triangle' ) {
                 my @temp_drawing_data;
-                out_triangle(
+                Bio::GMOD::CMap::Drawer::Glyph->out_triangle(
                     drawing_data => \@temp_drawing_data,
                     x_pos2 => $feature_x + 6,
                     x_pos1 => $feature_x + 3,

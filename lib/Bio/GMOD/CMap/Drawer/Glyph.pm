@@ -21,26 +21,28 @@ This module contains methods for drawing glyphs.
 use strict;
 use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
-require Exporter;
+use Regexp::Common;
+require Class::Base;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
-use base 'Exporter';
+use base 'Class::Base';
 
-my @subs = qw[
-  line
-  span
-  up_arrow
-  down_arrow
-  double_arrow
-  dumbell
-  box
-  filled_box
-  in_triangle
-  out_triangle
-];
-@EXPORT_OK = @subs;
-@EXPORT    = @subs;
+#my @subs = qw[
+#  line
+#  span
+#  up_arrow
+#  down_arrow
+#  double_arrow
+#  dumbell
+#  box
+#  filled_box
+#  in_triangle
+#  out_triangle
+#  read_depth
+#];
+#@EXPORT_OK = @subs;
+#@EXPORT    = @subs;
 
 # ------------------------------------
 sub line {
@@ -53,13 +55,14 @@ sub line {
                                                                                 
 =cut
 
-    my %args         = @_;
+    my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
     my $x_pos2 = $args{'x_pos2'};
     my $x_pos1 = $args{'x_pos1'};
     my $y_pos1       = $args{'y_pos1'};
     my $y_pos2       = $args{'y_pos2'};
     my $color        = $args{'color'};
+    my $name        = $args{'name'};
     my $label_side   = $args{'label_side'} || RIGHT;
     my @coords;
     my $reverse = $label_side eq RIGHT ? -1 : 1;
@@ -80,13 +83,14 @@ sub span {
                                                                                 
 =cut
 
-    my %args         = @_;
+    my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
     my $x_pos2 = $args{'x_pos2'};
     my $x_pos1 = $args{'x_pos1'};
     my $y_pos1       = $args{'y_pos1'};
     my $y_pos2       = $args{'y_pos2'};
     my $color        = $args{'color'};
+	my $name        = $args{'name'};
     my $label_side   = $args{'label_side'} || RIGHT;
     my @coords;
     my $reverse = $label_side eq RIGHT ? -1 : 1;
@@ -127,13 +131,14 @@ sub up_arrow {
                                                                                 
 =cut
 
-    my %args         = @_;
+    my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
     my $x_pos2 = $args{'x_pos2'};
     my $x_pos1 = $args{'x_pos1'};
     my $y_pos1       = $args{'y_pos1'};
     my $y_pos2       = $args{'y_pos2'};
     my $color        = $args{'color'};
+	my $name        = $args{'name'};
     my $label_side   = $args{'label_side'} || RIGHT;
     my @coords;
     push @$drawing_data,
@@ -160,13 +165,14 @@ sub down_arrow {
                                                                                 
 =cut
 
-    my %args         = @_;
+    my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
     my $x_pos2 = $args{'x_pos2'};
     my $x_pos1 = $args{'x_pos1'};
     my $y_pos1       = $args{'y_pos1'};
     my $y_pos2       = $args{'y_pos2'};
     my $color        = $args{'color'};
+	my $name        = $args{'name'};
     my $label_side   = $args{'label_side'} || RIGHT;
     my @coords;
     push @$drawing_data,
@@ -193,13 +199,14 @@ sub double_arrow {
                                                                                 
 =cut
 
-    my %args         = @_;
+    my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
     my $x_pos2 = $args{'x_pos2'};
     my $x_pos1 = $args{'x_pos1'};
     my $y_pos1       = $args{'y_pos1'};
     my $y_pos2       = $args{'y_pos2'};
     my $color        = $args{'color'};
+	my $name        = $args{'name'};
     my $label_side   = $args{'label_side'} || RIGHT;
 
     # my $= $args{''};
@@ -231,13 +238,14 @@ sub dumbell {
                                                                                 
 =cut
 
-    my %args         = @_;
+    my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
     my $x_pos2 = $args{'x_pos2'};
     my $x_pos1 = $args{'x_pos1'};
     my $y_pos1       = $args{'y_pos1'};
     my $y_pos2       = $args{'y_pos2'};
     my $color        = $args{'color'};
+	my $name        = $args{'name'};
     my $label_side   = $args{'label_side'} || RIGHT;
     my @coords;
     push @$drawing_data,
@@ -273,13 +281,14 @@ sub box {
                                                                                 
 =cut
 
-    my %args         = @_;
+    my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
     my $x_pos2 = $args{'x_pos2'};
     my $x_pos1 = $args{'x_pos1'};
     my $y_pos1       = $args{'y_pos1'};
     my $y_pos2       = $args{'y_pos2'};
     my $color        = $args{'color'};
+	my $name        = $args{'name'};
     my $label_side   = $args{'label_side'} || RIGHT;
     my @coords;
 
@@ -303,13 +312,14 @@ sub filled_box {
                                                                                 
 =cut
 
-    my %args         = @_;
+    my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
     my $x_pos2 = $args{'x_pos2'};
     my $x_pos1 = $args{'x_pos1'};
     my $y_pos1       = $args{'y_pos1'};
     my $y_pos2       = $args{'y_pos2'};
     my $color        = $args{'color'};
+	my $name        = $args{'name'};
     my $label_side   = $args{'label_side'} || RIGHT;
     my @coords;
     push @$drawing_data,
@@ -335,7 +345,7 @@ sub filled_box {
 
 # ------------------------------------
 sub in_triangle {
-    my %args       = @_;
+    my ( $self, %args ) = @_;
     my $label_side = $args{'label_side'} || RIGHT;
 
     if ( $label_side eq LEFT ) {
@@ -348,15 +358,14 @@ sub in_triangle {
 
 # ------------------------------------
 sub out_triangle {
-    my %args       = @_;
+    my ( $self, %args ) = @_;
     my $label_side = $args{'label_side'} || RIGHT;
 
     if ( $label_side eq RIGHT ) {
         return right_facing_triangle(%args);
     }
     else {
-        return left_facing_triangle(%args);
-    }
+        return left_facing_triangle(%args); }
 }
 
 # ------------------------------------
@@ -370,13 +379,14 @@ sub right_facing_triangle {
                                                                                 
 =cut
 
-    my %args         = @_;
+    my (  %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
     my $x_pos2 = $args{'x_pos2'};
     my $x_pos1 = $args{'x_pos1'};
     my $y_pos1       = $args{'y_pos1'};
     my $y_pos2       = $args{'y_pos2'};
     my $color        = $args{'color'};
+	my $name        = $args{'name'};
     my $label_side   = $args{'label_side'} || RIGHT;
     my @coords;
 
@@ -412,20 +422,19 @@ sub right_facing_triangle {
 sub left_facing_triangle {
 
 =pod
-                                                                                
-=head2
-                                                                                
+                                                                                =head2 
                                                                                 
                                                                                 
 =cut
 
-    my %args         = @_;
+    my (  %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
     my $x_pos2 = $args{'x_pos2'};
     my $x_pos1 = $args{'x_pos1'};
     my $y_pos1       = $args{'y_pos1'};
     my $y_pos2       = $args{'y_pos2'};
     my $color        = $args{'color'};
+	my $name        = $args{'name'};
     my $label_side   = $args{'label_side'} || RIGHT;
     my @coords;
 
@@ -461,6 +470,53 @@ sub left_facing_triangle {
 
     return \@coords;
 }
+# ------------------------------------
+sub read_depth {
+
+=pod
+                                                                                
+=head2
+                                                                                
+                                                                                
+                                                                                
+=cut
+
+    my ( $self, %args ) = @_;
+    my $drawing_data = $args{'drawing_data'};
+    my $x_pos2 = $args{'x_pos2'};
+    my $x_pos1 = $args{'x_pos1'};
+    my $y_pos1       = $args{'y_pos1'};
+    my $y_pos2       = $args{'y_pos2'};
+    my $color        = $args{'color'};
+	my $name        = $args{'name'};
+    my $label_side   = $args{'label_side'} || RIGHT;
+    my @coords;
+    my $reverse = $label_side eq RIGHT ? -1 : 1;
+
+    if ($name =~ $RE{num}{real}){
+        $x_pos2 = $x_pos1+($name * $reverse);
+    }
+    else{
+        $x_pos2 = $x_pos1;
+    }
+
+    push @$drawing_data,
+      [
+        LINE, $x_pos2,
+        $y_pos1, $x_pos2,
+        $y_pos2, $color,
+      ];
+
+    if ( $reverse > 0 ) {
+        @coords = ( $x_pos1, $y_pos1, $x_pos2, $y_pos2 );
+    }
+    else {
+        @coords = ( $x_pos2, $y_pos1, $x_pos1, $y_pos2 );
+    }
+
+    return \@coords;
+}
+
 
 1;
 

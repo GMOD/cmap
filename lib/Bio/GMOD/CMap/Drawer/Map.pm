@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.89 2004-06-09 15:02:40 mwz444 Exp $
+# $Id: Map.pm,v 1.90 2004-06-10 12:56:21 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.89 $)[-1];
+$VERSION = (qw$Revision: 1.90 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1603,6 +1603,7 @@ sub add_feature_to_map {
 #                    !$has_corr     &&          # feature has no correspondences
 #                    !$show_labels;             # not showing labels
 
+print STDERR Dumper($feature)."\n";
     my $feature_shape = $feature->{'shape'} || LINE;
     my $shape_is_triangle = $feature_shape =~ /triangle$/;
     my $fstart = $feature->{'start_position'} || 0;
@@ -1704,117 +1705,24 @@ sub add_feature_to_map {
               ? $tick_stop + $offset
               : $tick_start - $offset;
 
-            if ( $feature_shape eq 'line' ) {
-                @coords = @{span(
-                        drawing_data => \@temp_drawing_data,
-    					x_pos2 => $vert_line_x2,
-    					x_pos1 => $vert_line_x1,
-    					y_pos1=> $y_pos1,
-    					y_pos2=> $y_pos2,
-    					color => $color,
-    					label_side=> $label_side,
+            my $glyph = Bio::GMOD::CMap::Drawer::Glyph->new();
+            my $feature_glyph = $feature_shape;
+            $feature_glyph =~s/-/_/g;
+            if ($glyph->can($feature_glyph)){
+                @coords = @{$glyph->$feature_glyph(
+                    drawing_data => \@temp_drawing_data,
+                    x_pos2 => $vert_line_x2,
+                    x_pos1 => $vert_line_x1,
+                    y_pos1=> $y_pos1,
+                    y_pos2=> $y_pos2,
+                    color => $color,
+                    name => $feature->{'feature_name'},
+                    label_side=> $label_side,
                 )};
             }
-            elsif ( $feature_shape eq 'span' ) {
-                @coords = @{span(
-                        drawing_data => \@temp_drawing_data,
-    					x_pos2 => $vert_line_x2,
-    					x_pos1 => $vert_line_x1,
-    					y_pos1=> $y_pos1,
-    					y_pos2=> $y_pos2,
-    					color => $color,
-    					label_side=> $label_side,
-                )};
-            }
-            elsif ( $feature_shape eq 'up-arrow' ) {
-                 @coords = @{up_arrow(
-                        drawing_data => \@temp_drawing_data,
-    					x_pos2 => $vert_line_x2,
-    					x_pos1 => $vert_line_x1,
-    					y_pos1=> $y_pos1,
-    					y_pos2=> $y_pos2,
-    					color => $color,
-    					label_side=> $label_side,
-                )};
-            }
-            elsif ( $feature_shape eq 'down-arrow' ) {
-                 @coords = @{down_arrow(
-                        drawing_data => \@temp_drawing_data,
-    					x_pos2 => $vert_line_x2,
-    					x_pos1 => $vert_line_x1,
-    					y_pos1=> $y_pos1,
-    					y_pos2=> $y_pos2,
-    					color => $color,
-    					label_side=> $label_side,
-                )};
-            }
-            elsif ( $feature_shape eq 'double-arrow' ) {
-                  @coords = @{double_arrow(
-                        drawing_data => \@temp_drawing_data,
-    					x_pos2 => $vert_line_x2,
-    					x_pos1 => $vert_line_x1,
-    					y_pos1=> $y_pos1,
-    					y_pos2=> $y_pos2,
-    					color => $color,
-    					label_side=> $label_side,
-                )};
-            }
-            elsif ( $feature_shape eq 'box' ) {
-                   @coords = @{box(
-                        drawing_data => \@temp_drawing_data,
-    					x_pos2 => $vert_line_x2,
-    					x_pos1 => $vert_line_x1,
-    					y_pos1=> $y_pos1,
-    					y_pos2=> $y_pos2,
-    					color => $color,
-    					label_side=> $label_side,
-                )};
-            }
-            elsif ( $feature_shape eq 'dumbbell' ) {
-                    @coords = @{dumbell(
-                        drawing_data => \@temp_drawing_data,
-    					x_pos2 => $vert_line_x2,
-    					x_pos1 => $vert_line_x1,
-    					y_pos1=> $y_pos1,
-    					y_pos2=> $y_pos2,
-    					color => $color,
-    					label_side=> $label_side,
-                )};
-            }
-            elsif ( $feature_shape eq 'filled-box' ) {
-                    @coords = @{filled_box(
-                        drawing_data => \@temp_drawing_data,
-    					x_pos2 => $vert_line_x2,
-    					x_pos1 => $vert_line_x1,
-    					y_pos1=> $y_pos1,
-    					y_pos2=> $y_pos2,
-    					color => $color,
-    					label_side=> $label_side,
-                )};
-            }
-            elsif ( $feature_shape eq 'in-triangle') {
-                     @coords = @{in_triangle(
-                        drawing_data => \@temp_drawing_data,
-    					x_pos2 => $vert_line_x2,
-    					x_pos1 => $vert_line_x1,
-    					y_pos1=> $y_pos1,
-    					y_pos2=> $y_pos2,
-    					color => $color,
-    					label_side=> $label_side,
-                )};
-            }
-            elsif ( $feature_shape eq 'out-triangle') {
-                      @coords = @{out_triangle(
-                        drawing_data => \@temp_drawing_data,
-    					x_pos2 => $vert_line_x2,
-    					x_pos1 => $vert_line_x1,
-    					y_pos1=> $y_pos1,
-    					y_pos2=> $y_pos2,
-    					color => $color,
-    					label_side=> $label_side,
-                )};
-           }
-
+            else{
+                return $self->error("Can't draw shape '$feature_glyph'");
+            } 
             if ( $feature->{'feature_type'} eq 'chunk' ) {
                 push @$map_area_data,
                   {
