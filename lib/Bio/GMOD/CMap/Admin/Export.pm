@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::Export;
 # vim: set ft=perl:
 
-# $Id: Export.pm,v 1.4 2003-12-20 02:27:53 kycl4rk Exp $
+# $Id: Export.pm,v 1.5 2003-12-30 18:47:03 kycl4rk Exp $
 
 =pod
 
@@ -28,7 +28,7 @@ of data out of CMap.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.4 $)[-1];
+$VERSION  = (qw$Revision: 1.5 $)[-1];
 
 use Data::Dumper;
 use File::Spec::Functions;
@@ -52,24 +52,15 @@ Exports data.
 
     my ( $self, %args ) = @_;
     my $objects         = $args{'objects'};
-    my $output_dir      = $args{'output_dir'} || '.';
-    my $db              = $self->db           or die 'No database handle';
-    $LOG_FH             = $args{'log_fh'}     ||                 \*STDOUT;
+    my $output_path     = $args{'output_path'} or 
+                          return $self->error('No output path');
+    my $db              = $self->db or 
+                          return $self->error('No database handle');
+    $LOG_FH             = $args{'log_fh'} || \*STDOUT;
 
     return $self->error('No objects to export') unless @$objects;
 
-    my $out_file = catfile( $output_dir, 'cmap_dump.xml' );
-
-    if ( -e $out_file ) {
-        print "The file '$out_file' exists.  Overwrite? [Y/n] ";
-        chomp( my $answer = <STDIN> );
-        if ( $answer =~ /^[Nn]/ ) {
-            print "OK, not dumping data.\n";
-            return;
-        }
-    }
-
-    open my $out_fh, ">$out_file" or die "Can't open '$out_file'\n";
+    open my $out_fh, ">$output_path" or die "Can't open '$output_path'\n";
 
     local $| = 1;
 
@@ -209,27 +200,83 @@ sub get_cmap_evidence_type {
 # ----------------------------------------------------
 sub get_cmap_feature_correspondence {
     my ( $self, %args ) = @_;
-
-    my $db = $self->db or return;
-    my $fc = $db->selectall_arrayref(
-        q[
-            select fc.feature_correspondence_id as object_id,
-                   fc.accession_id,
-                   fc.is_enabled,
-                   f1.accession_id as feature_aid1,
-                   f1.feature_name as feature_name1,
-                   f2.accession_id as feature_aid2,
-                   f2.feature_name as feature_name2
-            from   cmap_feature_correspondence fc,
-                   cmap_feature f1,
-                   cmap_feature f2
-            where  fc.feature_id1=f1.feature_id
-            and    fc.feature_id2=f2.feature_id
-        ],
-        { Columns => {} }
+    my $map_set_ids     = join(', ', 
+        map { $_->{'map_set_id'} } @{ $args{'map_sets'} || [] }
     );
 
+    my $fc_sql = q[
+        select fc.feature_correspondence_id as object_id,
+               fc.accession_id,
+               fc.is_enabled,
+               f1.accession_id as feature_aid1,
+               f2.accession_id as feature_aid2
+        from   cmap_feature_correspondence fc,
+               cmap_feature f1,
+               cmap_feature f2,
+               cmap_map map1,
+               cmap_map map2
+        where  fc.feature_id1=f1.feature_id
+        and    f1.map_id=map1.map_id
+        and    fc.feature_id2=f2.feature_id
+        and    f2.map_id=map2.map_id      
+    ];         
+               
+    if ( $map_set_ids ) {
+        $fc_sql .= qq[ 
+            and map1.map_set_id in ($map_set_ids) 
+            and map2.map_set_id in ($map_set_ids)
+        ]; 
+    }  
+
+    my $db = $self->db or return;
+    my $fc = $db->selectall_arrayref( $fc_sql, { Columns => {} } );
+
     $self->get_attributes_and_xrefs( 'cmap_feature_correspondence', $fc );
+
+    my $evidence_sql;
+    if ( $map_set_ids )  {
+        $evidence_sql = qq[
+            select ce.correspondence_evidence_id as object_id,
+                   ce.feature_correspondence_id,
+                   ce.accession_id,
+                   ce.evidence_type_id,
+                   ce.score
+            from   cmap_correspondence_evidence ce,
+                   cmap_feature_correspondence fc,
+                   cmap_feature f1,
+                   cmap_feature f2,
+                   cmap_map map1,
+                   cmap_map map2
+            where  ce.feature_correspondence_id=fc.feature_correspondence_id
+            and    fc.feature_id1=f1.feature_id
+            and    f1.map_id=map1.map_id
+            and    fc.feature_id2=f2.feature_id
+            and    f2.map_id=map2.map_id      
+            and    map1.map_set_id in ($map_set_ids) 
+            and    map2.map_set_id in ($map_set_ids)
+        ];
+    }
+    else {
+        $evidence_sql = q[
+            select correspondence_evidence_id as object_id,
+                   feature_correspondence_id,
+                   accession_id,
+                   evidence_type_id,
+                   score
+            from   cmap_correspondence_evidence
+        ];
+    }
+
+    my $evidence = $db->selectall_arrayref( $evidence_sql, { Columns => {} } );
+    my %evidence_lookup = ();
+    for my $e ( @$evidence ) {
+        push @{ $evidence_lookup{ $e->{'object_id'} } }, $e;
+    }
+
+    for my $corr ( @$fc ) {
+        $corr->{'correspondence_evidence'} = 
+            $evidence_lookup{ $corr->{'object_id'} };
+    }
 
     return $fc;
 }
@@ -357,7 +404,7 @@ sub get_cmap_map_set {
             for my $f ( @{ $map->{'feature'} } ) {
                 $ft_ids{ $f->{'feature_type_id'} } = 1;
                 if ( defined $alias_lookup{ $f->{'object_id'} } ) {
-                    $f->{'alias'} = $alias_lookup{ $f->{'object_id'} };
+                    $f->{'feature_alias'} = $alias_lookup{ $f->{'object_id'} };
                 }
             }
 
@@ -464,6 +511,7 @@ sub get_cmap_xref {
                    xref_url
             from   cmap_xref
             where  object_id is null
+            or     object_id=0
         ],
         { Columns => {} }
     );
