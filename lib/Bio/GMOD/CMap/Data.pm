@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.62 2003-09-29 20:49:12 kycl4rk Exp $
+# $Id: Data.pm,v 1.63 2003-10-01 23:18:51 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.62 $)[-1];
+$VERSION = (qw$Revision: 1.63 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -69,7 +69,7 @@ Given an accession id for a particular table, find the internal id.  Expects:
             $id_field = $1.'_id';
         }
         else {
-            $self->error(qq[No id field and I can't figure it out]);
+            $self->error(qq[No id field and I cannot figure it out]);
         }
     }
 
@@ -694,13 +694,13 @@ Returns the data for drawing comparative maps.
 
         #
         # Go ahead and assume we can get all the features right now.
+        # Removed "alternate_name"
         #
         my $f_sql = qq[
             select   f.feature_id,
                      f.accession_id,
                      f.map_id,
                      f.feature_name,
-                     f.alternate_name,
                      f.is_landmark,
                      f.start_position,
                      f.stop_position,
@@ -1530,9 +1530,10 @@ Returns the data for the main comparative map HTML form.
                              ms.map_type_id, 
                              ms.species_id, 
                              ms.can_be_reference_map,
-                             ms.remarks,
+                             mt.accession_id as map_type_aid, 
                              mt.map_type, 
                              mt.map_units, 
+                             s.accession_id as species_aid, 
                              s.common_name as species_common_name, 
                              s.full_name as species_full_name,
                              s.ncbi_taxon_id
@@ -1546,6 +1547,16 @@ Returns the data for the main comparative map HTML form.
             );
             $sth->execute( $ref_map_set_aid );
             $ref_map_set_info = $sth->fetchrow_hashref;
+            $ref_map_set_info->{'note'} = $db->selectrow_array(
+                q[
+                    select note
+                    from   cmap_note
+                    where  table_name=?
+                    and    object_id=?
+                ],
+                {},
+                ( 'cmap_map_set', $ref_map_set_info->{'map_set_id'} )
+            );
         }
     }
 
@@ -2089,6 +2100,33 @@ Given a feature acc. id, find out all the details on it.
         "Invalid feature accession ID ($feature_aid)"
     );
 
+    $feature->{'note'} = $db->selectrow_array(
+        q[
+            select note
+            from   cmap_note
+            where  table_name=?
+            and    object_id=?
+        ],
+        {},
+        ( 'cmap_feature', $feature->{'feature_id'} )
+    );
+
+    $feature->{'aliases'} = [
+        map { $_->[0] } 
+        @{
+            $db->selectall_arrayref(
+                q[
+                    select   alias 
+                    from     cmap_feature_alias
+                    where    feature_id=?
+                    order by alias
+                ],
+                {},
+                ( $feature->{'feature_id'} )
+            )
+        }
+    ];
+
     my $correspondences = $db->selectall_arrayref(
         $sql->feature_correspondence_sql,
         { Columns => {} },
@@ -2111,7 +2149,23 @@ Given a feature acc. id, find out all the details on it.
             ],
             { Columns => {} },
             ( $corr->{'feature_correspondence_id'} )
-        )
+        );
+
+        $corr->{'aliases'} = [
+            map { $_->[0] } 
+            @{
+                $db->selectall_arrayref(
+                    q[
+                        select   alias 
+                        from     cmap_feature_alias
+                        where    feature_id=?
+                        order by alias
+                    ],
+                    {},
+                    ( $corr->{'feature_id'} )
+                )
+            }
+        ];
     }
 
     if ( $feature->{'dbxref_name'} || $feature->{'dbxref_url'} ) {
@@ -2186,6 +2240,10 @@ Given a list of feature names, find any maps they occur on.
     my $species_aids      = $args{'species_aids'};
     my $feature_type_aids = $args{'feature_type_aids'};
     my $feature_string    = $args{'features'};
+    my $page_data         = $args{'page_data'};
+    my $page_size         = $args{'page_size'};
+    my $page_no           = $args{'page_no'};
+    my $pages_per_set     = $args{'pages_per_set'};
     my @feature_names     = (
         map { 
             s/\*/%/g;       # turn stars into SQL wildcards
@@ -2193,7 +2251,7 @@ Given a list of feature names, find any maps they occur on.
             s/^\s+|\s+$//g; # remove leading/trailing whitespace
             s/"//g;         # remove double quotes
             s/'/\\'/g;      # backslash escape single quotes
-            uc $_ || ()     # uppercase what's left
+            $_ || ()        
         }
         parse_words( $feature_string )
     );
@@ -2208,45 +2266,54 @@ Given a list of feature names, find any maps they occur on.
     # We'll get the feature ids first.  Use "like" in case they've
     # included wildcard searches.
     #
-    my @found_features = ();
+    my %features = ();
     for my $feature_name ( @feature_names ) {
         my $comparison = $feature_name =~ m/%/ ? 'like' : '=';
-        my $where      = $search_field eq 'both'
-            ? qq[
+        my $where;
+        if ( $search_field eq 'feature_name' ) {
+            $feature_name = uc $feature_name;
+            $where = qq[
                 where  (
                     upper(f.feature_name) $comparison '$feature_name'
                     or
-                    upper(f.alternate_name) $comparison '$feature_name'
+                    upper(fa.alias) $comparison '$feature_name'
                 )
-            ]
-            : qq[where upper(f.$search_field) $comparison '$feature_name']
-        ;
+            ];
+        }
+        else {
+            $where = qq[where f.accession_id $comparison '$feature_name'];
+        }
 
+        #
+        # Removed "alternate_name"
+        #
         my $sql = qq[
-            select f.accession_id as feature_aid,
-                   f.feature_name, 
-                   f.alternate_name, 
-                   f.start_position,
-                   f.stop_position,
-                   ft.feature_type,
-                   map.accession_id as map_aid,
-                   map.map_name, 
-                   ms.accession_id as map_set_aid, 
-                   ms.short_name as map_set_name,
-                   ms.can_be_reference_map,
-                   s.species_id,
-                   s.common_name as species_name
-            from   cmap_feature f, 
-                   cmap_feature_type ft,
-                   cmap_map map,
-                   cmap_map_set ms,
-                   cmap_species s
+            select    f.feature_id,
+                      f.accession_id as feature_aid,
+                      f.feature_name, 
+                      f.start_position,
+                      f.stop_position,
+                      ft.feature_type,
+                      map.accession_id as map_aid,
+                      map.map_name, 
+                      ms.accession_id as map_set_aid, 
+                      ms.short_name as map_set_name,
+                      ms.can_be_reference_map,
+                      s.species_id,
+                      s.common_name as species_name
+            from      cmap_feature f, 
+                      cmap_feature_type ft,
+                      cmap_map map,
+                      cmap_map_set ms,
+                      cmap_species s
+            left join cmap_feature_alias fa
+            on        f.feature_id=fa.feature_id
             $where
-            and    f.feature_type_id=ft.feature_type_id
-            and    f.map_id=map.map_id
-            and    map.map_set_id=ms.map_set_id
-            and    ms.is_enabled=1
-            and    ms.species_id=s.species_id
+            and       f.feature_type_id=ft.feature_type_id
+            and       f.map_id=map.map_id
+            and       map.map_set_id=ms.map_set_id
+            and       ms.is_enabled=1
+            and       ms.species_id=s.species_id
         ];
 
         if ( @$feature_type_aids ) {
@@ -2261,11 +2328,73 @@ Given a list of feature names, find any maps they occur on.
             ')';
         }
 
-        $sql .= "order by $order_by";
+print STDERR "sql=\n$sql\n";
 
-        push @found_features, @{ 
-            $db->selectall_arrayref( $sql, { Columns => {} } ) 
-        };
+        my $found = $db->selectall_hashref( $sql, 'feature_id' );
+        while ( my ( $id, $f ) = each %$found ) {
+            $features{ $id } = $f;
+        }
+    }
+
+    #
+    # Perform sort on accumulated results.
+    #
+    my @found_features = ();
+    if ( $order_by eq 'start_position' ) {
+        @found_features = 
+            map  { $_->[1] }
+            sort { $a->[0] <=> $b->[0] }
+            map  { [ $_->{ $order_by }, $_ ] }
+            values %features
+        ;
+    }
+    else {
+        my @sort_fields = split( /,/, $order_by );
+        @found_features = 
+            map  { $_->[1] }
+            sort { $a->[0] cmp $b->[0] }
+            map  { [ join('', @{ $_ }{ @sort_fields } ), $_ ] }
+            values %features
+        ;
+    }
+
+    #
+    # Page the data here so as to make the "IN" statement 
+    # below managable.
+    #
+    my $pager = Data::Pageset->new( {
+        total_entries    => scalar @found_features,
+        entries_per_page => $page_size,
+        current_page     => $page_no,
+        pages_per_set    => $pages_per_set,
+    } );
+
+    if ( $page_data && @found_features ) {
+        @found_features = $pager->splice( \@found_features ) 
+    }
+
+    my @feature_ids = map { $_->{'feature_id'} } @found_features;
+    if ( @feature_ids ) {
+        my $aliases = $db->selectall_arrayref(
+            q[
+                select fa.feature_id, fa.alias
+                from   cmap_feature_alias fa
+                where  feature_id in (].
+                join(',', @feature_ids).q[)
+            ],
+        );
+
+        my %aliases;
+        for my $alias ( @$aliases ) {
+            push @{ $aliases{ $alias->[0] } }, $alias->[1];
+        }
+
+        for my $f ( @found_features ) {
+            $f->{'aliases'} = [
+                sort { lc $a cmp lc $b } 
+                @{ $aliases{ $f->{'feature_id'} } || [] }
+            ];
+        }
     }
 
     #
@@ -2300,6 +2429,7 @@ Given a list of feature names, find any maps they occur on.
         data          => \@found_features,
         species       => $species,
         feature_types => $feature_types,
+        pager         => $pager,
     };
 }
 
@@ -2322,8 +2452,7 @@ Return data for a list of feature type acc. IDs.
                ft.accession_id as feature_type_aid,
                ft.feature_type,
                ft.shape,
-               ft.color,
-               ft.description
+               ft.color
         from   cmap_feature_type ft
     ];
 
@@ -2334,6 +2463,22 @@ Return data for a list of feature type acc. IDs.
     }
 
     my $feature_types = $db->selectall_arrayref( $sql, { Columns => {} } );
+
+    my $notes = $db->selectall_hashref(
+        q[
+            select object_id, note
+            from   cmap_note
+            where  table_name=?
+        ],
+        'object_id',
+        {},
+        ( 'cmap_feature_type' )
+    );
+
+    for my $ft ( @$feature_types ) {
+        $ft->{'note'} = $notes->{ $ft->{'feature_type_id'} }{'note'} || '';
+    }
+
     my $default_color = $self->config('feature_color');
 
     for my $ft ( @$feature_types ) {
@@ -2387,9 +2532,9 @@ Returns the data for drawing comparative maps.
                  ms.map_type_id, 
                  ms.species_id, 
                  ms.can_be_reference_map,
-                 ms.remarks,
                  mt.map_type, 
                  mt.map_units, 
+                 s.accession_id as species_aid, 
                  s.common_name, 
                  s.full_name,
                  s.ncbi_taxon_id
@@ -2444,6 +2589,17 @@ Returns the data for drawing comparative maps.
         $map_set_sql, { Columns => {} } 
     );
 
+    my $notes = $db->selectall_hashref( 
+        q[
+            select object_id, note
+            from   cmap_note
+            where  table_name=?
+        ],
+        'object_id',
+        {},
+        ( 'cmap_map_set' )
+    );
+
     my %map_lookup;
     for my $map ( @$maps ) {
         push @{ $map_lookup{ $map->{'map_set_id'} } }, $map;
@@ -2466,6 +2622,7 @@ Returns the data for drawing comparative maps.
             $ft_lookup{ $map_set->{'map_set_id'} };
         next unless $map_set->{'can_be_reference_map'};
         $map_set->{'maps'} = $map_lookup{ $map_set->{'map_set_id'} };
+        $map_set->{'note'} = $notes->{ $map_set->{'map_set_id'} }{'note'};
     }
 
     my $species = $db->selectall_arrayref(
@@ -2567,7 +2724,7 @@ Returns the detail info for a map.
     my $slots                  = $args{'slots'};
     my $map                    = $slots->{'0'};
     my $highlight              = $args{'highlight'}             || '';
-    my $order_by               = $args{'order_by'}          || 'start_position';
+    my $order_by               = $args{'order_by'} || 'f.start_position';
     my $comparative_map_field  = $args{'comparative_map_field'} || '';
     my $comparative_map_aid    = $args{'comparative_map_aid'}   || '';
     my $page_size              = $args{'page_size'}             || 25;
@@ -2763,8 +2920,8 @@ Returns the detail info for a map.
         $feature->{'highlight_color'} = 
             $highlight_hash->{ uc $feature->{'feature_name'} }
             ||
-            $highlight_hash->{ $feature->{'alternate_name'} }
-            ||
+#            $highlight_hash->{ $feature->{'alternate_name'} }
+#            ||
             $highlight_hash->{ $feature->{'accession_id'} }
             ? $self->config('feature_highlight_bg_color')
             : '';
@@ -2818,6 +2975,118 @@ Returns the detail info for a map.
         comparative_maps  => \@comparative_maps,
         pager             => $pager,
     };
+}
+
+# ----------------------------------------------------
+sub map_type_viewer_data {
+
+=pod
+
+=head2 map_type_viewer_data
+
+Returns data on map types.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my @map_type_aids   = @{ $args{'map_type_aids'} || [] };
+    my $db              = $self->db or return;
+
+    my $sql = q[
+        select   mt.map_type_id,
+                 mt.accession_id as map_type_aid,
+                 mt.map_type,
+                 mt.map_units,
+                 mt.is_relational_map,
+                 mt.shape,
+                 mt.color,
+                 mt.width,
+                 mt.display_order
+        from     cmap_map_type mt 
+    ];
+
+    if ( @map_type_aids ) {
+        $sql .= 'where mt.accession_id in ('.
+            join( ',', map { qq['$_'] } @map_type_aids ) . 
+        ') ';
+    }
+
+    $sql .= 'order by display_order, map_type';
+
+    my $map_type = $db->selectall_arrayref( $sql, { Columns => {} } );
+
+    my $notes = $db->selectall_hashref(
+        q[
+            select object_id, note
+            from   cmap_note
+            where  table_name=?
+        ],
+        'object_id',
+        {},
+        ( 'cmap_map_type' )
+    );
+
+    for my $mt ( @$map_type ) {
+        $mt->{'width'} ||= DEFAULT->{'map_width'};
+        $mt->{'shape'} ||= DEFAULT->{'map_shape'};
+        $mt->{'color'} ||= DEFAULT->{'map_color'};
+        $mt->{'note'} = $notes->{ $mt->{'map_type_id'} }{'note'} || '';
+    }
+
+    return $map_type;
+}
+
+# ----------------------------------------------------
+sub species_viewer_data {
+
+=pod
+
+=head2 species_viewer_data
+
+Returns data on species.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my @species_aids    = @{ $args{'species_aids'} || [] };
+    my $db              = $self->db or return;
+
+    my $sql = q[
+        select   s.species_id,
+                 s.accession_id as species_aid,
+                 s.common_name,
+                 s.full_name,
+                 s.display_order,
+                 s.ncbi_taxon_id
+        from     cmap_species s 
+    ];
+
+    if ( @species_aids ) {
+        $sql .= 'where s.accession_id in ('.
+            join( ',', map { qq['$_'] } @species_aids ) . 
+        ') ';
+    }
+
+    $sql .= 'order by display_order, common_name';
+
+    my $species = $db->selectall_arrayref( $sql, { Columns => {} } );
+
+    my $notes = $db->selectall_hashref(
+        q[
+            select object_id, note
+            from   cmap_note
+            where  table_name=?
+        ],
+        'object_id',
+        {},
+        ( 'cmap_species' )
+    );
+
+    for my $s ( @$species ) {
+        $s->{'note'} = $notes->{ $s->{'species_id'} }{'note'} || '';
+    }
+
+    return $species;
 }
 
 # ----------------------------------------------------
