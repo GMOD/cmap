@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.132 2004-10-12 18:10:37 mwz444 Exp $
+# $Id: Map.pm,v 1.133 2004-10-18 19:01:43 kycl4rk Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.132 $)[-1];
+$VERSION = (qw$Revision: 1.133 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -936,18 +936,17 @@ sub layout {
 Lays out the map.
 
 Variable Info:
-    $map_drawing_data{$map_id} holds the un-offset drawing data for each map;
-    $map_area_data{$map_id} holds the un-offset area data for each map;
-    $map_placement_data{$map_id} holds the boundary and map_coords for each map.
-        {'bounds'} holds the boundary data for the whole thing, labels, toppers,
-                   footers, everything that needs to avoid collision.
-        {'map_coords'} holds the coords of just the map (ie the box/dumbell/I-beam)
-    $features_with_corr_by_map_id{$map_id};
-    
+
+  $map_drawing_data{$map_id} holds the un-offset drawing data for each map;
+  $map_area_data{$map_id} holds the un-offset area data for each map;
+  $map_placement_data{$map_id} holds the boundary and map_coords for each map.
+    {'bounds'} holds the boundary data for the whole thing, labels, toppers,
+               footers, everything that needs to avoid collision.
+    {'map_coords'} holds the coords of just the map (ie the box/dumbell/I-beam)
+  $features_with_corr_by_map_id{$map_id};
 
 =cut
 
-    #p#rint S#TDERR "layout()\n";
     my $self         = shift;
     my $base_y       = $self->base_y;
     my $slot_no      = $self->slot_no;
@@ -1479,15 +1478,17 @@ Variable Info:
                             .']';
                     }
                     my $field_type='map_set_aid';
-                    if ($field eq 'maps'){
+                    if ($field eq 'maps') {
                         $field_type='map_aid';
                     }
-                    my $link = join( '%3d', $slot_no, $field_type, join(',',@aid_info) );
+                    my $link = join( '%3d', 
+                        $slot_no, $field_type, join(',',@aid_info) 
+                    );
                     push @cmaps, $link;
                 }
             }
 
-            my $delete_url=$self->create_viewer_link(
+            my $delete_url        =  $self->create_viewer_link(
                 ref_map_set_aid   => $slots->{'0'}{'map_set_aid'},
                 ref_map_aids      => $ref_map_aids_hash,
                 ref_map_set_aids  => $ref_map_set_aids_hash,
@@ -1503,7 +1504,8 @@ Variable Info:
                 image_type        => $drawer->image_type,
                 flip              => $flip_str,
                 data_source       => $drawer->data_source,
-                );
+                url               => $map_viewer_url,
+            );
 
             push @map_buttons,
               {
@@ -1523,7 +1525,7 @@ Variable Info:
                 $flip_comparative_map_hash{$slot_no}=$slots->{$slot_no};
             }
 
-            my $flip_url=$self->create_viewer_link(
+            my $flip_url          =  $self->create_viewer_link(
                 ref_map_set_aid   => $slots->{'0'}{'map_set_aid'},
                 ref_map_aids      => $ref_map_aids_hash,
                 ref_map_set_aids  => $ref_map_set_aids_hash,
@@ -1539,7 +1541,8 @@ Variable Info:
                 image_type        => $drawer->image_type,
                 flip              => $flipping_flip_str,
                 data_source       => $drawer->data_source,
-                );
+                url               => $map_viewer_url,
+            );
 
             push @map_buttons,
               {
