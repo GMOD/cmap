@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.217 2005-03-15 15:04:12 mwz444 Exp $
+# $Id: Data.pm,v 1.218 2005-03-16 17:47:31 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.217 $)[-1];
+$VERSION = (qw$Revision: 1.218 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -3324,10 +3324,11 @@ Given a list of feature names, find any maps they occur on.
     #
     # Get the feature types.
     #
-    my $feature_types =
-      $self->fake_selectall_arrayref( $feature_type_data,
-        'feature_type_accession as feature_type_aid',
-        'feature_type' );
+    my $feature_types = $self->fake_selectall_arrayref(
+        $feature_type_data,
+        'feature_type',
+        'feature_type_accession as feature_type_aid'
+    );
 
     return {
         data          => \@found_features,
