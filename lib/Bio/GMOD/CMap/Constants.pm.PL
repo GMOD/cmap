@@ -18,14 +18,14 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.6 2004-02-13 22:55:11 kycl4rk Exp $
+# $Id: Constants.pm.PL,v 1.7 2004-02-14 03:04:40 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.6 $)[-1];
+$VERSION = (qw$Revision: 1.7 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -284,7 +284,7 @@ use constant DEFAULT => {
     #
     # Where the main viewer is located.
     #
-    cmap_viewer_url => '/cmap/viewer',
+    cmap_viewer_url => 'viewer',
 
     #
     # The color of the line connecting things.
@@ -307,7 +307,7 @@ use constant DEFAULT => {
     #
     # URL for evidence type info
     #
-    evidence_type_details_url => '/cmap/evidence_type_info?evidence_type_aid=',
+    evidence_type_details_url => 'evidence_type_info?evidence_type_aid=',
 
     #
     # Color of a feature if not defined
@@ -318,7 +318,7 @@ use constant DEFAULT => {
     #
     # Where to see feature details.
     #
-    feature_details_url => '/cmap/feature?feature_aid=',
+    feature_details_url => 'feature?feature_aid=',
 
     #
     # Color of box around a highlighted feature.
@@ -355,7 +355,7 @@ use constant DEFAULT => {
     #
     # Where to see feature type details.
     #
-    feature_type_details_url => '/cmap/feature_type_info?feature_type_aid=',
+    feature_type_details_url => 'feature_type_info?feature_type_aid=',
     
     #
     # The size of the map image.  Note that there are options on the
@@ -389,9 +389,9 @@ use constant DEFAULT => {
 
     #
     # The URL for map set info.
-    # Default: /cmap/map_set_info
+    # Default: map_set_info
     #
-    map_set_info_url => '/cmap/map_set_info',
+    map_set_info_url => 'map_set_info',
 
     #
     # The titles to put atop the individual maps, e.g., "Wheat-2M."
@@ -469,7 +469,7 @@ use constant DEFAULT => {
     #
     # Where to see more on a map type.
     #
-    map_details_url => '/cmap/map_details',
+    map_details_url => 'map_details',
 
     #
     # The colors of the slot background and border.
