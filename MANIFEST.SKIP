@@ -1,1 +1,11 @@
 .*CVS.*
+.*.swp
+.*.bak
+.*.old
+^Makefile$
+^blib/
+_blib$
+^data/
+^#
+(^|/)\.
+cmap_install.conf

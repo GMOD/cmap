@@ -1,6 +1,6 @@
                       Revision history for CMap
 
-0.08   2003-08-01 
+0.08   2003-08-15
 
 -   Added ability to view all maps in reference map set
 -   Added "cmap_feature_note" table to allow free text notes on features

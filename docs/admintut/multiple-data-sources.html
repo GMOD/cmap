@@ -11,10 +11,29 @@
 <a href="drawing-options.html">&lt; Drawing Options</a>
 <hr>
 
+<p>
 You can set up many CMap databases (each running on a different
 RDBMS!) and simply point CMap to each of them.  This is especially
 helpful if you would like to maintain spaces for testing, staging,
 and production.
+</p>
+
+<p>
+The default &quot;cmap.conf&quot; file shows how to define more than
+one datasource and describes each setting of the
+<code>&lt;database&gt;</code> section.  If you only wish to have one
+database connection defined, simply delete the lines for the one you
+don't want or comment it out by placing hash signs at the beginning of
+the lines.
+</p>
+
+<p>
+When you have more than one datasource defined, you should
+automatically see a "Data Source" menu in the upper-right corner of
+the CMap pages (and in the top-center on the admin home page).  This
+will allow users to switch between different databases, each of which
+is completely independent from the others.
+</p>
 
 <hr>
 <a href="index.html">Index</a> |

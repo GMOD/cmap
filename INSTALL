@@ -1,6 +1,6 @@
                               CMAP INSTALL
 
-                             $Revision: 1.25 $
+                             $Revision: 1.26 $
 
 1.      QUICK START
 
@@ -10,7 +10,7 @@ the very abbreviated explanation of how to install CMap:
 *   Install libpng, libjpeg and libgd
 *   Install MySQL, PostgreSQL, Oracle or Sybase, create tables with
     contents of "sql" directory, grant appropriate user permissions
-*   Install Perl 5.6.1 or greater, Apache 1.3.26 and mod_perl 1.27
+*   Install Perl 5.6.1 or greater, Apache 1.3.27 and mod_perl 1.28
 *   Execute "perl Makefile.PL" and answer the questions
 *   Execute "make && make install" being sure to install module dependencies
 *   Add contents of "httpd.conf" and "perlstartup.pl" in "conf"
@@ -93,10 +93,10 @@ basic triumvirate of commands:
 There are quite a number of prerequisites to getting this running:
 
     * libgd 
-    * a database (MySQL 3.23.x or Oracle 9x) 
+    * a database (MySQL 3.23.x/4.1, Oracle 9x, Sybase, PostgreSQL) 
     * Perl (5.6.1 or higher)
-    * Apache (version 1.3.26 suggested)
-    * mod_perl (version 1.27 suggested)
+    * Apache (version 1.3.27 suggested)
+    * mod_perl (version 1.28 suggested)
 
 6.      LIBGD
 
@@ -354,8 +354,8 @@ installed or because you need to upgrade or because you're a purist
 or just because it's fun, you'll be happy to know that it's quite
 easy.  Both are available from the Apache mirrors which you can find
 by looking on the Apache website, http://www.apache.org/.  Apache
-can be found in "/pub/dist/httpd/apache_1.3.26.tar.gz" and mod_perl
-can be found in "/pub/dist/perl/mod_perl-1.27.tar.gz."  
+can be found in "/pub/dist/httpd/apache_1.3.27.tar.gz" and mod_perl
+can be found in "/pub/dist/perl/mod_perl-1.28.tar.gz."  
 
 Note: This application has only been developed under the Apache and
       mod_perl 1.x trees. Apache and mod_perl 2.x are exciting new
@@ -379,17 +379,17 @@ Note: The backslashes ("\") above tell the command-line that you are
     # cd /usr/local/downloads
     # ncftp ftp.tux.org
     ncftp > cd pub/net/apache/dist/httpd
-    ncftp > get apache_1.3.26.tar.gz
+    ncftp > get apache_1.3.27.tar.gz
     ncftp > cd ../perl
-    ncftp > get mod_perl-1.27.tar.gz
+    ncftp > get mod_perl-1.28.tar.gz
     ncftp > quit
     # cd /usr/local/src
-    # tar zxvf ../downloads/apache_1.3.26.tar.gz
-    # tar zxvf ../downloads/mod_perl-1.27.tar.gz
-    # cd mod_perl-1.27
+    # tar zxvf ../downloads/apache_1.3.27.tar.gz
+    # tar zxvf ../downloads/mod_perl-1.28.tar.gz
+    # cd mod_perl-1.28
     # perl Makefile.PL \
     > APACHE_PREFIX=/usr/local/apache \
-    > APACHE_SRC=../apache_1.3.26/src \
+    > APACHE_SRC=../apache_1.3.27/src \
     > DO_HTTPD=1 \
     > EVERYTHING=1 \
     > USE_APACI=1

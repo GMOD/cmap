@@ -24,5 +24,8 @@ extend it, read "docs/CODE_OVERVIEW."
 To understand how to load and curate data as well as how to generally
 administrate CMap, please read "docs/ADMINISTRATION."
 
+For a guided tour of setting up maps and features and such, use a web
+browser to view the tutorial in "docs/admintut."
+
 If you have questions, write the CMap development list at
 "gmod-cmap@lists.sourceforge.net" or the author at "kclark@cshl.org".
