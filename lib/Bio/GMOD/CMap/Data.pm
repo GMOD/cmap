@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.96 2004-03-12 20:56:28 kycl4rk Exp $
+# $Id: Data.pm,v 1.97 2004-03-12 21:06:50 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.96 $)[-1];
+$VERSION = (qw$Revision: 1.97 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -2518,6 +2518,19 @@ Given a list of feature names, find any maps they occur on.
     my %features = ();
     for my $feature_name ( @feature_names ) {
         my $comparison = $feature_name =~ m/%/ ? 'like' : '=';
+        my $where      = '';
+        if ( @$feature_type_aids ) {
+            $where .= 'and ft.accession_id in ('.
+                join( ', ', map { qq['$_'] } @$feature_type_aids ). 
+            ') ';
+        }
+
+        if ( @$species_aids ) {
+            $where .= 'and s.accession_id in ('.
+                join( ', ', map { qq['$_'] } @$species_aids ). 
+            ') ';
+        }
+
         my $sql;
         if ( $search_field eq 'feature_name' ) {
             $sql = qq[
@@ -2548,6 +2561,7 @@ Given a list of feature names, find any maps they occur on.
                 and      ms.species_id=s.species_id
                 and      ms.map_type_id=mt.map_type_id
                 and      ms.is_enabled=1
+                $where
                 UNION
                 select f.feature_id,
                        f.accession_id as feature_aid,
@@ -2578,6 +2592,7 @@ Given a list of feature names, find any maps they occur on.
                 and    map.map_set_id=ms.map_set_id
                 and    ms.species_id=s.species_id
                 and    ms.is_enabled=1
+                $where
             ];
         }
         else {
@@ -2609,19 +2624,8 @@ Given a list of feature names, find any maps they occur on.
                 and      ms.species_id=s.species_id
                 and      ms.map_type_id=mt.map_type_id
                 and      ms.is_enabled=1
+                $where
             ];
-        }
-
-        if ( @$feature_type_aids ) {
-            $sql .= 'and ft.accession_id in ('.
-                join( ', ', map { qq['$_'] } @$feature_type_aids ). 
-            ')';
-        }
-
-        if ( @$species_aids ) {
-            $sql .= 'and s.accession_id in ('.
-                join( ', ', map { qq['$_'] } @$species_aids ). 
-            ')';
         }
 
         my $features = $db->selectall_arrayref( $sql,  { Columns => {} } );
