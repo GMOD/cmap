@@ -13,6 +13,15 @@
         <td><input name="accession_id" value="[% corr.accession_id %]"></td>
     </tr>
     <tr>
+        <th align="right">Is Enabled:</th>
+        <td>
+            <select name="is_enabled">
+                <option value="1"[% IF corr.is_enabled==1; ' selected'; END %]>Yes</option>
+                <option value="0"[% IF corr.is_enabled==0; ' selected'; END %]>No</option>
+            </select>
+        </td>
+    </tr>
+    <tr>
         <td colspan="2" align="center">
             <input type="hidden" name="feature_correspondence_id" value="[% corr.feature_correspondence_id %]">
             <input type="hidden" name="action" value="feature_corr_update">

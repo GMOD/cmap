@@ -77,6 +77,11 @@
         <th align="right">Acc ID:</th>
         <td>[% corr.accession_id %]</td>
     </tr>
+
+    <tr>
+        <th align="right">Is Enabled:</th>
+        <td>[% IF corr.is_enabled; 'Yes'; ELSE; 'No'; END %]</td>
+    </tr>
 </table>
 
 <table width="100%">

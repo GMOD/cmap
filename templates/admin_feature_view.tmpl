@@ -115,6 +115,7 @@
             <th>Feature Name</th>
             <th>Alt. Name</th>
             <th>Evidence</th>
+            <th>Is Enabled</th>
             <th colspan="3">&nbsp;</th>
         </tr>
       
@@ -130,6 +131,7 @@
                 </td>
                 <td>[% fc.alternate_name %]</td>
                 <td>[% fc.evidence %]</td>
+                <td>[% IF fc.is_enabled; 'Yes'; ELSE; 'No'; END %]</td>
                 <td>
                     <a href="admin?action=feature_corr_view;feature_correspondence_id=[% fc.feature_correspondence_id %]">View</a>
                 </td>

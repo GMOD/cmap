@@ -1,5 +1,6 @@
 [% INCLUDE admin_header.tmpl title="Feature Type Edit &quot;$feature_type.feature_type&quot;" %]
 <a href="admin">Home</a> |
+<a href="admin?action=confirm_delete;entity_type=cmap_feature_type;entity_id=[% feature_type.feature_type_id %];entity_name_field=feature_type">Delete</a> |
 <a href="admin?action=feature_types_view">View Feature Types</a>
 <hr noshade>
 
@@ -49,6 +50,20 @@
                     <option value="[% color %]"[% IF feature_type.color==color; ' selected'; END %]>[% color %]</option>
                 [% END %]
             </select>
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Drawing Lane:</td>
+        <td>
+            <input name="drawing_lane" value="[% feature_type.drawing_lane %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Drawing Priority:</td>
+        <td>
+            <input name="drawing_priority" value="[% feature_type.drawing_priority %]">
         </td>
     </tr>
 
