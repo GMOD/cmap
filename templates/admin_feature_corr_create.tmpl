@@ -13,7 +13,7 @@
 
 <table>
     <tr>
-        <td>Feature 1:</th>
+        <td><em>From</em> Feature 1:</th>
         <td>
             <a href="admin?action=map_view;map_id=[% feature1.map_id %]">[% feature1.species_name %]-[% feature1.map_set_name %]-[% feature1.map_name %]</a> : 
             <a href="admin?action=feature_view;feature_id=[% feature1.feature_id %]">[% feature1.feature_name %]</a>
@@ -21,7 +21,7 @@
     </tr>
 
     <tr>
-        <td>Feature 2:</td>
+        <td><em>To</em> Feature 2:</td>
         <td>
             [% IF feature2 %]
                 <a href="admin?action=map_view;map_id=[% feature2.map_id %]">[% feature2.species_name %]-[% feature2.map_set_name %]-[% feature2.map_name %]</a> : 
@@ -33,18 +33,31 @@
     </tr>
 
     [% IF feature1 AND feature2 %]
-        <form action="admin" method="post">
+        <form action="admin" method="get">
             <tr>
-                <td>Acc. ID:</th>
+                <td>Evidence Type:</th>
+                <td>
+                    <select name="evidence_type_id">
+                        <option value="">--Please Select--</option>
+                        [% FOREACH et=evidence_types %]
+                            <option value="[% et.evidence_type_id %]">[% et.evidence_type %] ([% et.rank %])</option>
+                        [% END %]
+                    </select>
+                </td>
+            </tr>
+
+            <tr>
+                <td>Acc. ID (<em>Opt.</em>):</th>
                 <td><input name="accession_id"></td>
             </tr>
 
             <tr>
                 <td colspan="2" align="center">
-                    <input type="hidden" name="feature_id1" value="[% feature1.feature_id %]">
-                    <input type="hidden" name="feature_id2" value="[% feature2.feature_id %]">
-                    <input type="hidden" name="action" value="feature_corr_insert">
-                    <input type="submit" value="Submit">
+                    <input type="hidden" name="feature2_name" value="[% apr.param('feature2_name') %]">
+                    <input type="hidden" name="feature_id1"   value="[% feature1.feature_id %]">
+                    <input type="hidden" name="feature_id2"   value="[% feature2.feature_id %]">
+                    <input type="hidden" name="action"        value="feature_corr_insert">
+                    <input type="submit" value="Create Correspondence">
                 </th>
             </tr>
         </form>

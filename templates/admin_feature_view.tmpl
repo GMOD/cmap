@@ -109,8 +109,9 @@
     <table width="100%">
         <tr>
             <th>Acc. ID</th>
+            <th>Map</th>
             <th>Feature Name</th>
-            <th>Feature Name</th>
+            <th>Alt. Name</th>
             <th>Evidence</th>
             <th colspan="2">&nbsp;</th>
         </tr>
@@ -119,8 +120,9 @@
         [% FOREACH fc=feature.correspondences %]
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
                 <td>[% fc.accession_id %]</td>
-                <td>[% fc.feature_name1 %]</td>
-                <td>[% fc.feature_name2 %]</td>
+                <td>[% fc.species_name %]-[% fc.map_set_name %]-[% fc.map_name %]</td>
+                <td>[% fc.feature_name %]</td>
+                <td>[% fc.alternate_name %]</td>
                 <td>[% fc.evidence %]</td>
                 <td>
                     <a href="admin?action=feature_corr_view;feature_correspondence_id=[% fc.feature_correspondence_id %]">View</a>

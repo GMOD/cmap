@@ -1,13 +1,13 @@
 package Bio::GMOD::CMap::Constants;
 
-# $Id: Constants.pm,v 1.12 2002-09-12 22:07:42 kycl4rk Exp $
+# $Id: Constants.pm,v 1.13 2002-10-01 18:42:06 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.12 $)[-1];
+$VERSION = (qw$Revision: 1.13 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -344,10 +344,10 @@ use constant DEFAULT => {
     map_color => 'lightgrey',
 
     #
-    # Width of a map.
-    # Default: 8
+    # The URL for map set info.
+    # Default: /cmap/map_set_info
     #
-    map_width => 8,
+    map_set_info_url => '/cmap/map_set_info',
 
     #
     # The titles to put atop the individual maps, e.g., "Wheat-2M."
@@ -356,6 +356,12 @@ use constant DEFAULT => {
     # Default: species_name, map_name
     #
     map_titles => [ qw( species_name map_set_name map_name) ],
+
+    #
+    # Width of a map.
+    # Default: 8
+    #
+    map_width => 8,
 
     #
     # The smallest any map can be drawn, in pixels.

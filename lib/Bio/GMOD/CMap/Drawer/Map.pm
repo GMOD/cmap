@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.12 2002-09-19 00:58:09 kycl4rk Exp $
+# $Id: Map.pm,v 1.13 2002-10-01 18:42:06 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.12 $)[-1];
+$VERSION = (qw$Revision: 1.13 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -402,7 +402,8 @@ Lays out the map.
         $bottom_y,      # southernmost coord for the slot
         $slot_min_x,    # easternmost coord for the slot
         $slot_max_x,    # westernmost coord for the slot
-        @map_titles     # the titles to put above
+        @map_titles,    # the titles to put above - for relational maps
+        $map_set_aid,   # the map set acc. ID - for relational maps
     );
 #    my $original_base_x = $self->base_x;
 
@@ -956,6 +957,7 @@ Lays out the map.
                     reverse @config_map_titles
                 ;
             }
+            $map_set_aid = $self->map_set_aid( $map_id );
         }
         else {
             my $buffer = 4;
@@ -1010,6 +1012,15 @@ Lays out the map.
 
             $drawer->add_drawing( 
                 RECTANGLE, @bounds, 'black'
+            );
+
+            my $url = $self->config('map_set_info_url').
+                      '?map_set_aid='.
+                      $self->map_set_aid( $map_id );
+            $drawer->add_map_area(
+                coords => \@bounds,
+                url    => $url,
+                alt    => 'Map Set Info',
             );
 
             $min_x = $bounds[0] if $bounds[0] < $min_x;
@@ -1080,6 +1091,13 @@ Lays out the map.
 
         $drawer->add_drawing( 
             RECTANGLE, @bounds, 'black'
+        );
+
+        $drawer->add_map_area(
+            coords => \@bounds,
+            url    => $self->config('map_set_info_url').
+                      "?map_set_aid=$map_set_aid",
+            alt    => 'Map Set Info',
         );
 
         $slot_min_x = $bounds[0] if $bounds[0] < $slot_min_x;

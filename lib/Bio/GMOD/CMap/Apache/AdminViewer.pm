@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.9 2002-10-01 14:13:29 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.10 2002-10-01 18:42:06 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -28,7 +28,7 @@ $COLORS         = [ sort keys %{ +COLORS } ];
 $FEATURE_SHAPES = [ qw( box dumbbell line span ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.9 $)[-1];
+$VERSION        = (qw$Revision: 1.10 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -1361,17 +1361,26 @@ sub feature_view {
                    fc.accession_id,
                    fc.feature_id1,
                    fc.feature_id2,
-                   f1.feature_name as feature_name1,
-                   f2.feature_name as feature_name2
-            from   cmap_feature_correspondence fc,
-                   cmap_feature f1,
-                   cmap_feature f2
-            where  ( fc.feature_id1=? or fc.feature_id2=? )
-            and    fc.feature_id1=f1.feature_id
-            and    fc.feature_id2=f2.feature_id
+                   f.feature_name as feature_name,
+                   f.alternate_name as alternate_name,
+                   map.map_name,
+                   ms.short_name as map_set_name,
+                   s.common_name as species_name
+            from   cmap_correspondence_lookup cl,
+                   cmap_feature_correspondence fc,
+                   cmap_feature f,
+                   cmap_map map,
+                   cmap_map_set ms,
+                   cmap_species s
+            where  cl.feature_id1=? 
+            and    cl.feature_correspondence_id=fc.feature_correspondence_id
+            and    cl.feature_id2=f.feature_id
+            and    f.map_id=map.map_id
+            and    map.map_set_id=ms.map_set_id
+            and    ms.species_id=s.species_id
         ],
         { Columns => {} },
-        ( $feature_id, $feature_id )
+        ( $feature_id )
     );
 
     for my $corr ( @$correspondences ) {
@@ -1485,7 +1494,7 @@ sub feature_corr_create {
         $feature2_name  =~ s/\*/%/g;
         $feature2_name  =~ s/['"]//g;
         my $search_term =  uc $feature2_name;
-        my $sql         = qq[
+        my $sql         =  qq[
             select f.feature_id,
                    f.feature_name,
                    map.map_id,
@@ -1517,6 +1526,17 @@ sub feature_corr_create {
         { Columns => {} }
     );
 
+    my $evidence_types = $db->selectall_arrayref(
+        q[
+            select   et.evidence_type_id,
+                     et.evidence_type,
+                     et.rank
+            from     cmap_evidence_type et
+            order by rank, evidence_type
+        ],
+        { Columns => {} }
+    );
+
     return $self->process_template(
         TEMPLATE->{'feature_corr_create'}, 
         { 
@@ -1525,6 +1545,7 @@ sub feature_corr_create {
             feature2         => $feature2,
             feature2_choices => $feature2_choices,
             species          => $species,
+            evidence_types   => $evidence_types,
             errors           => $args{'errors'},
         }, 
     );
@@ -1532,13 +1553,15 @@ sub feature_corr_create {
 
 # ----------------------------------------------------
 sub feature_corr_insert {
-    my $self         = shift;
-    my @errors       = ();
-    my $db           = $self->db;
-    my $apr          = $self->apr;
-    my $feature_id1  = $apr->param('feature_id1') or die 'No feature id 1';
-    my $feature_id2  = $apr->param('feature_id2') or die 'No feature id 2';
-    my $accession_id = $apr->param('accession_id') || '';
+    my $self             = shift;
+    my @errors           = ();
+    my $db               = $self->db;
+    my $apr              = $self->apr;
+    my $feature_id1      = $apr->param('feature_id1') or die 'No feature id1';
+    my $feature_id2      = $apr->param('feature_id2') or die 'No feature id2';
+    my $accession_id     = $apr->param('accession_id')     || '';
+    my $evidence_type_id = $apr->param('evidence_type_id') or push @errors,
+        'Please select an evidence type';
 
     push @errors, 
         "Can't create a circular correspondence (feature IDs are the same)"
@@ -1546,38 +1569,42 @@ sub feature_corr_insert {
 
     return $self->feature_corr_create( errors => \@errors ) if @errors;
 
-    my $feature_correspondence_id = $db->selectrow_array(
-        q[
-            select feature_correspondence_id
-            from   cmap_feature_correspondence
-            where  ( feature_id1=? and feature_id2=? )
-            or     ( feature_id1=? and feature_id2=? )
-        ],
-        {},
-        ( $feature_id1, $feature_id2, $feature_id2, $feature_id1 )
-    ); 
+    my $feature_correspondence_id = insert_correspondence(
+        $db, $feature_id1, $feature_id2, $evidence_type_id
+    );
 
-    unless ( $feature_correspondence_id ) {
-        $feature_correspondence_id =  next_number(
-            db                        => $db, 
-            table_name                => 'cmap_feature_correspondence',
-            id_field                  => 'feature_correspondence_id',
-        ) or die 'No feature correspondence id';
-        $accession_id ||= $feature_correspondence_id;
-
-        $db->do(
-            q[
-                insert
-                into   cmap_feature_correspondence
-                       ( feature_correspondence_id, accession_id, 
-                         feature_id1, feature_id2 )
-                values ( ?, ?, ?, ? )
-            ],
-            {},
-            ( $feature_correspondence_id, $accession_id, 
-              $feature_id1, $feature_id2 )
-        );
-    }
+#    my $feature_correspondence_id = $db->selectrow_array(
+#        q[
+#            select feature_correspondence_id
+#            from   cmap_feature_correspondence
+#            where  ( feature_id1=? and feature_id2=? )
+#            or     ( feature_id1=? and feature_id2=? )
+#        ],
+#        {},
+#        ( $feature_id1, $feature_id2, $feature_id2, $feature_id1 )
+#    ); 
+#
+#    unless ( $feature_correspondence_id ) {
+#        $feature_correspondence_id =  next_number(
+#            db                        => $db, 
+#            table_name                => 'cmap_feature_correspondence',
+#            id_field                  => 'feature_correspondence_id',
+#        ) or die 'No feature correspondence id';
+#        $accession_id ||= $feature_correspondence_id;
+#
+#        $db->do(
+#            q[
+#                insert
+#                into   cmap_feature_correspondence
+#                       ( feature_correspondence_id, accession_id, 
+#                         feature_id1, feature_id2 )
+#                values ( ?, ?, ?, ? )
+#            ],
+#            {},
+#            ( $feature_correspondence_id, $accession_id, 
+#              $feature_id1, $feature_id2 )
+#        );
+#    }
 
     return $self->redirect_home( 
         ADMIN_HOME_URI.'?action=feature_corr_view;'.

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Utils;
 
-# $Id: Utils.pm,v 1.7 2002-09-17 20:30:18 kycl4rk Exp $
+# $Id: Utils.pm,v 1.8 2002-10-01 18:42:06 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.7 $)[-1];
+$VERSION = (qw$Revision: 1.8 $)[-1];
 
 use base 'Exporter';
 
@@ -327,8 +327,7 @@ Inserts a correspondence.
         );
     }
     
-    print "    Inserted correspondence.\n", 
-    return 1;
+    return $feature_correspondence_id;
 }
 
 # ----------------------------------------------------
