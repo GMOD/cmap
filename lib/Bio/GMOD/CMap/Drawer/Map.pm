@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.135.2.7 2004-11-09 22:29:29 mwz444 Exp $
+# $Id: Map.pm,v 1.135.2.8 2004-11-10 17:26:26 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.135.2.7 $)[-1];
+$VERSION = (qw$Revision: 1.135.2.8 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1996,6 +1996,9 @@ sub offset_drawing_data {
 
 Add the topper to the map.
 
+The toppers are laid down starting from the top.  The map coords and the bottom
+boundary are moved down at the end based on the height of the toppers.
+
 =cut
 
 sub add_topper {
@@ -2009,6 +2012,7 @@ sub add_topper {
     my $map_placement_data = $args{'map_placement_data'};
     my $map_area_data      = $args{'map_area_data'};
     my $is_flipped         = $args{'is_flipped'};
+    my $map_width          = $self->map_width($map_id);
 
     my $no_features = $self->no_features($map_id);
     my $map_name    = $self->map_name($map_id);
@@ -2016,38 +2020,28 @@ sub add_topper {
       or return $self->error( $drawer->error );
     my $font_width  = $reg_font->width;
     my $font_height = $reg_font->height;
-    my $buttons     = $self->create_buttons(
-        map_id     => $map_id,
-        drawer     => $drawer,
-        slot_no    => $slot_no,
-        is_flipped => $is_flipped,
-        buttons    => [ 'map_detail', 'map_matrix', 'flip', 'new_view', ],
-    );
-    my $button_y_buffer = 4;
-    my $button_x_buffer = 6;
-    my $button_height   =
-      ( scalar @$buttons )
-      ? $font_height + ( $button_y_buffer * 2 )
-      : 0;
 
-    my $base_x     = $map_placement_data->{$map_id}{'map_coords'}[0];
-    my $map_base_y = $map_placement_data->{$map_id}{'map_coords'}[1];
-
-    my $button_y = $map_base_y - $button_height;
+    my $base_x        = $map_placement_data->{$map_id}{'map_coords'}[0];
+    my $base_y        = $map_placement_data->{$map_id}{'bounds'}[1];
+    my $current_max_y = $base_y;
+    my $mid_x         = $base_x + ( $map_width / 2 );
 
     #
     # Indicate total number of features on the map.
     #
     my @map_toppers = $is_compressed ? ($map_name) : ();
-    push @map_toppers, "[$no_features]" if defined $no_features;
+    push @map_toppers, "[$no_features]"
+      if ( defined($no_features) and not $self->clean_view );
+
+    # Add toppers.
 
     for my $i ( 0 .. $#map_toppers ) {
         my $topper = $map_toppers[$i];
-        my $f_x1   = $base_x - ( ( length($topper) * $font_width ) / 2 );
+        my $f_x1   = $mid_x - ( ( length($topper) * $font_width ) / 2 );
         my $f_x2   = $f_x1 + ( length($topper) * $font_width );
 
-        my $topper_y = $map_base_y - $button_height -
-          ( $font_height * ( scalar @map_toppers - $i ) + 4 );
+        my $topper_y = $current_max_y;
+        $current_max_y += ( $font_height + 4 );
 
         $map_placement_data->{$map_id}{'bounds'}[1] = $topper_y
           if ( $map_placement_data->{$map_id}{'bounds'}[1] > $topper_y );
@@ -2070,8 +2064,6 @@ sub add_topper {
 
         $map_placement_data->{$map_id}{'bounds'}[0] = $f_x1
           if ( $map_placement_data->{$map_id}{'bounds'}[0] > $f_x1 );
-        $map_placement_data->{$map_id}{'bounds'}[1] = $topper_y
-          if ( $map_placement_data->{$map_id}{'bounds'}[1] > $topper_y );
         $map_placement_data->{$map_id}{'bounds'}[2] = $f_x2
           if ( $map_placement_data->{$map_id}{'bounds'}[2] < $f_x2 );
 
@@ -2083,45 +2075,73 @@ sub add_topper {
     # Add Buttons
     #
 
-    #
-    # Figure out how much room left-to-right the buttons will take.
-    #
-    my $buttons_width = 0;
-    for my $button (@$buttons) {
-        $buttons_width += $font_width * length( $button->{'label'} );
+    my $buttons = $self->create_buttons(
+        map_id     => $map_id,
+        drawer     => $drawer,
+        slot_no    => $slot_no,
+        is_flipped => $is_flipped,
+        buttons    => [ 'map_detail', 'map_matrix', 'flip', 'new_view', ],
+    );
+    if ( scalar(@$buttons) ) {
+        my $button_y_buffer = 4;
+        my $button_x_buffer = 6;
+        my $button_height   =
+          ( scalar @$buttons )
+          ? $font_height + ( $button_y_buffer * 2 )
+          : 0;
+
+        #
+        # Figure out how much room left-to-right the buttons will take.
+        #
+        my $buttons_width = 0;
+        for my $button (@$buttons) {
+            $buttons_width += $font_width * length( $button->{'label'} );
+        }
+        $buttons_width += $button_x_buffer * ( scalar @$buttons - 1 );
+
+        #
+        # Place the buttons.
+        #
+        my $button_y = $current_max_y;
+        $current_max_y += $button_height;
+        my $label_x = $base_x - $buttons_width / 2;
+
+        for my $button (@$buttons) {
+            my $len  = $font_width * length( $button->{'label'} );
+            my $end  = $label_x + $len;
+            my @area = (
+                $label_x - 2,
+                $button_y - ( $button_y_buffer / 2 ),
+                $end + 2, $button_y + $font_height + ( $button_y_buffer / 2 )
+            );
+            push @{ $map_drawing_data->{$map_id} },
+              [
+                STRING,             $reg_font, $label_x, $button_y,
+                $button->{'label'}, 'grey'
+              ],
+              [ RECTANGLE, @area, 'grey' ],;
+
+            $map_placement_data->{$map_id}{'bounds'}[0] = $label_x
+              if ( $map_placement_data->{$map_id}{'bounds'}[0] > $label_x );
+            $map_placement_data->{$map_id}{'bounds'}[2] = $end
+              if ( $map_placement_data->{$map_id}{'bounds'}[2] < $end );
+            $label_x += $len + $button_x_buffer;
+
+            push @{ $map_area_data->{$map_id} },
+              {
+                coords => \@area,
+                url    => $button->{'url'},
+                alt    => $button->{'alt'},
+              };
+        }
     }
-    $buttons_width += $button_x_buffer * ( scalar @$buttons - 1 );
 
-    #
-    # Place the buttons.
-    #
-    my $label_x = $base_x - $buttons_width / 2;
+    # Move map down by the hight of the topper
+    my $topper_offset = $current_max_y - $base_y;
 
-    for my $button (@$buttons) {
-        my $len  = $font_width * length( $button->{'label'} );
-        my $end  = $label_x + $len;
-        my @area = (
-            $label_x - 2,
-            $button_y - ( $button_y_buffer / 2 ),
-            $end + 2, $button_y + $font_height + ( $button_y_buffer / 2 )
-        );
-        push @{ $map_drawing_data->{$map_id} },
-          [ STRING, $reg_font, $label_x, $button_y, $button->{'label'},
-            'grey' ], [ RECTANGLE, @area, 'grey' ],;
-
-        $map_placement_data->{$map_id}{'bounds'}[0] = $label_x
-          if ( $map_placement_data->{$map_id}{'bounds'}[0] > $label_x );
-        $map_placement_data->{$map_id}{'bounds'}[2] = $end
-          if ( $map_placement_data->{$map_id}{'bounds'}[2] < $end );
-        $label_x += $len + $button_x_buffer;
-
-        push @{ $map_area_data->{$map_id} },
-          {
-            coords => \@area,
-            url    => $button->{'url'},
-            alt    => $button->{'alt'},
-          };
-    }
+    $map_placement_data->{$map_id}{'bounds'}[3]     += $topper_offset;
+    $map_placement_data->{$map_id}{'map_coords'}[1] += $topper_offset;
+    $map_placement_data->{$map_id}{'map_coords'}[3] += $topper_offset;
 }
 
 # ----------------------------------------

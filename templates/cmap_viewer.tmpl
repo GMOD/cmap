@@ -659,6 +659,9 @@ function changeCompMaps(sel,index,side){
               <tr>
                 <td align="left" valign="top">Image Size:</td>
                 <td>
+                  <input type="radio" name="image_size" value="tiny"[% IF apr.param('image_size') == 'tiny'; ' checked'; END %]>Tiny
+                </td>
+                <td>
                   <input type="radio" name="image_size" value="small"[% IF apr.param('image_size') == 'small'; ' checked'; END %]>Small
                 </td>
                 <td>
