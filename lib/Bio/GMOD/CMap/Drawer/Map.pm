@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.128 2004-09-16 13:46:56 mwz444 Exp $
+# $Id: Map.pm,v 1.129 2004-09-20 18:32:14 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.128 $)[-1];
+$VERSION = (qw$Revision: 1.129 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1712,7 +1712,7 @@ Variable Info:
 #xxx
     #Make aggregated correspondences
     for my $map_id (@map_ids){
-        if ($self->aggregate){
+        if ($self->aggregate and $is_compressed){
             my @drawing_data=();
             my $map_length=$self->map_length($map_id);
             for my $ref_connect (@{$map_aggregate_corr{$map_id}}) {
