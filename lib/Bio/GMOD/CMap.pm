@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap;
 
-# $Id: CMap.pm,v 1.22 2003-01-30 22:24:46 kycl4rk Exp $
+# $Id: CMap.pm,v 1.23 2003-02-11 00:23:52 kycl4rk Exp $
 
 =head1 NAME
 
@@ -34,16 +34,15 @@ use Config::General;
 use Bio::GMOD::CMap::Data;
 use Bio::GMOD::CMap::Constants;
 use DBI;
-#use Bio::GMOD::CMap::DB;
 
 use base 'Class::Base';
 
-## ----------------------------------------------------
-#sub init {
-#    my ( $self, $config ) = $_;
-#    $self->{'db'} = $config->{'db'} || undef;
-#    return $self;
-#}
+# ----------------------------------------------------
+sub init {
+    my ( $self, $config ) = @_;
+    $self->data_source( $config->{'data_source'} );
+    return $self;
+}
 
 # ----------------------------------------------------
 sub config {
@@ -85,6 +84,77 @@ Returns one or all options from the config file.
 }
 
 # ----------------------------------------------------
+sub data_source {
+
+=pod
+
+=head2 data_source
+
+Remembers what has been selected as the current data source.
+
+=cut
+
+    my $self = shift;
+    $self->{'data_source'} = shift if @_;
+
+    unless ( defined $self->{'data_source'} ) {
+        for my $ds ( @{ $self->{'data_sources'} } ) {
+            $self->{'data_source'} = $ds->{'name'} 
+                if $ds->{'is_current'};
+        }
+    }
+
+    return $self->{'data_source'} || '';
+}
+
+# ----------------------------------------------------
+sub data_sources {
+
+=pod
+
+=head2 data_sources
+
+Returns all the data souces defined in the configuration file.
+
+=cut
+
+    my $self = shift;
+
+    unless ( defined $self->{'data_sources'} ) {
+        my $config  = $self->config('database') or 
+            return $self->error('No database configuration options defined');
+        $config     = [ $config ] unless ref $config eq 'ARRAY';
+        my $current = $self->data_source;
+
+        my $ok = 0;
+        for my $source ( @$config ) {
+            if ( $current && $source->{'name'} eq $current ) {
+                $source->{'is_current'} = 1;
+                $ok                     = 1;
+            }
+        }
+
+        unless ( $ok ) {
+            for my $source ( @$config ) {
+                if ( $source->{'is_default'} ) {
+                    $source->{'is_current'} = 1;
+                    $ok                     = 1;
+                }
+            }
+
+            return $self->error('No default data source defined') unless $ok;
+        }
+
+        $self->{'data_sources'} = [
+            sort { $a->{'name'} cmp $b->{'name'} }
+            @$config
+        ];
+    } 
+
+    return $self->{'data_sources'};
+}
+
+# ----------------------------------------------------
 sub db {
 
 =pod
@@ -95,26 +165,50 @@ Returns a database handle.  This is the only way into the database.
 
 =cut
 
-    my $self = shift;
+    my $self    = shift;
+    my $db_name = shift || $self->data_source;
 
     unless ( defined $self->{'db'} ) {
-        my $config     = $self->config('database') or 
-            $self->error('No database configuration options');
-        my $datasource = $config->{'datasource'}
+        my $config = $self->config('database') or 
+            return $self->error('No database configuration options defined');
+
+        #
+        # If more than one datasource is defined, try to find either
+        # the one named $db_name or the default one.  Give up if neither.
+        #
+        my $db_config;
+        if ( ref $config eq 'ARRAY' ) {
+            my $default;
+            for my $section ( @$config ) {
+                $default = $section if $section->{'is_default'}; 
+                if ( $db_name && $section->{'name'} eq $db_name ) {
+                    $db_config = $section;
+                    last;
+                } 
+            }
+            $db_config = $default unless defined $db_config;
+        }
+        elsif ( ref $config eq 'HASH' ) {
+            $db_config = $config;
+        }
+        else {
+            return $self->error('DB config not array or hash');
+        }
+
+        return $self->error("Couldn't determine database info") unless 
+            defined $db_config;
+
+        my $datasource = $db_config->{'datasource'}
             or $self->error('No database source defined');
-        my $user       = $config->{'user'}
+        my $user       = $db_config->{'user'}
             or $self->error('No database user defined');
-        my $password   = $config->{'password'} || '';
-        my $options    = $config->{'options'}  || {};
+        my $password   = $db_config->{'password'} || '';
+        my $options    = $db_config->{'options'}  || {};
 
         eval {
             $self->{'db'} = DBI->connect( 
                 $datasource, $user, $password, $options 
             );
-
-#            Bio::GMOD::CMap::DB->connect( 
-#                $datasource, $user, $password, $options 
-#            );
         };
 
         if ( $@ || !defined $self->{'db'} ) {
@@ -140,8 +234,9 @@ Returns a handle to the data module.
     my $self = shift;
 
     unless ( $self->{'data_module'} ) { 
-        $self->{'data_module'} = Bio::GMOD::CMap::Data->new or 
-            $self->error( Bio::GMOD::CMap::Data->error );
+        $self->{'data_module'} = Bio::GMOD::CMap::Data->new(
+            data_source => $self->data_source,
+        ) or $self->error( Bio::GMOD::CMap::Data->error );
     }
 
     return $self->{'data_module'};
@@ -162,21 +257,6 @@ Object clean-up when destroyed by Perl.
     $self->db->disconnect if defined $self->{'db'};
     return 1;
 }
-
-## ----------------------------------------------------
-#sub error {
-#
-#=pod
-#
-#=head2 error
-#
-#Overrides Class::Base's "error" just enough to use Exception::Class's "throw."
-#
-#=cut
-#    my $self = shift;
-#    $self->SUPER::error( @_ );
-#    return CMapException->throw( error => $self->SUPER::error );
-#}
 
 # ----------------------------------------------------
 sub template { 
