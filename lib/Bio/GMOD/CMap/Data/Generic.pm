@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data::Generic;
 
-# $Id: Generic.pm,v 1.18 2003-01-16 17:06:24 kycl4rk Exp $
+# $Id: Generic.pm,v 1.19 2003-01-25 00:43:13 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.18 $)[-1];
+$VERSION = (qw$Revision: 1.19 $)[-1];
 
 use Data::Dumper; # really just for debugging
 use Bio::GMOD::CMap;
@@ -68,10 +68,10 @@ sub cmap_data_features_sql {
 The SQL for finding all the features on a map.
 
 =cut
-    my ( $self, %args )   = @_;
-    my $order_by          = $args{'order_by'}          || '';
-    my $restrict_by       = $args{'restrict_by'}       || '';
-    my @feature_type_aids = @{ $args{'feature_type_aids'} || [] };
+    my ( $self, %args )  = @_;
+    my $order_by         = $args{'order_by'}            || '';
+    my $restrict_by      = $args{'restrict_by'}         || '';
+    my @feature_type_ids = @{ $args{'feature_type_ids'} || [] };
     my $sql               = qq[
         select   f.feature_id,
                  f.accession_id,
@@ -110,12 +110,9 @@ The SQL for finding all the features on a map.
         and      ms.map_type_id=mt.map_type_id
     ];
 
-    #
-    # "-1" is a reserved value meaning "All" feature types.
-    #
-    if ( @feature_type_aids && grep { !/^-1$/ } @feature_type_aids ) {
-        $sql .= 'and ft.accession_id in ('.
-            join( ',', map { qq['$_'] } @feature_type_aids ).
+    if ( @feature_type_ids ) {
+        $sql .= 'and ft.feature_type_id in ('.
+            join( ',', @feature_type_ids ).
         ')';
     }
 
@@ -208,12 +205,12 @@ sub correspondences_count_by_single_map_sql {
 The SQL for finding the number of correspondences by for one map.
 
 =cut
-    my ( $self, %args )    = @_;
-    my $feature_type_aids  = $args{'feature_type_aids'};
-    my $evidence_type_aids = $args{'evidence_type_aids'};
+    my ( $self, %args )   = @_;
+    my $feature_type_ids  = $args{'feature_type_ids'};
+    my $evidence_type_ids = $args{'evidence_type_ids'};
 
     my $sql = q[
-        select   f2.feature_id,
+        select   fc.feature_correspondence_id,
                  s.common_name as species_name,
                  mt.map_type,
                  mt.display_order as map_type_display_order,
@@ -231,11 +228,9 @@ The SQL for finding the number of correspondences by for one map.
                  cmap_species s,
                  cmap_feature f1,
                  cmap_feature f2,
-                 cmap_feature_type ft,
                  cmap_correspondence_lookup cl,
                  cmap_feature_correspondence fc,
-                 cmap_correspondence_evidence ce,
-                 cmap_evidence_type et
+                 cmap_correspondence_evidence ce
         where    map1.accession_id=?
         and      map1.map_id=f1.map_id
         and      f1.start_position>=? 
@@ -244,9 +239,7 @@ The SQL for finding the number of correspondences by for one map.
         and      cl.feature_correspondence_id=fc.feature_correspondence_id
         and      fc.is_enabled=1
         and      fc.feature_correspondence_id=ce.feature_correspondence_id
-        and      ce.evidence_type_id=et.evidence_type_id
         and      cl.feature_id2=f2.feature_id
-        and      f2.feature_type_id=ft.feature_type_id
         and      f2.map_id=map2.map_id
         and      map2.accession_id<>?
         and      map2.map_set_id=ms.map_set_id
@@ -254,15 +247,15 @@ The SQL for finding the number of correspondences by for one map.
         and      ms.species_id=s.species_id
     ];
 
-    if ( @$evidence_type_aids ) {
-        $sql .= 'and et.accession_id in ('.
-            join( ',', map { qq['$_'] } @$evidence_type_aids ).
+    if ( @$evidence_type_ids ) {
+        $sql .= 'and ce.evidence_type_id in ('.
+            join( ',', @$evidence_type_ids ).
         ') ';
     }
 
-    if ( @$feature_type_aids ) {
-        $sql .= 'and ft.accession_id in ('.
-            join( ',', map { qq['$_'] } @$feature_type_aids ).
+    if ( @$feature_type_ids ) {
+        $sql .= 'and f2.feature_type_id in ('.
+            join( ',', @$feature_type_ids ).
         ') ';
     }
 
@@ -282,8 +275,6 @@ The SQL for finding the number of correspondences by for one map.
 #                 map2.accession_id,
 #                 map2.map_name
 #    ];
-#
-    warn "sql =\n$sql\n";
 
     return $sql;
 }
@@ -298,12 +289,12 @@ sub correspondences_count_by_map_set_sql {
 The SQL for finding the number of correspondences for a whole map set.
 
 =cut
-    my ( $self, %args )    = @_;
-    my $feature_type_aids  = $args{'feature_type_aids'};
-    my $evidence_type_aids = $args{'evidence_type_aids'};
+    my ( $self, %args )   = @_;
+    my $feature_type_ids  = $args{'feature_type_ids'};
+    my $evidence_type_ids = $args{'evidence_type_ids'};
 
     my $sql = q[
-        select   f2.feature_id,
+        select   fc.feature_correspondence_id,
                  s.common_name as species_name,
                  mt.map_type,
                  mt.display_order as map_type_display_order,
@@ -323,11 +314,13 @@ The SQL for finding the number of correspondences for a whole map set.
                  cmap_feature f2,
                  cmap_correspondence_lookup cl,
                  cmap_feature_correspondence fc,
-                 cmap_correspondence_evidence ce,
-                 cmap_evidence_type et
+                 cmap_correspondence_evidence ce
         where    map1.map_set_id=?
         and      map1.map_id=f1.map_id
         and      f1.feature_id=cl.feature_id1
+        and      cl.feature_correspondence_id=fc.feature_correspondence_id
+        and      fc.is_enabled=1
+        and      fc.feature_correspondence_id=ce.feature_correspondence_id
         and      cl.feature_id2=f2.feature_id
         and      f2.map_id=map2.map_id
         and      map2.map_set_id<>?
@@ -336,15 +329,15 @@ The SQL for finding the number of correspondences for a whole map set.
         and      ms.species_id=s.species_id
     ];
 
-    if ( @$evidence_type_aids ) {
-        $sql .= 'and et.accession_id in ('.
-            join( ',', map { qq['$_'] } @$evidence_type_aids ).
+    if ( @$evidence_type_ids ) {
+        $sql .= 'and ce.evidence_type_id in ('.
+            join( ',', @$evidence_type_ids ).
         ') ';
     }
 
-    if ( @$feature_type_aids ) {
-        $sql .= 'and ft.accession_id in ('.
-            join( ',', map { qq['$_'] } @$feature_type_aids ).
+    if ( @$feature_type_ids ) {
+        $sql .= 'and f2.feature_type_id in ('.
+            join( ',', @$feature_type_ids ).
         ') ';
     }
 
@@ -359,7 +352,6 @@ The SQL for finding the number of correspondences for a whole map set.
 #                 map2.map_name
 #    ];
 
-    warn "sql=\n$sql\n";
     return $sql;
 }
 
@@ -374,13 +366,13 @@ The SQL for finding the number of correspondences for many maps
 (like those in a map set).
 
 =cut
-    my ( $self, %args )    = @_;
-    my $map_ids            = $args{'map_ids'};
-    my $feature_type_aids  = $args{'feature_type_aids'};
-    my $evidence_type_aids = $args{'evidence_type_aids'};
+    my ( $self, %args )   = @_;
+    my $map_ids           = $args{'map_ids'};
+    my $feature_type_ids  = $args{'feature_type_ids'};
+    my $evidence_type_ids = $args{'evidence_type_ids'};
 
     my $sql = qq[
-        select   f2.feature_id,
+        select   fc.feature_correspondence_id,
                  s.common_name as species_name,
                  mt.map_type,
                  mt.display_order as map_type_display_order,
@@ -394,22 +386,18 @@ The SQL for finding the number of correspondences for many maps
         from     cmap_map map2,
                  cmap_map_set ms,
                  cmap_map_type mt,
-                 cmap_feature_type ft,
                  cmap_species s,
                  cmap_feature f1,
                  cmap_feature f2,
                  cmap_correspondence_lookup cl,
                  cmap_feature_correspondence fc,
-                 cmap_correspondence_evidence ce,
-                 cmap_evidence_type et
+                 cmap_correspondence_evidence ce
         where    f1.map_id in ($map_ids)
         and      f1.feature_id=cl.feature_id1
         and      cl.feature_correspondence_id=fc.feature_correspondence_id
         and      fc.is_enabled=1
         and      fc.feature_correspondence_id=ce.feature_correspondence_id
-        and      ce.evidence_type_id=et.evidence_type_id
         and      cl.feature_id2=f2.feature_id
-        and      f2.feature_type_id=ft.feature_type_id
         and      f2.map_id not in ($map_ids)
         and      f2.map_id=map2.map_id
         and      map2.map_set_id=ms.map_set_id
@@ -417,15 +405,15 @@ The SQL for finding the number of correspondences for many maps
         and      ms.species_id=s.species_id
     ];
 
-    if ( @$evidence_type_aids ) {
-        $sql .= 'and et.accession_id in ('.
-            join( ',', map { qq['$_'] } @$evidence_type_aids ).
+    if ( @$evidence_type_ids ) {
+        $sql .= 'and ce.evidence_type_id in ('.
+            join( ',', @$evidence_type_ids ).
         ') ';
     }
 
-    if ( @$feature_type_aids ) {
-        $sql .= 'and ft.accession_id in ('.
-            join( ',', map { qq['$_'] } @$feature_type_aids ).
+    if ( @$feature_type_ids ) {
+        $sql .= 'and f2.feature_type_id in ('.
+            join( ',', @$feature_type_ids ).
         ') ';
     }
 
@@ -444,7 +432,6 @@ The SQL for finding the number of correspondences for many maps
 #                 map2.map_name
 #    ];
 
-    warn "sql=\n$sql\n";
     return $sql;
 }
 
@@ -708,13 +695,13 @@ have some correspondence to a given region of a reference
 map.
 
 =cut
-    my ( $self, %args )    = @_;
-    my @evidence_type_aids = @{ $args{'evidence_type_aids'} || [] };
+    my ( $self, %args )   = @_;
+    my @evidence_type_ids = @{ $args{'evidence_type_ids'} || [] };
 
     #
     # "-1" is a reserved value meaning "All" evidence types.
     #
-    if ( @evidence_type_aids && grep { !/^-1$/ } @evidence_type_aids ) {
+    if ( @evidence_type_ids ) {
         return q[
             select   distinct map.map_id
             from     cmap_map map,
@@ -733,7 +720,7 @@ map.
             and      fc.feature_correspondence_id=ce.feature_correspondence_id
             and      ce.evidence_type_id=et.evidence_type_id
             and      et.accession_id in (].
-            join( ',', map { qq['$_'] } @evidence_type_aids ).q[)
+            join( ',', @evidence_type_ids ).q[)
             and      cl.feature_id2=f2.feature_id
             and      f2.map_id=map.map_id
             and      map.map_set_id=?
@@ -774,9 +761,9 @@ sub map_data_feature_correspondence_by_map_sql {
 The SQL for finding all correspondences between two maps.
 
 =cut
-    my ( $self, %args )    = @_;
-    my $feature_type_aids  = $args{'feature_type_aids'};
-    my $evidence_type_aids = $args{'evidence_type_aids'};
+    my ( $self, %args )   = @_;
+    my $feature_type_ids  = $args{'feature_type_ids'};
+    my $evidence_type_ids = $args{'evidence_type_ids'};
     
     my $sql = q[
         select   f1.feature_id as feature_id1,
@@ -787,7 +774,6 @@ The SQL for finding all correspondences between two maps.
                  et.evidence_type
         from     cmap_feature f1, 
                  cmap_feature f2, 
-                 cmap_feature_type ft, 
                  cmap_correspondence_lookup cl, 
                  cmap_feature_correspondence fc,
                  cmap_correspondence_evidence ce,
@@ -795,7 +781,6 @@ The SQL for finding all correspondences between two maps.
         where    f1.map_id=?
         and      f1.start_position>=?
         and      f1.start_position<=?
-        and      f1.feature_type_id=ft.feature_type_id
         and      f1.feature_id=cl.feature_id1
         and      cl.feature_correspondence_id=fc.feature_correspondence_id
         and      fc.is_enabled=1
@@ -807,15 +792,15 @@ The SQL for finding all correspondences between two maps.
         and      f2.start_position<=?
     ];
 
-    if ( @$feature_type_aids ) {
-        $sql .= 'and ft.accession_id in ('.
-            join( ',', map { qq['$_'] } @$feature_type_aids ).
+    if ( @$feature_type_ids ) {
+        $sql .= 'and f1.feature_type_id in ('.
+            join( ',', @$feature_type_ids ).
         ')';
     }
 
-    if ( @$evidence_type_aids ) {
-        $sql .= 'and et.accession_id in ('.
-            join( ',', map { qq['$_'] } @$evidence_type_aids ).
+    if ( @$evidence_type_ids ) {
+        $sql .= 'and et.evidence_type_id in ('.
+            join( ',', @$evidence_type_ids ).
         ')';
     }
 
@@ -832,9 +817,9 @@ sub map_data_feature_correspondence_by_map_set_sql{
 The SQL for finding all correspondences between two maps.
 
 =cut
-    my ( $self, %args )    = @_;
-    my $feature_type_aids  = $args{'feature_type_aids'};
-    my $evidence_type_aids = $args{'evidence_type_aids'};
+    my ( $self, %args )   = @_;
+    my $feature_type_ids  = $args{'feature_type_ids'};
+    my $evidence_type_ids = $args{'evidence_type_ids'};
     
     my $sql = q[
         select   f1.feature_id as feature_id1,
@@ -846,14 +831,12 @@ The SQL for finding all correspondences between two maps.
         from     cmap_map map,
                  cmap_feature f1, 
                  cmap_feature f2, 
-                 cmap_feature_type ft,
                  cmap_correspondence_lookup cl,
                  cmap_feature_correspondence fc,
                  cmap_correspondence_evidence ce,
                  cmap_evidence_type et
         where    map.map_set_id=?
         and      map.map_id=f1.map_id
-        and      f1.feature_type_id=ft.feature_type_id
         and      f1.feature_id=cl.feature_id1
         and      cl.feature_correspondence_id=fc.feature_correspondence_id
         and      fc.is_enabled=1
@@ -865,15 +848,15 @@ The SQL for finding all correspondences between two maps.
         and      f2.start_position<=?
     ];
 
-    if ( @$evidence_type_aids ) {
-        $sql .= 'and et.accession_id in ('.
-            join( ',', map { qq['$_'] } @$evidence_type_aids ).
+    if ( @$evidence_type_ids ) {
+        $sql .= 'and et.evidence_type_id in ('.
+            join( ',', @$evidence_type_ids ).
         ')';
     }
 
-    if ( @$feature_type_aids ) {
-        $sql .= 'and ft.accession_id in ('.
-            join( ',', map { qq['$_'] } @$feature_type_aids ).
+    if ( @$feature_type_ids ) {
+        $sql .= 'and f1.feature_type_id in ('.
+            join( ',', @$feature_type_ids ).
         ')';
     }
 
@@ -890,10 +873,10 @@ sub map_data_feature_correspondence_by_multi_maps_sql{
 The SQL for finding all correspondences between two maps.
 
 =cut
-    my ( $self, %args )    = @_;
-    my $map_ids            = $args{'reference_map_ids'};
-    my $evidence_type_aids = $args{'evidence_type_aids'};
-    my $feature_type_aids  = $args{'feature_type_aids'};
+    my ( $self, %args )   = @_;
+    my $map_ids           = $args{'reference_map_ids'};
+    my $evidence_type_ids = $args{'evidence_type_ids'};
+    my $feature_type_ids  = $args{'feature_type_ids'};
     
     my $sql = qq[
         select   f1.feature_id as feature_id1,
@@ -905,14 +888,12 @@ The SQL for finding all correspondences between two maps.
         from     cmap_map map,
                  cmap_feature f1, 
                  cmap_feature f2, 
-                 cmap_feature_type ft,
                  cmap_correspondence_lookup cl,
                  cmap_feature_correspondence fc,
                  cmap_correspondence_evidence ce,
                  cmap_evidence_type et
         where    map.map_id in ($map_ids)
         and      map.map_id=f1.map_id
-        and      f1.feature_type_id=ft.feature_type_id
         and      f1.feature_id=cl.feature_id1
         and      cl.feature_correspondence_id=fc.feature_correspondence_id
         and      fc.is_enabled=1
@@ -924,15 +905,15 @@ The SQL for finding all correspondences between two maps.
         and      f2.start_position<=?
     ];
 
-    if ( @$evidence_type_aids ) {
-        $sql .= 'and et.accession_id in ('.
-            join( ',', map { qq['$_'] } @$evidence_type_aids ).
+    if ( @$evidence_type_ids ) {
+        $sql .= 'and et.evidence_type_id in ('.
+            join( ',', @$evidence_type_ids ).
         ')';
     }
 
-    if ( @$feature_type_aids ) {
-        $sql .= 'and ft.accession_id in ('.
-            join( ',', map { qq['$_'] } @$feature_type_aids ).
+    if ( @$feature_type_ids ) {
+        $sql .= 'and f1.accession_id in ('.
+            join( ',', @$feature_type_ids ).
         ')';
     }
 

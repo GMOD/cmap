@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.24 2003-01-16 17:06:24 kycl4rk Exp $
+# $Id: Map.pm,v 1.25 2003-01-25 00:43:13 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.24 $)[-1];
+$VERSION = (qw$Revision: 1.25 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -390,8 +390,6 @@ Lays out the map.
     my $no_of_maps     = scalar @map_ids;
     my @columns        = ();
     my $label_features = $drawer->label_features;
-
-    warn "laying out slot no '$slot_no'\n";
 
     #
     # The title is often the widest thing we'll draw, so we need
