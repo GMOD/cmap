@@ -1,6 +1,6 @@
                               CMAP INSTALL
 
-                            $Revision: 1.43 $
+                            $Revision: 1.44 $
 
 1.      QUICK START
 
@@ -421,7 +421,7 @@ To install the CMap modules and scripts:
 
     $ perl Build.PL
     $ ./Build
-    $ su -
+    $ su
     # ./Build install
 
 Several configuration options can be set via arguments to Build.PL.
