@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap;
 
-# $Id: CMap.pm,v 1.36 2003-09-18 20:30:12 kycl4rk Exp $
+# $Id: CMap.pm,v 1.37 2003-09-19 19:01:21 kycl4rk Exp $
 
 =head1 NAME
 
@@ -147,7 +147,7 @@ Remembers what has been selected as the current data source.
     }
 
     unless ( $self->{'data_source'} ) {
-        my @data_sources = $self->data_sources or return;
+        my @data_sources = @{ $self->data_sources } or return;
         for my $ds ( @data_sources ) {
             $self->{'data_source'} = $ds->{'name'} if $ds->{'is_current'};
         }
@@ -214,8 +214,7 @@ Returns all the data souces defined in the configuration file.
     } 
 
     if ( @{ $self->{'data_sources'} } ) {
-        return wantarray 
-            ? @{ $self->{'data_sources'} } : $self->{'data_sources'};
+        return $self->{'data_sources'};
     }
     else {
         return $self->error("Can't determine data sources (undefined?)");
