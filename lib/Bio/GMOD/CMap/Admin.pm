@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.46.2.2 2004-06-03 21:51:53 kycl4rk Exp $
+# $Id: Admin.pm,v 1.46.2.3 2004-06-04 19:39:30 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.46.2.2 $)[-1];
+$VERSION = (qw$Revision: 1.46.2.3 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -1193,11 +1193,11 @@ sub map_create {
         );
     }
 
-    unless ( $start_position =~ NUMBER_RE ) {
+    unless ( $start_position =~ $RE{'num'}{'real'} ) {
         return $self->error("Bad start position ($start_position)");
     }
 
-    unless ( $stop_position =~ NUMBER_RE ) {
+    unless ( $stop_position =~ $RE{'num'}{'real'} ) {
         return $self->error("Bad stop position ($stop_position)");
     }
 
