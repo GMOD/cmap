@@ -24,13 +24,18 @@
 
                     <td>
                         [% IF form_data.ref_map_sets.size %]
+                            [% SET last_map_type='' %]
                             <select name="ref_map_set_aid" onChange="javascript:ref_map_set_form.submit()">
                                 <option value="">--Select--</option>
-                                [% FOREACH ms=form_data.ref_map_sets %]
+                                [%- FOREACH ms=form_data.ref_map_sets -%]
+                                    [%- IF ms.map_type != last_map_type -%]
+                                        <option value="">--&nbsp;[% ms.map_type %]&nbsp;Maps&nbsp;--</option>
+                                    [%- END -%]
                                     <option [% IF apr.param('ref_map_set_aid') == ms.accession_id %] selected[% END %] value="[% ms.accession_id %]">
                                       [% ms.species_name %] - [% ms.map_set_name %]
                                     </option>
-                                [% END %]
+                                    [%- SET last_map_type=ms.map_type -%]
+                                [%- END -%]
                             </select>&nbsp;<input type="submit" value="Submit">
                             <input type="hidden" name="prev_ref_map_set_aid" value="[% apr.param('ref_map_set_aid') %]">
                             <input type="hidden" name="highlight"            value="[% apr.param('highlight') %]">
@@ -266,10 +271,10 @@
     <hr>
     <table width="700">
         <tr>
-            <th colspan="2" align="center">Reference Map Set Info</th>
+            <th colspan="2" align="center" valign="top">Reference Map Set Info</th>
         </tr>
         <tr>
-            <th align="right">Map&nbsp;Set:</th>
+            <th align="right" valign="top">Map&nbsp;Set:</th>
             <td>
                 [% form_data.ref_map_set_info.map_set_name %]
                 ([% form_data.ref_map_set_info.short_name %])
@@ -277,7 +282,7 @@
             </td>
         </tr>
         <tr>
-            <th align="right">Species:</th>
+            <th align="right" valign="top">Species:</th>
             <td>
                 [% form_data.ref_map_set_info.species_common_name %]
                 ([% form_data.ref_map_set_info.species_full_name %])
@@ -285,7 +290,7 @@
             </td>
         </tr>
         <tr>
-            <th align="right">Map&nbsp;Type:</th>
+            <th align="right" valign="top">Map&nbsp;Type:</th>
             <td>
                 [% form_data.ref_map_set_info.map_type %]
                 ([% form_data.ref_map_set_info.map_units %])
@@ -294,7 +299,7 @@
         </tr>
         [% FOREACH att=form_data.ref_map_set_info.attributes %]
             <tr>
-                <th align="right">
+                <th align="right" valign="top">
                     [% att.attribute_name %]:
                 </td>
                 <td>
