@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.146.2.2 2005-03-18 17:00:29 mwz444 Exp $
+# $Id: Map.pm,v 1.146.2.3 2005-03-28 20:58:52 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.146.2.2 $)[-1];
+$VERSION = (qw$Revision: 1.146.2.3 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1103,8 +1103,6 @@ Variable Info:
     my $map_viewer_url         = $url . 'viewer';
     my $map_details_url        = $url . 'map_details';
     my $map_set_info_url       = $url . 'map_set_info';
-    my $rel_map_show_corr_only =
-      $drawer->config_data('relational_maps_show_only_correspondences') || 0;
     my $feature_highlight_fg_color =
       $drawer->config_data('feature_highlight_fg_color');
     my $feature_highlight_bg_color =
