@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.17 2003-02-13 00:40:40 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.18 2003-02-14 00:12:04 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.17 $)[-1];
+$VERSION = (qw$Revision: 1.18 $)[-1];
 
 #
 # Turn off output buffering.
@@ -151,12 +151,18 @@ sub show_greeting {
     my $self      = shift;
     my $separator = '-=' x 10;
 
+    print "\nCurrent data source: ", $self->data_source, "\n";
+
     my $action  =  $self->show_menu(
         title   => join("\n", $separator, '  --= Main Menu =--  ', $separator),
         prompt  => 'What would you like to do?',
         display => 'display',
         return  => 'action',
         data    => [
+            { 
+                action  => 'change_data_source', 
+                display => 'Change current data source',
+            },
             { 
                 action  => 'create_map_set', 
                 display => 'Create new map set' 
@@ -192,6 +198,24 @@ sub show_greeting {
 }
 
 # ----------------------------------------------------
+sub change_data_source {
+    my $self = shift;
+    
+    my $data_source = $self->show_menu(
+        title   => 'Available Date Sources',
+        prompt  => 'Which data source?',
+        display => 'display',
+        return  => 'value',
+        data     => [
+            map { { value => $_->{'name'}, display => $_->{'name'} } }
+            @{ $self->data_sources }
+        ],
+    );
+
+    $self->data_source( $data_source );
+}
+
+# ----------------------------------------------------
 sub create_map_set {
     my $self = shift;
     my $db   = $self->db;
@@ -211,7 +235,8 @@ sub create_map_set {
             { Columns => {} },
         ),
     );
-    die "No map types to select from.\n" unless $map_type_id;
+    die "No map types! Please use the web admin tool to create.\n" 
+        unless $map_type_id;
 
     my ( $species_id, $common_name ) = $self->show_menu(
         title   => 'Available Species',
@@ -227,7 +252,8 @@ sub create_map_set {
             { Columns => {} },
         ),
     );
-    die "No species to select from.\n" unless $species_id;
+    die "No species!  Please use the web admin tool to create.\n" 
+        unless $species_id;
 
     print "Map Study Name (long): ";
     chomp( my $map_set_name = <STDIN> || 'New map set' ); 
@@ -961,7 +987,10 @@ sub import_correspondences {
     chomp( my $answer = <STDIN> );
     return if $answer =~ /^[Nn]/;
 
-    my $importer = Bio::GMOD::CMap::Admin::ImportCorrespondences->new;
+    my $importer = Bio::GMOD::CMap::Admin::ImportCorrespondences->new(
+        data_source => $self->data_source,
+    );
+
     $importer->import( 
         fh          => $fh,
 #        map_set_ids => \@map_set_ids,
