@@ -125,87 +125,104 @@ my $admin = Bio::GMOD::CMap::Admin->new( data_source => $cmap->data_source );
 #
 # DBXrefs
 #
-my $dbxrefs = $db->selectall_arrayref(
-    q[
-        select dbxref_id, map_set_id, feature_type_id, species_id, 
-               dbxref_name, url
-        from   cmap_dbxref
-    ],
-    { Columns => {} },
-);
+#my $dbxrefs = $db->selectall_arrayref(
+#    q[
+#        select dbxref_id, map_set_id, feature_type_id, species_id, 
+#               dbxref_name, url
+#        from   cmap_dbxref
+#    ],
+#    { Columns => {} },
+#);
 #print "dbxrefs = ", Dumper( $dbxrefs ), "\n";
+#
+#print "Converting generic dbxrefs (", scalar @$dbxrefs, ")\n";
+#my $feature_types = $db->selectall_hashref(
+#    'select feature_type_id, accession_id, feature_type from cmap_feature_type',
+#    'feature_type_id'
+#);
+#
+#my @new_xrefs;
+#for my $dbxref ( @$dbxrefs ) {
+#    my $new_url = convert_xref(
+#        feature_type_id => $dbxref->{'feature_type_id'} ||  0,
+#        map_set_id      => $dbxref->{'map_set_id'}      ||  0,
+#        species_id      => $dbxref->{'species_id'}      ||  0,
+#        name            => $dbxref->{'dbxref_name'}     || '',
+#        url             => $dbxref->{'url'}             || '',
+#    ) or next;
+#
+##    print "xref = '$name'\nold url = '$dbxref->{url}'\nnew url = '$new_url'\n\n";
+#
+#    push @new_xrefs, { 
+#        name => $dbxref->{'dbxref_name'}, 
+#        url  => $new_url,
+#    };
+#}
+#
+#if ( @new_xrefs ) {
+#    print "Creating ", scalar @new_xrefs, " new xrefs.\n";
+#    $admin->set_xrefs(
+#        table_name => 'cmap_feature',
+#        xrefs      => \@new_xrefs,
+#    ) or warn $admin->error;
+#}
+#
+#my $dbxref_features = $db->selectall_arrayref(
+#    q[
+#        select feature_id, dbxref_name, dbxref_url 
+#        from   cmap_feature
+#    ],
+#    { Columns => {} }
+#);
+#print "Converting feature-specific dbxrefs (", scalar @$dbxref_features, ")\n";
+#
+#for my $f ( @$dbxref_features ) {
+#    my $feature_id  = $f->{'feature_id'}  or next;
+#    my $name        = $f->{'dbxref_name'} or next;
+#    my $url         = $f->{'dbxref_url'}  or next;
+#
+#    my $new_url     = convert_xref(
+#        feature_id  => $feature_id,
+#        name        => $name,
+#        url         => $url,
+#    ) or next;
+#
+##    print "name = '$name', url = '$f->{dbxref_url}'\nnew = '$new_url'\n\n";
+#
+##    if ( $name =~ /^not available$/i && $url eq '' ) {
+##        ; # do nothing for now
+##    }
+##    elsif ( $name && $url ) {
+#
+#    $admin->set_xrefs(
+#        table_name => 'cmap_feature',
+#        object_id => $feature_id, 
+#        xrefs      => [ { name => $name, url => $new_url } ] 
+#    ) or warn $admin->error;
+#}
 
-print "Converting generic dbxrefs (", scalar @$dbxrefs, ")\n";
-my $feature_types = $db->selectall_hashref(
-    'select feature_type_id, accession_id, feature_type from cmap_feature_type',
-    'feature_type_id'
-);
-
-my @new_xrefs;
-for my $dbxref ( @$dbxrefs ) {
-    my $new_url = convert_xref(
-        feature_type_id => $dbxref->{'feature_type_id'} ||  0,
-        map_set_id      => $dbxref->{'map_set_id'}      ||  0,
-        species_id      => $dbxref->{'species_id'}      ||  0,
-        name            => $dbxref->{'dbxref_name'}     || '',
-        url             => $dbxref->{'url'}             || '',
-    ) or next;
-
-#    print "xref = '$name'\nold url = '$dbxref->{url}'\nnew url = '$new_url'\n\n";
-
-    push @new_xrefs, { 
-        name => $dbxref->{'dbxref_name'}, 
-        url  => $new_url,
-    };
-}
-
-if ( @new_xrefs ) {
-    print "Creating ", scalar @new_xrefs, " new xrefs.\n";
-    $admin->set_xrefs(
-        table_name => 'cmap_feature',
-        xrefs      => \@new_xrefs,
-    ) or warn $admin->error;
-}
-
-my $dbxref_features = $db->selectall_arrayref(
+#
+# Species NCBI taxon id
+#
+my $species = $db->selectall_arrayref(
     q[
-        select feature_id, dbxref_name, dbxref_url 
-        from   cmap_feature
+        select species_id, ncbi_taxon_id
+        from   cmap_species
     ],
     { Columns => {} }
 );
-print "Converting feature-specific dbxrefs (", scalar @$dbxref_features, ")\n";
+print "Converting species NCBI taxon ID (", scalar @$species , ")\n";
 
-for my $f ( @$dbxref_features ) {
-    my $feature_id  = $f->{'feature_id'}  or next;
-    my $name        = $f->{'dbxref_name'} or next;
-    my $url         = $f->{'dbxref_url'}  or next;
+for my $s ( @$species  ) {
+    my $species_id = $s->{'species_id'}    or next;
+    my $taxon_id   = $s->{'ncbi_taxon_id'} or next;
 
-    my $new_url     = convert_xref(
-        feature_id  => $feature_id,
-        name        => $name,
-        url         => $url,
-    ) or next;
-
-#    print "name = '$name', url = '$f->{dbxref_url}'\nnew = '$new_url'\n\n";
-
-#    if ( $name =~ /^not available$/i && $url eq '' ) {
-#        ; # do nothing for now
-#    }
-#    elsif ( $name && $url ) {
-
-    $admin->set_xrefs(
-        table_name => 'cmap_feature',
-        object_id => $feature_id, 
-        xrefs      => [ { name => $name, url => $new_url } ] 
+    $admin->set_attributes(
+        table_name => 'cmap_species',
+        object_id  => $species_id,
+        attributes => [ { name => 'NCBI Taxon ID', value => $taxon_id } ],
     ) or warn $admin->error;
 }
-
-#print "new xrefs = ", Dumper( \@new_xrefs ), "\n";
-
-#
-# Feature dbxrefs
-#
 
 print join("\n",
     'You may now drop the following:',
@@ -216,6 +233,7 @@ print join("\n",
     "\tcmap_feature.dbxref_url",
     "\tcmap_feature_note",
     "\tcmap_dbxref",
+    "\tcmap_species.ncbi_taxon_id",
 );
 
 print "\nDone\n";
@@ -224,60 +242,60 @@ exit(0);
 #
 # Subroutines start here.
 #
-sub convert_xref {
-    my %args            = @_;
-    my $feature_type_id = $args{'feature_type_id'} || 0;
-    my $map_set_id      = $args{'map_set_id'}      || 0;
-    my $species_id      = $args{'species_id'}      || 0;
-    my $feature_id      = $args{'feature_id'}      || 0;
-    my $name            = $args{'name'}            || '';
-    my $url             = $args{'url'}             || '';
-    my $ft              = $feature_types->{ $feature_type_id };
-
-    $url =~ s#\[%\s*feature\.#\[% object.#g;
-    $url =~ s/accession_id/feature_aid/g;
-
-    if ( $url =~ m/alternate_name/ ) {
-        warn "DBXref '$name' uses deprecated 'alternate_name' column\n";
-        $url =~ s#\[% object\.alternate_name\s*#\[% a #g;
-        $url = '[% FOREACH a=object.aliases %]'.$url.' [% END %]';
-    }
-
-    my $new_url;
-    if ( $map_set_id ) {
-        my $map_set_aid = $db->selectrow_array(
-            'select accession_id from cmap_map_set where map_set_id=?',
-            {},
-            ( $map_set_id )
-        ) or next;
-
-        $new_url = 
-            '[% IF object.feature_type_aid==\'' . $ft->{'accession_id'} .
-            '\' AND object.map_set_aid==\'' . $map_set_aid . '\' %]'.
-            $url . '[% END %]'
-        ;
-    }
-    elsif ( $species_id ) {
-        my $species_aid = $db->selectrow_array(
-            'select accession_id from cmap_species where species_id=?',
-            {},
-            ( $species_id )
-        ) or next;
-
-        $new_url = 
-            '[% IF object.feature_type_aid==\'' . $ft->{'accession_id'} .
-            '\' AND object.species_aid==\'' . $species_aid . '\' %]'.
-            $url . '[% END %]'
-        ;
-    }
-    elsif ( $feature_id ) {
-        if ( $name =~ /^not available$/i ) {
-            $new_url = '';
-        }
-        else {
-            $new_url = $url;
-        }
-    }
-
-    return $new_url;
-}
+#sub convert_xref {
+#    my %args            = @_;
+#    my $feature_type_id = $args{'feature_type_id'} || 0;
+#    my $map_set_id      = $args{'map_set_id'}      || 0;
+#    my $species_id      = $args{'species_id'}      || 0;
+#    my $feature_id      = $args{'feature_id'}      || 0;
+#    my $name            = $args{'name'}            || '';
+#    my $url             = $args{'url'}             || '';
+#    my $ft              = $feature_types->{ $feature_type_id };
+#
+#    $url =~ s#\[%\s*feature\.#\[% object.#g;
+#    $url =~ s/accession_id/feature_aid/g;
+#
+#    if ( $url =~ m/alternate_name/ ) {
+#        warn "DBXref '$name' uses deprecated 'alternate_name' column\n";
+#        $url =~ s#\[% object\.alternate_name\s*#\[% a #g;
+#        $url = '[% FOREACH a=object.aliases %]'.$url.' [% END %]';
+#    }
+#
+#    my $new_url;
+#    if ( $map_set_id ) {
+#        my $map_set_aid = $db->selectrow_array(
+#            'select accession_id from cmap_map_set where map_set_id=?',
+#            {},
+#            ( $map_set_id )
+#        ) or next;
+#
+#        $new_url = 
+#            '[% IF object.feature_type_aid==\'' . $ft->{'accession_id'} .
+#            '\' AND object.map_set_aid==\'' . $map_set_aid . '\' %]'.
+#            $url . '[% END %]'
+#        ;
+#    }
+#    elsif ( $species_id ) {
+#        my $species_aid = $db->selectrow_array(
+#            'select accession_id from cmap_species where species_id=?',
+#            {},
+#            ( $species_id )
+#        ) or next;
+#
+#        $new_url = 
+#            '[% IF object.feature_type_aid==\'' . $ft->{'accession_id'} .
+#            '\' AND object.species_aid==\'' . $species_aid . '\' %]'.
+#            $url . '[% END %]'
+#        ;
+#    }
+#    elsif ( $feature_id ) {
+#        if ( $name =~ /^not available$/i ) {
+#            $new_url = '';
+#        }
+#        else {
+#            $new_url = $url;
+#        }
+#    }
+#
+#    return $new_url;
+#}
