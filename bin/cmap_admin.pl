@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.29 2003-03-27 21:44:48 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.30 2003-03-31 20:05:41 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.29 $)[-1];
+$VERSION = (qw$Revision: 1.30 $)[-1];
 
 #
 # Get command-line options
@@ -287,11 +287,11 @@ sub create_map_set {
     my ( $species_id, $common_name ) = $self->show_menu(
         title   => 'Available Species',
         prompt  => 'What species?',
-        display => 'common_name,full_name',
+        display => 'common_name',
         return  => 'species_id,common_name',
         data     => $db->selectall_arrayref(
             q[
-                select   s.species_id, s.common_name, s.full_name
+                select   s.species_id, s.common_name
                 from     cmap_species s
                 order by common_name
             ],
@@ -547,26 +547,65 @@ sub delete_map_set {
     my $db   = $self->db or die $self->error;
 
     #
+    # Restrict by map type.
+    #
+    my ( $map_type_id, $map_type ) = $self->show_menu(
+        title   => 'Available Map Types',
+        prompt  => 'What type of map?',
+        display => 'map_type',
+        return  => 'map_type_id,map_type',
+        data     => $db->selectall_arrayref(
+            q[
+                select   mt.map_type_id, mt.map_type
+                from     cmap_map_type mt
+                order by map_type
+            ],
+            { Columns => {} },
+        ),
+    );
+
+    #
+    # Get the species.
+    #
+    my ( $species_id, $common_name ) = $self->show_menu(
+        title   => "Available Species (for $map_type)",
+        prompt  => 'Please select a species',
+        display => 'common_name',
+        return  => 'species_id,common_name',
+        data     => $db->selectall_arrayref(
+            q[
+                select   distinct s.species_id, s.common_name
+                from     cmap_species s,
+                         cmap_map_set ms
+                where    ms.species_id=s.species_id
+                and      ms.map_type_id=?
+                order by common_name
+            ],
+            { Columns => {} },
+            ( $map_type_id )
+        ),
+    );
+
+    #
     # Get the map set.
     #
     my ( $map_set_id, $species_name, $map_set_name ) = $self->show_menu(
         title       => 'Choose Map Set',
-        prompt      => 'Please select a map set',
-        display     => 'species_name,map_set_name',
+        prompt      => "Please select a map set (for $common_name)",
+        display     => 'map_set_name',
         return      => 'map_set_id,species_name,map_set_name',
         allow_null  => 0,
         allow_mult  => 0,
         data        => $db->selectall_arrayref(
             q[
                 select   ms.map_set_id, 
-                         ms.short_name as map_set_name,
-                         s.common_name as species_name
-                from     cmap_map_set ms,
-                         cmap_species s
-                where    ms.species_id=s.species_id
-                order by common_name, map_set_name
+                         ms.short_name as map_set_name
+                from     cmap_map_set ms
+                where    ms.species_id=?
+                order by map_set_name
             ],
             { Columns => {} },
+            ( $species_id )
         ),
     );
 
