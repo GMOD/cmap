@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.90 2005-03-10 18:30:09 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.91 2005-03-17 15:14:35 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.90 $)[-1];
+$VERSION = (qw$Revision: 1.91 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -214,6 +214,7 @@ sub handler {
     }
 
     my @feature_types;
+    my $url_feature_default_display = undef;
     my @corr_only_feature_types;
     my @ignored_feature_types;
     my @included_evidence_types;
@@ -225,6 +226,16 @@ sub handler {
         if ( $param =~ /^feature_type_(\S+)/ ) {
             my $ft  = $1;
             my $val = $apr->param($param);
+            if ( $ft eq 'DEFAULT' ) {
+                if ( $val =~ /^\d$/ ) {
+                    $url_feature_default_display = $val;
+                }
+                else {
+                    $url_feature_default_display = undef;
+                    $apr->param( 'feature_type_DEFAULT', undef );
+                }
+                next;
+            }
             if ( $val == 0 ) {
                 push @ignored_feature_types, $ft;
             }
@@ -422,6 +433,7 @@ sub handler {
             included_feature_types  => \@feature_types,
             corr_only_feature_types => \@corr_only_feature_types,
             ignored_feature_types   => \@ignored_feature_types,
+            url_feature_default_display => $url_feature_default_display,
             ignored_evidence_types  => \@ignored_evidence_types,
             included_evidence_types => \@included_evidence_types,
             less_evidence_types     => \@less_evidence_types,
@@ -478,6 +490,7 @@ sub handler {
       or return $self->error( $data->error );
 
     my $feature_default_display = $data->feature_default_display;
+
     $form_data->{'feature_types'} =
       [ sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} }
           @{ $self->data_module->get_all_feature_types } ];

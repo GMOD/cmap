@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.218 2005-03-16 17:47:31 mwz444 Exp $
+# $Id: Data.pm,v 1.219 2005-03-17 15:14:30 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.218 $)[-1];
+$VERSION = (qw$Revision: 1.219 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -433,6 +433,7 @@ sub cmap_data {
     my $included_feature_type_aids  = $args{'included_feature_type_aids'} || [];
     my $corr_only_feature_type_aids = $args{'corr_only_feature_type_aids'} || [];
     my $ignored_feature_type_aids   = $args{'ignored_feature_type_aids'} || [];
+    my $url_feature_default_display = $args{'url_feature_default_display'};
     my $ignored_evidence_type_aids  = $args{'ignored_evidence_type_aids'} || [];
     my $included_evidence_type_aids = $args{'included_evidence_type_aids'} || [];
     my $less_evidence_type_aids     = $args{'less_evidence_type_aids'} || [];
@@ -442,7 +443,7 @@ sub cmap_data {
     my $pid = $$;
 
     # Fill the default array with any feature types not accounted for.
-    my $feature_default_display = $self->feature_default_display;
+    my $feature_default_display = $self->feature_default_display($url_feature_default_display);
 
     my %found_feature_type;
     foreach
@@ -5628,7 +5629,20 @@ Given the slot_no and map_id
 
 =cut
 
-    my $self = shift;
+    my $self                        = shift;
+    my $url_feature_default_display = shift;
+
+    if ( defined($url_feature_default_display) ) {
+        if ( $url_feature_default_display == 0 ) {
+            $self->{'feature_default_display'} = 'ignore';
+        }
+        elsif ( $url_feature_default_display == 1 ) {
+            $self->{'feature_default_display'} = 'corr_only';
+        }
+        elsif ( $url_feature_default_display == 2 ) {
+            $self->{'feature_default_display'} = 'display';
+        }
+    }
 
     unless ( $self->{'feature_default_display'} ) {
         my $feature_default_display =
