@@ -78,11 +78,21 @@ The following is an example of how that would look.
         drawing_priority 1
     </feature_type>
  
-=head2 Modifying feature types
+=head2 Modifying Feature Types
+
+=over 4
+
+=item * gbrowse_class
 
 Each feature type whose features you to be able view in GBrowse will need a "gbrowse_class" entry added.  This is the class that will be assigned to the features.  If a class does not have a gbrowse_class assigned to it, it will be unavailable from GBrowse.
 
 IMPORTANT NOTE: The Combination of the gbrowse_class (gclass) and feature_name must be unique.  Therefore, it is important to not give a gbrowse_class to feature types that can have redundant names, such as markers or read depth.  A non-unique set will result in an error when preparing the CMap data for GBrowse and also possibly only allowing the first of that name to be displayed.
+
+=item * gbrowse_ftype
+
+This needs to be set for each feature type whose data will be copied from the CMap db to the GBrowse db.  It is the GBrowse feature type "fmethod".
+
+=back
 
     Example:
     <feature_type read>
@@ -94,7 +104,31 @@ IMPORTANT NOTE: The Combination of the gbrowse_class (gclass) and feature_name m
         drawing_lane 3
         drawing_priority 1
         gbrowse_class read
+        gbrowse_ftype Read
     </feature_type>
+
+=head2 Modifying Map Types
+
+=over 4
+
+=item * gbrowse_ftype
+
+This needs to be set for each map type whose data will be copied from the CMap db to the GBrowse db.  It is the GBrowse feature type "fmethod" that will be used for the "map feature".
+
+=back
+
+    Example:
+    <map_type sequence>
+        map_type_accession sequence
+        map_type Sequence
+        map_units bp
+        is_relational_map
+        width 1
+        shape span
+        color
+        display_order 1
+        gbrowse_ftype Sequence
+    </map_type>
 
 =head1 LOAD CMAP DATA
 
@@ -122,6 +156,14 @@ Also, remember to make the "reference class" the same as what was defined in the
 You can use bp_load_gff.pl to load Data into the GBrowse side of the database (making sure that the data is already prepared in the CMap side, of course).  Use the dbi::mysqlcmap adaptor as follows.
 
     /usr/bin/bp_load_gff.pl --dns CMAP_GBROWSE --adaptor dbi::mysqlcmap file_name.gff
+
+=head1 COPY DATA FROM CMAP
+
+You can also copy data that was imported as CMap data into the GBrowse database using CMap Admin.  If your data_source config file has the "gbrowse_compatible" set, the menu option "Copy CMap data into GBrowse" will appear in the cmap_admin.pl main menu. 
+
+Simply select the copy option and select the map sets and feature types you want to import.
+
+Be sure that the feature types you want to copy have both a gbrowse_class and a gbrowse_ftype.  The map sets' map type must have a gbrowse_ftype associated with it in the config file as well.
 
 =head1 LINK THE TWO
 
