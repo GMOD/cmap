@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap;
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.45 2004-02-10 23:06:44 kycl4rk Exp $
+# $Id: CMap.pm,v 1.46 2004-02-25 22:48:49 kycl4rk Exp $
 
 =head1 NAME
 
@@ -62,7 +62,8 @@ Returns the cache directory.
     my $self = shift;
 
     unless ( defined $self->{'cache_dir'} ) {
-        my $cache_dir = $self->config('cache_dir');
+        my $cache_dir = $self->config('cache_dir') or return
+            $self->error('No cache directory defined in "'.CONFIG_FILE.'"');
         unless ( -d $cache_dir ) {
             eval { mkpath( $cache_dir, 0, 0700 ) };
             if ( my $err = $@ ) {
@@ -494,7 +495,8 @@ Returns a Template Toolkit object.
 
     unless ( $self->{'template'} ) {
         my $cache_dir    = $self->cache_dir or return;
-        my $template_dir = $self->config('template_dir') || '';
+        my $template_dir = $self->config('template_dir') or return
+            $self->error('No template directory defined in "'.CONFIG_FILE.'"');
         return $self->error("Template directory '$template_dir' doesn't exist")
             unless -d $template_dir;
 
