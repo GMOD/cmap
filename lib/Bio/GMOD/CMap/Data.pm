@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.44 2003-04-14 16:45:00 kycl4rk Exp $
+# $Id: Data.pm,v 1.45 2003-04-17 17:46:49 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.44 $)[-1];
+$VERSION = (qw$Revision: 1.45 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -567,7 +567,6 @@ Returns the data for drawing comparative maps.
         $sth->execute( $map_id );
         $maps->{ $map_id } = $sth->fetchrow_hashref;
     }
-
 
     return $maps;
 }

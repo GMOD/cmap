@@ -3,6 +3,7 @@ use Apache();
 use Apache::Constants();
 use Apache::Cookie();
 use Apache::Request();
+use Cache::FileCache();
 use Class::Base();
 use Config::General();
 use Data::Dumper();
