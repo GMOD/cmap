@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.83.2.3 2005-03-03 17:20:37 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.83.2.4 2005-03-04 06:15:22 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.83.2.3 $)[-1];
+$VERSION = (qw$Revision: 1.83.2.4 $)[-1];
 
 #
 # Get command-line options
@@ -2401,11 +2401,12 @@ sub reload_correspondence_matrix {
 
 # ----------------------------------------------------
 sub show_question {
-    my $self         = shift;
     my %args         = @_;
     my $question     = $args{'question'} or return;
     my $default      = $args{'default'};
+    my $allow_null   = $args{'allow_null'};
     my $validHashRef = $args{'valid_hash'} || ();
+    $allow_null = 1 unless ( defined($allow_null));
 
     $question .= "<Default: $default>:" if ( defined $default );
     my $answer;
@@ -2419,7 +2420,8 @@ sub show_question {
             print $question;
             next;
         }
-        elsif ( $answer and $answer !~ /^\S+$/ ) {
+        elsif ( (!$allow_null and not defined($answer) )
+            or (defined($answer) and $answer =~ /\s+/) ) {
             print "Your input was not valid.\n";
             print $question;
             next;
