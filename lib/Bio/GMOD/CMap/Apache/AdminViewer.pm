@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.47 2003-10-01 23:15:20 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.48 2003-10-14 23:54:09 kycl4rk Exp $
 
 use strict;
 use Apache::Constants qw[ :common M_GET REDIRECT ];
@@ -34,7 +34,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.47 $)[-1];
+$VERSION        = (qw$Revision: 1.48 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -49,6 +49,8 @@ use constant TEMPLATE         => {
     dbxref_edit               => 'admin_dbxref_edit.tmpl',
     dbxrefs_view              => 'admin_dbxrefs_view.tmpl',
     error                     => 'admin_error.tmpl',
+    feature_attribute_create  => 'admin_feature_attribute_create.tmpl',
+    feature_attribute_edit    => 'admin_feature_attribute_edit.tmpl',
     feature_corr_create       => 'admin_feature_corr_create.tmpl',
     feature_corr_view         => 'admin_feature_corr_view.tmpl',
     feature_corr_edit         => 'admin_feature_corr_edit.tmpl',
@@ -59,6 +61,7 @@ use constant TEMPLATE         => {
     feature_types_view        => 'admin_feature_types_view.tmpl',
     feature_type_create       => 'admin_feature_type_create.tmpl',
     feature_type_edit         => 'admin_feature_type_edit.tmpl',
+    feature_type_view         => 'admin_feature_type_view.tmpl',
     map_create                => 'admin_map_create.tmpl',
     map_edit                  => 'admin_map_edit.tmpl',
     map_view                  => 'admin_map_view.tmpl',
@@ -679,6 +682,27 @@ sub entity_delete {
         $uri_args = '?action=feature_types_view';
     }
     #
+    # Feature Attribute
+    #
+    elsif ( $entity_type eq 'cmap_feature_attribute' ) {
+        my $fid = $db->selectrow_array(
+            q[
+                select feature_id 
+                from   cmap_feature_attribute 
+                where  feature_attribute_id=?
+            ],
+            {},
+            ( $apr->param('entity_id') )
+        );
+
+        $db->do(
+            'delete from cmap_feature_attribute where feature_attribute_id=?',
+            {},
+            ( $apr->param('entity_id') )
+        );
+        $uri_args = "?action=feature_view;feature_id=$fid";
+    }
+    #
     # Feature
     #
     elsif ( $entity_type eq 'cmap_feature' ) {
@@ -848,13 +872,13 @@ sub map_insert {
         q[
             insert
             into   cmap_map
-                   ( map_id, accession_id, map_set_id, map_name, display_order,
-                     start_position, stop_position )
+                   ( map_id, accession_id, map_set_id, map_name, 
+                     display_order, start_position, stop_position )
             values ( ?, ?, ?, ?, ?, ?, ? )
         ],
         {},
         ( $map_id, $accession_id, $map_set_id, $map_name, $display_order,
-          $start_position, $stop_position 
+          $start_position, $stop_position,
         )
     );
 
@@ -1028,7 +1052,7 @@ sub map_update {
                map_name=?, 
                display_order=?, 
                start_position=?,
-               stop_position=?
+               stop_position=?,
         where  map_id=?
     ];
     
@@ -1294,6 +1318,7 @@ sub feature_view {
     my $db         = $self->db or return $self->error;
     my $apr        = $self->apr;
     my $feature_id = $apr->param('feature_id') or die 'No feature id';
+    my $order_by   = $apr->param('order_by') || '';
 
     my $sth = $db->prepare(
         q[
@@ -1330,6 +1355,8 @@ sub feature_view {
 
     $feature->{'note'} = $self->admin->get_note( 'cmap_feature', $feature_id );
     $feature->{'aliases'} = $self->admin->get_aliases( $feature_id );
+    $feature->{'attributes'} = 
+        $self->admin->get_attributes( $feature_id, $order_by );
 
     #
     # Removed "alternate_name"
@@ -1915,6 +1942,132 @@ sub corr_evidence_update {
 }
 
 # ----------------------------------------------------
+sub feature_attribute_create {
+    my ( $self, %args ) = @_;
+
+    my $apr        = $self->apr;
+    my $db         = $self->db;
+    my $feature_id = $apr->param('feature_id') or die 'No feature id';
+    my $sth        = $db->prepare(
+        'select * from cmap_feature where feature_id=?' 
+    );
+    $sth->execute( $feature_id );
+    my $feature    = $sth->fetchrow_hashref;
+
+    return $self->process_template( 
+        TEMPLATE->{'feature_attribute_create'}, 
+        {
+            apr     => $apr,
+            errors  => $args{'errors'},
+            feature => $feature,
+        }
+    );
+}
+
+# ----------------------------------------------------
+sub feature_attribute_edit {
+    my ( $self, %args )      = @_;
+    my $apr                  = $self->apr;
+    my $db                   = $self->db    or return;
+    my $admin                = $self->admin or return;
+    my $feature_attribute_id = $apr->param('feature_attribute_id') or 
+                               die 'No feature attribute id';
+
+    my $sth = $db->prepare(
+        q[
+            select   fa.feature_attribute_id,
+                     fa.feature_id,
+                     fa.display_order,
+                     fa.attribute_name,
+                     fa.attribute_value,
+                     f.feature_name
+            from     cmap_feature_attribute fa,
+                     cmap_feature f
+            where    fa.feature_attribute_id=?
+            and      fa.feature_id=f.feature_id
+        ]
+    );
+    $sth->execute( $feature_attribute_id );
+    my $attribute = $sth->fetchrow_hashref;
+
+    return $self->process_template( 
+        TEMPLATE->{'feature_attribute_edit'}, 
+        {
+            apr       => $apr,
+            attribute => $attribute,
+        }
+    );
+}
+
+# ----------------------------------------------------
+sub feature_attribute_insert {
+    my ( $self, %args )  = @_;
+    my $apr              = $self->apr;
+    my $db               = $self->db    or return;
+    my $admin            = $self->admin or return;
+    my $feature_id       = $apr->param('feature_id') or die 'No feature id';
+
+    my @errors;
+    my $attribute_name   = $apr->param('attribute_name') or
+        push @errors, 'No attribute name';
+    my $attribute_value  = $apr->param('attribute_value') or
+        push @errors, 'No attribute value';
+    my $display_order    = $apr->param('display_order') || 1;
+
+    $admin->set_feature_attributes(
+        feature_id => $feature_id,
+        attributes => [
+            { name => $attribute_name, value => $attribute_value },
+        ],
+    ) or return $self->error( $admin->error );
+
+    return $self->redirect_home( 
+        ADMIN_HOME_URI."?action=feature_view;feature_id=$feature_id"
+    );
+}
+
+# ----------------------------------------------------
+sub feature_attribute_update {
+    my ( $self, %args )      = @_;
+    my $apr                  = $self->apr;
+    my $db                   = $self->db    or return;
+    my $admin                = $self->admin or return;
+
+    my @errors;
+    my $feature_id           = $apr->param('feature_id') or 
+                               push @errors, 'No feature id';
+    my $feature_attribute_id = $apr->param('feature_attribute_id') or 
+                               push @errors, 'No feature attribute id';
+    my $attribute_name       = $apr->param('attribute_name') or 
+                               push @errors, 'No attribute name';
+    my $attribute_value      = $apr->param('attribute_value') or 
+                               push @errors, 'No attribute value';
+    my $display_order        = $apr->param('display_order') || 1;
+
+    return $self->feature_attribute_edit(
+        apr    => $apr,
+        errors => \@errors,
+    ) if @errors;
+
+    $db->do(
+        q[
+            update cmap_feature_attribute 
+            set    attribute_name=?,
+                   attribute_value=?,
+                   display_order=?
+            where  feature_attribute_id=?
+        ],
+        {},
+        ( $attribute_name, $attribute_value, $display_order,
+          $feature_attribute_id )
+    );
+
+    return $self->redirect_home( 
+        ADMIN_HOME_URI."?action=feature_view;feature_id=$feature_id"
+    );
+}
+
+# ----------------------------------------------------
 sub feature_type_create {
     my ( $self, %args ) = @_;
 
@@ -2059,6 +2212,43 @@ sub feature_type_update {
     );
 
     return $self->redirect_home( ADMIN_HOME_URI.'?action=feature_types_view' ); 
+}
+
+# ----------------------------------------------------
+sub feature_type_view {
+    my ( $self, %args ) = @_;
+    my $db              = $self->db or return $self->error;
+    my $apr             = $self->apr;
+    my $feature_type_id = $apr->param('feature_type_id') or 
+                          die 'No feature type id';
+    my $sth             = $db->prepare(
+        q[
+            select   accession_id,
+                     feature_type_id, 
+                     feature_type, 
+                     shape, 
+                     color,
+                     drawing_lane,
+                     drawing_priority
+            from     cmap_feature_type
+            where    feature_type_id=?
+        ]
+    );
+    $sth->execute( $feature_type_id );
+    my $feature_type = $sth->fetchrow_hashref or return $self->error(
+        "No feature type for ID '$feature_type_id'"
+    );
+
+    $feature_type->{'color'}    ||= DEFAULT->{'feature_color'};
+    $feature_type->{'note'}       = 
+        $self->admin->get_note( 'cmap_feature_type', $feature_type_id );
+
+    return $self->process_template( 
+        TEMPLATE->{'feature_type_view'},
+        { 
+            feature_type => $feature_type,
+        }
+    );
 }
 
 # ----------------------------------------------------
