@@ -1,6 +1,6 @@
                       Planned enhancements for CMap
     
-                             $Revision: 1.3 $
+                             $Revision: 1.4 $
 
 -   Some indicator for when features are dropped out
 -   Allow clicking/zooming on comparative maps
@@ -8,6 +8,8 @@
 -   Add buttons under maps for "delete," "flip," "zoom in," and "zoom
     out." Most likely I'll try to use icons for each, respectively: "X,"
     some sort of reciprocating arrows, "+", and "-".
+-   Allow some maps to be flipped by default (add "do_flip" option 
+    in cmap_map?)
 -   Keep up with features better so that a map that appears more than
     one doesn't think that some of its features are corresponding when
     they're not

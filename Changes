@@ -1,6 +1,18 @@
                       Revision history for CMap
 
-0.06
+0.07
+
+-   Fixed bug in cmap_admin.pl which referenced deprecate "linkage_group"
+    field
+-   Altered import code to use Text::RecordParser
+-   Fixed drawing bugs for spanning features with negative coordinates
+-   Changed "span" shape to not extend all the way to the map (was too
+    easily overdrawing other spans)
+-   Significant changes in drawing code to allow relational maps of
+    varying widths that don't collide with map titles or other maps
+
+0.06    2003-04-17
+
 -   Fixed bug (#657917) where last page of features on map view in web
     admin tool was showing too many rows in feature table
 -   Added separate BUGS and TODO files so they are not lost in the 
@@ -144,7 +156,7 @@
     or accesssion ID
 -   Added ability to highlight features with embedded spaces in the name
 
-0.05
+0.05    2002-12-17
 -   Added extra split tokens to highlight string in map detail page 
     as features weren't being highlighted in the table when 
     multiple highlighted features were specified with anything other
@@ -183,7 +195,7 @@
     cmap_admin.pl
 -   Added a schema for PostgreSQL and started initial testing
 
-0.04
+0.04    2002-10-11
 
 -   Added "cmap_dump.pl" script to help dump CMap tables as
     database-independent "INSERT" statements
@@ -218,7 +230,7 @@
 -   Improved POD in cmap_admin.pl
 -   Improved INSTALL docs with feedback from beta testers
 
-0.03
+0.03    2002-09-26
 
 Moved all the code to the namespace Bio::GMOD::CMap as the tool
 became a part of the Generic Model Organism Database project
@@ -251,7 +263,7 @@ became a part of the Generic Model Organism Database project
 -   Fixed problem with spacing of maps and long titles
 -   Removed old CSHL::* namespace
 
-0.02
+0.02    2002-07-31
 
 Pretty much a complete rewrite of version 0.01.  Moved to the
 namespace CSHL::CMap.  Much improved, but still pretty rough, esp. on
