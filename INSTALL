@@ -1,6 +1,6 @@
                               CMAP INSTALL
 
-                             $Revision: 1.34 $
+                             $Revision: 1.35 $
 
 1.      QUICK START
 
@@ -285,9 +285,7 @@ whatever user will connect to your database.
 
 It would be hard to imagine that a UNIX system wouldn't have some
 version of Perl installed.  We need a minimum of Perl 5.6.0 (but 5.6.1
-is recommended).  Currently, 5.8.1 is the latest, and this application
-seems to work just fine that version.  inspect your version of Perl,
-type:
+is recommended).  To inspect your version of Perl, type:
 
     $ perl -v
 
@@ -308,23 +306,31 @@ On my current system, the output looks like this:
 
 If your version of Perl is OK, you can likely skip ahead to the next
 section.  If you have anything 5.00503 or older, you'll need to upgrade
-your Perl binary.  Even if your Perl is new enough, you may still want
-to consider building a new binary from source if you've never done so.
-It's actually fun (in a geeky way), but it also may prove a necessity.
-A fair number of mod_perl installations fail because people use broken
-RPM versions of Perl.  You can just stick with your installed Perl and
-see if it causes problems.  Obviously, upgrading important system
-binaries like Perl can cause unforeseen problems.  If you're using an
-established machine that is already being used for other tasks,
-upgrading Perl could break a lot of things, so you should discuss this
-with your sysadmin.  (Of course, you could always build your own Perl
-with a PREFIX of something like "/usr/local/cmap" and install
-everything you need -- Perl, Apache, CMap, etc. -- there.  This would
-then allow you to build everything fresh without disturbing your
-existing binaries.  Again, discuss this with your sysadmin.)  If you
-are lucky enough to have a free machine to play with, it's nice to
-start with a clean slate by building everything from source.  You
-should choose what's practical, convenient, and appropriate for you.
+your Perl binary.  
+
+Even if your Perl is new enough, you may still want to consider
+building a new binary from source if you're concerned about
+performance, e.g., RedHat compiles their Perl with threading support,
+which can make it slower.  Unless you are pretty sure that your
+version of Perl is somehow broken, I'd recommend sticking with
+whatever is installed on your system or just using a pre-built package
+(e.g., a RedHat RPM or Debian package or whatever).
+
+If you really want to compile your own Perl, it's actually fun (in a
+geeky way), but it will probably cause a lot more work for you to
+install the modules that you'll need for use as a web development
+language.  And, obviously, upgrading important system binaries like
+Perl can cause unforeseen problems.  If you're using an established
+machine that is already being used for other tasks, upgrading Perl
+could break a lot of things, so you should discuss this with your
+sysadmin.  (Of course, you could always build your own Perl with a
+PREFIX of something like "/usr/local/cmap" and install everything you
+need -- Perl, Apache, CMap, etc. -- there.  This would then allow you
+to build everything fresh without disturbing your existing binaries.
+Again, discuss this with your sysadmin.)  If you are lucky enough to
+have a free machine to play with, it's nice to start with a clean
+slate by building everything from source.  You should choose what's
+practical, convenient, and appropriate for you.
 
 If you want to install a new Perl binary, it only takes a few
 minutes to download and build.  Here's one way:
@@ -343,13 +349,13 @@ minutes to download and build.  Here's one way:
     # make install
 
 For better downloads, go to the CPAN (Comprehensive Perl Archive
-Network) website (http://www.cpan.org/) and find a mirror near you.  (A
-mirror is a machine whose owner is nice enough to provide disk space
-and bandwidth so that demand can be distributed among processors and
-across geographical areas.  Needless to say, it's usually better to
-find a mirror that's near you as long as that machine isn't overloaded.
-Just keep trying different machines until you find one with a good,
-fast connection to you.)
+Network) website (http://www.cpan.org/) and find a mirror near you.
+(A mirror is a machine whose owner is nice enough to provide disk
+space and bandwidth so that demand can be distributed among processors
+and across geographical areas.  Needless to say, it's usually better
+to find a mirror that's near you as long as that machine isn't
+overloaded.  Just keep trying different machines until you find one
+with a good, fast connection to you.)
 
 11.     INSTALLING APACHE AND MOD_PERL
 
@@ -412,7 +418,7 @@ Note: This application has only been developed under the Apache and
       mod_perl 1.x trees. Apache and mod_perl 2.x are exciting new
       frontiers for mod_perlers, but it will be a while before this
       application is moved to that architecture. Just stick with the
-       1.x trees.
+      1.x trees.
 
 You can install Apache and mod_perl in one fell swoop so long as
 you're not interested in compiling in any other modules (e.g., PHP
@@ -525,64 +531,54 @@ lot of errors, and, of course, things won't work in the end.  It's
 best to use the CPAN shell to install all the modules that Perl
 complains about.
 
-Here are brief descriptions of some of the major modules required:
+Here are the CPAN modules required:
 
-*   Apache::Request:  Also known as "libapreq" because this is a C library,
-    this module actually bundles many other modules used, including
-    Apache::Request and Apache::Cookie.  The first handles the parsing of
-    the request and other miscellaneous bits about communicating with the
-    user's browser, while the latter is a nice interface to reading and
-    setting cookies, which is important as user preferences are stored in
-    cookies.  Both have their interfaces modeled after Lincoln Stein's
-    CGI.pm module.
+*   Apache, Apache::Constants (automatically installed when you build
+    Apache with mod_perl)
 
-*   Class::Base:  A very nice class-building module written by Andy
-    Wardley, the author of Template Toolkit.  All the CMap modules inherit
-    from Class::Base.
+*   Apache::Request (AKA "libapreq", also contains Apache::Cookie)
 
-*   Config::General:  A module for reading configuration files, this is
-    what parses "cmap.conf."
+*   Class::Base
 
-*   DBI: The Perl Database Interface, this module standardizes the way
-    that Perl talks to databases.  The specifics of how to communicate
-    with particular databases is handled by lower-level drivers.  This is
-    one of the reasons why it was relatively easy to write this
-    application to talk to either MySQL or Oracle -- only the SQL has to
-    be customized for each vendor's product, but the way the code talks to
-    the database is the same.
+*   Config::General
 
-*   DBD::mysql, DBD::Oracle, DBD::*: Since this application works with
-    both a number of different databases, I don't bother specifying
-    which DBD driver to install. Therefore it is up to you to install
-    DBD::mysql or DBD::Oracle (or whatever) yourself, then add it to
-    your "perlstartup.pl" (or equivalent).
+*   Data::Page
 
-    Whichever database you choose to use, it is largely up to you to
-    figure out how to get the driver to work. Most DBD drivers require
-    some sort of client software supplied by the vendor to be installed
-    locally. If, for instance, you choose to use Oracle, this
-    installation is likely to be quite a headache if you do not have an
-    administrative background, so you may want to get some help from an
-    experienced systems administrator. I've included fairly detailed
-    instructions for getting everything to work with MySQL because it's
-    my favorite database, and it's free for you to use. If you're not
-    going to use MySQL, you'll have to modify the general ideas
-    (creating the database and table, granting user permissions, etc.)
-    to work with your database.
+*   Data::Pageset
 
-*   File::MkTemp:  This module is responsible for creating the temporary
-    files where the map images are written.
+*   DBI
 
-*   GD:  Lincoln Stein's Perl module that interfaces with Paul Boutell's
-    libgd system library which actually does the drawing of the maps.
+*   DBD::mysql (if you're using MySQL)
 
-*   IO::Tee: This module mimics the "tee" utility of UNIX allowing
-    simulaneous streaming to multiple outputs (terminals, files, etc.)
+*   DBD::Oracle (if you're using Oracle)
 
-*   Template:  The Template Toolkit, this module handles the substitutions
-    made in the template files to create the HTML displayed to browsers.
+*   DBD::Pg (if you're using PostgreSQL)
 
-*   Time::Object, Time::ParseDate: Two modules for dealing with dates.
+*   DBD::SQLite (if you're using SQL::Lite)
+
+*   DBD::Sybase (if you're using Sybase)
+
+*   File::MkTemp
+
+*   File::Path
+
+*   GD
+
+*   IO::Tee
+
+*   Template
+
+*   Text::RecordParser
+
+*   Text::ParseWords
+
+*   Time::Object 
+
+*   Time::ParseDate
+
+*   URI::Escape
+
+*   YAML
 
 If you need to install any of these Perl modules, I'd really recommend
 you use the CPAN shell, a convenient package that automates the
