@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.165.2.13 2004-11-28 21:14:15 mwz444 Exp $
+# $Id: Data.pm,v 1.165.2.14 2004-11-30 20:50:49 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.165.2.13 $)[-1];
+$VERSION = (qw$Revision: 1.165.2.14 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -230,7 +230,7 @@ sub correspondence_detail_data {
         }
 
         $corr->{'evidence'} =
-          sort_selectall_arrayref( $corr->{'evidence'}, 'rank',
+          sort_selectall_arrayref( $corr->{'evidence'}, '#rank',
             'evidence_type' );
         $self->store_cached_results(
             4,
@@ -1509,7 +1509,7 @@ Returns the data for the correspondence matrix.
     }
 
     $map_types =
-      sort_selectall_arrayref( $map_types, 'display_order', 'map_type' );
+      sort_selectall_arrayref( $map_types, '#display_order', 'map_type' );
 
     unless ( $args{'show_matrix'} ) {
         return {
@@ -1582,10 +1582,12 @@ Returns the data for the correspondence matrix.
             $row->{'map_type'} =
               $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
         }
-        $map_sets =
-          sort_selectall_arrayref( $map_sets, 'default_display_order',
-            'map_type', 'display_order', 'common_name', 'display_order',
-            'published_on desc', 'short_name' );
+        $map_sets = sort_selectall_arrayref(
+            $map_sets,           '#default_display_order',
+            'map_type',          '#display_order',
+            'common_name',       '#display_order',
+            'published_on desc', 'short_name'
+        );
 
         my $map_sql = qq[
             select   distinct map.map_name,
@@ -1725,9 +1727,9 @@ Returns the data for the correspondence matrix.
 
         @reference_map_sets = @{
             sort_selectall_arrayref(
-                $tempMapSet,    'map_type_display_order',
-                'map_type',     'species_display_order',
-                'species_name', 'map_set_display_order',
+                $tempMapSet,    '#map_type_display_order',
+                'map_type',     '#species_display_order',
+                'species_name', '#map_set_display_order',
                 'map_set_name', 'published_on desc',
                 'map_set_name'
             )
@@ -1957,9 +1959,9 @@ Returns the data for the correspondence matrix.
               $self->map_type_data( $row->{'map_type_aid'}, 'display_order' );
         }
         $tempMapSet = sort_selectall_arrayref(
-            $tempMapSet,    'map_type_display_order',
-            'map_type',     'species_display_order',
-            'species_name', 'map_set_display_order',
+            $tempMapSet,    '#map_type_display_order',
+            'map_type',     '#species_display_order',
+            'species_name', '#map_set_display_order',
             'published_on', 'map_set_name'
         );
     }
@@ -2162,10 +2164,22 @@ sub cmap_form_data {
         unless ( $ref_map_sets = $self->get_cached_results( 1, $sql_str ) ) {
             $ref_map_sets =
               $db->selectall_arrayref( $sql_str, { Columns => {} }, );
-            foreach my $row ( @{$ref_map_sets} ) {
+
+            foreach my $row (@$ref_map_sets) {
                 $row->{'map_type'} =
                   $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
+                $row->{'map_type_display_order'} =
+                  $self->map_type_data( $row->{'map_type_aid'},
+                    'display_order' );
             }
+
+            $ref_map_sets = sort_selectall_arrayref(
+                $ref_map_sets,  '#map_type_display_order',
+                'map_type',     '#species_display_order',
+                'species_name', '#map_set_display_order',
+                'map_set_name',
+            );
+
             $self->store_cached_results( 1, $sql_str, $ref_map_sets );
         }
     }
@@ -2847,7 +2861,7 @@ Given a feature acc. id, find out all the details on it.
         }
 
         $corr->{'evidence'} =
-          sort_selectall_arrayref( $corr->{'evidence'}, 'rank',
+          sort_selectall_arrayref( $corr->{'evidence'}, '#rank',
             'evidence_type' );
 
         $corr->{'aliases'} = $db->selectcol_arrayref(
@@ -3432,7 +3446,7 @@ Returns the data for drawing comparative maps.
       $self->fake_selectall_arrayref( $self->map_type_data(),
         'map_type_accession as map_type_aid', 'map_type' );
     $map_types =
-      sort_selectall_arrayref( $map_types, 'display_order', 'map_type' );
+      sort_selectall_arrayref( $map_types, '#display_order', 'map_type' );
 
     return {
         species   => $species,
@@ -3974,8 +3988,8 @@ Returns data on species.
               $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
         }
         $s->{'map_sets'} =
-          sort_selectall_arrayref( $s->{'map_sets'}, 'default_display_order',
-            'map_type', 'display_order', 'published_on desc',
+          sort_selectall_arrayref( $s->{'map_sets'}, '#default_display_order',
+            'map_type', '#display_order', 'published_on desc',
             'map_set_name' );
     }
 
