@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.51 2004-08-06 05:19:56 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.52 2004-08-07 01:35:54 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.51 $)[-1];
+$VERSION = (qw$Revision: 1.52 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -345,14 +345,6 @@ sub handler {
                 lc $a->{'feature_type'} cmp lc $b->{'feature_type'}
             } @{ $self->data_module->get_all_feature_types}
         ];
-    #
-    # The start and stop may have had to be moved as there 
-    # were too few or too many features in the selected region.
-    #
-#    $apr->param( ref_map_names   => $ref_map_names                  );
-#    $apr->param( ref_map_aids    => join(',', @ref_map_aids)        );
-#    $apr->param( ref_species_aid => $form_data->{'ref_species_aid'} );
-#    $apr->param( ref_map_set_aid => $form_data->{'ref_map_set_aid'} );
 
     #
     # Wrap up our current comparative maps so we can store them on 

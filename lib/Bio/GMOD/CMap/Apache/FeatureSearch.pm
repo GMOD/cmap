@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::FeatureSearch;
 # vim: set ft=perl:
 
-# $Id: FeatureSearch.pm,v 1.20 2004-06-16 17:31:28 mwz444 Exp $
+# $Id: FeatureSearch.pm,v 1.21 2004-08-07 01:35:54 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.20 $)[-1];
+$VERSION = (qw$Revision: 1.21 $)[-1];
 
 use Bio::GMOD::CMap::Data;
 use Data::Pageset;
@@ -74,8 +74,6 @@ sub handler {
 
     my $html;
     my $t = $self->template;
-print STDERR Dumper(\@feature_type_aids)."\n";
-print STDERR Dumper($results->{'feature_type_aids'})."\n";
     $t->process( 
         TEMPLATE, 
         { 
@@ -84,7 +82,7 @@ print STDERR Dumper($results->{'feature_type_aids'})."\n";
             stylesheet          => $self->stylesheet,
             pager               => $results->{'pager'},
             species             => $results->{'species'},
-            feature_type_aids       => $results->{'feature_type_aids'},
+            feature_types       => $results->{'feature_types'},
             search_results      => $results->{'data'},
             species_lookup      => { map { $_, 1 } @species_aids      },
             feature_type_aid_lookup => { map { $_, 1 } @feature_type_aids },

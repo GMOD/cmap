@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.137 2004-08-04 04:30:59 mwz444 Exp $
+# $Id: Data.pm,v 1.138 2004-08-07 01:35:53 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.137 $)[-1];
+$VERSION = (qw$Revision: 1.138 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -136,9 +136,10 @@ sub correspondence_detail_data {
             where  accession_id=?
 		 ];
     my ( $corr, $feature1, $feature2 );
-    unless ( ( $corr, $feature1, $feature2 ) =
-        @{ $self->get_cached_results( $sql . $correspondence_aid ) } )
-    {
+    if (my $array_ref=$self->get_cached_results( $sql . $correspondence_aid)){
+        ( $corr, $feature1, $feature2 ) = @$array_ref;
+    }
+    else{
         my $sth = $db->prepare($sql);
         $sth->execute($correspondence_aid);
 
@@ -821,7 +822,7 @@ sub slot_data {
             #$sql_str .= "and f.feature_id=-1 "
             #  if ( $corr_only_feature_type_aids->[0] == -1 );
             if (
-                @$corr_only_feature_type_aids
+                (@$corr_only_feature_type_aids or $feature_types_undefined)
                 and (  $self->slot_info->{ $this_slot_no + 1 }
                     || $self->slot_info->{ $this_slot_no - 1 } )
               )
@@ -847,7 +848,8 @@ sub slot_data {
                   ] . $sql_base_bottom . q[
                 and cl.feature_id1=f.feature_id
                 and cl.feature_id2=f2.feature_id];
-                unless ( $corr_only_feature_type_aids->[0] == -1 ) {
+                unless ( $corr_only_feature_type_aids->[0] == -1 
+                    or $feature_types_undefined) {
                     $with_corr_sql .=
                       " and f.feature_type_accession in ('"
                       . join( "','", @$corr_only_feature_type_aids ) . "')";
@@ -2945,7 +2947,7 @@ Given a list of feature names, find any maps they occur on.
         my $where = '';
         if (@$incoming_feature_type_aids) {
             $where .=
-              'and f.accession_id in ('
+              'and f.feature_type_accession in ('
               . join( ', ', map { qq['$_'] } @$incoming_feature_type_aids ) . ') ';
         }
 
@@ -3128,7 +3130,7 @@ Given a list of feature names, find any maps they occur on.
     #
     # Get the feature types.
     #
-    my $feature_type_aids = $self->fake_selectall_arrayref(
+    my $feature_types = $self->fake_selectall_arrayref(
         $self->feature_type_data(),
         'feature_type_accession as feature_type_aid',
         'feature_type'
@@ -3137,7 +3139,7 @@ Given a list of feature names, find any maps they occur on.
     return {
         data          => \@found_features,
         species       => $species,
-        feature_type_aids => $feature_type_aids,
+        feature_types => $feature_types,
         pager         => $pager,
     };
 }
@@ -3542,7 +3544,8 @@ Returns the detail info for a map.
                    map.map_name,
                    map.start_position,
                    map.stop_position,
-                   ms.map_units
+                   ms.map_units,
+                   ms.map_type_accession as map_type_aid
             from   cmap_map map,
                    cmap_map_set ms,
                    cmap_species s
@@ -3637,6 +3640,10 @@ Returns the detail info for a map.
 
     for my $feature (@$features) {
         $feature->{'aliases'} = $alias_lookup{ $feature->{'feature_id'} } || [];
+        $feature->{'feature_type'} = 
+            $self->feature_type_data( $feature->{'feature_type_aid'},
+            'feature_type' );
+
     }
 
     #

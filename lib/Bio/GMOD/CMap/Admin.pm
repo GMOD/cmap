@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.54 2004-08-04 18:51:09 mwz444 Exp $
+# $Id: Admin.pm,v 1.55 2004-08-07 01:35:53 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.54 $)[-1];
+$VERSION = (qw$Revision: 1.55 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -1023,10 +1023,8 @@ sub delete_duplicate_correspondences {
         group by a.feature_correspondence_id
         ];
     
-print STDERR "$dup_sql\n";
     my $duplicates = $db->selectall_arrayref( $dup_sql, { Columns => {} });
 
-print STDERR Dumper($duplicates)."\n";
     ### Move any non-duplicate evidence from the duplicate to the original.
     foreach my $dup (@$duplicates){
         print "Deleting correspondence id ".$dup->{'duplicate_id'}."\n";
