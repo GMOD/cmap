@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.39 2003-07-03 18:37:35 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.40 2003-07-30 02:10:16 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.39 $)[-1];
+$VERSION = (qw$Revision: 1.40 $)[-1];
 
 #
 # Get command-line options
@@ -818,7 +818,6 @@ sub export_as_sql {
                 accession_id     => STR,
                 feature_type     => STR,
                 default_rank     => NUM,
-                is_visible       => NUM,
                 shape            => STR,
                 color            => STR,
                 drawing_lane     => NUM,
