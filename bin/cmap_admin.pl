@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.42 2003-09-02 20:09:12 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.43 2003-09-04 19:47:10 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.42 $)[-1];
+$VERSION = (qw$Revision: 1.43 $)[-1];
 
 #
 # Get command-line options
@@ -851,6 +851,7 @@ sub export_as_sql {
             name   => 'cmap_map_type',
             fields => {
                 map_type_id       => NUM,
+                accession_id      => STR,
                 map_type          => STR,
                 map_units         => STR,
                 is_relational_map => NUM,
