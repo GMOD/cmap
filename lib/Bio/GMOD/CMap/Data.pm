@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.123 2004-06-07 15:01:48 mwz444 Exp $
+# $Id: Data.pm,v 1.124 2004-06-08 14:41:12 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.123 $)[-1];
+$VERSION = (qw$Revision: 1.124 $)[-1];
 
 use Data::Dumper;
 use Regexp::Common;
@@ -3491,32 +3491,32 @@ Returns the data for drawing comparative maps.
         push @{ $map_lookup{ $map->{'map_set_id'} } }, $map;
     }
 
-    #
-    # Feature types on the maps
-    #
-    my $ft_sql = qq[
-        select   distinct 
-                 f.feature_type_accession as feature_type_aid, 
-                 map.map_set_id
-        from     cmap_feature f,
-                 cmap_map map,
-                 cmap_map_set ms, 
-                 cmap_species s
-        where    f.map_id=map.map_id
-        and      map.map_set_id=ms.map_set_id
-        and      ms.species_id=s.species_id
-        $restriction
-    ];
-    my $feature_types = $db->selectall_arrayref( $ft_sql, { Columns => {} } );
-    foreach my $row ( @{$feature_types} ) {
-        $row->{'feature_type'} =
-          $self->feature_type_data( $row->{'feature_type_aid'},
-            'feature_type' );
-    }
-    my %ft_lookup;
-    for my $ft (@$feature_types) {
-        push @{ $ft_lookup{ $ft->{'map_set_id'} } }, $ft;
-    }
+#    #
+#    # Feature types on the maps
+#    #
+#    my $ft_sql = qq[
+#        select   distinct 
+#                 f.feature_type_accession as feature_type_aid, 
+#                 map.map_set_id
+#        from     cmap_feature f,
+#                 cmap_map map,
+#                 cmap_map_set ms, 
+#                 cmap_species s
+#        where    f.map_id=map.map_id
+#        and      map.map_set_id=ms.map_set_id
+#        and      ms.species_id=s.species_id
+#        $restriction
+#    ];
+#    my $feature_types = $db->selectall_arrayref( $ft_sql, { Columns => {} } );
+#    foreach my $row ( @{$feature_types} ) {
+#        $row->{'feature_type'} =
+#          $self->feature_type_data( $row->{'feature_type_aid'},
+#            'feature_type' );
+#    }
+#    my %ft_lookup;
+#    for my $ft (@$feature_types) {
+#        push @{ $ft_lookup{ $ft->{'map_set_id'} } }, $ft;
+#    }
 
     #
     # Attributes of the map sets
@@ -3551,8 +3551,8 @@ Returns the data for drawing comparative maps.
     for my $map_set (@$map_sets) {
         $map_set->{'object_id'}     = $map_set->{'map_set_id'};
         $map_set->{'attributes'}    = $attr_lookup{ $map_set->{'map_set_id'} };
-        $map_set->{'feature_types'} = $ft_lookup{ $map_set->{'map_set_id'} }
-          || [];
+#        $map_set->{'feature_types'} = $ft_lookup{ $map_set->{'map_set_id'} }
+#          || [];
         $map_set->{'maps'} = $map_lookup{ $map_set->{'map_set_id'} } || [];
     }
 
@@ -3753,6 +3753,24 @@ Returns the detail info for a map.
         ( $map_id, $map_start, $map_stop, $map_start, $map_start )
     );
 
+     my $feature_count_by_type = $db->selectall_arrayref(
+         q[
+             select   count(f.feature_type_accession) as no_by_type, 
+                      f.feature_type_accession as feature_type_aid
+             from     cmap_feature f
+             where    f.map_id=?
+             group by f.feature_type_aid
+             order by no_by_type desc
+         ],
+         { Columns => {} },
+         ( $map_id )
+     );
+    foreach my $row ( @{$feature_count_by_type} ) {
+        $row->{'feature_type'} =
+          $self->feature_type_data( $row->{'feature_type_aid'},
+            'feature_type' );
+    }
+
     #
     # Page the data here so as to reduce the calls below
     # for the comparative map info.
@@ -3948,12 +3966,13 @@ Returns the detail info for a map.
     #$db->do("delete from cmap_map_cache where pid=$pid");
 
     return {
-        features         => $features,
-        feature_types    => \@feature_types,
-        evidence_types   => \@evidence_types,
-        reference_map    => $reference_map,
-        comparative_maps => \@comparative_maps,
-        pager            => $pager,
+        features              => $features,
+        feature_count_by_type => $feature_count_by_type,
+        feature_types         => \@feature_types,
+        evidence_types        => \@evidence_types,
+        reference_map         => $reference_map,
+        comparative_maps      => \@comparative_maps,
+        pager                 => $pager,
     };
 }
 

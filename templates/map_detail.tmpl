@@ -177,6 +177,29 @@
         <th align="right">Map&nbsp;Stop:</th>
         <td>[% IF reference_map.stop_position.defined %][% reference_map.stop_position | commify %][% ELSE %]NULL[% END %] [% reference_map.map_units %]</td>
     </tr>
+
+    [% IF feature_count_by_type.size %]
+     <tr>
+         <th align="right" valign="top">Features&nbsp;by&nbsp;Type:</th>
+         <td>
+         <table>
+         [% SET total=0 %]
+         [% FOREACH ft=feature_count_by_type %]
+             <tr>
+                 <td align="right">[% ft.no_by_type | commify %]</td>
+                 <td align="left">[% ft.feature_type %]</td>
+                 [% total = total + ft.no_by_type -%]
+             </tr>
+         [% END %]
+             <tr>
+                 <td align="right"><u>[% total | commify %]</u></td>
+                 <td align="left"><u>Total</u></td>
+             </tr>
+         </table>
+         </td>
+     </tr>
+     [% END %]
+
     [% FOREACH att=reference_map.attributes %]
         [% NEXT UNLESS att.is_public %]
         <tr>
