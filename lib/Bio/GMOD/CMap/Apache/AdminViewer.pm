@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.57 2003-12-20 02:29:02 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.58 2003-12-30 18:48:25 kycl4rk Exp $
 
 use strict;
 use Apache::Constants qw[ :common M_GET REDIRECT ];
@@ -34,7 +34,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.57 $)[-1];
+$VERSION        = (qw$Revision: 1.58 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -476,35 +476,13 @@ sub corr_evidence_type_create {
 # ----------------------------------------------------
 sub corr_evidence_type_insert {
     my $self          = shift;
-    my @errors        = ();
-    my $db            = $self->db or return $self->error;
+    my $admin         = $self->admin;
     my $apr           = $self->apr;
-    my $evidence_type = $apr->param('evidence_type') or 
-        push @errors, 'No evidence type';
-    my $evidence_id   = next_number(
-        db            => $db, 
-        table_name    => 'cmap_evidence_type',
-        id_field      => 'evidence_type_id',
-    ) or push @errors, 'No next number for correspondence evidence type id';
-    my $accession_id  = $apr->param('accession_id')  || $evidence_id;
-    my $rank          = $apr->param('rank')          or
-        push @errors, 'Please define a rank';
-    my $line_color    = $apr->param('line_color')    || '';
-
-    return $self->corr_evidence_type_create( errors => \@errors ) if @errors;
-
-    $db->do(
-        q[
-            insert
-            into    cmap_evidence_type
-                    ( evidence_type_id, accession_id, evidence_type, 
-                      rank, line_color )
-            values  ( ?, ?, ?, ?, ? )
-        ],
-        {},
-        ( $evidence_id, $accession_id, $evidence_type, 
-          $rank, $line_color )
-    );
+    my $evidence_id   = $admin->evidence_type_create(
+        evidence_type => $apr->param('evidence_type') || '',
+        rank          => $apr->param('rank')          || '',
+        line_color    => $apr->param('line_color')    || '',
+    ) or return $self->corr_evidence_type_create( errors => $admin->error );
 
     return $self->redirect_home( 
         ADMIN_HOME_URI.'?action=corr_evidence_types_view'
@@ -1218,7 +1196,6 @@ sub feature_alias_insert {
         feature_id => $feature_id,
         alias      => $apr->param('alias')      || '',
     ) or return $self->feature_alias_create( errors => [ $admin->error ] );
-
     
     return $self->redirect_home( 
         ADMIN_HOME_URI."?action=feature_view;feature_id=$feature_id" 
@@ -1396,56 +1373,20 @@ sub feature_edit {
 # ----------------------------------------------------
 sub feature_insert {
     my $self            = shift;
-    my @errors          = ();
-    my $db              = $self->db or return $self->error;
+    my $admin           = $self->admin;
     my $apr             = $self->apr;
-    my $map_id          = $apr->param('map_id') or die 'No map_id';
-    my $feature_id      = next_number(
-        db              => $db, 
-        table_name      => 'cmap_feature',
-        id_field        => 'feature_id',
-    ) or die 'No feature id';
-    my $accession_id    = $apr->param('accession_id') || $feature_id;
-    my $feature_name    = $apr->param('feature_name') or 
-                          push @errors, 'No feature name';
-    my $feature_type_id = $apr->param('feature_type_id') 
-                           or push @errors, 'No feature type';
-    my $start_position  = $apr->param('start_position');
-    push @errors, "No start" unless $start_position =~ NUMBER_RE;
-    my $stop_position   = $apr->param('stop_position');
-    my $is_landmark     = $apr->param('is_landmark') || 0;
-
-    return $self->feature_create( errors => \@errors ) if @errors;
-
-    my @insert_args = ( 
-        $feature_id, $accession_id, $map_id, $feature_name, 
-        $feature_type_id, $is_landmark, $start_position
-    );
-
-    my $stop_placeholder; 
-    if ( $stop_position =~ NUMBER_RE ) {
-        $stop_placeholder = '?';
-        push @insert_args, $stop_position;
-    }
-    else {
-        $stop_placeholder = 'NULL';
-    }
-
-    $db->do(
-        qq[
-            insert
-            into   cmap_feature
-                   ( feature_id, accession_id, map_id, feature_name, 
-                     feature_type_id, is_landmark,
-                     start_position, stop_position )
-            values ( ?, ?, ?, ?, ?, ?, ?, $stop_placeholder )
-        ],
-        {},
-        @insert_args
-    );
+    my $feature_id      = $admin->feature_create(
+        map_id          => $apr->param('map_id')          ||  0,
+        accession_id    => $apr->param('accession_id')    || '',
+        feature_name    => $apr->param('feature_name')    || '',
+        feature_type_id => $apr->param('feature_type_id') ||  0,
+        is_landmark     => $apr->param('is_landmark')     ||  0,
+        start_position  => $apr->param('start_position')  ||  0,
+        stop_position   => $apr->param('stop_position')
+    ) or return $self->feature_create( errors => $admin->error );
 
     return $self->redirect_home( 
-        ADMIN_HOME_URI."?action=map_view;map_id=$map_id" 
+        ADMIN_HOME_URI.'?action=map_view;map_id='.$apr->param('map_id')
     ); 
 }
 
@@ -1769,9 +1710,12 @@ sub feature_corr_insert {
 
     return $self->feature_corr_create( errors => \@errors ) if @errors;
 
-    my $feature_correspondence_id = $admin->insert_correspondence(
-        $feature_id1, $feature_id2, $evidence_type_id, 
-        $accession_id, $is_enabled
+    my $feature_correspondence_id =  $admin->feature_correspondence_create(
+        feature_id1               => $feature_id1, 
+        feature_id2               => $feature_id2, 
+        evidence_type_id          => $evidence_type_id, 
+        accession_id              => $accession_id, 
+        is_enabled                => $is_enabled
     );
 
     if ( $feature_correspondence_id < 0 ) {
@@ -1926,7 +1870,6 @@ sub feature_corr_view {
                      ce.feature_correspondence_id,
                      ce.evidence_type_id,
                      ce.score,
-                     ce.remark,
                      et.evidence_type,
                      et.rank
             from     cmap_correspondence_evidence ce,
@@ -2013,8 +1956,7 @@ sub corr_evidence_edit {
                    ce.accession_id,
                    ce.feature_correspondence_id,
                    ce.evidence_type_id,
-                   ce.score,
-                   ce.remark
+                   ce.score
             from   cmap_correspondence_evidence ce
             where  ce.correspondence_evidence_id=?
         ]
@@ -2056,7 +1998,6 @@ sub corr_evidence_insert {
     my $evidence_type_id          = $apr->param('evidence_type_id') 
         or push @errors, 'No evidence type';
     my $score                     = $apr->param('score') || '';
-    my $remark                    = $apr->param('remark') || '';
 
     my $correspondence_evidence_id = next_number(
         db               => $db, 
@@ -2074,14 +2015,12 @@ sub corr_evidence_insert {
             insert
             into   cmap_correspondence_evidence
                    ( correspondence_evidence_id, accession_id, 
-                     feature_correspondence_id, evidence_type_id,
-                     score, remark )
-            values ( ?, ?, ?, ?, ?, ? )
+                     feature_correspondence_id, evidence_type_id, score )
+            values ( ?, ?, ?, ?, ? )
         ],
         {},
         ( $correspondence_evidence_id, $accession_id, 
-          $feature_correspondence_id, $evidence_type_id,
-          $score, $remark 
+          $feature_correspondence_id, $evidence_type_id, $score
         )
     ); 
 
@@ -2106,7 +2045,6 @@ sub corr_evidence_update {
     my $evidence_type_id           = $apr->param('evidence_type_id') 
         or push @errors, 'No evidence type';
     my $score                      = $apr->param('score') || '';
-    my $remark                     = $apr->param('remark') || '';
 
     return $self->corr_evidence_edit( errors => \@errors ) if @errors;
     
@@ -2114,12 +2052,12 @@ sub corr_evidence_update {
         q[
             update cmap_correspondence_evidence
             set    accession_id=?, feature_correspondence_id=?, 
-                   evidence_type_id=?, score=?, remark=?
+                   evidence_type_id=?, score=?
             where  correspondence_evidence_id=?
         ],
         {},
         ( $accession_id, $feature_correspondence_id, $evidence_type_id,
-          $score, $remark, $correspondence_evidence_id
+          $score, $correspondence_evidence_id
         )
     ); 
 
@@ -2561,61 +2499,22 @@ sub map_set_edit {
 
 # ----------------------------------------------------
 sub map_set_insert {
-    my $self                 = shift;
-    my $db                   = $self->db;
-    my $apr                  = $self->apr;
-    my @errors               = ();
-    my $map_set_name         = $apr->param('map_set_name')
-        or push @errors, 'No map set name';
-    my $short_name           = $apr->param('short_name')
-        or push @errors, 'No short name';
-    my $species_id           = $apr->param('species_id')
-        or push @errors, 'No species';
-    my $map_type_id          = $apr->param('map_type_id')
-        or push @errors, 'No map type';
-    my $accession_id         = $apr->param('accession_id')         || '';
-    my $display_order        = $apr->param('display_order')        ||  1;
-    my $can_be_reference_map = $apr->param('can_be_reference_map') ||  0;
-    my $shape                = $apr->param('shape')                || '';
-    my $color                = $apr->param('color')                || '';
-    my $width                = $apr->param('width')                ||  0;
-    my $published_on         = $apr->param('published_on')    || 'today';
-
-    if ( $published_on ) {{
-        my $pub_date = parsedate($published_on, VALIDATE => 1)
-            or do {
-                push @errors, "Publication date '$published_on' is not valid";
-                last;
-            };
-        my $t = localtime( $pub_date );
-        $published_on = $t->strftime( $self->data_module->sql->date_format );
-    }}
-
-    return $self->map_set_create( errors => \@errors ) if @errors;
-
-    my $map_set_id = next_number(
-        db           => $db, 
-        table_name   => 'cmap_map_set',
-        id_field     => 'map_set_id',
-    ) or die 'No map set id';
-    $accession_id ||= $map_set_id;
-
-    $db->do(
-        q[
-            insert
-            into   cmap_map_set
-                   ( map_set_id, accession_id, map_set_name, short_name,
-                     species_id, map_type_id, published_on, display_order, 
-                     can_be_reference_map, shape, width, color )
-            values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
-        ],
-        {}, 
-        ( 
-            $map_set_id, $accession_id, $map_set_name, $short_name,
-            $species_id, $map_type_id, $published_on, $display_order, 
-            $can_be_reference_map, $shape, $width, $color
-        )
-    );
+    my $self                 =  shift;
+    my $apr                  =  $self->apr;
+    my $admin                =  $self->admin;
+    my $map_set_id           =  $admin->map_set_create(
+        map_set_name         => $apr->param('map_set_name')         || '',
+        short_name           => $apr->param('short_name')           || '',
+        species_id           => $apr->param('species_id')           || '',
+        map_type_id          => $apr->param('map_type_id')          || '',
+        accession_id         => $apr->param('accession_id')         || '',
+        display_order        => $apr->param('display_order')        ||  1,
+        can_be_reference_map => $apr->param('can_be_reference_map') ||  0,
+        shape                => $apr->param('shape')                || '',
+        color                => $apr->param('color')                || '',
+        width                => $apr->param('width')                ||  0,
+        published_on         => $apr->param('published_on')    || 'today',
+    ) or return $self->map_set_create( errors => $admin->error );
 
     return $self->redirect_home( 
         ADMIN_HOME_URI."?action=map_set_view;map_set_id=$map_set_id",
@@ -3259,31 +3158,17 @@ sub xref_insert {
     my $db              = $self->db or return $self->error;
     my $apr             = $self->apr;
     my $admin           = $self->admin;
-    my @errors          = ();
-    my $object_id       = $apr->param('object_id')  ||  0;
-    my $table_name      = $apr->param('table_name') or
-                          push @errors, 'No database object';
-    my $name            = $apr->param('xref_name')  or
-                          push @errors, 'No xref name';
-    my $url             = $apr->param('xref_url')   or
-                          push @errors, 'No xref URL';
-    my $return_action   = $apr->param('return_action') || '';
     my $pk_name         = $apr->param('pk_name')       || '';
-    my $display_order   = $apr->param('display_order');
+    my $return_action   = $apr->param('return_action') || '';
+    my $object_id       = $apr->param('object_id')     ||  0;
 
-    return $self->xref_create( errors => \@errors ) if @errors;
-
-    $admin->set_xrefs(
-        object_id  => $object_id,
-        table_name => $table_name,
-        xrefs      => [
-            { 
-                name          => $name, 
-                url           => $url,
-                display_order => $display_order,
-            },
-        ],
-    ) or return $self->error( $admin->error );
+    $admin->xref_create(
+        object_id       => $object_id,
+        table_name      => $apr->param('table_name')    || '',
+        name            => $apr->param('xref_name')     || '',
+        url             => $apr->param('xref_url')      || '',
+        display_order   => $apr->param('display_order') || '',
+    ) or return $self->xref_create( errors => $admin->error );
 
     my $action = $return_action && $pk_name && $object_id
         ? "$return_action;$pk_name=$object_id" : 'xrefs_view';
