@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapDetailViewer;
 
-# $Id: MapDetailViewer.pm,v 1.16 2003-09-05 17:52:36 kycl4rk Exp $
+# $Id: MapDetailViewer.pm,v 1.17 2003-09-05 22:59:01 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES );
-$VERSION = (qw$Revision: 1.16 $)[-1];
+$VERSION = (qw$Revision: 1.17 $)[-1];
 
 use Apache::Constants;
 use URI::Escape;
@@ -126,6 +126,26 @@ sub handler {
     my ( $comparative_map_field, $comparative_map_aid ) = 
         split( /=/, $apr->param('comparative_map') );
 
+    #
+    # Instantiate the drawer.
+    #
+    my $drawer                 =  Bio::GMOD::CMap::Drawer->new(
+        data_source            => $self->data_source,
+        apr                    => $apr,
+        slots                  => \%slots,
+        flip                   => $flip,
+        highlight              => $highlight,
+        font_size              => $font_size,
+        image_size             => $image_size,
+        image_type             => $image_type,
+        label_features         => $label_features,
+        collapse_features      => $collapse_features,
+        include_feature_types  => \@feature_types,
+        include_evidence_types => \@evidence_types,
+        debug                  => $self->config('debug'),
+        map_view               => 'details',
+    ) or die $self->error( "Drawer: ".Bio::GMOD::CMap::Drawer->error );
+
     my $data                   = $data_module->map_detail_data( 
         slots                  => \%slots,
         highlight              => $highlight,
@@ -137,6 +157,7 @@ sub handler {
         page_size              => $PAGE_SIZE,
         max_pages              => $MAX_PAGES,
         page_no                => $page_no,
+        page_data              => $action eq 'download' ? 0 : 1,
     ) or return $self->error( "Data: ".$data_module->error );
 
     if ( $action eq 'download' ) {
@@ -173,26 +194,6 @@ sub handler {
         $apr->print( $text );
     }
     else {
-        #
-        # Instantiate the drawer.
-        #
-        my $drawer                 =  Bio::GMOD::CMap::Drawer->new(
-            data_source            => $self->data_source,
-            apr                    => $apr,
-            slots                  => \%slots,
-            flip                   => $flip,
-            highlight              => $highlight,
-            font_size              => $font_size,
-            image_size             => $image_size,
-            image_type             => $image_type,
-            label_features         => $label_features,
-            collapse_features      => $collapse_features,
-            include_feature_types  => \@feature_types,
-            include_evidence_types => \@evidence_types,
-            debug                  => $self->config('debug'),
-            map_view               => 'details',
-        ) or die $self->error( "Drawer: ".Bio::GMOD::CMap::Drawer->error );
-
         my $ref_map = $drawer->{'data'}{'slots'}{'0'}{ $ref_map_aid };
         $apr->param('ref_map_start',  $ref_map->{'start'}         );
         $apr->param('ref_map_stop',   $ref_map->{'stop'}          );
