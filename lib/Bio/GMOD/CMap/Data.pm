@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.37 2003-03-05 01:54:52 kycl4rk Exp $
+# $Id: Data.pm,v 1.38 2003-03-17 20:27:13 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.37 $)[-1];
+$VERSION = (qw$Revision: 1.38 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -1794,9 +1794,15 @@ Given a list of feature names, find any maps they occur on.
     my $feature_type_aids = $args{'feature_type_aids'};
     my $feature_string    = $args{'features'};
     my @feature_names     = (
-        # Turn stars into SQL wildcards, kill quotes.
-        map { s/\*/%/g; s/['"]//g; uc $_ || () }
-        split( /[,:;\s+]/, $feature_string ) 
+        map { 
+            s/\*/%/g;       # turn stars into SQL wildcards
+            s/,//g;         # kill commas
+            s/^\s+|\s+$//g; # kill leading/trailing whitespace
+            s/"//g;         # kill double quotes
+            s/'/\\'/g;      # backslash escape single quotes
+            uc $_ || ()     # uppercase what's left
+        }
+        parse_words( $feature_string )
     );
     my $order_by         = $args{'order_by'} || 
         'feature_name,species_name,map_set_name,map_name,start_position';
