@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.46 2003-09-29 20:49:12 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.47 2003-10-01 23:15:20 kycl4rk Exp $
 
 use strict;
 use Apache::Constants qw[ :common M_GET REDIRECT ];
@@ -11,6 +11,7 @@ use Data::Pageset;
 use Template;
 use Time::Object;
 use Time::ParseDate;
+use Text::ParseWords 'parse_line';
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Admin;
@@ -33,7 +34,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.46 $)[-1];
+$VERSION        = (qw$Revision: 1.47 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -257,6 +258,12 @@ sub corr_evidence_type_insert {
           $rank, $line_color )
     );
 
+    $self->admin->object_note_insert_or_update( 
+        table_name => 'cmap_evidence_type',
+        object_id  => $evidence_id, 
+        note       => $apr->param('note'),
+    );
+
     return $self->redirect_home( 
         ADMIN_HOME_URI.'?action=corr_evidence_types_view'
     ); 
@@ -286,6 +293,9 @@ sub corr_evidence_type_edit {
     my $evidence_type = $sth->fetchrow_hashref or return $self->error(
         "No evidence type for ID '$evidence_type_id'"
     );
+
+    $evidence_type->{'note'} = 
+        $self->admin->get_note( 'cmap_evidence_type', $evidence_type_id );
 
     return $self->process_template( 
         TEMPLATE->{'corr_evidence_type_edit'}, 
@@ -326,6 +336,12 @@ sub corr_evidence_type_update {
         ( $accession_id, $evidence_type, $rank, $line_color, $evidence_type_id )
     );
 
+    $self->admin->object_note_insert_or_update( 
+        table_name => 'cmap_evidence_type',
+        object_id  => $evidence_type_id, 
+        note       => $apr->param('note'),
+    );
+
     return $self->redirect_home( 
         ADMIN_HOME_URI.'?action=corr_evidence_types_view'
     );
@@ -358,7 +374,8 @@ sub corr_evidence_types_view {
         current_page     => $page_no,
         pages_per_set    => $MAX_PAGES,
     } );
-    $evidence_types = [ $pager->splice( $evidence_types ) ]; 
+    $evidence_types = 
+        @$evidence_types ? [ $pager->splice( $evidence_types ) ] : [];
 
     return $self->process_template( 
         TEMPLATE->{'corr_evidence_types_view'}, 
@@ -596,7 +613,7 @@ sub dbxrefs_view {
         current_page     => $page_no,
         pages_per_set    => $MAX_PAGES,
     } );
-    $refs = [ $pager->splice( $refs ) ]; 
+    $refs = @$refs ? [ $pager->splice( $refs ) ] : []; 
 
     return $self->process_template( 
         TEMPLATE->{'dbxrefs_view'}, 
@@ -792,6 +809,8 @@ sub map_edit {
         "No map for ID '$map_id'"
     );
 
+    $map->{'note'} = $self->admin->get_note( 'cmap_map', $map_id );
+
     return $self->process_template( 
         TEMPLATE->{'map_edit'}, 
         { 
@@ -839,6 +858,12 @@ sub map_insert {
         )
     );
 
+    $self->admin->object_note_insert_or_update( 
+        table_name => 'cmap_map',
+        object_id  => $map_id, 
+        note       => $apr->param('note'),
+    );
+
     return $self->redirect_home( 
         ADMIN_HOME_URI."?action=map_view;map_id=$map_id" 
     ); 
@@ -881,11 +906,12 @@ sub map_view {
         "No map for ID '$map_id'"
     );
 
+    $map->{'note'} = $self->admin->get_note( 'cmap_map', $map_id );
+
     my $sql = q[
         select   f.feature_id, 
                  f.accession_id, 
                  f.feature_name, 
-                 f.alternate_name, 
                  f.map_id, 
                  f.start_position, 
                  f.stop_position, 
@@ -911,7 +937,31 @@ sub map_view {
         current_page     => $page_no,
         pages_per_set    => $MAX_PAGES,
     } );
-    $map->{'features'} = [ $pager->splice( $features ) ]; 
+    $map->{'features'} = @$features ? [ $pager->splice( $features ) ] : []; 
+
+    my @feature_ids = map { $_->{'feature_id'} } @$features;
+    if ( @feature_ids ) {
+        my $aliases = $db->selectall_arrayref(
+            q[
+                select fa.feature_id, fa.alias
+                from   cmap_feature_alias fa
+                where  feature_id in (].
+                join(',', @feature_ids).q[)
+            ],
+        );
+
+        my %aliases;
+        for my $alias ( @$aliases ) {
+            push @{ $aliases{ $alias->[0] } }, $alias->[1];
+        }
+
+        for my $f ( @$features ) {
+            $f->{'aliases'} = [
+                sort { lc $a cmp lc $b } 
+                @{ $aliases{ $f->{'feature_id'} } || [] }
+            ];
+        }
+    }
 
     for my $feature ( @{ $map->{'features'} } ) {
         $feature->{'no_correspondences'} = $db->selectrow_array(
@@ -990,6 +1040,12 @@ sub map_update {
         ) 
     );
 
+    $self->admin->object_note_insert_or_update( 
+        table_name => 'cmap_map',
+        object_id  => $map_id, 
+        note       => $apr->param('note'),
+    );
+
     return $self->redirect_home( 
         ADMIN_HOME_URI."?action=map_view;map_id=$map_id" 
     ); 
@@ -1056,20 +1112,16 @@ sub feature_edit {
                        f.map_id,
                        f.feature_type_id,
                        f.feature_name,
-                       f.alternate_name,
                        f.start_position,
                        f.stop_position,
                        f.is_landmark,
                        f.dbxref_name,
                        f.dbxref_url,
-                       fn.note,
                        ft.feature_type,
                        map.map_name,
                        ms.short_name as map_set_name,
                        s.common_name as species_name
             from       cmap_feature f
-            left join  cmap_feature_note fn
-            on         f.feature_id=fn.feature_id
             inner join cmap_feature_type ft
             on         f.feature_type_id=ft.feature_type_id
             inner join cmap_map map
@@ -1085,6 +1137,13 @@ sub feature_edit {
     my $feature = $sth->fetchrow_hashref or return $self->error(
         "No feature for ID '$feature_id'"
     );
+
+    $feature->{'note'} = $self->admin->get_note( 'cmap_feature', $feature_id );
+
+    $feature->{'aliases'} = [
+        map { s/"/\\"/g; qq["$_"] }
+        @{ $self->admin->get_aliases( $feature_id ) }
+    ];
 
     my $feature_types = $db->selectall_arrayref(
         q[
@@ -1121,7 +1180,6 @@ sub feature_insert {
     my $accession_id    = $apr->param('accession_id') || $feature_id;
     my $feature_name    = $apr->param('feature_name') or 
                           push @errors, 'No feature name';
-    my $alternate_name  = $apr->param('alternate_name') || '';
     my $feature_type_id = $apr->param('feature_type_id') 
                            or push @errors, 'No feature type';
     my $start_position  = $apr->param('start_position');
@@ -1135,7 +1193,7 @@ sub feature_insert {
 
     my @insert_args = ( 
         $feature_id, $accession_id, $map_id, $feature_name, 
-        $alternate_name, $feature_type_id, $is_landmark, 
+        $feature_type_id, $is_landmark, 
         $dbxref_name, $dbxref_url, $start_position
     );
 
@@ -1153,16 +1211,21 @@ sub feature_insert {
             insert
             into   cmap_feature
                    ( feature_id, accession_id, map_id, feature_name, 
-                     alternate_name, feature_type_id, is_landmark,
+                     feature_type_id, is_landmark,
                      dbxref_name, dbxref_url, start_position, stop_position )
-            values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, $stop_placeholder )
+            values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, $stop_placeholder )
         ],
         {},
         @insert_args
     );
 
-    $self->admin->feature_note_insert_or_update( 
-        $feature_id, $apr->param('note') 
+    my @aliases = parse_line(',', 0, $apr->param('aliases') );
+    $self->admin->feature_alias_update( $feature_id, @aliases );
+
+    $self->admin->object_note_insert_or_update( 
+        table_name => 'cmap_feature',
+        object_id  => $feature_id, 
+        note       => $apr->param('note'),
     );
 
     return $self->redirect_home( 
@@ -1182,7 +1245,6 @@ sub feature_update {
                           push @errors, 'No accession id';
     my $feature_name    = $apr->param('feature_name') or 
                           push @errors, 'No feature name';
-    my $alternate_name  = $apr->param('alternate_name') || '';
     my $feature_type_id = $apr->param('feature_type_id') 
                           or die 'No feature type id';
     my $is_landmark     = $apr->param('is_landmark') || 0;
@@ -1196,7 +1258,7 @@ sub feature_update {
 
     my $sql = q[
         update cmap_feature
-        set    accession_id=?, feature_name=?, alternate_name=?,
+        set    accession_id=?, feature_name=?, 
                feature_type_id=?, is_landmark=?, start_position=?,
                dbxref_name=?, dbxref_url=?
     ];
@@ -1205,16 +1267,21 @@ sub feature_update {
     $db->do(
         $sql,
         {},
-        ( $accession_id, $feature_name, $alternate_name,
+        ( $accession_id, $feature_name, 
           $feature_type_id, $is_landmark, $start_position, 
           $dbxref_name, $dbxref_url,
           $feature_id
         )
     );
 
-    $self->admin->feature_note_insert_or_update( 
-        $feature_id, $apr->param('note') 
+    $self->admin->object_note_insert_or_update( 
+        table_name => 'cmap_feature',
+        object_id  => $feature_id, 
+        note       => $apr->param('note'),
     );
+
+    my @aliases = parse_line(',', 0, $apr->param('aliases') );
+    $self->admin->feature_alias_update( $feature_id, @aliases );
 
     return $self->redirect_home( 
         ADMIN_HOME_URI."?action=feature_view;feature_id=$feature_id" 
@@ -1227,6 +1294,7 @@ sub feature_view {
     my $db         = $self->db or return $self->error;
     my $apr        = $self->apr;
     my $feature_id = $apr->param('feature_id') or die 'No feature id';
+
     my $sth = $db->prepare(
         q[
             select     f.feature_id, 
@@ -1234,20 +1302,16 @@ sub feature_view {
                        f.map_id,
                        f.feature_type_id,
                        f.feature_name,
-                       f.alternate_name,
                        f.is_landmark,
                        f.start_position,
                        f.stop_position,
                        f.dbxref_name,
                        f.dbxref_url,
-                       fn.note,
                        ft.feature_type,
                        map.map_name,
                        ms.short_name as map_set_name,
                        s.common_name as species_name
             from       cmap_feature f
-            left join  cmap_feature_note fn
-            on         f.feature_id=fn.feature_id
             inner join cmap_feature_type ft
             on         f.feature_type_id=ft.feature_type_id
             inner join cmap_map map
@@ -1264,6 +1328,12 @@ sub feature_view {
         "No feature for ID '$feature_id'"
     );
 
+    $feature->{'note'} = $self->admin->get_note( 'cmap_feature', $feature_id );
+    $feature->{'aliases'} = $self->admin->get_aliases( $feature_id );
+
+    #
+    # Removed "alternate_name"
+    #
     my $correspondences = $db->selectall_arrayref(
         q[
             select fc.feature_correspondence_id,
@@ -1273,7 +1343,6 @@ sub feature_view {
                    fc.is_enabled,
                    f.feature_id,
                    f.feature_name as feature_name,
-                   f.alternate_name as alternate_name,
                    map.map_id,
                    map.map_name,
                    ms.short_name as map_set_name,
@@ -1310,6 +1379,8 @@ sub feature_view {
                 ( $corr->{'feature_correspondence_id'} )
             )
         } );
+
+        $corr->{'aliases'} = $self->admin->get_aliases( $corr->{'feature_id'} );
     }
     
     $feature->{'correspondences'} = $correspondences;
@@ -1361,7 +1432,8 @@ sub feature_search {
             pages_per_set    => $MAX_PAGES,
         } );
         $params->{'pager'}    = $pager;
-        $params->{'features'} = [ $pager->splice( $features ) ];
+        $params->{'features'} = 
+            @$features ? [ $pager->splice( $features ) ] : [];
     }
 
     return $self->process_template( TEMPLATE->{'feature_search'}, $params );
@@ -1598,6 +1670,9 @@ sub feature_corr_view {
         "No record for feature correspondence ID '$feature_correspondence_id'"
     );
 
+    #
+    # Removed "alternate_name"
+    #
     $sth = $db->prepare(
         q[
             select f.feature_id, 
@@ -1605,7 +1680,6 @@ sub feature_corr_view {
                    f.map_id,
                    f.feature_type_id,
                    f.feature_name,
-                   f.alternate_name,
                    f.start_position,
                    f.stop_position,
                    ft.feature_type,
@@ -1870,8 +1944,7 @@ sub feature_type_edit {
                      shape, 
                      color,
                      drawing_lane,
-                     drawing_priority,
-                     description
+                     drawing_priority
             from     cmap_feature_type
             where    feature_type_id=?
         ]
@@ -1880,6 +1953,9 @@ sub feature_type_edit {
     my $feature_type = $sth->fetchrow_hashref or return $self->error(
         "No feature type for ID '$feature_type_id'"
     );
+
+    $feature_type->{'note'} = 
+        $self->admin->get_note( 'cmap_feature_type', $feature_type_id );
 
     return $self->process_template( 
         TEMPLATE->{'feature_type_edit'},
@@ -1891,7 +1967,6 @@ sub feature_type_edit {
         }
     );
 }
-
 
 # ----------------------------------------------------
 sub feature_type_insert {
@@ -1906,7 +1981,7 @@ sub feature_type_insert {
     my $color            = $apr->param('color')            || '';
     my $drawing_lane     = $apr->param('drawing_lane')     ||  1;
     my $drawing_priority = $apr->param('drawing_priority') ||  1;
-    my $description      = $apr->param('description')      || '';
+    my $note             = $apr->param('note')             || '';
     my $feature_type_id  = next_number(
         db               => $db, 
         table_name       => 'cmap_feature_type',
@@ -1921,14 +1996,20 @@ sub feature_type_insert {
             insert
             into   cmap_feature_type 
                    ( accession_id, feature_type_id, feature_type, 
-                     shape, color, drawing_lane, drawing_priority,
-                     description )
-            values ( ?, ?, ?, ?, ?, ?, ?, ? )
+                     shape, color, drawing_lane, drawing_priority
+                   )
+            values ( ?, ?, ?, ?, ?, ?, ? )
         ],
         {}, 
         ( $accession_id, $feature_type_id, $feature_type, 
-          $shape, $color, $drawing_lane, $drawing_priority,
-          $description )
+          $shape, $color, $drawing_lane, $drawing_priority
+        )
+    );
+
+    $self->admin->object_note_insert_or_update(
+        table_name => 'cmap_feature_type',
+        object_id  => $feature_type_id,
+        note       => $apr->param('note'),
     );
 
     return $self->redirect_home( ADMIN_HOME_URI.'?action=feature_types_view' ); 
@@ -1947,7 +2028,6 @@ sub feature_type_update {
     my $color            = $apr->param('color')            || '';
     my $drawing_lane     = $apr->param('drawing_lane')     ||  1;
     my $drawing_priority = $apr->param('drawing_priority') ||  1;
-    my $description      = $apr->param('description')      || '';
     my $feature_type_id  = $apr->param('feature_type_id') 
         or push @errors, 'No feature type id';
     my $feature_type     = $apr->param('feature_type')    
@@ -1963,15 +2043,19 @@ sub feature_type_update {
                    shape=?, 
                    color=?,
                    drawing_lane=?,
-                   drawing_priority=?,
-                   description=?
+                   drawing_priority=?
             where  feature_type_id=?
         ],
         {}, 
         ( $accession_id, $feature_type, $shape, $color, 
-          $drawing_lane, $drawing_priority, $description,
-          $feature_type_id 
+          $drawing_lane, $drawing_priority, $feature_type_id 
         )
+    );
+
+    $self->admin->object_note_insert_or_update(
+        table_name => 'cmap_feature_type',
+        object_id  => $feature_type_id,
+        note       => $apr->param('note'),
     );
 
     return $self->redirect_home( ADMIN_HOME_URI.'?action=feature_types_view' ); 
@@ -2011,7 +2095,8 @@ sub feature_types_view {
         current_page     => $page_no,
         pages_per_set    => $MAX_PAGES,
     } );
-    $feature_types = [ $pager->splice( $feature_types ) ]; 
+    $feature_types = 
+        @$feature_types ? [ $pager->splice( $feature_types ) ] : []; 
 
     return $self->process_template( 
         TEMPLATE->{'feature_types_view'}, 
@@ -2091,7 +2176,7 @@ sub map_sets_view {
         current_page     => $page_no,
         pages_per_set    => $MAX_PAGES,
     } );
-    $map_sets = [ $pager->splice( $map_sets ) ];
+    $map_sets = @$map_sets ? [ $pager->splice( $map_sets ) ] : [];
 
     my $specie = $db->selectall_arrayref(
         q[
@@ -2186,7 +2271,6 @@ sub map_set_edit {
                       ms.accession_id, ms.map_set_name,
                       ms.short_name, 
                       ms.display_order, 
-                      ms.remarks,
                       ms.published_on, 
                       ms.can_be_reference_map,
                       ms.map_type_id, 
@@ -2215,6 +2299,8 @@ sub map_set_edit {
     my $map_set = $sth->fetchrow_hashref or return $self->error(
         "No map set for ID '$map_set_id'"
     );
+
+    $map_set->{'note'} = $self->admin->get_note( 'cmap_map_set', $map_set_id );
 
     my $specie = $db->selectall_arrayref(
         q[
@@ -2263,7 +2349,7 @@ sub map_set_insert {
     my $accession_id         = $apr->param('accession_id')         || '';
     my $display_order        = $apr->param('display_order')        ||  1;
     my $can_be_reference_map = $apr->param('can_be_reference_map') ||  0;
-    my $remarks              = $apr->param('remarks')              || '';
+    my $note                 = $apr->param('note')                 || '';
     my $shape                = $apr->param('shape')                || '';
     my $color                = $apr->param('color')                || '';
     my $width                = $apr->param('width')                ||  0;
@@ -2294,18 +2380,21 @@ sub map_set_insert {
             into   cmap_map_set
                    ( map_set_id, accession_id, map_set_name, short_name,
                      species_id, map_type_id, published_on, display_order, 
-                     can_be_reference_map, remarks, shape,
-                     width, color
-                   )
-            values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
+                     can_be_reference_map, shape, width, color )
+            values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
         ],
         {}, 
         ( 
             $map_set_id, $accession_id, $map_set_name, $short_name,
             $species_id, $map_type_id, $published_on, $display_order, 
-            $can_be_reference_map, $remarks, $shape, 
-            $width, $color
+            $can_be_reference_map, $shape, $width, $color
         )
+    );
+
+    $self->admin->object_note_insert_or_update( 
+        table_name => 'cmap_map_set',
+        object_id  => $map_set_id, 
+        note       => $apr->param('note'),
     );
 
     return $self->redirect_home( 
@@ -2326,7 +2415,7 @@ sub map_set_view {
         q[
             select    ms.map_set_id, ms.accession_id, ms.map_set_name,
                       ms.short_name, ms.display_order, ms.published_on,
-                      ms.remarks, ms.map_type_id, ms.species_id, 
+                      ms.map_type_id, ms.species_id, 
                       ms.can_be_reference_map, ms.is_enabled,
                       ms.shape, ms.color, ms.width,
                       s.common_name as species_common_name,
@@ -2349,6 +2438,9 @@ sub map_set_view {
     my $map_set = $sth->fetchrow_hashref or return $self->error(
         "No map set for ID '$map_set_id'"
     );
+
+    $map_set->{'note'} = $self->admin->get_note( 'cmap_map_set', $map_set_id );
+
     my @maps = @{ 
         $db->selectall_arrayref( 
             qq[
@@ -2386,7 +2478,7 @@ sub map_set_view {
         pages_per_set    => $MAX_PAGES,
     } );
 
-    $map_set->{'maps'} = [ $pager->splice( \@maps ) ];
+    $map_set->{'maps'} = @maps ? [ $pager->splice( \@maps ) ] : [];
     $apr->param( order_by => $order_by );
 
     return $self->process_template( 
@@ -2414,7 +2506,7 @@ sub map_set_update {
     my $can_be_reference_map = $apr->param('can_be_reference_map') ||  0;
     my $is_enabled           = $apr->param('is_enabled')           ||  0;
     my $display_order        = $apr->param('display_order')        ||  1;
-    my $remarks              = $apr->param('remarks')              || '';
+    my $note                 = $apr->param('note')                 || '';
     my $shape                = $apr->param('shape')                || '';
     my $color                = $apr->param('color')                || '';
     my $width                = $apr->param('width')                ||  0;
@@ -2438,8 +2530,7 @@ sub map_set_update {
             set    accession_id=?, map_set_name=?, short_name=?,
                    species_id=?, map_type_id=?, published_on=?,
                    can_be_reference_map=?, display_order=?, 
-                   remarks=?, is_enabled=?, shape=?,
-                   color=?, width=?
+                   is_enabled=?, shape=?, color=?, width=?
             where  map_set_id=?
         ],
         {},
@@ -2447,10 +2538,15 @@ sub map_set_update {
             $accession_id, $map_set_name, $short_name, 
             $species_id, $map_type_id, $published_on, 
             $can_be_reference_map, $display_order, 
-            $remarks, $is_enabled, $shape,
-            $color, $width,
+            $is_enabled, $shape, $color, $width,
             $map_set_id
         )
+    );
+
+    $self->admin->object_note_insert_or_update( 
+        table_name => 'cmap_map_set',
+        object_id  => $map_set_id, 
+        note       => $apr->param('note'),
     );
 
     return $self->redirect_home( 
@@ -2509,10 +2605,13 @@ sub map_type_edit {
             where    map_type_id=?
         ]
     );
-    $sth->execute( $apr->param('map_type_id') );
+    $sth->execute( $map_type_id );
     my $map_type = $sth->fetchrow_hashref or return $self->error(
         "No map type for ID '$map_type_id'"
     );
+
+    $map_type->{'note'} = 
+        $self->admin->get_note( 'cmap_map_type', $map_type_id );
 
     return $self->process_template( 
         TEMPLATE->{'map_type_edit'},
@@ -2565,6 +2664,12 @@ sub map_type_insert {
           $is_relational_map, $display_order, $shape, $width, $color )
     );
 
+    $self->admin->object_note_insert_or_update(
+        table_name => 'cmap_map_type',
+        object_id  => $map_type_id,
+        note       => $apr->param('note'),
+    );
+
     return $self->redirect_home( ADMIN_HOME_URI.'?action=map_types_view' ); 
 }
 
@@ -2610,6 +2715,12 @@ sub map_type_update {
         )
     );
 
+    $self->admin->object_note_insert_or_update(
+        table_name => 'cmap_map_type',
+        object_id  => $map_type_id,
+        note       => $apr->param('note'),
+    );
+
     return $self->redirect_home( ADMIN_HOME_URI.'?action=map_types_view' ); 
 }
 
@@ -2644,7 +2755,7 @@ sub map_types_view {
         current_page     => $page_no,
         pages_per_set    => $MAX_PAGES,
     } );
-    $map_types = [ $pager->splice( $map_types ) ]; 
+    $map_types = @$map_types ? [ $pager->splice( $map_types ) ] : []; 
 
     return $self->process_template( 
         TEMPLATE->{'map_types_view'},
@@ -2706,6 +2817,8 @@ sub species_edit {
         "No species for ID '$species_id'"
     );
 
+    $species->{'note'} = $self->admin->get_note('cmap_species', $species_id);
+
     return $self->process_template( 
         TEMPLATE->{'species_edit'},
         { 
@@ -2751,6 +2864,12 @@ sub species_insert {
         )
     );
 
+    $self->admin->object_note_insert_or_update( 
+        table_name => 'cmap_species',
+        object_id  => $species_id, 
+        note       => $apr->param('note'),
+    );
+
     return $self->redirect_home( ADMIN_HOME_URI.'?action=species_view' ); 
 }
 
@@ -2789,6 +2908,12 @@ sub species_update {
         )
     );
 
+    $self->admin->object_note_insert_or_update( 
+        table_name => 'cmap_species',
+        object_id  => $species_id, 
+        note       => $apr->param('note'),
+    );
+
     return $self->redirect_home( ADMIN_HOME_URI.'?action=species_view' ); 
 }
 
@@ -2820,7 +2945,7 @@ sub species_view {
         current_page     => $page_no,
         pages_per_set    => $MAX_PAGES,
     } );
-    $species = [ $pager->splice( $species ) ]; 
+    $species = @$species ? [ $pager->splice( $species ) ] : []; 
 
     return $self->process_template( 
         TEMPLATE->{'species_view'},
