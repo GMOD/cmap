@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.16 2004-02-17 22:47:43 kycl4rk Exp $
+# $Id: Build.PL,v 1.17 2004-02-18 22:23:52 kycl4rk Exp $
 
 use strict;
 
@@ -245,15 +245,14 @@ my $builder   =  Module::Build->subclass(
     script_files      => [ 'bin/cmap_admin.pl' ],
     sign              => 1,
     requires          => {
-        'Apache'             => 0,
-        'Apache::Request'    => 0,
         'Class::Base'        => 0,
         'Config::General'    => 0,
         'Data::Page'         => 0,
         'Data::Pageset'      => 0,
         'DBI'                => 1.20,
         'File::MkTemp'       => 0,
-        'GD'                 => 1.33,
+        'GD'                 => 2.11,
+        'GD:SVG'             => 0.24,
         'IO::Tee'            => 0,
         'Regexp::Common'     => 0,
         'Template'           => 2.00,
