@@ -11,6 +11,8 @@ enables features/groups from each to be referenced from each program.
 
 The process of setting up an integrated is explained in this document.
 
+Note: Currently the only RDBMS used in the integration is mysql.
+
 =head1 CREATE THE DATABASE
 
 There are several different ways to create the integrated database.
@@ -25,7 +27,7 @@ install a sql file, see INSTALL.pod.
 You can also install the regular cmap database and use the following the
 "Previous Install" directions.
 
-=head2 Previous Install
+=head2 Previous CMap Install
 
 If you currently have a CMap version of 0.13 or higher, don't panic.  The
 database update is non-destructive to the CMap side.  (If you are running and
@@ -37,7 +39,20 @@ add the GBrowse tables and the new columns in the CMap tables.
     Example:
         $ mysql CMAP_GBROWSE < sql/cmap_gbrowse.adapt.mysql
 
-=head1 CONFIGURATION
+=head2 Create Database Using bp_load_gff.pl or bp_bulk_load_gff.pl
+
+You will need a recent version of bioperl-live from cvs.
+
+If you wish to import GBrowse data first (and use that data to populate the CMap side), you can use either of these loaders; bp_load_gff.pl or bp_bulk_load_gff.pl.  These programs can create the database while they import data.
+
+You must specify mysqlcmap as the adaptor.  
+
+    Examples:
+        $ bp_bulk_load_gff.pl -d dbi:mysql:db_name  -a mysqlcmap --create yeast_data.gff
+
+        $ bp_load_gff.pl -d dbi:mysql:db_name -a dbi::mysqlcmap --create yeast_data.gff
+
+=head1 CONFIGURING CMAP
 
 Starting with a regular CMap config, configuring for integration can be fun and
 easy.  (If you need help with the CMap configuration part, please see
@@ -67,6 +82,14 @@ spans the whole length of the CMap map.
 This is the CMap feature type accession that the "map" feature will have in the
 cmap database.  This must also be definded as a feature type.
 
+=item * gbrowse_config_dir
+
+Only needed if you are going to copy data from the GBrowse side to the CMap side of the database.  gbrowse_config_dir holds the name of the directory where the GBrowse config file resides.
+
+=item * gbrowse_config_file
+
+Only needed if you are going to copy data from the GBrowse side to the CMap side of the database.  gbrowse_config_file holds the name of the GBrowse config file that corresponds to this one.  This is important to determine the cmap feature types that the GBrowse features will have.
+
 =back
 
 The following is an example of how that would look.
@@ -75,17 +98,17 @@ The following is an example of how that would look.
     # The database includes gbrowse tables.
     #
     gbrowse_compatible 1
-                                                                                                                             
+
     #
     # The GBrowse class that a map will have.
     #
     gbrowse_default_map_class CMap_Map
-                                                                                                                             
+
     #
     # The CMap feature_type_accession that a map "feature" will have.
     #
     gbrowse_default_map_feature_type_aid gbrowse_map
-                                                                                                                             
+
     <feature_type gbrowse_map>
         feature_type_accession gbrowse_map
         feature_type GBrowse Map
@@ -95,7 +118,7 @@ The following is an example of how that would look.
         drawing_lane 10
         drawing_priority 1
     </feature_type>
- 
+
 =head2 Modifying Feature Types
 
 =over 4
@@ -157,19 +180,6 @@ used for the "map feature".
         gbrowse_ftype Sequence
     </map_type>
 
-=head1 LOAD CMAP DATA
-
-You can load the CMap data as normal.  Keep in mind that (currently) it is
-essential that the CMap data be loaded in first.  Under this system, there can
-be CMap data not displayed in GBrowse but not the other way around.
-
-=head1 PREPARE CMAP DATA
-
-Using cmap_admin.pl, select the correct data source and then choose the
-"Prepare the Database for GBrowse data" option.  It will ask you to select a
-map set and some feature types to prepare.  You will want to prepare the data
-that corresponds to the GBrowse data you will be then importing.
-
 =head1 CONFIGURING GBROWSE 
 
 To use the integrated database, you must select the dbi::mysqlcmap adaptor as
@@ -185,15 +195,27 @@ in the following example.
 Also, remember to make the "reference class" the same as what was defined in
 the cmap config file. 
 
-=head1 IMPORT THE GBROWSE DATA
+If you are going to copy data from the GBrowse side of the db into the CMap side, you will also need to add a "cmap_feature_type_accession" value to each track that you want to be able to copy.  An example track would look like this:
 
-You can use bp_load_gff.pl to load Data into the GBrowse side of the database
-(making sure that the data is already prepared in the CMap side, of course).
-Use the dbi::mysqlcmap adaptor as follows.
+    [contig]
+    feature      = contig
+    glyph        = generic
+    key          = Contig
+    link         = sub {my $self = shift; return $self->cmap_viewer_link('GCMAP');}
+    cmap_feature_type_accession = contig
 
-    /usr/bin/bp_load_gff.pl --dns CMAP_GBROWSE --adaptor dbi::mysqlcmap file_name.gff
 
-=head1 COPY DATA FROM CMAP
+=head1 DATA
+
+There are multiple ways to get data into the database.  You can load CMap data first using cmap_admin.pl (that comes with CMap).  Then you can either simply copy that data into the GBrowse side or manually insert corresponding GBrowse data using bp_load_gff.pl (from bioperl).  Alternatively, you can load GFF data into the GBrowse side first and then copy that data into the CMap side.
+
+=head2 LOADING CMAP DATA
+
+You can load the CMap data as normal.  Keep in mind that (currently) it is
+essential that the CMap data be loaded in first.  Under this system, there can
+be CMap data not displayed in GBrowse but not the other way around.
+
+=head2 COPY DATA FROM CMAP
 
 You can also copy data that was imported as CMap data into the GBrowse database
 using CMap Admin.  If your data_source config file has the "gbrowse_compatible"
@@ -206,6 +228,63 @@ want to import.
 Be sure that the feature types you want to copy have both a gbrowse_class and a
 gbrowse_ftype.  The map sets' map type must have a gbrowse_ftype associated
 with it in the config file as well.
+
+=head2 MANUALLY IMPORT CORRESPONDING GBROWSE DATA
+
+If you have a GFF file with data that corresponds to the CMap data, you can import that data separately.  Doing this rather than copying from the CMap side will allow you to import more detailed data.
+
+When importing, it is very important that the feature names and classes correspond to the feature names and gclasses already in the CMap database.
+
+=head3 PREPARING CMAP DATA FOR GBROWSE DATA INSERT
+
+Using cmap_admin.pl, select the correct data source and then choose the
+"Prepare the Database for GBrowse data" option.  It will ask you to select a
+map set and some feature types to prepare.  You will want to prepare the data
+that corresponds to the GBrowse data you will be then importing.
+
+This will copy the gbrowse_class into the gclass column of each feature.  The
+gbrowse_class is defined by the feature type in the config file (see
+L<Modifying Feature Types> above).
+
+It also creates a feature for the whole map.  This feature will have the gclass
+that is defined in the config file as gbrowse_default_map_class and the cmap
+feature type that is defined in the config file as
+gbrowse_default_map_feature_type_aid.
+
+When this is done, the database will be ready for importing the GBrowse data.
+
+=head3 IMPORTING THE GBROWSE DATA
+
+You can use bp_load_gff.pl to load Data into the GBrowse side of the database
+(making sure that the data is already prepared in the CMap side, of course).
+Use the dbi::mysqlcmap adaptor as follows.
+
+    /usr/bin/bp_load_gff.pl --dns CMAP_GBROWSE --adaptor dbi::mysqlcmap file_name.gff
+
+=head2 LOADING GBROWSE DATA
+
+
+You can load GBrowse data on its own from a GFF file.  This method is also described in L<Create Database Using bp_load_gff.pl or bp_bulk_load_gff.pl>.
+
+Keep in mind NOT to use the --create option if you don't want to wipe the database and start over.
+
+You can use either of these loaders; bp_load_gff.pl or bp_bulk_load_gff.pl.
+
+You must specify mysqlcmap as the adaptor.  
+
+    Examples:
+        $ bp_bulk_load_gff.pl -d dbi:mysql:db_name  -a mysqlcmap yeast_data.gff
+
+        $ bp_load_gff.pl -d dbi:mysql:db_name -a dbi::mysqlcmap yeast_data.gff
+
+
+=head2 COPYING DATA FROM GBROWSE
+
+In order to copy data from the GBrowse side to the CMap side of the database, you will need to make some changes to the config files.  These were described in L<CONFIGURING CMAP> and L<CONFIGURING GBROWSE>.
+
+Using cmap_admin.pl, select the "Copy GBrowse into the CMap database" option (this option will only appear if the datasource (config file) that you are currently using is gbrowse_compatible). 
+
+Then select the map set that you want to copy the data into and the program will take care of the rest.
 
 =head1 LINK THE TWO
 
@@ -280,3 +359,5 @@ Then your done and you can happily use both CMap and GBrowse in concert.
 =head1 AUTHOR
 
 Ben Faga E<lt>faga@cshl.orgE<gt>
+
+
