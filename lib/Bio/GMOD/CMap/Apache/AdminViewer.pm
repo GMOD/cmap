@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.27 2003-03-05 21:32:57 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.28 2003-03-13 01:34:03 kycl4rk Exp $
 
 use strict;
 use Apache::Constants qw[ :common M_GET REDIRECT ];
@@ -25,12 +25,13 @@ use vars qw(
 
 $COLORS         = [ sort keys %{ +COLORS } ];
 $FEATURE_SHAPES = [ qw( 
-    box dumbbell line span up-arrow down-arrow double-arrow rectangle
+    box dumbbell line span up-arrow down-arrow double-arrow filled-box
+    in-triangle out-triangle
 ) ];
 $LINE_STYLES    = [ qw( dashed solid ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.27 $)[-1];
+$VERSION        = (qw$Revision: 1.28 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -40,6 +41,7 @@ use constant TEMPLATE         => {
     corr_evidence_types_view  => 'admin_corr_evidence_types_view.tmpl',
     corr_evidence_type_create => 'admin_corr_evidence_type_create.tmpl',
     corr_evidence_type_edit   => 'admin_corr_evidence_type_edit.tmpl',
+    colors_view               => 'admin_colors_view.tmpl',
     dbxref_create             => 'admin_dbxref_create.tmpl',
     dbxref_edit               => 'admin_dbxref_edit.tmpl',
     dbxrefs_view              => 'admin_dbxrefs_view.tmpl',
@@ -138,6 +140,72 @@ sub confirm_delete {
     return $self->process_template( 
         TEMPLATE->{'confirm_delete'}, 
         { entity => $entity }
+    );
+}
+
+# ----------------------------------------------------
+sub colors_view {
+    my $self        = shift;
+    my $apr         = $self->apr;
+    my $color_name  = lc $apr->param('color_name') || '';
+    my $limit_start = $apr->param('limit_start')   ||  0;
+    my ( @colors, @errors );
+
+    #
+    # Find a particular color (or all matching if there's a splat).
+    #
+    if ( $color_name ) {
+        my $orig_color_name = $color_name;
+        if ( $color_name =~ s/\*//g ) {
+            for my $color ( grep { /$color_name/ } @$COLORS ) {
+                push @colors, {
+                    name => $color,
+                    hex  => join( '', @{ +COLORS->{ $color } } ),
+                };
+            }
+            @errors = ( "No colors in palette match '$orig_color_name'" )
+                unless @colors;
+        }
+        elsif ( exists COLORS->{ $color_name } ) {
+            @colors  = ( {
+                name => $color_name,
+                hex  => join( '', @{ +COLORS->{ $color_name } } ),
+            } );
+        }
+        else {
+            @colors = ();
+            @errors = ( "Color '$color_name' isn't in the palette" );
+        }
+    }
+    else {
+        @colors = map { 
+            { 
+                name => $_, 
+                hex  => join( '', @{ +COLORS->{ $_ } } )
+            } 
+        }
+        sort keys %{ +COLORS };
+    }
+
+    my $pager       =  paginate( 
+        self        => $self,
+        data        => \@colors,
+        limit_start => $limit_start,
+    );
+
+    return $self->process_template( 
+        TEMPLATE->{'colors_view'}, 
+        { 
+            apr         => $self->apr,
+            colors      => $pager->{'data'},
+            no_elements => $pager->{'no_elements'},
+            page_size   => $pager->{'page_size'},
+            pages       => $pager->{'pages'},
+            cur_page    => $pager->{'cur_page'},
+            show_start  => $pager->{'show_start'},
+            show_stop   => $pager->{'show_stop'},
+            errors      => \@errors,
+        }
     );
 }
 
@@ -2086,17 +2154,26 @@ sub map_set_edit {
 
     my $sth = $db->prepare(
         q[
-            select    ms.map_set_id, ms.accession_id, ms.map_set_name,
-                      ms.short_name, ms.display_order, ms.remarks,
-                      ms.published_on, ms.can_be_reference_map,
-                      ms.map_type_id, ms.species_id, ms.is_enabled,
-                      ms.shape, ms.width, ms.color,
+            select    ms.map_set_id, 
+                      ms.accession_id, ms.map_set_name,
+                      ms.short_name, 
+                      ms.display_order, 
+                      ms.remarks,
+                      ms.published_on, 
+                      ms.can_be_reference_map,
+                      ms.map_type_id, 
+                      ms.species_id, 
+                      ms.is_enabled,
+                      ms.shape, 
+                      ms.width, 
+                      ms.color,
                       s.common_name as species_common_name,
                       s.full_name as species_full_name,
-                      mt.map_type, mt.map_units,
+                      mt.map_type, 
+                      mt.map_units,
                       mt.shape as default_shape,
-                      mt.color as default_width, 
-                      mt.width as default_color
+                      mt.color as default_color, 
+                      mt.width as default_width
             from      cmap_map_set ms, 
                       cmap_species s, 
                       cmap_map_type mt
@@ -2704,8 +2781,8 @@ sub species_view {
     my $self        = shift;
     my $db          = $self->db;
     my $apr         = $self->apr;
-    my $order_by    = $apr->param('order_by')    || 'common_name';
-    my $limit_start = $apr->param('limit_start') ||             0;
+    my $order_by    = $apr->param('order_by')    || 'display_order,common_name';
+    my $limit_start = $apr->param('limit_start') || 0;
 
     my $species = $db->selectall_arrayref(
         qq[
