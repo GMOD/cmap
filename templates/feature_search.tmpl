@@ -98,7 +98,7 @@ Use &quot;*&quot; or &quot;%&quot; for wildcards.  To find features with spaces 
                     <td align="right">
                         [% r.start_position | commify %][% IF r.stop_position.defined AND r.stop_position > r.start_position %]-[% r.stop_position | commify %][% END %] [% r.map_units %]
                     </td>
-                    <td>[% r.aliases.join(', ') %]</td>
+                    <td>[% r.aliases.join(', ') | truncate(30) %]</td>
                     <td align="center">
                         <b>[</b>&nbsp;<a href="/cmap/map_details?ref_map_set_aid=[% r.map_set_aid %];ref_map_aid=[% r.map_aid %];highlight=&quot;[% r.feature_name %]&quot;;data_source=[% apr.param('data_source') %];label_features=landmarks">View&nbsp;on&nbsp;Map</a>&nbsp;<b>]</b>
                     </td>
