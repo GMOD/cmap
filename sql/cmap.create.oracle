@@ -1,6 +1,6 @@
 --
 -- Created by SQL::Translator::Producer::Oracle
--- Created on Wed Mar 26 09:49:08 2003
+-- Created on Thu Apr 17 13:37:00 2003
 --
 
 -- We assume that default NLS_DATE_FORMAT has been changed
@@ -77,8 +77,8 @@ CREATE TABLE cmap_evidence_type (
   rank number(11) DEFAULT '0' CONSTRAINT nn_rank NOT NULL,
   line_color varchar2(20) DEFAULT NULL,
   CONSTRAINT pk_cmap_evidence_type PRIMARY KEY (evidence_type_id),
-  CONSTRAINT rank_cmap_evidence_type UNIQUE (rank),
-  CONSTRAINT accession_id_cmap_evidence_typ UNIQUE (accession_id)
+  CONSTRAINT accession_id_cmap_evidence_typ UNIQUE (accession_id),
+  CONSTRAINT rank_cmap_evidence_type UNIQUE (rank)
 );
 
 --
@@ -151,7 +151,6 @@ CREATE TABLE cmap_map (
   map_set_id number(11) DEFAULT '0' CONSTRAINT nn_map_set_id NOT NULL,
   map_name varchar2(32) DEFAULT '' CONSTRAINT nn_map_name NOT NULL,
   display_order number(11) DEFAULT '1' CONSTRAINT nn_display_order NOT NULL,
-  linkage_group varchar2(10) DEFAULT NULL,
   start_position number(11,2) DEFAULT NULL,
   stop_position number(11,2) DEFAULT NULL,
   CONSTRAINT pk_cmap_map PRIMARY KEY (map_id),

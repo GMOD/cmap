@@ -1,6 +1,6 @@
 -- MySQL dump 8.21
 --
--- Host: localhost    Database: CMAP4
+-- Host: localhost    Database: CMAP
 ---------------------------------------------------------
 -- Server version	3.23.49
 
@@ -72,8 +72,8 @@ CREATE TABLE cmap_evidence_type (
   rank int(11) NOT NULL default '0',
   line_color varchar(20) default NULL,
   PRIMARY KEY  (evidence_type_id),
-  UNIQUE KEY rank (rank),
-  UNIQUE KEY accession_id (accession_id)
+  UNIQUE KEY accession_id (accession_id),
+  UNIQUE KEY rank (rank)
 ) TYPE=MyISAM;
 
 --
@@ -142,7 +142,6 @@ CREATE TABLE cmap_map (
   map_set_id int(11) NOT NULL default '0',
   map_name varchar(32) NOT NULL default '',
   display_order int(11) NOT NULL default '1',
-  linkage_group varchar(10) default NULL,
   start_position double(11,2) default NULL,
   stop_position double(11,2) default NULL,
   PRIMARY KEY  (map_id),
