@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.19 2003-03-04 20:28:27 kycl4rk Exp $
+# $Id: Import.pm,v 1.20 2003-03-05 17:38:21 kycl4rk Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.19 $)[-1];
+$VERSION  = (qw$Revision: 1.20 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -225,6 +225,13 @@ have for the map set).
             my $datatype = $field_attr->{'datatype'} || '';
             if ( $datatype && defined $field_val && $field_val ne '' ) {
                 if ( my $regex = RE_LOOKUP->{ $datatype } ) {
+                    #
+                    # The following line forces the string a numeric 
+                    # context where it's more likely to succeed in the
+                    # regex.  This solves ".4" being bad according to
+                    # the regex.
+                    #
+                    $field_val += 0 if $datatype eq 'number';
                     return $self->error(
                         "Value of '$field_name' is wrong.  " .
                         "Expected $datatype and got '$field_val'."
