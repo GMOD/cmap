@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::FeatureSearch;
 
-# $Id: FeatureSearch.pm,v 1.6 2003-02-11 00:23:11 kycl4rk Exp $
+# $Id: FeatureSearch.pm,v 1.7 2003-02-13 00:32:57 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.6 $)[-1];
+$VERSION = (qw$Revision: 1.7 $)[-1];
 
 use Apache::Constants;
 
@@ -48,6 +48,12 @@ sub handler {
     unless ( @feature_type_aids ) {
         @feature_type_aids = split /,/, $apr->param('feature_type_aids');
     }
+
+    #
+    # "-1" is a reserved value meaning "All."
+    #
+    @species_aids      = () if grep { /^-1$/ } @species_aids;
+    @feature_type_aids = () if grep { /^-1$/ } @feature_type_aids;
 
     #
     # Set the parameters in the request object.
