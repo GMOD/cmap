@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.79 2004-04-23 17:45:37 mwz444 Exp $
+# $Id: Map.pm,v 1.80 2004-05-10 21:18:24 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.79 $)[-1];
+$VERSION = (qw$Revision: 1.80 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -416,7 +416,6 @@ a hashref keyed on feature_id.
           )
         {
 
-            #p#rint STDERR Dumper($data);
             push @{ $map->{'feature_store'}{ $data->{'drawing_lane'} } }, $data;
         }
     }
@@ -632,6 +631,21 @@ Lays out the map.
             drawing_data => \@drawing_data,
         );
 
+	my $map_details_url = DEFAULT->{'map_details_url'};
+	my $map    = $self->map($map_id);
+	my $code='';
+	eval $self->map_type_data(
+	     $map->{'map_type_aid'},'area_code');
+	push @map_area_data,
+	{
+	    coords => \@map_bounds,
+	    url    => $map_details_url ."?ref_map_aid=".$map->{'accession_id'},
+	    alt    => 'Map Details: '
+		. $map->{'map_name'},
+                code   => $code,
+	    };
+	
+
         $last_map_y = $map_y_end + 2;
 
         my $map_start         = $self->start_position($map_id);
@@ -697,7 +711,7 @@ Lays out the map.
         my %lanes;                  # associate priority with a lane
         my %features_with_corr;     # features w/correspondences
         my ( $leftmostf, $rightmostf );    # furthest features
-	#p#rint STDERR Dumper($features);
+
         for my $lane ( sort { $a <=> $b } keys %$features ) {
 
             my ( @north_labels, @south_labels );    # holds label coordinates
@@ -731,7 +745,7 @@ Lays out the map.
                 my $coords;
                 my $color;
                 my $label_y;
-		#p#rint STDERR "$leftmostf, $rightmostf\n";
+
                 ( $leftmostf, $rightmostf, $coords, $color, $label_y ) =
                   $self->add_feature_to_map(
                     base_x            => $base_x,
