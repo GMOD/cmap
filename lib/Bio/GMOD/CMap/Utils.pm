@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Utils;
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.25.2.6 2004-05-27 21:33:25 mwz444 Exp $
+# $Id: Utils.pm,v 1.25.2.7 2004-05-28 18:53:28 kycl4rk Exp $
 
 =head1 NAME
 
@@ -28,7 +28,7 @@ use Bio::GMOD::CMap::Constants;
 use POSIX;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.25.2.6 $)[-1];
+$VERSION = (qw$Revision: 1.25.2.7 $)[-1];
 
 use base 'Exporter';
 
@@ -446,12 +446,16 @@ Special thanks to Noel Yap for suggesting this strategy.
         last if $available < $font_height;
 
         my $no_possible = int( $available / $font_height );
-        my $skip_val    = $no_present > $no_possible
-            ? int( $no_present / $no_possible ) : 1
-        ;
-
-        for ( my $i = 0; $i < $no_present; $i += $skip_val ) {
-            push @accepted, $labels->{ $priority }[ $i ];
+        my $skip_val    = 1;
+        if ( $no_present > $no_possible ) {
+            $skip_val = int( $no_present / $no_possible );
+            $skip_val = 2 if $skip_val < 2;
+            for ( my $i = 0; $i < $no_present; $i += $skip_val ) {
+                push @accepted, $labels->{ $priority }[ $i ];
+            }
+        }
+        else {
+            push @accepted, @{ $labels->{ $priority } };
         }
 
         $no_added++;
@@ -468,22 +472,8 @@ Special thanks to Noel Yap for suggesting this strategy.
 
     my $no_accepted = scalar @accepted;
     my $no_possible = int( $map_height / $font_height );
-
-    #
-    # See if we can squeeze the labels into a smaller space,
-    # thereby placing the labels closer to their targets.
-    #
-#    if ( $no_accepted > 1 ) {
-#        my $feature_span = $accepted[-1]->{'target'} - $accepted[0]->{'target'};
-#        if ( 
-#            ( $feature_span < $map_height )
-#            &&
-#            ( ( $no_accepted * $font_height ) < $feature_span )
-#        ) {
-#            $map_height = $feature_span;
-#            $start_y    = $accepted[0]->{'target'};
-#        }
-#    }
+#    print STDERR "no accepted = '$no_accepted', ",
+#        "no_possible = '$no_possible' ($map_height / $font_height)\n";
 
     #
     # If there's only one label, put it right next to the one feature.
@@ -495,92 +485,162 @@ Special thanks to Noel Yap for suggesting this strategy.
     #
     # If we took fewer than was possible, try to sort them nicely.
     #
-    elsif ( $no_accepted > 1 && $no_accepted < ( $no_possible / 2 ) ) {
-        my $bin_size  = 3;
-        my $half_font = sprintf( "%d", $font_height / 2 );
+    elsif ( $no_accepted > 1 && $no_accepted <= ( $no_possible * .5 ) ) {
+        my $bin_size  = 2;
+        my $half_font = $font_height / 2;
         my $no_bins   = sprintf( "%d", $map_height / $bin_size );
         my $bins      = Bit::Vector->new( $no_bins );
 #        print STDERR "-----------------------------------------------\n",
 #            "bin size = '$bin_size', no bins = '$no_bins', ",
-#            " start = '$start_y'\n";
+#            "map height = '$map_height', start = '$start_y', ",
+#            "half font = '$half_font'\n";
 
+        my $i = 1;
         for my $label ( @accepted ) {
-            my $vtarget     = $label->{'target'} - $start_y;
-            my $low         = int( ( $vtarget - $half_font ) / $bin_size );
-            my $high        = int( ( $vtarget + $half_font ) / $bin_size );
-            my $low_bin     = int( ( $low  - $start_y ) / $bin_size );
-            my $high_bin    = int( ( $high - $start_y ) / $bin_size );
-            $low_bin = 0 if $low_bin < 0;
+            my $target   = $label->{'target'};
+            my $low_bin  = sprintf("%d", ( $target - $half_font ) / $bin_size);
+            my $high_bin = sprintf("%d", ( $target + $half_font ) / $bin_size);
+
+            if ( $low_bin < 0 ) {
+                my $diff   = 0 - $low_bin;
+                $low_bin  += $diff;
+                $high_bin += $diff;
+#                print STDERR "low bin ($low_bin) < 0, ", 
+#                    "moving up '$diff' ($low_bin, $high_bin)\n";
+            }
 
 #            print STDERR "\nbins = ", $bins->to_ASCII, "\n";
-#            print STDERR "$label->{text} ($label->{start_position}) ",
+#            print STDERR "$i: $label->{text} ($label->{start_position}) ",
 #                "target = $label->{target}, bins = ($low_bin, $high_bin)\n";
 
             my ( $hmin, $hmax )  = $bins->Interval_Scan_inc( $low_bin );
-            my ( $lmin, $lmax )  = $low_bin > 1
-                ? $bins->Interval_Scan_dec( $low_bin - 1 ) : ();
-#            print STDERR "below = ($lmin, $lmax), above = ($hmin, $hmax)\n";
+            my ( $lmin, $lmax, $next_lmin, $next_lmax );
+            if ( $low_bin > 0 ) {
+                ( $lmin, $lmax ) = $bins->Interval_Scan_dec( $low_bin - 1 );
+
+                if ( $lmin > 1 && $lmax == $low_bin - 1 ) {
+#                    print STDERR "Looking further than bin $lmin below\n";
+#                    $hmin = $lmin if defined $hmin;
+#                    ( $lmin, $lmax )  = $bins->Interval_Scan_dec( $lmin - 1 );
+                    ( $next_lmin, $next_lmax ) = 
+                        $bins->Interval_Scan_dec( $lmin - 1 );
+                }
+            }
+#            print STDERR "below = ($lmin, $lmax), above = ($hmin, $hmax), ",
+#                "next below ($next_lmin, $next_lmax)\n";
 
             my $bin_span = $high_bin - $low_bin;
             my $bins_occupied = $bin_span + 1;
+#            print STDERR "bin span = '$bin_span', bins occupied = '$bins_occupied'\n";
+
+            my ($gap_below, $gap_above, $diff_to_gap_below, $diff_to_gap_above);
+            # nothing below and enough open space
+            if ( ! defined $lmax && $low_bin - $bin_span > 1 ) {
+#                print STDERR "low decision 1\n";
+                $gap_below         = $low_bin - 1;
+                $diff_to_gap_below = $low_bin - $bins_occupied;
+            }
+            # something below but enough space b/w it and this
+            elsif ( defined $lmax && $low_bin - $lmax > $bin_span ) {
+#                print STDERR "low decision 2\n";
+                $gap_below         = $low_bin - $lmax;
+                $diff_to_gap_below = $bins_occupied;
+            }
+            # something immediately below but enough space in next gap
+            elsif ( 
+                defined $lmax && $lmax == $low_bin - 1 &&
+                defined $next_lmax && $lmin - $next_lmax >= $bins_occupied
+            ) {
+#                print STDERR "low decision 3\n";
+                $gap_below         = $lmin - $next_lmax;
+                $diff_to_gap_below = ( $low_bin - $lmin ) + $bins_occupied;
+            }
+            # something below and enough space beyond it w/o going past 0
+            elsif ( 
+                ! defined $next_lmax && defined $lmin && $lmin - $bin_span > 0
+            ) {
+#                print STDERR "low decision 4\n";
+                $gap_below         = $lmin;
+                $diff_to_gap_below = $lmin + $bins_occupied;
+            }
+
+            # nothing above and space w/in the bins
+            if ( ! defined $hmin && $high_bin + $bin_span < $no_bins ) {
+                $gap_above         = $no_bins - $low_bin;
+                $diff_to_gap_above = 0;
+            }
+            # inside an occupied bin but space just afterwards
+            elsif ( 
+                defined $hmax && 
+                $hmax <= $high_bin && 
+                $hmax + 1 + $bin_span < $no_bins
+            ) {
+                $gap_above         = $no_bins - $hmax;
+                $diff_to_gap_above = ( $hmax - $low_bin ) + 1;
+            }
+            # collision but space afterwards
+            elsif ( defined $hmax && $hmax + $bin_span < $no_bins ) {
+                $gap_above         = $no_bins - ( $hmax + 1 );
+                $diff_to_gap_above = ( $hmax + 1 ) - $low_bin;
+            }
+
+            my $below_open = $gap_below >= $bins_occupied;
+            my $above_open = $gap_above >= $bins_occupied;
+            my $closer_gap = 
+                $diff_to_gap_below == $diff_to_gap_above ? 'neither' :
+                defined $diff_to_gap_below && 
+                ($diff_to_gap_below < $diff_to_gap_above) ? 'below'   : 'above';
+
+#            print STDERR "gap below = '$gap_below', ",
+#                "diff to gap below = '$diff_to_gap_below'\n",
+#                "gap above = '$gap_above' ", 
+#                "diff to gap above = '$diff_to_gap_above'\n",
+#                "Below open = '$below_open', above open = ",
+#                "'$above_open', closer gap = '$closer_gap'\n";
+
             my $diff = 0;
             if ( ! defined $hmin ) {
 #                print STDERR "Nothing here, leaving alone\n";
                 ; # do nothing
             }
             elsif ( 
-                ! defined $lmin && ( $low_bin - $bins_occupied ) > 1
+                $below_open && (
+                    $closer_gap =~ /^(neither|below)$/ ||
+                    ! $above_open
+                )
             ) {
-                $diff        = $bins_occupied * $bin_size;
-                $high_bin    = $low_bin - 1;
-                $low_bin     = $high_bin - $bin_span;
-#                print STDERR "Nothing below, moving down\n";
+                $low_bin  -= $diff_to_gap_below;
+                $high_bin -= $diff_to_gap_below;
+                $diff      = -( $bin_size * $diff_to_gap_below );
+#                print STDERR "Moving LOW\n";
             }
-            elsif ( $hmin && $lmin ) {
-                my $hbins    = $hmax + $bin_span <= $no_bins
-                               ? abs( $low_bin - $hmax ) + 1 : undef;
-                my $lbins    = $low_bin - $lmax >= $bin_span ? $lmax :
-                    $lmin - $bin_span > 1 ? $lmin : undef;
-
-                if ( 
-                    ( ! defined $lbins ) 
-                    ||
-                    ( defined $lbins && defined $hbins && $hbins < $lbins )
-                ) {
-                    # move up
-                    $low_bin  += $hbins;
-                    $high_bin += $hbins;
-                    $diff      = $bin_size * $bins_occupied * $hbins;
-#                    print STDERR "Moving HIGH\n";
-                }
-                elsif ( defined $lbins ) {
-                    # move down
-                    $diff      = -( $bin_size * $bins_occupied * $lbins );
-                    $lbins    -= 1;
-                    $low_bin  -= $lbins;
-                    $high_bin -= $lbins;
-#                    print STDERR "Moving LOW\n";
-                }
-                else {
-                    # can't place?
-                    $low_bin  = undef;
-                    $high_bin = undef;
-                }
+            else {
+                $diff_to_gap_above ||= ( $hmax - $low_bin ) + 1;
+#                print STDERR "Moving HIGH ($diff_to_gap_above)\n";
+                $low_bin  += $diff_to_gap_above;
+                $high_bin += $diff_to_gap_above;
+                $diff      = $bin_size * $diff_to_gap_above;
             }
 
-#            print STDERR "chose bins = ($low_bin, $high_bin), diff = '$diff'\n";
+#            print STDERR "chose bins = ($low_bin, $high_bin), diff = '$diff',",
+#                " no bins = '", $bins->Size, "'\n";
 
             if ( defined $low_bin && defined $high_bin ) {
+                if ( $high_bin >= $bins->Size ) {
+                    my $cur  = $bins->Size;
+                    my $diff = ( $high_bin - $cur ) + 1;
+                    $bins->Resize( $cur + $diff );
+                }
                 $bins->Bit_On( $_ ) for $low_bin..$high_bin;
             }
 
-            $label->{'y'} = $vtarget + $diff;
+            $label->{'y'} = $target + $diff;
         }
     }
     #
     # If we used all available space, just space evenly.
     #
-    else { # if ( $no_accepted >= $no_possible ) {
+    else {
         #
         # Figure the gap to evenly space the labels in the space.
         #
