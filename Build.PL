@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.15 2004-02-10 23:23:06 kycl4rk Exp $
+# $Id: Build.PL,v 1.16 2004-02-17 22:47:43 kycl4rk Exp $
 
 use strict;
 
@@ -8,36 +8,41 @@ if ( $@ =~ /Can't locate/ ) {
     exit(0);
 }
 
+use CGI;
 use FindBin '$Bin';
-use File::Copy;
 use File::Basename;
+use File::Find;
 use File::Path;
 use File::Spec::Functions;
 
 use constant INSTALL_CONF => 'cmap_install.conf';
 my $cmap_conf_file        =  catfile('conf', 'cmap.conf');
 
-my @ARGS = qw[ PREFIX CONF_DIR CGI_DIR TEMPLATE_DIR HTDOCS ];
+my @ARGS = qw[ PREFIX CONF CGIBIN TEMPLATES HTDOCS CACHE ];
 my %ARGS = ( 
-    PREFIX       => {
-        desc     => 'A directory prefix for all install arguments',
-        default  => catdir('/', 'usr', 'local', 'apache'),
+    PREFIX      => {
+        desc    => 'A directory prefix for all install arguments',
+        default => catdir('/', 'usr', 'local', 'apache'),
     },
-    CONF_DIR     => {
-        desc     => 'Location for the cmap.conf configuration file',
-        default  => 'conf',
+    CONF        => {
+        desc    => 'Location for the cmap.conf configuration file',
+        default => 'conf',
     },
-    CGI_DIR      => {
-        desc     => 'Location for CGI executables',
-        default  => 'cgi-bin',
+    CGIBIN      => {
+        desc    => 'Location for CGI executables',
+        default => 'cgi-bin',
     },
-    TEMPLATE_DIR => {
-        desc     => 'Location for CMap HTML templates',
-        default  => catdir( 'templates', 'cmap' ),
+    TEMPLATES   => {
+        desc    => 'Location for CMap HTML templates',
+        default => catdir( 'templates', 'cmap' ),
     },
-    HTDOCS       => {
-        desc     => 'Location for static files',
-        default  => catdir( 'htdocs', 'cmap' ),
+    HTDOCS      => {
+        desc    => 'Location for static files',
+        default => catdir( 'htdocs', 'cmap' ),
+    },
+    CACHE       => {
+        desc    => 'Location for temporary image files',
+        default => catdir( 'htdocs', 'cmap', 'tmp' ),
     },
 );
 
@@ -48,12 +53,16 @@ my $USAGE = join("\n",
     'To customize install locations, provide one or more of the options ',
     '',
     join("\n", 
-        map { sprintf("%14s: %-s\n\t\t(default: %s)\n", 
-            $_, $ARGS{$_}{'desc'}, $ARGS{$_}{'default'}) 
+        map { 
+            sprintf("%10s: %-s\n\t\t(default: %s%s)\n", 
+                $_, $ARGS{$_}{'desc'}, 
+                $_ eq 'PREFIX' ? '' : '$PREFIX + ',
+                $ARGS{$_}{'default'}
+            ) 
         } 
         @ARGS
     ),
-    "e.g., 'perl Build.PL PREFIX=/opt'",
+    "e.g., 'perl Build.PL PREFIX=/usr/local/apache'",
     '',
     ''
 );
@@ -101,7 +110,7 @@ if ( !%OPTIONS && -e INSTALL_CONF ) {
 # Make sure we have usable options.
 #
 if ( $OPTIONS{'PREFIX'} ) {
-    for my $option ( qw[ CONF_DIR CGI_DIR TEMPLATE_DIR HTDOCS ] ) {
+    for my $option ( qw[ CONF CGIBIN TEMPLATES HTDOCS CACHE ] ) {
         $OPTIONS{ $option } ||= $ARGS{ $option }{'default'};
         $OPTIONS{ $option }   = catdir( 
             $OPTIONS{'PREFIX'}, $OPTIONS{ $option } 
@@ -109,7 +118,7 @@ if ( $OPTIONS{'PREFIX'} ) {
     }
 }
 else {
-    for my $option ( qw[ CONF_DIR TEMPLATE_DIR CGI_DIR HTDOCS ] ) {
+    for my $option ( qw[ CONF TEMPLATES CGIBIN HTDOCS CACHE ] ) {
         $OPTIONS{ $option } ||= catdir( 
             $ARGS{'PREFIX'}{'default'}, $ARGS{ $option }{'default'}
         );
@@ -118,8 +127,8 @@ else {
 
 print "The following options will be used to install CMap:\n",
     join( "\n", '',
-        ( map { sprintf( "%15s: %-s", $_, $OPTIONS{ $_ } ) } 
-          qw[ CONF_DIR CGI_DIR TEMPLATE_DIR HTDOCS ] 
+        ( map { sprintf( "%10s: %-s", $_, $OPTIONS{ $_ } ) } 
+          qw[ CONF CGIBIN TEMPLATES HTDOCS CACHE ] 
         ),
         '', ''
     ),
@@ -130,27 +139,83 @@ print "The following options will be used to install CMap:\n",
 #
 my $config = "$Bin/".INSTALL_CONF;
 open F,">$config" or warn "Can't open $config for writing: $!\n";
-print F "$_=$OPTIONS{$_}\n" for qw[ CONF_DIR CGI_DIR TEMPLATE_DIR HTDOCS ];
+print F "$_=$OPTIONS{$_}\n" for qw[ CONF CGIBIN TEMPLATES HTDOCS CACHE ];
 close F;
 
 #
-# Make the text for copying the templates.
+# Create the main CMap index page with a summary of the install.
 #
-#opendir( TEMPLATES, 'templates' );
-#my $template_copy = join("\n",
-#    map {
-#        $_ = catfile( 'templates', $_ );
-#        qq[
-#            \$self->copy_if_modified(
-#                from    => '$_',
-#                to_dir  => '$OPTIONS{'TEMPLATE_DIR'}',
-#                flatten => 1,
-#            );
-#        ]
-#    }
-#    grep { /\.tmpl$/ } readdir( TEMPLATES )
-#);
-#closedir TEMPLATES;
+my $index = catfile( 'htdocs', 'index.html' );
+open INDEX, ">$index" or die "Can't write new index file '$index': $!\n";
+my $q     = CGI->new;
+my $title = 'CMap Installation Summary';
+print INDEX
+    $q->start_html( { -title => $title } ),
+    $q->h1( $title ),
+    "Congratulations!  CMap has been installed.<br>",
+    $q->ul(
+        $q->li( $q->a({ -href => '/cgi-bin/cmap' }, 'CMap') ), 
+        $q->li( $q->a({ -href => '/cgi-bin/cmap/admin' }, 'Web Admin Tool') ), 
+        $q->li( $q->a({ -href => 'tutorial/' }, 'User Tutorial') ), 
+        $q->li( $q->a({ -href => 'admintut/' }, 'Admin Tutorial') ),
+    ),
+;
+close INDEX; 
+
+#
+# Make the text for copying the templates, CGI, and htdocs.
+#
+my $install;
+for my $opt ( 
+    [ 'conf',      'CONF'      ],
+    [ 'htdocs',    'HTDOCS'    ],
+    [ 'templates', 'TEMPLATES' ],
+    [ 'cgi-bin',   'CGIBIN'    ],
+) {
+    my ( $dir, $opt_name ) = @$opt;
+
+    my @files;
+    find( 
+        sub {
+            push @files, $File::Find::name if 
+                -f $_ && 
+                $File::Find::name !~ /CVS/ &&
+                $File::Find::name !~ /PL$/;
+        },
+        $dir
+    );
+
+    for my $file ( @files ) {
+        my $to = $OPTIONS{ $opt_name };
+        if ( $file =~ /($dir)(.*)/ ) {
+            $to = catdir( $to, $2 );
+        }
+
+        $install .= qq[
+            \$self->copy_if_modified(
+                from    => '$file',
+                to      => '$to',
+                flatten => 0,
+            );
+        ];
+
+        $install .= 
+            qq[chmod 0755, '$to' or die "Cannot make '$to' executable: \$!\\n";]
+            if $opt_name eq 'CGIBIN';
+    }
+}
+
+#
+# Make the temp dir for the images
+#
+$install .= qq[
+    unless ( -d '$OPTIONS{CACHE}' ) {
+        mkdir '$OPTIONS{CACHE}' or die 
+            "Can't create image cache dir '$OPTIONS{CACHE}': \$!\\n";
+    }
+    chmod 0777, '$OPTIONS{CACHE}' or die
+        "Can't chmod image cache dir '$OPTIONS{CACHE}': \$!\\n";
+];
 
 #
 # Write the build script.
@@ -162,31 +227,12 @@ my $builder   =  Module::Build->subclass(
         sub ACTION_install {
             my \$self = shift;
 
-            \$self->copy_if_modified( 
-                from    => '$conf_file',
-                to_dir  => '$OPTIONS{'CONF_DIR'}',
-                flatten => 1,
-            );
-
-            \$self->copy_if_modified( 
-                from    => 'cgi-bin',
-                to_dir  => '$OPTIONS{'CGI_DIR'}',
-                flatten => 1,
-            );
-
-            \$self->copy_if_modified( 
-                from    => 'templates',
-                to_dir  => '$OPTIONS{'TEMPLATE_DIR'}',
-                flatten => 1,
-            );
-
-            \$self->copy_if_modified( 
-                from    => 'htdocs',
-                to_dir  => '$OPTIONS{'HTDOCS'}',
-                flatten => 0,
-            );
+            $install
 
             \$self->SUPER::ACTION_install;
+
+            chomp( my \$host = `hostname` || 'localhost' );
+            print qq[\\n\\nCMap installed.  Go to "http://\$host/cmap"\\n\\n];
         }
     ]
 )->new(
@@ -217,9 +263,15 @@ my $builder   =  Module::Build->subclass(
         'XML::Simple'        => 0,
     },
     PL_files         => {
+        'cgi-bin/cmap.PL'    => 'cgi-bin/cmap',
         'conf/cmap.conf.PL'  => 'conf/cmap.conf',
         'lib/Bio/GMOD/CMap/Constants.pm.PL' => 'lib/Bio/GMOD/CMap/Constants.pm',
     },
+    add_to_cleanup   => [
+        'cgi-bin/cmap',
+        'conf/cmap.conf',
+        'lib/Bio/GMOD/CMap/Constants.pm',
+    ],
 );
 
 $builder->create_build_script;
