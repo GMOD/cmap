@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Utils;
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.25.2.4 2004-05-27 13:58:17 kycl4rk Exp $
+# $Id: Utils.pm,v 1.25.2.5 2004-05-27 14:33:02 kycl4rk Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.25.2.4 $)[-1];
+$VERSION = (qw$Revision: 1.25.2.5 $)[-1];
 
 use base 'Exporter';
 
@@ -378,7 +378,7 @@ Special thanks to Noel Yap for suggesting this strategy.
 
 #            print STDERR "\nbins = ", $bins->to_ASCII, "\n";
 #            print STDERR "$label->{text} ($label->{start_position}) ",
-#                "target = '$label->{target}, bins = ($low_bin, $high_bin)\n";
+#                "target = $label->{target}, bins = ($low_bin, $high_bin)\n";
 
             my ( $hmin, $hmax )  = $bins->Interval_Scan_inc( $low_bin );
             my ( $lmin, $lmax )  = $low_bin > 1
@@ -392,7 +392,9 @@ Special thanks to Noel Yap for suggesting this strategy.
 #                print STDERR "Nothing here, leaving alone\n";
                 ; # do nothing
             }
-            elsif ( ! defined $lmin ) {
+            elsif ( 
+                ! defined $lmin && ( $low_bin - $bins_occupied ) > 1
+            ) {
                 $diff        = $bins_occupied * $bin_size;
                 $high_bin    = $low_bin - 1;
                 $low_bin     = $high_bin - $bin_span;
@@ -413,7 +415,7 @@ Special thanks to Noel Yap for suggesting this strategy.
                     $low_bin  += $hbins;
                     $high_bin += $hbins;
                     $diff      = $bin_size * $bins_occupied * $hbins;
-#                    print STDERR "Moving HIGH ($bin_size * $bins_occupied * $hbins)\n";
+#                    print STDERR "Moving HIGH\n";
                 }
                 elsif ( defined $lbins ) {
                     # move down
@@ -421,7 +423,7 @@ Special thanks to Noel Yap for suggesting this strategy.
                     $lbins    -= 1;
                     $low_bin  -= $lbins;
                     $high_bin -= $lbins;
-#                    print STDERR "Moving LOW ($bin_size * $bins_occupied * $lbins)\n";
+#                    print STDERR "Moving LOW\n";
                 }
                 else {
                     # can't place?
@@ -452,20 +454,6 @@ Special thanks to Noel Yap for suggesting this strategy.
             $label->{'y'} = sprintf("%.2f", $start_y + ( $gap * $i++ ) );
         }
     }
-
-#    print STDERR "accepted = ", Dumper(\@accepted), "\n";
-
-#    else {
-#
-#        #
-#        # Figure the gap to evenly space the labels in the space.
-#        #
-#        my $gap = $map_height / ( $no_accepted - 1 );
-#        my $i   = 0;
-#        for my $label ( @accepted ) {
-#            $label->{'y'} = sprintf("%.2f", $start_y + ( $gap * $i++ ) );
-#        }
-#    }
 
     return \@accepted;
 }
