@@ -1,7 +1,8 @@
 package Bio::GMOD::CMap::Admin::Import;
+
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.55 2004-09-20 18:33:10 mwz444 Exp $
+# $Id: Import.pm,v 1.55.2.1 2004-11-05 19:33:07 mwz444 Exp $
 
 =pod
 
@@ -13,11 +14,15 @@ Bio::GMOD::CMap::Admin::Import - import map data
 
   use Bio::GMOD::CMap::Admin::Import;
 
-  my $importer = Bio::GMOD::CMap::Admin::Import->new(db=>$db);
+  my $importer = Bio::GMOD::CMap::Admin::Import->new(data_source=>$data_source);
   $importer->import(
       map_set_id => $map_set_id,
       fh         => $fh,
   ) or print "Error: ", $importer->error, "\n";
+
+The "data_source" parameter is a string of the name of the data source
+to be used.  This information is found in the config file as the
+"<database>" name field.
 
 =head1 DESCRIPTION
 
@@ -28,7 +33,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.55 $)[-1];
+$VERSION = (qw$Revision: 1.55.2.1 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -40,41 +45,49 @@ use XML::Simple;
 use Regexp::Common;
 use base 'Bio::GMOD::CMap';
 
-use constant FIELD_SEP => "\t"; # use tabs for field separator
-use constant STRING_RE => qr{\S+}; 
+use constant FIELD_SEP => "\t";      # use tabs for field separator
+use constant STRING_RE => qr{\S+};
 use constant RE_LOOKUP => {
     string => STRING_RE,
-    number => '^'.$RE{'num'}{'real'}.'$',
+    number => '^' . $RE{'num'}{'real'} . '$',
 };
 
 use vars '$LOG_FH';
 
 %COLUMNS = (
-    map_name             => { is_required => 1, datatype => 'string' },
-    map_accession_id     => { is_required => 0, datatype => 'string' },
-    map_display_order    => { is_required => 0, datatype => 'number' },
-    map_start            => { is_required => 0, datatype => 'number' },
-    map_stop             => { is_required => 0, datatype => 'number' },
-    feature_name         => { is_required => 1, datatype => 'string' },
-    feature_accession_id => { is_required => 0, datatype => 'string' },
-    feature_alt_name     => { is_required => 0, datatype => 'string' },
-    feature_aliases      => { is_required => 0, datatype => 'string' },
-    feature_start        => { is_required => 1, datatype => 'number' },
-    feature_stop         => { is_required => 0, datatype => 'number' },
-    feature_direction    => { is_required => 0, datatype => 'number' },
+    map_name               => { is_required => 1, datatype => 'string' },
+    map_accession_id       => { is_required => 0, datatype => 'string' },
+    map_display_order      => { is_required => 0, datatype => 'number' },
+    map_start              => { is_required => 0, datatype => 'number' },
+    map_stop               => { is_required => 0, datatype => 'number' },
+    feature_name           => { is_required => 1, datatype => 'string' },
+    feature_accession_id   => { is_required => 0, datatype => 'string' },
+    feature_alt_name       => { is_required => 0, datatype => 'string' },
+    feature_aliases        => { is_required => 0, datatype => 'string' },
+    feature_start          => { is_required => 1, datatype => 'number' },
+    feature_stop           => { is_required => 0, datatype => 'number' },
+    feature_direction      => { is_required => 0, datatype => 'number' },
     feature_type_accession => { is_required => 1, datatype => 'string' },
-    feature_note         => { is_required => 0, datatype => 'string' },
-    is_landmark          => { is_required => 0, datatype => 'number' },
-    feature_dbxref_name  => { is_required => 0, datatype => 'string' },
-    feature_dbxref_url   => { is_required => 0, datatype => 'string' },
-    feature_attributes   => { is_required => 0, datatype => 'string' },
+    feature_note           => { is_required => 0, datatype => 'string' },
+    is_landmark            => { is_required => 0, datatype => 'number' },
+    feature_dbxref_name    => { is_required => 0, datatype => 'string' },
+    feature_dbxref_url     => { is_required => 0, datatype => 'string' },
+    feature_attributes     => { is_required => 0, datatype => 'string' },
 );
 
 # ----------------------------------------------------
 
+sub import_tab {
+
 =pod
 
 =head2 import_tab
+
+=head3 For External Use
+
+=over 4
+
+=item * Description
 
 Imports tab-delimited file with the following fields:
 
@@ -107,7 +120,48 @@ pre-existing maps or features that aren't updated can be deleted (this
 is what you'd want if the import file contains *all* the data you
 have for the map set).
 
-=head3 Feature Attributes
+
+=item * Usage
+
+    $importer->import_tab(
+        map_set_id => $map_set_id,
+        fh => $fh,
+        overwrite => $overwrite,
+        log_fh => $log_fh,
+        allow_update => $allow_update,
+    );
+
+=item * Returns
+
+1
+
+=item * Fields
+
+=over 4
+
+=item - map_set_id
+
+=item - overwrite
+
+Set to 1 to delete and re-add the data if overwriting. 
+Otherwise will just add.
+
+=item - fh
+
+File handle of the imput file.
+
+=item - log_fh
+
+File handle of the log file (default is STDOUT).
+
+=item - allow_update 
+
+If allow is set to 1, the database will be searched for duplicates 
+which is slow.  Setting to 0 is recommended.
+
+=back
+
+=item * Feature Attributes
 
 Feature attributes are defined as key:value pairs separated by
 semi-colons, e.g.:
@@ -140,7 +194,7 @@ be quite large (exactly how large depends on which database you use
 and how that field is defined).  The order of the attributes will be
 used to determine the "display_order."
 
-=head3 Feature Aliases
+=item * Feature Aliases
 
 Feature aliases should be a comma-separated list of values.  They may
 either occur in the "feature_aliases" (or "feature_alt_name" in order to 
@@ -152,7 +206,7 @@ with the key "aliases" (case-insensitive), e.g.:
 Note that an alias which is the same (case-sensitive) as the feature's 
 primary name will be discarded.
 
-=head3 Cross-references
+=item * Cross-references
 
 Any attribute of type "dbxref" or "xref" (case-insensitive) will be 
 entered as an xref for the feature.  The field value should be enclosed
@@ -164,37 +218,38 @@ semicolon like so:
 The older "feature_dbxref*" fields are still accepted and are simply
 appended to the list of xrefs.
 
+=back
+
 =cut
 
-sub import_tab {
-
     my ( $self, %args ) = @_;
-    my $db              = $self->db           or die 'No database handle';
-    my $map_set_id      = $args{'map_set_id'} or die      'No map set id';
-    my $fh              = $args{'fh'}         or die     'No file handle';
-    my $overwrite       = $args{'overwrite'}  ||                        0;
-    my $allow_update    = defined($args{'allow_update'})?
-	$args{'allow_update'}:
-	2;
+    my $db         = $self->db           or die 'No database handle';
+    my $map_set_id = $args{'map_set_id'} or die 'No map set id';
+    my $fh         = $args{'fh'}         or die 'No file handle';
+    my $overwrite = $args{'overwrite'} || 0;
+    my $allow_update =
+      defined( $args{'allow_update'} )
+      ? $args{'allow_update'}
+      : 2;
 
-    $LOG_FH             = $args{'log_fh'}     ||                 \*STDOUT;
-    
-    my $max_simultaneous_inserts=1000; 
+    $LOG_FH = $args{'log_fh'} || \*STDOUT;
+
+    my $max_simultaneous_inserts = 1000;
 
     my $admin = Bio::GMOD::CMap::Admin->new(
-	config      => $self->config,
+        config      => $self->config,
         data_source => $self->data_source
-    ) or return $self->error(
-        "Can't create admin object: ", Bio::GMOD::CMap::Admin->error
-    );
-    
+      )
+      or return $self->error( "Can't create admin object: ",
+        Bio::GMOD::CMap::Admin->error );
 
     #
     # Examine map set.
     #
     $self->Print("Importing map set data.\n");
     $self->Print("Examining map set.\n");
-    my $map_set_name = join ('-', 
+    my $map_set_name = join(
+        '-',
         $db->selectrow_array(
             q[
                 select s.common_name, ms.map_set_name
@@ -204,7 +259,7 @@ sub import_tab {
                 and    ms.species_id=s.species_id
             ],
             {},
-            ( $map_set_id )
+            ($map_set_id)
         )
     );
 
@@ -217,50 +272,51 @@ sub import_tab {
             where  map.map_set_id=?
         ],
         {},
-        ( $map_set_id )
+        ($map_set_id)
     );
 
-    my %maps     = map { uc $_->[0], { map_id => $_->[1] } } @$map_info;
-    my %map_aids = map { $_->[2], $_->[0]                  } @$map_info;
-    my %modified_maps=();
+    my %maps = map { uc $_->[0], { map_id => $_->[1] } } @$map_info;
+    my %map_aids      = map { $_->[2], $_->[0] } @$map_info;
+    my %modified_maps = ();
 
     $self->Print(
-        "'$map_set_name' currently has ", scalar keys %maps, " maps.\n"
+        "'$map_set_name' currently has ",
+        scalar keys %maps,
+        " maps.\n"
     );
 
     #
     # Memorize the features currently on each map.
     #
-    if ($overwrite){
-	for my $map_name ( keys %maps ) {
-	    my $map_id = $maps{ $map_name }{'map_id'} or return $self->error
-		(
-		 "Map '$map_name' has no ID!"
-		 );
+    if ($overwrite) {
+        for my $map_name ( keys %maps ) {
+            my $map_id = $maps{$map_name}{'map_id'}
+              or return $self->error( "Map '$map_name' has no ID!" );
 
-	    my $features = $db->selectall_arrayref
-		(
-		 q[
+            my $features = $db->selectall_arrayref(
+                q[
 		   select f.feature_id, f.feature_name
 		   from   cmap_feature f
 		   where  f.map_id=?
 		   ],
-		 { Columns => {} },
-		 ( $map_id )
-		 );
+                { Columns => {} },
+                ($map_id)
+            );
 
-	    for ( @$features ) {
-		$maps{ $map_name }{'features'}{ $_->{'feature_id'} } = 0;
-	    }
-	    
-	    $self->Print
-		(
-		 "Map '$map_name' currently has ", scalar @$features, " features\n"
-		 );
-	}
+            for (@$features) {
+                $maps{$map_name}{'features'}{ $_->{'feature_id'} } = 0;
+            }
+
+            $self->Print(
+                "Map '$map_name' currently has ",
+                scalar @$features,
+                " features\n"
+            );
+        }
     }
+
     #
-    # Make column names lowercase, convert spaces to underscores 
+    # Make column names lowercase, convert spaces to underscores
     # (e.g., make "Feature Name" => "feature_name").
     #
     $self->Print("Checking headers.\n");
@@ -270,61 +326,58 @@ sub import_tab {
         header_filter   => sub { $_ = shift; s/\s+/_/g; lc $_ },
         field_filter    => sub { $_ = shift; s/^\s+|\s+$//g; $_ },
     );
-    $parser->field_compute(
-        'feature_aliases', sub { [ parse_line( ',', 0, shift() ) ] }
-    );
+    $parser->field_compute( 'feature_aliases',
+        sub { [ parse_line( ',', 0, shift() ) ] } );
     $parser->bind_header;
 
-    my %required = 
-        map  { $_, 0 }
-        grep { $COLUMNS{ $_ }{'is_required'} }
-        keys %COLUMNS;
-        
+    my %required =
+      map { $_, 0 }
+      grep { $COLUMNS{$_}{'is_required'} }
+      keys %COLUMNS;
+
     for my $column_name ( $parser->field_list ) {
-        if ( exists $COLUMNS{ $column_name } ) {
+        if ( exists $COLUMNS{$column_name} ) {
             $self->Print("Column '$column_name' OK.\n");
-            $required{ $column_name } = 1 if defined $required{ $column_name };
+            $required{$column_name} = 1 if defined $required{$column_name};
         }
         else {
             return $self->error("Column name '$column_name' is not valid.");
         }
     }
 
-    if ( my @missing = grep { $required{ $_ } == 0 } keys %required ) {
-        return $self->error("Missing following required columns: ".
-            join(', ', @missing) 
-        );
+    if ( my @missing = grep { $required{$_} == 0 } keys %required ) {
+        return $self->error(
+            "Missing following required columns: " . join( ', ', @missing ) );
     }
 
     $self->Print("Parsing file...\n");
-    my ( %feature_type_aids, %feature_ids, %map_info,@insert_features );
-    my ($last_map_name,$last_map_id)=('','');
+    my ( %feature_type_aids, %feature_ids, %map_info, @insert_features );
+    my ( $last_map_name, $last_map_id ) = ( '', '' );
     while ( my $record = $parser->fetchrow_hashref ) {
         for my $field_name ( $parser->field_list ) {
-            my $field_attr = $COLUMNS{ $field_name } or next;
-            my $field_val  = $record->{ $field_name };
+            my $field_attr = $COLUMNS{$field_name} or next;
+            my $field_val  = $record->{$field_name};
 
-            if ( 
-                $field_attr->{'is_required'} && 
-                ( !defined $field_val || $field_val eq '' )
-            ) {
+            if ( $field_attr->{'is_required'}
+                && ( !defined $field_val || $field_val eq '' ) )
+            {
                 return $self->error("Field '$field_name' is required");
             }
 
             my $datatype = $field_attr->{'datatype'} || '';
             if ( $datatype && defined $field_val && $field_val ne '' ) {
-                if ( my $regex = RE_LOOKUP->{ $datatype } ) {
+                if ( my $regex = RE_LOOKUP->{$datatype} ) {
+
                     #
-                    # The following line forces the string a numeric 
+                    # The following line forces the string a numeric
                     # context where it's more likely to succeed in the
                     # regex.  This solves ".4" being bad according to
                     # the regex.
                     #
                     $field_val += 0 if $datatype eq 'number';
-                    return $self->error(
-                        "Value of '$field_name' is wrong.  " .
-                        "Expected $datatype and got '$field_val'."
-                    ) unless $field_val =~ $regex;
+                    return $self->error( "Value of '$field_name' is wrong.  "
+                          . "Expected $datatype and got '$field_val'." )
+                      unless $field_val =~ $regex;
                 }
             }
             elsif ( $datatype eq 'number' && $field_val eq '' ) {
@@ -332,63 +385,63 @@ sub import_tab {
             }
         }
 
-        my $feature_type_aid    = $record->{'feature_type_accession'};
+        my $feature_type_aid = $record->{'feature_type_accession'};
 
         #
         # Not in the database, so ask to create it.
         #
         unless ( $self->feature_type_data($feature_type_aid) ) {
             $self->Print(
-                "Feature type accession '$feature_type_aid' doesn't exist.  After import, please add it to your configuration file.[<enter> to continue] "
+"Feature type accession '$feature_type_aid' doesn't exist.  After import, please add it to your configuration file.[<enter> to continue] "
             );
             chomp( my $answer = <STDIN> );
-	    exit;
+            exit;
         }
 
         #
         # Figure out the map id (or create it).
         #
         my ( $map_id, $map_name );
-        my $map_aid  = $record->{'map_accession_id'} || '';
-        if ( $map_aid ) {
-            $map_name = $map_aids{ $map_aid } || '';
+        my $map_aid = $record->{'map_accession_id'} || '';
+        if ($map_aid) {
+            $map_name = $map_aids{$map_aid} || '';
         }
- 
-        $map_name ||= $record->{'map_name'};
-	if ($map_name eq $last_map_name){
-	    $map_id = $last_map_id;
-	}
-	else{
-	    if ( exists $maps{ uc $map_name } ) { 
-		$map_id = $maps{ uc $map_name }{'map_id'};
-		$maps{ uc $map_name }{'touched'} = 1;
-		$modified_maps{(uc $map_name,)}=1;
-	    }
-	    
-	    my $display_order = $record->{'map_display_order'} || 1;
-	    my $map_start     = $record->{'map_start'}         || 0;
-	    my $map_stop      = $record->{'map_stop'}          || 0;
-	    
-	    if ( 
-		 defined $map_start &&
-		 defined $map_stop  &&
-		 $map_start > $map_stop 
-		 ) {
-		( $map_start, $map_stop ) = ( $map_stop, $map_start );
-	    }
 
-	    #
-	    # If the map already exists, just remember stuff about it.
-	    #
-	    unless ( $map_id ) {
-		$map_id          = next_number(
-					       db           => $db, 
-					       table_name   => 'cmap_map',
-					       id_field     => 'map_id',
-					       ) or die 'No map id';
-		$map_aid ||= $map_id;
-		$db->do(
-			q[
+        $map_name ||= $record->{'map_name'};
+        if ( $map_name eq $last_map_name ) {
+            $map_id = $last_map_id;
+        }
+        else {
+            if ( exists $maps{ uc $map_name } ) {
+                $map_id = $maps{ uc $map_name }{'map_id'};
+                $maps{ uc $map_name }{'touched'} = 1;
+                $modified_maps{ ( uc $map_name, ) } = 1;
+            }
+
+            my $display_order = $record->{'map_display_order'} || 1;
+            my $map_start     = $record->{'map_start'}         || 0;
+            my $map_stop      = $record->{'map_stop'}          || 0;
+
+            if (   defined $map_start
+                && defined $map_stop
+                && $map_start > $map_stop )
+            {
+                ( $map_start, $map_stop ) = ( $map_stop, $map_start );
+            }
+
+            #
+            # If the map already exists, just remember stuff about it.
+            #
+            unless ($map_id) {
+                $map_id = next_number(
+                    db         => $db,
+                    table_name => 'cmap_map',
+                    id_field   => 'map_id',
+                  )
+                  or die 'No map id';
+                $map_aid ||= $map_id;
+                $db->do(
+                    q[
 			  insert
 			  into   cmap_map 
 			  ( map_id, accession_id, map_set_id, 
@@ -397,75 +450,74 @@ sub import_tab {
 			    )
 			  values ( ?, ?, ?, ?, ?, ?, ? )
 			  ],
-			{}, 
-			( $map_id, $map_aid, $map_set_id, 
-			  $map_name, $map_start, $map_stop, 
-			  $display_order
-			  )
-			);
-		
-		$self->Print("Created map $map_name ($map_id).\n");
-		$maps{ uc $map_name }{'map_id'}  = $map_id;
-		$maps{ uc $map_name }{'touched'} = 1;
-		$modified_maps{(uc $map_name,)}=1;
-		
-		$map_info{ $map_id }{'map_id'}         ||= $map_id;
-		$map_info{ $map_id }{'map_set_id'}     ||= $map_set_id;
-		$map_info{ $map_id }{'map_name'}       ||= $map_name;
-		$map_info{ $map_id }{'start_position'} ||= $map_start;
-		$map_info{ $map_id }{'stop_position'}  ||= $map_stop;
-		$map_info{ $map_id }{'display_order'}  ||= $display_order;
-		$map_info{ $map_id }{'accession_id'}   ||= $map_aid;
+                    {},
+                    (
+                        $map_id,    $map_aid,  $map_set_id, $map_name,
+                        $map_start, $map_stop, $display_order
+                    )
+                );
 
-		$last_map_id=$map_id;
-		$last_map_name=$map_name;
-	    }
-	}
+                $self->Print("Created map $map_name ($map_id).\n");
+                $maps{ uc $map_name }{'map_id'}  = $map_id;
+                $maps{ uc $map_name }{'touched'} = 1;
+                $modified_maps{ ( uc $map_name, ) } = 1;
+
+                $map_info{$map_id}{'map_id'}         ||= $map_id;
+                $map_info{$map_id}{'map_set_id'}     ||= $map_set_id;
+                $map_info{$map_id}{'map_name'}       ||= $map_name;
+                $map_info{$map_id}{'start_position'} ||= $map_start;
+                $map_info{$map_id}{'stop_position'}  ||= $map_stop;
+                $map_info{$map_id}{'display_order'}  ||= $display_order;
+                $map_info{$map_id}{'accession_id'}   ||= $map_aid;
+
+                $last_map_id   = $map_id;
+                $last_map_name = $map_name;
+            }
+        }
 
         #
         # Basic feature info
         #
-        my $feature_name    = $record->{'feature_name'} 
-            or warn "feature name blank! ", Dumper( $record ), "\n";
-        my $accession_id    = $record->{'feature_accession_id'};
-        my $aliases         = $record->{'feature_aliases'};
-        my $attributes      = $record->{'feature_attributes'}  || '';
-        my $start           = $record->{'feature_start'};
-        my $stop            = $record->{'feature_stop'};
-        my $direction       = $record->{'feature_direction'} || 1;
-        my $is_landmark     = $record->{'is_landmark'} || 0;
-        my $default_rank    = $record->{'default_rank'} ||
-            $self->feature_type_data($feature_type_aid,'default_rank');
+        my $feature_name = $record->{'feature_name'}
+          or warn "feature name blank! ", Dumper($record), "\n";
+        my $accession_id = $record->{'feature_accession_id'};
+        my $aliases      = $record->{'feature_aliases'};
+        my $attributes   = $record->{'feature_attributes'} || '';
+        my $start        = $record->{'feature_start'};
+        my $stop         = $record->{'feature_stop'};
+        my $direction    = $record->{'feature_direction'} || 1;
+        my $is_landmark  = $record->{'is_landmark'} || 0;
+        my $default_rank = $record->{'default_rank'}
+          || $self->feature_type_data( $feature_type_aid, 'default_rank' );
 
         #
         # Feature attributes
         #
         my ( @fattributes, @xrefs );
-	if ($attributes){
-	    for my $attr ( parse_line( ';', 1, $attributes ) ) {
-		my ( $key, $value ) = 
-		    map { s/^\s+|\s+$//g; s/^"|"$//g; $_ } 
-                parse_line( ':', 1, $attr )
-		    ;
-		
-		if ( $key =~ /^alias(es)?$/i ) {
-		    push @$aliases, 
-                    map { s/^\s+|\s+$//g; s/\\"/"/g; $_ } 
-                    parse_line( ',', 1, $value )
-			;
-		}
-		elsif ( $key =~ /^(db)?xref$/i ) {
-		    $value =~ s/^"|"$//g;
-		    if ( my ( $xref_name, $xref_url ) = split(/;/, $value) ) {
-			push @xrefs, { name => $xref_name, url => $xref_url };
-		    }
-		}
-		else {
-		    $value =~ s/\\"/"/g;
-		    push @fattributes, { name => $key, value => $value };
-		}
-	    }
+        if ($attributes) {
+            for my $attr ( parse_line( ';', 1, $attributes ) ) {
+                my ( $key, $value ) =
+                  map { s/^\s+|\s+$//g; s/^"|"$//g; $_ }
+                  parse_line( ':', 1, $attr );
+
+                if ( $key =~ /^alias(es)?$/i ) {
+                    push @$aliases,
+                      map { s/^\s+|\s+$//g; s/\\"/"/g; $_ }
+                      parse_line( ',', 1, $value );
+                }
+                elsif ( $key =~ /^(db)?xref$/i ) {
+                    $value =~ s/^"|"$//g;
+                    if ( my ( $xref_name, $xref_url ) = split( /;/, $value ) ) {
+                        push @xrefs, { name => $xref_name, url => $xref_url };
+                    }
+                }
+                else {
+                    $value =~ s/\\"/"/g;
+                    push @fattributes, { name => $key, value => $value };
+                }
+            }
         }
+
         #
         # Backward-compatibility stuff
         #
@@ -487,88 +539,87 @@ sub import_tab {
         #
         # Check start and stop positions, flip if necessary.
         #
-        if ( 
-            defined $start &&
-            defined $stop  &&
-            $start ne ''   &&
-            $stop  ne ''   &&
-            $stop < $start 
-        ) {
+        if (   defined $start
+            && defined $stop
+            && $start ne ''
+            && $stop  ne ''
+            && $stop < $start )
+        {
             ( $start, $stop ) = ( $stop, $start );
-            $direction*=-1;
+            $direction *= -1;
         }
 
-        my $feature_id='';
-	if( $allow_update ) {
-	    if ( $accession_id ) {
-		$feature_id = $db->selectrow_array(
-                q[
+        my $feature_id = '';
+        if ($allow_update) {
+            if ($accession_id) {
+                $feature_id = $db->selectrow_array(
+                    q[
 		  select feature_id
 		  from   cmap_feature
 		  where  accession_id=?
 		  ],
-                {},
-		 ( $accession_id )
-		);
-	    }
+                    {},
+                    ($accession_id)
+                );
+            }
 
-	    #
-	    # If there's no accession ID, see if another feature
-	    # with the same name exists.
-	    #
-	    if ( !$feature_id && !$accession_id ) {
-		$feature_id = $db->selectrow_array
-		    (
-		     q[
+            #
+            # If there's no accession ID, see if another feature
+            # with the same name exists.
+            #
+            if ( !$feature_id && !$accession_id ) {
+                $feature_id = $db->selectrow_array(
+                    q[
 		       select feature_id
 		       from   cmap_feature
 		       where  map_id=?
 		       and    upper(feature_name)=?
 		       ],
-		     {},
-		     ( $map_id, uc $feature_name )
-		     );
-	    }
-	
-	    my $action = 'Inserted';
-	    if ( $feature_id ) {
-		$action         = 'Updated';
-		$accession_id ||= $feature_id;
-		$db->do
-		    (
-		     q[
+                    {},
+                    ( $map_id, uc $feature_name )
+                );
+            }
+
+            my $action = 'Inserted';
+            if ($feature_id) {
+                $action = 'Updated';
+                $accession_id ||= $feature_id;
+                $db->do(
+                    q[
 		       update cmap_feature
 		       set    accession_id=?, map_id=?, feature_type_accession=?, 
 		       feature_name=?, start_position=?, stop_position=?,
 		       is_landmark=?, default_rank=?,direction=?
 		       where  feature_id=?
 		       ],
-		     {}, 
-		     ( $accession_id, $map_id, $feature_type_aid, 
-		       $feature_name, $start, $stop, $is_landmark,
-		       $feature_id,$default_rank,$direction
-		       )
-		     );
+                    {},
+                    (
+                        $accession_id, $map_id,     $feature_type_aid,
+                        $feature_name, $start,      $stop,
+                        $is_landmark,  $feature_id, $default_rank,
+                        $direction
+                    )
+                );
 
-		$maps{ uc $map_name }{'features'}{ $feature_id } = 1 if 
-		    defined $maps{ uc $map_name }{'features'}{ $feature_id };
-	    }
-	    else{
-		#
-		# Create a new feature record.
-		#
-		$feature_id = next_number
-		    (
-		     db           => $db,
-		     table_name   => 'cmap_feature',
-		     id_field     => 'feature_id',
-		     ) or die 'No feature id';
-		
-		$accession_id ||= $feature_id;
-		
-		$db->do
-		    (
-		     q[
+                $maps{ uc $map_name }{'features'}{$feature_id} = 1
+                  if defined $maps{ uc $map_name }{'features'}{$feature_id};
+            }
+            else {
+
+                #
+                # Create a new feature record.
+                #
+                $feature_id = next_number(
+                    db         => $db,
+                    table_name => 'cmap_feature',
+                    id_field   => 'feature_id',
+                  )
+                  or die 'No feature id';
+
+                $accession_id ||= $feature_id;
+
+                $db->do(
+                    q[
 		       insert
 		       into   cmap_feature
 		       ( feature_id, accession_id, map_id,
@@ -578,69 +629,81 @@ sub import_tab {
 			 )
 		       values ( ?, ?, ?, ?, ?, ?, ?, ?, ? )
 		       ],
-		     {},
-		     ( $feature_id, $accession_id, $map_id, $feature_type_aid,
-		       $feature_name, $start, $stop, $is_landmark, 
-		       $default_rank,$direction)
-		     );
-	    } 
-	    my $pos = join('-', map { defined $_ ? $_ : () } $start, $stop);
-	    $self->Print
-		(
-		 "$action $feature_type_aid '$feature_name' on map $map_name at $pos.\n"
-		 );
-	}
+                    {},
+                    (
+                        $feature_id,       $accession_id, $map_id,
+                        $feature_type_aid, $feature_name, $start,
+                        $stop,             $is_landmark,  $default_rank,
+                        $direction
+                    )
+                );
+            }
+            my $pos = join( '-', map { defined $_ ? $_ : () } $start, $stop );
+            $self->Print(
+"$action $feature_type_aid '$feature_name' on map $map_name at $pos.\n"
+            );
+        }
         else {
+
             #
             # Always Create a new feature record
             #
-            
-	    $insert_features[++$#insert_features]=
-		[$accession_id, $map_id, $feature_type_aid, 
-		 $feature_name, $start, $stop, $is_landmark, $default_rank,$direction,
-		 ];
-	    @insert_features=@{$self->insert_features(
-				   feature_array => \@insert_features,
-				   db            => $db,
-						     )}
-		if ($max_simultaneous_inserts<=$#insert_features);
+
+            $insert_features[ ++$#insert_features ] = [
+                $accession_id, $map_id,       $feature_type_aid,
+                $feature_name, $start,        $stop,
+                $is_landmark,  $default_rank, $direction,
+            ];
+            @insert_features = @{
+                $self->insert_features(
+                    feature_array => \@insert_features,
+                    db            => $db,
+                )
+              }
+              if ( $max_simultaneous_inserts <= $#insert_features );
         }
 
-        for my $name ( @$aliases ) {
+        for my $name (@$aliases) {
             next if $name eq $feature_name;
             $admin->feature_alias_create(
                 feature_id => $feature_id,
                 alias      => $name,
-            ) or warn $admin->error;
+              )
+              or warn $admin->error;
         }
 
-        if ( @fattributes ) {
-            $admin->set_attributes( 
-                object_id  => $feature_id, 
+        if (@fattributes) {
+            $admin->set_attributes(
+                object_id  => $feature_id,
                 table_name => 'cmap_feature',
                 attributes => \@fattributes,
                 overwrite  => $overwrite,
-            ) or return $self->error( $admin->error );
+              )
+              or return $self->error( $admin->error );
         }
 
-        if ( @xrefs ) {
+        if (@xrefs) {
             $admin->set_xrefs(
                 object_id  => $feature_id,
                 table_name => 'cmap_feature',
                 overwrite  => $overwrite,
                 xrefs      => \@xrefs,
-            ) or return $self->error( $admin->error );
+              )
+              or return $self->error( $admin->error );
         }
 
-        #my $pos = join('-', map { defined $_ ? $_ : () } $start, $stop);
-        #$self->Print(
-        #    "$action $feature_type_aid '$feature_name' on map $map_name at $pos.\n"
-        #);
+    #my $pos = join('-', map { defined $_ ? $_ : () } $start, $stop);
+    #$self->Print(
+    #    "$action $feature_type_aid '$feature_name' on map $map_name at $pos.\n"
+    #);
     }
-    @insert_features=@{$self->insert_features(
-        feature_array => \@insert_features,
-        db            => $db,
-        )} if (@insert_features);
+    @insert_features = @{
+        $self->insert_features(
+            feature_array => \@insert_features,
+            db            => $db,
+        )
+      }
+      if (@insert_features);
 
     #
     # Go through and update all the maps.
@@ -656,14 +719,11 @@ sub import_tab {
                        display_order=?
                 where  map_id=?
             ],
-            {}, 
-            ( 
-                $map->{'map_set_id'}, 
-                $map->{'map_name'}, 
-                $map->{'start_position'}, 
-                $map->{'stop_position'}, 
-                $map->{'display_order'}, 
-                $map->{'map_id'},
+            {},
+            (
+                $map->{'map_set_id'},     $map->{'map_name'},
+                $map->{'start_position'}, $map->{'stop_position'},
+                $map->{'display_order'},  $map->{'map_id'},
             )
         );
 
@@ -674,7 +734,7 @@ sub import_tab {
                     set    accession_id=?
                     where  map_id=?
                 ],
-                {}, 
+                {},
                 ( $map->{'accession_id'}, $map->{'map_id'} )
             );
         }
@@ -683,46 +743,40 @@ sub import_tab {
     }
 
     #
-    # Go through existing maps and features, delete any that weren't 
+    # Go through existing maps and features, delete any that weren't
     # updated, if necessary.
     #
-    if ( $overwrite ) {
+    if ($overwrite) {
         for my $map_name ( sort keys %maps ) {
-            my $map_id = $maps{ uc $map_name }{'map_id'} or return $self->error(
-                "Map '$map_name' has no ID!"
-            );
+            my $map_id = $maps{ uc $map_name }{'map_id'}
+              or return $self->error( "Map '$map_name' has no ID!" );
 
             unless ( $maps{ uc $map_name }{'touched'} ) {
-                $self->Print(
-                    "Map '$map_name' ($map_id) ",
-                    "wasn't updated or inserted, so deleting\n"
-                );
-                $admin->map_delete( map_id => $map_id ) or return 
-                    $self->error( $admin->error );
+                $self->Print( "Map '$map_name' ($map_id) ",
+                    "wasn't updated or inserted, so deleting\n" );
+                $admin->map_delete( map_id => $map_id )
+                  or return $self->error( $admin->error );
                 delete $maps{ uc $map_name };
                 next;
             }
 
-            while ( 
-                my ( $feature_id, $touched ) = 
-                each %{ $maps{ uc $map_name }{'features'} } 
-            ) {
+            while ( my ( $feature_id, $touched ) =
+                each %{ $maps{ uc $map_name }{'features'} } )
+            {
                 next if $touched;
-                $self->Print(
-                    "Feature '$feature_id' ",
-                    "wasn't updated or inserted, so deleting\n"
-                );
-                $admin->feature_delete( feature_id => $feature_id ) or return 
-                    $self->error( $admin->error );
+                $self->Print( "Feature '$feature_id' ",
+                    "wasn't updated or inserted, so deleting\n" );
+                $admin->feature_delete( feature_id => $feature_id )
+                  or return $self->error( $admin->error );
             }
         }
     }
 
-    # 
+    #
     # Make sure the maps have legitimate starts and stops.
-    # 
+    #
     for my $map_name ( sort keys %modified_maps ) {
-        my $map_id = $maps{ $map_name }{'map_id'};
+        my $map_id = $maps{$map_name}{'map_id'};
         my ( $map_start, $map_stop ) = $db->selectrow_array(
             q[
                 select map.start_position, map.stop_position
@@ -730,7 +784,7 @@ sub import_tab {
                 where  map.map_id=?
             ],
             {},
-            ( $map_id )
+            ($map_id)
         );
 
         my ( $min_start, $max_start, $max_stop ) = $db->selectrow_array(
@@ -743,7 +797,7 @@ sub import_tab {
                 group by f.map_id
             ],
             {},
-            ( $map_id )
+            ($map_id)
         );
 
         #
@@ -756,9 +810,9 @@ sub import_tab {
         $map_start = 0 unless defined $map_start;
         $map_stop  = 0 unless defined $map_stop;
 
-        $max_stop    = $max_start if $max_start > $max_stop;
-        $map_start   = $min_start if $min_start < $map_start;
-        $map_stop    = $max_stop  if $max_stop  > $map_stop;
+        $max_stop  = $max_start if $max_start > $max_stop;
+        $map_start = $min_start if $min_start < $map_start;
+        $map_stop  = $max_stop  if $max_stop > $map_stop;
 
         $db->do(
             q[
@@ -778,7 +832,7 @@ sub import_tab {
     }
 
     $self->Print("Done\n");
-    
+
     return 1;
 }
 
@@ -789,38 +843,81 @@ sub import_objects {
 
 =head2 import_objects
 
+=head3 For External Use
+
+=over 4
+
+=item * Description
+
 Imports an XML document containing CMap database objects.
+Not guaranteed to work.
+
+=item * Usage
+
+    $importer->import_objects(
+        overwrite => $overwrite,
+        fh => $fh,
+        log_fh => $log_fh,
+    );
+
+=item * Returns
+
+1
+
+=item * Fields
+
+=over 4
+
+=item - overwrite
+
+Set to 1 to delete and re-add the data if overwriting. 
+Otherwise will just add.
+
+=item - fh
+
+File handle of the imput file.
+
+=item - log_fh
+
+File handle of the log file (default is STDOUT).
+
+=back
+
+=back
 
 =cut
 
     my ( $self, %args ) = @_;
-    my $db              = $self->db           or die 'No database handle';
-    my $fh              = $args{'fh'}         or die     'No file handle';
-    my $overwrite       = $args{'overwrite'}  ||                        0;
-    $LOG_FH             = $args{'log_fh'}     ||                 \*STDOUT;
+    my $db = $self->db   or die 'No database handle';
+    my $fh = $args{'fh'} or die 'No file handle';
+    my $overwrite = $args{'overwrite'} || 0;
+    $LOG_FH = $args{'log_fh'} || \*STDOUT;
 
     my $admin = Bio::GMOD::CMap::Admin->new(
         config      => $self->config,
         data_source => $self->data_source
-    ) or return $self->error(
-        "Can't create admin object: ", Bio::GMOD::CMap::Admin->error
-    );
+      )
+      or return $self->error( "Can't create admin object: ",
+        Bio::GMOD::CMap::Admin->error );
 
-    my $import        =  XMLin( $fh,
+    my $import = XMLin(
+        $fh,
         KeepRoot      => 0,
         SuppressEmpty => 1,
-        ForceArray    => [ qw( 
-            cmap_map_set map feature xref attribute 
-            cmap_species feature_alias 
-            cmap_feature_correspondence cmap_xref correspondence_evidence
-        ) ],
+        ForceArray    => [
+            qw(
+              cmap_map_set map feature xref attribute
+              cmap_species feature_alias
+              cmap_feature_correspondence cmap_xref correspondence_evidence
+              )
+        ],
     );
 
     #
     # Species.
     #
     my %species;
-    for my $species ( @{ $import->{'cmap_species'} || [] } )  {
+    for my $species ( @{ $import->{'cmap_species'} || [] } ) {
         $self->import_object(
             overwrite   => $overwrite,
             table_name  => 'cmap_species',
@@ -830,7 +927,8 @@ Imports an XML document containing CMap database objects.
             field_names => [
                 qw/accession_id common_name full_name display_order/
             ],
-        ) or return;
+          )
+          or return;
 
         $species{ $species->{'object_id'} } = $species;
     }
@@ -841,13 +939,12 @@ Imports an XML document containing CMap database objects.
     my %feature_ids;
     for my $ms ( @{ $import->{'cmap_map_set'} || [] } ) {
         $self->Print(
-            "Importing map set '$ms->{map_set_name}' ($ms->{accession_id})\n"
-        );
+            "Importing map set '$ms->{map_set_name}' ($ms->{accession_id})\n" );
 
-        my $species          = $species{ $ms->{'species_id'} };
-        my $map_type_aid         = $ms->{'map_type_accession'};
-        $ms->{'species_id'}  = $species->{'new_species_id'} or 
-            return $self->error('Cannot determine species id');
+        my $species      = $species{ $ms->{'species_id'} };
+        my $map_type_aid = $ms->{'map_type_accession'};
+        $ms->{'species_id'} = $species->{'new_species_id'}
+          or return $self->error('Cannot determine species id');
 
         $self->import_object(
             overwrite   => $overwrite,
@@ -855,12 +952,15 @@ Imports an XML document containing CMap database objects.
             pk_name     => 'map_set_id',
             object_type => 'map_set',
             object      => $ms,
-            field_names => [ qw/ accession_id map_set_name short_name
-                color shape is_enabled display_order can_be_reference_map
-                published_on width species_id map_type_accession map_units 
-                is_relational_map
-            / ],
-        ) or return;
+            field_names => [
+                qw/ accession_id map_set_name short_name
+                  color shape is_enabled display_order can_be_reference_map
+                  published_on width species_id map_type_accession map_units
+                  is_relational_map
+                  /
+            ],
+          )
+          or return;
 
         for my $map ( @{ $ms->{'map'} || [] } ) {
             $map->{'map_set_id'} = $ms->{'new_map_set_id'};
@@ -870,39 +970,46 @@ Imports an XML document containing CMap database objects.
                 pk_name     => 'map_id',
                 object_type => 'map',
                 object      => $map,
-                field_names => [ qw/ accession_id map_name display_order
-                    start_position stop_position map_set_id
-                / ],
-            ) or return;
+                field_names => [
+                    qw/ accession_id map_name display_order
+                      start_position stop_position map_set_id
+                      /
+                ],
+              )
+              or return;
 
             for my $feature ( @{ $map->{'feature'} || [] } ) {
-                $feature->{'map_id'}          = $map->{'new_map_id'};
+                $feature->{'map_id'} = $map->{'new_map_id'};
                 $self->import_object(
                     overwrite   => $overwrite,
                     table_name  => 'cmap_feature',
                     pk_name     => 'feature_id',
                     object_type => 'feature',
                     object      => $feature,
-                    field_names => [ qw/ map_id accession_id
-                        feature_name start_position stop_position
-                        is_landmark feature_type_accession default_rank direction
-                    / ],
-                ) or return;
+                    field_names => [
+                        qw/ map_id accession_id
+                          feature_name start_position stop_position
+                          is_landmark feature_type_accession default_rank direction
+                          /
+                    ],
+                  )
+                  or return;
 
-                $feature_ids{ $feature->{'object_id'} } = 
-                    $feature->{'new_feature_id'};
+                $feature_ids{ $feature->{'object_id'} } =
+                  $feature->{'new_feature_id'};
 
                 for my $alias ( @{ $feature->{'feature_alias'} || [] } ) {
                     $alias->{'feature_id'} = $feature->{'new_feature_id'};
                     $self->import_object(
-                        overwrite   => $overwrite,
+                        overwrite           => $overwrite,
                         table_name          => 'cmap_feature_alias',
                         pk_name             => 'feature_alias_id',
                         object_type         => 'feature_alias',
                         object              => $alias,
-                        field_names         => [ qw/ feature_id alias / ],
+                        field_names         => [qw/ feature_id alias /],
                         lookup_accession_id => 0,
-                    ) or return;
+                      )
+                      or return;
                 }
             }
         }
@@ -911,7 +1018,7 @@ Imports an XML document containing CMap database objects.
     #
     # Feature correspondences
     #
-    for my $fc ( @{ $import->{'cmap_feature_correspondence'} || [] } )  {
+    for my $fc ( @{ $import->{'cmap_feature_correspondence'} || [] } ) {
         $fc->{'feature_id1'} = $feature_ids{ $fc->{'feature_id1'} };
         $fc->{'feature_id2'} = $feature_ids{ $fc->{'feature_id2'} };
 
@@ -920,25 +1027,29 @@ Imports an XML document containing CMap database objects.
             pk_name     => 'feature_correspondence_id',
             object_type => 'feature_correspondence',
             object      => $fc,
-            field_names => [ qw/ 
-                accession_id feature_aid1 feature_aid2 is_enabled  
-                correspondence_evidence
-            / ],
-        ) or return;
+            field_names => [
+                qw/
+                  accession_id feature_aid1 feature_aid2 is_enabled
+                  correspondence_evidence
+                  /
+            ],
+          )
+          or return;
     }
 
     #
     # Cross-references
     #
-    for my $xref ( @{ $import->{'cmap_xref'} || [] } )  {
+    for my $xref ( @{ $import->{'cmap_xref'} || [] } ) {
         $self->import_object(
             table_name  => 'cmap_xref',
             pk_name     => 'xref_id',
             object_type => 'xref',
             object      => $xref,
-            field_names => [ qw/display_order xref_name xref_url table_name/ ],
+            field_names => [qw/display_order xref_name xref_url table_name/],
             lookup_accession_id => 0,
-        ) or return;
+          )
+          or return;
     }
 
     return 1;
@@ -946,20 +1057,67 @@ Imports an XML document containing CMap database objects.
 
 # ----------------------------------------------------
 sub import_object {
-    my ( $self, %args )     = @_;
+
+=pod
+
+=head2 import_object
+
+=head3 NOT For External Use
+
+=over 4
+
+=item * Description
+
+Imports an object.
+
+=item * Usage
+
+    $importer->import_object(
+        pk_name => $pk_name,
+        table_name => $table_name,
+        object => $object,
+        object_type => $object_type,
+        field_names => $field_names,
+    );
+
+=item * Returns
+
+1
+
+=item * Fields
+
+=over 4
+
+=item - pk_name
+
+=item - table_name
+
+=item - object
+
+=item - object_type
+
+=item - field_names
+
+=back
+
+=back
+
+=cut
+
+    my ( $self, %args ) = @_;
     my $object_type         = $args{'object_type'};
     my $object              = $args{'object'};
     my $table_name          = $args{'table_name'};
     my $field_names         = $args{'field_names'};
-    my $pk_name             = $args{'pk_name'} || pk_name( $table_name );
-    my $lookup_accession_id = defined $args{'lookup_accession_id'}
-                              ? $args{'lookup_accession_id'} : 1;
-    my $db                  = $self->db;
-    my $admin               = $self->admin;
+    my $pk_name             = $args{'pk_name'} || pk_name($table_name);
+    my $lookup_accession_id =
+      defined $args{'lookup_accession_id'} ? $args{'lookup_accession_id'} : 1;
+    my $db    = $self->db;
+    my $admin = $self->admin;
 
     my $new_object_id;
 
-    if ( $lookup_accession_id ) {
+    if ($lookup_accession_id) {
         $new_object_id = $db->selectrow_array(
             qq[
                 select $pk_name
@@ -973,18 +1131,18 @@ sub import_object {
 
     if ( $new_object_id && $args{'overwrite'} ) {
         $self->Print("Updating $table_name\n");
-        my $update_method     = $object_type . '_update';
-        $object->{ $pk_name } = $new_object_id;
-        $admin->$update_method(
-            map { $_, $object->{ $_ } } $pk_name, @$field_names
-        ) or return $self->error( $admin->error );
+        my $update_method = $object_type . '_update';
+        $object->{$pk_name} = $new_object_id;
+        $admin->$update_method( map { $_, $object->{$_} } $pk_name,
+            @$field_names )
+          or return $self->error( $admin->error );
     }
-    elsif ( ! $new_object_id ) {
+    elsif ( !$new_object_id ) {
         $self->Print("Creating new data in $table_name\n");
         my $create_method = $object_type . '_create';
-        $new_object_id    = $admin->$create_method(
-            map { $_, $object->{ $_ } } @$field_names
-        ) or return $self->error( $admin->error );
+        $new_object_id =
+          $admin->$create_method( map { $_, $object->{$_} } @$field_names )
+          or return $self->error( $admin->error );
     }
 
     $object->{"new_$pk_name"} = $new_object_id;
@@ -1009,24 +1167,62 @@ sub import_object {
 }
 
 # ----------------------------------------------------
-sub insert_features{
-    my ( $self, %args )     = @_;
-    my $feature_array       = $args{'feature_array'};
-    my $db                  = $args{'db'};
-    my $no_features         = scalar(@{$feature_array});
+sub insert_features {
 
-    return if ($no_features<=0);
+=pod
+
+=head2 insert_features
+
+=head3 NOT For External Use
+
+=over 4
+
+=item * Description
+
+insert_features
+
+=item * Usage
+
+    $importer->insert_features(
+        db => $db,
+        feature_array => $feature_array,
+    );
+
+=item * Returns
+
+Empty feature_array
+
+=item * Fields
+
+=over 4
+
+=item - db
+
+=item - feature_array
+
+=back
+
+=back
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $feature_array = $args{'feature_array'};
+    my $db            = $args{'db'};
+    my $no_features   = scalar( @{$feature_array} );
+
+    return if ( $no_features <= 0 );
 
     my $base_feature_id = next_number(
-                db           => $db, 
-                table_name   => 'cmap_feature',
-                id_field     => 'feature_id',
-		requested    => $no_features,
-            ) or die 'No feature id';
+        db         => $db,
+        table_name => 'cmap_feature',
+        id_field   => 'feature_id',
+        requested  => $no_features,
+      )
+      or die 'No feature id';
 
-
-    my $sth=$db->prepare(
-	    q[
+    my $sth = $db->prepare(
+        q[
 	      insert
 	      into   cmap_feature
 	      ( feature_id, accession_id, map_id,
@@ -1036,38 +1232,86 @@ sub insert_features{
 		)
 	      values (?,?,?,?,?,?,?,?,?,?)
 	      ]
-        );
-    
-    for (my $i=0;$i<$no_features; $i++){
-        my $feature_id=$base_feature_id+$i;
-        $feature_array->[$i][0] ||=$feature_id;
-        $sth->execute($feature_id,@{$feature_array->[$i]});
+    );
+
+    for ( my $i = 0 ; $i < $no_features ; $i++ ) {
+        my $feature_id = $base_feature_id + $i;
+        $feature_array->[$i][0] ||= $feature_id;
+        $sth->execute( $feature_id, @{ $feature_array->[$i] } );
     }
-    
-    $self->Print(
-           "Inserted $no_features features.\n"
-        );
-    $feature_array=[];
+
+    $self->Print( "Inserted $no_features features.\n" );
+    $feature_array = [];
     return $feature_array;
 }
 
 # ----------------------------------------------------
 sub Print {
+
+=pod
+
+=head2 Print
+
+=head3 NOT For External Use
+
+=over 4
+
+=item * Description
+
+Prints to log file.
+
+=item * Usage
+
+    $importer->Print();
+
+=item * Returns
+
+nothing
+
+=back
+
+=cut
+
     my $self = shift;
     print $LOG_FH @_;
 }
 
 # ----------------------------------------------------
 sub admin {
+
+=pod
+
+=head2 admin
+
+=head3 NOT For External Use
+
+=over 4
+
+=item * Description
+
+Creates or retrieves Admin object for internal use.
+
+=item * Usage
+
+    $importer->admin();
+
+=item * Returns
+
+Bio::GMOD::CMap::Admin object
+
+=back
+
+=cut
+
     my $self = shift;
 
     unless ( defined $self->{'admin'} ) {
         $self->{'admin'} = Bio::GMOD::CMap::Admin->new(
             config      => $self->config,
             data_source => $self->data_source
-        ) or return $self->error(
-            "Can't create admin object: ", Bio::GMOD::CMap::Admin->error
-        );
+          )
+          or return $self->error( "Can't create admin object: ",
+            Bio::GMOD::CMap::Admin->error );
     }
 
     return $self->{'admin'};
@@ -1098,3 +1342,4 @@ This library is free software;  you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 =cut
+

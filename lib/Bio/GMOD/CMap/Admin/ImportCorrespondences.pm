@@ -1,7 +1,8 @@
 package Bio::GMOD::CMap::Admin::ImportCorrespondences;
+
 # vim: set ft=perl:
 
-# $Id: ImportCorrespondences.pm,v 1.21.2.2 2004-11-01 14:59:01 mwz444 Exp $
+# $Id: ImportCorrespondences.pm,v 1.21.2.3 2004-11-05 19:33:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -43,7 +44,7 @@ feature names, a correspondence will be created.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.21.2.2 $)[-1];
+$VERSION = (qw$Revision: 1.21.2.3 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -63,13 +64,13 @@ use Regexp::Common;
     is_enabled            => { is_required => 0, datatype => 'number' },
 );
 
-use constant FIELD_SEP => "\t"; # use tabs for field separator
+use constant FIELD_SEP => "\t";    # use tabs for field separator
 
-use constant STRING_RE => qr{\S+};    #qr{^[\w\s.()-]+$};
+use constant STRING_RE => qr{\S+}; #qr{^[\w\s.()-]+$};
 
 use constant RE_LOOKUP => {
     string => STRING_RE,
-    number => '^'.$RE{'num'}{'real'}.'$',
+    number => '^' . $RE{'num'}{'real'} . '$',
 };
 
 use constant FEATURE_SQL_BY_AID => q[
@@ -118,13 +119,61 @@ use constant FEATURE_SQL_BY_NAME => q[
 
 # ----------------------------------------------------
 sub import {
+
+=pod
+
+=head2 import
+
+=head3 For External Use
+
+=over 4
+
+=item * Description
+
+Import tab-delimited file of correspondences.
+
+=item * Usage
+
+    $importer->import(
+        fh => $fh,
+        log_fh => $log_fh,
+        allow_update => $allow_update,
+    );
+
+=item * Returns
+
+1
+
+=item * Fields
+
+=over 4
+
+=item - fh
+
+File handle of the imput file.
+
+=item - log_fh
+
+File handle of the log file (default is STDOUT).
+
+=item - allow_update 
+
+If allow is set to 1, the database will be searched for duplicates 
+which is slow.  Setting to 0 is recommended.
+
+=back
+
+=back
+
+=cut
+
     my ( $self, %args ) = @_;
-    my $fh              = $args{'fh'} or return $self->error('No file handle');
-    my %map_set_ids     = map { $_, 1 } @{ $args{'map_set_ids'} || [] };
-    my $db              = $self->db;
-    $LOG_FH             = $args{'log_fh'} || \*STDOUT;
-    my $allow_update           = $args{'allow_update'};
-    my $admin           = Bio::GMOD::CMap::Admin->new(
+    my $fh = $args{'fh'} or return $self->error('No file handle');
+    my %map_set_ids = map { $_, 1 } @{ $args{'map_set_ids'} || [] };
+    my $db = $self->db;
+    $LOG_FH = $args{'log_fh'} || \*STDOUT;
+    my $allow_update = $args{'allow_update'};
+    my $admin        = Bio::GMOD::CMap::Admin->new(
         config      => $self->config,
         data_source => $self->data_source,
     );
@@ -132,7 +181,7 @@ sub import {
     $self->Print("Importing feature correspondence data.\n");
 
     #
-    # Make column names lowercase, convert spaces to underscores 
+    # Make column names lowercase, convert spaces to underscores
     # (e.g., make "Feature Name" => "feature_name").
     #
     $self->Print("Checking headers.\n");
@@ -145,40 +194,38 @@ sub import {
     $parser->bind_header;
 
     for my $column_name ( $parser->field_list ) {
-        if ( exists $COLUMNS{ $column_name } ) {
-            $self->Print("Column '$column_name' OK.\n")
+        if ( exists $COLUMNS{$column_name} ) {
+            $self->Print("Column '$column_name' OK.\n");
         }
         else {
             return $self->error("Column name '$column_name' is not valid.");
         }
     }
 
-    my @feature_name_fields = qw[ 
-        species_name map_set_name map_name feature_name 
+    my @feature_name_fields = qw[
+      species_name map_set_name map_name feature_name
     ];
 
     $self->Print("Parsing file...\n");
     my ( %feature_ids, %evidence_type_aids, $inserts, $total );
-    LINE:
+  LINE:
     while ( my $record = $parser->fetchrow_hashref ) {
         for my $field_name ( $parser->field_list ) {
-            my $field_attr = $COLUMNS{ $field_name } or next;
-            my $field_val  = $record->{ $field_name };
+            my $field_attr = $COLUMNS{$field_name} or next;
+            my $field_val  = $record->{$field_name};
 
-            if ( 
-                $field_attr->{'is_required'} && 
-                ( !defined $field_val || $field_val eq '' )
-            ) {
+            if ( $field_attr->{'is_required'}
+                && ( !defined $field_val || $field_val eq '' ) )
+            {
                 return $self->error("Field '$field_name' is required");
             }
 
             my $datatype = $field_attr->{'datatype'} || '';
             if ( $datatype && defined $field_val && $field_val ne '' ) {
-                if ( my $regex = RE_LOOKUP->{ $datatype } ) {
-                    return $self->error(
-                        "Value of '$field_name'  is wrong.  " .
-                        "Expected $datatype and got '$field_val'."
-                    ) unless $field_val =~ $regex;
+                if ( my $regex = RE_LOOKUP->{$datatype} ) {
+                    return $self->error( "Value of '$field_name'  is wrong.  "
+                          . "Expected $datatype and got '$field_val'." )
+                      unless $field_val =~ $regex;
                 }
             }
         }
@@ -188,37 +235,40 @@ sub import {
         for my $i ( 1, 2 ) {
             my $field_name     = "feature_name$i";
             my $aid_field_name = "feature_accession_id$i";
-            my $feature_name   = $record->{ $field_name }     || '';
-            my $accession_id   = $record->{ $aid_field_name } || '';
+            my $feature_name   = $record->{$field_name} || '';
+            my $accession_id   = $record->{$aid_field_name} || '';
             next unless $feature_name || $accession_id;
-            my $upper_name     = uc $feature_name;
+            my $upper_name = uc $feature_name;
             my @feature_ids;
 
-            if ( $accession_id ) {
-                my $sth = $db->prepare( FEATURE_SQL_BY_AID );
-                $sth->execute( "$accession_id" );
+            if ($accession_id) {
+                my $sth = $db->prepare(FEATURE_SQL_BY_AID);
+                $sth->execute("$accession_id");
                 my $feature = $sth->fetchrow_hashref;
                 push @feature_ids, $feature if $feature;
             }
             else {
-                if ( defined $feature_ids{ $upper_name } ) {
-                    @feature_ids = @{ $feature_ids{ $upper_name } } or next;
+                if ( defined $feature_ids{$upper_name} ) {
+                    @feature_ids = @{ $feature_ids{$upper_name} } or next;
                 }
             }
 
-            unless ( @feature_ids ) {
-                @feature_ids = @{ $db->selectall_arrayref(
-                    FEATURE_SQL_BY_NAME,
-                    { Columns => {} },
-                    ( $upper_name, $upper_name )
-                ) || [] };
+            unless (@feature_ids) {
+                @feature_ids = @{
+                    $db->selectall_arrayref(
+                        FEATURE_SQL_BY_NAME,
+                        { Columns => {} },
+                        ( $upper_name, $upper_name )
+                      )
+                      || []
+                  };
 
             }
 
-            if ( @feature_ids ) {
-                $feature_ids{ $upper_name } = \@feature_ids;
+            if (@feature_ids) {
+                $feature_ids{$upper_name} = \@feature_ids;
 
-                if ( $i==1 ) {
+                if ( $i == 1 ) {
                     @feature_ids1 = @feature_ids;
                 }
                 else {
@@ -226,33 +276,33 @@ sub import {
                 }
             }
             else {
-                $feature_ids{ $upper_name } = [];
+                $feature_ids{$upper_name} = [];
                 warn qq[Cannot find feature IDs for "$feature_name".\n];
                 next LINE;
             }
         }
 
-        if ( %map_set_ids ) {
-            my @found_map_set_ids = map { $_->{'map_set_id'} } 
-                @feature_ids1, @feature_ids2;
+        if (%map_set_ids) {
+            my @found_map_set_ids = map { $_->{'map_set_id'} } @feature_ids1,
+              @feature_ids2;
             my $ok;
-            for my $found ( @found_map_set_ids ) {
-                $ok = 1, last if $map_set_ids{ $found };
+            for my $found (@found_map_set_ids) {
+                $ok = 1, last if $map_set_ids{$found};
             }
             next LINE unless $ok;
         }
 
         next LINE unless @feature_ids1 && @feature_ids2;
 
-        my @evidences = map {s/^\s+|\s+$//g;$_} 
-            split /,/, $record->{'evidence'};
+        my @evidences = map { s/^\s+|\s+$//g; $_ }
+          split /,/, $record->{'evidence'};
         my @evidence_type_aids;
-        for my $evidence ( @evidences ) {
-            my $evidence_type_aid = $evidence ;
+        for my $evidence (@evidences) {
+            my $evidence_type_aid = $evidence;
 
-                unless ( $self->evidence_type_data($evidence_type_aid) ) {
+            unless ( $self->evidence_type_data($evidence_type_aid) ) {
                 $self->Print(
-                    "Evidence type accession '$evidence_type_aid' doesn't exist.  After import, please add it to your configuration file.[<enter> to continue] "
+"Evidence type accession '$evidence_type_aid' doesn't exist.  After import, please add it to your configuration file.[<enter> to continue] "
                 );
                 chomp( my $answer = <STDIN> );
             }
@@ -261,26 +311,25 @@ sub import {
         }
 
         my $is_enabled = $record->{'is_enabled'};
-           $is_enabled = 1 unless defined $is_enabled;
+        $is_enabled = 1 unless defined $is_enabled;
 
-        for my $feature1 ( @feature_ids1 ) {
-            for my $feature2 ( @feature_ids2 ) {
-                if ( %map_set_ids ) {
-                    next unless 
-                        $map_set_ids{ $feature1->{'map_set_id'} }
-                        ||
-                        $map_set_ids{ $feature2->{'map_set_id'} }
-                    ;
+        for my $feature1 (@feature_ids1) {
+            for my $feature2 (@feature_ids2) {
+                if (%map_set_ids) {
+                    next
+                      unless $map_set_ids{ $feature1->{'map_set_id'} }
+                      || $map_set_ids{ $feature2->{'map_set_id'} };
                 }
 
-                for my $evidence_type_aid ( @evidence_type_aids ) {
+                for my $evidence_type_aid (@evidence_type_aids) {
                     my ( $evidence_type_aid, $evidence ) = @$evidence_type_aid;
-                    my $fc_id = $admin->add_feature_correspondence_to_list( 
+                    my $fc_id = $admin->add_feature_correspondence_to_list(
                         feature_id1       => $feature1->{'feature_id'},
                         feature_id2       => $feature2->{'feature_id'},
                         evidence_type_aid => $evidence_type_aid,
-		                allow_update      => $allow_update,
-                    ) or return $self->error( $admin->error );
+                        allow_update      => $allow_update,
+                      )
+                      or return $self->error( $admin->error );
 
                     $admin->insert_feature_correspondence_if_gt(1000);
                 }
@@ -294,6 +343,31 @@ sub import {
 }
 
 sub Print {
+
+=pod
+
+=head2 Print
+
+=head3 NOT For External Use
+
+=over 4
+
+=item * Description
+
+Prints to log file
+
+=item * Usage
+
+    $importer->Print();
+
+=item * Returns
+
+
+
+=back
+
+=cut
+
     my $self = shift;
     print $LOG_FH @_;
 }
@@ -324,3 +398,4 @@ This library is free software;  you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 =cut
+
