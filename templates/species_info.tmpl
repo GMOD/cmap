@@ -61,7 +61,7 @@
                             <tr>
                             <td>[% ms.map_set_name %]</td>
                             <td align="center">&nbsp;<b>[</b>&nbsp;<a href="map_set_info?map_set_aid=[% ms.map_set_aid %]">View&nbsp;Map&nbsp;Set&nbsp;Info</a>&nbsp;<b>]</b>&nbsp;</td>
-                            <td align="center">&nbsp;<b>[</b>&nbsp;<a href="matrix?show_matrix=1&[% IF ms.is_relational_map %]link_map_set_aid=[% ms.map_set_aid %][% ELSE %]map_type_aid=[% ms.map_type_aid %]&species_aid=[% ms.species_aid %]map_set_aid=[% ms.map_set_aid %][% END %]">View&nbsp;Map&nbsp;Set&nbsp;In&nbsp;Matrix</a>&nbsp;<b>]</b>&nbsp;</td>
+                            <td align="center">&nbsp;<b>[</b>&nbsp;<a href="matrix?show_matrix=1&[% IF ms.is_relational_map %]link_map_set_aid=[% ms.map_set_aid %][% ELSE %]map_type_aid=[% ms.map_type_aid %]&species_aid=[% ms.species_aid %]&map_set_aid=[% ms.map_set_aid %][% END %]">View&nbsp;Map&nbsp;Set&nbsp;In&nbsp;Matrix</a>&nbsp;<b>]</b>&nbsp;</td>
                             </tr>
                             [% last_map_type=ms.map_type_aid %]
                         [% END %]
