@@ -110,7 +110,7 @@
 
     <table width="100%">
         <tr>
-            <td colspan="7" align="center">
+            <td colspan="8" align="center">
                 [% SET pager_url="/cmap/admin?action=map_set_view&map_set_id=${map_set.map_set_id}" %]
                 [% PROCESS pager.tmpl %]
             </td>
@@ -118,6 +118,7 @@
         <tr>
             <th>Acc. ID</th>
             <th>Map Name</th>
+            <th>Linkage Group</th>
             <th>Start</th>
             <th>Stop</th>
             <th colspan="3">&nbsp;</th>
@@ -127,6 +128,7 @@
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
                 <td>[% map.accession_id   OR '&nbsp;' %]</td>
                 <td>[% map.map_name       OR '&nbsp;' %]</td>
+                <td>[% map.linkage_group  OR '&nbsp;' %]</td>
                 <td align="right">
                     [% map.start_position %]
                 </td>
