@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.35 2003-03-25 23:18:56 kycl4rk Exp $
+# $Id: Map.pm,v 1.36 2003-03-27 22:54:53 kycl4rk Exp $
 
 =pod
 
@@ -23,8 +23,9 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.35 $)[-1];
+$VERSION = (qw$Revision: 1.36 $)[-1];
 
+use URI::Escape;
 use Data::Dumper;
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
@@ -1214,15 +1215,17 @@ Lays out the map.
                 # or left connection points for linking up to 
                 # corresponding features.
                 #
-                if ( $label_side eq RIGHT ) {
-                    $features_with_corr{ $label->{'feature_id'} }{'right'} = 
-                        [ $label_bounds[2], 
-                          ($label_bounds[1]+$label_bounds[3])/2 ];
-                }
-                else {
-                    $features_with_corr{ $label->{'feature_id'} }{'left'} = 
-                        [ $label_bounds[0], 
-                          ($label_bounds[1]+$label_bounds[3])/2 ];
+                if( defined $features_with_corr{ $label->{'feature_id'} } ) {
+                    if ( $label_side eq RIGHT ) {
+                        $features_with_corr{ $label->{'feature_id'} }{'right'} =
+                            [ $label_bounds[2], 
+                              ($label_bounds[1]+$label_bounds[3])/2 ];
+                    }
+                    else {
+                        $features_with_corr{ $label->{'feature_id'} }{'left'} = 
+                            [ $label_bounds[0], 
+                              ($label_bounds[1]+$label_bounds[3])/2 ];
+                    }
                 }
 
                 #
@@ -1337,7 +1340,7 @@ Lays out the map.
             ';label_features='.$drawer->label_features.
             ';feature_types='.
             join(',', @{ $drawer->include_feature_types || [] }).
-            ';highlight='.$drawer->highlight;
+            ';highlight='.uri_escape( $drawer->highlight );
 
         if ( $is_relational && $slot_no != 0 ) {
             $drawer->add_map_area(
