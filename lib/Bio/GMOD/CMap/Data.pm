@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.34 2003-02-07 20:35:35 kycl4rk Exp $
+# $Id: Data.pm,v 1.35 2003-02-11 00:26:04 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,13 +24,20 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.34 $)[-1];
+$VERSION = (qw$Revision: 1.35 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Utils;
 use base 'Bio::GMOD::CMap';
+
+# ----------------------------------------------------
+sub init {
+    my ( $self, $config ) = @_;
+    $self->data_source( $config->{'data_source'} );
+    return $self;
+}
 
 # ----------------------------------------------------
 sub acc_id_to_internal_id {
@@ -163,8 +170,6 @@ Returns the data for drawing comparative maps.
     my ( $self, %args ) = @_;
     my $db              = $self->db  or return;
     my $sql             = $self->sql or return;
-
-#    warn "args =\n", Dumper( \%args ), "\n";
 
     #
     # Get the arguments.
@@ -491,6 +496,7 @@ Returns the data for drawing comparative maps.
                 push @{ $correspondence_evidence->{ 
                     $corr->{'feature_correspondence_id'}
                 } }, {
+                    evidence_type => $corr->{'evidence_type'}, 
                     evidence_rank => $corr->{'evidence_rank'}, 
                     line_color    => $corr->{'line_color'},
                     line_style    => $corr->{'line_style'},
@@ -1492,6 +1498,7 @@ Takes a list of evidence type accession IDs and returns their table IDs.
     my $db                 = $self->db;
 
     for my $aid ( @evidence_type_aids ) {
+        next unless defined $aid && $aid ne '';
         my $id = $db->selectrow_array(
             q[
                 select evidence_type_id
@@ -1504,7 +1511,7 @@ Takes a list of evidence type accession IDs and returns their table IDs.
         push @evidence_type_ids, $id;
     }
 
-    return wantarray ? @evidence_type_ids : \@evidence_type_ids;
+    return @evidence_type_ids ? [ @evidence_type_ids ] : [];
 }
 
 # ----------------------------------------------------
@@ -1524,6 +1531,7 @@ Takes a list of feature type accession IDs and returns their table IDs.
     my $db                = $self->db;
 
     for my $aid ( @feature_type_aids ) {
+        next unless defined $aid && $aid ne '';
         my $id = $db->selectrow_array(
             q[
                 select feature_type_id
@@ -1536,7 +1544,7 @@ Takes a list of feature type accession IDs and returns their table IDs.
         push @feature_type_ids, $id;
     }
 
-    return wantarray ? @feature_type_ids : \@feature_type_ids;
+    return @feature_type_ids ? [ @feature_type_ids ] : [];
 }
 
 # ----------------------------------------------------

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.22 2003-02-07 20:35:36 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.23 2003-02-11 00:26:04 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.22 $)[-1];
+$VERSION = (qw$Revision: 1.23 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
@@ -37,6 +37,7 @@ use base 'Bio::GMOD::CMap';
 use constant INIT_PARAMS => [ qw(
     apr slots highlight font_size image_size image_type 
     label_features include_feature_types include_evidence_types
+    data_source
 ) ];
 
 # ----------------------------------------------------
@@ -56,7 +57,6 @@ Initializes the drawing object.
         $self->$param( $config->{ $param } );
     }
 
-#    $Error::Debug = $self->debugging ? 1 : 0;
     $self->draw;
     return $self;
 }
@@ -523,7 +523,9 @@ Lays out the image and writes it to the file system, set the "image_name."
         my $font   = $self->regular_font;
         my $x      = $min_x + 20;
 
-        $self->add_drawing( STRING, $font, $x, $max_y, 'Legend:', 'black' );
+        $self->add_drawing( 
+            STRING, $font, $x, $max_y, 'Feature Types:', 'black' 
+        );
         $max_y += $font->height + 10;
 
         my $corr_color = $self->config('feature_correspondence_color');
@@ -531,13 +533,13 @@ Lays out the image and writes it to the file system, set the "image_name."
             push @feature_types, {
                 shape        => '',
                 color        => $corr_color,
-                feature_type => ucfirst($corr_color).' denontes correspondence',
+                feature_type => ucfirst($corr_color).' denotes correspondence',
             };
         }
 
         for my $ft ( @feature_types ) {
             my $color     = $ft->{'color'} || $self->config('feature_color');
-            my $label     = $ft->{'feature_type'};
+            my $label     = $ft->{'feature_type'} or next;
             my $feature_x = $x;
             my $feature_y = $max_y;
             my $label_x   = $feature_x + 15;
@@ -566,6 +568,48 @@ Lays out the image and writes it to the file system, set the "image_name."
                     LINE, 
                     $feature_x, $feature_y + 10, 
                     $feature_x + 5, $feature_y + 10, 
+                    $color
+                );
+                $label_y = $feature_y + 5;
+            }
+            elsif ( $ft->{'shape'} eq 'up-arrow' ) {
+                $feature_x +=5;
+                $self->add_drawing(
+                    LINE, 
+                    $feature_x, $feature_y, $feature_x, $feature_y + 10,  
+                    $color
+                );
+                $self->add_drawing(
+                    LINE, 
+                    $feature_x, $feature_y,
+                    $feature_x - 2, $feature_y + 2, 
+                    $color
+                );
+                $self->add_drawing(
+                    LINE, 
+                    $feature_x, $feature_y,
+                    $feature_x + 2, $feature_y + 2, 
+                    $color
+                );
+                $label_y = $feature_y + 5;
+            }
+            elsif ( $ft->{'shape'} eq 'down-arrow' ) {
+                $feature_x +=5;
+                $self->add_drawing(
+                    LINE, 
+                    $feature_x, $feature_y, $feature_x, $feature_y + 10,  
+                    $color
+                );
+                $self->add_drawing(
+                    LINE, 
+                    $feature_x, $feature_y + 10, 
+                    $feature_x - 2, $feature_y + 8,
+                    $color
+                );
+                $self->add_drawing(
+                    LINE, 
+                    $feature_x, $feature_y + 10, 
+                    $feature_x + 2, $feature_y + 8,
                     $color
                 );
                 $label_y = $feature_y + 5;
@@ -610,6 +654,27 @@ Lays out the image and writes it to the file system, set the "image_name."
             my $furthest_y = $feature_y > $label_y ? $feature_y : $label_y;
             $max_x         = $furthest_x if $furthest_x > $max_x;
             $max_y         = $furthest_y + 10;
+        }
+
+        #
+        # Evidence type legend.
+        #
+        if ( my @evidence_types = $self->correspondence_evidence_seen ) {
+            $self->add_drawing( 
+                STRING, $font, $x, $max_y, 'Evidence Types:', 'black' 
+            );
+            $max_y += $font->height + 10;
+
+            for my $et ( @evidence_types ) {
+                my $color = $et->{'line_color'} || 
+                            $self->config('connecting_line_color');
+                $self->add_drawing( 
+                    STRING, $font, $x + 15, $max_y,
+                    ucfirst($color) .' line denotes '.  $et->{'evidence_type'}, 
+                    $color
+                );
+                $max_y += $font->height + 5;
+            }
         }
 
         my $watermark = 'CMap v'.$Bio::GMOD::CMap::VERSION;
@@ -691,7 +756,7 @@ necessary data for drawing.
     my $self = shift;
 
     unless ( $self->{'data'} ) {
-        my $data                   =  Bio::GMOD::CMap::Data->new;
+        my $data                   =  $self->data_module or return;
         $self->{'data'}            =  $data->cmap_data( 
             slots                  => $self->slots,
             include_feature_types  => $self->include_feature_types,
@@ -703,19 +768,29 @@ necessary data for drawing.
 }
 
 # ----------------------------------------------------
-sub has_correspondence {
+sub correspondence_evidence_seen {
 
 =pod
 
-=head2 has_correspondence
+=head2 correspondence_evidence_seen
 
-Returns whether or not a feature has a correspondence.
+Returns a distinct list of all the correspondence evidence types seen.
 
 =cut
 
-    my $self       = shift;
-    my $feature_id = shift or return;
-    return defined $self->{'data'}{'correspondences'}{ $feature_id };
+    my $self = shift;
+    unless ( $self->{'correspondence_evidence_seen'} ) {
+        my %types = 
+            map  { $_->{'evidence_type'}, $_ }
+            values %{ $self->{'data'}{'correspondence_evidence'} };
+
+        $self->{'correspondence_evidence_seen'} = [
+            map { $types{ $_ } }   
+            sort keys %types
+        ];
+    }
+
+    return @{ $self->{'correspondence_evidence_seen'} || [] };
 }
 
 # ----------------------------------------------------
@@ -734,8 +809,7 @@ Given a feature correspondence ID, returns supporting evidence.
         $self->{'data'}{'correspondences'}{ $fid1 }{ $fid2 } or return;
 
     return
-        $self->{'data'}{'correspondence_evidence'}{ $feature_correspondence_id };
-
+        $self->{'data'}{'correspondence_evidence'}{$feature_correspondence_id};
 }
 
 # ----------------------------------------------------
@@ -883,6 +957,22 @@ Returns the font size.
         $self->{'font_size'} ||= $font_size;
     }
     return $self->{'font_size'};
+}
+
+# ----------------------------------------------------
+sub has_correspondence {
+
+=pod
+
+=head2 has_correspondence
+
+Returns whether or not a feature has a correspondence.
+
+=cut
+
+    my $self       = shift;
+    my $feature_id = shift or return;
+    return defined $self->{'data'}{'correspondences'}{ $feature_id };
 }
 
 # ----------------------------------------------------
