@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.87 2005-02-10 19:06:04 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.88 2005-02-14 20:12:25 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.87 $)[-1];
+$VERSION = (qw$Revision: 1.88 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -100,8 +100,10 @@ sub handler {
 
     $collapse_features = $self->config_data('collapse_overlapping_features')
       unless ( defined($collapse_features) );
+    # reset the params only if you want the code to be able to change them.
+    # otherwise, simply initialize the avalue.
     $apr->param( 'aggregate', $self->aggregate($aggregate) );
-    $apr->param( 'cluster_corr', $self->cluster_corr($cluster_corr) );
+    $self->cluster_corr($cluster_corr);
     $apr->param( 'show_intraslot_corr',
         $self->show_intraslot_corr($show_intraslot_corr) );
     $apr->param( 'split_agg_ev',
