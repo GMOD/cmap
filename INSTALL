@@ -1,6 +1,6 @@
                               CMAP INSTALL
 
-                             $Revision: 1.35 $
+                             $Revision: 1.36 $
 
 1.      QUICK START
 
@@ -566,13 +566,15 @@ Here are the CPAN modules required:
 
 *   IO::Tee
 
+*   Regexp::Common
+
 *   Template
 
 *   Text::RecordParser
 
 *   Text::ParseWords
 
-*   Time::Object 
+*   Time::Piece 
 
 *   Time::ParseDate
 
