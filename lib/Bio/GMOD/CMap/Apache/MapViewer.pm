@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 
-# $Id: MapViewer.pm,v 1.16 2003-03-25 23:13:47 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.17 2003-03-27 22:56:31 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $TEMPLATE $PAGE );
-$VERSION = (qw$Revision: 1.16 $)[-1];
+$VERSION = (qw$Revision: 1.17 $)[-1];
 
 use Apache::Constants qw[ :common REDIRECT ];
 use Apache::Request;
@@ -209,6 +209,7 @@ sub show_form {
                 close STDOUT;
                 close STDERR;
             }
+
             $drawer                    =  Bio::GMOD::CMap::Drawer->new(
                 apr                    => $apr,
                 data_source            => $self->data_source,
@@ -271,8 +272,6 @@ sub show_form {
             $slot_no, map { $slots{ $slot_no }{ $_ } } qw[ field aid ]
         );
     }
-
-#    warn "form _data =\n", Dumper( $form_data ), "\n";
 
     my $html;
     my $t = $self->template or return;
