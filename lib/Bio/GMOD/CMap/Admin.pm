@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin;
 
-# $Id: Admin.pm,v 1.23 2003-07-01 16:36:51 kycl4rk Exp $
+# $Id: Admin.pm,v 1.24 2003-07-01 17:41:15 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.23 $)[-1];
+$VERSION = (qw$Revision: 1.24 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils qw[ next_number parse_words ];
@@ -354,20 +354,20 @@ Find all the features matching some criteria.
         }
         parse_words( $args{'feature_name'} )
     );
-    my $map_aid         = $args{'map_aid'}         ||             '';
-    my $species_id      = $args{'species_id'}      ||              0;
-    my $feature_type_id = $args{'feature_type_id'} ||              0;
-    my $field_name      = $args{'field_name'}      || 'feature_name';
-    my $order_by        = $args{'order_by'}        || 'feature_name';
-    my $limit_start     = $args{'limit_start'}     ||              0;
-    my $db              = $self->db or return;
+    my $map_aid          = $args{'map_aid'}          ||             '';
+    my $species_ids      = $args{'species_ids'}      ||             [];
+    my $feature_type_ids = $args{'feature_type_ids'} ||             [];
+    my $field_name       = $args{'field_name'}       || 'feature_name';
+    my $order_by         = $args{'order_by'}         || 'feature_name';
+    my $limit_start      = $args{'limit_start'}      ||              0;
+    my $db               = $self->db or return;
     my @results;
 
     #
     # "-1" is a reserved value meaning "all"
     #
-    $species_id      = 0 if $species_id      == -1;
-    $feature_type_id = 0 if $feature_type_id == -1;
+    $species_ids      = [] if grep { /^-1$/ } @$species_ids;
+    $feature_type_ids = [] if grep { /^-1$/ } @$feature_type_ids;
 
     for my $feature_name ( map { uc $_ } @feature_names ) {
         my $comparison = $feature_name =~ m/%/ ? 'like' : '=';
@@ -411,8 +411,16 @@ Find all the features matching some criteria.
             and ms.map_type_id=mt.map_type_id
         ];
         $sql .= "and map.accession_id='$map_aid' "        if $map_aid;
-        $sql .= "and ms.species_id=$species_id "          if $species_id;
-        $sql .= "and f.feature_type_id=$feature_type_id " if $feature_type_id;
+
+        if ( @$species_ids ) {
+            $sql .= 'and ms.species_id in (' . 
+                join(', ', @$species_ids ) . ') ';
+        }
+
+        if ( @$feature_type_ids ) {
+            $sql .= 'and f.feature_type_id in (' .
+                join(', ', @$feature_type_ids ) . ') ';
+        }
         $sql .= "order by $order_by ";
 
         push @results, @{ $db->selectall_arrayref( $sql, { Columns => {} } ) };
