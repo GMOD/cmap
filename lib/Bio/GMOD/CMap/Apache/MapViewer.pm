@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.42 2004-05-26 13:08:51 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.43 2004-05-30 20:28:05 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.42 $)[-1];
+$VERSION = (qw$Revision: 1.43 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -32,8 +32,8 @@ sub handler {
     my $ref_map_start         = $apr->param('ref_map_start');
     my $ref_map_stop          = $apr->param('ref_map_stop');
     my $comparative_maps      = $apr->param('comparative_maps')      || '';
-    my $comparative_map_right = $apr->param('comparative_map_right') || '';
-    my $comparative_map_left  = $apr->param('comparative_map_left')  || '';
+    my @comparative_map_right = $apr->param('comparative_map_right');
+    my @comparative_map_left  = $apr->param('comparative_map_left');
     my $highlight             = $apr->param('highlight')             || '';
     my $font_size             = $apr->param('font_size')             || '';
     my $image_size            = $apr->param('image_size')            || '';
@@ -98,8 +98,8 @@ sub handler {
         $ref_map_stop          = undef;
         $ref_map_names         = '';
         $comparative_maps      = undef;
-        $comparative_map_right = undef;
-        $comparative_map_left  = undef;
+        @comparative_map_right = ();
+        @comparative_map_left  = ();
     }
 
     my ( $ref_field, $ref_value );
@@ -134,13 +134,23 @@ sub handler {
             $start        = $2;
             $stop         = $3;
         }
-        $slots{ $slot_no } =  {
-            field          => $field,
-            aid            => $accession_id,
-            start          => $start,
-            stop           => $stop,
-        }; 
+        foreach my $aid (split /,/,$accession_id){
+            unless ($slots{ $slot_no }){ 
+                $slots{ $slot_no } =  {
+                    field          => $field,
+                    start          => $start,
+                    stop           => $stop,
+                };
+            }
+            push @{$slots{ $slot_no }->{'aid'}}, $aid; 
+        }
     }
+    for my $slot_no (keys %slots){
+        if (scalar(@{$slots{ $slot_no }->{'aid'}})==1){
+            $slots{ $slot_no }->{'aid'}=$slots{ $slot_no }->{'aid'}->[0];
+        }
+    }
+    
 
     my @slot_nos  = sort { $a <=> $b } keys %slots;
     my $max_right = $slot_nos[-1];
@@ -152,17 +162,21 @@ sub handler {
     for my $side ( ( RIGHT, LEFT ) ) {
         my $slot_no = $side eq RIGHT ? $max_right + 1 : $max_left - 1;
         my $cmap    = $side eq RIGHT 
-            ? $comparative_map_right : $comparative_map_left;
-        my ( $field, $accession_id ) = split( /=/, $cmap ) or next;
-        my ( $start, $stop );
+            ? \@comparative_map_right : \@comparative_map_left;
+        ###Use the first comp_map to determine the field
+        my ( $field, $accession_id ) = split( /=/, $cmap->[0] ) or next;
+        my ( $start, $stop, @comp_ids );
+        ###If it is using start and stop, assume there is only 
+        ###  one comp_map and use start and stop.
         if ( $accession_id =~ m/^(.+)\[(.+),(.+)\]$/ ) {
             $accession_id = $1;
             $start        = $2;
             $stop         = $3;
         }
+        @comp_ids=map {substr($_,index($_,'=')+1)} @{$cmap};
         $slots{ $slot_no } =  {
             field          => $field,
-            aid            => $accession_id,
+            aid            => \@comp_ids,
             start          => $start,
             stop           => $stop,
         }; 
@@ -233,9 +247,19 @@ sub handler {
     #
     my @comp_maps = ();
     for my $slot_no ( grep { $_ != 0 } keys %slots ) {
-        push @comp_maps, join( '=', 
-            $slot_no, map { $slots{ $slot_no }{ $_ } } qw[ field aid ]
-        );
+        if (ref($slots{ $slot_no }{ 'aid' }) eq 'ARRAY'){
+            for(my $i=0; $i<= $#{$slots{ $slot_no }{ 'aid' }};$i++){
+                push @comp_maps, join( '=',
+                    $slot_no,
+                    $slots{ $slot_no }{ 'field' },
+                    $slots{ $slot_no }{ 'aid' }->[$i]);
+            }
+        }
+        else{
+            push @comp_maps, join( '=', 
+                $slot_no, map { $slots{ $slot_no }{ $_ } } qw[ field aid ]
+            );
+        }
     }
   
     my $html;

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.119 2004-05-27 21:35:50 mwz444 Exp $
+# $Id: Data.pm,v 1.120 2004-05-30 20:28:04 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.119 $)[-1];
+$VERSION = (qw$Revision: 1.120 $)[-1];
 
 use Data::Dumper;
 use Regexp::Common;
@@ -489,18 +489,6 @@ sub slot_data {
     my ( $ref_map_id, $ref_map_start, $ref_map_stop, $ref_maps,
         $ref_pos_restrict );
     if ( defined $ref_slot_no ) {
-
-        #$ref_maps = $db->selectall_arrayref(
-        #    q[
-        #        select map_id, start_position, stop_position
-        #        from   cmap_map_cache
-        #        where  pid=?
-        #        and    slot_no=?
-        #    ],
-        #    { Columns => {} },
-        #    ( $pid, $ref_slot_no )
-        #);
-
         foreach my $map ( @{ $self->slot_info->{$ref_slot_no} } ) {
             my %temp_hash = (
                 'map_id'         => $map->[0],
@@ -1055,16 +1043,6 @@ sub slot_data {
           . join( "','", @$evidence_type_aids ) . "')"
           : '';
 
-        my ( $field, $value );
-        if ( $map_set_id || scalar @slot_map_ids > 1 ) {
-            $field = 'map_set_id';
-            $value = $map_set_id;
-        }
-        else {
-            $field = 'map_id';
-            $value = $slot_map_ids[0];
-        }
-
         my ( $count_sql, $position_sql, @query_args );
         if ($ref_map_id) {    # just one reference map
             if ($self->{'expanded_correspondence_lookup'}){
@@ -1085,8 +1063,17 @@ sub slot_data {
                              ce.feature_correspondence_id
                     $where
                     and      cl.map_id2=map2.map_id
-                    and      map2.$field=?
-                    group by map_id1, map_id2
+                ];
+
+                if(defined($map_set_id)){
+                    $base_sql .= " and map2.map_set_id =$map_set_id ";
+                }
+                else{
+                    $base_sql .= " and cl.map_id2 in (".
+                        join(",",@slot_map_ids).
+                        ") ";
+                }
+                $base_sql .= q[ group by map_id1, map_id2
                 ];
                 $count_sql = sprintf( $base_sql,
                     'count(distinct cl.feature_correspondence_id) as no_corr, ' );
@@ -1118,8 +1105,16 @@ sub slot_data {
                     $where
                     and      cl.feature_id2=f2.feature_id
                     and      f2.map_id=map2.map_id
-                    and      map2.$field=?
-                    group by map_id1, map_id2
+                ];
+                if(defined($map_set_id)){
+                    $base_sql .= " and map2.map_set_id =$map_set_id ";
+                }
+                else{
+                    $base_sql .= " and map2.map_id in (".
+                        join(",",@slot_map_ids).
+                        ") ";
+                }
+                $base_sql .= q[ group by map_id1, map_id2
                 ];
                 $count_sql = sprintf( $base_sql,
                     'count(distinct cl.feature_correspondence_id) as no_corr, ' );
@@ -1129,7 +1124,7 @@ sub slot_data {
                       . 'avg(((f1.stop_position-f1.start_position)/2)'
                       .     '+f1.start_position) as avg_mid, '  );
             }
-            push @query_args, $ref_map_id, $value;
+            push @query_args, $ref_map_id;
         }
         elsif ( defined $ref_slot_no ) {    # multiple reference maps
             my $base_sql;
@@ -1149,8 +1144,15 @@ sub slot_data {
                              ce.feature_correspondence_id
                     $where
                     and      cl.map_id2=map2.map_id
-                    and      map2.$field=?
                 ];
+                if(defined($map_set_id)){
+                    $base_sql .= " and map2.map_set_id =$map_set_id ";
+                }
+                else{
+                    $base_sql .= " and cl.map_id2 in (".
+                        join(",",@slot_map_ids).
+                        ") ";
+                }
 
                 $base_sql .= " and cl.map_id1 in ('"
                   . join( "','",
@@ -1186,8 +1188,15 @@ sub slot_data {
                     $where
                     and      cl.feature_id2=f2.feature_id
                     and      f2.map_id=map2.map_id
-                    and      map2.$field=?
                 ];
+                if(defined($map_set_id)){
+                    $base_sql .= " and map2.map_set_id =$map_set_id ";
+                }
+                else{
+                    $base_sql .= " and map2.map_id in (".
+                        join(",",@slot_map_ids).
+                        ") ";
+                }
 
                 $base_sql .= " and f1.map_id in ('"
                   . join( "','",
@@ -1203,7 +1212,6 @@ sub slot_data {
                       . 'avg(((f1.stop_position-f1.start_position)/2)'
                       .     '+f1.start_position) as avg_mid, ' );
             }
-            push @query_args, $value;
         }
 
         my %map_id_lookup = map { $_->{'map_id'}, 1 } @maps;
@@ -1268,9 +1276,9 @@ sub slot_data {
             $return->{ $map->{'map_id'} } = $map;
         }
     }
-    $self->get_intraslot_correspondences( $intraslot_correspondences,
-        $correspondence_evidence, $pid, $ref_slot_no, $evidence_type_aids,
-        $feature_type_aids, $map_start, $map_stop );
+    #$self->get_intraslot_correspondences( $intraslot_correspondences,
+    #    $correspondence_evidence, $pid, $ref_slot_no, $evidence_type_aids,
+    #    $feature_type_aids, $map_start, $map_stop );
 
     return $return;
 
@@ -1416,7 +1424,7 @@ sub get_feature_correspondences {
             else {
                 $corr_sql .=
                     " and cl.map_id1 in ("
-                  . join( "", map { $_->[0] } @{ $self->slot_info->{$slot_no} } )
+                  . join( ",", map { $_->[0] } @{ $self->slot_info->{$slot_no} } )
                   . ")";
             }
         }
@@ -1484,7 +1492,7 @@ sub get_feature_correspondences {
             else {
                 $corr_sql .=
                     " and f.map_id in ("
-                  . join( "", map { $_->[0] } @{ $self->slot_info->{$slot_no} } )
+                  . join( ",", map { $_->[0] } @{ $self->slot_info->{$slot_no} } )
                   . ")";
             }
         }
@@ -1659,8 +1667,8 @@ sub get_intraslot_correspondences {
         ];
 
         $corr_sql .=
-          "and f.map_id in ('"
-          . join( "','", map { $_->[0] } @{ $self->slot_info->{$slot_no} } ) . "')";
+          "and f.map_id in ("
+          . join( ",", map { $_->[0] } @{ $self->slot_info->{$slot_no} } ) . ")";
         $corr_sql .=
           "and f2.map_id in ('"
           . join( "','", map { $_->[0] } @{ $self->slot_info->{$slot_no} } ) . "')";
@@ -2763,7 +2771,6 @@ out which maps have relationships.
               . join( "','", @$feature_type_aids ) . "') ";
         }
 
-        my $corr_sql;
 
             $corr_sql = qq[ 
             select   count(distinct cl.feature_correspondence_id) as no_corr, 
@@ -3125,16 +3132,28 @@ sub fill_out_maps {
             push @cmap_nos, grep { $_ < $slot_no && $_ != 0 } @ordered_slot_nos;
         }
 
-        $map->{'cmaps'} = [
-            map {
-                {
-                    field   => $slots->{$_}{'field'},
-                    aid     => $slots->{$_}{'aid'},
-                    slot_no => $_,
-                }
-              } @cmap_nos
-        ];
-
+        if (scalar($slots->{$_}{'aid'},)==1){
+            $map->{'cmaps'} = [
+                map {
+                    {
+                        field   => $slots->{$_}{'field'},
+                        aid     => $slots->{$_}{'aid'},
+                        slot_no => $_,
+                    }
+                  } @cmap_nos
+            ];
+        }
+        else{
+            $map->{'cmaps'} = [
+                map {
+                    {
+                        field   => $slots->{$_}{'field'},
+                        aid     => join(",",@{$slots->{$_}{'aid'}}),
+                        slot_no => $_,
+                    }
+                  } @cmap_nos
+            ];
+        }
         $map->{'slot_no'} = $slot_no;
         push @maps, $map;
     }
@@ -4488,6 +4507,8 @@ sub cache_array_results {
 sub get_cached_results {
     my $self  = shift;
     my $query = shift;
+#p#rint S#TDERR "|$query|\n------------------\n";
+    return undef unless($query);
     return thaw( $self->{'cache'}->get($query) );
 }
 

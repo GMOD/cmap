@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.85 2004-05-26 23:36:18 mwz444 Exp $
+# $Id: Map.pm,v 1.86 2004-05-30 20:28:05 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.85 $)[-1];
+$VERSION = (qw$Revision: 1.86 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -471,6 +471,7 @@ Lays out the map.
 
 =cut
 
+    #p#rint S#TDERR "layout()\n";
     my $self         = shift;
     my $base_y       = $self->base_y;
     my $slot_no      = $self->slot_no;
@@ -986,18 +987,39 @@ Lays out the map.
 
             my @cmaps;
             for my $slot_no (@cmap_nos) {
-                my $s = join( '%3d',
-                    $slot_no,
-                    $slots->{$slot_no}{'field'},
-                    $slots->{$slot_no}{'aid'} );
-                if (   defined $slots->{$slot_no}{'show_start'}
-                    && defined $slots->{$slot_no}{'show_stop'} )
-                {
-                    $s .= '['
-                      . $slots->{$slot_no}{'show_start'} . ','
-                      . $slots->{$slot_no}{'show_stop'} . ']';
+                if(ref( $slots->{$slot_no}{'aid'})eq 'ARRAY'){
+                    my $start_stop="";
+                    if (   scalar(@{$slots->{$slot_no}{'aid'}})==1 
+                        && defined $slots->{$slot_no}{'show_start'}
+                        && defined $slots->{$slot_no}{'show_stop'} )
+                    {
+                        $start_stop = '['
+                          . $slots->{$slot_no}{'show_start'} . ','
+                          . $slots->{$slot_no}{'show_stop'} . ']';
+                    }
+
+                    foreach my $aid (@{$slots->{$slot_no}{'aid'}}){
+                        my $s = join( '%3d',
+                        $slot_no,
+                        $slots->{$slot_no}{'field'},
+                        $aid );
+                        push @cmaps, $s.$start_stop;
+                    } 
                 }
-                push @cmaps, $s;
+                else{
+                    my $s = join( '%3d',
+                        $slot_no,
+                        $slots->{$slot_no}{'field'},
+                        $slots->{$slot_no}{'aid'} );
+                    if (   defined $slots->{$slot_no}{'show_start'}
+                        && defined $slots->{$slot_no}{'show_stop'} )
+                    {
+                        $s .= '['
+                          . $slots->{$slot_no}{'show_start'} . ','
+                          . $slots->{$slot_no}{'show_stop'} . ']';
+                    }
+                    push @cmaps, $s;
+                }
             }
 
             my $delete_url = $self_url
@@ -1042,18 +1064,39 @@ Lays out the map.
         unless ($is_compressed) {
             my @cmaps;
             for my $slot_no (@ordered_slot_nos) {
-                my $s = join( '%3d',
-                    $slot_no,
-                    $slots->{$slot_no}{'field'},
-                    $slots->{$slot_no}{'aid'} );
-                if (   defined $slots->{$slot_no}{'show_start'}
-                    && defined $slots->{$slot_no}{'show_stop'} )
-                {
-                    $s .= '['
-                      . $slots->{$slot_no}{'show_start'} . ','
-                      . $slots->{$slot_no}{'show_stop'} . ']';
+                if(ref( $slots->{$slot_no}{'aid'})eq 'ARRAY'){
+                    my $start_stop="";
+                    if (   scalar(@{$slots->{$slot_no}{'aid'}})==1
+                        && defined $slots->{$slot_no}{'show_start'}
+                        && defined $slots->{$slot_no}{'show_stop'} )
+                    {
+                        $start_stop = '['
+                          . $slots->{$slot_no}{'show_start'} . ','
+                          . $slots->{$slot_no}{'show_stop'} . ']';
+                    }
+                                                                                
+                    foreach my $aid (@{$slots->{$slot_no}{'aid'}}){
+                        my $s = join( '%3d',
+                        $slot_no,
+                        $slots->{$slot_no}{'field'},
+                        $aid );
+                        push @cmaps, $s.$start_stop;
+                    }
                 }
-                push @cmaps, $s;
+                else{
+                    my $s = join( '%3d',
+                        $slot_no,
+                        $slots->{$slot_no}{'field'},
+                        $slots->{$slot_no}{'aid'} );
+                    if (   defined $slots->{$slot_no}{'show_start'}
+                        && defined $slots->{$slot_no}{'show_stop'} )
+                    {
+                        $s .= '['
+                          . $slots->{$slot_no}{'show_start'} . ','
+                          . $slots->{$slot_no}{'show_stop'} . ']';
+                    }
+                    push @cmaps, $s;
+                }
             }
 
             my @flips;
