@@ -4,7 +4,7 @@
 <a href="admin?action=map_set_edit;map_set_id=[% map_set.map_set_id %]">Edit</a> |
 <a href="admin?action=confirm_delete;entity_type=cmap_map_set;entity_id=[% map_set.map_set_id %]">Delete</a>
 [% IF map_set.can_be_reference_map %]
-  | <a href="/cmap/viewer?reference_map_set_id=[% map_set.map_set_id %]">View in CMap Viewer</a>
+  | <a href="/cmap/viewer?ref_map_set_aid=[% map_set.accession_id %]">View in CMap Viewer</a>
 [% END %]
 <hr noshade>
 

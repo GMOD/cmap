@@ -1,0 +1,44 @@
+[% INCLUDE admin_header.tmpl title='View Color Palette' %]
+
+<a href="admin">Home</a> |
+<a href="admin?action=colors_view">Show All Colors</a>
+<hr noshade>
+
+[% IF errors.size %]
+    There were errors:
+    <ul>
+        [% FOREACH e=errors %]
+            <li>[% e %]</li>
+        [% END %]
+    </ul>
+[% END %]
+
+<form>
+    Search for a color *:
+    <input name="color_name" value="[% apr.param('color_name') %]">
+    <input type="hidden" name="action" value="colors_view">
+    <input type="submit" value="Submit">
+</form>
+
+<div align="center">
+<table>
+    <tr>
+        <td colspan="2" align="center">
+            [% SET pager_url="/cmap/admin?action=colors_view" %]
+            [% PROCESS pager.tmpl %]
+        </td>
+    </tr>
+    [% FOREACH color=colors %]
+        <tr>
+            <td>[% color.name %]</td>
+            <td bgcolor="#[% color.hex %]">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+        </tr>
+    [% END %]
+</table>
+</div>
+
+<small>
+Add an asterisk (*) to find all colors matching your string.
+</small>
+
+[% INCLUDE admin_footer.tmpl %]
