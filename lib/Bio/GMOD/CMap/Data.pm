@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.115 2004-05-17 18:26:40 mwz444 Exp $
+# $Id: Data.pm,v 1.116 2004-05-17 20:41:31 mwz444 Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.115 $)[-1];
+$VERSION = (qw$Revision: 1.116 $)[-1];
 
 use Data::Dumper;
 use Regexp::Common;
@@ -713,7 +713,7 @@ sub slot_data {
     # More than one map in the slot?  All are compressed.
     # 
     my $return;
-    if (  1 ) { # just one map in this slot
+    if (  scalar(@maps)==1 ) { # just one map in this slot
         
        #
         # Register the feature types on the maps in this slot.
@@ -916,12 +916,13 @@ sub slot_data {
             }
         
 	    ###set $feature_correspondences and$correspondence_evidence
-	    $self->get_feature_correspondences
+	    if (defined $ref_slot_no){
+		$self->get_feature_correspondences
 		(
 		 $feature_correspondences,$correspondence_evidence,
 		 'map_id',$map->{'map_id'}, $pid, $ref_slot_no,
 		 $evidence_type_aids,$feature_type_aids,$map_start,$map_stop );
-
+	    }
 	    $return->{ $map->{'map_id'} } = $map;
 	}
     }
@@ -1132,10 +1133,12 @@ sub slot_data {
             $map->{'no_features'}        = $count_lookup{ $map->{'map_id'} };
 
             ###set $feature_correspondences and$correspondence_evidence
-	    $self->get_feature_correspondences(
+	    if (defined $ref_slot_no){
+		$self->get_feature_correspondences(
 		$feature_correspondences,$correspondence_evidence,
     	        'map_id',$map->{'map_id'}, $pid, $ref_slot_no,
 	        $evidence_type_aids,$feature_type_aids,$map_start,$map_stop );
+	    }
 	    $return->{ $map->{'map_id'} } = $map;
         }
     }
@@ -1274,12 +1277,20 @@ sub get_feature_correspondences {
         and      map.$field=?
         $to_restriction
     ];
+    
     if ($self->slot_info->{$slot_no} 
 	and 
 	@{$self->slot_info->{$slot_no}}){
-	$corr_sql .= " and f.map_id in (".
-	    join("", map{$_->[0]} @{$self->slot_info->{$slot_no}}).
-	    ")";
+	if (scalar(@{$self->slot_info->{$slot_no}})==1){
+	    $corr_sql .= " and f.map_id = ".
+	        $self->slot_info->{$slot_no}->[0][0].
+		" ";
+	}
+	else{
+	    $corr_sql .= " and f.map_id in (".
+	        join("", map{$_->[0]} @{$self->slot_info->{$slot_no}}).
+		")";
+	}
     }
 
     if ( @$evidence_type_aids ) {
