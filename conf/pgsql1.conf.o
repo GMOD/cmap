@@ -74,7 +74,7 @@ is_enabled 1
 # | feature_type_accession2   | varchar(20)  |
 # +---------------------------+--------------+
                                                                                 
-expanded_correspondence_lookup 0
+expanded_correspondence_lookup 1
 
 
 #   
