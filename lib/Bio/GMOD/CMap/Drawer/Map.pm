@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.39 2003-04-15 21:20:22 kycl4rk Exp $
+# $Id: Map.pm,v 1.40 2003-04-16 18:51:47 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.39 $)[-1];
+$VERSION = (qw$Revision: 1.40 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1108,7 +1108,7 @@ Lays out the map.
             my $buffer    =  2;  # the space between things
             if ( @north_labels && @south_labels ) {
                 @north_labels =
-                    map  { $_->[0]->{'direction'} = NORTH; $_->[0] }
+                    map  { $_->[0] }
                     sort { 
                         $b->[1] <=> $a->[1] || 
                         $a->[2] <=> $b->[2] ||
@@ -1117,7 +1117,7 @@ Lays out the map.
                     }
                     map  { [ 
                         $_, 
-                        $_->{'start_position'},
+                        $_->{'target'},
                         $_->{'priority'}, 
                         $_->{'is_highlighted'} || 0, 
                         $_->{'has_corr'}       || 0,
@@ -1125,7 +1125,7 @@ Lays out the map.
                     @north_labels;
 
                 @south_labels =
-                    map  { $_->[0]->{'direction'} = SOUTH; $_->[0] }
+                    map  { $_->[0] }
                     sort { 
                         $a->[1] <=> $b->[1] || 
                         $b->[2] <=> $a->[2] ||
@@ -1134,7 +1134,7 @@ Lays out the map.
                     }
                     map  { [ 
                         $_, 
-                        $_->{'start_position'},
+                        $_->{'target'},
                         $_->{'priority'}, 
                         $_->{'is_highlighted'} || 0, 
                         $_->{'has_corr'}       || 0,
