@@ -6,7 +6,7 @@ Are you sure you want to delete [% entity.type %] &quot;<b>[% entity.name %]</b>
 </p>
 
 <p>
-<a href="admin">No</a> |
+<a href="admin[% IF return_action AND pk_name AND object_id %]?action=[% return_action %];[% pk_name %]=[% object_id %][% END %]">No</a> |
 <a href="admin?action=entity_delete;entity_type=[% entity.type %];entity_id=[% entity.id %];return_action=[% apr.param('return_action') %]">Yes</a>
 <p>
 [% INCLUDE admin_footer.tmpl %]

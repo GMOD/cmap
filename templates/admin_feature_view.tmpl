@@ -1,7 +1,7 @@
 [% INCLUDE admin_header.tmpl title="View Feature &quot;$feature.feature_name&quot;" %]
 
 <a href="admin">Home</a> |
-<a href="admin?action=confirm_delete;entity_type=cmap_feature;entity_id=[% feature.feature_id %]">Delete</a> |
+<a href="admin?action=confirm_delete;entity_type=cmap_feature;entity_id=[% feature.feature_id %];return_action=feature_view">Delete</a> |
 <a href="admin?action=feature_edit;feature_id=[% feature.feature_id %]">Edit</a>
 <hr noshade>
 
@@ -83,25 +83,7 @@
             Stop:
         </th>
         <td>
-            [% feature.stop_position %]
-        </td>
-    </tr>
-
-    <tr>
-        <th align="right">
-            DBXRef Name:
-        </th>
-        <td>
-            [% feature.dbxref_name %]
-        </td>
-    </tr>
-
-    <tr>
-        <th align="right">
-            DBXRef URL:
-        </th>
-        <td>
-            [% feature.dbxref_url %]
+            [% IF feature.stop_position.defined; feature.stop_position; ELSE; 'NULL'; END %]
         </td>
     </tr>
 </table>
