@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.14 2003-01-08 21:09:30 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.15 2003-01-08 22:59:07 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.14 $)[-1];
+$VERSION = (qw$Revision: 1.15 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
@@ -1286,8 +1286,8 @@ sub register_feature_type {
 Remembers a feature type.
 
 =cut
-    my ( $self, $feature_type_id ) = @_;
-    $self->{'data'}{'feature_types'}{ $feature_type_id }{'seen'} = 1;
+    my ( $self, @feature_type_ids ) = @_;
+    $self->{'data'}{'feature_types'}{ $_ }{'seen'} = 1 for @feature_type_ids;
 }
 
 # ----------------------------------------------------
