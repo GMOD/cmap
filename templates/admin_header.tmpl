@@ -14,7 +14,10 @@
   <tr bgcolor="#ffffff">
     <td align="center">
       <h2>[% title %]</h2>
-      Data Source: [% data_source %] (<a href="admin?action=admin_home">Change</a>)
+      Data Source: [% data_source %] 
+      [% IF data_sources.size > 1 %]
+          (<a href="admin?action=admin_home">Change</a>)
+      [% END %]
     </td>
   </tr>
   <tr bgcolor="#ffffff">
