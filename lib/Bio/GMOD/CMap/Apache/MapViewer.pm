@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.71 2004-10-19 13:46:03 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.71.2.1 2004-10-29 04:46:30 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.71 $)[-1];
+$VERSION = (qw$Revision: 1.71.2.1 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -594,15 +594,18 @@ sub parse_map_info {
         $start = undef unless ( $start =~ /\S/ );
         $stop  = undef unless ( $stop  =~ /\S/ );
         my $start_stop_feature = 0;
+        my @highlight_array;
+        push @highlight_array,$highlight if $highlight;
         if ( $start !~ /^$RE{'num'}{'real'}$/ ) {
-            $highlight = join( ',', $highlight, $start );
+            push @highlight_array,$start if $start;
             $start_stop_feature = 1;
         }
 
         if ( $stop !~ /^$RE{'num'}{'real'}$/ ) {
-            $highlight = join( ',', $highlight, $stop );
+            push @highlight_array,$stop if $stop;
             $start_stop_feature = 1;
         }
+        $highlight = join( ',', @highlight_array);
 
         if ( ! $start_stop_feature
             and defined($start)
