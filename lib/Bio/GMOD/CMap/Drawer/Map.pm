@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.59 2003-11-03 18:35:46 kycl4rk Exp $
+# $Id: Map.pm,v 1.60 2003-11-04 17:19:04 kycl4rk Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.59 $)[-1];
+$VERSION = (qw$Revision: 1.60 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -674,12 +674,13 @@ Lays out the map.
         #
         # Tick marks.
         #
-        my $map_start  = $self->start_position( $map_id );
-        my $map_stop   = $self->stop_position ( $map_id );
-        my $map_length = $self->map_length    ( $map_id );
+        my $map_start         = $self->start_position( $map_id );
+        my $map_stop          = $self->stop_position ( $map_id );
+        my $actual_map_length = $self->map_length    ( $map_id );
+        my $map_length        = $actual_map_length || 1;
         if ( $show_ticks ) {
             my $interval      = $self->tick_mark_interval( $map_id ) || 1;
-            my $no_intervals  = int( $map_length / $interval );
+            my $no_intervals  = int( $actual_map_length / $interval );
             my $tick_overhang = 5;
             my @intervals     = map { 
                 int ( $map_start + ( $_ * $interval ) ) 
