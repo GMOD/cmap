@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Config;
 # vim: set ft=perl:
 
-# $Id: Config.pm,v 1.7 2004-12-09 18:46:44 mwz444 Exp $
+# $Id: Config.pm,v 1.7.2.1 2005-01-11 19:53:46 mwz444 Exp $
 
 =head1 NAME
 
@@ -128,9 +128,6 @@ Sets the active config data.
             $self->{'current_config'} = $config_name;
             return 1;
         }
-        else{
-            return 0;
-        }
     }
 
     unless ( $self->{'current_config'} ) {
@@ -151,8 +148,10 @@ Sets the active config data.
         # No preference set.  Just let Fate (keys) decide.
         #
         $self->{'current_config'} = ( keys %{ $self->{'config_data'} } )[0];
-        return 1;
     }
+    
+    return 1 if ($self->{'current_config'});
+    return 0;
 }
 
 # ----------------------------------------------------
