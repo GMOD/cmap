@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.20 2004-02-19 18:53:35 kycl4rk Exp $
+# $Id: Build.PL,v 1.21 2004-02-20 20:18:34 kycl4rk Exp $
 
 use strict;
 
@@ -159,6 +159,7 @@ print INDEX
         $q->li( $q->a({ -href => 'tutorial/' }, 'User Tutorial') ), 
         $q->li( $q->a({ -href => 'admintut/' }, 'Admin Tutorial') ),
     ),
+    $q->end_html
 ;
 close INDEX; 
 
