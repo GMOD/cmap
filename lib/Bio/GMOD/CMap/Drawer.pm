@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.8 2002-09-11 01:54:51 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.9 2002-09-11 14:46:12 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
@@ -218,6 +218,10 @@ Accepts a list of attributes to describe how to draw an object.
             push @x, $attr[ $x_locations[0] ] + ($font->width*length($string));
             push @y, $attr[ $y_locations[0] ] - $font->height;
         }
+        elsif ( $shape eq STRING_UP ) {
+            my $font   = $attr[1];
+            push @x, $attr[ $x_locations[0] ] + $font->height;
+        }
 
         push @{ $self->{'drawing_data'}{ $layer } }, [ @attr ];
     }
@@ -411,13 +415,13 @@ Lays out the image and writes it to the file system, set the "image_name."
 =cut
     my $self = shift;
 
-    my ( $min_y, $max_y, %slot_sides );
+    my ( $min_y, $max_y );
     for my $slot_no ( $self->slot_numbers ) {
         my $data      = $self->slot_data( $slot_no );
         my $map       =  Bio::GMOD::CMap::Drawer::Map->new( 
             drawer    => $self, 
-            base_x    => $self->max_x,
-            base_y    => 0,
+#            base_x    => $self->max_x,
+#            base_y    => 0,
             slot_no   => $slot_no,
             maps      => $data,
         );
@@ -426,22 +430,27 @@ Lays out the image and writes it to the file system, set the "image_name."
         $min_y     = $bounds[1] if $bounds[1] < $min_y;
         $max_y     = $bounds[3] unless defined $max_y;
         $max_y     = $bounds[3] if $bounds[3] > $max_y;
-        $slot_sides{ $slot_no } = [ $bounds[0], $bounds[2] ];
+        $self->slot_sides( 
+            slot_no => $slot_no,
+            left    => $bounds[0], 
+            right   => $bounds[2],
+        );
     }
 
     #
     # Frame out the slots.
     #
     for my $slot_no ( $self->slot_numbers ) {
-        my @bounds = (
-            $slot_sides{ $slot_no }->[0],
+        my ( $left, $right ) = $self->slot_sides( slot_no => $slot_no );
+        my @slot_bounds = (
+            $left,
             $min_y,
-            $slot_sides{ $slot_no }->[1],
+            $right,
             $max_y,
         );
 
-        $self->add_drawing( FILLED_RECT, @bounds, 'beige', -1 );
-        $self->add_drawing( RECTANGLE,   @bounds, 'khaki', -1 );
+        $self->add_drawing( FILLED_RECT, @slot_bounds, 'beige', -1 );
+        $self->add_drawing( RECTANGLE,   @slot_bounds, 'khaki', -1 );
     }
     $self->adjust_frame;
 
@@ -964,6 +973,28 @@ Returns the data for one or all slots.
     else {
         return $data->{'slots'};
     }
+}
+
+# ----------------------------------------------------
+sub slot_sides {
+
+=pod
+
+=head2 slot_sides
+
+Remembers the right and left bounds of a slot.
+
+=cut
+    my ( $self, %args ) = @_;
+    my $slot_no         = $args{'slot_no'} || 0;
+    my $right           = $args{'right'};
+    my $left            = $args{'left'};
+
+    if ( defined $right && defined $left ) {
+        $self->{'slot_sides'}{ $slot_no } = [ $left, $right ];
+    }
+
+    return @{ $self->{'slot_sides'}{ $slot_no } || [] };
 }
 
 # ----------------------------------------------------

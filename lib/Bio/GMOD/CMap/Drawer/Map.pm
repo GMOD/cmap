@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.9 2002-09-11 01:54:51 kycl4rk Exp $
+# $Id: Map.pm,v 1.10 2002-09-11 14:46:13 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.9 $)[-1];
+$VERSION = (qw$Revision: 1.10 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -84,10 +84,13 @@ sub base_x {
 Figure out where right-to-left this map belongs.
 
 =cut
-    my $self    = shift;
-    my $slot_no = $self->slot_no or return 0; # slot "0" is in the middle
-    my $drawer  = $self->drawer;
-    my $buffer  = 20;
+    my $self        = shift;
+    my $slot_no     = $self->slot_no or return 0; # slot "0" is in the middle
+    my $drawer      = $self->drawer;
+    my $ref_slot_no = $drawer->reference_slot_no( $slot_no );
+    my $buffer      = 15;
+    my ( $ref_left, $ref_right ) = 
+        $drawer->slot_sides( slot_no => $ref_slot_no );
 
     my $base_x;
     if ( 
@@ -95,10 +98,12 @@ Figure out where right-to-left this map belongs.
         ||
         ( $slot_no < 0 )
     ) {
-        $base_x = $drawer->min_x - $buffer * 4;
+#        $base_x = $drawer->min_x - $buffer;
+        $base_x = $ref_left - $buffer;
     }
     else {
-        $base_x = $drawer->max_x + $buffer;
+#        $base_x = $drawer->max_x + $buffer;
+        $base_x = $ref_right + $buffer;
     }
 
     return $base_x;
@@ -115,7 +120,7 @@ Return the base y coordinate.
 
 =cut
     my $self = shift;
-    return $self->{'base_y'};
+    return $self->{'base_y'} || 0;
 }
 
 # ----------------------------------------------------
@@ -398,11 +403,10 @@ Lays out the map.
     );
 
     for my $map_id ( @map_ids ) {
-        my ( $min_x, $max_x );
         $is_relational     = $self->is_relational_map( $map_id );
         my $base_x         = $label_side eq RIGHT
-                             ? $self->base_x + $half_title_length
-                             : $self->base_x; 
+                             ? $self->base_x + $half_title_length + 10
+                             : $self->base_x - $half_title_length - 20;
         my $show_labels    = $is_relational && $slot_no != 0 ? 0 :
                              $include_features eq 'none' ? 0 : 1 ;
         my $show_ticks     = $is_relational && $slot_no != 0 ? 0 : 1;
@@ -415,6 +419,7 @@ Lays out the map.
         #
         # The map.
         #
+        my ( $min_x, $max_x, $area );
         my $draw_sub_name = SHAPE->{ $self->shape( $map_id ) };
         if ( $is_relational && $slot_no != 0 ) {
             #
@@ -471,16 +476,17 @@ Lays out the map.
             );
 
             my $leftmost = $label_side eq RIGHT
-                ? $label_x + $reg_font->height
+                ? $base_x
                 : $label_x;
             my $rightmost = $label_side eq RIGHT
-                ? $label_x
-                : $label_x + $reg_font->height;
+                ? $label_x + $reg_font->height
+                : $base_x + $map_width + 6;
 
             $min_x = $leftmost  unless defined $min_x;
             $max_x = $rightmost unless defined $max_x;
             $min_x = $leftmost  if $leftmost  < $min_x;
             $max_x = $rightmost if $rightmost > $max_x;
+            $area  = [ $leftmost, $top, $rightmost, $bottom ];
         }
 
         $top_y = $base_y unless defined $top_y;
@@ -491,6 +497,7 @@ Lays out the map.
             map_units => $show_map_units ? $self->map_units( $map_id ) : '',
             drawer    => $drawer,
             coords    => [ $base_x, $base_y, $base_y + $pixel_height ],
+            area      => $area,
         );
         $min_x    = $bounds[0] unless defined $min_x;
         $min_x    = $bounds[0] if $bounds[0] < $min_x;
@@ -580,7 +587,7 @@ Lays out the map.
             ';comparative_maps='.join( ':', @maps );
 
         $drawer->add_map_area(
-            coords => \@bounds,
+            coords => $area || \@bounds,
             url    => $url,
             alt    => 'Details: '.$self->map_name,
         );
