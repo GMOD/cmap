@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
-# $Id: MakeCorrespondences.pm,v 1.2 2002-08-30 23:41:06 kycl4rk Exp $
+# $Id: MakeCorrespondences.pm,v 1.3 2002-09-13 05:28:49 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils 'next_number';
@@ -86,15 +86,25 @@ sub make_name_correspondences {
                            cmap_feature f
                     where  map.map_set_id<>$map_set->{'map_set_id'}
                     and    map.map_id=f.map_id
-                    and    f.feature_name=?
+                    and    (
+                        upper(f.feature_name)=?
+                        or
+                        upper(f.alternate_name)=?
+                    )
                 ]
                 : qq[
                     select f.feature_id
                     from   cmap_feature f
                     where  f.map_id<>$map->{'map_id'}
-                    and    f.feature_name=?
+                    and    (
+                        upper(f.feature_name)=?
+                        or
+                        upper(f.alternate_name)=?
+                    )
                 ]
             ;
+
+            warn "sql =\n$corr_sql\n";
             
             for my $feature ( 
                 @{ $db->selectall_arrayref(
@@ -108,11 +118,13 @@ sub make_name_correspondences {
                 ) }
             ) {
 #                print "Feature: $feature->{'feature_name'}\n";
+                my $upper_name = uc $feature->{'feature_name'} or next;
+                print "Feature: '$upper_name'\n";
                 for my $corr_id ( 
                     @{ $db->selectcol_arrayref(
                         $corr_sql,
                         {},
-                        ( $feature->{'feature_name'} )
+                        ( $upper_name, $upper_name )
                     ) }
                 ) {
                     #
