@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin;
 
-# $Id: Admin.pm,v 1.12 2003-01-25 00:43:46 kycl4rk Exp $
+# $Id: Admin.pm,v 1.13 2003-01-30 02:51:35 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.12 $)[-1];
+$VERSION = (qw$Revision: 1.13 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils qw[ next_number ];
@@ -40,6 +40,7 @@ sub correspondence_evidence_delete {
 Delete a correspondence evidence.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $corr_evidence_id = $args{'correspondence_evidence_id'} 
         or return $self->error('No correspondence evidence id');
@@ -78,6 +79,7 @@ sub dbxref_delete {
 Delete a database cross reference.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $dbxref_id       = $args{'dbxref_id'} or return $self->error(
         'No dbxref id'
@@ -107,6 +109,7 @@ sub evidence_type_delete {
 Delete an evidence type.
 
 =cut
+
     my ( $self, %args )  = @_;
     my $evidence_type_id = $args{'evidence_type_id'} or return $self->error(
         'No evidence type id'
@@ -159,6 +162,7 @@ sub feature_delete {
 Delete a feature.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $feature_id      = $args{'feature_id'} or return $self->error(
         'No feature id'
@@ -214,6 +218,7 @@ sub feature_correspondence_delete {
 Delete a feature correspondence.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $feature_corr_id = $args{'feature_correspondence_id'} or
         return $self->error('No feature correspondence id');
@@ -261,6 +266,7 @@ sub feature_search {
 Find all the features matching some criteria.
 
 =cut
+
     my ( $self, %args ) = @_;
     my @feature_names   = map { s/^\s+|\s+$//g; s/\*/%/g; $_ || () } 
                           split( /[,\s+]/, $args{'feature_name'} );
@@ -333,6 +339,7 @@ sub feature_type_by_id {
 Find all feature types by the internal ID.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $feature_type_id = $args{'feature_type_id'} or 
         $self->error('No feature type id');
@@ -360,6 +367,7 @@ sub feature_name_by_id {
 Find a feature's name by either its internal or accession ID.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $feature_id      = $args{'feature_id'} || 0;
     my $feature_aid     = $args{'feature_aid'} || 0;
@@ -389,6 +397,7 @@ sub feature_type_delete {
 Delete a feature type.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $feature_type_id = $args{'feature_type_id'} or 
         return $self->error('No feature type id');
@@ -439,6 +448,7 @@ sub feature_types {
 Find all the feature types.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $order_by        = $args{'order_by'} || 'feature_type';
 
@@ -465,6 +475,7 @@ sub insert_correspondence {
 Inserts a correspondence.  Returns -1 if there is nothing to do.
 
 =cut
+
     my $self             = shift;
     my $feature_id1      = shift;
     my $feature_id2      = shift;
@@ -649,6 +660,7 @@ sub map_delete {
 Delete a map.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $map_id          = $args{'map_id'} or return $self->error('No map id');
     my $db              = $self->db or return;
@@ -699,6 +711,7 @@ sub map_set_delete {
 Delete a map set.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $map_set_id      = $args{'map_set_id'} or return $self->error(
         'No map set id'
@@ -741,6 +754,7 @@ sub map_type_delete {
 Delete a map type.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $map_type_id     = $args{'map_type_id'} or 
         return $self->error('No map type id');
@@ -790,6 +804,7 @@ sub map_info_by_id {
 Find a map's basic info by either its internal or accession ID.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $map_id          = $args{'map_id'} || 0;
     my $map_aid         = $args{'map_aid'} || 0;
@@ -829,6 +844,7 @@ sub map_sets {
 Return all the map sets.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $order_by        = $args{'order_by'} || 'species_name,map_set_name';
 
@@ -1027,6 +1043,7 @@ sub species {
 Return all the species.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $order_by        = $args{'order_by'} || 'common_name';
     my $db              = $self->db or return;
@@ -1053,6 +1070,7 @@ sub species_delete {
 Delete a species.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $species_id      = $args{'species_id'} or 
         return $self->error('No species id');

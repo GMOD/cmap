@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.32 2003-01-25 00:43:46 kycl4rk Exp $
+# $Id: Data.pm,v 1.33 2003-01-30 02:51:35 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.32 $)[-1];
+$VERSION = (qw$Revision: 1.33 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -46,6 +46,7 @@ Given an accession id for a particular table, find the internal id.  Expects:
     id_field: (opt.) the name of the internal id field
 
 =cut
+
     my ( $self, %args ) = @_;
     my $table           = $args{'table'}    or $self->error('No table');
     my $acc_id          = $args{'acc_id'}   or $self->error('No accession id');
@@ -90,6 +91,7 @@ sub cmap_data {
 Organizes the data for drawing comparative maps.
 
 =cut
+
     my ( $self, %args )        = @_;
     my $slots                  = $args{'slots'};
     my $include_feature_types  = $args{'include_feature_types'}  || [];
@@ -98,6 +100,8 @@ Organizes the data for drawing comparative maps.
     my @pos                    = sort { $a <=> $b } grep { $_ >= 0 } @slot_nos;
     my @neg                    = sort { $b <=> $a } grep { $_ <  0 } @slot_nos; 
     my @ordered_slot_nos       = ( @pos, @neg );
+
+#    warn "slots =\n", Dumper( $slots ), "\n";
 
     #
     # "-1" is a reserved value meaning "All."
@@ -144,6 +148,8 @@ Organizes the data for drawing comparative maps.
     $data->{'correspondence_evidence'} = \%correspondence_evidence;
     $data->{'feature_types'}           = \%feature_types;
 
+#    warn "data =\n", Dumper( $data ), "\n";
+
     return $data;
 }
 
@@ -157,9 +163,12 @@ sub map_data {
 Returns the data for drawing comparative maps.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $db              = $self->db  or return;
     my $sql             = $self->sql or return;
+
+#    warn "args =\n", Dumper( \%args ), "\n";
 
     #
     # Get the arguments.
@@ -240,28 +249,31 @@ Returns the data for drawing comparative maps.
                 )
             ) };
         }
-        else {
+        elsif ( $reference_map->{'map_ids'} ) {
             push @map_ids, @{ $db->selectcol_arrayref(
                 qq[
-                    select   distinct map.map_id
-                    from     cmap_map map,
-                             cmap_feature f1, 
-                             cmap_feature f2, 
-                             cmap_correspondence_lookup cl,
-                             cmap_feature_correspondence fc
-                    where    f1.map_id in ( $reference_map->{'map_ids'} )
-                    and      f1.feature_id=cl.feature_id1
-                    and      cl.feature_correspondence_id=
-                             fc.feature_correspondence_id
-                    and      fc.is_enabled=1
-                    and      cl.feature_id2=f2.feature_id
-                    and      f2.map_id=map.map_id
-                    and      map.map_set_id=?
-                    and      map.map_id not in ( $reference_map->{'map_ids'} )
+                    select distinct map.map_id
+                    from   cmap_map map,
+                           cmap_feature f1, 
+                           cmap_feature f2, 
+                           cmap_correspondence_lookup cl,
+                           cmap_feature_correspondence fc
+                    where  f1.map_id in ( $reference_map->{'map_ids'} )
+                    and    f1.feature_id=cl.feature_id1
+                    and    cl.feature_correspondence_id=
+                           fc.feature_correspondence_id
+                    and    fc.is_enabled=1
+                    and    cl.feature_id2=f2.feature_id
+                    and    f2.map_id=map.map_id
+                    and    map.map_set_id=?
+                    and    map.map_id not in ( $reference_map->{'map_ids'} )
                 ],
                 {},
                 ( $map_set_id )
             ) };
+        }
+        else {
+            @map_ids = ();
         }
 
         $map->{'map_ids'} = join( ',', @map_ids );
@@ -497,11 +509,47 @@ Returns the data for drawing comparative maps.
         # If there was a reference map (or set) and we found 
         # no correspondences, then don't add the map.
         #
-        if ( $ref_map_id || $ref_map_set_id ) {
-            next unless $map_data->{'no_correspondences'};
-        }
+#        if ( $ref_map_id || $ref_map_set_id ) {
+#            next unless $map_data->{'no_correspondences'};
+#        }
         $maps->{ $map_id } = $map_data;
     }
+
+    #
+    # It's possible we won't have found any maps
+    #
+    unless ( defined $maps ) {
+        my $map_id;
+        if ( $map_set_aid ) {
+            $map_id = $db->selectrow_array(
+                q[
+                    select map.map_id   
+                    from   cmap_map map,
+                           cmap_map_set ms
+                    where  map.map_set_id=ms.map_set_id
+                    and    ms.accession_id=?
+                ],
+                {},
+                ( "$map_set_aid" )
+            );
+        }
+        else {
+            $map_id = $db->selectrow_array(
+                q[
+                    select map.map_id   
+                    from   cmap_map map
+                    where  map.accession_id=?
+                ],
+                {},
+                ( "$map_aid" )
+            );
+        }
+
+        my $sth = $db->prepare( $sql->cmap_data_map_info_sql );
+        $sth->execute( $map_id );
+        $maps->{ $map_id } = $sth->fetchrow_hashref;
+    }
+
 
     return $maps;
 }
@@ -516,6 +564,7 @@ sub matrix_correspondence_data {
 Returns the data for the correspondence matrix.
 
 =cut
+
     my ( $self, %args )  = @_;
     my $db               = $self->db                 or return;
     my $species_aid      = $args{'species_aid'}      ||     '';
@@ -1081,6 +1130,7 @@ sub cmap_form_data {
 Returns the data for the main comparative map HTML form.
 
 =cut
+
     my ( $self, %args )        = @_;
     my $slots                  = $args{'slots'} or return;
     my $include_feature_types  = $args{'include_feature_types'}  || [];
@@ -1288,6 +1338,7 @@ Given a reference map and (optionally) start and stop positions, figure
 out which maps have relationships.
 
 =cut
+
     my ( $self, %args )   = @_;
     my $map               = $args{'map'};
     my $feature_type_ids  = $args{'feature_type_ids'};
@@ -1445,6 +1496,7 @@ sub evidence_type_aid_to_id {
 Takes a list of evidence type accession IDs and returns their table IDs.
 
 =cut
+
     my $self               = shift;
     my @evidence_type_aids = @_;
     my @evidence_type_ids  = ();
@@ -1476,6 +1528,7 @@ sub feature_type_aid_to_id {
 Takes a list of feature type accession IDs and returns their table IDs.
 
 =cut
+
     my $self              = shift;
     my @feature_type_aids = @_;
     my @feature_type_ids  = ();
@@ -1507,6 +1560,7 @@ sub feature_correspondence_data {
 Retrieve the data for a feature correspondence.
 
 =cut
+
     my ( $self, %args )           = @_;
     my $feature_correspondence_id = $args{'feature_correspondence_id'} 
         or return;
@@ -1522,6 +1576,7 @@ sub feature_name_to_position {
 Turn a feature name into a position.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $feature_name    = $args{'feature_name'} or return;
     my $map_id          = $args{'map_id'}       or return;
@@ -1547,6 +1602,7 @@ sub fill_out_maps {
 Gets the names, IDs, etc., of the maps in the slots.
 
 =cut
+
     my ( $self, $slots ) = @_;
     my $db               = $self->db  or return;
     my $sql              = $self->sql or return;
@@ -1608,6 +1664,7 @@ sub feature_detail_data {
 Given a feature acc. id, find out all the details on it.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $feature_aid     = $args{'feature_aid'} or die 'No accession id';
     my $db              = $self->db  or return;
@@ -1710,11 +1767,12 @@ sub feature_search_data {
 Given a list of feature names, find any maps they occur on.
 
 =cut
-    my ( $self, %args )  = @_;
-    my $species_aid      = $args{'species_aid'}      ||  0;
-    my $feature_type_aid = $args{'feature_type_aid'} || '';
-    my $feature_string   = $args{'features'};
-    my @feature_names    = (
+
+    my ( $self, %args )   = @_;
+    my $species_aids      = $args{'species_aids'};
+    my $feature_type_aids = $args{'feature_type_aids'};
+    my $feature_string    = $args{'features'};
+    my @feature_names     = (
         # Turn stars into SQL wildcards, kill quotes.
         map { s/\*/%/g; s/['"]//g; uc $_ || () }
         split( /[,:;\s+]/, $feature_string ) 
@@ -1723,10 +1781,9 @@ Given a list of feature names, find any maps they occur on.
         'feature_name,species_name,map_set_name,map_name,start_position';
     my $search_field     = 
         $args{'search_field'} || $self->config('feature_search_field');
-       $search_field     = DEFAULT->{'feature_search_field'} 
+    $search_field        = DEFAULT->{'feature_search_field'} 
         unless VALID->{'feature_search_field'}{ $search_field };
     my $db               = $self->db  or return;
-    my $sql              = $self->sql or return;
 
     #
     # We'll get the feature ids first.  Use "like" in case they've
@@ -1766,20 +1823,30 @@ Given a list of feature names, find any maps they occur on.
                    cmap_species s
             $where
             and    f.feature_type_id=ft.feature_type_id
-        ];
-        $sql .= "and ft.accession_id='$feature_type_aid' " if $feature_type_aid;
-        $sql .= q[
             and    f.map_id=map.map_id
             and    map.map_set_id=ms.map_set_id
             and    ms.is_enabled=1
             and    ms.can_be_reference_map=1
             and    ms.species_id=s.species_id
         ];
-        $sql .= "and s.accession_id='$species_aid' " if $species_aid;
+
+        if ( @$feature_type_aids ) {
+            $sql .= 'and ft.accession_id in ('.
+                join( ', ', map { qq['$_'] } @$feature_type_aids ). 
+            ')';
+        }
+
+        if ( @$species_aids ) {
+            $sql .= 'and s.accession_id in ('.
+                join( ', ', map { qq['$_'] } @$species_aids ). 
+            ')';
+        }
 
         $sql .= "order by $order_by";
 
-        push @found_features, @{ $db->selectall_arrayref($sql, {Columns=>{}}) };
+        push @found_features, @{ 
+            $db->selectall_arrayref( $sql, { Columns => {} } ) 
+        };
     }
 
     #
@@ -1822,11 +1889,12 @@ sub map_set_viewer_data {
 
 =pod
 
-=head2 map_data
+=head2 map_set_viewer_data
 
 Returns the data for drawing comparative maps.
 
 =cut
+
     my ( $self, %args ) = @_;
     my @map_set_aids    = @{ $args{'map_set_aids'} || [] };
     my $db              = $self->db or return;
@@ -1904,6 +1972,7 @@ Given a map acc. id or a map_id, find the highest start or stop position
 lowest stop for a given feature type. (enhancement)
 
 =cut
+
     my ( $self, %args ) = @_;
     my $db              = $self->db  or return;
     my $sql_obj         = $self->sql or return;
@@ -1930,6 +1999,7 @@ Given a map acc. id or a map_id, find the lowest start position.
 Optionally finds the lowest start for a given feature type. (enhancement)
 
 =cut
+
     my ( $self, %args ) = @_;
     my $db              = $self->db  or return;
     my $sql_obj         = $self->sql or return;
@@ -1955,6 +2025,7 @@ sub map_detail_data {
 Returns the detail info for a map.
 
 =cut
+
     my ( $self, %args )       = @_;
     my $map                   = $args{'map'};
     my $highlight             = $args{'highlight'}         ||               '';
@@ -2100,6 +2171,7 @@ sub sql {
 Returns the correct SQL module driver for the RDBMS we're using.
 
 =cut
+
     my $self      = shift;
     my $db_driver = lc shift;
 
@@ -2131,6 +2203,7 @@ Makes sure that a map doesn't include too many or too few features.  Set
 MAX_FEATURE_COUNT to zero or undefined to disable this.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $map_id          = $args{'map_id'} or return;
     my $begin           = $args{'begin'} || $self->map_start(map_id => $map_id);

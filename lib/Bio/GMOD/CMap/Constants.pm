@@ -1,13 +1,13 @@
 package Bio::GMOD::CMap::Constants;
 
-# $Id: Constants.pm,v 1.17 2003-01-25 00:43:46 kycl4rk Exp $
+# $Id: Constants.pm,v 1.18 2003-01-30 02:51:35 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.17 $)[-1];
+$VERSION = (qw$Revision: 1.18 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -186,7 +186,7 @@ use constant COLORS      => {
 use constant CONFIG_FILE => '/usr/local/apache/conf/cmap.conf';
 
 #
-# The URL of the CMAP website.
+# The URL of the GMOD-CMap website.
 #
 use constant CMAP_URL => 'http://www.gmod.org/cmap';
 

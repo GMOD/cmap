@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.20 2003-01-25 00:43:46 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.21 2003-01-30 02:51:35 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.20 $)[-1];
+$VERSION = (qw$Revision: 1.21 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
@@ -71,6 +71,7 @@ sub apr {
 Returns the Apache::Request object.
 
 =cut
+
     my $self       = shift;
     $self->{'apr'} = shift if @_;
     return $self->{'apr'} || undef;
@@ -87,6 +88,7 @@ If there's anything drawn in a negative X or Y region, move everything
 so that it's positive.
 
 =cut
+
     my $self    = shift;
     my $min_x   = $self->min_x - 10;
     my $min_y   = $self->min_y - 10;
@@ -129,6 +131,7 @@ sub add_connection {
 Draws a line from one point to another.
 
 =cut
+
     my ( $self, $x1, $y1, $x2, $y2, $color, $line_style ) = @_;
     my $layer = 0; # bottom-most layer of image
     my @lines = ();
@@ -163,6 +166,7 @@ sub add_drawing {
 Accepts a list of attributes to describe how to draw an object.
 
 =cut
+
     my $self  = shift;
     my ( @records, @attr );
     if ( ref $_[0] eq 'ARRAY' ) {
@@ -225,11 +229,12 @@ sub add_map_area {
 
 =pod
 
-=head2 add_drawing
+=head2 add_map_area
 
 Accepts a list of coordinates and a URL for hyperlinking a map area.
 
 =cut
+
     my ( $self, %args ) = @_;
     push @{ $self->{'image_map_data'} }, { %args };
 }
@@ -244,6 +249,7 @@ sub cache_dir {
 Returns the cache directory.
 
 =cut
+
     my $self = shift;
 
     unless ( defined $self->{'cache_dir'} ) {
@@ -266,6 +272,7 @@ sub comparative_map {
 Gets/sets the comparative map.
 
 =cut
+
     my $self = shift;
     if ( my $map = shift ) {
         my ( $field, $aid ) = split( /=/, $map ) or 
@@ -287,6 +294,7 @@ sub correspondences_exist {
 Returns whether or not there are any feature correspondences.
 
 =cut
+
     my $self = shift;
     return %{ $self->{'data'}{'correspondences'} || {} } ? 1 : 0;
 }
@@ -301,6 +309,7 @@ sub get_completed_map {
 Gets a completed map.
 
 =cut
+
     my ( $self, $map_no ) = @_;
     return $self->{'completed_maps'}{ $map_no };
 }
@@ -384,6 +393,7 @@ sub include_evidence_types {
 Gets/sets which evidence type (accession IDs) to include.
 
 =cut
+
     my $self = shift;
 
     if ( my $arg = shift ) {
@@ -403,6 +413,7 @@ sub include_feature_types {
 Gets/sets which feature type (accession IDs) to include.
 
 =cut
+
     my $self = shift;
 
     if ( my $arg = shift ) {
@@ -422,6 +433,7 @@ sub set_completed_map {
 Sets a completed map.
 
 =cut
+
     my ( $self, %args ) = @_;
     $self->{'completed_maps'}{ $args{'map_no'} } = $args{'map'};
 }
@@ -436,6 +448,7 @@ sub drawing_data {
 Returns the drawing data.
 
 =cut
+
     my $self = shift;
     return 
         map   { @{ $self->{'drawing_data'}{ $_ } } }
@@ -453,6 +466,7 @@ sub draw {
 Lays out the image and writes it to the file system, set the "image_name."
 
 =cut
+
     my $self = shift;
 
     my ( $min_y, $max_y, $min_x, $max_x );
@@ -673,6 +687,7 @@ Uses the Bio::GMOD::CMap::Data module to retreive the
 necessary data for drawing.
 
 =cut
+
     my $self = shift;
 
     unless ( $self->{'data'} ) {
@@ -697,6 +712,7 @@ sub has_correspondence {
 Returns whether or not a feature has a correspondence.
 
 =cut
+
     my $self       = shift;
     my $feature_id = shift or return;
     return defined $self->{'data'}{'correspondences'}{ $feature_id };
@@ -713,6 +729,7 @@ Given a feature correspondence ID, returns what is known about the
 correspondence.
 
 =cut
+
     my $self                      = shift;
     my $feature_correspondence_id = shift or return;
     return {};
@@ -728,6 +745,7 @@ sub feature_types_seen {
 Returns all the feature types seen on the maps.
 
 =cut
+
     my $self = shift;
     unless ( $self->{'feature_types'} ) {
         $self->{'feature_types'} = [ 
@@ -751,6 +769,7 @@ sub feature_correspondences {
 Returns the correspondences for a given feature id.
 
 =cut
+
     my $self        = shift;
     my @feature_ids = ref $_[0] eq 'ARRAY' ? @{ shift() } : ( shift() );
     return unless @feature_ids;
@@ -770,6 +789,7 @@ Accepts a map number and returns an array of arrayrefs denoting the positions
 to connect corresponding features on two maps.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $slot_no         = $args{'slot_no'};
     my $ref_slot_no     = $self->reference_slot_no( $slot_no );
@@ -810,6 +830,7 @@ map positions (start, stop) in the reference slot to use when selecting a
 region of corresponding features.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $slot_no         = $args{'slot_no'};
     my $map_id          = $args{'map_id'};
@@ -847,6 +868,7 @@ sub font_size {
 Returns the font size.
 
 =cut
+
     my $self      = shift;
     if ( my $font_size = shift ) {
         $self->error(qq[Font size "$font_size" is not valid"])
@@ -866,6 +888,7 @@ sub highlight {
 Gets/sets the string of highlighted features.
 
 =cut
+
     my $self = shift;
     $self->{'highlight'} = shift if @_;
     return $self->{'highlight'};
@@ -876,11 +899,12 @@ sub highlight_feature {
 
 =pod
 
-=head2 highlight
+=head2 highlight_feature
 
 Gets/sets the string of highlighted features.
 
 =cut
+
     my $self         = shift;
     my $feature_name = uc shift or return;
 
@@ -911,7 +935,7 @@ sub image_map_data {
 
 =pod
 
-=head2 image_size
+=head2 image_map_data
 
 Returns an array of records with the "coords" and "url" for each image map
 area.
@@ -1006,6 +1030,7 @@ sub label_font {
 Returns the font for the "label" stuff (titles mostly).
 
 =cut
+
     my $self = shift;
     unless ( $self->{'label_font'} ) {
         my $font_size = $self->font_size;
@@ -1102,6 +1127,7 @@ sub map_height {
 Gets/sets the output map image's height.
 
 =cut
+
     my $self = shift;
     return $self->max_y + 10;
 }
@@ -1116,6 +1142,7 @@ sub map_width {
 Gets/sets the output map image's width.
 
 =cut
+
     my $self = shift;
     return $self->max_x + 10;
 }
@@ -1130,6 +1157,7 @@ sub label_features {
 Gets/sets whether to show feature labels.
 
 =cut
+
     my $self = shift;
 
     if ( my $arg = shift ) {
@@ -1151,6 +1179,7 @@ sub slot_numbers {
 Returns the slot numbers, 0 to positive, -1 to negative.
 
 =cut
+
     my $self = shift;
 
     unless ( $self->{'slot_numbers'} ) {
@@ -1174,6 +1203,7 @@ sub slot_data {
 Returns the data for one or all slots.
 
 =cut
+
     my $self = shift;
     my $data = $self->data;
 
@@ -1196,6 +1226,7 @@ sub slot_sides {
 Remembers the right and left bounds of a slot.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $slot_no         = $args{'slot_no'} || 0;
     my $right           = $args{'right'};
@@ -1218,6 +1249,7 @@ sub slots {
 Gets/sets what's in the "slots" (the maps in each position).
 
 =cut
+
     my $self         = shift;
     $self->{'slots'} = shift if @_;
     return $self->{'slots'};
@@ -1233,6 +1265,7 @@ sub max_x {
 Gets/sets the maximum x-coordinate.
 
 =cut
+
     my $self = shift;
 
     if ( my @args = sort { $a <=> $b } @_ ) {
@@ -1253,6 +1286,7 @@ sub max_y {
 Gets/sets the maximum x-coordinate.
 
 =cut
+
     my $self = shift;
 
     if ( my @args = sort { $a <=> $b } @_ ) {
@@ -1273,6 +1307,7 @@ sub min_x {
 Gets/sets the minimum x-coordinate.
 
 =cut
+
     my $self = shift;
 
     if ( my @args = sort { $a <=> $b } @_ ) {
@@ -1293,6 +1328,7 @@ sub min_y {
 Gets/sets the minimum x-coordinate.
 
 =cut
+
     my $self = shift;
 
     if ( my @args = sort { $a <=> $b } @_ ) {
@@ -1313,6 +1349,7 @@ sub pixel_height {
 Returns the pixel height of the image based upon the requested "image_size."
 
 =cut
+
     my $self = shift;
 
     unless ( $self->{'pixel_height'} ) {
@@ -1334,6 +1371,7 @@ sub reference_slot_no {
 Returns the reference slot number for a given slot number.
 
 =cut
+
     my ( $self, $slot_no ) = @_;
     return unless defined $slot_no;
 
@@ -1358,6 +1396,7 @@ sub register_feature_type {
 Remembers a feature type.
 
 =cut
+
     my ( $self, @feature_type_ids ) = @_;
     $self->{'data'}{'feature_types'}{ $_ }{'seen'} = 1 for @feature_type_ids;
 }
@@ -1372,6 +1411,7 @@ sub register_feature_position {
 Remembers the feature position on a map.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $feature_id      = $args{'feature_id'} or return;
     my $slot_no         = $args{'slot_no'};
@@ -1395,6 +1435,7 @@ sub regular_font {
 Returns the font for the "regular" stuff (feature labels, map names, etc.).
 
 =cut
+
     my $self = shift;
     unless ( $self->{'regular_font'} ) {
         my $font_size = $self->font_size;
@@ -1415,6 +1456,7 @@ sub tick_y_positions {
 Returns the "tick_y" positions of the features IDs in a given slot.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $slot_no         = $args{'slot_no'};
     my $feature_ids     = $args{'feature_ids'};
@@ -1445,6 +1487,7 @@ sub total_no_slots {
 Returns the number of slots.
 
 =cut
+
     my $self = shift;
     return scalar keys %{ $self->slot_data };
 }

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Utils;
 
-# $Id: Utils.pm,v 1.11 2003-01-01 02:12:52 kycl4rk Exp $
+# $Id: Utils.pm,v 1.12 2003-01-30 02:51:35 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.11 $)[-1];
+$VERSION = (qw$Revision: 1.12 $)[-1];
 
 use base 'Exporter';
 
@@ -50,6 +50,7 @@ sub column_distribution {
 Given a reference to some columns, figure out where something can be inserted.
 
 =cut
+
     my %args    = @_;
     my $columns = $args{'columns'} || []; # array reference
     my $top     = $args{'top'}     ||  0; # the top and bottom
@@ -187,6 +188,7 @@ sub commify {
 Turns "12345" into "12,345"
 
 =cut
+
     my $number = shift;
     1 while $number =~ s/^(-?\d+)(\d{3})/$1,$2/;
     return $number;
@@ -203,6 +205,7 @@ Given a reference to an array containing labels, figure out where a new
 label can be inserted.
 
 =cut
+
     my %args         = @_;
     my $debug        = $args{'debug'} || 0;
 #    warn "label dist args =\n", Dumper( \%args ), "\n" if $debug;
@@ -361,6 +364,7 @@ sub paginate {
 Given a result set, break it up into pages.
 
 =cut
+
     my %args        = @_;
     my $self        = $args{'self'};
     my $data        = $args{'data'}        || [];
