@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::FeatureSearch;
 # vim: set ft=perl:
 
-# $Id: FeatureSearch.pm,v 1.16 2004-02-10 22:50:09 kycl4rk Exp $
+# $Id: FeatureSearch.pm,v 1.17 2004-02-26 16:57:13 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.16 $)[-1];
+$VERSION = (qw$Revision: 1.17 $)[-1];
 
 use Bio::GMOD::CMap::Data;
 use Data::Pageset;
@@ -18,8 +18,7 @@ sub handler {
     # Make a jazz noise here...
     #
     my ( $self, $apr )    = @_;
-    my $features          = $apr->param('features')     || 
-                            $apr->param('highlight')    || '';
+    my $features          = $apr->param('features')     || '';
     my $order_by          = $apr->param('order_by')     || '';
     my $page_no           = $apr->param('page_no')      ||  1;
     my $search_field      = $apr->param('search_field') || '';
