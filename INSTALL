@@ -1,6 +1,6 @@
                               CMAP INSTALL
 
-                             $Revision: 1.37 $
+                            $Revision: 1.38 $
 
 1.      QUICK START
 
@@ -8,148 +8,34 @@ If you're pretty experienced with Unix systems administration, here is
 the very abbreviated explanation of how to install CMap:
 
 *   Install libpng, libjpeg and libgd
-*   Install MySQL, PostgreSQL, Oracle or Sybase, create tables with
-    contents of "sql" directory, grant appropriate user permissions
-*   Install Perl 5.6.1 or greater, Apache 1.3.27 and mod_perl 1.28
-*   Execute "perl Build.PL; ./Build; ./Build install"
-*   Add contents of "httpd.conf" and "perlstartup.pl" in "conf"
-    directory to your own versions of these files
-*   Restart Apache
-*   Import data
+*   Install the database of your choice (MySQL, PostgreSQL, Oracle,
+    Sybase, SQLite) create tables with contents of "sql" directory, grant
+    appropriate user permissions
+*   Install Perl 5.6.1 or greater and Apache (1.3.x or 2.x)
+*   Execute "perl Build.PL; ./Build; ./Build install"; install any other
+    Perl modules reported missing by the build process
+*   Import data (sample data is included)
 *   Compare maps
 
-If you need further instructions, read on.
+If you need further instructions, read on.  Appendices at the end of
+this document cover general interest topics for the UNIX-phobic such
+as conventions for building software, etc. 
 
-2.      GETTING STARTED
+2.      REQUIREMENTS
 
-Depending on your comfort level with software installation on UNIX
-environments, you may find some of this document a bit tedious.
-I'll try to assume that you know only the basics, but you do need to
-know the difference between an unprivileged user and the special
-"root" user.  To begin, I'd like to suggest you have many of the
-GNU project's utilities installed, such as gcc, gmake, gunzip, and
-tar.  If you are installing on a GNU/Linux system, you most likely
-already have these, so don't worry about it.  If you're installing
-on a Sun Solaris system, you'll probably have gcc and GNU's make,
-but you'll likely have to install gunzip and GNU tar.  If, in
-addition, you hope to install MySQL, you'll be required to install
-GNU tar as Sun's tar is broken and won't untar the MySQL packages
-properly.
-
-3.      OPERATING SYSTEM
-
-Since all of CMap is written in Perl, theoretically you should be able
-to install the application on any operating system (OS) that Perl
-runs on, including different versions of UNIX (Solaris, Linux, *BSD,
-Mac OS X) and Windows.  The easiest OSs to build CMap tend to be
-Linux and Solaris.  The author has little or no experience building on
-other platforms, though he would not discourage you from trying.  CMap
-itself is quite easy to install and run -- it's really all the
-dependent software (a database, system libraries like "gd," and some
-of the trickier Perl modules) that can cause problems.
-
-If you have a choice in the Linux distribution, I would give the
-following caveats.  
-
-    Debian:  Though I really like Debian for it's ease of installation
-    and package management ("apt-get"), I find that the package
-    management is too closely tied to their installed Perl for my
-    comforts.  No matter the system, I prefer to build Perl from source,
-    and this would really mean maintaining two Perl binaries on a Debian
-    system, which I see no reason to do.
-
-    RedHat:  RedHat is definitely one of the more popular distros in the
-    Linux world, but they have historically shipped with Perl binaries
-    that tend to be considered "broken" by many, including the author.
-    If you use RedHat, with no exception the first thing you should do
-    is to complete remove RedHat's Perl from the system via "rpm -e
-    --nodeps perl" and then build from the latest stable source (or
-    whichever version of Perl you prefer post 5.6.1).  The RedHat
-    Package Manager (RPM) can be frustrating at times (it won't
-    automatically satisfy dependencies a la apt-get or Fink), but
-    overall it can be quite handy for installing many of the other
-    pieces of the system you'll need (e.g., MySQL).
-
-I have little experience with other distros, but my general advice is
-to build as much from source as you feel comfortable doing (with the
-exception of MySQL, which you should use a precompiled binary as it's
-very difficult to compile a something more optimized for your OS than
-what they offer).  Solaris is a decent OS, but the first thing you'll
-want to do is to install all the GNU tools (gcc, tar [Sun's tar is
-broken and won't unpack MySQL], etc.) that make using Linux so easy.
-The one time I tried installing CMap on my Mac Powerbook (OS 10.2), I
-found myself completely stuck on things like libgd and mod_perl
-(something about "undefined symbols"), so I gave up.  As I said
-earlier, theoretically it should be possible to get CMap working on
-any system that Perl runs on, but the reality can be quite
-frustrating. 
-
-4.      CONVENTIONS FOR BUILDING SOFTWARE ON UNIX
-
-The standard way to install software on a UNIX-like system includes
-running something that figures out what your system looks like.
-This is usually a script called "configure."  Then you use "make" to
-build the binaries, sometimes to test them, and then to install
-them.  The first couple of steps can be done as an unprivileged user
-(i.e., whatever your normal login on a system is) as long as you
-unpack your sources into a directory where you can write files.  The
-last step, usually "make install," almost always requires root
-privileges as it places the newly built files into sensitive
-system directories.
-
-5.      WHERE TO PUT SOURCES
-
-As a convention, Linux users often unpack sources into one directory
-like "/usr/local/src." Additionally, I would recommend you place all the
-original packages (rpm's, deb's, tar.gz's, etc.) into one directory. I
-like to create a directory called "/usr/local/downloads" for these types
-of files. I'd recommend that both be owned and only writable by root.
-After you've stored the files you download, unpack them like into some
-source directory. I like to use "/usr/local/src." Here is how to
-decompress and unpack a tar.gz file in one step using GNU tar:
-
-    # cd /usr/local/src
-    # tar zxvf ../downloads/my-package.tar.gz
-
-Note: The root's prompt is usually shown with a hash sign "#". When
-      showing a prompt for a regular user, the convention is to use a
-      dollar sign "$". You won't actually type the hash or dollar sign
-      in the commands listed, only what follows.
-
-The above command only works with GNU tar.  To unzip and unpack on
-Solaris, do the following (assuming you've got "gunzip" installed on 
-your system):
-
-    # cd /usr/local/src
-    # gunzip -c ../downloads/my-package.tar.gz | tar xvf -
-
-Alternately, you can always just "gunzip" the "tar.gz" file into just
-a plain tar file, then untar that.  It takes two steps instead of one,
-but it works just as well.
-
-After that, cd into the directory created by the package and follow the
-directions for installing the software.  Typically, it will involve the 
-basic triumvirate of commands:
-
-    # ./configure
-    # make
-    # make install
-
-6.      REQUIREMENTS
-
-There are quite a number of prerequisites to getting this running:
+There are quite a number of prerequisites to getting CMap running:
 
     * libgd 
-    * a database (MySQL, Oracle 9x, Sybase, PostgreSQL) 
+    * a database (MySQL, Oracle 9x, Sybase, PostgreSQL, SQLite) 
     * Perl (5.6.1 or higher)
-    * Apache (version 1.3.27 suggested)
-    * mod_perl (version 1.28 suggested)
+    * Various CPAN modules
+    * Apache (version 1.3.x or 2.x)
 
-Note: Apache and mod_perl are updated often.  If there is a later
-      version of either (in the 1.x series) than that mentioned in this
-      document, please use the latest source.
+Versions prior to 0.10 required mod_perl, but this is no longer the
+case.  As such, CMap should actually work with any web server that
+supports CGI, not just Apache (e.g., Microsoft IIS, Netscape, etc.).
 
-7.      LIBGD
+2.1.    LIBGD
 
 Unfortunately, you're pretty much on your own for installing libgd.
 With any luck, you may already have it on your system if you have a
@@ -189,35 +75,25 @@ Here are URLs to help you track down everything you need to install libgd:
     * zlib: http://www.gzip.org/zlib/
     * JGEP: http://www.ijg.org/
 
-8.      DATABASE
+2.2.    DATABASE
 
 The CMap application relies on a relational database management system
 (RDBMS) to store and retrieve data.  If you already have a database
-such as MySQL (version 4.1 recommended, but 3.23 should be fine) or
+such as MySQL (version 4.x recommended, but 3.23 should be fine) or
 Oracle (version 9.x) installed on your system, you can skip ahead to
 the next section.  If not and you're doing this on your own, and
-aren't a trained DBA, I'd recommend using MySQL for your database.
-It's free, extremely stable, flexible, and fun.  Oracle is really
-overkill for such a lightweight application as this because the code
-doesn't rely on much of anything from the database except joins (no
-transactions, no referential integrity, no stored procedures, etc.).
-If you prefer to use Oracle, you're in luck because this application
-was developed concurrently on MySQL and Oracle.  As of version 0.05, a
-schema is included which seems to work with PostgreSQL.  As of version
-0.06, CMap seems to play rather well with PostgreSQL, but testing has
-not been exhaustive (there seems to be some problem with the feature
-correspondence matrix).  One user has also hacked the schema to work
-with Sybase, and the code seems to have no problems.
+aren't a trained DBA, I'd recommend using MySQL
+(http://www.mysql.com/) for your database.  It's free, extremely
+stable, flexible, and fun.  Another free database that can be highly
+recommended is PostgreSQL (http://www.postgresql.org/).  Oracle is
+really overkill for such a lightweight application as this because the
+code doesn't rely on much of anything from the database except joins
+(no transactions, no referential integrity, no stored procedures,
+etc.).
 
 Note: Oracle 8.x doesn't support ANSI-standard left joins, so some parts
       of the application will fail. If you can't upgrade, then you can
-      alter the few SQL statements that cause problems. If you prefer to
-      use some other RDBMS, like PostgreSQL or Sybase or whatever, then
-      you're still in luck. Much has been done to make the SQL simple
-      and portable and extensible. If an SQL statement is giving you
-      problems, you can likely create a small module and override the
-      statement with one of your own making. See the CODE_OVERVIEW in
-      the "docs" directory for more information.
+      alter the few SQL statements that cause problems.
 
 I'll assume that you're going to use MySQL.  If you don't already
 have MySQL on your system, you can get everything you need either
@@ -235,16 +111,12 @@ command-line tools;  see the MySQL website for more information.  If
 you get really stuck, then MySQL AB, the company which develops and
 releases MySQL, offers commercial support.
 
-9.      CREATING DATABASE TABLES AND GRANTING PERMISSIONS
+CREATING DATABASE TABLES AND GRANTING PERMISSIONS
 
 Once you've settled on your database of choice and have a working
 installation, you need to create the tables that will hold the data for
 the comparative maps.  In the "sql" directory, you will find create
-scripts for Oracle and MySQL.  If you need to create scripts for a
-different database, then write the author for a copy of an upcoming
-(RSN) CPAN module, SQL::Translator, specifying which database you're
-using.  All efforts will be made to help you convert the schema to
-your system.
+scripts for all the databases on which CMap is known to run.
 
 For MySQL, you can do the following to create the database "CMAP" and
 grant appropriate permissions to a user "joe" with the password
@@ -255,6 +127,7 @@ grant appropriate permissions to a user "joe" with the password
     $ mysql -uroot -p CMAP < sql/cmap.create.mysql
     $ mysql -uroot -p CMAP -e 'grant select, insert, update, delete 
         on CMAP.* to joe@localhost identified by "foobar"'
+    $ mysqladmin -uroot -p CMAP flush-privileges
 
 In the above example, you'll be required to type the root password
 for MySQL.
@@ -281,7 +154,7 @@ equivalent of creating the tables described in the create scripts in
 the "sql" directory and then granting the proper permissions to
 whatever user will connect to your database.
 
-10.     INSTALLING PERL 
+2.3.    PERL 
 
 It would be hard to imagine that a UNIX system wouldn't have some
 version of Perl installed.  We need a minimum of Perl 5.6.0 (but 5.6.1
@@ -304,33 +177,23 @@ On my current system, the output looks like this:
     access to the Internet, point your browser at http://www.perl.com/,
     the Perl Home Page.
 
-If your version of Perl is OK, you can likely skip ahead to the next
-section.  If you have anything 5.00503 or older, you'll need to upgrade
-your Perl binary.  
-
-Even if your Perl is new enough, you may still want to consider
-building a new binary from source if you're concerned about
-performance, e.g., RedHat compiles their Perl with threading support,
-which can make it slower.  Unless you are pretty sure that your
-version of Perl is somehow broken, I'd recommend sticking with
-whatever is installed on your system or just using a pre-built package
-(e.g., a RedHat RPM or Debian package or whatever).
-
-If you really want to compile your own Perl, it's actually fun (in a
-geeky way), but it will probably cause a lot more work for you to
-install the modules that you'll need for use as a web development
-language.  And, obviously, upgrading important system binaries like
-Perl can cause unforeseen problems.  If you're using an established
-machine that is already being used for other tasks, upgrading Perl
-could break a lot of things, so you should discuss this with your
-sysadmin.  (Of course, you could always build your own Perl with a
-PREFIX of something like "/usr/local/cmap" and install everything you
-need -- Perl, Apache, CMap, etc. -- there.  This would then allow you
-to build everything fresh without disturbing your existing binaries.
-Again, discuss this with your sysadmin.)  If you are lucky enough to
-have a free machine to play with, it's nice to start with a clean
-slate by building everything from source.  You should choose what's
-practical, convenient, and appropriate for you.
+If your version of Perl is OK, you can skip ahead to the next section.
+If you have anything 5.00503 or older, you'll need to upgrade your
+Perl binary.  If you want or need to compile your own Perl, it's
+actually fun (in a geeky way), but it will create a lot more work for
+you to install all the modules that you'll need for CMap.  And,
+obviously, upgrading important system binaries like Perl can cause
+unforeseen problems.  If you're using an established machine that is
+already being used for other tasks, upgrading Perl could break a lot
+of things, so you should discuss this with your sysadmin.  (Of course,
+you could always build your own Perl with a PREFIX of something like
+"/usr/local/cmap" and install everything you need -- Perl, Apache,
+CMap, etc. -- there.  This would then allow you to build everything
+fresh without disturbing your existing binaries.  Again, discuss this
+with your sysadmin.)  If you are lucky enough to have a free machine
+to play with, it's nice to start with a clean slate by building
+everything from source.  You should choose what's practical,
+convenient, and appropriate for you.
 
 If you want to install a new Perl binary, it only takes a few
 minutes to download and build.  Here's one way:
@@ -357,171 +220,26 @@ to find a mirror that's near you as long as that machine isn't
 overloaded.  Just keep trying different machines until you find one
 with a good, fast connection to you.)
 
-11.     INSTALLING APACHE AND MOD_PERL
+2.4.    APACHE
 
 Given that Apache is the most popular web server right now, it's
 also likely that you'll already have it installed on your system.
-Additionally, mod_perl is becoming a very standard package, and a
-number of systems offer pre-built binaries or easy-to-install
-packages.  Both RedHat and Debian have such packages, and Windows
-users can also install pre-built binaries.  To see if your Apache
-binary has mod_perl compiled into it, do the following:
+It's usually installed by default on most Linux distributions as well
+as Mac OS X.  If you need to install Apache, just go to
+http://www.apache.org/ and follow the directions there.  CMap works
+just fine with both the 1.3.x or 2.x trees.  If you wish to use
+mod_perl, I recommend you stay with the 1.3.x tree of Apache and the
+latest version of mod_perl < 1.99 (which is actually the beta version
+for mod_perl 2).
 
-    $ cd /usr/local/apache/bin
-    $ ./httpd -l
+As stated earlier, CMap is simply a CGI application and should
+therefore run on most any modern web server, including Microsoft IIS.
+If you have any problems (or success) using a web server other than
+Apache, please contact the author.
 
-Here's the output of mine:
+2.5.    CPAN MODULES
 
-    Compiled-in modules:
-      http_core.c
-      mod_env.c
-      mod_log_config.c
-      mod_mime.c
-      mod_negotiation.c
-      mod_status.c
-      mod_include.c
-      mod_autoindex.c
-      mod_dir.c
-      mod_cgi.c
-      mod_asis.c
-      mod_imap.c
-      mod_actions.c
-      mod_userdir.c
-      mod_alias.c
-      mod_rewrite.c
-      mod_access.c
-      mod_auth.c
-      mod_proxy.c
-      mod_setenvif.c
-      mod_perl.c
-    suexec: disabled; invalid wrapper /usr/local/apache/bin/suexec
-
-Note: Apache is extremely modular. This is one of its great strengths.
-      You can compile a very "high-speed/low-drag" binary with very few
-      modules or a great big binary with SSL and PHP and mod_perl and
-      more. Your output may vary from the above depending on how the
-      binary got there, who installed it, etc. I like to compile Apache
-      with mod_rewrite and mod_proxy, which are not standard modules. If
-      you don't see this exact module listing, it's probably OK.
-
-If you see "mod_perl.c" in the list, then you can probably skip
-ahead to the next section.  If, however, you choose to build Apache
-and mod_perl for your system, either because it's not already
-installed or because you need to upgrade or because you're a purist
-or just because it's fun, you'll be happy to know that it's quite
-easy.  Both are available from the Apache mirrors which you can find
-by looking on the Apache website, http://www.apache.org/.  Apache
-can be found in "/pub/dist/httpd/apache_1.3.27.tar.gz" and mod_perl
-can be found in "/pub/dist/perl/mod_perl-1.28.tar.gz."  
-
-Note: This application has only been developed under the Apache and
-      mod_perl 1.x trees. Apache and mod_perl 2.x are exciting new
-      frontiers for mod_perlers, but it will be a while before this
-      application is moved to that architecture. Just stick with the
-      1.x trees.
-
-You can install Apache and mod_perl in one fell swoop so long as
-you're not interested in compiling in any other modules (e.g., PHP
-or SSL, etc.).  To do so, grab the sources for both and unpack them
-into a directory so that they're side by side, then follow the
-directions included in the INSTALL.apaci file in the mod_perl
-distribution.  Here's an example:
-
-Note: The backslashes ("\") below tell the command-line that you are
-      continuing the command on a new line. It's not necessary to do
-      this. You can just keep typing, but it's easier to see what you're
-      doing when you use multiple lines.
-
-    $ su -
-    # cd /usr/local/downloads
-    # ncftp ftp.tux.org
-    ncftp > cd pub/net/apache/dist/httpd
-    ncftp > get apache_1.3.27.tar.gz
-    ncftp > cd ../perl
-    ncftp > get mod_perl-1.28.tar.gz
-    ncftp > quit
-    # cd /usr/local/src
-    # tar zxvf ../downloads/apache_1.3.27.tar.gz
-    # tar zxvf ../downloads/mod_perl-1.28.tar.gz
-    # cd mod_perl-1.28
-    # perl Makefile.PL \
-    > APACHE_PREFIX=/usr/local/apache \
-    > APACHE_SRC=../apache_1.3.27/src \
-    > DO_HTTPD=1 \
-    > EVERYTHING=1 \
-    > USE_APACI=1
-    # make
-    # make test
-    # make install
-
-The APACHE_PREFIX that I list above is not necessarily where you
-should install Apache.  It's a fairly standard location on most
-GNU/Linux systems, but where Apache goes is still up to the
-discretion of your sysadmin (which is probably you, if you're
-reading this).  There's no reason whatsoever that Apache can't be
-installed "/var/web/" or "/opt/httpd" (though I might not recommend
-installing into "/tmp/" :-).  For the purposes of this document,
-"/usr/local/apache" can be substituted with whatever path you
-choose.
-
-Note: You'll notice that the first command you give to build most Perl
-      packages is "perl Makefile.PL."  This is the equivalent of the
-      "configure" script in standard UNIX packages.  This command tells
-      your Perl binary to figure out what needs to happen in the "make"
-      process.  Additionally, you'll see that you should "make test"
-      when installing.  When testing a package, *all* tests should pass
-      (unless you know that certain failures are OK for your system).
-      Generally failures in the installation of a Perl module can be
-      remedied by installing some dependency (usually another Perl
-      module or a system library).  If tests still fail, it is very
-      important that you report these errors to the module authors so
-      that they can be fixed.
-
-      A newer way of installing Perl modules involves a module called,
-      appropriately, "Module::Build," and works similarly.  Instead of
-      executing a file called "Makefile.PL" to create a makefile, the
-      entire build/test/install process is handled exclusively by Perl.
-      CMap uses this newer process.  Rather than executing "perl
-      Makefile.PL; make; make install" you simply run "perl Build.PL;
-      ./Build; ./Build install."  Given that Module::Build is a newer
-      module that is yet to be distributed with the core Perl, you will
-      need to install it before proceeding with the CMap installation
-      process.  There are many very good reasons for avoiding "make" for
-      installing Perl modules, one being that not every system has
-      compatible makefile syntax, and another being that it's relatively
-      easy for Perl to handle the installation of its own modules.  For
-      more information on this, execute "perldoc Module::Build" after
-      installing the module.
-
-If all goes well, you should see a lot of text go whizzing by and then
-a big text banner saying "You now have successfully built and installed
-the Apache 1.3 HTTP server...." after you type "make install."  If so,
-follow the directions and check the configuration files and try to
-start Apache like so:  
-
-    $ cd /usr/local/apache/bin
-    $ ./apachectl start
-
-If Apache starts up, then open a browser and try to bring up your new
-web server.  If not, then you'll have to troubleshoot what your
-problem is as there's no need to go further unless all this is
-working.  There are a whole host of things you'll need to modify to
-get Apache working just right for you, e.g., you will proabably need
-to set the ServerName in your httpd.conf to get Apache to not complain
-about the syntax of your config.  Unfortunately, thoroughly explaining
-everything to watch for in configuring Apache is a bit out of the
-scope of this document.  There are many fine venues for seeking help
-with Apache, including the docs and mailing lists.  If you have
-troubles, please consult those resources to solve your problems.
-
-Finally, verify that mod_perl is indeed compiled into Apache by
-executing your new httpd binary with the "-l" flag as shown above and
-look for "mod_perl.c."  If all that is good, then move on to the next
-section.
-
-12.     INSTALLING PERL MODULES
-
-There are a number of CPAN modules required by the CMap application.
+There are a number of CPAN (modules required by the CMap application.
 You will likely need to install these prior to installing the CMap
 modules as they are not in the standard Perl distribution.  These
 modules are listed in the "requires" section in the Build.PL build
@@ -532,11 +250,6 @@ best to use the CPAN shell to install all the modules that Perl
 complains about.
 
 Here are the CPAN modules required:
-
-*   Apache, Apache::Constants (automatically installed when you build
-    Apache with mod_perl)
-
-*   Apache::Request (AKA "libapreq", also contains Apache::Cookie)
 
 *   Class::Base
 
@@ -558,11 +271,11 @@ Here are the CPAN modules required:
 
 *   DBD::Sybase (if you're using Sybase)
 
-*   File::MkTemp
-
 *   File::Path
 
 *   GD
+
+*   GD::SVG
 
 *   IO::Tee
 
@@ -580,10 +293,12 @@ Here are the CPAN modules required:
 
 *   URI::Escape
 
-*   YAML
+*   XML::Simple
 
-If you need to install any of these Perl modules, I'd really recommend
-you use the CPAN shell, a convenient package that automates the
+Many of the above modules will have dependecies of their own which you
+must resolve.  This can be very tedious to do by hand, so if you do
+need to install any of these Perl modules, I'd really recommend you
+use the CPAN shell, a convenient package that automates the
 downloading and building of modules.  The CPAN shell can also can
 recursively install all module dependencies automatically, which is a
 very nice feature.  To use the CPAN shell, type the following (as
@@ -625,107 +340,63 @@ return to installing the first one.  After satisfying several
 dependencies on your own, you'll begin to appreciate all the automation
 the CPAN shell gives you.
 
-Note: Don't forget that the versions of GD.pm and libgd need to match up
-      (either both 1.x or both 2.x). CPAN will always try to install the
-      latest version of a module (so 2.x of GD.pm). If your system has a
-      1.x libgd (look for something like "libgd.so.1.8.4" in "/usr/lib"
-      or "/usr/local/lib") and you use CPAN to install GD.pm, you will
-      have problems. In this case, it will be much easier to grab the
-      source for version 1.x of GD.pm and install it by hand.
+3.      INSTALLING CMAP
 
-13.     INSTALLING THE CMAP PERL MODULES
-
-To install the CMap modules included in this package, you can either
-use the normal installation routine to place the modules into Perl's
-system-wide library path, or you can put the modules into a directory
-of your own choosing.  Unless you'd like to have reasons to do the
-latter, I'd recommend choosing the first way.  Here's how to do both:
-
-1)  Execute the following commands in the directory created by
-    untarring the CMap distribution:
+To install the CMap modules and scripts:
 
     $ perl Build.PL
     $ ./Build
+    $ su -
     # ./Build install
 
-    Several configuration options can be set via arguments to Build.PL.
-    Execute "perl Build.PL -h" to read a brief help message on what they
-    are and how you can specify your choices.  Reasonable defaults are
-    provided for all the options if you have no strong feelings about
-    where to install things.
+Several configuration options can be set via arguments to Build.PL.
+Execute "perl Build.PL -h" to read a brief help message on what they
+are and how you can specify your choices.  Reasonable defaults are
+provided for all the options if you have no strong feelings about
+where to install things.
 
-    As you make your choices, two key files will receive crucial updates:
+During the build process, several important steps will be taken:
 
-    Bio::GMOD::CMap::Constants
-        This file will have the value of the "CONFIG_FILE" altered
-        to match CONF_DIR.
+*   The "Bio::GMOD::CMap::Constants.pm" file will be created in the
+    "lib" directory and will have it's "CONFIG_FILE" set to match the
+    "CONF" argument to "Build.PL." Should you ever move or rename the
+    CMap config file, you will have to alter this file.
 
-    conf/cmap.conf
-        This file will have the value of "template_dir" altered 
-        to match TEMPLATE_DIR.
+*   The "cmap.conf" file will be created in the "conf" directory and
+    will set the "template_dir" and "cache_dir" to match the
+    "TEMPLATES" and "CACHE" arguments to "Build.PL," respectively.  It
+    will then be copied to the "CONF" location.
 
-2)  Manually place the contents of "conf," "lib," "bin," and
-    "templates" into directories of your choosing like so:
-    
-    conf/cmap.conf
-        Copy to a location readable by all scripts and processes
-        that will need to read this file (command-line scripts run
-        by users and the httpd process) as this file contains 
-        database connection info and other runtime options.  Be sure 
-        to change "template_dir" yourself to reflect the location of
-        the CMap templates.
+*   The "cmap_admin.pl" script will be copied into a system binary
+    location.  You will use this script for most CMap
+    administration tasks.
 
-    conf/cmap.css
-        This is the cascading style sheet used by the maps. Copy to a
-        location where a web browser can retrieve, such as a
-        "stylesheets" directory. You can, of course, use your own HTML
-        stylesheet; if you choose to do this, just update "cmap.conf"
-        with the URI of your stylesheet.
+*   The contents of the "templates" directory will be copied to the
+    "TEMPLATES" directory specified to Build.PL.
 
-    lib
-        Copy to a location visible to all Perl/mod_perl processes. Be
-        sure to update your PERL5LIB environment variable and the
-        "perlstartup.pl" script to reflect your custom installation. I
-        like to put custom libraries used by Apache under
-        "/usr/local/apache/lib/perl" (assuming, of course, that you
-        might have libraries for Java and Python and whatever else
-        tickles your fancy).  
-    
-        Note: Be sure to update Bio::GMOD::CMap::Constants to have
-              "CONFIG_FILE" point to the correct location of your
-              configuration file ("cmap.conf") or things won't work!
+*   The contents of the "htdocs" directory will be copied to the
+    "HTDOCS" directory specified to Build.PL.
 
-    bin
-        Copy "cmap_admin.pl" to a location suitable for the execution by
-        the curator(s) of your data, such as "/usr/local/bin/". If you
-        are the only one who will run the script, perhaps place it into
-        $HOME/bin.
+*   The "CACHE" diretory specified will be created and have its
+    permissions set so that files can be written and deleted from it.
 
-    templates
-        Copy to a location readable by your mod_perl server. I would
-        recommend putting the templates into
-        "/usr/local/apache/templates/cmap."
+*   The "cmap" CGI script will be created in the "cgi-bin" directory
+    and will be copied to the "CGIBIN" directory specified to Build.PL
+    and its permissions will be changed to make it executable.
 
-    And why might you want to put the files into your own library path
-    instead of Perl's? Well, if you plan on hacking around with the
-    source, you might rather not have them installed in an inconvenient
-    directory and owned by root, which they will be if you choose the
-    first. Of course, if you really plan on hacking around, I would hope
-    that you would consider doing a CVS checkout so you could contribute
-    your work back to the project! More on that later.
+It is probably easiest to simply give the argument
+"PREFIX=/usr/local/apache" and place all the CMap files in the
+default locations.  
 
-Either way you install, you'll need to be sure to edit your
-"cmap.conf" file to use the correct database connection information.
-(If you forget the location of the configuration file and you
-installed via option #1, then you can look in the "cmap_install.conf"
-file in the source directory of the CMap application.)  The database
-section is at the top of the file.  Only the first two options
-("database" and "template_dir") *must* be set.  Everything else has
-reasonable defaults if nothing is specified in this file.  I would
-encourage you to look around this file and change things to affect the
-look and feel of your site.  If you don't like a change, comment out
-the line by placing a pound sign ("#") at the beginning of the line.
-Remember to restart Apache to see the changes.
+Be sure to update your "cmap.conf" file after installation with the
+correct database connection information.  (If you forget the location
+of the configuration file and you installed via option #1, then you
+can look in the "cmap_install.conf" file in the source directory of
+the CMap application.)  The database section is at the top of the
+file.  I would encourage you to look around this file and change
+things to affect the look and feel of your site.  If you don't like a
+change, comment out the line by placing a pound sign ("#") at the
+beginning of the line.
 
 If you are upgrading from an earlier version of CMap, I would caution
 your to be careful of how you install the latest "cmap.conf."  You'll
@@ -734,173 +405,42 @@ this file over manually and "diff" the two.  Most likely, you won't
 need to make too many changes to the new one to get things working the
 way you had them before.
 
-14.     CONFIGURING APACHE
+4.      PROTECTING WEB ADMIN WITH A PASSWORD 
 
-After installing Apache, mod_perl, and all the necessary modules,
-you're now ready to configure Apache.  Two fragments of files are
-included in the "conf" directory of this distribution to help you do
-this: "httpd.conf" and "perlstartup.pl."  The first of these files
-contains all the additions you should make to your own httpd.conf in
-order to configure the Apache environment and to set up the handlers
-for the CMap application.  The second file, typically called something
-like "perlstartup.pl" (but you can call it whatever you like) is used
-to let Apache know about the modules it will use in its lifetime, and
-is placed in the same directory as the httpd.conf.  (Most likely, a
-startup file like this won't exist unless you were already using
-mod_perl and were pre-loading modules.  If this is the case, you'll
-just create one anew or copy the one from "conf" to the desired
-location.)  The parent Apache process will parse this file and include
-all the modules in each child process, further enhancing the
-performance of the application.
-
-Note: All the files in Apache's "conf" directory are very important and
-      sensitive, so it's best to have everything be owned and writable
-      only by root. The startup file will be executed as root, so this
-      could represent an easy system compromise were a non-root user
-      able to write to the file.
-
-Here are brief descriptions of the additions you'll make to httpd.conf so you
-can intelligently edit you own entries.
-
-*   PerlRequire /path/to/perlstartup.pl
-
-    This is the location of the file that lists all your Perl modules.
-    Generally the path would be "/usr/local/apache/conf/perlstartup.pl."
-
-*   Alias /cmap/images /tmp/cmap_cache
-
-    This is the directory where the application will write the temporary
-    images created for each request.  Apache will directly serve the
-    images from this cache.  If you do not define a directory, then the
-    default ("/tmp/cmap_cache") will be created for you on the first
-    request.  This directory will be owned by the user and group of the
-    httpd process and will have 0700 as its permissions .  
-
-    If you do not want to use "/tmp/cmap_cache" for your images, you can
-    specify a different directory, perhaps something in your "/var"
-    directory or something on a partition separate from your web server.
-    If you create a directory on your own, I'd recommend making the
-    directory owned by root, and preventing anyone but the web server's
-    uid to alter any file it creates. To do this, "su" to root and issue
-    the following commands:
-
-        # mkdir /path/to/images
-        # chown root:root /path/to/images 
-        # chmod 4777 /path/to/images 
-
-    Where "/path/to/images" is probably something like
-    "/var/cmap_cache." Whether you create the cache directory or not,
-    you will need to alias it so that Apache will know where to find the
-    images. So, let's say that you decide to put your images into
-    "/var/cmap_cache" and that you'd like to reference those images
-    through a web browser as "/cmap/images," you'll need to edit the
-    "Alias" above in your httpd.conf to reflect the default value or
-    your own choice.  FWIW, the "4777" permissions will modify the
-    directory to be owned by root, but will prevent anyone but the web
-    server's UID to alter any file it creates.
-
-    I'd probably recommend against placing the images directly into your
-    DocumentRoot as the space taken by the images is completely dependent
-    upon the amount of traffic your site gets.  You could conceivably fill
-    your primary disk partition if you either never cleaned out old images
-    or someone launched some sort of DoS attack on you.  It would be
-    better to place them into a directory on a separate partition, like
-    "/var," which is usually able to handle such variable directories.
-    Where ever you put your images and however you alias them, be sure that
-    the "<img>" tag in the "cmap_viewer.tmpl" template reflects the same
-    path as your Alias.  (Of course, you won't have to change anything
-    in the templates if you use the default of "/cmap/images.")
-
-*   <Location> directives
-
-    You'll add two directives to your httpd.conf, the second of which is
-    only necessary if you wish to password-protect your administrative
-    interface (which I'm sure you will).  An actual directory called
-    "cmap" can exist in your DocumentRoot, but there's no reason for it.
-    You may want to place the CMap style sheet there, but it's probably
-    just as easy to create a site-wide "stylesheets" directory.  However,
-    the code is written in such a way that any files in a "/cmap"
-    directory will be properly served by Apache.
-
-    To protect the administrative interface with a password, you'll need
-    to use the "htpasswd" program that is distributed with Apache.  It is
-    usually located in the same directory as the "httpd" binary
-    (e.g., "/usr/local/apache/bin").  If you've never used htpasswd
-    before, you can get the quick synopsis by giving it a single argument
-    of "-h" or "--help."  You should read the help to make sure that you
-    create your password file correctly (making sure not to overwrite an
-    existing file!), but this will probably work just fine for you:
-
-        $ su -
-        # cd /usr/local/apache
-        # mkdir passwd
-        # ./bin/htpasswd -c /usr/local/apache/passwd/cmap admin
-
-    In the last command, the last argument is the user name which you'll
-    use when prompted by your web browser to see the admin tool, and the
-    argument before that is the name of the new password file that will be
-    created by the "-c" argument.  If the file already exists, then don't
-    use "-c."
-
-15.     STARTING APACHE
-
-Now see if Apache like what you've done by typing the following commands:
+You should protect the web admin tool (e.g., "/cgi-bin/cmap/admin")
+with a password.  To do this with Apache, use the "htpasswd" program
+that is installed in Apache's "bin" directory.  If you've never used
+htpasswd before, you can get the quick synopsis by giving it a single
+argument of "-h" or "--help."  You should read the help to make sure
+that you create your password file correctly (making sure not to
+overwrite an existing file!), but this will probably work just fine
+for you:
 
     $ su -
-    # cd /usr/local/apache/bin
-    # ./apachectl configtest
+    # cd /usr/local/apache
+    # mkdir passwd
+    # ./bin/htpasswd -c /usr/local/apache/passwd/cmap admin
 
-If you see "Syntax OK," then restart Apache:
+In the last command, the last argument is the user name which you'll
+use when prompted by your web browser to see the admin tool, and the
+argument before that is the name of the new password file that will be
+created by the "-c" argument.  If the file already exists, then don't
+use "-c."
 
-    # ./apachectl stop
-    # ./apachectl start
+5.      VIEWING CMAP
 
-Now it's time to see if the basic installation worked.  Open up a web
-browser and point it to your new CMap installation:
+Once you have installed the CMap modules, templates, HTML files, and
+scripts (command-line and CGI), you should be able to view the CMap
+application by pointing your browser to the web server, e.g.:
 
     http://my.server.org/cmap
 
 If your web server doesn't have a name that resolves into an IP address
 for you, then you can just use the IP address instead of a name. You
-should see a page welcoming you to the genetic and comparative maps
-application.  If you don't see anything or you get an error, check your
-error log (whatever your "ErrorLog" directive is set to in your
-httpd.conf), which is most likely "/usr/local/apache/logs/error_log."
+should see a page created during installation summarizing how CMap was
+installed and with links pointing to the CMap CGI script and tutorials.
 
-16.     STARTING APACHE ET AL. ON BOOT
-
-Should your system ever go down for any reason (e.g., crash or
-reboot), you'll probably want all your services to come back up when
-the machine boots.  UNIX-type systems can vary quite a bit in how
-you determine what comes up at boot and in what order, but on
-typical GNU/Linux systems, you can simply place start scripts in a
-directory like "/etc/rc.d/init.d" and then create symbolic links
-into the "rcX.d" directory where the "X" represents your default
-runlevel (usually 2 or 3 for a server).  Here's how you could start
-Apache at boot on a RedHat system with a default runlevel of "3":
-
-    $ su -
-    # cd /etc/rc.d/init.d
-    # ln -s /usr/local/apache/bin/apachectl ./httpd
-    # cd /etc/rc.d/rc3.d/
-    # ln -s ../init.d/httpd ./S99httpd
-    # ln -s ../init.d/httpd ./K99httpd
-
-The "SXX" and "KXX" prefix are conventions used to indicate "start"
-and "kill" scripts.  The number that occurs after the "S" or "K"
-indicates the relative order in which the script.  All "S" scripts are
-passed a command of "start" when the system is booting and are
-processed in alphabetical order, so "S10abc" is started before
-"S10def" which is processed before "S11ghi," etc.  The "K" scripts are
-given an argument of "stop."  Generally, if you start a service in
-this manner, you should cleanly shut it down with a kill script
-rather than just letting the process die with the final kill signals
-the operating system sends out just before shutdown.
-
-MySQL has its own scripts to make sure it starts up on boot.  You
-should follow the directions appropriate for your system.
-
-17.     CRONTAB TO REMOVE OLD IMAGES
+6.      CRONTAB TO REMOVE OLD IMAGES
 
 The map images will only be used for one request, so you'll need to
 include some way to clear out old images.  A simple cron job will do
@@ -927,17 +467,16 @@ I can see that it worked by typing "echo $EDITOR" on the command line.
 However you choose to edit the file, you'll need to paste or type the
 following lines:
 
-    # clear out old CMap images
-    # added by Joe User <juser@foo.com>
-    0 0 * * *  find /tmp/cmap_cache/ -type f -mtime +1 -exec rm -rf {} \;
+  # clear out old CMap images
+  # added by Joe User <juser@foo.com>
+  0 0 * * *  find /usr/local/apache/cmap/tmp/ -type f -mtime +1 -exec rm -rf {} \;
 
 Of course, you'll want to change the "Joe User..." part to reflect
 your own name and e-mail address.  Also, if you choose to store your
-map images in a location other than the default of "/tmp/cmap_cache,"
-then you'll need to change the above directory to match your choice.
-When you save the file, crontab will automatically exit.  If all went
-well, you should see a message saying that a new crontab was
-installed.
+map images in a location other than the default directory then you'll
+need to change the above directory to match your choice.  When you
+save the file, crontab will automatically exit.  If all went well, you
+should see a message saying that a new crontab was installed.
 
 If you're curious, a "crontab" is simply a file which uses a particular
 syntax to describe to the "cron" daemon events which should happen at some
@@ -988,24 +527,18 @@ whole command (starting with the "0") should go on one line.
 Note: Some UNIXs may have a slightly different cron format. Check
       your man page!
 
-18.     TEMPLATES
+7.      TEMPLATES
 
-Some of the templates may contain language specific to the Gramene
-project (e.g., "matrix.tmpl").  You may wish to scan all your pages
-and remove any language that doesn't pertain to your data.  In fact,
-it's a great idea for you to customize the templates to the types of
-data you wish to highlight or explain.
+All of the dynamic HTML in CMap is generated from templates and
+reference stylesheets in the hope that you will find it easy to
+customize the look of the application to your web site.  The templates
+are processed by the CPAN module Template Toolkit
+(http://www.template-toolkit.com/) which employs a very simple yet
+powerful syntax for creating displays.  In addition, you can specify
+site-specific introductions to most of the pages in your "cmap.conf"
+file.
 
-19.     CVS ACCESS
-
-If you'd like to install the very latest (which is not necessarily
-guaranteed to work!), then you'll want to checkout the "cmap" project
-from the anonymous CVS repository at SourceForge.  See the project
-homepage for instructions:
-
-    http://gmod.sourceforge.net/cmap
-
-20.     COMMENTS
+8.      COMMENTS
 
 If you have questions or comments about this document, please write
 the CMap development mailing list at
@@ -1014,10 +547,143 @@ in order to stay up on the latest in the development as well as to
 contribute your opinions as to the direction that CMap takes in the
 future.
 
-21.     LET US KNOW!
+9.      LET US KNOW!
 
 Please consider allowing the GMOD project advertise your use of our
 code.  If you have a publicly accessible installation of CMap, we
 would very much like to provide a link from the GMOD website to it!
+
+10.     APPENDICES
+
+Depending on your comfort level with software installation on UNIX
+environments, you may find some of this document a bit tedious.
+I'll try to assume that you know only the basics, but you do need to
+know the difference between an unprivileged user and the special
+"root" user.  To begin, I'd like to suggest you have many of the
+GNU project's utilities installed, such as gcc, gmake, gunzip, and
+tar.  If you are installing on a GNU/Linux system, you most likely
+already have these, so don't worry about it.  If you're installing
+on a Sun Solaris system, you'll probably have gcc and GNU's make,
+but you'll likely have to install gunzip and GNU tar.  If, in
+addition, you hope to install MySQL, you'll be required to install
+GNU tar as Sun's tar is broken and won't untar the MySQL packages
+properly.
+
+APPENDIX 1. OPERATING SYSTEM
+
+Since all of CMap is written in Perl, theoretically you should be able
+to install the application on any operating system (OS) that Perl
+runs on, including different versions of UNIX (Solaris, Linux, *BSD,
+Mac OS X) and Windows.  The easiest OSs to build CMap tend to be
+Linux and Solaris.  The author has little or no experience building on
+other platforms, though he would not discourage you from trying.  CMap
+itself is quite easy to install and run -- it's really all the
+dependent software (a database, system libraries like "gd," and some
+of the trickier Perl modules) that can cause problems.
+
+My general advice is to use precompiled binaries (e.g. RPMs) unless
+you want to build from source (with the exception of MySQL, which you
+should always use a precompiled binary as it's very difficult to
+compile a something more optimized for your OS than what they offer).
+Solaris is a decent OS, but the first thing you'll want to do is to
+install all the GNU tools (gcc, tar [Sun's tar is broken and won't
+unpack MySQL], etc.) that make using Linux so easy.  It can be tricky
+getting the necessary libraries installed on OS X, but there are sites
+that offer everything you need.
+
+APPENDIX 2. CONVENTIONS FOR BUILDING SOFTWARE ON UNIX
+
+The standard way to install software on a UNIX-like system includes
+running something that figures out what your system looks like.
+This is usually a script called "configure."  Then you use "make" to
+build the binaries, sometimes to test them, and then to install
+them.  The first couple of steps can be done as an unprivileged user
+(i.e., whatever your normal login on a system is) as long as you
+unpack your sources into a directory where you can write files.  The
+last step, usually "make install," almost always requires root
+privileges as it places the newly built files into sensitive
+system directories.
+
+2.1.        WHERE TO PUT SOURCES
+
+As a convention, Linux users often unpack sources into one directory
+like "/usr/local/src." Additionally, I would recommend you place all the
+original packages (rpm's, deb's, tar.gz's, etc.) into one directory. I
+like to create a directory called "/usr/local/downloads" for these types
+of files. I'd recommend that both be owned and only writable by root.
+After you've stored the files you download, unpack them like into some
+source directory. I like to use "/usr/local/src." Here is how to
+decompress and unpack a tar.gz file in one step using GNU tar:
+
+    # cd /usr/local/src
+    # tar zxvf ../downloads/my-package.tar.gz
+
+Note: The root's prompt is usually shown with a hash sign "#". When
+      showing a prompt for a regular user, the convention is to use a
+      dollar sign "$". You won't actually type the hash or dollar sign
+      in the commands listed, only what follows.
+
+The above command only works with GNU tar.  To unzip and unpack on
+Solaris, do the following (assuming you've got "gunzip" installed on 
+your system):
+
+    # cd /usr/local/src
+    # gunzip -c ../downloads/my-package.tar.gz | tar xvf -
+
+Alternately, you can always just "gunzip" the "tar.gz" file into just
+a plain tar file, then untar that.  It takes two steps instead of one,
+but it works just as well.
+
+After that, cd into the directory created by the package and follow the
+directions for installing the software.  Typically, it will involve the 
+basic triumvirate of commands:
+
+    # ./configure
+    # make
+    # make install
+
+APPENDIX 3. STARTING APACHE ET AL. ON BOOT
+
+Should your system ever go down for any reason (e.g., crash or
+reboot), you'll probably want all your services to come back up when
+the machine boots.  UNIX-type systems can vary quite a bit in how
+you determine what comes up at boot and in what order, but on
+typical GNU/Linux systems, you can simply place start scripts in a
+directory like "/etc/rc.d/init.d" and then create symbolic links
+into the "rcX.d" directory where the "X" represents your default
+runlevel (usually 2 or 3 for a server).  Here's how you could start
+Apache at boot on a RedHat system with a default runlevel of "3":
+
+    $ su -
+    # cd /etc/rc.d/init.d
+    # ln -s /usr/local/apache/bin/apachectl ./httpd
+    # cd /etc/rc.d/rc3.d/
+    # ln -s ../init.d/httpd ./S99httpd
+    # ln -s ../init.d/httpd ./K99httpd
+
+The "SXX" and "KXX" prefix are conventions used to indicate "start"
+and "kill" scripts.  The number that occurs after the "S" or "K"
+indicates the relative order in which the script.  All "S" scripts are
+passed a command of "start" when the system is booting and are
+processed in alphabetical order, so "S10abc" is started before
+"S10def" which is processed before "S11ghi," etc.  The "K" scripts are
+given an argument of "stop."  Generally, if you start a service in
+this manner, you should cleanly shut it down with a kill script
+rather than just letting the process die with the final kill signals
+the operating system sends out just before shutdown.
+
+MySQL has its own scripts to make sure it starts up on boot.  You
+should follow the directions appropriate for your system.
+
+APPENDIX 4. CVS ACCESS
+
+If you'd like to install and/or hack on the very latest version of
+CMap, then you'll want to checkout the "cmap" project from the
+anonymous CVS repository at SourceForge.  See the project homepage for
+instructions:
+
+    http://gmod.sourceforge.net/cmap
+
+AUTHOR:     Ken Y. Clark <kclark@cshl.org>
 
 __END__
