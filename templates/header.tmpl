@@ -93,7 +93,7 @@
 
 [% body = page.start_body OR '<body>' %]
 [%- IF body_addendum;
-    body.replace('^<body ', "<body $body_addendum ");
+    body.replace('^<body', "<body $body_addendum ");
 ELSE;
     body;
 END -%]
