@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::FeatureSearch;
 
-# $Id: FeatureSearch.pm,v 1.11 2003-07-08 15:25:47 kycl4rk Exp $
+# $Id: FeatureSearch.pm,v 1.12 2003-07-15 03:11:46 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES );
-$VERSION = (qw$Revision: 1.11 $)[-1];
+$VERSION = (qw$Revision: 1.12 $)[-1];
 
 use Apache::Constants;
 
@@ -30,8 +30,8 @@ sub handler {
     my $order_by          = $apr->param('order_by')           || '';
     my $page_no           = $apr->param('page_no')            ||  1;
     my $search_field      = $apr->param('search_field')       || '';
-    my @species_aids      = ( $apr->param('species_aid')      || () );
-    my @feature_type_aids = ( $apr->param('feature_type_aid') || () );
+    my @species_aids      = ( $apr->param('species_aid')      );
+    my @feature_type_aids = ( $apr->param('feature_type_aid') );
 
     $self->data_source( $apr->param('data_source') );
 
