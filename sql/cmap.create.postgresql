@@ -1,6 +1,6 @@
 --
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Mon Mar 24 13:00:27 2003
+-- Created on Wed Mar 26 09:49:01 2003
 --
 
 --
@@ -146,6 +146,7 @@ CREATE TABLE "cmap_map" (
   "accession_id" character varying(20) DEFAULT '' NOT NULL,
   "map_set_id" integer DEFAULT '0' NOT NULL,
   "map_name" character varying(32) DEFAULT '' NOT NULL,
+  "display_order" integer DEFAULT '1' NOT NULL,
   "linkage_group" character varying(10) DEFAULT NULL,
   "start_position" double precision DEFAULT NULL,
   "stop_position" double precision DEFAULT NULL,

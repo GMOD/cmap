@@ -141,6 +141,7 @@ CREATE TABLE cmap_map (
   accession_id varchar(20) NOT NULL default '',
   map_set_id int(11) NOT NULL default '0',
   map_name varchar(32) NOT NULL default '',
+  display_order int(11) NOT NULL default '1',
   linkage_group varchar(10) default NULL,
   start_position double(11,2) default NULL,
   stop_position double(11,2) default NULL,

@@ -1,6 +1,6 @@
 --
 -- Created by SQL::Translator::Producer::Oracle
--- Created on Mon Mar 24 12:58:39 2003
+-- Created on Wed Mar 26 09:49:08 2003
 --
 
 -- We assume that default NLS_DATE_FORMAT has been changed
@@ -150,6 +150,7 @@ CREATE TABLE cmap_map (
   accession_id varchar2(20) DEFAULT '' CONSTRAINT nn_accession_id06 NOT NULL,
   map_set_id number(11) DEFAULT '0' CONSTRAINT nn_map_set_id NOT NULL,
   map_name varchar2(32) DEFAULT '' CONSTRAINT nn_map_name NOT NULL,
+  display_order number(11) DEFAULT '1' CONSTRAINT nn_display_order NOT NULL,
   linkage_group varchar2(10) DEFAULT NULL,
   start_position number(11,2) DEFAULT NULL,
   stop_position number(11,2) DEFAULT NULL,
@@ -170,7 +171,7 @@ CREATE TABLE cmap_map_set (
   species_id number(11) DEFAULT '0' CONSTRAINT nn_species_id NOT NULL,
   published_on date DEFAULT NULL,
   can_be_reference_map number(4) DEFAULT '1' CONSTRAINT nn_can_be_reference_map NOT NULL,
-  display_order number(11) DEFAULT '1' CONSTRAINT nn_display_order NOT NULL,
+  display_order number(11) DEFAULT '1' CONSTRAINT nn_display_order02 NOT NULL,
   is_enabled number(4) DEFAULT '1' CONSTRAINT nn_is_enabled02 NOT NULL,
   remarks long,
   shape varchar2(12) DEFAULT NULL,
@@ -192,7 +193,7 @@ CREATE TABLE cmap_map_type (
   shape varchar2(12) DEFAULT NULL,
   color varchar2(20) DEFAULT NULL,
   width number(11) DEFAULT NULL,
-  display_order number(11) DEFAULT '1' CONSTRAINT nn_display_order02 NOT NULL,
+  display_order number(11) DEFAULT '1' CONSTRAINT nn_display_order03 NOT NULL,
   CONSTRAINT pk_cmap_map_type PRIMARY KEY (map_type_id),
   CONSTRAINT map_type_cmap_map_type UNIQUE (map_type)
 );
@@ -216,7 +217,7 @@ CREATE TABLE cmap_species (
   accession_id varchar2(20) DEFAULT '' CONSTRAINT nn_accession_id08 NOT NULL,
   common_name varchar2(64) DEFAULT '' CONSTRAINT nn_common_name NOT NULL,
   full_name varchar2(64) DEFAULT '' CONSTRAINT nn_full_name NOT NULL,
-  display_order number(11) DEFAULT '1' CONSTRAINT nn_display_order03 NOT NULL,
+  display_order number(11) DEFAULT '1' CONSTRAINT nn_display_order04 NOT NULL,
   ncbi_taxon_id number(11) DEFAULT NULL,
   CONSTRAINT pk_cmap_species PRIMARY KEY (species_id)
 );
