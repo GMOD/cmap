@@ -945,4 +945,4 @@ function selectAllOptions(select){
   [% INCLUDE help_quick_start.tmpl %]
 [% END %]
 
-[% INCLUDE footer.tmpl %]
+[% UNLESS no_footer; INCLUDE footer.tmpl; END %]
