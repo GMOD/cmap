@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::Index;
 
-# $Id: Index.pm,v 1.4 2003-02-20 16:50:07 kycl4rk Exp $
+# $Id: Index.pm,v 1.5 2003-07-09 22:03:31 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Apache::Constants;
 use Data::Dumper;
@@ -20,7 +20,7 @@ sub handler {
     #
     my ( $self, $apr )   = @_;
     my $html;
-    my $t = $self->template;
+    my $t = $self->template or return;
     $t->process( 
         TEMPLATE, 
         { 
