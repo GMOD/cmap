@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.18 2003-02-14 00:12:04 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.19 2003-02-19 01:03:23 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.18 $)[-1];
+$VERSION = (qw$Revision: 1.19 $)[-1];
 
 #
 # Turn off output buffering.
@@ -1113,13 +1113,15 @@ sub import_data {
         "  Species   : $species",
         "  Map Type  : $map_type",
         "  Map Study : $map_set_name",
-        "  Overwrite : " . $overwrite ? "Yes" : "No",
+        "  Overwrite : " . ( $overwrite ? "Yes" : "No" ),
         "[Y/n] "
     );
     chomp( my $answer = <STDIN> );
     return if $answer =~ /^[Nn]/;
 
-    my $importer = Bio::GMOD::CMap::Admin::Import->new;
+    my $importer = Bio::GMOD::CMap::Admin::Import->new(
+        data_source => $self->data_source,
+    );
     $importer->import(
         map_set_id => $map_set_id,
         fh         => $fh,
@@ -1195,7 +1197,10 @@ sub make_name_correspondences {
     chomp( my $answer = <STDIN> );
     return if $answer =~ m/^[Nn]/;
 
-    my $corr_maker = Bio::GMOD::CMap::Admin::MakeCorrespondences->new(db=>$db);
+    my $corr_maker = Bio::GMOD::CMap::Admin::MakeCorrespondences->new(
+        db          => $db,
+        data_source => $self->data_source,
+    );
     $corr_maker->make_name_correspondences(
         evidence_type_id => $evidence_type_id,
         map_set_ids      => \@map_set_ids,
@@ -1213,7 +1218,10 @@ sub reload_correspondence_matrix {
     chomp( my $answer = <STDIN> );
     return if $answer =~ m/^[Nn]/;
 
-    my $admin = Bio::GMOD::CMap::Admin->new( db => $self->db );
+    my $admin = Bio::GMOD::CMap::Admin->new( 
+        db          => $self->db,
+        data_source => $self->data_source,
+    );
     $admin->reload_correspondence_matrix or do { 
         print "Error: ", $admin->error, "\n"; return; 
     };
