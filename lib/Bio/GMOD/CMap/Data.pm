@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.98.2.17 2004-06-18 22:32:07 kycl4rk Exp $
+# $Id: Data.pm,v 1.98.2.18 2004-06-18 22:35:57 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.98.2.17 $)[-1];
+$VERSION = (qw$Revision: 1.98.2.18 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -2901,6 +2901,15 @@ Return data for a list of evidence type acc. IDs.
 
     my $evidence_types = $db->selectall_arrayref( $sql, { Columns => {} } );
 
+    my $all_evidence_types = $db->selectall_arrayref( 
+        q[
+            select   accession_id as evidence_type_aid, evidence_type
+            from     cmap_evidence_type
+            order by evidence_type
+        ],
+        { Columns => {} } 
+    );
+
     my $attributes = $db->selectall_arrayref(
         q[
             select   object_id, display_order, is_public, 
@@ -2930,7 +2939,10 @@ Return data for a list of evidence type acc. IDs.
         objects    => $evidence_types,
     );
 
-    return $evidence_types;
+    return {
+        all_evidence_types => $all_evidence_types,
+        evidence_types     => $evidence_types,
+    }
 }
 
 # ----------------------------------------------------
