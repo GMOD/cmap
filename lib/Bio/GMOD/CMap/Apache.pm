@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache;
 # vim: set ft=perl:
 
-# $Id: Apache.pm,v 1.17 2004-03-18 22:00:59 mwz444 Exp $
+# $Id: Apache.pm,v 1.18 2004-03-30 02:24:17 kycl4rk Exp $
 
 =head1 NAME
 
@@ -46,7 +46,7 @@ this class will catch errors and display them correctly.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.17 $)[-1];
+$VERSION = (qw$Revision: 1.18 $)[-1];
 
 use CGI;
 use Data::Dumper;
@@ -111,7 +111,7 @@ Initializes the object.
 
     my ( $self, $config ) = @_;
     $self->params( $config, 'apr' );
-    $self->{'config'}=Bio::GMOD::CMap::Config->new() unless $self->{'config'};
+    $self->{'config'} = Bio::GMOD::CMap::Config->new() unless $self->{'config'};
     if ( my $apr = $self->apr ) {
         $self->data_source( $apr->param('data_source') );
     }
