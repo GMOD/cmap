@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.80 2004-12-07 17:50:08 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.81 2004-12-14 19:51:12 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.80 $)[-1];
+$VERSION = (qw$Revision: 1.81 $)[-1];
 
 #
 # Get command-line options
@@ -16,15 +16,15 @@ $VERSION = (qw$Revision: 1.80 $)[-1];
 my ( $show_help, $show_version, $no_log, $datasource, $Quiet );
 
 GetOptions(
-    'h|help'         => \$show_help,    # Show help and exit
-    'v|version'      => \$show_version, # Show version and exit
-    'no-log'         => \$no_log,       # Don't keep a log
-    'd|datasource=s' => \$datasource,   # Default data source
-    'q|quiet'        => \$Quiet,        # Only print necessities
+    'h|help'         => \$show_help,       # Show help and exit
+    'v|version'      => \$show_version,    # Show version and exit
+    'no-log'         => \$no_log,          # Don't keep a log
+    'd|datasource=s' => \$datasource,      # Default data source
+    'q|quiet'        => \$Quiet,           # Only print necessities
 ) or pod2usage(2);
 
 pod2usage(0) if $show_help;
-if ( $show_version ) {
+if ($show_version) {
     print "$0 Version: $VERSION (CMap Version $Bio::GMOD::CMap::VERSION)\n";
     exit(0);
 }
@@ -32,14 +32,14 @@ if ( $show_version ) {
 #
 # Create a CLI object.
 #
-my $cli = Bio::GMOD::CMap::CLI::Admin->new( 
-    user       => $>,  # effective UID
+my $cli = Bio::GMOD::CMap::CLI::Admin->new(
+    user       => $>,            # effective UID
     no_log     => $no_log,
     datasource => $datasource,
     file       => shift,
 );
 
-while ( 1 ) { 
+while (1) {
     my $action = $cli->show_greeting;
     $cli->$action();
 }
@@ -70,8 +70,8 @@ use base 'Bio::GMOD::CMap';
 
 use constant STR => 'string';
 use constant NUM => 'number';
-use constant OFS => "\t";     # ouput field separator
-use constant ORS => "\n";     # ouput record separator
+use constant OFS => "\t";       # ouput field separator
+use constant ORS => "\n";       # ouput record separator
 
 #
 # Turn off output buffering.
@@ -82,8 +82,8 @@ $| = 1;
 sub init {
     my ( $self, $config ) = @_;
     $self->params( $config, qw[ file user no_log ] );
-    unless ($self->{'config'}){
-        $self->{'config'}=Bio::GMOD::CMap::Config->new();
+    unless ( $self->{'config'} ) {
+        $self->{'config'} = Bio::GMOD::CMap::Config->new();
     }
 
     if ( $config->{'datasource'} ) {
@@ -98,7 +98,7 @@ sub admin {
     my $db   = $self->db or die $self->error;
 
     unless ( $self->{'admin'} ) {
-        $self->{'admin'} = Bio::GMOD::CMap::Admin->new( 
+        $self->{'admin'} = Bio::GMOD::CMap::Admin->new(
             db          => $db,
             data_source => $self->data_source,
         );
@@ -108,14 +108,14 @@ sub admin {
 }
 
 # ----------------------------------------------------
-sub file { 
+sub file {
     my $self = shift;
     $self->{'file'} = shift if @_;
-    return $self->{'file'} || '' 
+    return $self->{'file'} || '';
 }
 
 # ----------------------------------------------------
-sub no_log { 
+sub no_log {
     my $self = shift;
     my $arg  = shift;
     $self->{'no_log'} = $arg if defined $arg;
@@ -127,22 +127,25 @@ sub no_log {
 }
 
 # ----------------------------------------------------
-sub user { 
+sub user {
     my $self = shift;
-    return $self->{'user'} || '' 
+    return $self->{'user'} || '';
 }
 
 # ----------------------------------------------------
 sub log_filename {
     my $self = shift;
     unless ( $self->{'log_filename'} ) {
-        my ( $name, $passwd, $uid, $gid, $quota, $comment, $gcos, 
-            $home_dir, $shell ) = getpwuid( $self->user );
+        my (
+            $name,    $passwd, $uid,      $gid, $quota,
+            $comment, $gcos,   $home_dir, $shell
+          )
+          = getpwuid( $self->user );
 
         my $filename = 'cmap_admin_log';
         my $i        = 0;
         my $path;
-        while ( 1 ) {
+        while (1) {
             $path = catfile( $home_dir, $filename . '.' . $i );
             last unless -e $path;
             $i++;
@@ -164,9 +167,8 @@ sub log_fh {
     else {
         unless ( $self->{'log_fh'} ) {
             my $path = $self->log_filename or return;
-            my $fh = IO::Tee->new( \*STDOUT, ">$path" ) or return $self->error(
-                "Unable to open '$path': $!"
-            );
+            my $fh = IO::Tee->new( \*STDOUT, ">$path" )
+              or return $self->error( "Unable to open '$path': $!" );
             print $fh "Log file created '", scalar localtime, ".'\n";
             $self->{'log_fh'} = $fh;
         }
@@ -187,12 +189,12 @@ sub term {
 
 # ----------------------------------------------------
 sub quit {
-    my $self   = shift;
+    my $self = shift;
 
     if ( defined $self->{'log_fh'} ) {
         my $log_fh = $self->log_fh;
         print $log_fh "Log file closed '", scalar localtime, ".'\n";
-        print "Log file:  ", $self->log_filename, "\nNamaste.\n"; 
+        print "Log file:  ", $self->log_filename, "\nNamaste.\n";
     }
 
     exit(0);
@@ -205,55 +207,55 @@ sub show_greeting {
 
     print "\nCurrent data source: ", $self->data_source, "\n";
 
-    my $action  =  $self->show_menu(
-        title   => join("\n", $separator, '  --= Main Menu =--  ', $separator),
+    my $action = $self->show_menu(
+        title => join( "\n", $separator, '  --= Main Menu =--  ', $separator ),
         prompt  => 'What would you like to do?',
         display => 'display',
         return  => 'action',
         data    => [
-            { 
-                action  => 'change_data_source', 
+            {
+                action  => 'change_data_source',
                 display => 'Change current data source',
             },
-            { 
-                action  => 'create_map_set', 
-                display => 'Create new map set' 
+            {
+                action  => 'create_map_set',
+                display => 'Create new map set'
             },
-            { 
-                action  => 'import_data', 
+            {
+                action  => 'import_data',
                 display => 'Import data',
             },
-            { 
-                action  => 'export_data', 
-                display => 'Export data' 
+            {
+                action  => 'export_data',
+                display => 'Export data'
             },
-            { 
-                action  => 'delete_data', 
+            {
+                action  => 'delete_data',
                 display => 'Delete data',
             },
-            { 
-                action  => 'make_name_correspondences', 
-                display => 'Make name-based correspondences' 
+            {
+                action  => 'make_name_correspondences',
+                display => 'Make name-based correspondences'
             },
-            { 
-                action  => 'reload_correspondence_matrix', 
-                display => 'Reload correspondence matrix' 
+            {
+                action  => 'reload_correspondence_matrix',
+                display => 'Reload correspondence matrix'
             },
-            { 
-                action  => 'purge_query_cache_menu',   
-                display => 'Purge the cache to view new data' 
+            {
+                action  => 'purge_query_cache_menu',
+                display => 'Purge the cache to view new data'
             },
-            { 
-                action  => 'delete_duplicate_correspondences',   
-                display => 'Delete duplicate correspondences' 
+            {
+                action  => 'delete_duplicate_correspondences',
+                display => 'Delete duplicate correspondences'
             },
-            { 
-                action  => 'manage_links',   
-                display => 'Manage imported links' 
+            {
+                action  => 'manage_links',
+                display => 'Manage imported links'
             },
-            { 
-                action  => 'quit',   
-                display => 'Quit' 
+            {
+                action  => 'quit',
+                display => 'Quit'
             },
         ],
     );
@@ -264,44 +266,46 @@ sub show_greeting {
 # ----------------------------------------------------
 sub change_data_source {
     my $self = shift;
-    
+
     my $data_source = $self->show_menu(
         title   => 'Available Data Sources',
         prompt  => 'Which data source?',
         display => 'display',
         return  => 'value',
-        data     => [
+        data    => [
             map { { value => $_->{'name'}, display => $_->{'name'} } }
-            @{ $self->data_sources }
+              @{ $self->data_sources }
         ],
     );
 
-    $self->data_source( $data_source ) or warn $self->error, "\n";
+    $self->data_source($data_source) or warn $self->error, "\n";
 }
 
 # ----------------------------------------------------
 sub create_map_set {
     my $self = shift;
-    my $db   = $self->db or die $self->error;
+    my $db = $self->db or die $self->error;
+    print "Creating new map set.\n";
 
-    my ($map_type_aid,$map_type) = $self->show_menu(
+    my ( $map_type_aid, $map_type ) = $self->show_menu(
         title   => 'Available Map Types',
         prompt  => 'What type of map?',
         display => 'map_type',
         return  => 'map_type_aid,map_type',
-	data    => $self->fake_selectall_arrayref(
-		$self->map_type_data(),
-		'map_type_accession as map_type_aid','map_type')
+        data    => $self->fake_selectall_arrayref(
+            $self->map_type_data(), 'map_type_accession as map_type_aid',
+            'map_type'
+        )
     );
-    die "No map types! Please use the config file to add some.\n" 
-        unless $map_type_aid;
+    die "No map types! Please use the config file to add some.\n"
+      unless $map_type_aid;
 
     my ( $species_id, $common_name ) = $self->show_menu(
         title   => 'Available Species',
         prompt  => 'What species?',
         display => 'common_name',
         return  => 'species_id,common_name',
-        data     => $db->selectall_arrayref(
+        data    => $db->selectall_arrayref(
             q[
                 select   s.species_id, s.common_name
                 from     cmap_species s
@@ -310,61 +314,63 @@ sub create_map_set {
             { Columns => {} },
         ),
     );
-    die "No species!  Please use the web admin tool to create.\n" 
-        unless $species_id;
+    die "No species!  Please use the web admin tool to create.\n"
+      unless $species_id;
 
     print "Map Study Name (long): ";
-    chomp( my $map_set_name = <STDIN> || 'New map set' ); 
+    chomp( my $map_set_name = <STDIN> || 'New map set' );
 
     print "Short Name [$map_set_name]: ";
     chomp( my $short_name = <STDIN> );
-    $short_name ||= $map_set_name; 
+    $short_name ||= $map_set_name;
 
     print "Accession ID (optional): ";
     chomp( my $map_set_aid = <STDIN> );
-    
-    my $map_color=$self->map_type_data($map_type_aid,'color') || 
-        $self->config_data("map_color");
-    
-    $map_color  = $self->show_question(
+
+    my $map_color = $self->map_type_data( $map_type_aid, 'color' )
+      || $self->config_data("map_color");
+
+    $map_color = $self->show_question(
         question   => 'What color should this map set be?',
-        default  => $map_color,
+        default    => $map_color,
         valid_hash => COLORS,
     );
-    
-    my $map_shape=$self->map_type_data($map_type_aid,'shape') || 
-        'box';
 
-    $map_shape  = $self->show_question(
+    my $map_shape = $self->map_type_data( $map_type_aid, 'shape' )
+      || 'box';
+
+    $map_shape = $self->show_question(
         question   => 'What shape should this map set be?',
-        default  => $map_shape,
+        default    => $map_shape,
         valid_hash => VALID->{'map_shapes'},
     );
 
-    my $map_width=$self->map_type_data($map_type_aid,'width') || 
-        $self->config_data("map_width");
+    my $map_width = $self->map_type_data( $map_type_aid, 'width' )
+      || $self->config_data("map_width");
 
-    $map_width  = $self->show_question(
-        question   => 'What width should this map set be?',
+    $map_width = $self->show_question(
+        question => 'What width should this map set be?',
         default  => $map_width,
     );
 
-    my $map_units=$self->map_type_data($map_type_aid,'map_units');
-    my $is_relational_map=$self->map_type_data($map_type_aid,'is_relational_map');
+    my $map_units = $self->map_type_data( $map_type_aid, 'map_units' );
+    my $is_relational_map =
+      $self->map_type_data( $map_type_aid, 'is_relational_map' );
 
     my $map_set_id = next_number(
-        db           => $db,
-        table_name   => 'cmap_map_set',
-        id_field     => 'map_set_id',
-    ) or die 'No map set id';
+        db         => $db,
+        table_name => 'cmap_map_set',
+        id_field   => 'map_set_id',
+      )
+      or die 'No map set id';
     $map_set_aid ||= $map_set_id;
 
-    print "OK to create set '$map_set_name' in data source '", 
-        $self->data_source, "'?\n[Y/n] ";
+    print "OK to create set '$map_set_name' in data source '",
+      $self->data_source, "'?\n[Y/n] ";
     chomp( my $answer = <STDIN> );
     return if $answer =~ m/^[Nn]/;
 
-    $is_relational_map||=0; #make sure this is set to something
+    $is_relational_map ||= 0;    #make sure this is set to something
     $db->do(
         q[
             insert
@@ -377,9 +383,10 @@ sub create_map_set {
         ],
         {},
         (
-            $map_set_id, $map_set_aid, $map_set_name, $short_name,
-            $species_id, $map_type_aid, $map_units, $is_relational_map,
-	    $map_color, $map_shape, $map_width
+            $map_set_id, $map_set_aid,       $map_set_name,
+            $short_name, $species_id,        $map_type_aid,
+            $map_units,  $is_relational_map, $map_color,
+            $map_shape,  $map_width
         )
     );
 
@@ -391,38 +398,40 @@ sub create_map_set {
 
 # ----------------------------------------------------
 sub delete_data {
-#
-# Deletes data.
-#
+
+    #
+    # Deletes data.
+    #
     my $self = shift;
     my $db   = $self->db or die $self->error;
-    
-    my $action  = $self->show_menu(
+
+    my $action = $self->show_menu(
         title   => 'Delete Options',
         prompt  => 'What do you want to delete?',
         display => 'display',
         return  => 'action',
         data    => [
-            { 
+            {
                 action  => 'delete_map_set',
                 display => 'Delete a map set (or maps within it)',
             },
-            { 
+            {
                 action  => 'delete_correspondences',
                 display => 'Feature correspondences',
             },
         ]
     );
-    
-    $self->$action( $db );
+
+    $self->$action($db);
     $self->purge_query_cache(1);
 }
 
 # ----------------------------------------------------
 sub delete_correspondences {
-#
-# Deletes a map set.
-#
+
+    #
+    # Deletes a map set.
+    #
     my $self = shift;
     my $db   = $self->db or die $self->error;
 
@@ -430,16 +439,17 @@ sub delete_correspondences {
     # Get the map set.
     #
     my @map_set_ids = $self->show_menu(
-        title       => 'Select Map Set(s)',
-        prompt      => 'Select Map Set(s)',
-        display     => 'common_name,short_name',
-        return      => 'map_set_id',
-        allow_null  => 0,
-        allow_mult  => 1,
-        allow_all   => 1,
-        data        => $db->selectall_arrayref(
+        title      => 'Select Map Set(s)',
+        prompt     => 'Select Map Set(s)',
+        display    => 'common_name,short_name,accession_id',
+        return     => 'map_set_id',
+        allow_null => 0,
+        allow_mult => 1,
+        allow_all  => 1,
+        data       => $db->selectall_arrayref(
             q[
                 select   ms.map_set_id,
+                         ms.accession_id,
                          ms.short_name,
                          s.common_name
                 from     cmap_map_set ms,
@@ -452,65 +462,67 @@ sub delete_correspondences {
     );
 
     my %map_set_names = @map_set_ids
-        ? 
-            map { 
-                $_->{'map_set_id'},
-                join( '-', $_->{'species_name'}, $_->{'map_set_name'} ),  
-            } @{
-                $db->selectall_arrayref(
-                    q[
+      ? map {
+        $_->{'map_set_id'},
+          join( '-', $_->{'species_name'}, $_->{'map_set_name'} ),
+      } @{
+        $db->selectall_arrayref(
+            q[
                         select   ms.map_set_id, 
                                  ms.short_name as map_set_name,
                                  s.common_name as species_name
                         from     cmap_map_set ms,
                                  cmap_species s
-                        where    ms.map_set_id in (].join(',', @map_set_ids).q[)
+                        where    ms.map_set_id in (]
+              . join( ',', @map_set_ids ) . q[)
                         and      ms.species_id=s.species_id
                         order by common_name, short_name
                     ],
-                    { Columns => {} }
-                )
-            }
-        : ()
-    ;
+            { Columns => {} }
+        )
+      }
+      : ();
 
     my @evidence_types = $self->show_menu(
-        title       => 'Select Evidence Type (Optional)',
-        prompt      => 'Select evidence types',
-        display     => 'evidence_type',
-        return      => 'evidence_type_aid,evidence_type',
-        allow_null  => 0,
-        allow_mult  => 1,
-        allow_all   => 1,
-	data        =>  $self->fake_selectall_arrayref(
-			     $self->evidence_type_data(),
-       		             'evidence_type_accession as evidence_type_aid','evidence_type')
+        title      => 'Select Evidence Type (Optional)',
+        prompt     => 'Select evidence types',
+        display    => 'evidence_type',
+        return     => 'evidence_type_aid,evidence_type',
+        allow_null => 0,
+        allow_mult => 1,
+        allow_all  => 1,
+        data       => $self->fake_selectall_arrayref(
+            $self->evidence_type_data(),
+            'evidence_type_accession as evidence_type_aid',
+            'evidence_type'
+        )
     );
 
     #
     # Confirm decisions.
     #
-    print join("\n",
+    print join( "\n",
         'OK to delete feature correspondences?',
-        '  Data source          : ' . $self->data_source, 
+        '  Data source          : ' . $self->data_source,
     );
-    if ( @map_set_ids ) {
-        print "\n  Map Set(s)           :\n", 
-            join( "\n", map { "    $_" } values %map_set_names );
+    if (@map_set_ids) {
+        print "\n  Map Set(s)           :\n",
+          join( "\n", map { "    $_" } values %map_set_names );
     }
-    if ( @evidence_types ) {
-        print "\n  Evidence Types       :\n", 
-            join( "\n", map { "    $_->[1]" } @evidence_types );
+    if (@evidence_types) {
+        print "\n  Evidence Types       :\n",
+          join( "\n", map { "    $_->[1]" } @evidence_types );
     }
     print "\n[Y/n] ";
     chomp( my $answer = <STDIN> );
     return if $answer =~ /^[Nn]/;
 
-    my $evidence_types = "'".join( "','", map {$_->[0]} @evidence_types )."'";
-    my %evidence_lookup   = map { $_->[0], 1 } @evidence_types;
-    my $admin             = $self->admin ;
-    my $log_fh            = $self->log_fh;
-    for my $map_set_id ( @map_set_ids ) {
+    my $evidence_types =
+      "'" . join( "','", map { $_->[0] } @evidence_types ) . "'";
+    my %evidence_lookup = map { $_->[0], 1 } @evidence_types;
+    my $admin           = $self->admin;
+    my $log_fh          = $self->log_fh;
+    for my $map_set_id (@map_set_ids) {
         my $fc_ids = $db->selectall_hashref(
             qq[
                 select cl.feature_correspondence_id
@@ -528,15 +540,15 @@ sub delete_correspondences {
             ],
             'feature_correspondence_id',
             {},
-            ( $map_set_id )
+            ($map_set_id)
         );
 
-        print $log_fh "Deleting correspondences for ", 
-            $map_set_names{ $map_set_id }, "\n"; 
+        print $log_fh "Deleting correspondences for ",
+          $map_set_names{$map_set_id}, "\n";
 
         #
-        # If there is more evidence supporting the correspondence, 
-        # then just remove the evidence, otherwise remove the 
+        # If there is more evidence supporting the correspondence,
+        # then just remove the evidence, otherwise remove the
         # correspondence (which will remove all the evidence).
         #
         for my $fc_id ( keys %$fc_ids ) {
@@ -548,23 +560,22 @@ sub delete_correspondences {
                     where  ce.feature_correspondence_id=?
                 ],
                 { Columns => {} },
-                ( $fc_id )
+                ($fc_id)
             );
 
             my $no_evidence_deleted = 0;
-            for my $evidence ( @$all_evidence ) {
-                next unless $evidence_lookup{ $evidence->{'evidence_type_aid'} };
+            for my $evidence (@$all_evidence) {
+                next
+                  unless $evidence_lookup{ $evidence->{'evidence_type_aid'} };
                 $admin->correspondence_evidence_delete(
-                    correspondence_evidence_id => 
-                        $evidence->{'correspondence_evidence_id'}
-                );
+                    correspondence_evidence_id =>
+                      $evidence->{'correspondence_evidence_id'} );
                 $no_evidence_deleted++;
             }
 
             if ( $no_evidence_deleted == scalar @$all_evidence ) {
-                $admin->feature_correspondence_delete( 
-                    feature_correspondence_id => $fc_id
-                );
+                $admin->feature_correspondence_delete(
+                    feature_correspondence_id => $fc_id );
             }
         }
     }
@@ -573,75 +584,24 @@ sub delete_correspondences {
 
 # ----------------------------------------------------
 sub delete_map_set {
-#
-# Deletes a map set.
-#
+
+    #
+    # Deletes a map set.
+    #
     my $self = shift;
     my $db   = $self->db or die $self->error;
 
-    #
-    # Get the species.
-    #
-    my ( $species_id, $common_name ) = $self->show_menu(
-        title   => 'Available Species',
-        prompt  => 'Please select a species',
-        display => 'common_name',
-        return  => 'species_id,common_name',
-        data     => $db->selectall_arrayref(
-            q[
-                select   distinct s.species_id, s.common_name
-                from     cmap_species s,
-                         cmap_map_set ms
-                where    ms.species_id=s.species_id
-                order by common_name
-            ],
-            { Columns => {} },
-        ),
-    );
-
-    #
-    # Restrict by map type.
-    #
-    my ($map_type_aid,$map_type)  = $self->show_menu(
-        title   => "Available Map Types (for $common_name)",
-        prompt  => 'What type of map?',
-        display => 'map_type',
-        return  => 'map_type_aid,map_type',
-	data    => $self->fake_selectall_arrayref(
-		$self->map_type_data(),
-		'map_type_accession as map_type_aid','map_type'),
-    );
-
-    #
-    # Get the map set.
-    #
-    my ( $map_set_id, $map_set_name ) = $self->show_menu(
-        title       => "Available Map Sets (for $common_name, $map_type)",
-        prompt      => 'Please select a map set',
-        display     => 'map_set_name',
-        return      => 'map_set_id,map_set_name',
-        allow_null  => 0,
-        allow_mult  => 0,
-        data        => $db->selectall_arrayref(
-            q[
-                select   ms.map_set_id, 
-                         ms.short_name as map_set_name
-                from     cmap_map_set ms
-                where    ms.species_id=?
-                and      ms.map_type_accession=?
-                order by map_set_name
-            ],
-            { Columns => {} },
-            ( $species_id, $map_type_aid )
-        ),
-    );
+    my $map_sets = $self->get_map_sets( allow_mult => 0, allow_null => 0 );
+    return unless @{ $map_sets || [] };
+    my $map_set    = $map_sets->[0];
+    my $map_set_id = $map_set->{'map_set_id'};
 
     my $delete_what = $self->show_menu(
         title   => 'Delete',
         prompt  => 'How much to delete?',
         display => 'display',
         return  => 'value',
-        data     => [
+        data    => [
             { value => 'entire', display => 'Delete entire map set' },
             { value => 'some',   display => 'Delete just some maps in it' }
         ],
@@ -649,14 +609,14 @@ sub delete_map_set {
 
     my @map_ids;
     if ( $delete_what eq 'some' ) {
-        @map_ids     =  $self->show_menu(
-            title       => 'Restrict by Map (optional)',
-            prompt      => 'Select one or more maps',
-            display     => 'map_name',
-            return      => 'map_id',
-            allow_null  => 1,
-            allow_mult  => 1,
-            data        => $db->selectall_arrayref(
+        @map_ids = $self->show_menu(
+            title      => 'Restrict by Map (optional)',
+            prompt     => 'Select one or more maps',
+            display    => 'map_name',
+            return     => 'map_id',
+            allow_null => 1,
+            allow_mult => 1,
+            data       => $db->selectall_arrayref(
                 q[
                     select   map.map_id, 
                              map.map_name
@@ -665,30 +625,32 @@ sub delete_map_set {
                     order by map_name
                 ],
                 { Columns => {} },
-                ( $map_set_id )
+                ($map_set_id)
             ),
         );
     }
 
     my $map_names;
-    if ( @map_ids ) {
+    if (@map_ids) {
         $map_names = $db->selectcol_arrayref(
             q[
                 select map.map_name
                 from   cmap_map map
-                where  map.map_id in (].
-                join( ', ', @map_ids ).q[)
+                where  map.map_id in (] . join( ', ', @map_ids ) . q[)
             ]
         );
     }
 
-    print join("\n",
-        map { $_ || () }
-        'OK to delete?',
-        '  Data source : ' . $self->data_source, 
-        '  Map Set     : ' . $common_name.'-'.$map_set_name,
-        ( @{ $map_names || [] }
-            ? '  Maps        : ' . join(', ', @$map_names)
+    print join(
+        "\n",
+        map { $_ || () } 'OK to delete?',
+        '  Data source : ' . $self->data_source,
+        '  Map Set     : '
+          . $map_set->{'species_name'} . '-'
+          . $map_set->{'map_set_name'},
+        (
+            @{ $map_names || [] }
+            ? '  Maps        : ' . join( ', ', @$map_names )
             : ''
         ),
         '[Y/n] ',
@@ -699,201 +661,94 @@ sub delete_map_set {
 
     my $admin  = $self->admin;
     my $log_fh = $self->log_fh;
-    if ( @map_ids ) {
-        for my $map_id ( @map_ids ) {
+    if (@map_ids) {
+        for my $map_id (@map_ids) {
             print $log_fh "Deleting map ID '$map_id.'\n";
             $admin->map_delete( map_id => $map_id )
-                or return $self->error( $admin->error );
+              or return $self->error( $admin->error );
         }
     }
     else {
-        print $log_fh "Deleting map set '$common_name-$map_set_name.'\n";
+        print $log_fh "Deleting map set "
+          . $map_set->{'species_name'} . '-'
+          . $map_set->{'map_set_name'} . "'\n";
         $admin->map_set_delete( map_set_id => $map_set_id )
-            or return $self->error( $admin->error );
+          or return $self->error( $admin->error );
     }
     $self->purge_query_cache(1);
 }
 
 # ----------------------------------------------------
 sub export_data {
-#
-# Exports data.
-#
+
+    #
+    # Exports data.
+    #
     my $self = shift;
     my $db   = $self->db or die $self->error;
-    
-    my $action  = $self->show_menu(
+
+    my $action = $self->show_menu(
         title   => 'Data Export Options',
         prompt  => 'What do you want to export?',
         display => 'display',
         return  => 'action',
         data    => [
-            { 
+            {
                 action  => 'export_as_text',
                 display => 'Data in tab-delimited CMap format',
             },
-            { 
+            {
                 action  => 'export_as_sql',
                 display => 'Data as SQL INSERT statements',
             },
-            { 
+            {
                 action  => 'export_objects',
                 display => 'Database objects [experimental]',
             },
         ]
     );
-    
+
     $self->$action();
 }
 
 # ----------------------------------------------------
 sub export_as_text {
-#
-# Exports data in tab-delimited import format.
-#
+
+    #
+    # Exports data in tab-delimited import format.
+    #
     my $self   = shift;
     my $db     = $self->db or die $self->error;
     my $log_fh = $self->log_fh;
 
-    my @col_names = qw( 
-        map_accession_id
-        map_name
-        map_start
-        map_stop
-        feature_accession_id
-        feature_name
-        feature_aliases
-        feature_start
-        feature_stop
-        feature_type_accession
-        feature_dbxref_name
-        feature_dbxref_url
-        is_landmark
-        feature_attributes
+    my @col_names = qw(
+      map_accession_id
+      map_name
+      map_start
+      map_stop
+      feature_accession_id
+      feature_name
+      feature_aliases
+      feature_start
+      feature_stop
+      feature_type_accession
+      feature_dbxref_name
+      feature_dbxref_url
+      is_landmark
+      feature_attributes
     );
 
-    my $map_types = $self->fake_selectall_arrayref(
-		$self->map_type_data(),
-	       'map_type_accession as map_type_aid','map_type');
-
-    die "No map types! Please use the config file to create.\n" 
-        unless @$map_types;
-
-    my @map_types = $self->show_menu(
-        title        => 'Restrict by Map Types',
-        prompt       => 'Limit export by which map types (optional)?',
-        display      => 'map_type',
-        return       => 'map_type_aid,map_type',
-        allow_null   => 1,
-        allow_mult   => 1,
-        data         => $map_types,
-    );
-
-    my $species_sql = q[
-        select   distinct s.species_id, 
-                 s.common_name
-        from     cmap_species s,
-                 cmap_map_set ms
-        where    s.species_id=ms.species_id
-    ];
-    $species_sql .= "and ms.map_type_accession in ('".join("','", map{$_->[0]}@map_types)."') "
-        if @map_types;
-    $species_sql .= 'order by common_name';
-    my $species   = $db->selectall_arrayref( $species_sql, { Columns => {} } );
-    die "No species! Please use the web admin tool to create.\n" 
-        unless @$species;
-
-    my @species_ids = $self->show_menu(
-        title       => 'Restrict by Species',
-        prompt      => 'Limit export by which species (optional)?',
-        display     => 'common_name',
-        return      => 'species_id',
-        allow_null  => 1,
-        allow_mult  => 1,
-        data        => $species,
-    );
-
-    my $map_set_sql = q[
-        select   ms.map_set_id,
-                 ms.short_name,
-                 s.common_name,
-                 ms.map_type_accession as map_type_aid
-        from     cmap_map_set ms,
-                 cmap_species s
-        where    ms.species_id=s.species_id
-    ];
-    $map_set_sql .= 'and ms.species_id in ('.join(',', @species_ids).') '
-        if @species_ids;
-    $map_set_sql .= "and ms.map_type_accession in ('".join("','", map{$_->[0]}@map_types)."') "
-        if @map_types;
-    $map_set_sql .= 'order by short_name';
-    my $map_sets  = $db->selectall_arrayref( $map_set_sql, { Columns => {} } );
-    foreach my $row ( @{$map_sets} ) {
-        $row->{'map_type'} =
-            $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
-    }
-
-    my @map_set_ids = $self->show_menu(
-        title       => 'Restrict by Map Sets',
-        prompt      => 'Limit export by which map sets (optional)?',
-        display     => 'map_type,common_name,short_name',
-        return      => 'map_set_id',
-        allow_null  => 1,
-        allow_mult  => 1,
-        data        => $map_sets,
-    );
-
-    my $ft_sql;
-    if ( @map_set_ids ) {
-        $ft_sql = q[
-            select   distinct f.feature_type_accession as feature_type_aid
-            from     cmap_map map,
-                     cmap_feature f
-            where    map.map_set_id in (].join( ',', @map_set_ids ).q[)
-            and      map.map_id=f.map_id
-            order by feature_type_aid
-        ];
-    }
-    else {
-        $ft_sql = '';#q[
-            #select   ft.feature_type_id, 
-            #         ft.feature_type
-            #from     cmap_feature_type ft
-            #order by feature_type
-        #];
-    }
-
-    my $feature_types;
-    if ($ft_sql){
-	$feature_types = $db->selectall_arrayref( $ft_sql, { Columns => {} } );
-        foreach my $row ( @{$feature_types} ) {
-            $row->{'feature_type'} =
-                $self->feature_type_data( $row->{'feature_type_aid'}, 'feature_type' );
-        }
-    }
-    else{
-	$feature_types = $self->fake_selectall_arrayref(
-		$self->feature_type_data(),
-		'feature_type_accession as feature_type_aid','feature_type');
-    }
-    my @feature_types =  $self->show_menu(
-        title            => 'Restrict by Feature Types',
-        prompt           => 'Limit export to which feature types (optional)?',
-        display          => 'feature_type',
-        return           => 'feature_type_aid,feature_type',
-        allow_null       => 1,
-        allow_mult       => 1,
-        data             => $feature_types,
-    );
+    my $map_sets      = $self->get_map_sets;
+    my $feature_types = $self->get_feature_types;
 
     my @exclude_fields = $self->show_menu(
-        title       => 'Select Fields to Exclude',
-        prompt      => 'Which fields do you want to EXCLUDE from export?',
-        display     => 'field_name',
-        return      => 'field_name',
-        allow_null  => 1,
-        allow_mult  => 1,
-        data        => [ map { { field_name => $_ } } @col_names ],
+        title      => 'Select Fields to Exclude',
+        prompt     => 'Which fields do you want to EXCLUDE from export?',
+        display    => 'field_name',
+        return     => 'field_name',
+        allow_null => 1,
+        allow_mult => 1,
+        data       => [ map { { field_name => $_ } } @col_names ],
     );
 
     if ( @exclude_fields == @col_names ) {
@@ -903,60 +758,42 @@ sub export_as_text {
 
     my $dir = _get_dir() or return;
 
-    $map_set_sql = q[
-        select   ms.map_set_id, 
-                 ms.short_name as map_set_name,
-                 s.common_name as species_name
-        from     cmap_map_set ms,
-                 cmap_species s
-        where    ms.species_id=s.species_id
-    ];
-    $map_set_sql .= 'and ms.species_id in ('.join(',', @species_ids).') '
-        if @species_ids;
-    $map_set_sql .= "and ms.map_type_accession in ('".join("','",  map{$_->[0]}@map_types)."') "
-        if @map_types;
-    $map_set_sql .= 'and ms.map_set_id in ('.join(',', @map_set_ids).') '
-        if @map_set_ids;
-    $map_set_sql .= 'order by common_name, short_name';
-    $map_sets     = $db->selectall_arrayref( $map_set_sql, { Columns => {} } );
-
     my @map_set_names;
-    if ( @map_set_ids ) {
-        @map_set_names = 
-            map { join( '-', $_->{'species_name'}, $_->{'map_set_name'} ) }
-            @$map_sets
-        ;
+    if ( @{ $map_sets || [] } ) {
+        @map_set_names =
+          map { join( '-', $_->{'species_name'}, $_->{'map_set_name'} ) }
+          @$map_sets;
     }
     else {
         @map_set_names = ('All');
     }
 
-    if ( !@feature_types ) {    
-        @feature_types = (['All','All'],);
+    if ( !@$feature_types ) {
+        $feature_types = [ [ 'All', 'All' ], ];
     }
 
-    my $excluded_fields = 
-        @exclude_fields ? join(', ', @exclude_fields) : 'None';
+    my $excluded_fields =
+      @exclude_fields ? join( ', ', @exclude_fields ) : 'None';
 
     #
     # Confirm decisions.
     #
-    print join("\n",
+    print join( "\n",
         'OK to export?',
-        '  Data source     : '  . $self->data_source, 
-        "  Map Sets        :\n" . join("\n", map { "    $_" } @map_set_names),
-        "  Feature Types   :\n" . join("\n", map { "    $_->[1]" } @feature_types),
+        '  Data source     : ' . $self->data_source,
+        "  Map Sets        :\n" . join( "\n", map { "    $_" } @map_set_names ),
+        "  Feature Types   :\n"
+          . join( "\n", map { "    $_->[2]" } @$feature_types ),
         "  Exclude Fields  : $excluded_fields",
         "  Directory       : $dir",
-        "[Y/n] "
-    );
+        "[Y/n] " );
     chomp( my $answer = <STDIN> );
     return if $answer =~ /^[Nn]/;
 
-    my %exclude = map  { $_, 1 } @exclude_fields;
-    @col_names  = grep { ! $exclude{ $_ } } @col_names;
+    my %exclude = map { $_, 1 } @exclude_fields;
+    @col_names = grep { !$exclude{$_} } @col_names;
 
-    $ft_sql = q[
+    my $ft_sql = q[
         select   f.feature_id, 
                  f.accession_id as feature_accession_id,
                  f.feature_name,
@@ -973,17 +810,19 @@ sub export_as_text {
         where    f.map_id=?
         and      f.map_id=map.map_id
     ];
-    $ft_sql .= "and f.feature_type_accession in ('".join("','",  map{$_->[0]}@feature_types)."') "
-        if @feature_types;
+    $ft_sql .=
+      "and f.feature_type_accession in ('"
+      . join( "','", map { $_->[0] } @$feature_types ) . "') "
+      if @$feature_types;
     $ft_sql .= 'order by f.start_position';
 
-    for my $map_set ( @$map_sets ) {
+    for my $map_set (@$map_sets) {
         my $map_set_id   = $map_set->{'map_set_id'};
         my $map_set_name = $map_set->{'map_set_name'};
         my $species_name = $map_set->{'species_name'};
         my $file_name    = join( '-', $species_name, $map_set_name );
-           $file_name    =~ tr/a-zA-Z0-9-/_/cs;
-           $file_name    = "$dir/$file_name.dat";
+        $file_name =~ tr/a-zA-Z0-9-/_/cs;
+        $file_name = "$dir/$file_name.dat";
 
         print $log_fh "Dumping '$species_name-$map_set_name' to '$file_name'\n";
         open my $fh, ">$file_name" or die "Can't write to $file_name: $!\n";
@@ -997,7 +836,7 @@ sub export_as_text {
                 order by map_name
             ],
             { Columns => {} },
-            ( $map_set_id )
+            ($map_set_id)
         );
 
         my $attributes = $db->selectall_arrayref(
@@ -1009,17 +848,19 @@ sub export_as_text {
                 where  table_name=?
             ],
             {},
-            ( 'cmap_feature' )
+            ('cmap_feature')
         );
 
         my %attr_lookup = ();
-        for my $a ( @$attributes ) {
+        for my $a (@$attributes) {
             push @{ $attr_lookup{ $a->[0] } }, qq[$a->[1]: "$a->[2]"];
         }
 
-        for my $map ( @$maps ) {
-            my $features = $db->selectall_arrayref( 
-                $ft_sql, { Columns => {} }, ( $map->{'map_id'} )
+        for my $map (@$maps) {
+            my $features = $db->selectall_arrayref(
+                $ft_sql,
+                { Columns => {} },
+                ( $map->{'map_id'} )
             );
 
             my $aliases = $db->selectall_arrayref(
@@ -1036,38 +877,35 @@ sub export_as_text {
             );
 
             my %alias_lookup = ();
-            for my $a ( @$aliases ) {
+            for my $a (@$aliases) {
                 push @{ $alias_lookup{ $a->[0] } }, $a->[1];
             }
 
-            for my $feature ( @$features ) {
-                $feature->{'stop_position'} = undef 
-                if $feature->{'stop_position'} < $feature->{'start_position'};
+            for my $feature (@$features) {
+                $feature->{'stop_position'} = undef
+                  if $feature->{'stop_position'} < $feature->{'start_position'};
 
-                $feature->{'feature_attributes'} = join('; ', 
-                    @{ $attr_lookup{ $feature->{'feature_id'} } || [] }
-                );
+                $feature->{'feature_attributes'} = join( '; ',
+                    @{ $attr_lookup{ $feature->{'feature_id'} } || [] } );
 
-                $feature->{'feature_aliases'} = join(',', 
+                $feature->{'feature_aliases'} = join( ',',
                     map { s/"/\\"/g ? qq["$_"] : $_ }
-                    @{ $alias_lookup{ $feature->{'feature_id'} || [] } }
-                );
+                      @{ $alias_lookup{ $feature->{'feature_id'} || [] } } );
 
-                print $fh 
-                    join( OFS, map { $feature->{ $_ } } @col_names ), 
-                    ORS;
+                print $fh join( OFS, map { $feature->{$_} } @col_names ), ORS;
             }
         }
-        
+
         close $fh;
     }
 }
 
 # ----------------------------------------------------
 sub export_as_sql {
-#
-# Exports data as SQL INSERT statements.
-#
+
+    #
+    # Exports data as SQL INSERT statements.
+    #
     my $self   = shift;
     my $db     = $self->db or die $self->error;
     my $log_fh = $self->log_fh;
@@ -1121,15 +959,15 @@ sub export_as_sql {
         {
             name   => 'cmap_feature',
             fields => {
-                feature_id      => NUM,
-                accession_id    => STR,
-                map_id          => NUM,
+                feature_id             => NUM,
+                accession_id           => STR,
+                map_id                 => NUM,
                 feature_type_accession => STR,
-                feature_name    => STR,
-                is_landmark     => NUM,
-                start_position  => NUM,
-                stop_position   => NUM,
-		default_rank    => NUM,
+                feature_name           => STR,
+                is_landmark            => NUM,
+                start_position         => NUM,
+                stop_position          => NUM,
+                default_rank           => NUM,
             }
         },
         {
@@ -1179,7 +1017,7 @@ sub export_as_sql {
                 display_order => STR,
             }
         },
-        { 
+        {
             name   => 'cmap_map_set',
             fields => {
                 map_set_id           => NUM,
@@ -1195,8 +1033,8 @@ sub export_as_sql {
                 shape                => STR,
                 color                => STR,
                 width                => NUM,
-		map_units            => STR,
-		is_relational_map    => NUM,
+                map_units            => STR,
+                is_relational_map    => NUM,
             },
         },
         {
@@ -1216,12 +1054,12 @@ sub export_as_sql {
     # Ask user what/how/where to dump.
     #
     my @dump_tables = $self->show_menu(
-        title       => 'Select Tables',
-        prompt      => 'Which tables do you want to export?',
-        display     => 'table_name',
-        return      => 'table_name',
-        allow_all   => 1,
-        data        => [ map { { 'table_name', $_->{'name'} } } @tables ],
+        title     => 'Select Tables',
+        prompt    => 'Which tables do you want to export?',
+        display   => 'table_name',
+        return    => 'table_name',
+        allow_all => 1,
+        data      => [ map { { 'table_name', $_->{'name'} } } @tables ],
     );
 
     print "Add 'TRUNCATE TABLE' statements? [Y/n] ";
@@ -1230,10 +1068,10 @@ sub export_as_sql {
     my $add_truncate = $answer =~ m/^[yY]/;
 
     my $file;
-    for ( ;; ) {
+    for ( ; ; ) {
         my $default = './cmap_dump.sql';
         print "Where would you like to write the file?\n",
-            "['q' to quit, '$default' is default] ";
+          "['q' to quit, '$default' is default] ";
         chomp( my $user_file = <STDIN> );
         $user_file ||= $default;
 
@@ -1265,13 +1103,13 @@ sub export_as_sql {
     }
 
     my $quote_escape = $self->show_menu(
-        title   => 'Quote Style',
-        prompt  => "How should embeded quotes be escaped?\n".
-                   'Hint: Oracle and Sybase like [1], MySQL likes [2]',
+        title  => 'Quote Style',
+        prompt => "How should embeded quotes be escaped?\n"
+          . 'Hint: Oracle and Sybase like [1], MySQL likes [2]',
         display => 'display',
         return  => 'action',
-        data     => [
-            { display => 'Doubled',   action => 'doubled'   },
+        data    => [
+            { display => 'Doubled',   action => 'doubled' },
             { display => 'Backslash', action => 'backslash' },
         ],
     );
@@ -1279,55 +1117,54 @@ sub export_as_sql {
     #
     # Confirm decisions.
     #
-    print join("\n",
+    print join( "\n",
         'OK to export?',
-        '  Data source  : ' . $self->data_source, 
-        '  Tables       : ' . join(', ', @dump_tables),
-        '  Add Truncate : ' . ( $add_truncate ? 'Yes' : 'No' ), 
+        '  Data source  : ' . $self->data_source,
+        '  Tables       : ' . join( ', ', @dump_tables ),
+        '  Add Truncate : ' . ( $add_truncate ? 'Yes' : 'No' ),
         "  File         : $file",
         "  Escape Quotes: $quote_escape",
-        "[Y/n] "
-    );
+        "[Y/n] " );
 
     chomp( $answer = <STDIN> );
     return if $answer =~ /^[Nn]/;
 
     print $log_fh "Making SQL dump of tables to '$file'\n";
     open my $fh, ">$file" or die "Can't write to '$file': $!\n";
-    print $fh 
-        "--\n-- Dumping data for CMap v", $Bio::GMOD::CMap::VERSION, 
-        "\n-- Produced by cmap_admin.pl v", $main::VERSION,
-        "\n-- ", scalar localtime, "\n--\n";
+    print $fh "--\n-- Dumping data for CMap v", $Bio::GMOD::CMap::VERSION,
+      "\n-- Produced by cmap_admin.pl v", $main::VERSION, "\n-- ",
+      scalar localtime, "\n--\n";
 
     my %dump_tables = map { $_, 1 } @dump_tables;
-    for my $table ( @tables ) {
+    for my $table (@tables) {
         my $table_name = $table->{'name'};
-        next if %dump_tables && !$dump_tables{ $table_name };
+        next if %dump_tables && !$dump_tables{$table_name};
 
         print $log_fh "Dumping data for '$table_name.'\n";
         print $fh "\n--\n-- Data for '$table_name'\n--\n";
-        if ( $add_truncate ) {
+        if ($add_truncate) {
             print $fh "TRUNCATE TABLE $table_name;\n";
         }
 
-        my %fields     = %{ $table->{'fields'} };
-        my @fld_names  = sort keys %fields;
+        my %fields    = %{ $table->{'fields'} };
+        my @fld_names = sort keys %fields;
 
-        my $insert = "INSERT INTO $table_name (". join(', ', @fld_names).
-                ') VALUES (';
+        my $insert =
+          "INSERT INTO $table_name (" . join( ', ', @fld_names ) . ') VALUES (';
 
-        my $sth = $db->prepare(
-            'select ' . join(', ', @fld_names). " from $table_name"
-        );
+        my $sth =
+          $db->prepare(
+            'select ' . join( ', ', @fld_names ) . " from $table_name" );
         $sth->execute;
-        while ( my $rec = $sth->fetchrow_hashref ) { 
+        while ( my $rec = $sth->fetchrow_hashref ) {
             my @vals;
-            for my $fld ( @fld_names ) {
-                my $val = $rec->{ $fld };
-                if ( $fields{ $fld } eq STR ) {
+            for my $fld (@fld_names) {
+                my $val = $rec->{$fld};
+                if ( $fields{$fld} eq STR ) {
+
                     # Escape existing single quotes.
-                    $val =~ s/'/\\'/g if $quote_escape eq 'backslash'; 
-                    $val =~ s/'/''/g  if $quote_escape eq 'doubled'; #'
+                    $val =~ s/'/\\'/g if $quote_escape eq 'backslash';
+                    $val =~ s/'/''/g  if $quote_escape eq 'doubled';     #'
                     $val = defined $val ? qq['$val'] : qq[''];
                 }
                 else {
@@ -1336,7 +1173,7 @@ sub export_as_sql {
                 push @vals, $val;
             }
 
-            print $fh $insert, join(', ', @vals), ");\n";
+            print $fh $insert, join( ', ', @vals ), ");\n";
         }
     }
 
@@ -1345,20 +1182,21 @@ sub export_as_sql {
 
 # ----------------------------------------------------
 sub export_objects {
-#
-# Exports serialized database objects.
-#
+
+    #
+    # Exports serialized database objects.
+    #
     my $self = shift;
 
     my $export_path;
-    for ( ;; ) {
+    for ( ; ; ) {
         my $dir = _get_dir() or return;
 
         print 'What file name [cmap_export.xml]? ';
         chomp( my $file_name = <STDIN> );
         $file_name ||= 'cmap_export.xml';
 
-        $export_path = catfile ( $dir, $file_name );
+        $export_path = catfile( $dir, $file_name );
 
         if ( -e $export_path ) {
             print "The file '$export_path' exists.  Overwrite? [Y/n] ";
@@ -1377,15 +1215,15 @@ sub export_objects {
     #
     # Which objects?
     #
-    my @objects     =  $self->show_menu(
-        title       => 'Which objects?',
-        prompt      => 'Please select the objects you wish to export',
-        display     => 'object_name',
-        return      => 'object_type,object_name',
-        allow_null  => 0,
-        allow_mult  => 1,
-        allow_all   => 1,
-        data        => [
+    my @objects = $self->show_menu(
+        title      => 'Which objects?',
+        prompt     => 'Please select the objects you wish to export',
+        display    => 'object_name',
+        return     => 'object_type,object_name',
+        allow_null => 0,
+        allow_mult => 1,
+        allow_all  => 1,
+        data       => [
             {
                 object_type => 'cmap_map_set',
                 object_name => 'Map Sets',
@@ -1408,207 +1246,295 @@ sub export_objects {
     my @db_objects   = map { $_->[0] } @objects;
     my @object_names = map { $_->[1] } @objects;
 
-    my @confirm = ( 
+    my @confirm = (
         '  Data source  : ' . $self->data_source,
-        '  Objects      : ' . join(', ', @object_names),
+        '  Objects      : ' . join( ', ', @object_names ),
         "  File name    : $export_path",
     );
 
     my ( $map_sets, $feature_types );
     if ( grep { /map_set/ } @db_objects ) {
-        my $hr            = $self->get_map_sets;
-        $feature_types    = $hr->{'feature_types'};
-        $map_sets         = $hr->{'map_sets'};
-        my @ft_names      = map{$_->[1]} @$feature_types;
-        my @map_set_names = 
-            map { 
-                $_->{'species_name'}.'-'.$_->{'map_set_name'}.
-                ' ('.$_->{'map_type'}.')'
-            } 
-            @$map_sets;
+        $map_sets      = $self->get_map_sets;
+        $feature_types = $self->get_feature_types;
+        my @ft_names = map { $_->{'feature_type'} } @$feature_types;
+        my @map_set_names =
+          map {
+                $_->{'species_name'} . '-'
+              . $_->{'map_set_name'} . ' ('
+              . $_->{'map_type'} . ')'
+          } @$map_sets;
 
         @map_set_names = ('All') unless @map_set_names;
         @ft_names      = ('All') unless @ft_names;
 
-        push @confirm, (
-            "  Map Sets     :\n" . join( "\n", map {"    $_"} @map_set_names ),
-            "  Feature Types:\n" . join( "\n", map {"    $_"} @ft_names ),
-        );
+        push @confirm,
+          (
+            "  Map Sets     :\n"
+              . join( "\n", map { "    $_" } @map_set_names ),
+            "  Feature Types:\n" . join( "\n", map { "    $_" } @ft_names ),
+          );
     }
 
     #
     # Confirm decisions.
     #
-    print join("\n", 'OK to export?', @confirm, '[Y/n] ' );
+    print join( "\n", 'OK to export?', @confirm, '[Y/n] ' );
     chomp( my $answer = <STDIN> );
     return if $answer =~ /^[Nn]/;
 
-    my $exporter    =  Bio::GMOD::CMap::Admin::Export->new( 
-        data_source => $self->data_source 
-    );
+    my $exporter =
+      Bio::GMOD::CMap::Admin::Export->new( data_source => $self->data_source );
 
-    $exporter->export( 
+    $exporter->export(
         objects       => \@db_objects,
         output_path   => $export_path,
         log_fh        => $self->log_fh,
         map_sets      => $map_sets,
         feature_types => $feature_types,
-    ) or do { 
-        print "Error: ", $exporter->error, "\n"; return; 
-    };
-    
+      )
+      or do {
+        print "Error: ", $exporter->error, "\n";
+        return;
+      };
+
     return 1;
 }
 
 # ----------------------------------------------------
 sub get_map_sets {
-#
-# Help user choose map sets.
-#
-    my $self   = shift;
+
+    #
+    # Help user choose map sets.
+    #
+    my ( $self, %args ) = @_;
+    my $allow_mult = defined $args{'allow_mult'} ? $args{'allow_mult'} : 1;
+    my $allow_null = defined $args{'allow_null'} ? $args{'allow_null'} : 1;
     my $db     = $self->db or die $self->error;
     my $log_fh = $self->log_fh;
-    my $return;
 
-    my $map_types = $self->fake_selectall_arrayref(
-		$self->map_type_data(),
-		'map_type_accession as map_type_aid','map_type');
-
-    die "No map types! Please use the config file to create.\n" 
-        unless @$map_types;
-
-    my @map_types = $self->show_menu(
-        title        => 'Restrict by Map Set Export by Map Types',
-        prompt       => 'Limit export of map sets by which map types?',
-        display      => 'map_type',
-        return       => 'map_type_aid,map_type',
-        allow_null   => 1,
-        allow_mult   => 1,
-        data         => $map_types,
-    );
-
-    my $species_sql = q[
-        select   distinct s.species_id, 
-                 s.common_name
-        from     cmap_species s,
-                 cmap_map_set ms
-        where    s.species_id=ms.species_id
-    ];
-    $species_sql .= "and ms.map_type_accession in ('".join("','",  map{$_->[0]}@map_types)."') "
-        if @map_types;
-    $species_sql .= 'order by common_name';
-    my $species   = $db->selectall_arrayref( $species_sql, { Columns => {} } );
-    die "No species! Please use the web admin tool to create.\n" 
-        unless @$species;
-
-    my @species_ids = $self->show_menu(
-        title       => 'Restrict by Species',
-        prompt      => 'Limit export by which species?',
-        display     => 'common_name',
-        return      => 'species_id',
-        allow_null  => 1,
-        allow_mult  => 1,
-        data        => $species,
-    );
-
-    my $map_set_sql = q[
-        select   ms.map_set_id,
-                 ms.short_name,
-                 s.common_name,
-                 ms.map_type_accession as map_type_aid
-        from     cmap_map_set ms,
-                 cmap_species s
-        where    ms.species_id=s.species_id
-    ];
-    $map_set_sql .= 'and ms.species_id in ('.join(',', @species_ids).') '
-        if @species_ids;
-    $map_set_sql .= "and ms.map_type_accession in ('".join("','",  map{$_->[0]}@map_types)."') "
-        if @map_types;
-    $map_set_sql .= 'order by short_name';
-    my $map_sets  = $db->selectall_arrayref( $map_set_sql, { Columns => {} } );
-    foreach my $row ( @{$map_sets} ) {
-        $row->{'map_type'} =
-            $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
+    if ( my $explanation = $args{'explanation'} ) {
+        print join( "\n",
+            "------------------------------------------------------",
+            "NOTE: $explanation",
+            "------------------------------------------------------",
+        );
     }
 
-    my @map_set_ids = $self->show_menu(
-        title       => 'Restrict by Map Sets',
-        prompt      => 'Limit export by which map sets?',
-        display     => 'map_type,common_name,short_name',
-        return      => 'map_set_id',
-        allow_null  => 1,
-        allow_mult  => 1,
-        data        => $map_sets,
+    my $select = $self->show_menu(
+        title   => 'Map Set Selection Method',
+        prompt  => 'How would you like to select map sets?',
+        display => 'display',
+        return  => 'action',
+        data    => [
+            {
+                action  => 'by_accession_id',
+                display => 'Supply Map Set Accession ID',
+            },
+            {
+                action  => 'by_menu',
+                display => 'Use Menus'
+            },
+        ],
     );
 
-    my $where;
-    $where .= 'and ms.species_id in  ('.join(',', @species_ids) .') '
-        if @species_ids;
-    $where .= "and ms.map_type_accession in ('".join("','",  map{$_->[0]}@map_types)."') "
-        if @map_types;
-    $where .= 'and ms.map_set_id in  ('.join(',', @map_set_ids) .') '
-        if @map_set_ids;
-
-    $map_set_sql = qq[
-        select   ms.map_set_id, 
-                 ms.short_name as map_set_name,
-                 s.common_name as species_name,
-                 ms.map_type_accession as map_type_aid
-        from     cmap_map_set ms,
-                 cmap_species s
-        where    ms.species_id=s.species_id
-        $where
-    ];
-    $map_set_sql .= 'order by common_name, short_name';
-
-    $return->{'map_sets'} = $db->selectall_arrayref( 
-        $map_set_sql, { Columns => {} } 
-    );
-    foreach my $row ( @{$return->{'map_sets'}} ) {
-        $row->{'map_type'} =
-            $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
+    my $map_sets;
+    if ( $select eq 'by_accession_id' ) {
+        print 'Please supply the accession IDs separated by commas or spaces: ';
+        chomp( my $answer = <STDIN> );
+        my @accessions = split( /[,\s+]/, $answer );
+        return unless @accessions;
+        for my $acc (@accessions) {
+            my $sth = $db->prepare(
+                q[
+                    select   ms.map_set_id, 
+                             ms.accession_id as map_set_aid,
+                             ms.short_name as map_set_name,
+                             s.common_name as species_name,
+                             mt.map_type
+                    from     cmap_map_set ms,
+                             cmap_species s,
+                             cmap_map_type mt
+                    where    ms.accession_id=?
+                    and      ms.species_id=s.species_id
+                    and      ms.map_type_id=mt.map_type_id
+                ]
+            );
+            $sth->execute($acc);
+            push @{$map_sets}, $sth->fetchrow_hashref;
+        }
+        return unless @$map_sets;
     }
+    else {
+        my $map_types =
+          $self->fake_selectall_arrayref( $self->map_type_data(),
+            'map_type_accession as map_type_aid', 'map_type' );
+        $map_types = sort_selectall_arrayref( $map_types, 'map_type' );
+        die "No map types! Please use the config file to create.\n"
+          unless @$map_types;
 
+        my @map_types = $self->show_menu(
+            title      => 'Restrict by Map Set by Map Types',
+            prompt     => 'Limit map sets by which map types?',
+            display    => 'map_type',
+            return     => 'map_type_aid,map_type',
+            allow_null => $allow_null,
+            allow_mult => $allow_mult,
+            data       => $map_types,
+        );
+        if (@map_types and ref $map_types[0] ne 'ARRAY'){
+            @map_types=@{[[@map_types]]};
+        }
+
+        my $species_sql = q[
+            select   distinct s.species_id, 
+                     s.common_name
+            from     cmap_species s,
+                     cmap_map_set ms
+            where    s.species_id=ms.species_id
+        ];
+        $species_sql .=
+          "and ms.map_type_accession in ('"
+          . join( "','", map { $_->[0] } @map_types ) . "') "
+          if @map_types;
+        $species_sql .= 'order by common_name';
+        my $species =
+          $db->selectall_arrayref( $species_sql, { Columns => {} } );
+        die "No species! Please use the web admin tool to create.\n"
+          unless @$species;
+
+        my $species_ids = $self->show_menu(
+            title      => 'Restrict by Species',
+            prompt     => 'Limit by which species?',
+            display    => 'common_name',
+            return     => 'species_id',
+            allow_null => $allow_null,
+            allow_mult => $allow_mult,
+            data       => $species,
+        );
+        if (ref $species_ids ne 'ARRAY'){
+            $species_ids=[$species_ids,];
+        }
+
+        my $map_set_sql = q[
+            select   ms.map_set_id,
+                     ms.accession_id,
+                     ms.short_name,
+                     s.common_name,
+                     ms.map_type_accession as map_type_aid
+            from     cmap_map_set ms,
+                     cmap_species s
+            where    ms.species_id=s.species_id
+        ];
+        $map_set_sql .=
+          'and ms.species_id in (' . join( ',', @$species_ids ) . ') '
+          if (@$species_ids and defined $species_ids->[0]);
+        $map_set_sql .=
+          "and ms.map_type_accession in ('"
+          . join( "','", map { $_->[0] } @map_types ) . "') "
+          if @map_types;
+        $map_set_sql .= 'order by short_name';
+        my $ms_choices =
+          $db->selectall_arrayref( $map_set_sql, { Columns => {} } );
+
+        foreach my $row ( @{$ms_choices} ) {
+            $row->{'map_type'} =
+              $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
+        }
+
+        my $map_set_ids = $self->show_menu(
+            title      => 'Restrict by Map Sets',
+            prompt     => 'Limit by which map sets?',
+            display    => 'map_type,common_name,short_name',
+            return     => 'map_set_id',
+            allow_null => $allow_null,
+            allow_mult => $allow_mult,
+            data       => $ms_choices,
+        );
+        if (ref $map_set_ids ne 'ARRAY'){
+            $map_set_ids=[$map_set_ids,];
+        }
+
+        my $where;
+        $where .= 'and ms.species_id in  (' . join( ',', @$species_ids ) . ') '
+          if (@$species_ids and defined $species_ids->[0]);
+        $where .=
+          "and ms.map_type_accession in ('"
+          . join( "','", map { $_->[0] } @map_types ) . "') "
+          if @map_types;
+        $where .= 'and ms.map_set_id in  (' . join( ',', @$map_set_ids ) . ') '
+          if (@$map_set_ids and defined $map_set_ids->[0]);
+
+        $map_set_sql = qq[
+            select   ms.map_set_id, 
+                     ms.accession_id as map_set_aid,
+                     ms.short_name as map_set_name,
+                     s.common_name as species_name,
+                     ms.map_type_accession as map_type_aid
+            from     cmap_map_set ms,
+                     cmap_species s
+            where    ms.species_id=s.species_id
+            $where
+        ];
+        $map_set_sql .= 'order by common_name, short_name';
+
+        $map_sets = $db->selectall_arrayref( $map_set_sql, { Columns => {} } );
+        foreach my $row ( @{$map_sets} ) {
+            $row->{'map_type'} =
+              $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
+        }
+    }
+    return $map_sets;
+}
+
+# ----------------------------------------------------
+sub get_feature_types {
+
+    #
+    # Allow selection of feature types
+    #
+    my ( $self, %args ) = @_;
+    my @map_set_ids = @{ $args{'map_set_ids'} || [] };
+    my $ft_sql;
     my $ft_sql_data;
-    if ( $where ) {
-        $ft_sql_data = $db->selectall_arrayref(qq[
+    if (@map_set_ids) {
+        my $db = $self->db or die $self->error;
+        $ft_sql_data = $db->selectall_arrayref(
+            qq[
             select   distinct  
                      f.feature_type_accession as feature_type_aid
             from     cmap_map_set ms,
                      cmap_map map,
                      cmap_feature f
-            where    ms.map_set_id=map.map_set_id
+            where    ms.map_set_id in (] . join( ',', @map_set_ids ) . qq[
+            and      ms.map_set_id=map.map_set_id
             and      map.map_id=f.map_id
-	    $where
             order by feature_type_aid
-	    ],{ Columns => {} });
-         foreach my $row ( @{$ft_sql_data} ) {
+	    ], { Columns => {} }
+        );
+        foreach my $row ( @{$ft_sql_data} ) {
             $row->{'feature_type'} =
-                $self->feature_type_data( $row->{'feature_type_aid'}, 'feature_type' );
+              $self->feature_type_data( $row->{'feature_type_aid'},
+                'feature_type' );
         }
 
     }
     else {
-        $ft_sql_data = $self->fake_selectall_arrayref(
-		$self->feature_type_data(),
-		'feature_type_aid','feature_type');
+        $ft_sql_data =
+          $self->fake_selectall_arrayref( $self->feature_type_data(),
+            'feature_type_aid', 'feature_type' );
     }
 
-    my @feature_types =  $self->show_menu(
-        title            => 'Restrict by Feature Types',
-        prompt           => 'Limit export by feature types?',
-        display          => 'feature_type',
-        return           => 'feature_type_aid,feature_type',
-        allow_null       => 1,
-        allow_mult       => 1,
-        data             => $ft_sql_data,
+    my @feature_types = $self->show_menu(
+        title      => 'Restrict by Feature Types',
+        prompt     => 'Limit export by feature types?',
+        display    => 'feature_type',
+        return     => 'feature_type_aid,feature_type',
+        allow_null => 1,
+        allow_mult => 1,
+        data       => $ft_sql_data,
     );
-    
-    if ( @feature_types ) {
-        $return->{'feature_types'} = \@feature_types;
-    }
 
-    return $return;
+    return \@feature_types;
 }
 
 # ----------------------------------------------------
@@ -1642,7 +1568,7 @@ sub get_map_sets {
 #            $db->selectcol_arrayref(
 #                q[
 #                    select evidence_type
-#                    from   cmap_evidence_type 
+#                    from   cmap_evidence_type
 #                    where  evidence_type_id in (].
 #                    join(', ', @evidence_type_ids).q[)
 #                ]
@@ -1675,7 +1601,7 @@ sub get_map_sets {
 #        ?  map { join( '-', $_->{'species_name'}, $_->{'map_set_name'} ) } @{
 #            $db->selectall_arrayref(
 #                q[
-#                    select   ms.map_set_id, 
+#                    select   ms.map_set_id,
 #                             ms.short_name as map_set_name,
 #                             s.common_name as species_name
 #                    from     cmap_map_set ms,
@@ -1701,16 +1627,16 @@ sub get_map_sets {
 #    #
 #    print join("\n",
 #        'OK to export feature correspondences?',
-#        '  Data source          : ' . $self->data_source, 
+#        '  Data source          : ' . $self->data_source,
 #        "  Export Accession IDs : " . ( $export_corr_aid ? "Yes" : "No" ),
 #        "  Directory            : $dir",
 #    );
 #    if ( @evidence_types ) {
-#        print "\n  Evidence Types       :\n", 
+#        print "\n  Evidence Types       :\n",
 #            join( "\n", map { "    $_" } @evidence_types );
 #    }
 #    if ( @map_set_ids ) {
-#        print "\n  Map Set(s)           :\n", 
+#        print "\n  Map Set(s)           :\n",
 #            join( "\n", map { "    $_" } @map_set_names );
 #    }
 #    print "\n[Y/n] ";
@@ -1741,27 +1667,27 @@ sub get_map_sets {
 #    ];
 #
 #    if ( my $map_set_ids = join( ',', @map_set_ids ) ) {
-#        $sql .= qq[ 
-#            and ( 
+#        $sql .= qq[
+#            and (
 #                map1.map_set_id in ($map_set_ids) or
 #                map2.map_set_id in ($map_set_ids)
-#            ) 
+#            )
 #        ];
 #    }
 #
 #    my $sth = $db->prepare( $sql );
 #    $sth->execute;
 #
-#    my @col_names = ( 
+#    my @col_names = (
 #        map { !$export_corr_aid && $_ =~ /accession/ ? () : $_ }
-#        qw[ 
-#            feature_name1 
-#            feature_accession_id1 
-#            feature_name2 
+#        qw[
+#            feature_name1
+#            feature_accession_id1
+#            feature_name2
 #            feature_accession_id2
-#            evidence 
+#            evidence
 #            is_enabled
-#        ] 
+#        ]
 #    );
 #
 #    my $evidence_sql = q[
@@ -1773,7 +1699,7 @@ sub get_map_sets {
 #    ];
 #    if ( @evidence_type_ids ) {
 #        $evidence_sql .= 'and ce.evidence_type_id in ('.
-#            join( ', ', @evidence_type_ids ). 
+#            join( ', ', @evidence_type_ids ).
 #        ')';
 #    }
 #
@@ -1796,28 +1722,29 @@ sub get_map_sets {
 
 # ----------------------------------------------------
 sub import_data {
-#
-# Determine what kind of data to import (new or old)
-#
-    my $self    = shift;
 
-    my $action  =  $self->show_menu(
+    #
+    # Determine what kind of data to import (new or old)
+    #
+    my $self = shift;
+
+    my $action = $self->show_menu(
         title   => 'Import Options',
         prompt  => 'What would you like to import?',
         display => 'display',
         return  => 'action',
         data    => [
-            { 
-                action  => 'import_tab_data', 
-                display => 'Import tab-delimited data for existing map set' 
+            {
+                action  => 'import_tab_data',
+                display => 'Import tab-delimited data for existing map set'
             },
-            { 
-                action  => 'import_correspondences', 
-                display => 'Import feature correspondences' 
+            {
+                action  => 'import_correspondences',
+                display => 'Import feature correspondences'
             },
-            { 
-                action  => 'import_object_data', 
-                display => 'Import CMap objects [experimental]' 
+            {
+                action  => 'import_object_data',
+                display => 'Import CMap objects [experimental]'
             },
         ],
     );
@@ -1828,26 +1755,27 @@ sub import_data {
 
 # ----------------------------------------------------
 sub manage_links {
-#
-# Determine what kind of data to import (new or old)
-#
-    my $self    = shift;
+
+    #
+    # Determine what kind of data to import (new or old)
+    #
+    my $self = shift;
     my $db   = $self->db or die $self->error;
     my $term = $self->term;
 
-    my $action  =  $self->show_menu(
+    my $action = $self->show_menu(
         title   => 'Import Options',
         prompt  => 'What would you like to import?',
         display => 'display',
         return  => 'action',
         data    => [
-            { 
-                action  => 'import_links', 
-                display => 'Import Links' 
+            {
+                action  => 'import_links',
+                display => 'Import Links'
             },
-            { 
-                action  => 'delete_links', 
-                display => 'Remove Link Set' 
+            {
+                action  => 'delete_links',
+                display => 'Remove Link Set'
             },
         ],
     );
@@ -1857,10 +1785,11 @@ sub manage_links {
 
 # ----------------------------------------------------
 sub import_links {
-#
-# Imports links in simple tab-delimited format
-#
-    my ($self,%args) = @_;
+
+    #
+    # Imports links in simple tab-delimited format
+    #
+    my ( $self, %args ) = @_;
     my $db   = $self->db or die $self->error;
     my $term = $self->term;
 
@@ -1872,7 +1801,7 @@ sub import_links {
         prompt  => 'Please select a species',
         display => 'common_name',
         return  => 'species_id,common_name',
-        data     => $db->selectall_arrayref(
+        data    => $db->selectall_arrayref(
             q[
                 select   distinct s.species_id, s.common_name
                 from     cmap_species s,
@@ -1881,11 +1810,11 @@ sub import_links {
                 order by common_name
             ],
             { Columns => {} },
-            (  )
+            ()
         ),
     );
     do { print "No species to select from.\n"; return } unless $species_id;
-    
+
     #
     # Get the map set.
     #
@@ -1902,133 +1831,132 @@ sub import_links {
                 order by map_set_name
             ],
             { Columns => {} },
-            ( $species_id )
+            ($species_id)
         ),
     );
     do { print "There are no map sets!\n"; return }
-         unless $map_set_id;
+      unless $map_set_id;
 
     ###New File Handling
-    my $file_str =  $term->readline( 
-    'Where is the file?[q to quit] '
-     );
+    my $file_str = $term->readline( 'Where is the file?[q to quit] ' );
     return if $file_str =~ m/^[Qq]$/;
-    my @file_strs    =  split(/\s+/,$file_str);
-    my @files=();
-    foreach my $str (@file_strs){
-        push @files,glob($str);
+    my @file_strs = split( /\s+/, $file_str );
+    my @files = ();
+    foreach my $str (@file_strs) {
+        push @files, glob($str);
     }
-    foreach (my $i=0;$i<=$#files;$i++){
-        unless( -r $files[$i] and -f $files[$i]){
+    foreach ( my $i = 0 ; $i <= $#files ; $i++ ) {
+        unless ( -r $files[$i] and -f $files[$i] ) {
             print "Unable to read $files[$i]\n";
-            splice(@files,$i,1);
+            splice( @files, $i, 1 );
             $i--;
         }
     }
-    return unless(scalar(@files));
+    return unless ( scalar(@files) );
 
-    my $link_set_name  = $self->show_question(
-        question   => 'What should this link set be named (default='
-                      .$files[0].')?',
-        default    => $files[0],
+    my $link_set_name = $self->show_question(
+        question => 'What should this link set be named (default='
+          . $files[0] . ')?',
+        default => $files[0],
     );
-    $link_set_name = "map set $map_set_id:".$link_set_name;
+    $link_set_name = "map set $map_set_id:" . $link_set_name;
 
     #
     # Confirm decisions.
     #
-    print join("\n",
+    print join( "\n",
         'OK to import?',
-        '  Data source     : ' . $self->data_source, 
-	"  File            : ".join(", ",@files),
+        '  Data source     : ' . $self->data_source,
+        "  File            : " . join( ", ", @files ),
         "  Species         : $species_name",
         "  Map Study       : $map_set_name",
         "  Link Set        : $link_set_name",
-        "[Y/n] "
-    );
+        "[Y/n] " );
     chomp( my $answer = <STDIN> );
     return if $answer =~ /^[Nn]/;
 
-    my $link_manager = Bio::GMOD::CMap::Admin::ManageLinks->new(
-        data_source => $self->data_source,
-    );
+    my $link_manager =
+      Bio::GMOD::CMap::Admin::ManageLinks->new(
+        data_source => $self->data_source, );
 
-    foreach my $file (@files){
-        my $fh = IO::File->new( $file ) or die "Can't read $file: $!";
-        $link_manager->import_links
-	    (
-	     map_set_id => $map_set_id,
-	     fh         => $fh,
-	     link_set_name => $link_set_name,
-	     log_fh     => $self->log_fh,
-	     name_space => $self->get_link_name_space,
-	     ) or do { 
-		 print "Error: ", $link_manager->error, "\n"; 
-		 return; 
-	     };
-    } 
+    foreach my $file (@files) {
+        my $fh = IO::File->new($file) or die "Can't read $file: $!";
+        $link_manager->import_links(
+            map_set_id    => $map_set_id,
+            fh            => $fh,
+            link_set_name => $link_set_name,
+            log_fh        => $self->log_fh,
+            name_space    => $self->get_link_name_space,
+          )
+          or do {
+            print "Error: ", $link_manager->error, "\n";
+            return;
+          };
+    }
 }
 
 # ----------------------------------------------------
 sub delete_links {
-#
-# Removes links
-#
-    my ($self,%args) = @_;
-    my $name_space   = $self->get_link_name_space;
-    my $db   = $self->db or die $self->error;
-    my $term = $self->term;
 
-    my $link_manager = Bio::GMOD::CMap::Admin::ManageLinks->new(
-        data_source => $self->data_source,
-    );
-    my @link_set_names=$link_manager->list_set_names(
-        name_space => $self->get_link_name_space,
-        ); 
+    #
+    # Removes links
+    #
+    my ( $self, %args ) = @_;
+    my $name_space = $self->get_link_name_space;
+    my $db         = $self->db or die $self->error;
+    my $term       = $self->term;
+
+    my $link_manager =
+      Bio::GMOD::CMap::Admin::ManageLinks->new(
+        data_source => $self->data_source, );
+    my @link_set_names =
+      $link_manager->list_set_names( name_space => $self->get_link_name_space,
+      );
     my @link_set_name_display;
-    foreach my $name (@link_set_names){
-        $link_set_name_display[++$#link_set_name_display]->{'link_set_name'}
-                = $name;
+    foreach my $name (@link_set_names) {
+        $link_set_name_display[ ++$#link_set_name_display ]->{'link_set_name'} =
+          $name;
     }
-    my $link_set_name  =  $self->show_menu(
+    my $link_set_name = $self->show_menu(
         title   => join("\n"),
         prompt  => 'Which would you like to remove?',
         display => 'link_set_name',
         return  => 'link_set_name',
         data    => \@link_set_name_display,
-        );
-    unless ($link_set_name){
+    );
+    unless ($link_set_name) {
         print "No Link Sets\n";
         return;
     }
+
     #
     # Confirm decisions.
     #
-    print join("\n",
+    print join( "\n",
         'OK to remove?',
-        '  Data source     : ' . $self->data_source, 
+        '  Data source     : ' . $self->data_source,
         "  Link Set        : $link_set_name",
-        "[Y/n] "
-    );
+        "[Y/n] " );
     chomp( my $answer = <STDIN> );
     return if $answer =~ /^[Nn]/;
 
-    $link_manager->delete_links
-	    (
-	     link_set_name => $link_set_name,
-	     log_fh     => $self->log_fh,
-	     name_space => $self->get_link_name_space,
-	     ) or do { 
-		 print "Error: ", $link_manager->error, "\n"; 
-		 return; 
-	     };
+    $link_manager->delete_links(
+        link_set_name => $link_set_name,
+        log_fh        => $self->log_fh,
+        name_space    => $self->get_link_name_space,
+      )
+      or do {
+        print "Error: ", $link_manager->error, "\n";
+        return;
+      };
 }
 
 # ----------------------------------------------------
 sub import_correspondences {
-#
-# Gathers the info to import feature correspondences.
-#
+
+    #
+    # Gathers the info to import feature correspondences.
+    #
     my $self = shift;
     my $db   = $self->db or die $self->error;
     my $file = $self->file;
@@ -2037,15 +1965,15 @@ sub import_correspondences {
     #
     # Make sure we have a file to parse.
     #
-    if ( $file ) {
+    if ($file) {
         print "OK to use '$file'? [Y/n] ";
         chomp( my $answer = <STDIN> );
         $file = '' if $answer =~ m/^[Nn]/;
     }
 
-    while ( ! -r $file || ! -f _ ) {
+    while ( !-r $file || !-f _ ) {
         print "Unable to read '$file' or not a regular file.\n" if $file;
-        $file =  $term->readline( 'Where is the file? [q to quit] ');
+        $file = $term->readline('Where is the file? [q to quit] ');
         $file =~ s/^\s*|\s*$//g;
         return if $file =~ m/^[Qq]/;
     }
@@ -2053,21 +1981,21 @@ sub import_correspondences {
     #
     # Open the file.  If it's good, remember it.
     #
-    my $fh = IO::File->new( $file ) or die "Can't read $file: $!";
-    $term->addhistory( $file ); 
-    $self->file( $file );
+    my $fh = IO::File->new($file) or die "Can't read $file: $!";
+    $term->addhistory($file);
+    $self->file($file);
 
     #
     # Get the map set.
     #
     my @map_sets = $self->show_menu(
-        title       => 'Restrict by Map Set (optional)',
-        prompt      => 'Please select a map set to restrict the search',
-        display     => 'species_name,map_set_name',
-        return      => 'map_set_id,species_name,map_set_name',
-        allow_null  => 1,
-        allow_mult  => 1,
-        data        => $db->selectall_arrayref(
+        title      => 'Restrict by Map Set (optional)',
+        prompt     => 'Please select a map set to restrict the search',
+        display    => 'species_name,map_set_name',
+        return     => 'map_set_id,species_name,map_set_name',
+        allow_null => 1,
+        allow_mult => 1,
+        data       => $db->selectall_arrayref(
             q[
                 select   ms.map_set_id, 
                          ms.short_name as map_set_name,
@@ -2083,49 +2011,50 @@ sub import_correspondences {
 
     my @map_set_ids = map { $_->[0] } @map_sets;
 
-    print join("\n",
+    print join( "\n",
         'OK to import?',
-        '  Data source   : ' . $self->data_source, 
+        '  Data source   : ' . $self->data_source,
         "  File          : $file",
     );
 
-    if ( @map_sets ) {
-        print join("\n", 
+    if (@map_sets) {
+        print join( "\n",
             '',
-            '  From map sets :', 
-            map { "    $_" } map { join('-', $_->[1], $_->[2]) } @map_sets
-        );
+            '  From map sets :',
+            map { "    $_" } map { join( '-', $_->[1], $_->[2] ) } @map_sets );
     }
     print "\n[Y/n] ";
 
     chomp( my $answer = <STDIN> );
     return if $answer =~ /^[Nn]/;
 
-    my $importer = Bio::GMOD::CMap::Admin::ImportCorrespondences->new(
-        data_source => $self->data_source,
-    );
+    my $importer =
+      Bio::GMOD::CMap::Admin::ImportCorrespondences->new(
+        data_source => $self->data_source, );
 
-    $importer->import( 
+    $importer->import(
         fh          => $fh,
         map_set_ids => \@map_set_ids,
         log_fh      => $self->log_fh,
-    ) or do { 
-        print "Error: ", $importer->error, "\n"; 
-        return; 
-    };
+      )
+      or do {
+        print "Error: ", $importer->error, "\n";
+        return;
+      };
     $self->purge_query_cache(4);
 }
 
 # ----------------------------------------------------
 sub delete_duplicate_correspondences {
-#
-# deletes all duplicate correspondences.
-#
-    my $self  = shift;
-    my $db    = $self->db or die $self->error;
+
+    #
+    # deletes all duplicate correspondences.
+    #
+    my $self = shift;
+    my $db   = $self->db or die $self->error;
 
     my $admin = Bio::GMOD::CMap::Admin->new(
-	    config      => $self->config,
+        config      => $self->config,
         data_source => $self->data_source,
     );
 
@@ -2138,38 +2067,39 @@ sub delete_duplicate_correspondences {
 
 sub purge_query_cache_menu {
 
-    my $self  = shift;
+    my $self = shift;
 
-    my $cache_level=$self->show_menu(
-        title   => '  --= Cache Level =--  ',
-        prompt  => 'At which cache level would you like to start the purging?\n(The purges cascade down. ie selecting level 3 removes 3 and 4):',
+    my $cache_level = $self->show_menu(
+        title  => '  --= Cache Level =--  ',
+        prompt =>
+'At which cache level would you like to start the purging?\n(The purges cascade down. ie selecting level 3 removes 3 and 4):',
         display => 'display',
         return  => 'level',
         data    => [
-            { 
-                level  => 1, 
+            {
+                level   => 1,
                 display => 'Cache Level 1 Purge All (Species/Map Sets changed)',
             },
-            { 
-                level  => 2, 
+            {
+                level   => 2,
                 display => 'Cache Level 2 (purge map info)',
             },
-            { 
-                level  => 3, 
+            {
+                level   => 3,
                 display => 'Cache Level 3 (purge feature info)',
             },
-            { 
-                level  => 4, 
+            {
+                level   => 4,
                 display => 'Cache Level 4 (purge correspondence info)',
             },
-            { 
-                level  => 0, 
+            {
+                level   => 0,
                 display => 'quit',
             },
         ],
     );
     return unless $cache_level;
-    
+
     $self->purge_query_cache($cache_level);
 }
 
@@ -2179,158 +2109,107 @@ sub purge_query_cache {
     my $self        = shift;
     my $cache_level = shift || 1;
 
-    my $admin       = Bio::GMOD::CMap::Admin->new(
-	    config      => $self->config,
+    my $admin = Bio::GMOD::CMap::Admin->new(
+        config      => $self->config,
         data_source => $self->data_source,
     );
     print "Purging cache\n";
     $admin->purge_cache($cache_level);
     print "Cache Purged\n";
 }
+
 # ----------------------------------------------------
 sub import_tab_data {
-#
-# Imports simple (old) tab-delimited format
-#
+
+    #
+    # Imports simple (old) tab-delimited format
+    #
     my $self = shift;
     my $db   = $self->db or die $self->error;
     my $term = $self->term;
 
     ###New File Handling
-    my $file_str =  $term->readline( 
-    'Where is the file(s)? \nSeparate Multiple files with a space. [q to quit] '
-     );
+    my $file_str =
+      $term->readline(
+'Where is the file(s)? \nSeparate Multiple files with a space. [q to quit] '
+      );
     return if $file_str =~ m/^[Qq]$/;
-    my @file_strs    =  split(/\s+/,$file_str);
-    my @files=();
-    foreach my $str (@file_strs){
-	push @files,glob($str);
+    my @file_strs = split( /\s+/, $file_str );
+    my @files = ();
+    foreach my $str (@file_strs) {
+        push @files, glob($str);
     }
-    foreach (my $i=0;$i<=$#files;$i++){
-        unless( -r $files[$i] and -f $files[$i]){
+    foreach ( my $i = 0 ; $i <= $#files ; $i++ ) {
+        unless ( -r $files[$i] and -f $files[$i] ) {
             print "Unable to read $files[$i]\n";
-            splice(@files,$i,1);
+            splice( @files, $i, 1 );
             $i--;
         }
     }
 
-
-    #
-    # Get the map type.
-    #
-    my ($map_type_aid,$map_type) = $self->show_menu(
-        title   => 'Available Map Types',
-        prompt  => 'Please select a map type',
-        display => 'map_type',
-        return  => 'map_type_aid,map_type',
-	data    => $self->fake_selectall_arrayref(
-		$self->map_type_data(),
-		'map_type_accession as map_type_aid','map_type'),
-    );
-    do { print "No map types to select from.\n"; return } unless $map_type_aid;
-    #
-    # Get the species.
-    #
-    my ( $species_id, $species ) = $self->show_menu(
-        title   => "Available Species (for $map_type)",
-        prompt  => 'Please select a species',
-        display => 'common_name',
-        return  => 'species_id,common_name',
-        data     => $db->selectall_arrayref(
-            q[
-                select   distinct s.species_id, s.common_name
-                from     cmap_species s,
-                         cmap_map_set ms
-                where    ms.species_id=s.species_id
-                and      ms.map_type_accession=?
-                order by common_name
-            ],
-            { Columns => {} },
-            ( $map_type_aid )
-        ),
-    );
-    do { print "No species to select from.\n"; return } unless $species_id;
-    
-    #
-    # Get the map set.
-    #
-    my ( $map_set_id, $map_set_name ) = $self->show_menu(
-        title   => "Available Map Sets (for $map_type, $species)",
-        prompt  => 'Please select a map set',
-        display => 'map_set_name',
-        return  => 'map_set_id,map_set_name',
-        data    => $db->selectall_arrayref(
-            q[
-                select   ms.map_set_id, ms.map_set_name
-                from     cmap_map_set ms
-                where    ms.map_type_accession=?
-                and      ms.species_id=?
-                order by map_set_name
-            ],
-            { Columns => {} },
-            ( $map_type_aid, $species_id )
-        ),
-    );
-    do { print "There are no map sets for that map type!\n"; return }
-         unless $map_set_id;
+    my $map_sets = $self->get_map_sets( allow_mult => 0, allow_null => 0 );
+    return unless @{ $map_sets || [] };
+    my $map_set = $map_sets->[0];
 
     print "Remove data in map set not in import file? [y/N] ";
     chomp( my $overwrite = <STDIN> );
     $overwrite = ( $overwrite =~ /^[Yy]/ ) ? 1 : 0;
-    
-    print "\nNOTE: If yes to the following, features on the same map with the same name \nwill be treated as duplicates.  Be sure to select the default, 'NO', if that \nwill create problems for your data.\nCheck for duplicate data (slow)? [y/N]";
+
+    print
+"\nNOTE: If yes to the following, features on the same map with the same name \nwill be treated as duplicates.  Be sure to select the default, 'NO', if that \nwill create problems for your data.\nCheck for duplicate data (slow)? [y/N]";
     chomp( my $allow_update = <STDIN> );
     $allow_update = ( $allow_update =~ /^[Yy]/ ) ? 1 : 0;
 
     #
     # Confirm decisions.
     #
-    print join("\n",
+    print join( "\n",
         'OK to import?',
-        '  Data source     : ' . $self->data_source, 
-	"  File            : ".join(", ",@files),
-        "  Species         : $species",
-        "  Map Type        : $map_type",
-        "  Map Study       : $map_set_name",
-        "  Overwrite       : " . ( $overwrite ? "Yes" : "No" ),
+        '  Data source : ' . $self->data_source,
+        "  File        : " . join( ", ", @files ),
+        "  Species     : " . $map_set->{species_name},
+        "  Map Type    : " . $map_set->{map_type},
+        "  Map Set     : " . $map_set->{map_set_name},
+        "  Map Set Acc : " . $map_set->{map_set_aid},
+        "  Overwrite   : " .     ( $overwrite    ? "Yes" : "No" ),
         "  Update Features : " . ( $allow_update ? "Yes" : "No" ),
-        "[Y/n] "
-    );
+        "[Y/n] " );
     chomp( my $answer = <STDIN> );
     return if $answer =~ /^[Nn]/;
 
-    my $importer = Bio::GMOD::CMap::Admin::Import->new(
-        data_source => $self->data_source,
-    );
+    my $importer =
+      Bio::GMOD::CMap::Admin::Import->new( data_source => $self->data_source, );
 
     my $time_start = new Benchmark;
-    foreach my $file (@files){
-	my $fh = IO::File->new( $file ) or die "Can't read $file: $!";
-	$importer->import_tab
-	    (
-	     map_set_id => $map_set_id,
-	     fh         => $fh,
-	     map_type_aid   => $map_type_aid,
-	     log_fh     => $self->log_fh,
-	     overwrite  => $overwrite,
-	     allow_update => $allow_update,
-	     ) or do { 
-		 print "Error: ", $importer->error, "\n"; 
-		 return; 
-	     };
-    } 
+    foreach my $file (@files) {
+        my $fh = IO::File->new($file) or die "Can't read $file: $!";
+        $importer->import_tab(
+            map_set_id   => $map_set->{'map_set_id'},
+            fh           => $fh,
+            map_type_aid => $map_set->{'map_type_aid'},
+            log_fh       => $self->log_fh,
+            overwrite    => $overwrite,
+            allow_update => $allow_update,
+          )
+          or do {
+            print "Error: ", $importer->error, "\n";
+            return;
+          };
+    }
 
-my $time_end = new Benchmark;
-print STDERR "import time: ".timestr(timediff($time_end,$time_start))."\n";
+    my $time_end = new Benchmark;
+    print STDERR "import time: "
+      . timestr( timediff( $time_end, $time_start ) ) . "\n";
 
     $self->purge_query_cache(1);
 }
 
 # ----------------------------------------------------
 sub import_object_data {
-#
-# Gathers the info to import physical or genetic maps.
-#
+
+    #
+    # Gathers the info to import physical or genetic maps.
+    #
     my $self = shift;
     my $db   = $self->db or die $self->error;
     my $term = $self->term;
@@ -2339,15 +2218,15 @@ sub import_object_data {
     #
     # Make sure we have a file to parse.
     #
-    if ( $file ) {
+    if ($file) {
         print "OK to use '$file'? [Y/n] ";
         chomp( my $answer = <STDIN> );
         $file = '' if $answer =~ m/^[Nn]/;
     }
 
-    while ( ! -r $file || ! -f _ ) {
+    while ( !-r $file || !-f _ ) {
         print "Unable to read '$file' or not a regular file.\n" if $file;
-        $file =  $term->readline( 'Where is the file? [q to quit] ');
+        $file = $term->readline('Where is the file? [q to quit] ');
         $file =~ s/^\s*|\s*$//g;
         return if $file =~ m/^[Qq]/;
     }
@@ -2355,9 +2234,9 @@ sub import_object_data {
     #
     # Open the file.  If it's good, remember it.
     #
-    my $fh = IO::File->new( $file ) or die "Can't read $file: $!";
-    $term->addhistory($file); 
-    $self->file( $file );
+    my $fh = IO::File->new($file) or die "Can't read $file: $!";
+    $term->addhistory($file);
+    $self->file($file);
 
     print "Overwrite any existing data? [y/N] ";
     chomp( my $overwrite = <STDIN> );
@@ -2366,27 +2245,26 @@ sub import_object_data {
     #
     # Confirm decisions.
     #
-    print join("\n",
+    print join( "\n",
         'OK to import?',
-        '  Data source : ' . $self->data_source, 
+        '  Data source : ' . $self->data_source,
         "  File        : $file",
         "  Overwrite   : " . ( $overwrite ? "Yes" : "No" ),
-        "[Y/n] "
-    );
+        "[Y/n] " );
     chomp( my $answer = <STDIN> );
     return if $answer =~ /^[Nn]/;
 
-    my $importer = Bio::GMOD::CMap::Admin::Import->new(
-        data_source => $self->data_source,
-    );
+    my $importer =
+      Bio::GMOD::CMap::Admin::Import->new( data_source => $self->data_source, );
     $importer->import_objects(
-        fh         => $fh,
-        log_fh     => $self->log_fh,
-        overwrite  => $overwrite,
-    ) or do { 
-        print "Error: ", $importer->error, "\n"; 
-        return; 
-    };
+        fh        => $fh,
+        log_fh    => $self->log_fh,
+        overwrite => $overwrite,
+      )
+      or do {
+        print "Error: ", $importer->error, "\n";
+        return;
+      };
     $self->purge_query_cache(1);
 }
 
@@ -2398,105 +2276,92 @@ sub make_name_correspondences {
     #
     # Get the evidence type id.
     #
-    my ($evidence_type_aid, $evidence_type) = $self->show_menu(
+    my ( $evidence_type_aid, $evidence_type ) = $self->show_menu(
         title   => 'Available evidence types',
         prompt  => 'Please select an evidence type',
         display => 'evidence_type',
         return  => 'evidence_type_aid,evidence_type',
-        data    =>  $self->fake_selectall_arrayref(
-		$self->evidence_type_data(),
-		'evidence_type_accession as evidence_type_aid','evidence_type'),
+        data    => $self->fake_selectall_arrayref(
+            $self->evidence_type_data(),
+            'evidence_type_accession as evidence_type_aid',
+            'evidence_type'
+        ),
     );
-    die "No evidence types!  Please use the config file to create.\n" 
-        unless $evidence_type;
+    die "No evidence types!  Please use the config file to create.\n"
+      unless $evidence_type;
 
-    #
-    # Get the target map sets.
-    #
-    my $map_sets_data=  $db->selectall_arrayref(
-            q[
-                select   ms.map_set_id,
-                         ms.short_name as map_set_name,
-                         s.common_name as species_name,
-                         ms.map_type_accession as map_type_aid
-                from     cmap_map_set ms,
-                         cmap_species s
-                where    ms.species_id=s.species_id
-                order by map_type_aid, common_name, map_set_name
-            ],
-            { Columns => {} },
-        );
-    foreach my $row ( @{$map_sets_data} ) {
-        $row->{'map_type'} =
-            $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
+    my $from_map_sets =
+      $self->get_map_sets(
+        explanation => 'First you will select the starting map sets' );
+
+    my $use_from_as_target_answer =
+      $self->show_question( question =>
+          'Do you want to use the starting map sets as the target sets? [y|N]', );
+    my $to_map_sets;
+    if ( $use_from_as_target_answer =~ /^y/ ) {
+        $to_map_sets = $from_map_sets;
+    }
+    else {
+        $to_map_sets =
+          $self->get_map_sets(
+            explanation => 'Now you will select the target map sets' );
     }
 
-    my @map_sets    =  $self->show_menu(
-        title       => 'Map Set (optional)',
-        prompt      => 'Please select the map sets to include',
-        display     => 'map_type,species_name,map_set_name',
-        return      => 'map_set_id,map_type_aid,map_type,species_name,map_set_name',
-        allow_null  => 1,
-        allow_mult  => 1,
-        data        => $map_sets_data,
-    );
-
-    my @map_set_ids = map { $_->[0] } @map_sets;
-    my $targets     = @map_sets
-        ? join( "\n", 
-            map { "    $_" } map { join('-', $_->[2], $_->[3], $_->[4]) } 
-            @map_sets
-        )
-        : '    All'
-    ;
-
     my @skip_features = $self->show_menu(
-        title       => 'Skip Feature Types (optional)',
-        prompt      => 'Select any feature types to skip in check',
-        display     => 'feature_type',
-        return      => 'feature_type_aid,feature_type',
-        allow_null  => 1,
-        allow_mult  => 1,
-        data        => $self->fake_selectall_arrayref(
-		$self->feature_type_data(),
-		'feature_type_accession as feature_type_aid','feature_type'),
+        title      => 'Skip Feature Types (optional)',
+        prompt     => 'Select any feature types to skip in check',
+        display    => 'feature_type',
+        return     => 'feature_type_aid,feature_type',
+        allow_null => 1,
+        allow_mult => 1,
+        data       => $self->fake_selectall_arrayref(
+            $self->feature_type_data(),
+            'feature_type_accession as feature_type_aid',
+            'feature_type'
+        ),
     );
-    my @skip_feature_type_aids = map{$_->[0]}@skip_features;
-    my $skip = @skip_features
-        ? join( "\n     ",  map{$_->[1]}@skip_features )."\n"
-        : '    None'
-    ;
+    my @skip_feature_type_aids = map { $_->[0] } @skip_features;
+    my $skip =
+      @skip_features
+      ? join( "\n     ", map { $_->[1] } @skip_features ) . "\n"
+      : '    None';
 
     print "Check for duplicate data (slow)? [y/N] ";
     chomp( my $allow_update = <STDIN> );
     $allow_update = ( $allow_update =~ /^[Yy]/ ) ? 1 : 0;
 
     my $name_regex = $self->show_menu(
-        title       => "Match Type\n(You can add your own match types by editing cmap_admin.pl)",
-        prompt      => "Select the match type that you desire",
-        display     => 'regex_title',
-        return      => 'regex',
-        allow_null  => 0,
-        allow_mult  => 0,
-        data    => [
-                {
-                    regex_title => 'exact match only',
-                    regex       => '',
-                },
-                {
-                    regex_title => q[read pairs '(\S+)\.\w\d$'],
-                    regex => '(\S+)\.\w\d$',
-                },
-            ],
-        );
+        title =>
+"Match Type\n(You can add your own match types by editing cmap_admin.pl)",
+        prompt     => "Select the match type that you desire",
+        display    => 'regex_title',
+        return     => 'regex',
+        allow_null => 0,
+        allow_mult => 0,
+        data       => [
+            {
+                regex_title => 'exact match only',
+                regex       => '',
+            },
+            {
+                regex_title => q[read pairs '(\S+)\.\w\d$'],
+                regex       => '(\S+)\.\w\d$',
+            },
+        ],
+    );
 
+    my $from = join( "\n",
+        map { "    $_->{species_name}-$_->{map_set_name} ($_->{map_set_aid})" }
+          @{$from_map_sets} );
+
+    my $to = join( "\n",
+        map { "    $_->{species_name}-$_->{map_set_name} ($_->{map_set_aid})" }
+          @{$to_map_sets} );
     print "Make name-based correspondences\n",
-        '  Data source     : ' . $self->data_source, "\n",
-        "  Evidence type   : $evidence_type\n",
-        "  Target map sets :\n$targets\n",
-        "  Skip features   :\n$skip\n",
-        "  Check for dups  : ".($allow_update? "yes":"no");
-    ;
+      '  Data source   : ' . $self->data_source, "\n",
+      "  Evidence type : $evidence_type\n", "  From map sets :\n$from\n",
+      "  To map sets   :\n$to\n",           "  Skip features :\n$skip\n",
+      "  Check for dups  : " . ( $allow_update ? "yes" : "no" );
     print "\nOK to make correspondences? [Y/n] ";
     chomp( my $answer = <STDIN> );
     return if $answer =~ m/^[Nn]/;
@@ -2506,20 +2371,24 @@ sub make_name_correspondences {
         data_source => $self->data_source,
     );
 
+    my @from_map_set_ids = map { $_->{map_set_id} } @$from_map_sets;
+    my @to_map_set_ids   = map { $_->{map_set_id} } @$to_map_sets;
     my $time_start = new Benchmark;
     $corr_maker->make_name_correspondences(
-        evidence_type_aid     => $evidence_type_aid,
-        map_set_ids           => \@map_set_ids,
-        skip_feature_type_aids    => \@skip_feature_type_aids,
-        log_fh                => $self->log_fh,
-        quiet                 => $Quiet,
-        name_regex            => $name_regex,
-	allow_update => $allow_update,
-    ) or do { print "Error: ", $corr_maker->error, "\n"; return; };
+        evidence_type_aid      => $evidence_type_aid,
+        from_map_set_ids       => \@from_map_set_ids,
+        to_map_set_ids         => \@to_map_set_ids,
+        skip_feature_type_aids => \@skip_feature_type_aids,
+        log_fh                 => $self->log_fh,
+        quiet                  => $Quiet,
+        name_regex             => $name_regex,
+        allow_update           => $allow_update,
+      )
+      or do { print "Error: ", $corr_maker->error, "\n"; return; };
 
     my $time_end = new Benchmark;
-    print STDERR "make correspondence time: ".
-	timestr(timediff($time_end,$time_start))."\n";
+    print STDERR "make correspondence time: "
+      . timestr( timediff( $time_end, $time_start ) ) . "\n";
 
     $self->purge_query_cache(4);
     return 1;
@@ -2527,16 +2396,17 @@ sub make_name_correspondences {
 
 # ----------------------------------------------------
 sub reload_correspondence_matrix {
-    my $self  = shift;
+    my $self = shift;
 
-    print "OK to truncate table in data source '", $self->data_source, 
-        "' and reload? [Y/n] ";
+    print "OK to truncate table in data source '", $self->data_source,
+      "' and reload? [Y/n] ";
     chomp( my $answer = <STDIN> );
     return if $answer =~ m/^[Nn]/;
 
     my $admin = $self->admin;
-    $admin->reload_correspondence_matrix or do { 
-        print "Error: ", $admin->error, "\n"; return; 
+    $admin->reload_correspondence_matrix or do {
+        print "Error: ", $admin->error, "\n";
+        return;
     };
 
     return 1;
@@ -2544,39 +2414,42 @@ sub reload_correspondence_matrix {
 
 # ----------------------------------------------------
 sub show_question {
-    my $self     = shift;
-    my %args     = @_;
-    my $question = $args{'question'}   or return;
-    my $default  = $args{'default'} || '';
+    my $self         = shift;
+    my %args         = @_;
+    my $question     = $args{'question'} or return;
+    my $default      = $args{'default'};
     my $validHashRef = $args{'valid_hash'} || ();
 
+    $question .= "<Default: $default>:" if (defined $default);
     my $answer;
-    while(1){
-        print "$question <Default: $default>:";
+    while (1) {
+        print $question;
         chomp( $answer = <STDIN> );
-        if ($validHashRef and $answer and not $validHashRef->{$answer}){
-            print "Options:\n".join("\n",keys %{$validHashRef})."\n";
-            print "Your input was not valid, please choose from the above list\n";
-            print "$question <Default: $default>:";
+        if ( $validHashRef and $answer and not $validHashRef->{$answer} ) {
+            print "Options:\n" . join( "\n", keys %{$validHashRef} ) . "\n";
+            print
+              "Your input was not valid, please choose from the above list\n";
+            print $question;
             next;
         }
-        elsif($answer and $answer!~/^\S+$/){
+        elsif ( $answer and $answer !~ /^\S+$/ ) {
             print "Your input was not valid.\n";
-            print "$question <Default: $default>:";
+            print $question;
             next;
         }
-        $answer=$answer||$default;
+        $answer = $answer || $default;
         return $answer;
     }
 }
+
 # ----------------------------------------------------
 sub show_menu {
-    my $self    = shift;
-    my %args    = @_;
-    my $data    = $args{'data'}   or return;
-    my @return  = split(/,/, $args{'return'} ) 
-                  or die "No return field(s) defined\n";
-    my @display = split(/,/, $args{'display'});
+    my $self   = shift;
+    my %args   = @_;
+    my $data   = $args{'data'} or return;
+    my @return = split( /,/, $args{'return'} )
+      or die "No return field(s) defined\n";
+    my @display = split( /,/, $args{'display'} );
     my $result;
 
     if ( scalar @$data > 1 || $args{'allow_null'} ) {
@@ -2585,10 +2458,12 @@ sub show_menu {
 
         my $title = $args{'title'} || '';
         print $title ? "\n$title\n" : "\n";
-        for my $row ( @$data ) {
-            print "[$i] ", join(' : ', map { $row->{$_} } @display), "\n";
-            $lookup{ $i } = scalar @return > 1 ? 
-                [ map { $row->{$_} } @return ] : $row->{ $return[0] };
+        for my $row (@$data) {
+            print "[$i] ", join( ' : ', map { $row->{$_} } @display ), "\n";
+            $lookup{$i} =
+              scalar @return > 1
+              ? [ map { $row->{$_} } @return ]
+              : $row->{ $return[0] };
             $i++;
         }
 
@@ -2597,19 +2472,15 @@ sub show_menu {
         }
 
         my $prompt = $args{'prompt'} || 'Please select';
-        $prompt   .= 
-            $args{'allow_null'} && $args{'allow_mult'} 
-                ? "\n(<Enter> for nothing, multiple allowed): " :
-            $args{'allow_null'} 
-                ? ' (0 or <Enter> for nothing): ' :
-            $args{'allow_mult'} 
-                ? ' (multiple allowed): ' :
-            $args{'allow_mult'} 
-                ? ' (multiple allowed):' :
-            ' (one choice only): '
-        ;        
+        $prompt .=
+             $args{'allow_null'}
+          && $args{'allow_mult'} ? "\n(<Enter> for nothing, multiple allowed): "
+          : $args{'allow_null'}  ? ' (0 or <Enter> for nothing): '
+          : $args{'allow_mult'}  ? ' (multiple allowed): '
+          : $args{'allow_mult'}  ? ' (multiple allowed):'
+          : ' (one choice only): ';
 
-        for ( ;; ) {
+        for ( ; ; ) {
             print "\n$prompt";
             chomp( my $answer = <STDIN> );
 
@@ -2618,33 +2489,36 @@ sub show_menu {
                 last;
             }
             elsif ( $args{'allow_all'} && $answer == $i ) {
-                $result = [ map { $lookup{ $_ } } 1 .. $i - 1 ];
+                $result = [ map { $lookup{$_} } 1 .. $i - 1 ];
                 last;
             }
             elsif ( $args{'allow_all'} || $args{'allow_mult'} ) {
-                my %numbers = 
-                    # make a lookup 
-                    map  { $_, 1 }  
-                    # take only numbers
-                    grep { /\d+/ }  
-                    # look for ranges
-                    map  { $_ =~ m/(\d+)-(\d+)/ ? ( $1..$2 ) : $_ } 
-                    # split on space or comma
-                    split /[,\s]+/, $answer
-                ;
+                my %numbers =
 
-                $result = [ 
-                    map  { $_ || () }      # parse out nulls
-                    map  { $lookup{ $_ } } # look it up
-                    sort { $a <=> $b }     # keep order
-                    keys %numbers          # make unique
+                  # make a lookup
+                  map { $_, 1 }
+
+                  # take only numbers
+                  grep { /\d+/ }
+
+                  # look for ranges
+                  map { $_ =~ m/(\d+)-(\d+)/ ? ( $1 .. $2 ) : $_ }
+
+                  # split on space or comma
+                  split /[,\s]+/, $answer;
+
+                $result = [
+                    map { $_ || () }    # parse out nulls
+                      map  { $lookup{$_} }    # look it up
+                      sort { $a <=> $b }      # keep order
+                      keys %numbers           # make unique
                 ];
 
                 next unless @$result;
                 last;
             }
-            elsif ( defined $lookup{ $answer } ) {
-                $result = $lookup{ $answer }; 
+            elsif ( defined $lookup{$answer} ) {
+                $result = $lookup{$answer};
                 last;
             }
         }
@@ -2653,32 +2527,31 @@ sub show_menu {
         $result = undef;
     }
     else {
-        $result   = [ map { $data->[0]->{ $_ } } @return ];
-        unless(wantarray or scalar(@$result)!=1){
-            $result=$result->[0];
+        $result = [ map { $data->[0]->{$_} } @return ];
+        unless ( wantarray or scalar(@$result) != 1 ) {
+            $result = $result->[0];
         }
-        my $value = join(' : ', map { $data->[0]->{ $_ } } @display);
+        my $value = join( ' : ', map { $data->[0]->{$_} } @display );
         my $title = $args{'title'} || '';
         print $title ? "\n$title\n" : "\n";
         print "Using '$value'\n";
     }
-    
-    return wantarray 
-        ? defined $result 
-            ? @$result : () 
-        : $result
-    ;
+
+    return wantarray
+      ? defined $result ? @$result : ()
+      : $result;
 }
 
 # ----------------------------------------------------
 sub _get_dir {
-#
-# Get a directory for writing files to.
-#
+
+    #
+    # Get a directory for writing files to.
+    #
     my $dir;
-    for ( ;; ) {
+    for ( ; ; ) {
         print "\nTo which directory should I write the output files?\n",
-            "['q' to quit, current dir (.) is default] ";
+          "['q' to quit, current dir (.) is default] ";
         chomp( my $answer = <STDIN> );
         $answer ||= '.';
         return if $answer =~ m/^[qQ]/;
@@ -2707,13 +2580,13 @@ sub _get_dir {
                     print "I couldn't make that directory: $err\n\n";
                     next;
                 }
-                else  {
+                else {
                     $dir = $answer;
                     last;
                 }
             }
         }
-    } 
+    }
     return $dir;
 }
 
@@ -2972,3 +2845,4 @@ it under the same terms as Perl itself.
 Bio::GMOD::CMap::Admin::Import, Bio::GMOD::CMap::Admin::ImportCorrespondences.
 
 =cut
+
