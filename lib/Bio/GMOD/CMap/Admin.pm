@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.68 2005-03-04 05:58:17 mwz444 Exp $
+# $Id: Admin.pm,v 1.69 2005-03-14 18:57:29 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.68 $)[-1];
+$VERSION = (qw$Revision: 1.69 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -643,12 +643,12 @@ a key/value pair with the pk_name as key and the id as the value.
         values   => \%args,
         required => [
             qw/ accession_id feature_name start_position
-              map_id feature_type_id
+              map_id feature_type_accession
               /
         ],
         fields => [
             qw/ accession_id feature_name start_position stop_position
-              map_id feature_type_id is_landmark direction
+              map_id feature_type_accession is_landmark direction
               /
         ],
     );
@@ -2365,13 +2365,13 @@ a key/value pair with the pk_name as key and the id as the value.
         values   => \%args,
         required => [
             qw/ accession_id map_set_name short_name species_id
-              map_type_id
+              map_type_accession
               /
         ],
         fields => [
             qw/ accession_id map_set_name short_name
               color shape is_enabled display_order can_be_reference_map
-              published_on width species_id map_type_id
+              published_on width species_id map_type_accession
               /
         ],
     );

@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.94 2005-03-11 21:07:21 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.95 2005-03-14 18:57:26 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.94 $)[-1];
+$VERSION = (qw$Revision: 1.95 $)[-1];
 
 #
 # Get command-line options
@@ -212,6 +212,10 @@ sub show_greeting {
             display => 'Change current data source',
         },
         {
+            action  => 'create_species',
+            display => 'Create new species'
+        },
+        {
             action  => 'create_map_set',
             display => 'Create new map set'
         },
@@ -260,6 +264,11 @@ sub show_greeting {
                 action  => 'copy_cmap_into_gbrowse',
                 display => 'Copy CMap into the GBrowse database'
             };
+        push @$menu_options, 
+            {
+                action  => 'copy_gbrowse_into_cmap',
+                display => 'Copy GBrowse into the CMap database'
+            };
     }
 
     push @$menu_options, 
@@ -299,25 +308,49 @@ sub change_data_source {
 }
 
 # ----------------------------------------------------
+sub create_species {
+    my $self = shift;
+    my $db = $self->db or die $self->error;
+    print "Creating new map set.\n";
+
+    print "Full Species Name (long): ";
+    chomp( my $full_name = <STDIN> || 'New Species' );
+
+    print "Common Name [$full_name]: ";
+    chomp( my $common_name = <STDIN> );
+    $common_name ||= $full_name;
+
+    print "Accession ID (optional): ";
+    chomp( my $species_aid = <STDIN> );
+
+    print "OK to create species '$full_name' in data source '",
+      $self->data_source, "'?\n[Y/n] ";
+    chomp( my $answer = <STDIN> );
+    return if $answer =~ m/^[Nn]/;
+
+    my $admin           = $self->admin;
+    $admin->species_create(
+        accession_id  => $species_aid  || '',
+        common_name   => $common_name  || '',
+        full_name     => $full_name    || '',
+    ) or do {
+        print "Error: ", $admin->error, "\n";
+        return;
+    };
+
+    my $log_fh = $self->log_fh;
+    print $log_fh "Species $common_name created\n";
+
+    $self->purge_query_cache(1);
+}
+
+# ----------------------------------------------------
 sub create_map_set {
     my $self = shift;
     my $db = $self->db or die $self->error;
     print "Creating new map set.\n";
 
-    my ( $map_type_aid, $map_type ) = $self->show_menu(
-        title   => 'Available Map Types',
-        prompt  => 'What type of map?',
-        display => 'map_type',
-        return  => 'map_type_aid,map_type',
-        data    => $self->fake_selectall_arrayref(
-            $self->map_type_data(), 'map_type_accession as map_type_aid',
-            'map_type'
-        )
-    );
-    die "No map types! Please use the config file to add some.\n"
-      unless $map_type_aid;
-
-    my ( $species_id, $common_name ) = $self->show_menu(
+    my $species_info = $self->show_menu(
         title   => 'Available Species',
         prompt  => 'What species?',
         display => 'common_name',
@@ -331,8 +364,25 @@ sub create_map_set {
             { Columns => {} },
         ),
     );
-    die "No species!  Please use the web admin tool to create.\n"
-      unless $species_id;
+    my ( $species_id, $common_name ) = @$species_info;
+    
+    unless ($species_id){
+        print "No species!  Please use cmap_admin.pl to create.\n";
+        return;
+    }
+
+    my ( $map_type_aid, $map_type ) = $self->show_menu(
+        title   => 'Available Map Types',
+        prompt  => 'What type of map?',
+        display => 'map_type',
+        return  => 'map_type_aid,map_type',
+        data    => $self->fake_selectall_arrayref(
+            $self->map_type_data(), 'map_type_accession as map_type_aid',
+            'map_type'
+        )
+    );
+    die "No map types! Please use the config file to add some.\n"
+      unless $map_type_aid;
 
     print "Map Study Name (long): ";
     chomp( my $map_set_name = <STDIN> || 'New map set' );
@@ -592,8 +642,7 @@ sub delete_map_set {
     my $self = shift;
     my $db   = $self->db or die $self->error;
 
-    my $map_sets = $self->get_map_sets( allow_mult => 0, allow_null => 0 );
-    return unless @{ $map_sets || [] };
+    my $map_sets = $self->get_map_sets( allow_mult => 0, allow_null => 0 ) or return;
     my $map_set    = $map_sets->[0];
     my $map_set_id = $map_set->{'map_set_id'};
 
@@ -739,7 +788,7 @@ sub export_as_text {
       feature_attributes
     );
 
-    my $map_sets      = $self->get_map_sets;
+    my $map_sets      = $self->get_map_sets or return;
     my $feature_types = $self->get_feature_types;
 
     my @exclude_fields = $self->show_menu(
@@ -1261,7 +1310,7 @@ sub export_objects {
 
     my ( $map_sets, $feature_types );
     if ( grep { /map_set/ } @db_objects ) {
-        $map_sets      = $self->get_map_sets;
+        $map_sets      = $self->get_map_sets or return;
         $feature_types = $self->get_feature_types;
         my @ft_names = map { $_->{'feature_type'} } @$feature_types;
         my @map_set_names =
@@ -1367,9 +1416,16 @@ sub get_map_sets {
             $sth->execute($acc);
             push @{$map_sets}, $sth->fetchrow_hashref;
         }
+        unless (@$map_sets){
+            print "Those map sets were not in the database!\n";
+            return;
+        }
         foreach my $row ( @{$map_sets} ) {
             $row->{'map_type'} =
-              $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
+              $self->map_type_data( $row->{'map_type_aid'}, 'map_type' )
+                or die "Map type accession "
+                . $row->{'map_type_aid'}
+                . " not defined in config file\n";
         }
         return unless @$map_sets;
     }
@@ -1380,15 +1436,20 @@ sub get_map_sets {
         ];
         my $map_types =
           $db->selectall_arrayref( $map_set_sql, { Columns => {} } );
+        unless (@$map_types){
+            print "No map sets in the database!  Use cmap_admin.pl to create.\n";
+            return;
+        }
 
         foreach my $row ( @{$map_types} ) {
             $row->{'map_type'} =
-              $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
+              $self->map_type_data( $row->{'map_type_aid'}, 'map_type' )
+                or die "Map type accession "
+                . $row->{'map_type_aid'}
+                . " not defined in config file\n";
         }
         $map_types = sort_selectall_arrayref( $map_types, 'map_type' );
 
-        die "No map types! Please use the config file to create.\n"
-          unless @$map_types;
 
         my @map_types = $self->show_menu(
             title      => 'Restrict by Map Set by Map Types',
@@ -2108,7 +2169,7 @@ sub import_alignments {
         explanation => 'First you will select the map set of the Query',
         allow_mult  => 0,
         allow_null  => 0,
-    );
+    ) or return;
     my $use_query_as_hit_answer =
       $self->show_question( question =>
           'Do you want to use the query map set as the Subject set? [y|N]', );
@@ -2121,7 +2182,7 @@ sub import_alignments {
             explanation => 'Now you will select the subject map set',
             allow_mult  => 0,
             allow_null  => 0,
-        );
+        ) or return;
     }
 
     #
@@ -2325,8 +2386,7 @@ sub import_tab_data {
         }
     }
 
-    my $map_sets = $self->get_map_sets( allow_mult => 0, allow_null => 0 );
-    return unless @{ $map_sets || [] };
+    my $map_sets = $self->get_map_sets( allow_mult => 0, allow_null => 0 ) or return;
     my $map_set = $map_sets->[0];
 
     print "Remove data in map set not in import file? [y/N] ";
@@ -2470,7 +2530,7 @@ sub make_name_correspondences {
 
     my $from_map_sets =
       $self->get_map_sets(
-        explanation => 'First you will select the starting map sets' );
+        explanation => 'First you will select the starting map sets' ) or return;
 
     my $use_from_as_target_answer =
       $self->show_question( question =>
@@ -2483,7 +2543,7 @@ sub make_name_correspondences {
     else {
         $to_map_sets =
           $self->get_map_sets(
-            explanation => 'Now you will select the target map sets' );
+            explanation => 'Now you will select the target map sets' ) or return;
     }
 
     my @skip_features = $self->show_menu(
@@ -2612,7 +2672,7 @@ sub prepare_for_gbrowse {
         explanation => 'Which map sets do you want to use',
         allow_mult  => 1,
         allow_null  => 0,
-    );
+    ) or return;
 
     #
     # Get the feature types
@@ -2694,7 +2754,7 @@ sub copy_cmap_into_gbrowse {
         explanation => 'Which map sets do you want to copy data from?',
         allow_mult  => 1,
         allow_null  => 0,
-    );
+    ) or return;
 
     #
     # Get the feature types
@@ -2760,6 +2820,52 @@ sub copy_cmap_into_gbrowse {
         print "Error: ", $gbrowse_liason->error, "\n";
         return;
     };
+}
+
+# ----------------------------------------------------
+sub copy_gbrowse_into_cmap {
+
+    require Bio::GMOD::CMap::Admin::GBrowseLiason;
+    #
+    # Gathers the info to import feature correspondences.
+    #
+    my $self = shift;
+    my $db   = $self->db or die $self->error;
+    my $term = $self->term;
+
+    #
+    # Get the map sets.
+    #
+    my $map_sets = $self->get_map_sets(
+        explanation => 'Which map set do you want the copied data to be part of?',
+        allow_mult  => 0,
+        allow_null  => 0,
+    ) or return;
+    my $map_set_id = $map_sets->[0]{'map_set_id'};
+
+    print join( "\n",
+        'OK to copy data into CMap?',
+        '  Data source     : ' . $self->data_source,
+        '  Map Set         : '.
+          join( "\n", map { "    ".$_->{'map_set_name'} } @$map_sets ),
+    );
+
+    print "\n[Y/n] ";
+
+    chomp( my $answer = <STDIN> );
+    return if $answer =~ /^[Nn]/;
+
+    my $gbrowse_liason = Bio::GMOD::CMap::Admin::GBrowseLiason->new(
+        data_source => $self->data_source, 
+    );
+    $gbrowse_liason->copy_data_into_cmap(
+        map_set_id       => $map_set_id,
+      )
+      or do {
+        print "Error: ", $gbrowse_liason->error, "\n";
+        return;
+    };
+    $self->purge_query_cache(1);
 }
 
 # ----------------------------------------------------

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::GBrowseLiason;
 
 # vim: set ft=perl:
 
-# $Id: GBrowseLiason.pm,v 1.6 2005-03-01 06:55:14 mwz444 Exp $
+# $Id: GBrowseLiason.pm,v 1.7 2005-03-14 18:57:31 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,11 +26,12 @@ GBrowse integration at the db level.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.6 $)[-1];
+$VERSION = (qw$Revision: 1.7 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
 use Bio::DB::GFF::Util::Binning;
+use Bio::Graphics::Browser::Util qw[open_config];
 
 use base 'Bio::GMOD::CMap';
 
@@ -61,10 +62,7 @@ sub prepare_data_for_gbrowse {
     my %gclass_lookup;
     $LOG_FH = $args{'log_fh'} || \*STDOUT;
     print $LOG_FH "Preparing Data for GBrowse\n";
-    my $admin = Bio::GMOD::CMap::Admin->new(
-      data_source => $self->data_source
-    );
-
+    my $admin = $self->admin;
 
     for (my $i=0;$i<=$#{$feature_type_aids}; $i++){
         my $gclass = $self->feature_type_data($feature_type_aids->[$i],'gbrowse_class');
@@ -348,6 +346,122 @@ sub copy_data_into_gbrowse {
 # ----------------------------------------------
 =pod
 
+=head2 copy_data_into_cmap
+
+Given a list of map set ids and an optional list of feature type accessions,
+this will copy data from the CMap side of the db to the GBrowse side, allowing
+it to be viewed in GBrowse.
+
+=cut
+
+sub copy_data_into_cmap {
+    my ( $self, %args ) = @_;
+    my $map_set_id = $args{'map_set_id'}
+      or return $self->error('No map set ids');
+    my $db           = $self->db;
+    my %fmethod_to_ft_aid;
+
+    my $gbrowse_config_dir = $self->config_data('gbrowse_config_dir');
+    return  $self->error('No gbrowse_config_dir defined in config file') unless $gbrowse_config_dir;
+
+    my $gbrowse_config = $self->config_data('gbrowse_config_file');
+    return $self->error('No gbrowse_config_file defined in config file') unless $gbrowse_config;
+    $gbrowse_config =~ s/\.conf$//;
+    $gbrowse_config =~ s/^\d+\.//;
+
+    my $main_gbconfig = open_config($gbrowse_config_dir);
+    $main_gbconfig->source($gbrowse_config) or return $self->("Reading $gbrowse_config FAILED");
+    my $gbconfig = $main_gbconfig->config();
+    my $track_info = $gbconfig->{'config'};
+                                                                                                                             
+    my @labels = $gbconfig->labels();
+    my $fmethod;
+    # Build the connection between fmethod and ft_aids
+    foreach my $label (@labels){
+        if ( $track_info->{$label}{'cmap_feature_type_accession'} ) {
+            $fmethod = $track_info->{$label}{'feature'};
+            $fmethod =~ s/:.+//;
+            $fmethod_to_ft_aid{ $fmethod } = $track_info->{$label}{'cmap_feature_type_accession'};
+        }
+    }
+    
+    my $data_sql = q[
+        select
+            m_group.feature_name as map_name,
+            m_data.fstart as map_start,
+            m_data.fstop as map_stop,
+            f_group.feature_id,
+            f_group.accession_id as feature_aid,
+            f_group.feature_name as feature_name,
+            f_data.fstart as feature_start,
+            f_data.fstop as feature_stop,
+            f_data.fstrand as feature_strand,
+            f_type.fmethod as feature_method
+        from cmap_feature m_group,
+            cmap_feature f_group,
+            fdata m_data,
+            fdata f_data,
+            ftype f_type
+        where
+            m_data.feature_id=m_group.feature_id
+            and (not f_group.map_id > 0)
+            and f_data.fref=m_group.feature_name
+            and f_data.feature_id=f_group.feature_id
+            and f_data.ftypeid=f_type.ftypeid 
+    ];
+    $data_sql .= " and f_type.fmethod in ('"
+        . join ("','", keys(%fmethod_to_ft_aid) )
+        . "')";
+    $data_sql .= " order by m_group.feature_name ";
+
+    my $feature_results = $db->selectall_arrayref( $data_sql, { Columns => {} }, );
+
+    my $current_map_name;
+    my $map_id;
+    my $admin = $self->admin;
+    my ($direction,$ft_aid);
+    my $map_count = 0;
+
+    foreach my $row (@$feature_results){
+        unless (defined $map_id and $current_map_name eq $row->{'map_name'}){
+            $map_count++;
+            $current_map_name = $row->{'map_name'};
+            $map_id = $admin->map_create(
+                map_name => $row->{'map_name'},
+                map_set_id => $map_set_id,
+                start_position => $row->{'map_start'},
+                stop_position => $row->{'map_stop'},
+            );
+        }
+        $direction = 1;
+        if ( (defined($row->{'feature_strand'})
+              and $row->{'feature_strand'} eq '-')
+            or $row->{'feature_stop'}<$row->{'feature_start'}){
+            $direction = -1;
+        }
+        $ft_aid = $fmethod_to_ft_aid{$row->{'feature_method'}};
+        
+
+        $admin->feature_update(
+                map_id => $map_id,
+                feature_id => $row->{'feature_id'},
+                feature_name => $row->{'feature_name'},
+                start_position => $row->{'feature_start'},
+                stop_position => $row->{'feature_stop'},
+                feature_type_accession => $ft_aid,
+                direction => $direction,
+        );
+    }
+    print "Copied ".scalar(@$feature_results)." features on $map_count maps.\n";
+
+
+
+    return 1;
+}
+
+# ----------------------------------------------
+=pod
+
 =head2 create_fref_name
 
 This method gives a stable way to name the feature that represents a GBrowse
@@ -410,4 +524,16 @@ sub find_or_create_ftype {
         }
     }
 }
+
+sub admin {
+    my $self = shift;
+
+    unless($self->{'admin'}){
+        $self->{'admin'} = Bio::GMOD::CMap::Admin->new(
+          data_source => $self->data_source
+        );
+    }
+    return $self->{'admin'};
+}
+
 1;
