@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin;
 
-# $Id: Admin.pm,v 1.9 2003-01-01 02:18:49 kycl4rk Exp $
+# $Id: Admin.pm,v 1.10 2003-01-05 04:25:35 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.9 $)[-1];
+$VERSION = (qw$Revision: 1.10 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils qw[ next_number ];
@@ -460,9 +460,13 @@ sub insert_correspondence {
 Inserts a correspondence.  Returns -1 if there is nothing to do.
 
 =cut
-    my ( $self, $feature_id1, $feature_id2, $evidence_type_id, 
-        $accession_id ) = @_;
-    my $db              = $self->db or return;
+    my $self             = shift;
+    my $feature_id1      = shift;
+    my $feature_id2      = shift;
+    my $evidence_type_id = shift;
+    my $accession_id     = shift || '';
+    my $is_enabled       = shift ||  0;
+    my $db               = $self->db or return;
     return -1 if $feature_id1 == $feature_id2;
 
     my $feature_sth = $db->prepare(
@@ -551,14 +555,16 @@ Inserts a correspondence.  Returns -1 if there is nothing to do.
                 insert
                 into   cmap_feature_correspondence
                        ( feature_correspondence_id, accession_id,
-                         feature_id1, feature_id2 )
-                values ( ?, ?, ?, ? )
+                         feature_id1, feature_id2, is_enabled )
+                values ( ?, ?, ?, ?, ? )
             ],
             {},
-            ( $feature_correspondence_id, 
-              $accession_id, 
-              $feature_id1, 
-              $feature_id2
+            ( 
+                $feature_correspondence_id, 
+                $accession_id, 
+                $feature_id1, 
+                $feature_id2,
+                $is_enabled
             )
         );
     }
@@ -583,10 +589,11 @@ Inserts a correspondence.  Returns -1 if there is nothing to do.
             values ( ?, ?, ?, ? )
         ],
         {},
-        ( $correspondence_evidence_id,  
-          $correspondence_evidence_id, 
-          $feature_correspondence_id,   
-          $evidence_type_id
+        ( 
+            $correspondence_evidence_id,  
+            $correspondence_evidence_id, 
+            $feature_correspondence_id,   
+            $evidence_type_id
         )
     );
 
