@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.37 2003-06-17 15:53:44 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.38 2003-07-01 15:19:51 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.37 $)[-1];
+$VERSION = (qw$Revision: 1.38 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -712,7 +712,7 @@ Lays out the image and writes it to the file system, set the "image_name."
 
             $self->add_drawing( 
                 STRING, $font, $label_x, $label_y - $font->height/2, 
-                $label, 'black'
+                $label, $color
             );
 
             my $furthest_x = $label_x + $font->width * length($label) + 5;
