@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.68 2005-01-05 03:03:54 mwz444 Exp $
+# $Id: CMap.pm,v 1.69 2005-01-19 20:38:56 mwz444 Exp $
 
 =head1 NAME
 
@@ -544,6 +544,27 @@ The default is ''.
 }
 
 # ----------------------------------------------------
+sub comp_menu_order {
+
+=pod
+                                                                                
+=head2 comp_menu_order
+
+Returns the string that determins how the comparison map menu is ordered. 
+
+The default is ''.
+
+=cut
+
+    my $self = shift;
+    my $val  = shift;
+    $self->{'comp_menu_order'} = $val if defined $val;
+    $self->{'comp_menu_order'} = $self->config_data('comp_menu_order') || '' 
+        unless defined $self->{'comp_menu_order'};
+    return $self->{'comp_menu_order'};
+}
+
+# ----------------------------------------------------
 sub data_module {
 
 =pod
@@ -565,6 +586,7 @@ Returns a handle to the data module.
             aggregate           => $self->aggregate,
             show_intraslot_corr => $self->show_intraslot_corr,
             ref_map_order       => $self->ref_map_order,
+            comp_menu_order     => $self->comp_menu_order,
           )
           or $self->error( Bio::GMOD::CMap::Data->error );
     }

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.88 2005-01-05 03:04:07 mwz444 Exp $
+# $Id: Drawer.pm,v 1.89 2005-01-19 20:39:05 mwz444 Exp $
 
 =head1 NAME
 
@@ -48,6 +48,7 @@ The base map drawing module.
         scale_maps => $scale_maps,
         stack_maps => $stack_maps,
         ref_map_order => $ref_map_order,
+        comp_menu_order => $comp_menu_order,
     );
 
 =head2 Fields
@@ -218,6 +219,12 @@ Set to 1 stack the reference maps vertically.  Default is 0.
 This is the string that dictates the order of the reference maps.  The format
 is the list of map_aids in order, separated by commas 
 
+=item * comp_menu_order
+
+This is the string that dictates the order of the comparative maps in the menu.
+Options are 'display_order' (order on the map display_order) and 'corrs' (order
+on the number of correspondences).  'display_order' is the default.
+
 =back
 
 =head1 METHODS
@@ -226,7 +233,7 @@ is the list of map_aids in order, separated by commas
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.88 $)[-1];
+$VERSION = (qw$Revision: 1.89 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -245,7 +252,7 @@ my @INIT_PARAMS = qw[
   included_evidence_types ignored_evidence_types ignored_feature_types
   config data_source min_correspondences collapse_features cache_dir
   map_view data_module aggregate show_intraslot_corr clean_view
-  magnify_all scale_maps stack_maps ref_map_order
+  magnify_all scale_maps stack_maps ref_map_order comp_menu_order
 ];
 
 # ----------------------------------------------------
@@ -2313,6 +2320,7 @@ Creates default link parameters for CMap->create_viewer_link()
     my $scale_maps                  = $args{'scale_maps'};
     my $stack_maps                  = $args{'stack_maps'};
     my $ref_map_order               = $args{'ref_map_order'};
+    my $comp_menu_order               = $args{'comp_menu_order'};
     my $show_intraslot_corr         = $args{'show_intraslot_corr'};
     my $clean_view                  = $args{'clean_view'};
     my $magnify_all                 = $args{'magnify_all'};
@@ -2383,6 +2391,9 @@ Creates default link parameters for CMap->create_viewer_link()
     unless ( defined($stack_maps) ) {
         $stack_maps = $self->stack_maps();
     }
+    unless ( defined($comp_menu_order) ) {
+        $comp_menu_order = $self->comp_menu_order();
+    }
     unless ( defined($ref_map_order) ) {
         $ref_map_order = $self->ref_map_order();
     }
@@ -2449,6 +2460,7 @@ Creates default link parameters for CMap->create_viewer_link()
         scale_maps                  => $scale_maps,
         stack_maps                  => $stack_maps,
         ref_map_order               => $ref_map_order,
+        comp_menu_order               => $comp_menu_order,
         show_intraslot_corr         => $show_intraslot_corr,
         clean_view                  => $clean_view,
         magnify_all                 => $magnify_all,

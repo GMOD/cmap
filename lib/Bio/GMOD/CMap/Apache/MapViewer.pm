@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.83 2005-01-19 19:22:52 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.84 2005-01-19 20:39:05 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.83 $)[-1];
+$VERSION = (qw$Revision: 1.84 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -76,6 +76,7 @@ sub handler {
     my $magnify_all           = $apr->param('magnify_all');
     my $scale_maps            = $apr->param('scale_maps');
     my $stack_maps            = $apr->param('stack_maps');
+    my $comp_menu_order         = $apr->param('comp_menu_order');
     my $ref_map_order         = $apr->param('ref_map_order');
     my $prev_ref_map_order    = $apr->param('prev_ref_map_order');
     my $flip                  = $apr->param('flip') || '';
@@ -100,10 +101,11 @@ sub handler {
     $apr->param( 'aggregate', $self->aggregate($aggregate) );
     $apr->param( 'show_intraslot_corr',
         $self->show_intraslot_corr($show_intraslot_corr) );
-    $apr->param( 'clean_view',  $self->clean_view($clean_view) );
-    $apr->param( 'magnify_all', $self->magnify_all($magnify_all) );
-    $apr->param( 'scale_maps',  $self->scale_maps($scale_maps) );
-    $apr->param( 'stack_maps',  $self->stack_maps($stack_maps) );
+    $apr->param( 'clean_view',      $self->clean_view($clean_view) );
+    $apr->param( 'magnify_all',     $self->magnify_all($magnify_all) );
+    $apr->param( 'scale_maps',      $self->scale_maps($scale_maps) );
+    $apr->param( 'stack_maps',      $self->stack_maps($stack_maps) );
+    $apr->param( 'comp_menu_order',  $self->comp_menu_order($comp_menu_order) );
 
     if ($ref_map_order) {
         $self->ref_map_order($ref_map_order);
@@ -411,6 +413,7 @@ sub handler {
             scale_maps              => $self->scale_maps,
             stack_maps              => $self->stack_maps,
             ref_map_order           => $self->ref_map_order,
+            comp_menu_order         => $self->comp_menu_order,
           )
           or return $self->error( Bio::GMOD::CMap::Drawer->error );
 

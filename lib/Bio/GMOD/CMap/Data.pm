@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.200 2005-01-12 00:06:45 mwz444 Exp $
+# $Id: Data.pm,v 1.201 2005-01-19 20:38:58 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.200 $)[-1];
+$VERSION = (qw$Revision: 1.201 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -49,6 +49,7 @@ sub init {
     $self->aggregate( $config->{'aggregate'} );
     $self->show_intraslot_corr( $config->{'show_intraslot_corr'} );
     $self->ref_map_order( $config->{'ref_map_order'} );
+    $self->comp_menu_order( $config->{'comp_menu_order'} );
 
     ### Create the cache objects for each of the levels
     ### For and explaination of the cache levels, see
@@ -2581,12 +2582,25 @@ out which maps have relationships.
         my $total_correspondences;    # all the correspondences for the map set
         my $can_be_reference_map;     # whether or not it can
 
-        for my $map (
-            sort {
-                     $a->{'display_order'} <=> $b->{'display_order'}
-                  || $a->{'map_name'} cmp $b->{'map_name'}
-            } @{ $map_set->{'maps'} || [] }
-          )
+        my $display_order_sort = sub {
+            $a->{'display_order'} <=> $b->{'display_order'}
+            || $a->{'map_name'} cmp $b->{'map_name'}
+        };
+        my $no_corr_sort = sub {
+            $b->{'no_correspondences'} <=> $a->{'no_correspondences'}
+            || $a->{'display_order'} <=> $b->{'display_order'}
+            || $a->{'map_name'} cmp $b->{'map_name'}
+        };
+
+        my $sort_sub;
+        if ($self->comp_menu_order eq 'corrs'){
+            $sort_sub = $no_corr_sort;
+        }
+        else{
+            $sort_sub = $display_order_sort;
+        }
+    
+        for my $map ( sort $sort_sub @{ $map_set->{'maps'} || [] })
         {
             next
               if $min_correspondences
