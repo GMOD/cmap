@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.19 2005-03-10 18:30:08 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.20 2005-03-23 21:49:50 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.19 $)[-1];
+$VERSION = (qw$Revision: 1.20 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -281,12 +281,6 @@ use constant DEFAULT => {
     cookie_domain => '',
 
     #
-    # Whether or not to be in debug mode ("0" or "1").
-    # Default: 0
-    #
-    debug => 0,
-
-    #
     # URL for evidence type info
     #
     evidence_type_details_url => 'evidence_type_info?evidence_type=',
@@ -429,12 +423,6 @@ use constant DEFAULT => {
     # Default: 0 (disabled)
     #
     max_web_timeout => 0,
-
-    #
-    # The number of positions to have flanking zoomed areas.
-    # Default: 3
-    #
-    number_flanking_positions => 3,
 
     #
     # The module to dispatch to when no path is given to "/cmap."
