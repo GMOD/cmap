@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.54 2003-12-30 18:43:54 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.55 2003-12-30 21:08:59 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.54 $)[-1];
+$VERSION = (qw$Revision: 1.55 $)[-1];
 
 #
 # Get command-line options
@@ -749,7 +749,7 @@ sub export_as_text {
         feature_dbxref_name
         feature_dbxref_url
         is_landmark
-        feature_note
+        feature_attributes
     );
 
     my $map_types = $db->selectall_arrayref(
@@ -988,23 +988,26 @@ sub export_as_text {
             ( $map_set_id )
         );
 
+        my $attributes = $db->selectall_arrayref(
+            q[
+                select object_id, 
+                       attribute_name,
+                       attribute_value
+                from   cmap_attribute
+                where  table_name=?
+            ],
+            {},
+            ( 'cmap_feature' )
+        );
+
+        my %attr_lookup = ();
+        for my $a ( @$attributes ) {
+            push @{ $attr_lookup{ $a->[0] } }, qq[$a->[1]: "$a->[2]"];
+        }
+
         for my $map ( @$maps ) {
             my $features = $db->selectall_arrayref( 
                 $ft_sql, { Columns => {} }, ( $map->{'map_id'} )
-            );
-
-            my $feature_notes = $db->selectall_hashref(
-                q[
-                    select fn.feature_id,
-                           fn.note 
-                    from   cmap_feature_note fn,
-                           cmap_feature f
-                    where  fn.feature_id=f.feature_id
-                    and    f.map_id=?
-                ],
-                'feature_id',
-                {},
-                ( $map->{'map_id'} )
             );
 
             my $aliases = $db->selectall_arrayref(
@@ -1029,8 +1032,9 @@ sub export_as_text {
                 $feature->{'stop_position'} = undef 
                 if $feature->{'stop_position'} < $feature->{'start_position'};
 
-                $feature->{'feature_note'} = 
-                    $feature_notes->{ $feature->{'feature_id'} } || '';
+                $feature->{'feature_attributes'} = join('; ', 
+                    @{ $attr_lookup{ $feature->{'feature_id'} } || [] }
+                );
 
                 $feature->{'feature_aliases'} = join(',', 
                     map { s/"/\\"/g ? qq["$_"] : $_ }
