@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.62.2.2 2004-06-04 15:30:34 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.62.2.3 2004-07-01 15:43:44 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.62.2.2 $)[-1];
+$VERSION = (qw$Revision: 1.62.2.3 $)[-1];
 
 #
 # Get command-line options
@@ -753,114 +753,8 @@ sub export_as_text {
         feature_attributes
     );
 
-    my $map_types = $db->selectall_arrayref(
-        q[
-            select   mt.map_type_id, mt.map_type
-            from     cmap_map_type mt
-            order by map_type
-        ],
-        { Columns => {} },
-    );
-    die "No map types! Please use the web admin tool to create.\n" 
-        unless @$map_types;
-
-    my @map_type_ids = $self->show_menu(
-        title        => 'Restrict by Map Types',
-        prompt       => 'Limit export by which map types (optional)?',
-        display      => 'map_type',
-        return       => 'map_type_id',
-        allow_null   => 1,
-        allow_mult   => 1,
-        data         => $map_types,
-    );
-
-    my $species_sql = q[
-        select   distinct s.species_id, 
-                 s.common_name
-        from     cmap_species s,
-                 cmap_map_set ms
-        where    s.species_id=ms.species_id
-    ];
-    $species_sql .= 'and ms.map_type_id in ('.join(',', @map_type_ids).') '
-        if @map_type_ids;
-    $species_sql .= 'order by common_name';
-    my $species   = $db->selectall_arrayref( $species_sql, { Columns => {} } );
-    die "No species! Please use the web admin tool to create.\n" 
-        unless @$species;
-
-    my @species_ids = $self->show_menu(
-        title       => 'Restrict by Species',
-        prompt      => 'Limit export by which species (optional)?',
-        display     => 'common_name',
-        return      => 'species_id',
-        allow_null  => 1,
-        allow_mult  => 1,
-        data        => $species,
-    );
-
-    my $map_set_sql = q[
-        select   ms.map_set_id,
-                 ms.accession_id,
-                 ms.short_name,
-                 s.common_name,
-                 mt.map_type
-        from     cmap_map_set ms,
-                 cmap_species s,
-                 cmap_map_type mt
-        where    ms.species_id=s.species_id
-        and      ms.map_type_id=mt.map_type_id
-    ];
-    $map_set_sql .= 'and ms.species_id in ('.join(',', @species_ids).') '
-        if @species_ids;
-    $map_set_sql .= 'and ms.map_type_id in ('.join(',', @map_type_ids).') '
-        if @map_type_ids;
-    $map_set_sql .= 'order by short_name';
-    my $map_sets  = $db->selectall_arrayref( $map_set_sql, { Columns => {} } );
-    
-    my @map_set_ids = $self->show_menu(
-        title       => 'Restrict by Map Sets',
-        prompt      => 'Limit export by which map sets (optional)?',
-        display     => 'map_type,common_name,short_name,accession_id',
-        return      => 'map_set_id',
-        allow_null  => 1,
-        allow_mult  => 1,
-        data        => $map_sets,
-    );
-
-    my $ft_sql;
-    if ( @map_set_ids ) {
-        $ft_sql = q[
-            select   distinct ft.feature_type_id, 
-                     ft.feature_type
-            from     cmap_map map,
-                     cmap_feature f,
-                     cmap_feature_type ft
-            where    map.map_set_id in (].join( ',', @map_set_ids ).q[)
-            and      map.map_id=f.map_id
-            and      f.feature_type_id=ft.feature_type_id
-            order by feature_type
-        ];
-    }
-    else {
-        $ft_sql = q[
-            select   ft.feature_type_id, 
-                     ft.feature_type
-            from     cmap_feature_type ft
-            order by feature_type
-        ];
-    }
-
-    my $feature_types = $db->selectall_arrayref( $ft_sql, { Columns => {} } );
-
-    my @feature_type_ids =  $self->show_menu(
-        title            => 'Restrict by Feature Types',
-        prompt           => 'Limit export to which feature types (optional)?',
-        display          => 'feature_type',
-        return           => 'feature_type_id',
-        allow_null       => 1,
-        allow_mult       => 1,
-        data             => $feature_types,
-    );
+    my $map_sets      = $self->get_map_sets;
+    my $feature_types = $self->get_feature_types;
 
     my @exclude_fields = $self->show_menu(
         title       => 'Select Fields to Exclude',
@@ -879,25 +773,8 @@ sub export_as_text {
 
     my $dir = _get_dir() or return;
 
-    $map_set_sql = q[
-        select   ms.map_set_id, 
-                 ms.short_name as map_set_name,
-                 s.common_name as species_name
-        from     cmap_map_set ms,
-                 cmap_species s
-        where    ms.species_id=s.species_id
-    ];
-    $map_set_sql .= 'and ms.species_id in ('.join(',', @species_ids).') '
-        if @species_ids;
-    $map_set_sql .= 'and ms.map_type_id in ('.join(',', @map_type_ids).') '
-        if @map_type_ids;
-    $map_set_sql .= 'and ms.map_set_id in ('.join(',', @map_set_ids).') '
-        if @map_set_ids;
-    $map_set_sql .= 'order by common_name, short_name';
-    $map_sets     = $db->selectall_arrayref( $map_set_sql, { Columns => {} } );
-
     my @map_set_names;
-    if ( @map_set_ids ) {
+    if ( @{ $map_sets || [] } ) {
         @map_set_names = 
             map { join( '-', $_->{'species_name'}, $_->{'map_set_name'} ) }
             @$map_sets
@@ -907,19 +784,20 @@ sub export_as_text {
         @map_set_names = ('All');
     }
 
-    if ( @feature_type_ids ) {
-        $feature_types = $db->selectcol_arrayref(
+    my $ft_choices;
+    if ( @$feature_types ) {
+        $ft_choices = $db->selectcol_arrayref(
             q[
                 select   ft.feature_type
                 from     cmap_feature_type ft
                 where    ft.feature_type_id in (].
-                         join(',', @feature_type_ids).q[)
+                join(',', map{ $_->{'feature_type_id'} } @$feature_types).q[)
                 order by feature_type
             ],
         );
     }
     else {
-        $feature_types = [ 'All' ];
+        $ft_choices = [ 'All' ];
     }
 
     my $excluded_fields = 
@@ -932,7 +810,7 @@ sub export_as_text {
         'OK to export?',
         '  Data source     : '  . $self->data_source, 
         "  Map Sets        :\n" . join("\n", map { "    $_" } @map_set_names),
-        "  Feature Types   :\n" . join("\n", map { "    $_" } @$feature_types),
+        "  Feature Types   :\n" . join("\n", map { "    $_" } @$ft_choices),
         "  Exclude Fields  : $excluded_fields",
         "  Directory       : $dir",
         "[Y/n] "
@@ -943,7 +821,7 @@ sub export_as_text {
     my %exclude = map  { $_, 1 } @exclude_fields;
     @col_names  = grep { ! $exclude{ $_ } } @col_names;
 
-    $ft_sql = q[
+    my $ft_sql = q[
         select   f.feature_id, 
                  f.accession_id as feature_accession_id,
                  f.feature_name,
@@ -962,15 +840,17 @@ sub export_as_text {
         and      f.map_id=map.map_id
         and      f.feature_type_id=ft.feature_type_id
     ];
-    $ft_sql .= 'and ft.feature_type_id in ('.join(',', @feature_type_ids).') '
-        if @feature_type_ids;
+    $ft_sql .= 'and ft.feature_type_id in ('.
+        join(',', map { $_->{'feature_type_id'} } @$feature_types).') '
+        if @$feature_types;
     $ft_sql .= 'order by f.start_position';
 
     for my $map_set ( @$map_sets ) {
+        my $ms_aid       = $map_set->{'map_set_aid'};
         my $map_set_id   = $map_set->{'map_set_id'};
         my $map_set_name = $map_set->{'map_set_name'};
         my $species_name = $map_set->{'species_name'};
-        my $file_name    = join( '-', $species_name, $map_set_name );
+        my $file_name    = join( '-', $ms_aid, $species_name, $map_set_name );
            $file_name    =~ tr/a-zA-Z0-9-/_/cs;
            $file_name    = "$dir/$file_name.dat";
 
@@ -1450,9 +1330,8 @@ sub export_objects {
 
     my ( $map_sets, $feature_types );
     if ( grep { /map_set/ } @db_objects ) {
-        my $hr            = $self->get_map_sets;
-        $feature_types    = $hr->{'feature_types'};
-        $map_sets         = $hr->{'map_sets'};
+        $map_sets      = $self->get_map_sets;
+        $feature_types = $self->get_feature_types;
         my @ft_names      = map { $_->{'feature_type'} } @$feature_types;
         my @map_set_names = 
             map { 
@@ -1499,124 +1378,181 @@ sub get_map_sets {
 #
 # Help user choose map sets.
 #
-    my $self   = shift;
-    my $db     = $self->db or die $self->error;
-    my $log_fh = $self->log_fh;
+    my ( $self, %args ) = @_;
+    my $allow_mult      = defined $args{'allow_mult'} ? $args{'allow_mult'} : 1;
+    my $allow_null      = defined $args{'allow_null'} ? $args{'allow_null'} : 1;
+    my $db              = $self->db or die $self->error;
+    my $log_fh          = $self->log_fh;
     my $return;
 
-    my $map_types = $db->selectall_arrayref(
-        q[
-            select   mt.map_type_id, mt.map_type
-            from     cmap_map_type mt
-            order by map_type
+    my $select  =  $self->show_menu(
+        title   => 'Map Set Selection Method',
+        prompt  => 'How would you like to select map sets?',
+        display => 'display',
+        return  => 'action',
+        data    => [
+            { 
+                action  => 'by_accession_id', 
+                display => 'Supply Map Set Accession ID',
+            },
+            { 
+                action  => 'by_menu',   
+                display => 'Use Menus' 
+            },
         ],
-        { Columns => {} },
-    );
-    die "No map types! Please use the web admin tool to create.\n" 
-        unless @$map_types;
-
-    my @map_type_ids = $self->show_menu(
-        title        => 'Restrict by Map Set Export by Map Types',
-        prompt       => 'Limit export of map sets by which map types?',
-        display      => 'map_type',
-        return       => 'map_type_id',
-        allow_null   => 1,
-        allow_mult   => 1,
-        data         => $map_types,
     );
 
-    my $species_sql = q[
-        select   distinct s.species_id, 
-                 s.common_name
-        from     cmap_species s,
-                 cmap_map_set ms
-        where    s.species_id=ms.species_id
-    ];
-    $species_sql .= 'and ms.map_type_id in ('.join(',', @map_type_ids).') '
-        if @map_type_ids;
-    $species_sql .= 'order by common_name';
-    my $species   = $db->selectall_arrayref( $species_sql, { Columns => {} } );
-    die "No species! Please use the web admin tool to create.\n" 
-        unless @$species;
+    my $map_sets;
+    if ( $select eq 'by_accession_id' ) {
+        print 'Please supply the accession IDs separated by commas or spaces: ';
+        chomp( my $answer = <STDIN> );
+        my @accessions = split( /[,\s+]/, $answer );
+        return unless @accessions;
+        for my $acc ( @accessions ) {
+            my $sth = $db->prepare(
+                q[
+                    select   ms.map_set_id, 
+                             ms.accession_id as map_set_aid,
+                             ms.short_name as map_set_name,
+                             s.common_name as species_name,
+                             mt.map_type
+                    from     cmap_map_set ms,
+                             cmap_species s,
+                             cmap_map_type mt
+                    where    ms.accession_id=?
+                    and      ms.species_id=s.species_id
+                    and      ms.map_type_id=mt.map_type_id
+                ]
+            );
+            $sth->execute( $acc );
+            push @{ $map_sets }, $sth->fetchrow_hashref;
+        }
+        return unless @$map_sets;
+    }
+    else {
+        my $map_types = $db->selectall_arrayref(
+            q[
+                select   mt.map_type_id, mt.map_type
+                from     cmap_map_type mt
+                order by map_type
+            ],
+            { Columns => {} },
+        );
+        die "No map types! Please use the web admin tool to create.\n" 
+            unless @$map_types;
 
-    my @species_ids = $self->show_menu(
-        title       => 'Restrict by Species',
-        prompt      => 'Limit export by which species?',
-        display     => 'common_name',
-        return      => 'species_id',
-        allow_null  => 1,
-        allow_mult  => 1,
-        data        => $species,
-    );
+        my @map_type_ids = $self->show_menu(
+            title        => 'Restrict by Map Set Export by Map Types',
+            prompt       => 'Limit map sets to which map types?',
+            display      => 'map_type',
+            return       => 'map_type_id',
+            allow_null   => $allow_null,
+            allow_mult   => $allow_mult,
+            data         => $map_types,
+        );
 
-    my $map_set_sql = q[
-        select   ms.map_set_id,
-                 ms.accession_id,
-                 ms.short_name,
-                 s.common_name,
-                 mt.map_type
-        from     cmap_map_set ms,
-                 cmap_species s,
-                 cmap_map_type mt
-        where    ms.species_id=s.species_id
-        and      ms.map_type_id=mt.map_type_id
-    ];
-    $map_set_sql .= 'and ms.species_id in ('.join(',', @species_ids).') '
-        if @species_ids;
-    $map_set_sql .= 'and ms.map_type_id in ('.join(',', @map_type_ids).') '
-        if @map_type_ids;
-    $map_set_sql .= 'order by short_name';
-    my $map_sets  = $db->selectall_arrayref( $map_set_sql, { Columns => {} } );
-    
-    my @map_set_ids = $self->show_menu(
-        title       => 'Restrict by Map Sets',
-        prompt      => 'Limit export by which map sets?',
-        display     => 'map_type,common_name,short_name,accession_id',
-        return      => 'map_set_id',
-        allow_null  => 1,
-        allow_mult  => 1,
-        data        => $map_sets,
-    );
+        my $species_sql = q[
+            select   distinct s.species_id, 
+                     s.common_name
+            from     cmap_species s,
+                     cmap_map_set ms
+            where    s.species_id=ms.species_id
+        ];
+        $species_sql .= 'and ms.map_type_id in ('.join(',', @map_type_ids).') '
+            if @map_type_ids;
+        $species_sql .= 'order by common_name';
+        my $species = $db->selectall_arrayref($species_sql, { Columns => {} });
+        die "No species! Please use the web admin tool to create.\n" 
+            unless @$species;
 
-    my $where;
-    $where .= 'and ms.species_id in  ('.join(',', @species_ids) .') '
-        if @species_ids;
-    $where .= 'and ms.map_type_id in ('.join(',', @map_type_ids).') '
-        if @map_type_ids;
-    $where .= 'and ms.map_set_id in  ('.join(',', @map_set_ids) .') '
-        if @map_set_ids;
+        my @species_ids = $self->show_menu(
+            title       => 'Restrict by Species',
+            prompt      => 'Limit to which species?',
+            display     => 'common_name',
+            return      => 'species_id',
+            allow_null  => $allow_null,
+            allow_mult  => $allow_mult,
+            data        => $species,
+        );
 
-    $map_set_sql = qq[
-        select   ms.map_set_id, 
-                 ms.short_name as map_set_name,
-                 s.common_name as species_name,
-                 mt.map_type
-        from     cmap_map_set ms,
-                 cmap_species s,
-                 cmap_map_type mt
-        where    ms.species_id=s.species_id
-        and      ms.map_type_id=mt.map_type_id
-        $where
-    ];
-    $map_set_sql .= 'order by common_name, short_name';
+        my $map_set_sql = q[
+            select   ms.map_set_id,
+                     ms.accession_id,
+                     ms.short_name,
+                     s.common_name,
+                     mt.map_type
+            from     cmap_map_set ms,
+                     cmap_species s,
+                     cmap_map_type mt
+            where    ms.species_id=s.species_id
+            and      ms.map_type_id=mt.map_type_id
+        ];
+        $map_set_sql .= 'and ms.species_id in ('.join(',', @species_ids).') '
+            if @species_ids;
+        $map_set_sql .= 'and ms.map_type_id in ('.join(',', @map_type_ids).') '
+            if @map_type_ids;
+        $map_set_sql .= 'order by short_name';
+        my $ms_choices = $db->selectall_arrayref($map_set_sql, {Columns => {}});
+        
+        my @map_set_ids = $self->show_menu(
+            title       => 'Restrict by Map Sets',
+            prompt      => 'Limit to which map sets?',
+            display     => 'map_type,common_name,short_name,accession_id',
+            return      => 'map_set_id',
+            allow_null  => $allow_null,
+            allow_mult  => $allow_mult,
+            data        => $ms_choices,
+        );
 
-    $return->{'map_sets'} = $db->selectall_arrayref( 
-        $map_set_sql, { Columns => {} } 
-    );
+        my $where;
+        $where .= 'and ms.species_id in  ('.join(',', @species_ids) .') '
+            if @species_ids;
+        $where .= 'and ms.map_type_id in ('.join(',', @map_type_ids).') '
+            if @map_type_ids;
+        $where .= 'and ms.map_set_id in  ('.join(',', @map_set_ids) .') '
+            if @map_set_ids;
 
+        $map_set_sql = qq[
+            select   ms.map_set_id, 
+                     ms.accession_id as map_set_aid,
+                     ms.short_name as map_set_name,
+                     s.common_name as species_name,
+                     mt.map_type
+            from     cmap_map_set ms,
+                     cmap_species s,
+                     cmap_map_type mt
+            where    ms.species_id=s.species_id
+            and      ms.map_type_id=mt.map_type_id
+            $where
+        ];
+        $map_set_sql .= 'order by common_name, short_name';
+
+        $map_sets = $db->selectall_arrayref( $map_set_sql, { Columns => {} } );
+    }
+
+    return $map_sets;
+}
+
+# ----------------------------------------------------
+sub get_feature_types {
+#
+# Allow selection of feature types
+#
+    my ( $self, %args ) = @_;
+    my @map_set_ids     = @{ $args{'map_set_ids'} || [] };
     my $ft_sql;
-    if ( $where ) {
-        $ft_sql = qq[
+    if ( @map_set_ids ) {
+        $ft_sql = q[
             select   distinct ft.feature_type_id, 
                      ft.feature_type
             from     cmap_map_set ms,
                      cmap_map map,
                      cmap_feature f,
                      cmap_feature_type ft
-            where    ms.map_set_id=map.map_set_id
+            where    ms.map_set_id in (].join(',', @map_set_ids).q[
+            and      ms.map_set_id=map.map_set_id
             and      map.map_id=f.map_id
             and      f.feature_type_id=ft.feature_type_id
-            $where
             order by feature_type
         ];
     }
@@ -1629,6 +1565,7 @@ sub get_map_sets {
         ];
     }
 
+    my $db               = $self->db or die $self->error;
     my @feature_type_ids =  $self->show_menu(
         title            => 'Restrict by Feature Types',
         prompt           => 'Limit export by feature types?',
@@ -1639,8 +1576,9 @@ sub get_map_sets {
         data             => $db->selectall_arrayref($ft_sql, { Columns => {} })
     );
 
+    my $feature_types = [];
     if ( @feature_type_ids ) {
-        $return->{'feature_types'} = $db->selectall_arrayref(
+        $feature_types = $db->selectall_arrayref(
             q[
                 select   feature_type_id, feature_type
                 from     cmap_feature_type
@@ -1652,7 +1590,7 @@ sub get_map_sets {
         );
     }
 
-    return $return;
+    return $feature_types;
 }
 
 # ----------------------------------------------------
@@ -1994,71 +1932,9 @@ sub import_tab_data {
     $term->addhistory($file); 
     $self->file( $file );
 
-    #
-    # Get the map type.
-    #
-    my ( $map_type_id, $map_type ) = $self->show_menu(
-        title   => 'Available Map Types',
-        prompt  => 'Please select a map type',
-        display => 'map_type',
-        return  => 'map_type_id,map_type',
-        data     => $db->selectall_arrayref(
-            q[
-                select   mt.map_type_id, mt.map_type
-                from     cmap_map_type mt
-                order by map_type
-            ],
-            { Columns => {} },
-        ),
-    );
-    do { print "No map types to select from.\n"; return } unless $map_type_id;
-
-    #
-    # Get the species.
-    #
-    my ( $species_id, $species ) = $self->show_menu(
-        title   => "Available Species (for $map_type)",
-        prompt  => 'Please select a species',
-        display => 'common_name',
-        return  => 'species_id,common_name',
-        data     => $db->selectall_arrayref(
-            q[
-                select   distinct s.species_id, s.common_name
-                from     cmap_species s,
-                         cmap_map_set ms
-                where    ms.species_id=s.species_id
-                and      ms.map_type_id=?
-                order by common_name
-            ],
-            { Columns => {} },
-            ( $map_type_id )
-        ),
-    );
-    do { print "No species to select from.\n"; return } unless $species_id;
-    
-    #
-    # Get the map set.
-    #
-    my ( $map_set_id, $map_set_name ) = $self->show_menu(
-        title   => "Available Map Sets (for $map_type, $species)",
-        prompt  => 'Please select a map set',
-        display => 'map_set_name',
-        return  => 'map_set_id,map_set_name',
-        data    => $db->selectall_arrayref(
-            q[
-                select   ms.map_set_id, ms.map_set_name
-                from     cmap_map_set ms
-                where    ms.map_type_id=?
-                and      ms.species_id=?
-                and      ms.map_type_id=?
-                order by map_set_name
-            ],
-            { Columns => {} },
-            ( $map_type_id, $species_id, $map_type_id )
-        ),
-    );
-    do { print "There are no map sets for that map type!\n"; return }
-         unless $map_set_id;
+    my $map_sets = $self->get_map_sets( allow_mult => 0, allow_null => 0 );
+    return unless @{ $map_sets || [] };
+    my $map_set  = $map_sets->[0];
 
     print "Remove data in map set not in import file? [y/N] ";
     chomp( my $overwrite = <STDIN> );
@@ -2071,9 +1947,10 @@ sub import_tab_data {
         'OK to import?',
         '  Data source : ' . $self->data_source, 
         "  File        : $file",
-        "  Species     : $species",
-        "  Map Type    : $map_type",
-        "  Map Study   : $map_set_name",
+        "  Species     : $map_set->{species_name}",
+        "  Map Type    : $map_set->{map_type}",
+        "  Map Set     : $map_set->{map_set_name}",
+        "  Map Set Acc : $map_set->{map_set_aid}",
         "  Overwrite   : " . ( $overwrite ? "Yes" : "No" ),
         "[Y/n] "
     );
@@ -2085,9 +1962,8 @@ sub import_tab_data {
     );
 
     $importer->import_tab(
-        map_set_id => $map_set_id,
+        map_set_id => $map_set->{'map_set_id'},
         fh         => $fh,
-        map_type   => $map_type,
         log_fh     => $self->log_fh,
         overwrite  => $overwrite,
     ) or do { 
@@ -2379,11 +2255,18 @@ sub show_menu {
         print "Using '$value'\n";
     }
 
-    return wantarray 
-        ? defined $result 
-            ? @$result : () 
-        : $result
-    ;
+#    return ref $result eq 'ARRAY' && wantarray 
+#        ? defined $result 
+#            ? @$result : () 
+#        : $result
+#    ;
+
+    if ( defined $result ) {
+        return ref $result eq 'ARRAY' && wantarray ? @$result : $result;
+    }
+    else {
+        return wantarray ? () : undef;
+    }
 }
 
 # ----------------------------------------------------
