@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::SpeciesViewer;
 # vim: set ft=perl:
 
-# $Id: SpeciesViewer.pm,v 1.5 2004-06-22 03:05:35 mwz444 Exp $
+# $Id: SpeciesViewer.pm,v 1.6 2005-03-10 18:30:17 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use Data::Pageset;
 use Bio::GMOD::CMap::Apache;
@@ -41,6 +41,10 @@ sub handler {
         pages_per_set    => $MAX_PAGES,
     } );
     $species = [ $pager->splice( $species ) ] if @$species;
+
+    for my $s ( @$species ) {
+        $self->object_plugin( 'species_info', $s );
+    }
 
     my $t = $self->template;
     for my $s ( @$species ) {

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.73 2005-03-04 20:52:22 mwz444 Exp $
+# $Id: CMap.pm,v 1.74 2005-03-10 18:30:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -146,10 +146,8 @@ Allow for object plugin stuff.
 =cut
 
     my ( $self, $obj_type, $object ) = @_;
-
-    return unless($self->config_data('object_plugin'));
-    my $xref_sub = $self->config_data('object_plugin')->{ $obj_type } 
-        or return;
+    my $plugin_info = $self->config_data('object_plugin') or return;
+    my $xref_sub    = $plugin_info->{ $obj_type }         or return;
 
     if ( $xref_sub =~ /^\s*sub\s*{/ ) {
         $xref_sub = eval $xref_sub;
@@ -157,6 +155,8 @@ Allow for object plugin stuff.
     elsif ( $xref_sub =~ /\w+::\w+/ ) {
         $xref_sub = \&{ $xref_sub };
     }
+
+    return unless ref $xref_sub eq 'CODE';
 
     no strict 'refs';
     $xref_sub->( $object );

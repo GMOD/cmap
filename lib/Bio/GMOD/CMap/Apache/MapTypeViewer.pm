@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapTypeViewer;
 # vim: set ft=perl:
 
-# $Id: MapTypeViewer.pm,v 1.5 2004-06-22 03:05:35 mwz444 Exp $
+# $Id: MapTypeViewer.pm,v 1.6 2005-03-10 18:30:09 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use Data::Pageset;
 use Bio::GMOD::CMap::Apache;
@@ -40,6 +40,10 @@ sub handler {
         pages_per_set    => $MAX_PAGES,
     } );
     $map_types = [ $pager->splice( $map_types ) ] if @$map_types;
+
+    for my $mt ( @$map_types ) {
+        $self->object_plugin( 'map_type_info', $mt );
+    }
 
     $INTRO ||= $self->config_data('map_type_info_intro') || '';
 

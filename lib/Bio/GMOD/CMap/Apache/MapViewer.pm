@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.89 2005-03-03 19:31:00 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.90 2005-03-10 18:30:09 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.89 $)[-1];
+$VERSION = (qw$Revision: 1.90 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -577,6 +577,8 @@ sub handler {
             page_data               => $action eq 'download' ? 0 : 1,
           )
           or return $self->error( "Data: " . $data->error );
+
+        $self->object_plugin( 'map_details', $detail_data->{'reference_map'} );
 
         if ( $action eq 'download' ) {
             my $text = join( FIELD_SEP, @{ +COLUMN_NAMES } ) . RECORD_SEP;

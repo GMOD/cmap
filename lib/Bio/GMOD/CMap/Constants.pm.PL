@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.18 2005-01-05 03:03:58 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.19 2005-03-10 18:30:08 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.18 $)[-1];
+$VERSION = (qw$Revision: 1.19 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -337,7 +337,7 @@ use constant DEFAULT => {
     #
     # Where to see feature type details.
     #
-    feature_type_details_url => 'feature_type_info?feature_type=',
+    feature_type_details_url => 'feature_type_info?feature_type_aid=',
     
     #
     # The size of the map image.  Note that there are options on the
