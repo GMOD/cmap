@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.40 2004-05-14 20:36:30 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.41 2004-05-25 21:41:26 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.40 $)[-1];
+$VERSION = (qw$Revision: 1.41 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -210,14 +210,13 @@ sub handler {
         ref_species_aid        => $ref_species_aid,
     ) or return $self->error( $data->error );
 
-    $form_data->{'feature_types'} = $drawer 
-        ? [ 
-            sort {
+    $form_data->{'feature_types'} = 
+        [
+        sort {
                 lc $a->{'feature_type'} cmp lc $b->{'feature_type'}
-            } @{ $drawer->{'feature_types'} }
-        ]
-        : []
-    ;
+            } @{ $self->data_module->get_all_feature_types}
+        ];
+}
     #
     # The start and stop may have had to be moved as there 
     # were too few or too many features in the selected region.
@@ -239,7 +238,7 @@ sub handler {
             $slot_no, map { $slots{ $slot_no }{ $_ } } qw[ field aid ]
         );
     }
-   
+  
     my $html;
     my $t = $self->template or return;
     $t->process( 
