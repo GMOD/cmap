@@ -1,0 +1,53 @@
+[% INCLUDE admin_header.tmpl title="Species View &quot;$species.common_name&quot;" %]
+<a href="admin">Home</a> |
+<a href="admin?action=confirm_delete;entity_type=cmap_species;entity_id=[% species.species_id %];entity_name_field=common_name">Delete</a> |
+<a href="admin?action=species_view">View All Species</a>
+<hr noshade>
+
+<table>
+    <tr>
+        <td align="right">Acc. ID <em>(opt.)</em>:</td>
+        <td>
+            [% species.accession_id %]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Common Name:</td>
+        <td>
+            [% species.common_name %]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Full Name:</td>
+        <td>
+            [% species.full_name %]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Display Order <em>(opt.)</em>:</td>
+        <td>
+            [% species.display_order %]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">NCBI Taxon ID <em>(opt.)</em>:</td>
+        <td>
+            [% species.ncbi_taxon_id %]
+        </td>
+    </tr>
+</table>
+
+[% 
+    INCLUDE admin_attributes_view.tmpl 
+    attributes=species.attributes 
+    return_action='species_view'
+    pk_name='species_id'
+    object_id=species.species_id
+    table_name='cmap_species'
+%]
+</form>
+[% INCLUDE admin_footer.tmpl %]
