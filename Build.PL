@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.10 2003-09-24 21:24:37 kycl4rk Exp $
+# $Id: Build.PL,v 1.11 2003-09-24 21:37:42 kycl4rk Exp $
 
 use strict;
 
@@ -127,11 +127,6 @@ print "The following options will be used to install CMap:\n",
 #
 my $config = "$Bin/".INSTALL_CONF;
 open F,">$config" or warn "Can't open $config for writing: $!\n";
-print F 
-    "# This hints file contains configuration \n",
-    "# information used by the CMap installer.\n",
-    qq[# To reconfigure, run "perl Makefile.PL `cat ".INSTALL_CONF."`"\n]
-;
 print F "$_=$OPTIONS{$_}\n" for qw[ CONF_DIR TEMPLATE_DIR STYLESHEET_DIR ];
 close F;
 
