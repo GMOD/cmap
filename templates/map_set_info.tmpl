@@ -131,14 +131,12 @@
                 </tr> 
             [% END %]
 
-            [% UNLESS ms.is_relational_map %] 
-                <tr>
-                    <th align="right" valign="top">Matrix&nbsp;View:</th>
-                    <td>
-                        <b>[</b>&nbsp;<a href="matrix?show_matrix=1;map_type_aid=[% ms.map_type_aid %]&species_aid=[% ms.species_aid %]&map_set_aid=[% ms.map_set_aid %]">View&nbsp;In&nbsp;Matrix</a>&nbsp;<b>]</b>
-                    </td>
-                </tr>
-            [% END %]
+            <tr>
+                <th align="right" valign="top">Matrix&nbsp;View:</th>
+                <td>
+                    <b>[</b>&nbsp;<a href="matrix?show_matrix=1&[% IF ms.is_relational_map %]link_map_set_aid=[% ms.map_set_aid %][% ELSE %]map_type_aid=[% ms.map_type_aid %]&species_aid=[% ms.species_aid %]map_set_aid=[% ms.map_set_aid %][% END %]">View&nbsp;Map&nbsp;Set&nbsp;In&nbsp;Matrix</a>&nbsp;<b>]</b>
+                </td>
+            </tr>
 
             [% IF ms.feature_types.size %]
                 <tr>
