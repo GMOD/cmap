@@ -3,11 +3,11 @@
   title=title
   cur_sec='map_viewer'
   help_anchor='map_viewer'
-  body_addendum='onLoad="setDivObjects();document.comparative_map_form.reset()"'
+  body_addendum='onLoad="setDivElems();document.comparative_map_form.reset()"'
 %]
 <script language="javascript">
                                         
-function setDivObjects(){
+function setDivElems(){
   startPage();
 }
 
@@ -390,7 +390,7 @@ function selectAllOptions(select){
                 </select>
               </td>
               <td>
-                <input type="submit" value="Change Map Set" name="sub">
+                <input type="submit" value="Show Selected Set's Maps" name="sub">
                 <input type="hidden" name="prev_ref_species_aid" value="[% apr.param('ref_species_aid') %]">
                 <input type="hidden" name="prev_ref_map_set_aid" value="[% apr.param('ref_map_set_aid') %]">
                 <input type="hidden" name="highlight"      value="[% apr.param('highlight') %]">
@@ -427,6 +427,9 @@ function selectAllOptions(select){
                       <option value="">--No Maps Available--</option>
                     [% END %]
                   </select>
+                <td valign="top">
+                  <input type="submit" value="Change Maps" name="sub">
+                </td>
     
                   <input type="hidden" name="prev_ref_species_aid" value="[% apr.param('ref_species_aid') %]">
                   <input type="hidden" name="prev_ref_map_aids" value="[% apr.param('ref_map_aids') %]">
@@ -438,9 +441,6 @@ function selectAllOptions(select){
                     <input type="hidden" name="image_size"     value="[% apr.param('image_size') %]">
                     <input type="hidden" name="image_type"     value="[% apr.param('image_type') %]">
                   [% END %]
-                </td>
-                <td valign=top>
-                  <input type="submit" value="Change Maps" name="sub">
                 </td>
               </tr>
             </form>
@@ -503,7 +503,7 @@ function selectAllOptions(select){
                 </td>
               </tr>
               <tr>
-                <td align="left" colspan=2>Min. No. Correspondences: 
+                <td align="left" colspan=2>Min. No. Correspondences:
                 <input name="min_correspondences" value="[% apr.param('min_correspondences') %]"> </td>
               </tr>
             </table>

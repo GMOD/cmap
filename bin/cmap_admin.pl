@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.78.2.2 2004-12-14 20:01:07 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.78.2.3 2004-12-22 21:36:04 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.78.2.2 $)[-1];
+$VERSION = (qw$Revision: 1.78.2.3 $)[-1];
 
 #
 # Get command-line options
@@ -1350,17 +1350,19 @@ sub get_map_sets {
                              ms.accession_id as map_set_aid,
                              ms.short_name as map_set_name,
                              s.common_name as species_name,
-                             mt.map_type
+                             ms.map_type_accession as map_type_aid
                     from     cmap_map_set ms,
-                             cmap_species s,
-                             cmap_map_type mt
+                             cmap_species s
                     where    ms.accession_id=?
                     and      ms.species_id=s.species_id
-                    and      ms.map_type_id=mt.map_type_id
                 ]
             );
             $sth->execute($acc);
             push @{$map_sets}, $sth->fetchrow_hashref;
+        }
+        foreach my $row ( @{$map_sets} ) {
+            $row->{'map_type'} =
+              $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
         }
         return unless @$map_sets;
     }
