@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.186 2004-12-09 20:01:36 mwz444 Exp $
+# $Id: Data.pm,v 1.187 2004-12-09 20:48:27 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.186 $)[-1];
+$VERSION = (qw$Revision: 1.187 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -1568,12 +1568,14 @@ Returns the data for the correspondence matrix.
 
             $row->{'map_type'} =
               $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
+
+            $row->{'epoch_published_on'} = parsedate($row->{'published_on'});
         }
         $map_sets = sort_selectall_arrayref(
             $map_sets,           '#default_display_order',
             'map_type',          '#display_order',
             'common_name',       '#display_order',
-            'published_on desc', 'short_name'
+            'epoch_published_on desc', 'short_name'
         );
 
         my $map_sql = qq[
@@ -1710,6 +1712,7 @@ Returns the data for the correspondence matrix.
 
             $row->{'map_type'} =
               $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
+            $row->{'epoch_published_on'} = parsedate($row->{'published_on'});
         }
 
         @reference_map_sets = @{
@@ -1717,7 +1720,7 @@ Returns the data for the correspondence matrix.
                 $tempMapSet,    '#map_type_display_order',
                 'map_type',     '#species_display_order',
                 'species_name', '#map_set_display_order',
-                'map_set_name', 'published_on desc',
+                'map_set_name', 'epoch_published_on desc',
                 'map_set_name'
             )
           };
@@ -1944,12 +1947,13 @@ Returns the data for the correspondence matrix.
               $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
             $row->{'map_type_display_order'} =
               $self->map_type_data( $row->{'map_type_aid'}, 'display_order' );
+            $row->{'epoch_published_on'} = parsedate($row->{'published_on'});
         }
         $tempMapSet = sort_selectall_arrayref(
             $tempMapSet,    '#map_type_display_order',
             'map_type',     '#species_display_order',
             'species_name', '#map_set_display_order',
-            'published_on', 'map_set_name'
+            'epoch_published_on desc', 'map_set_name'
         );
     }
 
@@ -2153,13 +2157,14 @@ sub cmap_form_data {
                 $row->{'map_type_display_order'} =
                   $self->map_type_data( $row->{'map_type_aid'},
                     'display_order' );
+            $row->{'epoch_published_on'} = parsedate($row->{'published_on'});
             }
 
             $ref_map_sets = sort_selectall_arrayref(
-                $ref_map_sets,  '#map_type_display_order',
-                'map_type',     '#species_display_order',
-                'species_name', '#map_set_display_order',
-                'map_set_name',
+                $ref_map_sets,        '#map_type_display_order',
+                'map_type',           '#species_display_order',
+                'species_name',       '#map_set_display_order',
+                'epoch_published_on', 'map_set_name',
             );
 
             $self->store_cached_results( 1, $sql_str, $ref_map_sets );
@@ -3970,10 +3975,11 @@ Returns data on species.
               $self->map_type_data( $row->{'map_type_aid'}, 'width' );
             $row->{'map_type'} =
               $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
+            $row->{'epoch_published_on'} = parsedate($row->{'published_on'});
         }
         $s->{'map_sets'} =
           sort_selectall_arrayref( $s->{'map_sets'}, '#default_display_order',
-            'map_type', '#display_order', 'published_on desc',
+            'map_type', '#display_order', 'epoch_published_on desc',
             'map_set_name' );
     }
 
