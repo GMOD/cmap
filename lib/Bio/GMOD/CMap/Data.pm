@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.162 2004-10-15 20:23:43 kycl4rk Exp $
+# $Id: Data.pm,v 1.163 2004-10-19 13:47:23 kycl4rk Exp $
 
 =head1 NAME
 
@@ -15,7 +15,7 @@ my $data = Bio::GMOD::CMap::Data->new;
 my $foo  = $data->foo_data;
 
 =head1 DESCRIPTION
-    
+
 A module for getting data from a database.  Think DBI for whatever
 RDBMS you want to use underneath.  I'll try to write generic SQL to
 work with anything, and customize it in subclasses.
@@ -26,8 +26,9 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.162 $)[-1];
+$VERSION = (qw$Revision: 1.163 $)[-1];
 
+use Cache::FileCache;
 use Data::Dumper;
 use Date::Format;
 use Regexp::Common;
@@ -36,31 +37,29 @@ use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Utils;
 use Bio::GMOD::CMap::Admin::Export;
 use Bio::GMOD::CMap::Admin::ManageLinks;
-use base 'Bio::GMOD::CMap';
-use Cache::FileCache;
 use Storable qw(freeze thaw);
+
+use base 'Bio::GMOD::CMap';
 
 # ----------------------------------------------------
 sub init {
-
-    #p#rint S#TDERR "init\n";
     my ( $self, $config ) = @_;
     $self->config( $config->{'config'} );
     $self->data_source( $config->{'data_source'} );
     $self->aggregate( $config->{'aggregate'} );
+
     ### Create the cache objects for each of the levels
     ### For and explaination of the cache levels, see
     ### the comments above the cache subroutines 
     ### titled "Query Caching"
     my @level_names=$self->cache_level_names();
-    for (my $i=0;$i<=$#level_names;$i++){
-        my %cache_params = (
-            'namespace' => $level_names[$i],
-             );
-        $self->{'L'.($i+1).'_cache'} = new Cache::FileCache( \%cache_params );
+    for ( my $i = 0 ; $i <= $#level_names ; $i++ ) {
+        my %cache_params = ( 'namespace' => $level_names[$i], );
+        $self->{ 'L' . ( $i + 1 ) . '_cache' } =
+          new Cache::FileCache( \%cache_params );
     }
     
-    $self->{'expanded_correspondence_lookup'}=
+    $self->{'expanded_correspondence_lookup'} =
         $self->config_data('expanded_correspondence_lookup');
     return $self;
 }
@@ -1041,13 +1040,12 @@ sub slot_data {
 
 =head2 get_web_page_extras
 
-gets the extra javascript code that needs to go on the web
-    page for these features.
-    
+Gets the extra javascript code that needs to go on the web
+page for these features.
+
 =cut
 
 sub get_web_page_extras {
-
     my $self          = shift;
     my $feature_types = shift;
     my $map_type_aids = shift;
@@ -2950,34 +2948,35 @@ Given a feature acc. id, find out all the details on it.
 }
 
 # ----------------------------------------------------
-sub link_viewer_data{
+sub link_viewer_data {
 
 =pod
 
-=head2 feature_search_data
+=head2 link_viewer_data
 
 Given a list of feature names, find any maps they occur on.
 
 =cut
 
     my ( $self, %args ) = @_;
-    my $selected_link_set      = $args{'selected_link_set'};
+    my $selected_link_set = $args{'selected_link_set'};
 
     my $link_manager = Bio::GMOD::CMap::Admin::ManageLinks->new(
-        data_source => $self->data_source,
+        data_source => $self->data_source
     );
-    my @link_set_names=$link_manager->list_set_names(
-        name_space => $self->get_link_name_space,
-        );
+
+    my @link_set_names = $link_manager->list_set_names( 
+        name_space => $self->get_link_name_space
+    );
 
     my @links = $link_manager->output_links(
-        name_space => $self->get_link_name_space,
+        name_space    => $self->get_link_name_space,
         link_set_name => $selected_link_set,
-        );
+    );
 
     return {
-        links          => \@links,
-        link_sets      => \@link_set_names,
+        links     => \@links,
+        link_sets => \@link_set_names,
     };
 }
 
@@ -4865,37 +4864,41 @@ sub get_ref_unit_size {
 
 # ----------------------------------------------------
 sub compress_maps {
-                                                                                                                             
-=pod
-                                                                                                                             
-=head2 compress_maps
-                                                                                                                             
-Decide if the maps should be compressed.
-If it is aggregated, compress unless all the slots contain only 1 map
-If it is not aggregated, compress unless this slot contains only 1 map.
-                                                                                                                             
-=cut
-                                                                                                                             
-    my $self     = shift;
-    my $this_slot_no  = shift;
-    return unless (defined($this_slot_no));
 
-    if ($self->aggregate){
-        if (defined($self->{'compress_aggregates'})){
-            return($self->{'compress_aggregates'});
+=pod
+
+=head2 compress_maps
+
+Decide if the maps should be compressed.
+If it is aggregated, compress unless all the slots contain only 1 map.
+If it is not aggregated, compress unless this slot contains only 1 map.
+
+=cut
+
+    my $self         = shift;
+    my $this_slot_no = shift;
+
+    return unless defined $this_slot_no;
+
+    if ( $self->aggregate ) {
+        if ( defined( $self->{'compress_aggregates'} ) ) {
+            return ( $self->{'compress_aggregates'} );
         }
-        my $slot_info
-            = $self->slot_info;
-        foreach my $slot_no (keys(%$slot_info)){
-            if ( scalar(keys(%{$slot_info->{$slot_no}}))>1){
-                $self->{'compress_aggregates'}=1;
-                return ($self->{'compress_aggregates'});
+
+        my $slot_info = $self->slot_info;
+
+        foreach my $slot_no ( keys(%$slot_info) ) {
+            if ( scalar( keys( %{ $slot_info->{$slot_no} } ) ) > 1 ) {
+                $self->{'compress_aggregates'} = 1;
+                return ( $self->{'compress_aggregates'} );
             }
         }
-        $self->{'compress_aggregates'}=0;
-        return ($self->{'compress_aggregates'});
+
+        $self->{'compress_aggregates'} = 0;
+        return ( $self->{'compress_aggregates'} );
     }
-    return (scalar(keys(%{$self->slot_info->{$this_slot_no}}))>1);
+
+    return ( scalar( keys( %{ $self->slot_info->{$this_slot_no} } ) ) > 1 );
 }
 
 # ----------------------------------------------------
@@ -4908,6 +4911,7 @@ sub getDisplayedStartStop {
 get start and stop of a map set.
 
 =cut
+
     my $self     = shift;
     my $slot_no  = shift;
     my $map_id   = shift;
@@ -4946,6 +4950,7 @@ sub truncatedMap {
 test if the map is truncated
 
 =cut
+
     my $self     = shift;
     my $slot_no  = shift;
     my $map_id   = shift;
@@ -4980,6 +4985,7 @@ sub scroll_data {
 return the start and stop for the scroll buttons
 
 =cut
+
     my $self       = shift;
     my $slot_no    = shift;
     my $map_id     = shift;
@@ -5043,20 +5049,20 @@ return the start and stop for the scroll buttons
 
 # ----------------------------------------------------
 sub magnification {
-                                                                                                                             
+
 =pod
-                                                                                                                             
+
 =head2 magnification
-                                                                                                                             
-given the slot_no and map_id
-                                                                                                                             
+
+Given the slot_no and map_id
+
 =cut
+
     my $self     = shift;
     my $slot_no  = shift;
     my $map_id   = shift;
-    return 1
-        unless (defined($slot_no) and defined($map_id));
-                                                                                                                             
+    return 1 unless defined $slot_no and defined $map_id;
+
     if ($self->slot_info->{$slot_no}
         and %{$self->slot_info->{$slot_no}}
         and @{$self->slot_info->{$slot_no}{$map_id}}) {
@@ -5065,28 +5071,31 @@ given the slot_no and map_id
             return $map_info->[4];
         }
     }
+
     return 1;
 }
 
 # ----------------------------------------------------
 sub feature_default_display {
-                                                                                                                             
+
 =pod
-                                                                                                                             
+
 =head2 feature_default_display
-                                                                                                                             
-given the slot_no and map_id
-                                                                                                                             
+
+Given the slot_no and map_id
+
 =cut
+
     my $self     = shift;
 
-    unless ($self->{'feature_default_display'}){
-        my $feature_default_display= $self->config_data('feature_default_display');
+    unless ( $self->{'feature_default_display'} ) {
+        my $feature_default_display =
+          $self->config_data('feature_default_display');
         $feature_default_display = lc($feature_default_display);
-        unless ($feature_default_display eq 'corr_only' 
-                or
-                $feature_default_display eq 'ignore'){
-            $feature_default_display='display'; #Default value
+        unless ( $feature_default_display eq 'corr_only'
+            or $feature_default_display eq 'ignore' )
+        {
+            $feature_default_display = 'display';    #Default value
         }
         $self->{'feature_default_display'} = $feature_default_display;
     }
@@ -5096,21 +5105,26 @@ given the slot_no and map_id
 
 
 # ----------------------------------------------------
-# store and retrieve the slot info.
 sub slot_info {
 
 =pod
                                                                                 
 =head2 slot_info
-                                                                                
-Creates and returns some map info for each slot.
-Data Structure:
-slot_info={slot_no=>{map_id=>
-   [current_start, current_stop, ori_start,ori_stop]}}
 
-current_start and current_stop are undef if using the 
+Stores and retrieve the slot info.
+
+Creates and returns some map info for each slot.
+
+Data Structure:
+  slot_info  =  {
+    slot_no  => {
+      map_id => [ current_start, current_stop, ori_start, ori_stop ]
+    }
+  }
+
+"current_start" and "current_stop" are undef if using the 
 original start and stop. 
-                                                                                
+
 =cut
 
     my $self  = shift;
@@ -5128,7 +5142,6 @@ original start and stop.
 	  ];
 
     if ($slots) {
-#print S#TDERR Dumper($slots)."\n";
         my $sql_suffix;
         foreach my $slot_no ( sort orderOutFromZero keys %{$slots} ) {
             my $from  = '';
