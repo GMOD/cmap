@@ -113,8 +113,6 @@
             <input type="hidden" name="ref_map_set_aid"  value="[% apr.param('ref_map_set_aid') %]">
             <input type="hidden" name="ref_map_aids"      value="[% apr.param('ref_map_aids') %]">
             <input type="hidden" name="comparative_maps" value="[% apr.param('comparative_maps') %]">
-            <input type="hidden" name="feature_types"    value="[% apr.param('feature_types') %]">
-            <input type="hidden" name="evidence_types"   value="[% apr.param('evidence_types') %]">
             <input type="submit" value="Submit">
             </form>
         </td>
@@ -183,7 +181,7 @@
                     [% p.evidence.join(', ') %]
                 </td>
                 <td align="center">
-                    <a href="map_details?ref_map_set_aid=[% reference_map.map_set_aid%];ref_map_aids=[% reference_map.map_aid %];comparative_maps=1%3dmap_aid%3d[% p.map_aid %];feature_types=[% apr.param('feature_types') %];evidence_types=[% apr.param('evidence_types') %];highlight=&quot;[% f.feature_name %]&quot;[% IF p.feature_name != f.feature_name %],&quot;[% p.feature_name %]&quot;[% END %]">View&nbsp;Maps</a>
+                    <a href="map_details?ref_map_set_aid=[% reference_map.map_set_aid%];ref_map_aids=[% reference_map.map_aid %];comparative_maps=1%3dmap_aid%3d[% p.map_aid %];highlight=&quot;[% f.feature_name %]&quot;[% IF p.feature_name != f.feature_name %],&quot;[% p.feature_name %]&quot;[% END %]">View&nbsp;Maps</a>
                 </td>
 
                 [% IF i>0 %]</tr>[% END %]
