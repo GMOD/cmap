@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.46 2003-05-16 17:06:52 kycl4rk Exp $
+# $Id: Data.pm,v 1.47 2003-05-16 19:56:26 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,11 +24,11 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.46 $)[-1];
+$VERSION = (qw$Revision: 1.47 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
-use Bio::GMOD::CMap;
+#use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Utils;
 use base 'Bio::GMOD::CMap';
@@ -315,6 +315,9 @@ Returns the data for drawing comparative maps.
             #
             # Make sure the start and stop are numbers.
             #
+            $map_start = undef if $map_start eq '';
+            $map_stop  = undef if $map_stop  eq '';
+
             for ( $map_start, $map_stop ) {
                 next unless defined $_;
                 unless ( $_ =~ NUMBER_RE ) {
@@ -766,7 +769,6 @@ Returns the data for the correspondence matrix.
             ];
         }
 
-#        warn "ref map set sql =\n$map_set_sql\n";
         @reference_map_sets = @{ 
             $db->selectall_arrayref( $map_set_sql, { Columns => {} } )
         };
@@ -1172,6 +1174,8 @@ Returns the data for the main comparative map HTML form.
         #
         # Make sure the start and stop are numbers.
         #
+        $ref_map_start = undef if $ref_map_start eq '';
+        $ref_map_stop  = undef if $ref_map_stop  eq '';
         for ( $ref_map_start, $ref_map_stop ) {
             next unless defined $_;
             unless ( $_ =~ NUMBER_RE ) {
