@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::ManageLinks;
 # vim: set ft=perl:
 
-# $Id: ManageLinks.pm,v 1.2 2004-08-23 15:50:51 mwz444 Exp $
+# $Id: ManageLinks.pm,v 1.3 2004-10-01 18:07:24 mwz444 Exp $
 
 =pod
 
@@ -28,7 +28,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.2 $)[-1];
+$VERSION  = (qw$Revision: 1.3 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -54,6 +54,7 @@ use vars '$LOG_FH';
     map_start            => { is_required => 0, datatype => 'number' },
     map_stop             => { is_required => 0, datatype => 'number' },
     map_accesion_id      => { is_required => 0, datatype => 'string' },
+    link_name            => { is_required => 0, datatype => 'string' },
 );
 
 # ----------------------------------------------------
