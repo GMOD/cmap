@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.35 2004-05-12 17:50:26 mwz444 Exp $
+# $Id: Build.PL,v 1.36 2004-05-12 20:05:41 mwz444 Exp $
 
 use strict;
 
@@ -304,7 +304,7 @@ $install .= qq[
 #
 
 for my $opt ( 
-    [ 'conf/cmap.conf', 'CONF'      ],
+    [ 'conf', 'CONF'      ],
     [ 'htdocs',         'HTDOCS'    ],
     [ 'templates',      'TEMPLATES' ],
     [ 'cgi-bin',        'CGIBIN'    ],
@@ -338,6 +338,7 @@ for my $opt (
             $installed_cmap_conf = $to;
             $overwrite_ok        = 0;
         }
+	else{next;}
 
         if ( $opt_name eq 'HTDOCS' && $file =~ m{htdocs/index\.html$} ) {
             $overwrite_ok = 0;
@@ -390,7 +391,7 @@ my $builder      =  Module::Build->subclass(
             print join("\\n\\n",
                 '',
                 'CMap has been installed.',
-                'Be sure to edit "$installed_cmap_conf" with database info!',
+                'Be sure to edit the config files with database info!',
                 qq[Then go to "http://\$host/cmap"],
                 ''       
             );
@@ -430,7 +431,7 @@ my $builder      =  Module::Build->subclass(
     },
     PL_files         => {
         'cgi-bin/cmap.PL'    => 'cgi-bin/cmap',
-        'conf/cmap.conf/global.conf.PL'  => 'conf/cmap.conf/global.conf',
+        'conf/global.conf.PL'  => 'conf/cmap.conf/global.conf',
         'lib/Bio/GMOD/CMap/Constants.pm.PL' => 'lib/Bio/GMOD/CMap/Constants.pm',
     },
 );
