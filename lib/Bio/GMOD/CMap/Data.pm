@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.191 2004-12-14 21:08:18 mwz444 Exp $
+# $Id: Data.pm,v 1.192 2004-12-15 15:26:14 kycl4rk Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.191 $)[-1];
+$VERSION = (qw$Revision: 1.192 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -989,38 +989,26 @@ sub slot_data {
 
                 #$sql_str = $corr_free_sql . " UNION " . $with_corr_sql;
             }
-            unless ( $map->{'features'} =
-                $self->get_cached_results( 4, $sql_str ) )
-            {
 
+            unless ( 
+                $map->{'features'} = $self->get_cached_results( 4, $sql_str ) 
+            ) {
                 $map->{'features'} =
                   $db->selectall_hashref( $sql_str, 'feature_id', {}, () );
-                foreach my $rowKey ( keys %{ $map->{'features'} } ) {
-                    $map->{'features'}->{$rowKey}->{'feature_type'} =
-                      $self->feature_type_data(
-                        $map->{'features'}->{$rowKey}->{'feature_type_aid'},
-                        'feature_type' );
-                    $map->{'features'}->{$rowKey}->{'default_rank'} =
-                      $self->feature_type_data(
-                        $map->{'features'}->{$rowKey}->{'feature_type_aid'},
-                        'default_rank' );
-                    $map->{'features'}->{$rowKey}->{'shape'} =
-                      $self->feature_type_data(
-                        $map->{'features'}->{$rowKey}->{'feature_type_aid'},
-                        'shape' );
-                    $map->{'features'}->{$rowKey}->{'color'} =
-                      $self->feature_type_data(
-                        $map->{'features'}->{$rowKey}->{'feature_type_aid'},
-                        'color' );
-                    $map->{'features'}->{$rowKey}->{'drawing_lane'} =
-                      $self->feature_type_data(
-                        $map->{'features'}->{$rowKey}->{'feature_type_aid'},
-                        'drawing_lane' );
-                    $map->{'features'}->{$rowKey}->{'drawing_priority'} =
-                      $self->feature_type_data(
-                        $map->{'features'}->{$rowKey}->{'feature_type_aid'},
-                        'drawing_priority' );
+
+                for my $feature_id ( keys %{ $map->{'features'} } ) {
+                    my $ft = $self->feature_type_data(
+                        $map->{'features'}{$feature_id}{'feature_type_aid'}
+                    );
+
+                    for my $fld ( qw[ feature_type default_rank shape 
+                        color drawing_lane drawing_priority ] 
+                    ) {
+                        $map->{'features'}{ $feature_id }{ $fld } =
+                            $ft->{ $fld };
+                    }
                 }
+
                 $self->store_cached_results( 4, $sql_str, $map->{'features'} );
             }
 
