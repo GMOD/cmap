@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.38 2004-05-17 20:42:51 mwz444 Exp $
+# $Id: Build.PL,v 1.39 2004-05-30 20:58:24 mwz444 Exp $
 
 use strict;
 
@@ -430,6 +430,8 @@ my $builder      =  Module::Build->subclass(
         'XML::Simple'        => 0,
         'Cache::FileCache'   => 0,
         'Storable'           => 0,
+        'Algorithm::Numerical::Sample' => 0,
+        'Bit::Vector'        => 0,
     },
     PL_files         => {
         'cgi-bin/cmap.PL'    => 'cgi-bin/cmap',
