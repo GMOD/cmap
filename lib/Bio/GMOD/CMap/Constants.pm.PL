@@ -18,14 +18,14 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.9 2004-02-24 14:49:23 kycl4rk Exp $
+# $Id: Constants.pm.PL,v 1.10 2004-02-25 22:36:38 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.9 $)[-1];
+$VERSION = (qw$Revision: 1.10 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -256,30 +256,10 @@ use constant SHAPE_XY => {
 #
 use constant DEFAULT => {
     #
-    # Whether or not to allow forking of CMap viewer
-    #
-    allow_fork => 0,
-
-    #
     # The background color of the map image.
     # Default: lightgoldenrodyellow
     #
     background_color => 'lightgoldenrodyellow',
-
-    #
-    # The directory to store the images.  Note that this directory must
-    # actually exist and be writable by the httpd user process.  I would
-    # suggest making the directory permissions 700, owned by the
-    # user/group of the httpd user.  I would also suggest you purge this
-    # directory for old images so you don't fill up your disk.  Here's a
-    # simple cron job you can put in your root's crontab:
-    #
-    # 0 0 * * *  find /tmp/comparative_map_cache/ -type f -mtime +1 \
-    # -exec rm -rf {} \;
-    #
-    # Default: /tmp/comparative_map_cache
-    #
-    cache_dir => '/tmp/cmap_cache',
 
     #
     # Where the main viewer is located.
@@ -424,13 +404,6 @@ use constant DEFAULT => {
     matrix_title => 'Welcome to the Matrix',
 
     #
-    # The maximum pixel width for any image.
-    # Set to "0" (or comment out) to disable.
-    # Default: 2000
-    #
-    max_image_pixel_width => 2000,
-
-    #
     # The maximum number of features allowed on a map.
     # Set to "0" (or a negative number) or undefined to disable.
     # Default: 200
@@ -492,11 +465,6 @@ use constant DEFAULT => {
     sql_driver_module => 'generic',
 
     #
-    # Location of templates.
-    #
-    template_dir => '/usr/local/apache/templates/comparative_maps',
-
-    #
     # What to name the cookie containing user preferences.
     #
     user_pref_cookie_name => 'CMAP_USER_PREF', 
@@ -524,6 +492,15 @@ use constant PREFERENCE_FIELDS => [ qw(
 # A list of valid options.
 #
 use constant VALID => {
+    #
+    # Font sizes
+    #
+    font_size      => {
+        small      => 1,
+        medium     => 1,
+        large      => 1,
+    },
+
     #
     # Image types, this should match how you compiled libgd on your system.
     #
