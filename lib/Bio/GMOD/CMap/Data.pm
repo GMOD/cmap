@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.189 2004-12-10 21:08:15 mwz444 Exp $
+# $Id: Data.pm,v 1.190 2004-12-14 21:02:22 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.189 $)[-1];
+$VERSION = (qw$Revision: 1.190 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -3244,13 +3244,44 @@ Return data for a list of feature type acc. IDs.
         if (%supplied_feature_types) {
             next unless ( $supplied_feature_types{$feature_type} );
         }
+        my @attributes = ();
+        my @xrefs      = ();
+
+        # Get Attributes from config file
+        my $configured_attributes = $self->feature_type_data( $feature_type, 'attribute' );
+        if ( ref($configured_attributes) ne 'ARRAY' ) {
+            $configured_attributes = [ $configured_attributes, ];
+        }
+        foreach my $att (@$configured_attributes){
+            next unless (defined($att->{'name'}) and defined($att->{'value'}));
+            push @attributes, {
+                attribute_name  => $att->{'name'},
+                attribute_value => $att->{'value'},
+                is_public       => defined($att->{'is_public'}) ? $att->{'is_public'}:1,
+            };
+        }
+        
+        # Get Xrefs from config file
+        my $configured_xrefs = $self->feature_type_data( $feature_type, 'xref' );
+        if ( ref($configured_xrefs) ne 'ARRAY' ) {
+            $configured_xrefs = [ $configured_xrefs, ];
+        }
+        foreach my $xref (@$configured_xrefs){
+            next unless (defined($xref->{'name'}) and defined($xref->{'url'}));
+            push @xrefs, {
+                xref_name => $xref->{'name'},
+                xref_url  => $xref->{'url'},
+            };
+        }
+        
         $return_array[ ++$#return_array ] = {
             'feature_type_aid' => $feature_type,
             'feature_type'     =>
               $self->feature_type_data( $feature_type, 'feature_type' ),
-            'shape' => $self->feature_type_data( $feature_type, 'shape' ),
-            'color' => $self->feature_type_data( $feature_type, 'color' ),
-
+            'shape'      => $self->feature_type_data( $feature_type, 'shape' ),
+            'color'      => $self->feature_type_data( $feature_type, 'color' ),
+            'attributes' => \@attributes,
+            'xrefs'      => \@xrefs,
         };
     }
 
