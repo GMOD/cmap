@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.43 2003-09-08 17:28:14 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.44 2003-09-08 17:59:03 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.43 $)[-1];
+$VERSION = (qw$Revision: 1.44 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -556,6 +556,7 @@ Lays out the image and writes it to the file system, set the "image_name."
                 shape        => '',
                 color        => $corr_color,
                 feature_type => "Features in $corr_color have correspondences",
+                correspondence_color => 1,
             };
         }
 
@@ -756,7 +757,7 @@ Lays out the image and writes it to the file system, set the "image_name."
                 ],
                 url    => $ft_details_url.$ft->{'feature_type_aid'},
                 alt    => "Feature Type Details for $label",
-            );
+            ) unless $ft->{'correspondence_color'};
 
             my $furthest_x = $label_x + $font->width * length($label) + 5;
             $max_x         = $furthest_x if $furthest_x > $max_x;
