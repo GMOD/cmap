@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::Import;
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.35 2003-10-01 23:13:09 kycl4rk Exp $
+# $Id: Import.pm,v 1.36 2003-10-14 23:52:42 kycl4rk Exp $
 
 =pod
 
@@ -28,7 +28,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.35 $)[-1];
+$VERSION  = (qw$Revision: 1.36 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -64,6 +64,7 @@ use vars '$LOG_FH';
     is_landmark          => { is_required => 0, datatype => 'number' },
     feature_dbxref_name  => { is_required => 0, datatype => 'string' },
     feature_dbxref_url   => { is_required => 0, datatype => 'string' },
+    feature_attributes   => { is_required => 0, datatype => 'string' },
 );
 
 # ----------------------------------------------------
@@ -90,6 +91,7 @@ Imports tab-delimited file with the following fields:
     is_landmark
     feature_dbxref_name
     feature_dbxref_url
+    feature_attributes
 
 Starred fields are required.  Order of fields is not important.
 
@@ -98,6 +100,43 @@ existing maps and features will be updated.  If you choose, any of the
 pre-existing maps or features that aren't updated can be deleted (this
 is what you'd want if the import file contains *all* the data you
 have for the map set).
+
+Feature attributes are defined as key:value pairs separated by
+semi-colons, e.g.:
+
+    Genbank ID: "BH245189"; Overgo: "SOG1776";
+
+Which defines two separate attributes, one of type "Genbank ID" with
+the value "BH245189" and another of type "Overgo" with the value of
+"SOG1776."  It isn't strictly necessary to place double-quotes around
+the values of the attributes, but it is recommended.  It is actually
+required if the values themselves contain a delimiter (colons or
+semi-colons), e.g.:
+
+    DBXRef: "http://www.gramene.org/db/markers/marker_view?marker_name=CDO590"
+
+If, in addition, you wish to include literal double-quotes in the
+attribute values, they must be backslash-escapes, e.g.:
+
+    DBXRef: "<a href=\"http://www.gramene.org/db/markers/marker_view?marker_name=CDO590\">View At Gramene</a>"
+
+Any attribute of type "Note" (case-insensitive) will automatically be
+appended to the "feature_note" field.  Multiple occurrences of a
+"note" field will be concatenated with semi-colons.
+
+Both attribute names and values can be as wide as 255 characters.  The
+order of the attributes will be used to determine the "display_order."
+
+Feature notes are defined in the database with much larger datatypes
+than the space alloted for the values of attributes, so it is
+recommended you use the "notes" for anything larger than 255
+characters of data.
+
+Feature aliases must be defined as a comma-separated list of values.
+They may also be defined in the "feature_attributes" field with the
+key "alias" (case-insensitive), e.g.:
+
+    Alias: "SHO29a, SHO29b"
 
 =cut
 
@@ -383,16 +422,42 @@ have for the map set).
         #
         # See if the acc. id already exists.
         #
-        my $feature_name    = $record->{'feature_name'}     #or next;
+        my $feature_name    = $record->{'feature_name'} 
             or warn "feature name blank! ", Dumper( $record ), "\n";
         my $accession_id    = $record->{'feature_accession_id'};
         my $aliases         = $record->{'feature_aliases'};
         my $dbxref_name     = $record->{'feature_dbxref_name'} || '';
         my $dbxref_url      = $record->{'feature_dbxref_url'}  || '';
         my $feature_note    = $record->{'feature_note'}        || '';
+        my $attributes      = $record->{'feature_attributes'}  || '';
         my $start           = $record->{'feature_start'};
         my $stop            = $record->{'feature_stop'};
         my $is_landmark     = $record->{'is_landmark'} || 0;
+
+        my ( @fattributes, @feature_notes );
+        for my $attr ( parse_line( ';', 1, $attributes ) ) {
+            my ( $key, $value ) = 
+                map { s/^\s+|\s+$//g; s/^"|"$//g; $_ } 
+                parse_line( ':', 1, $attr )
+            ;
+
+            if ( $key =~ /note/i ) {
+                $value =~ s/\\"/"/g;
+                push @feature_notes, $value;
+            }
+            elsif ( $key =~ /alias/i ) {
+                push @$aliases, 
+                    map { s/^\s+|\s+$//g; s/\\"/"/g; $_ } 
+                    parse_line( ',', 1, $value )
+                ;
+            }
+            else {
+                $value =~ s/\\"/"/g;
+                push @fattributes, { name => $key, value => $value };
+            }
+        }
+
+        $feature_note .= join('; ', @feature_notes);
 
         if ( 
             defined $start &&
@@ -516,6 +581,12 @@ have for the map set).
             table_name => 'cmap_feature',
             object_id  => $feature_id, 
             note       => $feature_note,
+        );
+
+        $admin->set_feature_attributes( 
+            feature_id => $feature_id, 
+            attributes => \@fattributes,
+            overwrite  => $overwrite,
         );
 
         my $pos = join('-', map { defined $_ ? $_ : () } $start, $stop);
