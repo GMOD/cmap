@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.25 2004-02-24 20:06:14 kycl4rk Exp $
+# $Id: Build.PL,v 1.26 2004-02-24 23:30:09 kycl4rk Exp $
 
 use strict;
 
@@ -224,8 +224,11 @@ my $title = 'CMap Installation Summary';
 print INDEX join("\n",
     $q->start_html( { -title => $title } ), 
     $q->h1( $title ),
-    "Congratulations!  CMap has been installed.<br>",
-    "Here are some links:<br>",
+    $q->p('Congratulations!  CMap has been installed.'),
+    $q->p('Eventually you will want to create your own content '.
+        'for this intro page.'),
+    $q->p('For the mean time, here are some links to the installed '.
+        'application and supporting docs:'),
     $q->ul(
         ( map { $q->li( $q->a({ -href => $_->[0] }, $_->[1]) ) ."\n" } 
         @html_links )
@@ -267,16 +270,26 @@ for my $opt (
             $to = catdir( $to, $2 );
         }
 
+        my $overwrite_ok = 1;
+
         if ( $opt_name eq 'CONF' && $file =~ /cmap\.conf$/ ) {
             $installed_cmap_conf = $to;
+            $overwrite_ok        = 0;
         }
+
+        if ( $opt_name eq 'HTDOCS' && $file =~ /index\.html$/ ) {
+            $installed_cmap_conf = $to;
+            $overwrite_ok        = 0;
+        }
+
+        my $extra = $overwrite_ok ? '' : "unless -e '$to'";
 
         $install .= qq[
             \$self->copy_if_modified(
                 from    => '$file',
                 to      => '$to',
                 flatten => 0,
-            );
+            ) $extra;
         ];
 
         $install .= 
@@ -367,7 +380,9 @@ $builder->add_to_cleanup(
     'lib/Bio/GMOD/CMap/Constants.pm',
     @cleanup,
     $tarball,
-    'pod2htm*',
+    'pod2htmd.x~~',
+    'pod2htmi.x~~',
+    'htdocs/index.html'
 );
 
 $builder->create_build_script;
