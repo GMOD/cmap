@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.28 2003-02-07 20:35:36 kycl4rk Exp $
+# $Id: Map.pm,v 1.29 2003-02-11 00:22:22 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.28 $)[-1];
+$VERSION = (qw$Revision: 1.29 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -757,7 +757,7 @@ Lays out the map.
                         bottom       => $y_pos2,
                         buffer       => $buffer,
                     );
-                    my $offset       = ( $column_index + 1 ) * 4;
+                    my $offset       = ( $column_index + 1 ) * 6;
                     my $vert_line_x1 = $label_side eq RIGHT
                         ? $tick_start : $tick_stop;
                     my $vert_line_x2 = $label_side eq RIGHT 
@@ -792,6 +792,46 @@ Lays out the map.
                             $vert_line_x2, $y_pos1, $vert_line_x2, $y_pos2
                         );
                     }
+                    elsif ( $feature->shape eq 'up-arrow' ) {
+                        $drawer->add_drawing(
+                            LINE,
+                            $vert_line_x2, $y_pos1,
+                            $vert_line_x2 - 2, $y_pos1 + 2,
+                            $color
+                        );
+
+                        $drawer->add_drawing(
+                            LINE,
+                            $vert_line_x2, $y_pos1,
+                            $vert_line_x2 + 2, $y_pos1 + 2,
+                            $color
+                        );
+
+                        @coords = (
+                            $vert_line_x2 - 2, $y_pos2,
+                            $vert_line_x2 + 2, $y_pos1, $color
+                        );
+                    }
+                    elsif ( $feature->shape eq 'down-arrow' ) {
+                        $drawer->add_drawing(
+                            LINE,
+                            $vert_line_x2, $y_pos2,
+                            $vert_line_x2 - 2, $y_pos2 - 2,
+                            $color
+                        );
+
+                        $drawer->add_drawing(
+                            LINE,
+                            $vert_line_x2, $y_pos2,
+                            $vert_line_x2 + 2, $y_pos2 - 2,
+                            $color
+                        );
+
+                        @coords = (
+                            $vert_line_x2 - 2, $y_pos2,
+                            $vert_line_x2 + 2, $y_pos1, $color
+                        );
+                    }
                     elsif ( $feature->shape eq 'box' ) {
                         $vert_line_x1 = $label_side eq RIGHT
                             ? $tick_start - $offset : $tick_stop + $offset;
@@ -805,7 +845,7 @@ Lays out the map.
 
                         $drawer->add_drawing( RECTANGLE, @coords, $color );
                     }
-                    else {
+                    else { # dumbbell
                         my $width = 3;
                         $drawer->add_drawing(
                             ARC, 
@@ -1223,7 +1263,6 @@ Lays out the map.
             $drawer->feature_correspondence_positions( slot_no => $slot_no ) 
         ) {
             my @positions     = @{ $position_set->{'positions'} || [] } or next;
-    
             my $evidence_info = $drawer->feature_correspondence_evidence(
                 $position_set->{'feature_id1'},
                 $position_set->{'feature_id2'}

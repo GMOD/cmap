@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Feature;
 
-# $Id: Feature.pm,v 1.11 2003-02-07 20:35:36 kycl4rk Exp $
+# $Id: Feature.pm,v 1.12 2003-02-11 00:22:23 kycl4rk Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.11 $)[-1];
+$VERSION = (qw$Revision: 1.12 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -43,10 +43,12 @@ use constant INIT_FIELDS => [
 # Actually, I'm handling all this elsewhere, so just ignore.
 #
 use constant SHAPE => {
-    box      => 1,
-    line     => 1,
-    span     => 1,
-    dumbbell => 1,
+    'box'          => 1,
+    'line'         => 1,
+    'span'         => 1,
+    'dumbbell'     => 1,
+    'up-arrow'     => 1,
+    'down-arrow'   => 1,
 };
 
 BEGIN {
