@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.77 2004-12-06 17:06:27 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.78 2004-12-08 23:24:50 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.77 $)[-1];
+$VERSION = (qw$Revision: 1.78 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -119,9 +119,11 @@ sub handler {
         $apr->param( 'ref_map_aids', join( ":", @ref_map_aids ) );
     }
 
-    ###For DEBUGGING purposes.  Remove before release
+    #
+    # Catch old argument, handle nicely.
+    #
     if ( $apr->param('ref_map_aid') ) {
-        die "ref_map_aid defined " . $apr->param('ref_map_aid');
+        push @ref_map_aids, $apr->param('ref_map_aid');
     }
 
     my %ref_maps;
