@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.48 2004-02-10 22:38:20 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.49 2004-02-10 23:06:44 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.48 $)[-1];
+$VERSION = (qw$Revision: 1.49 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -1829,11 +1829,11 @@ L<perl>, L<GD>, L<GD::SVG>.
 
 =head1 AUTHOR
 
-Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
+Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002-3 Cold Spring Harbor Laboratory
+Copyright (c) 2002-4 Cold Spring Harbor Laboratory
 
 This library is free software;  you can redistribute it and/or modify 
 it under the same terms as Perl itself.

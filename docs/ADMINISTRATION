@@ -1,6 +1,6 @@
                 CMAP ADMINISTRATION AND DATA CURATION
 
-                          $Revision: 1.13 $
+                          $Revision: 1.14 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are two tools you will use:
@@ -1130,4 +1130,4 @@ SQL::Translator is available on CPAN.  For more information, see here:
 
 Ken Y. Clark, kclark@cshl.org
 
-Copyright (c) 2002-3 Cold Spring Harbor Laboratory
+Copyright (c) 2002-4 Cold Spring Harbor Laboratory

@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.91 2004-02-10 22:37:31 kycl4rk Exp $
+# $Id: Data.pm,v 1.92 2004-02-10 23:06:44 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.91 $)[-1];
+$VERSION = (qw$Revision: 1.92 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -3574,11 +3574,11 @@ L<perl>, L<DBI>.
 
 =head1 AUTHOR
 
-Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
+Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002-3 Cold Spring Harbor Laboratory
+Copyright (c) 2002-4 Cold Spring Harbor Laboratory
 
 This library is free software;  you can redistribute it and/or modify 
 it under the same terms as Perl itself.

@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.58 2004-01-09 16:34:37 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.59 2004-02-10 23:07:06 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.58 $)[-1];
+$VERSION = (qw$Revision: 1.59 $)[-1];
 
 #
 # Get command-line options
@@ -2619,11 +2619,11 @@ list of maps.
 
 =head1 AUTHOR
 
-Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
+Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002-3 Cold Spring Harbor Laboratory
+Copyright (c) 2002-4 Cold Spring Harbor Laboratory
 
 This program is free software;  you can redistribute it and/or modify
 it under the same terms as Perl itself.

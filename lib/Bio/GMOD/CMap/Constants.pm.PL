@@ -18,14 +18,14 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.4 2003-12-15 17:30:58 kycl4rk Exp $
+# $Id: Constants.pm.PL,v 1.5 2004-02-10 23:06:44 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -615,11 +615,11 @@ L<perl>.
 
 =head1 AUTHOR
 
-Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
+Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002-3 Cold Spring Harbor Laboratory
+Copyright (c) 2002-4 Cold Spring Harbor Laboratory
 
 This library is free software;  you can redistribute it and/or modify 
 it under the same terms as Perl itself.

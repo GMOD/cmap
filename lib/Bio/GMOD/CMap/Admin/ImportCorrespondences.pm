@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 # vim: set ft=perl:
 
-# $Id: ImportCorrespondences.pm,v 1.14 2003-12-30 18:47:34 kycl4rk Exp $
+# $Id: ImportCorrespondences.pm,v 1.15 2004-02-10 23:06:50 kycl4rk Exp $
 
 =head1 NAME
 
@@ -43,7 +43,7 @@ each of the two feature names, a correspondence will be created.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.14 $)[-1];
+$VERSION = (qw$Revision: 1.15 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -372,11 +372,11 @@ L<perl>.
 
 =head1 AUTHOR
 
-Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
+Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002-3 Cold Spring Harbor Laboratory
+Copyright (c) 2002-4 Cold Spring Harbor Laboratory
 
 This library is free software;  you can redistribute it and/or modify 
 it under the same terms as Perl itself.

@@ -1,6 +1,6 @@
                            CMAP CODE OVERVIEW
 
-                            $Revision: 1.10 $
+                            $Revision: 1.11 $
 
 The comparative and genetic maps application ("CMap") is written
 entirely in Perl and takes advantage of mod_perl, Apache's embedded
@@ -345,4 +345,4 @@ Bio::GMOD::CMap modules.  Here's an example:
 
 Ken Y. Clark, kclark@cshl.org
 
-Copyright (c) 2002-3 Cold Spring Harbor Laboratory
+Copyright (c) 2002-4 Cold Spring Harbor Laboratory

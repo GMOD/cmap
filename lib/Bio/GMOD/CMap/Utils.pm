@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Utils;
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.24 2003-10-24 20:04:35 kycl4rk Exp $
+# $Id: Utils.pm,v 1.25 2004-02-10 23:06:44 kycl4rk Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.24 $)[-1];
+$VERSION = (qw$Revision: 1.25 $)[-1];
 
 use base 'Exporter';
 
@@ -476,11 +476,11 @@ L<perl>.
 
 =head1 AUTHOR
 
-Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
+Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002-3 Cold Spring Harbor Laboratory
+Copyright (c) 2002-4 Cold Spring Harbor Laboratory
 
 This library is free software;  you can redistribute it and/or modify 
 it under the same terms as Perl itself.

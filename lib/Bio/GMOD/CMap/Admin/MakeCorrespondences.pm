@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.28 2004-01-13 23:00:52 kycl4rk Exp $
+# $Id: MakeCorrespondences.pm,v 1.29 2004-02-10 23:06:50 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.28 $)[-1];
+$VERSION = (qw$Revision: 1.29 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -298,11 +298,11 @@ L<perl>.
 
 =head1 AUTHOR
 
-Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
+Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002-3 Cold Spring Harbor Laboratory
+Copyright (c) 2002-4 Cold Spring Harbor Laboratory
 
 This library is free software;  you can redistribute it and/or modify 
 it under the same terms as Perl itself.

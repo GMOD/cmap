@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.63 2003-12-16 23:54:46 kycl4rk Exp $
+# $Id: Map.pm,v 1.64 2004-02-10 23:06:50 kycl4rk Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.63 $)[-1];
+$VERSION = (qw$Revision: 1.64 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -466,7 +466,8 @@ Lays out the map.
     my $drawer         = $self->drawer;
     my $label_side     = $drawer->label_side( $slot_no );
     my $pixel_height   = $drawer->pixel_height;
-    my $reg_font       = $drawer->regular_font;
+    my $reg_font       = $drawer->regular_font or 
+                         return $self->error($drawer->error);
     my $slots          = $drawer->slots;
     my @map_ids        = $self->map_ids;
     my $no_of_maps     = scalar @map_ids;
@@ -516,9 +517,11 @@ Lays out the map.
     my $default_feature_color  = $drawer->config('feature_color');
     my $feature_details_url    = DEFAULT->{'feature_details_url'};
     my $connecting_line_color  = $drawer->config('connecting_line_color');
-    my $map_viewer_url         = $drawer->config('cmap_viewer_url');
-    my $map_details_url        = $drawer->config('map_details_url');
-    my $map_set_info_url       = $drawer->config('map_set_info_url');
+    my $apr                    = $drawer->apr;
+    my $url                    = $apr->url;
+    my $map_viewer_url         = $url.'/viewer';
+    my $map_details_url        = $url.'/map_details';
+    my $map_set_info_url       = $url.'/map_set_info';
     my $rel_map_show_corr_only =
         $drawer->config('relational_maps_show_only_correspondences') || 0;
     my $feature_corr_color    =
@@ -832,11 +835,13 @@ Lays out the map.
                     $feature->{'mid_y'} = ( $y_pos1 + $y_pos2 ) / 2;
                 }
 
+                my ( %drawn_glyphs, @temp_drawing_data );
                 if ( $feature_shape eq LINE ) {
                     $y_pos1 = ( $y_pos1 + $y_pos2 ) / 2;
-                    push @drawing_data, [
+                    push @temp_drawing_data, [
                         LINE, $tick_start, $y_pos1, $tick_stop, $y_pos1, $color
                     ];
+
                     @coords = ( $tick_start, $y_pos1, $tick_stop, $y_pos1 );
                 }
                 else {
@@ -857,7 +862,7 @@ Lays out the map.
                         : $tick_start - $offset;
 
                     if ( $y_pos1 < $y_pos2 && !$shape_is_triangle ) {
-                        push @drawing_data, [
+                        push @temp_drawing_data, [
                             LINE, 
                             $vert_line_x2, $y_pos1, 
                             $vert_line_x2, $y_pos2, 
@@ -871,14 +876,14 @@ Lays out the map.
 
                     if ( $feature_shape eq 'span' ) {
                         my $reverse = $label_side eq RIGHT ? -1 : 1;
-                        push @drawing_data, [
+                        push @temp_drawing_data, [
                             LINE, 
                             $vert_line_x2, $y_pos1, 
                             $vert_line_x2 + ( 3 * $reverse ), $y_pos1, 
                             $color,
                         ];
 
-                        push @drawing_data, [
+                        push @temp_drawing_data, [
                             LINE, 
                             $vert_line_x2, $y_pos2, 
                             $vert_line_x2 + ( 3 * $reverse ), $y_pos2, 
@@ -890,14 +895,14 @@ Lays out the map.
                         );
                     }
                     elsif ( $feature_shape eq 'up-arrow' ) {
-                        push @drawing_data, [
+                        push @temp_drawing_data, [
                             LINE,
                             $vert_line_x2, $y_pos1,
                             $vert_line_x2 - 2, $y_pos1 + 2,
                             $color
                         ];
 
-                        push @drawing_data, [
+                        push @temp_drawing_data, [
                             LINE,
                             $vert_line_x2, $y_pos1,
                             $vert_line_x2 + 2, $y_pos1 + 2,
@@ -910,14 +915,14 @@ Lays out the map.
                         );
                     }
                     elsif ( $feature_shape eq 'down-arrow' ) {
-                        push @drawing_data, [
+                        push @temp_drawing_data, [
                             LINE,
                             $vert_line_x2, $y_pos2,
                             $vert_line_x2 - 2, $y_pos2 - 2,
                             $color
                         ];
 
-                        push @drawing_data, [
+                        push @temp_drawing_data, [
                             LINE,
                             $vert_line_x2, $y_pos2,
                             $vert_line_x2 + 2, $y_pos2 - 2,
@@ -930,25 +935,25 @@ Lays out the map.
                         );
                     }
                     elsif ( $feature_shape eq 'double-arrow' ) {
-                        push @drawing_data, [
+                        push @temp_drawing_data, [
                             LINE,
                             $vert_line_x2, $y_pos1,
                             $vert_line_x2 - 2, $y_pos1 + 2,
                             $color
                         ];
-                        push @drawing_data, [
+                        push @temp_drawing_data, [
                             LINE,
                             $vert_line_x2, $y_pos1,
                             $vert_line_x2 + 2, $y_pos1 + 2,
                             $color
                         ];
-                        push @drawing_data, [
+                        push @temp_drawing_data, [
                             LINE,
                             $vert_line_x2, $y_pos2,
                             $vert_line_x2 - 2, $y_pos2 - 2,
                             $color
                         ];
-                        push @drawing_data, [
+                        push @temp_drawing_data, [
                             LINE,
                             $vert_line_x2, $y_pos2,
                             $vert_line_x2 + 2, $y_pos2 - 2,
@@ -971,7 +976,7 @@ Lays out the map.
                             $vert_line_x1, $y_pos1, 
                         );
 
-                        push @drawing_data, [ RECTANGLE, @coords, $color ];
+                        push @temp_drawing_data, [ RECTANGLE, @coords, $color ];
                     }
                     elsif ( $feature_shape eq 'dumbbell' ) {
                         my $width  = 4;
@@ -980,12 +985,12 @@ Lays out the map.
                             $y_pos2 -= 2;
                         }
 
-                        push @drawing_data, [
+                        push @temp_drawing_data, [
                             ARC, 
                             $vert_line_x2, $y_pos1,
                             $width, $width, 0, 360, $color
                         ];
-                        push @drawing_data, [
+                        push @temp_drawing_data, [
                             ARC, 
                             $vert_line_x2, $y_pos2,
                             $width, $width, 0, 360, $color
@@ -998,13 +1003,13 @@ Lays out the map.
                     }
                     elsif ( $feature_shape eq 'filled-box' ) {
                         my $width = 3;
-                        push @drawing_data, [
+                        push @temp_drawing_data, [
                             FILLED_RECT, 
                             $vert_line_x2, $y_pos1,
                             $vert_line_x2 + $width, $y_pos2,
                             $color,
                         ];
-                        push @drawing_data, [
+                        push @temp_drawing_data, [
                             RECTANGLE, 
                             $vert_line_x2, $y_pos1,
                             $vert_line_x2 + $width, $y_pos2,
@@ -1027,25 +1032,25 @@ Lays out the map.
                         )
                     ) {
                         my $width = 3;
-                        push @drawing_data, [
+                        push @temp_drawing_data, [
                             LINE,
                             $vert_line_x2, $y_pos1 - $width,
                             $vert_line_x2, $y_pos1 + $width,
                             $color
                         ];
-                        push @drawing_data, [
+                        push @temp_drawing_data, [
                             LINE,
                             $vert_line_x2, $y_pos1 - $width,
                             $vert_line_x2 + $width, $y_pos1,
                             $color
                         ];
-                        push @drawing_data, [
+                        push @temp_drawing_data, [
                             LINE,
                             $vert_line_x2, $y_pos1 + $width,
                             $vert_line_x2 + $width, $y_pos1,
                             $color
                         ];
-                        push @drawing_data, [
+                        push @temp_drawing_data, [
                             FILL,
                             $vert_line_x2 + 1, $y_pos1 + 1,
                             $color
@@ -1068,25 +1073,25 @@ Lays out the map.
                         )
                     ) {
                         my $width = 3;
-                        push @drawing_data, [
+                        push @temp_drawing_data, [
                             LINE,
                             $vert_line_x2 + $width, $y_pos1 - $width,
                             $vert_line_x2 + $width, $y_pos1 + $width,
                             $color
                         ];
-                        push @drawing_data, [
+                        push @temp_drawing_data, [
                             LINE,
                             $vert_line_x2 + $width, $y_pos1 - $width,
                             $vert_line_x2, $y_pos1,
                             $color
                         ];
-                        push @drawing_data, [
+                        push @temp_drawing_data, [
                             LINE,
                             $vert_line_x2, $y_pos1,
                             $vert_line_x2 + $width, $y_pos1 + $width,
                             $color
                         ];
-                        push @drawing_data, [
+                        push @temp_drawing_data, [
                             FILL,
                             $vert_line_x2 + $width - 1, $y_pos1 + 1,
                             $color
@@ -1106,6 +1111,22 @@ Lays out the map.
                             'Feature Details: ' . $feature->{'feature_name'}.
                             ' [' . $feature->{'accession_id'} . ']',
                     };
+                }
+
+                #
+                # Here we try to reduce the redundant drawing of glyphs.
+                # However, if a feature has a correspondence, we want to 
+                # make sure to draw it so it will show up highlighted.
+                #
+                my $glyph_key = int($y_pos1) . $feature_shape . int($y_pos2);
+                my $draw_this = 1;
+                if ( $drawn_glyphs{ $glyph_key } ) {
+                    $draw_this = $has_corr ? 1 : 0;
+                }
+
+                if ( $draw_this ) {
+                    $drawn_glyphs{ $glyph_key } = 1;
+                    push @drawing_data, @temp_drawing_data;
                 }
 
                 #
@@ -1579,12 +1600,14 @@ Lays out the map.
         #
         unless ( $is_relational ) {
             my $new_url = $map_viewer_url.
-                '?ref_map_set_aid='.$self->map_set_aid( $map_id ).
-                ';ref_map_aid='.$self->accession_id( $map_id ).
-                ';label_features='.$drawer->label_features.
-                ';feature_types='.
-                join(',', @{ $drawer->include_feature_types || [] }).
-                ';highlight='.uri_escape( $drawer->highlight ).
+                '?ref_map_set_aid='.$self->map_set_aid( $map_id ) .
+                ';ref_map_aid='.$self->accession_id( $map_id ) .
+                ';ref_map_start='.$self->start_position( $map_id ) .
+                ';ref_map_stop='.$self->stop_position( $map_id ) .
+                ';label_features='.$drawer->label_features .
+                ';include_feature_types=' .
+                join(',', @{ $drawer->include_feature_types || [] }) .
+                ';highlight='.uri_escape( $drawer->highlight ) .
                 ';data_source='.$drawer->data_source;
 
             push @map_buttons, {
@@ -1973,11 +1996,11 @@ L<perl>.
 
 =head1 AUTHOR
 
-Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
+Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002-3 Cold Spring Harbor Laboratory
+Copyright (c) 2002-4 Cold Spring Harbor Laboratory
 
 This library is free software;  you can redistribute it and/or modify 
 it under the same terms as Perl itself.

@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap;
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.44 2004-02-10 22:32:54 kycl4rk Exp $
+# $Id: CMap.pm,v 1.45 2004-02-10 23:06:44 kycl4rk Exp $
 
 =head1 NAME
 
@@ -546,11 +546,11 @@ L<perl>, L<Class::Base>.
 
 =head1 AUTHOR
 
-Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
+Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002-3 Cold Spring Harbor Laboratory
+Copyright (c) 2002-4 Cold Spring Harbor Laboratory
 
 This library is free software;  you can redistribute it and/or modify 
 it under the same terms as Perl itself.
