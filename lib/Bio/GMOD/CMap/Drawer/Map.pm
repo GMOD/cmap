@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.130 2004-09-29 20:16:36 mwz444 Exp $
+# $Id: Map.pm,v 1.131 2004-10-12 17:15:27 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.130 $)[-1];
+$VERSION = (qw$Revision: 1.131 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -169,6 +169,7 @@ box.
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
     my $map_area_data = $args{'map_area_data'};
+    my $map_coords = $args{'map_coords'};
     my $drawer = $args{'drawer'} || $self->drawer
       or $self->error('No drawer');
     my ( $x1, $y1, $y2 ) = @{ $args{'coords'} || [] }
@@ -182,14 +183,15 @@ box.
     my $x2        = $x1 + $width;
     my $x_mid     = $x1 + ($width/2);
     my @coords = ( $x1, $y1, $x2, $y2 );
-    my @map_coords = @coords;
+    $map_coords->[0] = $x1 if ($map_coords->[0] > $x1);
+    $map_coords->[2] = $x2 if ($map_coords->[2] < $x2);
 
     my $truncated = $drawer->data_module->truncatedMap($slot_no,$map_id);
     if (($truncated>=2 and $is_flipped) 
         or (($truncated==1 or $truncated==3) and not $is_flipped)){
         $self->draw_truncation_arrows(
             is_up         => 1,
-            map_coords    => \@map_coords,
+            map_coords    => $map_coords,
             coords        => \@coords,
             drawer        => $drawer,
             map_area_data => $map_area_data,
@@ -201,14 +203,14 @@ box.
         )
     }
 
-    push @$drawing_data, [ FILLED_RECT, @map_coords, $color ];
-    push @$drawing_data, [ RECTANGLE,   @map_coords, 'black' ];
+    push @$drawing_data, [ FILLED_RECT, @$map_coords, $color ];
+    push @$drawing_data, [ RECTANGLE,   @$map_coords, 'black' ];
 
     if (($truncated>=2 and not $is_flipped) 
         or (($truncated==1 or $truncated==3) and $is_flipped)){
         $self->draw_truncation_arrows(
             is_up         => 0,
-            map_coords    => \@map_coords,
+            map_coords    => $map_coords,
             coords        => \@coords,
             drawer        => $drawer,
             map_area_data => $map_area_data,
@@ -224,9 +226,9 @@ box.
         $self->draw_map_bottom(
             map_id  => $map_id,
             slot_no => $slot_no,
-            map_x1  => $map_coords[0],
-            map_x2  => $map_coords[2],
-            map_y2  => $map_coords[3],
+            map_x1  => $map_coords->[0],
+            map_x2  => $map_coords->[2],
+            map_y2  => $map_coords->[3],
             drawer  => $drawer,
             drawing_data  => $drawing_data,
             map_area_data => $map_area_data,
@@ -235,7 +237,7 @@ box.
         );
     }
 
-    return (\@coords,\@map_coords);
+    return (\@coords,$map_coords);
 }
 
 # ----------------------------------------------------
@@ -253,6 +255,7 @@ bounds of the image.
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
     my $map_area_data = $args{'map_area_data'};
+    my $map_coords = $args{'map_coords'};
     my $drawer = $args{'drawer'} || $self->drawer
       or $self->error('No drawer');
     my ( $x1, $y1, $y2 ) = @{ $args{'coords'} || [] }
@@ -269,13 +272,14 @@ bounds of the image.
 
     my $drew_bells =0;
     my @coords = ( $x1, $y1, $x2, $y2 );
-    my @map_coords = ($x1,$y1,$x2,$y2);
+    $map_coords->[0] = $x1 if ($map_coords->[0] > $x1);
+    $map_coords->[2] = $x2 if ($map_coords->[2] < $x2);
     my $truncated = $drawer->data_module->truncatedMap($slot_no,$map_id);
     if (($truncated>=2 and $is_flipped) 
         or (($truncated==1 or $truncated==3) and not $is_flipped)){
         $self->draw_truncation_arrows(
             is_up         => 1,
-            map_coords    => \@map_coords,
+            map_coords    => $map_coords,
             coords        => \@coords,
             drawer        => $drawer,
             map_area_data => $map_area_data,
@@ -288,15 +292,15 @@ bounds of the image.
     }
     else{
         push @$drawing_data,
-          [ ARC, $mid_x, $map_coords[1], $arc_width, $arc_width, 0, 360, $color ];
-        push @$drawing_data, [ FILL_TO_BORDER, $mid_x, $map_coords[1], $color, $color ];
+          [ ARC, $mid_x, $map_coords->[1], $arc_width, $arc_width, 0, 360, $color ];
+        push @$drawing_data, [ FILL_TO_BORDER, $mid_x, $map_coords->[1], $color, $color ];
         $drew_bells = 1;
     }
     if (($truncated>=2 and not $is_flipped) 
         or (($truncated==1 or $truncated==3) and $is_flipped)){
         $self->draw_truncation_arrows(
             is_up         => 0,
-            map_coords    => \@map_coords,
+            map_coords    => $map_coords,
             coords        => \@coords,
             drawer        => $drawer,
             map_area_data => $map_area_data,
@@ -309,19 +313,19 @@ bounds of the image.
     }
     else{
         push @$drawing_data,
-          [ ARC, $mid_x, $map_coords[3], $arc_width, $arc_width, 0, 360, $color ];
-        push @$drawing_data, [ FILL_TO_BORDER, $mid_x, $map_coords[3], $color, $color ];
+          [ ARC, $mid_x, $map_coords->[3], $arc_width, $arc_width, 0, 360, $color ];
+        push @$drawing_data, [ FILL_TO_BORDER, $mid_x, $map_coords->[3], $color, $color ];
         $drew_bells = 1;
     }
-    push @$drawing_data, [ FILLED_RECT,    $map_coords[0],    $map_coords[1], $map_coords[2],    $map_coords[3], $color ];
+    push @$drawing_data, [ FILLED_RECT,    $map_coords->[0],    $map_coords->[1], $map_coords->[2],    $map_coords->[3], $color ];
 
     if ( my $map_units = $args{'map_units'} ) {
         $self->draw_map_bottom(
             map_id  => $map_id,
             slot_no => $slot_no,
-            map_x1  => $map_coords[0],
-            map_x2  => $map_coords[2],
-            map_y2  => $map_coords[3],
+            map_x1  => $map_coords->[0],
+            map_x2  => $map_coords->[2],
+            map_y2  => $map_coords->[3],
             drawer  => $drawer,
             drawing_data  => $drawing_data,
             map_area_data => $map_area_data,
@@ -332,16 +336,16 @@ bounds of the image.
     if ($drew_bells){
         $coords[0] = $mid_x - $arc_width / 2
             if ($coords[0] > $mid_x - $arc_width / 2); 
-        $coords[1] = $map_coords[1] - $arc_width / 2
-            if ($coords[1] > $map_coords[1] - $arc_width / 2); 
+        $coords[1] = $map_coords->[1] - $arc_width / 2
+            if ($coords[1] > $map_coords->[1] - $arc_width / 2); 
         $coords[2] = $mid_x + $arc_width / 2
             if ($coords[2] < $mid_x + $arc_width / 2); 
-        $coords[3] = $map_coords[3] + $arc_width / 2
-            if ($coords[3] < $map_coords[3] + $arc_width / 2); 
+        $coords[3] = $map_coords->[3] + $arc_width / 2
+            if ($coords[3] < $map_coords->[3] + $arc_width / 2); 
     }
     return (
         \@coords,
-        \@map_coords
+        $map_coords
     );
 }
 
@@ -359,6 +363,7 @@ Draws the map as an "I-beam."  Return the bounds of the image.
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
     my $map_area_data = $args{'map_area_data'};
+    my $map_coords = $args{'map_coords'};
     my $drawer = $args{'drawer'} || $self->drawer
       or $self->error('No drawer');
     my ( $x1, $y1, $y2 ) = @{ $args{'coords'} || [] }
@@ -373,13 +378,14 @@ Draws the map as an "I-beam."  Return the bounds of the image.
     my $x     = $x1 + $width / 2;
 
     my @coords=($x1,  $y1, $x2,  $y2);
-    my @map_coords=($x1,  $y1, $x2,  $y2);
+    $map_coords->[0] = $x1 if ($map_coords->[0] > $x1);
+    $map_coords->[2] = $x2 if ($map_coords->[2] < $x2);
     my $truncated = $drawer->data_module->truncatedMap($slot_no,$map_id);
     if (($truncated>=2 and $is_flipped) 
         or (($truncated==1 or $truncated==3) and not $is_flipped)){
         $self->draw_truncation_arrows(
             is_up         => 1,
-            map_coords    => \@map_coords,
+            map_coords    => $map_coords,
             coords        => \@coords,
             drawer        => $drawer,
             map_area_data => $map_area_data,
@@ -391,13 +397,13 @@ Draws the map as an "I-beam."  Return the bounds of the image.
         )
     }
     else{
-        push @$drawing_data, [ LINE, $map_coords[0], $map_coords[1], $map_coords[2], $map_coords[1], $color ];
+        push @$drawing_data, [ LINE, $map_coords->[0], $map_coords->[1], $map_coords->[2], $map_coords->[1], $color ];
     }
     if (($truncated>=2 and not $is_flipped) 
         or (($truncated==1 or $truncated==3) and $is_flipped)){
         $self->draw_truncation_arrows(
             is_up         => 0,
-            map_coords    => \@map_coords,
+            map_coords    => $map_coords,
             coords        => \@coords,
             drawer        => $drawer,
             map_area_data => $map_area_data,
@@ -409,16 +415,16 @@ Draws the map as an "I-beam."  Return the bounds of the image.
         )
     }
     else{
-        push @$drawing_data, [ LINE, $map_coords[0], $map_coords[3], $map_coords[2], $map_coords[3], $color ];
+        push @$drawing_data, [ LINE, $map_coords->[0], $map_coords->[3], $map_coords->[2], $map_coords->[3], $color ];
     }
-    push @$drawing_data, [ LINE, $x,  $map_coords[1], $x,  $map_coords[3], $color ];
+    push @$drawing_data, [ LINE, $x,  $map_coords->[1], $x,  $map_coords->[3], $color ];
     if ( my $map_units = $args{'map_units'} ) {
         $self->draw_map_bottom(
             map_id  => $map_id,
             slot_no => $slot_no,
-            map_x1  => $map_coords[0],
-            map_x2  => $map_coords[2],
-            map_y2  => $map_coords[3],
+            map_x1  => $map_coords->[0],
+            map_x2  => $map_coords->[2],
+            map_y2  => $map_coords->[3],
             drawer  => $drawer,
             drawing_data  => $drawing_data,
             map_area_data => $map_area_data,
@@ -427,7 +433,7 @@ Draws the map as an "I-beam."  Return the bounds of the image.
         );
     }
 
-    return ( \@coords,\@map_coords );
+    return ( \@coords,$map_coords );
 }
 
 # ----------------------------------------------------
@@ -1124,17 +1130,10 @@ Variable Info:
                               $map_placement_data{$map_id}{'map_coords'}[1], 
                               $map_placement_data{$map_id}{'map_coords'}[3], 
                             ],
+            map_coords   => $map_placement_data{$map_id}{'map_coords'},
             drawing_data => $map_drawing_data{$map_id},
             map_area_data => $map_area_data{$map_id},
         );
-        $map_placement_data{$map_id}{'map_coords'}[0]=$map_coords->[0]
-            if ($map_placement_data{$map_id}{'map_coords'}[0]>$map_coords->[0]);
-        $map_placement_data{$map_id}{'map_coords'}[1]=$map_coords->[1]
-            if ($map_placement_data{$map_id}{'map_coords'}[1]>$map_coords->[1]);
-        $map_placement_data{$map_id}{'map_coords'}[2]=$map_coords->[2]
-            if ($map_placement_data{$map_id}{'map_coords'}[2]<$map_coords->[2]);
-        $map_placement_data{$map_id}{'map_coords'}[3]=$map_coords->[3]
-            if ($map_placement_data{$map_id}{'map_coords'}[3]<$map_coords->[3]);
         $map_placement_data{$map_id}{'bounds'}[0]=$bounds->[0]
             if ($map_placement_data{$map_id}{'bounds'}[0]>$bounds->[0]);
         $map_placement_data{$map_id}{'bounds'}[1]=$bounds->[1]
