@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.33 2003-04-09 16:38:41 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.34 2003-04-17 19:24:08 kycl4rk Exp $
 
 use strict;
 use Apache::Constants qw[ :common M_GET REDIRECT ];
@@ -30,7 +30,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.33 $)[-1];
+$VERSION        = (qw$Revision: 1.34 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -774,7 +774,6 @@ sub map_edit {
                    map.accession_id, 
                    map.map_name, 
                    map.display_order, 
-                   map.linkage_group, 
                    map.start_position, 
                    map.stop_position,
                    ms.map_set_id, 
@@ -822,7 +821,6 @@ sub map_insert {
     push @errors, 'No map name' unless defined $map_name && $map_name ne '';
     my $map_set_id     = $apr->param('map_set_id')   or 
                          push @errors, 'No map set id';
-    my $linkage_group  = $apr->param('linkage_group') || '';
     my $start_position = $apr->param('start_position');
     my $stop_position  = $apr->param('stop_position');
     push @errors, 'No start' unless $start_position =~ NUMBER_RE;
@@ -835,12 +833,12 @@ sub map_insert {
             insert
             into   cmap_map
                    ( map_id, accession_id, map_set_id, map_name, display_order,
-                     linkage_group, start_position, stop_position )
-            values ( ?, ?, ?, ?, ?, ?, ?, ? )
+                     start_position, stop_position )
+            values ( ?, ?, ?, ?, ?, ?, ? )
         ],
         {},
         ( $map_id, $accession_id, $map_set_id, $map_name, $display_order,
-          $linkage_group, $start_position, $stop_position 
+          $start_position, $stop_position 
         )
     );
 
@@ -865,7 +863,6 @@ sub map_view {
                    map.accession_id, 
                    map.map_name, 
                    map.display_order, 
-                   map.linkage_group, 
                    map.start_position, 
                    map.stop_position,
                    ms.map_set_id, 
@@ -976,7 +973,6 @@ sub map_update {
     my $display_order  = $apr->param('display_order') || 1;
     my $map_name       = $apr->param('map_name');
     push @errors, 'No map name' unless defined $map_name && $map_name ne '';
-    my $linkage_group  = $apr->param('linkage_group') || '';
     my $start_position = $apr->param('start_position');
     push @errors, 'No start position' unless defined $start_position;
     my $stop_position  = $apr->param('stop_position')  
@@ -989,7 +985,6 @@ sub map_update {
         set    accession_id=?, 
                map_name=?, 
                display_order=?, 
-               linkage_group=?, 
                start_position=?,
                stop_position=?
         where  map_id=?
@@ -998,7 +993,7 @@ sub map_update {
     $db->do( 
         $sql, 
         {}, 
-        ( $accession_id, $map_name, $display_order, $linkage_group, 
+        ( $accession_id, $map_name, $display_order, 
           $start_position, $stop_position, $map_id 
         ) 
     );
@@ -2342,7 +2337,6 @@ sub map_set_view {
                           map.accession_id, 
                           map.map_name, 
                           map.display_order, 
-                          map.linkage_group, 
                           map.start_position, 
                           map.stop_position,
                           count(f.map_id) as no_features
@@ -2354,7 +2348,6 @@ sub map_set_view {
                           map.accession_id, 
                           map.map_name, 
                           map.display_order,
-                          map.linkage_group, 
                           map.start_position, 
                           map.stop_position
                 order by  $order_by
@@ -2363,18 +2356,6 @@ sub map_set_view {
             ( $map_set_id ) 
         )
     };
-
-    if ( $order_by eq 'map_name' || $order_by eq 'linkage_group' ) {
-        my $all_numbers = grep { $_->{ $order_by } =~ m/[0-9]/ } @maps;
-        if ( $all_numbers == scalar @maps ) {
-            @maps = 
-                map  { $_->[0] }
-                sort { $a->[1] <=> $b->[1] }
-                map  { [ $_, extract_numbers( $_->{ $order_by } ) ] }
-                @maps
-            ;
-        }
-    }
 
     #
     # Slice the results up into pages suitable for web viewing.
