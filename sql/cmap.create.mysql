@@ -29,7 +29,7 @@ CREATE TABLE cmap_correspondence_evidence (
   accession_id varchar(20) NOT NULL default '',
   feature_correspondence_id int(11) NOT NULL default '0',
   evidence_type_accession varchar(20) NOT NULL default '0',
-  score double(8,2) default NULL,
+  score double default NULL,
   rank int(11) NOT NULL default '0',
   PRIMARY KEY  (correspondence_evidence_id),
   UNIQUE KEY accession_id (accession_id),
