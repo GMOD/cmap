@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.79 2004-01-06 18:44:12 kycl4rk Exp $
+# $Id: Data.pm,v 1.80 2004-01-06 18:48:23 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.79 $)[-1];
+$VERSION = (qw$Revision: 1.80 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -1635,6 +1635,7 @@ Returns the data for the main comparative map HTML form.
     my $ref_species = $db->selectall_arrayref(
         q[
             select   distinct s.accession_id as species_aid,
+                     s.display_order,
                      s.common_name as species_common_name,
                      s.full_name as species_full_name
             from     cmap_map_set ms,
