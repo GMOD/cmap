@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.140 2004-11-05 06:29:22 mwz444 Exp $
+# $Id: Map.pm,v 1.141 2004-11-09 18:01:14 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.140 $)[-1];
+$VERSION = (qw$Revision: 1.141 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1883,7 +1883,11 @@ sub get_map_height {
     #
     # Set information used to scale.
     #
-    if ( $drawer->{'data'}{'ref_unit_size'}{ $self->map_units($map_id) } ) {
+    if (    $self->scale_maps
+        and $self->config_data('scalable')
+        and $self->config_data('scalable')->{ $self->map_units($map_id) }
+        and $drawer->{'data'}{'ref_unit_size'}{ $self->map_units($map_id) } )
+    {
         $pixel_height =
           ( $self->stop_position($map_id) - $self->start_position($map_id) ) *
           ( $drawer->pixel_height() /
