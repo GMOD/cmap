@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.113 2004-08-28 13:08:50 mwz444 Exp $
+# $Id: Map.pm,v 1.114 2004-08-31 22:06:51 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.113 $)[-1];
+$VERSION = (qw$Revision: 1.114 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1907,7 +1907,7 @@ sub add_tick_marks {
         # Figure out how many signifigant figures the number needs by 
         # going down to the $interval size.
         #
-        my $sig_figs = int(''.(log($tick_pos)/log(10)))-int(''.(log($interval)/log(10))) + 1;
+        my $sig_figs = int(''.(log(abs($tick_pos))/log(10)))-int(''.(log(abs($interval))/log(10))) + 1;
         my $tick_pos_str = presentable_number($tick_pos,$sig_figs);
         my $label_y = $y_pos + ( $font_width * length($tick_pos_str) ) / 2;
 
@@ -2750,7 +2750,7 @@ Returns the map's tick mark interval.
     unless ( defined $map->{'tick_mark_interval'} ) {
         my $map_length =
           $self->stop_position($map_id) - $self->start_position($map_id);
-        my $map_scale  = int(log($map_length)/log(10)); 
+        my $map_scale  = int(log(abs($map_length))/log(10)); 
         if (int(($map_length/(10**$map_scale))+.5)>=2){
             push @{$map->{'tick_mark_interval'}}, (10**$map_scale, $map_scale);
         }
