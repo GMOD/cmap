@@ -6,7 +6,9 @@ CVS
 ^blib/
 ^_build/
 ^Build$
-^data/
+^data/dumps/
+^data/datasets/
+^data/sample-dump.sql.gz
 ^#
 (^|/)\.
 cmap_install.conf

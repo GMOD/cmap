@@ -39,9 +39,9 @@ sub ACTION_install {
     #
     # Install config file.
     #
-    shell("mkdir ".$self->notes('CONF')) unless (-d $self->notes('CONF'));
+    system("mkdir ".$self->notes('CONF')) unless (-d $self->notes('CONF'));
 
-    foreach my $conf_file ('global.conf', 'mysql1.conf', 'pgsql1.conf'){
+    foreach my $conf_file ('global.conf', 'mysql1.conf', 'pgsql1.conf.o'){
         my $from_conf = 'conf/'.$conf_file;
         my $to_conf   = catfile( $self->notes('CONF'), $conf_file );
         my $copy_conf = 1;
@@ -178,6 +178,7 @@ sub ACTION_build_html {
         (
             [ 'CMap Home'      => '' ],
             [ 'Maps'           => '/cgi-bin/cmap/viewer' ],
+            [ 'Map Search'     => '/cgi-bin/cmap/entry' ],
             [ 'Search'         => '/cgi-bin/cmap/feature_search' ],
             [ 'Matrix'         => '/cgi-bin/cmap/matrix' ],
             [ 'Map Sets'       => '/cgi-bin/cmap/map_set_info' ],
