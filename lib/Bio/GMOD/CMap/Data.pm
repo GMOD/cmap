@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.88 2004-01-08 22:12:36 kycl4rk Exp $
+# $Id: Data.pm,v 1.89 2004-01-12 19:03:47 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.88 $)[-1];
+$VERSION = (qw$Revision: 1.89 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -1228,15 +1228,20 @@ Returns the data for the correspondence matrix.
                      ms.map_set_id, 
                      ms.accession_id as map_set_aid,
                      ms.short_name as map_set_name,
+                     mt.accession_id as map_type_aid, 
+                     mt.display_order as map_type_display_order, 
+                     mt.map_type,
                      s.species_id,
                      s.accession_id as species_aid,
                      s.common_name as species_name
             from     cmap_map map,
                      cmap_map_set ms,
+                     cmap_map_type mt,
                      cmap_species s
             where    map.map_set_id=ms.map_set_id
             and      ms.is_enabled=1
             and      ms.accession_id='$map_set_aid'
+            and      ms.map_type_id=mt.map_type_id
             and      ms.species_id=s.species_id
         ];
 
