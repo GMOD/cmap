@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.124 2004-06-08 14:41:12 mwz444 Exp $
+# $Id: Data.pm,v 1.125 2004-06-11 02:46:53 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.124 $)[-1];
+$VERSION = (qw$Revision: 1.125 $)[-1];
 
 use Data::Dumper;
 use Regexp::Common;
@@ -4552,12 +4552,28 @@ sub slot_info {
                     ###If aid was found, $sql_suffix will be created
                     my $slot_results;
                     unless ( $slot_results =
-                        $self->get_cached_results( $sql_str . $sql_suffix ) )
+                        $self->get_cached_results( $sql_str . $sql_suffix 
+                            .$slots->{$slot_no}{'start'}
+                            .$slots->{$slot_no}{'stop'} ) )
                     {
                         $slot_results =
                           $db->selectall_arrayref( $sql_str . $sql_suffix,
                             {}, () );
-                        $self->store_cached_results( $sql_str . $sql_suffix,
+                        if ($slots->{$slot_no}{'start'} ne ''){
+                            foreach my $row (@$slot_results){
+                                $row->[1]=
+                                    $slots->{$slot_no}{'start'};
+                            }
+                        }
+                        if ($slots->{$slot_no}{'stop'} ne ''){
+                            foreach my $row (@$slot_results){
+                                $row->[2]=
+                                    $slots->{$slot_no}{'stop'};
+                            }
+                        }
+                        $self->store_cached_results( $sql_str . $sql_suffix
+                            .$slots->{$slot_no}{'start'}
+                            .$slots->{$slot_no}{'stop'},
                             $slot_results );
                     }
 
