@@ -93,6 +93,7 @@ sub ACTION_install {
         '',
         'CMap has been installed.',
         "Be sure to edit the config files with database info!",
+        "Remember to purge the cache with cmap_admin.pl after changing the config file or changing the data.",
         qq[Then go to "http://$host/cmap"], '' );
 }
 
