@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap;
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.62 2004-10-28 21:34:38 mwz444 Exp $
+# $Id: CMap.pm,v 1.63 2004-10-29 15:26:39 mwz444 Exp $
 
 =head1 NAME
 
@@ -699,7 +699,7 @@ Given information about the link, creates a url to cmap_viewer.
                 or defined($ref_map_aids->{'stop'})){
                 push @ref_strs, $ref_map_aid.'['
                     . $ref_map_aids->{'start'}.'*'
-                    . $ref_map_aids->{'stop'}.'*'
+                    . $ref_map_aids->{'stop'}.'x'
                     . $ref_map_aids->{'magnify'}
                     .']';
             }
@@ -725,7 +725,7 @@ Given information about the link, creates a url to cmap_viewer.
                             $slot_no
                           . '%3dmap_aid%3d'
                           . $aid.'['.$map->{$field}{$aid}{'start'}.'*'
-                          . $map->{$field}{$aid}{'stop'}.'*'
+                          . $map->{$field}{$aid}{'stop'}.'x'
                           . $map->{$field}{$aid}{'magnify'}
                           .']';
 
