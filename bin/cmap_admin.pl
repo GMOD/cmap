@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.48 2003-09-29 20:49:47 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.49 2003-10-01 23:26:17 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.48 $)[-1];
+$VERSION = (qw$Revision: 1.49 $)[-1];
 
 #
 # Get command-line options
@@ -319,7 +319,7 @@ sub create_map_set {
         table_name   => 'cmap_map_set',
         id_field     => 'map_set_id',
     ) or die 'No map set id';
-    $map_set_aid ||= '';
+    $map_set_aid ||= $map_set_id;
 
     print "OK to create set '$map_set_name' in data source '", 
         $self->data_source, "'?\n[Y/n] ";
@@ -800,7 +800,6 @@ sub export_as_sql {
                 map_id          => NUM,
                 feature_type_id => NUM,
                 feature_name    => STR,
-                alternate_name  => STR,
                 is_landmark     => NUM,
                 start_position  => NUM,
                 stop_position   => NUM,
@@ -813,6 +812,13 @@ sub export_as_sql {
             fields => {
                 feature_id      => NUM,
                 note            => STR,
+            }
+        },
+        {
+            name   => 'cmap_feature_alias',
+            fields => {
+                feature_id      => NUM,
+                alias           => STR,
             }
         },
         {
@@ -1051,7 +1057,7 @@ sub export_as_text {
         map_stop
         feature_accession_id
         feature_name
-        feature_alt_name
+        feature_aliases
         feature_start
         feature_stop
         feature_type
@@ -1249,7 +1255,6 @@ sub export_as_text {
         select   f.feature_id, 
                  f.accession_id as feature_accession_id,
                  f.feature_name,
-                 f.alternate_name as feature_alt_name,
                  f.start_position as feature_start,
                  f.stop_position as feature_stop,
                  f.dbxref_name as feature_dbxref_name,
@@ -1313,12 +1318,35 @@ sub export_as_text {
                 ( $map->{'map_id'} )
             );
 
+            my $aliases = $db->selectall_arrayref(
+                q[
+                    select fa.feature_id,
+                           fa.alias 
+                    from   cmap_feature_alias fa,
+                           cmap_feature f
+                    where  fa.feature_id=f.feature_id
+                    and    f.map_id=?
+                ],
+                {},
+                ( $map->{'map_id'} )
+            );
+
+            my %alias_lookup = ();
+            for my $a ( @$aliases ) {
+                push @{ $alias_lookup{ $a->[0] } }, $a->[1];
+            }
+
             for my $feature ( @$features ) {
                 $feature->{'stop_position'} = undef 
                 if $feature->{'stop_position'} < $feature->{'start_position'};
 
                 $feature->{'feature_note'} = 
                     $feature_notes->{ $feature->{'feature_id'} } || '';
+
+                $feature->{'feature_aliases'} = join(',', 
+                    map { s/"/\\"/g ? qq["$_"] : $_ }
+                    @{ $alias_lookup{ $feature->{'feature_id'} || [] } }
+                );
 
                 print $fh 
                     join( OFS, map { $feature->{ $_ } } @col_names ), 
@@ -1790,83 +1818,6 @@ sub make_name_correspondences {
         ),
     );
 
-    #
-    # Get the source map set(s).
-    #
-#    my @from_map_sets = $self->show_menu(
-#        title       => 'Reference Map Set (optional)',
-#        prompt      => 'Please select a map set',
-#        display     => 'map_type,species_name,map_set_name',
-#        return      => 'map_set_id,map_type,species_name,map_set_name',
-#        allow_null  => 1,
-#        allow_mult  => 1,
-#        data        => $db->selectall_arrayref(
-#            q[
-#                select   ms.map_set_id, 
-#                         ms.short_name as map_set_name,
-#                         s.common_name as species_name,
-#                         mt.map_type
-#                from     cmap_map_set ms,
-#                         cmap_species s,
-#                         cmap_map_type mt
-#                where    ms.species_id=s.species_id
-#                and      ms.map_type_id=mt.map_type_id
-#                order by map_type, common_name, map_set_name
-#            ],
-#            { Columns => {} },
-#        ),
-#    );
-#
-#    my @from_map_set_ids = map { $_->[0] } @from_map_sets;
-#
-#    #
-#    # Get the source map set(s).
-#    #
-#    my @to_map_sets;
-#    if ( @from_map_sets ) {
-#        @to_map_sets = $self->show_menu(
-#            title       => 'Target Map Set (optional)',
-#            prompt      => 'Please select a target map set',
-#            display     => 'map_type,species_name,map_set_name',
-#            return      => 'map_set_id,map_type,species_name,map_set_name',
-#            allow_null  => 1,
-#            allow_mult  => 1,
-#            data        => $db->selectall_arrayref(
-#                q[
-#                    select   ms.map_set_id, 
-#                             ms.short_name as map_set_name,
-#                             s.common_name as species_name,
-#                             mt.map_type
-#                    from     cmap_map_set ms,
-#                             cmap_species s,
-#                             cmap_map_type mt
-#                    where    ms.species_id=s.species_id
-#                    and      ms.map_type_id=mt.map_type_id
-#                    order by map_type, common_name, map_set_name
-#                ],
-#                { Columns => {} },
-#            ),
-#        );
-#    }
-#
-#    my @to_map_set_ids = map { $_->[0] } @to_map_sets;
-#
-#    my $from = @from_map_sets
-#        ? join( "\n", 
-#            map { "    $_" } map { join('-', $_->[1], $_->[2], $_->[3]) } 
-#            @from_map_sets
-#        )
-#        : '    All'
-#    ;
-#
-#    my $to = @to_map_sets
-#        ? join( "\n", 
-#            map { "    $_" } map { join('-', $_->[1], $_->[2], $_->[3]) } 
-#            @to_map_sets
-#        )
-#        : '    All'
-#    ;
-
     my @map_set_ids = map { $_->[0] } @map_sets;
     my $targets     = @map_sets
         ? join( "\n", 
@@ -1896,7 +1847,7 @@ sub make_name_correspondences {
     my @skip_feature_type_ids = map { $_->[0] } @skip_features;
     my $skip = @skip_features
         ? join( "\n", map { "    $_->[1]" } @skip_features )
-        : 'None'
+        : '    None'
     ;
 
     print "Make name-based correspondences\n",
@@ -2189,7 +2140,7 @@ this script or you can specify the file's location when asked.
 =head2 Make name-based correspondences
 
 This option will create correspondences between any two features with
-the same "feature_name" or "alternate_name," irrespective of case.  It
+the same "feature_name" or "aliases," irrespective of case.  It
 is possible to choose to make the correspondences from only one map
 set (for the occasions when you bring in just one new map set, you
 don't want to rerun this for the whole database -- it can take a long
