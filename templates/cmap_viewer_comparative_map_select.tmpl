@@ -8,7 +8,7 @@
          onChange="changeCompMaps(document.comparative_map_form.comparative_map_[% side | lower %],this.selectedIndex, '[% side %]')"   >
             [% FOREACH ms=map_sets %]
                 <option value="[% ms.map_set_aid %]">
-                [% ms.map_type %]:[% ms.species_name %] - [% ms.map_set_name %] [[% ms.no_correspondences %]]</option>      
+                [% ms.map_type %] : [% ms.species_name %] - [% ms.map_set_name %] [[% ms.no_correspondences %]]</option>      
                 
                 [% SET last_map_type = ms.map_type %]
             [% END %]

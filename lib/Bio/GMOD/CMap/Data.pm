@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.165.2.8 2004-11-16 02:19:12 mwz444 Exp $
+# $Id: Data.pm,v 1.165.2.9 2004-11-17 19:08:30 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.165.2.8 $)[-1];
+$VERSION = (qw$Revision: 1.165.2.9 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -48,6 +48,7 @@ sub init {
     $self->data_source( $config->{'data_source'} );
     $self->aggregate( $config->{'aggregate'} );
     $self->show_intraslot_corr( $config->{'show_intraslot_corr'} );
+    $self->ref_map_order( $config->{'ref_map_order'} );
 
     ### Create the cache objects for each of the levels
     ### For and explaination of the cache levels, see
@@ -525,6 +526,10 @@ sub cmap_data {
             map_type_aids               => \%map_type_aids,
           )
           or return;
+
+        #Set the map order for this slot
+        $self->sorted_map_ids( $slot_no, $data->{'slots'}{$slot_no} );
+
     }
     ###Get the extra javascript that goes along with the feature_types.
     ### and get extra forms
@@ -2070,6 +2075,7 @@ sub cmap_form_data {
     my $included_evidence_type_aids = $args{'included_evidence_types'} || [];
     my $ignored_evidence_type_aids  = $args{'ignored_evidence_types'}  || [];
     my $ref_species_aid             = $args{'ref_species_aid'}         || '';
+    my $ref_slot_data               = $args{'ref_slot_data'}           || {};
     my $ref_map                     = $slots->{0};
     my $ref_map_set_aid             = $args{'ref_map_set_aid'}         || 0;
     my $db  = $self->db  or return;
@@ -2079,12 +2085,14 @@ sub cmap_form_data {
 
     my @ref_maps = ();
 
-    if ( $self->slot_info ) {
-        foreach my $map_id ( keys( %{ $self->slot_info->{0} } ) ) {
+    if ( @{ $self->sorted_map_ids(0) } ) {
+        foreach my $map_id ( @{ $self->sorted_map_ids(0) } ) {
             my %temp_hash = (
-                'map_id'         => $self->slot_info->{0}{$map_id}[0],
-                'start_position' => $self->slot_info->{0}{$map_id}[1],
-                'stop_position'  => $self->slot_info->{0}{$map_id}[2],
+                'map_id'         => $map_id,
+                'map_aid'        => $ref_slot_data->{$map_id}{'accession_id'},
+                'map_name'       => $ref_slot_data->{$map_id}{'map_name'},
+                'start_position' => $self->slot_info->{0}{$map_id}[0],
+                'stop_position'  => $self->slot_info->{0}{$map_id}[1],
             );
             push @ref_maps, \%temp_hash;
         }
@@ -2276,14 +2284,13 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
         $map_info = $self->fill_out_maps($slots);
     }
 
-    #$db->do("delete from cmap_map_cache where pid=$pid");
-
     return {
         ref_species_aid        => $ref_species_aid,
         ref_species            => $ref_species,
         ref_map_sets           => $ref_map_sets,
         ref_map_set_aid        => $ref_map_set_aid,
         ref_maps               => $ref_maps,
+        ordered_ref_maps       => \@ref_maps,
         ref_map_set_info       => $ref_map_set_info,
         comparative_maps_right => $comp_maps_right,
         comparative_maps_left  => $comp_maps_left,
@@ -3798,7 +3805,6 @@ Returns the detail info for a map.
     #
     # Delete anything from the cache.
     #
-    #$db->do("delete from cmap_map_cache where pid=$pid");
 
     return {
         features              => $features,
@@ -5060,6 +5066,88 @@ Given the slot_no and map_id
     }
 
     return $self->{'evidence_default_display'};
+}
+
+# ----------------------------------------------------
+sub ref_map_order_hash {
+
+=pod
+
+=head2 ref_map_order_hash
+
+Uses ref_map_order() to create a hash designating the maps order.
+
+=cut
+
+    my $self          = shift;
+    my %return_hash   = ();
+    my $ref_map_order = $self->ref_map_order();
+    my @ref_map_aids  = split( /,/, $ref_map_order );
+    for ( my $i = 0 ; $i <= $#ref_map_aids ; $i++ ) {
+        my $map_id = $self->acc_id_to_internal_id(
+            table    => 'cmap_map',
+            acc_id   => $ref_map_aids[$i],
+            field_id => 'map_id'
+        );
+        $return_hash{$map_id} = $i + 1;
+    }
+
+    return %return_hash;
+}
+
+# ----------------------------------------------------
+sub sorted_map_ids {
+
+=pod
+
+=head2 sorted_map_ids
+
+Sets and returns the sorted map ids for each slot
+
+=cut
+
+    my $self      = shift;
+    my $slot_no   = shift;
+    my $slot_data = shift;
+
+    if ($slot_data) {
+        my @map_ids = keys(%$slot_data);
+        if ( $slot_no == 0 ) {
+            my %map_order = $self->ref_map_order_hash;
+            @map_ids =
+              map  { $_->[0] }
+              sort {
+                ( %map_order
+                      and ( $map_order{ $a->[0] } or $map_order{ $b->[0] } ) )
+                  ? ( $map_order{ $a->[0] } and $map_order{ $b->[0] } )
+                  ? $map_order{ $a->[0] } <=> $map_order{ $b->[0] }
+                  : ( $map_order{ $a->[0] } ) ? -1
+                  : 1
+                  : (    $a->[1] <=> $b->[1]
+                      || $a->[2] cmp $b->[2]
+                      || $a->[0] <=> $b->[0] )
+              }
+              map {
+                [
+                    $_,
+                    $slot_data->{$_}{'display_order'},
+                    $slot_data->{$_}{'map_name'},
+                ]
+              } @map_ids;
+        }
+        else {
+            @map_ids =
+              map  { $_->[0] }
+              sort { $b->[1] <=> $a->[1] }
+              map  { [ $_, $self->{'maps'}{$_}{'no_correspondences'} ] }
+              @map_ids;
+        }
+        $self->{'sorted_map_ids'}{$slot_no} = \@map_ids;
+    }
+    if ( defined($slot_no) ) {
+        return $self->{'sorted_map_ids'}{$slot_no} || [];
+    }
+    return $self->{'sorted_map_ids'} || [];
 }
 
 # ----------------------------------------------------

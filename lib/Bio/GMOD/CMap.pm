@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.61.2.6 2004-11-09 22:29:28 mwz444 Exp $
+# $Id: CMap.pm,v 1.61.2.7 2004-11-17 19:08:29 mwz444 Exp $
 
 =head1 NAME
 
@@ -511,6 +511,26 @@ The default is 0.
 }
 
 # ----------------------------------------------------
+sub ref_map_order {
+
+=pod
+                                                                                
+=head2 ref_map_order
+
+Returns the string that describes the order of the ref maps. 
+
+The default is ''.
+
+=cut
+
+    my $self = shift;
+    my $val  = shift;
+    $self->{'ref_map_order'} = $val if defined $val;
+    $self->{'ref_map_order'} = '' unless defined $self->{'ref_map_order'};
+    return $self->{'ref_map_order'};
+}
+
+# ----------------------------------------------------
 sub data_module {
 
 =pod
@@ -523,12 +543,15 @@ Returns a handle to the data module.
 
     my $self = shift;
 
+    $self->{'data_module'} = shift if @_;
+
     unless ( $self->{'data_module'} ) {
         $self->{'data_module'} = Bio::GMOD::CMap::Data->new(
             data_source         => $self->data_source,
             config              => $self->config,
             aggregate           => $self->aggregate,
             show_intraslot_corr => $self->show_intraslot_corr,
+            ref_map_order       => $self->ref_map_order,
           )
           or $self->error( Bio::GMOD::CMap::Data->error );
     }

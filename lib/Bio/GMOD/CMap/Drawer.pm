@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.81.2.6 2004-11-09 22:29:29 mwz444 Exp $
+# $Id: Drawer.pm,v 1.81.2.7 2004-11-17 19:08:34 mwz444 Exp $
 
 =head1 NAME
 
@@ -47,6 +47,7 @@ The base map drawing module.
         magnify_all => $magnify_all,
         scale_maps => $scale_maps,
         stack_maps => $stack_maps,
+        ref_map_order => $ref_map_order,
     );
 
 =head2 Fields
@@ -212,6 +213,11 @@ Set to 1 scale the maps with the same unit.  Default is 1.
 
 Set to 1 stack the reference maps vertically.  Default is 0.
 
+=item * ref_map_order
+
+This is the string that dictates the order of the reference maps.  The format
+is the list of map_aids in order, separated by commas 
+
 =back
 
 =head1 METHODS
@@ -220,7 +226,7 @@ Set to 1 stack the reference maps vertically.  Default is 0.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.81.2.6 $)[-1];
+$VERSION = (qw$Revision: 1.81.2.7 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -239,7 +245,7 @@ my @INIT_PARAMS = qw[
   included_evidence_types ignored_evidence_types ignored_feature_types
   config data_source min_correspondences collapse_features cache_dir
   map_view data_module aggregate show_intraslot_corr clean_view
-  magnify_all scale_maps stack_maps
+  magnify_all scale_maps stack_maps ref_map_order
 ];
 
 # ----------------------------------------------------
@@ -272,7 +278,7 @@ Initializes the drawing object.
 }
 
 # ----------------------------------------
-sub data_module {
+sub xdata_module {
 
 =pod
 

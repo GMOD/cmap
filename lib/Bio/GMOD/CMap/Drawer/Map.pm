@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.135.2.12 2004-11-16 18:38:59 mwz444 Exp $
+# $Id: Map.pm,v 1.135.2.13 2004-11-17 19:08:35 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.135.2.12 $)[-1];
+$VERSION = (qw$Revision: 1.135.2.13 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -41,7 +41,7 @@ use base 'Bio::GMOD::CMap';
 
 my @INIT_FIELDS =
   qw[ drawer base_x base_y slot_no maps config aggregate
-  clean_view magnify_all scale_maps stack_maps];
+  clean_view magnify_all scale_maps stack_maps ];
 
 my %SHAPE = (
     'default'  => 'draw_box',
@@ -3236,40 +3236,15 @@ sub map_ids {
 
 =head2 map_ids
 
-Returns the all the map IDs sorted by the number of correspondences
-(to the reference map), highest to lowest.
+Returns the all the map IDs sorted 
 
 =cut
 
-    my $self = shift;
+    my $self    = shift;
+    my $slot_no = $self->slot_no;
+    my $drawer  = $self->drawer;
 
-    unless ( $self->{'sorted_map_ids'} ) {
-        my @map_ids = keys %{ $self->{'maps'} || {} };
-
-        if ( $self->slot_no == 0 && scalar @map_ids > 1 ) {
-            $self->{'sorted_map_ids'} = [
-                map { $_->[0] }
-                  sort { $a->[1] <=> $b->[1] || $a->[2] cmp $b->[2] }
-                  map {
-                    [
-                        $_,
-                        $self->{'maps'}{$_}{'display_order'},
-                        $self->{'maps'}{$_}{'map_name'}
-                    ]
-                  } @map_ids
-            ];
-        }
-        else {
-            $self->{'sorted_map_ids'} = [
-                map    { $_->[0] }
-                  sort { $b->[1] <=> $a->[1] }
-                  map  { [ $_, $self->{'maps'}{$_}{'no_correspondences'} ] }
-                  @map_ids
-            ];
-        }
-    }
-
-    return @{ $self->{'sorted_map_ids'} || [] };
+    return @{ $drawer->data_module->sorted_map_ids($slot_no) || [] };
 }
 
 # ----------------------------------------------------
