@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.82 2004-01-07 17:45:24 kycl4rk Exp $
+# $Id: Data.pm,v 1.83 2004-01-07 18:32:07 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.82 $)[-1];
+$VERSION = (qw$Revision: 1.83 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -1579,7 +1579,7 @@ Returns the data for the correspondence matrix.
     # Fill in the matrix with the reference set and all it's correspondences.
     # Herein lies madness.
     #
-    my ( @matrix, %no_ref_by_species, %no_ref_by_type );
+    my ( @matrix, %no_ref_by_species_and_type, %no_ref_by_type );
     for my $map_set ( @reference_map_sets ) {
         my $r_map_aid       = $map_set->{'map_aid'} || 0;
         my $r_map_set_aid   = $map_set->{'map_set_aid'};
@@ -1591,7 +1591,7 @@ Returns the data for the correspondence matrix.
             $r_map_aid || $r_map_set_aid;
 
         $no_ref_by_type{ $r_map_type_aid }++;
-        $no_ref_by_species{ $r_species_aid }++;
+        $no_ref_by_species_and_type{ $r_species_aid }{ $r_map_type_aid }++;
 
         for my $comp_map_set ( @all_map_sets ) {
             my $comp_map_set_aid = $comp_map_set->{'map_set_aid'};
@@ -1612,10 +1612,10 @@ Returns the data for the correspondence matrix.
         push @matrix, $map_set;
     }
 
-    my $matrix_data   =  {
-        data          => \@matrix,
-        no_by_type    => \%no_ref_by_type,
-        no_by_species => \%no_ref_by_species,
+    my $matrix_data            =  {
+        data                   => \@matrix,
+        no_by_type             => \%no_ref_by_type,
+        no_by_species_and_type => \%no_ref_by_species_and_type,
     };
 
     return {

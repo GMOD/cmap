@@ -120,8 +120,8 @@
                 <tr>
                     <td colspan="3">&nbsp;</td>
                     [% FOREACH ms=top_row.map_sets %]
-                        <td>
-                            <a href="/cmap/matrix?show_matrix=1;map_set_aid=[% apr.param('map_set_aid') %];species_aid=[% apr.param('species_aid') %];map_name=[% apr.param('map_name') %];link_map_set_aid=[% ms.map_set_aid %]">[% ms.map_set_name %][% IF ms.map_aid %][% END %]</a>
+                        <td align="center">
+                            <a href="/cmap/matrix?show_matrix=1;map_set_aid=[% apr.param('map_set_aid') %];species_aid=[% apr.param('species_aid') %];map_name=[% apr.param('map_name') %];link_map_set_aid=[% ms.map_set_aid %]">[% ms.map_set_name %]</a>
                         </td>
                     [% END %]
                     <td colspan="3">&nbsp;</td>
@@ -132,7 +132,7 @@
             [% SET last_map_type_aid=0 %]
             [% SET last_species_aid=0 %]
             [% SET no_ref_by_type=matrix.no_by_type %]
-            [% SET no_by_species=matrix.no_by_species %]
+            [% SET no_ref_by_species_and_type=matrix.no_by_species_and_type %]
             [% FOREACH ms=matrix.data %]
                 <tr>
                     [% SET map_type_aid=ms.map_type_aid %]
@@ -149,7 +149,7 @@
                     [% END %]
 
                     [% UNLESS ms.species_aid==last_species_aid %]
-                        [% SET rowspan=no_by_species.$species_aid %]
+                        [% SET rowspan=no_ref_by_species_and_type.$species_aid.$map_type_aid %]
                         <th[% IF rowspan > 1 %] rowspan="[% rowspan %]"[% END %]>
                             [% ms.species_name %]
                             [% IF apr.param('map_set_aid') %]
@@ -199,7 +199,7 @@
                     </td>
 
                     [% UNLESS ms.species_aid==last_species_aid %]
-                        [% SET rowspan=no_by_species.$species_aid %]
+                        [% SET rowspan=no_ref_by_type_and_species.$map_type_aid.$species_aid %]
                         <th[% IF rowspan > 1 %] rowspan="[% rowspan %]"[% END %]>
                             [% ms.species_name %]
                             [% IF apr.param('map_set_aid') %]
