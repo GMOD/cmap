@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.9 $
+$Revision: 1.10 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -134,12 +134,6 @@ Contains the database connection parameters. The 'name' field is the
 name that this config file and the data source will be called.  
 Therefor, it is important to keep it unique.
 
-=item * expanded_correspondence_lookup
-
-Set to 1.  This tells CMap if the database uses a normalized lookup 
-table.  If you have used the upgrade scripts or the table creation 
-scripts that come along with v0.13, you should leave this as 1.
-
 =item * feature_default_display
 
 Dictates the default choice of the feature type display menu.
@@ -212,6 +206,15 @@ It is appropriate to describe all relationships as CMap won't neccessarily figur
 
 Set to one if the query cache should not be used.  This is handy for 
 speed testing or debugging.
+
+=item * comp_menu_order
+
+Dictates the default value of how the comparison maps will be ordered in the
+menu select box.  The choices are 'display_order' and 'corrs'.  'display_order'
+is the classical order based on the maps display order and their names.
+Specifying 'corrs' orders the maps by the number of correspondences.
+
+Default: 'display_order'
 
 =back
 
@@ -513,6 +516,23 @@ The rank of the evidence relative to the others
 
 How lines representing this evidence type will be drawn (not currently
 supported)
+
+=item * <aggregated_correspondence_colors>
+
+This option dictates the color of aggregated correspondence lines for this
+evidence type.  It is defined the same way as aggregated_correspondence_colors
+is in the main options section of L<INDIVIDUAL CONFIGURATION FILES>.
+
+These colors will only be used if the aggregate correspondences are split based
+on evidence type.  Meaning each evidence type will have it's own aggregated
+correspondence.  It is suggested to use primary colors for each different type,
+so they can be distinguished.
+
+ <aggregated_correspondence_colors>
+    1    lightblue
+    20   blue
+    0    darkblue
+ </aggregated_correspondence_colors>
 
 =back
 
