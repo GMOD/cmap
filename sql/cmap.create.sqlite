@@ -1,29 +1,45 @@
+-- 
+-- Created by SQL::Translator::Producer::SQLite
+-- Created on Thu Jan  8 10:37:09 2004
+-- 
 BEGIN TRANSACTION;
 
+--
+-- Table: cmap_attribute
+--
 CREATE TABLE cmap_attribute (
   attribute_id INTEGER PRIMARY KEY NOT NULL DEFAULT '0',
   table_name varchar(30) NOT NULL DEFAULT '',
-  object_id integer(11) DEFAULT NULL,
-  display_order integer(11) DEFAULT '1',
+  object_id integer(11) NOT NULL DEFAULT '0',
+  display_order integer(11) NOT NULL DEFAULT '1',
+  is_public tinyint(4) NOT NULL DEFAULT '1',
   attribute_name varchar(200) NOT NULL DEFAULT '',
-  attribute_value text(65535)
+  attribute_value text(65535) NOT NULL
 );
 
+--
+-- Table: cmap_correspondence_evidence
+--
 CREATE TABLE cmap_correspondence_evidence (
   correspondence_evidence_id INTEGER PRIMARY KEY NOT NULL DEFAULT '0',
   accession_id varchar(20) NOT NULL DEFAULT '',
   feature_correspondence_id integer(11) NOT NULL DEFAULT '0',
   evidence_type_id integer(11) NOT NULL DEFAULT '0',
-  score double(8,2) DEFAULT NULL,
-  remark varchar(100) DEFAULT NULL
+  score double(8,2) DEFAULT NULL
 );
 
+--
+-- Table: cmap_correspondence_lookup
+--
 CREATE TABLE cmap_correspondence_lookup (
   feature_id1 integer(11) DEFAULT NULL,
   feature_id2 integer(11) DEFAULT NULL,
   feature_correspondence_id integer(11) DEFAULT NULL
 );
 
+--
+-- Table: cmap_correspondence_matrix
+--
 CREATE TABLE cmap_correspondence_matrix (
   reference_map_aid varchar(20) NOT NULL DEFAULT '0',
   reference_map_name varchar(32) NOT NULL DEFAULT '',
@@ -36,6 +52,9 @@ CREATE TABLE cmap_correspondence_matrix (
   no_correspondences integer(11) NOT NULL DEFAULT '0'
 );
 
+--
+-- Table: cmap_dbxref
+--
 CREATE TABLE cmap_dbxref (
   dbxref_id INTEGER PRIMARY KEY NOT NULL DEFAULT '0',
   map_set_id integer(11) DEFAULT NULL,
@@ -45,6 +64,9 @@ CREATE TABLE cmap_dbxref (
   url varchar(200) NOT NULL DEFAULT ''
 );
 
+--
+-- Table: cmap_evidence_type
+--
 CREATE TABLE cmap_evidence_type (
   evidence_type_id INTEGER PRIMARY KEY NOT NULL DEFAULT '0',
   accession_id varchar(20) NOT NULL DEFAULT '',
@@ -53,6 +75,9 @@ CREATE TABLE cmap_evidence_type (
   line_color varchar(20) DEFAULT NULL
 );
 
+--
+-- Table: cmap_feature
+--
 CREATE TABLE cmap_feature (
   feature_id INTEGER PRIMARY KEY NOT NULL DEFAULT '0',
   accession_id varchar(20) NOT NULL DEFAULT '',
@@ -66,11 +91,18 @@ CREATE TABLE cmap_feature (
   dbxref_url varchar(200) DEFAULT NULL
 );
 
+--
+-- Table: cmap_feature_alias
+--
 CREATE TABLE cmap_feature_alias (
+  feature_alias_id INTEGER PRIMARY KEY NOT NULL DEFAULT '0',
   feature_id integer(11) NOT NULL DEFAULT '0',
   alias varchar(255) DEFAULT NULL
 );
 
+--
+-- Table: cmap_feature_correspondence
+--
 CREATE TABLE cmap_feature_correspondence (
   feature_correspondence_id INTEGER PRIMARY KEY NOT NULL DEFAULT '0',
   accession_id varchar(20) NOT NULL DEFAULT '',
@@ -79,6 +111,9 @@ CREATE TABLE cmap_feature_correspondence (
   is_enabled tinyint(4) NOT NULL DEFAULT '1'
 );
 
+--
+-- Table: cmap_feature_type
+--
 CREATE TABLE cmap_feature_type (
   feature_type_id INTEGER PRIMARY KEY NOT NULL DEFAULT '0',
   accession_id varchar(20) NOT NULL DEFAULT '',
@@ -90,6 +125,9 @@ CREATE TABLE cmap_feature_type (
   drawing_priority integer(11) NOT NULL DEFAULT '1'
 );
 
+--
+-- Table: cmap_map
+--
 CREATE TABLE cmap_map (
   map_id INTEGER PRIMARY KEY NOT NULL DEFAULT '0',
   accession_id varchar(20) NOT NULL DEFAULT '',
@@ -100,6 +138,9 @@ CREATE TABLE cmap_map (
   stop_position double(11,2) DEFAULT NULL
 );
 
+--
+-- Table: cmap_map_cache
+--
 CREATE TABLE cmap_map_cache (
   pid integer(11) NOT NULL DEFAULT '0',
   slot_no smallint(6) NOT NULL DEFAULT '0',
@@ -108,6 +149,9 @@ CREATE TABLE cmap_map_cache (
   stop_position double(11,2) DEFAULT NULL
 );
 
+--
+-- Table: cmap_map_set
+--
 CREATE TABLE cmap_map_set (
   map_set_id INTEGER PRIMARY KEY NOT NULL DEFAULT '0',
   accession_id varchar(20) NOT NULL DEFAULT '',
@@ -124,6 +168,9 @@ CREATE TABLE cmap_map_set (
   width integer(11) DEFAULT NULL
 );
 
+--
+-- Table: cmap_map_type
+--
 CREATE TABLE cmap_map_type (
   map_type_id INTEGER PRIMARY KEY NOT NULL DEFAULT '0',
   accession_id varchar(20) NOT NULL DEFAULT '',
@@ -136,12 +183,18 @@ CREATE TABLE cmap_map_type (
   display_order integer(11) NOT NULL DEFAULT '1'
 );
 
+--
+-- Table: cmap_next_number
+--
 CREATE TABLE cmap_next_number (
   table_name varchar(40) NOT NULL DEFAULT '',
   next_number integer(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (table_name)
 );
 
+--
+-- Table: cmap_species
+--
 CREATE TABLE cmap_species (
   species_id INTEGER PRIMARY KEY NOT NULL DEFAULT '0',
   accession_id varchar(20) NOT NULL DEFAULT '',
@@ -151,6 +204,18 @@ CREATE TABLE cmap_species (
   ncbi_taxon_id integer(11) DEFAULT NULL
 );
 
+--
+-- Table: cmap_xref
+--
+CREATE TABLE cmap_xref (
+  xref_id INTEGER PRIMARY KEY NOT NULL DEFAULT '0',
+  table_name varchar(30) NOT NULL DEFAULT '',
+  object_id integer(11) DEFAULT NULL,
+  display_order integer(11) NOT NULL DEFAULT '1',
+  xref_name varchar(200) NOT NULL DEFAULT '',
+  xref_url text(65535) NOT NULL
+);
+
 CREATE INDEX feature_correspondence_id_cmap on cmap_correspondence_evidence (feature_correspondence_id, evidence_type_id);
 CREATE INDEX feature_id1_cmap_correspondenc on cmap_correspondence_lookup (feature_id1);
 CREATE INDEX corr_id_cmap_correspondence_lo on cmap_correspondence_lookup (feature_correspondence_id);
@@ -158,7 +223,8 @@ CREATE INDEX feature_name_cmap_feature on cmap_feature (feature_name);
 CREATE INDEX feature_id_map_id_cmap_feature on cmap_feature (feature_id, map_id);
 CREATE INDEX feature_id_map_id_start_cmap_f on cmap_feature (feature_id, map_id, start_position);
 CREATE INDEX map_id_cmap_feature on cmap_feature (map_id);
-CREATE INDEX feature_id_cmap_feature_alias on cmap_feature_alias (feature_id, alias);
+CREATE INDEX feature_id_cmap_feature_alias on cmap_feature_alias (feature_id);
+CREATE INDEX alias_cmap_feature_alias on cmap_feature_alias (alias);
 CREATE INDEX feature_id1_cmap_feature_corre on cmap_feature_correspondence (feature_id1);
 CREATE INDEX cmap_feature_corresp_idx_cmap_ on cmap_feature_correspondence (is_enabled, feature_correspondence_id);
 CREATE INDEX pid_cmap_map_cache_cmap_map_ca on cmap_map_cache (pid, slot_no, map_id);
@@ -168,10 +234,13 @@ CREATE UNIQUE INDEX B_cmap_correspondence_evidence on cmap_correspondence_eviden
 CREATE UNIQUE INDEX B_cmap_evidence_type on cmap_evidence_type (accession_id);
 CREATE UNIQUE INDEX C_cmap_evidence_type on cmap_evidence_type (rank);
 CREATE UNIQUE INDEX B_cmap_feature on cmap_feature (accession_id);
+CREATE UNIQUE INDEX B_cmap_feature_alias on cmap_feature_alias (feature_id, alias);
 CREATE UNIQUE INDEX B_cmap_feature_correspondence on cmap_feature_correspondence (accession_id);
 CREATE UNIQUE INDEX B_cmap_feature_type on cmap_feature_type (accession_id);
 CREATE UNIQUE INDEX B_cmap_map on cmap_map (accession_id);
+CREATE UNIQUE INDEX C_cmap_map on cmap_map (map_id, map_set_id, map_name, accession_id);
 CREATE UNIQUE INDEX B_cmap_map_set on cmap_map_set (accession_id);
+CREATE UNIQUE INDEX C_cmap_map_set on cmap_map_set (map_set_id, species_id, short_name, accession_id);
 CREATE UNIQUE INDEX B_cmap_map_type on cmap_map_type (map_type);
 CREATE UNIQUE INDEX C_cmap_map_type on cmap_map_type (accession_id);
 COMMIT;

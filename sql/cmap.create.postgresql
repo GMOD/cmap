@@ -1,12 +1,25 @@
+-- 
+-- Created by SQL::Translator::Producer::PostgreSQL
+-- Created on Thu Jan  8 10:36:40 2004
+-- 
+--
+-- Table: cmap_attribute
+--
+
 CREATE TABLE "cmap_attribute" (
   "attribute_id" bigint DEFAULT '0' NOT NULL,
   "table_name" character varying(30) DEFAULT '' NOT NULL,
-  "object_id" bigint DEFAULT NULL,
-  "display_order" bigint DEFAULT '1',
+  "object_id" bigint DEFAULT '0' NOT NULL,
+  "display_order" bigint DEFAULT '1' NOT NULL,
+  "is_public" smallint DEFAULT '1' NOT NULL,
   "attribute_name" character varying(200) DEFAULT '' NOT NULL,
-  "attribute_value" text,
+  "attribute_value" text NOT NULL,
   PRIMARY KEY ("attribute_id")
 );
+
+--
+-- Table: cmap_correspondence_evidence
+--
 
 CREATE TABLE "cmap_correspondence_evidence" (
   "correspondence_evidence_id" bigint DEFAULT '0' NOT NULL,
@@ -14,12 +27,15 @@ CREATE TABLE "cmap_correspondence_evidence" (
   "feature_correspondence_id" bigint DEFAULT '0' NOT NULL,
   "evidence_type_id" bigint DEFAULT '0' NOT NULL,
   "score" numeric(8,2) DEFAULT NULL,
-  "remark" character varying(100) DEFAULT NULL,
   PRIMARY KEY ("correspondence_evidence_id"),
   UNIQUE ("accession_id")
 );
 
 CREATE INDEX "feature_correspondence_id" on cmap_correspondence_evidence ("feature_correspondence_id", "evidence_type_id");
+
+--
+-- Table: cmap_correspondence_lookup
+--
 
 CREATE TABLE "cmap_correspondence_lookup" (
   "feature_id1" bigint DEFAULT NULL,
@@ -30,6 +46,10 @@ CREATE TABLE "cmap_correspondence_lookup" (
 CREATE INDEX "feature_id1" on cmap_correspondence_lookup ("feature_id1");
 
 CREATE INDEX "corr_id" on cmap_correspondence_lookup ("feature_correspondence_id");
+
+--
+-- Table: cmap_correspondence_matrix
+--
 
 CREATE TABLE "cmap_correspondence_matrix" (
   "reference_map_aid" character varying(20) DEFAULT '0' NOT NULL,
@@ -43,6 +63,10 @@ CREATE TABLE "cmap_correspondence_matrix" (
   "no_correspondences" bigint DEFAULT '0' NOT NULL
 );
 
+--
+-- Table: cmap_dbxref
+--
+
 CREATE TABLE "cmap_dbxref" (
   "dbxref_id" bigint DEFAULT '0' NOT NULL,
   "map_set_id" bigint DEFAULT NULL,
@@ -52,6 +76,10 @@ CREATE TABLE "cmap_dbxref" (
   "url" character varying(200) DEFAULT '' NOT NULL,
   PRIMARY KEY ("dbxref_id")
 );
+
+--
+-- Table: cmap_evidence_type
+--
 
 CREATE TABLE "cmap_evidence_type" (
   "evidence_type_id" bigint DEFAULT '0' NOT NULL,
@@ -63,6 +91,10 @@ CREATE TABLE "cmap_evidence_type" (
   UNIQUE ("accession_id"),
   UNIQUE ("rank")
 );
+
+--
+-- Table: cmap_feature
+--
 
 CREATE TABLE "cmap_feature" (
   "feature_id" bigint DEFAULT '0' NOT NULL,
@@ -87,12 +119,25 @@ CREATE INDEX "feature_id_map_id_start" on cmap_feature ("feature_id", "map_id", 
 
 CREATE INDEX "map_id" on cmap_feature ("map_id");
 
+--
+-- Table: cmap_feature_alias
+--
+
 CREATE TABLE "cmap_feature_alias" (
+  "feature_alias_id" bigint DEFAULT '0' NOT NULL,
   "feature_id" bigint DEFAULT '0' NOT NULL,
-  "alias" character varying(255) DEFAULT NULL
+  "alias" character varying(255) DEFAULT NULL,
+  PRIMARY KEY ("feature_alias_id"),
+  UNIQUE ("feature_id", "alias")
 );
 
-CREATE INDEX "feature_id" on cmap_feature_alias ("feature_id", "alias");
+CREATE INDEX "feature_id" on cmap_feature_alias ("feature_id");
+
+CREATE INDEX "alias" on cmap_feature_alias ("alias");
+
+--
+-- Table: cmap_feature_correspondence
+--
 
 CREATE TABLE "cmap_feature_correspondence" (
   "feature_correspondence_id" bigint DEFAULT '0' NOT NULL,
@@ -108,6 +153,10 @@ CREATE INDEX "feature_id12" on cmap_feature_correspondence ("feature_id1");
 
 CREATE INDEX "cmap_feature_corresp_idx" on cmap_feature_correspondence ("is_enabled", "feature_correspondence_id");
 
+--
+-- Table: cmap_feature_type
+--
+
 CREATE TABLE "cmap_feature_type" (
   "feature_type_id" bigint DEFAULT '0' NOT NULL,
   "accession_id" character varying(20) DEFAULT '' NOT NULL,
@@ -121,6 +170,10 @@ CREATE TABLE "cmap_feature_type" (
   UNIQUE ("accession_id")
 );
 
+--
+-- Table: cmap_map
+--
+
 CREATE TABLE "cmap_map" (
   "map_id" bigint DEFAULT '0' NOT NULL,
   "accession_id" character varying(20) DEFAULT '' NOT NULL,
@@ -130,8 +183,13 @@ CREATE TABLE "cmap_map" (
   "start_position" numeric(11,2) DEFAULT NULL,
   "stop_position" numeric(11,2) DEFAULT NULL,
   PRIMARY KEY ("map_id"),
-  UNIQUE ("accession_id")
+  UNIQUE ("accession_id"),
+  UNIQUE ("map_id", "map_set_id", "map_name", "accession_id")
 );
+
+--
+-- Table: cmap_map_cache
+--
 
 CREATE TABLE "cmap_map_cache" (
   "pid" bigint DEFAULT '0' NOT NULL,
@@ -142,6 +200,10 @@ CREATE TABLE "cmap_map_cache" (
 );
 
 CREATE INDEX "pid_cmap_map_cache" on cmap_map_cache ("pid", "slot_no", "map_id");
+
+--
+-- Table: cmap_map_set
+--
 
 CREATE TABLE "cmap_map_set" (
   "map_set_id" bigint DEFAULT '0' NOT NULL,
@@ -158,10 +220,15 @@ CREATE TABLE "cmap_map_set" (
   "color" character varying(20) DEFAULT NULL,
   "width" bigint DEFAULT NULL,
   PRIMARY KEY ("map_set_id"),
-  UNIQUE ("accession_id")
+  UNIQUE ("accession_id"),
+  UNIQUE ("map_set_id", "species_id", "short_name", "accession_id")
 );
 
 CREATE INDEX "cmap_map_set_idx" on cmap_map_set ("can_be_reference_map", "is_enabled", "species_id", "display_order", "published_on", "short_name");
+
+--
+-- Table: cmap_map_type
+--
 
 CREATE TABLE "cmap_map_type" (
   "map_type_id" bigint DEFAULT '0' NOT NULL,
@@ -178,11 +245,19 @@ CREATE TABLE "cmap_map_type" (
   UNIQUE ("accession_id")
 );
 
+--
+-- Table: cmap_next_number
+--
+
 CREATE TABLE "cmap_next_number" (
   "table_name" character varying(40) DEFAULT '' NOT NULL,
   "next_number" bigint DEFAULT '0' NOT NULL,
   PRIMARY KEY ("table_name")
 );
+
+--
+-- Table: cmap_species
+--
 
 CREATE TABLE "cmap_species" (
   "species_id" bigint DEFAULT '0' NOT NULL,
@@ -195,4 +270,18 @@ CREATE TABLE "cmap_species" (
 );
 
 CREATE INDEX "acc_id_species_id" on cmap_species ("accession_id", "species_id");
+
+--
+-- Table: cmap_xref
+--
+
+CREATE TABLE "cmap_xref" (
+  "xref_id" bigint DEFAULT '0' NOT NULL,
+  "table_name" character varying(30) DEFAULT '' NOT NULL,
+  "object_id" bigint DEFAULT NULL,
+  "display_order" bigint DEFAULT '1' NOT NULL,
+  "xref_name" character varying(200) DEFAULT '' NOT NULL,
+  "xref_url" text NOT NULL,
+  PRIMARY KEY ("xref_id")
+);
 
