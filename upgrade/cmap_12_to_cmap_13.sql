@@ -1,3 +1,7 @@
+--Changes a CMap database from version 0.12 to version 0.13 
+--  in place
+
+
 --Update cmap_correspondence_evidence
 alter table cmap_correspondence_evidence 
  add column evidence_type_accession varchar(20) default '0',
