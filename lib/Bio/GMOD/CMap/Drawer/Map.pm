@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.65 2004-02-18 20:58:25 kycl4rk Exp $
+# $Id: Map.pm,v 1.66 2004-02-25 22:37:56 kycl4rk Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.65 $)[-1];
+$VERSION = (qw$Revision: 1.66 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1531,9 +1531,22 @@ Lays out the map.
             my @flips = map { $_->{'slot_no'}.'%3d'.$_->{'map_aid'} } 
                 @{ $drawer->flip };
 
-            my @cmaps = map {
-                join( '%3d', $_, $slots->{$_}{'field'}, $slots->{$_}{'aid'} )
-            } @cmap_nos;
+            my @cmaps;
+            for my $slot_no ( @cmap_nos ) {
+                my $s = join( '%3d', 
+                    $slot_no, 
+                    $slots->{ $slot_no }{'field'}, 
+                    $slots->{ $slot_no }{'aid'} 
+                );
+                if ( 
+                    defined $slots->{ $slot_no }{'start'} &&
+                    defined $slots->{ $slot_no }{'stop'} 
+                ) {
+                $s .= '[' . $slots->{ $slot_no }{'start'} . ',' .
+                      $slots->{ $slot_no }{'stop'} . ']';
+                }
+                push @cmaps, $s;
+            }
 
             my $delete_url = $self_url.
                 '?ref_map_set_aid='.$slots->{'0'}{'map_set_aid'}.
@@ -1560,9 +1573,22 @@ Lays out the map.
         # Flip button.
         # 
         if ( !$is_relational || ( $is_relational && $slot_no == 0 ) ) {
-            my @cmaps = map {
-                join( '%3d', $_, $slots->{$_}{'field'}, $slots->{$_}{'aid'} )
-            } @ordered_slot_nos;
+            my @cmaps;
+            for my $slot_no ( @ordered_slot_nos ) {
+                my $s = join( '%3d', 
+                    $slot_no, 
+                    $slots->{ $slot_no }{'field'}, 
+                    $slots->{ $slot_no }{'aid'} 
+                );
+                if ( 
+                    defined $slots->{ $slot_no }{'start'} &&
+                    defined $slots->{ $slot_no }{'stop'} 
+                ) {
+                $s .= '[' . $slots->{ $slot_no }{'start'} . ',' .
+                      $slots->{ $slot_no }{'stop'} . ']';
+                }
+                push @cmaps, $s;
+            }
 
             my @flips;
             my $acc_id = $self->accession_id( $map_id );
