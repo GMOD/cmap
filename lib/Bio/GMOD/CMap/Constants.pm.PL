@@ -18,14 +18,14 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.5 2004-02-10 23:06:44 kycl4rk Exp $
+# $Id: Constants.pm.PL,v 1.6 2004-02-13 22:55:11 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -347,7 +347,7 @@ use constant DEFAULT => {
 
     #
     # Which field to search if none specified.
-    # Choices: feature_name, alternate_name, both
+    # Choices: feature_name, accession_id
     # Default: feature_name
     #
     feature_search_field => 'feature_name',
