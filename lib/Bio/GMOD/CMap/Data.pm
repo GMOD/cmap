@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.77 2003-12-11 22:50:36 kycl4rk Exp $
+# $Id: Data.pm,v 1.78 2003-12-31 22:19:03 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.77 $)[-1];
+$VERSION = (qw$Revision: 1.78 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -173,7 +173,6 @@ Gets the specifics on a feature correspondence record.
                      ce.feature_correspondence_id,
                      ce.evidence_type_id,
                      ce.score,
-                     ce.remark,
                      et.accession_id as evidence_type_aid,
                      et.evidence_type,
                      et.rank
@@ -1646,7 +1645,8 @@ Returns the data for the main comparative map HTML form.
             and      ms.map_type_id=mt.map_type_id
             and      mt.is_relational_map=0
             and      ms.species_id=s.species_id
-            order by s.common_name, 
+            order by s.display_order,
+                     s.common_name, 
                      s.full_name
         ],
         { Columns => {} }
