@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.37 2003-10-29 23:51:39 kycl4rk Exp $
+# $Id: Admin.pm,v 1.38 2003-11-04 17:09:10 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.37 $)[-1];
+$VERSION = (qw$Revision: 1.38 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -525,35 +525,35 @@ Find all the features matching some criteria.
         }
 
         my $sql = qq[
-            select    f.feature_id, 
-                      f.accession_id as feature_aid,
-                      f.feature_name,
-                      f.start_position,
-                      f.stop_position,
-                      ft.feature_type,
-                      map.map_name,
-                      map.map_id,
-                      ms.map_set_id,
-                      ms.short_name as map_set_name,
-                      s.species_id,
-                      s.common_name as species_name,
-                      mt.map_type
-            from      cmap_feature f,
-                      cmap_feature_type ft,
-                      cmap_map map,
-                      cmap_map_set ms,
-                      cmap_species s,
-                      cmap_map_type mt
-            left join cmap_feature_alias fa
-            on        f.feature_id=fa.feature_id
+            select     f.feature_id, 
+                       f.accession_id as feature_aid,
+                       f.feature_name,
+                       f.start_position,
+                       f.stop_position,
+                       ft.feature_type,
+                       map.map_name,
+                       map.map_id,
+                       ms.map_set_id,
+                       ms.short_name as map_set_name,
+                       s.species_id,
+                       s.common_name as species_name,
+                       mt.map_type
+            from       cmap_feature f
+            left join  cmap_feature_alias fa
+            on         f.feature_id=fa.feature_id
+            inner join cmap_feature_type ft
+            on         f.feature_type_id=ft.feature_type_id
+            inner join cmap_map map
+            on         f.map_id=map.map_id
+            inner join cmap_map_set ms
+            on         map.map_set_id=ms.map_set_id
+            inner join cmap_species s
+            on         ms.species_id=s.species_id
+            inner join cmap_map_type mt
+            on         ms.map_type_id=mt.map_type_id
             $where 
-            and       f.feature_type_id=ft.feature_type_id
-            and       f.map_id=map.map_id
-            and       map.map_set_id=ms.map_set_id
-            and       ms.species_id=s.species_id
-            and       ms.map_type_id=mt.map_type_id
         ];
-        $sql .= "and map.accession_id='$map_aid' "        if $map_aid;
+        $sql .= "and map.accession_id='$map_aid' " if $map_aid;
 
         if ( @$species_ids ) {
             $sql .= 'and ms.species_id in (' . 
