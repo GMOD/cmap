@@ -1,21 +1,9 @@
-#!/usr/bin/perl -w
-
-# $Id: 01_ini.t,v 1.3 2003-01-23 18:51:55 kycl4rk Exp $
-
-#
-# CMap test suite
-#
-# Very simple testing right now.  I'm hard pressed to come up with 
-# good tests given that the application is so heavily dependent on 
-# a database and mainly produces visual output that can't be easily
-# verified with automated tests.
-#
+# $Id: 01_ini.t,v 1.4 2003-09-19 19:05:23 kycl4rk Exp $
 
 use strict;
-use Test::More 'no_plan';
+use Test::More tests => 4;
 use Template;
 
-use lib '../lib';
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Data;
