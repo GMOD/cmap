@@ -1,4 +1,4 @@
-# $Id: Makefile.PL,v 1.11 2002-10-09 01:07:31 kycl4rk Exp $
+# $Id: Makefile.PL,v 1.12 2003-04-17 20:22:20 kycl4rk Exp $
 
 use strict;
 use FindBin '$Bin';
@@ -91,12 +91,6 @@ $OPTIONS{'TEMPLATE_DIR'}   ||= get_path(
     default  => $prefix.'/templates/cmap',
 );
 
-$OPTIONS{'SCRIPT_DIR'}     ||= get_path(
-    prompt   => 'Where would you like the command-line scripts installed?',
-    optional => 1,
-    default  => $OPTIONS{'PREFIX'} ? $prefix.'/bin' : DEFAULT_BIN_DIR,
-);
-
 $OPTIONS{'STYLESHEET_DIR'} ||= get_path(
     prompt   => 'Where would you like the HTML stylesheet installed?',
     optional => 1,
@@ -166,11 +160,11 @@ if ( my $template_dir = $OPTIONS{'TEMPLATE_DIR'} ) {
 #
 # Copy the admin script.
 #
-if ( my $script_dir = $OPTIONS{'SCRIPT_DIR'} ) {
-    my $admin_script = "$Bin/bin/cmap_admin.pl";
-    print "\nCopying admin script to '$script_dir'.\n";
-    scopy( $admin_script , $script_dir );
-}
+#if ( my $script_dir = $OPTIONS{'SCRIPT_DIR'} ) {
+#    my $admin_script = "$Bin/bin/cmap_admin.pl";
+#    print "\nCopying admin script to '$script_dir'.\n";
+#    scopy( $admin_script , $script_dir );
+#}
 
 #
 # Copy the stylesheet.
@@ -240,6 +234,9 @@ WriteMakefile(
         'Time::Object'     => 0,
         'Time::ParseDate'  => 0,
     },
+    EXE_FILES    => [
+        'bin/cmap_admin.pl',
+    ]
 );
 
 print qq[Now you must run "make" and "make install"\n];
