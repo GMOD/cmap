@@ -24,25 +24,9 @@ use Bio::GMOD::CMap::Constants;
 use Regexp::Common;
 require Class::Base;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 use base 'Class::Base';
-
-#my @subs = qw[
-#  line
-#  span
-#  up_arrow
-#  down_arrow
-#  double_arrow
-#  dumbell
-#  box
-#  filled_box
-#  in_triangle
-#  out_triangle
-#  read_depth
-#];
-#@EXPORT_OK = @subs;
-#@EXPORT    = @subs;
 
 # ------------------------------------
 sub line {
@@ -72,6 +56,7 @@ sub line {
 
     return \@coords;
 }
+
 # ------------------------------------
 sub span {
 
@@ -293,7 +278,7 @@ sub double_arrow {
 }
 
 # ------------------------------------
-sub dumbell {
+sub dumbbell {
 
 =pod
                                                                                 
