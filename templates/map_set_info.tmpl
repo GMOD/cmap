@@ -16,7 +16,7 @@
 [% IF show_restriction %]
     <div align="center">
     <form method="GET" action="map_set_info">
-    <table>
+    <table width="100%">
         <tr>
             <td>Restrict by Species:</td>
             <td>Restrict by Map Type:</td>
@@ -56,7 +56,7 @@
 [% END %]
 
 [% IF map_sets.size %]
-    <table>
+    <table width="100%">
         <tr>
             <td colspan="2" align="center">
                 [% SET pager_url="/cmap/map_set_info?" %]
@@ -163,6 +163,9 @@
                 </tr> 
             [% END %]
         [% END %]
+        <tr>
+            <td colspan="2">&nbsp;</td>
+        </tr>
     </table>
 [% ELSE %]
 
