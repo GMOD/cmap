@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.85 2005-01-21 16:29:21 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.86 2005-02-09 15:11:15 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.85 $)[-1];
+$VERSION = (qw$Revision: 1.86 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -520,6 +520,8 @@ sub handler {
     if ( $path_info eq 'map_details' and scalar keys %ref_maps == 1 ) {
         $PAGE_SIZE ||= $self->config_data('max_child_elements') || 0;
         $MAX_PAGES ||= $self->config_data('max_search_pages')   || 1;
+        my ( $comparative_map_field, $comparative_map_aid ) = 
+            split( /=/, $apr->param('comparative_map') );
         my ($map_aid) = keys %ref_maps;
         my $map_id = $drawer->data_module->acc_id_to_internal_id(
             table    => 'cmap_map',
@@ -537,8 +539,8 @@ sub handler {
             included_evidence_types => \@included_evidence_types,
             ignored_evidence_types  => \@ignored_evidence_types,
             order_by                => $apr->param('order_by') || '',
-            comparative_map_field   => '',
-            comparative_map_aid     => '',
+            comparative_map_field   => $comparative_map_field || '',
+            comparative_map_aid     => $comparative_map_aid || '',
             page_size               => $PAGE_SIZE,
             max_pages               => $MAX_PAGES,
             page_no                 => $page_no,
