@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.94 2005-03-17 15:14:34 mwz444 Exp $
+# $Id: Drawer.pm,v 1.95 2005-03-24 15:19:05 mwz444 Exp $
 
 =head1 NAME
 
@@ -275,7 +275,7 @@ on the number of correspondences).  'display_order' is the default.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.94 $)[-1];
+$VERSION = (qw$Revision: 1.95 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -2511,7 +2511,6 @@ Creates default link parameters for CMap->create_viewer_link()
     my $prev_ref_map_set_aid        = $args{'prev_ref_map_set_aid'};
     my $ref_species_aid             = $args{'ref_species_aid'};
     my $ref_map_set_aid             = $args{'ref_map_set_aid'};
-    my $ref_map_names               = $args{'ref_map_names'};
     my $ref_map_start               = $args{'ref_map_start'};
     my $ref_map_stop                = $args{'ref_map_stop'};
     my $comparative_maps            = $args{'comparative_maps'};
@@ -2562,9 +2561,6 @@ Creates default link parameters for CMap->create_viewer_link()
     }
     unless ( defined($ref_species_aid) ) {
         $ref_species_aid = undef;
-    }
-    unless ( defined($ref_map_names) ) {
-        $ref_map_names = undef;
     }
     unless ( defined($ref_map_start) ) {
         $ref_map_start = undef;
@@ -2675,7 +2671,6 @@ Creates default link parameters for CMap->create_viewer_link()
         prev_ref_map_set_aid        => $prev_ref_map_set_aid,
         ref_species_aid             => $ref_species_aid,
         ref_map_set_aid             => $ref_map_set_aid,
-        ref_map_names               => $ref_map_names,
         ref_map_start               => $ref_map_start,
         ref_map_stop                => $ref_map_stop,
         comparative_maps            => $comparative_maps,

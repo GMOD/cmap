@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.78 2005-03-23 21:56:30 mwz444 Exp $
+# $Id: CMap.pm,v 1.79 2005-03-24 15:19:05 mwz444 Exp $
 
 =head1 NAME
 
@@ -815,7 +815,6 @@ Given information about the link, creates a url to cmap_viewer.
     my $prev_ref_map_set_aid        = $args{'prev_ref_map_set_aid'};
     my $ref_species_aid             = $args{'ref_species_aid'};
     my $ref_map_set_aid             = $args{'ref_map_set_aid'};
-    my $ref_map_names               = $args{'ref_map_names'};
     my $ref_map_start               = $args{'ref_map_start'};
     my $ref_map_stop                = $args{'ref_map_stop'};
     my $comparative_maps            = $args{'comparative_maps'};
@@ -923,9 +922,6 @@ Given information about the link, creates a url to cmap_viewer.
         }
         $url .= "ref_map_aids=" . join( ',', @ref_strs ) . ";";
     }
-
-    $url .= "ref_map_names=$ref_map_names"
-      if defined($ref_map_names);
 
     if ( $comparative_maps and %$comparative_maps ) {
         my @strs;
