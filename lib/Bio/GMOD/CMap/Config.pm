@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Config;
 # vim: set ft=perl:
 
-# $Id: Config.pm,v 1.7.2.1 2005-01-11 19:53:46 mwz444 Exp $
+# $Id: Config.pm,v 1.7.2.2 2005-03-16 17:23:50 mwz444 Exp $
 
 =head1 NAME
 
@@ -30,7 +30,7 @@ use base 'Class::Base';
 # ----------------------------------------------------
 sub init {
     my ( $self ) = @_;
-    $self->set_config();
+    $self->set_config() or return self->error('No enabled config files');
     return $self;
 }
 
@@ -122,23 +122,24 @@ Sets the active config data.
     #
     # If config_name specified, check if it exists.
     #
-    if ( $config_name ) {
-#print STDERR "looking up '$config_name'\n";
-        if ( $self->{'config_data'}{ $config_name } ) {
+    if ($config_name) {
+        if (    $self->{'config_data'}{$config_name}
+            and $self->{'config_data'}{$config_name}{'is_enabled'} )
+        {
             $self->{'current_config'} = $config_name;
             return 1;
         }
     }
 
     unless ( $self->{'current_config'} ) {
-#print STDERR "current config = ", Dumper($self->{'current_config'}), "\n";
         #
         # If the default db is in the global_config
         # and it exists, set that as the config.
         #
         if (
             $self->{'global_config'}{'default_db'} &&
-            $self->{'config_data'}{ $self->{'global_config'}{'default_db'} }
+            $self->{'config_data'}{ $self->{'global_config'}{'default_db'} } &&
+            $self->{'config_data'}{ $self->{'global_config'}{'default_db'} }{'is_enabled'}
         ) {
             $self->{'current_config'} = $self->{'global_config'}{'default_db'};
             return 1;
@@ -147,7 +148,12 @@ Sets the active config data.
         #
         # No preference set.  Just let Fate (keys) decide.
         #
-        $self->{'current_config'} = ( keys %{ $self->{'config_data'} } )[0];
+        foreach my $config_name (keys %{ $self->{'config_data'} } ) {
+            if ($self->{'config_data'}{$config_name}{'is_enabled'} ){ 
+                $self->{'current_config'} = $config_name;
+                last;
+            }
+        }
     }
     
     return 1 if ($self->{'current_config'});
@@ -166,7 +172,7 @@ Returns an array ref of the keys to self->{'config_data'}.
 =cut
 
     my $self=shift;
-    return [ keys %{ $self->{'config_data'} } ];
+    return [ grep {$self->{'config_data'}{$_}{'is_enabled'}} keys %{ $self->{'config_data'} } ];
 }
 
 # ----------------------------------------------------
@@ -187,7 +193,7 @@ optionally you can specify a set of config data to read from.
     # If config not set, set it.
     #
     unless ( $self->{'current_config'} ) {
-        $self->set_config() or return self->error;
+        $self->set_config() or return self->error('No enabled config files');
     }
     
     return $self unless $option;
