@@ -146,7 +146,7 @@ function addPosToStr(str, slot_no, matchStr, value, is_start){
             <td>
               [%- IF form_data.ref_species.size -%]
                 <select name="ref_species_aid" 
-                  onChange="javascript:ref_map_set_form.submit()">
+                  onChange="window.document.ref_map_set_form.ref_map_set_aid.value='';javascript:ref_map_set_form.submit()">
                 <option value="">--Select--</option>
                 [%- IF form_data.ref_species.size > 1; 
                   form_data.ref_species.unshift({ 
