@@ -77,6 +77,35 @@
             [% END %]
         </tr>
 
+        [% IF apr.param('link_map_set_aid') %]
+            <tr>
+                <td colspan="2">&nbsp;</td>
+                <th colspan="[% top_row.map_sets.size %]">[% top_row.map_sets.0.map_set_name %]</th>
+                <td colspan="2">&nbsp;</td>
+            </tr>
+
+            <tr>
+                <td colspan="2">&nbsp;</td>
+                [% FOREACH map=top_row.map_sets %]
+                    <th>
+                        [% map.map_name %]
+                    </th>
+                [% END %]
+                <td colspan="2">&nbsp;</td>
+            </tr>
+
+        [% ELSE %]
+            <tr>
+                <td colspan="2">&nbsp;</td>
+                [% FOREACH ms=top_row.map_sets %]
+                    <td>
+                        <a href="/cmap/matrix?map_set_aid=[% apr.param('map_set_aid') %];species_aid=[% apr.param('species_aid') %];map_name=[% apr.param('map_name') %];link_map_set_aid=[% ms.map_set_aid %]">[% ms.map_set_name %][% IF ms.map_aid %][% END %]</a>
+                    </td>
+                [% END %]
+                <td colspan="2">&nbsp;</td>
+            </tr>
+        [% END %]
+
         [% SET i=0 %]
         [% SET last_species_aid=0 %]
         [% SET no_by_species=matrix.no_by_species %]
