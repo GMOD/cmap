@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.198.2.2 2005-01-27 22:59:37 mwz444 Exp $
+# $Id: Data.pm,v 1.198.2.3 2005-02-15 17:43:39 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.198.2.2 $)[-1];
+$VERSION = (qw$Revision: 1.198.2.3 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -4488,7 +4488,6 @@ sub cmap_map_search_data {
         from     cmap_map_set ms,
                  cmap_species s
         where    ms.is_enabled=1
-        and      ms.is_relational_map=0
         and      ms.species_id=s.species_id
         order by s.display_order,
                  s.common_name, 
@@ -4513,7 +4512,7 @@ sub cmap_map_search_data {
     #
     my $ref_map_sets = [];
     if ($ref_species_aid) {
-        $sql_str = $sql->form_data_ref_map_sets_sql($ref_species_aid);
+        $sql_str = $sql->form_data_map_sets_sql($ref_species_aid);
         unless ( $ref_map_sets = $self->get_cached_results( 1, $sql_str ) ) {
             $ref_map_sets =
               $db->selectall_arrayref( $sql_str, { Columns => {} } );
