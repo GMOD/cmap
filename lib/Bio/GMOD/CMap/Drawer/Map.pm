@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.131 2004-10-12 17:15:27 mwz444 Exp $
+# $Id: Map.pm,v 1.132 2004-10-12 18:10:37 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.131 $)[-1];
+$VERSION = (qw$Revision: 1.132 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1708,7 +1708,6 @@ Variable Info:
         );
 
     }
-#xxx
     #Make aggregated correspondences
     for my $map_id (@map_ids){
         if ($self->aggregate and $is_compressed){
@@ -1734,7 +1733,7 @@ Variable Info:
                     $ref_connect->[1], 
                     $this_map_x, 
                     $this_map_y, 
-                    $line_color,       0
+                    $line_color,      0 
                   ];
                 push @drawing_data,
                   [
@@ -1743,7 +1742,7 @@ Variable Info:
                     $this_map_y-1, 
                     $this_map_x,
                     $this_map_y+1, 
-                    'black',       0
+                    'black',       10
                   ];
                 push @drawing_data,
                   [
@@ -1752,7 +1751,7 @@ Variable Info:
                     $this_map_y, 
                     $this_map_x2,
                     $this_map_y, 
-                    'black',       0
+                    'black',       10
                   ];
 
             }
@@ -1906,7 +1905,6 @@ sub place_map_y {
             #
             # Get the information about the reference map.
             #
-#xxx
             my $ref_pos =
                 $drawer->reference_map_coords( $ref_slot_no,
                 $ref_corr->{'ref_map_id'} );
@@ -1931,7 +1929,6 @@ sub place_map_y {
                 $ref_pos->{'y1'} +
                 (($avg_mid - $ref_pos->{'map_start'} ) /
                   $ref_map_unit_len ) * $ref_map_pixel_len;
-#xxx
             my $ref_map_y1 =
               $ref_pos->{'y1'} +
               ( ( $ref_corr->{'min_start'} - $ref_pos->{'map_start'} ) /
@@ -1942,7 +1939,7 @@ sub place_map_y {
                   $ref_map_unit_len ) * $ref_map_pixel_len;
 
             # add aggregate correspondences to ref_connections
-            if (0){
+            if ($self->aggregate == 1){
                 # Single line to avg corr
                 push @{$map_aggregate_corr->{$map_id}},
                   [ $ref_pos->{'x1'}, $ref_map_mid_y, $ref_corr->{'no_corr'}
