@@ -8,8 +8,49 @@
 <h1>[% title %]</h1>
 
 <p>
-[% IF map_sets.size %]
+[% IF show_restriction %]
+    <div align="center">
+    <form method="GET" action="map_set_info">
+    <table>
+        <tr>
+            <td>Restrict by Species:</td>
+            <td>Restrict by Map Type:</td>
+        </tr>
 
+        <tr>
+            <td>
+                <select name="species_aid">
+                    <option value="-1">--All Species--</option>
+                    [% FOREACH s=species %]
+                        <option value="[% s.species_aid %]"[% IF apr.param('species_aid')==s.species_aid %] selected[% END %]>[% s.species_name %]</option>
+                    [% END %]
+                </select>
+            </td>
+            <td>
+                <select name="map_type_aid">
+                    <option value="-1">--All Map Types--</option>
+                    [% FOREACH mt=map_types %]
+                        <option value="[% mt.map_type_aid %]"[% IF apr.param('map_type_aid')==mt.map_type_aid %] selected[% END %]>[% mt.map_type %]</option>
+                    [% END %]
+                </select>
+            </td>
+        </tr>
+
+        <tr>
+            <td colspan="2" align="center">
+                <input type="submit" value="Submit">
+            </td>
+        </tr>
+    </table>
+    </form>
+    </div>
+[% ELSE %]
+    <div align="center">
+        <a href="map_set_info">Show All Map Sets</a>
+    </div>
+[% END %]
+
+[% IF map_sets.size %]
     <table>
         <tr>
             <td colspan="2" align="center">
@@ -19,14 +60,14 @@
         </tr>
         [% FOREACH ms=map_sets %]
             <tr bgcolor="lightgrey">
-                <td align="right">Map Set Name:</td>
+                <td align="right">Map&nbsp;Set&nbsp;Name:</td>
                 <td>
                     <b>[% IF ms.can_be_reference_map %]<a href="/cmap/viewer?ref_map_set_aid=[% ms.map_set_aid %]">[% END %][% ms.map_set_name %][% IF ms.can_be_reference_map %]</a>[% END %]</b>
                 </td>
             </tr> 
 
             <tr>
-                <td align="right">Abbreviated Name:</td>
+                <td align="right">Abbreviated&nbsp;Name:</td>
                 <td>[% ms.short_name %]</td>
             </tr> 
 
@@ -41,12 +82,12 @@
             </tr> 
 
             <tr>
-                <td align="right">Map Type:</td>
+                <td align="right">Map&nbsp;Type:</td>
                 <td>[% ms.map_type %]</td>
             </tr> 
 
             <tr>
-                <td align="right">Map Units:</td>
+                <td align="right">Map&nbsp;Units:</td>
                 <td>[% ms.map_units %]</td>
             </tr> 
 
@@ -69,12 +110,14 @@
             [% END %]
         [% END %]
     </table>
-
 [% ELSE %]
 
-    No map sets.
+    <div align="center">
+    No map sets returned.
+    </div>
 
 [% END %]
+
 <br>
 <br>
 <br>

@@ -47,7 +47,7 @@
                         <td align="right">Ref. Map:</td>
   
                         <td>
-                            <select name="ref_map_aid"
+                            <select name="ref_map_aid" 
                                 [% IF apr.param('ref_map_aid') %]
                                     onchange="javascript:if(document.ref_map_form.ref_map_aid.value!=document.ref_map_form.prev_ref_map_aid.value){document.comparative_map_form.start.value='';document.comparative_map_form.end.value='';document.ref_map_form.submit()}">
                                 [% ELSE %]
