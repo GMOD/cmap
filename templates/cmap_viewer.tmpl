@@ -449,7 +449,7 @@ function selectAllOptions(select){
       </div>
     </td>
   </tr>
-  [% IF apr.param('ref_map_aids') OR apr.param('ref_map_names') #OR form_data.ref_maps  %]
+  [% IF apr.param('ref_map_aids') #OR form_data.ref_maps  %]
     <form name="comparative_map_form" onSubmit="beforeSubmit()">
       <tr>
         <td align=left valign=top>
@@ -878,7 +878,6 @@ function selectAllOptions(select){
                   <input type="hidden" name="ref_map_set_aid" value="[% apr.param('ref_map_set_aid') %]">
                   <input type="hidden" name="ref_map_aids"   value="[% apr.param('ref_map_aids').join(',') %]">
                   <input type="hidden" name="modified_ref_map"   value="">
-                  <input type="hidden" name="ref_map_names"   value="[% apr.param('ref_map_names') %]">
                   <input type="hidden" name="ref_species_aid"  value="[% apr.param('ref_species_aid') %]">
                   <input type="hidden" name="comparative_maps" value="[% comparative_maps %]">
                   <input type="hidden" name="modified_comp_map"   value="">
@@ -981,7 +980,7 @@ function selectAllOptions(select){
   </table>
 [% END %]
 
-[% UNLESS apr.param('ref_map_aids') OR apr.param('ref_map_names') OR form_data.ref_map_set_info %]
+[% UNLESS apr.param('ref_map_aids') OR form_data.ref_map_set_info %]
   [% INCLUDE help_quick_start.tmpl %]
 [% END %]
 
