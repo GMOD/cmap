@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.70.2.5 2004-06-14 16:20:13 kycl4rk Exp $
+# $Id: Map.pm,v 1.70.2.6 2004-06-14 18:49:31 kycl4rk Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.70.2.5 $)[-1];
+$VERSION = (qw$Revision: 1.70.2.6 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -877,6 +877,7 @@ Lays out the map.
                             buffer       => $buffer,
                         );
 
+                        $feature->{'column'} = $column_index;
                         my $offset       = ( $column_index + 1 ) * 7;
                         my $vert_line_x1 = $label_side eq RIGHT
                             ? $tick_start : $tick_stop;
@@ -995,8 +996,8 @@ Lays out the map.
                                 ? $tick_stop + $offset : $tick_start - $offset;
 
                             @coords = (
-                                $vert_line_x2, $y_pos2,
                                 $vert_line_x1, $y_pos1, 
+                                $vert_line_x2, $y_pos2,
                             );
 
                             push @temp_drawing_data,
@@ -1189,6 +1190,7 @@ Lays out the map.
                         feature_id     => $feature->{'feature_id'},
                         start_position => $feature->{'start_position'},
                         shape          => $feature->{'shape'},
+                        column         => $feature->{'column'},
                         url            => 
                             $feature_details_url.$feature->{'accession_id'},
                         alt            => 
