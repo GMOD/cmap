@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.23 2003-03-14 20:10:18 kycl4rk Exp $
+# $Id: Import.pm,v 1.24 2003-03-18 23:00:43 kycl4rk Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.23 $)[-1];
+$VERSION  = (qw$Revision: 1.24 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -409,9 +409,10 @@ have for the map set).
         }
 
         #
-        # Just see if another identical record exists.
+        # If there's no accession ID, see if another feature
+        # with the same name exists.
         #
-        unless ( $feature_id ) {
+        if ( !$feature_id && !$accession_id ) {
             $feature_id = $db->selectrow_array(
                 q[
                     select feature_id
