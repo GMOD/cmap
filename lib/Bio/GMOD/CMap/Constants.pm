@@ -1,13 +1,13 @@
 package Bio::GMOD::CMap::Constants;
 
-# $Id: Constants.pm,v 1.21 2003-03-13 01:25:53 kycl4rk Exp $
+# $Id: Constants.pm,v 1.22 2003-04-09 20:43:04 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.21 $)[-1];
+$VERSION = (qw$Revision: 1.22 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -24,7 +24,6 @@ $VERSION = (qw$Revision: 1.21 $)[-1];
     NUMBER_RE
     NORTH
     PREFERENCE_FIELDS
-    TEMPLATE_DIR
     RECTANGLE
     RIGHT
     SHAPE_XY
