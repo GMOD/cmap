@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.83.2.7 2005-03-11 21:08:15 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.83.2.8 2005-03-17 15:46:56 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.83.2.7 $)[-1];
+$VERSION = (qw$Revision: 1.83.2.8 $)[-1];
 
 #
 # Get command-line options
@@ -418,53 +418,17 @@ sub delete_correspondences {
     my $self = shift;
     my $db   = $self->db or die $self->error;
 
-    #
-    # Get the map set.
-    #
-    my @map_set_ids = $self->show_menu(
-        title      => 'Select Map Set(s)',
-        prompt     => 'Select Map Set(s)',
-        display    => 'common_name,short_name,accession_id',
-        return     => 'map_set_id',
-        allow_null => 0,
-        allow_mult => 1,
-        allow_all  => 1,
-        data       => $db->selectall_arrayref(
-            q[
-                select   ms.map_set_id,
-                         ms.accession_id,
-                         ms.short_name,
-                         s.common_name
-                from     cmap_map_set ms,
-                         cmap_species s
-                where    ms.species_id=s.species_id
-                order by common_name, short_name
-            ],
-            { Columns => {} },
-        )
-    );
-
-    my %map_set_names = @map_set_ids
-      ? map {
-        $_->{'map_set_id'},
-          join( '-', $_->{'species_name'}, $_->{'map_set_name'} ),
-      } @{
-        $db->selectall_arrayref(
-            q[
-                        select   ms.map_set_id, 
-                                 ms.short_name as map_set_name,
-                                 s.common_name as species_name
-                        from     cmap_map_set ms,
-                                 cmap_species s
-                        where    ms.map_set_id in (]
-              . join( ',', @map_set_ids ) . q[)
-                        and      ms.species_id=s.species_id
-                        order by common_name, short_name
-                    ],
-            { Columns => {} }
-        )
-      }
-      : ();
+    my $map_sets = $self->get_map_sets;
+    return unless @{ $map_sets || [] };
+    my @map_set_names;
+    if ( @{ $map_sets || [] } ) {
+        @map_set_names =
+          map { join( '-', $_->{'species_name'}, $_->{'map_set_name'} ) }
+          @$map_sets;
+    }
+    else {
+        @map_set_names = ('All');
+    }
 
     my @evidence_types = $self->show_menu(
         title      => 'Select Evidence Type (Optional)',
@@ -488,11 +452,11 @@ sub delete_correspondences {
         'OK to delete feature correspondences?',
         '  Data source          : ' . $self->data_source,
     );
-    if (@map_set_ids) {
+    if ( @$map_sets ) {
         print "\n  Map Set(s)           :\n",
-          join( "\n", map { "    $_" } values %map_set_names );
+          join( "\n", map { "    $_" } @map_set_names );
     }
-    if (@evidence_types) {
+    if ( @evidence_types ) {
         print "\n  Evidence Types       :\n",
           join( "\n", map { "    $_->[1]" } @evidence_types );
     }
@@ -505,7 +469,9 @@ sub delete_correspondences {
     my %evidence_lookup = map { $_->[0], 1 } @evidence_types;
     my $admin           = $self->admin;
     my $log_fh          = $self->log_fh;
-    for my $map_set_id (@map_set_ids) {
+
+    for my $map_set ( @$map_sets ) {
+        my $map_set_id = $map_set->{'map_set_id'};
         my $fc_ids = $db->selectall_hashref(
             qq[
                 select cl.feature_correspondence_id
@@ -527,7 +493,7 @@ sub delete_correspondences {
         );
 
         print $log_fh "Deleting correspondences for ",
-          $map_set_names{$map_set_id}, "\n";
+          $map_set->{'species_name'}, '-', $map_set->{'map_set_name'}, "\n";
 
         #
         # If there is more evidence supporting the correspondence,
