@@ -158,6 +158,13 @@
 <h2>Map Details</h2>
 <table>
     <tr>
+        <th align="right">Map&nbsp;Type:</th>
+        <td>
+            [% reference_map.map_type %]
+            <b>[</b> <a href="map_type_info?map_type_aid=[% reference_map.map_type_aid %]">View Map Type Info</a> <b>]</b>
+        </td>
+    </tr>
+    <tr>
         <th align="right">Map&nbsp;Set&nbsp;Name:</th>
         <td>
             [% reference_map.species_name %] -
@@ -186,7 +193,7 @@
         [% FOREACH ft=feature_count_by_type %]
             <tr>
                 <td align="right">[% ft.no_by_type | commify %]</td>
-                <td align="left">[% ft.feature_type %]</td>
+                <td align="left"><a href="feature_type_info?feature_type_aid=[% ft.feature_type_aid %]">[% ft.feature_type %]</a></td>
                 [% total = total + ft.no_by_type -%]
             </tr>
         [% END %]
