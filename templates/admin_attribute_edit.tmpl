@@ -1,0 +1,52 @@
+[% INCLUDE admin_header.tmpl title="Edit Attribute" %]
+<a href="admin">Home</a> |
+<a href="admin?action=[% apr.param('return_action') %];[% pk_name %]=[% attribute.object_id %]">Back to [% object_type | ucfirst %]</a>
+<hr noshade>
+
+[% IF errors.size %]
+    <b>There were errors:</b>
+    <ul>
+        [% FOREACH e=errors %]
+          <li>[% e %]</li>
+        [% END %]
+    </ul>
+[% END %]
+
+<form action="admin" method="post">
+<table>
+    <tr>
+        <td align="right">Attribute Name:</td>
+        <td>
+            <input name="attribute_name" value="[% attribute.attribute_name %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Value:</td>
+        <td>
+            <textarea name="attribute_value" rows="5" cols="50">[% attribute.attribute_value | html %]</textarea>
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Display Order:</td>
+        <td>
+            <input name="display_order" value="[% attribute.display_order %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td colspan="2" align="center">
+            <input type="hidden" name="attribute_id" value="[% attribute.attribute_id %]">
+            <input type="hidden" name="table_name" value="[% attribute.table_name %]">
+            <input type="hidden" name="object_id" value="[% attribute.object_id %]">
+            <input type="hidden" name="object_type" value="[% object_type %]">
+            <input type="hidden" name="pk_name" value="[% pk_name %]">
+            <input type="hidden" name="return_action" value="[% apr.param('return_action') %]">
+            <input type="hidden" name="action" value="attribute_update">
+            <input type="submit" value="Submit">
+        </td>
+    </tr>
+</table>
+</form>
+[% INCLUDE admin_footer.tmpl %]

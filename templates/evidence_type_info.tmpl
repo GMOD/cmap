@@ -1,0 +1,82 @@
+[% SET title='Evidence Type Info' %]
+[% 
+    INCLUDE header.tmpl 
+    title=title
+    cur_sec='evidence_type_info'
+    help_anchor='evidence_type_info'
+%]
+
+<h1>[% title %]</h1>
+
+[%- IF intro -%]
+<p>[% intro %]</p>
+[%- END -%]
+
+<div align="center">
+<p>
+[% IF evidence_types.size == 1 %]
+    <div align="center">
+    <a href="evidence_type_info">View All Evidence Types</a>
+    </div>
+[% END %]
+</p>
+
+<p>
+[% IF evidence_types.size %]
+    <div align="center">
+    <table>
+        <tr>
+            <td colspan="2" align="center">
+                [% SET pager_url="/cmap/evidence_type_info?" %]
+                [% PROCESS pager.tmpl %]
+            </td>
+        </tr>
+        [% FOREACH et=evidence_types %]
+            <tr bgcolor="lightgrey">
+                <td align="right"><b>Evidence&nbsp;Type:<b></td>
+                <td><b>[% et.evidence_type %]</b></td>
+            </tr> 
+            <tr>
+                <td align="right">Accession&nbsp;ID:</td>
+                <td>[% et.evidence_type_aid %]</td>
+            </tr> 
+            <tr>
+                <td align="right">Rank:</td>
+                <td>[% et.rank %]</td>
+            </tr> 
+            <tr>
+                <td align="right">Line&nbsp;Color:</td>
+                <td>[% et.line_color %]</td>
+            </tr> 
+            [% FOREACH att=et.attributes %]
+                <tr>
+                    <td align="right">
+                        [% att.attribute_name %]:
+                    </td>
+                    <td>
+                        [%- IF att.attribute_value.match('^http://') -%]
+                            <a href="[% att.attribute_value %]">[% att.attribute_value %]</a>
+                        [%- ELSE -%]
+                            [% att.attribute_value %]
+                        [%- END -%]
+                    </td>
+                </tr>
+            [% END %]
+        [% END %]
+    </table>
+    </div>
+
+[% ELSE %]
+
+    No evidence types returned.
+
+[% END %]
+</div>
+
+<br>
+<br>
+<br>
+<br>
+<br>
+[% page.end_body OR '</body>' %]
+</html>

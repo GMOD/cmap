@@ -1,0 +1,47 @@
+[% DEFAULT title='Attributes' %]
+<table width="100%">
+    <tr bgcolor="lightgrey">
+        <th>[% title %]</th>
+        <td align="right">
+            <a href="admin?action=attribute_create;table_name=[% table_name %];object_id=[% object_id %];return_action=[% return_action %]">Add Attribute</a>
+        </td>
+    </tr>
+</table>
+
+[% IF attributes.size %]
+    <table width="100%">
+        <tr>
+            <th>
+                <a href="admin?action=[% return_action %];[% pk_name %]=[% object_id %];att_order_by=display_order">Display Order</a>
+            </th>
+            <th>
+                <a href="admin?action=[% return_action %];[% pk_name %]=[% object_id %];att_order_by=attribute_name">Name</a>
+            </th>
+            <th>
+                <a href="admin?action=[% return_action %];[% pk_name %]=[% object_id %];att_order_by=attribute_value">Value</a>
+            </th>
+            <td colspan="2">&nbsp</td>
+        </tr>
+        [% SET i=0 %]
+        [% FOREACH att=attributes %]
+            <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
+                <td>[% att.display_order %]</td>
+                <td>[% att.attribute_name %]</td>
+                <td>[% att.attribute_value | html %]</td>
+                <td align="center">
+                    <a href="admin?action=attribute_edit;attribute_id=[% att.attribute_id %];return_action=[% return_action %]">Edit</a>
+                </td>
+                <td align="center">
+                    <a href="admin?action=confirm_delete;entity_id=[% att.attribute_id %];entity_type=cmap_attribute;entity_name_field=attribute_name;return_action=[% return_action %]">Delete</a>
+                </td>
+            </tr>
+            [% SET i=i+1 %]
+        [% END %]
+    </table>
+[% ELSE %]
+    <div align="center">
+        No attributes defined.
+    </div>
+[% END %]
+<br>
+<br>

@@ -1,0 +1,61 @@
+[% INCLUDE admin_header.tmpl title="Feature Type View &quot;$feature_type.feature_type&quot;" %]
+<a href="admin">Home</a> |
+<a href="admin?action=feature_type_edit;feature_type_id=[% feature_type.feature_type_id %]">Edit</a> |
+<a href="admin?action=confirm_delete;entity_type=cmap_feature_type;entity_id=[% feature_type.feature_type_id %];entity_name_field=feature_type">Delete</a> |
+<a href="admin?action=feature_types_view">View All Feature Types</a>
+<hr noshade>
+
+<table>
+    <tr>
+        <td align="right">Acc. ID <em>(opt.)</em>:</td>
+        <td>
+            [% feature_type.accession_id %]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Feature Type:</td>
+        <td>
+            [% feature_type.feature_type %]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Shape:</td>
+        <td>
+            [% feature_type.shape %]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Color:</td>
+        <td>
+            [% feature_type.color %]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Drawing Lane:</td>
+        <td>
+            [% feature_type.drawing_lane %]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Drawing Priority:</td>
+        <td>
+            [% feature_type.drawing_priority %]
+        </td>
+    </tr>
+</table>
+
+[% 
+    INCLUDE admin_attributes_view.tmpl 
+    attributes=feature_type.attributes 
+    return_action='feature_type_view'
+    pk_name='feature_type_id'
+    object_id=feature_type.feature_type_id
+    table_name='cmap_feature_type'
+%]
+
+[% INCLUDE admin_footer.tmpl %]

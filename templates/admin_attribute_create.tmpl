@@ -1,0 +1,52 @@
+[% INCLUDE admin_header.tmpl title="Create Attribute" %]
+<a href="admin">Home</a> |
+<a href="admin?action=[% object_type %]_view;[% pk_name %]=[% object_id %]">Back to [% object_type | ucfirst %]</a>
+<hr noshade>
+
+[% IF errors.size %]
+    <b>There were errors:</b>
+    <ul>
+        [% FOREACH e=errors %]
+          <li>[% e %]</li>
+        [% END %]
+    </ul>
+[% END %]
+
+<form action="admin" method="post">
+<table>
+    <tr>
+        <td align="right">Attribute Name:</td>
+        <td>
+            <input name="attribute_name" value="[% apr.param('attribute_name') %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right" valign="top">Value:</td>
+        <td>
+            <textarea name="attribute_value" rows="5" cols="50">[% apr.param('attribute_value') %]</textarea>
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Display Order <em>(opt.)</em>:</td>
+        <td>
+            <input name="display_order" value="[% apr.param('display_order') %]">
+        </td>
+    </tr>
+
+
+    <tr>
+        <td colspan="2" align="center">
+            <input type="hidden" name="object_id"   value="[% object_id %]">
+            <input type="hidden" name="table_name"  value="[% table_name %]">
+            <input type="hidden" name="object_type" value="[% object_type %]">
+            <input type="hidden" name="pk_name"     value="[% pk_name %]">
+            <input type="hidden" name="action"      value="attribute_insert">
+            <input type="hidden" name="return_action" value="[% apr.param('return_action') %]">
+            <input type="submit" value="Submit">
+        </td>
+    </tr>
+</table>
+</form>
+[% INCLUDE admin_footer.tmpl %]
