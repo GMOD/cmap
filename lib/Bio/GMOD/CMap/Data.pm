@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.187 2004-12-09 20:48:27 mwz444 Exp $
+# $Id: Data.pm,v 1.188 2004-12-09 21:07:12 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.187 $)[-1];
+$VERSION = (qw$Revision: 1.188 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -2164,7 +2164,7 @@ sub cmap_form_data {
                 $ref_map_sets,        '#map_type_display_order',
                 'map_type',           '#species_display_order',
                 'species_name',       '#map_set_display_order',
-                'epoch_published_on', 'map_set_name',
+                'epoch_published_on desc', 'map_set_name',
             );
 
             $self->store_cached_results( 1, $sql_str, $ref_map_sets );
