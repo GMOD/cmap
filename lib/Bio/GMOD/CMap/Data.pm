@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.48 2003-05-29 19:43:47 kycl4rk Exp $
+# $Id: Data.pm,v 1.49 2003-05-29 20:04:44 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.48 $)[-1];
+$VERSION = (qw$Revision: 1.49 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -783,7 +783,7 @@ Returns the data for the correspondence matrix.
     }
 
 #    warn "map set aid = $map_set_aid\n";
-#    warn "ref map sets =\n", Dumper( @reference_map_sets ), "\n";
+#    warn "ref map sets =\n", Dumper( \@reference_map_sets ), "\n";
 
     #
     # Select the relationships from the pre-computed table.
@@ -913,7 +913,7 @@ Returns the data for the correspondence matrix.
                { $hr->{'link_map_set_aid'} } = $hr->{'correspondences'}
         }
     }
-#    warn "lookup =\n", Dumper( %lookup ), "\n";
+#    warn "lookup =\n", Dumper( \%lookup ), "\n";
 
     #
     # Select ALL the map sets to go across.
@@ -1055,21 +1055,6 @@ Returns the data for the correspondence matrix.
                 $comp_map_set_aid eq $r_map_set_aid ? 'N/A' :
                 $lookup{ $reference_aid }{ $comparative_aid } || 0
             ;
-#            my $correspondences;
-#            if ( $map_set_aid ) {
-#                if ( $comp_map_aid eq $r_map_aid ) { 
-#                    $correspondences = 'N/A';
-#                }
-#                else {
-#                    $correspondences = 
-#                        $lookup{ $reference_aid }{ $comparative_aid } || 0;
-#                }
-#            }
-#            else {
-#                $correspondences = 
-#                    $comp_map_set_aid eq $r_map_set_aid ? 'N/A' :
-#                    $lookup{ $reference_aid }{ $comparative_aid } || 0
-#            }
 #            warn "correspondences = $correspondences\n";
 
             push @{ $map_set->{'correspondences'} }, {
