@@ -4,7 +4,7 @@ package Bio::GMOD::CMap::Apache::MapSearch;
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.1.2.1 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;

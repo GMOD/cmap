@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache;
 
 # vim: set ft=perl:
 
-# $Id: Apache.pm,v 1.24.2.1 2004-11-24 22:07:24 mwz444 Exp $
+# $Id: Apache.pm,v 1.24.2.2 2004-12-01 20:10:40 mwz444 Exp $
 
 =head1 NAME
 
@@ -47,7 +47,7 @@ this class will catch errors and display them correctly.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.24.2.1 $)[-1];
+$VERSION = (qw$Revision: 1.24.2.2 $)[-1];
 
 use CGI;
 use Data::Dumper;
@@ -66,7 +66,7 @@ use Bio::GMOD::CMap::Apache::Index;
 use Bio::GMOD::CMap::Apache::MapSetViewer;
 use Bio::GMOD::CMap::Apache::MapTypeViewer;
 use Bio::GMOD::CMap::Apache::MapViewer;
-use Bio::GMOD::CMap::Apache::EntryViewer;
+use Bio::GMOD::CMap::Apache::MapSearch;
 use Bio::GMOD::CMap::Apache::SpiderViewer;
 use Bio::GMOD::CMap::Apache::LinkViewer;
 use Bio::GMOD::CMap::Apache::MatrixViewer;
@@ -98,7 +98,7 @@ use constant DISPATCH => {
     species_info        => __PACKAGE__ . '::SpeciesViewer',
     view_feature_on_map => __PACKAGE__ . '::ViewFeatureOnMap',
     viewer              => __PACKAGE__ . '::MapViewer',
-    entry               => __PACKAGE__ . '::EntryViewer',
+    map_search          => __PACKAGE__ . '::MapSearch',
     spider              => __PACKAGE__ . '::SpiderViewer',
     link_viewer         => __PACKAGE__ . '::LinkViewer',
 };

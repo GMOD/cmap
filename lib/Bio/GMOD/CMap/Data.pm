@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.165.2.14 2004-11-30 20:50:49 mwz444 Exp $
+# $Id: Data.pm,v 1.165.2.15 2004-12-01 20:10:40 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.165.2.14 $)[-1];
+$VERSION = (qw$Revision: 1.165.2.15 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -4325,13 +4325,13 @@ sub count_correspondences {
 
 =pod
 
-=head2 cmap_entry_data
+=head2 cmap_map_search_data
 
-Returns the data for the entry page.
+Returns the data for the map_search page.
 
 =cut
 
-sub cmap_entry_data {
+sub cmap_map_search_data {
 
     my ( $self, %args ) = @_;
     my $slots = $args{'slots'} or return;
