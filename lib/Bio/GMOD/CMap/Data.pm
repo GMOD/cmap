@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.114 2004-05-16 19:39:39 mwz444 Exp $
+# $Id: Data.pm,v 1.115 2004-05-17 18:26:40 mwz444 Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.114 $)[-1];
+$VERSION = (qw$Revision: 1.115 $)[-1];
 
 use Data::Dumper;
 use Regexp::Common;
@@ -1372,12 +1372,11 @@ sub get_intraslot_correspondences {
                  f2.feature_id as ref_feature_id, 
                  f2.feature_name as f2_name,
                  f2.start_position as f2_start,
-                 map.map_id,
+                 f2.map_id,
                  cl.feature_correspondence_id,
                  ce.evidence_type_accession as evidence_type_aid
         from     cmap_feature f, 
-                 cmap_feature f2, 
-                 cmap_map map,
+                 cmap_feature f2,
                  cmap_correspondence_lookup cl,
                  cmap_feature_correspondence fc,
                  cmap_correspondence_evidence ce
@@ -1388,7 +1387,6 @@ sub get_intraslot_correspondences {
         and      fc.feature_correspondence_id=
                  ce.feature_correspondence_id
         and      cl.feature_id2=f2.feature_id
-        and      f2.map_id=map.map_id
         $to_restriction
     ];
 
@@ -2334,7 +2332,6 @@ out which maps have relationships.
     my $db                  = $self->db  or return;
     my $sql                 = $self->sql or return;
     return unless defined $ref_slot_no;
-
     #
     # Find out how many reference maps there are 
     # (and make sure there are some!).
@@ -2350,7 +2347,6 @@ out which maps have relationships.
     #    { Columns => {} },
     #    ( $pid, $ref_slot_no )
     #);
-    
     foreach my $map (@{$self->slot_info->{$ref_slot_no}}){
 	my %temp_hash=('map_id'=>$map->[0], 
 		       'start_position'=>$map->[1], 
@@ -3964,57 +3960,93 @@ sub slot_info{
 
     my $sql_str = 
 	q[
-	  select m.map_id,
+	  select distinct m.map_id,
 	         m.start_position,
 	         m.stop_position
 	  from   cmap_map m
 	  ];
 
-    
     if ($slots){
 	my $sql_suffix;
-	foreach my $key (keys %{$slots}){
+	foreach my $slot_no (sort orderOutFromZero keys %{$slots}){
 	    $sql_suffix="";
-	    if ($slots->{$key}){
-		#$slots->{$key}{'start'};
-		#$slots->{$key}{'stop'};
-		if (ref $slots->{$key}{'aid'} eq 'ARRAY'){
-		    if (scalar(@{$slots->{$key}{'aid'}})){
+	    if ($slots->{$slot_no}){
+		if (ref $slots->{$slot_no}{'aid'} eq 'ARRAY'){
+		    if (scalar(@{$slots->{$slot_no}{'aid'}})){
 			$sql_suffix=
 			    "where m.accession_id in ('".
-			    join("','",@{$slots->{$key}{'aid'}}).
+			    join("','",@{$slots->{$slot_no}{'aid'}}).
 			    "')";
 		    }
 		}
 		else{
-		    if ($slots->{$key}{'field'} eq 'map_set_aid'){
+		    if ($slots->{$slot_no}{'field'} eq 'map_set_aid'){
 			#Map set aid
-			$sql_suffix=
-			    q[,
-			      cmap_map_set ms
-			      where m.map_set_id=ms.map_set_id
-			      ].
-			      "and ms.accession_id = '".
-			      $slots->{$key}{'aid'}.
-			      "'";
+			if ($slot_no ==0){
+			    $sql_suffix=
+				q[,
+				  cmap_map_set ms
+				  where m.map_set_id=ms.map_set_id
+				  ].
+				  "and ms.accession_id = '".
+				  $slots->{$slot_no}{'aid'}.
+				  "'";
+			}
+			else{
+			    my $slot_modifier= $slot_no>0 ? -1 : 1;
+			    $sql_suffix=
+				q[, cmap_feature f1,
+				  cmap_feature f2,
+				  cmap_correspondence_lookup cl,
+				  cmap_map_set ms
+				  where m.map_set_id=ms.map_set_id
+				  and m.map_id=f1.map_id 
+				  and f1.feature_id=cl.feature_id1
+				  and f2.feature_id=cl.feature_id2
+				  ].
+				"and f2.map_id in (".
+				join(",",
+				     map {$_->[0]}
+				     @{$self->{'slot_info'}{$slot_no+$slot_modifier}}).
+				     ")". 
+				  " and ms.accession_id = '".
+				  $slots->{$slot_no}{'aid'}.
+				  "'";
+			}
 		    }
 		    else{
 			###aid is a list of map_ids
 			$sql_suffix=
 			    "where m.accession_id = '".
-			    $slots->{$key}{'aid'}.
+			    $slots->{$slot_no}{'aid'}.
 			    "'";
 		    }
 		}
 		if ($sql_suffix){
 		    ###If aid was found, $sql_suffix will be created
-		    push @{$self->{'slot_info'}{$key}}, 
-		    @{$db->selectall_arrayref($sql_str.$sql_suffix, {},())};
+		    my $slot_results;
+		    unless ($slot_results=
+			    $self->get_cached_results($sql_str.$sql_suffix)){ 
+			$slot_results=
+			    $db->selectall_arrayref($sql_str.$sql_suffix, {},());
+			$self->store_cached_results($sql_str.$sql_suffix,$slot_results);
+		    }
+			
+		    push @{$self->{'slot_info'}{$slot_no}}, 
+		    @{$slot_results};
 		}
 	    }
 	}	
     }
     return $self->{'slot_info'};
+}
+
+sub orderOutFromZero{
+    ###Return the sort in this order (0,1,2,3,-1,-2,-3)
+    ###If both are positive (or 0) give the cmp.
+    return $a cmp $b if ($a>=0 and $b>=0);
+    ###Otherwise reverse the compare.
+    return $b cmp $a;
 }
 
 # ----------------------------------------------------
