@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap;
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.42 2003-10-23 02:15:41 kycl4rk Exp $
+# $Id: CMap.pm,v 1.43 2003-10-24 20:13:51 kycl4rk Exp $
 
 =head1 NAME
 
@@ -441,24 +441,25 @@ Given a table name and some objects, get the cross-references.
             my $attr_val  =  $attr->{'attribute_value'}   or next;
             my $attr_name =  lc $attr->{'attribute_name'} or next;
                $attr_name =~ tr/ /_/s;
-            $o->{'attribute'}{ $attr_name } = $attr->{'attribute_value'};
+            push @{ $o->{'attribute'}{ $attr_name } }, 
+                $attr->{'attribute_value'};
         }
 
+        my @xrefs = @{ $xref_specific{ $o->{'object_id'} } || [] };
+        push @xrefs, @xref_generic;
 
-        $o->{'xrefs'} = $xref_specific{ $o->{'object_id'} };
-        push @{ $o->{'xrefs'} }, @xref_generic;
-
-        my @xrefs;
-        for my $xref ( @{ $o->{'xrefs'} || [] } ) {
+        my @processed;
+        for my $xref ( @xrefs ) {
             my $url;
             $t->process( \$xref->{'xref_url'}, { object => $o }, \$url );
-            push @xrefs, { 
+
+            push @processed, { 
                 xref_name => $xref->{'xref_name'},
-                xref_url  => $url,
-            } if $url;
+                xref_url  => $_,
+            } for map { $_ || () } split /\s+/, $url;
         }
 
-        $o->{'xrefs'} = [ @xrefs ];
+        $o->{'xrefs'} = \@processed;
     }
 }
 
