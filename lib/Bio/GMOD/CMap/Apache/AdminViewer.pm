@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.74 2004-10-13 18:56:00 mwz444 Exp $
+# $Id: AdminViewer.pm,v 1.74.4.1 2005-03-03 16:50:43 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -33,7 +33,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.74 $)[-1];
+$VERSION        = (qw$Revision: 1.74.4.1 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -2177,6 +2177,7 @@ sub map_set_edit {
                       ms.short_name, 
                       ms.display_order, 
                       ms.published_on, 
+                      ms.is_relational_map,
                       ms.can_be_reference_map,
                       ms.map_type_accession as map_type_aid, 
                       ms.species_id, 
@@ -2248,6 +2249,7 @@ sub map_set_insert {
         map_type_aid         => $apr->param('map_type_aid')          || '',
         accession_id         => $apr->param('accession_id')         || '',
         display_order        => $apr->param('display_order')        ||  1,
+        is_relational_map    => $apr->param('is_relational_map')    ||  0,
         can_be_reference_map => $apr->param('can_be_reference_map') ||  0,
         shape                => $apr->param('shape')                || '',
         color                => $apr->param('color')                || '',
@@ -2275,6 +2277,7 @@ sub map_set_view {
                       ms.short_name, ms.display_order, ms.published_on,
                       ms.map_type_accession as map_type_aid,
                       ms.species_id, 
+                      ms.is_relational_map,
                       ms.can_be_reference_map, ms.is_enabled,
                       ms.shape, ms.color, ms.width,
                       s.common_name as species_common_name,
@@ -2364,6 +2367,7 @@ sub map_set_update {
     my $short_name           = $apr->param('short_name')           || '';
     my $species_id           = $apr->param('species_id')           ||  0;
     my $map_type_aid         = $apr->param('map_type_aid')         ||  0;
+    my $is_relational_map    = $apr->param('is_relational_map')    ||  0;
     my $can_be_reference_map = $apr->param('can_be_reference_map') ||  0;
     my $is_enabled           = $apr->param('is_enabled')           ||  0;
     my $display_order        = $apr->param('display_order')        ||  1;
@@ -2392,6 +2396,7 @@ sub map_set_update {
             update cmap_map_set
             set    accession_id=?, map_set_name=?, short_name=?,
                    species_id=?, map_type_accession=?, published_on=?,
+                   is_relational_map=?,
                    can_be_reference_map=?, display_order=?, 
                    is_enabled=?, shape=?, color=?, width=?,map_units=?
             where  map_set_id=?
@@ -2400,6 +2405,7 @@ sub map_set_update {
         (
             $accession_id, $map_set_name, $short_name, 
             $species_id, $map_type_aid, $published_on, 
+            $is_relational_map,
             $can_be_reference_map, $display_order, 
             $is_enabled, $shape, $color, $width,
             $map_units, $map_set_id
