@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.35 2003-05-23 02:17:20 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.36 2003-05-29 19:18:42 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,9 +22,8 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.35 $)[-1];
+$VERSION = (qw$Revision: 1.36 $)[-1];
 
-#use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
@@ -967,11 +966,8 @@ to connect corresponding features on two maps.
     my ( $self, %args ) = @_;
     my $slot_no         = $args{'slot_no'};
     my $ref_slot_no     = $self->reference_slot_no( $slot_no );
-
-#    return unless defined $slot_no and defined $ref_slot_no;
-
-    my $ref_side = $slot_no > 0 ? RIGHT : LEFT;
-    my $cur_side = $slot_no > 0 ? LEFT  : RIGHT;
+    my $ref_side        = $slot_no > 0 ? RIGHT : LEFT;
+    my $cur_side        = $slot_no > 0 ? LEFT  : RIGHT;
 
     my @return = ();
     for my $f1 ( keys %{ $self->{'feature_position'}{ $slot_no } } ) {
@@ -1301,38 +1297,6 @@ and everything else on the left.
     }
 
     return $self->{'label_side'}{ $slot_no };
-}
-
-# ----------------------------------------------------
-sub layout_menu {
-
-=pod
-
-=head2 layout_menu
-
-Lays out the menu.
-
-=cut
-
-    my $self   = shift;
-    my @fields = qw[ species_name map_set_name map_name ];
-    my @labels = ();
-    for my $map ( $self->slot_data ) {
-        push @labels, join( '-', map { $map->{ $_ } } @fields );
-    }
-#    warn "labels = ", join("\n", @labels), "\n";
-    my $label_font = $self->label_font;
-
-    for my $label ( @labels ) {
-        my $label_y     = $self->min_y - $label_font->height - 10;
-        my $label_width = $label_font->width * length( $label );
-        my $map_width   = $self->max_x - $self->min_x;
-#           $map_width   = $label_width if $map_width < $label_width;
-        my $label_x     = $map_width/2 - $label_width/2;
-        $self->add_drawing(
-            STRING, $label_font, $label_x, $label_y, $label, 'black'
-        );
-    }
 }
 
 # ----------------------------------------------------
