@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap;
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.47 2004-03-10 20:11:45 kycl4rk Exp $
+# $Id: CMap.pm,v 1.48 2004-03-18 16:09:40 mwz444 Exp $
 
 =head1 NAME
 
@@ -63,7 +63,7 @@ Returns the cache directory.
 
     unless ( defined $self->{'cache_dir'} ) {
         my $cache_dir = $self->config('cache_dir') or return
-            $self->error('No cache directory defined in "'.CONFIG_FILE.'"');
+            $self->error('No cache directory defined in "'.GLOBAL_CONFIG_FILE.'"');
         unless ( -d $cache_dir ) {
             eval { mkpath( $cache_dir, 0, 0700 ) };
             if ( my $err = $@ ) {
@@ -79,6 +79,122 @@ Returns the cache directory.
     return $self->{'cache_dir'};
 }
 
+#-----------------------------------------------------
+sub read_config_dir {
+
+=pod
+
+=head2 read_config_dir
+
+Reads in config files from the conf directory.
+Requires a global conf and at least one db specific conf.
+The conf dir and the global conf file are specified in Constants.pm
+
+=cut
+{
+    my $self=shift;
+    my $suffix="conf";
+    my %config_data;
+
+    ###Get files from directory (taken from Bio/Graphics/Browser.pm by lstein)
+    die CONFIG_DIR.": not a directory"  unless -d CONFIG_DIR;
+    opendir(D,CONFIG_DIR) or die "Couldn't open ".CONFIG_DIR.": $!";
+    my @conf_files = map { CONFIG_DIR."/$_" } grep {/\.$suffix$/} readdir(D);
+    close D;
+    
+    # try to work around a bug in Apache/mod_perl which appears when
+    # running under linux/glibc 2.2.1
+    unless (@conf_files) {
+	@conf_files = glob(CONFIG_DIR."/*.$suffix");
+    }
+    
+    ###read config data from each file and store it all in a hash.
+    foreach my $conf_file (@conf_files){
+	
+	my $conf          = Config::General->new( $conf_file ) or return 0;
+	my %config        = $conf->getall or 
+	    $self->error('No configuration options');
+	if ($conf_file=~/${\GLOBAL_CONFIG_FILE}$/){
+	    $self->{'global_config'} = \%config;
+	}
+	else{
+	    $config_data{$config{'database'}->{'name'}}=\%config;
+	}
+    } 
+    ###Need a global and specific conf file
+    return 0 unless (%config_data and $self->{'global_config'});
+    $self->{'config_data'}=\%config_data;
+    return 1;
+    
+}
+}
+# ----------------------------------------------------
+sub set_config {
+
+=pod
+
+=head2 set_config
+
+sets the active config data (config and data_source)
+
+=cut
+{
+    my $self        = shift;
+    my $config_name = shift;
+    
+    unless ($self->{'config_data'}){
+	$self->read_config_dir() or die "Failed to read config files\n";
+    }
+
+    ###If config_name specified, check if it exists
+    if ($config_name){
+	if ($self->{'config_data'}{$config_name}){
+	    $self->{'config'}=$config_name;
+	    $self->{'data_source'}=$config_name;
+	    return 1;
+	}
+	else{
+	    return 0;
+	}
+    }
+
+    unless ($self->{'config'}){
+	###If the default db is in the global_config
+	### and it exists, set that as the config
+	if ($self->{'global_config'}{'default_db'} 
+	    and $self->{'config_data'}{$self->{'global_config'}{'default_db'}}){
+	    $self->{'config'}=$self->{'global_config'}{'default_db'};
+	    $self->{'data_source'}=$self->{'config'};
+	    return 1;
+	}
+    
+	###No preference set.  Just let fate(keys) decide.
+	$self->{'config'}=${keys %{$self->{'config_data'}}}->[0];
+	$self->{'data_source'}=$self->{'config'};
+	return 1;
+    }
+    return 1;
+
+
+}
+}
+
+# ----------------------------------------------------
+sub get_config_names {
+
+=pod
+
+=head2 set_config
+
+returns an array ref of the keys to self->{'config_data'}
+
+=cut
+{
+    my $self=shift;
+    return [keys %{$self->{'config_data'}}];
+}
+}
+
 # ----------------------------------------------------
 sub config {
 
@@ -86,26 +202,38 @@ sub config {
 
 =head2 config
 
-Returns one or all options from the config file.
+Returns one option from the config file.
 
 =cut
+{
+    my ( $self, $option,$specific_db) = @_;
 
-    my ( $self, $option ) = @_;
-
+    ###If config not set, set it
     unless ( $self->{'config'} ) {
-        my $conf          = Config::General->new( CONFIG_FILE ) or
-            return $self->error('Error reading config file: '.CONFIG_FILE);
-        my %config        = $conf->getall or 
-            $self->error('No configuration options');
-        $self->{'config'} = \%config;
+        $self->set_config() or die "Failed to set config\n";
     }
-
+    
     if ( $option ) {
-        my $value = defined $self->{'config'}{ $option } 
-            ? $self->{'config'}{ $option } 
-            : DEFAULT->{ $option }
-        ;
-
+	my $value;
+	###If a specific db conf file was asked for, supply answer from it 
+	if ($specific_db){
+	    $value = defined $self->{'config_data'}->{$specific_db}{ $option } 
+            ?  $self->{'config_data'}->{$specific_db}{ $option }
+	    : '';	    
+	}
+	else{
+	    ###Is it in the global config
+	    if (defined $self->{'global_config'}->{ $option }){
+		$value= $self->{'global_config'}->{ $option };
+	    }
+	    else{
+		###Otherwise get it from the other config.
+		$value = defined $self->{'config_data'}->{$self->{'config'}}{ $option } 
+		?  $self->{'config_data'}->{$self->{'config'}}{ $option }
+		: DEFAULT->{ $option }
+		;
+	    }
+	}
         if ( $value ) {
             return wantarray && ref $value ? @$value : $value;
         }
@@ -114,10 +242,11 @@ Returns one or all options from the config file.
         }
     }
     else {
-        return wantarray ? @{ $self->{'config'} } : $self->{'config'};
+	###Should never be used
+        return ();
     }
 }
-
+}
 # ----------------------------------------------------
 sub data_source {
 
@@ -125,7 +254,7 @@ sub data_source {
 
 =head2 data_source
 
-Remembers what has been selected as the current data source.
+Basically a front for set_config()
 
 =cut
 
@@ -134,25 +263,20 @@ Remembers what has been selected as the current data source.
 
     #
     # If passed a new data source, force a reconnect.
+    # This may slow things down.
     #
     if ( $arg ) {
-        my %valid_ds = map { $_->{'name'}, 1 } @{ $self->data_sources };
-        return $self->error("'$arg' is not a defined data source") 
-            unless $valid_ds{ $arg };
-        $self->{'data_source'} = $arg;
-        $self->{'data_sources'} = undef;
-        if ( defined $self->{'db'} ) {
+        $self->set_config($arg) or die "couldn't set data_source:$arg\n";  
+	if ( defined $self->{'db'} ) {
             my $db = $self->db;
             $db->disconnect;
             $self->{'db'} = undef;
         }
+      
     }
 
     unless ( $self->{'data_source'} ) {
-        my @data_sources = @{ $self->data_sources } or return;
-        for my $ds ( @data_sources ) {
-            $self->{'data_source'} = $ds->{'name'} if $ds->{'is_current'};
-        }
+        $self->set_config();
     }
 
     return $self->{'data_source'} || '';
@@ -165,20 +289,21 @@ sub data_sources {
 
 =head2 data_sources
 
-Returns all the data souces defined in the configuration file.
+Returns all the data souces defined in the configuration files.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self  = shift;
 
     unless ( defined $self->{'data_sources'} ) {
-        my $config  = $self->config('database') or 
-            return $self->error('No database configuration options defined');
-        $config     = [ $config ] unless ref $config eq 'ARRAY';
-
+	my @data_sources_result;
+	
+	$self->data_source() unless($self->{'data_source'});
+        
         my $ok = 0;
         if ( my $current = $self->{'data_source'} ) {
-            for my $source ( @$config ) {
+            foreach my $config_name ( @{$self->get_config_names()} ) {
+		my $source=$self->config('database',$config_name);
                 if ( $current && $source->{'name'} eq $current ) {
                     $source->{'is_current'} = 1;
                     $ok                     = 1;
@@ -186,32 +311,14 @@ Returns all the data souces defined in the configuration file.
                 else {
                     $source->{'is_current'} = 0;
                 }
+		$data_sources_result[++$#data_sources_result]=$source;
             }
         }
 
-        unless ( $ok ) {
-            for my $source ( @$config ) {
-                if ( $source->{'is_default'} ) {
-                    $source->{'is_current'} = 1;
-                    $ok                     = 1;
-                }
-            }
-        }
+        die "No database defined as default\n" unless ($ok);
 
-        #
-        # If there's only one defined, just use it.
-        #
-        if ( !$ok && scalar @$config == 1 ) {
-            $config->[0]->{'is_current'} = 1;
-        }
-        else {
-            return $self->error('No default data source defined') unless $ok;
-        }
-
-        $self->{'data_sources'} = [
-            sort { $a->{'name'} cmp $b->{'name'} }
-            @$config
-        ];
+        $self->{'data_sources'} = 
+	    [ sort { $a->{'name'} cmp $b->{'name'} } @data_sources_result];
 
     } 
 
@@ -496,7 +603,7 @@ Returns a Template Toolkit object.
     unless ( $self->{'template'} ) {
         my $cache_dir    = $self->cache_dir or return;
         my $template_dir = $self->config('template_dir') or return
-            $self->error('No template directory defined in "'.CONFIG_FILE.'"');
+            $self->error('No template directory defined in "'.GLOBAL_CONFIG_FILE.'"');
         return $self->error("Template directory '$template_dir' doesn't exist")
             unless -d $template_dir;
 
