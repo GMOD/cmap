@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.93 2004-03-03 21:30:28 kycl4rk Exp $
+# $Id: Data.pm,v 1.94 2004-03-11 01:36:47 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.93 $)[-1];
+$VERSION = (qw$Revision: 1.94 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -250,7 +250,7 @@ Organizes the data for drawing comparative maps.
             feature_type_ids         => $feature_type_ids,
             evidence_type_ids        => $evidence_type_ids,
             pid                      => $pid,
-        ) or return $self->error("Can't find data for map.");
+        ) or return;
     }
 
     #
@@ -331,7 +331,9 @@ Returns the data for drawing comparative maps.
         : undef
     ;
 
-    return $self->error("argh!") unless $map_set_id || $this_map_id;
+    return $self->error("Neither map set acc id '$map_set_aid' ".
+        "nor map acc id '$map_aid' converts to an internal id"
+    ) unless $map_set_id || $this_map_id;
 
     if ( $this_map_id ) {
         for ( $map_start, $map_stop ) {
@@ -1909,6 +1911,7 @@ Returns the data for the main comparative map HTML form.
         ref_species_aid        => $ref_species_aid,
         ref_species            => $ref_species,
         ref_map_sets           => $ref_map_sets,
+        ref_map_set_aid        => $ref_map_set_aid,
         ref_maps               => $ref_maps,
         ref_map_start          => $ref_map_start,
         ref_map_stop           => $ref_map_stop,
