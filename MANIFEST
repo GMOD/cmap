@@ -8,6 +8,7 @@ Build.PL
 Changes
 cgi-bin/cmap.PL
 conf/cmap.conf.PL
+CMapBuildConfig.pm
 CREDITS
 data/sample-dump.sql.gz
 docs/ADMINISTRATION
@@ -195,7 +196,6 @@ lib/Bio/GMOD/CMap/Drawer.pm
 lib/Bio/GMOD/CMap/Drawer/Map.pm
 lib/Bio/GMOD/CMap/Utils.pm
 LICENSE
-LocalConfig.pm
 MANIFEST			This list of files
 META.yml
 README
