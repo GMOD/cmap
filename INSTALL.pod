@@ -8,7 +8,7 @@ CMap Install
 
 =head1 VERSION
 
-$Revision: 1.11 $
+$Revision: 1.11.2.1 $
 
 =head1 QUICK START
 
@@ -116,16 +116,15 @@ Here are URLs to help you track down everything you need to install libgd:
 
 The CMap application relies on a relational database management system
 (RDBMS) to store and retrieve data.  If you already have a database
-such as MySQL (version 4.x recommended, but 3.23 is OK), you can skip
-ahead to the next section.  If not and you're doing this on your own
-and are not a trained DBA, I'd recommend using MySQL
-(http://www.mysql.com/) for your database.  It's free, extremely
-stable, flexible, and fun.  Another free database that can be highly
-recommended is PostgreSQL (http://www.postgresql.org/).  Oracle is
-really overkill for such a lightweight application as this because the
-code doesn't rely on much of anything from the database except joins
-(no transactions, no referential integrity, no stored procedures,
-etc.).
+such as MySQL (at least version 4.0 required), you can skip ahead to
+the next section.  If not and you're doing this on your own and are
+not a trained DBA, I'd recommend using MySQL (http://www.mysql.com/)
+for your database.  It's free, extremely stable, flexible, and fun.
+Another free database that can be highly recommended is PostgreSQL
+(http://www.postgresql.org/).  Oracle is really overkill for such a
+lightweight application as this because the code doesn't rely on much
+of anything from the database except joins (no transactions, no
+referential integrity, no stored procedures, etc.).
 
 B<Note:> Oracle 8.x doesn't support ANSI-standard left joins, so some
 parts of the application will fail. If you can't upgrade, then you can
