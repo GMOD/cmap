@@ -18,14 +18,14 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.15 2004-06-23 20:53:48 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.16 2004-07-02 20:53:35 mwz444 Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.15 $)[-1];
+$VERSION = (qw$Revision: 1.16 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -516,8 +516,8 @@ use constant VALID => {
     # Image heights, in pixels.
     #
     image_size => {
-        small  => 400,
-        medium => 600,
+        small  => 300,
+        medium => 500,
         large  => 800,
     },
 
