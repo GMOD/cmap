@@ -83,7 +83,7 @@
 </head>
 [% IF stylesheet %]<link rel="stylesheet" href="[% stylesheet %]" type="text/css">[% END %]
 
-[% page.start_body OR '<body>' %]
+[% page.start_body OR start_body OR '<body>' %]
 
 <table width="100%">
     <tr>
