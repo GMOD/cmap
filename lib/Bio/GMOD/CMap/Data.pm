@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.210 2005-03-02 15:07:21 mwz444 Exp $
+# $Id: Data.pm,v 1.211 2005-03-02 15:24:48 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.210 $)[-1];
+$VERSION = (qw$Revision: 1.211 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -5887,7 +5887,7 @@ original start and stop.
                     elsif ( defined( $maps->{$map_aid}{'start'} ) ) {
                         $aid_where .= 
                             qq[ and ( not m.accession_id = '$map_aid'  ]
-                            . " and (( cl.start_position1>="
+                            . " or (( cl.start_position1>="
                           . $maps->{$map_aid}{'start'}
                           . " ) or ( cl.stop_position1 is not null "
                           . " and cl.stop_position1>="
@@ -5896,7 +5896,7 @@ original start and stop.
                     elsif ( defined( $maps->{$map_aid}{'stop'}  ) ) {
                         $aid_where .= 
                             qq[ and ( not m.accession_id = '$map_aid'  ]
-                            . " and cl.start_position1<="
+                            . " or cl.start_position1<="
                             . $maps->{$map_aid}{'stop'}  . ") ";
                     }
                 }
@@ -5920,6 +5920,11 @@ original start and stop.
             $where = " where $aid_where ";
         }
         $sql_str = "$sql_base $from $where $group_by $having\n";
+
+        # The min_correspondences sql code doesn't play nice with distinct
+        if ($min_correspondences and $slot_no != 0){
+            $sql_str =~ s/distinct//;
+        }
 
         #print S#TDERR "SLOT_INFO SQL \n$sql_str\n";
 
