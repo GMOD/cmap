@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.165.2.6 2004-11-12 17:30:13 mwz444 Exp $
+# $Id: Data.pm,v 1.165.2.7 2004-11-12 21:30:53 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.165.2.6 $)[-1];
+$VERSION = (qw$Revision: 1.165.2.7 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -4094,75 +4094,75 @@ sub count_correspondences {
         # Include current slot maps
         my $slot_info            = $self->slot_info->{$this_slot_no};
         my @unrestricted_map_ids = ();
-        my $unrestricted_sql_2   = '';
-        my $restricted_sql_2     = '';
         my $unrestricted_sql_1   = '';
         my $restricted_sql_1     = '';
+        my $unrestricted_sql_2   = '';
+        my $restricted_sql_2     = '';
         foreach my $slot_map_id ( keys( %{$slot_info} ) ) {
 
             # $slot_info->{$slot_map_id}->[0] is start [1] is stop
             if (    defined( $slot_info->{$slot_map_id}->[0] )
                 and defined( $slot_info->{$slot_map_id}->[1] ) )
             {
-                $restricted_sql_2 .=
-                    " or (cl.map_id2="
+                $restricted_sql_1 .=
+                    " or (cl.map_id1="
                   . $slot_map_id
-                  . " and (( cl.start_position2>="
+                  . " and (( cl.start_position1>="
                   . $slot_info->{$slot_map_id}->[0]
-                  . " and cl.start_position2<="
+                  . " and cl.start_position1<="
                   . $slot_info->{$slot_map_id}->[1]
-                  . " ) or ( cl.stop_position2 is not null and "
-                  . "  cl.start_position2<="
+                  . " ) or ( cl.stop_position1 is not null and "
+                  . "  cl.start_position1<="
                   . $slot_info->{$slot_map_id}->[0]
-                  . " and cl.stop_position2>="
+                  . " and cl.stop_position1>="
                   . $slot_info->{$slot_map_id}->[0] . " )))";
                 if ($show_intraslot_corr) {
-                    $restricted_sql_1 .=
-                        " or (cl.map_id1="
+                    $restricted_sql_2 .=
+                        " or (cl.map_id2="
                       . $slot_map_id
-                      . " and (( cl.start_position1>="
+                      . " and (( cl.start_position2>="
                       . $slot_info->{$slot_map_id}->[0]
-                      . " and cl.start_position1<="
+                      . " and cl.start_position2<="
                       . $slot_info->{$slot_map_id}->[1]
-                      . " ) or ( cl.stop_position1 is not null and "
-                      . "  cl.start_position1<="
+                      . " ) or ( cl.stop_position2 is not null and "
+                      . "  cl.start_position2<="
                       . $slot_info->{$slot_map_id}->[0]
-                      . " and cl.stop_position1>="
+                      . " and cl.stop_position2>="
                       . $slot_info->{$slot_map_id}->[0] . " )))";
                 }
 
             }
             elsif ( defined( $slot_info->{$slot_map_id}->[0] ) ) {
-                $restricted_sql_2 .=
-                    " or (cl.map_id2="
+                $restricted_sql_1 .=
+                    " or (cl.map_id1="
                   . $slot_map_id
-                  . " and (( cl.start_position2>="
+                  . " and (( cl.start_position1>="
                   . $slot_info->{$slot_map_id}->[0]
-                  . " ) or ( cl.stop_position2 is not null "
-                  . " and cl.stop_position2>="
+                  . " ) or ( cl.stop_position1 is not null "
+                  . " and cl.stop_position1>="
                   . $slot_info->{$slot_map_id}->[0] . " )))";
                 if ($show_intraslot_corr) {
-                    $restricted_sql_1 .=
-                        " or (cl.map_id1="
+                    $restricted_sql_2 .=
+                        " or (cl.map_id2="
                       . $slot_map_id
-                      . " and (( cl.start_position1>="
+                      . " and (( cl.start_position2>="
                       . $slot_info->{$slot_map_id}->[0]
-                      . " ) or ( cl.stop_position1 is not null "
-                      . " and cl.stop_position1>="
+                      . " ) or ( cl.stop_position2 is not null "
+                      . " and cl.stop_position2>="
                       . $slot_info->{$slot_map_id}->[0] . " )))";
                 }
             }
             elsif ( defined( $slot_info->{$slot_map_id}->[1] ) ) {
-                $restricted_sql_2 .=
-                    " or (cl.map_id2="
+                $restricted_sql_1 .=
+                    " or (cl.map_id1="
                   . $slot_map_id
-                  . " and cl.start_position2<="
+                  . " and cl.start_position1<="
                   . $slot_info->{$slot_map_id}->[1] . ") ";
                 if ($show_intraslot_corr) {
-                    $restricted_sql_1 .=
-                        " or (cl.map_id1="
+                    $restricted_sql_2 .=
+                        " or (cl.map_id2="
                       . $slot_map_id
-                      . " and cl.start_position1<="
+                      . " and cl.start_position2<="
                       . $slot_info->{$slot_map_id}->[1] . ") ";
                 }
             }
@@ -4171,15 +4171,15 @@ sub count_correspondences {
             }
         }
         if (@unrestricted_map_ids) {
-            $unrestricted_sql_2 .=
-              " or cl.map_id2 in (" . join( ',', @unrestricted_map_ids ) . ") ";
+            $unrestricted_sql_1 .=
+              " or cl.map_id1 in (" . join( ',', @unrestricted_map_ids ) . ") ";
             if ($show_intraslot_corr) {
-                $unrestricted_sql_1 .=
-                  " or cl.map_id1 in ("
+                $unrestricted_sql_2 .=
+                  " or cl.map_id2 in ("
                   . join( ',', @unrestricted_map_ids ) . ") ";
             }
         }
-        my $combined_sql = $restricted_sql_2 . $unrestricted_sql_2;
+        my $combined_sql = $restricted_sql_1 . $unrestricted_sql_1;
         $combined_sql =~ s/^\s+or//;
         $base_sql .= " and (" . $combined_sql . ")";
 
@@ -4194,34 +4194,34 @@ sub count_correspondences {
                 if (    defined( $slot_info->{$slot_map_id}->[0] )
                     and defined( $slot_info->{$slot_map_id}->[1] ) )
                 {
-                    $restricted_sql_1 .=
-                        " or (cl.map_id1="
+                    $restricted_sql_2 .=
+                        " or (cl.map_id2="
                       . $slot_map_id
-                      . " and (( cl.start_position1>="
+                      . " and (( cl.start_position2>="
                       . $slot_info->{$slot_map_id}->[0]
-                      . " and cl.start_position1<="
+                      . " and cl.start_position2<="
                       . $slot_info->{$slot_map_id}->[1]
-                      . " ) or ( cl.stop_position1 is not null and "
-                      . "  cl.start_position1<="
+                      . " ) or ( cl.stop_position2 is not null and "
+                      . "  cl.start_position2<="
                       . $slot_info->{$slot_map_id}->[0]
-                      . " and cl.stop_position1>="
+                      . " and cl.stop_position2>="
                       . $slot_info->{$slot_map_id}->[0] . " )))";
                 }
                 elsif ( defined( $slot_info->{$slot_map_id}->[0] ) ) {
-                    $restricted_sql_1 .=
-                        " or (cl.map_id1="
+                    $restricted_sql_2 .=
+                        " or (cl.map_id2="
                       . $slot_map_id
-                      . " and (( cl.start_position1>="
+                      . " and (( cl.start_position2>="
                       . $slot_info->{$slot_map_id}->[0]
-                      . " ) or ( cl.stop_position1 is not null "
-                      . " and cl.stop_position1>="
+                      . " ) or ( cl.stop_position2 is not null "
+                      . " and cl.stop_position2>="
                       . $slot_info->{$slot_map_id}->[0] . " )))";
                 }
                 elsif ( defined( $slot_info->{$slot_map_id}->[1] ) ) {
-                    $restricted_sql_1 .=
-                        " or (cl.map_id1="
+                    $restricted_sql_2 .=
+                        " or (cl.map_id2="
                       . $slot_map_id
-                      . " and cl.start_position1<="
+                      . " and cl.start_position2<="
                       . $slot_info->{$slot_map_id}->[1] . ") ";
                 }
                 else {
@@ -4229,29 +4229,29 @@ sub count_correspondences {
                 }
             }
             if (@unrestricted_map_ids) {
-                $unrestricted_sql_1 .=
-                  " or cl.map_id1 in ("
+                $unrestricted_sql_2 .=
+                  " or cl.map_id2 in ("
                   . join( ',', @unrestricted_map_ids ) . ") ";
             }
         }
-        $combined_sql = $restricted_sql_1 . $unrestricted_sql_1;
+        $combined_sql = $restricted_sql_2 . $unrestricted_sql_2;
         $combined_sql =~ s/^\s+or//;
         $base_sql .= " and (" . $combined_sql . ")";
 
-        $base_sql .= " group by map_id1,map_id2";
+        $base_sql .= " group by map_id2,map_id1";
 
         $count_sql = sprintf( $base_sql,
                 'count(distinct cl.feature_correspondence_id) as no_corr, '
-              . 'min(cl.start_position1) as min_start, '
-              . 'max(cl.start_position1) as max_start , '
-              . 'avg(((cl.stop_position1-cl.start_position1)/2)'
-              . '+cl.start_position1) as avg_mid, '
-              . 'avg(cl.start_position1) as start_avg1,'
-              . 'avg(cl.start_position2) as start_avg2,'
               . 'min(cl.start_position2) as min_start2, '
-              . 'max(cl.start_position2) as max_start2 , '
+              . 'max(cl.start_position2) as max_start2, '
               . 'avg(((cl.stop_position2-cl.start_position2)/2)'
-              . '+cl.start_position2) as avg_mid2, ' );
+              . '+cl.start_position2) as avg_mid2, '
+              . 'avg(cl.start_position2) as start_avg2,'
+              . 'avg(cl.start_position1) as start_avg1,'
+              . 'min(cl.start_position1) as min_start1, '
+              . 'max(cl.start_position1) as max_start1 , '
+              . 'avg(((cl.stop_position1-cl.start_position1)/2)'
+              . '+cl.start_position1) as avg_mid1, ' );
     }
 
     my %map_id_lookup = map { $_->{'map_id'}, 1 } @$maps;
@@ -4273,23 +4273,25 @@ sub count_correspondences {
                 $map_corr_counts );
         }
         for my $count (@$map_corr_counts) {
-            next unless $map_id_lookup{ $count->{'map_id2'} };
-
-            $map_correspondences->{$this_slot_no}{ $count->{'map_id2'} }
-              { $count->{'map_id1'} } = {
-                map_id     => $count->{'map_id2'},
-                ref_map_id => $count->{'map_id1'},
+            next unless $map_id_lookup{ $count->{'map_id1'} };
+            
+            # The reference map is now number 2
+            # meaning that map_id2 is the old ref_map_id
+            $map_correspondences->{$this_slot_no}{ $count->{'map_id1'} }
+              { $count->{'map_id2'} } = {
+                map_id1    => $count->{'map_id1'},
+                map_id2    => $count->{'map_id2'},
                 no_corr    => $count->{'no_corr'},
-                min_start  => $count->{'min_start'},
-                max_start  => $count->{'max_start'},
-                avg_mid    => $count->{'avg_mid'},
+                min_start1 => $count->{'min_start1'},
+                max_start1 => $count->{'max_start1'},
                 min_start2 => $count->{'min_start2'},
                 max_start2 => $count->{'max_start2'},
+                avg_mid1   => $count->{'avg_mid1'},
                 avg_mid2   => $count->{'avg_mid2'},
-                start_avg1 => $count->{'start_avg1'},
                 start_avg2 => $count->{'start_avg2'},
+                start_avg1 => $count->{'start_avg1'},
               };
-            $corr_lookup{ $count->{'map_id2'} } += $count->{'no_corr'};
+            $corr_lookup{ $count->{'map_id1'} } += $count->{'no_corr'};
         }
     }
     return \%corr_lookup;
