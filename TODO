@@ -1,6 +1,6 @@
                       Planned enhancements for CMap
     
-                             $Revision: 1.4 $
+                             $Revision: 1.5 $
 
 -   Some indicator for when features are dropped out
 -   Allow clicking/zooming on comparative maps
@@ -24,3 +24,4 @@
 -   Add "remarks" (and maybe "code") column to cmap_feature_type and
     cmap_evidence_type, allow clicking on description in map legend to
     go to a page describing the object
+-   SVG output
