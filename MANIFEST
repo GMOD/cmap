@@ -5,7 +5,7 @@ INSTALL
 LICENSE
 MANIFEST
 MANIFEST.SKIP
-Makefile.PL
+Build.PL
 README
 TODO
 bin/cmap_admin.pl
@@ -63,6 +63,7 @@ docs/admintut/index.html
 docs/admintut/map-shapes.html
 docs/admintut/multiple-data-sources.html
 docs/admintut/relational-maps.html
+docs/cmap-desc.html
 docs/cmap-graph.png
 docs/cmap-schema.png
 lib/Bio/GMOD/CMap.pm
@@ -73,6 +74,7 @@ lib/Bio/GMOD/CMap/Admin/MakeCorrespondences.pm
 lib/Bio/GMOD/CMap/Apache.pm
 lib/Bio/GMOD/CMap/Apache/AdminViewer.pm
 lib/Bio/GMOD/CMap/Apache/FeatureSearch.pm
+lib/Bio/GMOD/CMap/Apache/FeatureTypeViewer.pm
 lib/Bio/GMOD/CMap/Apache/FeatureViewer.pm
 lib/Bio/GMOD/CMap/Apache/HelpViewer.pm
 lib/Bio/GMOD/CMap/Apache/Index.pm
@@ -136,8 +138,10 @@ templates/cmap_viewer_comparative_map_select.tmpl
 templates/error.tmpl
 templates/feature_detail.tmpl
 templates/feature_search.tmpl
+templates/feature_type_info.tmpl
 templates/header.tmpl
 templates/help_feature_details.tmpl
+templates/help_feature_type_info.tmpl
 templates/help_feature_search.tmpl
 templates/help_map_details.tmpl
 templates/help_map_set_info.tmpl

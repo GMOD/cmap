@@ -1,11 +1,13 @@
-.*CVS.*
-.*.swp
-.*.bak
+CVS
+\.swp$
+\.bak$
 .*.old
 ^Makefile$
 ^blib/
-_blib$
+^_build/
+Build
 ^data/
 ^#
 (^|/)\.
 cmap_install.conf
+^MANIFEST\.SKIP$
