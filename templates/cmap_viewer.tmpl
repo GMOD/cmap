@@ -168,6 +168,16 @@
                         </tr>
 
                         <tr>
+                            <td align="right" valign="top">Collapse Overlapping Features:</td>
+
+                            <td>
+                                [% IF apr.param('collapse_features')==1; collapse=1; ELSE; collapse=0; END %]
+                                <input type="radio" name="collapse_features" value="0"[% IF collapse==0; ' checked'; END %]>No
+                                <input type="radio" name="collapse_features" value="1"[% IF collapse==1; ' checked'; END %]>Yes
+                            </td>
+                        </tr>
+
+                        <tr>
                             <td align="right">Min. No. Correspondences:</td>
 
                             <td>
