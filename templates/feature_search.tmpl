@@ -23,7 +23,7 @@
 
         <td valign="top">
             <select name="species_aid" size="5" multiple>
-                <option value="">--All Species--</option>
+                <option value="-1">--All Species--</option>
                 [% FOREACH s=species %]
                     <option value="[% s.species_aid %]"[% IF species_lookup.${s.species_aid} %] selected[% END %]>[% s.species_name %]</option>
                 [% END %]
@@ -32,7 +32,7 @@
 
         <td valign="top">
             <select name="feature_type_aid" size="5" multiple>
-                <option value="">--All Feature Types--</option>
+                <option value="-1">--All Feature Types--</option>
                 [% FOREACH ft=feature_types %]
                     <option value="[% ft.feature_type_aid %]"[% IF feature_type_lookup.${ft.feature_type_aid} %] selected[% END %]>[% ft.feature_type %]</option>
                 [% END %]
