@@ -115,6 +115,8 @@ Or, specify each config file separately:
 
   $ cmap_typetables_to_config.pl /path/to/cmap.conf/foo.conf
   
+This will also move the attributes and xrefs for the *_types into the
+config file.
 
 =back
 

@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.7 $
+$Revision: 1.8 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -210,6 +210,45 @@ The full name of that type, such as "Maize Marker".
 =item * color 
 
 The color of the object.
+
+=item * attribute
+
+Attributes of feature, evidence and map types have been moved out of the
+database and into the config file.
+
+Attributes are essentially name, value pairs which describe something about the
+type.  They must be definined in <attribute> tags.  Here is an example entry:
+
+ <attribute>
+   name Description
+   value This is the description of the *_type.
+   is_public 1
+ </attribute>
+ <attribute>
+   name History
+   value This type was first discovered in the fourth century BC.
+ </attribute>
+
+Notice that is_public is optional.  If not given it will default to 1.
+
+=item * xref (cross-reference)
+
+Cross-references of feature, evidence and map types have been moved out of the
+database and into the config file.
+
+Cross-references (xrefs) are links from this type to another website.  They
+consist of a name and a url.  If the url is inside the "cmap/" namespace you
+can define just the end portion.  However if you want to link outside this
+website, you must include the "http://".  Here is an example entry:
+
+ <xref>
+   name Map Search
+   url map_search
+ </xref>
+ <xref>
+   name google
+   url http://www.google.com
+ </xref>
 
 =item * area_code (map and feature types only)
 

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-# $Id: cmap_typetables_to_config.pl,v 1.3 2004-10-13 21:16:07 kycl4rk Exp $
+# $Id: cmap_typetables_to_config.pl,v 1.4 2004-12-15 20:07:54 mwz444 Exp $
 
 =pod
 
@@ -39,28 +39,24 @@ Ken Youens-Clark E<lt>kclark@cshl.eduE<gt>.
 
 use strict;
 use Config::General;
-use DBI;      
+use DBI;
 use File::Spec::Functions;
 use Getopt::Long;
 use Pod::Usage;
 
-my ( $help );
-GetOptions(
-    'help|h|?' => \$help,
-) or pod2usage;
+my ($help);
+GetOptions( 'help|h|?' => \$help, ) or pod2usage;
 
 pod2usage(0) if $help;
 
 pod2usage('No arguments') unless @ARGV;
 
 my @configs;
-for my $arg ( @ARGV ) {
+for my $arg (@ARGV) {
     if ( -d $arg ) {
         opendir DIR, $arg;
-        push @configs, 
-            map  { catfile( $arg, $_ ) }
-            grep { /.*\.conf$/ && !/^global.conf$/ } 
-            readdir DIR;
+        push @configs, map { catfile( $arg, $_ ) }
+          grep { /.*\.conf$/ && !/^global.conf$/ } readdir DIR;
         closedir DIR;
     }
     elsif ( -f _ ) {
@@ -68,7 +64,7 @@ for my $arg ( @ARGV ) {
     }
 }
 
-my $connect_options  = {
+my $connect_options = {
     AutoCommit       => 1,
     FetchHashKeyName => 'NAME_lc',
     LongReadLen      => 3000,
@@ -76,14 +72,14 @@ my $connect_options  = {
     RaiseError       => 1,
 };
 
-for my $file ( @configs ) {
+for my $file (@configs) {
     print "Parsing config file '$file'\n";
     my %db_opts;
     {
-        my $cfile  = Config::General->new($file) or die "Error reading '$file'";
+        my $cfile = Config::General->new($file) or die "Error reading '$file'";
         my %config = $cfile->getall;
-        %db_opts   = %{ $config{'database'} }
-            or die "No database configuration present in '$file'";
+        %db_opts = %{ $config{'database'} }
+          or die "No database configuration present in '$file'";
     }
 
     my $datasource = $db_opts{'datasource'} || '';
@@ -102,10 +98,9 @@ for my $file ( @configs ) {
     #
     # Feature types
     #
-    my $ft = $dbh->selectall_arrayref(
-        'select * from cmap_feature_type', { Columns => {} }
-    );
-    for my $row ( @$ft ) {
+    my $ft = $dbh->selectall_arrayref( 'select * from cmap_feature_type',
+        { Columns => {} } );
+    for my $row (@$ft) {
         print $fh "\n<feature_type " . $row->{'accession_id'} . ">";
         print $fh "\nfeature_type_accession " . $row->{'accession_id'};
         print $fh "\nfeature_type ";
@@ -122,19 +117,58 @@ for my $file ( @configs ) {
         print $fh $row->{'drawing_priority'} if $row->{'drawing_priority'};
         print $fh "\n" . q[area_code <<EOF
     $code=sprintf("onMouseOver=\"window.status='%s';return true\"",$feature->{'feature_name'});
-    EOF];
+EOF];
         print $fh "\nrequired_page_code ";
         print $fh "\nextra_forms ";
+        
+        # Get Attributes
+        my $atts = $dbh->selectall_arrayref( q[
+            select * 
+            from   cmap_attribute 
+            where  table_name = 'cmap_feature_type'
+               and object_id = ]
+            .$row->{'feature_type_id'}
+            , { Columns => {} } );
+        foreach my $att (@$atts){
+            print $fh "\n<attribute>"
+                . "\n  name "
+                . $att->{'attribute_name'}
+                . "\n  value "
+                . $att->{'attribute_value'}
+                . "\n  is_public "
+                . $att->{'is_public'}
+                . "\n  display_order "
+                . $att->{'display_order'}
+                . "\n</attribute>\n";
+        }
+        # Get Xrefs
+        my $xrefs = $dbh->selectall_arrayref( q[
+            select * 
+            from   cmap_xref 
+            where  table_name = 'cmap_feature_type'
+               and object_id = ]
+            .$row->{'feature_type_id'}
+            , { Columns => {} } );
+        foreach my $xref (@$xrefs){
+            print $fh "\n<xref>"
+                . "\n  name "
+                . $xref->{'xref_name'}
+                . "\n  url "
+                . $xref->{'xref_url'}
+                . "\n  display_order "
+                . $xref->{'display_order'}
+                . "\n</xref>\n";
+        }
+
         print $fh "\n</feature_type>\n\n";
     }
 
     #
     # Evidence types
     #
-    my $et = $dbh->selectall_arrayref(
-        'select * from cmap_evidence_type', { Columns => {} } 
-    );
-    for my $row ( @$et ) {
+    my $et = $dbh->selectall_arrayref( 'select * from cmap_evidence_type',
+        { Columns => {} } );
+    for my $row (@$et) {
         print $fh "\n<evidence_type " . $row->{'accession_id'} . ">";
         print $fh "\nevidence_type_accession " . $row->{'accession_id'};
         print $fh "\nevidence_type ";
@@ -143,16 +177,55 @@ for my $file ( @configs ) {
         print $fh $row->{'rank'} if $row->{'rank'};
         print $fh "\ncolor ";
         print $fh $row->{'line_color'} if $row->{'line_color'};
+        
+        # Get Attributes
+        my $atts = $dbh->selectall_arrayref( q[
+            select * 
+            from   cmap_attribute 
+            where  table_name = 'cmap_evidence_type'
+               and object_id = ]
+            .$row->{'evidence_type_id'}
+            , { Columns => {} } );
+        foreach my $att (@$atts){
+            print $fh "\n<attribute>"
+                . "\n  name "
+                . $att->{'attribute_name'}
+                . "\n  value "
+                . $att->{'attribute_value'}
+                . "\n  is_public "
+                . $att->{'is_public'}
+                . "\n  display_order "
+                . $att->{'display_order'}
+                . "\n</attribute>\n";
+        }
+        # Get Xrefs
+        my $xrefs = $dbh->selectall_arrayref( q[
+            select * 
+            from   cmap_xref 
+            where  table_name = 'cmap_evidence_type'
+               and object_id = ]
+            .$row->{'evidence_type_id'}
+            , { Columns => {} } );
+        foreach my $xref (@$xrefs){
+            print $fh "\n<xref>"
+                . "\n  name "
+                . $xref->{'xref_name'}
+                . "\n  url "
+                . $xref->{'xref_url'}
+                . "\n  display_order "
+                . $xref->{'display_order'}
+                . "\n</xref>\n";
+        }
+
         print $fh "\n</evidence_type>\n\n";
     }
 
     #
     # Map types
     #
-    my $mt = $dbh->selectall_arrayref(
-        'select * from cmap_map_type', { Columns => {} } 
-    );
-    for my $row ( @$mt ) {
+    my $mt = $dbh->selectall_arrayref( 'select * from cmap_map_type',
+        { Columns => {} } );
+    for my $row (@$mt) {
         print $fh "\n<map_type " . $row->{'accession_id'} . ">";
         print $fh "\nmap_type_accession " . $row->{'accession_id'};
         print $fh "\nmap_type ";
@@ -171,9 +244,49 @@ for my $file ( @configs ) {
         print $fh $row->{'display_order'} if $row->{'display_order'};
         print $fh "\n" . q[area_code <<EOF
     $code=sprintf("onMouseOver=\"window.status='%s';return true\"",$map->{'map_name'});
-    EOF];
+EOF];
         print $fh "\nrequired_page_code ";
         print $fh "\nextra_forms ";
+        
+        # Get Attributes
+        my $atts = $dbh->selectall_arrayref( q[
+            select * 
+            from   cmap_attribute 
+            where  table_name = 'cmap_map_type'
+               and object_id = ]
+            .$row->{'map_type_id'}
+            , { Columns => {} } );
+        foreach my $att (@$atts){
+            print $fh "\n<attribute>"
+                . "\n  name "
+                . $att->{'attribute_name'}
+                . "\n  value "
+                . $att->{'attribute_value'}
+                . "\n  is_public "
+                . $att->{'is_public'}
+                . "\n  display_order "
+                . $att->{'display_order'}
+                . "\n</attribute>\n";
+        }
+        # Get Xrefs
+        my $xrefs = $dbh->selectall_arrayref( q[
+            select * 
+            from   cmap_xref 
+            where  table_name = 'cmap_map_type'
+               and object_id = ]
+            .$row->{'map_type_id'}
+            , { Columns => {} } );
+        foreach my $xref (@$xrefs){
+            print $fh "\n<xref>"
+                . "\n  name "
+                . $xref->{'xref_name'}
+                . "\n  url "
+                . $xref->{'xref_url'}
+                . "\n  display_order "
+                . $xref->{'display_order'}
+                . "\n</xref>\n";
+        }
+
         print $fh "\n</map_type>\n\n";
     }
 
