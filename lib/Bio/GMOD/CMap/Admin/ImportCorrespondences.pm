@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 # vim: set ft=perl:
 
-# $Id: ImportCorrespondences.pm,v 1.13 2003-09-29 20:49:12 kycl4rk Exp $
+# $Id: ImportCorrespondences.pm,v 1.14 2003-12-30 18:47:34 kycl4rk Exp $
 
 =head1 NAME
 
@@ -43,7 +43,7 @@ each of the two feature names, a correspondence will be created.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.13 $)[-1];
+$VERSION = (qw$Revision: 1.14 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -314,12 +314,11 @@ sub import {
 
                 for my $evidence_type ( @evidence_types ) {
                     my ( $evidence_type_id, $evidence ) = @$evidence_type;
-                    my $fc_id = $admin->insert_correspondence( 
-                        $feature1->{'feature_id'},
-                        $feature2->{'feature_id'},
-                        $evidence_type_id,
-                        '', # accession id
-                        $is_enabled,
+                    my $fc_id = $admin->feature_correspondence_create( 
+                        feature_id1      => $feature1->{'feature_id'},
+                        feature_id2      => $feature2->{'feature_id'},
+                        evidence_type_id => $evidence_type_id,
+                        is_enabled       => $is_enabled,
                     ) or return $self->error( $admin->error );
 
                     my $fname1 = join('-', map { $feature1->{$_} }
