@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.21 2003-01-30 02:51:35 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.22 2003-02-07 20:35:36 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.21 $)[-1];
+$VERSION = (qw$Revision: 1.22 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
@@ -719,20 +719,23 @@ Returns whether or not a feature has a correspondence.
 }
 
 # ----------------------------------------------------
-sub feature_correspondence_info {
+sub feature_correspondence_evidence {
 
 =pod
 
-=head2 feature_correspondence_info
+=head2 feature_correspondence_evidence
 
-Given a feature correspondence ID, returns what is known about the 
-correspondence.
+Given a feature correspondence ID, returns supporting evidence.
 
 =cut
 
-    my $self                      = shift;
-    my $feature_correspondence_id = shift or return;
-    return {};
+    my ( $self, $fid1, $fid2 )    = @_;
+    my $feature_correspondence_id = 
+        $self->{'data'}{'correspondences'}{ $fid1 }{ $fid2 } or return;
+
+    return
+        $self->{'data'}{'correspondence_evidence'}{ $feature_correspondence_id };
+
 }
 
 # ----------------------------------------------------
@@ -811,7 +814,11 @@ to connect corresponding features on two maps.
                 $self->{'feature_position'}{ $ref_slot_no }{ $f2 }{ $ref_side } 
                 || []
             } or next;
-            push @return, [ @f1_pos, @ref_pos ];
+            push @return, {
+                feature_id1 => $f1,
+                feature_id2 => $f2,
+                positions   => [ @f1_pos, @ref_pos ],
+            }
         }
     }
 

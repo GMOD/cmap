@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Feature;
 
-# $Id: Feature.pm,v 1.10 2003-01-29 00:23:29 kycl4rk Exp $
+# $Id: Feature.pm,v 1.11 2003-02-07 20:35:36 kycl4rk Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.10 $)[-1];
+$VERSION = (qw$Revision: 1.11 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -43,10 +43,9 @@ use constant INIT_FIELDS => [
 # Actually, I'm handling all this elsewhere, so just ignore.
 #
 use constant SHAPE => {
-    default  => 'draw_line', #'draw_span',
-    box      => 'draw_line', #'draw_box',
-    line     => 'draw_line',
-    span     => 'draw_line', #'draw_span',
+    box      => 1,
+    line     => 1,
+    span     => 1,
     dumbbell => 1,
 };
 
@@ -111,45 +110,6 @@ Returns the URL for the details on the feature.
 }
 
 # ----------------------------------------------------
-sub draw {
-
-=pod
-
-=head2 draw
-
-Draws the feature.
-
-=cut
-
-    my $self          = shift;
-    my $shape         = $self->shape || '';
-    my $draw_sub_name = SHAPE->{ $shape };
-    $self->$draw_sub_name( @_ );
-}
-
-# ----------------------------------------------------
-sub draw_line {
-
-=pod
-
-=head2 draw_line
-
-Draws the feature as a line.
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $drawer          = $args{'drawer'} or $self->error('No drawer');
-    my @coords          = @{ $args{'coords'} || [] } or 
-                          $self->error('No coords');
-    my $color           = $self->color;
-
-    $drawer->add_drawing( LINE, @coords, $color );
-
-    return 1;
-}
-
-# ----------------------------------------------------
 sub shape {
 
 =pod
@@ -164,10 +124,7 @@ Returns a string describing how to draw the feature.
 
     unless ( $self->{'shape_vetted'} ) {
         my $shape = lc $self->{'shape'} || '';
-        $shape    = 'default' unless defined SHAPE->{ $shape };
-#        $shape    = LINE 
-#            if $self->start_position == $self->stop_position ||
-#            !defined $self->stop_position;
+        $shape    = 'line' unless defined SHAPE->{ $shape };
         $self->{'shape_vetted'} = $shape;
     }
 

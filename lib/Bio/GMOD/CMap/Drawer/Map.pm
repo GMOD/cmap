@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.27 2003-01-30 02:51:08 kycl4rk Exp $
+# $Id: Map.pm,v 1.28 2003-02-07 20:35:36 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.27 $)[-1];
+$VERSION = (qw$Revision: 1.28 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -848,6 +848,7 @@ Lays out the map.
                         left       => [ $coords[0], $mid_feature ],
                         right      => [ $coords[2], $mid_feature ],
                         tick_y     => $mid_feature,
+#                        feature_correspondence_id => $,r
                     };
                 }
 
@@ -1221,10 +1222,16 @@ Lays out the map.
         for my $position_set ( 
             $drawer->feature_correspondence_positions( slot_no => $slot_no ) 
         ) {
-
+            my @positions     = @{ $position_set->{'positions'} || [] } or next;
+    
+            my $evidence_info = $drawer->feature_correspondence_evidence(
+                $position_set->{'feature_id1'},
+                $position_set->{'feature_id2'}
+            );
             $drawer->add_connection(
-                @$position_set,
-                $self->config('connecting_line_color')
+                @positions,
+                $evidence_info->{'line_color'} || 
+                    $self->config('connecting_line_color'),
             );
         }
 

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.33 2003-01-30 02:51:35 kycl4rk Exp $
+# $Id: Data.pm,v 1.34 2003-02-07 20:35:35 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.33 $)[-1];
+$VERSION = (qw$Revision: 1.34 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -101,8 +101,6 @@ Organizes the data for drawing comparative maps.
     my @neg                    = sort { $b <=> $a } grep { $_ <  0 } @slot_nos; 
     my @ordered_slot_nos       = ( @pos, @neg );
 
-#    warn "slots =\n", Dumper( $slots ), "\n";
-
     #
     # "-1" is a reserved value meaning "All."
     #
@@ -115,40 +113,38 @@ Organizes the data for drawing comparative maps.
 
     my ( $data, %correspondences, %correspondence_evidence, %feature_types );
     for my $slot_no ( @ordered_slot_nos ) {
-        my $cur_map     = $slots->{ $slot_no };
-#        my $ref_slot_no = $slot_no > 0 
-#            ? $slots->{ $slot_no - 1 } : $slots->{$slot_no + 1 };
-#        my $ref_map     = $slots->{ $ref_slot_no } || undef;
-
+        my $cur_map = $slots->{ $slot_no };
         my $ref_map = $slot_no == 0 ? undef :
             $slot_no > 0 ? $slots->{ $slot_no - 1 } : $slots->{ $slot_no + 1 };
 
-        #
-        # Don't bother getting slot data if there's nothing in the ref. slot.
-        #
-#        if ( $slot_no != 0 && !%{ $data->{'slots'}{ $ref_slot_no } || {} } ) {
-#            $data->{'slots'}{ $slot_no } = {};
-#            next;
-#        }
-#        else {
-            $data->{'slots'}{ $slot_no } =  $self->map_data( 
-                map                      => \$cur_map,                 # pass
-                correspondences          => \%correspondences,         # by
-                correspondence_evidence  => \%correspondence_evidence, # ref-
-                feature_types            => \%feature_types,           # erence
-                reference_map            => $ref_map,
-                slot_no                  => $slot_no,
-                feature_type_ids         => $feature_type_ids,
-                evidence_type_ids        => $evidence_type_ids,
-            ) || {};
-#        }
+        $data->{'slots'}{ $slot_no } =  $self->map_data( 
+            map                      => \$cur_map,                 # pass
+            correspondences          => \%correspondences,         # by
+            correspondence_evidence  => \%correspondence_evidence, # ref-
+            feature_types            => \%feature_types,           # erence
+            reference_map            => $ref_map,
+            slot_no                  => $slot_no,
+            feature_type_ids         => $feature_type_ids,
+            evidence_type_ids        => $evidence_type_ids,
+        ) || {};
+    }
+
+    #
+    # Allow only one correspondence evidence per.
+    #
+    for my $fc_id ( keys %correspondence_evidence ) {
+        my @evidence = 
+            sort { $a->{'evidence_rank'} <=> $b->{'evidence_rank'} }
+            @{ $correspondence_evidence{ $fc_id } };
+        $correspondence_evidence{ $fc_id } = $evidence[0];
     }
 
     $data->{'correspondences'}         = \%correspondences;
     $data->{'correspondence_evidence'} = \%correspondence_evidence;
     $data->{'feature_types'}           = \%feature_types;
 
-#    warn "data =\n", Dumper( $data ), "\n";
+#    warn "correspondences =\n", Dumper($data->{'correspondences'}), "\n";
+#    warn "corr evidence=\n", Dumper($data->{'correspondence_evidence'}), "\n";
 
     return $data;
 }
@@ -495,9 +491,9 @@ Returns the data for drawing comparative maps.
                 push @{ $correspondence_evidence->{ 
                     $corr->{'feature_correspondence_id'}
                 } }, {
-                    evidence_type_aid => $corr->{'evidence_type_aid'},
-                    evidence_type     => $corr->{'evidence_type'},
-                    rank              => $corr->{'rank'},
+                    evidence_rank => $corr->{'evidence_rank'}, 
+                    line_color    => $corr->{'line_color'},
+                    line_style    => $corr->{'line_style'},
                 };
             }
 
@@ -505,13 +501,6 @@ Returns the data for drawing comparative maps.
                 scalar keys %distinct_correspondences;
         }
 
-        #
-        # If there was a reference map (or set) and we found 
-        # no correspondences, then don't add the map.
-        #
-#        if ( $ref_map_id || $ref_map_set_id ) {
-#            next unless $map_data->{'no_correspondences'};
-#        }
         $maps->{ $map_id } = $map_data;
     }
 

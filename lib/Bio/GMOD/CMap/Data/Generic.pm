@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data::Generic;
 
-# $Id: Generic.pm,v 1.20 2003-01-29 00:23:29 kycl4rk Exp $
+# $Id: Generic.pm,v 1.21 2003-02-07 20:35:36 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.20 $)[-1];
+$VERSION = (qw$Revision: 1.21 $)[-1];
 
 use Data::Dumper; # really just for debugging
 use Bio::GMOD::CMap;
@@ -788,7 +788,8 @@ The SQL for finding all correspondences between two maps.
                  cl.feature_correspondence_id,
                  et.accession_id as evidence_type_aid,
                  et.rank as evidence_rank,
-                 et.evidence_type
+                 et.line_style,
+                 et.line_color
         from     cmap_feature f1, 
                  cmap_feature f2, 
                  cmap_correspondence_lookup cl, 
@@ -845,7 +846,8 @@ The SQL for finding all correspondences between two maps.
                  cl.feature_correspondence_id,
                  et.accession_id as evidence_type_aid,
                  et.rank as evidence_rank,
-                 et.evidence_type
+                 et.line_style,
+                 et.line_color
         from     cmap_map map,
                  cmap_feature f1, 
                  cmap_feature f2, 
@@ -903,7 +905,9 @@ The SQL for finding all correspondences between two maps.
                  cl.feature_correspondence_id,
                  et.accession_id as evidence_type_aid,
                  et.rank as evidence_rank,
-                 et.evidence_type
+                 et.evidence_type,
+                 et.line_style,
+                 et.line_color
         from     cmap_map map,
                  cmap_feature f1, 
                  cmap_feature f2, 
