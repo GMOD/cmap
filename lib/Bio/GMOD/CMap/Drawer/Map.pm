@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.125 2004-09-13 21:04:20 mwz444 Exp $
+# $Id: Map.pm,v 1.126 2004-09-14 17:16:58 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.125 $)[-1];
+$VERSION = (qw$Revision: 1.126 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -95,7 +95,7 @@ Figure out where right-to-left this map belongs.
     my $buffer  = 15;
 
     my $base_x;
-    if ( $slot_no < 0 || ( $slot_no == 0 && $drawer->label_side eq LEFT ) ) {
+    if ( $slot_no < 0  || ( $slot_no == 0 && $drawer->label_side eq LEFT ) ) {
         $base_x = $drawer->min_x - $buffer;
     }
     else {
@@ -599,9 +599,9 @@ sub draw_truncation_arrows {
                                                                                                                              
 =pod
                                                                                                                              
-=head2 draw_map_title
+=head2 draw_truncation_arrows
                                                                                                                              
-Draws the map title.
+Draws the truncation arrows
                                                                                                                              
 =cut
                                                                                                                              
@@ -729,13 +729,15 @@ Draws the map title.
     my $min_y   = $args{'min_y'} || 0;
     my $left_x  = $args{'left_x'} || 0;
     my $right_x = $args{'right_x'} || 0;
+    my $bound_side = $args{'bound_side'} || 0;
     my $lines   = $args{'lines'} || [];
     my $buttons = $args{'buttons'} || [];
     my $font    = $args{'font'};
     my $buffer  = 4;
+    my $bottom_buf = 5;
     my $mid_x   = $left_x + ( ( $right_x - $left_x ) / 2 );
     my $top_y   =
-      $min_y - ( scalar @$lines + 1 ) * ( $font->height + $buffer ) - 4;
+      $min_y - (2*$bottom_buf) - ( scalar @$lines + 1 ) * ( $font->height + $buffer ) - 4;
     my $leftmost  = $mid_x;
     my $rightmost = $mid_x;
 
@@ -795,14 +797,38 @@ Draws the map title.
 
     push @drawing_data, [ LINE, $sep_x, $sep_y, $label_x - 6, $sep_y, 'grey' ];
 
+    $leftmost  -= $buffer;
+    $rightmost += $buffer;
+    my $offset=0;
+    if ($bound_side eq RIGHT){
+        if ($right_x<$rightmost){
+           $offset=$right_x-$rightmost; 
+        }
+    }
+    elsif ($bound_side eq LEFT){
+        if ($leftmost<$left_x){
+           $offset=$left_x-$leftmost;
+        }
+    }
+    if ($offset){
+        $self->offset_drawing_data(
+            drawing_data  => \@drawing_data,
+            offset        => $offset,
+            );
+        for (my $i=0;$i<=$#map_area_data;$i++){
+            $map_area_data[$i]{'coords'}[0]+=$offset;
+            $map_area_data[$i]{'coords'}[2]+=$offset;
+        }
+    }
+
     #
     # Enclose the whole area in black-edged white box.
     #
     my @bounds = (
-        $leftmost - $buffer,
+        $leftmost + $offset,
         $top_y - $buffer,
-        $rightmost + $buffer,
-        $min_y + $buffer,
+        $rightmost + $offset,
+        $min_y - $bottom_buf,
     );
 
     push @drawing_data, [
@@ -949,10 +975,7 @@ Variable Info:
         }
     }
     my $half_title_length = ( $font_width * $longest ) / 2 + 10;
-    my $original_base_x   =
-        $label_side eq RIGHT
-      ? $self->base_x + $half_title_length
-      : $self->base_x - $half_title_length;
+    my $slot_buffer = 10;
 
     #
     # These are for drawing the map titles last if this is a relational map.
@@ -1000,10 +1023,10 @@ Variable Info:
     my $show_map_title = $is_compressed ? 0 : 1;
     my $show_map_units = $is_compressed ? 0 : 1;
 
-    my $base_x =
-        $slot_no == 0 ? $self->base_x
-      : $slot_no > 0  ? $self->base_x + $half_title_length + 10
-      : $self->base_x - $half_title_length - 20;
+    my $base_x = $self->base_x;
+    #    $slot_no == 0 ? $self->base_x
+    #  : $slot_no > 0  ? $self->base_x + $half_title_length + 10
+    #  : $self->base_x - $half_title_length - 20;
 
     my @map_columns = ();
     # Variable info:
@@ -1577,7 +1600,7 @@ Variable Info:
             my ( $bounds, $drawing_data, $map_data ) = $self->draw_map_title(
                 left_x  => $min_x,
                 right_x => $max_x,
-                min_y   => $min_y - $font_height - 8,
+                min_y   => $min_y, 
                 lines   => \@lines,
                 buttons => \@map_buttons,
                 font    => $reg_font,
@@ -1605,7 +1628,6 @@ Variable Info:
                 or $map_placement_data{$map_id}{'bounds'}[3]>$slot_max_y);
     }
 
-###NEW STUFF######
     # place each map in a lane and find the width of each lane
     my %map_lane;
     my @lane_width;
@@ -1633,23 +1655,25 @@ Variable Info:
             if ($lane_width[$map_lane{$map_id}]<$map_placement_data{$map_id}{'bounds'}[2]
                     -$map_placement_data{$map_id}{'bounds'}[0]);
     }
+
     my @lane_base_x;
-    $lane_base_x[0]=$base_x;
-    if ($slot_no >= 0){
-        # maps are placed from left to right
-        for my $i (1..$#map_columns){
-            $lane_base_x[$i]=$lane_base_x[$i-1]+$lane_width[$i-1]+$lane_buffer;
-        }
-        $slot_min_x = $lane_base_x[0];
-        $slot_max_x = $lane_base_x[-1]+$lane_width[-1]+$lane_buffer;
-    }
-    else{
+    if ( $slot_no < 0 || ( $slot_no == 0 && $drawer->label_side eq LEFT ) ) {
+        $lane_base_x[0]=$base_x-$lane_width[0]-$slot_buffer;
         # maps are placed from right to left
         for my $i (1..$#map_columns){
             $lane_base_x[$i]=$lane_base_x[$i-1]-$lane_width[$i]-$lane_buffer;
         }
-        $slot_max_x = $lane_base_x[0]+$lane_width[0];
-        $slot_min_x = $lane_base_x[-1];
+        $slot_max_x = $base_x;
+        $slot_min_x = $lane_base_x[-1]-$slot_buffer;
+    }
+    else{
+        $lane_base_x[0]=$base_x+$slot_buffer;
+        # maps are placed from left to right
+        for my $i (1..$#map_columns){
+            $lane_base_x[$i]=$lane_base_x[$i-1]+$lane_width[$i-1]+$lane_buffer;
+        }
+        $slot_min_x = $base_x;
+        $slot_max_x = $lane_base_x[-1]+$lane_width[-1]+$slot_buffer;
     }
 
     # Offset all of the coords accordingly
@@ -1740,37 +1764,32 @@ Variable Info:
             $drawer->add_drawing(@drawing_data);
         }
     }
-###END NEW STUFF#########
 
     #
     # Draw the map titles last for compressed maps,
     # centered over all the maps.
     #
     if ($is_compressed) {
-        my $base_x =
-            $label_side eq RIGHT
-          ? $self->base_x + $half_title_length + 10
-          : $self->base_x - $half_title_length - 20;
-        $slot_min_x = $base_x unless defined $slot_min_x;
-        $slot_max_x = $base_x unless defined $slot_max_x;
-
         unless (@map_titles) {
             push @map_titles, map { $self->$_( $map_ids[0] ) }
               grep { !/map_name/ } @config_map_titles;
         }
 
+        my $bound_side= ( $slot_no < 0 || ( $slot_no == 0 && $drawer->label_side eq LEFT ) )
+            ? RIGHT : LEFT ;
         my ( $bounds, $drawing_data, $map_data ) = $self->draw_map_title(
             left_x  => $slot_min_x,
             right_x => $slot_max_x,
-            min_y   => $slot_min_y - 10 - ( $font_height + 8 ),
+            bound_side => $bound_side,
+            min_y   => $slot_min_y ,
             lines   => \@map_titles,
             buttons => \@map_buttons,
             font    => $reg_font,
         );
 
-        $slot_min_x = $bounds->[0] if $bounds->[0] < $slot_min_x;
-        $top_y      = $bounds->[1] if $bounds->[1] < $top_y;
-        $slot_max_x = $bounds->[2] if $bounds->[2] > $slot_max_x;
+        $slot_min_x = $bounds->[0]-$slot_buffer if $bounds->[0]-$slot_buffer < $slot_min_x;
+        $slot_min_y = $bounds->[1] if $bounds->[1] < $slot_min_y;
+        $slot_max_x = $bounds->[2]+$slot_buffer if $bounds->[2]+$slot_buffer > $slot_max_x;
 
         $drawer->add_drawing(@$drawing_data);
         $drawer->add_map_area(@$map_data);
@@ -1784,12 +1803,11 @@ Variable Info:
     #
     # Background color
     #
-    my $buffer = 10;
     return [
-        $slot_min_x - $buffer,
-        $slot_min_y - $buffer,
-        $slot_max_x + $buffer,
-        $slot_max_y + $buffer,
+        $slot_min_x,
+        $slot_min_y - $slot_buffer,
+        $slot_max_x,
+        $slot_max_y,
     ];
 }
 

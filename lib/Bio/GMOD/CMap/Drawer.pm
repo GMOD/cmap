@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.77 2004-09-13 20:55:05 mwz444 Exp $
+# $Id: Drawer.pm,v 1.78 2004-09-14 17:16:58 mwz444 Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.77 $)[-1];
+$VERSION = (qw$Revision: 1.78 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -575,6 +575,10 @@ Lays out the image and writes it to the file system, set the "image_name."
             left    => $bounds->[0], 
             right   => $bounds->[2],
         );
+        $self->min_x( ($min_x,) ); 
+        $self->max_x( ($max_x,) );
+        $self->min_y( ($min_y,) ); 
+        $self->max_y( ($max_y,) );
 
         #
         # Draw feature correspondences to reference map.
