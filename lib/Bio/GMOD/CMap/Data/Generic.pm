@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data::Generic;
 
-# $Id: Generic.pm,v 1.21 2003-02-07 20:35:36 kycl4rk Exp $
+# $Id: Generic.pm,v 1.22 2003-02-11 00:25:44 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.21 $)[-1];
+$VERSION = (qw$Revision: 1.22 $)[-1];
 
 use Data::Dumper; # really just for debugging
 use Bio::GMOD::CMap;
@@ -74,7 +74,7 @@ The SQL for finding all the features on a map.
     my $order_by         = $args{'order_by'}            || '';
     my $restrict_by      = $args{'restrict_by'}         || '';
     my @feature_type_ids = @{ $args{'feature_type_ids'} || [] };
-    my $sql               = qq[
+    my $sql              = qq[
         select   f.feature_id,
                  f.accession_id,
                  f.feature_name,
@@ -714,9 +714,6 @@ map.
     my ( $self, %args )   = @_;
     my @evidence_type_ids = @{ $args{'evidence_type_ids'} || [] };
 
-    #
-    # "-1" is a reserved value meaning "All" evidence types.
-    #
     if ( @evidence_type_ids ) {
         return q[
             select   distinct map.map_id
@@ -725,8 +722,7 @@ map.
                      cmap_feature f2, 
                      cmap_correspondence_lookup cl,
                      cmap_feature_correspondence fc,
-                     cmap_correspondence_evidence ce,
-                     cmap_evidence_type et
+                     cmap_correspondence_evidence ce
             where    f1.map_id=?
             and      f1.start_position>=?
             and      f1.start_position<=?
@@ -734,8 +730,7 @@ map.
             and      cl.feature_correspondence_id=fc.feature_correspondence_id
             and      fc.is_enabled=1
             and      fc.feature_correspondence_id=ce.feature_correspondence_id
-            and      ce.evidence_type_id=et.evidence_type_id
-            and      et.accession_id in (].
+            and      ce.evidence_type_id in (].
             join( ',', @evidence_type_ids ).q[)
             and      cl.feature_id2=f2.feature_id
             and      f2.map_id=map.map_id
@@ -787,6 +782,7 @@ The SQL for finding all correspondences between two maps.
                  f2.feature_id as feature_id2,
                  cl.feature_correspondence_id,
                  et.accession_id as evidence_type_aid,
+                 et.evidence_type,
                  et.rank as evidence_rank,
                  et.line_style,
                  et.line_color
@@ -817,7 +813,7 @@ The SQL for finding all correspondences between two maps.
     }
 
     if ( @$evidence_type_ids ) {
-        $sql .= 'and et.evidence_type_id in ('.
+        $sql .= 'and ce.evidence_type_id in ('.
             join( ',', @$evidence_type_ids ).
         ')';
     }
@@ -869,7 +865,7 @@ The SQL for finding all correspondences between two maps.
     ];
 
     if ( @$evidence_type_ids ) {
-        $sql .= 'and et.evidence_type_id in ('.
+        $sql .= 'and ce.evidence_type_id in ('.
             join( ',', @$evidence_type_ids ).
         ')';
     }
@@ -935,7 +931,7 @@ The SQL for finding all correspondences between two maps.
     }
 
     if ( @$feature_type_ids ) {
-        $sql .= 'and f1.accession_id in ('.
+        $sql .= 'and f1.feature_type_id in ('.
             join( ',', @$feature_type_ids ).
         ')';
     }
