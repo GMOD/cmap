@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.160 2004-10-12 22:20:01 mwz444 Exp $
+# $Id: Data.pm,v 1.161 2004-10-12 22:45:57 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.160 $)[-1];
+$VERSION = (qw$Revision: 1.161 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -152,7 +152,7 @@ sub correspondence_detail_data {
         my $sth = $db->prepare($sql);
         $sth->execute($correspondence_aid);
 
-        my $corr = $sth->fetchrow_hashref
+        $corr = $sth->fetchrow_hashref
           or return $self->error(
             "No record for correspondence accession ID '$correspondence_aid'" );
 
