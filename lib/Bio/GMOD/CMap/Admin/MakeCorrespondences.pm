@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
-# $Id: MakeCorrespondences.pm,v 1.8 2002-10-09 01:07:31 kycl4rk Exp $
+# $Id: MakeCorrespondences.pm,v 1.9 2002-10-09 23:11:55 kycl4rk Exp $
 
 =head1 NAME
 
@@ -30,7 +30,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -46,6 +46,8 @@ sub make_name_correspondences {
     $LOG_FH              = $args{'log_fh'}     || \*STDOUT;
     my $db               = $self->db;
     my $admin            = Bio::GMOD::CMap::Admin->new;
+
+    $self->Print("Making name-based correspondences.\n");
 
     #
     # Get all the map sets.

@@ -1,5 +1,87 @@
-Revision history for Perl extension CSHL::CMap.
+                   Revision history for Bio::GMOD::CMap
 
-0.01  Mon Jul 01 09:58:40 2002
-	- original version; created by ExtUtils::ModuleMaker 0.204
+0.04
 
+-   Fixed a bug where a feature's relative start/stop positions could
+    return a value less than 0 or greater than 1, which could allow
+    features to be drawn outside the bounds of a map
+-   Fixed some bugs in admin templates where they weren't including
+    the footer
+-   Got rid of useless "help_footer" template
+-   Added ability to tee the output of cmap_admin.pl actions to a log
+    file in user's home directory
+-   Fixed various import and correspondence routines to print so as to
+    take advantage of log tee
+-   Added IO::Tee dependency to Makefile and default perlstartup.pl
+-   Moved "insert_correspondence" from Utils.pm into Admin.pm, added
+    some logic to keep it from creating correspondences between
+    relational maps
+-   In jumbling around code, I had messed up some code that allowed
+    automatic zooming of comparative maps when going to the
+    "map_details" page
+-   Made cmap_cache dir permissions '0700' on creation
+-   Playing around with some ideas about automatic auditing of
+    database changes.  Nothing implemented yet, but I'm considering a
+    Bio::GMOD::CMap::DB class to inherit from DBI and override the "do"
+    method.
+-   Really cleaned up admin code for removing objects from the
+    database, very important as I can't rely on referential integrity
+    to do cascade deletes, dependency checking, etc.
+-   Cleaned up code to handle catastrophic errors better (misplaced
+    conf file, bad db connection info, bad template dir, etc.).
+-   Improved POD in cmap_admin.pl
+
+TODO
+
+-   Need to fix bug in matrix where you see zeros when you zoom in on map
+-   When relational maps have feature shapse that aren't directly on
+    the map (like dumbells, I-beams, etc.), they collide with the map
+    title which is written vertically beside the map.  Either I need to 
+    move the title to a horizontal position above the map (which will
+    make it like all the other maps) or I need to delay writing the title
+    until after drawing all the features.
+
+0.03
+
+Moved all the code to the namespace Bio::GMOD::CMap as the tool
+became a part of the Generic Model Organism Database project
+(http://www.gmod.org/).  
+
+-   Added importing of correspondences (before there was only
+    name-based)
+-   Made install use ExtUtils::MakeMaker for "real" installation
+-   Fixed bug in distribution of feature labels
+-   Added frames around map "slots"
+-   Added zooming on comparative maps in "map_details" and flanking
+    markers
+-   Added database cross-references to features
+-   Fixed collisions of map titles
+-   Added more to INSTALL file, moved some parts to DATA_IMPORT
+-   Added sample data from Gramene project, maybe I'll have some other
+    datasets in the future?  I'd also like to add a dump from MySQL.
+-   Added "I-beam" shape for drawing maps
+-   Changed database as such:
+    *   Allow a feature to have specific db cross-references:
+        alter table cmap_feature add dbxref_name varchar(32);
+        alter table cmap_feature add dbxref_url varchar(200);
+    *   Change the name of the "how_to_draw" column (awkward)
+        alter table cmap_map_type change column how_to_draw 
+            shape varchar(12);
+        alter table cmap_feature_type change column how_to_draw 
+            shape varchar(12);
+        alter table cmap_map_set change column how_to_draw 
+            shape varchar(12);
+-   Fixed problem with spacing of maps and long titles
+-   Removed old CSHL::* namespace
+
+0.02
+
+Pretty much a complete rewrite of version 0.01.  Moved to the
+namespace CSHL::CMap.  Much improved, but still pretty rough, esp. on
+the installation and customization.
+
+0.01  
+
+The original version was called CSHL::ComparativeMaps as I developed
+it for Cold Spring Harbor's Gramene project (http://www.gramene.org/).
+It was pretty rough.  Be glad you aren't using it.

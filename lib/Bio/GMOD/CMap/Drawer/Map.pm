@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.15 2002-10-09 01:07:31 kycl4rk Exp $
+# $Id: Map.pm,v 1.16 2002-10-09 23:11:55 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.15 $)[-1];
+$VERSION = (qw$Revision: 1.16 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -524,10 +524,10 @@ Lays out the map.
         $bottom_y = $bounds[3] unless defined $bottom_y;
         $bottom_y = $bounds[3] if $bounds[3] > $bottom_y;
 
+        #
+        # Tick marks.
+        #
         if ( $show_ticks ) {
-            #
-            # Tick marks.
-            #
             my $interval      = $self->tick_mark_interval( $map_id ) || 1;
             my $map_length    = $self->map_length( $map_id );
             my $no_intervals  = int( $map_length / $interval );

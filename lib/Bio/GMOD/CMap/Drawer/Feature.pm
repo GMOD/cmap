@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Feature;
 
-# $Id: Feature.pm,v 1.5 2002-10-03 05:37:33 kycl4rk Exp $
+# $Id: Feature.pm,v 1.6 2002-10-09 23:11:55 kycl4rk Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -188,9 +188,11 @@ length of the map.
         my $map_start  = $map->start_position( $map_id );
         my $map_stop   = $map->stop_position( $map_id );
         my $map_length = ( $map_stop - $map_start ) || 1;
-        $self->{'relative_start_position'} = sprintf(
+        my $rel_pos    = sprintf(
             "%.2f", ( $self->start_position - $map_start ) / $map_length
         );
+        $self->{'relative_start_position'} = 
+            $rel_pos > 1 ? 1 : $rel_pos < 0 ? 0 : $rel_pos;
     }
 
     return $self->{'relative_start_position'};
@@ -215,9 +217,11 @@ length of the map.
         my $map_start  = $map->start_position( $map_id );
         my $map_stop   = $map->stop_position( $map_id );
         my $map_length = ( $map_stop - $map_start ) || 1;
-        $self->{'relative_stop_position'} = sprintf(
+        my $rel_pos    = sprintf(
             "%.2f", ( $self->stop_position - $map_start ) / $map_length
         );
+        $self->{'relative_stop_position'} = 
+            $rel_pos > 1 ? 1 : $rel_pos < 0 ? 0 : $rel_pos;
     }
 
     return $self->{'relative_stop_position'};
