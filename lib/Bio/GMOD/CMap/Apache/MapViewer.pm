@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.68 2004-09-23 16:07:44 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.69 2004-09-29 20:16:35 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.68 $)[-1];
+$VERSION = (qw$Revision: 1.69 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -370,6 +370,12 @@ sub handler {
         %slots = %{ $drawer->{'slots'} };
         $extra_code=$drawer->{'data'}->{'extra_code'};
         $extra_form=$drawer->{'data'}->{'extra_form'};
+
+        @feature_types              = @{$drawer->include_feature_types};
+        @corr_only_feature_types    = @{$drawer->corr_only_feature_types}; 
+        @ignored_feature_types      = @{$drawer->ignored_feature_types}; 
+        %include_corr_only_features = map{$_=>1} @corr_only_feature_types;
+        %ignored_feature_types      = map{$_=>1} @ignored_feature_types;
     }
 
     

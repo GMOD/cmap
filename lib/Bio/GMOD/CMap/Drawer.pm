@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.78 2004-09-14 17:16:58 mwz444 Exp $
+# $Id: Drawer.pm,v 1.79 2004-09-29 20:16:33 mwz444 Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.78 $)[-1];
+$VERSION = (qw$Revision: 1.79 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -39,7 +39,7 @@ use base 'Bio::GMOD::CMap';
 my @INIT_PARAMS = qw[
     apr flip slots highlight font_size image_size image_type 
     label_features include_feature_types corr_only_feature_types
-    include_evidence_types ignore_feature_types
+    include_evidence_types ignored_feature_types
     config data_source min_correspondences collapse_features cache_dir
     map_view data_module aggregate magnify_all scale_maps
 ];
@@ -482,11 +482,11 @@ Gets/sets which feature type (accession IDs) to corr_only.
 }
 
 # ----------------------------------------------------
-sub ignore_feature_types {
+sub ignored_feature_types {
                                                                                 
 =pod
                                                                                 
-=head2 ignore_feature_types
+=head2 ignored_feature_types
                                                                                 
 Gets/sets which feature type (accession IDs) to ignore.
                                                                                 
@@ -495,10 +495,10 @@ Gets/sets which feature type (accession IDs) to ignore.
     my $self = shift;
                                                                                 
     if ( my $arg = shift ) {
-        push @{ $self->{'ignore_feature_types'} }, @$arg;
+        push @{ $self->{'ignored_feature_types'} }, @$arg;
     }
                                                                                 
-    return $self->{'ignore_feature_types'};
+    return $self->{'ignored_feature_types'};
 }
 
 # ----------------------------------------------------
@@ -875,7 +875,7 @@ necessary data for drawing.
             min_correspondences    => $self->min_correspondences,
             include_feature_type_aids  => $self->include_feature_types,
             corr_only_feature_type_aids  => $self->corr_only_feature_types,
-            ignore_feature_type_aids  => $self->ignore_feature_types,
+            ignore_feature_type_aids  => $self->ignored_feature_types,
             include_evidence_types => $self->include_evidence_types,
         ) or return $self->error( $data->error );
 

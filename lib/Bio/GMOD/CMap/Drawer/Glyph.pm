@@ -24,7 +24,7 @@ use Bio::GMOD::CMap::Constants;
 use Regexp::Common;
 require Class::Base;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.9 $)[-1];
+$VERSION = (qw$Revision: 1.10 $)[-1];
 
 use base 'Class::Base';
 
@@ -381,6 +381,52 @@ sub filled_box {
       [
         RECTANGLE, $x_pos2, $y_pos1, $x_pos2 + $width,
         $y_pos2,   'black',
+      ];
+    @coords = (
+        $x_pos2 - $width / 2, $y_pos1,
+        $x_pos2 + $width / 2, $y_pos2
+    );
+
+    return \@coords;
+}
+
+# ------------------------------------
+sub banding {
+
+=pod
+                                                                                
+=head2
+                                                                                
+                                                                                
+                                                                                
+=cut
+
+    my ( $self, %args ) = @_;
+    my $drawing_data = $args{'drawing_data'};
+    my $x_pos2       = $args{'x_pos2'};
+    my $x_pos1       = $args{'x_pos1'};
+    my $y_pos1       = $args{'y_pos1'};
+    my $y_pos2       = $args{'y_pos2'};
+    my $color1       = $args{'color'};
+	my $name         = $args{'name'};
+	my $calling_obj  = $args{'calling_obj'};
+    my $label_side   = $args{'label_side'} || RIGHT;
+    my @coords;
+    my $color2='black';
+    my $color = $calling_obj->{'oscillating_color'} || $color1; 
+    if ($calling_obj->{'oscillating_color'} eq $color2){
+        $calling_obj->{'oscillating_color'} = $color1;
+    }
+    else{
+        $calling_obj->{'oscillating_color'} = $color2;
+    }
+    push @$drawing_data,
+      [ LINE, $x_pos2, $y_pos1, $x_pos2, $y_pos2, $color, ];
+    my $width = 3;
+    push @$drawing_data,
+      [
+        FILLED_RECT,            $x_pos2, $y_pos1,
+        $x_pos2 + $width, $y_pos2,       $color,
       ];
     @coords = (
         $x_pos2 - $width / 2, $y_pos1,

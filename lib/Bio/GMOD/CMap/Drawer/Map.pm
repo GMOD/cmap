@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.129 2004-09-20 18:32:14 mwz444 Exp $
+# $Id: Map.pm,v 1.130 2004-09-29 20:16:36 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.129 $)[-1];
+$VERSION = (qw$Revision: 1.130 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -2550,6 +2550,7 @@ sub add_feature_to_map {
                     direction    => $feature->{'direction'},
                     name         => $feature->{'feature_name'},
                     label_side   => $label_side,
+                    calling_obj  => $self,
                 )};
             }
             else{
