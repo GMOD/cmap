@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data::Generic;
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.43 2003-12-16 03:27:31 kycl4rk Exp $
+# $Id: Generic.pm,v 1.44 2004-01-13 23:02:41 kycl4rk Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.43 $)[-1];
+$VERSION = (qw$Revision: 1.44 $)[-1];
 
 use Data::Dumper; # really just for debugging
 use Bio::GMOD::CMap;
@@ -76,9 +76,6 @@ The SQL for finding all the features on a map.
     my $restrict_by      = $args{'restrict_by'}         || '';
     my @feature_type_ids = @{ $args{'feature_type_ids'} || [] };
 
-    #
-    # Removed "alternate_name"
-    #
     my $sql              = qq[
         select   f.feature_id,
                  f.accession_id,
@@ -200,9 +197,6 @@ The SQL for finding correspondences for a feature.
     my $self = shift;
     my %args = @_;
 
-    #
-    # Removed "alternate_name"
-    #
     my $sql  = q[
         select   f.feature_name,
                  f.feature_id,
@@ -268,30 +262,6 @@ The SQL for finding correspondences for a feature.
     ];
 
     return $sql;
-}
-
-# ----------------------------------------------------
-sub feature_name_to_position_sql {
-
-=pod
-
-=head2 feature_name_to_position_sql
-
-The SQL for finding the position of a given feature name.
-
-=cut
-
-    my $self = shift;
-    return q[
-        select f.start_position
-        from   cmap_feature f
-        where  (
-            upper(f.feature_name)=?
-            or
-            upper(f.alternate_name)=?
-        )
-        and    f.map_id=?
-    ];
 }
 
 # ----------------------------------------------------
