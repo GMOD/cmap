@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Utils;
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.25 2004-02-10 23:06:44 kycl4rk Exp $
+# $Id: Utils.pm,v 1.25.2.1 2004-05-07 21:52:07 kycl4rk Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.25 $)[-1];
+$VERSION = (qw$Revision: 1.25.2.1 $)[-1];
 
 use base 'Exporter';
 
@@ -34,6 +34,7 @@ my @subs   = qw[
     column_distribution 
     commify 
     extract_numbers 
+    even_label_distribution 
     label_distribution 
     next_number 
     parse_words
@@ -247,6 +248,102 @@ Turns "12345" into "12,345"
     my $number = shift;
     1 while $number =~ s/^(-?\d+)(\d{3})/$1,$2/;
     return $number;
+}
+
+# ----------------------------------------------------
+sub even_label_distribution {
+
+=pod
+
+=head2 even_label_distribution
+
+Simply space (a sample of) the labels evenly in the given vertical space.
+
+Given:
+
+  labels: a hashref of arrayrefs, the keys of the hashref being one of
+    "highlights" - highlighted features, all will be taken
+    "correspondences" - features with correspondences
+    "normal" - all other features
+
+  map_height: the pixel height of the map (the bounds in which 
+    labels can be drawn
+
+  buffer: the space between labels (optional, default = "2")
+
+  start_y: the starting Y value from which to start assigning labels Y values
+
+  font_height: how many pixels tall the label font is
+
+Basically, we just divide the total vertical pixel space available 
+(map_height) by the number of labels we want to place and decide how many 
+will fit.  For each of the keys of the "labels" hashref, we try to add
+as many labels as will fit.  As space becomes limited, we start taking an
+even sampling of the available labels.  Once we've selected all the labels
+that will fit, we sort them (if needed) by "start_position," figure out the
+gaps to put b/w the labels, and then space them evenly from top to bottom
+using the gap interval.
+
+Special thanks to Noel Yap for suggesting this strategy.
+
+=cut
+
+    my %args        = @_;
+    my $labels      = $args{'labels'};
+    my $map_height  = $args{'map_height'}   || 0;
+    my $buffer      = $args{'buffer'}       || 2;
+    my $start_y     = $args{'start_y'}      || 0;
+    my $font_height = $args{'font_height'}  || 0;
+       $font_height += $buffer;
+    my @accepted    = @{ $labels->{'highlights'} || [] }; # take all highlights
+    my $no_added    = @accepted ? 1 : 0;
+
+    for my $priority ( qw/ correspondences normal / ) {
+        #
+        # See if there's enough room available for all the labels; 
+        # if not, just take an even sampling.
+        #
+        my $no_accepted = scalar @accepted;
+        my $no_present  = scalar @{ $labels->{ $priority } || [] } or next;
+        my $available   = $map_height - ( $no_accepted * $font_height );
+        last if $available < $font_height;
+
+        my $no_possible = int( $available / $font_height );
+        my $skip_val    = $no_possible < $no_present 
+            ? int( $no_present / $no_possible ) : 1
+        ;
+
+        for ( my $i = 0; $i < $no_present; $i += $skip_val ) {
+            push @accepted, $labels->{ $priority }[ $i ];
+        }
+        $no_added++;
+    }
+
+    #
+    # Resort, if necessary.
+    #
+    if ( $no_added > 1 ) { 
+        @accepted = 
+            map  { $_->[0] }
+            sort { $a->[1] <=> $b->[1] }
+            map  { [ $_, $_->{'start_position'} ] }
+            @accepted;
+    }
+
+    my $no_accepted = scalar @accepted;
+    if ( $no_accepted == 1 ) {
+        my $label = $accepted[0];
+        $label->{'y'} = $label->{'feature_mid_y'} - $font_height / 2;
+    }
+    elsif ( $no_accepted > 1 ) {
+        my $gap = $map_height / ( $no_accepted - 1 );
+        my $i   = 0;
+        for my $label ( @accepted ) {
+            $label->{'y'} = sprintf("%.2f", $start_y + ( $gap * $i++ ) );
+        }
+    }
+
+    return \@accepted;
 }
 
 # ----------------------------------------------------
