@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.40 2003-03-27 22:13:46 kycl4rk Exp $
+# $Id: Data.pm,v 1.41 2003-03-27 23:04:43 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.40 $)[-1];
+$VERSION = (qw$Revision: 1.41 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -660,21 +660,8 @@ Returns the data for the correspondence matrix.
             and      s.accession_id='$species_aid'
         ];
         $map_sql .= "and ms.accession_id='$map_set_aid' " if $map_set_aid;
-        $map_sql .= 'order by map_name';
+        $map_sql .= 'order by map.display_order, map.map_name';
         $maps     = $db->selectall_arrayref( $map_sql, { Columns=>{} } );
-
-        #
-        # Sort maps that start with a number numerically.
-        #
-        my $all_numbers = grep { $_->{'map_name'} =~ m/^[0-9]/ } @$maps;
-        if ( $all_numbers == scalar @$maps ) {
-            @$maps = 
-                map  { $_->[0] }
-                sort { $a->[1] <=> $b->[1] }
-                map  { [$_, extract_numbers( $_->{'map_name'} )] }
-                @$maps
-            ;
-        }
     }
 
     #
@@ -704,22 +691,11 @@ Returns the data for the correspondence matrix.
 
         $map_set_sql .= "and map.map_name='$map_name' " if $map_name;
 
-        $map_set_sql .= 'order by map.map_name';
+        $map_set_sql .= 'order by map.display_order, map.map_name';
 
         @reference_map_sets = @{ 
             $db->selectall_arrayref( $map_set_sql, { Columns => {} } )
         };
-
-        my $all_numbers = grep { $_->{'map_name'} =~ m/^[0-9]/ } 
-            @reference_map_sets;
-        if ( $all_numbers == scalar @reference_map_sets ) {
-            @reference_map_sets = 
-                map  { $_->[0] }
-                sort { $a->[1] <=> $b->[1] }
-                map  { [ $_, extract_numbers( $_->{'map_name'} ) ] }
-                @reference_map_sets
-            ;
-        }
     }
     else {
         my $map_set_sql;
@@ -984,7 +960,7 @@ Returns the data for the correspondence matrix.
             and      ms.accession_id='$link_map_set_aid'
             and      ms.map_type_id=mt.map_type_id
             and      ms.species_id=s.species_id
-            order by map_name
+            order by map.display_order, map.map_name
         ];
     }
     else {
@@ -1023,23 +999,9 @@ Returns the data for the correspondence matrix.
         ];
     }
 
-#    warn "link sql =\n$link_map_set_sql\n";
     my @all_map_sets = @{ 
         $db->selectall_arrayref( $link_map_set_sql, { Columns => {} } )
     };
-
-    my $all_numbers = grep { $_->{'map_name'} =~ m/^[0-9]/ } 
-        @all_map_sets;
-    if ( $all_numbers == scalar @all_map_sets ) {
-        @all_map_sets = 
-            map  { $_->[0] }
-            sort { $a->[1] <=> $b->[1] }
-            map  { [$_, extract_numbers( $_->{'map_name'} )] }
-            @all_map_sets
-        ;
-    }
-
-#    warn "all map sets =\n", Dumper( \@all_map_sets ), "\n";
 
     #
     # Figure out the number by type and species.
@@ -1194,16 +1156,6 @@ Returns the data for the main comparative map HTML form.
         $self->error(
             qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
         ) unless @$ref_maps;
-
-        if ( grep { $_->{'map_name'} =~ m/^[0-9]/ } @$ref_maps ) {
-            @$ref_maps = 
-                map  { $_->[0] }
-                sort { $a->[1] <=> $b->[1] }
-                map  { [ $_, extract_numbers( $_->{'map_name'} ) ] }
-                @$ref_maps
-            ;
-        }
-
     }
 
     #
@@ -2072,22 +2024,11 @@ Returns the data for drawing comparative maps.
                              map.map_name
                     from     cmap_map map
                     where    map.map_set_id=?
-                    order by map_name
+                    order by display_order,map_name
                 ],
                 { Columns => {} }, ( $map_set->{'map_set_id'} )
             )
         } or next;
-
-        my $all_numbers = grep { $_->{'map_name'} =~ m/^[0-9]/ } @maps;
-
-        if ( $all_numbers == scalar @maps ) {
-            @maps = 
-                map  { $_->[0] }
-                sort { $a->[1] <=> $b->[1] }
-                map  { [ $_, extract_numbers( $_->{'map_name'} ) ] }
-                @maps
-            ;
-        }
 
         $map_set->{'maps'} = \@maps;
     }
