@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.35 2003-04-23 16:07:14 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.36 2003-05-22 16:51:43 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.35 $)[-1];
+$VERSION = (qw$Revision: 1.36 $)[-1];
 
 #
 # Get command-line options
@@ -591,7 +591,7 @@ sub delete_map_set {
     #
     my ( $map_set_id, $species_name, $map_set_name ) = $self->show_menu(
         title       => 'Choose Map Set',
-        prompt      => "Please select a map set (for $common_name)",
+        prompt      => "Please select a map set (for $map_type, $common_name)",
         display     => 'map_set_name',
         return      => 'map_set_id,species_name,map_set_name',
         allow_null  => 0,
@@ -602,10 +602,11 @@ sub delete_map_set {
                          ms.short_name as map_set_name
                 from     cmap_map_set ms
                 where    ms.species_id=?
+                and      ms.map_type_id=?
                 order by map_set_name
             ],
             { Columns => {} },
-            ( $species_id )
+            ( $species_id, $map_type_id )
         ),
     );
 
