@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.172 2004-11-11 17:30:02 mwz444 Exp $
+# $Id: Data.pm,v 1.173 2004-11-17 20:01:55 kycl4rk Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.172 $)[-1];
+$VERSION = (qw$Revision: 1.173 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -2053,8 +2053,6 @@ Returns the data for the main comparative map HTML form.
 =cut
 
 sub cmap_form_data {
-
-    #p#rint S#TDERR "cmap_form_data\n";
     my ( $self, %args ) = @_;
     my $slots = $args{'slots'} or return;
     my $min_correspondences         = $args{'min_correspondences'}     || 0;
@@ -2106,9 +2104,8 @@ sub cmap_form_data {
     }
 
     #
-    # Select all the map set that can be reference maps.
+    # Select all the species of map sets that can be reference maps.
     #
-
     $sql_str = q[
             select   distinct s.accession_id as species_aid,
                      s.display_order,
@@ -4352,7 +4349,7 @@ sub cmap_entry_data {
     }
 
     #
-    # Select all the map set that can be reference maps.
+    # Select all the map sets that can be reference maps.
     #
     my $ref_map_sets = [];
     if ($ref_species_aid) {
