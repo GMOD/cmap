@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
-# $Id: MakeCorrespondences.pm,v 1.10 2003-01-01 02:21:00 kycl4rk Exp $
+# $Id: MakeCorrespondences.pm,v 1.11 2003-01-30 02:51:08 kycl4rk Exp $
 
 =head1 NAME
 
@@ -30,7 +30,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.10 $)[-1];
+$VERSION = (qw$Revision: 1.11 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -66,7 +66,6 @@ sub make_name_correspondences {
     $sql .= 'order by map_set_name';
     my $map_sets = $db->selectall_arrayref( $sql, { Columns => {} } );
 
-    my %done;
     for my $map_set ( @$map_sets ) {
         #
         # Find all the maps.

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.26 2003-01-29 00:23:29 kycl4rk Exp $
+# $Id: Map.pm,v 1.27 2003-01-30 02:51:08 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.26 $)[-1];
+$VERSION = (qw$Revision: 1.27 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -1239,9 +1239,24 @@ Lays out the map.
     # centered over all the maps.
     #
     if ( $is_relational && $slot_no != 0 ) {
+        my $base_x  = $label_side eq RIGHT
+                      ? $self->base_x + $half_title_length + 10
+                      : $self->base_x - $half_title_length - 20;
+        $slot_min_x = $base_x unless defined $slot_min_x;
+        $slot_max_x = $base_x unless defined $slot_max_x;
+
         my $buffer = 4;
         my $min_y = $top_y - 10 - ( $reg_font->height + $buffer * 2 );
-        my $mid_x = $slot_min_x + ( ( $slot_max_x - $slot_min_x ) / 2 ); 
+        my $mid_x = ( $slot_min_x + $slot_max_x ) / 2; 
+
+        unless ( @map_titles ) {
+            push @map_titles,
+                map  { $self->$_( $map_ids[0] ) } 
+                grep { !/map_name/ }
+                reverse @config_map_titles
+            ;
+        }
+        
         my ( $leftmost, $rightmost, $topmost, $bottommost );
         for my $label ( @map_titles ) {
             my $label_x = $mid_x - 
