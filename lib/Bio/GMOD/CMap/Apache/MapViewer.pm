@@ -1,26 +1,87 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 
-# $Id: MapViewer.pm,v 1.14 2003-03-05 01:56:25 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.15 2003-03-13 01:28:39 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $TEMPLATE $PAGE );
-$VERSION = (qw$Revision: 1.14 $)[-1];
+$VERSION = (qw$Revision: 1.15 $)[-1];
 
-use Apache::Constants;
+use Apache::Constants qw[ :common REDIRECT ];
 use Apache::Request;
-use Template;
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer;
 use Bio::GMOD::CMap::Data;
-
-use Carp;
+use Cache::FileCache;
+use Digest::MD5;
+use Template;
 use Data::Dumper;
-use base 'Bio::GMOD::CMap::Apache';
-use constant TEMPLATE => 'cmap_viewer.tmpl';
 
+use base 'Bio::GMOD::CMap::Apache';
+use constant TEMPLATE     => 'cmap_viewer.tmpl';
+use constant REFRESH_RATE => 2; # seconds
+
+# ----------------------------------------------------
 sub handler {
+#
+# Main entry point.  Decides whether we forked and whether to 
+# read session data.  Calls "show_form."
+#
     my ( $self, $apr ) = @_;
+    my $allow_fork     = $self->config('allow_fork');
+    my $timeout        = $self->config('max_web_timeout') || 0;
+    my $max_tries      = $timeout / REFRESH_RATE;
+
+    my $session;
+
+    if ( $allow_fork && ( $session = $apr->param('session') ) ) {
+        my $cache    = get_cache_handle();
+        my $data     = $cache->get( $session );
+                
+        unless ( $data and ref $data eq 'ARRAY' ) { # something is wrong
+            $self->show_form( $apr );
+        }       
+
+        if ( $data->[0] ) {
+            $apr       = $data->[1]{'apr'};
+            my $drawer = $data->[1]{'drawer'};
+            $cache->set( $session, '' ); # wipe out cache
+            $self->show_form( $apr, drawer => $drawer );
+        }   
+        else {  
+            my $kid = $data->[1];
+            my $cur = $data->[2];
+               $cur++;
+            my $out;
+            if ( $max_tries && $cur > $max_tries ) {
+                kill 1, $kid if $kid;
+                return $self->error("Timeout reached ($timeout seconds)");
+            }
+            else {
+                $cache->set( $session, [ 0, $kid, $cur ] );
+                $apr->header_out( Refresh => REFRESH_RATE );
+                my $secs = $cur * REFRESH_RATE;
+                $out = "<html><body>Please wait ($cur tries, $secs seconds)</body></html>";
+            }
+            $apr->content_type('text/html');
+            $apr->send_http_header;
+            $apr->print( $out );
+            return OK;
+        }
+    }
+    else {
+        $self->show_form( $apr );
+    }
+}
+
+# ----------------------------------------------------
+sub show_form {
+#
+# Shows the main form for selecting maps and displaying images.
+#
+    my ( $self, $apr, %args ) = @_;
+    my $allow_fork            = $self->config('allow_fork');
+    my $drawer                = $args{'drawer'} || '';
 
     my $prev_ref_map_set_aid  = $apr->param('prev_ref_map_set_aid')  ||  0;
     my $ref_map_set_aid       = $apr->param('ref_map_set_aid')       ||  0;
@@ -121,25 +182,64 @@ sub handler {
     #
     # Instantiate the drawer if there's at least one map to draw.
     #
-    my $drawer;
-    if ( $ref_map_aid ) {
-        $drawer                    =  Bio::GMOD::CMap::Drawer->new(
-            apr                    => $apr,
-            data_source            => $self->data_source,
-            slots                  => \%slots,
-            highlight              => $highlight,
-            font_size              => $font_size,
-            image_size             => $image_size,
-            image_type             => $image_type,
-            label_features         => $label_features,
-            min_correspondences    => $min_correspondences,
-            include_feature_types  => \@feature_types,
-            include_evidence_types => \@evidence_types,
-            debug                  => $self->config('debug'),
-        ) or return $self->error( "Drawer: ".Bio::GMOD::CMap::Drawer->error );
+    if ( $ref_map_aid && !$drawer ) {
+        my $session = get_session_id();
+        my $cache   = get_cache_handle();
+        $cache->set( $session, [0, ''] ); # no data yet
 
-        %slots = %{ $drawer->slots };
+        $SIG{'CHLD'} = 'IGNORE';
+        my $pid;
+        if ( $allow_fork && ( $pid = fork ) ) {
+            $cache->set( $session, [ 0, $pid ] );
+            my $url  = '/cmap/viewer?' . join( ';',
+                map  { $_.'='.$apr->param( $_ ) }
+                grep { !/session/ }
+                $apr->param
+            );
+            $url .= ";session=$session";
+
+            $apr->headers_out->set( Location => $url );
+            $apr->status( REDIRECT );
+            $apr->send_http_header;
+            return OK;
+        }
+        elsif ( !$allow_fork || defined $pid ) {
+            close STDIN;
+            close STDOUT;
+            close STDERR;
+            $drawer                    =  Bio::GMOD::CMap::Drawer->new(
+                apr                    => $apr,
+                data_source            => $self->data_source,
+                slots                  => \%slots,
+                highlight              => $highlight,
+                font_size              => $font_size,
+                image_size             => $image_size,
+                image_type             => $image_type,
+                label_features         => $label_features,
+                min_correspondences    => $min_correspondences,
+                include_feature_types  => \@feature_types,
+                include_evidence_types => \@evidence_types,
+                debug                  => $self->config('debug'),
+            ) or return 
+                $self->error( Bio::GMOD::CMap::Drawer->error );
+
+            $cache->set( $session, [ 1, {
+                apr                => $apr,
+                drawer             => {
+                    slots          => $drawer->slots,
+                    image_name     => $drawer->image_name,
+                    map_height     => $drawer->map_height,
+                    map_width      => $drawer->map_width,
+                    image_map_data => [ $drawer->image_map_data ],
+                },
+            } ] ) if $allow_fork;
+        }
+        else {
+            return $self->error( "Cannot fork: $!" );
+        }
     }
+
+    %slots = %{ $drawer->{'slots'} } if $drawer;
 
     #
     # Get the data for the form.
@@ -199,6 +299,29 @@ sub handler {
     return OK;
 }
 
+# ----------------------------------------------------
+#
+# Creates a session cache.
+#
+sub get_cache_handle {
+    Cache::FileCache->new(
+        {
+            namespace           => 'cmap_viewer',
+            username            => 'nobody',
+            default_expires_in  => '30 minutes',
+            auto_purge_interval => '4 hours',
+        }
+    );
+}
+
+# ----------------------------------------------------
+#
+# Generates a session ID.
+#
+sub get_session_id {
+    Digest::MD5::md5_hex( Digest::MD5::md5_hex( time().{}.rand().$$ ) );
+}
+
 1;
 
 # ----------------------------------------------------
@@ -222,9 +345,14 @@ In httpd.conf:
 
 =head1 DESCRIPTION
 
-This module is a mod_perl handler for displaying the user interface to select
-and display comparative maps.  It inherits from Bio::GMOD::CMap::Apache where
-all the error handling occurs.
+This module is a mod_perl handler for displaying the user interface to
+select and display comparative maps.  It inherits from
+Bio::GMOD::CMap::Apache where all the error handling occurs.
+
+Added forking to allow creation of really large maps.  Stole most of
+the implementation from Randal Schwartz:
+
+    http://www.stonehenge.com/merlyn/LinuxMag/col39.html
 
 =head1 SEE ALSO
 
