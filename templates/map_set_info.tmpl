@@ -98,6 +98,12 @@
                 <td>&nbsp;</td>
             </tr> 
 
+            <tr>
+                <th align="right">Published&nbsp;On:</th>
+                <td>[% ms.published_on OR 'N/A' %]</td>
+                <td>&nbsp;</td>
+            </tr> 
+
             [% FOREACH att=ms.attributes %]
                 [% NEXT UNLESS att.is_public %]
                 <tr>
