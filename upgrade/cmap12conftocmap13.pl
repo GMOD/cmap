@@ -214,6 +214,18 @@ feature_default_display=display
     cm 0
 </scalable>
 
+# scale_conversion
+# The unit to unit conversion factor if scaling between maps of different units
+# is desired.  This completely made up example is read "One band is .1 the size
+# of one centimorgan".  For more information, please view the
+# ADMINISTRATION.pod file in the docs/ directory.
+#<scale_conversion>
+#    <bands>
+#        cM .1
+#    </bands>
+#</scale_conversion>
+
+
 #
 # ----------------------------------------------------
 #

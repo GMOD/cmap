@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.165.2.7 2004-11-12 21:30:53 mwz444 Exp $
+# $Id: Data.pm,v 1.165.2.8 2004-11-16 02:19:12 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.165.2.7 $)[-1];
+$VERSION = (qw$Revision: 1.165.2.8 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -4274,7 +4274,7 @@ sub count_correspondences {
         }
         for my $count (@$map_corr_counts) {
             next unless $map_id_lookup{ $count->{'map_id1'} };
-            
+
             # The reference map is now number 2
             # meaning that map_id2 is the old ref_map_id
             $map_correspondences->{$this_slot_no}{ $count->{'map_id1'} }
@@ -4706,31 +4706,80 @@ sub get_ref_unit_size {
     my $self  = shift;
     my $slots = shift;
 
+    my $scale_conversion = $self->scale_conversion;
     my %ref_for_unit;
     my %set_by_slot;
     foreach my $slot_id ( sort orderOutFromZero keys %$slots ) {
-        foreach my $map_id ( keys %{ $slots->{$slot_id} } ) {
-            my $map = $slots->{$slot_id}{$map_id};
-            if (    defined( $set_by_slot{ $map->{'map_units'} } )
-                and $set_by_slot{ $map->{'map_units'} } != $slot_id
-                and $ref_for_unit{ $map->{'map_units'} } )
+      MAPID: foreach my $map_id ( keys %{ $slots->{$slot_id} } ) {
+            my $map      = $slots->{$slot_id}{$map_id};
+            my $map_unit = $map->{'map_units'};
+
+            # If the unit size is already defined by a different
+            # slot, we don't want to redifine it.
+            if (    defined( $set_by_slot{$map_unit} )
+                and $set_by_slot{$map_unit} != $slot_id
+                and $ref_for_unit{$map_unit} )
             {
-                last;
+                last MAPID;
             }
-            else {
-                $set_by_slot{ $map->{'map_units'} } = $slot_id;
-                if ( !$ref_for_unit{ $map->{'map_units'} }
-                    or $ref_for_unit{ $map->{'map_units'} } <
-                    $map->{'stop_position'} - $map->{'start_position'} )
+
+            $set_by_slot{$map_unit} = $slot_id;
+
+            # If there is a unit defined that we have a conversion
+            # factor for, use that.
+            if ( $scale_conversion->{$map_unit} ) {
+                while ( my ( $unit, $conversion ) =
+                    each %{ $scale_conversion->{$map_unit} } )
                 {
-                    $ref_for_unit{ $map->{'map_units'} } =
-                      $map->{'stop_position'} - $map->{'start_position'};
+                    if ( $ref_for_unit{$unit} ) {
+                        $ref_for_unit{$map_unit} =
+                          $ref_for_unit{$unit} * $conversion;
+                        last MAPID;
+                    }
                 }
+            }
+
+            # If the unit hasn't been defined or
+            # this map is bigger, set ref_for_unit
+            if ( !$ref_for_unit{$map_unit}
+                or $ref_for_unit{$map_unit} <
+                $map->{'stop_position'} - $map->{'start_position'} )
+            {
+                $ref_for_unit{$map_unit} =
+                  $map->{'stop_position'} - $map->{'start_position'};
             }
         }
     }
 
     return \%ref_for_unit;
+}
+
+# ----------------------------------------------------
+sub scale_conversion {
+
+=pod
+
+=head2 scale_conversion
+
+Returns a hash with the conversion factors between unit types as defined in the
+config file.
+
+=cut
+
+    my $self = shift;
+
+    unless ( $self->{'scale_conversion'} ) {
+        my $config_scale = $self->config_data('scale_conversion');
+        if ($config_scale) {
+            while ( my ( $unit1, $convs ) = each %$config_scale ) {
+                while ( my ( $unit2, $factor ) = each %$convs ) {
+                    $self->{'scale_conversion'}{$unit2}{$unit1} = $factor;
+                    $self->{'scale_conversion'}{$unit1}{$unit2} = 1 / $factor;
+                }
+            }
+        }
+    }
+    return $self->{'scale_conversion'};
 }
 
 # ----------------------------------------------------

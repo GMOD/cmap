@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.4 $
+$Revision: 1.4.2.1 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -149,6 +149,45 @@ Dictates the default choice of the feature type display menu.
 Dictates which map units can be used to scale maps to each other.  Maps 
 with units described here will be scaled against maps with the same 
 units.  
+
+=item * <scale_conversion>
+
+If you want to scale maps with different map units, the conversion factor must
+be specified here.
+
+For an example (a completely non-sensical example), lets pretend that a
+centimorgan (cM) is 100 base pair (bp).  The config would look something like
+the following, which is read 'One centimorgan is the size of 100 base pairs'. 
+
+ <scale_conversion>
+   <cM>
+     bp 100
+   </cM>
+ </scale_conversion>
+
+Since the directionality doesn't matter, this is the same as: 
+
+ <scale_conversion>
+   <bp>
+     cM .01
+   </bp>
+ </scale_conversion>
+
+There is no reason to define the conversion in both directions since only one factor will be used and it could create inconsistancies if one direction was different from the other.
+
+Also, multiple conversions can be difined as in this (non-sensical) example.
+
+ <scale_conversion>
+   <bp>
+     cM .01
+     bands .1
+   </bp>
+   <cM>
+     bands 10
+   </cM>
+ </scale_conversion>
+
+It is appropriate to describe all relationships as CMap won't neccessarily figure out the relationship between a band and a centimorgan transitively (but it might depending on the order of the map sets).  Therefor, to avoid inconsistancies, please make sure to define all relationships (and define them correctly).
 
 =item * disable_cache
 
