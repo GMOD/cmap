@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.64.2.1 2005-02-18 17:27:35 mwz444 Exp $
+# $Id: Admin.pm,v 1.64.2.2 2005-03-04 06:15:56 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.64.2.1 $)[-1];
+$VERSION = (qw$Revision: 1.64.2.2 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -1035,6 +1035,7 @@ If not defined, the object_id will be assigned to it.
     my $evidence_type_aid = $args{'evidence_type_aid'};
     my $evidence          = $args{'correspondence_evidence'};
     my $accession_id      = $args{'accession_id'} || '';
+    my $score             = $args{'score'};
     my $allow_update      =
       defined( $args{'allow_update'} )
       ? $args{'allow_update'}
@@ -1125,7 +1126,10 @@ If not defined, the object_id will be assigned to it.
     # evidence arrayref (of hashrefs).
     #
     if ($evidence_type_aid) {
-        push @$evidence, { evidence_type_aid => $evidence_type_aid };
+        push @$evidence, { 
+            evidence_type_aid => $evidence_type_aid, 
+            score             => $score,
+        };
     }
     my $feature_correspondence_id = '';
     if ($allow_update) {
