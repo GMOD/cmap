@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.42 2003-05-02 18:55:42 kycl4rk Exp $
+# $Id: Map.pm,v 1.43 2003-05-02 18:56:11 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.42 $)[-1];
+$VERSION = (qw$Revision: 1.43 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -787,7 +787,6 @@ Lays out the map.
                     $label_y = ( $y_pos1 + ( $y_pos2 - $y_pos1 ) / 2 ) 
                         - $reg_font->height/2;
                 }
-                warn $feature->{'feature_name'}, " label_y = '$label_y' : $fstart-$fstop ($y_pos1,$y_pos2)\n";
 
                 if ( $feature_shape eq LINE ) {
                     $drawer->add_drawing(
@@ -926,7 +925,6 @@ Lays out the map.
                         $drawer->add_drawing( RECTANGLE, @coords, $color );
                     }
                     elsif ( $feature_shape eq 'dumbbell' ) {
-                        warn "adding dumbbell ($y_pos1 to $y_pos2)\n";
                         my $width = 3;
                         $drawer->add_drawing(
                             ARC, 
