@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.47 2003-05-16 19:56:26 kycl4rk Exp $
+# $Id: Data.pm,v 1.48 2003-05-29 19:43:47 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.47 $)[-1];
+$VERSION = (qw$Revision: 1.48 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -778,7 +778,7 @@ Returns the data for the correspondence matrix.
     # If there's only only set, then pretend that the user selected 
     # this one and expand the relationships to the map level.
     #
-    if ( $map_set_aid == '' && scalar @reference_map_sets == 1 ) {
+    if ( $map_set_aid eq '' && scalar @reference_map_sets == 1 ) {
         $map_set_aid = $reference_map_sets[0]->{'map_set_aid'};
     }
 
