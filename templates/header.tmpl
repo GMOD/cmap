@@ -13,12 +13,12 @@
 <table width="100%">
     <tr>
         <td align="left">
-            [% IF no_link != 'home' %]<a href="/cmap">[% END %]Home[% IF no_link != 'home' %]</a>[% END %] |
-            [% IF no_link != 'maps' %]<a href="/cmap/viewer">[% END %]Genetic &amp; Comparative Maps[% IF no_link != 'maps' %]</a>[% END %] |
-            [% IF no_link != 'matrix' %]<a href="/cmap/matrix">[% END %]Matrix[% IF no_link != 'matrix' %]</a>[% END %] |
-            [% IF no_link != 'feature_search' %]<a href="/cmap/feature_search">[% END %]Feature Search[% IF no_link != 'feature_search' %]</a>[% END %] |
-            [% IF no_link != 'map_set_info' %]<a href="/cmap/map_set_info">[% END %]Map Set Info[% IF no_link != 'map_set_info' %]</a>[% END %] |
-            [% IF no_link != 'help' %]<a href="/cmap/help[% IF help_anchor; "?section=$help_anchor"; END %]">[% END %]Help[% IF no_link != 'help' %]</a>[% END %]
+            [% IF no_link != 'home' %]<a href="/cmap">[% ELSE %]<b>[% END %]Home[% IF no_link != 'home' %]</a>[% ELSE %]</b>[% END %] |
+            [% IF no_link != 'maps' %]<a href="/cmap/viewer">[% ELSE %]<b>[% END %]Map Viewer[% IF no_link != 'maps' %]</a>[% ELSE %]</b>[% END %] |
+            [% IF no_link != 'matrix' %]<a href="/cmap/matrix">[% ELSE %]<b>[% END %]Matrix[% IF no_link != 'matrix' %]</a>[% ELSE %]</b>[% END %] |
+            [% IF no_link != 'feature_search' %]<a href="/cmap/feature_search">[% ELSE %]<b>[% END %]Feature Search[% IF no_link != 'feature_search' %]</a>[% ELSE %]</b>[% END %] |
+            [% IF no_link != 'map_set_info' %]<a href="/cmap/map_set_info">[% ELSE %]<b>[% END %]Map Set Info[% IF no_link != 'map_set_info' %]</a>[% ELSE %]</b>[% END %] |
+            [% IF no_link != 'help' %]<a href="/cmap/help[% IF help_anchor; "?section=$help_anchor"; END %]">[% ELSE %]<b>[% END %]Help[% IF no_link != 'help' %]</a>[% ELSE %]</b>[% END %]
         </td>
         <td align="right">
             [% IF data_sources.size > 1 %]
