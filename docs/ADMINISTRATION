@@ -1,5 +1,7 @@
                 CMAP ADMINISTRATION AND DATA CURATION
 
+# $Id: ADMINISTRATION,v 1.1 2003-02-13 22:16:08 kycl4rk Exp $
+
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are two tools you will use:
 the "cmap_admin.pl" command-line interface and the web-base
