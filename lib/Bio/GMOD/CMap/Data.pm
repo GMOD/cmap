@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.98.2.16 2004-06-18 22:25:45 kycl4rk Exp $
+# $Id: Data.pm,v 1.98.2.17 2004-06-18 22:32:07 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.98.2.16 $)[-1];
+$VERSION = (qw$Revision: 1.98.2.17 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -2643,7 +2643,16 @@ Given a list of feature names, find any maps they occur on.
     for my $feature_name ( @feature_names ) {
         my $comparison = $feature_name =~ m/%/ ? 'like' : '=';
         $feature_name  = uc $feature_name;
-        my $where      = '';
+        
+        my ( $fname_where, $aname_where );
+        if ( $feature_name ne '%' ) {
+            $fname_where .= 
+                "and upper(f.feature_name) $comparison '$feature_name' ";
+            $aname_where .= 
+                "and upper(fa.alias) $comparison '$feature_name' ";
+        }
+
+        my $where = '';
         if ( @$feature_type_aids ) {
             $where .= 'and ft.accession_id in ('.
                 join( ', ', map { qq['$_'] } @$feature_type_aids ). 
@@ -2679,13 +2688,13 @@ Given a list of feature names, find any maps they occur on.
                          cmap_map_set ms,
                          cmap_species s,
                          cmap_map_type mt
-                where    upper(f.feature_name) $comparison '$feature_name'
-                and      f.feature_type_id=ft.feature_type_id
+                where    f.feature_type_id=ft.feature_type_id
                 and      f.map_id=map.map_id
                 and      map.map_set_id=ms.map_set_id
                 and      ms.species_id=s.species_id
                 and      ms.map_type_id=mt.map_type_id
                 and      ms.is_enabled=1
+                $fname_where
                 $where
                 UNION
                 select f.feature_id,
@@ -2709,14 +2718,14 @@ Given a list of feature names, find any maps they occur on.
                        cmap_map_set ms,
                        cmap_species s,
                        cmap_map_type mt
-                where  upper(fa.alias) $comparison '$feature_name'
-                and    fa.feature_id=f.feature_id
+                where  fa.feature_id=f.feature_id
                 and    f.feature_type_id=ft.feature_type_id
                 and    f.map_id=map.map_id
                 and    ms.map_type_id=mt.map_type_id
                 and    map.map_set_id=ms.map_set_id
                 and    ms.species_id=s.species_id
                 and    ms.is_enabled=1
+                $aname_where
                 $where
             ];
         }
@@ -2742,8 +2751,7 @@ Given a list of feature names, find any maps they occur on.
                          cmap_map_set ms,
                          cmap_species s,
                          cmap_map_type mt
-                where    upper(f.accession_id) $comparison '$feature_name'
-                and      f.feature_type_id=ft.feature_type_id
+                where    f.feature_type_id=ft.feature_type_id
                 and      f.map_id=map.map_id
                 and      map.map_set_id=ms.map_set_id
                 and      ms.species_id=s.species_id
@@ -2751,6 +2759,10 @@ Given a list of feature names, find any maps they occur on.
                 and      ms.is_enabled=1
                 $where
             ];
+
+            unless ( $feature_name eq '%' ) {
+                $sql .= "and upper(f.accession_id) $comparison '$feature_name'";
+            }
         }
 
         my $features = $db->selectall_arrayref( $sql,  { Columns => {} } );
