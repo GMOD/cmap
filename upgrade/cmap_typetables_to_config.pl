@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-# $Id: cmap_typetables_to_config.pl,v 1.2 2004-10-13 21:10:13 kycl4rk Exp $
+# $Id: cmap_typetables_to_config.pl,v 1.3 2004-10-13 21:16:07 kycl4rk Exp $
 
 =pod
 
@@ -10,7 +10,7 @@ cmap_typetables_to_config.pl - create config for "cmap_*_type" tables
 
 =head1 SYNOPSIS
 
-  cmap_typetables_to_config.pl <cmap-conf-file-or-dir>
+  cmap_typetables_to_config.pl <cmap-conf-file-or-dir> [...]
 
 =head1 DESCRIPTION
 
@@ -20,9 +20,18 @@ the config file format.  After running this script, you may choose to
 drop these tables from your schema (but be sure you backed up your
 database first!).  
 
+The script accepts multiple arguments, each of which may be a directory 
+where the config files exist (in which case every file in the
+directory ending in ".conf" will be processed with the exception of
+the "global.conf" file) or a file path.  Each file processed will be
+examined for the database connection information, then that database
+will be queried for the "*_type" tables, and this information will be
+appended to the configuration file.
+
 =head1 AUTHOR
 
-Ben Faga E<lt>faga@cshl.eduE<gt>.
+Ben Faga E<lt>faga@cshl.eduE<gt>, 
+Ken Youens-Clark E<lt>kclark@cshl.eduE<gt>.
 
 =cut
 
