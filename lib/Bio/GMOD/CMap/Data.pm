@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.98.2.14 2004-06-18 21:19:27 kycl4rk Exp $
+# $Id: Data.pm,v 1.98.2.15 2004-06-18 22:08:16 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.98.2.14 $)[-1];
+$VERSION = (qw$Revision: 1.98.2.15 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -3582,6 +3582,14 @@ Returns data on map types.
     $sql .= 'order by display_order, map_type';
 
     my $map_types = $db->selectall_arrayref( $sql, { Columns => {} } );
+    my $all_map_types = $db->selectall_arrayref( 
+        q[
+            select   accession_id as map_type_aid, map_type
+            from     cmap_map_type
+            order by map_type
+        ],
+        { Columns => {} } 
+    );
 
     my $attributes = $db->selectall_arrayref(
         q[
@@ -3613,7 +3621,10 @@ Returns data on map types.
         objects    => $map_types,
     );
 
-    return $map_types;
+    return {
+        all_map_types => $all_map_types,
+        map_types     => $map_types,
+    }
 }
 
 # ----------------------------------------------------
@@ -3649,6 +3660,15 @@ Returns data on species.
     $sql .= 'order by display_order, common_name';
 
     my $species = $db->selectall_arrayref( $sql, { Columns => {} } );
+
+    my $all_species = $db->selectall_arrayref(
+        q[
+            select   accession_id as species_aid, common_name, full_name
+            from     cmap_species
+            order by common_name
+        ],
+        { Columns => {} }
+    );
 
     my $attributes = $db->selectall_arrayref(
         q[
@@ -3700,7 +3720,10 @@ Returns data on species.
         objects    => $species,
     );
 
-    return $species;
+    return {
+        all_species => $all_species,
+        species     => $species,
+    };
 }
 
 # ----------------------------------------------------
