@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 
-# $Id: ImportCorrespondences.pm,v 1.8 2003-02-20 16:50:05 kycl4rk Exp $
+# $Id: ImportCorrespondences.pm,v 1.9 2003-02-20 23:55:16 kycl4rk Exp $
 
 =head1 NAME
 
@@ -21,28 +21,27 @@ This module encapsulates all the logic for importing features
 correspondences.  Currently, only one format is acceptable, a
 tab-delimited file containing the following fields:
 
-    feature_name1
-    feature_name2
-    evidence
+    feature_name1 *
+    feature_accession_id1
+    feature_name2 *
+    feature_accession_id2
+    evidence *
 
-The order of the fields is unimportant, and the order of the names of
-the features is, too, as reciprocal records will be created for each
-correspondences ("A=B" and "B=A," etc.).  If the evidence doesn't
-exist, a prompt will ask to create it.
+Only the starred fields are required.  The order of the fields is
+unimportant, and the order of the names of the features is, too, as
+reciprocal records will be created for each correspondences ("A=B" and
+"B=A," etc.).  If the evidence doesn't exist, a prompt will ask to
+create it.
 
-Note:  Both the "feature_name" and "alternate_name" fields are
-checked.  For every feature matching each of the two feature names, a
-correspondence will be created.
-
-I'd like to add the ability to import with feature accession IDs
-(which are unique) as that seems like it could be a lot more accurate
-than just feature names (which could be duplicated on other maps).
+B<Note:> If the accession IDs are not present, both the "feature_name"
+and "alternate_name" fields are checked. For every feature matching
+each of the two feature names, a correspondence will be created.
 
 =cut
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -52,9 +51,11 @@ use Bio::GMOD::CMap::Utils qw[ next_number ];
 use base 'Bio::GMOD::CMap';
 
 %COLUMNS = (
-    feature_name1 => { is_required => 1, datatype => 'string' },
-    feature_name2 => { is_required => 1, datatype => 'string' },
-    evidence      => { is_required => 1, datatype => 'string' },
+    feature_name1         => { is_required => 1, datatype => 'string' },
+    feature_accession_id1 => { is_required => 0, datatype => 'string' },
+    feature_name2         => { is_required => 1, datatype => 'string' },
+    feature_accession_id2 => { is_required => 0, datatype => 'string' },
+    evidence              => { is_required => 1, datatype => 'string' },
 );
 
 use constant FIELD_SEP => "\t"; # use tabs for field separator
@@ -63,16 +64,39 @@ use constant RE_LOOKUP => {
     string => STRING_RE,
     number => NUMBER_RE,
 };
-use constant FEATURE_SQL => q[
+use constant FEATURE_SQL_BY_AID => q[
     select f.feature_id,
            f.feature_name,
            map.accession_id as map_aid,
            map.map_name,
            map.map_set_id,
+           ms.short_name as map_set_name,
+           s.common_name as species_name,
            mt.is_relational_map
     from   cmap_feature f,
            cmap_map map,
            cmap_map_set ms,
+           cmap_species s,
+           cmap_map_type mt
+    where  f.accession_id=?
+    and    f.map_id=map.map_id
+    and    map.map_set_id=ms.map_set_id
+    and    ms.map_type_id=mt.map_type_id
+    and    ms.species_id=s.species_id
+];
+use constant FEATURE_SQL_BY_NAME => q[
+    select f.feature_id,
+           f.feature_name,
+           map.accession_id as map_aid,
+           map.map_name,
+           map.map_set_id,
+           ms.short_name as map_set_name,
+           s.common_name as species_name,
+           mt.is_relational_map
+    from   cmap_feature f,
+           cmap_map map,
+           cmap_map_set ms,
+           cmap_species s,
            cmap_map_type mt
     where  (
         upper(f.feature_name)=?
@@ -82,6 +106,7 @@ use constant FEATURE_SQL => q[
     and    f.map_id=map.map_id
     and    map.map_set_id=ms.map_set_id
     and    ms.map_type_id=mt.map_type_id
+    and    ms.species_id=s.species_id
 ];
 
 # ----------------------------------------------------
@@ -114,6 +139,9 @@ sub import {
         }
     }
 
+    my @feature_name_fields = qw[ 
+        species_name map_set_name map_name feature_name 
+    ];
 #    my $sql = FEATURE_SQL;
 #    if ( @map_set_ids ) {
 #        $self->Print("Restricting SQL with map set IDs.\n");
@@ -127,7 +155,7 @@ sub import {
         chomp;
         my @fields = split FIELD_SEP;
         return $self->error("Odd number of fields") 
-            if @fields > @columns_present;
+            if scalar @fields > scalar @columns_present;
 
         my %record;
         for my $i ( 0 .. $#columns_present ) {
@@ -156,34 +184,45 @@ sub import {
 
         my ( @feature_ids1, @feature_ids2 );
         for my $i ( 1, 2 ) {
-            my $field_name   = "feature_name$i";
-            my $feature_name = $record{ $field_name } or next;
-            my $upper_name   = uc $feature_name;
+            my $field_name     = "feature_name$i";
+            my $aid_field_name = "feature_accession_id$i";
+            my $feature_name   = $record{ $field_name }     or next;
+            my $accession_id   = $record{ $aid_field_name } ||   '';
+            my $upper_name     = uc $feature_name;
             my @feature_ids;
-            if ( defined $feature_ids{ $upper_name } ) {
-                @feature_ids = @{ $feature_ids{ $upper_name } } or next;
+
+            if ( $accession_id ) {
+                my $sth = $db->prepare( FEATURE_SQL_BY_AID );
+                $sth->execute( "$accession_id" );
+                my $feature = $sth->fetchrow_hashref;
+                push @feature_ids, $feature if $feature;
             }
-
-            unless ( @feature_ids ) {
-                @feature_ids = @{ $db->selectall_arrayref(
-                    FEATURE_SQL,
-                    { Columns => {} },
-                    ( $upper_name, $upper_name )
-                ) || [] };
-
-                if ( @feature_ids ) {
-                    $feature_ids{ $upper_name } = \@feature_ids;
-
-                    if ( $i==1 ) {
-                        @feature_ids1 = @feature_ids;
-                    }
-                    else {
-                        @feature_ids2 = @feature_ids;
-                    }
+            else {
+                if ( defined $feature_ids{ $upper_name } ) {
+                    @feature_ids = @{ $feature_ids{ $upper_name } } or next;
                 }
             }
 
             unless ( @feature_ids ) {
+                @feature_ids = @{ $db->selectall_arrayref(
+                    FEATURE_SQL_BY_NAME,
+                    { Columns => {} },
+                    ( $upper_name, $upper_name )
+                ) || [] };
+
+            }
+
+            if ( @feature_ids ) {
+                $feature_ids{ $upper_name } = \@feature_ids;
+
+                if ( $i==1 ) {
+                    @feature_ids1 = @feature_ids;
+                }
+                else {
+                    @feature_ids2 = @feature_ids;
+                }
+            }
+            else {
                 $feature_ids{ $upper_name } = [];
                 warn qq[Can't find feature IDs for "$feature_name".\n];
                 next LINE;
@@ -257,25 +296,29 @@ sub import {
                         $evidence_type_id,
                     ) or return $self->error( $admin->error );
 
+                    my $fname1 = join('-', map { $feature1->{$_} }
+                        @feature_name_fields );
+                    my $fname2 = join('-', map { $feature2->{$_} }
+                        @feature_name_fields );
+
                     if ( $fc_id > 0 ) {
-                        $self->Print("Created correspondence for '",
-                            $feature1->{'feature_name'}, "' and '", 
-                            $feature2->{'feature_name'}, "' ($evidence).\n"
+                        $self->Print("Created correspondence for ",
+                            "'$fname1' and '$fname2' ($evidence).\n"
                         );
+                        $inserts++;
                     }
                     else {
-                        $self->Print("Correspondence already existed for '",
-                            $feature1->{'feature_name'}, "' and '", 
-                            $feature2->{'feature_name'}, "' ($evidence).\n"
+                        $self->Print("Correspondence already existed for ",
+                            "'$fname1' and '$fname2' ($evidence).\n"
                         );
                     }
-
-                    $inserts++;
                 }
             }
         }
     }
 
+    $total   ||= 0;
+    $inserts ||= 0;
     $self->Print(
         "Processed $total records, inserted $inserts correspondences.\n"
     );

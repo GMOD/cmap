@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.16 2003-02-20 16:50:05 kycl4rk Exp $
+# $Id: Import.pm,v 1.17 2003-02-20 23:55:16 kycl4rk Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.16 $)[-1];
+$VERSION  = (qw$Revision: 1.17 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -86,15 +86,11 @@ Imports tab-delimited file with the following fields:
 
 Starred fields are required.  Order of fields is not important.
 
-When you import data for an map set that already has data, all 
-existing maps and features will be updated.  Any of the pre-existing 
-maps or features that aren't updated will be deleted as it will be 
-assumed that they are no longer present in the dataset.  If this is 
-what you would like to have happen, just make sure that none of the 
-names of the maps or features are different.  Features, additionally,
-look to see if the newer feature has the same "start_position."  If 
-so, then it will be updated, otherwise the newer feature will be 
-added.
+When you import data for an map set that already has data, all
+existing maps and features will be updated.  If you choose, any of the
+pre-existing maps or features that aren't updated can be deleted (this
+is what you'd want if the import file contained *all* the data you
+have for the map set).
 
 =cut
 
@@ -124,17 +120,20 @@ added.
         )
     );
 
-    my %maps = map { $_->[0], { map_id => $_->[1] } } @{
-        $db->selectall_arrayref(
-            q[
-                select upper(map.map_name), map.map_id
-                from   cmap_map map
-                where  map.map_set_id=?
-            ],
-            {},
-            ( $map_set_id )
-        )
-    };
+    my $map_info = $db->selectall_arrayref(
+        q[
+            select upper(map.map_name), 
+                   map.accession_id,
+                   map.map_id
+            from   cmap_map map
+            where  map.map_set_id=?
+        ],
+        {},
+        ( $map_set_id )
+    );
+
+    my %maps     = map { $_->[0], { map_id => $_->[1] } } @$map_info;
+    my %map_aids = map { $_->[1], $_->[0]               } @$map_info;
 
     $self->Print(
         "'$map_set_name' currently has ", scalar keys %maps, " maps.\n"
@@ -290,8 +289,13 @@ added.
         #
         # Figure out the map id (or create it).
         #
-        my $map_name = $record{'map_name'};
-        my $map_id;
+        my ( $map_id, $map_name );
+        my $map_aid  = $record{'map_accession_id'} || '';
+        if ( $map_aid ) {
+            $map_name = $map_aids{ $map_aid } || '';
+        }
+ 
+        $map_name ||= $record{'map_name'};
         if ( exists $maps{ uc $map_name } ) { 
             $map_id = $maps{ uc $map_name }{'map_id'};
             $maps{ uc $map_name }{'touched'} = 1;
@@ -323,7 +327,7 @@ added.
                 )
             );
 
-            if ( my $accession_id = $record{'accession_id'} ) {
+            if ( $map_aid ) {
                 $db->do(
                     q[
                         update cmap_map 
@@ -331,7 +335,7 @@ added.
                         where  map_id=?
                     ],
                     {}, 
-                    ( $accession_id, $map_id )
+                    ( $map_aid, $map_id )
                 );
             }
 
@@ -344,7 +348,7 @@ added.
                 table_name   => 'cmap_map',
                 id_field     => 'map_id',
             ) or die 'No map id';
-            my $accession_id = $record{'accession_id'} || $map_id;
+            $map_aid ||= $map_id;
 
             $db->do(
                 q[
@@ -357,7 +361,7 @@ added.
                     values ( ?, ?, ?, ?, ?, ?, ? )
                 ],
                 {}, 
-                ( $map_id, $accession_id, $map_set_id, 
+                ( $map_id, $map_aid, $map_set_id, 
                   $map_name, $map_start, $map_stop, $linkage_group
                 )
             );
@@ -366,12 +370,13 @@ added.
             $maps{ uc $map_name }{'map_id'} = $map_id;
         }
 
+
         #
         # See if the acc. id already exists.
         #
         my $feature_name   = $record{'feature_name'}     #or next;
             or warn "feature name blank! ", Dumper( %record ), "\n";
-        my $accession_id   = $record{'accession_id'};
+        my $accession_id   = $record{'feature_accession_id'};
         my $alternate_name = $record{'feature_alt_name'} || '';
         my $dbxref_name    = $record{'dbxref_name'}      || '';
         my $dbxref_url     = $record{'dbxref_url'}       || '';
