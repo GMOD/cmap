@@ -1,13 +1,30 @@
+#!perl
+
+use strict;
+use LocalConfig;
+use Cwd;
+use File::Basename qw(&basename &dirname);
+use File::Spec::Functions;
+
+my $conf_file = catfile( $Local{'CONF_DIR'}, 'cmap.conf' );
+
+my $origdir = cwd;
+chdir dirname($0);
+my $file;
+($file = basename($0)) =~ s/\.PL$//;
+open OUT, ">$file" or die "Can't write file '$file': $!\n";
+print "Extracting $file (with variable substitutions)\n";
+print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 
-# $Id: Constants.pm,v 1.26 2003-09-16 16:57:06 kycl4rk Exp $
+# $Id: Constants.pm.PL,v 1.1 2003-09-24 19:06:35 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.26 $)[-1];
+$VERSION = (qw$Revision: 1.1 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -33,6 +50,16 @@ $VERSION = (qw$Revision: 1.26 $)[-1];
     VALID
 ];
 
+NOGROK
+print OUT<<"!GROK!THIS!";
+#
+# The location of the configuration file.
+#
+use constant CONFIG_FILE => '$conf_file';
+
+!GROK!THIS!
+
+print OUT<<'NOGROK';
 #
 # My palette of colors available for drawing maps
 #
@@ -178,11 +205,6 @@ use constant COLORS      => {
     yellow               => ['FF','FF','00'],
     yellowgreen          => ['9A','CD','32'],
 };
-
-#
-# The location of the configuration file.
-#
-use constant CONFIG_FILE => '/usr/local/apache/conf/cmap.conf';
 
 #
 # The URL of the GMOD-CMap website.
@@ -607,3 +629,4 @@ This library is free software;  you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 =cut
+NOGROK
