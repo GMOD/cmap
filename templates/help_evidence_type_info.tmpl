@@ -1,0 +1,20 @@
+[% SET title='Evidence Type Detail Help' %]
+[% 
+    INCLUDE header.tmpl 
+    title=title
+    cur_sec='help'
+    help_anchor=''
+%]
+
+[% INCLUDE help_header.tmpl cur_sec='evidence_type_detail' %]
+
+<h2>[% title %]</h2>
+<p>
+This page lists the name an evidence type, its accession ID, 
+rank (in relation to other evidence types), the color of the 
+line representing the correspondence, and any attributes or
+cross-references established by the curators.
+</p>
+
+[% page.end_body OR '</body>' %]
+</html>
