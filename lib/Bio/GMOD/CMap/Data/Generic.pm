@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.58 2005-01-12 00:07:01 mwz444 Exp $
+# $Id: Generic.pm,v 1.59 2005-02-15 17:47:38 mwz444 Exp $
 
 =head1 NAME
 
@@ -33,7 +33,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.58 $)[-1];
+$VERSION = (qw$Revision: 1.59 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Bio::GMOD::CMap;
@@ -372,6 +372,48 @@ The SQL for finding all reference map sets.
       and $ref_species_aid ne '-1';
     $sql .= q[
         and      ms.is_relational_map=0
+        order by ms.display_order,
+                 ms.map_type_accession,
+                 s.display_order,
+                 species_name,
+                 ms.published_on desc,
+                 ms.map_set_name
+    ];
+
+    return $sql;
+}
+
+# ----------------------------------------------------
+sub form_data_map_sets_sql {
+
+=pod
+
+=head2 form_data_map_sets_sql
+
+The SQL for finding all map sets.
+
+=cut
+
+    my $self            = shift;
+    my $ref_species_aid = shift || 0;
+    my $sql             = q[
+        select   ms.accession_id, 
+                 ms.map_set_id,
+                 ms.short_name as map_set_name,
+                 ms.display_order as map_set_display_order,
+                 ms.published_on,
+                 s.common_name as species_name,
+                 s.display_order as species_display_order,
+                 ms.map_type_accession as map_type_aid
+        from     cmap_map_set ms,
+                 cmap_species s
+        where    ms.is_enabled=1
+        and      ms.species_id=s.species_id
+    ];
+    $sql .= "and s.accession_id='$ref_species_aid' "
+      if $ref_species_aid
+      and $ref_species_aid ne '-1';
+    $sql .= q[
         order by ms.display_order,
                  ms.map_type_accession,
                  s.display_order,
