@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap;
 
-# $Id: CMap.pm,v 1.26 2003-02-21 16:55:56 kycl4rk Exp $
+# $Id: CMap.pm,v 1.27 2003-02-21 17:15:13 kycl4rk Exp $
 
 =head1 NAME
 
@@ -226,7 +226,13 @@ Returns a database handle.  This is the only way into the database.
         my $user       = $db_config->{'user'}
             or $self->error('No database user defined');
         my $password   = $db_config->{'password'} || '';
-        my $options    = $db_config->{'options'}  || {};
+        my $options    = {
+            AutoCommit       => 1,
+            FetchHashKeyName => 'NAME_lc',
+            LongReadLen      => 3000,
+            LongTruncOk      => 1,
+            RaiseError       => 1,
+        };
 
         eval {
             $self->{'db'} = DBI->connect( 
