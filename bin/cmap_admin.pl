@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.1.1.1 2002-07-31 23:27:28 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.2 2002-08-23 16:02:37 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION $BE_QUIET ];
-$VERSION = (qw$Revision: 1.1.1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 #
 # Turn off output buffering.
@@ -103,7 +103,7 @@ sub show_greeting {
             },
             { 
                 action  => 'import_data', 
-                display => 'Import data for existing set' 
+                display => 'Import data for existing map set' 
             },
             { 
                 action  => 'make_name_correspondences', 

@@ -1,6 +1,6 @@
-package CSHL::CMap::Constants;
+package Bio::GMOD::CMap::Constants;
 
-# $Id: Constants.pm,v 1.2 2002-08-03 04:41:33 kycl4rk Exp $
+# $Id: Constants.pm,v 1.2 2002-08-23 22:31:02 kycl4rk Exp $
 
 use strict;
 use GD;
@@ -12,6 +12,7 @@ $VERSION = (qw$Revision: 1.2 $)[-1];
 @EXPORT = qw[ 
     ARC
     COLORS
+    CONFIG_FILE
     DEFAULT
     FILL
     FILLED_RECT
@@ -182,6 +183,11 @@ use constant COLORS      => {
 };
 
 #
+# The location of the configuration file.
+#
+use constant CONFIG_FILE => '/usr/local/apache/conf';
+
+#
 # This group represents strings used for the GD package for drawing.
 # I'd rather use constants in order to get compile-time spell-checking
 # rather than using plain strings (even though that would be somewhat
@@ -314,12 +320,28 @@ use constant DEFAULT => {
     # Default: 'none'
     #
     include_features => 'none',
+
+    #
+    # The module to dispatch to when no path is given to "/cmap."
+    #
+    path_info => 'index',
+
+    #
+    # The HTML stylesheet.
+    # Default: '/cmap/cmap.css'
+    #
+    stylesheet => '/cmap/cmap.css',
     
     #
     # The name of the SQL driver module to use if nothing else is specified.
     # Default: generic
     #
     sql_driver_module => 'generic',
+
+    #
+    # Location of templates.
+    #
+    template_dir => '/usr/local/apache/templates/comparative_maps',
 
     #
     # What to name the cookie containing user preferences.
@@ -369,12 +391,6 @@ use constant MAX_SEARCH_PAGES => 10;
 #
 use constant NUMBER_RE => qr{^\-?\d+(?:\.\d+)?$};
 
-#
-# The absolute path of the directory holding the templates.
-# At run time, this can be overridden by an Apache dir_config, e.g.:
-# PerlSetVar TEMPLATE_DIR '/web/templates/'
-#
-use constant TEMPLATE_DIR => '/usr/local/apache/templates/comparative_maps';
 
 #
 # The fields to remember between requests and sessions.
@@ -448,16 +464,16 @@ use constant VALID => {
     },
 
     #
-    # SQL driver modules used by CSHL::CMap::Data
+    # SQL driver modules used by Bio::GMOD::CMap::Data
     # If you use a different database, then just point the driver
     # name to the module you want to use.  Or write your own module
     # and point your driver to it.  Use only lowercase for the keys.
     #
     sql_driver_module => {
-        generic       => 'CSHL::CMap::Data::Generic',
-        mysql         => 'CSHL::CMap::Data::MySQL',
-        oracle        => 'CSHL::CMap::Data::Oracle',
-        #postgres     => 'CSHL::CMap::Data::Generic' or 'My::Postgres',
+        generic       => 'Bio::GMOD::CMap::Data::Generic',
+        mysql         => 'Bio::GMOD::CMap::Data::MySQL',
+        oracle        => 'Bio::GMOD::CMap::Data::Oracle',
+        #postgres     => 'Bio::GMOD::CMap::Data::Generic' or 'My::Postgres',
     },
 
     #
@@ -493,11 +509,11 @@ use constant VALID => {
 
 =head1 NAME
 
-CSHL::CMap::Constants - constants module
+Bio::GMOD::CMap::Constants - constants module
 
 =head1 SYNOPSIS
 
-  use CSHL::CMap::Constants;
+  use Bio::GMOD::CMap::Constants;
   blah blah blah
 
 =head1 DESCRIPTION

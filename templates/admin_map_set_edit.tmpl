@@ -1,8 +1,17 @@
-[% INCLUDE admin_header.tmpl title="View $map_set.map_set_name" %]
+[% INCLUDE admin_header.tmpl title="Edit $map_set.map_set_name" %]
 <a href="admin">Home</a> |
 <a href="admin?action=map_sets_view">View All Map Sets</a> |
 <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %]">View Map Set</a>
 <hr noshade>
+
+[% IF errors.size %]
+    <b>There were errors:</b>
+    <ul>
+        [% FOREACH e=errors %] 
+          <li>[% e %]</li> 
+        [% END %]
+    </ul>
+[% END %]
 
 <form action="admin" method="post">
 <table>
@@ -73,7 +82,7 @@
         </td>
         <td>
             <input name="published_on" value="[% map_set.published_on %]">
-            <small><em>(e.g., &quot;1999-01-01&quot;)</em></small>
+            <small><em>Most formats are acceptable.</em></small>
         </td>
     </tr>
 

@@ -1,15 +1,15 @@
-package CSHL::CMap::Drawer;
+package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.2 2002-08-03 04:41:33 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.1 2002-08-23 16:07:18 kycl4rk Exp $
 
 =head1 NAME
 
-CSHL::CMap::Drawer - draw maps
+Bio::GMOD::CMap::Drawer - draw maps
 
 =head1 SYNOPSIS
 
-  use CSHL::CMap::Drawer;
-  my $drawer = CSHL::CMap::Drawer( ref_map_id => 12345 );
+  use Bio::GMOD::CMap::Drawer;
+  my $drawer = Bio::GMOD::CMap::Drawer( ref_map_id => 12345 );
   $drawer->image_name;
 
 =head1 DESCRIPTION
@@ -22,17 +22,17 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.1 $)[-1];
 
-use CSHL::CMap;
-use CSHL::CMap::Constants;
-use CSHL::CMap::Data;
-use CSHL::CMap::Drawer::Map;
+use Bio::GMOD::CMap;
+use Bio::GMOD::CMap::Constants;
+use Bio::GMOD::CMap::Data;
+use Bio::GMOD::CMap::Drawer::Map;
 use GD;
 use File::MkTemp;
 use File::Path;
 use Data::Dumper;
-use base 'CSHL::CMap';
+use base 'Bio::GMOD::CMap';
 
 use constant INIT_PARAMS => [
     qw( apr slots highlight font_size image_size image_type include_features )
@@ -340,7 +340,7 @@ Lays out the image and writes it to the file system, set the "image_name."
 
 #        warn "data =\n", Dumper( $data ), "\n" if $slot_no == 0;
 
-        my $map       =  CSHL::CMap::Drawer::Map->new( 
+        my $map       =  Bio::GMOD::CMap::Drawer::Map->new( 
             drawer    => $self, 
             base_x    => $self->max_x,
             base_y    => 0,
@@ -404,13 +404,13 @@ sub data {
 
 =head2 data
 
-Uses the CSHL::CMap::Data module to retreive the necessary data for drawing.
+Uses the Bio::GMOD::CMap::Data module to retreive the necessary data for drawing.
 
 =cut
     my $self = shift;
 
     unless ( $self->{'data'} ) {
-        my $data =  CSHL::CMap::Data->new;
+        my $data =  Bio::GMOD::CMap::Data->new;
 
         $self->{'data'}      =  $data->cmap_data( 
             slots            => $self->slots,
