@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.198.2.13 2005-03-15 14:40:11 mwz444 Exp $
+# $Id: Data.pm,v 1.198.2.14 2005-03-16 17:46:49 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.198.2.13 $)[-1];
+$VERSION = (qw$Revision: 1.198.2.14 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -230,7 +230,7 @@ sub correspondence_detail_data {
         }
 
         $corr->{'evidence'} =
-          sort_selectall_arrayref( $corr->{'evidence'}, '#$rank',
+          sort_selectall_arrayref( $corr->{'evidence'}, '#rank',
             'evidence_type' );
         $self->store_cached_results(
             4,
