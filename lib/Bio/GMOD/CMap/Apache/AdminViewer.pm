@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.13 2002-12-11 16:57:46 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.14 2002-12-12 22:37:19 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -28,7 +28,7 @@ $COLORS         = [ sort keys %{ +COLORS } ];
 $FEATURE_SHAPES = [ qw( box dumbbell line span ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.13 $)[-1];
+$VERSION        = (qw$Revision: 1.14 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -2102,6 +2102,7 @@ sub map_set_view {
                       s.common_name as species_common_name,
                       s.full_name as species_full_name,
                       mt.map_type, mt.map_units,
+                      mt.is_relational_map,
                       mt.shape as default_shape,
                       mt.color as default_color,
                       mt.width as default_width
