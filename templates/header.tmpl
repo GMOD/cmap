@@ -1,0 +1,17 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//Dtd HTML//EN">
+<!--Header VERSION: $Id: header.tmpl,v 1.1.1.1 2002-07-31 23:27:29 kycl4rk Exp $ -->
+<html>
+<head>
+<title>[% title %]</title>
+</head>
+<link rel="stylesheet" href="/stylesheets/gramene.css" type="text/css">
+
+[% page.start_body OR '<body bgcolor="white">' %]
+
+&nbsp;<img src="/images/icons/grain_icon.jpg" alt="grain_icon" height=16 width=16 align="top">&nbsp;
+[% IF no_link != 'maps' %]<a href="viewer">[% END %]Genetic &amp; Comparative Maps[% IF no_link != 'maps' %]</a>[% END %] |
+[% IF no_link != 'matrix' %]<a href="matrix">[% END %]Matrix[% IF no_link != 'matrix' %]</a>[% END %] |
+[% IF no_link != 'feature_search' %]<a href="feature_search">[% END %]Feature Search[% IF no_link != 'feature_search' %]</a>[% END %] |
+<a href="/documentation/map_viewer_correspondences.html">Documentation</a> |
+[% IF no_link != 'map_set_info' %]<a href="map_set_info">[% END %]Map Set Info[% IF no_link != 'map_set_info' %]</a>[% END %] |
+[% IF no_link != 'help' %]<a href="help[% IF help_anchor; "#$help_anchor"; END %]">[% END %]Help[% IF no_link != 'help' %]</a>[% END %]

@@ -1,0 +1,354 @@
+REQUIREMENTS
+
+There are quite a number of prerequisites to getting this running:
+
+    * libgd (version 1.8.4, cf. http://www.boutell.com/)
+    * an RDBMS (e.g., Oracle or MySQL) 
+    * Perl (5.6.1 suggested)
+    * Apache (version 1.3.24 or higher)
+    * mod_perl (version 1.27 or higher)
+
+For the first two requirements, you're pretty much on your own.
+Installation of libgd has a number of dependencies you'll have to
+resolve (e.g., zlib, JPEG libraries, etc.), and each database has its
+own installation requirements you'll have to follow depending on what
+you want to use.  Do note that you should not use the latest (2.0.*)
+version of libgd as it causes a segfault with GD.pm.
+
+RDBMS
+
+Once you've settled on your database of choice and have a working
+installation, you should create the tables that will hold the data for
+the comparative maps.  In the "sql" directory, you will find create
+scripts for Oracle and MySQL.  If you need to create scripts for a
+different database, then write the author for a copy of an upcoming
+(RSN) CPAN module, SQL::Translator, specifying which database you're
+using.  All efforts will be made to help you convert the schema to
+your system.
+
+For MySQL, you can do the following to create the database "CMAP" and
+grant appropriate permissions to a user "joe" with the password
+"foobar":
+
+    $ mysqladmin -uroot -p create CMAP
+    $ mysql -uroot -p CMAP < sql/cmap.create.mysql
+    $ mysql -uroot -p CMAP
+    mysql> grant select, insert, update, delete \
+        -> on CMAP.* to joe@localhost identified by 'foobar';
+
+Once you've successfully created the database and chosen a username
+and password for connecting, be sure to appropriately edit
+CSHL::Config to reflect your connection parameters.
+
+This application generally relies on the use of simple SQL statements
+that OUGHT to run on just about any modern relational database that
+implements basic joins and ANSI SQL functions like "MAX" and "MIN" and
+"UPPER."  It was developed on both Oracle and MySQL, and I imagine it
+should run on most other databases with minimal tweaking.  To
+accomplish this, however, I've usually avoided the use of proprietary
+(and perhaps performance-enhancing) extensions, such as stored
+procedures and SQL dialects.  To find out more about how to customize
+any problem SQL for your installation, "perldoc CSHL::CMap::Data."
+
+Note for MySQL Users:  MySQL AB, the company which develops and
+releases MySQL, offers on their website http://www.mysql.com/
+commercial support for MySQL, should you desire professional help.
+They also have a freely available GUI (Graphical User Interface) tool
+called MySQLGUI if you are uncomfortable with the CLI (Command Line
+Interface) tools.  Binaries are available for Linux, Win32, *BSD, and
+Solaris. 
+
+INSTALLING PERL & APACHE/MOD_PERL
+
+You can install Apache and mod_perl together, but you will first need
+to be sure that you have a working version of Perl.  I would highly
+recommend that you compile every part of your system yourself,
+starting with Perl.  Most installations of mod_perl fail because
+people used RPM versions of Perl and Apache.  To get the lastest
+stable version of Perl, go to the Comprehensive Perl Archive Network,
+or "CPAN."  You can access it with a web browser at
+"http://www.cpan.org/" or via FTP at "ftp://cpan.org."  From there,
+grab "/src/stable.tar.gz," unpack the source and follow the directions
+to compile Perl (usually just "sh Configure -de; make; make install"
+will do it).
+
+Once you have a proper Perl installation, you can now install Apache
+and mod_perl.  You have two choices: download sources and compile by
+hand or use Apache Toolbox to automate the process.
+
+    * By Hand: Grab the latest versions of Apache and mod_perl from
+      CPAN, too. FTP to "cpan.org," and grab Apache from
+      "/pub/apache/dist/" and mod_perl from
+      "/pub/CPAN/modules/by-module/Apache/." Unpack them into the same
+      directory (e.g., "/usr/local/src/") such that the root directories
+      of each package are at the same level. From there you can go into
+      the mod_perl directory and compile Apache and mod_perl together in
+      one step, following the directions given.
+
+    * Apache Toolbox: Go to http://www.apachetoolbox.com/, download the
+      program and follow the instructions. I've never tried this
+      program, but it has gotten some decent praise in the community and
+      it purports to be able to install Apache and pretty much every
+      module available with it. It also claims to be able to install
+      MySQL, so this might be a good program to try if you're starting
+      from scratch.
+
+INSTALLING THE PERL MODULES
+
+To install the base modules, execute the following commands from the current
+directory:
+
+    $ perl Makefile.PL
+    $ make
+    # make install
+
+The first two commands can be run as an unprivileged user, but "make
+install" must be run as root (signified by the typical "#" prompt).
+
+You will be asked a couple of questions, such as where to place the
+templates and command-line scripts.  You can place them in any valid
+directory on your system, but you should remember where you put them
+for configuring Apache later.  There are also a number of
+"pre-requisite" modules.  If prompted to install any other modules,
+respond in the affirmative.
+
+CONFIGURING APACHE
+
+After installing Apache, mod_perl, and all the necessary modules,
+you're now ready to configure Apache.  You may need to set up a couple
+environment variables for mod_perl by placing the following lines in
+your httpd.conf:
+
+    PerlSetVar TEMPLATE_DIR /usr/local/apache/templates/comparative_maps
+    PerlSetVar PAGE_OBJECT  GramenePage
+
+The first actually need not be set if you set the path in the
+"CSHL::CMap::Constants" module.  The second directive will likely
+never be used by anyone but the original Gramene site where the
+"GramenePage" module automagically inserts proper headers and footers
+and navigation bars depending on the page being requested.  If you
+don't have anything like this, you can simply place your site's
+headers and footers directly into the templates provided.  Probably
+you can skip both of the above directives.
+
+You will need to create a directory to place the map images.  This
+directory will need to be writable by the httpd process (usually "web"
+or "nobody"), and the permissions on it should be very restrictive.  I
+would suggest the following (as root, of course):
+
+    # mkdir /path/to/images
+    # chown nobody:nobody /path/to/images 
+    # chmod 700 /path/to/images 
+
+Now you will need to alias that directory so that Apache will know
+where to find the images.  So, let's say that you decide to put your
+images into "/var/web/comparative_map_cache" and that you'd like to
+reference those images through a web browser as "/maps/images," you'll
+need to add the following line to your httpd.conf:
+
+    Alias /maps/images /var/web/comparative_map_cache
+
+I'd probably recommend against placing the images directly into your
+DocumentRoot as the space taken by the images is completely dependent
+upon the amount of traffic your site gets.  You could conceivably fill
+your primary disk partition if you either never cleaned out old images
+or someone launched some sort of DoS attack on you.  It would be
+better to place them into a directory on a separate partition, like
+"/var," which is usually able to handle such variable directories.
+Where ever you put your images and however you alias them, be sure that
+the "<img>" tag in the "cmap_viewer.tmpl" template reflects the same
+path as your Alias.
+
+The map images will only be used for one request, so you'll need to
+include some way to clear out old images.  A simple cron job will do
+the trick.  Add this to your root crontab (e.g., by running "crontab
+-e" as root):
+
+    0 0 * * *  find /var/web/comparative_map_cache/ \
+        -type f -mtime +1 -exec rm -rf {} \;
+
+INSTALLING MOD_PERL HANDLERS
+
+To make the comparative map code "live," you'll have to tell Apache to
+execute the code when a user goes to a particular location.  You do
+this by adding the following directives to the httpd.conf:
+
+    <Location /cmap/admin>
+        AuthType        Basic
+        AuthName        "Maps Curation"
+        AuthUserFile    /usr/local/apache/passwd/passwords
+        Require         valid-user
+        SetHandler      perl-script
+        PerlHandler     CSHL::CMap::Apache::AdminViewer
+    </Location>
+
+    <Location /cmap/feature>
+        SetHandler      perl-script
+        PerlHandler     CSHL::CMap::Apache::FeatureViewer->super
+    </Location>
+
+    <Location /cmap/feature_search>
+        SetHandler      perl-script
+        PerlHandler     CSHL::CMap::Apache::FeatureSearch->super
+    </Location> 
+
+    <Location /cmap/help>
+        SetHandler      perl-script
+        PerlHandler     CSHL::CMap::Apache::HelpViewer->super
+    </Location>
+
+    <Location /cmap/map_set_info>
+        SetHandler      perl-script
+        PerlHandler     CSHL::CMap::Apache::MapSetViewer->super
+    </Location>
+
+    <Location /cmap/matrix>
+        SetHandler      perl-script
+        PerlHandler     CSHL::CMap::Apache::MatrixViewer->super
+    </Location>
+
+    <Location /cmap/viewer>
+        PerlInitHandler CSHL::CMap::Apache::UserPreferences
+        SetHandler      perl-script
+        PerlHandler     CSHL::CMap::Apache::MapViewer->super
+    </Location>
+
+perlstartup.pl
+
+To take full advantage of the performance benefits of mod_perl, you'll
+want to create a file containing all the modules that Apache will use
+in its lifetime.  Typically, this file is called something like
+"perlstartup.pl" and is placed in the same directory as the
+httpd.conf.  The parent Apache process will parse this file and
+include all the modules in each child process, further enhancing the
+performance of the application.
+
+NOTE:  Everything in Apache's "conf" directory is very important
+and sensitive, so it's best to have everything be owned and writable
+only by root.  The startup file will be executed as root, so this
+could represent an easy root compromise were a non-root user able to
+write to the file.  With this in mind, as root, create this file with
+the following lines:
+
+    # File: perlstartup.pl
+    use Apache();
+    use Apache::Constants();
+    use Apache::Cookie();
+    use Apache::Reload();
+    use Apache::Request();
+    use Class::Base();
+    use Data::Dumper();
+    use DBI();
+    use DBD::mysql();   
+    use Error();
+    use GD();
+    use File::MkTemp;
+    use Template();
+
+    use CSHL::Config();
+    use CSHL::CMap();
+    use CSHL::CMap::Admin();
+    use CSHL::CMap::Apache();
+    use CSHL::CMap::Apache::UserPreferences();
+    use CSHL::CMap::Apache::AdminViewer();
+    use CSHL::CMap::Apache::HelpViewer();
+    use CSHL::CMap::Apache::FeatureSearch();
+    use CSHL::CMap::Apache::FeatureViewer();
+    use CSHL::CMap::Apache::MapViewer();
+    use CSHL::CMap::Apache::MapSetViewer();
+    use CSHL::CMap::Apache::MatrixViewer();
+    use CSHL::CMap::Apache::RelationalMapViewer();
+    use CSHL::CMap::Constants();
+    use CSHL::CMap::Data();
+    use CSHL::CMap::Data::Generic();
+    use CSHL::CMap::Data::MySQL();
+    use CSHL::CMap::Data::Oracle();
+    use CSHL::CMap::Drawer();
+    use CSHL::CMap::Drawer::Map();
+    use CSHL::CMap::Drawer::Feature();
+    use CSHL::CMap::Utils();
+
+    1;
+
+Now you'll want to add this line to your httpd.conf to tell Apache to
+load all those modules at start time:
+
+    PerlRequire      /path/to/perlstartup.pl
+
+Where "/path/to/perlstartup.pl" would probably be something like
+"/usr/local/apache/conf/perlstartup.pl."
+
+Now see if Apache like what you've done by typing the following
+command (you'll probably have to specify a full path to "apachectl"):
+
+    # apachectl configtest
+
+If everything is OK, then restart Apache:
+
+    # apachectl stop
+    # apachectl start
+
+IMPORTING YOUR DATA
+
+Now you've got some basic setup to do for your data.  First off, open
+up the web administration interface by going to the URL you set up for
+the CSHL::CMap::AdminViewer module.  You'll need to set up what types
+of maps, features, species, and evidence types you'll be working with.
+For each, go to the "View ..." choice from the main menu, then choose
+"Create New ..." and fill in the correct information.  For information
+on the correct format for data import, "perldoc
+CSHL::CMap::Admin::Import." When you have your data in the correct
+format, launch the "cmap_admin.pl" script and follow the instructions.
+
+When setting up database cross-references, you'll have to use some
+extra syntax in the URL field to indicate the field to link out on.
+Here's an example from Gramene for linking to GrainGenes:
+
+    http://www.graingenes.org/cgi-bin/WebAce/webace?\
+    db=graingenes&class=Locus&object=[% feature.feature_name %]
+
+And here's how we link to our own contig viewer:
+
+    /perl/contigview?clone=[% feature.feature_name %]
+
+The funny brackets ("[%" and "%]") are from Template Toolkit, the
+templating system used for the comparative maps.  Simply use whichever
+field you want from the feature table (accession_id, feature_name, or
+alternate_name) and the above style syntax for either absolute (first)
+or relative (second) URLs.
+
+For now, the only correspondences supported are name-based, so run the
+"Find name-based correspondences" command from cmap_admin.pl.  Make
+sure that you've created some evidence type to represent this
+automated correspondence.  If you don't run this, then there will be
+no relationships among your maps.  If you run this and don't have
+like-named features on different maps, then you'll have to create the
+correspondences yourself using the admin tool.  I'll write a tool for
+importing some sort of correspondence data RSN.  Suggestions on the
+format of the data would be welcomed.
+
+CUSTOMIZING YOUR INSTALLATION
+
+You should edit CSHL::CMap::Constants to reflect your own preferences.
+Remember to restart Apache whenever you make a change to this file as
+these are *constants* and therefore don't change for the life of the
+Apache process.  You can also change the way maps and features are
+drawn based on their types.  Edit each "map type" and "feature type"
+that you create, and experiment with the colors, shapes, and sizes
+available to you.
+
+CUSTOMIZING YOUR HTML
+
+All the HTML displayed by the application is contained in the
+templates.  These templates are processed by Template Toolkit to
+produce the user interface.  For the most part, the files contain
+straight-up HTML and can be altered to your heart's content.  You
+could probably even pass off the care and feeding of these templates
+to a non-technical person (as this was the idea behind having no HTML
+in the code).  The only functional parts of the templates lie in
+between the many "[% %]" tags, and these are often quite
+self-explanatory.  If you can't figure out what to change on your own,
+then check out http://www.template-toolkit.com/ for the documentation
+(or type "perldoc Template" on your command line).
+
+__END__

@@ -1,0 +1,97 @@
+[% INCLUDE admin_header.tmpl title='Feature Correspodence Create' %]
+<a href="admin">Home</a> |
+<hr noshade>
+<table>
+    <tr>
+        <td>Feature 1:</th>
+        <td>
+            <a href="admin?action=map_view;map_id=[% feature1.map_id %]">[% feature1.species_name %]-[% feature1.map_set_name %]-[% feature1.map_name %]</a> : 
+            <a href="admin?action=feature_view;feature_id=[% feature1.feature_id %]">[% feature1.feature_name %]</a>
+        </td>
+    </tr>
+
+    <tr>
+        <td>Feature 2:</td>
+        <td>
+            [% IF feature2 %]
+                <a href="admin?action=map_view;map_id=[% feature2.map_id %]">[% feature2.species_name %]-[% feature2.map_set_name %]-[% feature2.map_name %]</a> : 
+                <a href="admin?action=feature_view;feature_id=[% feature2.feature_id %]">[% feature2.feature_name %]</a>
+            [% ELSE %]
+                Please use the form below to search.
+            [% END %]
+        </td>
+    </tr>
+
+    [% IF feature1 AND feature2 %]
+        <form action="admin" method="post">
+            <tr>
+                <td>Acc. ID:</th>
+                <td><input name="accession_id"></td>
+            </tr>
+
+            <tr>
+                <td colspan="2" align="center">
+                    <input type="hidden" name="feature_id1" value="[% feature1.feature_id %]">
+                    <input type="hidden" name="feature_id2" value="[% feature2.feature_id %]">
+                    <input type="hidden" name="action" value="feature_corr_insert">
+                    <input type="submit" value="Submit">
+                </th>
+            </tr>
+        </form>
+    [% END %]
+</table>
+
+<form action="admin" method="get">
+<table>
+    <tr>
+        <th>Search For Feature 2:</th>
+        <td>
+            <input name="feature2_name" value="[% apr.param('feature2_name') %]">
+            Species:
+            <select name="species_id">
+                <option value="">--All--</option>
+                [% FOREACH s=species %]
+                    <option value="[% s.species_id %]"[% IF s.species_id==apr.param('species_id') %] selected[% END %]>[% s.common_name %]</option>
+                [% END %]
+            </select>
+            <input type="hidden" name="action"      value="feature_corr_create">
+            <input type="hidden" name="feature_id1" value="[% feature1.feature_id %]">
+            <input type="submit" value="Search">
+        </td>
+    </tr>
+</table>
+</form>
+
+[% IF feature2_choices.size %]
+    <table width="100%">
+        <tr>
+            <th>Species</th>
+            <th>Map Set</th>
+            <th>Map</th>
+            <th>Feature Name</th>
+            <th>&nbsp;</th>
+        </tr>
+        [% SET i=0 %]
+        [% FOREACH f=feature2_choices %]
+            <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
+                <td>
+                    [% f.species_name %]
+                </td>
+                <td>
+                    [% f.map_set_name %]
+                </td>
+                <td>
+                    [% f.map_name %]
+                </td>
+                <td>
+                    [% f.feature_name %]
+                </td>
+                <td>
+                    <a href="admin?action=feature_corr_create;feature_id1=[% feature1.feature_id %];species_id=[% apr.param('species_id') %];feature_id2=[% f.feature_id %];feature2_name=[% apr.param('feature2_name') %]">Select</a>
+                </td>
+            </tr>
+            [% SET i=i+1 %]
+        [% END %]
+    </table>
+[% END %]
+[% INCLUDE admin_footer.tmpl %]

@@ -1,0 +1,220 @@
+# MySQL dump 8.13
+#
+# Host: localhost    Database: CMAP
+#--------------------------------------------------------
+# Server version	3.23.40
+
+#
+# Table structure for table 'cmap_correspondence_evidence'
+#
+
+CREATE TABLE cmap_correspondence_evidence (
+  correspondence_evidence_id int(11) NOT NULL default '0',
+  accession_id varchar(20) NOT NULL default '',
+  feature_correspondence_id int(11) NOT NULL default '0',
+  evidence_type_id int(11) NOT NULL default '0',
+  score int(11) default NULL,
+  remark varchar(100) default NULL,
+  PRIMARY KEY  (correspondence_evidence_id),
+  UNIQUE KEY accession_id (accession_id),
+  KEY feature_correspondence_id (feature_correspondence_id,evidence_type_id)
+) TYPE=MyISAM;
+
+#
+# Table structure for table 'cmap_correspondence_lookup'
+#
+
+CREATE TABLE cmap_correspondence_lookup (
+  feature_id1 int(11) default NULL,
+  feature_id2 int(11) default NULL,
+  feature_correspondence_id int(11) default NULL,
+  KEY feature_id1 (feature_id1)
+) TYPE=MyISAM;
+
+#
+# Table structure for table 'cmap_correspondence_matrix'
+#
+
+CREATE TABLE cmap_correspondence_matrix (
+  reference_map_aid varchar(20) NOT NULL default '0',
+  reference_map_name varchar(32) NOT NULL default '',
+  reference_map_set_aid varchar(20) NOT NULL default '0',
+  reference_species_aid varchar(20) NOT NULL default '0',
+  link_map_aid varchar(20) default NULL,
+  link_map_name varchar(32) default NULL,
+  link_map_set_aid varchar(20) NOT NULL default '0',
+  link_species_aid varchar(20) NOT NULL default '0',
+  no_correspondences int(11) NOT NULL default '0',
+  UNIQUE KEY reference_map_aid (reference_map_aid,link_map_aid)
+) TYPE=MyISAM;
+
+#
+# Table structure for table 'cmap_dbxref'
+#
+
+CREATE TABLE cmap_dbxref (
+  dbxref_id int(11) NOT NULL default '0',
+  map_set_id int(11) default NULL,
+  feature_type_id int(11) default NULL,
+  species_id int(11) default NULL,
+  dbxref_name varchar(32) default NULL,
+  url varchar(200) NOT NULL default '',
+  PRIMARY KEY  (dbxref_id)
+) TYPE=MyISAM;
+
+#
+# Table structure for table 'cmap_evidence_type'
+#
+
+CREATE TABLE cmap_evidence_type (
+  evidence_type_id int(11) NOT NULL default '0',
+  accession_id varchar(20) NOT NULL default '',
+  evidence_type varchar(30) NOT NULL default '',
+  rank int(11) NOT NULL default '0',
+  PRIMARY KEY  (evidence_type_id),
+  UNIQUE KEY accession_id (accession_id),
+  UNIQUE KEY rank (rank)
+) TYPE=MyISAM;
+
+#
+# Table structure for table 'cmap_feature'
+#
+
+CREATE TABLE cmap_feature (
+  feature_id int(11) NOT NULL default '0',
+  accession_id varchar(20) NOT NULL default '',
+  map_id int(11) NOT NULL default '0',
+  feature_type_id int(11) NOT NULL default '0',
+  feature_name varchar(32) NOT NULL default '',
+  alternate_name varchar(32) default NULL,
+  is_landmark tinyint(4) NOT NULL default '0',
+  start_position double(8,2) NOT NULL default '0.00',
+  stop_position double(8,2) default NULL,
+  PRIMARY KEY  (feature_id),
+  UNIQUE KEY accession_id (accession_id),
+  KEY feature_name (feature_name),
+  KEY alternate_name (alternate_name),
+  KEY map_id (map_id)
+) TYPE=MyISAM;
+
+#
+# Table structure for table 'cmap_feature_correspondence'
+#
+
+CREATE TABLE cmap_feature_correspondence (
+  feature_correspondence_id int(11) NOT NULL default '0',
+  accession_id varchar(20) NOT NULL default '',
+  feature_id1 int(11) NOT NULL default '0',
+  feature_id2 int(11) NOT NULL default '0',
+  PRIMARY KEY  (feature_correspondence_id),
+  UNIQUE KEY accession_id (accession_id),
+  KEY feature_id1 (feature_id1)
+) TYPE=MyISAM;
+
+#
+# Table structure for table 'cmap_feature_type'
+#
+
+CREATE TABLE cmap_feature_type (
+  feature_type_id int(11) NOT NULL default '0',
+  accession_id varchar(20) NOT NULL default '',
+  feature_type varchar(32) NOT NULL default '',
+  default_rank int(11) NOT NULL default '1',
+  is_visible tinyint(4) NOT NULL default '1',
+  how_to_draw varchar(12) NOT NULL default '',
+  color varchar(20) default NULL,
+  PRIMARY KEY  (feature_type_id),
+  UNIQUE KEY accession_id (accession_id)
+) TYPE=MyISAM;
+
+#
+# Table structure for table 'cmap_map'
+#
+
+CREATE TABLE cmap_map (
+  map_id int(11) NOT NULL default '0',
+  accession_id varchar(20) NOT NULL default '',
+  map_set_id int(11) NOT NULL default '0',
+  map_name varchar(32) NOT NULL default '',
+  start_position double(8,2) default NULL,
+  stop_position double(8,2) default NULL,
+  PRIMARY KEY  (map_id),
+  UNIQUE KEY accession_id (accession_id)
+) TYPE=MyISAM;
+
+#
+# Table structure for table 'cmap_map_set'
+#
+
+CREATE TABLE cmap_map_set (
+  map_set_id int(11) NOT NULL default '0',
+  accession_id varchar(20) NOT NULL default '',
+  map_set_name varchar(64) NOT NULL default '',
+  short_name varchar(30) NOT NULL default '',
+  map_type_id int(11) NOT NULL default '0',
+  species_id int(11) NOT NULL default '0',
+  published_on date default NULL,
+  can_be_reference_map tinyint(4) NOT NULL default '1',
+  display_order int(11) NOT NULL default '1',
+  is_enabled tinyint(4) NOT NULL default '1',
+  remarks text,
+  how_to_draw varchar(12) NOT NULL default '',
+  color varchar(20) default NULL,
+  width int(11) default NULL,
+  PRIMARY KEY  (map_set_id),
+  UNIQUE KEY accession_id (accession_id)
+) TYPE=MyISAM;
+
+#
+# Table structure for table 'cmap_map_set_correspondence'
+#
+
+CREATE TABLE cmap_map_set_correspondence (
+  map_set_id1 int(11) NOT NULL default '0',
+  map_set_id2 int(11) NOT NULL default '0',
+  should_draw_correspondences tinyint(4) NOT NULL default '0',
+  PRIMARY KEY  (map_set_id1,map_set_id2)
+) TYPE=MyISAM;
+
+#
+# Table structure for table 'cmap_map_type'
+#
+
+CREATE TABLE cmap_map_type (
+  map_type_id int(11) NOT NULL default '0',
+  map_type varchar(64) NOT NULL default '',
+  map_units varchar(12) NOT NULL default '',
+  is_relational_map tinyint(11) NOT NULL default '0',
+  how_to_draw varchar(12) NOT NULL default '',
+  color varchar(20) default NULL,
+  width int(11) default NULL,
+  display_order int(11) NOT NULL default '1',
+  PRIMARY KEY  (map_type_id),
+  UNIQUE KEY map_type (map_type)
+) TYPE=MyISAM;
+
+#
+# Table structure for table 'cmap_next_number'
+#
+
+CREATE TABLE cmap_next_number (
+  table_name varchar(40) NOT NULL default '',
+  next_number int(11) NOT NULL default '0',
+  PRIMARY KEY  (table_name)
+) TYPE=MyISAM;
+
+#
+# Table structure for table 'cmap_species'
+#
+
+CREATE TABLE cmap_species (
+  species_id int(11) NOT NULL default '0',
+  accession_id varchar(20) NOT NULL default '',
+  common_name varchar(64) NOT NULL default '',
+  full_name varchar(64) NOT NULL default '',
+  display_order int(11) NOT NULL default '1',
+  ncbi_taxon_id int(11) default NULL,
+  PRIMARY KEY  (species_id),
+  UNIQUE KEY accession_id (accession_id)
+) TYPE=MyISAM;
+

@@ -1,0 +1,40 @@
+[% INCLUDE admin_header.tmpl title='Species View' %]
+<a href="admin">Home</a> |
+<a href="admin?action=species_create">Create New Species</a>
+<hr noshade>
+
+[% IF species.size %]
+  <table>
+      <tr>
+        <th><a href="admin?action=species_view;order_by=accession_id">Acc. ID</a></th>
+        <th><a href="admin?action=species_view;order_by=common_name">Common Name</a></th>
+        <th><a href="admin?action=species_view;order_by=full_name">Full Name</a></th>
+        <th><a href="admin?action=species_view;order_by=display_order">Display Order</a></th>
+        <th><a href="admin?action=species_view;order_by=ncbi_taxon_id">NCBI Taxon ID</a></th>
+        <th colspan="2" align="center">Actions</th>
+      </tr>
+    [% SET i=0 %]
+    [% FOREACH s=species %]
+      <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
+        <td>[% s.accession_id %]</td>
+        <td>[% s.common_name %]</td>
+        <td>[% s.full_name %]</td>
+        <td>[% s.display_order %]</td>
+        <td>[% s.ncbi_taxon_id %]</td>
+        <td>
+          <a href="admin?action=species_edit;species_id=[% s.species_id %]">Edit</a>
+        </td>
+        <td>
+          <a href="admin?action=confirm_delete;entity_type=cmap_species;entity_id=[% s.species_id %];entity_name_field=common_name">Delete</a>
+        </td>
+      </tr>
+      [% SET i = i + 1 %]
+    [% END %]
+  </table>
+
+[% ELSE %]
+
+  <p>No species to show.</p>
+
+[% END %]
+[% INCLUDE admin_footer.tmpl %]

@@ -1,0 +1,48 @@
+[% INCLUDE admin_header.tmpl title='Feature Type Create' %]
+<a href="admin">Home</a> |
+<a href="admin?action=feature_types_view">View Feature Types</a>
+<hr noshade>
+<form action="admin" method="post">
+<table>
+    <tr>
+        <td>Acc. ID:</th>
+        <td><input name="accession_id"></td>
+    </tr>
+
+    <tr>
+        <td>Feature Type:</th>
+        <td><input name="feature_type"></td>
+    </tr>
+
+    <tr>
+        <td align="right">How To Draw:</td>
+        <td>
+            <select name="how_to_draw">
+                [% FOREACH shape=shapes %]
+                    <option value="[% shape %]">[% shape %]</option>
+                [% END %]
+            </select>
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Color:</td>
+        <td>
+            <select name="color">
+                <option value="">--Default--</option>
+                [% FOREACH color=colors %]
+                    <option value="[% color %]">[% color %]</option>
+                [% END %]
+            </select>
+        </td>
+    </tr>
+
+    <tr>
+        <td colspan="2" align="center">
+            <input type="hidden" name="action" value="feature_type_insert">
+            <input type="submit" value="Submit">
+        </th>
+    </tr>
+</table>
+</form>
+[% INCLUDE admin_footer.tmpl %]

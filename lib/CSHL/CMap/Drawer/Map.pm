@@ -1,0 +1,993 @@
+package CSHL::CMap::Drawer::Map;
+
+# $Id: Map.pm,v 1.1.1.1 2002-07-31 23:27:28 kycl4rk Exp $
+
+=pod
+
+=head1 NAME
+
+CSHL::CMap::Drawer::Map - draw a map
+
+=head1 SYNOPSIS
+
+  use CSHL::CMap::Drawer::Map;
+  blah blah blah
+
+=head1 DESCRIPTION
+
+Blah blah blah.
+
+=head1 METHODS
+
+=cut
+
+use strict;
+use vars qw( $VERSION );
+$VERSION = (qw$Revision: 1.1.1.1 $)[-1];
+
+use Data::Dumper;
+use CSHL::CMap;
+use CSHL::CMap::Constants;
+use CSHL::CMap::Drawer::Feature;
+use CSHL::CMap::Utils 'column_distribution';
+
+use base 'CSHL::CMap';
+
+use constant AUTO_FIELDS => [
+    qw( map_set_id map_set_aid map_type accession_id species_id map_id 
+        species_name map_units map_name map_set_name map_type_id 
+        is_relational_map begin end 
+    )
+];
+
+use constant INIT_FIELDS => [
+    qw( drawer base_x base_y slot_no maps )
+];
+
+use constant HOW_TO_DRAW => {
+    default  => 'draw_box',
+    box      => 'draw_box',
+    dumbbell => 'draw_dumbbell',
+};
+
+BEGIN {
+    #
+    # Create automatic accessor methods.
+    #
+    foreach my $sub_name ( @{ +AUTO_FIELDS } ) {
+        no strict 'refs';
+        unless ( defined &$sub_name ) {
+            *{ $sub_name } = sub { 
+                my $self   = shift;
+                my $map_id = shift;
+                return $self->{'maps'}{ $map_id }{ $sub_name } 
+            };
+        }
+    }
+}
+
+# ----------------------------------------------------
+sub init {
+    my ( $self, $config ) = @_;
+    $self->params( $config, @{ +INIT_FIELDS } );
+    return $self;
+}
+
+# ----------------------------------------------------
+sub base_x {
+
+=pod
+
+=head2 base_x
+
+Figure out where right-to-left this map belongs.
+
+=cut
+    my $self    = shift;
+    my $slot_no = $self->slot_no or return 0; # slot "0" is in the middle
+    my $drawer  = $self->drawer;
+    my $buffer  = 20;
+
+    my $base_x;
+    if ( 
+        ( $slot_no == -1 && $drawer->total_no_slots == 2 )
+        ||
+        ( $slot_no < 0 )
+    ) {
+        $base_x = $drawer->min_x - $buffer * 4;
+    }
+    else {
+        $base_x = $drawer->max_x + $buffer
+    }
+
+    return $base_x;
+}
+
+# ----------------------------------------------------
+sub base_y {
+
+=pod
+
+=head2 base_y
+
+Return the base y coordinate.
+
+=cut
+    my $self = shift;
+    return $self->{'base_y'};
+}
+
+# ----------------------------------------------------
+sub color {
+
+=pod
+
+=head2 color
+
+Returns the color of the map.
+
+=cut
+    my $self   = shift;
+    my $map_id = shift or return;
+    my $map    = $self->map( $map_id );
+    return 
+        lc $map->{'color'}         || 
+        lc $map->{'default_color'} || 
+        lc DEFAULT->{'map_color'};
+}
+
+# ----------------------------------------------------
+sub drawer {
+
+=pod
+
+=head2 drawer
+
+Returns the CSHL::CMap::Drawer object.
+
+=cut
+    my $self = shift;
+    return $self->{'drawer'};
+}
+
+# ----------------------------------------------------
+sub draw_box {
+
+=pod
+
+=head2 draw_box
+
+Draws the map as a "box" (a filled-in rectangle).  Return the bounds of the
+box.
+
+=cut
+    my ( $self, %args )  = @_;
+    my $drawer           = $args{'drawer'} || $self->drawer or 
+                           $self->error('No drawer');
+    my ( $x1, $y1, $y2 ) = @{ $args{'coords'} || [] } or 
+                           $self->error('No coordinates');
+    my $color            = $self->color( $args{'map_id'} );
+    my $width            = $self->map_width( $args{'map_id'} );
+    my $x2               = $x1 + $width;
+    my @coords           = ( $x1, $y1, $x2, $y2 ); 
+
+    $drawer->add_drawing( FILLED_RECT, @coords, $color  );
+    $drawer->add_drawing( RECTANGLE,   @coords, 'black' );
+    
+    if ( my $map_units = $args{'map_units'} ) {
+        my $buf  = 2;
+        my $font = $drawer->regular_font;
+        my $x    = $x1 + ( ( $x2 - $x1 ) / 2 ) -
+                   ( ( $font->width * length( $map_units ) ) / 2 );
+        my $y    = $y2 + $buf;
+        $drawer->add_drawing( STRING, $font, $x, $y, $map_units, 'grey' );
+    }
+
+    return @coords;
+}
+
+# ----------------------------------------------------
+sub draw_dumbbell {
+
+=pod
+
+=head2 draw_dumbbell
+
+Draws the map as a "dumbbell" (a line with circles on the ends).  Return the
+bounds of the image.
+
+=cut
+    my ( $self, %args )  = @_;
+    my $drawer           = $args{'drawer'} || $self->drawer or 
+                           $self->error('No drawer');
+    my ( $x1, $y1, $y2 ) = @{ $args{'coords'} || [] } or 
+                           $self->error('No coordinates');
+    my $color            = $self->color( $args{'map_id'} );
+    my $width            = $self->map_width( $args{'map_id'} );
+    my $x2               = $x1 + $width;
+    my $mid_x            = $x1 + ( ( $x2 - $x1 ) / 2 );
+    my $arc_width        = $width + 6;
+
+    $drawer->add_drawing(
+        ARC, $mid_x, $y1, $arc_width, $arc_width, 0, 360, $color
+    );
+    $drawer->add_drawing(
+        ARC, $mid_x, $y2, $arc_width, $arc_width, 0, 360, $color
+    );
+    $drawer->add_drawing( FILL_TO_BORDER, $mid_x, $y1, $color, $color );
+    $drawer->add_drawing( FILL_TO_BORDER, $mid_x, $y2, $color, $color );
+    $drawer->add_drawing( FILLED_RECT, $x1, $y1, $x2, $y2, $color );
+    
+    if ( my $map_units = $args{'map_units'} ) {
+        my $buf  = 2;
+        my $font = $drawer->regular_font;
+        my $x    = $x1 + ( ( $x2 - $x1 ) / 2 ) -
+                   ( ( $font->width * length( $map_units ) ) / 2 );
+        my $y    = $y2 + $buf;
+        $drawer->add_drawing( STRING, $font, $x, $y, $map_units, 'grey' );
+    }
+
+    return ( 
+        $mid_x - $arc_width/2, $y1 - $arc_width/2,
+        $mid_x + $arc_width/2, $y2 + $arc_width/2,
+    );
+}
+
+# ----------------------------------------------------
+sub features {
+
+=pod
+
+=head2 features
+
+Returns all the features on the map (as objects).
+
+=cut
+    my $self   = shift;
+    my $map_id = shift or return;
+    my $map    = $self->map( $map_id );
+
+    unless ( defined $map->{'feature_store'} ) {
+        for my $data ( 
+            map   { @{ $map->{'features'}{ $_ } } } 
+            sort  { $a <=> $b }
+            keys %{ $map->{'features'} } 
+        ) {
+            push @{ $map->{'feature_store'} }, 
+                CSHL::CMap::Drawer::Feature->new( 
+                    map    => $self,
+                    map_id => $map_id,
+                    %$data,
+                )
+            ;
+        }
+    }
+
+    return @{ $map->{'feature_store'} || [] };
+}
+
+# ----------------------------------------------------
+sub feature_positions {
+
+=pod
+
+=head2 feature_positions
+
+Returns the feature positions on the map.
+
+=cut
+    my $self   = shift;
+    my $map_id = shift or return;
+    my $map    = $self->map( $map_id );
+
+    unless ( $map->{'feature_positions'} ) {
+        $map->{'feature_positions'} = 
+            [ sort { $a <=> $b } keys %{ $map->{'features'} } ];
+    }
+
+    return @{ $map->{'feature_positions'} || [] };
+}
+
+# ----------------------------------------------------
+sub how_to_draw {
+
+=pod
+
+=head2 how_to_draw
+
+Returns a string describing how to draw the map.
+
+=cut
+    my $self        = shift;
+    my $map_id      = shift or return;
+    my $map         = $self->map( $map_id );
+    my $how_to_draw = lc $map->{'how_to_draw'}         ||
+                      lc $map->{'default_how_to_draw'} || '';
+    $how_to_draw    = 'default' unless defined HOW_TO_DRAW->{ $how_to_draw };
+    return $how_to_draw;
+}
+
+# ----------------------------------------------------
+sub layout {
+
+=pod
+
+=head2 layout
+
+Lays out the map.
+
+=cut
+    my $self             = shift;
+    my $base_y           = $self->base_y;
+    my $slot_no          = $self->slot_no;
+    my $drawer           = $self->drawer;
+    my $label_side       = $drawer->label_side( $slot_no );
+    my $pixel_height     = $drawer->pixel_height;
+    my $label_font       = $drawer->label_font;
+    my $reg_font         = $drawer->regular_font;
+    my @map_ids          = $self->map_ids;
+    my $no_of_maps       = scalar @map_ids;
+    my @columns          = ();
+    my $original_base_x  = $self->base_x;
+    my $include_features = $drawer->include_features;
+
+    #
+    # These are for drawing the map titles last if this is a relational map.
+    #
+    my ( $is_relational, $top_y, $min_x, $max_x, @map_titles );
+
+    for my $map_id ( @map_ids ) {
+        $is_relational       = $self->is_relational_map( $map_id );
+        my $base_x           = $self->base_x + 30;
+        my $show_labels      = $is_relational && $slot_no != 0 ? 0 :
+                               $include_features eq 'none' ? 0 : 1;
+        my $show_ticks       = $is_relational && $slot_no != 0 ? 0 : 1;
+        my $show_map_title   = $is_relational && $slot_no != 0 ? 0 : 1;
+        my $show_map_units   = $is_relational && $slot_no != 0 ? 0 : 1;
+        my $map_width        = $self->map_width( $map_id );
+        my $column_width     = $map_width + $reg_font->height + 10;
+        my @features         = $self->features( $map_id );
+
+        #
+        # The map.
+        #
+        my $draw_sub_name = HOW_TO_DRAW->{ $self->how_to_draw( $map_id ) };
+        if ( $is_relational && $slot_no != 0 ) {
+            #
+            # Relational maps are drawn to a size relative to the distance
+            # their features correspond to features on the reference map.
+            # So, we need to find all the features with correspondences and
+            # find the "tick_y" position any have in the reference slot.
+            # Put them in ascending numerical order and use the first and last
+            # to find the height.
+            #
+            my @corr_feature_ids = map { 
+                $drawer->has_correspondence( $_->feature_id ) 
+                ? $_->feature_id : ()
+            } @features;
+
+            my @positions   =  sort{ $a <=> $b } $drawer->tick_y_positions(
+                slot_no     => $drawer->reference_slot_no( $slot_no ),
+                feature_ids => \@corr_feature_ids,
+            );
+
+            $pixel_height = $positions[-1] - $positions[0];
+            $pixel_height = MIN_MAP_PIXEL_HEIGHT 
+                if $pixel_height < MIN_MAP_PIXEL_HEIGHT;
+            my $midpoint  = ( $positions[0] + $positions[-1] ) / 2;
+            $base_y       = $midpoint - $pixel_height/2;
+
+            my $map_name     = $self->map_name( $map_id );
+            my $half_label   = ( $reg_font->width * length( $map_name ) ) / 2;
+            my $label_top    = $midpoint - $half_label;
+            my $label_bottom = $midpoint + $half_label;
+            my $top          = $base_y < $label_top ? $base_y : $label_top;
+            my $bottom       = $base_y + $pixel_height > $label_bottom ?
+                               $base_y + $pixel_height : $label_bottom ;
+            my $buffer       = 4;
+            my $column_index = column_distribution(
+                columns      => \@columns,
+                top          => $top,
+                bottom       => $bottom,
+                buffer       => $buffer,
+            );
+
+            $base_x = $label_side eq RIGHT 
+                ? $original_base_x + ( $column_width * $column_index )
+                : $original_base_x - ( $column_width * $column_index );
+
+            $min_x = $base_x unless defined $min_x;
+            $min_x = $base_x if $base_x < $min_x;
+            $max_x = $base_x if $base_x > $max_x;
+
+            my $label_x = $label_side eq RIGHT
+                ? $base_x + $map_width + 6 
+                : $base_x - $reg_font->height - 6;
+
+            $drawer->add_drawing(
+                STRING_UP, $reg_font, $label_x, $label_bottom,
+                $map_name, 'black'
+            );
+        }
+
+        $top_y = $base_y unless defined $top_y;
+        $top_y = $base_y if $base_y < $top_y;
+
+        my @bounds    =  $self->$draw_sub_name(
+            map_id    => $map_id,
+            map_units => $show_map_units ? $self->map_units( $map_id ) : '',
+            drawer    => $drawer,
+            coords    => [ $base_x, $base_y, $base_y + $pixel_height ],
+        );
+
+        if ( $is_relational && $slot_no != 0 ) {
+            my $slots = $drawer->slots;
+
+            my @maps;
+            for my $side ( qw[ left right ] ) {
+                my $no  = $side eq 'left' ? $slot_no - 1 : $slot_no + 1;
+                my $new_no  = $side eq 'left' ? -1 : 1;
+                my $map = $slots->{ $no } or next; 
+                push @maps,
+                    join('%3d', $new_no, map { $map->{$_} } qw[ field aid ] );
+            }
+
+            my $url = URLS->{'cmap_viewer'}.
+                '?ref_map_set_aid='.$self->map_set_aid( $map_id ).
+                ';ref_map_aid='.$self->accession_id( $map_id ).
+                ';comparative_maps='.join( ':', @maps );
+
+            $drawer->add_map_area(
+                coords => \@bounds,
+                url    => $url,
+                alt    => 'Details: '.$self->map_name,
+            );
+        }
+        
+        if ( $show_ticks ) {
+            #
+            # Tick marks.
+            #
+            my $interval      = $self->tick_mark_interval( $map_id ) || 1;
+            my $map_length    = $self->map_length( $map_id );
+            my $no_intervals  = int( $map_length / $interval );
+            my $tick_overhang = 5;
+            my $start         = $self->start_position( $map_id );
+            my @intervals     = map { 
+                int ( $start + ( $_ * $interval ) ) 
+            } 1 .. $no_intervals;
+
+            for my $tick_pos ( @intervals ) {
+                my $rel_position = ( $tick_pos - $start ) / $map_length;
+                my $y_pos        = $base_y + ( $pixel_height * $rel_position );
+                my $tick_start   = $label_side eq RIGHT
+                    ? $base_x - $tick_overhang
+                    : $base_x
+                ;
+
+                my $tick_stop     = $label_side eq RIGHT
+                    ? $base_x + $map_width
+                    : $base_x + $map_width + $tick_overhang
+                ;
+
+                $drawer->add_drawing(
+                    LINE, $tick_start, $y_pos, $tick_stop, $y_pos, 'grey'
+                );
+
+                my $label_x = $label_side eq RIGHT 
+                    ? $tick_start - $reg_font->height - 2
+                    : $tick_stop  + 2
+                ;
+
+                my $label_y = $y_pos + ($reg_font->width*length($tick_pos))/2;
+
+                $drawer->add_drawing(
+                    STRING_UP, $reg_font, $label_x, $label_y, $tick_pos, 'grey'
+                );
+            }
+        }
+
+        #
+        # Features.
+        #
+        my $no_features         = scalar @features;
+        my $midpoint            = int ( $no_features / 2 ) || 0;
+        my $midpoint_feature_id = $features[ $midpoint ]->feature_id;
+        my @sorted_features     = (
+            @features[ reverse 0 .. $midpoint - 1 ],
+            @features[ $midpoint .. $no_features - 1 ]
+        );
+        
+        my $prev_label_y;
+        my $moving_up = 1;
+        my $min_y     = $base_y;
+        my @fcolumns  = ();
+        my $mid_y;
+        for my $feature ( @sorted_features ) {
+            my $y_pos1        = $base_y +
+                ( $pixel_height * $feature->relative_start_position );
+            my $y_pos2        = $base_y +
+                ( $pixel_height * $feature->relative_stop_position );
+            my $tick_overhang = 2;
+            my $label_offset  = 30;
+
+            my $has_corr   = $drawer->has_correspondence($feature->feature_id);
+            my $color      = $has_corr 
+                ? DEFAULT->{'feature_correspondence_color'} || $feature->color
+                : $feature->color;
+            my $label      = $feature->feature_name;
+            my $tick_start = $base_x - $tick_overhang;
+            my $tick_stop  = $base_x + $map_width + $tick_overhang;
+            my $x_plane    =  $label_side eq RIGHT
+                ? $tick_stop  + 2 : $tick_start - 2;
+
+            if ( $feature->how_to_draw eq 'line' ) {
+                $drawer->add_drawing(
+                    LINE, $tick_start, $y_pos1, $tick_stop, $y_pos1, $color
+                );
+            }
+            elsif ( 
+                $feature->how_to_draw eq 'span' 
+                ||
+                $feature->how_to_draw eq 'dumbbell' 
+            ) {
+                my $buffer       = 2;
+                my $column_index = column_distribution(
+                    columns      => \@fcolumns,
+                    top          => $y_pos1,
+                    bottom       => $y_pos2,
+                    buffer       => $buffer,
+                );
+                my $offset       = ( $column_index + 1 ) * 4;
+                my $vert_line_x1 = $label_side eq RIGHT
+                    ? $tick_stop + 2 : $tick_start - 2;
+                my $vert_line_x2 = $label_side eq RIGHT 
+                    ? $tick_stop + $offset : $tick_start - $offset;
+
+                $drawer->add_drawing(
+                    LINE, 
+                    $vert_line_x2, $y_pos1, 
+                    $vert_line_x2, $y_pos2, 
+                    $color
+                );
+
+                if ( $feature->how_to_draw eq 'span' ) {
+                    $drawer->add_drawing(
+                        LINE, 
+                        $vert_line_x1, $y_pos1, 
+                        $vert_line_x2, $y_pos1, 
+                        $color
+                    );
+
+                    $drawer->add_drawing(
+                        LINE, 
+                        $vert_line_x2, $y_pos2, 
+                        $vert_line_x1, $y_pos2, 
+                        $color
+                    );
+                }
+                else {
+                    my $width = 3;
+                    $drawer->add_drawing(
+                        ARC, 
+                        $vert_line_x2, $y_pos1,
+                        $width, $width, 0, 360, $color
+                    );
+
+                    $drawer->add_drawing(
+                        ARC, 
+                        $vert_line_x2, $y_pos2,
+                        $width, $width, 0, 360, $color
+                    );
+                }
+
+                $drawer->add_map_area(
+                    coords => [$vert_line_x1, $y_pos1, $vert_line_x2, $y_pos2], 
+                    url    => URLS->{'feature_details'}.
+                              $feature->accession_id,
+                    alt    => 'Details: '.$feature->feature_name,
+                );
+
+                $x_plane = $vert_line_x2;
+            }
+            elsif ( $feature->how_to_draw eq 'box' ) {
+                $drawer->add_drawing(
+                    RECTANGLE, $tick_start, $y_pos1, $tick_stop, $y_pos2, $color
+                );
+            }
+
+            my ( $left_connection, $right_connection );
+            if ( $show_labels ) {
+                my $label_y = $y_pos1 - $reg_font->height/2;
+                if ( $feature->feature_id == $midpoint_feature_id ) {
+                    $moving_up = 0;
+                }
+                else {
+                    $prev_label_y = $label_y unless defined $prev_label_y;
+                }
+
+                my $is_highlighted = 
+                    $drawer->highlight_feature( $feature->feature_name );
+
+                if ( 
+                    $include_features eq 'landmarks' && !$feature->is_landmark 
+                ) {
+                    next unless $has_corr || $is_highlighted;
+                }
+
+                #
+                # Feature label.
+                #
+                my $label_x = $label_side eq RIGHT
+                    ? $base_x + $label_offset
+                    : $base_x - $label_offset - $reg_font->width*length($label)
+                ;
+
+                my $diff = 0;
+                if ( $moving_up ) {
+                    $diff-- while $label_y + $diff > $prev_label_y;
+                }
+                else {
+                    $diff++ while $label_y + $diff < $prev_label_y;
+                    $diff++ while $label_y + $diff < $mid_y;
+                }
+
+                my $buffer = 2;
+                if ( 
+                    $is_highlighted || 
+                    ( $has_corr && abs $diff < 10 ) ||
+                    ( $include_features =~ /^all|landmarks$/ && abs $diff < 5 )
+                ) {
+                    $label_y += $diff;
+                    $prev_label_y = $moving_up
+                        ? $label_y - $reg_font->height 
+                        : $label_y + $reg_font->height;
+                    $min_y = $prev_label_y if $prev_label_y < $min_y;
+
+                    if ( $moving_up and !defined $mid_y ) {
+                        $mid_y = $label_y + $reg_font->height;
+                    }
+
+                    $drawer->add_drawing(
+                        STRING, $reg_font, $label_x, $label_y, $label, $color
+                    );
+
+                    my @bounds = (
+                        $label_x - $buffer, 
+                        $label_y,
+                        $label_x + $reg_font->width * length($label) + $buffer, 
+                        $label_y + $reg_font->height,
+                    );
+
+                    if ( $is_highlighted ) {
+                        $drawer->add_drawing(
+                            RECTANGLE, @bounds, 
+                            DEFAULT->{'feature_highlight_color'}
+                        );
+                    }
+
+                    $drawer->add_map_area(
+                        coords => \@bounds,
+                        url    => URLS->{'feature_details'}.
+                                  $feature->accession_id,
+                        alt    => 'Details: '.$feature->feature_name,
+                    );
+
+                    my $label_connect_x1 = $x_plane;
+
+                    my $label_connect_y1 = $feature->how_to_draw eq 'line'
+                        ? $y_pos1 : $y_pos1 + ($y_pos2 - $y_pos1)/2;
+
+                    my $label_connect_x2 = $label_side eq RIGHT
+                        ? $base_x + $label_offset - 2
+                        : $base_x - $label_offset + 2
+                    ;
+
+                    my $label_connect_y2 = $label_y + $reg_font->height/2;
+
+                    $drawer->add_connection(
+                        $label_connect_x1,
+                        $label_connect_y1,
+                        $label_connect_x2, 
+                        $label_connect_y2,
+                        $color || DEFAULT->{'connecting_line_color'}
+                    );
+
+                    $left_connection  = $label_side eq RIGHT
+                            ? [ $tick_start - $buffer, $y_pos1 ] 
+                            : [ $label_x - $buffer, $label_connect_y2 ];
+
+                    $right_connection = $label_side eq RIGHT 
+                            ? [ $label_x +
+                                $reg_font->width*length($label) + $buffer,
+                                $label_connect_y2 ] 
+                            : [ $tick_stop + $buffer, $y_pos1 ]; 
+                }
+                else {
+                    $left_connection  = [ $tick_start - $buffer, $y_pos1 ];
+                    $right_connection = [ $tick_stop  + $buffer, $y_pos1 ]; 
+                }
+            }
+            else {
+                my $buffer = 2;
+                $left_connection  = [ $tick_start - $buffer, $y_pos1 ];
+                $right_connection = [ $tick_stop  + $buffer, $y_pos1 ]; 
+            }
+
+            if ( $has_corr ) {
+                $drawer->register_feature_position(
+                    feature_id => $feature->feature_id,
+                    slot_no    => $slot_no,
+                    left       => $left_connection,
+                    right      => $right_connection,
+                    tick_y     => $y_pos1,
+                );
+            }
+        }
+
+        #
+        # The map title.
+        #
+        if ( $is_relational && $slot_no != 0 ) {
+            unless ( @map_titles ) {
+                push @map_titles,
+                    map  { $self->$_( $map_id ) } 
+                    grep { !/map_name/ }
+                    reverse @{ +MAP_TITLES } 
+                ;
+            }
+        }
+        else {
+            $min_y -= $reg_font->height + 5;
+            for my $label ( 
+                map { $self->$_( $map_id ) } reverse @{ +MAP_TITLES } 
+            ) {
+                my $label_x = $base_x + ( $map_width / 2 ) - 
+                    ( ( $reg_font->width * length( $label ) ) / 2 );
+
+                $drawer->add_drawing( 
+                    STRING, $reg_font, $label_x, $min_y, $label, 'black'
+                );
+
+                my $label_end = $label_x + ($reg_font->width * length($label));
+                $min_y       -= $reg_font->height;
+            }
+        }
+
+        #
+        # Draw feature correspondences to reference map.
+        # This could be moved into the Drawer and be done at the end (?).
+        #
+        for my $position_set ( 
+            $drawer->feature_correspondence_positions( slot_no => $slot_no ) 
+        ) {
+            $drawer->add_connection(
+                @$position_set,
+                DEFAULT->{'connecting_line_color'}    
+            );
+        }
+    }
+
+    #
+    # Draw the map titles last for relational maps, centered over all the maps.
+    #
+    $top_y -= 10;
+    if ( $is_relational && $slot_no != 0 ) {
+        my $min_y = $top_y - $reg_font->height + 5;
+        for my $label ( @map_titles ) {
+            my $label_x = $min_x + ( ( $max_x - $min_x ) / 2 ) - 
+                ( ( $reg_font->width * length( $label ) ) / 2 );
+
+            $drawer->add_drawing( 
+                STRING, $reg_font, $label_x, $min_y, $label, 'black'
+            );
+
+            my $label_end = $label_x + ($reg_font->width * length($label));
+            $min_y       -= $reg_font->height;
+        }
+    }
+
+    return 1;
+}
+
+# ----------------------------------------------------
+sub map_ids {
+
+=pod
+
+=head2 map_ids
+
+Returns the all the map IDs.
+
+=cut
+    my $self = shift;
+    
+    unless ( $self->{'sorted_map_ids'} ) {
+        my @maps = map { 
+            [ $_, $self->{'maps'}{ $_ }{'no_correspondences'} ] 
+        } keys %{ $self->{'maps'} };
+
+        $self->{'sorted_map_ids'} = [
+            map  { $_->[0] }
+            sort { $b->[1] <=> $a->[1] } 
+            @maps
+        ];
+    }
+
+    return @{ $self->{'sorted_map_ids'} };
+}
+
+# ----------------------------------------------------
+sub map {
+
+=pod
+
+=head2 map
+
+Returns one map.
+
+=cut
+    my $self   = shift;
+    my $map_id = shift or return;
+    return $self->{'maps'}{ $map_id };
+}
+
+# ----------------------------------------------------
+sub maps {
+
+=pod
+
+=head2 maps
+
+Gets/sets all the maps.
+
+=cut
+    my $self = shift;
+    $self->{'maps'} = shift if @_;
+    return $self->{'maps'};
+}
+
+# ----------------------------------------------------
+sub map_length {
+
+=pod
+
+=head2 map_length
+
+Returns the map's length (stop - start).
+
+=cut
+    my $self   = shift;
+    my $map_id = shift or return;
+#    warn "map length(): map_id = $map_id, stop = ", 
+#        $self->stop_position($map_id), ", start = ", 
+#        $self->start_position($map_id), "\n";
+    return $self->stop_position($map_id) - $self->start_position($map_id);
+}
+
+# ----------------------------------------------------
+sub map_width {
+
+=pod
+
+=head2 map_width
+
+Returns a string describing how to draw the map.
+
+=cut
+    my $self   = shift;
+    my $map_id = shift or return;
+    my $map    = $self->map( $map_id );
+    return 
+        $map->{'width'}         || 
+        $map->{'default_width'} || 
+        DEFAULT->{'map_width'};
+}
+
+
+# ----------------------------------------------------
+sub slot_no {
+
+=pod
+
+=head2 slot_no
+
+Returns the slot number.
+
+=cut
+    my $self = shift;
+    return $self->{'slot_no'};
+}
+
+# ----------------------------------------------------
+sub start_position {
+
+=pod
+
+=head2 start_position
+
+Returns a map's start position.
+
+=cut
+    my $self   = shift;
+    my $map_id = shift or return;
+    my $map    = $self->map( $map_id );
+#    warn "in start_pos, map = ", Dumper($map), "\n";
+    
+    unless ( defined $map->{'start_position'} ) {
+        my @positions = $self->feature_positions( $map_id );
+        $map->{'start_position'} = @positions ? $positions[0] : undef;
+    }
+
+    return $map->{'start_position'};
+}
+
+# ----------------------------------------------------
+sub stop_position {
+
+=pod
+
+=head2 stop_position
+
+Returns a map's stop position.
+
+=cut
+    my $self   = shift;
+    my $map_id = shift or return;
+    my $map    = $self->map( $map_id );
+    
+    unless ( defined $map->{'stop_position'} ) {
+        my @positions = $self->feature_positions( $map_id );
+        $map->{'stop_position'} = @positions ? $positions[-1] : undef;
+    }
+
+    return $map->{'stop_position'};
+}
+
+# ----------------------------------------------------
+sub tick_mark_interval {
+
+=pod
+
+=head2 tick_mark_interval
+
+Returns the map's tick mark interval.
+
+=cut
+    my $self   = shift;
+    my $map_id = shift or return;
+    my $map    = $self->map( $map_id );
+
+    unless ( defined $map->{'tick_mark_interval'} ) {
+        my $map_length = 
+            $self->stop_position( $map_id ) - $self->start_position( $map_id );
+        $map->{'tick_mark_interval'} = int ( $map_length / 5 );
+    }
+
+    return $map->{'tick_mark_interval'};
+}
+
+1;
+
+# ----------------------------------------------------
+# The hours of folly are measur'd by the clock,
+# but of wisdom: no clock can measure.
+# William Blake
+# ----------------------------------------------------
+
+=pod
+
+=head1 SEE ALSO
+
+L<perl>.
+
+=head1 AUTHOR
+
+Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
+
+Copyright (c) 2002 Cold Spring Harbor Laboratory
+
+This library is free software;  you can redistribute it and/or modify 
+it under the same terms as Perl itself.
+
+=cut

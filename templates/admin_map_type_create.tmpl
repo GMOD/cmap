@@ -1,0 +1,76 @@
+[% INCLUDE admin_header.tmpl title='Map Type Create' %]
+<a href="admin">Home</a> |
+<a href="admin?action=map_types_view">View Map Types</a>
+<hr noshade>
+
+<form method="post" action="admin">
+<table>
+    <tr>
+        <td align="right">Map Type:</td>
+        <td>
+            <input name="map_type">
+        </td>
+    </tr>
+  
+    <tr>
+        <td align="right">Map Units:</td>
+        <td>
+            <input name="map_units">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Is Relational Map:</td>
+        <td>
+            <select name="is_relational_map"> 
+                <option value="0"[% IF apr.param('is_relational_map')==0 %] selected[% END %]>No</option>
+                <option value="1"[% IF apr.param('is_relational_map')==1 %] selected[% END %]>Yes</option>
+            </select>
+        </td>
+    </tr>
+
+  
+    <tr>
+        <td align="right">How To Draw:</td>
+        <td>
+            <select name="how_to_draw">
+                [% FOREACH shape=shapes %]
+                    <option value="[% shape %]">[% shape %]</option>
+                [% END %]
+            </select>
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Width:</td>
+        <td>
+            <select name="width">
+                <option value="">--Default--</option>
+                [% FOREACH width=widths %]
+                    <option value="[% width %]">[% width %]</option>
+                [% END %]
+            </select>
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Color:</td>
+        <td>
+            <select name="color">
+                <option value="">--Default--</option>
+                [% FOREACH color=colors %]
+                    <option value="[% color %]">[% color %]</option>
+                [% END %]
+            </select>
+        </td>
+    </tr>
+  
+    <tr>
+        <td colspan="2">
+            <input type="submit" value="Submit">
+            <input type="hidden" name="action" value="map_type_insert">
+        </td>
+    </tr>
+</table>
+</form>
+[% INCLUDE admin_footer.tmpl %]

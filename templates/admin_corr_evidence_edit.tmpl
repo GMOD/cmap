@@ -1,0 +1,50 @@
+[% INCLUDE admin_header.tmpl title="Edit Correspondence &quot;$corr.accession_id&quot;" %]
+<a href="admin">Home</a>
+<hr noshade>
+
+<form method="post" action="admin">
+<table>
+    <tr>
+        <td align="right">
+            Acc. ID:
+        </td>
+        <td>
+            <input name="accession_id" value="[% corr.accession_id %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Evidence Type:
+        </td>
+        <td>
+            <select name="evidence_type_id">
+            [% FOREACH et=evidence_types %]
+                <option value="[% et.evidence_type_id %]"[% IF et.evidence_type_id==corr.evidence_type_id %] selected[% END %]>[% et.evidence_type %]([% et.rank %])</option>
+            [% END %]
+            </select>
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Score:</td>
+        <td><input name="score" value="[% corr.score %]"></td>
+    </tr>
+
+    <tr>
+        <td align="right">Remark:</td>
+        <td><input name="remark" value="[% corr.remark %]"></td>
+    </tr>
+
+    <tr>
+        <td colspan="2">
+            <input type="hidden" name="correspondence_evidence_id" value="[% corr.correspondence_evidence_id %]">
+            <input type="hidden" name="feature_correspondence_id" value="[% corr.feature_correspondence_id %]">
+            <input type="hidden" name="action" value="corr_evidence_update">
+            <input type="submit" value="Submit">
+        </td>
+    </tr>
+</table>
+</form>
+</body>
+</html>

@@ -1,0 +1,52 @@
+[% INCLUDE admin_header.tmpl title="Species Edit &quot;$species.common_name&quot;" %]
+<a href="admin">Home</a> |
+<a href="admin?action=species_view">View Species</a>
+<hr noshade>
+
+<form method="post" action="admin">
+<table>
+    <tr>
+        <td align="right">Acc. ID:</td>
+        <td>
+            <input name="accession_id" value="[% species.accession_id %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Common Name:</td>
+        <td>
+            <input name="common_name" value="[% species.common_name %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Full Name:</td>
+        <td>
+            <input name="full_name" value="[% species.full_name %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Display Order:</td>
+        <td>
+            <input name="display_order" value="[% species.display_order %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">NCBI Taxon ID:</td>
+        <td>
+            <input name="ncbi_taxon_id" value="[% species.ncbi_taxon_id %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td colspan="2">
+            <input type="submit" value="Submit">
+            <input type="hidden" name="species_id" value="[% species.species_id %]">
+            <input type="hidden" name="action" value="species_update">
+        </td>
+    </tr>
+</table>
+</form>
+[% INCLUDE admin_footer.tmpl %]

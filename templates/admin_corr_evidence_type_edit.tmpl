@@ -1,0 +1,31 @@
+[% INCLUDE admin_header.tmpl title="Edit Correspondence Evidence Type &quot;$evidence_type.evidence_type&quot;" %]
+<a href="admin">Home</a> |
+<a href="admin?action=corr_evidence_types_view">View Correspondence Evidence Types</a>
+<hr noshade>
+<form action="admin" method="post">
+    <table>
+        <tr>
+            <td>Acc. ID:</th>
+            <td><input name="accession_id" value="[% evidence_type.accession_id %]"></td>
+        </tr>
+
+        <tr>
+            <td>Evidence Type:</th>
+            <td><input name="evidence_type" value="[% evidence_type.evidence_type %]"></td>
+        </tr>
+
+        <tr>
+            <td>Rank:</th>
+            <td><input name="rank" value="[% evidence_type.rank %]"></td>
+        </tr>
+
+        <tr>
+            <td colspan="2" align="center">
+                <input type="hidden" name="evidence_type_id" value="[% evidence_type.evidence_type_id %]">
+                <input type="hidden" name="action" value="corr_evidence_type_update">
+                <input type="submit" value="Submit">
+            </th>
+        </tr>
+    </table>
+</form>
+[% INCLUDE admin_footer.tmpl %]
