@@ -4,7 +4,7 @@ package Bio::GMOD::CMap::Apache::MapSearch;
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -24,16 +24,21 @@ sub handler {
     #
     my ( $self, $apr ) = @_;
     my $ref_species_aid         = $apr->param('ref_species_aid')         || '';
+    my $prev_ref_species_aid    = $apr->param('prev_ref_species_aid')    || '';
     my $ref_map_set_aid         = $apr->param('ref_map_set_aid')         || '';
-    my $ref_map_names           = $apr->param('ref_map_names')           || '';
-    my $min_correspondence_maps = $apr->param('min_correspondence_maps') || 0;
+    my $min_correspondence_maps = $apr->param('min_correspondence_maps') ||  0;
     my $name_search             = $apr->param('name_search')             || '';
     my $order_by                = $apr->param('order_by')                || '';
-    my $page_index_start        = $apr->param('page_index_start')        || 1;
-    my $page_index_stop         = $apr->param('page_index_stop')         || 20;
+    my $page_no                 = $apr->param('page_no')                 ||  1;
 
-    $INTRO ||= $self->config_data( 'map_viewer_intro', $self->data_source )
-      || '';
+    $INTRO ||= $self->config_data('map_viewer_intro', $self->data_source) || '';
+
+    if ( 
+        $prev_ref_species_aid &&
+        ( $prev_ref_species_aid ne $ref_species_aid )
+    ) {
+        $ref_map_set_aid = '';
+    }
 
     #
     # Take the feature types either from the query string (first
@@ -46,27 +51,6 @@ sub handler {
     }
     elsif ( $apr->param('ref_map_aids') ) {
         @ref_map_aids = ( $apr->param('ref_map_aids') );
-    }
-
-    my @feature_types;
-    if ( defined( $apr->param('feature_types') ) ) {
-        @feature_types = ( $apr->param('feature_types') );
-    }
-    elsif ( $apr->param('included_feature_types') ) {
-        @feature_types = split( /,/, $apr->param('included_feature_types') );
-    }
-    my @corr_only_feature_types;
-    if ( defined( $apr->param('corr_only_feature_types') ) ) {
-        @corr_only_feature_types = ( $apr->param('corr_only_feature_types') );
-    }
-    my %included_corr_only_features = map { $_ => 1 } @corr_only_feature_types;
-
-    my @evidence_types;
-    if ( $apr->param('evidence_types') ) {
-        @evidence_types = ( $apr->param('evidence_types') );
-    }
-    elsif ( $apr->param('included_evidence_types') ) {
-        @evidence_types = split( /,/, $apr->param('included_evidence_types') );
     }
 
     #
@@ -91,7 +75,6 @@ sub handler {
             start       => '',
             stop        => '',
             map_set_aid => $ref_map_set_aid,
-            map_names   => $ref_map_names,
         },
     );
 
@@ -102,57 +85,37 @@ sub handler {
     my $form_data = $data->cmap_map_search_data(
         slots                   => \%slots,
         min_correspondence_maps => $min_correspondence_maps,
-        included_feature_types  => \@feature_types,
-        included_evidence_types => \@evidence_types,
         ref_species_aid         => $ref_species_aid,
-        page_index_start        => $page_index_start,
-        page_index_stop         => $page_index_stop,
         name_search             => $name_search,
         order_by                => $order_by,
-      )
-      or return $self->error( $data->error );
+        page_no                 => $page_no
+    ) or return $self->error( $data->error );
 
     #
     # The start and stop may have had to be moved as there
     # were too few or too many features in the selected region.
     #
-    $apr->param( ref_map_start   => $form_data->{'ref_map_start'} );
-    $apr->param( ref_map_stop    => $form_data->{'ref_map_stop'} );
-    $apr->param( ref_map_names   => $ref_map_names );
-    $apr->param( ref_map_aids    => join( ',', @ref_map_aids ) );
     $apr->param( ref_species_aid => $form_data->{'ref_species_aid'} );
     $apr->param( ref_map_set_aid => $form_data->{'ref_map_set_aid'} );
-
-    my $url_sort_tmpl =
-"/map_search?ref_species_aid=$ref_species_aid&ref_map_set_aid=$ref_map_set_aid&ref_map_names=$ref_map_names&min_correspondence_maps=$min_correspondence_maps&name_search=$name_search&page_index_start=$page_index_start&page_index_stop=$page_index_stop";
 
     my $html;
     my $t = $self->template or return;
     $t->process(
         TEMPLATE,
         {
-            apr                         => $apr,
-            form_data                   => $form_data,
-            page_index_start            => $page_index_start,
-            page_index_stop             => $page_index_stop,
-            name_search                 => $name_search,
-            cur_order_by                => $order_by,
-            url_sort_tmpl               => $url_sort_tmpl,
-            min_correspondence_maps     => $min_correspondence_maps,
-            page                        => $self->page,
-            debug                       => $self->debug,
-            intro                       => $INTRO,
-            url_sort_tmpl               => $url_sort_tmpl,
-            data_source                 => $self->data_source,
-            data_sources                => $self->data_sources,
-            title                       => 'Welcome to CMap',
-            stylesheet                  => $self->stylesheet,
-            selected_maps               => { map { $_, 1 } @ref_map_aids },
-            included_features           => { map { $_, 1 } @feature_types },
-            included_evidence           => { map { $_, 1 } @evidence_types },
-            included_corr_only_features => \%included_corr_only_features,
-            feature_types  => join( ',', @feature_types ),
-            evidence_types => join( ',', @evidence_types ),
+            apr                     => $apr,
+            form_data               => $form_data,
+            name_search             => $name_search,
+            cur_order_by            => $order_by,
+            min_correspondence_maps => $min_correspondence_maps,
+            page                    => $self->page,
+            debug                   => $self->debug,
+            intro                   => $INTRO,
+            data_source             => $self->data_source,
+            data_sources            => $self->data_sources,
+            title                   => 'Map Search',
+            stylesheet              => $self->stylesheet,
+            pager                   => $form_data->{'pager'},
         },
         \$html
       )
@@ -200,7 +163,7 @@ L<perl>, L<Template>.
 
 =head1 AUTHOR
 
-Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
+Ken Youens-Clark E<lt>kclark@cshl.orgE<gt>,
 Ben Faga E<lt>faga@cshl.orgE<gt>.
 
 =head1 COPYRIGHT
