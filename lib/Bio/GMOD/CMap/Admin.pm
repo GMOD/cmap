@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin;
 
-# $Id: Admin.pm,v 1.18 2003-02-20 23:56:22 kycl4rk Exp $
+# $Id: Admin.pm,v 1.19 2003-02-25 19:30:17 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.18 $)[-1];
+$VERSION = (qw$Revision: 1.19 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils qw[ next_number ];
@@ -513,7 +513,7 @@ Inserts a correspondence.  Returns -1 if there is nothing to do.
     #
     # Don't create correspondences among relational maps.
     #
-    return if 
+    return -1 if 
         $feature1->{'map_set_id'} == $feature2->{'map_set_id'} 
         &&
         $feature1->{'is_relational_map'} == 1;
@@ -521,7 +521,7 @@ Inserts a correspondence.  Returns -1 if there is nothing to do.
     #
     # Don't create correspondences among relational map sets.
     #
-    return if $feature1->{'is_relational_map'} && 
+    return -1 if $feature1->{'is_relational_map'} && 
         $feature2->{'is_relational_map'};
 
     #

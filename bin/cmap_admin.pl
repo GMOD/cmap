@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.21 2003-02-20 23:54:37 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.22 2003-02-25 19:30:12 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.21 $)[-1];
+$VERSION = (qw$Revision: 1.22 $)[-1];
 
 #
 # Turn off output buffering.
@@ -234,7 +234,7 @@ sub change_data_source {
         ],
     );
 
-    $self->data_source( $data_source );
+    $self->data_source( $data_source ) or warn $self->error, "\n";
 }
 
 # ----------------------------------------------------
@@ -958,41 +958,41 @@ sub import_correspondences {
     #
     # Get the map set.
     #
-#    my @map_sets = $self->show_menu(
-#        title       => 'Reference Map Set (optional)',
-#        prompt      => 'Please select a map set',
-#        display     => 'species_name,map_set_name',
-#        return      => 'map_set_id,species_name,map_set_name',
-#        allow_null  => 1,
-#        allow_mult  => 1,
-#        data        => $db->selectall_arrayref(
-#            q[
-#                select   ms.map_set_id, 
-#                         ms.short_name as map_set_name,
-#                         s.common_name as species_name
-#                from     cmap_map_set ms,
-#                         cmap_species s
-#                where    ms.species_id=s.species_id
-#                order by common_name, map_set_name
-#            ],
-#            { Columns => {} },
-#        ),
-#    );
-#
-#    my @map_set_ids = map { $_->[0] } @map_sets;
+    my @map_sets = $self->show_menu(
+        title       => 'Restrict by Map Set (optional)',
+        prompt      => 'Please select a map set to restrict the search',
+        display     => 'species_name,map_set_name',
+        return      => 'map_set_id,species_name,map_set_name',
+        allow_null  => 1,
+        allow_mult  => 1,
+        data        => $db->selectall_arrayref(
+            q[
+                select   ms.map_set_id, 
+                         ms.short_name as map_set_name,
+                         s.common_name as species_name
+                from     cmap_map_set ms,
+                         cmap_species s
+                where    ms.species_id=s.species_id
+                order by common_name, map_set_name
+            ],
+            { Columns => {} },
+        ),
+    );
+
+    my @map_set_ids = map { $_->[0] } @map_sets;
 
     print join("\n",
         'OK to import?',
         "  File      : $file",
     );
 
-#    if ( @map_sets ) {
-#        print join("\n", 
-#            '',
-#            '  From map sets:', 
-#            map { "    $_" } map { join('-', $_->[1], $_->[2]) } @map_sets
-#        );
-#    }
+    if ( @map_sets ) {
+        print join("\n", 
+            '',
+            '  From map sets:', 
+            map { "    $_" } map { join('-', $_->[1], $_->[2]) } @map_sets
+        );
+    }
     print "\n[Y/n] ";
 
     chomp( my $answer = <STDIN> );
@@ -1004,7 +1004,7 @@ sub import_correspondences {
 
     $importer->import( 
         fh          => $fh,
-#        map_set_ids => \@map_set_ids,
+        map_set_ids => \@map_set_ids,
         log_fh      => $self->log_fh,
     ) or do { 
         print "Error: ", $importer->error, "\n"; 
@@ -1411,26 +1411,22 @@ zero and ascending by one for each time you run the program (until you
 delete existing logs, of course).  The name of the log file will be
 echoed to you when you exit the program.
 
-B<Note:> All the questions asked in cmap_admin.pl can be answered
-either by choosing the number of the answer from a pre-defined list or
-by typing something (usually a file path, notice that you can use
-tab-completion if your system supports it).  When the answer must be
-selected from a list and the answer is required, you will not be
-allowed to leave the question until you have selected an answer from
-the list.  Occassionally the answer is not required, so you can just
-hit "<Return>."  Sometimes more than one answer is acceptable, so you
+All the questions asked in cmap_admin.pl can be answered either by
+choosing the number of the answer from a pre-defined list or by typing
+something (usually a file path, notice that you can use tab-completion
+if your system supports it).  When the answer must be selected from a
+list and the answer is required, you will not be allowed to leave the
+question until you have selected an answer from the list.
+Occassionally the answer is not required, so you can just hit
+"<Return>."  Sometimes more than one answer is acceptable, so you
 should specify all your choices on one line, separating the numbers
 with spaces.  Finally, sometimes a question is never asked if there is
 only one possible answer; the one answer is automatically taken and
 processing moves on to the next question.
 
-There are seven actions you can take with this tool:
+=head1 ACTIONS
 
-=over 4
-
-=item 1 
-
-Change data source
+=head2 Change data source
 
 Whenever the "Main Menu" is displayed, the current data source is
 displayed.  If you have configured CMap to work with multiple data
@@ -1439,9 +1435,7 @@ using.  The one defined as the "default" will always be chosen when
 you first begin. See the ADMINISTRATION document for more information
 on creating multiple data sources.
 
-=item 2
-
-Create new map set
+=head2 Create new map set
 
 This is the only feature duplicated with the web admin tool.  This is
 a very simple implementation, however, meant strictly as a convenience
@@ -1450,9 +1444,7 @@ type, long and short names.  Everything else about the map set must be
 edited with the web admin tool.
 
 
-=item 2 
-
-Import data for existing map set
+=head2 Import data for existing map set
 
 This allows you to import the feature data for a map set. The map set
 may be one you just created and is empty or one that already has data
@@ -1463,9 +1455,7 @@ the documentation ("perldoc") for Bio::GMOD::CMap::Admin::Import.  The
 file containing the feature data can either be given as an argument to
 this script or you can specify the file's location when asked.  
 
-=item 3 
-
-Make name-based correspondences
+=head2 Make name-based correspondences
 
 This option will create correspondences between any two features with
 the same "feature_name" or "alternate_name," irrespective of case.  It
@@ -1474,30 +1464,34 @@ set (for the occasions when you bring in just one new map set, you
 don't want to rerun this for the whole database -- it can take a long
 time).
 
-=item 4 
-
-Import feature correspondences
+=head2 Import feature correspondences
 
 Choose this option to import a file containing correspondences between
 your features.  For more information on the format of this file, see
 the documentation for Bio::GMOD::CMap::Admin::ImportCorrespondences.
+Like the name-based correspondences, you can restrict the maps which
+are involved in the search.  The lookups for the features will be done
+as normal, but only if one of the two features falls on one of the
+maps specified will a correspondence be created.  Again, the idea is
+that this should take less time than reloading correspondences when
+searching the entire database.
 
-=item 5 
-
-Reload correspondence matrix
+=head2 Reload correspondence matrix
 
 You should choose this option whenever you've altered the number of
 correspondences in the database.  This will truncate the
 "cmap_correspondence_matrix" table and reload it with the pair-wise
 comparison of every map set in the database.
 
-=item 6 Export data
+=head2 Export data
 
 There are three ways to dump the data in CMap:
 
 =over 4 
 
-=item 1 All Data as SQL INSERT statements
+=item 1 
+
+All Data as SQL INSERT statements
 
 This method creates an INSERT statement for every record in every
 table (or just those selected) a la "mysqldump."  This is meant to be
@@ -1508,7 +1502,9 @@ another database to mirror your current one.  You can also choose to
 add "TRUNCATE TABLE" statements just before the INSERT statements so
 as to erase any existing data.
 
-=item 2 Map data in CMap import format
+=item 2 
+
+Map data in CMap import format
 
 This method creates a separate file for each map set in the database.
 The data is dumped to the same tab-delimited format used when
@@ -1516,7 +1512,9 @@ importing.  You can choose to dump every map set or just particular
 ones, and you can choose to I<leave out> certain fields (e.g., maybe
 you don't care to export your accession IDs).
 
-=item 3 Feature correspondence data in CMap import format
+=item 3 
+
+Feature correspondence data in CMap import format
 
 This method dumps the feature correspondence data in the same
 tab-delimited format that is accepted for importing.  You can choose
@@ -1534,8 +1532,6 @@ weren't present at all.  In short, exporting with accession IDs is a
 Good Thing if the importing database has the same accession IDs
 (this was is much faster and more exact), but a very, very Bad Thing
 if the importing database has different accession IDs.
-
-=back
 
 =back
 

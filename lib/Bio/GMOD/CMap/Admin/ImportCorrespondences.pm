@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 
-# $Id: ImportCorrespondences.pm,v 1.9 2003-02-20 23:55:16 kycl4rk Exp $
+# $Id: ImportCorrespondences.pm,v 1.10 2003-02-25 19:30:19 kycl4rk Exp $
 
 =head1 NAME
 
@@ -41,7 +41,7 @@ each of the two feature names, a correspondence will be created.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.9 $)[-1];
+$VERSION = (qw$Revision: 1.10 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -113,7 +113,7 @@ use constant FEATURE_SQL_BY_NAME => q[
 sub import {
     my ( $self, %args ) = @_;
     my $fh              = $args{'fh'} or return $self->error('No file handle');
-#    my @map_set_ids     = @{ $args{'map_set_ids'} || [] };
+    my %map_set_ids     = map { $_, 1 } @{ $args{'map_set_ids'} || [] };
     my $db              = $self->db;
     $LOG_FH             = $args{'log_fh'} || \*STDOUT;
     my $admin           = Bio::GMOD::CMap::Admin->new(
@@ -142,11 +142,6 @@ sub import {
     my @feature_name_fields = qw[ 
         species_name map_set_name map_name feature_name 
     ];
-#    my $sql = FEATURE_SQL;
-#    if ( @map_set_ids ) {
-#        $self->Print("Restricting SQL with map set IDs.\n");
-#        $sql .= 'and ms.map_set_id in (' . join(',', @map_set_ids) . ')';
-#    }
 
     $self->Print("Parsing file...\n");
     my ( %feature_ids, %evidence_type_ids, $inserts, $total );
@@ -229,6 +224,16 @@ sub import {
             }
         }
 
+        if ( %map_set_ids ) {
+            my @found_map_set_ids = map { $_->{'map_set_id'} } 
+                @feature_ids1, @feature_ids2;
+            my $ok;
+            for my $found ( @found_map_set_ids ) {
+                $ok = 1, last if $map_set_ids{ $found };
+            }
+            next LINE unless $ok;
+        }
+
         next LINE unless @feature_ids1 && @feature_ids2;
 
         my @evidences = map {s/^\s+|\s+$//g;$_} split /,/, $record{'evidence'};
@@ -288,6 +293,14 @@ sub import {
 
         for my $feature1 ( @feature_ids1 ) {
             for my $feature2 ( @feature_ids2 ) {
+                if ( %map_set_ids ) {
+                    next unless 
+                        $map_set_ids{ $feature1->{'map_set_id'} }
+                        ||
+                        $map_set_ids{ $feature2->{'map_set_id'} }
+                    ;
+                }
+
                 for my $evidence_type ( @evidence_types ) {
                     my ( $evidence_type_id, $evidence ) = @$evidence_type;
                     my $fc_id = $admin->insert_correspondence( 

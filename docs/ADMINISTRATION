@@ -1,6 +1,6 @@
                 CMAP ADMINISTRATION AND DATA CURATION
 
-                          $Revision: 1.5 $
+                          $Revision: 1.6 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are two tools you will use:
@@ -430,24 +430,14 @@ true if you haven't explicitly defined the feature types you plan to
 show on your maps.  When this happens, you will be prompted by
 cmap_admin.pl to create the feature type.  This is provided merely as
 a convenience to the import process;  you should use the web admin
-tool to refine the new feature type (see the later section on feature
-types).
+tool to refine the new feature type (see the section on creating
+feature types).
 
 When cmap_admin.pl has successfully finished importing your map data,
 you will be returned to the "Main Menu."  From here, choose to "Quit"
 as the rest of the functionality will be covered later.
 
-8.      VIEWING MAPS
-
-At this point, you should be able to view at least one map in the
-viewer (so long as you have at least one map where
-"can_be_reference_map" is "true").  Before moving on, use your browser
-to point to the map viewer ("/cmap/viewer") and visually inspect the
-maps that you have imported.  You should get something resembling the
-data you imported.  Use the web admin tool to play with the shapes and
-colors use to represent the maps and the features.  
-
-9.      MAKING CORRESPONDENCES
+8.      MAKING CORRESPONDENCES
 
 Once you have more than one set of maps in CMap, you can use it for
 what it was designed:  showing comparisons.  To do this, you must
@@ -455,7 +445,7 @@ first create the correspondences between the features on the maps.
 Before you can do this, you'll need to establish the evidence types
 that can be used to support the correspondences.
 
-9.1     CREATING CORRESPONDENCE EVIDENCE TYPES
+8.1     CREATING CORRESPONDENCE EVIDENCE TYPES
 
 From the "Home" page of the web admin tool, choose the link "View
 Correspondence Evidence Types."  There will be no records to view, so
@@ -486,7 +476,7 @@ special evidence to use just for that purpose (e.g., with the name
 "Automated name-based" or something similar to flag it as a
 machine-created/non-curated correspondence).
 
-9.2     CREATING CORRESPONDENCE RECORDS
+8.2     CREATING CORRESPONDENCE RECORDS
 
 Once you have evidence types, you can create the correspondence
 records.  It might be helpful to you to inspect "cmap-schema.png,"
@@ -587,7 +577,7 @@ There are three ways to create correspondences:
 	bcd386	p-bcd386	name-based
 	pBF266	p-pBF266	name-based
 
-10.     LOADING THE CORRESPONDENCE MATRIX
+9.      LOADING THE CORRESPONDENCE MATRIX
 
 The data underlying the correspondence matrix is all precomputed.  As
 it is an intensive operation on seldom-changing data, it was
@@ -600,7 +590,7 @@ cmap_admin.pl and choose the "Reload correspondence matrix" option.
 The only option is to completely truncate the table and reload it from
 scratch.
 
-11.     ESTABLISHING DATABASE CROSS-REFERENCES
+10.     ESTABLISHING DATABASE CROSS-REFERENCES
 
 As CMap is only intended to provide a framework for visually showing
 comparisons and does not provide the space for storing details on the
@@ -700,12 +690,12 @@ Here are the fields you can use in the URL:
 The information in parentheses is simply clarifying the exact table
 and field that is being referred to.
 
-12.     VIEWING DATA
+11.     VIEWING DATA
 
 Now that we've stepped through the basics of setting up the CMap data,
 let's go over some of the more basic operations of curating the data.
 
-12.1    VIEWING ALL MAP SETS
+11.1    VIEWING ALL MAP SETS
 
 From the home page of the web admin tool, you'll see that you can
 "View Map Sets."  Selecting this link takes you to the "Map Sets View"
@@ -728,7 +718,7 @@ Note: On pages that may return a large recordset, the data is "paged"
       determined by the "max_child_elements" option in the CMap
       configuration file which will be discussed shortly.)
 
-12.2    VIEWING A MAP SET
+11.2    VIEWING A MAP SET
 
 Choose to "view" one of your map sets.  You'll be taken to the a page
 which lists all the data in the map set table as well as a summary of
@@ -746,9 +736,9 @@ Note: Deleting an object that has dependencies will cause the
       it can have cascading effects, and, as noted earlier, THERE IS NO
       UNDO. There is, however, the option to dump your data before
       messing with it giving you the ability to recover. This is 
-      discussed in section 13, "Export data." 
+      discussed in the POD documentation of cmap_admin.pl.
 
-12.3    VIEWING A MAP
+11.3    VIEWING A MAP
 
 Choose to "view" a map to see a summary of all the data in the map
 table as well as all the features on the map.  Notice that you can
@@ -756,16 +746,16 @@ restrict the features displayed by their feature types.  You can also
 search for a feature;  the search option on the map view page
 automatically restricts the search to the current map being displayed.
 
-12.4    VIEWING A FEATURE
+11.4    VIEWING A FEATURE
 
 Choose to "view" a feature from the map view page.  You'll be
 presented with all the data stored in the feature table as well as a
 summary of the correspondences the feature has to other features and
 the evidence types supporting the correspondences.  You can also add a
 new correspondence by clicking "Add Correspondence" and following the
-directions discussed earlier in section 9.
+directions discussed earlier in section 8.
 
-12.5    EDITING A FEATURE
+11.5    EDITING A FEATURE
 
 If you click on the "Edit" link from the feature view page, you'll be
 presented a form with the following fields:
@@ -795,7 +785,7 @@ presented a form with the following fields:
 *   DB Cross Reference Name (opt.): The dbxref name for this feature.
 
 *   DB Cross Reference URL (opt.): The dbxref URL for this feature.
-    Please see section 11 for more details about database cross
+    Please see section 10 for more details about database cross
     references.
 
 Note: If you wish to nullify a dbxref for a particular feature, you can
@@ -804,7 +794,7 @@ Note: If you wish to nullify a dbxref for a particular feature, you can
       feature details page, they'll see that the dbxref field shows "Not
       available" (with no <A HREF>, of course).
 
-12.6    SEARCHING FOR A FEATURE
+11.6    SEARCHING FOR A FEATURE
 
 Often you will be interested in finding an individual feature in the
 database without having to navigate to the map set, then the map, then
@@ -826,13 +816,77 @@ web admin tool, you can choose the "Search for a Feature" link.  The
     search either the "feature_name" or "alternate_name" field rather
     than both (which is the default option).
 
-13.     cmap_admin.pl and cmap_matrix_compare.pl
+12.     cmap_admin.pl and cmap_matrix_compare.pl
 
 The cmap_admin.pl and cmap_matrix_compare.pl scripts contain full
 documentation in POD format.  To read, please execute "perldoc
 <script_name>".
 
-14.     cmap.conf
+13.     cmap.conf
+
+The "cmap.conf" file is CMap's configuration file.  Everything that
+can be customized about CMap is controlled by this file (apart from
+thing things which are driven by the data, such as the shapes and
+colors of maps and features, etc.).  There are two sections which MUST
+be edited by you:  "database" and "template_dir."  For emphasis and
+convenience, they are the first two sections of cmap.conf.  
+
+cmap.conf is written in a standard configuration file syntax.
+Comments are defined as anything following a hash sign and are
+ignored.  Options which are grouped together are in angle brackets
+("<>").  Standard options are written in a "Name Value" syntax where
+the two are separated by whitespace or an equal sign.  For more
+information on the syntax, read the POD for Config::General (by
+executing "perldoc Config::General" on your system).
+
+Each configuration setting is documented in comments.  Legal and
+default values are listed along with a brief description of the
+option.  Except for the "database" and "template_dir" settings, there
+is a reasonable default, hardcoded value for every configuration
+setting (so you could actually comment out all of the "optional
+settings" in the file).
+
+Whenever you make a change to cmap.conf, it will most likely be
+necessary for you to restart Apache to see the change if the change
+affects something in the viewer.  This is because the configuration
+information is cached by each Apache child after the first time it
+reads the file.  If you do not restart Apache, you may see the changes
+sporadically as some children start up and read the new settings while
+older children used their cached settings.
+
+13.1    CONFIGURING DATABASE CONNECTION(S)
+
+As of version 0.06, CMap supports multiple data sources, allowing a
+curator to maintain distinct databases and view them all in CMap
+without changing cmap.conf to point to the one of interest.  If you
+have only one database, then you need only defined one "database"
+section in cmap.conf.  If, however, you choose to define more than
+one, you should be sure to mark one as "is_default."  The parameters
+are explained in comments.
+
+13.2    CONFIGURING TEMPLATE DIRECTORY
+
+You template directory will probably be properly set if you went
+through the "perl Makefile.PL; make; make install" routine for
+installing CMap.  The question of where to install the templates and
+where to install cmap.conf are both asked during this process, and the
+values are placed into the appropriate files.  If you installed
+everything by hand (or you ever move your templates), then you'll just
+need to make sure that the path is properly set in cmap.conf.
+
+14.     HTML TEMPLATES
+
+All the HTML displayed by the application is contained in the
+templates.  These templates are processed by Template Toolkit to
+produce the user interface.  For the most part, the files contain
+straight-up HTML and can be altered to your heart's content.  You
+could probably even pass off the care and feeding of these templates
+to a non-technical person (as this was the idea behind having no HTML
+in the code).  The only functional parts of the templates lie in
+between the many "[% %]" tags, and these are often quite
+self-explanatory.  If you can't figure out what to change on your own,
+then check out http://www.template-toolkit.com/ for the documentation
+(or type "perldoc Template" on your command line).
 
 15.     LINKING IN
 
@@ -939,35 +993,7 @@ If you want a whole map set in a slot (e.g., a physical map set like
 accession ID.  You can use the admin interface ("/cmap/admin") to
 easily find the accession IDs.
 
-5. CUSTOMIZING YOUR INSTALLATION
-
-You should edit "cmap.conf" with the proper connection data for your
-database and to reflect your own preferences for how maps are drawn.
-Each entry in the configuration file is commented to help you
-understand its purpose and the possible values and default values are
-also provided.  If you don't understand a configuration, you can just
-leave it alone and use the default.  Remember to restart Apache
-whenever you make a change to this file as these are constants and
-don't change for the life of the Apache process.
-
-You can change the way maps and features are drawn based on
-their types.  Use the web-based admin tool to edit each "map type"
-and "feature type" that you create.  Experiment with the colors,
-shapes, and sizes.
-
-All the HTML displayed by the application is contained in the
-templates.  These templates are processed by Template Toolkit to
-produce the user interface.  For the most part, the files contain
-straight-up HTML and can be altered to your heart's content.  You
-could probably even pass off the care and feeding of these templates
-to a non-technical person (as this was the idea behind having no HTML
-in the code).  The only functional parts of the templates lie in
-between the many "[% %]" tags, and these are often quite
-self-explanatory.  If you can't figure out what to change on your own,
-then check out http://www.template-toolkit.com/ for the documentation
-(or type "perldoc Template" on your command line).
-
-10.     AUTHOR
+16.     AUTHOR
 
 Ken Y. Clark, kclark@cshl.org
 

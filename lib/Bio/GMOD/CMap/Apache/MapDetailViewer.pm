@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapDetailViewer;
 
-# $Id: MapDetailViewer.pm,v 1.7 2003-02-20 16:50:07 kycl4rk Exp $
+# $Id: MapDetailViewer.pm,v 1.8 2003-02-25 19:30:20 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.7 $)[-1];
+$VERSION = (qw$Revision: 1.8 $)[-1];
 
 use Apache::Constants;
 use Data::Dumper;
@@ -53,6 +53,10 @@ sub handler {
     my $label_features   = $apr->param('label_features')   ||     '';
     my $action           = $apr->param('action')           || 'view';
 
+    #
+    # Set the data source.
+    #
+    $self->data_source( $apr->param('data_source') );
     
     #
     # Take the feature types either from the query string (first
@@ -77,7 +81,10 @@ sub handler {
         },
     );
 
-    my $data_module           = $self->data_module;
+    my $data_module           = $self->data_module(
+        data_source           => $self->data_source
+    ) or return;
+
     my $data                  = $data_module->map_detail_data( 
         map                   => $slots{0},
         highlight             => $highlight,
@@ -143,6 +150,7 @@ sub handler {
         # Instantiate the drawer.
         #
         my $drawer                =  Bio::GMOD::CMap::Drawer->new(
+            data_source           => $self->data_source,
             apr                   => $apr,
             slots                 => \%slots,
             highlight             => $highlight,

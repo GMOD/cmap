@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.17 2003-02-20 23:55:16 kycl4rk Exp $
+# $Id: Import.pm,v 1.18 2003-02-25 19:30:18 kycl4rk Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.17 $)[-1];
+$VERSION  = (qw$Revision: 1.18 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -188,7 +188,7 @@ have for the map set).
     }
 
     $self->Print("Parsing file...\n");
-    my ( %feature_type_ids, %feature_ids );
+    my ( %feature_type_ids, %feature_ids, %map_info );
     while ( <$fh> ) {
         chomp;
         my @fields = split FIELD_SEP;
@@ -312,34 +312,17 @@ have for the map set).
             ( $map_start, $map_stop ) = ( $map_stop, $map_start );
         }
 
+        #
+        # If the map already exists, just remember stuff about it.
+        #
         if ( $map_id ) {
-            $db->do(
-                q[
-                    update cmap_map 
-                    set    map_set_id=?,
-                           map_name=?, start_position=?, stop_position=?,
-                           linkage_group=?
-                    where  map_id=?
-                ],
-                {}, 
-                ( $map_set_id, $map_name, $map_start, $map_stop, 
-                  $linkage_group, $map_id
-                )
-            );
-
-            if ( $map_aid ) {
-                $db->do(
-                    q[
-                        update cmap_map 
-                        set    accession_id=?
-                        where  map_id=?
-                    ],
-                    {}, 
-                    ( $map_aid, $map_id )
-                );
-            }
-
-            $self->Print("Updated map $map_name ($map_id).\n");
+            $map_info{ $map_id }{'map_id'}         ||= $map_id;
+            $map_info{ $map_id }{'map_set_id'}     ||= $map_set_id;
+            $map_info{ $map_id }{'map_name'}       ||= $map_name;
+            $map_info{ $map_id }{'start_position'} ||= $map_start;
+            $map_info{ $map_id }{'stop_position'}  ||= $map_stop;
+            $map_info{ $map_id }{'linkage_group'}  ||= $linkage_group;
+            $map_info{ $map_id }{'accession_id'}   ||= $map_aid;
 
         }
         else {
@@ -369,7 +352,6 @@ have for the map set).
             $self->Print("Created map $map_name ($map_id).\n");
             $maps{ uc $map_name }{'map_id'} = $map_id;
         }
-
 
         #
         # See if the acc. id already exists.
@@ -481,6 +463,46 @@ have for the map set).
     }
 
     #
+    # Go through and update all the maps.
+    #
+    for my $map ( values %map_info ) {
+        $db->do(
+            q[
+                update cmap_map 
+                set    map_set_id=?,
+                       map_name=?, 
+                       start_position=?, 
+                       stop_position=?,
+                       linkage_group=?
+                where  map_id=?
+            ],
+            {}, 
+            ( 
+                $map->{'map_set_id'}, 
+                $map->{'map_name'}, 
+                $map->{'map_start'}, 
+                $map->{'map_stop'}, 
+                $map->{'linkage_group'}, 
+                $map->{'map_id'},
+            )
+        );
+
+        if ( $map->{'accession_id'} ) {
+            $db->do(
+                q[
+                    update cmap_map 
+                    set    accession_id=?
+                    where  map_id=?
+                ],
+                {}, 
+                ( $map->{'accession_id'}, $map->{'map_id'} )
+            );
+        }
+
+        $self->Print("Updated map $map->{'map_name'} ($map->{'map_id'}).\n");
+    }
+
+    #
     # Go through existing maps and features, delete any that weren't 
     # updated, if necessary.
     #
@@ -565,6 +587,8 @@ have for the map set).
             $min_start ||= 0;
             $max_start ||= 0;
             $max_stop  ||= 0;
+            $map_start   = 0 unless defined $map_start;
+            $map_stop    = 0 unless defined $map_stop;
             $max_stop    = $max_start > $max_stop ? $max_start : $max_stop;
             $map_start   = $min_start if $min_start < $map_start;
             $map_stop    = $max_stop  if $max_stop  > $map_stop;
