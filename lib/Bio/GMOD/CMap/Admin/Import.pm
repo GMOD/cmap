@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::Import;
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.37 2003-10-16 22:17:56 kycl4rk Exp $
+# $Id: Import.pm,v 1.38 2003-10-24 20:08:03 kycl4rk Exp $
 
 =pod
 
@@ -28,7 +28,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.37 $)[-1];
+$VERSION  = (qw$Revision: 1.38 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -56,6 +56,7 @@ use vars '$LOG_FH';
     map_stop             => { is_required => 0, datatype => 'number' },
     feature_name         => { is_required => 1, datatype => 'string' },
     feature_accession_id => { is_required => 0, datatype => 'string' },
+    feature_alt_name     => { is_required => 0, datatype => 'string' },
     feature_aliases      => { is_required => 0, datatype => 'string' },
     feature_start        => { is_required => 1, datatype => 'number' },
     feature_stop         => { is_required => 0, datatype => 'number' },
@@ -82,24 +83,29 @@ Imports tab-delimited file with the following fields:
     map_start
     map_stop
     feature_name *
+    feature_alt_name +
     feature_accession_id
     feature_aliases
     feature_start *
     feature_stop
     feature_type *
-    feature_note
+    feature_note +
     is_landmark
-    feature_dbxref_name
-    feature_dbxref_url
+    feature_dbxref_name +
+    feature_dbxref_url +
     feature_attributes
 
-Starred fields are required.  Order of fields is not important.
+Fields with an asterisk are required.  Order of fields is not important.
+
+Fields with a plus sign are deprecated.
 
 When you import data for an map set that already has data, all
 existing maps and features will be updated.  If you choose, any of the
 pre-existing maps or features that aren't updated can be deleted (this
 is what you'd want if the import file contains *all* the data you
 have for the map set).
+
+=head3 Feature Attributes
 
 Feature attributes are defined as key:value pairs separated by
 semi-colons, e.g.:
@@ -120,6 +126,8 @@ attribute values, they must be backslash-escapes, e.g.:
 
     DBXRef: "<a href=\"http://www.gramene.org/db/markers/marker_view?marker_name=CDO590\">View At Gramene</a>"
 
+(But see below about importing actual cross-references.)
+
 Version 0.08 of CMap added the "feature_note" field.  This is now
 considered just another type of attribute.  The "feature_note" field
 is provided only for backward-compatibility and will simply be added
@@ -130,12 +138,29 @@ be quite large (exactly how large depends on which database you use
 and how that field is defined).  The order of the attributes will be
 used to determine the "display_order."
 
+=head3 Feature Aliases
+
 Feature aliases should be a comma-separated list of values.  They may
-either occur in the "feature_aliases" field or in the
-"feature_attributes" field with the key "aliases" (case-insensitive),
-e.g.:
+either occur in the "feature_aliases" (or "feature_alt_name" in order to 
+remain backward-compatible) field or in the "feature_attributes" field 
+with the key "aliases" (case-insensitive), e.g.:
 
     Aliases: "SHO29a, SHO29b"
+
+Note that an alias which is the same (case-sensitive) as the feature's 
+primary name will be discarded.
+
+=head3 Cross-references
+
+Any attribute of type "dbxref" or "xref" (case-insensitive) will be 
+entered as an xref for the feature.  The field value should be enclosed
+in double-quotes with the xref name separated from the URL by a 
+semicolon like so:
+
+    XRef: "View at Gramene;http://www.gramene.org/db/markers/marker_view?marker_name=CDO590"
+
+The older "feature_dbxref*" fields are still accepted and are simply
+appended to the list of xrefs.
 
 =cut
 
@@ -419,36 +444,38 @@ e.g.:
         $map_info{ $map_id }{'accession_id'}   ||= $map_aid;
 
         #
-        # See if the acc. id already exists.
+        # Basic feature info
         #
         my $feature_name    = $record->{'feature_name'} 
             or warn "feature name blank! ", Dumper( $record ), "\n";
         my $accession_id    = $record->{'feature_accession_id'};
         my $aliases         = $record->{'feature_aliases'};
-        my $dbxref_name     = $record->{'feature_dbxref_name'} || '';
-        my $dbxref_url      = $record->{'feature_dbxref_url'}  || '';
-        my $feature_note    = $record->{'feature_note'}        || '';
         my $attributes      = $record->{'feature_attributes'}  || '';
         my $start           = $record->{'feature_start'};
         my $stop            = $record->{'feature_stop'};
         my $is_landmark     = $record->{'is_landmark'} || 0;
 
-        my ( @fattributes, @feature_notes );
+        #
+        # Feature attributes
+        #
+        my ( @fattributes, @xrefs );
         for my $attr ( parse_line( ';', 1, $attributes ) ) {
             my ( $key, $value ) = 
                 map { s/^\s+|\s+$//g; s/^"|"$//g; $_ } 
                 parse_line( ':', 1, $attr )
             ;
 
-            if ( $key =~ /note/i ) {
-                $value =~ s/\\"/"/g;
-                push @feature_notes, $value;
-            }
-            elsif ( $key =~ /aliases/i ) {
+            if ( $key =~ /^alias(es)?$/i ) {
                 push @$aliases, 
                     map { s/^\s+|\s+$//g; s/\\"/"/g; $_ } 
                     parse_line( ',', 1, $value )
                 ;
+            }
+            elsif ( $key =~ /^(db)?xref$/i ) {
+                $value =~ s/^"|"$//g;
+                if ( my ( $xref_name, $xref_url ) = split(/;/, $value) ) {
+                    push @xrefs, { name => $xref_name, url => $xref_url };
+                }
             }
             else {
                 $value =~ s/\\"/"/g;
@@ -456,8 +483,27 @@ e.g.:
             }
         }
 
-        $feature_note .= join('; ', @feature_notes);
+        #
+        # Backward-compatibility stuff
+        #
+        if ( my $alt_name = $record->{'feature_alt_name'} ) {
+            push @$aliases, $alt_name;
+        }
 
+        if ( my $feature_note = $record->{'feature_note'} ) {
+            push @fattributes, { name => 'Note', value => $feature_note };
+        }
+
+        my $dbxref_name = $record->{'feature_dbxref_name'} || '';
+        my $dbxref_url  = $record->{'feature_dbxref_url'}  || '';
+
+        if ( $dbxref_name && $dbxref_url ) {
+            push @xrefs, { name => $dbxref_name, url => $dbxref_url };
+        }
+
+        #
+        # Check start and stop positions, flip if necessary.
+        #
         if ( 
             defined $start &&
             defined $stop  &&
@@ -507,13 +553,12 @@ e.g.:
                     update cmap_feature
                     set    accession_id=?, map_id=?, feature_type_id=?, 
                            feature_name=?, start_position=?, stop_position=?,
-                           dbxref_name=?, dbxref_url=?, is_landmark=?
+                           is_landmark=?
                     where  feature_id=?
                 ],
                 {}, 
                 ( $accession_id, $map_id, $feature_type_id, 
-                  $feature_name, $start, $stop, 
-                  $dbxref_name, $dbxref_url, $is_landmark,
+                  $feature_name, $start, $stop, $is_landmark,
                   $feature_id
                 )
             );
@@ -540,14 +585,13 @@ e.g.:
                            ( feature_id, accession_id, map_id,
                              feature_type_id, feature_name, 
                              start_position, stop_position,
-                             dbxref_name, dbxref_url, is_landmark
+                             is_landmark
                            )
-                    values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
+                    values ( ?, ?, ?, ?, ?, ?, ?, ? )
                 ],
                 {}, 
                 ( $feature_id, $accession_id, $map_id, $feature_type_id, 
-                  $feature_name, $start, $stop,
-                  $dbxref_name, $dbxref_url, $is_landmark
+                  $feature_name, $start, $stop, $is_landmark
                 )
             );
         }
@@ -576,18 +620,19 @@ e.g.:
             );
         }
 
-        $admin->object_note_insert_or_update( 
-            table_name => 'cmap_feature',
-            object_id  => $feature_id, 
-            note       => $feature_note,
-        );
-
-        $admin->set_object_attributes( 
+        $admin->set_attributes( 
             object_id  => $feature_id, 
             table_name => 'cmap_feature',
             attributes => \@fattributes,
             overwrite  => $overwrite,
         );
+
+        $admin->set_xrefs(
+            object_id  => $feature_id,
+            table_name => 'cmap_feature',
+            overwrite  => $overwrite,
+            xrefs      => \@xrefs,
+        ) or return $self->error( $admin->error );
 
         my $pos = join('-', map { defined $_ ? $_ : () } $start, $stop);
         $self->Print(
