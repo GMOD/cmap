@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.146 2004-08-25 05:15:29 mwz444 Exp $
+# $Id: Data.pm,v 1.147 2004-08-27 07:04:59 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.146 $)[-1];
+$VERSION = (qw$Revision: 1.147 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -4227,6 +4227,8 @@ sub count_correspondences{
                   . 'max(cl.start_position1) as max_start , '
                   . 'avg(((cl.stop_position1-cl.start_position1)/2)'
                   .     '+cl.start_position1) as avg_mid, '
+                  . 'avg(cl.start_position1) as start_avg1,'
+                  . 'avg(cl.start_position2) as start_avg2,'
                   . 'min(cl.start_position2) as min_start2, '
                   . 'max(cl.start_position2) as max_start2 , '
                   . 'avg(((cl.stop_position2-cl.start_position2)/2)'
@@ -4344,6 +4346,8 @@ sub count_correspondences{
                   . 'max(f1.start_position) as max_start , '
                   . 'avg(((f1.stop_position-f1.start_position)/2)'
                   .     '+f1.start_position) as avg_mid, '
+                  .  'avg(f1.start_position) as start_avg1, '
+                  .  'avg(f2.start_position) as start_avg2, '
                   . 'min(f2.start_position) as min_start2, '
                   . 'max(f2.start_position) as max_start2 , '
                   . 'avg(((f2.stop_position-f2.start_position)/2)'
@@ -4391,6 +4395,8 @@ sub count_correspondences{
                 min_start2 => $pos->{'min_start2'},
                 max_start2 => $pos->{'max_start2'},
                 avg_mid2   => $pos->{'avg_mid2'},
+                start_avg1   => $pos->{'start_avg1'},
+                start_avg2   => $pos->{'start_avg2'},
               };
             $corr_lookup{ $count->{'map_id2'} } += $count->{'no_corr'};
         }

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.110 2004-08-25 05:15:29 mwz444 Exp $
+# $Id: Map.pm,v 1.111 2004-08-27 07:05:01 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.110 $)[-1];
+$VERSION = (qw$Revision: 1.111 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1475,6 +1475,22 @@ sub layout_map_foundation {
                 $drawer->reference_map_y_coords( $ref_slot_no,
                 $ref_corr->{'ref_map_id'} );
 
+            my $avg_mid;
+            if (defined($ref_corr->{'avg_mid'})){
+                $avg_mid=$ref_corr->{'avg_mid'};
+            }
+            else{
+                $avg_mid=$ref_corr->{'start_avg1'}
+            }
+            my $avg_mid2;
+            if (defined($ref_corr->{'avg_mid2'})){
+                $avg_mid2=$ref_corr->{'avg_mid2'};
+            }
+            else{
+                $avg_mid2=$ref_corr->{'start_avg2'}
+            }
+
+
             my $ref_map_pixel_len = $ref_pos->{'y2'} - $ref_pos->{'y1'};
             my $ref_map_unit_len  = $ref_pos->{'map_stop'} - $ref_pos->{'map_start'};
             $ref_top    = $ref_pos->{'y1'};
@@ -1492,14 +1508,14 @@ sub layout_map_foundation {
             # Set the avg location of the corr on the ref map
             my $ref_map_mid_y =
                 $ref_pos->{'y1'} +
-                (($ref_corr->{'avg_mid'} - $ref_pos->{'map_start'} ) /
+                (($avg_mid - $ref_pos->{'map_start'} ) /
                   $ref_map_unit_len ) * $ref_map_pixel_len;
 
             if (0){
                 # Single line to avg corr
                 push @ref_connections,
                   [ $ref_pos->{'x'}, $ref_map_mid_y, $ref_corr->{'no_corr'}
-                  ,($ref_corr->{'avg_mid2'}-$self->start_position($map_id))];
+                  ,($avg_mid2-$self->start_position($map_id))];
             }
             else{
                 # V showing span of corrs
