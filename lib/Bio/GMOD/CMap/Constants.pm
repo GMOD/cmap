@@ -1,13 +1,13 @@
 package Bio::GMOD::CMap::Constants;
 
-# $Id: Constants.pm,v 1.20 2003-02-20 16:50:02 kycl4rk Exp $
+# $Id: Constants.pm,v 1.21 2003-03-13 01:25:53 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.20 $)[-1];
+$VERSION = (qw$Revision: 1.21 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -234,6 +234,11 @@ use constant SHAPE_XY => {
 #
 use constant DEFAULT => {
     #
+    # Whether or not to allow forking of CMap viewer
+    #
+    allow_fork => 0,
+
+    #
     # The background color of the map image.
     # Default: lightgoldenrodyellow
     #
@@ -383,6 +388,13 @@ use constant DEFAULT => {
     map_shape => 'box',
 
     #
+    # The maximum pixel width for any image.
+    # Set to "0" (or comment out) to disable.
+    # Default: 2000
+    #
+    max_image_pixel_width => 2000,
+
+    #
     # The maximum number of features allowed on a map.
     # Set to "0" (or a negative number) or undefined to disable.
     # Default: 200
@@ -400,6 +412,12 @@ use constant DEFAULT => {
     # Default: 10
     #
     max_search_pages => 10,
+
+    #
+    # Maximum number of seconds before timing out the web request
+    # Default: 0 (disabled)
+    #
+    max_web_timeout => 0,
 
     #
     # The number of positions to have flanking zoomed areas.
