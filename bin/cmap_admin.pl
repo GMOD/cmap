@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.61 2004-02-18 22:24:33 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.62 2004-03-04 15:21:59 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.61 $)[-1];
+$VERSION = (qw$Revision: 1.62 $)[-1];
 
 #
 # Get command-line options
@@ -138,7 +138,7 @@ sub log_filename {
         my $i        = 0;
         my $path;
         while ( 1 ) {
-            $path = join( '/', $home_dir, $filename . '.' . $i );
+            $path = catfile( $home_dir, $filename . '.' . $i );
             last unless -e $path;
             $i++;
         }
