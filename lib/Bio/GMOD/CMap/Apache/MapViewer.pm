@@ -1,22 +1,47 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.49 2004-08-04 04:26:06 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.50 2004-08-04 04:31:00 mwz444 Exp $
 
 use strict;
-use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.49 $)[-1];
+use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
+$VERSION = (qw$Revision: 1.50 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer;
 use Bio::GMOD::CMap::Data;
 use Template;
+use URI::Escape;
 use Regexp::Common;
 use Data::Dumper;
 
 use base 'Bio::GMOD::CMap::Apache';
 use constant TEMPLATE     => 'cmap_viewer.tmpl';
+use constant DETAIL_TEMPLATE     => 'map_detail_bottom.tmpl';
+use constant FIELD_SEP       => "\t";
+use constant RECORD_SEP      => "\n";
+use constant COLUMN_NAMES    => [
+    qw[ species_accession_id species_name 
+        map_set_accession_id map_set_name
+        map_accession_id map_name
+        feature_accession_id feature_name feature_type start_position 
+        stop_position alt_species_name alt_map_set_name alt_map_name 
+        alt_feature_type alt_start_position alt_stop_position 
+        evidence
+    ]
+];
+use constant MAP_FIELDS      => [
+    qw[ species_aid species_name map_set_aid map_set_name map_aid map_name ]
+];
+use constant FEATURE_FIELDS  => [
+    qw[ accession_id feature_name feature_type start_position stop_position ]
+];
+use constant POSITION_FIELDS => [
+    qw[ species_name map_set_name map_name feature_type 
+        start_position stop_position evidence
+    ]
+];
 
 # ----------------------------------------------------
 sub handler {
@@ -44,6 +69,14 @@ sub handler {
     my $aggregate             = $apr->param('aggregate')             ;
     my $flip                  = $apr->param('flip')                  || '';
     my $min_correspondences   = $apr->param('min_correspondences')   ||  0;
+    my $page_no               = $apr->param('page_no')               ||      1;
+    my $action                = $apr->param('action')                || 'view';
+
+
+    my $path_info = $apr->path_info || '';
+    if ( $path_info ) {
+       $path_info =~ s{^/(cmap/)?}{}; # kill superfluous stuff
+    }
 
     $self->aggregate($aggregate);
 
@@ -374,7 +407,102 @@ sub handler {
         \$html 
     ) or $html = $t->error;
 
-    print $apr->header( -type => 'text/html', -cookie => $self->cookie ), $html;
+
+    if ($path_info eq 'map_details' or scalar(keys(%ref_maps))==1){
+            
+        $PAGE_SIZE ||= $self->config_data('max_child_elements') || 0;
+        $MAX_PAGES ||= $self->config_data('max_search_pages')   || 1;
+        my ($map_id,) = keys(%ref_maps);
+
+        my $detail_data            = $data->map_detail_data(
+            ref_map                => $drawer->{'data'}{'slots'}{0}{$map_id},
+            highlight              => $highlight,
+            include_feature_types  => \@feature_types,
+            include_evidence_types => \@evidence_types,
+            order_by               => $apr->param('order_by') || '',
+            comparative_map_field  => '',
+            comparative_map_aid    => '',
+            page_size              => $PAGE_SIZE,
+            max_pages              => $MAX_PAGES,
+            page_no                => $page_no,
+            page_data              => $action eq 'download' ? 0 : 1,
+        ) or return $self->error( "Data: ".$data->error );
+
+        if ( $action eq 'download' ) {
+            my $text       = join( FIELD_SEP, @{ +COLUMN_NAMES } ).RECORD_SEP;
+            my $map_fields = join(
+                FIELD_SEP, map { $detail_data->{'reference_map'}{$_} } @{ +MAP_FIELDS }
+            );
+
+            for my $feature ( @{ $detail_data->{'features'} } ) {
+                my $row = join(
+                    FIELD_SEP, 
+                    $map_fields, map { $feature->{$_} } @{ +FEATURE_FIELDS }
+                );
+
+                if ( @{ $feature->{'positions'} } ) {
+                    for my $position ( @{ $feature->{'positions'} } ) {
+                        $position->{'evidence'} = 
+                            join( ',', @{ $position->{'evidence'} } );
+                        $text .= join(
+                            FIELD_SEP, 
+                            $row,
+                            map { defined $position->{$_} ? $position->{$_} : '' } 
+                                @{ +POSITION_FIELDS }
+                        ) . RECORD_SEP;
+                    }
+                }
+                else {
+                    $text .= $row . RECORD_SEP;
+                }
+            }
+
+            print $apr->header( -type => 'text/plain' ), $text;
+        }
+        else {
+            my @map_ids    = map {$_||()} keys %{$drawer->{'data'}{'slots'}{'0'}};
+            my $ref_map_id = shift @map_ids;
+            my $ref_map    = $drawer->{'data'}{'slots'}{'0'}{ $ref_map_id };
+            $apr->param('ref_map_start',  $ref_map->{'start'}         );
+            $apr->param('ref_map_stop',   $ref_map->{'stop'}          );
+            $apr->param('feature_types',  join(',', @feature_types )  );
+            $apr->param('evidence_types', join(',', @evidence_types ) );
+            $apr->param('highlight_uri',  uri_escape( $apr->param('highlight') ) );
+
+            my $detail_html;
+            my $t = $self->template;
+            $t->process( 
+                DETAIL_TEMPLATE, 
+                { 
+                    apr                   => $apr,
+                    pager                 => $detail_data->{'pager'},
+                    feature_types         => $detail_data->{'feature_types'},
+                    feature_count_by_type => $detail_data->{'feature_count_by_type'},
+                    evidence_types        => $detail_data->{'evidence_types'},
+                    reference_map         => $detail_data->{'reference_map'},
+                    comparative_maps      => $detail_data->{'comparative_maps'},
+                    comparative_map_field => '',
+                    comparative_map_aid   => '',
+                    drawer                => $drawer,
+                    page                  => $self->page,
+                    title                 => 'Reference Map Details',
+                    stylesheet            => $self->stylesheet,
+                    included_features     => { map { $_, 1 } @feature_types },
+                    included_evidence     => { map { $_, 1 } @evidence_types },
+                    features              => $detail_data->{'features'},
+                },
+                \$detail_html 
+            ) or $detail_html = $t->error;
+
+            print $apr->header( -type => 'text/html', -cookie => $self->cookie ), 
+                $html,
+                $detail_html;
+        }
+    }
+    else{
+        # Regular map Viewing
+        print $apr->header( -type => 'text/html', -cookie => $self->cookie ), $html;
+    }
     return 1;
 }
 

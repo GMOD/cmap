@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data::Generic;
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.51 2004-06-22 03:05:36 mwz444 Exp $
+# $Id: Generic.pm,v 1.52 2004-08-04 04:31:00 mwz444 Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.51 $)[-1];
+$VERSION = (qw$Revision: 1.52 $)[-1];
 
 use Data::Dumper; # really just for debugging
 use Bio::GMOD::CMap;
@@ -229,14 +229,13 @@ The SQL for finding correspondences for a feature.
         $sql .= "and map.accession_id='".$args{'comparative_map_aid'}."' ";
     }
 
-    $sql .= "and ce.evidence_type_accesion in ('".$args{'evidence_type_aids'}."') " 
+    $sql .= "and ce.evidence_type_accession in ('".$args{'evidence_type_aids'}."') " 
         if $args{'evidence_type_aids'};
 
     $sql .= q[
-                 order by ms.map_set_name, 
-                 map.map_name, 
-                 f.start_position, 
-                 f.feature_name
+            order by species_display_order, species_name, 
+            ms_display_order, map_set_name, map_display_order,
+            map_name, start_position, feature_name
     ];
 
     return $sql;

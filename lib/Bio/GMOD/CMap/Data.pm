@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.136 2004-07-29 20:28:23 mwz444 Exp $
+# $Id: Data.pm,v 1.137 2004-08-04 04:30:59 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.136 $)[-1];
+$VERSION = (qw$Revision: 1.137 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -543,33 +543,6 @@ sub slot_data {
     my @map_aids = keys(%{$slot_map->{'maps'}});
     my @map_set_aids = keys(%{$slot_map->{'map_sets'}});
     my $no_flanking_positions = $slot_map->{'no_flanking_positions'} || 0;
-
-    #
-    # If looking at just one map, we can restrict by feature names,
-    # so look to see if either the start or stop positions look like
-    # non-numbers and convert to their positions if so.
-    #
-#    if ( scalar @slot_map_ids == 1 ) {
-#        for ( $map_start, $map_stop ) {
-#            next if !defined $_ || ( defined $_ && $_ =~ $RE{'num'}{'real'} );
-#            $_ = $self->feature_name_to_position(
-#                feature_name => $_,
-#                map_id       => $slot_map_ids[0],
-#              )
-#              || 0;
-#        }
-#
-#        if (   defined $map_start
-#            && defined $map_stop
-#            && $map_start > $map_stop )
-#        {
-#            ( $map_start, $map_stop ) = ( $map_stop, $map_start );
-#        }
-#    }
-#    else {
-#        $map_start = undef;
-#        $map_stop  = undef;
-#    }
 
     #
     # Gather necessary info on all the maps in this slot.
@@ -1487,7 +1460,7 @@ Returns the data for the correspondence matrix.
             from     cmap_species s,
                      cmap_map_set ms
             where    s.species_id=ms.species_id
-            and      ms.can_be_reference_map=1
+            and      ms.is_relational_map=0
             and      ms.is_enabled=1
             order by s.display_order, s.common_name
         ],
@@ -1501,7 +1474,7 @@ Returns the data for the correspondence matrix.
         q[
             select   distinct ms.map_type_accession as map_type_aid
             from     cmap_map_set ms
-            where    ms.can_be_reference_map=1
+            where    ms.is_relational_map=0
             and      ms.is_enabled=1
         ],
         { Columns => {} }
@@ -1569,7 +1542,7 @@ Returns the data for the correspondence matrix.
                      ms.short_name as map_set_name
             from     cmap_map_set ms,
                      cmap_species s
-            where    ms.can_be_reference_map=1
+            where    ms.is_relational_map=0
             and      ms.is_enabled=1
             and      ms.species_id=s.species_id
         ];
@@ -1599,7 +1572,7 @@ Returns the data for the correspondence matrix.
                      cmap_map_set ms,
                      cmap_species s
             where    map.map_set_id=ms.map_set_id
-            and      ms.can_be_reference_map=1
+            and      ms.is_relational_map=0
             and      ms.is_enabled=1
             and      ms.species_id=s.species_id
         ];
@@ -1677,7 +1650,7 @@ Returns the data for the correspondence matrix.
                 and      map.map_set_id=ms.map_set_id
                 and      ms.is_enabled=1
                 and      ms.species_id=s.species_id
-                and      ms.can_be_reference_map=1
+                and      ms.is_relational_map=0
             ];
 
             $map_set_sql .= "and s.accession_id='$species_aid' "
@@ -1702,7 +1675,7 @@ Returns the data for the correspondence matrix.
                          s.display_order as species_display_order
                 from     cmap_map_set ms,
                          cmap_species s
-                where    ms.can_be_reference_map=1
+                where    ms.is_relational_map=0
                 and      ms.is_enabled=1
                 and      ms.species_id=s.species_id
             ];
@@ -1740,14 +1713,6 @@ Returns the data for the correspondence matrix.
             )
           };
     }
-
-    #
-    # If there's only only set, then pretend that the user selected
-    # this one and expand the relationships to the map level.
-    #
-    #    if ( $map_set_aid eq '' && scalar @reference_map_sets == 1 ) {
-    #        $map_set_aid = $reference_map_sets[0]->{'map_set_aid'};
-    #    }
 
     #
     # Select the relationships from the pre-computed table.
@@ -1881,17 +1846,22 @@ Returns the data for the correspondence matrix.
     #
     # Select ALL the map sets to go across.
     #
-    my $link_map_can_be_reference = ($link_map_set_aid)
-      ? $db->selectrow_array(
-        q[
-                select ms.can_be_reference_map
-                from   cmap_map_set ms
+
+    my $link_map_can_be_reference;
+    if ( $link_map_set_aid ) {
+        my $is_rel = $db->selectrow_array(
+              q[
+                select mt.is_relational_map
+                from   cmap_map_set ms, cmap_map_type mt  
                 where  ms.accession_id=?
-            ],
-        {},
-        ($link_map_set_aid)
-      )
-      : undef;
+                and    ms.map_type_id=mt.map_type_id 
+              ],
+              {},
+              ( $link_map_set_aid )
+        );
+
+        $link_map_can_be_reference = $is_rel ? 0 : 1;
+    }
 
     #
     # If given a map set id for a map set that can be a reference map,
@@ -2047,6 +2017,7 @@ Returns the data for the correspondence matrix.
         map_sets     => $map_sets,
         map_types    => $map_types,
         maps         => $maps,
+        lookup       => \%lookup,
     };
 }
 
@@ -2123,7 +2094,7 @@ sub cmap_form_data {
             from     cmap_map_set ms,
                      cmap_species s
             where    ms.is_enabled=1
-            and      ms.can_be_reference_map=1
+            and      ms.is_relational_map=0
             and      ms.species_id=s.species_id
             order by s.display_order,
                      s.common_name, 
@@ -2206,6 +2177,7 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
                              ms.map_type_accession as map_type_aid, 
                              ms.species_id, 
                              ms.can_be_reference_map, 
+                             ms.is_relational_map, 
                              ms.map_units, 
                              s.accession_id as species_aid, 
                              s.common_name as species_common_name, 
@@ -2505,6 +2477,7 @@ out which maps have relationships.
                    ms.short_name as map_set_name,
                    ms.published_on,
                    ms.display_order as ms_display_order,
+                   ms.is_relational_map, 
                    ms.can_be_reference_map
             from   cmap_map_set ms,
                    cmap_species s
@@ -2681,13 +2654,15 @@ Turn a feature name into a position.
 
 =cut
 
-    my ( $self, %args ) = @_;
-    my $feature_name = $args{'feature_name'} or return;
-    my $map_id       = $args{'map_id'}       or return;
-    my $db           = $self->db             or return;
-    my $upper_name   = uc $feature_name;
-    my $sql_str      = q[
-            select    f.start_position
+    my ( $self, %args )      = @_;
+    my $feature_name         = $args{'feature_name'} or return;
+    my $map_id               = $args{'map_id'}       or return;
+    my $start_position_only  = $args{'start_position_only'};
+    my $db                   = $self->db             or return;
+    my $upper_name           = uc $feature_name;
+    my $sql_str              = q[
+            select    f.start_position,
+                      f.stop_position
             from      cmap_feature f
             left join cmap_feature_alias fa
             on        f.feature_id=fa.feature_id
@@ -2698,22 +2673,22 @@ Turn a feature name into a position.
                 upper(fa.alias)=?
             )
 		  ];
-    my $position;
-
-    if ( my $scalarref =
+    my ($start,$stop);
+    if ( my $arrayref =
         $self->get_cached_results( $sql_str . $map_id . $upper_name ) )
-    {
-        $position = $$scalarref;
+   {
+        ( $start, $stop ) = @$arrayref;
     }
     else {
-        $position =
+        ( $start, $stop ) =
           $db->selectrow_array( $sql_str, {},
-            ( $map_id, $upper_name, $upper_name ) )
-          || 0;
+            ( $map_id, $upper_name, $upper_name ) );
         $self->store_cached_results( $sql_str . $map_id . $upper_name,
-            \$position );
+            [$start,$stop] );
     }
-    return $position;
+    
+    return $start_position_only ? $start :
+        defined $stop ? $stop : $start;
 }
 
 # ----------------------------------------------------
@@ -3353,7 +3328,7 @@ Returns the data for drawing comparative maps.
                  cmap_map_set ms,  
                  cmap_species s
         where    map.map_set_id=ms.map_set_id
-        and      ms.can_be_reference_map=1
+        and      ms.is_relational_map=0
         and      ms.species_id=s.species_id
         $restriction
         order by map.map_set_id, 
@@ -3526,8 +3501,7 @@ Returns the detail info for a map.
 =cut
 
     my ( $self, %args ) = @_;
-    my $slots                 = $args{'slots'};
-    my $map                   = $slots->{'0'};
+    my $map                   = $args{'ref_map'};
     my $highlight             = $args{'highlight'} || '';
     my $order_by              = $args{'order_by'} || 'f.start_position';
     my $comparative_map_field = $args{'comparative_map_field'} || '';
@@ -3538,12 +3512,9 @@ Returns the detail info for a map.
     my $page_data             = $args{'page_data'};
     my $db                    = $self->db or return;
     my $sql                   = $self->sql or return;
-    my $map_id                = $self->acc_id_to_internal_id(
-        table  => 'cmap_map',
-        acc_id => $map->{'aid'},
-    );
-    my $map_start = $map->{'start'};
-    my $map_stop  = $map->{'stop'};
+    my $map_id                = $map->{'map_id'};
+    my $map_start             = $map->{'start'};
+    my $map_stop              = $map->{'stop'};
 
     my $feature_type_aids  = $args{'include_feature_types'};
     my $evidence_type_aids = $args{'include_evidence_types'};
@@ -3585,10 +3556,10 @@ Returns the detail info for a map.
 
     $map_start = $reference_map->{'start_position'}
       unless defined $map_start
-      and $map_start =~ NUMBER_RE;
+      and $map_start =~ /^$RE{'num'}{'real'}$/;
     $map_stop = $reference_map->{'stop_position'}
       unless defined $map_stop
-      and $map_stop =~ NUMBER_RE;
+      and $map_stop =~ /^$RE{'num'}{'real'}$/;
     $reference_map->{'start'}      = $map_start;
     $reference_map->{'stop'}       = $map_stop;
     $reference_map->{'object_id'}  = $map_id;
@@ -4446,7 +4417,7 @@ sub cmap_entry_data {
             from     cmap_map_set ms,
                      cmap_species s
             where    ms.is_enabled=1
-            and      ms.can_be_reference_map=1
+            and      ms.is_relational_map=0
             and      ms.species_id=s.species_id
             order by s.display_order,
                      s.common_name, 
@@ -4721,6 +4692,7 @@ sub slot_info {
 	  ];
 
     if ($slots) {
+#print S#TDERR Dumper($slots)."\n";
         my $sql_suffix;
         foreach my $slot_no ( sort orderOutFromZero keys %{$slots} ) {
             my $from  = '';
@@ -4802,24 +4774,44 @@ sub slot_info {
                     }
                     if (scalar(keys(%{$slots->{$slot_no}{'maps'}}))>0){
                         foreach my $row (@$slot_results){
-                            if (defined($slots->{$slot_no}{'maps'}{$row->[0]}{'start'})
-                                and
-                                $slots->{$slot_no}{'maps'}{$row->[0]}{'start'}>$row->[1]){
+                            if (defined($slots->{$slot_no}{'maps'}{$row->[0]}{'start'})){
                                 $row->[1]=
-                                    $slots->{$slot_no}{'maps'}{$row->[0]}{'start'}
+                                    $slots->{$slot_no}{'maps'}{$row->[0]}{'start'};
+                                ### If start is a feature, get the positions 
+                                ### and store in both places.
+                                if (not $row->[1]=~ /^$RE{'num'}{'real'}$/){
+                                    $row->[1] = $self->feature_name_to_position(
+                                        feature_name        => $row->[1],
+                                        map_id              => $row->[0],
+                                        start_position_only => 1,
+                                      ) || undef;
+                                    $slots->{$slot_no}{'maps'}{$row->[0]}{'start'}=$row->[1] ;
+                                }
                             }
                             else {
                                 $row->[1]=undef;
                             }
-                            if (defined($slots->{$slot_no}{'maps'}{$row->[0]}{'stop'})
-                                and
-                                $slots->{$slot_no}{'maps'}{$row->[0]}{'stop'}<$row->[2]){
+                            if (defined($slots->{$slot_no}{'maps'}{$row->[0]}{'stop'})){
                                 $row->[2]=
-                                    $slots->{$slot_no}{'maps'}{$row->[0]}{'stop'}
+                                    $slots->{$slot_no}{'maps'}{$row->[0]}{'stop'};
+                                ### If stop is a feature, get the positions.
+                                ### and store in both places.
+                                if (not $row->[2]=~ /^$RE{'num'}{'real'}$/ ){
+                                    $row->[2] = $self->feature_name_to_position(
+                                        feature_name        => $row->[2],
+                                        map_id              => $row->[0],
+                                        start_position_only => 0,
+                                      ) || undef;
+                                    $slots->{$slot_no}{'maps'}{$row->[0]}{'stop'}=$row->[2];
+                                }
                             }
                             else {
                                 $row->[2]=undef;
                             }
+                            ###flip start and end if start>end
+                            ($row->[1],$row->[2])=($row->[2],$row->[1])
+                                if (defined($row->[1]) and defined($row->[2]) 
+                                    and $row->[1]>$row->[2]);
                         }
                     }
                     foreach my $row (@$slot_results){
@@ -4829,7 +4821,7 @@ sub slot_info {
                 }
             }
         }
-#print STDERR Dumper($self->{'slot_info'})."\n";
+#print S#TDERR Dumper($self->{'slot_info'})."\n";
     }
     return $self->{'slot_info'};
 }
@@ -4848,6 +4840,7 @@ sub cache_array_results {
     my ( $self, $sql, $attr, $args, $db, $select_type, $sub ) = @_;
     my $data;
     my $cache_key = $sql . join( '-', @$args );
+#print S#TDERR "|$cache_key|\n------------------\n";
     unless ( $data = thaw( $self->{'cache'}->get($cache_key) ) ) {
         $data = $db->$select_type( $sql, $attr, @$args );
         if ( ref $sub eq 'CODE' ) {
@@ -4862,7 +4855,7 @@ sub cache_array_results {
 sub get_cached_results {
     my $self  = shift;
     my $query = shift;
-#p#rint S#TDERR "|$query|\n------------------\n";
+#print S#TDERR "|$query|\n------------------\n";
     return undef unless($query);
     return thaw( $self->{'cache'}->get($query) );
 }
