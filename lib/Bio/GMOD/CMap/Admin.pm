@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin;
 
-# $Id: Admin.pm,v 1.24 2003-07-01 17:41:15 kycl4rk Exp $
+# $Id: Admin.pm,v 1.25 2003-08-01 21:11:16 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.24 $)[-1];
+$VERSION = (qw$Revision: 1.25 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils qw[ next_number parse_words ];
@@ -417,9 +417,8 @@ Find all the features matching some criteria.
                 join(', ', @$species_ids ) . ') ';
         }
 
-        if ( @$feature_type_ids ) {
-            $sql .= 'and f.feature_type_id in (' .
-                join(', ', @$feature_type_ids ) . ') ';
+        if ( my $ft = join(', ',  @$feature_type_ids ) ) {
+            $sql .= "and f.feature_type_id in ($ft) ";
         }
         $sql .= "order by $order_by ";
 
