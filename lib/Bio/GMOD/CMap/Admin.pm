@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.58 2004-09-10 19:02:47 mwz444 Exp $
+# $Id: Admin.pm,v 1.59 2004-09-15 21:18:48 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.58 $)[-1];
+$VERSION = (qw$Revision: 1.59 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -826,100 +826,17 @@ sub insert_feature_correspondence_if_gt{
          id_field     => 'feature_correspondence_id',
          requested    => $no_corrs,
             ) or return $self->error('No next number for feature correspondence');
-
-        my $new_corr_values='';
-        my $new_corr_lookup_values='';
-        if ($expanded_correspondence_lookup){
-            foreach (my $i=0;$i<$no_corrs;$i++){
-                my $corr_id=$base_corr_id+$i;
-                
-                $self->{'new_corr'}->[$i]->{'accession_id'} ||= $corr_id;
-
-                $new_corr_values.=", " if ($i);
-                $new_corr_values.="($corr_id,".
-                "'".$self->{'new_corr'}->[$i]->{'accession_id'}."',".
-                "'".$self->{'new_corr'}->[$i]->{'feature_id1'}."',".
-                "'".$self->{'new_corr'}->[$i]->{'feature_id2'}."',".
-                "'".$self->{'new_corr'}->[$i]->{'is_enabled'}."'".
-                ")";
-                $new_corr_lookup_values.=", " if ($i);
-                $new_corr_lookup_values.="($corr_id,".
-                "'".$self->{'new_corr'}->[$i]->{'feature_id1'}."',".
-                "'".$self->{'new_corr'}->[$i]->{'feature_id2'}."',".
-                "'".$self->{'new_corr'}->[$i]->{'feature_type_aid1'}."',".
-                "'".$self->{'new_corr'}->[$i]->{'feature_type_aid2'}."',".
-                "'".$self->{'new_corr'}->[$i]->{'map_id1'}."',".
-                "'".$self->{'new_corr'}->[$i]->{'map_id2'}."',".
-                "'".$self->{'new_corr'}->[$i]->{'start_position1'}."',".
-                "'".$self->{'new_corr'}->[$i]->{'start_position2'}."',".
-                "'".$self->{'new_corr'}->[$i]->{'stop_position1'}."',".
-                "'".$self->{'new_corr'}->[$i]->{'stop_position2'}."'".
-                "), ($corr_id,".
-                "'".$self->{'new_corr'}->[$i]->{'feature_id2'}."',".
-                "'".$self->{'new_corr'}->[$i]->{'feature_id1'}."',".
-                "'".$self->{'new_corr'}->[$i]->{'feature_type_aid2'}."',".
-                "'".$self->{'new_corr'}->[$i]->{'feature_type_aid1'}."',".
-                "'".$self->{'new_corr'}->[$i]->{'map_id2'}."',".
-                "'".$self->{'new_corr'}->[$i]->{'map_id1'}."',".
-                "'".$self->{'new_corr'}->[$i]->{'start_position2'}."',".
-                "'".$self->{'new_corr'}->[$i]->{'start_position1'}."',".
-                "'".$self->{'new_corr'}->[$i]->{'stop_position2'}."',".
-                "'".$self->{'new_corr'}->[$i]->{'stop_position1'}."'".
-                ")";
-                ###Add this to add_evidence so the evidence
-                ###  section will handle it.
-                push @{$self->{'add_evidence'}},
-                  [$corr_id,
-                   $self->{'new_corr'}->[$i]->{'evidence'}];
-            }
-        }
-        else{
-            foreach (my $i=0;$i<$no_corrs;$i++){
-                my $corr_id=$base_corr_id+$i;
-                
-                $self->{'new_corr'}->[$i]->{'accession_id'} ||= $corr_id;
-
-                $new_corr_values.=", " if ($i);
-                $new_corr_values.="($corr_id,".
-                "'".$self->{'new_corr'}->[$i]->{'accession_id'}."',".
-                "'".$self->{'new_corr'}->[$i]->{'feature_id1'}."',".
-                "'".$self->{'new_corr'}->[$i]->{'feature_id2'}."',".
-                "'".$self->{'new_corr'}->[$i]->{'is_enabled'}."'".
-                ")";
-                $new_corr_lookup_values.=", " if ($i);
-                $new_corr_lookup_values.="($corr_id,".
-                "'".$self->{'new_corr'}->[$i]->{'feature_id1'}."',".
-                "'".$self->{'new_corr'}->[$i]->{'feature_id2'}."'".
-                "), ($corr_id,".
-                "'".$self->{'new_corr'}->[$i]->{'feature_id2'}."',".
-                "'".$self->{'new_corr'}->[$i]->{'feature_id1'}."'".
-                ")";
-                ###Add this to add_evidence so the evidence
-                ###  section will handle it.
-                push @{$self->{'add_evidence'}},
-                  [$corr_id,
-                   $self->{'new_corr'}->[$i]->{'evidence'}];
-            }
-        }
-            
-        print STDERR "Inserting $no_corrs Correspondences\n";
-            #
-            # Create the official correspondence records.
-            #
-        my $sql_str= q[
+        
+        my $corr_sth=$db->prepare( q[
                     insert
                     into   cmap_feature_correspondence
                            ( feature_correspondence_id, accession_id,
                              feature_id1, feature_id2, is_enabled )
-                    values ];
-        $sql_str.=$new_corr_values;
-            $db->do($sql_str, {}, () );
-
-        #
-        # Create the official corr lookups.
-        #
+                    values (?,?,?,?,?) ]);
+        my $new_corr_values='';
+        my $new_corr_lookup_values='';
         if ($expanded_correspondence_lookup){
-            $sql_str= q[insert
+            my $corr_lookup_sth=$db->prepare( q[insert
                 into   cmap_correspondence_lookup
                 ( feature_correspondence_id,
                   feature_id1, feature_id2,
@@ -928,18 +845,85 @@ sub insert_feature_correspondence_if_gt{
                   start_position1, start_position2,
                   stop_position1, stop_position2
                 )
-                values ];
+                values (?,?,?,?,?,?,?,?,?,?,?) ]);
+
+            foreach (my $i=0;$i<$no_corrs;$i++){
+                my $corr_id=$base_corr_id+$i;
+                
+                $self->{'new_corr'}->[$i]->{'accession_id'} ||= $corr_id;
+
+                $corr_sth->execute( $corr_id,
+                    $self->{'new_corr'}->[$i]->{'accession_id'},
+                    $self->{'new_corr'}->[$i]->{'feature_id1'},
+                    $self->{'new_corr'}->[$i]->{'feature_id2'},
+                    $self->{'new_corr'}->[$i]->{'is_enabled'}
+                );
+
+                $corr_lookup_sth->execute( $corr_id,
+                    $self->{'new_corr'}->[$i]->{'feature_id1'},
+                    $self->{'new_corr'}->[$i]->{'feature_id2'},
+                    $self->{'new_corr'}->[$i]->{'feature_type_aid1'},
+                    $self->{'new_corr'}->[$i]->{'feature_type_aid2'},
+                    $self->{'new_corr'}->[$i]->{'map_id1'},
+                    $self->{'new_corr'}->[$i]->{'map_id2'},
+                    $self->{'new_corr'}->[$i]->{'start_position1'},
+                    $self->{'new_corr'}->[$i]->{'start_position2'},
+                    $self->{'new_corr'}->[$i]->{'stop_position1'},
+                    $self->{'new_corr'}->[$i]->{'stop_position2'}
+                ); 
+                $corr_lookup_sth->execute( $corr_id,
+                    $self->{'new_corr'}->[$i]->{'feature_id2'},
+                    $self->{'new_corr'}->[$i]->{'feature_id1'},
+                    $self->{'new_corr'}->[$i]->{'feature_type_aid2'},
+                    $self->{'new_corr'}->[$i]->{'feature_type_aid1'},
+                    $self->{'new_corr'}->[$i]->{'map_id2'},
+                    $self->{'new_corr'}->[$i]->{'map_id1'},
+                    $self->{'new_corr'}->[$i]->{'start_position2'},
+                    $self->{'new_corr'}->[$i]->{'start_position1'},
+                    $self->{'new_corr'}->[$i]->{'stop_position2'},
+                    $self->{'new_corr'}->[$i]->{'stop_position1'}
+                );
+                ###Add this to add_evidence so the evidence
+                ###  section will handle it.
+                push @{$self->{'add_evidence'}},
+                  [$corr_id,
+                   $self->{'new_corr'}->[$i]->{'evidence'}];
+            }
         }
         else{
-            $sql_str= q[insert
+            my $corr_lookup_sth=$db->prepare( q[insert
                 into   cmap_correspondence_lookup
                 ( feature_correspondence_id,
                   feature_id1, feature_id2 )
-                 values ];
+                 values (?,?,?)]);
+            foreach (my $i=0;$i<$no_corrs;$i++){
+                my $corr_id=$base_corr_id+$i;
+                
+                $self->{'new_corr'}->[$i]->{'accession_id'} ||= $corr_id;
+
+                $corr_sth->execute($corr_id,
+                    $self->{'new_corr'}->[$i]->{'accession_id'},
+                    $self->{'new_corr'}->[$i]->{'feature_id1'},
+                    $self->{'new_corr'}->[$i]->{'feature_id2'},
+                    $self->{'new_corr'}->[$i]->{'is_enabled'}
+                );
+                $corr_lookup_sth->execute($corr_id,
+                    $self->{'new_corr'}->[$i]->{'feature_id1'},
+                    $self->{'new_corr'}->[$i]->{'feature_id2'}
+                );
+                $corr_lookup_sth->execute($corr_id,
+                    $self->{'new_corr'}->[$i]->{'feature_id2'},
+                    $self->{'new_corr'}->[$i]->{'feature_id1'}
+                );
+                ###Add this to add_evidence so the evidence
+                ###  section will handle it.
+                push @{$self->{'add_evidence'}},
+                  [$corr_id,
+                   $self->{'new_corr'}->[$i]->{'evidence'}];
+            }
         }
-        $sql_str.=$new_corr_lookup_values;
-        $db->do($sql_str, {}, () );
-        print STDERR "Inserted\n";
+            
+        print STDERR "Inserted $no_corrs Correspondences\n";
     }
 
  
@@ -964,41 +948,37 @@ sub insert_feature_correspondence_if_gt{
 	 )
 	or return $self->error('No next number for correspondence evidence');
 
-    my $sql_str=q[    insert
-		      into   cmap_correspondence_evidence
-		      ( correspondence_evidence_id, 
-			accession_id,
-			feature_correspondence_id,     
+    my $evidence_sth=$db->prepare( q[ insert
+        into   cmap_correspondence_evidence
+          ( correspondence_evidence_id, 
+            accession_id,
+            feature_correspondence_id,     
 			evidence_type_accession,
 			score,
 			rank
 			)
-		      values ];
+          values (?,?,?,?,?,?)]
+        );
 
     for (my $i=0;$i<=$#{$self->{'add_evidence'}};$i++){
-	for my $e ( @{$self->{'add_evidence'}->[$i]->[1]} ) {
-	    my $et_aid            = $e->{'evidence_type_aid'};
-	    my $score            = $e->{'score'};
-	    my $accession_id     = $e->{'accession_id'} || $corr_evidence_id;
-	   
-	    if ( not defined $score ) {
-		$score = 'NULL';
-	    }
-	    my $rank=$self->evidence_type_data($et_aid,'rank') || 1;
+        for my $e ( @{$self->{'add_evidence'}->[$i]->[1]} ) {
+            my $et_aid            = $e->{'evidence_type_aid'};
+            my $score            = $e->{'score'};
+            my $accession_id     = $e->{'accession_id'} || $corr_evidence_id;
+           
+            if ( not defined $score ) {
+            $score = 'NULL';
+            }
+            my $rank=$self->evidence_type_data($et_aid,'rank') || 1;
 
-	    $sql_str.=", " if ($i);
-	    $sql_str.="($corr_evidence_id, '$accession_id',".
-		$self->{'add_evidence'}->[$i]->[0].", '$et_aid',".
-		"'score','$rank')";
-	    ###Increment the id so the next one can use it.
-	    $corr_evidence_id++;
-	}
+            $evidence_sth->execute($corr_evidence_id, $accession_id,
+                $self->{'add_evidence'}->[$i]->[0], $et_aid, $score,$rank);
+            ###Increment the id so the next one can use it.
+            $corr_evidence_id++;
+        }
     }
 
-    ###Do the actual evidence insert
-    print STDERR "Inserting $no_evidence Evidences\n";
-    $db->do($sql_str,{},() );
-    print STDERR "Inserted\n";
+    print STDERR "Insert $no_evidence Evidences\n";
 
     $self->{'new_corr'}=[];
     $self->{'add_evidence'}=[];
@@ -1037,7 +1017,6 @@ sub delete_duplicate_correspondences {
             where  ce1.feature_correspondence_id=].$dup->{'duplicate_id'}.q[ 
                and ce2.feature_correspondence_id is NULL
             ];
-print STDERR "$evidence_move_sql\n";
         my $move_evidence = $db->selectcol_arrayref( $evidence_move_sql, {}, () );
         if (scalar(@$move_evidence)){
             my $move_sql=q[
@@ -1046,7 +1025,6 @@ print STDERR "$evidence_move_sql\n";
                 where correspondence_evidence_id in (].
                 join(',',@$move_evidence).q[)
                 ];
-print STDERR "$move_sql\n";
             $db->do($move_sql);
         }
         $self->feature_correspondence_delete(
