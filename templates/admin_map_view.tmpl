@@ -139,7 +139,7 @@
                 <td>[% IF f.is_landmark; 'Yes'; ELSE; 'No'; END %]</td>
                 <td>[% f.alternate_name OR '&nbsp;' %]</td>
                 <td>[% f.feature_type   OR '&nbsp;' %]</td>
-                <td align="right">[% IF f.start_position %] [% f.start_position | commify %] [% ELSE %] '&nbsp;' [% END %]</td>
+                <td align="right">[% IF f.start_position!='' %] [% f.start_position | commify %] [% ELSE %] '&nbsp;' [% END %]</td>
                 <td align="right">[% f.stop_position  OR '&nbsp;' %]</td>
                 <td>
                   <a href="admin?action=feature_view;feature_id=[% f.feature_id %]">View</a>

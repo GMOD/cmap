@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: cmap_dump.pl,v 1.2 2002-10-11 21:37:51 kycl4rk Exp $
+# $Id: cmap_dump.pl,v 1.3 2002-11-14 01:50:36 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -8,29 +8,39 @@ use Pod::Usage;
 use Getopt::Long;
 use Bio::GMOD::CMap;
 
-use constant STR => 'string';
-use constant NUM => 'number';
+use constant STR    => 'string';
+use constant NUM    => 'number';
+use constant OUT_FS => "\t";     # ouput field separator
+use constant OUT_RS => "\n";     # ouput record separator
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
+
+my %dispatch = (
+    text     => \&text_dump,
+    sql      => \&sql_dump,
+);
 
 #
 # Get command-line options.
 #
-my ( $show_help, $show_version, $truncate );
+my ( $show_help, $show_version, $truncate, $out_type );
 GetOptions(
-    'h|help'         => \$show_help,    # Show help and exit
-    'v|version'      => \$show_version, # Show version and exit
-    't|add-truncate' => \$truncate,     # Add truncate table statements
+    'h|help'       => \$show_help,    # Show help and exit
+    'v|version'    => \$show_version, # Show version and exit
+    'add-truncate' => \$truncate,     # Add truncate table statements
+    't|type=s'     => \$out_type,     # INSERT statements or text format
 ) or pod2usage(2);
 
-pod2usage(0) if $show_help;
+$out_type ||= 'sql';
+
+pod2usage(0) if $show_help or !exists $dispatch{ lc $out_type };
 if ( $show_version ) {
     print "$0 Version: $VERSION\n";
     exit(0);
 }
 
-my @tables = (
+my @Tables = (
     {
         name   => 'cmap_correspondence_evidence',
         fields => {
@@ -182,54 +192,159 @@ my @tables = (
 # Get any specific tables to dump.
 #
 my %args = map { $_ =~ s/\s+//g; ( $_, 1 ) } @ARGV;
-my %dump_tables;
-for my $table_name ( map { $_->{'name'} } @tables ) {
-    $dump_tables{ $table_name } = 1 if $args{ $table_name };
+my %Dump_tables;
+for my $table_name ( map { $_->{'name'} } @Tables ) {
+    $Dump_tables{ $table_name } = 1 if $args{ $table_name };
 }
 
-my $db = Bio::GMOD::CMap->new->db or die 'No db';
-print "--\n-- Dumping data for Cmap",
-    "\n-- Produced by cmap_dump.pl",
-    "\n-- Version: $VERSION",
-    "\n-- ", scalar localtime, "\n--\n";
-for my $table ( @tables ) {
-    my $table_name = $table->{'name'};
-    next if %dump_tables && !$dump_tables{ $table_name };
+#
+# Create a database handle and dispatch the action.
+#
+my $bio = Bio::GMOD::CMap->new or die 'No CMap object';
+my $db  = $bio->db             or die $bio->error;
+$dispatch{ lc $out_type }->( $db );
 
-    print "\n--\n-- Data for '$table_name'\n--\n";
-    if ( $truncate ) {
-        print "TRUNCATE TABLE $table_name;\n" if $truncate;
-    }
+#
+# Create a separate file for each map set, dump data like import format.
+#
+sub text_dump {
+    my $db = shift;
 
-    my %fields     = %{ $table->{'fields'} };
-    my @fld_names  = sort keys %fields;
+    my @col_names = qw[ map_accession_id map_name map_start
+        map_stop feature_accession_id feature_name feature_alt_name
+        feature_start feature_stop feature_type
+    ];
 
-    my $insert = "INSERT INTO $table_name (". join(', ', @fld_names).
-            ') VALUES (';
-
-    my $sth = $db->prepare(
-        'select ' . join(', ', @fld_names). " from $table_name"
+    my $map_sets = $db->selectall_arrayref(
+        q[
+            select ms.map_set_id, 
+                   ms.map_set_name,
+                   s.common_name as species_name
+            from   cmap_map_set ms,
+                   cmap_species s
+            where  ms.species_id=s.species_id
+        ],
+        { Columns => {} }
     );
-    $sth->execute;
-    while ( my $rec = $sth->fetchrow_hashref ) { 
-        my @vals;
-        for my $fld ( @fld_names ) {
-            my $val = $rec->{ $fld };
-            if ( $fields{ $fld } eq STR ) {
-                $val =~ s/'/\\'/g;
-                $val = defined $val ? qq['$val'] : qq[''];
+
+    for my $map_set ( @$map_sets ) {
+        my $map_set_id   = $map_set->{'map_set_id'};
+        my $map_set_name = $map_set->{'map_set_name'};
+        my $species_name = $map_set->{'species_name'};
+        my $file_name    = join( '-', $species_name, $map_set_name );
+           $file_name    =~ tr/a-zA-Z0-9-/_/cs;
+           $file_name    .= '.dat';
+
+        print "Dumping '$species_name-$map_set_name' to '$file_name'\n";
+        open my $fh, ">./$file_name" or die "Can't write to ./$file_name: $!";
+        print $fh join( OUT_FS, @col_names ), OUT_RS;
+
+        my $maps = $db->selectall_arrayref(
+            q[
+                select   map_id, 
+                         map_name, 
+                         accession_id,
+                         start_position,
+                         stop_position
+                from     cmap_map
+                where    map_set_id=?
+                order by map_name
+            ],
+            { Columns => {} },
+            ( $map_set_id )
+        );
+
+        for my $map ( @$maps ) {
+            my $features = $db->selectall_arrayref(
+                q[
+                    select   f.feature_id, 
+                             f.accession_id,
+                             f.feature_name,
+                             f.alternate_name,
+                             f.start_position,
+                             f.stop_position,
+                             ft.feature_type
+                    from     cmap_feature f,
+                             cmap_feature_type ft
+                    where    f.map_id=?
+                    and      f.feature_type_id=ft.feature_type_id
+                    order by f.start_position
+                ],
+                { Columns => {} },
+                ( $map->{'map_id'} )
+            );
+
+            for my $feature ( @$features ) {
+                $feature->{'stop_position'} = undef 
+                if $feature->{'stop_position'} < $feature->{'start_position'};
+
+                print $fh join( OUT_FS,
+                    $map->{'accession_id'},
+                    $map->{'map_name'},
+                    $map->{'start_position'},
+                    $map->{'stop_position'},
+                    $feature->{'accession_id'},
+                    $feature->{'feature_name'},
+                    $feature->{'alternate_name'},
+                    $feature->{'start_position'},
+                    $feature->{'stop_position'},
+                    $feature->{'feature_type'},
+                ), OUT_RS;
             }
-            else {
-                $val = defined $val ? $val : 'NULL';
-            }
-            push @vals, $val;
+        }
+        
+        close $fh;
+    }
+}
+
+#
+# Create dump of data with SQL INSERT statements -- all in one output stream.
+#
+sub sql_dump {
+    my $db = shift;
+    print "--\n-- Dumping data for Cmap",
+        "\n-- Produced by cmap_dump.pl",
+        "\n-- Version: $VERSION",
+        "\n-- ", scalar localtime, "\n--\n";
+    for my $table ( @Tables ) {
+        my $table_name = $table->{'name'};
+        next if %Dump_tables && !$Dump_tables{ $table_name };
+
+        print "\n--\n-- Data for '$table_name'\n--\n";
+        if ( $truncate ) {
+            print "TRUNCATE TABLE $table_name;\n" if $truncate;
         }
 
-        print $insert, join(', ', @vals), ");\n";
-    }
-}
+        my %fields     = %{ $table->{'fields'} };
+        my @fld_names  = sort keys %fields;
 
-print "\n--\n-- Finished dumping Cmap data\n--\n";
+        my $insert = "INSERT INTO $table_name (". join(', ', @fld_names).
+                ') VALUES (';
+
+        my $sth = $db->prepare(
+            'select ' . join(', ', @fld_names). " from $table_name"
+        );
+        $sth->execute;
+        while ( my $rec = $sth->fetchrow_hashref ) { 
+            my @vals;
+            for my $fld ( @fld_names ) {
+                my $val = $rec->{ $fld };
+                if ( $fields{ $fld } eq STR ) {
+                    $val =~ s/'/\\'/g;
+                    $val = defined $val ? qq['$val'] : qq[''];
+                }
+                else {
+                    $val = defined $val ? $val : 'NULL';
+                }
+                push @vals, $val;
+            }
+
+            print $insert, join(', ', @vals), ");\n";
+        }
+    }
+
+    print "\n--\n-- Finished dumping Cmap data\n--\n";
+}
 
 =pod
 
@@ -243,9 +358,10 @@ cmap_dump.pl - dump data from Cmap tables like "mysqldump"
 
   Options:
 
-    -t|add-truncate Add 'truncate table' statements
-    -h|help         Display help message
-    -v|version      Display version
+    -t|--type=SQL|text INSERT statements (default) or text format
+    -t|--add-truncate  Add 'truncate table' statements
+    -h|--help          Display help message
+    -v|--version       Display version
 
 =head1 DESCRIPTION
 
