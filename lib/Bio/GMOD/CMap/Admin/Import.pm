@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::Import;
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.38 2003-10-24 20:08:03 kycl4rk Exp $
+# $Id: Import.pm,v 1.39 2003-10-28 21:39:29 kycl4rk Exp $
 
 =pod
 
@@ -28,7 +28,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.38 $)[-1];
+$VERSION  = (qw$Revision: 1.39 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -620,19 +620,23 @@ appended to the list of xrefs.
             );
         }
 
-        $admin->set_attributes( 
-            object_id  => $feature_id, 
-            table_name => 'cmap_feature',
-            attributes => \@fattributes,
-            overwrite  => $overwrite,
-        );
+        if ( @fattributes ) {
+            $admin->set_attributes( 
+                object_id  => $feature_id, 
+                table_name => 'cmap_feature',
+                attributes => \@fattributes,
+                overwrite  => $overwrite,
+            ) or return $self->error( $admin->error );
+        }
 
-        $admin->set_xrefs(
-            object_id  => $feature_id,
-            table_name => 'cmap_feature',
-            overwrite  => $overwrite,
-            xrefs      => \@xrefs,
-        ) or return $self->error( $admin->error );
+        if ( @xrefs ) {
+            $admin->set_xrefs(
+                object_id  => $feature_id,
+                table_name => 'cmap_feature',
+                overwrite  => $overwrite,
+                xrefs      => \@xrefs,
+            ) or return $self->error( $admin->error );
+        }
 
         my $pos = join('-', map { defined $_ ? $_ : () } $start, $stop);
         $self->Print(
