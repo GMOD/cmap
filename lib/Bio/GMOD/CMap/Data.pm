@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.197 2004-12-16 18:52:11 mwz444 Exp $
+# $Id: Data.pm,v 1.198 2004-12-18 00:26:21 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.197 $)[-1];
+$VERSION = (qw$Revision: 1.198 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -575,7 +575,6 @@ Returns the feature and correspondence data for the maps in a slot.
 
 sub slot_data {
 
-    #print S#TDERR "slot_data\n";
     my ( $self, %args ) = @_;
     my $db  = $self->db  or return;
     my $sql = $self->sql or return;
@@ -601,6 +600,7 @@ sub slot_data {
 
     my $max_no_features = 200000;
 
+    #print S#TDERR "slot_data $this_slot_no\n";
     #
     # If there is more than 1 map in this slot, we will return totals
     # for all the features on every map and the number of
@@ -859,10 +859,12 @@ sub slot_data {
             $map->{'start_position'} = $map_start if defined($map_start);
             $map->{'stop_position'}  = $map_stop  if defined($map_stop);
             $map->{'no_correspondences'} = $corr_lookup{ $map->{'map_id'} };
-            next
-              if ( $min_correspondences
+            if ( $min_correspondences
                 && defined $ref_slot_no
-                && $map->{'no_correspondences'} < $min_correspondences );
+                && $map->{'no_correspondences'} < $min_correspondences ){
+                delete $self->{'slot_info'}{$this_slot_no}{ $map->{'map_id'} };
+                next;
+            }
             $map->{'no_features'} = $count_lookup{ $map->{'map_id'} };
             my $where =
               @$feature_type_aids
@@ -1109,10 +1111,14 @@ sub slot_data {
             $map->{'start_position'} = $map_start if defined($map_start);
             $map->{'stop_position'}  = $map_stop  if defined($map_stop);
             $map->{'no_correspondences'} = $corr_lookup{ $map->{'map_id'} };
-            next
-              if ( $min_correspondences
+            if ( $min_correspondences
                 && defined $ref_slot_no
-                && $map->{'no_correspondences'} < $min_correspondences );
+                && $map->{'no_correspondences'} < $min_correspondences ){
+                delete $self->{'slot_info'}{$this_slot_no}{ $map->{'map_id'} };
+                next
+            }
+
+
             $map->{'no_features'} = $count_lookup{ $map->{'map_id'} };
 
             ###set $feature_correspondences and$correspondence_evidence
@@ -2310,8 +2316,6 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
     if ( scalar @ref_maps >= 1 ) {
         $map_info = $self->fill_out_maps($slots);
     }
-
-    #$db->do("delete from cmap_map_cache where pid=$pid");
 
     return {
         ref_species_aid        => $ref_species_aid,
@@ -3912,11 +3916,6 @@ Returns the detail info for a map.
             maps        => \@maps,
           };
     }
-
-    #
-    # Delete anything from the cache.
-    #
-    #$db->do("delete from cmap_map_cache where pid=$pid");
 
     return {
         features              => $features,
