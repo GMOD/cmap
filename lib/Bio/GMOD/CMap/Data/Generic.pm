@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data::Generic;
 
-# $Id: Generic.pm,v 1.25 2003-03-18 01:26:19 kycl4rk Exp $
+# $Id: Generic.pm,v 1.26 2003-03-25 23:18:20 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.25 $)[-1];
+$VERSION = (qw$Revision: 1.26 $)[-1];
 
 use Data::Dumper; # really just for debugging
 use Bio::GMOD::CMap;
@@ -224,9 +224,10 @@ The SQL for finding the number of correspondences by for one map.
                  ms.short_name as map_set_name,
                  ms.published_on,
                  ms.can_be_reference_map,
-                 ms.display_order as map_set_display_order,
+                 ms.display_order as ms_display_order,
                  map2.accession_id as map_aid,
-                 map2.map_name
+                 map2.map_name,
+                 map2.display_order as map_display_order
         from     cmap_map map1,
                  cmap_map map2,
                  cmap_map_set ms,
@@ -293,9 +294,10 @@ The SQL for finding the number of correspondences for a whole map set.
                  ms.short_name as map_set_name,
                  ms.published_on,
                  ms.can_be_reference_map,
-                 ms.display_order as map_set_display_order,
+                 ms.display_order as ms_display_order,
                  map2.accession_id as map_aid,
-                 map2.map_name
+                 map2.map_name,
+                 map2.display_order as map_display_order
         from     cmap_map map1,
                  cmap_map map2,
                  cmap_map_set ms,
@@ -362,9 +364,10 @@ The SQL for finding the number of correspondences for many maps
                  ms.short_name as map_set_name,
                  ms.published_on,
                  ms.can_be_reference_map,
-                 ms.display_order as map_set_display_order,
+                 ms.display_order as ms_display_order,
                  map2.accession_id as map_aid,
-                 map2.map_name
+                 map2.map_name,
+                 map2.display_order as map_display_order
         from     cmap_map map2,
                  cmap_map_set ms,
                  cmap_map_type mt,
@@ -441,15 +444,24 @@ The SQL for finding correspondences for a feature.
                  map.map_id,
                  map.accession_id as map_aid,
                  map.map_name,
+                 map.display_order as map_display_order,
                  ms.map_set_id,
                  ms.accession_id as map_set_aid,
                  ms.short_name as map_set_name,
+                 ms.display_order as ms_display_order,
+                 ms.published_on,
+                 mt.map_type,
+                 mt.display_order as map_type_display_order,
                  mt.map_units,
                  s.common_name as species_name,
+                 s.display_order as species_display_order,
                  fc.feature_correspondence_id,
-                 fc.accession_id as feature_correspondence_aid
+                 fc.accession_id as feature_correspondence_aid,
+                 et.evidence_type
         from     cmap_correspondence_lookup cl, 
                  cmap_feature_correspondence fc,
+                 cmap_correspondence_evidence ce,
+                 cmap_evidence_type et,
                  cmap_feature f,
                  cmap_feature_type ft,
                  cmap_map map,
@@ -457,6 +469,8 @@ The SQL for finding correspondences for a feature.
                  cmap_map_type mt,
                  cmap_species s
         where    cl.feature_correspondence_id=fc.feature_correspondence_id
+        and      fc.feature_correspondence_id=ce.feature_correspondence_id
+        and      ce.evidence_type_id=et.evidence_type_id
         and      cl.feature_id1=?
         and      cl.feature_id2=f.feature_id
         and      f.feature_type_id=ft.feature_type_id
@@ -467,7 +481,15 @@ The SQL for finding correspondences for a feature.
         and      ms.map_type_id=mt.map_type_id
     ];
 
-    $sql .= "and map.accession_id='".$args{'map_aid'}."'" if $args{'map_aid'};
+    if ( $args{'comparative_map_field'} eq 'map_set_aid' ) {
+        $sql .= "and ms.accession_id='".$args{'comparative_map_aid'}."' ";
+    }
+    elsif ( $args{'comparative_map_field'} eq 'map_aid' ) {
+        $sql .= "and map.accession_id='".$args{'comparative_map_aid'}."' ";
+    }
+
+    $sql .= 'and ce.evidence_type_id in ('.$args{'evidence_type_ids'}.') ' 
+        if $args{'evidence_type_ids'};
 
     $sql .= q[
                  order by map_set_name, 
@@ -747,7 +769,6 @@ The SQL for finding all correspondences between two maps.
                  et.accession_id as evidence_type_aid,
                  et.evidence_type,
                  et.rank as evidence_rank,
-                 et.line_style,
                  et.line_color
         from     cmap_feature f1, 
                  cmap_feature f2, 
@@ -805,7 +826,6 @@ The SQL for finding all correspondences between two maps.
                  cl.feature_correspondence_id,
                  et.accession_id as evidence_type_aid,
                  et.rank as evidence_rank,
-                 et.line_style,
                  et.line_color
         from     cmap_map map,
                  cmap_feature f1, 
@@ -865,7 +885,6 @@ The SQL for finding all correspondences between two maps.
                  et.accession_id as evidence_type_aid,
                  et.rank as evidence_rank,
                  et.evidence_type,
-                 et.line_style,
                  et.line_color
         from     cmap_map map,
                  cmap_feature f1, 
