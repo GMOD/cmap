@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.5 2002-09-15 19:12:52 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.6 2002-09-16 12:25:09 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -28,7 +28,7 @@ $COLORS         = [ sort keys %{ +COLORS } ];
 $FEATURE_SHAPES = [ qw( box dumbbell line span ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.5 $)[-1];
+$VERSION        = (qw$Revision: 1.6 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -2271,29 +2271,33 @@ sub redirect_home {
 
 # ----------------------------------------------------
 sub map_type_create {
-    my $self = shift;
+    my ( $self, %args ) = @_;
+    my $errors          = $args{'errors'};
 
     return $self->process_template( 
         TEMPLATE->{'map_type_create'},
         { 
-            colors   => $COLORS,
-            shapes   => $MAP_SHAPES,
-            widths   => $WIDTHS,
+            colors => $COLORS,
+            shapes => $MAP_SHAPES,
+            widths => $WIDTHS,
+            errors => $errors,
         }
     );
 }
 
 # ----------------------------------------------------
 sub map_type_edit {
-    my $self = shift;
-    my $db   = $self->db;
-    my $apr  = $self->apr;
-    my $sth  = $db->prepare(
+    my ( $self, %args ) = @_;
+    my $errors          = $args{'errors'};
+    my $db              = $self->db;
+    my $apr             = $self->apr;
+    my $sth             = $db->prepare(
         q[
             select   map_type_id, 
                      map_type, 
                      map_units, 
                      is_relational_map,
+                     display_order,
                      shape, 
                      width, 
                      color
@@ -2311,6 +2315,7 @@ sub map_type_edit {
             colors   => $COLORS,
             shapes   => $MAP_SHAPES,
             widths   => $WIDTHS,
+            errors   => $errors,
         }
     );
 }
@@ -2318,13 +2323,18 @@ sub map_type_edit {
 # ----------------------------------------------------
 sub map_type_insert {
     my $self              = shift;
+    my @errors            = ();
     my $db                = $self->db;
     my $apr               = $self->apr;
-    my $map_type          = $apr->param('map_type')  or die 'No map type';
-    my $map_units         = $apr->param('map_units') or die 'No map units';
-    my $shape             = $apr->param('shape')     or die 'How to draw?';
-    my $width             = $apr->param('width')     || '';
-    my $color             = $apr->param('color')     || '';
+    my $map_type          = $apr->param('map_type')  
+        or push @errors, 'No map type';
+    my $map_units         = $apr->param('map_units') 
+        or push @errors, 'No map units';
+    my $shape             = $apr->param('shape')     
+        or push @errors, 'How to draw?';
+    my $width             = $apr->param('width')             || '';
+    my $color             = $apr->param('color')             || '';
+    my $display_order     = $apr->param('display_order')     || '';
     my $is_relational_map = $apr->param('is_relational_map') || 0;
     my $map_type_id       = next_number(
         db                => $db, 
@@ -2332,17 +2342,19 @@ sub map_type_insert {
         id_field          => 'map_type_id',
     ) or die 'No map type id';
 
+    return $self->map_type_create( errors => \@errors ) if @errors;
+
     $db->do(
         q[ 
             insert
             into   cmap_map_type 
                    ( map_type_id, map_type, map_units, is_relational_map,
-                     shape, width, color )
-            values ( ?, ?, ?, ?, ?, ?, ? )
+                     display_order, shape, width, color )
+            values ( ?, ?, ?, ?, ?, ?, ?, ? )
         ],
         {}, 
         ( $map_type_id, $map_type, $map_units, $is_relational_map, 
-          $shape, $width, $color )
+          $display_order, $shape, $width, $color )
     );
 
     return $self->redirect_home( ADMIN_HOME_URI.'?action=map_types_view' ); 
@@ -2351,26 +2363,40 @@ sub map_type_insert {
 # ----------------------------------------------------
 sub map_type_update {
     my $self              = shift;
+    my @errors            = ();
     my $db                = $self->db;
     my $apr               = $self->apr;
-    my $map_type_id       = $apr->param('map_type_id') or die 'No map type id';
-    my $map_type          = $apr->param('map_type')    or die 'No map type';
-    my $map_units         = $apr->param('map_units')   or die 'No map units';
-    my $shape             = $apr->param('shape')       or die 'No shape';
+    my $map_type_id       = $apr->param('map_type_id') 
+        or push @errors, 'No map type id';
+    my $map_type          = $apr->param('map_type')    
+        or push @errors, 'No map type';
+    my $map_units         = $apr->param('map_units')   
+        or push @errors, 'No map units';
+    my $shape             = $apr->param('shape')       
+        or push @errors, 'No shape';
     my $is_relational_map = $apr->param('is_relational_map') || 0;
+    my $display_order     = $apr->param('display_order');
     my $width             = $apr->param('width') || '';
     my $color             = $apr->param('color') || '';
+
+    return $self->map_type_edit( errors => \@errors ) if @errors;
 
     $db->do(
         q[ 
             update cmap_map_type
-            set    map_type=?, map_units=?, is_relational_map=?, 
-                   shape=?, width=?, color=?
+            set    map_type=?, 
+                   map_units=?, 
+                   is_relational_map=?, 
+                   display_order=?, 
+                   shape=?, 
+                   width=?, 
+                   color=?
             where  map_type_id=?
         ],
         {}, 
-        ( $map_type, $map_units, $is_relational_map, $shape, 
-          $width, $color, $map_type_id )
+        ( $map_type, $map_units, $is_relational_map, $display_order,
+          $shape, $width, $color, $map_type_id 
+        )
     );
 
     return $self->redirect_home( ADMIN_HOME_URI.'?action=map_types_view' ); 
@@ -2389,6 +2415,7 @@ sub map_types_view {
                      map_type, 
                      map_units, 
                      is_relational_map, 
+                     display_order, 
                      shape, 
                      width, 
                      color

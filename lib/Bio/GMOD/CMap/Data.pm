@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.13 2002-09-15 19:12:52 kycl4rk Exp $
+# $Id: Data.pm,v 1.14 2002-09-16 12:25:09 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.13 $)[-1];
+$VERSION = (qw$Revision: 1.14 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -585,10 +585,12 @@ Returns the data for the correspondence matrix.
                          ms.map_set_id, 
                          ms.accession_id as map_set_aid, 
                          ms.short_name as map_set_name,
+                         ms.display_order as map_set_display_order,
+                         ms.published_on, 
                          s.species_id,
                          s.accession_id as species_aid,
                          s.common_name as species_name,
-                         s.display_order
+                         s.species_display_order
                 from     cmap_map map,
                          cmap_map_set ms,
                          cmap_species s
@@ -603,18 +605,24 @@ Returns the data for the correspondence matrix.
             $map_set_sql .= 
                 "and ms.accession_id='$map_set_aid' " if $map_set_aid;
 
-            $map_set_sql .= 
-                'order by display_order, species_name, map_set_name';
+            $map_set_sql .= q[
+                order by species_display_order, 
+                         species_name, 
+                         map_set_display_order,
+                         published_on,
+                         map_set_name
+            ];
         }
         else {
             $map_set_sql = q[
                 select   ms.map_set_id, 
                          ms.accession_id as map_set_aid,
                          ms.short_name as map_set_name,
+                         ms.display_order as map_set_display_order,
                          s.species_id,
                          s.accession_id as species_aid,
                          s.common_name as species_name,
-                         s.display_order
+                         s.display_order as species_display_order
                 from     cmap_map_set ms,
                          cmap_species s
                 where    ms.can_be_reference_map=1
@@ -627,9 +635,9 @@ Returns the data for the correspondence matrix.
                 "and ms.accession_id='$map_set_aid' " if $map_set_aid;
 
             $map_set_sql .= q[
-                order by s.display_order, 
-                         s.common_name,
-                         ms.display_order,
+                order by s.species_display_order, 
+                         s.species_name,
+                         ms.map_set_display_order,
                          ms.published_on desc,
                          ms.short_name
             ];
@@ -831,12 +839,15 @@ Returns the data for the correspondence matrix.
             select   ms.map_set_id, 
                      ms.accession_id as map_set_aid,
                      ms.short_name as map_set_name,
+                     ms.display_order as map_set_display_order,
+                     ms.published_on,
                      s.species_id,
                      s.accession_id as species_aid,
                      s.common_name as species_name,
-                     s.display_order,
+                     s.display_order as species_display_order,
                      mt.map_type_id, 
-                     mt.map_type
+                     mt.map_type,
+                     mt.display_order as map_type_display_order
             from     cmap_map_set ms,
                      cmap_map_type mt,
                      cmap_species s
@@ -847,8 +858,15 @@ Returns the data for the correspondence matrix.
         $link_map_set_sql .= 
             "and ms.accession_id='$link_map_set_aid' " if $link_map_set_aid;
 
-        $link_map_set_sql .= 
-            'order by map_type, display_order, species_name, map_set_name';
+        $link_map_set_sql .= q[
+            order by map_type_display_order,
+                     map_type,
+                     species_display_order, 
+                     species_name, 
+                     map_set_display_order,
+                     published_on,
+                     map_set_name
+        ];
     }
 
 #    warn "link sql =\n$link_map_set_sql\n";
@@ -1813,8 +1831,11 @@ Returns the detail info for a map.
     }
 
     my @comparative_maps = 
-        sort { $a->{'name'} cmp $b->{'name'} } 
-        values %comparative_maps;
+        sort { 
+            $a->{'map_set_name'} cmp $b->{'map_set_name'} 
+        } 
+        values %comparative_maps
+    ;
 
     return {
         features         => $features,

@@ -3,6 +3,15 @@
 <a href="admin?action=map_types_view">View Map Types</a>
 <hr noshade>
 
+[% IF errors.size %]
+    <b>There were errors:</b>
+    <ul>
+        [% FOREACH e=errors %] 
+          <li>[% e %]</li> 
+        [% END %]
+    </ul>
+[% END %]
+
 <form method="post" action="admin">
 <table>
     <tr>
@@ -26,6 +35,13 @@
                 <option value="0"[% IF map_type.is_relational_map==0 %] selected[% END %]>No</option>
                 <option value="1"[% IF map_type.is_relational_map==1 %] selected[% END %]>Yes</option>
             </select>
+        </td>
+    </tr>
+  
+    <tr>
+        <td align="right">Display Order:</td>
+        <td>
+            <input name="display_order" value="[% map_type.display_order %]">
         </td>
     </tr>
   
@@ -63,7 +79,7 @@
             </select>
         </td>
     </tr>
-  
+
     <tr>
         <td colspan="2">
             <input type="submit" value="Submit">

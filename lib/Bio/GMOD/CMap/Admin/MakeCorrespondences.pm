@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
-# $Id: MakeCorrespondences.pm,v 1.6 2002-09-13 23:47:04 kycl4rk Exp $
+# $Id: MakeCorrespondences.pm,v 1.7 2002-09-16 12:25:09 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.6 $)[-1];
+$VERSION = (qw$Revision: 1.7 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils qw[ next_number insert_correspondence ];
@@ -127,21 +127,6 @@ sub make_name_correspondences {
                             ( $upper_name, $upper_name )
                         ) }
                     ) {
-#                        #
-#                        # Skip if a correspondence exists already.
-#                        #
-#                        my $count = $db->selectrow_array(
-#                            q[
-#                                select count(*)
-#                                from   cmap_correspondence_lookup
-#                                where  feature_id1=?
-#                                and    feature_id2=?
-#                            ],
-#                            {},
-#                            ( $feature->{'feature_id'}, $corr_id )
-#                        ) || 0;
-#                        next if $count;
-
                         insert_correspondence( 
                             $db,
                             $feature->{'feature_id'},
