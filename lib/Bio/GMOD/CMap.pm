@@ -1,6 +1,7 @@
 package Bio::GMOD::CMap;
+# vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.37 2003-09-19 19:01:21 kycl4rk Exp $
+# $Id: CMap.pm,v 1.38 2003-09-29 20:49:29 kycl4rk Exp $
 
 =head1 NAME
 
