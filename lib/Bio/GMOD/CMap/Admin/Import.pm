@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.5 2002-09-13 23:47:04 kycl4rk Exp $
+# $Id: Import.pm,v 1.6 2002-10-01 14:13:29 kycl4rk Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.5 $)[-1];
+$VERSION  = (qw$Revision: 1.6 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -84,19 +84,70 @@ Starred fields are required.  Order of fields is not important.
     my $db              = $self->db           or die 'No database handle';
     my $map_set_id      = $args{'map_set_id'} or die 'No map set id';
     my $fh              = $args{'fh'}         or die 'No file handle';
-    my $overwrite       = $args{'overwrite'}  || 0;
 
-#    $self->be_quiet( $args{'be_quiet'} );
+    #
+    # Examine map set.
+    #
+    $self->Print("Examining map set.\n");
+    my $map_set_name = join ('-', @{ 
+        $db->selectall_arrayref(
+            q[
+                select s.common_name, ms.map_set_name
+                from   cmap_map_set ms,
+                       cmap_species s
+                where  ms.map_set_id=?
+                and    ms.species_id=s.species_id
+            ],
+            {},
+            ( $map_set_id )
+        )
+    } );
 
-    my ( %map_ids, %feature_type_ids, %feature_ids );
-    $self->Print("Checking headers.\n");
+    my %maps = map { $_->[0], { map_id => $_->[1] } } @{
+        $db->selectall_arrayref(
+            q[
+                select upper(map_name), map_id
+                from   cmap_map
+                where  map_set_id=?
+            ],
+            {},
+            ( $map_set_id )
+        )
+    };
+    $self->Print("$map_set_name currently has ", scalar keys %maps, " maps\n");
+
+    #
+    # Memorize the features currently on each map.
+    #
+    for my $map_name ( keys %maps ) {
+        my $map_id   = $maps{ $map_name }{'map_id'} or return $self->error(
+            "Map '$map_name' has no ID!"
+        );
+
+        my $features = $db->selectall_arrayref(
+            q[
+                select f.feature_name
+                from   cmap_feature f
+                where  f.map_id=?
+            ],
+            { Columns => {} },
+            ( $map_id )
+        );
+
+        $maps{ $map_name }{'features'}{ $_ } = {} for @$features;
+
+        $self->Print(
+            "Map '$map_name' currently has ", scalar @$features, " features\n"
+        );
+    }
 
     #
     # Make column names lowercase, convert spaces to underscores 
     # (e.g., make "Feature Name" => "feature_name").
     #
+    $self->Print("Checking headers.\n");
     chomp( my $header   = <$fh> );
-    my @columns_present = map { s/\s+/_/g; lc $_ } split(FIELD_SEP, $header);
+    my @columns_present = map { s/\s+/_/g; lc $_ } split( FIELD_SEP, $header );
 
     for my $column_name ( @columns_present ) {
         if ( exists $COLUMNS{ $column_name } ) {
@@ -108,6 +159,7 @@ Starred fields are required.  Order of fields is not important.
     }
 
     $self->Print("Parsing file...\n");
+    my ( %feature_type_ids, %feature_ids );
     while ( <$fh> ) {
         chomp;
         my @fields = split FIELD_SEP;
@@ -162,7 +214,9 @@ Starred fields are required.  Order of fields is not important.
         # Not in the database, so ask to create it.
         #
         unless ( $feature_type_id ) {
-            print "Feature type '$feature_type' doesn't exist.  Create?[Y/n] ";
+            $self->Print(
+                "Feature type '$feature_type' doesn't exist.  Create?[Y/n] "
+            );
             chomp( my $answer = <STDIN> );
             unless ( $answer =~ m/^[Nn]/ ) {
                 $feature_type_id = next_number(
@@ -185,6 +239,8 @@ Starred fields are required.  Order of fields is not important.
                       1, 1, 'line' 
                     )
                 );
+
+                $self->Print("Feature type '$feature_type' created.\n");
             }
             else {
                 next;
@@ -197,51 +253,34 @@ Starred fields are required.  Order of fields is not important.
         # Figure out the map id (or create it).
         #
         my $map_name = $record{'map_name'};
-        my $map_id   = $map_ids{ $map_name };
+        my $map_id   = $maps{ uc $map_name }{'map_id'} || 0;
         unless ( $map_id ) {
-            $map_id = $db->selectrow_array(
+            $map_id          = next_number(
+                db           => $db, 
+                table_name   => 'cmap_map',
+                id_field     => 'map_id',
+            ) or die 'No map id';
+
+            my $accession_id = $record{'accession_id'} || $map_id;
+            my $map_start    = $record{'map_start'}    || 0;
+            my $map_stop     = $record{'map_stop'}     || 0;
+
+            $db->do(
                 q[
-                    select map_id
-                    from   cmap_map
-                    where  map_set_id=?
-                    and    map_name=?
+                    insert
+                    into   cmap_map 
+                           ( map_id, accession_id, map_set_id, 
+                             map_name, start_position, stop_position )
+                    values ( ?, ?, ?, ?, ?, ? )
                 ],
-                {}, ( $map_set_id, $map_name )
+                {}, 
+                ( $map_id, $accession_id, $map_set_id, 
+                  $map_name, $map_start, $map_stop 
+                )
             );
 
-            unless ( $map_id ) {
-                $map_id = next_number(
-                    db           => $db, 
-                    table_name   => 'cmap_map',
-                    id_field     => 'map_id',
-                ) or die 'No map id';
-
-                my $accession_id = $record{'accession_id'} || $map_id;
-                my $map_start    = $record{'map_start'}    || 0;
-                my $map_stop     = $record{'map_stop'}     || 0;
-
-                $db->do(
-                    q[
-                        insert
-                        into   cmap_map 
-                               ( map_id, accession_id, map_set_id, 
-                                 map_name, start_position, stop_position )
-                        values ( ?, ?, ?, ?, ?, ? )
-                    ],
-                    {}, 
-                    ( $map_id, $accession_id, $map_set_id, 
-                      $map_name, $map_start, $map_stop 
-                    )
-                );
-
-                $self->Print(
-                    "Created map $map_name ($map_id).\n"
-                );
-            }
-
-            $self->Print("No id for map $map_name.\n"), next 
-                unless $map_id;
-            $map_ids{ $map_name } = $map_id;
+            $self->Print("Created map $map_name ($map_id).\n");
+            $maps{ uc $map_name }{'map_id'} = $map_id;
         }
 
         #
@@ -273,11 +312,11 @@ Starred fields are required.  Order of fields is not important.
                     select feature_id
                     from   cmap_feature
                     where  map_id=?
-                    and    feature_name=?
+                    and    upper(feature_name)=?
                     and    start_position=?
                 ],
                 {},
-                ( $map_id, $feature_name, $start )
+                ( $map_id, uc $feature_name, $start )
             );
         }
 
@@ -299,6 +338,8 @@ Starred fields are required.  Order of fields is not important.
                   $start, $stop, $feature_id
                 )
             );
+
+            $maps{ uc $map_name }{'features'}{ $feature_name }{'updated'} = 1;
         }
         else {
             #
@@ -329,16 +370,16 @@ Starred fields are required.  Order of fields is not important.
         }
 
         my $pos = join('-', map { defined $_ ? $_ : () } $start, $stop);
-        $self->Print("$action $feature_type '$feature_name' on map ".
-              "$map_name ($map_id) at $pos.\n"
+        $self->Print(
+            "$action $feature_type '$feature_name' on map $map_name at $pos.\n"
         );
     }
 
     # 
     # Make sure the maps have legitimate starts and stops.
     # 
-    for my $map_name ( sort keys %map_ids ) {
-        my $map_id = $map_ids{ $map_name };
+    for my $map_name ( sort keys %maps ) {
+        my $map_id = $maps{ $map_name }{'map_id'};
         my ( $map_start, $map_stop ) = $db->selectrow_array(
             q[
                 select map.start_position, map.stop_position

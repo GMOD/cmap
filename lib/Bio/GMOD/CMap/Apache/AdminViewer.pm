@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.8 2002-09-18 16:29:28 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.9 2002-10-01 14:13:29 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -28,7 +28,7 @@ $COLORS         = [ sort keys %{ +COLORS } ];
 $FEATURE_SHAPES = [ qw( box dumbbell line span ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.8 $)[-1];
+$VERSION        = (qw$Revision: 1.9 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -1497,7 +1497,7 @@ sub feature_corr_create {
                    cmap_map map,
                    cmap_map_set ms,
                    cmap_species s
-            where  f.feature_name like "$search_term"
+            where  upper(f.feature_name) like '$search_term'
             and    f.map_id=map.map_id
             and    map.map_set_id=ms.map_set_id
             and    ms.species_id=s.species_id

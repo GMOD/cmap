@@ -1,13 +1,12 @@
 package Bio::GMOD::CMap::Apache::MapSetViewer;
 
-# $Id: MapSetViewer.pm,v 1.3 2002-09-06 22:15:51 kycl4rk Exp $
+# $Id: MapSetViewer.pm,v 1.4 2002-10-01 14:13:30 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Apache::Constants;
-
 use Bio::GMOD::CMap::Apache;
 use base 'Bio::GMOD::CMap::Apache';
 
@@ -51,7 +50,8 @@ sub handler {
 
 =head1 NAME
 
-Bio::GMOD::CMap::Apache::MapSetViewer - show information on one or more map sets
+Bio::GMOD::CMap::Apache::MapSetViewer - 
+    show information on one or more map sets
 
 =head1 SYNOPSIS
 
@@ -64,7 +64,8 @@ In httpd.conf:
 
 =head1 DESCRIPTION
 
-If given a map set accession id, then show that map set.  Otherwise, show all.
+Show the information on one or more map sets (identified by map set accession
+IDs, separated by commas) or all map sets.
 
 =head1 SEE ALSO
 
