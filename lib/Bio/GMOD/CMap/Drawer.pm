@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.76 2004-09-08 04:52:41 mwz444 Exp $
+# $Id: Drawer.pm,v 1.77 2004-09-13 20:55:05 mwz444 Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.76 $)[-1];
+$VERSION = (qw$Revision: 1.77 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -215,7 +215,7 @@ Draws a line from one point to another.
 #        }
 #    }
 
-    $self->add_drawing( @lines );
+    return @lines ;
 }
 
 # ----------------------------------------------------
@@ -589,12 +589,14 @@ Lays out the image and writes it to the file system, set the "image_name."
                 $position_set->{'feature_id2'}
             );
 
-            $self->add_connection(
-                @positions,
-                $evidence_info->{'line_color'} || 
-                    $self->config_data('connecting_line_color'),
-                $position_set->{'same_map'}    || 0,
-                $position_set->{'label_side'}  || '',
+            $self->add_drawing(
+                $self->add_connection(
+                    @positions,
+                    $evidence_info->{'line_color'} || 
+                        $self->config_data('connecting_line_color'),
+                    $position_set->{'same_map'}    || 0,
+                    $position_set->{'label_side'}  || '',
+                )
             );
         }
     }
@@ -1694,32 +1696,33 @@ Remembers the feature position on a map.
 }
 
 # ----------------------------------------------------
-sub register_map_y_coords {
+sub register_map_coords {
 
 =pod
 
-=head2 register_map_y_coords
+=head2 register_map_coords
 
 Returns the font for the "regular" stuff (feature labels, map names, etc.).
 
 =cut
 
-    my ( $self, $slot_no, $map_id, $start, $stop, $y1, $y2, $x ) = @_;
-    $self->{'map_y_coords'}{ $slot_no }{ $map_id } = { 
+    my ( $self, $slot_no, $map_id, $start, $stop, $x1, $y1, $x2, $y2 ) = @_;
+    $self->{'map_coords'}{ $slot_no }{ $map_id } = { 
         map_start => $start,
         map_stop  => $stop,
         y1        => $y1, 
         y2        => $y2,
-        x         => $x 
+        x1        => $x1, 
+        x2        => $x2,
     };
 }
 
 # ----------------------------------------------------
-sub reference_map_y_coords {
+sub reference_map_coords {
 
 =pod
 
-=head2 reference_map_y_coords
+=head2 reference_map_coords
 
 Returns top and bottom y coordinates of the reference map for a given 
 slot and map id.
@@ -1733,7 +1736,7 @@ slot and map id.
     # positions from this slot to 
     #
     if ( defined $slot_no && $map_id ) {
-        return $self->{'map_y_coords'}{ $slot_no }{ $map_id };
+        return $self->{'map_coords'}{ $slot_no }{ $map_id };
     }
     else {
         return {};

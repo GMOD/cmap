@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.42 2004-08-31 22:06:50 mwz444 Exp $
+# $Id: Utils.pm,v 1.43 2004-09-13 20:55:06 mwz444 Exp $
 
 =head1 NAME
 
@@ -30,7 +30,7 @@ use Bio::GMOD::CMap::Constants;
 use POSIX;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.42 $)[-1];
+$VERSION = (qw$Revision: 1.43 $)[-1];
 
 use base 'Exporter';
 
@@ -262,10 +262,10 @@ Special thanks to Noel Yap for suggesting this strategy.
 
         my $i = 1;
         for my $label (@accepted) {
-            my $target = $label->{'target'}-$label->{'map_base_y'};
-            my $low_bin = sprintf( "%d", ( $target - $half_font ) / $bin_size );
+            my $target = $label->{'target'};
+            my $low_bin = sprintf( "%d", ( $target - $start_y - $half_font ) / $bin_size );
             my $high_bin =
-              sprintf( "%d", ( $target + $half_font ) / $bin_size );
+              sprintf( "%d", ( $target - $start_y + $half_font ) / $bin_size );
 
             if ( $low_bin < 0 ) {
                 my $diff = 0 - $low_bin;
