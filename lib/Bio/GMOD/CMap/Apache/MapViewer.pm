@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.37 2004-04-23 17:45:37 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.38 2004-05-03 19:35:22 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.37 $)[-1];
+$VERSION = (qw$Revision: 1.38 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -183,6 +183,7 @@ sub handler {
             include_feature_types  => \@feature_types,
             include_evidence_types => \@evidence_types,
             config                 => $self->config,
+            data_module            => $self->data_module,
         ) or return $self->error( Bio::GMOD::CMap::Drawer->error );
 
         %slots = %{ $drawer->{'slots'} };
