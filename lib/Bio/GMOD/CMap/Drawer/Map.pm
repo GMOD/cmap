@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.126 2004-09-14 17:16:58 mwz444 Exp $
+# $Id: Map.pm,v 1.127 2004-09-15 21:16:19 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.126 $)[-1];
+$VERSION = (qw$Revision: 1.127 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1778,8 +1778,8 @@ Variable Info:
         my $bound_side= ( $slot_no < 0 || ( $slot_no == 0 && $drawer->label_side eq LEFT ) )
             ? RIGHT : LEFT ;
         my ( $bounds, $drawing_data, $map_data ) = $self->draw_map_title(
-            left_x  => $slot_min_x,
-            right_x => $slot_max_x,
+            left_x  => $slot_min_x+$slot_buffer,
+            right_x => $slot_max_x-$slot_buffer,
             bound_side => $bound_side,
             min_y   => $slot_min_y ,
             lines   => \@map_titles,
