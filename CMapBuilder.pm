@@ -16,6 +16,7 @@ use CGI;
 use File::Basename;
 use File::Copy;
 use File::Find;
+use File::Path;
 use File::Spec::Functions;
 use Module::Build;
 use Pod::Html;
@@ -41,7 +42,8 @@ sub ACTION_install {
     #
     my $conf_dir = $self->notes('CONF');
     unless ( -d $conf_dir ) {
-        mkdir $conf_dir or warn "Can't create image conf dir $conf_dir: $!\n";
+        eval { mkpath( $conf_dir, 0, 0700 ) };
+        warn "Can't create conf dir $conf_dir: $@\n" if $@;
     }
 
     foreach my $conf_file ( 'global.conf', 'example.conf' ) {
@@ -56,8 +58,7 @@ sub ACTION_install {
             from    => $from_conf,
             to      => $to_conf,
             flatten => 0,
-          )
-          if $copy_conf;
+        ) if $copy_conf;
     }
 
     #
@@ -77,12 +78,9 @@ sub ACTION_install {
     #
     my $cache_dir = $self->notes('CACHE');
     unless ( -d $cache_dir ) {
-        mkdir $cache_dir
-          or warn "Can't create image cache dir $cache_dir: $!\n";
+        eval { mkpath( $cache_dir, 0, 0777 ) };
+        warn "Can't create image cache dir $cache_dir: $@\n" if $@;
     }
-
-    chmod 0777, $cache_dir
-      or warn "Can't chmod image cache dir $cache_dir: $!\n";
 
     $self->SUPER::ACTION_install;
 
@@ -295,7 +293,6 @@ sub ACTION_templates {
             flatten => 0,
         );
     }
-
 }
 
 # ----------------------------------------------------
