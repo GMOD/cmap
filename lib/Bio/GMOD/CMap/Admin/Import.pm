@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Import;
 
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.61 2005-01-05 03:04:20 mwz444 Exp $
+# $Id: Import.pm,v 1.62 2005-02-09 05:31:35 mwz444 Exp $
 
 =pod
 
@@ -33,7 +33,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.61 $)[-1];
+$VERSION = (qw$Revision: 1.62 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -234,6 +234,12 @@ appended to the list of xrefs.
 
     $LOG_FH = $args{'log_fh'} || \*STDOUT;
 
+    return $self->error("File did not pass inspection\n") 
+        unless ($self->validate_tab_file(
+            fh     => $fh,
+            log_fh => $LOG_FH,
+        ));
+
     my $max_simultaneous_inserts = 1000;
 
     my $admin = Bio::GMOD::CMap::Admin->new(
@@ -330,25 +336,26 @@ appended to the list of xrefs.
         sub { [ parse_line( ',', 0, shift() ) ] } );
     $parser->bind_header;
 
-    my %required =
-      map { $_, 0 }
-      grep { $COLUMNS{$_}{'is_required'} }
-      keys %COLUMNS;
-
-    for my $column_name ( $parser->field_list ) {
-        if ( exists $COLUMNS{$column_name} ) {
-            $self->Print("Column '$column_name' OK.\n");
-            $required{$column_name} = 1 if defined $required{$column_name};
-        }
-        else {
-            return $self->error("Column name '$column_name' is not valid.");
-        }
-    }
-
-    if ( my @missing = grep { $required{$_} == 0 } keys %required ) {
-        return $self->error(
-            "Missing following required columns: " . join( ', ', @missing ) );
-    }
+### This is now done in validate_tab_file
+#    my %required =
+#      map { $_, 0 }
+#      grep { $COLUMNS{$_}{'is_required'} }
+#      keys %COLUMNS;
+#
+#    for my $column_name ( $parser->field_list ) {
+#        if ( exists $COLUMNS{$column_name} ) {
+#            $self->Print("Column '$column_name' OK.\n");
+#            $required{$column_name} = 1 if defined $required{$column_name};
+#        }
+#        else {
+#            return $self->error("Column name '$column_name' is not valid.");
+#        }
+#    }
+#
+#    if ( my @missing = grep { $required{$_} == 0 } keys %required ) {
+#        return $self->error(
+#            "Missing following required columns: " . join( ', ', @missing ) );
+#    }
 
     $self->Print("Parsing file...\n");
     my ( %feature_type_aids, %feature_ids, %map_info, @insert_features );
@@ -842,6 +849,137 @@ appended to the list of xrefs.
 }
 
 # ----------------------------------------------------
+
+sub validate_tab_file {
+
+=pod
+
+=head2 validate_tab_file
+
+=head3 For External Use
+
+=over 4
+
+=item * Description
+
+Checks a tab-delimited file to make sure it can be imported using the following
+columns.
+
+    map_name *
+    map_accession_id
+    map_display_order
+    map_start
+    map_stop
+    feature_name *
+    feature_alt_name +
+    feature_accession_id
+    feature_aliases
+    feature_start *
+    feature_stop
+    feature_direction
+    feature_type_accession *
+    feature_note +
+    is_landmark
+    feature_dbxref_name +
+    feature_dbxref_url +
+    feature_attributes
+
+Fields with an asterisk are required.  Order of fields is not important.
+
+Fields with a plus sign are deprecated.
+
+If a feature_type_accession is found that is not in the config file, the user 
+will be alerted and this will return false.
+
+
+=item * Usage
+
+    $importer->validate_tab_file(
+        fh => $fh,
+        log_fh => $log_fh,
+    );
+
+=item * Returns
+
+1
+
+=item * Fields
+
+=over 4
+
+=item - fh
+
+File handle of the input file.
+
+=item - log_fh
+
+File handle of the log file (default is STDOUT).
+
+=back
+
+=back
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $fh         = $args{'fh'}         or die 'No file handle';
+    $LOG_FH = $args{'log_fh'} || \*STDOUT;
+
+    my $valid = 1;
+
+
+    #
+    # Make column names lowercase, convert spaces to underscores
+    # (e.g., make "Feature Name" => "feature_name").
+    #
+    my $parser = Text::RecordParser->new(
+        fh              => $fh,
+        field_separator => FIELD_SEP,
+        header_filter   => sub { $_ = shift; s/\s+/_/g; lc $_ },
+        field_filter    => sub { $_ = shift; s/^\s+|\s+$//g; $_ },
+    );
+    $parser->field_compute( 'feature_aliases',
+        sub { [ parse_line( ',', 0, shift() ) ] } );
+    $parser->bind_header;
+
+    my %required =
+      map { $_, 0 }
+      grep { $COLUMNS{$_}{'is_required'} }
+      keys %COLUMNS;
+
+    for my $column_name ( $parser->field_list ) {
+        if ( exists $COLUMNS{$column_name} ) {
+            $required{$column_name} = 1 if defined $required{$column_name};
+        }
+        else {
+            $valid = 0;
+            print $LOG_FH "Column name '$column_name' is not valid.\n";
+        }
+    }
+
+    if ( my @missing = grep { $required{$_} == 0 } keys %required ) {
+        $valid = 0;
+        print $LOG_FH "Missing following required columns: " . join( ', ', @missing ) ;
+    }
+
+    return 0 unless ($required{'feature_type_accession'});
+
+    my ( %feature_type_aids);
+    while ( my $record = $parser->fetchrow_hashref ) {
+        $feature_type_aids{$record->{'feature_type_accession'}} = 1;
+    }
+    
+    foreach my $ft_aid (keys(%feature_type_aids)){
+        unless ( $self->feature_type_data($ft_aid) ) {
+            $valid = 0;
+            print $LOG_FH "You must define a feature type with the accession id, '$ft_aid'.\n";
+        }
+    }
+
+    return $valid;
+}
+
+# ----------------------------------------------------
 sub import_objects {
 
 =pod
@@ -880,7 +1018,7 @@ Otherwise will just add.
 
 =item - fh
 
-File handle of the imput file.
+File handle of the input file.
 
 =item - log_fh
 
