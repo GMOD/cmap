@@ -9,7 +9,9 @@ employs a "wizard"-like approach to accomplishing various tasks by
 asking the curator a series of closed-ended questions and performing
 the desired action using the answers provided.  The web admin tool is
 meant to provide a point-and-click interface for performing the more
-mundane administrative tasks or for viewing the data.
+mundane administrative tasks or for viewing the data.  Lastly, you can
+customize many aspects of CMap by altering the your "cmap.conf" file.
+All of this is discussed in further detail in this document.
 
 1. IMPORTING DATA
 
