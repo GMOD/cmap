@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 
-# $Id: MapViewer.pm,v 1.17 2003-03-27 22:56:31 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.18 2003-04-09 00:21:51 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $TEMPLATE $PAGE );
-$VERSION = (qw$Revision: 1.17 $)[-1];
+$VERSION = (qw$Revision: 1.18 $)[-1];
 
 use Apache::Constants qw[ :common REDIRECT ];
 use Apache::Request;
@@ -254,6 +254,15 @@ sub show_form {
         include_feature_types  => \@feature_types,
         include_evidence_types => \@evidence_types,
     ) or return $self->error( $data->error );
+
+    $form_data->{'feature_types'} = $drawer 
+        ? [ 
+            sort {
+                lc $a->{'feature_type'} cmp lc $b->{'feature_type'}
+            } @{ $drawer->{'feature_types'} }
+        ]
+        : []
+    ;
 
     #
     # The start and stop may have had to be moved as there 
