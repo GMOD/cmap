@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.25 2003-01-25 00:43:13 kycl4rk Exp $
+# $Id: Map.pm,v 1.26 2003-01-29 00:23:29 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.25 $)[-1];
+$VERSION = (qw$Revision: 1.26 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -84,6 +84,7 @@ sub base_x {
 Figure out where right-to-left this map belongs.
 
 =cut
+
     my $self        = shift;
     my $slot_no     = $self->slot_no or return 0; # slot "0" is in the middle
     my $drawer      = $self->drawer;
@@ -119,6 +120,7 @@ sub base_y {
 Return the base y coordinate.
 
 =cut
+
     my $self = shift;
     return $self->{'base_y'} || 0;
 }
@@ -133,6 +135,7 @@ sub color {
 Returns the color of the map.
 
 =cut
+
     my $self   = shift;
     my $map_id = shift or return;
     my $map    = $self->map( $map_id );
@@ -152,6 +155,7 @@ sub drawer {
 Returns the Bio::GMOD::CMap::Drawer object.
 
 =cut
+
     my $self = shift;
     return $self->{'drawer'};
 }
@@ -167,6 +171,7 @@ Draws the map as a "box" (a filled-in rectangle).  Return the bounds of the
 box.
 
 =cut
+
     my ( $self, %args )  = @_;
     my $drawer           = $args{'drawer'} || $self->drawer or 
                            $self->error('No drawer');
@@ -204,6 +209,7 @@ Draws the map as a "dumbbell" (a line with circles on the ends).  Return the
 bounds of the image.
 
 =cut
+
     my ( $self, %args )  = @_;
     my $drawer           = $args{'drawer'} || $self->drawer or 
                            $self->error('No drawer');
@@ -251,6 +257,7 @@ sub draw_i_beam {
 Draws the map as an "I-beam."  Return the bounds of the image.
 
 =cut
+
     my ( $self, %args )  = @_;
     my $drawer           = $args{'drawer'} || $self->drawer or 
                            $self->error('No drawer');
@@ -289,6 +296,7 @@ Returns all the features on the map (as objects).  Features are stored
 in raw format as a hashref keyed on feature_id.
 
 =cut
+
     my $self   = shift;
     my $map_id = shift or return;
     my $map    = $self->map( $map_id );
@@ -359,6 +367,7 @@ sub shape {
 Returns a string describing how to draw the map.
 
 =cut
+
     my $self   = shift;
     my $map_id = shift or return;
     my $map    = $self->map( $map_id );
@@ -377,6 +386,7 @@ sub layout {
 Lays out the map.
 
 =cut
+
     my $self           = shift;
     my $base_y         = $self->base_y;
     my $slot_no        = $self->slot_no;
@@ -1308,6 +1318,7 @@ sub map_ids {
 Returns the all the map IDs.
 
 =cut
+
     my $self = shift;
     
     unless ( $self->{'sorted_map_ids'} ) {
@@ -1335,6 +1346,7 @@ sub map {
 Returns one map.
 
 =cut
+
     my $self   = shift;
     my $map_id = shift or return;
     return $self->{'maps'}{ $map_id };
@@ -1350,6 +1362,7 @@ sub maps {
 Gets/sets all the maps.
 
 =cut
+
     my $self = shift;
     $self->{'maps'} = shift if @_;
     return $self->{'maps'};
@@ -1365,6 +1378,7 @@ sub map_length {
 Returns the map's length (stop - start).
 
 =cut
+
     my $self   = shift;
     my $map_id = shift or return;
     return $self->stop_position($map_id) - $self->start_position($map_id);
@@ -1380,6 +1394,7 @@ sub map_width {
 Returns a string describing how to draw the map.
 
 =cut
+
     my $self   = shift;
     my $map_id = shift or return;
     my $map    = $self->map( $map_id );
@@ -1394,11 +1409,12 @@ sub real_map_length {
 
 =pod
 
-=head2 map_length
+=head2 real_map_length
 
 Returns the entiry map's length.
 
 =cut
+
     my $self   = shift;
     my $map_id = shift or return;
     return $self->real_stop_position($map_id) - 
@@ -1415,6 +1431,7 @@ sub real_start_position {
 Returns a map's start position.
 
 =cut
+
     my $self   = shift;
     my $map_id = shift or return;
     my $map    = $self->map( $map_id );
@@ -1426,11 +1443,12 @@ sub real_stop_position {
 
 =pod
 
-=head2 stop_position
+=head2 real_stop_position
 
 Returns a map's stop position.
 
 =cut
+
     my $self   = shift;
     my $map_id = shift or return;
     my $map    = $self->map( $map_id );
@@ -1448,6 +1466,7 @@ sub slot_no {
 Returns the slot number.
 
 =cut
+
     my $self = shift;
     return $self->{'slot_no'};
 }
@@ -1462,6 +1481,7 @@ sub start_position {
 Returns a map's start position for the range selected.
 
 =cut
+
     my $self   = shift;
     my $map_id = shift or return;
     my $map    = $self->map( $map_id );
@@ -1478,6 +1498,7 @@ sub stop_position {
 Returns a map's stop position for the range selected.
 
 =cut
+
     my $self   = shift;
     my $map_id = shift or return;
     my $map    = $self->map( $map_id );
@@ -1494,6 +1515,7 @@ sub tick_mark_interval {
 Returns the map's tick mark interval.
 
 =cut
+
     my $self   = shift;
     my $map_id = shift or return;
     my $map    = $self->map( $map_id );

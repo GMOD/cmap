@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap;
 
-# $Id: CMap.pm,v 1.20 2003-01-01 02:16:18 kycl4rk Exp $
+# $Id: CMap.pm,v 1.21 2003-01-29 00:23:48 kycl4rk Exp $
 
 =head1 NAME
 
@@ -54,6 +54,7 @@ sub config {
 Returns one or all options from the config file.
 
 =cut
+
     my ( $self, $option ) = @_;
 
     unless ( $self->{'config'} ) {
@@ -92,6 +93,7 @@ sub db {
 Returns a database handle.  This is the only way into the database.
 
 =cut
+
     my $self = shift;
 
     unless ( defined $self->{'db'} ) {
@@ -133,6 +135,7 @@ sub data_module {
 Returns a handle to the data module.
 
 =cut
+
     my $self = shift;
 
     unless ( $self->{'data_module'} ) { 
@@ -153,6 +156,7 @@ sub DESTROY {
 Object clean-up when destroyed by Perl.
 
 =cut
+
     my $self = shift;
     $self->db->disconnect if defined $self->{'db'};
     return 1;
@@ -183,6 +187,7 @@ sub template {
 Returns a Template Toolkit object.
 
 =cut
+
     my $self = shift;
 
     unless ( $self->{'template'} ) {
@@ -216,6 +221,7 @@ Provides a simple way to print messages to STDERR.  Also, I could
 easily turn off warnings glabally with the "debug" flag.
 
 =cut
+
     my $self = shift;
     print STDERR @_;
 }

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Feature;
 
-# $Id: Feature.pm,v 1.9 2003-01-08 22:51:57 kycl4rk Exp $
+# $Id: Feature.pm,v 1.10 2003-01-29 00:23:29 kycl4rk Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.9 $)[-1];
+$VERSION = (qw$Revision: 1.10 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -79,6 +79,7 @@ sub color {
 Returns the color of the feature.
 
 =cut
+
     my $self = shift;
     return $self->{'color'} || $self->config('feature_color');
 }
@@ -93,6 +94,7 @@ sub feature_details_url {
 Returns the URL for the details on the feature.
 
 =cut
+
     my $self = shift;
 
     my $url;
@@ -118,6 +120,7 @@ sub draw {
 Draws the feature.
 
 =cut
+
     my $self          = shift;
     my $shape         = $self->shape || '';
     my $draw_sub_name = SHAPE->{ $shape };
@@ -134,6 +137,7 @@ sub draw_line {
 Draws the feature as a line.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $drawer          = $args{'drawer'} or $self->error('No drawer');
     my @coords          = @{ $args{'coords'} || [] } or 
@@ -155,6 +159,7 @@ sub shape {
 Returns a string describing how to draw the feature.
 
 =cut
+
     my $self = shift;
 
     unless ( $self->{'shape_vetted'} ) {
@@ -180,6 +185,7 @@ Returns the start position of the feature relative to the overall
 length of the map.
 
 =cut
+
     my $self = shift;
 
     unless ( defined $self->{'relative_start_position'} ) {
@@ -209,6 +215,7 @@ Returns the stop position of the feature relative to the overall
 length of the map.
 
 =cut
+
     my $self = shift;
 
     unless ( defined $self->{'relative_stop_position'} ) {

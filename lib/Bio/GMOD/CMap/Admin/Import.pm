@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.9 2003-01-11 03:46:25 kycl4rk Exp $
+# $Id: Import.pm,v 1.10 2003-01-29 00:23:29 kycl4rk Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.9 $)[-1];
+$VERSION  = (qw$Revision: 1.10 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -91,6 +91,7 @@ so, then it will be updated, otherwise the newer feature will be
 added.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $db              = $self->db           or die 'No database handle';
     my $map_set_id      = $args{'map_set_id'} or die      'No map set id';

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.18 2003-01-28 20:40:15 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.19 2003-01-29 00:23:29 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -29,7 +29,7 @@ $FEATURE_SHAPES = [ qw( box dumbbell line span ) ];
 $LINE_STYLES    = [ qw( dashed solid ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.18 $)[-1];
+$VERSION        = (qw$Revision: 1.19 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -2174,6 +2174,7 @@ sub map_set_view {
     my $db          = $self->db;
     my $apr         = $self->apr;
     my $map_set_id  = $apr->param('map_set_id') or die 'No map set id';
+    my $order_by    = $apr->param('order_by')    || 'map_name';
     my $limit_start = $apr->param('limit_start') || 0;
 
     my $sth = $db->prepare(
@@ -2205,26 +2206,28 @@ sub map_set_view {
     );
     my @maps = @{ 
         $db->selectall_arrayref( 
-            q[
+            qq[
                 select   map_id, accession_id, map_name, 
                          linkage_group, start_position, stop_position
                 from     cmap_map
                 where    map_set_id=?
-                order by map_name
+                order by $order_by
             ],
             { Columns => {} }, 
             ( $map_set_id ) 
         )
     };
 
-    my $all_numbers = grep { $_->{ 'map_name' } =~ m/[0-9]/ } @maps;
-    if ( $all_numbers == scalar @maps ) {
-        @maps = 
-            map  { $_->[0] }
-            sort { $a->[1] <=> $b->[1] }
-            map  { [$_, extract_numbers( $_->{ 'map_name' } )] }
-            @maps
-        ;
+    if ( $order_by eq 'map_name' || $order_by eq 'linkage_group' ) {
+        my $all_numbers = grep { $_->{ $order_by } =~ m/[0-9]/ } @maps;
+        if ( $all_numbers == scalar @maps ) {
+            @maps = 
+                map  { $_->[0] }
+                sort { $a->[1] <=> $b->[1] }
+                map  { [ $_, extract_numbers( $_->{ $order_by } ) ] }
+                @maps
+            ;
+        }
     }
 
     #
@@ -2237,6 +2240,7 @@ sub map_set_view {
     );
 
     $map_set->{'maps'} = $data->{'data'};
+    $apr->param( order_by => $order_by );
 
     return $self->process_template( 
         TEMPLATE->{'map_set_view'}, 
@@ -2248,6 +2252,7 @@ sub map_set_view {
             cur_page    => $data->{'cur_page'},
             show_start  => $data->{'show_start'},
             show_stop   => $data->{'show_stop'},
+            apr         => $apr,
         }
     );
 }

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data::Generic;
 
-# $Id: Generic.pm,v 1.19 2003-01-25 00:43:13 kycl4rk Exp $
+# $Id: Generic.pm,v 1.20 2003-01-29 00:23:29 kycl4rk Exp $
 
 =head1 NAME
 
@@ -12,7 +12,7 @@ Bio::GMOD::CMap::Data::Generic - generic SQL module
 
   use Bio::GMOD::CMap::Data::Generic;
   use base 'Bio::GMOD::CMap::Data::Generic';
-  
+
   sub sql_method_that_doesnt_work {
       return $sql_tailored_to_my_db;
   }
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.19 $)[-1];
+$VERSION = (qw$Revision: 1.20 $)[-1];
 
 use Data::Dumper; # really just for debugging
 use Bio::GMOD::CMap;
@@ -47,6 +47,7 @@ sub cmap_data_feature_count_sql {
 The SQL for finding the number of features on a map.
 
 =cut
+
     my ( $self, %args ) = @_;
 
     return q[
@@ -68,6 +69,7 @@ sub cmap_data_features_sql {
 The SQL for finding all the features on a map.
 
 =cut
+
     my ( $self, %args )  = @_;
     my $order_by         = $args{'order_by'}            || '';
     my $restrict_by      = $args{'restrict_by'}         || '';
@@ -131,6 +133,7 @@ sub cmap_data_map_info_sql {
 The SQL for finding info on a map.
 
 =cut
+
     my $self = shift;
     return q[
         select map.map_id,
@@ -174,6 +177,7 @@ sub cmap_data_feature_types_sql {
 The SQL for finding all the feature typess on a map.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $restrict_by     = $args{'restrict_by'} || '';
     my $sql             = qq[
@@ -205,6 +209,7 @@ sub correspondences_count_by_single_map_sql {
 The SQL for finding the number of correspondences by for one map.
 
 =cut
+
     my ( $self, %args )   = @_;
     my $feature_type_ids  = $args{'feature_type_ids'};
     my $evidence_type_ids = $args{'evidence_type_ids'};
@@ -289,6 +294,7 @@ sub correspondences_count_by_map_set_sql {
 The SQL for finding the number of correspondences for a whole map set.
 
 =cut
+
     my ( $self, %args )   = @_;
     my $feature_type_ids  = $args{'feature_type_ids'};
     my $evidence_type_ids = $args{'evidence_type_ids'};
@@ -366,6 +372,7 @@ The SQL for finding the number of correspondences for many maps
 (like those in a map set).
 
 =cut
+
     my ( $self, %args )   = @_;
     my $map_ids           = $args{'map_ids'};
     my $feature_type_ids  = $args{'feature_type_ids'};
@@ -445,6 +452,7 @@ sub date_format {
 The strftime string for date format.
 
 =cut
+
     my $self = shift;
     return '%Y-%m-%d';
 }
@@ -459,6 +467,7 @@ sub feature_correspondence_sql {
 The SQL for finding correspondences for a feature.
 
 =cut
+
     my $self = shift;
     my %args = @_;
     my $sql  = q[
@@ -520,6 +529,7 @@ sub feature_name_to_position_sql {
 The SQL for finding the position of a given feature name.
 
 =cut
+
     my $self = shift;
     return q[
         select f.start_position
@@ -543,6 +553,7 @@ sub fill_out_maps_by_map_sql {
 The SQL for finding basic info on a map.
 
 =cut
+
     my $self = shift;
     return q[
         select map.map_id,
@@ -566,11 +577,12 @@ sub fill_out_maps_by_map_set_sql {
 
 =pod
 
-=head2 fill_out_maps_by_map_sql
+=head2 fill_out_maps_by_map_set_sql
 
 The SQL for finding basic info on a map.
 
 =cut
+
     my $self = shift;
     return q[
         select ms.map_set_id,
@@ -594,6 +606,7 @@ sub feature_detail_data_sql {
 The SQL for finding basic info on a feature.
 
 =cut
+
     my $self = shift;
     return q[
         select f.feature_id, 
@@ -638,6 +651,7 @@ sub form_data_ref_map_sets_sql {
 The SQL for finding all reference map sets.
 
 =cut
+
     my $self = shift;
 
     return q[
@@ -671,6 +685,7 @@ sub form_data_ref_maps_sql {
 The SQL for finding all reference maps.
 
 =cut
+
     my $self = shift;
 
     return q[
@@ -695,6 +710,7 @@ have some correspondence to a given region of a reference
 map.
 
 =cut
+
     my ( $self, %args )   = @_;
     my @evidence_type_ids = @{ $args{'evidence_type_ids'} || [] };
 
@@ -761,6 +777,7 @@ sub map_data_feature_correspondence_by_map_sql {
 The SQL for finding all correspondences between two maps.
 
 =cut
+
     my ( $self, %args )   = @_;
     my $feature_type_ids  = $args{'feature_type_ids'};
     my $evidence_type_ids = $args{'evidence_type_ids'};
@@ -817,6 +834,7 @@ sub map_data_feature_correspondence_by_map_set_sql{
 The SQL for finding all correspondences between two maps.
 
 =cut
+
     my ( $self, %args )   = @_;
     my $feature_type_ids  = $args{'feature_type_ids'};
     my $evidence_type_ids = $args{'evidence_type_ids'};
@@ -868,11 +886,12 @@ sub map_data_feature_correspondence_by_multi_maps_sql{
 
 =pod
 
-=head2 map_data_feature_correspondence_by_map_set_sql
+=head2 map_data_feature_correspondence_by_multi_maps_sql
 
 The SQL for finding all correspondences between two maps.
 
 =cut
+
     my ( $self, %args )   = @_;
     my $map_ids           = $args{'reference_map_ids'};
     my $evidence_type_ids = $args{'evidence_type_ids'};
@@ -930,6 +949,7 @@ sub map_stop_sql {
 The SQL for finding the maximum position of features.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $sql;
 
@@ -967,6 +987,7 @@ sub map_start_sql {
 The SQL for finding the minimum position of features.
 
 =cut
+
     my ( $self, %args ) = @_;
     my $sql;
 
@@ -1002,6 +1023,7 @@ sub set_date_format {
 The SQL for setting the proper date format.
 
 =cut
+
     return 1;
 }
 

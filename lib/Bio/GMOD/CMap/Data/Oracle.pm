@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data::Oracle;
 
-# $Id: Oracle.pm,v 1.2 2002-09-11 16:31:50 kycl4rk Exp $
+# $Id: Oracle.pm,v 1.3 2003-01-29 00:23:29 kycl4rk Exp $
 
 =head1 NAME
 
@@ -19,7 +19,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Bio::GMOD::CMap::Data::Generic;
 use base 'Bio::GMOD::CMap::Data::Generic';
@@ -34,6 +34,7 @@ sub set_date_format {
 The SQL for setting the proper date format.
 
 =cut
+
     my $self = shift;
 
     $self->db->do(
@@ -53,6 +54,7 @@ sub date_format {
 The strftime string for date format.
 
 =cut
+
     my $self = shift;
     return '%d-%b-%y';
 }
