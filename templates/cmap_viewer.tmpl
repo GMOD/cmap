@@ -732,18 +732,24 @@ function changeCompMaps(sel,index,side){
                 <td><input type="radio" name="scale_maps" value="1"[% IF scale_maps==1; ' checked'; END %]>Yes</td>
               </tr>
               <tr>
-                <td align="left" valign="top">Clean View (no navigation buttons):
-                  [% IF apr.param('clean_view')==1; clean_view=1; ELSE; clean_view=0; END %]
-                  <input type="radio" name="clean_view" value="0"[% IF clean_view==0; ' checked'; END %]>No
-                  <input type="radio" name="clean_view" value="1"[% IF clean_view==1; ' checked'; END %]>yes
-                </td>
+                <td align="left" valign="top">Stack the Reference Maps:</td>
+                [% IF apr.param('stack_maps')==1; stack_maps=1; ELSE; stack_maps=0; END %]
+                <td><input type="radio" name="stack_maps" value="0"[% IF stack_maps==0; ' checked'; END %]>No</td>
+                <td><input type="radio" name="stack_maps" value="1"[% IF stack_maps==1; ' checked'; END %]>Yes</td>
               </tr>
               <tr>
-                <td align="left" valign="top">View Intra-Slot Correspondences:
+                <td align="left" valign="top">Clean View (no navigation buttons):</td>
+                  [% IF apr.param('clean_view')==1; clean_view=1; ELSE; clean_view=0; END %]
+                <td><input type="radio" name="clean_view" value="0"[% IF clean_view==0; ' checked'; END %]>No</td>
+                <td><input type="radio" name="clean_view" value="1"[% IF clean_view==1; ' checked'; END %]>yes</td>
+              </tr>
+              <tr>
+                <td align="left" valign="top">View Intra-Slot Correspondences:</td>
                   [% IF apr.param('show_intraslot_corr')==1; show_intraslot_corr=1; ELSE; show_intraslot_corr=0; END %]
-                  <input type="radio" name="show_intraslot_corr" value="0"[% IF show_intraslot_corr==0; ' checked'; END %]>No
-                  <input type="radio" name="show_intraslot_corr" value="1"[% IF show_intraslot_corr==1; ' checked'; END %]>yes
-                </td>
+                <td><input type="radio" name="show_intraslot_corr" value="0"
+                  [% IF show_intraslot_corr==0; ' checked'; END %]>No</td>
+                <td><input type="radio" name="show_intraslot_corr" value="1"
+                  [% IF show_intraslot_corr==1; ' checked'; END %]>yes</td>
               </tr>
               <tr>
                 <td colspan=4>

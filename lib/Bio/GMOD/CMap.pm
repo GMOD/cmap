@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.61.2.5 2004-11-09 17:52:53 mwz444 Exp $
+# $Id: CMap.pm,v 1.61.2.6 2004-11-09 22:29:28 mwz444 Exp $
 
 =head1 NAME
 
@@ -490,6 +490,27 @@ The default is 1.
 }
 
 # ----------------------------------------------------
+sub stack_maps {
+
+=pod
+                                                                                
+=head2 stack_maps
+
+Returns the boolean stack_maps variable.  This determines 
+if the reference maps are staced vertically.
+
+The default is 0.
+
+=cut
+
+    my $self = shift;
+    my $val  = shift;
+    $self->{'stack_maps'} = $val if defined $val;
+    $self->{'stack_maps'} = 0 unless defined $self->{'stack_maps'};
+    return $self->{'stack_maps'};
+}
+
+# ----------------------------------------------------
 sub data_module {
 
 =pod
@@ -686,6 +707,8 @@ Given information about the link, creates a url to cmap_viewer.
     my $label_features              = $args{'label_features'};
     my $collapse_features           = $args{'collapse_features'};
     my $aggregate                   = $args{'aggregate'};
+    my $scale_maps                  = $args{'scale_maps'};
+    my $stack_maps                  = $args{'stack_maps'};
     my $show_intraslot_corr         = $args{'show_intraslot_corr'};
     my $clean_view                  = $args{'clean_view'};
     my $magnify_all                 = $args{'magnify_all'};
@@ -735,6 +758,10 @@ Given information about the link, creates a url to cmap_viewer.
       if defined($collapse_features);
     $url .= "aggregate=$aggregate;"
       if defined($aggregate);
+    $url .= "scale_maps=$scale_maps;"
+      if defined($scale_maps);
+    $url .= "stack_maps=$stack_maps;"
+      if defined($stack_maps);
     $url .= "show_intraslot_corr=$show_intraslot_corr;"
       if defined($show_intraslot_corr);
     $url .= "clean_view=$clean_view;"

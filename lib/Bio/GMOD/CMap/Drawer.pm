@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.81.2.5 2004-11-09 17:52:55 mwz444 Exp $
+# $Id: Drawer.pm,v 1.81.2.6 2004-11-09 22:29:29 mwz444 Exp $
 
 =head1 NAME
 
@@ -46,6 +46,7 @@ The base map drawing module.
         clean_view => $clean_view,
         magnify_all => $magnify_all,
         scale_maps => $scale_maps,
+        stack_maps => $stack_maps,
     );
 
 =head2 Fields
@@ -207,6 +208,10 @@ Set to the magnification factor of the whole picture.  The default is 1.
 
 Set to 1 scale the maps with the same unit.  Default is 1.
 
+=item * stack_maps
+
+Set to 1 stack the reference maps vertically.  Default is 0.
+
 =back
 
 =head1 METHODS
@@ -215,7 +220,7 @@ Set to 1 scale the maps with the same unit.  Default is 1.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.81.2.5 $)[-1];
+$VERSION = (qw$Revision: 1.81.2.6 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -234,7 +239,7 @@ my @INIT_PARAMS = qw[
   included_evidence_types ignored_evidence_types ignored_feature_types
   config data_source min_correspondences collapse_features cache_dir
   map_view data_module aggregate show_intraslot_corr clean_view
-  magnify_all scale_maps
+  magnify_all scale_maps stack_maps
 ];
 
 # ----------------------------------------------------
@@ -387,7 +392,7 @@ Draws a line from one point to another.
     my @lines = ();
     my $line  = LINE;
 
-    if ( $line_type eq 'direct' ) {
+    if ( !$line_type or $line_type eq 'direct' ) {
         push @lines, [ $line, $x1, $y1, $x2, $y2, $color, $layer ];
     }
     else {
@@ -849,6 +854,7 @@ Lays out the image and writes it to the file system, set the "image_name."
             clean_view  => $self->clean_view,
             magnify_all => $self->magnify_all,
             scale_maps  => $self->scale_maps,
+            stack_maps  => $self->stack_maps,
           )
           or return $self->error( Bio::GMOD::CMap::Drawer::Map->error );
 
@@ -2272,6 +2278,8 @@ Creates default link parameters for CMap->create_viewer_link()
     my $label_features              = $args{'label_features'};
     my $collapse_features           = $args{'collapse_features'};
     my $aggregate                   = $args{'aggregate'};
+    my $scale_maps                  = $args{'scale_maps'};
+    my $stack_maps                  = $args{'stack_maps'};
     my $show_intraslot_corr         = $args{'show_intraslot_corr'};
     my $clean_view                  = $args{'clean_view'};
     my $magnify_all                 = $args{'magnify_all'};
@@ -2336,6 +2344,12 @@ Creates default link parameters for CMap->create_viewer_link()
     unless ( defined($aggregate) ) {
         $aggregate = $self->aggregate();
     }
+    unless ( defined($scale_maps) ) {
+        $scale_maps = $self->scale_maps();
+    }
+    unless ( defined($stack_maps) ) {
+        $stack_maps = $self->stack_maps();
+    }
     unless ( defined($show_intraslot_corr) ) {
         $show_intraslot_corr = $self->show_intraslot_corr();
     }
@@ -2396,6 +2410,8 @@ Creates default link parameters for CMap->create_viewer_link()
         label_features              => $label_features,
         collapse_features           => $collapse_features,
         aggregate                   => $aggregate,
+        scale_maps                  => $scale_maps,
+        stack_maps                  => $stack_maps,
         show_intraslot_corr         => $show_intraslot_corr,
         clean_view                  => $clean_view,
         magnify_all                 => $magnify_all,

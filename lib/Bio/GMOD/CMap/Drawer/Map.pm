@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.135.2.6 2004-11-09 17:52:56 mwz444 Exp $
+# $Id: Map.pm,v 1.135.2.7 2004-11-09 22:29:29 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.135.2.6 $)[-1];
+$VERSION = (qw$Revision: 1.135.2.7 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -41,7 +41,7 @@ use base 'Bio::GMOD::CMap';
 
 my @INIT_FIELDS =
   qw[ drawer base_x base_y slot_no maps config aggregate
-  clean_view magnify_all scale_maps ];
+  clean_view magnify_all scale_maps stack_maps];
 
 my %SHAPE = (
     'default'  => 'draw_box',
@@ -1136,6 +1136,8 @@ Variable Info:
 
     # Variable info:
     #
+    my $y_buffer    = 4;    # buffer between maps in the y direction
+    my $lane_buffer = 4;    # buffer between maps in the x direction
     my %map_drawing_data;
     my %map_area_data;
     my %map_placement_data;
@@ -1188,7 +1190,9 @@ Variable Info:
             is_compressed      => $is_compressed,
             pixel_height       => $pixel_height,
             is_flipped         => $is_flipped,
+            y_buffer           => $y_buffer,
             map_aggregate_corr => \%map_aggregate_corr,
+            map_placement_data => \%map_placement_data,
         );
         $map_placement_data{$map_id}{'bounds'} =
           [ 0, $placed_y1, 0, $placed_y2 ];
@@ -1467,8 +1471,6 @@ Variable Info:
     my %map_lane;
     my @lane_width;
     my @map_colunms;
-    my $y_buffer    = 4;
-    my $lane_buffer = 4;
     for my $map_id (
         sort {
             $map_placement_data{$a}{'bounds'}[1]
@@ -1755,7 +1757,9 @@ sub place_map_y {
     my $is_compressed      = $args{'is_compressed'};
     my $pixel_height       = $args{'pixel_height'};
     my $map_aggregate_corr = $args{'map_aggregate_corr'};
+    my $map_placement_data = $args{'map_placement_data'};
     my $is_flipped         = $args{'is_flipped'};
+    my $y_buffer           = $args{'y_buffer'};
 
     my ( $return_y1, $return_y2 );
 
@@ -1766,10 +1770,14 @@ sub place_map_y {
     my $magnify_all     = $self->magnify_all;
     my $capped          = 0;
 
-    my $top_boundary = $base_y -
+    my $top_boundary_offset =
       ( ( $drawer->pixel_height() ) * $boundary_factor * $magnify_all );
-    my $bottom_boundary = $base_y + ( $drawer->pixel_height() * $magnify_all ) +
+    my $top_boundary           = $base_y - $top_boundary_offset;
+    my $bottom_boundary_offset =
       ( ( $drawer->pixel_height() ) * $boundary_factor * $magnify_all );
+    my $bottom_boundary =
+      ( $drawer->pixel_height() * $magnify_all ) + $base_y +
+      $bottom_boundary_offset;
 
     #
     # If drawing compressed maps in the first slot, then draw them
@@ -1784,6 +1792,7 @@ sub place_map_y {
         # Use Correspondences to figure out where to put this vertically.
         my $ref_corrs = $drawer->map_correspondences( $slot_no, $map_id );
         my ( $min_ref_y, $max_ref_y );
+        my $placed = 0;
         for my $ref_corr ( values %$ref_corrs ) {
 
             #
@@ -1884,12 +1893,20 @@ sub place_map_y {
             #
             # Center map around ref_map_mid_y
             #
-            my $map_unit_len = $self->map_length($map_id);
-            my $map_start    = $self->start_position($map_id);
-            my $rstart       =
-              sprintf( "%.2f", ( $avg_mid2 - $map_start ) / $map_unit_len );
-            $min_ref_y = $ref_map_mid_y - ( $pixel_height * $rstart );
-            $max_ref_y = $ref_map_mid_y + ( $pixel_height * ( 1 - $rstart ) );
+            if ( not $placed ) {
+
+                # This places the map in relation to the first reference map
+                my $map_unit_len = $self->map_length($map_id);
+                my $map_start    = $self->start_position($map_id);
+                my $rstart       =
+                  sprintf( "%.2f", ( $avg_mid2 - $map_start ) / $map_unit_len );
+                $min_ref_y = $ref_map_mid_y - ( $pixel_height * $rstart );
+                $max_ref_y =
+                  $ref_map_mid_y + ( $pixel_height * ( 1 - $rstart ) );
+                $top_boundary    = $ref_pos->{'y1'} - $top_boundary_offset;
+                $bottom_boundary = $ref_pos->{'y2'} + $bottom_boundary_offset;
+                $placed          = 1;
+            }
         }
 
         unless (%$ref_corrs) {
@@ -1900,18 +1917,31 @@ sub place_map_y {
 
         $return_y1 = $min_ref_y;
         $return_y2 = $max_ref_y;
+        my $temp_hash = $self->enforce_boundaries(
+            return_y1       => $return_y1,
+            return_y2       => $return_y2,
+            top_boundary    => $top_boundary,
+            bottom_boundary => $bottom_boundary,
+            pixel_height    => $pixel_height,
+        );
+        $return_y1    = $temp_hash->{'return_y1'};
+        $return_y2    = $temp_hash->{'return_y2'};
+        $pixel_height = $temp_hash->{'pixel_height'};
+        $capped       = $temp_hash->{'capped'};
     }
-    my $temp_hash = $self->enforce_boundaries(
-        return_y1       => $return_y1,
-        return_y2       => $return_y2,
-        top_boundary    => $top_boundary,
-        bottom_boundary => $bottom_boundary,
-        pixel_height    => $pixel_height,
-    );
-    $return_y1    = $temp_hash->{'return_y1'};
-    $return_y2    = $temp_hash->{'return_y2'};
-    $pixel_height = $temp_hash->{'pixel_height'};
-    $capped       = $temp_hash->{'capped'};
+    elsif ( $self->stack_maps ) {
+
+        # Find the lowest placed map and place this below it.
+        my $max_y;
+        while ( my ( $map_id, $data ) = each %$map_placement_data ) {
+            if ( not defined($max_y) or $max_y < $data->{'bounds'}[3] ) {
+                $max_y = $data->{'bounds'}[3];
+            }
+        }
+        $return_y1 = $max_y + $y_buffer + 1;
+        $return_y2 = $return_y1 + $pixel_height;
+
+    }
 
     return ( $return_y1, $return_y2, $pixel_height, $capped );
 }
