@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin;
 
-# $Id: Admin.pm,v 1.21 2003-06-17 15:58:19 kycl4rk Exp $
+# $Id: Admin.pm,v 1.22 2003-07-01 16:09:52 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.21 $)[-1];
+$VERSION = (qw$Revision: 1.22 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils qw[ next_number parse_words ];
@@ -198,6 +198,16 @@ Delete a feature.
     $db->do(
         q[
             delete
+            from    cmap_feature_note
+            where   feature_id=?
+        ],
+        {},
+        ( $feature_id )
+    );
+
+    $db->do(
+        q[
+            delete
             from    cmap_feature
             where   feature_id=?
         ],
@@ -250,6 +260,71 @@ Delete a feature correspondence.
             ],
             {},
             ( $feature_corr_id )
+        );
+    }
+
+    return 1;
+}
+
+# ----------------------------------------------------
+sub feature_note_insert_or_update {
+
+=pod
+
+=head2 feature_note_insert_or_update 
+
+Inserts, updates or deletes the note attached to a feature.
+
+=cut
+
+    my $self       = shift;
+    my $feature_id = shift or return $self->error('No feature id');
+    my $note       = shift || '';
+    my $db         = $self->db;
+
+    my $count = $db->selectrow_array(
+        q[
+            select count(feature_id)
+            from   cmap_feature_note
+            where  feature_id=?
+        ],
+        {},
+        ( $feature_id )
+    );
+
+    if ( $count ) {
+        if ( $note ) {
+            $db->do(
+                q[
+                    update cmap_feature_note
+                    set    note=?
+                    where  feature_id=?
+                ],
+                {},
+                ( $note, $feature_id )
+            );
+        }
+        else {
+            $db->do(
+                q[
+                    delete 
+                    from   cmap_feature_note
+                    where  feature_id=?
+                ],
+                {},
+                ( $feature_id )
+            );
+        }
+    }
+    elsif ( $note ) {
+        $db->do(
+            q[
+                insert
+                into   cmap_feature_note (feature_id, note)
+                values ( ?, ? )
+            ],
+            {},
+            ( $feature_id, $note )
         );
     }
 

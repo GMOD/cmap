@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.37 2003-06-27 01:48:32 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.38 2003-07-01 16:06:58 kycl4rk Exp $
 
 use strict;
 use Apache::Constants qw[ :common M_GET REDIRECT ];
@@ -30,7 +30,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.37 $)[-1];
+$VERSION        = (qw$Revision: 1.38 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -1059,31 +1059,34 @@ sub feature_edit {
 
     my $sth = $db->prepare(
         q[
-            select f.feature_id,
-                   f.accession_id,
-                   f.map_id,
-                   f.feature_type_id,
-                   f.feature_name,
-                   f.alternate_name,
-                   f.start_position,
-                   f.stop_position,
-                   f.is_landmark,
-                   f.dbxref_name,
-                   f.dbxref_url,
-                   ft.feature_type,
-                   map.map_name,
-                   ms.short_name as map_set_name,
-                   s.common_name as species_name
-            from   cmap_feature f,
-                   cmap_feature_type ft,
-                   cmap_map map,
-                   cmap_map_set ms,
-                   cmap_species s
-            where  f.feature_id=?
-            and    f.feature_type_id=ft.feature_type_id
-            and    f.map_id=map.map_id
-            and    map.map_set_id=ms.map_set_id
-            and    ms.species_id=s.species_id
+            select     f.feature_id,
+                       f.accession_id,
+                       f.map_id,
+                       f.feature_type_id,
+                       f.feature_name,
+                       f.alternate_name,
+                       f.start_position,
+                       f.stop_position,
+                       f.is_landmark,
+                       f.dbxref_name,
+                       f.dbxref_url,
+                       fn.note,
+                       ft.feature_type,
+                       map.map_name,
+                       ms.short_name as map_set_name,
+                       s.common_name as species_name
+            from       cmap_feature f
+            left join  cmap_feature_note fn
+            on         f.feature_id=fn.feature_id
+            inner join cmap_feature_type ft
+            on         f.feature_type_id=ft.feature_type_id
+            inner join cmap_map map
+            on         f.map_id=map.map_id
+            inner join cmap_map_set ms
+            on         map.map_set_id=ms.map_set_id
+            inner join cmap_species s
+            on         ms.species_id=s.species_id
+            where      f.feature_id=?
         ]
     );
     $sth->execute( $feature_id );
@@ -1166,6 +1169,10 @@ sub feature_insert {
         @insert_args
     );
 
+    $self->admin->feature_note_insert_or_update( 
+        $feature_id, $apr->param('note') 
+    );
+
     return $self->redirect_home( 
         ADMIN_HOME_URI."?action=map_view;map_id=$map_id" 
     ); 
@@ -1213,6 +1220,10 @@ sub feature_update {
         )
     );
 
+    $self->admin->feature_note_insert_or_update( 
+        $feature_id, $apr->param('note') 
+    );
+
     return $self->redirect_home( 
         ADMIN_HOME_URI."?action=feature_view;feature_id=$feature_id" 
     ); 
@@ -1226,31 +1237,34 @@ sub feature_view {
     my $feature_id = $apr->param('feature_id') or die 'No feature id';
     my $sth = $db->prepare(
         q[
-            select f.feature_id, 
-                   f.accession_id, 
-                   f.map_id,
-                   f.feature_type_id,
-                   f.feature_name,
-                   f.alternate_name,
-                   f.is_landmark,
-                   f.start_position,
-                   f.stop_position,
-                   f.dbxref_name,
-                   f.dbxref_url,
-                   ft.feature_type,
-                   map.map_name,
-                   ms.short_name as map_set_name,
-                   s.common_name as species_name
-            from   cmap_feature f,
-                   cmap_feature_type ft,
-                   cmap_map map,
-                   cmap_map_set ms,
-                   cmap_species s
-            where  f.feature_id=?
-            and    f.feature_type_id=ft.feature_type_id
-            and    f.map_id=map.map_id
-            and    map.map_set_id=ms.map_set_id
-            and    ms.species_id=s.species_id
+            select     f.feature_id, 
+                       f.accession_id, 
+                       f.map_id,
+                       f.feature_type_id,
+                       f.feature_name,
+                       f.alternate_name,
+                       f.is_landmark,
+                       f.start_position,
+                       f.stop_position,
+                       f.dbxref_name,
+                       f.dbxref_url,
+                       fn.note,
+                       ft.feature_type,
+                       map.map_name,
+                       ms.short_name as map_set_name,
+                       s.common_name as species_name
+            from       cmap_feature f
+            left join  cmap_feature_note fn
+            on         f.feature_id=fn.feature_id
+            inner join cmap_feature_type ft
+            on         f.feature_type_id=ft.feature_type_id
+            inner join cmap_map map
+            on         f.map_id=map.map_id
+            inner join cmap_map_set ms
+            on         map.map_set_id=ms.map_set_id
+            inner join cmap_species s
+            on         ms.species_id=s.species_id
+            where      f.feature_id=?
         ]
     );
     $sth->execute( $feature_id );
