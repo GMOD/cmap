@@ -1,23 +1,27 @@
 <td align="right" valign="top">Comp. Map ([% side %]):</td>
 
 <td colspan="2">
-    [% IF maps.size %]
+    [% IF map_sets.size %]
+    [% SET last_map_type = "" %]
         <select name="comparative_map_[% side | lower %]" size="4">
-            [% FOREACH type=maps %]
-                <option value="">==&nbsp;&nbsp;[% type.type %] Maps&nbsp;&nbsp;==</option>
-                [% FOREACH ms=type.map_sets %]
-                    [% IF !ms.maps %]
-                        <option value="map_set_aid=[% ms.map_set_aid %]">[% ms.species_name %] - [% ms.map_set_name %] [[% ms.no_correspondences %]]</option>
-                    [% ELSIF ms.maps.size==1 %]
-                        [% map=ms.maps.0 %]
-                        <option value="map_aid=[% map.map_aid %]">[% ms.species_name %] - [% ms.map_set_name %] - [% map.map_name %] [[% map.no_correspondences %]]</option>
-                    [% ELSE %]
-                        <option value="map_set_aid=[% ms.map_set_aid %]">[% ms.species_name %] - [% ms.map_set_name %] (All) [[% ms.no_correspondences %]]</option>
-                        [% FOREACH map=ms.maps %]
-                            <option value="map_aid=[% map.map_aid %]">&nbsp;&nbsp;[% map.map_name %] [[% map.no_correspondences %]]</option>
-                        [% END %]
+            [% FOREACH ms=map_sets %]
+                [% IF last_map_type != ms.map_type %]
+                    <option value="">==&nbsp;&nbsp;[% ms.map_type %] Maps&nbsp;&nbsp;==</option>
+                [% END %]
+
+                [% IF !ms.maps %]
+                    <option value="map_set_aid=[% ms.map_set_aid %]">&nbsp;&nbsp;[% ms.species_name %] - [% ms.map_set_name %] [[% ms.no_correspondences %]]</option>
+                [% ELSIF ms.maps.size==1 %]
+                    [% map=ms.maps.0 %]
+                    <option value="map_aid=[% map.map_aid %]">&nbsp;&nbsp;[% ms.species_name %] - [% ms.map_set_name %] - [% map.map_name %] [[% map.no_correspondences %]]</option>
+                [% ELSE %]
+                    <option value="map_set_aid=[% ms.map_set_aid %]">&nbsp;&nbsp;[% ms.species_name %] - [% ms.map_set_name %] (All) [[% ms.no_correspondences %]]</option>
+                    [% FOREACH map=ms.maps %]
+                        <option value="map_aid=[% map.map_aid %]">&nbsp;&nbsp;&nbsp;&nbsp;[% map.map_name %] [[% map.no_correspondences %]]</option>
                     [% END %]
                 [% END %]
+
+                [% SET last_map_type = ms.map_type %]
             [% END %]
         </select>
     [% ELSE %]
