@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.22 2003-01-01 02:17:34 kycl4rk Exp $
+# $Id: Data.pm,v 1.23 2003-01-05 04:23:57 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.22 $)[-1];
+$VERSION = (qw$Revision: 1.23 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -222,9 +222,13 @@ Returns the data for drawing comparative maps.
                     from     cmap_map map,
                              cmap_feature f1, 
                              cmap_feature f2, 
-                             cmap_correspondence_lookup cl
+                             cmap_correspondence_lookup cl,
+                             cmap_feature_correspondence fc
                     where    f1.map_id in ( $reference_map->{'map_ids'} )
                     and      f1.feature_id=cl.feature_id1
+                    and      cl.feature_correspondence_id=
+                             fc.feature_correspondence_id
+                    and      fc.is_enabled=1
                     and      cl.feature_id2=f2.feature_id
                     and      f2.map_id=map.map_id
                     and      map.map_set_id=?
@@ -503,6 +507,7 @@ Returns the data for the correspondence matrix.
                 from     cmap_map_set ms,
                          cmap_species s
                 where    ms.can_be_reference_map=1
+                and      ms.is_enabled=1
                 and      ms.species_id=s.species_id
                 and      s.accession_id=?
                 order by ms.display_order, 
@@ -520,6 +525,7 @@ Returns the data for the correspondence matrix.
                      cmap_species s
             where    map.map_set_id=ms.map_set_id
             and      ms.can_be_reference_map=1
+            and      ms.is_enabled=1
             and      ms.species_id=s.species_id
             and      s.accession_id='$species_aid'
         ];
@@ -561,6 +567,7 @@ Returns the data for the correspondence matrix.
                      cmap_map_set ms,
                      cmap_species s
             where    map.map_set_id=ms.map_set_id
+            and      ms.is_enabled=1
             and      ms.accession_id='$map_set_aid'
             and      ms.species_id=s.species_id
         ];
@@ -604,6 +611,7 @@ Returns the data for the correspondence matrix.
                          cmap_species s
                 where    map.map_name='$map_name'
                 and      map.map_set_id=ms.map_set_id
+                and      ms.is_enabled=1
                 and      ms.species_id=s.species_id
                 and      ms.can_be_reference_map=1
             ];
@@ -634,6 +642,7 @@ Returns the data for the correspondence matrix.
                 from     cmap_map_set ms,
                          cmap_species s
                 where    ms.can_be_reference_map=1
+                and      ms.is_enabled=1
                 and      ms.species_id=s.species_id
             ];
             $map_set_sql .= 
@@ -686,9 +695,12 @@ Returns the data for the correspondence matrix.
                      cm.link_map_aid,
                      cm.link_map_set_aid,
                      cm.link_species_aid
-            from     cmap_correspondence_matrix cm
+            from     cmap_correspondence_matrix cm,
+                     cmap_map_set ms
             where    cm.reference_map_set_aid='$map_set_aid'
             and      cm.link_map_set_aid='$link_map_set_aid'
+            and      cm.reference_map_set_aid=ms.accession_id
+            and      ms.is_enabled=1
         ];
 
         $select_sql .= "and cm.reference_species_aid='$species_aid' " 
@@ -715,8 +727,10 @@ Returns the data for the correspondence matrix.
                      cm.reference_species_aid,
                      cm.link_map_set_aid,
                      cm.link_species_aid
-            from     cmap_correspondence_matrix cm
+            from     cmap_correspondence_matrix cm,
+                     cmap_map_set ms
             where    cm.reference_map_set_aid='$map_set_aid'
+            and      cm.reference_map_set_aid=ms.accession_id
         ];
 
         $select_sql .= "and cm.reference_species_aid='$species_aid' " 
@@ -836,6 +850,7 @@ Returns the data for the correspondence matrix.
                      cmap_map_type mt,
                      cmap_species s
             where    map.map_set_id=ms.map_set_id
+            and      ms.is_enabled=1
             and      ms.accession_id='$link_map_set_aid'
             and      ms.map_type_id=mt.map_type_id
             and      ms.species_id=s.species_id
@@ -860,6 +875,7 @@ Returns the data for the correspondence matrix.
                      cmap_map_type mt,
                      cmap_species s
             where    ms.map_type_id=mt.map_type_id
+            and      ms.is_enabled=1
             and      ms.species_id=s.species_id
         ];
 
