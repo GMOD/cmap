@@ -66,6 +66,7 @@
                     <td colspan="2">
                         <input type="radio" name="image_type" value="png"[% IF apr.param('image_type') == 'png'; ' checked'; END %]>PNG
                         <input type="radio" name="image_type" value="jpeg"[% IF apr.param('image_type') == 'jpeg'; ' checked'; END %]>JPEG
+                        <input type="radio" name="image_type" value="svg"[% IF apr.param('image_type') == 'svg'; ' checked'; END %]>SVG *
                     </td>
                 </tr>
 
@@ -134,6 +135,8 @@
                         <input type="hidden" name="comparative_map_aid" value="[% apr.param('comparative_map_aid') %]">
                         <input type="reset"  value="Reset">
                         <input type="submit" value="Submit">
+                        <br><em><b>*</b>SVG output for high-resolution 
+                        printing only (no hyperlinks).</em>
                     </td>
                 </tr>
             </table>
@@ -141,8 +144,11 @@
         </td>
 
         <td valign="top">
-            <img src="/cmap/images/[% drawer.image_name %]" height="[% drawer.map_height %]" width="[% drawer.map_width %]" usemap="#zoom" border="0" alt="map_image">
-
+            [% IF drawer.image_type=='svg' %]
+              <object type="image/svg+xml" data="/cmap/images/[% drawer.image_name %]" height="[% drawer.map_height %]" width="[% drawer.map_width %]"></object>
+            [% ELSE %]
+              <img src="/cmap/images/[% drawer.image_name %]" height="[% drawer.map_height %]" width="[% drawer.map_width %]" usemap="#zoom" border="0" alt="map_image">
+            [% END %]
         </td>
     </tr>
 </table>
