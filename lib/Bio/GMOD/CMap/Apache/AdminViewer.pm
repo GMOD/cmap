@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.56 2003-12-12 03:21:04 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.57 2003-12-20 02:29:02 kycl4rk Exp $
 
 use strict;
 use Apache::Constants qw[ :common M_GET REDIRECT ];
@@ -34,7 +34,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.56 $)[-1];
+$VERSION        = (qw$Revision: 1.57 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -945,41 +945,19 @@ sub map_edit {
 
 # ----------------------------------------------------
 sub map_insert {
-    my $self           = shift;
-    my @errors         = ();
-    my $db             = $self->db or return $self->error;
-    my $apr            = $self->apr;
-    my $map_id         = next_number(
-        db             => $db, 
-        table_name     => 'cmap_map',
-        id_field       => 'map_id',
-    ) or die 'No next number for map id';
-    my $accession_id   = $apr->param('accession_id')  || $map_id;
-    my $display_order  = $apr->param('display_order') ||       1;
-    my $map_name       = $apr->param('map_name');
-    push @errors, 'No map name' unless defined $map_name && $map_name ne '';
-    my $map_set_id     = $apr->param('map_set_id')   or 
-                         push @errors, 'No map set id';
-    my $start_position = $apr->param('start_position');
-    my $stop_position  = $apr->param('stop_position');
-    push @errors, 'No start' unless $start_position =~ NUMBER_RE;
-    push @errors, 'No stop'  unless $stop_position  =~ NUMBER_RE;
-
-    return $self->map_create( errors => \@errors ) if @errors;
-    
-    $db->do(
-        q[
-            insert
-            into   cmap_map
-                   ( map_id, accession_id, map_set_id, map_name, 
-                     display_order, start_position, stop_position )
-            values ( ?, ?, ?, ?, ?, ?, ? )
-        ],
-        {},
-        ( $map_id, $accession_id, $map_set_id, $map_name, $display_order,
-          $start_position, $stop_position,
-        )
-    );
+    my $self           =  shift;
+    my $admin          =  $self->admin;
+    my $apr            =  $self->apr;
+    my $map_id         =  $admin->map_create(
+        accession_id   => $apr->param('accession_id')  || '',
+        display_order  => $apr->param('display_order') ||  1,
+        map_name       => $apr->param('map_name')      || '',
+        map_set_id     => $apr->param('map_set_id')    ||  0,
+        start_position => defined $apr->param('start_position')
+                          ? $apr->param('start_position') : undef,
+        stop_position  => defined $apr->param('stop_position')
+                          ? $apr->param('stop_position') : undef,
+    ) or return $self->map_create( errors => $admin->error );
 
     return $self->redirect_home( 
         ADMIN_HOME_URI."?action=map_view;map_id=$map_id" 
@@ -2180,6 +2158,7 @@ sub feature_type_edit {
                      feature_type, 
                      shape, 
                      color,
+                     default_rank,
                      drawing_lane,
                      drawing_priority
             from     cmap_feature_type
@@ -2204,41 +2183,19 @@ sub feature_type_edit {
 
 # ----------------------------------------------------
 sub feature_type_insert {
-    my $self             = shift;
-    my @errors           = ();
-    my $db               = $self->db or return $self->error;
-    my $apr              = $self->apr;
-    my $feature_type     = $apr->param('feature_type') or 
-                           push @errors, 'No feature type';
-    my $shape            = $apr->param('shape')        or 
-                           push @errors, 'No shape';
-    my $color            = $apr->param('color')            || '';
-    my $drawing_lane     = $apr->param('drawing_lane')     ||  1;
-    my $drawing_priority = $apr->param('drawing_priority') ||  1;
-    my $note             = $apr->param('note')             || '';
-    my $feature_type_id  = next_number(
-        db               => $db, 
-        table_name       => 'cmap_feature_type',
-        id_field         => 'feature_type_id',
-    ) or push @errors, 'No feature type id';
-    my $accession_id     = $apr->param('accession_id') || $feature_type_id;
-
-    return $self->feature_type_create( errors => \@errors ) if @errors;
-
-    $db->do(
-        q[ 
-            insert
-            into   cmap_feature_type 
-                   ( accession_id, feature_type_id, feature_type, 
-                     shape, color, drawing_lane, drawing_priority
-                   )
-            values ( ?, ?, ?, ?, ?, ?, ? )
-        ],
-        {}, 
-        ( $accession_id, $feature_type_id, $feature_type, 
-          $shape, $color, $drawing_lane, $drawing_priority
-        )
-    );
+    my $self  = shift;
+    my $apr   = $self->apr;
+    my $admin = $self->admin;
+    
+    $admin->feature_type_create(
+        feature_type     => $apr->param('feature_type')     || '',
+        shape            => $apr->param('shape')            || '',
+        color            => $apr->param('color')            || '',
+        default_rank     => $apr->param('default_rank')     ||  1,
+        drawing_lane     => $apr->param('drawing_lane')     ||  1,
+        drawing_priority => $apr->param('drawing_priority') ||  1,
+        accession_id     => $apr->param('accession_id')     || '',
+    ) or return $self->feature_type_create( errors => $admin->error );
 
     return $self->redirect_home( ADMIN_HOME_URI.'?action=feature_types_view' ); 
 }
@@ -2254,6 +2211,7 @@ sub feature_type_update {
     my $shape            = $apr->param('shape')
         or push @errors, 'No shape';
     my $color            = $apr->param('color')            || '';
+    my $default_rank     = $apr->param('default_rank')     ||  1;
     my $drawing_lane     = $apr->param('drawing_lane')     ||  1;
     my $drawing_priority = $apr->param('drawing_priority') ||  1;
     my $feature_type_id  = $apr->param('feature_type_id') 
@@ -2270,13 +2228,14 @@ sub feature_type_update {
                    feature_type=?, 
                    shape=?, 
                    color=?,
+                   default_rank=?,
                    drawing_lane=?,
                    drawing_priority=?
             where  feature_type_id=?
         ],
         {}, 
         ( $accession_id, $feature_type, $shape, $color, 
-          $drawing_lane, $drawing_priority, $feature_type_id 
+          $default_rank, $drawing_lane, $drawing_priority, $feature_type_id 
         )
     );
 
@@ -2297,6 +2256,7 @@ sub feature_type_view {
                      feature_type, 
                      shape, 
                      color,
+                     default_rank,
                      drawing_lane,
                      drawing_priority
             from     cmap_feature_type
@@ -2342,6 +2302,7 @@ sub feature_types_view {
                      feature_type, 
                      shape, 
                      color,
+                     default_rank,
                      drawing_lane,
                      drawing_priority
             from     cmap_feature_type
@@ -2615,7 +2576,6 @@ sub map_set_insert {
     my $accession_id         = $apr->param('accession_id')         || '';
     my $display_order        = $apr->param('display_order')        ||  1;
     my $can_be_reference_map = $apr->param('can_be_reference_map') ||  0;
-    my $note                 = $apr->param('note')                 || '';
     my $shape                = $apr->param('shape')                || '';
     my $color                = $apr->param('color')                || '';
     my $width                = $apr->param('width')                ||  0;
@@ -2772,7 +2732,6 @@ sub map_set_update {
     my $can_be_reference_map = $apr->param('can_be_reference_map') ||  0;
     my $is_enabled           = $apr->param('is_enabled')           ||  0;
     my $display_order        = $apr->param('display_order')        ||  1;
-    my $note                 = $apr->param('note')                 || '';
     my $shape                = $apr->param('shape')                || '';
     my $color                = $apr->param('color')                || '';
     my $width                = $apr->param('width')                ||  0;
@@ -2884,42 +2843,19 @@ sub map_type_edit {
 
 # ----------------------------------------------------
 sub map_type_insert {
-    my $self              = shift;
-    my @errors            = ();
-    my $db                = $self->db;
-    my $apr               = $self->apr;
-    my $accession_id      = $apr->param('accession_id')  
-        or push @errors, 'No accession ID';
-    my $map_type          = $apr->param('map_type')  
-        or push @errors, 'No map type';
-    my $map_units         = $apr->param('map_units') 
-        or push @errors, 'No map units';
-    my $shape             = $apr->param('shape')     
-        or push @errors, 'No shape';
-    my $width             = $apr->param('width')             || '';
-    my $color             = $apr->param('color')             || '';
-    my $display_order     = $apr->param('display_order')     ||  1;
-    my $is_relational_map = $apr->param('is_relational_map') ||  0;
-    my $map_type_id       = next_number(
-        db                => $db, 
-        table_name        => 'cmap_map_type',
-        id_field          => 'map_type_id',
-    ) or die 'No map type id';
-
-    return $self->map_type_create( errors => \@errors ) if @errors;
-
-    $db->do(
-        q[ 
-            insert
-            into   cmap_map_type 
-                   ( map_type_id, accession_id, map_type, map_units, 
-                     is_relational_map, display_order, shape, width, color )
-            values ( ?, ?, ?, ?, ?, ?, ?, ?, ? )
-        ],
-        {}, 
-        ( $map_type_id, $accession_id, $map_type, $map_units, 
-          $is_relational_map, $display_order, $shape, $width, $color )
-    );
+    my $self  = shift;
+    my $apr   = $self->apr;
+    my $admin = $self->admin;
+    $admin->map_type_create(
+        accession_id      => $apr->param('accession_id')      || '',
+        map_type          => $apr->param('map_type')          || '',
+        map_units         => $apr->param('map_units')         || '',
+        shape             => $apr->param('shape')             || '',
+        width             => $apr->param('width')             || '',
+        color             => $apr->param('color')             || '',
+        display_order     => $apr->param('display_order')     ||  1,
+        is_relational_map => $apr->param('is_relational_map') ||  0,
+    ) or return $self->map_type_create( errors => $admin->error );
 
     return $self->redirect_home( ADMIN_HOME_URI.'?action=map_types_view' ); 
 }
@@ -3077,7 +3013,10 @@ sub species_create {
     my ( $self, %args ) = @_;
     return $self->process_template( 
         TEMPLATE->{'species_create'},
-        { errors => $args{'errors'} }
+        { 
+            apr    => $self->apr,
+            errors => $args{'errors'},
+        }
     );
 }
 
@@ -3114,36 +3053,16 @@ sub species_edit {
 
 # ----------------------------------------------------
 sub species_insert {
-    my $self          = shift;
-    my @errors        = ();
-    my $db            = $self->db;
-    my $apr           = $self->apr;
-    my $common_name   = $apr->param('common_name') or 
-                        push @errors, 'No common name';
-    my $full_name     = $apr->param('full_name')   or 
-                        push @errors, 'No full name';
-    my $display_order = $apr->param('display_order') || 1;
-    my $species_id    = next_number(
-        db            => $db, 
-        table_name    => 'cmap_species',
-        id_field      => 'species_id',
-    ) or push @errors, "Can't get new species id";
-    my $accession_id  = $apr->param('accession_id')  || $species_id;
+    my $self  = shift;
+    my $apr   = $self->apr;
+    my $admin = $self->admin;
 
-    return $self->species_create( errors => \@errors ) if @errors;
-
-    $db->do(
-        q[ 
-            insert
-            into   cmap_species 
-                   ( accession_id, species_id, full_name, common_name, 
-                     display_order
-                   )
-            values ( ?, ?, ?, ?, ? )
-        ],
-        {}, 
-        ($accession_id, $species_id, $full_name, $common_name, $display_order)
-    );
+    $admin->species_create( 
+        accession_id  => $apr->param('accession_id')  || '', 
+        common_name   => $apr->param('common_name')   || '', 
+        full_name     => $apr->param('full_name')     || '', 
+        display_order => $apr->param('display_order') || '', 
+    ) or return $self->species_create( errors => $admin->error );
 
     return $self->redirect_home( ADMIN_HOME_URI.'?action=species_view' ); 
 }
