@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.65 2005-01-05 03:03:56 mwz444 Exp $
+# $Id: Admin.pm,v 1.66 2005-02-14 19:45:26 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.65 $)[-1];
+$VERSION = (qw$Revision: 1.66 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -249,6 +249,7 @@ Create a feature.
         is_landmark => $is_landmark,
         feature_type_aid => $feature_type_aid,
         direction => $direction,
+        #gclass => $gclass,
     );
 
 =item * Returns
@@ -290,6 +291,11 @@ The accession id of a feature type that is defined in the config file.
 
 The direction the feature points in relation to the map.
 
+=item - gclass
+
+The gclass that the feature will have.  This only relates to using CMap
+integrated with GBrowse and should not be used otherwise. 
+
 =back
 
 =back
@@ -308,6 +314,8 @@ The direction the feature points in relation to the map.
     my $stop_position = $args{'stop_position'};
     my $is_landmark   = $args{'is_landmark'} || 0;
     my $direction     = $args{'direction'} || 1;
+    my $gclass        = $args{'gclass'};
+    $gclass = undef unless($self->config_data('gbrowse_compatible'));
     my $db            = $self->db or return $self->error;
     my $feature_id    = next_number(
         db         => $db,
@@ -339,18 +347,34 @@ The direction the feature points in relation to the map.
         $stop_placeholder = undef;
     }
 
-    $db->do(
-        qq[
-            insert
-            into   cmap_feature
-                   ( feature_id, accession_id, map_id, feature_name, 
-                     feature_type_accession, is_landmark, direction,
-                     start_position, stop_position,default_rank )
-            values ( ?, ?, ?, ?, ?, ?, ?, ?, $stop_placeholder,$default_rank )
-        ],
-        {},
-        @insert_args
-    );
+    if ($gclass){
+        $db->do(
+            qq[
+                insert
+                into   cmap_feature
+                       ( feature_id, accession_id, map_id, feature_name, 
+                         feature_type_accession, is_landmark, direction,
+                         start_position, stop_position,default_rank,gclass )
+                values ( ?, ?, ?, ?, ?, ?, ?, ?, $stop_placeholder,$default_rank,'$gclass' )
+            ],
+            {},
+            @insert_args
+        );
+    }
+    else{
+        $db->do(
+            qq[
+                insert
+                into   cmap_feature
+                       ( feature_id, accession_id, map_id, feature_name, 
+                         feature_type_accession, is_landmark, direction,
+                         start_position, stop_position,default_rank )
+                values ( ?, ?, ?, ?, ?, ?, ?, ?, $stop_placeholder,$default_rank )
+            ],
+            {},
+            @insert_args
+        );
+    }
 
     return $feature_id;
 }

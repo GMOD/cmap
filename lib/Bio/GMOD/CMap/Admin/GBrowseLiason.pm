@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::GBrowseLiason;
 
 # vim: set ft=perl:
 
-# $Id: GBrowseLiason.pm,v 1.1 2005-02-10 19:03:15 mwz444 Exp $
+# $Id: GBrowseLiason.pm,v 1.2 2005-02-14 19:45:28 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ GBrowse integration at the db level.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -55,6 +55,10 @@ sub prepare_data_for_gbrowse {
     my %class_lookup;
     $LOG_FH = $args{'log_fh'} || \*STDOUT;
     print $LOG_FH "Preparing Data for GBrowse\n";
+    my $admin = Bio::GMOD::CMap::Admin->new(
+      data_source => $self->data_source
+    );
+
 
     for (my $i=0;$i<=$#{$feature_type_aids}; $i++){
         my $class = $self->feature_type_data($feature_type_aids->[$i],'gbrowse_class');
@@ -73,6 +77,60 @@ sub prepare_data_for_gbrowse {
     return $self->error( "No Feature Types to work on.\n" )
         unless (%class_lookup);
 
+    # 
+    # Make sure there is a "Map" feature for GBrowse
+    #
+    my $map_set_sql = qq[
+        select  ms.map_type_accession as map_type_aid,
+                map.map_id,
+                map.start_position,
+                map.stop_position,
+                map.map_name
+        from    cmap_map_set ms,
+                cmap_map map
+        where   map.map_set_id=ms.map_set_id
+            and ms.map_set_id in ( 
+    ].
+        join (',',@$map_set_ids).
+        qq[ ) 
+    ];
+
+    my $map_feature_sql = qq[
+        select  feature_id
+        from    cmap_feature
+        where   feature_type_accession = ?
+            and map_id = ?
+            and gclass = ?
+    ];
+    
+    my $sth = $db->prepare( $map_feature_sql );
+    
+    my $map_set_results = $db->selectall_arrayref( $map_set_sql, { Columns => {} }, );
+    my %map_class_lookup;
+    my $ft_aid = $self->config_data('gbrowse_default_map_feature_type_aid'); 
+    return $self->error( "No gbrowse_default_map_feature_type_aid defined in config file.\n" ) unless ($ft_aid);
+    foreach my $row (@$map_set_results){
+        unless ($map_class_lookup{$row->{'map_type_aid'}}){
+            my $class = $self->map_type_data($row->{'map_type_aid'},'gbrowse_map_class');
+            $class = $self->config_data('gbrowse_default_map_class') unless ($class);
+            return $self->error( "No gbrowse_default_map_class defined in config file.\n" ) unless ($class);
+            $map_class_lookup{$row->{'map_type_aid'}} = $class;
+        }
+        $sth->execute($ft_aid,$row->{'map_id'},$map_class_lookup{$row->{'map_type_aid'}});
+        my $map_search = $sth->fetchrow_arrayref;
+        unless ($map_search and @$map_search){
+            print $LOG_FH "Adding Map feature\n";
+            $admin->feature_create(
+                map_id => $row->{'map_id'},
+                feature_name => $row->{'map_name'},
+                start_position => $row->{'start_position'},
+                stop_position => $row->{'stop_position'},
+                feature_type_aid => $ft_aid,
+                gclass => $map_class_lookup{$row->{'map_type_aid'}},
+            );
+        }
+    }
+
     my $update_sql = qq[
         update cmap_feature, cmap_map
         set cmap_feature.gclass=? 
@@ -84,7 +142,7 @@ sub prepare_data_for_gbrowse {
         qq[ ) 
     ];
 
-    my $sth = $db->prepare( $update_sql );
+    $sth = $db->prepare( $update_sql );
     
     foreach my $ft_aid (@$feature_type_aids){
         print $LOG_FH "Preparing Feature Type with accession $ft_aid\n";
