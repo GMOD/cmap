@@ -311,7 +311,7 @@ function changeCompMaps(sel,index,side){
                   <option value="">--Select--</option>
                   [%- FOREACH ms=form_data.ref_map_sets -%]
                     <option [% IF apr.param('ref_map_set_aid') == ms.accession_id OR form_data.ref_map_sets.size==1; apr.param('ref_map_set_aid') = ms.accession_id; ' selected'; END %] value="[% ms.accession_id %]">
-                    [%- ms.map_type %] : [% ms.species_name %] - [% ms.map_set_name -%]
+                      [% ms.map_type %] : [% ms.species_name %] - [% ms.map_set_name %]
                     </option>
                   [%- END -%]
                 </select>&nbsp;<input type="submit" value="Change" name="sub">

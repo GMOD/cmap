@@ -1,7 +1,8 @@
 package Bio::GMOD::CMap::Data::Generic;
+
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.54 2004-11-17 20:52:30 kycl4rk Exp $
+# $Id: Generic.pm,v 1.55 2004-11-17 22:33:06 mwz444 Exp $
 
 =head1 NAME
 
@@ -32,9 +33,9 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.54 $)[-1];
+$VERSION = (qw$Revision: 1.55 $)[-1];
 
-use Data::Dumper; # really just for debugging
+use Data::Dumper;    # really just for debugging
 use Bio::GMOD::CMap;
 use base 'Bio::GMOD::CMap';
 
@@ -71,12 +72,12 @@ The SQL for finding all the features on a map.
 
 =cut
 
-    my ( $self, %args )  = @_;
-    my $order_by         = $args{'order_by'}            || '';
-    my $restrict_by      = $args{'restrict_by'}         || '';
+    my ( $self, %args ) = @_;
+    my $order_by    = $args{'order_by'}    || '';
+    my $restrict_by = $args{'restrict_by'} || '';
     my @feature_type_aids = @{ $args{'feature_types'} || [] };
 
-    my $sql              = qq[
+    my $sql = qq[
         select   f.feature_id,
                  f.accession_id,
                  f.feature_name,
@@ -103,10 +104,10 @@ The SQL for finding all the features on a map.
         and      map.map_set_id=ms.map_set_id
     ];
 
-    if ( @feature_type_aids ) {
-        $sql .= "and f.feature_type_accession in ('".
-            join( "','", @feature_type_aids ).
-        "')";
+    if (@feature_type_aids) {
+        $sql .=
+          "and f.feature_type_accession in ('"
+          . join( "','", @feature_type_aids ) . "')";
     }
 
     $sql .= "order by $order_by" if $order_by;
@@ -182,7 +183,7 @@ The SQL for finding correspondences for a feature.
     my $self = shift;
     my %args = @_;
 
-    my $sql  = q[
+    my $sql = q[
         select   f.feature_name,
                  f.feature_id,
                  f.accession_id as feature_aid,
@@ -223,14 +224,16 @@ The SQL for finding correspondences for a feature.
     ];
 
     if ( $args{'comparative_map_field'} eq 'map_set_aid' ) {
-        $sql .= "and ms.accession_id='".$args{'comparative_map_aid'}."' ";
+        $sql .= "and ms.accession_id='" . $args{'comparative_map_aid'} . "' ";
     }
     elsif ( $args{'comparative_map_field'} eq 'map_aid' ) {
-        $sql .= "and map.accession_id='".$args{'comparative_map_aid'}."' ";
+        $sql .= "and map.accession_id='" . $args{'comparative_map_aid'} . "' ";
     }
 
-    $sql .= "and ce.evidence_type_accession in ('".$args{'evidence_type_aids'}."') " 
-        if $args{'evidence_type_aids'};
+    $sql .=
+      "and ce.evidence_type_accession in ('"
+      . $args{'evidence_type_aids'} . "') "
+      if $args{'evidence_type_aids'};
 
     $sql .= q[
             order by species_display_order, species_name, 
@@ -357,25 +360,22 @@ The SQL for finding all reference map sets.
                  ms.published_on,
                  s.common_name as species_name,
                  s.display_order,
-                 ms.map_type_accession as map_type_aid,
-                 mt.map_type
+                 ms.map_type_accession as map_type_aid
         from     cmap_map_set ms,
-                 cmap_species s,
-                 cmap_map_type mt
+                 cmap_species s
         where    ms.can_be_reference_map=1
         and      ms.is_enabled=1
         and      ms.species_id=s.species_id
-        and      ms.map_type_id=mt.map_type_id
     ];
-    $sql .= "and s.accession_id='$ref_species_aid' " 
-        if $ref_species_aid and $ref_species_aid ne '-1';
+    $sql .= "and s.accession_id='$ref_species_aid' "
+      if $ref_species_aid
+      and $ref_species_aid ne '-1';
     $sql .= q[
         and      ms.is_relational_map=0
-        order by mt.display_order,
-                 mt.map_type,
+        order by ms.display_order,
+                 ms.map_type_accession,
                  s.display_order,
-                 s.common_name,
-                 ms.display_order,
+                 species_name,
                  ms.published_on desc,
                  ms.map_set_name
     ];
@@ -421,10 +421,10 @@ map.
 
 =cut
 
-    my ( $self, %args )   = @_;
+    my ( $self, %args ) = @_;
     my @evidence_type_aids = @{ $args{'evidence_type_aids'} || [] };
 
-    if ( @evidence_type_aids ) {
+    if (@evidence_type_aids) {
         return q[
             select   distinct map.map_id,
                      map.accession_id,
@@ -466,8 +466,8 @@ map.
             and      cl.feature_correspondence_id=fc.feature_correspondence_id
             and      fc.is_enabled=1
             and      fc.feature_correspondence_id=ce.feature_correspondence_id
-            and      ce.evidence_type_accession in ('].
-            join( "','", @evidence_type_aids ).q[')
+            and      ce.evidence_type_accession in (']
+          . join( "','", @evidence_type_aids ) . q[')
             and      cl.feature_id2=f2.feature_id
             and      f2.map_id=map.map_id
             and      map.map_set_id=?
@@ -642,3 +642,4 @@ This library is free software;  you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 =cut
+

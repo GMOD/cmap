@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.173 2004-11-17 20:01:55 kycl4rk Exp $
+# $Id: Data.pm,v 1.174 2004-11-17 22:33:05 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.173 $)[-1];
+$VERSION = (qw$Revision: 1.174 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -274,8 +274,7 @@ Returns a string of tab-delimited data for either a map or map set.
           $db->selectrow_array(
             'select map_id from cmap_map where accession_id=?',
             {}, ($map_aid) )
-          or
-          return $self->error( "'$map_aid' is not a valid map accession ID" );
+          or return $self->error("'$map_aid' is not a valid map accession ID");
     }
 
     if ($map_set_aid) {
@@ -284,7 +283,7 @@ Returns a string of tab-delimited data for either a map or map set.
             'select map_set_id from cmap_map_set where accession_id=?',
             {}, ($map_set_aid) )
           or return $self->error(
-            "'$map_set_aid' is not a valid map set accession ID" );
+            "'$map_set_aid' is not a valid map set accession ID");
     }
 
     my $return;
@@ -2053,6 +2052,7 @@ Returns the data for the main comparative map HTML form.
 =cut
 
 sub cmap_form_data {
+
     my ( $self, %args ) = @_;
     my $slots = $args{'slots'} or return;
     my $min_correspondences         = $args{'min_correspondences'}     || 0;
@@ -2144,6 +2144,10 @@ sub cmap_form_data {
         unless ( $ref_map_sets = $self->get_cached_results( 1, $sql_str ) ) {
             $ref_map_sets =
               $db->selectall_arrayref( $sql_str, { Columns => {} }, );
+            foreach my $row ( @{$ref_map_sets} ) {
+                $row->{'map_type'} =
+                  $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
+            }
             $self->store_cached_results( 1, $sql_str, $ref_map_sets );
         }
     }
@@ -4357,6 +4361,10 @@ sub cmap_entry_data {
         unless ( $ref_map_sets = $self->get_cached_results( 1, $sql_str ) ) {
             $ref_map_sets =
               $db->selectall_arrayref( $sql_str, { Columns => {} }, );
+            foreach my $row ( @{$ref_map_sets} ) {
+                $row->{'map_type'} =
+                  $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
+            }
             $self->store_cached_results( 1, $sql_str, $ref_map_sets );
         }
     }
@@ -4693,8 +4701,8 @@ sub compress_maps {
 =head2 compress_maps
 
 Decide if the maps should be compressed.
-If it is aggregated, compress unless all the slots contain only 1 map.
-If it is not aggregated, compress unless this slot contains only 1 map.
+If it is aggregated, compress unless the slot contain only 1 map.
+If it is not aggregated don't compress. 
 
 =cut
 
@@ -4703,25 +4711,14 @@ If it is not aggregated, compress unless this slot contains only 1 map.
 
     return unless defined $this_slot_no;
 
-    if ( $self->aggregate ) {
-        if ( defined( $self->{'compress_aggregates'} ) ) {
-            return ( $self->{'compress_aggregates'} );
-        }
-
-        my $slot_info = $self->slot_info;
-
-        foreach my $slot_no ( keys(%$slot_info) ) {
-            if ( scalar( keys( %{ $slot_info->{$slot_no} } ) ) > 1 ) {
-                $self->{'compress_aggregates'} = 1;
-                return ( $self->{'compress_aggregates'} );
-            }
-        }
-
-        $self->{'compress_aggregates'} = 0;
-        return ( $self->{'compress_aggregates'} );
+    if ( scalar( keys( %{ $self->slot_info->{$this_slot_no} } ) ) > 1
+        and $self->aggregate )
+    {
+        return 1;
     }
 
-    return ( scalar( keys( %{ $self->slot_info->{$this_slot_no} } ) ) > 1 );
+    return 0;    # Don't compress if not aggregated
+       #return ( scalar( keys( %{ $self->slot_info->{$this_slot_no} } ) ) > 1 );
 }
 
 # ----------------------------------------------------
@@ -5030,7 +5027,8 @@ original start and stop.
                         $from .= q[,
                           cmap_correspondence_lookup cl
                           ];
-                        $where .= q[ and m.map_id=cl.map_id1 and cl.map_id1!=cl.map_id2 ];
+                        $where .=
+q[ and m.map_id=cl.map_id1 and cl.map_id1!=cl.map_id2 ];
 
                         ### Add the information about the adjoinint slot
                         ### including info about the start and end.
@@ -5123,7 +5121,8 @@ original start and stop.
                     ### If aid was found, $sql_suffix will be created
                     my $slot_results;
                     my $sql_str = $sql_start . $from . $where;
-#print S#TDERR "SLOT_INFO SQL \n$sql_str\n";
+
+                    #print S#TDERR "SLOT_INFO SQL \n$sql_str\n";
                     unless ( $slot_results =
                         $self->get_cached_results( 4, $sql_str ) )
                     {
