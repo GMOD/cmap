@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin;
 
-# $Id: Admin.pm,v 1.10 2003-01-05 04:25:35 kycl4rk Exp $
+# $Id: Admin.pm,v 1.11 2003-01-09 17:19:17 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.10 $)[-1];
+$VERSION = (qw$Revision: 1.11 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils qw[ next_number ];
@@ -262,60 +262,65 @@ Find all the features matching some criteria.
 
 =cut
     my ( $self, %args ) = @_;
-    my $feature_name    = uc $args{'feature_name'} or 
-                          $self->error('No feature name');
-    $feature_name       =~ s/\*/%/g; # make stars into SQL wildcards
+    my @feature_names   = map { s/^\s+|\s+$//g; s/\*/%/g; $_ || () } 
+                          split( /[,\s+]/, $args{'feature_name'} );
     my $map_aid         = $args{'map_aid'}         ||             '';
     my $feature_type_id = $args{'feature_type_id'} ||              0;
     my $field_name      = $args{'field_name'}      || 'feature_name';
     my $order_by        = $args{'order_by'}        || 'feature_name';
     my $limit_start     = $args{'limit_start'}     ||              0;
     my $db              = $self->db or return;
-    my $comparison      = $feature_name =~ m/%/ ? 'like' : '=';
+    my @results;
 
-    my $where = $field_name eq 'both'
-        ? qq[
-            where  (
-                upper(f.feature_name) $comparison '$feature_name'
-                or
-                upper(f.alternate_name) $comparison '$feature_name'
-            )
-        ]
-        : qq[where upper(f.$field_name) $comparison '$feature_name']
-    ;
+    for my $feature_name ( @feature_names ) {
+        my $comparison      = $feature_name =~ m/%/ ? 'like' : '=';
 
-    my $sql = qq[
-        select f.feature_id, 
-               f.feature_name,
-               f.alternate_name,
-               f.start_position,
-               f.stop_position,
-               ft.feature_type,
-               map.map_name,
-               map.map_id,
-               ms.map_set_id,
-               ms.short_name as map_set_name,
-               s.species_id,
-               s.common_name as species_name,
-               mt.map_type
-        from   cmap_feature f,
-               cmap_feature_type ft,
-               cmap_map map,
-               cmap_map_set ms,
-               cmap_species s,
-               cmap_map_type mt
-        $where 
-        and f.feature_type_id=ft.feature_type_id
-        and f.map_id=map.map_id
-        and map.map_set_id=ms.map_set_id
-        and ms.species_id=s.species_id
-        and ms.map_type_id=mt.map_type_id
-    ];
-    $sql .= "and map.accession_id='$map_aid' "                if $map_aid;
-    $sql .= "and f.feature_type_id=$feature_type_id " if $feature_type_id;
-    $sql .= "order by $order_by ";
+        my $where = $field_name eq 'both'
+            ? qq[
+                where  (
+                    upper(f.feature_name) $comparison '$feature_name'
+                    or
+                    upper(f.alternate_name) $comparison '$feature_name'
+                )
+            ]
+            : qq[where upper(f.$field_name) $comparison '$feature_name']
+        ;
 
-    return $db->selectall_arrayref( $sql, { Columns => {} } );
+        my $sql = qq[
+            select f.feature_id, 
+                   f.feature_name,
+                   f.alternate_name,
+                   f.start_position,
+                   f.stop_position,
+                   ft.feature_type,
+                   map.map_name,
+                   map.map_id,
+                   ms.map_set_id,
+                   ms.short_name as map_set_name,
+                   s.species_id,
+                   s.common_name as species_name,
+                   mt.map_type
+            from   cmap_feature f,
+                   cmap_feature_type ft,
+                   cmap_map map,
+                   cmap_map_set ms,
+                   cmap_species s,
+                   cmap_map_type mt
+            $where 
+            and f.feature_type_id=ft.feature_type_id
+            and f.map_id=map.map_id
+            and map.map_set_id=ms.map_set_id
+            and ms.species_id=s.species_id
+            and ms.map_type_id=mt.map_type_id
+        ];
+        $sql .= "and map.accession_id='$map_aid' "                if $map_aid;
+        $sql .= "and f.feature_type_id=$feature_type_id " if $feature_type_id;
+        $sql .= "order by $order_by ";
+
+        push @results, @{ $db->selectall_arrayref( $sql, { Columns => {} } ) };
+    }
+
+    return \@results;
 }
 
 # ----------------------------------------------------
