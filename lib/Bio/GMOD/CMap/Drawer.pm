@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.47 2003-12-15 17:23:54 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.48 2004-02-10 22:38:20 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.47 $)[-1];
+$VERSION = (qw$Revision: 1.48 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -61,6 +61,8 @@ Initializes the drawing object.
     my $gd_class = $self->image_type eq 'svg' ? 'GD::SVG' : 'GD';
 
     eval "use $gd_class";
+
+    return $self->error( @$ ) if @$;
 
     return $self->draw;
 }
@@ -1148,6 +1150,12 @@ Returns the font size.
             unless defined VALID->{'font_size'}{ $font_size };
         $self->{'font_size'} ||= $font_size;
     }
+
+    unless ( $self->{'font_size'} ) {
+        $self->{'font_size'} = $self->config('font_size') 
+            || DEFAULT->{'font_size'};
+    }
+
     return $self->{'font_size'};
 }
 
@@ -1742,7 +1750,7 @@ Returns the font for the "regular" stuff (feature labels, map names, etc.).
     my $self = shift;
     unless ( $self->{'regular_font'} ) {
         my $font_size = $self->font_size;
-        my $font_pkg  = $self->font_class;
+        my $font_pkg  = $self->font_class or return;
         my %methods   = ( 
             small     => 'Tiny',
             medium    => 'Small',
@@ -1750,7 +1758,8 @@ Returns the font for the "regular" stuff (feature labels, map names, etc.).
         );
 
         if ( my $font = $methods{ $font_size } ) {
-            $self->{'regular_font'} = $font_pkg->$font();
+            $self->{'regular_font'} = $font_pkg->$font() or return 
+                $self->error("Error creating font with package '$font_pkg'");
         }
         else {
             return $self->error(qq[No "regular" font for "$font_size"])
