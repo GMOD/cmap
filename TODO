@@ -1,23 +1,13 @@
                       Planned enhancements for CMap
     
-                             $Revision: 1.7 $
+                             $Revision: 1.8 $
 
--   Better label distribution algorithm
--   Allow multiple alternate names for features
+-   Improve label distribution (speed and use of space)
+-   XML import/export for data (to keep heiracrchical structures)
+-   Easier zooming on maps
 -   Some indicator for when features are dropped out
--   Allow clicking/zooming on comparative maps
--   Add reverse sort on columns in map_details
--   Allow some maps to be flipped by default (add "do_flip" option 
-    in cmap_map?)
 -   Keep up with features better so that a map that appears more than
     one doesn't think that some of its features are corresponding when
     they're not
--   Possibly add "attributes" table a la Bio::DB::GFF for things like
-    curator notes, dbxrefs, evidences, misc. extra data, multiple
-    alternative names to features
--   Make help more contextual (use object names from local data)
--   Add automatic database audit trail (perhaps use GMOD Chado
-    mechanisms?)
 -   Write some (post-installation) tests!  (Tests need to assume some
     data in the database, a working Apache installation, etc.)
--   SVG output
