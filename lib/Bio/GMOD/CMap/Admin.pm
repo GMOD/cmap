@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.30 2003-10-16 22:19:53 kycl4rk Exp $
+# $Id: Admin.pm,v 1.31 2003-10-22 00:23:12 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.30 $)[-1];
+$VERSION = (qw$Revision: 1.31 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils qw[ next_number parse_words ];
@@ -1289,6 +1289,8 @@ Set the attributes for a database object.
         my $display_order = $attr->{'display_order'} || 0;
         my $attr_name     = $attr->{'name'}          or next;
         my $attr_value    = $attr->{'value'}         or next;
+        my $is_public     = $attr->{'is_public'};
+        $is_public        = 1 unless defined $is_public;
 
         unless ( $display_order ) {
             $display_order = $db->selectrow_array(
@@ -1329,13 +1331,14 @@ Set the attributes for a database object.
                     set    object_id=?, 
                            table_name=?,
                            display_order=?,
+                           is_public=?,
                            attribute_name=?, 
                            attribute_value=?
                     where  attribute_id=?
                 ],
                 {}, 
-                ($object_id, $table_name, $display_order, $attr_name, 
-                 $attr_value, $attribute_id)
+                ($object_id, $table_name, $display_order, $is_public,
+                 $attr_name, $attr_value, $attribute_id)
             ); 
         }
         else {
@@ -1352,12 +1355,13 @@ Set the attributes for a database object.
                     insert 
                     into    cmap_attribute
                             (attribute_id, object_id, table_name,
-                             display_order, attribute_name, attribute_value)
-                    values  (?, ?, ?, ?, ?, ?)
+                             display_order, is_public, 
+                             attribute_name, attribute_value)
+                    values  (?, ?, ?, ?, ?, ?, ?)
                 ],
                 {}, 
-                ($attribute_id, $object_id, $table_name, $display_order, 
-                 $attr_name, $attr_value)
+                ($attribute_id, $object_id, $table_name, 
+                 $display_order, $is_public, $attr_name, $attr_value)
             );
         }
     }
@@ -1443,6 +1447,35 @@ Delete a species.
     return 1;
 }
 
+# ----------------------------------------------------
+sub xref_delete {
+
+=pod
+
+=head2 xref_delete
+
+Delete a cross reference.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $xref_id         = $args{'xref_id'} or return $self->error(
+        'No xref id'
+    );
+
+    my $db = $self->db or return;
+    $db->do(
+        q[
+            delete
+            from   cmap_xref
+            where  xref_id=?
+        ], 
+        {}, 
+        ( $xref_id )
+    );
+
+    return 1;
+}
 1;
 
 # ----------------------------------------------------
