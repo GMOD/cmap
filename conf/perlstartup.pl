@@ -30,6 +30,7 @@ use Bio::GMOD::CMap();
 use Bio::GMOD::CMap::Admin();
 use Bio::GMOD::CMap::Apache();
 use Bio::GMOD::CMap::Apache::AdminViewer();
+use Bio::GMOD::CMap::Apache::CorrespondenceViewer();
 use Bio::GMOD::CMap::Apache::HelpViewer();
 use Bio::GMOD::CMap::Apache::Index();
 use Bio::GMOD::CMap::Apache::EvidenceTypeViewer();
