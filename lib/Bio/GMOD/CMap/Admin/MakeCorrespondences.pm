@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
-# $Id: MakeCorrespondences.pm,v 1.12 2003-02-14 01:25:36 kycl4rk Exp $
+# $Id: MakeCorrespondences.pm,v 1.13 2003-02-20 16:50:05 kycl4rk Exp $
 
 =head1 NAME
 
@@ -30,7 +30,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.12 $)[-1];
+$VERSION = (qw$Revision: 1.13 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -232,7 +232,9 @@ L<perl>.
 
 Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
 
-Copyright (c) 2002 Cold Spring Harbor Laboratory
+=head1 COPYRIGHT
+
+Copyright (c) 2002-3 Cold Spring Harbor Laboratory
 
 This library is free software;  you can redistribute it and/or modify 
 it under the same terms as Perl itself.

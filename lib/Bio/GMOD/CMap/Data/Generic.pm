@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data::Generic;
 
-# $Id: Generic.pm,v 1.22 2003-02-11 00:25:44 kycl4rk Exp $
+# $Id: Generic.pm,v 1.23 2003-02-20 16:50:07 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.22 $)[-1];
+$VERSION = (qw$Revision: 1.23 $)[-1];
 
 use Data::Dumper; # really just for debugging
 use Bio::GMOD::CMap;
@@ -1044,7 +1044,9 @@ L<perl>.
 
 Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
 
-Copyright (c) 2002 Cold Spring Harbor Laboratory
+=head1 COPYRIGHT
+
+Copyright (c) 2002-3 Cold Spring Harbor Laboratory
 
 This library is free software;  you can redistribute it and/or modify 
 it under the same terms as Perl itself.

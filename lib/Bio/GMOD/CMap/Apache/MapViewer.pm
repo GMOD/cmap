@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 
-# $Id: MapViewer.pm,v 1.12 2003-02-11 00:23:11 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.13 2003-02-20 16:50:07 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $TEMPLATE $PAGE );
-$VERSION = (qw$Revision: 1.12 $)[-1];
+$VERSION = (qw$Revision: 1.13 $)[-1];
 
 use Apache::Constants;
 use Apache::Request;
@@ -231,7 +231,9 @@ L<perl>, L<Template>.
 
 Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
 
-Copyright (c) 2002 Cold Spring Harbor Laboratory
+=head1 COPYRIGHT
+
+Copyright (c) 2002-3 Cold Spring Harbor Laboratory
 
 This library is free software;  you can redistribute it and/or modify 
 it under the same terms as Perl itself.

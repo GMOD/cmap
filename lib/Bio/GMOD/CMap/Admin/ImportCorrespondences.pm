@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 
-# $Id: ImportCorrespondences.pm,v 1.7 2003-02-20 01:29:31 kycl4rk Exp $
+# $Id: ImportCorrespondences.pm,v 1.8 2003-02-20 16:50:05 kycl4rk Exp $
 
 =head1 NAME
 
@@ -42,7 +42,7 @@ than just feature names (which could be duplicated on other maps).
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.7 $)[-1];
+$VERSION = (qw$Revision: 1.8 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -306,7 +306,9 @@ L<perl>.
 
 Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
 
-Copyright (c) 2002 Cold Spring Harbor Laboratory
+=head1 COPYRIGHT
+
+Copyright (c) 2002-3 Cold Spring Harbor Laboratory
 
 This library is free software;  you can redistribute it and/or modify 
 it under the same terms as Perl itself.

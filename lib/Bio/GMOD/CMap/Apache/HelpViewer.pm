@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::HelpViewer;
 
-# $Id: HelpViewer.pm,v 1.2 2002-09-06 22:15:51 kycl4rk Exp $
+# $Id: HelpViewer.pm,v 1.3 2003-02-20 16:50:07 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Apache::Constants;
 
@@ -73,7 +73,9 @@ L<perl>.
 
 Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
 
-Copyright (c) 2002 Cold Spring Harbor Laboratory
+=head1 COPYRIGHT
+
+Copyright (c) 2002-3 Cold Spring Harbor Laboratory
 
 This library is free software;  you can redistribute it and/or modify 
 it under the same terms as Perl itself.

@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::FeatureViewer;
 
-# $Id: FeatureViewer.pm,v 1.6 2003-02-11 00:23:11 kycl4rk Exp $
+# $Id: FeatureViewer.pm,v 1.7 2003-02-20 16:50:07 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.6 $)[-1];
+$VERSION = (qw$Revision: 1.7 $)[-1];
 
 use Apache::Constants;
 use Apache::Request;
@@ -98,7 +98,9 @@ L<perl>, Bio::GMOD::CMap::Apache.
 
 Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
 
-Copyright (c) 2002 Cold Spring Harbor Laboratory
+=head1 COPYRIGHT
+
+Copyright (c) 2002-3 Cold Spring Harbor Laboratory
 
 This library is free software;  you can redistribute it and/or modify 
 it under the same terms as Perl itself.

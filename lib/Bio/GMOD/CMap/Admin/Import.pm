@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.15 2003-02-19 20:17:47 kycl4rk Exp $
+# $Id: Import.pm,v 1.16 2003-02-20 16:50:05 kycl4rk Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.15 $)[-1];
+$VERSION  = (qw$Revision: 1.16 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -609,7 +609,9 @@ L<perl>.
 
 Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
 
-Copyright (c) 2002 Cold Spring Harbor Laboratory
+=head1 COPYRIGHT
+
+Copyright (c) 2002-3 Cold Spring Harbor Laboratory
 
 This library is free software;  you can redistribute it and/or modify
 it under the same terms as Perl itself.

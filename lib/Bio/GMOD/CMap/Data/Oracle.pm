@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data::Oracle;
 
-# $Id: Oracle.pm,v 1.3 2003-01-29 00:23:29 kycl4rk Exp $
+# $Id: Oracle.pm,v 1.4 2003-02-20 16:50:08 kycl4rk Exp $
 
 =head1 NAME
 
@@ -19,7 +19,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Bio::GMOD::CMap::Data::Generic;
 use base 'Bio::GMOD::CMap::Data::Generic';
@@ -77,7 +77,9 @@ L<perl>.
 
 Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
 
-Copyright (c) 2002 Cold Spring Harbor Laboratory
+=head1 COPYRIGHT
+
+Copyright (c) 2002-3 Cold Spring Harbor Laboratory
 
 This library is free software;  you can redistribute it and/or modify 
 it under the same terms as Perl itself.

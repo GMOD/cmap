@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.21 2003-02-14 01:26:01 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.22 2003-02-20 16:50:06 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -31,7 +31,7 @@ $FEATURE_SHAPES = [ qw(
 $LINE_STYLES    = [ qw( dashed solid ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.21 $)[-1];
+$VERSION        = (qw$Revision: 1.22 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -754,8 +754,8 @@ sub map_insert {
         id_field       => 'map_id',
     ) or die 'No next number for map id';
     my $accession_id   = $apr->param('accession_id') || $map_id;
-    my $map_name       = $apr->param('map_name')     or 
-                         push @errors, 'No map name';
+    my $map_name       = $apr->param('map_name');
+    push @errors, 'No map name' unless defined $map_name && $map_name ne '';
     my $map_set_id     = $apr->param('map_set_id')   or 
                          push @errors, 'No map set id';
     my $linkage_group  = $apr->param('linkage_group') || '';
@@ -893,8 +893,8 @@ sub map_update {
         or push @errors, 'No map id';
     my $accession_id   = $apr->param('accession_id')   
         or push @errors, 'No accession id';
-    my $map_name       = $apr->param('map_name')       
-        or push @errors, 'No map name';
+    my $map_name       = $apr->param('map_name');
+    push @errors, 'No map name' unless defined $map_name && $map_name ne '';
     my $linkage_group  = $apr->param('linkage_group') || '';
     my $start_position = $apr->param('start_position');
     push @errors, 'No start position' unless defined $start_position;
@@ -2759,7 +2759,9 @@ L<perl>, htpasswd.
 
 Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
 
-Copyright (c) 2002 Cold Spring Harbor Laboratory
+=head1 COPYRIGHT
+
+Copyright (c) 2002-3 Cold Spring Harbor Laboratory
 
 This library is free software;  you can redistribute it and/or modify 
 it under the same terms as Perl itself.
