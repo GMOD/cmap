@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.133 2004-10-18 19:01:43 kycl4rk Exp $
+# $Id: Map.pm,v 1.134 2004-10-25 21:05:46 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.133 $)[-1];
+$VERSION = (qw$Revision: 1.134 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -597,7 +597,7 @@ such as the units.
 #    $x    = $x_mid -
 #      ( ( $font->width * length($size_str) ) / 2 );
 #    push @$drawing_data, [ STRING, $font, $x, $y, $size_str, 'grey' ];
-    $y2 = $font->height +$y+$buf;
+#    $y2 = $font->height +$y+$buf;
 }
 
 # ----------------------------------------------------
@@ -1712,19 +1712,27 @@ Variable Info:
 
     }
     #Make aggregated correspondences
+    my $corrs_aggregated=0;
     for my $map_id (@map_ids){
         if ($self->aggregate and $is_compressed){
+            $corrs_aggregated=1 
+                if ($map_aggregate_corr{$map_id} and @{$map_aggregate_corr{$map_id}});
             my @drawing_data=();
             my $map_length=$self->map_length($map_id);
             for my $ref_connect (@{$map_aggregate_corr{$map_id}}) {
                 my $map_coords = $map_placement_data{$map_id}{'map_coords'};
-                my $line_color =
-                    $ref_connect->[2] <= 1  ? 'lightgrey'
-                  : $ref_connect->[2] <= 5  ? 'lightblue'
-                  : $ref_connect->[2] <= 25 ? 'blue'
-                  : $ref_connect->[2] <= 50 ? 'purple'
-                  : $ref_connect->[2] <= 200 ? 'red'
-                  : 'black';
+                my $corr_colors 
+                    = $drawer->aggregated_correspondence_colors;
+                my $corr_color_bounds  
+                    = $drawer->aggregated_correspondence_color_bounds;
+                my $line_color = $drawer->default_aggregated_correspondence_color;
+                foreach my $color_bound (@$corr_color_bounds){
+                    if ($ref_connect->[2] <= $color_bound){
+                        $line_color = $corr_colors->{$color_bound};
+                        last;
+                    }
+                }                
+
                 my $this_map_x=$label_side eq RIGHT ? $map_coords->[0]-4 : $map_coords->[2]+4;
                 my $this_map_x2=$label_side eq RIGHT ? $map_coords->[0] : $map_coords->[2];
                 my $this_map_y=(($ref_connect->[3]/$map_length)
@@ -1805,7 +1813,7 @@ Variable Info:
         $slot_min_y - $slot_buffer,
         $slot_max_x,
         $slot_max_y,
-    ];
+    ],$corrs_aggregated;
 }
 
 # ----------------------------------------

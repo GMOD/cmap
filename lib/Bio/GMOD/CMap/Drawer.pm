@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.79 2004-09-29 20:16:33 mwz444 Exp $
+# $Id: Drawer.pm,v 1.80 2004-10-25 21:05:46 mwz444 Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.79 $)[-1];
+$VERSION = (qw$Revision: 1.80 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -548,6 +548,7 @@ Lays out the image and writes it to the file system, set the "image_name."
     my $self = shift;
 
     my ( $min_y, $max_y, $min_x, $max_x );
+    my $corrs_aggregated = 0;
     for my $slot_no ( $self->slot_numbers ) {
         my $data    = $self->slot_data( $slot_no ) or return;
         my $map     =  Bio::GMOD::CMap::Drawer::Map->new( 
@@ -560,15 +561,17 @@ Lays out the image and writes it to the file system, set the "image_name."
             scale_maps  => $self->scale_maps,
         ) or return $self->error( Bio::GMOD::CMap::Drawer::Map->error );
 
-        my $bounds = $map->layout or return $self->error( $map->error );
-        $min_x     = $bounds->[0] unless defined $min_x;
-        $min_y     = $bounds->[1] unless defined $min_y;
-        $max_x     = $bounds->[2] unless defined $max_x;
-        $max_y     = $bounds->[3] unless defined $max_y;
-        $min_x     = $bounds->[0] if $bounds->[0] < $min_x;
-        $min_y     = $bounds->[1] if $bounds->[1] < $min_y;
-        $max_x     = $bounds->[2] if $bounds->[2] > $max_x;
-        $max_y     = $bounds->[3] if $bounds->[3] > $max_y;
+        my ($bounds,$corrs_aggregated_tmp) 
+               = $map->layout or return $self->error( $map->error );
+        $corrs_aggregated = $corrs_aggregated_tmp if $corrs_aggregated_tmp;
+        $min_x = $bounds->[0] unless defined $min_x;
+        $min_y = $bounds->[1] unless defined $min_y;
+        $max_x = $bounds->[2] unless defined $max_x;
+        $max_y = $bounds->[3] unless defined $max_y;
+        $min_x = $bounds->[0] if $bounds->[0] < $min_x;
+        $min_y = $bounds->[1] if $bounds->[1] < $min_y;
+        $max_x = $bounds->[2] if $bounds->[2] > $max_x;
+        $max_y = $bounds->[3] if $bounds->[3] > $max_y;
 
         $self->slot_sides( 
             slot_no => $slot_no,
@@ -620,17 +623,20 @@ Lays out the image and writes it to the file system, set the "image_name."
         );
 
         $self->add_drawing( FILLED_RECT, @slot_bounds, $bg_color,     -1 );
-        $self->add_drawing( RECTANGLE,   @slot_bounds, $border_color, -1 );
+        $self->add_drawing( RECTANGLE,   @slot_bounds, $border_color, 10 );
     }
 
+    #
+    # Add the legend 
+    #
+    my @bounds = ( $min_x, $max_y+10  );
+    my $font   = $self->regular_font;
+    my $x      = $min_x + 20;
+    $max_y    += 20;
     #
     # Add the legend for the feature types.
     #
     if ( my @feature_types = $self->feature_types_seen ) {
-        $max_y    += 20;
-        my @bounds = ( $min_x, $max_y - 10 );
-        my $font   = $self->regular_font;
-        my $x      = $min_x + 20;
         my $string = 'Feature Types:';
         $self->add_drawing( 
             STRING, $font, $x, $max_y, $string, 'black' 
@@ -747,62 +753,102 @@ Lays out the image and writes it to the file system, set the "image_name."
             }
         }
         $max_y += 5;
-
-        #
-        # Extra symbols.
-        #
-        my @buttons = (
-            [ 'i' => 'Map Set Info' ],
-            [ '?' => 'Map Details' ],
-            [ 'M' => 'Matrix View' ],
-            [ 'X' => 'Delete Map' ],
-            [ 'F' => 'Flip Map' ],
-            [ 'N' => 'New Map View' ],
-        );
-        {
-            $self->add_drawing( 
-                STRING, $font, $x, $max_y, 'Menu Symbols:', 'black' 
-            );
-            $max_y += $font->height + 10;
-
-            for my $button ( @buttons ) {
-                my ( $sym, $caption ) = @$button;
-                $self->add_drawing(
-                    STRING, $font, $x + 2, $max_y + 2, $sym, 'grey'
-                );
-                my $end = $x + $font->width + 4;
-
-                $self->add_drawing(
-                    RECTANGLE, $x, $max_y, $end, 
-                    $max_y + $font->height + 4, 'grey'
-                );
-
-                $self->add_drawing( 
-                    STRING, $font, $end + 5, $max_y + 2, $caption, 'black' 
-                );
-
-                $max_y += $font->height + 10;
-            }
-        }
-
-        my $watermark = 'CMap v'.$Bio::GMOD::CMap::VERSION;
-        my $wm_x      = $max_x - $font->width * length( $watermark ) - 5;
-        my $wm_y      = $max_y;
-        $self->add_drawing( STRING, $font, $wm_x, $wm_y, $watermark, 'grey' );
-        $self->add_map_area(
-            coords => [ $wm_x, $wm_y , 
-                        $wm_x + $font->width * length( $watermark ), $wm_y + $font->height ],
-            url    => CMAP_URL,
-            alt    => 'GMOD-CMap website',
-        );
-
-        $max_y += $font->height + 5;
-
-        push @bounds, ( $max_x, $max_y );
-
-        $self->add_drawing( FILLED_RECT, @bounds, $bg_color,     -1 );
-        $self->add_drawing( RECTANGLE,   @bounds, $border_color, -1 );
     }
+
+    if ($corrs_aggregated){
+        
+        $self->add_drawing( 
+            STRING, $font, $x, $max_y, 'Aggregated Correspondences Colors:', 'black' 
+        );
+        $max_y += $font->height + 10;
+        my $corr_colors
+            = $self->aggregated_correspondence_colors;
+        my $corr_color_bounds
+            = $self->aggregated_correspondence_color_bounds;
+        my $default_color = $self->default_aggregated_correspondence_color;
+        if ($corr_color_bounds and @$corr_color_bounds){
+            my $last_bound;
+            foreach my $color_bound (@$corr_color_bounds){
+                $self->add_drawing(
+                    STRING, $font, $x, $max_y, $color_bound.' or less correspondences', 
+                    $corr_colors->{$color_bound}
+                );
+                $max_y += $font->height + 4; 
+                $last_bound = $color_bound;
+            }
+            $self->add_drawing(
+                STRING, $font, $x, $max_y, 'More than '.$last_bound.' correspondences', 
+                $default_color
+            );
+            $max_y += $font->height + 4; 
+        }
+        else{
+            $self->add_drawing(
+                STRING, $font, $x, $max_y, 'All Aggregated Correspondences',
+                $default_color
+            );
+            $max_y += $font->height + 4;
+
+        }
+        $max_y += $font->height ; 
+
+
+    }
+
+    #
+    # Extra symbols.
+    #
+    my @buttons = (
+        [ 'i' => 'Map Set Info' ],
+        [ '?' => 'Map Details' ],
+        [ 'M' => 'Matrix View' ],
+        [ 'X' => 'Delete Map' ],
+        [ 'F' => 'Flip Map' ],
+        [ 'N' => 'New Map View' ],
+    );
+    {
+        $self->add_drawing( 
+            STRING, $font, $x, $max_y, 'Menu Symbols:', 'black' 
+        );
+        $max_y += $font->height + 10;
+
+        for my $button ( @buttons ) {
+            my ( $sym, $caption ) = @$button;
+            $self->add_drawing(
+                STRING, $font, $x + 2, $max_y + 2, $sym, 'grey'
+            );
+            my $end = $x + $font->width + 4;
+
+            $self->add_drawing(
+                RECTANGLE, $x, $max_y, $end, 
+                $max_y + $font->height + 4, 'grey'
+            );
+
+            $self->add_drawing( 
+                STRING, $font, $end + 5, $max_y + 2, $caption, 'black' 
+            );
+
+            $max_y += $font->height + 10;
+        }
+    }
+
+    my $watermark = 'CMap v'.$Bio::GMOD::CMap::VERSION;
+    my $wm_x      = $max_x - $font->width * length( $watermark ) - 5;
+    my $wm_y      = $max_y;
+    $self->add_drawing( STRING, $font, $wm_x, $wm_y, $watermark, 'grey' );
+    $self->add_map_area(
+        coords => [ $wm_x, $wm_y , 
+                    $wm_x + $font->width * length( $watermark ), $wm_y + $font->height ],
+        url    => CMAP_URL,
+        alt    => 'GMOD-CMap website',
+    );
+
+    $max_y += $font->height + 5;
+
+    push @bounds, ( $max_x, $max_y );
+
+    $self->add_drawing( FILLED_RECT, @bounds, $bg_color,     -1 );
+    $self->add_drawing( RECTANGLE,   @bounds, $border_color, -1 );
 
     $self->max_x( $max_x );
 
@@ -1823,6 +1869,79 @@ Returns the number of slots.
 
     my $self = shift;
     return scalar keys %{ $self->slot_data };
+}
+
+# ----------------------------------------------------
+sub aggregated_correspondence_colors {
+
+=pod
+
+=head2 aggregated_correspondence_colors
+
+Returns the correspondence colors specified in the config file.
+
+=cut
+
+    my $self = shift;
+
+    unless($self->{'corr_colors'}){
+        $self->{'corr_colors'}
+            = $self->config_data('aggregated_correspondence_colors');
+    }
+
+    return $self->{'corr_colors'};
+}
+
+# ----------------------------------------------------
+sub default_aggregated_correspondence_color {
+
+=pod
+
+=head2 default_aggregated_correspondence_color
+
+Returns the correspondence colors specified as the default or black.
+
+=cut
+
+    my $self = shift;
+
+    unless($self->{'default_corr_color'}){
+        my $corr_colors = $self->aggregated_correspondence_colors;
+        if ($corr_colors and %$corr_colors){
+            $self->{'default_corr_color'}
+                = $corr_colors->{0};
+        }
+        unless($self->{'default_corr_color'}){
+            $self->{'default_corr_color'}='black';
+        }
+    }
+
+    return $self->{'default_corr_color'};
+}
+
+# ----------------------------------------------------
+sub aggregated_correspondence_color_bounds {
+
+=pod
+
+=head2 aggregated_correspondence_color_bounds
+
+Returns the upper bounds of the correspondence colors specified 
+in the config file.
+
+=cut
+
+    my $self = shift;
+
+    unless($self->{'corr_color_bounds'}){
+        my $corr_colors = $self->aggregated_correspondence_colors;
+        if ($corr_colors and %$corr_colors){
+            @{$self->{'corr_color_bounds'}} 
+                = sort {$a <=> $b} grep {$_} keys(%$corr_colors)
+        }
+    }
+
+    return $self->{'corr_color_bounds'};
 }
 
 1;
