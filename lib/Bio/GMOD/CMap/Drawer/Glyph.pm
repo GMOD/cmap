@@ -24,7 +24,7 @@ use Bio::GMOD::CMap::Constants;
 use Regexp::Common;
 require Class::Base;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use base 'Class::Base';
 
@@ -499,7 +499,7 @@ sub read_depth {
     else{
         $x_pos2 = $x_pos1;
     }
-
+    $x_pos2 += 3;
     push @$drawing_data,
       [
         LINE, $x_pos2,
