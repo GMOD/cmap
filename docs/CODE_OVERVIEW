@@ -1,10 +1,11 @@
                            CMAP CODE OVERVIEW
 
-The comparative and genetic maps application ("CMAP") is written entirely in
-Perl and takes advantage of mod_perl, Apache's embedded Perl technology.  The
-application also relies upon a relational database management system (RDBMS),
-such as Oracle or MySQL for gathering the data, and uses Paul Boutell's "libgd"
-and Lincoln Stein's "GD" Perl module to draw the maps.  The code was
+The comparative and genetic maps application ("CMAP") is written
+entirely in Perl and takes advantage of mod_perl, Apache's embedded
+Perl technology.  The application also relies upon a relational
+database management system (RDBMS), such as Oracle, MySQL or
+PostgreSQL for gathering the data, and uses Paul Boutell's "libgd" and
+Lincoln Stein's "GD" Perl module to draw the maps.  The code was
 originally written for the Gramene project (http://www.gramene.org/),
 a comparative mapping resource for crop grasses, but much has been
 done to make the application generic enough to be used with many
@@ -209,9 +210,9 @@ databases.
 8. TABLE DESCRIPTIONS
 
 In the "sql" directory, you will find create statements of the tables
-for both MySQL and Oracle.  Following is a general description of each
-table, what kind of data it is supposed to hold, and how it fits in
-with the others:
+for MySQL, Oracle and PostgreSQL.  Following is a general description
+of each table, what kind of data it is supposed to hold, and how it
+fits in with the others:
 
 *   cmap_map_set: Arguably the "base" table, a "map set" is a collection
     of "maps," which themselves are just points on a line. Generally a
@@ -284,8 +285,10 @@ with the others:
     By implementing this in Perl, I don't have to worry how (or even
     "if") a particular RDBMS supports some one-up field.
 
-*   cmap_map_set_correspondence: This table is not currently used and
-    may be dropped.
+*   cmap_dbxref: This table holds database cross-references, which are
+    just URLs that can be used to link features to other on-line
+    databases.  See the section called "DATABASE CROSS-REFERENCES" in
+    the INSTALL document for a full description on how these work.
 
 9. AUTHOR
 
