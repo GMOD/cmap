@@ -2,6 +2,16 @@
 <a href="admin">Home</a> |
 <a href="admin?action=feature_types_view">View Feature Types</a>
 <hr noshade>
+
+[% IF errors.size %]
+    <b>There were errors:</b>
+    <ul>
+        [% FOREACH e=errors %]
+          <li>[% e %]</li>
+        [% END %]
+    </ul>
+[% END %]
+
 <form action="admin" method="post">
 <table>
     <tr>
@@ -18,6 +28,7 @@
         <td align="right">Shape:</td>
         <td>
             <select name="shape">
+                <option value="">--Please Select--</option>
                 [% FOREACH shape=shapes %]
                     <option value="[% shape %]">[% shape %]</option>
                 [% END %]

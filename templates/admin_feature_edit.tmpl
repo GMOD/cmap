@@ -2,6 +2,16 @@
 
 <a href="admin">Home</a> |
 <a href="admin?action=feature_view;feature_id=[% feature.feature_id %]">View Feature</a>
+<hr noshade>
+
+[% IF errors.size %]
+    <b>There were errors:</b>
+    <ul>
+        [% FOREACH e=errors %]
+          <li>[% e %]</li>
+        [% END %]
+    </ul>
+[% END %]
 
 <form action="admin" method="post">
 <table>

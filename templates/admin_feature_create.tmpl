@@ -1,6 +1,16 @@
 [% INCLUDE admin_header.tmpl title="Create Feature" %]
 
 <a href="admin">Home</a>
+<hr noshade>
+
+[% IF errors.size %]
+    <b>There were errors:</b>
+    <ul>
+        [% FOREACH e=errors %]
+          <li>[% e %]</li>
+        [% END %]
+    </ul>
+[% END %]
 
 <form action="admin" method="post">
 <table>

@@ -1,6 +1,16 @@
-[% INCLUDE admin_header.tmpl title='Feature Correspodence Create' %]
-<a href="admin">Home</a> |
+[% INCLUDE admin_header.tmpl title='Feature Correspondence Create' %]
+<a href="admin">Home</a>
 <hr noshade>
+
+[% IF errors.size %]
+    <b>There were errors:</b>
+    <ul>
+        [% FOREACH e=errors %]
+          <li>[% e %]</li>
+        [% END %]
+    </ul>
+[% END %]
+
 <table>
     <tr>
         <td>Feature 1:</th>

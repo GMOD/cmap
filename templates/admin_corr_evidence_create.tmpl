@@ -1,6 +1,16 @@
 [% INCLUDE admin_header.tmpl title='Correspondence Evidence Create' %]
 <a href="admin">Home</a>
 <hr noshade>
+
+[% IF errors.size %]
+    <b>There were errors:</b>
+    <ul>
+        [% FOREACH e=errors %] 
+          <li>[% e %]</li> 
+        [% END %]
+    </ul>
+[% END %]
+
 <form action="admin" metdod="post">
 <table>
     <tr>
@@ -19,9 +29,10 @@
         <td align="right">Evidence Type(s):</td>
         <td>
             <select name="evidence_type_id">
-            [% FOREACH et=evidence_types %]
-                <option value="[% et.evidence_type_id %]">[% et.evidence_type %]([% et.rank %])</option>
-            [% END %]
+                <option value="">--Please Select--</option>
+                [% FOREACH et=evidence_types %]
+                    <option value="[% et.evidence_type_id %]">[% et.evidence_type %]([% et.rank %])</option>
+                [% END %]
             </select>
         </td>
     </tr>

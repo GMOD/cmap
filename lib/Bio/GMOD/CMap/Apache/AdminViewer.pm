@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.6 2002-09-16 12:25:09 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.7 2002-09-17 20:30:18 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -28,7 +28,7 @@ $COLORS         = [ sort keys %{ +COLORS } ];
 $FEATURE_SHAPES = [ qw( box dumbbell line span ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.6 $)[-1];
+$VERSION        = (qw$Revision: 1.7 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -73,7 +73,14 @@ sub handler {
 #
     my ( $self, $apr ) = @_;
     my $action         = $apr->param( 'action' ) || 'admin_home';
-    return $self->$action();
+    my $return         = eval { $self->$action() };
+    if ( my $err = $@ || $self->error ) {
+        $self->process_template(
+            $self->error_template,
+            { error => $err }
+        );
+    }
+    return $return || OK;
 }
 
 # ----------------------------------------------------
@@ -159,24 +166,32 @@ sub confirm_delete {
 
 # ----------------------------------------------------
 sub corr_evidence_type_create {
-    my $self = shift;
-    return $self->process_template( TEMPLATE->{'corr_evidence_type_create'} );
+    my ( $self, %args ) = @_;
+    return $self->process_template( 
+        TEMPLATE->{'corr_evidence_type_create'},
+        { 
+            errors => $args{'errors'} 
+        }
+    );
 }
 
 # ----------------------------------------------------
 sub corr_evidence_type_insert {
     my $self          = shift;
+    my @errors        = ();
     my $db            = $self->db;
     my $apr           = $self->apr;
+    my $evidence_type = $apr->param('evidence_type') or 
+        push @errors, 'No evidence type';
     my $evidence_id   = next_number(
         db            => $db, 
         table_name    => 'cmap_evidence_type',
         id_field      => 'evidence_type_id',
-    ) or die 'No next number for correspondence evidence type id';
-
+    ) or push @errors, 'No next number for correspondence evidence type id';
     my $accession_id  = $apr->param('accession_id')  || $evidence_id;
-    my $evidence_type = $apr->param('evidence_type') or die 'No type';
     my $rank          = $apr->param('rank')          || 1;
+
+    return $self->corr_evidence_type_create( errors => \@errors ) if @errors;
 
     $db->do(
         q[
@@ -196,10 +211,12 @@ sub corr_evidence_type_insert {
 
 # ----------------------------------------------------
 sub corr_evidence_type_edit {
-    my $self             = shift;
+    my ( $self, %args )  = @_;
+    my $errors           = $args{'errors'};
     my $db               = $self->db;
     my $apr              = $self->apr;
-    my $evidence_type_id = $apr->param('evidence_type_id') or die 'No id';
+    my $evidence_type_id = $apr->param('evidence_type_id') 
+        or return $self->error('No evidence type id');
 
     my $sth = $db->prepare(
         q[
@@ -212,26 +229,34 @@ sub corr_evidence_type_edit {
         ]
     );
     $sth->execute( $evidence_type_id );
-    my $evidence_type = $sth->fetchrow_hashref;
+    my $evidence_type = $sth->fetchrow_hashref or return $self->error(
+        "No evidence type for ID '$evidence_type_id'"
+    );
 
     return $self->process_template( 
         TEMPLATE->{'corr_evidence_type_edit'}, 
-        { evidence_type => $evidence_type }
+        { 
+            evidence_type => $evidence_type,
+            errors        => $errors,
+        }
     );
 }
 
 # ----------------------------------------------------
 sub corr_evidence_type_update {
     my $self             = shift;
+    my @errors           = ();
     my $db               = $self->db;
     my $apr              = $self->apr;
     my $evidence_type_id = $apr->param('evidence_type_id') 
-                           or die 'No evidence type id';
+                           or push @errors, 'No evidence type id';
     my $accession_id     = $apr->param('accession_id')  
-                           or die 'No accession id';
+                           or push @errors, 'No accession id';
     my $evidence_type    = $apr->param('evidence_type') 
-                           or die 'No evidence type';
+                           or push @errors, 'No evidence type';
     my $rank             = $apr->param('rank') || 1;
+
+    return $self->corr_evidence_type_edit( errors => \@errors ) if @errors;
 
     $db->do(
         q[
@@ -241,7 +266,7 @@ sub corr_evidence_type_update {
         ],
         {},
         ( $accession_id, $evidence_type, $rank, $evidence_type_id )
-    );    
+    );
 
     return $self->redirect_home( 
         ADMIN_HOME_URI.'?action=corr_evidence_types_view'
@@ -467,22 +492,22 @@ sub dbxrefs_view {
     my $feature_type_id = $apr->param('feature_type_id') || 0;
 
     my $sql = qq[
-        select    d.dbxref_id,
-                  d.map_set_id,
-                  d.feature_type_id,
-                  d.species_id,
-                  d.dbxref_name,
-                  d.url,
-                  ft.feature_type,
-                  ms.short_name as map_set_name,
-                  s.common_name as species_name
-        from      cmap_dbxref d
-        left join cmap_map_set ms
-        on        d.map_set_id=ms.map_set_id
-        left join cmap_species s
-        on        d.species_id=s.species_id
+        select     d.dbxref_id,
+                   d.map_set_id,
+                   d.feature_type_id,
+                   d.species_id,
+                   d.dbxref_name,
+                   d.url,
+                   ft.feature_type,
+                   ms.short_name as map_set_name,
+                   s.common_name as species_name
+        from       cmap_dbxref d
+        left join  cmap_map_set ms
+        on         d.map_set_id=ms.map_set_id
+        left join  cmap_species s
+        on         d.species_id=s.species_id
         inner join cmap_feature_type ft
-        on        d.feature_type_id=ft.feature_type_id
+        on         d.feature_type_id=ft.feature_type_id
     ];
     $sql .= "and d.species_id=$species_id "           if $species_id;
     $sql .= "and d.feature_type_id=$feature_type_id " if $feature_type_id;
@@ -810,10 +835,10 @@ sub error_template {
 
 # ----------------------------------------------------
 sub map_create {
-    my $self       = shift;
-    my $db         = $self->db;
-    my $apr        = $self->apr;
-    my $map_set_id = $apr->param('map_set_id') or die 'No map set id';
+    my ( $self, %args ) = @_;
+    my $db              = $self->db;
+    my $apr             = $self->apr;
+    my $map_set_id      = $apr->param('map_set_id') or die 'No map set id';
 
     my $sth = $db->prepare(
         q[
@@ -831,7 +856,10 @@ sub map_create {
 
     return $self->process_template( 
         TEMPLATE->{'map_create'}, 
-        { map_set => $map_set }
+        { 
+            map_set => $map_set,
+            errors  => $args{'errors'},
+        }
     );
 }
 
@@ -878,6 +906,7 @@ sub map_edit {
 # ----------------------------------------------------
 sub map_insert {
     my $self           = shift;
+    my @errors         = ();
     my $db             = $self->db;
     my $apr            = $self->apr;
     my $map_id         = next_number(
@@ -886,12 +915,16 @@ sub map_insert {
         id_field       => 'map_id',
     ) or die 'No next number for map id';
     my $accession_id   = $apr->param('accession_id') || $map_id;
-    my $map_name       = $apr->param('map_name')     or die 'No map name';
-    my $map_set_id     = $apr->param('map_set_id')   or die 'No map set id';
+    my $map_name       = $apr->param('map_name')     or 
+                         push @errors, 'No map name';
+    my $map_set_id     = $apr->param('map_set_id')   or 
+                         push @errors, 'No map set id';
     my $start_position = $apr->param('start_position');
     my $stop_position  = $apr->param('stop_position');
-    die "No start" unless $start_position =~ NUMBER_RE;
-    die "No stop"  unless $stop_position  =~ NUMBER_RE;
+    push @errors, 'No start' unless $start_position =~ NUMBER_RE;
+    push @errors, 'No stop'  unless $stop_position  =~ NUMBER_RE;
+
+    return $self->map_create( errors => \@errors ) if @errors;
     
     $db->do(
         q[
@@ -1062,10 +1095,10 @@ sub map_update {
 
 # ----------------------------------------------------
 sub feature_create {
-    my $self   = shift;
-    my $db     = $self->db;
-    my $apr    = $self->apr;
-    my $map_id = $apr->param('map_id') or die 'No map id';
+    my ( $self, %args ) = @_;
+    my $db              = $self->db;
+    my $apr             = $self->apr;
+    my $map_id          = $apr->param('map_id') or die 'No map id';
 
     my $sth = $db->prepare(
         q[
@@ -1099,16 +1132,17 @@ sub feature_create {
         { 
             map           => $map,
             feature_types => $feature_types,
+            errors        => $args{'errors'},
         }
     );
 }
 
 # ----------------------------------------------------
 sub feature_edit {
-    my $self       = shift;
-    my $db         = $self->db;
-    my $apr        = $self->apr;
-    my $feature_id = $apr->param('feature_id') or die 'No feature id';
+    my ( $self, %args ) = @_;
+    my $db              = $self->db;
+    my $apr             = $self->apr;
+    my $feature_id      = $apr->param('feature_id') or die 'No feature id';
 
     my $sth = $db->prepare(
         q[
@@ -1157,6 +1191,7 @@ sub feature_edit {
         { 
             feature       => $feature,
             feature_types => $feature_types,
+            errors        => $args{'errors'},
         }, 
     );
 }
@@ -1164,25 +1199,29 @@ sub feature_edit {
 # ----------------------------------------------------
 sub feature_insert {
     my $self            = shift;
+    my @errors          = ();
     my $db              = $self->db;
     my $apr             = $self->apr;
+    my $map_id          = $apr->param('map_id') or die 'No map_id';
     my $feature_id      = next_number(
         db              => $db, 
         table_name      => 'cmap_feature',
         id_field        => 'feature_id',
     ) or die 'No feature id';
     my $accession_id    = $apr->param('accession_id') || $feature_id;
-    my $map_id          = $apr->param('map_id')       or die 'No map_id';
-    my $feature_name    = $apr->param('feature_name') or die 'No feature name';
+    my $feature_name    = $apr->param('feature_name') or 
+                          push @errors, 'No feature name';
     my $alternate_name  = $apr->param('alternate_name') || '';
     my $feature_type_id = $apr->param('feature_type_id') 
-                           or die 'No feature type id';
+                           or push @errors, 'No feature type';
     my $start_position  = $apr->param('start_position');
-    die "No start" unless defined $start_position =~ NUMBER_RE;
+    push @errors, "No start" unless $start_position =~ NUMBER_RE;
     my $stop_position   = $apr->param('stop_position');
     my $is_landmark     = $apr->param('is_landmark') || 0;
     my $dbxref_name     = $apr->param('dbxref_name') || '';
     my $dbxref_url      = $apr->param('dbxref_url')  || '';
+
+    return $self->feature_create( errors => \@errors ) if @errors;
 
     my @insert_args = ( 
         $feature_id, $accession_id, $map_id, $feature_name, 
@@ -1220,20 +1259,26 @@ sub feature_insert {
 # ----------------------------------------------------
 sub feature_update {
     my $self            = shift;
+    my @errors          = ();
     my $db              = $self->db;
     my $apr             = $self->apr;
-    my $feature_id      = $apr->param('feature_id')   or die 'No feature id';
-    my $accession_id    = $apr->param('accession_id') or die 'No accession id';
-    my $feature_name    = $apr->param('feature_name') or die 'No feature name';
+    my $feature_id      = $apr->param('feature_id')   or 
+                          push @errors, 'No feature id';
+    my $accession_id    = $apr->param('accession_id') or 
+                          push @errors, 'No accession id';
+    my $feature_name    = $apr->param('feature_name') or 
+                          push @errors, 'No feature name';
     my $alternate_name  = $apr->param('alternate_name') || '';
     my $feature_type_id = $apr->param('feature_type_id') 
                           or die 'No feature type id';
     my $is_landmark     = $apr->param('is_landmark') || 0;
     my $start_position  = $apr->param('start_position');
-    die "No start" unless defined $start_position =~ NUMBER_RE;
+    push @errors, "No start" unless $start_position =~ NUMBER_RE;
     my $stop_position   = $apr->param('stop_position');
     my $dbxref_name     = $apr->param('dbxref_name') || '';
     my $dbxref_url      = $apr->param('dbxref_url')  || '';
+
+    return $self->feature_edit( errors => \@errors ) if @errors;
 
     my $sql = q[
         update cmap_feature
@@ -1294,7 +1339,9 @@ sub feature_view {
         ]
     );
     $sth->execute( $feature_id );
-    my $feature = $sth->fetchrow_hashref;
+    my $feature = $sth->fetchrow_hashref or return $self->error(
+        "No feature for ID '$feature_id'"
+    );
 
     my $correspondences = $db->selectall_arrayref(
         q[
@@ -1382,15 +1429,14 @@ sub feature_search {
 
 # ----------------------------------------------------
 sub feature_corr_create {
-    my $self          = shift;
-    my $db            = $self->db;
-    my $apr           = $self->apr;
-    my $feature_id1   = $apr->param('feature_id1')   or die 'No feature id';
-    my $feature_id2   = $apr->param('feature_id2')   || 0;
-    my $feature2_name = $apr->param('feature2_name') || '';
-    my $species_id    = $apr->param('species_id')    || 0;
-
-    my $sth           = $db->prepare(
+    my ( $self, %args ) = @_;
+    my $db              = $self->db;
+    my $apr             = $self->apr;
+    my $feature_id1     = $apr->param('feature_id1')   or die 'No feature id';
+    my $feature_id2     = $apr->param('feature_id2')   ||  0;
+    my $feature2_name   = $apr->param('feature2_name') || '';
+    my $species_id      = $apr->param('species_id')    ||  0;
+    my $sth             = $db->prepare(
         q[
             select f.feature_id,
                    f.feature_name,
@@ -1410,12 +1456,16 @@ sub feature_corr_create {
         ]
     );
     $sth->execute( $feature_id1 );
-    my $feature1 = $sth->fetchrow_hashref;
+    my $feature1 = $sth->fetchrow_hashref or return $self->error(
+        "No feature for ID '$feature_id1'"
+    );
 
     my $feature2;
     if ( $feature_id2 ) {
         $sth->execute( $feature_id2 );
-        $feature2 = $sth->fetchrow_hashref;
+        $feature2 = $sth->fetchrow_hashref or return $self->error(
+            "No feature for ID '$feature_id2'"
+        );
     }
 
     my $feature2_choices;
@@ -1463,6 +1513,7 @@ sub feature_corr_create {
             feature2         => $feature2,
             feature2_choices => $feature2_choices,
             species          => $species,
+            errors           => $args{'errors'},
         }, 
     );
 }
@@ -1470,14 +1521,18 @@ sub feature_corr_create {
 # ----------------------------------------------------
 sub feature_corr_insert {
     my $self         = shift;
+    my @errors       = ();
     my $db           = $self->db;
     my $apr          = $self->apr;
     my $feature_id1  = $apr->param('feature_id1') or die 'No feature id 1';
     my $feature_id2  = $apr->param('feature_id2') or die 'No feature id 2';
     my $accession_id = $apr->param('accession_id') || '';
 
-#    my @evidence_type_ids = $apr->param('evidence_type_id');
-#    warn "ev types = ", Dumper( @evidence_type_ids ), "\n";
+    push @errors, 
+        "Can't create a circular correspondence (feature IDs are the same)"
+        if $feature_id1 == $feature_id2;
+
+    return $self->feature_corr_create( errors => \@errors ) if @errors;
 
     my $feature_correspondence_id = $db->selectrow_array(
         q[
@@ -1512,17 +1567,6 @@ sub feature_corr_insert {
         );
     }
 
-#    for my $evidence_type_id ( @evidence_type_ids ) {
-#        next if $db->selectrow_array(
-#            q[
-#                select count(*)
-#                from   cmap_correspondence_evidence
-#                where  feature_correspondence_id=?
-#                and    evidence_type_id=?
-#            ]
-#        );
-#    }
-
     return $self->redirect_home( 
         ADMIN_HOME_URI.'?action=feature_corr_view;'.
             "feature_correspondence_id=$feature_correspondence_id"
@@ -1536,7 +1580,7 @@ sub feature_corr_view {
     my $apr                       = $self->apr;
     my $order_by                  = $apr->param('order_by') || 'evidence_type';
     my $feature_correspondence_id = $apr->param('feature_correspondence_id')
-        or die 'No feature correspondence id';
+        or return $self->error('No feature correspondence id');
 
     my $sth = $db->prepare(
         q[
@@ -1548,8 +1592,10 @@ sub feature_corr_view {
             where  fc.feature_correspondence_id=?
         ]
     );
-    $sth->execute( $feature_correspondence_id );
-    my $corr = $sth->fetchrow_hashref;
+    $sth->execute( $feature_correspondence_id ); 
+    my $corr = $sth->fetchrow_hashref or return $self->error(
+        "No record for feature correspondence ID '$feature_correspondence_id'"
+    );
 
     $sth = $db->prepare(
         q[
@@ -1614,11 +1660,11 @@ sub feature_corr_view {
 
 # ----------------------------------------------------
 sub corr_evidence_create {
-    my $self                      = shift;
+    my ( $self, %args )           = @_;
     my $db                        = $self->db;
     my $apr                       = $self->apr;
     my $feature_correspondence_id = $apr->param('feature_correspondence_id') 
-        or die 'No feature correspondence id';
+        or return $self->error('No feature correspondence id');
 
     my $sth = $db->prepare(
         q[
@@ -1637,7 +1683,9 @@ sub corr_evidence_create {
         ]
     );
     $sth->execute( $feature_correspondence_id );
-    my $corr = $sth->fetchrow_hashref;
+    my $corr = $sth->fetchrow_hashref or return $self->error(
+        "No feature correspondence for ID '$feature_correspondence_id'"
+    );
 
     my $evidence_types = $db->selectall_arrayref(
         q[
@@ -1655,13 +1703,14 @@ sub corr_evidence_create {
         {
             corr           => $corr,
             evidence_types => $evidence_types,
+            errors         => $args{'errors'},
         }
     );
 }
 
 # ----------------------------------------------------
 sub corr_evidence_edit {
-    my $self                       = shift;
+    my ( $self, %args )            = @_;
     my $db                         = $self->db;
     my $apr                        = $self->apr;
     my $correspondence_evidence_id = $apr->param('correspondence_evidence_id')
@@ -1688,7 +1737,7 @@ sub corr_evidence_edit {
                      et.evidence_type,
                      et.rank
             from     cmap_evidence_type et
-            order by et.rank
+            order by rank, evidence_type
         ],
         { Columns => {} }
     );
@@ -1698,6 +1747,7 @@ sub corr_evidence_edit {
         {
             corr           => $corr,
             evidence_types => $evidence_types,
+            errors         => $args{'errors'},
         }
     );
 }
@@ -1705,12 +1755,13 @@ sub corr_evidence_edit {
 # ----------------------------------------------------
 sub corr_evidence_insert {
     my $self                      = shift;
+    my @errors                    = ();
     my $db                        = $self->db;
     my $apr                       = $self->apr;
     my $feature_correspondence_id = $apr->param('feature_correspondence_id') 
-        or die 'No feature correspondence id';
+        or push @errors, 'No feature correspondence id';
     my $evidence_type_id          = $apr->param('evidence_type_id') 
-        or die 'No evidence type id';
+        or push @errors, 'No evidence type id';
     my $score                     = $apr->param('score') || '';
     my $remark                    = $apr->param('remark') || '';
 
@@ -1718,7 +1769,9 @@ sub corr_evidence_insert {
         db               => $db, 
         table_name       => 'cmap_correspondence_evidence',
         id_field         => 'correspondence_evidence_id',
-    ) or die 'No feature type id';
+    ) or push @errors, 'No correspondence evidence id';
+
+    return $self->corr_evidence_create( errors => \@errors ) if @errors;
 
     my $accession_id = $apr->param('accession_id')||$correspondence_evidence_id;
     
@@ -1747,18 +1800,21 @@ sub corr_evidence_insert {
 # ----------------------------------------------------
 sub corr_evidence_update {
     my $self                       = shift;
+    my @errors                     = ();
     my $db                         = $self->db;
     my $apr                        = $self->apr;
     my $correspondence_evidence_id = $apr->param('correspondence_evidence_id') 
-        or die 'No correspondence evidence id';
+        or push @errors, 'No correspondence evidence id';
     my $accession_id               = $apr->param('accession_id')
         || $correspondence_evidence_id;
     my $feature_correspondence_id  = $apr->param('feature_correspondence_id') 
-        or die 'No feature correspondence id';
+        or push @errors, 'No feature correspondence id';
     my $evidence_type_id           = $apr->param('evidence_type_id') 
-        or die 'No evidence type id';
+        or push @errors, 'No evidence type id';
     my $score                      = $apr->param('score') || '';
     my $remark                     = $apr->param('remark') || '';
+
+    return $self->corr_evidence_edit( errors => \@errors ) if @errors;
     
     $db->do(
         q[
@@ -1781,24 +1837,26 @@ sub corr_evidence_update {
 
 # ----------------------------------------------------
 sub feature_type_create {
-    my $self = shift;
+    my ( $self, %args ) = @_;
 
     return $self->process_template( 
         TEMPLATE->{'feature_type_create'}, 
         {
-            colors   => $COLORS,
-            shapes   => $FEATURE_SHAPES,
+            colors => $COLORS,
+            shapes => $FEATURE_SHAPES,
+            errors => $args{'errors'},
         }
     );
 }
 
 # ----------------------------------------------------
 sub feature_type_edit {
-    my $self = shift;
-    my $db   = $self->db;
-    my $apr  = $self->apr;
-
-    my $sth = $db->prepare(
+    my ( $self, %args ) = @_;
+    my $db              = $self->db;
+    my $apr             = $self->apr;
+    my $feature_type_id = $apr->param('feature_type_id') or 
+                          die 'No feature type id';
+    my $sth             = $db->prepare(
         q[
             select   accession_id,
                      feature_type_id, 
@@ -1809,8 +1867,10 @@ sub feature_type_edit {
             where    feature_type_id=?
         ]
     );
-    $sth->execute( $apr->param('feature_type_id') );
-    my $feature_type = $sth->fetchrow_hashref;
+    $sth->execute( $feature_type_id );
+    my $feature_type = $sth->fetchrow_hashref or return $self->error(
+        "No feature type for ID '$feature_type_id'"
+    );
 
     return $self->process_template( 
         TEMPLATE->{'feature_type_edit'},
@@ -1818,6 +1878,7 @@ sub feature_type_edit {
             feature_type => $feature_type,
             colors       => $COLORS,
             shapes       => $FEATURE_SHAPES,
+            errors       => $args{'errors'},
         }
     );
 }
@@ -1826,17 +1887,22 @@ sub feature_type_edit {
 # ----------------------------------------------------
 sub feature_type_insert {
     my $self            = shift;
+    my @errors          = ();
     my $db              = $self->db;
     my $apr             = $self->apr;
-    my $feature_type    = $apr->param('feature_type') or die 'No feature type';
-    my $shape           = $apr->param('shape')        or die 'No shape';
+    my $feature_type    = $apr->param('feature_type') or 
+                          push @errors, 'No feature type';
+    my $shape           = $apr->param('shape')        or 
+                          push @errors, 'No shape';
     my $color           = $apr->param('color')        || '';
     my $feature_type_id = next_number(
         db              => $db, 
         table_name      => 'cmap_feature_type',
         id_field        => 'feature_type_id',
-    ) or die 'No feature type id';
+    ) or push @errors, 'No feature type id';
     my $accession_id    = $apr->param('accession_id') || $feature_type_id;
+
+    return $self->feature_type_create( errors => \@errors ) if @errors;
 
     $db->do(
         q[ 
@@ -1855,15 +1921,20 @@ sub feature_type_insert {
 # ----------------------------------------------------
 sub feature_type_update {
     my $self            = shift;
+    my @errors          = ();
     my $db              = $self->db;
     my $apr             = $self->apr;
-    my $accession_id    = $apr->param('accession_id') or die 'No accession id';
-    my $shape           = $apr->param('shape')        or die 'No shape';
+    my $accession_id    = $apr->param('accession_id') or 
+                          push @errors, 'No accession id';
+    my $shape           = $apr->param('shape')        or 
+                          push @errors, 'No shape';
     my $color           = $apr->param('color')        || '';
     my $feature_type_id = $apr->param('feature_type_id') 
-        or die 'No feature type id';
+        or push @errors, 'No feature type id';
     my $feature_type    = $apr->param('feature_type')    
-        or die 'No feature type';
+        or push @errors, 'No feature type';
+
+    return $self->feature_type_edit( errors => \@errors ) if @errors;
 
     $db->do(
         q[ 

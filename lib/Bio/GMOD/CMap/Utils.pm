@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Utils;
 
-# $Id: Utils.pm,v 1.6 2002-09-15 19:12:52 kycl4rk Exp $
+# $Id: Utils.pm,v 1.7 2002-09-17 20:30:18 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.6 $)[-1];
+$VERSION = (qw$Revision: 1.7 $)[-1];
 
 use base 'Exporter';
 
@@ -204,6 +204,7 @@ Inserts a correspondence.
 =cut
     my ( $db, $feature_id1, $feature_id2, $evidence_type_id ) = @_;
 #    warn "  f1 = $feature_id1, f2 = $feature_id2, et = $evidence_type_id\n";
+    return if $feature_id1 == $feature_id2;
 
     #
     # Skip if a correspondence for this type exists already.

@@ -2,6 +2,15 @@
 <a href="admin">Home</a>
 <hr noshade>
 
+[% IF errors.size %]
+    <b>There were errors:</b>
+    <ul>
+        [% FOREACH e=errors %] 
+          <li>[% e %]</li> 
+        [% END %]
+    </ul>
+[% END %]
+
 <form method="post" action="admin">
 <table>
     <tr>
@@ -19,9 +28,10 @@
         </td>
         <td>
             <select name="evidence_type_id">
-            [% FOREACH et=evidence_types %]
-                <option value="[% et.evidence_type_id %]"[% IF et.evidence_type_id==corr.evidence_type_id %] selected[% END %]>[% et.evidence_type %]([% et.rank %])</option>
-            [% END %]
+                <option value="">--Please Select--</option>
+                [% FOREACH et=evidence_types %]
+                    <option value="[% et.evidence_type_id %]"[% IF et.evidence_type_id==corr.evidence_type_id %] selected[% END %]>[% et.evidence_type %]([% et.rank %])</option>
+                [% END %]
             </select>
         </td>
     </tr>
