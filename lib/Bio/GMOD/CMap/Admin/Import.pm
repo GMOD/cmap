@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.30 2003-05-09 21:51:36 kycl4rk Exp $
+# $Id: Import.pm,v 1.31 2003-05-29 18:25:51 kycl4rk Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.30 $)[-1];
+$VERSION  = (qw$Revision: 1.31 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -161,9 +161,7 @@ have for the map set).
         );
 
         for ( @$features ) {
-            $maps{ $map_name }{'features'}{ uc $_->{'feature_name'} } = {
-                feature_id => $_->{'feature_id'}
-            } 
+            $maps{ $map_name }{'features'}{ $_->{'feature_id'} } = 0;
         }
 
         $self->Print(
@@ -384,6 +382,8 @@ have for the map set).
         if ( 
             defined $start &&
             defined $stop  &&
+            $start ne ''   &&
+            $stop  ne ''   &&
             $stop < $start 
         ) {
             ( $start, $stop ) = ( $stop, $start );
@@ -440,7 +440,8 @@ have for the map set).
                 )
             );
 
-            $maps{uc $map_name}{'features'}{uc $feature_name}{'touched'} = 1;
+            $maps{ uc $map_name }{'features'}{ $feature_id } = 1 if 
+                defined $maps{ uc $map_name }{'features'}{ $feature_id };
         }
         else {
             #
@@ -547,13 +548,12 @@ have for the map set).
             }
 
             while ( 
-                my ( $feature_name, $feature ) =  
-                    each %{ $maps{ uc $map_name }{'features'} } 
+                my ( $feature_id, $touched ) = 
+                each %{ $maps{ uc $map_name }{'features'} } 
             ) {
-                next if $feature->{'touched'};
-                my $feature_id = $feature->{'feature_id'} or next;
+                next if $touched;
                 $self->Print(
-                    "Feature '$feature_name' ($feature_id) ",
+                    "Feature '$feature_id' ",
                     "wasn't updated or inserted, so deleting\n"
                 );
                 $admin->feature_delete( feature_id => $feature_id ) or return 
