@@ -1,0 +1,36 @@
+[% 
+    INCLUDE header.tmpl 
+    title='Data Download Help'
+    cur_sec='help'
+    help_anchor=''
+%]
+
+[% INCLUDE help_header.tmpl cur_sec='data_download' %]
+
+<h2>Data Download</h2>
+<p>
+You may download the data for either an entire map set or just one map
+in the set.  There are three formats available:
+
+<ul>
+    <li>
+        <b>CMap (tab-delimited):</b> this is the standard CMap tab-delimited
+format that can be easily parsed and imported into CMap
+    </li>
+    <li>
+        <b>GFF:</b> a standard tab-delimited format as described <a
+href="http://www.sanger.ac.uk/Software/formats/GFF/GFF_Spec.shtml">by
+the Sanger Center</a>
+    </li>
+    <li>
+        <b>CMap (XML):</b> an XML representation of the map set and maps.
+Each object that makes up an map set (its type, species, maps, the
+features on the maps and their types, etc.) is represented in their
+entirity.  This option is only available when downloading an entire
+map set.
+    </li>
+</ul>
+</p>
+
+[% page.end_body OR '</body>' %]
+</html>
