@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.27 2004-01-08 21:00:14 kycl4rk Exp $
+# $Id: MakeCorrespondences.pm,v 1.28 2004-01-13 23:00:52 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.27 $)[-1];
+$VERSION = (qw$Revision: 1.28 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -62,36 +62,48 @@ sub make_name_correspondences {
     #
     my %add_name_correspondences;
     for my $line ( $self->config('add_name_correspondence') ) {
-        my ( $ft1, $ft2 ) = split /\s+/, $line, 2;
-        my $ft_id1 = $db->selectrow_array(
-            q[
-                select ft.feature_type_id
-                from   cmap_feature_type ft
-                where  ft.accession_id=?
-            ],
-            {},
-            ( $ft1 ) 
-        );
+        my @feature_type_aids = split /\s+/, $line;
 
-        my $ft_id2 = $db->selectrow_array(
-            q[
-                select ft.feature_type_id
-                from   cmap_feature_type ft
-                where  ft.accession_id=?
-            ],
-            {},
-            ( $ft2 ) 
-        );
+        for my $i ( 0 .. $#feature_type_aids ) {
+            my $ft1    = $feature_type_aids[ $i ] or next;
+            my $ft_id1 = $db->selectrow_array(
+                q[
+                    select ft.feature_type_id
+                    from   cmap_feature_type ft
+                    where  ft.accession_id=?
+                ],
+                {},
+                ( $ft1 ) 
+            ) or next;
 
-        next unless $ft_id1 && $ft_id2;
-        $add_name_correspondences{ $ft_id1 }{ $ft_id2 } = 1;
-        $add_name_correspondences{ $ft_id2 }{ $ft_id1 } = 1;
+            for my $j ( 1 .. $#feature_type_aids ) {
+                my $ft2 = $feature_type_aids[ $j ];
+                next if $ft1 eq $ft2;
+                
+                my $ft_id2 = $db->selectrow_array(
+                    q[
+                        select ft.feature_type_id
+                        from   cmap_feature_type ft
+                        where  ft.accession_id=?
+                    ],
+                    {},
+                    ( $ft2 ) 
+                ) or next;
 
+                next if $ft_id1 == $ft_id2;
+                $add_name_correspondences{ $ft_id1 }{ $ft_id2 } = 1;
+                $add_name_correspondences{ $ft_id2 }{ $ft_id1 } = 1;
+            }
+        }
     }
 
-    for my $ft_id1 ( keys %add_name_correspondences ) { 
-        for my $ft_id2 ( keys %{ $add_name_correspondences{ $ft_id1 } } ) { 
-            for my $ft_id3 ( keys %{ $add_name_correspondences{ $ft_id2 } } ) { 
+    #
+    # Make sure they're all accounted for (e.g., possibly defined
+    # on multiple lines, as of old).
+    #
+    for my $ft_id1 ( keys %add_name_correspondences ) {
+        for my $ft_id2 ( keys %{ $add_name_correspondences{ $ft_id1 } } ) {
+            for my $ft_id3 ( keys %{ $add_name_correspondences{ $ft_id2 } } ) {
                 next if $ft_id1 == $ft_id3;
                 $add_name_correspondences{ $ft_id1 }{ $ft_id3 } = 1;
             }
