@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.3 $
+$Revision: 1.4 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -149,6 +149,11 @@ Dictates the default choice of the feature type display menu.
 Dictates which map units can be used to scale maps to each other.  Maps 
 with units described here will be scaled against maps with the same 
 units.  
+
+=item * disable_cache
+
+Set to one if the query cache should not be used.  This is handy for 
+speed testing or debugging.
 
 =back
 

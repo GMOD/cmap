@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.163 2004-10-19 13:47:23 kycl4rk Exp $
+# $Id: Data.pm,v 1.164 2004-10-25 15:33:04 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.163 $)[-1];
+$VERSION = (qw$Revision: 1.164 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -59,6 +59,7 @@ sub init {
           new Cache::FileCache( \%cache_params );
     }
     
+    $self->{'disable_cache'}=$self->config_data('disable_cache');
     $self->{'expanded_correspondence_lookup'} =
         $self->config_data('expanded_correspondence_lookup');
     return $self;
@@ -5341,8 +5342,8 @@ sub cache_array_results {
     $cache_level    = 1 unless $cache_level;    
     my $data;
     my $cache_key = $sql . join( '-', @$args );
-    unless ( $data 
-        = thaw( $self->{'L'.$cache_level.'_cache'}->get($cache_key) ) ) {
+    unless ( !$self->{'disable_cache'} and
+        $data = thaw( $self->{'L'.$cache_level.'_cache'}->get($cache_key) ) ) {
         $data = $db->$select_type( $sql, $attr, @$args );
         if ( ref $sub eq 'CODE' ) {
             $sub->( $data, $db );
@@ -5357,6 +5358,7 @@ sub get_cached_results {
     my $self        = shift;
     my $cache_level = shift;
     my $query       = shift;
+    return undef if ($self->{'disable_cache'});
     $cache_level    = 1 unless $cache_level;    
 
     return undef unless($query);
@@ -5368,6 +5370,7 @@ sub store_cached_results {
     my $cache_level = shift;
     my $query       = shift;
     my $object      = shift;
+    return undef if ($self->{'disable_cache'});
     $cache_level    = 1 unless $cache_level;    
 
     $self->{"L".$cache_level."_cache"}->set( $query, freeze($object) );

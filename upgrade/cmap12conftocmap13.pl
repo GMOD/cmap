@@ -60,7 +60,7 @@ print $global_conf q[# ----------------------------------------------------
 # enact any changes here.
 #
 # ----------------------------------------------------
-                                                                                
+
 #
 # An absolute path to the directory holding the templates
 # Default: Set on install
@@ -118,13 +118,13 @@ foreach my $db (@databases){
 # enact any changes here.
 #
 # ----------------------------------------------------
-                                                                                
+
 #
 # Enable this config file
 #
-                                                                                
+
 is_enabled 1
-                                                                                
+
 #
 # Database connection parameters
 #
@@ -187,9 +187,17 @@ foreach my $fh (@file_handles){
 # | feature_type_accession1   | varchar(20)  |
 # | feature_type_accession2   | varchar(20)  |
 # +---------------------------+--------------+
-                                                                                
+
 expanded_correspondence_lookup 1
-                                                                                
+
+#
+#disable_cache
+#
+# Set to 1 if the query cache should not be used.  This is handy for
+#  speed testing or debugging.
+# default is 0.
+disable_cache 0
+
 #feature_default_display
 # What the default display option should be for feature types
 # Default is 'display'.
@@ -212,7 +220,7 @@ feature_default_display=display
 # Start optional settings
 #
 # ----------------------------------------------------
-                                                                                
+
 #
 # Introductory texts for various pages.
 #
@@ -256,7 +264,7 @@ feature_default_display=display
 #
 #add_name_correspondence foo bar baz
 #add_name_correspondence fee fie
-                                                                                
+
 #
 # Any entries to "disallow_name_correspondence" will cause the admin
 # tool to NOT make correspondences between features of the types listed.
@@ -297,7 +305,7 @@ feature_default_display=display
 # Default: commented out
 #
 #cookie_domain .foo.org
-                                                                                
+
 ];
 
     print $fh q[#
