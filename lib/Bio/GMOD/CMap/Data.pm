@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.45 2003-04-17 17:46:49 kycl4rk Exp $
+# $Id: Data.pm,v 1.46 2003-05-16 17:06:52 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.45 $)[-1];
+$VERSION = (qw$Revision: 1.46 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -1163,9 +1163,10 @@ Returns the data for the main comparative map HTML form.
     # the ends of the ref. map.
     #
     if ( $ref_map_aid ) {
-        my $map_id = $self->acc_id_to_internal_id(
-            table  => 'cmap_map', 
-            acc_id => $ref_map_aid,
+        my $map_id   =  $self->acc_id_to_internal_id(
+            id_field => 'map_id',
+            table    => 'cmap_map', 
+            acc_id   => $ref_map_aid,
         );
 
         #
@@ -1396,7 +1397,7 @@ out which maps have relationships.
 
     #
     # Because of the mess with having to join down to the
-    # correspodence evidence table, it's hard to get the
+    # correspondence evidence table, it's hard to get the
     # *distinct* count of correspondences we need (because
     # there can be multiple evidence codes for each
     # correspondence).  For this reason, we have to just
