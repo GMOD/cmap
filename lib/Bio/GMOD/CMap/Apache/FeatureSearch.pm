@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::FeatureSearch;
 # vim: set ft=perl:
 
-# $Id: FeatureSearch.pm,v 1.17 2004-02-26 16:57:13 kycl4rk Exp $
+# $Id: FeatureSearch.pm,v 1.17.2.1 2004-03-31 20:23:39 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.17 $)[-1];
+$VERSION = (qw$Revision: 1.17.2.1 $)[-1];
 
 use Bio::GMOD::CMap::Data;
 use Data::Pageset;
@@ -37,13 +37,13 @@ sub handler {
     # if the user clicks on a link in the pager, then I have to look
     # in the "*_aids" field, which is a comma-separated string of acc. IDs.
     #
-    unless ( @species_aids ) {
+    if ( !@species_aids && $apr->param('species_aids') ) {
         @species_aids = split /,/, $apr->param('species_aids');
-    }
-
-    unless ( @feature_type_aids ) {
+    }   
+            
+    if ( !@feature_type_aids && $apr->param('feature_type_aids') ) {
         @feature_type_aids = split /,/, $apr->param('feature_type_aids');
-    }
+    }  
 
     #
     # "-1" is a reserved value meaning "All."
