@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.110 2004-05-06 14:10:23 mwz444 Exp $
+# $Id: Data.pm,v 1.111 2004-05-10 21:15:31 mwz444 Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.110 $)[-1];
+$VERSION = (qw$Revision: 1.111 $)[-1];
 
 use Data::Dumper;
 use Regexp::Common;
@@ -38,6 +38,7 @@ use Storable qw(freeze thaw);
 
 # ----------------------------------------------------
 sub init {
+    #p#rint S#TDERR "init\n";
     my ( $self, $config ) = @_;
     $self->config($config->{'config'});
     $self->data_source( $config->{'data_source'} );
@@ -104,7 +105,6 @@ Given an accession id for a particular table, find the internal id.  Expects:
 }
 
 # ----------------------------------------------------
-sub correspondence_detail_data {
 
 =pod
 
@@ -114,6 +114,8 @@ Gets the specifics on a feature correspondence record.
 
 =cut
 
+sub correspondence_detail_data {
+    #p#rint S#TDERR "correspondence_detail_data\n";
     my ( $self, %args )    = @_;
     my $correspondence_aid = $args{'correspondence_aid'} or 
         return $self->error('No correspondence accession ID');
@@ -127,7 +129,6 @@ Gets the specifics on a feature correspondence record.
             from   cmap_feature_correspondence
             where  accession_id=?
 		 ];
-print STDERR "REALLY HERE\n";
     my ($corr,$feature1,$feature2);
     unless (($corr,$feature1,$feature2)=@{$self->get_cached_results($sql.$correspondence_aid)}){
 	my $sth                = $db->prepare($sql);
@@ -212,8 +213,6 @@ print STDERR "REALLY HERE\n";
 }
 
 # ----------------------------------------------------
-sub cmap_data {
-
 =pod
 
 =head2 cmap_data
@@ -222,6 +221,8 @@ Organizes the data for drawing comparative maps.
 
 =cut
 
+sub cmap_data {
+    #p#rint S#TDERR "cmap_data\n";
     my ( $self, %args )        = @_;
     my $slots                  = $args{'slots'};
     my $min_correspondences    = $args{'min_correspondences'}    ||  0;
@@ -232,7 +233,7 @@ Organizes the data for drawing comparative maps.
     my @neg                    = sort { $b <=> $a } grep { $_ <  0 } @slot_nos; 
     my @ordered_slot_nos       = ( @pos, @neg );
     my $db                     = $self->db or return;
-    my $pid                    = $$;
+    my $pid=$$;
 
     #
     # "-1" is a reserved value meaning "All."
@@ -248,7 +249,9 @@ Organizes the data for drawing comparative maps.
 
     my ( $data, %feature_correspondences, %intraslot_correspondences, 
 	 %map_correspondences, 
-        %correspondence_evidence, %feature_types );
+        %correspondence_evidence, %feature_types, %map_type_aids);
+
+    $self->slot_info($slots);
     for my $slot_no ( @ordered_slot_nos ) {
         my $cur_map     = $slots->{ $slot_no };
         my $ref_slot_no = $slot_no == 0 ? undef :
@@ -266,16 +269,17 @@ Organizes the data for drawing comparative maps.
             slot_no                  => $slot_no,
             ref_slot_no              => $ref_slot_no,
             min_correspondences      => $min_correspondences,
-            feature_type_aids         => $include_feature_type_aids,
-            evidence_type_aids        => $include_evidence_type_aids,
+            feature_type_aids        => $include_feature_type_aids,
+            evidence_type_aids       => $include_evidence_type_aids,
             pid                      => $pid,
+	    map_type_aids            =>\%map_type_aids,
         ) or return;
     }
     ###Get the extra javascript that goes along with the feature_types.
     ### and get extra forms
     my ($extra_code,$extra_form);
     ($extra_code,$extra_form)=
-	$self->get_web_page_extras(\%feature_types,$extra_code,$extra_form);
+	$self->get_web_page_extras(\%feature_types,\%map_type_aids,$extra_code,$extra_form);
     #
     # Allow only one correspondence evidence per (the top-most ranking).
     #
@@ -307,7 +311,7 @@ Returns the feature and correspondence data for the maps in a slot.
 =cut
 
 sub slot_data {
-
+    #p#rint S#TDERR "slot_data\n";
     my ( $self, %args )         = @_;
     my $db                      = $self->db  or return;
     my $sql                     = $self->sql or return;
@@ -323,8 +327,9 @@ sub slot_data {
     my $map_correspondences     = $args{'map_correspondences'};
     my $correspondence_evidence = $args{'correspondence_evidence'};
     my $feature_types_seen      = $args{'feature_types'};
+    my $map_type_aids           = $args{'map_type_aids'};
     my $pid                     = $args{'pid'};
-    my $max_no_features         = 2000000;
+    my $max_no_features         = 200000;
 
     #
     # If there is more than 1 map in this slot, we will return totals
@@ -386,13 +391,16 @@ sub slot_data {
                     and    upper(map_name)=?
 		      ];
 	    my $map_id;
-	    unless ($map_id = 
+	    if (my $scalarref = 
 		$self->get_cached_results($sql.$map_set_id.(uc $map_name))){
+		$map_id=$$scalarref;
+	    }
+	    else{
 		$map_id = $db->selectrow_array($sql, {},
 					       ( $map_set_id, uc $map_name )
 					       );
 		$self->store_cached_results($sql.$map_set_id.(uc $map_name),
-					$map_id);
+					\$map_id);
 	    }
             push @map_ids, $map_id if $map_id;
         }
@@ -455,7 +463,7 @@ sub slot_data {
         #    ( $pid, $ref_slot_no )
         #);
 	
-	foreach my $map (@{$self->{'slot_data'}->{$ref_slot_no}}){
+	foreach my $map (@{$self->slot_info->{$ref_slot_no}}){
 	    my %temp_hash=('map_id'=>$map->[0], 
 			   'start_position'=>$map->[1], 
 			   'stop_position'=>$map->[2],
@@ -582,7 +590,7 @@ sub slot_data {
             else { # many reference maps, use map_cache
 		my $slot_sql = " and f1.map_id in ('".
 		    join("','", 
-			 map{$_->[0]} @{$self->{'slot_data'}->{$ref_slot_no}}).
+			 map{$_->[0]} @{$self->slot_info->{$ref_slot_no}}).
 		    "')";
 		my $sql_str= q[
                         select   distinct map.map_id,
@@ -682,36 +690,20 @@ sub slot_data {
     }
 
     #
-    # Store all the maps in this slot in the cache table.
+    # Store all the map types
     #
-    my @cache_values;
     if ( scalar @maps == 1 ) {
         $map_start = $maps[0]{'start_position'} unless defined $map_start; 
         $map_stop  = $maps[0]{'stop_position'}  unless defined $map_stop;
-        push @cache_values, [ $maps[0]{'map_id'}, $map_start, $map_stop ];
+	$map_type_aids->{$maps[0]{'map_type_aid'}}=1;
     }
     else {
         for ( @maps ) {
-            push @cache_values, [ 
-                $_->{'map_id'}, $_->{'start_position'}, $_->{'stop_position'}
-            ];
+	    $map_type_aids->{$_->{'map_type_aid'}}=1;
         }
     }
 
-    for my $values ( @cache_values ) {
-        #$db->do(
-        #    q[
-        #        insert 
-        #        into   cmap_map_cache 
-        #               (pid, slot_no, map_id, start_position, stop_position)
-        #        values ( ?, ?, ?, ?, ? )
-        #    ],
-        #    {},
-        #    ( $pid, $this_slot_no, @$values )
-        #);
-	push @{$self->{'slot_data'}->{$this_slot_no}}, $values;
-    }
-
+    
     # 
     # More than one map in the slot?  All are compressed.
     # 
@@ -773,7 +765,7 @@ sub slot_data {
                     f.stop_position>=$map_stop
                 )
             )
-        ];
+			   ];
         if ( @$feature_type_aids ) {
             $count_sql .= "and f.feature_type_accession in ('".
                 join( "','", @$feature_type_aids ).
@@ -796,7 +788,8 @@ sub slot_data {
                 ? "and f.feature_type_accession in ('".join("','",@$feature_type_aids)."')"
                 : ''
             ;
-	    my $sql_str=qq[
+            ###'read' IS HARD CODED FOR NOW
+	    my $sql_base_top=qq[
                     select   f.feature_id,
                              f.accession_id,
                              f.map_id,
@@ -810,7 +803,9 @@ sub slot_data {
                     from     cmap_feature f,
                              cmap_map map,
                              cmap_map_set ms
-                    where    f.map_id=?
+				];
+	    my $sql_base_bottom=qq[
+                    where    f.map_id=$maps[0]{'map_id'}
                     and      (
                         ( f.start_position>=$map_start and 
                           f.start_position<=$map_stop )
@@ -824,12 +819,45 @@ sub slot_data {
                     and      f.map_id=map.map_id
                     and      map.map_set_id=ms.map_set_id
 			   ];
+	    my $corr_free_sql=$sql_base_top.$sql_base_bottom.
+		q[
+		  and f.feature_type_accession not in ('read')
+		  ];
+	    my $sql_str=$corr_free_sql;
+	    if($self->slot_info->{$this_slot_no+1}||$self->slot_info->{$this_slot_no-1}){
+		my $map_id_string .= " and f2.map_id in (".
+		    join("", 
+			 ($self->slot_info->{$this_slot_no+1}? 
+			  map{$_->[0]} @{$self->slot_info->{$this_slot_no+1}}:
+			  ()
+			  ),
+			 ($self->slot_info->{$this_slot_no-1}? 
+			  map{$_->[0]} @{$self->slot_info->{$this_slot_no-1}}:
+			  ()
+			  )
+			 ).
+			 ")";
+		my $with_corr_sql=
+		    $sql_base_top.
+		    q[,
+		      cmap_feature f2,
+		      cmap_correspondence_lookup cl
+		      ].
+		      $sql_base_bottom.
+		      q[
+			and cl.feature_id1=f.feature_id
+			and cl.feature_id2=f2.feature_id
+                        and f.feature_type_accession in ('read')
+			].
+			$map_id_string;
+		$sql_str=$corr_free_sql." UNION ".$with_corr_sql;
+	    }
 	    unless($map->{'features'}=$self->get_cached_results($sql_str.$maps[0]{'map_id'})){
 
 		$map->{'features'} = $db->selectall_hashref
 		    (
 		     $sql_str,
-		     'feature_id', {}, ( $maps[0]{'map_id'} )
+		     'feature_id', {}, ( )
 		     );  
 		foreach my $rowKey (keys %{$map->{'features'}}){
 		    $map->{'features'}->{$rowKey}->{'feature_type'}=
@@ -885,7 +913,7 @@ sub slot_data {
             where    
         ];
 	$ft_sql .= " f.map_id in ('".
-	    join("','", map{$_->[0]} @{$self->{'slot_data'}->{$this_slot_no}}).
+	    join("','", map{$_->[0]} @{$self->slot_info->{$this_slot_no}}).
 	    "')";
         if ( @$feature_type_aids ) {
             $ft_sql .= "and f.feature_type_accession in ('".
@@ -929,7 +957,7 @@ sub slot_data {
         ];
 
 	$f_count_sql .= " f.map_id in ('".
-	    join("','", map{$_->[0]} @{$self->{'slot_data'}->{$ref_slot_no}}).
+	    join("','", map{$_->[0]} @{$self->slot_info->{$ref_slot_no}}).
 	    "')";
 	$f_count_sql .=" group by f.map_id";
 	my $f_counts;
@@ -1021,7 +1049,7 @@ sub slot_data {
             ];
 
 	    $base_sql .= " and f1.map_id in ('".
-		join("','",map{$_->[0]} @{$self->{'slot_data'}->{$ref_slot_no}}).
+		join("','",map{$_->[0]} @{$self->slot_info->{$ref_slot_no}}).
 		"')";
 	    $base_sql .=" group by map_id1,map_id2";
 
@@ -1032,7 +1060,7 @@ sub slot_data {
                  'min(f1.start_position) as min_start, ' .
                  'max(f1.start_position) as max_start, '
             );
-            push @query_args, $pid, $ref_slot_no, $value;
+            push @query_args, $value;
         }
 
         my %map_id_lookup = map { $_->{'map_id'}, 1 } @maps;
@@ -1048,7 +1076,7 @@ sub slot_data {
 		$map_corr_counts= $db->selectall_arrayref( 
 		    $count_sql, { Columns => {} }, @query_args 
        		);
-		my $positions = $db->selectall_hashref( 
+		$positions = $db->selectall_hashref( 
                     $position_sql, 'map_id2', {}, @query_args 
                  );
 		$self->get_cached_results($count_sql.$position_sql.join(".",@query_args),
@@ -1057,6 +1085,7 @@ sub slot_data {
             for my $count ( @$map_corr_counts ) {
                 next unless $map_id_lookup{ $count->{'map_id2'} };
                 my $pos = $positions->{ $count->{'map_id2'} };
+		
                 $map_correspondences->
                     { $this_slot_no       } 
                     { $count->{'map_id2'} }
@@ -1087,11 +1116,11 @@ sub slot_data {
 	    $return->{ $map->{'map_id'} } = $map;
         }
     }
-
     $self->get_intraslot_correspondences(
 		$intraslot_correspondences,$correspondence_evidence,
     	        $pid, $ref_slot_no,
 	        $evidence_type_aids,$feature_type_aids,$map_start,$map_stop );
+    
     return $return;
 
 #    #
@@ -1690,12 +1719,15 @@ sub get_web_page_extras{
 
     my $self          = shift;
     my $feature_types = shift;
+    my $map_type_aids = shift;
     my $extra_code    = shift;
     my $extra_form    = shift;
 
     my %snippet_aids;
     my %extra_form_aids;
     my $required_string;
+
+    ###Get the feature type info
     foreach my $key (keys %{$feature_types}){
 	###First get the code snippets
 	$required_string=
@@ -1709,8 +1741,26 @@ sub get_web_page_extras{
 	foreach my $extra_form_aid (split(/\s*,\s*/ ,$required_string)){
 	    $extra_form_aids{$extra_form_aid}=1;
 	}
+    }
+
+    ###Get the map type info
+    foreach my $key (keys %{$map_type_aids}){
+	###First get the code snippets
+	$required_string=
+	    $self->map_type_data($key,'required_page_code');
+	foreach my $snippet_aid (split(/\s*,\s*/ ,$required_string)){
+	    $snippet_aids{$snippet_aid}=1;
+	}
+	###Then get the extra form stuff
+	$required_string=
+	    $self->map_type_data($key,'extra_forms');
+	foreach my $extra_form_aid (split(/\s*,\s*/ ,$required_string)){
+	    $extra_form_aids{$extra_form_aid}=1;
+	}
 
     }
+
+
     foreach my $snippet_aid (keys(%snippet_aids)){
 	$extra_code.=
 	    $self->config_data('page_code')->{$snippet_aid}->{'page_code'};
@@ -1734,6 +1784,7 @@ and the provided id.
 
 =cut
 sub get_feature_correspondences {
+    #print S#TDERR "get_feature_correspondences\n";
     my ( $self,$feature_correspondences,$correspondence_evidence,
 	 $field,$value, $pid, $slot_no,
 	 $evidence_type_aids,$feature_type_aids,
@@ -1780,11 +1831,11 @@ sub get_feature_correspondences {
         and      map.$field=?
         $to_restriction
     ];
-    if ($self->{'slot_data'}->{$slot_no} 
+    if ($self->slot_info->{$slot_no} 
 	and 
-	@{$self->{'slot_data'}->{$slot_no}}){
+	@{$self->slot_info->{$slot_no}}){
 	$corr_sql .= " and f.map_id in (".
-	    join("", map{$_->[0]} @{$self->{'slot_data'}->{$slot_no}}).
+	    join("", map{$_->[0]} @{$self->slot_info->{$slot_no}}).
 	    ")";
     }
 
@@ -1899,10 +1950,10 @@ sub get_intraslot_correspondences {
     ];
 
     $corr_sql .= "and f.map_id in ('".
-	join("','", map{$_->[0]} @{$self->{'slot_data'}->{$slot_no}}).
+	join("','", map{$_->[0]} @{$self->slot_info->{$slot_no}}).
 	"')";
     $corr_sql .= "and f2.map_id in ('".
-	join("','", map{$_->[0]} @{$self->{'slot_data'}->{$slot_no}}).
+	join("','", map{$_->[0]} @{$self->slot_info->{$slot_no}}).
 	"')";
 
 
@@ -2557,8 +2608,6 @@ Returns the data for the correspondence matrix.
 }
 
 # ----------------------------------------------------
-sub cmap_form_data {
-
 =pod
 
 =head2 cmap_form_data
@@ -2567,6 +2616,8 @@ Returns the data for the main comparative map HTML form.
 
 =cut
 
+sub cmap_form_data {
+    #p#rint S#TDERR "cmap_form_data\n";
     my ( $self, %args )        = @_;
     my $slots                  = $args{'slots'} or return;
     my $min_correspondences    = $args{'min_correspondences'}    ||  0;
@@ -2581,29 +2632,16 @@ Returns the data for the main comparative map HTML form.
     my $sql                    = $self->sql or return;
     my $pid                    = $$;
 
-
-    #my @ref_maps = 
-	#@{ $db->selectall_arrayref(
-        #q[
-        #    select map_id, start_position, stop_position
-        #    from   cmap_map_cache
-        #    where  pid=?
-        #    and    slot_no=0
-        #],
-        #{ Columns => {} },
-        #( $pid )
-	#) };
     my @ref_maps;
     
-    foreach my $slot (keys %{$self->{'slot_data'}}){
-	foreach my $map (@{$self->{'slot_data'}->{$slot}}){
-	    my %temp_hash=('map_id'=>$map->[0], 
-			   'start_position'=>$map->[1], 
-			   'stop_position'=>$map->[2],
-			   );
-	    push @ref_maps, \%temp_hash;
-	}
+    foreach my $map (@{$self->slot_info->{0}}){
+	my %temp_hash=('map_id'=>$map->[0], 
+		       'start_position'=>$map->[1], 
+		       'stop_position'=>$map->[2],
+		       );
+	push @ref_maps, \%temp_hash;
     }
+    
     if ( scalar @ref_maps > 1 ) {
         $ref_map_start = undef;
         $ref_map_stop  = undef;
@@ -2629,7 +2667,6 @@ Returns the data for the main comparative map HTML form.
 	    $self->store_cached_results($sql_str.$ref_map_set_aid,\$ref_species_aid);
 	}
     }
-
     #
     # Select all the map set that can be reference maps.
     #
@@ -2699,19 +2736,27 @@ Returns the data for the main comparative map HTML form.
     # If the user selected a map set, select all the maps in it.
     #
     my ( $ref_maps, $ref_map_set_info ); 
+    
     if ( $ref_map_set_aid ) {
-	$sql_str=$sql->form_data_ref_maps_sql;	
-	unless($ref_maps=$self->get_cached_results($sql_str."$ref_map_set_aid")){
-	    $ref_maps = $db->selectall_arrayref(
-						$sql_str,
-						{ Columns => {} },
-						( "$ref_map_set_aid" )
-						);
-	    $self->get_cached_results($sql_str."$ref_map_set_aid",$ref_maps);
-	}
-        $self->error(
-            qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
-        ) unless @$ref_maps;
+	unless (
+		(ref($ref_map->{'aid'}) eq 'ARRAY'? 
+		 @{$ref_map->{'aid'}}:
+		 $ref_map->{'aid'}) 
+		 or $ref_map->{'map_names'}){
+	    $sql_str=$sql->form_data_ref_maps_sql;	
+	    unless($ref_maps=$self->get_cached_results($sql_str."$ref_map_set_aid")){
+		$ref_maps = $db->selectall_arrayref
+		    (
+		     $sql_str,
+		     { Columns => {} },
+		     ( "$ref_map_set_aid" )
+		     );
+		$self->store_cached_results($sql_str."$ref_map_set_aid",$ref_maps);
+	    }
+            $self->error(
+                qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
+            ) unless @$ref_maps;
+       }
 
         unless ( @ref_maps ) {
 	    $sql_str=q[
@@ -2858,7 +2903,7 @@ out which maps have relationships.
     #    ( $pid, $ref_slot_no )
     #);
     
-    foreach my $map (@{$self->{'slot_data'}->{$ref_slot_no}}){
+    foreach my $map (@{$self->slot_info->{$ref_slot_no}}){
 	my %temp_hash=('map_id'=>$map->[0], 
 		       'start_position'=>$map->[1], 
 		       'stop_position'=>$map->[2],
@@ -2896,7 +2941,7 @@ out which maps have relationships.
             $ref_map_start = undef;
             $ref_map_stop  = undef;
         }
-        else {
+        else{
             $from_restriction = qq[
                 and      (
                     ( f1.start_position>=$ref_map_start and 
@@ -2946,7 +2991,7 @@ out which maps have relationships.
     ];
 
     $corr_sql .= " and f1.map_id in ('".
-	join("','", map{$_->[0]} @{$self->{'slot_data'}->{$ref_slot_no}}).
+	join("','", map{$_->[0]} @{$self->slot_info->{$ref_slot_no}}).
 	"')";
     $corr_sql .=" group by f2.map_id";
     my $feature_correspondences;
@@ -3241,8 +3286,6 @@ Turn a feature name into a position.
 }
 
 # ----------------------------------------------------
-sub fill_out_maps {
-
 =pod
 
 =head2 fill_out_maps
@@ -3251,6 +3294,8 @@ Gets the names, IDs, etc., of the maps in the slots.
 
 =cut
 
+sub fill_out_maps {
+    #p#rint S#TDERR "fill_out_maps\n";
     my ( $self, $slots ) = @_;
     my $db               = $self->db  or return;
     my $sql              = $self->sql or return;
@@ -3988,7 +4033,7 @@ Optionally finds the lowest start for a given feature type. (enhancement)
     }
     return $start;
 }
-#xxx
+
 # ----------------------------------------------------
 sub map_detail_data {
 
@@ -4136,14 +4181,13 @@ Returns the detail info for a map.
     $ft_sql.=join("','", 
 		  map{
 		      join("','",
-			   map{$_->[0]} @{$self->{'slot_data'}->{$_}}
+			   map{$_->[0]} @{$self->slot_info->{$_}}
 			   ) 
 		      } 
-		  keys %{$self->{'slot_data'}}
+		  keys %{$self->slot_info}
 		  )."')";
 
-    my $pid = $$;
-    my $tempFeatureTypes=$db->selectall_arrayref( $ft_sql, { Columns => {} }, $pid );
+    my $tempFeatureTypes=$db->selectall_arrayref( $ft_sql, { Columns => {} });
     foreach my $row (@{$tempFeatureTypes}){
         $row->{'feature_type'}=
             $self->feature_type_data($row->{'feature_type_aid'},'feature_type');
@@ -4471,6 +4515,69 @@ sub view_feature_on_map {
 }
 
 # ----------------------------------------------------
+# store and retrieve the slot info.
+sub slot_info{
+    my $self  = shift;
+    my $slots = shift;
+    my $db    = $self->db;
+
+    my $sql_str = 
+	q[
+	  select m.map_id,
+	         m.start_position,
+	         m.stop_position
+	  from   cmap_map m
+	  ];
+
+    
+    if ($slots){
+	my $sql_suffix;
+	foreach my $key (keys %{$slots}){
+	    $sql_suffix="";
+	    if ($slots->{$key}){
+		#$slots->{$key}{'start'};
+		#$slots->{$key}{'stop'};
+		if (ref $slots->{$key}{'aid'} eq 'ARRAY'){
+		    if (scalar(@{$slots->{$key}{'aid'}})){
+			$sql_suffix=
+			    "where m.accession_id in ('".
+			    join("','",@{$slots->{$key}{'aid'}}).
+			    "')";
+		    }
+		}
+		else{
+		    if ($slots->{$key}{'field'} eq 'map_set_aid'){
+			#Map set aid
+			$sql_suffix=
+			    q[
+			      cmap_map_set ms
+			      where m.map_set_id=ms.map_set_id
+			      ].
+			      "and ms.accession_id = '".
+			      $slots->{$key}{'aid'}.
+			      "'";
+		    }
+		    else{
+			###aid is a list of map_ids
+			$sql_suffix=
+			    "where m.accession_id = '".
+			    $slots->{$key}{'aid'}.
+			    "'";
+		    }
+		}
+		if ($sql_suffix){
+		    ###If aid was found, $sql_suffix will be created
+		    push @{$self->{'slot_info'}{$key}}, 
+		    @{$db->selectall_arrayref($sql_str.$sql_suffix, {},())};
+		}
+	    }
+	}	
+    }
+    
+    return $self->{'slot_info'};
+}
+
+# ----------------------------------------------------
 sub get_cached_results{
     my $self=shift;
     my $query=shift;
@@ -4481,9 +4588,9 @@ sub store_cached_results{
     my $self=shift;
     my $query=shift;
     my $object=shift;
-    #print STDERR Dumper($self->get_cached_results($query));
-    #print STDERR "$query\n";
-   # print STDERR Dumper($object)."---------------------\n";
+    #print S#TDERR Dumper($self->get_cached_results($query));
+    #print S#TDERR "$query\n";
+    #print S#TDERR Dumper($object)."---------------------\n";
     $self->{'cache'}->set($query,freeze($object));
 }
 
