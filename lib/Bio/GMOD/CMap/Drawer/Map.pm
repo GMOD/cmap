@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.57 2003-10-30 23:25:05 kycl4rk Exp $
+# $Id: Map.pm,v 1.58 2003-11-03 18:29:06 kycl4rk Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.57 $)[-1];
+$VERSION = (qw$Revision: 1.58 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1110,7 +1110,7 @@ Lays out the map.
 
                 my $is_highlighted = $drawer->highlight_feature( 
                     $feature->{'feature_name'},
-                    $feature->{'alternate_name'},
+                    @{ $feature->{'aliases'} || [] },
                     $feature->{'accession_id'},
                 );
 
