@@ -420,14 +420,14 @@ To install the cmap modules included in this package, you can either:
         This file will have the value of the "CONFIG_FILE" altered
         to match CONF_DIR.
 
-    apache_conf/cmap.conf
+    conf/cmap.conf
         This file will have the value of "template_dir" altered 
         to match TEMPLATE_DIR.
 
-2)  Manually place the contents of "apache_conf," "lib," "bin," and
+2)  Manually place the contents of "conf," "lib," "bin," and
     "templates" into directories of your choosing like so:
     
-    apache_conf/cmap.conf
+    conf/cmap.conf
         Copy to a location readable by all scripts and processes
         that will need to read this file (command-line scripts run
         by users and the httpd process) as this file contains 
@@ -435,7 +435,7 @@ To install the cmap modules included in this package, you can either:
         to change TEMPLATE_DIR yourself to reflect the location of
         the CMAP templates.
 
-    apache_conf/cmap.css
+    conf/cmap.css
         This is the cascading stylesheet used by the maps. Copy to a
         location where a web browser can retreive, such as a
         "stylesheets" directory.
@@ -466,7 +466,7 @@ CONFIGURING APACHE
 
 After installing Apache, mod_perl, and all the necessary modules,
 you're now ready to configure Apache.  Two files are included in the
-"apache_conf" directory of this package to help you do this:
+"conf" directory of this package to help you do this:
 "httpd.conf" and "perlstartup.pl."  The first of these files
 contains all the additions you should make to your own httpd.conf in
 order to configure the Apache environment and to set up the various

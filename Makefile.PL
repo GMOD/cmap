@@ -134,7 +134,7 @@ if ( my $template_dir = $OPTIONS{'TEMPLATE_DIR'} ) {
     }
 
     local $/;
-    my $conf_file = "$Bin/apache_conf/cmap.conf";
+    my $conf_file = "$Bin/conf/cmap.conf";
     print "\nUpdating '$conf_file'\n  with template dir '$template_dir'.\n";
     open( F, "<$conf_file" ) or die "Can't read $conf_file: $!\n";
     my $configuration = <F>;
@@ -170,7 +170,7 @@ if ( my $script_dir = $OPTIONS{'SCRIPT_DIR'} ) {
 # Copy the stylesheet.
 #
 if ( my $stylesheet_dir = $OPTIONS{'STYLESHEET_DIR'} ) {
-    my $stylesheet = "$Bin/apache_conf/cmap.css";
+    my $stylesheet = "$Bin/conf/cmap.css";
     print "\nCopying stylesheet to '$stylesheet_dir'.\n";
     scopy( $stylesheet , $stylesheet_dir );
 }
@@ -180,7 +180,7 @@ if ( my $stylesheet_dir = $OPTIONS{'STYLESHEET_DIR'} ) {
 # with the location of the config file.
 #
 if ( my $conf_dir = $OPTIONS{'CONF_DIR'} ) {
-    my $conf_file = "$Bin/apache_conf/cmap.conf";
+    my $conf_file = "$Bin/conf/cmap.conf";
     print "\nCopying config file to '$conf_dir'.\n";
     scopy( $conf_file , $conf_dir );
 
