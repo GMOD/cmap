@@ -1,6 +1,6 @@
                 CMAP ADMINISTRATION AND DATA CURATION
 
-                          $Revision: 1.12 $
+                          $Revision: 1.13 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are two tools you will use:
@@ -396,7 +396,12 @@ datatypes:
 
 *   feature_name (character(32)) [REQUIRED]: The name of the feature.
 
-*   feature_alt_name (character(32)): The alternate name of the feature.
+*   feature_alt_name (character(32)) [DEPRECATED]: The alternate name of
+    the feature;  deprecated in lieu of "feature_aliases" but still     
+    supported.
+
+*   feature_aliases (character(255) each): Any number of comma-delimited
+    aliases, each of which can be a maximum of 255 characters
 
 *   feature_start (double(8,2)) [REQUIRED]: The starting position of the
     feature on the map.
@@ -406,15 +411,20 @@ datatypes:
 
 *   feature_type (character(32)) [REQUIRED]: The feature's type.
 
-*   feature_dbxref_name (character(32)): The name of the database cross
-    reference.
+*   feature_dbxref_name (character(32)) [DEPRECATED]: The name of the
+    database cross reference;  deprecated in favor of "feature_attributes."
 
-*   feature_dbxref_url (character(200)): The URL of the database cross
-    reference.
+*   feature_dbxref_url (character(200)) [DEPRECATED]: The URL of the
+    database cross reference;  deprecated in favor of "feature_attributes."
+
+*   feature_attributes: a semi-colon-delimited list of feature attributes.
 
 *   is_landmark ("1" or "0"): Whether or not the feature should be
     marked as a landmark feature (allowing it to be labelled when a
     user chooses "Landmarks" for the "Label Features" option).
+
+For a more thorough treatment of these fields, read the "import_tab" 
+section of "perldoc Bio::GMOD::CMap::Admin::Import."
 
 The first line of the file should be the tab-separated names of the
 fields in whatever order you're supplying them (the order of fields is
