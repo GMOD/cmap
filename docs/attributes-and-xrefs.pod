@@ -180,6 +180,7 @@ Table: cmap_feature
   map_set_name     [cmap_map_set.short_name ]
   species_id       [cmap_species]
   species_name     [cmap_species.common_name]
+  map_type_aid     [cmap_map_type.accession_id]
   map_type         [cmap_map_type]
   map_units        [cmap_map_type]
 
