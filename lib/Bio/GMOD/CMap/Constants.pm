@@ -1,13 +1,13 @@
 package Bio::GMOD::CMap::Constants;
 
-# $Id: Constants.pm,v 1.23 2003-04-15 21:21:20 kycl4rk Exp $
+# $Id: Constants.pm,v 1.24 2003-05-20 21:40:18 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.23 $)[-1];
+$VERSION = (qw$Revision: 1.24 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -479,6 +479,7 @@ use constant PREFERENCE_FIELDS => [ qw(
     image_type  
     label_features
     data_source
+    collapse_features
 ) ];
 
 #
