@@ -5,8 +5,14 @@
     cur_sec='feature_type_info'
     help_anchor='feature_type_info'
 %]
+
 <h1>[% title %]</h1>
 
+[%- IF intro -%]
+<p>[% intro %]</p>
+[%- END -%]
+
+<div align="center">
 <p>
 [% IF feature_types.size == 1 %]
     <div align="center">
@@ -43,8 +49,8 @@
                 <td>[% ft.shape %]</td>
             </tr> 
             <tr>
-                <td valign="top" align="right">Description:</td>
-                <td>[% ft.description %]</td>
+                <td valign="top" align="right">Note:</td>
+                <td>[% ft.note %]</td>
             </tr> 
         [% END %]
     </table>
@@ -52,11 +58,10 @@
 
 [% ELSE %]
 
-    <div align="center">
     No feature types returned.
-    </div>
 
 [% END %]
+</div>
 
 <br>
 <br>

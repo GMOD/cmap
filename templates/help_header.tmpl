@@ -2,31 +2,39 @@
     SET menu = [
         { 
             name    => 'map_viewer',
-            display => 'Map Viewer Help',
+            display => 'Map Viewer',
         },
         { 
             name    => 'feature_search',
-            display => 'Feature Search Help',
+            display => 'Feature Search',
         },
         { 
             name    => 'matrix',
-            display => 'Matrix Help',
+            display => 'Matrix',
         },
         { 
             name    => 'map_set_info',
-            display => 'Map Set Info Help',
+            display => 'Map Sets',
         },
         { 
             name    => 'feature_type_info',
-            display => 'Feature Type Info Help',
+            display => 'Feature Types',
+        },
+        { 
+            name    => 'map_type_info',
+            display => 'Map Types'
+        },
+        { 
+            name    => 'species_info',
+            display => 'Species',
         },
         { 
             name    => 'map_details',
-            display => 'Map Details Help',
+            display => 'Map Details',
         },
         { 
             name    => 'feature_details',
-            display => 'Feature Details Help',
+            display => 'Feature Details',
         },
     ];
 
@@ -41,4 +49,5 @@
     END;
 -%]
 <hr>
+<b>Help Sections</b>:
 [% links.join( ' | ' ) %]

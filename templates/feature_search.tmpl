@@ -6,13 +6,7 @@
 %]
 <h1>Feature Search</h1>
 
-<p>
-A <b>feature</b> in CMap is any element that can be placed on a
-map, either as a point or an interval.  This includes molecular
-markers such as RFLP and SSR, mutant phenotypes, QTL, centromeres,
-BACs, contigs, etc.  For more information, see the <a
-href="/cmap/help?section=feature_search">help</a> page.
-</p>
+[%- IF intro -%]<p>[%- intro -%]</p>[%- END -%]
 
 <p>
 <form>
@@ -49,9 +43,8 @@ href="/cmap/help?section=feature_search">help</a> page.
 
         <td valign="top">
             <select name="search_field">
-                <option value="both"[% IF apr.param('search_field')=='both'; 'selected'; END %]>Both</option>
-                <option value="feature_name"[% IF apr.param('search_field')=='feature_name'; 'selected'; END %]>Feature Name</option>
-                <option value="alternate_name"[% IF apr.param('search_field')=='alternate_name'; 'selected'; END %]>Alt. Name</option>
+                <option value="feature_name"[% IF apr.param('search_field')=='name'; ' selected'; END %]>Name</option>
+                <option value="feature_aid"[% IF apr.param('search_field')=='feature_aid'; ' selected'; END %]>Feature Acc. ID</option>
             </select>
         </td>
     </tr>
@@ -89,8 +82,8 @@ Use &quot;*&quot; or &quot;%&quot; for wildcards.  To find features with spaces 
                 <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=species_name;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aid=[% apr.param('feature_type_aids') %];data_source=[% apr.param('data_source') %]">Species</a></th>
                 <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=map_set_name;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %];data_source=[% apr.param('data_source') %]">Map Set</a></th>
                 <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=map_name;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %];data_source=[% apr.param('data_source') %]">Map Name</a></th>
-                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=alternate_name;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %];data_source=[% apr.param('data_source') %]">Alt. Name</a></th>
                 <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=start_position;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %];data_source=[% apr.param('data_source') %]">Position</a></th>
+                <th>Aliases</th>
                 <th>&nbsp;</th>
                 <th>&nbsp;</th>
             </tr>
@@ -102,10 +95,10 @@ Use &quot;*&quot; or &quot;%&quot; for wildcards.  To find features with spaces 
                     <td>[% r.species_name %]</td>
                     <td><a href="map_set_info?map_set_aid=[% r.map_set_aid %]">[% r.map_set_name %]</a></td>
                     <td>[% r.map_name %]</td>
-                    <td>[% r.alternate_name %]</td>
                     <td align="right">
                         [% r.start_position %][% IF r.stop_position.defined %]-[% r.stop_position %][% END %]
                     </td>
+                    <td>[% r.aliases.join(', ') %]</td>
                     <td align="center">
                         <b>[</b>&nbsp;<a href="/cmap/map_details?ref_map_set_aid=[% r.map_set_aid %];ref_map_aid=[% r.map_aid %];highlight=&quot;[% r.feature_name %]&quot;;data_source=[% apr.param('data_source') %];label_features=landmarks">View&nbsp;on&nbsp;Map</a>&nbsp;<b>]</b>
                     </td>

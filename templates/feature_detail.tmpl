@@ -36,10 +36,10 @@
 
     <tr>
         <td align="right">
-            Alternate Name:
+            Aliases:
         </td>
         <td>
-            [% feature.alternate_name %]
+            [% feature.aliases.join(', ') %]
         </td>
     </tr>
 
@@ -115,7 +115,7 @@
             <th>Map Set Name</th>
             <th>Map Name</th>
             <th>Feature Name</th>
-            <th>Alt. Name</th>
+            <th>Aliases</th>
             <th>Evidence</th>
             <th colspan="3">Actions</th>
         </tr>
@@ -127,7 +127,7 @@
                 <td>[% fc.map_set_name %]</td>
                 <td>[% fc.map_name %]</td>
                 <td>[% fc.feature_name %]</td>
-                <td>[% fc.alternate_name %]</td>
+                <td>[% fc.aliases.join(', ') %]</td>
                 <td>
                     [% FOREACH e=fc.evidence %]
                         [% e.evidence_type %]<br>

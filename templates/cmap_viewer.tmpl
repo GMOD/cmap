@@ -5,6 +5,10 @@
     help_anchor='map_viewer'
 %]
 
+[%- IF intro -%]
+<p>[% intro %]</p>
+[%- END -%]
+
 <table border="0"> 
     <tr>
         <td valign="top">
@@ -277,6 +281,7 @@
             <td>
                 [% form_data.ref_map_set_info.species_common_name %]
                 ([% form_data.ref_map_set_info.species_full_name %])
+                <b>[</b>&nbsp;<a href="species_info?species_aid=[% form_data.ref_map_set_info.species_aid %]">View More Info</a>&nbsp;<b>]</b>
             </td>
         </tr>
         <tr>
@@ -284,11 +289,12 @@
             <td>
                 [% form_data.ref_map_set_info.map_type %]
                 ([% form_data.ref_map_set_info.map_units %])
+                <b>[</b>&nbsp;<a href="map_type_info?map_type_aid=[% form_data.ref_map_set_info.map_type_aid %]">View More Info</a>&nbsp;<b>]</b>
             </td>
         </tr>
         <tr>
-            <th align="right" valign="top">Remarks:</th>
-            <td>[% form_data.ref_map_set_info.remarks %]</td>
+            <th align="right" valign="top">Note:</th>
+            <td>[% form_data.ref_map_set_info.note %]</td>
         </tr>
     </table>
 [% END %]

@@ -5,7 +5,12 @@
     cur_sec='map_set_info'
     help_anchor='map_set_info'
 %]
+
 <h1>[% title %]</h1>
+
+[%- IF intro -%]
+<p>[% intro %]</p>
+[%- END -%]
 
 <p>
 [% IF show_restriction %]
@@ -79,10 +84,7 @@
             <tr>
                 <td align="right">Species:</td>
                 <td>
-                    [% ms.full_name %] ([% ms.common_name %])
-                    [%- IF ms.ncbi_taxon_id -%]
-                        <a href="http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=[% ms.ncbi_taxon_id %]">(View at NCBI)</a>
-                    [%- END -%]
+                    <a href="species_info?species_aid=[% ms.species_aid %]">[% ms.full_name %] ([% ms.common_name %])</a>
                 </td>
             </tr> 
 
@@ -97,8 +99,8 @@
             </tr> 
 
             <tr>
-                <td align="right" valign="top">Remarks:</td>
-                <td>[% ms.remarks%]</td>
+                <td align="right" valign="top">Note:</td>
+                <td>[% ms.note%]</td>
             </tr> 
 
             [% IF ms.maps.size %]
