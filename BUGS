@@ -1,0 +1,14 @@
+                            Known Bugs in CMap
+
+                              $Revision: 1.1 $
+
+-   When relational maps have feature shapse that aren't directly on
+    the map (like dumbells, I-beams, etc.), they collide with the map
+    title which is written vertically beside the map.  Either I need to
+    move the title to a horizontal position above the map (which will
+    make it like all the other maps) or I need to delay writing the title
+    until after drawing all the features.
+-   There seems to be a problem with the matrix and PostgreSQL
+-   As more features float beside a map, they are colliding with
+    labels.  Most likely the features will need to be drawn first,
+    then labels will be floated out beyond the furthest feature glyph.
