@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.33 2003-05-16 19:54:38 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.34 2003-05-20 21:39:26 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.33 $)[-1];
+$VERSION = (qw$Revision: 1.34 $)[-1];
 
 #use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils 'parse_words';
@@ -90,11 +90,20 @@ so that it's positive.
 
 =cut
 
-    my $self    = shift;
-    my $min_x   = $self->min_x - 10;
-    my $min_y   = $self->min_y - 10;
-    my $x_shift = $min_x < 0 ? abs $min_x : 0;
-    my $y_shift = $min_y < 0 ? abs $min_y : 0;
+    my ( $self, %args ) = @_;
+    my ( $x_shift, $y_shift );
+
+    if ( %args ) {
+        $x_shift  = $args{'x_shift'};
+        $y_shift  = $args{'y_shift'};
+    }
+
+    unless ( defined $x_shift && defined $y_shift ) {
+        my $min_x = $self->min_x - 10;
+        my $min_y = $self->min_y - 10;
+        $x_shift  = $min_x < 0 ? abs $min_x : 0;
+        $y_shift  = $min_y < 0 ? abs $min_y : 0;
+    }
 
     for my $rec ( 
         map   { @{ $self->{'drawing_data'}{ $_ } } }
@@ -109,15 +118,30 @@ so that it's positive.
         }
     }
 
-    for my $rec ( @{ $self->{'image_map_data'} } ) {
-        my @coords       = @{ $rec->{'coords'} };
-        $coords[ $_ ]   += $y_shift for ( 1, 3 );
-        $coords[ $_ ]   += $x_shift for ( 0, 2 );
-        $rec->{'coords'} = join( ',', map { int } @coords );
+    if ( $args{'shift_feature_coords'} ) {
+        for my $slot ( values %{ $self->{'feature_position'} } ) {
+            for my $feature_pos ( values %{ $slot } ) {
+                $feature_pos->{'right'}[0] += $x_shift;
+                $feature_pos->{'right'}[1] += $y_shift;
+                $feature_pos->{'left'}[0]  += $x_shift;
+                $feature_pos->{'left'}[1]  += $y_shift;
+            }
+        }
     }
 
-    $self->{ $_ } += $x_shift for qw[ min_x max_x ];
-    $self->{ $_ } += $y_shift for qw[ min_y max_y ];
+    unless ( $args{'leave_map_areas'} ) {
+        for my $rec ( @{ $self->{'image_map_data'} } ) {
+            my @coords       = @{ $rec->{'coords'} };
+            $coords[ $_ ]   += $y_shift for ( 1, 3 );
+            $coords[ $_ ]   += $x_shift for ( 0, 2 );
+            $rec->{'coords'} = [ map { int } @coords ];
+        }
+    }
+
+    unless ( $args{'leave_max_x_y'} ) {
+        $self->{ $_ } += $x_shift for qw[ min_x max_x ];
+        $self->{ $_ } += $y_shift for qw[ min_y max_y ];
+    }
 
     return 1;
 }
@@ -246,8 +270,8 @@ Accepts a list of coordinates and a URL for hyperlinking a map area.
 
 =cut
 
-    my ( $self, %args ) = @_;
-    push @{ $self->{'image_map_data'} }, { %args };
+    my $self = shift;
+    push @{ $self->{'image_map_data'} }, { @_ } if @_;
 }
 
 # ----------------------------------------------------
@@ -323,75 +347,6 @@ Gets a completed map.
     my ( $self, $map_no ) = @_;
     return $self->{'completed_maps'}{ $map_no };
 }
-
-## ----------------------------------------------------
-#sub get_map_href_bounds {
-#
-#=pod
-#
-#=head2 get_map_href_bounds
-#
-#Retrieves the coords for making maps clickable.
-#
-#=cut
-#    my $self = shift;
-#    return $self->{'map_href_bounds'};
-#}
-
-## ----------------------------------------------------
-#sub hyperlink_maps {
-#
-#=pod
-#
-#=head2 hyperlink_maps
-#
-#Make maps clickable.
-#
-#=cut
-#    my $self  = shift;
-#    my $slots = $self->slots;
-#
-#    for my $href ( @{ $self->get_map_href_bounds } ) {
-#        my $slot_no  = $href->{'slot_no'};
-#        my $map_id   = $href->{'map_id'};
-#        my $map_name = $href->{'map_name'};
-#        my @bounds   = @{ $href->{'bounds'} };
-#        my @maps;
-#        for my $side ( qw[ left right ] ) {
-#            my $no      = $side eq 'left' ? $slot_no - 1 : $slot_no + 1;
-#            my $new_no  = $side eq 'left' ? -1 : 1;
-#            my $map     = $slots->{ $no } or next; 
-#            my $link    = 
-#                join( '%3d', $new_no, map { $map->{$_} } qw[ field aid ] );
-#
-#            if ( 
-#                my @ref_positions = sort { $a <=> $b }
-#                $self->feature_correspondence_map_positions(
-#                    slot_no     => $slot_no,
-#                    map_id      => $map_id,
-#                    ref_slot_no => $no,
-#                )
-#            ) {
-#                my $first = $ref_positions[0];
-#                my $last  = $ref_positions[-1];
-#                $link    .= "[$first,$last]";
-#            }
-#
-#            push @maps, $link;
-#        }
-#
-#        my $url = $self->config('map_details_url').
-#            '?ref_map_set_aid='.$self->map_set_aid( $map_id ).
-#            ';ref_map_aid='.$self->accession_id( $map_id ).
-#            ';comparative_maps='.join( ':', @maps );
-#
-#        $self->add_map_area(
-#            coords => \@bounds,
-#            url    => $url,
-#            alt    => 'Details: '.$map_name,
-#        );
-#    }
-#}
 
 # ----------------------------------------------------
 sub include_evidence_types {
@@ -1751,6 +1706,34 @@ Returns the "tick_y" positions of the features IDs in a given slot.
     return @return;
 }
 
+# ----------------------------------------------------
+sub set_scratch_pad {
+
+=pod
+
+=head2 set_scratch_pad
+
+Set the scratch pad.
+
+=cut
+
+    my ( $self, $arg ) = @_;
+
+    if ( $arg ) {
+        $self->{'scratch_pad_draw'} = $self->{'drawing_data'};
+        $self->{'drawing_data'}     = undef;
+    }
+    else {
+        for my $layer ( keys %{ $self->{'scratch_pad_draw'} || {} } ) {
+            push @{ $self->{'drawing_data'}{ $layer } }, 
+                @{ $self->{'scratch_pad_draw'}{ $layer } };
+        }
+
+        $self->{'scratch_pad_draw'} = undef;
+    }
+
+    return 1;
+}
 
 # ----------------------------------------------------
 sub total_no_slots {
