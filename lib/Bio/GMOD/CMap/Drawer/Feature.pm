@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Feature;
 
-# $Id: Feature.pm,v 1.7 2003-01-05 04:22:27 kycl4rk Exp $
+# $Id: Feature.pm,v 1.8 2003-01-08 21:03:26 kycl4rk Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.7 $)[-1];
+$VERSION = (qw$Revision: 1.8 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -29,8 +29,8 @@ use Bio::GMOD::CMap::Constants;
 use base 'Bio::GMOD::CMap';
 
 use constant AUTO_FIELDS => [ 
-    qw( map map_id is_visible default_rank feature_type alternate_name
-        feature_id feature_name is_landmark accession_id 
+    qw( map map_id is_visible default_rank feature_type_id feature_type 
+        alternate_name feature_id feature_name is_landmark accession_id 
         drawing_lane drawing_priority start_position stop_position 
     )
 ];

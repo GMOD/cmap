@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.19 2003-01-07 02:06:57 kycl4rk Exp $
+# $Id: Map.pm,v 1.20 2003-01-08 21:03:28 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.19 $)[-1];
+$VERSION = (qw$Revision: 1.20 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -451,10 +451,6 @@ Lays out the map.
             # Put them in ascending numerical order and use the first and last
             # to find the height.
             #
-#            my @corr_feature_ids = map { 
-#                $drawer->has_correspondence( $_->feature_id ) 
-#                ? $_->feature_id : ()
-#            } @{ values %$features };
             my @corr_feature_ids;
             for my $lane ( keys %$features ) {
                 push @corr_feature_ids, map { 
@@ -824,6 +820,11 @@ Lays out the map.
                         alt    => 'Details: '.$feature->feature_name,
                     );
                 }
+
+                #
+                # Register that we saw this type of feature.
+                #
+                $drawer->register_feature_type( $feature->feature_type_id );
 
                 my ( $left_side, $right_side );
                 my $is_highlighted = 
