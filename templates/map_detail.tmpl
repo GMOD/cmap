@@ -98,11 +98,30 @@
                 </tr>
 
                 <tr>
+                    <td align="right" valign="top">Include Correspondence Types:</td>
+
+                    <td>
+                        [% IF evidence_types.size %]
+                            [% evidence_types.unshift({evidence_type_aid=>'-1',evidence_type=>'--All--'}) %]
+                            <select name="include_evidence_types" size="4" multiple>
+                                [% FOREACH et=evidence_types %]
+                                    <option value="[% et.evidence_type_aid %]"[% IF included_evidence.${et.evidence_type_aid}; ' selected'; END %]>[% et.evidence_type %]</option>
+                                [% END %]
+                            </select>
+
+                        [% ELSE %]
+                            There are no evidence types!
+                        [% END %]
+                    </td>
+                </tr>
+
+                <tr>
                     <td colspan="3" align="center">
-                        <input type="hidden" name="limit_start"      value="[% apr.param('limit_start') %]">
-                        <input type="hidden" name="ref_map_set_aid"  value="[% apr.param('ref_map_set_aid') %]">
-                        <input type="hidden" name="ref_map_aid"      value="[% apr.param('ref_map_aid') %]">
-                        <input type="hidden" name="comparative_maps" value="[% apr.param('comparative_maps') %]">
+                        <input type="hidden" name="limit_start"         value="[% apr.param('limit_start') %]">
+                        <input type="hidden" name="ref_map_set_aid"     value="[% apr.param('ref_map_set_aid') %]">
+                        <input type="hidden" name="ref_map_aid"         value="[% apr.param('ref_map_aid') %]">
+                        <input type="hidden" name="comparative_maps"    value="[% apr.param('comparative_maps') %]">
+                        <input type="hidden" name="comparative_map_aid" value="[% apr.param('comparative_map_aid') %]">
                         <input type="reset"  value="Reset">
                         <input type="submit" value="Submit">
                     </td>
@@ -148,7 +167,7 @@
     <tr>
         <td align="center" colspan="8">
             [% SET comp_maps = "${apr.param('comparative_maps')}" %]
-            [% SET pager_url="/cmap/map_details?ref_map_set_aid=${apr.param('ref_map_set_aid')}&ref_map_aid=${apr.param('ref_map_aid')}&comparative_maps=${comp_maps.replace('=', '%3d')}&label_features=${apr.param('label_features')}&feature_types=${apr.param('feature_types')}&highlight=${apr.param('highlight')}" %]
+            [% SET pager_url="/cmap/map_details?ref_map_set_aid=${apr.param('ref_map_set_aid')}&ref_map_aid=${apr.param('ref_map_aid')}&comparative_maps=${comp_maps.replace('=', '%3d')}&label_features=${apr.param('label_features')}&feature_types=${apr.param('feature_types')}&highlight=${apr.param('highlight')}&comparative_map_aid=${apr.param('comparative_map_aid')}" %]
             [% PROCESS pager.tmpl %]
         </td>
     </tr>
@@ -159,9 +178,9 @@
     </tr>
 
     <tr>
-        <th><a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% apr.param('comparative_maps') %];feature_type_aid=[% apr.param('feature_type_aid') %];highlight=[% apr.param('highlight') %];image_size=[% apr.param('image_size') %];font_size=[% apr.param('font_size') %];image_type=[% apr.param('image_type') %];label_features=[% apr.param('label_features') %];order=[% apr.param('order') %];order_by=feature_name">Feature</a></th>
-        <th><a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% apr.param('comparative_maps') %];feature_type_aid=[% apr.param('feature_type_aid') %];highlight=[% apr.param('highlight') %];image_size=[% apr.param('image_size') %];font_size=[% apr.param('font_size') %];image_type=[% apr.param('image_type') %];label_features=[% apr.param('label_features') %];order=[% apr.param('order') %];order_by=feature_type">Type</a></th>
-        <th><a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% apr.param('comparative_maps') %];feature_type_aid=[% apr.param('feature_type_aid') %];highlight=[% apr.param('highlight') %];image_size=[% apr.param('image_size') %];font_size=[% apr.param('font_size') %];image_type=[% apr.param('image_type') %];label_features=[% apr.param('label_features') %];order=[% apr.param('order') %];order_by=start_position">Position</a> ([% reference_map.map_units %])</th>
+        <th><a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% apr.param('comparative_maps') %];feature_type_aid=[% apr.param('feature_type_aid') %];highlight=[% apr.param('highlight') %];image_size=[% apr.param('image_size') %];font_size=[% apr.param('font_size') %];image_type=[% apr.param('image_type') %];label_features=[% apr.param('label_features') %];order=[% apr.param('order') %];order_by=feature_name;comparative_map_aid=[% apr.param('comparative_map_aid') %]">Feature</a></th>
+        <th><a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% apr.param('comparative_maps') %];feature_type_aid=[% apr.param('feature_type_aid') %];highlight=[% apr.param('highlight') %];image_size=[% apr.param('image_size') %];font_size=[% apr.param('font_size') %];image_type=[% apr.param('image_type') %];label_features=[% apr.param('label_features') %];order=[% apr.param('order') %];order_by=feature_type;comparative_map_aid=[% apr.param('comparative_map_aid') %]">Type</a></th>
+        <th><a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% apr.param('comparative_maps') %];feature_type_aid=[% apr.param('feature_type_aid') %];highlight=[% apr.param('highlight') %];image_size=[% apr.param('image_size') %];font_size=[% apr.param('font_size') %];image_type=[% apr.param('image_type') %];label_features=[% apr.param('label_features') %];order=[% apr.param('order') %];order_by=start_position;comparative_map_aid=[% apr.param('comparative_map_aid') %]">Position</a> ([% reference_map.map_units %])</th>
         <th>Map</th>
         <th>Feature</th>
         <th>Type</th>
@@ -171,7 +190,7 @@
 
     [% FOREACH f=features %]
     <tr>
-        <td [% IF f.no_positions>1 %] rowspan="[% f.no_positions %]"[% END %] [% IF f.highlight_color %]bgcolor="[% f.highlight_color %]"[% END %]>
+        <td[% IF f.no_positions>1 %] rowspan="[% f.no_positions %]"[% END %][% IF f.highlight_color %] bgcolor="[% f.highlight_color %]"[% END %]>
             <a href="feature?feature_aid=[% f.accession_id %]">[% f.feature_name %]</a>
         </td>
         <td [% IF f.no_positions>1 %] rowspan="[% f.no_positions %]"[% END %]>
@@ -187,9 +206,7 @@
                 [% IF i>0 %]<tr>[% END %]
 
                 <td>
-                    [% p.species_name %] -
-                    [% p.map_set_name %] -
-                    [% p.map_name %]
+                    [% p.species_name %] - [% p.map_set_name %] - [% p.map_name %]
                 </td>
                 <td>
                     <a href="feature?feature_aid=[% p.feature_aid %]">[% p.feature_name %]</a>

@@ -12,9 +12,8 @@
         </tr>
         <tr>
             <th><a href="admin?action=corr_evidence_types_view;order_by=accession_id">Acc. ID</a></th>
-            <th><a href="admin?action=corr_evidence_types_view;order_by=evidence_type">Evidence Type</a></th>
             <th><a href="admin?action=corr_evidence_types_view;order_by=rank">Rank</a></th>
-            <th><a href="admin?action=corr_evidence_types_view;order_by=line_style">Line Style</a></th>
+            <th><a href="admin?action=corr_evidence_types_view;order_by=evidence_type">Evidence Type</a></th>
             <th><a href="admin?action=corr_evidence_types_view;order_by=line_color">Line Color</a></th>
             <th colspan="2">&nbsp;</th>
         </tr>
@@ -23,9 +22,8 @@
         [% FOREACH et=evidence_types %]
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
                 <td>[% et.accession_id %]</td>
-                <td>[% et.evidence_type %]</td>
                 <td>[% et.rank %]</td>
-                <td>[% et.line_style %]</td>
+                <td>[% et.evidence_type %]</td>
                 <td>[% et.line_color %]</td>
                 <td align="center">
                     <a href="admin?action=corr_evidence_type_edit;evidence_type_id=[% et.evidence_type_id %]">Edit</a>
