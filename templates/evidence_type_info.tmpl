@@ -14,11 +14,16 @@
 [%- url=apr.url -%]
 
 <div align="center">
-<p>
-[% IF evidence_types.size == 1 %]
-    <b>[</b>&nbsp;<a href="evidence_type_info">View All Evidence Types</a>&nbsp;<b>]</b>
-[% END %]
-</p>
+<form method="GET" action="evidence_type_info">
+    Display:
+    <select name="evidence_type_aid">
+        <option value="">--All Evidence Types--</option>
+        [% FOREACH et=all_evidence_types %]
+            <option value="[% et.evidence_type_aid %]"[% IF apr.param('evidence_type_aid')==et.evidence_type_aid %] selected[% END %]>[% et.evidence_type %]</option>
+        [% END %]
+    </select>
+    <input type="submit" value="Submit">
+</form>
 
 <p>
 [% IF evidence_types.size %]
