@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.84 2004-01-07 19:01:46 kycl4rk Exp $
+# $Id: Data.pm,v 1.85 2004-01-08 17:24:33 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.84 $)[-1];
+$VERSION = (qw$Revision: 1.85 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -1780,6 +1780,9 @@ Returns the data for the main comparative map HTML form.
             $sth->execute( $ref_map_set_aid );
             $ref_map_set_info = $sth->fetchrow_hashref;
             $ref_map_set_info->{'attributes'} = $self->get_attributes(
+                'cmap_map_set', $ref_map_set_info->{'map_set_id'}
+            );
+            $ref_map_set_info->{'xrefs'} = $self->get_xrefs(
                 'cmap_map_set', $ref_map_set_info->{'map_set_id'}
             );
         }
