@@ -109,6 +109,25 @@
                     </td>
                 </tr> 
             [% END %]
+
+            [% IF ms.feature_types.size %]
+                <tr>
+                    <td align="right">Feature Types:</td>
+                    <td>
+                        [%- SET list=[] -%]
+                        [%- SET ft_list=[] -%]
+                        [%- FOREACH ft=ms.feature_types -%]
+                            [%- list.push("<a href=\"/cmap/feature_type_info?feature_type_aid=$ft.feature_type_aid\">$ft.feature_type</a>") -%]
+                            [%- ft_list.push(ft.feature_type_aid) -%]
+                        [%- END -%]
+                        [%- list.join(', ') -%]
+                        [%- IF ft_list.size > 1 -%]
+                            [%- SET all_ft = ft_list.join(',') -%]
+                            <b>[</b> <a href="/cmap/feature_type_info?feature_type_aid=[%- all_ft -%]">View All Feature Types</a> <b>]</b>
+                        [%- END -%]
+                    </td>
+                </tr> 
+            [% END %]
         [% END %]
     </table>
 [% ELSE %]
