@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.209 2005-03-01 17:42:19 mwz444 Exp $
+# $Id: Data.pm,v 1.210 2005-03-02 15:07:21 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.209 $)[-1];
+$VERSION = (qw$Revision: 1.210 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -5869,6 +5869,37 @@ original start and stop.
                 $aid_where .=
                   " m.accession_id in ('"
                   . join( "','", keys( %{$maps} ) ) . "')";
+                foreach my $map_aid (keys %{$maps} ) {
+                    if (defined($maps->{$map_aid}{'start'}) 
+                        and defined($maps->{$map_aid}{'stop'} ) ) {
+                        $aid_where .= 
+                            qq[ and ( not m.accession_id = '$map_aid'  ]
+                          . " or (( cl.start_position1>="
+                          . $maps->{$map_aid}{'start'}
+                          . " and cl.start_position1<="
+                          . $maps->{$map_aid}{'stop'} 
+                          . " ) or ( cl.stop_position1 is not null and "
+                          . "  cl.start_position1<="
+                          . $maps->{$map_aid}{'start'}
+                          . " and cl.stop_position1>="
+                          . $maps->{$map_aid}{'start'} . " ))) ";
+                    }
+                    elsif ( defined( $maps->{$map_aid}{'start'} ) ) {
+                        $aid_where .= 
+                            qq[ and ( not m.accession_id = '$map_aid'  ]
+                            . " and (( cl.start_position1>="
+                          . $maps->{$map_aid}{'start'}
+                          . " ) or ( cl.stop_position1 is not null "
+                          . " and cl.stop_position1>="
+                          . $maps->{$map_aid}{'start'} . " ))) ";
+                    }
+                    elsif ( defined( $maps->{$map_aid}{'stop'}  ) ) {
+                        $aid_where .= 
+                            qq[ and ( not m.accession_id = '$map_aid'  ]
+                            . " and cl.start_position1<="
+                            . $maps->{$map_aid}{'stop'}  . ") ";
+                    }
+                }
             }
             if ($min_correspondences) {
                 $group_by = q[ 
