@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.41 2003-07-30 16:55:31 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.42 2003-07-31 02:21:17 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.41 $)[-1];
+$VERSION = (qw$Revision: 1.42 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -469,12 +469,12 @@ Lays out the image and writes it to the file system, set the "image_name."
 
     my ( $min_y, $max_y, $min_x, $max_x );
     for my $slot_no ( $self->slot_numbers ) {
-        my $data    = $self->slot_data( $slot_no );
+        my $data    = $self->slot_data( $slot_no ) or return;
         my $map     =  Bio::GMOD::CMap::Drawer::Map->new( 
             drawer  => $self, 
             slot_no => $slot_no,
             maps    => $data,
-        );
+        ) or return $self->error( Bio::GMOD::CMap::Drawer::Map->error );
 
         my $bounds = $map->layout or return $self->error( $map->error );
         $min_x     = $bounds->[0] unless defined $min_x;
@@ -897,7 +897,9 @@ necessary data for drawing.
             min_correspondences    => $self->min_correspondences,
             include_feature_types  => $self->include_feature_types,
             include_evidence_types => $self->include_evidence_types,
-        );
+        ) or return $self->error( $data->error );
+
+        return $self->error("Problem getting data") unless $self->{'data'};
     }
 
     return $self->{'data'};
