@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.87 2004-12-16 18:52:15 mwz444 Exp $
+# $Id: Drawer.pm,v 1.88 2005-01-05 03:04:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -42,8 +42,12 @@ The base map drawing module.
         map_view => $map_view,
         data_module => $data_module,
         aggregate => $aggregate,
+        show_intraslot_corr => $show_intraslot_corr,
+        clean_view => $clean_view,
         magnify_all => $magnify_all,
         scale_maps => $scale_maps,
+        stack_maps => $stack_maps,
+        ref_map_order => $ref_map_order,
     );
 
 =head2 Fields
@@ -189,6 +193,14 @@ it has already been created.  Otherwise, Drawer will create it.
 Set to 1 to aggregate the correspondences with one line.
 Set to 2 to aggregate the correspondences with two lines.
 
+=item * show_intraslot_corr
+
+Set to 1 to diplsyed intraslot correspondences.
+
+=item * clean_view
+
+Set to 1 to not have the control buttons displayed on the image.
+
 =item * magnify_all
 
 Set to the magnification factor of the whole picture.  The default is 1.
@@ -196,6 +208,15 @@ Set to the magnification factor of the whole picture.  The default is 1.
 =item * scale_maps
 
 Set to 1 scale the maps with the same unit.  Default is 1.
+
+=item * stack_maps
+
+Set to 1 stack the reference maps vertically.  Default is 0.
+
+=item * ref_map_order
+
+This is the string that dictates the order of the reference maps.  The format
+is the list of map_aids in order, separated by commas 
 
 =back
 
@@ -205,7 +226,7 @@ Set to 1 scale the maps with the same unit.  Default is 1.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.87 $)[-1];
+$VERSION = (qw$Revision: 1.88 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -223,7 +244,8 @@ my @INIT_PARAMS = qw[
   label_features included_feature_types corr_only_feature_types
   included_evidence_types ignored_evidence_types ignored_feature_types
   config data_source min_correspondences collapse_features cache_dir
-  map_view data_module aggregate magnify_all scale_maps
+  map_view data_module aggregate show_intraslot_corr clean_view
+  magnify_all scale_maps stack_maps ref_map_order
 ];
 
 # ----------------------------------------------------
@@ -256,7 +278,7 @@ Initializes the drawing object.
 }
 
 # ----------------------------------------
-sub data_module {
+sub xdata_module {
 
 =pod
 
@@ -370,40 +392,97 @@ Draws a line from one point to another.
 
 =cut
 
-    my ( $self, $x1, $y1, $x2, $y2, $color, $same_map, $label_side ) = @_;
+    my ( $self, $x1, $y1, $x2, $y2, $color, $same_map, $label_side, $line_type )
+      = @_;
     my $layer = 0;      # bottom-most layer of image
     my @lines = ();
     my $line  = LINE;
 
-    push @lines, [ $line, $x1, $y1, $x2, $y2, $color, $layer ];
-
-    #    if ( $y1 == $y2 ) {
-    #        push @lines, [ $line, $x1, $y1, $x2, $y2, $color ];
-    #    }
-    #    elsif ( $same_map ) {
-    #        if ( $label_side eq RIGHT ) {
-    #            push @lines, [ $line, $x1  , $y1, $x1+5, $y1, $color, $layer ];
-    #            push @lines, [ $line, $x1+5, $y1, $x2+5, $y2, $color, $layer ];
-    #            push @lines, [ $line, $x2+5, $y2, $x2  , $y2, $color, $layer ];
-    #        }
-    #        else {
-    #            push @lines, [ $line, $x1  , $y1, $x1-5, $y1, $color, $layer ];
-    #            push @lines, [ $line, $x1-5, $y1, $x2-5, $y2, $color, $layer ];
-    #            push @lines, [ $line, $x2-5, $y2, $x2  , $y2, $color, $layer ];
-    #        }
-    #    }
-    #    else {
-    #        if ( $x1 < $x2 ) {
-    #            push @lines, [ $line, $x1  , $y1, $x1+5, $y1, $color, $layer ];
-    #            push @lines, [ $line, $x1+5, $y1, $x2-5, $y2, $color, $layer ];
-    #            push @lines, [ $line, $x2-5, $y2, $x2  , $y2, $color, $layer ];
-    #        }
-    #        else {
-    #            push @lines, [ $line, $x1  , $y1, $x1-5, $y1, $color, $layer ];
-    #            push @lines, [ $line, $x1-5, $y1, $x2+5, $y2, $color, $layer ];
-    #            push @lines, [ $line, $x2+5, $y2, $x2  , $y2, $color, $layer ];
-    #        }
-    #    }
+    if ( !$line_type or $line_type eq 'direct' ) {
+        push @lines, [ $line, $x1, $y1, $x2, $y2, $color, $layer ];
+    }
+    else {
+        my $extention_length = 15;
+        if ( $y1 == $y2 ) {
+            push @lines, [ $line, $x1, $y1, $x2, $y2, $color ];
+        }
+        elsif ($same_map) {
+            if ( $label_side eq RIGHT ) {
+                push @lines,
+                  [
+                    $line, $x1, $y1, $x1 + $extention_length,
+                    $y1, $color, $layer
+                  ];
+                push @lines,
+                  [
+                    $line,                   $x1 + $extention_length, $y1,
+                    $x2 + $extention_length, $y2,                     $color,
+                    $layer
+                  ];
+                push @lines,
+                  [
+                    $line, $x2 + $extention_length,
+                    $y2, $x2, $y2, $color, $layer
+                  ];
+            }
+            else {
+                push @lines,
+                  [
+                    $line, $x1, $y1, $x1 - $extention_length,
+                    $y1, $color, $layer
+                  ];
+                push @lines,
+                  [
+                    $line,                   $x1 - $extention_length, $y1,
+                    $x2 - $extention_length, $y2,                     $color,
+                    $layer
+                  ];
+                push @lines,
+                  [
+                    $line, $x2 - $extention_length,
+                    $y2, $x2, $y2, $color, $layer
+                  ];
+            }
+        }
+        else {
+            if ( $x1 < $x2 ) {
+                push @lines,
+                  [
+                    $line, $x1, $y1, $x1 + $extention_length,
+                    $y1, $color, $layer
+                  ];
+                push @lines,
+                  [
+                    $line,                   $x1 + $extention_length, $y1,
+                    $x2 - $extention_length, $y2,                     $color,
+                    $layer
+                  ];
+                push @lines,
+                  [
+                    $line, $x2 - $extention_length,
+                    $y2, $x2, $y2, $color, $layer
+                  ];
+            }
+            else {
+                push @lines,
+                  [
+                    $line, $x1, $y1, $x1 - $extention_length,
+                    $y1, $color, $layer
+                  ];
+                push @lines,
+                  [
+                    $line,                   $x1 - $extention_length, $y1,
+                    $x2 + $extention_length, $y2,                     $color,
+                    $layer
+                  ];
+                push @lines,
+                  [
+                    $line, $x2 + $extention_length,
+                    $y2, $x2, $y2, $color, $layer
+                  ];
+            }
+        }
+    }
 
     return @lines;
 }
@@ -796,14 +875,17 @@ Lays out the image and writes it to the file system, set the "image_name."
             }
             next;
         }
+
         my $map = Bio::GMOD::CMap::Drawer::Map->new(
             drawer      => $self,
             slot_no     => $slot_no,
             maps        => $data,
             config      => $self->config(),
             aggregate   => $self->aggregate,
+            clean_view  => $self->clean_view,
             magnify_all => $self->magnify_all,
             scale_maps  => $self->scale_maps,
+            stack_maps  => $self->stack_maps,
           )
           or return $self->error( Bio::GMOD::CMap::Drawer::Map->error );
 
@@ -849,6 +931,7 @@ Lays out the image and writes it to the file system, set the "image_name."
                       || $self->config_data('connecting_line_color'),
                     $position_set->{'same_map'}   || 0,
                     $position_set->{'label_side'} || '',
+                    $position_set->{'line_type'},
                 )
             );
         }
@@ -1026,12 +1109,13 @@ Lays out the image and writes it to the file system, set the "image_name."
     # Extra symbols.
     #
     my @buttons = (
-        [ 'i' => 'Map Set Info' ],
-        [ '?' => 'Map Details' ],
-        [ 'M' => 'Matrix View' ],
-        [ 'X' => 'Delete Map' ],
-        [ 'F' => 'Flip Map' ],
-        [ 'N' => 'New Map View' ],
+        [ 'i'  => 'Map Set Info' ],
+        [ '?'  => 'Map Details' ],
+        [ 'M'  => 'Matrix View' ],
+        [ 'X'  => 'Delete Map' ],
+        [ 'F'  => 'Flip Map' ],
+        [ 'UF' => 'Unflip Map' ],
+        [ 'N'  => 'New Map View' ],
     );
     {
         $self->add_drawing( STRING, $font, $x, $max_y, 'Menu Symbols:',
@@ -1040,9 +1124,9 @@ Lays out the image and writes it to the file system, set the "image_name."
 
         for my $button (@buttons) {
             my ( $sym, $caption ) = @$button;
-            $self->add_drawing( STRING, $font, $x + 2, $max_y + 2, $sym,
+            $self->add_drawing( STRING, $font, $x + 3, $max_y + 2, $sym,
                 'grey' );
-            my $end = $x + $font->width + 4;
+            my $end = $x + ( $font->width * length($sym) ) + 4;
 
             $self->add_drawing( RECTANGLE, $x, $max_y, $end,
                 $max_y + $font->height + 4, 'grey' );
@@ -1342,6 +1426,7 @@ to connect corresponding features on two maps.
                 positions   => [ @f1_self_pos, @same_map ],
                 same_map    => 1,
                 label_side  => $self->label_side($slot_no),
+                line_type   => 'direct',
               }
               if @same_map;
 
@@ -1350,6 +1435,36 @@ to connect corresponding features on two maps.
                 feature_id1 => $f1,
                 feature_id2 => $f2,
                 positions   => [ @f1_pos, @ref_pos ],
+                line_type   => 'direct',
+              }
+              if @ref_pos;
+        }
+        for my $f2 ( $self->intraslot_correspondences($f1) ) {
+            my @same_map =
+              @{ $self->{'feature_position'}{$slot_no}{$f2}{$self_label_side}
+                  || [] };
+
+            my @ref_pos =
+              @{ $self->{'feature_position'}{$ref_slot_no}{$f2}{$ref_side}
+                  || [] };
+
+            push @return,
+              {
+                feature_id1 => $f1,
+                feature_id2 => $f2,
+                positions   => [ @f1_self_pos, @same_map ],
+                same_map    => 1,
+                label_side  => $self->label_side($slot_no),
+                line_type   => 'indirect',
+              }
+              if @same_map;
+
+            push @return,
+              {
+                feature_id1 => $f1,
+                feature_id2 => $f2,
+                positions   => [ @f1_pos, @ref_pos ],
+                line_type   => 'indirect',
               }
               if @ref_pos;
         }
@@ -1398,7 +1513,7 @@ Returns whether or not a feature has a correspondence.
     my $self = shift;
     my $feature_id = shift or return;
     return defined $self->{'data'}{'correspondences'}{$feature_id}
-      or defined $self->{'data'}{'intraslot_correspondences'}{$feature_id};
+      || defined $self->{'data'}{'intraslot_correspondences'}{$feature_id};
 }
 
 # ----------------------------------------------------
@@ -2195,6 +2310,11 @@ Creates default link parameters for CMap->create_viewer_link()
     my $label_features              = $args{'label_features'};
     my $collapse_features           = $args{'collapse_features'};
     my $aggregate                   = $args{'aggregate'};
+    my $scale_maps                  = $args{'scale_maps'};
+    my $stack_maps                  = $args{'stack_maps'};
+    my $ref_map_order               = $args{'ref_map_order'};
+    my $show_intraslot_corr         = $args{'show_intraslot_corr'};
+    my $clean_view                  = $args{'clean_view'};
     my $magnify_all                 = $args{'magnify_all'};
     my $flip                        = $args{'flip'};
     my $min_correspondences         = $args{'min_correspondences'};
@@ -2257,6 +2377,21 @@ Creates default link parameters for CMap->create_viewer_link()
     unless ( defined($aggregate) ) {
         $aggregate = $self->aggregate();
     }
+    unless ( defined($scale_maps) ) {
+        $scale_maps = $self->scale_maps();
+    }
+    unless ( defined($stack_maps) ) {
+        $stack_maps = $self->stack_maps();
+    }
+    unless ( defined($ref_map_order) ) {
+        $ref_map_order = $self->ref_map_order();
+    }
+    unless ( defined($show_intraslot_corr) ) {
+        $show_intraslot_corr = $self->show_intraslot_corr();
+    }
+    unless ( defined($clean_view) ) {
+        $clean_view = $self->clean_view();
+    }
     unless ( defined($magnify_all) ) {
         $magnify_all = $self->magnify_all();
     }
@@ -2311,6 +2446,11 @@ Creates default link parameters for CMap->create_viewer_link()
         label_features              => $label_features,
         collapse_features           => $collapse_features,
         aggregate                   => $aggregate,
+        scale_maps                  => $scale_maps,
+        stack_maps                  => $stack_maps,
+        ref_map_order               => $ref_map_order,
+        show_intraslot_corr         => $show_intraslot_corr,
+        clean_view                  => $clean_view,
         magnify_all                 => $magnify_all,
         flip                        => $flip,
         min_correspondences         => $min_correspondences,

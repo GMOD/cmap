@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.79 2004-12-09 18:46:45 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.80 2005-01-05 03:04:25 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.79 $)[-1];
+$VERSION = (qw$Revision: 1.80 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -71,8 +71,13 @@ sub handler {
     my $label_features        = $apr->param('label_features') || '';
     my $collapse_features     = $apr->param('collapse_features');
     my $aggregate             = $apr->param('aggregate');
+    my $show_intraslot_corr   = $apr->param('show_intraslot_corr');
+    my $clean_view            = $apr->param('clean_view');
     my $magnify_all           = $apr->param('magnify_all');
     my $scale_maps            = $apr->param('scale_maps');
+    my $stack_maps            = $apr->param('stack_maps');
+    my $ref_map_order         = $apr->param('ref_map_order');
+    my $prev_ref_map_order    = $apr->param('prev_ref_map_order');
     my $flip                  = $apr->param('flip') || '';
     my $min_correspondences   = $apr->param('min_correspondences') || 0;
     my $page_no               = $apr->param('page_no') || 1;
@@ -92,11 +97,22 @@ sub handler {
 
     $collapse_features = $self->config_data('collapse_overlapping_features')
       unless ( defined($collapse_features) );
+    $apr->param( 'aggregate', $self->aggregate($aggregate) );
+    $apr->param( 'show_intraslot_corr',
+        $self->show_intraslot_corr($show_intraslot_corr) );
+    $apr->param( 'clean_view',  $self->clean_view($clean_view) );
+    $apr->param( 'magnify_all', $self->magnify_all($magnify_all) );
+    $apr->param( 'scale_maps',  $self->scale_maps($scale_maps) );
+    $apr->param( 'stack_maps',  $self->stack_maps($stack_maps) );
 
-    # Get and set a variety of options
-    $apr->param('aggregate',   $self->aggregate($aggregate) );
-    $apr->param('magnify_all', $self->magnify_all($magnify_all));
-    $apr->param('scale_maps',  $self->scale_maps($scale_maps));
+    if ($ref_map_order) {
+        $self->ref_map_order($ref_map_order);
+    }
+    else {
+
+        #use the previous order if new order is not defined.
+        $self->ref_map_order($prev_ref_map_order);
+    }
 
     $INTRO ||= $self->config_data( 'map_viewer_intro', $self->data_source )
       || '';
@@ -389,8 +405,12 @@ sub handler {
             config                  => $self->config,
             data_module             => $self->data_module,
             aggregate               => $self->aggregate,
+            show_intraslot_corr     => $self->show_intraslot_corr,
+            clean_view              => $self->clean_view,
             magnify_all             => $self->magnify_all,
             scale_maps              => $self->scale_maps,
+            stack_maps              => $self->stack_maps,
+            ref_map_order           => $self->ref_map_order,
           )
           or return $self->error( Bio::GMOD::CMap::Drawer->error );
 
@@ -421,6 +441,7 @@ sub handler {
         included_evidence_types => \@included_evidence_types,
         ref_species_aid         => $ref_species_aid,
         ref_map_set_aid         => $ref_map_set_aid,
+        ref_slot_data           => $drawer->{'data'}->{'slots'}{0},
       )
       or return $self->error( $data->error );
 
@@ -481,6 +502,7 @@ sub handler {
             extra_code              => $extra_code,
             extra_form              => $extra_form,
             feature_default_display => $feature_default_display,
+            prev_ref_map_order      => $self->ref_map_order(),
         },
         \$html
       )

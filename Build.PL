@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.42 2004-12-17 20:00:08 mwz444 Exp $
+# $Id: Build.PL,v 1.43 2005-01-05 03:03:37 mwz444 Exp $
 
 use strict;
 use CMapBuilder;

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.67 2004-12-09 18:46:44 mwz444 Exp $
+# $Id: CMap.pm,v 1.68 2005-01-05 03:03:54 mwz444 Exp $
 
 =head1 NAME
 
@@ -397,12 +397,59 @@ The default is 1.
 
     my $self = shift;
     my $val  = shift;
-    $self->{'aggregate'} = $val if ( defined $val );
-    $self->{'aggregate'} = $self->config_data('aggregate_correspondences')
+    $self->{'aggregate'} = $val if defined $val;
+    $self->{'aggregate'} = $self->config_data('aggregate_correspondences') || 1
       unless defined $self->{'aggregate'};
-    $self->{'aggregate'} = 1
-      unless ( defined $self->{'aggregate'} );
     return $self->{'aggregate'};
+}
+
+# ----------------------------------------------------
+sub show_intraslot_corr {
+
+=pod
+                                                                                
+=head2 show_intraslot_corr
+
+Returns the boolean show_intraslot_corr variable.  This determines 
+if the intraslot correspondences are displayed.
+
+The default is 1.
+
+=cut
+
+    my $self = shift;
+    my $val  = shift;
+    $self->{'show_intraslot_corr'} = $val if defined $val;
+    $self->{'show_intraslot_corr'} =
+      $self->config_data('show_intraslot_correspondences')
+      unless defined $self->{'show_intraslot_corr'};
+    $self->{'show_intraslot_corr'} = 0
+      unless defined $self->{'show_intraslot_corr'};
+    return $self->{'show_intraslot_corr'};
+}
+
+# ----------------------------------------------------
+sub clean_view {
+
+=pod
+                                                                                
+=head2 clean_view
+
+Returns the boolean clean_view variable.  This determines 
+if there will be control buttons on the map.
+
+The default is 1.
+
+=cut
+
+    my $self = shift;
+    my $val  = shift;
+    $self->{'clean_view'} = $val if defined $val;
+    $self->{'clean_view'} = $self->config_data('clean_view')
+      unless defined $self->{'clean_view'};
+    $self->{'clean_view'} = 0
+      unless defined $self->{'clean_view'};
+    return $self->{'clean_view'};
 }
 
 # ----------------------------------------------------
@@ -453,6 +500,50 @@ The default is 1.
 }
 
 # ----------------------------------------------------
+sub stack_maps {
+
+=pod
+                                                                                
+=head2 stack_maps
+
+Returns the boolean stack_maps variable.  This determines 
+if the reference maps are staced vertically.
+
+The default is 0.
+
+=cut
+
+    my $self = shift;
+    my $val  = shift;
+    $self->{'stack_maps'} = $val if defined $val;
+    $self->{'stack_maps'} = $self->config_data('stack_maps')
+      unless defined $self->{'stack_maps'};
+    $self->{'stack_maps'} = 0
+      unless defined $self->{'stack_maps'};
+    return $self->{'stack_maps'};
+}
+
+# ----------------------------------------------------
+sub ref_map_order {
+
+=pod
+                                                                                
+=head2 ref_map_order
+
+Returns the string that describes the order of the ref maps. 
+
+The default is ''.
+
+=cut
+
+    my $self = shift;
+    my $val  = shift;
+    $self->{'ref_map_order'} = $val if defined $val;
+    $self->{'ref_map_order'} = '' unless defined $self->{'ref_map_order'};
+    return $self->{'ref_map_order'};
+}
+
+# ----------------------------------------------------
 sub data_module {
 
 =pod
@@ -465,11 +556,15 @@ Returns a handle to the data module.
 
     my $self = shift;
 
+    $self->{'data_module'} = shift if @_;
+
     unless ( $self->{'data_module'} ) {
         $self->{'data_module'} = Bio::GMOD::CMap::Data->new(
-            data_source => $self->data_source,
-            config      => $self->config,
-            aggregate   => $self->aggregate,
+            data_source         => $self->data_source,
+            config              => $self->config,
+            aggregate           => $self->aggregate,
+            show_intraslot_corr => $self->show_intraslot_corr,
+            ref_map_order       => $self->ref_map_order,
           )
           or $self->error( Bio::GMOD::CMap::Data->error );
     }
@@ -522,7 +617,6 @@ sub get_xrefs {
 =pod
 
 =head2 get_xrefs 
-
 Retrieves the xrefs attached to a database object.
 
 =cut
@@ -648,6 +742,11 @@ Given information about the link, creates a url to cmap_viewer.
     my $label_features              = $args{'label_features'};
     my $collapse_features           = $args{'collapse_features'};
     my $aggregate                   = $args{'aggregate'};
+    my $scale_maps                  = $args{'scale_maps'};
+    my $stack_maps                  = $args{'stack_maps'};
+    my $ref_map_order               = $args{'ref_map_order'};
+    my $show_intraslot_corr         = $args{'show_intraslot_corr'};
+    my $clean_view                  = $args{'clean_view'};
     my $magnify_all                 = $args{'magnify_all'};
     my $flip                        = $args{'flip'};
     my $min_correspondences         = $args{'min_correspondences'};
@@ -662,15 +761,16 @@ Given information about the link, creates a url to cmap_viewer.
     $url .= '?' unless $url =~ /\?$/;
 
     ###Required Fields
-    unless (defined($ref_map_set_aid)
+    unless ( ( defined($ref_map_set_aid) or defined($ref_map_aids) )
         and defined($data_source) )
     {
         return '';
     }
-    $url .= "ref_map_set_aid=$ref_map_set_aid;";
     $url .= "data_source=$data_source;";
 
     ### optional
+    $url .= "ref_map_set_aid=$ref_map_set_aid;"
+      if defined($ref_map_set_aid);
     $url .= "ref_species_aid=$ref_species_aid;"
       if defined($ref_species_aid);
     $url .= "prev_ref_species_aid=$prev_ref_species_aid;"
@@ -695,6 +795,16 @@ Given information about the link, creates a url to cmap_viewer.
       if defined($collapse_features);
     $url .= "aggregate=$aggregate;"
       if defined($aggregate);
+    $url .= "scale_maps=$scale_maps;"
+      if defined($scale_maps);
+    $url .= "stack_maps=$stack_maps;"
+      if defined($stack_maps);
+    $url .= "ref_map_order=$ref_map_order;"
+      if defined($ref_map_order);
+    $url .= "show_intraslot_corr=$show_intraslot_corr;"
+      if defined($show_intraslot_corr);
+    $url .= "clean_view=$clean_view;"
+      if defined($clean_view);
     $url .= "magnify_all=$magnify_all;"
       if defined($magnify_all);
     $url .= "flip=$flip;"

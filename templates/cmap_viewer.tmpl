@@ -108,7 +108,19 @@ function startPage(){
         }
     }
   }
+
+  document.comparative_map_form.ref_map_order='';
 } 
+
+function beforeSubmit(){
+  //Clean things up before submitting to decrease the URL clutter
+  var select = document.comparative_map_form.ori_ref_map_order;
+  select.selectedIndex = -1;
+  document.comparative_map_form.ref_map_order_display.value='';
+  if (document.comparative_map_form.ref_map_order.value != '' ){
+    document.comparative_map_form.prev_ref_map_order.value = '';
+  }
+}
 
 function selectFeatureRadio(val){
   var radios=document.getElementsByTagName("INPUT");
@@ -123,6 +135,7 @@ function selectFeatureRadio(val){
     }
   }
 }
+
 
 function selectEvidenceRadio(val){
   var radios=document.getElementsByTagName("INPUT");
@@ -173,6 +186,7 @@ function changeCompMaps(sel,index,side){
     sel.options[0] = opt;
     return;
   }
+
   if (side == 'Left'){
     dataArray=new Array(
       [% SET not_first_map_set=0; -%]
@@ -247,8 +261,40 @@ function changeCompMaps(sel,index,side){
   sel.selectedIndex=0;
 }
 
+function moveOrderedMaps() {
+  select        = document.comparative_map_form.ori_ref_map_order;
+  selectOptions = select.options;
+  for ( var i=0;i<selectOptions.length;i++){
+    if (selectOptions[i].selected){
+      document.comparative_map_form.ref_map_order_display.value = 
+        document.comparative_map_form.ref_map_order_display.value + selectOptions[i].text + ",";
+      document.comparative_map_form.ref_map_order.value = 
+        document.comparative_map_form.ref_map_order.value + selectOptions[i].value + ",";
+      select.remove(i);
+      i--;
+    }
+  }
+}
+function moveOrderedMapsRev() {
+  select        = document.comparative_map_form.ori_ref_map_order;
+  selectOptions = select.options;
+  for ( var i=selectOptions.length-1;i>=0;i--){
+    if (selectOptions[i].selected){
+      document.comparative_map_form.ref_map_order_display.value = 
+        document.comparative_map_form.ref_map_order_display.value + selectOptions[i].text + ",";
+      document.comparative_map_form.ref_map_order.value = 
+        document.comparative_map_form.ref_map_order.value + selectOptions[i].value + ",";
+      select.remove(i);
+    }
+  }
+}
 
-
+function selectAllOptions(select){
+  var options = select.options;
+  for ( var i=0;i<options.length;i++){  
+    options[i].selected=1;
+  }
+}
 </script>
 [%- IF extra_code -%]
   [% extra_code %]
@@ -332,12 +378,14 @@ function changeCompMaps(sel,index,side){
               <td align="right">Ref. Set:</td>
 
               <td>
+                [% SET last_map_type='' %]
                 <select name="ref_map_set_aid" >
                   <option value="">--Select--</option>
                   [%- FOREACH ms=form_data.ref_map_sets -%]
                     <option [% IF apr.param('ref_map_set_aid') == ms.accession_id OR form_data.ref_map_sets.size==1; apr.param('ref_map_set_aid') = ms.accession_id; ' selected'; END %] value="[% ms.accession_id %]">
                       [% ms.map_type %] : [% ms.species_name %] - [% ms.map_set_name %]
                     </option>
+                    [%- SET last_map_type=ms.map_type -%]
                   [%- END -%]
                 </select>
               </td>
@@ -363,12 +411,12 @@ function changeCompMaps(sel,index,side){
               <tr>
                 <td valign="top" align="right">Ref. Map:</td>
       
-                <td>
+                <td valign="top">
                   <select name="ref_map_aids" size="14" multiple
                     [% IF apr.param('ref_map_aids') %]
-                      onchange="javascript:if(document.ref_map_form.ref_map_aids.value!=document.ref_map_form.prev_ref_map_aids.value){document.comparative_map_form.start.value='';document.comparative_map_form.end.value='';"}>
+                      onchange="javascript:if(document.ref_map_form.ref_map_aids.value!=document.ref_map_form.prev_ref_map_aids.value){document.comparative_map_form.start.value='';document.comparative_map_form.end.value='';}">
                     [% ELSE %]
-                      >
+                        >
                     [% END %]
     
                     [% IF form_data.ref_maps.size %]
@@ -402,7 +450,7 @@ function changeCompMaps(sel,index,side){
     </td>
   </tr>
   [% IF apr.param('ref_map_aids') OR apr.param('ref_map_names') #OR form_data.ref_maps  %]
-    <form name="comparative_map_form">
+    <form name="comparative_map_form" onSubmit="beforeSubmit()">
       <tr>
         <td align=left valign=top>
           <input type="hidden" name="refMenu" id="refMenu" value="[% apr.param('refMenu') %]">
@@ -430,19 +478,18 @@ function changeCompMaps(sel,index,side){
             >
               <img src="/cmap/minus.png">&nbsp;<b>Hide Comparison Menu</b>
             </span>
-            <table border=0>
+              <table border="0">
               <tr>
                 <td align="left" colspan=2>Ref Map Start:
                   <input name="ref_map_start" value="[% apr.param('ref_map_start') %]">
                 </td>
               </tr>
-        
               <tr>
                 <td align="left" colspan=2>Ref Map End:
                   <input name="ref_map_stop" value="[% apr.param('ref_map_stop') %]">
                 </td>
               </tr>
-        
+
               <tr>
                 <td align="left" valign="top">Current Map Sets:</td>
                 <td>
@@ -515,7 +562,7 @@ function changeCompMaps(sel,index,side){
             <table>
               <tr>
                 <td align="left">Highlight Features: 
-                  <input name="highlight" value="[% apr.param('highlight') | html %]">
+                      <input name="highlight" value="[% apr.param('highlight') | html %]">
                 </td>
               </tr>
               <tr>
@@ -614,7 +661,7 @@ function changeCompMaps(sel,index,side){
                 </td>
               </tr>
               <tr>
-                <td>
+                <td><hr>
                   <input type="submit" value="Redraw Map" name="sub">
                   <input type="reset"  value="Reset">
                 </td>
@@ -648,8 +695,45 @@ function changeCompMaps(sel,index,side){
             </span>
 
             <table border="0">
+              [%- IF form_data.ordered_ref_maps.size > 1; -%]
+                <tr>
+                  <td align="left" valign="center" colspan=5>
+                    <table border=0>
+                      <tr>
+                        <td colspan=3>Reference Map Order:</td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <select name="ori_ref_map_order" multiple size=5>
+                          [%- FOREACH map=form_data.ordered_ref_maps -%]
+                            <option value='[% map.map_aid %]'>[% map.map_name %]</option>
+                          [%- END -%]
+                          </select>
+                        </td>
+                        <td>
+                          <input type=button value='Order -->' onclick="moveOrderedMaps()"><br>
+                          <input type=button value='Reverse -->' onclick="moveOrderedMapsRev()">
+                        </td>
+                        <td>
+                          <textarea name=ref_map_order_display rows=1 disabled=1></textarea>
+                          <input type=hidden name=ref_map_order>
+                          <input type=hidden name=prev_ref_map_order value="[% prev_ref_map_order %]">
+                        </td>
+                      </tr>
+                      <tr>
+                        <td colspan=2>
+                          <input type=button value='Select All' onclick="selectAllOptions(ori_ref_map_order)">
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              [%- END -%]
               <tr>
                 <td align="left" valign="top">Image Size:</td>
+                <td>
+                  <input type="radio" name="image_size" value="tiny"[% IF apr.param('image_size') == 'tiny'; ' checked'; END %]>Tiny
+                </td>
                 <td>
                   <input type="radio" name="image_size" value="small"[% IF apr.param('image_size') == 'small'; ' checked'; END %]>Small
                 </td>
@@ -724,6 +808,32 @@ function changeCompMaps(sel,index,side){
                 <td><input type="radio" name="scale_maps" value="1"[% IF scale_maps==1; ' checked'; END %]>Yes</td>
               </tr>
               <tr>
+                <td align="left" valign="top">Stack the Reference Maps:</td>
+                [% IF apr.param('stack_maps')==1; stack_maps=1; ELSE; stack_maps=0; END %]
+                <td><input type="radio" name="stack_maps" value="0"[% IF stack_maps==0; ' checked'; END %]>No</td>
+                <td><input type="radio" name="stack_maps" value="1"[% IF stack_maps==1; ' checked'; END %]>Yes</td>
+              </tr>
+              <tr>
+                <td align="left" valign="top">Clean View (no navigation buttons):</td>
+                  [% IF apr.param('clean_view')==1; clean_view=1; ELSE; clean_view=0; END %]
+                <td><input type="radio" name="clean_view" value="0"[% IF clean_view==0; ' checked'; END %]>No</td>
+                <td><input type="radio" name="clean_view" value="1"[% IF clean_view==1; ' checked'; END %]>yes</td>
+              </tr>
+              <tr>
+                <td align="left" valign="top">View Intra-Slot Correspondences:</td>
+                  [% IF apr.param('show_intraslot_corr')==1; show_intraslot_corr=1; ELSE; show_intraslot_corr=0; END %]
+                <td><input type="radio" name="show_intraslot_corr" value="0"
+                  [% IF show_intraslot_corr==0; ' checked'; END %]>No</td>
+                <td><input type="radio" name="show_intraslot_corr" value="1"
+                  [% IF show_intraslot_corr==1; ' checked'; END %]>yes</td>
+              </tr>
+              <tr>
+                <td colspan=4>
+                  <input type="submit" value="Redraw Map" name="sub">
+                  <input type="reset"  value="Reset">
+                </td>
+              </tr>
+              <tr>
                 <td colspan="4" align="center">
                   <input type="hidden" name="ref_map_set_aid" value="[% apr.param('ref_map_set_aid') %]">
                   <input type="hidden" name="ref_map_aids"   value="[% apr.param('ref_map_aids').join(',') %]">
@@ -746,12 +856,12 @@ function changeCompMaps(sel,index,side){
           [%- END -%]
         </td>
       </tr>
-              <tr>
-                <td><hr>
-                  <input type="submit" value="Redraw Map" name="sub">
-                  <input type="reset"  value="Reset">
-                </td>
-              </tr>
+      <tr>
+        <td><hr>
+          <input type="submit" value="Redraw Map" name="sub">
+          <input type="reset"  value="Reset">
+        </td>
+      </tr>
     </form>
   [% ELSE %]
     <form name="comparative_map_form">

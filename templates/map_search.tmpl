@@ -115,7 +115,7 @@
                 [% SET map_info=form_data.map_info.$map_id %]
                 <tr>
                     <td>
-                        <a href="[% apr.url %]/viewer?ref_map_set_aid=[% apr.param('ref_map_set_aid') %]&ref_map_aids=[% map_info.accession_id %]&ref_species_aid=1&data_source=[% data_source %]">[% map_info.map_name | nbsp %]</a>
+                        <a href="[% apr.url %]/viewer?ref_map_set_aid=[% apr.param('ref_map_set_aid') %]&ref_map_aids=[% map_info.accession_id %]&ref_species_aid=1&data_source=[% data_source %]">[% map_info.map_name | nbsp %]</a>&nbsp(<a href="[% apr.url %]/spider?map_aid=[% map_info.accession_id %]">spider</a>)</td>
                     </td>
                     <td>[% map_info.cmap_count %]</td>
                     <td>[% map_info.cmap_count_per %]</td>
