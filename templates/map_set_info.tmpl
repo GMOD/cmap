@@ -65,41 +65,31 @@
             <tr class="colored">
                 <th align="right">Map&nbsp;Set&nbsp;Name:</th>
                 <td><b>[% ms.map_set_name %]</b></td>
-                <td><b>[</b>&nbsp;<a href="map_set_info?map_set_aid=[% ms.map_set_aid %]">Show Only This Set</a>&nbsp;<b>]</b></td>
+                <td align="center"><b>[</b>&nbsp;<a href="map_set_info?map_set_aid=[% ms.map_set_aid %]">Show Only This Set</a>&nbsp;<b>]</b></td>
             </tr> 
 
             <tr>
                 <th align="right">Abbreviated&nbsp;Name:</th>
                 <td>[% ms.short_name %]</td>
-                <td>
-                    <b>[</b>&nbsp;<a href="download_data?map_set_aid=[% ms.map_set_aid %]">Download&nbsp;Map&nbsp;Set&nbsp;Data</a>&nbsp;<b>]</b>
-                </td>
+                <td align="center"><b>[</b>&nbsp;<a href="download_data?map_set_aid=[% ms.map_set_aid %]">Download&nbsp;Map&nbsp;Set&nbsp;Data</a>&nbsp;<b>]</b></td>
             </tr> 
 
             <tr>
                 <th align="right">Accession&nbsp;ID:</th>
                 <td>[% ms.map_set_aid %]</td>
-                <td>
-                    <b>[</b>&nbsp;<a href="matrix?show_matrix=1&[% IF ms.is_relational_map %]link_map_set_aid=[% ms.map_set_aid %][% ELSE %]map_type_aid=[% ms.map_type_aid %]&species_aid=[% ms.species_aid %]&map_set_aid=[% ms.map_set_aid %][% END %]">View&nbsp;Map&nbsp;Set&nbsp;In&nbsp;Matrix</a>&nbsp;<b>]</b>
-                </td>
+                <td align="center"><b>[</b>&nbsp;<a href="matrix?show_matrix=1&[% IF ms.is_relational_map %]link_map_set_aid=[% ms.map_set_aid %][% ELSE %]map_type_aid=[% ms.map_type_aid %]&species_aid=[% ms.species_aid %]&map_set_aid=[% ms.map_set_aid %][% END %]">View&nbsp;Map&nbsp;Set&nbsp;In&nbsp;Matrix</a>&nbsp;<b>]</b></td>
             </tr>
 
             <tr>
                 <th align="right">Species:</th>
-                <td>
-                    [% ms.full_name %] ([% ms.common_name %])
-                </td>
-                <td>
-                    <b>[</b>&nbsp;<a href="species_info?species_aid=[% ms.species_aid %]">View Species Info</a>&nbsp;<b>]</b>
-                </td>
+                <td>[% ms.full_name %] ([% ms.common_name %])</td>
+                <td align="center"><b>[</b>&nbsp;<a href="species_info?species_aid=[% ms.species_aid %]">View Species Info</a>&nbsp;<b>]</b></td>
             </tr> 
 
             <tr>
                 <th align="right">Map&nbsp;Type:</th>
                 <td>[% ms.map_type %]</td>
-                <td>
-                    <b>[</b>&nbsp;<a href="map_type_info?map_type_aid=[% ms.map_type_aid %]">View Map Type Info</a>&nbsp;<b>]</b>
-                </td>
+                <td align="center"><b>[</b>&nbsp;<a href="map_type_info?map_type_aid=[% ms.map_type_aid %]">View Map Type Info</a>&nbsp;<b>]</b></td>
             </tr> 
 
             <tr>
