@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.61.2.3 2004-11-05 19:32:57 mwz444 Exp $
+# $Id: CMap.pm,v 1.61.2.4 2004-11-05 21:41:50 mwz444 Exp $
 
 =head1 NAME
 
@@ -403,6 +403,27 @@ The default is 1.
 }
 
 # ----------------------------------------------------
+sub clean_view {
+
+=pod
+                                                                                
+=head2 clean_view
+
+Returns the boolean clean_view variable.  This determines 
+if there will be control buttons on the map.
+
+The default is 1.
+
+=cut
+
+    my $self = shift;
+    my $val  = shift;
+    $self->{'clean_view'} = $val if defined $val;
+    $self->{'clean_view'} = 0 unless defined $self->{'clean_view'};
+    return $self->{'clean_view'};
+}
+
+# ----------------------------------------------------
 sub magnify_all {
 
 =pod
@@ -642,6 +663,7 @@ Given information about the link, creates a url to cmap_viewer.
     my $label_features              = $args{'label_features'};
     my $collapse_features           = $args{'collapse_features'};
     my $aggregate                   = $args{'aggregate'};
+    my $clean_view                  = $args{'clean_view'};
     my $magnify_all                 = $args{'magnify_all'};
     my $flip                        = $args{'flip'};
     my $min_correspondences         = $args{'min_correspondences'};
@@ -689,6 +711,8 @@ Given information about the link, creates a url to cmap_viewer.
       if defined($collapse_features);
     $url .= "aggregate=$aggregate;"
       if defined($aggregate);
+    $url .= "clean_view=$clean_view;"
+      if defined($clean_view);
     $url .= "magnify_all=$magnify_all;"
       if defined($magnify_all);
     $url .= "flip=$flip;"

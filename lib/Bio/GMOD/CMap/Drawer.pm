@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.81.2.3 2004-11-05 19:33:06 mwz444 Exp $
+# $Id: Drawer.pm,v 1.81.2.4 2004-11-05 21:41:57 mwz444 Exp $
 
 =head1 NAME
 
@@ -42,6 +42,7 @@ The base map drawing module.
         map_view => $map_view,
         data_module => $data_module,
         aggregate => $aggregate,
+        clean_view => $clean_view,
         magnify_all => $magnify_all,
         scale_maps => $scale_maps,
     );
@@ -189,6 +190,10 @@ it has already been created.  Otherwise, Drawer will create it.
 Set to 1 to aggregate the correspondences with one line.
 Set to 2 to aggregate the correspondences with two lines.
 
+=item * clean_view
+
+Set to 1 to not have the control buttons displayed on the image.
+
 =item * magnify_all
 
 Set to the magnification factor of the whole picture.  The default is 1.
@@ -205,7 +210,7 @@ Set to 1 scale the maps with the same unit.  Default is 1.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.81.2.3 $)[-1];
+$VERSION = (qw$Revision: 1.81.2.4 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -223,7 +228,7 @@ my @INIT_PARAMS = qw[
   label_features included_feature_types corr_only_feature_types
   included_evidence_types ignored_evidence_types ignored_feature_types
   config data_source min_correspondences collapse_features cache_dir
-  map_view data_module aggregate magnify_all scale_maps
+  map_view data_module aggregate clean_view magnify_all scale_maps
 ];
 
 # ----------------------------------------------------
@@ -778,6 +783,7 @@ Lays out the image and writes it to the file system, set the "image_name."
             maps        => $data,
             config      => $self->config(),
             aggregate   => $self->aggregate,
+            clean_view   => $self->clean_view,
             magnify_all => $self->magnify_all,
             scale_maps  => $self->scale_maps,
           )
@@ -2171,6 +2177,7 @@ Creates default link parameters for CMap->create_viewer_link()
     my $label_features              = $args{'label_features'};
     my $collapse_features           = $args{'collapse_features'};
     my $aggregate                   = $args{'aggregate'};
+    my $clean_view                  = $args{'clean_view'};
     my $magnify_all                 = $args{'magnify_all'};
     my $flip                        = $args{'flip'};
     my $min_correspondences         = $args{'min_correspondences'};
@@ -2233,6 +2240,9 @@ Creates default link parameters for CMap->create_viewer_link()
     unless ( defined($aggregate) ) {
         $aggregate = $self->aggregate();
     }
+    unless ( defined($clean_view) ) {
+        $clean_view = $self->clean_view();
+    }
     unless ( defined($magnify_all) ) {
         $magnify_all = $self->magnify_all();
     }
@@ -2287,6 +2297,7 @@ Creates default link parameters for CMap->create_viewer_link()
         label_features              => $label_features,
         collapse_features           => $collapse_features,
         aggregate                   => $aggregate,
+        clean_view                   => $clean_view,
         magnify_all                 => $magnify_all,
         flip                        => $flip,
         min_correspondences         => $min_correspondences,

@@ -732,6 +732,13 @@ function changeCompMaps(sel,index,side){
                 <td><input type="radio" name="scale_maps" value="1"[% IF scale_maps==1; ' checked'; END %]>Yes</td>
               </tr>
               <tr>
+                <td align="left" valign="top">Clean View (no navigation buttons):
+                  [% IF apr.param('clean_view')==1; clean_view=1; ELSE; clean_view=0; END %]
+                  <input type="radio" name="clean_view" value="0"[% IF clean_view==0; ' checked'; END %]>No
+                  <input type="radio" name="clean_view" value="1"[% IF clean_view==1; ' checked'; END %]>yes
+                </td>
+              </tr>
+              <tr>
                 <td colspan=4>
                   <input type="submit" value="Redraw Map" name="sub">
                   <input type="reset"  value="Reset">

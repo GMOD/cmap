@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.135.2.4 2004-11-05 19:33:09 mwz444 Exp $
+# $Id: Map.pm,v 1.135.2.5 2004-11-05 21:41:58 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.135.2.4 $)[-1];
+$VERSION = (qw$Revision: 1.135.2.5 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -40,7 +40,8 @@ use Bio::GMOD::CMap::Drawer::Glyph;
 use base 'Bio::GMOD::CMap';
 
 my @INIT_FIELDS =
-  qw[ drawer base_x base_y slot_no maps config aggregate magnify_all scale_maps ];
+  qw[ drawer base_x base_y slot_no maps config aggregate 
+      clean_view magnify_all scale_maps ];
 
 my %SHAPE = (
     'default'  => 'draw_box',
@@ -505,114 +506,116 @@ such as the units.
     my $x;
     my $code;
     my $map_aid = $self->map_aid($map_id);
-    ###Full size button if needed
-    if (   $drawer->data_module->truncatedMap( $slot_no, $map_id )
-        or $magnification != 1 )
-    {
-        my $full_str = "Reset Map";
-        $x = $x_mid - ( ( $font->width * length($full_str) ) / 2 );
-        push @$drawing_data, [ STRING, $font, $x, $y, $full_str, 'grey' ];
+    unless($self->clean_view){
+        ###Full size button if needed
+        if (   $drawer->data_module->truncatedMap( $slot_no, $map_id )
+            or $magnification != 1 )
+        {
+            my $full_str = "Reset Map";
+            $x = $x_mid - ( ( $font->width * length($full_str) ) / 2 );
+            push @$drawing_data, [ STRING, $font, $x, $y, $full_str, 'grey' ];
+            $code = qq[
+                onMouseOver="window.status='Make map original size';return true" 
+                onClick="mod_map_info($slot_no, '$map_aid', '', '',1);document.comparative_map_form.submit();"
+                ];
+            push @$map_area_data,
+              {
+                coords => [
+                    $x, $y,
+                    $x + ( $font->width * length($full_str) ),
+                    $y + $font->height,
+                ],
+                url  => '#',
+                alt  => 'Make map original size',
+                code => $code,
+              };
+            $y += $font->height + $buf;
+            $bounds->[0] = $x
+              if ( $bounds->[0] < $x );
+            $bounds->[2] = $x + ( $font->width * length($full_str) )
+              if ( $bounds->[2] < $x + ( $font->width * length($full_str) ) );
+            $bounds->[3] = $y + $font->height
+              if ( $bounds->[3] < $y + $font->height );
+
+        }
+
+        ###Scale buttons
+        my $mag_plus_val =
+          $magnification <= 1 ? $magnification * 2 : $magnification * 2;
+        my $mag_minus_val =
+          $magnification <= 1 ? $magnification / 2 : $magnification / 2;
+        my $mag_plus_str  = "+";
+        my $mag_minus_str = "-";
+        my $mag_mid_str   = " Mag ";
+        $x = $x_mid - (
+            (
+                $font->width *
+                  length( $mag_minus_str . $mag_plus_str . $mag_mid_str )
+            ) / 2
+        );
+
+        # Minus side
+        push @$drawing_data, [ STRING, $font, $x, $y, $mag_minus_str, 'grey' ];
         $code = qq[
-            onMouseOver="window.status='Make map original size';return true" 
-            onClick="mod_map_info($slot_no, '$map_aid', '', '',1);document.comparative_map_form.submit();"
+            onMouseOver="window.status='Magnify by $mag_minus_val times original size';return true" 
+            onClick="mod_map_info($slot_no,'$map_aid',$start_pos, $stop_pos,$mag_minus_val);document.comparative_map_form.submit();"
             ];
         push @$map_area_data,
           {
             coords => [
                 $x, $y,
-                $x + ( $font->width * length($full_str) ),
-                $y + $font->height,
+                $x + ( $font->width * length($mag_minus_str) ),
+                $y + $font->height
             ],
             url  => '#',
-            alt  => 'Make map original size',
+            alt  => 'Magnification',
             code => $code,
           };
-        $y += $font->height + $buf;
         $bounds->[0] = $x
-          if ( $bounds->[0] < $x );
-        $bounds->[2] = $x + ( $font->width * length($full_str) )
-          if ( $bounds->[2] < $x + ( $font->width * length($full_str) ) );
+          if ( $bounds->[0] > $x );
         $bounds->[3] = $y + $font->height
           if ( $bounds->[3] < $y + $font->height );
+        $x += ( $font->width * length($mag_minus_str) );
 
+        # Middle
+        push @$drawing_data, [ STRING, $font, $x, $y, $mag_mid_str, 'grey' ];
+        $code = qq[
+            onMouseOver="window.status='Current Magnification: $magnification times original size';return true" 
+            ];
+        push @$map_area_data,
+          {
+            coords => [
+                $x, $y,
+                $x + ( $font->width * length($mag_mid_str) ),
+                $y + $font->height
+            ],
+            url  => '',
+            alt  => 'Current Magnification: ' . $magnification . ' times',
+            code => $code,
+          };
+        $x += ( $font->width * length($mag_mid_str) );
+
+        # Plus Side
+        push @$drawing_data, [ STRING, $font, $x, $y, $mag_plus_str, 'grey' ];
+        $code = qq[
+            onMouseOver="window.status='Magnify by $mag_plus_val times original size';return true" 
+            onClick="mod_map_info($slot_no,'$map_aid',$start_pos,$stop_pos,$mag_plus_val);document.comparative_map_form.submit();"
+            ];
+        push @$map_area_data,
+          {
+            coords => [
+                $x, $y,
+                $x + ( $font->width * length($mag_plus_str) ),
+                $y + $font->height
+            ],
+            url  => '#',
+            alt  => 'Magnification',
+            code => $code,
+          };
+        $bounds->[2] = $x + ( $font->width * length($mag_plus_str) )
+          if ( $bounds->[2] < $x + ( $font->width * length($mag_plus_str) ) );
+        $y += $font->height + $buf;
     }
-
-    ###Scale buttons
-    my $mag_plus_val =
-      $magnification <= 1 ? $magnification * 2 : $magnification * 2;
-    my $mag_minus_val =
-      $magnification <= 1 ? $magnification / 2 : $magnification / 2;
-    my $mag_plus_str  = "+";
-    my $mag_minus_str = "-";
-    my $mag_mid_str   = " Mag ";
-    $x = $x_mid - (
-        (
-            $font->width *
-              length( $mag_minus_str . $mag_plus_str . $mag_mid_str )
-        ) / 2
-    );
-
-    # Minus side
-    push @$drawing_data, [ STRING, $font, $x, $y, $mag_minus_str, 'grey' ];
-    $code = qq[
-        onMouseOver="window.status='Magnify by $mag_minus_val times original size';return true" 
-        onClick="mod_map_info($slot_no,'$map_aid',$start_pos, $stop_pos,$mag_minus_val);document.comparative_map_form.submit();"
-        ];
-    push @$map_area_data,
-      {
-        coords => [
-            $x, $y,
-            $x + ( $font->width * length($mag_minus_str) ),
-            $y + $font->height
-        ],
-        url  => '#',
-        alt  => 'Magnification',
-        code => $code,
-      };
-    $bounds->[0] = $x
-      if ( $bounds->[0] > $x );
-    $bounds->[3] = $y + $font->height
-      if ( $bounds->[3] < $y + $font->height );
-    $x += ( $font->width * length($mag_minus_str) );
-
-    # Middle
-    push @$drawing_data, [ STRING, $font, $x, $y, $mag_mid_str, 'grey' ];
-    $code = qq[
-        onMouseOver="window.status='Current Magnification: $magnification times original size';return true" 
-        ];
-    push @$map_area_data,
-      {
-        coords => [
-            $x, $y,
-            $x + ( $font->width * length($mag_mid_str) ),
-            $y + $font->height
-        ],
-        url  => '',
-        alt  => 'Current Magnification: ' . $magnification . ' times',
-        code => $code,
-      };
-    $x += ( $font->width * length($mag_mid_str) );
-
-    # Plus Side
-    push @$drawing_data, [ STRING, $font, $x, $y, $mag_plus_str, 'grey' ];
-    $code = qq[
-        onMouseOver="window.status='Magnify by $mag_plus_val times original size';return true" 
-        onClick="mod_map_info($slot_no,'$map_aid',$start_pos,$stop_pos,$mag_plus_val);document.comparative_map_form.submit();"
-        ];
-    push @$map_area_data,
-      {
-        coords => [
-            $x, $y,
-            $x + ( $font->width * length($mag_plus_str) ),
-            $y + $font->height
-        ],
-        url  => '#',
-        alt  => 'Magnification',
-        code => $code,
-      };
-    $bounds->[2] = $x + ( $font->width * length($mag_plus_str) )
-      if ( $bounds->[2] < $x + ( $font->width * length($mag_plus_str) ) );
-    $y += $font->height + $buf;
 
     ###Start and stop
     my ( $start, $stop ) =
@@ -840,10 +843,11 @@ Draws the map title.
     my $buffer     = 4;
     my $bottom_buf = 5;
     my $mid_x      = $left_x + ( ( $right_x - $left_x ) / 2 );
-    my $top_y      = $min_y - ( 2 * $bottom_buf ) - ( scalar @$lines + 1 ) *
-      ( $font->height + $buffer ) - 4;
-    my $leftmost  = $mid_x;
-    my $rightmost = $mid_x;
+    my $top_y      = $min_y - ( 2 * $bottom_buf ) - 
+        ( ( scalar @$lines ) * ( $font->height + $buffer ) ) - 4;
+    $top_y        -= ( $font->height + $buffer ) if (scalar @$buttons);
+    my $leftmost   = $mid_x;
+    my $rightmost  = $mid_x;
 
     #
     # Place the titles.
@@ -865,44 +869,47 @@ Draws the map title.
     #
     # Figure out how much room left-to-right the buttons will take.
     #
-    my $buttons_width;
-    for my $button (@$buttons) {
-        $buttons_width += $font->width * length( $button->{'label'} );
+    my $buttons_width=0;
+    if ( scalar @$buttons ) {
+        for my $button (@$buttons) {
+            $buttons_width += $font->width * length( $button->{'label'} );
+        }
+        $buttons_width += 6 * ( scalar @$buttons - 1 );
+
+        #
+        # Place the buttons.
+        #
+        my $label_x = $mid_x - $buttons_width / 2;
+        my $sep_x   = $label_x;
+        my $sep_y   = $y;
+        $y += 6;
+
+        for my $button (@$buttons) {
+            my $len  = $font->width * length( $button->{'label'} );
+            my $end  = $label_x + $len;
+            my @area = ( $label_x - 2, $y - 2, $end + 2, $y + $font->height + 2 );
+            push @drawing_data,
+              [ STRING, $font, $label_x, $y, $button->{'label'}, 'grey' ],
+              [ RECTANGLE, @area, 'grey' ],;
+
+            $leftmost  = $label_x if $label_x < $leftmost;
+            $rightmost = $end     if $end > $rightmost;
+            $label_x += $len + 6;
+
+            push @map_area_data,
+              {
+                coords => \@area,
+                url    => $button->{'url'},
+                alt    => $button->{'alt'},
+              };
+        }
+
+        push @drawing_data, [ LINE, $sep_x, $sep_y, $label_x - 6, $sep_y, 'grey' ];
+
+        $leftmost -= $buffer;
+        $rightmost += $buffer;
     }
-    $buttons_width += 6 * ( scalar @$buttons - 1 );
 
-    #
-    # Place the buttons.
-    #
-    my $label_x = $mid_x - $buttons_width / 2;
-    my $sep_x   = $label_x;
-    my $sep_y   = $y;
-    $y += 6;
-
-    for my $button (@$buttons) {
-        my $len  = $font->width * length( $button->{'label'} );
-        my $end  = $label_x + $len;
-        my @area = ( $label_x - 2, $y - 2, $end + 2, $y + $font->height + 2 );
-        push @drawing_data,
-          [ STRING, $font, $label_x, $y, $button->{'label'}, 'grey' ],
-          [ RECTANGLE, @area, 'grey' ],;
-
-        $leftmost  = $label_x if $label_x < $leftmost;
-        $rightmost = $end     if $end > $rightmost;
-        $label_x += $len + 6;
-
-        push @map_area_data,
-          {
-            coords => \@area,
-            url    => $button->{'url'},
-            alt    => $button->{'alt'},
-          };
-    }
-
-    push @drawing_data, [ LINE, $sep_x, $sep_y, $label_x - 6, $sep_y, 'grey' ];
-
-    $leftmost -= $buffer;
-    $rightmost += $buffer;
     my $offset = 0;
     if ( $bound_side eq RIGHT ) {
         if ( $right_x < $rightmost ) {
@@ -929,9 +936,9 @@ Draws the map title.
     # Enclose the whole area in black-edged white box.
     #
     my @bounds = (
-        $leftmost + $offset,
+        $leftmost + $offset - $buffer,
         $top_y - $buffer,
-        $rightmost + $offset,
+        $rightmost + $offset + $buffer,
         $min_y - $bottom_buf,
     );
 
@@ -1972,9 +1979,18 @@ sub add_topper {
       or return $self->error( $drawer->error );
     my $font_width      = $reg_font->width;
     my $font_height     = $reg_font->height;
+    my $buttons = $self->create_buttons(
+        map_id     => $map_id,
+        drawer     => $drawer,
+        slot_no    => $slot_no,
+        is_flipped => $is_flipped,
+        buttons    => [ 'map_detail', 'map_matrix', 'flip', 'new_view', ],
+    );
     my $button_y_buffer = 4;
     my $button_x_buffer = 6;
-    my $button_height   = $font_height + ( $button_y_buffer * 2 );
+    my $button_height   = ( scalar @$buttons ) 
+        ? $font_height + ( $button_y_buffer * 2 )
+        : 0;
 
     my $base_x     = $map_placement_data->{$map_id}{'map_coords'}[0];
     my $map_base_y = $map_placement_data->{$map_id}{'map_coords'}[1];
@@ -2028,18 +2044,11 @@ sub add_topper {
     #
     # Add Buttons
     #
-    my $buttons = $self->create_buttons(
-        map_id     => $map_id,
-        drawer     => $drawer,
-        slot_no    => $slot_no,
-        is_flipped => $is_flipped,
-        buttons    => [ 'map_detail', 'map_matrix', 'flip', 'new_view', ],
-    );
 
     #
     # Figure out how much room left-to-right the buttons will take.
     #
-    my $buttons_width;
+    my $buttons_width = 0;
     for my $button (@$buttons) {
         $buttons_width += $font_width * length( $button->{'label'} );
     }
@@ -2075,7 +2084,6 @@ sub add_topper {
             alt    => $button->{'alt'},
           };
     }
-
 }
 
 # ----------------------------------------
@@ -2202,11 +2210,12 @@ sub add_tick_marks {
     my $font_width  = $reg_font->width;
     my $font_height = $reg_font->height;
     my $base_x      = $map_coords->[0];
+    my $clean_view  = $self->clean_view;
 
     my $array_ref = $self->tick_mark_interval( $map_id, $pixel_height );
     my ( $interval, $map_scale ) = @$array_ref;
     my $no_intervals  = int( $actual_map_length / $interval );
-    my $tick_overhang = 15;
+    my $tick_overhang = $clean_view ? 8 : 15;
     my @intervals     =
       map { int( $map_start + ( $_ * $interval ) ) } 1 .. $no_intervals;
     my $min_tick_distance = $self->config_data('min_tick_distance') || 40;
@@ -2248,149 +2257,151 @@ sub add_tick_marks {
         push @$drawing_data,
           [ LINE, $tick_start, $y_pos, $tick_stop, $y_pos, 'grey' ];
 
-        my $clip_arrow_color   = 'grey';
-        my $clip_arrow_width   = 6;
-        my $clip_arrow_y1_down = $y_pos + 2;
-        my $clip_arrow_y1_up   = $y_pos - 2;
-        my $clip_arrow_y2_down = $clip_arrow_y1_down + 3;
-        my $clip_arrow_y2_up   = $clip_arrow_y1_up - 3;
-        my $clip_arrow_y3_down = $clip_arrow_y2_down + 5;
-        my $clip_arrow_y3_up   = $clip_arrow_y2_up - 5;
-        my $clip_arrow_x1      =
-            $label_side eq LEFT
-          ? $tick_stop - $clip_arrow_width
-          : $tick_start;
-        my $clip_arrow_x2   = $clip_arrow_x1 + $clip_arrow_width;
-        my $clip_arrow_xmid = ( $clip_arrow_x1 + $clip_arrow_x2 ) / 2;
+        unless($clean_view){
+            # If not clean view, show the crop arrows.
+            my $clip_arrow_color   = 'grey';
+            my $clip_arrow_width   = 6;
+            my $clip_arrow_y1_down = $y_pos + 2;
+            my $clip_arrow_y1_up   = $y_pos - 2;
+            my $clip_arrow_y2_down = $clip_arrow_y1_down + 3;
+            my $clip_arrow_y2_up   = $clip_arrow_y1_up - 3;
+            my $clip_arrow_y3_down = $clip_arrow_y2_down + 5;
+            my $clip_arrow_y3_up   = $clip_arrow_y2_up - 5;
+            my $clip_arrow_x1      =
+                $label_side eq LEFT
+              ? $tick_stop - $clip_arrow_width
+              : $tick_start;
+            my $clip_arrow_x2   = $clip_arrow_x1 + $clip_arrow_width;
+            my $clip_arrow_xmid = ( $clip_arrow_x1 + $clip_arrow_x2 ) / 2;
 
-        # First line across
-        push @$drawing_data,
-          [
-            LINE,           $clip_arrow_x1,      $clip_arrow_y1_down,
-            $clip_arrow_x2, $clip_arrow_y1_down, $clip_arrow_color
-          ];
-        push @$drawing_data,
-          [
-            LINE,           $clip_arrow_x1,    $clip_arrow_y1_up,
-            $clip_arrow_x2, $clip_arrow_y1_up, $clip_arrow_color
-          ];
+            # First line across
+            push @$drawing_data,
+              [
+                LINE,           $clip_arrow_x1,      $clip_arrow_y1_down,
+                $clip_arrow_x2, $clip_arrow_y1_down, $clip_arrow_color
+              ];
+            push @$drawing_data,
+              [
+                LINE,           $clip_arrow_x1,    $clip_arrow_y1_up,
+                $clip_arrow_x2, $clip_arrow_y1_up, $clip_arrow_color
+              ];
 
-        # line to arrow
-        push @$drawing_data,
-          [
-            LINE,             $clip_arrow_xmid,    $clip_arrow_y1_down,
-            $clip_arrow_xmid, $clip_arrow_y2_down, $clip_arrow_color
-          ];
-        push @$drawing_data,
-          [
-            LINE,             $clip_arrow_xmid,  $clip_arrow_y1_up,
-            $clip_arrow_xmid, $clip_arrow_y2_up, $clip_arrow_color
-          ];
+            # line to arrow
+            push @$drawing_data,
+              [
+                LINE,             $clip_arrow_xmid,    $clip_arrow_y1_down,
+                $clip_arrow_xmid, $clip_arrow_y2_down, $clip_arrow_color
+              ];
+            push @$drawing_data,
+              [
+                LINE,             $clip_arrow_xmid,  $clip_arrow_y1_up,
+                $clip_arrow_xmid, $clip_arrow_y2_up, $clip_arrow_color
+              ];
 
-        # base of arrow
-        push @$drawing_data,
-          [
-            LINE,           $clip_arrow_x1,      $clip_arrow_y2_down,
-            $clip_arrow_x2, $clip_arrow_y2_down, $clip_arrow_color
-          ];
-        push @$drawing_data,
-          [
-            LINE,           $clip_arrow_x1,    $clip_arrow_y2_up,
-            $clip_arrow_x2, $clip_arrow_y2_up, $clip_arrow_color
-          ];
+            # base of arrow
+            push @$drawing_data,
+              [
+                LINE,           $clip_arrow_x1,      $clip_arrow_y2_down,
+                $clip_arrow_x2, $clip_arrow_y2_down, $clip_arrow_color
+              ];
+            push @$drawing_data,
+              [
+                LINE,           $clip_arrow_x1,    $clip_arrow_y2_up,
+                $clip_arrow_x2, $clip_arrow_y2_up, $clip_arrow_color
+              ];
 
-        # left side of arrow
-        push @$drawing_data,
-          [
-            LINE,             $clip_arrow_x1,      $clip_arrow_y2_down,
-            $clip_arrow_xmid, $clip_arrow_y3_down, $clip_arrow_color
-          ];
-        push @$drawing_data,
-          [
-            LINE,             $clip_arrow_x1,    $clip_arrow_y2_up,
-            $clip_arrow_xmid, $clip_arrow_y3_up, $clip_arrow_color
-          ];
+            # left side of arrow
+            push @$drawing_data,
+              [
+                LINE,             $clip_arrow_x1,      $clip_arrow_y2_down,
+                $clip_arrow_xmid, $clip_arrow_y3_down, $clip_arrow_color
+              ];
+            push @$drawing_data,
+              [
+                LINE,             $clip_arrow_x1,    $clip_arrow_y2_up,
+                $clip_arrow_xmid, $clip_arrow_y3_up, $clip_arrow_color
+              ];
 
-        # right side of arrow
-        push @$drawing_data,
-          [
-            LINE,             $clip_arrow_x2,      $clip_arrow_y2_down,
-            $clip_arrow_xmid, $clip_arrow_y3_down, $clip_arrow_color
-          ];
-        push @$drawing_data,
-          [
-            LINE,             $clip_arrow_x2,    $clip_arrow_y2_up,
-            $clip_arrow_xmid, $clip_arrow_y3_up, $clip_arrow_color
-          ];
+            # right side of arrow
+            push @$drawing_data,
+              [
+                LINE,             $clip_arrow_x2,      $clip_arrow_y2_down,
+                $clip_arrow_xmid, $clip_arrow_y3_down, $clip_arrow_color
+              ];
+            push @$drawing_data,
+              [
+                LINE,             $clip_arrow_x2,    $clip_arrow_y2_up,
+                $clip_arrow_xmid, $clip_arrow_y3_up, $clip_arrow_color
+              ];
 
-        # fill arrow
-        push @$drawing_data, [ FILL, $clip_arrow_xmid, $clip_arrow_y2_down + 1,
-            $clip_arrow_color ];
-        push @$drawing_data,
-          [ FILL, $clip_arrow_xmid, $clip_arrow_y2_up - 1, $clip_arrow_color ];
+            # fill arrows
+            push @$drawing_data, [ FILL, $clip_arrow_xmid, $clip_arrow_y2_down + 1,
+                $clip_arrow_color ];
+            push @$drawing_data,
+              [ FILL, $clip_arrow_xmid, $clip_arrow_y2_up - 1, $clip_arrow_color ];
+            my $down_command = $is_flipped ? '1' : '0';
+            my $up_command   = $is_flipped ? '0' : '1';
+            my ( $up_start_pos, $up_stop_pos, $down_start_pos, $down_stop_pos );
+            my $slot_info = $drawer->data_module->slot_info->{$slot_no};
+            if ($is_flipped) {
+                $up_start_pos   = $tick_pos;
+                $down_stop_pos  = $tick_pos;
+                $down_start_pos =
+                  defined( $slot_info->{$map_id}->[0] )
+                  ? $slot_info->{$map_id}->[0]
+                  : "''";
+                $up_stop_pos =
+                  defined( $slot_info->{$map_id}->[1] )
+                  ? $slot_info->{$map_id}->[1]
+                  : "''";
 
-        my $down_command = $is_flipped ? '1' : '0';
-        my $up_command   = $is_flipped ? '0' : '1';
-        my ( $up_start_pos, $up_stop_pos, $down_start_pos, $down_stop_pos );
-        my $slot_info = $drawer->data_module->slot_info->{$slot_no};
-        if ($is_flipped) {
-            $up_start_pos   = $tick_pos;
-            $down_stop_pos  = $tick_pos;
-            $down_start_pos =
-              defined( $slot_info->{$map_id}->[0] )
-              ? $slot_info->{$map_id}->[0]
-              : "''";
-            $up_stop_pos =
-              defined( $slot_info->{$map_id}->[1] )
-              ? $slot_info->{$map_id}->[1]
-              : "''";
+            }
+            else {
+                $up_stop_pos    = $tick_pos;
+                $down_start_pos = $tick_pos;
+                $up_start_pos   =
+                  defined( $slot_info->{$map_id}->[0] )
+                  ? $slot_info->{$map_id}->[0]
+                  : "''";
+                $down_stop_pos =
+                  defined( $slot_info->{$map_id}->[1] )
+                  ? $slot_info->{$map_id}->[1]
+                  : "''";
+            }
+            my $magnification =
+              defined( $slot_info->{$map_id}->[4] )
+              ? $slot_info->{$map_id}->[4]
+              : "'1'";
 
+            my $down_code = qq[ 
+                onMouseOver="window.status='crop down';return true" 
+                onClick="mod_map_info($slot_no, '$map_aid', $down_start_pos, $down_stop_pos,$magnification);document.comparative_map_form.submit();"
+                ];
+            my $up_code = qq[
+                onMouseOver="window.status='crop up';return true" 
+                onClick="mod_map_info($slot_no, '$map_aid', $up_start_pos, $up_stop_pos,$magnification);document.comparative_map_form.submit();"
+                ];
+            push @$map_area_data,
+              {
+                coords => [
+                    $clip_arrow_x1, $clip_arrow_y1_down,
+                    $clip_arrow_x2, $clip_arrow_y3_down
+                ],
+                url  => '#',
+                alt  => 'Crop from here down',
+                code => $down_code,
+              };
+            push @$map_area_data,
+              {
+                coords => [
+                    $clip_arrow_x1, $clip_arrow_y3_up,
+                    $clip_arrow_x2, $clip_arrow_y1_up
+                ],
+                url  => '#',
+                alt  => 'Crop from here up',
+                code => $up_code,
+              };
         }
-        else {
-            $up_stop_pos    = $tick_pos;
-            $down_start_pos = $tick_pos;
-            $up_start_pos   =
-              defined( $slot_info->{$map_id}->[0] )
-              ? $slot_info->{$map_id}->[0]
-              : "''";
-            $down_stop_pos =
-              defined( $slot_info->{$map_id}->[1] )
-              ? $slot_info->{$map_id}->[1]
-              : "''";
-        }
-        my $magnification =
-          defined( $slot_info->{$map_id}->[4] )
-          ? $slot_info->{$map_id}->[4]
-          : "'1'";
-
-        my $down_code = qq[ 
-            onMouseOver="window.status='crop down';return true" 
-            onClick="mod_map_info($slot_no, '$map_aid', $down_start_pos, $down_stop_pos,$magnification);document.comparative_map_form.submit();"
-            ];
-        my $up_code = qq[
-            onMouseOver="window.status='crop up';return true" 
-            onClick="mod_map_info($slot_no, '$map_aid', $up_start_pos, $up_stop_pos,$magnification);document.comparative_map_form.submit();"
-            ];
-        push @$map_area_data,
-          {
-            coords => [
-                $clip_arrow_x1, $clip_arrow_y1_down,
-                $clip_arrow_x2, $clip_arrow_y3_down
-            ],
-            url  => '#',
-            alt  => 'Crop from here down',
-            code => $down_code,
-          };
-        push @$map_area_data,
-          {
-            coords => [
-                $clip_arrow_x1, $clip_arrow_y3_up,
-                $clip_arrow_x2, $clip_arrow_y1_up
-            ],
-            url  => '#',
-            alt  => 'Crop from here up',
-            code => $up_code,
-          };
         my $label_x =
             $label_side eq RIGHT
           ? $tick_start - $font_height - 2
@@ -3219,6 +3230,10 @@ sub create_buttons {
 
 =head2 create_button
 
+Returns button definitions in an arrayref.
+
+Returns empty arrayref if clean_view is true.
+
 Button options:
 
  map_set_info
@@ -3237,6 +3252,8 @@ Button options:
     my $slot_no       = $args{'slot_no'};
     my $is_flipped    = $args{'is_flipped'};
     my $buttons_array = $args{'buttons'};
+
+    return [] if $self->clean_view;
 
     my %requested_buttons;
     foreach my $button (@$buttons_array) {

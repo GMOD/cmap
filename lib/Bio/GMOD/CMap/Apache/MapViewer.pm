@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.71.2.3 2004-11-05 19:33:08 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.71.2.4 2004-11-05 21:41:58 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.71.2.3 $)[-1];
+$VERSION = (qw$Revision: 1.71.2.4 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -69,6 +69,7 @@ sub handler {
     my $label_features        = $apr->param('label_features')        || '';
     my $collapse_features     = $apr->param('collapse_features')     ||  0;
     my $aggregate             = $apr->param('aggregate')             ;
+    my $clean_view            = $apr->param('clean_view')             ;
     my $magnify_all           = $apr->param('magnify_all')             ;
     my $scale_maps            = $apr->param('scale_maps')             ;
     my $flip                  = $apr->param('flip')                  || '';
@@ -89,6 +90,7 @@ sub handler {
     }
 
     $self->aggregate($aggregate);
+    $self->clean_view($clean_view);
     $self->magnify_all($magnify_all);
     $self->scale_maps($scale_maps);
 
@@ -383,6 +385,7 @@ sub handler {
             config                  => $self->config,
             data_module             => $self->data_module,
             aggregate               => $self->aggregate,
+            clean_view               => $self->clean_view,
             magnify_all             => $self->magnify_all,
             scale_maps              => $self->scale_maps,
           )
