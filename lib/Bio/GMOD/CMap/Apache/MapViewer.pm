@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.55 2004-08-27 08:49:14 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.56 2004-08-27 18:20:48 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.55 $)[-1];
+$VERSION = (qw$Revision: 1.56 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -92,7 +92,7 @@ sub handler {
     my @ref_map_aids;
     if ( $apr->param('ref_map_aids') ) {
         foreach my $aid ($apr->param('ref_map_aids')){
-            push @ref_map_aids,split( /,/,$aid);
+            push @ref_map_aids,split( /[:,]/,$aid);
         }
     }
     ###For DEBUGGING purposes.  Remove before release
@@ -127,12 +127,14 @@ sub handler {
         $ref_maps{$ref_map_aid} = {start=>$start,stop=>$stop};
     }
     if (scalar @ref_map_aids==1){
-        if (defined($ref_map_start) and not defined($ref_maps{$ref_map_aids[0]}{'start'})){
-            $ref_maps{$ref_map_aids[0]}{'start'} =$ref_map_start;
-        }
-        if (defined($ref_map_stop)
-             and not defined($ref_maps{$ref_map_aids[0]}{'stop'})){
-            $ref_maps{$ref_map_aids[0]}{'stop'} =$ref_map_stop;
+        unless ($ref_map_aids[0]=='-1'){
+            if (defined($ref_map_start) and not defined($ref_maps{$ref_map_aids[0]}{'start'})){
+                $ref_maps{$ref_map_aids[0]}{'start'} =$ref_map_start;
+            }
+            if (defined($ref_map_stop)
+                 and not defined($ref_maps{$ref_map_aids[0]}{'stop'})){
+                $ref_maps{$ref_map_aids[0]}{'stop'} =$ref_map_stop;
+            }
         }
     }
 
