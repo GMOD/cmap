@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.28 2003-10-01 23:12:12 kycl4rk Exp $
+# $Id: Admin.pm,v 1.29 2003-10-14 23:53:23 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.28 $)[-1];
+$VERSION = (qw$Revision: 1.29 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils qw[ next_number parse_words ];
@@ -219,6 +219,16 @@ Delete a feature.
     $db->do(
         q[
             delete
+            from    cmap_feature_attribute
+            where   feature_id=?
+        ],
+        {},
+        ( $feature_id )
+    );
+
+    $db->do(
+        q[
+            delete
             from    cmap_feature
             where   feature_id=?
         ],
@@ -320,6 +330,91 @@ Updates the aliases attached to a feature.
     }
 
     return 1;
+}
+
+# ----------------------------------------------------
+sub get_attributes {
+
+=pod
+
+=head2 get_attributes 
+
+Retrieves the attributes attached to a feature type.
+
+=cut
+
+    my $self       = shift;
+    my $feature_id = shift or return;
+    my $order_by   = shift || 'display_order,attribute_name';
+    my $db         = $self->db or return;
+    if ( !$order_by || $order_by eq 'display_order' ) {
+        $order_by  = 'display_order,attribute_name';
+    }
+
+    return $db->selectall_arrayref(
+        qq[
+            select   fa.feature_attribute_id,
+                     fa.feature_id,
+                     fa.display_order,
+                     fa.attribute_name,
+                     fa.attribute_value
+            from     cmap_feature_attribute fa
+            where    fa.feature_id=?
+            order by $order_by
+        ],
+        { Columns => {} },
+        ( $feature_id )
+    );
+}
+
+# ----------------------------------------------------
+sub get_feature_attribute_id {
+
+=pod
+
+=head2 get_feature_attribute_id
+
+Retrieves the feature attribute id for a given feature attribute.
+Creates it if necessary.
+
+=cut
+
+    my $self                 = shift;
+    my $attribute_name       = shift     or return $self->error('No name');
+    my $display_order        = shift     || 1;
+    my $db                   = $self->db or return;
+    my $feature_attribute_id = $db->selectrow_array(
+        q[
+            select feature_attribute_id 
+            from   cmap_feature_attribute
+            where  attribute_name=?
+        ],
+        {},
+        ( $attribute_name )
+    );
+
+    unless ( $feature_attribute_id ) {
+        $feature_attribute_id = next_number( 
+            db               => $db,
+            table_name       => 'cmap_feature_attribute',
+            id_field         => 'feature_attribute_id',
+        ) or return $self->error( 
+            "Can't get next ID for 'cmap_feature_attribute'"
+        );
+
+        $db->do(
+            q[
+                insert 
+                into   cmap_feature_attribute
+                       (feature_attribute_id, attribute_name, display_order)
+                values (?, ?, ?)
+            ],
+            {},
+            ( $feature_attribute_id, $attribute_name, $display_order )
+        );
+    }
+
+    return $feature_attribute_id;
 }
 
 # ----------------------------------------------------
@@ -1295,6 +1390,93 @@ sub reload_correspondence_matrix {
     }
 
     print("\n$new_records new records inserted.\n");
+}
+
+# ----------------------------------------------------
+sub set_feature_attributes {
+
+=pod
+
+=head2 set_feature_attributes
+
+Set the attributes for a features
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $feature_id      = $args{'feature_id'} or 
+                          return $self->error('No feature id');
+    my @attributes      = @{ $args{'attributes'} || [] } or return;
+    my $overwrite       = $args{'overwrite'} || 0;
+    my $db              = $self->db or return;
+
+    if ( $overwrite ) {
+        $db->do(
+            'delete from cmap_feature_attribute where feature_id=?',
+            {},
+            $feature_id
+        );
+    }
+
+    my $attr_order;
+    for my $attr ( @attributes ) {
+        my $attr_name     = $attr->{'name'};
+        my $attr_value    = $attr->{'value'};
+        my $display_order = $attr->{'display_order'} || ++$attr_order;
+
+        next unless 
+            defined $attr_name  && $attr_name  ne '' && 
+            defined $attr_value && $attr_value ne ''
+        ;
+        
+        my $feature_attribute_id = $db->selectrow_array(
+            q[
+                select feature_attribute_id
+                from   cmap_feature_attribute
+                where  feature_id=?
+                and    attribute_name=?
+                and    attribute_value=?
+            ],
+            {},
+            ( $feature_id, $attr_name, $attr_value )
+        );
+
+        if ( $feature_attribute_id ) {
+            $db->do(
+                q[
+                    update  cmap_feature_attribute
+                    set     feature_id=?, display_order=?,
+                            attribute_name=?, attribute_value=?
+                    where   feature_attribute_id=?
+                ],
+                {}, 
+                ($feature_id, $display_order, $attr_name, 
+                 $attr_value, $feature_attribute_id)
+            ); 
+        }
+        else {
+            $feature_attribute_id = next_number( 
+                db               => $db,
+                table_name       => 'cmap_feature_attribute',
+                id_field         => 'feature_attribute_id',
+            ) or return $self->error(
+                "Can't get next ID for 'cmap_feature_attribute'"
+            );
+
+            $db->do(
+                q[
+                    insert 
+                    into    cmap_feature_attribute
+                            (feature_attribute_id, feature_id, display_order,
+                             attribute_name, attribute_value)
+                    values  (?, ?, ?, ?, ?)
+                ],
+                {}, 
+                ($feature_attribute_id, $feature_id, $display_order, 
+                 $attr_name, $attr_value)
+            );
+        }
+    }
 }
 
 # ----------------------------------------------------
