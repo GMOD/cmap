@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.34 2003-04-17 19:24:08 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.35 2003-05-29 19:49:11 kycl4rk Exp $
 
 use strict;
 use Apache::Constants qw[ :common M_GET REDIRECT ];
@@ -30,7 +30,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.34 $)[-1];
+$VERSION        = (qw$Revision: 1.35 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -2043,7 +2043,8 @@ sub map_sets_view {
     ];
     $sql .= qq[ and ms.map_type_id=$map_type_id ] if $map_type_id;
     $sql .= qq[ and ms.species_id=$species_id ]   if $species_id;
-    $sql .= qq[ and ms.is_enabled=$is_enabled ]   if $is_enabled =~ m/^[01]$/;
+    $sql .= qq[ and ms.is_enabled=$is_enabled ]   
+        if defined $is_enabled && $is_enabled =~ m/^[01]$/;
     $sql .= qq[ 
         group by    ms.map_set_id,
                     ms.short_name,
