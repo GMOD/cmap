@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.42 2003-07-31 02:21:17 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.43 2003-09-08 17:28:14 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.42 $)[-1];
+$VERSION = (qw$Revision: 1.43 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -548,7 +548,9 @@ Lays out the image and writes it to the file system, set the "image_name."
         my $end = $x + $font->width * length( $string );
         $max_x  = $end if $end > $max_x;
 
-        my $corr_color = $self->config('feature_correspondence_color');
+        my $corr_color     = $self->config('feature_correspondence_color');
+        my $ft_details_url = $self->config('feature_type_details_url');
+
         if ( $corr_color && $self->correspondences_exist ) {
             push @feature_types, {
                 shape        => '',
@@ -740,9 +742,20 @@ Lays out the image and writes it to the file system, set the "image_name."
                 $label_y = $feature_y + 5;
             }
 
+            my $ft_y = $label_y - $font->height/2;
             $self->add_drawing( 
-                STRING, $font, $label_x, $label_y - $font->height/2, 
-                $label, $color
+                STRING, $font, $label_x, $ft_y, $label, $color
+            );
+
+            $self->add_map_area( 
+                coords => [ 
+                    $label_x, 
+                    $ft_y,
+                    $label_x + $font->width * length( $label ), 
+                    $ft_y + $font->height,
+                ],
+                url    => $ft_details_url.$ft->{'feature_type_aid'},
+                alt    => "Feature Type Details for $label",
             );
 
             my $furthest_x = $label_x + $font->width * length($label) + 5;
