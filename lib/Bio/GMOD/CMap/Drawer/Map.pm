@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.135.2.15 2004-11-19 18:32:39 mwz444 Exp $
+# $Id: Map.pm,v 1.135.2.16 2004-11-28 21:14:18 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.135.2.15 $)[-1];
+$VERSION = (qw$Revision: 1.135.2.16 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1144,6 +1144,7 @@ Variable Info:
     my %map_aggregate_corr;
     my %features_with_corr_by_map_id;
     my %flipped_maps;
+    my $last_map_id;
   MAP:
 
     for my $map_id (@map_ids) {
@@ -1195,6 +1196,7 @@ Variable Info:
             pixel_height       => $pixel_height,
             is_flipped         => $is_flipped,
             y_buffer           => $y_buffer,
+            last_map_id        => $last_map_id,
             map_aggregate_corr => \%map_aggregate_corr,
             map_placement_data => \%map_placement_data,
         );
@@ -1469,12 +1471,16 @@ Variable Info:
         $slot_max_y = $map_placement_data{$map_id}{'bounds'}[3]
           if ( not defined $slot_max_y
             or $map_placement_data{$map_id}{'bounds'}[3] > $slot_max_y );
+
+        $last_map_id = $map_id;
     }
 
     # place each map in a lane and find the width of each lane
     my %map_lane;
     my @lane_width;
     my @map_colunms;
+    my $ref_map_order_hash =
+      $slot_no == 0 ? $drawer->data_module->ref_map_order_hash() : undef;
     for my $map_id (
         sort {
             $map_placement_data{$a}{'bounds'}[1]
@@ -1482,18 +1488,26 @@ Variable Info:
         } @map_ids
       )
     {
-        if (@map_columns) {
-            for my $i ( 0 .. $#map_columns ) {
-                if ( $map_columns[$i] <
-                    $map_placement_data{$map_id}{'bounds'}[1] )
-                {
-                    $map_lane{$map_id} = $i;
-                    last;
-                }
-            }
+        if (    ( not $self->stack_maps() )
+            and $ref_map_order_hash
+            and $ref_map_order_hash->{$map_id} )
+        {
+            $map_lane{$map_id} = $ref_map_order_hash->{$map_id} - 1;
         }
         else {
-            $map_lane{$map_id} = 0;
+            if (@map_columns) {
+                for my $i ( 0 .. $#map_columns ) {
+                    if ( $map_columns[$i] <
+                        $map_placement_data{$map_id}{'bounds'}[1] )
+                    {
+                        $map_lane{$map_id} = $i;
+                        last;
+                    }
+                }
+            }
+            else {
+                $map_lane{$map_id} = 0;
+            }
         }
         $map_lane{$map_id} = scalar @map_columns
           unless defined $map_lane{$map_id};
@@ -1964,6 +1978,7 @@ sub place_map_y {
     my $map_placement_data = $args{'map_placement_data'};
     my $is_flipped         = $args{'is_flipped'};
     my $y_buffer           = $args{'y_buffer'};
+    my $last_map_id        = $args{'last_map_id'};
 
     my ( $return_y1, $return_y2 );
 
@@ -2140,18 +2155,44 @@ sub place_map_y {
         $pixel_height = $temp_hash->{'pixel_height'};
         $capped       = $temp_hash->{'capped'};
     }
-    elsif ( $self->stack_maps ) {
+    else {
 
-        # Find the lowest placed map and place this below it.
-        my $max_y;
-        while ( my ( $map_id, $data ) = each %$map_placement_data ) {
-            if ( not defined($max_y) or $max_y < $data->{'bounds'}[3] ) {
-                $max_y = $data->{'bounds'}[3];
+        # Ref map
+        my $next_to_last_map =
+          ( defined($last_map_id)
+              and $drawer->data_module->ref_maps_equal( $last_map_id, $map_id )
+          )
+          ? 1
+          : 0;
+        my $stack_maps = $self->stack_maps ? 1 : 0;
+        if ( $stack_maps + $next_to_last_map == 1 ) {
+
+            # either stacked or next to
+            # Stack this ref map below the last.
+
+            # Find the lowest point of the last map and place this map below it.
+            if ( defined($last_map_id) ) {
+                $return_y1 =
+                  $map_placement_data->{$last_map_id}{'bounds'}[3] + $y_buffer +
+                  1;
             }
-        }
-        $return_y1 = $max_y + $y_buffer + 1;
-        $return_y2 = $return_y1 + $pixel_height;
+            else {
+                $return_y1 = $base_y;
+            }
+            $return_y2 = $return_y1 + $pixel_height;
 
+        }
+        else {
+
+            # This ref map goes next to the last map
+            if ( $next_to_last_map and defined($last_map_id) ) {
+                $return_y1 = $map_placement_data->{$last_map_id}{'bounds'}[1];
+            }
+            else {
+                $return_y1 = $base_y;
+            }
+            $return_y2 = $return_y1 + $pixel_height;
+        }
     }
 
     return ( $return_y1, $return_y2, $pixel_height, $capped );

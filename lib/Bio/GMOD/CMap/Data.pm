@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.165.2.12 2004-11-24 22:07:24 mwz444 Exp $
+# $Id: Data.pm,v 1.165.2.13 2004-11-28 21:14:15 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.165.2.12 $)[-1];
+$VERSION = (qw$Revision: 1.165.2.13 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -5207,20 +5207,83 @@ Uses ref_map_order() to create a hash designating the maps order.
 
 =cut
 
-    my $self          = shift;
-    my %return_hash   = ();
-    my $ref_map_order = $self->ref_map_order();
-    my @ref_map_aids  = split( /[,:]/, $ref_map_order );
-    for ( my $i = 0 ; $i <= $#ref_map_aids ; $i++ ) {
-        my $map_id = $self->acc_id_to_internal_id(
-            table    => 'cmap_map',
-            acc_id   => $ref_map_aids[$i],
-            field_id => 'map_id'
-        );
-        $return_hash{$map_id} = $i + 1;
+    my $self = shift;
+
+    unless ( $self->{'ref_map_order_hash'} ) {
+        my %return_hash      = ();
+        my $ref_map_order    = $self->ref_map_order();
+        my @ref_map_aid_list = split( /[,]/, $ref_map_order );
+        for ( my $i = 0 ; $i <= $#ref_map_aid_list ; $i++ ) {
+            my @ref_map_aids = split( /[:]/, $ref_map_aid_list[$i] );
+            foreach my $aid (@ref_map_aids) {
+                my $map_id = $self->acc_id_to_internal_id(
+                    table    => 'cmap_map',
+                    acc_id   => $aid,
+                    field_id => 'map_id'
+                );
+                $return_hash{$map_id} = $i + 1;
+            }
+        }
+        $self->{'ref_map_order_hash'} = \%return_hash;
     }
 
-    return %return_hash;
+    return $self->{'ref_map_order_hash'};
+}
+
+# ----------------------------------------------------
+sub ref_maps_equal {
+
+=pod
+
+=head2 ref_maps_equal
+
+Uses ref_map_order_hash() to compare the placement of each map
+in the order.  returns 1 if they are equally placed.
+
+=cut
+
+    my $self          = shift;
+    my $first_map_id  = shift;
+    my $second_map_id = shift;
+    my %map_order     = %{ $self->ref_map_order_hash };
+
+    return 0 unless (%map_order);
+
+    if ( $map_order{$first_map_id} and $map_order{$second_map_id} ) {
+        return ( $map_order{$first_map_id} == $map_order{$second_map_id} );
+    }
+
+    return 0;
+}
+
+# ----------------------------------------------------
+sub cmp_ref_map_order {
+
+=pod
+
+=head2 cmp_ref_map_order
+
+Uses ref_map_order_hash() to compare the placement of each map
+in the order.  returns -1, 0 or 1 as cmp does.
+
+=cut
+
+    my $self          = shift;
+    my $first_map_id  = shift;
+    my $second_map_id = shift;
+    my %map_order     = %{ $self->ref_map_order_hash };
+
+    return 0 unless (%map_order);
+
+    if ( $map_order{$first_map_id} and $map_order{$second_map_id} ) {
+        return ( $map_order{$first_map_id} <=> $map_order{$second_map_id} );
+    }
+    elsif ( $map_order{$first_map_id} ) {
+        return -1;
+    }
+    else {
+        return 1;
+    }
 }
 
 # ----------------------------------------------------
@@ -5241,17 +5304,11 @@ Sets and returns the sorted map ids for each slot
     if ($slot_data) {
         my @map_ids = keys(%$slot_data);
         if ( $slot_no == 0 ) {
-            my %map_order = $self->ref_map_order_hash;
             @map_ids =
               map  { $_->[0] }
               sort {
-                ( %map_order
-                      and ( $map_order{ $a->[0] } or $map_order{ $b->[0] } ) )
-                  ? ( $map_order{ $a->[0] } and $map_order{ $b->[0] } )
-                  ? $map_order{ $a->[0] } <=> $map_order{ $b->[0] }
-                  : ( $map_order{ $a->[0] } ) ? -1
-                  : 1
-                  : (    $a->[1] <=> $b->[1]
+                (        $self->cmp_ref_map_order( $a->[0], $b->[0] )
+                      || $a->[1] <=> $b->[1]
                       || $a->[2] cmp $b->[2]
                       || $a->[0] <=> $b->[0] )
               }

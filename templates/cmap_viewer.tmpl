@@ -117,7 +117,7 @@ function beforeSubmit(){
   var select = document.comparative_map_form.ori_ref_map_order;
   select.selectedIndex = -1;
   document.comparative_map_form.ref_map_order_display.value='';
-  if (document.comparative_map_form.ref_map_order != '' ){
+  if (document.comparative_map_form.ref_map_order.value != '' ){
     document.comparative_map_form.prev_ref_map_order.value = '';
   }
 }
