@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.31 2003-04-08 18:10:37 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.32 2003-04-08 18:28:00 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.31 $)[-1];
+$VERSION = (qw$Revision: 1.32 $)[-1];
 
 #
 # Get command-line options
@@ -1673,6 +1673,8 @@ sub make_name_correspondences {
             { Columns => {} },
         ),
     );
+    die "No evidence types!  Please use the web admin tool to create.\n" 
+        unless $evidence_type_id;
 
     #
     # Get the source map set(s).
