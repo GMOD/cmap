@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: cmap_typetables_to_config.pl,v 1.3 2004-04-01 07:50:32 mwz444 Exp $
+# $Id: cmap_typetables_to_config.pl,v 1.4 2004-04-14 13:39:50 mwz444 Exp $
 
 =head1 NAME
 
@@ -60,6 +60,7 @@ $sth=$dbh->prepare("select * from cmap_feature_type;");
 $sth->execute;
 while (  my $row = $sth->fetchrow_hashref ) {
     print "\n<feature_type ".$row->{'accession_id'}.">";
+    print "\nfeature_type_accession ".$row->{'accession_id'};
     print "\nfeature_type ";
     print $row->{'feature_type'} if $row->{'feature_type'};
     print "\ndefault_rank ";
@@ -79,6 +80,7 @@ $sth=$dbh->prepare("select * from cmap_evidence_type;");
 $sth->execute;
 while (  my $row = $sth->fetchrow_hashref ) {
     print "\n<evidence_type ".$row->{'accession_id'}.">";
+    print "\nevidence_type_accession ".$row->{'accession_id'};
     print "\nevidence_type ";
     print $row->{'evidence_type'} if $row->{'evidence_type'};
     print "\nrank ";
@@ -93,6 +95,7 @@ $sth=$dbh->prepare("select * from cmap_map_type;");
 $sth->execute;
 while (  my $row = $sth->fetchrow_hashref ) {
     print "\n<map_type ".$row->{'accession_id'}.">";
+    print "\nmap_type_accession ".$row->{'accession_id'};
     print "\nmap_type ";
     print $row->{'map_type'} if $row->{'map_type'};
     print "\nmap_units ";
