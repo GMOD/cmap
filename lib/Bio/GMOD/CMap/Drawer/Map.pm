@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.70.2.8 2004-06-17 14:17:38 kycl4rk Exp $
+# $Id: Map.pm,v 1.70.2.9 2004-06-17 18:46:44 kycl4rk Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.70.2.8 $)[-1];
+$VERSION = (qw$Revision: 1.70.2.9 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1462,6 +1462,12 @@ Lays out the map.
                 coords => \@map_bounds,
                 url    => $details_url,
                 alt    => 'Map Details',
+            };
+            push @map_buttons, {   
+                label => 'M',
+                url   => 'matrix?&show_matrix=1'.
+                    '&link_map_set_aid='.$self->map_set_aid( $map_id ),
+                alt   => 'View In Matrix'
             };
         }
         else {
