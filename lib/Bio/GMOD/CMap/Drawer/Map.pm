@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.135.2.1 2004-10-27 21:49:12 mwz444 Exp $
+# $Id: Map.pm,v 1.135.2.2 2004-10-28 23:30:05 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.135.2.1 $)[-1];
+$VERSION = (qw$Revision: 1.135.2.2 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -3012,6 +3012,7 @@ Button options:
     my $map_set_info_url       = $url . '/map_set_info';
 
     my @map_buttons;
+    my %this_map_info;
 
     my $slots = $drawer->slots;
     #
@@ -3020,31 +3021,6 @@ Button options:
     
     my $ref_map   = $slots->{0} or next;
     my $ref_map_aids_hash=$ref_map->{'maps'};
-    my $ref_map_set_aids_hash=$ref_map->{'map_sets'};
-
-    my @flips;
-    my @flipping_flips;
-    my $acc_id = $self->accession_id($map_id);
-    for my $rec ( @{ $drawer->flip } ) {
-        push @flips, $rec->{'slot_no'} . '%3d' . $rec->{'map_aid'};
-        unless (   
-            $rec->{'slot_no'} == $slot_no
-            && 
-            $rec->{'map_aid'} == $acc_id )
-        {
-            push @flipping_flips,   
-                $rec->{'slot_no'} . '%3d' . $rec->{'map_aid'};
-        }
-    }
-    push @flipping_flips, "$slot_no%3d$acc_id" unless $is_flipped;
-    my $flip_str=join(":",@flips);
-    my $flipping_flip_str=join(":",@flipping_flips);
-
-    my $feature_type_selection='';
-    $feature_type_selection.='feature_type_'.$_.'=2;' 
-        foreach (@{$drawer->include_feature_types});
-    $feature_type_selection.='feature_type_'.$_.'=1;' 
-        foreach (@{$drawer->corr_only_feature_types});
 
     #
     # Map Set Info
@@ -3067,51 +3043,31 @@ Button options:
     # Map details button.
     #
     if ($requested_buttons{'map_detail'}){
-        my @maps;
+        my $slots = $drawer->slots;
+
+        my %detail_maps;
         for my $side (qw[ left right ]) {
-            my $no     = $side eq 'left' ? $slot_no - 1 : $slot_no + 1;
-            my $new_no = $side eq 'left' ? -1           : 1;
-            my $map   = $slots->{$no} or next;
-            my $link;
-            for my $field (qw[ maps map_sets ]) {
-                my @aid_info;
-                next unless (defined($map->{$field})); 
-                foreach my $aid (keys %{$map->{$field}}){
-                    push @aid_info, $aid.'['.$map->{$field}{$aid}{'start'}.'*'
-                        .$map->{$field}{$aid}{'stop'}.'x'
-                        .$map->{$field}{$aid}{'mag'}
-                        .']';
-                }
-                my $field_type='map_set_aid';
-                if ($field eq 'maps'){
-                    $field_type='map_aid';
-                }
-                my $link = join( '%3d', $new_no, $field_type, join(',',@aid_info) );
-                push @maps, $link;
-            }
+            my $next_slot_no = $side eq 'left' ? $slot_no - 1 : $slot_no + 1;
+            my $new_slot_no  = $side eq 'left' ? -1           : 1;
+            $detail_maps{$new_slot_no}=$slots->{$next_slot_no};
         }
 
-        my $details_url =
-            $map_details_url
-          . '?ref_map_set_aid='
-          . $self->map_set_aid($map_id)
-          . ';ref_map_aids='
-          . $self->accession_id($map_id)
-          . ';comparative_maps='
-          . join( ':', @maps )
-          . ';label_features='
-          . $drawer->label_features
-          . ';' . $feature_type_selection
-          . 'include_evidence_types='
-          . join( ',', @{ $drawer->include_evidence_types || [] } )
-          . ';highlight='
-          . uri_escape( $drawer->highlight )
-          . ';min_correspondences='
-          . $drawer->min_correspondences
-          . ';image_type='
-          . $drawer->image_type
-          . ';data_source='
-          . $drawer->data_source;
+        unless(%this_map_info){
+            $this_map_info{$self->accession_id($map_id)} = {
+                start => $self->start_position($map_id),
+                stop  => $self->stop_position($map_id),
+                mag   => $drawer->data_module->magnification($slot_no,$map_id),
+            };
+        }
+    
+        my $details_url        =  $self->create_viewer_link(
+            $drawer->create_link_params(
+                ref_map_set_aid   => $self->map_set_aid($map_id),
+                ref_map_aids      => \%this_map_info,
+                comparative_maps  => \%detail_maps,
+                url               => $map_details_url,
+            )
+        );
 
         push @map_buttons,
           {
@@ -3163,24 +3119,13 @@ Button options:
                 next if ($slot_no==0);
                 $delete_comparative_map_hash{$slot_no}=$slots->{$slot_no};
             }
-
             my $delete_url        =  $self->create_viewer_link(
-                ref_map_set_aid   => $slots->{'0'}{'map_set_aid'},
-                ref_map_aids      => $ref_map_aids_hash,
-                ref_map_set_aids  => $ref_map_set_aids_hash,
-                comparative_maps  => \%delete_comparative_map_hash,
-                label_features    => $drawer->label_features,
-                feature_type_aids => $drawer->include_feature_types,
-                corr_only_feature_type_aids 
-                                  => $drawer->corr_only_feature_types,
-                evidence_type_aids  
-                                  => $drawer->include_evidence_types,
-                highlight         => uri_escape( $drawer->highlight ),
-                min_correspondences => $drawer->min_correspondences,
-                image_type        => $drawer->image_type,
-                flip              => $flip_str,
-                data_source       => $drawer->data_source,
-                url               => $map_viewer_url,
+                $drawer->create_link_params(
+                    ref_map_set_aid   => $slots->{'0'}{'map_set_aid'},
+                    ref_map_aids      => $ref_map_aids_hash,
+                    comparative_maps  => \%delete_comparative_map_hash,
+                    url               => $map_viewer_url,
+                )
             );
 
             push @map_buttons,
@@ -3196,29 +3141,35 @@ Button options:
     # Flip button.
     #
     if ($requested_buttons{'flip'}){
+        my @flipping_flips;
+        my $acc_id = $self->accession_id($map_id);
+        for my $rec ( @{ $drawer->flip } ) {
+            unless (   
+                $rec->{'slot_no'} == $slot_no
+                && 
+                $rec->{'map_aid'} == $acc_id )
+            {
+                push @flipping_flips,   
+                    $rec->{'slot_no'} . '%3d' . $rec->{'map_aid'};
+            }
+        }
+        push @flipping_flips, "$slot_no%3d$acc_id" unless $is_flipped;
+        my $flipping_flip_str=join(":",@flipping_flips);
+
         my %flip_comparative_map_hash;
         foreach my $slot_no (keys(%$slots)){
             next if ($slot_no==0);
             $flip_comparative_map_hash{$slot_no}=$slots->{$slot_no};
         }
 
-        my $flip_url          =  $self->create_viewer_link(
-            ref_map_set_aid   => $slots->{'0'}{'map_set_aid'},
-            ref_map_aids      => $ref_map_aids_hash,
-            ref_map_set_aids  => $ref_map_set_aids_hash,
-            comparative_maps  => \%flip_comparative_map_hash,
-            label_features    => $drawer->label_features,
-            feature_type_aids => $drawer->include_feature_types,
-            corr_only_feature_type_aids 
-                              => $drawer->corr_only_feature_types,
-            evidence_type_aids  
-                              => $drawer->include_evidence_types,
-            highlight         => uri_escape( $drawer->highlight ),
-            min_correspondences => $drawer->min_correspondences,
-            image_type        => $drawer->image_type,
-            flip              => $flipping_flip_str,
-            data_source       => $drawer->data_source,
-            url               => $map_viewer_url,
+        my $flip_url  =  $self->create_viewer_link(
+            $drawer->create_link_params(
+                ref_map_set_aid   => $slots->{'0'}{'map_set_aid'},
+                ref_map_aids      => $ref_map_aids_hash,
+                comparative_maps  => \%flip_comparative_map_hash,
+                flip              => $flipping_flip_str,
+                url               => $map_viewer_url,
+            )
         );
 
         push @map_buttons,
@@ -3233,27 +3184,20 @@ Button options:
     # New View button.
     #
     if ($requested_buttons{'new_view'}){
-        my $new_url =
-            $map_viewer_url
-          . '?ref_map_set_aid='
-          . $self->map_set_aid($map_id)
-          . ';ref_map_aids='
-          . $self->accession_id($map_id)
-          . ';ref_map_start='
-          . $self->start_position($map_id)
-          . ';ref_map_stop='
-          . $self->stop_position($map_id)
-          . ';label_features='
-          . $drawer->label_features
-          . ';' . $feature_type_selection
-          . ';include_evidence_types='
-          . join( ',', @{ $drawer->include_evidence_types || [] } )
-          . ';highlight='
-          . uri_escape( $drawer->highlight )
-          . ';image_type='
-          . $drawer->image_type
-          . ';data_source='
-          . $drawer->data_source;
+        unless(%this_map_info){
+            $this_map_info{$self->accession_id($map_id)} = {
+                start => $self->start_position($map_id),
+                stop  => $self->stop_position($map_id),
+                mag   => $drawer->data_module->magnification($slot_no,$map_id),
+            };
+        }
+        my $new_url        =  $self->create_viewer_link(
+            $drawer->create_link_params(
+                ref_map_set_aid   => $self->map_set_aid($map_id),
+                ref_map_aids      => \%this_map_info,
+                url               => $map_viewer_url,
+            )
+        );
 
         push @map_buttons,
           {

@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.81 2004-10-26 17:11:46 mwz444 Exp $
+# $Id: Drawer.pm,v 1.81.2.1 2004-10-28 23:30:04 mwz444 Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.81 $)[-1];
+$VERSION = (qw$Revision: 1.81.2.1 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -1919,6 +1919,163 @@ Returns the correspondence colors specified as the default or black.
 
     return $self->{'default_corr_color'};
 }
+
+# ----------------------------------------------------
+sub create_link_params {
+
+=pod
+
+=head2 create_link_params
+
+Creates default link parameters for CMap->create_viewer_link()
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $prev_ref_species_aid  = $args{'prev_ref_species_aid'};
+    my $prev_ref_map_set_aid  = $args{'prev_ref_map_set_aid'};
+    my $ref_species_aid       = $args{'ref_species_aid'};
+    my $ref_map_set_aid       = $args{'ref_map_set_aid'};
+    my $ref_map_names         = $args{'ref_map_names'};
+    my $ref_map_start         = $args{'ref_map_start'};
+    my $ref_map_stop          = $args{'ref_map_stop'};
+    my $comparative_maps      = $args{'comparative_maps'};
+    my $highlight             = $args{'highlight'};
+    my $font_size             = $args{'font_size'};
+    my $image_size            = $args{'image_size'};
+    my $image_type            = $args{'image_type'};
+    my $label_features        = $args{'label_features'};
+    my $collapse_features     = $args{'collapse_features'};
+    my $aggregate             = $args{'aggregate'};
+    my $magnify_all           = $args{'magnify_all'};
+    my $flip                  = $args{'flip'};
+    my $min_correspondences   = $args{'min_correspondences'};
+    my $ref_map_aids          = $args{'ref_map_aids'};
+    my $feature_type_aids     = $args{'feature_type_aids'};
+    my $corr_only_feature_type_aids 
+                              = $args{'corr_only_feature_type_aids'};
+    my $ignored_feature_type_aids
+                              = $args{'ignored_feature_type_aids'};
+
+    my $evidence_type_aids    = $args{'evidence_type_aids'};
+    my $data_source           = $args{'data_source'};
+    my $url                   = $args{'url'};
+
+
+
+    ### Required Fields that Drawer can't figure out.
+    unless(defined($ref_map_set_aid)){
+        return;
+        $ref_map_set_aid = undef;
+    }
+
+    ### Optional fields for finer control
+    unless(defined($prev_ref_species_aid)){
+        $prev_ref_species_aid = undef;
+    }
+    unless(defined($prev_ref_map_set_aid)){
+        $prev_ref_map_set_aid = undef;
+    }
+    unless(defined($ref_species_aid)){
+        $ref_species_aid = undef;
+    }
+    unless(defined($ref_map_names)){
+        $ref_map_names = undef;
+    }
+    unless(defined($ref_map_start)){
+        $ref_map_start = undef;
+    }
+    unless(defined($ref_map_stop)){
+        $ref_map_stop = undef;
+    }
+    unless(defined($comparative_maps)){
+        $comparative_maps = undef;
+    }
+    unless(defined($highlight)){
+        $highlight = $self->highlight();
+    }
+    unless(defined($font_size)){
+        $font_size = $self->font_size();
+    }
+    unless(defined($image_size)){
+        $image_size = $self->image_size();
+    }
+    unless(defined($image_type)){
+        $image_type = $self->image_type();
+    }
+    unless(defined($label_features)){
+        $label_features = $self->label_features();
+    }
+    unless(defined($collapse_features)){
+        $collapse_features = $self->collapse_features();
+    }
+    unless(defined($aggregate)){
+        $aggregate = $self->aggregate();
+    }
+    unless(defined($magnify_all)){
+        $magnify_all = $self->magnify_all();
+    }
+    unless(defined($flip)){
+        my @flips;
+        for my $rec ( @{ $self->flip } ) {
+            push @flips, $rec->{'slot_no'} . '%3d' . $rec->{'map_aid'};
+        }
+        $flip=join(":",@flips);
+    }
+    unless(defined($min_correspondences)){
+        $min_correspondences = $self->min_correspondences();
+    }
+    unless(defined($ref_map_aids)){
+        $ref_map_aids = $self->ref_map_aids();
+    }
+    unless(defined($feature_type_aids)){
+        $feature_type_aids = $self->include_feature_types();
+    }
+    unless(defined($corr_only_feature_type_aids)){
+        $corr_only_feature_type_aids = $self->corr_only_feature_types();
+    } 
+    unless(defined($ignored_feature_type_aids)){
+        $ignored_feature_type_aids = $self->ignored_feature_types();
+    }
+    unless(defined($evidence_type_aids)){
+        $evidence_type_aids = $self->include_evidence_types();
+    }
+    unless(defined($data_source)){
+        $data_source = $self->data_source();
+    }
+    unless(defined($url)){
+        $url = '/viewer'; 
+    }
+
+    return (
+        prev_ref_species_aid        => $prev_ref_species_aid,
+        prev_ref_map_set_aid        => $prev_ref_map_set_aid,
+        ref_species_aid             => $ref_species_aid,
+        ref_map_set_aid             => $ref_map_set_aid,
+        ref_map_names               => $ref_map_names,
+        ref_map_start               => $ref_map_start,
+        ref_map_stop                => $ref_map_stop,
+        comparative_maps            => $comparative_maps,
+        highlight                   => $highlight,
+        font_size                   => $font_size,
+        image_size                  => $image_size,
+        image_type                  => $image_type,
+        label_features              => $label_features,
+        collapse_features           => $collapse_features,
+        aggregate                   => $aggregate,
+        magnify_all                 => $magnify_all,
+        flip                        => $flip,
+        min_correspondences         => $min_correspondences,
+        ref_map_aids                => $ref_map_aids,
+        feature_type_aids           => $feature_type_aids,
+        corr_only_feature_type_aids => $corr_only_feature_type_aids,
+        ignored_feature_type_aids   => $ignored_feature_type_aids,
+        evidence_type_aids          => $evidence_type_aids,
+        data_source                 => $data_source,
+        url                   => $url,
+    );
+}
+
 
 # ----------------------------------------------------
 sub aggregated_correspondence_color_bounds {

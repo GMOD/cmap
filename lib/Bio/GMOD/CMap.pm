@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap;
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.61 2004-10-19 13:41:52 kycl4rk Exp $
+# $Id: CMap.pm,v 1.61.2.1 2004-10-28 23:30:04 mwz444 Exp $
 
 =head1 NAME
 
@@ -36,6 +36,7 @@ use Config::General;
 use Bio::GMOD::CMap::Data;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Config;
+use URI::Escape;
 use DBI;
 use File::Path;
 use Template;
@@ -629,8 +630,6 @@ Given information about the link, creates a url to cmap_viewer.
     my $ref_map_start         = $args{'ref_map_start'};
     my $ref_map_stop          = $args{'ref_map_stop'};
     my $comparative_maps      = $args{'comparative_maps'};
-    my @comparative_map_right = $args{'comparative_map_right'};
-    my @comparative_map_left  = $args{'comparative_map_left'};
     my $highlight             = $args{'highlight'};
     my $font_size             = $args{'font_size'};
     my $image_size            = $args{'image_size'};
@@ -645,6 +644,8 @@ Given information about the link, creates a url to cmap_viewer.
     my $feature_type_aids     = $args{'feature_type_aids'};
     my $corr_only_feature_type_aids 
                               = $args{'corr_only_feature_type_aids'};
+    my $ignored_feature_type_aids 
+                              = $args{'ignored_feature_type_aids'};
     my $evidence_type_aids    = $args{'evidence_type_aids'};
     my $data_source           = $args{'data_source'} or return;
     my $url                   = $args{'url'};
@@ -669,7 +670,7 @@ Given information about the link, creates a url to cmap_viewer.
         if defined($ref_map_start);
     $url .= "ref_map_stop=$ref_map_stop;" 
         if defined($ref_map_stop);
-    $url .= "highlight=$highlight;" 
+    $url .= "highlight=".uri_escape($highlight).";" 
         if defined($highlight);
     $url .= "font_size=$font_size;" 
         if defined($font_size);
@@ -747,6 +748,9 @@ Given information about the link, creates a url to cmap_viewer.
     }
     foreach my $aid (@$corr_only_feature_type_aids){
         $url .= "feature_type_".$aid."=1;";
+    }
+    foreach my $aid (@$ignored_feature_type_aids){
+        $url .= "feature_type_".$aid."=0;";
     }
     if ($evidence_type_aids and @$evidence_type_aids){
         $url .= "evidence_types=".join(',',@$evidence_type_aids);
