@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap;
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.41 2003-10-17 18:50:46 kycl4rk Exp $
+# $Id: CMap.pm,v 1.42 2003-10-23 02:15:41 kycl4rk Exp $
 
 =head1 NAME
 
@@ -345,6 +345,7 @@ Retrieves the attributes attached to a database object.
                      object_id,
                      table_name,
                      display_order,
+                     is_public,
                      attribute_name,
                      attribute_value
             from     cmap_attribute
@@ -355,6 +356,110 @@ Retrieves the attributes attached to a database object.
         { Columns => {} },
         ( $object_id, $table_name )
     );
+}
+
+# ----------------------------------------------------
+sub get_xrefs {
+
+=pod
+
+=head2 get_xrefs 
+
+Retrieves the xrefs attached to a database object.
+
+=cut
+
+    my $self       = shift;
+    my $table_name = shift or return;
+    my $object_id  = shift or return;
+    my $order_by   = shift || 'display_order,xref_name';
+    my $db         = $self->db or return;
+    if ( !$order_by || $order_by eq 'display_order' ) {
+        $order_by  = 'display_order,xref_name';
+    }
+
+    return $db->selectall_arrayref(
+        qq[
+            select   xref_id,
+                     object_id,
+                     table_name,
+                     display_order,
+                     xref_name,
+                     xref_url
+            from     cmap_xref
+            where    object_id=?
+            and      table_name=?
+            order by $order_by
+        ],
+        { Columns => {} },
+        ( $object_id, $table_name )
+    );
+}
+
+# ----------------------------------------------------
+sub get_multiple_xrefs {
+
+=pod
+
+=head2 get_xrefs
+
+Given a table name and some objects, get the cross-references.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $table_name      = $args{'table_name'} or return;
+    my $objects         = $args{'objects'};
+    my $db              = $self->db or return;
+
+    return unless @{ $objects || [] };
+
+    my $xrefs = $db->selectall_arrayref(
+        q[
+            select   object_id, display_order, xref_name, xref_url
+            from     cmap_xref
+            where    table_name=?
+            order by object_id, display_order, xref_name
+        ],
+        { Columns => {} },
+        ( $table_name )
+    );
+
+    my ( %xref_specific, @xref_generic );
+    for my $xref ( @$xrefs ) {
+        if ( $xref->{'object_id'} ) {
+            push @{ $xref_specific{ $xref->{'object_id'} } }, $xref;
+        }
+        else {
+            push @xref_generic, $xref;
+        }
+    }
+
+    my $t = $self->template;
+    for my $o ( @$objects ) {
+        for my $attr ( @{ $o->{'attributes'} || [] } ) {
+            my $attr_val  =  $attr->{'attribute_value'}   or next;
+            my $attr_name =  lc $attr->{'attribute_name'} or next;
+               $attr_name =~ tr/ /_/s;
+            $o->{'attribute'}{ $attr_name } = $attr->{'attribute_value'};
+        }
+
+
+        $o->{'xrefs'} = $xref_specific{ $o->{'object_id'} };
+        push @{ $o->{'xrefs'} }, @xref_generic;
+
+        my @xrefs;
+        for my $xref ( @{ $o->{'xrefs'} || [] } ) {
+            my $url;
+            $t->process( \$xref->{'xref_url'}, { object => $o }, \$url );
+            push @xrefs, { 
+                xref_name => $xref->{'xref_name'},
+                xref_url  => $url,
+            } if $url;
+        }
+
+        $o->{'xrefs'} = [ @xrefs ];
+    }
 }
 
 # ----------------------------------------------------
