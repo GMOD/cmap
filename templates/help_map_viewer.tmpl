@@ -24,23 +24,23 @@
 
 <h3 id="ref_and_comp_maps">Reference and Comparative Maps</h3> 
 <p> 
-  To set up a comparison, a user first selects a reference map
-  set, then a <b>reference map</b>.  This serves as the basis for
-  any comparisons that the user chooses to make.  Once the
-  reference map image has been rendered, the user is given the
-  option to select one or two <b>comparative maps</b>.  These
-  comparative maps may be added to both the left and the right of
-  the reference map.  The user may keep adding additional maps for
-  as long as valid comparisons are available.
+  To set up a comparison, a user first selects a reference species
+  (optional), then a reference map set (required), then a <b>reference
+  map</b>.  This serves as the basis for any comparisons that the user
+  chooses to make.  Once the reference map image has been rendered, the
+  user is given the option to select one or two <b>comparative maps</b>.
+  These comparative maps may be added to both the left and the right of
+  the reference map.  The user may keep adding additional maps for as
+  long as valid comparisons are available.
 </p>
 
 <h3 id="features">Features and Feature Types</h3>
 <p> 
   Any item that is positioned on a map is called a <b>feature</b>.
   The position may be either a point or an interval.  Different
-  <b>feature types</b> are represented by different shapes (such
+  <b>feature types</b> may be represented by different shapes (such
   as horizontal tick marks [for points], line intervals, boxes,
-  arrows, etc.) or different colors.  For more information on any
+  arrows, etc.) and/or different colors.  For more information on any
   feature, click on it to view the corresponding <b>feature
   detail</b> page.
 </p>
@@ -59,6 +59,12 @@
 <hr>
 <h2 id="options">Map Viewer Options</h2>
 <dl>
+  <dt>Ref. Species</dt>
+  <dd>
+    Select a species to from the drop-down list to limit the &quot;Ref.
+    Set&quot; list to a particular species.  Selecting &quot;All
+    Species&quot; will cause the &quot;Ref. Set&quot; to not be
+    restricted.
   <dt>Ref. Set</dt>
   <dd>
     Select a reference map set from the drop-down list. For
@@ -70,11 +76,11 @@
   </dd>
   <dt>Ref. Map</dt>
   <dd>
-    Select a reference map from the drop-down list.  The list is
-    limited to maps that are part of the selected map set.  You
-    must first select a reference map set before this option
-    becomes available.  Choosing a reference map allows other
-    options to become available.
+    Select a single reference map or "All" from the drop-down list.  The
+    list is limited to maps that are part of the selected map set.  You
+    must first select a reference map set before this option becomes
+    available.  Choosing a reference map allows other options to become
+    available.
   </dd>
   <dt>Start</dt>
   <dd>
@@ -85,8 +91,8 @@
   </dd>
   <dt>End</dt>
   <dd>
-    Enter a position at which map drawing shall stop.  By default,
-    is the actual end position of the map is used.  Use this in
+    Enter a position at which map drawing will stop.  By default,
+    the actual end position of the map is used.  Use this in
     conjuction with the &quot;Start&quot; option above to zoom in
     to a particular region of the map.
   </dd>
@@ -94,8 +100,9 @@
   <dd>
     Enter features to highlight on the map.  Separate multiple
     features with commas or spaces.  If you wish to highlight a feature
-    that has spaces in its name, then enclose the feature name in double
-    quotes.
+    that has spaces in its name, enclose the feature name in double
+    quotes.  You may highlight a feature using its primary name, aliases
+    or accesion ID.
   </dd>
   <dt>Comp. Map (Right)</dt>
   <dd>
@@ -142,7 +149,7 @@
       </li>
       <li>
         <b>Landmarks</b>: Show labels of features designated as
-        landmarks or those with correspondences.
+        landmarks and those with correspondences.
       </li>
       <li>
         <b>All</b>: Show all labels that will fit in the image.
@@ -184,6 +191,7 @@
         &quot;relational&quot; maps, click directly on the map glyph
         for this action)
     </li>
+    <li><b>M</b>: View the map in the matrix</li>
     <li><b>X</b>: Delete the map from the viewer</li>
     <li><b>F</b>: Flip the map</li>
     <li><b>N</b>: Create a new map viewer with the map as the reference
@@ -204,7 +212,7 @@
   algorithm will try to fit as many labels as it can, until there
   is no more available space.  To see more labels, you may wish to
   increase the image size or decrease the font size.  You may also
-  specify "Start" and "End" positions to zoom in to a particular
+  specify &quot;Start&quot; and &quot;End&quot; positions to zoom in to a particular
   region on the reference map.
 </p>
 <p>
