@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::Oracle
--- Created on Thu Jul 31 16:05:41 2003
+-- Created on Fri Aug 15 11:25:41 2003
 -- 
 -- We assume that default NLS_DATE_FORMAT has been changed
 -- but we set it here anyway to be self-consistent.
@@ -188,9 +188,9 @@ CREATE TABLE cmap_map_cache (
 
 CREATE OR REPLACE TRIGGER ts_cmap_map_cache_requested_on
 BEFORE INSERT OR UPDATE ON cmap_map_cache
-FOR EACH ROW WHEN (new.requested_on} IS NULL)
+FOR EACH ROW WHEN (new.requested_on IS NULL)
 BEGIN 
- SELECT sysdate INTO :new.requested_on} FROM dual;
+ SELECT sysdate INTO :new.requested_on FROM dual;
 END;
 /
 
