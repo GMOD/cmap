@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.56.2.2 2005-02-15 17:44:24 mwz444 Exp $
+# $Id: Generic.pm,v 1.56.2.3 2005-03-04 20:06:36 mwz444 Exp $
 
 =head1 NAME
 
@@ -33,7 +33,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.56.2.2 $)[-1];
+$VERSION = (qw$Revision: 1.56.2.3 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Bio::GMOD::CMap;
@@ -230,10 +230,32 @@ The SQL for finding correspondences for a feature.
         $sql .= "and map.accession_id='" . $args{'comparative_map_aid'} . "' ";
     }
 
-    $sql .=
-      "and ce.evidence_type_accession in ('"
-      . $args{'evidence_type_aids'} . "') "
-      if $args{'evidence_type_aids'};
+    my $included_evidence_type_aids = $args{'included_evidence_type_aids'} || [];
+    my $less_evidence_type_aids     = $args{'less_evidence_type_aids'}     || [];
+    my $greater_evidence_type_aids  = $args{'greater_evidence_type_aids'}  || [];
+    my $evidence_type_score         = $args{'evidence_type_score'}         || {};
+
+    if ( @$included_evidence_type_aids or @$less_evidence_type_aids
+            or @$greater_evidence_type_aids ) {
+        $sql .= "and ( ";
+        my @join_array;
+        if ( @$included_evidence_type_aids ) {
+            push @join_array,
+              " ce.evidence_type_accession in ('"
+              . join( "','", @$included_evidence_type_aids ) . "')";
+        }
+        foreach my $et_aid (@$less_evidence_type_aids ) {
+            push @join_array,
+                " ( ce.evidence_type_accession = '$et_aid' "
+              . " and ce.score <= ".$evidence_type_score->{$et_aid}." ) ";
+        }
+        foreach my $et_aid (@$greater_evidence_type_aids ) {
+            push @join_array,
+                " ( ce.evidence_type_accession = '$et_aid' "
+              . " and ce.score >= ".$evidence_type_score->{$et_aid}." ) ";
+        }
+        $sql .= join (' or ', @join_array). " ) ";
+    }
 
     $sql .= q[
             order by species_display_order, species_name, 

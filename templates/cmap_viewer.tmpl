@@ -564,15 +564,27 @@ function changeCompMaps(sel,index,side){
                         <td>Evidence</td>
                         <td>Ignore</td>
                         <td>Use</td>
+                        <td>Less Than<br> Score</td>
+                        <td>Greater Than<br> Score</td>
+                        <td>Score</td>
                       </tr>
                       [% FOREACH et=form_data.evidence_types %]
                         <tr>
                           <td><a href="evidence_type_info?evidence_type_aid=[% et.evidence_type_aid %]">[% et.evidence_type %]</a></td>
                         <td>
-                          <input type="radio" name="evidence_type_[% et.evidence_type_aid %]" value="0" [% IF ignored_evidence_types.${et.evidence_type_aid}; ' checked'; END %]>
+                          <input type="radio" name="evidence_type_[% et.evidence_type_aid %]" value="0" [% IF evidence_type_menu_select.${et.evidence_type_aid}==0; ' checked'; END %]>
                         </td>
                         <td>
-                          <input type="radio" name="evidence_type_[% et.evidence_type_aid %]" value="1" [% IF NOT ignored_evidence_types.${et.evidence_type_aid}; ' checked'; END %]>
+                          <input type="radio" name="evidence_type_[% et.evidence_type_aid %]" value="1" [% IF NOT evidence_type_menu_select.${et.evidence_type_aid}.defined or evidence_type_menu_select.${et.evidence_type_aid}==1; ' checked'; END %]>
+                        </td>
+                        <td>
+                          <input type="radio" name="evidence_type_[% et.evidence_type_aid %]" value="2" [% IF evidence_type_menu_select.${et.evidence_type_aid}==2; ' checked'; END %]>
+                        </td>
+                        <td>
+                          <input type="radio" name="evidence_type_[% et.evidence_type_aid %]" value="3" [% IF evidence_type_menu_select.${et.evidence_type_aid}==3; ' checked'; END %]>
+                        </td>
+                        <td>
+                            <input name="ets_[% et.evidence_type_aid %]" value="[% IF evidence_type_score.${et.evidence_type_aid}; evidence_type_score.${et.evidence_type_aid}; ELSE; '0'; END  %]"> </td>
                         </td>
                       </tr>
                     [% END %]
