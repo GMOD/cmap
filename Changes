@@ -16,6 +16,7 @@
 -   Added "View All Maps" link to map set info template
 -   Added "description" field to feature type and "feature_type_info" 
     handler for displaying details on feature types
+-   Changed installation to use Module::Build instead of ExtUtils::MakeMaker
 
 0.08   2003-08-15
 
