@@ -23,7 +23,7 @@
 [% IF species.size %]
     <table>
         <tr>
-            <td colspan="2" align="center">
+            <td colspan="3" align="center">
                 [% SET pager_url="$url/species_info?" %]
                 [% PROCESS pager.tmpl %]
             </td>
@@ -31,25 +31,24 @@
         [% FOREACH s=species %]
             <tr class="colored">
                 <td align="right">Common&nbsp;Name:</td>
-                <td>
-                    <b>[% s.common_name %]</b>
-                </td>
+                <td><b>[% s.common_name %]</b></td>
+                <td align="center"><b>[</b>&nbsp;<a href="species_info?species_aid=[% s.species_aid %]">Show Only This Species</a>&nbsp;<b>]</b></td>
             </tr> 
 
             <tr>
                 <td align="right">Full&nbsp;Name:</td>
-                <td>[% s.full_name %]</td>
+                <td colspan="2">[% s.full_name %]</td>
             </tr>
 
             <tr>
                 <td align="right">Accession&nbsp;ID:</td>
-                <td>[% s.species_aid %]</td>
+                <td colspan="2">[% s.species_aid %]</td>
             </tr>
 
             [% IF s.map_sets.size %]
                 <tr>
                     <td valign="top" align="right">Map Sets ([% s.map_sets.size %]):</td>
-                    <td align="center">
+                    <td colspan="2" align="center">
                         <b>[</b>&nbsp;<a href="map_set_info?species_aid=[% s.species_aid %]">Show Info For All Map Sets From This Species</a>&nbsp;<b>]</b>
                         [% SET last_map_type='' %]
                         <table border="0">
@@ -74,10 +73,8 @@
             [% FOREACH att=s.attributes %]
                 [% NEXT UNLESS att.is_public %]
                 <tr>
-                    <td align="right">
-                        [% att.attribute_name %]:
-                    </td>
-                    <td>
+                    <td align="right">[% att.attribute_name %]:</td>
+                    <td colspan="2">
                         [%- IF att.attribute_value.match('^http://') -%]
                             <a href="[% att.attribute_value %]">[% att.attribute_value %]</a>
                         [%- ELSE -%]
@@ -89,10 +86,8 @@
 
             [% IF s.xrefs.size %]
                 <tr>
-                    <td align="right" valign="top">
-                        Cross-references:
-                    </td>
-                    <td>
+                    <td align="right" valign="top">Cross-references:</td>
+                    <td colspan="2">
                         <ul>
                         [% FOREACH xref=s.xrefs %]
                             [% NEXT UNLESS xref.xref_url %]
