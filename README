@@ -16,6 +16,8 @@ Oracle, MySQL, PostgreSQL or Sybase for gathering the data, and uses
 Paul Boutell's libgd c library and Lincoln Stein's GD Perl module to
 draw the maps.
 
+To verify the integrity of the tarball, run "cpansign -v."
+
 To install, follow the directions in the file called "INSTALL."
 
 If you want to understand the code further, esp. to customize or

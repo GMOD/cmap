@@ -16,6 +16,8 @@
 -   Added "View All Maps" link to map set info template
 -   Added "description" field to feature type and "feature_type_info" 
     handler for displaying details on feature types
+-   Added reference map set info to map viewer page when only the 
+    reference map set has been chosen
 -   Changed installation to use Module::Build instead of ExtUtils::MakeMaker
 
 0.08   2003-08-15
@@ -197,6 +199,7 @@
 -   Added ability to highlight features with embedded spaces in the name
 
 0.05    2002-12-17
+
 -   Added extra split tokens to highlight string in map detail page 
     as features weren't being highlighted in the table when 
     multiple highlighted features were specified with anything other

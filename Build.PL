@@ -1,10 +1,10 @@
-# $Id: Build.PL,v 1.1 2003-09-10 19:48:44 kycl4rk Exp $
+# $Id: Build.PL,v 1.2 2003-09-18 20:34:54 kycl4rk Exp $
 
 use strict;
 
 eval { require Module::Build };
 if ( $@ =~ /Can't locate/ ) {
-    print qq[Please install "Module::Build" before continuing.\n"];
+    print qq[Please install "Module::Build" before continuing.\n];
     exit(0);
 }
 
@@ -12,33 +12,45 @@ use FindBin '$Bin';
 use File::Copy;
 use File::Basename;
 use File::Path;
-use MyBuilder;
+use File::Spec::Functions;
 
 use constant INSTALL_CONF => 'cmap_install.conf';
+my $cmap_conf_file        =  catfile('conf', 'cmap.conf');
+my $stylesheet_file       =  catfile('conf', 'cmap.css');
 
+my @ARGS = qw[ PREFIX CONF_DIR TEMPLATE_DIR STYLESHEET_DIR ];
 my %ARGS = ( 
-    CONF_DIR        => {
-        desc        => 'Location for the cmap.conf configuration file',
-        default     => '/usr/local/apache/conf',
+    PREFIX         => {
+        desc       => 'A directory prefix for all install arguments',
+        default    => '/usr/local/apache',
     },
-    TEMPLATE_DIR    => {
-        desc        => 'Location for CMap HTML templates',
-        default     => '/usr/local/apache/templates',
+    CONF_DIR       => {
+        desc       => 'Location for the cmap.conf configuration file',
+        default    => 'conf',
     },
-    STYLESHEET_DIR  => {
-        desc        => 'Location for CMap stylesheet',
-        default     => '/usr/local/apache/htdocs',
+    TEMPLATE_DIR   => {
+        desc       => 'Location for CMap HTML templates',
+        default    => 'templates',
+    },
+    STYLESHEET_DIR => {
+        desc       => 'Location for CMap stylesheet',
+        default    => 'htdocs',
     },
 );
 
-my $OPTIONS = join ( '|', keys %ARGS );
+my $OPTIONS = join ( '|', @ARGS );
 my %OPTIONS;
 
 my $USAGE = join("\n", 
-    'Usage:',
     'To customize install locations, provide one or more of the options ',
-    join("\n", map { sprintf("%20s: %-s", $_, $ARGS{$_}{'desc'}) } keys %ARGS),
-    "e.g., 'perl Build.PL TEMPLATE_DIR=/opt/templates'",
+    '',
+    join("\n", 
+        map { sprintf("%14s: %-s\n\t\t(default: %s)\n", 
+            $_, $ARGS{$_}{'desc'}, $ARGS{$_}{'default'}) 
+        } 
+        @ARGS
+    ),
+    "e.g., 'perl Build.PL PREFIX=/opt'",
     '',
     ''
 );
@@ -206,7 +218,27 @@ close F;
 #
 # Write the makefile.
 #
-my $build             =  MyBuilder->new(
+my $builder           =  Module::Build->subclass(
+    class             => 'My::Builder',
+    code              => q[
+        sub ACTION_fakeinstall {
+            my $self = shift;
+            copy_if_modified('templates', $template_dir);
+                from   => 'templates/cmap.conf', 
+                to_dir => $OPTIONS{'CONF_DIR'}
+            );
+            copy_if_modified( 
+                from   => File::Spec::catfile('conf', 'cmap.conf'),
+                to_dir => $OPTIONS{'CONF_DIR'}
+            );
+            copy_if_modified( 
+                from   => 'conf/cmap.css', 
+                to_dir => $OPTIONS{'STYLESHEET_DIR'}
+            );
+            $self->SUPER::ACTION_fakeinstall;
+        }
+    ]
+)->new(
     module_name       => 'Bio::GMOD::CMap',
     dist_abstract     => 'Modules for drawing comparative and genetic maps',
     dist_author       => 'Ken Y. Clark <kclark@cshl.org>',
@@ -232,7 +264,7 @@ my $build             =  MyBuilder->new(
     },
 );
 
-if ( my $failures = $build->prereq_failures ) {
+if ( my $failures = $builder->prereq_failures ) {
     while ( my ( $type, $list ) = each %$failures ) {
         while ( my ( $name, $hash ) = each %$list ) {
             print "Failed to find module '$name': $hash->{'message'}\n";
@@ -240,8 +272,8 @@ if ( my $failures = $build->prereq_failures ) {
     }
 }
 
-$build->add_to_cleanup( INSTALL_CONF );
-$build->create_build_script;
+$builder->add_to_cleanup( INSTALL_CONF );
+$builder->create_build_script;
 
 print qq[Now run "./Build" and "./Build install"\n];
 print qq[Be sure to edit your "cmap.conf" file with your database info!\n];
