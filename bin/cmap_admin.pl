@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.66 2004-04-23 16:20:57 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.67 2004-05-03 19:32:36 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Benchmark;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.66 $)[-1];
+$VERSION = (qw$Revision: 1.67 $)[-1];
 
 #
 # Get command-line options
@@ -2177,7 +2177,6 @@ sub make_name_correspondences {
         "  Target map sets :\n$targets\n",
         "  Skip features   :\n$skip\n"
     ;
-
     print "\nOK to make correspondences? [Y/n] ";
     chomp( my $answer = <STDIN> );
     return if $answer =~ m/^[Nn]/;
@@ -2189,7 +2188,7 @@ sub make_name_correspondences {
     $corr_maker->make_name_correspondences(
         evidence_type_aid         => $evidence_type_aid,
         map_set_ids           => \@map_set_ids,
-        skip_feature_types    => \@skip_feature_type_aids,
+        skip_feature_type_aids    => \@skip_feature_type_aids,
         log_fh                => $self->log_fh,
         quiet                 => $Quiet,
     ) or do { print "Error: ", $corr_maker->error, "\n"; return; };
