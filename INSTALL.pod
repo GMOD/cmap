@@ -4,7 +4,7 @@ CMap Install
 
 =head1 VERSION
 
-$Revision: 1.3 $
+$Revision: 1.4 $
 
 =head1 QUICK START
 
@@ -693,7 +693,7 @@ Execute the "CREATE TABLE/INDEX" statements from the appropriate
 After you have added these tables, you should create the following
 indices:
 
- CREATE INDEX feature_correspondence_id ON cmap_correspondence_evidence 
+ CREATE INDEX ev_feature_correspondence_id ON cmap_correspondence_evidence 
  (feature_correspondence_id);
 
  CREATE INDEX map_id_feature_id ON cmap_feature (feature_id,map_id);
