@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.198.2.9 2005-03-04 21:51:08 mwz444 Exp $
+# $Id: Data.pm,v 1.198.2.10 2005-03-09 21:26:11 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.198.2.9 $)[-1];
+$VERSION = (qw$Revision: 1.198.2.10 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -3779,10 +3779,7 @@ Returns the detail info for a map.
             $sql->feature_correspondence_sql(
                 comparative_map_field       => $comparative_map_field,
                 comparative_map_aid         => $comparative_map_aid,
-                included_evidence_type_aids => @$included_evidence_type_aids
-                ? join( ',', @$included_evidence_type_aids )
-                : @$included_evidence_type_aids ? "-1"
-                : '',
+                included_evidence_type_aids => \@$included_evidence_type_aids,
                 less_evidence_type_aids     => $less_evidence_type_aids,
                 greater_evidence_type_aids  => $greater_evidence_type_aids,
                 evidence_type_score         => $evidence_type_score,
