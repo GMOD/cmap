@@ -1,46 +1,24 @@
-[% pager.total_entries | commify %] record[% IF pager.total_entries > 1 %]s[% END %] found.  
-
-[% IF pager.total_entries > 1 %]
-    Showing [% pager.first | commify %] to [% pager.last | commify %].
-[% END %]
-
+[% USE CGI %]
+<form method="GET">
+Items [% pager.first | commify %] to [% pager.last | commify %] of [% pager.total_entries | commify %].
 [% IF pager.last_page > 1 %]
-    [% SET page_list=[] %]
-
-    [% IF pager.current_page > 1 %]
-        [% page_list.push("<a href=\"${pager_url}&page_no=1\">First</a>") %]
-    [% ELSE %]
-        [% page_list.push("First") %]
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    [% q = CGI.new( pager_url.replace('^.*?\?', '') ) %]
+    [% prev_page = pager.previous_page %]
+    [% IF prev_page %]
+        <a href="[% pager_url %]&page_no=[% prev_page %]\">Previous</a> |
     [% END %]
 
-    [% prev_set = pager.previous_set %]
-    [% IF prev_set %]
-        [% page_list.push("<a href=\"${pager_url}&page_no=${prev_set}\">Prev</a>") %]
-    [% ELSE %]
-        [% page_list.push("Prev") %]
+    [% FOREACH p=q.param %]
+        <input type="hidden" name="[% p %]" value="[% q.param(p) %]">
     [% END %]
+    <input type="submit" value="Page">
+    <input type="text" name="page_no" value="[% apr.param('page_no') OR '1' %]" size="4">
+    of [% pager.last_page | commify %]
 
-    <br>
-    [% FOREACH page_no = pager.pages_in_set %]
-        [% IF page_no == pager.current_page %]
-            [% page_list.push("<b>$page_no</b>") %]
-        [% ELSE %]
-            [% page_list.push("<a href=\"${pager_url}&page_no=${page_no}\">$page_no</a>") %]
-        [% END %]
+    [% next_page = pager.next_page %]
+    [% IF next_page %]
+        | <a href="[% pager_url %]&page_no=[% next_page %]">Next</a>
     [% END %]
-
-    [% next_set = pager.next_set %]
-    [% IF next_set %]
-        [% page_list.push("<a href=\"${pager_url}&page_no=${next_set}\">Next</a>") %]
-    [% ELSE %]
-        [% page_list.push("Next") %]
-    [% END %]
-
-    [% IF pager.current_page != pager.last_page %]
-        [% page_list.push("<a href=\"${pager_url}&page_no=${pager.last_page}\">Last</a>") %]
-    [% ELSE %]
-        [% page_list.push("Last") %]
-    [% END %]
-
-    [% page_list.join(' | ') %]
 [% END %]
+</form>
