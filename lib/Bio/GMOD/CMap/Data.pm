@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.54 2003-09-05 17:53:14 kycl4rk Exp $
+# $Id: Data.pm,v 1.55 2003-09-05 22:57:58 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.54 $)[-1];
+$VERSION = (qw$Revision: 1.55 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -965,6 +965,24 @@ Returns the data for the correspondence matrix.
     );
 
     #
+    # And map types.
+    #
+#    my $map_types = $db->selectall_arrayref( 
+#        q[
+#            select   distinct mt.accession_id as map_type_aid, 
+#                     mt.map_type,
+#                     mt.display_order 
+#            from     cmap_map_type mt,
+#                     cmap_map_set ms
+#            where    mt.map_type_id=ms.map_type_id
+#            and      ms.can_be_reference_map=1
+#            and      ms.is_enabled=1
+#            order by mt.display_order, mt.map_type
+#        ],
+#        { Columns => {} } 
+#    );
+
+    #
     # Make sure that species_id is set if map_set_id is.
     #
     if ( $map_set_aid && !$species_aid ) {
@@ -1437,6 +1455,7 @@ Returns the data for the correspondence matrix.
         data        => $data,
         species     => $species,
         map_sets    => $map_sets,
+#        map_types   => $map_types,
         maps        => $maps,
     };
 }
@@ -2437,6 +2456,7 @@ Returns the detail info for a map.
     my $page_size              = $args{'page_size'}             || 25;
     my $max_pages              = $args{'max_pages'}             ||  0;
     my $page_no                = $args{'page_no'}               ||  1;
+    my $page_data              = $args{'page_data'};
     my $db                     = $self->db  or return;
     my $sql                    = $self->sql or return;
     my $map_id                 = $self->acc_id_to_internal_id(
@@ -2520,72 +2540,28 @@ Returns the detail info for a map.
         current_page     => $page_no,
         pages_per_set    => $max_pages,
     } );
-    $features = [ $pager->splice( $features ) ];
+    $features = [ $pager->splice( $features ) ] if $page_data;
 
     #
-    # Get all the map IDs to use to restrict the feature types.
+    # Get all the feature types on all the maps.
     #
-    my @all_map_ids;
-    for my $slot ( values %$slots ) {
-        if ( $slot->{'field'} eq 'map_set_aid' ) {
-            push @all_map_ids, @{
-                $db->selectcol_arrayref(
-                    q[
-                        select map.map_id
-                        from   cmap_map map,
-                               cmap_map_set ms
-                        where  map.map_set_id=ms.map_set_id
-                        and    ms.accession_id=?
-                    ],
-                    {},
-                    ( $slot->{'aid'} )
-                )
-            };
-        }
-        else {
-            push @all_map_ids, @{
-                $db->selectcol_arrayref(
-                    q[
-                        select map.map_id
-                        from   cmap_map map
-                        where  map.accession_id=?
-                    ],
-                    {},
-                    ( $slot->{'aid'} )
-                )
-            };
-        }
-    }
+    my $ft_sql .= q[
+        select   distinct 
+                 ft.accession_id as feature_type_aid,
+                 ft.feature_type
+        from     cmap_feature_type ft,
+                 cmap_feature f,
+                 cmap_map_cache mc
+        where    f.feature_type_id=ft.feature_type_id
+        and      f.map_id=mc.map_id
+        and      mc.pid=?
+        order by ft.feature_type
+    ];
 
-    #
-    # Feature types.
-    #
-    my $ft_sql;
-    if ( @all_map_ids ) {
-        $ft_sql .= q[
-            select   distinct 
-                     ft.accession_id as feature_type_aid,
-                     ft.feature_type
-            from     cmap_feature_type ft,
-                     cmap_feature f
-            where    f.feature_type_id=ft.feature_type_id
-            and      f.map_id in (].
-            join(',', @all_map_ids).q[)
-            order by ft.feature_type
-        ];
-    }
-    else {
-        $ft_sql .= q[
-            select   ft.accession_id as feature_type_aid,
-                     ft.feature_type
-            from     cmap_feature_type ft
-            order by ft.feature_type
-        ];
-    }
-
+    my $pid = $$;
     my @feature_types = 
         sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} } 
-        @{ $db->selectall_arrayref( $ft_sql, { Columns => {} } ) }
+        @{ $db->selectall_arrayref( $ft_sql, { Columns => {} }, $pid ) }
     ;
 
     #
@@ -2712,6 +2688,11 @@ Returns the detail info for a map.
         };
     }
 
+    #
+    # Delete anything from the cache.
+    #
+    $db->do("delete from cmap_map_cache where pid=$pid");
+
     return {
         features          => $features,
         feature_types     => \@feature_types,
@@ -2719,7 +2700,7 @@ Returns the detail info for a map.
         reference_map     => $reference_map,
         comparative_maps  => \@comparative_maps,
         pager             => $pager,
-    }
+    };
 }
 
 # ----------------------------------------------------
