@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.70.2.7 2004-06-15 14:54:10 kycl4rk Exp $
+# $Id: Map.pm,v 1.70.2.8 2004-06-17 14:17:38 kycl4rk Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.70.2.7 $)[-1];
+$VERSION = (qw$Revision: 1.70.2.8 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -52,7 +52,7 @@ BEGIN {
     my @AUTO_FIELDS = qw[
         map_set_id map_set_aid map_type accession_id species_id 
         map_id species_name map_units map_name map_set_name 
-        map_type_id is_relational_map begin end 
+        map_type_id is_relational_map begin end species_aid map_type_aid
     ];
 
     foreach my $sub_name ( @AUTO_FIELDS ) {
@@ -1461,14 +1461,23 @@ Lays out the map.
             push @map_area_data, {
                 coords => \@map_bounds,
                 url    => $details_url,
-                alt    => 'Details: '.$self->map_name,
+                alt    => 'Map Details',
             };
         }
         else {
             push @map_buttons, {
                 label => '?',
                 url   => $details_url,
-                alt   => 'Details: '.( $self->map_name || '' ),
+                alt   => 'Map Details',
+            },   
+            {   
+                label => 'M',
+                url   => 'matrix?map_type_aid='.$self->map_type_aid( $map_id ).
+                    '&species_aid='.$self->species_aid( $map_id ).
+                    '&map_set_aid='.$self->map_set_aid( $map_id ).
+                    '&map_name='.$self->map_name( $map_id ).
+                    '&show_matrix=1',
+                alt   => 'View In Matrix'
             };
         }
 
@@ -1552,10 +1561,10 @@ Lays out the map.
             my @flips;
             my $acc_id = $self->accession_id( $map_id );
             for my $rec ( @{ $drawer->flip } ) {
-                if ( 
-                    $rec->{'slot_no'} != $slot_no
+                unless ( 
+                    $rec->{'slot_no'} == $slot_no
                     &&
-                    $rec->{'map_aid'} != $acc_id
+                    $rec->{'map_aid'} == $acc_id
                 ) {
                     push @flips, $rec->{'slot_no'}.'%3d'.$rec->{'map_aid'};
                 }
