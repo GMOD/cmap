@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.60 2004-02-14 02:42:16 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.61 2004-02-18 22:24:33 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.60 $)[-1];
+$VERSION = (qw$Revision: 1.61 $)[-1];
 
 #
 # Get command-line options
@@ -1165,7 +1165,7 @@ sub export_as_sql {
                 accession_id   => STR,
                 map_set_id     => NUM,
                 map_name       => STR,
-                display_order  => STR,
+                display_order  => NUM,
                 start_position => NUM,
                 stop_position  => NUM,
             }
