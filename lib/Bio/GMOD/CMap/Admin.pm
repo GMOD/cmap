@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.61.2.3 2004-11-05 19:32:57 mwz444 Exp $
+# $Id: Admin.pm,v 1.61.2.4 2004-12-02 20:56:20 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.61.2.3 $)[-1];
+$VERSION = (qw$Revision: 1.61.2.4 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -207,7 +207,7 @@ Nothing
 =cut
 
     my ( $self, %args ) = @_;
-    my $dbxref_id = $args{'dbxref_id'} or return $self->error( 'No dbxref id' );
+    my $dbxref_id = $args{'dbxref_id'} or return $self->error('No dbxref id');
 
     my $db = $self->db or return;
     $db->do(
@@ -248,6 +248,7 @@ Create a feature.
         stop_position => $stop_position,
         is_landmark => $is_landmark,
         feature_type_aid => $feature_type_aid,
+        direction => $direction,
     );
 
 =item * Returns
@@ -285,6 +286,10 @@ Declares the feature to be a landmark.
 
 The accession id of a feature type that is defined in the config file.
 
+=item - direction
+
+The direction the feature points in relation to the map.
+
 =back
 
 =back
@@ -302,6 +307,7 @@ The accession id of a feature type that is defined in the config file.
     push @missing, 'start' unless $start_position =~ /^$RE{'num'}{'real'}$/;
     my $stop_position = $args{'stop_position'};
     my $is_landmark   = $args{'is_landmark'} || 0;
+    my $direction     = $args{'direction'} || 1;
     my $db            = $self->db or return $self->error;
     my $feature_id    = next_number(
         db         => $db,
@@ -320,8 +326,8 @@ The accession id of a feature type that is defined in the config file.
     }
 
     my @insert_args = (
-        $feature_id,       $accession_id, $map_id, $feature_name,
-        $feature_type_aid, $is_landmark,  $start_position
+        $feature_id, $accession_id, $map_id, $feature_name, $feature_type_aid,
+        $is_landmark, $direction, $start_position
     );
 
     my $stop_placeholder;
@@ -338,9 +344,9 @@ The accession id of a feature type that is defined in the config file.
             insert
             into   cmap_feature
                    ( feature_id, accession_id, map_id, feature_name, 
-                     feature_type_accession, is_landmark,
+                     feature_type_accession, is_landmark, direction,
                      start_position, stop_position,default_rank )
-            values ( ?, ?, ?, ?, ?, ?, ?, $stop_placeholder,$default_rank )
+            values ( ?, ?, ?, ?, ?, ?, ?, ?, $stop_placeholder,$default_rank )
         ],
         {},
         @insert_args
@@ -520,7 +526,7 @@ Nothing
 
     my ( $self, %args ) = @_;
     my $feature_id = $args{'feature_id'}
-      or return $self->error( 'No feature id' );
+      or return $self->error('No feature id');
 
     my $db = $self->db or return;
     my $map_id = $db->selectrow_array(
@@ -618,7 +624,7 @@ a key/value pair with the pk_name as key and the id as the value.
         ],
         fields => [
             qw/ accession_id feature_name start_position stop_position
-              map_id feature_type_id is_landmark
+              map_id feature_type_id is_landmark direction
               /
         ],
     );
@@ -861,19 +867,20 @@ If not defined, the object_id will be assigned to it.
           )
           or return $self->error('No next number for correspondence evidence');
         my $accession_id = $e->{'accession_id'} || $corr_evidence_id;
+        my $rank = $self->evidence_type_data( $et_id, 'rank' ) || 1;
         my @insert_args = (
-            $corr_evidence_id, $accession_id, $feature_correspondence_id, $et_id
+            $corr_evidence_id, $accession_id, $feature_correspondence_id,
+            $et_id, $score, $rank,
         );
 
-        my $score_arg;
-        if ( defined $score ) {
-            push @insert_args, $score;
-            $score_arg = '?';
-        }
-        else {
-            $score_arg = undef;
-        }
-        my $rank = $self->evidence_type_data( $et_id, 'rank' ) || 1;
+        #my $score_arg;
+        #if ( defined $score ) {
+        #    push @insert_args, $score;
+        #    $score_arg = '?';
+        #}
+        #else {
+        #    $score_arg = undef;
+        #}
         $db->do(
             qq[
                 insert
@@ -885,7 +892,7 @@ If not defined, the object_id will be assigned to it.
                          score,
                          rank
                        )
-                values ( ?, ?, ?, ?, $score_arg,$rank )
+                values ( ?, ?, ?, ?, ?, ? )
             ],
             {},
             (@insert_args)
@@ -920,10 +927,10 @@ If not defined, the object_id will be assigned to it.
                          map_id1, map_id2,
                          feature_type_accession1, feature_type_accession2,
                          start_position1, start_position2,
-                         stop_position, stop_position2
+                         stop_position1, stop_position2
                         )
                 select f1.feature_id,
-                    f2.featrue_id,
+                    f2.feature_id,
                     ?,
                     f1.map_id,
                     f2.map_id,
@@ -933,6 +940,8 @@ If not defined, the object_id will be assigned to it.
                     f2.start_position,
                     f1.stop_position,
                     f2.stop_position
+                from cmap_feature f1, 
+                     cmap_feature f2
                 where f1.feature_id=?
                     and f2.feature_id=?
             ],
@@ -1684,8 +1693,8 @@ The display order of the attribute if the attribute needs to be created.
             table_name => 'cmap_feature_attribute',
             id_field   => 'feature_attribute_id',
           )
-          or return $self->error(
-            "Can't get next ID for 'cmap_feature_attribute'" );
+          or
+          return $self->error("Can't get next ID for 'cmap_feature_attribute'");
 
         $db->do(
             q[
@@ -2045,7 +2054,7 @@ Arrayref of hashes with feature_type data.
     {
         $feature_types->[ ++$#{$feature_types} ] =
           $self->feature_type_data($type_aid)
-          or return $self->error( "No feature type accession '$type_aid'" );
+          or return $self->error("No feature type accession '$type_aid'");
     }
     return $feature_types;
 }
@@ -2526,7 +2535,7 @@ Nothing
 
     my ( $self, %args ) = @_;
     my $map_set_id = $args{'map_set_id'}
-      or return $self->error( 'No map set id' );
+      or return $self->error('No map set id');
     my $db = $self->db or return;
     my $map_ids = $db->selectcol_arrayref(
         q[          
@@ -2991,8 +3000,7 @@ The name of the table being reference.
                 table_name => 'cmap_attribute',
                 id_field   => 'attribute_id',
               )
-              or
-              return $self->error( "Can't get next ID for 'cmap_attribute'" );
+              or return $self->error("Can't get next ID for 'cmap_attribute'");
 
             unless ($display_order) {
                 $display_order = $db->selectrow_array(

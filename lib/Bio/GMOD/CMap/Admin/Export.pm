@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Export;
 
 # vim: set ft=perl:
 
-# $Id: Export.pm,v 1.10.2.1 2004-11-05 19:33:07 mwz444 Exp $
+# $Id: Export.pm,v 1.10.2.2 2004-12-02 20:56:21 mwz444 Exp $
 
 =pod
 
@@ -29,7 +29,7 @@ of data out of CMap.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.10.2.1 $)[-1];
+$VERSION = (qw$Revision: 1.10.2.2 $)[-1];
 
 use Data::Dumper;
 use File::Spec::Functions;
@@ -333,7 +333,8 @@ Feature correspondence
                    ce.feature_correspondence_id,
                    ce.accession_id,
                    ce.evidence_type_accession as evidence_type_aid,
-                   ce.score
+                   ce.score,
+                   ce.rank
             from   cmap_correspondence_evidence ce,
                    cmap_feature_correspondence fc,
                    cmap_feature f1,
@@ -355,7 +356,8 @@ Feature correspondence
                    feature_correspondence_id,
                    accession_id,
                    evidence_type_accession as evidence_type_aid,
-                   score
+                   score,
+                   rank
             from   cmap_correspondence_evidence
         ];
     }
@@ -373,35 +375,6 @@ Feature correspondence
 
     return $fc;
 }
-
-# ----------------------------------------------------
-###Removed because I don't know where it is called
-#sub get_cmap_feature_type {
-#    my ( $self, %args ) = @_;
-#
-#    my $db  = $self->db or return;
-#    my $sql = q[
-#        select feature_type_id as object_id,
-#               accession_id,
-#               feature_type,
-#               default_rank,
-#               shape,
-#               color,
-#               drawing_lane,
-#               drawing_priority
-#        from   cmap_feature_type
-#    ];
-#
-#    if ( my $ft_id = $args{'feature_type_id'} ) {
-#        $sql .= "where feature_type_id=$ft_id";
-#    }
-#
-#    my $ft = $db->selectall_arrayref( $sql, { Columns => {} } );
-#
-#    $self->get_attributes_and_xrefs( 'cmap_feature_type', $ft );
-#
-#    return $ft;
-#}
 
 # ----------------------------------------------------
 sub get_cmap_map_set {
@@ -456,7 +429,6 @@ hash with map set and species
                shape,
                color,
                width,
-               species_id,
                is_relational_map,
                map_units
         from   cmap_map_set ms
@@ -508,7 +480,8 @@ hash with map set and species
                            start_position,
                            stop_position,
                            feature_type_accession as feature_type_aid,
-                           default_rank
+                           default_rank,
+                           direction
                     from   cmap_feature
                     where  map_id=?
                 ],
@@ -562,21 +535,6 @@ hash with map set and species
           @{ $self->get_cmap_species( species_id => $species_id ) };
     }
 
-    ###Removing because no longer need to export types
-    #my @map_type;
-    #for my $map_type ( keys %map_types ) {
-    #    push @map_type, @{
-    #        $self->get_cmap_map_type( map_type => $map_type )
-    #    };
-    #}
-
-    #my @feature_types;
-    #for my $feature_type_id ( keys %ft_ids ) {
-    #    push @feature_types, @{
-    #        $self->get_cmap_feature_type( feature_type_id => $feature_type_id )
-    #    };
-    #}
-
     return {
         cmap_map_set => $map_sets,
         cmap_species => \@species,
@@ -585,35 +543,6 @@ hash with map set and species
         #cmap_feature_type => \@feature_types,
     };
 }
-
-# ----------------------------------------------------
-#sub get_cmap_map_type {
-#    my ( $self, %args ) = @_;
-#
-#    my $db  = $self->db or return;
-#    my $sql = q[
-#        select map_type_id as object_id,
-#               accession_id,
-#               map_type,
-#               map_units,
-#               is_relational_map,
-#               shape,
-#               color,
-#               width,
-#               display_order
-#        from   cmap_map_type
-#    ];
-#
-#    if ( my $map_type_id = $args{'map_type_id'} ) {
-#        $sql .= "where map_type_id=$map_type_id";
-#    }
-#
-#    my $mt = $db->selectall_arrayref( $sql, { Columns => {} } );
-#
-#    $self->get_attributes_and_xrefs( 'cmap_map_type', $mt );
-#
-#    return $mt;
-#}
 
 # ----------------------------------------------------
 sub get_cmap_species {

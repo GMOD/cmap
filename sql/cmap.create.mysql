@@ -149,19 +149,6 @@ CREATE TABLE cmap_map (
 ) TYPE=MyISAM;
 
 --
--- Table structure for table `cmap_map_cache`
---
-
-CREATE TABLE cmap_map_cache (
-  pid int(11) NOT NULL default '0',
-  slot_no smallint(6) NOT NULL default '0',
-  map_id int(11) NOT NULL default '0',
-  start_position double(11,2) default NULL,
-  stop_position double(11,2) default NULL,
-  KEY pid_cmap_map_cache (pid,slot_no,map_id)
-) TYPE=MyISAM;
-
---
 -- Table structure for table `cmap_map_set`
 --
 

@@ -223,25 +223,6 @@ COMMENT ON TABLE cmap_map is
   'Table structure for table `cmap_map`';
 
 --
--- Table: cmap_map_cache
---
-
-DROP TABLE cmap_map_cache;
-CREATE TABLE cmap_map_cache (
-  pid number(11) DEFAULT '0' NOT NULL,
-  slot_no number(6) DEFAULT '0' NOT NULL,
-  map_id number(11) DEFAULT '0' NOT NULL,
-  start_position number(11, 2) DEFAULT NULL,
-  stop_position number(11, 2) DEFAULT NULL
-)
-TYPE    MyISAM;
-
-CREATE INDEX pid_cmap_map_cache on cmap_map_cache (pid, slot_no, map_id);
-
-COMMENT ON TABLE cmap_map_cache is
-  'Table structure for table `cmap_map_cache`';
-
---
 -- Table: cmap_map_set
 --
 

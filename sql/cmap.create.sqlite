@@ -118,17 +118,6 @@ CREATE TABLE cmap_map (
   stop_position double(11,2) DEFAULT NULL
 );
 
---
--- Table: cmap_map_cache
---
-DROP TABLE cmap_map_cache;
-CREATE TABLE cmap_map_cache (
-  pid int(11) NOT NULL DEFAULT '0',
-  slot_no smallint(6) NOT NULL DEFAULT '0',
-  map_id int(11) NOT NULL DEFAULT '0',
-  start_position double(11,2) DEFAULT NULL,
-  stop_position double(11,2) DEFAULT NULL
-);
 
 --
 -- Table: cmap_map_set
@@ -206,7 +195,6 @@ CREATE INDEX alias_cmap_feature_alias on cmap_feature_alias (alias);
 CREATE INDEX feature_id1_cmap_feature_corre on cmap_feature_correspondence (feature_id1);
 CREATE INDEX cmap_feature_corresp_idx_cmap_ on cmap_feature_correspondence (is_enabled, feature_correspondence_id);
 CREATE INDEX map_set_id_index_cmap_map on cmap_map (map_set_id);
-CREATE INDEX pid_cmap_map_cache_cmap_map_ca on cmap_map_cache (pid, slot_no, map_id);
 CREATE INDEX cmap_map_set_idx_cmap_map_set on cmap_map_set (can_be_reference_map, is_enabled, species_id, display_order, published_on, short_name);
 CREATE INDEX acc_id_species_id_cmap_species on cmap_species (accession_id, species_id);
 CREATE INDEX table_name_cmap_xref on cmap_xref (table_name, object_id, display_order);

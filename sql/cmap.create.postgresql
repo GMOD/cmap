@@ -175,21 +175,6 @@ CREATE TABLE "cmap_map" (
 CREATE INDEX "map_set_id_index" on cmap_map ("map_set_id");
 
 --
--- Table: cmap_map_cache
---
-
-DROP TABLE "cmap_map_cache";
-CREATE TABLE "cmap_map_cache" (
-  "pid" bigint DEFAULT '0' NOT NULL,
-  "slot_no" smallint DEFAULT '0' NOT NULL,
-  "map_id" bigint DEFAULT '0' NOT NULL,
-  "start_position" numeric(11,2) DEFAULT NULL,
-  "stop_position" numeric(11,2) DEFAULT NULL
-);
-
-CREATE INDEX "pid_cmap_map_cache" on cmap_map_cache ("pid", "slot_no", "map_id");
-
---
 -- Table: cmap_map_set
 --
 
