@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.22 2003-02-25 19:30:12 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.23 2003-03-05 17:40:18 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.22 $)[-1];
+$VERSION = (qw$Revision: 1.23 $)[-1];
 
 #
 # Turn off output buffering.
@@ -1501,6 +1501,11 @@ will be put into a file of your choosing and can be fed directly into
 another database to mirror your current one.  You can also choose to
 add "TRUNCATE TABLE" statements just before the INSERT statements so
 as to erase any existing data.
+
+B<Note to Oracle users>: If you have ampersands in strings, Oracle
+will think that they are variables and will prompt you for values when
+you run the file.  Either "SET SCAN OFF" or "SET DEFINE OFF" to have
+Oracle accept the string as is.
 
 =item 2 
 
