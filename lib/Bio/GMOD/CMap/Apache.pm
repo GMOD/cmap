@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache;
 # vim: set ft=perl:
 
-# $Id: Apache.pm,v 1.10 2004-01-08 22:27:47 kycl4rk Exp $
+# $Id: Apache.pm,v 1.11 2004-02-10 22:36:12 kycl4rk Exp $
 
 =head1 NAME
 
@@ -46,13 +46,9 @@ this class will catch errors and display them correctly.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.10 $)[-1];
+$VERSION = (qw$Revision: 1.11 $)[-1];
 
-use Apache;
-use Apache::Constants;
-use Apache::Cookie;
-use Apache::Request;
-use Apache::Constants;
+use CGI;
 use Data::Dumper;
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
@@ -134,21 +130,13 @@ the handler to the derived class's "handler" method.
 
 =cut
 
-    my $apr      = Apache::Request->new( shift );
-    my $filename = $apr->filename;
-    return DECLINED if -e $filename;
-
-    my $path_info =  $apr->path_info || '';
+    my $apr       = CGI->new;
+    my $path_info = $apr->path_info || '';
     if ( $path_info ) {
        $path_info =~ s{^/(cmap/)?}{}; # kill superfluous stuff
     }
-    else {
-        if ( $filename =~ m{^.*/(\w+)$} ) {
-            $path_info = $1;
-        }
-    }
-    $path_info = DEFAULT->{'path_info'} unless exists DISPATCH->{$path_info};
 
+    $path_info = DEFAULT->{'path_info'} unless exists DISPATCH->{ $path_info };
     my $class  = DISPATCH->{ $path_info };
     my $module = $class->new( apr => $apr );
     my $status;
@@ -179,12 +167,10 @@ the handler to the derived class's "handler" method.
             }
         };
 
-        $apr->content_type('text/html');
-        $apr->send_http_header;
-        $apr->print( $html || $e );
+        print $apr->header('text/html'), $html || $e;
     }
     
-    return $status || OK;
+    return 1;
 }
 
 # ----------------------------------------------------
@@ -200,6 +186,24 @@ Returns the Apache::Request object.
 
     my $self = shift;
     return $self->{'apr'};
+}
+
+# ----------------------------------------------------
+sub cookie { 
+
+=pod
+
+=head2 cookie
+
+Get/set the cookie.
+
+=cut
+
+    my $self = shift;
+
+    $self->{'cookie'} = shift if @_;
+
+    return $self->{'cookie'};
 }
 
 # ----------------------------------------------------
@@ -309,18 +313,15 @@ cookie with current settings.
     my %preferences       = ();
 
     #
-    # Try to fetch the cookie and read it.
+    # Fetch and read the cookie.
     #
-    if ( my %cookies = Apache::Cookie->new($apr)->fetch ) {{
-        my $cookie        = $cookies{$cookie_name} or last;
-        my $cookie_string = $cookie->value         ||   '';
-        my @cookie_fields = split RECORD_SEP, $cookie_string;
+    my $cookie_string = $apr->cookie( $cookie_name ); 
+    my @cookie_fields = split RECORD_SEP, $cookie_string;
 
-        foreach ( @cookie_fields ) {
-            my ( $name, $value )  = split FIELD_SEP;
-            $preferences{ $name } = $value if $value;
-        }
-    }}
+    foreach ( @cookie_fields ) {
+        my ( $name, $value )  = split FIELD_SEP;
+        $preferences{ $name } = $value if $value;
+    }
 
     #
     # This updates the preferences with whatever is in the latest
@@ -350,17 +351,17 @@ cookie with current settings.
         map { join( FIELD_SEP, $_, $preferences{ $_ } ) } @preference_fields 
     );
 
-    my $cookie   = Apache::Cookie->new(
-        $apr,
-        -name    => $cookie_name,
-        -value   => $cookie_value,
-        -expires => '+1y',
-        -domain  => $cookie_domain,
-        -path    => '/'
+    $self->cookie(
+        $apr->cookie( 
+            -name    => $cookie_name, 
+            -value   => $cookie_value,
+            -expires => '+1y',
+            -domain  => $cookie_domain,
+            -path    => '/'
+        )
     );
-    $cookie->bake;
 
-    return OK;
+    return 1;
 }
 
 1;
