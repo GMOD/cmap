@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin;
 
-# $Id: Admin.pm,v 1.25 2003-08-01 21:11:16 kycl4rk Exp $
+# $Id: Admin.pm,v 1.26 2003-09-02 20:06:11 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.25 $)[-1];
+$VERSION = (qw$Revision: 1.26 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils qw[ next_number parse_words ];
@@ -357,7 +357,7 @@ Find all the features matching some criteria.
     my $map_aid          = $args{'map_aid'}          ||             '';
     my $species_ids      = $args{'species_ids'}      ||             [];
     my $feature_type_ids = $args{'feature_type_ids'} ||             [];
-    my $field_name       = $args{'field_name'}       || 'feature_name';
+    my $search_field     = $args{'search_field'}     || 'feature_name';
     my $order_by         = $args{'order_by'}         || 'feature_name';
     my $limit_start      = $args{'limit_start'}      ||              0;
     my $db               = $self->db or return;
@@ -372,7 +372,7 @@ Find all the features matching some criteria.
     for my $feature_name ( map { uc $_ } @feature_names ) {
         my $comparison = $feature_name =~ m/%/ ? 'like' : '=';
 
-        my $where = $field_name eq 'both'
+        my $where = $search_field eq 'both'
             ? qq[
                 where  (
                     upper(f.feature_name) $comparison '$feature_name'
@@ -380,11 +380,18 @@ Find all the features matching some criteria.
                     upper(f.alternate_name) $comparison '$feature_name'
                 )
             ]
-            : qq[where upper(f.$field_name) $comparison '$feature_name']
+            : $search_field =~ /(feature_name|alternate_name)/
+            ? qq[where upper(f.$search_field) $comparison '$feature_name']
+            : $search_field eq 'feature_aid'
+            ? qq[where f.accession_id $comparison '$feature_name']
+            : ''
         ;
+
+        die "Invalid search field '$search_field'" unless $where;
 
         my $sql = qq[
             select f.feature_id, 
+                   f.accession_id as feature_aid,
                    f.feature_name,
                    f.alternate_name,
                    f.start_position,
@@ -420,9 +427,22 @@ Find all the features matching some criteria.
         if ( my $ft = join(', ',  @$feature_type_ids ) ) {
             $sql .= "and f.feature_type_id in ($ft) ";
         }
-        $sql .= "order by $order_by ";
 
         push @results, @{ $db->selectall_arrayref( $sql, { Columns => {} } ) };
+    }
+
+    if ( $order_by ) {
+        my $sort = $order_by =~ m/position$/ 
+            ? sub { $a->[0] <=> $b->[0] } 
+            : sub { $a->[0] cmp $b->[0] }
+        ;
+
+        @results = 
+            map  { $_->[1] }
+            sort $sort
+            map  { [ $_->{ $order_by }, $_ ] }
+            @results
+        ;
     }
 
     return \@results;
