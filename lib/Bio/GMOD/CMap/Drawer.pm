@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.10 2002-09-11 16:31:50 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.11 2002-09-24 22:39:04 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.10 $)[-1];
+$VERSION = (qw$Revision: 1.11 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
@@ -260,7 +260,7 @@ Returns the cache directory.
 
     unless ( defined $self->{'cache_dir'} ) {
         my $cache_dir   = $self->config('cache_dir');
-        -d $cache_dir || eval{ mkpath( $cache_dir ) } || 
+        -d $cache_dir || eval{ mkpath( $cache_dir, 0, 0700 ) } || 
             return $self->error("No cache dir; Using '$cache_dir'");
         $self->{'cache_dir'} = $cache_dir;
     }

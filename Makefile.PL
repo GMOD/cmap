@@ -1,3 +1,5 @@
+# $Id: Makefile.PL,v 1.9 2002-09-24 22:39:03 kycl4rk Exp $
+
 use strict;
 use FindBin '$Bin';
 use File::Copy;
@@ -5,9 +7,11 @@ use File::Basename;
 use File::Path;
 use ExtUtils::MakeMaker qw[ prompt WriteMakefile ];
 
-use constant CONF_FILE => 'cmap_install.conf';
+use constant CONF_FILE       => 'cmap_install.conf';
+use constant DEFAULT_PREFIX  => '/usr/local/apache';
+use constant DEFAULT_BIN_DIR => '/usr/local/bin';
 
-my @OPTIONS = qw[ CONF_DIR TEMPLATE_DIR STYLESHEET_DIR SCRIPT_DIR ];
+my @OPTIONS = qw[ CONF_DIR PREFIX TEMPLATE_DIR STYLESHEET_DIR SCRIPT_DIR ];
 my $OPTIONS = join ( '|', @OPTIONS );
 my %OPTIONS;
 
@@ -22,7 +26,7 @@ foreach ( @argv ) {
             'To customize install locations, provide one or '.
             'more of the options ',
             join( ', ', @OPTIONS ),
-            "e.g., 'CONF_DIR=/usr/local/apache/conf'"
+            "e.g., 'PREFIX=/usr/local/cmap'"
         );
     }
     elsif ( /($OPTIONS)=(.+)/og ) {
@@ -72,29 +76,30 @@ PREAMBLE
 
     $preamble .= join( "\n", map { "\t$_" } @OPTIONS, '' );
     print $preamble;
+    my $prefix = $OPTIONS{'PREFIX'} || DEFAULT_PREFIX;
 
-    $OPTIONS{'CONF_DIR'} = get_path(
+    $OPTIONS{'CONF_DIR'}       ||= get_path(
         prompt   => 'Where would you like the configuration file installed?',
         optional => 1,
-        default  => '/usr/local/apache/conf',
+        default  => $prefix.'/conf',
     );
 
-    $OPTIONS{'TEMPLATE_DIR'} = get_path(
+    $OPTIONS{'TEMPLATE_DIR'}   ||= get_path(
         prompt   => 'Where would you like the HTML templates installed?',
         optional => 1,
-        default  => '/usr/local/apache/templates/cmap',
+        default  => $prefix.'templates/cmap',
     );
 
-    $OPTIONS{'SCRIPT_DIR'} = get_path(
+    $OPTIONS{'SCRIPT_DIR'}     ||= get_path(
         prompt   => 'Where would you like the command-line scripts installed?',
         optional => 1,
-        default  => '/usr/local/bin/',
+        default  => $OPTIONS{'PREFIX'} ? $prefix.'/bin' : DEFAULT_BIN_DIR,
     );
 
-    $OPTIONS{'STYLESHEET_DIR'} = get_path(
+    $OPTIONS{'STYLESHEET_DIR'} ||= get_path(
         prompt   => 'Where would you like the HTML stylesheet installed?',
         optional => 1,
-        default  => '/usr/local/apache/htdocs/stylesheets',
+        default  => $prefix.'htdocs/stylesheets',
     );
 }
 
@@ -104,16 +109,17 @@ PREAMBLE
 my $config = "$Bin/".CONF_FILE;
 open F,">$config" or die "Can't open $config for writing: $!";
 print F 
-    "# This hints file contains configuration information used\n",
-    "# by the cmap installer.\n",
-    qq[# To reconfigure, run "perl Makefile.PL `cat ".CONF_FILE."`"\n];
+    "# This hints file contains configuration \n",
+    "# information used by the cmap installer.\n",
+    qq[# To reconfigure, run "perl Makefile.PL `cat ".CONF_FILE."`"\n]
+;
 foreach ( keys %OPTIONS ) {
     print F "$_=$OPTIONS{$_}\n";
 }
 close F;
 
 #
-# Let the installer know where things are going.
+# Let the user know where things are going to be installed.
 #
 print "\nHere are the paths I'm using to install:\n",
     map { "  $_ = $OPTIONS{$_}\n" } keys %OPTIONS;
@@ -218,7 +224,7 @@ if ( my $conf_dir = $OPTIONS{'CONF_DIR'} ) {
 #
 WriteMakefile(
     NAME          => 'Bio::GMOD::CMap',
-    VERSION       => '0.03',
+    VERSION_FROM  => 'lib/Bio/GMOD/CMap.pm',
     AUTHOR        => 'Ken Y. Clark <kclark@cshl.org>',
     ABSTRACT      => 'Modules for drawing comparative and genetic maps.',
     PREREQ_PM     => {

@@ -57,18 +57,11 @@ the directory "/usr/local/downloads."  This directory doesn't
 usually exist, so I do the following (as root):
 
     # mkdir /usr/local/downloads
-    # chgrp users /usr/local/downloads
     # chmod g+w /usr/local/downloads
 
-Where the group "users" is a group I'm a member of.  This way I can
-write all my downloads into the directory without having to su to
-root.  (Note the convention of showing root's prompt with a hash sign
+(Note the convention of showing root's prompt with a hash sign
 "#".  When showing a prompt for a regular user, the convention is to
-use a dollar sign "$")  Some people also like to make the directory
-"/usr/local/src" writable by "users" (or whatever you call it on
-your system), but I'm a bit too paranoid to do that.  This means I
-usually do all my configuring and building as root, for better or
-worse.
+use a dollar sign "$".)
  
 As you download the packages required, put them into
 "/usr/local/downloads" (or wherever you can keep up with them), and
@@ -86,7 +79,7 @@ your system);
 
 After that, cd into the directory created by the package and follow the
 directions for installing the software.  Typically, it will involve the 
-basic triumverate of commands:
+basic triumvirate of commands:
 
     # ./configure
     # make
@@ -158,7 +151,7 @@ so some parts of the application will fail.  If you can't upgrade,
 then you can alter the few SQL statements that cause problems.  If you
 prefer to use some other RDBMS, like PostgreSQL or Sybase or whatever,
 then you're still in luck.  Much has been done to make the SQL simple
-and portable and extendible.  If an SQL statement is giving you
+and portable and extensible.  If an SQL statement is giving you
 problems, you can likely create a small module and override the
 statement with one of your own making.  More on that later.
 
@@ -199,15 +192,17 @@ grant appropriate permissions to a user "joe" with the password
         on CMAP.* to joe@localhost identified by "foobar"'
 
 In the above example, you'll be required to type the root password
-for MySQL.  Note:  this is not the same "root" as your system
-"root."  If you never set MySQL's "root" password, then just hit
-<Enter> at the password prompt (though I'd be remiss if I didn't
-suggest you actually protect your MySQL root user with a decent
-password).  Be sure to remember the username and password you'll
-connect to the database with as you'll need to place these values into
-your "cmap.conf" file further into the installation process.  
+for MySQL.  
 
-After you've granted the username access to the system, please test
+Note:  This is not the same "root" as your system "root." If you never
+       set MySQL's "root" password, then just hit <Enter> at the
+       password prompt (though I'd be remiss if I didn't suggest you
+       actually protect your MySQL root user with a decent password). Be
+       sure to remember the user name and password you'll connect to the
+       database with as you'll need to place these values into your
+       "cmap.conf" file further into the installation process.
+
+After you've granted the user name access to the system, please test
 that the login works by, well, logging in.  For example, if you used
 the above, try this:
 
@@ -224,7 +219,7 @@ whatever user will connect to your database.
 INSTALLING PERL 
 
 It would be hard to imagine that a UNIX system wouldn't have some
-version of Perl installed.  We need a minimun of Perl 5.6.1.  To
+version of Perl installed.  We need a minimum of Perl 5.6.1.  To
 see if you have that, type:
 
     $ perl -v
@@ -278,19 +273,19 @@ minutes to download and build.  Here's one way:
 
 For better downloads, go to the CPAN (Comprehensive Perl Archive
 Network) website and find a mirror near you.  (A mirror is a machine
-who's owner is nice enough to provide disc space and bandwidth so
-that damand can be distributed amongst processors and across
-geographical areas.  Needless to say, it's usally better to find a
+who's owner is nice enough to provide disk space and bandwidth so
+that demand can be distributed among processors and across
+geographical areas.  Needless to say, it's usually better to find a
 mirror that's near you as long as that machine isn't overloaded.
 Just keep trying different machines until you find one with a good,
 fast connection to you.)
 
-INSTALLING APACHE ANG MOD_PERL
+INSTALLING APACHE AND MOD_PERL
 
 Given that Apache is the most popular web server right now, it's
 also likely that you'll already have it installed on your system.
 Additionally, mod_perl is becoming a very standard package, and a
-number of systems offer prebuilt binaries or easy-to-install
+number of systems offer pre-built binaries or easy-to-install
 packages.  Both RedHat and Debian have such packages, and Windows
 users can also install pre-built binaries.  To see if your Apache
 binary has mod_perl compiled into it, do the following:
@@ -327,17 +322,19 @@ Here's the output of mine:
 If you see "mod_perl.c" in the list, then you can probably skip
 ahead to the next section.  If, however, you choose to build Apache
 and mod_perl for your system, either because it's not already
-installed or because you need to upgrade or becaue you're a purist
+installed or because you need to upgrade or because you're a purist
 or just because it's fun, you'll be happy to know that it's quite
 easy.  Both are available from the Apache mirrors.  I'll be
 referencing "ftp.apache.org," but you should find a mirror near you
 by looking on the Apache website, http://www.apache.org/.  Apache
 can be found in "/pub/dist/httpd/apache_1.3.26.tar.gz" and mod_perl
-can be found in "/pub/dist/perl/mod_perl-1.27.tar.gz."  Note:  This
-application has only been developed under the Apache and mod_perl
-1.x trees.  Apache and mod_perl 2.x are exciting new frontiers for
-mod_perlers, but it will be a while before this application is moved
-to that architecture.  Just stick with the 1.x trees.
+can be found in "/pub/dist/perl/mod_perl-1.27.tar.gz."  
+
+Note:  This application has only been developed under the Apache and
+       mod_perl 1.x trees. Apache and mod_perl 2.x are exciting new
+       frontiers for mod_perlers, but it will be a while before this
+       application is moved to that architecture. Just stick with the
+       1.x trees.
 
 You can install Apache and mod_perl in one fell swoop so long as
 you're not interested in compiling in any other modules (e.g., PHP
@@ -369,7 +366,7 @@ doing when you use multiple lines.
 The APACHE_PREFIX that I list above is not necessarily where you
 should install Apache.  It's a fairly standard location on most
 GNU/Linux systems, but where Apache goes is still up to the
-descretion of your sysadmin (which is probably you, if you're
+discretion of your sysadmin (which is probably you, if you're
 reading this).  There's no reason whatsoever that Apache can't be
 installed "/var/web/" or "/opt/httpd" (though I might not recommend
 installing into "/tmp/" :-).  For the purposes of this document,
@@ -391,48 +388,12 @@ be fixed.)
 
 INSTALLING PERL MODULES
 
-If you ever need to install a Perl module, I'd really recommend you
-use the CPAN shell.  It is a really convenient package that
-automates the downloading and building of modules.  Additionally, it
-can recursively install all module dependencies automagically.  To
-use the CPAN shell, type the following (as root):
-
-    # perl -MCPAN -e shell
-
-(If you're curious, the "-M" flag tells Perl to use a particular
-module, in this case "CPAN.pm," and the "-e" flag tells Perl to execute
-some code.  In this case, we're executing the command "shell," which
-is exported by CPAN.pm.  If you ever wanted to see if a particular
-module was loaded on your system, e.g., the DBI module, you could do
-the following:
-
-    $ perl -MDBI -e 'print "OK\n"'
-
-If Perl is not able to load DBI, you will certainly know about it;
-otherwise you'll see "OK.")
-
-The first time you use the CPAN shell, you will have to answer a few
-questions mostly concerned with choosing a mirror close to you and
-where certain important system binaries are (like "gzip," "ncftp,"
-"tar," etc.).  Generally you can just keep hitting <Return> to
-accept the defaults presented in square brackets.
-
-Occasionally a module may not install properly via the CPAN shell,
-or perhaps it is not available on CPAN (many aren't).  In that case,
-you can install the module in much the same way that you install
-system binaries.  I'd recommend downloading the source into
-"/usr/local/downloads" and then untarring into "/usr/local/src."
-Execute "perl Makefile.PL; make; make test; make install" and you're
-generally all done.  If the module requires another module, you'll
-need to track that down, install it, then return to installing the
-first one.  After satisfying several dependencies on your own,
-you'll begin to appreciate all the automation the CPAN shell gives
-you.
-
-There are a number of CPAN modules required by the CMAP application.  They
-are listed in the PREREQ_PM hash reference in the Makefile.PL included
-with this distribution.  Here are brief descriptions of some of the major
-ones required:
+There are a number of CPAN modules required by the CMAP application.
+You will likely need to install these prior to installing the CMAP
+modules as they are not in the standard Perl distribution.  These
+modules are listed in the PREREQ_PM hash reference in the Makefile.PL
+included with this distribution.  Here are brief descriptions of some
+of the major ones required:
 
 *   Apache::Request:  Also known as "libapreq" because this is a C library,
     this module actually bundles many other modules used, including
@@ -458,6 +419,11 @@ ones required:
     be customized for each vendor's product, but the way the code talks to
     the database is the same.
 
+    Note:  Since this application works with both MySQL and Oracle (and
+           hopefully with even more databases one day), I don't bother
+           specifying which DBD driver to install. Therefore it is up to
+           you to install DBD::mysql or DBD::Oracle yourself.
+
 *   Template:  The Template Toolkit, this module handles the substitutions
     made in the template files to create the HTML displayed to browsers.
 
@@ -468,6 +434,45 @@ ones required:
     libgd system library which actually does the drawing of the maps.
 
 *   Time::Object, Time::ParseDate: Two modules for dealing with dates.
+
+If you need to install any of these Perl modules, I'd really recommend
+you use the CPAN shell, a convenient package that automates the
+downloading and building of modules.  The CPAN shell can also can
+recursively install all module dependencies automatically, which is a
+very nice feature.  To use the CPAN shell, type the following (as
+root):
+
+    # perl -MCPAN -e shell
+
+If you're curious, the "-M" flag tells Perl to use a particular
+module, in this case "CPAN.pm," and the "-e" flag tells Perl to execute
+some code.  In this case, we're executing the command "shell," which
+is exported by CPAN.pm.  If you want to see if any of the above
+modules is already installed on your system, simply substitute the
+name of the module where "CPAN" occurs above, e.g., for the DBI
+module, you would do the following:
+
+    $ perl -MDBI -e 'print "OK\n"'
+
+If Perl is not able to load DBI, you will certainly know about it;
+otherwise you'll see "OK."
+
+The first time you use the CPAN shell, you will have to answer a few
+questions mostly concerned with choosing a mirror close to you and
+where certain important system binaries are (like "gzip," "ncftp,"
+"tar," etc.).  Generally you can just keep hitting <Return> to
+accept the defaults presented in square brackets.
+
+Occasionally a module may not install properly via the CPAN shell,
+or perhaps it is not available on CPAN.  In that case, you can install
+the module in much the same way that you install system binaries.  I'd
+recommend downloading the source into "/usr/local/downloads" and then
+untarring into "/usr/local/src." Execute "perl Makefile.PL; make; make
+test; make install" and you're generally all done.  If the module
+requires another module, you'll need to track that down, install it,
+then return to installing the first one.  After satisfying several
+dependencies on your own, you'll begin to appreciate all the
+automation the CPAN shell gives you.
 
 INSTALLING THE CMAP PERL MODULES
 
@@ -486,10 +491,10 @@ latter, I'd recommend choosing the first way.  Here's how to do both:
 
     You will be asked several questions, such as where to place the main
     configuration file, the templates, the "cmap_admin.pl" script, and
-    an HTML stylesheet. You can place them in any valid directory on
+    an HTML style sheet. You can place them in any valid directory on
     your system, and you will be provided with reasonable defaults. If
     you don't wish to have the installer put file in a directory (e.g.,
-    you want to use your own stylesheet), answer "no" to the default
+    you want to use your own style sheet), answer "no" to the default
     choice and "q" when prompted for a path. All the questions are
     optional, so you could do this for all of them. If a file of the
     same name exists in the installation directory for anything but the
@@ -517,8 +522,8 @@ latter, I'd recommend choosing the first way.  Here's how to do both:
         the CMAP templates.
 
     conf/cmap.css
-        This is the cascading stylesheet used by the maps. Copy to a
-        location where a web browser can retreive, such as a
+        This is the cascading style sheet used by the maps. Copy to a
+        location where a web browser can retrieve, such as a
         "stylesheets" directory.
 
     lib
@@ -547,7 +552,7 @@ latter, I'd recommend choosing the first way.  Here's how to do both:
 
     And why might you want to put the files into your own library path
     instead of Perl's? Well, if you plan on hacking around with the
-    source, you might rather not have them installed in an inconvient
+    source, you might rather not have them installed in an inconvenient
     directory and owned by root, which they will be if you choose the
     first. Of course, if you really plan on hacking around, I would hope
     that you would consider doing a CVS checkout so you could contribute
@@ -578,14 +583,17 @@ handlers for the CMAP application.  The second file, typically
 called something like "perlstartup.pl" (but you can call it whatever
 you like) is used to let Apache know about the modules it will use
 in its lifetime, and is placed in the same directory as the
-httpd.conf.  The parent Apache process will parse this file and
-include all the modules in each child process, further enhancing the
-performance of the application.
+httpd.conf.  (Most likely, a startup file like this won't exist unless
+you were already using mod_perl and were pre-loading modules.  If this
+is the case, you'll just create one anew or copy the one from "conf"
+to the desired location.)  The parent Apache process will parse this
+file and include all the modules in each child process, further
+enhancing the performance of the application.
 
 NOTE:  All the files in Apache's "conf" directory are very important
 and sensitive, so it's best to have everything be owned and writable
 only by root.  The startup file will be executed as root, so this
-could represent an easy root compromise were a non-root user able to
+could represent an easy system compromise were a non-root user able to
 write to the file.
 
 I'll now briefly discuss the meaning of the edits you'll make to
@@ -602,23 +610,24 @@ This is the directory where the application will write the temporary
 images created for each request.  Apache will directly serve the
 images from this cache.  If you do not define a directory, then the
 default ("/tmp/cmap_cache") will be created for you on the first
-request.  You can, however, specify your own choice if you have a
-preference, perhaps something in your "/var" directory or something
-on a partition separate from your web server.  If you create a
-directory on your own, be sure that this directory is writable by
-the httpd process (usually "web" or "nobody"), and that the
-permissions on it are very restrictive.  I would suggest the
-following (as root, of course):
+request.  This directory will be owned by the user and group of the
+httpd process and will have 0700 as its permissions .  You can,
+however, specify your own choice if you have a preference, perhaps
+something in your "/var" directory or something on a partition
+separate from your web server.  If you create a directory on your own,
+I'd recommend making the directory owned by root, and preventing
+anyone but the web server's uid to alter any file it creates.  To do
+this, "su" to root and issue the following commands:
 
     # mkdir /path/to/images
-    # chown nobody:nobody /path/to/images 
-    # chmod 700 /path/to/images 
+    # chown root:root /path/to/images 
+    # chmod 4777 /path/to/images 
 
 Whether you create the cache directory or not, you will need to alias
 it so that Apache will know where to find the images.  So, let's say
 that you decide to put your images into "/var/web/cmap_cache" and that
 you'd like to reference those images through a web browser as
-"/cmap/images," you'll need to edit the above line in your
+"/cmap/images," you'll need to edit the "Alias" above in your
 httpd.conf to reflect the default value or your own choice.
 
 I'd probably recommend against placing the images directly into your
@@ -635,16 +644,50 @@ in the templates if you use the default of "/cmap/images.")
 
 The map images will only be used for one request, so you'll need to
 include some way to clear out old images.  A simple cron job will do
-the trick.  Add this to your root crontab (e.g., by running "crontab
--e" as root):
+the trick, so we'll need to add a line root's crontab.  You edit a
+crontab by typing "crontab -e" on the command line.  If you are "joe"
+when you type this, you'll be editing your own crontab.  So you should
+su to root and do "crontab -e".  Once you're in the editing of the
+crontab, you'll actually be using an editor called "vi" (the VIsual
+editor, progeny of "ex").  vi is an interesting editor;  it requires
+you understand "command" and "insert" modes, and is usually only used
+by somewhat hard-core UNIX-y people.  I don't want to assume an
+understanding of editing files with vi, so here's exactly what you
+should type on the command line:
+
+    $ su - 
+    # crontab -e
+    
+At this point, you'll be in vi, so type the following commands (less 
+the comments in square brackets, of course):
+    
+    G <Return> [this takes you to the bottom of the file]
+    o <Return> [this opens a new line]
+
+Now either paste or type the following lines:
 
     # clear out old cmap images
     # added by Joe User <juser@foo.com>
     0 0 * * *  find /tmp/cmap_cache/ -type f -mtime +1 -exec rm -rf {} \;
 
-If you choose to store your map images in a location other than the
-default of "/tmp/cmap_cache," then you'll need to change the above
-directory to match your choice.
+Of course, you'll want to change the "Joe User..." part to reflect
+your own name and e-mail address.  Also, if you choose to store your
+map images in a location other than the default of "/tmp/cmap_cache,"
+then you'll need to change the above directory to match your choice.
+
+Note: You may find that the "backspace" key works funny (maybe doesn't
+      work or deletes the character before the cursor instead of behind,
+      etc.); if so, use Control-H to backspace. For a primer on vi
+      commands, see the vim ("VI iMproved") homepage at
+      http://www.vim.org/.
+
+When you're done typing (or pasting), type:
+
+    ESC [this leave "insert" mode]
+    ZZ  [this saves the file and exits]
+
+If all went well, you should see a message saying that a new crontab 
+was installed.
 
 If you're curious, a "crontab" is simply a file which uses a particular
 syntax to describe to the "cron" daemon events which should happen at some
@@ -679,7 +722,7 @@ on my GNU/Linux system), you get this:
               month          1-12 (or names, see below)
               day of week    0-7 (0 or 7 is Sun, or use names)
 
-Every minute "crond" looks aroundto see if it's time to do something by
+Every minute "crond" looks around to see if it's time to do something by
 looking at the first 5 fields of each line in everybody's crontabs.  Stars
 mean "all" and numbers mean, well, the number.  So the above would tell
 crond to run <ftp command> (whatever that might be) on the zero-th minute
@@ -690,11 +733,13 @@ the first line -- that's just being polite.  It's always a good idea to
 comment on what you're doing in a system-wide file like a crontab so you
 and everyone else knows what each command does.  Be sure to put in your
 own name and e-mail address.  The whole command (starting with the "0")
-should go on one line.  Note:  The backslash in the command you should put
-in the root crontab is actually a part of the command and not an
-indication that the command continues on the following line.  In this
-context, the backslash tells "find" that the semi-colon is part of its
-"-exec" command.
+should go on one line.  
+
+Note:  The backslash in the command you should put in the root crontab
+       is actually a part of the command and not an indication that the
+       command continues on the following line. In this context, the
+       backslash tells "find" that the semi-colon is part of its
+       "-exec" command.
 
 * <Location> directives
 
@@ -702,7 +747,7 @@ You'll add two directives to your httpd.conf, the second of which is
 only necessary if you wish to password-protect your administrative
 interface (which I'm sure you will).  An actual directory called
 "cmap" can exist in your DocumentRoot, but there's no reason for it.
-You may want to place the CMAP stylesheet there, but it's probably
+You may want to place the CMAP style sheet there, but it's probably
 just as easy to create a site-wide "stylesheets" directory.  However,
 the code is written in such a way that any files in a "/cmap"
 directory will be properly served by Apache.
@@ -717,11 +762,11 @@ create your password file correctly (making sure not to overwrite an
 existing file!), but this will probably work just fine for you:
 
     $ su -
-    # cd /usr/local/apache/bin
+    # cd /usr/local/apache
     # mkdir passwd
-    # ./htpasswd -c /usr/local/apache/passwd/cmap admin
+    # ./bin/htpasswd -c /usr/local/apache/passwd/cmap admin
 
-In the last command, the last argument is the username which you'll
+In the last command, the last argument is the user name which you'll
 use when prompted by your web browser to see the admin tool, and the
 argument before that is the name of the new password file that will be
 created by the "-c" argument.  If the file already exists, then don't
@@ -739,6 +784,19 @@ If you see "Syntax OK," then restart Apache:
 
     # ./apachectl stop
     # ./apachectl start
+
+Now it's time to see if the basic installation worked.  Open up a web
+browser and point it to your new Apache installation.  If your server
+is called "foo.org" (whatever you configured your "ServerName" in your
+httpd.conf), then type into your browser's location box:
+
+    http://foo.org/cmap
+
+You should see a page welcoming you to the genetic and comparative
+maps application.  If you don't see anything or you get an error,
+check your error log (whatever your "ErrorLog" directive is set to in
+your httpd.conf), which is most likely
+"/usr/local/apache/logs/error_log."
 
 STARTING APACHE ET AL. ON BOOT
 
@@ -785,15 +843,15 @@ database and test the maps.
 
 If you want to import your own data, you'll need to perform some basic
 setup on the empty database.  First off, open up the web
-administration interface by going to the URL you set up for the admin
-interface ("/cmap/admin" by default).  You'll need to set up what
-types of maps, features, species, and evidence types you'll be working
-with.  For each, go to the "View ..." choice from the main menu, then
-choose "Create New ..." and fill in the correct information.  For
-information on the correct format for data import, execute the command
-"perldoc Bio::GMOD::CMap::Admin::Import" on your command line.  When
-you have your data in the correct format, launch the "cmap_admin.pl"
-script and follow the instructions.
+administration interface by opening the URL you set up for the admin
+interface ("/cmap/admin" by default) in a web browser.  You'll need to
+set up what types of maps, features, species, and evidence types
+you'll be working with.  For each, go to the "View ..." choice from
+the main menu, then choose "Create New ..." and fill in the correct
+information.  For information on the correct format for data import,
+execute the command "perldoc Bio::GMOD::CMap::Admin::Import" on your
+command line.  When you have your data in the correct format, launch
+the "cmap_admin.pl" script and follow the instructions.
 
 When setting up database cross-references, you'll have to use some
 extra syntax in the URL field to indicate the field to link out on.
@@ -870,11 +928,11 @@ LINKING IN
 
 Most likely, you'll want to link directly into the CMAP viewer from
 some other part of your site.  To link to just one map, make it the
-"reference" map like so by using the accesion IDs for the map's parent
+"reference" map like so by using the accession IDs for the map's parent
 "set" and the map itself.  Give the feature (mutant) name to highlight
 it;  for more than one, separate with commas.  You'll want to make
 sure that the user can see all the feature labels, so include "all" as
-the "include_feature" arg.
+the "include_feature" argument.
 
     URI:  /cmap/viewer?
     Args: ref_map_set_aid=<map_set_accession_id>
