@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.89 2005-01-19 20:39:05 mwz444 Exp $
+# $Id: Drawer.pm,v 1.90 2005-01-21 03:37:49 mwz444 Exp $
 
 =head1 NAME
 
@@ -233,7 +233,7 @@ on the number of correspondences).  'display_order' is the default.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.89 $)[-1];
+$VERSION = (qw$Revision: 1.90 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -1082,26 +1082,43 @@ Lays out the image and writes it to the file system, set the "image_name."
         $self->add_drawing( STRING, $font, $x, $max_y,
             'Aggregated Correspondences Colors:', 'black' );
         $max_y += $font->height + 10;
-        my $corr_colors       = $self->aggregated_correspondence_colors;
-        my $corr_color_bounds = $self->aggregated_correspondence_color_bounds;
-        my $default_color     = $self->default_aggregated_correspondence_color;
-        if ( $corr_color_bounds and @$corr_color_bounds ) {
-            my $last_bound;
-            foreach my $color_bound (@$corr_color_bounds) {
-                $self->add_drawing(
-                    STRING, $font, $x, $max_y,
-                    $color_bound . ' or fewer correspondences',
-                    $corr_colors->{$color_bound}
-                );
-                $max_y += $font->height + 4;
-                $last_bound = $color_bound;
+        my $all_corr_colors   = $self->aggregated_correspondence_colors;
+        if ( $all_corr_colors and %$all_corr_colors ){
+            foreach my $evidence_type_aid (keys (%$all_corr_colors)){
+                my $corr_colors       = $all_corr_colors->{$evidence_type_aid};
+                my $default_color     
+                    = $self->default_aggregated_correspondence_color($evidence_type_aid);
+                my $last_bound;
+                if ( $evidence_type_aid ne DEFAULT->{'aggregated_type_substitute'} ){
+                    $self->add_drawing( STRING, $font, $x, $max_y,
+                        $self->evidence_type_data($evidence_type_aid, 'evidence_type') 
+                        , 'black' );
+                    $max_y += $font->height + 4;
+                }
+                elsif ( scalar ( keys ( %$all_corr_colors) ) > 1 ){
+                    # These are the default colors.
+                    # They are not needed if the types are defined.
+                    next;
+                }
+                foreach my $color_bound ( 
+                    sort { $a <=> $b } grep { $_ } keys(%$corr_colors) 
+                ){
+                    $self->add_drawing(
+                        STRING, $font, $x+15, $max_y,
+                        $color_bound . ' or fewer correspondences',
+                        $corr_colors->{$color_bound}
+                    );
+                    $max_y += $font->height + 4;
+                    $last_bound = $color_bound;
+                }
+                $self->add_drawing( STRING, $font, $x+15, $max_y,
+                    'More than ' . $last_bound . ' correspondences',
+                    $default_color );
+                $max_y += $font->height + 6;
             }
-            $self->add_drawing( STRING, $font, $x, $max_y,
-                'More than ' . $last_bound . ' correspondences',
-                $default_color );
-            $max_y += $font->height + 4;
         }
         else {
+            my $default_color     = $self->default_aggregated_correspondence_color;
             $self->add_drawing( STRING, $font, $x, $max_y,
                 'All Aggregated Correspondences',
                 $default_color );
@@ -2250,18 +2267,28 @@ sub aggregated_correspondence_colors {
 
 =head2 aggregated_correspondence_colors
 
-Returns the correspondence colors specified in the config file.
+Returns the correspondence colors specified in the config file for 
+that evidence type.  Defaults to the 'aggregated_correspondence_colors'
+that is defined in the main section.
 
 =cut
 
-    my $self = shift;
+    my $self              = shift;
+    my $evidence_type_aid = shift;
 
-    unless ( $self->{'corr_colors'} ) {
-        $self->{'corr_colors'} =
-          $self->config_data('aggregated_correspondence_colors');
+    return $self->{'corr_colors'}
+         unless ($evidence_type_aid);
+
+    unless ( $self->{'corr_colors'} and $self->{'corr_colors'}{$evidence_type_aid} ) {
+        unless ($self->{'corr_colors'}{$evidence_type_aid} =
+            $self->evidence_type_data( $evidence_type_aid, 'aggregated_correspondence_colors' )
+        ){
+          $self->{'corr_colors'}{$evidence_type_aid} = 
+              $self->config_data('aggregated_correspondence_colors');
+        }
     }
 
-    return $self->{'corr_colors'};
+    return $self->{'corr_colors'}{$evidence_type_aid};
 }
 
 # ----------------------------------------------------
@@ -2271,23 +2298,60 @@ sub default_aggregated_correspondence_color {
 
 =head2 default_aggregated_correspondence_color
 
-Returns the correspondence colors specified as the default or black.
+Returns the correspondence colors specified as the default or 
+the value in Constants.pm for aggregated_correspondence_color.
 
 =cut
 
     my $self = shift;
+    my $evidence_type_aid = shift;
 
-    unless ( $self->{'default_corr_color'} ) {
-        my $corr_colors = $self->aggregated_correspondence_colors;
+    $evidence_type_aid = DEFAULT->{'aggregated_type_substitute'}
+         unless ($evidence_type_aid);
+
+    unless ( $self->{'default_corr_color'} 
+        and $self->{'default_corr_color'}{$evidence_type_aid}
+    ) {
+        my $corr_colors = $self->aggregated_correspondence_colors($evidence_type_aid);
         if ( $corr_colors and %$corr_colors ) {
-            $self->{'default_corr_color'} = $corr_colors->{0};
+            $self->{'default_corr_color'}{$evidence_type_aid} = $corr_colors->{0};
         }
-        unless ( $self->{'default_corr_color'} ) {
-            $self->{'default_corr_color'} = 'black';
+        unless ( $self->{'default_corr_color'}{$evidence_type_aid} ) {
+            $self->{'default_corr_color'}{$evidence_type_aid}
+                = DEFAULT->{'aggregated_correspondence_color'};
         }
     }
 
-    return $self->{'default_corr_color'};
+    return $self->{'default_corr_color'}{$evidence_type_aid};
+}
+
+# ----------------------------------------------------
+sub aggregated_line_color {
+
+=pod
+
+=head2 aggregated_line_color
+
+Given the evidence type and the number of correspondences, 
+return the correct line color for the aggregated correspondences.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $evidence_type_aid = $args{'evidence_type_aid'};
+    my $corr_no = $args{'corr_no'};
+
+    my $corr_colors       = $self->aggregated_correspondence_colors($evidence_type_aid);
+    my $line_color        = $self->default_aggregated_correspondence_color($evidence_type_aid);
+    foreach my $color_bound ( 
+        sort { $a <=> $b } grep { $_ } keys(%$corr_colors) 
+    ){
+        if ( $corr_no <= $color_bound ) {
+            $line_color = $corr_colors->{$color_bound};
+            last;
+        }
+    }
+    return $line_color;
 }
 
 # ----------------------------------------------------
@@ -2477,32 +2541,6 @@ Creates default link parameters for CMap->create_viewer_link()
     );
 }
 
-# ----------------------------------------------------
-sub aggregated_correspondence_color_bounds {
-
-=pod
-
-=head2 aggregated_correspondence_color_bounds
-
-Returns the upper bounds of the correspondence colors specified 
-in the config file.
-
-=cut
-
-    my $self = shift;
-
-    unless ( $self->{'corr_color_bounds'} ) {
-        my $corr_colors = $self->aggregated_correspondence_colors;
-        if ( $corr_colors and %$corr_colors ) {
-            @{ $self->{'corr_color_bounds'} } =
-              sort { $a <=> $b } grep { $_ } keys(%$corr_colors);
-        }
-    }
-
-    return $self->{'corr_color_bounds'};
-}
-
-1;
 
 # ----------------------------------------------------
 # It is not all books that are as dull as their readers.

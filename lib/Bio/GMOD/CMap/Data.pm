@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.201 2005-01-19 20:38:58 mwz444 Exp $
+# $Id: Data.pm,v 1.202 2005-01-21 03:37:48 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.201 $)[-1];
+$VERSION = (qw$Revision: 1.202 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -4468,20 +4468,31 @@ sub count_correspondences {
         $combined_sql =~ s/^\s+or//;
         $base_sql .= " and (" . $combined_sql . ")";
 
-        $base_sql .= " group by map_id2,map_id1";
+        $base_sql .= " group by map_id2,map_id1,evidence_type_accession";
 
-        $count_sql = sprintf( $base_sql,
-                'count(distinct cl.feature_correspondence_id) as no_corr, '
-              . 'min(cl.start_position2) as min_start2, '
-              . 'max(cl.start_position2) as max_start2, '
-              . 'avg(((cl.stop_position2-cl.start_position2)/2)'
-              . '+cl.start_position2) as avg_mid2, '
-              . 'avg(cl.start_position2) as start_avg2,'
-              . 'avg(cl.start_position1) as start_avg1,'
-              . 'min(cl.start_position1) as min_start1, '
-              . 'max(cl.start_position1) as max_start1 , '
-              . 'avg(((cl.stop_position1-cl.start_position1)/2)'
-              . '+cl.start_position1) as avg_mid1, ' );
+        my $select_str;
+        my $split_evidence_types=1;
+        if ($split_evidence_types){
+            $select_str = "ce.evidence_type_accession as evidence_type_aid, ";
+        }
+        else {
+            $select_str = "'".DEFAULT->{'aggregated_type_substitute'}."' as evidence_type_aid, ";
+        }
+
+        $select_str .= 
+            'count(distinct cl.feature_correspondence_id) as no_corr, '
+          . 'min(cl.start_position2) as min_start2, '
+          . 'max(cl.start_position2) as max_start2, '
+          . 'avg(((cl.stop_position2-cl.start_position2)/2)'
+          . '+cl.start_position2) as avg_mid2, '
+          . 'avg(cl.start_position2) as start_avg2,'
+          . 'avg(cl.start_position1) as start_avg1,'
+          . 'min(cl.start_position1) as min_start1, '
+          . 'max(cl.start_position1) as max_start1 , '
+          . 'avg(((cl.stop_position1-cl.start_position1)/2)'
+          . '+cl.start_position1) as avg_mid1, ';
+
+        $count_sql = sprintf( $base_sql, $select_str );
     }
 
     my %map_id_lookup = map { $_->{'map_id'}, 1 } @$maps;
@@ -4508,7 +4519,7 @@ sub count_correspondences {
             # The reference map is now number 2
             # meaning that map_id2 is the old ref_map_id
             $map_correspondences->{$this_slot_no}{ $count->{'map_id1'} }
-              { $count->{'map_id2'} } = {
+              { $count->{'map_id2'} }{ $count->{'evidence_type_aid'} } = {
                 map_id1    => $count->{'map_id1'},
                 map_id2    => $count->{'map_id2'},
                 no_corr    => $count->{'no_corr'},

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.147 2005-01-05 03:04:27 mwz444 Exp $
+# $Id: Map.pm,v 1.148 2005-01-21 03:37:50 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.147 $)[-1];
+$VERSION = (qw$Revision: 1.148 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1595,7 +1595,6 @@ Variable Info:
             or $self->is_compressed( $drawer->reference_slot_no($slot_no) ) )
       )
     {
-
         for my $map_id (@map_ids) {
             $corrs_aggregated = 1
               if ( $map_aggregate_corr{$map_id}
@@ -1604,9 +1603,9 @@ Variable Info:
             my $map_length   = $self->map_length($map_id);
             for my $ref_connect ( @{ $map_aggregate_corr{$map_id} } ) {
                 my $map_coords = $map_placement_data{$map_id}{'map_coords'};
-                my $line_color = $self->aggregated_line_color(
+                my $line_color = $drawer->aggregated_line_color(
                     corr_no => $ref_connect->[2],
-                    drawer  => $drawer,
+                    evidence_type_aid => $ref_connect->[4],
                 );
 
                 my $this_map_x =
@@ -1659,8 +1658,11 @@ Variable Info:
             my $corrs = $drawer->map_correspondences( $slot_no, $map_id1 );
             for ( my $j = $i + 1 ; $j <= $#map_ids ; $j++ ) {
                 my $map_id2 = $map_ids[$j];
-                my $corr    = $corrs->{$map_id2};
-                next unless defined($corr);
+                my $all_corrs    = $corrs->{$map_id2};
+                next unless defined($all_corrs);
+                my $drawing_offset=0;
+                foreach my $evidence_type_aid (keys(%$all_corrs)){
+                my $corr = $all_corrs->{$evidence_type_aid};
 
                 #
                 # Get the information about the map placement.
@@ -1769,23 +1771,23 @@ Variable Info:
                 my $map2_coords  = $map_placement_data{$map_id2}{'map_coords'};
                 my $left_side    = my $map1_x =
                     $label_side eq LEFT
-                  ? $map1_coords->[0]
-                  : $map1_coords->[2];
+                  ? $map1_coords->[0] - $drawing_offset
+                  : $map1_coords->[2] + $drawing_offset;
                 my $map2_x =
                     $label_side eq LEFT
                   ? $map2_coords->[0]
                   : $map2_coords->[2];
                 my $map1_x2 =
                     $label_side eq LEFT
-                  ? $map1_coords->[0] - $line_cushion
-                  : $map1_coords->[2] + $line_cushion;
+                  ? $map1_x - $line_cushion
+                  : $map1_x + $line_cushion;
                 my $map2_x2 =
                     $label_side eq LEFT
-                  ? $map2_coords->[0] - ( $line_cushion * 3 )
-                  : $map2_coords->[2] + ( $line_cushion * 3 );
-                my $line_color = $self->aggregated_line_color(
+                  ? $map2_x - ( $line_cushion * 3 )
+                  : $map2_x + ( $line_cushion * 3 );
+                my $line_color = $drawer->aggregated_line_color(
                     corr_no => $corr->{'no_corr'},
-                    drawer  => $drawer,
+                    evidence_type_aid => $evidence_type_aid,
                 );
 
                 # add aggregate correspondences to ref_connections
@@ -1844,6 +1846,8 @@ Variable Info:
                         $map2_y2, $line_color, 0
                       ];
                 }
+                $drawing_offset++;
+            }
             }
             $drawer->add_drawing(@drawing_data) if ( scalar(@drawing_data) );
         }
@@ -2016,8 +2020,11 @@ sub place_map_y {
         my $placed = 0;
         for my $ref_map_id ( keys(%$ref_slot_info) ) {
 
-            my $ref_corr = $ref_corrs->{$ref_map_id};
-            next unless defined($ref_corr);
+            my $all_ref_corrs    = $ref_corrs->{$ref_map_id};
+            next unless defined($all_ref_corrs);
+            my $drawing_offset=0;
+            foreach my $evidence_type_aid (keys(%$all_ref_corrs)){
+            my $ref_corr = $all_ref_corrs->{$evidence_type_aid};
 
             #
             # Get the information about the reference map.
@@ -2080,15 +2087,17 @@ sub place_map_y {
               ( ( $ref_corr->{'max_start2'} - $ref_pos->{'map_start2'} ) /
                   $ref_map_unit_len ) * $ref_map_pixel_len;
 
+            my $ref_map_x1 = $ref_pos->{'x1'} + $drawing_offset;
             # add aggregate correspondences to ref_connections
             if ( $self->aggregate == 1 ) {
 
                 # Single line to avg corr
                 push @{ $map_aggregate_corr->{$map_id} },
                   [
-                    $ref_pos->{'x1'}, $ref_map_mid_y,
+                    $ref_map_x1, $ref_map_mid_y,
                     $ref_corr->{'no_corr'},
-                    ( $avg_mid - $self->start_position($map_id) )
+                    ( $avg_mid - $self->start_position($map_id) ),
+                    $evidence_type_aid,
                   ];
             }
             else {
@@ -2106,12 +2115,12 @@ sub place_map_y {
                 # V showing span of corrs
                 push @{ $map_aggregate_corr->{$map_id} },
                   [
-                    $ref_pos->{'x1'},       $ref_map_y1,
+                    $ref_map_x1,       $ref_map_y1,
                     $ref_corr->{'no_corr'}, $this_agg_y1
                   ];
                 push @{ $map_aggregate_corr->{$map_id} },
                   [
-                    $ref_pos->{'x1'},       $ref_map_y2,
+                    $ref_map_x1,       $ref_map_y2,
                     $ref_corr->{'no_corr'}, $this_agg_y2
                   ];
             }
@@ -2132,6 +2141,8 @@ sub place_map_y {
                 $top_boundary    = $ref_pos->{'y1'} - $top_boundary_offset;
                 $bottom_boundary = $ref_pos->{'y2'} + $bottom_boundary_offset;
                 $placed          = 1;
+            }
+            $drawing_offset+=5;
             }
         }
 
@@ -3786,34 +3797,6 @@ Button options:
           };
     }
     return \@map_buttons;
-}
-
-# ----------------------------------------------------
-
-sub aggregated_line_color {
-
-=pod
-                                                                                                                             
-=head2 DESTROY
-                                                                                                                             
-Break cyclical links.
-                                                                                                                             
-=cut
-
-    my ( $self, %args ) = @_;
-    my $corr_no = $args{'corr_no'};
-    my $drawer  = $args{'drawer'};
-
-    my $corr_colors       = $drawer->aggregated_correspondence_colors;
-    my $corr_color_bounds = $drawer->aggregated_correspondence_color_bounds;
-    my $line_color        = $drawer->default_aggregated_correspondence_color;
-    foreach my $color_bound (@$corr_color_bounds) {
-        if ( $corr_no <= $color_bound ) {
-            $line_color = $corr_colors->{$color_bound};
-            last;
-        }
-    }
-    return $line_color;
 }
 
 # ----------------------------------------------------
