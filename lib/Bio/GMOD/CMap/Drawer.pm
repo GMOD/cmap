@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.28 2003-03-14 20:10:15 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.29 2003-03-25 23:15:17 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.28 $)[-1];
+$VERSION = (qw$Revision: 1.29 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
@@ -132,10 +132,10 @@ Draws a line from one point to another.
 
 =cut
 
-    my ( $self, $x1, $y1, $x2, $y2, $color, $line_style ) = @_;
+    my ( $self, $x1, $y1, $x2, $y2, $color ) = @_;
     my $layer = 0; # bottom-most layer of image
     my @lines = ();
-    my $line  = LINE; #$line_style eq 'dashed' ? DASHED_LINE : LINE;
+    my $line  = LINE;
 
     if ( $y1 == $y2 ) {
         push @lines, [ $line, $x1, $y1, $x2, $y2, $color ];
@@ -765,7 +765,7 @@ Lays out the image and writes it to the file system, set the "image_name."
                     STRING, $font, $x + 15, $max_y, $string, $color
                 );
                 $max_y += $font->height + 5;
-                my $end = $x + $font->width * length( $string );
+                my $end = $x + 15 + $font->width * length( $string ) + 4;
                 $max_x  = $end if $end > $max_x;
             }
         }
@@ -814,6 +814,8 @@ Lays out the image and writes it to the file system, set the "image_name."
         $self->add_drawing( FILLED_RECT, @bounds, $bg_color,     -1 );
         $self->add_drawing( RECTANGLE,   @bounds, $border_color, -1 );
     }
+
+    $self->max_x( $max_x );
 
     #
     # Move all the coordinates to positive numbers.
@@ -1121,8 +1123,8 @@ Gets/sets the string of highlighted features.
 
 =cut
 
-    my $self         = shift;
-    my $feature_name = uc shift or return;
+    my ( $self, @ids ) = @_;
+    return unless @ids;
 
     unless ( defined $self->{'highlight_hash'} ) {
         if ( my $highlight = $self->highlight ) {
@@ -1143,7 +1145,12 @@ Gets/sets the string of highlighted features.
     }
 
     return unless $self->{'highlight_hash'};
-    return exists $self->{'highlight_hash'}{ $feature_name };
+
+    for my $id ( @ids ) {
+        return 1 if exists $self->{'highlight_hash'}{ uc $id };
+    }
+
+    return 0;
 }
 
 # ----------------------------------------------------
