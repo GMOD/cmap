@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.34 2004-03-12 22:08:55 kycl4rk Exp $
+# $Id: Build.PL,v 1.34.2.1 2004-06-01 14:23:00 kycl4rk Exp $
 
 use strict;
 
@@ -402,21 +402,23 @@ my $builder      =  Module::Build->subclass(
     script_files      => [ 'bin/cmap_admin.pl' ],
     sign              => 1,
     requires          => {
-        'Class::Base'        => 0,
-        'Config::General'    => 0,
-        'Data::Page'         => 0,
-        'Data::Pageset'      => 0,
-        'DBI'                => 1.20,
-        'File::MkTemp'       => 0,
-        'GD'                 => 2.11,
-        'GD::SVG'            => 0.25,
-        'IO::Tee'            => 0,
-        'Regexp::Common'     => 0,
-        'Template'           => 2.00,
-        'Text::RecordParser' => 0.02,
-        'Time::Piece'        => 0,
-        'Time::ParseDate'    => 0,
-        'XML::Simple'        => 0,
+        'Algorithm::Numerical::Sample' => 0,
+        'Bit::Vector'                  => 0,
+        'Class::Base'                  => 0,
+        'Config::General'              => 0,
+        'Data::Page'                   => 0,
+        'Data::Pageset'                => 0,
+        'DBI'                          => 1.20,
+        'File::MkTemp'                 => 0,
+        'GD'                           => 2.11,
+        'GD::SVG'                      => 0.25,
+        'IO::Tee'                      => 0,
+        'Regexp::Common'               => 0,
+        'Template'                     => 2.00,
+        'Text::RecordParser'           => 0.02,
+        'Time::Piece'                  => 0,
+        'Time::ParseDate'              => 0,
+        'XML::Simple'                  => 0,
     },
     PL_files         => {
         'cgi-bin/cmap.PL'    => 'cgi-bin/cmap',
