@@ -1,6 +1,6 @@
                       Revision history for CMap
 
-0.07
+0.07    2003-05-30
 
 -   Fixed bug in cmap_admin.pl which referenced deprecate "linkage_group"
     field
