@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.127 2004-09-15 21:16:19 mwz444 Exp $
+# $Id: Map.pm,v 1.128 2004-09-16 13:46:56 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.127 $)[-1];
+$VERSION = (qw$Revision: 1.128 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1598,24 +1598,20 @@ Variable Info:
         else {
             my @lines = map { $self->$_($map_id) } @config_map_titles;
             my ( $bounds, $drawing_data, $map_data ) = $self->draw_map_title(
-                left_x  => $min_x,
-                right_x => $max_x,
-                min_y   => $min_y, 
+                left_x  => $map_placement_data{$map_id}{'bounds'}[0],
+                right_x => $map_placement_data{$map_id}{'bounds'}[2],
+                min_y   => $map_placement_data{$map_id}{'bounds'}[1], 
                 lines   => \@lines,
                 buttons => \@map_buttons,
                 font    => $reg_font,
             );
 
-            $min_x = $bounds->[0] unless defined $min_x;
-            $min_x = $bounds->[0] if $bounds->[0] < $min_x;
-            $top_y = $bounds->[1] if $bounds->[1] < $top_y;
-            $max_x = $bounds->[2] if $bounds->[2] > $max_x;
-            $map_placement_data{$map_id}{'bounds'}[0]=$min_x
-                if ($map_placement_data{$map_id}{'bounds'}[0]>$min_x);
-            $map_placement_data{$map_id}{'bounds'}[1]=$top_y
-                if ($map_placement_data{$map_id}{'bounds'}[1]>$top_y);
-            $map_placement_data{$map_id}{'bounds'}[2]=$max_x
-                if ($map_placement_data{$map_id}{'bounds'}[2]<$max_x);
+            $map_placement_data{$map_id}{'bounds'}[0]=$bounds->[0]
+                if ($map_placement_data{$map_id}{'bounds'}[0]>$bounds->[0]);
+            $map_placement_data{$map_id}{'bounds'}[1]=$bounds->[1]
+                if ($map_placement_data{$map_id}{'bounds'}[1]>$bounds->[1]);
+            $map_placement_data{$map_id}{'bounds'}[2]=$bounds->[2]
+                if ($map_placement_data{$map_id}{'bounds'}[2]<$bounds->[2]);
 
             push @{$map_drawing_data{$map_id}},  @$drawing_data;
             push @{$map_area_data{$map_id}}, @$map_data;
