@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.40 2004-08-04 04:26:05 mwz444 Exp $
+# $Id: Build.PL,v 1.41 2004-08-27 09:28:23 mwz444 Exp $
 
 use strict;
 use CMapBuilder;
@@ -169,14 +169,15 @@ my $builder           =  CMapBuilder->new(
     dist_version_from => 'lib/Bio/GMOD/CMap.pm',
     license           => 'gpl',
     script_files      => [ 'bin/cmap_admin.pl' ],
-    sign              => 1,
+    sign              => 0,
     requires          => {
         'Class::Base'        => 0,
         'Config::General'    => 0,
         'Data::Page'         => 0,
         'Data::Pageset'      => 0,
         'DBI'                => 1.20,
-        'File::Temp'       => 0,
+        'File::Temp'         => 0,
+        'IO::Tee'            => 0,
         'GD'                 => 2.11,
         'GD::SVG'            => 0.25,
         'Regexp::Common'     => 0,
