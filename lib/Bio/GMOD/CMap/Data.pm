@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.75 2003-11-10 17:33:11 kycl4rk Exp $
+# $Id: Data.pm,v 1.76 2003-12-11 03:03:01 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.75 $)[-1];
+$VERSION = (qw$Revision: 1.76 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -1099,6 +1099,13 @@ Returns the data for the correspondence matrix.
         { Columns => {} } 
     );
 
+    unless ( $args{'show_matrix'} ) {
+        return {
+            species_aid => $species_aid,
+            species     => $species,
+        };
+    }
+
     #
     # And map types.
     #
@@ -1394,9 +1401,7 @@ Returns the data for the correspondence matrix.
                      cm.link_species_aid
         ];
     }
-#    warn "select_sql =\n$select_sql\n";
     my $data = $db->selectall_arrayref( $select_sql, { Columns => {} } );
-#    warn "data =\n", Dumper( $data ), "\n";
 
     #
     # Create a lookup hash from the data.
@@ -1420,7 +1425,6 @@ Returns the data for the correspondence matrix.
                { $hr->{'link_map_set_aid'} } = $hr->{'correspondences'}
         }
     }
-#    warn "lookup =\n", Dumper( \%lookup ), "\n";
 
     #
     # Select ALL the map sets to go across.
@@ -1533,19 +1537,15 @@ Returns the data for the correspondence matrix.
         map_sets               => \@all_map_sets
     };
 
-#    warn "top row =\n", Dumper( $top_row ), "\n";
-
     #
     # Fill in the matrix with the reference set and all it's correspondences.
     # Herein lies madness.
     #
     my ( @matrix, %no_by_species );
-#    warn "lookup = ", Dumper( \%lookup ), "\n";
     for my $map_set ( @reference_map_sets ) {
         my $r_map_aid       = $map_set->{'map_aid'} || 0;
         my $r_map_set_aid   = $map_set->{'map_set_aid'};
         my $r_species_aid   = $map_set->{'species_aid'};
-#        my $reference_aid   = $r_map_aid || $r_map_set_aid;
         my $reference_aid   = 
             $map_name && $map_set_aid ? $r_map_aid     : 
             $map_name                 ? $r_map_set_aid : 
@@ -1554,7 +1554,6 @@ Returns the data for the correspondence matrix.
         $no_by_species{ $r_species_aid }++;
 
         for my $comp_map_set ( @all_map_sets ) {
-#            warn "comp map set = ", Dumper($comp_map_set), "\n";
             my $comp_map_set_aid = $comp_map_set->{'map_set_aid'};
             my $comp_map_aid     = $comp_map_set->{'map_aid'} || 0;
             my $comparative_aid  = $comp_map_aid || $comp_map_set_aid;
@@ -1562,7 +1561,6 @@ Returns the data for the correspondence matrix.
                 $comp_map_set_aid eq $r_map_set_aid ? 'N/A' :
                 $lookup{ $reference_aid }{ $comparative_aid } || 0
             ;
-#            warn "correspondences = $correspondences\n";
 
             push @{ $map_set->{'correspondences'} }, {
                 map_set_aid => $comp_map_set_aid, 
@@ -1573,8 +1571,6 @@ Returns the data for the correspondence matrix.
 
         push @matrix, $map_set;
     }
-
-#    warn "matrix =\n", Dumper( @matrix ), "\n";
 
     my $matrix_data   =  {
         data          => \@matrix,
@@ -1611,6 +1607,7 @@ Returns the data for the main comparative map HTML form.
     my $min_correspondences    = $args{'min_correspondences'}    ||  0;
     my $include_feature_types  = $args{'include_feature_types'}  || [];
     my $include_evidence_types = $args{'include_evidence_types'} || [];
+    my $ref_species_aid        = $args{'ref_species_aid'}        || '';
     my $ref_map                = $slots->{ 0 };
     my $ref_map_set_aid        = $ref_map->{'map_set_aid'}       ||  0;
     my $ref_map_aid            = $ref_map->{'aid'}               ||  0;
@@ -1619,13 +1616,52 @@ Returns the data for the main comparative map HTML form.
     my $db                     = $self->db  or return;
     my $sql                    = $self->sql or return;
 
+    if ( $ref_map_set_aid && !$ref_species_aid ) {
+        $ref_species_aid = $db->selectrow_array(
+            q[
+                select s.accession_id
+                from   cmap_map_set ms,
+                       cmap_species s
+                where  ms.accession_id=?
+                and    ms.species_id=s.species_id
+            ],
+            {},
+            ( $ref_map_set_aid )
+        );
+    }
+
     #
     # Select all the map set that can be reference maps.
     #
-    my $ref_map_sets = $db->selectall_arrayref(
-        $sql->form_data_ref_map_sets_sql,
+    my $ref_species = $db->selectall_arrayref(
+        q[
+            select   distinct s.accession_id as species_aid,
+                     s.common_name as species_common_name,
+                     s.full_name as species_full_name
+            from     cmap_map_set ms,
+                     cmap_map_type mt,
+                     cmap_species s
+            where    ms.is_enabled=1
+            and      ms.can_be_reference_map=1
+            and      ms.map_type_id=mt.map_type_id
+            and      mt.is_relational_map=0
+            and      ms.species_id=s.species_id
+            order by s.common_name, 
+                     s.full_name
+        ],
         { Columns => {} }
     );
+
+    #
+    # Select all the map set that can be reference maps.
+    #
+    my $ref_map_sets = $ref_species_aid
+        ? $db->selectall_arrayref(
+            $sql->form_data_ref_map_sets_sql( $ref_species_aid ),
+            { Columns => {} },
+        )
+        : []
+    ;
 
     #
     # "-1" is a reserved value meaning "All."
@@ -1790,6 +1826,8 @@ Returns the data for the main comparative map HTML form.
     $db->do("delete from cmap_map_cache where pid=$pid");
     
     return {
+        ref_species_aid        => $ref_species_aid,
+        ref_species            => $ref_species,
         ref_map_sets           => $ref_map_sets,
         ref_maps               => $ref_maps,
         ref_map_start          => $ref_map_start,
