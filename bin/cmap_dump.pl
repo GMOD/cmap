@@ -1,8 +1,9 @@
 #!/usr/bin/perl
 
-# $Id: cmap_dump.pl,v 1.3 2002-11-14 01:50:36 kycl4rk Exp $
+# $Id: cmap_dump.pl,v 1.4 2002-11-15 01:13:08 kycl4rk Exp $
 
 use strict;
+use DBI;
 use Data::Dumper;
 use Pod::Usage;
 use Getopt::Long;
@@ -14,7 +15,7 @@ use constant OUT_FS => "\t";     # ouput field separator
 use constant OUT_RS => "\n";     # ouput record separator
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 my %dispatch = (
     text     => \&text_dump,
@@ -210,10 +211,18 @@ $dispatch{ lc $out_type }->( $db );
 sub text_dump {
     my $db = shift;
 
-    my @col_names = qw[ map_accession_id map_name map_start
-        map_stop feature_accession_id feature_name feature_alt_name
-        feature_start feature_stop feature_type
-    ];
+    my @col_names = ( 
+        #'map_accession_id',
+        'map_name',
+        'map_start',
+        'map_stop',
+        #'feature_accession_id',
+        'feature_name',
+        'feature_alt_name',
+        'feature_start',
+        'feature_stop',
+        'feature_type',
+    );
 
     my $map_sets = $db->selectall_arrayref(
         q[
@@ -279,11 +288,11 @@ sub text_dump {
                 if $feature->{'stop_position'} < $feature->{'start_position'};
 
                 print $fh join( OUT_FS,
-                    $map->{'accession_id'},
+                    #$map->{'accession_id'},
                     $map->{'map_name'},
                     $map->{'start_position'},
                     $map->{'stop_position'},
-                    $feature->{'accession_id'},
+                    #$feature->{'accession_id'},
                     $feature->{'feature_name'},
                     $feature->{'alternate_name'},
                     $feature->{'start_position'},

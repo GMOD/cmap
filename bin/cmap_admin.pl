@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.9 2002-10-09 01:07:31 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.10 2002-11-15 01:13:08 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.9 $)[-1];
+$VERSION = (qw$Revision: 1.10 $)[-1];
 
 #
 # Turn off output buffering.
@@ -47,6 +47,7 @@ while ( 1 ) {
 package Bio::GMOD::CMap::CLI::Admin;
 
 use strict;
+use File::Path;
 use IO::File;
 use IO::Tee;
 use Data::Dumper;
@@ -61,6 +62,11 @@ use Bio::GMOD::CMap::Admin::MakeCorrespondences();
 use Bio::GMOD::CMap::Admin::ImportCorrespondences();
 
 use base 'Bio::GMOD::CMap';
+
+use constant STR    => 'string';
+use constant NUM    => 'number';
+use constant OUT_FS => "\t";     # ouput field separator
+use constant OUT_RS => "\n";     # ouput record separator
 
 # ----------------------------------------------------
 sub init {
@@ -133,7 +139,9 @@ sub term {
 
 # ----------------------------------------------------
 sub quit {
-    my $self = shift;
+    my $self   = shift;
+    my $log_fh = $self->log_fh;
+    print $log_fh "Log file closed '", scalar localtime, ".'\n";
     print "Log file:  ", $self->log_filename, "\nNamaste.\n"; 
     exit(0);
 }
@@ -168,6 +176,10 @@ sub show_greeting {
             { 
                 action  => 'reload_correspondence_matrix', 
                 display => 'Reload correspondence matrix' 
+            },
+            { 
+                action  => 'export_data', 
+                display => 'Export data' 
             },
             { 
                 action  => 'quit',   
@@ -252,6 +264,535 @@ sub create_map_set {
     );
 
     print "Map set $map_set_name created\n";
+}
+
+# ----------------------------------------------------
+sub export_data {
+#
+# Exports data.
+#
+    my $self = shift;
+    my $db   = $self->db;
+    
+    my $action  = $self->show_menu(
+        title   => 'Data Export Formats',
+        prompt  => 'How do you want to export?',
+        display => 'display',
+        return  => 'action',
+        data    => [
+            { 
+                action  => 'export_as_sql',
+                display => 'SQL INSERT statements',
+            },
+            { 
+                action  => 'export_as_text',
+                display => 'CMap import format',
+            },
+        ]
+    );
+    
+    $self->$action( $db );
+}
+
+# ----------------------------------------------------
+sub export_as_sql {
+#
+# Exports data as SQL INSERT statements.
+#
+    my $self   = shift;
+    my $db     = $self->db;
+    my $log_fh = $self->log_fh;
+    my @tables = (
+        {
+            name   => 'cmap_correspondence_evidence',
+            fields => {
+                correspondence_evidence_id => NUM,
+                accession_id               => STR,
+                feature_correspondence_id  => NUM,
+                evidence_type_id           => NUM,
+                score                      => NUM,
+                remark                     => STR,
+            }
+        },
+        {
+            name   => 'cmap_correspondence_lookup',
+            fields => {
+                feature_id1               => NUM,
+                feature_id2               => NUM,
+                feature_correspondence_id => NUM,
+
+            }
+        },
+        {
+            name   => 'cmap_correspondence_matrix',
+            fields => {
+                reference_map_aid     => STR,
+                reference_map_name    => STR,
+                reference_map_set_aid => STR,
+                reference_species_aid => STR,
+                link_map_aid          => STR,
+                link_map_name         => STR,
+                link_map_set_aid      => STR,
+                link_species_aid      => STR,
+                no_correspondences    => NUM,
+            }
+        },
+        {
+            name   => 'cmap_dbxref',
+            fields => {
+                dbxref_id       => NUM,
+                map_set_id      => NUM,
+                feature_type_id => NUM,
+                species_id      => NUM,
+                dbxref_name     => STR,
+                url             => STR,
+            }
+        },
+        {
+            name   => 'cmap_evidence_type',
+            fields => {
+                evidence_type_id => NUM,
+                accession_id     => STR,
+                evidence_type    => STR,
+                rank             => NUM,
+            }
+        },
+        {
+            name   => 'cmap_feature',
+            fields => {
+                feature_id      => NUM,
+                accession_id    => STR,
+                map_id          => NUM,
+                feature_type_id => NUM,
+                feature_name    => STR,
+                alternate_name  => STR,
+                is_landmark     => NUM,
+                start_position  => NUM,
+                stop_position   => NUM,
+                dbxref_name     => STR,
+                dbxref_url      => STR,
+            }
+        },
+        {
+            name   => 'cmap_feature_correspondence',
+            fields => {
+                feature_correspondence_id => NUM,
+                accession_id              => STR,
+                feature_id1               => NUM,
+                feature_id2               => NUM,
+            }
+        },
+        {
+            name   => 'cmap_feature_type',
+            fields => {
+                feature_type_id => NUM,
+                accession_id    => STR,
+                feature_type    => STR,
+                default_rank    => NUM,
+                is_visible      => NUM,
+                shape           => STR,
+                color           => STR,
+            }
+        },
+        {
+            name   => 'cmap_map',
+            fields => {
+                map_id         => NUM,
+                accession_id   => STR,
+                map_set_id     => NUM,
+                map_name       => STR,
+                start_position => NUM,
+                stop_position  => NUM,
+            }
+        },
+        {
+            name   => 'cmap_map_type',
+            fields => {
+                map_type_id       => NUM,
+                map_type          => STR,
+                map_units         => STR,
+                is_relational_map => NUM,
+                shape             => STR,
+                color             => STR,
+                width             => NUM,
+                display_order     => NUM,
+            }
+        },
+        {
+            name   => 'cmap_species',
+            fields => {
+                species_id    => NUM,
+                accession_id  => STR,
+                common_name   => STR,
+                full_name     => STR,
+                display_order => STR,
+                ncbi_taxon_id => NUM,
+            }
+        },
+        { 
+            name   => 'cmap_map_set',
+            fields => {
+                map_set_id           => NUM,
+                accession_id         => STR,
+                map_set_name         => STR,
+                short_name           => STR,
+                map_type_id          => NUM,
+                species_id           => NUM,
+                published_on         => STR,
+                can_be_reference_map => NUM,
+                display_order        => NUM,
+                is_enabled           => NUM,
+                remarks              => STR,
+                shape                => STR,
+                color                => STR,
+                width                => NUM,
+            },
+        }
+    );
+
+    my @dump_tables = $self->show_menu(
+        title       => 'Select Tables',
+        prompt      => 'Which tables do you want to export?',
+        display     => 'table_name',
+        return      => 'table_name',
+        allow_all   => 1,
+        data        => [ map { { 'table_name', $_->{'name'} } } @tables ],
+    );
+
+    print "Add 'TRUNCATE TABLE' statements? [Y/n] ";
+    chomp( my $answer = <STDIN> );
+    $answer ||= 'y';
+    my $add_truncate = $answer =~ m/^[yY]/;
+
+    my $file;
+    for ( ;; ) {
+        my $default = './cmap_dump.sql';
+        print "Where would you like to write the file?\n",
+            "['q' to quit, '$default' is default] ";
+        chomp( my $user_file = <STDIN> );
+        $user_file ||= $default;
+
+        if ( -d $user_file ) {
+            print "'$user_file' is a directory.  Please give me a file path.\n";
+            next;
+        }
+        elsif ( -e _ && -r _ ) {
+            print "'$user_file' exists.  Overwrite? [Y/n] ";
+            chomp( my $overwrite = <STDIN> );
+            $overwrite ||= 'y';
+            if ( $overwrite =~ m/^[yY]/ ) {
+                $file = $user_file;
+                last;
+            }
+            else {
+                print "OK, I won't overwrite.  Try again.\n";
+                next;
+            }
+        }
+        elsif ( -e _ ) {
+            print "'$user_file' exists & isn't writable by you.  Try again.\n";
+            next;
+        }
+        else {
+            $file = $user_file;
+            last;
+        }
+    }
+
+    #
+    # Confirm decisions.
+    #
+    print join("\n",
+        'OK to export?',
+        '  Tables       : ' . join(', ', @dump_tables),
+        '  Add Truncate : ' . ( $add_truncate ? 'Yes' : 'No' ), 
+        "  File         : $file",
+        "[Y/n] "
+    );
+
+    chomp( $answer = <STDIN> );
+    return if $answer =~ /^[Nn]/;
+
+    print $log_fh, "Making SQL dump of tables to '$file'\n";
+    open my $fh, ">$file" or die "Can't write to '$file': $!\n";
+    print $fh 
+        "--\n-- Dumping data for Cmap",
+        "\n-- Produced by cmap_admin.pl",
+        "\n-- Version: ", $main::VERSION,
+        "\n-- ", scalar localtime, "\n--\n";
+
+    my %dump_tables = map { $_, 1 } @dump_tables;
+    for my $table ( @tables ) {
+        my $table_name = $table->{'name'};
+        next if %dump_tables && !$dump_tables{ $table_name };
+
+        print $log_fh "Dumping data for '$table_name.'\n";
+        print $fh "\n--\n-- Data for '$table_name'\n--\n";
+        if ( $add_truncate ) {
+            print $fh "TRUNCATE TABLE $table_name;\n";
+        }
+
+        my %fields     = %{ $table->{'fields'} };
+        my @fld_names  = sort keys %fields;
+
+        my $insert = "INSERT INTO $table_name (". join(', ', @fld_names).
+                ') VALUES (';
+
+        my $sth = $db->prepare(
+            'select ' . join(', ', @fld_names). " from $table_name"
+        );
+        $sth->execute;
+        while ( my $rec = $sth->fetchrow_hashref ) { 
+            my @vals;
+            for my $fld ( @fld_names ) {
+                my $val = $rec->{ $fld };
+                if ( $fields{ $fld } eq STR ) {
+                    $val =~ s/'/\\'/g; # escape existing single quotes
+                    $val = defined $val ? qq['$val'] : qq[''];
+                }
+                else {
+                    $val = defined $val ? $val : 'NULL';
+                }
+                push @vals, $val;
+            }
+
+            print $fh $insert, join(', ', @vals), ");\n";
+        }
+    }
+
+    print $fh "\n--\n-- Finished dumping Cmap data\n--\n";
+}
+
+# ----------------------------------------------------
+sub export_as_text {
+#
+# Exports data as tab-delimited import format.
+#
+    my $self   = shift;
+    my $db     = $self->db;
+    my $log_fh = $self->log_fh;
+
+    my @col_names = qw( 
+        map_accession_id
+        map_name
+        map_start
+        map_stop
+        feature_accession_id
+        feature_name
+        feature_alt_name
+        feature_start
+        feature_stop
+        feature_type
+    );
+    
+    my @map_set_ids = $self->show_menu(
+        title       => 'Select Map Sets',
+        prompt      => 'Which map sets do you want to export?',
+        display     => 'common_name,short_name',
+        return      => 'map_set_id',
+        allow_all   => 1,
+        data        => $db->selectall_arrayref(
+            q[
+                select   ms.map_set_id,
+                         ms.short_name,
+                         s.common_name
+                from     cmap_map_set ms,
+                         cmap_species s
+                where    ms.species_id=s.species_id
+                order by common_name, short_name
+            ],
+            { Columns => {} },
+        )
+    );
+
+    my @feature_type_ids = $self->show_menu(
+        title       => 'Select Feature Types',
+        prompt      => 'Which feature types do you want to include?',
+        display     => 'feature_type',
+        return      => 'feature_type_id',
+        allow_all   => 1,
+        data        => $db->selectall_arrayref(
+            q[
+                select   distinct ft.feature_type_id, 
+                         ft.feature_type
+                from     cmap_map map,
+                         cmap_feature f,
+                         cmap_feature_type ft
+                where    map.map_set_id in (].join(',', @map_set_ids).q[)
+                and      map.map_id=f.map_id
+                and      f.feature_type_id=ft.feature_type_id
+                order by feature_type
+            ],
+            { Columns => {} }
+        )
+    );
+
+    my @exclude_fields = $self->show_menu(
+        title       => 'Select Fields to Exclude',
+        prompt      => 'Which fields do you want to exclude?',
+        display     => 'field_name',
+        return      => 'field_name',
+        allow_null  => 1,
+        allow_mult  => 1,
+        data        => [ map { { field_name => $_ } } @col_names ],
+    );
+
+    if ( @exclude_fields == @col_names ) {
+        print "\nError:  Can't exclude all the fields!\n";
+        return;
+    }
+
+    my $dir;
+    for ( ;; ) {
+        print "\nTo which directory should I write the output files?\n",
+            "['q' to quit, current dir (.) is default] ";
+        chomp( my $answer = <STDIN> );
+        $answer ||= '.';
+        return if $answer =~ m/^[qQ]/;
+
+        if ( -d $answer ) {
+            if ( -w _ ) {
+                $dir = $answer;
+                last;
+            }
+            else {
+                print "\n'$answer' is not writable by you.\n\n";
+                next;
+            }
+        }
+        elsif ( -f $answer ) {
+            print "\n'$answer' is not a directory.  Please try again.\n\n";
+            next;
+        }
+        else {
+            print "\n'$answer' does not exist.  Create? [Y/n] ";
+            chomp( my $response = <STDIN> );
+            $response ||= 'y';
+            if ( $response =~ m/^[Yy]/ ) {
+                eval { mkpath( $answer, 0, 0711 ) };
+                if ( my $err = $@ ) {
+                    print "I couldn't make that directory: $err\n\n";
+                    next;
+                }
+                else  {
+                    $dir = $answer;
+                    last;
+                }
+            }
+        }
+    } 
+
+    my $map_sets = $db->selectall_arrayref(
+        q[
+            select   ms.map_set_id, 
+                     ms.short_name as map_set_name,
+                     s.common_name as species_name
+            from     cmap_map_set ms,
+                     cmap_species s
+            where    ms.map_set_id in (].join(',', @map_set_ids).q[)
+            and      ms.species_id=s.species_id
+            order by common_name, short_name
+        ],
+        { Columns => {} }
+    );
+
+    my @map_set_names = 
+        map { join( '-', $_->{'species_name'}, $_->{'map_set_name'} ) }
+        @$map_sets
+    ;
+
+    my $feature_types = $db->selectcol_arrayref(
+        q[
+            select   ft.feature_type
+            from     cmap_feature_type ft
+            where    ft.feature_type_id in (].join(',', @feature_type_ids).q[)
+            order by feature_type
+        ],
+    );
+
+    my $excluded_fields = 
+        @exclude_fields ? join(', ', @exclude_fields) : 'None';
+
+    #
+    # Confirm decisions.
+    #
+    print join("\n",
+        'OK to export?',
+        '  Map Sets       : ' . join(', ', @map_set_names),
+        '  Feature Types  : ' . join(', ', @$feature_types),
+        "  Exclude Fields : $excluded_fields",
+        "  Directory      : $dir",
+        "[Y/n] "
+    );
+    chomp( my $answer = <STDIN> );
+    return if $answer =~ /^[Nn]/;
+
+    my %exclude = map  { $_, 1 } @exclude_fields;
+    @col_names  = grep { ! $exclude{ $_ } } @col_names;
+
+    for my $map_set ( @$map_sets ) {
+        my $map_set_id   = $map_set->{'map_set_id'};
+        my $map_set_name = $map_set->{'map_set_name'};
+        my $species_name = $map_set->{'species_name'};
+        my $file_name    = join( '-', $species_name, $map_set_name );
+           $file_name    =~ tr/a-zA-Z0-9-/_/cs;
+           $file_name    = "$dir/$file_name.dat";
+
+        print $log_fh "Dumping '$species_name-$map_set_name' to '$file_name'\n";
+        open my $fh, ">$file_name" or die "Can't write to $file_name: $!\n";
+        print $fh join( OUT_FS, @col_names ), OUT_RS;
+
+        my $maps = $db->selectall_arrayref(
+            q[
+                select   map_id
+                from     cmap_map
+                where    map_set_id=?
+                order by map_name
+            ],
+            { Columns => {} },
+            ( $map_set_id )
+        );
+
+        for my $map ( @$maps ) {
+            my $features = $db->selectall_arrayref(
+                q[
+                    select   f.feature_id, 
+                             f.accession_id as feature_accession_id,
+                             f.feature_name,
+                             f.alternate_name as feature_alt_name,
+                             f.start_position as feature_start,
+                             f.stop_position as feature_stop,
+                             ft.feature_type,
+                             map.map_name, 
+                             map.accession_id as map_accession_id,
+                             map.start_position as map_start,
+                             map.stop_position as map_stop
+                    from     cmap_feature f,
+                             cmap_feature_type ft,
+                             cmap_map map
+                    where    f.map_id=?
+                    and      f.map_id=map.map_id
+                    and      f.feature_type_id=ft.feature_type_id
+                    and      ft.feature_type_id in (].
+                             join(',', @feature_type_ids).q[)
+                    order by f.start_position
+                ],
+                { Columns => {} },
+                ( $map->{'map_id'} )
+            );
+
+            for my $feature ( @$features ) {
+                $feature->{'stop_position'} = undef 
+                if $feature->{'stop_position'} < $feature->{'start_position'};
+
+                print $fh 
+                    join( OUT_FS, map { $feature->{ $_ } } @col_names ), 
+                    OUT_RS;
+            }
+        }
+        
+        close $fh;
+    }
 }
 
 # ----------------------------------------------------
@@ -529,20 +1070,49 @@ sub show_menu {
             $i++;
         }
 
-        my $number;
+        if ( $args{'allow_all'} ) {
+            print "[$i] All of the above\n";
+        }
+
         my $prompt = $args{'prompt'} || 'Please select';
-        while ( 1 ) {
+        for ( ;; ) {
             print "\n$prompt", 
-                $args{'allow_null'} ? ' (0 for nothing)' : '',
+                $args{'allow_null'} 
+                    ? ' (0 or <Enter> for nothing)'               : '',
+                $args{'allow_all'} || $args{'allow_mult'} 
+                    ? "\n(separate multiple choices with spaces)" : '',
                 ': '
             ;
-            chomp( $number = <STDIN> );
-            if ( $args{'allow_null'} && $number == 0 ) {
+
+            chomp( my $answer = <STDIN> );
+
+            if ( $args{'allow_null'} && $answer == 0 ) {
                 $result = undef;
                 last;
             }
-            elsif ( defined $lookup{ $number } ) {
-                $result = $lookup{ $number }; 
+            elsif ( $args{'allow_all'} && $answer == $i ) {
+                $result = [ map { $lookup{ $_ } } 1 .. $i - 1 ];
+                last;
+            }
+            elsif ( $args{'allow_all'} || $args{'allow_mult'} ) {
+                my %numbers = 
+                    map { $_, 1 }         # make a lookup
+                    grep {/\d+/}          # take only numbers
+                    split /\s+/, $answer
+                ;
+
+                $result = [ 
+                    map { $_ || () }      # parse out nulls
+                    map { $lookup{ $_ } } # look it up
+                    keys %numbers         # make unique
+                ];
+
+                next unless @$result;
+
+                last;
+            }
+            elsif ( defined $lookup{ $answer } ) {
+                $result = $lookup{ $answer }; 
                 last;
             }
         }
@@ -554,7 +1124,11 @@ sub show_menu {
         $result = [ map { $data->[0]->{ $_ } } @return ];
     }
 
-    return wantarray ? defined $result ? @$result : undef : $result;
+    return wantarray 
+        ? defined $result 
+            ? @$result : () 
+        : $result
+    ;
 }
 
 # ----------------------------------------------------
@@ -582,11 +1156,12 @@ cmap_admin.pl - command-line CMAP administrative tool
 
 This script is a complement to the web-based administration tool for
 the GMOD-CMAP application.  This tool handles all of the long-running
-processes (e.g., importing data and correspondences, reloading cache
-tables) and tasks which require interaction with file-based data
-(i.e., map coordinates, feature correspondences, etc.).
+processes (e.g., importing/exporting data and correspondences,
+reloading cache tables) and tasks which require interaction with
+file-based data (i.e., map coordinates, feature correspondences,
+etc.).
 
-There are five actions you can take with this tool:
+There are six actions you can take with this tool:
 
 =over 4
 
@@ -629,6 +1204,34 @@ You should choose this option whenever you've altered the number of
 correspondences in the database.  This will truncate the
 "cmap_correspondence_matrix" table and reload it with the pair-wise
 comparison of every map set in the database.
+
+=item 6 Export data
+
+There are two ways to dump the data in CMap:
+
+=over 4 
+
+=item 1 SQL INSERT statements
+
+This method creates an INSERT statement for every record in every
+table (or just those selected) a la "mysqldump."  This is meant to be
+an easy way to backup or migrate an entire CMap database, esp. when
+moving between database platforms (e.g. Oracle to MySQL).  The output
+will be put into a file of your choosing and can be fed directly into
+another database to mirror your current one.  You can also choose to
+add "TRUNCATE TABLE" statements just before the INSERT statements so
+as to erase any existing data.
+
+=item 2 Tab-delimited import format
+
+This method creates a separate file for each map set in the database
+an one for the feature correspondences.  The data is dumped to the
+same tab-delimited format used when importing.  You can choose to dump
+every map set or just particular ones, and you can choose to leave out
+certain fields (e.g., maybe you don't care to export your accession
+IDs).
+
+=back
 
 =back
 
