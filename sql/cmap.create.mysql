@@ -1,13 +1,12 @@
 -- 
 -- Created by SQL::Translator::Producer::MySQL
--- Created on Thu Sep 25 10:35:05 2003
+-- Created on Mon Sep 29 15:47:37 2003
 -- 
 SET foreign_key_checks=0;
 
 --
 -- Table: cmap_correspondence_evidence
 --
-DROP TABLE IF EXISTS cmap_correspondence_evidence;
 CREATE TABLE cmap_correspondence_evidence (
   correspondence_evidence_id integer(11) NOT NULL DEFAULT '0',
   accession_id varchar(20) NOT NULL DEFAULT '',
@@ -23,7 +22,6 @@ CREATE TABLE cmap_correspondence_evidence (
 --
 -- Table: cmap_correspondence_lookup
 --
-DROP TABLE IF EXISTS cmap_correspondence_lookup;
 CREATE TABLE cmap_correspondence_lookup (
   feature_id1 integer(11) DEFAULT NULL,
   feature_id2 integer(11) DEFAULT NULL,
@@ -35,7 +33,6 @@ CREATE TABLE cmap_correspondence_lookup (
 --
 -- Table: cmap_correspondence_matrix
 --
-DROP TABLE IF EXISTS cmap_correspondence_matrix;
 CREATE TABLE cmap_correspondence_matrix (
   reference_map_aid varchar(20) NOT NULL DEFAULT '0',
   reference_map_name varchar(32) NOT NULL DEFAULT '',
@@ -51,7 +48,6 @@ CREATE TABLE cmap_correspondence_matrix (
 --
 -- Table: cmap_dbxref
 --
-DROP TABLE IF EXISTS cmap_dbxref;
 CREATE TABLE cmap_dbxref (
   dbxref_id integer(11) NOT NULL DEFAULT '0',
   map_set_id integer(11) DEFAULT NULL,
@@ -65,7 +61,6 @@ CREATE TABLE cmap_dbxref (
 --
 -- Table: cmap_evidence_type
 --
-DROP TABLE IF EXISTS cmap_evidence_type;
 CREATE TABLE cmap_evidence_type (
   evidence_type_id integer(11) NOT NULL DEFAULT '0',
   accession_id varchar(20) NOT NULL DEFAULT '',
@@ -80,7 +75,6 @@ CREATE TABLE cmap_evidence_type (
 --
 -- Table: cmap_feature
 --
-DROP TABLE IF EXISTS cmap_feature;
 CREATE TABLE cmap_feature (
   feature_id integer(11) NOT NULL DEFAULT '0',
   accession_id varchar(20) NOT NULL DEFAULT '',
@@ -105,7 +99,6 @@ CREATE TABLE cmap_feature (
 --
 -- Table: cmap_feature_correspondence
 --
-DROP TABLE IF EXISTS cmap_feature_correspondence;
 CREATE TABLE cmap_feature_correspondence (
   feature_correspondence_id integer(11) NOT NULL DEFAULT '0',
   accession_id varchar(20) NOT NULL DEFAULT '',
@@ -121,17 +114,15 @@ CREATE TABLE cmap_feature_correspondence (
 --
 -- Table: cmap_feature_note
 --
-DROP TABLE IF EXISTS cmap_feature_note;
 CREATE TABLE cmap_feature_note (
   feature_id integer(11) NOT NULL DEFAULT '0',
-  note text(65535),
+  note text,
   PRIMARY KEY (feature_id)
 );
 
 --
 -- Table: cmap_feature_type
 --
-DROP TABLE IF EXISTS cmap_feature_type;
 CREATE TABLE cmap_feature_type (
   feature_type_id integer(11) NOT NULL DEFAULT '0',
   accession_id varchar(20) NOT NULL DEFAULT '',
@@ -141,7 +132,7 @@ CREATE TABLE cmap_feature_type (
   color varchar(20) DEFAULT NULL,
   drawing_lane integer(11) NOT NULL DEFAULT '1',
   drawing_priority integer(11) NOT NULL DEFAULT '1',
-  description text(65535),
+  description text,
   PRIMARY KEY (feature_type_id),
   UNIQUE (accession_id)
 );
@@ -149,7 +140,6 @@ CREATE TABLE cmap_feature_type (
 --
 -- Table: cmap_map
 --
-DROP TABLE IF EXISTS cmap_map;
 CREATE TABLE cmap_map (
   map_id integer(11) NOT NULL DEFAULT '0',
   accession_id varchar(20) NOT NULL DEFAULT '',
@@ -165,7 +155,6 @@ CREATE TABLE cmap_map (
 --
 -- Table: cmap_map_cache
 --
-DROP TABLE IF EXISTS cmap_map_cache;
 CREATE TABLE cmap_map_cache (
   pid integer(11) NOT NULL DEFAULT '0',
   slot_no smallint(6) NOT NULL DEFAULT '0',
@@ -179,7 +168,6 @@ CREATE TABLE cmap_map_cache (
 --
 -- Table: cmap_map_set
 --
-DROP TABLE IF EXISTS cmap_map_set;
 CREATE TABLE cmap_map_set (
   map_set_id integer(11) NOT NULL DEFAULT '0',
   accession_id varchar(20) NOT NULL DEFAULT '',
@@ -191,7 +179,7 @@ CREATE TABLE cmap_map_set (
   can_be_reference_map tinyint(4) NOT NULL DEFAULT '1',
   display_order integer(11) NOT NULL DEFAULT '1',
   is_enabled tinyint(4) NOT NULL DEFAULT '1',
-  remarks text(65535),
+  remarks text,
   shape varchar(12) DEFAULT NULL,
   color varchar(20) DEFAULT NULL,
   width integer(11) DEFAULT NULL,
@@ -203,7 +191,6 @@ CREATE TABLE cmap_map_set (
 --
 -- Table: cmap_map_type
 --
-DROP TABLE IF EXISTS cmap_map_type;
 CREATE TABLE cmap_map_type (
   map_type_id integer(11) NOT NULL DEFAULT '0',
   accession_id varchar(20) NOT NULL DEFAULT '',
@@ -222,7 +209,6 @@ CREATE TABLE cmap_map_type (
 --
 -- Table: cmap_next_number
 --
-DROP TABLE IF EXISTS cmap_next_number;
 CREATE TABLE cmap_next_number (
   table_name varchar(40) NOT NULL DEFAULT '',
   next_number integer(11) NOT NULL DEFAULT '0',
@@ -232,7 +218,6 @@ CREATE TABLE cmap_next_number (
 --
 -- Table: cmap_species
 --
-DROP TABLE IF EXISTS cmap_species;
 CREATE TABLE cmap_species (
   species_id integer(11) NOT NULL DEFAULT '0',
   accession_id varchar(20) NOT NULL DEFAULT '',
