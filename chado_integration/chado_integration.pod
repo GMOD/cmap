@@ -1,0 +1,83 @@
+# vim: tw=70:
+
+=pod
+
+=head1 NAME
+
+chado_integration.pod
+
+=head1 SYNOPSIS
+
+Where we discuss how to integrate CMap with the chado database.
+This is specifically useful for connection of CMap with GBrowse.
+
+=head1 INTRODUCTION
+
+This document assumes that you have a working installation of the
+chado database and you want to add CMap to it.
+
+The goal is to walk you through adding the CMap tables to the chado
+database and creating links from features in Gbrowse to CMap.
+
+=head1 CREATING THE CMAP TABLES
+
+Since the database is already created, all you have to do is create
+the tables in it.
+
+ $ psql chado_db < sql/cmap.create.postgresql
+
+Then create the linking table.  This connects the CMap features with
+the Chado features.
+
+ $ psql chado_db < chado_integration/linker_table.sql
+
+Then all you need to is set up the correct privileges.
+
+=head1 POPULATE TABLES
+
+First you will populate the CMap tables with your data.  For
+information on how to do this see docs/ADMINISTRATION.pod.  
+
+After you have data in both CMap and Chado portions of the database,
+you can populate the linker table, "feature_to_cmap".  Since the data
+is going to be different from site to site, it is left to you to
+decide how exactly you want to populate the linker table.
+
+The "feature_to_cmap" table has 2 important columns that you will need
+to insert.  One is the "feature_id" of the Chado feature and the other
+is "cmap_feature_aid" which is the "accession_id" of a cmap feature.
+
+Here is an example insert statement where the chado feature_id is '32' and the
+cmap accession id is 'EDEN1':
+
+ insert into feature_to_cmap (feature_id, cmap_feature_aid) values (32,'EDEN1') 
+
+=head1 Linking a feature from GBrowse to CMap.
+
+To link a feature from GBrowse to a feature in CMap, you must first
+have that link in the "feature_to_cmap" table, as described above.
+
+Then creating a link is as simple as editing the config file.  Edit or
+add the link attribute to the track definition like the following:
+
+ link = sub {my $feature=shift; return $feature->cmap_link('DATASOURCE');}
+
+You must change the DATASOURCE from above to the name of a CMap
+datasouce, which can be found as the <database> "name" in the cmap
+config file.
+
+The cmap_link() method is located in
+Bio::DB::Das::Chado::Segment::Feature.
+
+=head1 CONCLUSION
+
+That should allow you to link from GBrowse to CMap.  If you
+have any troubles email the CMap developer's list:
+
+  gmod-cmap@lists.sourceforge.net
+
+=head1 AUTHOR
+
+Ben Faga E<lt>faga@cshl.eduE<gt>.
+
+=cut

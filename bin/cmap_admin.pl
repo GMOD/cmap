@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.81 2004-12-14 19:51:12 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.82 2004-12-14 22:02:38 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.81 $)[-1];
+$VERSION = (qw$Revision: 1.82 $)[-1];
 
 #
 # Get command-line options
@@ -168,7 +168,7 @@ sub log_fh {
         unless ( $self->{'log_fh'} ) {
             my $path = $self->log_filename or return;
             my $fh = IO::Tee->new( \*STDOUT, ">$path" )
-              or return $self->error( "Unable to open '$path': $!" );
+              or return $self->error("Unable to open '$path': $!");
             print $fh "Log file created '", scalar localtime, ".'\n";
             $self->{'log_fh'} = $fh;
         }
@@ -1381,8 +1381,8 @@ sub get_map_sets {
             allow_mult => $allow_mult,
             data       => $map_types,
         );
-        if (@map_types and ref $map_types[0] ne 'ARRAY'){
-            @map_types=@{[[@map_types]]};
+        if ( @map_types and ref $map_types[0] ne 'ARRAY' ) {
+            @map_types = @{ [ [@map_types] ] };
         }
 
         my $species_sql = q[
@@ -1411,8 +1411,9 @@ sub get_map_sets {
             allow_mult => $allow_mult,
             data       => $species,
         );
-        if (ref $species_ids ne 'ARRAY'){
-            $species_ids=[$species_ids,];
+
+        if ( ref $species_ids ne 'ARRAY' ) {
+            $species_ids = [ $species_ids, ];
         }
 
         my $map_set_sql = q[
@@ -1427,7 +1428,7 @@ sub get_map_sets {
         ];
         $map_set_sql .=
           'and ms.species_id in (' . join( ',', @$species_ids ) . ') '
-          if (@$species_ids and defined $species_ids->[0]);
+          if ( @$species_ids and defined $species_ids->[0] );
         $map_set_sql .=
           "and ms.map_type_accession in ('"
           . join( "','", map { $_->[0] } @map_types ) . "') "
@@ -1450,19 +1451,19 @@ sub get_map_sets {
             allow_mult => $allow_mult,
             data       => $ms_choices,
         );
-        if (ref $map_set_ids ne 'ARRAY'){
-            $map_set_ids=[$map_set_ids,];
+        if ( ref $map_set_ids ne 'ARRAY' ) {
+            $map_set_ids = [ $map_set_ids, ];
         }
 
         my $where;
         $where .= 'and ms.species_id in  (' . join( ',', @$species_ids ) . ') '
-          if (@$species_ids and defined $species_ids->[0]);
+          if ( @$species_ids and defined $species_ids->[0] );
         $where .=
           "and ms.map_type_accession in ('"
           . join( "','", map { $_->[0] } @map_types ) . "') "
           if @map_types;
         $where .= 'and ms.map_set_id in  (' . join( ',', @$map_set_ids ) . ') '
-          if (@$map_set_ids and defined $map_set_ids->[0]);
+          if ( @$map_set_ids and defined $map_set_ids->[0] );
 
         $map_set_sql = qq[
             select   ms.map_set_id, 
@@ -1838,7 +1839,7 @@ sub import_links {
       unless $map_set_id;
 
     ###New File Handling
-    my $file_str = $term->readline( 'Where is the file?[q to quit] ' );
+    my $file_str = $term->readline('Where is the file?[q to quit] ');
     return if $file_str =~ m/^[Qq]$/;
     my @file_strs = split( /\s+/, $file_str );
     my @files = ();
@@ -2296,7 +2297,8 @@ sub make_name_correspondences {
 
     my $use_from_as_target_answer =
       $self->show_question( question =>
-          'Do you want to use the starting map sets as the target sets? [y|N]', );
+          'Do you want to use the starting map sets as the target sets? [y|N]',
+      );
     my $to_map_sets;
     if ( $use_from_as_target_answer =~ /^y/ ) {
         $to_map_sets = $from_map_sets;
@@ -2420,7 +2422,7 @@ sub show_question {
     my $default      = $args{'default'};
     my $validHashRef = $args{'valid_hash'} || ();
 
-    $question .= "<Default: $default>:" if (defined $default);
+    $question .= "<Default: $default>:" if ( defined $default );
     my $answer;
     while (1) {
         print $question;
