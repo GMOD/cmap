@@ -657,7 +657,7 @@ function mod_map_info(slot_no, map_aid, start, stop,mag){
 [% IF drawer AND drawer.image_type!='svg' %]
   <map name="zoom">
   [% FOREACH area=drawer.image_map_data %]
-    <area [% area.code %] coords="[% area.coords.join(',') %]" [% IF !area.code %]href="[% area.url %]" [% END %] title="[% area.alt %]">
+    <area [% area.code %] coords="[% area.coords.join(',') %]" [% IF area.url %]href="[% area.url %]" [% END %]title="[% area.alt %]">
   [% END %]
   </map>
 [% END %]

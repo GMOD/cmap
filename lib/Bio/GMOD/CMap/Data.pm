@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.154 2004-09-08 14:54:18 mwz444 Exp $
+# $Id: Data.pm,v 1.155 2004-09-09 16:24:46 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.154 $)[-1];
+$VERSION = (qw$Revision: 1.155 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -4953,7 +4953,7 @@ return the start and stop for the scroll buttons
     my $is_flipped = shift;
     my $dir        = shift;
     my $is_up      = ($dir eq 'UP');
-    return undef 
+    return (undef,undef,1) 
         unless (defined($slot_no) and defined($map_id));
 
     if ($self->slot_info->{$slot_no}
@@ -4961,7 +4961,8 @@ return the start and stop for the scroll buttons
         and @{$self->slot_info->{$slot_no}{$map_id}}) {
         my $map_info = $self->slot_info->{$slot_no}{$map_id};
 
-        return (undef,undef) unless
+        my $mag   = $map_info->[4] ||1;
+        return (undef,undef,$mag) unless
             (defined($map_info->[0]) or defined($map_info->[1]));
 
         my $start = $map_info->[0];
@@ -4969,7 +4970,7 @@ return the start and stop for the scroll buttons
 
         if (($is_up and not $is_flipped) or ($is_flipped and not $is_up)){
             # Scroll data for up arrow
-            return (undef,undef) unless defined($start);
+            return (undef,undef,$mag) unless defined($start);
             my $view_length=defined($stop)?($stop-$start):$map_info->[3]-$start;
             my $new_start = $start-($view_length/2);
             my $new_stop  = $new_start+$view_length;
@@ -4983,11 +4984,11 @@ return the start and stop for the scroll buttons
                 $new_stop  ="''";
             }
 
-            return($new_start,$new_stop);
+            return($new_start,$new_stop,$mag);
         }
         else {
             # Scroll data for down arrow
-            return (undef,undef) unless defined($stop);
+            return (undef,undef,$mag) unless defined($stop);
             my $view_length=defined($start)?($stop-$start):$stop-$map_info->[2];
             my $new_stop  = $stop+($view_length/2);
             my $new_start = $new_stop-$view_length;
@@ -5001,10 +5002,10 @@ return the start and stop for the scroll buttons
                 $new_stop  ="''";
             }
 
-            return($new_start,$new_stop);
+            return($new_start,$new_stop,$mag);
         }
     }
-    return (undef,undef);
+    return (undef,undef,1);
 }
 
 # ----------------------------------------------------

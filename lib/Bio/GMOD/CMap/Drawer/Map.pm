@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.122 2004-09-07 18:29:07 mwz444 Exp $
+# $Id: Map.pm,v 1.123 2004-09-09 16:24:48 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.122 $)[-1];
+$VERSION = (qw$Revision: 1.123 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -466,7 +466,7 @@ such as the units.
             (($font->width * length($full_str)) / 2);
         $drawer->add_drawing( STRING, $font, $x, $y, $full_str, 'grey' );
         $code=qq[
-            onMouseOver="window.status='Make map full sized';return true" 
+            onMouseOver="window.status='Make map original size';return true" 
             onClick="mod_map_info($slot_no, '$map_aid', '', '',1);document.comparative_map_form.submit();"
             ]; 
         push @$map_area_data,
@@ -477,8 +477,8 @@ such as the units.
                 $x+($font->width * length($full_str)),
                 $y+$font->height,
                 ],
-            url  => '',
-            alt  => 'Make map full sized',
+            url  => '#',
+            alt  => 'Make map original size',
             code => $code,
           };
         $y += $font->height + $buf;
@@ -506,7 +506,7 @@ such as the units.
             $y, 
             $x+($font->width * length($mag_minus_str)),
             $y+$font->height],
-        url  => '',
+        url  => '#',
         alt  => 'Magnification',
         code => $code,
       };
@@ -541,7 +541,7 @@ such as the units.
             $y, 
             $x+($font->width * length($mag_plus_str)),
             $y+$font->height],
-        url  => '',
+        url  => '#',
         alt  => 'Magnification',
         code => $code,
       };
@@ -637,7 +637,7 @@ Draws the map title.
           {
             coords => [$x_mid-$trunc_half_width,$y_base-$trunc_height,
                 $x_mid+$trunc_half_width,$y_base],
-            url  => '',
+            url  => '#',
             alt  => 'Scroll',
             code => $code,
           };
@@ -678,7 +678,7 @@ Draws the map title.
           {
             coords => [$x_mid-$trunc_half_width,$y_base,
                 $x_mid+$trunc_half_width,$y_base+$trunc_height],
-            url  => '',
+            url  => '#',
             alt  => 'Scroll',
             code => $code,
           };
@@ -2235,7 +2235,7 @@ sub add_tick_marks {
           {
             coords => [$clip_arrow_x1,$clip_arrow_y1_down,
                 $clip_arrow_x2,$clip_arrow_y3_down],
-            url  => '',
+            url  => '#',
             alt  => 'Crop from here down',
             code => $down_code,
           };
@@ -2243,7 +2243,7 @@ sub add_tick_marks {
           {
             coords => [$clip_arrow_x1,$clip_arrow_y3_up,
                 $clip_arrow_x2,$clip_arrow_y1_up],
-            url  => '',
+            url  => '#',
             alt  => 'Crop from here up',
             code => $up_code,
           };
