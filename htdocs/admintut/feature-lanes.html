@@ -1,0 +1,94 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//Dtd HTML//EN">
+<!-- vim: set ts=2 wm=10 shiftwidth=2: -->
+<html>
+<head>
+<title>CMap Admin Tutorial: Feature Lanes</title>
+</head>
+
+<body>
+<h1>CMap Admin Tutorial: Feature Lanes</h1>
+<a href="index.html">Index</a> |
+<a href="feature-shapes.html">&lt; Feature Shapes</a> |
+<a href="drawing-options.html">Drawing Options &gt;</a>
+<hr>
+
+In addition to determing the glyph and color for feature types, you
+can control how features are grouped, how they are placed in proximity
+to the map, and the order in which they are drawn.  This grouping
+(into &quot;lanes&quot;) and ordering (via &quot;priorities&quot;)
+allows the curator to prioritize data so that the end user can better
+discern patterns.
+
+<h2>Lane</h2>
+<table>
+  <tr>
+    <td valign="top" width="33%">
+      By default, all the features for a map are drawn as closely to the map
+      as possible.  Here's an example of a rather dense map with all the
+      features in the same lane (and at the same priority):
+    </td>
+    <td valign="top" width="33%">
+      Here it is with the &quot;lines&quot; and &quot;box&quot; in the
+      lane &quot;1&quot;, and the rest in lane &quot;2.&quot;
+    </td>
+    <td valign="top" width="33%">
+      And here it is with the each feature type in it's own lane (with
+      the exception of the &quot;box,&quot; which shares the same lane as
+      the &quot;line.&quot;
+    </td>
+  </tr>
+  <tr>
+    <td valign="center" align="center">
+      <img src="images/lanes-cluttered.jpg">
+    </td>
+    <td valign="center" align="center">
+      <img src="images/lanes-uncluttered1.jpg">
+    </td>
+    <td valign="center" align="center">
+      <img src="images/lanes-uncluttered2.jpg">
+    </td>
+  </tr>
+</table>
+
+<p>
+The idea of &quot;lanes&quot; is not absolute.  Assigning a feature
+type to lane &quot;5&quot; does not mean that there will be empty
+lanes if features for lanes 2-4 are missing -- the missing lanes will
+simply be skipped.  The numbers you assign to the &quot;lane&quot;
+value are used to group features into the same drawing area and to
+order which are drawn closer to the map.
+</p>
+
+<h2>Priority</h2>
+
+<table>
+  <tr>
+    <td valign="top" width="50%">
+      The &quot;priority&quot; value is used to determine how soon to
+      drawn a feature <em>within its assigned lane</em>. Here the
+      features are drawn at the same priority. Notice how they
+      mix:
+    </td>
+    <td valign="top" width="50%">
+      Here the features are drawn at the same priority. The blue
+      triangles are given a higher priority than the brown dumbbells,
+      causing them all to be drawn first.
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="images/lanes-eq-priority.jpg">
+    </td>
+    <td align="center">
+      <img src="images/lanes-with-priority.jpg">
+    </td>
+  </tr>
+</table>
+</p>
+
+<hr>
+<a href="index.html">Index</a> |
+<a href="feature-shapes.html">&lt; Feature Shapes</a> |
+<a href="drawing-options.html">Drawing Options &gt;</a>
+</body>
+</html>

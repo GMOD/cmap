@@ -1,0 +1,96 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//Dtd HTML//EN">
+<!-- vim: set ts=2 wm=10 shiftwidth=2: -->
+<html>
+<head>
+<title>CMap Admin Tutorial: Relational Maps</title>
+</head>
+
+<body>
+<h1>CMap Admin Tutorial: Relational Maps</h1>
+<a href="index.html">Index</a> |
+<a href="map-shapes.html">&lt; Map Shapes</a> |
+<a href="feature-shapes.html">Feature Shapes &gt;</a>
+<hr>
+<table>
+  <tr>
+    <td colspan="2">
+      Maps can either stand on their own or must be shown <em>in relation
+      to</em> some other map.  The latter are called &quot;relational&quot;
+      maps in CMap.  When a map set is tagged as having &quot;relational
+      only&quot; maps, then this applies to all the maps in the set.  In
+      order to view these relational maps, the user must first select some
+      &quot;reference map&quot; which has correspondences to some of the
+      relational maps.  The choice of exactly which maps are shown in the
+      image is determined by CMap -- only maps with correspondences to the
+      reference map are displayed.
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <p>
+      Normally, all maps are drawn to the full height available in the
+      image, like the map on the left in this image.  No effort is made
+      to scale maps to one another, even if they are in the same map units
+      (e.g., one &quot;centimorgan&quot; can represent different
+      distances in different studies).  
+      </p>
+      <p>
+      When a relational map is drawn next to a reference map, however,
+      it is drawn to a length in pixels equal to the distance covered by
+      all the correspondences on the reference map.  The contigs shown
+      to the right demonstrate this.  In the cases of &quot;ctg2&quot;
+      and &quot;ctg3,&quot; the tops and bottoms of the maps are equal
+      (more or less) to the top and bottom positions of the
+      correspondences. The other three contigs, have either just one
+      correspondence or have all their correspondences clustered in one
+      location on the reference map, so they are drawn to a minimum
+      pixel height.
+      </p>
+      <p>
+      The placement of features on the relational maps works just it
+      does for any other map.  They are drawn at a location relative
+      to their distance along the map -- that is, the entire pixel
+      length of the map is assumed to represent the entire relational
+      map, and features are placed at a pixel distance on the map
+      equivalent to their start/stop positions divided by the overall
+      length of the map.
+      </p>
+      <p>
+      You can determine the shape, color and width of the maps in a
+      relational map set just as you would any other map.
+      </p>
+    </td>
+    <td align="center" valign="center">
+      <img src="images/rel-map1.jpg">
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      As you zoom in, it follows that the relational maps will lengthen
+      to accomodate the greater pixel distance covered by the
+      correspondences, as illustrated in this image:
+    </td>
+    <td align="center" valign="center">
+      <img src="images/rel-map2.jpg">
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      However, this view of the <em>entire</em> reference map shows that
+      our original view left off the furthest correspondence to map
+      &quot;ctg3.&quot;  In this view, &quot;ctg3&quot; is far larger
+      than &quot;ctg2&quot; whereas in the previous two views they were
+      close to the same size.
+    </td>
+    <td align="center" valign="center">
+      <img src="images/rel-map3.jpg">
+    </td>
+  </tr>
+</table>
+
+<hr>
+<a href="index.html">Index</a> |
+<a href="map-shapes.html">&lt; Map Shapes</a> |
+<a href="feature-shapes.html">Feature Shapes &gt;</a>
+</body>
+</html>

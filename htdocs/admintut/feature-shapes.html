@@ -1,0 +1,135 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//Dtd HTML//EN">
+<!-- vim: set ts=2 wm=10 shiftwidth=2: -->
+<html>
+<head>
+<title>CMap Admin Tutorial: Feature Shapes</title>
+</head>
+
+<body>
+<h1>CMap Admin Tutorial: Feature Shapes</h1>
+<a href="index.html">Index</a> |
+<a href="relational-maps.html">&lt; Relational Maps</a> |
+<a href="feature-lanes.html">Feature Lanes &gt;</a>
+<hr>
+
+A feature's shape is determined by it's &quot;feature type.&quot;  All
+features of the same type are drawn the same.  <em>Note: How your
+features are drawn (esp. the dumbbells) will differ slightly depending
+on whether you have version 1.x or 2.x of <a
+href="http://www.boutell.com/gd/">libgd</a> installed.</em>
+
+<h2>Shapes</h2>
+These are the following shapes (AKA &quot;glyphs&quot;) you can choose
+from:
+<table width="500" border="1">
+  <tr>
+    <td width="80%" valign="top">
+      <b>box:</b><p>This is an empty box which straddles the map (or
+      lane -- <em>lanes</em> and <em>priorities</em> are covered in the
+      <a href="feature-lanes.html">next section</a>). It's really only
+      intended for the rare feature on a map which has a span (both a
+      start and stop position) in the lowest numbered lane (i.e.
+      <em>on</em> the map) which won't overlap other features with this
+      shape, such as a centromere. Many features drawn with the
+      &quot;box&quot; shape tend to clutter a map hopelessly. </td>
+    <td valign="center" align="center">
+      <img src="images/feature-box.jpg">
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <b>dumbbell:</b><p>Like the dumbbell for the map shape, only you
+      can't control the width. If the feature has only a start
+      position, it will be drawn as just a dot (the end of the
+      dumbbell). Here are several features drawn as the dumbbell.
+    </td>
+    <td valign="center" align="center">
+      <img src="images/feature-db.jpg">
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <b>line:</b><p>This is the simplest shape as is ideal for
+      single-point features. It is also a good choice for features with
+      a span where you aren't concerned about showing the start and stop
+      positions as the line is placed at the <em>midpoint</em> of the
+      feature's span.
+    </td>
+    <td valign="center" align="center">
+      <img src="images/feature-line.jpg">
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <b>span:</b><p>This feature is like rectangle missing a side
+      where the open side point to the map on which the feature lives.
+    </td>
+    <td valign="center" align="center">
+      <img src="images/feature-span.jpg">
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <b>up-arrow:</b><p>A vertical line with an arrowhead pointing to the top
+      of the map.
+    </td>
+    <td valign="center" align="center">
+      <img src="images/feature-up-arrow.jpg">
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <b>down-arrow:</b><p>A vertical line with an arrowhead pointing to the
+      bottom of the map.
+    </td>
+    <td valign="center" align="center">
+      <img src="images/feature-down-arrow.jpg">
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <b>double-arrow:</b><p>A vertical line with arrowheads at both ends.
+    </td>
+    <td valign="center" align="center">
+      <img src="images/feature-double-arrow.jpg">
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <b>filled-box:</b><p>A black-trimmed rectangle filled with the
+      color of choice.
+    </td>
+    <td valign="center" align="center">
+      <img src="images/feature-filled-box.jpg">
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <b>in-triangle:</b><p>A single triangle pointing towards the map
+      and placed at the feature's <em>start</em> position.
+    </td>
+    <td valign="center" align="center">
+      <img src="images/feature-in-triangle.jpg">
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <b>out-triangle:</b><p>A single triangle pointing away from
+      map and placed at the feature's <em>start</em> position.
+    </td>
+    <td valign="center" align="center">
+      <img src="images/feature-out-triangle.jpg">
+    </td>
+  </tr>
+</table>
+
+<h2>Color</h2>
+You can use any of the same colors for the features as you can for
+maps.
+
+<hr>
+<a href="index.html">Index</a> |
+<a href="relational-maps.html">&lt; Relational Maps</a> |
+<a href="feature-lanes.html">Feature Lanes &gt;</a>
+</body>
+</html>
