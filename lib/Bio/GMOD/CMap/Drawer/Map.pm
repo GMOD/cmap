@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.68 2004-03-04 15:24:07 kycl4rk Exp $
+# $Id: Map.pm,v 1.69 2004-03-10 20:09:39 kycl4rk Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.68 $)[-1];
+$VERSION = (qw$Revision: 1.69 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -91,7 +91,9 @@ Figure out where right-to-left this map belongs.
     if ( 
         ( $slot_no == -1 && $drawer->total_no_slots == 2 )
         ||
-        ( $slot_no < 0 )
+        $slot_no < 0
+        ||
+        ( $slot_no == 0 && $drawer->label_side eq LEFT )
     ) {
         $base_x = $drawer->min_x - $buffer;
     }
@@ -540,11 +542,11 @@ Lays out the map.
     my @map_buttons;
     for my $map_id ( @map_ids ) {
         $is_relational     = $self->is_relational_map( $map_id );
-        my $base_x         = $label_side eq RIGHT
-            ? $slot_no == 0 && $map_id == $map_ids[0]
-                ? $self->base_x 
-                : $self->base_x + $half_title_length + 10
-            : $self->base_x - $half_title_length - 20
+        my $base_x         = $slot_no == 0 && $map_id == $map_ids[0]
+            ? $self->base_x 
+            : $label_side eq RIGHT
+                ? $self->base_x + $half_title_length + 10
+                : $self->base_x - $half_title_length - 20
         ;
 
         my $show_labels    = $is_relational && $slot_no != 0 ? 0 :
