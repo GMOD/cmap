@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.198.2.8 2005-03-04 20:06:25 mwz444 Exp $
+# $Id: Data.pm,v 1.198.2.9 2005-03-04 21:51:08 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.198.2.8 $)[-1];
+$VERSION = (qw$Revision: 1.198.2.9 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -3602,6 +3602,7 @@ Returns the detail info for a map.
     my $map_start             = $map->{'start'};
     my $map_stop              = $map->{'stop'};
     my $feature_type_data     = $self->feature_type_data();
+    my $evidence_type_data    = $self->evidence_type_data();
 
     my $feature_type_aids           = $args{'included_feature_types'}  || [];
     my $corr_only_feature_type_aids = $args{'corr_only_feature_types'}  || [];
@@ -3794,6 +3795,9 @@ Returns the detail info for a map.
         for my $position (@$positions) {
             my $map_set_aid = $position->{'map_set_aid'};
             my $map_aid     = $position->{'map_aid'};
+            $position->{'evidence_type'} =
+              $evidence_type_data->{ $position->{'evidence_type_aid'} }
+              {'evidence_type'};
 
             unless ( defined $comparative_maps{$map_set_aid} ) {
                 for (
