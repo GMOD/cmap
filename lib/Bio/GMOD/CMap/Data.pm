@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.67 2003-10-22 22:53:20 kycl4rk Exp $
+# $Id: Data.pm,v 1.68 2003-10-24 20:04:06 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.67 $)[-1];
+$VERSION = (qw$Revision: 1.68 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -2202,10 +2202,6 @@ Given a feature acc. id, find out all the details on it.
     $feature->{'attributes'} = $self->get_attributes(
         'cmap_feature', $feature->{'feature_id'}
     );
-    $self->get_multiple_xrefs(
-        table_name => 'cmap_feature', objects => [ $feature ],
-    );
-
     $feature->{'aliases'} = [
         map { $_->[0] } 
         @{
@@ -2265,6 +2261,10 @@ Given a feature acc. id, find out all the details on it.
     }
 
     $feature->{'correspondences'} = $correspondences;
+
+    $self->get_multiple_xrefs(
+        table_name => 'cmap_feature', objects => [ $feature ],
+    );
 
     return $feature;
 }
