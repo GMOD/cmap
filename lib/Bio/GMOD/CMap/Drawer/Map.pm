@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.56 2003-10-30 01:23:17 kycl4rk Exp $
+# $Id: Map.pm,v 1.57 2003-10-30 23:25:05 kycl4rk Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.56 $)[-1];
+$VERSION = (qw$Revision: 1.57 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1096,9 +1096,10 @@ Lays out the map.
                     push @map_area_data, {
                         coords => \@coords,
                         url    => 
-                            $feature_details_url.$feature->{'accession_id'},
+                            $feature_details_url . $feature->{'accession_id'},
                         alt    => 
-                            'Feature Details: '.$feature->{'feature_name'},
+                            'Feature Details: ' . $feature->{'feature_name'}.
+                            ' [' . $feature->{'accession_id'} . ']',
                     };
                 }
 
@@ -1155,12 +1156,15 @@ Lays out the map.
                         feature_coords => \@coords,
                         feature_mid_y  => $feature->{'mid_y'},
                         feature_type   => $feature->{'feature_type'},
-                        url            => 
-                            $feature_details_url.$feature->{'accession_id'},
                         has_corr       => $has_corr,
                         feature_id     => $feature->{'feature_id'},
                         start_position => $feature->{'start_position'},
                         shape          => $feature->{'shape'},
+                        url            => 
+                            $feature_details_url.$feature->{'accession_id'},
+                        alt            => 
+                            'Feature Details: ' . $feature->{'feature_name'}.
+                            ' [' . $feature->{'accession_id'} . ']',
                     };
                 }
 
@@ -1285,7 +1289,7 @@ Lays out the map.
                 push @map_area_data, {
                     coords => \@label_bounds,
                     url    => $label->{'url'},
-                    alt    => 'Map Details',
+                    alt    => $label->{'alt'},
                 };
 
                 $min_x    = $label_bounds[0] if $label_bounds[0] < $min_x;
