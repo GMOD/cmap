@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.83.2.8 2005-03-17 15:46:56 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.83.2.9 2005-03-17 16:50:29 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.83.2.8 $)[-1];
+$VERSION = (qw$Revision: 1.83.2.9 $)[-1];
 
 #
 # Get command-line options
@@ -571,7 +571,7 @@ sub delete_map_set {
                              map.map_name
                     from     cmap_map map
                     where    map.map_set_id=?
-                    order by map_name
+                    order by display_order, map_name
                 ],
                 { Columns => {} },
                 ($map_set_id)
