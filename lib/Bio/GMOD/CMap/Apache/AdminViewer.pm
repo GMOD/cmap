@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.35 2003-05-29 19:49:11 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.36 2003-06-02 15:49:05 kycl4rk Exp $
 
 use strict;
 use Apache::Constants qw[ :common M_GET REDIRECT ];
@@ -30,7 +30,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.35 $)[-1];
+$VERSION        = (qw$Revision: 1.36 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -1324,6 +1324,7 @@ sub feature_search {
     my $params        = {
         apr           => $apr,
         feature_types => $admin->feature_types,
+        species       => $admin->species,
     }; 
 
     #
@@ -1333,6 +1334,7 @@ sub feature_search {
         my $features        =  $admin->feature_search(
             feature_name    => $feature_name,
             map_aid         => $apr->param('map_aid')         ||  0,
+            species_id      => $apr->param('species_id')      ||  0,
             feature_type_id => $apr->param('feature_type_id') ||  0,
             field_name      => $apr->param('field_name')      || '',
             order_by        => $apr->param('order_by')        || '', 
