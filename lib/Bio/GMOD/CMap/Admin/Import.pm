@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.10 2003-01-29 00:23:29 kycl4rk Exp $
+# $Id: Import.pm,v 1.11 2003-01-30 02:50:03 kycl4rk Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.10 $)[-1];
+$VERSION  = (qw$Revision: 1.11 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -56,6 +56,7 @@ use vars '$LOG_FH';
     feature_start        => { is_required => 1, datatype => 'number' },
     feature_stop         => { is_required => 0, datatype => 'number' },
     feature_type         => { is_required => 1, datatype => 'string' },
+    linkage_group        => { is_required => 0, datatype => 'string' },
 );
 
 # ----------------------------------------------------
@@ -77,6 +78,7 @@ Imports tab-delimited file with the following fields:
     feature_start *
     feature_stop
     feature_type *
+    linkage_group
 
 Starred fields are required.  Order of fields is not important.
 
@@ -280,35 +282,68 @@ added.
             $maps{ uc $map_name }{'touched'} = 1;
         }
 
-        unless ( $map_id ) {
+        my $linkage_group = $record{'linkage_group'};
+        my $map_start     = $record{'map_start'}    || 0;
+        my $map_stop      = $record{'map_stop'}     || 0;
+        if ( 
+            defined $map_start &&
+            defined $map_stop  &&
+            $map_stop > $map_start 
+        ) {
+            ( $map_start, $map_stop ) = ( $map_stop, $map_start );
+        }
+
+        if ( $map_id ) {
+            $db->do(
+                q[
+                    update cmap_map 
+                    set    map_set_id=?,
+                           map_name=?, start_position=?, stop_position=?,
+                           linkage_group=?
+                    where  map_id=?
+                ],
+                {}, 
+                ( $map_set_id, $map_name, $map_start, $map_stop, 
+                  $linkage_group, $map_id
+                )
+            );
+
+            if ( my $accession_id = $record{'accession_id'} ) {
+                $db->do(
+                    q[
+                        update cmap_map 
+                        set    accession_id=?
+                        where  map_id=?
+                    ],
+                    {}, 
+                    ( $accession_id, $map_id )
+                );
+            }
+
+            $self->Print("Updated map $map_name ($map_id).\n");
+
+        }
+        else {
             $map_id          = next_number(
                 db           => $db, 
                 table_name   => 'cmap_map',
                 id_field     => 'map_id',
             ) or die 'No map id';
-
             my $accession_id = $record{'accession_id'} || $map_id;
-            my $map_start    = $record{'map_start'}    || 0;
-            my $map_stop     = $record{'map_stop'}     || 0;
-            if ( 
-                defined $map_start &&
-                defined $map_stop  &&
-                $map_stop > $map_start 
-            ) {
-                ( $map_start, $map_stop ) = ( $map_stop, $map_start );
-            }
 
             $db->do(
                 q[
                     insert
                     into   cmap_map 
                            ( map_id, accession_id, map_set_id, 
-                             map_name, start_position, stop_position )
-                    values ( ?, ?, ?, ?, ?, ? )
+                             map_name, start_position, stop_position,
+                             linkage_group
+                           )
+                    values ( ?, ?, ?, ?, ?, ?, ? )
                 ],
                 {}, 
                 ( $map_id, $accession_id, $map_set_id, 
-                  $map_name, $map_start, $map_stop 
+                  $map_name, $map_start, $map_stop, $linkage_group
                 )
             );
 
