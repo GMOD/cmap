@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.73 2003-11-04 15:56:45 kycl4rk Exp $
+# $Id: Data.pm,v 1.74 2003-11-05 16:44:27 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.73 $)[-1];
+$VERSION = (qw$Revision: 1.74 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -502,49 +502,50 @@ Returns the data for drawing comparative maps.
             else { # many reference maps, use map_cache
                 push @maps, @{ $db->selectall_arrayref(
                     q[
-                        select distinct map.map_id,
-                               map.accession_id,
-                               map.map_name,
-                               map.start_position,
-                               map.stop_position,
-                               map.display_order,
-                               ms.map_set_id,
-                               ms.accession_id as map_set_aid,
-                               ms.short_name as map_set_name,
-                               ms.shape,
-                               ms.width,
-                               ms.color,
-                               mt.map_type_id,
-                               mt.map_type,
-                               mt.map_units,
-                               mt.is_relational_map,
-                               mt.shape as default_shape,
-                               mt.width as default_width,
-                               mt.color as default_color,
-                               s.species_id,
-                               s.common_name as species_name
-                        from   cmap_map map,
-                               cmap_feature f1, 
-                               cmap_feature f2, 
-                               cmap_map_set ms,
-                               cmap_map_cache mc,
-                               cmap_species s,
-                               cmap_map_type mt,
-                               cmap_correspondence_lookup cl,
-                               cmap_feature_correspondence fc
-                        where  mc.pid=?
-                        and    mc.slot_no=?
-                        and    mc.map_id=f1.map_id
-                        and    f1.feature_id=cl.feature_id1
-                        and    cl.feature_correspondence_id=
-                               fc.feature_correspondence_id
-                        and    fc.is_enabled=1
-                        and    cl.feature_id2=f2.feature_id
-                        and    f2.map_id=map.map_id
-                        and    map.map_set_id=?
-                        and    map.map_set_id=ms.map_set_id
-                        and    ms.map_type_id=mt.map_type_id
-                        and    ms.species_id=s.species_id
+                        select   distinct map.map_id,
+                                 map.accession_id,
+                                 map.map_name,
+                                 map.start_position,
+                                 map.stop_position,
+                                 map.display_order,
+                                 ms.map_set_id,
+                                 ms.accession_id as map_set_aid,
+                                 ms.short_name as map_set_name,
+                                 ms.shape,
+                                 ms.width,
+                                 ms.color,
+                                 mt.map_type_id,
+                                 mt.map_type,
+                                 mt.map_units,
+                                 mt.is_relational_map,
+                                 mt.shape as default_shape,
+                                 mt.width as default_width,
+                                 mt.color as default_color,
+                                 s.species_id,
+                                 s.common_name as species_name
+                        from     cmap_map map,
+                                 cmap_feature f1, 
+                                 cmap_feature f2, 
+                                 cmap_map_set ms,
+                                 cmap_map_cache mc,
+                                 cmap_species s,
+                                 cmap_map_type mt,
+                                 cmap_correspondence_lookup cl,
+                                 cmap_feature_correspondence fc
+                        where    mc.pid=?
+                        and      mc.slot_no=?
+                        and      mc.map_id=f1.map_id
+                        and      f1.feature_id=cl.feature_id1
+                        and      cl.feature_correspondence_id=
+                                 fc.feature_correspondence_id
+                        and      fc.is_enabled=1
+                        and      cl.feature_id2=f2.feature_id
+                        and      f2.map_id=map.map_id
+                        and      map.map_set_id=?
+                        and      map.map_set_id=ms.map_set_id
+                        and      ms.map_type_id=mt.map_type_id
+                        and      ms.species_id=s.species_id
+                        order by map.display_order, map.map_name
                     ],
                     { Columns => {} },
                     ( $pid, $ref_slot_no, $map_set_id )
@@ -555,35 +556,36 @@ Returns the data for drawing comparative maps.
             push @maps, @{ 
                 $db->selectall_arrayref(
                     q[
-                        select map.map_id,
-                               map.accession_id,
-                               map.map_name,
-                               map.start_position,
-                               map.stop_position,
-                               map.display_order,
-                               ms.map_set_id,
-                               ms.accession_id as map_set_aid,
-                               ms.short_name as map_set_name,
-                               ms.shape,
-                               ms.width,
-                               ms.color,
-                               mt.map_type_id,
-                               mt.map_type,
-                               mt.map_units,
-                               mt.is_relational_map,
-                               mt.shape as default_shape,
-                               mt.width as default_width,
-                               mt.color as default_color,
-                               s.species_id,
-                               s.common_name as species_name
-                        from   cmap_map map,
-                               cmap_map_set ms,
-                               cmap_species s,
-                               cmap_map_type mt
-                        where  map.map_set_id=?
-                        and    map.map_set_id=ms.map_set_id
-                        and    ms.map_type_id=mt.map_type_id
-                        and    ms.species_id=s.species_id
+                        select   map.map_id,
+                                 map.accession_id,
+                                 map.map_name,
+                                 map.start_position,
+                                 map.stop_position,
+                                 map.display_order,
+                                 ms.map_set_id,
+                                 ms.accession_id as map_set_aid,
+                                 ms.short_name as map_set_name,
+                                 ms.shape,
+                                 ms.width,
+                                 ms.color,
+                                 mt.map_type_id,
+                                 mt.map_type,
+                                 mt.map_units,
+                                 mt.is_relational_map,
+                                 mt.shape as default_shape,
+                                 mt.width as default_width,
+                                 mt.color as default_color,
+                                 s.species_id,
+                                 s.common_name as species_name
+                        from     cmap_map map,
+                                 cmap_map_set ms,
+                                 cmap_species s,
+                                 cmap_map_type mt
+                        where    map.map_set_id=?
+                        and      map.map_set_id=ms.map_set_id
+                        and      ms.map_type_id=mt.map_type_id
+                        and      ms.species_id=s.species_id
+                        order by map.display_order, map.map_name
                     ],
                     { Columns => {} },
                     ( $map_set_id )
@@ -2757,6 +2759,7 @@ Returns the data for drawing comparative maps.
                  cmap_map_type mt, 
                  cmap_species s
         where    map.map_set_id=ms.map_set_id
+        and      ms.can_be_reference_map=1
         and      ms.map_type_id=mt.map_type_id
         and      ms.species_id=s.species_id
         $restriction
@@ -2831,12 +2834,12 @@ Returns the data for drawing comparative maps.
     # Sort it all out
     #
     for my $map_set ( @$map_sets ) {
-        $map_set->{'object_id'} = $map_set->{'map_set_id'};
+        $map_set->{'object_id'}     = $map_set->{'map_set_id'};
+        $map_set->{'attributes'}    = $attr_lookup{ $map_set->{'map_set_id'} };
         $map_set->{'feature_types'} = 
-            $ft_lookup{ $map_set->{'map_set_id'} };
-        next unless $map_set->{'can_be_reference_map'};
-        $map_set->{'maps'} = $map_lookup{ $map_set->{'map_set_id'} };
-        $map_set->{'attributes'} = $attr_lookup{ $map_set->{'map_set_id'} };
+            $ft_lookup{ $map_set->{'map_set_id'} }  || [];
+        $map_set->{'maps'}          = 
+            $map_lookup{ $map_set->{'map_set_id'} } || [];
     }
 
     $self->get_multiple_xrefs(
