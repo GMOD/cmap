@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.80 2004-05-10 21:18:24 mwz444 Exp $
+# $Id: Map.pm,v 1.81 2004-05-12 17:56:34 mwz444 Exp $
 
 =pod
 
@@ -25,12 +25,14 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.80 $)[-1];
+$VERSION = (qw$Revision: 1.81 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
-use Bio::GMOD::CMap::Utils qw[ column_distribution2 column_distribution label_distribution ];
+use Bio::GMOD::CMap::Utils qw[ 
+    column_distribution2 even_label_distribution label_distribution 
+    ];
 
 use base 'Bio::GMOD::CMap';
 
@@ -393,7 +395,6 @@ a hashref keyed on feature_id.
     my $self       = shift;
     my $map_id     = shift or return;
     my $map        = $self->map($map_id);
-    my $is_flipped = shift || 0;
 
     unless ( defined $map->{'feature_store'} ) {
         for my $data (
@@ -713,8 +714,8 @@ Lays out the map.
         my ( $leftmostf, $rightmostf );    # furthest features
 
         for my $lane ( sort { $a <=> $b } keys %$features ) {
-
-            my ( @north_labels, @south_labels );    # holds label coordinates
+	    my %even_labels; # holds label coordinates
+            #my ( @north_labels, @south_labels );    # holds label coordinates
             my $lane_features = $features->{$lane};
             my $midpoint      =
               ( $lane_features->[0]->{'start_position'} +
@@ -765,8 +766,9 @@ Lays out the map.
                     feature_type_aids => \%feature_type_aids,
                   );
                 $self->collect_labels_to_display(
-                    north_labels      => \@north_labels,
-                    south_labels      => \@south_labels,
+                    #north_labels      => \@north_labels,
+                    #south_labels      => \@south_labels,
+                    even_labels       => \%even_labels,
                     map_id            => $map_id,
                     slot_no           => $slot_no,
                     is_flipped        => $is_flipped,
@@ -789,8 +791,10 @@ Lays out the map.
             ( $base_x, $leftmostf, $rightmostf, $max_x, $min_x, $top_y,
 	      $bottom_y, $min_y )=$self->add_labels_to_map(
                 base_x        => $base_x,
-                north_labels  => \@north_labels,
-                south_labels  => \@south_labels,
+		base_y        => $base_y,
+                even_labels  => \%even_labels,
+                #north_labels  => \@north_labels,
+                #south_labels  => \@south_labels,
                 drawer        => $drawer,
                 rightmostf    => $rightmostf,
                 leftmostf     => $leftmostf,
@@ -804,6 +808,7 @@ Lays out the map.
                 top_y              => $top_y,
                 bottom_y           => $bottom_y,
                 min_y              => $min_y,
+                pixel_height       => $pixel_height,
             );
             ##############################################
             $lanes{$lane}{'furthest'} =
@@ -1908,8 +1913,9 @@ sub collect_labels_to_display {
     my ( $self, %args ) = @_;
 
     my $coords             = $args{'coords'};
-    my $north_labels       = $args{'north_labels'};
-    my $south_labels       = $args{'south_labels'};
+    #my $north_labels       = $args{'north_labels'};
+    #my $south_labels       = $args{'south_labels'};
+    my $even_labels        = $args{'even_labels'};
     my $drawer             = $args{'drawer'};
     my $feature            = $args{'feature'};
     my $color              = $args{'color'};
@@ -1944,7 +1950,7 @@ sub collect_labels_to_display {
             tick_y     => $mid_feature,
         };
     }
-    
+
     if (
         $show_labels
         && (
@@ -1956,32 +1962,53 @@ sub collect_labels_to_display {
         )
       )
     {
-        my $labels =
-             $feature->{'midpoint'} < $midpoint && $is_flipped
-          || $feature->{'midpoint'} > $midpoint && $is_flipped
-          || $feature->{'midpoint'} < $midpoint && !$is_flipped
-          ? $north_labels
-          : $south_labels;
-
-        push @$labels,
-          {
-            priority       => $feature->{'drawing_priority'},
-            text           => $label,
-            target         => $label_y,
-            color          => $color,
-            is_highlighted => $is_highlighted,
-            feature_coords => $coords,
-            feature_mid_y  => $feature->{'mid_y'},
-            feature_type   => $feature->{'feature_type'},
-            has_corr       => $has_corr,
-            feature_id     => $feature->{'feature_id'},
-            start_position => $feature->{'start_position'},
-            shape          => $feature->{'shape'},
-            url            => $feature_details_url . $feature->{'accession_id'},
-            alt            => 'Feature Details: '
-              . $feature->{'feature_name'} . ' ['
-              . $feature->{'accession_id'} . ']',
-          };
+#        my $labels =
+#             $feature->{'midpoint'} < $midpoint && $is_flipped
+#          || $feature->{'midpoint'} > $midpoint && $is_flipped
+#          || $feature->{'midpoint'} < $midpoint && !$is_flipped
+#          ? $north_labels
+#          : $south_labels;
+#
+#        push @$labels,
+#          {
+#            priority       => $feature->{'drawing_priority'},
+#            text           => $label,
+#            target         => $label_y,
+#            color          => $color,
+#            is_highlighted => $is_highlighted,
+#            feature_coords => $coords,
+#            feature_mid_y  => $feature->{'mid_y'},
+#            feature_type   => $feature->{'feature_type'},
+#            has_corr       => $has_corr,
+#            feature_id     => $feature->{'feature_id'},
+#            start_position => $feature->{'start_position'},
+#            shape          => $feature->{'shape'},
+#            url            => $feature_details_url . $feature->{'accession_id'},
+#            alt            => 'Feature Details: '
+#              . $feature->{'feature_name'} . ' ['
+#              . $feature->{'accession_id'} . ']',
+#          };
+	my $even_label_key = $is_highlighted ? 'highlights'
+	    : $has_corr ? 'correspondences' : 'normal';
+	push @{ $even_labels->{ $even_label_key } }, {
+	    priority       => $feature->{'drawing_priority'},
+	    text           => $label,
+	    target         => $label_y,
+	    color          => $color,
+	    is_highlighted => $is_highlighted,
+	    feature_coords => $coords,
+	    feature_mid_y  => $feature->{'mid_y'},
+	    feature_type   => $feature->{'feature_type'},
+	    has_corr       => $has_corr,
+	    feature_id     => $feature->{'feature_id'},
+	    start_position => $feature->{'start_position'},
+	    shape          => $feature->{'shape'},
+	    url            => 
+		$feature_details_url.$feature->{'accession_id'},
+		alt            => 
+		'Feature Details: ' . $feature->{'feature_name'}.
+		' [' . $feature->{'accession_id'} . ']',
+	    };
     } 
     
 }
@@ -1996,8 +2023,10 @@ sub add_labels_to_map {
     my ( $self, %args ) = @_;
 
     my $base_x             = $args{'base_x'};
-    my $north_labels       = $args{'north_labels'};
-    my $south_labels       = $args{'south_labels'};
+    my $base_y             = $args{'base_y'};
+    my $even_labels        = $args{'even_labels'};
+    #my $north_labels       = $args{'north_labels'};
+    #my $south_labels       = $args{'south_labels'};
     my $drawer             = $args{'drawer'};
     my $rightmostf         = $args{'rightmostf'};
     my $leftmostf          = $args{'leftmostf'};
@@ -2011,6 +2040,7 @@ sub add_labels_to_map {
     my $top_y              = $args{'top_y'};
     my $bottom_y           = $args{'bottom_y'};
     my $min_y              = $args{'min_y'};
+    my $pixel_height       = $args{'pixel_height'};
 
     my $label_side = $drawer->label_side($slot_no);
     my $reg_font   = $drawer->regular_font
@@ -2024,60 +2054,66 @@ sub add_labels_to_map {
     my $feature_highlight_bg_color =
       $drawer->config_data('feature_highlight_bg_color');
 
-    my @accepted_labels;    # the labels we keep
+    #my @accepted_labels;    # the labels we keep
     my $buffer = 2;         # the space between things
-    if ( $north_labels || $south_labels ) {
-        @$north_labels =
-          map  { $_->[0] }
-          sort {
-                 $b->[1] <=> $a->[1]
-              || $a->[2] <=> $b->[2]
-              || $b->[3] <=> $a->[3]
-              || $b->[4] <=> $a->[4]
-          }
-          map {
-            [
-                $_, $_->{'target'},
-                $_->{'priority'}, $_->{'is_highlighted'} || 0,
-                $_->{'has_corr'} || 0,
-            ]
-          } @$north_labels;
-
-        @$south_labels =
-          map  { $_->[0] }
-          sort {
-                 $a->[1] <=> $b->[1]
-              || $b->[2] <=> $a->[2]
-              || $b->[3] <=> $a->[3]
-              || $b->[4] <=> $a->[4]
-          }
-          map {
-            [
-                $_, $_->{'target'},
-                $_->{'priority'}, $_->{'is_highlighted'} || 0,
-                $_->{'has_corr'} || 0,
-            ]
-          } @$south_labels;
-
-        my $used = label_distribution(
-            labels     => $north_labels,
-            accepted   => \@accepted_labels,
-            used       => [],
-            buffer     => $buffer,
-            direction  => NORTH,
-            row_height => $font_height,
-        );
-
-        label_distribution(
-            labels     => $south_labels,
-            accepted   => \@accepted_labels,
-            used       => $used,
-            buffer     => $buffer,
-            direction  => SOUTH,
-            row_height => $font_height,
-        );
-    }
-
+    #if ( $north_labels || $south_labels ) {
+    #    @$north_labels =
+    #      map  { $_->[0] }
+    #      sort {
+    #             $b->[1] <=> $a->[1]
+    #          || $a->[2] <=> $b->[2]
+    #          || $b->[3] <=> $a->[3]
+    #          || $b->[4] <=> $a->[4]
+    #      }
+    #      map {
+    #        [
+    #            $_, $_->{'target'},
+    #            $_->{'priority'}, $_->{'is_highlighted'} || 0,
+    #            $_->{'has_corr'} || 0,
+    #        ]
+    #      } @$north_labels;
+    #
+    #    @$south_labels =
+    #      map  { $_->[0] }
+    #      sort {
+    #             $a->[1] <=> $b->[1]
+    #          || $b->[2] <=> $a->[2]
+    #          || $b->[3] <=> $a->[3]
+    #          || $b->[4] <=> $a->[4]
+    #      }
+    #      map {
+    #        [
+    #            $_, $_->{'target'},
+    #            $_->{'priority'}, $_->{'is_highlighted'} || 0,
+    #            $_->{'has_corr'} || 0,
+    #        ]
+    #      } @$south_labels;
+    #
+    #    my $used = label_distribution(
+    #        labels     => $north_labels,
+    #        accepted   => \@accepted_labels,
+    #        used       => [],
+    #        buffer     => $buffer,
+    #        direction  => NORTH,
+    #        row_height => $font_height,
+    #    );
+    #
+    #    label_distribution(
+    #        labels     => $south_labels,
+    #        accepted   => \@accepted_labels,
+    #        used       => $used,
+    #        buffer     => $buffer,
+    #        direction  => SOUTH,
+    #        row_height => $font_height,
+    #    );
+    #}
+    my $accepted_labels = even_label_distribution
+	( 
+	  labels          => $even_labels,
+	  map_height      => $pixel_height,
+	  font_height     => $font_height,
+	  start_y         => $base_y,
+	  );
     my $label_offset = 15;
     $base_x =
         $label_side eq RIGHT
@@ -2086,7 +2122,7 @@ sub add_labels_to_map {
       ? $leftmostf
       : $base_x;
 
-    for my $label (@accepted_labels) {
+    for my $label (@$accepted_labels) {
         my $text    = $label->{'text'};
         my $label_y = $label->{'y'};
         my $label_x =

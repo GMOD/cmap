@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Utils;
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.33 2004-05-06 14:06:27 mwz444 Exp $
+# $Id: Utils.pm,v 1.34 2004-05-12 17:56:33 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ use Bio::GMOD::CMap::Constants;
 use POSIX;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.33 $)[-1];
+$VERSION = (qw$Revision: 1.34 $)[-1];
 
 use base 'Exporter';
 
@@ -36,6 +36,7 @@ my @subs   = qw[
     column_distribution2 
     commify 
     extract_numbers 
+    even_label_distribution
     label_distribution 
     next_number 
     parse_words
@@ -383,6 +384,117 @@ Turns "12345" into "12,345"
     my $number = shift;
     1 while $number =~ s/^(-?\d+)(\d{3})/$1,$2/;
     return $number;
+}
+# ----------------------------------------------------
+
+=pod
+
+=head2 even_label_distribution
+
+Simply space (a sample of) the labels evenly in the given vertical space.
+
+Given:
+
+  labels: a hashref of arrayrefs, the keys of the hashref being one of
+    "highlights" - highlighted features, all will be taken
+    "correspondences" - features with correspondences
+    "normal" - all other features
+
+  map_height: the pixel height of the map (the bounds in which 
+    labels can be drawn
+
+  buffer: the space between labels (optional, default = "2")
+
+  start_y: the starting Y value from which to start assigning labels Y values
+
+  font_height: how many pixels tall the label font is
+
+Basically, we just divide the total vertical pixel space available 
+(map_height) by the number of labels we want to place and decide how many 
+will fit.  For each of the keys of the "labels" hashref, we try to add
+as many labels as will fit.  As space becomes limited, we start taking an
+even sampling of the available labels.  Once we've selected all the labels
+that will fit, we sort them (if needed) by "start_position," figure out the
+gaps to put b/w the labels, and then space them evenly from top to bottom
+using the gap interval.
+
+Special thanks to Noel Yap for suggesting this strategy.
+
+=cut
+sub even_label_distribution {
+    my %args        = @_;
+    my $labels      = $args{'labels'};
+    my $map_height  = $args{'map_height'}   || 0;
+    my $buffer      = $args{'buffer'}       || 2;
+    my $start_y     = $args{'start_y'}      || 0;
+    my $font_height = $args{'font_height'}  || 0;
+       $font_height += $buffer;
+    my @accepted    = @{ $labels->{'highlights'} || [] }; # take all highlights
+    my $no_added    = @accepted ? 1 : 0;
+
+    for my $priority ( qw/ correspondences normal / ) {
+        #
+        # See if there's enough room available for all the labels; 
+        # if not, just take an even sampling.
+        #
+        my $no_accepted = scalar @accepted;
+        my $no_present  = scalar @{ $labels->{ $priority } || [] } or next;
+        my $available   = $map_height - ( $no_accepted * $font_height );
+        last if $available < $font_height;
+
+        my $no_possible = int( $available / $font_height );
+        my $skip_val    = $no_possible < $no_present 
+            ? int( $no_present / $no_possible ) : 1
+        ;
+
+        for ( my $i = 0; $i < $no_present; $i += $skip_val ) {
+            push @accepted, $labels->{ $priority }[ $i ];
+        }
+        $no_added++;
+    }
+
+    #
+    # Resort by the target (reduces crossed lines).
+    #
+    @accepted = 
+	map  { $_->[0] }
+    sort { $a->[1] <=> $b->[1] }
+    map  { [ $_, $_->{'target'} ] }
+    @accepted;
+
+    my $no_accepted = scalar @accepted;
+    #
+    # If there's only one label, put it right next to the one feature.
+    #
+    if ( $no_accepted == 1 ) {
+        my $label = $accepted[0];
+        $label->{'y'} = $label->{'target'} - $font_height / 2;
+    }
+    elsif ( $no_accepted > 1 ) {
+        #
+        # See if we can squeeze the labels into a smaller space,
+        # thereby placing the labels closer to their targets.
+        #
+        my $feature_span = $accepted[-1]->{'target'} - $accepted[0]->{'target'};
+        if ( 
+            ( $feature_span < $map_height )
+            &&
+            ( ( scalar @accepted * $font_height ) < $feature_span )
+        ) {
+            $map_height = $feature_span;
+        }
+
+        #
+        # Figure the gap to evenly space the labels in the space.
+        #
+        my $gap = $map_height / ( $no_accepted - 1 );
+        my $i   = 0;
+        for my $label ( @accepted ) {
+            $label->{'y'} = sprintf("%.2f", $start_y + ( $gap * $i++ ) );
+        }
+    }
+   
+    return \@accepted;
 }
 
 # ----------------------------------------------------

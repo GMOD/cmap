@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.63 2004-05-06 14:39:02 mwz444 Exp $
+# $Id: Drawer.pm,v 1.64 2004-05-12 17:56:33 mwz444 Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.63 $)[-1];
+$VERSION = (qw$Revision: 1.64 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -37,7 +37,8 @@ use base 'Bio::GMOD::CMap';
 
 my @INIT_PARAMS = qw[
     apr flip slots highlight font_size image_size image_type 
-    label_features include_feature_types include_evidence_types
+    label_features include_feature_types corr_only_feature_types
+    include_evidence_types
     config data_source min_correspondences collapse_features cache_dir
     map_view data_module
 ];
@@ -456,6 +457,26 @@ Gets/sets which feature type (accession IDs) to include.
     }
 
     return $self->{'include_feature_types'};
+}
+                                                                                
+# ----------------------------------------------------
+sub corr_only_feature_types {
+                                                                                
+=pod
+                                                                                
+=head2 corr_only_feature_types
+                                                                                
+Gets/sets which feature type (accession IDs) to corr_only.
+                                                                                
+=cut
+                                                                                
+    my $self = shift;
+                                                                                
+    if ( my $arg = shift ) {
+        push @{ $self->{'corr_only_feature_types'} }, @$arg;
+    }
+                                                                                
+    return $self->{'corr_only_feature_types'};
 }
 
 # ----------------------------------------------------
@@ -968,6 +989,7 @@ necessary data for drawing.
             slots                  => $self->slots,
             min_correspondences    => $self->min_correspondences,
             include_feature_type_aids  => $self->include_feature_types,
+            corr_only_feature_type_aids  => $self->corr_only_feature_types,
             include_evidence_types => $self->include_evidence_types,
         ) or return $self->error( $data->error );
 
