@@ -1,7 +1,8 @@
 package Bio::GMOD::CMap::Admin::Export;
+
 # vim: set ft=perl:
 
-# $Id: Export.pm,v 1.10 2004-06-22 03:05:35 mwz444 Exp $
+# $Id: Export.pm,v 1.11 2004-11-01 23:29:58 mwz444 Exp $
 
 =pod
 
@@ -28,7 +29,7 @@ of data out of CMap.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.10 $)[-1];
+$VERSION = (qw$Revision: 1.11 $)[-1];
 
 use Data::Dumper;
 use File::Spec::Functions;
@@ -46,44 +47,89 @@ sub export {
 
 =head2 export
 
-Exports data.
+=head3 For External Use
+
+=over 4
+
+=item * Description
+
+Export data.
+
+=item * Usage
+
+    $exporter->export(
+        output => $output,
+        log_fh => $log_fh,
+        objects => $objects,
+        output_path => $output_path,
+    );
+
+=item * Returns
+
+1
+
+=item * Fields
+
+=over 4
+
+=item - output
+
+File handle of the output file.
+Must specify either an output or output_path
+
+=item - output_path
+
+String of the path and file name of an output file.
+Must specify either an output or output_path
+
+=item - log_fh
+
+File handle of the log file (defaults to STDOUT)
+
+=item - objects
+
+An arrayref of object names to be exported, such as "cmap_map_set"
+
+=back
+
+=back
 
 =cut
 
     my ( $self, %args ) = @_;
-    my $objects         = $args{'objects'};
-    my $output          = $args{'output'};
-    my $output_path     = $args{'output_path'}; 
+    my $objects     = $args{'objects'};
+    my $output      = $args{'output'};
+    my $output_path = $args{'output_path'};
     return $self->error('No output path') unless $output || $output_path;
-    return $self->error('Output arg not a scalar reference') if
-        defined $output && ref $output ne 'SCALAR';
-    my $db              = $self->db or 
-                          return $self->error('No database handle');
-    $LOG_FH             = $args{'log_fh'} || \*STDOUT;
+    return $self->error('Output arg not a scalar reference')
+      if defined $output && ref $output ne 'SCALAR';
+    my $db = $self->db
+      or return $self->error('No database handle');
+    $LOG_FH = $args{'log_fh'} || \*STDOUT;
 
     return $self->error('No objects to export') unless @$objects;
 
     local $| = 1;
 
-    my %dump; 
-    for my $object_type ( @$objects ) {
-        my $method = 'get_'.$object_type;
+    my %dump;
+    for my $object_type (@$objects) {
+        my $method = 'get_' . $object_type;
 
-        if ( $self->can( $method ) ) {
+        if ( $self->can($method) ) {
             my $pretty = $object_type;
-            $pretty    =~ s/^cmap_//;
-            $pretty    =~ s/_/ /g;
+            $pretty =~ s/^cmap_//;
+            $pretty =~ s/_/ /g;
 
             $self->Print("Dumping objects for type '$pretty.'\n");
 
-            my $objects = $self->$method( %args );
+            my $objects = $self->$method(%args);
 
             if ( ref $objects eq 'ARRAY' ) {
-                push @{ $dump{ $object_type } }, @$objects;
+                push @{ $dump{$object_type} }, @$objects;
             }
             elsif ( ref $objects eq 'HASH' ) {
                 while ( my ( $k, $v ) = each %$objects ) {
-                    push @{ $dump{ $k } }, @$v;
+                    push @{ $dump{$k} }, @$v;
                 }
             }
         }
@@ -100,11 +146,13 @@ Exports data.
         "Created on $date"
     );
 
-    my $xml = join( "\n", 
+    my $xml = join(
+        "\n",
         "<?xml version='1.0'?>",
         ( join( "\n", map { "<!-- $_ -->" } @comments ) ),
         '', '',
-        XMLout( \%dump, 
+        XMLout(
+            \%dump,
             RootName      => 'cmap_export',
             NoAttr        => 1,
             SuppressEmpty => 1,
@@ -112,7 +160,7 @@ Exports data.
         )
     );
 
-    if ( $output_path ) {
+    if ($output_path) {
         open my $out_fh, ">$output_path" or die "Can't open '$output_path'\n";
         print $out_fh $xml;
         close $out_fh;
@@ -120,12 +168,37 @@ Exports data.
     else {
         $$output = $xml;
     }
-    
+
     return 1;
 }
 
 # ----------------------------------------------------
 sub get_attributes_and_xrefs {
+
+=pod
+
+=head2 get_attributes_and_xrefs
+
+=head3 NOT For External Use
+
+=over 4
+
+=item * Description
+
+get_attributes_and_xrefs
+
+=item * Usage
+
+    $exporter->get_attributes_and_xrefs();
+
+=item * Returns
+
+1
+
+=back
+
+=cut
+
     my ( $self, $table_name, $objects ) = @_;
     my $db = $self->db or return;
 
@@ -141,7 +214,7 @@ sub get_attributes_and_xrefs {
             and    table_name=?
         ],
         { Columns => {} },
-        ( $table_name )
+        ($table_name)
     );
 
     my $xrefs = $db->selectall_arrayref(
@@ -155,20 +228,20 @@ sub get_attributes_and_xrefs {
             and    table_name=?
         ],
         { Columns => {} },
-        ( $table_name )
+        ($table_name)
     );
 
     my %attr_lookup;
-    for my $a ( @$attributes ) {
+    for my $a (@$attributes) {
         push @{ $attr_lookup{ $a->{'object_id'} } }, $a;
     }
 
     my %xref_lookup;
-    for my $x ( @$xrefs ) {
+    for my $x (@$xrefs) {
         push @{ $xref_lookup{ $x->{'object_id'} } }, $x;
     }
 
-    for my $o ( @$objects ) {
+    for my $o (@$objects) {
         if ( defined $attr_lookup{ $o->{'object_id'} } ) {
             $o->{'attribute'} = $attr_lookup{ $o->{'object_id'} };
         }
@@ -183,10 +256,44 @@ sub get_attributes_and_xrefs {
 
 # ----------------------------------------------------
 sub get_cmap_feature_correspondence {
-    my ( $self, %args ) = @_;
-    my $map_set_ids     = join(', ', 
-        map { $_->{'map_set_id'} } @{ $args{'map_sets'} || [] }
+
+=pod
+
+=head2 get_cmap_feature_correspondence
+
+=head3 NOT For External Use
+
+=over 4
+
+=item * Description
+
+get_cmap_feature_correspondence
+
+=item * Usage
+
+    $exporter->get_cmap_feature_correspondence(
+        feature_type_id => $feature_type_id,
     );
+
+=item * Returns
+
+Feature correspondence
+
+=item * Fields
+
+=over 4
+
+=item - feature_type_id
+
+=back
+
+=back
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $map_set_ids =
+      join( ', ', map { $_->{'map_set_id'} } @{ $args{'map_sets'} || [] } );
 
     my $fc_sql = q[
         select fc.feature_correspondence_id as object_id,
@@ -203,14 +310,14 @@ sub get_cmap_feature_correspondence {
         and    f1.map_id=map1.map_id
         and    fc.feature_id2=f2.feature_id
         and    f2.map_id=map2.map_id      
-    ];         
-               
-    if ( $map_set_ids ) {
+    ];
+
+    if ($map_set_ids) {
         $fc_sql .= qq[ 
             and map1.map_set_id in ($map_set_ids) 
             and map2.map_set_id in ($map_set_ids)
-        ]; 
-    }  
+        ];
+    }
 
     my $db = $self->db or return;
     my $fc = $db->selectall_arrayref( $fc_sql, { Columns => {} } );
@@ -220,7 +327,7 @@ sub get_cmap_feature_correspondence {
     }
 
     my $evidence_sql;
-    if ( $map_set_ids )  {
+    if ($map_set_ids) {
         $evidence_sql = qq[
             select ce.correspondence_evidence_id as object_id,
                    ce.feature_correspondence_id,
@@ -255,13 +362,13 @@ sub get_cmap_feature_correspondence {
 
     my $evidence = $db->selectall_arrayref( $evidence_sql, { Columns => {} } );
     my %evidence_lookup = ();
-    for my $e ( @$evidence ) {
+    for my $e (@$evidence) {
         push @{ $evidence_lookup{ $e->{'object_id'} } }, $e;
     }
 
-    for my $corr ( @$fc ) {
-        $corr->{'correspondence_evidence'} = 
-            $evidence_lookup{ $corr->{'object_id'} };
+    for my $corr (@$fc) {
+        $corr->{'correspondence_evidence'} =
+          $evidence_lookup{ $corr->{'object_id'} };
     }
 
     return $fc;
@@ -276,8 +383,8 @@ sub get_cmap_feature_correspondence {
 #    my $sql = q[
 #        select feature_type_id as object_id,
 #               accession_id,
-#               feature_type, 
-#               default_rank, 
+#               feature_type,
+#               default_rank,
 #               shape,
 #               color,
 #               drawing_lane,
@@ -298,9 +405,44 @@ sub get_cmap_feature_correspondence {
 
 # ----------------------------------------------------
 sub get_cmap_map_set {
+
+=pod
+
+=head2 get_cmap_map_set
+
+=head3 NOT For External Use
+
+=over 4
+
+=item * Description
+
+get_cmap_map_set
+
+=item * Usage
+
+    $exporter->get_cmap_map_set(
+        map_type_id => $map_type_id,
+    );
+
+=item * Returns
+
+hash with map set and species
+
+=item * Fields
+
+=over 4
+
+=item - map_type_id
+
+=back
+
+=back
+
+=cut
+
     my ( $self, %args ) = @_;
-    my $db              = $self->db or return;
-    my $sql             = q[
+    my $db  = $self->db or return;
+    my $sql = q[
         select map_set_id as object_id,
                accession_id,
                map_set_name, 
@@ -320,18 +462,19 @@ sub get_cmap_map_set {
         from   cmap_map_set ms
     ];
 
-    if ( 
-        my @map_set_ids = 
-        map { $_->{'map_set_id'} } @{ $args{'map_sets'} || [] } 
-    ) {
-        $sql .= 'where map_set_id in (' . join(',', @map_set_ids) . ')';
+    if (
+        my @map_set_ids =
+        map { $_->{'map_set_id'} } @{ $args{'map_sets'} || [] }
+      )
+    {
+        $sql .= 'where map_set_id in (' . join( ',', @map_set_ids ) . ')';
     }
 
     my $map_sets = $db->selectall_arrayref( $sql, { Columns => {} } );
 
     my ( %species_ids, %map_type_aids, %ft_ids );
-    for my $ms ( @$map_sets ) {
-        $species_ids { $ms->{'species_id'}  } = 1;
+    for my $ms (@$map_sets) {
+        $species_ids{ $ms->{'species_id'} }     = 1;
         $map_type_aids{ $ms->{'map_type_aid'} } = 1;
 
         $ms->{'map'} = $db->selectall_arrayref(
@@ -351,7 +494,7 @@ sub get_cmap_map_set {
 
         $self->get_attributes_and_xrefs( 'cmap_map', $ms->{'map'} );
 
-         unless ( $args{'no_attributes'} ) {
+        unless ( $args{'no_attributes'} ) {
             $self->get_attributes_and_xrefs( 'cmap_map', $ms->{'map'} );
         }
 
@@ -388,13 +531,12 @@ sub get_cmap_map_set {
             );
 
             unless ( $args{'no_attributes'} ) {
-                $self->get_attributes_and_xrefs( 
-                    'cmap_feature_alias', $aliases 
-                );
+                $self->get_attributes_and_xrefs( 'cmap_feature_alias',
+                    $aliases );
             }
 
             my %alias_lookup = ();
-            for my $alias ( @$aliases ) {
+            for my $alias (@$aliases) {
                 push @{ $alias_lookup{ $alias->{'feature_id'} } }, $alias;
             }
 
@@ -405,9 +547,8 @@ sub get_cmap_map_set {
                 }
             }
 
-            $self->get_attributes_and_xrefs( 
-                'cmap_feature', $map->{'feature'} 
-            )unless $args{'no_attributes'};
+            $self->get_attributes_and_xrefs( 'cmap_feature', $map->{'feature'} )
+              unless $args{'no_attributes'};
         }
     }
 
@@ -417,29 +558,29 @@ sub get_cmap_map_set {
 
     my @species;
     for my $species_id ( keys %species_ids ) {
-        push @species, @{ 
-            $self->get_cmap_species( species_id => $species_id ) 
-        };
+        push @species,
+          @{ $self->get_cmap_species( species_id => $species_id ) };
     }
 
     ###Removing because no longer need to export types
     #my @map_type;
     #for my $map_type ( keys %map_types ) {
-    #    push @map_type, @{ 
-    #        $self->get_cmap_map_type( map_type => $map_type ) 
+    #    push @map_type, @{
+    #        $self->get_cmap_map_type( map_type => $map_type )
     #    };
     #}
 
     #my @feature_types;
     #for my $feature_type_id ( keys %ft_ids ) {
-    #    push @feature_types, @{ 
-    #        $self->get_cmap_feature_type( feature_type_id => $feature_type_id ) 
+    #    push @feature_types, @{
+    #        $self->get_cmap_feature_type( feature_type_id => $feature_type_id )
     #    };
     #}
 
     return {
-        cmap_map_set      => $map_sets,
-        cmap_species      => \@species,
+        cmap_map_set => $map_sets,
+        cmap_species => \@species,
+
         #cmap_map_type     => \@map_type,
         #cmap_feature_type => \@feature_types,
     };
@@ -453,8 +594,8 @@ sub get_cmap_map_set {
 #    my $sql = q[
 #        select map_type_id as object_id,
 #               accession_id,
-#               map_type, 
-#               map_units, 
+#               map_type,
+#               map_units,
 #               is_relational_map,
 #               shape,
 #               color,
@@ -476,6 +617,41 @@ sub get_cmap_map_set {
 
 # ----------------------------------------------------
 sub get_cmap_species {
+
+=pod
+
+=head2 get_cmap_species
+
+=head3 NOT For External Use
+
+=over 4
+
+=item * Description
+
+get_cmap_species
+
+=item * Usage
+
+    $exporter->get_cmap_species(
+        species_id => $species_id,
+    );
+
+=item * Returns
+
+Species object
+
+=item * Fields
+
+=over 4
+
+=item - species_id
+
+=back
+
+=back
+
+=cut
+
     my ( $self, %args ) = @_;
 
     my $db  = $self->db or return;
@@ -503,8 +679,33 @@ sub get_cmap_species {
 
 # ----------------------------------------------------
 sub get_cmap_xref {
+
+=pod
+
+=head2 get_cmap_xref
+
+=head3 NOT For External Use
+
+=over 4
+
+=item * Description
+
+get_cmap_xref
+
+=item * Usage
+
+    $exporter->get_cmap_xref();
+
+=item * Returns
+
+Xref data
+
+=back
+
+=cut
+
     my ( $self, %args ) = @_;
-    my $db              = $self->db or return;
+    my $db = $self->db or return;
     return $db->selectall_arrayref(
         q[
             select table_name,
@@ -521,6 +722,31 @@ sub get_cmap_xref {
 
 # ----------------------------------------------------
 sub Print {
+
+=pod
+
+=head2 Print
+
+=head3 NOT For External Use
+
+=over 4
+
+=item * Description
+
+Print
+
+=item * Usage
+
+    $exporter->Print();
+
+=item * Returns
+
+Nothing
+
+=back
+
+=cut
+
     my $self = shift;
     print $LOG_FH @_;
 }
@@ -550,3 +776,4 @@ This library is free software;  you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 =cut
+
