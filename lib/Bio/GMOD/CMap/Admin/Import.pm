@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Import;
 
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.55.2.2 2004-12-02 20:56:21 mwz444 Exp $
+# $Id: Import.pm,v 1.55.2.3 2004-12-05 17:14:56 mwz444 Exp $
 
 =pod
 
@@ -33,7 +33,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.55.2.2 $)[-1];
+$VERSION = (qw$Revision: 1.55.2.3 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -642,6 +642,35 @@ appended to the list of xrefs.
             $self->Print(
 "$action $feature_type_aid '$feature_name' on map $map_name at $pos.\n"
             );
+
+            for my $name (@$aliases) {
+                next if $name eq $feature_name;
+                $admin->feature_alias_create(
+                    feature_id => $feature_id,
+                    alias      => $name,
+                  )
+                  or warn $admin->error;
+            }
+
+            if (@fattributes) {
+                $admin->set_attributes(
+                    object_id  => $feature_id,
+                    table_name => 'cmap_feature',
+                    attributes => \@fattributes,
+                    overwrite  => $overwrite,
+                  )
+                  or return $self->error( $admin->error );
+            }
+
+            if (@xrefs) {
+                $admin->set_xrefs(
+                    object_id  => $feature_id,
+                    table_name => 'cmap_feature',
+                    overwrite  => $overwrite,
+                    xrefs      => \@xrefs,
+                  )
+                  or return $self->error( $admin->error );
+            }
         }
         else {
 
@@ -650,57 +679,30 @@ appended to the list of xrefs.
             #
 
             $insert_features[ ++$#insert_features ] = [
-                $accession_id, $map_id,       $feature_type_aid,
+              [ $accession_id, $map_id,       $feature_type_aid,
                 $feature_name, $start,        $stop,
                 $is_landmark,  $default_rank, $direction,
+              ],
+              $aliases, \@fattributes, \@xrefs,
             ];
             @insert_features = @{
                 $self->insert_features(
                     feature_array => \@insert_features,
                     db            => $db,
+                    overwrite     => $overwrite,
+                    admin         => $admin,
                 )
               }
               if ( $max_simultaneous_inserts <= $#insert_features );
         }
 
-        for my $name (@$aliases) {
-            next if $name eq $feature_name;
-            $admin->feature_alias_create(
-                feature_id => $feature_id,
-                alias      => $name,
-              )
-              or warn $admin->error;
-        }
-
-        if (@fattributes) {
-            $admin->set_attributes(
-                object_id  => $feature_id,
-                table_name => 'cmap_feature',
-                attributes => \@fattributes,
-                overwrite  => $overwrite,
-              )
-              or return $self->error( $admin->error );
-        }
-
-        if (@xrefs) {
-            $admin->set_xrefs(
-                object_id  => $feature_id,
-                table_name => 'cmap_feature',
-                overwrite  => $overwrite,
-                xrefs      => \@xrefs,
-              )
-              or return $self->error( $admin->error );
-        }
-
-    #my $pos = join('-', map { defined $_ ? $_ : () } $start, $stop);
-    #$self->Print(
-    #    "$action $feature_type_aid '$feature_name' on map $map_name at $pos.\n"
-    #);
     }
     @insert_features = @{
         $self->insert_features(
             feature_array => \@insert_features,
             db            => $db,
+            overwrite     => $overwrite,
+            admin         => $admin,
         )
       }
       if (@insert_features);
@@ -1209,6 +1211,8 @@ Empty feature_array
     my ( $self, %args ) = @_;
     my $feature_array = $args{'feature_array'};
     my $db            = $args{'db'};
+    my $admin         = $args{'admin'};
+    my $overwrite     = $args{'overwrite'};
     my $no_features   = scalar( @{$feature_array} );
 
     return if ( $no_features <= 0 );
@@ -1236,8 +1240,41 @@ Empty feature_array
 
     for ( my $i = 0 ; $i < $no_features ; $i++ ) {
         my $feature_id = $base_feature_id + $i;
-        $feature_array->[$i][0] ||= $feature_id;
-        $sth->execute( $feature_id, @{ $feature_array->[$i] } );
+        $feature_array->[$i][0][0] ||= $feature_id;
+        $sth->execute( $feature_id, @{ $feature_array->[$i][0] } );
+        my $feature_name = $feature_array->[$i][0][4];
+
+        my $aliases     = $feature_array->[$i][1];
+        my $fattributes = $feature_array->[$i][2];
+        my $xrefs       = $feature_array->[$i][3];
+        for my $name (@$aliases) {
+            next if $name eq $feature_name;
+            $admin->feature_alias_create(
+                feature_id => $feature_id,
+                alias      => $name,
+              )
+              or warn $admin->error;
+        }
+
+        if (@$fattributes) {
+            $admin->set_attributes(
+                object_id  => $feature_id,
+                table_name => 'cmap_feature',
+                attributes => $fattributes,
+                overwrite  => $overwrite,
+              )
+              or return $self->error( $admin->error );
+        }
+
+        if (@$xrefs) {
+            $admin->set_xrefs(
+                object_id  => $feature_id,
+                table_name => 'cmap_feature',
+                overwrite  => $overwrite,
+                xrefs      => $xrefs,
+              )
+              or return $self->error( $admin->error );
+        }
     }
 
     $self->Print("Inserted $no_features features.\n");

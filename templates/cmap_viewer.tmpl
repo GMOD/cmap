@@ -306,6 +306,18 @@ function selectAllOptions(select){
 
 <table border="0"> 
   <tr>
+    [% IF drawer.image_name %]
+      <td valign="top">
+        [% IF drawer.image_type=='svg' %]
+          <object type="image/svg+xml" data="/cmap/tmp/[% drawer.image_name %]" height="[% drawer.map_height %]" width="[% drawer.map_width %]"></object>
+        [% ELSE %]
+          <img src="/cmap/tmp/[% drawer.image_name %]" height="[% drawer.map_height %]" width="[% drawer.map_width %]" usemap="#zoom" border="0">
+        [% END %]
+        <hr>
+      </td>
+    [% END %]
+  </tr>
+  <tr>
     <td align="left" valign="top">
       <div id="hiddenRefMenu">
         <span  
@@ -433,7 +445,7 @@ function selectAllOptions(select){
               </tr>
             </form>
           [% END %]
-        </table>
+        </table><hr>
       </div>
     </td>
   </tr>
@@ -520,7 +532,7 @@ function selectAllOptions(select){
               </tr>
             </table>
             <input type="submit" value="Redraw Map" name="sub">
-            <input type="reset"  value="Reset">
+            <input type="reset"  value="Reset"><hr>
           </div>
         </td>
       </tr>
@@ -548,6 +560,11 @@ function selectAllOptions(select){
               <img src="/cmap/minus.png">&nbsp;<b>Hide Options Menu</b>
             </span>
             <table>
+              <tr>
+                <td align="left">Highlight Feature: 
+                      <input name="highlight" value="[% apr.param('highlight') | html %]">
+                </td>
+              </tr>
               <tr>
                 <td align="left" valign="bottom" colspan="2"><b>Feature Types:</b></td>
               </tr>
@@ -618,11 +635,6 @@ function selectAllOptions(select){
                 </td>
               </tr>
               <tr>
-                <td align="left">Highlight Feature: 
-                      <input name="highlight" value="[% apr.param('highlight') | html %]">
-                </td>
-              </tr>
-              <tr>
                 <td align="left" valign="top">Aggregate Correspondences:
                   [% IF apr.param('aggregate')==0; aggregate=0; ELSE; aggregate=1; END %]
                   [% IF apr.param('aggregate')==2; aggregate=2; END %]
@@ -648,26 +660,15 @@ function selectAllOptions(select){
                   </select>
                 </td>
               </tr>
-            </table>
+              <tr>
+                <td><hr>
+                  <input type="submit" value="Redraw Map" name="sub">
+                  <input type="reset"  value="Reset">
+                </td>
+              </tr>
+            </table><hr>
           </div>
         </td>
-      </tr>
-      <tr>
-        <td><hr>
-          <input type="submit" value="Redraw Map" name="sub">
-          <input type="reset"  value="Reset">
-        </td>
-      </tr>
-      <tr>
-        [% IF drawer.image_name %]
-          <td valign="top">
-            [% IF drawer.image_type=='svg' %]
-              <object type="image/svg+xml" data="/cmap/tmp/[% drawer.image_name %]" height="[% drawer.map_height %]" width="[% drawer.map_width %]"></object>
-            [% ELSE %]
-              <img src="/cmap/tmp/[% drawer.image_name %]" height="[% drawer.map_height %]" width="[% drawer.map_width %]" usemap="#zoom" border="0">
-            [% END %]
-          </td>
-        [% END %]
       </tr>
       <tr>
         <td align=left valign=top>
@@ -853,6 +854,12 @@ function selectAllOptions(select){
           [%- IF extra_form -%]
             [% extra_form %]
           [%- END -%]
+        </td>
+      </tr>
+      <tr>
+        <td><hr>
+          <input type="submit" value="Redraw Map" name="sub">
+          <input type="reset"  value="Reset">
         </td>
       </tr>
     </form>
