@@ -18,7 +18,7 @@
             [% IF no_link != 'matrix' %]<a href="/cmap/matrix">[% END %]Matrix[% IF no_link != 'matrix' %]</a>[% END %] |
             [% IF no_link != 'feature_search' %]<a href="/cmap/feature_search">[% END %]Feature Search[% IF no_link != 'feature_search' %]</a>[% END %] |
             [% IF no_link != 'map_set_info' %]<a href="/cmap/map_set_info">[% END %]Map Set Info[% IF no_link != 'map_set_info' %]</a>[% END %] |
-            [% IF no_link != 'help' %]<a href="/cmap/help[% IF help_anchor; "#$help_anchor"; END %]">[% END %]Help[% IF no_link != 'help' %]</a>[% END %]
+            [% IF no_link != 'help' %]<a href="/cmap/help[% IF help_anchor; "?section=$help_anchor"; END %]">[% END %]Help[% IF no_link != 'help' %]</a>[% END %]
         </td>
         <td align="right">
             [% IF data_sources.size > 1 %]

@@ -1,0 +1,21 @@
+[% 
+    INCLUDE header.tmpl 
+    title='Map Set Info Help'
+    no_link='help'
+    help_anchor=''
+%]
+
+<h2>Map Set Infomation</h2>
+<p>
+This page displays the full and abbreviated names of the map set.
+(For more information on what constitutes a <em>map set</em>, see the
+<a href="help?section=viewer">map viewer help section</a>.)  Also
+shown are the species, map type, map units, any remarks the curator
+has added, and the listing of the maps in the set if the maps are
+allowed to act as reference maps.  If the species has an NCBI taxon
+ID, then a link is provided to view more information on the species at
+NCBI.
+</p>
+
+[% page.end_body OR '</body>' %]
+</html>

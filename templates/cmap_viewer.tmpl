@@ -2,7 +2,7 @@
     INCLUDE header.tmpl 
     title=title
     no_link='maps'
-    help_anchor=''
+    help_anchor='viewer'
 %]
 
 <table border="0"> 
@@ -248,7 +248,7 @@
 [% END %]
 
 [% UNLESS apr.param('ref_map_aid') %]
-    [% INCLUDE help_body.tmpl %]
+    [% INCLUDE help_quick_start.tmpl %]
 [% END %]
 
 [% page.end_body OR '</body>' %]
