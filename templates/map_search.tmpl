@@ -46,19 +46,13 @@ url=apr.url( '-full' => 1, '-path_info' => 1 ).replace('\/cmap.*', '/cmap');
                         <td align="right">Ref. Set:</td>
 
                         <td>
-                            [% SET last_map_type='' %]
-                            <select name="ref_map_set_aid" onChange="javascript:ref_map_set_form.submit()">
+                            <select name="ref_map_set_aid">
                                 <option value="">--Select--</option>
                                 [%- FOREACH ms=form_data.ref_map_sets -%]
-                                    [%- IF ms.map_type != last_map_type -%]
-                                        <option value="">--&nbsp;[% ms.map_type %]&nbsp;Maps&nbsp;--</option>
-                                    [%- END -%]
                                     <option [% IF apr.param('ref_map_set_aid') == ms.accession_id OR form_data.ref_map_sets.size==1; ' selected'; END %] value="[% ms.accession_id %]">
-                                      [% ms.species_name %] - [% ms.map_set_name %]
+                                      [% ms.map_type %] : [% ms.species_name %] - [% ms.map_set_name %]
                                     </option>
-                                    [%- SET last_map_type=ms.map_type -%]
                                 [%- END -%]
-                            </select>&nbsp;<input type="submit" value="Change">
                             <input type="hidden" name="data_source"          value="[% data_source %]">
                         </td>
                     </tr>
@@ -78,6 +72,7 @@ url=apr.url( '-full' => 1, '-path_info' => 1 ).replace('\/cmap.*', '/cmap');
                             Get results </td><td><input size=4 type="text" name="page_index_start" value="[% page_index_start %]"> through <input size=4 type="text" name="page_index_stop" value="[% page_index_stop %]">
                         </td>
                     </tr>
+                    <tr><td align=right></select>&nbsp;<input type="submit" value="Submit"></td></tr>
                 [% END %]
                 </table></table><P><HR>
                 [% IF form_data.map_ids %]
