@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Utils;
 
-# $Id: Utils.pm,v 1.13 2003-02-20 16:50:04 kycl4rk Exp $
+# $Id: Utils.pm,v 1.14 2003-03-05 01:55:49 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.13 $)[-1];
+$VERSION = (qw$Revision: 1.14 $)[-1];
 
 use base 'Exporter';
 
@@ -207,8 +207,6 @@ label can be inserted.
 =cut
 
     my %args         = @_;
-    my $debug        = $args{'debug'} || 0;
-#    warn "label dist args =\n", Dumper( \%args ), "\n" if $debug;
     my $rows         = $args{'rows'}         ||    []; # array ref
     my $target       = $args{'target'}       ||     0; # desired location
     my $row_height   = $args{'row_height'}   ||     1; # how tall a row is
@@ -227,14 +225,11 @@ label can be inserted.
     my $reverse = $direction eq NORTH ? -1 : 1;
     my @used    = sort { $reverse * ( $a->[0] <=> $b->[0] ) } @$rows;
     my $ok      = 1; # assume innocent until proven guilty
-    warn "Used = ", Dumper( \@used ), "\n" if $debug;
-    warn "I want to put this label close to ($top, $bottom)\n" if $debug;
 
     SEGMENT:
     for my $i ( 0 .. $#used ) {
         my $segment = $used[ $i ];
         my ( $north, $south ) = @$segment; 
-        warn "Current segment ($north, $south)\n" if $debug;
         next if $south + $buffer <= $top;    # segment is above our target.
         next if $north - $buffer >= $bottom; # segment is below our target.
 
@@ -261,7 +256,6 @@ label can be inserted.
                     ? $north 
                     : defined $next_segment->[0] ? $next_segment->[0] : undef
             ;
-            warn "Frame top = $ftop, bottom = $fbottom\n" if $debug;
 
             #
             # Check if we can fit the label into the frame.
@@ -270,10 +264,8 @@ label can be inserted.
                  defined $fbottom &&
                  $fbottom - $ftop < $bottom - $top
             ) {
-                warn "Frame too small, moving on.\n" if $debug;
                 next SEGMENT;
             }
-            warn "Open frame is big enough for label\n" if $debug;
 
             #
             # See if moving the label to the frame would move it too far.
@@ -282,15 +274,10 @@ label can be inserted.
                 ? $fbottom - $bottom - $buffer
                 : $ftop - $top + $buffer
             ;
-#            next SEGMENT if ( abs $diff > $max_distance ) && $can_skip;
             if ( ( abs $diff > $max_distance ) && $can_skip ) {
-                warn "Diff ($diff) is greater than max distance ",
-                    "($max_distance) and I can skip\n" if $debug;
                 next SEGMENT;
             }
             $_ += $diff for $top, $bottom;
-            warn "Applying diff ($diff), new top = $top, bottom = $bottom\n" 
-                if $debug;
 
             #
             # See if it will fit.  Same as two above?
@@ -306,11 +293,9 @@ label can be inserted.
                 ||
                 ( defined $fbottom && $bottom + $buffer <= $fbottom )
             ) {
-                warn "OK!\n" if $debug;
                 $ok = 1; 
                 last;
             }
-            warn "Skipping...\n" if !$ok && $debug;
             next SEGMENT if !$ok and !$can_skip;
             last;
         }
@@ -318,8 +303,6 @@ label can be inserted.
             $ok = 1;
         }
     }
-
-    warn "I went through everything, ok = $ok\n" if $debug;
 
     #
     # If nothing was found but we can't skip, then move the
@@ -336,7 +319,6 @@ label can be inserted.
             $bottom = $top + $row_height;
         }
         $ok         = 1;
-        warn "I can't skip, so I'll put it at the end\n" if $debug;
     }
 
     #
@@ -345,12 +327,10 @@ label can be inserted.
     # went and return the new location.
     #
     if ( !@$rows || $ok ) {
-        warn "I'm going to add a row for ($top, $bottom)\n" if $debug;
         push @$rows, [ $top, $bottom ];
         return $top;
     }
 
-    warn "I didn't find anything, returning nothing\n" if $debug;
     return undef;
 }
 
