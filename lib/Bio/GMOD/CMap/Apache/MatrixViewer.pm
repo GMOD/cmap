@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MatrixViewer;
 # vim: set ft=perl:
 
-# $Id: MatrixViewer.pm,v 1.7 2003-10-01 23:16:08 kycl4rk Exp $
+# $Id: MatrixViewer.pm,v 1.8 2003-12-11 03:03:58 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.7 $)[-1];
+$VERSION = (qw$Revision: 1.8 $)[-1];
 
 use Apache::Constants;
 use Data::Dumper;
@@ -20,6 +20,7 @@ sub handler {
     # Make a jazz noise here...
     #
     my ( $self, $apr )   = @_;
+    my $show_matrix      = $apr->param('show_matrix')      ||  0;
     my $species_aid      = $apr->param('species_aid')      || '';
     my $map_set_aid      = $apr->param('map_set_aid')      || '';
     my $map_name         = $apr->param('map_name')         || '';
@@ -37,6 +38,7 @@ sub handler {
 
     my $data_module      =  $self->data_module;
     my $data             =  $data_module->matrix_correspondence_data(
+        show_matrix      => $show_matrix,
         species_aid      => $species_aid,
         map_set_aid      => $map_set_aid,
         map_name         => $map_name,
