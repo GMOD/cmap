@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.83.2.4 2005-03-04 06:15:22 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.83.2.5 2005-03-10 16:40:03 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.83.2.4 $)[-1];
+$VERSION = (qw$Revision: 1.83.2.5 $)[-1];
 
 #
 # Get command-line options
@@ -2516,7 +2516,8 @@ sub show_menu {
         $result = undef;
     }
     else {
-        $result = [ map { $data->[0]->{$_} } @return ];
+        # only one choice, use it.
+        $result = [ [ map { $data->[0]->{$_} } @return ] ];
         unless ( wantarray or scalar(@$result) != 1 ) {
             $result = $result->[0];
         }
