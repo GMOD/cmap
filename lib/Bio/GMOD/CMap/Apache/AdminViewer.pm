@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.42 2003-09-04 17:48:32 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.43 2003-09-08 17:16:40 kycl4rk Exp $
 
 use strict;
 use Apache::Constants qw[ :common M_GET REDIRECT ];
@@ -32,7 +32,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.42 $)[-1];
+$VERSION        = (qw$Revision: 1.43 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -1869,7 +1869,8 @@ sub feature_type_edit {
                      shape, 
                      color,
                      drawing_lane,
-                     drawing_priority
+                     drawing_priority,
+                     description
             from     cmap_feature_type
             where    feature_type_id=?
         ]
@@ -1904,6 +1905,7 @@ sub feature_type_insert {
     my $color            = $apr->param('color')            || '';
     my $drawing_lane     = $apr->param('drawing_lane')     ||  1;
     my $drawing_priority = $apr->param('drawing_priority') ||  1;
+    my $description      = $apr->param('description')      || '';
     my $feature_type_id  = next_number(
         db               => $db, 
         table_name       => 'cmap_feature_type',
@@ -1918,12 +1920,14 @@ sub feature_type_insert {
             insert
             into   cmap_feature_type 
                    ( accession_id, feature_type_id, feature_type, 
-                     shape, color, drawing_lane, drawing_priority )
-            values ( ?, ?, ?, ?, ?, ?, ? )
+                     shape, color, drawing_lane, drawing_priority,
+                     description )
+            values ( ?, ?, ?, ?, ?, ?, ?, ? )
         ],
         {}, 
         ( $accession_id, $feature_type_id, $feature_type, 
-          $shape, $color, $drawing_lane, $drawing_priority )
+          $shape, $color, $drawing_lane, $drawing_priority,
+          $description )
     );
 
     return $self->redirect_home( ADMIN_HOME_URI.'?action=feature_types_view' ); 
@@ -1940,8 +1944,9 @@ sub feature_type_update {
     my $shape            = $apr->param('shape')
         or push @errors, 'No shape';
     my $color            = $apr->param('color')            || '';
-    my $drawing_lane     = $apr->param('drawing_lane')     || 1;
-    my $drawing_priority = $apr->param('drawing_priority') || 1;
+    my $drawing_lane     = $apr->param('drawing_lane')     ||  1;
+    my $drawing_priority = $apr->param('drawing_priority') ||  1;
+    my $description      = $apr->param('description')      || '';
     my $feature_type_id  = $apr->param('feature_type_id') 
         or push @errors, 'No feature type id';
     my $feature_type     = $apr->param('feature_type')    
@@ -1957,12 +1962,14 @@ sub feature_type_update {
                    shape=?, 
                    color=?,
                    drawing_lane=?,
-                   drawing_priority=?
+                   drawing_priority=?,
+                   description=?
             where  feature_type_id=?
         ],
         {}, 
         ( $accession_id, $feature_type, $shape, $color, 
-          $drawing_lane, $drawing_priority, $feature_type_id 
+          $drawing_lane, $drawing_priority, $description,
+          $feature_type_id 
         )
     );
 

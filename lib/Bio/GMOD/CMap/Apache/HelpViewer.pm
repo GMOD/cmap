@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::HelpViewer;
 
-# $Id: HelpViewer.pm,v 1.5 2003-07-31 21:10:55 kycl4rk Exp $
+# $Id: HelpViewer.pm,v 1.6 2003-09-08 17:16:40 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use Apache::Constants;
 
@@ -15,6 +15,7 @@ use constant TEMPLATES => {
     default            => 'help_map_viewer.tmpl',
     feature_details    => 'help_feature_details.tmpl',
     feature_search     => 'help_feature_search.tmpl',
+    feature_type_info  => 'help_feature_type_info.tmpl',
     matrix             => 'help_matrix.tmpl',
     map_set_info       => 'help_map_set_info.tmpl',
     map_details        => 'help_map_details.tmpl',
