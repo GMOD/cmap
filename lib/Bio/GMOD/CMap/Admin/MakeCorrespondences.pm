@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.31 2004-03-19 15:33:26 mwz444 Exp $
+# $Id: MakeCorrespondences.pm,v 1.32 2004-03-25 14:09:29 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.31 $)[-1];
+$VERSION = (qw$Revision: 1.32 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -43,9 +43,9 @@ use Data::Dumper;
 sub make_name_correspondences {
     my ( $self, %args )       = @_;
     my @map_set_ids           = @{ $args{'map_set_ids'}        || [] };
-    my @skip_feature_type_ids = @{ $args{'skip_feature_type_ids'} || [] };
-    my $evidence_type_id      = $args{'evidence_type_id'} or 
-                                return 'No evidence type id';
+    my @skip_feature_types    = @{ $args{'skip_feature_types'} || [] };
+    my $evidence_type         = $args{'evidence_type'} or 
+                                return 'No evidence type';
     $LOG_FH                   = $args{'log_fh'} || \*STDOUT;
     my $quiet                 = $args{'quiet'};
     my $db                    = $self->db;
@@ -63,37 +63,17 @@ sub make_name_correspondences {
     #
     my %add_name_correspondences;
     for my $line ( $self->config_data('add_name_correspondence') ) {
-        my @feature_type_aids = split /\s+/, $line;
+        my @feature_types = split /\s+/, $line;
 
-        for my $i ( 0 .. $#feature_type_aids ) {
-            my $ft1    = $feature_type_aids[ $i ] or next;
-            my $ft_id1 = $db->selectrow_array(
-                q[
-                    select ft.feature_type_id
-                    from   cmap_feature_type ft
-                    where  ft.accession_id=?
-                ],
-                {},
-                ( $ft1 ) 
-            ) or next;
+        for my $i ( 0 .. $#feature_types ) {
+            my $ft1    = $feature_types[ $i ] or next;
 
-            for my $j ( 1 .. $#feature_type_aids ) {
-                my $ft2 = $feature_type_aids[ $j ];
+            for my $j ( 1 .. $#feature_types ) {
+                my $ft2 = $feature_types[ $j ];
                 next if $ft1 eq $ft2;
                 
-                my $ft_id2 = $db->selectrow_array(
-                    q[
-                        select ft.feature_type_id
-                        from   cmap_feature_type ft
-                        where  ft.accession_id=?
-                    ],
-                    {},
-                    ( $ft2 ) 
-                ) or next;
-
-                next if $ft_id1 == $ft_id2;
-                $add_name_correspondences{ $ft_id1 }{ $ft_id2 } = 1;
-                $add_name_correspondences{ $ft_id2 }{ $ft_id1 } = 1;
+                $add_name_correspondences{ $ft1 }{ $ft2 } = 1;
+                $add_name_correspondences{ $ft2 }{ $ft1 } = 1;
             }
         }
     }
@@ -114,17 +94,15 @@ sub make_name_correspondences {
     my $feature_sql = q[
         select f.feature_id,
                f.feature_name,
-               f.feature_type_id,
+               f.feature_type,
                map.map_id,
                ms.map_set_id,
-               mt.is_relational_map
+               ms.is_relational_map
         from   cmap_feature f,
                cmap_map map,
-               cmap_map_set ms,
-               cmap_map_type mt
+               cmap_map_set ms
         where  f.map_id=map.map_id
         and    map.map_set_id=ms.map_set_id
-        and    ms.map_type_id=mt.map_type_id
     ];
 
     my $alias_sql = q[
@@ -147,10 +125,10 @@ sub make_name_correspondences {
         }
     }
 
-    if ( @skip_feature_type_ids ) {
+    if ( @skip_feature_types ) {
         for ( $feature_sql, $alias_sql ) {
-            $_ .= 'and f.feature_type_id not in (' .
-                join( ', ', @skip_feature_type_ids ) .
+            $_ .= 'and f.feature_type not in (' .
+                join( ', ', @skip_feature_types ) .
             ')';
         }
     }
@@ -182,12 +160,12 @@ sub make_name_correspondences {
             from   cmap_feature_correspondence fc,
                    cmap_correspondence_evidence ce
             where  fc.feature_correspondence_id=ce.feature_correspondence_id
-            and    ce.evidence_type_id=?
+            and    ce.evidence_type=?
                 
         ],
         'feature_correspondence_id',
         {},
-        ( $evidence_type_id )
+        ( $evidence_type )
     );
 
     my %corr = ();
@@ -223,11 +201,11 @@ sub make_name_correspondences {
                 # Check feature types.
                 #
                 unless ( 
-                    $f1->{'feature_type_id'} == $f2->{'feature_type_id'} 
+                    $f1->{'feature_type'} == $f2->{'feature_type'} 
                 ) {
                     next unless $add_name_correspondences
-                        { $f1->{'feature_type_id'} }
-                        { $f2->{'feature_type_id'} }
+                        { $f1->{'feature_type'} }
+                        { $f2->{'feature_type'} }
                     ;
                 }
 
@@ -254,7 +232,7 @@ sub make_name_correspondences {
                     my $fc_id =  $admin->feature_correspondence_create( 
                         feature_id1      => $f1->{'feature_id'},
                         feature_id2      => $f2->{'feature_id'},
-                        evidence_type_id => $evidence_type_id,
+                        evidence_type => $evidence_type,
                     ) or return $self->error( $admin->error );
 
                     $self->Print( 

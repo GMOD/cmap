@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 # vim: set ft=perl:
 
-# $Id: ImportCorrespondences.pm,v 1.17 2004-03-19 15:33:11 mwz444 Exp $
+# $Id: ImportCorrespondences.pm,v 1.18 2004-03-25 14:09:29 mwz444 Exp $
 
 =head1 NAME
 
@@ -43,7 +43,7 @@ feature names, a correspondence will be created.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.17 $)[-1];
+$VERSION = (qw$Revision: 1.18 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -79,16 +79,14 @@ use constant FEATURE_SQL_BY_AID => q[
            map.map_set_id,
            ms.short_name as map_set_name,
            s.common_name as species_name,
-           mt.is_relational_map
+           ms.is_relational_map
     from   cmap_feature f,
            cmap_map map,
            cmap_map_set ms,
-           cmap_species s,
-           cmap_map_type mt
+           cmap_species s
     where  f.accession_id=?
     and    f.map_id=map.map_id
     and    map.map_set_id=ms.map_set_id
-    and    ms.map_type_id=mt.map_type_id
     and    ms.species_id=s.species_id
 ];
 
@@ -100,7 +98,7 @@ use constant FEATURE_SQL_BY_NAME => q[
                ms.map_set_id, 
                ms.short_name as map_set_name,
                s.common_name as species_name,
-               mt.is_relational_map
+               ms.is_relational_map
     from       cmap_feature f
     left join  cmap_feature_alias fa
     on         f.feature_id=fa.feature_id
@@ -110,8 +108,6 @@ use constant FEATURE_SQL_BY_NAME => q[
     on         map.map_set_id=ms.map_set_id
     inner join cmap_species s
     on         ms.species_id=s.species_id
-    inner join cmap_map_type mt
-    on         ms.map_type_id=mt.map_type_id
     where      (
         upper(f.feature_name)=?
         or
@@ -160,7 +156,7 @@ sub import {
     ];
 
     $self->Print("Parsing file...\n");
-    my ( %feature_ids, %evidence_type_ids, $inserts, $total );
+    my ( %feature_ids, %evidence_types, $inserts, $total );
     LINE:
     while ( my $record = $parser->fetchrow_hashref ) {
         for my $field_name ( $parser->field_list ) {
@@ -229,7 +225,7 @@ sub import {
             }
             else {
                 $feature_ids{ $upper_name } = [];
-                warn qq[Can't find feature IDs for "$feature_name".\n];
+                warn qq[Cannot find feature IDs for "$feature_name".\n];
                 next LINE;
             }
         }
@@ -250,56 +246,16 @@ sub import {
             split /,/, $record->{'evidence'};
         my @evidence_types;
         for my $evidence ( @evidences ) {
-            my $evidence_type_id = $evidence_type_ids{ uc $evidence };
-            unless ( $evidence_type_id ) {
-                $evidence_type_id = $db->selectrow_array(
-                    q[
-                        select evidence_type_id
-                        from   cmap_evidence_type
-                        where  upper(evidence_type)=?
-                    ],
-                    {},
-                    ( uc $evidence )
-                );
-                $evidence_type_ids{ uc $evidence } = $evidence_type_id;
-            } 
+            my $evidence_type = $evidence ;
 
-            unless ( $evidence_type_id ) {
+                unless ( $self->evidence_type_data($evidence_type) ) {
                 $self->Print(
-                    qq[No evidence type like "$evidence."\n]
+                    "Evidence type '$evidence_type' doesn't exist.  After import, please add it to your configuration file.[<enter> to continue] "
                 );
-                $self->Print("Create? [Y/n]");
                 chomp( my $answer = <STDIN> );
-                unless ( $answer =~ m/^[Nn]/ ) {
-                    $evidence_type_id = next_number(
-                        db           => $db, 
-                        table_name   => 'cmap_evidence_type',
-                        id_field     => 'evidence_type_id',
-                    ) or return $self->error(
-                        'No next number for evidence type id.'
-                    );
-
-                    $db->do(
-                        q[
-                            insert 
-                            into   cmap_evidence_type
-                                   ( evidence_type_id, accession_id, 
-                                     evidence_type )
-                            values ( ?, ?, ? )
-                        ],
-                        {},
-                        ( $evidence_type_id, $evidence_type_id, $evidence )
-                    );
-
-                    $evidence_type_ids{ uc $evidence } = $evidence_type_id;
-                }
-                else {
-                    $self->Print("OK, then skipping\n");
-                    next LINE;
-                }
             }
 
-            push @evidence_types, [ $evidence_type_id, $evidence ];
+            push @evidence_types, [ $evidence_type, $evidence ];
         }
 
         my $is_enabled = $record->{'is_enabled'};
@@ -316,11 +272,11 @@ sub import {
                 }
 
                 for my $evidence_type ( @evidence_types ) {
-                    my ( $evidence_type_id, $evidence ) = @$evidence_type;
+                    my ( $evidence_type, $evidence ) = @$evidence_type;
                     my $fc_id = $admin->feature_correspondence_create( 
                         feature_id1      => $feature1->{'feature_id'},
                         feature_id2      => $feature2->{'feature_id'},
-                        evidence_type_id => $evidence_type_id,
+                        evidence_type => $evidence_type,
                         is_enabled       => $is_enabled,
                     ) or return $self->error( $admin->error );
 

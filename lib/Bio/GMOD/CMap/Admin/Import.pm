@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::Import;
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.46 2004-03-19 15:33:10 mwz444 Exp $
+# $Id: Import.pm,v 1.47 2004-03-25 14:09:29 mwz444 Exp $
 
 =pod
 
@@ -28,7 +28,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.46 $)[-1];
+$VERSION  = (qw$Revision: 1.47 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -283,7 +283,7 @@ appended to the list of xrefs.
     }
 
     $self->Print("Parsing file...\n");
-    my ( %feature_type_ids, %feature_ids, %map_info );
+    my ( %feature_types, %feature_ids, %map_info );
     while ( my $record = $parser->fetchrow_hashref ) {
         for my $field_name ( $parser->field_list ) {
             my $field_attr = $COLUMNS{ $field_name } or next;
@@ -318,63 +318,15 @@ appended to the list of xrefs.
         }
 
         my $feature_type    = $record->{'feature_type'};
-        my $feature_type_id = $feature_type_ids{ uc $feature_type };
-
-        #
-        # Not in our cache, so select it.
-        #
-        unless ( $feature_type_id ) {
-            $feature_type_id = $db->selectrow_array(
-                q[
-                    select feature_type_id
-                    from   cmap_feature_type
-                    where  upper(feature_type)=?
-                ],
-                {},
-                ( uc $feature_type )
-            ) || 0;
-
-            $feature_type_ids{ uc $feature_type } = $feature_type_id;
-        }
 
         #
         # Not in the database, so ask to create it.
         #
-        unless ( $feature_type_id ) {
+        unless ( $self->feature_type_data($feature_type) ) {
             $self->Print(
-                "Feature type '$feature_type' doesn't exist.  Create?[Y/n] "
+                "Feature type '$feature_type' doesn't exist.  After import, please add it to your configuration file.[<enter> to continue] "
             );
             chomp( my $answer = <STDIN> );
-            
-            unless ( $answer =~ m/^[Nn]/ ) {
-                $feature_type_id = next_number(
-                    db           => $db, 
-                    table_name   => 'cmap_feature_type',
-                    id_field     => 'feature_type_id',
-                ) or die 'No next number for feature type id.';
-
-                $db->do(
-                    q[
-                        insert
-                        into   cmap_feature_type
-                               ( feature_type_id, accession_id, 
-                                 feature_type, default_rank,
-                                 shape )
-                        values ( ?, ?, ?, ?, ? )
-                    ],
-                    {},
-                    ( $feature_type_id, $feature_type_id, $feature_type, 
-                      1, 'line' 
-                    )
-                );
-
-                $self->Print("Feature type '$feature_type' created.\n");
-            }
-            else {
-                next;
-            }
-
-            $feature_type_ids{ uc $feature_type } = $feature_type_id;
         }
 
         #
@@ -456,6 +408,8 @@ appended to the list of xrefs.
         my $start           = $record->{'feature_start'};
         my $stop            = $record->{'feature_stop'};
         my $is_landmark     = $record->{'is_landmark'} || 0;
+        my $default_rank    = $record->{'default_rank'} ||
+            $self->feature_type_data($feature_type,'default_rank');
 
         #
         # Feature attributes
@@ -553,15 +507,15 @@ appended to the list of xrefs.
             $db->do(
                 q[
                     update cmap_feature
-                    set    accession_id=?, map_id=?, feature_type_id=?, 
+                    set    accession_id=?, map_id=?, feature_type=?, 
                            feature_name=?, start_position=?, stop_position=?,
-                           is_landmark=?
+                           is_landmark=?, default_rank=?
                     where  feature_id=?
                 ],
                 {}, 
-                ( $accession_id, $map_id, $feature_type_id, 
+                ( $accession_id, $map_id, $feature_type, 
                   $feature_name, $start, $stop, $is_landmark,
-                  $feature_id
+                  $feature_id,$default_rank
                 )
             );
 
@@ -585,15 +539,15 @@ appended to the list of xrefs.
                     insert
                     into   cmap_feature
                            ( feature_id, accession_id, map_id,
-                             feature_type_id, feature_name, 
+                             feature_type, feature_name, 
                              start_position, stop_position,
                              is_landmark
                            )
-                    values ( ?, ?, ?, ?, ?, ?, ?, ? )
+                    values ( ?, ?, ?, ?, ?, ?, ?, ?, ? )
                 ],
                 {}, 
-                ( $feature_id, $accession_id, $map_id, $feature_type_id, 
-                  $feature_name, $start, $stop, $is_landmark
+                ( $feature_id, $accession_id, $map_id, $feature_type, 
+                  $feature_name, $start, $stop, $is_landmark, $default_rank
                 )
             );
         }
@@ -823,59 +777,6 @@ Imports an XML document containing CMap database objects.
     }
 
     #
-    # Map types.
-    #
-    my %map_types;
-    for my $map_type ( @{ $import->{'cmap_map_type'} || [] } )  {
-        $self->import_object(
-            table_name  => 'cmap_map_type',
-            pk_name     => 'map_type_id',
-            object_type => 'map_type',
-            object      => $map_type,
-            field_names => [ qw/ accession_id map_type map_units color
-                is_relational_map shape display_order width
-            / ],
-        ) or return;
-
-        $map_types{ $map_type->{'object_id'} } = $map_type;
-    }
-
-    #
-    # Feature types.
-    #
-    my %feature_types;
-    for my $ft ( @{ $import->{'cmap_feature_type'} || [] } )  {
-        $self->import_object(
-            table_name  => 'cmap_feature_type',
-            pk_name     => 'feature_type_id',
-            object_type => 'feature_type',
-            object      => $ft,
-            field_names => [ qw/ accession_id feature_type shape
-                color default_rank drawing_lane drawing_priority
-            / ],
-        ) or return;
-
-        $feature_types{ $ft->{'object_id'} } = $ft;
-    }
-
-    #
-    # Evidence types.
-    #
-    my %evidence_type_ids;
-    for my $et ( @{ $import->{'cmap_evidence_type'} || [] } )  {
-        $self->import_object(
-            table_name  => 'cmap_evidence_type',
-            pk_name     => 'evidence_type_id',
-            object_type => 'evidence_type',
-            object      => $et,
-            field_names => [ qw/ accession_id evidence_type line_color rank / ],
-        ) or return;
-
-        $evidence_type_ids{ $et->{'object_id'} } = 
-            $et->{'new_evidence_type_id'};
-    }
-
-    #
     # Map sets, maps, features
     #
     my %feature_ids;
@@ -885,11 +786,9 @@ Imports an XML document containing CMap database objects.
         );
 
         my $species          = $species{ $ms->{'species_id'} };
-        my $map_type         = $map_types{ $ms->{'map_type_id'} };
+        my $map_type         = $ms->{'map_type'};
         $ms->{'species_id'}  = $species->{'new_species_id'} or 
             return $self->error('Cannot determine species id');
-        $ms->{'map_type_id'} = $map_type->{'new_map_type_id'} or 
-            return $self->error('Cannot determine map type id');
 
         $self->import_object(
             table_name  => 'cmap_map_set',
@@ -898,7 +797,8 @@ Imports an XML document containing CMap database objects.
             object      => $ms,
             field_names => [ qw/ accession_id map_set_name short_name
                 color shape is_enabled display_order can_be_reference_map
-                published_on width species_id map_type_id
+                published_on width species_id map_type map_units 
+                is_relational_map
             / ],
         ) or return;
 
@@ -915,8 +815,6 @@ Imports an XML document containing CMap database objects.
             ) or return;
 
             for my $feature ( @{ $map->{'feature'} || [] } ) {
-                my $ft = $feature_types{ $feature->{'feature_type_id'} };
-                $feature->{'feature_type_id'} = $ft->{'new_feature_type_id'};
                 $feature->{'map_id'}          = $map->{'new_map_id'};
                 $self->import_object(
                     table_name  => 'cmap_feature',
@@ -925,7 +823,7 @@ Imports an XML document containing CMap database objects.
                     object      => $feature,
                     field_names => [ qw/ map_id accession_id
                         feature_name start_position stop_position
-                        is_landmark feature_type_id
+                        is_landmark feature_type default_rank
                     / ],
                 ) or return;
 
@@ -953,11 +851,6 @@ Imports an XML document containing CMap database objects.
     for my $fc ( @{ $import->{'cmap_feature_correspondence'} || [] } )  {
         $fc->{'feature_id1'} = $feature_ids{ $fc->{'feature_id1'} };
         $fc->{'feature_id2'} = $feature_ids{ $fc->{'feature_id2'} };
-
-        for my $e ( @{ $fc->{'correspondence_evidence'} } ) {
-            $e->{'evidence_type_id'} = 
-                $evidence_type_ids{ $e->{'evidence_type_id'} };
-        }
 
         $self->import_object(
             table_name  => 'cmap_feature_correspondence',
