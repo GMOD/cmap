@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap;
 
-# $Id: CMap.pm,v 1.18 2002-12-06 01:43:39 kycl4rk Exp $
+# $Id: CMap.pm,v 1.19 2002-12-17 15:54:25 kycl4rk Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ itself based on Andy Wardley's Class::Base module.
 
 use strict;
 use vars '$VERSION';
-$VERSION = 0.04;
+$VERSION = 0.05;
 
 use Class::Base;
 use Config::General;
