@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.30 2003-03-31 20:05:41 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.31 2003-04-08 18:10:37 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.30 $)[-1];
+$VERSION = (qw$Revision: 1.31 $)[-1];
 
 #
 # Get command-line options
@@ -1028,24 +1028,63 @@ sub export_as_text {
         feature_dbxref_url
         is_landmark
     );
+
+    my ( $map_type_id, $map_type ) = $self->show_menu(
+        title   => 'Available Map Types',
+        prompt  => 'What type of map?',
+        display => 'map_type',
+        return  => 'map_type_id,map_type',
+        data     => $db->selectall_arrayref(
+            q[
+                select   mt.map_type_id, mt.map_type
+                from     cmap_map_type mt
+                order by map_type
+            ],
+            { Columns => {} },
+        ),
+    );
+    die "No map types! Please use the web admin tool to create.\n" 
+        unless $map_type_id;
+
+    my ( $species_id, $common_name ) = $self->show_menu(
+        title   => "Available Species (for $map_type)",
+        prompt  => 'What species?',
+        display => 'common_name',
+        return  => 'species_id,common_name',
+        data     => $db->selectall_arrayref(
+            q[
+                select   distinct s.species_id, 
+                         s.common_name
+                from     cmap_species s,
+                         cmap_map_set ms
+                where    s.species_id=ms.species_id
+                and      ms.map_type_id=?
+                order by common_name
+            ],
+            { Columns => {} },
+            ( $map_type_id )
+        ),
+    );
+    die "No species!  Please use the web admin tool to create.\n" 
+        unless $species_id;
     
     my @map_set_ids = $self->show_menu(
-        title       => 'Select Map Sets',
+        title       => "Available Map Sets (for $map_type, $common_name)",
         prompt      => 'Which map sets do you want to export?',
-        display     => 'common_name,short_name',
+        display     => 'short_name',
         return      => 'map_set_id',
         allow_all   => 1,
         data        => $db->selectall_arrayref(
             q[
                 select   ms.map_set_id,
-                         ms.short_name,
-                         s.common_name
-                from     cmap_map_set ms,
-                         cmap_species s
-                where    ms.species_id=s.species_id
-                order by common_name, short_name
+                         ms.short_name
+                from     cmap_map_set ms
+                where    ms.species_id=?
+                and      ms.map_type_id=?
+                order by short_name
             ],
             { Columns => {} },
+            ( $species_id, $map_type_id )
         )
     );
 
