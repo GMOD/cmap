@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache;
 # vim: set ft=perl:
 
-# $Id: Apache.pm,v 1.16 2004-03-09 22:41:05 kycl4rk Exp $
+# $Id: Apache.pm,v 1.17 2004-03-18 22:00:59 mwz444 Exp $
 
 =head1 NAME
 
@@ -46,7 +46,7 @@ this class will catch errors and display them correctly.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.16 $)[-1];
+$VERSION = (qw$Revision: 1.17 $)[-1];
 
 use CGI;
 use Data::Dumper;
@@ -111,6 +111,7 @@ Initializes the object.
 
     my ( $self, $config ) = @_;
     $self->params( $config, 'apr' );
+    $self->{'config'}=Bio::GMOD::CMap::Config->new() unless $self->{'config'};
     if ( my $apr = $self->apr ) {
         $self->data_source( $apr->param('data_source') );
     }
@@ -221,7 +222,7 @@ Returns whether or not we're in "debug" mode.
     my $self = shift;
 
     unless ( defined $self->{'debug'} ) {
-        $self->{'debug'} = $self->config('debug') || 0;
+        $self->{'debug'} = $self->config_data('debug') || 0;
     }
 }
 
@@ -262,7 +263,7 @@ it, and this method will never return anything.
     my $self = shift;
 
     unless ( defined $self->{'page'} ) {
-        if ( my $page_object = $self->config('page_object') ) {
+        if ( my $page_object = $self->config_data('page_object') ) {
             eval "require Apache";
             unless ( $@ ) {
                 my $r = Apache->request;
@@ -292,7 +293,7 @@ Return any defined stylesheet.
     my $self = shift;
 
     unless ( defined $self->{'stylesheet'} ) {
-         $self->{'stylesheet'} = $self->config('stylesheet') || '';
+         $self->{'stylesheet'} = $self->config_data('stylesheet') || '';
     }
 
     return $self->{'stylesheet'};
@@ -314,7 +315,7 @@ cookie with current settings.
     my $self              = shift;
     my $apr               = $self->apr;
     my @preference_fields = @{ +PREFERENCE_FIELDS };
-    my $cookie_name       = $self->config('user_pref_cookie_name') || '';
+    my $cookie_name       = $self->config_data('user_pref_cookie_name') || '';
     my %preferences       = ();
 
     #
@@ -340,7 +341,7 @@ cookie with current settings.
                 ? $apr->param( $pref ) 
                 : defined $preferences{ $pref }
                     ? $preferences{ $pref } 
-                    : $self->config( $pref ) || '';
+                    : $self->config_data( $pref ) || '';
         ;
 
         $apr->param( $pref, $value );
@@ -350,7 +351,7 @@ cookie with current settings.
     #
     # Set a new cookie with the latest preferences.
     #
-    my $cookie_domain = $self->config('cookie_domain') || '';
+    my $cookie_domain = $self->config_data('cookie_domain') || '';
     my $cookie_value  = join( 
         RECORD_SEP,
         map { join( FIELD_SEP, $_, $preferences{ $_ } ) } @preference_fields 

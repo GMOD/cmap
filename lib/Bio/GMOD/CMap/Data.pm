@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.98 2004-03-12 21:58:43 kycl4rk Exp $
+# $Id: Data.pm,v 1.99 2004-03-18 22:00:59 mwz444 Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.98 $)[-1];
+$VERSION = (qw$Revision: 1.99 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -36,6 +36,7 @@ use base 'Bio::GMOD::CMap';
 # ----------------------------------------------------
 sub init {
     my ( $self, $config ) = @_;
+    $self->{'config'}=$config->{'config'};
     $self->data_source( $config->{'data_source'} );
     return $self;
 }
@@ -2507,7 +2508,7 @@ Given a list of feature names, find any maps they occur on.
     my $order_by         = $args{'order_by'} || 
         'feature_name,species_name,map_set_name,map_name,start_position';
     my $search_field     = 
-        $args{'search_field'} || $self->config('feature_search_field');
+        $args{'search_field'} || $self->config_data('feature_search_field');
     $search_field        = DEFAULT->{'feature_search_field'} 
         unless VALID->{'feature_search_field'}{ $search_field };
 
@@ -2782,7 +2783,7 @@ Return data for a list of evidence type acc. IDs.
         push @{ $attr_lookup{ $attr->{'object_id'} } }, $attr;
     }
 
-    my $default_color = $self->config('connecting_line_color');
+    my $default_color = $self->config_data('connecting_line_color');
     for my $et ( @$evidence_types ) {
         $et->{'object_id'}    = $et->{'evidence_type_id'};
         $et->{'line_color'} ||= $default_color;
@@ -2855,7 +2856,7 @@ Return data for a list of feature type acc. IDs.
         objects    => $feature_types,
     );
 
-    my $default_color = $self->config('feature_color');
+    my $default_color = $self->config_data('feature_color');
 
     for my $ft ( @$feature_types ) {
         $ft->{'color'} ||= $default_color;
@@ -3361,7 +3362,7 @@ Returns the detail info for a map.
         ) {
             if ( $highlight_hash->{ uc $val } ) {
                 $feature->{'highlight_color'} = 
-                    $self->config('feature_highlight_bg_color');
+                    $self->config_data('feature_highlight_bg_color');
             }
         }
     }
@@ -3575,8 +3576,8 @@ Returns the correct SQL module driver for the RDBMS we're using.
         eval "require $sql_module" or return $self->error(
             qq[Unable to require SQL module "$sql_module": $@]
         );
-
-        $self->{'sql_module'} = $sql_module->new; 
+        $self->{'sql_module'} = $sql_module->new(config=>$self->{'config'},); 
+	
     }
 
     return $self->{'sql_module'};

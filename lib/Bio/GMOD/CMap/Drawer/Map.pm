@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.70 2004-03-11 19:34:25 kycl4rk Exp $
+# $Id: Map.pm,v 1.71 2004-03-18 22:01:00 mwz444 Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.70 $)[-1];
+$VERSION = (qw$Revision: 1.71 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -33,7 +33,7 @@ use Bio::GMOD::CMap::Utils qw[ column_distribution label_distribution ];
 
 use base 'Bio::GMOD::CMap';
 
-my @INIT_FIELDS = qw[ drawer base_x base_y slot_no maps ];
+my @INIT_FIELDS = qw[ config drawer base_x base_y slot_no maps ];
 
 my %SHAPE = (
     'default'  => 'draw_box',
@@ -69,6 +69,21 @@ sub init {
     my ( $self, $config ) = @_;
     $self->params( $config, @INIT_FIELDS );
     return $self;
+}
+# ----------------------------------------------------
+sub config {
+
+=pod
+
+=head2 apr
+
+Returns the Bio::GMOD::CMap::Config object.
+
+=cut
+
+    my $self       = shift;
+    $self->{'config'} = shift if @_;
+    return $self->{'config'} || undef;
 }
 
 # ----------------------------------------------------
@@ -130,7 +145,7 @@ Returns the color of the map.
     return 
         $map->{'color'}         || 
         $map->{'default_color'} || 
-        $self->config('map_color');
+        $self->config_data('map_color');
 }
 
 # ----------------------------------------------------
@@ -476,7 +491,7 @@ Lays out the map.
     # to figure out which is the longest and take half its length
     # into account when deciding where to start with the map(s).
     #
-    my @config_map_titles = $self->config('map_titles');
+    my @config_map_titles = $self->config_data('map_titles');
     my $longest;
     for my $map_id ( @map_ids ) {
         for my $length ( 
@@ -509,24 +524,24 @@ Lays out the map.
     # Some common things we'll need later on.
     #
     my $collapse_features      = $drawer->collapse_features;
-    my $max_image_pixel_width  = $drawer->config('max_image_pixel_width');
-    my $min_map_pixel_height   = $drawer->config('min_map_pixel_height');
-    my $default_feature_color  = $drawer->config('feature_color');
+    my $max_image_pixel_width  = $drawer->config_data('max_image_pixel_width');
+    my $min_map_pixel_height   = $drawer->config_data('min_map_pixel_height');
+    my $default_feature_color  = $drawer->config_data('feature_color');
     my $feature_details_url    = DEFAULT->{'feature_details_url'};
-    my $connecting_line_color  = $drawer->config('connecting_line_color');
+    my $connecting_line_color  = $drawer->config_data('connecting_line_color');
     my $apr                    = $drawer->apr;
     my $url                    = $apr->url;
     my $map_viewer_url         = $url.'/viewer';
     my $map_details_url        = $url.'/map_details';
     my $map_set_info_url       = $url.'/map_set_info';
     my $rel_map_show_corr_only =
-        $drawer->config('relational_maps_show_only_correspondences') || 0;
+        $drawer->config_data('relational_maps_show_only_correspondences') || 0;
     my $feature_corr_color    =
-        $drawer->config('feature_correspondence_color') || '';
+        $drawer->config_data('feature_correspondence_color') || '';
     my $feature_highlight_fg_color = 
-        $drawer->config('feature_highlight_fg_color');
+        $drawer->config_data('feature_highlight_fg_color');
     my $feature_highlight_bg_color = 
-        $drawer->config('feature_highlight_bg_color');
+        $drawer->config_data('feature_highlight_bg_color');
 
     my $self_url = $drawer->map_view eq 'details' 
         ? $map_details_url : $map_viewer_url;
@@ -1877,7 +1892,7 @@ Returns a string describing how to draw the map.
     return 
         $map->{'width'}         || 
         $map->{'default_width'} || 
-        $self->config('map_width');
+        $self->config_data('map_width');
 }
 
 # ----------------------------------------------------

@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::FeatureSearch;
 # vim: set ft=perl:
 
-# $Id: FeatureSearch.pm,v 1.17 2004-02-26 16:57:13 kycl4rk Exp $
+# $Id: FeatureSearch.pm,v 1.18 2004-03-18 22:01:00 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.17 $)[-1];
+$VERSION = (qw$Revision: 1.18 $)[-1];
 
 use Bio::GMOD::CMap::Data;
 use Data::Pageset;
@@ -27,9 +27,9 @@ sub handler {
 
     $self->data_source( $apr->param('data_source') ) or return;
 
-    $PAGE_SIZE ||= $self->config('max_child_elements')   ||  0;
-    $MAX_PAGES ||= $self->config('max_search_pages')     ||  1;
-    $INTRO     ||= $self->config('feature_search_intro') || '';
+    $PAGE_SIZE ||= $self->config_data('max_child_elements')   ||  0;
+    $MAX_PAGES ||= $self->config_data('max_search_pages')     ||  1;
+    $INTRO     ||= $self->config_data('feature_search_intro') || '';
 
     #
     # Because I need a <select> element on the search form, I could

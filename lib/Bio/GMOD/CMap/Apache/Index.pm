@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::Index;
 # vim: set ft=perl:
 
-# $Id: Index.pm,v 1.8 2004-02-10 22:50:09 kycl4rk Exp $
+# $Id: Index.pm,v 1.9 2004-03-18 22:01:00 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use base 'Bio::GMOD::CMap::Apache';
@@ -18,7 +18,7 @@ sub handler {
     #
     my ( $self, $apr )   = @_;
 
-    $INTRO ||= $self->config('cmap_home_intro') || '';
+    $INTRO ||= $self->config_data('cmap_home_intro') || '';
 
     my $html;
     my $t = $self->template or return;

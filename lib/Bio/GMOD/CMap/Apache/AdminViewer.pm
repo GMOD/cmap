@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.64 2004-03-11 00:58:12 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.65 2004-03-18 22:01:00 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -32,7 +32,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.64 $)[-1];
+$VERSION        = (qw$Revision: 1.65 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -140,8 +140,8 @@ sub handler {
 
     $self->data_source( $apr->param('data_source') ) or return;
 
-    $PAGE_SIZE ||= $self->config('max_child_elements') || 0;
-    $MAX_PAGES ||= $self->config('max_search_pages')   || 1;    
+    $PAGE_SIZE ||= $self->config_data('max_child_elements') || 0;
+    $MAX_PAGES ||= $self->config_data('max_search_pages')   || 1;    
 
     my $action = $apr->param('action') || 'admin_home';
     my $return = eval { $self->$action() };
@@ -158,6 +158,7 @@ sub admin {
     unless ( defined $self->{'admin'} ) {
         $self->{'admin'} =  Bio::GMOD::CMap::Admin->new(
             data_source  => $self->data_source,
+	    config       => $self->{'config'},
         );
     }
     return $self->{'admin'};

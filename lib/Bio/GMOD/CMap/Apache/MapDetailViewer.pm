@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapDetailViewer;
 # vim: set ft=perl:
 
-# $Id: MapDetailViewer.pm,v 1.22 2004-03-03 21:28:31 kycl4rk Exp $
+# $Id: MapDetailViewer.pm,v 1.23 2004-03-18 22:01:00 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES );
-$VERSION = (qw$Revision: 1.22 $)[-1];
+$VERSION = (qw$Revision: 1.23 $)[-1];
 
 use URI::Escape;
 use Data::Pageset;
@@ -64,8 +64,8 @@ sub handler {
     #
     $self->data_source( $apr->param('data_source') ) or return;
 
-    $PAGE_SIZE ||= $self->config('max_child_elements') || 0;
-    $MAX_PAGES ||= $self->config('max_search_pages')   || 1;
+    $PAGE_SIZE ||= $self->config_data('max_child_elements') || 0;
+    $MAX_PAGES ||= $self->config_data('max_search_pages')   || 1;
     
     #
     # Take the feature types either from the query string (first
@@ -101,7 +101,7 @@ sub handler {
     #
     # Add in previous maps.
     #
-    my $no_flanking = $self->config('number_flanking_positions') || 0;
+    my $no_flanking = $self->config_data('number_flanking_positions') || 0;
     for my $cmap ( split( /:/, $comparative_maps ) ) {
         my ( $slot_no, $field, $accession_id ) = split(/=/, $cmap) or next;
         my ( $start, $stop );
@@ -141,8 +141,9 @@ sub handler {
         collapse_features      => $collapse_features,
         include_feature_types  => \@feature_types,
         include_evidence_types => \@evidence_types,
-        debug                  => $self->config('debug'),
+        debug                  => $self->config_data('debug'),
         map_view               => 'details',
+        config                  => $self->{'config'},
     ) or die $self->error( "Drawer: ".Bio::GMOD::CMap::Drawer->error );
 
     my $data                   = $data_module->map_detail_data( 

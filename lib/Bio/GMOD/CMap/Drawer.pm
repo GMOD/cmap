@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.53 2004-03-04 15:23:20 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.54 2004-03-18 22:00:59 mwz444 Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.53 $)[-1];
+$VERSION = (qw$Revision: 1.54 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -36,7 +36,7 @@ use Data::Dumper;
 use base 'Bio::GMOD::CMap';
 
 my @INIT_PARAMS = qw[
-    apr flip slots highlight font_size image_size image_type 
+    apr config flip slots highlight font_size image_size image_type 
     label_features include_feature_types include_evidence_types
     data_source min_correspondences collapse_features cache_dir
     map_view
@@ -84,6 +84,21 @@ Returns the Apache::Request object.
     my $self       = shift;
     $self->{'apr'} = shift if @_;
     return $self->{'apr'} || undef;
+}
+# ----------------------------------------------------
+sub config {
+
+=pod
+
+=head2 apr
+
+Returns the Bio::GMOD::CMap::Config object.
+
+=cut
+
+    my $self       = shift;
+    $self->{'config'} = shift if @_;
+    return $self->{'config'} || undef;
 }
 
 # ----------------------------------------------------
@@ -483,6 +498,7 @@ Lays out the image and writes it to the file system, set the "image_name."
             drawer  => $self, 
             slot_no => $slot_no,
             maps    => $data,
+	    config  => $self->{'config'},
         ) or return $self->error( Bio::GMOD::CMap::Drawer::Map->error );
 
         my $bounds = $map->layout or return $self->error( $map->error );
@@ -516,7 +532,7 @@ Lays out the image and writes it to the file system, set the "image_name."
             $self->add_connection(
                 @positions,
                 $evidence_info->{'line_color'} || 
-                    $self->config('connecting_line_color'),
+                    $self->config_data('connecting_line_color'),
                 $position_set->{'same_map'}    || 0,
                 $position_set->{'label_side'}  || '',
             );
@@ -526,8 +542,8 @@ Lays out the image and writes it to the file system, set the "image_name."
     #
     # Frame out the slots.
     #
-    my $bg_color     = $self->config('slot_background_color');
-    my $border_color = $self->config('slot_border_color');
+    my $bg_color     = $self->config_data('slot_background_color');
+    my $border_color = $self->config_data('slot_border_color');
     for my $slot_no ( $self->slot_numbers ) {
         my ( $left, $right ) = $self->slot_sides( slot_no => $slot_no );
         my @slot_bounds = (
@@ -557,9 +573,9 @@ Lays out the image and writes it to the file system, set the "image_name."
         my $end = $x + $font->width * length( $string );
         $max_x  = $end if $end > $max_x;
 
-        my $corr_color     = $self->config('feature_correspondence_color');
-        my $ft_details_url = $self->config('feature_type_details_url');
-        my $et_details_url = $self->config('evidence_type_details_url');
+        my $corr_color     = $self->config_data('feature_correspondence_color');
+        my $ft_details_url = $self->config_data('feature_type_details_url');
+        my $et_details_url = $self->config_data('evidence_type_details_url');
 
         if ( $corr_color && $self->correspondences_exist ) {
             push @feature_types, {
@@ -571,7 +587,7 @@ Lays out the image and writes it to the file system, set the "image_name."
         }
 
         for my $ft ( @feature_types ) {
-            my $color     = $ft->{'color'} || $self->config('feature_color');
+            my $color     = $ft->{'color'} || $self->config_data('feature_color');
             my $label     = $ft->{'feature_type'} or next;
             my $feature_x = $x;
             my $feature_y = $max_y;
@@ -785,7 +801,7 @@ Lays out the image and writes it to the file system, set the "image_name."
 
             for my $et ( @evidence_types ) {
                 my $color = $et->{'line_color'} || 
-                            $self->config('connecting_line_color');
+                            $self->config_data('connecting_line_color');
                 my $string = 
                     ucfirst($color) .' line denotes '.  $et->{'evidence_type'};
 
@@ -886,7 +902,7 @@ Lays out the image and writes it to the file system, set the "image_name."
     ;
     $img->interlaced( 'true' );
     $img->filledRectangle( 
-        0, 0, $width, $height, $colors{ $self->config('background_color') } 
+        0, 0, $width, $height, $colors{ $self->config_data('background_color') } 
     );
 
     #
@@ -1158,7 +1174,7 @@ Returns the font size.
     }
 
     unless ( $self->{'font_size'} ) {
-        $self->{'font_size'} = $self->config('font_size') 
+        $self->{'font_size'} = $self->config_data('font_size') 
             || DEFAULT->{'font_size'};
     }
 
@@ -1303,7 +1319,7 @@ Returns the set image size.
     }
 
     unless ( defined $self->{'image_size'} ) {
-        $self->{'image_size'} = $self->config('image_size') ||
+        $self->{'image_size'} = $self->config_data('image_size') ||
             DEFAULT->{'image_size'};
     }
 
@@ -1329,7 +1345,7 @@ Gets/sets the current image type.
     }
 
     unless ( defined $self->{'image_type'} ) {
-        $self->{'image_type'} = $self->config('image_type') ||
+        $self->{'image_type'} = $self->config_data('image_type') ||
             DEFAULT->{'image_type'};
     }
 

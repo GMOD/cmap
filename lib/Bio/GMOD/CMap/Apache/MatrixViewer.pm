@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MatrixViewer;
 # vim: set ft=perl:
 
-# $Id: MatrixViewer.pm,v 1.10 2004-02-10 22:50:09 kycl4rk Exp $
+# $Id: MatrixViewer.pm,v 1.11 2004-03-18 22:01:00 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.10 $)[-1];
+$VERSION = (qw$Revision: 1.11 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use base 'Bio::GMOD::CMap::Apache';
@@ -49,7 +49,7 @@ sub handler {
     $apr->param( map_set_aid  => $data->{'map_set_aid'}  );
     $apr->param( map_name     => $data->{'map_name'}     );
 
-    $INTRO ||= $self->config('matrix_intro') || '';
+    $INTRO ||= $self->config_data('matrix_intro') || '';
 
     my $html;
     my $t = $self->template;
@@ -60,7 +60,7 @@ sub handler {
             page         => $self->page,
             top_row      => $data->{'top_row'},
             matrix       => $data->{'matrix'}, 
-            title        => $self->config('matrix_title'),
+            title        => $self->config_data('matrix_title'),
             species      => $data->{'species'},
             map_types    => $data->{'map_types'},
             map_sets     => $data->{'map_sets'},
