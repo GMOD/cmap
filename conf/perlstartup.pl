@@ -10,6 +10,7 @@ use DBI();
 #use DBD::mysql();   # choose the driver that's
 #use DBD::Oracle();  # correct for your installation
 use GD();
+use IO::Tee();
 use File::MkTemp();
 use File::Path();
 use Template();

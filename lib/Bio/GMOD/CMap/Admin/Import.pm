@@ -1,18 +1,18 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.6 2002-10-01 14:13:29 kycl4rk Exp $
+# $Id: Import.pm,v 1.7 2002-10-09 01:07:31 kycl4rk Exp $
 
 =pod
 
 =head1 NAME
 
-Bio::GMOD::CMap::Admin::DataImport - import map data
+Bio::GMOD::CMap::Admin::Import - import map data
 
 =head1 SYNOPSIS
 
-  use Bio::GMOD::CMap::Admin::DataImport;
+  use Bio::GMOD::CMap::Admin::Import;
 
-  my $importer = Bio::GMOD::CMap::Admin::DataImport->new(db=>$db);
+  my $importer = Bio::GMOD::CMap::Admin::Import->new(db=>$db);
   $importer->import(
       map_set_id => $map_set_id,
       fh         => $fh,
@@ -27,7 +27,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.6 $)[-1];
+$VERSION  = (qw$Revision: 1.7 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -42,6 +42,8 @@ use constant RE_LOOKUP => {
     string => STRING_RE,
     number => NUMBER_RE,
 };
+
+use vars '$LOG_FH';
 
 %COLUMNS = (
     map_name             => { is_required => 1, datatype => 'string' },
@@ -79,18 +81,19 @@ Imports tab-delimited file with the following fields:
 Starred fields are required.  Order of fields is not important.
 
 =cut
-
     my ( $self, %args ) = @_;
     my $db              = $self->db           or die 'No database handle';
-    my $map_set_id      = $args{'map_set_id'} or die 'No map set id';
-    my $fh              = $args{'fh'}         or die 'No file handle';
+    my $map_set_id      = $args{'map_set_id'} or die      'No map set id';
+    my $fh              = $args{'fh'}         or die     'No file handle';
+    $LOG_FH             = $args{'log_fh'}     ||                 \*STDOUT;
 
     #
     # Examine map set.
     #
+    $self->Print("Importing map set data.\n");
     $self->Print("Examining map set.\n");
-    my $map_set_name = join ('-', @{ 
-        $db->selectall_arrayref(
+    my $map_set_name = join ('-', 
+        $db->selectrow_array(
             q[
                 select s.common_name, ms.map_set_name
                 from   cmap_map_set ms,
@@ -101,32 +104,35 @@ Starred fields are required.  Order of fields is not important.
             {},
             ( $map_set_id )
         )
-    } );
+    );
 
     my %maps = map { $_->[0], { map_id => $_->[1] } } @{
         $db->selectall_arrayref(
             q[
-                select upper(map_name), map_id
-                from   cmap_map
-                where  map_set_id=?
+                select upper(map.map_name), map.map_id
+                from   cmap_map map
+                where  map.map_set_id=?
             ],
             {},
             ( $map_set_id )
         )
     };
-    $self->Print("$map_set_name currently has ", scalar keys %maps, " maps\n");
+
+    $self->Print(
+        "'$map_set_name' currently has ", scalar keys %maps, " maps.\n"
+    );
 
     #
     # Memorize the features currently on each map.
     #
     for my $map_name ( keys %maps ) {
-        my $map_id   = $maps{ $map_name }{'map_id'} or return $self->error(
+        my $map_id = $maps{ $map_name }{'map_id'} or return $self->error(
             "Map '$map_name' has no ID!"
         );
 
         my $features = $db->selectall_arrayref(
             q[
-                select f.feature_name
+                select f.feature_id, f.feature_name
                 from   cmap_feature f
                 where  f.map_id=?
             ],
@@ -134,7 +140,11 @@ Starred fields are required.  Order of fields is not important.
             ( $map_id )
         );
 
-        $maps{ $map_name }{'features'}{ $_ } = {} for @$features;
+        for ( @$features ) {
+            $maps{ $map_name }{'features'}{ uc $_->{'feature_name'} } = {
+                feature_id => $_->{'feature_id'}
+            } 
+        }
 
         $self->Print(
             "Map '$map_name' currently has ", scalar @$features, " features\n"
@@ -253,7 +263,12 @@ Starred fields are required.  Order of fields is not important.
         # Figure out the map id (or create it).
         #
         my $map_name = $record{'map_name'};
-        my $map_id   = $maps{ uc $map_name }{'map_id'} || 0;
+        my $map_id;
+        if ( exists $maps{ uc $map_name } ) { 
+            $map_id = $maps{ uc $map_name }{'map_id'};
+            $maps{ uc $map_name }{'touched'} = 1;
+        }
+
         unless ( $map_id ) {
             $map_id          = next_number(
                 db           => $db, 
@@ -286,7 +301,8 @@ Starred fields are required.  Order of fields is not important.
         #
         # See if the acc. id already exists.
         #
-        my $feature_name   = $record{'feature_name'}     or next;
+        my $feature_name   = $record{'feature_name'}     #or next;
+            or warn "feature name blank! ", Dumper( %record ), "\n";
         my $accession_id   = $record{'accession_id'};
         my $alternate_name = $record{'feature_alt_name'} || '';
         my $start          = $record{'feature_start'};
@@ -303,10 +319,22 @@ Starred fields are required.  Order of fields is not important.
                 ( $accession_id )
             );
         }
+
         #
-        # Else, just see if another identical record exists.
+        # Look it up.
         #
-        else {
+#        unless ( $feature_id ) {
+#            $feature_id = 
+#                exists $maps{uc $map_name}{'features'}{uc $feature_name} ?
+#                $maps{uc $map_name}{'features'}{uc $feature_name}{'feature_id'}
+#                : 0
+#            ;
+#        }
+
+        #
+        # Just see if another identical record exists.
+        #
+        unless ( $feature_id ) {
             $feature_id = $db->selectrow_array(
                 q[
                     select feature_id
@@ -339,7 +367,7 @@ Starred fields are required.  Order of fields is not important.
                 )
             );
 
-            $maps{ uc $map_name }{'features'}{ $feature_name }{'updated'} = 1;
+            $maps{uc $map_name}{'features'}{uc $feature_name}{'touched'} = 1;
         }
         else {
             #
@@ -373,6 +401,44 @@ Starred fields are required.  Order of fields is not important.
         $self->Print(
             "$action $feature_type '$feature_name' on map $map_name at $pos.\n"
         );
+    }
+
+    #
+    # Go through existing maps and features, delete any that weren't updated.
+    #
+    my $admin = Bio::GMOD::CMap::Admin->new or return $self->error(
+        "Can't create admin object: ", Bio::GMOD::CMap::Admin->error
+    );
+
+    for my $map_name ( sort keys %maps ) {
+        my $map_id = $maps{ uc $map_name }{'map_id'} or return $self->error(
+            "Map '$map_name' has no ID!"
+        );
+
+        unless ( $maps{ uc $map_name }{'touched'} ) {
+            $self->Print(
+                "Map '$map_name' ($map_id) ",
+                "wasn't updated or inserted, so deleting\n"
+            );
+            $admin->map_delete( map_id => $map_id ) or return 
+                $self->error( $admin->error );
+            delete $maps{ uc $map_name };
+            next;
+        }
+
+        while ( 
+            my ( $feature_name, $feature ) =  
+                each %{ $maps{ uc $map_name }{'features'} } 
+        ) {
+            next if $feature->{'touched'};
+            my $feature_id = $feature->{'feature_id'} or next;
+            $self->Print(
+                "Feature '$feature_name' ($feature_id) ",
+                "wasn't updated or inserted, so deleting\n"
+            );
+            $admin->feature_delete( feature_id => $feature_id ) or return 
+                $self->error( $admin->error );
+        }
     }
 
     # 
@@ -431,10 +497,10 @@ Starred fields are required.  Order of fields is not important.
         }
 
         $self->Print(
-            "Verified start ($map_start) and stop ($map_stop) ",
-            "for map $map_name ($map_id).\n"
+            "Verified map $map_name ($map_id) ",
+            "start ($map_start) and stop ($map_stop).\n",
         );
-    }    
+    }
 
     $self->Print("Done\n");
     
@@ -443,7 +509,7 @@ Starred fields are required.  Order of fields is not important.
 
 sub Print {
     my $self = shift;
-    print @_;
+    print $LOG_FH @_;
 }
 
 1;

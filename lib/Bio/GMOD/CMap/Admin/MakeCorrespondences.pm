@@ -1,21 +1,41 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
-# $Id: MakeCorrespondences.pm,v 1.7 2002-09-16 12:25:09 kycl4rk Exp $
+# $Id: MakeCorrespondences.pm,v 1.8 2002-10-09 01:07:31 kycl4rk Exp $
+
+=head1 NAME
+
+Bio::GMOD::CMap::Admin::MakeCorrespondences - create correspondences
+
+=head1 SYNOPSIS
+
+  use Bio::GMOD::CMap::Admin::MakeCorrespondences;
+  blah blah blah
+
+=head1 DESCRIPTION
+
+This module will create automated name-based correspondences.
+Basically, it selects every feature from the database (optionally for
+only one given map set) and then selects every other feature of the
+same type that has either a "feature_name" or "alternate_name"
+matching either its "feature_name" or "alternate_name."  The match
+must be exact (no suffixes or prefixes), but it is not case-sensitive.
+This type of correspondence is likely to be highly error-prone as it
+will be very optimistic about what is a valid correspondence (e.g.,
+it will create relationships between features named "centromere"), so
+it is suggested that you create an evidence like "Automated
+name-based" and give it a low ranking in relation to your other
+correspondence evidences.
+
+=cut
 
 use strict;
-use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.7 $)[-1];
+use vars qw( $VERSION $LOG_FH );
+$VERSION = (qw$Revision: 1.8 $)[-1];
 
 use Bio::GMOD::CMap;
-use Bio::GMOD::CMap::Utils qw[ next_number insert_correspondence ];
+use Bio::GMOD::CMap::Admin;
+use Bio::GMOD::CMap::Utils qw[ next_number ];
 use base 'Bio::GMOD::CMap';
-
-# ----------------------------------------------------
-sub init {
-    my ( $self, $config ) = @_;
-    $self->params( $config, qw[ file db ] );
-    return $self;
-}
 
 # ----------------------------------------------------
 sub make_name_correspondences {
@@ -23,7 +43,9 @@ sub make_name_correspondences {
     my $map_set_id       = $args{'map_set_id'} || 0;
     my $evidence_type_id = $args{'evidence_type_id'} or 
                            return 'No evidence type id';
+    $LOG_FH              = $args{'log_fh'}     || \*STDOUT;
     my $db               = $self->db;
+    my $admin            = Bio::GMOD::CMap::Admin->new;
 
     #
     # Get all the map sets.
@@ -55,8 +77,10 @@ sub make_name_correspondences {
             ( $map_set->{'map_set_id'} )
         );
 
-        print "Map set $map_set->{'map_set_name'} has ", 
-            scalar @$maps, " maps.\n";
+        $self->Print(
+            "Map set $map_set->{'map_set_name'} has ", 
+            scalar @$maps, " maps.\n"
+        );
 
         for my $map ( @$maps ) {
             #
@@ -72,7 +96,9 @@ sub make_name_correspondences {
                 ( $map->{'map_id'} )
             );
 
-            print "  Map $map->{'map_name'} has $no_features features.\n";
+            $self->Print(
+                "  Map $map->{'map_name'} has $no_features features.\n"
+            );
 
             #
             # Make SQL to find all the places something by this 
@@ -81,9 +107,15 @@ sub make_name_correspondences {
             #
             my $corr_sql =  $map_set->{'is_relational_map'}
                 ? qq[
-                    select f.feature_id
+                    select f.feature_id, 
+                           f.feature_name, 
+                           map.map_name,
+                           ms.short_name as map_set_name, 
+                           s.common_name as species_name
                     from   cmap_map map,
-                           cmap_feature f
+                           cmap_feature f,
+                           cmap_map_set ms,
+                           cmap_species s
                     where  map.map_set_id<>$map_set->{'map_set_id'}
                     and    map.map_id=f.map_id
                     and    (
@@ -91,16 +123,30 @@ sub make_name_correspondences {
                         or 
                         upper(f.alternate_name)=?
                     )
+                    and    f.feature_type_id=?
+                    and    map.map_set_id=ms.map_set_id
+                    and    ms.species_id=s.species_id
                 ]
                 : qq[
-                    select f.feature_id
-                    from   cmap_feature f
+                    select f.feature_id, 
+                           f.feature_name, 
+                           map.map_name,
+                           ms.short_name as map_set_name, 
+                           s.common_name as species_name
+                    from   cmap_feature f,
+                           cmap_map map,
+                           cmap_map_set ms,
+                           cmap_species s
                     where  f.map_id<>$map->{'map_id'}
                     and    (
                         upper(f.feature_name)=?
                         or 
                         upper(f.alternate_name)=?
                     )
+                    and    f.feature_type_id=?
+                    and    f.map_id=map.map_id
+                    and    map.map_set_id=ms.map_set_id
+                    and    ms.species_id=s.species_id
                 ]
             ;
 
@@ -109,7 +155,8 @@ sub make_name_correspondences {
                     q[
                         select f.feature_id, 
                                f.feature_name,
-                               f.alternate_name
+                               f.alternate_name,
+                               f.feature_type_id
                         from   cmap_feature f
                         where  map_id=?
                     ],
@@ -119,19 +166,32 @@ sub make_name_correspondences {
             ) {
                 for my $field ( qw[ feature_name alternate_name ] ) {
                     my $upper_name = uc $feature->{ $field } or next;
-#                    warn "Checking $field = '$upper_name'\n";
-                    for my $corr_id ( 
-                        @{ $db->selectcol_arrayref(
+                    $self->Print("    Checking $field = '$upper_name'\n");
+                    for my $corr ( 
+                        @{ $db->selectall_arrayref(
                             $corr_sql,
-                            {},
-                            ( $upper_name, $upper_name )
+                            { Columns => {} },
+                            ( $upper_name, $upper_name, 
+                              $feature->{'feature_type_id'} 
+                            )
                         ) }
                     ) {
-                        insert_correspondence( 
-                            $db,
+                        my $fc_id = $admin->insert_correspondence( 
                             $feature->{'feature_id'},
-                            $corr_id,
+                            $corr->{'feature_id'},
                             $evidence_type_id,
+                        ) or return $self->error( $admin->error );
+
+                        my $map_name = join('-', 
+                            $corr->{'species_name'},
+                            $corr->{'map_set_name'},
+                            $corr->{'map_name'},
+                        );
+
+                        $self->Print( 
+                            $fc_id > 0
+                            ? "      Inserted correspondence to '$map_name'\n"
+                            : "      Correspondence existed to '$map_name'\n"
                         );
                     }
                 }
@@ -139,7 +199,14 @@ sub make_name_correspondences {
         }
     }
 
+    $self->Print("Done.\n");
+
     return 1;
+}
+
+sub Print {
+    my $self = shift;
+    print $LOG_FH @_;
 }
 
 1;
@@ -149,18 +216,7 @@ sub make_name_correspondences {
 # William Blake
 # ----------------------------------------------------
 
-=head1 NAME
-
-Bio::GMOD::CMap::Admin::MakeCorrespondences - create correspondences
-
-=head1 SYNOPSIS
-
-  use Bio::GMOD::CMap::Admin::MakeCorrespondences;
-  blah blah blah
-
-=head1 DESCRIPTION
-
-Blah blah blah.
+=pod
 
 =head1 SEE ALSO
 
@@ -176,84 +232,3 @@ This library is free software;  you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 =cut
-
-#                    my $feature_correspondence_id = next_number(
-#                        db               => $db,
-#                        table_name       => 'cmap_feature_correspondence',
-#                        id_field         => 'feature_correspondence_id',
-#                    ) or die 'No next number for feature correspondence';
-#
-#                    #
-#                    # Create the official correspondence record.
-#                    #
-#                    $db->do(
-#                        q[
-#                            insert
-#                            into   cmap_feature_correspondence
-#                                   ( feature_correspondence_id, accession_id,
-#                                     feature_id1, feature_id2 )
-#                            values ( ?, ?, ?, ? )
-#                        ],
-#                        {},
-#                        ( $feature_correspondence_id, 
-#                          $feature_correspondence_id, 
-#                          $feature->{'feature_id'}, 
-#                          $corr_id
-#                        )
-#                    );
-#
-#                    #
-#                    # Create the evidence.
-#                    #
-#                    my $correspondence_evidence_id = next_number(
-#                        db               => $db,
-#                        table_name       => 'cmap_correspondence_evidence',
-#                        id_field         => 'correspondence_evidence_id',
-#                    ) or die 'No next number for correspondence evidence';
-#
-#                    $db->do(
-#                        q[
-#                            insert
-#                            into   cmap_correspondence_evidence
-#                                   ( correspondence_evidence_id, accession_id,
-#                                     feature_correspondence_id,     
-#                                     evidence_type_id 
-#                                   )
-#                            values ( ?, ?, ?, ? )
-#                        ],
-#                        {},
-#                        ( $correspondence_evidence_id,  
-#                          $correspondence_evidence_id, 
-#                          $feature_correspondence_id,   
-#                          $evidence_type_id
-#                        )
-#                    );
-#
-#                    #
-#                    # Create the lookup record.
-#                    #
-#                    my @insert = (
-#                        [ $feature->{'feature_id'}, $corr_id ],
-#                        [ $corr_id, $feature->{'feature_id'} ],
-#                    );
-#
-#                    for my $vals ( @insert ) {
-#                        $db->do(
-#                            q[
-#                                insert
-#                                into   cmap_correspondence_lookup
-#                                       ( feature_id1, feature_id2,
-#                                         feature_correspondence_id )
-#                                values ( ?, ?, ? )
-#                            ],
-#                            {},
-#                            ( $vals->[0],
-#                              $vals->[1],
-#                              $feature_correspondence_id
-#                            )
-#                        );
-#                    }
-#                    
-#                    print "    Inserted correspondence for feature '", 
-#                        $feature->{'feature_name'}, "'.\n";
-#                }

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Utils;
 
-# $Id: Utils.pm,v 1.9 2002-10-03 05:37:32 kycl4rk Exp $
+# $Id: Utils.pm,v 1.10 2002-10-09 01:07:31 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.9 $)[-1];
+$VERSION = (qw$Revision: 1.10 $)[-1];
 
 use base 'Exporter';
 
@@ -33,7 +33,6 @@ my @subs   = qw[
     column_distribution 
     commify 
     extract_numbers 
-    insert_correspondence
     label_distribution 
     next_number 
 ];
@@ -190,144 +189,6 @@ Turns "12345" into "12,345"
     my $number = shift;
     1 while $number =~ s/^(-?\d+)(\d{3})/$1,$2/;
     return $number;
-}
-
-# ----------------------------------------------------
-sub insert_correspondence {
-
-=pod
-
-=head2 insert_correspondence
-
-Inserts a correspondence.
-
-=cut
-    my ( $db, $feature_id1, $feature_id2, $evidence_type_id ) = @_;
-    my $accession_id = shift || '';
-    return if $feature_id1 == $feature_id2;
-
-    #
-    # Skip if a correspondence for this type exists already.
-    #
-    my $count = $db->selectrow_array(
-        q[
-            select count(*)
-            from   cmap_correspondence_lookup cl,
-                   cmap_correspondence_evidence ce
-            where  cl.feature_id1=?
-            and    cl.feature_id2=?
-            and    cl.feature_correspondence_id=ce.feature_correspondence_id
-            and    ce.evidence_type_id=?
-        ],
-        {},
-        ( $feature_id1, $feature_id2, $evidence_type_id )
-    ) || 0;
-    return 1 if $count;
-
-    #
-    # See if a correspondence exists already.
-    #
-    my $feature_correspondence_id = $db->selectrow_array(
-        q[
-            select feature_correspondence_id
-            from   cmap_correspondence_lookup
-            where  feature_id1=?
-            and    feature_id2=?
-        ],
-        {},
-        ( $feature_id1, $feature_id2 )
-    ) || 0;
-
-    unless ( $feature_correspondence_id ) {
-        $feature_correspondence_id = next_number(
-            db               => $db,
-            table_name       => 'cmap_feature_correspondence',
-            id_field         => 'feature_correspondence_id',
-        ) or die 'No next number for feature correspondence';
-        $accession_id ||= $feature_correspondence_id;
-
-        #
-        # Create the official correspondence record.
-        #
-        $db->do(
-            q[
-                insert
-                into   cmap_feature_correspondence
-                       ( feature_correspondence_id, accession_id,
-                         feature_id1, feature_id2 )
-                values ( ?, ?, ?, ? )
-            ],
-            {},
-            ( $feature_correspondence_id, 
-              $accession_id, 
-              $feature_id1, 
-              $feature_id2
-            )
-        );
-    }
-
-    #
-    # Create the evidence.
-    #
-    my $correspondence_evidence_id = next_number(
-        db               => $db,
-        table_name       => 'cmap_correspondence_evidence',
-        id_field         => 'correspondence_evidence_id',
-    ) or die 'No next number for correspondence evidence';
-
-    $db->do(
-        q[
-            insert
-            into   cmap_correspondence_evidence
-                   ( correspondence_evidence_id, accession_id,
-                     feature_correspondence_id,     
-                     evidence_type_id 
-                   )
-            values ( ?, ?, ?, ? )
-        ],
-        {},
-        ( $correspondence_evidence_id,  
-          $correspondence_evidence_id, 
-          $feature_correspondence_id,   
-          $evidence_type_id
-        )
-    );
-
-    #
-    # Create the lookup record.
-    #
-    my @insert = (
-        [ $feature_id1, $feature_id2 ],
-        [ $feature_id2, $feature_id1 ],
-    );
-
-    for my $vals ( @insert ) {
-        next if $db->selectrow_array(
-            q[
-                select count(*)
-                from   cmap_correspondence_lookup cl
-                where  cl.feature_id1=?
-                and    cl.feature_id2=?
-                and    cl.feature_correspondence_id=?
-            ],
-            {},
-            ( $vals->[0], $vals->[1], $feature_correspondence_id )
-        );
-
-        $db->do(
-            q[
-                insert
-                into   cmap_correspondence_lookup
-                       ( feature_id1, feature_id2,
-                         feature_correspondence_id )
-                values ( ?, ?, ? )
-            ],
-            {},
-            ( $vals->[0], $vals->[1], $feature_correspondence_id )
-        );
-    }
-    
-    return $feature_correspondence_id;
 }
 
 # ----------------------------------------------------

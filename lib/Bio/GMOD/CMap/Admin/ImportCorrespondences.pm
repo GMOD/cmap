@@ -1,14 +1,53 @@
 package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 
-# $Id: ImportCorrespondences.pm,v 1.3 2002-09-13 23:47:04 kycl4rk Exp $
+# $Id: ImportCorrespondences.pm,v 1.4 2002-10-09 01:07:31 kycl4rk Exp $
+
+=head1 NAME
+
+Bio::GMOD::CMap::Admin::ImportCorrespondences - import correspondences
+
+=head1 SYNOPSIS
+
+  use Bio::GMOD::CMap::Admin::ImportCorrespondences;
+  my $importer = Bio::GMOD::CMap::Admin::ImportCorrespondences->new;
+  $importer->import(
+      fh       => $fh,
+      log_fh   => $self->log_fh,
+  ) or return $importer->error;
+
+=head1 DESCRIPTION
+
+This module encapsulates all the logic for importing features
+correspondences.  Currently, only one format is acceptable, a
+tab-delimited file containing the following fields:
+
+    feature_name1
+    feature_name2
+    evidence
+
+The order of the fields is unimportant, and the order of the names of
+the features is, too, as reciprocal records will be created for each
+correspondences ("A=B" and "B=A," etc.).  If the evidence doesn't
+exist, a prompt will ask to create it.
+
+Note:  Both the "feature_name" and "alternate_name" fields are
+checked.  For every feature matching each of the two feature names, a
+correspondence will be created.
+
+I'd like to add the ability to import with feature accession IDs
+(which are unique) as that seems like it could be a lot more accurate
+than just feature names (which could be duplicated on other maps).
+
+=cut
 
 use strict;
-use vars qw( $VERSION %COLUMNS );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+use vars qw( $VERSION %COLUMNS $LOG_FH );
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Bio::GMOD::CMap;
+use Bio::GMOD::CMap::Admin;
 use Bio::GMOD::CMap::Constants;
-use Bio::GMOD::CMap::Utils qw[ next_number insert_correspondence ];
+use Bio::GMOD::CMap::Utils qw[ next_number ];
 use base 'Bio::GMOD::CMap';
 
 %COLUMNS = (
@@ -45,19 +84,15 @@ use constant FEATURE_SQL => q[
 ];
 
 # ----------------------------------------------------
-sub init {
-    my ( $self, $config ) = @_;
-    $self->params( $config, qw[ file db ] );
-    return $self;
-}
-
-# ----------------------------------------------------
 sub import {
     my ( $self, %args ) = @_;
-    my $fh              = $args{'fh'} or die 'No file handle';
+    my $fh              = $args{'fh'} or return $self->error('No file handle');
     my $db              = $self->db;
+    $LOG_FH             = $args{'log_fh'} || \*STDOUT;
+    my $admin           = Bio::GMOD::CMap::Admin->new;
 
-    print("Checking headers.\n");
+    $self->Print("Importing feature correspondence data.\n");
+    $self->Print("Checking headers.\n");
 
     #
     # Make column names lowercase, convert spaces to underscores 
@@ -66,7 +101,16 @@ sub import {
     chomp( my $header   = <$fh> );
     my @columns_present = map { s/\s+/_/g; lc $_ } split(FIELD_SEP, $header);
 
-    print("Parsing file...\n");
+    for my $column_name ( @columns_present ) {
+        if ( exists $COLUMNS{ $column_name } ) {
+            $self->Print("Column '$column_name' OK.\n")
+        }
+        else {
+            return $self->error("Column name '$column_name' is not valid.");
+        }
+    }
+
+    $self->Print("Parsing file...\n");
     my ( %feature_ids, %evidence_type_ids, $inserts, $total );
     LINE:
     while ( <$fh> ) {
@@ -152,15 +196,17 @@ sub import {
         } 
 
         unless ( $evidence_type_id ) {
-            print(qq[No evidence type like "$record{'evidence'}."\n]);
-            print("Create? [Y/n]");
+            $self->Print(qq[No evidence type like "$record{'evidence'}."\n]);
+            $self->Print("Create? [Y/n]");
             chomp( my $answer = <STDIN> );
             unless ( $answer =~ m/^[Nn]/ ) {
                 $evidence_type_id = next_number(
                     db           => $db, 
                     table_name   => 'cmap_evidence_type',
                     id_field     => 'evidence_type_id',
-                ) or die 'No next number for evidence type id.';
+                ) or return $self->error(
+                    'No next number for evidence type id.'
+                );
 
                 $db->do(
                     q[
@@ -176,38 +222,64 @@ sub import {
                 );
             }
             else {
-                print("OK, then skipping\n");
+                $self->Print("OK, then skipping\n");
                 next LINE;
             }
         }
 
         for my $feature1 ( @feature_ids1 ) {
             for my $feature2 ( @feature_ids2 ) {
-                next if 
-                    $feature1->{'map_set_id'} == $feature2->{'map_set_id'} 
-                    &&
-                    $feature1->{'is_relational_map'} == 1;
+#                #
+#                # Don't create correspondences among relational maps.
+#                #
+#                next if 
+#                    $feature1->{'map_set_id'} == $feature2->{'map_set_id'} 
+#                    &&
+#                    $feature1->{'is_relational_map'} == 1;
+#
+#                #
+#                # Don't create correspondences among relational map sets.
+#                #
+#                next if $feature1->{'is_relational_map'} && 
+#                    $feature2->{'is_relational_map'};
 
-                print "Creating correspondence for '",
-                    $feature1->{'feature_name'}, "' and '", 
-                    $feature2->{'feature_name'}, "' (",
-                    $record{'evidence'}, ").\n";
-
-                insert_correspondence( 
-                    $db,
+                my $fc_id = $admin->insert_correspondence( 
                     $feature1->{'feature_id'},
                     $feature2->{'feature_id'},
                     $evidence_type_id,
-                );
+                ) or return $self->error( $admin->error );
+
+                if ( $fc_id > 0 ) {
+                    $self->Print("Created correspondence for '",
+                        $feature1->{'feature_name'}, "' and '", 
+                        $feature2->{'feature_name'}, "' (",
+                        $record{'evidence'}, ").\n"
+                    );
+                }
+                else {
+                    $self->Print("Correspondence already existed for '",
+                        $feature1->{'feature_name'}, "' and '", 
+                        $feature2->{'feature_name'}, "' (",
+                        $record{'evidence'}, ").\n"
+                    );
+                }
+
                 $inserts++;
             }
         }
 
     }
 
-    print "Processed $total records, inserted $inserts correspondences.\n";
+    $self->Print(
+        "Processed $total records, inserted $inserts correspondences.\n"
+    );
 
     return 1;
+}
+
+sub Print {
+    my $self = shift;
+    print $LOG_FH @_;
 }
 
 1;
@@ -218,18 +290,7 @@ sub import {
 # William Blake
 # ----------------------------------------------------
 
-=head1 NAME
-
-Bio::GMOD::CMap::Admin::ImportCorrespondences - import correspondences
-
-=head1 SYNOPSIS
-
-  use Bio::GMOD::CMap::Admin::ImportCorrespondences;
-  blah blah blah
-
-=head1 DESCRIPTION
-
-Blah blah blah.
+=pod
 
 =head1 SEE ALSO
 

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.14 2002-10-04 01:14:42 kycl4rk Exp $
+# $Id: Map.pm,v 1.15 2002-10-09 01:07:31 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.14 $)[-1];
+$VERSION = (qw$Revision: 1.15 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -405,19 +405,8 @@ Lays out the map.
         @map_titles,    # the titles to put above - for relational maps
         $map_set_aid,   # the map set acc. ID - for relational maps
     );
-#    my $original_base_x = $self->base_x;
 
     for my $map_id ( @map_ids ) {
-        my $longest;
-#        for my $length ( map {length $self->$_($map_id)} @config_map_titles ) {
-#            $longest = $length if $length > $longest;
-#        }
-#        my $half_title_length = ( $reg_font->width * $longest ) / 2 + 10;
-##        my $base_x1 = $self->base_x;
-##        my $original_base_x = $label_side eq RIGHT
-##            ? $original_base_x = $base_x1 + $half_title_length;
-##            : $original_base_x = $base_x1 - $half_title_length;
-
         $is_relational     = $self->is_relational_map( $map_id );
         my $base_x         = $label_side eq RIGHT
                              ? $self->base_x + $half_title_length + 10
@@ -514,6 +503,20 @@ Lays out the map.
             coords    => [ $base_x, $base_y, $base_y + $pixel_height ],
             area      => $area,
         );
+
+        if ( $drawer->highlight_feature($self->map_name($map_id)) ) {
+            $drawer->add_drawing(
+                RECTANGLE, @bounds, 
+                $self->config('feature_highlight_fg_color')
+            );
+
+            $drawer->add_drawing(
+                FILLED_RECT, @bounds, 
+                $self->config('feature_highlight_bg_color'),
+                0
+            );
+        }
+
         $min_x    = $bounds[0] unless defined $min_x;
         $min_x    = $bounds[0] if $bounds[0] < $min_x;
         $max_x    = $bounds[2] unless defined $max_x;
@@ -650,12 +653,13 @@ Lays out the map.
             @features[ $midpoint .. $no_features - 1 ]
         );
 
-        my $mid_y;               # remembers the y value of the middle label
-        my $prev_label_y;        # remembers the y value of previous label
-        my $direction =   NORTH; # initially we move from the middle up
-        my $min_y     = $base_y; # remembers the northermost position
-        my @fcolumns  =      (); # for feature east-to-west
-        my @rows      =      (); # for labels north-to-south
+        my $mid_y;                    # remembers the y value of middle label
+        my $prev_label_y;             # remembers the y value of previous label
+        my $direction =      NORTH; # initially we move from the middle up
+        my $min_y     =      $base_y; # remembers the northermost position
+        my @fcolumns  =           (); # for feature east-to-west
+        my @rows      =           (); # for labels north-to-south
+        my ($leftmostf, $rightmostf); # for title placement
 
         for my $feature ( @sorted_features ) {
             my $tick_overhang = 2;
@@ -893,6 +897,11 @@ Lays out the map.
                 $right_connection = [ $tick_stop  + $buffer, $y_pos1 ]; 
             }
 
+            $leftmostf  = $left_connection  unless defined $leftmostf;
+            $leftmostf  = $left_connection  if $left_connection < $leftmostf;
+            $rightmostf = $right_connection unless defined $rightmostf;
+            $rightmostf = $right_connection if $right_connection < $rightmostf;
+
             if ( $has_corr ) {
                 $drawer->register_feature_position(
                     feature_id => $feature->feature_id,
@@ -966,20 +975,9 @@ Lays out the map.
             my $mid_x  = $min_x + ( ( $max_x - $min_x ) / 2 );
             my ( $leftmost, $rightmost, $topmost, $bottommost );
 
-#            $drawer->add_drawing( 
-#                LINE, $min_x, $min_y, $min_x, $min_y + 10, 'blue'
-#            );
-#            $drawer->add_drawing( 
-#                LINE, $mid_x, $min_y, $mid_x, $min_y + 10, 'red'
-#            );
-#            $drawer->add_drawing( 
-#                LINE, $max_x, $min_y, $max_x, $min_y + 10, 'green'
-#            );
-
             for my $label ( 
                 map { $self->$_( $map_id ) } reverse @config_map_titles
             ) {
-#                my $label_x = $base_x + ( $map_width / 2 ) - 
                 my $label_x = $mid_x - 
                     ( ( $reg_font->width * length( $label ) ) / 2 );
 

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin;
 
-# $Id: Admin.pm,v 1.5 2002-10-04 01:14:42 kycl4rk Exp $
+# $Id: Admin.pm,v 1.6 2002-10-09 01:07:31 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,9 +23,10 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use Bio::GMOD::CMap;
+use Bio::GMOD::CMap::Utils qw[ next_number ];
 use base 'Bio::GMOD::CMap';
 use Bio::GMOD::CMap::Constants;
 
@@ -466,6 +467,183 @@ Find all the feature types.
         ], 
         { Columns => {} }
     );
+}
+
+# ----------------------------------------------------
+sub insert_correspondence {
+
+=pod
+
+=head2 insert_correspondence
+
+Inserts a correspondence.  Returns -1 if there is nothing to do.
+
+=cut
+    my ( $self, $feature_id1, $feature_id2, $evidence_type_id, 
+        $accession_id ) = @_;
+    my $db              = $self->db or return;
+    return -1 if $feature_id1 == $feature_id2;
+
+    my $feature_sth = $db->prepare(
+        q[
+            select f.feature_id,
+                   f.feature_name,
+                   map.accession_id as map_aid,
+                   map.map_name,
+                   map.map_set_id,
+                   mt.is_relational_map
+            from   cmap_feature f,
+                   cmap_map map,
+                   cmap_map_set ms,
+                   cmap_map_type mt
+            where  f.feature_id=?
+            and    f.map_id=map.map_id
+            and    map.map_set_id=ms.map_set_id
+            and    ms.map_type_id=mt.map_type_id
+        ]
+    );
+
+    $feature_sth->execute( $feature_id1 );
+    my $feature1 = $feature_sth->fetchrow_hashref;
+    $feature_sth->execute( $feature_id2 );
+    my $feature2 = $feature_sth->fetchrow_hashref;
+
+    #
+    # Don't create correspondences among relational maps.
+    #
+    next if 
+        $feature1->{'map_set_id'} == $feature2->{'map_set_id'} 
+        &&
+        $feature1->{'is_relational_map'} == 1;
+
+    #
+    # Don't create correspondences among relational map sets.
+    #
+    next if $feature1->{'is_relational_map'} && 
+        $feature2->{'is_relational_map'};
+
+    #
+    # Skip if a correspondence for this type exists already.
+    #
+    my $count = $db->selectrow_array(
+        q[
+            select count(*)
+            from   cmap_correspondence_lookup cl,
+                   cmap_correspondence_evidence ce
+            where  cl.feature_id1=?
+            and    cl.feature_id2=?
+            and    cl.feature_correspondence_id=ce.feature_correspondence_id
+            and    ce.evidence_type_id=?
+        ],
+        {},
+        ( $feature_id1, $feature_id2, $evidence_type_id )
+    ) || 0;
+    return -1 if $count;
+
+    #
+    # See if a correspondence exists already.
+    #
+    my $feature_correspondence_id = $db->selectrow_array(
+        q[
+            select feature_correspondence_id
+            from   cmap_correspondence_lookup
+            where  feature_id1=?
+            and    feature_id2=?
+        ],
+        {},
+        ( $feature_id1, $feature_id2 )
+    ) || 0;
+
+    unless ( $feature_correspondence_id ) {
+        $feature_correspondence_id = next_number(
+            db               => $db,
+            table_name       => 'cmap_feature_correspondence',
+            id_field         => 'feature_correspondence_id',
+        ) or return $self->error('No next number for feature correspondence');
+        $accession_id ||= $feature_correspondence_id;
+
+        #
+        # Create the official correspondence record.
+        #
+        $db->do(
+            q[
+                insert
+                into   cmap_feature_correspondence
+                       ( feature_correspondence_id, accession_id,
+                         feature_id1, feature_id2 )
+                values ( ?, ?, ?, ? )
+            ],
+            {},
+            ( $feature_correspondence_id, 
+              $accession_id, 
+              $feature_id1, 
+              $feature_id2
+            )
+        );
+    }
+
+    #
+    # Create the evidence.
+    #
+    my $correspondence_evidence_id = next_number(
+        db               => $db,
+        table_name       => 'cmap_correspondence_evidence',
+        id_field         => 'correspondence_evidence_id',
+    ) or return $self->error('No next number for correspondence evidence');
+
+    $db->do(
+        q[
+            insert
+            into   cmap_correspondence_evidence
+                   ( correspondence_evidence_id, accession_id,
+                     feature_correspondence_id,     
+                     evidence_type_id 
+                   )
+            values ( ?, ?, ?, ? )
+        ],
+        {},
+        ( $correspondence_evidence_id,  
+          $correspondence_evidence_id, 
+          $feature_correspondence_id,   
+          $evidence_type_id
+        )
+    );
+
+    #
+    # Create the lookup record.
+    #
+    my @insert = (
+        [ $feature_id1, $feature_id2 ],
+        [ $feature_id2, $feature_id1 ],
+    );
+
+    for my $vals ( @insert ) {
+        next if $db->selectrow_array(
+            q[
+                select count(*)
+                from   cmap_correspondence_lookup cl
+                where  cl.feature_id1=?
+                and    cl.feature_id2=?
+                and    cl.feature_correspondence_id=?
+            ],
+            {},
+            ( $vals->[0], $vals->[1], $feature_correspondence_id )
+        );
+
+        $db->do(
+            q[
+                insert
+                into   cmap_correspondence_lookup
+                       ( feature_id1, feature_id2,
+                         feature_correspondence_id )
+                values ( ?, ?, ? )
+            ],
+            {},
+            ( $vals->[0], $vals->[1], $feature_correspondence_id )
+        );
+    }
+    
+    return $feature_correspondence_id;
 }
 
 # ----------------------------------------------------

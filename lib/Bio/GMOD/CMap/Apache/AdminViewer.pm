@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.11 2002-10-03 05:37:32 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.12 2002-10-09 01:07:31 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -28,7 +28,7 @@ $COLORS         = [ sort keys %{ +COLORS } ];
 $FEATURE_SHAPES = [ qw( box dumbbell line span ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.11 $)[-1];
+$VERSION        = (qw$Revision: 1.12 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -493,8 +493,9 @@ sub dbxrefs_view {
     my $db              = $self->db;
     my $admin           = $self->admin;
     my $apr             = $self->apr;
-    my $order_by        = $apr->param('order_by') ||'feature_type,species_name';
-    my $species_id      = $apr->param('species_id') || 0;
+    my $order_by        = $apr->param('order_by')        ||
+                          'feature_type, species_name';
+    my $species_id      = $apr->param('species_id')      || 0;
     my $feature_type_id = $apr->param('feature_type_id') || 0;
 
     my $sql = qq[
@@ -1370,11 +1371,11 @@ sub feature_corr_create {
 sub feature_corr_insert {
     my $self             = shift;
     my @errors           = ();
-    my $db               = $self->db;
+    my $admin            = $self->admin or return;
     my $apr              = $self->apr;
-    my $feature_id1      = $apr->param('feature_id1') or die 'No feature id1';
-    my $feature_id2      = $apr->param('feature_id2') or die 'No feature id2';
-    my $accession_id     = $apr->param('accession_id')     || '';
+    my $feature_id1      = $apr->param('feature_id1')  or die 'No feature id1';
+    my $feature_id2      = $apr->param('feature_id2')  or die 'No feature id2';
+    my $accession_id     = $apr->param('accession_id') || '';
     my $evidence_type_id = $apr->param('evidence_type_id') or push @errors,
         'Please select an evidence type';
 
@@ -1384,8 +1385,8 @@ sub feature_corr_insert {
 
     return $self->feature_corr_create( errors => \@errors ) if @errors;
 
-    my $feature_correspondence_id = insert_correspondence(
-        $db, $feature_id1, $feature_id2, $evidence_type_id, $accession_id
+    my $feature_correspondence_id = $admin->insert_correspondence(
+        $feature_id1, $feature_id2, $evidence_type_id, $accession_id
     );
 
     return $self->redirect_home( 

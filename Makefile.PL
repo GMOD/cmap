@@ -1,4 +1,4 @@
-# $Id: Makefile.PL,v 1.10 2002-09-26 19:31:34 kycl4rk Exp $
+# $Id: Makefile.PL,v 1.11 2002-10-09 01:07:31 kycl4rk Exp $
 
 use strict;
 use FindBin '$Bin';
@@ -235,6 +235,7 @@ WriteMakefile(
         'DBI'              => 1.20,
         'File::MkTemp'     => 0,
         'GD'               => 1.33,
+        'IO::Tee'          => 0,
         'Template'         => 2.00,
         'Time::Object'     => 0,
         'Time::ParseDate'  => 0,

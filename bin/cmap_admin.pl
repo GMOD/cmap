@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.8 2002-10-04 23:38:58 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.9 2002-10-09 01:07:31 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 #
 # Turn off output buffering.
@@ -17,8 +17,7 @@ $| = 1;
 #
 # Get command-line options
 #
-my $show_help;    
-my $show_version; 
+my ( $show_help, $show_version );
 
 GetOptions(
     'h|help'    => \$show_help,    # Show help and exit
@@ -32,9 +31,13 @@ if ( $show_version ) {
 }
 
 #
-# Create a CLI object with the file arg (if any).
+# Create a CLI object.
 #
-my $cli = Bio::GMOD::CMap::CLI::Admin->new( file => shift );
+my $cli = Bio::GMOD::CMap::CLI::Admin->new( 
+    user => $>,  # effective UID
+    file => shift 
+);
+
 while ( 1 ) { 
     my $action = $cli->show_greeting;
     $cli->$action();
@@ -45,6 +48,7 @@ package Bio::GMOD::CMap::CLI::Admin;
 
 use strict;
 use IO::File;
+use IO::Tee;
 use Data::Dumper;
 use Term::ReadLine;
 use Bio::GMOD::CMap;
@@ -61,7 +65,7 @@ use base 'Bio::GMOD::CMap';
 # ----------------------------------------------------
 sub init {
     my ( $self, $config ) = @_;
-    $self->params( $config, 'file' );
+    $self->params( $config, qw[ file user ] );
     return $self;
 }
 
@@ -73,23 +77,64 @@ sub file {
 }
 
 # ----------------------------------------------------
+sub user { 
+    my $self = shift;
+    return $self->{'user'} || '' 
+}
+
+# ----------------------------------------------------
+sub log_filename {
+    my $self = shift;
+    unless ( $self->{'log_filename'} ) {
+        my ( $name, $passwd, $uid, $gid, $quota, $comment, $gcos, 
+            $home_dir, $shell ) = getpwuid( $self->user );
+
+        my $filename = 'cmap_admin_log';
+        my $i        = 0;
+        my $path;
+        while ( 1 ) {
+            $path = join( '/', $home_dir, $filename . '.' . $i );
+            last unless -e $path;
+            $i++;
+        }
+
+        $self->{'log_filename'} = $path;
+    }
+
+    return $self->{'log_filename'};
+}
+
+# ----------------------------------------------------
 sub log_fh {
     my $self = shift;
+
     unless ( $self->{'log_fh'} ) {
-        $self->{'log_fh'} = '';
+        my $path = $self->log_filename or return;
+        my $fh = IO::Tee->new( \*STDOUT, ">$path" ) or return $self->error(
+            "Unable to open '$path': $!"
+        );
+        print $fh "Log file created '", scalar localtime, ".'\n";
+        $self->{'log_fh'} = $fh;
     }
+
+    return $self->{'log_fh'};
 }
 
 # ----------------------------------------------------
 sub term {
     my $self = shift;
-    $self->{'term'} ||= Term::ReadLine->new('Map Importer');
-    return $self->{'term'}
+
+    unless ( $self->{'term'} ) {
+        $self->{'term'} = Term::ReadLine->new('Map Importer');
+    }
+
+    return $self->{'term'};
 }
 
 # ----------------------------------------------------
 sub quit {
-    print "Namaste.\n"; 
+    my $self = shift;
+    print "Log file:  ", $self->log_filename, "\nNamaste.\n"; 
     exit(0);
 }
 
@@ -249,10 +294,11 @@ sub import_correspondences {
     chomp( my $answer = <STDIN> );
     return if $answer =~ /^[Nn]/;
 
-    print "Importing data...\n";
-
     my $importer = Bio::GMOD::CMap::Admin::ImportCorrespondences->new;
-    $importer->import( fh => $fh ) or do { 
+    $importer->import( 
+        fh       => $fh,
+        log_fh   => $self->log_fh,
+    ) or do { 
         print "Error: ", $importer->error, "\n"; 
         return; 
     };
@@ -371,14 +417,16 @@ sub import_data {
     chomp( my $answer = <STDIN> );
     return if $answer =~ /^[Nn]/;
 
-    print "Importing data...\n";
-
-    my $importer = Bio::GMOD::CMap::Admin::Import->new( db => $db );
+    my $importer = Bio::GMOD::CMap::Admin::Import->new;
     $importer->import(
         map_set_id => $map_set_id,
         fh         => $fh,
         map_type   => $map_type,
-    ) or do { print "Error: ", $importer->error, "\n"; return; };
+        log_fh     => $self->log_fh,
+    ) or do { 
+        print "Error: ", $importer->error, "\n"; 
+        return; 
+    };
 }
 
 # ----------------------------------------------------
@@ -435,6 +483,8 @@ sub make_name_correspondences {
     $corr_maker->make_name_correspondences(
         evidence_type_id => $evidence_type_id,
         map_set_id       => $map_set_id,
+        log_fh           => $self->log_fh,
+        
     ) or do { print "Error: ", $corr_maker->error, "\n"; return; };
 
     return 1;
@@ -581,6 +631,14 @@ correspondences in the database.  This will truncate the
 comparison of every map set in the database.
 
 =back
+
+The output of the actions taken by the program (i.e., statements of
+what happens, not the menu items, etc.) will be tee'd between your
+terminal and a log file.  The log will be placed into your home
+directory and will be called "cmap_admin_log.x" where "x" is a number
+starting at zero and ascending by one for each time you run the
+program (until you delete existing logs, of course).  The name of the
+log file will be echoed to you when you exit the program.
 
 =head1 AUTHOR
 
