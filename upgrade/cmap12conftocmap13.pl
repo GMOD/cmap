@@ -1,38 +1,54 @@
 #!/usr/bin/perl -w
+
+=pod
+
+=head1 NAME
+
+cmap12conftocmap13.pl
+
+=head1 SYNOPSIS
+
+  cmap12conftocmap13.pl cmap.conf
+
+=head1 DESCRIPTION
+
+Parses a CMap config file from version 0.12 (maybe earlier but not tested) 
+and converts it to CMap version 0.13.
+
+Creates a "global.conf" and one "cmap#.conf" for each database
+described in the config file.  These should be moved to the cmap.conf
+directory in the current working directory (so it's best to launch
+from within the "cmap.conf" directory).
+
+Does not carry over ANY comments.  It just ignores all of the commented 
+text.  It does add the pre-scripted comments.
+
+=head1 AUTHOR
+
+Ben Faga E<lt>faga@cshl.eduE<gt>.
+
+=cut
+
+# -------------------------------------------------------
+
 use strict;
-
-# cmap12conftocmap13.pl
-#
-# Use: cmap12conftocmap13.pl cmap.conf
-#
-# Parses a CMap config file from version 0.12 (maybe earlier but not tested) 
-#    and converts it to CMap version 0.13.
-#
-# Creates a global.conf and one cmap#.conf for each database described in 
-#    the config file.  These should be moved to the cmap.conf directory in 
-#    the apache/conf/ dir.
-#
-# Does Not carry over ANY comments.  It just ignores all of the commented 
-#    text.  It does add the pre-scripted comments.
-#
-#
-
 use Config::General;
-use Data::Dumper;
 
-my $conf_file=$ARGV[0];
+my $conf_file = shift or die "Missing original 'cmap.conf' file\n";
+
+print "Parsing config file '$conf_file.'\n";
+
+my $conf = Config::General->new( $conf_file ) or
+    die "Trouble reading config '$conf_file'";
+my %config = $conf->getall or 
+    die "No configuration options present in '$conf_file'";
+
 my %handled;
 
-print "Parsing $conf_file\n";
+open my $global_conf, ">global.conf" or 
+    die "Couldn't create 'global.conf': $!\n";
 
-my $conf   = Config::General->new( $conf_file ) or
-    die "Trouble reading config '$conf_file'";
-my %config = $conf->getall or return
-    die"No configuration options present in '$conf_file'";
-
-open my $GLOBAL_CONF,">global.conf" or die "couldn't open global.conf";
-
-print $GLOBAL_CONF q[# ----------------------------------------------------
+print $global_conf q[# ----------------------------------------------------
 #
 # cmap.conf
 #
@@ -51,9 +67,9 @@ print $GLOBAL_CONF q[# ----------------------------------------------------
 #
 ];
 $handled{'template_dir'}=1;
-print $GLOBAL_CONF "template_dir ".$config{'template_dir'}."\n\n";
+print $global_conf "template_dir ".$config{'template_dir'}."\n\n";
 
-print $GLOBAL_CONF q[#
+print $global_conf q[#
 # An absolute path to the directory where images are written I would
 # also suggest you purge this directory for old images so you don't
 # fill up your disk.  Here's a simple cron job you can put in your
@@ -67,7 +83,7 @@ print $GLOBAL_CONF q[#
 
 ];
 $handled{'cache_dir'}=1;
-print $GLOBAL_CONF "cache_dir ".$config{'cache_dir'}."\n\n";
+print $global_conf "cache_dir ".$config{'cache_dir'}."\n\n";
 
 my @databases;
 if (ref($config{'database'}) eq 'HASH'){
@@ -84,9 +100,8 @@ my @file_handles;
 
 $handled{'database'}=1;
 foreach my $db (@databases){
-print STDERR "HERE\n";
-    my $config_name ='cmap'.$config_index.'.conf';
-    open my $fh,'>'.$config_name
+    my $config_name = 'cmap'.$config_index.'.conf';
+    open my $fh, '>'.$config_name
         or die "couldn't open config file $config_name\n";
 
     $file_handles[$config_index]=$fh;
@@ -139,18 +154,17 @@ is_enabled 1
     $default_config = $config_name if not $default_config;
 }
 
-print $GLOBAL_CONF q[#
+print $global_conf q[#
 # Which database should be the default
 # Use the "name" from the specific conf file
 # Default: CMap
 #
 ];
-print $GLOBAL_CONF "default_db ".$default_config."\n\n";
+print $global_conf "default_db ".$default_config."\n\n";
 
 ###Finish off with the individual config files
 
 foreach my $fh (@file_handles){
-print STDERR Dumper($fh)."\n";
     print $fh q[#
 #Using expanded cmap_correspondence_lookup table
 #
@@ -497,5 +511,4 @@ foreach my $key (keys(%config)){
     }
 }
 
-
-
+print "Finished.\n";
