@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.11 2003-01-30 02:50:03 kycl4rk Exp $
+# $Id: Import.pm,v 1.12 2003-02-03 22:01:08 kycl4rk Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.11 $)[-1];
+$VERSION  = (qw$Revision: 1.12 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -170,7 +170,9 @@ added.
     #
     $self->Print("Checking headers.\n");
     chomp( my $header   = <$fh> );
-    my @columns_present = map { s/\s+/_/g; lc $_ } split( FIELD_SEP, $header );
+    my @columns_present = 
+        map  { s/^\s+|\s+$//g; s/\s+/_/g; lc $_ } 
+        split( FIELD_SEP, $header );
 
     for my $column_name ( @columns_present ) {
         if ( exists $COLUMNS{ $column_name } ) {
