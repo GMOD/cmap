@@ -98,7 +98,7 @@ Use &quot;*&quot; or &quot;%&quot; for wildcards.
                         [% r.start_position %][% IF r.stop_position >= r.start_position %]-[% r.stop_position %][% END %]
                     </td>
                     <td>
-                        <b>[</b>&nbsp;<a href="/cmap/viewer?ref_map_set_aid=[% r.map_set_aid %];ref_map_aid=[% r.map_aid %];highlight=&quot;[% r.feature_name %]&quot;">View&nbsp;on&nbsp;Map</a>&nbsp;<b>]</b>
+                        <b>[</b>&nbsp;<a href="/cmap/viewer?ref_map_set_aid=[% r.map_set_aid %];ref_map_aid=[% r.map_aid %];highlight=[% r.feature_aid %]">View&nbsp;on&nbsp;Map</a>&nbsp;<b>]</b>
                     </td>
                     <td>
                         <b>[</b>&nbsp;<a href="feature?feature_aid=[% r.feature_aid %]">Feature&nbsp;Details</a><b>&nbsp;]</b>
