@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.64.2.2 2005-03-04 06:15:56 mwz444 Exp $
+# $Id: Admin.pm,v 1.64.2.3 2005-03-30 17:11:10 kycl4rk Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.64.2.2 $)[-1];
+$VERSION = (qw$Revision: 1.64.2.3 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -1453,7 +1453,7 @@ Nothing
     my ( $self, %args ) = @_;
     my $db = $self->db or return;
 
-    print "Deleting Duplicate Corresponcences\n";
+    print "Deleting Duplicate Correspondences\n";
     my $dup_sql = q[
         select min(b.feature_correspondence_id) as original_id,
                a.feature_correspondence_id as duplicate_id
