@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.46.2.4 2004-06-04 19:56:43 kycl4rk Exp $
+# $Id: Admin.pm,v 1.46.2.5 2004-07-20 22:09:33 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.46.2.4 $)[-1];
+$VERSION = (qw$Revision: 1.46.2.5 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -2224,13 +2224,17 @@ sub xref_create {
     # See if one like this exists already.
     #
     my $sth = $db->prepare(
-        q[
-            select xref_id, display_order
-            from   cmap_xref
-            where  xref_name=?
-            and    xref_url=?
-            and    table_name=?
-        ]
+        sprintf(
+            q[
+                select xref_id, display_order
+                from   cmap_xref
+                where  xref_name=?
+                and    xref_url=?
+                and    table_name=?
+                %s
+            ],
+            $object_id ? "and object_id=$object_id" : ''
+        )
     );
     $sth->execute( $name, $url, $table_name );
     my $xref = $sth->fetchrow_hashref;

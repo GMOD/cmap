@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.62.2.3 2004-07-01 15:43:44 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.62.2.5 2004-07-13 20:28:44 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.62.2.3 $)[-1];
+$VERSION = (qw$Revision: 1.62.2.5 $)[-1];
 
 #
 # Get command-line options
@@ -51,7 +51,6 @@ use strict;
 use File::Path;
 use File::Spec::Functions;
 use IO::File;
-use IO::Tee;
 use Data::Dumper;
 use Term::ReadLine;
 use Bio::GMOD::CMap;
@@ -552,71 +551,10 @@ sub delete_map_set {
     my $self = shift;
     my $db   = $self->db or die $self->error;
 
-    #
-    # Get the species.
-    #
-    my ( $species_id, $common_name ) = $self->show_menu(
-        title   => 'Available Species',
-        prompt  => 'Please select a species',
-        display => 'common_name',
-        return  => 'species_id,common_name',
-        data     => $db->selectall_arrayref(
-            q[
-                select   distinct s.species_id, s.common_name
-                from     cmap_species s,
-                         cmap_map_set ms
-                where    ms.species_id=s.species_id
-                order by common_name
-            ],
-            { Columns => {} },
-        ),
-    );
-
-    #
-    # Restrict by map type.
-    #
-    my ( $map_type_id, $map_type ) = $self->show_menu(
-        title   => "Available Map Types (for $common_name)",
-        prompt  => 'What type of map?',
-        display => 'map_type',
-        return  => 'map_type_id,map_type',
-        data     => $db->selectall_arrayref(
-            q[
-                select   distinct mt.map_type_id, mt.map_type
-                from     cmap_map_type mt,
-                         cmap_map_set ms
-                where    mt.map_type_id=ms.map_type_id
-                and      ms.species_id=?
-                order by map_type
-            ],
-            { Columns => {} },
-            ( $species_id )
-        ),
-    );
-
-    #
-    # Get the map set.
-    #
-    my ( $map_set_id, $map_set_name ) = $self->show_menu(
-        title       => "Available Map Sets (for $common_name, $map_type)",
-        prompt      => 'Please select a map set',
-        display     => 'map_set_name',
-        return      => 'map_set_id,map_set_name',
-        allow_null  => 0,
-        allow_mult  => 0,
-        data        => $db->selectall_arrayref(
-            q[
-                select   ms.map_set_id, 
-                         ms.short_name as map_set_name
-                from     cmap_map_set ms
-                where    ms.species_id=?
-                and      ms.map_type_id=?
-                order by map_set_name
-            ],
-            { Columns => {} },
-            ( $species_id, $map_type_id )
-        ),
-    );
+    my $map_sets   = $self->get_map_sets( allow_mult => 0, allow_null => 0 );
+    return unless @{ $map_sets || [] };
+    my $map_set    = $map_sets->[0];
+    my $map_set_id = $map_set->{'map_set_id'};
 
     my $delete_what = $self->show_menu(
         title   => 'Delete',
@@ -668,7 +606,8 @@ sub delete_map_set {
         map { $_ || () }
         'OK to delete?',
         '  Data source : ' . $self->data_source, 
-        '  Map Set     : ' . $common_name.'-'.$map_set_name,
+        '  Map Set     : ' . 
+            $map_set->{'species_name'}.'-'.$map_set->{'map_set_name'},
         ( @{ $map_names || [] }
             ? '  Maps        : ' . join(', ', @$map_names)
             : ''
@@ -689,7 +628,7 @@ sub delete_map_set {
         }
     }
     else {
-        print $log_fh "Deleting map set '$common_name-$map_set_name.'\n";
+        print $log_fh "Deleting map set '$map_set->{map_set_aid}.'\n";
         $admin->map_set_delete( map_set_id => $map_set_id )
             or return $self->error( $admin->error );
     }
@@ -719,7 +658,7 @@ sub export_data {
             },
             { 
                 action  => 'export_objects',
-                display => 'Database objects [experimental]',
+                display => 'Database objects (XML)',
             },
         ]
     );
@@ -1385,6 +1324,14 @@ sub get_map_sets {
     my $log_fh          = $self->log_fh;
     my $return;
 
+    if ( my $explanation = $args{'explanation'} ) {
+        print join("\n", 
+            "------------------------------------------------------",
+            "NOTE: $explanation",
+            "------------------------------------------------------",
+        );
+    }
+
     my $select  =  $self->show_menu(
         title   => 'Map Set Selection Method',
         prompt  => 'How would you like to select map sets?',
@@ -1799,7 +1746,7 @@ sub import_data {
             },
             { 
                 action  => 'import_object_data', 
-                display => 'Import CMap objects [experimental]' 
+                display => 'Import CMap objects (XML)' 
             },
         ],
     );
@@ -2060,42 +2007,13 @@ sub make_name_correspondences {
     die "No evidence types!  Please use the web admin tool to create.\n" 
         unless $evidence_type_id;
 
-    #
-    # Get the target map sets.
-    #
-    my @map_sets    =  $self->show_menu(
-        title       => 'Map Set (optional)',
-        prompt      => 'Please select the map sets to include',
-        display     => 'map_type,species_name,map_set_name,accession_id',
-        return      => 'map_set_id,map_type,species_name,map_set_name',
-        allow_null  => 1,
-        allow_mult  => 1,
-        data        => $db->selectall_arrayref(
-            q[
-                select   ms.map_set_id, 
-                         ms.accession_id,
-                         ms.short_name as map_set_name,
-                         s.common_name as species_name,
-                         mt.map_type
-                from     cmap_map_set ms,
-                         cmap_species s,
-                         cmap_map_type mt
-                where    ms.species_id=s.species_id
-                and      ms.map_type_id=mt.map_type_id
-                order by map_type, common_name, map_set_name
-            ],
-            { Columns => {} },
-        ),
+    my $from_map_sets = $self->get_map_sets(
+        explanation => 'First you will select the starting map sets'
     );
 
-    my @map_set_ids = map { $_->[0] } @map_sets;
-    my $targets     = @map_sets
-        ? join( "\n", 
-            map { "    $_" } map { join('-', $_->[1], $_->[2], $_->[3]) } 
-            @map_sets
-        )
-        : '    All'
-    ;
+    my $to_map_sets = $self->get_map_sets(
+        explanation => 'Now you will select the target map sets'
+    );
 
     my @skip_features = $self->show_menu(
         title       => 'Skip Feature Types (optional)',
@@ -2120,11 +2038,22 @@ sub make_name_correspondences {
         : '    None'
     ;
 
+    my $from = join("\n", 
+        map { "    $_->{species_name}-$_->{map_set_name} ($_->{map_set_aid})" }
+        @{ $from_map_sets }
+    );
+
+    my $to = join("\n", 
+        map { "    $_->{species_name}-$_->{map_set_name} ($_->{map_set_aid})" }
+        @{ $to_map_sets }
+    );
+
     print "Make name-based correspondences\n",
-        '  Data source     : ' . $self->data_source, "\n",
-        "  Evidence type   : $evidence_type\n",
-        "  Target map sets :\n$targets\n",
-        "  Skip features   :\n$skip\n"
+        '  Data source   : ' . $self->data_source, "\n",
+        "  Evidence type : $evidence_type\n",
+        "  From map sets :\n$from\n",
+        "  To map sets   :\n$to\n",
+        "  Skip features :\n$skip\n"
     ;
 
     print "\nOK to make correspondences? [Y/n] ";
@@ -2136,9 +2065,13 @@ sub make_name_correspondences {
         data_source => $self->data_source,
     );
 
+    my @from_map_set_ids = map { $_->{'map_set_id'} } @{ $from_map_sets };
+    my @to_map_set_ids   = map { $_->{'map_set_id'} } @{ $to_map_sets };
+
     $corr_maker->make_name_correspondences(
         evidence_type_id      => $evidence_type_id,
-        map_set_ids           => \@map_set_ids,
+        from_map_set_ids      => \@from_map_set_ids,
+        to_map_set_ids        => \@to_map_set_ids,
         skip_feature_type_ids => \@skip_feature_type_ids,
         log_fh                => $self->log_fh,
         quiet                 => $Quiet,

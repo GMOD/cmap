@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.2 $
+$Revision: 1.2.2.1 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are two tools you will use:
@@ -114,11 +114,11 @@ B<Note:> All the "accession_id" columns in the CMap tables act the
 same.  They are all character fields, so they will accept any
 combination of numbers and letters you care to use. Please don't use
 spaces or characters outside the ranges "a-z," "A-Z," "0-9" or dashes
-("-") as this will likely only cause you headaches. It is also not
+("-") as this will likely only cause you headaches.  It is also not
 necessary to explicitly assign any accession IDs.  While they *are*
 required by the database, there is code in place to ensure that the
 accession ID is set to the primary ID of the record if the accession
-ID is empty. Once your accession IDs have been established and
+ID is empty.  Once your accession IDs have been established and
 publicized, they should never change.
 
 The fields marked "(opt.)" do not require you to enter a value.  If
@@ -625,10 +625,10 @@ as the rest of the functionality will be covered later.
 
 =head2 IMPORTING XML DATA (EXPERIMENTAL)
 
-As of 0.10, CMap exports and imports data in XML format.  The standard
+CMap exports and imports data in its own XML format.  The standard
 tab-delimited format is very convenient and easy to generate, but it's
 also difficult to indicate hierarchical relationships among data.  As
-such, some experimental has been added to export the concept of
+such, code has been added to export the concept of
 "objects" from the database.  These objects will contain all the
 information within them necessary to duplicate themselves entirely in
 another CMap database.  For example, a "feature" object has a
@@ -637,9 +637,8 @@ the information about both the feature and it's type (including color,
 shape, drawing priority, etc.).  Likewise, to export a "map set"
 object, one must export the map set's type, species, maps, features
 and all the other dependent data (esp. the arbitrary attributes and
-xrefs) on those objects.  This code is functional but still marked
-"experimental" as it appears to be very slow when exporting very large
-map sets.
+xrefs) on those objects.  This code is functional but may prove to be
+very slow to export data from very large databases.
 
 To try this feature, choose "Export data" and then "Database objects."
 Follow the directions from there.  Then try importing the data (into
@@ -1254,7 +1253,7 @@ to easily find the accession IDs.
 If you would like to see sample import data for CMap, you can find
 many examples from the Gramene site:
 
-  ftp://ftp.gramene.org/pub/gramene/maps
+  ftp://ftp.gramene.org/
 
 =head1 MISCELLANEOUS
 

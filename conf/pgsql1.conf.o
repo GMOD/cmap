@@ -1,21 +1,3 @@
-#!perl
-
-use strict;
-use CMapBuilder;
-use Cwd;
-use File::Basename qw(&basename &dirname);
-
-my $builder      = CMapBuilder->current;
-my $template_dir = $builder->notes('TEMPLATES');
-my $cache_dir    = $builder->notes('CACHE');
-
-my $origdir = cwd;
-chdir dirname($0);
-my $file;
-($file = basename($0)) =~ s/\.PL$//;
-open OUT, ">$file" or die "Can't write file '$file': $!\n";
-print "Extracting $file (with variable substitutions)\n";
-print OUT<<"!GROK!THIS!";
 # ----------------------------------------------------
 #
 # cmap.conf
@@ -30,9 +12,17 @@ print OUT<<"!GROK!THIS!";
 # ----------------------------------------------------
 
 #
+# Enable this config file
+#
+
+is_enabled 1
+
+#
 # Database connection parameters
 #
-# You can specify multiple database sections, if you wish.
+# You can only specify one database sections per conf file.
+# If you wish to add more, you must make a different conf file.
+# The database name must be unique across all conf files in this dir.
 #
 # Parameters:
 #
@@ -44,12 +34,12 @@ print OUT<<"!GROK!THIS!";
 #               multiple data sources
 #
 <database>
-    name       CMap
-    datasource dbi:mysql:CMAP
-    user       guest
-    password   password
-    is_default 1
+    name       pgCmap
+    datasource dbi:Pg:dbname=CMAP
+    user       mysql
+    password
 </database>
+
 
 #
 # Configure more as needed...
@@ -61,35 +51,38 @@ print OUT<<"!GROK!THIS!";
 #    password   password
 #</database>
 
-#   
-# An absolute path to the directory holding the templates
-# Default: Set on install
-#   
-template_dir $template_dir
+#
+#Using expanded cmap_correspondence_lookup table
+#
+# Set to 1 if your cmap_correspondence_lookup table is the
+#  expanded version that looks like this:
+#
+# explain cmap_correspondence_lookup;
+# +---------------------------+--------------+
+# | Field                     | Type         |
+# +---------------------------+--------------+
+# | feature_id1               | int(11)      |
+# | feature_id2               | int(11)      |
+# | feature_correspondence_id | int(11)      |
+# | start_position1           | double(11,2) |
+# | start_position2           | double(11,2) |
+# | stop_position1            | double(11,2) |
+# | stop_position2            | double(11,2) |
+# | map_id1                   | int(11)      |
+# | map_id2                   | int(11)      |
+# | feature_type_accession1   | varchar(20)  |
+# | feature_type_accession2   | varchar(20)  |
+# +---------------------------+--------------+
+                                                                                
+expanded_correspondence_lookup 0
+
 
 #   
-# An absolute path to the directory where images are written I would
-# also suggest you purge this directory for old images so you don't
-# fill up your disk.  Here's a simple cron job you can put in your
-# root's crontab (all on one line, of course):
-#
-# 0 0 * * *  find /usr/local/apache/htdocs/cmap/tmp \
-# -type f -mtime +1 -exec rm -rf {} \;
-#
-# Default: /usr/local/apache/htdocs/cmap/tmp
-#
-cache_dir $cache_dir
-
 # ----------------------------------------------------
 #
 # Start optional settings
 #
 # ----------------------------------------------------
-
-#
-# HTML title to place on main map viewer
-#
-#cmap_title Comparative Maps on localhost
 
 #
 # Introductory texts for various pages.
@@ -132,14 +125,13 @@ EOF
 # relationships will be reciprocal, so if you say "foo bar" then
 # correspondences from features with the accession ID "foo" will be
 # allowed to those with the accession ID "bar" and vice versa.
-# Separate feature types with spaces.  You may assert more than two
-# feature types on one line, e.g., "foo bar baz."
+# Separate feature types with spaces.  Assert all equivalent feature
+# types on one line, e.g., "foo bar baz."
 # Default: Nothing
 #
 #add_name_correspondence foo bar baz
 #add_name_correspondence fee fie
 
-#
 # Any entries to "disallow_name_correspondence" will cause the admin
 # tool to NOT make correspondences between features of the types listed.
 # Either list the feature type accessions separated by spaces on one
@@ -335,4 +327,118 @@ stylesheet /cmap/cmap.css
 # Default: CMAP_USER_PREF
 #
 user_pref_cookie_name CMAP_USER_PREF
-!GROK!THIS!
+
+
+#
+# Drawing information for Feature type
+#
+
+#Notice the area_code, required_page_code and extra_forms
+#  The area_code is perl code that will be used to create the javascript
+#    for features/maps being described.  It will be inserted in the area map
+#    over the object.  $code is a variable that holds the javascript, so
+#    append all new code to the $code variable.  Some of the variables
+#    from the underlying CMap code are accessable to this code.
+#
+#  The required_page_code lists the names of required page_code (described
+#    later) needed to perform the tasks in area_code.  The page_code is 
+#    added to the top of the page and is most likely going to be functions
+#    to be called.
+#
+#  The extra_forms contains the names of extra_forms (described later)
+#    which contain extra form elements.  This is so the admin can add
+#    text fields, buttons, etc. 
+#
+
+<feature_type contig>
+feature_type_accession contig
+feature_type Contig
+default_rank 1
+color
+shape span 
+drawing_lane 1
+drawing_priority 1
+area_code <<EOF
+$code=sprintf("onMouseOver=\"window.status='%s';return true\"",$feature->{'feature_type_aid'});
+$code.=sprintf(" onClick=\"demo('%s')\";",$feature->{'feature_id'});
+EOF
+required_page_code democode
+extra_forms 
+</feature_type>
+
+<feature_type read>
+feature_type_accession read
+feature_type Read
+default_rank 1 
+color
+shape up-arrow
+drawing_lane 2
+drawing_priority 1
+area_code <<EOF
+$code=sprintf("onMouseOver=\"window.status='%s';return true\"",$feature->{'feature_type_aid'});
+$code.=sprintf(" onClick=\"demo('%s')\";",$feature->{'feature_id'});
+EOF
+required_page_code democode
+extra_forms 
+</feature_type>
+
+<feature_type far_apart>
+feature_type_accession far_apart
+feature_type Reads Too Far Apart
+default_rank 1
+color black
+shape span 
+drawing_lane 3
+drawing_priority 1
+</feature_type>
+
+
+<evidence_type ANB>
+evidence_type_accession ANB
+evidence_type Automated name-based
+rank 1
+color 
+</evidence_type>
+
+<map_type Seq>
+map_type_accession Seq
+map_type Sequence
+map_units bp
+is_relational_map 
+width 1
+shape box
+color 
+display_order 1
+</map_type>
+
+#  The page_code is made up of javascript that is to perform the tasks in 
+#    map/feature area_code.  The page_code is
+#    added to the top of the page and is most likely going to be functions
+#    to be called.
+
+
+
+<page_code democode>
+page_code <<EOF
+<script type="text/javascript">
+function demo(txt){    
+   alert('txt');
+}
+</script>
+EOF
+</page_code>
+
+#  The extra_forms contain extra form elements.  This is so the admin can add
+#    text fields, buttons, etc.  The demmo is commented out but can be used
+#    build more interesting form elements.
+
+
+#<extra_form feature_list>
+#extra_form <<EOF
+#<tr><td align="right">Feature List:</td>
+#<td><input type=text name='featureList'>
+#<input type=BUTTON onClick="clearFeatureList();" value='clear' id='clear'>
+#<input type=Submit onClick="return changeFormAction('/cgi-bin/launch_test.cgi');" value='Submit' >
+#</td></tr>
+#EOF
+#</form_extras>

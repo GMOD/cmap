@@ -1,0 +1,14 @@
+map_name	feature_name	feature_start	feature_stop	feature_type_accession
+T1	T1.1	0	1000	contig
+T1	T1.2	1000	2000	contig
+T1	T1.3	2000	4000	contig
+T1	R1	0	500	read
+T1	R2	450	1000	read
+T1	R3	1000	2000	read
+T1	R4	2000	2300	read
+T1	R5	2200	2700	read
+T1	R6	2650	3300	read
+T1	R7	3100	4000	read
+T2	T2.1	0	1000	contig
+T2	R10	0	500	read
+T2	R11	500	1000	read

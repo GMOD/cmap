@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.29.2.1 2004-06-07 19:18:05 kycl4rk Exp $
+# $Id: MakeCorrespondences.pm,v 1.29.2.3 2004-07-13 21:22:11 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.29.2.1 $)[-1];
+$VERSION = (qw$Revision: 1.29.2.3 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -42,7 +42,8 @@ use Data::Dumper;
 # ----------------------------------------------------
 sub make_name_correspondences {
     my ( $self, %args )       = @_;
-    my @map_set_ids           = @{ $args{'map_set_ids'}        || [] };
+    my @from_map_set_ids      = @{ $args{'from_map_set_ids'}      || [] };
+    my @to_map_set_ids        = @{ $args{'to_map_set_ids'}        || [] };
     my @skip_feature_type_ids = @{ $args{'skip_feature_type_ids'} || [] };
     my $evidence_type_id      = $args{'evidence_type_id'} or 
                                 return 'No evidence type id';
@@ -140,6 +141,7 @@ sub make_name_correspondences {
                cmap_map_set ms,
                cmap_map_type mt
         where  f.map_id=map.map_id
+        and    map.map_set_id=?
         and    map.map_set_id=ms.map_set_id
         and    ms.map_type_id=mt.map_type_id
     ];
@@ -147,22 +149,13 @@ sub make_name_correspondences {
     my $alias_sql = q[
         select fa.feature_id,
                fa.alias
-        from   cmap_feature f,
-               cmap_feature_alias fa,
-               cmap_map map,
-               cmap_map_set ms
-        where  f.feature_id=fa.feature_id
-        and    f.map_id=map.map_id
-        and    map.map_set_id=ms.map_set_id
+        from   cmap_map map,
+               cmap_feature f,
+               cmap_feature_alias fa
+        where  map.map_set_id=?
+        and    map.map_id=f.map_id
+        and    f.feature_id=fa.feature_id
     ];
-
-    if ( @map_set_ids ) {
-        for ( $feature_sql, $alias_sql ) {
-            $_ .= 'and map.map_set_id in (' .
-                join( ', ', @map_set_ids ) .
-            ') ';
-        }
-    }
 
     if ( @skip_feature_type_ids ) {
         for ( $feature_sql, $alias_sql ) {
@@ -172,126 +165,164 @@ sub make_name_correspondences {
         }
     }
 
-    my $features = $db->selectall_hashref( $feature_sql, 'feature_id' );
-    my $aliases  = $db->selectall_arrayref( $alias_sql );
+    my ( %f_done, %ms_done );
+    for my $from_map_set_id ( @from_map_set_ids ) {
+        for my $to_map_set_id ( @to_map_set_ids ) {
+            next if $ms_done{ $from_map_set_id }{ $to_map_set_id };
 
-    my %alias_lookup;
-    for my $a ( @$aliases ) {
-        push @{ $alias_lookup{ $a->[0] } }, $a->[1];
-    }   
+            #
+            # Make a lookup table of all the names/aliases of all features
+            # on the map sets involved.
+            #
+            my ( %features, %aliases );
+            for my $ms_id ( $from_map_set_id, $to_map_set_id ) {
+                my $features = $db->selectall_arrayref( 
+                    $feature_sql, { Columns => {} }, ( $ms_id )
+                );
 
-    my %names = ();
-    for my $f ( values %$features ) {
-        for my $name ( 
-            $f->{'feature_name'}, 
-            @{ $alias_lookup{ $f->{'feature_id'} } || [] }
-        ) {
-            next unless $name;
-            $names{ lc $name }{ $f->{'feature_id'} } = 0;
-        }
-    }
+                for my $f ( @$features ) {
+                    $features{ $f->{'feature_id'} } = $f;
+                }   
 
-    my $corr = $db->selectall_hashref(
-        q[
-            select fc.feature_id1,
-                   fc.feature_id2,
-                   fc.feature_correspondence_id
-            from   cmap_feature_correspondence fc,
-                   cmap_correspondence_evidence ce
-            where  fc.feature_correspondence_id=ce.feature_correspondence_id
-            and    ce.evidence_type_id=?
-                
-        ],
-        'feature_correspondence_id',
-        {},
-        ( $evidence_type_id )
-    );
+                my $aliases = $db->selectall_arrayref( 
+                    $alias_sql, {}, ( $ms_id ) 
+                );
 
-    my %corr = ();
-    for my $c ( values %$corr ) {
-        $corr{ $c->{'feature_id1'} }{ $c->{'feature_id2'} } = 
-            $c->{'feature_correspondence_id'};
+                for my $a ( @$aliases ) {
+                    push @{ $aliases{ $a->[0] } }, $a->[1];
+                }   
+            }
 
-        $corr{ $c->{'feature_id2'} }{ $c->{'feature_id1'} } = 
-            $c->{'feature_correspondence_id'};
-    }
+            next unless %features;
 
-    for my $name ( keys %names ) {
-        my @feature_ids = keys %{ $names{ $name } };
-
-        #
-        # Only one feature has this name, so skip.
-        #
-        next if scalar @feature_ids == 1;
-
-        my %done;
-        for my $i ( 0..$#feature_ids ) {
-            my $fid1 = $feature_ids[ $i ]; 
-            my $f1   = $features->{ $fid1 };
-
-            for my $j ( 1..$#feature_ids ) {
-                my $fid2 = $feature_ids[ $j ]; 
-                next if $fid1 == $fid2;          # same feature
-                next if $done{ $fid1 }{ $fid2 }; # already processed
-
-                my $f2 = $features->{ $fid2 };
-
-                #
-                # Check feature types.
-                #
-                unless ( 
-                    $f1->{'feature_type_id'} == $f2->{'feature_type_id'} 
+            my %names = ();
+            for my $f ( values %features ) {
+                for my $name ( 
+                    $f->{'feature_name'}, 
+                    @{ $aliases{ $f->{'feature_id'} } || [] }
                 ) {
-                    next unless $add_name_correspondences
-                        { $f1->{'feature_type_id'} }
-                        { $f2->{'feature_type_id'} }
-                    ;
-                }
-
-                next if     
-                    $f1->{'feature_type_id'} == $f2->{'feature_type_id'} &&
-                    $disallow_name_correspondence{ $f1->{'feature_type_id'} }
-                ;
-
-                #
-                # If both features are in the same relational map set,
-                # only create a corr. if both are on the same map.
-                #
-                next if $f1->{'is_relational_map'} &&
-                    $f1->{'map_set_id'} == $f2->{'map_set_id'} &&
-                    $f1->{'map_id'} != $f2->{'map_id'};
-
-                my $s = "b/w '$f1->{'feature_name'}' ".
-                        "and '$f2->{'feature_name'}.'\n";
-
-                #
-                # Check if we already know that a correspondence based
-                # on our evidence already exists.
-                #
-                if ( $corr{ $fid1 }{ $fid2 } ) {
-                    $self->Print("Correspondence exists $s") unless $quiet;
-                    next;
-                }
-                else {
-                    my $fc_id =  $admin->feature_correspondence_create( 
-                        feature_id1      => $f1->{'feature_id'},
-                        feature_id2      => $f2->{'feature_id'},
-                        evidence_type_id => $evidence_type_id,
-                    ) or return $self->error( $admin->error );
-
-                    $self->Print( 
-                        $fc_id > 0
-                        ? "Inserted correspondence ($fc_id) $s"
-                        : "Correspondence existed $s"
-                    ) unless $quiet;
-
-                    $corr{ $fid1 }{ $fid2 } = $fc_id;
-                    $corr{ $fid2 }{ $fid1 } = $fc_id;
-
-                    $done{ $fid1 }{ $fid2 } = 1;
-                    $done{ $fid2 }{ $fid1 } = 1;
+                    next unless $name;
+                    $names{ lc $name }{ $f->{'feature_id'} } = 0;
                 }
             }
+
+            #
+            # Make a lookup table of all the correspondences from this
+            # map set based on the supplied evidence code.
+            #
+            my $corr = $db->selectall_arrayref(
+                q[
+                    select cl.feature_id1,
+                           cl.feature_id2,
+                           cl.feature_correspondence_id
+                    from   cmap_correspondence_lookup cl,
+                           cmap_correspondence_evidence ce,
+                           cmap_feature f,
+                           cmap_map map
+                    where  cl.feature_correspondence_id=
+                           ce.feature_correspondence_id
+                    and    ce.evidence_type_id=?
+                    and    cl.feature_id1=f.feature_id
+                    and    f.map_id=map.map_id
+                    and    map.map_set_id=?
+                ],
+                { Columns => {} },
+                ( $evidence_type_id, $from_map_set_id )
+            );
+
+            my %corr = ();
+            for my $c ( @$corr ) {
+                $corr{ $c->{'feature_id1'} }{ $c->{'feature_id2'} } = 
+                    $c->{'feature_correspondence_id'};
+
+                $corr{ $c->{'feature_id2'} }{ $c->{'feature_id1'} } = 
+                    $c->{'feature_correspondence_id'};
+            }
+
+            for my $name ( keys %names ) {
+                my @feature_ids = keys %{ $names{ $name } };
+
+                #
+                # Only one feature has this name, so skip.
+                #
+                next if scalar @feature_ids == 1;
+
+                for my $i ( 0..$#feature_ids ) {
+                    my $fid1 = $feature_ids[ $i ]; 
+                    my $f1   = $features{ $fid1 };
+
+                    for my $j ( $i+1..$#feature_ids ) {
+                        my $fid2 = $feature_ids[ $j ]; 
+                        next if $fid1 == $fid2;          # same feature
+                        next if $f_done{ $fid1 }{ $fid2 }; # already processed
+
+                        my $f2 = $features{ $fid2 };
+
+                        #
+                        # Check feature types.
+                        #
+                        if ( 
+                            $f1->{'feature_type_id'} != $f2->{'feature_type_id'} 
+                        ) {
+                            next unless $add_name_correspondences
+                                { $f1->{'feature_type_id'} }
+                                { $f2->{'feature_type_id'} }
+                            ;
+                        }
+
+                        next if     
+                            $f1->{'feature_type_id'}==$f2->{'feature_type_id'} 
+                            &&
+                            $disallow_name_correspondence{
+                                $f1->{'feature_type_id'}
+                            }
+                        ;
+
+                        #
+                        # If both features are in the same relational map set,
+                        # only create a corr. if both are on the same map.
+                        #
+                        next if $f1->{'is_relational_map'} &&
+                            $f1->{'map_set_id'} == $f2->{'map_set_id'} &&
+                            $f1->{'map_id'} != $f2->{'map_id'};
+
+                        my $s = "b/w '$f1->{'feature_name'}' ".
+                                "and '$f2->{'feature_name'}.'\n";
+
+                        #
+                        # Check if we already know that a correspondence based
+                        # on our evidence already exists.
+                        #
+                        if ( $corr{ $fid1 }{ $fid2 } ) {
+                            $self->Print("Correspondence exists $s") 
+                                unless $quiet;
+                            next;
+                        }
+                        else {
+                            my $fc_id =  $admin->feature_correspondence_create( 
+                                feature_id1      => $f1->{'feature_id'},
+                                feature_id2      => $f2->{'feature_id'},
+                                evidence_type_id => $evidence_type_id,
+                            ) or return $self->error( $admin->error );
+
+                            $self->Print( 
+                                $fc_id > 0
+                                ? "Inserted correspondence ($fc_id) $s"
+                                : "Correspondence existed $s"
+                            ) unless $quiet;
+
+                            $corr{ $fid1 }{ $fid2 } = $fc_id;
+                            $corr{ $fid2 }{ $fid1 } = $fc_id;
+
+                            $f_done{ $fid1 }{ $fid2 } = 1;
+                            $f_done{ $fid2 }{ $fid1 } = 1;
+                        }
+                    }
+                }
+            }
+
+            $ms_done{ $from_map_set_id }{ $to_map_set_id } = 1;
+            $ms_done{ $to_map_set_id }{ $from_map_set_id } = 1;
         }
     }
 

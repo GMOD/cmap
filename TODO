@@ -1,9 +1,7 @@
                       Planned enhancements for CMap
     
-                             $Revision: 1.8 $
+                             $Revision: 1.8.2.1 $
 
--   Improve label distribution (speed and use of space)
--   XML import/export for data (to keep heiracrchical structures)
 -   Easier zooming on maps
 -   Some indicator for when features are dropped out
 -   Keep up with features better so that a map that appears more than

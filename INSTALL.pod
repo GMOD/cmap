@@ -4,7 +4,7 @@ CMap Install
 
 =head1 VERSION
 
-$Revision: 1.5 $
+$Revision: 1.5.2.1 $
 
 =head1 QUICK START
 
@@ -33,12 +33,7 @@ other Perl modules reported missing by the build process
 
 =back
 
-If you need further instructions, read on.  Appendices at the end of
-this document cover general interest topics for the UNIX-phobic such
-as conventions for building software, etc.  
-
-B<Note:> If you have version 0.09 of CMap installed, please read
-APPENDIX 1 for instructions on upgrading.
+If you need further instructions, read on.
 
 =head1 INSTALLATION REQUIREMENTS
 
@@ -71,18 +66,20 @@ output necessitates libgd 2.x.  With any luck, you may already have it
 on your system if you have a GNU/Linux system.  To check, you could
 just skip this step for now and wait to see if the Perl module GD.pm
 will install properly.  If it complains that it can't find libgd, then
-come back here.
+come back here.  Note that as of version 2.0.28, libgd produces GIF 
+images again.  This version of CMap assumes you have the latest versions
+of libgd and GD.pm in order to produce GIFs.
 
 Installation of libgd can easily be one of the more frustrating
 parts of this installation.  There are a number of dependencies 
 including the zlib compression library and whatever image libraries
-you want, like JPEG, libpng, and libgif.  Again, you may already
+you want, like JPEG and libpng.  Again, you may already
 have some of these libraries, so you needn't panic just yet.  One
 way to see if you do is to check the directories "/usr/lib" and
-"/usr/local/lib" for files that look like "libgd*," "libjpeg*,"
-"libpng*," and "libgif*".  If you're using something like RedHat Linux,
-you could try the "locate" command for each of these (without the star
-as it does wildcard searching on its own).
+"/usr/local/lib" for files that look like "libgd*," "libjpeg*," and
+"libpng*."  If you're using something like RedHat Linux, you could 
+try the "locate" command for each of these (without the star as it 
+does wildcard searching on its own).
 
 To install libgd, retrieve the source (tar.gz package) from Paul
 Boutell's (author of libgd) website.  When you go to build libgd, it
@@ -277,60 +274,78 @@ Here are the CPAN modules required:
 
 =over 4
 
-=item *   Class::Base
+=item * Algorithm::Numerical::Sample
 
-=item *   Config::General
+=item * Bit::Vector
 
-=item *   Data::Page
+=item * CGI
 
-=item *   Data::Pageset
+=item * Class::Base
 
-=item *   DBI
+=item * Config::General
 
-=item *   DBD::mysql (if you're using MySQL)
+=item * Cwd
 
-=item *   DBD::Oracle (if you're using Oracle)
+=item * Data::Page
 
-=item *   DBD::Pg (if you're using PostgreSQL)
+=item * Data::Pageset
 
-=item *   DBD::SQLite (if you're using SQL::Lite)
+=item * Date::Format
 
-=item *   DBD::Sybase (if you're using Sybase)
+=item * DBI
 
-=item *   File::Path
+=item * DBD::mysql (if you're using MySQL)
 
-=item *   GD
+=item * DBD::Oracle (if you're using Oracle)
 
-=item *   GD::SVG
+=item * DBD::Pg (if you're using PostgreSQL)
 
-=item *   IO::Tee
+=item * DBD::SQLite (if you're using SQL::Lite)
 
-=item *   Regexp::Common
+=item * DBD::Sybase (if you're using Sybase)
 
-=item *   Template
+=item * File::Basename
 
-=item *   Text::RecordParser
+=item * File::Path
 
-=item *   Text::ParseWords
+=item * File::Spec
 
-=item *   Time::Piece 
+=item * File::Temp
 
-=item *   Time::ParseDate
+=item * GD
 
-=item *   URI::Escape
+=item * GD::SVG
 
-=item *   XML::Simple
+=item * IO::Tee
+
+=item * Regexp::Common
+
+=item * Template
+
+=item * Text::RecordParser
+
+=item * Text::ParseWords
+
+=item * Time::Piece 
+
+=item * Time::ParseDate
+
+=item * URI::Escape
+
+=item * XML::Simple
 
 =back
 
-Many of the above modules will have dependecies of their own which you
-must resolve.  This can be very tedious to do by hand, so if you do
-need to install any of these Perl modules, I'd really recommend you
-use the CPAN shell, a convenient package that automates the
-downloading and building of modules.  The CPAN shell can also can
-recursively install all module dependencies automatically, which is a
-very nice feature.  To use the CPAN shell, type the following (as
-root):
+Several of these modules (e.g., CGI, File::Basename) are in the Perl
+"core," which means they are installed by default with Perl.  Many of
+the above modules that will likely need installing will have
+dependecies of their own which you must resolve.  This can be very
+tedious to do by hand, so if you do need to install any of these Perl
+modules, I'd really recommend you use the CPAN shell, a convenient
+package that automates the downloading and building of modules.  The
+CPAN shell can also can recursively install all module dependencies
+automatically, which is a very nice feature.  To use the CPAN shell,
+type the following (as root):
 
  # perl -MCPAN -e shell
 
@@ -644,209 +659,7 @@ Please consider allowing the GMOD project advertise your use of our
 code.  If you have a publicly accessible installation of CMap, we
 would very much like to provide a link from the GMOD website to it!
 
-=head1 APPENDICES
-
-Depending on your comfort level with software installation on UNIX
-environments, you may find some of this document a bit tedious.
-I'll try to assume that you know only the basics, but you do need to
-know the difference between an unprivileged user and the special
-"root" user.  To begin, I'd like to suggest you have many of the
-GNU project's utilities installed, such as gcc, gmake, gunzip, and
-tar.  If you are installing on a GNU/Linux system, you most likely
-already have these, so don't worry about it.  If you're installing
-on a Sun Solaris system, you'll probably have gcc and GNU's make,
-but you'll likely have to install gunzip and GNU tar.  If, in
-addition, you hope to install MySQL, you'll be required to install
-GNU tar as Sun's tar is broken and won't untar the MySQL packages
-properly.
-
-=head1 APPENDIX 1. UPGRADING FROM VERSION 0.09
-
-If you have version 0.09 of CMap installed, you will need to alter
-your database *after* performing the entire installation process (so
-the new CMap libraries will be in place).  There are three new tables
-in the 0.10 version of CMap.  In addition, several fields and tables
-have been deprecated.  
-
-=head2 BACKUP YOUR DATA
-
-Before attempting any of the instructions in this document, it is
-recommended that you backup your database before attempting to alter
-the schema and migrate the data (or replicate the database and try the
-alterations on the copy).  
-
-=head2 CREATE NEW TABLES AND INDICES
-
-Execute the "CREATE TABLE/INDEX" statements from the appropriate
-"sql/cmap.create.*" for the following tables:
-
-=over 4
-
-=item *   cmap_attribute
-
-=item *   cmap_feature_alias
-
-=item *   cmap_xref
-
-=back
-
-After you have added these tables, you should create the following
-indices:
-
- CREATE INDEX ev_feature_correspondence_id ON cmap_correspondence_evidence 
- (feature_correspondence_id);
-
- CREATE INDEX map_id_feature_id ON cmap_feature (feature_id,map_id);
-
-=head2 MIGRATE DATA
-
-The next step is to migrate your existing data to the new tables.  To
-do this, run the "cmap_v09_to_v10.pl" script in the "bin" directory.
-This is a non-destructive script meaning that no data will be removed
-from your database, it will only be shuffled from the old fields to
-the new.
-
-=head2 DROP TABLES AND FIELDS (OPTIONAL)
-
-Once you have done this, you can drop the deprecated fields and
-tables.  This is an optional step as the code in version 0.10 no
-longer references these tables and fields, so they can remain if you
-are paranoid about losing anything.
-
-  ALTER TABLE cmap_correspondence_evidence DROP remark;
-  ALTER TABLE cmap_feature DROP alternate_name;
-  ALTER TABLE cmap_feature DROP dbxref_name;
-  ALTER TABLE cmap_feature DROP dbxref_url;
-  ALTER TABLE cmap_feature_type DROP description;
-  ALTER TABLE cmap_map_cache DROP requested_on;
-  ALTER TABLE cmap_map_set DROP remarks;
-  ALTER TABLE cmap_species DROP ncbi_taxon_id;
-  DROP TABLE cmap_dbxref;
-  DROP INDEX feature_correspondence_id on cmap_correspondence_evidence;
-  DROP INDEX alternate_name on cmap_feature;
-  DROP TABLE cmap_feature_note;
-
-=head2 RECONFIGURE APACHE
-
-If you are upgrading from 0.09, you will notice that CMap no longers
-installs as a mod_perl handler -- it's now just a simple CGI
-application.  As such, you should remove the "<Location>" directives
-from your "httpd.conf" file after installing the "cmap" CGI script.
-If you want to automatically redirect your users from the old "/cmap"
-location to the new script, simply use mod_rewrite in Apache with
-these directives:
-
-  RewriteEngine on
-  RewriteRule   ^/cmap/(admin|correspondence|evidence_type_info|feature|feature_alias|feature_search|feature_type_info|help|map_details|map_set_info|map_type_info|matrix|species_info|view_feature_on_map|viewer)(\??.*) /cgi-bin/cmap/$1$2 [R]
-
-
-=head1 APPENDIX 2. OPERATING SYSTEM
-
-Since all of CMap is written in Perl, theoretically you should be able
-to install the application on any operating system (OS) that Perl
-runs on, including different versions of UNIX (Solaris, Linux, *BSD,
-Mac OS X) and Windows.  The easiest OSs to build CMap tend to be
-Linux and Solaris.  The author has little or no experience building on
-other platforms, though he would not discourage you from trying.  CMap
-itself is quite easy to install and run -- it's really all the
-dependent software (a database, system libraries like "gd," and some
-of the trickier Perl modules) that can cause problems.
-
-My general advice is to use precompiled binaries (e.g. RPMs) unless
-you want to build from source (with the exception of MySQL, which you
-should always use a precompiled binary as it's very difficult to
-compile a something more optimized for your OS than what they offer).
-Solaris is a decent OS, but the first thing you'll want to do is to
-install all the GNU tools (gcc, tar [Sun's tar is broken and won't
-unpack MySQL], etc.) that make using Linux so easy.  It can be tricky
-getting the necessary libraries installed on OS X, but there are sites
-that offer everything you need.
-
-=head1 APPENDIX 3. CONVENTIONS FOR BUILDING SOFTWARE ON UNIX
-
-The standard way to install software on a UNIX-like system includes
-running something that figures out what your system looks like.
-This is usually a script called "configure."  Then you use "make" to
-build the binaries, sometimes to test them, and then to install
-them.  The first couple of steps can be done as an unprivileged user
-(i.e., whatever your normal login on a system is) as long as you
-unpack your sources into a directory where you can write files.  The
-last step, usually "make install," almost always requires root
-privileges as it places the newly built files into sensitive
-system directories.
-
-=head2 2.1. WHERE TO PUT SOURCES
-
-As a convention, Linux users often unpack sources into one directory
-like "/usr/local/src." Additionally, I would recommend you place all the
-original packages (rpm's, deb's, tar.gz's, etc.) into one directory. I
-like to create a directory called "/usr/local/downloads" for these types
-of files. I'd recommend that both be owned and only writable by root.
-After you've stored the files you download, unpack them like into some
-source directory. I like to use "/usr/local/src." Here is how to
-decompress and unpack a tar.gz file in one step using GNU tar:
-
-  # cd /usr/local/src
-  # tar zxvf ../downloads/my-package.tar.gz
-
-B<Note:> The root's prompt is usually shown with a hash sign "#". When
-showing a prompt for a regular user, the convention is to use a dollar
-sign "$". You won't actually type the hash or dollar sign in the
-commands listed, only what follows.
-
-The above command only works with GNU tar.  To unzip and unpack on
-Solaris, do the following (assuming you've got "gunzip" installed on 
-your system):
-
-  # cd /usr/local/src
-  # gunzip -c ../downloads/my-package.tar.gz | tar xvf -
-
-Alternately, you can always just "gunzip" the "tar.gz" file into just
-a plain tar file, then untar that.  It takes two steps instead of one,
-but it works just as well.
-
-After that, cd into the directory created by the package and follow the
-directions for installing the software.  Typically, it will involve the 
-basic triumvirate of commands:
-
-  # ./configure
-  # make
-  # make install
-
-=head1 APPENDIX 4. STARTING APACHE ET AL. ON BOOT
-
-Should your system ever go down for any reason (e.g., crash or
-reboot), you'll probably want all your services to come back up when
-the machine boots.  UNIX-type systems can vary quite a bit in how
-you determine what comes up at boot and in what order, but on
-typical GNU/Linux systems, you can simply place start scripts in a
-directory like "/etc/rc.d/init.d" and then create symbolic links
-into the "rcX.d" directory where the "X" represents your default
-runlevel (usually 2 or 3 for a server).  Here's how you could start
-Apache at boot on a RedHat system with a default runlevel of "3":
-
-  $ su -
-  # cd /etc/rc.d/init.d
-  # ln -s /usr/local/apache/bin/apachectl ./httpd
-  # cd /etc/rc.d/rc3.d/
-  # ln -s ../init.d/httpd ./S99httpd
-  # ln -s ../init.d/httpd ./K99httpd
-
-The "SXX" and "KXX" prefix are conventions used to indicate "start"
-and "kill" scripts.  The number that occurs after the "S" or "K"
-indicates the relative order in which the script.  All "S" scripts are
-passed a command of "start" when the system is booting and are
-processed in alphabetical order, so "S10abc" is started before
-"S10def" which is processed before "S11ghi," etc.  The "K" scripts are
-given an argument of "stop."  Generally, if you start a service in
-this manner, you should cleanly shut it down with a kill script
-rather than just letting the process die with the final kill signals
-the operating system sends out just before shutdown.
-
-MySQL has its own scripts to make sure it starts up on boot.  You
-should follow the directions appropriate for your system.
-
-=head1 APPENDIX 5. CVS ACCESS
+=head1 CVS ACCESS
 
 If you'd like to install and/or hack on the very latest version of
 CMap, then you'll want to checkout the "cmap" project from the
@@ -857,4 +670,4 @@ instructions:
 
 =head1 AUTHOR
 
-Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
+Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.

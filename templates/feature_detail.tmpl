@@ -90,7 +90,7 @@
     [% IF feature.xrefs.size %]
         <tr>
             <th align="right" valign="top">Cross-references:</th>
-            <td colspan="2" align="center">
+            <td colspan="2">
                 [%- FOREACH xref=feature.xrefs -%]
                     [% NEXT UNLESS xref.xref_url %]
                     <b>[</b>&nbsp;<a href="[% xref.xref_url %]">[% xref.xref_name %]</a>&nbsp;<b>]</a><br />
@@ -113,6 +113,7 @@
         <tr>
             <th>Feature</th>
             <th>Map</th>
+            <th>Map&nbsp;Type</th>
             <th>Aliases</th>
             <th>Evidence&nbsp;Type</th>
             <th colspan="4">Actions</th>
@@ -125,6 +126,7 @@
                     <a href="feature?feature_aid=[% fc.feature_aid %]">[% fc.feature_name %]</a>
                 </td>
                 <td>[% fc.species_name %]-[% fc.map_set_name %]-[% fc.map_name %]</td>
+                <td>[% fc.map_type %]</td>
                 <td>[% IF fc.defined('aliases') AND fc.aliases.size; fc.aliases.join(', '); ELSE; 'None'; END %]</td>
                 <td>
                     [% FOREACH e=fc.evidence %]

@@ -60,7 +60,10 @@
 
     &nbsp;
 
+    <input type="checkbox" name="use_colors" value="1"[% IF apr.param('use_colors'); ' checked'; END %]>Use Colors
+
     <input type="hidden" name="show_matrix" value="1">
+    <input type="hidden" name="link_map_set_aid" value="[% apr.param('link_map_set_aid') %]">
     <input type="hidden" name="prev_species_aid" value="[% apr.param('species_aid') %]">
     <input type="hidden" name="prev_map_set_aid" value="[% apr.param('map_set_aid') %]">
     <input type="hidden" name="prev_map_name"    value="[% apr.param('map_name') %]">
@@ -124,7 +127,7 @@
                     <td colspan="3">&nbsp;</td>
                     [% FOREACH ms=top_row.map_sets %]
                         <td align="center">
-                            <a href="[% url %]/matrix?show_matrix=1;map_set_aid=[% apr.param('map_set_aid') %];species_aid=[% apr.param('species_aid') %];map_name=[% apr.param('map_name') %];link_map_set_aid=[% ms.map_set_aid %]">[% ms.map_set_name %]</a>
+                            <a href="[% url %]/matrix?show_matrix=1;map_set_aid=[% apr.param('map_set_aid') %];species_aid=[% apr.param('species_aid') %];map_name=[% apr.param('map_name') %];link_map_set_aid=[% ms.map_set_aid %];use_colors=[% apr.param('use_colors') %]">[% ms.map_set_name %]</a>
                         </td>
                     [% END %]
                     <td colspan="3">&nbsp;</td>
@@ -169,12 +172,35 @@
                                 <b>All</b>
                             [% END %]
                         [% ELSE %]
-                            <a href="[% url %]/matrix?show_matrix=1;species_aid=[% apr.param('species_aid') %];map_set_aid=[% ms.map_set_aid %]">[% ms.map_set_name | nbsp %]</a>
+                            <a href="[% url %]/matrix?show_matrix=1;species_aid=[% apr.param('species_aid') %];map_set_aid=[% ms.map_set_aid %];link_map_set_aid=[% apr.param('link_map_set_aid') %];use_colors=[% apr.param('use_colors') %]">[% ms.map_set_name | nbsp %]</a>
                         [% END %]
                     </td>
 
                     [% FOREACH r=ms.correspondences %]
-                        <td align="center" class="[% IF i % 2 == 0 %]colored[% ELSE %]monotonic[% END %]">
+                        [% 
+                            IF apr.param('use_colors');
+                                IF r.number=='N/A' OR r.number==0;
+                                    SET bgcolor='FFFFFF'; # white
+                                ELSIF r.number>0 AND r.number<=100;
+                                    SET bgcolor='7FFFD4'; # aquamarine
+                                ELSIF r.number>100 AND r.number<=500;
+                                    SET bgcolor='90EE90'; # lightgreen
+                                ELSIF r.number>500 AND r.number<=1000;
+                                    SET bgcolor='ADFF2F'; # greenyellow
+                                ELSIF r.number>1000;
+                                    SET bgcolor='FFFF00'; # yellow
+                                END;
+                                SET attr="bgcolor='$bgcolor'";
+                            ELSE;
+                                IF i % 2 == 0; 
+                                    SET class='colored';
+                                ELSE; 
+                                    SET class='monotonic'; 
+                                END;
+                                SET attr="class=$class"; 
+                            END 
+                        -%]
+                        <td align="center" [% attr%]>
                             [% IF r.number=='N/A' %]
                                 [% r.number %]
                             [% ELSIF r.number==0 %]
@@ -183,7 +209,7 @@
                                 [% IF apr.param('map_set_aid') %]
                                     <a href="[% url %]/viewer?ref_map_set_aid=[% ms.map_set_aid %];ref_map_aid=[% ms.map_aid %];comparative_maps=[% IF r.map_aid %]1%3dmap_aid%3d[% r.map_aid %][% ELSE %]1%3dmap_set_aid%3d[% r.map_set_aid %][% END %]">[% r.number %]</a>
                                 [% ELSE %]
-                                    <a href="[% url %]/matrix?show_matrix=1;species_aid=[% apr.param('species_aid') %];map_name=[% apr.param('map_name') %];map_set_aid=[% ms.map_set_aid %];link_map_set_aid=[% r.map_set_aid %]">[% r.number %]</a>
+                                    <a href="[% url %]/matrix?show_matrix=1;species_aid=[% apr.param('species_aid') %];map_name=[% apr.param('map_name') %];map_set_aid=[% ms.map_set_aid %];link_map_set_aid=[% r.map_set_aid %];use_colors=[% apr.param('use_colors') %]">[% r.number %]</a>
                                 [% END %]
                             [% END %]
                         </td>
@@ -197,7 +223,7 @@
                                 <b>All</b>
                             [% END %]
                         [% ELSE %]
-                            <a href="[% url %]/matrix?show_matrix=1;species_aid=[% apr.param('species_aid') %];map_set_aid=[% ms.map_set_aid %]">[% ms.map_set_name | nbsp %]</a>
+                            <a href="[% url %]/matrix?show_matrix=1;species_aid=[% apr.param('species_aid') %];map_set_aid=[% ms.map_set_aid %];link_map_set_aid=[% apr.param('link_map_set_aid') %];use_colors=[% apr.param('use_colors') %]">[% ms.map_set_name | nbsp %]</a>
                         [% END %]
                     </td>
 
@@ -250,7 +276,7 @@
                     <td colspan="3">&nbsp;</td>
                     [% FOREACH ms=top_row.map_sets %]
                         <td>
-                            <a href="[% url %]/matrix?show_matrix=1;map_set_aid=[% apr.param('map_set_aid') %];species_aid=[% apr.param('species_aid') %];map_name=[% apr.param('map_name') %];link_map_set_aid=[% ms.map_set_aid %]">[% ms.map_set_name %]</a>
+                            <a href="[% url %]/matrix?show_matrix=1;map_set_aid=[% apr.param('map_set_aid') %];species_aid=[% apr.param('species_aid') %];map_name=[% apr.param('map_name') %];link_map_set_aid=[% ms.map_set_aid %];use_colors=[% apr.param('use_colors') %]">[% ms.map_set_name %]</a>
                         </td>
                     [% END %]
                     <td colspan="3">&nbsp;</td>

@@ -4,7 +4,7 @@ CMap Code Overview
 
 =head1 VERSION
 
-$Revision: 1.4 $
+$Revision: 1.4.2.1 $
 
 CMap is a CGI application for viewing comparative and genetic maps.
 Written entirely in Perl, this application will run on many different
@@ -25,8 +25,8 @@ traditional "three-tiered" structure of layers for the data, the
 logic, and the presentation layers.  You'll find all the database
 interaction encapsulated into the Bio::GMOD::CMap::Data* modules, all
 the "logic" (the code that lays out the map components) in the
-Bio::GMOD::CMap::Drawer* modules, and all the HTML generation in the
-Bio::GMOD::CMap::Apache* modules.  
+Bio::GMOD::CMap::Drawer* modules, and all the CGI interaction and HTML
+generation in the Bio::GMOD::CMap::Apache* modules.  
 
 =head1 DATA MODULES
 
@@ -416,6 +416,8 @@ Bio::GMOD::CMap modules.  Here's an example:
 
 =head1 AUTHOR
 
-Ken Y. Clark, kclark@cshl.org
+Ken Y. Clark, E<lt>kclark@cshl.orgE<gt>.
 
-Copyright (c) 2002-4 Cold Spring Harbor Laboratory
+=head1 COPYRIGHT
+
+Copyright (c) 2002-4 Cold Spring Harbor Laboratory.

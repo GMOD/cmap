@@ -1,15 +1,16 @@
 package Bio::GMOD::CMap::Apache::MapDetailViewer;
 # vim: set ft=perl:
 
-# $Id: MapDetailViewer.pm,v 1.22.2.1 2004-05-28 20:50:29 kycl4rk Exp $
+# $Id: MapDetailViewer.pm,v 1.22.2.2 2004-07-28 15:13:57 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES );
-$VERSION = (qw$Revision: 1.22.2.1 $)[-1];
+$VERSION = (qw$Revision: 1.22.2.2 $)[-1];
 
 use URI::Escape;
 use Data::Pageset;
 use Bio::GMOD::CMap::Apache;
+use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer;
 
 use base 'Bio::GMOD::CMap::Apache';
@@ -86,6 +87,11 @@ sub handler {
     }
     elsif ( $apr->param('include_evidence_types') ) {
         @evidence_types = split( /,/, $apr->param('include_evidence_types') );
+    }
+
+    for ( $ref_map_start, $ref_map_stop ) {
+        next if $_ =~ NUMBER_RE;
+        $highlight = join( ',', $highlight, $_ );    
     }
 
     my %slots = (
@@ -194,8 +200,6 @@ sub handler {
         my @map_ids    = map {$_||()} keys %{$drawer->{'data'}{'slots'}{'0'}};
         my $ref_map_id = shift @map_ids;
         my $ref_map    = $drawer->{'data'}{'slots'}{'0'}{ $ref_map_id };
-        $apr->param('ref_map_start',  $ref_map->{'start'}         );
-        $apr->param('ref_map_stop',   $ref_map->{'stop'}          );
         $apr->param('feature_types',  join(',', @feature_types )  );
         $apr->param('evidence_types', join(',', @evidence_types ) );
         $apr->param('highlight_uri',  uri_escape( $apr->param('highlight') ) );

@@ -1,0 +1,115 @@
+[% 
+    INCLUDE header.tmpl 
+    title=title
+    cur_sec='entry_viewer'
+    help_anchor='entry_viewer'
+%]
+[%-
+url=apr.url( '-full' => 1, '-path_info' => 1 ).replace('\/cmap.*', '/cmap');
+-%]
+
+[%- IF intro -%]
+<p>[% intro %]</p>
+[%- END -%]
+
+<table border="0"> 
+    <tr>
+        <td valign="top">
+    
+            <table border="0">
+                <form name="ref_map_set_form">
+                <tr>
+                    <th colspan="2">Map Viewer</th>
+                </tr>
+
+                <tr>
+                    <td align="right">Ref. Species:</td>
+
+                    <td>
+                        [%- IF form_data.ref_species.size -%]
+                            <select name="ref_species_aid" onChange="javascript:ref_map_set_form.submit()">
+                            <option value="">--Select--</option>
+                            [%- IF form_data.ref_species.size > 1; form_data.ref_species.unshift({ species_aid => -1, species_common_name => 'All Species' }); END -%]
+                            [%- FOREACH s=form_data.ref_species -%]
+                                <option value="[% s.species_aid %]"[% IF s.species_aid==apr.param('ref_species_aid') OR form_data.ref_species.size==1; ' selected'; END %]>[% s.species_common_name %][% IF s.species_full_name %] ([% s.species_full_name %])[% END %]</option>
+                            [%- END -%]
+                            </select>
+                            <input type="submit" value="Change">
+                        [%- ELSE -%]
+                            No species.
+                        [%- END -%]
+                    </td>
+                </tr>
+              
+                [% IF form_data.ref_map_sets.size %]
+                    <tr>
+                        <td align="right">Ref. Set:</td>
+
+                        <td>
+                            [% SET last_map_type='' %]
+                            <select name="ref_map_set_aid" onChange="javascript:ref_map_set_form.submit()">
+                                <option value="">--Select--</option>
+                                [%- FOREACH ms=form_data.ref_map_sets -%]
+                                    [%- IF ms.map_type != last_map_type -%]
+                                        <option value="">--&nbsp;[% ms.map_type %]&nbsp;Maps&nbsp;--</option>
+                                    [%- END -%]
+                                    <option [% IF apr.param('ref_map_set_aid') == ms.accession_id OR form_data.ref_map_sets.size==1; ' selected'; END %] value="[% ms.accession_id %]">
+                                      [% ms.species_name %] - [% ms.map_set_name %]
+                                    </option>
+                                    [%- SET last_map_type=ms.map_type -%]
+                                [%- END -%]
+                            </select>&nbsp;<input type="submit" value="Change">
+                            <input type="hidden" name="data_source"          value="[% data_source %]">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align=RIGHT>
+                            Name</td><td><input size=10 type="text" name="name_search" value="[% name_search %]"  onChange="window.document.ref_map_set_form.page_index_start.value=''; window.document.ref_map_set_form.page_index_stop.value=''">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align=RIGHT>
+                            Minimum Number of Related Maps </td><td><input size=4 type="text" name="min_correspondences" value="[% min_correspondences %]" onChange="window.document.ref_map_set_form.page_index_start.value=''; window.document.ref_map_set_form.page_index_stop.value=''">
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td align=RIGHT>
+                            Get results </td><td><input size=4 type="text" name="page_index_start" value="[% page_index_start %]"> through <input size=4 type="text" name="page_index_stop" value="[% page_index_stop %]">
+                        </td>
+                    </tr>
+                [% END %]
+                </form>
+                </table></table><P><HR>
+                [% IF form_data.ref_maps %]
+                    [% IF form_data.ref_maps.size %]
+                        <table border=1>
+                        <tr><td>Map Name</td><td>Related Maps</td>
+                            <td>Start</td><td>Stop</td>
+                        </tr>
+                        [% FOREACH m=form_data.ref_maps %]
+                        <tr>
+                            <td><a href="[% url %]/viewer?image_size=small&font_size=small&image_type=png&label_features=all&collapse_features=1&aggregate=1&feature_types=-1&corr_only_feature_types=-1&ref_map_set_aid=[% apr.param('ref_map_set_aid') %]&ref_map_aids=[% m.accession_id %]&ref_species_aid=1&data_source=[% data_source %]&">[% m.map_name %]</a></td>
+                            <td>[% m.comp_map_count %]</td>
+                            <td>[% m.start_position %]</td>
+                            <td>[% m.stop_position %]</td>
+                        </tr>
+                        [% END %]
+                        </table>
+                    [% ELSE %]
+                        --No Maps Available--
+                [% END %]
+
+                            <input type="hidden" name="ref_map_set_aid"  value="[% apr.param('ref_map_set_aid') %]">
+                            <input type="hidden" name="ref_species_aid"  value="[% apr.param('ref_species_aid') %]">
+                            <input type="hidden" name="data_source"          value="[% data_source %]">
+                   [% ELSE %]
+                    </form>
+                    [% END %]
+            </table>
+    
+      </td>
+
+    </tr>
+</table>
+

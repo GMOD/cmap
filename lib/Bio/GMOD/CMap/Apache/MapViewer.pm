@@ -1,16 +1,17 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.31.2.1 2004-06-17 20:14:06 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.31.2.2 2004-07-28 15:13:57 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.31.2.1 $)[-1];
+$VERSION = (qw$Revision: 1.31.2.2 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer;
 use Bio::GMOD::CMap::Data;
+use Regexp::Common;
 use Template;
 
 use base 'Bio::GMOD::CMap::Apache';
@@ -83,6 +84,11 @@ sub handler {
         $comparative_maps      = undef;
         $comparative_map_right = undef;
         $comparative_map_left  = undef;
+    }
+
+    for ( $ref_map_start, $ref_map_stop ) {
+        next if $_ =~ NUMBER_RE;
+        $highlight = join( ',', $highlight, $_ );    
     }
 
     my %slots = (

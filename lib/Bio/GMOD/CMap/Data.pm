@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.98.2.20 2004-07-09 13:45:34 kycl4rk Exp $
+# $Id: Data.pm,v 1.98.2.23 2004-07-28 15:10:23 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.98.2.20 $)[-1];
+$VERSION = (qw$Revision: 1.98.2.23 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -493,8 +493,8 @@ Returns the data for drawing comparative maps.
         : undef
     ;
 
-    return $self->error("Neither map set acc id '$map_set_aid' ".
-        "nor map acc id '$map_aid' converts to an internal id"
+    return $self->error("Neither map set acc id '$map_set_aid' nor ".
+        "map acc id '$map_aid' converts to an internal id (bad data source?)"
     ) unless $map_set_id || $this_map_id;
 
     if ( $this_map_id ) {
@@ -1208,9 +1208,11 @@ Returns the data for the correspondence matrix.
                      s.common_name,
                      s.display_order 
             from     cmap_species s,
-                     cmap_map_set ms
+                     cmap_map_set ms,
+                     cmap_map_type mt
             where    s.species_id=ms.species_id
-            and      ms.can_be_reference_map=1
+            and      ms.map_type_id=mt.map_type_id
+            and      mt.is_relational_map=0
             and      ms.is_enabled=1
             order by s.display_order, s.common_name
         ],
@@ -1228,7 +1230,7 @@ Returns the data for the correspondence matrix.
             from     cmap_map_type mt,
                      cmap_map_set ms
             where    mt.map_type_id=ms.map_type_id
-            and      ms.can_be_reference_map=1
+            and      mt.is_relational_map=0
             and      ms.is_enabled=1
             order by mt.display_order, mt.map_type
         ],
@@ -1293,10 +1295,10 @@ Returns the data for the correspondence matrix.
             from     cmap_map_set ms,
                      cmap_map_type mt,
                      cmap_species s
-            where    ms.can_be_reference_map=1
-            and      ms.is_enabled=1
-            and      ms.map_type_id=mt.map_type_id
+            where    ms.is_enabled=1
             and      ms.species_id=s.species_id
+            and      ms.map_type_id=mt.map_type_id
+            and      mt.is_relational_map=0
         ];
 
         $sql .= "and s.accession_id='$species_aid' "   if $species_aid;
@@ -1321,9 +1323,9 @@ Returns the data for the correspondence matrix.
                      cmap_map_type mt,
                      cmap_species s
             where    map.map_set_id=ms.map_set_id
-            and      ms.can_be_reference_map=1
             and      ms.is_enabled=1
             and      ms.map_type_id=mt.map_type_id
+            and      mt.is_relational_map=0
             and      ms.species_id=s.species_id
         ];
         $map_sql .= "and mt.accession_id='$map_type_aid' " if $map_type_aid;
@@ -1394,11 +1396,11 @@ Returns the data for the correspondence matrix.
                          cmap_map_type mt,
                          cmap_species s
                 where    map.map_name='$map_name'
-                and      map.map_type_id=mt.map_type_id
                 and      map.map_set_id=ms.map_set_id
+                and      ms.map_type_id=mt.map_type_id
                 and      ms.is_enabled=1
                 and      ms.species_id=s.species_id
-                and      ms.can_be_reference_map=1
+                and      mt.is_relational_map=0
             ];
 
             $map_set_sql .= 
@@ -1437,10 +1439,10 @@ Returns the data for the correspondence matrix.
                 from     cmap_map_set ms,
                          cmap_map_type mt,
                          cmap_species s
-                where    ms.can_be_reference_map=1
-                and      ms.is_enabled=1
+                where    ms.is_enabled=1
                 and      ms.map_type_id=mt.map_type_id
                 and      ms.species_id=s.species_id
+                and      mt.is_relational_map=0
             ];
 
             $map_set_sql .= 
@@ -1468,14 +1470,6 @@ Returns the data for the correspondence matrix.
             $db->selectall_arrayref( $map_set_sql, { Columns => {} } )
         };
     }
-
-    #
-    # If there's only only set, then pretend that the user selected 
-    # this one and expand the relationships to the map level.
-    #
-#    if ( $map_set_aid eq '' && scalar @reference_map_sets == 1 ) {
-#        $map_set_aid = $reference_map_sets[0]->{'map_set_aid'};
-#    }
 
     #
     # Select the relationships from the pre-computed table.
@@ -1607,18 +1601,21 @@ Returns the data for the correspondence matrix.
     #
     # Select ALL the map sets to go across.
     #
-    my $link_map_can_be_reference = ( $link_map_set_aid )
-        ? $db->selectrow_array(
+    my $link_map_can_be_reference;
+    if ( $link_map_set_aid ) {
+        my $is_rel = $db->selectrow_array(
             q[
-                select ms.can_be_reference_map
-                from   cmap_map_set ms
+                select mt.is_relational_map
+                from   cmap_map_set ms, cmap_map_type mt
                 where  ms.accession_id=?
+                and    ms.map_type_id=mt.map_type_id
             ],
             {},
             ( $link_map_set_aid )
-        )
-        : undef
-    ;
+        );
+
+        $link_map_can_be_reference = $is_rel ? 0 : 1;
+    }
 
     #
     # If given a map set id for a map set that can be a reference map, 
@@ -1771,6 +1768,7 @@ Returns the data for the correspondence matrix.
         map_sets     => $map_sets,
         map_types    => $map_types,
         maps         => $maps,
+        lookup       => \%lookup,
     };
 }
 
@@ -3339,9 +3337,9 @@ Returns the detail info for a map.
     my $reference_map = $sth->fetchrow_hashref;
 
     $map_start = $reference_map->{'start_position'} 
-        unless defined $map_start and $map_start =~ NUMBER_RE;
+        unless defined $map_start and $map_start =~ $RE{'num'}{'real'};
     $map_stop  = $reference_map->{'stop_position'} 
-        unless defined $map_stop and $map_stop =~ NUMBER_RE;
+        unless defined $map_stop and $map_stop =~ $RE{'num'}{'real'};
     $reference_map->{'start'}       = $map_start;
     $reference_map->{'stop'}        = $map_stop;
     $reference_map->{'object_id'}   = $map_id;

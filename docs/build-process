@@ -1,0 +1,38 @@
+Steps For Building CMap Release
+-------------------------------
+
+-   Update the following files:
+    * Changes
+    * TODO
+    * MANIFEST
+    * README
+    * INSTALL.pod
+    * BUGS
+    * docs/ADMINISTRATION.pod
+    * docs/CODE_OVERVIEW.pod
+
+-   Update SQL and docs:
+    * Dump development db from MySQL with "mysqldump --no-data"
+    * Convert to various formats with SQL::Translator:
+        $ sqlt -f MySQL -t YAML dump.sql > dump.yml
+        $ sqlt -f YAML -t MySQL dump.yml > sql/cmap.create.mysql
+        $ sqlt -f YAML -t Oracle dump.yml > sql/cmap.create.oracle
+        $ sqlt -f YAML -t PostgreSQL dump.yml > sql/cmap.create.postgresql
+        $ sqlt -f YAML -t Sybase dump.yml > sql/cmap.create.sybase
+        $ sqlt -f YAML -t SQLite dump.yml > sql/cmap.create.sqlite
+        $ sqlt -f YAML -t HTML --title 'CMap Version' dump.yml > docs/cmap-schema-desc.html
+        $ sqlt-diagram -d YAML --color --title 'CMap Version' dump.yml > docs/cmap-schema.png
+        $ sqlt-graph -d YAML --color --height 7.5 --width 13 dump.yml > docs/cmap-schema-graph.png
+
+-   Dump the data from a small sample database:
+    $ mysqldump --no-create-info test > data/sample-dump.sql
+    $ gzip !$
+    (or use "sqlt-dumper" to make a dumper script)
+
+-   Make sure "cmap.conf.PL" and "Constants.pm.PL" have the latest contents
+
+-   Check with "./Build distcheck"
+
+-   Create tarball with "./Build dist"
+
+-   Test installation from tarball on a different machine

@@ -2,6 +2,8 @@
 
 0.12 
 
+-   Added colors to matrix cells to indicate ranges of correspondences
+-   Added "GIF" image type choice now that GIF is free
 -   Further enhancements to label distribution: if there are as many
     labels as can possibly fit in the vertical space, they're just
     placed evenly;  otherwise, they are spaced as closely as possible to
@@ -47,6 +49,7 @@
 -   Added ability to disallow automated name-based correspondences
     based on feature type (e.g., don't create correspondences between
     features of type "centromere")
+-   Fixed bug in pager URL on map details page
 
 0.11    2004-03-12
 
