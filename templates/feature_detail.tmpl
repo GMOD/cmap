@@ -1,7 +1,7 @@
 [% 
     INCLUDE header.tmpl 
     title="Feature Detail &quot;$feature.feature_name&quot;"
-    cur_sec='feature_detail'
+    cur_sec='feature_details'
     help_anchor='feature_details'
 %]
 
@@ -124,18 +124,20 @@
 [% IF feature.correspondences.size %]
     <table width="100%">
         <tr>
-            <th>Map</th>
             <th>Feature</th>
+            <th>Map</th>
             <th>Aliases</th>
-            <th>Evidence</th>
+            <th>Evidence&nbsp;Type</th>
             <th colspan="4">Actions</th>
         </tr>
       
         [% SET i=0 %]
         [% FOREACH fc=feature.correspondences %]
             <tr class="[% IF i % 2 == 0 %]colored[% ELSE %]monotonic[% END %]">
+                <td>
+                    <a href="feature?feature_aid=[% fc.feature_aid %]">[% fc.feature_name %]</a>
+                </td>
                 <td>[% fc.species_name %]-[% fc.map_set_name %]-[% fc.map_name %]</td>
-                <td>[% fc.feature_name %]</td>
                 <td>[% IF fc.defined('aliases') AND fc.aliases.size; fc.aliases.join(', '); ELSE; 'None'; END %]</td>
                 <td>
                     [% FOREACH e=fc.evidence %]
@@ -146,13 +148,10 @@
                     <b>[</b>&nbsp;<a href="correspondence?correspondence_aid=[% fc.feature_correspondence_aid %]">Correspondence&nbsp;Details</a>&nbsp;<b>]</b>
                 </td>
                 <td align="center">
-                    <b>[</b>&nbsp;<a href="feature?feature_aid=[% fc.feature_aid %]">Feature&nbsp;Details</a>&nbsp;<b>]</b>
-                </td>
-                <td align="center">
                     <b>[</b>&nbsp;<a href="map_details?ref_map_set_aid=[% fc.map_set_aid %];ref_map_aid=[% fc.map_aid %];highlight=[% fc.feature_aid %]">View&nbsp;On&nbsp;Map</a>&nbsp;<b>]</b>
                 </td>
                 <td align="center">
-                    <b>[</b>&nbsp;<a href="viewer?ref_map_set_aid=[% feature.map_set_aid %];ref_map_aid=[% feature.map_aid %];highlight=[% feature.feature_aid %],[% fc.feature_aid %];comparative_maps=1%3dmap_aid%3d[% fc.map_aid %]">Show&nbsp;Maps</a>&nbsp;<b>]</b>
+                    <b>[</b>&nbsp;<a href="viewer?ref_map_set_aid=[% feature.map_set_aid %];ref_map_aid=[% feature.map_aid %];highlight=[% feature.feature_aid %],[% fc.feature_aid %];comparative_maps=1%3dmap_aid%3d[% fc.map_aid %]">Comparative&nbsp;View</a>&nbsp;<b>]</b>
                 </td>
             </tr>
             [% SET i=i+1 %]
