@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.33 2004-03-26 20:42:11 mwz444 Exp $
+# $Id: MakeCorrespondences.pm,v 1.34 2004-03-30 02:25:46 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.33 $)[-1];
+$VERSION = (qw$Revision: 1.34 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -96,8 +96,7 @@ sub make_name_correspondences {
                f.feature_name,
                f.feature_type,
                map.map_id,
-               ms.map_set_id,
-               ms.is_relational_map
+               ms.map_set_id
         from   cmap_feature f,
                cmap_map map,
                cmap_map_set ms
@@ -208,14 +207,6 @@ sub make_name_correspondences {
                         { $f2->{'feature_type'} }
                     ;
                 }
-
-                #
-                # If both features are in the same relational map set,
-                # only create a corr. if both are on the same map.
-                #
-                next if $f1->{'is_relational_map'} &&
-                    $f1->{'map_set_id'} == $f2->{'map_set_id'} &&
-                    $f1->{'map_id'} != $f2->{'map_id'};
 
                 my $s = "b/w '$f1->{'feature_name'}' ".
                         "and '$f2->{'feature_name'}.'\n";
