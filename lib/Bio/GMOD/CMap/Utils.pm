@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Utils;
 
-# $Id: Utils.pm,v 1.16 2003-03-17 20:26:49 kycl4rk Exp $
+# $Id: Utils.pm,v 1.17 2003-03-28 18:58:18 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.16 $)[-1];
+$VERSION = (qw$Revision: 1.17 $)[-1];
 
 use base 'Exporter';
 
@@ -413,8 +413,8 @@ Given a result set, break it up into pages.
 sub parse_words {
 #
 # Stole this from String::ParseWords::parse by Christian Gilmore 
-# (CPAN ID: CGILMORE).  Allows quoted phrases within a string to 
-# count as a "word," e.g.:
+# (CPAN ID: CGILMORE), modified to split on commas or spaces.  Allows
+# quoted phrases within a string to count as a "word," e.g.:
 #
 # "Foo bar" baz
 # 
@@ -447,12 +447,16 @@ sub parse_words {
             $inquote = 0;
         } 
         elsif ( $nextspace < $nextquote ) {
-            push(@words, substr($string, $pos, $nextspace - $pos));
+            push @words, 
+                split /[,\s+]/, substr($string, $pos, $nextspace - $pos);
             $pos = $nextspace + 1;
         } 
         elsif ( $nextspace == $length && $nextquote == $length ) {
             # End of the line
-            push( @words, substr( $string, $pos, $nextspace - $pos ) );
+            push @words, 
+                map { s/^\s+|\s+$//g; $_ }
+                split /,/,
+                substr( $string, $pos, $nextspace - $pos );
             $pos = $nextspace;
         } 
         else {
