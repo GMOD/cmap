@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap;
 
-# $Id: CMap.pm,v 1.35 2003-09-05 23:04:37 kycl4rk Exp $
+# $Id: CMap.pm,v 1.36 2003-09-18 20:30:12 kycl4rk Exp $
 
 =head1 NAME
 
@@ -43,7 +43,7 @@ use base 'Class::Base';
 # ----------------------------------------------------
 sub init {
     my ( $self, $config ) = @_;
-    $self->data_source( $config->{'data_source'} );
+    $self->data_source( $config->{'data_source'} ) or return;
     return $self;
 }
 
@@ -147,7 +147,8 @@ Remembers what has been selected as the current data source.
     }
 
     unless ( $self->{'data_source'} ) {
-        for my $ds ( @{ $self->data_sources } ) {
+        my @data_sources = $self->data_sources or return;
+        for my $ds ( @data_sources ) {
             $self->{'data_source'} = $ds->{'name'} if $ds->{'is_current'};
         }
     }
@@ -212,7 +213,13 @@ Returns all the data souces defined in the configuration file.
 
     } 
 
-    return $self->{'data_sources'};
+    if ( @{ $self->{'data_sources'} } ) {
+        return wantarray 
+            ? @{ $self->{'data_sources'} } : $self->{'data_sources'};
+    }
+    else {
+        return $self->error("Can't determine data sources (undefined?)");
+    }
 }
 
 # ----------------------------------------------------
@@ -228,6 +235,7 @@ Returns a database handle.  This is the only way into the database.
 
     my $self    = shift;
     my $db_name = shift || $self->data_source;
+    return unless $db_name;
 
     unless ( defined $self->{'db'} ) {
         my $config = $self->config('database') or 
