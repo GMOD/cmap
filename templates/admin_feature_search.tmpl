@@ -52,7 +52,7 @@
 </form>
 
 [% IF apr.param('feature_name') %]
-    [% IF data.size %]
+    [% IF features.size %]
         <table width="100%">
             <tr>
                 <td colspan="9" align="center">
@@ -90,7 +90,7 @@
 
             [% SET i=0 %]
             [% SET start = apr.param('limit_start') OR 1 %]
-            [% FOREACH f=data %]
+            [% FOREACH f=features %]
                 <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
                     <td>[% f.feature_name %]</td>
                     <td>[% f.alternate_name %]</td>
