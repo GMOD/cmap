@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.78 2004-10-23 23:43:18 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.79 2004-12-06 19:23:37 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.78 $)[-1];
+$VERSION = (qw$Revision: 1.79 $)[-1];
 
 #
 # Get command-line options
@@ -240,7 +240,7 @@ sub show_greeting {
                 display => 'Reload correspondence matrix' 
             },
             { 
-                action  => 'purge_query_cache',   
+                action  => 'purge_query_cache_menu',   
                 display => 'Purge the cache to view new data' 
             },
             { 
@@ -385,6 +385,8 @@ sub create_map_set {
 
     my $log_fh = $self->log_fh;
     print $log_fh "Map set $map_set_name created\n";
+
+    $self->purge_query_cache(1);
 }
 
 # ----------------------------------------------------
@@ -413,6 +415,7 @@ sub delete_data {
     );
     
     $self->$action( $db );
+    $self->purge_query_cache(1);
 }
 
 # ----------------------------------------------------
@@ -565,6 +568,7 @@ sub delete_correspondences {
             }
         }
     }
+    $self->purge_query_cache(1);
 }
 
 # ----------------------------------------------------
@@ -707,6 +711,7 @@ sub delete_map_set {
         $admin->map_set_delete( map_set_id => $map_set_id )
             or return $self->error( $admin->error );
     }
+    $self->purge_query_cache(1);
 }
 
 # ----------------------------------------------------
@@ -1818,6 +1823,7 @@ sub import_data {
     );
 
     $self->$action();
+    $self->purge_query_cache(1);
 }
 
 # ----------------------------------------------------
@@ -2107,6 +2113,7 @@ sub import_correspondences {
         print "Error: ", $importer->error, "\n"; 
         return; 
     };
+    $self->purge_query_cache(4);
 }
 
 # ----------------------------------------------------
@@ -2124,11 +2131,12 @@ sub delete_duplicate_correspondences {
 
     $admin->delete_duplicate_correspondences();
 
+    $self->purge_query_cache(4);
 }
 
 # ----------------------------------------------------
 
-sub purge_query_cache {
+sub purge_query_cache_menu {
 
     my $self  = shift;
 
@@ -2161,17 +2169,24 @@ sub purge_query_cache {
         ],
     );
     return unless $cache_level;
+    
+    $self->purge_query_cache($cache_level);
+}
 
-    my $admin = Bio::GMOD::CMap::Admin->new(
+# ----------------------------------------------------
+sub purge_query_cache {
+
+    my $self        = shift;
+    my $cache_level = shift || 1;
+
+    my $admin       = Bio::GMOD::CMap::Admin->new(
 	    config      => $self->config,
         data_source => $self->data_source,
     );
     print "Purging cache\n";
     $admin->purge_cache($cache_level);
-    print "Cache Purged\n\n"
-
+    print "Cache Purged\n";
 }
-
 # ----------------------------------------------------
 sub import_tab_data {
 #
@@ -2308,6 +2323,7 @@ sub import_tab_data {
 my $time_end = new Benchmark;
 print STDERR "import time: ".timestr(timediff($time_end,$time_start))."\n";
 
+    $self->purge_query_cache(1);
 }
 
 # ----------------------------------------------------
@@ -2371,6 +2387,7 @@ sub import_object_data {
         print "Error: ", $importer->error, "\n"; 
         return; 
     };
+    $self->purge_query_cache(1);
 }
 
 # ----------------------------------------------------
@@ -2504,6 +2521,7 @@ sub make_name_correspondences {
     print STDERR "make correspondence time: ".
 	timestr(timediff($time_end,$time_start))."\n";
 
+    $self->purge_query_cache(4);
     return 1;
 }
 
