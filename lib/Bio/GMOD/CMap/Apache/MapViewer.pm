@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.25 2003-10-01 23:16:08 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.26 2003-12-11 03:03:38 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.25 $)[-1];
+$VERSION = (qw$Revision: 1.26 $)[-1];
 
 use Apache::Constants qw[ :common REDIRECT ];
 use Apache::Request;
@@ -259,6 +259,7 @@ sub show_form {
         min_correspondences    => $min_correspondences,
         include_feature_types  => \@feature_types,
         include_evidence_types => \@evidence_types,
+        ref_species_aid        => $apr->param('ref_species_aid'),
     ) or return $self->error( $data->error );
 
     $form_data->{'feature_types'} = $drawer 
@@ -274,8 +275,9 @@ sub show_form {
     # The start and stop may have had to be moved as there 
     # were too few or too many features in the selected region.
     #
-    $apr->param( ref_map_start => $form_data->{'ref_map_start'} );
-    $apr->param( ref_map_stop  => $form_data->{'ref_map_stop'}  );
+    $apr->param( ref_map_start   => $form_data->{'ref_map_start'}   );
+    $apr->param( ref_map_stop    => $form_data->{'ref_map_stop'}    );
+    $apr->param( ref_species_aid => $form_data->{'ref_species_aid'} );
 
     #
     # Wrap up our current comparative maps so we can store them on 
