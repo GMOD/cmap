@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.27 2003-09-29 20:49:11 kycl4rk Exp $
+# $Id: Admin.pm,v 1.28 2003-10-01 23:12:12 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.27 $)[-1];
+$VERSION = (qw$Revision: 1.28 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils qw[ next_number parse_words ];
@@ -150,6 +150,11 @@ Delete an evidence type.
         );
     }
 
+    $self->object_note_insert_or_update(
+        table_name => 'cmap_evidence_type',
+        object_id  => $evidence_type_id,
+    );
+
     return 1;
 }
 
@@ -196,10 +201,15 @@ Delete a feature.
         ) or return;
     }
 
+    $self->object_note_insert_or_update(
+        table_name => 'cmap_feature',
+        object_id  => $feature_id,
+    );
+
     $db->do(
         q[
             delete
-            from    cmap_feature_note
+            from    cmap_feature_alias
             where   feature_id=?
         ],
         {},
@@ -264,68 +274,179 @@ Delete a feature correspondence.
         );
     }
 
+    $self->object_note_insert_or_update(
+        table_name => 'cmap_feature_correspondence',
+        object_id  => $feature_corr_id,
+    );
+
     return 1;
 }
 
 # ----------------------------------------------------
-sub feature_note_insert_or_update {
+sub feature_alias_update {
 
 =pod
 
-=head2 feature_note_insert_or_update 
+=head2 feature_alias_update 
 
-Inserts, updates or deletes the note attached to a feature.
+Updates the aliases attached to a feature.
 
 =cut
 
     my $self       = shift;
     my $feature_id = shift or return $self->error('No feature id');
-    my $note       = shift || '';
+    my @aliases    = @_;
     my $db         = $self->db;
 
-    my $count = $db->selectrow_array(
+    if ( @aliases ) {
+        $db->do(
+            'delete from cmap_feature_alias where feature_id=?', 
+            {},
+            ( $feature_id )
+        );
+    }
+
+    for my $alias ( @aliases ) {
+        $alias =~ s/^\s+|\s+$//g;
+        $db->do(
+            q[
+                insert
+                into   cmap_feature_alias (feature_id, alias)
+                values (?, ?)
+            ],
+            {},
+            ( $feature_id, $alias )
+        );
+    }
+
+    return 1;
+}
+
+# ----------------------------------------------------
+sub get_aliases {
+
+=pod
+
+=head2 get_aliases 
+
+Retrieves the aliases attached to a feature.
+
+=cut
+
+    my ( $self, $feature_id ) = @_;
+    my $db = $self->db or return;
+
+    return [
+        map { $_->[0] } 
+        @{
+            $db->selectall_arrayref(
+                q[
+                    select   alias 
+                    from     cmap_feature_alias
+                    where    feature_id=?
+                    order by alias
+                ],
+                {},
+                ( $feature_id )
+            )
+        }
+    ];
+}
+
+# ----------------------------------------------------
+sub get_note {
+
+=pod
+
+=head2 get_note 
+
+Retrieves the note attached to an object.
+
+=cut
+
+    my ( $self, $table, $object_id ) = @_;
+    my $db = $self->db or return;
+
+    return $db->selectrow_array(
         q[
-            select count(feature_id)
-            from   cmap_feature_note
-            where  feature_id=?
+            select note
+            from   cmap_note
+            where  table_name=?
+            and    object_id=?
         ],
         {},
-        ( $feature_id )
+        ( $table, $object_id )
+    );
+}
+
+# ----------------------------------------------------
+sub object_note_insert_or_update {
+
+=pod
+
+=head2 object_note_insert_or_update 
+
+Inserts, updates or deletes the note attached to an object.
+
+=cut
+
+    my $self      = shift;
+    my %args      = @_;
+    my $object_id = $args{'object_id'} or return $self->error('No object id');
+    my $table     = $args{'table_name'} or return $self->error('No table name');
+    my $note      = $args{'note'} || '';
+    my $db        = $self->db;
+
+    my $note_id = $db->selectrow_array(
+        q[
+            select note_id
+            from   cmap_note
+            where  table_name=?
+            and    object_id=?
+        ],
+        {},
+        ( $table, $object_id )
     );
 
-    if ( $count ) {
+    if ( $note_id ) {
         if ( $note ) {
             $db->do(
                 q[
-                    update cmap_feature_note
+                    update cmap_note
                     set    note=?
-                    where  feature_id=?
+                    where  note_id=?
                 ],
                 {},
-                ( $note, $feature_id )
+                ( $note, $note_id )
             );
         }
         else {
             $db->do(
                 q[
                     delete 
-                    from   cmap_feature_note
-                    where  feature_id=?
+                    from   cmap_note
+                    where  note_id=?
                 ],
                 {},
-                ( $feature_id )
+                ( $note_id )
             );
         }
     }
     elsif ( $note ) {
+        $note_id = next_number( 
+            db               => $db,
+            table_name       => 'cmap_note',
+            id_field         => 'note_id',
+        ) or die "Can't get next ID for 'cmap_note'";
+
         $db->do(
             q[
                 insert
-                into   cmap_feature_note (feature_id, note)
-                values ( ?, ? )
+                into   cmap_note ( note_id, table_name, object_id, note )
+                values ( ?, ?, ?, ? )
             ],
             {},
-            ( $feature_id, $note )
+            ( $note_id, $table, $object_id, $note )
         );
     }
 
@@ -390,11 +511,13 @@ Find all the features matching some criteria.
 
         die "Invalid search field '$search_field'" unless $where;
 
+        #
+        # Removed "alternate_name"
+        #
         my $sql = qq[
             select f.feature_id, 
                    f.accession_id as feature_aid,
                    f.feature_name,
-                   f.alternate_name,
                    f.start_position,
                    f.stop_position,
                    ft.feature_type,
@@ -554,6 +677,11 @@ Delete a feature type.
             {}, ( $feature_type_id )
         );
     }
+
+    $self->object_note_insert_or_update(
+        table_name => 'cmap_feature_type',
+        object_id  => $feature_type_id,
+    );
 
     return 1;
 }
@@ -808,6 +936,11 @@ Delete a map.
     for my $feature_id ( @$feature_ids ) {
         $self->feature_delete( feature_id => $feature_id ) or return;
     }
+
+    $self->object_note_insert_or_update(
+        table_name => 'cmap_map',
+        object_id  => $map_id,
+    );
     
     $db->do(
         q[
@@ -851,6 +984,11 @@ Delete a map set.
     for my $map_id ( @$map_ids ) {
         $self->map_delete( map_id => $map_id ) or return;
     }
+
+    $self->object_note_insert_or_update(
+        table_name => 'cmap_map_set',
+        object_id  => $map_set_id,
+    );
 
     $db->do(    
         q[         
@@ -902,6 +1040,11 @@ Delete a map type.
         );
     }       
     else {  
+        $self->object_note_insert_or_update(
+            table_name => 'cmap_map_type',
+            object_id  => $map_type_id,
+        );
+
         $db->do(
             q[
                 delete
@@ -1217,6 +1360,11 @@ Delete a species.
         );
     }
     else {
+        $self->object_note_insert_or_update(
+            table_name => 'cmap_species',
+            object_id  => $species_id,
+        );
+
         $db->do(
             q[
                 delete
