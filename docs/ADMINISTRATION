@@ -1,6 +1,6 @@
                 CMAP ADMINISTRATION AND DATA CURATION
 
-                          $Revision: 1.3 $
+                          $Revision: 1.4 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are two tools you will use:
@@ -190,28 +190,58 @@ Create."  From here you can fill in the following fields:
 *   Feature Type: The name of the feature type (e.g., "Marker" or
     "BAC")
 
-*   Shape: The shape to use when drawing the feature.
-	-	box
-	-	dumbbell
-	-	line
-	-	span
-	-	up-arrow
-	-	down-arrow
-	-	double-arrow
-	-	rectangle         
+*   Shape: The shape to use when drawing the feature.  Here is a short
+    description of the shapes and what they're best used for:
 
-*   Color:
+    box: Creates an open (unfilled) box that straddles the map. While
+    it's possible to place a box in a lane other than "1" (i.e., there's
+    no code in place to stop you), it really doesn't look very good.
+    This shape was really intended just to represent infrequently
+    occuring features, like a centromere. The boxes get progressively
+    larger as they start to collide and are quite confusing when there
+    are many. Use sparingly.
 
-*   Drawing Lane:
+    dumbbell: This is a spanning shape intended for features with both a
+    start and stop position. The dumbbell is fairly small and floats in
+    mini-lanes within the drawing lane. When a feature with no length (a
+    single-point feature) is drawn with a dumbbell, it renders as a dot
+    (just the circle on the end), which could be confusing to users.
 
-*   Drawing Priority:
+    line: This a horizontal line just wider than the map's width
+    intended to represent single-point features (e.g., SNPs or markers).
+    If the feature has a length (a defined stop), the feature is not
+    (currently) drawn differently. There has been some discussion about
+    rotating the line to be vertical when there is a length and float it
+    like a dumbbell.
 
--   Both "drawing_lane" and "drawing_priority" take positive integers
--   The lower the number for the lane, the closer to the map the
-    feature will be drawn
--   The lower the number for the priority, the sooner the feature will
-    be drawn in the lane
--   Lanes are not absolute, they are only used to sort the features on
+    span: Like half a box, the "span" is a three-sided figure made of
+    straight lines that was intended for spanning features. Looks very
+    odd when applied to single-point feature.
+
+    up-arrow: Another spanning shape, this is a straight line with an
+    arrowhead pointing towards the top of the image. It "floats" like
+    the dumbbell.
+
+    down-arrow: Exactly like the "up-arrow," only with the arrowhead
+    pointing towards the bottom of the image.
+
+    double-arrow: Like the "up-arrow" and "down-arrow," except with
+    arrowheads on both ends.
+
+    rectangle: Another spanning feature which floats (like the
+    dumbbell), this is a filled-in rectangle (trimmed in black).
+
+*   Color: The color the feature will be drawn.
+
+*   Drawing Lane: A positive integer defining the "lane" where the
+    feature will be drawn. The idea was taken from Gbrowse's "tracks,"
+    this allows you the ability to segregate feature types into visually
+    distinct vertical areas. Feature types which share the same lane
+    will all be distributed before feature types in the next highest
+    lane. The lower the number for the lane, the closer to the map the
+    feature will be drawn.
+
+    Lanes are not absolute, they are only used to sort the features on
     a map;  therefore, if you have only "Centromeres" and "Markers" in 
     lane #1, on any map with either of those types of features, they
     will be drawn *on* the map;  on any map without those types, the 
@@ -220,6 +250,9 @@ Create."  From here you can fill in the following fields:
     the lanes move like "1," "4," "7," you will have only 3 lanes with
     no gaps.
 
+*   Drawing Priority: A positive integer which determines the order in
+    which feature types within the lane are drawn. The lower the number
+    for the priority, the sooner the feature will be drawn in the lane.
 
 6.      CREATING A NEW MAP SET
 
@@ -455,73 +488,125 @@ machine-created/non-curated correspondence).
 
 9.2     CREATING CORRESPONDENCE RECORDS
 
-Once you have evidenc 
-There are two ways to do this:
+Once you have evidence types, you can create the correspondence
+records.  It might be helpful to you to inspect "cmap-schema.png,"
+then image in the "docs" directory that shows a diagram of the CMap
+tables and their relationships.  The tables involved are:
 
-1)  Create them by hand using the web admin tool: To do this, locate a
+    -   cmap_feature
+    -   cmap_feature_correspondence
+    -   cmap_correspondence_lookup
+    -   cmap_correspondence_evidence
+    -   cmap_evidence_type
+
+For descriptions of these tables, look at the "CODE_OVERVIEW" document
+in the "docs" directory.
+
+There are three ways to create correspondences:
+
+1)  Create each by hand using the web admin tool.  To do this, locate a
     feature on a map by:
 
-    A)  View a map set, then view a map, then view the feature
+    A)  "View" a map set, then "view" a map, then "view" the feature
     B)  Click on "Search for a Feature" and find the feature by name
 
     Once you have located a feature and have navigated to the "View
-Feature" page, click on the link to "Add Correspondence."  This will
-take you to the "Feature Correspondence Create" page where you can
-search for the other feature in the relationship.  When you have
-located both features, choose an evidence to support the 
+    Feature" page, click on the link to "Add Correspondence." This will
+    take you to the "Feature Correspondence Create" page where you can
+    search for the other feature in the relationship. When you have
+    located both features, you will be presented a form with the
+    following fields:
 
-There are several ways to create correspondences among features.
+    *   Evidence Type: The evidence type which supports this
+        correspondence. If you wish to add more, you can do so after
+        creating the relationship.
 
-A) Strictly name-base: If you choose the "Find name-based
-   correspondences" command from cmap_admin.pl, a correspondence will be
-   created between any two features with the *exact* same name,
-   irrespective of case. You'll need to select some evidence type to
-   represent this automated correspondence.
+    *   Acc. ID (opt.): The accession ID
 
-B) Import correspondences: Create a tab-delimited file that lists the
-   names of two features and some evidence to support the
-   correspondence. The first line of the file should contain column
-   headers for "feature_name1," "feature_name2," and "evidence" (the
-   order is unimportant).  Here's a sample:
+    *   Is Enabled: You can hide correspondences by setting this field
+        to "No." The intention was that a curator could permanently
+        negate a certain correspondence, e.g., while running the
+        automated name-based comparison, a feature name "ABD104" is
+        found on two maps so the correspondence is created; however the
+        curator knows that this is an invalid correspondence, so, rather
+        than deleted the correspondence, he sets "Is Enabled" to "No"
+        thereby preventing the correspondence from being created again
+        in the future (i.e., additional evidence types may be added to
+        the correspondence, but it won't be enabled -- only the curator
+        can re-enable a correspondence using the web admin tool).
+
+    When you have finished, click the button entitled "Create
+    Correspondence." If the correspondence is successfully created, you
+    will be taken to the "View Feature Correspondence" page showing you
+    the two features, their respective maps and types, and the evidences
+    supporting this relationship. You can add more evidence types by
+    clicking the link "Add Evidence." You can also edit and delete
+    existing evidences by clicking the appropriate links to the right of
+    them. If you choose to "Edit" a correspondence, you will be
+    presented a form with the following fields:
+
+    *   Acc. ID (opt.): The accession ID.
+
+    *   Evidence Type: The evidence type.
+
+    *   Score (opt.): A floating-point number representing some value
+        associated with the correspondence, e.g., a BLAST similarity
+        score or an e-value.
+
+    *   Remark (opt.): A textual description of the correspondence.
+
+2)  The second method for creating correspondences is to allow CMap to
+    create a relationship between any two features with the *exact* same
+    name, irrespective of case. To do this, start cmap_admin.pl and
+    choose "Find name-based correspondences." It's recommended that you
+    define special evidence type to represent this automated
+    correspondence. This method is likely to be both incomplete and
+    overly-optimistic. For example, it will create correspondences
+    between features called "Centromere," which is probably not
+    desirable. The name comparisons happen on both the "feature_name"
+    and "alternate_name" from the "cmap_feature" table. Every feature
+    has each of these fields compared to those fields for every other
+    feature, so this can take a long time to complete. For all of its
+    problems, this can be a good way to get started, and you can pare
+    down the correspondences from there. This method is the surest
+    as you are always directly controlling what gets created.
+
+3)  The third way to create correspondences is to import them. Simply
+    create a tab-delimited file that lists the names of two features and
+    some evidence to support the correspondence. The first line of the
+    file should contain column headers for "feature_name1,"
+    "feature_name2," and "evidence" (the order is unimportant). The
+    "evidence" column may contain mulitple evidences separated by
+    commas. Here's a sample:
 
 	feature_name1	feature_name2	evidence
 	C1008	S1633	insilico
 	C11393S	E10074S	insilico
 	C1238	S15180S	insilico
-	bcd386	p-bcd386	name-based
+	bcd386	p-bcd386	name-based, insilico
 	bcd386	p-bcd386	name-based
 	pBF266	p-pBF266	name-based
 
-C) Create correspondences by hand using the admin interface: Choose to
-   "view" a map set in the web-based administrative tool. "View" an
-   individual map, then choose to "view" a feature. From there, you will
-   have the option to "Add Correspondence." Click this, and then search
-   for the feature to which you wish to create a correspondence. Add
-   your evidence, and you're done.
+10.     LOADING THE CORRESPONDENCE MATRIX
 
-The first method is likely to be both incomplete and overly-optimistic.
-For example, it will create correspondences between features called
-"Centromere," which is probably not desirable.  The name comparisons
-happen on both the "feature_name" and "alternate_name" from the
-"cmap_feature" table.  Every feature has each of these fields compared
-to those fields for every other feature, so this can take a long time
-to complete.  For all of its problems, this can be a good way to get
-started, and you can pare down the correspondences from there.  The
-second method is the surest method as you are controlling what gets
-created.  The third method is also very exact but very tedious.  I
-wouldn't recommend it for creating more than a few correspondences.
+The data underlying the correspondence matrix is all precomputed.  As
+it is an intensive operation on seldom-changing data, it was
+determined to cache the pair-wise comparisons of all the maps in the
+database into a (very denormalized) table that would subsequently
+optimize the many calls for this data.  Because of this, it is
+necessary that you remember to reload the matrix whenever you alter
+the number of correspondences in the database.  To do this, execute
+cmap_admin.pl and choose the "Reload correspondence matrix" option.
+The only option is to completely truncate the table and reload it from
+scratch.
 
-After creating any new correspondences (or deleting existing ones),
-be sure to run the "Reload correspondence matrix" option of the
-"cmap_admin.pl" script to refresh the data that is pre-computed
-and cached in the "cmap_correspondence_matrix" table.  The only option
-is to completely truncate the table and reload it from scratch.
+11.     ESTABLISHING DATABASE CROSS-REFERENCES
 
-2. DATABASE CROSS-REFERENCES
-
-It is possible to set up links from features to other datasources
-outside of CMap.  These are called "database cross-references."  They
-can be set up in several different ways:
+As CMap is only intended to provide a framework for visually showing
+comparisons and does not provide the space for storing details on the
+map features, there are a couple of ways to link map features to
+external, on-line database through database cross-references
+("dbxref").  They can be set up in several different ways:
 
     1)  For a feature type and a species, e.g., all the rice markers
 
@@ -535,15 +620,33 @@ In the case of the first two, you can create multiple cross-references
 and all will display on the "feature detail" page;  the last case only
 allows a single cross-reference.  In all cases, the more specific
 references beat out all others, so any cross-references created like
-#2 will beat out those from #1, but the "ABC" marker will only use
-those set up as #3.  That is, *only* the most specific
-cross-references will be shown, so if you wanted to include the
-records from #1 with a marker in the "Foo" map set, you'd need to
-duplicate the URLs from #1 for the "Foo" map set.
+#2 will beat out those from #1, but the "ABC" marker on map 3 will
+only use its own.  That is, *only* the most specific cross-references
+will be shown, so if you wanted to include the records from #1 with a
+marker in the "Foo" map set, you'd need to duplicate the URLs from #1
+for the "Foo" map set.
 
-When setting up database cross-references, you'll have to use some
-extra syntax in the URL field to indicate the field to link out on.
-Here's an example from Gramene for linking to GrainGenes:
+To create a dbxref, go to the home page of the web admin tool and
+choose the "View Database Cross-References" link, then choose the
+"Create New Database Cross-Reference" link.  On the form, you will be
+presented the following fields:
+
+*   Species (opt.): The species to which to apply the dbxref.
+
+    OR             
+
+*   Map Set (opt.): The map set to which to apply the dbxref.
+
+*   Feature Type: The feature type to which to apply the dbxref.
+
+*   Cross-Reference Name: The name of the dbxref (what will appear for
+    the hyperlink)
+
+*   URL: The URL of the dbxref.
+
+You'll have to use some extra syntax in the URL field to indicate the
+field to link out on.  Here's an example from Gramene for linking to
+GrainGenes:
 
     http://www.graingenes.org/cgi-bin/WebAce/webace?db=graingenes \
     &class=Locus&object=[% feature.feature_name %]
@@ -574,25 +677,106 @@ Toolkit's virtual methods, type "perldoc Template::Manual::VMethods."
 
 Here are the fields you can use in the URL:
 
-   feature_id
-   accession_id
-   map_id
-   feature_type_id
-   feature_name
-   alternate_name
-   is_landmark
-   start_position
-   stop_position
-   dbxref_name
-   dbxref_url
-   feature_type
-   map_name
-   map_aid (map accession_id)
-   map_set_id
-   map_set_aid (map set accession_id)
-   map_set_name (actually the "short_name")
-   species_id
-   species_name (actually the "common_name")
+    feature.feature_id
+    feature.accession_id
+    feature.map_id
+    feature.feature_type_id
+    feature.feature_name
+    feature.alternate_name
+    feature.is_landmark
+    feature.start_position
+    feature.stop_position
+    feature.dbxref_name
+    feature.dbxref_url
+    feature.feature_type
+    feature.map_name
+    feature.map_aid (cmap_map.accession_id)
+    feature.map_set_id
+    feature.map_set_aid (cmap_map_set.accession_id)
+    feature.map_set_name (cmap_map_set.short_name)
+    feature.species_id
+    feature.species_name (cmap_species.common_name)
+
+The information in parentheses is simply clarifying the exact table
+and field that is being referred to.
+
+12.     VIEWING DATA
+
+Now that we've stepped through the basics of setting up the CMap data,
+let's go over some of the more basic operations of curating the data.
+
+12.1    VIEWING ALL MAP SETS
+
+From the home page of the web admin tool, you'll see that you can
+"View Map Sets."  Selecting this link takes you to the "Map Sets View"
+page where you'll notice three drop-down boxes that you can use to
+narrow the selection criteria for the map sets being displayed.  You
+can restrict them by species, map type, and whether or not they are
+currently enabled.  There is no automatic submission of the form when
+you make a choice (as you might want to use more than one criteria),
+so be sure to hit "Submit" when you've made your choices.  As noted
+before, you can resort the data by clicking on the hyperlinked column
+headers.  Every object in the web admin tool can be "viewed,"
+"edited," and "deleted" by the respective links which are usually
+displayed to the right.  
+
+Note: On pages that may return a large recordset, the data is "paged"
+      and can be accessed by moving through the pages of the data. On
+      all these pages, the total number of records is displayed along
+      with which are currently being shown. This is the section that
+      looks like "52 records found. Showing 1 to 25." (The page size is
+      determined by the "max_child_elements" option in the CMap
+      configuration file which will be discussed shortly.)
+
+12.2    VIEWING A MAP SET
+
+Choose to "view" one of your map sets.  You'll be taken to the a page
+which lists all the data in the map set table as well as a summary of
+all the maps associated with the map set.  Notice that you can change
+any of the data for the map set by clicking the "edit" link at the
+top, or you can delete it from here by choosing the "delete" link.
+
+Note: Deleting an object that has dependencies will cause the
+      dependencies to be deleted as well. So deleting a map will delete
+      all the features (which will delete all the correspondences which
+      will delete all the evidences [but not evidence types] supporting
+      the correspondence). Deleting a map set deletes all the maps
+      (which deletes all the features which ... you get the picture).
+      Basically, just be very sure that you want to delete something as
+      it can have cascading effects, and, as noted earlier, THERE IS NO
+      UNDO. There is, however, the option to dump your data before
+      messing with it giving you the ability to recover. This will be
+      discussed later.
+
+12.3    VIEWING A MAP
+
+Choose to "view" a map to see a summary of all the data in the map
+table as well as all the features on the map.  Notice that you can
+restrict the features displayed by their feature types.  You can also
+search for a feature;  the search option on the map view page
+automatically restricts the search to the current map being displayed.
+
+12.4    VIEWING A FEATURE
+
+Choose to "view" a feature from the map view page.  You'll be
+presented with all the data stored in the feature table as well as a
+summary of the correspondences the feature has to other features and
+the evidence types supporting the correspondences.  You can also add a
+new correspondence by clicking "Add Correspondence" and following the
+directions discussed earlier in section 9.
+
+12.5    SEARCHING FOR A FEATURE
+
+Often you will be interested in finding an individual feature in the
+database without having to navigate to the map set, then the map, then
+page through until you find the feature.  From the home page of the
+web admin tool, you can choose the "Search for a Feature" link.  The
+"Feature Search" form gives you four fields:
+
+*   Name:
+*   Feature Type (opt.):
+*   Map Acc ID (opt.):
+*   Field:
 
 3. ESTABLISHING LANDMARKS
 
