@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.19 2003-01-29 00:23:29 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.20 2003-02-11 00:23:11 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -25,11 +25,11 @@ use vars qw(
 );
 
 $COLORS         = [ sort keys %{ +COLORS } ];
-$FEATURE_SHAPES = [ qw( box dumbbell line span ) ];
+$FEATURE_SHAPES = [ qw( box dumbbell line span up-arrow down-arrow ) ];
 $LINE_STYLES    = [ qw( dashed solid ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.19 $)[-1];
+$VERSION        = (qw$Revision: 1.20 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -74,8 +74,11 @@ sub handler {
 # Make a jazz noise here...
 #
     my ( $self, $apr ) = @_;
-    my $action         = $apr->param( 'action' ) || 'admin_home';
-    my $return         = eval { $self->$action() };
+
+    $self->data_source( $apr->param('data_source') );
+
+    my $action = $apr->param('action') || 'admin_home';
+    my $return = eval { $self->$action() };
 
     if ( my $err = $@ || $self->error ) {
         $self->process_template(
@@ -94,7 +97,9 @@ sub admin {
 #
     my $self = shift;
     unless ( defined $self->{'admin'} ) {
-        $self->{'admin'} = Bio::GMOD::CMap::Admin->new;
+        $self->{'admin'} =  Bio::GMOD::CMap::Admin->new(
+            data_source  => $self->data_source,
+        )
     }
     return $self->{'admin'};
 }
@@ -103,13 +108,7 @@ sub admin {
 sub admin_home {
     my $self = shift;
     my $apr  = $self->apr;
-
-    return $self->process_template( 
-        TEMPLATE->{'admin_home'}, 
-        { 
-            stylesheet  => $self->stylesheet,
-        }
-    );
+    return $self->process_template( TEMPLATE->{'admin_home'}, {} );
 }
 
 # ----------------------------------------------------
@@ -144,7 +143,7 @@ sub confirm_delete {
 
     return $self->process_template( 
         TEMPLATE->{'confirm_delete'}, 
-        { entity => $entity }, 
+        { entity => $entity }
     );
 }
 
@@ -154,10 +153,10 @@ sub corr_evidence_type_create {
     return $self->process_template( 
         TEMPLATE->{'corr_evidence_type_create'},
         { 
-            apr         => $self->apr,
-            line_styles => $LINE_STYLES,
-            line_colors => $COLORS,
-            errors      => $args{'errors'} 
+            apr          => $self->apr,
+            line_styles  => $LINE_STYLES,
+            line_colors  => $COLORS,
+            errors       => $args{'errors'},
         }
     );
 }
@@ -1410,6 +1409,20 @@ sub feature_corr_insert {
         $accession_id, $is_enabled
     );
 
+    if ( $feature_correspondence_id < 0 ) {
+        my $db = $self->db or return;
+        $feature_correspondence_id = $db->selectrow_array(
+            q[
+                select feature_correspondence_id
+                from   cmap_correspondence_lookup
+                where  feature_id1=?
+                and    feature_id2=?
+            ],
+            {},
+            ( $feature_id1, $feature_id2 )
+        );
+    }
+
     return $self->redirect_home( 
         ADMIN_HOME_URI.'?action=feature_corr_view;'.
             "feature_correspondence_id=$feature_correspondence_id"
@@ -2512,6 +2525,10 @@ sub map_types_view {
 # ----------------------------------------------------
 sub process_template {
     my ( $self, $template, $params ) = @_;
+
+    $params->{'stylesheet'}   = $self->stylesheet;
+    $params->{'data_source'}  = $self->data_source;
+    $params->{'data_sources'} = $self->data_sources;
 
     my $output; 
     my $t = $self->template or return; 

@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 
-# $Id: MapViewer.pm,v 1.11 2003-01-16 17:06:24 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.12 2003-02-11 00:23:11 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $TEMPLATE $PAGE );
-$VERSION = (qw$Revision: 1.11 $)[-1];
+$VERSION = (qw$Revision: 1.12 $)[-1];
 
 use Apache::Constants;
 use Apache::Request;
@@ -37,6 +37,19 @@ sub handler {
     my $label_features        = $apr->param('label_features')        || '';
     my @feature_types         = ( $apr->param('feature_types') );
     my @evidence_types        = ( $apr->param('evidence_types') );
+
+    unless ( @feature_types ) {
+        @feature_types = split /,/, $apr->param('feature_types');
+    }
+
+    unless ( @evidence_types ) {
+        @evidence_types = split /,/, $apr->param('evidence_types');
+    }
+
+    #
+    # Set the data source.
+    #
+    $self->data_source( $apr->param('data_source') );
 
     if ( 
         $prev_ref_map_set_aid && $prev_ref_map_set_aid != $ref_map_set_aid 
@@ -111,6 +124,7 @@ sub handler {
     if ( $ref_map_aid ) {
         $drawer                    =  Bio::GMOD::CMap::Drawer->new(
             apr                    => $apr,
+            data_source            => $self->data_source,
             slots                  => \%slots,
             highlight              => $highlight,
             font_size              => $font_size,
@@ -163,11 +177,15 @@ sub handler {
             drawer            => $drawer,
             page              => $self->page,
             debug             => $self->debug,
+            data_source       => $self->data_source,
+            data_sources      => $self->data_sources,
             comparative_maps  => join( ':', @comp_maps ),
             title             => 'Comparative Maps',
             stylesheet        => $self->stylesheet,
             included_features => { map { $_, 1 } @feature_types },
             included_evidence => { map { $_, 1 } @evidence_types },
+            feature_types     => join( ',', @feature_types ),
+            evidence_types    => join( ',', @evidence_types ),
         },
         \$html 
     ) or $html = $t->error;

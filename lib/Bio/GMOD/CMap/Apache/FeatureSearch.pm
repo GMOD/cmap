@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::FeatureSearch;
 
-# $Id: FeatureSearch.pm,v 1.5 2003-01-27 19:59:32 kycl4rk Exp $
+# $Id: FeatureSearch.pm,v 1.6 2003-02-11 00:23:11 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use Apache::Constants;
 
@@ -33,6 +33,8 @@ sub handler {
     my @species_aids      = ( $apr->param('species_aid')      );
     my @feature_type_aids = ( $apr->param('feature_type_aid') );
 
+    $self->data_source( $apr->param('data_source') );
+
     #
     # Because I need a <select> element on the search form, I could
     # get the species and feature type acc. IDs as an array.  However,
@@ -54,7 +56,7 @@ sub handler {
     $apr->param( species_aids           => join(',', @species_aids         ) );
     $apr->param( feature_type_aids      => join(',', @feature_type_aids    ) );
 
-    my $data              =  Bio::GMOD::CMap::Data->new;
+    my $data              = $self->data_module;
     my $results           =  $data->feature_search_data(
         features          => $features,
         order_by          => $order_by,
@@ -91,6 +93,7 @@ sub handler {
             show_stop           => $page_data->{'show_stop'},
             species_lookup      => { map { $_, 1 } @species_aids      },
             feature_type_lookup => { map { $_, 1 } @feature_type_aids },
+            data_sources        => $self->data_sources,
         },
         \$html 
     ) 

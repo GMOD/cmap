@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MatrixViewer;
 
-# $Id: MatrixViewer.pm,v 1.2 2002-09-06 22:15:51 kycl4rk Exp $
+# $Id: MatrixViewer.pm,v 1.3 2003-02-11 00:23:11 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Apache::Constants;
 use Data::Dumper;
@@ -27,12 +27,14 @@ sub handler {
     my $prev_map_set_aid = $apr->param('prev_map_set_id')  || '';
     my $prev_map_name    = $apr->param('prev_map_name')    || '';
 
+    $self->data_source( $apr->param('data_source') );
+
     if ( $prev_species_aid && $species_aid != $prev_species_aid ) {
         $map_set_aid = '';
         $map_name    = '';
     }
 
-    my $data_module      =  Bio::GMOD::CMap::Data->new;
+    my $data_module      =  $self->data_module;
     my $data             =  $data_module->matrix_correspondence_data(
         species_aid      => $species_aid,
         map_set_aid      => $map_set_aid,
@@ -44,22 +46,21 @@ sub handler {
     $apr->param( map_set_aid => $data->{'map_set_aid'} );
     $apr->param( map_name    => $data->{'map_name'}    );
 
-#    warn "data =\n", Dumper( $data ), "\n";
-
     my $html;
     my $t = $self->template;
     $t->process( 
         TEMPLATE, 
         { 
-            apr        => $apr,
-            page       => $self->page,
-            top_row    => $data->{'top_row'},
-            matrix     => $data->{'matrix'}, 
-            title      => 'Welcome to the Matrix',
-            species    => $data->{'species'},
-            map_sets   => $data->{'map_sets'},
-            maps       => $data->{'maps'},
-            stylesheet => $self->stylesheet,
+            apr          => $apr,
+            page         => $self->page,
+            top_row      => $data->{'top_row'},
+            matrix       => $data->{'matrix'}, 
+            title        => 'Welcome to the Matrix',
+            species      => $data->{'species'},
+            map_sets     => $data->{'map_sets'},
+            maps         => $data->{'maps'},
+            stylesheet   => $self->stylesheet,
+            data_sources => $self->data_sources,
         },
         \$html 
     ) or $html = $t->error;
