@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.8.2.1 $
+$Revision: 1.8.2.2 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -1770,10 +1770,10 @@ A "1" or "0" ("Yes" or "No," respectively) indicating whether to
 collapse spanning features of the same type and with the same
 coordinates to overlap rather than pushing out
 
-=item * feature_type_DEFAULT
+=item * ft_DEFAULT (or the depricated feature_type_DEFAULT)
 
 This will define the how to display feature types that are not explicitly
-defined in feature_type_*, overriding the config setting.  Setting the features
+defined in ft_*, overriding the config setting.  Setting the features
 to be ignored or display only when there is a correspondence can help speed the
 page drastically.
 
@@ -1782,16 +1782,20 @@ page drastically.
     1 :  Display only features of this type with displayed correspondences
     2 :  Display all features of this type
 
+Note: Both the ft_* format and the feature_type_* format to define the same
+feature type, CMap will appear to randomly decide which one to use.  So please
+be consistant and use ft_*.
+
 =back
 
 =head2 Menu Arguments
 
 =over 4
 
-=item * feature_type_* [ default: set in config ]
+=item * ft_* (or the depricated feature_type_*) [ default: set in config ]
 
 These define how to display each feature type.  The "*" is replaced by the
-feature type's accession (example: feature_type_marker=2).  Setting the
+feature type's accession (example: ft_marker=2).  Setting the
 features to be ignored or display only when there is a correspondence can help
 speed the page drastically.
 
@@ -1800,10 +1804,14 @@ speed the page drastically.
     1 :  Display only features of this type with displayed correspondences
     2 :  Display all features of this type
 
-=item * evidence_type_* [ default: set in config ]
+Note: Both the ft_* format and the feature_type_* format to define the same
+feature type, CMap will appear to randomly decide which one to use.  So please
+be consistant and use ft_*.
+
+=item * et_* (or the depricated evidence_type_*) [ default: set in config ]
 
 These define how to handle each evidence type.  The "*" is replaced by the
-evidence type's accession (example: feature_type_blast=2).  
+evidence type's accession (example: et_blast=2).  
 
 You can use this to ignore or display certain evidence types.  You can also
 filter evidence based on the score.  If you do this, there MUST be an ets_*
@@ -1814,9 +1822,13 @@ displayed, that correspondence will be displayed.
 
  Values:
     0 :  Completely ignore this evidence type
-    1 :  Display all features of this type
+    1 :  Display all evidences of this type
     2 :  Display if score is less than or equal the est_* score
     3 :  Display if score is greater than or equal the est_* score
+
+Note: Both the et_* format and the evidence_type_* format to define the same
+evidence type, CMap will appear to randomly decide which one to use.  So please
+be consistant and use et_*.
 
 =item * ets_* (evidence type score) [ Optional ]
 

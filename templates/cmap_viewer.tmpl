@@ -113,7 +113,7 @@ function startPage(){
 function selectFeatureRadio(val){
   var radios=document.getElementsByTagName("INPUT");
   for (var i=0; i < radios.length; i++){
-    if (radios[i].name.search(/^feature_type_/)>=0){
+    if (radios[i].name.search(/^ft_/)>=0){
       if (radios[i].value==val){
         radios[i].checked=true;
       }
@@ -523,7 +523,7 @@ function changeCompMaps(sel,index,side){
               </tr>
               <tr>
                 <td colspan="2" align="left">
-                  <input type=hidden name="feature_type_DEFAULT" value='[% apr.param('feature_type_DEFAULT') %]'>
+                  <input type=hidden name="ft_DEFAULT" value='[% apr.param('ft_DEFAULT') %]'>
                   <table border="1">
                     <tr>
                       <td>Feature</td>
@@ -535,13 +535,13 @@ function changeCompMaps(sel,index,side){
                       <tr>
                         <td><a href="feature_type_info?feature_type_aid=[% ft.feature_type_aid %]">[% ft.feature_type %]</a></td>
                         <td>
-                          <input type="radio" name="feature_type_[% ft.feature_type_aid %]" value="0" [% IF (ignored_feature_types.${ft.feature_type_aid} OR (feature_default_display=='ignore' AND NOT included_features.${ft.feature_type_aid} AND NOT corr_only_feature_types.${ft.feature_type_aid})) ; ' checked'; END %]>
+                          <input type="radio" name="ft_[% ft.feature_type_aid %]" value="0" [% IF (ignored_feature_types.${ft.feature_type_aid} OR (feature_default_display=='ignore' AND NOT included_features.${ft.feature_type_aid} AND NOT corr_only_feature_types.${ft.feature_type_aid})) ; ' checked'; END %]>
                         </td>
                         <td>
-                          <input type="radio" name="feature_type_[% ft.feature_type_aid %]" value="1" [% IF (corr_only_feature_types.${ft.feature_type_aid} OR (feature_default_display=='corr_only' AND NOT included_features.${ft.feature_type_aid} AND NOT ignored_feature_types.${ft.feature_type_aid})); ' checked'; END %]>
+                          <input type="radio" name="ft_[% ft.feature_type_aid %]" value="1" [% IF (corr_only_feature_types.${ft.feature_type_aid} OR (feature_default_display=='corr_only' AND NOT included_features.${ft.feature_type_aid} AND NOT ignored_feature_types.${ft.feature_type_aid})); ' checked'; END %]>
                         </td>
                         <td>
-                          <input type="radio" name="feature_type_[% ft.feature_type_aid %]" value="2" [% IF (included_features.${ft.feature_type_aid} OR (feature_default_display=='display' AND NOT corr_only_feature_types.${ft.feature_type_aid} AND NOT ignored_feature_types.${ft.feature_type_aid})); ' checked'; END %]>
+                          <input type="radio" name="ft_[% ft.feature_type_aid %]" value="2" [% IF (included_features.${ft.feature_type_aid} OR (feature_default_display=='display' AND NOT corr_only_feature_types.${ft.feature_type_aid} AND NOT ignored_feature_types.${ft.feature_type_aid})); ' checked'; END %]>
                         </td>
                       </tr>
                     [% END %]
