@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.50 2003-10-22 00:19:15 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.51 2003-10-23 02:04:53 kycl4rk Exp $
 
 use strict;
 use Apache::Constants qw[ :common M_GET REDIRECT ];
@@ -34,7 +34,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.50 $)[-1];
+$VERSION        = (qw$Revision: 1.51 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -48,9 +48,6 @@ use constant TEMPLATE         => {
     corr_evidence_type_edit   => 'admin_corr_evidence_type_edit.tmpl',
     corr_evidence_type_view   => 'admin_corr_evidence_type_view.tmpl',
     colors_view               => 'admin_colors_view.tmpl',
-#    dbxref_create             => 'admin_dbxref_create.tmpl',
-#    dbxref_edit               => 'admin_dbxref_edit.tmpl',
-#    dbxrefs_view              => 'admin_dbxrefs_view.tmpl',
     error                     => 'admin_error.tmpl',
     feature_corr_create       => 'admin_feature_corr_create.tmpl',
     feature_corr_view         => 'admin_feature_corr_view.tmpl',
@@ -84,11 +81,6 @@ use constant TEMPLATE         => {
 };
 
 use constant XREF_OBJECTS     => [ 
-    {
-        table_name            => 'cmap_correspondence_evidence',
-        object_name           => 'Correspondence Evidence',
-        name_field            => 'accession_id',
-    },
     {
         table_name            => 'cmap_evidence_type',
         object_name           => 'Evidence Type',
@@ -368,14 +360,35 @@ sub confirm_delete {
         );
     }
 
+    my $pk_name    = pk_name( $entity_type );
+    my $object_id  = $entity_id;
+
+    if ( $entity_type =~ m/^cmap_(attribute|xref)$/ ) {
+        my $sth = $db->prepare(
+            qq[
+                select table_name, object_id
+                from   $entity_type
+                where  $pk_name=$object_id
+            ]
+        );
+        $sth->execute;
+        my $hr = $sth->fetchrow_hashref;
+
+        $object_id = $hr->{'object_id'};
+        $pk_name   = pk_name( $hr->{'table_name'} );
+    }
+
     return $self->process_template( 
         TEMPLATE->{'confirm_delete'}, 
         { 
-            apr    => $apr,
-            entity => {
-                id     => $entity_id,
-                name   => $entity_name,
-                type   => $entity_type, 
+            apr           => $apr,
+            return_action => $apr->param('return_action') || '',
+            pk_name       => $pk_name,
+            object_id     => $object_id,
+            entity        => {
+                id        => $entity_id,
+                name      => $entity_name,
+                type      => $entity_type, 
             },
         }
     );
@@ -794,9 +807,15 @@ sub entity_delete {
             $uri_args = '?action=xrefs_view';
         }
 
-        $admin->xref_delete(
-            xref_id => $entity_id 
-        ) or return $self->error( $admin->error );
+        $db->do(
+            q[
+                delete
+                from   cmap_xref
+                where  xref_id=?
+            ], 
+            {}, 
+            ( $entity_id )
+        );
     }
     #
     # Unknown
@@ -806,6 +825,9 @@ sub entity_delete {
             "You are not allowed to delete entities of type '$entity_type.'"
         );
     }
+
+    $self->admin->attribute_delete( $entity_type, $entity_id );
+    $self->admin->xref_delete     ( $entity_type, $entity_id );
 
     return $self->redirect_home( ADMIN_HOME_URI.$uri_args ); 
 }
@@ -3163,31 +3185,23 @@ sub xref_insert {
                           push @errors, 'No xref name';
     my $url             = $apr->param('xref_url')   or
                           push @errors, 'No xref URL';
-    my $display_order   = $apr->param('display_order') ||  1;
     my $return_action   = $apr->param('return_action') || '';
     my $pk_name         = $apr->param('pk_name')       || '';
+    my $display_order   = $apr->param('display_order');
 
     return $self->xref_create( errors => \@errors ) if @errors;
 
-    my $xref_id    = next_number(
-        db         => $db, 
-        table_name => 'cmap_xref',
-        id_field   => 'xref_id',
-    ) or die 'No next number for xref id';
-
-    $db->do(
-        q[
-            insert
-            into   cmap_xref
-                   (xref_id, table_name, object_id, 
-                    display_order, xref_name, xref_url)
-            values (?, ?, ?, ?, ?, ?)
+    $admin->set_xrefs(
+        object_id  => $object_id,
+        table_name => $table_name,
+        xrefs      => [
+            { 
+                name          => $name, 
+                value         => $url,
+                display_order => $display_order,
+            },
         ],
-        {},
-        ( $xref_id, $table_name, $object_id, 
-          $display_order, $name, $url 
-        )
-    );
+    ) or return $self->error( $admin->error );
 
     my $action = $return_action && $pk_name 
         ? "$return_action;$pk_name=$object_id" : 'xrefs_view';
@@ -3204,7 +3218,8 @@ sub xref_update {
     my @errors          = ();
     my $xref_id         = $apr->param('xref_id') or die 'No xref id';
     my $object_id       = $apr->param('object_id')     ||  0;
-    my $display_order   = $apr->param('display_order') ||  0;
+    my $return_action   = $apr->param('return_action') || '';
+    my $display_order   = $apr->param('display_order');
     my $table_name      = $apr->param('table_name')
                           or push @errors, 'No table name';
     my $name            = $apr->param('xref_name')
@@ -3214,18 +3229,26 @@ sub xref_update {
 
     return $self->xref_edit( errors => \@errors ) if @errors;
 
-    $db->do(
-        q[
-            update cmap_xref
-            set    table_name=?, object_id=?, display_order=?, 
-                   xref_name=?, xref_url=?
-            where  xref_id=?
+    $admin->set_xrefs(
+        object_id  => $object_id,
+        table_name => $table_name,
+        xrefs      => [
+            { 
+                xref_id       => $xref_id,
+                name          => $name, 
+                value         => $url,
+                display_order => $display_order,
+            },
         ],
-        {},
-        ( $table_name, $object_id, $display_order, $name, $url, $xref_id )
-    );
+    ) or return $self->error( $admin->error );
 
-    return $self->redirect_home( ADMIN_HOME_URI.'?action=xrefs_view' ); 
+    my $pk_name  = pk_name( $table_name );
+    my $uri_args = $return_action && $pk_name && $object_id
+        ? "action=$return_action;$pk_name=$object_id"
+        : 'action=xrefs_view'
+    ;
+
+    return $self->redirect_home( ADMIN_HOME_URI."?$uri_args" );
 }
 
 # ----------------------------------------------------
