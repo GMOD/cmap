@@ -3,6 +3,7 @@ CREDITS
 Changes
 INSTALL
 LICENSE
+LocalConfig.pm
 MANIFEST
 MANIFEST.SKIP
 META.yml
@@ -14,7 +15,7 @@ bin/cmap_admin.pl
 bin/cmap_matrix_compare.pl
 bin/cmap_metrics.pl
 bin/profile-cmap-draw.pl
-conf/cmap.conf
+conf/cmap.conf.PL
 conf/cmap.css
 conf/httpd.conf
 conf/perlstartup.pl
@@ -86,7 +87,7 @@ lib/Bio/GMOD/CMap/Apache/MapSetViewer.pm
 lib/Bio/GMOD/CMap/Apache/MapViewer.pm
 lib/Bio/GMOD/CMap/Apache/MatrixViewer.pm
 lib/Bio/GMOD/CMap/Apache/ViewFeatureOnMap.pm
-lib/Bio/GMOD/CMap/Constants.pm
+lib/Bio/GMOD/CMap/Constants.pm.PL
 lib/Bio/GMOD/CMap/Data.pm
 lib/Bio/GMOD/CMap/Data/Generic.pm
 lib/Bio/GMOD/CMap/Data/MySQL.pm
