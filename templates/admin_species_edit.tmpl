@@ -1,5 +1,6 @@
 [% INCLUDE admin_header.tmpl title="Species Edit &quot;$species.common_name&quot;" %]
 <a href="admin">Home</a> |
+<a href="admin?action=confirm_delete;entity_type=cmap_species;entity_id=[% species.species_id %];entity_name_field=common_name">Delete</a> |
 <a href="admin?action=species_view">View Species</a>
 <hr noshade>
 
@@ -46,6 +47,15 @@
         <td align="right">NCBI Taxon ID <em>(opt.)</em>:</td>
         <td>
             <input name="ncbi_taxon_id" value="[% species.ncbi_taxon_id %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Note <em>(opt.)</em>:
+        </td>
+        <td>
+            <textarea name="note" rows="10" cols="50" wrap="virtual">[% species.note %]</textarea>
         </td>
     </tr>
 

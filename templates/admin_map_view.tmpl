@@ -52,6 +52,13 @@
         </td>
         <td>[% map.stop_position OR '&nbsp;' %]</td>
     </tr>
+
+    <tr>
+        <td align="right">
+            Note:
+        </td>
+        <td>[% map.note OR '&nbsp;' %]</td>
+    </tr>
 </table>
 
 <table width="100%">
@@ -109,9 +116,9 @@
         <tr>
             <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type_id=[% apr.param('feature_type_id') %];order_by=accession_id">Acc. ID</a></th>
             <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type_id=[% apr.param('feature_type_id') %];order_by=feature_name">Name</a></th>
-            <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type_id=[% apr.param('feature_type_id') %];order_by=is_landmark">Landmark</a></th>
-            <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type_id=[% apr.param('feature_type_id') %];order_by=alternate_name">Alt. Name</a></th>
+            <th>Aliases</th>
             <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type_id=[% apr.param('feature_type_id') %];order_by=feature_type">Type</a></th>
+            <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type_id=[% apr.param('feature_type_id') %];order_by=is_landmark">Landmark</a></th>
             <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type_id=[% apr.param('feature_type_id') %];order_by=start_position">Start</a></th>
             <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type_id=[% apr.param('feature_type_id') %];order_by=stop_position">Stop</a></th>
             <th>No. Corr.</th>
@@ -123,9 +130,9 @@
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
                 <td>[% f.accession_id   OR '&nbsp;' %]</td>
                 <td>[% f.feature_name   OR '&nbsp;' %]</td>
-                <td>[% IF f.is_landmark; 'Yes'; ELSE; 'No'; END %]</td>
-                <td>[% f.alternate_name OR '&nbsp;' %]</td>
+                <td>[% f.aliases.join(', ') OR '&nbsp;' %]</td>
                 <td>[% f.feature_type   OR '&nbsp;' %]</td>
+                <td>[% IF f.is_landmark; 'Yes'; ELSE; 'No'; END %]</td>
                 <td align="right">[% IF f.start_position!='' %] [% f.start_position | commify %] [% ELSE %] '&nbsp;' [% END %]</td>
                 <td align="right">[% f.stop_position  OR '&nbsp;' %]</td>
                 <td align="right">[% f.no_correspondences %]</td>
@@ -145,7 +152,9 @@
 
 [% ELSE %]
 
-    <p>No features to show.</p>
+    <div align="center">
+    <p>This map has no features.</p>
+    </div>
 
 [% END %]
 <small>* -- On this map</small>

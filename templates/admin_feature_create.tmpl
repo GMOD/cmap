@@ -44,10 +44,10 @@
 
     <tr>
         <td align="right">
-            Alternate Name <em>(opt.)</em>:
+            Aliases <em>(opt.)</em>:
         </td>
         <td>
-            <input name="alternate_name" value="[% apr.param('alternate_name') %]">
+            <input name="aliases" value="[% apr.param('aliases') %]">
         </td>
     </tr>
 
@@ -118,7 +118,7 @@
             Note (opt.):
         </td>
         <td>
-            <input name="note" value="[% apr.param('note') %]">
+            <textarea name="note" rows="5" cols="50">[% apr.param('note') %]</textarea>
         </td>
     </tr>
 

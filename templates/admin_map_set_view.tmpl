@@ -1,4 +1,4 @@
-[% INCLUDE admin_header.tmpl title="View &quot;$map_set.map_set_name&quot;" %]
+[% INCLUDE admin_header.tmpl title="Map Set &quot;$map_set.map_set_name&quot;" %]
 <a href="admin">Home</a> |
 <a href="admin?action=map_sets_view">View All Map Sets</a> |
 <a href="admin?action=map_set_edit;map_set_id=[% map_set.map_set_id %]">Edit</a> |
@@ -90,9 +90,9 @@
     </tr>
 
     <tr>
-        <td align="right" valign="top">Remarks:</td>
+        <td align="right" valign="top">Note:</td>
         <td>
-            [% map_set.remarks %]
+            [% map_set.note %]
         </td>
     </tr>
 </table>
@@ -160,7 +160,9 @@
 
 [% ELSE %]
 
+  <div align="center">
   <p>This set has no maps.</p>
+  </div>
 
 [% END %]
 [% INCLUDE admin_footer.tmpl %]
