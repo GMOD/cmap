@@ -125,6 +125,7 @@ b	{ font-weight: bold; }
 
 
 body    {
+          background-color: #FFFFFF;
           font: 10pt sans-serif;
           margin-top: 0;
           border-top-width: 0;
