@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 
 # vim: set ft=perl:
 
-# $Id: ImportCorrespondences.pm,v 1.25 2005-03-04 05:58:17 mwz444 Exp $
+# $Id: ImportCorrespondences.pm,v 1.26 2005-03-04 21:17:05 mwz444 Exp $
 
 =head1 NAME
 
@@ -36,6 +36,13 @@ reciprocal records will be created for each correspondences ("A=B" and
 "B=A," etc.).  If the evidence doesn't exist, a prompt will ask to
 create it.
 
+The evidence should be specified as an evidence_type_accession.  An optional score can be included.  The score must be numerical but may be in scientific notation.  Only evidences with scores will be retrieved when using the "Less Than Score" or "Greater Than Score".  In other words, if a score is not specified, this correspondence will NEVER appear when a score cutoff is set.
+
+The syntax for the evidence column is as follows
+
+    evidence_type_accession[:score]
+    examples: "name_based", "blast:1e-10", "hunch:92"
+
 B<Note:> If the accession IDs are not present, both the "feature_name"
 and "aliases" are checked. For every feature matching each of the two
 feature names, a correspondence will be created.
@@ -44,7 +51,7 @@ feature names, a correspondence will be created.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.25 $)[-1];
+$VERSION = (qw$Revision: 1.26 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
