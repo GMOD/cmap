@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.149 2005-02-10 19:06:06 mwz444 Exp $
+# $Id: Map.pm,v 1.150 2005-02-14 20:07:04 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.149 $)[-1];
+$VERSION = (qw$Revision: 1.150 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -2024,7 +2024,7 @@ sub place_map_y {
             next unless defined($all_ref_corrs);
             my $drawing_offset=0;
             foreach my $ref_corr (@$all_ref_corrs){
-            my $evidence_type_aid = $ref_corrs->{'evidence_type_aid'};
+            my $evidence_type_aid = $ref_corr->{'evidence_type_aid'};
 
             #
             # Get the information about the reference map.
