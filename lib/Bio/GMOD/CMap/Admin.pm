@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.34 2003-10-24 22:04:33 kycl4rk Exp $
+# $Id: Admin.pm,v 1.35 2003-10-29 20:44:38 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.34 $)[-1];
+$VERSION = (qw$Revision: 1.35 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -181,6 +181,47 @@ Delete an evidence type.
 }
 
 # ----------------------------------------------------
+sub feature_alias_create {
+    my ( $self, %args )  = @_;
+    my $db               = $self->db;
+    my @errors           = ();
+    my $feature_id       = $args{'feature_id'} or 
+                           return $self->error('No feature id');
+    my $alias            = $args{'alias'} or return $self->error('No alias');
+    my $feature_alias_id = $db->selectrow_array(
+        q[
+            select feature_alias_id
+            from   cmap_feature_alias
+            where  feature_id=?
+            and    alias=?
+        ],
+        {},
+        ( $feature_id, $alias )
+    );
+
+    return 1 if $feature_alias_id;
+
+    $feature_alias_id = next_number(
+        db            => $db, 
+        table_name    => 'cmap_feature_alias',
+        id_field      => 'feature_alias_id',
+    ) or return $self->error('No feature alias id');
+
+    $db->do(
+        q[
+            insert
+            into   cmap_feature_alias
+                   (feature_alias_id, feature_id, alias)
+            values (?, ?, ?)
+        ],
+        {},
+        ( $feature_alias_id, $feature_id, $alias )
+    );
+
+    return 1;
+}
+
+# ----------------------------------------------------
 sub feature_delete {
 
 =pod
@@ -299,44 +340,44 @@ Delete a feature correspondence.
 }
 
 # ----------------------------------------------------
-sub feature_alias_update {
-
-=pod
-
-=head2 feature_alias_update 
-
-Updates the aliases attached to a feature.
-
-=cut
-
-    my $self       = shift;
-    my $feature_id = shift or return $self->error('No feature id');
-    my @aliases    = @_;
-    my $db         = $self->db;
-
-    if ( @aliases ) {
-        $db->do(
-            'delete from cmap_feature_alias where feature_id=?', 
-            {},
-            ( $feature_id )
-        );
-    }
-
-    for my $alias ( @aliases ) {
-        $alias =~ s/^\s+|\s+$//g;
-        $db->do(
-            q[
-                insert
-                into   cmap_feature_alias (feature_id, alias)
-                values (?, ?)
-            ],
-            {},
-            ( $feature_id, $alias )
-        );
-    }
-
-    return 1;
-}
+#sub feature_alias_update {
+#
+#=pod
+#
+#=head2 feature_alias_update 
+#
+#Updates the aliases attached to a feature.
+#
+#=cut
+#
+#    my $self       = shift;
+#    my $feature_id = shift or return $self->error('No feature id');
+#    my @aliases    = @_;
+#    my $db         = $self->db;
+#
+#    if ( @aliases ) {
+#        $db->do(
+#            'delete from cmap_feature_alias where feature_id=?', 
+#            {},
+#            ( $feature_id )
+#        );
+#    }
+#
+#    for my $alias ( @aliases ) {
+#        $alias =~ s/^\s+|\s+$//g;
+#        $db->do(
+#            q[
+#                insert
+#                into   cmap_feature_alias (feature_id, alias)
+#                values (?, ?)
+#            ],
+#            {},
+#            ( $feature_id, $alias )
+#        );
+#    }
+#
+#    return 1;
+#}
 
 # ----------------------------------------------------
 sub get_feature_attribute_id {
@@ -402,21 +443,16 @@ Retrieves the aliases attached to a feature.
     my ( $self, $feature_id ) = @_;
     my $db = $self->db or return;
 
-    return [
-        map { $_->[0] } 
-        @{
-            $db->selectall_arrayref(
-                q[
-                    select   alias 
-                    from     cmap_feature_alias
-                    where    feature_id=?
-                    order by alias
-                ],
-                {},
-                ( $feature_id )
-            )
-        }
-    ];
+    return $db->selectall_arrayref(
+        q[
+            select   feature_alias_id, feature_id, alias
+            from     cmap_feature_alias
+            where    feature_id=?
+            order by alias
+        ],
+        { Columns => {} },
+        ( $feature_id )
+    );
 }
 
 # ----------------------------------------------------
@@ -1453,7 +1489,7 @@ Set the attributes for a database object.
             my $update_sql = 
                 'update cmap_xref set ' .
                 join(', ', map { $_->[0].'=?' } @update_fields) .
-                ' where xref_id=?'
+                'where xref_id=?'
             ;
 
             $db->do(
