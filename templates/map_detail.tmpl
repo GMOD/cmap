@@ -142,11 +142,24 @@
     <tr>
         <td valign="top" align="center" colspan="4">
             <form method="GET" action="map_details">
-            Restrict by Comparative Map:
-            <select name="comparative_map_aid">
+            Restrict by Map:
+            [% SET last_map_type = "" %]
+            <select name="comparative_map">
                 <option value="">--All--</option>
                 [% FOREACH ms=comparative_maps %]
-                    <option value="[% ms.map_aid %]"[% IF ms.map_aid==apr.param('comparative_map_aid'); ' selected'; END %]>[% ms.map_set_name %]</option>
+                    [% IF last_map_type != ms.map_type %]
+                        <option value="">== [% ms.map_type %] Maps ==</option>
+                    [% END %]
+                    [% IF ms.maps.size > 1 %]
+                        <option value="map_set_aid=[% ms.map_set_aid %]"[% IF comparative_map_field=='map_set_aid' && ms.map_set_aid==comparative_map_aid; ' selected'; END %]>[% ms.map_set_name %] (All)</option>
+                        [% FOREACH map=ms.maps %]
+                            <option value="map_aid=[% map.map_aid %]"[% IF comparative_map_field=='map_aid' && map.map_aid==comparative_map_aid; ' selected'; END %]>&nbsp;&nbsp;[% map.map_name %]</option>
+                        [% END %]
+                    [% ELSIF ms.maps.size == 1 %]
+                        [% SET map = ms.maps.0 %]
+                        <option value="map_aid=[% map.map_aid %]"[% IF comparative_map_field=='map_aid' && map.map_aid==comparative_map_aid; ' selected'; END %]>[% ms.map_set_name %]-[% map.map_name %]</option>
+                    [% END %]
+                    [% SET last_map_type = ms.map_type %]
                 [% END %]
             </select>
 
@@ -156,25 +169,26 @@
             <input type="hidden" name="ref_map_aid"      value="[% apr.param('ref_map_aid') %]">
             <input type="hidden" name="comparative_maps" value="[% apr.param('comparative_maps') %]">
             <input type="hidden" name="feature_types"    value="[% apr.param('feature_types') %]">
+            <input type="hidden" name="evidence_types"   value="[% apr.param('evidence_types') %]">
             <input type="submit" value="Submit">
             </form>
         </td>
-        <td align="center" colspan="4">
-            [ <a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];feature_type_aid=[% apr.param('feature_type_aid') %];order=[% apr.param('order') %];order_by=[% apr.param('order_by') %];action=download">Download All Feature Data</a> ]
+        <td align="center" colspan="5">
+            [ <a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];feature_type_aid=[% apr.param('feature_type_aid') %];order=[% apr.param('order') %];order_by=[% apr.param('order_by') %];action=download">Download Feature Data</a> ]
         </td>
     </tr>
 
     <tr>
-        <td align="center" colspan="8">
+        <td align="center" colspan="9">
             [% SET comp_maps = "${apr.param('comparative_maps')}" %]
-            [% SET pager_url="/cmap/map_details?ref_map_set_aid=${apr.param('ref_map_set_aid')}&ref_map_aid=${apr.param('ref_map_aid')}&comparative_maps=${comp_maps.replace('=', '%3d')}&label_features=${apr.param('label_features')}&feature_types=${apr.param('feature_types')}&highlight=${apr.param('highlight')}&comparative_map_aid=${apr.param('comparative_map_aid')}" %]
+            [% SET pager_url="/cmap/map_details?ref_map_set_aid=${apr.param('ref_map_set_aid')}&ref_map_aid=${apr.param('ref_map_aid')}&comparative_maps=${comp_maps.replace('=', '%3d')}&label_features=${apr.param('label_features')}&feature_types=${apr.param('feature_types')}&evidence_types=${apr.param('evidence_types')}&highlight=${apr.param('highlight')}&comparative_map=${apr.param('comparative_map')}" %]
             [% PROCESS pager.tmpl %]
         </td>
     </tr>
 
     <tr>
         <th colspan="3">[% reference_map.species_name %] - [% reference_map.map_set_name %] - [% reference_map.map_name %]<br><small>(Click headers to resort)</small></th>
-        <th colspan="5">Comparative Maps</th>
+        <th colspan="6">Comparative Maps</th>
     </tr>
 
     <tr>
@@ -185,6 +199,7 @@
         <th>Feature</th>
         <th>Type</th>
         <th>Position</th>
+        <th>Evidence</th>
         <th>Actions</th>
     </tr>
 
@@ -217,8 +232,11 @@
                 <td align="right">
                     [% p.start_position %] [% IF p.stop_position>p.start_position %]- [% p.stop_position %][% END %] ([% p.map_units %])
                 </td>
+                <td>
+                    [% p.evidence.join(', ') %]
+                </td>
                 <td align="center">
-                    <a href="viewer?ref_map_set_aid=[% reference_map.map_set_aid%];ref_map_aid=[% reference_map.map_aid %];comparative_maps=1%3dmap_aid%3d[% p.map_aid %];highlight=[% f.feature_name %][% IF p.feature_name != f.feature_name %],[% p.feature_name %][% END %]">View Maps</a>
+                    <a href="map_details?ref_map_set_aid=[% reference_map.map_set_aid%];ref_map_aid=[% reference_map.map_aid %];comparative_maps=1%3dmap_aid%3d[% p.map_aid %];feature_types=[% apr.param('feature_types') %];evidence_types=[% apr.param('evidence_types') %];highlight=[% f.feature_name %][% IF p.feature_name != f.feature_name %],[% p.feature_name %][% END %]">View Maps</a>
                 </td>
 
                 [% IF i>0 %]</tr>[% END %]
@@ -227,7 +245,7 @@
             
         [% ELSE %]
 
-                <td colspan="5" align="center"><em>No other positions</em></td>
+                <td colspan="6" align="center"><em>No other positions</em></td>
 
         [% END %]
     </tr>
