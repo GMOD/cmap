@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::Import;
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.42 2003-12-30 18:45:45 kycl4rk Exp $
+# $Id: Import.pm,v 1.43 2004-01-08 20:59:47 kycl4rk Exp $
 
 =pod
 
@@ -28,7 +28,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.42 $)[-1];
+$VERSION  = (qw$Revision: 1.43 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -801,10 +801,6 @@ Imports an XML document containing CMap database objects.
             cmap_feature_correspondence cmap_xref correspondence_evidence
         ) ],
     );
-
-#    open my $foo, ">/tmp/foo";
-#    print $foo "data = ", Dumper($data), "\n";
-#    close $foo;
 
     #
     # Species.
