@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.49 2003-06-17 15:53:44 kycl4rk Exp $
+# $Id: Map.pm,v 1.50 2003-07-03 18:36:27 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.49 $)[-1];
+$VERSION = (qw$Revision: 1.50 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -662,7 +662,7 @@ Lays out the map.
                 my ( $label_y, @coords );
                 if ( 
                     $shape_is_triangle     ||
-                    $feature_shape eq LINE || 
+#                    $feature_shape eq LINE || 
                     $y_pos2 <= $y_pos1
                 ) {
                     $label_y               = $y_pos1 - $reg_font->height/2;
@@ -680,6 +680,7 @@ Lays out the map.
                 }
 
                 if ( $feature_shape eq LINE ) {
+                    $y_pos1 = ( $y_pos1 + $y_pos2 ) / 2;
                     push @drawing_data, [
                         LINE, $tick_start, $y_pos1, $tick_stop, $y_pos1, $color
                     ];
