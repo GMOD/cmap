@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.37 2004-05-14 20:32:36 mwz444 Exp $
+# $Id: Build.PL,v 1.38 2004-05-17 20:42:51 mwz444 Exp $
 
 use strict;
 
@@ -293,8 +293,8 @@ my ( $install, $installed_cmap_conf );
 # Make the cmap.conf dir for the conf files
 #
 $install .= qq[
-    unless ( -d '$OPTIONS{CONF}/cmap.conf' ) {
-        mkdir '$OPTIONS{CONF}/cmap.conf' or warn 
+    unless ( -d '$OPTIONS{CONF}' ) {
+        mkdir '$OPTIONS{CONF}' or warn 
             "Can't create image cache dir '$OPTIONS{CONF}': \$!\\n";
     }
 ];
