@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.135 2004-10-26 17:11:47 mwz444 Exp $
+# $Id: Map.pm,v 1.135.2.1 2004-10-27 21:49:12 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.135 $)[-1];
+$VERSION = (qw$Revision: 1.135.2.1 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1001,11 +1001,6 @@ Variable Info:
     # Some common things we'll need later on.
     #
     my $connecting_line_color  = $drawer->config_data('connecting_line_color');
-    my $apr                    = $drawer->apr;
-    my $url                    = $apr->url;
-    my $map_viewer_url         = $url . '/viewer';
-    my $map_details_url        = $url . '/map_details';
-    my $map_set_info_url       = $url . '/map_set_info';
     my $rel_map_show_corr_only =
       $drawer->config_data('relational_maps_show_only_correspondences') || 0;
     my $feature_highlight_fg_color =
@@ -1013,12 +1008,8 @@ Variable Info:
     my $feature_highlight_bg_color =
       $drawer->config_data('feature_highlight_bg_color');
 
-    my $self_url =
-      $drawer->map_view eq 'details' ? $map_details_url : $map_viewer_url;
 
-    my @ordered_slot_nos = sort { $a <=> $b } grep { $_ != 0 } keys %$slots;
-
-    my ( @map_buttons, $last_map_x );
+    my ( $last_map_x );
     my $last_map_y  = $base_y;
     my $show_labels =
         $is_compressed ? 0
@@ -1067,21 +1058,6 @@ Variable Info:
         my $features = $self->features($map_id);
 
         #
-        # Reset map buttons.
-        #
-        @map_buttons = (
-            {
-                url => $map_set_info_url
-                  . '?map_set_aid='
-                  . $self->map_set_aid($map_id)
-                  . ';data_source='
-                  . $drawer->data_source,
-                alt   => 'Map Set Info',
-                label => 'i',
-            }
-        );
-
-        #
         # The map.
         #
 
@@ -1115,6 +1091,7 @@ Variable Info:
             map_drawing_data   => \%map_drawing_data,
             map_area_data      => \%map_area_data,
             map_placement_data => \%map_placement_data,
+            is_flipped         => $is_flipped,
             );
              
         # Draw the actual Map
@@ -1314,279 +1291,6 @@ Variable Info:
         $features_with_corr_by_map_id{$map_id}=\%features_with_corr;
 
         my ( $min_x);
-
-        #
-        # Buttons
-        #
-        
-        my $ref_map   = $slots->{0} or next;
-        my ($ref_map_link,@rmap_links);
-        my $ref_map_aids_hash=$ref_map->{'maps'};
-        my $ref_map_set_aids_hash=$ref_map->{'map_sets'};
-        for my $field (qw[ maps map_sets ]) {
-            my @aid_info;
-            next unless (defined($ref_map->{$field})); 
-            foreach my $aid (keys %{$ref_map->{$field}}){
-                push @aid_info, $aid.'['.$ref_map->{$field}{$aid}{'start'}.'*'
-                    .$ref_map->{$field}{$aid}{'stop'}.'x'
-                    .$ref_map->{$field}{$aid}{'mag'}
-                    .']';
-            }
-            if ($field eq 'maps'){
-                $ref_map_link = 'ref_map_aids='.
-                    join(';ref_map_aids=',@aid_info).
-                    ';';
-            }
-            else{
-                $ref_map_link = 'ref_map_set_aids='.
-                    join(';ref_map_set_aids=',@aid_info).
-                    ';';
-            }
-
-            if(@aid_info){
-                push @rmap_links, $ref_map_link;
-            }
-        }
-
-        my @flips;
-        my @flipping_flips;
-        my $acc_id = $self->accession_id($map_id);
-        for my $rec ( @{ $drawer->flip } ) {
-            push @flips, $rec->{'slot_no'} . '%3d' . $rec->{'map_aid'};
-            unless (   
-                $rec->{'slot_no'} == $slot_no
-                && 
-                $rec->{'map_aid'} == $acc_id )
-            {
-                push @flipping_flips,   
-                    $rec->{'slot_no'} . '%3d' . $rec->{'map_aid'};
-            }
-        }
-        push @flipping_flips, "$slot_no%3d$acc_id" unless $is_flipped;
-        my $flip_str=join(":",@flips);
-        my $flipping_flip_str=join(":",@flipping_flips);
-
-        my $feature_type_selection='';
-        $feature_type_selection.='feature_type_'.$_.'=2;' 
-            foreach (@{$drawer->include_feature_types});
-        $feature_type_selection.='feature_type_'.$_.'=1;' 
-            foreach (@{$drawer->corr_only_feature_types});
-        #
-        # Map details button.
-        #
-        my $slots = $drawer->slots;
-        my @maps;
-        for my $side (qw[ left right ]) {
-            my $no     = $side eq 'left' ? $slot_no - 1 : $slot_no + 1;
-            my $new_no = $side eq 'left' ? -1           : 1;
-            my $map   = $slots->{$no} or next;
-            my $link;
-            for my $field (qw[ maps map_sets ]) {
-                my @aid_info;
-                next unless (defined($map->{$field})); 
-                foreach my $aid (keys %{$map->{$field}}){
-                    push @aid_info, $aid.'['.$map->{$field}{$aid}{'start'}.'*'
-                        .$map->{$field}{$aid}{'stop'}.'x'
-                        .$map->{$field}{$aid}{'mag'}
-                        .']';
-                }
-                my $field_type='map_set_aid';
-                if ($field eq 'maps'){
-                    $field_type='map_aid';
-                }
-                my $link = join( '%3d', $new_no, $field_type, join(',',@aid_info) );
-                push @maps, $link;
-            }
-        }
-
-        my $details_url =
-            $map_details_url
-          . '?ref_map_set_aid='
-          . $self->map_set_aid($map_id)
-          . ';ref_map_aids='
-          . $self->accession_id($map_id)
-          . ';comparative_maps='
-          . join( ':', @maps )
-          . ';label_features='
-          . $drawer->label_features
-          . ';' . $feature_type_selection
-          . 'include_evidence_types='
-          . join( ',', @{ $drawer->include_evidence_types || [] } )
-          . ';highlight='
-          . uri_escape( $drawer->highlight )
-          . ';min_correspondences='
-          . $drawer->min_correspondences
-          . ';image_type='
-          . $drawer->image_type
-          . ';data_source='
-          . $drawer->data_source;
-
-        if ($is_compressed) {
-            push @map_buttons, {   
-                label => 'M',
-                url   => 'matrix?&show_matrix=1'.
-                    '&link_map_set_aid='.$self->map_set_aid( $map_id ),
-                alt   => 'View In Matrix'
-            };
-        }
-        else {
-            push @map_buttons,
-              {
-                label => '?',
-                url   => $details_url,
-                alt   => 'Map Details',
-            },   
-            {   
-                label => 'M',
-                url   => 'matrix?map_type_aid='.$self->map_type_aid( $map_id ).
-                    '&species_aid='.$self->species_aid( $map_id ).
-                    '&map_set_aid='.$self->map_set_aid( $map_id ).
-                    '&map_name='.$self->map_name( $map_id ).
-                    '&show_matrix=1',
-                alt   => 'View In Matrix'
-              };
-        }
-
-        #
-        # Delete button.
-        #
-        if ( $slot_no != 0 ) {
-            my @cmap_nos;
-            if ( $slot_no < 0 ) {
-                push @cmap_nos, grep { $_ > $slot_no } @ordered_slot_nos;
-            }
-            else {
-                push @cmap_nos, grep { $_ < $slot_no } @ordered_slot_nos;
-            }
-            my %delete_comparative_map_hash;
-            foreach my $slot_no (@cmap_nos){
-                next if ($slot_no==0);
-                $delete_comparative_map_hash{$slot_no}=$slots->{$slot_no};
-            }
-
-            my @cmaps;
-            for my $slot_no (@cmap_nos) {
-                my $map   = $slots->{$slot_no} or next;
-                my $link;
-                for my $field (qw[ maps map_sets ]) {
-                    my @aid_info;
-                    next unless (defined($map->{$field})); 
-                    foreach my $aid (keys %{$map->{$field}}){
-                        push @aid_info, $aid.'['
-                            .$map->{$field}{$aid}{'start'}.'*'
-                            .$map->{$field}{$aid}{'stop'}.'x'
-                            .$map->{$field}{$aid}{'mag'}
-                            .']';
-                    }
-                    my $field_type='map_set_aid';
-                    if ($field eq 'maps') {
-                        $field_type='map_aid';
-                    }
-                    my $link = join( '%3d', 
-                        $slot_no, $field_type, join(',',@aid_info) 
-                    );
-                    push @cmaps, $link;
-                }
-            }
-
-            my $delete_url        =  $self->create_viewer_link(
-                ref_map_set_aid   => $slots->{'0'}{'map_set_aid'},
-                ref_map_aids      => $ref_map_aids_hash,
-                ref_map_set_aids  => $ref_map_set_aids_hash,
-                comparative_maps  => \%delete_comparative_map_hash,
-                label_features    => $drawer->label_features,
-                feature_type_aids => $drawer->include_feature_types,
-                corr_only_feature_type_aids 
-                                  => $drawer->corr_only_feature_types,
-                evidence_type_aids  
-                                  => $drawer->include_evidence_types,
-                highlight         => uri_escape( $drawer->highlight ),
-                min_correspondences => $drawer->min_correspondences,
-                image_type        => $drawer->image_type,
-                flip              => $flip_str,
-                data_source       => $drawer->data_source,
-                url               => $map_viewer_url,
-            );
-
-            push @map_buttons,
-              {
-                label => 'X',
-                url   => $delete_url,
-                alt   => 'Delete Map',
-              };
-        }
-
-        #
-        # Flip button.
-        #
-        unless ($is_compressed) {
-            my %flip_comparative_map_hash;
-            foreach my $slot_no (keys(%$slots)){
-                next if ($slot_no==0);
-                $flip_comparative_map_hash{$slot_no}=$slots->{$slot_no};
-            }
-
-            my $flip_url          =  $self->create_viewer_link(
-                ref_map_set_aid   => $slots->{'0'}{'map_set_aid'},
-                ref_map_aids      => $ref_map_aids_hash,
-                ref_map_set_aids  => $ref_map_set_aids_hash,
-                comparative_maps  => \%flip_comparative_map_hash,
-                label_features    => $drawer->label_features,
-                feature_type_aids => $drawer->include_feature_types,
-                corr_only_feature_type_aids 
-                                  => $drawer->corr_only_feature_types,
-                evidence_type_aids  
-                                  => $drawer->include_evidence_types,
-                highlight         => uri_escape( $drawer->highlight ),
-                min_correspondences => $drawer->min_correspondences,
-                image_type        => $drawer->image_type,
-                flip              => $flipping_flip_str,
-                data_source       => $drawer->data_source,
-                url               => $map_viewer_url,
-            );
-
-            push @map_buttons,
-              {
-                label => 'F',
-                url   => $flip_url,
-                alt   => 'Flip Map',
-              };
-        }
-
-        #
-        # New View button.
-        #
-        unless ($is_compressed) {
-            my $new_url =
-                $map_viewer_url
-              . '?ref_map_set_aid='
-              . $self->map_set_aid($map_id)
-              . ';ref_map_aids='
-              . $self->accession_id($map_id)
-              . ';ref_map_start='
-              . $self->start_position($map_id)
-              . ';ref_map_stop='
-              . $self->stop_position($map_id)
-              . ';label_features='
-              . $drawer->label_features
-              . ';' . $feature_type_selection
-              . ';include_evidence_types='
-              . join( ',', @{ $drawer->include_evidence_types || [] } )
-              . ';highlight='
-              . uri_escape( $drawer->highlight )
-              . ';image_type='
-              . $drawer->image_type
-              . ';data_source='
-              . $drawer->data_source;
-
-            push @map_buttons,
-              {
-                label => 'N',
-                url   => $new_url,
-                alt   => 'New Map View',
-              };
-        }
-
         #
         # The map title(s).
         #
@@ -1605,7 +1309,16 @@ Variable Info:
                 right_x => $map_placement_data{$map_id}{'bounds'}[2],
                 min_y   => $map_placement_data{$map_id}{'bounds'}[1], 
                 lines   => \@lines,
-                buttons => \@map_buttons,
+                buttons => $self->create_buttons(
+                            map_id => $map_id,
+                            drawer => $drawer,
+                            slot_no => $slot_no,
+                            is_flipped => $is_flipped,
+                            buttons => [ 'map_set_info', 'map_detail', 
+                                         'map_matrix', 'delete', 'flip', 
+                                         'new_view',
+                                        ],
+                            ),
                 font    => $reg_font,
             );
 
@@ -1793,7 +1506,13 @@ Variable Info:
             bound_side => $bound_side,
             min_y   => $slot_min_y ,
             lines   => \@map_titles,
-            buttons => \@map_buttons,
+            buttons => $self->create_buttons(
+                        map_id => $map_ids[0],
+                        drawer => $drawer,
+                        slot_no => $slot_no,
+                        is_flipped => $flipped_maps{$map_ids[0]},
+                        buttons => [ 'map_set_info', 'set_matrix', 'delete', ],
+                        ),
             font    => $reg_font,
         );
 
@@ -2073,6 +1792,7 @@ sub add_topper {
     my $map_drawing_data   = $args{'map_drawing_data'};
     my $map_placement_data = $args{'map_placement_data'};
     my $map_area_data      = $args{'map_area_data'};
+    my $is_flipped         = $args{'is_flipped'};
 
     my $no_features        = $self->no_features($map_id);
     my $map_name           = $self->map_name($map_id);
@@ -2080,23 +1800,28 @@ sub add_topper {
       or return $self->error( $drawer->error );
     my $font_width         = $reg_font->width;
     my $font_height        = $reg_font->height;
-    my $topper_height      = ( $font_height + 2 ) * 2;
+    my $button_y_buffer      = 4;
+    my $button_x_buffer      = 6; 
+    my $button_height      = $font_height +($button_y_buffer*2);
 
     my $base_x     = $map_placement_data->{$map_id}{'map_coords'}[0];
     my $map_base_y = $map_placement_data->{$map_id}{'map_coords'}[1];
+
+    my $button_y = $map_base_y - $button_height; 
 
     #
     # Indicate total number of features on the map.
     #
     my @map_toppers = $is_compressed ? ($map_name) : ();
     push @map_toppers, "[$no_features]" if defined $no_features;
+
     for my $i ( 0 .. $#map_toppers ) {
         my $topper = $map_toppers[$i];
         my $f_x1   = $base_x - ( ( length($topper) * $font_width ) / 2 );
         my $f_x2   = $f_x1 + ( length($topper) * $font_width ) ;
 
         my $topper_y =
-              $map_base_y - ( $font_height * ( scalar @map_toppers - $i ) + 4 );
+              $map_base_y - $button_height - ( $font_height * ( scalar @map_toppers - $i ) + 4 );
 
         $map_placement_data->{$map_id}{'bounds'}[1]=$topper_y
             if  ($map_placement_data->{$map_id}{'bounds'}[1]>$topper_y);
@@ -2125,6 +1850,56 @@ sub add_topper {
         push @{$map_drawing_data->{$map_id}},
           [ STRING, $reg_font, $f_x1, $topper_y, $topper, 'black' ];
     }
+
+    #
+    # Add Buttons
+    #
+    my $buttons = $self->create_buttons(
+        map_id => $map_id,
+        drawer => $drawer,
+        slot_no => $slot_no,
+        is_flipped => $is_flipped,
+        buttons => [ 'map_detail', 'map_matrix', 'flip', 
+                     'new_view',
+                    ],
+        );
+    #
+    # Figure out how much room left-to-right the buttons will take.
+    #
+    my $buttons_width;
+    for my $button (@$buttons) {
+        $buttons_width += $font_width * length( $button->{'label'} );
+    }
+    $buttons_width += $button_x_buffer * ( scalar @$buttons - 1 );
+
+    #
+    # Place the buttons.
+    #
+    my $label_x = $base_x - $buttons_width / 2;
+
+    for my $button (@$buttons) {
+        my $len  = $font_width * length( $button->{'label'} );
+        my $end  = $label_x + $len;
+        my @area = ( $label_x - 2, $button_y - ($button_y_buffer/2), 
+                     $end + 2, $button_y + $font_height + ($button_y_buffer/2) );
+        push @{$map_drawing_data->{$map_id}},
+          [ STRING, $reg_font, $label_x, $button_y, $button->{'label'}, 'grey' ],
+          [ RECTANGLE, @area, 'grey' ],;
+
+        $map_placement_data->{$map_id}{'bounds'}[0]=$label_x
+            if  ($map_placement_data->{$map_id}{'bounds'}[0]>$label_x);
+        $map_placement_data->{$map_id}{'bounds'}[2]=$end
+            if  ($map_placement_data->{$map_id}{'bounds'}[2]<$end);
+        $label_x += $len + $button_x_buffer;
+
+        push @{$map_area_data->{$map_id}},
+          {
+            coords => \@area,
+            url    => $button->{'url'},
+            alt    => $button->{'alt'},
+          };
+    }
+
 
 }
 
@@ -3196,6 +2971,298 @@ Returns the map's tick mark interval.
     }
 
     return $map->{'tick_mark_interval'};
+}
+
+# ---------------------------------------------------
+sub create_buttons {
+
+=pod
+
+=head2 create_button
+
+Button options:
+
+ map_set_info
+ map_detail
+ set_matrix
+ map_matrix
+ delete
+ flip
+ new_view
+
+=cut
+
+    my ( $self, %args )   = @_;
+    my $map_id            = $args{'map_id'};
+    my $drawer            = $args{'drawer'};
+    my $slot_no           = $args{'slot_no'};
+    my $is_flipped        = $args{'is_flipped'};
+    my $buttons_array     = $args{'buttons'};
+
+    my %requested_buttons;
+    foreach my $button (@$buttons_array){
+        $requested_buttons{$button}=1;
+    }
+
+    # Specify the base urls
+    my $apr                    = $drawer->apr;
+    my $url                    = $apr->url;
+    my $map_viewer_url         = $url . '/viewer';
+    my $map_details_url        = $url . '/map_details';
+    my $map_set_info_url       = $url . '/map_set_info';
+
+    my @map_buttons;
+
+    my $slots = $drawer->slots;
+    #
+    # Buttons
+    #
+    
+    my $ref_map   = $slots->{0} or next;
+    my $ref_map_aids_hash=$ref_map->{'maps'};
+    my $ref_map_set_aids_hash=$ref_map->{'map_sets'};
+
+    my @flips;
+    my @flipping_flips;
+    my $acc_id = $self->accession_id($map_id);
+    for my $rec ( @{ $drawer->flip } ) {
+        push @flips, $rec->{'slot_no'} . '%3d' . $rec->{'map_aid'};
+        unless (   
+            $rec->{'slot_no'} == $slot_no
+            && 
+            $rec->{'map_aid'} == $acc_id )
+        {
+            push @flipping_flips,   
+                $rec->{'slot_no'} . '%3d' . $rec->{'map_aid'};
+        }
+    }
+    push @flipping_flips, "$slot_no%3d$acc_id" unless $is_flipped;
+    my $flip_str=join(":",@flips);
+    my $flipping_flip_str=join(":",@flipping_flips);
+
+    my $feature_type_selection='';
+    $feature_type_selection.='feature_type_'.$_.'=2;' 
+        foreach (@{$drawer->include_feature_types});
+    $feature_type_selection.='feature_type_'.$_.'=1;' 
+        foreach (@{$drawer->corr_only_feature_types});
+
+    #
+    # Map Set Info
+    #
+    if ($requested_buttons{'map_set_info'}){
+        @map_buttons = (
+            {
+                url => $map_set_info_url
+                  . '?map_set_aid='
+                  . $self->map_set_aid($map_id)
+                  . ';data_source='
+                  . $drawer->data_source,
+                alt   => 'Map Set Info',
+                label => 'i',
+            }
+        );
+    }
+
+    #
+    # Map details button.
+    #
+    if ($requested_buttons{'map_detail'}){
+        my @maps;
+        for my $side (qw[ left right ]) {
+            my $no     = $side eq 'left' ? $slot_no - 1 : $slot_no + 1;
+            my $new_no = $side eq 'left' ? -1           : 1;
+            my $map   = $slots->{$no} or next;
+            my $link;
+            for my $field (qw[ maps map_sets ]) {
+                my @aid_info;
+                next unless (defined($map->{$field})); 
+                foreach my $aid (keys %{$map->{$field}}){
+                    push @aid_info, $aid.'['.$map->{$field}{$aid}{'start'}.'*'
+                        .$map->{$field}{$aid}{'stop'}.'x'
+                        .$map->{$field}{$aid}{'mag'}
+                        .']';
+                }
+                my $field_type='map_set_aid';
+                if ($field eq 'maps'){
+                    $field_type='map_aid';
+                }
+                my $link = join( '%3d', $new_no, $field_type, join(',',@aid_info) );
+                push @maps, $link;
+            }
+        }
+
+        my $details_url =
+            $map_details_url
+          . '?ref_map_set_aid='
+          . $self->map_set_aid($map_id)
+          . ';ref_map_aids='
+          . $self->accession_id($map_id)
+          . ';comparative_maps='
+          . join( ':', @maps )
+          . ';label_features='
+          . $drawer->label_features
+          . ';' . $feature_type_selection
+          . 'include_evidence_types='
+          . join( ',', @{ $drawer->include_evidence_types || [] } )
+          . ';highlight='
+          . uri_escape( $drawer->highlight )
+          . ';min_correspondences='
+          . $drawer->min_correspondences
+          . ';image_type='
+          . $drawer->image_type
+          . ';data_source='
+          . $drawer->data_source;
+
+        push @map_buttons,
+          {
+            label => '?',
+            url   => $details_url,
+            alt   => 'Map Details',
+        },   
+    }
+    
+    #
+    # Matrix buttons
+    #
+    if ($requested_buttons{'set_matrix'}){
+        push @map_buttons, {   
+            label => 'M',
+            url   => 'matrix?&show_matrix=1'.
+                '&link_map_set_aid='.$self->map_set_aid( $map_id ),
+            alt   => 'View In Matrix'
+        };
+    }
+    if ($requested_buttons{'map_matrix'}){
+        push @map_buttons, {   
+            label => 'M',
+            url   => 'matrix?map_type_aid='.$self->map_type_aid( $map_id ).
+                '&species_aid='.$self->species_aid( $map_id ).
+                '&map_set_aid='.$self->map_set_aid( $map_id ).
+                '&map_name='.$self->map_name( $map_id ).
+                '&show_matrix=1',
+            alt   => 'View In Matrix'
+          };
+    }
+
+    #
+    # Delete button.
+    # will only create if not slot 0
+    #
+    if ($requested_buttons{'delete'}){
+        if ( $slot_no != 0 ) {
+            my @ordered_slot_nos = sort { $a <=> $b } grep { $_ != 0 } keys %$slots;
+            my @cmap_nos;
+            if ( $slot_no < 0 ) {
+                push @cmap_nos, grep { $_ > $slot_no } @ordered_slot_nos;
+            }
+            else {
+                push @cmap_nos, grep { $_ < $slot_no } @ordered_slot_nos;
+            }
+            my %delete_comparative_map_hash;
+            foreach my $slot_no (@cmap_nos){
+                next if ($slot_no==0);
+                $delete_comparative_map_hash{$slot_no}=$slots->{$slot_no};
+            }
+
+            my $delete_url        =  $self->create_viewer_link(
+                ref_map_set_aid   => $slots->{'0'}{'map_set_aid'},
+                ref_map_aids      => $ref_map_aids_hash,
+                ref_map_set_aids  => $ref_map_set_aids_hash,
+                comparative_maps  => \%delete_comparative_map_hash,
+                label_features    => $drawer->label_features,
+                feature_type_aids => $drawer->include_feature_types,
+                corr_only_feature_type_aids 
+                                  => $drawer->corr_only_feature_types,
+                evidence_type_aids  
+                                  => $drawer->include_evidence_types,
+                highlight         => uri_escape( $drawer->highlight ),
+                min_correspondences => $drawer->min_correspondences,
+                image_type        => $drawer->image_type,
+                flip              => $flip_str,
+                data_source       => $drawer->data_source,
+                url               => $map_viewer_url,
+            );
+
+            push @map_buttons,
+              {
+                label => 'X',
+                url   => $delete_url,
+                alt   => 'Delete Map',
+              };
+        }
+    }
+
+    #
+    # Flip button.
+    #
+    if ($requested_buttons{'flip'}){
+        my %flip_comparative_map_hash;
+        foreach my $slot_no (keys(%$slots)){
+            next if ($slot_no==0);
+            $flip_comparative_map_hash{$slot_no}=$slots->{$slot_no};
+        }
+
+        my $flip_url          =  $self->create_viewer_link(
+            ref_map_set_aid   => $slots->{'0'}{'map_set_aid'},
+            ref_map_aids      => $ref_map_aids_hash,
+            ref_map_set_aids  => $ref_map_set_aids_hash,
+            comparative_maps  => \%flip_comparative_map_hash,
+            label_features    => $drawer->label_features,
+            feature_type_aids => $drawer->include_feature_types,
+            corr_only_feature_type_aids 
+                              => $drawer->corr_only_feature_types,
+            evidence_type_aids  
+                              => $drawer->include_evidence_types,
+            highlight         => uri_escape( $drawer->highlight ),
+            min_correspondences => $drawer->min_correspondences,
+            image_type        => $drawer->image_type,
+            flip              => $flipping_flip_str,
+            data_source       => $drawer->data_source,
+            url               => $map_viewer_url,
+        );
+
+        push @map_buttons,
+          {
+            label => 'F',
+            url   => $flip_url,
+            alt   => 'Flip Map',
+          };
+    }
+
+    #
+    # New View button.
+    #
+    if ($requested_buttons{'new_view'}){
+        my $new_url =
+            $map_viewer_url
+          . '?ref_map_set_aid='
+          . $self->map_set_aid($map_id)
+          . ';ref_map_aids='
+          . $self->accession_id($map_id)
+          . ';ref_map_start='
+          . $self->start_position($map_id)
+          . ';ref_map_stop='
+          . $self->stop_position($map_id)
+          . ';label_features='
+          . $drawer->label_features
+          . ';' . $feature_type_selection
+          . ';include_evidence_types='
+          . join( ',', @{ $drawer->include_evidence_types || [] } )
+          . ';highlight='
+          . uri_escape( $drawer->highlight )
+          . ';image_type='
+          . $drawer->image_type
+          . ';data_source='
+          . $drawer->data_source;
+
+        push @map_buttons,
+          {
+            label => 'N',
+            url   => $new_url,
+            alt   => 'New Map View',
+          };
+    }
+    return \@map_buttons;
 }
 
 # ----------------------------------------------------
