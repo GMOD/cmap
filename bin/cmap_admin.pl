@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.27 2003-03-21 00:35:51 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.28 2003-03-25 23:22:21 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.27 $)[-1];
+$VERSION = (qw$Revision: 1.28 $)[-1];
 
 #
 # Turn off output buffering.
@@ -523,7 +523,6 @@ sub export_as_sql {
                 evidence_type    => STR,
                 rank             => NUM,
                 line_color       => STR,
-                line_style       => STR,
             }
         },
         {
