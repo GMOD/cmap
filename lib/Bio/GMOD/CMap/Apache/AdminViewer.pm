@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.17 2003-01-25 00:43:12 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.18 2003-01-28 20:40:15 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -29,7 +29,7 @@ $FEATURE_SHAPES = [ qw( box dumbbell line span ) ];
 $LINE_STYLES    = [ qw( dashed solid ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.17 $)[-1];
+$VERSION        = (qw$Revision: 1.18 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -699,6 +699,7 @@ sub map_create {
     return $self->process_template( 
         TEMPLATE->{'map_create'}, 
         { 
+            apr     => $apr,
             map_set => $map_set,
             errors  => $args{'errors'},
         }
@@ -717,6 +718,7 @@ sub map_edit {
             select map.map_id, 
                    map.accession_id, 
                    map.map_name, 
+                   map.linkage_group, 
                    map.start_position, 
                    map.stop_position,
                    ms.map_set_id, 
@@ -763,6 +765,7 @@ sub map_insert {
                          push @errors, 'No map name';
     my $map_set_id     = $apr->param('map_set_id')   or 
                          push @errors, 'No map set id';
+    my $linkage_group  = $apr->param('linkage_group') || '';
     my $start_position = $apr->param('start_position');
     my $stop_position  = $apr->param('stop_position');
     push @errors, 'No start' unless $start_position =~ NUMBER_RE;
@@ -775,12 +778,12 @@ sub map_insert {
             insert
             into   cmap_map
                    ( map_id, accession_id, map_set_id, map_name, 
-                     start_position, stop_position )
-            values ( ?, ?, ?, ?, ?, ? )
+                     linkage_group, start_position, stop_position )
+            values ( ?, ?, ?, ?, ?, ?, ? )
         ],
         {},
         ( $map_id, $accession_id, $map_set_id, $map_name, 
-          $start_position, $stop_position 
+          $linkage_group, $start_position, $stop_position 
         )
     );
 
@@ -804,6 +807,7 @@ sub map_view {
             select map.map_id, 
                    map.accession_id, 
                    map.map_name, 
+                   map.linkage_group, 
                    map.start_position, 
                    map.stop_position,
                    ms.map_set_id, 
@@ -898,6 +902,7 @@ sub map_update {
         or push @errors, 'No accession id';
     my $map_name       = $apr->param('map_name')       
         or push @errors, 'No map name';
+    my $linkage_group  = $apr->param('linkage_group') || '';
     my $start_position = $apr->param('start_position');
     push @errors, 'No start position' unless defined $start_position;
     my $stop_position  = $apr->param('stop_position')  
@@ -909,6 +914,7 @@ sub map_update {
         update cmap_map
         set    accession_id=?, 
                map_name=?, 
+               linkage_group=?, 
                start_position=?,
                stop_position=?
         where  map_id=?
@@ -917,7 +923,9 @@ sub map_update {
     $db->do( 
         $sql, 
         {}, 
-        ( $accession_id, $map_name, $start_position, $stop_position, $map_id ) 
+        ( $accession_id, $map_name, $linkage_group, 
+          $start_position, $stop_position, $map_id 
+        ) 
     );
 
     return $self->redirect_home( 
@@ -2199,7 +2207,7 @@ sub map_set_view {
         $db->selectall_arrayref( 
             q[
                 select   map_id, accession_id, map_name, 
-                         start_position, stop_position
+                         linkage_group, start_position, stop_position
                 from     cmap_map
                 where    map_set_id=?
                 order by map_name
