@@ -32,7 +32,12 @@
 
             <tr>
                 <td align="right">Species:</td>
-                <td>[% ms.full_name %] ([% ms.common_name %])</td>
+                <td>
+                    [% ms.full_name %] ([% ms.common_name %])
+                    [% IF ms.ncbi_taxon_id %]
+                        <a href="http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=[% ms.ncbi_taxon_id %]">(View at NCBI)</a>
+                    [% END %]
+                </td>
             </tr> 
 
             <tr>
