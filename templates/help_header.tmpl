@@ -1,0 +1,44 @@
+[%- 
+    SET menu = [
+        { 
+            name    => 'feature_details',
+            display => 'Feature Details Help',
+        },
+        { 
+            name    => 'feature_search',
+            display => 'Feature Search Help',
+        },
+        { 
+            name    => 'feature_type_info',
+            display => 'Feature Type Info Help',
+        },
+        { 
+            name    => 'map_details',
+            display => 'Map Details Help',
+        },
+        { 
+            name    => 'map_set_info',
+            display => 'Map Set Info Help',
+        },
+        { 
+            name    => 'map_viewer',
+            display => 'Map Viewer Help',
+        },
+        { 
+            name    => 'matrix',
+            display => 'Matrix Help',
+        },
+    ];
+
+    SET links=[];
+
+    FOREACH s=menu;
+        IF cur_sec==s.name; 
+            links.push("<b>$s.display</b>");
+        ELSE; 
+            links.push("<a href=\"help?section=$s.name\">$s.display</a>");
+        END;
+    END;
+-%]
+<hr>
+[% links.join( ' | ' ) %]
