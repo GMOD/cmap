@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.33 2003-04-14 15:44:00 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.34 2003-04-14 19:59:32 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.33 $)[-1];
+$VERSION = (qw$Revision: 1.34 $)[-1];
 
 #
 # Get command-line options
@@ -15,10 +15,10 @@ $VERSION = (qw$Revision: 1.33 $)[-1];
 my ( $show_help, $show_version, $no_log, $datasource );
 
 GetOptions(
-    'h|help'       => \$show_help,    # Show help and exit
-    'v|version'    => \$show_version, # Show version and exit
-    'no-log'       => \$no_log,       # Don't keep a log
-    'datasource=s' => \$datasource,   # Default data source
+    'h|help'         => \$show_help,    # Show help and exit
+    'v|version'      => \$show_version, # Show version and exit
+    'no-log'         => \$no_log,       # Don't keep a log
+    'd|datasource=s' => \$datasource,   # Default data source
 ) or pod2usage(2);
 
 pod2usage(0) if $show_help;
@@ -1708,29 +1708,32 @@ sub make_name_correspondences {
     #
     # Get the source map set(s).
     #
-    my @to_map_sets = $self->show_menu(
-        title       => 'Target Map Set (optional)',
-        prompt      => 'Please select a target map set',
-        display     => 'map_type,species_name,map_set_name',
-        return      => 'map_set_id,map_type,species_name,map_set_name',
-        allow_null  => 1,
-        allow_mult  => 1,
-        data        => $db->selectall_arrayref(
-            q[
-                select   ms.map_set_id, 
-                         ms.short_name as map_set_name,
-                         s.common_name as species_name,
-                         mt.map_type
-                from     cmap_map_set ms,
-                         cmap_species s,
-                         cmap_map_type mt
-                where    ms.species_id=s.species_id
-                and      ms.map_type_id=mt.map_type_id
-                order by map_type, common_name, map_set_name
-            ],
-            { Columns => {} },
-        ),
-    );
+    my @to_map_sets;
+    if ( @from_map_sets ) {
+        @to_map_sets = $self->show_menu(
+            title       => 'Target Map Set (optional)',
+            prompt      => 'Please select a target map set',
+            display     => 'map_type,species_name,map_set_name',
+            return      => 'map_set_id,map_type,species_name,map_set_name',
+            allow_null  => 1,
+            allow_mult  => 1,
+            data        => $db->selectall_arrayref(
+                q[
+                    select   ms.map_set_id, 
+                             ms.short_name as map_set_name,
+                             s.common_name as species_name,
+                             mt.map_type
+                    from     cmap_map_set ms,
+                             cmap_species s,
+                             cmap_map_type mt
+                    where    ms.species_id=s.species_id
+                    and      ms.map_type_id=mt.map_type_id
+                    order by map_type, common_name, map_set_name
+                ],
+                { Columns => {} },
+            ),
+        );
+    }
 
     my @to_map_set_ids = map { $_->[0] } @to_map_sets;
 
@@ -1944,9 +1947,10 @@ cmap_admin.pl - command-line CMap administrative tool
 
   Options:
 
-    -h|help     Display help message
-    -v|version  Display version
-    --no-log    Don't keep a log of actions
+    -h|help          Display help message
+    -v|version       Display version
+    -d|--datasource  The default data source to use
+    --no-log         Don't keep a log of actions
 
 =head1 DESCRIPTION
 
