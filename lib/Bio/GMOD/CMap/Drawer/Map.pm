@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.78 2004-04-14 20:54:29 mwz444 Exp $
+# $Id: Map.pm,v 1.79 2004-04-23 17:45:37 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.78 $)[-1];
+$VERSION = (qw$Revision: 1.79 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1631,8 +1631,12 @@ sub add_feature_to_map {
                 $y_pos2, $vert_line_x2 + ( 3 * $reverse ),
                 $y_pos2, $color,
               ];
-
-            @coords = ( $vert_line_x2, $y_pos1, $vert_line_x2, $y_pos2 );
+            if ($reverse >0){
+                @coords = ( $vert_line_x2, $y_pos1, $vert_line_x2+3, $y_pos2 );
+            }
+            else{
+                @coords = ( $vert_line_x2-3, $y_pos1, $vert_line_x2, $y_pos2 );
+            }
         }
         elsif ( $feature_shape eq 'up-arrow' ) {
             push @temp_drawing_data,
@@ -1833,6 +1837,9 @@ sub add_feature_to_map {
               };
         }
         else {
+            my $code='';
+            eval $self->feature_type_data(
+                          $feature->{'feature_type_aid'},'area_code');
             push @$map_area_data,
               {
                 coords => \@coords,
@@ -1840,6 +1847,7 @@ sub add_feature_to_map {
                 alt    => 'Feature Details: '
                   . $feature->{'feature_name'} . ' ['
                   . $feature->{'accession_id'} . ']',
+                code   => $code,
               };
         }
 

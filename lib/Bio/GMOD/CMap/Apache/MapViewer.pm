@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.36 2004-04-16 17:49:17 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.37 2004-04-23 17:45:37 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.36 $)[-1];
+$VERSION = (qw$Revision: 1.37 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -166,7 +166,7 @@ sub handler {
     #
     # Instantiate the drawer if there's at least one map to draw.
     #
-    my $drawer;
+    my ($drawer,$extra_code,$extra_form);
     if ( @ref_map_aids || $ref_map_names ) {
         $drawer                    =  Bio::GMOD::CMap::Drawer->new(
             apr                    => $apr,
@@ -186,6 +186,8 @@ sub handler {
         ) or return $self->error( Bio::GMOD::CMap::Drawer->error );
 
         %slots = %{ $drawer->{'slots'} };
+        $extra_code=$drawer->{'data'}->{'extra_code'};
+        $extra_form=$drawer->{'data'}->{'extra_form'};
     }
 
     
@@ -252,6 +254,8 @@ sub handler {
             included_evidence => { map { $_, 1 } @evidence_types },
             feature_types     => join( ',', @feature_types ),
             evidence_types    => join( ',', @evidence_types ),
+            extra_code        => $extra_code,
+            extra_form        => $extra_form,
         },
         \$html 
     ) or $html = $t->error;

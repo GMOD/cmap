@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.107 2004-04-19 14:58:29 mwz444 Exp $
+# $Id: Data.pm,v 1.108 2004-04-23 17:45:36 mwz444 Exp $
 
 =head1 NAME
 
@@ -9,12 +9,12 @@ Bio::GMOD::CMap::Data - base data module
 
 =head1 SYNOPSIS
 
-  use Bio::GMOD::CMap::Data;
-  my $data = Bio::GMOD::CMap::Data->new;
-  my $foo  = $data->foo_data;
+use Bio::GMOD::CMap::Data;
+my $data = Bio::GMOD::CMap::Data->new;
+my $foo  = $data->foo_data;
 
 =head1 DESCRIPTION
-
+    
 A module for getting data from a database.  Think DBI for whatever
 RDBMS you want to use underneath.  I'll try to write generic SQL to
 work with anything, and customize it in subclasses.
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.107 $)[-1];
+$VERSION = (qw$Revision: 1.108 $)[-1];
 
 use Data::Dumper;
 use Regexp::Common;
@@ -255,7 +255,11 @@ Organizes the data for drawing comparative maps.
             pid                      => $pid,
         ) or return;
     }
-
+    ###Get the extra javascript that goes along with the feature_types.
+    ### and get extra forms
+    my ($extra_code,$extra_form);
+    ($extra_code,$extra_form)=
+	$self->get_web_page_extras(\%feature_types,$extra_code,$extra_form);
     #
     # Allow only one correspondence evidence per (the top-most ranking).
     #
@@ -271,6 +275,8 @@ Organizes the data for drawing comparative maps.
     $data->{'map_correspondences'}     = \%map_correspondences;
     $data->{'correspondence_evidence'} = \%correspondence_evidence;
     $data->{'feature_types'}           = \%feature_types;
+    $data->{'extra_code'}              =$extra_code;
+    $data->{'extra_form'}              =$extra_form;
 
 
     return $data;
@@ -1591,6 +1597,52 @@ sub slot_data {
 # ----------------------------------------------------
 =pod
 
+=head2 get_web_page_extras
+
+gets the extra javascript code that needs to go on the web
+    page for these features.
+    
+=cut
+sub get_web_page_extras{
+
+    my $self          = shift;
+    my $feature_types = shift;
+    my $extra_code    = shift;
+    my $extra_form    = shift;
+
+    my %snippet_aids;
+    my %extra_form_aids;
+    my $required_string;
+    foreach my $key (keys %{$feature_types}){
+	###First get the code snippets
+	$required_string=
+	    $self->feature_type_data($key,'required_page_code');
+	foreach my $snippet_aid (split(/\s*,\s*/ ,$required_string)){
+	    $snippet_aids{$snippet_aid}=1;
+	}
+	###Then get the extra form stuff
+	$required_string=
+	    $self->feature_type_data($key,'extra_forms');
+	foreach my $extra_form_aid (split(/\s*,\s*/ ,$required_string)){
+	    $extra_form_aids{$extra_form_aid}=1;
+	}
+
+    }
+    foreach my $snippet_aid (keys(%snippet_aids)){
+	$extra_code.=
+	    $self->config_data('page_code')->{$snippet_aid}->{'page_code'};
+    } 
+    foreach my $extra_form_aid (keys(%extra_form_aids)){
+	$extra_form.=
+	    $self->config_data('extra_form')->{$extra_form_aid}->{'extra_form'};
+    }
+    return ($extra_code,$extra_form);
+}	
+
+
+# ----------------------------------------------------
+=pod
+    
 =head2 get_feature_correspondences
 
 inserts correspondence info into $feature_correspondence and 
