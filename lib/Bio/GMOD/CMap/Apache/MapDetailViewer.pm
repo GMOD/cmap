@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapDetailViewer;
 # vim: set ft=perl:
 
-# $Id: MapDetailViewer.pm,v 1.22 2004-03-03 21:28:31 kycl4rk Exp $
+# $Id: MapDetailViewer.pm,v 1.22.2.1 2004-05-28 20:50:29 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES );
-$VERSION = (qw$Revision: 1.22 $)[-1];
+$VERSION = (qw$Revision: 1.22.2.1 $)[-1];
 
 use URI::Escape;
 use Data::Pageset;
@@ -208,6 +208,7 @@ sub handler {
                 apr                   => $apr,
                 pager                 => $data->{'pager'},
                 feature_types         => $data->{'feature_types'},
+                feature_count_by_type => $data->{'feature_count_by_type'},
                 evidence_types        => $data->{'evidence_types'},
                 reference_map         => $data->{'reference_map'},
                 comparative_maps      => $data->{'comparative_maps'},
