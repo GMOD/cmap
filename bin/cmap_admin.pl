@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.56 2004-01-05 03:18:33 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.57 2004-01-07 18:08:33 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.56 $)[-1];
+$VERSION = (qw$Revision: 1.57 $)[-1];
 
 #
 # Get command-line options
@@ -1068,7 +1068,6 @@ sub export_as_sql {
                 feature_correspondence_id  => NUM,
                 evidence_type_id           => NUM,
                 score                      => NUM,
-                remark                     => STR,
             }
         },
         {
@@ -1128,13 +1127,6 @@ sub export_as_sql {
                 stop_position   => NUM,
                 dbxref_name     => STR,
                 dbxref_url      => STR,
-            }
-        },
-        {
-            name   => 'cmap_feature_note',
-            fields => {
-                feature_id      => NUM,
-                note            => STR,
             }
         },
         {
@@ -1225,7 +1217,6 @@ sub export_as_sql {
                 can_be_reference_map => NUM,
                 display_order        => NUM,
                 is_enabled           => NUM,
-                remarks              => STR,
                 shape                => STR,
                 color                => STR,
                 width                => NUM,
