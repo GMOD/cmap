@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap;
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.60 2004-10-18 19:03:00 kycl4rk Exp $
+# $Id: CMap.pm,v 1.61 2004-10-19 13:41:52 kycl4rk Exp $
 
 =head1 NAME
 
@@ -385,18 +385,17 @@ sub aggregate {
 =head2 aggregate
 
 Returns the boolean aggregate variable.  This determines 
-if the correspondences are aggregated or individually depicted
+if the correspondences are aggregated or individually depicted.
 
-The default is 1                                                          
+The default is 1.
 
 =cut
 
     my $self = shift;
     my $val  = shift;
-    $self->{'aggregate'}=$val if defined($val); 
-    $self->{'aggregate'}=1 unless defined($self->{'aggregate'}); 
+    $self->{'aggregate'} = $val if defined $val;
+    $self->{'aggregate'} = 1 unless defined $self->{'aggregate'};
     return $self->{'aggregate'}; 
-
 }
 
 # ----------------------------------------------------
@@ -409,17 +408,16 @@ sub magnify_all {
 Returns the boolean magnify_all variable.  This determines 
 the value that the whole image is magnified by.
 
-The default is 1                                                          
+The default is 1.
 
 =cut
 
     my $self = shift;
     my $val  = shift;
-    $self->{'magnify_all'}=$val if defined($val); 
+    $self->{'magnify_all'} = $val if defined($val);
     # Don't allow Zero as a value
-    $self->{'magnify_all'}=1 unless $self->{'magnify_all'}; 
+    $self->{'magnify_all'} = 1 unless $self->{'magnify_all'};
     return $self->{'magnify_all'}; 
-
 }
 
 # ----------------------------------------------------
@@ -432,18 +430,16 @@ sub scale_maps {
 Returns the boolean scale_maps variable.  This determines 
 if the maps are drawn to scale 
 
-The default is 1                                                          
+The default is 1.
 
 =cut
 
     my $self = shift;
     my $val  = shift;
-    $self->{'scale_maps'}=$val if defined($val); 
-    $self->{'scale_maps'}=1 unless defined($self->{'scale_maps'}); 
+    $self->{'scale_maps'} = $val if defined $val;
+    $self->{'scale_maps'} = 1 unless defined $self->{'scale_maps'};
     return $self->{'scale_maps'}; 
-
 }
-
 
 # ----------------------------------------------------
 sub data_module {
