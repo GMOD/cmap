@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.98.2.2 2004-05-11 19:35:52 kycl4rk Exp $
+# $Id: Data.pm,v 1.98.2.3 2004-05-13 15:40:49 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.98.2.2 $)[-1];
+$VERSION = (qw$Revision: 1.98.2.3 $)[-1];
 
 use Data::Dumper;
 use Regexp::Common;
@@ -1967,10 +1967,11 @@ out which maps have relationships.
 
     my $corr_sql = qq[ 
         select   count(distinct cl.feature_correspondence_id) as no_corr, 
-                 f2.map_id
+                 f2.map_id, map.map_set_id
         from     cmap_map_cache mc,
                  cmap_feature f1,
                  cmap_feature f2,
+                 cmap_map map,
                  cmap_correspondence_lookup cl,
                  cmap_feature_correspondence fc
         $additional_tables
@@ -1983,9 +1984,10 @@ out which maps have relationships.
                  fc.feature_correspondence_id
         and      fc.is_enabled=1
         and      cl.feature_id2=f2.feature_id
+        and      f2.map_id=map.map_id
         and      mc.map_id!=f2.map_id
         $additional_where
-        group by f2.map_id
+        group by f2.map_id, map.map_set_id
     ];
 
     my $feature_correspondences = $db->selectall_arrayref(
@@ -1994,45 +1996,70 @@ out which maps have relationships.
         ( $pid, $ref_slot_no )
     );
 
-    my %map_sets;     # the map set info and any maps
-    for my $fc ( @$feature_correspondences ) {
-        my $sth = $db->prepare(
+    #
+    # Gather info on the maps and map sets.
+    #
+    my %map_set_ids = map { $_->{'map_set_id'}, 1 } @$feature_correspondences;
+    my $ms_sth      = $db->prepare(
+        q[
+            select s.common_name as species_name,
+                   s.display_order as species_display_order,
+                   mt.map_type,
+                   mt.display_order as map_type_display_order,
+                   ms.accession_id as map_set_aid,
+                   ms.short_name as map_set_name,
+                   ms.published_on,
+                   ms.display_order as ms_display_order,
+                   ms.can_be_reference_map
+            from   cmap_map_set ms,
+                   cmap_species s,
+                   cmap_map_type mt
+            where  ms.map_set_id=?
+            and    ms.species_id=s.species_id
+            and    ms.map_type_id=mt.map_type_id
+        ]
+    );
+
+    my ( %map_sets, %map_info ); 
+    for my $map_set_id ( keys %map_set_ids ) {
+        $ms_sth->execute( $map_set_id );
+        my $ms_info = $ms_sth->fetchrow_hashref;
+        $ms_info->{'published_on'} = parsedate( $ms_info->{'published_on'} );
+        $map_sets{ $ms_info->{'map_set_aid'} } = $ms_info;
+
+        my $map_info = $db->selectall_arrayref(
             q[
-                select s.common_name as species_name,
-                       s.display_order as species_display_order,
-                       mt.map_type,
-                       mt.display_order as map_type_display_order,
+                select map.map_id,
                        ms.accession_id as map_set_aid,
-                       ms.short_name as map_set_name,
-                       ms.published_on,
-                       ms.display_order as ms_display_order,
-                       ms.can_be_reference_map,
-                       map.map_id,
                        map.accession_id as map_aid,
                        map.map_name,
                        map.display_order as map_display_order
                 from   cmap_map map,
-                       cmap_map_set ms,
-                       cmap_species s,
-                       cmap_map_type mt
-                where  map.map_id=?
+                       cmap_map_set ms
+                where  map.map_set_id=?
                 and    map.map_set_id=ms.map_set_id
-                and    ms.species_id=s.species_id
-                and    ms.map_type_id=mt.map_type_id
-            ]
+            ],
+            { Columns => {} },
+            ( $map_set_id )
         );
-        $sth->execute( $fc->{'map_id'} );
-        my $info         = $sth->fetchrow_hashref;
-        $info->{'published_on'} = parsedate( $info->{'published_on'} );
 
-        $map_sets{ $info->{'map_set_aid'} } = $info;
-        $map_sets{ $info->{'map_set_aid'} }{'maps'}{ $info->{'map_aid'} } = {
-            map_name             => $info->{'map_name'},
-            map_aid              => $info->{'map_aid'},
-            display_order        => $info->{'map_display_order'},
-            can_be_reference_map => $info->{'can_be_reference_map'},
-            no_correspondences   => $fc->{'no_corr'},
-        };
+        for my $map ( @$map_info ) {
+            $map_info{ $map->{'map_id'} } = {
+                map_name             => $map->{'map_name'},
+                map_aid              => $map->{'map_aid'},
+                display_order        => $map->{'map_display_order'},
+                can_be_reference_map => $map->{'can_be_reference_map'},
+            };
+        }
+    }
+
+    for my $fc ( @$feature_correspondences ) {
+        my $map_info = $map_info{ $fc->{'map_id'} };
+        $map_info->{'no_correspondences'} = $fc->{'no_corr'};
+
+        $map_sets{
+            $map_info->{'map_set_aid'}{'maps'}{ $map_info->{'map_aid'} } 
+        } = $map_info;
     }
 
     #
