@@ -322,7 +322,7 @@
     [% END %]
 </table>
 
-[% IF drawer %]
+[% IF drawer AND drawer.image_type!='svg' %]
     <map name="zoom">
     [% FOREACH area=drawer.image_map_data %]
         <area coords="[% area.coords.join(',') %]" href="[% area.url %]" alt="[% area.alt %]" title="[% area.alt %]">
