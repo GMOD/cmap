@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.69 2003-10-24 22:58:23 kycl4rk Exp $
+# $Id: Data.pm,v 1.70 2003-10-29 20:41:56 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.69 $)[-1];
+$VERSION = (qw$Revision: 1.70 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -2040,6 +2040,52 @@ Takes a list of evidence type accession IDs and returns their table IDs.
 }
 
 # ----------------------------------------------------
+sub feature_alias_detail_data {
+
+=pod
+
+=head2 feature_alias_detail_data
+
+Returns the data for the feature alias detail page.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $feature_aid     = $args{'feature_aid'} or 
+                          return $self->error('No feature acc. id');
+    my $feature_alias   = $args{'feature_alias'} or 
+                          return $self->error('No feature alias');
+
+    my $db    = $self->db;
+    my $sth   = $db->prepare(
+        q[
+            select fa.feature_alias_id,
+                   fa.alias,
+                   f.accession_id as feature_aid,
+                   f.feature_name
+            from   cmap_feature_alias fa,
+                   cmap_feature f
+            where  fa.alias=?
+            and    fa.feature_id=f.feature_id
+            and    f.accession_id=?
+        ]
+    );
+    $sth->execute( $feature_alias, $feature_aid );
+    my $alias = $sth->fetchrow_hashref or return $self->error('No alias');
+
+    $alias->{'object_id'}  = $alias->{'feature_alias_id'};
+    $alias->{'attributes'} = $self->get_attributes(
+        'cmap_feature_alias', $alias->{'feature_alias_id'}
+    );
+
+    $self->get_multiple_xrefs(
+        table_name => 'cmap_feature_alias', objects => [ $alias ],
+    );
+
+    return $alias;
+}
+
+# ----------------------------------------------------
 sub feature_type_aid_to_id {
 
 =pod
@@ -2202,21 +2248,20 @@ Given a feature acc. id, find out all the details on it.
     $feature->{'attributes'} = $self->get_attributes(
         'cmap_feature', $feature->{'feature_id'}
     );
-    $feature->{'aliases'} = [
-        map { $_->[0] } 
-        @{
-            $db->selectall_arrayref(
-                q[
-                    select   alias 
-                    from     cmap_feature_alias
-                    where    feature_id=?
-                    order by alias
-                ],
-                {},
-                ( $feature->{'feature_id'} )
-            )
-        }
-    ];
+    $feature->{'aliases'}    = $db->selectall_arrayref(
+        q[
+            select   fa.feature_alias_id, 
+                     fa.alias,
+                     f.accession_id as feature_aid
+            from     cmap_feature_alias fa,
+                     cmap_feature f
+            where    fa.feature_id=?
+            and      fa.feature_id=f.feature_id
+            order by alias
+        ],
+        { Columns => {} },
+        ( $feature->{'feature_id'} )
+    );
 
     my $correspondences = $db->selectall_arrayref(
         $sql->feature_correspondence_sql,
