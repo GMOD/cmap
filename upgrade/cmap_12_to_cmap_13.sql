@@ -95,6 +95,7 @@ f1.feature_id=fc.feature_id1 and f2.feature_id=fc.feature_id2
 ;
 
 --Drop tables we no longer need
+--Only do this if you are no longer going to use the config creation tool
 --DROP TABLE cmap_evidence_type;
 --DROP TABLE cmap_feature_type;
 --DROP TABLE cmap_map_cache;

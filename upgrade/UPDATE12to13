@@ -1,0 +1,75 @@
+
+Updating your database and config files from version 0.12 to 0.13.
+
+Contents:
+1. Introduction
+2. Database Update
+3. Configuration File Update
+
+-----------------------------------------------------------------
+1. Introduction
+
+    Congratulation on your decision to upgrade from CMap version 0.12 to
+0.13.  This guide will take you through how to modify your database (and 
+the data inside) as well as converting you configuration files.
+
+    Please make sure you back up both your database and you config files
+While this process has been tested, it is best not to take any chances.
+
+
+2. Database Update
+
+    - Back up your database.
+
+    - run cmap_12_to_cmap_13.sql on your database.  This modifies your data
+      in place which is why it is essential that you back up your data in
+      case anything happens durring the upgrade process.  
+      
+      In mysql the command looks something like this:
+        $ mysql -uroot -p CMAP < cmap_12_to_cmap_13.sql
+
+    - That's it.  Your database should have some new collumns that are 
+      filled with data.
+
+
+3. Configuration File Update
+
+    CMap version 0.13 has a configuration scheme.  The config files are 
+stored in a ../conf/cmap.conf/ directory.  There is now a global.conf which
+holds a couple important fields.  Each database has at least one of it's own
+config files.  Anything in cmap.conf/ that ends in ".conf" is considered as 
+a config file.
+
+    - cd into the config directory
+        $ cd /usr/local/apache/conf/
+
+    - Move your cmap.conf file to another file name:
+        $ mv cmap.conf cmap.conf.v0.12
+
+    - Make the new conf directory (this may have been done for you by the 
+      install script.
+        $ mkdir cmap.conf 
+
+    - cd into cmap.conf/
+        $ cd cmap.conf/
+
+    - run cmap12conftocmap13.pl on the old cmap.conf
+        $ /usr/local/src/cmap/upgrade/cmap12conftocmap13.pl ../cmap.conf.v0.12
+      
+      This will create global.conf and one cmap#.conf for each database 
+      described in the original cmap.conf file.
+
+    - add the feature/map/evidence type information into each individual config
+      file using cmap_typetables_to_config.pl.
+
+        $ cmap_typetables_to_config.pl -d datasource -u sql_username [-p sql_password] >>cmap0.conf
+        $ cmap_typetables_to_config.pl -d datasource -u sql_username [-p sql_password] >>cmap1.conf
+
+4. Conclusion
+
+    That should do it for the databases and the configuration.  If you have any 
+troubles email the CMap developers list: gmod-cmap@lists.sourceforge.net .
+
+
+
+
