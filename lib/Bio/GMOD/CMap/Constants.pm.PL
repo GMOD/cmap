@@ -6,7 +6,7 @@ use Cwd;
 use File::Basename qw(&basename &dirname);
 use File::Spec::Functions;
 
-my $conf_file = catfile( $Build{'CONF'}, 'cmap.conf' );
+my $conf_dir = catfile( $Build{'CONF'}, 'cmap.conf' );
 
 my $origdir = cwd;
 chdir dirname($0);
@@ -18,19 +18,20 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.10 2004-02-25 22:36:38 kycl4rk Exp $
+# $Id: Constants.pm.PL,v 1.11 2004-03-18 16:07:45 mwz444 Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.10 $)[-1];
+$VERSION = (qw$Revision: 1.11 $)[-1];
 
 @EXPORT = qw[ 
     ARC
     COLORS
-    CONFIG_FILE
+    GLOBAL_CONFIG_FILE
+    CONFIG_DIR
     CMAP_URL
     DASHED_LINE
     DEFAULT
@@ -54,9 +55,10 @@ $VERSION = (qw$Revision: 1.10 $)[-1];
 NOGROK
 print OUT<<"!GROK!THIS!";
 #
-# The location of the configuration file.
+# The location of the configuration files.
 #
-use constant CONFIG_FILE => '$conf_file';
+use constant CONFIG_DIR => '$conf_dir';
+use constant GLOBAL_CONFIG_FILE => 'global.conf';
 
 !GROK!THIS!
 
