@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 # vim: set ft=perl:
 
-# $Id: ImportCorrespondences.pm,v 1.15 2004-02-10 23:06:50 kycl4rk Exp $
+# $Id: ImportCorrespondences.pm,v 1.16 2004-03-11 00:57:25 kycl4rk Exp $
 
 =head1 NAME
 
@@ -36,14 +36,14 @@ reciprocal records will be created for each correspondences ("A=B" and
 create it.
 
 B<Note:> If the accession IDs are not present, both the "feature_name"
-and "alternate_name" fields are checked. For every feature matching
-each of the two feature names, a correspondence will be created.
+and "aliases" are checked. For every feature matching each of the two
+feature names, a correspondence will be created.
 
 =cut
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.15 $)[-1];
+$VERSION = (qw$Revision: 1.16 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -93,28 +93,30 @@ use constant FEATURE_SQL_BY_AID => q[
 ];
 
 use constant FEATURE_SQL_BY_NAME => q[
-    select f.feature_id,
-           f.feature_name,
-           map.accession_id as map_aid,
-           map.map_name,
-           map.map_set_id,
-           ms.short_name as map_set_name,
-           s.common_name as species_name,
-           mt.is_relational_map
-    from   cmap_feature f,
-           cmap_map map,
-           cmap_map_set ms,
-           cmap_species s,
-           cmap_map_type mt
-    where  (
+    select     f.feature_id,
+               f.feature_name, 
+               map.accession_id as map_aid,
+               map.map_name, 
+               ms.map_set_id, 
+               ms.short_name as map_set_name,
+               s.common_name as species_name,
+               mt.is_relational_map
+    from       cmap_feature f
+    left join  cmap_feature_alias fa
+    on         f.feature_id=fa.feature_id
+    inner join cmap_map map
+    on         f.map_id=map.map_id
+    inner join cmap_map_set ms
+    on         map.map_set_id=ms.map_set_id
+    inner join cmap_species s
+    on         ms.species_id=s.species_id
+    inner join cmap_map_type mt
+    on         ms.map_type_id=mt.map_type_id
+    where      (
         upper(f.feature_name)=?
         or
-        upper(f.alternate_name)=?
+        upper(fa.alias)=?
     )
-    and    f.map_id=map.map_id
-    and    map.map_set_id=ms.map_set_id
-    and    ms.map_type_id=mt.map_type_id
-    and    ms.species_id=s.species_id
 ];
 
 # ----------------------------------------------------
