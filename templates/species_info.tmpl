@@ -1,0 +1,76 @@
+[% SET title='Species Info' %]
+[% 
+    INCLUDE header.tmpl 
+    title=title
+    cur_sec='species_info'
+    help_anchor='species_info'
+%]
+
+<h1>[% title %]</h1>
+
+[%- IF intro -%]
+<p>[% intro %]</p>
+[%- END -%]
+
+<div align="center">
+
+[%- IF apr.param('species_aid') -%]
+    <a href="species_info">Show All Species</a>
+[%- END -%]
+
+<p>
+[% IF species.size %]
+    <table>
+        <tr>
+            <td colspan="2" align="center">
+                [% SET pager_url="/cmap/species_info?" %]
+                [% PROCESS pager.tmpl %]
+            </td>
+        </tr>
+        [% FOREACH s=species %]
+            <tr bgcolor="lightgrey">
+                <td align="right">Common&nbsp;Name:</td>
+                <td>
+                    <b>[% s.common_name %]</b>
+                </td>
+            </tr> 
+
+            <tr>
+                <td align="right">Full&nbsp;Name:</td>
+                <td>[% s.full_name %]</td>
+            </tr>
+
+            <tr>
+                <td align="right">Accession&nbsp;ID:</td>
+                <td>[% s.species_aid %]</td>
+            </tr>
+
+            <tr>
+                <td align="right">NCBI&nbsp;Taxon&nbsp;ID:</td>
+                <td>
+                    [% IF s.ncbi_taxon_id %]
+                        <b>[</b> <a href="http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=[% s.ncbi_taxon_id %]">View at NCBI</a> <b>]</b>
+                    [% END %]
+                </td>
+            </tr>
+
+            <tr>
+                <td align="right">Note:</td>
+                <td>[% s.note %]</td>
+            </tr> 
+        [% END %]
+    </table>
+[% ELSE %]
+
+    No map types found.
+
+[% END %]
+</div>
+
+<br>
+<br>
+<br>
+<br>
+<br>
+[% page.end_body OR '</body>' %]
+</html>

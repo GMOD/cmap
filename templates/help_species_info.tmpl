@@ -1,0 +1,17 @@
+[% 
+    INCLUDE header.tmpl 
+    title='Species Info Help'
+    cur_sec='help'
+    help_anchor=''
+%]
+
+[% INCLUDE help_header.tmpl cur_sec='species_info' %]
+
+<h2>Species Infomation</h2>
+<p>
+This page displays each species's common and full names, it's
+NCBI taxon ID (if available), and any curator comments.
+</p>
+
+[% page.end_body OR '</body>' %]
+</html>

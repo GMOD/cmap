@@ -1,0 +1,89 @@
+[% SET title='Map Type Info' %]
+[% 
+    INCLUDE header.tmpl 
+    title=title
+    cur_sec='map_type_info'
+    help_anchor='map_type_info'
+%]
+
+<h1>[% title %]</h1>
+
+[%- IF intro -%]
+<p>[% intro %]</p>
+[%- END -%]
+
+<div align="center">
+
+[%- IF apr.param('map_type_aid') -%]
+    <a href="map_type_info">Show All Map Types</a>
+[%- END -%]
+
+<p>
+[% IF map_types.size %]
+    <table>
+        <tr>
+            <td colspan="2" align="center">
+                [% SET pager_url="/cmap/map_type_info?" %]
+                [% PROCESS pager.tmpl %]
+            </td>
+        </tr>
+        [% FOREACH mt=map_types %]
+            <tr bgcolor="lightgrey">
+                <td align="right">Map&nbsp;Type:</td>
+                <td>
+                    <b>[% mt.map_type %]</b>
+                </td>
+            </tr> 
+
+            <tr>
+                <td align="right">Accession&nbsp;ID:</td>
+                <td>[% mt.map_type_aid %]</td>
+            </tr>
+
+            <tr>
+                <td align="right">Map&nbsp;Units:</td>
+                <td>[% mt.map_units %]</td>
+            </tr>
+
+            <tr>
+                <td align="right">Is&nbsp;Relational&nbsp;Only:</td>
+                <td>
+                    [% IF mt.ncbi_taxon_id; 'Yes'; ELSE; 'No'; END %] 
+                </td>
+            </tr> 
+
+            <tr>
+                <td align="right">Shape:</td>
+                <td>[% mt.shape %]</td>
+            </tr> 
+
+            <tr>
+                <td align="right">Width:</td>
+                <td>[% mt.width %]</td>
+            </tr> 
+
+            <tr>
+                <td align="right">Color:</td>
+                <td>[% mt.color %]</td>
+            </tr> 
+
+            <tr>
+                <td align="right">Note:</td>
+                <td>[% mt.note %]</td>
+            </tr> 
+        [% END %]
+    </table>
+[% ELSE %]
+
+    No map types found.
+
+[% END %]
+</div>
+
+<br>
+<br>
+<br>
+<br>
+<br>
+[% page.end_body OR '</body>' %]
+</html>
