@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.179 2004-11-19 22:11:46 mwz444 Exp $
+# $Id: Data.pm,v 1.180 2004-11-30 03:53:26 kycl4rk Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.179 $)[-1];
+$VERSION = (qw$Revision: 1.180 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -2139,15 +2139,42 @@ sub cmap_form_data {
     # Select all the map set that can be reference maps.
     #
     my $ref_map_sets = [];
-    if ($ref_species_aid) {
+    if ( $ref_species_aid ) {
         $sql_str = $sql->form_data_ref_map_sets_sql($ref_species_aid);
         unless ( $ref_map_sets = $self->get_cached_results( 1, $sql_str ) ) {
-            $ref_map_sets =
-              $db->selectall_arrayref( $sql_str, { Columns => {} }, );
-            foreach my $row ( @{$ref_map_sets} ) {
-                $row->{'map_type'} =
-                  $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
+            $ref_map_sets = $db->selectall_arrayref( 
+                $sql_str, { Columns => {} } 
+            );
+
+            foreach my $row ( @$ref_map_sets ) {
+                $row->{'map_type'} = $self->map_type_data( 
+                    $row->{'map_type_aid'}, 'map_type' 
+                );
+                $row->{'map_type_display_order'} = $self->map_type_data( 
+                    $row->{'map_type_aid'}, 'display_order' 
+                );
             }
+
+            $ref_map_sets = [
+                sort {
+                    $a->{'map_type_display_order'} <=>
+                    $b->{'map_type_display_order'}
+                    ||
+                    $a->{'map_type'} cmp $b->{'map_type'}
+                    ||
+                    $a->{'species_display_order'} <=> 
+                    $b->{'species_display_order'}
+                    ||
+                    $a->{'species_name'} cmp $b->{'species_name'}
+                    ||
+                    $a->{'map_set_display_order'} <=> 
+                    $b->{'map_set_display_order'}
+                    ||
+                    $a->{'map_set_name'} cmp $b->{'map_set_name'}
+                }
+                @$ref_map_sets
+            ];
+
             $self->store_cached_results( 1, $sql_str, $ref_map_sets );
         }
     }
