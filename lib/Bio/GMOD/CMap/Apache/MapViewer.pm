@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.43 2004-05-30 20:28:05 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.44 2004-06-01 18:58:01 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.43 $)[-1];
+$VERSION = (qw$Revision: 1.44 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -173,6 +173,14 @@ sub handler {
             $start        = $2;
             $stop         = $3;
         }
+        ###if there are map_set_aids only use those
+        if (my @msa_list=grep /^map_set_aid/, @$cmap){
+            @$cmap = @msa_list;
+            $field = 'map_set_aid';
+            $start = undef;
+            $stop  = undef;
+        }
+ 
         @comp_ids=map {substr($_,index($_,'=')+1)} @{$cmap};
         $slots{ $slot_no } =  {
             field          => $field,

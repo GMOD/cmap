@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.120 2004-05-30 20:28:04 mwz444 Exp $
+# $Id: Data.pm,v 1.121 2004-06-01 18:58:00 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.120 $)[-1];
+$VERSION = (qw$Revision: 1.121 $)[-1];
 
 use Data::Dumper;
 use Regexp::Common;
@@ -387,6 +387,11 @@ sub slot_data {
         $slot_map->{'map_set_aid'} ? $slot_map->{'map_set_aid'}
       : $slot_map->{'field'} eq 'map_set_aid' ? $slot_map->{'aid'}
       : '';
+    ### If $map_set_aid is an array,
+    ### assume it is only an artifact and only take the first map_set_id
+    if(ref($map_set_aid) eq 'ARRAY'){
+        $map_set_aid=$map_set_aid->[0];
+    }
     my $no_flanking_positions = $slot_map->{'no_flanking_positions'} || 0;
 
     #
@@ -878,6 +883,9 @@ sub slot_data {
             my $sql_str = $corr_free_sql;
             $sql_str .= "and f.feature_id=-1 "
               if ( $corr_only_feature_type_aids->[0] == -1 );
+if ((  $self->slot_info->{ $this_slot_no + 1 }
+                    || $self->slot_info->{ $this_slot_no - 1 } )){
+}
             if (
                 @$corr_only_feature_type_aids
                 and (  $self->slot_info->{ $this_slot_no + 1 }
@@ -4381,77 +4389,92 @@ sub slot_info {
 	  ];
 
     if ($slots) {
+print STDERR Dumper($slots)."\n";
         my $sql_suffix;
         foreach my $slot_no ( sort orderOutFromZero keys %{$slots} ) {
             $sql_suffix = "";
             if ( $slots->{$slot_no} ) {
-                if ( ref $slots->{$slot_no}{'aid'} eq 'ARRAY' ) {
-                    if ( scalar( @{ $slots->{$slot_no}{'aid'} } ) ) {
-                        $sql_suffix =
-                            "where m.accession_id in ('"
-                          . join( "','", @{ $slots->{$slot_no}{'aid'} } )
-                          . "')";
+               if ( $slots->{$slot_no}{'field'} eq 'map_set_aid' ) {
+
+                    #Map set aid
+                    if ( $slot_no == 0 ) {
+                        $sql_suffix = q[,
+                          cmap_map_set ms
+                          where m.map_set_id=ms.map_set_id
+                          ]
+                          . "and ms.accession_id = '"
+                          . $slots->{$slot_no}{'aid'} . "'";
+                    }
+                    else {
+                        my $slot_modifier = $slot_no > 0 ? -1 : 1;
+                        if($self->{'expanded_correspondence_lookup'}){
+                            ###Use the expanded cmap_corr_lookup
+                            $sql_suffix = q[,
+                              cmap_correspondence_lookup cl,
+                              cmap_map_set ms
+                              where m.map_set_id=ms.map_set_id
+                              and m.map_id=cl.map_id1
+                              ] . "and cl.map_id2 in ("
+                              . join(
+                                ",",
+                                map { $_->[0] } @{
+                                    $self->{'slot_info'}
+                                      { $slot_no + $slot_modifier }
+                                  }
+                              )
+                              . ")";
+                            if (ref($slots->{$slot_no}{'aid'}) eq 'ARRAY'){
+                                $sql_suffix .= " and ms.accession_id in ('".
+                                    join("','",@{$slots->{$slot_no}{'aid'}}).
+                                    "')";
+                            }
+                            else{
+                                $sql_suffix .= " and ms.accession_id = '"
+                                . $slots->{$slot_no}{'aid'} . "'";
+                            }
+                        }
+                        else{
+                            ###Don't use the expanded cmap_corr_lookup
+                            $sql_suffix = q[, cmap_feature f1,
+                              cmap_feature f2,
+                              cmap_correspondence_lookup cl,
+                              cmap_map_set ms
+                              where m.map_set_id=ms.map_set_id
+                              and m.map_id=f1.map_id 
+                              and f1.feature_id=cl.feature_id1
+                              and f2.feature_id=cl.feature_id2
+                              ] . "and f2.map_id in ("
+                              . join(
+                                ",",
+                                map { $_->[0] } @{
+                                    $self->{'slot_info'}
+                                      { $slot_no + $slot_modifier }
+                                  }
+                              )
+                              . ")";
+                            if (ref($slots->{$slot_no}{'aid'}) eq 'ARRAY'){
+                                $sql_suffix .= " and ms.accession_id in ('".
+                                    join("','",@{$slots->{$slot_no}{'aid'}}).
+                                    "')";
+                            }
+                            else{
+                                $sql_suffix .= " and ms.accession_id = '"
+                                . $slots->{$slot_no}{'aid'} . "'";
+                            }
+                        }
                     }
                 }
                 else {
-                    if ( $slots->{$slot_no}{'field'} eq 'map_set_aid' ) {
-
-                        #Map set aid
-                        if ( $slot_no == 0 ) {
-                            $sql_suffix = q[,
-                      cmap_map_set ms
-                      where m.map_set_id=ms.map_set_id
-                      ]
-                              . "and ms.accession_id = '"
-                              . $slots->{$slot_no}{'aid'} . "'";
-                        }
-                        else {
-                            my $slot_modifier = $slot_no > 0 ? -1 : 1;
-                            if($self->{'expanded_correspondence_lookup'}){
-                                ###Use the expanded cmap_corr_lookup
-                                $sql_suffix = q[,
-                                  cmap_correspondence_lookup cl,
-                                  cmap_map_set ms
-                                  where m.map_set_id=ms.map_set_id
-                                  and m.map_id=cl.map_id1
-                                  ] . "and cl.map_id2 in ("
-                                  . join(
-                                    ",",
-                                    map { $_->[0] } @{
-                                        $self->{'slot_info'}
-                                          { $slot_no + $slot_modifier }
-                                      }
-                                  )
-                                  . ")"
-                                  . " and ms.accession_id = '"
-                                  . $slots->{$slot_no}{'aid'} . "'";
-                            }
-                            else{
-                                ###Don't use the expanded cmap_corr_lookup
-                                $sql_suffix = q[, cmap_feature f1,
-                                  cmap_feature f2,
-                                  cmap_correspondence_lookup cl,
-                                  cmap_map_set ms
-                                  where m.map_set_id=ms.map_set_id
-                                  and m.map_id=f1.map_id 
-                                  and f1.feature_id=cl.feature_id1
-                                  and f2.feature_id=cl.feature_id2
-                                  ] . "and f2.map_id in ("
-                                  . join(
-                                    ",",
-                                    map { $_->[0] } @{
-                                        $self->{'slot_info'}
-                                          { $slot_no + $slot_modifier }
-                                      }
-                                  )
-                                  . ")"
-                                  . " and ms.accession_id = '"
-                                  . $slots->{$slot_no}{'aid'} . "'";
-                            }
+                    if ( ref $slots->{$slot_no}{'aid'} eq 'ARRAY' ) {
+                        ###aid is a list of map_ids
+                        if ( scalar( @{ $slots->{$slot_no}{'aid'} } ) ) {
+                            $sql_suffix =
+                                "where m.accession_id in ('"
+                              . join( "','", @{ $slots->{$slot_no}{'aid'} } )
+                              . "')";
                         }
                     }
                     else {
-                        ###aid is a list of map_ids
                         $sql_suffix =
                           "where m.accession_id = '"
                           . $slots->{$slot_no}{'aid'} . "'";
