@@ -94,13 +94,13 @@
     that has spaces in its name, then enclose the feature name in double
     quotes.
   </dd>
-  <dt>Comp. Map (Left)</dt>
+  <dt>Comp. Map (Right)</dt>
   <dd>
-    Select a comparative map to add to the left of the map
+    Select a comparative map to add to the right of the map
     display.  Only maps which have some correspondence to the
-    leftmost map are listed.  The number of correspondences is
+    rightmost map are listed.  The number of correspondences is
     shown in square brackets.  <br> [See also &quot;Comp. Map
-    (Right)&quot;.]
+    (Left)&quot;.]
   </dd>
   <dt>Current Maps</dt>
   <dd>
@@ -110,27 +110,27 @@
     The main reference map is denoted with &quot;(Ref.)&quot; and
     cannot be deleted.
   </dd>
-  <dt>Comp. Map (Right)</dt>
+  <dt>Comp. Map (Left)</dt>
   <dd>
-    Select a comparative map to add to the right of the map
+    Select a comparative map to add to the left of the map
     display.  Only maps which have some correspondence to the
-    rightmost map are listed.  The number of correspondences is
+    leftmost map are listed.  The number of correspondences is
     shown in square brackets.  <br> [See also &quot;Comp. Map
-    (Left)&quot;.]
+    (Right)&quot;.]
   </dd>
   <dt>Image Size</dt>
   <dd>
     Select the desired size of the image.
   </dd>
-  <dt>Font size</dt>
+  <dt>Font Size</dt>
   <dd>
     Select the desired size of the fonts.
   </dd>
-  <dt>Image type</dt>
+  <dt>Image Type</dt>
   <dd>
     Select the image format you prefer.
   </dd>
-  <dt>Show labels</dt>
+  <dt>Show Labels</dt>
   <dd>
     Select which class of feature labels to show.
     <ul>
@@ -145,6 +145,11 @@
         <b>All</b>: Show all labels that will fit in the image.
       </li>
     </ul>
+  </dd>
+  <dt>Collapse Overlapping Features</dt>
+  <dd>
+    Allows you to collapse spanning features of the same type which 
+    occupy the exact same coordinates as other features.
   </dd>
   <dt>Min. No. Correspondences</dt>
   <dd>
@@ -169,8 +174,18 @@
   map, it is immediately rendered as a map image.  By default, the
   entire length of the map is displayed.  At the top of the image
   is a box in which is printed the species, map set name, and map
-  name.  Click on the box to view the corresponding Map Set Info
-  page.
+  name as well as a combination of the following controls:
+  <ul>
+    <li><b>i</b>: View the info page for the map set</li>
+    <li><b>?</b>: View the map details page for the map (for 
+        &quot;relational&quot; maps, click directly on the map glyph
+        for this action)
+    </li>
+    <li><b>X</b>: Delete the map from the viewer</li>
+    <li><b>F</b>: Flip the map</li>
+    <li><b>N</b>: Create a new map viewer with the map as the reference
+    </li>
+  </ul>
 </p>
 <p>
   A vertical scale bar indicates positions along the length of the
@@ -187,7 +202,7 @@
   is no more available space.  To see more labels, you may wish to
   increase the image size or decrease the font size.  You may also
   specify "Start" and "End" positions to zoom in to a particular
-  region.
+  region on the reference map.
 </p>
 <p>
   If two or more maps are being compared, each map will be drawn
@@ -195,6 +210,12 @@
   lines that connect corresponding features.  The color of the
   line depends on the type of correspondence, indicated in the
   legend at the bottom of the map image.
+</p>
+<p>
+  In the lower-right-hand corner is a watermark indicating the version
+  of CMap used to draw the map.  This is also hyperlinked to the CMap
+  homepage, 
+  <a href="http://www.gmod.org/cmap">http://www.gmod.org/cmap</a>.
 </p>
 
 [% page.end_body OR '</body>' %]
