@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.35 2004-04-01 08:04:25 mwz444 Exp $
+# $Id: MakeCorrespondences.pm,v 1.36 2004-04-20 17:40:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.35 $)[-1];
+$VERSION = (qw$Revision: 1.36 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -43,8 +43,8 @@ use Data::Dumper;
 sub make_name_correspondences {
     my ( $self, %args )       = @_;
     my @map_set_ids           = @{ $args{'map_set_ids'}        || [] };
-    my @skip_feature_types    = @{ $args{'skip_feature_types'} || [] };
-    my $evidence_type         = $args{'evidence_type'} or 
+    my @skip_feature_type_aids    = @{ $args{'skip_feature_type_aids'} || [] };
+    my $evidence_type_aid         = $args{'evidence_type_aid'} or 
                                 return 'No evidence type';
     $LOG_FH                   = $args{'log_fh'} || \*STDOUT;
     my $quiet                 = $args{'quiet'};
@@ -63,13 +63,13 @@ sub make_name_correspondences {
     #
     my %add_name_correspondences;
     for my $line ( $self->config_data('add_name_correspondence') ) {
-        my @feature_types = split /\s+/, $line;
+        my @feature_type_aids = split /\s+/, $line;
 
-        for my $i ( 0 .. $#feature_types ) {
-            my $ft1    = $feature_types[ $i ] or next;
+        for my $i ( 0 .. $#feature_type_aids ) {
+            my $ft1    = $feature_type_aids[ $i ] or next;
 
-            for my $j ( 1 .. $#feature_types ) {
-                my $ft2 = $feature_types[ $j ];
+            for my $j ( 1 .. $#feature_type_aids ) {
+                my $ft2 = $feature_type_aids[ $j ];
                 next if $ft1 eq $ft2;
                 
                 $add_name_correspondences{ $ft1 }{ $ft2 } = 1;
@@ -94,7 +94,7 @@ sub make_name_correspondences {
     my $feature_sql = q[
         select f.feature_id,
                f.feature_name,
-               f.feature_type,
+               f.feature_type_accession as feature_type_aid,
                map.map_id,
                ms.map_set_id
         from   cmap_feature f,
@@ -124,10 +124,10 @@ sub make_name_correspondences {
         }
     }
 
-    if ( @skip_feature_types ) {
+    if ( @skip_feature_type_aids ) {
         for ( $feature_sql, $alias_sql ) {
-            $_ .= "and f.feature_type not in ('" .
-                join( "', '", @skip_feature_types ) .
+            $_ .= "and f.feature_type_accession not in ('" .
+                join( "', '", @skip_feature_type_aids ) .
             "')";
         }
     }
@@ -159,12 +159,12 @@ sub make_name_correspondences {
             from   cmap_feature_correspondence fc,
                    cmap_correspondence_evidence ce
             where  fc.feature_correspondence_id=ce.feature_correspondence_id
-            and    ce.evidence_type=?
+            and    ce.evidence_type_accession=?
                 
         ],
         'feature_correspondence_id',
         {},
-        ( $evidence_type )
+        ( $evidence_type_aid )
     );
 
     my %corr = ();
@@ -200,11 +200,11 @@ sub make_name_correspondences {
                 # Check feature types.
                 #
                 unless ( 
-                    $f1->{'feature_type'} == $f2->{'feature_type'} 
+                    $f1->{'feature_type_aid'} == $f2->{'feature_type_aid'} 
                 ) {
                     next unless $add_name_correspondences
-                        { $f1->{'feature_type'} }
-                        { $f2->{'feature_type'} }
+                        { $f1->{'feature_type_aid'} }
+                        { $f2->{'feature_type_aid'} }
                     ;
                 }
 
@@ -223,7 +223,7 @@ sub make_name_correspondences {
                     my $fc_id =  $admin->feature_correspondence_create( 
                         feature_id1      => $f1->{'feature_id'},
                         feature_id2      => $f2->{'feature_id'},
-                        evidence_type => $evidence_type,
+                        evidence_type_aid => $evidence_type_aid,
                     ) or return $self->error( $admin->error );
 
                     $self->Print( 

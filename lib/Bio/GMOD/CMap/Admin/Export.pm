@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::Export;
 # vim: set ft=perl:
 
-# $Id: Export.pm,v 1.8 2004-03-26 20:42:11 mwz444 Exp $
+# $Id: Export.pm,v 1.9 2004-04-20 17:39:50 mwz444 Exp $
 
 =pod
 
@@ -28,7 +28,7 @@ of data out of CMap.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.8 $)[-1];
+$VERSION  = (qw$Revision: 1.9 $)[-1];
 
 use Data::Dumper;
 use File::Spec::Functions;
@@ -240,7 +240,7 @@ sub get_cmap_feature_correspondence {
             select ce.correspondence_evidence_id as object_id,
                    ce.feature_correspondence_id,
                    ce.accession_id,
-                   ce.evidence_type,
+                   ce.evidence_type_accession as evidence_type_aid,
                    ce.score
             from   cmap_correspondence_evidence ce,
                    cmap_feature_correspondence fc,
@@ -262,7 +262,7 @@ sub get_cmap_feature_correspondence {
             select correspondence_evidence_id as object_id,
                    feature_correspondence_id,
                    accession_id,
-                   evidence_type,
+                   evidence_type_accession as evidence_type_aid,
                    score
             from   cmap_correspondence_evidence
         ];
@@ -320,7 +320,7 @@ sub get_cmap_map_set {
                accession_id,
                map_set_name, 
                short_name, 
-               map_type,
+               map_type_accession as map_type_aid,
                species_id,
                published_on,
                can_be_reference_map,
@@ -344,10 +344,10 @@ sub get_cmap_map_set {
 
     my $map_sets = $db->selectall_arrayref( $sql, { Columns => {} } );
 
-    my ( %species_ids, %map_types, %ft_ids );
+    my ( %species_ids, %map_type_aids, %ft_ids );
     for my $ms ( @$map_sets ) {
         $species_ids { $ms->{'species_id'}  } = 1;
-        $map_types{ $ms->{'map_type'} } = 1;
+        $map_type_aids{ $ms->{'map_type_aid'} } = 1;
 
         $ms->{'map'} = $db->selectall_arrayref(
             q[
@@ -375,7 +375,7 @@ sub get_cmap_map_set {
                            is_landmark,
                            start_position,
                            stop_position,
-                           feature_type,
+                           feature_type_accession as feature_type_aid,
                            default_rank
                     from   cmap_feature
                     where  map_id=?
@@ -406,7 +406,7 @@ sub get_cmap_map_set {
             }
 
             for my $f ( @{ $map->{'feature'} } ) {
-                $ft_ids{ $f->{'feature_type'} } = 1;
+                $ft_ids{ $f->{'feature_type_aid'} } = 1;
                 if ( defined $alias_lookup{ $f->{'object_id'} } ) {
                     $f->{'feature_alias'} = $alias_lookup{ $f->{'object_id'} };
                 }

@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::Import;
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.49 2004-04-01 08:04:25 mwz444 Exp $
+# $Id: Import.pm,v 1.50 2004-04-20 17:40:04 mwz444 Exp $
 
 =pod
 
@@ -28,7 +28,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.49 $)[-1];
+$VERSION  = (qw$Revision: 1.50 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -61,7 +61,7 @@ use vars '$LOG_FH';
     feature_aliases      => { is_required => 0, datatype => 'string' },
     feature_start        => { is_required => 1, datatype => 'number' },
     feature_stop         => { is_required => 0, datatype => 'number' },
-    feature_type         => { is_required => 1, datatype => 'string' },
+    feature_type_accession => { is_required => 1, datatype => 'string' },
     feature_note         => { is_required => 0, datatype => 'string' },
     is_landmark          => { is_required => 0, datatype => 'number' },
     feature_dbxref_name  => { is_required => 0, datatype => 'string' },
@@ -89,7 +89,7 @@ Imports tab-delimited file with the following fields:
     feature_aliases
     feature_start *
     feature_stop
-    feature_type *
+    feature_type_accession *
     feature_note +
     is_landmark
     feature_dbxref_name +
@@ -283,7 +283,7 @@ appended to the list of xrefs.
     }
 
     $self->Print("Parsing file...\n");
-    my ( %feature_types, %feature_ids, %map_info );
+    my ( %feature_type_aids, %feature_ids, %map_info );
     while ( my $record = $parser->fetchrow_hashref ) {
         for my $field_name ( $parser->field_list ) {
             my $field_attr = $COLUMNS{ $field_name } or next;
@@ -317,14 +317,14 @@ appended to the list of xrefs.
             }
         }
 
-        my $feature_type    = $record->{'feature_type'};
+        my $feature_type_aid    = $record->{'feature_type_accession'};
 
         #
         # Not in the database, so ask to create it.
         #
-        unless ( $self->feature_type_data($feature_type) ) {
+        unless ( $self->feature_type_data($feature_type_aid) ) {
             $self->Print(
-                "Feature type '$feature_type' doesn't exist.  After import, please add it to your configuration file.[<enter> to continue] "
+                "Feature type accession '$feature_type_aid' doesn't exist.  After import, please add it to your configuration file.[<enter> to continue] "
             );
             chomp( my $answer = <STDIN> );
         }
@@ -409,7 +409,7 @@ appended to the list of xrefs.
         my $stop            = $record->{'feature_stop'};
         my $is_landmark     = $record->{'is_landmark'} || 0;
         my $default_rank    = $record->{'default_rank'} ||
-            $self->feature_type_data($feature_type,'default_rank');
+            $self->feature_type_data($feature_type_aid,'default_rank');
 
         #
         # Feature attributes
@@ -507,13 +507,13 @@ appended to the list of xrefs.
             $db->do(
                 q[
                     update cmap_feature
-                    set    accession_id=?, map_id=?, feature_type=?, 
+                    set    accession_id=?, map_id=?, feature_type_accession=?, 
                            feature_name=?, start_position=?, stop_position=?,
                            is_landmark=?, default_rank=?
                     where  feature_id=?
                 ],
                 {}, 
-                ( $accession_id, $map_id, $feature_type, 
+                ( $accession_id, $map_id, $feature_type_aid, 
                   $feature_name, $start, $stop, $is_landmark,
                   $feature_id,$default_rank
                 )
@@ -539,14 +539,14 @@ appended to the list of xrefs.
                     insert
                     into   cmap_feature
                            ( feature_id, accession_id, map_id,
-                             feature_type, feature_name, 
+                             feature_type_accession, feature_name, 
                              start_position, stop_position,
                              is_landmark, default_rank
                            )
                     values ( ?, ?, ?, ?, ?, ?, ?, ?, ? )
                 ],
                 {}, 
-                ( $feature_id, $accession_id, $map_id, $feature_type, 
+                ( $feature_id, $accession_id, $map_id, $feature_type_aid, 
                   $feature_name, $start, $stop, $is_landmark, $default_rank
                 )
             );
@@ -580,7 +580,7 @@ appended to the list of xrefs.
 
         my $pos = join('-', map { defined $_ ? $_ : () } $start, $stop);
         $self->Print(
-            "$action $feature_type '$feature_name' on map $map_name at $pos.\n"
+            "$action $feature_type_aid '$feature_name' on map $map_name at $pos.\n"
         );
     }
 
@@ -752,8 +752,8 @@ Imports an XML document containing CMap database objects.
         KeepRoot      => 0,
         SuppressEmpty => 1,
         ForceArray    => [ qw( 
-            cmap_map_set map feature xref attribute cmap_feature_type 
-            cmap_map_type cmap_species feature_alias cmap_evidence_type 
+            cmap_map_set map feature xref attribute 
+            cmap_species feature_alias 
             cmap_feature_correspondence cmap_xref correspondence_evidence
         ) ],
     );
@@ -786,7 +786,7 @@ Imports an XML document containing CMap database objects.
         );
 
         my $species          = $species{ $ms->{'species_id'} };
-        my $map_type         = $ms->{'map_type'};
+        my $map_type_aid         = $ms->{'map_type_accession'};
         $ms->{'species_id'}  = $species->{'new_species_id'} or 
             return $self->error('Cannot determine species id');
 
@@ -797,7 +797,7 @@ Imports an XML document containing CMap database objects.
             object      => $ms,
             field_names => [ qw/ accession_id map_set_name short_name
                 color shape is_enabled display_order can_be_reference_map
-                published_on width species_id map_type map_units 
+                published_on width species_id map_type_accession map_units 
                 is_relational_map
             / ],
         ) or return;
@@ -823,7 +823,7 @@ Imports an XML document containing CMap database objects.
                     object      => $feature,
                     field_names => [ qw/ map_id accession_id
                         feature_name start_position stop_position
-                        is_landmark feature_type default_rank
+                        is_landmark feature_type_accession default_rank
                     / ],
                 ) or return;
 

@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.47 2004-03-25 14:11:56 mwz444 Exp $
+# $Id: Admin.pm,v 1.48 2004-04-20 17:39:46 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.47 $)[-1];
+$VERSION = (qw$Revision: 1.48 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -137,8 +137,8 @@ sub feature_create {
     my $map_id          = $args{'map_id'} or push @missing, 'map_id';
     my $feature_name    = $args{'feature_name'} or 
                           push @missing, 'feature_name';
-    my $feature_type    = $args{'feature_type'} 
-                          or push @missing, 'feature_type';
+    my $feature_type_aid    = $args{'feature_type_aid'} 
+                          or push @missing, 'feature_type_aid';
     my $start_position  = $args{'start_position'};
     push @missing, 'start' unless $start_position =~ $RE{'num'}{'real'};
     my $stop_position   = $args{'stop_position'};
@@ -151,7 +151,7 @@ sub feature_create {
     ) or die 'No feature id';
     my $accession_id    = $args{'accession_id'} || $feature_id;
     my $default_rank    = 
-        $self->feature_type_data($feature_type,'default_rank')|| 1;
+        $self->feature_type_data($feature_type_aid,'default_rank')|| 1;
     if ( @missing ) {
         return $self->error(
             'Feature create failed.  Missing required fields: ', 
@@ -161,7 +161,7 @@ sub feature_create {
 
     my @insert_args = ( 
         $feature_id, $accession_id, $map_id, $feature_name, 
-        $feature_type, $is_landmark, $start_position
+        $feature_type_aid, $is_landmark, $start_position
     );
 
     my $stop_placeholder; 
@@ -178,7 +178,7 @@ sub feature_create {
             insert
             into   cmap_feature
                    ( feature_id, accession_id, map_id, feature_name, 
-                     feature_type, is_landmark,
+                     feature_type_accession, is_landmark,
                      start_position, stop_position,default_rank )
             values ( ?, ?, ?, ?, ?, ?, ?, $stop_placeholder,$default_rank )
         ],
@@ -325,7 +325,7 @@ Inserts a correspondence.  Returns -1 if there is nothing to do.
     my $feature_id2      = $args{'feature_id2'};
     my $feature_aid1     = $args{'feature_aid1'};
     my $feature_aid2     = $args{'feature_aid2'};
-    my $evidence_type    = $args{'evidence_type'};
+    my $evidence_type_aid    = $args{'evidence_type_aid'};
     my $evidence         = $args{'correspondence_evidence'};
     my $accession_id     = $args{'accession_id'} || '';
     my $is_enabled       = $args{'is_enabled'};
@@ -366,7 +366,7 @@ Inserts a correspondence.  Returns -1 if there is nothing to do.
     # Bail if no evidence.
     #
     return $self->error('No evidence') unless 
-        $evidence_type || @{ $evidence || [] };
+        $evidence_type_aid || @{ $evidence || [] };
 
     my $feature_sth = $db->prepare(
         q[
@@ -415,10 +415,10 @@ Inserts a correspondence.  Returns -1 if there is nothing to do.
             where  cl.feature_id1=?
             and    cl.feature_id2=?
             and    cl.feature_correspondence_id=ce.feature_correspondence_id
-            and    ce.evidence_type=?
+            and    ce.evidence_type_accession=?
         ],
         {},
-        ( $feature_id1, $feature_id2, $evidence_type )
+        ( $feature_id1, $feature_id2, $evidence_type_aid )
     ) || 0;
     return -1 if $count;
 
@@ -470,9 +470,9 @@ Inserts a correspondence.  Returns -1 if there is nothing to do.
     # To be consistent, push any lone evidence types onto the optional
     # evidence arrayref (of hashrefs).
     #
-    if ( $evidence_type ) {
+    if ( $evidence_type_aid ) {
         push @$evidence, {
-            evidence_type => $evidence_type
+            evidence_type_aid => $evidence_type_aid
         };
     }
 
@@ -480,7 +480,7 @@ Inserts a correspondence.  Returns -1 if there is nothing to do.
     # Create the evidence.
     #
     for my $e ( @$evidence ) {
-        my $et_id            = $e->{'evidence_type'};
+        my $et_id            = $e->{'evidence_type_aid'};
         my $score            = $e->{'score'};
         my $corr_evidence_id = next_number(
             db               => $db,
@@ -507,7 +507,7 @@ Inserts a correspondence.  Returns -1 if there is nothing to do.
                        ( correspondence_evidence_id, 
                          accession_id,
                          feature_correspondence_id,     
-                         evidence_type,
+                         evidence_type_accession,
                          score,
                          rank
                        )
@@ -706,7 +706,7 @@ Find all the features matching some criteria.
     );
     my $map_aid          = $args{'map_aid'}          ||             '';
     my $species_ids      = $args{'species_ids'}      ||             [];
-    my $feature_types = $args{'feature_types'} ||             [];
+    my $feature_type_aids = $args{'feature_type_aids'} ||             [];
     my $search_field     = $args{'search_field'}     || 'feature_name';
     my $order_by         = $args{'order_by'}         || 
         'feature_name,species_name,map_set_name,map_name,start_position';
@@ -717,7 +717,7 @@ Find all the features matching some criteria.
     # "-1" is a reserved value meaning "all"
     #
     $species_ids      = [] if grep { /^-1$/ } @$species_ids;
-    $feature_types = [] if grep { /^-1$/ } @$feature_types;
+    $feature_type_aids = [] if grep { /^-1$/ } @$feature_type_aids;
 
     my %features;
     for my $feature_name ( map { uc $_ } @feature_names ) {
@@ -744,14 +744,14 @@ Find all the features matching some criteria.
                        f.feature_name,
                        f.start_position,
                        f.stop_position,
-                       f.feature_type,
+                       f.feature_type_accession as feature_type_aid,
                        map.map_name,
                        map.map_id,
                        ms.map_set_id,
                        ms.short_name as map_set_name,
                        s.species_id,
                        s.common_name as species_name,
-                       ms.map_type
+                       ms.map_type_accession as map_type_aid
             from       cmap_feature f
             left join  cmap_feature_alias fa
             on         f.feature_id=fa.feature_id
@@ -770,8 +770,8 @@ Find all the features matching some criteria.
                 join(', ', @$species_ids ) . ') ';
         }
 
-        if ( my $ft = join(', ',  @$feature_types ) ) {
-            $sql .= "and f.feature_type in ($ft) ";
+        if ( my $ft = join(', ',  @$feature_type_aids ) ) {
+            $sql .= "and f.feature_type_accession in ($ft) ";
         }
 
         my $found = $db->selectall_hashref( $sql, 'feature_id' );
@@ -871,15 +871,15 @@ Find all the feature types.
 =cut
 
     my ( $self, %args ) = @_;
-    my $order_by        = $args{'order_by'} || 'feature_type';
+    my $order_by        = $args{'order_by'} || 'feature_type_aid';
 
-    my @feature_type_names = keys(%{$self->config_data('feature_type')});
+    my @feature_type_aids = keys(%{$self->config_data('feature_type')});
     my $feature_types;
-    foreach my $type (sort {$a->{$order_by} cmp $b->{$order_by}} @feature_type_names){
+    foreach my $type_aid (sort {$a->{$order_by} cmp $b->{$order_by}} @feature_type_aids){
         $feature_types->[++$#{$feature_types}]=
-            $self->feature_type_data($type)
+            $self->feature_type_data($type_aid)
              or return $self->error(
-             "No feature type '$type'"
+             "No feature type accession '$type_aid'"
               );
     }
     return $feature_types;
@@ -1006,8 +1006,8 @@ sub map_set_create {
         or push @missing, 'short_name';
     my $species_id           = $args{'species_id'}
         or push @missing, 'species';
-    my $map_type             = $args{'map_type'}
-        or push @missing, 'map_type';
+    my $map_type_aid             = $args{'map_type_aid'}
+        or push @missing, 'map_type_aid';
     my $accession_id         = $args{'accession_id'}         || '';
     my $display_order        = $args{'display_order'}        ||  1;
     my $can_be_reference_map = $args{'can_be_reference_map'} ||  0;
@@ -1037,8 +1037,8 @@ sub map_set_create {
     ) or die 'No map set id';
     $accession_id ||= $map_set_id;
 
-    my $map_units= $self->map_type_data($map_type,'map_units');
-    my $is_relational_map=$self->map_type_data($map_type,'is_relational_map');
+    my $map_units= $self->map_type_data($map_type_aid,'map_units');
+    my $is_relational_map=$self->map_type_data($map_type_aid,'is_relational_map');
 
 
     $db->do(
@@ -1046,7 +1046,7 @@ sub map_set_create {
             insert
             into   cmap_map_set
                    ( map_set_id, accession_id, map_set_name, short_name,
-                     species_id, map_type, published_on, display_order, 
+                     species_id, map_type_accession, published_on, display_order, 
                      can_be_reference_map, shape, width, color, map_units,
                      is_relational_map )
             values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
@@ -1054,7 +1054,7 @@ sub map_set_create {
         {}, 
         ( 
             $map_set_id, $accession_id, $map_set_name, $short_name,
-            $species_id, $map_type, $published_on, $display_order, 
+            $species_id, $map_type_aid, $published_on, $display_order, 
             $can_be_reference_map, $shape, $width, $color, $map_units,
             $is_relational_map
         )

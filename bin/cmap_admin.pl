@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.64 2004-04-14 13:44:59 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.65 2004-04-20 17:39:25 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.64 $)[-1];
+$VERSION = (qw$Revision: 1.65 $)[-1];
 
 #
 # Get command-line options
@@ -274,18 +274,10 @@ sub create_map_set {
         title   => 'Available Map Types',
         prompt  => 'What type of map?',
         display => 'map_type',
-        return  => 'map_type_accession,map_type',
+        return  => 'map_type_aid,map_type',
 	data    => $self->fake_selectall_arrayref(
 		$self->map_type_data(),
-		'map_type_accession','map_type')
-        #data     => $db->selectall_arrayref(
-        #    q[
-        #        select   mt.map_type_id, mt.map_type
-        #        from     cmap_map_type mt
-        #        order by map_type
-        #    ],
-        #    { Columns => {} },
-        #),
+		'map_type_accession as map_type_aid','map_type')
     );
     die "No map types! Please use the config file to add some.\n" 
         unless $map_type_aid;
@@ -468,21 +460,13 @@ sub delete_correspondences {
         title       => 'Select Evidence Type (Optional)',
         prompt      => 'Select evidence types',
         display     => 'evidence_type',
-        return      => 'evidence_type',
+        return      => 'evidence_type_aid,evidence_type',
         allow_null  => 0,
         allow_mult  => 1,
         allow_all   => 1,
 	data        =>  $self->fake_selectall_arrayref(
 			     $self->evidence_type_data(),
-       		             'evidence_type','evidence_type')
-        #data        => $db->selectall_arrayref(
-        #    q[
-        #        select   et.evidence_type_id, et.evidence_type
-        #        from     cmap_evidence_type et
-        #        order by evidence_type
-        #    ],
-        #    { Columns => {} }
-        #)
+       		             'evidence_type_accession as evidence_type_aid','evidence_type')
     );
 
     #
@@ -498,14 +482,14 @@ sub delete_correspondences {
     }
     if ( @evidence_types ) {
         print "\n  Evidence Types       :\n", 
-            join( "\n", map { "    $_" } @evidence_types );
+            join( "\n", map { "    $_->[1]" } @evidence_types );
     }
     print "\n[Y/n] ";
     chomp( my $answer = <STDIN> );
     return if $answer =~ /^[Nn]/;
 
-    my $evidence_types = "'".join( "','", @evidence_types )."'";
-    my %evidence_lookup   = map { $_, 1 } @evidence_types;
+    my $evidence_types = "'".join( "','", map {$_->[0]} @evidence_types )."'";
+    my %evidence_lookup   = map { $_->[0], 1 } @evidence_types;
     my $admin             = $self->admin ;
     my $log_fh            = $self->log_fh;
     for my $map_set_id ( @map_set_ids ) {
@@ -522,7 +506,7 @@ sub delete_correspondences {
                 and    f.feature_id=cl.feature_id1
                 and    cl.feature_correspondence_id=fc.feature_correspondence_id
                 and    fc.feature_correspondence_id=ce.feature_correspondence_id
-                and    ce.evidence_type in ($evidence_types)
+                and    ce.evidence_type_accession in ($evidence_types)
             ],
             'feature_correspondence_id',
             {},
@@ -541,7 +525,7 @@ sub delete_correspondences {
             my $all_evidence = $db->selectall_arrayref(
                 qq[
                     select ce.correspondence_evidence_id,
-                           ce.evidence_type
+                           ce.evidence_type_accession as evidence_type_aid
                     from   cmap_correspondence_evidence ce
                     where  ce.feature_correspondence_id=?
                 ],
@@ -551,7 +535,7 @@ sub delete_correspondences {
 
             my $no_evidence_deleted = 0;
             for my $evidence ( @$all_evidence ) {
-                next unless $evidence_lookup{ $evidence->{'evidence_type'} };
+                next unless $evidence_lookup{ $evidence->{'evidence_type_aid'} };
                 $admin->correspondence_evidence_delete(
                     correspondence_evidence_id => 
                         $evidence->{'correspondence_evidence_id'}
@@ -599,14 +583,14 @@ sub delete_map_set {
     #
     # Restrict by map type.
     #
-    my $map_type  = $self->show_menu(
+    my ($map_type_aid,$map_type)  = $self->show_menu(
         title   => "Available Map Types (for $common_name)",
         prompt  => 'What type of map?',
         display => 'map_type',
-        return  => 'map_type',
+        return  => 'map_type_aid,map_type',
 	data    => $self->fake_selectall_arrayref(
 		$self->map_type_data(),
-		'map_type','map_type'),
+		'map_type_accession as map_type_aid','map_type'),
     );
 
     #
@@ -625,11 +609,11 @@ sub delete_map_set {
                          ms.short_name as map_set_name
                 from     cmap_map_set ms
                 where    ms.species_id=?
-                and      ms.map_type=?
+                and      ms.map_type_accession=?
                 order by map_set_name
             ],
             { Columns => {} },
-            ( $species_id, $map_type )
+            ( $species_id, $map_type_aid )
         ),
     );
 
@@ -761,7 +745,7 @@ sub export_as_text {
         feature_aliases
         feature_start
         feature_stop
-        feature_type
+        feature_type_accession
         feature_dbxref_name
         feature_dbxref_url
         is_landmark
@@ -770,16 +754,16 @@ sub export_as_text {
 
     my $map_types = $self->fake_selectall_arrayref(
 		$self->map_type_data(),
-	       'map_type','map_type');
+	       'map_type_accession as map_type_aid','map_type');
 
-    die "No map types! Please use the web admin tool to create.\n" 
+    die "No map types! Please use the config file to create.\n" 
         unless @$map_types;
 
     my @map_types = $self->show_menu(
         title        => 'Restrict by Map Types',
         prompt       => 'Limit export by which map types (optional)?',
         display      => 'map_type',
-        return       => 'map_type',
+        return       => 'map_type_aid,map_type',
         allow_null   => 1,
         allow_mult   => 1,
         data         => $map_types,
@@ -792,7 +776,7 @@ sub export_as_text {
                  cmap_map_set ms
         where    s.species_id=ms.species_id
     ];
-    $species_sql .= "and ms.map_type in ('".join("','", @map_types)."') "
+    $species_sql .= "and ms.map_type_accession in ('".join("','", map{$_->[0]}@map_types)."') "
         if @map_types;
     $species_sql .= 'order by common_name';
     my $species   = $db->selectall_arrayref( $species_sql, { Columns => {} } );
@@ -813,18 +797,22 @@ sub export_as_text {
         select   ms.map_set_id,
                  ms.short_name,
                  s.common_name,
-                 ms.map_type
+                 ms.map_type_accession as map_type_aid
         from     cmap_map_set ms,
                  cmap_species s
         where    ms.species_id=s.species_id
     ];
     $map_set_sql .= 'and ms.species_id in ('.join(',', @species_ids).') '
         if @species_ids;
-    $map_set_sql .= "and ms.map_type in ('".join("','", @map_types)."') "
+    $map_set_sql .= "and ms.map_type_accession in ('".join("','", map{$_->[0]}@map_types)."') "
         if @map_types;
     $map_set_sql .= 'order by short_name';
     my $map_sets  = $db->selectall_arrayref( $map_set_sql, { Columns => {} } );
-    
+    foreach my $row ( @{$map_sets} ) {
+        $row->{'map_type'} =
+            $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
+    }
+
     my @map_set_ids = $self->show_menu(
         title       => 'Restrict by Map Sets',
         prompt      => 'Limit export by which map sets (optional)?',
@@ -838,12 +826,12 @@ sub export_as_text {
     my $ft_sql;
     if ( @map_set_ids ) {
         $ft_sql = q[
-            select   distinct f.feature_type
+            select   distinct f.feature_type_accession as feature_type_aid
             from     cmap_map map,
                      cmap_feature f
             where    map.map_set_id in (].join( ',', @map_set_ids ).q[)
             and      map.map_id=f.map_id
-            order by feature_type
+            order by feature_type_aid
         ];
     }
     else {
@@ -858,17 +846,21 @@ sub export_as_text {
     my $feature_types;
     if ($ft_sql){
 	$feature_types = $db->selectall_arrayref( $ft_sql, { Columns => {} } );
+        foreach my $row ( @{$feature_types} ) {
+            $row->{'feature_type'} =
+                $self->feature_type_data( $row->{'feature_type_aid'}, 'feature_type' );
+        }
     }
     else{
 	$feature_types = $self->fake_selectall_arrayref(
 		$self->feature_type_data(),
-		'feature_type');
+		'feature_type_accession as feature_type_aid','feature_type');
     }
     my @feature_types =  $self->show_menu(
         title            => 'Restrict by Feature Types',
         prompt           => 'Limit export to which feature types (optional)?',
         display          => 'feature_type',
-        return           => 'feature_type',
+        return           => 'feature_type_aid,feature_type',
         allow_null       => 1,
         allow_mult       => 1,
         data             => $feature_types,
@@ -901,7 +893,7 @@ sub export_as_text {
     ];
     $map_set_sql .= 'and ms.species_id in ('.join(',', @species_ids).') '
         if @species_ids;
-    $map_set_sql .= "and ms.map_type in ('".join("','", @map_types)."') "
+    $map_set_sql .= "and ms.map_type_accession in ('".join("','",  map{$_->[0]}@map_types)."') "
         if @map_types;
     $map_set_sql .= 'and ms.map_set_id in ('.join(',', @map_set_ids).') '
         if @map_set_ids;
@@ -920,7 +912,7 @@ sub export_as_text {
     }
 
     if ( !@feature_types ) {    
-        @feature_types = ('All',);
+        @feature_types = (['All','All'],);
     }
 
     my $excluded_fields = 
@@ -933,7 +925,7 @@ sub export_as_text {
         'OK to export?',
         '  Data source     : '  . $self->data_source, 
         "  Map Sets        :\n" . join("\n", map { "    $_" } @map_set_names),
-        "  Feature Types   :\n" . join("\n", map { "    $_" } @feature_types),
+        "  Feature Types   :\n" . join("\n", map { "    $_->[1]" } @feature_types),
         "  Exclude Fields  : $excluded_fields",
         "  Directory       : $dir",
         "[Y/n] "
@@ -951,7 +943,7 @@ sub export_as_text {
                  f.start_position as feature_start,
                  f.stop_position as feature_stop,
                  f.is_landmark,
-                 f.feature_type,
+                 f.feature_type_accession as feature_type_aid,
                  map.map_name, 
                  map.accession_id as map_accession_id,
                  map.start_position as map_start,
@@ -961,7 +953,7 @@ sub export_as_text {
         where    f.map_id=?
         and      f.map_id=map.map_id
     ];
-    $ft_sql .= "and f.feature_type in ('".join("','", @feature_types)."') "
+    $ft_sql .= "and f.feature_type_accession in ('".join("','",  map{$_->[0]}@feature_types)."') "
         if @feature_types;
     $ft_sql .= 'order by f.start_position';
 
@@ -1078,7 +1070,7 @@ sub export_as_sql {
                 correspondence_evidence_id => NUM,
                 accession_id               => STR,
                 feature_correspondence_id  => NUM,
-                evidence_type              => NUM,
+                evidence_type_accession    => STR,
                 score                      => NUM,
                 rank                       => NUM,
             }
@@ -1112,7 +1104,7 @@ sub export_as_sql {
                 feature_id      => NUM,
                 accession_id    => STR,
                 map_id          => NUM,
-                feature_type => NUM,
+                feature_type_accession => STR,
                 feature_name    => STR,
                 is_landmark     => NUM,
                 start_position  => NUM,
@@ -1174,7 +1166,7 @@ sub export_as_sql {
                 accession_id         => STR,
                 map_set_name         => STR,
                 short_name           => STR,
-                map_type             => NUM,
+                map_type_accession   => STR,
                 species_id           => NUM,
                 published_on         => STR,
                 can_be_reference_map => NUM,
@@ -1407,7 +1399,7 @@ sub export_objects {
         my $hr            = $self->get_map_sets;
         $feature_types    = $hr->{'feature_types'};
         $map_sets         = $hr->{'map_sets'};
-        my @ft_names      = @$feature_types;
+        my @ft_names      = map{$_->[1]} @$feature_types;
         my @map_set_names = 
             map { 
                 $_->{'species_name'}.'-'.$_->{'map_set_name'}.
@@ -1460,16 +1452,16 @@ sub get_map_sets {
 
     my $map_types = $self->fake_selectall_arrayref(
 		$self->map_type_data(),
-		'map_type','map_type');
+		'map_type_accession as map_type_aid','map_type');
 
-    die "No map types! Please use the web admin tool to create.\n" 
+    die "No map types! Please use the config file to create.\n" 
         unless @$map_types;
 
     my @map_types = $self->show_menu(
         title        => 'Restrict by Map Set Export by Map Types',
         prompt       => 'Limit export of map sets by which map types?',
         display      => 'map_type',
-        return       => 'map_type',
+        return       => 'map_type_aid,map_type',
         allow_null   => 1,
         allow_mult   => 1,
         data         => $map_types,
@@ -1482,7 +1474,7 @@ sub get_map_sets {
                  cmap_map_set ms
         where    s.species_id=ms.species_id
     ];
-    $species_sql .= "and ms.map_type in ('".join("','", @map_types)."') "
+    $species_sql .= "and ms.map_type_accession in ('".join("','",  map{$_->[0]}@map_types)."') "
         if @map_types;
     $species_sql .= 'order by common_name';
     my $species   = $db->selectall_arrayref( $species_sql, { Columns => {} } );
@@ -1503,18 +1495,22 @@ sub get_map_sets {
         select   ms.map_set_id,
                  ms.short_name,
                  s.common_name,
-                 ms.map_type
+                 ms.map_type_accession as map_type_aid
         from     cmap_map_set ms,
                  cmap_species s
         where    ms.species_id=s.species_id
     ];
     $map_set_sql .= 'and ms.species_id in ('.join(',', @species_ids).') '
         if @species_ids;
-    $map_set_sql .= "and ms.map_type in ('".join("','", @map_types)."') "
+    $map_set_sql .= "and ms.map_type_accession in ('".join("','",  map{$_->[0]}@map_types)."') "
         if @map_types;
     $map_set_sql .= 'order by short_name';
     my $map_sets  = $db->selectall_arrayref( $map_set_sql, { Columns => {} } );
-    
+    foreach my $row ( @{$map_sets} ) {
+        $row->{'map_type'} =
+            $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
+    }
+
     my @map_set_ids = $self->show_menu(
         title       => 'Restrict by Map Sets',
         prompt      => 'Limit export by which map sets?',
@@ -1528,7 +1524,7 @@ sub get_map_sets {
     my $where;
     $where .= 'and ms.species_id in  ('.join(',', @species_ids) .') '
         if @species_ids;
-    $where .= "and ms.map_type in ('".join("','", @map_types)."') "
+    $where .= "and ms.map_type_accession in ('".join("','",  map{$_->[0]}@map_types)."') "
         if @map_types;
     $where .= 'and ms.map_set_id in  ('.join(',', @map_set_ids) .') '
         if @map_set_ids;
@@ -1537,7 +1533,7 @@ sub get_map_sets {
         select   ms.map_set_id, 
                  ms.short_name as map_set_name,
                  s.common_name as species_name,
-                 ms.map_type
+                 ms.map_type_accession as map_type_aid
         from     cmap_map_set ms,
                  cmap_species s
         where    ms.species_id=s.species_id
@@ -1548,32 +1544,41 @@ sub get_map_sets {
     $return->{'map_sets'} = $db->selectall_arrayref( 
         $map_set_sql, { Columns => {} } 
     );
+    foreach my $row ( @{$return->{'map_sets'}} ) {
+        $row->{'map_type'} =
+            $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
+    }
 
     my $ft_sql_data;
     if ( $where ) {
         $ft_sql_data = $db->selectall_arrayref(qq[
             select   distinct  
-                     f.feature_type
+                     f.feature_type_accession as feature_type_aid
             from     cmap_map_set ms,
                      cmap_map map,
                      cmap_feature f
             where    ms.map_set_id=map.map_set_id
             and      map.map_id=f.map_id
 	    $where
-            order by feature_type
+            order by feature_type_aid
 	    ],{ Columns => {} });
+         foreach my $row ( @{$ft_sql_data} ) {
+            $row->{'feature_type'} =
+                $self->feature_type_data( $row->{'feature_type_aid'}, 'feature_type' );
+        }
+
     }
     else {
         $ft_sql_data = $self->fake_selectall_arrayref(
 		$self->feature_type_data(),
-		'feature_type');
+		'feature_type_aid','feature_type');
     }
 
     my @feature_types =  $self->show_menu(
         title            => 'Restrict by Feature Types',
         prompt           => 'Limit export by feature types?',
         display          => 'feature_type',
-        return           => 'feature_type',
+        return           => 'feature_type_aid,feature_type',
         allow_null       => 1,
         allow_mult       => 1,
         data             => $ft_sql_data,
@@ -1927,14 +1932,14 @@ sub import_tab_data {
     #
     # Get the map type.
     #
-    my ($map_type,$map_type_aid) = $self->show_menu(
+    my ($map_type_aid,$map_type) = $self->show_menu(
         title   => 'Available Map Types',
         prompt  => 'Please select a map type',
         display => 'map_type',
-        return  => 'map_type,map_type_accession',
+        return  => 'map_type_aid,map_type',
 	data    => $self->fake_selectall_arrayref(
 		$self->map_type_data(),
-		'map_type_accession','map_type'),
+		'map_type_accession as map_type_aid','map_type'),
     );
     do { print "No map types to select from.\n"; return } unless $map_type_aid;
 print STDERR "$map_type_aid $map_type\n";
@@ -2011,7 +2016,7 @@ print STDERR "$map_type_aid $map_type\n";
     $importer->import_tab(
         map_set_id => $map_set_id,
         fh         => $fh,
-        map_type_accession   => $map_type_aid,
+        map_type_aid   => $map_type_aid,
         log_fh     => $self->log_fh,
         overwrite  => $overwrite,
     ) or do { 
@@ -2091,47 +2096,53 @@ sub make_name_correspondences {
     #
     # Get the evidence type id.
     #
-    my  $evidence_type = $self->show_menu(
+    my ($evidence_type_aid, $evidence_type) = $self->show_menu(
         title   => 'Available evidence types',
         prompt  => 'Please select an evidence type',
         display => 'evidence_type',
-        return  => 'evidence_type',
+        return  => 'evidence_type_aid,evidence_type',
         data    =>  $self->fake_selectall_arrayref(
 		$self->evidence_type_data(),
-		'evidence_type'),
+		'evidence_type_accession as evidence_type_aid','evidence_type'),
     );
-    die "No evidence types!  Please use the web admin tool to create.\n" 
+    die "No evidence types!  Please use the config file to create.\n" 
         unless $evidence_type;
 
     #
     # Get the target map sets.
     #
+    my $map_sets_data=  $db->selectall_arrayref(
+            q[
+                select   ms.map_set_id,
+                         ms.short_name as map_set_name,
+                         s.common_name as species_name,
+                         ms.map_type_accession as map_type_aid
+                from     cmap_map_set ms,
+                         cmap_species s
+                where    ms.species_id=s.species_id
+                order by map_type_aid, common_name, map_set_name
+            ],
+            { Columns => {} },
+        );
+    foreach my $row ( @{$map_sets_data} ) {
+        $row->{'map_type'} =
+            $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
+    }
+
     my @map_sets    =  $self->show_menu(
         title       => 'Map Set (optional)',
         prompt      => 'Please select the map sets to include',
         display     => 'map_type,species_name,map_set_name',
-        return      => 'map_set_id,map_type,species_name,map_set_name',
+        return      => 'map_set_id,map_type_aid,map_type,species_name,map_set_name',
         allow_null  => 1,
         allow_mult  => 1,
-        data        => $db->selectall_arrayref(
-            q[
-                select   ms.map_set_id, 
-                         ms.short_name as map_set_name,
-                         s.common_name as species_name,
-                         ms.map_type
-                from     cmap_map_set ms,
-                         cmap_species s
-                where    ms.species_id=s.species_id
-                order by map_type, common_name, map_set_name
-            ],
-            { Columns => {} },
-        ),
+        data        => $map_sets_data,
     );
 
     my @map_set_ids = map { $_->[0] } @map_sets;
     my $targets     = @map_sets
         ? join( "\n", 
-            map { "    $_" } map { join('-', $_->[1], $_->[2], $_->[3]) } 
+            map { "    $_" } map { join('-', $_->[2], $_->[3], $_->[4]) } 
             @map_sets
         )
         : '    All'
@@ -2141,16 +2152,16 @@ sub make_name_correspondences {
         title       => 'Skip Feature Types (optional)',
         prompt      => 'Select any feature types to skip in check',
         display     => 'feature_type',
-        return      => 'feature_type',
+        return      => 'feature_type_aid,feature_type',
         allow_null  => 1,
         allow_mult  => 1,
         data        => $self->fake_selectall_arrayref(
 		$self->feature_type_data(),
-		'feature_type'),
+		'feature_type_accession as feature_type_aid','feature_type'),
     );
-    my @skip_feature_types = @skip_features;
+    my @skip_feature_type_aids = map{$_->[0]}@skip_features;
     my $skip = @skip_features
-        ? join( "\n     ", @skip_features )."\n"
+        ? join( "\n     ",  map{$_->[1]}@skip_features )."\n"
         : '    None'
     ;
 
@@ -2169,11 +2180,10 @@ sub make_name_correspondences {
         db          => $db,
         data_source => $self->data_source,
     );
-
     $corr_maker->make_name_correspondences(
-        evidence_type         => $evidence_type,
+        evidence_type_aid         => $evidence_type_aid,
         map_set_ids           => \@map_set_ids,
-        skip_feature_types    => \@skip_feature_types,
+        skip_feature_types    => \@skip_feature_type_aids,
         log_fh                => $self->log_fh,
         quiet                 => $Quiet,
     ) or do { print "Error: ", $corr_maker->error, "\n"; return; };

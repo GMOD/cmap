@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 # vim: set ft=perl:
 
-# $Id: ImportCorrespondences.pm,v 1.19 2004-04-01 08:04:25 mwz444 Exp $
+# $Id: ImportCorrespondences.pm,v 1.20 2004-04-20 17:40:05 mwz444 Exp $
 
 =head1 NAME
 
@@ -43,7 +43,7 @@ feature names, a correspondence will be created.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.19 $)[-1];
+$VERSION = (qw$Revision: 1.20 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -156,7 +156,7 @@ sub import {
     ];
 
     $self->Print("Parsing file...\n");
-    my ( %feature_ids, %evidence_types, $inserts, $total );
+    my ( %feature_ids, %evidence_type_aids, $inserts, $total );
     LINE:
     while ( my $record = $parser->fetchrow_hashref ) {
         for my $field_name ( $parser->field_list ) {
@@ -244,18 +244,18 @@ sub import {
 
         my @evidences = map {s/^\s+|\s+$//g;$_} 
             split /,/, $record->{'evidence'};
-        my @evidence_types;
+        my @evidence_type_aids;
         for my $evidence ( @evidences ) {
-            my $evidence_type = $evidence ;
+            my $evidence_type_aid = $evidence ;
 
-                unless ( $self->evidence_type_data($evidence_type) ) {
+                unless ( $self->evidence_type_data($evidence_type_aid) ) {
                 $self->Print(
-                    "Evidence type '$evidence_type' doesn't exist.  After import, please add it to your configuration file.[<enter> to continue] "
+                    "Evidence type accession '$evidence_type_aid' doesn't exist.  After import, please add it to your configuration file.[<enter> to continue] "
                 );
                 chomp( my $answer = <STDIN> );
             }
 
-            push @evidence_types, [ $evidence_type, $evidence ];
+            push @evidence_type_aids, [ $evidence_type_aid, $evidence ];
         }
 
         my $is_enabled = $record->{'is_enabled'};
@@ -271,12 +271,12 @@ sub import {
                     ;
                 }
 
-                for my $evidence_type ( @evidence_types ) {
-                    my ( $evidence_type, $evidence ) = @$evidence_type;
+                for my $evidence_type_aid ( @evidence_type_aids ) {
+                    my ( $evidence_type_aid, $evidence ) = @$evidence_type_aid;
                     my $fc_id = $admin->feature_correspondence_create( 
                         feature_id1      => $feature1->{'feature_id'},
                         feature_id2      => $feature2->{'feature_id'},
-                        evidence_type => $evidence_type,
+                        evidence_type_aid => $evidence_type_aid,
                         is_enabled       => $is_enabled,
                     ) or return $self->error( $admin->error );
 
