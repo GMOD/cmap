@@ -53,7 +53,7 @@
             </tr>
 
             [% FOREACH att=s.attributes %]
-                [% NEXT UNLESS att.is_public %]
+                [% NEXT IF att.is_public.defined AND att.is_public == 0 %]
                 <tr>
                     <td align="right">[% att.attribute_name %]:</td>
                     <td colspan="2">

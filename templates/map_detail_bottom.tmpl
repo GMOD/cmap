@@ -51,7 +51,7 @@
     </tr>
     [% END %]
     [% FOREACH att=reference_map.attributes %]
-        [% NEXT UNLESS att.is_public %]
+        [% NEXT IF att.is_public.defined AND att.is_public == 0 %]
         <tr>
             <th align="right" valign="top">
                 [% att.attribute_name | nbsp %]:
