@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.208 2005-02-18 04:33:41 mwz444 Exp $
+# $Id: Data.pm,v 1.209 2005-03-01 17:42:19 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.208 $)[-1];
+$VERSION = (qw$Revision: 1.209 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -499,7 +499,7 @@ sub cmap_data {
         %map_type_aids
     );
     $self->slot_info( $slots, $ignored_feature_type_aids,
-        $ignored_evidence_type_aids, );
+        $ignored_evidence_type_aids, $min_correspondences,);
 
     my @slot_nos         = keys %$slots;
     my @pos              = sort { $a <=> $b } grep { $_ >= 0 } @slot_nos;
@@ -5731,7 +5731,9 @@ original start and stop.
     my $slots                 = shift;
     my $ignored_feature_list  = shift;
     my $ignored_evidence_list = shift;
+    my $min_correspondences   = shift;
     my $db                    = $self->db;
+
 
     # Return slot_info is not setting it.
     return $self->{'slot_info'} unless ($slots);
@@ -5752,6 +5754,8 @@ original start and stop.
         next unless ( $slots->{$slot_no} );
         my $from      = ' ';
         my $where     = '';
+        my $group_by  = '';
+        my $having    = '';
         my $aid_where = '';
         my $sql_str   = '';
         my $map_sets  = $slots->{$slot_no}{'map_sets'};
@@ -5866,6 +5870,17 @@ original start and stop.
                   " m.accession_id in ('"
                   . join( "','", keys( %{$maps} ) ) . "')";
             }
+            if ($min_correspondences) {
+                $group_by = q[ 
+                    group by cl.map_id2,
+                             m.start_position,
+                             m.stop_position,
+                             m.start_position,
+                             m.stop_position,
+                             m.accession_id
+                    ];
+                $having   = " having count(cl.feature_correspondence_id)>=$min_correspondences ";
+            }
         }
         if ($where) {
             $where = " where $where and ( $aid_where )";
@@ -5873,7 +5888,7 @@ original start and stop.
         else {
             $where = " where $aid_where ";
         }
-        $sql_str = "$sql_base $from $where\n";
+        $sql_str = "$sql_base $from $where $group_by $having\n";
 
         #print S#TDERR "SLOT_INFO SQL \n$sql_str\n";
 
