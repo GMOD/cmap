@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.6 2003-09-24 19:12:08 kycl4rk Exp $
+# $Id: Build.PL,v 1.7 2003-09-24 19:20:18 kycl4rk Exp $
 
 use strict;
 
@@ -225,7 +225,12 @@ if ( my $failures = $builder->prereq_failures ) {
     }
 }
 
-$builder->add_to_cleanup( 'Build', INSTALL_CONF );
+$builder->add_to_cleanup( 
+    INSTALL_CONF, 
+    'SIGNATURE.tmp', 
+    'conf/cmap.conf', 
+    'lib/Bio/GMOD/CMap/Constants.pm'
+);
 $builder->create_build_script;
 
 print qq[Now run "./Build" and "./Build install"\n];
