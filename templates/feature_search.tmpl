@@ -26,9 +26,9 @@
         </td>
         <td>
             <select name="search_field">
+                <option value="both"[% IF apr.param('search_field')=='both'; 'selected'; END %]>Both</option>
                 <option value="feature_name"[% IF apr.param('search_field')=='feature_name'; 'selected'; END %]>Feature Name</option>
-                <option value="alternate_name">[% IF apr.param('search_field')=='alternate_name'; 'selected'; END %]Alt. Name</option>
-                <option value="both">[% IF apr.param('search_field')=='both'; 'selected'; END %]Both</option>
+                <option value="alternate_name"[% IF apr.param('search_field')=='alternate_name'; 'selected'; END %]>Alt. Name</option>
             </select>
         </td>
     </tr>
@@ -135,3 +135,4 @@
 [% END %]
 
 [% page.end_body OR '</body>' %]
+</html>

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.18 2002-10-03 05:37:32 kycl4rk Exp $
+# $Id: Data.pm,v 1.19 2002-11-05 20:02:07 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.18 $)[-1];
+$VERSION = (qw$Revision: 1.19 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -598,7 +598,7 @@ Returns the data for the correspondence matrix.
                          s.species_id,
                          s.accession_id as species_aid,
                          s.common_name as species_name,
-                         s.species_display_order
+                         s.display_order as species_display_order
                 from     cmap_map map,
                          cmap_map_set ms,
                          cmap_species s
@@ -925,24 +925,41 @@ Returns the data for the correspondence matrix.
     my ( @matrix, %no_by_species );
 #    warn "lookup = ", Dumper( \%lookup ), "\n";
     for my $map_set ( @reference_map_sets ) {
-        my $map_aid       = $map_set->{'map_aid'} || 0;
-        my $map_set_aid   = $map_set->{'map_set_aid'};
-        my $species_aid   = $map_set->{'species_aid'};
-        my $reference_aid = $map_aid || $map_set_aid;
-#        my $reference_aid = scalar @all_map_sets > 1
-#            ? $map_set_aid : $map_set_aid || $map_aid;
+        my $r_map_aid       = $map_set->{'map_aid'} || 0;
+        my $r_map_set_aid   = $map_set->{'map_set_aid'};
+        my $r_species_aid   = $map_set->{'species_aid'};
+#        my $reference_aid   = $r_map_aid || $r_map_set_aid;
+        my $reference_aid   = 
+            $map_name && $map_set_aid ? $r_map_aid     : 
+            $map_name                 ? $r_map_set_aid : 
+            $r_map_aid || $r_map_set_aid;
 
-        $no_by_species{ $species_aid }++;
+        $no_by_species{ $r_species_aid }++;
 
         for my $comp_map_set ( @all_map_sets ) {
 #            warn "comp map set = ", Dumper($comp_map_set), "\n";
             my $comp_map_set_aid = $comp_map_set->{'map_set_aid'};
             my $comp_map_aid     = $comp_map_set->{'map_aid'} || 0;
             my $comparative_aid  = $comp_map_aid || $comp_map_set_aid;
-            my $correspondences  = $comp_map_set_aid eq $map_set_aid 
-                ? 'N/A'
-                : $lookup{ $reference_aid }{ $comparative_aid } || 0
+            my $correspondences  = 
+                $comp_map_set_aid eq $r_map_set_aid ? 'N/A' :
+                $lookup{ $reference_aid }{ $comparative_aid } || 0
             ;
+#            my $correspondences;
+#            if ( $map_set_aid ) {
+#                if ( $comp_map_aid eq $r_map_aid ) { 
+#                    $correspondences = 'N/A';
+#                }
+#                else {
+#                    $correspondences = 
+#                        $lookup{ $reference_aid }{ $comparative_aid } || 0;
+#                }
+#            }
+#            else {
+#                $correspondences = 
+#                    $comp_map_set_aid eq $r_map_set_aid ? 'N/A' :
+#                    $lookup{ $reference_aid }{ $comparative_aid } || 0
+#            }
 #            warn "correspondences = $correspondences\n";
 
             push @{ $map_set->{'correspondences'} }, {
@@ -1513,6 +1530,7 @@ Given a list of feature names, find any maps they occur on.
         my $sql = qq[
             select f.accession_id as feature_aid,
                    f.feature_name, 
+                   f.alternate_name, 
                    f.start_position,
                    f.stop_position,
                    ft.feature_type,

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin;
 
-# $Id: Admin.pm,v 1.6 2002-10-09 01:07:31 kycl4rk Exp $
+# $Id: Admin.pm,v 1.7 2002-11-05 20:02:07 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.6 $)[-1];
+$VERSION = (qw$Revision: 1.7 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils qw[ next_number ];
@@ -291,7 +291,7 @@ Find all the features matching some criteria.
         $where
         and    f.map_id=map.map_id
     ];
-    $count_sql            .= "and map.accession_id=$map_aid " if $map_aid;
+    $count_sql            .= "and map.accession_id='$map_aid' " if $map_aid;
     $count_sql            .= "and f.feature_type_id=$feature_type_id " 
                              if $feature_type_id;
     my $no_features        = $db->selectrow_array( $count_sql );

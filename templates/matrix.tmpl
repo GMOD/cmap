@@ -108,8 +108,10 @@
 
                 [% FOREACH r=ms.correspondences %]
                     <td align="center" bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
-                        [% IF r.number=='N/A' OR r.number==0 %]
+                        [% IF r.number=='N/A' %]
                             [% r.number %]
+                        [% ELSIF r.number==0 %]
+                            -
                         [% ELSE %]
                             [% IF apr.param('map_set_aid') %]
                                 <a href="/cmap/viewer?ref_map_set_aid=[% ms.map_set_aid %];ref_map_aid=[% ms.map_aid %];comparative_maps=[% IF r.map_aid %]1%3dmap_aid%3d[% r.map_aid %][% ELSE %]1%3dmap_set_aid%3d[% r.map_set_aid %][% END %]">[% r.number %]</a>

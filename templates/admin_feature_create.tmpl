@@ -61,6 +61,7 @@
                 [% FOREACH ft=feature_types %]
                     <option value="[% ft.feature_type_id %]"[% IF ft.feature_type_id==apr.param('feature_type_id') %] selected[% END %]>[% ft.feature_type %]</option>
                 [% END %]
+            </select>
         </td>
     </tr>
 
