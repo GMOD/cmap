@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap;
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.43 2003-10-24 20:13:51 kycl4rk Exp $
+# $Id: CMap.pm,v 1.44 2004-02-10 22:32:54 kycl4rk Exp $
 
 =head1 NAME
 
@@ -62,7 +62,7 @@ Returns the cache directory.
     my $self = shift;
 
     unless ( defined $self->{'cache_dir'} ) {
-        my $cache_dir   = $self->config('cache_dir');
+        my $cache_dir = $self->config('cache_dir');
         unless ( -d $cache_dir ) {
             eval { mkpath( $cache_dir, 0, 0700 ) };
             if ( my $err = $@ ) {
