@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.76 2005-03-17 15:14:28 mwz444 Exp $
+# $Id: CMap.pm,v 1.77 2005-03-23 20:25:50 mwz444 Exp $
 
 =head1 NAME
 
@@ -355,37 +355,20 @@ Returns a database handle.  This is the only way into the database.
         my $config = $config->get_config('database')
           or return $self->error('No database configuration options defined');
 
-        #
-        # If more than one datasource is defined, try to find either
-        # the one named $db_name or the default one.  Give up if neither.
-        #
-        my $db_config;
-        if ( ref $config eq 'ARRAY' ) {
-            my $default;
-            for my $section (@$config) {
-                $default = $section if $section->{'is_default'};
-                if ( $db_name && $section->{'name'} eq $db_name ) {
-                    $db_config = $section;
-                    last;
-                }
-            }
-            $db_config = $default unless defined $db_config;
-        }
-        elsif ( ref $config eq 'HASH' ) {
-            $db_config = $config;
-        }
-        else {
-            return $self->error('DB config not array or hash');
+        unless ( ref $config eq 'HASH' ) {
+            return $self->error( 'DB config not a hash.  '
+                  . 'You may have more than one "database" specified in the config file'
+            );
         }
 
         return $self->error("Couldn't determine database info")
-          unless defined $db_config;
+          unless defined $config;
 
-        my $datasource = $db_config->{'datasource'}
+        my $datasource = $config->{'datasource'}
           or $self->error('No database source defined');
-        my $user = $db_config->{'user'}
+        my $user = $config->{'user'}
           or $self->error('No database user defined');
-        my $password = $db_config->{'password'} || '';
+        my $password = $config->{'password'} || '';
         my $options = {
             AutoCommit       => 1,
             FetchHashKeyName => 'NAME_lc',
