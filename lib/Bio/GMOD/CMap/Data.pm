@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.198.2.10 2005-03-09 21:26:11 mwz444 Exp $
+# $Id: Data.pm,v 1.198.2.11 2005-03-14 15:36:43 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.198.2.10 $)[-1];
+$VERSION = (qw$Revision: 1.198.2.11 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -2488,9 +2488,9 @@ out which maps have relationships.
         } values %map_sets
       )
     {
-        my @maps;                     # the maps for the map set
-        my $total_correspondences;    # all the correspondences for the map set
-        my $can_be_reference_map;     # whether or not it can
+        my @maps;                  # the maps for the map set
+        my $total_correspondences; # all the correspondences for the map set
+        my $is_relational_only;
 
         for my $map (
             sort {
@@ -2504,11 +2504,12 @@ out which maps have relationships.
               && $map->{'no_correspondences'} < $min_correspondences;
 
             $total_correspondences += $map->{'no_correspondences'};
-            push @maps, $map if $map_set->{'can_be_reference_map'};
+            $is_relational_only = $map_set->{'is_relational_map'};
+            push @maps, $map unless $is_relational_only;
         }
 
         next unless $total_correspondences;
-        next if !@maps and $can_be_reference_map;
+        next unless @maps || $is_relational_only;
 
         push @sorted_map_sets,
           {
@@ -5310,6 +5311,7 @@ original start and stop.
                 $where .= join (' or ', @join_array). " ) ";
             }
             else {
+                $from  .= ", cmap_correspondence_evidence ce ";
                 $where .= " and ce.correspondence_evidence_id = -1 ";
             }
 
