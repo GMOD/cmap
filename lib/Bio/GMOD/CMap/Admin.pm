@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin;
 
-# $Id: Admin.pm,v 1.19 2003-02-25 19:30:17 kycl4rk Exp $
+# $Id: Admin.pm,v 1.20 2003-03-17 20:28:08 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,10 +23,10 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.19 $)[-1];
+$VERSION = (qw$Revision: 1.20 $)[-1];
 
 use Bio::GMOD::CMap;
-use Bio::GMOD::CMap::Utils qw[ next_number ];
+use Bio::GMOD::CMap::Utils qw[ next_number parse_words ];
 use base 'Bio::GMOD::CMap';
 use Bio::GMOD::CMap::Constants;
 
@@ -268,8 +268,17 @@ Find all the features matching some criteria.
 =cut
 
     my ( $self, %args ) = @_;
-    my @feature_names   = map { s/^\s+|\s+$//g; s/\*/%/g; $_ || () } 
-                          split( /[,\s+]/, $args{'feature_name'} );
+    my @feature_names   = (
+        map { 
+            s/\*/%/g;       # turn stars into SQL wildcards
+            s/,//g;         # kill commas
+            s/^\s+|\s+$//g; # kill leading/trailing whitespace
+            s/"//g;         # kill double quotes
+            s/'/\\'/g;      # backslash escape single quotes
+            uc $_ || ()     # uppercase what's left
+        }
+        parse_words( $args{'feature_name'} )
+    );
     my $map_aid         = $args{'map_aid'}         ||             '';
     my $feature_type_id = $args{'feature_type_id'} ||              0;
     my $field_name      = $args{'field_name'}      || 'feature_name';
