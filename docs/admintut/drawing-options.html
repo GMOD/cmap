@@ -11,18 +11,236 @@
 <a href="feature-lanes.html">&lt; Feature Lanes</a> |
 <a href="multiple-data-sources.html">Using Multiple Data Sources &gt;</a>
 <hr>
-<ul>
-  <li>Start (Reference Map):</li>
-  <li>Stop (Reference Map):</li>
-  <li>Highlight:</li>
-  <li>Image Size:</li>
-  <li>Font Size:</li>
-  <li>Image Type:</li>
-  <li>Show Labels:</li>
-  <li>Min. No. Correspondences:</li>
-  <li>Include Feature Types:</li>
-  <li>Include Correspondence Types:</li>
-</ul>
+
+<table width="500">
+  <tr>
+    <td valign="top">
+      <p>
+      When creating links to CMap, you can set a number of options to
+      control how the data is displayed. To illustrate each option, a
+      summary and its affect on the image follows.
+      </p>
+      Here is the starting image:
+    </td>
+    <td valign="top" align="center">
+      <img src="images/options-baseline.jpg">
+    </td>
+  </tr>
+</table>
+
+<table border="1">
+  <tr>
+    <th>Argument</th>
+    <th>Description</th>
+    <th>Image</th>
+  </tr>
+  <tr>
+    <th align="right" valign="top">
+      ref_map_start:
+    </td>
+    <td valign="top">
+      The starting position for the <a href="#ref-map">reference
+      map</a>. If not supplied, then the start position as defined for
+      the map will be used.  The map to the right was restricted with
+      an argument of &quot;20&quot; for the start of the reference map.
+    </td>
+    <td valign="top" align="center">
+      <img src="images/options-start.jpg">
+    </td>
+  </tr>
+  <tr>
+    <th align="right" valign="top">
+      ref_map_stop:
+    </td>
+    <td valign="top">
+      The stop position for the <a href="#ref-map">reference map</a>.
+      If not supplied, then the stop position as defined for the map
+      will be used. Here the map was cut off at &quot;100.&quot;
+    </td>
+    <td valign="top" align="center">
+      <img src="images/options-stop.jpg">
+    </td>
+  </tr>
+  <tr>
+    <th align="right" valign="top">
+      highlight:
+    </td>
+    <td valign="top">
+      A comma- or space-delimited string of features to highlight on the
+      maps. You can provide either the feature's primary name, alternate
+      name, or accession ID. If you wish to use a name with an embedded
+      space, then enclose the name in double quotes. In the image, the
+      two features were highlighted using an accession ID and a
+      feature name.
+    </td>
+    <td valign="top" align="center">
+      <img src="images/options-highlight.jpg">
+    </td>
+  </tr>
+  <tr>
+    <th align="right" valign="top">
+      image_size:
+    </td>
+    <td valign="top">
+      This controls the overall height of the image (and is also
+      configurable via &quot;cmap.conf&quot;), it is a string containing
+      one of either &quot;small,&quot; &quot;medium,&quot; or
+      &quot;large.&quot; Here the image is shown at the
+      &quot;large&quot; setting. 
+    </td>
+    <td valign="top" align="center">
+      <img src="images/options-image-size.jpg">
+    </td>
+  </tr>
+  <tr>
+    <th align="right" valign="top">
+      font_size:
+    </td>
+    <td valign="top">
+      This controls the size of the font used in the image and is a
+      string containing one of either &quot;small,&quot;
+      &quot;medium,&quot; or &quot;large.&quot; In the image to the
+      right, both the &quot;image size&quot; and &quot;font size&quot;
+      are set to &quot;large.&quot;
+    </td>
+    <td valign="top" align="center">
+      <img src="images/options-font-size.jpg">
+    </td>
+  </tr>
+  <tr>
+    <th align="right" valign="top">
+      image_type:
+    </td>
+    <td valign="top">
+      This controls the output type of the image. By default, only
+      &quot;png&quot; and &quot;jpeg&quot; are expected, but the choices
+      are limited only to how you compile <em>libgd</em> on your system.
+    </td>
+    <td valign="center" align="center">
+      <em>No image</em>
+    </td>
+  </tr>
+  <tr>
+    <th align="right" valign="top" rowspan="2">
+      label_features:
+    </td>
+    <td valign="top">
+      This controls what labels are displayed on the map.  The choices
+and their effect are as follows:
+      <ul>
+        <li><b>none</b>: Don't show any labels</li>
+        <li><b>landmarks</b>: Show only labels for those marked as
+               &quot;landmark&quot;, those requested to be highlighted,
+               and those with correspondences</li>
+        <li><b>all</b>: Show all labels that can be fit by the drawing
+               algorithm. Labels are prioritized as follows:
+          <ol>
+            <li>Highlighted features (always shown)</li>
+            <li>Features with correspondences</li>
+            <li>Other features</li>
+          <ol>
+        </li>
+      </ul>
+
+      <p>
+        The image to the right show no labels.
+      </p>
+    </td>
+    <td valign="top" align="center">
+      <img src="images/options-label-none.jpg">
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      And here it is with the argument &quot;landmarks&quot;:
+    </td>
+    <td valign="top" align="center">
+      <img src="images/options-label-landmarks.jpg">
+    </td>
+  </tr>
+  <tr>
+    <th align="right" valign="top">
+      collapse_features
+    </td>
+    <td valign="top">
+      A &quot;1&quot; (&quot;Yes&quot;) or &quot;0&quot;
+      (&quot;No&quot;) indicating whether or not to collapse features of
+      the same type with the same coordinates into one glyph (handy if
+      many spanning features would make the maps excessively wide).
+      In this image, some of the brown dumbbells were collapsed.
+    </td>
+    <td valign="top" align="center">
+      <img src="images/options-collapse-features.jpg">
+    </td>
+  </tr>
+  <tr>
+    <th align="right" valign="top" rowspan="2">
+      min_correspondences
+    </td>
+    <td valign="top">
+      An integer describing the minimum number of correspondences
+      required to be present between any two maps (not just to the
+      reference map). This is an especially handy feature to use when
+      displaying a reference map and many relational map when you wish
+      to exclude those relational maps with few correspondences. 
+      <p>
+      Here is the reference map alongside some relational maps:
+    </td>
+    <td valign="top" align="center">
+      <img src="images/options-with-comp-map.jpg">
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      And here is the map when insisting on at least &quot;5&quot;
+      correspondences from the the contigs to the reference map -- those
+      with fewer are excluded from the view altogether.
+    </td>
+    <td valign="top" align="center">
+      <img src="images/options-min-corr.jpg">
+    </td>
+  </tr>
+  <tr>
+    <th align="right" valign="top">
+      feature_types
+    </td>
+    <td valign="top">
+      A comma-separated list of feature type accession IDs to use in
+      limiting the types of features displayed on the maps. In the
+      image to the right, only features of type &quot;marker&quot;
+      are allowed.
+    </td>
+    <td valign="top" align="center">
+      <img src="images/options-ft.jpg">
+    </td>
+  </tr>
+  <tr>
+    <th align="right" valign="top">
+      evidence_types
+    </td>
+    <td valign="top">
+      A comma-separated list of correspondence evidence accession IDs
+      to use in limiting the correspondences displayed on the maps. Here
+      the correspondence evidence types have been restricted to just
+      those based on &quot;insilico analysis.&quot;
+    </td>
+    <td valign="top" align="center">
+      <img src="images/options-ce.jpg">
+    </td>
+  </tr>
+</table>
+
+<br>
+<br>
+<a name="ref-map">
+<b>Reference Map:</b>
+Recall that the <em>reference map</em> is considered the <em>central,
+starting map</em> from which all subsequent comparisons are made.
+It's not necessarily in the <em>center</em> of the view, however, as
+all the comparative maps could easily extend solely to the right or
+left of the reference map.  The reference map is simply the first map
+that a user starts with in building comparative map views.
+
 <hr>
 <a href="index.html">Index</a> |
 <a href="feature-lanes.html">&lt; Feature Lanes</a> |
