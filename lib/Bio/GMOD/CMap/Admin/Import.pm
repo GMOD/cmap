@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::Import;
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.50 2004-04-20 17:40:04 mwz444 Exp $
+# $Id: Import.pm,v 1.51 2004-05-06 14:08:59 mwz444 Exp $
 
 =pod
 
@@ -28,7 +28,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.50 $)[-1];
+$VERSION  = (qw$Revision: 1.51 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -70,7 +70,6 @@ use vars '$LOG_FH';
 );
 
 # ----------------------------------------------------
-sub import_tab {
 
 =pod
 
@@ -165,12 +164,20 @@ appended to the list of xrefs.
 
 =cut
 
+sub import_tab {
+
     my ( $self, %args ) = @_;
     my $db              = $self->db           or die 'No database handle';
     my $map_set_id      = $args{'map_set_id'} or die      'No map set id';
     my $fh              = $args{'fh'}         or die     'No file handle';
     my $overwrite       = $args{'overwrite'}  ||                        0;
+    my $allow_update    = defined($args{'allow_update'})?
+	$args{'allow_update'}:
+	2;
+
     $LOG_FH             = $args{'log_fh'}     ||                 \*STDOUT;
+    
+    my $max_simultaneous_inserts=1000; 
 
     my $admin = Bio::GMOD::CMap::Admin->new(
 	config      => $self->config,
@@ -178,7 +185,7 @@ appended to the list of xrefs.
     ) or return $self->error(
         "Can't create admin object: ", Bio::GMOD::CMap::Admin->error
     );
-
+    
 
     #
     # Examine map set.
@@ -213,6 +220,7 @@ appended to the list of xrefs.
 
     my %maps     = map { uc $_->[0], { map_id => $_->[1] } } @$map_info;
     my %map_aids = map { $_->[2], $_->[0]                  } @$map_info;
+    my @modified_maps=();
 
     $self->Print(
         "'$map_set_name' currently has ", scalar keys %maps, " maps.\n"
@@ -221,30 +229,34 @@ appended to the list of xrefs.
     #
     # Memorize the features currently on each map.
     #
-    for my $map_name ( keys %maps ) {
-        my $map_id = $maps{ $map_name }{'map_id'} or return $self->error(
-            "Map '$map_name' has no ID!"
-        );
+    if ($overwrite){
+	for my $map_name ( keys %maps ) {
+	    my $map_id = $maps{ $map_name }{'map_id'} or return $self->error
+		(
+		 "Map '$map_name' has no ID!"
+		 );
 
-        my $features = $db->selectall_arrayref(
-            q[
-                select f.feature_id, f.feature_name
-                from   cmap_feature f
-                where  f.map_id=?
-            ],
-            { Columns => {} },
-            ( $map_id )
-        );
+	    my $features = $db->selectall_arrayref
+		(
+		 q[
+		   select f.feature_id, f.feature_name
+		   from   cmap_feature f
+		   where  f.map_id=?
+		   ],
+		 { Columns => {} },
+		 ( $map_id )
+		 );
 
-        for ( @$features ) {
-            $maps{ $map_name }{'features'}{ $_->{'feature_id'} } = 0;
-        }
-
-        $self->Print(
-            "Map '$map_name' currently has ", scalar @$features, " features\n"
-        );
+	    for ( @$features ) {
+		$maps{ $map_name }{'features'}{ $_->{'feature_id'} } = 0;
+	    }
+	    
+	    $self->Print
+		(
+		 "Map '$map_name' currently has ", scalar @$features, " features\n"
+		 );
+	}
     }
-
     #
     # Make column names lowercase, convert spaces to underscores 
     # (e.g., make "Feature Name" => "feature_name").
@@ -283,7 +295,8 @@ appended to the list of xrefs.
     }
 
     $self->Print("Parsing file...\n");
-    my ( %feature_type_aids, %feature_ids, %map_info );
+    my ( %feature_type_aids, %feature_ids, %map_info,@insert_features );
+    my ($last_map_name,$last_map_id)=('','');
     while ( my $record = $parser->fetchrow_hashref ) {
         for my $field_name ( $parser->field_list ) {
             my $field_attr = $COLUMNS{ $field_name } or next;
@@ -327,6 +340,7 @@ appended to the list of xrefs.
                 "Feature type accession '$feature_type_aid' doesn't exist.  After import, please add it to your configuration file.[<enter> to continue] "
             );
             chomp( my $answer = <STDIN> );
+	    exit;
         }
 
         #
@@ -339,63 +353,72 @@ appended to the list of xrefs.
         }
  
         $map_name ||= $record->{'map_name'};
-        if ( exists $maps{ uc $map_name } ) { 
-            $map_id = $maps{ uc $map_name }{'map_id'};
-            $maps{ uc $map_name }{'touched'} = 1;
-        }
+	if ($map_name eq $last_map_name){
+	    $map_id = $last_map_id;
+	}
+	else{
+	    if ( exists $maps{ uc $map_name } ) { 
+		$map_id = $maps{ uc $map_name }{'map_id'};
+		$maps{ uc $map_name }{'touched'} = 1;
+		push @modified_maps, (uc $map_name,);
+	    }
+	    
+	    my $display_order = $record->{'map_display_order'} || 1;
+	    my $map_start     = $record->{'map_start'}         || 0;
+	    my $map_stop      = $record->{'map_stop'}          || 0;
+	    
+	    if ( 
+		 defined $map_start &&
+		 defined $map_stop  &&
+		 $map_start > $map_stop 
+		 ) {
+		( $map_start, $map_stop ) = ( $map_stop, $map_start );
+	    }
 
-        my $display_order = $record->{'map_display_order'} || 1;
-        my $map_start     = $record->{'map_start'}         || 0;
-        my $map_stop      = $record->{'map_stop'}          || 0;
+	    #
+	    # If the map already exists, just remember stuff about it.
+	    #
+	    unless ( $map_id ) {
+		$map_id          = next_number(
+					       db           => $db, 
+					       table_name   => 'cmap_map',
+					       id_field     => 'map_id',
+					       ) or die 'No map id';
+		$map_aid ||= $map_id;
+		$db->do(
+			q[
+			  insert
+			  into   cmap_map 
+			  ( map_id, accession_id, map_set_id, 
+			    map_name, start_position, stop_position,
+			    display_order
+			    )
+			  values ( ?, ?, ?, ?, ?, ?, ? )
+			  ],
+			{}, 
+			( $map_id, $map_aid, $map_set_id, 
+			  $map_name, $map_start, $map_stop, 
+			  $display_order
+			  )
+			);
+		
+		$self->Print("Created map $map_name ($map_id).\n");
+		$maps{ uc $map_name }{'map_id'}  = $map_id;
+		$maps{ uc $map_name }{'touched'} = 1;
+		push @modified_maps, (uc $map_name,);
+		
+		$map_info{ $map_id }{'map_id'}         ||= $map_id;
+		$map_info{ $map_id }{'map_set_id'}     ||= $map_set_id;
+		$map_info{ $map_id }{'map_name'}       ||= $map_name;
+		$map_info{ $map_id }{'start_position'} ||= $map_start;
+		$map_info{ $map_id }{'stop_position'}  ||= $map_stop;
+		$map_info{ $map_id }{'display_order'}  ||= $display_order;
+		$map_info{ $map_id }{'accession_id'}   ||= $map_aid;
 
-        if ( 
-            defined $map_start &&
-            defined $map_stop  &&
-            $map_start > $map_stop 
-        ) {
-            ( $map_start, $map_stop ) = ( $map_stop, $map_start );
-        }
-
-        #
-        # If the map already exists, just remember stuff about it.
-        #
-        unless ( $map_id ) {
-            $map_id          = next_number(
-                db           => $db, 
-                table_name   => 'cmap_map',
-                id_field     => 'map_id',
-            ) or die 'No map id';
-            $map_aid ||= $map_id;
-
-            $db->do(
-                q[
-                    insert
-                    into   cmap_map 
-                           ( map_id, accession_id, map_set_id, 
-                             map_name, start_position, stop_position,
-                             display_order
-                           )
-                    values ( ?, ?, ?, ?, ?, ?, ? )
-                ],
-                {}, 
-                ( $map_id, $map_aid, $map_set_id, 
-                  $map_name, $map_start, $map_stop, 
-                  $display_order
-                )
-            );
-
-            $self->Print("Created map $map_name ($map_id).\n");
-            $maps{ uc $map_name }{'map_id'}  = $map_id;
-            $maps{ uc $map_name }{'touched'} = 1;
-        }
-
-        $map_info{ $map_id }{'map_id'}         ||= $map_id;
-        $map_info{ $map_id }{'map_set_id'}     ||= $map_set_id;
-        $map_info{ $map_id }{'map_name'}       ||= $map_name;
-        $map_info{ $map_id }{'start_position'} ||= $map_start;
-        $map_info{ $map_id }{'stop_position'}  ||= $map_stop;
-        $map_info{ $map_id }{'display_order'}  ||= $display_order;
-        $map_info{ $map_id }{'accession_id'}   ||= $map_aid;
+		$last_map_id=$map_id;
+		$last_map_name=$map_name;
+	    }
+	}
 
         #
         # Basic feature info
@@ -415,30 +438,31 @@ appended to the list of xrefs.
         # Feature attributes
         #
         my ( @fattributes, @xrefs );
-        for my $attr ( parse_line( ';', 1, $attributes ) ) {
-            my ( $key, $value ) = 
-                map { s/^\s+|\s+$//g; s/^"|"$//g; $_ } 
+	if ($attributes){
+	    for my $attr ( parse_line( ';', 1, $attributes ) ) {
+		my ( $key, $value ) = 
+		    map { s/^\s+|\s+$//g; s/^"|"$//g; $_ } 
                 parse_line( ':', 1, $attr )
-            ;
-
-            if ( $key =~ /^alias(es)?$/i ) {
-                push @$aliases, 
+		    ;
+		
+		if ( $key =~ /^alias(es)?$/i ) {
+		    push @$aliases, 
                     map { s/^\s+|\s+$//g; s/\\"/"/g; $_ } 
                     parse_line( ',', 1, $value )
-                ;
-            }
-            elsif ( $key =~ /^(db)?xref$/i ) {
-                $value =~ s/^"|"$//g;
-                if ( my ( $xref_name, $xref_url ) = split(/;/, $value) ) {
-                    push @xrefs, { name => $xref_name, url => $xref_url };
-                }
-            }
-            else {
-                $value =~ s/\\"/"/g;
-                push @fattributes, { name => $key, value => $value };
-            }
+			;
+		}
+		elsif ( $key =~ /^(db)?xref$/i ) {
+		    $value =~ s/^"|"$//g;
+		    if ( my ( $xref_name, $xref_url ) = split(/;/, $value) ) {
+			push @xrefs, { name => $xref_name, url => $xref_url };
+		    }
+		}
+		else {
+		    $value =~ s/\\"/"/g;
+		    push @fattributes, { name => $key, value => $value };
+		}
+	    }
         }
-
         #
         # Backward-compatibility stuff
         #
@@ -470,86 +494,112 @@ appended to the list of xrefs.
             ( $start, $stop ) = ( $stop, $start );
         }
 
-        my $feature_id;
-        if ( $accession_id ) {
-            $feature_id = $db->selectrow_array(
+        my $feature_id='';
+	if( $allow_update ) {
+	    if ( $accession_id ) {
+		$feature_id = $db->selectrow_array(
                 q[
-                    select feature_id
-                    from   cmap_feature
-                    where  accession_id=?
-                ],
+		  select feature_id
+		  from   cmap_feature
+		  where  accession_id=?
+		  ],
                 {},
-                ( $accession_id )
-            );
-        }
+		 ( $accession_id )
+		);
+	    }
 
-        #
-        # If there's no accession ID, see if another feature
-        # with the same name exists.
-        #
-        if ( !$feature_id && !$accession_id ) {
-            $feature_id = $db->selectrow_array(
-                q[
-                    select feature_id
-                    from   cmap_feature
-                    where  map_id=?
-                    and    upper(feature_name)=?
-                ],
-                {},
-                ( $map_id, uc $feature_name )
-            );
-        }
+	    #
+	    # If there's no accession ID, see if another feature
+	    # with the same name exists.
+	    #
+	    if ( !$feature_id && !$accession_id ) {
+		$feature_id = $db->selectrow_array
+		    (
+		     q[
+		       select feature_id
+		       from   cmap_feature
+		       where  map_id=?
+		       and    upper(feature_name)=?
+		       ],
+		     {},
+		     ( $map_id, uc $feature_name )
+		     );
+	    }
+	
+	    my $action = 'Inserted';
+	    if ( $feature_id ) {
+		$action         = 'Updated';
+		$accession_id ||= $feature_id;
+		$db->do
+		    (
+		     q[
+		       update cmap_feature
+		       set    accession_id=?, map_id=?, feature_type_accession=?, 
+		       feature_name=?, start_position=?, stop_position=?,
+		       is_landmark=?, default_rank=?
+		       where  feature_id=?
+		       ],
+		     {}, 
+		     ( $accession_id, $map_id, $feature_type_aid, 
+		       $feature_name, $start, $stop, $is_landmark,
+		       $feature_id,$default_rank
+		       )
+		     );
 
-        my $action = 'Inserted';
-        if ( $feature_id ) {
-            $action         = 'Updated';
-            $accession_id ||= $feature_id;
-            $db->do(
-                q[
-                    update cmap_feature
-                    set    accession_id=?, map_id=?, feature_type_accession=?, 
-                           feature_name=?, start_position=?, stop_position=?,
-                           is_landmark=?, default_rank=?
-                    where  feature_id=?
-                ],
-                {}, 
-                ( $accession_id, $map_id, $feature_type_aid, 
-                  $feature_name, $start, $stop, $is_landmark,
-                  $feature_id,$default_rank
-                )
-            );
-
-            $maps{ uc $map_name }{'features'}{ $feature_id } = 1 if 
-                defined $maps{ uc $map_name }{'features'}{ $feature_id };
-        }
+		$maps{ uc $map_name }{'features'}{ $feature_id } = 1 if 
+		    defined $maps{ uc $map_name }{'features'}{ $feature_id };
+	    }
+	    else{
+		#
+		# Create a new feature record.
+		#
+		$feature_id = next_number
+		    (
+		     db           => $db,
+		     table_name   => 'cmap_feature',
+		     id_field     => 'feature_id',
+		     ) or die 'No feature id';
+		
+		$accession_id ||= $feature_id;
+		
+		$db->do
+		    (
+		     q[
+		       insert
+		       into   cmap_feature
+		       ( feature_id, accession_id, map_id,
+			 feature_type_accession, feature_name,
+			 start_position, stop_position,
+			 is_landmark, default_rank
+			 )
+		       values ( ?, ?, ?, ?, ?, ?, ?, ?, ? )
+		       ],
+		     {},
+		     ( $feature_id, $accession_id, $map_id, $feature_type_aid,
+		       $feature_name, $start, $stop, $is_landmark, 
+		       $default_rank)
+		     );
+	    } 
+	    my $pos = join('-', map { defined $_ ? $_ : () } $start, $stop);
+	    $self->Print
+		(
+		 "$action $feature_type_aid '$feature_name' on map $map_name at $pos.\n"
+		 );
+	}
         else {
             #
-            # Create a new feature record.
+            # Always Create a new feature record
             #
-            $feature_id = next_number(
-                db           => $db, 
-                table_name   => 'cmap_feature',
-                id_field     => 'feature_id',
-            ) or die 'No feature id';
-
-            $accession_id ||= $feature_id;
-
-            $db->do(
-                q[
-                    insert
-                    into   cmap_feature
-                           ( feature_id, accession_id, map_id,
-                             feature_type_accession, feature_name, 
-                             start_position, stop_position,
-                             is_landmark, default_rank
-                           )
-                    values ( ?, ?, ?, ?, ?, ?, ?, ?, ? )
-                ],
-                {}, 
-                ( $feature_id, $accession_id, $map_id, $feature_type_aid, 
-                  $feature_name, $start, $stop, $is_landmark, $default_rank
-                )
-            );
+            
+	    $insert_features[++$#insert_features]=
+		[$accession_id, $map_id, $feature_type_aid, 
+		 $feature_name, $start, $stop, $is_landmark, $default_rank,
+		 ];
+	    @insert_features=@{$self->insert_features(
+				   feature_array => \@insert_features,
+				   db            => $db,
+						     )}
+		if ($max_simultaneous_inserts<=$#insert_features);
         }
 
         for my $name ( @$aliases ) {
@@ -578,11 +628,15 @@ appended to the list of xrefs.
             ) or return $self->error( $admin->error );
         }
 
-        my $pos = join('-', map { defined $_ ? $_ : () } $start, $stop);
-        $self->Print(
-            "$action $feature_type_aid '$feature_name' on map $map_name at $pos.\n"
-        );
+        #my $pos = join('-', map { defined $_ ? $_ : () } $start, $stop);
+        #$self->Print(
+        #    "$action $feature_type_aid '$feature_name' on map $map_name at $pos.\n"
+        #);
     }
+    @insert_features=@{$self->insert_features(
+        feature_array => \@insert_features,
+        db            => $db,
+        )} if (@insert_features);
 
     #
     # Go through and update all the maps.
@@ -663,7 +717,7 @@ appended to the list of xrefs.
     # 
     # Make sure the maps have legitimate starts and stops.
     # 
-    for my $map_name ( sort keys %maps ) {
+    for my $map_name ( sort @modified_maps ) {
         my $map_id = $maps{ $map_name }{'map_id'};
         my ( $map_start, $map_stop ) = $db->selectrow_array(
             q[
@@ -934,6 +988,53 @@ sub import_object {
     }
 
     return 1;
+}
+
+# ----------------------------------------------------
+sub insert_features{
+    my ( $self, %args )     = @_;
+    my $feature_array       = $args{'feature_array'};
+    my $db                  = $args{'db'};
+    my $no_features         = scalar(@{$feature_array});
+
+    return if ($no_features<=0);
+
+    my $base_feature_id = next_number(
+                db           => $db, 
+                table_name   => 'cmap_feature',
+                id_field     => 'feature_id',
+		requested    => $no_features,
+            ) or die 'No feature id';
+
+
+    my $sql_str=
+	    q[
+	      insert
+	      into   cmap_feature
+	      ( feature_id, accession_id, map_id,
+		feature_type_accession, feature_name, 
+		start_position, stop_position,
+		is_landmark, default_rank
+		)
+	      values 
+	      ];
+    
+    for (my $i=0;$i<$no_features; $i++){
+	my $feature_id=$base_feature_id+$i;
+	$feature_array->[$i][0] ||=$feature_id;
+	$sql_str.=", " if ($i);
+	$sql_str.="($feature_id,'".join("','",@{$feature_array->[$i]})."')"
+    }
+    
+    $self->Print(
+           "Inserting $no_features features.\n"
+        );
+    $db->do($sql_str);
+    $self->Print(
+           "Inserted.\n"
+        );
+    $feature_array=[];
+    return $feature_array;
 }
 
 # ----------------------------------------------------
