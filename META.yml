@@ -13,7 +13,7 @@ requires:
   Data::Pageset: 0
   File::MkTemp: 0
   GD: 2.11
-  GD:SVG: 0.25
+  GD::SVG: 0.25
   IO::Tee: 0
   Regexp::Common: 0
   Template: 2
@@ -42,7 +42,7 @@ provides:
     version: 1.29
   Bio::GMOD::CMap::Apache:
     file: lib/Bio/GMOD/CMap/Apache.pm
-    version: 1.13
+    version: 1.14
   Bio::GMOD::CMap::Apache::AdminViewer:
     file: lib/Bio/GMOD/CMap/Apache/AdminViewer.pm
     version: 1.62
@@ -96,7 +96,7 @@ provides:
     version: 1.92
   Bio::GMOD::CMap::Data::Generic:
     file: lib/Bio/GMOD/CMap/Data/Generic.pm
-    version: 1.45
+    version: 1.46
   Bio::GMOD::CMap::Data::MySQL:
     file: lib/Bio/GMOD/CMap/Data/MySQL.pm
     version: 1.4

@@ -1,7 +1,7 @@
 #!perl
 
 use strict;
-use LocalConfig;
+use CMapBuildConfig;
 use Cwd;
 use File::Basename qw(&basename &dirname);
 
@@ -61,7 +61,7 @@ print OUT<<"!GROK!THIS!";
 # An absolute path to the directory holding the templates
 # Default: Set on install
 #   
-template_dir $Local{'TEMPLATES'}
+template_dir $Build{'TEMPLATES'}
 
 #   
 # An absolute path to the directory where images are written
@@ -73,7 +73,7 @@ template_dir $Local{'TEMPLATES'}
 #
 # Default: /usr/local/apache/htdocs/cmap/tmp
 #
-cache_dir $Local{'CACHE'}
+cache_dir $Build{'CACHE'}
 
 # ----------------------------------------------------
 #

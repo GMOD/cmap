@@ -1,12 +1,12 @@
 #!perl
 
 use strict;
-use LocalConfig;
+use CMapBuildConfig;
 use Cwd;
 use File::Basename qw(&basename &dirname);
 use File::Spec::Functions;
 
-my $conf_file = catfile( $Local{'CONF'}, 'cmap.conf' );
+my $conf_file = catfile( $Build{'CONF'}, 'cmap.conf' );
 
 my $origdir = cwd;
 chdir dirname($0);
@@ -18,14 +18,14 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.8 2004-02-18 23:47:05 kycl4rk Exp $
+# $Id: Constants.pm.PL,v 1.9 2004-02-24 14:49:23 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 @EXPORT = qw[ 
     ARC
