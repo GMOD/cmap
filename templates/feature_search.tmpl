@@ -72,7 +72,7 @@ Use &quot;*&quot; or &quot;%&quot; for wildcards.  To find features with spaces 
         <table border="0" width="100%">
             <tr>
                 <td colspan="9" align="center">
-                    [% SET pager_url="/cmap/feature_search?features=${apr.param('features')}&order_by=${apr.param('order_by')}&species_aids=${apr.param('species_aids')}&feature_type_aids=${apr.param('feature_type_aids')}" %]
+                    [% SET pager_url="/cmap/feature_search?features=${apr.param('features')}&order_by=${apr.param('order_by')}&search_field=${apr.param('search_field')}&species_aids=${apr.param('species_aids')}&feature_type_aids=${apr.param('feature_type_aids')}" %]
                     [% PROCESS pager.tmpl %]
                 </td>
             </tr>
