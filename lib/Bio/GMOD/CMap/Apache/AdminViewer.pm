@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.29 2003-03-14 20:10:19 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.30 2003-03-24 18:44:52 kycl4rk Exp $
 
 use strict;
 use Apache::Constants qw[ :common M_GET REDIRECT ];
@@ -28,10 +28,9 @@ $FEATURE_SHAPES = [ qw(
     box dumbbell line span up-arrow down-arrow double-arrow filled-box
     in-triangle out-triangle
 ) ];
-$LINE_STYLES    = [ qw( dashed solid ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.29 $)[-1];
+$VERSION        = (qw$Revision: 1.30 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -216,7 +215,6 @@ sub corr_evidence_type_create {
         TEMPLATE->{'corr_evidence_type_create'},
         { 
             apr          => $self->apr,
-            line_styles  => $LINE_STYLES,
             line_colors  => $COLORS,
             errors       => $args{'errors'},
         }
@@ -237,8 +235,8 @@ sub corr_evidence_type_insert {
         id_field      => 'evidence_type_id',
     ) or push @errors, 'No next number for correspondence evidence type id';
     my $accession_id  = $apr->param('accession_id')  || $evidence_id;
-    my $rank          = $apr->param('rank')          ||  1;
-    my $line_style    = $apr->param('line_style')    || '';
+    my $rank          = $apr->param('rank')          or
+        push @errors, 'Please define a rank';
     my $line_color    = $apr->param('line_color')    || '';
 
     return $self->corr_evidence_type_create( errors => \@errors ) if @errors;
@@ -248,12 +246,12 @@ sub corr_evidence_type_insert {
             insert
             into    cmap_evidence_type
                     ( evidence_type_id, accession_id, evidence_type, 
-                      rank, line_style, line_color )
-            values  ( ?, ?, ?, ?, ?, ? )
+                      rank, line_color )
+            values  ( ?, ?, ?, ?, ? )
         ],
         {},
         ( $evidence_id, $accession_id, $evidence_type, 
-          $rank, $line_style, $line_color )
+          $rank, $line_color )
     );
 
     return $self->redirect_home( 
@@ -276,7 +274,6 @@ sub corr_evidence_type_edit {
                    et.accession_id,
                    et.evidence_type,
                    et.rank,
-                   et.line_style,
                    et.line_color
             from   cmap_evidence_type et
             where  et.evidence_type_id=?
@@ -291,7 +288,6 @@ sub corr_evidence_type_edit {
         TEMPLATE->{'corr_evidence_type_edit'}, 
         { 
             evidence_type => $evidence_type,
-            line_styles   => $LINE_STYLES,
             line_colors   => $COLORS,
             errors        => $errors,
         }
@@ -310,8 +306,8 @@ sub corr_evidence_type_update {
                            or push @errors, 'No accession id';
     my $evidence_type    = $apr->param('evidence_type') 
                            or push @errors, 'No evidence type';
-    my $rank             = $apr->param('rank') || 1;
-    my $line_style       = $apr->param('line_style') || '';
+    my $rank             = $apr->param('rank')       or
+        push @errors, 'Please define a rank';
     my $line_color       = $apr->param('line_color') || '';
 
     return $self->corr_evidence_type_edit( errors => \@errors ) if @errors;
@@ -320,12 +316,11 @@ sub corr_evidence_type_update {
         q[
             update cmap_evidence_type
             set    accession_id=?, evidence_type=?, 
-                   rank=?, line_style=?, line_color=?
+                   rank=?, line_color=?
             where  evidence_type_id=?
         ],
         {},
-        ( $accession_id, $evidence_type, $rank, $line_style, $line_color,
-          $evidence_type_id )
+        ( $accession_id, $evidence_type, $rank, $line_color, $evidence_type_id )
     );
 
     return $self->redirect_home( 
@@ -338,7 +333,7 @@ sub corr_evidence_types_view {
     my $self        = shift;
     my $db          = $self->db or return $self->error;
     my $apr         = $self->apr;
-    my $order_by    = $apr->param('order_by') || 'evidence_type';
+    my $order_by    = $apr->param('order_by') || 'rank,evidence_type';
     my $limit_start = $apr->param('limit_start') ||          0;
 
     my $evidence_types = $db->selectall_arrayref(
@@ -347,7 +342,6 @@ sub corr_evidence_types_view {
                      et.accession_id,
                      et.evidence_type,
                      et.rank,
-                     et.line_style,
                      et.line_color
             from     cmap_evidence_type et
             order by $order_by
