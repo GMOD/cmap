@@ -2,13 +2,29 @@
 
 0.10
 
+-   Added preliminary support for SQLite
 -   Added support for multiple alternate names for features
 -   Added ability to specify "intro" texts in the "cmap.conf" for 
     various user pages
 -   Added "attributes" support for arbitrary key/value pairs of 
     information on any database object
+-   Revamped cross-references to allow multiple specific and generic
+    xrefs for all objects that can have attributes
 -   Allow feature search to accept feature accession ID
--   Added page for viewing correspondence evidence type information
+-   Added new handlers for viewing correspondence evidence type 
+    information, feature aliases, feature correspondences
+-   Added new export/import system to manipulate hierarchical db objects
+-   Removed forking code in map viewer/dependence on Cache::Cache
+-   Removed dependence on Time::Object (deprecated in favor of Time::Piece)
+-   Added initial species restriction for main viewer
+-   Changed matrix view to require a "submit" to reduce initial load times
+    (esp. for big tables)
+-   Added SVG output (but only for static images, i.e. no hyperlinks)
+-   Added restriction by map type to matrix;  other bug fixes to matrix
+-   Wrote user tutorial (separate download, see GMOD website)
+-   Changed the way to assert additional correspondences by feature type;
+    now put all equivalent feature types on one line
+-   Moved from mod_perl to plain CGI (but can still run under mod_perl)
 
 0.09    2003-09-29
 
