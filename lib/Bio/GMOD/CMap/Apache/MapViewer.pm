@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.46 2004-06-22 03:05:35 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.47 2004-07-01 19:22:45 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.46 $)[-1];
+$VERSION = (qw$Revision: 1.47 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -62,16 +62,22 @@ sub handler {
     }
 
     my @feature_types;
-    if ( defined($apr->param('feature_types')) ) {
-        @feature_types = ( $apr->param('feature_types') );
-    }
-    elsif ( $apr->param('include_feature_types') ) {
-        @feature_types = split( /,/, $apr->param('include_feature_types') );
-    }
     my @corr_only_feature_types;
-    if ( defined($apr->param('corr_only_feature_types')) ) {
-        @corr_only_feature_types = ( $apr->param('corr_only_feature_types') );
+    my $feature_types_undefined=1;
+    foreach my $param ($apr->param){
+        if ($param=~/^feature_type_(\S+)/){
+            my $ft  = $1;
+            $feature_types_undefined=0;
+            my $val = $apr->param($param);
+            if ($val==1){
+                push @corr_only_feature_types,$ft;
+            }
+            elsif ($val==2){
+                push @feature_types,$ft;
+            }
+        }
     }
+
     my %include_corr_only_features = map{$_=>1} @corr_only_feature_types;
 
     my @evidence_types;
@@ -216,6 +222,7 @@ sub handler {
             config                 => $self->config,
             data_module            => $self->data_module,
             aggregate              => $self->aggregate,
+            feature_types_undefined => $feature_types_undefined,
         ) or return $self->error( Bio::GMOD::CMap::Drawer->error );
 
         %slots = %{ $drawer->{'slots'} };
@@ -295,6 +302,7 @@ sub handler {
             included_evidence => { map { $_, 1 } @evidence_types },
             included_corr_only_features => \%include_corr_only_features,
             feature_types     => join( ',', @feature_types ),
+            feature_types_undefined => $feature_types_undefined,
             evidence_types    => join( ',', @evidence_types ),
             extra_code        => $extra_code,
             extra_form        => $extra_form,
