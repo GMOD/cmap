@@ -1,6 +1,6 @@
                 CMAP ADMINISTRATION AND DATA CURATION
 
-# $Revision: 1.2 $
+                          $Revision: 1.3 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are two tools you will use:
@@ -15,7 +15,7 @@ mundane administrative tasks or for viewing the data.  Lastly, you can
 customize many aspects of CMap by altering the your "cmap.conf" file.
 All of this is discussed in further detail in this document.
 
-1.  STARTING OUT
+1.      STARTING OUT
 
 If you've just installed CMap, then your database is probably
 completely empty.  So let's start by discussing what you need to do to
@@ -26,7 +26,7 @@ pointing your browser to "http://your.host.name/cmap/admin."
 Depending on whether or not you decided to protect that URL, you may
 have to enter a username and password when prompted by your browser.
 
-2.  WEB-ADMIN TOOL
+2.      WEB-ADMIN TOOL
 
 The home page for the web-based CMap administration tool has links for
 all the different actions you can take:
@@ -47,7 +47,7 @@ in detail later.  For the moment, let's just focus on what you need to
 import your first data set.  To do that, you'll need to first set up
 the species and map types.
 
-3.  SETTING UP SPECIES
+3.      SETTING UP SPECIES
 
 Click on "View Species" from the home page of the web-admin tool.  As
 you currently have no species to view, you should see the message "No
@@ -55,9 +55,7 @@ species to show."  To add a new species, click on the "Create New
 Species" link at the top of the page.  You should now see a page
 entitled "Species Create" with a form for the following fields:
 
-*   Acc. ID (opt.): This is the public accession ID for the species.
-    Once established, it should never change as it will be used in all
-    the publicly accessible links.
+*   Acc. ID (opt.): The accession ID
 
 *   Common Name: This is the non-scientific name of the species. This
     field will be used most often as a prefix to the map names. If you
@@ -74,6 +72,17 @@ entitled "Species Create" with a form for the following fields:
 
 *   NCBI Taxon ID (opt.): For disambiguating the species for users, it's
     not really used anywhere
+
+Note: All the "accession_id" columns in the CMap tables act the same.
+      They are all character fields, so they will accept any combination
+      of numbers and letters you care to use. Please don't use spaces or
+      characters outside the ranges "a-z," "A-Z," "0-9" or dashes ("-")
+      as this will likely only cause you headaches. It is also not
+      necessary to explicitly assign any accession IDs. While they *are*
+      required by the database, there is code in place to ensure that
+      the accession ID is set to the primary ID of the record if the
+      accession ID is empty. Once your accession IDs have been
+      established and publicized, they should never change.
 
 The fields marked "(opt.)" do not require you to enter a value.  If
 one is really required for the database (e.g., the "accession_id"),
@@ -105,7 +114,7 @@ Once you've set up all the species you wish to have in your database,
 click on the "Home" link in the upper-left corner to return to the
 web-admin home page.
 
-4.  SETTING UP MAP TYPES
+4.      SETTING UP MAP TYPES
 
 Click on "View Map Types" from the home page of the web-admin tool.
 As you currently have no map types to view, you should see the message
@@ -168,88 +177,34 @@ Once you've set up all the map types you wish to have in your
 database, click on the "Home" link in the upper-left corner to return
 to the web-admin home page.
 
-5.  CREATING A NEW MAP SET
+5.      CREATING FEATURE TYPES
 
-Once you have species and map types set up, you are ready to create a
-new map set.  Everything in CMap is designed to be generic, so a "map
-set" is simply a collection of maps.  What you group together is
-entirely up to you.  On Gramene, map sets tend to correspond to
-published studies of organisms and contain maps that represent
-chromosomes, linkage groups, FPC contigs, and such.  As the database
-design allows only one species and one map type to be linked to a map
-set, it is best to keep these narrowly defined.
+Although it's not imperative to create feature types before importing
+data, now is a good time to address them.  Choose the "View Feature
+Types" link from the web admin home page and then click the "Create
+New Feature Type" link to take you to the page entitled "Feature Type
+Create."  From here you can fill in the following fields:
 
-To create a new map set, click on the "Create New Map Set" link from
-the admin home page or from the "Map Sets View" page.  If you have
-failed to set up species or map types, you will be prompted to do so
-before continuing.  You will see the following fields:
+*   Acc. ID (opt.): The accession ID
 
-*   Map Set Name:         
+*   Feature Type: The name of the feature type (e.g., "Marker" or
+    "BAC")
 
-*   Short Name:         
-                     
-*   Accession ID (opt.):         
+*   Shape: The shape to use when drawing the feature.
+	-	box
+	-	dumbbell
+	-	line
+	-	span
+	-	up-arrow
+	-	down-arrow
+	-	double-arrow
+	-	rectangle         
 
-*   Species:         
+*   Color:
 
-*   Map Type:         
+*   Drawing Lane:
 
-*   Published On:         
-
-*   Display Order:         
-
-*   Can Be Reference Map:         
-
-*   Is Enabled:         
-
-*   Remarks (opt.):         
-
-*   Shape (opt.):
-
-*   Width (opt.):
-
-*   Color (opt.):
-
-
-1. IMPORTING DATA
-
-To learn how to import your own data, please read DATA_IMPORT in the
-"docs" directory for information on importing your data.  If you would
-like to see examples of data suitably formatted for importing into
-CMap, all the raw data from the Gramene project
-(http://www.gramene.org/) have been included with this distribution in
-the "data/datasets/gramene" directory.  You can use this data to
-ensure that your installation is working, or if you'd like examples of
-how to format your own data.  
-
-In addition, the entire Gramene database has been made available as a
-dump of "INSERT" statements which you can feed directly into your
-database.  This dump is located in the download section of the GMOD
-site as "Sample Data Files" under the "cmap" project.  If you are
-using MySQL, you can import the database in one step (after creating
-it, of course, with the commands described earlier):
-
-    $ mysql -uroot -p < gramene-dump.sql
-
-It might be helpful for you to create a test database and import the
-Gramene dataset in order to play around with a fully loaded database.
-Once you are comfortable, you can drop the database and create another
-for your own data.
-
-The dump of the Gramene site was created using a script in the "bin"
-directory called "cmap_dump.pl."  You might find it useful if you need
-to move your data around, like from a development machine to a
-production server.  It is especially useful for moving your data
-between different DBMSs, as I used it to dump the Gramene database
-from Oracle into my own MySQL database.  The tool basically mimics
-some of the functionality of MySQL's "mysqldump" facility.  Run
-"perldoc cmap_dump.pl" for more documentation on this tool.  The
-script will not be copied into a system directory, so if you want to
-use it yourself, you'll have to copy it to some directory manually.
-Perhaps after the tool has matured a bit, I'll put it into the
-installation routine.
-
-2. FEATURE TYPES
+*   Drawing Priority:
 
 -   Both "drawing_lane" and "drawing_priority" take positive integers
 -   The lower the number for the lane, the closer to the map the
@@ -264,6 +219,303 @@ installation routine.
     the map.  The same is true as you move into higher lanes;  if 
     the lanes move like "1," "4," "7," you will have only 3 lanes with
     no gaps.
+
+
+6.      CREATING A NEW MAP SET
+
+Once you have species and map types set up, you are ready to create a
+new map set.  Everything in CMap is designed to be generic, so a "map
+set" is simply a collection of maps.  What you group together is
+entirely up to you.  On Gramene, map sets tend to correspond to
+published studies of organisms and contain maps that represent
+chromosomes, linkage groups, FPC contigs, and such.  As the database
+design allows only one species and one map type to be linked to a map
+set, it is best to keep these narrowly defined.
+
+6.1     USING THE WEB ADMIN TOOL TO CREATE A MAP SET
+
+To create a new map set, click on the "Create New Map Set" link from
+the admin home page or from the "Map Sets View" page.  If you have
+failed to set up species or map types, you will be prompted to do so
+before continuing.  You will see the following fields:
+
+*   Map Set Name: This is the canonical name for the map set. It is
+    expected that this name will be quite long and informative, e.g.,
+    "Cornell Avena atlantica/A. hirtula RFLP 1995," but it doesn't have
+    to be. Given this expectaion, the name that appears in this fields
+    won't actually show up all that often. Mostly, it will show up only
+    on the "map set info" page.
+
+*   Short Name: This is the short version of the map set name, e.g.,
+    "Cornell Diploid 1995" for the name above. This name is what will be
+    used in all the drop-down boxes and for the map titles on the images
+    and in the matrix. The field is limited to 30 characters.
+                     
+*   Acc. ID (opt.): The accession ID
+
+*   Species: This is the one (and only one) species with which the map
+    set is associated.
+
+*   Map Type: The type of maps that are contained in this set.
+
+*   Published On: The date on which the study was published. This is
+    used to sort the map sets. Most date formats will be understood and
+    converted into the proper format for your database.
+
+*   Display Order: The order in which you'd prefer this map set to
+    sort above others.  Used before other sorting criteria.
+
+*   Can Be Reference Map: This determines whether or not the map of this
+    map set can serve as reference maps, i.e., as a starting point in a
+    user's search, either via the main map viewer or the feature search.
+
+*   Is Enabled: Determines whether or not this map set will appear to
+    end users. This is intended as a convenient way to temporarily hide
+    some data without having to remove it entirely from the database.
+
+*   Remarks (opt.): A free-form text field for describing the map set.
+
+*   Shape (opt.): The shape that maps of this set will be drawn.
+
+*   Width (opt.): The width that maps of this set will be drawn.
+
+*   Color (opt.): The color that maps of this set will be drawn.
+
+6.2     USING THE cmap_admin.pl TOOL TO CREATE A MAP SET
+
+You can also create a new map set by using the "cmap_admin.pl" tool.
+This is the only functionality that exists in both tools, and it was
+only added to cmap_admin.pl in order to make importing new data sets
+more convenient.  You can only specify the species, map type, and give
+the long and short name for the map set.  Everything else about the
+map must be edited using the web admin tool.  
+
+To create a new map set with cmap_admin.pl, start the script and
+choose the "Create new map set" option.  Answer the questions
+appropriately and confirm your decision.  If you see no errors, the
+map set was successfully created.
+
+Note: When using cmap_admin.pl, questions which have only one choice are
+      automatically answered by the tool. In the above example, if you
+      had only one species in the database, cmap_admin.pl will not ask
+      you which species to associate with the new map set. There can
+      only be one answer, so it answers the question automatically.
+
+6.3     VIEWING NEW MAP SET
+
+Once you have successfully created a map set, you will be taken to the
+view of that map set.  You should see the data that you entered and
+that the set currently has no maps associated with it.  You can either
+create each map for the map set individually or you can import the
+data for the map set.  Most likely, you will want to do the latter, so
+that is the next section.
+
+7.      IMPORTING MAP DATA
+
+Using the cmap_admin.pl, you can import a tab-delimited file
+containing the data for a map set with the following fields and
+datatypes:
+
+*   map_name (character(64)) [REQUIRED]: The name of the map (AKA
+    "linkage group," "chromosome," etc.).
+
+*   map_accession_id (character(20)): The accession ID of the map.
+
+*   map_start (double(8,2)): The start position of the map.
+
+*   map_stop (double(8,2)): The stop position of the map.
+
+*   linkage_group (character(10)): The genetic linkage group the map is
+    associate to.
+
+*   feature_accession_id (character(20)): The accession ID of the
+    feature.
+
+*   feature_name (character(32)) [REQUIRED]: The name of the feature.
+
+*   feature_alt_name (character(32)): The alternate name of the feature.
+
+*   feature_start (double(8,2)) [REQUIRED]: The starting position of the
+    feature on the map.
+
+*   feature_stop (double(8,2)): The ending position of the feature
+    on the map.
+
+*   feature_type (character(32)) [REQUIRED]: The feature's type.
+
+*   feature_dbxref_name (character(32)): The name of the database cross
+    reference.
+
+*   feature_dbxref_url (character(200)): The URL of the database cross
+    reference.
+
+The first line of the file should be the tab-separated names of the
+fields in whatever order you're supplying them (the order of fields is
+not important).  You should use the above names for the fields, but
+you can use spaces and capitalization for the column names, if you
+like, as spaces will be converted to underscores and the names
+lowercased (e.g. "Feature Alt Name" will become "feature_alt_name").
+
+If the fields "map_start" and "map_stop" are not supplied, then the
+start and stop positions of the map will be determined after importing
+all the features by selecting the MIN and MAX start and stop positions
+from the "cmap_feature" table.
+
+Use the "cmap_admin.pl" script to bring in your correctly formatted
+data.  Run the script, optionally passing your data file as an
+argument, like so:
+
+    $ cmap_admin.pl my_groovy_data.dat
+
+If you pass a file as an argument, you will be asked to confirm that
+that is the file you want to use.  If you answer "no" or did not pass
+a file, then you will be asked to locate the file containing your
+data.  Type in the path to the file (noticing that you can use tab
+completion), or type "q" to exit file selection and return to the
+"Main Menu."  Once you've found your file, you'll need to tell the
+tool which map set the data corresponds to.  First choose the map type
+and then the species of the map set, then the map set itself.  Lastly,
+you will need to confirm your choices.  If all goes well, you should
+see a lot of lines fly by giving you the step-by-step progress, the
+message "Done," and then you will be returned to the "Main Menu."  A
+complete log of the actions taken by the script will be stored in a
+file called "cmap_admin_log.X" (where "X" is an incrementing number).
+See the docs on cmap_admin.pl (by typing "perldoc cmap_admin.pl") for
+more info.
+
+When you import data for an map set that already has data, all
+existing maps and features with the same name as maps and features in
+your data will be updated.  You also have the option of deleting any
+data that isn't updated.  If you choose this "overwrite" option, any
+of the pre-existing maps or features that aren't updated will be
+deleted as it will be assumed that they are no longer present in the
+dataset.  
+
+While the import process is running, it may encounter feature types in
+your data which do not exist in the database.  This will certainly be
+true if you haven't explicitly defined the feature types you plan to
+show on your maps.  When this happens, you will be prompted by
+cmap_admin.pl to create the feature type.  This is provided merely as
+a convenience to the import process;  you should use the web admin
+tool to refine the new feature type (see the later section on feature
+types).
+
+When cmap_admin.pl has successfully finished importing your map data,
+you will be returned to the "Main Menu."  From here, choose to "Quit"
+as the rest of the functionality will be covered later.
+
+8.      VIEWING MAPS
+
+At this point, you should be able to view at least one map in the
+viewer (so long as you have at least one map where
+"can_be_reference_map" is "true").  Before moving on, use your browser
+to point to the map viewer ("/cmap/viewer") and visually inspect the
+maps that you have imported.  You should get something resembling the
+data you imported.  Use the web admin tool to play with the shapes and
+colors use to represent the maps and the features.  
+
+9.      MAKING CORRESPONDENCES
+
+Once you have more than one set of maps in CMap, you can use it for
+what it was designed:  showing comparisons.  To do this, you must
+first create the correspondences between the features on the maps.
+Before you can do this, you'll need to establish the evidence types
+that can be used to support the correspondences.
+
+9.1     CREATING CORRESPONDENCE EVIDENCE TYPES
+
+From the "Home" page of the web admin tool, choose the link "View
+Correspondence Evidence Types."  There will be no records to view, so
+click on the link "Create New Correspondence Evidence Type."  You
+should be on the "Correspondence Evidence Type Create" page where you
+can fill in the following fields:
+
+*   Acc. ID (opt.): The accession ID
+
+*   Evidence Type: The name for the evidence
+
+*   Rank: The rank of the evidence relative to the others
+
+*   Line Style: How lines representing this evidence type will be
+    drawn (not currently supported)
+
+*   Color (opt.):  The color that lines representing this evidence
+    type will be drawn
+
+A single correspondence can be supported by any number of evidence
+types, so it is necessary that these be ranked from "1" to N (where
+lower numbers have precedence over higher).  When multiple records
+support a correspondence, only the highest ranking evidence will be
+used when determining how to draw the correspondence line.  If you
+intend to use cmap_admin.pl tool to create correspondences for you
+based on simple name/feature type comparisons, you should create a
+special evidence to use just for that purpose (e.g., with the name
+"Automated name-based" or something similar to flag it as a
+machine-created/non-curated correspondence).
+
+9.2     CREATING CORRESPONDENCE RECORDS
+
+Once you have evidenc 
+There are two ways to do this:
+
+1)  Create them by hand using the web admin tool: To do this, locate a
+    feature on a map by:
+
+    A)  View a map set, then view a map, then view the feature
+    B)  Click on "Search for a Feature" and find the feature by name
+
+    Once you have located a feature and have navigated to the "View
+Feature" page, click on the link to "Add Correspondence."  This will
+take you to the "Feature Correspondence Create" page where you can
+search for the other feature in the relationship.  When you have
+located both features, choose an evidence to support the 
+
+There are several ways to create correspondences among features.
+
+A) Strictly name-base: If you choose the "Find name-based
+   correspondences" command from cmap_admin.pl, a correspondence will be
+   created between any two features with the *exact* same name,
+   irrespective of case. You'll need to select some evidence type to
+   represent this automated correspondence.
+
+B) Import correspondences: Create a tab-delimited file that lists the
+   names of two features and some evidence to support the
+   correspondence. The first line of the file should contain column
+   headers for "feature_name1," "feature_name2," and "evidence" (the
+   order is unimportant).  Here's a sample:
+
+	feature_name1	feature_name2	evidence
+	C1008	S1633	insilico
+	C11393S	E10074S	insilico
+	C1238	S15180S	insilico
+	bcd386	p-bcd386	name-based
+	bcd386	p-bcd386	name-based
+	pBF266	p-pBF266	name-based
+
+C) Create correspondences by hand using the admin interface: Choose to
+   "view" a map set in the web-based administrative tool. "View" an
+   individual map, then choose to "view" a feature. From there, you will
+   have the option to "Add Correspondence." Click this, and then search
+   for the feature to which you wish to create a correspondence. Add
+   your evidence, and you're done.
+
+The first method is likely to be both incomplete and overly-optimistic.
+For example, it will create correspondences between features called
+"Centromere," which is probably not desirable.  The name comparisons
+happen on both the "feature_name" and "alternate_name" from the
+"cmap_feature" table.  Every feature has each of these fields compared
+to those fields for every other feature, so this can take a long time
+to complete.  For all of its problems, this can be a good way to get
+started, and you can pare down the correspondences from there.  The
+second method is the surest method as you are controlling what gets
+created.  The third method is also very exact but very tedious.  I
+wouldn't recommend it for creating more than a few correspondences.
+
+After creating any new correspondences (or deleting existing ones),
+be sure to run the "Reload correspondence matrix" option of the
+"cmap_admin.pl" script to refresh the data that is pre-computed
+and cached in the "cmap_correspondence_matrix" table.  The only option
+is to completely truncate the table and reload it from scratch.
 
 2. DATABASE CROSS-REFERENCES
 
