@@ -4,7 +4,7 @@ CMap Code Overview
 
 =head1 VERSION
 
-$Revision: 1.3 $
+$Revision: 1.4 $
 
 CMap is a CGI application for viewing comparative and genetic maps.
 Written entirely in Perl, this application will run on many different
@@ -17,7 +17,7 @@ a comparative mapping resource for crop grasses, but much has been
 done to make the application generic enough to be used with many
 different types of data.
 
-=head1 1. ARCHITECTURE OVERVIEW
+=head1 ARCHITECTURE OVERVIEW
 
 Care has been given to carefully separate functionally different parts
 of the code into different modules, roughly corresponding to a
@@ -28,7 +28,7 @@ the "logic" (the code that lays out the map components) in the
 Bio::GMOD::CMap::Drawer* modules, and all the HTML generation in the
 Bio::GMOD::CMap::Apache* modules.  
 
-=head1 2. DATA MODULES
+=head1 DATA MODULES
 
 As stated above, all the database interaction happens in the
 Bio::GMOD::CMap::Data* modules.  One goal of this project has always
@@ -52,7 +52,7 @@ Bio::GMOD::CMap::Data::Generic (as noted in the perldocs), and then
 add a line to the Bio::GMOD::CMap::Constants to point to the new
 module.
 
-=head1 3. LOGIC MODULES
+=head1 LOGIC MODULES
 
 All the modules that actually do something toward laying out the
 comparative maps live in the Bio::GMOD::CMap::Drawer* namespace.  The top
@@ -72,7 +72,7 @@ modules and the cmap_admin.pl script.  Eventually I hope to move all
 the logic into Bio::GMOD::CMap::Admin and have the web- and
 command-line interfaces simply invoke methods on this Admin object.
 
-=head1 4. PRESENTATION MODULES
+=head1 PRESENTATION MODULES
 
 The modules in the Bio::GMOD::CMap::Apache namespace are responsible
 for actually displaying the maps through a web interface.  All of the
@@ -89,7 +89,7 @@ Toolkit is powerful and freely available Perl templating system, and
 the hope is that by using it, non-technical people who want to tweak
 the HTML to do so without interfering with the code.
 
-=head1 5. CONFIGURATION MODULES
+=head1 CONFIGURATION MODULES
 
 All local configuration of CMap should be done through the "cmap.conf"
 file.  Of course, the file doesn't have to be called "cmap.conf."  It
@@ -106,7 +106,7 @@ any of the options in "cmap.conf" (except "database," "template_dir"
 and "cache_dir"), there are defaults in the Bio::GMOD::CMap::Constants
 file.
 
-=head1 6. GENERAL FLOW FOR HANDLERS
+=head1 GENERAL FLOW FOR HANDLERS
 
 The web presentation modules are all located under the
 Bio::GMOD::CMap::Apache namespace and are instantiated as objects.  In
@@ -165,7 +165,7 @@ The above scenario is probably the most involved process in the
 comparative maps, but it shows the way that distinct pieces of the
 problem are split into specialized modules and objects.
 
-=head1 7. SQL CONVENTIONS
+=head1 SQL CONVENTIONS
 
 The tables used by the comparative maps follow a fairly rigid naming
 convention so that they should be able to integrate easily with existing
@@ -254,7 +254,7 @@ quoting and escaping your parameters.
 
 =back
 
-=head1 8. TABLE DESCRIPTIONS
+=head1 TABLE DESCRIPTIONS
 
 In the "docs" directory, you will find a schema diagram illustrating
 the structure and relationships of the tables.  In the "sql"
@@ -396,7 +396,7 @@ worry how (or even "if") a particular RDBMS supports a "one-up" field.
 
 =back
 
-=head1 9. TIPS
+=head1 TIPS
 
 If you'd like to write a script to access the database directly, you
 can get a handle to the database quite easily using the
