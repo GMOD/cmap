@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache;
 # vim: set ft=perl:
 
-# $Id: Apache.pm,v 1.9 2003-11-03 18:45:47 kycl4rk Exp $
+# $Id: Apache.pm,v 1.10 2004-01-08 22:27:47 kycl4rk Exp $
 
 =head1 NAME
 
@@ -46,7 +46,7 @@ this class will catch errors and display them correctly.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.9 $)[-1];
+$VERSION = (qw$Revision: 1.10 $)[-1];
 
 use Apache;
 use Apache::Constants;
@@ -56,6 +56,22 @@ use Apache::Constants;
 use Data::Dumper;
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
+use Bio::GMOD::CMap::Apache::AdminViewer;
+use Bio::GMOD::CMap::Apache::CorrespondenceViewer;
+use Bio::GMOD::CMap::Apache::EvidenceTypeViewer;
+use Bio::GMOD::CMap::Apache::FeatureViewer;
+use Bio::GMOD::CMap::Apache::FeatureAliasViewer;
+use Bio::GMOD::CMap::Apache::FeatureSearch;
+use Bio::GMOD::CMap::Apache::FeatureTypeViewer;
+use Bio::GMOD::CMap::Apache::HelpViewer;
+use Bio::GMOD::CMap::Apache::Index;
+use Bio::GMOD::CMap::Apache::MapDetailViewer;
+use Bio::GMOD::CMap::Apache::MapSetViewer;
+use Bio::GMOD::CMap::Apache::MapTypeViewer;
+use Bio::GMOD::CMap::Apache::MapViewer;
+use Bio::GMOD::CMap::Apache::MatrixViewer;
+use Bio::GMOD::CMap::Apache::SpeciesViewer;
+use Bio::GMOD::CMap::Apache::ViewFeatureOnMap;
 
 use base 'Bio::GMOD::CMap';
 
