@@ -56,6 +56,7 @@
                                     [%- SET last_map_type=ms.map_type -%]
                                 [%- END -%]
                             </select>&nbsp;<input type="submit" value="Submit">
+                            <input type="hidden" name="prev_ref_species_aid" value="[% apr.param('ref_species_aid') %]">
                             <input type="hidden" name="prev_ref_map_set_aid" value="[% apr.param('ref_map_set_aid') %]">
                             <input type="hidden" name="highlight"            value="[% apr.param('highlight') %]">
                             <input type="hidden" name="image_size"           value="[% apr.param('image_size') %]">
@@ -90,6 +91,7 @@
                                 [% END %]
                             </select>
 
+                            <input type="hidden" name="prev_ref_species_aid" value="[% apr.param('ref_species_aid') %]">
                             <input type="hidden" name="prev_ref_map_aid" value="[% apr.param('ref_map_aid') %]">
                             <input type="hidden" name="ref_map_set_aid"  value="[% apr.param('ref_map_set_aid') %]">
                             <input type="hidden" name="ref_species_aid"  value="[% apr.param('ref_species_aid') %]">
