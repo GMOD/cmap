@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.70 2003-10-29 20:41:56 kycl4rk Exp $
+# $Id: Data.pm,v 1.71 2003-11-03 18:09:57 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.70 $)[-1];
+$VERSION = (qw$Revision: 1.71 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -3013,7 +3013,32 @@ Returns the detail info for a map.
         current_page     => $page_no,
         pages_per_set    => $max_pages,
     } );
-    $features = [ $pager->splice( $features ) ] if $page_data;
+    $features = [ $pager->splice( $features ) ] if $page_data && @$features;
+
+    #
+    # Feature aliases.
+    #
+    my $aliases = $db->selectall_arrayref(
+        q[
+            select f.feature_id,
+                   fa.alias
+            from   cmap_feature f,
+                   cmap_feature_alias fa
+            where  f.map_id=?
+            and    f.feature_id=fa.feature_id
+        ],
+        {},
+        ( $map_id )
+    );
+
+    my %alias_lookup;
+    for my $alias ( @$aliases ) {
+        push @{ $alias_lookup{ $alias->[0] } }, $alias->[1];
+    }
+
+    for my $feature ( @$features ) {
+        $feature->{'aliases'} = $alias_lookup{ $feature->{'feature_id'} } || [];
+    }
 
     #
     # Get all the feature types on all the maps.
@@ -3116,14 +3141,17 @@ Returns the detail info for a map.
         
         $feature->{'no_positions'}    = scalar keys %distinct_positions;
         $feature->{'positions'}       = [ values %distinct_positions ];
-        $feature->{'highlight_color'} = 
-            $highlight_hash->{ uc $feature->{'feature_name'} }
-            ||
-#            $highlight_hash->{ $feature->{'alternate_name'} }
-#            ||
-            $highlight_hash->{ $feature->{'accession_id'} }
-            ? $self->config('feature_highlight_bg_color')
-            : '';
+
+        for my $val ( 
+            $feature->{'feature_name'},
+            @{ $feature->{'aliases'} || [] },
+            $feature->{'accession_id'}
+        ) {
+            if ( $highlight_hash->{ uc $val } ) {
+                $feature->{'highlight_color'} = 
+                    $self->config('feature_highlight_bg_color');
+            }
+        }
     }
 
     my @comparative_maps;
