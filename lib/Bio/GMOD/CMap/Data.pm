@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.111 2004-05-10 21:15:31 mwz444 Exp $
+# $Id: Data.pm,v 1.112 2004-05-10 21:44:49 mwz444 Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.111 $)[-1];
+$VERSION = (qw$Revision: 1.112 $)[-1];
 
 use Data::Dumper;
 use Regexp::Common;
@@ -2633,15 +2633,17 @@ sub cmap_form_data {
     my $pid                    = $$;
 
     my @ref_maps;
-    
-    foreach my $map (@{$self->slot_info->{0}}){
-	my %temp_hash=('map_id'=>$map->[0], 
-		       'start_position'=>$map->[1], 
-		       'stop_position'=>$map->[2],
-		       );
-	push @ref_maps, \%temp_hash;
+
+    if ($self->slot_info){
+	foreach my $map (@{$self->slot_info->{0}}){
+	    my %temp_hash=('map_id'=>$map->[0], 
+			   'start_position'=>$map->[1], 
+			   'stop_position'=>$map->[2],
+			   );
+	    push @ref_maps, \%temp_hash;
+	}
     }
-    
+   
     if ( scalar @ref_maps > 1 ) {
         $ref_map_start = undef;
         $ref_map_stop  = undef;
@@ -2814,17 +2816,18 @@ sub cmap_form_data {
     my $rightmost_map = $slots->{ $slot_nos[-1] };
     my $leftmost_map  = $slots->{ $slot_nos[ 0] };
     my %feature_types;
-
-    my $comp_maps_right     =  $self->get_comparative_maps( 
+    my ($comp_maps_right,$comp_maps_left);
+    if ($self->slot_info){
+	$comp_maps_right     =  $self->get_comparative_maps( 
         min_correspondences => $min_correspondences,
         feature_type_aids   => $feature_type_aids,
         evidence_type_aids  => $evidence_type_aids,
         feature_types       => \%feature_types,
         ref_slot_no         => $slot_nos[-1],
         pid                 => $pid,
-    );
+        );
 
-    my $comp_maps_left      =  $slot_nos[0] == $slot_nos[-1]
+	$comp_maps_left      =  $slot_nos[0] == $slot_nos[-1]
         ? $comp_maps_right
         : $self->get_comparative_maps(
             min_correspondences => $min_correspondences,
@@ -2834,7 +2837,8 @@ sub cmap_form_data {
             ref_slot_no         => $slot_nos[0],
             pid                 => $pid,
         )
-    ;
+	;
+    }
 
     #
     # Correspondence evidence types.
@@ -4549,7 +4553,7 @@ sub slot_info{
 		    if ($slots->{$key}{'field'} eq 'map_set_aid'){
 			#Map set aid
 			$sql_suffix=
-			    q[
+			    q[,
 			      cmap_map_set ms
 			      where m.map_set_id=ms.map_set_id
 			      ].
@@ -4567,13 +4571,13 @@ sub slot_info{
 		}
 		if ($sql_suffix){
 		    ###If aid was found, $sql_suffix will be created
+		    print STDERR "$sql_str $sql_suffix\n";
 		    push @{$self->{'slot_info'}{$key}}, 
 		    @{$db->selectall_arrayref($sql_str.$sql_suffix, {},())};
 		}
 	    }
 	}	
     }
-    
     return $self->{'slot_info'};
 }
 
