@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::Sybase
--- Created on Thu Jul 31 16:06:43 2003
+-- Created on Thu Sep  4 12:50:32 2003
 -- 
 --
 -- Table: cmap_correspondence_evidence
@@ -132,7 +132,7 @@ CREATE INDEX cmap_feature_corresp_idx ON cmap_feature_correspondence (is_enabled
 
 CREATE TABLE cmap_feature_note (
   feature_id numeric(11) DEFAULT '0' NOT NULL,
-  note varchar(255) NULL,
+  note varchar(65535) NULL,
   CONSTRAINT pk_cmap_feature_note PRIMARY KEY (feature_id)
 );
 
@@ -199,7 +199,7 @@ CREATE TABLE cmap_map_set (
   can_be_reference_map smallint(4) DEFAULT '1' NOT NULL,
   display_order numeric(11) DEFAULT '1' NOT NULL,
   is_enabled smallint(4) DEFAULT '1' NOT NULL,
-  remarks varchar(255) NULL,
+  remarks varchar(65535) NULL,
   shape varchar(12) DEFAULT NULL NULL,
   color varchar(20) DEFAULT NULL NULL,
   width numeric(11) DEFAULT NULL NULL,
@@ -215,6 +215,7 @@ CREATE INDEX cmap_map_set_idx ON cmap_map_set (can_be_reference_map, is_enabled,
 
 CREATE TABLE cmap_map_type (
   map_type_id numeric(11) DEFAULT '0' NOT NULL,
+  accession_id varchar(20) DEFAULT '' NOT NULL,
   map_type varchar(64) DEFAULT '' NOT NULL,
   map_units varchar(12) DEFAULT '' NOT NULL,
   is_relational_map smallint(11) DEFAULT '0' NOT NULL,
@@ -223,7 +224,8 @@ CREATE TABLE cmap_map_type (
   width numeric(11) DEFAULT NULL NULL,
   display_order numeric(11) DEFAULT '1' NOT NULL,
   CONSTRAINT pk_cmap_map_type PRIMARY KEY (map_type_id),
-  CONSTRAINT map_type UNIQUE (map_type)
+  CONSTRAINT map_type UNIQUE (map_type),
+  CONSTRAINT accession_id UNIQUE (accession_id)
 );
 
 --

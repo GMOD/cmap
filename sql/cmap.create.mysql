@@ -220,6 +220,7 @@ CREATE TABLE cmap_map_set (
 DROP TABLE IF EXISTS cmap_map_type;
 CREATE TABLE cmap_map_type (
   map_type_id int(11) NOT NULL default '0',
+  accession_id varchar(20) character set latin1 NOT NULL default '',
   map_type varchar(64) character set latin1 NOT NULL default '',
   map_units varchar(12) character set latin1 NOT NULL default '',
   is_relational_map tinyint(11) NOT NULL default '0',
@@ -228,7 +229,8 @@ CREATE TABLE cmap_map_type (
   width int(11) default NULL,
   display_order int(11) NOT NULL default '1',
   PRIMARY KEY  (map_type_id),
-  UNIQUE KEY map_type (map_type)
+  UNIQUE KEY map_type (map_type),
+  UNIQUE KEY accession_id (accession_id)
 ) TYPE=MyISAM;
 
 --

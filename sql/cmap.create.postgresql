@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Thu Sep  4 10:25:49 2003
+-- Created on Thu Sep  4 11:30:44 2003
 -- 
 --
 -- Table: cmap_correspondence_evidence
@@ -215,6 +215,7 @@ CREATE INDEX "cmap_map_set_idx" on cmap_map_set ("can_be_reference_map", "is_ena
 
 CREATE TABLE "cmap_map_type" (
   "map_type_id" bigint DEFAULT '0' NOT NULL,
+  "accession_id" character varying(20) DEFAULT '' NOT NULL,
   "map_type" character varying(64) DEFAULT '' NOT NULL,
   "map_units" character varying(12) DEFAULT '' NOT NULL,
   "is_relational_map" smallint DEFAULT '0' NOT NULL,
@@ -223,7 +224,8 @@ CREATE TABLE "cmap_map_type" (
   "width" bigint DEFAULT NULL,
   "display_order" bigint DEFAULT '1' NOT NULL,
   Constraint "pk_cmap_map_type" PRIMARY KEY ("map_type_id"),
-  Constraint "map_type" UNIQUE ("map_type")
+  Constraint "map_type" UNIQUE ("map_type"),
+  Constraint "accession_id8" UNIQUE ("accession_id")
 );
 
 --
