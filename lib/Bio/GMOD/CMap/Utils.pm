@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Utils;
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.25.2.7 2004-05-28 18:53:28 kycl4rk Exp $
+# $Id: Utils.pm,v 1.25.2.8 2004-05-28 20:50:22 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,13 +22,14 @@ which are exported by default.
 =cut 
 
 use strict;
+use Algorithm::Numerical::Sample 'sample';
 use Bit::Vector;
 use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 use POSIX;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.25.2.7 $)[-1];
+$VERSION = (qw$Revision: 1.25.2.8 $)[-1];
 
 use base 'Exporter';
 
@@ -446,12 +447,19 @@ Special thanks to Noel Yap for suggesting this strategy.
         last if $available < $font_height;
 
         my $no_possible = int( $available / $font_height );
-        my $skip_val    = 1;
         if ( $no_present > $no_possible ) {
-            $skip_val = int( $no_present / $no_possible );
-            $skip_val = 2 if $skip_val < 2;
-            for ( my $i = 0; $i < $no_present; $i += $skip_val ) {
-                push @accepted, $labels->{ $priority }[ $i ];
+            my $skip_val = int( $no_present / $no_possible );
+            if ( $skip_val > 1 ) {
+                for ( my $i = 0; $i < $no_present; $i += $skip_val ) {
+                    push @accepted, $labels->{ $priority }[ $i ];
+                }
+            }
+            else {
+                my @sample      =  sample(
+                    set         => [ 0 .. $no_present - 1 ],
+                    sample_size => $no_possible,
+                );
+                push @accepted, @{ $labels->{ $priority } }[ @sample ];
             }
         }
         else {
@@ -480,7 +488,7 @@ Special thanks to Noel Yap for suggesting this strategy.
     #
     if ( $no_accepted == 1 ) {
         my $label = $accepted[0];
-        $label->{'y'} = $label->{'target'} - $font_height / 2;
+        $label->{'y'} = $label->{'target'};
     }
     #
     # If we took fewer than was possible, try to sort them nicely.
@@ -505,8 +513,6 @@ Special thanks to Noel Yap for suggesting this strategy.
                 my $diff   = 0 - $low_bin;
                 $low_bin  += $diff;
                 $high_bin += $diff;
-#                print STDERR "low bin ($low_bin) < 0, ", 
-#                    "moving up '$diff' ($low_bin, $high_bin)\n";
             }
 
 #            print STDERR "\nbins = ", $bins->to_ASCII, "\n";
@@ -519,9 +525,6 @@ Special thanks to Noel Yap for suggesting this strategy.
                 ( $lmin, $lmax ) = $bins->Interval_Scan_dec( $low_bin - 1 );
 
                 if ( $lmin > 1 && $lmax == $low_bin - 1 ) {
-#                    print STDERR "Looking further than bin $lmin below\n";
-#                    $hmin = $lmin if defined $hmin;
-#                    ( $lmin, $lmax )  = $bins->Interval_Scan_dec( $lmin - 1 );
                     ( $next_lmin, $next_lmax ) = 
                         $bins->Interval_Scan_dec( $lmin - 1 );
                 }
@@ -538,7 +541,7 @@ Special thanks to Noel Yap for suggesting this strategy.
             if ( ! defined $lmax && $low_bin - $bin_span > 1 ) {
 #                print STDERR "low decision 1\n";
                 $gap_below         = $low_bin - 1;
-                $diff_to_gap_below = $low_bin - $bins_occupied;
+                $diff_to_gap_below = $bin_span;
             }
             # something below but enough space b/w it and this
             elsif ( defined $lmax && $low_bin - $lmax > $bin_span ) {
@@ -561,7 +564,7 @@ Special thanks to Noel Yap for suggesting this strategy.
             ) {
 #                print STDERR "low decision 4\n";
                 $gap_below         = $lmin;
-                $diff_to_gap_below = $lmin + $bins_occupied;
+                $diff_to_gap_below = $low_bin - $lmin + $bins_occupied;
             }
 
             # nothing above and space w/in the bins
@@ -635,6 +638,7 @@ Special thanks to Noel Yap for suggesting this strategy.
             }
 
             $label->{'y'} = $target + $diff;
+            $i++;
         }
     }
     #
