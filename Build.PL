@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.8 2003-09-24 20:31:44 kycl4rk Exp $
+# $Id: Build.PL,v 1.9 2003-09-24 21:06:25 kycl4rk Exp $
 
 use strict;
 
@@ -58,9 +58,7 @@ my $USAGE = join("\n",
 #
 # Process command-line args.
 #
-my @argv = @ARGV;
-@ARGV    = ();
-foreach ( @argv ) {
+foreach ( @ARGV ) {
     if ( /^--?h(elp)?/i ) {
         print $USAGE;
         exit(0);
@@ -69,7 +67,7 @@ foreach ( @argv ) {
         $OPTIONS{$1} = $2;
     }
     else {
-        push @ARGV, $_;
+        warn "Ignoring unknown option '$_'\n";
     }
 }
 
