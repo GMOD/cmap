@@ -1,0 +1,383 @@
+=head1 NAME
+
+CMAP Attributes and Cross-References
+
+=head1 INTRODUCTION
+
+Up to version 0.10, CMap has only stored just enough information
+on maps and features to draw images.  This has had the effect of
+forcing curators to set up external sources for richer data and users
+to leave CMap to view this data via cross-references.  Additionally,
+these cross-references could only be attached to features (i.e., not
+to any other CMap objects like map sets, maps, feature types,
+correspondence evidence types, etc.).  This has had the effect of
+burdening non-technical curators to create external applications for
+housing this data and hindering the ability of curators to provide
+details on every part of the system that needs annotation.
+
+=head1 ATTRIBUTE TABLE
+
+As it would be impossible to construct tables with the fields to
+satisfy any potential user of CMap, it was decided to create a generic
+"attributes" table to allow any number of arbitrary key/value pairs of
+data to be attached to any CMap database object a user can view.  The
+table looks like this:
+
+  CREATE TABLE cmap_attribute (
+    attribute_id    int(11)      NOT NULL default '0',
+    table_name      varchar(30)  NOT NULL default '',
+    object_id       int(11)      NOT NULL default '0',
+    display_order   int(11)      NOT NULL default '1',
+    is_public       tinyint(4)   NOT NULL default '1',
+    attribute_name  varchar(200) NOT NULL default '',
+    attribute_value text         NOT NULL,
+    PRIMARY KEY (attribute_id)
+  );
+
+The curator can use the "display_order" to determine the order in
+which to place the attributes and can hide certain attributes from the
+public by flagging "is_public" to "0."  An attribute can have any name
+up to 200 characters, and attribute names can be repeated as often as
+desired (e.g., a map feature has several "Genbank ID" attributes).
+The value of the attribute is limited mostly by the data type of the
+target database (note that for Oracle the field is currently
+"VARCHAR2(4000)" because CLOB fields are a PITA).
+
+=head1 XREF TABLE
+
+The new cross-reference system works much the same, and, in fact, the
+table looks very similar:
+
+  CREATE TABLE cmap_xref (
+    xref_id       int(11)      NOT NULL default '0',
+    table_name    varchar(30)  NOT NULL default '',
+    object_id     int(11)               default NULL,
+    display_order int(11)      NOT NULL default '1',
+    xref_name     varchar(200) NOT NULL default '',
+    xref_url      text         NOT NULL,
+    PRIMARY KEY  (XREF_ID)
+  );
+
+There is no "is_public" flag, but otherwise the table is essentially
+the same.  And, if you think about it, there is little to keep one
+from using an "attribute" as a cross-reference.  Simply make the
+"attribute_name" "DBXRef" and the "attribute_value" something like this:
+
+  <a href="/perl/pub_search?ref_id=4143">Singh et al., 
+  1996.  Proc Natl Acad Sci USA 93: 6163-6168</a>
+
+However, it was decided to split the cross-references out to a
+separate system for a couple of reasons:
+
+=over 4
+
+=item 1 
+
+Forcing the curator to create a full HTML anchor for the value is
+ugly.  It's more appropriately done by code. As a side note, the code
+tries to automatically detect any "attribute_value" that looks like a
+raw URL (if it begins with "http://") and make an anchor around it.
+
+=item 2
+
+Attributes need to be attached to individual database objects, but
+xrefs need to be able to apply a template to a class of objects, e.g.,
+all "feature_type" objects (notice that the xref table allows NULL
+values for the "object_id" field).
+
+=back
+
+For more on the second point, suppose one had a "feature type
+ontology" system running, and, from the "feature details" page, wanted
+to create a link to lookup the feature's type.  The xref could look
+like this:
+
+  Name: View Feature Type Ontology
+  URL : /ontology/feature_types?q=[% object.feature_type %]
+
+A couple things to notice:
+
+=over 4
+
+=item *   
+
+The templating language (the stuff between the "[%" and "%]" tags) is
+Template Toolkit (http://www.template-toolkit.com/).  TT is a Perl
+module available from CPAN as "Template" and is used by CMap for
+processing all the HTML templates.  Because Template Toolkit is
+already used by CMap, it was decided to stick with it for processing
+these mini-templates.  The syntax is simpler than Perl, is quite
+powerful, and should allow most anything people will want.
+
+=item *   
+
+The URL template will always refer to the object (the map or feature
+or whatever) as "object."  See the next section for field names.
+
+=back
+
+=head1 AVAILABLE FIELDS
+
+Following is a list the fields available for each object on the given
+page.  The default source table for the fields is given at the top.
+Any data that does not come from that table is specified either by
+"[table]" or "[table.column]."  In all cases a field ending in "_aid"
+refers to an "accession_id" field.  Because most every table contains
+a field called "accession_id," it is easiest to differentiate them as
+"species_aid" for "cmap_species.accesion_id." 
+
+=head2 Map Set Info (/cmap/map_set_info)
+
+Table: cmap_map_set
+
+  map_set_id
+  map_set_aid          (accession_id)
+  map_set_name
+  short_name
+  map_type_id
+  species_id
+  can_be_reference_map
+  map_type             [cmap_map_type]
+  map_units            [cmap_map_type]
+  species_aid          [cmap_species.accession_id]
+  common_name          [cmap_species]
+  full_name            [cmap_species]
+
+=head2 Map Details (/cmap/map_details)
+
+Table: cmap_map
+
+  map_aid      (accession_id)
+  map_name
+  start_position
+  stop_position
+  map_units
+  map_set_aid  [cmap_map_set.accession_id]
+  map_set_name [cmap_map_set.short_name]
+  species_aid  [cmap_species.accession_id]
+  species_name [cmap_species.common_name]
+
+=head2 Feature Details (/cmap/feature)
+
+Table: cmap_feature
+
+  feature_id 
+  feature_aid      (accession_id)
+  map_id
+  map_set_id 
+  feature_type_id
+  feature_name
+  is_landmark
+  start_position
+  stop_position
+  aliases          [cmap_feature_alias.alias] *
+  correspondences  [cmap_feature_correspondence] *
+  feature_type     [cmap_feature_type]
+  feature_type_aid [cmap_feature_type.accession_id]
+  map_name         [cmap_map]
+  map_aid          [cmap_map.accession_id]
+  map_set_aid      [cmap_map_set.accession_id]
+  map_set_name     [cmap_map_set.short_name ]
+  species_id       [cmap_species]
+  species_name     [cmap_species.common_name]
+  map_type         [cmap_map_type]
+  map_units        [cmap_map_type]
+
+=head2 Feature Type Info (/cmap/feature_type_info)
+
+Table: cmap_feature_type
+
+  feature_type_id
+  feature_type_aid (accession_id)
+  feature_type
+  shape
+  color
+
+=head2 Feature Alias Info (/cmap/feature_alias)
+
+Table: cmap_feature_alias
+
+  feature_alias_id
+  alias
+  feature_aid  [cmap_feature.accession_id]
+  feature_name [cmap_feature.feature_name]
+
+=head2 Map Type Info (/cmap/map_type_info)
+
+Table: cmap_map_type
+
+  map_type_id
+  map_type_aid (accession_id)
+  map_type
+  map_units
+  is_relational_map
+  shape
+  color
+  width
+  display_order
+
+=head2 Evidence Type Info (/cmap/evidence_type_info)
+
+Table: cmap_evidence_type
+
+  evidence_type_id
+  evidence_type_aid (accession_id)
+  evidence_type
+  rank
+  line_color
+
+=head2 Species Info (/cmap/species_info)
+
+Table: cmap_species
+
+  species_id
+  species_aid (accession_id)
+  common_name
+  full_name
+  display_order
+
+=head2 Correspondence Details (/cmap/correspondence)
+
+Table: cmap_feature_correspondence
+
+  feature_correspondence_id
+  accession_id
+  feature_id1
+  feature_id2
+  is_enabled
+
+B<Note:> The starred fields ("*") denote plural fields.  See discussion
+about attributes.
+
+=head1 ACCESSING ATTRIBUTES FOR XREFS
+
+In addition to the above fields, each object on the above pages will
+also include any attributes the curator has created.  This can be
+accessed by calling "object.attribute.attribute_name" where
+"attribute_name" is whatever name the curator assigned to the
+attribute.  This name will be lowercased and all spaces will be
+collapsed and turned into underscores.  To take the earlier example,
+suppose we have a feature with three "Genbank ID" attributes:
+
+  Feature Name    : SHO29
+  Attribute Name  : Genbank ID
+  Attribute Values: "BH245189", "BH245190," "BH245191"
+
+(This would actually exist as three attributes each of the name
+"Genbank ID".)
+
+This attribute would be accessed like so:
+
+  object.attribute.genbank_id
+
+B<Note:> If you intend to create certain fields as non-public, it
+might be easiest to name the fields with all-lowercase letters and
+underscores so there is no confusion when accessing the attribute.
+
+Because attribute names can be repeated for any object, the values of
+any attribute will always be an array.  Consider it a permanently
+"plural" field in which each member needs to be dealt with
+individually (even if there is actually only one attribute of a
+particular name for a particular object).  Whenever you create a
+template which uses a "plural" field like this, you will need to use a
+"FOREACH" loop.  The return value of the processed template will be
+simple text, so in order for the CMap code to sort out each URL for
+each attribute value, you will need to simply separate them with
+spaces.  This is logical if you consider that spaces are not legal
+syntax in URLs.  It's also easy if you use some simple formatting in
+the URL template.  E.g., these two versions of the Genbank xref will
+work:
+
+  Name: View Genank Info
+  URL : 
+
+  [% FOREACH id=object.attribute.genbank_id %]
+  http://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi?val=[% id %]
+  [% END %]
+
+  Name: View Genank Info
+  URL : [% FOREACH id=object.attribute.genbank_id; "http://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi?val=$id "; END %]
+
+(Notice the extra space after "$id" and before the semicolon.  This is
+what CMap will use to split the URLs.)
+
+If an object has no "Genbank ID" attributes, then nothing will be
+returned.  If an object has five Genbank IDs, then five URLs will be
+generated, one for each.
+
+You can do other simple checks inside the template to decide whether
+or not to make an xref.  Take this trivial example:
+
+  [% IF object.map_type=='Genetic' %]http://www.genetic-maps.org/search=[% object.map_name %][% END %]
+
+This template checks to see if the object (probably a map) is of the
+type "Genetic."  If so, it creates a URL querying on the map's name;
+otherwise it returns nothing, in which case the xref is discarded by
+CMap.  
+
+If may want to define an attribute that basically acts like a
+"Yes/No" flag, e.g. "can_link_to_genbank => 1."  To use this attribute
+in determining whether to create a link, you can do this:
+
+  Name: View Genank Info
+  URL : 
+  [% IF object.attribute.defined('can_link_to_genbank') %]
+    [% FOREACH id=object.attribute.genbank_id %]
+      http://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi?val=[% id %]
+    [% END %]
+  [% END %]
+
+=head1 OBJECT-SPECIFIC XREFS
+
+In addition to creating generic xrefs that apply to all objects of a
+particular class, you can also create xrefs that apply only to one
+specific object.  This is accomplished by drilling down to a view of
+the object in question (e.g., a map set or a map or a correspondence
+evidence) through the web admin interface and then clicking the "Add
+XRef" link under the cross-references section (if the link is not
+available, then you are not allowed to create an xref on the object).
+The top part of the form to create the xref will reflect the type of
+your database object and its name.  Simply fill in the xref name and
+URL, which can be a template or a simple string, e.g.:
+
+  Name: View Marker Details
+  URL : /db/markers/marker_view?marker_name=CDO590
+
+You can also import attributes and xrefs for features using a
+tab-delimited text file and the cmap_admin.pl tool.  For more
+information, see the documentation for importing data.
+
+=head1 PROBLEMS WITH ATTRIBUTES
+
+One possible problem with this generic attribute system is with the
+fact that they are much less searchable than might at first appear.
+To begin with, the "attribute_value" field is generally going to be
+the largest text data type for the underlying database (e.g., "text"
+for MySQL, possibly CLOB for Oracle), and searching for arbitary
+strings in those types of columns can be problematic.  Additionally,
+the values will always be stored as strings, so if the attribute were
+"Molecular Weight" and the value were meant to be floating-point
+values, it would not be easy to find all the features with a molecular
+weight greater than some value.  To execute this type of search, all
+the attributes of with the name "Molecular Weight" and the table name
+of "cmap_feature" would have to be pulled into Perl, the values
+converted to numbers and the search done in code.  Given that this
+would require foreknowledge of the field names and data types, there
+is no easy way to program an interface that could necessarily allow
+powerful searching for objects using this generic attribute system.
+
+I imagine it will also be very easy for curators to abuse the
+attributes to store all sorts of data that really shouldn't go there.
+However, with the above caveat having been stated, I'm not interested
+in stopping a creative curator from using the system however he sees
+fit.  To paraphrase a quote I recently read, "UNIX won't stop you from
+doing stupid things as it would also stop you from doing clever
+things."
+
+=head1 SEE ALSO
+
+Template::Manual.
+
+=head1 AUTHOR
+
+Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
