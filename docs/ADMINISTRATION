@@ -1,6 +1,6 @@
                 CMAP ADMINISTRATION AND DATA CURATION
 
-                          $Revision: 1.7 $
+                          $Revision: 1.8 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are two tools you will use:
@@ -1002,7 +1002,46 @@ If you want a whole map set in a slot (e.g., a physical map set like
 accession ID.  You can use the admin interface ("/cmap/admin") to
 easily find the accession IDs.
 
-16.     AUTHOR
+16.     THROTTLING CMAP
+
+While every attempt has been made to see that CMap works efficiently,
+it is very possible that users will request maps so dense that the
+server will not be able to deliver them in a timely fashion.  To
+combat this, you can limit what's allowed to be drawn and how your
+server acts while the drawing is taking place.
+
+-   Enable the "Please Wait" page: The main viewer to performs a fork to
+    create a separate Apache process to handle the layout of the maps
+    while the original checks back every couple of seconds to see if the
+    image has been rendered. In the mean time, the web user sees a page
+    that asks them to wait and lets them know how many attempts have
+    been made so far and how much time has passed. In addition, you can
+    also set a timeout (in seconds) to limit the length of time spent on
+    a request. Because the "Please Wait" page depends on the ability of
+    the underlying OS to fork properly and the current behavior uses a
+    "session" to maintain state between requests which erases the
+    original query string of the request, the use of this feature is
+    toggled with a configuration option ("allow_fork"). The timeout
+    variable is also a config option where a value of "0" disables the
+    timeout (letting the request go as long as is necessary or until the
+    system dies).
+
+-   Set the maximum image width (in pixels) to limit how large an image
+    is allowed to get. Because CMap uses a vertical orientation for the
+    maps (and the vertical is fairly well constrained with
+    configuration options), it's the horizontal that can grow (and grow
+    infinitely up to system resources). Through a configuration option
+    (which can be set to "0" to disable), the code can limit how wide
+    an image can get. The default setting is 2000 pixels, which seems
+    reasonable.
+
+All of the above can be used in concert to limit how CMap is used
+(e.g., allow the "Please Wait" page with a maximum of 45 seconds for a
+request and a maximum pixel width of 1000) or can all be turned off.
+The author prefers the idea of just using the maximum image width for
+throttling CMap.
+
+17.     AUTHOR
 
 Ken Y. Clark, kclark@cshl.org
 
