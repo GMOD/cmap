@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data::Generic;
 
-# $Id: Generic.pm,v 1.23 2003-02-20 16:50:07 kycl4rk Exp $
+# $Id: Generic.pm,v 1.24 2003-03-05 01:55:24 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.23 $)[-1];
+$VERSION = (qw$Revision: 1.24 $)[-1];
 
 use Data::Dumper; # really just for debugging
 use Bio::GMOD::CMap;
@@ -217,6 +217,7 @@ The SQL for finding the number of correspondences by for one map.
     my $sql = q[
         select   fc.feature_correspondence_id,
                  s.common_name as species_name,
+                 s.display_order as species_display_order,
                  mt.map_type,
                  mt.display_order as map_type_display_order,
                  ms.accession_id as map_set_aid,
@@ -264,23 +265,6 @@ The SQL for finding the number of correspondences by for one map.
         ') ';
     }
 
-#    $sql .= q[
-#        group by common_name,
-#                 mt.map_type,
-#                 mt.display_order,
-#                 ms.map_set_id,
-#                 ms.short_name,
-#                 ms.accession_id,
-#                 map_set_name,
-#                 ms.published_on,
-#                 ms.can_be_reference_map,
-#                 ms.display_order,
-#                 mt.display_order,
-#                 map2.map_id,
-#                 map2.accession_id,
-#                 map2.map_name
-#    ];
-
     return $sql;
 }
 
@@ -302,6 +286,7 @@ The SQL for finding the number of correspondences for a whole map set.
     my $sql = q[
         select   fc.feature_correspondence_id,
                  s.common_name as species_name,
+                 s.display_order as species_display_order,
                  mt.map_type,
                  mt.display_order as map_type_display_order,
                  ms.accession_id as map_set_aid,
@@ -347,17 +332,6 @@ The SQL for finding the number of correspondences for a whole map set.
         ') ';
     }
 
-#        group by s.species_name,
-#                 mt.map_type,
-#                 mt.display_order,
-#                 ms.map_set_id,
-#                 ms.map_set_name,
-#                 ms.published_on,
-#                 mt.display_order,
-#                 map2.map_id,
-#                 map2.map_name
-#    ];
-
     return $sql;
 }
 
@@ -381,6 +355,7 @@ The SQL for finding the number of correspondences for many maps
     my $sql = qq[
         select   fc.feature_correspondence_id,
                  s.common_name as species_name,
+                 s.display_order as species_display_order,
                  mt.map_type,
                  mt.display_order as map_type_display_order,
                  ms.accession_id as map_set_aid,
@@ -423,21 +398,6 @@ The SQL for finding the number of correspondences for many maps
             join( ',', @$feature_type_ids ).
         ') ';
     }
-
-#        group by s.common_name,
-#                 mt.map_type,
-#                 mt.display_order,
-#                 ms.map_set_id,
-#                 ms.accession_id,
-#                 ms.short_name,
-#                 ms.published_on,
-#                 ms.can_be_reference_map,
-#                 ms.display_order,
-#                 mt.display_order,
-#                 map2.map_id,
-#                 map2.accession_id,
-#                 map2.map_name
-#    ];
 
     return $sql;
 }
