@@ -4,16 +4,18 @@ CMAP Attributes and Cross-References
 
 =head1 INTRODUCTION
 
-Up to version 0.10, CMap has only stored just enough information
-on maps and features to draw images.  This has had the effect of
-forcing curators to set up external sources for richer data and users
-to leave CMap to view this data via cross-references.  Additionally,
-these cross-references could only be attached to features (i.e., not
-to any other CMap objects like map sets, maps, feature types,
-correspondence evidence types, etc.).  This has had the effect of
-burdening non-technical curators to create external applications for
-housing this data and hindering the ability of curators to provide
-details on every part of the system that needs annotation.
+Up to version 0.10, CMap has only stored just enough information on maps and
+features to draw images.  This has had the effect of forcing curators to set up
+external sources for richer data and users to leave CMap to view this data via
+cross-references.  Additionally, these cross-references could only be attached
+to features (i.e., not to any other CMap objects like map sets, maps, etc.).
+This has had the effect of burdening non-technical curators to create external
+applications for housing this data and hindering the ability of curators to
+provide details on every part of the system that needs annotation.
+
+It is important to note that attributes and cross-references for feature types,
+map types and evidence types are now defined in the configuation files.  Please
+see the Administration documentation for more information.
 
 =head1 ATTRIBUTE TABLE
 
@@ -82,18 +84,17 @@ raw URL (if it begins with "http://") and make an anchor around it.
 
 Attributes need to be attached to individual database objects, but
 xrefs need to be able to apply a template to a class of objects, e.g.,
-all "feature_type" objects (notice that the xref table allows NULL
+all "species" objects (notice that the xref table allows NULL
 values for the "object_id" field).
 
 =back
 
-For more on the second point, suppose one had a "feature type
-ontology" system running, and, from the "feature details" page, wanted
-to create a link to lookup the feature's type.  The xref could look
-like this:
+For more on the second point, suppose one had a system to link to similar 
+map sets and from the "Sap Set" page, wanted to create a link to lookup 
+the similar map sets.  The xref could look like this:
 
-  Name: View Feature Type Ontology
-  URL : /ontology/feature_types?q=[% object.feature_type %]
+  Name: View Similar Map Sets
+  URL : /similar_map_sets/similar_map_sets?map_set_aid=[% object.accession %]
 
 A couple things to notice:
 
@@ -134,11 +135,10 @@ Table: cmap_map_set
   map_set_aid          (accession_id)
   map_set_name
   short_name
-  map_type_id
+  map_type_accession
   species_id
   can_be_reference_map
-  map_type             [cmap_map_type]
-  map_units            [cmap_map_type]
+  map_units
   species_aid          [cmap_species.accession_id]
   common_name          [cmap_species]
   full_name            [cmap_species]
@@ -165,31 +165,27 @@ Table: cmap_feature
   feature_aid      (accession_id)
   map_id
   map_set_id 
-  feature_type_id
+  feature_type_accession
   feature_name
   is_landmark
   start_position
   stop_position
   aliases          [cmap_feature_alias.alias] *
   correspondences  [cmap_feature_correspondence] *
-  feature_type     [cmap_feature_type]
-  feature_type_aid [cmap_feature_type.accession_id]
   map_name         [cmap_map]
   map_aid          [cmap_map.accession_id]
   map_set_aid      [cmap_map_set.accession_id]
   map_set_name     [cmap_map_set.short_name ]
   species_id       [cmap_species]
   species_name     [cmap_species.common_name]
-  map_type_aid     [cmap_map_type.accession_id]
-  map_type         [cmap_map_type]
-  map_units        [cmap_map_type]
+  map_type_aid     [cmap_map.accession_id]
+  map_units        [cmap_map_set.map_units]
 
 =head2 Feature Type Info (/cmap/feature_type_info)
 
 Table: cmap_feature_type
 
-  feature_type_id
-  feature_type_aid (accession_id)
+  feature_type_accession 
   feature_type
   shape
   color
@@ -207,8 +203,7 @@ Table: cmap_feature_alias
 
 Table: cmap_map_type
 
-  map_type_id
-  map_type_aid (accession_id)
+  map_type_accession
   map_type
   map_units
   is_relational_map
@@ -221,8 +216,7 @@ Table: cmap_map_type
 
 Table: cmap_evidence_type
 
-  evidence_type_id
-  evidence_type_aid (accession_id)
+  evidence_type_accession
   evidence_type
   rank
   line_color
@@ -309,7 +303,7 @@ generated, one for each.
 You can do other simple checks inside the template to decide whether
 or not to make an xref.  Take this trivial example:
 
-  [% IF object.map_type=='Genetic' %]http://www.genetic-maps.org/search=[% object.map_name %][% END %]
+  [% IF object.map_type_accession=='Genetic' %]http://www.genetic-maps.org/search=[% object.map_name %][% END %]
 
 This template checks to see if the object (probably a map) is of the
 type "Genetic."  If so, it creates a URL querying on the map's name;

@@ -4,7 +4,7 @@ CMap Code Overview
 
 =head1 VERSION
 
-$Revision: 1.5 $
+$Revision: 1.6 $
 
 CMap is a CGI application for viewing comparative and genetic maps.
 Written entirely in Perl, this application will run on many different
@@ -91,20 +91,31 @@ the HTML to do so without interfering with the code.
 
 =head1 CONFIGURATION MODULES
 
+There is Bio::GMOD::CMap::Config which handles the reading in and parsing of
+the config files.
+
 All local configuration of CMap should be done through the "cmap.conf"
-file.  Of course, the file doesn't have to be called "cmap.conf."  It
+directory.  Of course, the directory doesn't have to be called "cmap.conf."  It
 can be called whatever you like, so long as the absolute path to the
-file is in the Bio::GMOD::CMap::Constants file.  This path is
+directory is in the Bio::GMOD::CMap::Constants file.  This path is
 automatically written during installation if you do the standard "perl
-Build.PL; ./Build; ./Build install" process.  There are defaults
-provided for most every option in the local config file with the
-exception of the database connection info and the template and image
-cache directories.  The latter two should be set during installation,
-and the first should be set by the installer after installation (they
-are promted to do this after "./Build install").  If you comment out
-any of the options in "cmap.conf" (except "database," "template_dir"
-and "cache_dir"), there are defaults in the Bio::GMOD::CMap::Constants
-file.
+Build.PL; ./Build; ./Build install" process.  
+
+There are now two types of config files.  There is the "global.conf" that
+handles information that all the data sources need, like the default data
+source.  There is also one config file for each data source.  This file is
+handles most of the configurable options.
+
+There are defaults provided for most every option in the local config file with
+the exception of the database connection info and the template and image cache
+directories.  The latter two should be set during installation, and the first
+should be set by the installer after installation (they are promted to do this
+after "./Build install").  If you comment out any of the options in "cmap.conf"
+(except "database," "template_dir" and "cache_dir"), there are defaults in the
+Bio::GMOD::CMap::Constants file.
+
+Feature, map and evidence types are now defined and controlled in the data
+source config files.
 
 =head1 GENERAL FLOW FOR HANDLERS
 
@@ -274,7 +285,10 @@ which themselves are just points on a line. The map set can be disabled
 (effectively removing it from all views) by setting the "is_enabled"
 field to zero.
 
-=item * cmap_map_type: 
+=item * cmap_map_type (depricated): 
+
+This table has been removed and it's functionality moved to the config
+file and other tables.
 
 Maps are of some type determined by the data curator.  It is useful to
 researchers to know that a map is a "genetic" map and that the
@@ -286,7 +300,6 @@ has great discretion over the presentation of maps. Additionally, the
 curator can determine if the maps can stand alone (like most genetic
 maps) or if they are a special kind of map set that CMap calls
 "relational," meaning that the maps can only be shown *in relation to*
-<<<<<<< CODE_OVERVIEW.pod
 some other map (of the first, "non-relational" kind, no less).
 Examples of this include physical fingerprint contig maps (FPC), QTLs,
 and haplotypes. These maps are usually composed of many smaller
@@ -303,7 +316,7 @@ correspondences cover on the reference map.
 =item * cmap_species: 
 
 A fairly obvious table, given that we hold genetic data. Map sets are
-tied to both a map type and a species.
+tied to a species.
 
 =item * cmap_map: 
 
@@ -342,7 +355,10 @@ This table allows you to attach any arbitrary key/value pair of data
 to almost any database object.  See the "attributes-and-xrefs.pod"
 document for more information.
 
-=item * cmap_feature_type: 
+=item * cmap_feature_type (depricated): 
+
+This table has been removed and it's functionality moved to the config
+file and other tables.
 
 Each feature is of some type. What particular types of features exist
 are completely determined by the data curator. The data curator
@@ -364,6 +380,9 @@ correspondence to another. There may be several reasons, each of a
 different type, optionally with some sort of score.
 
 =item * cmap_evidence_type: 
+
+This table has been removed and it's functionality moved to the config
+file and other tables.
 
 These are the types of evidence that we can use in the previous table.
 For instance, we can say two features are related because they have
