@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.106 2004-08-17 05:27:43 mwz444 Exp $
+# $Id: Map.pm,v 1.107 2004-08-20 15:41:13 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.106 $)[-1];
+$VERSION = (qw$Revision: 1.107 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -528,7 +528,7 @@ Lays out the map.
     my $no_of_maps  = scalar @map_ids;
 
     # if more than one map in slot, compress all
-    my $is_compressed  = $no_of_maps > 1;
+    my $is_compressed  = $drawer->data_module->compress_maps($slot_no);
     my $label_features = $drawer->label_features;
     my $config         = $self->config or return;
 
@@ -1353,10 +1353,14 @@ sub layout_map_foundation {
     # map shall be allowed to cross.
     #
     my $boundary_factor=0.5;
-    my $top_boundary=$ref_y1 - (
-        ($ref_y2 - $ref_y1) * $boundary_factor);
-    my $bottom_boundary=$ref_y2 + (
-        ($ref_y2 - $ref_y1) * $boundary_factor);
+#    my $top_boundary=$ref_y1 - (
+#        ($ref_y2 - $ref_y1) * $boundary_factor);
+#    my $bottom_boundary=$ref_y2 + (
+#        ($ref_y2 - $ref_y1) * $boundary_factor);
+    my $top_boundary=$base_y - (
+        ($drawer->pixel_height()) * $boundary_factor);
+    my $bottom_boundary=$base_y+$drawer->pixel_height() + (
+        ($drawer->pixel_height()) * $boundary_factor);
 
     #
     #Decide the dimentions of a compressed map
@@ -1396,7 +1400,7 @@ sub layout_map_foundation {
         my $half_label = ( ( $font_width * length($map_name) ) / 2 );
         $base_x       = $this_map_x - $half_label;
         $map_base_y   = $this_map_y;
-        $pixel_height = $compressed_map_pix_height;
+        $pixel_height = $scaled_map_pixel_height;
         $area         = [
             $base_x,
             $this_map_y + $font_height,
@@ -1615,7 +1619,8 @@ sub layout_map_foundation {
         push @$map_area_data,
           {
             coords => \@topper_bounds,
-            url  => $map_details_url . "?ref_map_aids=" . $map->{'accession_id'},            alt  => 'Map Details: ' . $map->{'map_name'},
+            url  => $map_details_url."?ref_map_aids=".$map->{'accession_id'},
+            alt  => 'Map Details: ' . $map->{'map_name'},
             code => $code,
           };
                                                                                 
