@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Utils;
 
-# $Id: Utils.pm,v 1.20 2003-05-16 19:57:17 kycl4rk Exp $
+# $Id: Utils.pm,v 1.21 2003-05-23 02:22:40 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.20 $)[-1];
+$VERSION = (qw$Revision: 1.21 $)[-1];
 
 use base 'Exporter';
 
@@ -57,6 +57,7 @@ Given a reference to some columns, figure out where something can be inserted.
     my $buffer      = $args{'buffer'}      ||  2; # space b/w things
     my $collapse    = $args{'collapse'}    ||  0; # whether to collapse
     my $collapse_on = $args{'collapse_on'} || ''; # on what type of object
+    my $col_span    = $args{'col_span'}    ||  1; # how many cols to occupy
     my $top         = $args{'top'};               # the top and bottom of
     my $bottom      = $args{'bottom'};            # the thing being inserted
     $bottom         = $top unless defined $bottom;
@@ -65,13 +66,16 @@ Given a reference to some columns, figure out where something can be inserted.
 
     my $column_index; # the number of the column chosen, is returned
     if ( @$columns ) {
-        for my $i ( 0..$#{ $columns } ) {
-            my $column = $columns->[ $i ];
-            my @used   = sort { $a->[0] <=> $b->[0] } @{ $column };
-            my $ok     = 1;
+        my $i = 0;
+        for ( ;; ) {
+            last if $i > $#{ $columns };
+            my $column    = $columns->[ $i ];
+            my @used      = sort { $a->[0] <=> $b->[0] } @{ $column };
+            my $ok        = 1;
+            my $collapsed = 0;
 
             for my $segment ( @used ) {
-                my ( $north, $south, $type ) = @$segment; 
+                my ( $north, $south, $span, $type ) = @$segment; 
                 if ( 
                     $collapse             && 
                     $collapse_on eq $type && 
@@ -79,29 +83,65 @@ Given a reference to some columns, figure out where something can be inserted.
                     $south == $bottom 
                 ) {
                     $ok = 1;
+                    $collapsed = 1;
                     last;
                 }
 
                 next if $south + $buffer < $top;
                 next if $north - $buffer > $bottom;
+                $i += $span; # jump past the last taken column
                 $ok = 0, last;
+            }
+
+            #
+            # If this column looks OK, see if there is clearance in the others.
+            #
+            if ( $ok && $col_span > 1 && $i < $#{ $columns } ) {
+                for my $n ( $i + 1 .. $i + $col_span - 1 ) {
+                    last if $n > $#{ $columns };
+                    my $ncol  = $columns->[ $n ];
+                    my @nused = sort { $a->[0] <=> $b->[0] } @{ $ncol };
+                    my $nok   = 1;
+
+                    for my $nseg ( @nused ) {
+                        my ( $n, $s, $nspan ) = @$nseg; 
+                        next if $s + $buffer < $top;
+                        next if $n - $buffer > $bottom;
+                        $i += $nspan; # jump past the last taken column
+                        $ok = 0, last;
+                    }
+                }
             }
 
             if ( $ok ) {
                 $column_index = $i;
-                push @{ $column }, [ $top, $bottom, $collapse_on ];
+                unless ( $collapsed ) {
+                    for my $n ( 0 .. $col_span - 1 ) {
+                        push @{ $columns->[ $column_index + $n ] }, [ 
+                            $top, $bottom, $col_span - $n, $collapse_on 
+                        ];
+                    }
+                }
                 last;
             }
         }
 
         unless ( defined $column_index ) {
-            push @$columns, [ [ $top, $bottom, $collapse_on ] ];
-            $column_index = $#{ $columns };
+            $column_index = $#{ $columns } + 1;
+            for my $n ( 0 .. $col_span - 1 ) {
+                push @{ $columns->[ $column_index + $n ] }, [ 
+                    $top, $bottom, $col_span - $n, $collapse_on
+                ];
+            }
         }
     }
     else {
         $column_index = 0;
-        push @$columns, [ [ $top, $bottom, $collapse_on ] ];
+        for my $n ( 0 .. $col_span - 1 ) {
+            push @{ $columns->[ $n ] }, [ 
+                $top, $bottom, $col_span - $n, $collapse_on
+            ];
+        }
     }
 
     return $column_index;
