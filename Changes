@@ -11,8 +11,8 @@
 -   Significant changes in drawing code to allow relational maps of
     varying widths that don't collide with map titles or other maps,
     this also fixed a very old bug (#688326)
--   Fixed (#729138) where features weren't being properly deleted when 
-    loading a map in "overwrite" mode
+-   Fixed bug (#729138) where features weren't being properly deleted 
+    when loading a map in "overwrite" mode
 -   Added ability to collapse overlapping features
 -   Changed some text in legend to use black rather than image colors 
     to improve readability
