@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.66 2004-11-29 23:17:23 mwz444 Exp $
+# $Id: CMap.pm,v 1.67 2004-12-09 18:46:44 mwz444 Exp $
 
 =head1 NAME
 
@@ -397,9 +397,11 @@ The default is 1.
 
     my $self = shift;
     my $val  = shift;
-    $self->{'aggregate'} = $val if defined $val;
-    $self->{'aggregate'} = $self->config_data('scale_maps') || 1
+    $self->{'aggregate'} = $val if ( defined $val );
+    $self->{'aggregate'} = $self->config_data('aggregate_correspondences')
       unless defined $self->{'aggregate'};
+    $self->{'aggregate'} = 1
+      unless ( defined $self->{'aggregate'} );
     return $self->{'aggregate'};
 }
 
@@ -443,7 +445,9 @@ The default is 1.
     my $self = shift;
     my $val  = shift;
     $self->{'scale_maps'} = $val if defined $val;
-    $self->{'scale_maps'} = $self->config_data('scale_maps') || 1
+    $self->{'scale_maps'} = $self->config_data('scale_maps')
+      unless defined $self->{'scale_maps'};
+    $self->{'scale_maps'} = 1
       unless defined $self->{'scale_maps'};
     return $self->{'scale_maps'};
 }

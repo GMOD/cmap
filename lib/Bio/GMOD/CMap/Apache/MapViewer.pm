@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.78 2004-12-08 23:24:50 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.79 2004-12-09 18:46:45 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.78 $)[-1];
+$VERSION = (qw$Revision: 1.79 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -93,9 +93,10 @@ sub handler {
     $collapse_features = $self->config_data('collapse_overlapping_features')
       unless ( defined($collapse_features) );
 
-    $self->aggregate($aggregate);
-    $self->magnify_all($magnify_all);
-    $self->scale_maps($scale_maps);
+    # Get and set a variety of options
+    $apr->param('aggregate',   $self->aggregate($aggregate) );
+    $apr->param('magnify_all', $self->magnify_all($magnify_all));
+    $apr->param('scale_maps',  $self->scale_maps($scale_maps));
 
     $INTRO ||= $self->config_data( 'map_viewer_intro', $self->data_source )
       || '';

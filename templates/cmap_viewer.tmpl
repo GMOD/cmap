@@ -514,7 +514,7 @@ function changeCompMaps(sel,index,side){
             </span>
             <table>
               <tr>
-                <td align="left">Highlight Feature: 
+                <td align="left">Highlight Features: 
                   <input name="highlight" value="[% apr.param('highlight') | html %]">
                 </td>
               </tr>
@@ -589,7 +589,7 @@ function changeCompMaps(sel,index,side){
               </tr>
               <tr>
                 <td align="left" valign="top">Aggregate Correspondences:
-                  [% IF apr.param('aggregate')==0; aggregate=0; ELSE; aggregate=1; END %]
+                  [% IF apr.param('aggregate')==1; aggregate=1; ELSE; aggregate=0; END %]
                   [% IF apr.param('aggregate')==2; aggregate=2; END %]
                   <input type="radio" name="aggregate" value="0"[% IF aggregate==0; ' checked'; END %]>No
                   <input type="radio" name="aggregate" value="1"[% IF aggregate==1; ' checked'; END %]>1 Line
@@ -718,7 +718,7 @@ function changeCompMaps(sel,index,side){
                 </td>
               </tr>
               <tr>
-                <td align="left" valign="top">Draw Maps Using Same Scale:</td>
+                <td align="left" valign="top">Draw Maps Using <br>Same Scale:</td>
                 [% IF apr.param('scale_maps')==0; scale_maps=0; ELSE; scale_maps=1; END %]
                 <td><input type="radio" name="scale_maps" value="0"[% IF scale_maps==0; ' checked'; END %]>No</td>
                 <td><input type="radio" name="scale_maps" value="1"[% IF scale_maps==1; ' checked'; END %]>Yes</td>
