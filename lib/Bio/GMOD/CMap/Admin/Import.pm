@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.26 2003-03-26 15:50:36 kycl4rk Exp $
+# $Id: Import.pm,v 1.27 2003-03-31 19:22:18 kycl4rk Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.26 $)[-1];
+$VERSION  = (qw$Revision: 1.27 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -324,10 +324,11 @@ have for the map set).
             $maps{ uc $map_name }{'touched'} = 1;
         }
 
-        my $display_order = $record{'map_display_order'};
+        my $display_order = $record{'map_display_order'} || 1;
+        my $map_start     = $record{'map_start'}         || 0;
+        my $map_stop      = $record{'map_stop'}          || 0;
         my $linkage_group = $record{'linkage_group'};
-        my $map_start     = $record{'map_start'}    || 0;
-        my $map_stop      = $record{'map_stop'}     || 0;
+
         if ( 
             defined $map_start &&
             defined $map_stop  &&
