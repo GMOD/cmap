@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.63 2004-02-24 15:11:33 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.64 2004-03-11 00:58:12 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -32,7 +32,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.63 $)[-1];
+$VERSION        = (qw$Revision: 1.64 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -1478,9 +1478,6 @@ sub feature_view {
         'cmap_feature', $feature_id, $apr->param('xref_order_by')
     );
 
-    #
-    # Removed "alternate_name"
-    #
     my $correspondences = $db->selectall_arrayref(
         q[
             select fc.feature_correspondence_id,
