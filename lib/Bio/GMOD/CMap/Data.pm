@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.132 2004-06-24 20:43:12 mwz444 Exp $
+# $Id: Data.pm,v 1.133 2004-07-01 19:24:20 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.132 $)[-1];
+$VERSION = (qw$Revision: 1.133 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -404,7 +404,8 @@ sub cmap_data {
     my $include_feature_type_aids   = $args{'include_feature_type_aids'} || [];
     my $corr_only_feature_type_aids = $args{'corr_only_feature_type_aids'}
       || [];
-    my $include_evidence_type_aids = $args{'include_evidence_type_aids'} || [];
+    my $feature_types_undefined     = $args{'feature_types_undefined'} || 1;
+    my $include_evidence_type_aids  = $args{'include_evidence_type_aids'} || [];
     my @slot_nos = keys %$slots;
     my @pos              = sort { $a <=> $b } grep { $_ >= 0 } @slot_nos;
     my @neg              = sort { $b <=> $a } grep { $_ < 0 } @slot_nos;
@@ -416,12 +417,12 @@ sub cmap_data {
     # "-1" is a reserved value meaning "All" for feature and evidence types
     # "-2" is reserved for "None"
     #
-    $include_feature_type_aids = []
-      if grep { /^-1$/ } @$include_feature_type_aids;
-    $include_feature_type_aids = [ -2, ]
-      if grep { /^-2$/ } @$include_feature_type_aids;
-    $corr_only_feature_type_aids = []
-      if grep { /^-2$/ } @$include_feature_type_aids;
+#    $include_feature_type_aids = []
+#      if grep { /^-1$/ } @$include_feature_type_aids;
+#    $include_feature_type_aids = [ -2, ]
+#      if grep { /^-2$/ } @$include_feature_type_aids;
+#    $corr_only_feature_type_aids = []
+#      if grep { /^-2$/ } @$include_feature_type_aids;
     $include_evidence_type_aids = [-1]
       if grep { /^-1$/ } @$include_evidence_type_aids;
 
@@ -459,6 +460,7 @@ sub cmap_data {
             min_correspondences         => $min_correspondences,
             feature_type_aids           => $include_feature_type_aids,
             corr_only_feature_type_aids => $corr_only_feature_type_aids,
+            feature_types_undefined     => $feature_types_undefined,
             evidence_type_aids          => $include_evidence_type_aids,
             pid                         => $pid,
             map_type_aids               => \%map_type_aids,
@@ -525,6 +527,7 @@ sub slot_data {
     my $correspondence_evidence   = $args{'correspondence_evidence'};
     my $feature_types_seen        = $args{'feature_types'};
     my $corr_only_feature_type_aids = $args{'corr_only_feature_type_aids'};
+    my $feature_types_undefined     = $args{'feature_types_undefined'} || 1;
     my $map_type_aids               = $args{'map_type_aids'};
     my $pid                         = $args{'pid'};
     my $max_no_features             = 200000;
@@ -1066,6 +1069,7 @@ sub slot_data {
                     and      map.map_set_id=ms.map_set_id
 			   ];
             my $corr_free_sql = $sql_base_top . $sql_base_bottom;
+            my $with_corr_sql ='';
             if (@$corr_only_feature_type_aids) {
                 $corr_free_sql .=
                   "and f.feature_type_accession not in ('"
@@ -1100,7 +1104,7 @@ if ((  $self->slot_info->{ $this_slot_no + 1 }
                     )
                   )
                   . ")";
-                my $with_corr_sql = $sql_base_top . q[,
+                $with_corr_sql = $sql_base_top . q[,
                   cmap_feature f2,
                   cmap_correspondence_lookup cl
                   ] . $sql_base_bottom . q[
@@ -1112,12 +1116,34 @@ if ((  $self->slot_info->{ $this_slot_no + 1 }
                       . join( "','", @$corr_only_feature_type_aids ) . "')";
                 }
                 $with_corr_sql .= $map_id_string;
-                if ( $corr_only_feature_type_aids->[0] == -1 ) {
+             #   if ( $corr_only_feature_type_aids->[0] == -1 ) {
+             #       $sql_str = $with_corr_sql;
+             #   }
+             #   else {
+             #       $sql_str = $corr_free_sql . " UNION " . $with_corr_sql;
+             #   }
+            }
+            #
+            # Decide what sql will be used
+            #
+            if (@$corr_only_feature_type_aids and @$feature_type_aids){
+                $sql_str = $corr_free_sql;
+                $sql_str .= " UNION " . $with_corr_sql if ($with_corr_sql);
+            }
+            elsif(@$corr_only_feature_type_aids or $feature_types_undefined){
+                if ($with_corr_sql){
                     $sql_str = $with_corr_sql;
                 }
-                else {
-                    $sql_str = $corr_free_sql . " UNION " . $with_corr_sql;
+                else{
+                    ###Return nothing
+                     $sql_str = $corr_free_sql."and f.feature_id=-1 "; 
                 }
+            }
+            elsif(@$feature_type_aids){
+                $sql_str = $corr_free_sql;
+            }
+            else{
+                $sql_str = $corr_free_sql . " UNION " . $with_corr_sql;
             }
             unless ( $map->{'features'} =
                 $self->get_cached_results( $sql_str) )
@@ -2430,7 +2456,7 @@ sub cmap_form_data {
     #
     # "-1" is a reserved value meaning "All."
     #
-    $feature_type_aids  = [] if grep { /^-1$/ } @$feature_type_aids;
+#    $feature_type_aids  = [] if grep { /^-1$/ } @$feature_type_aids;
     $evidence_type_aids = [] if grep { /^-1$/ } @$evidence_type_aids;
 
     #
