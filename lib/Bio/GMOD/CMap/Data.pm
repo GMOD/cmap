@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.169 2004-11-05 16:08:45 mwz444 Exp $
+# $Id: Data.pm,v 1.170 2004-11-05 19:28:43 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.169 $)[-1];
+$VERSION = (qw$Revision: 1.170 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -653,6 +653,7 @@ sub slot_data {
                            ms.map_units,
                            ms.is_relational_map,
                            s.species_id,
+                           s.accession_id as species_aid,
                            s.common_name as species_name
                     from   cmap_map map,
                            cmap_map_set ms,
