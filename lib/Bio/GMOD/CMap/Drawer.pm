@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.70 2004-06-24 20:43:15 mwz444 Exp $
+# $Id: Drawer.pm,v 1.71 2004-06-24 20:46:43 mwz444 Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.70 $)[-1];
+$VERSION = (qw$Revision: 1.71 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -639,34 +639,6 @@ Lays out the image and writes it to the file system, set the "image_name."
                     $color
                 );
                 $label_y = $feature_y;
-            }
-            elsif ( $ft->{'shape'} eq 'in-triangle' ) {
-                my @temp_drawing_data;
-                Bio::GMOD::CMap::Drawer::Glyph->in_triangle(
-                    drawing_data => \@temp_drawing_data,
-                    x_pos2 => $feature_x + 6,
-                    x_pos1 => $feature_x + 3,
-                    y_pos1=> $feature_y + 3,
-                    y_pos2=> $feature_y + 8,
-                    color => $color,
-                    label_side=> RIGHT,
-                    );
-                $self->add_drawing(@temp_drawing_data);
-                $label_y = $feature_y + 5;
-            }
-            elsif ( 0 and $ft->{'shape'} eq 'out-triangle' ) {
-                my @temp_drawing_data;
-                Bio::GMOD::CMap::Drawer::Glyph->out_triangle(
-                    drawing_data => \@temp_drawing_data,
-                    x_pos2 => $feature_x + 6,
-                    x_pos1 => $feature_x + 3,
-                    y_pos1=> $feature_y + 3,
-                    y_pos2=> $feature_y + 8,
-                    color => $color,
-                    label_side=> RIGHT,
-                    );
-                $self->add_drawing(@temp_drawing_data);
-                $label_y = $feature_y + 5;
             }
             else {
                 my @temp_drawing_data;
