@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.20 2003-02-11 00:23:11 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.21 2003-02-14 01:26:01 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -25,11 +25,13 @@ use vars qw(
 );
 
 $COLORS         = [ sort keys %{ +COLORS } ];
-$FEATURE_SHAPES = [ qw( box dumbbell line span up-arrow down-arrow ) ];
+$FEATURE_SHAPES = [ qw( 
+    box dumbbell line span up-arrow down-arrow double-arrow rectangle
+) ];
 $LINE_STYLES    = [ qw( dashed solid ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.20 $)[-1];
+$VERSION        = (qw$Revision: 1.21 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -79,14 +81,6 @@ sub handler {
 
     my $action = $apr->param('action') || 'admin_home';
     my $return = eval { $self->$action() };
-
-    if ( my $err = $@ || $self->error ) {
-        $self->process_template(
-            $self->error_template,
-            { error => $err }
-        );
-    }
-
     return $return || OK;
 }
 
@@ -99,7 +93,7 @@ sub admin {
     unless ( defined $self->{'admin'} ) {
         $self->{'admin'} =  Bio::GMOD::CMap::Admin->new(
             data_source  => $self->data_source,
-        )
+        );
     }
     return $self->{'admin'};
 }
@@ -2027,6 +2021,11 @@ sub map_set_create {
         ], { Columns => {} }
     );
 
+    return $self->error(
+        'Please <a href="admin?action=species_create">create species</a> '.
+        'before creating map sets.'
+    ) unless @$specie;
+
     my $map_types = $db->selectall_arrayref(
         q[
             select   mt.map_type_id, mt.map_type
@@ -2034,6 +2033,11 @@ sub map_set_create {
             order by map_type
         ], { Columns => {} }
     );
+
+    return $self->error(
+        'Please <a href="admin?action=map_type_create">create map types</a> '.
+        'before creating map sets.'
+    ) unless @$map_types;
 
     return $self->process_template( 
         TEMPLATE->{'map_set_create'},

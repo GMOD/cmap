@@ -1,5 +1,7 @@
                            CMAP CODE OVERVIEW
 
+# $Revision: 1.7 $
+
 The comparative and genetic maps application ("CMap") is written
 entirely in Perl and takes advantage of mod_perl, Apache's embedded
 Perl technology.  The application also relies upon a relational
@@ -209,32 +211,35 @@ databases.
 
 8. TABLE DESCRIPTIONS
 
-In the "sql" directory, you will find create statements of the tables
-for MySQL, Oracle and PostgreSQL.  Following is a general description
-of each table, what kind of data it is supposed to hold, and how it
-fits in with the others:
+In the "docs" directory, you will find a schema diagram illustrating
+the structure and relationships of the tables.  In the "sql"
+directory, you will find create statements of the tables for MySQL,
+Oracle and PostgreSQL.  Following is a general description of each
+table, what kind of data it is supposed to hold, and how it fits in
+with the others:
 
 *   cmap_map_set: Arguably the "base" table, a "map set" is a collection
-    of "maps," which themselves are just points on a line. Generally a
-    map set will contain maps that can each stand alone, like the
-    chromosomes of a human or the linkage groups of rice, but there is a
-    special kind of map set that I call "relational," meaning that the
-    maps can only be shown in relation to some other map (of the first,
+    of "maps," which themselves are just points on a line. The map set
+    can be disable (effectively removing it from all views) by setting
+    the "is_enabled" field to zero.
+
+*   cmap_map_type: Maps are of some type determined by the data curator.
+    It is useful to researchers to know that a map is a "genetic" map
+    and that the distances given are in "centiMorgans" as opposed to a
+    "physical" map where the distances are "bands." More importantly,
+    though, the curator can decide how different maps are drawn so as to
+    make them visually distinctive. By selecting from shapes, colors and
+    widths, the curator has great discretion over the presentation of
+    maps. Additionally, the curator can determine if the maps can stand
+    alone (like most genetic maps) or if they are a special kind of map
+    set that CMap calls "relational," meaning that the maps can only be
+    shown *in relation to* some other map (of the first,
     "non-relational" kind, no less :-). Examples of this include
     physical fingerprint contig maps (FPC), QTLs, and haplotypes. These
     maps are usually composed of many smaller fragments that have some
     correspondences to other maps. As such, they are just drawn to a
     size relative to the distance their correspondences cover on the
     reference map.
-
-*   cmap_map_type: Maps are of some type determined by the data
-    curator. It is useful to researchers to know that a map is a
-    "genetic" map and that the distances given are in "centimorgans" as
-    opposed to a "physical" map where the distances are "bands." More
-    importantly, though, the curator can decide how different maps are
-    drawn so as to make them visually distinctive. By selecting from
-    shapes, colors and widths, the curator has great discretion over
-    the presentation of maps.
 
 *   cmap_species: A fairly obvious table, given that we hold genetic
     data. Map sets are tied to both a map type and a species.
@@ -258,7 +263,8 @@ fits in with the others:
 *   cmap_feature_correspondence: The whole point of comparative maps is
     to show the relationships among maps. These correspondences are all
     held in this table, and they simply state that one feature is
-    related to another.
+    related to another. The correspondence can be disable by setting
+    the "is_enabled" field to zero.
 
 *   cmap_correspondence_evidence: This table holds the reasons why we
     can say that one feature has some correspondence to another. There
@@ -271,7 +277,7 @@ fits in with the others:
     evidences are stronger than others, so they can be ranked
     accordingly.
 
-*   cmap_correspondence_lookup: This is sort of a cheater table I
+*   cmap_correspondence_lookup: This is sort of a cheater table
     introduced in order to make it easier to find correspondences. It
     doubles the number of records for any single correspondence. E.g.,
     if "foo" corresponds to "bar," then two records go into this table,
@@ -279,16 +285,25 @@ fits in with the others:
     pointing to the "canonical" correspondence record in the
     "cmap_feature_correspondence" table.
 
-*   cmap_next_number: This table stores the next number for the primary
-    key of every table needing such. It's basically a simple workaround
-    for MySQL's "auto_increment" feature and Oracle's "sequence" type.
-    By implementing this in Perl, I don't have to worry how (or even
-    "if") a particular RDBMS supports some one-up field.
+*   cmap_correspondence_matrix: This is another cheater table used to
+    make lookups of feature correspondences fast. The idea is that
+    correspondences don't often change, so it's quicker and easier to
+    pre-compute all the possible combinations for the matrix and cache
+    them in a table. Everytime a the number of correspondences changes
+    for any reason, it is necessary to manually reload this table using
+    the cmap_admin.pl tool.
 
 *   cmap_dbxref: This table holds database cross-references, which are
     just URLs that can be used to link features to other on-line
     databases.  See the section called "DATABASE CROSS-REFERENCES" in
     the INSTALL document for a full description on how these work.
+
+*   cmap_next_number: This table stores the next number for the primary
+    key of every table needing such. It's basically a simple workaround
+    for MySQL's "auto_increment" feature, Oracle's "sequence" type,
+    PostgreSQL's "serial" type, etc. By implementing this in Perl, I
+    don't have to worry how (or even "if") a particular RDBMS supports
+    a "one-up" field.
 
 9. AUTHOR
 

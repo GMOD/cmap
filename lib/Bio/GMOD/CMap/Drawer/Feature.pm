@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Feature;
 
-# $Id: Feature.pm,v 1.12 2003-02-11 00:22:23 kycl4rk Exp $
+# $Id: Feature.pm,v 1.13 2003-02-14 01:26:01 kycl4rk Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.12 $)[-1];
+$VERSION = (qw$Revision: 1.13 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -49,6 +49,8 @@ use constant SHAPE => {
     'dumbbell'     => 1,
     'up-arrow'     => 1,
     'down-arrow'   => 1,
+    'double-arrow' => 1,
+    'rectangle'    => 1,
 };
 
 BEGIN {

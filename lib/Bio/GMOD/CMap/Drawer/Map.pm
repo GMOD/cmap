@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.29 2003-02-11 00:22:22 kycl4rk Exp $
+# $Id: Map.pm,v 1.30 2003-02-14 01:26:01 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.29 $)[-1];
+$VERSION = (qw$Revision: 1.30 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -742,7 +742,17 @@ Lays out the map.
                 my $label_y;
                 my @coords;
 
-                if ( $feature->shape eq LINE ) {
+                #
+                # This turns single-point lines into spanning ones.
+                #
+                if ( 
+                    $feature->shape eq LINE
+#                    && ( 
+#                        $y_pos2 == 0 
+#                        ||
+#                        $y_pos1 - $y_pos2 == 0
+#                    )
+                ) {
                     $drawer->add_drawing(
                         LINE, $tick_start, $y_pos1, $tick_stop, $y_pos1, $color
                     );
@@ -771,6 +781,10 @@ Lays out the map.
                             $vert_line_x2, $y_pos1, 
                             $vert_line_x2, $y_pos2, 
                             $color,
+                        );
+
+                        @coords = (
+                            $vert_line_x2, $y_pos1, $vert_line_x2, $y_pos2
                         );
                     }
 
@@ -832,6 +846,37 @@ Lays out the map.
                             $vert_line_x2 + 2, $y_pos1, $color
                         );
                     }
+                    elsif ( $feature->shape eq 'double-arrow' ) {
+                        $drawer->add_drawing(
+                            LINE,
+                            $vert_line_x2, $y_pos1,
+                            $vert_line_x2 - 2, $y_pos1 + 2,
+                            $color
+                        );
+                        $drawer->add_drawing(
+                            LINE,
+                            $vert_line_x2, $y_pos1,
+                            $vert_line_x2 + 2, $y_pos1 + 2,
+                            $color
+                        );
+                        $drawer->add_drawing(
+                            LINE,
+                            $vert_line_x2, $y_pos2,
+                            $vert_line_x2 - 2, $y_pos2 - 2,
+                            $color
+                        );
+                        $drawer->add_drawing(
+                            LINE,
+                            $vert_line_x2, $y_pos2,
+                            $vert_line_x2 + 2, $y_pos2 - 2,
+                            $color
+                        );
+
+                        @coords = (
+                            $vert_line_x2 - 2, $y_pos2,
+                            $vert_line_x2 + 2, $y_pos1, $color
+                        );
+                    }
                     elsif ( $feature->shape eq 'box' ) {
                         $vert_line_x1 = $label_side eq RIGHT
                             ? $tick_start - $offset : $tick_stop + $offset;
@@ -845,7 +890,7 @@ Lays out the map.
 
                         $drawer->add_drawing( RECTANGLE, @coords, $color );
                     }
-                    else { # dumbbell
+                    elsif ( $feature->shape eq 'dumbbell' ) {
                         my $width = 3;
                         $drawer->add_drawing(
                             ARC, 
@@ -857,6 +902,25 @@ Lays out the map.
                             ARC, 
                             $vert_line_x2, $y_pos2,
                             $width, $width, 0, 360, $color
+                        );
+                        @coords = (
+                            $vert_line_x2 - $width/2, $y_pos1, 
+                            $vert_line_x2 + $width/2, $y_pos2
+                        );
+                    }
+                    elsif ( $feature->shape eq 'rectangle' ) {
+                        my $width = 3;
+                        $drawer->add_drawing(
+                            FILLED_RECT, 
+                            $vert_line_x2, $y_pos1,
+                            $vert_line_x2 + $width, $y_pos2,
+                            $color,
+                        );
+                        $drawer->add_drawing(
+                            RECTANGLE, 
+                            $vert_line_x2, $y_pos1,
+                            $vert_line_x2 + $width, $y_pos2,
+                            'black',
                         );
                         @coords = (
                             $vert_line_x2 - $width/2, $y_pos1, 
@@ -888,7 +952,6 @@ Lays out the map.
                         left       => [ $coords[0], $mid_feature ],
                         right      => [ $coords[2], $mid_feature ],
                         tick_y     => $mid_feature,
-#                        feature_correspondence_id => $,r
                     };
                 }
 

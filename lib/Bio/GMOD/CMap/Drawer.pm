@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.23 2003-02-11 00:26:04 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.24 2003-02-14 01:29:52 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.23 $)[-1];
+$VERSION = (qw$Revision: 1.24 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
@@ -614,6 +614,39 @@ Lays out the image and writes it to the file system, set the "image_name."
                 );
                 $label_y = $feature_y + 5;
             }
+            elsif ( $ft->{'shape'} eq 'double-arrow' ) {
+                $feature_x +=5;
+                $self->add_drawing(
+                    LINE, 
+                    $feature_x, $feature_y, $feature_x, $feature_y + 10,  
+                    $color
+                );
+                $self->add_drawing(
+                    LINE, 
+                    $feature_x, $feature_y + 10, 
+                    $feature_x - 2, $feature_y + 8,
+                    $color
+                );
+                $self->add_drawing(
+                    LINE, 
+                    $feature_x, $feature_y + 10, 
+                    $feature_x + 2, $feature_y + 8,
+                    $color
+                );
+                $self->add_drawing(
+                    LINE, 
+                    $feature_x, $feature_y,
+                    $feature_x - 2, $feature_y + 2, 
+                    $color
+                );
+                $self->add_drawing(
+                    LINE, 
+                    $feature_x, $feature_y,
+                    $feature_x + 2, $feature_y + 2, 
+                    $color
+                );
+                $label_y = $feature_y + 5;
+            }
             elsif ( $ft->{'shape'} eq 'box' ) {
                 $self->add_drawing(
                     RECTANGLE, 
@@ -637,6 +670,20 @@ Lays out the image and writes it to the file system, set the "image_name."
                     ARC, 
                     $feature_x + 5, $feature_y + 10, $width, $width, 0, 360, 
                     $color
+                );
+                $label_y = $feature_y + 5;
+            }
+            elsif ( $ft->{'shape'} eq 'rectangle' ) {
+                my $width = 3;
+                $self->add_drawing(
+                    FILLED_RECT, 
+                    $feature_x + 3, $feature_y, $feature_x + 7, $feature_y + 10,
+                    $color
+                );
+                $self->add_drawing(
+                    RECTANGLE, 
+                    $feature_x + 3, $feature_y, $feature_x + 7, $feature_y + 10,
+                    'black'
                 );
                 $label_y = $feature_y + 5;
             }
