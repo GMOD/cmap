@@ -6,9 +6,18 @@
 
 [% IF pager.last_page > 1 %]
     [% SET page_list=[] %]
-    [% page_no = pager.previous_page %]
-    [% IF page_no %]
-        [% page_list.push("<a href=\"${pager_url}&page_no=${page_no}\">Previous</a>") %]
+
+    [% IF pager.current_page > 1 %]
+        [% page_list.push("<a href=\"${pager_url}&page_no=1\">First</a>") %]
+    [% ELSE %]
+        [% page_list.push("First") %]
+    [% END %]
+
+    [% prev_set = pager.previous_set %]
+    [% IF prev_set %]
+        [% page_list.push("<a href=\"${pager_url}&page_no=${prev_set}\">Prev</a>") %]
+    [% ELSE %]
+        [% page_list.push("Prev") %]
     [% END %]
 
     <br>
@@ -20,9 +29,18 @@
         [% END %]
     [% END %]
 
-    [% next_page_no = pager.current_page + 1 %]
-    [% IF next_page_no <= pager.last_page %]
-        [% page_list.push("<a href=\"${pager_url}&page_no=${next_page_no}\">Next</a>") %]
+    [% next_set = pager.next_set %]
+    [% IF next_set %]
+        [% page_list.push("<a href=\"${pager_url}&page_no=${next_set}\">Next</a>") %]
+    [% ELSE %]
+        [% page_list.push("Next") %]
     [% END %]
+
+    [% IF pager.current_page != pager.last_page %]
+        [% page_list.push("<a href=\"${pager_url}&page_no=${pager.last_page}\">Last</a>") %]
+    [% ELSE %]
+        [% page_list.push("Last") %]
+    [% END %]
+
     [% page_list.join(' | ') %]
 [% END %]
