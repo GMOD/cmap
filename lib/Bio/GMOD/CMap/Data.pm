@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.95 2004-03-12 19:05:38 kycl4rk Exp $
+# $Id: Data.pm,v 1.96 2004-03-12 20:56:28 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.95 $)[-1];
+$VERSION = (qw$Revision: 1.96 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -2518,98 +2518,114 @@ Given a list of feature names, find any maps they occur on.
     my %features = ();
     for my $feature_name ( @feature_names ) {
         my $comparison = $feature_name =~ m/%/ ? 'like' : '=';
-        my ( $f_where, $fa_where );
+        my $sql;
         if ( $search_field eq 'feature_name' ) {
-            $feature_name = uc $feature_name;
-            $f_where      = "where f.feature_name $comparison '$feature_name'";
-            $fa_where     = "where fa.alias $comparison '$feature_name'";
+            $sql = qq[
+                select   f.feature_id,
+                         f.accession_id as feature_aid,
+                         f.feature_name, 
+                         f.start_position,
+                         f.stop_position,
+                         ft.feature_type,
+                         map.accession_id as map_aid,
+                         map.map_name, 
+                         ms.accession_id as map_set_aid, 
+                         ms.short_name as map_set_name,
+                         ms.can_be_reference_map,
+                         s.species_id,
+                         s.common_name as species_name,
+                         mt.map_units
+                from     cmap_feature f,
+                         cmap_feature_type ft,
+                         cmap_map map,
+                         cmap_map_set ms,
+                         cmap_species s,
+                         cmap_map_type mt
+                where    f.feature_name $comparison '$feature_name'
+                and      f.feature_type_id=ft.feature_type_id
+                and      f.map_id=map.map_id
+                and      map.map_set_id=ms.map_set_id
+                and      ms.species_id=s.species_id
+                and      ms.map_type_id=mt.map_type_id
+                and      ms.is_enabled=1
+                UNION
+                select f.feature_id,
+                       f.accession_id as feature_aid,
+                       f.feature_name,
+                       f.start_position,
+                       f.stop_position,
+                       ft.feature_type,
+                       map.accession_id as map_aid,
+                       map.map_name,
+                       ms.accession_id as map_set_aid,
+                       ms.short_name as map_set_name,
+                       ms.can_be_reference_map,
+                       s.species_id,
+                       s.common_name as species_name,
+                       mt.map_units
+                from   cmap_feature_alias fa,
+                       cmap_feature f,
+                       cmap_feature_type ft,
+                       cmap_map map,
+                       cmap_map_set ms,
+                       cmap_species s,
+                       cmap_map_type mt
+                where  fa.alias $comparison '$feature_name'
+                and    fa.feature_id=f.feature_id
+                and    f.feature_type_id=ft.feature_type_id
+                and    f.map_id=map.map_id
+                and    ms.map_type_id=mt.map_type_id
+                and    map.map_set_id=ms.map_set_id
+                and    ms.species_id=s.species_id
+                and    ms.is_enabled=1
+            ];
         }
         else {
-            $fa_where = $f_where = 
-                qq[where f.accession_id $comparison '$feature_name'];
+            $sql = qq[
+                select   f.feature_id,
+                         f.accession_id as feature_aid,
+                         f.feature_name, 
+                         f.start_position,
+                         f.stop_position,
+                         ft.feature_type,
+                         map.accession_id as map_aid,
+                         map.map_name, 
+                         ms.accession_id as map_set_aid, 
+                         ms.short_name as map_set_name,
+                         ms.can_be_reference_map,
+                         s.species_id,
+                         s.common_name as species_name,
+                         mt.map_units
+                from     cmap_feature f,
+                         cmap_feature_type ft,
+                         cmap_map map,
+                         cmap_map_set ms,
+                         cmap_species s,
+                         cmap_map_type mt
+                where    f.accession_id $comparison '$feature_name'
+                and      f.feature_type_id=ft.feature_type_id
+                and      f.map_id=map.map_id
+                and      map.map_set_id=ms.map_set_id
+                and      ms.species_id=s.species_id
+                and      ms.map_type_id=mt.map_type_id
+                and      ms.is_enabled=1
+            ];
         }
 
-        my $f_sql = qq[
-            select   f.feature_id,
-                     f.accession_id as feature_aid,
-                     f.feature_name, 
-                     f.start_position,
-                     f.stop_position,
-                     ft.feature_type,
-                     map.accession_id as map_aid,
-                     map.map_name, 
-                     ms.accession_id as map_set_aid, 
-                     ms.short_name as map_set_name,
-                     ms.can_be_reference_map,
-                     s.species_id,
-                     s.common_name as species_name,
-                     mt.map_units
-            from     cmap_feature f,
-                     cmap_feature_type ft,
-                     cmap_map map,
-                     cmap_map_set ms,
-                     cmap_species s,
-                     cmap_map_type mt
-            $f_where
-            and      f.feature_type_id=ft.feature_type_id
-            and      f.map_id=map.map_id
-            and      map.map_set_id=ms.map_set_id
-            and      ms.species_id=s.species_id
-            and      ms.map_type_id=mt.map_type_id
-            and      ms.is_enabled=1
-        ];
-
-        my $fa_sql = qq[
-            select f.feature_id,
-                   f.accession_id as feature_aid,
-                   f.feature_name,
-                   f.start_position,
-                   f.stop_position,
-                   ft.feature_type,
-                   map.accession_id as map_aid,
-                   map.map_name,
-                   ms.accession_id as map_set_aid,
-                   ms.short_name as map_set_name,
-                   ms.can_be_reference_map,
-                   s.species_id,
-                   s.common_name as species_name,
-                   mt.map_units
-            from   cmap_feature_alias fa,
-                   cmap_feature f,
-                   cmap_feature_type ft,
-                   cmap_map map,
-                   cmap_map_set ms,
-                   cmap_species s,
-                   cmap_map_type mt
-            $fa_where
-            and    fa.feature_id=f.feature_id
-            and    f.feature_type_id=ft.feature_type_id
-            and    f.map_id=map.map_id
-            and    ms.map_type_id=mt.map_type_id
-            and    map.map_set_id=ms.map_set_id
-            and    ms.species_id=s.species_id
-            and    ms.is_enabled=1
-        ];
-
         if ( @$feature_type_aids ) {
-            my $extra = 'and ft.accession_id in ('.
+            $sql .= 'and ft.accession_id in ('.
                 join( ', ', map { qq['$_'] } @$feature_type_aids ). 
             ')';
-            $f_where  .= $extra;
-            $fa_where .= $extra;
         }
 
         if ( @$species_aids ) {
-            my $extra = 'and s.accession_id in ('.
+            $sql .= 'and s.accession_id in ('.
                 join( ', ', map { qq['$_'] } @$species_aids ). 
             ')';
-            $f_where  .= $extra;
-            $fa_where .= $extra;
         }
 
-        my $features = $db->selectall_arrayref( $f_sql,  { Columns => {} } );
-        my $aliases  = $db->selectall_arrayref( $fa_sql, { Columns => {} } );
-        for my $f ( @$features, @$aliases ) {
+        my $features = $db->selectall_arrayref( $sql,  { Columns => {} } );
+        for my $f ( @$features ) {
             $features{ $f->{'feature_id'} } = $f;
         }
     }
