@@ -7,6 +7,7 @@
 <table>
     <tr>
         <td>Name:</td>
+        <td>Species <em>(opt.)</em>:</td>
         <td>Feature Type <em>(opt.)</em>:</td>
         <td>Map Acc. ID <em>(opt.)</em>:</td>
         <td>Field:</td>
@@ -19,6 +20,14 @@
     <tr>
         <td>
             <input name="feature_name" value="[% apr.param('feature_name') | html_entity %]">
+        </td>
+        <td valign="top">
+            <select name="species_id">
+                <option value="-1">--All Species--</option>
+                [% FOREACH s=species %]
+                    <option value="[% s.species_id %]"[% IF s.species_id==apr.param('species_id') %] selected[% END %]>[% s.common_name %]</option>
+                [% END %]
+            </select>
         </td>
         <td>
             <select name="feature_type_id">
