@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.38 2003-07-01 16:23:30 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.39 2003-07-03 18:37:35 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.38 $)[-1];
+$VERSION = (qw$Revision: 1.39 $)[-1];
 
 #
 # Get command-line options
@@ -1769,11 +1769,35 @@ sub make_name_correspondences {
         : '    All'
     ;
 
+    my @skip_features = $self->show_menu(
+        title       => 'Skip Feature Types (optional)',
+        prompt      => 'Select any feature types to skip in check',
+        display     => 'feature_type',
+        return      => 'feature_type_id,feature_type',
+        allow_null  => 1,
+        allow_mult  => 1,
+        data        => $db->selectall_arrayref(
+            q[
+                select   ft.feature_type_id, 
+                         ft.feature_type
+                from     cmap_feature_type ft
+                order by feature_type
+            ],
+            { Columns => {} },
+        ),
+    );
+    my @skip_feature_type_ids = map { $_->[0] } @skip_features;
+    my $skip = @skip_features
+        ? join( "\n", map { "    $_->[1]" } @skip_features )
+        : 'None'
+    ;
+
     print "Make name-based correspondences\n",
         '  Data source   : ' . $self->data_source, "\n",
         "  Evidence type : $evidence_type\n",
         "  From map sets :\n$from\n",
         "  To map sets   :\n$to\n",
+        "  Skip features :\n$skip\n"
     ;
 
     print "\nOK to make correspondences? [Y/n] ";
@@ -1785,10 +1809,11 @@ sub make_name_correspondences {
         data_source => $self->data_source,
     );
     $corr_maker->make_name_correspondences(
-        evidence_type_id   => $evidence_type_id,
-        map_set_ids        => \@from_map_set_ids,
-        target_map_set_ids => \@to_map_set_ids,
-        log_fh             => $self->log_fh,
+        evidence_type_id      => $evidence_type_id,
+        map_set_ids           => \@from_map_set_ids,
+        target_map_set_ids    => \@to_map_set_ids,
+        skip_feature_type_ids => \@skip_feature_type_ids,
+        log_fh                => $self->log_fh,
     ) or do { print "Error: ", $corr_maker->error, "\n"; return; };
 
     return 1;
