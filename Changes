@@ -77,6 +77,18 @@
     map;  this is less ambiguous and also frees up the map for clicking
     to zoom on specific areas
 -   Added ability to restrict correspondences by type
+-   Changed "score" in "cmap_correspondence_evidence" to a float
+    For MySQL:
+    alter table cmap_correspondence_evidence modify score double;
+    For Oracle:
+    For PostgreSQL:
+-   Added "line_color" and "line_style" to "cmap_evidence_type" table
+    For MySQL:
+    alter table cmap_evidence_type add line_style varchar(12);
+    alter table cmap_evidence_type add line_color varchar(20);
+    For Oracle:
+    For PostgreSQL:
+-   Added "connecting_line_style" to cmap.conf for default line style
 
 0.05
 -   Added extra split tokens to highlight string in map detail page 

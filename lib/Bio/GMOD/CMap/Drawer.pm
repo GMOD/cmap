@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.18 2003-01-11 21:19:50 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.19 2003-01-16 17:06:24 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.18 $)[-1];
+$VERSION = (qw$Revision: 1.19 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
@@ -456,16 +456,16 @@ Lays out the image and writes it to the file system, set the "image_name."
 
     my ( $min_y, $max_y, $min_x, $max_x );
     for my $slot_no ( $self->slot_numbers ) {
-        my $data      = $self->slot_data( $slot_no );
-        my $map       =  Bio::GMOD::CMap::Drawer::Map->new( 
-            drawer    => $self, 
-#            base_x    => $self->max_x,
-#            base_y    => 0,
-            slot_no   => $slot_no,
-            maps      => $data,
+        my $data    = $self->slot_data( $slot_no );
+#        next unless %{ $data || {} };
+        my $map     =  Bio::GMOD::CMap::Drawer::Map->new( 
+            drawer  => $self, 
+            slot_no => $slot_no,
+            maps    => $data,
         );
 
         my @bounds = $map->layout;
+        warn "finished layout\n";
         $min_x     = $bounds[0] unless defined $min_x;
         $min_y     = $bounds[1] unless defined $min_y;
         $max_x     = $bounds[2] unless defined $max_x;
@@ -485,6 +485,7 @@ Lays out the image and writes it to the file system, set the "image_name."
     #
     # Frame out the slots.
     #
+    warn "framing slots\n";
     my $bg_color     = $self->config('slot_background_color');
     my $border_color = $self->config('slot_border_color');
     for my $slot_no ( $self->slot_numbers ) {
@@ -503,6 +504,7 @@ Lays out the image and writes it to the file system, set the "image_name."
     #
     # Add the legend for the feature types.
     #
+    warn "adding legend\n";
     if ( my @feature_types = $self->feature_types_seen ) {
         $max_y    += 20;
         my @bounds = ( $min_x, $max_y - 10 );
@@ -521,6 +523,7 @@ Lays out the image and writes it to the file system, set the "image_name."
             };
         }
 
+        warn "ft =\n", Dumper(\@feature_types), "\n";
         for my $ft ( @feature_types ) {
             my $color     = $ft->{'color'} || $self->config('feature_color');
             my $label     = $ft->{'feature_type'};
@@ -620,6 +623,7 @@ Lays out the image and writes it to the file system, set the "image_name."
     #
     # Move all the coordinates to positive numbers.
     #
+    warn "adjusting frame\n";
     $self->adjust_frame;
 
     my @data   = $self->drawing_data;
@@ -636,6 +640,7 @@ Lays out the image and writes it to the file system, set the "image_name."
     #
     # Sort the drawing data by the layer (which is the last field).
     #
+    warn "sorting/drawing data\n";
     for my $obj ( sort { $a->[-1] <=> $b->[-1] } @data ) {
         my $method = shift @$obj;
         my $layer  = pop   @$obj;
@@ -652,12 +657,14 @@ Lays out the image and writes it to the file system, set the "image_name."
     #
     # Write to a temporary file and remember it.
     #
+    warn "writing image\n";
     my $cache_dir = $self->cache_dir;
     my ( $fh, $filename ) = mkstempt( 'X' x 9, $cache_dir );
     my $image_type = $self->image_type;
     print $fh $gd->$image_type();
     $fh->close;
     $self->image_name( $filename );
+    warn "wrote to '$filename'\n";
 
     return 1;
 }

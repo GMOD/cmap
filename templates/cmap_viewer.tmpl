@@ -171,7 +171,7 @@
                             <td>
                                 [% IF form_data.feature_types.size %]
                                     [% form_data.feature_types.unshift({feature_type_aid=>'-1',feature_type=>'--All--'}) %]
-                                    <select name="feature_types" size="5" multiple>
+                                    <select name="feature_types" size="4" multiple>
                                         [% FOREACH ft=form_data.feature_types %]
                                             <option value="[% ft.feature_type_aid %]"[% IF included_features.${ft.feature_type_aid}; ' selected'; END %]>[% ft.feature_type %]</option>
                                         [% END %]
@@ -189,7 +189,7 @@
                             <td>
                                 [% IF form_data.evidence_types.size %]
                                     [% form_data.evidence_types.unshift({evidence_type_aid=>'-1',evidence_type=>'--All--'}) %]
-                                    <select name="evidence_types" size="[% IF form_data.evidence_types.size>5; '5'; ELSE; '3'; END %]" multiple>
+                                    <select name="evidence_types" size="4" multiple>
                                         [% FOREACH et=form_data.evidence_types %]
                                             <option value="[% et.evidence_type_aid %]"[% IF included_evidence.${et.evidence_type_aid}; ' selected'; END %]>[% et.evidence_type %]</option>
                                         [% END %]

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.23 2003-01-11 20:43:18 kycl4rk Exp $
+# $Id: Map.pm,v 1.24 2003-01-16 17:06:24 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.23 $)[-1];
+$VERSION = (qw$Revision: 1.24 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -391,6 +391,8 @@ Lays out the map.
     my @columns        = ();
     my $label_features = $drawer->label_features;
 
+    warn "laying out slot no '$slot_no'\n";
+
     #
     # The title is often the widest thing we'll draw, so we need
     # to figure out which is the longest and take half its length
@@ -459,6 +461,7 @@ Lays out the map.
                     ? $_->feature_id : ()
                 } @{ $features->{ $lane } };
             }
+            next unless @corr_feature_ids;
 
             my @positions   =  sort{ $a <=> $b } $drawer->tick_y_positions(
                 slot_no     => $drawer->reference_slot_no( $slot_no ),

@@ -2,7 +2,7 @@
 
 <td colspan="2">
     [% IF maps.size %]
-        <select name="comparative_map_[% side | lower %]" size="5">
+        <select name="comparative_map_[% side | lower %]" size="4">
             [% FOREACH type=maps %]
                 <option value="">==&nbsp;&nbsp;[% type.type %] Maps&nbsp;&nbsp;==</option>
                 [% FOREACH ms=type.map_sets %]
