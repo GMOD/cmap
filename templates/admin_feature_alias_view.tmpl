@@ -1,0 +1,48 @@
+[% INCLUDE admin_header.tmpl title="View Feature Alias &quot;$alias.alias&quot;" %]
+
+<a href="admin">Home</a> |
+<a href="admin?action=confirm_delete;entity_type=cmap_feature_alias;entity_id=[% alias.feature_alias_id %];entity_name_field=alias">Delete</a> |
+<a href="admin?action=feature_alias_edit;feature_alias_id=[% alias.feature_alias_id %]">Edit</a>
+<hr noshade>
+
+<table>
+    <tr>
+        <th align="right">
+            Alias:
+        </th>
+        <td>
+            [% alias.alias %]
+        </td>
+    </tr>
+
+    <tr>
+        <th align="right">
+            Feature Name:
+        </th>
+        <td>
+            [% alias.feature_name %]
+            (<a href="admin?action=feature_view;feature_id=[% alias.feature_id %]">View Feature</a>)
+        </td>
+    </tr>
+</table>
+
+[% 
+    INCLUDE admin_attributes_view.tmpl 
+    title='Feature Alias Attributes'
+    attributes=alias.attributes 
+    return_action='feature_alias_view'
+    pk_name='feature_alias_id'
+    object_id=alias.feature_alias_id
+    table_name='cmap_feature_alias'
+%]
+
+[% 
+    INCLUDE admin_xrefs_view_embedded.tmpl 
+    title='Feature Alias XRefs'
+    xrefs=alias.xrefs 
+    return_action='feature_alias_view'
+    pk_name='feature_alias_id'
+    object_id=alias.feature_alias_id
+    table_name='cmap_feature_alias'
+%]
+[% INCLUDE admin_footer.tmpl %]

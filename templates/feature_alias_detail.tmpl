@@ -1,0 +1,59 @@
+[% 
+    INCLUDE header.tmpl 
+    title="Feature Alias Detail &quot;$alias.alias&quot;"
+    cur_sec='feature_alias_details'
+    help_anchor='feature_alias_details'
+%]
+
+<h1>Feature Alias Detail &quot;[% alias.alias %]&quot;</h1>
+
+<table>
+    <tr>
+        <th align="right">
+            Alias:
+        </td>
+        <td>
+            [% alias.alias %]
+        </td>
+    </tr>
+
+    <tr>
+        <th align="right">
+            Feature Name:
+        </td>
+        <td>
+            [% alias.feature_name %] <b>[</b>&nbsp;<a href="feature?feature_aid=[% alias.feature_aid %]">View&nbsp;Feature</a>&nbsp;</b>]</b>
+        </td>
+    </tr>
+
+    [% FOREACH att=alias.attributes %]
+        [% NEXT UNLESS att.is_public %]
+        <tr>
+            <th align="right" valign="top">
+                [% att.attribute_name | nbsp %]:
+            </td>
+            <td>
+                [%- IF att.attribute_value.match('^http://') -%]
+                    <a href="[% att.attribute_value %]">[% att.attribute_value %]</a>
+                [%- ELSE -%]
+                    [% att.attribute_value %]
+                [%- END -%]
+            </td>
+        </tr>
+    [% END %]
+
+    [% IF alias.xrefs.size %]
+        <tr>
+            <th align="right" valign="top">Cross-references:</td>
+            <td>
+                <ul>
+                [%- FOREACH xref=alias.xrefs -%]
+                    [% NEXT UNLESS xref.xref_url %]
+                    <li><a href="[% xref.xref_url %]">[% xref.xref_name %]</a></li>
+                [%- END -%]
+                </ul>
+            </td>
+        </tr> 
+    [% END %]
+</table>
+[% page.end_body OR '</body>' %]

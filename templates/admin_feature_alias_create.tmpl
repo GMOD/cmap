@@ -1,0 +1,46 @@
+[% INCLUDE admin_header.tmpl title="Create Alias for Feature &quot;$feature.feature_name&quot;" %]
+
+<a href="admin">Home</a> |
+<a href="admin?action=feature_view;feature_id=[% feature.feature_id %]">Back to Feature &quot;[% feature.feature_name %]&quot;</a>
+<hr noshade>
+
+[% IF errors.size %]
+    <b>There were errors:</b>
+    <ul>
+        [% FOREACH e=errors %]
+          <li>[% e %]</li>
+        [% END %]
+    </ul>
+[% END %]
+
+<form action="admin" method="post">
+<table>
+    <tr>
+        <td align="right">
+            Alias:
+        </td>
+        <td>
+            <input name="alias" value="[% apr.param('alias') %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Feature Name:
+        </td>
+        <td>
+            [% feature.feature_name %]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="center" colspan="2">
+            <input type="hidden" name="feature_id" value="[% feature.feature_id %]">
+            <input type="hidden" name="action"     value="feature_alias_insert">
+            <input type="reset"  value="Reset">
+            <input type="submit" value="Submit">
+        </td>
+    </tr>
+</table>
+</form>
+[% INCLUDE admin_footer.tmpl %]

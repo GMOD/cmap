@@ -1,0 +1,47 @@
+[% INCLUDE admin_header.tmpl title="Edit Feature Alias &quot;$alias.alias&quot;" %]
+
+<a href="admin">Home</a> |
+<a href="admin?action=confirm_delete;entity_type=cmap_feature_alias;entity_id=[% alias.feature_alias_id %]">Delete</a> |
+<a href="admin?action=feature_alias_view;feature_alias_id=[% alias.feature_alias_id %]">View</a>
+<hr noshade>
+
+[% IF errors.size %]
+    <b>There were errors:</b>
+    <ul>
+        [% FOREACH e=errors %]
+          <li>[% e %]</li>
+        [% END %]
+    </ul>
+[% END %]
+
+<form action="admin" method="post">
+<table>
+    <tr>
+        <td align="right">
+            Alias:
+        </td>
+        <td>
+            <input name="alias" value="[% alias.alias %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Feature Name:
+        </td>
+        <td>
+            [% alias.feature_name %]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="center" colspan="2">
+            <input type="hidden" name="feature_alias_id" value="[% alias.feature_alias_id %]">
+            <input type="hidden" name="action"     value="feature_alias_update">
+            <input type="reset"  value="Reset">
+            <input type="submit" value="Submit">
+        </td>
+    </tr>
+</table>
+</form>
+[% INCLUDE admin_footer.tmpl %]
