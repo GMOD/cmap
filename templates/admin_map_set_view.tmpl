@@ -46,6 +46,13 @@
     </tr>
 
     <tr>
+        <td align="right">Is Relational Map:</td>
+        <td>
+            [% IF map_set.is_relational_map %]Yes[% ELSE %]No[% END %]
+        </td>
+    </tr>
+
+    <tr>
         <td align="right">Shape:</td>
         <td>
             [% map_set.color OR map_set.default_color OR 'Default color' %] - 
@@ -81,7 +88,7 @@
             [% IF map_set.can_be_reference_map %]Yes[% ELSE %]No[% END %]
         </td>
     </tr>
-  
+
     <tr>
         <td align="right">Remarks:</td>
         <td>
