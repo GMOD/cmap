@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.40 2003-07-30 02:10:16 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.41 2003-08-01 17:06:46 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.40 $)[-1];
+$VERSION = (qw$Revision: 1.41 $)[-1];
 
 #
 # Get command-line options
@@ -802,6 +802,13 @@ sub export_as_sql {
             }
         },
         {
+            name   => 'cmap_feature_note',
+            fields => {
+                feature_id      => NUM,
+                note            => STR,
+            }
+        },
+        {
             name   => 'cmap_feature_correspondence',
             fields => {
                 feature_correspondence_id => NUM,
@@ -1042,6 +1049,7 @@ sub export_as_text {
         feature_dbxref_name
         feature_dbxref_url
         is_landmark
+        feature_note
     );
 
     my ( $map_type_id, $map_type ) = $self->show_menu(
@@ -1247,6 +1255,12 @@ sub export_as_text {
             for my $feature ( @$features ) {
                 $feature->{'stop_position'} = undef 
                 if $feature->{'stop_position'} < $feature->{'start_position'};
+
+                $feature->{'feature_note'} = $db->selectrow_array(
+                    'select note from cmap_feature_note where feature_id=?',
+                    {},
+                    ( $feature->{'feature_id'} )
+                );
 
                 print $fh 
                     join( OFS, map { $feature->{ $_ } } @col_names ), 
