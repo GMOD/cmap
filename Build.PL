@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.12 2004-01-09 16:24:28 kycl4rk Exp $
+# $Id: Build.PL,v 1.13 2004-02-10 21:12:55 kycl4rk Exp $
 
 use strict;
 
@@ -16,25 +16,28 @@ use File::Spec::Functions;
 
 use constant INSTALL_CONF => 'cmap_install.conf';
 my $cmap_conf_file        =  catfile('conf', 'cmap.conf');
-my $stylesheet_file       =  catfile('conf', 'cmap.css');
 
-my @ARGS = qw[ PREFIX CONF_DIR TEMPLATE_DIR STYLESHEET_DIR ];
+my @ARGS = qw[ PREFIX CONF_DIR CGI_DIR TEMPLATE_DIR HTDOCS ];
 my %ARGS = ( 
-    PREFIX         => {
-        desc       => 'A directory prefix for all install arguments',
-        default    => catdir('/', 'usr', 'local', 'apache'),
+    PREFIX       => {
+        desc     => 'A directory prefix for all install arguments',
+        default  => catdir('/', 'usr', 'local', 'apache'),
     },
-    CONF_DIR       => {
-        desc       => 'Location for the cmap.conf configuration file',
-        default    => 'conf',
+    CONF_DIR     => {
+        desc     => 'Location for the cmap.conf configuration file',
+        default  => 'conf',
     },
-    TEMPLATE_DIR   => {
-        desc       => 'Location for CMap HTML templates',
-        default    => 'templates',
+    CGI_DIR      => {
+        desc     => 'Location for CGI executables',
+        default  => 'cgi-bin',
     },
-    STYLESHEET_DIR => {
-        desc       => 'Location for CMap stylesheet',
-        default    => 'htdocs',
+    TEMPLATE_DIR => {
+        desc     => 'Location for CMap HTML templates',
+        default  => 'templates',
+    },
+    HTDOCS       => {
+        desc     => 'Location for static files',
+        default  => 'htdocs',
     },
 );
 
@@ -98,7 +101,7 @@ if ( !%OPTIONS && -e INSTALL_CONF ) {
 # Make sure we have usable options.
 #
 if ( $OPTIONS{'PREFIX'} ) {
-    for my $option ( qw[ CONF_DIR TEMPLATE_DIR STYLESHEET_DIR ] ) {
+    for my $option ( qw[ CONF_DIR CGI_DIR TEMPLATE_DIR HTDOCS ] ) {
         $OPTIONS{ $option } ||= $ARGS{ $option }{'default'};
         $OPTIONS{ $option }   = catdir( 
             $OPTIONS{'PREFIX'}, $OPTIONS{ $option } 
@@ -106,7 +109,7 @@ if ( $OPTIONS{'PREFIX'} ) {
     }
 }
 else {
-    for my $option ( qw[ CONF_DIR TEMPLATE_DIR STYLESHEET_DIR ] ) {
+    for my $option ( qw[ CONF_DIR TEMPLATE_DIR CGI_DIR HTDOCS ] ) {
         $OPTIONS{ $option } ||= catdir( 
             $ARGS{'PREFIX'}{'default'}, $ARGS{ $option }{'default'}
         );
@@ -115,8 +118,8 @@ else {
 
 print "The following options will be used to install CMap:\n",
     join( "\n", '',
-        ( map { sprintf( "%20s: %-s", $_, $OPTIONS{ $_ } ) } 
-          qw[ CONF_DIR TEMPLATE_DIR STYLESHEET_DIR ] 
+        ( map { sprintf( "%15s: %-s", $_, $OPTIONS{ $_ } ) } 
+          qw[ CONF_DIR CGI_DIR TEMPLATE_DIR HTDOCS ] 
         ),
         '', ''
     ),
@@ -127,40 +130,37 @@ print "The following options will be used to install CMap:\n",
 #
 my $config = "$Bin/".INSTALL_CONF;
 open F,">$config" or warn "Can't open $config for writing: $!\n";
-print F "$_=$OPTIONS{$_}\n" for qw[ CONF_DIR TEMPLATE_DIR STYLESHEET_DIR ];
+print F "$_=$OPTIONS{$_}\n" for qw[ CONF_DIR CGI_DIR TEMPLATE_DIR HTDOCS ];
 close F;
 
 #
 # Make the text for copying the templates.
 #
-opendir( TEMPLATES, 'templates' );
-my $template_copy = join("\n",
-    map {
-        $_ = catfile( 'templates', $_ );
-        qq[
-            \$self->copy_if_modified(
-                from    => '$_',
-                to_dir  => '$OPTIONS{'TEMPLATE_DIR'}',
-                flatten => 1,
-            );
-        ]
-    }
-    grep { /\.tmpl$/ } readdir( TEMPLATES )
-);
-closedir TEMPLATES;
+#opendir( TEMPLATES, 'templates' );
+#my $template_copy = join("\n",
+#    map {
+#        $_ = catfile( 'templates', $_ );
+#        qq[
+#            \$self->copy_if_modified(
+#                from    => '$_',
+#                to_dir  => '$OPTIONS{'TEMPLATE_DIR'}',
+#                flatten => 1,
+#            );
+#        ]
+#    }
+#    grep { /\.tmpl$/ } readdir( TEMPLATES )
+#);
+#closedir TEMPLATES;
 
 #
 # Write the build script.
 #
-my $conf_file         =  catfile('conf', 'cmap.conf');
-my $stylesheet        =  catfile('conf', 'cmap.css');
-my $builder           =  Module::Build->subclass(
-    class             => 'My::Builder',
-    code              => qq[
+my $conf_file =  catfile('conf', 'cmap.conf');
+my $builder   =  Module::Build->subclass(
+    class     => 'CMap::Builder',
+    code      => qq[
         sub ACTION_install {
             my \$self = shift;
-
-            $template_copy
 
             \$self->copy_if_modified( 
                 from    => '$conf_file',
@@ -169,9 +169,21 @@ my $builder           =  Module::Build->subclass(
             );
 
             \$self->copy_if_modified( 
-                from    => '$stylesheet',
-                to_dir  => '$OPTIONS{'STYLESHEET_DIR'}',
+                from    => 'cgi-bin',
+                to_dir  => '$OPTIONS{'CGI_DIR'}',
                 flatten => 1,
+            );
+
+            \$self->copy_if_modified( 
+                from    => 'templates',
+                to_dir  => '$OPTIONS{'TEMPLATE_DIR'}',
+                flatten => 1,
+            );
+
+            \$self->copy_if_modified( 
+                from    => 'htdocs',
+                to_dir  => '$OPTIONS{'HTDOCS'}',
+                flatten => 0,
             );
 
             \$self->SUPER::ACTION_install;
@@ -207,10 +219,6 @@ my $builder           =  Module::Build->subclass(
         'conf/cmap.conf.PL'  => 'conf/cmap.conf',
         'lib/Bio/GMOD/CMap/Constants.pm.PL' => 'lib/Bio/GMOD/CMap/Constants.pm',
     },
-);
-
-$builder->add_to_cleanup( 
-    INSTALL_CONF, 'conf/cmap.conf', 'lib/Bio/GMOD/CMap/Constants.pm'
 );
 
 $builder->create_build_script;
