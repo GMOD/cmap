@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.12 2002-10-04 01:14:42 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.13 2003-01-07 01:57:54 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.12 $)[-1];
+$VERSION = (qw$Revision: 1.13 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
@@ -1162,8 +1162,6 @@ Remembers the feature position on a map.
         left   => $args{'left'},
         tick_y => $args{'tick_y'},
         map_id => $args{'map_id'},
-#        start  => $args{'start'},
-#        stop   => $args{'stop'},
     };
 }
 
