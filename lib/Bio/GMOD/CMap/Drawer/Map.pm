@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.136 2004-10-28 21:34:38 mwz444 Exp $
+# $Id: Map.pm,v 1.137 2004-10-28 23:30:40 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.136 $)[-1];
+$VERSION = (qw$Revision: 1.137 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1395,31 +1395,6 @@ Variable Info:
             foreach my $slot_no (@cmap_nos){
                 next if ($slot_no==0);
                 $delete_comparative_map_hash{$slot_no}=$slots->{$slot_no};
-            }
-
-            my @cmaps;
-            for my $slot_no (@cmap_nos) {
-                my $map   = $slots->{$slot_no} or next;
-                my $link;
-                for my $field (qw[ maps map_sets ]) {
-                    my @aid_info;
-                    next unless (defined($map->{$field})); 
-                    foreach my $aid (keys %{$map->{$field}}){
-                        push @aid_info, $aid.'['
-                            .$map->{$field}{$aid}{'start'}.'*'
-                            .$map->{$field}{$aid}{'stop'}.'x'
-                            .$map->{$field}{$aid}{'mag'}
-                            .']';
-                    }
-                    my $field_type='map_set_aid';
-                    if ($field eq 'maps') {
-                        $field_type='map_aid';
-                    }
-                    my $link = join( '%3d', 
-                        $slot_no, $field_type, join(',',@aid_info) 
-                    );
-                    push @cmaps, $link;
-                }
             }
 
             my $delete_url        =  $self->create_viewer_link(
