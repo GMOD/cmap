@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
-# $Id: MakeCorrespondences.pm,v 1.18 2003-04-14 19:55:52 kycl4rk Exp $
+# $Id: MakeCorrespondences.pm,v 1.19 2003-07-03 18:38:24 kycl4rk Exp $
 
 =head1 NAME
 
@@ -30,7 +30,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.18 $)[-1];
+$VERSION = (qw$Revision: 1.19 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -40,14 +40,15 @@ use Data::Dumper;
 
 # ----------------------------------------------------
 sub make_name_correspondences {
-    my ( $self, %args )    = @_;
-    my @map_set_ids        = @{ $args{'map_set_ids'}        || [] };
-    my @target_map_set_ids = @{ $args{'target_map_set_ids'} || [] };
-    my $evidence_type_id   = $args{'evidence_type_id'} or 
-                             return 'No evidence type id';
-    $LOG_FH                = $args{'log_fh'}     || \*STDOUT;
-    my $db                 = $self->db;
-    my $admin              = Bio::GMOD::CMap::Admin->new(
+    my ( $self, %args )       = @_;
+    my @map_set_ids           = @{ $args{'map_set_ids'}        || [] };
+    my @target_map_set_ids    = @{ $args{'target_map_set_ids'} || [] };
+    my @skip_feature_type_ids = @{ $args{'skip_feature_type_ids'} || [] };
+    my $evidence_type_id      = $args{'evidence_type_id'} or 
+                                return 'No evidence type id';
+    $LOG_FH                   = $args{'log_fh'} || \*STDOUT;
+    my $db                    = $self->db;
+    my $admin                 = Bio::GMOD::CMap::Admin->new(
         data_source => $self->data_source
     );
 
@@ -116,6 +117,23 @@ sub make_name_correspondences {
     $sql .= 'order by map_set_name';
     my $map_sets = $db->selectall_arrayref( $sql, { Columns => {} } );
 
+    my $feature_sql = q[
+        select f.feature_id, 
+               f.feature_name,
+               f.alternate_name,
+               f.feature_type_id
+        from   cmap_feature f,
+               cmap_feature_type ft
+        where  f.map_id=?
+        and    f.feature_type_id=ft.feature_type_id
+    ];
+
+    if ( @skip_feature_type_ids ) {
+        $feature_sql .= 'and ft.feature_type_id not in (' .
+            join( ', ', @skip_feature_type_ids ) .
+        ')';
+    }
+
     for my $map_set ( @$map_sets ) {
         #
         # Find all the maps.
@@ -154,18 +172,10 @@ sub make_name_correspondences {
                 "  Map $map->{'map_name'} has $no_features features.\n"
             );
 
+
             for my $feature ( 
                 @{ $db->selectall_arrayref(
-                    q[
-                        select f.feature_id, 
-                               f.feature_name,
-                               f.alternate_name,
-                               f.feature_type_id
-                        from   cmap_feature f
-                        where  map_id=?
-                    ],
-                    { Columns => {} },
-                    ( $map->{'map_id'} )
+                    $feature_sql, { Columns => {} }, ( $map->{'map_id'} )
                 ) }
             ) {
                 my @allowed_ft_ids = ( $feature->{'feature_type_id'} );
