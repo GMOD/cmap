@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.120 2004-09-03 17:23:02 mwz444 Exp $
+# $Id: Map.pm,v 1.121 2004-09-05 06:15:28 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.120 $)[-1];
+$VERSION = (qw$Revision: 1.121 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -447,17 +447,25 @@ such as the units.
     my $font         = $drawer->regular_font;
     my $y            = $y2 + $top_buf;
     my $x_mid        = $x1 + ( ( $x2 - $x1 ) / 2 );    
+    my $slot_info=$drawer->data_module->slot_info->{$slot_no};
+    my $start_pos   = defined($slot_info->{$map_id}->[0])
+        ? $slot_info->{$map_id}->[0]
+            : "''";
+    my $stop_pos   = defined($slot_info->{$map_id}->[1])
+            ? $slot_info->{$map_id}->[1]
+            : "''";
     my $x;
+    my $code;
     my $map_aid      = $self->map_aid($map_id);
     ###Full size button if needed
     if ($drawer->data_module->truncatedMap($slot_no,$map_id)){
-        my $full_str="full-size"; 
+        my $full_str="Reset Map"; 
         $x  = $x_mid -
             (($font->width * length($full_str)) / 2);
         $drawer->add_drawing( STRING, $font, $x, $y, $full_str, 'grey' );
-        my $code=qq[
+        $code=qq[
             onMouseOver="window.status='Make map full sized';return true" 
-            onClick="mod_map_info($slot_no, '$map_aid', '', '');document.comparative_map_form.submit();"
+            onClick="mod_map_info($slot_no, '$map_aid', '', '',1);document.comparative_map_form.submit();"
             ]; 
         push @$map_area_data,
           {
@@ -465,17 +473,84 @@ such as the units.
                 $x,
                 $y, 
                 $x+($font->width * length($full_str)),
-                $y+$font->height],
+                $y+$font->height,
+                ],
             url  => '',
             alt  => 'Make map full sized',
             code => $code,
           };
         $y += $font->height + $buf;
     }
+
+    ###Scale buttons
+    my $magnification=$drawer->data_module->magnification($slot_no,$map_id);
+    my $mag_plus_val  = $magnification<=1?$magnification*2:$magnification*2;
+    my $mag_minus_val = $magnification<=1?$magnification/2:$magnification/2;
+    my $mag_plus_str  = "+";
+    my $mag_minus_str = "-";
+    my $mag_mid_str   = " Magnify ";
+    $x  = $x_mid -
+            (($font->width * length($mag_minus_str.$mag_plus_str.$mag_mid_str)) / 2);
+
+    # Minus side
+    $drawer->add_drawing( STRING, $font, $x, $y, $mag_minus_str, 'grey' );
+    $code=qq[
+        onMouseOver="window.status='Magnify by $mag_minus_val times original size';return true" 
+        onClick="mod_map_info($slot_no,'$map_aid',$start_pos, $stop_pos,$mag_minus_val);document.comparative_map_form.submit();"
+        ]; 
+    push @$map_area_data,
+      {
+        coords => [
+            $x,
+            $y, 
+            $x+($font->width * length($mag_minus_str)),
+            $y+$font->height],
+        url  => '',
+        alt  => 'Magnification',
+        code => $code,
+      };
+    $x+=($font->width * length($mag_minus_str));
+    # Middle
+    $drawer->add_drawing( STRING, $font, $x, $y, $mag_mid_str, 'grey' );
+    $code=qq[
+        onMouseOver="window.status='Current Magnification: $magnification times original size';return true" 
+        ]; 
+    push @$map_area_data,
+      {
+        coords => [
+            $x,
+            $y, 
+            $x+($font->width * length($mag_mid_str)),
+            $y+$font->height],
+        url  => '',
+        alt  => 'Current Magnification: '.$magnification.' times',
+        code => $code,
+      };
+    $x+=($font->width * length($mag_mid_str));
+    # Plus Side
+    $drawer->add_drawing( STRING, $font, $x, $y, $mag_plus_str, 'grey' );
+    $code=qq[
+        onMouseOver="window.status='Magnify by $mag_plus_val times original size';return true" 
+        onClick="mod_map_info($slot_no,'$map_aid',$start_pos,$stop_pos,$mag_plus_val);document.comparative_map_form.submit();"
+        ]; 
+    push @$map_area_data,
+      {
+        coords => [
+            $x,
+            $y, 
+            $x+($font->width * length($mag_plus_str)),
+            $y+$font->height],
+        url  => '',
+        alt  => 'Magnification',
+        code => $code,
+      };
+        
+    $y += $font->height + $buf;
+
     ###Start and stop
     my ($start,$stop)
         = $drawer->data_module->getDisplayedStartStop($slot_no,$map_id);
-    my $start_str = commify($start)."-".commify($stop);
+    my $start_str = commify($start)."-".commify($stop)." ".$map_units;
     $x    = $x_mid -
       ( ( $font->width * length($start_str) ) / 2 );
     $drawer->add_drawing( STRING, $font, $x, $y, $start_str, 'grey' );
@@ -550,11 +625,11 @@ Draws the map title.
             [ FILL, $x_mid, $y_base-$trunc_height+1, $trunc_color ];
 
         # Create the link
-        my ($scroll_start,$scroll_stop)
+        my ($scroll_start,$scroll_stop,$scroll_mag)
             = $drawer->data_module->scroll_data($slot_no,$map_id,$is_flipped,'UP');
         my $code=qq[ 
             onMouseOver="window.status='Scroll up';return true" 
-            onClick="mod_map_info($slot_no, '$map_aid', $scroll_start,$scroll_stop);
+            onClick="mod_map_info($slot_no, '$map_aid', $scroll_start,$scroll_stop,$scroll_mag);
             document.comparative_map_form.submit();"
             ]; 
         push @$map_area_data,
@@ -591,11 +666,11 @@ Draws the map title.
             [ FILL, $x_mid, $y_base+$trunc_height-1, $trunc_color ];
 
         # Create the link
-        my ($scroll_start,$scroll_stop)
+        my ($scroll_start,$scroll_stop,$scroll_mag)
             = $drawer->data_module->scroll_data($slot_no,$map_id,$is_flipped,'DOWN');
         my $code=qq[ 
             onMouseOver="window.status='Scroll down';return true" 
-            onClick="mod_map_info($slot_no, '$map_aid', $scroll_start,$scroll_stop);
+            onClick="mod_map_info($slot_no, '$map_aid', $scroll_start,$scroll_stop,$scroll_mag);
             document.comparative_map_form.submit();"
             ]; 
         push @$map_area_data,
@@ -1257,8 +1332,10 @@ Lays out the map.
             my @aid_info;
             next unless (defined($ref_map->{$field})); 
             foreach my $aid (keys %{$ref_map->{$field}}){
-                push @aid_info, $aid.'['.$ref_map->{$field}{$aid}{'start'}.'*'.
-                    $ref_map->{$field}{$aid}{'stop'}.']';
+                push @aid_info, $aid.'['.$ref_map->{$field}{$aid}{'start'}.'*'
+                    .$ref_map->{$field}{$aid}{'stop'}.'x'
+                    .$ref_map->{$field}{$aid}{'mag'}
+                    .']';
             }
             if ($field eq 'maps'){
                 $ref_map_link = 'ref_map_aids='.
@@ -1313,8 +1390,10 @@ Lays out the map.
                 my @aid_info;
                 next unless (defined($map->{$field})); 
                 foreach my $aid (keys %{$map->{$field}}){
-                    push @aid_info, $aid.'['.$map->{$field}{$aid}{'start'}.'*'.
-                        $map->{$field}{$aid}{'stop'}.']';
+                    push @aid_info, $aid.'['.$map->{$field}{$aid}{'start'}.'*'
+                        .$map->{$field}{$aid}{'stop'}.'x'
+                        .$map->{$field}{$aid}{'mag'}
+                        .']';
                 }
                 my $field_type='map_set_aid';
                 if ($field eq 'maps'){
@@ -1404,8 +1483,11 @@ Lays out the map.
                     my @aid_info;
                     next unless (defined($map->{$field})); 
                     foreach my $aid (keys %{$map->{$field}}){
-                        push @aid_info, $aid.'['.$map->{$field}{$aid}{'start'}.'*'.
-                            $map->{$field}{$aid}{'stop'}.']';
+                        push @aid_info, $aid.'['
+                            .$map->{$field}{$aid}{'start'}.'*'
+                            .$map->{$field}{$aid}{'stop'}.'x'
+                            .$map->{$field}{$aid}{'mag'}
+                            .']';
                     }
                     my $field_type='map_set_aid';
                     if ($field eq 'maps'){
@@ -1667,6 +1749,7 @@ sub layout_map_foundation {
               / $drawer->{'data'}{'ref_unit_size'}{$self->map_units($map_id)});
         $scaled_map_pixel_height = $min_map_pixel_height
             if ($scaled_map_pixel_height < $min_map_pixel_height);
+        $scaled_map_pixel_height=$scaled_map_pixel_height*$drawer->data_module->magnification($slot_no,$map_id);
     }
     #
     # Get the information about the reference map.
@@ -2132,14 +2215,18 @@ sub add_tick_marks {
                 ? $slot_info->{$map_id}->[1]
                 : "''";
         }
+        my $magnification = defined($slot_info->{$map_id}->[4])
+            ? $slot_info->{$map_id}->[4]
+            : "'1'";
+
         
         my $down_code=qq[ 
             onMouseOver="window.status='crop down';return true" 
-            onClick="mod_map_info($slot_no, '$map_aid', $down_start_pos, $down_stop_pos);document.comparative_map_form.submit();"
+            onClick="mod_map_info($slot_no, '$map_aid', $down_start_pos, $down_stop_pos,$magnification);document.comparative_map_form.submit();"
             ]; 
         my $up_code=qq[
             onMouseOver="window.status='crop up';return true" 
-            onClick="mod_map_info($slot_no, '$map_aid', $up_start_pos, $up_stop_pos);document.comparative_map_form.submit();"
+            onClick="mod_map_info($slot_no, '$map_aid', $up_start_pos, $up_stop_pos,$magnification);document.comparative_map_form.submit();"
             ]; 
         push @$map_area_data,
           {
@@ -3009,12 +3096,12 @@ Returns the map's tick mark interval.
         my $map_length =
           $self->stop_position($map_id) - $self->start_position($map_id);
         my $map_scale  = int(log(abs($map_length))/log(10)); 
-        if (int(($map_length/(10**$map_scale))+.5)>=2){
-            push @{$map->{'tick_mark_interval'}}, (10**$map_scale, $map_scale);
-        }
-        else{
+        #if (int(($map_length/(10**$map_scale))+.5)>=2){
+        #    push @{$map->{'tick_mark_interval'}}, (10**$map_scale, $map_scale);
+        #}
+        #else{
             push @{$map->{'tick_mark_interval'}}, (10**($map_scale-1),$map_scale);
-        }
+        #}
     }
 
     return $map->{'tick_mark_interval'};

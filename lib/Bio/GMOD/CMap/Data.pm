@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.151 2004-09-03 03:38:44 mwz444 Exp $
+# $Id: Data.pm,v 1.152 2004-09-05 06:15:27 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.151 $)[-1];
+$VERSION = (qw$Revision: 1.152 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -5000,6 +5000,34 @@ return the start and stop for the scroll buttons
 }
 
 # ----------------------------------------------------
+sub magnification {
+                                                                                                                             
+=pod
+                                                                                                                             
+=head2 magnification
+                                                                                                                             
+given the slot_no and map_id
+                                                                                                                             
+=cut
+    my $self     = shift;
+    my $slot_no  = shift;
+    my $map_id   = shift;
+    return 1
+        unless (defined($slot_no) and defined($map_id));
+                                                                                                                             
+    if ($self->slot_info->{$slot_no}
+        and %{$self->slot_info->{$slot_no}}
+        and @{$self->slot_info->{$slot_no}{$map_id}}) {
+        my $map_info = $self->slot_info->{$slot_no}{$map_id};
+        if (defined($map_info->[4])){
+            return $map_info->[4];
+        }
+    }
+    return 1;
+}
+
+
+# ----------------------------------------------------
 # store and retrieve the slot info.
 sub slot_info {
 
@@ -5180,8 +5208,13 @@ original start and stop.
                         if ($row->[4]=~/(.+)\.0+$/){
                             $row->[4]=$1;
                         }
+                        my $magnification=1;
+                        if (defined($slots->{$slot_no}{'maps'}{$row->[5]}{'mag'})){
+                            $magnification=$slots->{$slot_no}{'maps'}{$row->[5]}{'mag'};
+                        }
+
                         $self->{'slot_info'}{$slot_no}{$row->[0]}
-                            =[$row->[1],$row->[2],$row->[3],$row->[4]];
+                            =[$row->[1],$row->[2],$row->[3],$row->[4],$magnification];
                     }
                 }
             }

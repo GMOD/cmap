@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.61 2004-09-03 18:57:27 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.62 2004-09-05 06:15:28 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.61 $)[-1];
+$VERSION = (qw$Revision: 1.62 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -115,9 +115,9 @@ sub handler {
     my %ref_map_sets=();
     foreach my $ref_map_aid (@ref_map_aids){
         next if ($ref_map_aid == -1);
-        my ($start, $stop) = (undef,undef);
-        ($ref_map_aid,$start,$stop,$highlight)=parse_map_info($ref_map_aid,$highlight);
-        $ref_maps{$ref_map_aid} = {start=>$start,stop=>$stop};
+        my ($start, $stop,$magnification) = (undef,undef,1);
+        ($ref_map_aid,$start,$stop,$magnification,$highlight)=parse_map_info($ref_map_aid,$highlight);
+        $ref_maps{$ref_map_aid} = {start=>$start,stop=>$stop,mag=>$magnification};
     }
     if (scalar @ref_map_aids==1){
         unless ($ref_map_aids[0]=='-1'){
@@ -139,9 +139,9 @@ sub handler {
         while( $ref_map_aid=~s/(.+\[)(\d+)\*\2(\D.*)/$1*$3/){};
         $apr->param('modified_ref_map',$ref_map_aid);
 
-        my ($start, $stop) = (undef,undef);
-        ($ref_map_aid,$start,$stop,$highlight)=parse_map_info($ref_map_aid,$highlight);
-        $ref_maps{$ref_map_aid} = {start=>$start,stop=>$stop};
+        my ($start, $stop,$magnification) = (undef,undef,1);
+        ($ref_map_aid,$start,$stop,$magnification,$highlight)=parse_map_info($ref_map_aid,$highlight);
+        $ref_maps{$ref_map_aid} = {start=>$start,stop=>$stop,mag=>$magnification};
 
         # Add the modified version into the comparative_maps param
         my $found=0;
@@ -247,13 +247,14 @@ sub handler {
     while( $comparative_maps=~s/(.+\[)(\d+)\*\2(\D.*)/$1*$3/){};
     for my $cmap ( split( /:/, $comparative_maps ) ) {
         my ( $slot_no, $field, $accession_id ) = split(/=/, $cmap) or next;
-        my ( $start, $stop );
+        my ( $start, $stop,$magnification );
         foreach my $aid (split /,/,$accession_id){
-            ($aid,$start,$stop,$highlight)=parse_map_info($aid,$highlight);
+            ($aid,$start,$stop,$magnification,$highlight)=parse_map_info($aid,$highlight);
             if ($field eq 'map_aid'){
                 $slots{$slot_no}->{'maps'}{$aid} =  {
                     start          => $start,
                     stop           => $stop,
+                    mag            => $magnification,
                 };
             }
             elsif ($field eq 'map_set_aid'){
@@ -272,12 +273,13 @@ sub handler {
         $apr->param('modified_comp_map',$comp_map);
 
         my ( $slot_no, $field, $aid ) = split(/=/, $comp_map) or next;
-        my ($start, $stop) = (undef,undef);
-        ($aid,$start,$stop,$highlight)=parse_map_info($aid,$highlight);
+        my ($start, $stop,$magnification) = (undef,undef,1);
+        ($aid,$start,$stop,$magnification,$highlight)=parse_map_info($aid,$highlight);
         if ($field eq 'map_aid'){
             $slots{$slot_no}->{'maps'}{$aid} =  {
                 start          => $start,
                 stop           => $stop,
+                mag            => $magnification,
             };
         }
         elsif ($field eq 'map_set_aid'){
@@ -316,12 +318,13 @@ sub handler {
             ? \@comparative_map_right : \@comparative_map_left;
         foreach my $cmap_str (@$cmap){
             my ( $field, $accession_id ) = split( /=/, $cmap_str ) or next;
-            my ( $start, $stop );
-            ($accession_id,$start,$stop,$highlight)=parse_map_info($accession_id,$highlight);
+            my ( $start, $stop,$magnification );
+            ($accession_id,$start,$stop,$magnification,$highlight)=parse_map_info($accession_id,$highlight);
             if ($field eq 'map_aid'){
                 $slots{$slot_no}->{'maps'}{$accession_id} =  {
                     start          => $start,
                     stop           => $stop,
+                    mag            => $magnification,
                 };
             }
             elsif ($field eq 'map_set_aid'){
@@ -398,7 +401,8 @@ sub handler {
                 defined $slots{$slot_no}{'maps'}{$map_aid}{'stop'}){
                 $map_str .= "["
                   . $slots{$slot_no}{'maps'}{$map_aid}{'start'}."*"
-                  . $slots{$slot_no}{'maps'}{$map_aid}{'stop'}
+                  . $slots{$slot_no}{'maps'}{$map_aid}{'stop'}. "x"
+                  . $slots{$slot_no}{'maps'}{$map_aid}{'mag'}
                   . "]";
             }
             push @comp_maps, $map_str;
@@ -544,10 +548,12 @@ sub parse_map_info{
     my $aid       = shift;
     my $highlight = shift;
 
-    my ($start,$stop)=(undef,undef);
-    if ( $aid =~ m/^(.+)\[(.*)\*(.*)\]$/ ) {
+    my ($start,$stop,$magnification)=(undef,undef,1);
+    # following matches map_id[1*200] and map_id[1*200x2]
+    if ( $aid =~ m/^(.+)\[(.*)\*(.*?)(?:x([\d\.]+)|)\]$/ ) {
         $aid=$1;
         ($start,$stop)=($2,$3); 
+        $magnification=$4 if $4;
         ($start,$stop)=(undef,undef) if ($start==$stop);
         $start = undef unless($start =~ /\S/);
         $stop  = undef unless($stop  =~ /\S/);
@@ -565,7 +571,7 @@ sub parse_map_info{
             ($start,$stop)= ($stop,$start); 
         }
     }
-    return ($aid,$start,$stop,$highlight);
+    return ($aid,$start,$stop,$magnification,$highlight);
 }
 1;
 

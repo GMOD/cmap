@@ -124,14 +124,14 @@ function selectFeatureRadio(val){
   }
 }
 
-function mod_map_info(slot_no, map_aid, start, stop){
+function mod_map_info(slot_no, map_aid, start, stop,mag){
   if ( slot_no == 0){
     if (start!='' && start==stop){
       document.comparative_map_form.modified_ref_map.value='';
     }
     else{
       document.comparative_map_form.modified_ref_map.value
-        =map_aid+"["+start+"*"+stop+"]";
+        =map_aid+"["+start+"*"+stop+"x"+mag+"]";
     }
   }
   else{
@@ -140,7 +140,7 @@ function mod_map_info(slot_no, map_aid, start, stop){
     }
     else{
     document.comparative_map_form.modified_comp_map.value
-      =slot_no+":map_aid:"+map_aid+"["+start+"*"+stop+"]";
+      =slot_no+"=map_aid="+map_aid+"["+start+"*"+stop+"x"+mag+"]";
     }
   }
 }
@@ -365,7 +365,7 @@ function mod_map_info(slot_no, map_aid, start, stop){
                           [% FOREACH cmap=map.cmaps %]
                             [% cmaps.push( "${cmap.slot_no}%3d${cmap.field}%3d${cmap.aid}" ) %]
                           [% END %]
-                          [% map.description %][% apr.param('ref_map_aids') %][% IF map.is_reference_map %]&nbsp;(Ref.)[% ELSE %]&nbsp;[&nbsp;<a href="viewer?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aids=[% apr.param('ref_map_aids') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% cmaps.join('%3a') %];include_feature_types=[% feature_types %];include_evidence_types=[% evidence_types %];collapse_features=[% apr.param('collapse_features') %];image_type=[% apr.param('image_type') %];min_correspondences=[% apr.param('min_correspondences') %]">Delete</a>&nbsp;]&nbsp;[% END %]<br>
+                          [% map.description %][% IF map.is_reference_map %]&nbsp;(Ref.)[% ELSE %]&nbsp;[&nbsp;<a href="viewer?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aids=[% apr.param('ref_map_aids') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% cmaps.join('%3a') %];include_feature_types=[% feature_types %];include_evidence_types=[% evidence_types %];collapse_features=[% apr.param('collapse_features') %];image_type=[% apr.param('image_type') %];min_correspondences=[% apr.param('min_correspondences') %]">Delete</a>&nbsp;]&nbsp;[% END %]<br>
                         [% END %]
                       </td>
                     </tr>
