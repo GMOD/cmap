@@ -5,6 +5,7 @@ use Apache::Cookie();
 use Apache::Reload();
 use Apache::Request();
 use Class::Base();
+use Config::General();
 use Data::Dumper();
 use DBI();
 use DBD::mysql();   

@@ -1,24 +1,159 @@
+GETTING STARTED
+
+Depending on your comfort level with software installation on UNIX
+environments, you may find some of this document a bit tedious.
+I'll try to assume that you know only the basics, but you do need to
+know the difference between an unprivileged user and the special
+"root" users.  To begin, I'd like to suggest you have many of the
+GNU project's utilities installed, such as gcc, gmake, gunzip, and
+tar.  If you are installing on a GNU/Linux system, you most likely
+already have these, so don't worry about it.  If you're installing
+on a Sun Solaris system, you'll probably have gcc and GNU's make,
+but you'll likely have to install gunzip and GNU tar.  If, in
+addition, you hope to install MySQL, you'll be required to install
+GNU tar as Sun's tar is broken and won't untar the MySQL packages
+properly.
+
+CONVENTIONS FOR BUILDING SOFTWARE ON UNIX
+
+The standard way to install software on a UNIX-like system includes
+running something that figures out what your system looks like.
+This is usually a script called "configure."  Then you use "make" to
+build the binaries, sometimes to test them, and then to install
+them.  The first couple of steps can be done as an unprivileged user
+(i.e., whatever your normal login on a system is) as long as you
+unpack your sources into a directory where you can write files.  The
+last step, usually "make install," almost always requires root
+privileges as it places the newly built files into sensitive
+system directories.
+
+WHERE TO PUT SOURCES
+
+As a convention, Linux users often unpack sources into one
+directory like "/usr/local/src."  Additionally, the author likes to
+place all the original packages (rpm's, deb's, tar.gz's, etc.) into
+the directory "/usr/local/downloads."  This directory doesn't
+usually exist, so I do the following (as root):
+
+    # mkdir /usr/local/downloads
+    # chgrp users /usr/local/downloads
+    # chmod g+w /usr/local/downloads
+
+Where the group "users" is a group I'm a member of.  This way I can
+write all my downloads into the directory without having to su to
+root.  (Note the convention of showing root's prompt with a hash sign
+"#".  When showing a prompt for a regular user, the convention is to
+use a dollar sign "$")  Some people also like to make the directory
+"/usr/local/src" writable by "users" (or whatever you call it on
+your system), but I'm a bit too paranoid to do that.  This means I
+usually do all my configuring and building as root, for better or
+worse.
+ 
+As you download the packages required, put them into
+"/usr/local/downloads" (or wherever you can keep up with them), and
+unpack them like into "/usr/local/src" like so:
+
+    # cd /usr/local/src
+    # tar zxvf ../downloads/my-package.tar.gz
+
+The above command only works with GNU tar.  To unzip and unpack on
+Solaris, so the following:
+
+    # cd /usr/local/src
+    # gunzip ../downloads/my-package.tar.gz | tar xvf -
+
+Of course, this assumes you've got "gunzip" installed on your
+Solaris system.  After that, cd into the directory created by the
+package and follow the directions for installing the software.
+Typically, it will involve the basic triumverate of commands:
+
+    # ./configure
+    # make
+    # make install
+
 REQUIREMENTS
 
 There are quite a number of prerequisites to getting this running:
 
-    * libgd (version 1.8.4, cf. http://www.boutell.com/)
+    * libgd 
     * an RDBMS (e.g., Oracle or MySQL) 
     * Perl (5.6.1 suggested)
     * Apache (version 1.3.24 or higher)
     * mod_perl (version 1.27 or higher)
 
-For the first two requirements, you're pretty much on your own.
-Installation of libgd has a number of dependencies you'll have to
-resolve (e.g., zlib, JPEG libraries, etc.), and each database has its
-own installation requirements you'll have to follow depending on what
-you want to use.  Do note that you should not use the latest (2.0.*)
-version of libgd as it causes a segfault with GD.pm.
+LIBGD
+
+Unfortunately, you're pretty much on your own for installing libgd.
+With any luck, you may already have it on your system if you have a
+GNU/Linux system.  To check, you could just skip this step for now
+and wait to see if the Perl module GD.pm will install properly.  If
+it complains that it can't find libgd, then come back here.
+
+Installation of libgd can easily be one of the more frustrating
+parts of this installation.  There are a number of dependencies 
+including the zlib compression library and whatever image libraries
+you want, like JPEG, libpng, and libgif.  Again, you may already
+have some of these libraries, so you needn't panic just yet.  One
+way to see if you do is to check the directories "/usr/lib" and
+"/usr/local/lib" for files that look like "libgd*," "libjpeg*,"
+"libpng*," and "libgif*".
+
+To install libgd, retrieve the source (tar.gz package) from libgd's
+author's (Paul Boutell) website,
+http://www.boutell.com/[exact_path].  Do note that you should be
+sure to use the only a 1.x version of libgd with a 1.x version of
+GD.pm, or go with 2.x versions of both or you'll get nasty
+segfaults.  When you go to build libgd, it should tell you which
+libraries it can and can't find.  You definitely won't get far
+without zlib installed, so you need to do that first.  Then you can
+look to see which kinds of files libgd will be able to write after
+you run the configure process.  You'll want to be sure that you can
+at least write JPEG and PNG (Portable Network Graphics) formats.
+You can create GIF if you don't mind worrying over ridiculous
+software patents over the LWZ compression algorithm.  PNG was
+created to be a completely open and free alternative to GIF.
 
 RDBMS
 
+If you already have a database installed on your system, you can
+skip ahead to the next section.  If not and you're doing this on
+your own, and aren't a trained DBA, I'd recommend using MySQL for
+your database.  It's free, extremely stable, flexible, and fun.
+Oracle is really overkill for such a lightweight application as this
+as the code doesn't rely on much of anything from the database
+except joins (no transactions, no referential integrity, no stored
+procedures, etc.).  If you prefer to use Oracle, you're in luck
+because this application was developed concurrently on MySQL 3.x and
+Oracle 9x.  Note, Oracle 8x doesn't support ANSI-standard left
+joins, so some parts of the application will fail.  If you can't
+upgrade, then you can alter the few SQL statements that cause
+problems.  If you prefer to use some other RDBMS, like PostgreSQL or
+Sybase or whatever, then you're still in luck.  Much has been done
+to make the SQL simple and portable and extendible.  If an SQL
+statement is giving you problems, you can likely create a small
+module and override the statement with one of your own making.  More
+on that later.
+
+I'll assume that you're going to use MySQL.  If you don't already
+have MySQL on your system, you can get everything you need either
+from your software vendor or directly from http://www.mysql.com/.
+There is a package called "Apache Toolbox" that claims to be able to
+install MySQL and Apache and many other things.  It's available at
+http://www.apachetoolbox.com/.  Additionally, RedHat Linux offers
+RPMs for installing everything you need, Debian GNU/Linux offers
+their DEB packages, or you can get precompiled binaries from MySQL
+for the architecture of your machine.  You may also choose to
+install from source, depending on your bent.  There are a number of
+freely available GUI (Graphical User Interface) and web-based tools
+to help you manage your databases if you want an alternative to
+MySQL's command-line tools.  See the MySQL website for more
+information.  If you get really stuck, then MySQL AB, the company
+which develops and releases MySQL, offers commercial support.
+
+CREATING DATABASE TABLES AND GRANTING PERMISSIONS
+
 Once you've settled on your database of choice and have a working
-installation, you should create the tables that will hold the data for
+installation, you need to create the tables that will hold the data for
 the comparative maps.  In the "sql" directory, you will find create
 scripts for Oracle and MySQL.  If you need to create scripts for a
 different database, then write the author for a copy of an upcoming
@@ -30,81 +165,244 @@ For MySQL, you can do the following to create the database "CMAP" and
 grant appropriate permissions to a user "joe" with the password
 "foobar":
 
-    $ mysqladmin -uroot -p create CMAP
+    $ mysql -uroot -p -e 'create database CMAP'
     $ mysql -uroot -p CMAP < sql/cmap.create.mysql
-    $ mysql -uroot -p CMAP
-    mysql> grant select, insert, update, delete \
-        -> on CMAP.* to joe@localhost identified by 'foobar';
+    $ mysql -uroot -p CMAP -e 'grant select, insert, update, delete 
+        on CMAP.* to joe@localhost identified by "foobar"'
 
-Once you've successfully created the database and chosen a username
-and password for connecting, be sure to appropriately edit
-CSHL::Config to reflect your connection parameters.
+In the above example, you'll be required to type the root password
+for MySQL.  Note:  this is not the same "root" as your system
+"root."  If you never set MySQL's "root" password, then just hit
+<Enter> at the password prompt (though I'd be remiss if I didn't
+suggest you actually protect your MySQL root user with a decent
+password).  Be sure to remember the username and password you'll
+connect to the database with as you'll need it further into the
+configuration process.
 
-This application generally relies on the use of simple SQL statements
-that OUGHT to run on just about any modern relational database that
-implements basic joins and ANSI SQL functions like "MAX" and "MIN" and
-"UPPER."  It was developed on both Oracle and MySQL, and I imagine it
-should run on most other databases with minimal tweaking.  To
-accomplish this, however, I've usually avoided the use of proprietary
-(and perhaps performance-enhancing) extensions, such as stored
-procedures and SQL dialects.  To find out more about how to customize
-any problem SQL for your installation, "perldoc CSHL::CMap::Data."
+If you're using something other than MySQL, then you should do the
+equivalent of creating the tables described in the create scripts in
+the "sql" directory and then granting the proper permissions to
+whatever user will connect to your database.
 
-Note for MySQL Users:  MySQL AB, the company which develops and
-releases MySQL, offers on their website http://www.mysql.com/
-commercial support for MySQL, should you desire professional help.
-They also have a freely available GUI (Graphical User Interface) tool
-called MySQLGUI if you are uncomfortable with the CLI (Command Line
-Interface) tools.  Binaries are available for Linux, Win32, *BSD, and
-Solaris. 
+INSTALLING PERL 
 
-INSTALLING PERL & APACHE/MOD_PERL
+It would be hard to imagine that a UNIX system wouldn't have some
+version of Perl installed.  We need a minimun of Perl 5.00503.  To
+see if you have that, type:
 
-You can install Apache and mod_perl together, but you will first need
-to be sure that you have a working version of Perl.  I would highly
-recommend that you compile every part of your system yourself,
-starting with Perl.  Most installations of mod_perl fail because
-people used RPM versions of Perl and Apache.  To get the lastest
-stable version of Perl, go to the Comprehensive Perl Archive Network,
-or "CPAN."  You can access it with a web browser at
-"http://www.cpan.org/" or via FTP at "ftp://cpan.org."  From there,
-grab "/src/stable.tar.gz," unpack the source and follow the directions
-to compile Perl (usually just "sh Configure -de; make; make install"
-will do it).
+    $ perl -v
 
-Once you have a proper Perl installation, you can now install Apache
-and mod_perl.  You have two choices: download sources and compile by
-hand or use Apache Toolbox to automate the process.
+On my current system, the output looks like this:
 
-    * By Hand: Grab the latest versions of Apache and mod_perl from
-      CPAN, too. FTP to "cpan.org," and grab Apache from
-      "/pub/apache/dist/" and mod_perl from
-      "/pub/CPAN/modules/by-module/Apache/." Unpack them into the same
-      directory (e.g., "/usr/local/src/") such that the root directories
-      of each package are at the same level. From there you can go into
-      the mod_perl directory and compile Apache and mod_perl together in
-      one step, following the directions given.
+    This is perl, v5.6.1 built for ppc-linux
 
-    * Apache Toolbox: Go to http://www.apachetoolbox.com/, download the
-      program and follow the instructions. I've never tried this
-      program, but it has gotten some decent praise in the community and
-      it purports to be able to install Apache and pretty much every
-      module available with it. It also claims to be able to install
-      MySQL, so this might be a good program to try if you're starting
-      from scratch.
+    Copyright 1987-2001, Larry Wall
 
-INSTALLING THE PERL MODULES
+    Perl may be copied only under the terms of either the Artistic 
+    License or the GNU General Public License, which may be found 
+    in the Perl 5 source kit.
 
-To install the base modules included in this package, you can either:
+    Complete documentation for Perl, including FAQ lists, should be
+    found on this system using `man perl' or `perldoc perl'. If you have
+    access to the Internet, point your browser at http://www.perl.com/,
+    the Perl Home Page.
 
-1)  Execute the following commands from the current directory:
+If your version of Perl is OK, you can likely skip ahead to the next
+section.  If you have anything 5.4 or older, you'll need to upgrade
+your Perl binary.  However, you may still want to consider building
+a new binary from source.  It's actually a little fun (in a geeky
+way), but it also may prove a necessity.  A fair number of mod_perl
+installations fail because people use broken RPM versions of Perl.
+You can just stick with your installed Perl and just see if it
+causes problems.  Obviously, upgrading important system binaries
+like Perl can cause unforeseen problems.  If you're using an
+established machine that is already being used for other tasks,
+upgrading Perl could break a lot of things, so you should discuss
+this with your sysadmin.  If you are lucky enough to have a free
+machine to play with, it's nice to start with a clean slate by
+building everything from source.  You should choose what's
+practical, convenient, and appropriate for you.
+
+If you want to install a new Perl binary, it only takes a few
+minutes to download and build.  Here's one way:
+
+    $ su -
+    # cd /usr/local/downloads
+    # ncftp ftp.cpan.org
+    ncftp> cd /pub/CPAN/src
+    ncftp> get perl-5.6.1.tar.gz
+    ncftp> quit
+    # cd ../src
+    # tar zxvf ../downloads/perl-5.6.1.tar.gz
+    # cd perl-5.6.1
+    # sh Configure -de
+    # make
+    # make install
+
+For better downloads, go to the CPAN (Comprehensive Perl Archive
+Network) website and find a mirror near you.  (A mirror is a machine
+who's owner is nice enough to provide disc space and bandwidth so
+that damand can be distributed amongst processors and across
+geographical areas.  Needless to say, it's usally better to find a
+mirror that's near you as long as that machine isn't overloaded.
+Just keep trying different machines until you find one with a good,
+fast connection to you.)
+
+INSTALLING APACHE ANG MOD_PERL
+
+Given that Apache is the most popular web server right now, it's
+also likely that you'll already have it installed on your system.
+Additionally, mod_perl is becoming a very standard package, and a
+number of systems offer prebuilt binaries or easy-to-install
+packages.  Both RedHat and Debian have such packages, and Windows
+users can also install pre-built binaries.  To see if your Apache
+binary has mod_perl compiled into it, do the following:
+
+    $ cd /usr/local/apache/bin
+    $ ./httpd -l
+
+Here's the output of mine:
+
+    Compiled-in modules:
+      http_core.c
+      mod_env.c
+      mod_log_config.c
+      mod_mime.c
+      mod_negotiation.c
+      mod_status.c
+      mod_include.c
+      mod_autoindex.c
+      mod_dir.c
+      mod_cgi.c
+      mod_asis.c
+      mod_imap.c
+      mod_actions.c
+      mod_userdir.c
+      mod_alias.c
+      mod_rewrite.c
+      mod_access.c
+      mod_auth.c
+      mod_proxy.c
+      mod_setenvif.c
+      mod_perl.c
+    suexec: disabled; invalid wrapper /usr/local/apache/bin/suexec
+
+If you see "mod_perl.c" in the list, then you can probably skip
+ahead to the next section.  If, however, you choose to build Apache
+and mod_perl for your system, either because it's not already
+installed or because you need to upgrade or becaue you're a purist
+or just because it's fun, you'll be happy to know that it's quite
+easy.  Both are available from a number of Apache mirrors.  I'll be
+referencing "ftp.apache.org," but you should find a mirror near you
+by looking on the Apache website, http://www.apache.org/.  Apache
+can be found in "/pub/dist/httpd/apache_1.3.26.tar.gz" and mod_perl
+can be found in "/pub/dist/perl/mod_perl-1.27.tar.gz."  Note:  This
+application has only been developed under the Apache and mod_perl
+1.x trees.  Apache and mod_perl 2.x are exciting new frontiers for
+mod_perlers, but it will be a while before this application is moved
+to that architecture.  So just stick with the 1.x trees.
+
+You can install Apache and mod_perl in one fell swoop so long as
+you're not interested in compiling in any other modules (e.g., PHP
+or SSL, etc.).  To do so, grab the sources for both and unpack them
+into a directory so that they're side by side, then follow the
+directions included in the INSTALL.apaci file in the mod_perl
+distribution.  Here's an example:
+
+    $ su -
+    # cd /usr/local/src
+    # tar zxvf ../downloads/apache_1.3.26.tar.gz
+    # tar zxvf ../downloads/mod_perl-1.27.tar.gz
+    # cd mod_perl-1.27
+    # perl Makefile.PL \
+    > APACHE_PREFIX=/usr/local/apache \
+    > APACHE_SRC=../apache_1.3.26/src \
+    > DO_HTTPD=1 \
+    > EVERYTHING=1 \
+    > USE_APACI=1
+    # make
+    # make test
+    # make install
+
+The backslashes ("\") above tell the command-line that you are
+continuing the command on a new line.  It's not necessary to do
+this.  You can just keep typing, but it's easier to see what you're
+doing when you use multiple lines.
+
+The APACHE_PREFIX that I list above is not necessarily where you
+should install Apache.  It's a fairly standard location on most
+GNU/Linux systems, but where Apache goes is still up to the
+descretion of your sysadmin (which is probably you, if you're
+reading this).  There's no reason whatsoever that Apache can't be
+installed "/var/web/" or "/opt/httpd" (though I might not recommend
+installing into "/tmp/" :-).  For the purposes of this document,
+"/usr/local/apache" can be substituted with whatever path you
+choose.
+
+(As an aside, you'll notice that the first command you give to build
+most Perl packages is "perl Makefile.PL."  This is the equivalent of
+the "configure" script in standard UNIX packages.  This command
+tells your Perl binary to figure out what needs to happen in the
+"make" process.  Additionally, you'll see that you should "make
+test" when installing.  When testing a package, *all* tests should
+pass (unless you know that certain failures are OK for your system).
+Generally failures in the installation of a Perl module can be
+remedied by installing some dependency (usually another Perl module
+or a system library).  If tests still fail, it is very important
+that you report these errors to the module authors so that they can
+be fixed.  Don't forget that most authors would tell you that
+patches are more welcome than just bug reports!).
+
+INSTALLING PERL MODULES
+
+If you ever need to install a Perl module, I'd really recommend you
+use the CPAN shell.  It is a really convenient package that
+automates the downloading and building of modules.  Additionally, it
+can recursively install all module dependencies automagically.  To
+use the CPAN shell, type the following (as root):
+
+    # perl -MCPAN -e shell
+
+(If you're curious, the "-M" flag tells Perl to use a particular
+module, in this case "CPAN.pm," and the "-e" flag tells Perl to execute
+some code.  In this case, we're executing the command "shell," which
+is exported by CPAN.pm.  If you ever wanted to see if a particular
+module was loaded on your system, e.g., the DBI module, you could do
+the following:
+
+    $ perl -MDBI -e 'print "OK\n"'
+
+If Perl is not able to load DBI, you will certainly know about it;
+otherwise you'll see "OK.")
+
+The first time you use the CPAN shell, you will have to answer a few
+questions mostly concerned with choosing a mirror close to you and
+where certain important system binaries are (like "gzip," "ncftp,"
+"tar," etc.).  Generally you can just keep hitting <Return> to
+accept the defaults presented in square brackets.
+
+Occasionally a module may not install properly via the CPAN shell,
+or perhaps it is not available on CPAN (many aren't).  In that case,
+you can install the module in much the same way that you install
+system binaries.  I'd recommend downloading the source into
+"/usr/local/downloads" and then untarring into "/usr/local/src."
+Execute "perl Makefile.PL; make; make test; make install" and you're
+generally all done.  If the module requires another module, you'll
+need to track that down, install it, then return to installing the
+first one.  After tracking down several dependencies on your own,
+you'll being to appreciate all the automation the CPAN shell gives
+you.
+
+INSTALLING THE CMAP PERL MODULES
+
+To install the cmap modules included in this package, you can either:
+
+1)  Execute the following commands in the directory created by
+    untarring the CMAP distribution:
 
     $ perl Makefile.PL
     $ make
     # make install
-
-    The first two commands can be run as an unprivileged user, but "make
-    install" must be run as root (signified by the typical "#" prompt).
 
     You will be asked a couple of questions, such as where to place the
     templates and command-line scripts. You can place them in any valid
@@ -113,59 +411,80 @@ To install the base modules included in this package, you can either:
     "pre-requisite" modules. 
 
 2)  Manually place the contents of "lib," "bin," and "templates" into
-    directories of your choosing. Be sure to put a "use lib '...'"
-    statement in your perlstartup.pl file to let Perl know where to find
-    these libraries. Additionally, you'll want to place your library
-    path into your PERL5LIB environment variable for when you run
-    command-line programs which depend on these libraries.
+    directories of your choosing.
 
-If you install the cmap modules through a CPAN shell and are
-prompted to install any other modules, respond in the affirmative.  If
-you find that you need to install other Perl modules to satisfy
-dependencies, please consider using the CPAN shell to do so as it
-automates the downloading and building of modules and will recursively
-install all dependencies.  To use the CPAN shell, type the following
-(as root):
-
-    # perl -MCPAN -e shell
+At this point in the package's maturity, I'd recommend the latter.
+I like to put custom libraries used by Apache under
+"/usr/local/apache/lib/perl" (assuming, of course, that you might
+have libraries for Java and Python and whatever else tickles your
+fancy).  I would recommend putting the templates into
+"/usr/local/apache/templates/cmap," and the binaries (really just
+"cmap_admin.pl") into some system binary (or just in your $HOME
+directory if you're the only one who'll be using it).  If you do put
+the libraries into a custom directory, you'll need to let Perl know
+about the existence of these non-standard library paths.  Set your
+your PERL5LIB environment variable to the directory you chose and
+then place a "use lib '...'" statement in your perlstartup.pl file
+to let Perl know where to find these libraries.  More on that last
+part in a bit.
 
 CONFIGURING APACHE
 
 After installing Apache, mod_perl, and all the necessary modules,
 you're now ready to configure Apache.  Two files are included in the
-"apache_conf" directory of this package: "httpd.conf" and
-"perlstartup.pl."  These files contains all the additions you
-should make to your own httpd.conf and Perl startup files.  If you
-aren't already pre-loading all the Perl modules you use via a
-"PerlRequire" or "PerlModule" statements, then this is a good habit to
-start doing now.  :)  Simply copy the contents of these files to your
-own Apache "conf" directories.
+"apache_conf" directory of this package to help you do this:
+"httpd.conf" and "perlstartup.pl."  The first of these files
+contains all the additions you should make to your own httpd.conf in
+order to configure the Apache environment and to set up the various
+handlers for the cmap application.  The second file, typically
+called something like "perlstartup.pl" (but you can call it whatever
+you like) is used to let Apache know about the modules it will use
+in its lifetime, and is placed in the same directory as the
+httpd.conf.  The parent Apache process will parse this file and
+include all the modules in each child process, further enhancing the
+performance of the application.
 
-You may not need to use all the httpd.conf.  For example, you should
-only include the following lines in order to set up a couple
-environment variables:
+NOTE:  All the files in Apache's "conf" directory are very important
+and sensitive, so it's best to have everything be owned and writable
+only by root.  The startup file will be executed as root, so this
+could represent an easy root compromise were a non-root user able to
+write to the file.
 
-    PerlSetVar TEMPLATE_DIR /usr/local/apache/templates/comparative_maps
-    PerlSetVar PAGE_OBJECT  GramenePage
+I'll now briefly discuss the meaning of the edits you'll make to
+httpd.conf so you can intelligently edit you own entries.
 
-The first actually need not be set if you set the path in the
-"CSHL::CMap::Constants" module.  The second directive will likely
-never be used by anyone but the original Gramene site where the
-"GramenePage" module automagically inserts proper headers and footers
-and navigation bars depending on the page being requested.  If you
-don't have anything like this, you can simply place your site's
-headers and footers directly into the templates provided.  Probably
-you can skip both of the above directives.
+* PerlRequire /path/to/perlstartup.pl
 
-The application will need to write the images to a cache directory
-from which Apache will serve the images.  If you do not define a
-directory, then the default ("/tmp/cmap_cache") will be created for
-you when you run.  However, you can specify a better choice, if you
-have a preference, perhaps something in your "/var" directory or
-something on a partiition separate from your web server.  If you
-create a directory on your own, be sure that this directory is
-writable by the httpd process (usually "web" or "nobody"), and that
-the permissions on it are very restrictive.  I would suggest the
+This is the location of the file that lists all your Perl modules.
+Generally the path would be "/usr/local/apache/conf/perlstartup.pl."
+
+* PerlSetVar TEMPLATE_DIR /usr/local/apache/templates/cmap
+
+This is the directory where you placed the cmap templates.  You
+actually don't need to set if you set the path in the
+"CSHL::CMap::Constants" module.
+
+* PerlSetVar PAGE_OBJECT  GramenePage
+
+This will likely never be used by anyone but the original Gramene site
+where the "GramenePage" module automagically inserts proper headers
+and footers and navigation bars depending on the page being
+requested.  If you don't have anything like this, you can simply
+place your site's headers and footers directly into the templates
+provided.  Probably you can skip both of the above directives.
+
+* Alias /cmap/images /tmp/cmap_cache
+
+This is the directory where the application will write the temporary
+images created for each request.  Apache will directly serve the
+images from this cache.  If you do not define a directory, then the
+default ("/tmp/cmap_cache") will be created for you on the first
+request.  You can,however, specify your own choice if you have a
+preference, perhaps something in your "/var" directory or something
+on a partition separate from your web server.  If you create a
+directory on your own, be sure that this directory is writable by
+the httpd process (usually "web" or "nobody"), and that the
+permissions on it are very restrictive.  I would suggest the
 following (as root, of course):
 
     # mkdir /path/to/images
@@ -176,10 +495,8 @@ Whether you create the cache directory or not, you will need to alias
 it so that Apache will know where to find the images.  So, let's say
 that you decide to put your images into "/var/web/cmap_cache" and that
 you'd like to reference those images through a web browser as
-"/maps/images," you'll need to add the following line to your
-httpd.conf:
-
-    Alias /maps/images /var/web/comparative_map_cache
+"/cmap/images," you'll need to edit the above line in your
+httpd.conf to reflect the default value or your own choice.
 
 I'd probably recommend against placing the images directly into your
 DocumentRoot as the space taken by the images is completely dependent
@@ -190,148 +507,75 @@ better to place them into a directory on a separate partition, like
 "/var," which is usually able to handle such variable directories.
 Where ever you put your images and however you alias them, be sure that
 the "<img>" tag in the "cmap_viewer.tmpl" template reflects the same
-path as your Alias.
+path as your Alias.  (Of course, you won't have to change anything
+in the templates if you use the default of "/cmap/images.")
 
 The map images will only be used for one request, so you'll need to
 include some way to clear out old images.  A simple cron job will do
 the trick.  Add this to your root crontab (e.g., by running "crontab
 -e" as root):
 
+    # clear out old cmap images
+    # added by Joe User <juser@foo.com>
     0 0 * * *  find /var/web/comparative_map_cache/ \
         -type f -mtime +1 -exec rm -rf {} \;
 
-INSTALLING MOD_PERL HANDLERS
+It's always a good idea to comment on what you're doing in a
+system-wide file like a crontab so you and everyone else knows what
+each command does.  Be sure to put in your own name and e-mail
+address.  The whole command (starting with the "0") should go on one
+line, so the first backslash is just my way of indicating to you
+that the command continues on the next line.  The second backslash,
+however, is actually a part of the command.  It tells "find" that
+the semi-colon is part of its "-exec" command.
 
-To make the comparative map code "live," you'll have to tell Apache to
-execute the code when a user goes to a particular location.  You do
-this by adding the following directives to the httpd.conf:
-
-    <Location /cmap/admin>
-        AuthType        Basic
-        AuthName        "Maps Curation"
-        AuthUserFile    /usr/local/apache/passwd/passwords
-        Require         valid-user
-        SetHandler      perl-script
-        PerlHandler     CSHL::CMap::Apache::AdminViewer
-    </Location>
-
-    <Location /cmap/feature>
-        SetHandler      perl-script
-        PerlHandler     CSHL::CMap::Apache::FeatureViewer->super
-    </Location>
-
-    <Location /cmap/feature_search>
-        SetHandler      perl-script
-        PerlHandler     CSHL::CMap::Apache::FeatureSearch->super
-    </Location> 
-
-    <Location /cmap/help>
-        SetHandler      perl-script
-        PerlHandler     CSHL::CMap::Apache::HelpViewer->super
-    </Location>
-
-    <Location /cmap/map_set_info>
-        SetHandler      perl-script
-        PerlHandler     CSHL::CMap::Apache::MapSetViewer->super
-    </Location>
-
-    <Location /cmap/matrix>
-        SetHandler      perl-script
-        PerlHandler     CSHL::CMap::Apache::MatrixViewer->super
-    </Location>
-
-    <Location /cmap/viewer>
-        PerlInitHandler CSHL::CMap::Apache::UserPreferences
-        SetHandler      perl-script
-        PerlHandler     CSHL::CMap::Apache::MapViewer->super
-    </Location>
-
-perlstartup.pl
-
-To take full advantage of the performance benefits of mod_perl, you'll
-want to create a file containing all the modules that Apache will use
-in its lifetime.  Typically, this file is called something like
-"perlstartup.pl" and is placed in the same directory as the
-httpd.conf.  The parent Apache process will parse this file and
-include all the modules in each child process, further enhancing the
-performance of the application.
-
-NOTE:  Everything in Apache's "conf" directory is very important
-and sensitive, so it's best to have everything be owned and writable
-only by root.  The startup file will be executed as root, so this
-could represent an easy root compromise were a non-root user able to
-write to the file.  With this in mind, as root, create this file with
-the following lines:
-
-    # File: perlstartup.pl
-    use Apache();
-    use Apache::Constants();
-    use Apache::Cookie();
-    use Apache::Reload();
-    use Apache::Request();
-    use Class::Base();
-    use Data::Dumper();
-    use DBI();
-    use DBD::mysql();   
-    use Error();
-    use GD();
-    use File::MkTemp;
-    use Template();
-
-    use CSHL::Config();
-    use CSHL::CMap();
-    use CSHL::CMap::Admin();
-    use CSHL::CMap::Apache();
-    use CSHL::CMap::Apache::UserPreferences();
-    use CSHL::CMap::Apache::AdminViewer();
-    use CSHL::CMap::Apache::HelpViewer();
-    use CSHL::CMap::Apache::FeatureSearch();
-    use CSHL::CMap::Apache::FeatureViewer();
-    use CSHL::CMap::Apache::MapViewer();
-    use CSHL::CMap::Apache::MapSetViewer();
-    use CSHL::CMap::Apache::MatrixViewer();
-    use CSHL::CMap::Apache::RelationalMapViewer();
-    use CSHL::CMap::Constants();
-    use CSHL::CMap::Data();
-    use CSHL::CMap::Data::Generic();
-    use CSHL::CMap::Data::MySQL();
-    use CSHL::CMap::Data::Oracle();
-    use CSHL::CMap::Drawer();
-    use CSHL::CMap::Drawer::Map();
-    use CSHL::CMap::Drawer::Feature();
-    use CSHL::CMap::Utils();
-
-    1;
-
-Now you'll want to add this line to your httpd.conf to tell Apache to
-load all those modules at start time:
-
-    PerlRequire      /path/to/perlstartup.pl
-
-Where "/path/to/perlstartup.pl" would probably be something like
-"/usr/local/apache/conf/perlstartup.pl."
+STARTING APACHE
 
 Now see if Apache like what you've done by typing the following
 command (you'll probably have to specify a full path to "apachectl"):
 
-    # apachectl configtest
+    $ su -
+    # cd /usr/local/apache/bin
+    # ./apachectl configtest
 
-If everything is OK, then restart Apache:
+If you see "Syntax OK," then restart Apache:
 
-    # apachectl stop
-    # apachectl start
+    # ./apachectl stop
+    # ./apachectl start
+
+STARTING APACHE ET AL. ON BOOT
+
+Should your system ever go down for any reason (e.g., crash or
+reboot), you'll probably want all your services to come back up when
+the machine boots.  UNIX-type systems can vary quite a bit in how
+you determine what comes up at boot and in what order, but on
+typical GNU/Linux systems, you can simply place start scripts in a
+directory like "/etc/rc.d/init.d" and then create symbolic links
+into the "rcX.d" directory where the "X" represents your default
+runlevel (usually 2 or 3 for a server).  Here's how you could start
+Apache at boot on a RedHat system with a default runlevel of "3":
+
+    $ su -
+    # cd /etc/rc.d/init.d
+    # ln -s /usr/local/apache/bin/apachectl ./httpd
+    # cd /etc/rc.d/rc3.d/
+    # ln -s ../init.d/httpd
+
+MySQL has its own scripts to make sure it starts up on boot.  You
+should follow the directions appropriate for your system.
 
 IMPORTING YOUR DATA
 
-Now you've got some basic setup to do for your data.  First off, open
-up the web administration interface by going to the URL you set up for
-the CSHL::CMap::AdminViewer module.  You'll need to set up what types
-of maps, features, species, and evidence types you'll be working with.
-For each, go to the "View ..." choice from the main menu, then choose
-"Create New ..." and fill in the correct information.  For information
-on the correct format for data import, "perldoc
-CSHL::CMap::Admin::Import." When you have your data in the correct
-format, launch the "cmap_admin.pl" script and follow the instructions.
+Now you've got some basic setup to do for your data.  First off,
+open up the web administration interface by going to the URL you set
+up for the CSHL::CMap::Apache::AdminViewer module.  You'll need to
+set up what types of maps, features, species, and evidence types
+you'll be working with.  For each, go to the "View ..." choice from
+the main menu, then choose "Create New ..." and fill in the correct
+information.  For information on the correct format for data import,
+"perldoc CSHL::CMap::Admin::Import." When you have your data in the
+correct format, launch the "cmap_admin.pl" script and follow the
+instructions.
 
 When setting up database cross-references, you'll have to use some
 extra syntax in the URL field to indicate the field to link out on.
@@ -340,7 +584,7 @@ Here's an example from Gramene for linking to GrainGenes:
     http://www.graingenes.org/cgi-bin/WebAce/webace?\
     db=graingenes&class=Locus&object=[% feature.feature_name %]
 
-And here's how we link to our own contig viewer:
+Here's how the Gramene project links to its own contig viewer:
 
     /perl/contigview?clone=[% feature.feature_name %]
 
@@ -349,6 +593,8 @@ templating system used for the comparative maps.  Simply use whichever
 field you want from the feature table (accession_id, feature_name, or
 alternate_name) and the above style syntax for either absolute (first)
 or relative (second) URLs.
+
+MAKING CORRESPONDENCES
 
 For now, the only correspondences supported are name-based, so run the
 "Find name-based correspondences" command from cmap_admin.pl.  Make
@@ -362,15 +608,19 @@ format of the data would be welcomed.
 
 CUSTOMIZING YOUR INSTALLATION
 
-You should edit CSHL::CMap::Constants to reflect your own preferences.
-Remember to restart Apache whenever you make a change to this file as
-these are *constants* and therefore don't change for the life of the
-Apache process.  You can also change the way maps and features are
-drawn based on their types.  Edit each "map type" and "feature type"
-that you create, and experiment with the colors, shapes, and sizes
-available to you.
+You should edit CSHL::Config with the proper connection data for
+your database and CSHL::CMap::Constants to reflect your own
+preferences.  Each entry in the Constants file is commented to help
+you understand its purpose.  If you don't understand a constant, you
+can just leave it alone and use the default.  Remember to restart
+Apache whenever you make a change to this file as these are
+*constants* and therefore don't change for the life of the Apache
+process.
 
-CUSTOMIZING YOUR HTML
+You can change the way maps and features are drawn based on
+their types.  Use the web-based admin tool to edit each "map type"
+and "feature type" that you create.  Experiment with the colors,
+shapes, and sizes.
 
 All the HTML displayed by the application is contained in the
 templates.  These templates are processed by Template Toolkit to
