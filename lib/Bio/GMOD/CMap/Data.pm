@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.80 2004-01-06 18:48:23 kycl4rk Exp $
+# $Id: Data.pm,v 1.81 2004-01-07 17:44:14 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.80 $)[-1];
+$VERSION = (qw$Revision: 1.81 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -1076,6 +1076,7 @@ Returns the data for the correspondence matrix.
     my ( $self, %args )  = @_;
     my $db               = $self->db                 or return;
     my $species_aid      = $args{'species_aid'}      ||     '';
+    my $map_type_aid     = $args{'map_type_aid'}     ||     '';
     my $map_set_aid      = $args{'map_set_aid'}      ||     '';
     my $map_name         = $args{'map_name'}         ||     ''; 
     my $link_map_set_aid = $args{'link_map_set_aid'} ||      0;
@@ -1108,23 +1109,23 @@ Returns the data for the correspondence matrix.
     #
     # And map types.
     #
-#    my $map_types = $db->selectall_arrayref( 
-#        q[
-#            select   distinct mt.accession_id as map_type_aid, 
-#                     mt.map_type,
-#                     mt.display_order 
-#            from     cmap_map_type mt,
-#                     cmap_map_set ms
-#            where    mt.map_type_id=ms.map_type_id
-#            and      ms.can_be_reference_map=1
-#            and      ms.is_enabled=1
-#            order by mt.display_order, mt.map_type
-#        ],
-#        { Columns => {} } 
-#    );
+    my $map_types = $db->selectall_arrayref( 
+        q[
+            select   distinct mt.accession_id as map_type_aid, 
+                     mt.map_type,
+                     mt.display_order 
+            from     cmap_map_type mt,
+                     cmap_map_set ms
+            where    mt.map_type_id=ms.map_type_id
+            and      ms.can_be_reference_map=1
+            and      ms.is_enabled=1
+            order by mt.display_order, mt.map_type
+        ],
+        { Columns => {} } 
+    );
 
     #
-    # Make sure that species_id is set if map_set_id is.
+    # Make sure that species_aid is set if map_set_id is.
     #
     if ( $map_set_aid && !$species_aid ) {
         $species_aid = $db->selectrow_array(
@@ -1134,6 +1135,23 @@ Returns the data for the correspondence matrix.
                        cmap_species s
                 where  ms.accession_id=?
                 and    ms.species_id=s.species_id
+            ],
+            {},
+            ( $map_set_aid )
+        );
+    }
+
+    #
+    # Make sure that map_type_aid is set if map_set_id is.
+    #
+    if ( $map_set_aid && !$map_type_aid ) {
+        $map_type_aid = $db->selectrow_array(
+            q[
+                select mt.accession_id
+                from   cmap_map_set ms,
+                       cmap_map_type mt
+                where  ms.accession_id=?
+                and    ms.map_type_id=mt.map_type_id
             ],
             {},
             ( $map_set_aid )
@@ -1224,29 +1242,41 @@ Returns the data for the correspondence matrix.
                          ms.short_name as map_set_name,
                          ms.display_order as map_set_display_order,
                          ms.published_on, 
+                         mt.accession_id as map_type_aid, 
+                         mt.display_order as map_type_display_order, 
+                         mt.map_type,
                          s.species_id,
                          s.accession_id as species_aid,
                          s.common_name as species_name,
                          s.display_order as species_display_order
                 from     cmap_map map,
                          cmap_map_set ms,
+                         cmap_map_type mt,
                          cmap_species s
                 where    map.map_name='$map_name'
+                and      map.map_type_id=mt.map_type_id
                 and      map.map_set_id=ms.map_set_id
                 and      ms.is_enabled=1
                 and      ms.species_id=s.species_id
                 and      ms.can_be_reference_map=1
             ];
-            $map_set_sql .= 
-                "and s.accession_id='$species_aid' " if $species_aid;
 
             $map_set_sql .= 
-                "and ms.accession_id='$map_set_aid' " if $map_set_aid;
+                "and s.accession_id='$species_aid' "   if $species_aid;
+
+            $map_set_sql .= 
+                "and mt.accession_id='$map_type_aid' " if $map_type_aid;
+
+            $map_set_sql .= 
+                "and ms.accession_id='$map_set_aid' "  if $map_set_aid;
 
             $map_set_sql .= q[
-                order by species_display_order, 
+                order by map_type_display_order,
+                         map_type,
+                         species_display_order, 
                          species_name, 
                          map_set_display_order,
+                         map_set_name,
                          published_on,
                          map_set_name
             ];
@@ -1257,26 +1287,38 @@ Returns the data for the correspondence matrix.
                          ms.accession_id as map_set_aid,
                          ms.short_name as map_set_name,
                          ms.display_order as map_set_display_order,
+                         mt.display_order as map_type_display_order, 
+                         mt.accession_id as map_type_aid, 
+                         mt.map_type,
                          s.species_id,
                          s.accession_id as species_aid,
                          s.common_name as species_name,
                          s.display_order as species_display_order
                 from     cmap_map_set ms,
+                         cmap_map_type mt,
                          cmap_species s
                 where    ms.can_be_reference_map=1
                 and      ms.is_enabled=1
+                and      ms.map_type_id=mt.map_type_id
                 and      ms.species_id=s.species_id
             ];
-            $map_set_sql .= 
-                "and s.accession_id='$species_aid' " if $species_aid;
 
             $map_set_sql .= 
-                "and ms.accession_id='$map_set_aid' " if $map_set_aid;
+                "and s.accession_id='$species_aid' "   if $species_aid;
+
+            $map_set_sql .= 
+                "and mt.accession_id='$map_type_aid' " if $map_type_aid;
+
+            $map_set_sql .= 
+                "and ms.accession_id='$map_set_aid' "  if $map_set_aid;
 
             $map_set_sql .= q[
-                order by species_display_order, 
+                order by map_type_display_order,
+                         map_type,
+                         species_display_order, 
                          species_name,
                          map_set_display_order,
+                         map_set_name,
                          published_on desc,
                          map_set_name
             ];
@@ -1294,9 +1336,6 @@ Returns the data for the correspondence matrix.
     if ( $map_set_aid eq '' && scalar @reference_map_sets == 1 ) {
         $map_set_aid = $reference_map_sets[0]->{'map_set_aid'};
     }
-
-#    warn "map set aid = $map_set_aid\n";
-#    warn "ref map sets =\n", Dumper( \@reference_map_sets ), "\n";
 
     #
     # Select the relationships from the pre-computed table.
@@ -1540,17 +1579,19 @@ Returns the data for the correspondence matrix.
     # Fill in the matrix with the reference set and all it's correspondences.
     # Herein lies madness.
     #
-    my ( @matrix, %no_by_species );
+    my ( @matrix, %no_ref_by_species, %no_ref_by_type );
     for my $map_set ( @reference_map_sets ) {
         my $r_map_aid       = $map_set->{'map_aid'} || 0;
         my $r_map_set_aid   = $map_set->{'map_set_aid'};
+        my $r_map_type_aid  = $map_set->{'map_type_aid'};
         my $r_species_aid   = $map_set->{'species_aid'};
         my $reference_aid   = 
             $map_name && $map_set_aid ? $r_map_aid     : 
             $map_name                 ? $r_map_set_aid : 
             $r_map_aid || $r_map_set_aid;
 
-        $no_by_species{ $r_species_aid }++;
+        $no_ref_by_type{ $r_map_type_aid }++;
+        $no_ref_by_species{ $r_species_aid }++;
 
         for my $comp_map_set ( @all_map_sets ) {
             my $comp_map_set_aid = $comp_map_set->{'map_set_aid'};
@@ -1573,20 +1614,22 @@ Returns the data for the correspondence matrix.
 
     my $matrix_data   =  {
         data          => \@matrix,
-        no_by_species => \%no_by_species,
+        no_by_type    => \%no_ref_by_type,
+        no_by_species => \%no_ref_by_species,
     };
 
     return {
-        top_row     => $top_row,
-        species_aid => $species_aid,
-        map_set_aid => $map_set_aid,
-        map_name    => $map_name,
-        matrix      => $matrix_data,
-        data        => $data,
-        species     => $species,
-        map_sets    => $map_sets,
-#        map_types   => $map_types,
-        maps        => $maps,
+        top_row      => $top_row,
+        species_aid  => $species_aid,
+        map_set_aid  => $map_set_aid,
+        map_type_aid => $map_type_aid,
+        map_name     => $map_name,
+        matrix       => $matrix_data,
+        data         => $data,
+        species      => $species,
+        map_sets     => $map_sets,
+        map_types    => $map_types,
+        maps         => $maps,
     };
 }
 
