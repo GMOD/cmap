@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::ViewFeatureOnMap;
 # vim: set ft=perl:
 
-# $Id: ViewFeatureOnMap.pm,v 1.7 2004-02-10 22:50:09 kycl4rk Exp $
+# $Id: ViewFeatureOnMap.pm,v 1.7.2.1 2004-04-29 16:16:24 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.7 $)[-1];
+$VERSION = (qw$Revision: 1.7.2.1 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use base 'Bio::GMOD::CMap::Apache';
@@ -15,10 +15,12 @@ sub handler {
     # Make a jazz noise here...
     #
     my ( $self, $apr ) = @_;
-    $self->data_source( $apr->param('data_source') ) or return;
+    my $data_source    = $apr->param('data_source')  || '';
     my $feature_aid    = $apr->param('feature_aid')  || '';
     my $highlight_by   = $apr->param('highlight_by') || '';
-    my $data           = $self->data_module;
+
+    $self->data_source( $data_source ) or return;
+    my $data = $self->data_module;
 
     my ( $ms_aid, $map_aid, $feature_name ) = 
         $data->view_feature_on_map( $feature_aid );
@@ -30,7 +32,7 @@ sub handler {
         unless $ms_aid && $map_aid;
 
     print $apr->redirect(
-        "/cmap/viewer?ref_map_set_aid=$ms_aid".
+        "/cmap/viewer?ref_map_set_aid=$ms_aid&data_source=$data_source".
         qq[&ref_map_aid=$map_aid&highlight="$highlight"]
     );
 
