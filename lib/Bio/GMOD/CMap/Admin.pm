@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.50 2004-06-07 15:07:05 mwz444 Exp $
+# $Id: Admin.pm,v 1.51 2004-06-08 16:10:42 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.50 $)[-1];
+$VERSION = (qw$Revision: 1.51 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -242,6 +242,20 @@ sub feature_alias_create {
 }
 
 # ----------------------------------------------------
+sub feature_alias_update {
+    my ( $self, %args ) = @_;
+
+    return $self->generic_update(
+        table    => 'cmap_feature_alias',
+        pk_name  => 'feature_alias_id',
+        values   => \%args,
+        required => [ qw/ feature_id alias / ],
+        fields   => [ qw/ feature_id alias / ],
+    );
+}
+ 
+
+# ----------------------------------------------------
 sub feature_delete {
 
 =pod
@@ -308,6 +322,27 @@ Delete a feature.
 
     return $map_id;
 }
+
+# ----------------------------------------------------
+sub feature_update {
+    my ( $self, %args ) = @_;
+
+    return $self->generic_update(
+        table    => 'cmap_feature',
+        pk_name  => 'feature_id',
+        values   => \%args,
+        required => [
+            qw/ accession_id feature_name start_position 
+                map_id feature_type_id
+            /
+        ],
+        fields   => [
+            qw/ accession_id feature_name start_position stop_position 
+                map_id feature_type_id is_landmark
+            /
+        ],
+    );
+} 
 
 # ----------------------------------------------------
 sub feature_correspondence_create {
@@ -1324,11 +1359,11 @@ sub map_create {
         );
     }
 
-    unless ( $start_position =~ NUMBER_RE ) {
+    unless ( $start_position =~ $RE{'num'}{'real'} ) {
         return $self->error("Bad start position ($start_position)");
     }
 
-    unless ( $stop_position =~ NUMBER_RE ) {
+    unless ( $stop_position =~ $RE{'num'}{'real'} ) {
         return $self->error("Bad stop position ($stop_position)");
     }
 
@@ -1411,6 +1446,46 @@ Delete a map.
 
     return $map_set_id;
 }
+
+# ----------------------------------------------------
+sub map_update {
+    my ( $self, %args ) = @_;
+
+    return $self->generic_update(
+        table    => 'cmap_map',
+        pk_name  => 'map_id',
+        values   => \%args,
+        required => [qw/ accession_id map_name start_position stop_position /],
+        fields   => [
+            qw/ accession_id map_name display_order
+                start_position stop_position map_set_id
+            /
+        ],
+    );
+}
+ 
+# ----------------------------------------------------
+sub map_set_update {
+    my ( $self, %args ) = @_;
+
+    return $self->generic_update(
+        table    => 'cmap_map_set',
+        pk_name  => 'map_set_id',
+        values   => \%args,
+        required => [ 
+            qw/ accession_id map_set_name short_name species_id 
+                map_type_id
+            / 
+        ],
+        fields   => [
+            qw/ accession_id map_set_name short_name
+                color shape is_enabled display_order can_be_reference_map
+                published_on width species_id map_type_id
+            /
+        ],
+    );
+}
+
 
 # ----------------------------------------------------
 sub map_set_create {
@@ -2131,6 +2206,65 @@ Delete a species.
 }
 
 # ----------------------------------------------------
+sub generic_update {
+    my ( $self, %args ) = @_;
+    my $table_name      = $args{'table'}        or die 'No table name';
+    my $pk_name         = $args{'pk_name'}      or die 'No primary key name';
+    my $fields          = $args{'fields'}       or die 'No table fields';
+    my $values          = $args{'values'}       or die 'No values';
+    my $pk_value        = $values->{ $pk_name } or die 'No primary key value';
+    my $db              = $self->db             or return;
+    my $required        = $args{'required'}     || [];
+    die 'No table fields' unless @$fields;
+
+    if ( @$required ) {
+        my @missing;
+        for my $field ( @$required ) {
+            push @missing, $field 
+                if exists $values->{ $field } && ! defined $values->{ $field };
+        }
+
+        return $self->error(
+            'Update missing required fields: ', join(', ', @missing)
+        ) if @missing;
+    }
+
+    my ( @update_fields, @bind_values );
+    for my $field_name ( @$fields ) {
+        next unless exists $values->{ $field_name };
+        my $value = $values->{ $field_name };
+        next unless defined $value;
+        push @update_fields, "$field_name=?";
+        push @bind_values, $value;
+    }
+    die "Error parsing fields, can't create update SQL\n" unless @update_fields;
+
+    my $sql = "update $table_name set " . join(', ', @update_fields) .
+        " where $pk_name=?";
+    push @bind_values, $pk_value;
+
+    $db->do( $sql, {}, @bind_values );
+
+    return 1;
+}
+
+# ----------------------------------------------------
+sub species_update {
+    my ( $self, %args ) = @_;
+
+    return $self->generic_update(
+        table    => 'cmap_species',
+        pk_name  => 'species_id',
+        values   => \%args,
+        required => [ qw/ common_name full_name accession_id / ],
+        fields   => [ 
+            qw/ accession_id full_name common_name display_order /
+        ],
+    );
+}
+
+
+# ----------------------------------------------------
 sub xref_create {
     my ( $self, %args ) = @_;
     my $db              = $self->db or return $self->error;
@@ -2140,6 +2274,7 @@ sub xref_create {
                           push @missing, 'database object (table name)';
     my $name            = $args{'xref_name'}  or push @missing, 'xref name';
     my $url             = $args{'xref_url'}   or push @missing, 'xref URL';
+    my $display_order   = $args{'display_order'};
 
     if ( @missing ) {
         return $self->error(
@@ -2148,18 +2283,46 @@ sub xref_create {
         );
     }
 
-    my $display_order   = $args{'display_order'};
-    my $xref_id         = $self->set_xrefs(
-        object_id       => $object_id,
-        table_name      => $table_name,
-        xrefs           => [
-            { 
-                name          => $name, 
-                url           => $url,
-                display_order => $display_order,
-            },
-        ],
-    ) or return $self->error;
+#
+    # See if one like this exists already.
+    #
+    my $sth = $db->prepare(
+        q[
+            select xref_id, display_order
+            from   cmap_xref
+            where  xref_name=?
+            and    xref_url=?
+            and    table_name=?
+        ]
+    );
+    $sth->execute( $name, $url, $table_name );
+    my $xref = $sth->fetchrow_hashref;
+
+    my $xref_id;
+    if ( $xref ) {
+        $xref_id = $xref->{'xref_id'};
+        if ( defined $display_order &&
+             $xref->{'display_order'} != $display_order 
+        ) {
+            $db->do(
+                'update cmap_xref set display_order=? where xref_id=?',
+                {}, ( $display_order, $xref_id )
+            );
+        }
+    }
+    else {
+        $xref_id          = $self->set_xrefs(
+            object_id     => $object_id,
+            table_name    => $table_name,
+            xrefs         => [
+                { 
+                    name          => $name, 
+                    url           => $url,
+                    display_order => $display_order,
+                },
+            ],
+        ) or return $self->error;
+    }
 
     return $xref_id;
 }
@@ -2188,6 +2351,22 @@ Delete a cross reference.
 
     return 1;
 }
+
+# ----------------------------------------------------
+sub xref_update {
+    my ( $self, %args ) = @_;
+
+    return $self->generic_update(
+        table    => 'cmap_xref',
+        pk_name  => 'xref_id',
+        values   => \%args,
+        required => [ qw/ xref_name xref_url table_name / ],
+        fields   => [ 
+            qw/ display_order xref_name xref_url table_name /
+        ],
+    );
+}
+
 
 1;
 

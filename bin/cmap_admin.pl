@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.71 2004-06-07 15:08:43 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.72 2004-06-08 16:10:42 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.71 $)[-1];
+$VERSION = (qw$Revision: 1.72 $)[-1];
 
 #
 # Get command-line options
@@ -2093,7 +2093,7 @@ sub import_object_data {
     $term->addhistory($file); 
     $self->file( $file );
 
-    print "Remove data in map set not in import file? [y/N] ";
+    print "Overwrite any existing data? [y/N] ";
     chomp( my $overwrite = <STDIN> );
     $overwrite = ( $overwrite =~ /^[Yy]/ ) ? 1 : 0;
 

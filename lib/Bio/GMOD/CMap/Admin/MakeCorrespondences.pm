@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.39 2004-06-07 15:07:05 mwz444 Exp $
+# $Id: MakeCorrespondences.pm,v 1.40 2004-06-08 16:10:43 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.39 $)[-1];
+$VERSION = (qw$Revision: 1.40 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -93,6 +93,16 @@ print STDERR "$expanded_correspondence_lookup MAKE \n";
                 next if $ft_id1 == $ft_id3;
                 $add_name_correspondences{ $ft_id1 }{ $ft_id3 } = 1;
             }
+        }
+    }
+
+    my %disallow_name_correspondence;
+    for my $line ( $self->config('disallow_name_correspondence') ) {
+        my @feature_types = split /\s+/, $line;
+        for my $ft ( @feature_types ) {
+            my $ft_id =$self->feature_type_data($ft)
+                 or next;
+            $disallow_name_correspondence{ $ft_id } = 1;
         }
     }
 
@@ -222,6 +232,10 @@ print STDERR "$expanded_correspondence_lookup MAKE \n";
                         { $f2->{'feature_type_aid'} }
                     ;
                 }
+                next if     
+                    $f1->{'feature_type_id'} == $f2->{'feature_type_id'} &&
+                    $disallow_name_correspondence{ $f1->{'feature_type_id'} }
+                ;
 
                 my $s = "b/w '$f1->{'feature_name'}' ".
                         "and '$f2->{'feature_name'}.'\n";
