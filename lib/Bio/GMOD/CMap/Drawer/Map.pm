@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.117 2004-09-02 01:42:59 mwz444 Exp $
+# $Id: Map.pm,v 1.118 2004-09-02 13:32:28 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.117 $)[-1];
+$VERSION = (qw$Revision: 1.118 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -181,11 +181,6 @@ box.
     my $width     = $self->map_width( $map_id );
     my $x2        = $x1 + $width;
     my $x_mid     = $x1 + ($width/2);
-    my $trunc_color      ='black';
-    my $trunc_half_width = 6; 
-    my $trunc_height     = 8;
-    my $trunc_line_width = 4;
-    my $trunc_buf        = 2;
     my @coords = ( $x1, $y1, $x2, $y2 );
     my @map_coords = @coords;
 
@@ -519,7 +514,7 @@ Draws the map title.
     my $map_aid       = $args{'map_aid'};
     my $slot_no       = $args{'slot_no'};
 
-    my $trunc_color      ='black';
+    my $trunc_color      ='grey';
     my $trunc_half_width = 6; 
     my $trunc_height     = 8;
     my $trunc_line_width = 4;
