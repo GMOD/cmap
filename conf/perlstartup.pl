@@ -8,6 +8,7 @@ use Class::Base();
 use Cache::Cache();
 use Config::General();
 use Data::Dumper();
+use Data::Pageset();
 use DBI();
 #use DBD::mysql();   # choose the driver that's
 #use DBD::Oracle();  # correct for your installation
@@ -16,6 +17,7 @@ use IO::Tee();
 use File::MkTemp();
 use File::Path();
 use Template();
+use Text::RecordParser();
 use Time::Object();
 use Time::ParseDate();
 
