@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.24 2003-03-05 22:26:11 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.25 2003-03-13 01:31:37 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.24 $)[-1];
+$VERSION = (qw$Revision: 1.25 $)[-1];
 
 #
 # Turn off output buffering.
@@ -75,6 +75,19 @@ sub init {
     my ( $self, $config ) = @_;
     $self->params( $config, qw[ file user no_log ] );
     return $self;
+}
+
+sub admin {
+    my $self  = shift;
+
+    unless ( $self->{'admin'} ) {
+        $self->{'admin'} = Bio::GMOD::CMap::Admin->new( 
+            db          => $self->db,
+            data_source => $self->data_source,
+        );
+    }
+
+    return $self->{'admin'};
 }
 
 # ----------------------------------------------------
@@ -210,6 +223,10 @@ sub show_greeting {
                 display => 'Export data' 
             },
             { 
+                action  => 'delete_map_set', 
+                display => 'Delete a map or map set' 
+            },
+            { 
                 action  => 'quit',   
                 display => 'Quit' 
             },
@@ -313,6 +330,101 @@ sub create_map_set {
     );
 
     print "Map set $map_set_name created\n";
+}
+
+# ----------------------------------------------------
+sub delete_map_set {
+#
+# Deletes a map set.
+#
+    my $self = shift;
+    my $db   = $self->db;
+
+    #
+    # Get the map set.
+    #
+    my ( $map_set_id, $species_name, $map_set_name ) = $self->show_menu(
+        title       => 'Choose Map Set',
+        prompt      => 'Please select a map set',
+        display     => 'species_name,map_set_name',
+        return      => 'map_set_id,species_name,map_set_name',
+        allow_null  => 0,
+        allow_mult  => 0,
+        data        => $db->selectall_arrayref(
+            q[
+                select   ms.map_set_id, 
+                         ms.short_name as map_set_name,
+                         s.common_name as species_name
+                from     cmap_map_set ms,
+                         cmap_species s
+                where    ms.species_id=s.species_id
+                order by common_name, map_set_name
+            ],
+            { Columns => {} },
+        ),
+    );
+
+    my @map_ids     =  $self->show_menu(
+        title       => 'Restrict by Map (optional)',
+        prompt      => 'Select one or more maps',
+        display     => 'map_name',
+        return      => 'map_id',
+        allow_null  => 1,
+        allow_mult  => 1,
+        data        => $db->selectall_arrayref(
+            q[
+                select   map.map_id, 
+                         map.map_name
+                from     cmap_map map
+                where    map.map_set_id=?
+                order by map_name
+            ],
+            { Columns => {} },
+            ( $map_set_id )
+        ),
+    );
+
+    my $map_names;
+    if ( @map_ids ) {
+        $map_names = $db->selectcol_arrayref(
+            q[
+                select map.map_name
+                from   cmap_map map
+                where  map.map_id in (].
+                join( ', ', @map_ids ).q[)
+            ]
+        );
+    }
+
+    print join("\n",
+        map { $_ || () }
+        'OK to delete?',
+        '  Data source : ' . $self->data_source, 
+        '  Map Set     : ' . $species_name.'-'.$map_set_name,
+        ( @{ $map_names || [] }
+            ? '  Maps        : ' . join(', ', @$map_names)
+            : ''
+        ),
+        '[Y/n] ',
+    );
+
+    chomp( my $answer = <STDIN> );
+    return if $answer =~ /^[Nn]/;
+
+    my $admin  = $self->admin;
+    my $log_fh = $self->log_fh;
+    if ( @map_ids ) {
+        for my $map_id ( @map_ids ) {
+            print $log_fh "Deleting map ID '$map_id.'\n";
+            $admin->map_delete( map_id => $map_id )
+                or return $self->error( $admin->error );
+        }
+    }
+    else {
+        print $log_fh "Deleting map set '$species_name-$map_set_name.'\n";
+        $admin->map_set_delete( map_set_id => $map_set_id )
+            or return $self->error( $admin->error );
+    }
 }
 
 # ----------------------------------------------------
@@ -670,6 +782,7 @@ sub export_as_text {
         feature_type
         feature_dbxref_name
         feature_dbxref_url
+        is_landmark
     );
     
     my @map_set_ids = $self->show_menu(
@@ -813,6 +926,7 @@ sub export_as_text {
                              f.stop_position as feature_stop,
                              f.dbxref_name as feature_dbxref_name,
                              f.dbxref_url as feature_dbxref_url,
+                             f.is_landmark,
                              ft.feature_type,
                              map.map_name, 
                              map.accession_id as map_accession_id,
@@ -902,6 +1016,7 @@ sub export_correspondences {
             feature_name2 
             feature_accession_id2
             evidence 
+            is_enabled
         ] 
     );
 
@@ -920,7 +1035,6 @@ sub export_correspondences {
                 ( $fc->{'feature_correspondence_id'} )
             )
         });
-
 
         print $fh join( OUT_FS, map { $fc->{ $_ } } @col_names ), OUT_RS;
     }
@@ -1116,9 +1230,9 @@ sub import_data {
     do { print "There are no map sets for that map type!\n"; return }
          unless $map_set_id;
 
-    print "Remove data in map set not in import file? [Y/n] ";
+    print "Remove data in map set not in import file? [y/N] ";
     chomp( my $overwrite = <STDIN> );
-    $overwrite = ( $overwrite =~ /^[Nn]/ ) ? 0 : 1;
+    $overwrite = ( $overwrite =~ /^[Yy]/ ) ? 1 : 0;
 
     #
     # Confirm decisions.
@@ -1237,10 +1351,7 @@ sub reload_correspondence_matrix {
     chomp( my $answer = <STDIN> );
     return if $answer =~ m/^[Nn]/;
 
-    my $admin = Bio::GMOD::CMap::Admin->new( 
-        db          => $self->db,
-        data_source => $self->data_source,
-    );
+    my $admin = $self->admin;
     $admin->reload_correspondence_matrix or do { 
         print "Error: ", $admin->error, "\n"; return; 
     };
@@ -1258,7 +1369,7 @@ sub show_menu {
     my @display = split(/,/, $args{'display'});
     my $result;
 
-    if ( scalar @$data > 1 ) {
+    if ( scalar @$data > 1 || $args{'allow_null'} ) {
         my $i      = 1;
         my %lookup = ();
 
@@ -1445,12 +1556,11 @@ on creating multiple data sources.
 
 =head2 Create new map set
 
-This is the only feature duplicated with the web admin tool.  This is
+This is the one feature duplicated with the web admin tool.  This is
 a very simple implementation, however, meant strictly as a convenience
 when loading new data sets.  You can only specify the species, map
 type, long and short names.  Everything else about the map set must be
 edited with the web admin tool.
-
 
 =head2 Import data for existing map set
 
@@ -1547,6 +1657,22 @@ Good Thing if the importing database has the same accession IDs
 if the importing database has different accession IDs.
 
 =back
+
+=head2 Delete a map or map set
+
+Along with creating a map set, this is the an task duplicated with the
+web admin tool.  The reason is because very large maps or map sets can
+take a very long time to delete.  As all of the referential integrity
+(e.g., deleting from one table causes deletes in others so as to not
+create orphan records) is handled in Perl, then can take a while to
+completely remove a map or map set.  Such a long-running process can
+time out in web browsers, so it can be more convenient to remove data
+using cmap_admin.pl.
+
+To remove just one (or more) map of a map set, first choose the map
+set and then the map (or maps) within it.  If you wish to remove an
+entire map set, then answer "0" (or just hit "Return") when given a
+list of maps.
 
 =head1 AUTHOR
 
