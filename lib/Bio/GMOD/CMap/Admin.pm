@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.56 2004-08-19 05:40:46 mwz444 Exp $
+# $Id: Admin.pm,v 1.57 2004-09-02 00:27:21 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.56 $)[-1];
+$VERSION = (qw$Revision: 1.57 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -1029,14 +1029,7 @@ sub delete_duplicate_correspondences {
     foreach my $dup (@$duplicates){
         print "Deleting correspondence id ".$dup->{'duplicate_id'}."\n";
         my $evidence_move_sql=q[
-            insert into cmap_correspondence_evidence
-            (accession_id,feature_correspondence_id,evidence_type_accession,score,rank)
-            select ce1.accession_id,
-               ] . $dup->{'original_id'}
-                 .q[,
-                   ce1.evidence_type_accession,
-                   ce1.score,
-                   ce1.rank 
+            select distinct ce1.correspondence_evidence_id
             from   cmap_correspondence_evidence ce1 
             left join cmap_correspondence_evidence ce2 
                 on ce1.evidence_type_accession=ce2.evidence_type_accession 
@@ -1044,7 +1037,18 @@ sub delete_duplicate_correspondences {
             where  ce1.feature_correspondence_id=].$dup->{'duplicate_id'}.q[ 
                and ce2.feature_correspondence_id is NULL
             ];
-        $db->do($evidence_move_sql);
+print STDERR "$evidence_move_sql\n";
+        my $move_evidence = $db->selectcol_arrayref( $evidence_move_sql, {}, () );
+        if (scalar(@$move_evidence)){
+            my $move_sql=q[
+                update cmap_correspondence_evidence 
+                set feature_correspondence_id = ].$dup->{'original_id'}.q[
+                where correspondence_evidence_id in (].
+                join(',',@$move_evidence).q[)
+                ];
+print STDERR "$move_sql\n";
+            $db->do($move_sql);
+        }
         $self->feature_correspondence_delete(
             feature_correspondence_id=>$dup->{'duplicate_id'}
             );        
