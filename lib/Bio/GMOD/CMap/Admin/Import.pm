@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Import;
 
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.55.2.3 2004-12-05 17:14:56 mwz444 Exp $
+# $Id: Import.pm,v 1.55.2.4 2004-12-10 17:55:49 mwz444 Exp $
 
 =pod
 
@@ -33,7 +33,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.55.2.3 $)[-1];
+$VERSION = (qw$Revision: 1.55.2.4 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -594,10 +594,10 @@ appended to the list of xrefs.
                ],
                     {},
                     (
-                        $accession_id, $map_id,     $feature_type_aid,
-                        $feature_name, $start,      $stop,
-                        $is_landmark,  $feature_id, $default_rank,
-                        $direction
+                        $accession_id, $map_id,       $feature_type_aid,
+                        $feature_name, $start,        $stop,
+                        $is_landmark,  $default_rank, $direction,
+                        $feature_id
                     )
                 );
 
@@ -679,11 +679,14 @@ appended to the list of xrefs.
             #
 
             $insert_features[ ++$#insert_features ] = [
-              [ $accession_id, $map_id,       $feature_type_aid,
-                $feature_name, $start,        $stop,
-                $is_landmark,  $default_rank, $direction,
-              ],
-              $aliases, \@fattributes, \@xrefs,
+                [
+                    $accession_id, $map_id,       $feature_type_aid,
+                    $feature_name, $start,        $stop,
+                    $is_landmark,  $default_rank, $direction,
+                ],
+                $aliases,
+                \@fattributes,
+                \@xrefs,
             ];
             @insert_features = @{
                 $self->insert_features(

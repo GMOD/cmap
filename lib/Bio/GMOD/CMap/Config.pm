@@ -1,7 +1,8 @@
 package Bio::GMOD::CMap::Config;
+
 # vim: set ft=perl:
 
-# $Id: Config.pm,v 1.6 2004-04-14 13:44:02 mwz444 Exp $
+# $Id: Config.pm,v 1.6.4.1 2004-12-10 17:55:46 mwz444 Exp $
 
 =head1 NAME
 
@@ -19,17 +20,17 @@ This module handles config files
 
 =cut 
 
-use strict; 
+use strict;
 use Class::Base;
 use Config::General;
 use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 
-use base 'Class::Base';    
+use base 'Class::Base';
 
 # ----------------------------------------------------
 sub init {
-    my ( $self ) = @_;
+    my ($self) = @_;
     $self->set_config();
     return $self;
 }
@@ -55,49 +56,53 @@ The conf dir and the global conf file are specified in Constants.pm
     #
     # Get files from directory (taken from Bio/Graphics/Browser.pm by lstein)
     #
-    die CONFIG_DIR.": not a directory"  unless -d CONFIG_DIR;
-    opendir(D,CONFIG_DIR) or die "Couldn't open ".CONFIG_DIR.": $!";
-    my @conf_files = map { CONFIG_DIR."/$_" } grep {/\.$suffix$/} readdir(D);
+    die CONFIG_DIR . ": not a directory" unless -d CONFIG_DIR;
+    opendir( D, CONFIG_DIR ) or die "Couldn't open " . CONFIG_DIR . ": $!";
+    my @conf_files =
+      map { CONFIG_DIR . "/$_" } grep { /\.$suffix$/ } readdir(D);
     close D;
-    
+
     #
     # Try to work around a bug in Apache/mod_perl which appears when
     # running under linux/glibc 2.2.1
     #
-    unless ( @conf_files ) {
+    unless (@conf_files) {
+
         # use File::Spec::catfile here?
         @conf_files = glob( CONFIG_DIR . "/*.$suffix" );
     }
-    
+
     #
     # Read config data from each file and store it all in a hash.
     #
-    foreach my $conf_file ( @conf_files ) {
-        my $conf   = Config::General->new( $conf_file ) or 
-            return $self->error("Trouble reading config '$conf_file'");
-        my %config = $conf->getall or return
-            $self->error("No configuration options present in '$conf_file'");
+    foreach my $conf_file (@conf_files) {
+        my $conf = Config::General->new($conf_file)
+          or return $self->error("Trouble reading config '$conf_file'");
+        my %config = $conf->getall
+          or return $self->error(
+            "No configuration options present in '$conf_file'");
 
         if ( $conf_file =~ /$global$/ ) {
             $self->{'global_config'} = \%config;
         }
         else {
-            my $db_name = $config{'database'}{'name'} || return $self->error(
-                qq[Config file "$conf_file" does not defined a db name]
-            );
-            $config_data{ $db_name } = \%config;
+            my $db_name = $config{'database'}{'name'}
+              || return $self->error(
+                qq[Config file "$conf_file" does not defined a db name] );
+            $config_data{$db_name} = \%config;
         }
-    } 
+    }
 
     #
     # Need a global and specific conf file
     #
-    return $self->error( 'No "global.conf" found in ' . CONFIG_DIR ) 
-        unless $self->{'global_config'};
-    return $self->error( 'No database conf files found in ' . CONFIG_DIR ) 
-        unless %config_data;
+    return $self->error( 'No "global.conf" found in ' . CONFIG_DIR )
+      unless $self->{'global_config'};
+    return $self->error( 'No database conf files found in ' . CONFIG_DIR )
+      unless %config_data;
     $self->{'config_data'} = \%config_data;
-#print STDERR "Read Config Files\n";
+
+    #print STDERR "Read Config Files\n";
     return 1;
 }
 
@@ -122,27 +127,29 @@ Sets the active config data.
     #
     # If config_name specified, check if it exists.
     #
-    if ( $config_name ) {
-#print STDERR "looking up '$config_name'\n";
-        if ( $self->{'config_data'}{ $config_name } ) {
+    if ($config_name) {
+
+        #print STDERR "looking up '$config_name'\n";
+        if ( $self->{'config_data'}{$config_name} ) {
             $self->{'current_config'} = $config_name;
             return 1;
         }
-        else{
+        else {
             return 0;
         }
     }
 
     unless ( $self->{'current_config'} ) {
-#print STDERR "current config = ", Dumper($self->{'current_config'}), "\n";
-        #
-        # If the default db is in the global_config
-        # and it exists, set that as the config.
-        #
-        if (
-            $self->{'global_config'}{'default_db'} &&
-            $self->{'config_data'}{ $self->{'global_config'}{'default_db'} }
-        ) {
+
+     #print STDERR "current config = ", Dumper($self->{'current_config'}), "\n";
+     #
+     # If the default db is in the global_config
+     # and it exists, set that as the config.
+     #
+        if (   $self->{'global_config'}{'default_db'}
+            && $self->{'config_data'}
+            { $self->{'global_config'}{'default_db'} } )
+        {
             $self->{'current_config'} = $self->{'global_config'}{'default_db'};
             return 1;
         }
@@ -166,7 +173,7 @@ Returns an array ref of the keys to self->{'config_data'}.
 
 =cut
 
-    my $self=shift;
+    my $self = shift;
     return [ keys %{ $self->{'config_data'} } ];
 }
 
@@ -190,38 +197,42 @@ optionally you can specify a set of config data to read from.
     unless ( $self->{'current_config'} ) {
         $self->set_config() or return self->error;
     }
-    
+
     return $self unless $option;
 
     #
     # If a specific db conf file was asked for, supply answer from it.
     #
     my $value;
-    if ( $specific_db ) {
-        $value = defined $self->{'config_data'}{ $specific_db }{ $option } 
-        ? $self->{'config_data'}{ $specific_db }{ $option }
-        : '';            
+    if ($specific_db) {
+        $value =
+          defined $self->{'config_data'}{$specific_db}{$option}
+          ? $self->{'config_data'}{$specific_db}{$option}
+          : '';
     }
-    else{
+    else {
+
         #
         # Is it in the global config
         #
-        if ( defined $self->{'global_config'}{ $option } ) {
-            $value = $self->{'global_config'}{ $option };
+        if ( defined $self->{'global_config'}{$option} ) {
+            $value = $self->{'global_config'}{$option};
         }
-        else{
+        else {
+
             #
             # Otherwise get it from the other config.
             #
-            $value = defined $self->{'config_data'}{$self->{'current_config'}}{ $option } 
-            ?  $self->{'config_data'}->{$self->{'current_config'}}{ $option }
-            : DEFAULT->{ $option }
-            ;
+            $value =
+              defined $self->{'config_data'}{ $self->{'current_config'} }
+              {$option}
+              ? $self->{'config_data'}->{ $self->{'current_config'} }{$option}
+              : DEFAULT->{$option};
         }
     }
 
-    if ( $value ) {
-        return wantarray && (ref $value eq "ARRAY") ? @$value : $value;
+    if ( defined($value) ) {
+        return wantarray && ( ref $value eq "ARRAY" ) ? @$value : $value;
     }
     else {
         return wantarray ? () : '';
@@ -248,3 +259,4 @@ This library is free software;  you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 =cut
+

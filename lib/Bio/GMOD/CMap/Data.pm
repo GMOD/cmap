@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.165.2.16 2004-12-06 15:59:44 mwz444 Exp $
+# $Id: Data.pm,v 1.165.2.17 2004-12-10 17:55:46 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.165.2.16 $)[-1];
+$VERSION = (qw$Revision: 1.165.2.17 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -1581,12 +1581,13 @@ Returns the data for the correspondence matrix.
 
             $row->{'map_type'} =
               $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
+            $row->{'epoch_published_on'} = parsedate( $row->{'published_on'} );
         }
         $map_sets = sort_selectall_arrayref(
-            $map_sets,           '#default_display_order',
-            'map_type',          '#display_order',
-            'common_name',       '#display_order',
-            'published_on desc', 'short_name'
+            $map_sets,                 '#default_display_order',
+            'map_type',                '#display_order',
+            'common_name',             '#display_order',
+            'epoch_published_on desc', 'short_name'
         );
 
         my $map_sql = qq[
@@ -1723,6 +1724,7 @@ Returns the data for the correspondence matrix.
 
             $row->{'map_type'} =
               $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
+            $row->{'epoch_published_on'} = parsedate( $row->{'published_on'} );
         }
 
         @reference_map_sets = @{
@@ -1730,7 +1732,7 @@ Returns the data for the correspondence matrix.
                 $tempMapSet,    '#map_type_display_order',
                 'map_type',     '#species_display_order',
                 'species_name', '#map_set_display_order',
-                'map_set_name', 'published_on desc',
+                'map_set_name', 'epoch_published_on desc',
                 'map_set_name'
             )
           };
@@ -1957,12 +1959,13 @@ Returns the data for the correspondence matrix.
               $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
             $row->{'map_type_display_order'} =
               $self->map_type_data( $row->{'map_type_aid'}, 'display_order' );
+            $row->{'epoch_published_on'} = parsedate( $row->{'published_on'} );
         }
         $tempMapSet = sort_selectall_arrayref(
-            $tempMapSet,    '#map_type_display_order',
-            'map_type',     '#species_display_order',
-            'species_name', '#map_set_display_order',
-            'published_on', 'map_set_name'
+            $tempMapSet,               '#map_type_display_order',
+            'map_type',                '#species_display_order',
+            'species_name',            '#map_set_display_order',
+            'epoch_published_on desc', 'map_set_name'
         );
     }
 
@@ -2171,13 +2174,15 @@ sub cmap_form_data {
                 $row->{'map_type_display_order'} =
                   $self->map_type_data( $row->{'map_type_aid'},
                     'display_order' );
+                $row->{'epoch_published_on'} =
+                  parsedate( $row->{'published_on'} );
             }
 
             $ref_map_sets = sort_selectall_arrayref(
-                $ref_map_sets,  '#map_type_display_order',
-                'map_type',     '#species_display_order',
-                'species_name', '#map_set_display_order',
-                'map_set_name',
+                $ref_map_sets,             '#map_type_display_order',
+                'map_type',                '#species_display_order',
+                'species_name',            '#map_set_display_order',
+                'epoch_published_on desc', 'map_set_name',
             );
 
             $self->store_cached_results( 1, $sql_str, $ref_map_sets );
@@ -2197,8 +2202,8 @@ sub cmap_form_data {
     my ( $ref_maps, $ref_map_set_info );
 
     if ($ref_map_set_aid) {
-        unless ( ( %{ $ref_map->{'maps'} } or %{ $ref_map->{'map_sets'} } )
-            or $ref_map->{'map_names'} )
+        unless ( ( $ref_map->{'maps'} and %{ $ref_map->{'maps'} } )
+            or ( $ref_map->{'map_sets'} and %{ $ref_map->{'map_sets'} } ) )
         {
             $sql_str = $sql->form_data_ref_maps_sql;
             unless ( $ref_maps =
@@ -2258,7 +2263,7 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
 
     my @slot_nos = sort { $a <=> $b } keys %$slots;
     my ( $comp_maps_right, $comp_maps_left );
-    if ( $self->slot_info ) {
+    if ( $self->slot_info and @slot_nos ) {
         $comp_maps_right = $self->get_comparative_maps(
             min_correspondences         => $min_correspondences,
             feature_type_aids           => $feature_type_aids,
@@ -3986,10 +3991,11 @@ Returns data on species.
               $self->map_type_data( $row->{'map_type_aid'}, 'width' );
             $row->{'map_type'} =
               $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
+            $row->{'epoch_published_on'} = parsedate( $row->{'published_on'} );
         }
         $s->{'map_sets'} =
           sort_selectall_arrayref( $s->{'map_sets'}, '#default_display_order',
-            'map_type', '#display_order', 'published_on desc',
+            'map_type', '#display_order', 'epoch_published_on desc',
             'map_set_name' );
     }
 
@@ -4558,7 +4564,8 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
             and     map.map_id=f.map_id
         ];
         if ( $min_correspondence_maps or $min_correspondences ) {
-            $sql_str .= " and map.map_id in (". join(",",keys(%$map_info)).") ";   
+            $sql_str .=
+              " and map.map_id in (" . join( ",", keys(%$map_info) ) . ") ";
         }
         if ($name_search) {
             $sql_str .= " and map.map_name='$name_search' ";
@@ -4582,9 +4589,10 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
                 $feature_info->{ $row->{'map_id'} }
                   { $row->{'feature_type_aid'} }{'total'} =
                   $row->{'feature_count'};
-                my $devisor = $map_info->{ $row->{'map_id'} }{'stop_position'} -
-                          $map_info->{ $row->{'map_id'} }{'start_position'} || 1;
-                
+                my $devisor =
+                  $map_info->{ $row->{'map_id'} }{'stop_position'} -
+                  $map_info->{ $row->{'map_id'} }{'start_position'} || 1;
+
                 my $raw_no = ( $row->{'feature_count'} / $devisor );
                 $feature_info->{ $row->{'map_id'} }
                   { $row->{'feature_type_aid'} }{'raw_per'} = $raw_no;
@@ -4954,6 +4962,7 @@ If it is not aggregated, don't compress
     my $this_slot_no = shift;
 
     return unless defined $this_slot_no;
+    return 0 if ( $this_slot_no == 0 );
     return $self->{'compressed_maps'}{$this_slot_no}
       if defined( $self->{'compressed_maps'}{$this_slot_no} );
 
@@ -5630,11 +5639,8 @@ original start and stop.
 }
 
 sub orderOutFromZero {
-    ###Return the sort in this order (0,1,2,3,-1,-2,-3)
-    ###If both are positive (or 0) give the cmp.
-    return $a cmp $b if ( $a >= 0 and $b >= 0 );
-    ###Otherwise reverse the compare.
-    return $b cmp $a;
+    ###Return the sort in this order (0,1,-1,-2,2,-3,3,)
+    return ( abs($a) cmp abs($b) );
 }
 ###########################################
 

@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.71.2.8 2004-11-29 23:20:14 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.71.2.9 2004-12-10 17:55:50 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.71.2.8 $)[-1];
+$VERSION = (qw$Revision: 1.71.2.9 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -97,12 +97,13 @@ sub handler {
 
     $collapse_features = $self->config_data('collapse_overlapping_features')
       unless ( defined($collapse_features) );
-    $self->aggregate($aggregate);
-    $self->show_intraslot_corr($show_intraslot_corr);
-    $self->clean_view($clean_view);
-    $self->magnify_all($magnify_all);
-    $self->scale_maps($scale_maps);
-    $self->stack_maps($stack_maps);
+    $apr->param( 'aggregate', $self->aggregate($aggregate) );
+    $apr->param( 'show_intraslot_corr',
+        $self->show_intraslot_corr($show_intraslot_corr) );
+    $apr->param( 'clean_view',  $self->clean_view($clean_view) );
+    $apr->param( 'magnify_all', $self->magnify_all($magnify_all) );
+    $apr->param( 'scale_maps',  $self->scale_maps($scale_maps) );
+    $apr->param( 'stack_maps',  $self->stack_maps($stack_maps) );
 
     if ($ref_map_order) {
         $self->ref_map_order($ref_map_order);
@@ -135,9 +136,11 @@ sub handler {
         $apr->param( 'ref_map_aids', join( ":", @ref_map_aids ) );
     }
 
-    ###For DEBUGGING purposes.  Remove before release
+    #
+    # Catch old argument, handle nicely.
+    #
     if ( $apr->param('ref_map_aid') ) {
-        die "ref_map_aid defined " . $apr->param('ref_map_aid');
+        push @ref_map_aids, $apr->param('ref_map_aid');
     }
 
     my %ref_maps;
@@ -508,7 +511,12 @@ sub handler {
     if ( $path_info eq 'map_details' and scalar keys %ref_maps == 1 ) {
         $PAGE_SIZE ||= $self->config_data('max_child_elements') || 0;
         $MAX_PAGES ||= $self->config_data('max_search_pages')   || 1;
-        my ($map_id) = keys %ref_maps;
+        my ($map_aid) = keys %ref_maps;
+        my $map_id = $drawer->data_module->acc_id_to_internal_id(
+            table    => 'cmap_map',
+            acc_id   => $map_aid,
+            field_id => 'map_id'
+        );
 
         my $detail_data = $data->map_detail_data(
             ref_map                 => $drawer->{'data'}{'slots'}{0}{$map_id},
