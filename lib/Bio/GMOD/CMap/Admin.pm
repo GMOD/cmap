@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.51 2004-06-08 16:10:42 mwz444 Exp $
+# $Id: Admin.pm,v 1.52 2004-06-30 21:03:00 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.51 $)[-1];
+$VERSION = (qw$Revision: 1.52 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -939,7 +939,6 @@ sub insert_feature_correspondence_if_gt{
                  values ];
         }
         $sql_str.=$new_corr_lookup_values;
-print STDERR "$sql_str\n";
         $db->do($sql_str, {}, () );
         print STDERR "Inserted\n";
     }
