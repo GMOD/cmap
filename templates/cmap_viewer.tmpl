@@ -218,7 +218,7 @@ function addPosToStr(str, slot_no, matchStr, value, command){
         <img src="/cmap/plus.png"> <b> Click to Show Change Menu</b>
         </span>
       </div>
-      <div id="displayChangeMenu" this.display="none" >
+      <div id="displayChangeMenu" >
         <span  
           onclick="setMenuObjects(
           window.document.ref_map_set_form.changeMenu,
@@ -360,7 +360,7 @@ function addPosToStr(str, slot_no, matchStr, value, command){
             <img src="/cmap/plus.png"> <b> Click to Show Comparison Menu</b>
             </span>
           </div>
-          <div id="displayCompMenu" this.display="none" >
+          <div id="displayCompMenu" >
             <span  
               onclick="setMenuObjects(
               window.document.ref_map_set_form.compMenu,
@@ -449,7 +449,7 @@ function addPosToStr(str, slot_no, matchStr, value, command){
              <img src="/cmap/plus.png"> <b> Click to Show options Menu</b>
             </span>
           </div>
-          <div id="displayOptionMenu" this.display="none" >
+          <div id="displayOptionMenu" >
             <span  
               onclick="setMenuObjects(
               window.document.ref_map_set_form.optionMenu,
@@ -488,7 +488,7 @@ function addPosToStr(str, slot_no, matchStr, value, command){
                   <table border=1>
                     <tr>
                       <td>Feature</td>
-                      <td>Hide</td>
+                      <td>Ignore</td>
                       <td>Display if<br>Correspondence</td>
                       <td>Always Display</td>
                     </tr>
@@ -565,7 +565,7 @@ function addPosToStr(str, slot_no, matchStr, value, command){
             <img src="/cmap/plus.png"> <b> Click to Show Image Menu</b>
             </span>
           </div>
-          <div id="displayImageMenu" this.display="none" >
+          <div id="displayImageMenu" >
             <span  
               onclick="setMenuObjects(
               window.document.ref_map_set_form.imageMenu,
@@ -673,6 +673,13 @@ function addPosToStr(str, slot_no, matchStr, value, command){
           [%- END -%]
         </td>
       </tr>
+    </form>
+  [% ELSE %]
+    <form name="comparative_map_form">
+      <input type=hidden name=changeMenu id=changeMenu value=[% apr.param('changeMenu') %]>
+      <input type=hidden name=compMenu id=compMenu value=[% apr.param('compMenu') %]>
+      <input type=hidden name=optionMenu id=optionMenu value=[% apr.param('optionMenu') %]>
+      <input type=hidden name=imageMenu id=imageMenu value=[% apr.param('imageMenu') %]>
     </form>
   [% END %]    
 </table>
