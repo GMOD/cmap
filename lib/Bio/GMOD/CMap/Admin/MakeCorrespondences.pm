@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.40 2004-06-08 16:10:43 mwz444 Exp $
+# $Id: MakeCorrespondences.pm,v 1.41 2004-06-30 21:00:56 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.40 $)[-1];
+$VERSION = (qw$Revision: 1.41 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -97,7 +97,7 @@ print STDERR "$expanded_correspondence_lookup MAKE \n";
     }
 
     my %disallow_name_correspondence;
-    for my $line ( $self->config('disallow_name_correspondence') ) {
+    for my $line ( $self->config_data('disallow_name_correspondence') ) {
         my @feature_types = split /\s+/, $line;
         for my $ft ( @feature_types ) {
             my $ft_id =$self->feature_type_data($ft)
