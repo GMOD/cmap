@@ -1,24 +1,23 @@
                               CMAP INSTALL
 
-1.  QUICK START
+1.      QUICK START
 
 If you're pretty experienced with Unix systems administration, here is
-the very abbreviated explanation of how to install this application:
+the very abbreviated explanation of how to install CMap:
 
-* Install libpng, libjpeg and libgd
-* Install MySQL or Oracle, create tables with contents of "sql"
-    directory, grant appropriate user permissions
-* Install Perl 5.6.1, Apache 1.3.26 and mod_perl 1.27
-* Execute "perl Makefile.PL" and answer the questions
-* Execute "make && make install" being sure to install module dependencies
-* Add contents of "httpd.conf" and "perlstartup.pl" in "conf"
+*   Install libpng, libjpeg and libgd
+*   Install MySQL, PostgreSQL, Oracle or Sybase, create tables with
+    contents of "sql" directory, grant appropriate user permissions
+*   Install Perl 5.6.1 (at least or 5.8.0), Apache 1.3.26 and mod_perl 1.27
+*   Execute "perl Makefile.PL" and answer the questions
+*   Execute "make && make install" being sure to install module dependencies
+*   Add contents of "httpd.conf" and "perlstartup.pl" in "conf"
     directory to your own versions of these files
-* Restart Apache
-* Import data
-* Compare maps
+*   Restart Apache
+*   Import data
+*   Compare maps
 
-Cursory testing shows no problems with Perl 5.8.0.  If you want to use
-or install the latest Perl, feel free to do so.  If you need help, read on.
+If you need further instructions, read on.
 
 2.  GETTING STARTED
 
@@ -36,7 +35,7 @@ addition, you hope to install MySQL, you'll be required to install
 GNU tar as Sun's tar is broken and won't untar the MySQL packages
 properly.
 
-3.  CONVENTIONS FOR BUILDING SOFTWARE ON UNIX
+3.      CONVENTIONS FOR BUILDING SOFTWARE ON UNIX
 
 The standard way to install software on a UNIX-like system includes
 running something that figures out what your system looks like.
@@ -49,7 +48,7 @@ last step, usually "make install," almost always requires root
 privileges as it places the newly built files into sensitive
 system directories.
 
-4.  WHERE TO PUT SOURCES
+4.      WHERE TO PUT SOURCES
 
 As a convention, Linux users often unpack sources into one directory
 like "/usr/local/src." Additionally, I would recommend you place all the
@@ -63,10 +62,10 @@ decompress and unpack a tar.gz file in one step using GNU tar:
     # cd /usr/local/src
     # tar zxvf ../downloads/my-package.tar.gz
 
-Note:  The root's prompt is usually shown with a hash sign "#". When
-       showing a prompt for a regular user, the convention is to use a
-       dollar sign "$".  You won't actually type the hash or dollar sign 
-       in the commands listed, only what follows.
+Note: The root's prompt is usually shown with a hash sign "#". When
+      showing a prompt for a regular user, the convention is to use a
+      dollar sign "$". You won't actually type the hash or dollar sign
+      in the commands listed, only what follows.
 
 The above command only works with GNU tar.  To unzip and unpack on
 Solaris, do the following (assuming you've got "gunzip" installed on 
@@ -87,7 +86,7 @@ basic triumvirate of commands:
     # make
     # make install
 
-5.  REQUIREMENTS
+5.      REQUIREMENTS
 
 There are quite a number of prerequisites to getting this running:
 
@@ -97,7 +96,7 @@ There are quite a number of prerequisites to getting this running:
     * Apache (version 1.3.26 suggested)
     * mod_perl (version 1.27 suggested)
 
-6.  LIBGD
+6.      LIBGD
 
 Unfortunately, you're pretty much on your own for installing libgd.
 With any luck, you may already have it on your system if you have a
@@ -137,9 +136,9 @@ Here are URLs to help you track down everything you need to install libgd:
     * zlib: http://www.gzip.org/zlib/
     * JGEP: http://www.ijg.org/
 
-7.  DATABASE
+7.      DATABASE
 
-The CMAP application relies on a relational database management system
+The CMap application relies on a relational database management system
 (RDBMS) to store and retrieve data.  If you already have a database
 such as MySQL (version 3.23) or Oracle (version 9.x) installed on your
 system, you can skip ahead to the next section.  If not and you're
@@ -151,21 +150,21 @@ database except joins (no transactions, no referential integrity, no
 stored procedures, etc.).  If you prefer to use Oracle, you're in luck
 because this application was developed concurrently on MySQL and
 Oracle.  As of version 0.05, a schema is included which seems to work
-with PostgreSQL.  It is an immediate goal to test CMap completely with
-PostgreSQL, but, alas, time has not yet allowed that.  There does seem
-to be some problem with the feature correspondence matrix and PG.  One
-user has also hacked the schema to work with Sybase, and the code
-seems to have no problems.
+with PostgreSQL.  As of version 0.06, CMap seems to play rather well
+with PostgreSQL, but testing has not been exhaustive (there seems to
+be some problem with the feature correspondence matrix).  One user has
+also hacked the schema to work with Sybase, and the code seems to have
+no problems.
 
-Note:  Oracle 8.x doesn't support ANSI-standard left joins, so some parts
-       of the application will fail. If you can't upgrade, then you can
-       alter the few SQL statements that cause problems. If you prefer
-       to use some other RDBMS, like PostgreSQL or Sybase or whatever,
-       then you're still in luck. Much has been done to make the SQL
-       simple and portable and extensible. If an SQL statement is giving
-       you problems, you can likely create a small module and override
-       the statement with one of your own making. See the CODE_OVERVIEW 
-       in the "docs" directory for more information.
+Note: Oracle 8.x doesn't support ANSI-standard left joins, so some parts
+      of the application will fail. If you can't upgrade, then you can
+      alter the few SQL statements that cause problems. If you prefer to
+      use some other RDBMS, like PostgreSQL or Sybase or whatever, then
+      you're still in luck. Much has been done to make the SQL simple
+      and portable and extensible. If an SQL statement is giving you
+      problems, you can likely create a small module and override the
+      statement with one of your own making. See the CODE_OVERVIEW in
+      the "docs" directory for more information.
 
 I'll assume that you're going to use MySQL.  If you don't already
 have MySQL on your system, you can get everything you need either
@@ -183,7 +182,7 @@ command-line tools;  see the MySQL website for more information.  If
 you get really stuck, then MySQL AB, the company which develops and
 releases MySQL, offers commercial support.
 
-8.  CREATING DATABASE TABLES AND GRANTING PERMISSIONS
+8.      CREATING DATABASE TABLES AND GRANTING PERMISSIONS
 
 Once you've settled on your database of choice and have a working
 installation, you need to create the tables that will hold the data for
@@ -205,15 +204,15 @@ grant appropriate permissions to a user "joe" with the password
         on CMAP.* to joe@localhost identified by "foobar"'
 
 In the above example, you'll be required to type the root password
-for MySQL.  
+for MySQL.
 
-Note:  This is not the same "root" as your system "root." If you never
-       set MySQL's "root" password, then just hit <Enter> at the
-       password prompt (though I'd be remiss if I didn't suggest you
-       actually protect your MySQL root user with a decent password). Be
-       sure to remember the user name and password you'll connect to the
-       database with as you'll need to place these values into your
-       "cmap.conf" file further into the installation process.
+Note: This is not the same "root" as your system "root." If you never
+      set MySQL's "root" password, then just hit <Enter> at the password
+      prompt (though I'd be remiss if I didn't suggest you actually
+      protect your MySQL root user with a decent password). Be sure to
+      remember the user name and password you'll connect to the database
+      with as you'll need to place these values into your "cmap.conf"
+      file further into the installation process.
 
 After you've granted the user name access to the system, please test
 that the login works by logging in.  For example, if you used the
@@ -229,7 +228,7 @@ equivalent of creating the tables described in the create scripts in
 the "sql" directory and then granting the proper permissions to
 whatever user will connect to your database.
 
-9.  INSTALLING PERL 
+9.      INSTALLING PERL 
 
 It would be hard to imagine that a UNIX system wouldn't have some
 version of Perl installed.  We need a minimum of Perl 5.6.0 (but 5.6.1
@@ -267,7 +266,7 @@ established machine that is already being used for other tasks,
 upgrading Perl could break a lot of things, so you should discuss this
 with your sysadmin.  (Of course, you could always build your own Perl
 with a PREFIX of something like "/usr/local/cmap" and install
-everything you need -- Perl, Apache, CMAP, etc. -- there.  This would
+everything you need -- Perl, Apache, CMap, etc. -- there.  This would
 then allow you to build everything fresh without disturbing your
 existing binaries.  Again, discuss this with your sysadmin.)  If you
 are lucky enough to have a free machine to play with, it's nice to
@@ -299,7 +298,7 @@ find a mirror that's near you as long as that machine isn't overloaded.
 Just keep trying different machines until you find one with a good,
 fast connection to you.)
 
-10. INSTALLING APACHE AND MOD_PERL
+10.     INSTALLING APACHE AND MOD_PERL
 
 Given that Apache is the most popular web server right now, it's
 also likely that you'll already have it installed on your system.
@@ -338,13 +337,13 @@ Here's the output of mine:
       mod_perl.c
     suexec: disabled; invalid wrapper /usr/local/apache/bin/suexec
 
-Note:  Apache is extremely modular. This is one of its great strengths.
-       You can compile a very "high-speed/low-drag" binary with very few
-       modules or a great big binary with SSL and PHP and mod_perl and
-       more. Your output may vary from the above depending on how the
-       binary got there, who installed it, etc. I like to compile Apache
-       with mod_rewrite and mod_proxy, which are not standard modules.
-       If you don't see this exact module listing, it's probably OK.
+Note: Apache is extremely modular. This is one of its great strengths.
+      You can compile a very "high-speed/low-drag" binary with very few
+      modules or a great big binary with SSL and PHP and mod_perl and
+      more. Your output may vary from the above depending on how the
+      binary got there, who installed it, etc. I like to compile Apache
+      with mod_rewrite and mod_proxy, which are not standard modules. If
+      you don't see this exact module listing, it's probably OK.
 
 If you see "mod_perl.c" in the list, then you can probably skip
 ahead to the next section.  If, however, you choose to build Apache
@@ -356,10 +355,10 @@ by looking on the Apache website, http://www.apache.org/.  Apache
 can be found in "/pub/dist/httpd/apache_1.3.26.tar.gz" and mod_perl
 can be found in "/pub/dist/perl/mod_perl-1.27.tar.gz."  
 
-Note:  This application has only been developed under the Apache and
-       mod_perl 1.x trees. Apache and mod_perl 2.x are exciting new
-       frontiers for mod_perlers, but it will be a while before this
-       application is moved to that architecture. Just stick with the
+Note: This application has only been developed under the Apache and
+      mod_perl 1.x trees. Apache and mod_perl 2.x are exciting new
+      frontiers for mod_perlers, but it will be a while before this
+      application is moved to that architecture. Just stick with the
        1.x trees.
 
 You can install Apache and mod_perl in one fell swoop so long as
@@ -369,10 +368,10 @@ into a directory so that they're side by side, then follow the
 directions included in the INSTALL.apaci file in the mod_perl
 distribution.  Here's an example:
 
-Note:  The backslashes ("\") above tell the command-line that you are
-       continuing the command on a new line. It's not necessary to do
-       this. You can just keep typing, but it's easier to see what
-       you're doing when you use multiple lines.
+Note: The backslashes ("\") above tell the command-line that you are
+      continuing the command on a new line. It's not necessary to do
+      this. You can just keep typing, but it's easier to see what you're
+      doing when you use multiple lines.
 
     $ su -
     # cd /usr/local/downloads
@@ -445,14 +444,14 @@ executing your new httpd binary with the "-l" flag as shown above and
 look for "mod_perl.c."  If all that is good, then move on to the next
 section.
 
-11. INSTALLING PERL MODULES
+11.     INSTALLING PERL MODULES
 
-There are a number of CPAN modules required by the CMAP application.
-You will likely need to install these prior to installing the CMAP
+There are a number of CPAN modules required by the CMap application.
+You will likely need to install these prior to installing the CMap
 modules as they are not in the standard Perl distribution.  These
 modules are listed in the PREREQ_PM hash reference in the Makefile.PL
 included with this distribution.  It is possible to install the
-CMAP application without installing these modules, but you will see a
+CMap application without installing these modules, but you will see a
 lot of errors, and, of course, things won't work in the end.  It's best
 to use the CPAN shell to install all the modules that Perl complains
 about.
@@ -469,7 +468,7 @@ Here are brief descriptions of some of the major modules required:
     CGI.pm module.
 
 *   Class::Base:  A very nice class-building module written by Andy
-    Wardley, the author of Template Toolkit.  All the CMAP modules inherit
+    Wardley, the author of Template Toolkit.  All the CMap modules inherit
     from Class::Base.
 
 *   Config::General:  A module for reading configuration files, this is
@@ -484,11 +483,10 @@ Here are brief descriptions of some of the major modules required:
     the database is the same.
 
 *   DBD::mysql, DBD::Oracle, DBD::*: Since this application works with
-    both MySQL and Oracle (and tentatively with Sybase and hopefully
-    with even more databases one day), I don't bother specifying which
-    DBD driver to install. Therefore it is up to you to install
-    DBD::mysql or DBD::Oracle (or whatever) yourself, then add it to your
-    "perlstartup.pl" (or equivalent).
+    both a number of different databases, I don't bother specifying
+    which DBD driver to install. Therefore it is up to you to install
+    DBD::mysql or DBD::Oracle (or whatever) yourself, then add it to
+    your "perlstartup.pl" (or equivalent).
 
     Whichever database you choose to use, it is largely up to you to
     figure out how to get the driver to work. Most DBD drivers require
@@ -560,25 +558,24 @@ return to installing the first one.  After satisfying several
 dependencies on your own, you'll begin to appreciate all the automation
 the CPAN shell gives you.
 
-Note:  Don't forget that the versions of GD.pm and libgd need to match
-       up (either both 1.x or both 2.x). CPAN will always try to
-       install the latest version of a module (so 2.x of GD.pm). If
-       your system has a 1.x libgd (look for something like
-       "libgd.so.1.8.4" in "/usr/lib" or "/usr/local/lib") and you use
-       CPAN to install GD.pm, you will have problems. In this case, it
-       will be much easier to grab the source for version 1.x of GD.pm
-       and install it by hand.
+Note: Don't forget that the versions of GD.pm and libgd need to match up
+      (either both 1.x or both 2.x). CPAN will always try to install the
+      latest version of a module (so 2.x of GD.pm). If your system has a
+      1.x libgd (look for something like "libgd.so.1.8.4" in "/usr/lib"
+      or "/usr/local/lib") and you use CPAN to install GD.pm, you will
+      have problems. In this case, it will be much easier to grab the
+      source for version 1.x of GD.pm and install it by hand.
 
-12. INSTALLING THE CMAP PERL MODULES
+12.     INSTALLING THE CMAP PERL MODULES
 
-To install the CMAP modules included in this package, you can either
+To install the CMap modules included in this package, you can either
 use the normal installation routine to place the modules into Perl's
 system-wide library path, or you can put the modules into a directory
 of your own choosing.  Unless you'd like to have reasons to do the
 latter, I'd recommend choosing the first way.  Here's how to do both:
 
-A)  Execute the following commands in the directory created by
-    untarring the CMAP distribution:
+1)  Execute the following commands in the directory created by
+    untarring the CMap distribution:
 
     $ perl Makefile.PL
     $ make
@@ -611,7 +608,7 @@ A)  Execute the following commands in the directory created by
         This file will have the value of "template_dir" altered 
         to match TEMPLATE_DIR.
 
-B)  Manually place the contents of "conf," "lib," "bin," and
+2)  Manually place the contents of "conf," "lib," "bin," and
     "templates" into directories of your choosing like so:
     
     conf/cmap.conf
@@ -620,7 +617,7 @@ B)  Manually place the contents of "conf," "lib," "bin," and
         by users and the httpd process) as this file contains 
         database connection info and other runtime options.  Be sure 
         to change "template_dir" yourself to reflect the location of
-        the CMAP templates.
+        the CMap templates.
 
     conf/cmap.css
         This is the cascading style sheet used by the maps. Copy to a
@@ -665,7 +662,7 @@ Either way you install, you'll need to be sure to edit your
 "cmap.conf" file to use the correct database connection information.
 (If you forget the location of the configuration file and you
 installed via option #1, then you can look in the "cmap_install.conf"
-file in the source directory of the CMAP application.)  The database
+file in the source directory of the CMap application.)  The database
 section is at the top of the file.  Only the first two options
 ("database" and "template_dir") *must* be set.  Everything else has
 reasonable defaults if nothing is specified in this file.  I would
@@ -674,14 +671,14 @@ look and feel of your site.  If you don't like a change, comment out
 the line by placing a pound sign ("#") at the beginning of the line.
 Remember to restart Apache to see the changes.
 
-If you are upgrading from an earlier version of CMAP, I would caution
+If you are upgrading from an earlier version of CMap, I would caution
 your to be careful of how you install the latest "cmap.conf."  You'll
 probably want to copy your original to a backup location, then copy
 this file over manually and "diff" the two.  Most likely, you won't
 need to make too many changes to the new one to get things working the
 way you had them before.
 
-13. CONFIGURING APACHE
+13.     CONFIGURING APACHE
 
 After installing Apache, mod_perl, and all the necessary modules,
 you're now ready to configure Apache.  Two fragments of files are
@@ -689,7 +686,7 @@ included in the "conf" directory of this distribution to help you do
 this: "httpd.conf" and "perlstartup.pl."  The first of these files
 contains all the additions you should make to your own httpd.conf in
 order to configure the Apache environment and to set up the handlers
-for the CMAP application.  The second file, typically called something
+for the CMap application.  The second file, typically called something
 like "perlstartup.pl" (but you can call it whatever you like) is used
 to let Apache know about the modules it will use in its lifetime, and
 is placed in the same directory as the httpd.conf.  (Most likely, a
@@ -700,21 +697,21 @@ location.)  The parent Apache process will parse this file and include
 all the modules in each child process, further enhancing the
 performance of the application.
 
-Note:  All the files in Apache's "conf" directory are very important and
-       sensitive, so it's best to have everything be owned and writable
-       only by root. The startup file will be executed as root, so this
-       could represent an easy system compromise were a non-root user
-       able to write to the file.
+Note: All the files in Apache's "conf" directory are very important and
+      sensitive, so it's best to have everything be owned and writable
+      only by root. The startup file will be executed as root, so this
+      could represent an easy system compromise were a non-root user
+      able to write to the file.
 
 Here are brief descriptions of the additions you'll make to httpd.conf so you
 can intelligently edit you own entries.
 
-* PerlRequire /path/to/perlstartup.pl
+*   PerlRequire /path/to/perlstartup.pl
 
     This is the location of the file that lists all your Perl modules.
     Generally the path would be "/usr/local/apache/conf/perlstartup.pl."
 
-* Alias /cmap/images /tmp/cmap_cache
+*   Alias /cmap/images /tmp/cmap_cache
 
     This is the directory where the application will write the temporary
     images created for each request.  Apache will directly serve the
@@ -756,13 +753,13 @@ can intelligently edit you own entries.
     path as your Alias.  (Of course, you won't have to change anything
     in the templates if you use the default of "/cmap/images.")
 
-* <Location> directives
+*   <Location> directives
 
     You'll add two directives to your httpd.conf, the second of which is
     only necessary if you wish to password-protect your administrative
     interface (which I'm sure you will).  An actual directory called
     "cmap" can exist in your DocumentRoot, but there's no reason for it.
-    You may want to place the CMAP style sheet there, but it's probably
+    You may want to place the CMap style sheet there, but it's probably
     just as easy to create a site-wide "stylesheets" directory.  However,
     the code is written in such a way that any files in a "/cmap"
     directory will be properly served by Apache.
@@ -787,7 +784,7 @@ can intelligently edit you own entries.
     created by the "-c" argument.  If the file already exists, then don't
     use "-c."
 
-14. STARTING APACHE
+14.     STARTING APACHE
 
 Now see if Apache like what you've done by typing the following commands:
 
@@ -801,7 +798,7 @@ If you see "Syntax OK," then restart Apache:
     # ./apachectl start
 
 Now it's time to see if the basic installation worked.  Open up a web
-browser and point it to your new CMAP installation:
+browser and point it to your new CMap installation:
 
     http://my.server.org/cmap
 
@@ -812,7 +809,7 @@ application.  If you don't see anything or you get an error, check your
 error log (whatever your "ErrorLog" directive is set to in your
 httpd.conf), which is most likely "/usr/local/apache/logs/error_log."
 
-15. STARTING APACHE ET AL. ON BOOT
+15.     STARTING APACHE ET AL. ON BOOT
 
 Should your system ever go down for any reason (e.g., crash or
 reboot), you'll probably want all your services to come back up when
@@ -845,7 +842,7 @@ the operating system sends out just before shutdown.
 MySQL has its own scripts to make sure it starts up on boot.  You
 should follow the directions appropriate for your system.
 
-16. CRONTAB TO REMOVE OLD IMAGES
+16.     CRONTAB TO REMOVE OLD IMAGES
 
 The map images will only be used for one request, so you'll need to
 include some way to clear out old images.  A simple cron job will do
@@ -872,7 +869,7 @@ I can see that it worked by typing "echo $EDITOR" on the command line.
 However you choose to edit the file, you'll need to paste or type the
 following lines:
 
-    # clear out old CMAP images
+    # clear out old CMap images
     # added by Joe User <juser@foo.com>
     0 0 * * *  find /tmp/cmap_cache/ -type f -mtime +1 -exec rm -rf {} \;
 
@@ -930,233 +927,10 @@ file like root's crontab so you and everyone else knows what each
 command does.  Be sure to put in your own name and e-mail address.  The
 whole command (starting with the "0") should go on one line.  
 
-Note:  Some UNIXs may have a slightly different cron format. Check
-       your man page!
+Note: Some UNIXs may have a slightly different cron format. Check
+      your man page!
 
-17. IMPORTING DATA
-
-To learn how to import your own data, please read DATA_IMPORT in the
-"docs" directory for information on importing your data.  If you would
-like to see examples of data suitably formatted for importing into
-CMAP, all the raw data from the Gramene project
-(http://www.gramene.org/) have been included with this distribution in
-the "data/datasets/gramene" directory.  You can use this data to
-ensure that your installation is working, or if you'd like examples of
-how to format your own data.  
-
-In addition, the entire Gramene database has been made available as a
-dump of "INSERT" statements which you can feed directly into your
-database.  This dump is located in the download section of the GMOD
-site as "Sample Data Files" under the "cmap" project.  If you are
-using MySQL, you can import the database in one step (after creating
-it, of course, with the commands described earlier):
-
-    $ mysql -uroot -p < gramene-dump.sql
-
-It might be helpful for you to create a test database and import the
-Gramene dataset in order to play around with a fully loaded database.
-Once you are comfortable, you can drop the database and create another
-for your own data.
-
-The dump of the Gramene site was created using a script in the "bin"
-directory called "cmap_dump.pl."  You might find it useful if you need
-to move your data around, like from a development machine to a
-production server.  It is especially useful for moving your data
-between different DBMSs, as I used it to dump the Gramene database
-from Oracle into my own MySQL database.  The tool basically mimics
-some of the functionality of MySQL's "mysqldump" facility.  Run
-"perldoc cmap_dump.pl" for more documentation on this tool.  The
-script will not be copied into a system directory, so if you want to
-use it yourself, you'll have to copy it to some directory manually.
-Perhaps after the tool has matured a bit, I'll put it into the
-installation routine.
-
-18. DATABASE CROSS-REFERENCES
-
-It is possible to set up links from features to other datasources
-outside of CMAP.  These are called "database cross-references."  They
-can be set up in several different ways:
-
-    1)  For a feature type and a species, e.g., all the rice markers
-
-    2)  For a features type and a map set, e.g., all the markers in rice
-        map set "Foo"
-
-    3)  For one specific feature, e.g., the "ABC" marker on map "3" of
-        rice map set "Foo"
-
-In the case of the first two, you can create multiple cross-references
-and all will display on the "feature detail" page;  the last case only
-allows a single cross-reference.  In all cases, the more specific
-references beat out all others, so any cross-references created like
-#2 will beat out those from #1, but the "ABC" marker will only use
-those set up as #3.  That is, *only* the most specific
-cross-references will be shown, so if you wanted to include the
-records from #1 with a marker in the "Foo" map set, you'd need to
-duplicate the URLs from #1 for the "Foo" map set.
-
-When setting up database cross-references, you'll have to use some
-extra syntax in the URL field to indicate the field to link out on.
-Here's an example from Gramene for linking to GrainGenes:
-
-    http://www.graingenes.org/cgi-bin/WebAce/webace?db=graingenes \
-    &class=Locus&object=[% feature.feature_name %]
-
-(The backslash is not part of the URL.  I'm using it to break up the
-line and help you see the syntax.)
-
-Here's how the Gramene project links to its own contig viewer:
-
-    /perl/contigview?clone=[% feature.feature_name %]
-
-Notice that you can use either absolute (first) or relative (second)
-URLs.  The funny brackets ("[%" and "%]") are from Template Toolkit,
-the templating system used for the comparative maps.  This allows for
-an extremely flexible system.  For example, at Gramene one URL looks
-like this:
-
-    http://www.genome.arizona.edu/cgi-bin/WebFPC/WebFPC_Direct.cgi? \
-    name=rice&contig=[% feature.map_name.replace("ctg","") %] \
-    &clone=[% feature.feature_name %]
-
-The contig names look like "ctg198," but only integers are legal
-arguments to the "contig" argument above.  We use the "replace"
-virtual method to get rid of the "ctg" part (or just replace it with
-nothing).  To find our more about Template Toolkit, execute "perldoc
-Template::Manual" on your system.  To find out more about Template
-Toolkit's virtual methods, type "perldoc Template::Manual::VMethods."
-
-Here are the fields you can use in the URL:
-
-   feature_id
-   accession_id
-   map_id
-   feature_type_id
-   feature_name
-   alternate_name
-   is_landmark
-   start_position
-   stop_position
-   dbxref_name
-   dbxref_url
-   feature_type
-   map_name
-   map_aid (map accession_id)
-   map_set_id
-   map_set_aid (map set accession_id)
-   map_set_name (actually the "short_name")
-   species_id
-   species_name (actually the "common_name")
-
-19. ESTABLISHING LANDMARKS
-
-You can define certain features on your maps to be "landmarks."  These
-can then be used by the end user to show maps less dense with feature
-labels, tagging only those that you as the curator have decided are
-the most important.  Simply set the "is_landmark" field to "1" to
-define a feature as a landmark.
-
-20. LINKING IN
-
-Most likely, you'll want to link directly into the CMAP viewer from
-some other part of your site.  To link to just one map, make it the
-"reference" map like so by using the accession IDs for the map's parent
-"set" and the map itself.  Give the feature (mutant) name to highlight
-it;  for more than one, separate with commas.  You'll want to make
-sure that the user can see all the feature labels, so include "all" as
-the "include_feature" argument.
-
-    URI:  /cmap/viewer?
-    Args: ref_map_set_aid=<map_set_accession_id>
-          ref_map_aid=<map_accession_id>
-          highlight=<mutant_name>
-          include_features=<none, all, or landmarks>
-    E.g.:
-http://www.gramene.org/cmap/viewer?ref_map_aid=13&ref_map_set_aid=cu-dh-2001&highlight=RM9&include_features=all
-
-Note: I use the abbreviation "aid" to represent "accession_id."
-
-To further include some number of comparative maps, you provide them
-in the "comparative_maps" argument, which is a single structured
-string that lists all the comparative maps and their placement
-relative to the reference map.  Here I'd like to introduce the concept
-of "slots," where the maps (or map sets) fall into a slot moving in
-positive and negative direction away from the reference map, which is
-in slot "0," like so:
-
-                -      -        -         -
-                |      |        |         |
-                |      |      - |  -      |
-                |      |      | -  |      |
-                |      |      |    |      |
-                |      |      |    -      |
-                -      -      -           -
-               -1      0         1        2
-       <----negative --+---------positive----->
-
-
-The above would be representative of genetic maps in slots -1, 0, and
-2, and a physical map in slot 1.  Slots are separated in the string by
-URI-escaped colons and the integral parts of the slot by URI-escaped
-equal signs.  Like so
-
-         "comparative_maps="
-         +
-             .-  <slot_number> + 
-             |  "%3D" + 
-       slot  |  <"map_aid" or "map_set_aid"> + 
-             |  "%3D" +
-             `-  <map_aid or map_set_aid>
-         +
-
-         "%3A"
-
-         +
-
-        <next slot>
-
-Here is a sample that puts "Rice-Cornell RFLP 2001-1" on the left
-(slot "-1") and "Rice-CTIR 2000-1" on the right (slot "1"):
-
-    comparative_maps=1%3Dmap_aid%3D423%3A-1%3Dmap_aid%3D1
-
-The middle part of the slot is one of the literal strings
-"map_set_aid" or "map_aid."  If you wanted to display just a single
-map in a slot, use the string "map_aid" and the map's accession ID.
-If you want a whole map set in a slot (e.g., a physical map set like
-"I-Map"), then use the string "map_set_aid" and the map set's
-accession ID.  You can use the admin interface ("/cmap/admin") to
-easily find the accession IDs.
-
-21. CUSTOMIZING YOUR INSTALLATION
-
-You should edit "cmap.conf" with the proper connection data for your
-database and to reflect your own preferences for how maps are drawn.
-Each entry in the configuration file is commented to help you
-understand its purpose and the possible values and default values are
-also provided.  If you don't understand a configuration, you can just
-leave it alone and use the default.  Remember to restart Apache
-whenever you make a change to this file as these are constants and
-don't change for the life of the Apache process.
-
-You can change the way maps and features are drawn based on
-their types.  Use the web-based admin tool to edit each "map type"
-and "feature type" that you create.  Experiment with the colors,
-shapes, and sizes.
-
-All the HTML displayed by the application is contained in the
-templates.  These templates are processed by Template Toolkit to
-produce the user interface.  For the most part, the files contain
-straight-up HTML and can be altered to your heart's content.  You
-could probably even pass off the care and feeding of these templates
-to a non-technical person (as this was the idea behind having no HTML
-in the code).  The only functional parts of the templates lie in
-between the many "[% %]" tags, and these are often quite
-self-explanatory.  If you can't figure out what to change on your own,
-then check out http://www.template-toolkit.com/ for the documentation
-(or type "perldoc Template" on your command line).
-
-22. CVS ACCESS
+17.     CVS ACCESS
 
 If you'd like to install the very latest (which is not necessarily
 guaranteed to work!), then you'll want to checkout the "cmap" project
@@ -1165,9 +939,19 @@ homepage for instructions:
 
     http://gmod.sourceforge.net/cmap
 
-23. COMMENTS
+18.     COMMENTS
 
 If you have questions or comments about this document, please write
-the CMAP development mailing list at "gmod-cmap@lists.sourceforge.net."
+the CMap development mailing list at
+"gmod-cmap@lists.sourceforge.net."  Please consider joining the list
+in order to stay up on the latest in the development as well as to
+contribute your opinions as to the direction that CMap takes in the
+future.
+
+19.     LET US KNOW!
+
+Please consider allowing the GMOD project advertise your use of our
+code.  If you have a publicly accessible installation of CMap, we
+would very much like to provide a link from the GMOD website to it!
 
 __END__
