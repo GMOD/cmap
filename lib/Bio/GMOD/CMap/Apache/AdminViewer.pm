@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.23 2003-02-20 23:56:22 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.24 2003-03-05 17:39:56 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -31,7 +31,7 @@ $FEATURE_SHAPES = [ qw(
 $LINE_STYLES    = [ qw( dashed solid ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.23 $)[-1];
+$VERSION        = (qw$Revision: 1.24 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -81,6 +81,7 @@ sub handler {
 
     my $action = $apr->param('action') || 'admin_home';
     my $return = eval { $self->$action() };
+    return $self->error( $@ ) if $@;
     return $return || OK;
 }
 
@@ -1936,27 +1937,42 @@ sub map_sets_view {
     my $species_id  = $apr->param('species_id')  || '';
     my $is_enabled  = $apr->param('is_enabled');
     my $limit_start = $apr->param('limit_start') || 0;
-    my $order_by    = $apr->param('order_by')    || 'species_name,short_name';
+    my $order_by    = $apr->param('order_by')    || 
+        'mt.display_order, mt.map_type, s.display_order, s.common_name, '.
+        'ms.published_on, ms.short_name';
 
     unless ( $order_by eq 'map_set_name' ) {
         $order_by .= ',map_set_name';
     }
 
     my $sql = q[
-        select   ms.map_set_id, ms.short_name as map_set_name, 
-                 ms.accession_id, ms.is_enabled,
+        select   ms.map_set_id, 
+                 ms.short_name as map_set_name, 
+                 ms.accession_id, 
+                 ms.is_enabled,
                  s.common_name as species_name,
-                 mt.map_type
+                 mt.map_type,
+                 count(map.map_id) as no_maps
         from     cmap_map_set ms, 
                  cmap_species s, 
-                 cmap_map_type mt
+                 cmap_map_type mt,
+                 cmap_map map
         where    ms.species_id=s.species_id
         and      ms.map_type_id=mt.map_type_id
+        and      ms.map_set_id=map.map_set_id
     ];
     $sql .= qq[ and ms.map_type_id=$map_type_id ] if $map_type_id;
     $sql .= qq[ and ms.species_id=$species_id ]   if $species_id;
     $sql .= qq[ and ms.is_enabled=$is_enabled ]   if $is_enabled =~ m/^[01]$/;
-    $sql .= qq[ order by $order_by ];
+    $sql .= qq[ 
+        group by ms.map_set_id,
+                 ms.short_name,
+                 ms.accession_id, 
+                 ms.is_enabled,
+                 s.common_name
+        order by $order_by
+    ];
+    warn "$sql\n";
 
     my $map_sets = $db->selectall_arrayref( $sql, { Columns => {} } );
 
@@ -2224,10 +2240,23 @@ sub map_set_view {
     my @maps = @{ 
         $db->selectall_arrayref( 
             qq[
-                select   map_id, accession_id, map_name, 
-                         linkage_group, start_position, stop_position
-                from     cmap_map
-                where    map_set_id=?
+                select   map.map_id, 
+                         map.accession_id, 
+                         map.map_name, 
+                         map.linkage_group, 
+                         map.start_position, 
+                         map.stop_position,
+                         count(f.map_id) as no_features
+                from     cmap_map map,
+                         cmap_feature f
+                where    map.map_set_id=?
+                and      map.map_id=f.map_id
+                group by map.map_id, 
+                         map.accession_id, 
+                         map.map_name, 
+                         map.linkage_group, 
+                         map.start_position, 
+                         map.stop_position
                 order by $order_by
             ],
             { Columns => {} }, 
