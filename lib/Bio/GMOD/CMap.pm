@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap;
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.59 2004-09-07 18:29:06 mwz444 Exp $
+# $Id: CMap.pm,v 1.60 2004-10-18 19:03:00 kycl4rk Exp $
 
 =head1 NAME
 
@@ -96,6 +96,7 @@ Returns the cache directory.
 Returns configuration object.
 
 =cut
+
 sub config {
 
     my $self = shift;
@@ -121,6 +122,7 @@ sub config_data {
 Access configuration.
 
 =cut
+
     my $self   = shift;
     my $config = $self->config or return;
     $config->get_config( @_ );
@@ -136,6 +138,7 @@ sub map_type_data {
 Return data from config about map type 
 
 =cut
+
     my $self      = shift;
     my $map_type_aid  = shift;
     my $attribute = shift;
@@ -162,6 +165,7 @@ sub feature_type_data {
 Return data from config about feature type 
 
 =cut
+
     my $self         = shift;
     my $feature_type_aid = shift;
     my $attribute    = shift;
@@ -188,6 +192,7 @@ sub evidence_type_data {
 Return data from config about evidence type 
 
 =cut
+
     my $self          = shift;
     my $evidence_type_aid = shift;
     my $attribute     = shift;
@@ -373,19 +378,19 @@ Returns a database handle.  This is the only way into the database.
 }
 
 # ----------------------------------------------------
-sub aggregate{
+sub aggregate {
                                                                                 
 =pod
                                                                                 
 =head2 aggregate
-                                                                                
+
 Returns the boolean aggregate variable.  This determines 
 if the correspondences are aggregated or individually depicted
 
 The default is 1                                                          
-                      
+
 =cut
-                                                                                
+
     my $self = shift;
     my $val  = shift;
     $self->{'aggregate'}=$val if defined($val); 
@@ -395,19 +400,19 @@ The default is 1
 }
 
 # ----------------------------------------------------
-sub magnify_all{
+sub magnify_all {
                                                                                 
 =pod
                                                                                 
 =head2 magnify_all
-                                                                                
+
 Returns the boolean magnify_all variable.  This determines 
 the value that the whole image is magnified by.
 
 The default is 1                                                          
-                      
+
 =cut
-                                                                                
+
     my $self = shift;
     my $val  = shift;
     $self->{'magnify_all'}=$val if defined($val); 
@@ -418,19 +423,19 @@ The default is 1
 }
 
 # ----------------------------------------------------
-sub scale_maps{
+sub scale_maps {
                                                                                 
 =pod
                                                                                 
 =head2 scale_maps
-                                                                                
+
 Returns the boolean scale_maps variable.  This determines 
 if the maps are drawn to scale 
 
 The default is 1                                                          
-                      
+
 =cut
-                                                                                
+
     my $self = shift;
     my $val  = shift;
     $self->{'scale_maps'}=$val if defined($val); 
@@ -546,7 +551,7 @@ sub get_multiple_xrefs {
 
 =pod
 
-=head2 get_xrefs
+=head2 get_multiple_xrefs
 
 Given a table name and some objects, get the cross-references.
 
@@ -646,8 +651,9 @@ Given information about the link, creates a url to cmap_viewer.
                               = $args{'corr_only_feature_type_aids'};
     my $evidence_type_aids    = $args{'evidence_type_aids'};
     my $data_source           = $args{'data_source'} or return;
+    my $url                   = $args{'url'};
+    $url                     .= '?' unless $url =~ /\?$/;
 
-    my $url ='/cgi-bin/cmap/viewer?';
     ###Required Fields
     unless(defined($ref_map_set_aid) 
         and defined($data_source)){
@@ -754,7 +760,7 @@ Given information about the link, creates a url to cmap_viewer.
 }
 
 # ----------------------------------------------------
-sub get_link_name_space{
+sub get_link_name_space {
 
 =pod
 
@@ -769,7 +775,7 @@ This is a consistant way of naming the link name space
 }
 
 # ----------------------------------------------------
-sub cache_level_names{
+sub cache_level_names {
 
 =pod
 
@@ -782,6 +788,7 @@ This is a consistant way of naming the cache levels.
     my $self = shift;
     return map {$self->config_data('database')->{'name'}."_L".$_} (1..4);
 }
+
 # ----------------------------------------------------
 sub DESTROY {
 
