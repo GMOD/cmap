@@ -1,11 +1,16 @@
 -- 
 -- Created by SQL::Translator::Producer::Oracle
--- Created on Wed Mar 10 16:52:50 2004
+-- Created on Wed Aug  4 17:37:16 2004
 -- 
+-- We assume that default NLS_DATE_FORMAT has been changed
+-- but we set it here anyway to be self-consistent.
+ALTER SESSION SET NLS_DATE_FORMAT = 'YYYY-MM-DD HH24:MI:SS';
+
 --
 -- Table: cmap_attribute
 --
 
+DROP TABLE cmap_attribute;
 CREATE TABLE cmap_attribute (
   attribute_id number(11) DEFAULT '0' NOT NULL,
   table_name varchar2(30) DEFAULT '' NOT NULL,
@@ -13,47 +18,92 @@ CREATE TABLE cmap_attribute (
   display_order number(11) DEFAULT '1' NOT NULL,
   is_public number(4) DEFAULT '1' NOT NULL,
   attribute_name varchar2(200) DEFAULT '' NOT NULL,
-  attribute_value varchar2(4000) NOT NULL,
+  attribute_value clob NOT NULL,
   CONSTRAINT pk_cmap_attribute PRIMARY KEY (attribute_id)
-);
+)
+TYPE    MyISAM;
 
 CREATE INDEX table_name on cmap_attribute (table_name, object_id, display_order, attribute_name);
+
+COMMENT ON TABLE cmap_attribute is
+  'MySQL dump 8.23';
+
+COMMENT ON TABLE cmap_attribute is
+  'Host: localhost    Database: CMAPTEST';
+
+COMMENT ON TABLE cmap_attribute is
+  '-------------------------------------------------------';
+
+COMMENT ON TABLE cmap_attribute is
+  'Server version	4.0.16-standard-log';
+
+COMMENT ON TABLE cmap_attribute is
+  'Table structure for table `cmap_attribute`';
 
 --
 -- Table: cmap_correspondence_evidence
 --
 
+DROP TABLE cmap_correspondence_evidence;
 CREATE TABLE cmap_correspondence_evidence (
   correspondence_evidence_id number(11) DEFAULT '0' NOT NULL,
   accession_id varchar2(20) DEFAULT '' NOT NULL,
   feature_correspondence_id number(11) DEFAULT '0' NOT NULL,
   evidence_type_accession varchar2(20) DEFAULT '0' NOT NULL,
   score number(8, 2) DEFAULT NULL,
-  rank number(11,0) DEFAULT'0' NOT NULL,
+  rank number(11) DEFAULT '0' NOT NULL,
   CONSTRAINT pk_cmap_correspondence_evidenc PRIMARY KEY (correspondence_evidence_id),
   CONSTRAINT accession_id UNIQUE (accession_id)
-);
+)
+TYPE    MyISAM;
 
 CREATE INDEX feature_correspondence_id on cmap_correspondence_evidence (feature_correspondence_id);
+
+COMMENT ON TABLE cmap_correspondence_evidence is
+  'Table structure for table `cmap_correspondence_evidence`';
 
 --
 -- Table: cmap_correspondence_lookup
 --
 
+DROP TABLE cmap_correspondence_lookup;
 CREATE TABLE cmap_correspondence_lookup (
   feature_id1 number(11) DEFAULT NULL,
   feature_id2 number(11) DEFAULT NULL,
-  feature_correspondence_id number(11) DEFAULT NULL
-);
+  feature_correspondence_id number(11) DEFAULT NULL,
+  start_position1 number(11, 2) DEFAULT NULL,
+  start_position2 number(11, 2) DEFAULT NULL,
+  stop_position1 number(11, 2) DEFAULT NULL,
+  stop_position2 number(11, 2) DEFAULT NULL,
+  map_id1 number(11) DEFAULT NULL,
+  map_id2 number(11) DEFAULT NULL,
+  feature_type_accession1 varchar2(20) DEFAULT NULL,
+  feature_type_accession2 varchar2(20) DEFAULT NULL
+)
+TYPE    MyISAM;
 
 CREATE INDEX feature_id1 on cmap_correspondence_lookup (feature_id1);
 
 CREATE INDEX corr_id on cmap_correspondence_lookup (feature_correspondence_id);
 
+CREATE INDEX feature_id1_index on cmap_correspondence_lookup (feature_id1);
+
+CREATE INDEX cl_map_id1 on cmap_correspondence_lookup (map_id1);
+
+CREATE INDEX cl_map_id2 on cmap_correspondence_lookup (map_id2);
+
+CREATE INDEX cl_map_id1_map_id2 on cmap_correspondence_lookup (map_id1, map_id2);
+
+CREATE INDEX cl_map_id2_map_id1 on cmap_correspondence_lookup (map_id2, map_id1);
+
+COMMENT ON TABLE cmap_correspondence_lookup is
+  'Table structure for table `cmap_correspondence_lookup`';
+
 --
 -- Table: cmap_correspondence_matrix
 --
 
+DROP TABLE cmap_correspondence_matrix;
 CREATE TABLE cmap_correspondence_matrix (
   reference_map_aid varchar2(20) DEFAULT '0' NOT NULL,
   reference_map_name varchar2(32) DEFAULT '' NOT NULL,
@@ -64,12 +114,17 @@ CREATE TABLE cmap_correspondence_matrix (
   link_map_set_aid varchar2(20) DEFAULT '0' NOT NULL,
   link_species_aid varchar2(20) DEFAULT '0' NOT NULL,
   no_correspondences number(11) DEFAULT '0' NOT NULL
-);
+)
+TYPE    MyISAM;
+
+COMMENT ON TABLE cmap_correspondence_matrix is
+  'Table structure for table `cmap_correspondence_matrix`';
 
 --
 -- Table: cmap_feature
 --
 
+DROP TABLE cmap_feature;
 CREATE TABLE cmap_feature (
   feature_id number(11) DEFAULT '0' NOT NULL,
   accession_id varchar2(20) DEFAULT '' NOT NULL,
@@ -77,12 +132,14 @@ CREATE TABLE cmap_feature (
   feature_type_accession varchar2(20) DEFAULT '0' NOT NULL,
   feature_name varchar2(32) DEFAULT '' NOT NULL,
   is_landmark number(4) DEFAULT '0' NOT NULL,
-  start_position number(11, 2) DEFAULT '0' NOT NULL,
+  start_position number(11, 2) DEFAULT '1' NOT NULL,
   stop_position number(11, 2) DEFAULT NULL,
-  default_rank number(11,0) DEFAULT'1' NOT NULL,
+  default_rank number(11) DEFAULT '1' NOT NULL,
+  direction number(4) DEFAULT '1' NOT NULL,
   CONSTRAINT pk_cmap_feature PRIMARY KEY (feature_id),
   CONSTRAINT accession_id UNIQUE (accession_id)
-);
+)
+TYPE    MyISAM;
 
 CREATE INDEX feature_name on cmap_feature (feature_name);
 
@@ -94,26 +151,35 @@ CREATE INDEX map_id on cmap_feature (map_id);
 
 CREATE INDEX map_id_feature_id on cmap_feature (map_id, feature_id);
 
+COMMENT ON TABLE cmap_feature is
+  'Table structure for table `cmap_feature`';
+
 --
 -- Table: cmap_feature_alias
 --
 
+DROP TABLE cmap_feature_alias;
 CREATE TABLE cmap_feature_alias (
   feature_alias_id number(11) DEFAULT '0' NOT NULL,
   feature_id number(11) DEFAULT '0' NOT NULL,
   alias varchar2(255) DEFAULT NULL,
   CONSTRAINT pk_cmap_feature_alias PRIMARY KEY (feature_alias_id),
   CONSTRAINT feature_id_2 UNIQUE (feature_id, alias)
-);
+)
+TYPE    MyISAM;
 
 CREATE INDEX feature_id on cmap_feature_alias (feature_id);
 
 CREATE INDEX alias on cmap_feature_alias (alias);
 
+COMMENT ON TABLE cmap_feature_alias is
+  'Table structure for table `cmap_feature_alias`';
+
 --
 -- Table: cmap_feature_correspondence
 --
 
+DROP TABLE cmap_feature_correspondence;
 CREATE TABLE cmap_feature_correspondence (
   feature_correspondence_id number(11) DEFAULT '0' NOT NULL,
   accession_id varchar2(20) DEFAULT '' NOT NULL,
@@ -122,16 +188,21 @@ CREATE TABLE cmap_feature_correspondence (
   is_enabled number(4) DEFAULT '1' NOT NULL,
   CONSTRAINT pk_cmap_feature_correspondence PRIMARY KEY (feature_correspondence_id),
   CONSTRAINT accession_id UNIQUE (accession_id)
-);
+)
+TYPE    MyISAM;
 
 CREATE INDEX feature_id1 on cmap_feature_correspondence (feature_id1);
 
 CREATE INDEX cmap_feature_corresp_idx on cmap_feature_correspondence (is_enabled, feature_correspondence_id);
 
+COMMENT ON TABLE cmap_feature_correspondence is
+  'Table structure for table `cmap_feature_correspondence`';
+
 --
 -- Table: cmap_map
 --
 
+DROP TABLE cmap_map;
 CREATE TABLE cmap_map (
   map_id number(11) DEFAULT '0' NOT NULL,
   accession_id varchar2(20) DEFAULT '' NOT NULL,
@@ -143,26 +214,38 @@ CREATE TABLE cmap_map (
   CONSTRAINT pk_cmap_map PRIMARY KEY (map_id),
   CONSTRAINT accession_id UNIQUE (accession_id),
   CONSTRAINT map_id UNIQUE (map_id, map_set_id, map_name, accession_id)
-);
+)
+TYPE    MyISAM;
+
+CREATE INDEX map_set_id_index on cmap_map (map_set_id);
+
+COMMENT ON TABLE cmap_map is
+  'Table structure for table `cmap_map`';
 
 --
 -- Table: cmap_map_cache
 --
 
+DROP TABLE cmap_map_cache;
 CREATE TABLE cmap_map_cache (
   pid number(11) DEFAULT '0' NOT NULL,
   slot_no number(6) DEFAULT '0' NOT NULL,
   map_id number(11) DEFAULT '0' NOT NULL,
   start_position number(11, 2) DEFAULT NULL,
   stop_position number(11, 2) DEFAULT NULL
-);
+)
+TYPE    MyISAM;
 
 CREATE INDEX pid_cmap_map_cache on cmap_map_cache (pid, slot_no, map_id);
+
+COMMENT ON TABLE cmap_map_cache is
+  'Table structure for table `cmap_map_cache`';
 
 --
 -- Table: cmap_map_set
 --
 
+DROP TABLE cmap_map_set;
 CREATE TABLE cmap_map_set (
   map_set_id number(11) DEFAULT '0' NOT NULL,
   accession_id varchar2(20) DEFAULT '' NOT NULL,
@@ -178,28 +261,38 @@ CREATE TABLE cmap_map_set (
   color varchar2(20) DEFAULT NULL,
   width number(11) DEFAULT NULL,
   map_units varchar2(12) DEFAULT '' NOT NULL,
-  is_relational_map number(4) DEFAULT '0' NOT NULL,
+  is_relational_map number(11) DEFAULT '0' NOT NULL,
   CONSTRAINT pk_cmap_map_set PRIMARY KEY (map_set_id),
   CONSTRAINT accession_id UNIQUE (accession_id),
   CONSTRAINT map_set_id UNIQUE (map_set_id, species_id, short_name, accession_id)
-);
+)
+TYPE    MyISAM;
 
 CREATE INDEX cmap_map_set_idx on cmap_map_set (can_be_reference_map, is_enabled, species_id, display_order, published_on, short_name);
+
+COMMENT ON TABLE cmap_map_set is
+  'Table structure for table `cmap_map_set`';
 
 --
 -- Table: cmap_next_number
 --
 
+DROP TABLE cmap_next_number;
 CREATE TABLE cmap_next_number (
   table_name varchar2(40) DEFAULT '' NOT NULL,
   next_number number(11) DEFAULT '0' NOT NULL,
   CONSTRAINT pk_cmap_next_number PRIMARY KEY (table_name)
-);
+)
+TYPE    MyISAM;
+
+COMMENT ON TABLE cmap_next_number is
+  'Table structure for table `cmap_next_number`';
 
 --
 -- Table: cmap_species
 --
 
+DROP TABLE cmap_species;
 CREATE TABLE cmap_species (
   species_id number(11) DEFAULT '0' NOT NULL,
   accession_id varchar2(20) DEFAULT '' NOT NULL,
@@ -207,23 +300,32 @@ CREATE TABLE cmap_species (
   full_name varchar2(64) DEFAULT '' NOT NULL,
   display_order number(11) DEFAULT '1' NOT NULL,
   CONSTRAINT pk_cmap_species PRIMARY KEY (species_id)
-);
+)
+TYPE    MyISAM;
 
 CREATE INDEX acc_id_species_id on cmap_species (accession_id, species_id);
+
+COMMENT ON TABLE cmap_species is
+  'Table structure for table `cmap_species`';
 
 --
 -- Table: cmap_xref
 --
 
+DROP TABLE cmap_xref;
 CREATE TABLE cmap_xref (
   xref_id number(11) DEFAULT '0' NOT NULL,
   table_name varchar2(30) DEFAULT '' NOT NULL,
   object_id number(11) DEFAULT NULL,
   display_order number(11) DEFAULT '1' NOT NULL,
   xref_name varchar2(200) DEFAULT '' NOT NULL,
-  xref_url varchar2(4000) NOT NULL,
+  xref_url clob NOT NULL,
   CONSTRAINT pk_cmap_xref PRIMARY KEY (xref_id)
-);
+)
+TYPE    MyISAM;
 
 CREATE INDEX table_name on cmap_xref (table_name, object_id, display_order);
+
+COMMENT ON TABLE cmap_xref is
+  'Table structure for table `cmap_xref`';
 

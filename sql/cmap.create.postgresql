@@ -1,11 +1,12 @@
 -- 
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Wed Mar 10 16:53:13 2004
+-- Created on Wed Aug  4 17:36:59 2004
 -- 
 --
 -- Table: cmap_attribute
 --
 
+DROP TABLE "cmap_attribute";
 CREATE TABLE "cmap_attribute" (
   "attribute_id" bigint DEFAULT '0' NOT NULL,
   "table_name" character varying(30) DEFAULT '' NOT NULL,
@@ -23,13 +24,14 @@ CREATE INDEX "table_name" on cmap_attribute ("table_name", "object_id", "display
 -- Table: cmap_correspondence_evidence
 --
 
+DROP TABLE "cmap_correspondence_evidence";
 CREATE TABLE "cmap_correspondence_evidence" (
   "correspondence_evidence_id" bigint DEFAULT '0' NOT NULL,
   "accession_id" character varying(20) DEFAULT '' NOT NULL,
   "feature_correspondence_id" bigint DEFAULT '0' NOT NULL,
-  "evidence_type_accession" varying(20) DEFAULT '0' NOT NULL,
+  "evidence_type_accession" character varying(20) DEFAULT '0' NOT NULL,
   "score" numeric(8,2) DEFAULT NULL,
-  "rank" numeric(11,0) DEFAULT '0' NOT NULL,
+  "rank" bigint DEFAULT '0' NOT NULL,
   PRIMARY KEY ("correspondence_evidence_id"),
   Constraint "accession_id" UNIQUE ("accession_id")
 );
@@ -40,20 +42,40 @@ CREATE INDEX "feature_correspondence_id" on cmap_correspondence_evidence ("featu
 -- Table: cmap_correspondence_lookup
 --
 
+DROP TABLE "cmap_correspondence_lookup";
 CREATE TABLE "cmap_correspondence_lookup" (
   "feature_id1" bigint DEFAULT NULL,
   "feature_id2" bigint DEFAULT NULL,
-  "feature_correspondence_id" bigint DEFAULT NULL
+  "feature_correspondence_id" bigint DEFAULT NULL,
+  "start_position1" numeric(11,2) DEFAULT NULL,
+  "start_position2" numeric(11,2) DEFAULT NULL,
+  "stop_position1" numeric(11,2) DEFAULT NULL,
+  "stop_position2" numeric(11,2) DEFAULT NULL,
+  "map_id1" bigint DEFAULT NULL,
+  "map_id2" bigint DEFAULT NULL,
+  "feature_type_accession1" character varying(20) DEFAULT NULL,
+  "feature_type_accession2" character varying(20) DEFAULT NULL
 );
 
 CREATE INDEX "feature_id1" on cmap_correspondence_lookup ("feature_id1");
 
 CREATE INDEX "corr_id" on cmap_correspondence_lookup ("feature_correspondence_id");
 
+CREATE INDEX "feature_id1_index" on cmap_correspondence_lookup ("feature_id1");
+
+CREATE INDEX "cl_map_id1" on cmap_correspondence_lookup ("map_id1");
+
+CREATE INDEX "cl_map_id2" on cmap_correspondence_lookup ("map_id2");
+
+CREATE INDEX "cl_map_id1_map_id2" on cmap_correspondence_lookup ("map_id1", "map_id2");
+
+CREATE INDEX "cl_map_id2_map_id1" on cmap_correspondence_lookup ("map_id2", "map_id1");
+
 --
 -- Table: cmap_correspondence_matrix
 --
 
+DROP TABLE "cmap_correspondence_matrix";
 CREATE TABLE "cmap_correspondence_matrix" (
   "reference_map_aid" character varying(20) DEFAULT '0' NOT NULL,
   "reference_map_name" character varying(32) DEFAULT '' NOT NULL,
@@ -70,18 +92,20 @@ CREATE TABLE "cmap_correspondence_matrix" (
 -- Table: cmap_feature
 --
 
+DROP TABLE "cmap_feature";
 CREATE TABLE "cmap_feature" (
   "feature_id" bigint DEFAULT '0' NOT NULL,
   "accession_id" character varying(20) DEFAULT '' NOT NULL,
   "map_id" bigint DEFAULT '0' NOT NULL,
-  "feature_type_accession" varying(20) DEFAULT '' NOT NULL,
+  "feature_type_accession" character varying(20) DEFAULT '0' NOT NULL,
   "feature_name" character varying(32) DEFAULT '' NOT NULL,
   "is_landmark" smallint DEFAULT '0' NOT NULL,
-  "start_position" numeric(11,2) DEFAULT '0' NOT NULL,
+  "start_position" numeric(11,2) DEFAULT '0.00' NOT NULL,
   "stop_position" numeric(11,2) DEFAULT NULL,
   "default_rank" bigint DEFAULT '1' NOT NULL,
+  "direction" smallint DEFAULT '1' NOT NULL,
   PRIMARY KEY ("feature_id"),
-  Constraint "accession_id4" UNIQUE ("accession_id")
+  Constraint "accession_id3" UNIQUE ("accession_id")
 );
 
 CREATE INDEX "feature_name" on cmap_feature ("feature_name");
@@ -98,6 +122,7 @@ CREATE INDEX "map_id_feature_id" on cmap_feature ("map_id", "feature_id");
 -- Table: cmap_feature_alias
 --
 
+DROP TABLE "cmap_feature_alias";
 CREATE TABLE "cmap_feature_alias" (
   "feature_alias_id" bigint DEFAULT '0' NOT NULL,
   "feature_id" bigint DEFAULT '0' NOT NULL,
@@ -114,6 +139,7 @@ CREATE INDEX "alias" on cmap_feature_alias ("alias");
 -- Table: cmap_feature_correspondence
 --
 
+DROP TABLE "cmap_feature_correspondence";
 CREATE TABLE "cmap_feature_correspondence" (
   "feature_correspondence_id" bigint DEFAULT '0' NOT NULL,
   "accession_id" character varying(20) DEFAULT '' NOT NULL,
@@ -121,7 +147,7 @@ CREATE TABLE "cmap_feature_correspondence" (
   "feature_id2" bigint DEFAULT '0' NOT NULL,
   "is_enabled" smallint DEFAULT '1' NOT NULL,
   PRIMARY KEY ("feature_correspondence_id"),
-  Constraint "accession_id5" UNIQUE ("accession_id")
+  Constraint "accession_id4" UNIQUE ("accession_id")
 );
 
 CREATE INDEX "feature_id12" on cmap_feature_correspondence ("feature_id1");
@@ -132,6 +158,7 @@ CREATE INDEX "cmap_feature_corresp_idx" on cmap_feature_correspondence ("is_enab
 -- Table: cmap_map
 --
 
+DROP TABLE "cmap_map";
 CREATE TABLE "cmap_map" (
   "map_id" bigint DEFAULT '0' NOT NULL,
   "accession_id" character varying(20) DEFAULT '' NOT NULL,
@@ -141,14 +168,17 @@ CREATE TABLE "cmap_map" (
   "start_position" numeric(11,2) DEFAULT NULL,
   "stop_position" numeric(11,2) DEFAULT NULL,
   PRIMARY KEY ("map_id"),
-  Constraint "accession_id7" UNIQUE ("accession_id"),
+  Constraint "accession_id5" UNIQUE ("accession_id"),
   Constraint "map_id2" UNIQUE ("map_id", "map_set_id", "map_name", "accession_id")
 );
+
+CREATE INDEX "map_set_id_index" on cmap_map ("map_set_id");
 
 --
 -- Table: cmap_map_cache
 --
 
+DROP TABLE "cmap_map_cache";
 CREATE TABLE "cmap_map_cache" (
   "pid" bigint DEFAULT '0' NOT NULL,
   "slot_no" smallint DEFAULT '0' NOT NULL,
@@ -163,12 +193,13 @@ CREATE INDEX "pid_cmap_map_cache" on cmap_map_cache ("pid", "slot_no", "map_id")
 -- Table: cmap_map_set
 --
 
+DROP TABLE "cmap_map_set";
 CREATE TABLE "cmap_map_set" (
   "map_set_id" bigint DEFAULT '0' NOT NULL,
   "accession_id" character varying(20) DEFAULT '' NOT NULL,
   "map_set_name" character varying(64) DEFAULT '' NOT NULL,
   "short_name" character varying(30) DEFAULT '' NOT NULL,
-  "map_type_accession" varying(30) DEFAULT '0' NOT NULL,
+  "map_type_accession" character varying(20) DEFAULT '0' NOT NULL,
   "species_id" bigint DEFAULT '0' NOT NULL,
   "published_on" date,
   "can_be_reference_map" smallint DEFAULT '1' NOT NULL,
@@ -176,11 +207,11 @@ CREATE TABLE "cmap_map_set" (
   "is_enabled" smallint DEFAULT '1' NOT NULL,
   "shape" character varying(12) DEFAULT NULL,
   "color" character varying(20) DEFAULT NULL,
-  "map_units" varying(12) DEFAULT '' NOT NULL,
-  "is_relational_map" smallint DEFAULT '0' NOT NULL,
   "width" bigint DEFAULT NULL,
+  "map_units" character varying(12) DEFAULT '' NOT NULL,
+  "is_relational_map" smallint DEFAULT '0' NOT NULL,
   PRIMARY KEY ("map_set_id"),
-  Constraint "accession_id8" UNIQUE ("accession_id"),
+  Constraint "accession_id6" UNIQUE ("accession_id"),
   Constraint "map_set_id" UNIQUE ("map_set_id", "species_id", "short_name", "accession_id")
 );
 
@@ -190,6 +221,7 @@ CREATE INDEX "cmap_map_set_idx" on cmap_map_set ("can_be_reference_map", "is_ena
 -- Table: cmap_next_number
 --
 
+DROP TABLE "cmap_next_number";
 CREATE TABLE "cmap_next_number" (
   "table_name" character varying(40) DEFAULT '' NOT NULL,
   "next_number" bigint DEFAULT '0' NOT NULL,
@@ -200,6 +232,7 @@ CREATE TABLE "cmap_next_number" (
 -- Table: cmap_species
 --
 
+DROP TABLE "cmap_species";
 CREATE TABLE "cmap_species" (
   "species_id" bigint DEFAULT '0' NOT NULL,
   "accession_id" character varying(20) DEFAULT '' NOT NULL,
@@ -215,6 +248,7 @@ CREATE INDEX "acc_id_species_id" on cmap_species ("accession_id", "species_id");
 -- Table: cmap_xref
 --
 
+DROP TABLE "cmap_xref";
 CREATE TABLE "cmap_xref" (
   "xref_id" bigint DEFAULT '0' NOT NULL,
   "table_name" character varying(30) DEFAULT '' NOT NULL,
