@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Utils;
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.25.2.1 2004-05-07 21:52:07 kycl4rk Exp $
+# $Id: Utils.pm,v 1.25.2.2 2004-05-11 19:31:50 kycl4rk Exp $
 
 =head1 NAME
 
@@ -26,15 +26,15 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.25.2.1 $)[-1];
+$VERSION = (qw$Revision: 1.25.2.2 $)[-1];
 
 use base 'Exporter';
 
 my @subs   = qw[ 
     column_distribution 
+    even_label_distribution 
     commify 
     extract_numbers 
-    even_label_distribution 
     label_distribution 
     next_number 
     parse_words
@@ -331,11 +331,30 @@ Special thanks to Noel Yap for suggesting this strategy.
     }
 
     my $no_accepted = scalar @accepted;
+    #
+    # If there's only one label, put it right next to the one feature.
+    #
     if ( $no_accepted == 1 ) {
         my $label = $accepted[0];
-        $label->{'y'} = $label->{'feature_mid_y'} - $font_height / 2;
+        $label->{'y'} = $label->{'target'} - $font_height / 2;
     }
     elsif ( $no_accepted > 1 ) {
+        #
+        # See if we can squeeze the labels into a smaller space,
+        # thereby placing the labels closer to their targets.
+        #
+        my $feature_span = $accepted[-1]->{'target'} - $accepted[0]->{'target'};
+        if ( 
+            ( $feature_span < $map_height )
+            &&
+            ( ( scalar @accepted * $font_height ) < $feature_span )
+        ) {
+            $map_height = $feature_span;
+        }
+
+        #
+        # Figure the gap to evenly space the labels in the space.
+        #
         my $gap = $map_height / ( $no_accepted - 1 );
         my $i   = 0;
         for my $label ( @accepted ) {
