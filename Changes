@@ -25,16 +25,25 @@
     indicate the number of correspondences.
 -   Maps may be "compressed" such that no feature glyphs are drawn on
     them allowing more data to be shown with less density.
--   Map, feature and evidence types definitions have been moved out of
-    database tables and into configuration files.  These tables have
-    been dropped from the schema and the configuration files have a new
-    structure where the previous single configuration file has been 
-    broken into a "global.conf" file for global options and other
-    datasource-specific files.
-    (How does this affect the attributes & xrefs?)
--   A new caching scheme greatly improves performance of map viewer
--   Added ability to search maps for/by [...]
--   Added "link viewer" to [...]
+-   Map, feature and evidence types definitions, attributes and external 
+    references have been moved out of database tables and into configuration 
+    files.  These tables have been dropped from the schema and the 
+    configuration files have a new structure where the previous single 
+    configuration file has been broken into a "global.conf" file for global 
+    options and other datasource-specific files.
+-   Added the option to draw maps with the same base unit to be drawn to 
+    scale with respect to each other.
+-   Added an optional directionality to the features and added a "direction_arrow" 
+    feature glyph to take advantage of this. 
+-   A new query caching scheme greatly improves performance of map viewer
+    when accessing the same data repeatedly.
+-   Added ability to search maps by name or by number of corresponding maps.
+    The results can then be sorted by the map data, such as total features
+    or average features per base unit.
+-   Added "link viewer" to allow the creation of CMap URLs from imported
+    map location data.
+-   Added instructions for how to integrage CMap with GBrowse using the 
+    Chado database schema.
 
 0.12    2004-07-29
 
