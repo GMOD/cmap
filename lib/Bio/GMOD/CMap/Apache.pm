@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache;
 # vim: set ft=perl:
 
-# $Id: Apache.pm,v 1.4 2003-09-29 20:49:12 kycl4rk Exp $
+# $Id: Apache.pm,v 1.5 2003-10-01 23:14:06 kycl4rk Exp $
 
 =head1 NAME
 
@@ -46,7 +46,7 @@ this class will catch errors and display them correctly.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Apache;
 use Apache::Constants;
@@ -70,10 +70,12 @@ use constant DISPATCH   => {
     help                => __PACKAGE__.'::HelpViewer',
     index               => __PACKAGE__.'::Index',
     map_set_info        => __PACKAGE__.'::MapSetViewer',
+    map_type_info       => __PACKAGE__.'::MapTypeViewer',
     matrix              => __PACKAGE__.'::MatrixViewer',
     viewer              => __PACKAGE__.'::MapViewer',
     map_details         => __PACKAGE__.'::MapDetailViewer',
     feature_type_info   => __PACKAGE__.'::FeatureTypeViewer',
+    species_info        => __PACKAGE__.'::SpeciesViewer',
     view_feature_on_map => __PACKAGE__.'::ViewFeatureOnMap',
 };
 
