@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.58 2003-12-30 18:48:25 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.59 2004-01-07 03:48:34 kycl4rk Exp $
 
 use strict;
 use Apache::Constants qw[ :common M_GET REDIRECT ];
@@ -34,7 +34,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.58 $)[-1];
+$VERSION        = (qw$Revision: 1.59 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -3165,8 +3165,8 @@ sub xref_insert {
     $admin->xref_create(
         object_id       => $object_id,
         table_name      => $apr->param('table_name')    || '',
-        name            => $apr->param('xref_name')     || '',
-        url             => $apr->param('xref_url')      || '',
+        xref_name       => $apr->param('xref_name')     || '',
+        xref_url        => $apr->param('xref_url')      || '',
         display_order   => $apr->param('display_order') || '',
     ) or return $self->xref_create( errors => $admin->error );
 
