@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.66 2003-10-22 00:22:30 kycl4rk Exp $
+# $Id: Data.pm,v 1.67 2003-10-22 22:53:20 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.66 $)[-1];
+$VERSION = (qw$Revision: 1.67 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -87,6 +87,108 @@ Given an accession id for a particular table, find the internal id.  Expects:
     );
 
     return $id;
+}
+
+# ----------------------------------------------------
+sub correspondence_detail_data {
+
+=pod
+
+=head2 correspondence_detail_data
+
+Gets the specifics on a feature correspondence record.
+
+=cut
+
+    my ( $self, %args )    = @_;
+    my $correspondence_aid = $args{'correspondence_aid'} or 
+        return $self->error('No correspondence accession ID');
+    my $db                 = $self->db;
+    my $sth                = $db->prepare(
+        q[
+            select feature_correspondence_id,
+                   accession_id,
+                   feature_id1,
+                   feature_id2,
+                   is_enabled
+            from   cmap_feature_correspondence
+            where  accession_id=?
+        ]
+    );
+    $sth->execute( $correspondence_aid ); 
+
+    my $corr = $sth->fetchrow_hashref or return $self->error(
+        "No record for correspondence accession ID '$correspondence_aid'"
+    );
+
+    $corr->{'attributes'} = $self->get_attributes(
+        'cmap_feature_correspondence', $corr->{'feature_correspondence_id'},
+    );
+
+    $corr->{'xrefs'} = $self->get_xrefs(
+        'cmap_feature_correspondence', $corr->{'feature_correspondence_id'},
+    );
+
+    $sth = $db->prepare(
+        q[
+            select f.feature_id, 
+                   f.accession_id as feature_aid, 
+                   f.map_id,
+                   f.accession_id as map_aid,
+                   f.feature_type_id,
+                   f.feature_name,
+                   f.start_position,
+                   f.stop_position,
+                   ft.feature_type,
+                   map.map_name,
+                   map.accession_id as map_aid,
+                   ms.map_set_id,
+                   ms.accession_id as map_set_aid,
+                   ms.short_name as map_set_name,
+                   s.common_name as species_name
+            from   cmap_feature f,
+                   cmap_feature_type ft,
+                   cmap_map map,
+                   cmap_map_set ms,
+                   cmap_species s
+            where  f.feature_id=?
+            and    f.feature_type_id=ft.feature_type_id
+            and    f.map_id=map.map_id
+            and    map.map_set_id=ms.map_set_id
+            and    ms.species_id=s.species_id
+        ]
+    );
+    $sth->execute( $corr->{'feature_id1'} );
+    my $feature1 = $sth->fetchrow_hashref;
+    $sth->execute( $corr->{'feature_id2'} );
+    my $feature2 = $sth->fetchrow_hashref;
+
+    $corr->{'evidence'} = $db->selectall_arrayref(
+        qq[
+            select   ce.correspondence_evidence_id,
+                     ce.accession_id,
+                     ce.feature_correspondence_id,
+                     ce.evidence_type_id,
+                     ce.score,
+                     ce.remark,
+                     et.accession_id as evidence_type_aid,
+                     et.evidence_type,
+                     et.rank
+            from     cmap_correspondence_evidence ce,
+                     cmap_evidence_type et
+            where    ce.feature_correspondence_id=?
+            and      ce.evidence_type_id=et.evidence_type_id
+            order by rank, evidence_type
+        ],
+        { Columns => {} },
+        ( $corr->{'feature_correspondence_id'} )
+    );
+
+    return {
+        correspondence => $corr,
+        feature1       => $feature1,
+        feature2       => $feature2,
+    };
 }
 
 # ----------------------------------------------------
