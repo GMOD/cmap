@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.141 2004-11-09 18:01:14 mwz444 Exp $
+# $Id: Map.pm,v 1.142 2004-11-11 17:29:22 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.141 $)[-1];
+$VERSION = (qw$Revision: 1.142 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -2058,8 +2058,10 @@ sub place_map_y {
             #
             my $map_unit_len = $self->map_length($map_id);
             my $map_start    = $self->start_position($map_id);
-            my $rstart       =
-              sprintf( "%.2f", ( $avg_mid2 - $map_start ) / $map_unit_len );
+            my $rstart       = $is_flipped
+              ? sprintf( "%.2f",
+                1 - ( ( $avg_mid2 - $map_start ) / $map_unit_len ) )
+              : sprintf( "%.2f", ( $avg_mid2 - $map_start ) / $map_unit_len );
             $min_ref_y = $ref_map_mid_y - ( $pixel_height * $rstart );
             $max_ref_y = $ref_map_mid_y + ( $pixel_height * ( 1 - $rstart ) );
         }
