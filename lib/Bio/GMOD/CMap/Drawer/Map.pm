@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.70.2.6 2004-06-14 18:49:31 kycl4rk Exp $
+# $Id: Map.pm,v 1.70.2.7 2004-06-15 14:54:10 kycl4rk Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.70.2.6 $)[-1];
+$VERSION = (qw$Revision: 1.70.2.7 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1221,7 +1221,7 @@ Lays out the map.
                 buffer          => $buffer,
             );
 
-            my $label_offset = 15;
+            my $label_offset = 20;
             $base_x          = $label_side eq RIGHT 
                 ? $rightmostf > $base_x ? $rightmostf : $base_x
                 : $leftmostf  < $base_x ? $leftmostf  : $base_x;
