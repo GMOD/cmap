@@ -5,7 +5,7 @@
 [% IF evidence_types.size %]
     <table width="100%">
         <tr>
-            <td colspan="5" align="center">
+            <td colspan="7" align="center">
                 [% SET pager_url="admin?action=corr_evidence_types_view&order_by=${apr.param('order_by')}" %]
                 [% PROCESS pager.tmpl %]
             </td>
@@ -14,6 +14,8 @@
             <th><a href="admin?action=corr_evidence_types_view;order_by=accession_id">Acc. ID</a></th>
             <th><a href="admin?action=corr_evidence_types_view;order_by=evidence_type">Evidence Type</a></th>
             <th><a href="admin?action=corr_evidence_types_view;order_by=rank">Rank</a></th>
+            <th><a href="admin?action=corr_evidence_types_view;order_by=line_style">Line Style</a></th>
+            <th><a href="admin?action=corr_evidence_types_view;order_by=line_color">Line Color</a></th>
             <th colspan="2">&nbsp;</th>
         </tr>
       
@@ -23,6 +25,8 @@
                 <td>[% et.accession_id %]</td>
                 <td>[% et.evidence_type %]</td>
                 <td>[% et.rank %]</td>
+                <td>[% et.line_style %]</td>
+                <td>[% et.line_color %]</td>
                 <td align="center">
                     <a href="admin?action=corr_evidence_type_edit;evidence_type_id=[% et.evidence_type_id %]">Edit</a>
                 </td>

@@ -12,7 +12,7 @@ CREATE TABLE "cmap_correspondence_evidence" (
   "accession_id" character varying(20) DEFAULT '' NOT NULL,
   "feature_correspondence_id" integer DEFAULT '0' NOT NULL,
   "evidence_type_id" integer DEFAULT '0' NOT NULL,
-  "score" integer DEFAULT NULL,
+  "score" double precision DEFAULT NULL,
   "remark" character varying(100) DEFAULT NULL,
   CONSTRAINT pk_cmap_correspondence_evidenc PRIMARY KEY (correspondence_evidence_id),
   CONSTRAINT accession_id_cmap_corresponden UNIQUE (accession_id)

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin;
 
-# $Id: Admin.pm,v 1.11 2003-01-09 17:19:17 kycl4rk Exp $
+# $Id: Admin.pm,v 1.12 2003-01-25 00:43:46 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.11 $)[-1];
+$VERSION = (qw$Revision: 1.12 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils qw[ next_number ];
@@ -855,7 +855,7 @@ sub reload_correspondence_matrix {
     #
     # Empty the table.
     #
-    $db->do('truncate table cmap_correspondence_matrix');
+    $db->do('delete from cmap_correspondence_matrix');
 
     #
     # Select all the reference maps.
@@ -866,7 +866,7 @@ sub reload_correspondence_matrix {
                 select   map.map_id,
                          map.accession_id as map_aid,
                          map.map_name,
-                         ms.accession_id map_set_aid,
+                         ms.accession_id as map_set_aid,
                          ms.short_name as map_set_name,
                          s.accession_id as species_aid,
                          s.common_name as species_name
@@ -913,11 +913,15 @@ sub reload_correspondence_matrix {
                 from     cmap_feature f1, 
                          cmap_feature f2, 
                          cmap_correspondence_lookup cl,
+                         cmap_feature_correspondence fc,
                          cmap_map map,
                          cmap_map_set ms,
                          cmap_species s
                 where    f1.map_id=?
                 and      f1.feature_id=cl.feature_id1
+                and      cl.feature_correspondence_id=
+                         fc.feature_correspondence_id
+                and      fc.is_enabled=1
                 and      cl.feature_id2=f2.feature_id
                 and      f2.map_id<>?
                 and      f2.map_id=map.map_id
@@ -950,13 +954,16 @@ sub reload_correspondence_matrix {
                 from     cmap_feature f1,
                          cmap_feature f2,
                          cmap_correspondence_lookup cl,
+                         cmap_feature_correspondence fc
                          cmap_map map,
                          cmap_map_set ms,
                          cmap_species s
                 where    f1.map_id=?
                 and      f1.feature_id=cl.feature_id1
                 and      cl.feature_id2=f2.feature_id
-                and      f2.map_id<>?
+                and      cl.feature_correspondence_id=
+                         fc.feature_correspondence_id
+                and      fc.is_enabled=1
                 and      f2.map_id=map.map_id
                 and      map.map_set_id=ms.map_set_id
                 and      ms.can_be_reference_map=0
@@ -968,7 +975,7 @@ sub reload_correspondence_matrix {
                 order by map_set_name
             ],
             { Columns => {} },
-            ( $map->{'map_id'}, $map->{'map_id'} )
+            ( $map->{'map_id'} )
         );
 
         for my $corr ( @$map_correspondences, @$map_set_correspondences ) {

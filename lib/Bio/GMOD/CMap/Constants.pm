@@ -1,19 +1,20 @@
 package Bio::GMOD::CMap::Constants;
 
-# $Id: Constants.pm,v 1.16 2003-01-11 03:46:25 kycl4rk Exp $
+# $Id: Constants.pm,v 1.17 2003-01-25 00:43:46 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.16 $)[-1];
+$VERSION = (qw$Revision: 1.17 $)[-1];
 
 @EXPORT = qw[ 
     ARC
     COLORS
     CONFIG_FILE
     CMAP_URL
+    DASHED_LINE
     DEFAULT
     FILL
     FILLED_RECT
@@ -197,6 +198,7 @@ use constant CMAP_URL => 'http://www.gmod.org/cmap';
 # Don't change these!
 #
 use constant ARC            => 'arc';
+use constant DASHED_LINE    => 'dashedLine';
 use constant LINE           => 'line';
 use constant FILLED_RECT    => 'filledRectangle';
 use constant FILL           => 'fill';

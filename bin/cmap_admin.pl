@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.13 2003-01-09 19:12:19 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.14 2003-01-25 00:43:46 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.13 $)[-1];
+$VERSION = (qw$Revision: 1.14 $)[-1];
 
 #
 # Turn off output buffering.
@@ -380,18 +380,21 @@ sub export_as_sql {
                 accession_id              => STR,
                 feature_id1               => NUM,
                 feature_id2               => NUM,
+                is_enabled                => NUM,
             }
         },
         {
             name   => 'cmap_feature_type',
             fields => {
-                feature_type_id => NUM,
-                accession_id    => STR,
-                feature_type    => STR,
-                default_rank    => NUM,
-                is_visible      => NUM,
-                shape           => STR,
-                color           => STR,
+                feature_type_id  => NUM,
+                accession_id     => STR,
+                feature_type     => STR,
+                default_rank     => NUM,
+                is_visible       => NUM,
+                shape            => STR,
+                color            => STR,
+                drawing_lane     => NUM,
+                drawing_priority => NUM,
             }
         },
         {

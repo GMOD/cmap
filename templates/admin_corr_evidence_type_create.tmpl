@@ -36,6 +36,30 @@
         </tr>
 
         <tr>
+            <td align="right">Line Style:</th>
+            <td>
+                <select name="line_style">
+                    <option value="">--Default--</option>
+                    [% FOREACH line_style=line_styles %]
+                        <option value="[% line_style %]"[% IF apr.param('line_style')==line_style  %] selected[% END %]>[% line_style %]</option>
+                    [% END %]
+                </select>
+            </td>
+        </tr>
+
+        <tr>
+            <td align="right">Color <em>(opt.)</em>:</td>
+            <td>
+                <select name="line_color">
+                    <option value="">--Default--</option>
+                    [% FOREACH color=line_colors %]
+                        <option value="[% color %]"[% IF apr.param('color')==color  %] selected[% END %]>[% color %]</option>
+                    [% END %]
+                </select>
+            </td>
+        </tr>
+  
+        <tr>
             <td colspan="2" align="center">
                 <input type="hidden" name="action" value="corr_evidence_type_insert">
                 <input type="submit" value="Submit">

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.31 2003-01-16 17:06:24 kycl4rk Exp $
+# $Id: Data.pm,v 1.32 2003-01-25 00:43:46 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.31 $)[-1];
+$VERSION = (qw$Revision: 1.32 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -104,22 +104,29 @@ Organizes the data for drawing comparative maps.
     #
     $include_feature_types  = [] if grep { /^-1$/ } @$include_feature_types;
     $include_evidence_types = [] if grep { /^-1$/ } @$include_evidence_types;
+    my $feature_type_ids    = 
+        $self->feature_type_aid_to_id( @$include_feature_types );
+    my $evidence_type_ids   =
+        $self->evidence_type_aid_to_id( @$include_evidence_types );
 
     my ( $data, %correspondences, %correspondence_evidence, %feature_types );
     for my $slot_no ( @ordered_slot_nos ) {
         my $cur_map     = $slots->{ $slot_no };
-        my $ref_slot_no = $slot_no > 0 
-            ? $slots->{ $slot_no - 1 } : $slots->{$slot_no + 1 };
-        my $ref_map     = $slots->{ $ref_slot_no } || undef;
+#        my $ref_slot_no = $slot_no > 0 
+#            ? $slots->{ $slot_no - 1 } : $slots->{$slot_no + 1 };
+#        my $ref_map     = $slots->{ $ref_slot_no } || undef;
+
+        my $ref_map = $slot_no == 0 ? undef :
+            $slot_no > 0 ? $slots->{ $slot_no - 1 } : $slots->{ $slot_no + 1 };
 
         #
         # Don't bother getting slot data if there's nothing in the ref. slot.
         #
-        if ( $slot_no != 0 && !%{ $data->{'slots'}{ $ref_slot_no } || {} } ) {
-            $data->{'slots'}{ $slot_no } = {};
-            next;
-        }
-        else {
+#        if ( $slot_no != 0 && !%{ $data->{'slots'}{ $ref_slot_no } || {} } ) {
+#            $data->{'slots'}{ $slot_no } = {};
+#            next;
+#        }
+#        else {
             $data->{'slots'}{ $slot_no } =  $self->map_data( 
                 map                      => \$cur_map,                 # pass
                 correspondences          => \%correspondences,         # by
@@ -127,10 +134,10 @@ Organizes the data for drawing comparative maps.
                 feature_types            => \%feature_types,           # erence
                 reference_map            => $ref_map,
                 slot_no                  => $slot_no,
-                include_feature_types    => $include_feature_types,
-                include_evidence_types   => $include_evidence_types,
+                feature_type_ids         => $feature_type_ids,
+                evidence_type_ids        => $evidence_type_ids,
             ) || {};
-        }
+#        }
     }
 
     $data->{'correspondences'}         = \%correspondences;
@@ -158,8 +165,8 @@ Returns the data for drawing comparative maps.
     # Get the arguments.
     #
     my $slot_no                 = $args{'slot_no'};
-    my $include_feature_types   = $args{'include_feature_types'};
-    my $include_evidence_types  = $args{'include_evidence_types'};
+    my $feature_type_ids        = $args{'feature_type_ids'};
+    my $evidence_type_ids       = $args{'evidence_type_ids'};
     my $map                     = ${ $args{'map'} }; # hashref
     my $reference_map           = $args{'reference_map'};
     my $correspondences         = $args{'correspondences'};
@@ -225,7 +232,7 @@ Returns the data for drawing comparative maps.
         if ( $ref_map_id ) {
             push @map_ids, @{ $db->selectcol_arrayref(
                 $sql->map_data_map_ids_by_single_reference_map(
-                    evidence_type_aids => $include_evidence_types,
+                    evidence_type_ids => $evidence_type_ids,
                 ),
                 {},    
                 ( $ref_map_id, $ref_map_start, $ref_map_stop, 
@@ -404,7 +411,7 @@ Returns the data for drawing comparative maps.
         #
         $map_data->{'features'} = $db->selectall_hashref(
             $sql->cmap_data_features_sql(
-                feature_type_aids => $include_feature_types, 
+                feature_type_ids => $feature_type_ids, 
             ),
             'feature_id',
             {},
@@ -424,8 +431,8 @@ Returns the data for drawing comparative maps.
         if ( $ref_map_id ) {
             $map_correspondences = $db->selectall_arrayref(
                 $sql->map_data_feature_correspondence_by_map_sql(
-                    feature_type_aids  => $include_feature_types,
-                    evidence_type_aids => $include_evidence_types,
+                    feature_type_ids  => $feature_type_ids,
+                    evidence_type_ids => $evidence_type_ids,
                 ),
                 { Columns => {} },
                 ( $ref_map_id, $ref_map_start, $ref_map_stop,
@@ -437,9 +444,9 @@ Returns the data for drawing comparative maps.
             if ( my $ref_map_ids = $reference_map->{'map_ids'} ) {
                 $map_correspondences = $db->selectall_arrayref(
                     $sql->map_data_feature_correspondence_by_multi_maps_sql(
-                        reference_map_ids  => $ref_map_ids,
-                        evidence_type_aids => $include_evidence_types,
-                        feature_type_aids  => $include_feature_types,
+                        reference_map_ids => $ref_map_ids,
+                        evidence_type_ids => $evidence_type_ids,
+                        feature_type_ids  => $feature_type_ids,
                     ),
                     { Columns => {} },
                     ( $map_id, $map_start, $map_stop )
@@ -448,8 +455,8 @@ Returns the data for drawing comparative maps.
             else {
                 $map_correspondences = $db->selectall_arrayref(
                     $sql->map_data_feature_correspondence_by_map_set_sql(
-                        evidence_type_aids => $include_evidence_types,
-                        feature_type_aids  => $include_feature_types,
+                        evidence_type_ids => $evidence_type_ids,
+                        feature_type_ids  => $feature_type_ids,
                     ),
                     { Columns => {} },
                     ( $ref_map_set_id, $map_id, $map_start, $map_stop )
@@ -1089,7 +1096,6 @@ Returns the data for the main comparative map HTML form.
     #
     # Select all the map set that can be reference maps.
     #
-    warn "getting ref map sets\n";
     my $ref_map_sets = $db->selectall_arrayref(
         $sql->form_data_ref_map_sets_sql,
         { Columns => {} }
@@ -1100,12 +1106,15 @@ Returns the data for the main comparative map HTML form.
     #
     $include_feature_types  = [] if grep { /^-1$/ } @$include_feature_types;
     $include_evidence_types = [] if grep { /^-1$/ } @$include_evidence_types;
+    my $feature_type_ids    = 
+        $self->feature_type_aid_to_id( @$include_feature_types );
+    my $evidence_type_ids   =
+        $self->evidence_type_aid_to_id( @$include_evidence_types );
 
     #
     # If the user selected a map set, select all the maps in it.
     #
     my $ref_maps; 
-    warn "getting ref maps\n";
     if ( $ref_map_set_aid ) {
         $ref_maps = $db->selectall_arrayref(
             $sql->form_data_ref_maps_sql,
@@ -1132,7 +1141,6 @@ Returns the data for the main comparative map HTML form.
     # If there is a ref. map selected but no start and stop, find 
     # the ends of the ref. map.
     #
-    warn "checking range\n";
     if ( $ref_map_aid ) {
         my $map_id = $self->acc_id_to_internal_id(
             table  => 'cmap_map', 
@@ -1201,30 +1209,27 @@ Returns the data for the main comparative map HTML form.
     my $rightmost_map = $slots->{ $slot_nos[-1] };
     my $leftmost_map  = $slots->{ $slot_nos[ 0] };
 
-    warn "getting right comp maps\n";
-    my $comp_maps_right        =  $self->get_comparative_maps( 
-        map                    => $rightmost_map,
-        include_feature_types  => $include_feature_types,
-        include_evidence_types => $include_evidence_types,
+    my $comp_maps_right   =  $self->get_comparative_maps( 
+        map               => $rightmost_map,
+        feature_type_ids  => $feature_type_ids,
+        evidence_type_ids => $evidence_type_ids,
     );
 
-    warn "getting left comp maps\n";
     my $comp_maps_left         =  
         $leftmost_map->{'field'} eq $rightmost_map->{'field'}
         &&
         $leftmost_map->{'aid'} eq $rightmost_map->{'aid'}
         ? $comp_maps_right
         : $self->get_comparative_maps(
-            map                    => $leftmost_map,
-            include_feature_types  => $include_feature_types,
-            include_evidence_types => $include_evidence_types,
+            map               => $leftmost_map,
+            feature_type_ids  => $feature_type_ids,
+            evidence_type_ids => $evidence_type_ids,
         )
     ;
 
     #
     # Feature types.
     #
-    warn "getting feature types\n";
     my @feature_types = 
         sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} } @{
         $db->selectall_arrayref(
@@ -1241,7 +1246,6 @@ Returns the data for the main comparative map HTML form.
     #
     # Correspondence evidence types.
     #
-    warn "getting evidence types\n";
     my @evidence_types = 
         sort { lc $a->{'evidence_type'} cmp lc $b->{'evidence_type'} } @{
         $db->selectall_arrayref(
@@ -1258,10 +1262,8 @@ Returns the data for the main comparative map HTML form.
     #
     # Fill out all the info we have on every map.
     #
-    warn "filling out map info\n";
     my $map_info = $self->fill_out_maps( $slots );
     
-    warn "done\n";
     return {
         ref_map_sets           => $ref_map_sets,
         ref_maps               => $ref_maps,
@@ -1286,25 +1288,24 @@ Given a reference map and (optionally) start and stop positions, figure
 out which maps have relationships.
 
 =cut
-    my ( $self, %args )        = @_;
-    my $map                    = $args{'map'};
-    my $include_feature_types  = $args{'include_feature_types'};
-    my $include_evidence_types = $args{'include_evidence_types'};
+    my ( $self, %args )   = @_;
+    my $map               = $args{'map'};
+    my $feature_type_ids  = $args{'feature_type_ids'};
+    my $evidence_type_ids = $args{'evidence_type_ids'};
 
-    my $aid_field       = $map->{'field'};
-    my $ref_map_aid     = $aid_field eq 'map_aid'     ? $map->{'aid'} : '';
-    my $ref_map_set_aid = $aid_field eq 'map_set_aid' ? $map->{'aid'} : '';
+    my $aid_field         = $map->{'field'};
+    my $ref_map_aid       = $aid_field eq 'map_aid'     ? $map->{'aid'} : '';
+    my $ref_map_set_aid   = $aid_field eq 'map_set_aid' ? $map->{'aid'} : '';
     return unless $ref_map_aid || $ref_map_set_aid;
 
-    my $ref_map_start   = $map->{'start'};
-    my $ref_map_stop    = $map->{'stop'};
-    my $db              = $self->db  or return;
-    my $sql             = $self->sql or return;
+    my $ref_map_start     = $map->{'start'};
+    my $ref_map_stop      = $map->{'stop'};
+    my $db                = $self->db  or return;
+    my $sql               = $self->sql or return;
     
     #
     # Find the correspondences to other maps.
     #
-    warn "getting feature correspondences\n";
     my $feature_correspondences;
     if ( $ref_map_set_aid ) {
         #
@@ -1325,11 +1326,11 @@ out which maps have relationships.
         if ( my $map_ids = $map->{'map_ids'} ) {
             $feature_correspondences = $db->selectall_hashref(
                 $sql->correspondences_count_by_multi_maps_sql( 
-                    map_ids            => $map_ids,
-                    feature_type_aids  => $include_feature_types,
-                    evidence_type_aids => $include_evidence_types,
+                    map_ids           => $map_ids,
+                    feature_type_ids  => $feature_type_ids,
+                    evidence_type_ids => $evidence_type_ids,
                 ),
-                'feature_id',
+                'feature_correspondence_id',
                 { Columns => {} },
             );
         }
@@ -1341,10 +1342,10 @@ out which maps have relationships.
         
             $feature_correspondences = $db->selectall_hashref(
                 $sql->correspondences_count_by_map_set_sql(
-                    feature_type_aids  => $include_feature_types,
-                    evidence_type_aids => $include_evidence_types,
+                    feature_type_ids  => $feature_type_ids,
+                    evidence_type_ids => $evidence_type_ids,
                 ),
-                'feature_id',
+                'feature_correspondence_id',
                 { Columns => {} },
                 ( $map_set_id, $map_set_id )
             );
@@ -1354,12 +1355,6 @@ out which maps have relationships.
         #
         # Make sure we have a start and stop.
         #
-#        $ref_map_start = $self->map_start( map_aid => $ref_map_aid ) 
-#            unless defined $ref_map_start && $ref_map_stop ne '';
-#
-#        $ref_map_stop = $self->map_stop( map_aid => $ref_map_aid )
-#            unless defined $ref_map_stop && $ref_map_stop ne '';
-
         my ( $ref_map_begin, $ref_map_end ) = $db->selectrow_array(
             q[
                 select start_position, stop_position
@@ -1378,23 +1373,21 @@ out which maps have relationships.
 
         $feature_correspondences = $db->selectall_hashref(
             $sql->correspondences_count_by_single_map_sql(
-                feature_type_aids  => $include_feature_types,
-                evidence_type_aids => $include_evidence_types,
+                feature_type_ids  => $feature_type_ids,
+                evidence_type_ids => $evidence_type_ids,
             ),
-            'feature_id',
+            'feature_correspondence_id',
             { Columns => {} },
             ( $ref_map_aid, $ref_map_start, $ref_map_stop, $ref_map_aid )
         );
     }
 
-    warn "sorting/counting by map aid\n";
     my ( %count_by_map, %corr_by_map );
     for ( values %$feature_correspondences ) {
         $count_by_map{ $_->{'map_aid'} }++;  
         $corr_by_map { $_->{'map_aid'} } = $_;
     }
 
-    warn "distributing correspondences\n";
     my $correspondences;
     for my $map_aid ( keys %corr_by_map ) {
         push @$correspondences, {
@@ -1405,7 +1398,6 @@ out which maps have relationships.
 
     my $map_sets;
     my $join_token = '::';
-    warn "processing correspondences\n";
     for my $corr ( @$correspondences ) {
         my $map_type    = $corr->{'map_type'};
         my $display     = $corr->{'map_type_display_order'};
@@ -1440,8 +1432,69 @@ out which maps have relationships.
         };
     }
 
-    warn "done\n";
     return \@return;
+}
+
+# ----------------------------------------------------
+sub evidence_type_aid_to_id {
+
+=pod
+
+=head2 evidence_type_aid_to_id
+
+Takes a list of evidence type accession IDs and returns their table IDs.
+
+=cut
+    my $self               = shift;
+    my @evidence_type_aids = @_;
+    my @evidence_type_ids  = ();
+    my $db                 = $self->db;
+
+    for my $aid ( @evidence_type_aids ) {
+        my $id = $db->selectrow_array(
+            q[
+                select evidence_type_id
+                from   cmap_evidence_type
+                where  accession_id=?
+            ],
+            {},
+            ( "$aid" )
+        );
+        push @evidence_type_ids, $id;
+    }
+
+    return wantarray ? @evidence_type_ids : \@evidence_type_ids;
+}
+
+# ----------------------------------------------------
+sub feature_type_aid_to_id {
+
+=pod
+
+=head2 feature_type_aid_to_id
+
+Takes a list of feature type accession IDs and returns their table IDs.
+
+=cut
+    my $self              = shift;
+    my @feature_type_aids = @_;
+    my @feature_type_ids  = ();
+    my $db                = $self->db;
+
+    for my $aid ( @feature_type_aids ) {
+        my $id = $db->selectrow_array(
+            q[
+                select feature_type_id
+                from   cmap_feature_type
+                where  accession_id=?
+            ],
+            {},
+            ( "$aid" )
+        );
+        push @feature_type_ids, $id;
+    }
+
+    return wantarray ? @feature_type_ids : \@feature_type_ids;
 }
 
 # ----------------------------------------------------
@@ -1907,7 +1960,6 @@ Returns the detail info for a map.
     my $highlight             = $args{'highlight'}         ||               '';
     my $order_by              = $args{'order_by'}          || 'start_position';
     my $comparative_map_aid   = $args{'comparative_map_aid'} ||             '';
-    my $include_feature_types = $args{'include_feature_types'};
     my $db                    = $self->db  or return;
     my $sql                   = $self->sql or return;
     my $map_id                = $self->acc_id_to_internal_id(
@@ -1916,6 +1968,11 @@ Returns the detail info for a map.
     );
     my $map_start             = $map->{'start'};
     my $map_stop              = $map->{'stop'};
+
+    my $include_feature_types = $args{'include_feature_types'};
+    $include_feature_types    = [] if grep { /^-1$/ } @$include_feature_types;
+    my $feature_type_ids      = 
+        $self->feature_type_aid_to_id( @$include_feature_types );
 
     #
     # Figure out hightlighted features.
@@ -1960,8 +2017,8 @@ Returns the detail info for a map.
     #
     my $features = $db->selectall_arrayref(
         $sql->cmap_data_features_sql( 
-            order_by          => $order_by,
-            feature_type_aids => $include_feature_types,
+            order_by         => $order_by,
+            feature_type_ids => $feature_type_ids,
         ),
         { Columns => {} },
         ( $map_id, $map_start, $map_stop, $map_start, $map_start )
