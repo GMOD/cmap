@@ -1,13 +1,13 @@
 package Bio::GMOD::CMap::Constants;
 
-# $Id: Constants.pm,v 1.25 2003-09-08 17:31:10 kycl4rk Exp $
+# $Id: Constants.pm,v 1.26 2003-09-16 16:57:06 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.25 $)[-1];
+$VERSION = (qw$Revision: 1.26 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -389,6 +389,11 @@ use constant DEFAULT => {
     # How to draw a map.
     #
     map_shape => 'box',
+
+    #
+    # Title for matrix page
+    #
+    matrix_title => 'Welcome to the Matrix',
 
     #
     # The maximum pixel width for any image.
