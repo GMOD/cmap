@@ -147,9 +147,6 @@
                         [% SET rowspan=no_ref_by_type.$map_type_aid %]
                         <th[% IF rowspan > 1 %] rowspan="[% rowspan %]"[% END %]>
                             [% ms.map_type %]
-                            [% IF apr.param('map_set_aid') %]
-                                <br>[% ms.map_set_name | nbsp %]
-                            [% END %]
                         </th>
                     [% END %]
 
@@ -217,9 +214,6 @@
                         [% SET rowspan=no_ref_by_type.$map_type_aid %]
                         <th[% IF rowspan > 1 %] rowspan="[% rowspan %]"[% END %]>
                             [% ms.map_type %]
-                            [% IF apr.param('map_set_aid') %]
-                                <br>[% ms.map_set_name | nbsp %]
-                            [% END %]
                         </th>
                     [% END %]
 
