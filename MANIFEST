@@ -238,7 +238,6 @@ lib/Bio/GMOD/CMap/Apache.pm
 lib/Bio/GMOD/CMap/Apache/AdminViewer.pm
 lib/Bio/GMOD/CMap/Apache/CorrespondenceViewer.pm
 lib/Bio/GMOD/CMap/Apache/DataDownloader.pm
-lib/Bio/GMOD/CMap/Apache/EntryViewer.pm
 lib/Bio/GMOD/CMap/Apache/EvidenceTypeViewer.pm
 lib/Bio/GMOD/CMap/Apache/FeatureAliasViewer.pm
 lib/Bio/GMOD/CMap/Apache/FeatureSearch.pm
@@ -247,7 +246,7 @@ lib/Bio/GMOD/CMap/Apache/FeatureViewer.pm
 lib/Bio/GMOD/CMap/Apache/HelpViewer.pm
 lib/Bio/GMOD/CMap/Apache/Index.pm
 lib/Bio/GMOD/CMap/Apache/LinkViewer.pm
-lib/Bio/GMOD/CMap/Apache/MapDetailViewer.pm
+lib/Bio/GMOD/CMap/Apache/MapSearch.pm
 lib/Bio/GMOD/CMap/Apache/MapSetViewer.pm
 lib/Bio/GMOD/CMap/Apache/MapTypeViewer.pm
 lib/Bio/GMOD/CMap/Apache/MapViewer.pm
@@ -331,7 +330,6 @@ templates/cmap_viewer.tmpl
 templates/cmap_viewer_comparative_map_select.tmpl
 templates/correspondence_detail.tmpl
 templates/data_downloader.tmpl
-templates/entry_viewer.tmpl
 templates/error.tmpl
 templates/evidence_type_info.tmpl
 templates/feature_alias_detail.tmpl
@@ -355,8 +353,8 @@ templates/help_quick_start.tmpl
 templates/help_species_info.tmpl
 templates/index.tmpl
 templates/link_viewer.tmpl
-templates/map_detail.tmpl
 templates/map_detail_bottom.tmpl
+templates/map_search.tmpl
 templates/map_set_info.tmpl
 templates/map_type_info.tmpl
 templates/matrix.tmpl
