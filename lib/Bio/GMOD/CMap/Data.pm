@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.190 2004-12-14 21:02:22 mwz444 Exp $
+# $Id: Data.pm,v 1.191 2004-12-14 21:08:18 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.190 $)[-1];
+$VERSION = (qw$Revision: 1.191 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -1569,12 +1569,12 @@ Returns the data for the correspondence matrix.
             $row->{'map_type'} =
               $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
 
-            $row->{'epoch_published_on'} = parsedate($row->{'published_on'});
+            $row->{'epoch_published_on'} = parsedate( $row->{'published_on'} );
         }
         $map_sets = sort_selectall_arrayref(
-            $map_sets,           '#default_display_order',
-            'map_type',          '#display_order',
-            'common_name',       '#display_order',
+            $map_sets,                  '#default_display_order',
+            'map_type',                 '#display_order',
+            'common_name',              '#display_order',
             '#epoch_published_on desc', 'short_name'
         );
 
@@ -1712,7 +1712,7 @@ Returns the data for the correspondence matrix.
 
             $row->{'map_type'} =
               $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
-            $row->{'epoch_published_on'} = parsedate($row->{'published_on'});
+            $row->{'epoch_published_on'} = parsedate( $row->{'published_on'} );
         }
 
         @reference_map_sets = @{
@@ -1947,12 +1947,12 @@ Returns the data for the correspondence matrix.
               $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
             $row->{'map_type_display_order'} =
               $self->map_type_data( $row->{'map_type_aid'}, 'display_order' );
-            $row->{'epoch_published_on'} = parsedate($row->{'published_on'});
+            $row->{'epoch_published_on'} = parsedate( $row->{'published_on'} );
         }
         $tempMapSet = sort_selectall_arrayref(
-            $tempMapSet,    '#map_type_display_order',
-            'map_type',     '#species_display_order',
-            'species_name', '#map_set_display_order',
+            $tempMapSet,                '#map_type_display_order',
+            'map_type',                 '#species_display_order',
+            'species_name',             '#map_set_display_order',
             '#epoch_published_on desc', 'map_set_name'
         );
     }
@@ -2157,13 +2157,14 @@ sub cmap_form_data {
                 $row->{'map_type_display_order'} =
                   $self->map_type_data( $row->{'map_type_aid'},
                     'display_order' );
-            $row->{'epoch_published_on'} = parsedate($row->{'published_on'});
+                $row->{'epoch_published_on'} =
+                  parsedate( $row->{'published_on'} );
             }
 
             $ref_map_sets = sort_selectall_arrayref(
-                $ref_map_sets,        '#map_type_display_order',
-                'map_type',           '#species_display_order',
-                'species_name',       '#map_set_display_order',
+                $ref_map_sets,              '#map_type_display_order',
+                'map_type',                 '#species_display_order',
+                'species_name',             '#map_set_display_order',
                 '#epoch_published_on desc', 'map_set_name',
             );
 
@@ -3188,6 +3189,45 @@ Return data for a list of evidence type acc. IDs.
         if (%supplied_evidence_types) {
             next unless ( $supplied_evidence_types{$evidence_type} );
         }
+        my @attributes = ();
+        my @xrefs      = ();
+
+        # Get Attributes from config file
+        my $configured_attributes =
+          $self->evidence_type_data( $evidence_type, 'attribute' );
+        if ( ref($configured_attributes) ne 'ARRAY' ) {
+            $configured_attributes = [ $configured_attributes, ];
+        }
+        foreach my $att (@$configured_attributes) {
+            next
+              unless ( defined( $att->{'name'} )
+                and defined( $att->{'value'} ) );
+            push @attributes,
+              {
+                attribute_name  => $att->{'name'},
+                attribute_value => $att->{'value'},
+                is_public       => defined( $att->{'is_public'} )
+                ? $att->{'is_public'}
+                : 1,
+              };
+        }
+
+        # Get Xrefs from config file
+        my $configured_xrefs =
+          $self->evidence_type_data( $evidence_type, 'xref' );
+        if ( ref($configured_xrefs) ne 'ARRAY' ) {
+            $configured_xrefs = [ $configured_xrefs, ];
+        }
+        foreach my $xref (@$configured_xrefs) {
+            next
+              unless ( defined( $xref->{'name'} )
+                and defined( $xref->{'url'} ) );
+            push @xrefs,
+              {
+                xref_name => $xref->{'name'},
+                xref_url  => $xref->{'url'},
+              };
+        }
         $return_array[ ++$#return_array ] = {
             'evidence_type_aid' => $evidence_type,
             'evidence_type'     =>
@@ -3195,6 +3235,8 @@ Return data for a list of evidence type acc. IDs.
             'rank'       => $self->evidence_type_data( $evidence_type, 'rank' ),
             'line_color' =>
               $self->evidence_type_data( $evidence_type, 'line_color' ),
+            'attributes' => \@attributes,
+            'xrefs'      => \@xrefs,
 
         };
     }
@@ -3248,32 +3290,42 @@ Return data for a list of feature type acc. IDs.
         my @xrefs      = ();
 
         # Get Attributes from config file
-        my $configured_attributes = $self->feature_type_data( $feature_type, 'attribute' );
+        my $configured_attributes =
+          $self->feature_type_data( $feature_type, 'attribute' );
         if ( ref($configured_attributes) ne 'ARRAY' ) {
             $configured_attributes = [ $configured_attributes, ];
         }
-        foreach my $att (@$configured_attributes){
-            next unless (defined($att->{'name'}) and defined($att->{'value'}));
-            push @attributes, {
+        foreach my $att (@$configured_attributes) {
+            next
+              unless ( defined( $att->{'name'} )
+                and defined( $att->{'value'} ) );
+            push @attributes,
+              {
                 attribute_name  => $att->{'name'},
                 attribute_value => $att->{'value'},
-                is_public       => defined($att->{'is_public'}) ? $att->{'is_public'}:1,
-            };
+                is_public       => defined( $att->{'is_public'} )
+                ? $att->{'is_public'}
+                : 1,
+              };
         }
-        
+
         # Get Xrefs from config file
-        my $configured_xrefs = $self->feature_type_data( $feature_type, 'xref' );
+        my $configured_xrefs =
+          $self->feature_type_data( $feature_type, 'xref' );
         if ( ref($configured_xrefs) ne 'ARRAY' ) {
             $configured_xrefs = [ $configured_xrefs, ];
         }
-        foreach my $xref (@$configured_xrefs){
-            next unless (defined($xref->{'name'}) and defined($xref->{'url'}));
-            push @xrefs, {
+        foreach my $xref (@$configured_xrefs) {
+            next
+              unless ( defined( $xref->{'name'} )
+                and defined( $xref->{'url'} ) );
+            push @xrefs,
+              {
                 xref_name => $xref->{'name'},
                 xref_url  => $xref->{'url'},
-            };
+              };
         }
-        
+
         $return_array[ ++$#return_array ] = {
             'feature_type_aid' => $feature_type,
             'feature_type'     =>
@@ -3881,6 +3933,45 @@ Returns data on map types.
             next unless $supplied_map_types{$map_type};
         }
 
+        my @attributes = ();
+        my @xrefs      = ();
+
+        # Get Attributes from config file
+        my $configured_attributes =
+          $self->map_type_data( $map_type, 'attribute' );
+        if ( ref($configured_attributes) ne 'ARRAY' ) {
+            $configured_attributes = [ $configured_attributes, ];
+        }
+        foreach my $att (@$configured_attributes) {
+            next
+              unless ( defined( $att->{'name'} )
+                and defined( $att->{'value'} ) );
+            push @attributes,
+              {
+                attribute_name  => $att->{'name'},
+                attribute_value => $att->{'value'},
+                is_public       => defined( $att->{'is_public'} )
+                ? $att->{'is_public'}
+                : 1,
+              };
+        }
+
+        # Get Xrefs from config file
+        my $configured_xrefs = $self->map_type_data( $map_type, 'xref' );
+        if ( ref($configured_xrefs) ne 'ARRAY' ) {
+            $configured_xrefs = [ $configured_xrefs, ];
+        }
+        foreach my $xref (@$configured_xrefs) {
+            next
+              unless ( defined( $xref->{'name'} )
+                and defined( $xref->{'url'} ) );
+            push @xrefs,
+              {
+                xref_name => $xref->{'name'},
+                xref_url  => $xref->{'url'},
+              };
+        }
+
         $return_array[ ++$#return_array ] = {
             map_type_aid  => $map_type,
             map_type      => $self->map_type_data( $map_type, 'map_type' ),
@@ -3891,6 +3982,8 @@ Returns data on map types.
             map_units     => $self->map_type_data( $map_type, 'map_units' ),
             is_relational_map =>
               $self->map_type_data( $map_type, 'is_relational_map' ),
+            'attributes' => \@attributes,
+            'xrefs'      => \@xrefs,
         };
     }
 
@@ -4006,7 +4099,7 @@ Returns data on species.
               $self->map_type_data( $row->{'map_type_aid'}, 'width' );
             $row->{'map_type'} =
               $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
-            $row->{'epoch_published_on'} = parsedate($row->{'published_on'});
+            $row->{'epoch_published_on'} = parsedate( $row->{'published_on'} );
         }
         $s->{'map_sets'} =
           sort_selectall_arrayref( $s->{'map_sets'}, '#default_display_order',
@@ -4756,7 +4849,7 @@ If it is not aggregated don't compress.
     my $this_slot_no = shift;
 
     return unless defined $this_slot_no;
-    return 0 if ($this_slot_no==0);
+    return 0 if ( $this_slot_no == 0 );
     return $self->{'compressed_maps'}{$this_slot_no}
       if defined( $self->{'compressed_maps'}{$this_slot_no} );
 
