@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Utils;
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.31 2004-04-14 20:46:42 mwz444 Exp $
+# $Id: Utils.pm,v 1.32 2004-04-16 17:49:17 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ use Bio::GMOD::CMap::Constants;
 use POSIX;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.31 $)[-1];
+$VERSION = (qw$Revision: 1.32 $)[-1];
 
 use base 'Exporter';
 
@@ -612,8 +612,19 @@ the DBI selectall_arrayref()
     my @columns = @_;
     my $i       = 0;
     my @return_array;
+    my %column_name;
+    foreach my $column (@columns){
+	if ($column=~/(\S+)\s+as\s+(\S+)/){
+	    $column=$1;
+            $column_name{$1}=$2;
+        }
+	else{
+            $column_name{$column}=$column;
+        }
+    }
     for my $key ( keys(%$hashref) ) {
-        %{ $return_array[$i] } = map { $_ => $hashref->{$key}->{$_} } @columns;
+        %{ $return_array[$i] } = map { 
+            $column_name{$_} => $hashref->{$key}->{$_} } @columns;
         $i++;
     }
     @return_array =

@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.59 2004-04-14 20:54:29 mwz444 Exp $
+# $Id: Drawer.pm,v 1.60 2004-04-16 17:49:16 mwz444 Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.59 $)[-1];
+$VERSION = (qw$Revision: 1.60 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -939,7 +939,7 @@ necessary data for drawing.
         $self->{'data'}            =  $data->cmap_data( 
             slots                  => $self->slots,
             min_correspondences    => $self->min_correspondences,
-            include_feature_types  => $self->include_feature_types,
+            include_feature_type_aids  => $self->include_feature_types,
             include_evidence_types => $self->include_evidence_types,
         ) or return $self->error( $data->error );
 

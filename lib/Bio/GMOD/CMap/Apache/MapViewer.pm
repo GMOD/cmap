@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.35 2004-04-01 08:04:25 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.36 2004-04-16 17:49:17 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.35 $)[-1];
+$VERSION = (qw$Revision: 1.36 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -188,6 +188,7 @@ sub handler {
         %slots = %{ $drawer->{'slots'} };
     }
 
+    
     #
     # Get the data for the form.
     #
@@ -208,7 +209,6 @@ sub handler {
         ]
         : []
     ;
-
     #
     # The start and stop may have had to be moved as there 
     # were too few or too many features in the selected region.
@@ -230,7 +230,7 @@ sub handler {
             $slot_no, map { $slots{ $slot_no }{ $_ } } qw[ field aid ]
         );
     }
-
+   
     my $html;
     my $t = $self->template or return;
     $t->process( 
