@@ -83,21 +83,21 @@ url=apr.url( '-full' => 1, '-path_info' => 1 ).replace('\/cmap.*', '/cmap');
                 [% IF form_data.map_ids %]
                     [% IF form_data.map_ids.size %]
                         <table border=1>
-                        <tr><td rowspan=2><a href="[% url %][% url_sort_tmpl %]&order_by=display_order">Map Name</a></td>
-                            <td rowspan=2><a href="[% url %][% url_sort_tmpl %]&order_by=cmap_count">Related Maps</a></td>
-                            <td rowspan=2><a href="[% url %][% url_sort_tmpl %]&order_by=cmap_count_per_raw">Related Maps<br>per unit</a></td>
-                            <td rowspan=2><a href="[% url %][% url_sort_tmpl %]&order_by=corr_count">Correspondeces</a></td>
-                            <td rowspan=2><a href="[% url %][% url_sort_tmpl %]&order_by=corr_count_per_raw">Correspondeces<br>per unit</a></td>
-                            <td rowspan=2><a href="[% url %][% url_sort_tmpl %]&order_by=start_position">Start</a></td>
-                            <td rowspan=2><a href="[% url %][% url_sort_tmpl %]&order_by=stop_position">Stop</a></td>
+                        <tr><td valign=top align=center rowspan=2><a href="[% url %][% url_sort_tmpl %]&order_by=display_order">Map Name</a></td>
+                            <td valign=top align=center rowspan=2><a href="[% url %][% url_sort_tmpl %]&order_by=cmap_count">Related Maps</a></td>
+                            <td valign=top align=center rowspan=2><a href="[% url %][% url_sort_tmpl %]&order_by=cmap_count_per_raw">Related Maps<br>per unit</a></td>
+                            <td valign=top align=center rowspan=2><a href="[% url %][% url_sort_tmpl %]&order_by=corr_count">Correspondences</a></td>
+                            <td valign=top align=center rowspan=2><a href="[% url %][% url_sort_tmpl %]&order_by=corr_count_per_raw">Correspondences<br>per unit</a></td>
+                            <td valign=top align=center rowspan=2><a href="[% url %][% url_sort_tmpl %]&order_by=start_position">Start</a></td>
+                            <td valign=top align=center rowspan=2><a href="[% url %][% url_sort_tmpl %]&order_by=stop_position">Stop</a></td>
                             [% FOREACH feature_type_aid=form_data.feature_type_aids %]
-                              <td colspan=2 align=center>[% feature_type_aid %]</td>
+                              <td colspan=2 align=center valign=top>[% feature_type_aid %]</td>
                             [% END %]
                         </tr>
                         <tr>
                           [% FOREACH ft=form_data.feature_type_aids %]
-                            <td><a href="[% url %][% url_sort_tmpl %]&order_by=feature_total_[% ft %]">total</a></td>
-                            <td><a href="[% url %][% url_sort_tmpl %]&order_by=feature_per_[% ft %]">per unit</a></td>
+                            <td valign=top align=center><a href="[% url %][% url_sort_tmpl %]&order_by=feature_total_[% ft %]">total</a></td>
+                            <td valign=top align=center><a href="[% url %][% url_sort_tmpl %]&order_by=feature_per_[% ft %]">per unit</a></td>
                           [% END %]
                         </tr>
                         [% FOREACH map_id=form_data.map_ids %]
