@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.133 2004-07-01 19:24:20 mwz444 Exp $
+# $Id: Data.pm,v 1.134 2004-07-02 20:45:48 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.133 $)[-1];
+$VERSION = (qw$Revision: 1.134 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -941,7 +941,7 @@ sub slot_data {
     # More than one map in the slot?  All are compressed.
     #
     my $return;
-    if (1 and ( scalar(@maps) == 1 or !$self->{'aggregate'})) {   
+    if ( scalar(@maps) == 1 or !$self->{'aggregate'}) {   
          # just one map in this slot
             #
             # Register the feature types on the maps in this slot.
@@ -1064,11 +1064,10 @@ sub slot_data {
 		       ];
             }
             $sql_base_bottom .= qq[
-                    $where
                     and      f.map_id=map.map_id
                     and      map.map_set_id=ms.map_set_id
 			   ];
-            my $corr_free_sql = $sql_base_top . $sql_base_bottom;
+            my $corr_free_sql = $sql_base_top . $sql_base_bottom.$where;
             my $with_corr_sql ='';
             if (@$corr_only_feature_type_aids) {
                 $corr_free_sql .=
@@ -1187,7 +1186,7 @@ if ((  $self->slot_info->{ $this_slot_no + 1 }
                     $feature_correspondences, $correspondence_evidence,
                     'map_id',                 $map->{'map_id'},
                     $pid,                     $ref_slot_no,
-                    $evidence_type_aids,      $feature_type_aids,
+                    $evidence_type_aids,      [@$feature_type_aids,@$corr_only_feature_type_aids],
                     $map_start,               $map_stop
                 );
             }
@@ -1287,7 +1286,7 @@ if ((  $self->slot_info->{ $this_slot_no + 1 }
                     $feature_correspondences, $correspondence_evidence,
                     'map_id',                 $map->{'map_id'},
                     $pid,                     $ref_slot_no,
-                    $evidence_type_aids,      $feature_type_aids,
+                    $evidence_type_aids,      [@$feature_type_aids,@$corr_only_feature_type_aids],
                     $map_start,               $map_stop
                 );
             }
@@ -3168,27 +3167,23 @@ sub fill_out_maps {
             push @cmap_nos, grep { $_ < $slot_no && $_ != 0 } @ordered_slot_nos;
         }
 
-        if (scalar($slots->{$_}{'aid'},)==1){
-            $map->{'cmaps'} = [
-                map {
+        foreach my $cmap_no (@cmap_nos){
+            if (ref ($slots->{$cmap_no}{'aid'}) eq 'HASH'){
+                push @{$map->{'cmaps'}},
                     {
-                        field   => $slots->{$_}{'field'},
-                        aid     => $slots->{$_}{'aid'},
-                        slot_no => $_,
-                    }
-                  } @cmap_nos
-            ];
-        }
-        else{
-            $map->{'cmaps'} = [
-                map {
+                        field   => $slots->{$cmap_no}{'field'},
+                        aid     => join(",",@{$slots->{$cmap_no}{'aid'}}),
+                        slot_no => $cmap_no,
+                    };
+            }
+            else{
+                 push @{$map->{'cmaps'}},
                     {
-                        field   => $slots->{$_}{'field'},
-                        aid     => join(",",@{$slots->{$_}{'aid'}}),
-                        slot_no => $_,
+                        field   => $slots->{$cmap_no}{'field'},
+                        aid     => $slots->{$cmap_no}{'aid'},
+                        slot_no => $cmap_no,
                     }
-                  } @cmap_nos
-            ];
+            }
         }
         $map->{'slot_no'} = $slot_no;
         push @maps, $map;
