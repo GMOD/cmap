@@ -1,6 +1,6 @@
                       Planned enhancements for CMap
     
-                             $Revision: 1.6 $
+                             $Revision: 1.7 $
 
 -   Better label distribution algorithm
 -   Allow multiple alternate names for features
@@ -20,7 +20,4 @@
     mechanisms?)
 -   Write some (post-installation) tests!  (Tests need to assume some
     data in the database, a working Apache installation, etc.)
--   Add "remarks" (and maybe "code") column to cmap_feature_type and
-    cmap_evidence_type, allow clicking on description in map legend to
-    go to a page describing the object
 -   SVG output
