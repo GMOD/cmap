@@ -1,6 +1,6 @@
                               CMAP INSTALL
 
-                            $Revision: 1.39 $
+                            $Revision: 1.40 $
 
 1.      QUICK START
 
@@ -9,8 +9,8 @@ the very abbreviated explanation of how to install CMap:
 
 *   Install libpng, libjpeg and libgd
 *   Install the database of your choice (MySQL, PostgreSQL, Oracle,
-    Sybase, SQLite) create tables with contents of "sql" directory, grant
-    appropriate user permissions
+    Sybase, SQLite); create tables with contents of "sql" directory; 
+    grant appropriate user permissions
 *   Install Perl 5.6.1 or greater and Apache (1.3.x or 2.x)
 *   Execute "perl Build.PL; ./Build; ./Build install"; install any other
     Perl modules reported missing by the build process
@@ -20,6 +20,14 @@ the very abbreviated explanation of how to install CMap:
 If you need further instructions, read on.  Appendices at the end of
 this document cover general interest topics for the UNIX-phobic such
 as conventions for building software, etc. 
+
+1.1     UPGRADING FROM VERSION 0.09
+
+If you have version 0.09 of CMap installed, you will need to alter
+your database *after* performing the entire installation process (so
+the new CMap libraries will be in place).  Please read the
+directions in the "UPGRADE" instruction file in the "upgrade"
+directory before continuing with this installation.
 
 2.      REQUIREMENTS
 
@@ -436,6 +444,18 @@ use when prompted by your web browser to see the admin tool, and the
 argument before that is the name of the new password file that will be
 created by the "-c" argument.  If the file already exists, then don't
 use "-c."
+
+Now you just need to tell Apache to protect the location of the admin 
+interface with a password like so:
+
+    <Location /cgi-bin/cmap/admin>
+        AuthType Basic
+        AuthName        "CMap Admin"
+        AuthUserFile    /usr/local/apache/passwd/cmap
+        Require         valid-user
+    </Location>
+
+Restart Apache to make the change take effect.
 
 5.      VIEWING CMAP
 
