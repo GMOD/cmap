@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.59 2004-09-15 21:18:48 mwz444 Exp $
+# $Id: Admin.pm,v 1.60 2004-09-16 05:39:33 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.59 $)[-1];
+$VERSION = (qw$Revision: 1.60 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -170,7 +170,7 @@ sub feature_create {
         push @insert_args, $stop_position;
     }
     else {
-        $stop_placeholder = 'NULL';
+        $stop_placeholder = undef;
     }
 
     $db->do(
@@ -534,7 +534,7 @@ Inserts a correspondence.  Returns -1 if there is nothing to do.
             $score_arg = '?';
         }
         else {
-            $score_arg = 'NULL';
+            $score_arg = undef;
         }
         my $rank=$self->evidence_type_data($et_id,'rank') || 1;
         $db->do(
@@ -967,7 +967,7 @@ sub insert_feature_correspondence_if_gt{
             my $accession_id     = $e->{'accession_id'} || $corr_evidence_id;
            
             if ( not defined $score ) {
-            $score = 'NULL';
+            $score = undef;
             }
             my $rank=$self->evidence_type_data($et_aid,'rank') || 1;
 
