@@ -1,0 +1,51 @@
+-- 
+-- Created by SQL::Translator::Producer::Oracle
+-- Created on Thu Feb 19 12:39:08 2004
+-- 
+--
+-- Table: cmap_attribute
+--
+
+CREATE TABLE cmap_attribute (
+  attribute_id number(11) DEFAULT '0' NOT NULL,
+  table_name varchar2(30) DEFAULT '' NOT NULL,
+  object_id number(11) DEFAULT '0' NOT NULL,
+  display_order number(11) DEFAULT '1' NOT NULL,
+  is_public number(4) DEFAULT '1' NOT NULL,
+  attribute_name varchar2(200) DEFAULT '' NOT NULL,
+  attribute_value clob NOT NULL,
+  CONSTRAINT pk_cmap_attribute PRIMARY KEY (attribute_id)
+);
+
+CREATE INDEX table_name on cmap_attribute (table_name, object_id, display_order, attribute_name);
+
+--
+-- Table: cmap_feature_alias
+--
+
+CREATE TABLE cmap_feature_alias (
+  feature_alias_id number(11) DEFAULT '0' NOT NULL,
+  feature_id number(11) DEFAULT '0' NOT NULL,
+  alias varchar2(255) DEFAULT NULL,
+  CONSTRAINT pk_cmap_feature_alias PRIMARY KEY (feature_alias_id),
+  CONSTRAINT u_cmap_feature_alias UNIQUE (feature_id, alias)
+);
+
+CREATE INDEX feature_id on cmap_feature_alias (feature_id);
+
+CREATE INDEX alias on cmap_feature_alias (alias);
+
+--
+-- Table: cmap_xref
+--
+
+CREATE TABLE cmap_xref (
+  xref_id number(11) DEFAULT '0' NOT NULL,
+  table_name varchar2(30) DEFAULT '' NOT NULL,
+  object_id number(11) DEFAULT NULL,
+  display_order number(11) DEFAULT '1' NOT NULL,
+  xref_name varchar2(200) DEFAULT '' NOT NULL,
+  xref_url clob NOT NULL,
+  CONSTRAINT pk_cmap_xref PRIMARY KEY (xref_id)
+);
+
