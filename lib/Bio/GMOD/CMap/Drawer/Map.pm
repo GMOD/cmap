@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.70.2.2 2004-05-07 21:55:56 kycl4rk Exp $
+# $Id: Map.pm,v 1.70.2.3 2004-06-01 16:02:51 kycl4rk Exp $
 
 =pod
 
@@ -24,13 +24,13 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.70.2.2 $)[-1];
+$VERSION = (qw$Revision: 1.70.2.3 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Utils qw[ 
-    column_distribution even_label_distribution label_distribution 
+    column_distribution label_distribution even_label_distribution 
 ];
 
 use base 'Bio::GMOD::CMap';
@@ -733,7 +733,6 @@ Lays out the map.
         my ($leftmostf, $rightmostf); # furthest features
 
         for my $lane ( sort { $a <=> $b } keys %$features ) {
-            my (@north_labels,@south_labels); # holds label coordinates
             my $lane_features = $features->{ $lane };
             my $midpoint      = (
                 $lane_features->[ 0]->{'start_position'} +
@@ -761,7 +760,7 @@ Lays out the map.
                 ;
             }
 
-            my %even_labels;
+            my ( %drawn_glyphs, %even_labels );
             for my $feature ( @$lane_features ) {
                 #
                 # If the map isn't showing labeled features (e.g., it's a
@@ -835,297 +834,322 @@ Lays out the map.
                     $feature->{'mid_y'} = ( $y_pos1 + $y_pos2 ) / 2;
                 }
 
-                my ( %drawn_glyphs, @temp_drawing_data );
-                if ( $feature_shape eq LINE ) {
-                    $y_pos1 = ( $y_pos1 + $y_pos2 ) / 2;
-                    push @temp_drawing_data, [
-                        LINE, $tick_start, $y_pos1, $tick_stop, $y_pos1, $color
-                    ];
-
-                    @coords = ( $tick_start, $y_pos1, $tick_stop, $y_pos1 );
-                }
-                else {
-                    my $buffer       = 2;
-                    my $column_index = column_distribution(
-                        columns      => \@fcolumns,
-                        top          => $y_pos1,
-                        bottom       => $y_pos2,
-                        buffer       => $buffer,
-                        collapse     => $collapse_features,
-                        collapse_on  => $feature->{'feature_type'},
-                    );
-                    my $offset       = ( $column_index + 1 ) * 7;
-                    my $vert_line_x1 = $label_side eq RIGHT
-                        ? $tick_start : $tick_stop;
-                    my $vert_line_x2 = $label_side eq RIGHT 
-                        ? $tick_stop + $offset 
-                        : $tick_start - $offset;
-
-                    unless ( $shape_is_triangle ) {
-                        push @temp_drawing_data, [
-                            LINE, 
-                            $vert_line_x2, $y_pos1, 
-                            $vert_line_x2, $y_pos2, 
-                            $color,
-                        ];
-
-                        @coords = (
-                            $vert_line_x2, $y_pos1, $vert_line_x2, $y_pos2
-                        );
-                    }
-
-                    if ( $feature_shape eq 'span' ) {
-                        my $reverse = $label_side eq RIGHT ? -1 : 1;
-                        push @temp_drawing_data, [
-                            LINE, 
-                            $vert_line_x2, $y_pos1, 
-                            $vert_line_x2 + ( 3 * $reverse ), $y_pos1, 
-                            $color,
-                        ];
-
-                        push @temp_drawing_data, [
-                            LINE, 
-                            $vert_line_x2, $y_pos2, 
-                            $vert_line_x2 + ( 3 * $reverse ), $y_pos2, 
-                            $color,
-                        ];
-
-                        @coords = (
-                            $vert_line_x2, $y_pos1, $vert_line_x2, $y_pos2
-                        );
-                    }
-                    elsif ( $feature_shape eq 'up-arrow' ) {
-                        push @temp_drawing_data, [
-                            LINE,
-                            $vert_line_x2, $y_pos1,
-                            $vert_line_x2 - 2, $y_pos1 + 2,
-                            $color
-                        ];
-
-                        push @temp_drawing_data, [
-                            LINE,
-                            $vert_line_x2, $y_pos1,
-                            $vert_line_x2 + 2, $y_pos1 + 2,
-                            $color
-                        ];
-
-                        @coords = (
-                            $vert_line_x2 - 2, $y_pos2,
-                            $vert_line_x2 + 2, $y_pos1,
-                        );
-                    }
-                    elsif ( $feature_shape eq 'down-arrow' ) {
-                        push @temp_drawing_data, [
-                            LINE,
-                            $vert_line_x2, $y_pos2,
-                            $vert_line_x2 - 2, $y_pos2 - 2,
-                            $color
-                        ];
-
-                        push @temp_drawing_data, [
-                            LINE,
-                            $vert_line_x2, $y_pos2,
-                            $vert_line_x2 + 2, $y_pos2 - 2,
-                            $color
-                        ];
-
-                        @coords = (
-                            $vert_line_x2 - 2, $y_pos2,
-                            $vert_line_x2 + 2, $y_pos1,
-                        );
-                    }
-                    elsif ( $feature_shape eq 'double-arrow' ) {
-                        push @temp_drawing_data, [
-                            LINE,
-                            $vert_line_x2, $y_pos1,
-                            $vert_line_x2 - 2, $y_pos1 + 2,
-                            $color
-                        ];
-                        push @temp_drawing_data, [
-                            LINE,
-                            $vert_line_x2, $y_pos1,
-                            $vert_line_x2 + 2, $y_pos1 + 2,
-                            $color
-                        ];
-                        push @temp_drawing_data, [
-                            LINE,
-                            $vert_line_x2, $y_pos2,
-                            $vert_line_x2 - 2, $y_pos2 - 2,
-                            $color
-                        ];
-                        push @temp_drawing_data, [
-                            LINE,
-                            $vert_line_x2, $y_pos2,
-                            $vert_line_x2 + 2, $y_pos2 - 2,
-                            $color
-                        ];
-
-                        @coords = (
-                            $vert_line_x2 - 2, $y_pos2,
-                            $vert_line_x2 + 2, $y_pos1,
-                        );
-                    }
-                    elsif ( $feature_shape eq 'box' ) {
-                        $vert_line_x1 = $label_side eq RIGHT
-                            ? $tick_start - $offset : $tick_stop + $offset;
-                        $vert_line_x2 = $label_side eq RIGHT 
-                            ? $tick_stop + $offset : $tick_start - $offset;
-
-                        @coords = (
-                            $vert_line_x2, $y_pos2,
-                            $vert_line_x1, $y_pos1, 
-                        );
-
-                        push @temp_drawing_data, [ RECTANGLE, @coords, $color ];
-                    }
-                    elsif ( $feature_shape eq 'dumbbell' ) {
-                        my $width = 4;
-                        unless ( $y_pos1 == $y_pos2 ) {
-                            $y_pos1 += 2;
-                            $y_pos2 -= 2;
-                        }
-
-                        push @temp_drawing_data, [
-                            ARC, 
-                            $vert_line_x2, $y_pos1,
-                            $width, $width, 0, 360, $color
-                        ];
-                        push @temp_drawing_data, [
-                            ARC, 
-                            $vert_line_x2, $y_pos2,
-                            $width, $width, 0, 360, $color
-                        ];
-
-                        @coords = (
-                            $vert_line_x2 - $width/2, $y_pos1, 
-                            $vert_line_x2 + $width/2, $y_pos2
-                        );
-                    }
-                    elsif ( $feature_shape eq 'filled-box' ) {
-                        my $width = 3;
-                        push @temp_drawing_data, [
-                            FILLED_RECT, 
-                            $vert_line_x2, $y_pos1,
-                            $vert_line_x2 + $width, $y_pos2,
-                            $color,
-                        ];
-                        push @temp_drawing_data, [
-                            RECTANGLE, 
-                            $vert_line_x2, $y_pos1,
-                            $vert_line_x2 + $width, $y_pos2,
-                            'black',
-                        ];
-                        @coords = (
-                            $vert_line_x2 - $width/2, $y_pos1, 
-                            $vert_line_x2 + $width/2, $y_pos2
-                        );
-                    }
-                    elsif ( 
-                        ( 
-                            $feature_shape eq 'in-triangle' &&
-                            $label_side eq LEFT
-                        )
-                        ||
-                        ( 
-                            $feature_shape eq 'out-triangle' &&
-                            $label_side eq RIGHT
-                        )
-                    ) {
-                        my $width = 3;
-                        push @temp_drawing_data, [
-                            LINE,
-                            $vert_line_x2, $y_pos1 - $width,
-                            $vert_line_x2, $y_pos1 + $width,
-                            $color
-                        ];
-                        push @temp_drawing_data, [
-                            LINE,
-                            $vert_line_x2, $y_pos1 - $width,
-                            $vert_line_x2 + $width, $y_pos1,
-                            $color
-                        ];
-                        push @temp_drawing_data, [
-                            LINE,
-                            $vert_line_x2, $y_pos1 + $width,
-                            $vert_line_x2 + $width, $y_pos1,
-                            $color
-                        ];
-                        push @temp_drawing_data, [
-                            FILL,
-                            $vert_line_x2 + 1, $y_pos1 + 1,
-                            $color
-                        ];
-
-                        @coords = (
-                            $vert_line_x2 - $width, $y_pos1 - $width,
-                            $vert_line_x2 + $width, $y_pos1 + $width,
-                        );
-                    }
-                    elsif (
-                        ( 
-                            $feature_shape eq 'in-triangle' &&
-                            $label_side eq RIGHT
-                        )
-                        ||
-                        ( 
-                            $feature_shape eq 'out-triangle' &&
-                            $label_side eq LEFT
-                        )
-                    ) {
-                        my $width = 3;
-                        push @temp_drawing_data, [
-                            LINE,
-                            $vert_line_x2 + $width, $y_pos1 - $width,
-                            $vert_line_x2 + $width, $y_pos1 + $width,
-                            $color
-                        ];
-                        push @temp_drawing_data, [
-                            LINE,
-                            $vert_line_x2 + $width, $y_pos1 - $width,
-                            $vert_line_x2, $y_pos1,
-                            $color
-                        ];
-                        push @temp_drawing_data, [
-                            LINE,
-                            $vert_line_x2, $y_pos1,
-                            $vert_line_x2 + $width, $y_pos1 + $width,
-                            $color
-                        ];
-                        push @temp_drawing_data, [
-                            FILL,
-                            $vert_line_x2 + $width - 1, $y_pos1 + 1,
-                            $color
-                        ];
-
-                        @coords = (
-                            $vert_line_x2 - $width, $y_pos1 - $width,
-                            $vert_line_x2 + $width, $y_pos1 + $width,
-                        );
-                    }
-                    
-                    push @map_area_data, {
-                        coords => \@coords,
-                        url    => 
-                            $feature_details_url . $feature->{'accession_id'},
-                        alt    => 
-                            'Feature Details: ' . $feature->{'feature_name'}.
-                            ' [' . $feature->{'accession_id'} . ']',
-                    };
-                }
 
                 #
                 # Here we try to reduce the redundant drawing of glyphs.
                 # However, if a feature has a correspondence, we want to 
                 # make sure to draw it so it will show up highlighted.
                 #
-                my $glyph_key = int($y_pos1) . $feature_shape . int($y_pos2);
                 my $draw_this = 1;
-                if ( $drawn_glyphs{ $glyph_key } ) {
-                    $draw_this = $has_corr ? 1 : 0;
+                my $glyph_key = int($y_pos1) . $feature_shape . int($y_pos2);
+                @coords       = @{ $drawn_glyphs{ $glyph_key } || [] };
+                if ( @coords ) {
+                    if ( $feature_shape eq LINE ) {
+                        $draw_this = $has_corr ? 1 : 0;
+                    }
+                    elsif ( $collapse_features ) {
+                        $draw_this = 0;
+                    }
                 }
 
                 if ( $draw_this ) {
-                    $drawn_glyphs{ $glyph_key } = 1;
+                    my @temp_drawing_data;
+                    if ( $feature_shape eq LINE ) {
+                        $y_pos1 = ( $y_pos1 + $y_pos2 ) / 2;
+                        push @temp_drawing_data, [
+                            LINE, $tick_start, $y_pos1, 
+                            $tick_stop, $y_pos1, $color
+                        ];
+
+                        @coords = ( $tick_start, $y_pos1, $tick_stop, $y_pos1 );
+                    }
+                    else {
+                        #
+                        # Find column to put feature.
+                        #
+                        my $buffer = 2;
+                        my $column_index;
+                        if ( @fcolumns ) {
+                            for my $i ( 0..$#fcolumns ) {
+                                if ( 
+                                    (!$is_flipped && $fcolumns[ $i ] < $y_pos1)
+                                    || 
+                                    ( $is_flipped && $fcolumns[ $i ] > $y_pos2)
+                                ) {
+                                    $column_index = $i;
+                                    last;
+                                } 
+                            }   
+                        }
+                        else {
+                            $column_index = 0;
+                        }
+                        $column_index = scalar @fcolumns 
+                            unless defined $column_index;
+                        $fcolumns[ $column_index ] = 
+                            $is_flipped ? $y_pos1 - $buffer: $y_pos2 + $buffer;
+
+                        my $offset       = ( $column_index + 1 ) * 7;
+                        my $vert_line_x1 = $label_side eq RIGHT
+                            ? $tick_start : $tick_stop;
+                        my $vert_line_x2 = $label_side eq RIGHT 
+                            ? $tick_stop + $offset 
+                            : $tick_start - $offset;
+
+                        unless ( $shape_is_triangle ) {
+                            push @temp_drawing_data, [
+                                LINE, 
+                                $vert_line_x2, $y_pos1, 
+                                $vert_line_x2, $y_pos2, 
+                                $color,
+                            ];
+
+                            @coords = (
+                                $vert_line_x2, $y_pos1, $vert_line_x2, $y_pos2
+                            );
+                        }
+
+                        if ( $feature_shape eq 'span' ) {
+                            my $reverse = $label_side eq RIGHT ? -1 : 1;
+                            push @temp_drawing_data, [
+                                LINE, 
+                                $vert_line_x2, $y_pos1, 
+                                $vert_line_x2 + ( 3 * $reverse ), $y_pos1, 
+                                $color,
+                            ];
+
+                            push @temp_drawing_data, [
+                                LINE, 
+                                $vert_line_x2, $y_pos2, 
+                                $vert_line_x2 + ( 3 * $reverse ), $y_pos2, 
+                                $color,
+                            ];
+
+                            @coords = (
+                                $vert_line_x2, $y_pos1, $vert_line_x2, $y_pos2
+                            );
+                        }
+                        elsif ( $feature_shape eq 'up-arrow' ) {
+                            push @temp_drawing_data, [
+                                LINE,
+                                $vert_line_x2, $y_pos1,
+                                $vert_line_x2 - 2, $y_pos1 + 2,
+                                $color
+                            ];
+
+                            push @temp_drawing_data, [
+                                LINE,
+                                $vert_line_x2, $y_pos1,
+                                $vert_line_x2 + 2, $y_pos1 + 2,
+                                $color
+                            ];
+
+                            @coords = (
+                                $vert_line_x2 - 2, $y_pos2,
+                                $vert_line_x2 + 2, $y_pos1,
+                            );
+                        }
+                        elsif ( $feature_shape eq 'down-arrow' ) {
+                            push @temp_drawing_data, [
+                                LINE,
+                                $vert_line_x2, $y_pos2,
+                                $vert_line_x2 - 2, $y_pos2 - 2,
+                                $color
+                            ];
+
+                            push @temp_drawing_data, [
+                                LINE,
+                                $vert_line_x2, $y_pos2,
+                                $vert_line_x2 + 2, $y_pos2 - 2,
+                                $color
+                            ];
+
+                            @coords = (
+                                $vert_line_x2 - 2, $y_pos2,
+                                $vert_line_x2 + 2, $y_pos1,
+                            );
+                        }
+                        elsif ( $feature_shape eq 'double-arrow' ) {
+                            push @temp_drawing_data, [
+                                LINE,
+                                $vert_line_x2, $y_pos1,
+                                $vert_line_x2 - 2, $y_pos1 + 2,
+                                $color
+                            ];
+                            push @temp_drawing_data, [
+                                LINE,
+                                $vert_line_x2, $y_pos1,
+                                $vert_line_x2 + 2, $y_pos1 + 2,
+                                $color
+                            ];
+                            push @temp_drawing_data, [
+                                LINE,
+                                $vert_line_x2, $y_pos2,
+                                $vert_line_x2 - 2, $y_pos2 - 2,
+                                $color
+                            ];
+                            push @temp_drawing_data, [
+                                LINE,
+                                $vert_line_x2, $y_pos2,
+                                $vert_line_x2 + 2, $y_pos2 - 2,
+                                $color
+                            ];
+
+                            @coords = (
+                                $vert_line_x2 - 2, $y_pos2,
+                                $vert_line_x2 + 2, $y_pos1,
+                            );
+                        }
+                        elsif ( $feature_shape eq 'box' ) {
+                            $vert_line_x1 = $label_side eq RIGHT
+                                ? $tick_start - $offset : $tick_stop + $offset;
+                            $vert_line_x2 = $label_side eq RIGHT 
+                                ? $tick_stop + $offset : $tick_start - $offset;
+
+                            @coords = (
+                                $vert_line_x2, $y_pos2,
+                                $vert_line_x1, $y_pos1, 
+                            );
+
+                            push @temp_drawing_data,
+                                [ RECTANGLE, @coords, $color ];
+                        }
+                        elsif ( $feature_shape eq 'dumbbell' ) {
+                            my $width = 4;
+                            unless ( $y_pos1 == $y_pos2 ) {
+                                $y_pos1 += 2;
+                                $y_pos2 -= 2;
+                            }
+
+                            push @temp_drawing_data, [
+                                ARC, 
+                                $vert_line_x2, $y_pos1,
+                                $width, $width, 0, 360, $color
+                            ];
+                            push @temp_drawing_data, [
+                                ARC, 
+                                $vert_line_x2, $y_pos2,
+                                $width, $width, 0, 360, $color
+                            ];
+
+                            @coords = (
+                                $vert_line_x2 - $width/2, $y_pos1, 
+                                $vert_line_x2 + $width/2, $y_pos2
+                            );
+                        }
+                        elsif ( $feature_shape eq 'filled-box' ) {
+                            my $width = 3;
+                            push @temp_drawing_data, [
+                                FILLED_RECT, 
+                                $vert_line_x2, $y_pos1,
+                                $vert_line_x2 + $width, $y_pos2,
+                                $color,
+                            ];
+                            push @temp_drawing_data, [
+                                RECTANGLE, 
+                                $vert_line_x2, $y_pos1,
+                                $vert_line_x2 + $width, $y_pos2,
+                                'black',
+                            ];
+                            @coords = (
+                                $vert_line_x2 - $width/2, $y_pos1, 
+                                $vert_line_x2 + $width/2, $y_pos2
+                            );
+                        }
+                        elsif ( 
+                            ( 
+                                $feature_shape eq 'in-triangle' &&
+                                $label_side eq LEFT
+                            )
+                            ||
+                            ( 
+                                $feature_shape eq 'out-triangle' &&
+                                $label_side eq RIGHT
+                            )
+                        ) {
+                            my $width = 3;
+                            push @temp_drawing_data, [
+                                LINE,
+                                $vert_line_x2, $y_pos1 - $width,
+                                $vert_line_x2, $y_pos1 + $width,
+                                $color
+                            ];
+                            push @temp_drawing_data, [
+                                LINE,
+                                $vert_line_x2, $y_pos1 - $width,
+                                $vert_line_x2 + $width, $y_pos1,
+                                $color
+                            ];
+                            push @temp_drawing_data, [
+                                LINE,
+                                $vert_line_x2, $y_pos1 + $width,
+                                $vert_line_x2 + $width, $y_pos1,
+                                $color
+                            ];
+                            push @temp_drawing_data, [
+                                FILL,
+                                $vert_line_x2 + 1, $y_pos1 + 1,
+                                $color
+                            ];
+
+                            @coords = (
+                                $vert_line_x2 - $width, $y_pos1 - $width,
+                                $vert_line_x2 + $width, $y_pos1 + $width,
+                            );
+                        }
+                        elsif (
+                            ( 
+                                $feature_shape eq 'in-triangle' &&
+                                $label_side eq RIGHT
+                            )
+                            ||
+                            ( 
+                                $feature_shape eq 'out-triangle' &&
+                                $label_side eq LEFT
+                            )
+                        ) {
+                            my $width = 3;
+                            push @temp_drawing_data, [
+                                LINE,
+                                $vert_line_x2 + $width, $y_pos1 - $width,
+                                $vert_line_x2 + $width, $y_pos1 + $width,
+                                $color
+                            ];
+                            push @temp_drawing_data, [
+                                LINE,
+                                $vert_line_x2 + $width, $y_pos1 - $width,
+                                $vert_line_x2, $y_pos1,
+                                $color
+                            ];
+                            push @temp_drawing_data, [
+                                LINE,
+                                $vert_line_x2, $y_pos1,
+                                $vert_line_x2 + $width, $y_pos1 + $width,
+                                $color
+                            ];
+                            push @temp_drawing_data, [
+                                FILL,
+                                $vert_line_x2 + $width - 1, $y_pos1 + 1,
+                                $color
+                            ];
+
+                            @coords = (
+                                $vert_line_x2 - $width, $y_pos1 - $width,
+                                $vert_line_x2 + $width, $y_pos1 + $width,
+                            );
+                        }
+                        
+                        push @map_area_data, {
+                            coords => \@coords,
+                            url    => 
+                                $feature_details_url.$feature->{'accession_id'},
+                            alt    => 
+                                'Feature Details: '.$feature->{'feature_name'}.
+                                ' [' . $feature->{'accession_id'} . ']',
+                        };
+                    }
+
+                    $drawn_glyphs{ $glyph_key } = \@coords;
                     push @drawing_data, @temp_drawing_data;
                 }
 
@@ -1152,7 +1176,6 @@ Lays out the map.
                     };
                 }
 
-                my ( $left_side, $right_side );
                 if ( 
                     $show_labels                 && (
                         $has_corr                || 
@@ -1163,36 +1186,6 @@ Lays out the map.
                         )
                     )
                 ) {
-#                    my $labels = 
-#                        $feature->{'midpoint'} < $midpoint && $is_flipped
-#                        ||
-#                        $feature->{'midpoint'} > $midpoint && $is_flipped
-#                        ||
-#                        $feature->{'midpoint'} < $midpoint && !$is_flipped
-#                        ? \@north_labels
-#                        : \@south_labels 
-#                    ;
-#
-#                    push @$labels, {
-#                        priority       => $feature->{'drawing_priority'},
-#                        text           => $label,
-#                        target         => $label_y,
-#                        color          => $color,
-#                        is_highlighted => $is_highlighted,
-#                        feature_coords => \@coords,
-#                        feature_mid_y  => $feature->{'mid_y'},
-#                        feature_type   => $feature->{'feature_type'},
-#                        has_corr       => $has_corr,
-#                        feature_id     => $feature->{'feature_id'},
-#                        start_position => $feature->{'start_position'},
-#                        shape          => $feature->{'shape'},
-#                        url            => 
-#                            $feature_details_url.$feature->{'accession_id'},
-#                        alt            => 
-#                            'Feature Details: ' . $feature->{'feature_name'}.
-#                            ' [' . $feature->{'accession_id'} . ']',
-#                    };
-
                     my $even_label_key = $is_highlighted ? 'highlights'
                         : $has_corr ? 'correspondences' : 'normal';
                     push @{ $even_labels{ $even_label_key } }, {
@@ -1216,84 +1209,26 @@ Lays out the map.
                     };
                 }
 
-                my $buffer  = 2;
-                $left_side  = $coords[0] - $buffer;
-                $right_side = $coords[2] + $buffer;
-                $leftmostf  = $left_side  unless defined $leftmostf;
-                $rightmostf = $right_side unless defined $rightmostf;
-                $leftmostf  = $left_side  if $left_side  < $leftmostf;
-                $rightmostf = $right_side if $right_side > $rightmostf;
+                my $buffer     = 2;
+                my $left_side  = $coords[0] - $buffer;
+                my $right_side = $coords[2] + $buffer;
+                $leftmostf     = $left_side  unless defined $leftmostf;
+                $rightmostf    = $right_side unless defined $rightmostf;
+                $leftmostf     = $left_side  if $left_side  < $leftmostf;
+                $rightmostf    = $right_side if $right_side > $rightmostf;
             }
 
             #
-            # We have to wait until all the features for the lane are 
-            # drawn before placing the labels.  Labels moving north
-            # must be reverse sorted by start position;  moving south,
-            # they should be in ascending order.
+            # Distribute the labels.
             #
-            my $buffer    =  2;  # the space between things
-#            my @accepted_labels; # the labels we keep
-#            if ( @north_labels || @south_labels ) {
-#                @north_labels =
-#                    map  { $_->[0] }
-#                    sort { 
-#                        $b->[1] <=> $a->[1] || 
-#                        $a->[2] <=> $b->[2] ||
-#                        $b->[3] <=> $a->[3] ||
-#                        $b->[4] <=> $a->[4]
-#                    }
-#                    map  { [ 
-#                        $_, 
-#                        $_->{'target'},
-#                        $_->{'priority'}, 
-#                        $_->{'is_highlighted'} || 0, 
-#                        $_->{'has_corr'}       || 0,
-#                    ] }
-#                    @north_labels;
-#
-#                @south_labels =
-#                    map  { $_->[0] }
-#                    sort { 
-#                        $a->[1] <=> $b->[1] || 
-#                        $b->[2] <=> $a->[2] ||
-#                        $b->[3] <=> $a->[3] ||
-#                        $b->[4] <=> $a->[4]
-#                    }
-#                    map  { [ 
-#                        $_, 
-#                        $_->{'target'},
-#                        $_->{'priority'}, 
-#                        $_->{'is_highlighted'} || 0, 
-#                        $_->{'has_corr'}       || 0,
-#                    ] }
-#                    @south_labels
-#                ;
-#
-#                my $used = label_distribution( 
-#                    labels     => \@north_labels, 
-#                    accepted   => \@accepted_labels,
-#                    used       => [],
-#                    buffer     => $buffer,
-#                    direction  => NORTH,
-#                    row_height => $reg_font->height,
-#                );
-#
-#                label_distribution( 
-#                    labels     => \@south_labels, 
-#                    accepted   => \@accepted_labels,
-#                    used       => $used,
-#                    buffer     => $buffer,
-#                    direction  => SOUTH,
-#                    row_height => $reg_font->height,
-#                );
-#            }
-
-            my $font_height = $reg_font->height;
+            my $buffer          = 2; # the space between things
+            my $font_height     = $reg_font->height;
             my $accepted_labels = even_label_distribution( 
                 labels          => \%even_labels,
                 map_height      => $pixel_height,
                 font_height     => $font_height,
                 start_y         => $base_y,
+                buffer          => $buffer,
             );
 
             my $label_offset = 15;
