@@ -1,6 +1,7 @@
 CVS
 \.swp$
 \.bak$
+\.tmp$
 .*.old
 ^Makefile$
 ^blib/
@@ -10,4 +11,6 @@ Build
 ^#
 (^|/)\.
 cmap_install.conf
+cmap.conf$
+Constants.pm$
 ^MANIFEST\.SKIP$
