@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.65 2003-10-16 22:10:07 kycl4rk Exp $
+# $Id: Data.pm,v 1.66 2003-10-22 00:22:30 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.65 $)[-1];
+$VERSION = (qw$Revision: 1.66 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -1538,8 +1538,7 @@ Returns the data for the main comparative map HTML form.
                              mt.map_units, 
                              s.accession_id as species_aid, 
                              s.common_name as species_common_name, 
-                             s.full_name as species_full_name,
-                             s.ncbi_taxon_id
+                             s.full_name as species_full_name
                     from     cmap_map_set ms, 
                              cmap_map_type mt, 
                              cmap_species s
@@ -1904,6 +1903,7 @@ out which maps have relationships.
     return \@sorted_map_sets;
 }
 
+
 # ----------------------------------------------------
 sub evidence_type_aid_to_id {
 
@@ -2096,8 +2096,12 @@ Given a feature acc. id, find out all the details on it.
         "Invalid feature accession ID ($feature_aid)"
     );
 
+    $feature->{'object_id'}  = $feature->{'feature_id'};
     $feature->{'attributes'} = $self->get_attributes(
         'cmap_feature', $feature->{'feature_id'}
+    );
+    $self->get_multiple_xrefs(
+        table_name => 'cmap_feature', objects => [ $feature ],
     );
 
     $feature->{'aliases'} = [
@@ -2116,22 +2120,6 @@ Given a feature acc. id, find out all the details on it.
         }
     ];
 
-    $feature->{'attributes'} = $db->selectall_arrayref(
-        qq[
-            select   attribute_id,
-                     object_id,
-                     display_order,
-                     attribute_name,
-                     attribute_value
-            from     cmap_attribute
-            where    object_id=?
-            and      table_name=?
-            order by display_order, attribute_name
-        ],
-        { Columns => {} },
-        ( $feature->{'feature_id'}, 'cmap_feature' )
-    );
-
     my $correspondences = $db->selectall_arrayref(
         $sql->feature_correspondence_sql,
         { Columns => {} },
@@ -2145,6 +2133,7 @@ Given a feature acc. id, find out all the details on it.
                          ce.score,
                          ce.remark,
                          et.rank,
+                         et.accession_id as evidence_type_aid,
                          et.evidence_type
                 from     cmap_correspondence_evidence ce,
                          cmap_evidence_type et
@@ -2171,57 +2160,6 @@ Given a feature acc. id, find out all the details on it.
                 )
             }
         ];
-    }
-
-    if ( $feature->{'dbxref_name'} || $feature->{'dbxref_url'} ) {
-        $feature->{'dbxrefs'} = [
-            { 
-                dbxref_name => $feature->{'dbxref_name'},
-                url         => $feature->{'dbxref_url'},
-            }
-        ]
-    }
-    else {
-        my $dbxrefs = $db->selectall_arrayref(
-            q[
-                select d.species_id,
-                       d.map_set_id,
-                       d.feature_type_id,
-                       d.url,
-                       d.dbxref_name
-                from   cmap_dbxref d
-                where  d.feature_type_id=?
-                and    (
-                    d.species_id=?
-                    or     
-                    d.map_set_id=?
-                )
-                or     (
-                    d.species_id=?
-                    and     
-                    d.map_set_id=?
-                )
-            ],
-            { Columns => {} },
-            ( 
-                $feature->{'feature_type_id'},
-                $feature->{'species_id'},
-                $feature->{'map_set_id'},
-                $feature->{'species_id'},
-                $feature->{'map_set_id'},
-            )
-        );
-
-        my ( @generic, @specific );
-        for my $dbxref ( @$dbxrefs ) {
-            if ( $dbxref->{'map_set_id'} == $feature->{'map_set_id'} ) {
-                push @specific, $dbxref;
-            }
-            else {
-                push @generic, $dbxref;
-            }
-        }
-        $feature->{'dbxrefs'} = @specific ? \@specific : \@generic;
     }
 
     $feature->{'correspondences'} = $correspondences;
@@ -2466,7 +2404,8 @@ Return data for a list of evidence type acc. IDs.
 
     my $attributes = $db->selectall_arrayref(
         q[
-            select   object_id, display_order, attribute_name, attribute_value
+            select   object_id, display_order, is_public, 
+                     attribute_name, attribute_value
             from     cmap_attribute
             where    table_name=?
             order by object_id, display_order, attribute_name
@@ -2482,9 +2421,15 @@ Return data for a list of evidence type acc. IDs.
 
     my $default_color = $self->config('connecting_line_color');
     for my $et ( @$evidence_types ) {
-        $et->{'attributes'} = $attr_lookup{ $et->{'evidence_type_id'} };
+        $et->{'object_id'}    = $et->{'evidence_type_id'};
         $et->{'line_color'} ||= $default_color;
+        $et->{'attributes'}   = $attr_lookup{ $et->{'evidence_type_id'} };
     }
+
+    $self->get_multiple_xrefs(
+        table_name => 'cmap_evidence_type',
+        objects    => $evidence_types,
+    );
 
     $evidence_types = [ 
         sort { lc $a->{'evidence_type'} cmp lc $b->{'evidence_type'} }
@@ -2527,7 +2472,8 @@ Return data for a list of feature type acc. IDs.
 
     my $attributes = $db->selectall_arrayref(
         q[
-            select   object_id, display_order, attribute_name, attribute_value
+            select   object_id, display_order, is_public, 
+                     attribute_name, attribute_value
             from     cmap_attribute
             where    table_name=?
             order by object_id, display_order, attribute_name
@@ -2542,8 +2488,14 @@ Return data for a list of feature type acc. IDs.
     }
 
     for my $ft ( @$feature_types ) {
+        $ft->{'object_id'}  = $ft->{'feature_type_id'};
         $ft->{'attributes'} = $attr_lookup{ $ft->{'feature_type_id'} };
     }
+
+    $self->get_multiple_xrefs(
+        table_name => 'cmap_feature_type',
+        objects    => $feature_types,
+    );
 
     my $default_color = $self->config('feature_color');
 
@@ -2590,6 +2542,9 @@ Returns the data for drawing comparative maps.
     $restriction .= qq[and s.accession_id='$species_aid' ]   if $species_aid;
     $restriction .= qq[and mt.accession_id='$map_type_aid' ] if $map_type_aid;
 
+    #
+    # Map sets
+    #
     my $map_set_sql = qq[
         select   ms.map_set_id, 
                  ms.accession_id as map_set_aid,
@@ -2602,8 +2557,7 @@ Returns the data for drawing comparative maps.
                  mt.map_units, 
                  s.accession_id as species_aid, 
                  s.common_name, 
-                 s.full_name,
-                 s.ncbi_taxon_id
+                 s.full_name
         from     cmap_map_set ms, 
                  cmap_map_type mt, 
                  cmap_species s
@@ -2611,7 +2565,11 @@ Returns the data for drawing comparative maps.
         and      ms.species_id=s.species_id
         $restriction
     ]; 
+    my $map_sets = $db->selectall_arrayref( $map_set_sql, { Columns => {} } );
 
+    #
+    # Maps in the map sets
+    #
     my $map_sql = qq[
         select   map.map_set_id,
                  map.accession_id as map_aid, 
@@ -2630,6 +2588,15 @@ Returns the data for drawing comparative maps.
                  map.map_name
     ];
 
+    my $maps = $db->selectall_arrayref( $map_sql, { Columns => {} } );
+    my %map_lookup;
+    for my $map ( @$maps ) {
+        push @{ $map_lookup{ $map->{'map_set_id'} } }, $map;
+    }
+
+    #
+    # Feature types on the maps
+    #
     my $ft_sql = qq[
         select   distinct 
                  ft.feature_type,
@@ -2648,16 +2615,19 @@ Returns the data for drawing comparative maps.
         $restriction
         and      f.feature_type_id=ft.feature_type_id
     ];
-
-    my $maps          = $db->selectall_arrayref( $map_sql, { Columns => {} } );
     my $feature_types = $db->selectall_arrayref( $ft_sql,  { Columns => {} } );
-    my $map_sets      = $db->selectall_arrayref( 
-        $map_set_sql, { Columns => {} } 
-    );
+    my %ft_lookup;
+    for my $ft ( @$feature_types ) {
+        push @{ $ft_lookup{ $ft->{'map_set_id'} } }, $ft;
+    }
 
+    #
+    # Attributes of the map sets
+    #
     my $attributes = $db->selectall_arrayref( 
         q[
-            select   object_id, display_order, attribute_name, attribute_value
+            select   object_id, display_order, is_public,
+                     attribute_name, attribute_value
             from     cmap_attribute
             where    table_name=?
             order by object_id, display_order, attribute_name
@@ -2665,22 +2635,14 @@ Returns the data for drawing comparative maps.
         { Columns => {} },
         ( 'cmap_map_set' )
     );
-
-    my %map_lookup;
-    for my $map ( @$maps ) {
-        push @{ $map_lookup{ $map->{'map_set_id'} } }, $map;
-    }
-
-    my %ft_lookup;
-    for my $ft ( @$feature_types ) {
-        push @{ $ft_lookup{ $ft->{'map_set_id'} } }, $ft;
-    }
-
     my %attr_lookup;
     for my $attr ( @$attributes ) {
         push @{ $attr_lookup{ $attr->{'object_id'} } }, $attr;
     }
 
+    #
+    # Make sure we have something
+    #
     if ( @map_set_aids && scalar @$map_sets == 0 ) {
         return $self->error(
             'No map sets match the following accession IDs: '.
@@ -2688,7 +2650,11 @@ Returns the data for drawing comparative maps.
         );
     }
 
+    #
+    # Sort it all out
+    #
     for my $map_set ( @$map_sets ) {
+        $map_set->{'object_id'} = $map_set->{'map_set_id'};
         $map_set->{'feature_types'} = 
             $ft_lookup{ $map_set->{'map_set_id'} };
         next unless $map_set->{'can_be_reference_map'};
@@ -2696,6 +2662,14 @@ Returns the data for drawing comparative maps.
         $map_set->{'attributes'} = $attr_lookup{ $map_set->{'map_set_id'} };
     }
 
+    $self->get_multiple_xrefs(
+        table_name => 'cmap_map_set',
+        objects    => $map_sets,
+    );
+
+    #
+    # Grab species and map type info for form restriction controls.
+    #
     my $species = $db->selectall_arrayref(
         q[
             select   s.accession_id as species_aid,
@@ -2860,8 +2834,15 @@ Returns the detail info for a map.
         unless defined $map_start and $map_start =~ NUMBER_RE;
     $map_stop  = $reference_map->{'stop_position'} 
         unless defined $map_stop and $map_stop =~ NUMBER_RE;
-    $reference_map->{'start'} = $map_start;
-    $reference_map->{'stop'}  = $map_stop;
+    $reference_map->{'start'}       = $map_start;
+    $reference_map->{'stop'}        = $map_stop;
+    $reference_map->{'object_id'}   = $map_id;
+    $reference_map->{'attributes'}  = $self->get_attributes(
+        'cmap_map', $map_id
+    );
+    $self->get_multiple_xrefs(
+        table_name => 'cmap_map', objects => [ $reference_map ]
+    );
 
     #
     # Get the reference map features.
@@ -3084,11 +3065,12 @@ Returns data on map types.
 
     $sql .= 'order by display_order, map_type';
 
-    my $map_type = $db->selectall_arrayref( $sql, { Columns => {} } );
+    my $map_types = $db->selectall_arrayref( $sql, { Columns => {} } );
 
     my $attributes = $db->selectall_arrayref(
         q[
-            select   object_id, display_order, attribute_name, attribute_value
+            select   object_id, display_order, is_public,
+                     attribute_name, attribute_value
             from     cmap_attribute
             where    table_name=?
             order by object_id, display_order, attribute_name
@@ -3102,14 +3084,20 @@ Returns data on map types.
         push @{ $attr_lookup{ $attr->{'object_id'} } }, $attr;
     }
 
-    for my $mt ( @$map_type ) {
-        $mt->{'width'} ||= DEFAULT->{'map_width'};
-        $mt->{'shape'} ||= DEFAULT->{'map_shape'};
-        $mt->{'color'} ||= DEFAULT->{'map_color'};
+    for my $mt ( @$map_types ) {
+        $mt->{'object_id'}  = $mt->{'map_type_id'};
+        $mt->{'width'}    ||= DEFAULT->{'map_width'};
+        $mt->{'shape'}    ||= DEFAULT->{'map_shape'};
+        $mt->{'color'}    ||= DEFAULT->{'map_color'};
         $mt->{'attributes'} = $attr_lookup{ $mt->{'map_type_id'} };
     }
 
-    return $map_type;
+    $self->get_multiple_xrefs(
+        table_name => 'cmap_map_type',
+        objects    => $map_types,
+    );
+
+    return $map_types;
 }
 
 # ----------------------------------------------------
@@ -3132,8 +3120,7 @@ Returns data on species.
                  s.accession_id as species_aid,
                  s.common_name,
                  s.full_name,
-                 s.display_order,
-                 s.ncbi_taxon_id
+                 s.display_order
         from     cmap_species s 
     ];
 
@@ -3149,7 +3136,8 @@ Returns data on species.
 
     my $attributes = $db->selectall_arrayref(
         q[
-            select   object_id, display_order, attribute_name, attribute_value
+            select   object_id, display_order, is_public, 
+                     attribute_name, attribute_value
             from     cmap_attribute
             where    table_name=?
             order by object_id, display_order, attribute_name
@@ -3164,8 +3152,14 @@ Returns data on species.
     }
 
     for my $s ( @$species ) {
+        $s->{'object_id'}  = $s->{'species_id'};
         $s->{'attributes'} = $attr_lookup{ $s->{'species_id'} };
     }
+
+    $self->get_multiple_xrefs(
+        table_name => 'cmap_species',
+        objects    => $species,
+    );
 
     return $species;
 }
