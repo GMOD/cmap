@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.67 2004-05-03 19:32:36 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.68 2004-05-06 14:05:14 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Benchmark;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.67 $)[-1];
+$VERSION = (qw$Revision: 1.68 $)[-1];
 
 #
 # Get command-line options
@@ -1908,28 +1908,48 @@ sub import_tab_data {
     my $term = $self->term;
     my $file = $self->file;
 
+    ###Old file handling
     #
     # Make sure we have a file to parse.
     #
-    if ( $file ) {
-        print "OK to use '$file'? [Y/n] ";
-        chomp( my $answer = <STDIN> );
-        $file = '' if $answer =~ m/^[Nn]/;
-    }
-
-    while ( ! -r $file || ! -f _ ) {
-        print "Unable to read '$file' or not a regular file.\n" if $file;
-        $file =  $term->readline( 'Where is the file? [q to quit] ');
-        $file =~ s/^\s*|\s*$//g;
-        return if $file =~ m/^[Qq]/;
-    }
-
+    #if ( $file ) {
+    #    print "OK to use '$file'? [Y/n] ";
+    #    chomp( my $answer = <STDIN> );
+    #    $file = '' if $answer =~ m/^[Nn]/;
+    #}
+    #
+    #while ( ! -r $file || ! -f _ ) {
+    #    print "Unable to read '$file' or not a regular file.\n" if $file;
+    #    $file =  $term->readline( 'Where is the file? [q to quit] ');
+    #    $file =~ s/^\s*|\s*$//g;
+    #    return if $file =~ m/^[Qq]/;
+    #}
+    #
     #
     # Open the file.  If it's good, remember it.
     #
-    my $fh = IO::File->new( $file ) or die "Can't read $file: $!";
-    $term->addhistory($file); 
-    $self->file( $file );
+    #my $fh = IO::File->new( $file ) or die "Can't read $file: $!";
+    #$term->addhistory($file); 
+    #$self->file( $file );
+
+    ###New File Handling
+    my $file_str =  $term->readline( 
+     'Where is the files? \nSeparate Multiple files with a space. [q to quit] '
+     );
+    return if $file_str =~ m/^[Qq]$/;
+    my @file_strs    =  split(/\s+/,$file_str);
+    my @files=();
+    foreach my $str (@file_strs){
+	push @files,glob($str);
+    }
+    foreach (my $i=0;$i<=$#files;$i++){
+	unless( -r $files[$i] and -f $files[$i]){
+	    print "Unable to read $files[$i]\n";
+	    splice(@files,$i,1);
+	    $i--;
+	}
+    }
+
 
     #
     # Get the map type.
@@ -1993,18 +2013,23 @@ sub import_tab_data {
     print "Remove data in map set not in import file? [y/N] ";
     chomp( my $overwrite = <STDIN> );
     $overwrite = ( $overwrite =~ /^[Yy]/ ) ? 1 : 0;
+    
+    print "Check for duplicate data (slow)? [y/N] ";
+    chomp( my $allow_update = <STDIN> );
+    $allow_update = ( $allow_update =~ /^[Yy]/ ) ? 1 : 0;
 
     #
     # Confirm decisions.
     #
     print join("\n",
         'OK to import?',
-        '  Data source : ' . $self->data_source, 
-        "  File        : $file",
-        "  Species     : $species",
-        "  Map Type    : $map_type",
-        "  Map Study   : $map_set_name",
-        "  Overwrite   : " . ( $overwrite ? "Yes" : "No" ),
+        '  Data source     : ' . $self->data_source, 
+	"  File            : ".join(", ",@files),
+        "  Species         : $species",
+        "  Map Type        : $map_type",
+        "  Map Study       : $map_set_name",
+        "  Overwrite       : " . ( $overwrite ? "Yes" : "No" ),
+        "  Update Features : " . ( $allow_update ? "Yes" : "No" ),
         "[Y/n] "
     );
     chomp( my $answer = <STDIN> );
@@ -2014,17 +2039,22 @@ sub import_tab_data {
         data_source => $self->data_source,
     );
 
-my $time_start = new Benchmark;
-    $importer->import_tab(
-        map_set_id => $map_set_id,
-        fh         => $fh,
-        map_type_aid   => $map_type_aid,
-        log_fh     => $self->log_fh,
-        overwrite  => $overwrite,
-    ) or do { 
-        print "Error: ", $importer->error, "\n"; 
-        return; 
-    };
+    my $time_start = new Benchmark;
+    foreach my $file (@files){
+	my $fh = IO::File->new( $file ) or die "Can't read $file: $!";
+	$importer->import_tab
+	    (
+	     map_set_id => $map_set_id,
+	     fh         => $fh,
+	     map_type_aid   => $map_type_aid,
+	     log_fh     => $self->log_fh,
+	     overwrite  => $overwrite,
+	     allow_update => $allow_update,
+	     ) or do { 
+		 print "Error: ", $importer->error, "\n"; 
+		 return; 
+	     };
+    } 
 
 my $time_end = new Benchmark;
 print STDERR "import time: ".timestr(timediff($time_end,$time_start))."\n";
