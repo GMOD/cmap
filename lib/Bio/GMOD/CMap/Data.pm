@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.25 2003-01-08 15:37:57 kycl4rk Exp $
+# $Id: Data.pm,v 1.26 2003-01-08 21:09:29 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.25 $)[-1];
+$VERSION = (qw$Revision: 1.26 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -92,14 +92,13 @@ Organizes the data for drawing comparative maps.
 =cut
     my ( $self, %args )  = @_;
     my $slots            = $args{'slots'};
-#    warn "slots = ", Dumper( $slots ), "\n";
     my $include_features = $args{'include_features'} || '';
     my @slot_nos         = keys %$slots;
     my @pos              = sort { $a <=> $b } grep { $_ >= 0 } @slot_nos;
     my @neg              = sort { $b <=> $a } grep { $_ <  0 } @slot_nos; 
     my @ordered_slot_nos = ( @pos, @neg );
 
-    my ( $data, %correspondences );
+    my ( $data, %correspondences, %feature_types );
     for my $slot_no ( @ordered_slot_nos ) {
         my $cur_map = $slots->{ $slot_no };
         my $ref_map = 
@@ -109,8 +108,9 @@ Organizes the data for drawing comparative maps.
         ;
 
         $data->{'slots'}{ $slot_no } = $self->map_data( 
-            map              => \$cur_map,         # pass by
-            correspondences  => \%correspondences, # reference
+            map              => \$cur_map,         # pass
+            correspondences  => \%correspondences, # by
+            feature_types    => \%feature_types,   # reference
             reference_map    => $ref_map,
             slot_no          => $slot_no,
             include_features => $include_features
@@ -118,8 +118,8 @@ Organizes the data for drawing comparative maps.
     }
 
     $data->{'correspondences'} = \%correspondences;
+    $data->{'feature_types'}   = \%feature_types;
 
-#    warn "corr = ", Dumper( $data->{'correspondences'} ), "\n";
     return $data;
 }
 
@@ -145,6 +145,7 @@ Returns the data for drawing comparative maps.
     my $map              = ${ $args{'map'} }; # hashref
     my $reference_map    = $args{'reference_map'};
     my $correspondences  = $args{'correspondences'};
+    my $feature_types    = $args{'feature_types'};
 
     #
     # Sort out the current map.
@@ -391,6 +392,15 @@ Returns the data for drawing comparative maps.
             {},
             ( $map_id, $map_start, $map_stop )
         );
+
+        my $map_feature_types = $db->selectall_arrayref(
+            $sql->cmap_data_feature_types_sql,
+            { Columns => {} },
+            ( $map_id, $map_start, $map_stop )
+        );
+
+        $feature_types->{ $_->{'feature_type_id'} } = $_ 
+            for @$map_feature_types;
 
         my $map_correspondences;
         if ( $ref_map_id ) {

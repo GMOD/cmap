@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.13 2003-01-07 01:57:54 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.14 2003-01-08 21:09:30 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.13 $)[-1];
+$VERSION = (qw$Revision: 1.14 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
@@ -415,7 +415,7 @@ Lays out the image and writes it to the file system, set the "image_name."
 =cut
     my $self = shift;
 
-    my ( $min_y, $max_y );
+    my ( $min_y, $max_y, $min_x, $max_x );
     for my $slot_no ( $self->slot_numbers ) {
         my $data      = $self->slot_data( $slot_no );
         my $map       =  Bio::GMOD::CMap::Drawer::Map->new( 
@@ -425,11 +425,17 @@ Lays out the image and writes it to the file system, set the "image_name."
             slot_no   => $slot_no,
             maps      => $data,
         );
+
         my @bounds = $map->layout;
+        $min_x     = $bounds[0] unless defined $min_x;
         $min_y     = $bounds[1] unless defined $min_y;
-        $min_y     = $bounds[1] if $bounds[1] < $min_y;
+        $max_x     = $bounds[2] unless defined $max_x;
         $max_y     = $bounds[3] unless defined $max_y;
+        $min_x     = $bounds[0] if $bounds[0] < $min_x;
+        $min_y     = $bounds[1] if $bounds[1] < $min_y;
+        $max_x     = $bounds[2] if $bounds[2] > $max_x;
         $max_y     = $bounds[3] if $bounds[3] > $max_y;
+
         $self->slot_sides( 
             slot_no => $slot_no,
             left    => $bounds[0], 
@@ -454,6 +460,114 @@ Lays out the image and writes it to the file system, set the "image_name."
         $self->add_drawing( FILLED_RECT, @slot_bounds, $bg_color,     -1 );
         $self->add_drawing( RECTANGLE,   @slot_bounds, $border_color, -1 );
     }
+
+    #
+    # Add the legend for the feature types.
+    #
+    if ( my @feature_types = $self->feature_types_seen ) {
+        $max_y    += 20;
+        my @bounds = ( $min_x, $max_y - 10 );
+        my $font   = $self->regular_font;
+        my $x      = $min_x + 20;
+
+        $self->add_drawing( STRING, $font, $x, $max_y, 'Legend:', 'black' );
+        $max_y += $font->height + 5;
+
+        for my $ft ( @feature_types ) {
+            my $color     = $ft->{'color'} || $self->config('feature_color');
+            my $label     = $ft->{'feature_type'};
+            my $feature_x = $x;
+            my $feature_y = $max_y;
+            my $label_x   = $feature_x + 15;
+            my $label_y;
+    
+            if ( $ft->{'shape'} eq 'line' ) {
+                $self->add_drawing(
+                    LINE, 
+                    $feature_x, $feature_y, $feature_x + 10, $feature_y, 
+                    $color
+                );
+                $label_y = $feature_y;
+            }
+            elsif ( $ft->{'shape'} eq 'span' ) {
+                $self->add_drawing(
+                    LINE, 
+                    $feature_x, $feature_y, $feature_x + 5, $feature_y, 
+                    $color
+                );
+                $self->add_drawing(
+                    LINE, 
+                    $feature_x, $feature_y, $feature_x, $feature_y + 10, 
+                    $color
+                );
+                $self->add_drawing(
+                    LINE, 
+                    $feature_x, $feature_y + 10, 
+                    $feature_x + 5, $feature_y + 10, 
+                    $color
+                );
+                $label_y = $feature_y + 5;
+            }
+            elsif ( $ft->{'shape'} eq 'box' ) {
+                $self->add_drawing(
+                    RECTANGLE, 
+                    $feature_x, $feature_y, $feature_x + 10, $feature_y + 10, 
+                    $color
+                );
+                $label_y = $feature_y + 5;
+            }
+            else { # dumbbell
+                my $width = 3;
+                $self->add_drawing(
+                    ARC, 
+                    $feature_x + 5, $feature_y, $width, $width, 0, 360, $color
+                );
+                $self->add_drawing(
+                    LINE, 
+                    $feature_x + 5, $feature_y, $feature_x + 5, $feature_y + 10,
+                    $color
+                );
+                $self->add_drawing(
+                    ARC, 
+                    $feature_x + 5, $feature_y + 10, $width, $width, 0, 360, 
+                    $color
+                );
+                $label_y = $feature_y + 5;
+            }
+
+            $self->add_drawing( 
+                STRING, $font, $label_x, $label_y - $font->height/2, 
+                $label, $color 
+            );
+
+            my $furthest_x = $label_x + $font->width * length($label) + 5;
+            my $furthest_y = $feature_y > $label_y ? $feature_y : $label_y;
+            $max_x         = $furthest_x if $furthest_x > $max_x;
+            $max_y         = $furthest_y + 10;
+        }
+
+        my $watermark = 'CMAP v'.$Bio::GMOD::CMap::VERSION;
+        my $wm_x      = $max_x - $font->width * length( $watermark ) - 5;
+        my $wm_y      = $max_y;
+        $self->add_drawing( STRING, $font, $wm_x, $wm_y, $watermark, 'grey' );
+        $self->add_map_area(
+            coords => [ $wm_x, $wm_y + $font->height, 
+                        $wm_x + $font->width * length( $watermark ), $wm_y ],
+            url    => CMAP_URL,
+            alt    => 'GMOD-CMap website',
+        );
+
+        $max_y += $font->height + 5;
+
+        push @bounds, ( $max_x, $max_y );
+
+        $self->add_drawing( FILLED_RECT, @bounds, $bg_color,     -1 );
+        $self->add_drawing( RECTANGLE,   @bounds, $border_color, -1 );
+    }
+
+    #
+    # Move all the coordinates to positive numbers.
+    #
     $self->adjust_frame;
 
     my @data   = $self->drawing_data;
@@ -533,6 +647,26 @@ Returns whether or not a feature has a correspondence.
     my $self       = shift;
     my $feature_id = shift or return;
     return defined $self->{'data'}{'correspondences'}{ $feature_id };
+}
+
+# ----------------------------------------------------
+sub feature_types_seen {
+
+=pod
+
+=head2 feature_types_seen
+
+Returns all the feature types seen on the maps.
+
+=cut
+    my $self = shift;
+    unless ( $self->{'feature_types'} ) {
+        $self->{'feature_types'} = [ 
+            values %{ $self->{'data'}{'feature_types'} || {} }
+        ];
+    }
+
+    return map { $_->{'seen'} ? $_ : () } @{ $self->{'feature_types'} || [] };
 }
 
 # ----------------------------------------------------
@@ -1140,6 +1274,20 @@ Returns the reference slot number for a given slot number.
 
     my $slot_data = $self->slot_data;
     return defined $slot_data->{ $ref_slot_no } ? $ref_slot_no : undef;
+}
+
+# ----------------------------------------------------
+sub register_feature_type {
+
+=pod
+
+=head2 register_feature_type
+
+Remembers a feature type.
+
+=cut
+    my ( $self, $feature_type_id ) = @_;
+    $self->{'data'}{'feature_types'}{ $feature_type_id }{'seen'} = 1;
 }
 
 # ----------------------------------------------------

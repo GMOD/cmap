@@ -1,18 +1,19 @@
 package Bio::GMOD::CMap::Constants;
 
-# $Id: Constants.pm,v 1.14 2002-12-06 01:43:39 kycl4rk Exp $
+# $Id: Constants.pm,v 1.15 2003-01-08 21:09:29 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.14 $)[-1];
+$VERSION = (qw$Revision: 1.15 $)[-1];
 
 @EXPORT = qw[ 
     ARC
     COLORS
     CONFIG_FILE
+    CMAP_URL
     DEFAULT
     FILL
     FILLED_RECT
@@ -182,6 +183,11 @@ use constant COLORS      => {
 # The location of the configuration file.
 #
 use constant CONFIG_FILE => '/usr/local/apache/conf/cmap.conf';
+
+#
+# The URL of the CMAP website.
+#
+use constant CMAP_URL => 'http://www.gmod.org/cmap';
 
 #
 # This group represents strings used for the GD package for drawing.
