@@ -1,9 +1,9 @@
-# $Id: Build.PL,v 1.34 2004-03-12 22:08:55 kycl4rk Exp $
+# $Id: Build.PL,v 1.35 2004-05-12 17:50:26 mwz444 Exp $
 
 use strict;
 
 eval { require Module::Build };
-if ( $@ =~ /Can't locate/ ) {
+if ( $@ =~ /Can't locate/ ) { #'
     print qq[Please install "Module::Build" before continuing.\n];
     exit(0);
 }
@@ -28,7 +28,7 @@ my %ARGS = (
     },
     CONF        => {
         desc    => 'Location for the cmap.conf configuration file',
-        default => 'conf',
+        default => catdir('conf','cmap.conf'),
     },
     CGIBIN      => {
         desc    => 'Location for CGI executables',
@@ -288,16 +288,26 @@ print INDEX join("\n",
 );
 close INDEX; 
 
+my ( $install, $installed_cmap_conf );
+#
+# Make the cmap.conf dir for the conf files
+#
+$install .= qq[
+    unless ( -d '$OPTIONS{CONF}/cmap.conf' ) {
+        mkdir '$OPTIONS{CONF}/cmap.conf' or warn 
+            "Can't create image cache dir '$OPTIONS{CONF}': \$!\\n";
+    }
+];
+
 #
 # Make the text for copying the templates, CGI, and htdocs.
 #
-my ( $install, $installed_cmap_conf );
 
 for my $opt ( 
-    [ 'conf',      'CONF'      ],
-    [ 'htdocs',    'HTDOCS'    ],
-    [ 'templates', 'TEMPLATES' ],
-    [ 'cgi-bin',   'CGIBIN'    ],
+    [ 'conf/cmap.conf', 'CONF'      ],
+    [ 'htdocs',         'HTDOCS'    ],
+    [ 'templates',      'TEMPLATES' ],
+    [ 'cgi-bin',        'CGIBIN'    ],
 ) {
     my ( $dir, $opt_name ) = @$opt;
 
@@ -324,7 +334,7 @@ for my $opt (
 
         my $overwrite_ok = 1;
 
-        if ( $opt_name eq 'CONF' && $file =~ /cmap\.conf$/ ) {
+        if ( $opt_name eq 'CONF' && $file =~ /\.conf$/ ) {
             $installed_cmap_conf = $to;
             $overwrite_ok        = 0;
         }
@@ -420,7 +430,7 @@ my $builder      =  Module::Build->subclass(
     },
     PL_files         => {
         'cgi-bin/cmap.PL'    => 'cgi-bin/cmap',
-        'conf/cmap.conf.PL'  => 'conf/cmap.conf',
+        'conf/cmap.conf/global.conf.PL'  => 'conf/cmap.conf/global.conf',
         'lib/Bio/GMOD/CMap/Constants.pm.PL' => 'lib/Bio/GMOD/CMap/Constants.pm',
     },
 );
