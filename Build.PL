@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.9 2003-09-24 21:06:25 kycl4rk Exp $
+# $Id: Build.PL,v 1.10 2003-09-24 21:24:37 kycl4rk Exp $
 
 use strict;
 
@@ -212,17 +212,10 @@ my $builder           =  Module::Build->subclass(
     },
 );
 
-if ( my $failures = $builder->prereq_failures ) {
-    while ( my ( $type, $list ) = each %$failures ) {
-        while ( my ( $name, $hash ) = each %$list ) {
-            print "Failed to find module '$name': $hash->{'message'}\n";
-        }
-    }
-}
-
 $builder->add_to_cleanup( 
     INSTALL_CONF, 'conf/cmap.conf', 'lib/Bio/GMOD/CMap/Constants.pm'
 );
+
 $builder->create_build_script;
 
 print qq[Now run "./Build" and "./Build install"\n];
