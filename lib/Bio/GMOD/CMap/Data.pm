@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.98.2.11 2004-06-17 20:13:05 kycl4rk Exp $
+# $Id: Data.pm,v 1.98.2.12 2004-06-17 21:16:40 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,9 +25,10 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.98.2.11 $)[-1];
+$VERSION = (qw$Revision: 1.98.2.12 $)[-1];
 
 use Data::Dumper;
+use Date::Format;
 use Regexp::Common;
 use Time::ParseDate;
 use Bio::GMOD::CMap::Constants;
@@ -2980,6 +2981,7 @@ Returns the data for drawing comparative maps.
                  ms.short_name,
                  ms.map_type_id, 
                  ms.species_id, 
+                 ms.published_on, 
                  ms.can_be_reference_map,
                  mt.map_type, 
                  mt.accession_id as map_type_aid, 
@@ -3025,33 +3027,6 @@ Returns the data for drawing comparative maps.
         push @{ $map_lookup{ $map->{'map_set_id'} } }, $map;
     }
 
-#    #
-#    # Feature types on the maps
-#    #
-#    my $ft_sql = qq[
-#        select   distinct 
-#                 ft.feature_type,
-#                 ft.accession_id as feature_type_aid, 
-#                 map.map_set_id
-#        from     cmap_feature f,
-#                 cmap_feature_type ft,
-#                 cmap_map map,
-#                 cmap_map_set ms, 
-#                 cmap_map_type mt, 
-#                 cmap_species s
-#        where    f.map_id=map.map_id
-#        and      map.map_set_id=ms.map_set_id
-#        and      ms.map_type_id=mt.map_type_id
-#        and      ms.species_id=s.species_id
-#        $restriction
-#        and      f.feature_type_id=ft.feature_type_id
-#    ];
-#    my $feature_types = $db->selectall_arrayref( $ft_sql,  { Columns => {} } );
-#    my %ft_lookup;
-#    for my $ft ( @$feature_types ) {
-#        push @{ $ft_lookup{ $ft->{'map_set_id'} } }, $ft;
-#    }
-
     #
     # Attributes of the map sets
     #
@@ -3085,12 +3060,22 @@ Returns the data for drawing comparative maps.
     # Sort it all out
     #
     for my $map_set ( @$map_sets ) {
-        $map_set->{'object_id'}     = $map_set->{'map_set_id'};
-        $map_set->{'attributes'}    = $attr_lookup{ $map_set->{'map_set_id'} };
-#        $map_set->{'feature_types'} = 
-#            $ft_lookup{ $map_set->{'map_set_id'} }  || [];
-        $map_set->{'maps'}          = 
+        $map_set->{'object_id'}  = $map_set->{'map_set_id'};
+        $map_set->{'attributes'} = $attr_lookup{ $map_set->{'map_set_id'} };
+        $map_set->{'maps'}       = 
             $map_lookup{ $map_set->{'map_set_id'} } || [];
+
+        if ( $map_set->{'published_on'} ) {
+            if ( my $pubdate = 
+                parsedate( $map_set->{'published_on'}, VALIDATE=>1)
+            ) {
+                my @time = localtime( $pubdate );
+                $map_set->{'published_on'} = strftime("%B %d, %Y", @time );
+            }
+            else {
+                $map_set->{'published_on'} = '';
+            }
+        }
     }
 
     $self->get_multiple_xrefs(
