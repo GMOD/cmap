@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.27 2003-03-31 19:22:18 kycl4rk Exp $
+# $Id: Import.pm,v 1.28 2003-03-31 20:06:32 kycl4rk Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.27 $)[-1];
+$VERSION  = (qw$Revision: 1.28 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -366,7 +366,8 @@ have for the map set).
             );
 
             $self->Print("Created map $map_name ($map_id).\n");
-            $maps{ uc $map_name }{'map_id'} = $map_id;
+            $maps{ uc $map_name }{'map_id'}  = $map_id;
+            $maps{ uc $map_name }{'touched'} = 1;
         }
 
         $map_info{ $map_id }{'map_id'}         ||= $map_id;
