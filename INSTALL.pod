@@ -4,7 +4,7 @@ CMap Install
 
 =head1 VERSION
 
-$Revision: 1.4 $
+$Revision: 1.5 $
 
 =head1 QUICK START
 
@@ -560,7 +560,7 @@ following lines:
 
   # clear out old CMap images
   # added by Joe User <juser@foo.com>
-  0 0 * * *  find /usr/local/apache/cmap/tmp/ -type f -mtime +1 -exec rm -rf {} \;
+  0 0 * * *  find /usr/local/apache/htdocs/cmap/tmp/ -type f -mtime +1 -exec rm -rf {} \;
 
 Of course, you'll want to change the "Joe User..." part to reflect
 your own name and e-mail address.  Also, if you choose to store your
