@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.164 2004-10-25 15:33:04 mwz444 Exp $
+# $Id: Data.pm,v 1.165 2004-10-26 01:57:06 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.164 $)[-1];
+$VERSION = (qw$Revision: 1.165 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -5143,6 +5143,7 @@ original start and stop.
 	  ];
 
     if ($slots) {
+#print S#TDERR Dumper($slots)."\n";
         my $sql_suffix;
         foreach my $slot_no ( sort orderOutFromZero keys %{$slots} ) {
             my $from  = '';
@@ -5165,17 +5166,45 @@ original start and stop.
                             $from .= q[,
                               cmap_correspondence_lookup cl
                               ];
-                            $where .= q[
-                                 and m.map_id=cl.map_id1
-                              ] . "and cl.map_id2 in ("
-                              . join(
-                                ",",
-                                keys(%{
-                                    $self->{'slot_info'}
-                                      { $slot_no + $slot_modifier }
-                                  })
-                              )
-                              . ")";
+                            $where .= q[ and m.map_id=cl.map_id1 ];
+
+                            ### Add the information about the adjoinint slot
+                            ### including info about the start and end.
+                            $where .=  "and ("; 
+                            my @ref_map_strs=();
+                            my $ref_slot_id = $slot_no + $slot_modifier;
+                            my $slot_info = $self->{'slot_info'}{$ref_slot_id};
+                            foreach my $m_id (keys(
+                                %{$self->{'slot_info'}{$ref_slot_id}})
+                            ){
+                                my $r_m_str = " (cl.map_id2 = $m_id ";
+                                if (defined($slot_info->{$m_id}->[0]) and defined($slot_info->{$m_id}->[1])){
+                                    $r_m_str .= 
+                                        " and (( cl.start_position2>=".$slot_info->{$m_id}->[0]
+                                      . " and cl.start_position2<=".$slot_info->{$m_id}->[1]
+                                      . " ) or ( cl.stop_position2 is not null and "
+                                      . "  cl.start_position2<=".$slot_info->{$m_id}->[0]
+                                      . " and cl.stop_position2>=".$slot_info->{$m_id}->[0]
+                                      . " ))) ";
+                                }
+                                elsif (defined($slot_info->{$m_id}->[0])){
+                                    $r_m_str .=
+                                        " and (( cl.start_position2>=".$slot_info->{$m_id}->[0]
+                                      . " ) or ( cl.stop_position2 is not null "
+                                      . " and cl.stop_position2>=".$slot_info->{$m_id}->[0]
+                                      . " ))) ";
+                                }
+                                elsif (defined($slot_info->{$m_id}->[1])){
+                                    $r_m_str .=
+                                        " and cl.start_position2<=".$slot_info->{$m_id}->[1].") "; 
+                                }
+                                else{
+                                    $r_m_str .= ") ";
+                                } 
+
+                                push @ref_map_strs,$r_m_str; 
+                            }
+                            $where .= join(' or ',@ref_map_strs).") ";
                         }
                         else{
                             ###Don't use the expanded cmap_corr_lookup
