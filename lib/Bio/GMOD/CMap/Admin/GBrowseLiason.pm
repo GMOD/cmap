@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::GBrowseLiason;
 
 # vim: set ft=perl:
 
-# $Id: GBrowseLiason.pm,v 1.4 2005-02-18 19:54:17 mwz444 Exp $
+# $Id: GBrowseLiason.pm,v 1.5 2005-02-18 22:36:41 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ GBrowse integration at the db level.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -187,6 +187,12 @@ sub copy_data_into_gbrowse {
         @$feature_type_aids = keys(%$feature_type_data);
     }
 
+    # get the feature type aid that is used for the "Map feature" 
+    # and make sure that it is not in the list of feature types
+    my $gbrowse_map_ft_aid = $self->config_data('gbrowse_default_map_feature_type_aid'); 
+
+    @$feature_type_aids = grep !/$gbrowse_map_ft_aid/, @$feature_type_aids;
+
     # Remove feature types that don't have the proper attributes
     # specified in the config file.
     for (my $i=0;$i<=$#{$feature_type_aids}; $i++){
@@ -225,43 +231,15 @@ sub copy_data_into_gbrowse {
 
 
     # Make sure there are all the required ftypes and get their ftypeids
-
-    my $sth = $db->prepare( q[
-        select  ftypeid 
-        from    ftype
-        where   fmethod=?]
-     );
-    my $insert_type_sth = $db->prepare( q[
-        insert into ftype 
-        (fmethod,fsource) 
-        values (?,'.')
-    ]);
-
     my %ftypeid_lookup;
-    foreach my $ftype (values(%ftype_lookup)){
-        next if ($ftypeid_lookup{$ftype});
-        $sth->execute($ftype);
-        my $ftype_result = $sth->fetchrow_hashref;
-        if ($ftype_result and %$ftype_result) {
-            $ftypeid_lookup{$ftype}=$ftype_result->{'ftypeid'};
-        }
-        else{
-            $insert_type_sth->execute($ftype);
-            $sth->execute($ftype);
-            my $ftype_result = $sth->fetchrow_hashref;
-            if ($ftype_result and %$ftype_result) {
-                $ftypeid_lookup{$ftype}=$ftype_result->{'ftypeid'};
-            }
-            else{
-                die "Something terrible has happened and the ftype, $ftype did not insert\n";
-            }
-        }
-    }
+    $self->find_or_create_ftype(\%ftypeid_lookup,values(%ftype_lookup));
+
+    
 
     # Get the data from CMap that is to be copied.
     # We will make the sql in a way that we don't get duplicate data.
 
-    my $sql_str = q[
+    my $feature_sql = q[
         select  m.map_name,
                 f.feature_id,
                 f.feature_type_accession as feature_type_aid,
@@ -275,6 +253,7 @@ sub copy_data_into_gbrowse {
             and fdata.fstart = f.start_position
             and fdata.fstop = f.stop_position
         where   f.map_id=m.map_id
+            and fdata.fid is NULL
             and m.map_set_id in ( 
     ].
         join (',',@$map_set_ids).
@@ -283,8 +262,30 @@ sub copy_data_into_gbrowse {
     ].
         join ("','",@$feature_type_aids).
         qq[ ')
+    ];
+    my $map_feature_sql = qq[
+        select  m.map_name,
+                ms.map_type_accession as map_type_aid,
+                f.feature_id,
+                f.feature_type_accession as feature_type_aid,
+                f.start_position,
+                f.stop_position,
+                f.direction
+        from    cmap_map m,
+                cmap_map_set ms,
+                cmap_feature f
+        LEFT JOIN fdata 
+        on      fdata.feature_id = f.feature_id
+            and fdata.fstart = f.start_position
+            and fdata.fstop = f.stop_position
+        where   f.map_id=m.map_id
+            and ms.map_set_id=m.map_set_id
             and fdata.fid is NULL
- 
+            and ms.map_set_id in ( 
+    ].
+        join (',',@$map_set_ids).
+        qq[ ) 
+            and f.feature_type_accession='$gbrowse_map_ft_aid'
     ];
             
     my $insert_sql = qq[
@@ -299,15 +300,17 @@ sub copy_data_into_gbrowse {
         qq[ ) 
     ];
 
-    $sth = $db->prepare( $insert_sql );
+    my $sth = $db->prepare( $insert_sql );
     my $insert_data_sth = $db->prepare( q[
         insert into fdata 
         ( fref , fstart, fstop, fbin, ftypeid, fstrand, feature_id )
         values (?,?,?,?,?,?,?)
     ]);
 
-    my $feature_results = $db->selectall_arrayref( $sql_str, { Columns => {} }, );
     my ($fref,$fstart,$fstop,$fbin,$ftypeid,$fstrand,$feature_id);
+
+    # Insert the new features
+    my $feature_results = $db->selectall_arrayref( $feature_sql, { Columns => {} }, );
     foreach my $row (@$feature_results){
         $fref       = $self->create_fref_name($row->{'map_name'});
         $fstart     = $row->{'start_position'};
@@ -315,6 +318,38 @@ sub copy_data_into_gbrowse {
         $fbin       = bin($fstart,$fstop,MIN_BIN);
         $ftypeid    = $ftypeid_lookup{$ftype_lookup{$row->{'feature_type_aid'}}};
         $fstrand    = ($row->{'feature_id'}>0) ? '+' : '-' ;
+        $feature_id = $row->{'feature_id'};
+
+        $insert_data_sth->execute($fref,$fstart,$fstop,$fbin,$ftypeid,$fstrand,$feature_id);
+    }
+
+    # Insert the new map features
+    my $map_feature_results = $db->selectall_arrayref( $map_feature_sql, { Columns => {} }, );
+    my %map_ftype_lookup;
+    foreach my $row (@$map_feature_results){
+        # First get the maps ftype
+        unless ($map_ftype_lookup{$row->{'map_type_aid'}}){
+            my $ftype = $self->map_type_data($row->{'map_type_aid'},'gbrowse_ftype');
+            if ($ftype){
+                $map_ftype_lookup{$row->{'map_type_aid'}}=$ftype;
+            }
+            else{
+                print $LOG_FH "Map Type with aid ".$row->{'map_type_aid'}." not eligible\n";
+                print $LOG_FH "If you wish to prepare this map type, add a gbrowse_ftype to it in the config file\n";
+                return $self->error("Map Type Not Accepted: ".$row->{'map_type_aid'}."\n");
+            }
+        }
+        # Next get the id of the ftype
+        unless ($ftypeid_lookup{$map_ftype_lookup{$row->{'map_type_aid'}}}){ 
+            $self->find_or_create_ftype(\%ftypeid_lookup,$map_ftype_lookup{$row->{'map_type_aid'}});
+        }
+        
+        $fref       = $self->create_fref_name($row->{'map_name'});
+        $fstart     = $row->{'start_position'};
+        $fstop      = $row->{'stop_position'} ;
+        $fbin       = bin($fstart,$fstop,MIN_BIN);
+        $ftypeid    = $ftypeid_lookup{$map_ftype_lookup{$row->{'map_type_aid'}}};
+        $fstrand    = '+' ;
         $feature_id = $row->{'feature_id'};
 
         $insert_data_sth->execute($fref,$fstart,$fstop,$fbin,$ftypeid,$fstrand,$feature_id);
@@ -338,5 +373,54 @@ sub create_fref_name {
     my $map_name = shift;
     
     return $map_name;
+}
+
+# ----------------------------------------------
+=pod
+
+=head2 find_or_create_ftype
+
+Takes lookup hash and a list of ftype fmethods and fills the lookup hash with
+the ftypeids with the fmethod as the key.
+
+=cut
+
+sub find_or_create_ftype {
+    my $self       = shift;
+    my $lookup     = shift;
+    my @ftype_list = @_;
+    my $db         = $self->db;
+
+    my $sth = $db->prepare( q[
+        select  ftypeid 
+        from    ftype
+        where   fmethod=?]
+     );
+    my $insert_type_sth = $db->prepare( q[
+        insert into ftype 
+        (fmethod,fsource) 
+        values (?,'.')
+    ]);
+
+    
+    foreach my $ftype (@ftype_list){
+        next if ($lookup->{$ftype});
+        $sth->execute($ftype);
+        my $ftype_result = $sth->fetchrow_hashref;
+        if ($ftype_result and %$ftype_result) {
+            $lookup->{$ftype}=$ftype_result->{'ftypeid'};
+        }
+        else{
+            $insert_type_sth->execute($ftype);
+            $sth->execute($ftype);
+            my $ftype_result = $sth->fetchrow_hashref;
+            if ($ftype_result and %$ftype_result) {
+                $lookup->{$ftype}=$ftype_result->{'ftypeid'};
+            }
+            else{
+                die "Something terrible has happened and the ftype, $ftype did not insert\n";
+            }
+        }
+    }
 }
 1;
