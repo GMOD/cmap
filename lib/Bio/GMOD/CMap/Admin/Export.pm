@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::Export;
 # vim: set ft=perl:
 
-# $Id: Export.pm,v 1.6.2.1 2004-06-18 21:17:42 kycl4rk Exp $
+# $Id: Export.pm,v 1.6.2.2 2004-06-18 21:23:05 kycl4rk Exp $
 
 =pod
 
@@ -28,7 +28,7 @@ of data out of CMap.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.6.2.1 $)[-1];
+$VERSION  = (qw$Revision: 1.6.2.2 $)[-1];
 
 use Data::Dumper;
 use File::Spec::Functions;
@@ -55,8 +55,8 @@ Exports data.
     my $output          = $args{'output'};
     my $output_path     = $args{'output_path'};
     return $self->error('No output argument') unless $output || $output_path;
-    return $self->error('Output arg not a scalar reference') unless
-        ref $output eq 'SCALAR';
+    return $self->error('Output arg not a scalar reference') if 
+        defined $output && ref $output ne 'SCALAR';
     my $db              = $self->db or 
                           return $self->error('No database handle');
     $LOG_FH             = $args{'log_fh'} || \*STDOUT;
@@ -114,7 +114,7 @@ Exports data.
 
     if ( $output_path ) {
         open my $out_fh, ">$output_path" or die "Can't open '$output_path'\n";
-        print $out_fh 
+        print $out_fh $xml;
         close $out_fh;
     }
     else {
