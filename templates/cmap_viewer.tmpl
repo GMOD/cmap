@@ -260,6 +260,18 @@ function changeCompMaps(sel,index,side){
 
 <table border="0"> 
   <tr>
+    [% IF drawer.image_name %]
+      <td valign="top">
+        [% IF drawer.image_type=='svg' %]
+          <object type="image/svg+xml" data="/cmap/tmp/[% drawer.image_name %]" height="[% drawer.map_height %]" width="[% drawer.map_width %]"></object>
+        [% ELSE %]
+          <img src="/cmap/tmp/[% drawer.image_name %]" height="[% drawer.map_height %]" width="[% drawer.map_width %]" usemap="#zoom" border="0">
+        [% END %]
+        <hr>
+      </td>
+    [% END %]
+  </tr>
+  <tr>
     <td align="left" valign="top">
       <div id="hiddenRefMenu">
         <span  
@@ -330,7 +342,7 @@ function changeCompMaps(sel,index,side){
                 </select>
               </td>
               <td>
-                <input type="submit" value="Change Map Set" name="sub">
+                <input type="submit" value="Show Selected Set's Maps" name="sub">
                 <input type="hidden" name="prev_ref_species_aid" value="[% apr.param('ref_species_aid') %]">
                 <input type="hidden" name="prev_ref_map_set_aid" value="[% apr.param('ref_map_set_aid') %]">
                 <input type="hidden" name="highlight"      value="[% apr.param('highlight') %]">
@@ -385,7 +397,7 @@ function changeCompMaps(sel,index,side){
               </tr>
             </form>
           [% END %]
-        </table>
+        </table><hr>
       </div>
     </td>
   </tr>
@@ -473,7 +485,7 @@ function changeCompMaps(sel,index,side){
               </tr>
             </table>
             <input type="submit" value="Redraw Map" name="sub">
-            <input type="reset"  value="Reset">
+            <input type="reset"  value="Reset"><hr>
           </div>
         </td>
       </tr>
@@ -501,6 +513,11 @@ function changeCompMaps(sel,index,side){
               <img src="/cmap/minus.png">&nbsp;<b>Hide Options Menu</b>
             </span>
             <table>
+              <tr>
+                <td align="left">Highlight Feature: 
+                  <input name="highlight" value="[% apr.param('highlight') | html %]">
+                </td>
+              </tr>
               <tr>
                 <td align="left" valign="bottom" colspan="2"><b>Feature Types:</b></td>
               </tr>
@@ -571,12 +588,6 @@ function changeCompMaps(sel,index,side){
                 </td>
               </tr>
               <tr>
-                <td align="left">Highlight Feature: 
-                  <input name="highlight" value="[% apr.param('highlight') | html %]">
-                </td>
-              </tr>
-
-              <tr>
                 <td align="left" valign="top">Aggregate Correspondences:
                   [% IF apr.param('aggregate')==0; aggregate=0; ELSE; aggregate=1; END %]
                   [% IF apr.param('aggregate')==2; aggregate=2; END %]
@@ -602,26 +613,15 @@ function changeCompMaps(sel,index,side){
                   </select>
                 </td>
               </tr>
-            </table>
+              <tr>
+                <td>
+                  <input type="submit" value="Redraw Map" name="sub">
+                  <input type="reset"  value="Reset">
+                </td>
+              </tr>
+            </table><hr>
           </div>
         </td>
-      </tr>
-      <tr>
-        <td><hr>
-          <input type="submit" value="Redraw Map" name="sub">
-          <input type="reset"  value="Reset">
-        </td>
-      </tr>
-      <tr>
-        [% IF drawer.image_name %]
-          <td valign="top">
-            [% IF drawer.image_type=='svg' %]
-              <object type="image/svg+xml" data="/cmap/tmp/[% drawer.image_name %]" height="[% drawer.map_height %]" width="[% drawer.map_width %]"></object>
-            [% ELSE %]
-              <img src="/cmap/tmp/[% drawer.image_name %]" height="[% drawer.map_height %]" width="[% drawer.map_width %]" usemap="#zoom" border="0">
-            [% END %]
-          </td>
-        [% END %]
       </tr>
       <tr>
         <td align=left valign=top>
@@ -724,12 +724,6 @@ function changeCompMaps(sel,index,side){
                 <td><input type="radio" name="scale_maps" value="1"[% IF scale_maps==1; ' checked'; END %]>Yes</td>
               </tr>
               <tr>
-                <td colspan=4>
-                  <input type="submit" value="Redraw Map" name="sub">
-                  <input type="reset"  value="Reset">
-                </td>
-              </tr>
-              <tr>
                 <td colspan="4" align="center">
                   <input type="hidden" name="ref_map_set_aid" value="[% apr.param('ref_map_set_aid') %]">
                   <input type="hidden" name="ref_map_aids"   value="[% apr.param('ref_map_aids').join(',') %]">
@@ -752,6 +746,12 @@ function changeCompMaps(sel,index,side){
           [%- END -%]
         </td>
       </tr>
+              <tr>
+                <td><hr>
+                  <input type="submit" value="Redraw Map" name="sub">
+                  <input type="reset"  value="Reset">
+                </td>
+              </tr>
     </form>
   [% ELSE %]
     <form name="comparative_map_form">
