@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.146.2.1 2005-01-11 20:46:52 mwz444 Exp $
+# $Id: Map.pm,v 1.146.2.2 2005-03-18 17:00:29 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.146.2.1 $)[-1];
+$VERSION = (qw$Revision: 1.146.2.2 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -2190,8 +2190,6 @@ sub add_topper {
         );
         my $map             = $self->map($map_id);
         my $map_details_url = DEFAULT->{'map_details_url'};
-        my $code            = '';
-        eval $self->map_type_data( $map->{'map_type_aid'}, 'area_code' );
 
         my $slots = $drawer->slots;
         my %detail_maps;
@@ -2215,11 +2213,15 @@ sub add_topper {
             )
         );
 
+        my $url = $details_url;
+        my $alt = 'Map Details: ' . $map->{'map_name'};
+        my $code            = '';
+        eval $self->map_type_data( $map->{'map_type_aid'}, 'area_code' );
         push @{ $map_area_data->{$map_id} },
           {
             coords => \@topper_bounds,
-            url    => $details_url,
-            alt    => 'Map Details: ' . $map->{'map_name'},
+            url    => $url,
+            alt    => $alt,
             code   => $code,
           };
 
@@ -2766,15 +2768,17 @@ sub add_feature_to_map {
             }
             else {
                 my $code = '';
+                my $url  = $feature_details_url . $feature->{'accession_id'}; 
+                my $alt  = 'Feature Details: '
+                      . $feature->{'feature_name'} . ' ['
+                      . $feature->{'accession_id'} . ']';
                 eval $self->feature_type_data( $feature->{'feature_type_aid'},
                     'area_code' );
                 push @$map_area_data,
                   {
                     coords => \@coords,
-                    url    => $feature_details_url . $feature->{'accession_id'},
-                    alt    => 'Feature Details: '
-                      . $feature->{'feature_name'} . ' ['
-                      . $feature->{'accession_id'} . ']',
+                    url    => $url,
+                    alt    => $alt,
                     code => $code,
                   };
             }
@@ -2868,32 +2872,12 @@ sub collect_labels_to_display {
       )
     {
 
-#        my $labels =
-#             $feature->{'midpoint'} < $midpoint && $is_flipped
-#          || $feature->{'midpoint'} > $midpoint && $is_flipped
-#          || $feature->{'midpoint'} < $midpoint && !$is_flipped
-#          ? $north_labels
-#          : $south_labels;
-#
-#        push @$labels,
-#          {
-#            priority       => $feature->{'drawing_priority'},
-#            text           => $label,
-#            target         => $label_y,
-#            color          => $color,
-#            is_highlighted => $is_highlighted,
-#            feature_coords => $coords,
-#            feature_mid_y  => $feature->{'mid_y'},
-#            feature_type   => $feature->{'feature_type'},
-#            has_corr       => $has_corr,
-#            feature_id     => $feature->{'feature_id'},
-#            start_position => $feature->{'start_position'},
-#            shape          => $feature->{'shape'},
-#            url            => $feature_details_url . $feature->{'accession_id'},
-#            alt            => 'Feature Details: '
-#              . $feature->{'feature_name'} . ' ['
-#              . $feature->{'accession_id'} . ']',
-#          };
+        my $code = '';
+        my $url  = $feature_details_url . $feature->{'accession_id'}; 
+        my $alt  = 'Feature Details: '
+              . $feature->{'feature_name'} . ' ['
+              . $feature->{'accession_id'} . ']';
+        eval $self->feature_type_data( $feature->{'feature_type_aid'}, 'area_code' );
         my $even_label_key =
             $is_highlighted ? 'highlights'
           : $has_corr       ? 'correspondences'
@@ -2914,10 +2898,9 @@ sub collect_labels_to_display {
             start_position => $feature->{'start_position'},
             shape          => $feature->{'shape'},
             column         => $feature->{'column'},
-            url            => $feature_details_url . $feature->{'accession_id'},
-            alt            => 'Feature Details: '
-              . $feature->{'feature_name'} . ' ['
-              . $feature->{'accession_id'} . ']',
+            url            => $url,
+            alt            => $alt,
+            code           => $code,
           };
     }
 
@@ -3024,6 +3007,7 @@ sub add_labels_to_map {
             coords => \@label_bounds,
             url    => $label->{'url'},
             alt    => $label->{'alt'},
+            code   => $label->{'code'},
           };
 
         $min_x    = $label_bounds[0] if $label_bounds[0] < $min_x;
