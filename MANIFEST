@@ -98,6 +98,7 @@ sql/cmap.create.oracle
 sql/cmap.create.postgresql
 sql/cmap.create.sybase
 t/01_ini.t
+t/01_signature.t
 templates/admin_colors_view.tmpl
 templates/admin_confirm_delete.tmpl
 templates/admin_corr_evidence_create.tmpl
