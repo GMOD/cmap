@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::ViewFeatureOnMap;
 
-# $Id: ViewFeatureOnMap.pm,v 1.2 2003-07-31 22:49:56 kycl4rk Exp $
+# $Id: ViewFeatureOnMap.pm,v 1.3 2003-09-12 19:06:16 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Apache::Constants qw[ OK REDIRECT ];
 
@@ -15,18 +15,19 @@ sub handler {
     #
     # Make a jazz noise here...
     #
-    my ( $self, $apr )       = @_;
+    my ( $self, $apr ) = @_;
     $self->data_source( $apr->param('data_source') );
-    my $feature_aid          = $apr->param('feature_aid') || '';
-    my $data                 = $self->data_module;
-    my ( $ms_aid, $map_aid ) = $data->view_feature_on_map( $feature_aid );
+    my $feature_aid    = $apr->param('feature_aid') || '';
+    my $data           = $self->data_module;
+    my ( $ms_aid, $map_aid, $feature_name ) = 
+        $data->view_feature_on_map( $feature_aid );
 
     return $self->error("Can't find the feature accession ID '$feature_aid'")
         unless $ms_aid && $map_aid;
 
     $apr->headers_out->set( 
         Location => "/cmap/viewer?ref_map_set_aid=$ms_aid".
-                    "&ref_map_aid=$map_aid&highlight=$feature_aid"
+            qq[&ref_map_aid=$map_aid&highlight="$feature_name"]
     );
     $apr->status( REDIRECT );
     $apr->send_http_header;
