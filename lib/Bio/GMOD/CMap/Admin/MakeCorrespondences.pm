@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
-# $Id: MakeCorrespondences.pm,v 1.16 2003-03-21 00:36:32 kycl4rk Exp $
+# $Id: MakeCorrespondences.pm,v 1.17 2003-04-09 16:43:19 kycl4rk Exp $
 
 =head1 NAME
 
@@ -30,7 +30,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.16 $)[-1];
+$VERSION = (qw$Revision: 1.17 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -166,57 +166,34 @@ sub make_name_correspondences {
 
                 #
                 # Make SQL to find all the places something by this 
-                # name occurs on another map.  If it's a relational
-                # map, then we'll skip every other map in the map set.
+                # name occurs on another map.
                 #
-                my $corr_sql =  $map_set->{'is_relational_map'}
-                    ? qq[
-                        select f.feature_id, 
-                               f.feature_name, 
-                               map.map_name,
-                               ms.short_name as map_set_name, 
-                               s.common_name as species_name
-                        from   cmap_map map,
-                               cmap_feature f,
-                               cmap_map_set ms,
-                               cmap_species s
-                        where  map.map_set_id<>$map_set->{'map_set_id'}
-                        and    map.map_id=f.map_id
-                        and    (
-                            upper(f.feature_name)=?
-                            or 
-                            upper(f.alternate_name)=?
-                        )
-                        and    f.feature_type_id in ($ft_ids)
-                        and    map.map_set_id=ms.map_set_id
-                        and    ms.species_id=s.species_id
-                    ]
-                    : qq[
-                        select f.feature_id, 
-                               f.feature_name, 
-                               map.map_name,
-                               ms.short_name as map_set_name, 
-                               s.common_name as species_name
-                        from   cmap_feature f,
-                               cmap_map map,
-                               cmap_map_set ms,
-                               cmap_species s
-                        where  f.map_id<>$map->{'map_id'}
-                        and    (
-                            upper(f.feature_name)=?
-                            or 
-                            upper(f.alternate_name)=?
-                        )
-                        and    f.feature_type_id in ($ft_ids)
-                        and    f.map_id=map.map_id
-                        and    map.map_set_id=ms.map_set_id
-                        and    ms.species_id=s.species_id
-                    ]
-                ;
+                my $corr_sql = qq[
+                    select f.feature_id, 
+                           f.feature_name, 
+                           map.map_id,
+                           map.map_name,
+                           ms.map_set_id,
+                           ms.short_name as map_set_name, 
+                           s.common_name as species_name
+                    from   cmap_map map,
+                           cmap_feature f,
+                           cmap_map_set ms,
+                           cmap_species s
+                    where  map.map_id=f.map_id
+                    and    (
+                        upper(f.feature_name)=?
+                        or 
+                        upper(f.alternate_name)=?
+                    )
+                    and    f.feature_type_id in ($ft_ids)
+                    and    map.map_set_id=ms.map_set_id
+                    and    ms.species_id=s.species_id
+                ];
 
                 if ( @target_map_set_ids ) {
-                    $corr_sql .= 'and ms.map_set_id in ('.
-                        join(',', @target_map_set_ids).
+                    $corr_sql .= 'and ms.map_set_id in (' .
+                        join( ',', @target_map_set_ids )  .
                     ')';
                 }
 
@@ -227,10 +204,17 @@ sub make_name_correspondences {
                         @{ $db->selectall_arrayref(
                             $corr_sql,
                             { Columns => {} },
-                            ( $upper_name, $upper_name, 
-                            )
+                            ( $upper_name, $upper_name )
                         ) }
                     ) {
+                        #
+                        # If it's a relational map, then we'll skip
+                        # every other map in the map set.
+                        #
+                        next if $map_set->{'is_relational_map'} &&
+                            $map_set->{'map_set_id'} == $corr->{'map_set_id'} &&
+                            $map_set->{'map_id'} != $corr->{'map_id'};
+
                         my $fc_id = $admin->insert_correspondence( 
                             $feature->{'feature_id'},
                             $corr->{'feature_id'},
