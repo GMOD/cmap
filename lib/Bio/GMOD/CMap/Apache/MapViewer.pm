@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.63 2004-09-07 18:29:07 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.64 2004-09-08 04:52:42 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.63 $)[-1];
+$VERSION = (qw$Revision: 1.64 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -167,15 +167,13 @@ sub handler {
 
     my @feature_types;
     my @corr_only_feature_types;
-    my @ignored_feature_types_array;
-    my $feature_types_undefined=1;
+    my @ignored_feature_types;
     foreach my $param ($apr->param){
         if ($param=~/^feature_type_(\S+)/){
             my $ft  = $1;
-            $feature_types_undefined=0;
             my $val = $apr->param($param);
             if ($val==0){
-                push @ignored_feature_types_array,$ft;
+                push @ignored_feature_types,$ft;
             }
             elsif ($val==1){
                 push @corr_only_feature_types,$ft;
@@ -187,7 +185,7 @@ sub handler {
     }
 
     my %include_corr_only_features = map{$_=>1} @corr_only_feature_types;
-    my %ignored_feature_types = map{$_=>1} @ignored_feature_types_array;
+    my %ignored_feature_types = map{$_=>1} @ignored_feature_types;
 
     my @evidence_types;
     if ( $apr->param('evidence_types') ) {
@@ -356,13 +354,13 @@ sub handler {
             min_correspondences    => $min_correspondences,
             include_feature_types  => \@feature_types,
             corr_only_feature_types=> \@corr_only_feature_types,
+            ignored_feature_types  => \@ignored_feature_types,
             include_evidence_types => \@evidence_types,
             config                 => $self->config,
             data_module            => $self->data_module,
             aggregate              => $self->aggregate,
             magnify_all              => $self->magnify_all,
             scale_maps              => $self->scale_maps,
-            feature_types_undefined => $feature_types_undefined,
         ) or return $self->error( Bio::GMOD::CMap::Drawer->error );
 
         %slots = %{ $drawer->{'slots'} };
@@ -438,7 +436,6 @@ sub handler {
             included_corr_only_features => \%include_corr_only_features,
             ignored_feature_types => \%ignored_feature_types,
             feature_types     => join( ',', @feature_types ),
-            feature_types_undefined => $feature_types_undefined,
             evidence_types    => join( ',', @evidence_types ),
             extra_code        => $extra_code,
             extra_form        => $extra_form,

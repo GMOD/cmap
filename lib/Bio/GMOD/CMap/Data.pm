@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.152 2004-09-05 06:15:27 mwz444 Exp $
+# $Id: Data.pm,v 1.153 2004-09-08 04:52:41 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.152 $)[-1];
+$VERSION = (qw$Revision: 1.153 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -414,7 +414,8 @@ sub cmap_data {
     my $include_feature_type_aids   = $args{'include_feature_type_aids'} || [];
     my $corr_only_feature_type_aids = $args{'corr_only_feature_type_aids'}
       || [];
-    my $feature_types_undefined     = $args{'feature_types_undefined'}; 
+    my $ignore_feature_type_aids = $args{'ignore_feature_type_aids'}
+      || [];
     my $include_evidence_type_aids  = $args{'include_evidence_type_aids'} || [];
     my @slot_nos = keys %$slots;
     my @pos              = sort { $a <=> $b } grep { $_ >= 0 } @slot_nos;
@@ -430,10 +431,19 @@ sub cmap_data {
     $include_evidence_type_aids = [-1]
       if grep { /^-1$/ } @$include_evidence_type_aids;
 
-    #
-    # Delete anything from the cache.
-    #
-    #$db->do("delete from cmap_map_cache where pid=$pid");
+    # Fill corr_only_feature_type_aids with any feature types not accounted for.
+    # This ensures that corr_only is the default
+    my %found_feature_type;
+    foreach my $ft (@$include_feature_type_aids,@$corr_only_feature_type_aids,@$ignore_feature_type_aids){
+        $found_feature_type{$ft}=1;
+    }
+    my $all_feature_types = $self->feature_type_data();
+    foreach my $key (keys(%$all_feature_types)){
+        my $aid=$all_feature_types->{$key}{'feature_type_accession'};
+        unless($found_feature_type{$aid}){
+            push @$corr_only_feature_type_aids,$aid;
+        }
+    }
 
     my (
         $data,                      %feature_correspondences,
@@ -463,7 +473,7 @@ sub cmap_data {
             min_correspondences         => $min_correspondences,
             feature_type_aids           => $include_feature_type_aids,
             corr_only_feature_type_aids => $corr_only_feature_type_aids,
-            feature_types_undefined     => $feature_types_undefined,
+            ignore_feature_type_aids => $ignore_feature_type_aids,
             evidence_type_aids          => $include_evidence_type_aids,
             pid                         => $pid,
             map_type_aids               => \%map_type_aids,
@@ -530,7 +540,7 @@ sub slot_data {
     my $correspondence_evidence   = $args{'correspondence_evidence'};
     my $feature_types_seen        = $args{'feature_types'};
     my $corr_only_feature_type_aids = $args{'corr_only_feature_type_aids'};
-    my $feature_types_undefined     = $args{'feature_types_undefined'};
+    my $ignore_feature_type_aids = $args{'ignore_feature_type_aids'};
     my $map_type_aids               = $args{'map_type_aids'};
     my $pid                         = $args{'pid'};
     my $max_no_features             = 200000;
@@ -823,16 +833,16 @@ sub slot_data {
 			   ];
             my $corr_free_sql = $sql_base_top . $sql_base_bottom.$where;
             my $with_corr_sql ='';
-            if (@$corr_only_feature_type_aids) {
+            if (@$corr_only_feature_type_aids or @$ignore_feature_type_aids) {
                 $corr_free_sql .=
                   "and f.feature_type_accession not in ('"
-                  . join( "','", @$corr_only_feature_type_aids ) . "')";
+                  . join( "','", @$corr_only_feature_type_aids,@$ignore_feature_type_aids ) . "')";
             }
             my $sql_str = $corr_free_sql;
             #$sql_str .= "and f.feature_id=-1 "
             #  if ( $corr_only_feature_type_aids->[0] == -1 );
             if (
-                (@$corr_only_feature_type_aids or $feature_types_undefined)
+                (@$corr_only_feature_type_aids)
                 and (  $self->slot_info->{ $this_slot_no + 1 }
                     || $self->slot_info->{ $this_slot_no - 1 } )
               )
@@ -858,8 +868,7 @@ sub slot_data {
                   ] . $sql_base_bottom . q[
                 and cl.feature_id1=f.feature_id
                 and cl.feature_id2=f2.feature_id];
-                unless ( $corr_only_feature_type_aids->[0] == -1 
-                    or $feature_types_undefined) {
+                if (@$corr_only_feature_type_aids or @$ignore_feature_type_aids) {
                     $with_corr_sql .=
                       " and f.feature_type_accession in ('"
                       . join( "','", @$corr_only_feature_type_aids ) . "')";
@@ -873,7 +882,7 @@ sub slot_data {
                 $sql_str = $corr_free_sql;
                 $sql_str .= " UNION " . $with_corr_sql if ($with_corr_sql);
             }
-            elsif(@$corr_only_feature_type_aids or $feature_types_undefined){
+            elsif(@$corr_only_feature_type_aids){
                 if ($with_corr_sql){
                     $sql_str = $with_corr_sql;
                 }
