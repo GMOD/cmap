@@ -1,4 +1,76 @@
-                   Revision history for Bio::GMOD::CMap
+                      Revision history for CMap
+
+0.06
+-   Fixed bug (#657917) where last page of features on map view in web
+    admin tool was showing too many rows in feature table
+-   Added separate BUGS and TODO files so they are not lost in the 
+    Changes file
+-   Added a generic feature search to web admin tool
+-   Added new "paginate" sub to Utils for creating pages of recordsets
+    for web navigation, added better and more standard paging to 
+    user feature search and most of the admin pages that return what
+    could be a large recordset
+-   Fixed bug (#660483) where "IO::Tee=GLOB(0x4d7900)" was being printed
+    while exporting data as SQL statements in cmap_admin.pl
+-   Added a DESTROY method to base class to disconnect database so that
+    "Database handle destroyed without explicit disconnect" error   
+    messages wouldn't appear
+-   Cleaned up many of the admin templates to make them more consistent
+-   Added "is_enabled" field to "cmap_feature_correspondence" to allow a
+    curator to permanently disable a feature correspondence record
+    For MySQL:
+    alter table cmap_feature_correspondence add is_enabled tinyint \
+    not null default '1'; 
+    For Oracle:
+    alter table cmap_feature_correspondence add is_enabled number(4) \
+    default '1' not null;
+    For PostgreSQL:  PG doesn't allow the addition of a "NOT NULL"
+    field, nor was I able to find an easy way to add such a constraint,
+    so I dumped the data, dropped the table and recreated it with the
+    definition in the create file
+-   Added "drawing_lane" field to cmap_feature_type so that a curator 
+    can determine the lane for drawing features (thereby placing some
+    feature types closer to the map)
+    For MySQL:
+    alter table cmap_feature_type add drawing_lane int(11) not null \
+    default '1';
+    For Oracle:
+    alter table cmap_feature_type add drawing_lane number(4) \
+    default '1' not null;
+    For PostgreSQL:  Same as above on "is_enabled" field
+-   Added "drawing_priority" field to cmap_feature_type so that a curator 
+    can determine the order for drawing features within a lane 
+    For MySQL:
+    alter table cmap_feature_type add drawing_priority int(11) not null \
+    default '1';
+    For Oracle:
+    alter table cmap_feature_type add drawing_priority number(4) \
+    default '1' not null;
+    For PostgreSQL:  Same as above on "is_enabled" field
+-   Added conditions to SQL for the matrix that all the map sets selected
+    must have "is_enabled=1"
+-   Changed label distribution on maps to wait until after all the 
+    features for a lane have been drawn, then sort by position, whether 
+    the feature is highlighted, and whether the feature has a 
+    correspondence
+-   Added new DATA_CURATION document in "docs" directory to describe how
+    to curate data using CMap tools
+-   Added a legend to explain feature glyphs
+-   Added watermark of "CMAP" version number in lower-right corner of 
+    legend hyperlinked to the GMOD-CMap website
+-   Added code to allow a dbxref with only a name to be accepted (so a 
+    curator can block out an cross-reference on a feature with "Not 
+    available")
+-   Added ability to search for multiple features in the admin tool
+-   Added ability to choose quote escaping style in cmap_admin.pl when
+    exporting data as SQL INSERT statements
+-   Fixed bug (#665326) where SQL for finding map features was missing 
+    spanning features (with both start and stop positions) when the given
+    range started after the feature's start position
+-   Changed ambiguously named element "include_features" on main CMap 
+    form to "label_features" in preparation for allowing users to actually
+    choose which feature types to show.  Be sure to use the new "cmap.conf"
+    if you're upgrading (or change "include_features" to "label_features")
 
 0.05
 -   Added extra split tokens to highlight string in map detail page 
@@ -73,46 +145,6 @@
     conf file, bad db connection info, bad template dir, etc.).
 -   Improved POD in cmap_admin.pl
 -   Improved INSTALL docs with feedback from beta testers
-
-TODO
-
--   Change Makefile.PL to use install targets for copying files
-    instead of doing it myself during the configuration process
--   Add automatic database audit trail
--   Add watermark to images ("CMAP" + $VERSION + Date + ???)
--   Allow dbxrefs and evidences to apply to more objects than just
-    features and correspondences, respectively
--   Some indicator for when features are dropped out
--   Add reverse sort on columns in map_details
--   Make contextual help (use object names from local data)
--   Add a key to colors/shapes on maps
--   Allow end user to override map colors (maybe shapes, too?)
--   Allow clicking/zooming on comparative maps
--   Move all SQL into modules
--   Add buttons under maps for "delete," "flip," "details," "zoom in,"
-    and "zoom out."  Most likely I'll try to use icons for each,
-    respectively: "X," some sort of reciprocating arrows, "?," "+", 
-    and "-".
--   Write some tests!
--   Keep up with features by feature_id instead of name so that a map
-    that appears more than one doesn't think that some of its features
-    are corresponding when they're not.
--   Add dropping of existing correspondences when not updated with new
-    correspondence file (as data import does with maps/features) (?)
--   Create dummy data to include with distribution that is more
-    complicated and much smaller than Gramene data, move raw Gramene
-    data to web download only
-
-BUGS
-
--   When relational maps have feature shapse that aren't directly on
-    the map (like dumbells, I-beams, etc.), they collide with the map
-    title which is written vertically beside the map.  Either I need to 
-    move the title to a horizontal position above the map (which will
-    make it like all the other maps) or I need to delay writing the title
-    until after drawing all the features.
--   Matrix, you see zeros when you zoom in on map
--   Fix pager of features in admin/map_view
 
 0.03
 
