@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.66 2004-09-16 05:21:39 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.67 2004-09-16 16:20:37 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.66 $)[-1];
+$VERSION = (qw$Revision: 1.67 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -320,7 +320,7 @@ sub handler {
             ? \@comparative_map_right : \@comparative_map_left;
         my $cmap_set_aid = $side eq RIGHT 
             ? $comp_map_set_right : $comp_map_set_left;
-        if (grep {-1} @$cmap){
+        if (grep {/^-1$/} @$cmap){
             unless(defined($slots{$slot_no}->{'map_sets'}{$cmap_set_aid})){
                 $slots{$slot_no}->{'map_sets'}{$cmap_set_aid}=();
             }
