@@ -6,7 +6,7 @@ use Cwd;
 use File::Basename qw(&basename &dirname);
 use File::Spec::Functions;
 
-my $conf_dir = catfile( $Build{'CONF'}, 'cmap.conf' );
+my $conf_dir = catfile( $Build{'CONF'} );
 
 my $origdir = cwd;
 chdir dirname($0);
@@ -18,14 +18,14 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.13 2004-03-26 20:42:10 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.14 2004-05-12 17:51:51 mwz444 Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.13 $)[-1];
+$VERSION = (qw$Revision: 1.14 $)[-1];
 
 @EXPORT = qw[ 
     ARC
