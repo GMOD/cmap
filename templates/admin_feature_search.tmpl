@@ -18,7 +18,7 @@
     </tr>
     <tr>
         <td>
-            <input name="feature_name" value="[% apr.param('feature_name') %]">
+            <input name="feature_name" value="[% apr.param('feature_name') | html_entity %]">
         </td>
         <td>
             <select name="feature_type_id">
