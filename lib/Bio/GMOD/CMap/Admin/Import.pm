@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Import;
 
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.62 2005-02-09 05:31:35 mwz444 Exp $
+# $Id: Import.pm,v 1.63 2005-02-10 19:49:15 mwz444 Exp $
 
 =pod
 
@@ -33,7 +33,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.62 $)[-1];
+$VERSION = (qw$Revision: 1.63 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -234,11 +234,13 @@ appended to the list of xrefs.
 
     $LOG_FH = $args{'log_fh'} || \*STDOUT;
 
+    my $file_pos = $fh->getpos;
     return $self->error("File did not pass inspection\n") 
         unless ($self->validate_tab_file(
             fh     => $fh,
             log_fh => $LOG_FH,
         ));
+    $fh->setpos($file_pos);
 
     my $max_simultaneous_inserts = 1000;
 
@@ -325,7 +327,7 @@ appended to the list of xrefs.
     # Make column names lowercase, convert spaces to underscores
     # (e.g., make "Feature Name" => "feature_name").
     #
-    $self->Print("Checking headers.\n");
+    $self->Print("Reading File.\n");
     my $parser = Text::RecordParser->new(
         fh              => $fh,
         field_separator => FIELD_SEP,
