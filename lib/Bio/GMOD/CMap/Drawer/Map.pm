@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.18 2003-01-07 01:57:12 kycl4rk Exp $
+# $Id: Map.pm,v 1.19 2003-01-07 02:06:57 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.18 $)[-1];
+$VERSION = (qw$Revision: 1.19 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -984,12 +984,12 @@ Lays out the map.
                 # corresponding features.
                 #
                 if ( $label_side eq RIGHT ) {
-                    $features_with_corr{ $label->{'feature'} }{'right'} = 
-                        [ $bounds[2], $bounds[3] ];
+                    $features_with_corr{ $label->{'feature_id'} }{'right'} = 
+                        [ $bounds[2], ($bounds[1]+$bounds[3])/2 ];
                 }
                 else {
-                    $features_with_corr{ $label->{'feature'} }{'left'} = 
-                        [ $bounds[0], $bounds[1] ];
+                    $features_with_corr{ $label->{'feature_id'} }{'left'} = 
+                        [ $bounds[0], ($bounds[1]+$bounds[3])/2 ];
                 }
 
                 #
