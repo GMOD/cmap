@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.26 2003-01-08 21:09:29 kycl4rk Exp $
+# $Id: Data.pm,v 1.27 2003-01-09 16:59:02 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.26 $)[-1];
+$VERSION = (qw$Revision: 1.27 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -1451,7 +1451,7 @@ Given a feature acc. id, find out all the details on it.
         )
     }
 
-    if ( $feature->{'dbxref_url'} ) {
+    if ( $feature->{'dbxref_name'} || $feature->{'dbxref_url'} ) {
         $feature->{'dbxrefs'} = [
             { 
                 dbxref_name => $feature->{'dbxref_name'},
