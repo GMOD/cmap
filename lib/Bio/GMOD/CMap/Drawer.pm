@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.82 2004-10-28 21:34:38 mwz444 Exp $
+# $Id: Drawer.pm,v 1.83 2004-10-30 07:19:13 mwz444 Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.82 $)[-1];
+$VERSION = (qw$Revision: 1.83 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -38,8 +38,8 @@ use base 'Bio::GMOD::CMap';
 
 my @INIT_PARAMS = qw[
     apr flip slots highlight font_size image_size image_type 
-    label_features include_feature_types corr_only_feature_types
-    include_evidence_types ignored_feature_types
+    label_features included_feature_types corr_only_feature_types
+    included_evidence_types ignored_evidence_types ignored_feature_types
     config data_source min_correspondences collapse_features cache_dir
     map_view data_module aggregate magnify_all scale_maps
 ];
@@ -67,6 +67,7 @@ Initializes the drawing object.
 
     return $self->error( @$ ) if @$;
 
+    $self->data;
     $self->draw or return;
 
     return $self;
@@ -422,11 +423,11 @@ Gets a completed map.
 }
 
 # ----------------------------------------------------
-sub include_evidence_types {
+sub included_evidence_types {
 
 =pod
 
-=head2 include_evidence_types
+=head2 included_evidence_types
 
 Gets/sets which evidence type (accession IDs) to include.
 
@@ -435,18 +436,38 @@ Gets/sets which evidence type (accession IDs) to include.
     my $self = shift;
 
     if ( my $arg = shift ) {
-        push @{ $self->{'include_evidence_types'} }, @$arg; 
+        push @{ $self->{'included_evidence_types'} }, @$arg; 
     }
 
-    return $self->{'include_evidence_types'};
+    return $self->{'included_evidence_types'};
 }
 
 # ----------------------------------------------------
-sub include_feature_types {
+sub ignored_evidence_types {
 
 =pod
 
-=head2 include_feature_types
+=head2 ignored_evidence_types
+
+Gets/sets which evidence type (accession IDs) to ignore.
+
+=cut
+
+    my $self = shift;
+
+    if ( my $arg = shift ) {
+        push @{ $self->{'ignored_evidence_types'} }, @$arg; 
+    }
+
+    return $self->{'ignored_evidence_types'};
+}
+
+# ----------------------------------------------------
+sub included_feature_types {
+
+=pod
+
+=head2 included_feature_types
 
 Gets/sets which feature type (accession IDs) to include.
 
@@ -455,10 +476,10 @@ Gets/sets which feature type (accession IDs) to include.
     my $self = shift;
 
     if ( my $arg = shift ) {
-        push @{ $self->{'include_feature_types'} }, @$arg; 
+        push @{ $self->{'included_feature_types'} }, @$arg; 
     }
 
-    return $self->{'include_feature_types'};
+    return $self->{'included_feature_types'};
 }
                                                                                 
 # ----------------------------------------------------
@@ -917,12 +938,13 @@ necessary data for drawing.
     unless ( $self->{'data'} ) {
         my $data                   =  $self->data_module or return;
         $self->{'data'}            =  $data->cmap_data( 
-            slots                  => $self->slots,
+            slots                  => $self->{'slots'},
             min_correspondences    => $self->min_correspondences,
-            include_feature_type_aids  => $self->include_feature_types,
+            included_feature_type_aids   => $self->included_feature_types,
             corr_only_feature_type_aids  => $self->corr_only_feature_types,
-            ignore_feature_type_aids  => $self->ignored_feature_types,
-            include_evidence_types => $self->include_evidence_types,
+            ignored_feature_type_aids     => $self->ignored_feature_types,
+            included_evidence_types      => $self->included_evidence_types,
+            ignored_evidence_type_aids       => $self->ignored_evidence_types,
         ) or return $self->error( $data->error );
 
         return $self->error("Problem getting data") unless $self->{'data'};
@@ -1503,13 +1525,13 @@ Returns the slot numbers, 0 to positive, -1 to negative.
 
     my $self = shift;
 
-    unless ( $self->{'slot_numbers'} ) {
+    #unless ( $self->{'slot_numbers'} ) {
         my @slot_nos = keys %{ $self->{'slots'} };
         my @pos      = sort { $a <=> $b } grep { $_ >= 0 } @slot_nos;
         my @neg      = sort { $b <=> $a } grep { $_ <  0 } @slot_nos;
 
         $self->{'slot_numbers'} = [ @pos, @neg ];
-    }
+    #}
 
     return @{ $self->{'slot_numbers'} };
 }
@@ -1958,6 +1980,8 @@ Creates default link parameters for CMap->create_viewer_link()
                               = $args{'ignored_feature_type_aids'};
 
     my $evidence_type_aids    = $args{'evidence_type_aids'};
+    my $ignored_evidence_type_aids
+                              = $args{'ignored_evidence_type_aids'};
     my $data_source           = $args{'data_source'};
     my $url                   = $args{'url'};
 
@@ -2029,7 +2053,7 @@ Creates default link parameters for CMap->create_viewer_link()
         $ref_map_aids = $self->ref_map_aids();
     }
     unless(defined($feature_type_aids)){
-        $feature_type_aids = $self->include_feature_types();
+        $feature_type_aids = $self->included_feature_types();
     }
     unless(defined($corr_only_feature_type_aids)){
         $corr_only_feature_type_aids = $self->corr_only_feature_types();
@@ -2037,8 +2061,11 @@ Creates default link parameters for CMap->create_viewer_link()
     unless(defined($ignored_feature_type_aids)){
         $ignored_feature_type_aids = $self->ignored_feature_types();
     }
+    unless(defined($ignored_evidence_type_aids)){
+        $ignored_evidence_type_aids = $self->ignored_evidence_types();
+    }
     unless(defined($evidence_type_aids)){
-        $evidence_type_aids = $self->include_evidence_types();
+        $evidence_type_aids = $self->included_evidence_types();
     }
     unless(defined($data_source)){
         $data_source = $self->data_source();
@@ -2070,6 +2097,7 @@ Creates default link parameters for CMap->create_viewer_link()
         feature_type_aids           => $feature_type_aids,
         corr_only_feature_type_aids => $corr_only_feature_type_aids,
         ignored_feature_type_aids   => $ignored_feature_type_aids,
+        ignored_evidence_type_aids   => $ignored_evidence_type_aids,
         evidence_type_aids          => $evidence_type_aids,
         data_source                 => $data_source,
         url                   => $url,

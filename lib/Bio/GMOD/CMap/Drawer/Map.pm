@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.138 2004-10-29 04:33:51 mwz444 Exp $
+# $Id: Map.pm,v 1.139 2004-10-30 07:19:14 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.138 $)[-1];
+$VERSION = (qw$Revision: 1.139 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1324,7 +1324,7 @@ Variable Info:
 
         my $feature_type_selection='';
         $feature_type_selection.='feature_type_'.$_.'=2;' 
-            foreach (@{$drawer->include_feature_types});
+            foreach (@{$drawer->included_feature_types});
         $feature_type_selection.='feature_type_'.$_.'=1;' 
             foreach (@{$drawer->corr_only_feature_types});
         #

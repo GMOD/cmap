@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.166 2004-10-27 22:56:34 mwz444 Exp $
+# $Id: Data.pm,v 1.167 2004-10-30 07:19:13 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.166 $)[-1];
+$VERSION = (qw$Revision: 1.167 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -409,31 +409,23 @@ sub cmap_data {
     my ( $self, %args ) = @_;
     my $slots                       = $args{'slots'};
     my $min_correspondences         = $args{'min_correspondences'} || 0;
-    my $include_feature_type_aids   = $args{'include_feature_type_aids'} || [];
+    my $included_feature_type_aids   = $args{'included_feature_type_aids'} || [];
     my $corr_only_feature_type_aids = $args{'corr_only_feature_type_aids'}
       || [];
-    my $ignore_feature_type_aids = $args{'ignore_feature_type_aids'}
+    my $ignored_feature_type_aids = $args{'ignored_feature_type_aids'}
       || [];
-    my $include_evidence_type_aids  = $args{'include_evidence_type_aids'} || [];
-    my @slot_nos = keys %$slots;
-    my @pos              = sort { $a <=> $b } grep { $_ >= 0 } @slot_nos;
-    my @neg              = sort { $b <=> $a } grep { $_ < 0 } @slot_nos;
-    my @ordered_slot_nos = ( @pos, @neg );
+    my $ignored_evidence_type_aids = $args{'ignored_evidence_type_aids'}
+      || [];
+    my $included_evidence_type_aids  = $args{'included_evidence_type_aids'} || [];
     my $db               = $self->db or return;
     my $pid              = $$;
 
-    #
-    # "-1" is a reserved value meaning "All" for feature and evidence types
-    # "-2" is reserved for "None"
-    #
-    $include_evidence_type_aids = [-1]
-      if grep { /^-1$/ } @$include_evidence_type_aids;
 
     # Fill the default array with any feature types not accounted for.
     my $feature_default_display= $self->feature_default_display;
 
     my %found_feature_type;
-    foreach my $ft (@$include_feature_type_aids,@$corr_only_feature_type_aids,@$ignore_feature_type_aids){
+    foreach my $ft (@$included_feature_type_aids,@$corr_only_feature_type_aids,@$ignored_feature_type_aids){
         $found_feature_type{$ft}=1;
     }
     my $all_feature_types = $self->feature_type_data();
@@ -446,10 +438,31 @@ sub cmap_data {
                 push @$corr_only_feature_type_aids,$aid;
             }
             elsif ($feature_default_display eq 'ignore'){
-                push @$ignore_feature_type_aids,$aid;
+                push @$ignored_feature_type_aids,$aid;
             }
             else{
-                push @$include_feature_type_aids,$aid;
+                push @$included_feature_type_aids,$aid;
+            }
+        }
+    }
+
+    # Fill the default array with any evidence types not accounted for.
+    my $evidence_default_display= $self->evidence_default_display;
+
+    my %found_evidence_type;
+    foreach my $et (@$included_evidence_type_aids,@$ignored_evidence_type_aids){
+        $found_evidence_type{$et}=1;
+    }
+    my $all_evidence_types = $self->evidence_type_data();
+
+    foreach my $key (keys(%$all_evidence_types)){
+        my $aid=$all_evidence_types->{$key}{'evidence_type_accession'};
+        unless($found_evidence_type{$aid}){
+            if ($evidence_default_display eq 'ignore'){
+                push @$ignored_evidence_type_aids,$aid;
+            }
+            else{
+                push @$included_evidence_type_aids,$aid;
             }
         }
     }
@@ -460,7 +473,14 @@ sub cmap_data {
         %correspondence_evidence,   %feature_types,
         %map_type_aids
     );
-    $self->slot_info($slots);
+    $self->slot_info($slots,
+        $ignored_feature_type_aids,
+        $ignored_evidence_type_aids,);
+
+    my @slot_nos = keys %$slots;
+    my @pos              = sort { $a <=> $b } grep { $_ >= 0 } @slot_nos;
+    my @neg              = sort { $b <=> $a } grep { $_ < 0 } @slot_nos;
+    my @ordered_slot_nos = ( @pos, @neg );
     for my $slot_no (@ordered_slot_nos) {
         my $cur_map     = $slots->{$slot_no};
         my $ref_slot_no =
@@ -480,10 +500,11 @@ sub cmap_data {
             slot_no                     => $slot_no,
             ref_slot_no                 => $ref_slot_no,
             min_correspondences         => $min_correspondences,
-            feature_type_aids           => $include_feature_type_aids,
+            feature_type_aids           => $included_feature_type_aids,
             corr_only_feature_type_aids => $corr_only_feature_type_aids,
-            ignore_feature_type_aids => $ignore_feature_type_aids,
-            evidence_type_aids          => $include_evidence_type_aids,
+            ignored_feature_type_aids   => $ignored_feature_type_aids,
+            ignored_evidence_type_aids  => $ignored_evidence_type_aids,
+            included_evidence_type_aids          => $included_evidence_type_aids,
             pid                         => $pid,
             map_type_aids               => \%map_type_aids,
           )
@@ -537,20 +558,21 @@ sub slot_data {
     my ( $self, %args ) = @_;
     my $db  = $self->db  or return;
     my $sql = $self->sql or return;
-    my $this_slot_no              = $args{'slot_no'};
-    my $ref_slot_no               = $args{'ref_slot_no'};
-    my $min_correspondences       = $args{'min_correspondences'} || 0;
-    my $feature_type_aids         = $args{'feature_type_aids'};
-    my $evidence_type_aids        = $args{'evidence_type_aids'};
-    my $slot_map                  = ${ $args{'map'} };                 # hashref
-    my $reference_map             = $args{'reference_map'};
-    my $feature_correspondences   = $args{'feature_correspondences'};
-    my $intraslot_correspondences = $args{'intraslot_correspondences'};
-    my $map_correspondences       = $args{'map_correspondences'};
-    my $correspondence_evidence   = $args{'correspondence_evidence'};
-    my $feature_types_seen        = $args{'feature_types'};
+    my $this_slot_no                = $args{'slot_no'};
+    my $ref_slot_no                 = $args{'ref_slot_no'};
+    my $min_correspondences         = $args{'min_correspondences'} || 0;
+    my $feature_type_aids           = $args{'feature_type_aids'};
+    my $included_evidence_type_aids = $args{'included_evidence_type_aids'};
+    my $slot_map                    = ${ $args{'map'} };                 # hashref
+    my $reference_map               = $args{'reference_map'};
+    my $feature_correspondences     = $args{'feature_correspondences'};
+    my $intraslot_correspondences   = $args{'intraslot_correspondences'};
+    my $map_correspondences         = $args{'map_correspondences'};
+    my $correspondence_evidence     = $args{'correspondence_evidence'};
+    my $feature_types_seen          = $args{'feature_types'};
     my $corr_only_feature_type_aids = $args{'corr_only_feature_type_aids'};
-    my $ignore_feature_type_aids = $args{'ignore_feature_type_aids'};
+    my $ignored_feature_type_aids   = $args{'ignored_feature_type_aids'};
+    my $ignored_evidence_type_aids  = $args{'ignored_evidence_type_aids'};
     my $map_type_aids               = $args{'map_type_aids'};
     my $pid                         = $args{'pid'};
     my $max_no_features             = 200000;
@@ -677,7 +699,7 @@ sub slot_data {
       . "')";
     if (@$feature_type_aids) {
         $ft_sql .=
-          "and f.feature_type_accession in ('"
+          " and f.feature_type_accession in ('"
           . join( "','", @$feature_type_aids ) . "')";
     }
     my $ft;
@@ -752,7 +774,12 @@ sub slot_data {
 
         my $combined_sql = $restricted_sql.$unrestricted_sql;
         $combined_sql =~ s/^\s+or//;
-        $f_count_sql .= "and (".$combined_sql.")";
+        if ($combined_sql){
+            $f_count_sql .= " and (".$combined_sql.")";
+        }
+        else{ #No maps
+            $f_count_sql .= " f.feature_id = -1 ";
+        }
         # Remove the instance of "where and"
         $f_count_sql =~ s/where\s+and/where /;
         $f_count_sql .= " group by f.map_id";
@@ -765,7 +792,8 @@ sub slot_data {
         }
 
         my %corr_lookup= %{$self->count_correspondences(
-            evidence_type_aids  => $evidence_type_aids,
+            included_evidence_type_aids  => $included_evidence_type_aids,
+            ignored_evidence_type_aids   => $ignored_evidence_type_aids,
             map_correspondences => $map_correspondences,
             this_slot_no        => $this_slot_no,
             ref_slot_no         => $ref_slot_no,
@@ -788,7 +816,7 @@ sub slot_data {
             $map->{'no_features'} = $count_lookup{ $map->{'map_id'} };
             my $where =
               @$feature_type_aids
-              ? "and f.feature_type_accession in ('"
+              ? " and f.feature_type_accession in ('"
               . join( "','", @$feature_type_aids ) . "')"
               : '';
             ###
@@ -843,13 +871,13 @@ sub slot_data {
 			   ];
             my $corr_free_sql = $sql_base_top . $sql_base_bottom.$where;
             my $with_corr_sql ='';
-            if (@$corr_only_feature_type_aids or @$ignore_feature_type_aids) {
+            if (@$corr_only_feature_type_aids or @$ignored_feature_type_aids) {
                 $corr_free_sql .=
-                  "and f.feature_type_accession not in ('"
-                  . join( "','", @$corr_only_feature_type_aids,@$ignore_feature_type_aids ) . "')";
+                  " and f.feature_type_accession not in ('"
+                  . join( "','", @$corr_only_feature_type_aids,@$ignored_feature_type_aids ) . "')";
             }
             my $sql_str = $corr_free_sql;
-            #$sql_str .= "and f.feature_id=-1 "
+            #$sql_str .= " and f.feature_id=-1 "
             #  if ( $corr_only_feature_type_aids->[0] == -1 );
             if (
                 (@$corr_only_feature_type_aids)
@@ -878,7 +906,7 @@ sub slot_data {
                   ] . $sql_base_bottom . q[
                 and cl.feature_id1=f.feature_id
                 and cl.feature_id2=f2.feature_id];
-                if (@$corr_only_feature_type_aids or @$ignore_feature_type_aids) {
+                if (@$corr_only_feature_type_aids or @$ignored_feature_type_aids) {
                     $with_corr_sql .=
                       " and f.feature_type_accession in ('"
                       . join( "','", @$corr_only_feature_type_aids ) . "')";
@@ -898,7 +926,7 @@ sub slot_data {
                 }
                 else{
                     ###Return nothing
-                     $sql_str = $corr_free_sql."and map.map_id=-1 "; 
+                     $sql_str = $corr_free_sql." and map.map_id=-1 "; 
                 }
             }
             elsif(@$feature_type_aids){
@@ -906,7 +934,7 @@ sub slot_data {
             }
             else{
                 ###Return nothing
-                $sql_str = $corr_free_sql."and map.map_id=-1 "; 
+                $sql_str = $corr_free_sql." and map.map_id=-1 "; 
                 #$sql_str = $corr_free_sql . " UNION " . $with_corr_sql;
             }
             unless ( $map->{'features'} =
@@ -950,7 +978,9 @@ sub slot_data {
                 $self->get_feature_correspondences(
                     $feature_correspondences, $correspondence_evidence,
                     $map->{'map_id'}, $ref_slot_no,
-                    $evidence_type_aids,      [@$feature_type_aids,@$corr_only_feature_type_aids],
+                    $included_evidence_type_aids,      
+                    $ignored_evidence_type_aids,      
+                    [@$feature_type_aids,@$corr_only_feature_type_aids],
                     $map_start,               $map_stop
                 );
             }
@@ -991,7 +1021,8 @@ sub slot_data {
         }
 
         my %corr_lookup= %{$self->count_correspondences(
-            evidence_type_aids  => $evidence_type_aids,
+            included_evidence_type_aids  => $included_evidence_type_aids,
+            ignored_evidence_type_aids   => $ignored_evidence_type_aids,
             map_correspondences => $map_correspondences,
             this_slot_no        => $this_slot_no,
             ref_slot_no         => $ref_slot_no,
@@ -1018,7 +1049,9 @@ sub slot_data {
                 $self->get_feature_correspondences(
                     $feature_correspondences, $correspondence_evidence,
                     $map->{'map_id'}, $ref_slot_no,
-                    $evidence_type_aids,      [@$feature_type_aids,@$corr_only_feature_type_aids],
+                    $included_evidence_type_aids,      
+                    $ignored_evidence_type_aids,      
+                    [@$feature_type_aids,@$corr_only_feature_type_aids],
                     $map_start,               $map_stop
                 );
             }
@@ -1026,7 +1059,7 @@ sub slot_data {
         }
     }
     #$self->get_intraslot_correspondences( $intraslot_correspondences,
-    #    $correspondence_evidence, $pid, $ref_slot_no, $evidence_type_aids,
+    #    $correspondence_evidence, $pid, $ref_slot_no, $included_evidence_type_aids,
     #    $feature_type_aids, $map_start, $map_stop );
 
     return $return;
@@ -1115,7 +1148,8 @@ sub get_feature_correspondences {
         $self,                    $feature_correspondences,
         $correspondence_evidence, 
         $value,                   
-        $slot_no,                 $evidence_type_aids,
+        $slot_no,                 $included_evidence_type_aids,
+        $ignored_evidence_type_aids,
         $feature_type_aids,       $map_start,
         $map_stop
       )
@@ -1180,15 +1214,18 @@ sub get_feature_correspondences {
           . ")";
     }
 
-    if (@$evidence_type_aids) {
+    if (@$included_evidence_type_aids or not @$ignored_evidence_type_aids) {
         $corr_sql .=
-          "and ce.evidence_type_accession in ('"
-          . join( "','", @$evidence_type_aids ) . "')";
+          " and ce.evidence_type_accession in ('"
+          . join( "','", @$included_evidence_type_aids ) . "')";
+    }
+    else{
+        $corr_sql .= " and ce.correspondence_evidence_id = -1 "; 
     }
 
     if (@$feature_type_aids) {
         $corr_sql .=
-          "and cl.feature_type_accession1 in ('"
+          " and cl.feature_type_accession1 in ('"
           . join( "','", @$feature_type_aids ) . "')";
     }
     
@@ -1247,7 +1284,7 @@ sub get_intraslot_correspondences {
     my (
         $self,                    $intraslot_correspondences,
         $correspondence_evidence, $pid,
-        $slot_no,                 $evidence_type_aids,
+        $slot_no,                 $included_evidence_type_aids,
         $feature_type_aids,       $map_start,
         $map_stop
       )
@@ -1292,21 +1329,21 @@ sub get_intraslot_correspondences {
     ];
 
     $corr_sql .=
-      "and cl.map_id2 in ('"
+      " and cl.map_id2 in ('"
       . join( "','", keys(%{ $self->slot_info->{$slot_no} } )) . "')";
     $corr_sql .=
-      "and cl.map_id2 in ('"
+      " and cl.map_id2 in ('"
       . join( "','", keys(%{ $self->slot_info->{$slot_no} } )) . "')";
 
-    if (@$evidence_type_aids) {
+    if (@$included_evidence_type_aids) {
         $corr_sql .=
-          "and ce.evidence_type_accession in ('"
-          . join( "','", @$evidence_type_aids ) . "')";
+          " and ce.evidence_type_accession in ('"
+          . join( "','", @$included_evidence_type_aids ) . "')";
     }
 
     if (@$feature_type_aids) {
         $corr_sql .=
-          "and cl.feature_type_accession1 in ('"
+          " and cl.feature_type_accession1 in ('"
           . join( "','", @$feature_type_aids ) . "')";
     }
     my $ref_correspondences;
@@ -1464,8 +1501,8 @@ Returns the data for the correspondence matrix.
             and      ms.species_id=s.species_id
         ];
 
-        $sql .= "and s.accession_id='$species_aid' "         if $species_aid;
-        $sql .= "and ms.map_type_accession='$map_type_aid' " if $map_type_aid;
+        $sql .= " and s.accession_id='$species_aid' "         if $species_aid;
+        $sql .= " and ms.map_type_accession='$map_type_aid' " if $map_type_aid;
 
         $map_sets = $db->selectall_arrayref( $sql, { Columns => {} } );
 
@@ -1493,10 +1530,10 @@ Returns the data for the correspondence matrix.
             and      ms.is_enabled=1
             and      ms.species_id=s.species_id
         ];
-        $map_sql .= "and ms.map_type_accession='$map_type_aid' "
+        $map_sql .= " and ms.map_type_accession='$map_type_aid' "
           if $map_type_aid;
-        $map_sql .= "and s.accession_id='$species_aid' "  if $species_aid;
-        $map_sql .= "and ms.accession_id='$map_set_aid' " if $map_set_aid;
+        $map_sql .= " and s.accession_id='$species_aid' "  if $species_aid;
+        $map_sql .= " and ms.accession_id='$map_set_aid' " if $map_set_aid;
         $map_sql .= 'order by map.display_order, map.map_name';
         $maps = $db->selectall_arrayref( $map_sql, { Columns => {} } );
     }
@@ -1527,7 +1564,7 @@ Returns the data for the correspondence matrix.
             and      ms.species_id=s.species_id
         ];
 
-        $map_set_sql .= "and map.map_name='$map_name' " if $map_name;
+        $map_set_sql .= " and map.map_name='$map_name' " if $map_name;
         $map_set_sql .= 'order by map.display_order, map.map_name';
 
         my $tempMapSet =
@@ -1570,13 +1607,13 @@ Returns the data for the correspondence matrix.
                 and      ms.is_relational_map=0
             ];
 
-            $map_set_sql .= "and s.accession_id='$species_aid' "
+            $map_set_sql .= " and s.accession_id='$species_aid' "
               if $species_aid;
 
-            $map_set_sql .= "and ms.map_type_accession='$map_type_aid' "
+            $map_set_sql .= " and ms.map_type_accession='$map_type_aid' "
               if $map_type_aid;
 
-            $map_set_sql .= "and ms.accession_id='$map_set_aid' "
+            $map_set_sql .= " and ms.accession_id='$map_set_aid' "
               if $map_set_aid;
         }
         else {
@@ -1597,13 +1634,13 @@ Returns the data for the correspondence matrix.
                 and      ms.species_id=s.species_id
             ];
 
-            $map_set_sql .= "and s.accession_id='$species_aid' "
+            $map_set_sql .= " and s.accession_id='$species_aid' "
               if $species_aid;
 
-            $map_set_sql .= "and ms.map_type_accession='$map_type_aid' "
+            $map_set_sql .= " and ms.map_type_accession='$map_type_aid' "
               if $map_type_aid;
 
-            $map_set_sql .= "and ms.accession_id='$map_set_aid' "
+            $map_set_sql .= " and ms.accession_id='$map_set_aid' "
               if $map_set_aid;
 
         }
@@ -1658,10 +1695,10 @@ Returns the data for the correspondence matrix.
             and      ms.is_enabled=1
         ];
 
-        $select_sql .= "and cm.reference_species_aid='$species_aid' "
+        $select_sql .= " and cm.reference_species_aid='$species_aid' "
           if $species_aid;
 
-        $select_sql .= "and cm.reference_map_name='$map_name' "
+        $select_sql .= " and cm.reference_map_name='$map_name' "
           if $map_name;
 
         $select_sql .= q[
@@ -1689,10 +1726,10 @@ Returns the data for the correspondence matrix.
             and      cm.reference_map_set_aid=ms.accession_id
         ];
 
-        $select_sql .= "and cm.reference_species_aid='$species_aid' "
+        $select_sql .= " and cm.reference_species_aid='$species_aid' "
           if $species_aid;
 
-        $select_sql .= "and cm.reference_map_name='$map_name' "
+        $select_sql .= " and cm.reference_map_name='$map_name' "
           if $map_name;
 
         $select_sql .= q[
@@ -1727,7 +1764,7 @@ Returns the data for the correspondence matrix.
         $select_sql .= "where cm.reference_species_aid='$species_aid' "
           if $species_aid;
 
-        $select_sql .= "and cm.reference_map_name='$map_name' "
+        $select_sql .= " and cm.reference_map_name='$map_name' "
           if $map_name;
 
         $select_sql .= q[
@@ -1842,7 +1879,7 @@ Returns the data for the correspondence matrix.
             and      ms.species_id=s.species_id
         ];
 
-        $link_map_set_sql .= "and ms.accession_id='$link_map_set_aid' "
+        $link_map_set_sql .= " and ms.accession_id='$link_map_set_aid' "
           if $link_map_set_aid;
 
         $tempMapSet =
@@ -1967,9 +2004,10 @@ sub cmap_form_data {
     my ( $self, %args ) = @_;
     my $slots = $args{'slots'} or return;
     my $min_correspondences = $args{'min_correspondences'}    || 0;
-    my $feature_type_aids   = $args{'include_feature_types'}  || [];
+    my $feature_type_aids   = $args{'included_feature_types'}  || [];
     my $ignored_feature_type_aids  = $args{'ignored_feature_types'}  || [];
-    my $evidence_type_aids  = $args{'include_evidence_types'} || [];
+    my $included_evidence_type_aids  = $args{'included_evidence_types'} || [];
+    my $ignored_evidence_type_aids  = $args{'ignored_evidence_types'} || [];
     my $ref_species_aid     = $args{'ref_species_aid'}        || '';
     my $ref_map             = $slots->{0};
     my $ref_map_set_aid     = $args{'ref_map_set_aid'}       || 0;
@@ -2067,11 +2105,6 @@ sub cmap_form_data {
     }
 
     #
-    # "-1" is a reserved value meaning "All."
-    #
-    $evidence_type_aids = [] if grep { /^-1$/ } @$evidence_type_aids;
-
-    #
     # If the user selected a map set, select all the maps in it.
     #
     my ( $ref_maps, $ref_map_set_info );
@@ -2145,7 +2178,8 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
             min_correspondences => $min_correspondences,
             feature_type_aids   => $feature_type_aids,
             ignored_feature_type_aids   => $ignored_feature_type_aids,
-            evidence_type_aids  => $evidence_type_aids,
+            included_evidence_type_aids  => $included_evidence_type_aids,
+            ignored_evidence_type_aids  => $ignored_evidence_type_aids,
             ref_slot_no         => $slot_nos[-1],
             pid                 => $pid,
         );
@@ -2157,7 +2191,8 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
             min_correspondences => $min_correspondences,
             feature_type_aids   => $feature_type_aids,
             ignored_feature_type_aids   => $ignored_feature_type_aids,
-            evidence_type_aids  => $evidence_type_aids,
+            included_evidence_type_aids  => $included_evidence_type_aids,
+            ignored_evidence_type_aids  => $ignored_evidence_type_aids,
             ref_slot_no         => $slot_nos[0],
             pid                 => $pid,
           );
@@ -2214,7 +2249,8 @@ out which maps have relationships.
     my $min_correspondences = $args{'min_correspondences'};
     my $feature_type_aids   = $args{'feature_type_aids'};
     my $ignored_feature_type_aids   = $args{'ignored_feature_type_aids'};
-    my $evidence_type_aids  = $args{'evidence_type_aids'};
+    my $included_evidence_type_aids  = $args{'included_evidence_type_aids'};
+    my $ignored_evidence_type_aids  = $args{'ignored_evidence_type_aids'};
     my $ref_slot_no         = $args{'ref_slot_no'};
     my $pid                 = $args{'pid'};
     my $db                  = $self->db or return;
@@ -2263,22 +2299,25 @@ out which maps have relationships.
     }
     $from_restriction = $restricted_sql.$unrestricted_sql;
     $from_restriction =~ s/^\s+or//;
-    $from_restriction = "and (".$from_restriction.")" if $from_restriction;
+    $from_restriction = " and (".$from_restriction.")" if $from_restriction;
     
 
     my $additional_where  = '';
     my $additional_tables = '';
-    if (@$evidence_type_aids) {
+    if (@$included_evidence_type_aids or not @$ignored_evidence_type_aids ) {
         $additional_tables = ', cmap_correspondence_evidence ce';
         $additional_where .= "
             and fc.feature_correspondence_id=ce.feature_correspondence_id
             and ce.evidence_type_accession in ('"
-          . join( "','", @$evidence_type_aids ) . "') ";
+          . join( "','", @$included_evidence_type_aids ) . "') ";
+    }
+    else{ #all are ignored, return nothing
+        $additional_where .= " and cl.map_id1 = -1 ";
     }
 
     if (@$ignored_feature_type_aids) {
         $additional_where .=
-          "and cl.feature_type_accession2 not in ('"
+          " and cl.feature_type_accession2 not in ('"
           . join( "','", @$ignored_feature_type_aids ) . "') ";
     }
 
@@ -2354,7 +2393,7 @@ out which maps have relationships.
                        cmap_map_set ms
                 where  map.map_set_id=ms.map_set_id
             ]
-            . "and map.map_id in ('"
+            . " and map.map_id in ('"
             . join("','", map {$_->{'map_id'}} @$feature_correspondences)
             . "')";
         my $maps;
@@ -2824,9 +2863,9 @@ Given a list of feature names, find any maps they occur on.
         my ( $fname_where, $aname_where );
         if ( $feature_name ne '%' ) {
             $fname_where .= 
-                "and upper(f.feature_name) $comparison '$feature_name' ";
+                " and upper(f.feature_name) $comparison '$feature_name' ";
             $aname_where .= 
-                "and upper(fa.alias) $comparison '$feature_name' ";
+                " and upper(fa.alias) $comparison '$feature_name' ";
         }
 
         my $where = '';
@@ -2925,7 +2964,7 @@ Given a list of feature names, find any maps they occur on.
                 $where
             ];
             unless ( $feature_name eq '%' ) {
-                $sql .= "and upper(f.accession_id) $comparison '$feature_name'";
+                $sql .= " and upper(f.accession_id) $comparison '$feature_name'";
             }
         }
 
@@ -3403,14 +3442,9 @@ Returns the detail info for a map.
     my $map_start             = $map->{'start'};
     my $map_stop              = $map->{'stop'};
 
-    my $feature_type_aids  = $args{'include_feature_types'};
-    my $evidence_type_aids = $args{'include_evidence_types'};
-
-    #
-    # "-1" is a reserved value meaning "All."
-    #
-    $feature_type_aids  = [] if grep { /^-1$/ } @$feature_type_aids;
-    $evidence_type_aids = [] if grep { /^-1$/ } @$evidence_type_aids;
+    my $feature_type_aids  = $args{'included_feature_types'};
+    my $included_evidence_type_aids = $args{'included_evidence_types'};
+    my $ignored_evidence_type_aids = $args{'ignored_evidence_types'};
 
     #
     # Figure out hightlighted features.
@@ -3583,9 +3617,11 @@ Returns the detail info for a map.
             $sql->feature_correspondence_sql(
                 comparative_map_field => $comparative_map_field,
                 comparative_map_aid   => $comparative_map_aid,
-                evidence_type_aids    => @$evidence_type_aids
-                ? join( ',', @$evidence_type_aids )
-                : '',
+                included_evidence_type_aids    => @$included_evidence_type_aids
+                ? join( ',', @$included_evidence_type_aids )
+                : @$included_evidence_type_aids 
+                    ? "-1"
+                    : '',
             ),
             { Columns => {} },
             ( $feature->{'feature_id'} )
@@ -3933,7 +3969,8 @@ sub view_feature_on_map {
 sub count_correspondences{
 
     my ( $self, %args ) = @_;
-    my $evidence_type_aids  = $args{'evidence_type_aids'};
+    my $included_evidence_type_aids  = $args{'included_evidence_type_aids'};
+    my $ignored_evidence_type_aids  = $args{'ignored_evidence_type_aids'};
     my $map_correspondences = $args{'map_correspondences'};
     my $this_slot_no        = $args{'this_slot_no'};
     my $ref_slot_no         = $args{'ref_slot_no'};
@@ -3945,11 +3982,16 @@ sub count_correspondences{
     #
     # Query for the counts of correspondences.
     #
+    # All possible evidence types that aren't ignored are in included_evidence_type_aids
+    #  at this point.  If it is empty, either all are ignored or something is wrong.
+    #  In the case where all are ignored, the sql is forced to return nothing.
     my $where =
-      @$evidence_type_aids
-      ? "and ce.evidence_type_accession in ('"
-      . join( "','", @$evidence_type_aids ) . "')"
-      : ''; 
+      @$included_evidence_type_aids
+      ? " and ce.evidence_type_accession in ('"
+      . join( "','", @$included_evidence_type_aids ) . "')"
+      : @$ignored_evidence_type_aids 
+        ? " and ce.correspondence_evidence_id = -1 "
+        : ''; 
 
     my ( $count_sql, $position_sql, @query_args );
     if ( defined $ref_slot_no ) {    # multiple reference maps
@@ -4009,7 +4051,7 @@ sub count_correspondences{
         }
         my $combined_sql = $restricted_sql.$unrestricted_sql;
         $combined_sql =~ s/^\s+or//;
-        $base_sql .= "and (".$combined_sql.")";
+        $base_sql .= " and (".$combined_sql.")";
 
         # Include reference slot maps
         $slot_info = $self->slot_info->{$ref_slot_no};
@@ -4051,7 +4093,7 @@ sub count_correspondences{
         }
         $combined_sql = $restricted_sql.$unrestricted_sql;
         $combined_sql =~ s/^\s+or//;
-        $base_sql .= "and (".$combined_sql.")";
+        $base_sql .= " and (".$combined_sql.")";
 
         $base_sql .= " group by map_id1,map_id2";
 
@@ -4134,8 +4176,9 @@ sub cmap_entry_data {
     my $slots = $args{'slots'} or return;
     my $min_correspondence_maps = $args{'min_correspondence_maps'}    || 0;
     my $min_correspondences = $args{'min_correspondences'}    || 0;
-    my $feature_type_aids   = $args{'include_feature_types'}  || [];
-    my $evidence_type_aids  = $args{'include_evidence_types'} || [];
+    my $feature_type_aids   = $args{'included_feature_types'}  || [];
+    my $included_evidence_type_aids  = $args{'included_evidence_types'} || [];
+    my $ignored_evidence_type_aids  = $args{'ignored_evidence_types'} || [];
     my $ref_species_aid     = $args{'ref_species_aid'}        || '';
     my $page_index_start    = $args{'page_index_start'}       || 1;
     my $page_index_stop     = $args{'page_index_stop'}        || 20;
@@ -4283,7 +4326,7 @@ sub cmap_entry_data {
         }
         if ($min_correspondence_maps and $min_correspondences){
             $map_sql_str.=" having count(distinct(cl.map_id2)) >=$min_correspondence_maps "
-            . "and count(distinct(cl.feature_correspondence_id)) >=$min_correspondences ";
+            . " and count(distinct(cl.feature_correspondence_id)) >=$min_correspondences ";
         }
         elsif ($min_correspondence_maps){
             $map_sql_str.=" having count(distinct(cl.map_id2)) >='$min_correspondence_maps' ";
@@ -4775,6 +4818,33 @@ Given the slot_no and map_id
     return $self->{'feature_default_display'};
 }
 
+# ----------------------------------------------------
+sub evidence_default_display {
+
+=pod
+
+=head2 evidence_default_display
+
+Given the slot_no and map_id
+
+=cut
+
+    my $self     = shift;
+
+    unless ( $self->{'evidence_default_display'} ) {
+        my $evidence_default_display =
+          $self->config_data('evidence_default_display');
+        $evidence_default_display = lc($evidence_default_display);
+        unless ( $evidence_default_display eq 'ignore' )
+        {
+            $evidence_default_display = 'display';    #Default value
+        }
+        $self->{'evidence_default_display'} = $evidence_default_display;
+    }
+
+    return $self->{'evidence_default_display'};
+}
+
 
 # ----------------------------------------------------
 sub slot_info {
@@ -4799,9 +4869,11 @@ original start and stop.
 
 =cut
 
-    my $self  = shift;
-    my $slots = shift;
-    my $db    = $self->db;
+    my $self                  = shift;
+    my $slots                 = shift;
+    my $ignored_feature_list  = shift;
+    my $ignored_evidence_list = shift;
+    my $db                    = $self->db;
 
     my $sql_start = q[
 	  select distinct m.map_id,
@@ -4826,7 +4898,7 @@ original start and stop.
                       cmap_map_set ms ];
                     $where .=  "where m.map_set_id=ms.map_set_id ";
                     #Map set aid
-                    my $where2 .= "and ((ms.accession_id = '"
+                    my $where2 .= " and ((ms.accession_id = '"
                       . join("' or ms.accession_id = '",
                         keys(%{$slots->{$slot_no}{'map_sets'}}))
                       ."')";
@@ -4839,7 +4911,7 @@ original start and stop.
 
                         ### Add the information about the adjoinint slot
                         ### including info about the start and end.
-                        $where .=  "and ("; 
+                        $where .=  " and ("; 
                         my @ref_map_strs=();
                         my $ref_slot_id = $slot_no + $slot_modifier;
                         my $slot_info = $self->{'slot_info'}{$ref_slot_id};
@@ -4874,6 +4946,23 @@ original start and stop.
                             push @ref_map_strs,$r_m_str; 
                         }
                         $where .= join(' or ',@ref_map_strs).") ";
+
+                        ### Add in considerations for feature and evidence types
+                        if ($ignored_feature_list and @$ignored_feature_list){
+                            $where .= " and cl.feature_type_accession1 not in ('"
+                                    . join("','",@$ignored_feature_list)
+                                    . "') ";
+                        } 
+                        if ($ignored_evidence_list and @$ignored_evidence_list){
+                            $from .= ", cmap_correspondence_evidence ce ";
+                            $where .= " and ce.feature_correspondence_id = cl.feature_correspondence_id ";
+                            $where .= " and ce.evidence_type_accession not in ('"
+                                    . join("','",@$ignored_evidence_list)
+                                    . "') ";
+                        } 
+                        
+                    
+
                     }
                     if (scalar(keys(%{$slots->{$slot_no}{'maps'}}))>0){
                         $where2 .= " or ("; 
@@ -4895,7 +4984,7 @@ original start and stop.
                     $where .= ")"
                 }
                 if ($where) {
-                    ###If aid was found, $sql_suffix will be created
+                    ### If aid was found, $sql_suffix will be created
                     my $slot_results;
                     my $sql_str=$sql_start.$from.$where;
                     unless ( $slot_results =
@@ -4976,6 +5065,27 @@ original start and stop.
                             =[$row->[1],$row->[2],$row->[3],$row->[4],$magnification];
                     }
                 }
+            }
+        }
+        # If ever a slot has no maps, remove the slot.
+        my $delete_pos = 0;
+        my $delete_neg = 0;
+        foreach my $slot_no ( sort orderOutFromZero keys %{$slots} ) {
+            if (scalar(keys(%{$self->{'slot_info'}{$slot_no}})) <= 0){
+                if ($slot_no >= 0){
+                    $delete_pos = 1;
+                }
+                if ($slot_no <= 0){ 
+                    $delete_neg = 1;
+                }
+            }
+            if ($slot_no >= 0 and $delete_pos){
+                delete $self->{'slot_info'}{$slot_no};
+                delete $slots->{$slot_no};
+            }
+            elsif ($slot_no < 0 and $delete_neg){ 
+                delete $self->{'slot_info'}{$slot_no};
+                delete $slots->{$slot_no};
             }
         }
 #print S#TDERR Dumper($self->{'slot_info'})."\n";

@@ -124,6 +124,20 @@ function selectFeatureRadio(val){
   }
 }
 
+function selectEvidenceRadio(val){
+  var radios=document.getElementsByTagName("INPUT");
+  for (var i=0; i < radios.length; i++){
+    if (radios[i].name.search(/^evidence_type_/)>=0){
+      if (radios[i].value==val){
+        radios[i].checked=true;
+      }
+      else{
+        radios[i].checked=false;
+      }
+    }
+  }
+}
+
 function mod_map_info(slot_no, map_aid, start, stop,mag){
   if ( slot_no == 0){
     if (start!='' && start==stop){
@@ -448,7 +462,7 @@ function changeCompMaps(sel,index,side){
                           [% FOREACH cmap=map.cmaps %]
                             [% cmaps.push( "${cmap.slot_no}%3d${cmap.field}%3d${cmap.aid}" ) %]
                           [% END %]
-                          [% map.description %][% IF map.is_reference_map %]&nbsp;(Ref.)[% ELSE %]&nbsp;[&nbsp;<a href="viewer?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aids=[% apr.param('ref_map_aids') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% cmaps.join('%3a') %];include_feature_types=[% feature_types %];include_evidence_types=[% evidence_types %];collapse_features=[% apr.param('collapse_features') %];image_type=[% apr.param('image_type') %];min_correspondences=[% apr.param('min_correspondences') %]">Delete</a>&nbsp;]&nbsp;[% END %]<br>
+                          [% map.description %][% IF map.is_reference_map %]&nbsp;(Ref.)[% ELSE %]&nbsp;[&nbsp;<a href="viewer?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aids=[% apr.param('ref_map_aids') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% cmaps.join('%3a') %];include_feature_types=[% feature_types %];included_evidence_types=[% evidence_types %];collapse_features=[% apr.param('collapse_features') %];image_type=[% apr.param('image_type') %];min_correspondences=[% apr.param('min_correspondences') %]">Delete</a>&nbsp;]&nbsp;[% END %]<br>
                         [% END %]
                       </td>
                     </tr>
@@ -542,11 +556,29 @@ function changeCompMaps(sel,index,side){
               <tr>
                 <td>
                   [% IF form_data.evidence_types.size %]
+                    <table border="1">
+                      <tr>
+                        <td>Evidence</td>
+                        <td>Ignore</td>
+                        <td>Use</td>
+                      </tr>
                       [% FOREACH et=form_data.evidence_types %]
-                        <input type="checkbox" name="evidence_types" value="[% et.evidence_type_aid %]"[% IF feature_types_undefined OR included_evidence.${et.evidence_type_aid}; ' checked'; END %]>[% et.evidence_type %]<br>
-                      [% END %]
-                    </select>
-    
+                        <tr>
+                          <td>[% et.evidence_type %]</td>
+                        <td>
+                          <input type="radio" name="evidence_type_[% et.evidence_type_aid %]" value="0" [% IF ignored_evidence_types.${et.evidence_type_aid}; ' checked'; END %]>
+                        </td>
+                        <td>
+                          <input type="radio" name="evidence_type_[% et.evidence_type_aid %]" value="1" [% IF NOT ignored_evidence_types.${et.evidence_type_aid}; ' checked'; END %]>
+                        </td>
+                      </tr>
+                    [% END %]
+                    <tr>
+                      <td>&nbsp;</td>
+                      <td><input type="button" name="checkColumn" value="Check All" onClick="selectEvidenceRadio(0)"></td>
+                      <td><input type="button" name="checkColumn" value="Check All" onClick="selectEvidenceRadio(1)"></td>
+                    </tr>
+                  </table> 
                   [% ELSE %]
                     There are no evidence types!
                   [% END %]
