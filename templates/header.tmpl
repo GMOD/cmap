@@ -13,7 +13,8 @@
 <table width="100%">
     <tr>
         <td align="left">
-            [% IF no_link != 'home' %]<a href="/cmap">[% ELSE %]<b>[% END %]Home[% IF no_link != 'home' %]</a>[% ELSE %]</b>[% END %] |
+            [% IF page %]<img src="/images/icons/grain_icon.jpg" alt="grain_icon" height="16" width="16">[% END %]
+            [% IF no_link != 'home' %]<a href="/cmap">[% ELSE %]<b>[% END %]CMap Home[% IF no_link != 'home' %]</a>[% ELSE %]</b>[% END %] |
             [% IF no_link != 'maps' %]<a href="/cmap/viewer">[% ELSE %]<b>[% END %]Map Viewer[% IF no_link != 'maps' %]</a>[% ELSE %]</b>[% END %] |
             [% IF no_link != 'matrix' %]<a href="/cmap/matrix">[% ELSE %]<b>[% END %]Matrix[% IF no_link != 'matrix' %]</a>[% ELSE %]</b>[% END %] |
             [% IF no_link != 'feature_search' %]<a href="/cmap/feature_search">[% ELSE %]<b>[% END %]Feature Search[% IF no_link != 'feature_search' %]</a>[% ELSE %]</b>[% END %] |
