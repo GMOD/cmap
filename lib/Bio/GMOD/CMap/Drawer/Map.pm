@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.91 2004-06-11 02:48:52 mwz444 Exp $
+# $Id: Map.pm,v 1.92 2004-06-14 22:35:45 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.91 $)[-1];
+$VERSION = (qw$Revision: 1.92 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -616,6 +616,7 @@ Lays out the map.
             drawer          => $drawer,
             map_columns     => \@map_columns,
             drawing_data    => \@drawing_data,
+            map_area_data   => \@map_area_data,
             original_base_x => $original_base_x,
             last_map_x      => $last_map_x,
             last_map_y      => $last_map_y,
@@ -639,7 +640,10 @@ Lays out the map.
         eval $self->map_type_data( $map->{'map_type_aid'}, 'area_code' );
         push @map_area_data,
           {
-            coords => \@map_bounds,
+            coords => [$map_bounds[0]-2,
+                $map_bounds[1],
+                $map_bounds[2]+2,
+                $map_bounds[3]],
             url  => $map_details_url . "?ref_map_aid=" . $map->{'accession_id'},
             alt  => 'Map Details: ' . $map->{'map_name'},
             code => $code,
@@ -953,19 +957,19 @@ Lays out the map.
           . $drawer->data_source;
 
         if ($is_compressed) {
-            push @map_area_data,
-              {
-                coords => \@map_bounds,
-                url    => $details_url,
-                alt    => 'Details: ' . $self->map_name,
-              };
+            #push @map_area_data,
+            #  {
+            #    coords => \@map_bounds,
+            #    url    => $details_url,
+            #    alt    => 'Details: ' . $self->map_name,
+            #  };
         }
         else {
             push @map_buttons,
               {
                 label => '?',
                 url   => $details_url,
-                alt   => 'Details: ' . ( $self->map_name || '' ),
+                alt   => 'Deertails: ' . ( $self->map_name || '' ),
               };
         }
 
@@ -1300,6 +1304,7 @@ sub layout_map_foundation {
     my $drawer          = $args{'drawer'};
     my $map_columns     = $args{'map_columns'};
     my $drawing_data    = $args{'drawing_data'};
+    my $map_area_data    = $args{'map_area_data'};
     my $original_base_x = $args{'original_base_x'};
     my $last_map_x      = $args{'last_map_x'};
     my $last_map_y      = $args{'last_map_y'};
@@ -1312,7 +1317,7 @@ sub layout_map_foundation {
     my $font_width  = $reg_font->width;
     my $font_height = $reg_font->height;
 
-    my $column_width         = 50;
+    my $column_width         = 70;
     my $topper_height        = ( $font_height + 2 ) * 2;
     my $map_name             = $self->map_name($map_id);
     my $no_features          = $self->no_features($map_id);
@@ -1447,9 +1452,11 @@ sub layout_map_foundation {
         if ($self->aggregate){
             for my $ref_connect (@ref_connections) {
                 my $line_color =
-                    $ref_connect->[2] <= 5  ? 'lightblue'
-                  : $ref_connect->[2] <= 25 ? 'grey'
-                  : $ref_connect->[2] <= 50 ? 'brown'
+                    $ref_connect->[2] <= 1  ? 'lightgrey'
+                  : $ref_connect->[2] <= 5  ? 'lightblue'
+                  : $ref_connect->[2] <= 25 ? 'blue'
+                  : $ref_connect->[2] <= 50 ? 'purple'
+                  : $ref_connect->[2] <= 200 ? 'red'
                   : 'black';
                 push @$drawing_data,
                   [
@@ -1477,6 +1484,21 @@ sub layout_map_foundation {
             $topper_y =
               $map_base_y - ( $font_height * ( scalar @map_toppers - $i ) + 4 );
         }
+
+        my @topper_bounds=($f_x, $topper_y,  
+            $f_x + ( length($topper) * $font_width ) ,
+            $topper_y+( $font_height * ( scalar @map_toppers - $i ))-4);
+        my $map             = $self->map($map_id);
+        my $map_details_url = DEFAULT->{'map_details_url'};
+        my $code            = '';
+        eval $self->map_type_data( $map->{'map_type_aid'}, 'area_code' );
+        push @$map_area_data,
+          {
+            coords => \@topper_bounds,
+            url  => $map_details_url . "?ref_map_aid=" . $map->{'accession_id'},            alt  => 'Map Details: ' . $map->{'map_name'},
+            code => $code,
+          };
+                                                                                
 
         push @$drawing_data,
           [ STRING, $reg_font, $f_x, $topper_y, $topper, 'black' ];

@@ -248,16 +248,16 @@
                             <td>
 
                                     <select name="feature_types" size="4" multiple>
-                                        <option value="-1" [% IF included_features.-1; ' selected'; END %]>--ALL--</option> 
-                                        <option value="-2" [% IF included_features.-2; ' selected'; END %]>--None--</option> 
+                                        <option value="-1" [% IF included_features.-1; ' selected'; END %]>--Show All--</option> 
+                                        <option value="-2" [% IF included_features.-2; ' selected'; END %]>--Don't Show Features--</option> 
                                         [% FOREACH ft=form_data.feature_types %]
                                             <option value="[% ft.feature_type_aid %]"[% IF included_features.${ft.feature_type_aid}; ' selected'; END %]>[% ft.feature_type %]</option>
                                         [% END %]
                                     </select></td></tr>
-                                <tr><td align="right" valign="top">Restrict by correspondence:</td><td>
+                                <tr><td align="right" valign="top" >Show only if  <br>correspondence <br>is displayed:</td><td>
                                     <select name="corr_only_feature_types" size="4" multiple>
-                                        <option value="-2" [% IF included_corr_only_features.-2; ' selected'; END %]>--None--</option>
-                                        <option value="-1" [% IF included_corr_only_features.-1; ' selected'; END %]>--ALL--</option> 
+                                        <option value="-2" [% IF included_corr_only_features.-2; ' selected'; END %]>--Don't Filter Any--</option>
+                                        <option value="-1" [% IF included_corr_only_features.-1; ' selected'; END %]>--Filter All Features--</option> 
 
                                         [% FOREACH ft=form_data.feature_types %]                                            <option value="[% ft.feature_type_aid %]"[% IF included_corr_only_features.${ft.feature_type_aid}; ' selected'; END %]>[% ft.feature_type %]</option>
                                         [% END %]
