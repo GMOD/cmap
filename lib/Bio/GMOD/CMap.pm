@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.69 2005-01-19 20:38:56 mwz444 Exp $
+# $Id: CMap.pm,v 1.70 2005-01-21 16:29:12 mwz444 Exp $
 
 =head1 NAME
 
@@ -429,6 +429,32 @@ The default is 1.
 }
 
 # ----------------------------------------------------
+sub split_agg_ev {
+
+=pod
+                                                                                
+=head2 split_agg_ev
+
+Returns the boolean split_agg_ev variable.  This determines 
+if the correspondences of different evidence types will be 
+aggregated together or split.
+
+The default is 1.
+
+=cut
+
+    my $self = shift;
+    my $val  = shift;
+    $self->{'split_agg_ev'} = $val if defined $val;
+    $self->{'split_agg_ev'} =
+      $self->config_data('split_agg_evespondences')
+      unless defined $self->{'split_agg_ev'};
+    $self->{'split_agg_ev'} = 0
+      unless defined $self->{'split_agg_ev'};
+    return $self->{'split_agg_ev'};
+}
+
+# ----------------------------------------------------
 sub clean_view {
 
 =pod
@@ -585,6 +611,7 @@ Returns a handle to the data module.
             config              => $self->config,
             aggregate           => $self->aggregate,
             show_intraslot_corr => $self->show_intraslot_corr,
+            split_agg_ev        => $self->split_agg_ev,
             ref_map_order       => $self->ref_map_order,
             comp_menu_order     => $self->comp_menu_order,
           )
@@ -768,6 +795,7 @@ Given information about the link, creates a url to cmap_viewer.
     my $stack_maps                  = $args{'stack_maps'};
     my $ref_map_order               = $args{'ref_map_order'};
     my $show_intraslot_corr         = $args{'show_intraslot_corr'};
+    my $split_agg_ev                = $args{'split_agg_ev'};
     my $clean_view                  = $args{'clean_view'};
     my $magnify_all                 = $args{'magnify_all'};
     my $flip                        = $args{'flip'};
@@ -823,8 +851,8 @@ Given information about the link, creates a url to cmap_viewer.
       if defined($stack_maps);
     $url .= "ref_map_order=$ref_map_order;"
       if defined($ref_map_order);
-    $url .= "show_intraslot_corr=$show_intraslot_corr;"
-      if defined($show_intraslot_corr);
+    $url .= "split_agg_ev=$split_agg_ev;"
+      if defined($split_agg_ev);
     $url .= "clean_view=$clean_view;"
       if defined($clean_view);
     $url .= "magnify_all=$magnify_all;"

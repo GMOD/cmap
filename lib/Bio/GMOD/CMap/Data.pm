@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.202 2005-01-21 03:37:48 mwz444 Exp $
+# $Id: Data.pm,v 1.203 2005-01-21 16:29:13 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.202 $)[-1];
+$VERSION = (qw$Revision: 1.203 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -48,6 +48,7 @@ sub init {
     $self->data_source( $config->{'data_source'} );
     $self->aggregate( $config->{'aggregate'} );
     $self->show_intraslot_corr( $config->{'show_intraslot_corr'} );
+    $self->split_agg_ev( $config->{'split_agg_ev'} );
     $self->ref_map_order( $config->{'ref_map_order'} );
     $self->comp_menu_order( $config->{'comp_menu_order'} );
 
@@ -4471,8 +4472,7 @@ sub count_correspondences {
         $base_sql .= " group by map_id2,map_id1,evidence_type_accession";
 
         my $select_str;
-        my $split_evidence_types=1;
-        if ($split_evidence_types){
+        if ($self->split_agg_ev){
             $select_str = "ce.evidence_type_accession as evidence_type_aid, ";
         }
         else {

@@ -828,6 +828,14 @@ function selectAllOptions(select){
                   [% IF show_intraslot_corr==1; ' checked'; END %]>yes</td>
               </tr>
               <tr>
+                <td align="left" valign="top">Aggregate evidence types separately:</td>
+                  [% IF apr.param('split_agg_ev')==1; split_agg_ev=1; ELSE; split_agg_ev=0; END %]
+                <td><input type="radio" name="split_agg_ev" value="0"
+                  [% IF split_agg_ev==0; ' checked'; END %]>No</td>
+                <td><input type="radio" name="split_agg_ev" value="1"
+                  [% IF split_agg_ev==1; ' checked'; END %]>yes</td>
+              </tr>
+              <tr>
                 <td align="left" valign="top">Menu Order of Comparative Maps:</td>
                   [% IF apr.param('comp_menu_order')=="corrs"; comp_menu_order="corrs"; ELSE; comp_menu_order="display_order"; END %]
                 <td><input type="radio" name="comp_menu_order" value="display_order"

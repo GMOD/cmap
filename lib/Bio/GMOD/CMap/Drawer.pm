@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.90 2005-01-21 03:37:49 mwz444 Exp $
+# $Id: Drawer.pm,v 1.91 2005-01-21 16:29:20 mwz444 Exp $
 
 =head1 NAME
 
@@ -43,6 +43,7 @@ The base map drawing module.
         data_module => $data_module,
         aggregate => $aggregate,
         show_intraslot_corr => $show_intraslot_corr,
+        split_agg_ev => $split_agg_ev,
         clean_view => $clean_view,
         magnify_all => $magnify_all,
         scale_maps => $scale_maps,
@@ -198,6 +199,11 @@ Set to 2 to aggregate the correspondences with two lines.
 
 Set to 1 to diplsyed intraslot correspondences.
 
+=item * split_agg_ev
+
+Set to 1 to split correspondences with different evidence types.
+Set to 0 to aggregate them all together.
+
 =item * clean_view
 
 Set to 1 to not have the control buttons displayed on the image.
@@ -233,7 +239,7 @@ on the number of correspondences).  'display_order' is the default.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.90 $)[-1];
+$VERSION = (qw$Revision: 1.91 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -253,6 +259,7 @@ my @INIT_PARAMS = qw[
   config data_source min_correspondences collapse_features cache_dir
   map_view data_module aggregate show_intraslot_corr clean_view
   magnify_all scale_maps stack_maps ref_map_order comp_menu_order
+  split_agg_ev 
 ];
 
 # ----------------------------------------------------
@@ -2384,8 +2391,9 @@ Creates default link parameters for CMap->create_viewer_link()
     my $scale_maps                  = $args{'scale_maps'};
     my $stack_maps                  = $args{'stack_maps'};
     my $ref_map_order               = $args{'ref_map_order'};
-    my $comp_menu_order               = $args{'comp_menu_order'};
+    my $comp_menu_order             = $args{'comp_menu_order'};
     my $show_intraslot_corr         = $args{'show_intraslot_corr'};
+    my $split_agg_ev                = $args{'split_agg_ev'};
     my $clean_view                  = $args{'clean_view'};
     my $magnify_all                 = $args{'magnify_all'};
     my $flip                        = $args{'flip'};
@@ -2464,6 +2472,9 @@ Creates default link parameters for CMap->create_viewer_link()
     unless ( defined($show_intraslot_corr) ) {
         $show_intraslot_corr = $self->show_intraslot_corr();
     }
+    unless ( defined($split_agg_ev) ) {
+        $split_agg_ev = $self->split_agg_ev();
+    }
     unless ( defined($clean_view) ) {
         $clean_view = $self->clean_view();
     }
@@ -2524,8 +2535,9 @@ Creates default link parameters for CMap->create_viewer_link()
         scale_maps                  => $scale_maps,
         stack_maps                  => $stack_maps,
         ref_map_order               => $ref_map_order,
-        comp_menu_order               => $comp_menu_order,
+        comp_menu_order             => $comp_menu_order,
         show_intraslot_corr         => $show_intraslot_corr,
+        split_agg_ev                => $split_agg_ev,
         clean_view                  => $clean_view,
         magnify_all                 => $magnify_all,
         flip                        => $flip,

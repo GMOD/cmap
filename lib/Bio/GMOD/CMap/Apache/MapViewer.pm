@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.84 2005-01-19 20:39:05 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.85 2005-01-21 16:29:21 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.84 $)[-1];
+$VERSION = (qw$Revision: 1.85 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -72,6 +72,7 @@ sub handler {
     my $collapse_features     = $apr->param('collapse_features');
     my $aggregate             = $apr->param('aggregate');
     my $show_intraslot_corr   = $apr->param('show_intraslot_corr');
+    my $split_agg_ev          = $apr->param('split_agg_ev');
     my $clean_view            = $apr->param('clean_view');
     my $magnify_all           = $apr->param('magnify_all');
     my $scale_maps            = $apr->param('scale_maps');
@@ -101,6 +102,8 @@ sub handler {
     $apr->param( 'aggregate', $self->aggregate($aggregate) );
     $apr->param( 'show_intraslot_corr',
         $self->show_intraslot_corr($show_intraslot_corr) );
+    $apr->param( 'split_agg_ev',
+        $self->split_agg_ev($split_agg_ev) );
     $apr->param( 'clean_view',      $self->clean_view($clean_view) );
     $apr->param( 'magnify_all',     $self->magnify_all($magnify_all) );
     $apr->param( 'scale_maps',      $self->scale_maps($scale_maps) );
@@ -408,6 +411,7 @@ sub handler {
             data_module             => $self->data_module,
             aggregate               => $self->aggregate,
             show_intraslot_corr     => $self->show_intraslot_corr,
+            split_agg_ev            => $self->split_agg_ev,
             clean_view              => $self->clean_view,
             magnify_all             => $self->magnify_all,
             scale_maps              => $self->scale_maps,
