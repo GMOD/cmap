@@ -1,5 +1,53 @@
                       Revision history for CMap
 
+0.12 
+
+-   Further enhancements to label distribution: if there are as many
+    labels as can possibly fit in the vertical space, they're just
+    placed evenly;  otherwise, they are spaced as closely as possible to
+    the feature glyph.  All labels are taken for highlighted features,
+    then as many will fit of those with correspondences, and lastly any
+    others are taken.
+-   Add new "M" map button for "Matrix" to link a map to its view in
+    the matrix
+-   Additions to map detail page:  added a small table on the map
+    details page just between the image and the feature correspondences
+    to list any information known about the map (e.g., any attributes or
+    xrefs) and a breakdown of the feature counts by type with a summary
+    of how many features total are on the map.  Additionally, there is
+    now an additional link for downloading the map data called "Download
+    Map Data."
+-   Added a new action called "download_data" to allow users to
+    easily request a tab-delimited dump of the features on any map or
+    for an entire map set (XML dump also available if downloading a
+    full map set).
+-   Enhancements to the map set info page: added a link to easily
+    restrict the page to any one map set if looking at more than one;
+    links to download the data for the map set or a single map, see the
+    map set or any single map in the matrix;  expanded view of maps in a
+    set with more links and explicit text to indicate actions; added the
+    display of the publication date of the study, if available.
+-   Added link to feature type info page to search for all features
+    of each type 
+-   Added link to map type info page allowing a user to quickly view all
+    the info (on the "map_set_info" page) of all the maps of a
+    particular type
+-   Species info page now lists all the map sets linked to each
+    species (Pankaj Jaiswal), ability to easily view any single
+    species on the page by clicking the "Show Only This Species" link
+-   Changed the layout of the top table on the correspondence
+    details page from being large on the horizontal to the vertical.
+-   cmap_admin.pl now allows selection of map sets by accession id
+    (very handy if many map sets are defined)
+-   Fixed bug in "Flip" button (Alex Feltus)
+-   Fixed bug in map details page feature type selection (Noel Yap)
+-   Fixed bug in web admin view of xrefs (Pankaj Jaiswal)
+-   Fixed bug in "view_feature_on_map" (Noel Yap)
+-   Added "cmap-fix-map-display-order.pl" script in "bin"
+-   Added ability to disallow automated name-based correspondences
+    based on feature type (e.g., don't create correspondences between
+    features of type "centromere")
+
 0.11    2004-03-12
 
 -   Various bug fixes
