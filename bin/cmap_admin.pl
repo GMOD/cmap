@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.26 2003-03-14 20:10:12 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.27 2003-03-21 00:35:51 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.26 $)[-1];
+$VERSION = (qw$Revision: 1.27 $)[-1];
 
 #
 # Turn off output buffering.
@@ -1028,21 +1028,21 @@ sub export_correspondences {
     open my $fh, ">$corr_file" or die "Can't write to $corr_file: $!\n";
     my $log_fh = $self->log_fh;
     print $log_fh "Dumping feature correspondences to '$corr_file'\n";
-    my $sql = q[
-        select fc.feature_correspondence_id,
-               fc.is_enabled,
-               f1.accession_id as feature_accession_id1,
-               f1.feature_name as feature_name1,
-               f2.accession_id as feature_accession_id2,
-               f2.feature_name as feature_name2
-        from   cmap_feature_correspondence fc,
-               cmap_feature f1,
-               cmap_feature f2
-        where  fc.feature_id1=f1.feature_id
-        and    fc.feature_id2=f2.feature_id
-    ];
-#    $sql .= 'and 
-    my $sth = $db->prepare( $sql );
+    my $sth = $db->prepare( 
+        q[
+            select fc.feature_correspondence_id,
+                   fc.is_enabled,
+                   f1.accession_id as feature_accession_id1,
+                   f1.feature_name as feature_name1,
+                   f2.accession_id as feature_accession_id2,
+                   f2.feature_name as feature_name2
+            from   cmap_feature_correspondence fc,
+                   cmap_feature f1,
+                   cmap_feature f2
+            where  fc.feature_id1=f1.feature_id
+            and    fc.feature_id2=f2.feature_id
+        ]
+    );
     $sth->execute;
 
     my @col_names = ( 
@@ -1057,23 +1057,45 @@ sub export_correspondences {
         ] 
     );
 
+    my $evidence_sql = q[
+        select et.evidence_type
+        from   cmap_correspondence_evidence ce,
+               cmap_evidence_type et
+        where  ce.feature_correspondence_id=?
+        and    ce.evidence_type_id=et.evidence_type_id
+    ];
+    if ( @evidence_type_ids ) {
+        $evidence_sql .= 'and ce.evidence_type_id in ('.
+            join( ', ', @evidence_type_ids ). 
+        ')';
+    }
+
+    my %done;
     print $fh join( OUT_FS, @col_names ), OUT_RS;
     while ( my $fc = $sth->fetchrow_hashref ) {
+#        next if $done{
+#            $fc->{'feature_accession_id1'}}{$fc->{'feature_accession_id2'}
+#        } || $done{
+#            $fc->{'feature_accession_id2'}}{$fc->{'feature_accession_id1'}
+#        };
+
         $fc->{'evidence'} = join(',', @{
             $db->selectcol_arrayref(
-                q[
-                    select et.evidence_type
-                    from   cmap_correspondence_evidence ce,
-                           cmap_evidence_type et
-                    where  ce.feature_correspondence_id=?
-                    and    ce.evidence_type_id=et.evidence_type_id
-                ],
+                $evidence_sql,
                 {},
                 ( $fc->{'feature_correspondence_id'} )
             )
         });
 
         print $fh join( OUT_FS, map { $fc->{ $_ } } @col_names ), OUT_RS;
+
+#        $done{
+#            $fc->{'feature_accession_id1'}}{$fc->{'feature_accession_id2'}
+#        } = 1;
+#
+#        $done{
+#            $fc->{'feature_accession_id2'}}{$fc->{'feature_accession_id1'}
+#        } = 1;
     }
 }
 
@@ -1326,9 +1348,9 @@ sub make_name_correspondences {
     );
 
     #
-    # Get the map set.
+    # Get the source map set(s).
     #
-    my @map_sets = $self->show_menu(
+    my @from_map_sets = $self->show_menu(
         title       => 'Reference Map Set (optional)',
         prompt      => 'Please select a map set',
         display     => 'species_name,map_set_name',
@@ -1349,18 +1371,54 @@ sub make_name_correspondences {
         ),
     );
 
-    my @map_set_ids = map { $_->[0] } @map_sets;
+    my @from_map_set_ids = map { $_->[0] } @from_map_sets;
+
+    #
+    # Get the source map set(s).
+    #
+    my @to_map_sets = $self->show_menu(
+        title       => 'Target Map Set (optional)',
+        prompt      => 'Please select a target map set',
+        display     => 'species_name,map_set_name',
+        return      => 'map_set_id,species_name,map_set_name',
+        allow_null  => 1,
+        allow_mult  => 1,
+        data        => $db->selectall_arrayref(
+            q[
+                select   ms.map_set_id, 
+                         ms.short_name as map_set_name,
+                         s.common_name as species_name
+                from     cmap_map_set ms,
+                         cmap_species s
+                where    ms.species_id=s.species_id
+                order by common_name, map_set_name
+            ],
+            { Columns => {} },
+        ),
+    );
+
+    my @to_map_set_ids = map { $_->[0] } @to_map_sets;
+
+    my $from = @from_map_sets
+        ? join( "\n", 
+            map { "    $_" } map { join('-', $_->[1], $_->[2]) } @from_map_sets
+        )
+        : '    All'
+    ;
+
+    my $to = @to_map_sets
+        ? join( "\n", 
+            map { "    $_" } map { join('-', $_->[1], $_->[2]) } @to_map_sets
+        )
+        : '    All'
+    ;
 
     print "Make name-based correspondences\n",
         '  Data source   : ' . $self->data_source, "\n",
-        "  Evidence type : $evidence_type";
-    if ( @map_sets ) {
-        print join("\n", 
-            '',
-            '  From map sets :', 
-            map { "    $_" } map { join('-', $_->[1], $_->[2]) } @map_sets
-        );
-    }
+        "  Evidence type : $evidence_type",
+        "  From map sets :\n$from\n",
+        "  To map sets   :\n$to\n",
+    ;
 
     print "\nOK to make correspondences? [Y/n] ";
     chomp( my $answer = <STDIN> );
@@ -1371,9 +1429,10 @@ sub make_name_correspondences {
         data_source => $self->data_source,
     );
     $corr_maker->make_name_correspondences(
-        evidence_type_id => $evidence_type_id,
-        map_set_ids      => \@map_set_ids,
-        log_fh           => $self->log_fh,
+        evidence_type_id   => $evidence_type_id,
+        map_set_ids        => \@from_map_set_ids,
+        target_map_set_ids => \@to_map_set_ids,
+        log_fh             => $self->log_fh,
     ) or do { print "Error: ", $corr_maker->error, "\n"; return; };
 
     return 1;
@@ -1469,7 +1528,11 @@ sub show_menu {
         $result = undef;
     }
     else {
-        $result = [ map { $data->[0]->{ $_ } } @return ];
+        $result   = [ map { $data->[0]->{ $_ } } @return ];
+        my $value = join(' : ', map { $data->[0]->{ $_ } } @display);
+        my $title = $args{'title'} || '';
+        print $title ? "\n$title\n" : "\n";
+        print "Using '$value'\n";
     }
 
     return wantarray 

@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::FeatureSearch;
 
-# $Id: FeatureSearch.pm,v 1.8 2003-02-20 16:50:07 kycl4rk Exp $
+# $Id: FeatureSearch.pm,v 1.9 2003-03-21 00:36:32 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 use Apache::Constants;
 
@@ -62,7 +62,7 @@ sub handler {
     $apr->param( species_aids           => join(',', @species_aids         ) );
     $apr->param( feature_type_aids      => join(',', @feature_type_aids    ) );
 
-    my $data              = $self->data_module;
+    my $data              = $self->data_module or return;
     my $results           =  $data->feature_search_data(
         features          => $features,
         order_by          => $order_by,

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
-# $Id: MakeCorrespondences.pm,v 1.15 2003-03-17 18:18:38 kycl4rk Exp $
+# $Id: MakeCorrespondences.pm,v 1.16 2003-03-21 00:36:32 kycl4rk Exp $
 
 =head1 NAME
 
@@ -30,7 +30,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.15 $)[-1];
+$VERSION = (qw$Revision: 1.16 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -40,18 +40,24 @@ use Data::Dumper;
 
 # ----------------------------------------------------
 sub make_name_correspondences {
-    my ( $self, %args )  = @_;
-    my @map_set_ids      = @{ $args{'map_set_ids'} || [] };
-    my $evidence_type_id = $args{'evidence_type_id'} or 
-                           return 'No evidence type id';
-    $LOG_FH              = $args{'log_fh'}     || \*STDOUT;
-    my $db               = $self->db;
-    my $admin            = Bio::GMOD::CMap::Admin->new(
+    my ( $self, %args )    = @_;
+    my @map_set_ids        = @{ $args{'map_set_ids'}        || [] };
+    my @target_map_set_ids = @{ $args{'target_map_set_ids'} || [] };
+    my $evidence_type_id   = $args{'evidence_type_id'} or 
+                             return 'No evidence type id';
+    $LOG_FH                = $args{'log_fh'}     || \*STDOUT;
+    my $db                 = $self->db;
+    my $admin              = Bio::GMOD::CMap::Admin->new(
         data_source => $self->data_source
     );
 
     $self->Print("Making name-based correspondences.\n");
 
+    #
+    # Normally we only create name-based correspondences between 
+    # features of the same type, but this reads the configuration
+    # file and adds in other allowed feature types.
+    #
     my %add_name_correspondences;
     for my $line ( $self->config('add_name_correspondence') ) {
         my ( $ft1, $ft2 ) = split /\s+/, $line, 2;
@@ -207,6 +213,12 @@ sub make_name_correspondences {
                         and    ms.species_id=s.species_id
                     ]
                 ;
+
+                if ( @target_map_set_ids ) {
+                    $corr_sql .= 'and ms.map_set_id in ('.
+                        join(',', @target_map_set_ids).
+                    ')';
+                }
 
                 for my $field ( qw[ feature_name alternate_name ] ) {
                     my $upper_name = uc $feature->{ $field } or next;
