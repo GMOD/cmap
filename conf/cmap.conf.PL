@@ -1,3 +1,17 @@
+#!perl
+
+use strict;
+use LocalConfig;
+use Cwd;
+use File::Basename qw(&basename &dirname);
+
+my $origdir = cwd;
+chdir dirname($0);
+my $file;
+($file = basename($0)) =~ s/\.PL$//;
+open OUT, ">$file" or die "Can't write file '$file': $!\n";
+print "Extracting $file (with variable substitutions)\n";
+print OUT<<"!GROK!THIS!";
 # ----------------------------------------------------
 #
 # cmap.conf
@@ -44,7 +58,7 @@
 # An absolute path to the directory holding the templates
 # Default: Set on install
 #   
-template_dir /usr/local/apache/templates/cmap
+template_dir $Local{'TEMPLATE_DIR'}
 
 # ----------------------------------------------------
 #
@@ -308,3 +322,4 @@ stylesheet /cmap/cmap.css
 # Default: CMAP_USER_PREF
 #
 user_pref_cookie_name CMAP_USER_PREF
+!GROK!THIS!
