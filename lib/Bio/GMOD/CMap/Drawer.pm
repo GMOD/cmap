@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.74 2004-08-17 05:27:42 mwz444 Exp $
+# $Id: Drawer.pm,v 1.75 2004-09-07 18:29:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.74 $)[-1];
+$VERSION = (qw$Revision: 1.75 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -41,7 +41,7 @@ my @INIT_PARAMS = qw[
     label_features include_feature_types corr_only_feature_types
     include_evidence_types feature_types_undefined
     config data_source min_correspondences collapse_features cache_dir
-    map_view data_module aggregate scale_maps
+    map_view data_module aggregate magnify_all scale_maps
 ];
 
 # ----------------------------------------------------
@@ -555,6 +555,7 @@ Lays out the image and writes it to the file system, set the "image_name."
             maps    => $data,
             config  => $self->config(),
             aggregate  => $self->aggregate,
+            magnify_all => $self->magnify_all,
             scale_maps  => $self->scale_maps,
         ) or return $self->error( Bio::GMOD::CMap::Drawer::Map->error );
 

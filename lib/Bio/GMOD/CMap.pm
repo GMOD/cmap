@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap;
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.58 2004-09-05 06:15:27 mwz444 Exp $
+# $Id: CMap.pm,v 1.59 2004-09-07 18:29:06 mwz444 Exp $
 
 =head1 NAME
 
@@ -395,6 +395,29 @@ The default is 1
 }
 
 # ----------------------------------------------------
+sub magnify_all{
+                                                                                
+=pod
+                                                                                
+=head2 magnify_all
+                                                                                
+Returns the boolean magnify_all variable.  This determines 
+the value that the whole image is magnified by.
+
+The default is 1                                                          
+                      
+=cut
+                                                                                
+    my $self = shift;
+    my $val  = shift;
+    $self->{'magnify_all'}=$val if defined($val); 
+    # Don't allow Zero as a value
+    $self->{'magnify_all'}=1 unless $self->{'magnify_all'}; 
+    return $self->{'magnify_all'}; 
+
+}
+
+# ----------------------------------------------------
 sub scale_maps{
                                                                                 
 =pod
@@ -614,6 +637,7 @@ Given information about the link, creates a url to cmap_viewer.
     my $label_features        = $args{'label_features'};
     my $collapse_features     = $args{'collapse_features'};
     my $aggregate             = $args{'aggregate'};
+    my $magnify_all           = $args{'magnify_all'};
     my $flip                  = $args{'flip'};
     my $min_correspondences   = $args{'min_correspondences'};
     my $ref_map_aids          = $args{'ref_map_aids'};
@@ -657,6 +681,8 @@ Given information about the link, creates a url to cmap_viewer.
         if defined($collapse_features);
     $url .= "aggregate=$aggregate;" 
         if defined($aggregate);
+    $url .= "magnify_all=$magnify_all;" 
+        if defined($magnify_all);
     $url .= "flip=$flip;" 
         if defined($flip);
     $url .= "min_correspondences=$min_correspondences;" 

@@ -4,11 +4,10 @@ package Bio::GMOD::CMap::Apache::EntryViewer;
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
-use Bio::GMOD::CMap::Drawer;
 use Bio::GMOD::CMap::Data;
 use Template;
 use Data::Dumper;

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.121 2004-09-05 06:15:28 mwz444 Exp $
+# $Id: Map.pm,v 1.122 2004-09-07 18:29:07 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.121 $)[-1];
+$VERSION = (qw$Revision: 1.122 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -39,7 +39,7 @@ use Bio::GMOD::CMap::Utils qw[
 use Bio::GMOD::CMap::Drawer::Glyph;
 use base 'Bio::GMOD::CMap';
 
-my @INIT_FIELDS = qw[ drawer base_x base_y slot_no maps config aggregate scale_maps ];
+my @INIT_FIELDS = qw[ drawer base_x base_y slot_no maps config aggregate magnify_all scale_maps ];
 
 my %SHAPE = (
     'default'  => 'draw_box',
@@ -447,6 +447,7 @@ such as the units.
     my $font         = $drawer->regular_font;
     my $y            = $y2 + $top_buf;
     my $x_mid        = $x1 + ( ( $x2 - $x1 ) / 2 );    
+    my $magnification=$drawer->data_module->magnification($slot_no,$map_id);
     my $slot_info=$drawer->data_module->slot_info->{$slot_no};
     my $start_pos   = defined($slot_info->{$map_id}->[0])
         ? $slot_info->{$map_id}->[0]
@@ -458,7 +459,8 @@ such as the units.
     my $code;
     my $map_aid      = $self->map_aid($map_id);
     ###Full size button if needed
-    if ($drawer->data_module->truncatedMap($slot_no,$map_id)){
+    if ($drawer->data_module->truncatedMap($slot_no,$map_id)
+        or $magnification!=1){
         my $full_str="Reset Map"; 
         $x  = $x_mid -
             (($font->width * length($full_str)) / 2);
@@ -483,12 +485,11 @@ such as the units.
     }
 
     ###Scale buttons
-    my $magnification=$drawer->data_module->magnification($slot_no,$map_id);
     my $mag_plus_val  = $magnification<=1?$magnification*2:$magnification*2;
     my $mag_minus_val = $magnification<=1?$magnification/2:$magnification/2;
     my $mag_plus_str  = "+";
     my $mag_minus_str = "-";
-    my $mag_mid_str   = " Magnify ";
+    my $mag_mid_str   = " Mag ";
     $x  = $x_mid -
             (($font->width * length($mag_minus_str.$mag_plus_str.$mag_mid_str)) / 2);
 
@@ -1689,7 +1690,7 @@ Lays out the map.
 
 =pod
 
-=head2 layout_map_foundation{
+=head2 layout_map_foundation
 
 Lays out the base map
 
@@ -1721,6 +1722,7 @@ sub layout_map_foundation {
     my $label_side   = $drawer->label_side($slot_no);
     my $reg_font     = $drawer->regular_font
       or return $self->error( $drawer->error );
+    my $magnify_all = $self->magnify_all;
     my $font_width  = $reg_font->width;
     my $font_height = $reg_font->height;
 
@@ -1749,7 +1751,8 @@ sub layout_map_foundation {
               / $drawer->{'data'}{'ref_unit_size'}{$self->map_units($map_id)});
         $scaled_map_pixel_height = $min_map_pixel_height
             if ($scaled_map_pixel_height < $min_map_pixel_height);
-        $scaled_map_pixel_height=$scaled_map_pixel_height*$drawer->data_module->magnification($slot_no,$map_id);
+        $scaled_map_pixel_height=$scaled_map_pixel_height*$drawer->data_module->magnification($slot_no,$map_id)
+            *$magnify_all;
     }
     #
     # Get the information about the reference map.
@@ -1776,9 +1779,9 @@ sub layout_map_foundation {
 #    my $bottom_boundary=$ref_y2 + (
 #        ($ref_y2 - $ref_y1) * $boundary_factor);
     my $top_boundary=$base_y - (
-        ($drawer->pixel_height()) * $boundary_factor);
-    my $bottom_boundary=$base_y+$drawer->pixel_height() + (
-        ($drawer->pixel_height()) * $boundary_factor);
+        ($drawer->pixel_height()) * $boundary_factor * $magnify_all);
+    my $bottom_boundary=$base_y+($drawer->pixel_height() * $magnify_all) + (
+        ($drawer->pixel_height()) * $boundary_factor * $magnify_all);
 
     #
     #Decide the dimentions of a compressed map
