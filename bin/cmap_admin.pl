@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.14 2003-01-25 00:43:46 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.15 2003-01-29 00:26:52 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.14 $)[-1];
+$VERSION = (qw$Revision: 1.15 $)[-1];
 
 #
 # Turn off output buffering.
@@ -355,6 +355,8 @@ sub export_as_sql {
                 accession_id     => STR,
                 evidence_type    => STR,
                 rank             => NUM,
+                line_color       => STR,
+                line_style       => STR,
             }
         },
         {
@@ -404,6 +406,7 @@ sub export_as_sql {
                 accession_id   => STR,
                 map_set_id     => NUM,
                 map_name       => STR,
+                linkage_group  => STR,
                 start_position => NUM,
                 stop_position  => NUM,
             }
@@ -1169,7 +1172,7 @@ sub show_menu {
 
 =head1 NAME
 
-cmap_admin.pl - command-line CMAP administrative tool
+cmap_admin.pl - command-line CMap administrative tool
 
 =head1 SYNOPSIS
 
@@ -1183,7 +1186,7 @@ cmap_admin.pl - command-line CMAP administrative tool
 =head1 DESCRIPTION
 
 This script is a complement to the web-based administration tool for
-the GMOD-CMAP application.  This tool handles all of the long-running
+the GMOD-CMap application.  This tool handles all of the long-running
 processes (e.g., importing/exporting data and correspondences,
 reloading cache tables) and tasks which require interaction with
 file-based data (i.e., map coordinates, feature correspondences,
