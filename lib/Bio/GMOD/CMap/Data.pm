@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.104 2004-04-01 22:16:07 mwz444 Exp $
+# $Id: Data.pm,v 1.105 2004-04-14 13:35:28 mwz444 Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.104 $)[-1];
+$VERSION = (qw$Revision: 1.105 $)[-1];
 
 use Data::Dumper;
 use Regexp::Common;
@@ -269,7 +269,7 @@ Organizes the data for drawing comparative maps.
     $data->{'correspondence_evidence'} = \%correspondence_evidence;
     $data->{'feature_types'}           = \%feature_types;
 
-#    print STDERR "drawing data =\n", Dumper($data), "\n";
+#    p#rint STDERR "drawing data =\n", Dumper($data), "\n";
 
     return $data;
 }
@@ -286,7 +286,6 @@ Returns the feature and correspondence data for the maps in a slot.
 =cut
 
     my ( $self, %args )         = @_;
-#print STDERR "slot data args = ", Dumper(\%args), "\n";
     my $db                      = $self->db  or return;
     my $sql                     = $self->sql or return;
     my $this_slot_no            = $args{'slot_no'};
@@ -301,9 +300,9 @@ Returns the feature and correspondence data for the maps in a slot.
     my $correspondence_evidence = $args{'correspondence_evidence'};
     my $feature_types_seen      = $args{'feature_types'};
     my $pid                     = $args{'pid'};
-    my $max_no_features         = 200;
+    my $max_no_features         = 2000000;
 
-#    print STDERR "map = ", Dumper($map), "\n" if $this_slot_no == 1;
+#    p#rint STDERR "map = ", Dumper($map), "\n" if $this_slot_no == 1;
 
     #
     # If there is more than 1 map in this slot, we will return totals
@@ -676,18 +675,17 @@ Returns the feature and correspondence data for the maps in a slot.
         );
         
         foreach my $rowKey (keys %{$ft}){
-            my $row = $ft->{'$rowKey'};
-            $row->{'feature_type'}=
+            $ft->{$rowKey}->{'feature_type'}=
         	$self->feature_type_data
         	(
         	 $ft->{$rowKey}->{'feature_type_accession'},'name'
         	 );
-            $row->{'shape'}=
+            $ft->{$rowKey}->{'shape'}=
         	$self->feature_type_data
         	(
         	 $ft->{$rowKey}->{'feature_type_accession'},'shape'
         	 ); 
-            $row->{'color'}=
+            $ft->{$rowKey}->{'color'}=
         	$self->feature_type_data
         	(
         	 $ft->{$rowKey}->{'feature_type_accession'},'color'
@@ -761,39 +759,43 @@ Returns the feature and correspondence data for the maps in a slot.
                 'feature_id', {}, ( $maps[0]{'map_id'} )
             );  
             foreach my $rowKey (keys %{$map->{'features'}}){
-        	my $row = $map->{'features'}->{'$rowKey'};
-        	$row->{'feature_type'}=
+        	$map->{'features'}->{$rowKey}->{'feature_type'}=
         	    $self->feature_type_data
         	    (
         	     $map->{'features'}->{$rowKey}->{'feature_type_accession'},'name'
         	     );
-        	$row->{'default_rank'}=
+        	$map->{'features'}->{$rowKey}->{'default_rank'}=
         	    $self->feature_type_data
         	    (
         	     $map->{'features'}->{$rowKey}->{'feature_type_accession'},'default_rank'
         	     ); 
-        	$row->{'shape'}=
+        	$map->{'features'}->{$rowKey}->{'shape'}=
         	    $self->feature_type_data
         	    (
         	     $map->{'features'}->{$rowKey}->{'feature_type_accession'},'shape'
-        	     ); 
-        	$row->{'color'}=
+        	     );
+        	$map->{'features'}->{$rowKey}->{'color'}=
         	    $self->feature_type_data
         	    (
         	     $map->{'features'}->{$rowKey}->{'feature_type_accession'},'color'
         	     );
-        	$row->{'drawing_lane'}=
+        	$map->{'features'}->{$rowKey}->{'drawing_lane'}=
         	    $self->feature_type_data
         	    (
         	     $map->{'features'}->{$rowKey}->{'feature_type_accession'},'drawing_lane'
         	     );
-        	$row->{'drawing_priority'}=
+        	$map->{'features'}->{$rowKey}->{'drawing_priority'}=
         	    $self->feature_type_data
         	    (
         	     $map->{'features'}->{$rowKey}->{'feature_type_accession'},'drawing_priority'
         	     );
             }
         }
+	###set $feature_correspondences and$correspondence_evidence
+	$self->get_feature_correspondences(
+	    $feature_correspondences,$correspondence_evidence,
+    	    'map_id',$map->{'map_id'}, $pid, $ref_slot_no,
+            $evidence_type_aids,$feature_type_aids,$map_start,$map_stop );
 
         $return->{ $map->{'map_id'} } = $map;
     }
@@ -823,18 +825,17 @@ Returns the feature and correspondence data for the maps in a slot.
             $ft_sql, 'feature_type_accession', {}, ( $pid, $this_slot_no )
         );
         foreach my $rowKey (keys %{$ft}){
-            my $row = $ft->{'$rowKey'};
-            $row->{'feature_type'}=
+            $ft->{$rowKey}->{'feature_type'}=
         	$self->feature_type_data
         	(
         	 $ft->{$rowKey}->{'feature_type_accession'},'name'
         	 );
-            $row->{'shape'}=
+            $ft->{$rowKey}->{'shape'}=
         	$self->feature_type_data
         	(
         	 $ft->{$rowKey}->{'feature_type_accession'},'shape'
         	 ); 
-            $row->{'color'}=
+            $ft->{$rowKey}->{'color'}=
         	$self->feature_type_data
         	(
         	 $ft->{$rowKey}->{'feature_type_accession'},'color'
@@ -981,27 +982,27 @@ Returns the feature and correspondence data for the maps in a slot.
                 };
                 $corr_lookup{ $count->{'map_id2'} } += $count->{'no_corr'};
             }
-#        print STDERR "map corr = ", Dumper($map_correspondences), "\n";
+#        p#rint STDERR "map corr = ", Dumper($map_correspondences), "\n";
         }
 
+
+	#p#rint STDERR "here3.5\n";
         for my $map ( @maps ) {
             $map->{'no_correspondences'} = $corr_lookup{ $map->{'map_id'} };
             next if $min_correspondences && defined $ref_slot_no &&
                 $map->{'no_correspondences'} < $min_correspondences;
             $map->{'no_features'}        = $count_lookup{ $map->{'map_id'} };
 
-#            if ( $map->{'no_features'} <= $max_no_features ) {
-#                my $corr = $self->get_feature_correspondences(
-#                    $map->{'map_id'}, $pid, $ref_slot_no
-#                );
-#print STDERR "corr = ", Dumper($corr), "\n";
-#            }
-
-            $return->{ $map->{'map_id'} } = $map;
+            ###set $feature_correspondences and$correspondence_evidence
+	    $self->get_feature_correspondences(
+		$feature_correspondences,$correspondence_evidence,
+    	        'map_id',$map->{'map_id'}, $pid, $ref_slot_no,
+	        $evidence_type_aids,$feature_type_aids,$map_start,$map_stop );
+	    $return->{ $map->{'map_id'} } = $map;
         }
     }
 
-#    print STDERR "return = ", Dumper($return), "\n";
+#    p#rint STDERR "return = ", Dumper($return), "\n";
     return $return;
 
 #    #
@@ -1201,7 +1202,7 @@ Returns the feature and correspondence data for the maps in a slot.
 #    }
 #
 #
-##print STDERR "counts = ", Dumper(\%count_lookup), "\n";
+##p#rint STDERR "counts = ", Dumper(\%count_lookup), "\n";
 #
 ## my %self_correspondences;
 ##        my $corr_sql = qq[
@@ -1424,7 +1425,7 @@ Returns the feature and correspondence data for the maps in a slot.
 #        }
 #
 #
-##    print STDERR "features = ", Dumper($map_data->{'features'}), "\n";
+##    p#rint STDERR "features = ", Dumper($map_data->{'features'}), "\n";
 #
 #        #
 #        # If we had to move the start and stop, remember it.
@@ -1507,18 +1508,18 @@ Returns the feature and correspondence data for the maps in a slot.
 #            ')';
 #        }
 #
-##        print STDERR "start ", "x" x 10, "\n", "$corr_sql\n", "end", "x" x 10, "\n";
+##        p#rint STDERR "start ", "x" x 10, "\n", "$corr_sql\n", "end", "x" x 10, "\n";
 #        my $ref_map_correspondences = $db->selectall_arrayref(
 #            $corr_sql, { Columns => {} }, ( $pid, $ref_slot_no, $value )
 #        );
-##        print STDERR "no corr = ", scalar @$ref_map_correspondences, "\n";
+##        p#rint STDERR "no corr = ", scalar @$ref_map_correspondences, "\n";
 #
 #        for my $corr ( @{ $ref_map_correspondences || [] } ) {
 #            push @{ $corr_lookup{ $corr->{'map_id'} } }, $corr;
 #        }
 #    }
 #
-##    print STDERR "corr lookup = ", Dumper(\%corr_lookup), "\n";
+##    p#rint STDERR "corr lookup = ", Dumper(\%corr_lookup), "\n";
 #
 #    for my $map_data ( @maps ) {
 #        #
@@ -1593,60 +1594,116 @@ Returns the feature and correspondence data for the maps in a slot.
 }
 
 # ----------------------------------------------------
-#sub get_feature_correspondences {
-#    my ( $self, $map_id, $pid, $slot_no ) = @_;
-#    my $db = $self->db;
-#    my $corr_sql = qq[
-#        select   f.feature_id as feature_id,
-#                 f2.feature_id as ref_feature_id, 
-#                 f2.feature_name as f2_name,
-#                 f2.start_position as f2_start,
-#                 map.map_id,
-#                 cl.feature_correspondence_id,
-#                 et.evidence_type,
-#                 et.accession_id as evidence_type_aid,
-#                 et.rank as evidence_rank,
-#                 et.line_color
-#        from     cmap_feature f, 
-#                 cmap_feature f2, 
-#                 cmap_map map,
-#                 cmap_map_cache mc,
-#                 cmap_correspondence_lookup cl,
-#                 cmap_feature_correspondence fc,
-#                 cmap_correspondence_evidence ce,
-#                 cmap_evidence_type et
-#        where    mc.pid=?
-#        and      mc.slot_no=?
-#        and      mc.map_id=f.map_id
-#        and      f.feature_id=cl.feature_id1
-#        and      cl.feature_correspondence_id=
-#                 fc.feature_correspondence_id
-#        and      fc.is_enabled=1
-#        and      fc.feature_correspondence_id=
-#                 ce.feature_correspondence_id
-#        and      ce.evidence_type_id=et.evidence_type_id
-#        and      cl.feature_id2=f2.feature_id
-#        and      f2.map_id=map.map_id
-#        and      map.map_id=?
-#        $to_restriction
-#    ];
-#
-#    if ( @$evidence_type_ids ) {
-#        $corr_sql .= 'and ce.evidence_type_id in ('.
-#            join( ',', @$evidence_type_ids ).
-#        ')';
-#    }
-#
-#    if ( @$feature_type_ids ) {
-#        $corr_sql .= 'and f.feature_type_id in ('.
-#            join( ',', @$feature_type_ids ).
-#        ')';
-#    }
-#
-#    return $db->selectall_arrayref(
-#        $corr_sql, { Columns => {} }, ( $pid, $slot_no, $value )
-#    );
-#}
+=pod
+
+=head2 get_feature_correspondences
+
+inserts correspondence info into $feature_correspondence and 
+$correspondence_evidence based on corrs from the slot
+and the provided id.
+
+=cut
+sub get_feature_correspondences {
+    my ( $self,$feature_correspondences,$correspondence_evidence,
+	 $field,$value, $pid, $slot_no,
+	 $evidence_type_aids,$feature_type_aids,
+	 $map_start,$map_stop ) = @_;
+    #p#rint STDERR "IN get_feature_correspondences\n";
+    my $db = $self->db;
+    my $to_restriction='';
+
+    if ( $field eq 'map_id' && defined $map_start && defined $map_stop ) {
+	$to_restriction = qq[
+	    and      (
+		      ( f2.start_position>=$map_start and 
+			f2.start_position<=$map_stop )
+		      or   (
+			    f2.stop_position is not null and
+			    f2.start_position<=$map_start and
+			    f2.stop_position>=$map_stop
+			    )
+		      )
+			     ];
+    }
+
+    my $corr_sql = qq[
+        select   f.feature_id as feature_id,
+                 f2.feature_id as ref_feature_id, 
+                 f2.feature_name as f2_name,
+                 f2.start_position as f2_start,
+                 map.map_id,
+                 cl.feature_correspondence_id,
+                 ce.evidence_type_accession as evidence_type_aid
+        from     cmap_feature f, 
+                 cmap_feature f2, 
+                 cmap_map map,
+                 cmap_map_cache mc,
+                 cmap_correspondence_lookup cl,
+                 cmap_feature_correspondence fc,
+                 cmap_correspondence_evidence ce
+        where    mc.pid=?
+        and      mc.slot_no=?
+        and      mc.map_id=f.map_id
+        and      f.feature_id=cl.feature_id1
+        and      cl.feature_correspondence_id=
+                 fc.feature_correspondence_id
+        and      fc.is_enabled=1
+        and      fc.feature_correspondence_id=
+                 ce.feature_correspondence_id
+        and      cl.feature_id2=f2.feature_id
+        and      f2.map_id=map.map_id
+        and      map.$field=?
+        $to_restriction
+    ];
+    if ( @$evidence_type_aids ) {
+        $corr_sql .= 'and ce.evidence_type_accession in ('.
+            join( ',', @$evidence_type_aids ).
+        ')';
+    }
+
+    if ( @$feature_type_aids ) {
+        $corr_sql .= 'and f.feature_type_accession in ('.
+            join( ',', @$feature_type_aids ).
+        ')';
+    }
+
+    my $ref_correspondences= $db->selectall_arrayref(
+	 $corr_sql, { Columns => {} }, ( $pid, $slot_no, $value )
+    );
+    
+    foreach my $row ( @{$ref_correspondences } ) {
+	$row->{'evidence_rank'} = $self->evidence_type_data( 
+	     $row->{'evidence_type_aid'}, 'rank' 
+	);
+	$row->{'line_color'} = $self->evidence_type_data( 
+	     $row->{'evidence_type_aid'}, 'line_color' 
+	);
+        $row->{'evidence_type'} = $self->evidence_type_data( 
+              $row->{'evidence_type_aid'}, 'name' 
+        );
+    }
+			   
+    for my $corr ( @{ $ref_correspondences } ) {
+	$feature_correspondences->{
+            $corr->{'feature_id'}}{ $corr->{'ref_feature_id'} }
+	= $corr->{'feature_correspondence_id'};
+
+	$feature_correspondences->{
+	    $corr->{'ref_feature_id'} }{ $corr->{'feature_id'}}
+	= $corr->{'feature_correspondence_id'};
+
+	push @{ $correspondence_evidence->{
+	    $corr->{'feature_correspondence_id'}
+	} }, {
+                evidence_type_aid => $corr->{'evidence_type_aid'},
+                evidence_type     => $corr->{'evidence_type'},
+                evidence_rank     => $corr->{'evidence_rank'},
+                line_color        => $corr->{'line_color'},
+            };
+        }
+    #p#rint STDERR Dumper($feature_correspondences);
+
+}
 
 # ----------------------------------------------------
 sub matrix_correspondence_data {
