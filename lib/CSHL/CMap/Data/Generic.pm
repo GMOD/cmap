@@ -1,6 +1,6 @@
 package CSHL::CMap::Data::Generic;
 
-# $Id: Generic.pm,v 1.1.1.1 2002-07-31 23:27:28 kycl4rk Exp $
+# $Id: Generic.pm,v 1.2 2002-08-09 22:08:42 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.1.1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use CSHL::CMap;
 use base 'CSHL::CMap';
@@ -457,7 +457,37 @@ The SQL for finding all reference maps.
 }
 
 # ----------------------------------------------------
-sub map_data_feature_correspondence_by_map_sql{
+sub map_data_map_ids_by_single_reference_map {
+
+=pod
+
+=head2 map_data_map_ids_by_single_reference_map
+
+The SQL for finding all the maps of a given study which
+have some correspondence to a given region of a reference
+map.
+
+=cut
+    my $self = shift;
+    return q[
+        select   distinct map.map_id
+        from     cmap_map map,
+                 cmap_feature f1, 
+                 cmap_feature f2, 
+                 cmap_correspondence_lookup cl
+        where    f1.map_id=?
+        and      f1.start_position>=?
+        and      f1.start_position<=?
+        and      f1.feature_id=cl.feature_id1
+        and      cl.feature_id2=f2.feature_id
+        and      f2.map_id=map.map_id
+        and      map.map_set_id=?
+        and      map.map_id<>?
+    ];
+}
+
+# ----------------------------------------------------
+sub map_data_feature_correspondence_by_map_sql {
 
 =pod
 
@@ -616,6 +646,19 @@ The SQL for finding the minimum position of features.
     }
 
     return $sql;
+}
+
+# ----------------------------------------------------
+sub set_date_format {
+
+=pod
+
+=head2 set_date_format
+
+The SQL for setting the proper date format.
+
+=cut
+    return 1;
 }
 
 1;

@@ -1,22 +1,32 @@
 package CSHL::CMap::Data::Oracle;
 
-# $Id: Oracle.pm,v 1.1.1.1 2002-07-31 23:27:28 kycl4rk Exp $
+# $Id: Oracle.pm,v 1.2 2002-08-09 22:08:43 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.1.1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use CSHL::CMap::Data::Generic;
 use base 'CSHL::CMap::Data::Generic';
 
 # ----------------------------------------------------
-#sub init {
-#    my ( $self, $config ) = @_;
-#
-#    $self->db->do(
-#        q[ALTER SESSION SET NLS_DATE_FORMAT = 'YYYY-MM-DD HH24:MI:SS']
-#    );
-#}
+sub set_date_format {
+
+=pod
+
+=head2 set_date_format
+
+The SQL for setting the proper date format.
+
+=cut
+    my $self = shift;
+
+    $self->db->do(
+        q[ALTER SESSION SET NLS_DATE_FORMAT = 'YYYY-MM-DD HH24:MI:SS']
+    );
+
+    return 1;
+}
 
 1;
 

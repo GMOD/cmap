@@ -1,6 +1,6 @@
 package CSHL::CMap::Data;
 
-# $Id: Data.pm,v 1.1.1.1 2002-07-31 23:27:27 kycl4rk Exp $
+# $Id: Data.pm,v 1.2 2002-08-09 22:08:42 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.1.1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Data::Dumper;
 use CSHL::CMap;
@@ -143,7 +143,7 @@ Returns the data for drawing comparative maps.
     my $correspondences  = $args{'correspondences'};
 
     #
-    # Sort out our map.
+    # Sort out the current map.
     #
     my $aid_field        = $map->{'field'};
     my $map_start        = $map->{'start'};
@@ -158,7 +158,8 @@ Returns the data for drawing comparative maps.
 #    warn "ref map = ", Dumper($reference_map), "\n";
 
     #
-    # Understand our reference map.
+    # Understand our reference map.  We can either be comparing our
+    # current map to a single reference map or to an entire map set.
     #
     my ( $ref_map_start, $ref_map_stop, $ref_map_set_id, $ref_map_id );
     if ( $reference_map ) {
@@ -205,22 +206,8 @@ Returns the data for drawing comparative maps.
 
         if ( $ref_map_id ) {
             push @map_ids, @{ $db->selectcol_arrayref(
-                q[
-                    select   distinct map.map_id
-                    from     cmap_map map,
-                             cmap_feature f1, 
-                             cmap_feature f2, 
-                             cmap_correspondence_lookup cl
-                    where    f1.map_id=?
-                    and      f1.start_position>=?
-                    and      f1.start_position<=?
-                    and      f1.feature_id=cl.feature_id1
-                    and      cl.feature_id2=f2.feature_id
-                    and      f2.map_id=map.map_id
-                    and      map.map_set_id=?
-                    and      map.map_id<>?
-                ],
-                {},
+                $sql->map_data_map_ids_by_single_reference_map,
+                {},    
                 ( $ref_map_id, $ref_map_start, $ref_map_stop, 
                   $map_set_id, $ref_map_id
                 )

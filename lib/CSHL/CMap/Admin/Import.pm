@@ -1,6 +1,6 @@
 package CSHL::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.1.1.1 2002-07-31 23:27:27 kycl4rk Exp $
+# $Id: Import.pm,v 1.2 2002-08-09 22:08:42 kycl4rk Exp $
 
 =pod
 
@@ -28,7 +28,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.1.1.1 $)[-1];
+$VERSION  = (qw$Revision: 1.2 $)[-1];
 
 use CSHL::CMap;
 use CSHL::CMap::Constants;
@@ -128,11 +128,12 @@ Starred fields are required.  Order of fields is not important.
             if ( my $datatype = $field_attr->{'datatype'} && 
                  defined $field_val 
             ) {
-                my $regex = RE_LOOKUP->{ $datatype };
-                return $self->error(
-                    "Value of '$field_name'  is wrong.  " .
-                    "Expected $datatype and got '$field_val'."
-                ) unless $field_val =~ $regex;
+                if ( my $regex = RE_LOOKUP->{ $datatype } ) {
+                    return $self->error(
+                        "Value of '$field_name'  is wrong.  " .
+                        "Expected $datatype and got '$field_val'."
+                    ) unless $field_val =~ $regex;
+                }
             }
 
             $record{ $field_name } = $field_val;
@@ -339,7 +340,6 @@ Starred fields are required.  Order of fields is not important.
     # 
     for my $map_name ( sort keys %map_ids ) {
         my $map_id = $map_ids{ $map_name };
-        $self->Print("Verifying start and stop for map $map_name ($map_id).\n");
         my ( $start, $stop ) = $db->selectrow_array(
             q[
                 select map.start_position, map.stop_position
@@ -350,29 +350,41 @@ Starred fields are required.  Order of fields is not important.
             ( $map_id )
         );
 
-        next if $start > 0 and $stop > 0;
-        
-        my ( $min, $max ) = $db->selectrow_array(
-            q[
-                select   min(f.start_position), 
-                         max(f.stop_position)
-                from     cmap_feature f
-                where    f.map_id=?
-                group by f.map_id
-            ],
-            {},
-            ( $map_id )
-        );
+        unless ( defined $start && defined $stop ) {
+            my ( $min_start, $max_start, $max_stop ) = $db->selectrow_array(
+                q[
+                    select   min(f.start_position), 
+                             max(f.start_position),
+                             max(f.stop_position)
+                    from     cmap_feature f
+                    where    f.map_id=?
+                    group by f.map_id
+                ],
+                {},
+                ( $map_id )
+            );
 
-        $db->do(
-            q[
-                update cmap_map
-                set    start_position=?,
-                       stop_position=?
-                where  map_id=?
-            ],
-            {},
-            ( $min, $max, $map_id )
+            $min_start ||= 0;
+            $max_start ||= 0;
+            $max_stop  ||= 0;
+            $start     ||= $min_start; 
+            $stop      ||= $max_start > $max_stop ? $max_start : $max_stop;
+
+            $db->do(
+                q[
+                    update cmap_map
+                    set    start_position=?,
+                           stop_position=?
+                    where  map_id=?
+                ],
+                {},
+                ( $start, $stop, $map_id )
+            );
+        }
+
+        $self->Print(
+            "Verified start ($start) and stop ($stop) ",
+            "for map $map_name ($map_id).\n"
         );
     }    
 

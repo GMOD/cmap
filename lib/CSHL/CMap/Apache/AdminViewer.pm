@@ -1,6 +1,6 @@
 package CSHL::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.1.1.1 2002-07-31 23:27:28 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.2 2002-08-09 22:08:42 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -27,7 +27,7 @@ $COLORS         = [ sort keys %{ +COLORS } ];
 $FEATURE_SHAPES = [ qw( box dumbbell line span ) ];
 $MAP_SHAPES     = [ qw( box dumbbell ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.1.1.1 $)[-1];
+$VERSION        = (qw$Revision: 1.2 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -65,6 +65,7 @@ use constant TEMPLATE         => {
     species_view              => 'admin_species_view.tmpl',
 };
 
+
 # ----------------------------------------------------
 sub handler {
 #
@@ -75,6 +76,7 @@ sub handler {
     return $self->$action;
 }
 
+
 # ----------------------------------------------------
 sub admin {
 #
@@ -87,6 +89,7 @@ sub admin {
     return $self->{'admin'};
 }
 
+
 # ----------------------------------------------------
 sub admin_home {
     my $self     = shift;
@@ -117,6 +120,7 @@ sub admin_home {
     );
 }
 
+
 # ----------------------------------------------------
 sub confirm_delete {
     my $self        = shift;
@@ -153,12 +157,14 @@ sub confirm_delete {
     );
 }
 
+
 # ----------------------------------------------------
 sub corr_evidence_type_create {
     my $self = shift;
     return $self->process_template( TEMPLATE->{'corr_evidence_type_create'} );
 }
 
+
 # ----------------------------------------------------
 sub corr_evidence_type_insert {
     my $self          = shift;
@@ -190,6 +196,7 @@ sub corr_evidence_type_insert {
     ); 
 }
 
+
 # ----------------------------------------------------
 sub corr_evidence_type_edit {
     my $self             = shift;
@@ -216,6 +223,7 @@ sub corr_evidence_type_edit {
     );
 }
 
+
 # ----------------------------------------------------
 sub corr_evidence_type_update {
     my $self             = shift;
@@ -244,6 +252,7 @@ sub corr_evidence_type_update {
     );
 }
 
+
 # ----------------------------------------------------
 sub corr_evidence_types_view {
     my $self     = shift;
@@ -269,6 +278,7 @@ sub corr_evidence_types_view {
     );
 }
 
+
 # ----------------------------------------------------
 sub dbxref_create {
     my ( $self, %args ) = @_;
@@ -286,6 +296,7 @@ sub dbxref_create {
     );
 }
 
+
 # ----------------------------------------------------
 sub dbxref_edit {
     my ( $self, %args ) = @_;
@@ -330,6 +341,7 @@ sub dbxref_edit {
     );
 }
 
+
 # ----------------------------------------------------
 sub dbxref_insert {
     my $self            = shift;
@@ -412,6 +424,7 @@ sub dbxref_insert {
     return $self->redirect_home( ADMIN_HOME_URI.'?action=dbxrefs_view' ); 
 }
 
+
 # ----------------------------------------------------
 sub dbxref_update {
     my $self            = shift;
@@ -452,6 +465,7 @@ sub dbxref_update {
     return $self->redirect_home( ADMIN_HOME_URI.'?action=dbxrefs_view' ); 
 }
 
+
 # ----------------------------------------------------
 sub dbxrefs_view {
     my $self            = shift;
@@ -497,6 +511,7 @@ sub dbxrefs_view {
     );
 }
 
+
 # ----------------------------------------------------
 sub entity_delete {
     my $self        = shift;
@@ -798,13 +813,14 @@ sub entity_delete {
     return $self->redirect_home( ADMIN_HOME_URI.$uri_args ); 
 }
 
-
+
 # ----------------------------------------------------
 sub error_template { 
     my $self = shift;
     return TEMPLATE->{'error'};
 }
 
+
 # ----------------------------------------------------
 sub map_create {
     my $self       = shift;
@@ -832,6 +848,7 @@ sub map_create {
     );
 }
 
+
 # ----------------------------------------------------
 sub map_edit {
     my $self   = shift;
@@ -868,6 +885,7 @@ sub map_edit {
     );
 }
 
+
 # ----------------------------------------------------
 sub map_insert {
     my $self           = shift;
@@ -905,6 +923,7 @@ sub map_insert {
     ); 
 }
 
+
 # ----------------------------------------------------
 sub map_view {
     my $self            = shift;
@@ -1013,6 +1032,7 @@ sub map_view {
     );
 }
 
+
 # ----------------------------------------------------
 sub map_update {
     my $self           = shift;
@@ -1044,6 +1064,7 @@ sub map_update {
     ); 
 }
 
+
 # ----------------------------------------------------
 sub feature_create {
     my $self   = shift;
@@ -1087,6 +1108,7 @@ sub feature_create {
     );
 }
 
+
 # ----------------------------------------------------
 sub feature_edit {
     my $self       = shift;
@@ -1974,6 +1996,7 @@ sub map_set_create {
     );
 }
 
+
 # ----------------------------------------------------
 sub map_set_edit {
     my $self = shift;
@@ -2154,6 +2177,7 @@ sub map_set_view {
     );
 }
 
+
 # ----------------------------------------------------
 sub map_set_update {
     my $self                 = shift;
@@ -2200,6 +2224,7 @@ sub map_set_update {
     )
 }
 
+
 # ----------------------------------------------------
 sub redirect_home {
     my ( $self, $uri ) = @_;
@@ -2214,6 +2239,7 @@ sub redirect_home {
     return DONE;
 }
 
+
 # ----------------------------------------------------
 sub map_type_create {
     my $self = shift;
