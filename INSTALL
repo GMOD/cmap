@@ -680,18 +680,27 @@ the operating system sends out just before shutdown.
 MySQL has its own scripts to make sure it starts up on boot.  You
 should follow the directions appropriate for your system.
 
-IMPORTING YOUR DATA
+IMPORTING DATA
 
-Now you've got some basic setup to do for your data.  First off, open
-up the web administration interface by going to the URL you set up for
-the admin interface ("/cmap/admin" by default).  You'll need to set up
-what types of maps, features, species, and evidence types you'll be
-working with.  For each, go to the "View ..." choice from the main
-menu, then choose "Create New ..." and fill in the correct
-information.  For information on the correct format for data import,
-execute the command "perldoc Bio::GMOD::CMap::Admin::Import" on your
-command line.  When you have your data in the correct format, launch
-the "cmap_admin.pl" script and follow the instructions.
+The data from the Gramene project (http://www.gramene.org/) has been
+included with this distribution.  You can use this data to ensure that
+your installation is working, or if you'd like examples of how to
+format your own data.  In addition to the files which contain map
+coordinates and correspondences, there is also a dump of a MySQL
+database.  You can simply run this into your existing schema to
+populate your database and test the maps.
+
+If you want to import your own data, you'll need to perform some basic
+setup on the empty database.  First off, open up the web
+administration interface by going to the URL you set up for the admin
+interface ("/cmap/admin" by default).  You'll need to set up what
+types of maps, features, species, and evidence types you'll be working
+with.  For each, go to the "View ..." choice from the main menu, then
+choose "Create New ..." and fill in the correct information.  For
+information on the correct format for data import, execute the command
+"perldoc Bio::GMOD::CMap::Admin::Import" on your command line.  When
+you have your data in the correct format, launch the "cmap_admin.pl"
+script and follow the instructions.
 
 When setting up database cross-references, you'll have to use some
 extra syntax in the URL field to indicate the field to link out on.
@@ -720,19 +729,37 @@ There are several ways to create correspondences among features.
    represent this automated correspondence.
 
 2) Import correspondences: Create a tab-delimited file that lists the
-   accession IDs of two features and some evidence to support the
+   names of two features and some evidence to support the
    correspondence. The first line of the file should contain column
-   headers for "feature_aid1," "feature_aid2," and "evidence." The
-   order is unimportant, as long as the data is ordered the same.
-   Here's a sample:
+   headers for "feature_name1," "feature_name2," and "evidence" (the
+   order is unimportant).  Here's a sample:
 
-    feature_aid1	feature_aid2	evidence
-    6058	6214	Insilico
-    6058	6233	Insilico
-    6058	561616	Insilico
-    561259	6214	Insilico
+	feature_name1	feature_name2	evidence
+	C1008	S1633	insilico
+	C11393S	E10074S	insilico
+	C1238	S15180S	insilico
+	bcd386	p-bcd386	name-based
+	bcd386	p-bcd386	name-based
+	pBF266	p-pBF266	name-based
 
-3) Create correspondences by hand using the admin interface.
+3) Create correspondences by hand using the admin interface: Choose to
+   "view" a map set in the web-based administrative tool. "View" an
+   individual map, then choose to "view" a feature. From there, you will
+   have the option to "Add Correspondence." Click this, and then search
+   for the feature to which you wish to create a correspondence. Add
+   your evidence, and you're done.
+
+The first method is likely to be both incomplete and optimistic.  For
+example, it will create correspondences between features called
+"Centromere," which is probably not desirable.  The name comparisons
+happen on both the "feature_name" and "alternate_name" from the
+"cmap_feature" table.  Every feature has each of these fields compared
+to those fields for every other feature, so this can take a long time
+to complete.  For all of its problems, this can be a good way to get
+started, and you can pare down the correspondences from there.  The
+second method is the surest method as you are controlling what gets
+created.  The third method is also very exact but very tedious.  I
+wouldn't recommend it for creating more than a few correspondences.
 
 After creating any new correspondences (or deleting existing ones),
 be sure to run the "Reload correspondence matrix" option of the

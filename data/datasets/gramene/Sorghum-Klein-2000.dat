@@ -1,0 +1,2769 @@
+map_name	feature_name	feature_start	feature_stop	feature_alt_name	feature_type
+a	Xtxa3383	0.0		Xtxa3383	Marker
+a	Xtxa2704	2.6		Xtxa2704	Marker
+a	isu62	2.6	7.9	isu62	Marker
+a	Xtxs1075.3	2.6	7.9	Xtxs1075.3	Marker
+a	Xtxa2621	2.6	7.9	Xtxa2621	Marker
+a	Xtxa2723	2.6	7.9	Xtxa2723	Marker
+a	Xtxa3905	2.6	7.9	Xtxa3905	Marker
+a	Xtxa4198	2.6	7.9	Xtxa4198	Marker
+a	Xtxa4069	2.6	12.7	Xtxa4069	Marker
+a	isu63.2	7.9		isu63.2	Marker
+a	Xtxa6198	8.6		Xtxa6198	Marker
+a	Xtxa6003	9.2		Xtxa6003	Marker
+a	Xtxa74	9.2	12.7	Xtxa74	Marker
+a	umc84	12.7		umc84	Marker
+a	Xtxa3050	12.7	16.9	Xtxa3050	Marker
+a	cdo457	14.0		cdo457	Marker
+a	Xtxa6032	14.0		Xtxa6032	Marker
+a	Xtxa3632	14.0		Xtxa3632	Marker
+a	bnl6.25	14.0	16.9	bnl6.25	Marker
+a	Xtxa2959	14.0	16.9	Xtxa2959	Marker
+a	Xtxa2998	14.0	16.9	Xtxa2998	Marker
+a	Xtxa3408	14.0	16.9	Xtxa3408	Marker
+a	Xtxa3757	14.0	16.9	Xtxa3757	Marker
+a	Xtxa3770	14.0	16.9	Xtxa3770	Marker
+a	Xtxa6104	14.0	16.9	Xtxa6104	Marker
+a	isu70	16.9		isu70	Marker
+a	isu110.4	16.9	19.8	isu110.4	Marker
+a	umc161	16.9	19.8	umc161	Marker
+a	cdo87.2	16.9	19.8	cdo87.2	Marker
+a	Xgap256	16.9	19.8	Xgap256	Marker
+a	Xtxa224	16.9	19.8	Xtxa224	Marker
+a	Xtxa3154	16.9	19.8	Xtxa3154	Marker
+a	Xtxa3527	16.9	19.8	Xtxa3527	Marker
+a	Xtxa4076	16.9	19.8	Xtxa4076	Marker
+a	Xtxa6077	16.9	19.8	Xtxa6077	Marker
+a	Xtxa6096	16.9	19.8	Xtxa6096	Marker
+a	Xtxa6176	16.9	19.8	Xtxa6176	Marker
+a	Xtxa6295	16.9	19.8	Xtxa6295	Marker
+a	Xtxa3258	16.9	24.2	Xtxa3258	Marker
+a	Xtxa6286	19.8		Xtxa6286	Marker
+a	Xtxa3257	20.6		Xtxa3257	Marker
+a	umc147	20.6	24.2	umc147	Marker
+a	Xtxa6069	20.6	24.2	Xtxa6069	Marker
+a	Xtxa6089	20.6	27.3	Xtxa6089	Marker
+a	Xtxp208	24.2		Xtxp208	Marker
+a	Xtxs1082	25.2		Xtxs1082	Marker
+a	Xtxa6374	25.2	25.6	Xtxa6374	Marker
+a	PHYC	25.6		PHYC	Marker
+a	Xtxp325	27.3		Xtxp325	Marker
+a	isu111	27.3	29.6	isu111	Marker
+a	Xtxs547	27.3	29.6	Xtxs547	Marker
+a	umc90	27.3	29.6	umc90	Marker
+a	PHYA	27.3	29.6	PHYA	Marker
+a	Xtxp350	27.3	29.6	Xtxp350	Marker
+a	Xtxa2084	29.6		Xtxa2084	Marker
+a	bcd808	29.6	31.2	bcd808	Marker
+a	Xtxa6373	29.6	31.2	Xtxa6373	Marker
+a	Xtxa3488	31.2		Xtxa3488	Marker
+a	Xtxp302	32.4		Xtxp302	Marker
+a	cdo121	34.0		cdo121	Marker
+a	Xtxa2683	29.6	38.9	Xtxa2683	Marker
+a	Xtxa359	34.0	38.9	Xtxa359	Marker
+a	Xtxa2985	34.0	38.9	Xtxa2985	Marker
+a	Xtxa6368	34.0	38.9	Xtxa6368	Marker
+a	Xtxa6372	34.0	38.9	Xtxa6372	Marker
+a	Xtxa6378	34.0	38.9	Xtxa6378	Marker
+a	Xtxa6383	34.0	38.9	Xtxa6383	Marker
+a	Xtxa6384	34.0	38.9	Xtxa6384	Marker
+a	Xtxa6388	34.0	38.9	Xtxa6388	Marker
+a	Xtxa357	38.9		Xtxa357	Marker
+a	Xtxa6366	38.9	41.4	Xtxa6366	Marker
+a	Xtxa6367	38.9	41.4	Xtxa6367	Marker
+a	Xtxa6377	38.9	41.4	Xtxa6377	Marker
+a	Xtxa6385	38.9	41.4	Xtxa6385	Marker
+a	Xtxa6387	38.9	41.4	Xtxa6387	Marker
+a	Xtxa6389	38.9	41.4	Xtxa6389	Marker
+a	Xtxa6398	38.9	41.4	Xtxa6398	Marker
+a	Xtxa6399	38.9	41.4	Xtxa6399	Marker
+a	Xtxa6400	38.9	41.4	Xtxa6400	Marker
+a	rz474	41.4		rz474	Marker
+a	Xtxa2773	41.4	43.1	Xtxa2773	Marker
+a	Xtxa6376	41.4	43.1	Xtxa6376	Marker
+a	Xtxa6379	41.4	43.1	Xtxa6379	Marker
+a	Xtxs1075.1	43.1		Xtxs1075.1	Marker
+a	Xtxa6401	38.9	45.9	Xtxa6401	Marker
+a	isu61.2	43.1	45.9	isu61.2	Marker
+a	Xtxa6380	43.1	45.9	Xtxa6380	Marker
+a	Xtxa6386	43.1	45.9	Xtxa6386	Marker
+a	Xtxa6393	43.1	45.9	Xtxa6393	Marker
+a	Xtxa6394	43.1	45.9	Xtxa6394	Marker
+a	Xtxa6396	43.1	45.9	Xtxa6396	Marker
+a	Xtxa6397	43.1	45.9	Xtxa6397	Marker
+a	Xtxa3222	43.1	49.2	Xtxa3222	Marker
+a	Xtxa6391	43.1	49.2	Xtxa6391	Marker
+a	isu76	45.9		isu76	Marker
+a	umc27	45.9		umc27	Marker
+a	Xtxa6370	45.9	49.2	Xtxa6370	Marker
+a	Xtxa6381	45.9	49.2	Xtxa6381	Marker
+a	Xtxa6382	45.9	49.2	Xtxa6382	Marker
+a	Xtxa6395	45.9	49.2	Xtxa6395	Marker
+a	Xtxa6402	45.9	49.2	Xtxa6402	Marker
+a	Xtxa3953	49.2		Xtxa3953	Marker
+a	Xtxa3705	49.2	55.9	Xtxa3705	Marker
+a	Xtxa6365	49.2	55.9	Xtxa6365	Marker
+a	Xtxa6375	49.2	55.9	Xtxa6375	Marker
+a	Xtxa6392	49.2	55.9	Xtxa6392	Marker
+a	Xtxa3126	55.9		Xtxa3126	Marker
+a	Xtxa2765	55.9	63.3	Xtxa2765	Marker
+a	Xtxa2953	55.9	63.3	Xtxa2953	Marker
+a	Xtxa4031	63.3		Xtxa4031	Marker
+a	umc128	63.2	67.6	umc128	Marker
+a	Xtxa2871	63.2	67.6	Xtxa2871	Marker
+a	Xtxa2615	67.6		Xtxa2615	Marker
+a	Xtxa523	67.6	71.6	Xtxa523	Marker
+a	Xtxa2140	67.6	71.6	Xtxa2140	Marker
+a	Xtxa2534	67.6	71.6	Xtxa2534	Marker
+a	Xtxa2845	67.6	71.6	Xtxa2845	Marker
+a	Xtxa6369	67.6	71.6	Xtxa6369	Marker
+a	umc166	71.6		umc166	Marker
+a	umc83	71.6	75.4	umc83	Marker
+a	Xtxa2716	71.6	75.4	Xtxa2716	Marker
+a	Xtxa3131	71.6	75.4	Xtxa3131	Marker
+a	Xtxa3471	71.6	75.4	Xtxa3471	Marker
+a	Xtxa3538	71.6	75.4	Xtxa3538	Marker
+a	Xtxa2655	75.4		Xtxa2655	Marker
+a	Xtxa3782	71.6	77.4	Xtxa3782	Marker
+a	Xtxp357	75.4	77.4	Xtxp357	Marker
+a	Xtxa147	75.4	77.4	Xtxa147	Marker
+a	Xtxa3120	75.4	77.4	Xtxa3120	Marker
+a	Xtxa2217	77.4		Xtxa2217	Marker
+a	Xtxa6133	77.8		Xtxa6133	Marker
+a	Xtxa378	77.8	80.5	Xtxa378	Marker
+a	Xtxa2346	77.8	80.5	Xtxa2346	Marker
+a	Xtxa3051	77.8	80.5	Xtxa3051	Marker
+a	Xtxa3204	77.8	80.5	Xtxa3204	Marker
+a	Xtxa3938	77.8	80.5	Xtxa3938	Marker
+a	umc124.3	80.5		umc124.3	Marker
+a	Xtxa6014	80.9		Xtxa6014	Marker
+a	Xtxa325	77.8	82.6	Xtxa325	Marker
+a	Xtxa2654	77.8	82.6	Xtxa2654	Marker
+a	Xtxa2770	77.8	82.6	Xtxa2770	Marker
+a	Xtxa3292	77.8	82.6	Xtxa3292	Marker
+a	Xtxa3747	77.8	82.6	Xtxa3747	Marker
+a	Xtxa215	80.9	82.6	Xtxa215	Marker
+a	Xtxa574	80.9	82.6	Xtxa574	Marker
+a	Xtxa2112	80.9	82.6	Xtxa2112	Marker
+a	Xtxa2651	80.9	82.6	Xtxa2651	Marker
+a	Xtxa2901	80.9	82.6	Xtxa2901	Marker
+a	Xtxa3033	80.9	82.6	Xtxa3033	Marker
+a	Xtxa3162	80.9	82.6	Xtxa3162	Marker
+a	Xtxa3298	80.9	82.6	Xtxa3298	Marker
+a	Xtxa3846	80.9	82.6	Xtxa3846	Marker
+a	Xtxa3917	80.9	82.6	Xtxa3917	Marker
+a	Xtxa440	82.6		Xtxa440	Marker
+a	Xtxa3161	82.6	83.8	Xtxa3161	Marker
+a	umc115	83.8		umc115	Marker
+a	Xtxa2251	80.9	85.7	Xtxa2251	Marker
+a	Xtxa3822	80.9	88.3	Xtxa3822	Marker
+a	Xtxa143	83.8	85.7	Xtxa143	Marker
+a	Xtxa301	83.8	85.7	Xtxa301	Marker
+a	Xtxa3406	83.8	85.7	Xtxa3406	Marker
+a	Xtxa3612	83.8	85.7	Xtxa3612	Marker
+a	Xtxa3907	83.8	85.7	Xtxa3907	Marker
+a	Xtxa539	83.8	88.3	Xtxa539	Marker
+a	Xtxa3411	85.7		Xtxa3411	Marker
+a	Xtxa3293	80.9	88.3	Xtxa3293	Marker
+a	Xtxa2331	83.8	88.3	Xtxa2331	Marker
+a	Xtxa71	85.7	88.3	Xtxa71	Marker
+a	Xtxa2252	85.7	88.3	Xtxa2252	Marker
+a	Xtxa2748	85.7	88.3	Xtxa2748	Marker
+a	Xtxa2760	85.7	88.3	Xtxa2760	Marker
+a	Xtxa2808	85.7	88.3	Xtxa2808	Marker
+a	Xtxa2847	88.3		Xtxa2847	Marker
+a	Xtxa3334	88.7		Xtxa3334	Marker
+a	Xtxa3824	71.6	91.6	Xtxa3824	Marker
+a	Xtxa80	88.7	91.6	Xtxa80	Marker
+a	Xtxa471	88.7	91.6	Xtxa471	Marker
+a	Xtxa2223	88.7	91.6	Xtxa2223	Marker
+a	Xtxa3252	88.7	91.6	Xtxa3252	Marker
+a	Xtxa3699	88.7	91.6	Xtxa3699	Marker
+a	umc167	91.6		umc167	Marker
+a	Xtxs2148.2	91.6	95.9	Xtxs2148.2	Marker
+a	Xtxa270	91.6	95.9	Xtxa270	Marker
+a	Xtxa2239	91.6	95.9	Xtxa2239	Marker
+a	Xtxa2293	91.6	95.9	Xtxa2293	Marker
+a	Xtxa2738	91.6	95.9	Xtxa2738	Marker
+a	Xtxa4004	91.6	95.9	Xtxa4004	Marker
+a	Xtxa4092	91.6	95.9	Xtxa4092	Marker
+a	Xtxa6046	91.6	95.9	Xtxa6046	Marker
+a	Xtxs361.1	95.9		Xtxs361.1	Marker
+a	Xtxa8	95.9	98.0	Xtxa8	Marker
+a	Xtxa4057	95.9	98.0	Xtxa4057	Marker
+a	Xtxa2091	98.0		Xtxa2091	Marker
+a	Xtxa42	99.9		Xtxa42	Marker
+a	Xtxa2270	99.9	102.8	Xtxa2270	Marker
+a	Xtxa3487	99.9	102.8	Xtxa3487	Marker
+a	Xtxa6361	99.9	102.8	Xtxa6361	Marker
+a	Xtxa2285	102.8		Xtxa2285	Marker
+a	Xtxa3219	99.9	105.5	Xtxa3219	Marker
+a	Xtxp43	102.8	105.5	Xtxp43	Marker
+a	Xtxa3357	102.8	105.5	Xtxa3357	Marker
+a	Xtxa6111	102.8	105.5	Xtxa6111	Marker
+a	isu73	105.5		isu73	Marker
+a	Xtxs1060	105.5	109.5	Xtxs1060	Marker
+a	Xtxs1573.1	105.5	109.5	Xtxs1573.1	Marker
+a	Xtxs490	105.5	109.5	Xtxs490	Marker
+a	Xtxp88	105.5	109.5	Xtxp88	Marker
+a	Xtxp149	105.5	109.5	Xtxp149	Marker
+a	Xtxa3000	105.5	109.5	Xtxa3000	Marker
+a	Xtxa6239	105.5	109.5	Xtxa6239	Marker
+a	Xtxa148	109.5		Xtxa148	Marker
+a	Xtxa3209	109.5	111.2	Xtxa3209	Marker
+a	Xtxa2623	111.2		Xtxa2623	Marker
+a	Xtxa6185	113.0		Xtxa6185	Marker
+a	Xtxa6297	113.0		Xtxa6297	Marker
+a	Xtxa6315	113.0	114.9	Xtxa6315	Marker
+a	cdo20	114.9		cdo20	Marker
+a	isu107.2	114.9	117.5	isu107.2	Marker
+a	Xtxa3730	114.9	117.5	Xtxa3730	Marker
+a	Xtxa4121	114.9	117.5	Xtxa4121	Marker
+a	Xtxa216	117.5		Xtxa216	Marker
+a	Xtxp32	117.5	120.9	Xtxp32	Marker
+a	Xtxa494	120.9		Xtxa494	Marker
+a	Xtxa384	102.9	123.8	Xtxa384	Marker
+a	isu165	123.8		isu165	Marker
+a	Xtxa2066	123.8	128.3	Xtxa2066	Marker
+a	Xtxa4003	123.8	128.3	Xtxa4003	Marker
+a	Xtxa6110	123.8	128.3	Xtxa6110	Marker
+a	Xtxa2059	128.3		Xtxa2059	Marker
+a	Xtxa2583	128.3	131.6	Xtxa2583	Marker
+a	Xtxa3819	128.3	131.6	Xtxa3819	Marker
+a	Xtxa243	131.6		Xtxa243	Marker
+a	Xtxa2355	131.6		Xtxa2355	Marker
+a	Xtxa2644	132.0		Xtxa2644	Marker
+a	Xtxa2609	133.6		Xtxa2609	Marker
+a	Xtxp37	133.6	137.1	Xtxp37	Marker
+a	Xtxa3114	133.6	137.1	Xtxa3114	Marker
+a	Xtxa6356	133.6	137.1	Xtxa6356	Marker
+a	Xtxa6334	137.1		Xtxa6334	Marker
+a	Xtxa2210	137.1	140.8	Xtxa2210	Marker
+a	Xtxa6277	140.8		Xtxa6277	Marker
+a	Xtxp335	140.8	143.2	Xtxp335	Marker
+a	Xtxa320	140.8	143.2	Xtxa320	Marker
+a	Xtxa2169	140.8	143.2	Xtxa2169	Marker
+a	Xtxa2588	140.8	143.2	Xtxa2588	Marker
+a	Xtxa3244	140.8	143.2	Xtxa3244	Marker
+a	Xtxa2658	143.2		Xtxa2658	Marker
+a	rz251	144.4		rz251	Marker
+a	isu164	144.4	145.8	isu164	Marker
+a	isu61.1	144.4	145.8	isu61.1	Marker
+a	Xtxa3013	144.4	145.8	Xtxa3013	Marker
+a	Xtxa3239	144.4	145.8	Xtxa3239	Marker
+a	Xtxa3812	145.8		Xtxa3812	Marker
+a	isu44	145.8	149.4	isu44	Marker
+a	Xtxs1129	145.8	149.4	Xtxs1129	Marker
+a	Xtxa451	145.8	149.4	Xtxa451	Marker
+a	Xtxa2070	145.8	149.4	Xtxa2070	Marker
+a	Xtxa3832	145.8	149.4	Xtxa3832	Marker
+a	Xtxa6088	149.4		Xtxa6088	Marker
+a	Xtxs1225	154.2		Xtxs1225	Marker
+a	Xtxa2876	154.2	158.3	Xtxa2876	Marker
+a	Xtxa6109	154.2	158.3	Xtxa6109	Marker
+a	umc95	158.3		umc95	Marker
+a	Xtxa4097	158.3	160.8	Xtxa4097	Marker
+a	Xtxp58	160.8		Xtxp58	Marker
+a	Xgap57	160.8	164.8	Xgap57	Marker
+a	Xtxa3555	160.8	164.8	Xtxa3555	Marker
+a	Xtxa4021	164.8		Xtxa4021	Marker
+a	Xtxa571	164.8	174.9	Xtxa571	Marker
+a	Xtxa3858	164.8	168.5	Xtxa3858	Marker
+a	Xtxa3826	168.5		Xtxa3826	Marker
+a	Xtxa6293	168.5	169.5	Xtxa6293	Marker
+a	cdo938	169.5		cdo938	Marker
+a	isu51	171.6		isu51	Marker
+a	OP_K20C	171.6	172.5	OP_K20C	Marker
+a	PHYB	172.5		PHYB	Marker
+a	Xtxa2803	164.8	174.9	Xtxa2803	Marker
+a	Xtxp75	174.9		Xtxp75	Marker
+a	Xtxp229	174.9	189.4	Xtxp229	Marker
+a	Xtxp279	178.6		Xtxp279	Marker
+a	Xtxa2837	181.8		Xtxa2837	Marker
+a	Xtxa3762	181.8	184.7	Xtxa3762	Marker
+a	Xtxa3660	184.7		Xtxa3660	Marker
+a	Xtxa4101	187.5		Xtxa4101	Marker
+a	Xtxa4037	187.5	189.4	Xtxa4037	Marker
+a	Xtxa6241	187.5	189.4	Xtxa6241	Marker
+a	Xtxa6208	189.4		Xtxa6208	Marker
+a	isu133	189.4	191.5	isu133	Marker
+a	Xtxs1765	189.4	191.5	Xtxs1765	Marker
+a	OP_K20A	189.4	191.5	OP_K20A	Marker
+a	Xgap36	189.4	191.5	Xgap36	Marker
+a	Xtxa408	189.4	191.5	Xtxa408	Marker
+a	Xtxa2511	189.4	191.5	Xtxa2511	Marker
+a	Xtxa3006	189.4	191.5	Xtxa3006	Marker
+a	Xtxa3016	189.4	191.5	Xtxa3016	Marker
+a	Xtxa3018	189.4	191.5	Xtxa3018	Marker
+a	Xtxa3783	189.4	191.5	Xtxa3783	Marker
+a	Xtxa6316	189.4	191.5	Xtxa6316	Marker
+a	Xtxa2304	191.5		Xtxa2304	Marker
+a	Xtxa203	191.5		Xtxa203	Marker
+a	Xtxa2865	191.5	194.2	Xtxa2865	Marker
+a	Xtxa3572	191.5	194.2	Xtxa3572	Marker
+a	Xtxa6008	191.5	194.2	Xtxa6008	Marker
+a	Xtxa3580	194.2		Xtxa3580	Marker
+a	Xtxa4238	194.2	196.9	Xtxa4238	Marker
+a	Xtxa3795	196.9		Xtxa3795	Marker
+a	Xtxa424	196.9	198.9	Xtxa424	Marker
+a	Xtxa395	196.9	198.9	Xtxa395	Marker
+a	Xtxa2241	196.9	198.9	Xtxa2241	Marker
+a	Xtxa2728	196.9	198.9	Xtxa2728	Marker
+a	Xtxa4235	196.9	198.9	Xtxa4235	Marker
+a	cdo1387	198.9		cdo1387	Marker
+a	bnl5.09	198.9	201.8	bnl5.09	Marker
+a	Xtxs300	198.9	201.8	Xtxs300	Marker
+a	Xtxp284	198.9	201.8	Xtxp284	Marker
+a	Xtxa3643	198.9	201.8	Xtxa3643	Marker
+a	Xtxa4013	198.9	201.8	Xtxa4013	Marker
+a	Xtxa6193	198.9	201.8	Xtxa6193	Marker
+a	Xtxa6057	201.8		Xtxa6057	Marker
+a	Xtxa4183	198.9	202.6	Xtxa4183	Marker
+a	Xtxa4241	202.6		Xtxa4241	Marker
+a	isu49	198.9	212.1	isu49	Marker
+a	Xtxa6073	202.6	203.8	Xtxa6073	Marker
+a	Xtxp61	203.8		Xtxp61	Marker
+a	Xtxa4149	204.5		Xtxa4149	Marker
+a	bnl14.28	204.5	212.1	bnl14.28	Marker
+a	Xtxa2129	204.5	212.1	Xtxa2129	Marker
+a	Xtxa4185	204.5	212.1	Xtxa4185	Marker
+a	Xtxa6215	212.1		Xtxa6215	Marker
+a	Xtxa3754	212.1	215.0	Xtxa3754	Marker
+a	Xtxa6017	212.1	215.0	Xtxa6017	Marker
+a	Xtxa6325	212.1	215.0	Xtxa6325	Marker
+a	Xtxa200	215.0		Xtxa200	Marker
+a	Xtxa3629	215.0		Xtxa3629	Marker
+a	Xtxa18	215.0	219.2	Xtxa18	Marker
+a	Xtxa3229	215.0	219.2	Xtxa3229	Marker
+a	Xtxa3351	215.0	219.2	Xtxa3351	Marker
+a	Xtxa6006	215.0	219.2	Xtxa6006	Marker
+a	Xtxa298	219.2		Xtxa298	Marker
+a	Xtxs1625	219.2	221.4	Xtxs1625	Marker
+a	Xtxp319	221.4		Xtxp319	Marker
+a	rz329	223.1		rz329	Marker
+a	Xtxa3958	223.9		Xtxa3958	Marker
+a	Xtxa3507	223.9	230.6	Xtxa3507	Marker
+a	umc157	228.2		umc157	Marker
+a	Xtxa2945	229.0		Xtxa2945	Marker
+a	Xtxa4051	223.9	230.6	Xtxa4051	Marker
+a	Xtxp340	230.6		Xtxp340	Marker
+a	Xtxa3353	230.6	234.6	Xtxa3353	Marker
+a	Xtxa6274	234.6		Xtxa6274	Marker
+a	Xtxs1153	234.6	238.9	Xtxs1153	Marker
+a	Xtxs1176.1	234.6	238.9	Xtxs1176.1	Marker
+a	Xtxa2344	234.6	238.9	Xtxa2344	Marker
+a	Xtxa3685	234.6	238.9	Xtxa3685	Marker
+a	Xtxa4080	234.6	238.9	Xtxa4080	Marker
+a	Xtxa6137	234.6	238.9	Xtxa6137	Marker
+a	rz273	238.9		rz273	Marker
+a	Xtxa581	238.9	242.9	Xtxa581	Marker
+a	Xtxa4098	238.9	242.9	Xtxa4098	Marker
+a	Xtxa4099	238.9	242.9	Xtxa4099	Marker
+a	Xtxa4111	238.9	242.9	Xtxa4111	Marker
+a	Xtxa3303	242.9		Xtxa3303	Marker
+b	Xtxa2851	0.0		Xtxa2851	Marker
+b	Xtxs1267	6.2		Xtxs1267	Marker
+b	Xtxs1573.2	6.2		Xtxs1573.2	Marker
+b	Xtxp96	6.2	8.3	Xtxp96	Marker
+b	Xtxp63	8.3		Xtxp63	Marker
+b	Xtxa4189	8.3	9.5	Xtxa4189	Marker
+b	Xtxa3726	9.5		Xtxa3726	Marker
+b	Xtxa2050	9.5	12.6	Xtxa2050	Marker
+b	Xtxa3177	9.5	12.6	Xtxa3177	Marker
+b	Xtxa3362	9.5	12.6	Xtxa3362	Marker
+b	Xtxa3492	9.5	12.6	Xtxa3492	Marker
+b	Xtxa3721	9.5	12.6	Xtxa3721	Marker
+b	Xtxa3727	9.5	12.6	Xtxa3727	Marker
+b	Xtxa3760	9.5	12.6	Xtxa3760	Marker
+b	Xtxa4008	9.5	12.6	Xtxa4008	Marker
+b	Xtxa4079	9.5	12.6	Xtxa4079	Marker
+b	Xtxa4127	9.5	12.6	Xtxa4127	Marker
+b	Xtxa6064	9.5	12.6	Xtxa6064	Marker
+b	Xtxa472	12.6		Xtxa472	Marker
+b	Xtxa3341	17.7		Xtxa3341	Marker
+b	Xtxa2756	17.7	21.6	Xtxa2756	Marker
+b	Xtxa6223	17.7	21.6	Xtxa6223	Marker
+b	Xtxa591	21.6		Xtxa591	Marker
+b	Xtxp25	21.6	24.2	Xtxp25	Marker
+b	Xtxa3329	24.2		Xtxa3329	Marker
+b	Xtxp297	24.2	27.0	Xtxp297	Marker
+b	Xtxa3887	24.2	27.0	Xtxa3887	Marker
+b	isu67	27.0		isu67	Marker
+b	Xtxp50	27.0	31.4	Xtxp50	Marker
+b	Xtxp84	27.0	31.4	Xtxp84	Marker
+b	Xtxa532	27.0	31.4	Xtxa532	Marker
+b	Xtxa2123	27.0	31.4	Xtxa2123	Marker
+b	Xtxa6150	31.4		Xtxa6150	Marker
+b	Xtxp211	31.4		Xtxp211	Marker
+b	Xtxa6355	34.2		Xtxa6355	Marker
+b	Xtxp304	34.2	36.9	Xtxp304	Marker
+b	Xtxa2732	34.2	36.9	Xtxa2732	Marker
+b	Xtxa3423	34.2	36.9	Xtxa3423	Marker
+b	Xtxa2733	34.2	44.6	Xtxa2733	Marker
+b	Xtxa3547	36.9		Xtxa3547	Marker
+b	Xtxa6063	36.9	38.8	Xtxa6063	Marker
+b	Xtxa2501	38.8		Xtxa2501	Marker
+b	Xtxa2827	38.8	41.1	Xtxa2827	Marker
+b	Xtxa55	41.1		Xtxa55	Marker
+b	Xtxa2142	41.5		Xtxa2142	Marker
+b	Xtxa538	41.5	44.6	Xtxa538	Marker
+b	Xtxa3681	41.5	44.6	Xtxa3681	Marker
+b	Xtxa3749	41.5	46.5	Xtxa3749	Marker
+b	Xtxa2717	44.6		Xtxa2717	Marker
+b	Xtxa3604	46.5		Xtxa3604	Marker
+b	Xtxa3451	50.5		Xtxa3451	Marker
+b	Xtxs1891	53.2		Xtxs1891	Marker
+b	Xtxs2014.1	53.2	55.4	Xtxs2014.1	Marker
+b	Xtxa2176	53.2	55.4	Xtxa2176	Marker
+b	Xtxa280	55.4		Xtxa280	Marker
+b	Xtxa317	55.4	59.5	Xtxa317	Marker
+b	Xtxa2244	55.4	59.5	Xtxa2244	Marker
+b	Xtxa2719	55.4	59.5	Xtxa2719	Marker
+b	Xtxa3919	55.4	59.5	Xtxa3919	Marker
+b	Xtxa4200	55.4	59.5	Xtxa4200	Marker
+b	Xtxa6016	55.4	59.5	Xtxa6016	Marker
+b	Xtxa2792	59.5		Xtxa2792	Marker
+b	Xtxa414	60.8		Xtxa414	Marker
+b	Xtxs1164	60.8	63.3	Xtxs1164	Marker
+b	Xtxs1271.2	60.8	63.3	Xtxs1271.2	Marker
+b	Xtxa2324	60.8	63.3	Xtxa2324	Marker
+b	Xtxa2885	60.8	63.3	Xtxa2885	Marker
+b	Xtxa3453	60.8	63.3	Xtxa3453	Marker
+b	Xtxa3534	60.8	63.3	Xtxa3534	Marker
+b	Xtxa3584	60.8	63.3	Xtxa3584	Marker
+b	Xtxa3641	60.8	63.3	Xtxa3641	Marker
+b	Xtxa3906	60.8	63.3	Xtxa3906	Marker
+b	Xtxa3927	60.8	63.3	Xtxa3927	Marker
+b	Xtxa4202	60.8	63.3	Xtxa4202	Marker
+b	Xtxa6194	60.8	65.7	Xtxa6194	Marker
+b	isu97.2	63.3		isu97.2	Marker
+b	isu71	63.8		isu71	Marker
+b	Xtxa3715	60.8	65.7	Xtxa3715	Marker
+b	Xtxs1381	63.8	65.7	Xtxs1381	Marker
+b	Xtxa2143	63.8	65.7	Xtxa2143	Marker
+b	Xtxa2312	63.8	65.7	Xtxa2312	Marker
+b	Xtxa3393	63.8	65.7	Xtxa3393	Marker
+b	Xtxa426	65.7		Xtxa426	Marker
+b	Xtxa172	66.9		Xtxa172	Marker
+b	Xtxs1075.2	66.9	68.1	Xtxs1075.2	Marker
+b	Xtxa561	66.9	68.1	Xtxa561	Marker
+b	Xtxa2991	66.9	68.1	Xtxa2991	Marker
+b	Xtxa3531	66.9	68.1	Xtxa3531	Marker
+b	Xtxa609	68.1		Xtxa609	Marker
+b	Xtxa2838	68.1	71.4	Xtxa2838	Marker
+b	Xtxa3173	68.1	71.4	Xtxa3173	Marker
+b	Xtxa3265	68.1	71.4	Xtxa3265	Marker
+b	Xtxa3427	68.1	71.4	Xtxa3427	Marker
+b	Xtxa3767	68.1	71.4	Xtxa3767	Marker
+b	Xtxa3969	68.1	71.4	Xtxa3969	Marker
+b	Xtxp4	68.1	71.4	Xtxp4	Marker
+b	Xtxa251	71.4		Xtxa251	Marker
+b	Xtxa2857	71.4	73.9	Xtxa2857	Marker
+b	Xtxa2979	71.4	73.9	Xtxa2979	Marker
+b	Xtxa6231	71.4	73.9	Xtxa6231	Marker
+b	isu151	73.9		isu151	Marker
+b	Xtxa351	73.9	76.6	Xtxa351	Marker
+b	Xtxa2018	73.9	76.6	Xtxa2018	Marker
+b	Xtxa2889	73.9	76.6	Xtxa2889	Marker
+b	Xtxa3310	73.9	76.6	Xtxa3310	Marker
+b	Xtxa3456	73.9	76.6	Xtxa3456	Marker
+b	Xtxa4140	73.9	76.6	Xtxa4140	Marker
+b	Xtxa4165	73.9	76.6	Xtxa4165	Marker
+b	Xtxa6170	73.9	76.6	Xtxa6170	Marker
+b	Xtxa4071	76.6		Xtxa4071	Marker
+b	Xtxp3	76.6	79.4	Xtxp3	Marker
+b	Xtxp55	76.6	79.4	Xtxp55	Marker
+b	Xtxp72	76.6	79.4	Xtxp72	Marker
+b	Xtxp201	76.6	79.4	Xtxp201	Marker
+b	Xtxp283	76.6	79.4	Xtxp283	Marker
+b	Xtxa47	76.6	79.4	Xtxa47	Marker
+b	Xtxa77	76.6	79.4	Xtxa77	Marker
+b	Xtxa420	76.6	79.4	Xtxa420	Marker
+b	Xtxa459	76.6	79.4	Xtxa459	Marker
+b	Xtxa465	76.6	79.4	Xtxa465	Marker
+b	Xtxa233	76.6	79.4	Xtxa233	Marker
+b	Xtxa517	76.6	79.4	Xtxa517	Marker
+b	Xtxa607	76.6	79.4	Xtxa607	Marker
+b	Xtxa2040	76.6	79.4	Xtxa2040	Marker
+b	Xtxa2173	76.6	79.4	Xtxa2173	Marker
+b	Xtxa2211	76.6	79.4	Xtxa2211	Marker
+b	Xtxa2592	76.6	79.4	Xtxa2592	Marker
+b	Xtxa2659	76.6	79.4	Xtxa2659	Marker
+b	Xtxa2892	76.6	79.4	Xtxa2892	Marker
+b	Xtxa3054	76.6	79.4	Xtxa3054	Marker
+b	Xtxa3150	76.6	79.4	Xtxa3150	Marker
+b	Xtxa3182	76.6	79.4	Xtxa3182	Marker
+b	Xtxa3215	76.6	79.4	Xtxa3215	Marker
+b	Xtxa3223	76.6	79.4	Xtxa3223	Marker
+b	Xtxa3283	76.6	79.4	Xtxa3283	Marker
+b	Xtxa3289	76.6	79.4	Xtxa3289	Marker
+b	Xtxa3337	76.6	79.4	Xtxa3337	Marker
+b	Xtxa3548	76.6	79.4	Xtxa3548	Marker
+b	Xtxa3634	76.6	79.4	Xtxa3634	Marker
+b	Xtxa3642	76.6	79.4	Xtxa3642	Marker
+b	Xtxa3725	76.6	79.4	Xtxa3725	Marker
+b	Xtxa3761	76.6	79.4	Xtxa3761	Marker
+b	Xtxa3766	76.6	79.4	Xtxa3766	Marker
+b	Xtxa3800	76.6	79.4	Xtxa3800	Marker
+b	Xtxa4211	76.6	79.4	Xtxa4211	Marker
+b	Xtxa6095	76.6	79.4	Xtxa6095	Marker
+b	Xtxa6178	76.6	79.4	Xtxa6178	Marker
+b	Xtxa6205	76.6	79.4	Xtxa6205	Marker
+b	Xtxa2812	76.6	80.9	Xtxa2812	Marker
+b	Xtxa3358	79.4		Xtxa3358	Marker
+b	Xtxa2724	79.4		Xtxa2724	Marker
+b	Xtxa3648	79.4		Xtxa3648	Marker
+b	rz413	79.4	80.9	rz413	Marker
+b	Xtxa274	79.4	80.9	Xtxa274	Marker
+b	Xtxa2035	79.4	80.9	Xtxa2035	Marker
+b	Xtxa2259	79.4	80.9	Xtxa2259	Marker
+b	Xtxa2715	79.4	80.9	Xtxa2715	Marker
+b	Xtxa2841	79.4	80.9	Xtxa2841	Marker
+b	Xtxa2939	79.4	80.9	Xtxa2939	Marker
+b	Xtxa3031	79.4	80.9	Xtxa3031	Marker
+b	Xtxa3305	79.4	80.9	Xtxa3305	Marker
+b	Xtxa6126	79.4	80.9	Xtxa6126	Marker
+b	Xtxa602	80.9		Xtxa602	Marker
+b	Xtxa2832	80.9		Xtxa2832	Marker
+b	Xtxa211	80.9		Xtxa211	Marker
+b	Xtxa2099	76.6	82.4	Xtxa2099	Marker
+b	Xtxa2245	79.4	82.4	Xtxa2245	Marker
+b	Xtxa3562	79.4	82.4	Xtxa3562	Marker
+b	Xtxs1639	80.9	82.4	Xtxs1639	Marker
+b	Xtxp19	80.9	82.4	Xtxp19	Marker
+b	Xtxa458	80.9	82.4	Xtxa458	Marker
+b	Xtxa570	80.9	82.4	Xtxa570	Marker
+b	Xtxa2242	80.9	82.4	Xtxa2242	Marker
+b	Xtxa2311	80.9	82.4	Xtxa2311	Marker
+b	Xtxa2603	80.9	82.4	Xtxa2603	Marker
+b	Xtxa2776	80.9	82.4	Xtxa2776	Marker
+b	Xtxa2913	80.9	82.4	Xtxa2913	Marker
+b	Xtxa3040	80.9	82.4	Xtxa3040	Marker
+b	Xtxa3142	80.9	82.4	Xtxa3142	Marker
+b	Xtxa3317	80.9	82.4	Xtxa3317	Marker
+b	Xtxa3328	80.9	82.4	Xtxa3328	Marker
+b	Xtxa3455	80.9	82.4	Xtxa3455	Marker
+b	Xtxa3615	80.9	82.4	Xtxa3615	Marker
+b	Xtxa3908	80.9	82.4	Xtxa3908	Marker
+b	Xtxa6266	80.9	82.4	Xtxa6266	Marker
+b	Xtxa3697	82.4		Xtxa3697	Marker
+b	Xtxa214	82.4	83.3	Xtxa214	Marker
+b	Xtxp13	83.3		Xtxp13	Marker
+b	isu63.3	83.3	86.0	isu63.3	Marker
+b	isu64.2	83.3	86.0	isu64.2	Marker
+b	Xtxa3696	83.3	86.0	Xtxa3696	Marker
+b	Xtxa3810	83.3	86.0	Xtxa3810	Marker
+b	Xtxa3942	83.3	86.0	Xtxa3942	Marker
+b	Xtxa4065	83.3	86.0	Xtxa4065	Marker
+b	isu94	86.0		isu94	Marker
+b	Xtxa2106	83.3	93.4	Xtxa2106	Marker
+b	umc22.2	86.0	93.4	umc22.2	Marker
+b	Xtxp298	86.0	93.4	Xtxp298	Marker
+b	Xtxa2313	86.0	93.4	Xtxa2313	Marker
+b	Xtxa2662	86.0	93.4	Xtxa2662	Marker
+b	Xtxa2663	86.0	93.4	Xtxa2663	Marker
+b	Xtxa2739	86.0	93.4	Xtxa2739	Marker
+b	Xtxa2854	86.0	93.4	Xtxa2854	Marker
+b	Xtxa3243	86.0	93.4	Xtxa3243	Marker
+b	Xtxa3327	86.0	93.4	Xtxa3327	Marker
+b	Xtxa6074	93.4		Xtxa6074	Marker
+b	umc88.1	93.4		umc88.1	Marker
+b	Xtxa4119	86.0	95.1	Xtxa4119	Marker
+b	Xtxa435	93.4	95.1	Xtxa435	Marker
+b	Xtxa537	93.4	95.1	Xtxa537	Marker
+b	Xtxa2201	95.1		Xtxa2201	Marker
+b	Xtxa2247	95.1	96.2	Xtxa2247	Marker
+b	Xtxa2008	96.2		Xtxa2008	Marker
+b	Xtxa2159	97.0		Xtxa2159	Marker
+b	Xtxa3763	99.3		Xtxa3763	Marker
+b	Xtxa2813	99.3	102.9	Xtxa2813	Marker
+b	umc139	102.9		umc139	Marker
+b	Xtxa6213	102.9	106.2	Xtxa6213	Marker
+b	Xtxa6138	106.2		Xtxa6138	Marker
+b	Xtxa482	106.2	107.7	Xtxa482	Marker
+b	Xtxa3420	107.7		Xtxa3420	Marker
+b	Xtxa2616	110.0		Xtxa2616	Marker
+b	Xtxa2514	110.0		Xtxa2514	Marker
+b	Xtxa3397	110.0		Xtxa3397	Marker
+b	Xtxa490	110.0	113.4	Xtxa490	Marker
+b	Xtxa6151	110.0	113.4	Xtxa6151	Marker
+b	Xtxa6350	110.0	113.4	Xtxa6350	Marker
+b	Xtxa3153	113.4		Xtxa3153	Marker
+b	Xtxa3542	113.4	115.9	Xtxa3542	Marker
+b	Xtxa3957	113.4	115.9	Xtxa3957	Marker
+b	Xtxa6082	113.4	115.9	Xtxa6082	Marker
+b	Xtxa409	115.9		Xtxa409	Marker
+b	isu86	115.9	119.7	isu86	Marker
+b	umc136	115.9	119.7	umc136	Marker
+b	Xtxa592	115.9	119.7	Xtxa592	Marker
+b	Xtxa489	115.9	119.7	Xtxa489	Marker
+b	Xtxa2593	115.9	119.7	Xtxa2593	Marker
+b	Xtxa2648	115.9	119.7	Xtxa2648	Marker
+b	Xtxs1111	119.7		Xtxs1111	Marker
+b	Xtxa6078	119.7	120.6	Xtxa6078	Marker
+b	Xtxa6145	119.7	120.6	Xtxa6145	Marker
+b	umc5	120.6		umc5	Marker
+b	isu85.3	120.6	124.5	isu85.3	Marker
+b	Xtxp1	120.6	124.5	Xtxp1	Marker
+b	Xtxa3803	120.6	124.5	Xtxa3803	Marker
+b	Xtxa6114	120.6	124.5	Xtxa6114	Marker
+b	Xtxa6195	120.6	124.5	Xtxa6195	Marker
+b	Xtxa6267	120.6	124.5	Xtxa6267	Marker
+b	Xtxp56	124.5		Xtxp56	Marker
+b	umc116	124.5	127.2	umc116	Marker
+b	Xtxa2907	124.5	127.2	Xtxa2907	Marker
+b	Xtxa3046	124.5	127.2	Xtxa3046	Marker
+b	Xtxa3878	124.5	127.2	Xtxa3878	Marker
+b	Xtxa481	127.2		Xtxa481	Marker
+b	Xtxa529	127.2	130.8	Xtxa529	Marker
+b	Xtxa2576	127.2	130.8	Xtxa2576	Marker
+b	Xtxa3022	127.2	130.8	Xtxa3022	Marker
+b	Xtxa3779	127.2	130.8	Xtxa3779	Marker
+b	Xtxa612	130.8		Xtxa612	Marker
+b	Xtxa2867	130.8	131.7	Xtxa2867	Marker
+b	Xtxa6165	131.7		Xtxa6165	Marker
+b	Xgap84	131.7	132.8	Xgap84	Marker
+b	Xtxa6311	131.7	132.8	Xtxa6311	Marker
+b	Xtxa3866	132.8		Xtxa3866	Marker
+b	Xtxa6164	133.9		Xtxa6164	Marker
+b	Xtxp286	133.9	135.9	Xtxp286	Marker
+b	Xtxa2638	133.9	135.9	Xtxa2638	Marker
+b	Xtxa2997	133.9	135.9	Xtxa2997	Marker
+b	Xtxa3027	133.9	135.9	Xtxa3027	Marker
+b	Xtxa3274	133.9	135.9	Xtxa3274	Marker
+b	Xtxa6234	133.9	135.9	Xtxa6234	Marker
+b	isu117	135.9		isu117	Marker
+b	Xtxa3900	135.9	138.5	Xtxa3900	Marker
+b	Xtxa3902	135.9	138.5	Xtxa3902	Marker
+b	Xtxa4012	135.9	138.5	Xtxa4012	Marker
+b	Xtxa2000	135.9	138.5	Xtxa2000	Marker
+b	isu43	138.5		isu43	Marker
+b	Xtxs645.1	138.5		Xtxs645.1	Marker
+b	Xtxs284	138.5	140.7	Xtxs284	Marker
+b	Xtxp179	138.5	140.7	Xtxp179	Marker
+b	umc22.1	140.7		umc22.1	Marker
+b	Xtxa6076	140.7		Xtxa6076	Marker
+b	Xtxa4215	140.7	141.2	Xtxa4215	Marker
+b	umc88.2	141.2		umc88.2	Marker
+b	isu145.1	138.5	144.0	isu145.1	Marker
+b	Xtxa2145	138.5	144.0	Xtxa2145	Marker
+b	Xtxa2513	141.2	144.0	Xtxa2513	Marker
+b	Xtxa2938	141.2	144.0	Xtxa2938	Marker
+b	Xtxa6191	141.2	144.0	Xtxa6191	Marker
+b	Xtxa6242	141.2	144.0	Xtxa6242	Marker
+b	Xtxa268	141.2	144.0	Xtxa268	Marker
+b	Xtxa264	144.0		Xtxa264	Marker
+b	Xtxa2570	144.0	147.8	Xtxa2570	Marker
+b	Xtxa2793	144.0	147.8	Xtxa2793	Marker
+b	Xtxa3909	144.0	147.8	Xtxa3909	Marker
+b	Xtxa598	147.8		Xtxa598	Marker
+b	isu66	147.8	152.6	isu66	Marker
+b	Xtxs1527	147.8	152.6	Xtxs1527	Marker
+b	Xtxs2042	147.8	152.6	Xtxs2042	Marker
+b	cdo1508	147.8	152.6	cdo1508	Marker
+b	Xtxp348	147.8	152.6	Xtxp348	Marker
+b	Xtxa565	147.8	152.6	Xtxa565	Marker
+b	Xtxa2023	147.8	152.6	Xtxa2023	Marker
+b	Xtxa2965	147.8	152.6	Xtxa2965	Marker
+b	Xtxa3251	147.8	152.6	Xtxa3251	Marker
+b	Xtxa3424	147.8	152.6	Xtxa3424	Marker
+b	Xtxa3541	147.8	152.6	Xtxa3541	Marker
+b	Xtxa3556	147.8	152.6	Xtxa3556	Marker
+b	Xtxa4151	147.8	152.6	Xtxa4151	Marker
+b	Xtxa6036	147.8	152.6	Xtxa6036	Marker
+b	Xtxa6252	147.8	152.6	Xtxa6252	Marker
+b	cdo385	152.6		cdo385	Marker
+b	Xtxs360	152.6	155.3	Xtxs360	Marker
+b	Xtxp315	152.6	155.3	Xtxp315	Marker
+b	Xtxa3895	152.6	155.3	Xtxa3895	Marker
+b	Xtxa6119	152.6	155.3	Xtxa6119	Marker
+b	Xtxa6045	155.3		Xtxa6045	Marker
+b	Xtxs1925	155.3	158.4	Xtxs1925	Marker
+b	Xtxa6060	155.3	158.4	Xtxa6060	Marker
+b	umc4	158.4		umc4	Marker
+b	Xtxa313	161.5		Xtxa313	Marker
+b	Xtxa6115	162.7		Xtxa6115	Marker
+b	cdo59	161.5	165.5	cdo59	Marker
+b	Xtxp100	162.7	165.5	Xtxp100	Marker
+b	Xtxa326	162.7	165.5	Xtxa326	Marker
+b	Xtxa2199	162.7	165.5	Xtxa2199	Marker
+b	Xtxa2758	162.7	167.9	Xtxa2758	Marker
+b	umc149	165.5		umc149	Marker
+b	Xtxp7	165.5	168.4	Xtxp7	Marker
+b	Xtxp207	167.9		Xtxp207	Marker
+b	Xtxa6338	168.4		Xtxa6338	Marker
+b	Xtxs1845	168.8		Xtxs1845	Marker
+b	Xtxp296	168.8	176.2	Xtxp296	Marker
+b	Xtxa2574	168.8	176.2	Xtxa2574	Marker
+b	Xtxa2575	168.8	176.2	Xtxa2575	Marker
+b	Xtxa3163	168.8	176.2	Xtxa3163	Marker
+b	Xtxa3428	168.8	176.2	Xtxa3428	Marker
+b	Xtxa3510	168.8	176.2	Xtxa3510	Marker
+b	umc125	176.2		umc125	Marker
+b	Xtxa64	176.2	179.1	Xtxa64	Marker
+b	Xtxa3026	176.2	179.1	Xtxa3026	Marker
+b	Xtxa3434	176.2	179.1	Xtxa3434	Marker
+b	Xtxa3833	176.2	179.1	Xtxa3833	Marker
+b	Xtxa3557	176.2	179.1	Xtxa3557	Marker
+b	Xtxa3931	176.2	179.1	Xtxa3931	Marker
+b	Xtxa6106	176.2	179.1	Xtxa6106	Marker
+b	Xtxa6124	176.2	179.1	Xtxa6124	Marker
+b	umc122	179.1		umc122	Marker
+b	bnl8.37	179.6		bnl8.37	Marker
+b	Xtxa2661	179.6	183.2	Xtxa2661	Marker
+b	Xtxa3145	179.6	183.2	Xtxa3145	Marker
+b	Xtxa6353	179.6	183.2	Xtxa6353	Marker
+b	rz395	183.2		rz395	Marker
+b	Xtxa2327	183.2	186.0	Xtxa2327	Marker
+b	Xtxa3466	183.2	186.0	Xtxa3466	Marker
+b	Xtxa4060	183.2	186.0	Xtxa4060	Marker
+b	Xtxa4095	183.2	186.0	Xtxa4095	Marker
+b	isu75.2	186.0		isu75.2	Marker
+b	isu113	186.0	188.3	isu113	Marker
+b	Xtxs290	186.0	188.3	Xtxs290	Marker
+b	Xtxa2806	186.0	188.3	Xtxa2806	Marker
+b	Xtxa3973	186.0	188.3	Xtxa3973	Marker
+b	Xtxs283	188.3		Xtxs283	Marker
+b	Xtxa391	188.3	192.0	Xtxa391	Marker
+b	Xtxa3662	188.3	192.0	Xtxa3662	Marker
+b	Xtxa6255	188.3	195.3	Xtxa6255	Marker
+b	Xtxa6117	192.0		Xtxa6117	Marker
+b	isu123.2	195.3		isu123.2	Marker
+b	Xtxa289	195.3	197.7	Xtxa289	Marker
+b	Xtxa2604	195.3	197.7	Xtxa2604	Marker
+b	Xtxa3477	195.3	201.4	Xtxa3477	Marker
+b	bnl16.06	197.7		bnl16.06	Marker
+b	Xtxa3506	197.7	201.4	Xtxa3506	Marker
+b	Xtxa3561	197.7	201.4	Xtxa3561	Marker
+b	Xtxa4207	197.7	201.4	Xtxa4207	Marker
+b	Xtxa6186	197.7	201.4	Xtxa6186	Marker
+b	Xtxa6271	197.7	201.4	Xtxa6271	Marker
+b	Xtxp8	201.4		Xtxp8	Marker
+b	Xtxa4124	201.4	205.5	Xtxa4124	Marker
+b	Xtxa311	205.5		Xtxa311	Marker
+b	Xtxa14	205.5	210.0	Xtxa14	Marker
+b	Xtxa493	210.0		Xtxa493	Marker
+b	Xtxa6049	210.0	212.2	Xtxa6049	Marker
+b	Xtxa6044	212.2		Xtxa6044	Marker
+b	Xtxs1610	214.2		Xtxs1610	Marker
+c	isu52	0.0		isu52	Marker
+c	Xtxa207	0.0	6.2	Xtxa207	Marker
+c	Xtxa245	0.0	6.2	Xtxa245	Marker
+c	Xtxa3859	6.2		Xtxa3859	Marker
+c	Xtxa341	8.8		Xtxa341	Marker
+c	Xtxp69	8.8	14.1	Xtxp69	Marker
+c	Xtxa422	8.8	14.1	Xtxa422	Marker
+c	Xtxa2232	8.8	14.1	Xtxa2232	Marker
+c	Xtxa3008	8.8	14.1	Xtxa3008	Marker
+c	Xtxa3381	8.8	14.1	Xtxa3381	Marker
+c	Xtxa3559	8.8	14.1	Xtxa3559	Marker
+c	Xtxa4073	14.1		Xtxa4073	Marker
+c	Xtxa3904	14.8		Xtxa3904	Marker
+c	Xtxa2056	15.5		Xtxa2056	Marker
+c	Xtxa3402	15.5	18.6	Xtxa3402	Marker
+c	Xtxa3987	15.5	18.6	Xtxa3987	Marker
+c	Xtxa4157	15.5	18.6	Xtxa4157	Marker
+c	Xtxa3610	18.6		Xtxa3610	Marker
+c	Xtxa3719	18.6	20.9	Xtxa3719	Marker
+c	Xtxa3891	20.9		Xtxa3891	Marker
+c	isu91	22.5		isu91	Marker
+c	Xtxp34	22.5	26.5	Xtxp34	Marker
+c	Xtxa2065	22.5	30.2	Xtxa2065	Marker
+c	Xtxa2667	22.5	26.5	Xtxa2667	Marker
+c	Xtxa3108	22.5	26.5	Xtxa3108	Marker
+c	Xtxa3140	22.5	26.5	Xtxa3140	Marker
+c	Xtxa6041	22.5	26.5	Xtxa6041	Marker
+c	Xtxa6043	22.5	26.5	Xtxa6043	Marker
+c	Xtxa3448	26.5		Xtxa3448	Marker
+c	Xtxa2032	26.5	28.5	Xtxa2032	Marker
+c	Xtxa2275	26.5	28.5	Xtxa2275	Marker
+c	Xtxa2051	28.5		Xtxa2051	Marker
+c	Xtxa2830	28.5	30.2	Xtxa2830	Marker
+c	Xtxa6283	30.2		Xtxa6283	Marker
+c	Xtxa2027	33.7		Xtxa2027	Marker
+c	Xtxp38	33.7	36.6	Xtxp38	Marker
+c	Xtxa253	33.7	36.6	Xtxa253	Marker
+c	Xtxa2515	33.7	36.6	Xtxa2515	Marker
+c	Xtxa3390	33.7	36.6	Xtxa3390	Marker
+c	Xtxa2271	36.6		Xtxa2271	Marker
+c	Xtxs1226	36.6	39.0	Xtxs1226	Marker
+c	Xtxa3331	36.6	39.0	Xtxa3331	Marker
+c	Xtxa3899	36.6	39.0	Xtxa3899	Marker
+c	Xtxa6040	36.6	39.0	Xtxa6040	Marker
+c	Xtxa6296	36.6	39.0	Xtxa6296	Marker
+c	isu166	39.0		isu166	Marker
+c	Xtxa3242	39.0	44.2	Xtxa3242	Marker
+c	Xtxa6351	39.0	44.2	Xtxa6351	Marker
+c	Xtxa2937	44.2		Xtxa2937	Marker
+c	Xtxa2986	45.8		Xtxa2986	Marker
+c	Xtxa3789	44.2	47.8	Xtxa3789	Marker
+c	Xtxa3598	45.8	47.8	Xtxa3598	Marker
+c	Xtxa3676	45.8	47.8	Xtxa3676	Marker
+c	Xtxa6125	45.8	47.8	Xtxa6125	Marker
+c	Xtxa6319	45.8	47.8	Xtxa6319	Marker
+c	Xtxa4063	47.8		Xtxa4063	Marker
+c	bcd738	47.8		bcd738	Marker
+c	umc7.2	47.8	49.7	umc7.2	Marker
+c	Xtxa6097	47.8	49.7	Xtxa6097	Marker
+c	bnl15.20	49.7		bnl15.20	Marker
+c	Xtxa3409	49.7	51.6	Xtxa3409	Marker
+c	Xtxa6093	49.7	51.6	Xtxa6093	Marker
+c	Xtxs1927	51.6		Xtxs1927	Marker
+c	Xtxs422	51.6		Xtxs422	Marker
+c	Xtxa443	51.6	53.3	Xtxa443	Marker
+c	Xtxa2111	51.6	53.3	Xtxa2111	Marker
+c	Xtxa2877	53.3		Xtxa2877	Marker
+c	Xtxa2961	55.0		Xtxa2961	Marker
+c	Xtxa428	55.0	57.4	Xtxa428	Marker
+c	Xtxa2243	55.0	57.4	Xtxa2243	Marker
+c	Xtxa2999	55.0	57.4	Xtxa2999	Marker
+c	Xtxa3518	55.0	57.4	Xtxa3518	Marker
+c	Xtxa3529	55.0	57.4	Xtxa3529	Marker
+c	Xtxa4068	55.0	57.4	Xtxa4068	Marker
+c	Xtxa2660	55.0	61.6	Xtxa2660	Marker
+c	Xtxa235	57.4		Xtxa235	Marker
+c	Xtxa383	57.4	61.6	Xtxa383	Marker
+c	Xtxa2064	57.4	61.6	Xtxa2064	Marker
+c	Xtxa2179	57.4	61.6	Xtxa2179	Marker
+c	Xtxa2500	57.4	61.6	Xtxa2500	Marker
+c	Xtxa2982	57.4	61.6	Xtxa2982	Marker
+c	Xtxa3520	57.4	61.6	Xtxa3520	Marker
+c	Xtxa6120	57.4	61.6	Xtxa6120	Marker
+c	Xtxa6204	57.4	61.6	Xtxa6204	Marker
+c	Xtxa2984	61.6		Xtxa2984	Marker
+c	umc16	61.6	62.9	umc16	Marker
+c	Xtxp114	61.6	62.9	Xtxp114	Marker
+c	Xtxa392	61.6	62.9	Xtxa392	Marker
+c	Xtxa3877	61.6	62.9	Xtxa3877	Marker
+c	Xtxa3915	61.6	62.9	Xtxa3915	Marker
+c	umc17	62.9		umc17	Marker
+c	Xtxa4107	62.9	64.3	Xtxa4107	Marker
+c	Xtxa594	62.9	67.5	Xtxa594	Marker
+c	isu121	64.3		isu121	Marker
+c	Xtxa4019	64.3		Xtxa4019	Marker
+c	Xtxa69	62.9	67.5	Xtxa69	Marker
+c	Xtxa2197	62.9	67.5	Xtxa2197	Marker
+c	bcd828	64.3	67.5	bcd828	Marker
+c	Xtxp218	64.3	67.5	Xtxp218	Marker
+c	Xtxa38	64.3	67.5	Xtxa38	Marker
+c	Xtxa54	64.3	67.5	Xtxa54	Marker
+c	Xtxa3295	64.3	67.5	Xtxa3295	Marker
+c	Xtxa4131	64.3	67.5	Xtxa4131	Marker
+c	Xtxa6155	64.3	67.5	Xtxa6155	Marker
+c	Xtxa6212	64.3	67.5	Xtxa6212	Marker
+c	Xtxa593	64.3	79.9	Xtxa593	Marker
+c	cdo470	67.5		cdo470	Marker
+c	isu74.2	69.0		isu74.2	Marker
+c	Xtxs1175	70.0		Xtxs1175	Marker
+c	Xtxa255	70.0	72.7	Xtxa255	Marker
+c	Xtxa337	70.0	72.7	Xtxa337	Marker
+c	Xtxa2506	70.0	72.7	Xtxa2506	Marker
+c	Xtxa3579	70.0	72.7	Xtxa3579	Marker
+c	Xtxa3731	70.0	72.7	Xtxa3731	Marker
+c	Xtxa2233	70.0	79.9	Xtxa2233	Marker
+c	Xtxa3940	70.0	79.9	Xtxa3940	Marker
+c	Xtxa389	72.7		Xtxa389	Marker
+c	Xtxa2110	72.7		Xtxa2110	Marker
+c	Xtxp59	72.7	79.9	Xtxp59	Marker
+c	Xtxp231	72.7	79.9	Xtxp231	Marker
+c	Xtxa6188	72.7	79.9	Xtxa6188	Marker
+c	cdo1160	79.9		cdo1160	Marker
+c	Xtxa2595	87.1		Xtxa2595	Marker
+c	Xtxa2074	87.1		Xtxa2074	Marker
+c	Xtxp120	88.2		Xtxp120	Marker
+c	Xtxa6219	88.2	90.9	Xtxa6219	Marker
+c	umc63	90.9		umc63	Marker
+c	umc93	90.9		umc93	Marker
+c	Xtxa6309	93.2		Xtxa6309	Marker
+c	Xtxs584	93.2	94.2	Xtxs584	Marker
+c	Xtxa4194	93.2	94.2	Xtxa4194	Marker
+c	Xtxa6099	93.2	94.2	Xtxa6099	Marker
+c	Xtxa4106	94.2		Xtxa4106	Marker
+c	Xtxa2607	96.8		Xtxa2607	Marker
+c	Xtxa242	96.8	100.5	Xtxa242	Marker
+c	Xtxa2320	96.8	100.5	Xtxa2320	Marker
+c	Xtxa2354	96.8	100.5	Xtxa2354	Marker
+c	Xtxa2769	96.8	100.5	Xtxa2769	Marker
+c	Xtxa2826	96.8	100.5	Xtxa2826	Marker
+c	Xtxa3294	96.8	100.5	Xtxa3294	Marker
+c	Xtxa2735	100.5		Xtxa2735	Marker
+c	Xtxp183	105.7		Xtxp183	Marker
+c	Xtxp31	105.7	108.9	Xtxp31	Marker
+c	Xtxp336	105.7	108.9	Xtxp336	Marker
+c	Xtxa4054	108.9		Xtxa4054	Marker
+c	Xtxa2923	108.9	111.8	Xtxa2923	Marker
+c	Xtxa3261	111.8		Xtxa3261	Marker
+c	Xtxa3270	108.9	115.2	Xtxa3270	Marker
+c	Xtxp205	111.8	115.2	Xtxp205	Marker
+c	Xtxa2768	111.8	115.2	Xtxa2768	Marker
+c	Xtxa2880	111.8	115.2	Xtxa2880	Marker
+c	Xtxa3102	111.8	115.2	Xtxa3102	Marker
+c	Xtxa3378	111.8	115.2	Xtxa3378	Marker
+c	Xtxa3493	111.8	115.2	Xtxa3493	Marker
+c	Xtxa4147	111.8	115.2	Xtxa4147	Marker
+c	Xtxa6335	111.8	115.2	Xtxa6335	Marker
+c	isu114	115.2		isu114	Marker
+c	Xgap236	115.2	117.6	Xgap236	Marker
+c	Xtxa330	115.2	117.6	Xtxa330	Marker
+c	Xtxa3836	115.2	117.6	Xtxa3836	Marker
+c	Xtxa4082	115.2	117.6	Xtxa4082	Marker
+c	Xtxa6031	115.2	117.6	Xtxa6031	Marker
+c	Xtxa6175	115.2	117.6	Xtxa6175	Marker
+c	cdo920	117.6		cdo920	Marker
+c	Xtxp33	117.6	120.0	Xtxp33	Marker
+c	Xtxa3701	117.6	120.0	Xtxa3701	Marker
+c	Xtxa3823	117.6	123.4	Xtxa3823	Marker
+c	rz244	120.0		rz244	Marker
+c	Xtxa3740	111.8	123.4	Xtxa3740	Marker
+c	Xtxs1162	120.0	123.4	Xtxs1162	Marker
+c	Xtxs1438	120.0	123.4	Xtxs1438	Marker
+c	umc10	120.0	123.4	umc10	Marker
+c	Xtxa418	120.0	123.4	Xtxa418	Marker
+c	Xtxa450	120.0	123.4	Xtxa450	Marker
+c	Xtxa476	120.0	123.4	Xtxa476	Marker
+c	Xtxa186	120.0	123.4	Xtxa186	Marker
+c	Xtxa197	120.0	123.4	Xtxa197	Marker
+c	Xtxa205	120.0	123.4	Xtxa205	Marker
+c	Xtxa379	120.0	123.4	Xtxa379	Marker
+c	Xtxa576	120.0	123.4	Xtxa576	Marker
+c	Xtxa535	120.0	123.4	Xtxa535	Marker
+c	Xtxa484	120.0	123.4	Xtxa484	Marker
+c	Xtxa2015	120.0	123.4	Xtxa2015	Marker
+c	Xtxa2019	120.0	123.4	Xtxa2019	Marker
+c	Xtxa2030	120.0	123.4	Xtxa2030	Marker
+c	Xtxa2058	120.0	123.4	Xtxa2058	Marker
+c	Xtxa2109	120.0	123.4	Xtxa2109	Marker
+c	Xtxa2116	120.0	123.4	Xtxa2116	Marker
+c	Xtxa2137	120.0	123.4	Xtxa2137	Marker
+c	Xtxa2205	120.0	123.4	Xtxa2205	Marker
+c	Xtxa2305	120.0	123.4	Xtxa2305	Marker
+c	Xtxa2529	120.0	123.4	Xtxa2529	Marker
+c	Xtxa2586	120.0	123.4	Xtxa2586	Marker
+c	Xtxa2642	120.0	123.4	Xtxa2642	Marker
+c	Xtxa2646	120.0	123.4	Xtxa2646	Marker
+c	Xtxa2670	120.0	123.4	Xtxa2670	Marker
+c	Xtxa2745	120.0	123.4	Xtxa2745	Marker
+c	Xtxa2759	120.0	123.4	Xtxa2759	Marker
+c	Xtxa2774	120.0	123.4	Xtxa2774	Marker
+c	Xtxa2779	120.0	123.4	Xtxa2779	Marker
+c	Xtxa2794	120.0	123.4	Xtxa2794	Marker
+c	Xtxa2805	120.0	123.4	Xtxa2805	Marker
+c	Xtxa2817	120.0	123.4	Xtxa2817	Marker
+c	Xtxa2825	120.0	123.4	Xtxa2825	Marker
+c	Xtxa2904	120.0	123.4	Xtxa2904	Marker
+c	Xtxa2917	120.0	123.4	Xtxa2917	Marker
+c	Xtxa2969	120.0	123.4	Xtxa2969	Marker
+c	Xtxa3030	120.0	123.4	Xtxa3030	Marker
+c	Xtxa3112	120.0	123.4	Xtxa3112	Marker
+c	Xtxa3122	120.0	123.4	Xtxa3122	Marker
+c	Xtxa3139	120.0	123.4	Xtxa3139	Marker
+c	Xtxa3212	120.0	123.4	Xtxa3212	Marker
+c	Xtxa3220	120.0	123.4	Xtxa3220	Marker
+c	Xtxa3246	120.0	123.4	Xtxa3246	Marker
+c	Xtxa3250	120.0	123.4	Xtxa3250	Marker
+c	Xtxa3313	120.0	123.4	Xtxa3313	Marker
+c	Xtxa3350	120.0	123.4	Xtxa3350	Marker
+c	Xtxa3375	120.0	123.4	Xtxa3375	Marker
+c	Xtxa3392	120.0	123.4	Xtxa3392	Marker
+c	Xtxa3410	120.0	123.4	Xtxa3410	Marker
+c	Xtxa3417	120.0	123.4	Xtxa3417	Marker
+c	Xtxa3460	120.0	123.4	Xtxa3460	Marker
+c	Xtxa3462	120.0	123.4	Xtxa3462	Marker
+c	Xtxa3835	120.0	123.4	Xtxa3835	Marker
+c	Xtxa3489	120.0	123.4	Xtxa3489	Marker
+c	Xtxa3571	120.0	123.4	Xtxa3571	Marker
+c	Xtxa3591	120.0	123.4	Xtxa3591	Marker
+c	Xtxa3606	120.0	123.4	Xtxa3606	Marker
+c	Xtxa3618	120.0	123.4	Xtxa3618	Marker
+c	Xtxa3637	120.0	123.4	Xtxa3637	Marker
+c	Xtxa3646	120.0	123.4	Xtxa3646	Marker
+c	Xtxa3656	120.0	123.4	Xtxa3656	Marker
+c	Xtxa3668	120.0	123.4	Xtxa3668	Marker
+c	Xtxa3688	120.0	123.4	Xtxa3688	Marker
+c	Xtxa3703	120.0	123.4	Xtxa3703	Marker
+c	Xtxa3742	120.0	123.4	Xtxa3742	Marker
+c	Xtxa3753	120.0	123.4	Xtxa3753	Marker
+c	Xtxa3780	120.0	123.4	Xtxa3780	Marker
+c	Xtxa3852	120.0	123.4	Xtxa3852	Marker
+c	Xtxa3947	120.0	123.4	Xtxa3947	Marker
+c	Xtxa4027	120.0	123.4	Xtxa4027	Marker
+c	Xtxa4174	120.0	123.4	Xtxa4174	Marker
+c	Xtxa4192	120.0	123.4	Xtxa4192	Marker
+c	Xtxa6001	120.0	123.4	Xtxa6001	Marker
+c	Xtxa6157	120.0	123.4	Xtxa6157	Marker
+c	Xtxa6161	120.0	123.4	Xtxa6161	Marker
+c	Xtxa6253	120.0	123.4	Xtxa6253	Marker
+c	Xtxa6276	120.0	123.4	Xtxa6276	Marker
+c	Xtxa6352	120.0	123.4	Xtxa6352	Marker
+c	Xtxa6364	120.0	123.4	Xtxa6364	Marker
+c	umc152.1	123.4		umc152.1	Marker
+c	Xtxa402	123.4	125.0	Xtxa402	Marker
+c	Xtxa2273	123.4	125.0	Xtxa2273	Marker
+c	Xtxa3267	123.4	125.0	Xtxa3267	Marker
+c	Xtxa3717	123.4	125.0	Xtxa3717	Marker
+c	Xtxa6050	123.4	125.0	Xtxa6050	Marker
+c	Xtxa2171	125.0		Xtxa2171	Marker
+c	Xtxs503	125.0	127.6	Xtxs503	Marker
+c	Xtxa366	125.0	127.6	Xtxa366	Marker
+c	Xtxa3039	125.0	127.6	Xtxa3039	Marker
+c	Xtxa3116	125.0	127.6	Xtxa3116	Marker
+c	Xtxa3450	125.0	127.6	Xtxa3450	Marker
+c	Xtxa3583	125.0	127.6	Xtxa3583	Marker
+c	Xtxa3603	125.0	127.6	Xtxa3603	Marker
+c	Xtxa3718	125.0	127.6	Xtxa3718	Marker
+c	isu148	127.6		isu148	Marker
+c	Xtxa234	127.6	131.1	Xtxa234	Marker
+c	Xtxa2246	127.6	131.1	Xtxa2246	Marker
+c	Xtxa2989	127.6	131.1	Xtxa2989	Marker
+c	Xtxa3781	127.6	131.1	Xtxa3781	Marker
+c	Xtxs578	131.1		Xtxs578	Marker
+c	Xtxa434	131.1	134.6	Xtxa434	Marker
+c	Xtxa556	131.1	134.6	Xtxa556	Marker
+c	Xtxa2634	131.1	134.6	Xtxa2634	Marker
+c	Xtxa2746	131.1	134.6	Xtxa2746	Marker
+c	Xtxa3485	131.1	134.6	Xtxa3485	Marker
+c	Xtxa4173	131.1	134.6	Xtxa4173	Marker
+c	Xtxa6027	131.1	134.6	Xtxa6027	Marker
+c	Xtxa2899	134.6		Xtxa2899	Marker
+c	Xtxa2996	134.6	138.0	Xtxa2996	Marker
+c	Xtxa3837	138.0		Xtxa3837	Marker
+c	Xtxa3839	138.0	141.4	Xtxa3839	Marker
+c	Xtxa2260	141.4		Xtxa2260	Marker
+c	Xtxa3021	141.4		Xtxa3021	Marker
+c	Xtxs1053	141.4	143.7	Xtxs1053	Marker
+c	Xtxa6033	141.4	143.7	Xtxa6033	Marker
+c	Xtxa30	143.7		Xtxa30	Marker
+c	Xtxa29	144.1		Xtxa29	Marker
+c	Xtxa2107	144.1	146.1	Xtxa2107	Marker
+c	Xtxa2165	144.1	146.1	Xtxa2165	Marker
+c	Xtxa2520	144.1	146.1	Xtxa2520	Marker
+c	Xtxa2822	144.1	146.1	Xtxa2822	Marker
+c	Xtxa2967	144.1	146.1	Xtxa2967	Marker
+c	Xtxa4102	144.1	146.1	Xtxa4102	Marker
+c	Xtxa6042	144.1	146.1	Xtxa6042	Marker
+c	Xtxa6218	144.1	146.1	Xtxa6218	Marker
+c	Xtxa2336	144.1	146.1	Xtxa2336	Marker
+c	Xtxa267	146.1		Xtxa267	Marker
+c	Xtxa2546	147.6		Xtxa2546	Marker
+c	Xtxa2671	147.6	152.4	Xtxa2671	Marker
+c	Xtxa3552	147.6	152.4	Xtxa3552	Marker
+c	isu68	152.4		isu68	Marker
+c	Xtxp215	152.4	156.6	Xtxp215	Marker
+c	Xtxa6085	152.4	156.6	Xtxa6085	Marker
+c	Xtxa3848	156.6		Xtxa3848	Marker
+c	Xtxa4126	156.6	158.5	Xtxa4126	Marker
+c	Xtxa2714	158.5		Xtxa2714	Marker
+c	Xtxa6025	158.5	160.8	Xtxa6025	Marker
+c	Xtxa2096	160.8		Xtxa2096	Marker
+c	Xtxa3003	162.7		Xtxa3003	Marker
+c	Xtxa2097	162.7	166.7	Xtxa2097	Marker
+c	Xtxa2328	162.7	166.7	Xtxa2328	Marker
+c	Xtxa3838	162.7	166.7	Xtxa3838	Marker
+c	Xtxa3590	162.7	166.7	Xtxa3590	Marker
+c	Xtxa6004	162.7	166.7	Xtxa6004	Marker
+c	Xtxa6291	162.7	166.7	Xtxa6291	Marker
+c	Xtxa6292	162.7	166.7	Xtxa6292	Marker
+c	Xtxa6359	162.7	166.7	Xtxa6359	Marker
+c	Xtxa3569	162.7	168.3	Xtxa3569	Marker
+c	Xtxs1092	166.7		Xtxs1092	Marker
+c	Xtxa4115	166.7	168.3	Xtxa4115	Marker
+c	Xtxa4216	166.7	168.3	Xtxa4216	Marker
+c	Xtxa2614	168.3		Xtxa2614	Marker
+c	Xtxa610	168.3	171.1	Xtxa610	Marker
+c	Xtxa2598	168.3	171.1	Xtxa2598	Marker
+c	Xtxa2734	171.1		Xtxa2734	Marker
+c	Xtxa6272	174.8		Xtxa6272	Marker
+c	Xtxa6160	177.8		Xtxa6160	Marker
+c	Xtxa3498	179.4		Xtxa3498	Marker
+c	umc124.1	180.3		umc124.1	Marker
+c	Xtxa552	180.3	184.2	Xtxa552	Marker
+c	Xtxa376	184.2		Xtxa376	Marker
+c	Xtxa375	184.2	186.6	Xtxa375	Marker
+c	Xtxa2849	184.2	186.6	Xtxa2849	Marker
+c	Xtxa4134	186.6		Xtxa4134	Marker
+c	Xtxp228	186.6	189.7	Xtxp228	Marker
+c	Xtxp266	186.6	189.7	Xtxp266	Marker
+c	Xtxs1178	189.7		Xtxs1178	Marker
+c	Xtxs31	189.7	192.6	Xtxs31	Marker
+c	Xtxa2079	189.7	192.6	Xtxa2079	Marker
+c	Xtxa2224	189.7	192.6	Xtxa2224	Marker
+c	Xtxa6263	189.7	192.6	Xtxa6263	Marker
+c	umc121	192.6		umc121	Marker
+c	Xtxa261	192.6	195.4	Xtxa261	Marker
+c	Xtxa3159	192.6	195.4	Xtxa3159	Marker
+c	Xtxa2105	195.4		Xtxa2105	Marker
+c	Xtxa6154	197.3		Xtxa6154	Marker
+c	Xtxa3461	197.7		Xtxa3461	Marker
+c	Xtxa2580	200.1		Xtxa2580	Marker
+c	Xtxa3395	202.0		Xtxa3395	Marker
+d	Xtxa2353	0.0		Xtxa2353	Marker
+d	isu81.2	0.0	5.4	isu81.2	Marker
+d	Xtxa240	0.0	5.4	Xtxa240	Marker
+d	Xtxa2613	0.0	5.4	Xtxa2613	Marker
+d	Xtxa6035	0.0	5.4	Xtxa6035	Marker
+d	isu61.3	5.4		isu61.3	Marker
+d	isu47	5.4	10.0	isu47	Marker
+d	cdo962	5.4	10.0	cdo962	Marker
+d	Xtxa520	5.4	10.0	Xtxa520	Marker
+d	Xtxa3984	5.4	10.0	Xtxa3984	Marker
+d	Xtxa3989	5.4	10.0	Xtxa3989	Marker
+d	Xtxa4176	5.4	10.0	Xtxa4176	Marker
+d	Xtxa6187	5.4	10.0	Xtxa6187	Marker
+d	Xtxs754	10.0		Xtxs754	Marker
+d	Xtxa2081	10.0	13.6	Xtxa2081	Marker
+d	Xtxa2121	10.0	13.6	Xtxa2121	Marker
+d	Xtxa2509	10.0	13.6	Xtxa2509	Marker
+d	Xtxa3034	10.0	13.6	Xtxa3034	Marker
+d	Xtxa3238	10.0	13.6	Xtxa3238	Marker
+d	Xtxa3544	10.0	13.6	Xtxa3544	Marker
+d	Xtxa3971	10.0	13.6	Xtxa3971	Marker
+d	Xtxa6177	10.0	13.6	Xtxa6177	Marker
+d	Xtxa6230	10.0	13.6	Xtxa6230	Marker
+d	Xtxa50	13.6		Xtxa50	Marker
+d	Xtxa2605	15.3		Xtxa2605	Marker
+d	Xtxa3921	17.4		Xtxa3921	Marker
+d	umc111	17.4	19.3	umc111	Marker
+d	Xtxa6020	17.4	19.3	Xtxa6020	Marker
+d	Xtxa3997	19.3		Xtxa3997	Marker
+d	Xtxa3882	20.8		Xtxa3882	Marker
+d	Xtxa161	20.8	25.0	Xtxa161	Marker
+d	Xtxa6	25.0		Xtxa6	Marker
+d	Xtxa3227	25.0	26.6	Xtxa3227	Marker
+d	Xtxa2348	26.6		Xtxa2348	Marker
+d	Xtxa6339	29.3		Xtxa6339	Marker
+d	umc40.2	37.0		umc40.2	Marker
+d	Xtxa4132	39.9		Xtxa4132	Marker
+d	Xtxa3625	39.9	46.2	Xtxa3625	Marker
+d	Xtxa3626	39.9	46.2	Xtxa3626	Marker
+d	Xtxa4205	39.9	46.2	Xtxa4205	Marker
+d	Xtxa6179	39.9	46.2	Xtxa6179	Marker
+d	isu56	46.2		isu56	Marker
+d	Xtxa3854	46.2		Xtxa3854	Marker
+d	Xtxa2164	46.2	52.0	Xtxa2164	Marker
+d	Xtxa2665	46.2	52.0	Xtxa2665	Marker
+d	Xtxa3554	46.2	52.0	Xtxa3554	Marker
+d	Xtxa3566	46.2	52.0	Xtxa3566	Marker
+d	Xtxa4114	46.2	52.0	Xtxa4114	Marker
+d	Xtxa6153	46.2	52.0	Xtxa6153	Marker
+d	Xtxa6192	46.2	52.0	Xtxa6192	Marker
+d	Xtxa495	52.0		Xtxa495	Marker
+d	Xtxa2669	52.0		Xtxa2669	Marker
+d	Xtxa4212	54.3		Xtxa4212	Marker
+d	Xtxa6268	56.4		Xtxa6268	Marker
+d	Xtxa4036	56.4		Xtxa4036	Marker
+d	Xtxa6121	56.4	61.7	Xtxa6121	Marker
+d	Xtxa257	61.7		Xtxa257	Marker
+d	Xtxa2204	67.5		Xtxa2204	Marker
+d	Xtxa2178	71.0		Xtxa2178	Marker
+d	Xtxa288	71.0	76.1	Xtxa288	Marker
+d	Xtxa2966	71.0	76.1	Xtxa2966	Marker
+d	Xtxa3188	71.0	76.1	Xtxa3188	Marker
+d	Xtxa3743	71.0	76.1	Xtxa3743	Marker
+d	Xtxa3537	76.1		Xtxa3537	Marker
+d	Xtxa2676	76.1	79.3	Xtxa2676	Marker
+d	Xtxa345	79.3		Xtxa345	Marker
+d	Xtxa338	79.3	86.8	Xtxa338	Marker
+d	Xtxa365	79.3	86.8	Xtxa365	Marker
+d	Xtxa2154	79.3	86.8	Xtxa2154	Marker
+d	Xtxa2198	79.3	86.8	Xtxa2198	Marker
+d	Xtxa2718	79.3	86.8	Xtxa2718	Marker
+d	Xtxa2815	79.3	86.8	Xtxa2815	Marker
+d	Xtxa3055	79.3	86.8	Xtxa3055	Marker
+d	Xtxa3501	79.3	86.8	Xtxa3501	Marker
+d	Xtxa3502	79.3	86.8	Xtxa3502	Marker
+d	Xtxa3504	79.3	86.8	Xtxa3504	Marker
+d	Xtxa3605	79.3	86.8	Xtxa3605	Marker
+d	Xtxa3635	79.3	86.8	Xtxa3635	Marker
+d	Xtxa3702	79.3	86.8	Xtxa3702	Marker
+d	Xtxa6317	79.3	86.8	Xtxa6317	Marker
+d	Xtxa461	79.3	86.8	Xtxa461	Marker
+d	Xtxa548	86.8		Xtxa548	Marker
+d	Xtxa2577	87.2		Xtxa2577	Marker
+d	Xtxa3796	88.3		Xtxa3796	Marker
+d	Xtxa3680	88.3	93.3	Xtxa3680	Marker
+d	Xtxa3704	88.3	90.6	Xtxa3704	Marker
+d	Xtxa4002	88.3	90.6	Xtxa4002	Marker
+d	Xtxa4177	88.3	90.6	Xtxa4177	Marker
+d	Xtxa3955	90.6		Xtxa3955	Marker
+d	Xtxa75	90.3	93.3	Xtxa75	Marker
+d	Xtxa425	90.3	93.3	Xtxa425	Marker
+d	Xtxa442	90.3	93.3	Xtxa442	Marker
+d	Xtxa226	90.3	93.3	Xtxa226	Marker
+d	Xtxa232	90.3	93.3	Xtxa232	Marker
+d	Xtxa287	90.3	93.3	Xtxa287	Marker
+d	Xtxa2002	90.3	93.3	Xtxa2002	Marker
+d	Xtxa2043	90.3	93.3	Xtxa2043	Marker
+d	Xtxa2082	90.3	93.3	Xtxa2082	Marker
+d	Xtxa2212	90.3	93.3	Xtxa2212	Marker
+d	Xtxa2566	90.3	93.3	Xtxa2566	Marker
+d	Xtxa2567	90.3	93.3	Xtxa2567	Marker
+d	Xtxa2587	90.3	93.3	Xtxa2587	Marker
+d	Xtxa2610	90.3	93.3	Xtxa2610	Marker
+d	Xtxa2680	90.3	93.3	Xtxa2680	Marker
+d	Xtxa2713	90.3	93.3	Xtxa2713	Marker
+d	Xtxa2763	90.3	93.3	Xtxa2763	Marker
+d	Xtxa2878	90.3	93.3	Xtxa2878	Marker
+d	Xtxa2941	90.3	93.3	Xtxa2941	Marker
+d	Xtxa3125	90.3	93.3	Xtxa3125	Marker
+d	Xtxa3385	90.3	93.3	Xtxa3385	Marker
+d	Xtxa3831	90.3	93.3	Xtxa3831	Marker
+d	Xtxa3677	90.3	93.3	Xtxa3677	Marker
+d	Xtxa3695	90.3	93.3	Xtxa3695	Marker
+d	Xtxa3736	90.3	93.3	Xtxa3736	Marker
+d	Xtxa3818	90.3	93.3	Xtxa3818	Marker
+d	Xtxa3922	90.3	93.3	Xtxa3922	Marker
+d	Xtxa3933	90.3	93.3	Xtxa3933	Marker
+d	Xtxa4181	90.3	93.3	Xtxa4181	Marker
+d	Xtxa6299	90.3	93.3	Xtxa6299	Marker
+d	Xtxa504	90.3	93.3	Xtxa504	Marker
+d	Xtxa2627	90.6	97.1	Xtxa2627	Marker
+d	Xtxa403	90.3	99.4	Xtxa403	Marker
+d	Xtxa2029	93.3		Xtxa2029	Marker
+d	Xtxa6172	93.7		Xtxa6172	Marker
+d	Xtxa6100	93.7		Xtxa6100	Marker
+d	Xtxa6285	93.7		Xtxa6285	Marker
+d	Xtxa6166	93.7		Xtxa6166	Marker
+d	Xtxs1146.2	93.7		Xtxs1146.2	Marker
+d	Xtxa4011	94.1		Xtxa4011	Marker
+d	Xtxa6189	95.2		Xtxa6189	Marker
+d	Xtxa3739	90.6	97.1	Xtxa3739	Marker
+d	Xtxa4078	94.1	97.1	Xtxa4078	Marker
+d	Xtxa431	95.2	97.1	Xtxa431	Marker
+d	Xtxa2558	95.2	97.1	Xtxa2558	Marker
+d	Xtxa4144	95.2	97.1	Xtxa4144	Marker
+d	Xtxa6052	95.2	97.1	Xtxa6052	Marker
+d	Xtxa6134	95.2	97.1	Xtxa6134	Marker
+d	Xtxa6258	97.1		Xtxa6258	Marker
+d	Xtxa522	97.1	99.4	Xtxa522	Marker
+d	Xtxa2133	97.1	99.4	Xtxa2133	Marker
+d	Xtxa2628	97.1	99.4	Xtxa2628	Marker
+d	Xtxa2085	99.4		Xtxa2085	Marker
+d	Xtxp12	100.0		Xtxp12	Marker
+d	Xtxp343	97.1	106.2	Xtxp343	Marker
+d	Xtxa2579	97.1	106.2	Xtxa2579	Marker
+d	Xtxa2983	99.4	106.2	Xtxa2983	Marker
+d	Xtxa3665	99.4	106.2	Xtxa3665	Marker
+d	Xtxa468	100.0	106.2	Xtxa468	Marker
+d	Xtxa550	100.0	106.2	Xtxa550	Marker
+d	Xtxa2802	100.0	106.2	Xtxa2802	Marker
+d	Xtxa3206	100.0	106.2	Xtxa3206	Marker
+d	Xtxa3816	100.0	106.2	Xtxa3816	Marker
+d	Xtxa4228	100.0	106.2	Xtxa4228	Marker
+d	Xtxa218	106.2		Xtxa218	Marker
+d	Xtxs1090	106.2	115.8	Xtxs1090	Marker
+d	Xtxa60	106.2	115.8	Xtxa60	Marker
+d	Xtxa575	106.2	115.8	Xtxa575	Marker
+d	Xtxa2186	106.2	115.8	Xtxa2186	Marker
+d	Xtxa2235	106.2	115.8	Xtxa2235	Marker
+d	Xtxa2294	106.2	115.8	Xtxa2294	Marker
+d	Xtxa2657	106.2	115.8	Xtxa2657	Marker
+d	Xtxa3628	106.2	115.8	Xtxa3628	Marker
+d	Xtxa4091	106.2	115.8	Xtxa4091	Marker
+d	Xtxa4146	106.2	115.8	Xtxa4146	Marker
+d	Xtxa4231	106.2	115.8	Xtxa4231	Marker
+d	Xtxa2095	115.8		Xtxa2095	Marker
+d	cdo1380	115.8	118.5	cdo1380	Marker
+d	Xtxa191	115.8	118.5	Xtxa191	Marker
+d	Xtxa569	115.8	118.5	Xtxa569	Marker
+d	Xtxa2743	115.8	118.5	Xtxa2743	Marker
+d	Xtxa6091	115.8	118.5	Xtxa6091	Marker
+d	Xtxa6200	115.8	118.5	Xtxa6200	Marker
+d	isu42	118.5		isu42	Marker
+d	Xtxa3582	106.2	124.4	Xtxa3582	Marker
+d	Xtxa6023	115.8	124.4	Xtxa6023	Marker
+d	isu149.2	118.5	124.4	isu149.2	Marker
+d	Xtxa2783	118.5	124.4	Xtxa2783	Marker
+d	Xtxa3627	118.5	124.4	Xtxa3627	Marker
+d	Xtxa6143	118.5	124.4	Xtxa6143	Marker
+d	Xtxa2017	124.4		Xtxa2017	Marker
+d	Xtxs1072	124.4	127.5	Xtxs1072	Marker
+d	Xtxp60	124.4	127.5	Xtxp60	Marker
+d	Xtxa27	124.4	127.5	Xtxa27	Marker
+d	Xtxa2155	124.4	127.5	Xtxa2155	Marker
+d	Xtxa6244	124.4	127.5	Xtxa6244	Marker
+d	Xtxa6083	124.4	127.5	Xtxa6083	Marker
+d	Xtxa6320	124.4	127.5	Xtxa6320	Marker
+d	umc54	127.5		umc54	Marker
+d	Xtxa2936	127.5	130.7	Xtxa2936	Marker
+d	Xtxa3540	127.5	131.2	Xtxa3540	Marker
+d	Xtxa3644	127.5	133.6	Xtxa3644	Marker
+d	isu132	130.7		isu132	Marker
+d	Xtxp24	131.2		Xtxp24	Marker
+d	Xtxp41	130.7	133.6	Xtxp41	Marker
+d	Xtxp177	131.2	133.6	Xtxp177	Marker
+d	Xtxa3330	131.2	133.6	Xtxa3330	Marker
+d	Xtxa3898	131.2	133.6	Xtxa3898	Marker
+d	Xtxa6030	131.2	133.6	Xtxa6030	Marker
+d	isu35	133.6		isu35	Marker
+d	umc152.2	133.6	136.4	umc152.2	Marker
+d	Xtxp327	133.6	136.4	Xtxp327	Marker
+d	Xtxa3499	133.6	136.4	Xtxa3499	Marker
+d	Xtxa4077	133.6	136.4	Xtxa4077	Marker
+d	Xtxs604	136.4		Xtxs604	Marker
+d	Xtxa2552	136.4	139.4	Xtxa2552	Marker
+d	Xtxa6282	136.4	139.4	Xtxa6282	Marker
+d	Xtxa516	139.4		Xtxa516	Marker
+d	Xtxa2068	139.9		Xtxa2068	Marker
+d	Xtxa6013	143.6		Xtxa6013	Marker
+d	Xtxa6067	143.6	145.2	Xtxa6067	Marker
+d	Xtxa4016	145.2		Xtxa4016	Marker
+d	Xtxp212	145.2	148.2	Xtxp212	Marker
+d	Xtxa250	145.2	148.2	Xtxa250	Marker
+d	Xtxa3119	145.2	148.2	Xtxa3119	Marker
+d	Xtxa6183	145.2	148.2	Xtxa6183	Marker
+d	Xtxp51	148.2		Xtxp51	Marker
+d	Xtxs1901	148.2	153.0	Xtxs1901	Marker
+d	Xtxa3352	148.2	153.0	Xtxa3352	Marker
+d	Xtxa3473	148.2	153.0	Xtxa3473	Marker
+d	Xtxa3912	148.2	153.0	Xtxa3912	Marker
+d	Xtxa4034	148.2	153.0	Xtxa4034	Marker
+d	Xtxa4180	148.2	153.0	Xtxa4180	Marker
+d	Xtxa2706	153.0		Xtxa2706	Marker
+d	Xtxa6257	153.0		Xtxa6257	Marker
+d	Xtxa6269	155.9		Xtxa6269	Marker
+d	Xtxa3117	155.9	158.4	Xtxa3117	Marker
+d	Xtxa6265	155.9	158.4	Xtxa6265	Marker
+d	bcd1427	158.4		bcd1427	Marker
+d	Xtxa4148	158.4	160.8	Xtxa4148	Marker
+d	Xtxa6337	158.4	160.8	Xtxa6337	Marker
+d	cdo516.1	160.8		cdo516.1	Marker
+d	Xtxs1103	163.4		Xtxs1103	Marker
+d	Xtxa2061	163.4	171.1	Xtxa2061	Marker
+d	Xtxp21	171.1		Xtxp21	Marker
+d	Xtxa2086	163.4	173.8	Xtxa2086	Marker
+d	Xtxp27	171.1	173.8	Xtxp27	Marker
+d	Xtxa3949	171.1	173.8	Xtxa3949	Marker
+d	Xtxa2633	173.8		Xtxa2633	Marker
+d	Xtxa2101	173.8	181.1	Xtxa2101	Marker
+d	Xtxa2177	173.8	181.1	Xtxa2177	Marker
+d	Xtxa2238	173.8	181.1	Xtxa2238	Marker
+d	Xtxa2518	173.8	181.1	Xtxa2518	Marker
+d	Xtxa3421	173.8	181.1	Xtxa3421	Marker
+d	Xtxa3472	173.8	181.1	Xtxa3472	Marker
+d	Xtxa3617	173.8	181.1	Xtxa3617	Marker
+d	Xtxa4154	173.8	181.1	Xtxa4154	Marker
+d	Xtxa6080	173.8	181.1	Xtxa6080	Marker
+d	umc104	181.1		umc104	Marker
+e	Xtxp40	0.0		Xtxp40	Marker
+e	Xtxs1674	0	6.5	Xtxs1674	Marker
+e	Xtxp36	0	6.5	Xtxp36	Marker
+e	Xtxa4	0	6.5	Xtxa4	Marker
+e	Xtxa600	0	6.5	Xtxa600	Marker
+e	Xtxa2181	0	6.5	Xtxa2181	Marker
+e	Xtxa3124	0	6.5	Xtxa3124	Marker
+e	Xtxa3165	0	6.5	Xtxa3165	Marker
+e	Xtxa3316	0	6.5	Xtxa3316	Marker
+e	Xtxa3944	6.5		Xtxa3944	Marker
+e	Xtxa23	6.5	8.5	Xtxa23	Marker
+e	Xtxa2183	6.5	8.5	Xtxa2183	Marker
+e	Xtxa2951	6.5	8.5	Xtxa2951	Marker
+e	Xtxa3952	6.5	8.5	Xtxa3952	Marker
+e	Xtxa6159	6.5	8.5	Xtxa6159	Marker
+e	isu139	8.5		isu139	Marker
+e	Xtxa3960	8.5	11.0	Xtxa3960	Marker
+e	Xtxa6238	8.5	11.0	Xtxa6238	Marker
+e	Xtxa4023	11.0		Xtxa4023	Marker
+e	Xtxa3896	11.0	14.4	Xtxa3896	Marker
+e	Xtxa6131	11.0	14.4	Xtxa6131	Marker
+e	Xtxa2650	14.4		Xtxa2650	Marker
+e	Xtxa3692	14.8		Xtxa3692	Marker
+e	Xtxa2844	14.8		Xtxa2844	Marker
+e	Xtxa193	14.8	21.7	Xtxa193	Marker
+e	Xtxa544	14.8	21.7	Xtxa544	Marker
+e	Xtxa2788	14.8	21.7	Xtxa2788	Marker
+e	Xtxa3019	14.8	21.7	Xtxa3019	Marker
+e	Xtxa3035	14.8	21.7	Xtxa3035	Marker
+e	Xtxa6130	14.8	21.7	Xtxa6130	Marker
+e	rz143.2	21.7		rz143.2	Marker
+e	Xtxs1931	22.3		Xtxs1931	Marker
+e	umc85	14.8	24.7	umc85	Marker
+e	Xtxa3336	24.7		Xtxa3336	Marker
+e	Xtxa3158	24.7	29.2	Xtxa3158	Marker
+e	Xtxa3883	24.7	29.2	Xtxa3883	Marker
+e	Xtxa3146	29.2		Xtxa3146	Marker
+e	Xtxa2286	32.5		Xtxa2286	Marker
+e	Xtxa182	32.5	36.7	Xtxa182	Marker
+e	Xtxa6331	32.5	36.7	Xtxa6331	Marker
+e	Xtxa2896	36.7		Xtxa2896	Marker
+e	Xtxp159	40.2		Xtxp159	Marker
+e	Xtxs1096	45.8		Xtxs1096	Marker
+e	Xtxa315	40.2	48.2	Xtxa315	Marker
+e	Xtxa3342	45.8	48.2	Xtxa3342	Marker
+e	Xtxp312	48.2		Xtxp312	Marker
+e	Xtxa3558	48.2	50.9	Xtxa3558	Marker
+e	Xtxa3935	50.9		Xtxa3935	Marker
+e	Xtxa2708	53.6		Xtxa2708	Marker
+e	Xtxa6345	53.6	57.3	Xtxa6345	Marker
+e	Xtxa2624	57.3		Xtxa2624	Marker
+e	Xtxa3017	58.6		Xtxa3017	Marker
+e	Xtxa219	60.2		Xtxa219	Marker
+e	Xtxa16	60.2		Xtxa16	Marker
+e	isu38	61.3		isu38	Marker
+e	Xtxa3195	61.3	69.4	Xtxa3195	Marker
+e	Xtxa3888	69.4		Xtxa3888	Marker
+e	Xtxs1107	69.4	74.7	Xtxs1107	Marker
+e	cdo244.1	69.4	74.7	cdo244.1	Marker
+e	Xtxp227	69.4	74.7	Xtxp227	Marker
+e	Xtxa262	69.4	74.7	Xtxa262	Marker
+e	Xtxa2512	69.4	74.7	Xtxa2512	Marker
+e	Xtxa2852	69.4	74.7	Xtxa2852	Marker
+e	Xtxa2884	69.4	74.7	Xtxa2884	Marker
+e	Xtxa3720	69.4	74.7	Xtxa3720	Marker
+e	Xtxa6209	69.4	74.7	Xtxa6209	Marker
+e	Xtxa3776	69.4	74.7	Xtxa3776	Marker
+e	bcd147	74.7		bcd147	Marker
+e	Xtxa470	74.7	76.7	Xtxa470	Marker
+e	Xtxa3539	74.7	76.7	Xtxa3539	Marker
+e	Xtxa3624	74.7	76.7	Xtxa3624	Marker
+e	Xtxa307	76.7		Xtxa307	Marker
+e	Xtxa2335	76.7	79.3	Xtxa2335	Marker
+e	Xtxa2855	76.7	79.3	Xtxa2855	Marker
+e	Xtxa3115	76.7	79.3	Xtxa3115	Marker
+e	Xtxa3191	76.7	79.3	Xtxa3191	Marker
+e	Xtxa3459	76.7	79.3	Xtxa3459	Marker
+e	Xtxa3509	76.7	79.3	Xtxa3509	Marker
+e	Xtxa3714	76.7	79.3	Xtxa3714	Marker
+e	Xtxa6256	76.7	85.3	Xtxa6256	Marker
+e	Xtxa358	79.3		Xtxa358	Marker
+e	Xtxa17	79.3	80.8	Xtxa17	Marker
+e	Xtxa479	79.3	80.8	Xtxa479	Marker
+e	Xtxa291	79.3	80.8	Xtxa291	Marker
+e	Xtxa2632	79.3	80.8	Xtxa2632	Marker
+e	Xtxa3240	79.3	80.8	Xtxa3240	Marker
+e	Xtxa6236	79.3	80.8	Xtxa6236	Marker
+e	Xtxa3774	79.3	81.6	Xtxa3774	Marker
+e	Xtxa2578	80.8		Xtxa2578	Marker
+e	Xtxa228	80.8	81.0	Xtxa228	Marker
+e	Xtxa369	80.8	81.0	Xtxa369	Marker
+e	Xtxa3036	80.8	81.0	Xtxa3036	Marker
+e	Xtxa3193	80.8	81.0	Xtxa3193	Marker
+e	Xtxa3374	80.8	81.0	Xtxa3374	Marker
+e	Xtxa3775	80.8	81.0	Xtxa3775	Marker
+e	Xtxa2333	81.0		Xtxa2333	Marker
+e	Xtxa164	81.0	81.2	Xtxa164	Marker
+e	Xtxs2014.2	81.2		Xtxs2014.2	Marker
+e	Xtxa2049	81.2	81.6	Xtxa2049	Marker
+e	Xtxa4195	81.2	81.6	Xtxa4195	Marker
+e	Xtxa3901	81.6		Xtxa3901	Marker
+e	Xtxa340	81.6		Xtxa340	Marker
+e	Xtxa2337	81.6		Xtxa2337	Marker
+e	Xtxa2869	81.6		Xtxa2869	Marker
+e	Xtxa3284	81.6		Xtxa3284	Marker
+e	Xtxa3401	81.6		Xtxa3401	Marker
+e	Xtxa2076	81.6		Xtxa2076	Marker
+e	isu98.2	81.6		isu98.2	Marker
+e	Xtxa166	81.6		Xtxa166	Marker
+e	Xtxp278	81.6	82.0	Xtxp278	Marker
+e	Xtxa2771	81.6	82.0	Xtxa2771	Marker
+e	Xtxa3199	81.6	82.0	Xtxa3199	Marker
+e	Xtxa3425	81.6	82.0	Xtxa3425	Marker
+e	Xtxa3649	81.6	82.0	Xtxa3649	Marker
+e	umc47.2	82.0		umc47.2	Marker
+e	Xtxa3799	76.7	85.3	Xtxa3799	Marker
+e	Xtxa3	79.3	85.3	Xtxa3	Marker
+e	Xtxa368	79.3	85.3	Xtxa368	Marker
+e	Xtxa2684	79.3	85.3	Xtxa2684	Marker
+e	Xtxa2700	79.3	85.3	Xtxa2700	Marker
+e	Xtxa2799	79.3	85.3	Xtxa2799	Marker
+e	Xtxa2814	79.3	85.3	Xtxa2814	Marker
+e	Xtxa2862	79.3	85.3	Xtxa2862	Marker
+e	Xtxa3435	79.3	85.3	Xtxa3435	Marker
+e	Xtxa3645	79.3	85.3	Xtxa3645	Marker
+e	Xtxa4006	79.3	85.3	Xtxa4006	Marker
+e	Xtxa4110	79.3	85.3	Xtxa4110	Marker
+e	Xtxa6197	79.3	85.3	Xtxa6197	Marker
+e	Xtxa474	79.3	85.6	Xtxa474	Marker
+e	Xtxs1185.3	80.8	85.3	Xtxs1185.3	Marker
+e	Xtxa146	80.8	85.3	Xtxa146	Marker
+e	Xtxa3225	80.8	85.3	Xtxa3225	Marker
+e	Xtxa3768	80.8	85.3	Xtxa3768	Marker
+e	Xtxa3802	80.8	85.3	Xtxa3802	Marker
+e	Xtxa433	81.6	85.3	Xtxa433	Marker
+e	Xtxa437	81.6	85.3	Xtxa437	Marker
+e	Xtxa370	81.6	85.3	Xtxa370	Marker
+e	Xtxa2785	81.6	85.3	Xtxa2785	Marker
+e	Xtxa3133	81.6	85.3	Xtxa3133	Marker
+e	Xtxa3297	81.6	85.3	Xtxa3297	Marker
+e	Xtxa3300	81.6	85.3	Xtxa3300	Marker
+e	Xtxa3391	81.6	85.3	Xtxa3391	Marker
+e	Xtxa3422	81.6	85.3	Xtxa3422	Marker
+e	Xtxa3657	81.6	85.3	Xtxa3657	Marker
+e	Xtxa3694	81.6	85.3	Xtxa3694	Marker
+e	Xtxa3974	81.6	85.3	Xtxa3974	Marker
+e	Xtxa4142	81.6	85.3	Xtxa4142	Marker
+e	Xtxa4210	81.6	85.3	Xtxa4210	Marker
+e	Xtxa6118	81.6	85.3	Xtxa6118	Marker
+e	Xtxa6264	81.6	85.3	Xtxa6264	Marker
+e	umc51.2	82.0	85.3	umc51.2	Marker
+e	Xgap342	82.0	85.3	Xgap342	Marker
+e	Xtxa20	82.0	85.3	Xtxa20	Marker
+e	Xtxa157	82.0	85.3	Xtxa157	Marker
+e	Xtxa181	82.0	85.3	Xtxa181	Marker
+e	Xtxa210	82.0	85.3	Xtxa210	Marker
+e	Xtxa286	82.0	85.3	Xtxa286	Marker
+e	Xtxa344	82.0	85.3	Xtxa344	Marker
+e	Xtxa396	82.0	85.3	Xtxa396	Marker
+e	Xtxa559	82.0	85.3	Xtxa559	Marker
+e	Xtxa599	82.0	85.3	Xtxa599	Marker
+e	Xtxa2033	82.0	85.3	Xtxa2033	Marker
+e	Xtxa2047	82.0	85.3	Xtxa2047	Marker
+e	Xtxa2144	82.0	85.3	Xtxa2144	Marker
+e	Xtxa2216	82.0	85.3	Xtxa2216	Marker
+e	Xtxa2281	82.0	85.3	Xtxa2281	Marker
+e	Xtxa2308	82.0	85.3	Xtxa2308	Marker
+e	Xtxa2345	82.0	85.3	Xtxa2345	Marker
+e	Xtxa2563	82.0	85.3	Xtxa2563	Marker
+e	Xtxa2666	82.0	85.3	Xtxa2666	Marker
+e	Xtxa2702	82.0	85.3	Xtxa2702	Marker
+e	Xtxa2712	82.0	85.3	Xtxa2712	Marker
+e	Xtxa2740	82.0	85.3	Xtxa2740	Marker
+e	Xtxa2784	82.0	85.3	Xtxa2784	Marker
+e	Xtxa2821	82.0	85.3	Xtxa2821	Marker
+e	Xtxa2829	82.0	85.3	Xtxa2829	Marker
+e	Xtxa2905	82.0	85.3	Xtxa2905	Marker
+e	Xtxa2921	82.0	85.3	Xtxa2921	Marker
+e	Xtxa2947	82.0	85.3	Xtxa2947	Marker
+e	Xtxa2978	82.0	85.3	Xtxa2978	Marker
+e	Xtxa3007	82.0	85.3	Xtxa3007	Marker
+e	Xtxa3010	82.0	85.3	Xtxa3010	Marker
+e	Xtxa3024	82.0	85.3	Xtxa3024	Marker
+e	Xtxa3025	82.0	85.3	Xtxa3025	Marker
+e	Xtxa3047	82.0	85.3	Xtxa3047	Marker
+e	Xtxa3208	82.0	85.3	Xtxa3208	Marker
+e	Xtxa3235	82.0	85.3	Xtxa3235	Marker
+e	Xtxa3279	82.0	85.3	Xtxa3279	Marker
+e	Xtxa3367	82.0	85.3	Xtxa3367	Marker
+e	Xtxa3446	82.0	85.3	Xtxa3446	Marker
+e	Xtxa3467	82.0	85.3	Xtxa3467	Marker
+e	Xtxa3478	82.0	85.3	Xtxa3478	Marker
+e	Xtxa3508	82.0	85.3	Xtxa3508	Marker
+e	Xtxa3515	82.0	85.3	Xtxa3515	Marker
+e	Xtxa3530	82.0	85.3	Xtxa3530	Marker
+e	Xtxa3532	82.0	85.3	Xtxa3532	Marker
+e	Xtxa3549	82.0	85.3	Xtxa3549	Marker
+e	Xtxa3565	82.0	85.3	Xtxa3565	Marker
+e	Xtxa3647	82.0	85.3	Xtxa3647	Marker
+e	Xtxa3672	82.0	85.3	Xtxa3672	Marker
+e	Xtxa3673	82.0	85.3	Xtxa3673	Marker
+e	Xtxa3687	82.0	85.3	Xtxa3687	Marker
+e	Xtxa3711	82.0	85.3	Xtxa3711	Marker
+e	Xtxa3723	82.0	85.3	Xtxa3723	Marker
+e	Xtxa3728	82.0	85.3	Xtxa3728	Marker
+e	Xtxa3729	82.0	85.3	Xtxa3729	Marker
+e	Xtxa3758	82.0	85.3	Xtxa3758	Marker
+e	Xtxa3769	82.0	85.3	Xtxa3769	Marker
+e	Xtxa3808	82.0	85.3	Xtxa3808	Marker
+e	Xtxa3820	82.0	85.3	Xtxa3820	Marker
+e	Xtxa3982	82.0	85.3	Xtxa3982	Marker
+e	Xtxa4182	82.0	85.3	Xtxa4182	Marker
+e	Xtxa3804	82.0	85.3	Xtxa3804	Marker
+e	Xtxa13	85.3		Xtxa13	Marker
+e	Xtxa371	85.3	87.8	Xtxa371	Marker
+e	Xtxa604	87.8		Xtxa604	Marker
+e	Xtxs1176.2	87.8	89.9	Xtxs1176.2	Marker
+e	Xtxa168	87.8	89.9	Xtxa168	Marker
+e	Xtxa2970	87.8	89.9	Xtxa2970	Marker
+e	Xtxa3181	87.8	89.9	Xtxa3181	Marker
+e	Xtxa3892	87.8	89.9	Xtxa3892	Marker
+e	Xtxa3941	87.8	89.9	Xtxa3941	Marker
+e	Xtxa4046	87.8	89.9	Xtxa4046	Marker
+e	Xtxa6243	87.8	89.9	Xtxa6243	Marker
+e	Xtxa6333	87.8	89.9	Xtxa6333	Marker
+e	Xtxa6053	87.8	91.6	Xtxa6053	Marker
+e	Xtxa4088	89.9		Xtxa4088	Marker
+e	umc23	91.6		umc23	Marker
+e	Xtxa2980	91.6	94.0	Xtxa2980	Marker
+e	Xtxa3443	91.6	94.0	Xtxa3443	Marker
+e	Xtxa4169	91.6	94.0	Xtxa4169	Marker
+e	Xtxa6010	91.6	94.0	Xtxa6010	Marker
+e	Xtxa6149	91.6	94.0	Xtxa6149	Marker
+e	Xtxa11	94.0		Xtxa11	Marker
+e	Xtxs1563	94.0	99.0	Xtxs1563	Marker
+e	Xtxa12	94.0	99.0	Xtxa12	Marker
+e	Xtxa2083	94.0	99.0	Xtxa2083	Marker
+e	Xtxa6199	94.0	99.0	Xtxa6199	Marker
+e	Xtxp92	99.0		Xtxp92	Marker
+e	Xtxa2664	99.9	100.6	Xtxa2664	Marker
+e	Xtxa79	100.6		Xtxa79	Marker
+e	Xtxa6362	102.9		Xtxa6362	Marker
+e	Xtxa6207	102.9	110.9	Xtxa6207	Marker
+e	Xtxa3581	110.9		Xtxa3581	Marker
+e	Xtxa6288	110.9	114.6	Xtxa6288	Marker
+e	Xtxa6336	110.9	114.6	Xtxa6336	Marker
+e	Xtxa584	114.6		Xtxa584	Marker
+e	Xtxa2796	116.9		Xtxa2796	Marker
+e	Xtxa2053	121.4		Xtxa2053	Marker
+e	Xtxa3412	121.4	124.5	Xtxa3412	Marker
+e	isu116	124.5		isu116	Marker
+e	Xtxa6220	121.4	126.8	Xtxa6220	Marker
+e	Xtxa6246	121.4	126.8	Xtxa6246	Marker
+e	Xtxs1186	124.5	126.8	Xtxs1186	Marker
+e	Xtxs1579	126.8		Xtxs1579	Marker
+e	Xtxa2943	126.8	132.5	Xtxa2943	Marker
+e	Xtxa487	132.5		Xtxa487	Marker
+e	Xtxa486	132.5		Xtxa486	Marker
+e	Xtxa2012	132.5	138.0	Xtxa2012	Marker
+e	Xtxa2161	132.5	138.0	Xtxa2161	Marker
+e	Xtxa2254	132.5	138.0	Xtxa2254	Marker
+e	Xtxa2524	132.5	138.0	Xtxa2524	Marker
+e	Xtxa2543	132.5	138.0	Xtxa2543	Marker
+e	Xtxa2691	132.5	138.0	Xtxa2691	Marker
+e	Xtxa601	138.0		Xtxa601	Marker
+e	Xtxa3578	138.0	141.0	Xtxa3578	Marker
+e	Xtxa3751	138.0	141.0	Xtxa3751	Marker
+e	Xtxa2007	141.0		Xtxa2007	Marker
+e	Xtxa419	142.6		Xtxa419	Marker
+e	Xtxp295	142.6	147.1	Xtxp295	Marker
+e	Xtxa3710	142.6	147.1	Xtxa3710	Marker
+e	Xtxa4240	142.6	147.1	Xtxa4240	Marker
+e	Xtxa6051	142.6	147.1	Xtxa6051	Marker
+e	Xtxa354	147.1		Xtxa354	Marker
+e	Xtxa2761	147.1	151.0	Xtxa2761	Marker
+e	Xtxa2639	149.5		Xtxa2639	Marker
+e	Xtxa3228	151.0		Xtxa3228	Marker
+e	Xtxa2220	151.0	153.0	Xtxa2220	Marker
+e	Xtxa6129	151.0	153.0	Xtxa6129	Marker
+e	Xtxa406	153.0		Xtxa406	Marker
+e	Xtxa2548	153.4		Xtxa2548	Marker
+e	Xtxa3299	153.4	155.0	Xtxa3299	Marker
+e	Xtxs1554	155.0		Xtxs1554	Marker
+e	Xtxs1185.1	155.0	159.6	Xtxs1185.1	Marker
+e	Xtxa6323	155.0	159.6	Xtxa6323	Marker
+e	Xtxa6102	159.6		Xtxa6102	Marker
+f	isu140	0.0		isu140	Marker
+f	Xtxa2673	0.0	9.8	Xtxa2673	Marker
+f	Xtxa2807	0.0	9.8	Xtxa2807	Marker
+f	Xtxa3233	0.0	9.8	Xtxa3233	Marker
+f	Xtxa3593	0.0	9.8	Xtxa3593	Marker
+f	Xtxa3945	0.0	9.8	Xtxa3945	Marker
+f	Xtxa6075	0.0	9.8	Xtxa6075	Marker
+f	Xtxa4059	0.0	23.5	Xtxa4059	Marker
+f	cdo542	9.8		cdo542	Marker
+f	cdo393	9.8		cdo393	Marker
+f	Xtxs1102	9.8	23.5	Xtxs1102	Marker
+f	umc134	9.8	23.5	umc134	Marker
+f	rz206	9.8	23.5	rz206	Marker
+f	Xtxa562	9.8	23.5	Xtxa562	Marker
+f	Xtxa3121	9.8	23.5	Xtxa3121	Marker
+f	umc132	23.5		umc132	Marker
+f	umc135.2	23.5		umc135.2	Marker
+f	umc38	23.5	33.9	umc38	Marker
+f	Xtxa6028	23.5	33.9	Xtxa6028	Marker
+f	Xtxa6058	23.5	33.9	Xtxa6058	Marker
+f	Xtxa4122	33.9		Xtxa4122	Marker
+f	cdo89	37.5		cdo89	Marker
+f	Xtxp339	37.5	43.4	Xtxp339	Marker
+f	Xtxa6224	37.5	43.4	Xtxa6224	Marker
+f	Xtxa6343	37.5	43.4	Xtxa6343	Marker
+f	Xtxa2988	37.5	46.9	Xtxa2988	Marker
+f	Xtxa3014	43.4		Xtxa3014	Marker
+f	Xtxa3012	43.4		Xtxa3012	Marker
+f	Xtxa3772	43.4		Xtxa3772	Marker
+f	Xtxa542	43.4	46.9	Xtxa542	Marker
+f	Xtxa553	43.4	46.9	Xtxa553	Marker
+f	Xtxa3445	43.4	46.9	Xtxa3445	Marker
+f	Xtxa3693	43.4	46.9	Xtxa3693	Marker
+f	Xtxa411	46.9		Xtxa411	Marker
+f	Xtxa547	47.6		Xtxa547	Marker
+f	Xtxa2289	43.4	51.6	Xtxa2289	Marker
+f	Xtxa2782	47.6	51.6	Xtxa2782	Marker
+f	Xtxa2351	51.6		Xtxa2351	Marker
+f	Xtxa4133	47.6	61.9	Xtxa4133	Marker
+f	Xtxa415	53.9		Xtxa415	Marker
+f	Xtxa2135	56.1		Xtxa2135	Marker
+f	Xtxa590	56.5		Xtxa590	Marker
+f	Xtxa2589	56.1	57.1	Xtxa2589	Marker
+f	Xtxa6329	56.5	57.1	Xtxa6329	Marker
+f	Xtxa66	57.1		Xtxa66	Marker
+f	Xtxa509	57.7		Xtxa509	Marker
+f	Xtxa2295	57.7	59.2	Xtxa2295	Marker
+f	Xtxa3996	57.7	59.2	Xtxa3996	Marker
+f	Xtxa2599	59.2		Xtxa2599	Marker
+f	Xtxa2553	59.2	61.9	Xtxa2553	Marker
+f	Xtxa3354	59.2	61.9	Xtxa3354	Marker
+f	Xtxa6308	61.9		Xtxa6308	Marker
+f	Xtxa236	61.9	65.8	Xtxa236	Marker
+f	bcd454	65.8		bcd454	Marker
+f	Xtxa2932	65.8	68.5	Xtxa2932	Marker
+f	Xtxa4113	68.5		Xtxa4113	Marker
+f	Xtxp10	68.5	71.8	Xtxp10	Marker
+f	Xtxa3869	68.5	71.8	Xtxa3869	Marker
+f	Xtxa6275	68.5	71.8	Xtxa6275	Marker
+f	Xtxs1383	71.8		Xtxs1383	Marker
+f	Xtxa6357	71.8	74.8	Xtxa6357	Marker
+f	Xtxa2200	71.8	76.2	Xtxa2200	Marker
+f	Xtxs943	74.8		Xtxs943	Marker
+f	Xtxs1628.2	74.8	76.2	Xtxs1628.2	Marker
+f	Xtxa363	74.8	76.2	Xtxa363	Marker
+f	Xtxa603	74.8	76.2	Xtxa603	Marker
+f	Xtxa2228	74.8	76.2	Xtxa2228	Marker
+f	Xtxa2535	74.8	76.2	Xtxa2535	Marker
+f	Xtxa2541	74.8	76.2	Xtxa2541	Marker
+f	Xtxa2731	74.8	76.2	Xtxa2731	Marker
+f	Xtxa2881	74.8	76.2	Xtxa2881	Marker
+f	Xtxa3247	74.8	76.2	Xtxa3247	Marker
+f	Xtxa3312	74.8	76.2	Xtxa3312	Marker
+f	Xtxa3338	74.8	76.2	Xtxa3338	Marker
+f	Xtxa3465	74.8	76.2	Xtxa3465	Marker
+f	Xtxa3807	74.8	76.2	Xtxa3807	Marker
+f	Xtxa3983	74.8	76.2	Xtxa3983	Marker
+f	Xtxa4206	74.8	76.2	Xtxa4206	Marker
+f	Xtxa6079	74.8	76.2	Xtxa6079	Marker
+f	Xtxa3765	74.8	77.0	Xtxa3765	Marker
+f	Xtxa2933	76.2		Xtxa2933	Marker
+f	Xtxa2528	74.8	77.0	Xtxa2528	Marker
+f	Xtxa447	74.8	77.0	Xtxa447	Marker
+f	Xtxa282	76.2	77.0	Xtxa282	Marker
+f	Xtxa175	76.2	77.4	Xtxa175	Marker
+f	Xtxa3733	77.0		Xtxa3733	Marker
+f	Xtxa3315	77.4		Xtxa3315	Marker
+f	Xtxa3380	77.4		Xtxa3380	Marker
+f	Xtxa2316	77.4	77.8	Xtxa2316	Marker
+f	Xtxa2063	77.8		Xtxa2063	Marker
+f	Xtxa2775	71.8	79.1	Xtxa2775	Marker
+f	Xtxa3788	71.8	79.1	Xtxa3788	Marker
+f	Xtxa3669	74.8	80.7	Xtxa3669	Marker
+f	Xtxa3868	77.0	79.1	Xtxa3868	Marker
+f	Xtxs1299.1	77.8	79.1	Xtxs1299.1	Marker
+f	Xtxa2755	77.8	79.1	Xtxa2755	Marker
+f	Xtxa2940	77.8	79.1	Xtxa2940	Marker
+f	Xtxa3210	77.8	79.1	Xtxa3210	Marker
+f	Xtxa3458	77.8	79.1	Xtxa3458	Marker
+f	Xtxa3512	77.8	79.1	Xtxa3512	Marker
+f	Xtxa3759	77.8	79.1	Xtxa3759	Marker
+f	Xtxa6048	77.8	79.1	Xtxa6048	Marker
+f	Xtxa184	77.8	79.1	Xtxa184	Marker
+f	Xtxa2014	77.8	79.1	Xtxa2014	Marker
+f	Xtxa3716	79.1		Xtxa3716	Marker
+f	Xtxa21	79.1		Xtxa21	Marker
+f	Xtxa2517	79.1		Xtxa2517	Marker
+f	Xtxa3679	77.8	80.7	Xtxa3679	Marker
+f	isu69.2	79.1	80.7	isu69.2	Marker
+f	Xtxa2606	79.1	80.7	Xtxa2606	Marker
+f	Xtxa3147	79.1	80.7	Xtxa3147	Marker
+f	Xtxa3678	79.1	80.7	Xtxa3678	Marker
+f	Xtxa3885	79.1	80.7	Xtxa3885	Marker
+f	Xtxa3248	80.7		Xtxa3248	Marker
+f	Xtxa2098	82.0		Xtxa2098	Marker
+f	Xtxa393	82.4		Xtxa393	Marker
+f	Xtxa2585	82.4	85.4	Xtxa2585	Marker
+f	Xtxa4237	82.4	85.4	Xtxa4237	Marker
+f	sBAC120	85.4		sBAC120	Marker
+f	Xtxa254	85.4	89.6	Xtxa254	Marker
+f	Xtxa502	85.4	89.6	Xtxa502	Marker
+f	Xtxa2338	85.4	89.6	Xtxa2338	Marker
+f	Xtxa2608	85.4	89.6	Xtxa2608	Marker
+f	Xtxa2649	85.4	89.6	Xtxa2649	Marker
+f	Xtxa3405	85.4	89.6	Xtxa3405	Marker
+f	Xtxa3432	85.4	89.6	Xtxa3432	Marker
+f	Xtxa3608	85.4	89.6	Xtxa3608	Marker
+f	Xtxa4067	85.4	89.6	Xtxa4067	Marker
+f	Xtxa6237	85.4	89.6	Xtxa6237	Marker
+f	Xtxa3379	89.6		Xtxa3379	Marker
+f	Xtxa2011	90.0		Xtxa2011	Marker
+f	Xtxa2160	90.0	92.3	Xtxa2160	Marker
+f	Xtxa3160	92.3		Xtxa3160	Marker
+f	Xtxa2600	96.3		Xtxa2600	Marker
+f	Xtxa2291	96.3	100.7	Xtxa2291	Marker
+f	Xtxa567	100.7		Xtxa567	Marker
+f	Xtxa2542	100.7		Xtxa2542	Marker
+f	Xtxa6038	100.7	103.4	Xtxa6038	Marker
+f	Xtxp230	100.7	103.4	Xtxp230	Marker
+f	Xtxp67	103.4		Xtxp67	Marker
+f	Xtxa4184	105.7		Xtxa4184	Marker
+f	Xtxa2816	105.7	108.8	Xtxa2816	Marker
+f	Xtxa3526	108.8		Xtxa3526	Marker
+f	Xtxa2326	111.1		Xtxa2326	Marker
+f	Xtxp258	111.1	113.7	Xtxp258	Marker
+f	Xtxa2946	111.1	113.7	Xtxa2946	Marker
+f	Xtxa4026	111.1	113.7	Xtxa4026	Marker
+f	Xtxa4100	111.1	113.7	Xtxa4100	Marker
+f	Xtxa6342	111.1	113.7	Xtxa6342	Marker
+f	Xtxa6344	111.1	113.7	Xtxa6344	Marker
+f	Xtxp287	113.7		Xtxp287	Marker
+f	Xtxa6132	115.7		Xtxa6132	Marker
+f	Xtxa6214	115.7		Xtxa6214	Marker
+f	Xtxa4213	118.0		Xtxa4213	Marker
+f	Xtxa3845	118.0		Xtxa3845	Marker
+f	Xtxa4137	121.1		Xtxa4137	Marker
+f	Xtxa2342	121.1	127.3	Xtxa2342	Marker
+f	Xtxa6354	121.1	127.3	Xtxa6354	Marker
+f	umc64	127.3		umc64	Marker
+f	Xtxa2757	127.3	133.4	Xtxa2757	Marker
+f	Xtxa3932	127.3	133.4	Xtxa3932	Marker
+f	Xtxa4125	127.3	133.4	Xtxa4125	Marker
+f	Xtxs1150	133.4		Xtxs1150	Marker
+f	cdo580	134.0		cdo580	Marker
+f	Xtxp358	134.0	150.8	Xtxp358	Marker
+f	Xtxa2315	134.0	150.8	Xtxa2315	Marker
+f	Xtxa3463	134.0	150.8	Xtxa3463	Marker
+f	Xtxa3464	134.0	150.8	Xtxa3464	Marker
+f	Xtxa3616	134.0	150.8	Xtxa3616	Marker
+f	Xtxs1703	150.8		Xtxs1703	Marker
+f	rz390	154.3		rz390	Marker
+f	Xtxs2148.1	157.3		Xtxs2148.1	Marker
+g	Xtxa2678	0.0		Xtxa2678	Marker
+g	Xtxa512	0.0	6.3	Xtxa512	Marker
+g	Xtxs1146.1	6.3		Xtxs1146.1	Marker
+g	Xtxa385	9.1		Xtxa385	Marker
+g	Xtxa386	9.1	11.3	Xtxa386	Marker
+g	Xtxa2764	9.1	11.3	Xtxa2764	Marker
+g	Xtxa6105	11.3		Xtxa6105	Marker
+g	Xtxa6066	11.3		Xtxa6066	Marker
+g	cdo590	11.3		cdo590	Marker
+g	Xtxa3245	14.4		Xtxa3245	Marker
+g	Xtxa3418	14.4	16.7	Xtxa3418	Marker
+g	AP2	14.4	16.7	AP2	Marker
+g	Xtxa6210	16.7		Xtxa6210	Marker
+g	Xtxa3914	14.4	18.3	Xtxa3914	Marker
+g	Xtxs1078	18.3		Xtxs1078	Marker
+g	Xtxa3764	18.3	21.5	Xtxa3764	Marker
+g	Xtxa3999	18.3	21.5	Xtxa3999	Marker
+g	AD12	18.3	21.5	AD12	Marker
+g	cdo475	21.5		cdo475	Marker
+g	Xtxa397	21.5	25.8	Xtxa397	Marker
+g	Xtxa2656	21.5	25.8	Xtxa2656	Marker
+g	Xtxa4233	21.5	25.8	Xtxa4233	Marker
+g	Xtxa2968	25.8		Xtxa2968	Marker
+g	Xtxa4225	28.1		Xtxa4225	Marker
+g	Xtxa2720	30.4		Xtxa2720	Marker
+g	Xtxs1163	30.4	33.1	Xtxs1163	Marker
+g	Xtxa2730	30.4	33.1	Xtxa2730	Marker
+g	Xtxa2750	30.4	33.1	Xtxa2750	Marker
+g	Xtxa3419	30.4	33.1	Xtxa3419	Marker
+g	Xtxa3863	30.4	33.1	Xtxa3863	Marker
+g	Xtxa6260	30.4	33.1	Xtxa6260	Marker
+g	Xtxa3924	33.1		Xtxa3924	Marker
+g	Xtxa3872	33.1		Xtxa3872	Marker
+g	Xtxa3961	35.0		Xtxa3961	Marker
+g	Xtxa4029	35.0	39.0	Xtxa4029	Marker
+g	Xtxa4167	35.0	39.0	Xtxa4167	Marker
+g	Xtxa6009	39.0		Xtxa6009	Marker
+g	Xtxa3592	39.0	41.1	Xtxa3592	Marker
+g	Xtxa3503	41.1		Xtxa3503	Marker
+g	Xtxa180	41.1	44.7	Xtxa180	Marker
+g	Xtxa2507	41.1	44.7	Xtxa2507	Marker
+g	Xtxa2737	41.1	44.7	Xtxa2737	Marker
+g	Xtxa3308	41.1	44.7	Xtxa3308	Marker
+g	Xtxa6229	41.1	44.7	Xtxa6229	Marker
+g	Xtxa2875	41.1	46.5	Xtxa2875	Marker
+g	isu136	44.7		isu136	Marker
+g	Xtxa179	44.7	46.5	Xtxa179	Marker
+g	Xtxa6327	46.5		Xtxa6327	Marker
+g	Xtxa2510	46.5	48.4	Xtxa2510	Marker
+g	umc113	48.4		umc113	Marker
+g	Xtxa453	50.7		Xtxa453	Marker
+g	Xtxa2556	50.7		Xtxa2556	Marker
+g	Xtxa498	50.7	53.4	Xtxa498	Marker
+g	Xtxa398	53.4		Xtxa398	Marker
+g	Xtxa3185	53.4	57.9	Xtxa3185	Marker
+g	cdo516.2	57.9		cdo516.2	Marker
+g	Xtxa2645	57.9	63.9	Xtxa2645	Marker
+g	Xtxa4156	63.9		Xtxa4156	Marker
+g	Xtxs558	64.7		Xtxs558	Marker
+g	Xtxa2343	66.8		Xtxa2343	Marker
+g	Xtxa3607	68.3		Xtxa3607	Marker
+g	umc109.2	68.3	72.0	umc109.2	Marker
+g	umc110	68.3	72.0	umc110	Marker
+g	Xtxa53	68.3	72.0	Xtxa53	Marker
+g	Xtxa2297	68.3	72.0	Xtxa2297	Marker
+g	Xtxa3287	68.3	72.0	Xtxa3287	Marker
+g	Xtxa3389	68.3	72.0	Xtxa3389	Marker
+g	Xtxa3661	68.3	72.0	Xtxa3661	Marker
+g	Xtxa6259	68.3	72.0	Xtxa6259	Marker
+g	Xtxa6294	68.3	72.0	Xtxa6294	Marker
+g	Xtxa6328	68.3	72.0	Xtxa6328	Marker
+g	Xtxa3830	68.3	73.9	Xtxa3830	Marker
+g	Xtxp20	72.0		Xtxp20	Marker
+g	Xtxp217	68.3	73.9	Xtxp217	Marker
+g	Xtxp309	72.0	73.9	Xtxp309	Marker
+g	Xtxp331	72.0	73.9	Xtxp331	Marker
+g	Xtxa198	72.0	73.9	Xtxa198	Marker
+g	Xtxa611	72.0	73.9	Xtxa611	Marker
+g	Xtxa2100	72.0	73.9	Xtxa2100	Marker
+g	Xtxa2299	72.0	73.9	Xtxa2299	Marker
+g	Xtxa2319	72.0	73.9	Xtxa2319	Marker
+g	Xtxa2502	72.0	73.9	Xtxa2502	Marker
+g	Xtxa2584	72.0	73.9	Xtxa2584	Marker
+g	Xtxa2879	72.0	73.9	Xtxa2879	Marker
+g	Xtxa3426	72.0	73.9	Xtxa3426	Marker
+g	Xtxa3563	72.0	73.9	Xtxa3563	Marker
+g	Xtxa4055	72.0	73.9	Xtxa4055	Marker
+g	Xtxa4187	72.0	73.9	Xtxa4187	Marker
+g	Xtxa4204	72.0	73.9	Xtxa4204	Marker
+g	Xtxa6123	72.0	73.9	Xtxa6123	Marker
+g	Xtxa6202	72.0	73.9	Xtxa6202	Marker
+g	Xtxp270	72.0	75.9	Xtxp270	Marker
+g	Xtxa4094	72.0	75.9	Xtxa4094	Marker
+g	Xtxa4143	72.0	75.9	Xtxa4143	Marker
+g	Xtxa4159	72.0	75.9	Xtxa4159	Marker
+g	cdo17	73.9		cdo17	Marker
+g	Xtxa190	72.0	75.9	Xtxa190	Marker
+g	Xtxa2533	72.0	75.9	Xtxa2533	Marker
+g	Xtxa2559	72.0	75.9	Xtxa2559	Marker
+g	Xtxa3414	72.0	75.9	Xtxa3414	Marker
+g	Xtxa3920	72.0	75.9	Xtxa3920	Marker
+g	Xtxa2835	72.0	79.0	Xtxa2835	Marker
+g	bnl7.24	73.9	75.9	bnl7.24	Marker
+g	Xtxs1923	73.9	75.9	Xtxs1923	Marker
+g	Xtxs1929	73.9	75.9	Xtxs1929	Marker
+g	Xtxs361.2	73.9	75.9	Xtxs361.2	Marker
+g	umc21	73.9	75.9	umc21	Marker
+g	Xtxp130	73.9	75.9	Xtxp130	Marker
+g	Xtxa19	73.9	75.9	Xtxa19	Marker
+g	Xtxa48	73.9	75.9	Xtxa48	Marker
+g	Xtxa78	73.9	75.9	Xtxa78	Marker
+g	Xtxa167	73.9	75.9	Xtxa167	Marker
+g	Xtxa170	73.9	75.9	Xtxa170	Marker
+g	Xtxa448	73.9	75.9	Xtxa448	Marker
+g	Xtxa464	73.9	75.9	Xtxa464	Marker
+g	Xtxa173	73.9	75.9	Xtxa173	Marker
+g	Xtxa195	73.9	75.9	Xtxa195	Marker
+g	Xtxa273	73.9	75.9	Xtxa273	Marker
+g	Xtxa319	73.9	75.9	Xtxa319	Marker
+g	Xtxa346	73.9	75.9	Xtxa346	Marker
+g	Xtxa524	73.9	75.9	Xtxa524	Marker
+g	Xtxa572	73.9	75.9	Xtxa572	Marker
+g	Xtxa2036	73.9	75.9	Xtxa2036	Marker
+g	Xtxa2048	73.9	75.9	Xtxa2048	Marker
+g	Xtxa2094	73.9	75.9	Xtxa2094	Marker
+g	Xtxa2113	73.9	75.9	Xtxa2113	Marker
+g	Xtxa2184	73.9	75.9	Xtxa2184	Marker
+g	Xtxa2265	73.9	75.9	Xtxa2265	Marker
+g	Xtxa2287	73.9	75.9	Xtxa2287	Marker
+g	Xtxa2539	73.9	75.9	Xtxa2539	Marker
+g	Xtxa2560	73.9	75.9	Xtxa2560	Marker
+g	Xtxa2597	73.9	75.9	Xtxa2597	Marker
+g	Xtxa2729	73.9	75.9	Xtxa2729	Marker
+g	Xtxa2833	73.9	75.9	Xtxa2833	Marker
+g	Xtxa2843	73.9	75.9	Xtxa2843	Marker
+g	Xtxa2856	73.9	75.9	Xtxa2856	Marker
+g	Xtxa2977	73.9	75.9	Xtxa2977	Marker
+g	Xtxa3009	73.9	75.9	Xtxa3009	Marker
+g	Xtxa3020	73.9	75.9	Xtxa3020	Marker
+g	Xtxa3404	73.9	75.9	Xtxa3404	Marker
+g	Xtxa3841	73.9	75.9	Xtxa3841	Marker
+g	Xtxa3528	73.9	75.9	Xtxa3528	Marker
+g	Xtxa3543	73.9	75.9	Xtxa3543	Marker
+g	Xtxa3564	73.9	75.9	Xtxa3564	Marker
+g	Xtxa3570	73.9	75.9	Xtxa3570	Marker
+g	Xtxa3589	73.9	75.9	Xtxa3589	Marker
+g	Xtxa3619	73.9	75.9	Xtxa3619	Marker
+g	Xtxa3623	73.9	75.9	Xtxa3623	Marker
+g	Xtxa3690	73.9	75.9	Xtxa3690	Marker
+g	Xtxa3752	73.9	75.9	Xtxa3752	Marker
+g	Xtxa3777	73.9	75.9	Xtxa3777	Marker
+g	Xtxa3787	73.9	75.9	Xtxa3787	Marker
+g	Xtxa3893	73.9	75.9	Xtxa3893	Marker
+g	Xtxa3951	73.9	75.9	Xtxa3951	Marker
+g	Xtxa3963	73.9	75.9	Xtxa3963	Marker
+g	Xtxa3993	73.9	75.9	Xtxa3993	Marker
+g	Xtxa4000	73.9	75.9	Xtxa4000	Marker
+g	Xtxa4020	73.9	75.9	Xtxa4020	Marker
+g	Xtxa4141	73.9	75.9	Xtxa4141	Marker
+g	Xtxa6034	73.9	75.9	Xtxa6034	Marker
+g	Xtxa6039	73.9	75.9	Xtxa6039	Marker
+g	Xtxa6152	73.9	75.9	Xtxa6152	Marker
+g	Xtxa6158	73.9	75.9	Xtxa6158	Marker
+g	Xtxa6250	73.9	75.9	Xtxa6250	Marker
+g	Xtxa6273	73.9	75.9	Xtxa6273	Marker
+g	Xtxa6324	73.9	75.9	Xtxa6324	Marker
+g	Xtxa156	75.9		Xtxa156	Marker
+g	Xtxa2863	75.9		Xtxa2863	Marker
+g	Xtxa2993	75.9		Xtxa2993	Marker
+g	Xtxa2786	75.9		Xtxa2786	Marker
+g	Xtxa2234	73.9	79.0	Xtxa2234	Marker
+g	Xtxa34	75.9	79.0	Xtxa34	Marker
+g	Xtxa362	75.9	79.0	Xtxa362	Marker
+g	Xtxa2253	75.9	79.0	Xtxa2253	Marker
+g	Xtxa2798	75.9	79.0	Xtxa2798	Marker
+g	Xtxa2860	75.9	79.0	Xtxa2860	Marker
+g	Xtxa3152	75.9	79.0	Xtxa3152	Marker
+g	Xtxa3259	75.9	79.0	Xtxa3259	Marker
+g	Xtxa3348	75.9	79.0	Xtxa3348	Marker
+g	Xtxa3756	75.9	79.0	Xtxa3756	Marker
+g	Xtxa3871	75.9	79.0	Xtxa3871	Marker
+g	Xtxa4005	75.9	79.0	Xtxa4005	Marker
+g	Xtxa4049	75.9	79.0	Xtxa4049	Marker
+g	Xtxa452	79.0		Xtxa452	Marker
+g	Xtxa2555	79.0		Xtxa2555	Marker
+g	Xtxa4064	79.7		Xtxa4064	Marker
+g	Xtxs1106	75.9	84.2	Xtxs1106	Marker
+g	Xtxa2356	75.9	84.2	Xtxa2356	Marker
+g	Xtxa2693	75.9	84.2	Xtxa2693	Marker
+g	Xtxa2804	79.7	81.3	Xtxa2804	Marker
+g	Xtxa3277	79.7	81.3	Xtxa3277	Marker
+g	Xtxa3978	79.7	81.3	Xtxa3978	Marker
+g	umc61.2	81.3		umc61.2	Marker
+g	Xtxa3998	81.8		Xtxa3998	Marker
+g	Xtxs1299.2	81.8	84.2	Xtxs1299.2	Marker
+g	Xtxa2003	81.8	84.2	Xtxa2003	Marker
+g	Xtxa2021	81.8	84.2	Xtxa2021	Marker
+g	Xtxa2674	81.8	84.2	Xtxa2674	Marker
+g	Xtxa2682	81.8	84.2	Xtxa2682	Marker
+g	Xtxa3104	81.8	84.2	Xtxa3104	Marker
+g	Xtxa3236	81.8	84.2	Xtxa3236	Marker
+g	Xtxa3349	81.8	84.2	Xtxa3349	Marker
+g	Xtxa3468	81.8	84.2	Xtxa3468	Marker
+g	Xtxa4172	81.8	84.2	Xtxa4172	Marker
+g	Xtxa4179	81.8	84.2	Xtxa4179	Marker
+g	Xtxa6135	81.8	84.2	Xtxa6135	Marker
+g	Xtxa6287	81.8	86.4	Xtxa6287	Marker
+g	Xtxa6070	81.8	93.6	Xtxa6070	Marker
+g	Xtxa2148	84.2		Xtxa2148	Marker
+g	rz476	85.0		rz476	Marker
+g	Xtxa2842	85.0	86.4	Xtxa2842	Marker
+g	Xtxa3032	85.0	86.4	Xtxa3032	Marker
+g	Xtxa3821	86.4		Xtxa3821	Marker
+g	Xtxs443	87.3		Xtxs443	Marker
+g	Xtxa2104	88.8		Xtxa2104	Marker
+g	isu128.1	88.8		isu128.1	Marker
+g	Xtxa381	89.2		Xtxa381	Marker
+g	Xtxa399	89.2	93.6	Xtxa399	Marker
+g	Xtxa3269	89.2	93.6	Xtxa3269	Marker
+g	Xtxa3689	89.2	93.6	Xtxa3689	Marker
+g	Xtxa3738	89.2	93.6	Xtxa3738	Marker
+g	Xtxa3784	89.2	93.6	Xtxa3784	Marker
+g	bnl5.04	93.6		bnl5.04	Marker
+g	Xtxa26	93.6	97.0	Xtxa26	Marker
+g	Xtxa277	93.6	97.0	Xtxa277	Marker
+g	Xtxa3613	93.6	97.0	Xtxa3613	Marker
+g	Xtxa3977	93.6	97.0	Xtxa3977	Marker
+g	Xtxa6007	93.6	97.0	Xtxa6007	Marker
+g	umc114.3	97.0		umc114.3	Marker
+g	Xtxa2522	97.0		Xtxa2522	Marker
+g	Xtxa6228	97.0	101.4	Xtxa6228	Marker
+g	Xtxa6262	97.0	101.4	Xtxa6262	Marker
+g	Xtxa309	101.4		Xtxa309	Marker
+g	Xtxa2707	101.4	103.7	Xtxa2707	Marker
+g	Xtxa6098	103.7		Xtxa6098	Marker
+g	Xgap1	103.7	105.6	Xgap1	Marker
+g	cdo400	105.6		cdo400	Marker
+g	Xtxa2240	105.6	110.4	Xtxa2240	Marker
+g	Xtxa4093	105.6	110.4	Xtxa4093	Marker
+g	Xtxa3881	110.4		Xtxa3881	Marker
+g	Xtxa239	110.4	114.4	Xtxa239	Marker
+g	Xtxa244	110.4	114.4	Xtxa244	Marker
+g	Xtxa4236	110.4	114.4	Xtxa4236	Marker
+g	umc150	114.4		umc150	Marker
+g	Xtxa2174	114.4	118.5	Xtxa2174	Marker
+g	Xtxa2005	115.2		Xtxa2005	Marker
+g	isu110.1	115.2	118.5	isu110.1	Marker
+g	Xtxa372	115.2	118.5	Xtxa372	Marker
+g	Xtxa6021	115.2	118.5	Xtxa6021	Marker
+g	Xtxs236	115.2	121.4	Xtxs236	Marker
+g	umc218	118.5		umc218	Marker
+g	Xtxs1684	119.4		Xtxs1684	Marker
+g	Xtxa2041	119.4	121.4	Xtxa2041	Marker
+g	Xtxa3959	119.4	121.4	Xtxa3959	Marker
+g	Xtxa4040	121.4		Xtxa4040	Marker
+g	Xtxa4155	121.4	122.8	Xtxa4155	Marker
+g	Xtxa2537	122.8		Xtxa2537	Marker
+g	Xtxa3376	124.0		Xtxa3376	Marker
+g	Xtxa2156	131.0		Xtxa2156	Marker
+g	Xtxa37	131.0		Xtxa37	Marker
+g	Xtxa56	131.0	133.3	Xtxa56	Marker
+g	Xtxa259	133.3		Xtxa259	Marker
+g	Xtxp141	133.3	136.0	Xtxp141	Marker
+g	Xtxa2930	133.3	136.0	Xtxa2930	Marker
+g	Xtxs758	136.0		Xtxs758	Marker
+g	Xtxa3596	138.7		Xtxa3596	Marker
+g	Xtxa3614	138.7	139.6	Xtxa3614	Marker
+g	Xtxa6280	138.7	139.6	Xtxa6280	Marker
+g	Xtxa2069	139.6		Xtxa2069	Marker
+g	Xtxa3965	139.6	141.0	Xtxa3965	Marker
+g	Xtxa3601	141.0		Xtxa3601	Marker
+g	Xtxa6251	142.1		Xtxa6251	Marker
+g	isu162	142.1	144.1	isu162	Marker
+g	Xtxs1628.1	142.1	144.1	Xtxs1628.1	Marker
+g	Xtxa438	142.1	144.1	Xtxa438	Marker
+g	Xtxa475	142.1	144.1	Xtxa475	Marker
+g	Xtxa272	142.1	144.1	Xtxa272	Marker
+g	Xtxa530	142.1	144.1	Xtxa530	Marker
+g	Xtxa2020	142.1	144.1	Xtxa2020	Marker
+g	Xtxa2226	142.1	144.1	Xtxa2226	Marker
+g	Xtxa3175	142.1	144.1	Xtxa3175	Marker
+g	Xtxa4017	142.1	144.1	Xtxa4017	Marker
+g	Xtxa6196	142.1	144.1	Xtxa6196	Marker
+g	Xtxa6298	142.1	144.1	Xtxa6298	Marker
+g	Xtxa2551	142.1	154.3	Xtxa2551	Marker
+g	Xtxa413	144.1		Xtxa413	Marker
+g	Xtxs664	144.1	145.1	Xtxs664	Marker
+g	isu45	145.1		isu45	Marker
+g	Xtxa2727	147.7		Xtxa2727	Marker
+g	Xtxa3441	147.7	154.3	Xtxa3441	Marker
+g	rz143.1	154.3		rz143.1	Marker
+h	Xtxa2948	0.0		Xtxa2948	Marker
+h	Xtxa2290	0	2.8	Xtxa2290	Marker
+h	Xtxa189	2.8		Xtxa189	Marker
+h	Xtxa3114	2.8	5.1	Xtxa3114	Marker
+h	Xtxa2332	5.1		Xtxa2332	Marker
+h	Xtxa4196	5.1	6.2	Xtxa4196	Marker
+h	Xtxa6304	6.2		Xtxa6304	Marker
+h	Xtxs1353	5.1	9.8	Xtxs1353	Marker
+h	Xgap34	6.2	9.8	Xgap34	Marker
+h	Xtxa2103	6.2	9.8	Xtxa2103	Marker
+h	Xtxa2189	6.2	9.8	Xtxa2189	Marker
+h	Xtxa2839	6.2	9.8	Xtxa2839	Marker
+h	Xtxa3793	6.2	9.8	Xtxa3793	Marker
+h	Xtxa4024	6.2	9.8	Xtxa4024	Marker
+h	Xtxa6301	6.2	9.8	Xtxa6301	Marker
+h	isu146	9.8		isu146	Marker
+h	Xtxa3879	9.8	12.8	Xtxa3879	Marker
+h	Xtxa3876	12.8		Xtxa3876	Marker
+h	Xtxa588	16.3		Xtxa588	Marker
+h	Xtxs1294	16.3	20.1	Xtxs1294	Marker
+h	Xtxa3106	16.3	20.1	Xtxa3106	Marker
+h	Xtxa4232	16.3	20.1	Xtxa4232	Marker
+h	Xtxa6346	16.3	20.1	Xtxa6346	Marker
+h	Xtxa4014	20.1		Xtxa4014	Marker
+h	Xtxa546	20.1	23.6	Xtxa546	Marker
+h	Xtxa2831	20.1	23.6	Xtxa2831	Marker
+h	Xtxa3107	20.1	23.6	Xtxa3107	Marker
+h	Xtxa6107	20.1	23.6	Xtxa6107	Marker
+h	Xtxa2789	23.6		Xtxa2789	Marker
+h	Xtxa3709	25.0		Xtxa3709	Marker
+h	Xtxa2778	26.4		Xtxa2778	Marker
+h	Xtxp105	26.9		Xtxp105	Marker
+h	Xtxa1	26.9	30.3	Xtxa1	Marker
+h	Xtxa2504	26.9	30.3	Xtxa2504	Marker
+h	Xtxa3903	26.9	30.3	Xtxa3903	Marker
+h	Xtxa3936	26.9	30.3	Xtxa3936	Marker
+h	Xtxa4042	26.9	30.3	Xtxa4042	Marker
+h	Xtxa6167	26.9	30.3	Xtxa6167	Marker
+h	Xtxa4112	30.3		Xtxa4112	Marker
+h	Xtxa3827	30.3	36.3	Xtxa3827	Marker
+h	Xtxa3857	30.3	36.3	Xtxa3857	Marker
+h	Xtxa4039	30.3	36.3	Xtxa4039	Marker
+h	Xtxa4084	36.3		Xtxa4084	Marker
+h	Xtxs1220	36.3	39.5	Xtxs1220	Marker
+h	Xtxa3713	36.3	39.5	Xtxa3713	Marker
+h	Xtxp321	36.3	41.3	Xtxp321	Marker
+h	Xtxp250	39.5		Xtxp250	Marker
+h	Xtxa606	39.5	41.3	Xtxa606	Marker
+h	Xtxa6090	41.3		Xtxa6090	Marker
+h	Xtxs560	41.7		Xtxs560	Marker
+h	Xtxp18	41.7	43.4	Xtxp18	Marker
+h	Xtxa6012	41.7	43.4	Xtxa6012	Marker
+h	Xtxa6347	43.4		Xtxa6347	Marker
+h	Xtxa515	39.5	48.7	Xtxa515	Marker
+h	Xtxa335	43.4	48.7	Xtxa335	Marker
+h	Xtxa2582	43.4	48.7	Xtxa2582	Marker
+h	Xtxa3431	43.4	48.7	Xtxa3431	Marker
+h	Xtxa6348	48.7		Xtxa6348	Marker
+h	Xtxs2065	48.7	53.6	Xtxs2065	Marker
+h	cdo344.1	48.7	53.6	cdo344.1	Marker
+h	Xtxa213	48.7	53.6	Xtxa213	Marker
+h	Xtxa388	48.7	53.6	Xtxa388	Marker
+h	Xtxa3439	48.7	53.6	Xtxa3439	Marker
+h	cdo459	53.6		cdo459	Marker
+h	Xtxp354	53.6	56.6	Xtxp354	Marker
+h	Xtxa223	53.6	56.6	Xtxa223	Marker
+h	Xtxa2703	53.6	56.6	Xtxa2703	Marker
+h	Xtxa3683	53.6	56.6	Xtxa3683	Marker
+h	Xtxa558	56.6		Xtxa558	Marker
+h	Xtxa3771	56.6		Xtxa3771	Marker
+h	Xtxa3943	56.6	58.5	Xtxa3943	Marker
+h	Xtxa3130	58.5		Xtxa3130	Marker
+h	Xtxa201	58.5	60.9	Xtxa201	Marker
+h	Xtxa557	58.5	60.9	Xtxa557	Marker
+h	Xtxa2302	58.5	60.9	Xtxa2302	Marker
+h	isu145.2	60.9		isu145.2	Marker
+h	Xtxa3853	62.9		Xtxa3853	Marker
+h	Xtxa72	62.9	65.3	Xtxa72	Marker
+h	Xtxa73	62.9	65.3	Xtxa73	Marker
+h	Xtxa589	62.9	65.3	Xtxa589	Marker
+h	Xtxa3343	62.9	65.3	Xtxa3343	Marker
+h	Xtxa4191	62.9	65.3	Xtxa4191	Marker
+h	Xtxs645.2	65.3		Xtxs645.2	Marker
+h	Xtxa3856	67.5		Xtxa3856	Marker
+h	Xtxp292	67.5	70.9	Xtxp292	Marker
+h	Xtxa2679	67.5	70.9	Xtxa2679	Marker
+h	Xtxa3968	67.5	70.9	Xtxa3968	Marker
+h	Xtxa6056	67.5	70.9	Xtxa6056	Marker
+h	Xtxa6226	67.5	70.9	Xtxa6226	Marker
+h	Xtxp294	70.9		Xtxp294	Marker
+h	Xtxp210	70.9	73.2	Xtxp210	Marker
+h	Xtxa2900	70.9	73.2	Xtxa2900	Marker
+h	Xtxa4242	70.9	73.2	Xtxa4242	Marker
+h	Xtxa6306	70.9	73.2	Xtxa6306	Marker
+h	rz261	73.2		rz261	Marker
+h	Xtxa3546	70.9	75.9	Xtxa3546	Marker
+h	Xtxs1440	73.2	75.9	Xtxs1440	Marker
+h	Xtxs2068	73.2	75.9	Xtxs2068	Marker
+h	Xtxa24	73.2	75.9	Xtxa24	Marker
+h	Xtxa28	73.2	75.9	Xtxa28	Marker
+h	Xtxa32	73.2	75.9	Xtxa32	Marker
+h	Xtxa150	73.2	75.9	Xtxa150	Marker
+h	Xtxa196	73.2	75.9	Xtxa196	Marker
+h	Xtxa292	73.2	75.9	Xtxa292	Marker
+h	Xtxa586	73.2	75.9	Xtxa586	Marker
+h	Xtxa2024	73.2	75.9	Xtxa2024	Marker
+h	Xtxa2075	73.2	75.9	Xtxa2075	Marker
+h	Xtxa2092	73.2	75.9	Xtxa2092	Marker
+h	Xtxa2170	73.2	75.9	Xtxa2170	Marker
+h	Xtxa2206	73.2	75.9	Xtxa2206	Marker
+h	Xtxa2214	73.2	75.9	Xtxa2214	Marker
+h	Xtxa2257	73.2	75.9	Xtxa2257	Marker
+h	Xtxa2263	73.2	75.9	Xtxa2263	Marker
+h	Xtxa2300	73.2	75.9	Xtxa2300	Marker
+h	Xtxa2710	73.2	75.9	Xtxa2710	Marker
+h	Xtxa2752	73.2	75.9	Xtxa2752	Marker
+h	Xtxa2762	73.2	75.9	Xtxa2762	Marker
+h	Xtxa2819	73.2	75.9	Xtxa2819	Marker
+h	Xtxa2864	73.2	75.9	Xtxa2864	Marker
+h	Xtxa2920	73.2	75.9	Xtxa2920	Marker
+h	Xtxa3043	73.2	75.9	Xtxa3043	Marker
+h	Xtxa3148	73.2	75.9	Xtxa3148	Marker
+h	Xtxa3168	73.2	75.9	Xtxa3168	Marker
+h	Xtxa3174	73.2	75.9	Xtxa3174	Marker
+h	Xtxa3226	73.2	75.9	Xtxa3226	Marker
+h	Xtxa3241	73.2	75.9	Xtxa3241	Marker
+h	Xtxa3256	73.2	75.9	Xtxa3256	Marker
+h	Xtxa3286	73.2	75.9	Xtxa3286	Marker
+h	Xtxa3377	73.2	75.9	Xtxa3377	Marker
+h	Xtxa3387	73.2	75.9	Xtxa3387	Marker
+h	Xtxa3454	73.2	75.9	Xtxa3454	Marker
+h	Xtxa3840	73.2	75.9	Xtxa3840	Marker
+h	Xtxa3536	73.2	75.9	Xtxa3536	Marker
+h	Xtxa3664	73.2	75.9	Xtxa3664	Marker
+h	Xtxa3667	73.2	75.9	Xtxa3667	Marker
+h	Xtxa3737	73.2	75.9	Xtxa3737	Marker
+h	Xtxa3755	73.2	75.9	Xtxa3755	Marker
+h	Xtxa3773	73.2	75.9	Xtxa3773	Marker
+h	Xtxa3786	73.2	75.9	Xtxa3786	Marker
+h	Xtxa3862	73.2	75.9	Xtxa3862	Marker
+h	Xtxa3873	73.2	75.9	Xtxa3873	Marker
+h	Xtxa3923	73.2	75.9	Xtxa3923	Marker
+h	Xtxa3925	73.2	75.9	Xtxa3925	Marker
+h	Xtxa3976	73.2	75.9	Xtxa3976	Marker
+h	Xtxa4018	73.2	75.9	Xtxa4018	Marker
+h	Xtxa4109	73.2	75.9	Xtxa4109	Marker
+h	Xtxa4193	73.2	75.9	Xtxa4193	Marker
+h	Xtxa4203	73.2	75.9	Xtxa4203	Marker
+h	Xtxa6002	73.2	75.9	Xtxa6002	Marker
+h	Xtxa6055	73.2	75.9	Xtxa6055	Marker
+h	Xtxa6094	73.2	75.9	Xtxa6094	Marker
+h	Xtxa6112	73.2	75.9	Xtxa6112	Marker
+h	Xtxa6113	73.2	75.9	Xtxa6113	Marker
+h	Xtxa6122	73.2	75.9	Xtxa6122	Marker
+h	Xtxa6128	73.2	75.9	Xtxa6128	Marker
+h	Xtxa6168	73.2	75.9	Xtxa6168	Marker
+h	Xtxa6180	73.2	75.9	Xtxa6180	Marker
+h	Xtxa6206	73.2	75.9	Xtxa6206	Marker
+h	Xtxa6312	73.2	75.9	Xtxa6312	Marker
+h	Xtxa6326	73.2	75.9	Xtxa6326	Marker
+h	Xtxa6340	73.2	75.9	Xtxa6340	Marker
+h	Xtxa6349	73.2	75.9	Xtxa6349	Marker
+h	Xtxa3675	73.2	77.1	Xtxa3675	Marker
+h	Xtxa9	73.2	80.8	Xtxa9	Marker
+h	Xtxa62	73.2	80.8	Xtxa62	Marker
+h	Xtxa174	73.2	80.8	Xtxa174	Marker
+h	Xtxa229	73.2	80.8	Xtxa229	Marker
+h	Xtxa339	73.2	80.8	Xtxa339	Marker
+h	Xtxa564	73.2	80.8	Xtxa564	Marker
+h	Xtxa2077	73.2	80.8	Xtxa2077	Marker
+h	Xtxa2180	73.2	80.8	Xtxa2180	Marker
+h	Xtxa2185	73.2	80.8	Xtxa2185	Marker
+h	Xtxa2207	73.2	80.8	Xtxa2207	Marker
+h	Xtxa2261	73.2	80.8	Xtxa2261	Marker
+h	Xtxa2309	73.2	80.8	Xtxa2309	Marker
+h	Xtxa2692	73.2	80.8	Xtxa2692	Marker
+h	Xtxa2711	73.2	80.8	Xtxa2711	Marker
+h	Xtxa2747	73.2	80.8	Xtxa2747	Marker
+h	Xtxa2810	73.2	80.8	Xtxa2810	Marker
+h	Xtxa2820	73.2	80.8	Xtxa2820	Marker
+h	Xtxa2952	73.2	80.8	Xtxa2952	Marker
+h	Xtxa2972	73.2	80.8	Xtxa2972	Marker
+h	Xtxa2974	73.2	80.8	Xtxa2974	Marker
+h	Xtxa2992	73.2	80.8	Xtxa2992	Marker
+h	Xtxa3318	73.2	80.8	Xtxa3318	Marker
+h	Xtxa3363	73.2	80.8	Xtxa3363	Marker
+h	Xtxa3403	73.2	80.8	Xtxa3403	Marker
+h	Xtxa3413	73.2	80.8	Xtxa3413	Marker
+h	Xtxa3447	73.2	80.8	Xtxa3447	Marker
+h	Xtxa3651	73.2	80.8	Xtxa3651	Marker
+h	Xtxa3708	73.2	80.8	Xtxa3708	Marker
+h	Xtxa3734	73.2	80.8	Xtxa3734	Marker
+h	Xtxa3811	73.2	80.8	Xtxa3811	Marker
+h	Xtxa3890	73.2	80.8	Xtxa3890	Marker
+h	Xtxa4197	73.2	80.8	Xtxa4197	Marker
+h	umc130	75.9		umc130	Marker
+h	Xtxs1379	75.9	77.1	Xtxs1379	Marker
+h	umc18	77.1		umc18	Marker
+h	Xtxa31	77.1	80.8	Xtxa31	Marker
+h	Xtxa155	77.1	80.8	Xtxa155	Marker
+h	Xtxa209	77.1	80.8	Xtxa209	Marker
+h	Xtxa361	77.1	80.8	Xtxa361	Marker
+h	Xtxa2052	77.1	80.8	Xtxa2052	Marker
+h	Xtxa2554	77.1	80.8	Xtxa2554	Marker
+h	Xtxa2736	77.1	80.8	Xtxa2736	Marker
+h	Xtxa2749	77.1	80.8	Xtxa2749	Marker
+h	Xtxa3001	77.1	80.8	Xtxa3001	Marker
+h	Xtxa6081	77.1	80.8	Xtxa6081	Marker
+h	Xtxa6341	77.1	80.8	Xtxa6341	Marker
+h	Xtxa6211	80.8		Xtxa6211	Marker
+h	Xtxa6174	83.5		Xtxa6174	Marker
+h	Xtxa348	85.8		Xtxa348	Marker
+h	Xtxa2547	85.8	90.5	Xtxa2547	Marker
+h	Xtxa2618	85.8	90.5	Xtxa2618	Marker
+h	Xtxa3682	85.8	90.5	Xtxa3682	Marker
+h	isu54	90.5		isu54	Marker
+h	Xtxa3861	92.8		Xtxa3861	Marker
+h	Xtxa3650	94.1		Xtxa3650	Marker
+h	Xtxa573	94.1	96.4	Xtxa573	Marker
+h	Xtxa3533	94.1	96.4	Xtxa3533	Marker
+h	Xtxa2612	96.4		Xtxa2612	Marker
+h	Xtxa2087	96.4	99.3	Xtxa2087	Marker
+h	Xtxa2744	96.4	99.3	Xtxa2744	Marker
+h	Xtxa416	99.3		Xtxa416	Marker
+h	Xtxs1185.2	99.3	103.5	Xtxs1185.2	Marker
+h	Xtxa2194	99.3	103.5	Xtxa2194	Marker
+h	Xtxa3309	99.3	103.5	Xtxa3309	Marker
+h	Xtxa3505	99.3	103.5	Xtxa3505	Marker
+h	Xtxa3638	99.3	103.5	Xtxa3638	Marker
+h	Xtxa2866	103.5		Xtxa2866	Marker
+h	Xtxa596	103.5	109.4	Xtxa596	Marker
+h	Xtxa4117	109.4		Xtxa4117	Marker
+h	Xtxa3954	109.4	116.1	Xtxa3954	Marker
+h	Xtxp47	116.1		Xtxp47	Marker
+h	Xtxa76	116.1	121.7	Xtxa76	Marker
+h	Xtxa265	116.1	121.7	Xtxa265	Marker
+h	Xtxa2013	116.1	121.7	Xtxa2013	Marker
+h	Xtxa2594	116.1	121.7	Xtxa2594	Marker
+h	Xtxa3388	116.1	121.7	Xtxa3388	Marker
+h	Xtxa3519	116.1	121.7	Xtxa3519	Marker
+h	Xtxa4170	116.1	121.7	Xtxa4170	Marker
+h	Xtxa6203	116.1	121.7	Xtxa6203	Marker
+h	Xtxa6245	116.1	121.7	Xtxa6245	Marker
+h	Xtxa2117	121.7		Xtxa2117	Marker
+h	Xtxa3386	122.1		Xtxa3386	Marker
+h	Xtxa3430	122.1	125.2	Xtxa3430	Marker
+h	Xtxa2780	125.2		Xtxa2780	Marker
+h	Xtxa2034	125.2	129.4	Xtxa2034	Marker
+h	bnl3.04	129.4		bnl3.04	Marker
+h	Xtxa6029	129.4		Xtxa6029	Marker
+h	Xtxa3855	130.4		Xtxa3855	Marker
+h	Xtxa4214	132.6		Xtxa4214	Marker
+h	Xtxa3686	132.6	135.8	Xtxa3686	Marker
+h	Xtxa3513	135.8		Xtxa3513	Marker
+h	Xtxa3517	139.0		Xtxa3517	Marker
+h	Xtxs1271.1	139.0	142.6	Xtxs1271.1	Marker
+h	Xtxa2317	142.6		Xtxa2317	Marker
+h	Xtxa2565	142.6	149.9	Xtxa2565	Marker
+h	Xtxa2636	142.6	149.9	Xtxa2636	Marker
+h	Xtxa3525	142.6	149.9	Xtxa3525	Marker
+h	Xtxa4058	149.9		Xtxa4058	Marker
+h	isu60.2	149.9	156.3	isu60.2	Marker
+h	Xtxa2922	149.9	156.3	Xtxa2922	Marker
+h	Xtxa3551	149.9	156.3	Xtxa3551	Marker
+h	Xtxp273	156.3		Xtxp273	Marker
+i	Xtxp6	0.0		Xtxp6	Marker
+i	Xtxa2742	0.0	10.1	Xtxa2742	Marker
+i	Xtxa3438	0.0	10.1	Xtxa3438	Marker
+i	Xtxa6054	0.0	10.1	Xtxa6054	Marker
+i	cdo718	10.1		cdo718	Marker
+i	Xtxa462	11.8		Xtxa462	Marker
+i	Xtxa2321	11.8	14.8	Xtxa2321	Marker
+i	Xtxa3029	11.8	14.8	Xtxa3029	Marker
+i	Xtxa3550	11.8	14.8	Xtxa3550	Marker
+i	Xtxa4001	11.8	14.8	Xtxa4001	Marker
+i	Xtxa7	14.8		Xtxa7	Marker
+i	Xtxa2124	16.8		Xtxa2124	Marker
+i	Xtxa2690	16.8	20.6	Xtxa2690	Marker
+i	Xtxa2927	16.8	20.6	Xtxa2927	Marker
+i	Xtxa4128	16.8	20.6	Xtxa4128	Marker
+i	Xtxa2926	20.6		Xtxa2926	Marker
+i	Xtxa3407	22.1		Xtxa3407	Marker
+i	Xtxa4103	24.6		Xtxa4103	Marker
+i	Xtxa6233	27.6		Xtxa6233	Marker
+i	Xtxa4032	27.6	30.8	Xtxa4032	Marker
+i	isu142	30.8		isu142	Marker
+i	Xtxa2853	30.8	33.9	Xtxa2853	Marker
+i	Xtxa445	33.9		Xtxa445	Marker
+i	Xtxa2568	35.5		Xtxa2568	Marker
+i	Xtxa580	35.5	39.8	Xtxa580	Marker
+i	Xtxa2601	35.5	39.8	Xtxa2601	Marker
+i	Xtxa3576	35.5	39.8	Xtxa3576	Marker
+i	umc119	39.8		umc119	Marker
+i	Xtxa2010	39.8	45.6	Xtxa2010	Marker
+i	Xtxa2971	39.8	45.6	Xtxa2971	Marker
+i	Xtxa3253	39.8	45.6	Xtxa3253	Marker
+i	Xtxa202	45.6		Xtxa202	Marker
+i	Xtxa454	45.6	47.6	Xtxa454	Marker
+i	Xtxa3213	45.6	47.6	Xtxa3213	Marker
+i	Xtxa2195	45.6	47.6	Xtxa2195	Marker
+i	Xtxa3011	47.6		Xtxa3011	Marker
+i	Xtxa2221	49.2		Xtxa2221	Marker
+i	Xtxa410	49.2		Xtxa410	Marker
+i	isu138	50.6		isu138	Marker
+i	Xtxa238	51.5		Xtxa238	Marker
+i	Xtxa4130	51.5	53.0	Xtxa4130	Marker
+i	Xtxa605	53.0		Xtxa605	Marker
+i	Xtxa294	54.5		Xtxa294	Marker
+i	Xtxa6281	55.0		Xtxa6281	Marker
+i	Xtxp145	55.0	59.6	Xtxp145	Marker
+i	Xtxa456	55.0	59.6	Xtxa456	Marker
+i	Xtxa2283	55.0	59.6	Xtxa2283	Marker
+i	Xtxa2557	55.0	59.6	Xtxa2557	Marker
+i	Xtxa2873	55.0	59.6	Xtxa2873	Marker
+i	Xtxa3500	55.0	59.6	Xtxa3500	Marker
+i	Xtxa4168	55.0	59.6	Xtxa4168	Marker
+i	Xtxa6005	55.0	59.6	Xtxa6005	Marker
+i	Xtxa541	55.0	63.6	Xtxa541	Marker
+i	Xtxa2530	59.6		Xtxa2530	Marker
+i	Xtxa2150	59.6		Xtxa2150	Marker
+i	Xtxa176	59.6		Xtxa176	Marker
+i	umc53	61.1		umc53	Marker
+i	Xtxa3653	55.0	63.6	Xtxa3653	Marker
+i	Xtxs1030	61.1	63.6	Xtxs1030	Marker
+i	Xtxp265	61.1	63.6	Xtxp265	Marker
+i	Xtxp317	61.1	63.6	Xtxp317	Marker
+i	Xtxa3304	61.1	63.6	Xtxa3304	Marker
+i	Xtxa3916	61.1	63.6	Xtxa3916	Marker
+i	Xtxp274	63.6		Xtxp274	Marker
+i	isu58	64.2		isu58	Marker
+i	Xtxa2637	64.2	65.4	Xtxa2637	Marker
+i	Xtxa2754	64.2	65.4	Xtxa2754	Marker
+i	Xtxa33	65.4		Xtxa33	Marker
+i	Xtxa2067	65.4	67.7	Xtxa2067	Marker
+i	Xtxa3573	65.4	67.7	Xtxa3573	Marker
+i	Xtxa4009	67.7		Xtxa4009	Marker
+i	Xtxp97	67.7	69.8	Xtxp97	Marker
+i	Xtxp104	67.7	69.8	Xtxp104	Marker
+i	Xtxp219	67.7	69.8	Xtxp219	Marker
+i	Xtxa3860	67.7	69.8	Xtxa3860	Marker
+i	Xtxa4152	67.7	69.8	Xtxa4152	Marker
+i	umc34	69.8		umc34	Marker
+i	Xtxs1546	69.8	72.6	Xtxs1546	Marker
+i	Xtxa2001	69.8	72.6	Xtxa2001	Marker
+i	Xtxa2090	69.8	72.6	Xtxa2090	Marker
+i	Xtxa3785	69.8	72.6	Xtxa3785	Marker
+i	Xtxa4087	69.8	72.6	Xtxa4087	Marker
+i	Xtxa4090	69.8	72.6	Xtxa4090	Marker
+i	Xtxa6162	69.8	72.6	Xtxa6162	Marker
+i	Xtxa278	72.6		Xtxa278	Marker
+i	Xtxa492	72.6	74.9	Xtxa492	Marker
+i	Xtxa3806	72.6	74.9	Xtxa3806	Marker
+i	Xtxa3911	72.6	74.9	Xtxa3911	Marker
+i	Xtxa555	74.9		Xtxa555	Marker
+i	Xtxa3282	74.9	76.6	Xtxa3282	Marker
+i	Xtxa4052	76.6		Xtxa4052	Marker
+i	Xtxa2569	76.6	79.1	Xtxa2569	Marker
+i	Xtxa3266	76.6	79.1	Xtxa3266	Marker
+i	Xtxa3491	76.6	79.1	Xtxa3491	Marker
+i	Xtxa3560	76.6	79.1	Xtxa3560	Marker
+i	Xtxa4118	76.6	79.1	Xtxa4118	Marker
+i	Xtxa4188	76.6	79.1	Xtxa4188	Marker
+i	Xtxs1906	79.1		Xtxs1906	Marker
+i	Xtxa521	79.1	80.9	Xtxa521	Marker
+i	Xtxa3792	79.1	80.9	Xtxa3792	Marker
+i	Xtxa6313	80.9		Xtxa6313	Marker
+i	Xtxs1173	80.9	82.7	Xtxs1173	Marker
+i	Xtxa3894	80.9	82.7	Xtxa3894	Marker
+i	Xtxa4136	80.9	82.7	Xtxa4136	Marker
+i	Xtxa6015	80.9	82.7	Xtxa6015	Marker
+i	bnl10.13	82.7		bnl10.13	Marker
+i	umc44	82.7		umc44	Marker
+i	Xtxa61	82.7	85.6	Xtxa61	Marker
+i	Xtxa2527	82.7	85.6	Xtxa2527	Marker
+i	Xtxa3038	82.7	85.6	Xtxa3038	Marker
+i	Xtxa3875	82.7	85.6	Xtxa3875	Marker
+i	Xtxa6101	82.7	85.6	Xtxa6101	Marker
+i	Xtxa3110	85.6		Xtxa3110	Marker
+i	Xtxa508	85.6	87.8	Xtxa508	Marker
+i	Xtxa2540	85.6	87.8	Xtxa2540	Marker
+i	Xtxa2687	85.6	87.8	Xtxa2687	Marker
+i	Xtxs1868	85.6	89.6	Xtxs1868	Marker
+i	Xtxp176	87.8		Xtxp176	Marker
+i	Xtxa3496	89.6		Xtxa3496	Marker
+i	Xtxs1139	89.6	92.6	Xtxs1139	Marker
+i	Xtxp95	89.6	92.6	Xtxp95	Marker
+i	Xtxa2039	92.6		Xtxa2039	Marker
+i	Xtxa6222	94.5		Xtxa6222	Marker
+i	Xtxa4062	97.6		Xtxa4062	Marker
+i	Xtxp57	97.6	102.2	Xtxp57	Marker
+i	Xtxs2063	99.8		Xtxs2063	Marker
+i	Xtxa6140	100.2		Xtxa6140	Marker
+i	cdo244.2	100.2	102.2	cdo244.2	Marker
+i	cdo328.2	100.2	102.2	cdo328.2	Marker
+i	isu147	102.2		isu147	Marker
+i	Xtxs1533	102.2	105.6	Xtxs1533	Marker
+i	Xtxa444	102.2	105.6	Xtxa444	Marker
+i	Xtxa2060	102.2	105.6	Xtxa2060	Marker
+i	Xtxa2591	102.2	105.6	Xtxa2591	Marker
+i	Xtxa2741	102.2	105.6	Xtxa2741	Marker
+i	Xtxa3041	102.2	105.6	Xtxa3041	Marker
+i	Xtxa3314	102.2	107.9	Xtxa3314	Marker
+i	Xtxp17	105.6		Xtxp17	Marker
+i	Xtxa3457	107.1		Xtxa3457	Marker
+i	Xtxa587	107.1		Xtxa587	Marker
+i	Xtxa2549	107.9		Xtxa2549	Marker
+i	Xtxa528	107.9		Xtxa528	Marker
+i	Xtxa3926	109.6		Xtxa3926	Marker
+i	Xtxa2080	109.6	111.3	Xtxa2080	Marker
+i	Xtxa3187	109.6	113.5	Xtxa3187	Marker
+i	Xtxa6261	111.3		Xtxa6261	Marker
+i	Xtxa6062	111.8		Xtxa6062	Marker
+i	umc58.2	113.5		umc58.2	Marker
+i	Xtxs1085	113.5	117.2	Xtxs1085	Marker
+i	Xtxa505	113.5	117.2	Xtxa505	Marker
+i	Xtxa506	113.5	117.2	Xtxa506	Marker
+i	Xtxa2848	113.5	117.2	Xtxa2848	Marker
+i	Xtxa3100	113.5	117.2	Xtxa3100	Marker
+i	Xtxa3254	113.5	117.2	Xtxa3254	Marker
+i	Xtxa3585	113.5	117.2	Xtxa3585	Marker
+i	Xtxa3813	113.5	117.2	Xtxa3813	Marker
+i	Xtxa3910	113.5	117.2	Xtxa3910	Marker
+i	Xtxa3928	113.5	117.2	Xtxa3928	Marker
+i	Xtxa4226	113.5	117.2	Xtxa4226	Marker
+i	Xtxa2721	117.2		Xtxa2721	Marker
+i	isu144	117.2	121.2	isu144	Marker
+i	Xtxs1124	117.2	121.2	Xtxs1124	Marker
+i	Xtxa3964	117.2	121.2	Xtxa3964	Marker
+i	Xtxa4116	117.2	121.2	Xtxa4116	Marker
+i	Xtxa4129	117.2	121.2	Xtxa4129	Marker
+i	Xtxa4227	117.2	121.2	Xtxa4227	Marker
+i	Xtxa6059	117.2	121.2	Xtxa6059	Marker
+i	Xtxa6071	117.2	121.2	Xtxa6071	Marker
+i	Xtxa6087	117.2	121.2	Xtxa6087	Marker
+i	Xtxa6232	117.2	121.2	Xtxa6232	Marker
+i	Xtxa6322	121.2		Xtxa6322	Marker
+i	Xtxa6061	121.9		Xtxa6061	Marker
+i	Xtxa6026	121.9		Xtxa6026	Marker
+i	isu53	121.9	124.7	isu53	Marker
+i	Xtxa511	121.9	124.7	Xtxa511	Marker
+i	Xtxa342	124.7		Xtxa342	Marker
+j	isu84.2	0		isu84.2	Marker
+j	Xtxa160	0	2.0	Xtxa160	Marker
+j	Xtxa2028	0	2.0	Xtxa2028	Marker
+j	Xtxa518	2.0		Xtxa518	Marker
+j	Xtxa4066	2.0	4.7	Xtxa4066	Marker
+j	Xtxa4199	4.7		Xtxa4199	Marker
+j	Xtxa3113	4.7	7.1	Xtxa3113	Marker
+j	Xtxa6065	7.1		Xtxa6065	Marker
+j	Xtxa2022	7.1	7.4	Xtxa2022	Marker
+j	Xtxa3495	7.1	7.4	Xtxa3495	Marker
+j	Xtxa4050	7.1	7.4	Xtxa4050	Marker
+j	Xtxa6019	7.1	7.4	Xtxa6019	Marker
+j	Xtxp65	7.4		Xtxp65	Marker
+j	Xtxa2037	14.7		Xtxa2037	Marker
+j	Xtxa192	14.7	20.1	Xtxa192	Marker
+j	Xtxa2883	14.7	20.1	Xtxa2883	Marker
+j	Xtxa6248	14.7	20.1	Xtxa6248	Marker
+j	Xtxp94	20.1		Xtxp94	Marker
+j	Xtxs722	22.8		Xtxs722	Marker
+j	Xtxa2893	22.8		Xtxa2893	Marker
+j	Xtxa3722	22.8	25.3	Xtxa3722	Marker
+j	Xtxa4096	22.8	25.3	Xtxa4096	Marker
+j	Xtxa6182	22.8	25.3	Xtxa6182	Marker
+j	Xtxa350	25.3		Xtxa350	Marker
+j	Xtxp115	25.3	27.4	Xtxp115	Marker
+j	Xtxa3135	25.3	27.4	Xtxa3135	Marker
+j	Xtxa6037	25.3	27.4	Xtxa6037	Marker
+j	Xtxa6047	27.4		Xtxa6047	Marker
+j	Xtxs2072	27.4	28.9	Xtxs2072	Marker
+j	Xtxa3190	28.9		Xtxa3190	Marker
+j	Xtxa6284	30.4		Xtxa6284	Marker
+j	Xtxa4135	31.1		Xtxa4135	Marker
+j	isu93.2	31.1	33.1	isu93.2	Marker
+j	Xtxp30	31.1	33.1	Xtxp30	Marker
+j	Xtxa2861	31.1	33.1	Xtxa2861	Marker
+j	Xtxa2284	33.1		Xtxa2284	Marker
+j	Xtxp303	33.1	38.1	Xtxp303	Marker
+j	Xtxa2329	33.1	38.1	Xtxa2329	Marker
+j	Xtxa2908	33.1	38.1	Xtxa2908	Marker
+j	Xtxa3118	33.1	38.1	Xtxa3118	Marker
+j	Xtxa3217	33.1	38.1	Xtxa3217	Marker
+j	Xtxa3535	33.1	38.1	Xtxa3535	Marker
+j	umc52	38.1		umc52	Marker
+j	Xtxa2134	38.1	46.4	Xtxa2134	Marker
+j	Xtxa2334	38.1	46.4	Xtxa2334	Marker
+j	Xtxa3870	38.1	46.4	Xtxa3870	Marker
+j	Xtxa4218	38.1	46.4	Xtxa4218	Marker
+j	Xtxa6147	38.1	46.4	Xtxa6147	Marker
+j	Xtxa3707	38.1	50.5	Xtxa3707	Marker
+j	Xtxa2256	46.4		Xtxa2256	Marker
+j	Xtxa2545	46.4		Xtxa2545	Marker
+j	Xtxa151	46.4	50.5	Xtxa151	Marker
+j	Xtxa2209	46.4	50.5	Xtxa2209	Marker
+j	Xtxa3138	46.4	50.5	Xtxa3138	Marker
+j	Xtxa3674	46.4	50.5	Xtxa3674	Marker
+j	Xtxa6169	46.4	50.5	Xtxa6169	Marker
+j	isu120	50.5		isu120	Marker
+j	Xtxa322	46.4	53.8	Xtxa322	Marker
+j	Xtxa3201	46.4	64.4	Xtxa3201	Marker
+j	Xtxa3521	46.4	64.4	Xtxa3521	Marker
+j	Xtxs713	50.5	53.8	Xtxs713	Marker
+j	Xtxa597	50.5	53.8	Xtxa597	Marker
+j	Xtxa503	50.5	53.8	Xtxa503	Marker
+j	Xtxa2118	50.5	53.8	Xtxa2118	Marker
+j	Xtxa2264	50.5	53.8	Xtxa2264	Marker
+j	Xtxa2643	50.5	53.8	Xtxa2643	Marker
+j	Xtxa2689	50.5	53.8	Xtxa2689	Marker
+j	Xtxa2914	50.5	53.8	Xtxa2914	Marker
+j	Xtxa2915	50.5	53.8	Xtxa2915	Marker
+j	Xtxa3476	50.5	53.8	Xtxa3476	Marker
+j	Xtxa3595	50.5	53.8	Xtxa3595	Marker
+j	Xtxa3631	50.5	53.8	Xtxa3631	Marker
+j	Xtxa3640	50.5	53.8	Xtxa3640	Marker
+j	Xtxa3691	50.5	53.8	Xtxa3691	Marker
+j	Xtxa3814	50.5	53.8	Xtxa3814	Marker
+j	Xtxa3865	50.5	53.8	Xtxa3865	Marker
+j	Xtxa4045	50.5	53.8	Xtxa4045	Marker
+j	Xtxa6084	50.5	53.8	Xtxa6084	Marker
+j	Xtxa6103	50.5	53.8	Xtxa6103	Marker
+j	Xtxa6270	50.5	53.8	Xtxa6270	Marker
+j	Xtxa6330	50.5	53.8	Xtxa6330	Marker
+j	Xtxa6360	50.5	53.8	Xtxa6360	Marker
+j	Xtxa477	50.5	64.4	Xtxa477	Marker
+j	Xtxa382	50.5	64.4	Xtxa382	Marker
+j	Xtxa545	50.5	64.4	Xtxa545	Marker
+j	Xtxa2987	50.5	64.4	Xtxa2987	Marker
+j	Xtxa3234	50.5	64.4	Xtxa3234	Marker
+j	Xtxa3474	50.5	64.4	Xtxa3474	Marker
+j	Xtxa3602	50.5	64.4	Xtxa3602	Marker
+j	Xtxa3867	50.5	64.4	Xtxa3867	Marker
+j	Xtxa4056	50.5	65.9	Xtxa4056	Marker
+j	Xtxp225	53.8		Xtxp225	Marker
+j	Xtxa2942	53.8	55.8	Xtxa2942	Marker
+j	Xtxa3415	53.8	55.8	Xtxa3415	Marker
+j	Xtxa3429	55.8		Xtxa3429	Marker
+j	Xtxa59	55.8	59.6	Xtxa59	Marker
+j	Xtxa171	55.8	59.6	Xtxa171	Marker
+j	Xtxa404	55.8	59.6	Xtxa404	Marker
+j	Xtxa269	55.8	59.6	Xtxa269	Marker
+j	Xtxa343	55.8	59.6	Xtxa343	Marker
+j	Xtxa519	55.8	59.6	Xtxa519	Marker
+j	Xtxa2282	55.8	59.6	Xtxa2282	Marker
+j	Xtxa3384	55.8	59.6	Xtxa3384	Marker
+j	Xtxa3609	55.8	59.6	Xtxa3609	Marker
+j	Xtxa3655	55.8	59.6	Xtxa3655	Marker
+j	Xtxa3744	55.8	59.6	Xtxa3744	Marker
+j	Xtxa2062	55.8	62.4	Xtxa2062	Marker
+j	Xtxa3196	55.8	62.4	Xtxa3196	Marker
+j	Xtxa2038	59.6		Xtxa2038	Marker
+j	Xtxa169	59.6		Xtxa169	Marker
+j	Xtxa2897	55.8	62.4	Xtxa2897	Marker
+j	Xtxa2925	55.8	62.4	Xtxa2925	Marker
+j	Xtxa3249	55.8	62.4	Xtxa3249	Marker
+j	Xtxa421	59.6	62.4	Xtxa421	Marker
+j	Xtxa2115	59.6	62.4	Xtxa2115	Marker
+j	Xtxa2347	59.6	62.4	Xtxa2347	Marker
+j	Xtxa2870	59.6	62.4	Xtxa2870	Marker
+j	Xtxa3151	59.6	62.4	Xtxa3151	Marker
+j	Xtxa3394	59.6	62.4	Xtxa3394	Marker
+j	Xtxa3433	59.6	62.4	Xtxa3433	Marker
+j	Xtxa3470	59.6	62.4	Xtxa3470	Marker
+j	Xtxa3828	59.6	62.4	Xtxa3828	Marker
+j	Xtxa507	62.4		Xtxa507	Marker
+j	Xtxa2219	59.6	64.4	Xtxa2219	Marker
+j	Xtxa3037	59.6	64.4	Xtxa3037	Marker
+j	Xtxa3748	59.6	64.4	Xtxa3748	Marker
+j	Xtxp299	62.4	64.4	Xtxp299	Marker
+j	Xtxa446	62.4	64.4	Xtxa446	Marker
+j	isu65	62.4	64.4	isu65	Marker
+j	Xtxa513	62.4	64.4	Xtxa513	Marker
+j	Xtxa533	62.4	64.4	Xtxa533	Marker
+j	Xtxa2057	62.4	64.4	Xtxa2057	Marker
+j	Xtxa2307	62.4	64.4	Xtxa2307	Marker
+j	Xtxa2505	62.4	64.4	Xtxa2505	Marker
+j	Xtxa2709	62.4	64.4	Xtxa2709	Marker
+j	Xtxa2777	62.4	64.4	Xtxa2777	Marker
+j	Xtxa2846	62.4	64.4	Xtxa2846	Marker
+j	Xtxa2919	62.4	64.4	Xtxa2919	Marker
+j	Xtxa2924	62.4	64.4	Xtxa2924	Marker
+j	Xtxa2973	62.4	64.4	Xtxa2973	Marker
+j	Xtxa3750	62.4	64.4	Xtxa3750	Marker
+j	Xtxa3874	62.4	64.4	Xtxa3874	Marker
+j	Xtxa3946	62.4	64.4	Xtxa3946	Marker
+j	Xtxa4139	62.4	64.4	Xtxa4139	Marker
+j	Xtxa4175	62.4	64.4	Xtxa4175	Marker
+j	Xtxa6024	62.4	64.4	Xtxa6024	Marker
+j	Xtxa6156	62.4	64.4	Xtxa6156	Marker
+j	Xtxa208	62.4	65.9	Xtxa208	Marker
+j	isu36.2	64.4		isu36.2	Marker
+j	isu59	64.4		isu59	Marker
+j	Xtxa6216	64.4		Xtxa6216	Marker
+j	Xtxa6278	64.4		Xtxa6278	Marker
+j	Xtxs387	64.4	65.9	Xtxs387	Marker
+j	Xtxp14	64.4	65.9	Xtxp14	Marker
+j	Xtxp15	64.4	65.9	Xtxp15	Marker
+j	Xtxa145	64.4	65.9	Xtxa145	Marker
+j	Xtxa217	64.4	65.9	Xtxa217	Marker
+j	Xtxa488	64.4	65.9	Xtxa488	Marker
+j	Xtxa2277	64.4	65.9	Xtxa2277	Marker
+j	Xtxa2306	64.4	65.9	Xtxa2306	Marker
+j	Xtxa2622	64.4	65.9	Xtxa2622	Marker
+j	Xtxa2631	64.4	65.9	Xtxa2631	Marker
+j	Xtxa2767	64.4	65.9	Xtxa2767	Marker
+j	Xtxa2823	64.4	65.9	Xtxa2823	Marker
+j	Xtxa2894	64.4	65.9	Xtxa2894	Marker
+j	Xtxa3700	64.4	65.9	Xtxa3700	Marker
+j	Xtxa3735	64.4	65.9	Xtxa3735	Marker
+j	Xtxa4053	64.4	65.9	Xtxa4053	Marker
+j	Xtxa6136	64.4	65.9	Xtxa6136	Marker
+j	Xtxa58	64.4	68.9	Xtxa58	Marker
+j	Xtxa499	64.4	68.9	Xtxa499	Marker
+j	Xtxa2672	64.4	68.9	Xtxa2672	Marker
+j	Xtxa3382	64.4	68.9	Xtxa3382	Marker
+j	Xtxa68	65.9		Xtxa68	Marker
+j	Xtxa2258	64.4	68.9	Xtxa2258	Marker
+j	Xtxa2701	64.4	68.9	Xtxa2701	Marker
+j	Xtxa2955	64.4	68.9	Xtxa2955	Marker
+j	Xtxa3321	64.4	68.9	Xtxa3321	Marker
+j	Xtxa463	65.9	68.9	Xtxa463	Marker
+j	Xtxa2072	65.9	68.9	Xtxa2072	Marker
+j	Xtxa2213	65.9	68.9	Xtxa2213	Marker
+j	Xtxa2705	65.9	68.9	Xtxa2705	Marker
+j	Xtxa2994	65.9	68.9	Xtxa2994	Marker
+j	Xtxa3171	65.9	68.9	Xtxa3171	Marker
+j	Xtxa3494	65.9	68.9	Xtxa3494	Marker
+j	Xtxa3724	65.9	68.9	Xtxa3724	Marker
+j	Xtxa3611	65.9	73.9	Xtxa3611	Marker
+j	Xtxa2141	68.9		Xtxa2141	Marker
+j	Xtxa510	68.9	73.9	Xtxa510	Marker
+j	Xtxa2751	68.9	73.9	Xtxa2751	Marker
+j	Xtxa3288	68.9	73.9	Xtxa3288	Marker
+j	Xtxa3436	68.9	73.9	Xtxa3436	Marker
+j	Xtxa4171	68.9	73.9	Xtxa4171	Marker
+j	Xtxa4208	68.9	73.9	Xtxa4208	Marker
+j	Xtxa290	73.9		Xtxa290	Marker
+j	Xtxa3444	74.6		Xtxa3444	Marker
+j	Xtxa324	75.3		Xtxa324	Marker
+j	Xtxa36	75.3	76.2	Xtxa36	Marker
+j	Xtxa67	75.3	76.2	Xtxa67	Marker
+j	Xtxa3797	75.3	80.4	Xtxa3797	Marker
+j	Xtxa2152	76.2		Xtxa2152	Marker
+j	Xtxa183	76.2	80.4	Xtxa183	Marker
+j	Xtxa302	76.2	80.4	Xtxa302	Marker
+j	Xtxa2619	76.2	80.4	Xtxa2619	Marker
+j	Xtxa2675	76.2	80.4	Xtxa2675	Marker
+j	Xtxa2960	76.2	80.4	Xtxa2960	Marker
+j	Xtxa3475	76.2	80.4	Xtxa3475	Marker
+j	Xtxa6068	76.2	80.4	Xtxa6068	Marker
+j	Xtxa6146	76.2	80.4	Xtxa6146	Marker
+j	Xtxa6163	76.2	80.4	Xtxa6163	Marker
+j	Xtxa6289	76.2	80.4	Xtxa6289	Marker
+j	Xtxa6321	76.2	80.4	Xtxa6321	Marker
+j	Xtxa4081	80.4		Xtxa4081	Marker
+j	Xtxa2071	81.2		Xtxa2071	Marker
+j	Xtxa3452	81.2		Xtxa3452	Marker
+j	Xtxa367	81.2	83.7	Xtxa367	Marker
+j	Xtxa2850	81.2	83.7	Xtxa2850	Marker
+j	Xtxa3322	81.2	83.7	Xtxa3322	Marker
+j	Xtxa6022	81.2	83.7	Xtxa6022	Marker
+j	Xtxa3886	83.7		Xtxa3886	Marker
+j	Xtxp23	87.5		Xtxp23	Marker
+j	Xtxa3109	92.0		Xtxa3109	Marker
+j	Xtxa3398	96.4		Xtxa3398	Marker
+j	Xtxa2093	96.4		Xtxa2093	Marker
+j	Xtxa2323	105.5		Xtxa2323	Marker
+j	Xtxa221	105.5		Xtxa221	Marker
+j	Xtxa2836	112.8		Xtxa2836	Marker
+j	Xtxp123	114.6		Xtxp123	Marker
+j	Xtxa6092	115.0		Xtxa6092	Marker
+j	Xtxp262	115.0	117.3	Xtxp262	Marker
+j	Xtxp136	117.3		Xtxp136	Marker
+j	Xtxa2795	117.3	121.0	Xtxa2795	Marker
+j	Xtxa2902	121.0		Xtxa2902	Marker
