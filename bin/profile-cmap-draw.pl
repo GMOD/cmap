@@ -1,4 +1,7 @@
 #!/usr/bin/perl
+# vim: set ft=perl:
+
+# $Id: profile-cmap-draw.pl,v 1.4 2003-09-29 20:49:47 kycl4rk Exp $
 
 =head1 NAME
 

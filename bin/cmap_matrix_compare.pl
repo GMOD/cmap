@@ -1,6 +1,7 @@
 #!/usr/bin/perl
+# vim: set ft=perl:
 
-# $Id: cmap_matrix_compare.pl,v 1.5 2003-02-20 16:50:48 kycl4rk Exp $
+# $Id: cmap_matrix_compare.pl,v 1.6 2003-09-29 20:49:47 kycl4rk Exp $
 
 =head1 NAME
 

@@ -1,13 +1,14 @@
 #!/usr/bin/perl
+# vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.47 2003-09-11 20:36:38 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.48 2003-09-29 20:49:47 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.47 $)[-1];
+$VERSION = (qw$Revision: 1.48 $)[-1];
 
 #
 # Get command-line options
