@@ -1,5 +1,7 @@
 package CMapBuildConfig;
 
+# $Id: CMapBuildConfig.pm,v 1.2 2004-02-24 23:30:59 kycl4rk Exp $
+
 use strict;
 use Exporter;
 use File::Spec::Functions;
