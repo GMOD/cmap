@@ -20,10 +20,10 @@
     curator to permanently disable a feature correspondence record
     For MySQL:
     alter table cmap_feature_correspondence add is_enabled tinyint \
-    not null default '1'; 
+        not null default '1'; 
     For Oracle:
     alter table cmap_feature_correspondence add is_enabled number(4) \
-    default '1' not null;
+        default '1' not null;
     For PostgreSQL:  PG doesn't allow the addition of a "NOT NULL"
     field, nor was I able to find an easy way to add such a constraint,
     so I dumped the data, dropped the table and recreated it with the
@@ -33,19 +33,19 @@
     feature types closer to the map)
     For MySQL:
     alter table cmap_feature_type add drawing_lane int(11) not null \
-    default '1';
+        default '1';
     For Oracle:
     alter table cmap_feature_type add drawing_lane number(4) \
-    default '1' not null;
+        default '1' not null;
     For PostgreSQL:  Same as above on "is_enabled" field
 -   Added "drawing_priority" field to cmap_feature_type so that a curator 
     can determine the order for drawing features within a lane 
     For MySQL:
     alter table cmap_feature_type add drawing_priority int(11) not null \
-    default '1';
+        default '1';
     For Oracle:
     alter table cmap_feature_type add drawing_priority number(4) \
-    default '1' not null;
+        default '1' not null;
     For PostgreSQL:  Same as above on "is_enabled" field
 -   Added conditions to SQL for the matrix that all the map sets selected
     must have "is_enabled=1"
@@ -56,7 +56,7 @@
 -   Added new DATA_CURATION document in "docs" directory to describe how
     to curate data using CMap tools
 -   Added a legend to explain feature glyphs
--   Added watermark of "CMAP" version number in lower-right corner of 
+-   Added watermark of "CMap" version number in lower-right corner of 
     legend hyperlinked to the GMOD-CMap website
 -   Added code to allow a dbxref with only a name to be accepted (so a 
     curator can block out an cross-reference on a feature with "Not 
@@ -81,14 +81,51 @@
     For MySQL:
     alter table cmap_correspondence_evidence modify score double;
     For Oracle:
+    alter table cmap_correspondence_evidence modify (score number(8,2));
     For PostgreSQL:
+    alter table cmap_correspondence_evidence rename score to old_score;
+    alter table cmap_correspondence_evidence add score double precision;
+    update cmap_correspondence_evidence set score=old_score;
+    alter table cmap_correspondence_evidence rename to foo;
+    select correspondence_evidence_id, accession_id, \
+        feature_correspondence_id, evidence_type_id, score, remark \
+        into cmap_correspondence_evidence from foo;
+    drop table foo;
 -   Added "line_color" and "line_style" to "cmap_evidence_type" table
     For MySQL:
     alter table cmap_evidence_type add line_style varchar(12);
     alter table cmap_evidence_type add line_color varchar(20);
     For Oracle:
+    alter table cmap_evidence_type add line_style varchar2(12);
+    alter table cmap_evidence_type add line_color varchar2(20);
     For PostgreSQL:
+    alter table cmap_evidence_type add line_style character varying(12);
+    alter table cmap_evidence_type add line_color character varying(20);
 -   Added "connecting_line_style" to cmap.conf for default line style
+-   Added "title" attribute to map areas on templates for viewing maps
+-   Changed "truncate table" in SQL for reloading of correpsondence
+    matrix to be a more simple unqualified "delete from" in order to
+    get around permissions in PostgreSQL (there was also some
+    complaint earlier that this didn't work with some earlier version
+    of MySQL)
+-   Added "linkage_group" to "cmap_map"
+    For MySQL:
+    alter table cmap_map add linkage_group varchar(10);
+    For Oracle:
+    alter table cmap_map add linkage_group varchar2(10);
+    For PostgreSQL:
+    alter table cmap_map add linkage_group character varying(10);
+-   Fixed bug (#677777) where feature search in the web admin tool
+    wasn't case-insensitive
+-   Added trimming of whitespace on column names in data import
+-   Added pagination to map set info page
+-   Added coloring of correspondence lines based on evidence
+-   Added new feature glyphs: up-arrow, down-arrow, double-arrow and rectangle
+-   Expanded legend into feature types and evidence types
+-   Added support for multiple data sources
+-   Added option to not overwrite map info when importing via cmap_admin.pl
+-   Added exporting of feature correspondence via cmap_admin.pl
+-   Added dbxref_name and dbxref_url to feature export in cmap_admin.pl
 
 0.05
 -   Added extra split tokens to highlight string in map detail page 
@@ -131,7 +168,7 @@
 
 0.04
 
--   Added "cmap_dump.pl" script to help dump CMAP tables as
+-   Added "cmap_dump.pl" script to help dump CMap tables as
     database-independent "INSERT" statements
 -   Put dump of entire Gramene database on GMOD site
 -   Fixed a bug where a feature's relative start/stop positions could
