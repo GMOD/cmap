@@ -1,3 +1,10 @@
+[% 
+    INCLUDE header.tmpl 
+    title='Map Details Help'
+    no_link='help'
+    help_anchor=''
+%]
+
 <h2>Map Image/Controls</h2>
 <p>
 The map details page shows you a view of the map with most of the same map
@@ -42,3 +49,5 @@ If you would like a dump of the entire map's features and
 correspondences as a tab-delimited text file, then you can click on
 the &quot;Download Feature Data&quot; link.
 </p>
+[% page.end_body OR '</body>' %]
+</html>
