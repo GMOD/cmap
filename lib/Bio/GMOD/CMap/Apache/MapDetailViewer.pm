@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapDetailViewer;
 
-# $Id: MapDetailViewer.pm,v 1.11 2003-03-27 22:56:06 kycl4rk Exp $
+# $Id: MapDetailViewer.pm,v 1.12 2003-05-29 19:01:53 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.11 $)[-1];
+$VERSION = (qw$Revision: 1.12 $)[-1];
 
 use Apache::Constants;
 use URI::Escape;
@@ -44,19 +44,20 @@ sub handler {
     #
     # Make a jazz noise here...
     #
-    my ( $self, $apr )   = @_;
-    my $ref_map_set_aid  = $apr->param('ref_map_set_aid')  ||      0;
-    my $ref_map_aid      = $apr->param('ref_map_aid')      ||     '';
-    my $ref_map_start    = $apr->param('ref_map_start');
-    my $ref_map_stop     = $apr->param('ref_map_stop');
-    my $comparative_maps = $apr->param('comparative_maps') ||     '';
-    my $highlight        = $apr->param('highlight')        ||     '';
-    my $font_size        = $apr->param('font_size')        ||     '';
-    my $image_size       = $apr->param('image_size')       ||     '';
-    my $image_type       = $apr->param('image_type')       ||     '';
-    my $label_features   = $apr->param('label_features')   ||     '';
-    my $limit_start      = $apr->param('limit_start')      ||     '';
-    my $action           = $apr->param('action')           || 'view';
+    my ( $self, $apr )    = @_;
+    my $ref_map_set_aid   = $apr->param('ref_map_set_aid')   ||      0;
+    my $ref_map_aid       = $apr->param('ref_map_aid')       ||     '';
+    my $ref_map_start     = $apr->param('ref_map_start');
+    my $ref_map_stop      = $apr->param('ref_map_stop');
+    my $comparative_maps  = $apr->param('comparative_maps')  ||     '';
+    my $highlight         = $apr->param('highlight')         ||     '';
+    my $font_size         = $apr->param('font_size')         ||     '';
+    my $image_size        = $apr->param('image_size')        ||     '';
+    my $image_type        = $apr->param('image_type')        ||     '';
+    my $label_features    = $apr->param('label_features')    ||     '';
+    my $collapse_features = $apr->param('collapse_features') ||      0;
+    my $limit_start       = $apr->param('limit_start')       ||     '';
+    my $action            = $apr->param('action')            || 'view';
 
     #
     # Set the data source.
@@ -177,6 +178,7 @@ sub handler {
             image_size             => $image_size,
             image_type             => $image_type,
             label_features         => $label_features,
+            collapse_features      => $collapse_features,
             include_feature_types  => \@feature_types,
             include_evidence_types => \@evidence_types,
             debug                  => $self->config('debug'),
