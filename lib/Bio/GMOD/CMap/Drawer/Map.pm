@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.99 2004-06-30 21:15:50 mwz444 Exp $
+# $Id: Map.pm,v 1.100 2004-07-02 20:51:56 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.99 $)[-1];
+$VERSION = (qw$Revision: 1.100 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -311,7 +311,7 @@ such as the units.
     my $buf  = 6;
     my $font = $drawer->regular_font;
     my $map_length =$self->map_length($map_id);
-    my $end_str    = presentable_number($map_length).$map_units;
+    my $end_str    = presentable_number($map_length,3).$map_units;
     my $x    = $x1 + ( ( $x2 - $x1 ) / 2 ) -
       ( ( $font->width * length($end_str) ) / 2 );
     my $y = $y2 + $buf;
@@ -1607,11 +1607,12 @@ sub layout_map_foundation {
                 } 
             }
         }
-        if ($pixel_height+$map_base_y>$bottom_boundary){
+        if ($bottom_boundary and $pixel_height+$map_base_y>$bottom_boundary){
+            ###Assumes $bottom_boundary is not naturally 0 
             $pixel_height=$bottom_boundary-$map_base_y;
                 if ($area and scalar @$area){
                     if ($area->[3]>$bottom_boundary){
-                    $area->[1]     = $bottom_boundary;
+                    $area->[3]     = $bottom_boundary;
                     } 
             } 
         }
@@ -1686,14 +1687,15 @@ sub add_tick_marks {
     my $font_width  = $reg_font->width;
     my $font_height = $reg_font->height;
 
-    my ($interval,$map_scale)
-         = @{$self->tick_mark_interval($map_id,$pixel_height)};
+    my $array_ref     = $self->tick_mark_interval($map_id,$pixel_height);
+    my ($interval,$map_scale) =@$array_ref;
     my $no_intervals  = int( $actual_map_length / $interval );
     my $tick_overhang = 5;
     my @intervals     =
       map { int( $map_start + ( $_ * $interval ) ) } 1 .. $no_intervals;
     my $min_tick_distance= $self->config_data('min_tick_distance') || 40;
     my $last_tick_rel_pos = undef;
+
     for my $tick_pos (@intervals) {
         my $rel_position = ( $tick_pos - $map_start ) / $map_length;
         
@@ -1736,7 +1738,12 @@ sub add_tick_marks {
             $label_side eq RIGHT
           ? $tick_start - $font_height - 2
           : $tick_stop + 2;
-        my $tick_pos_str = presentable_number($tick_pos);
+        #
+        # Figure out how many signifigant figures the number needs by 
+        # going down to the $interval size.
+        #
+        my $sig_figs = int(''.(log($tick_pos)/log(10)))-int(''.(log($interval)/log(10))) + 1;
+        my $tick_pos_str = presentable_number($tick_pos,$sig_figs);
         my $label_y = $y_pos + ( $font_width * length($tick_pos_str) ) / 2;
 
         push @$drawing_data,

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.38 2004-06-30 21:17:30 mwz444 Exp $
+# $Id: Utils.pm,v 1.39 2004-07-02 20:51:56 mwz444 Exp $
 
 =head1 NAME
 
@@ -30,7 +30,7 @@ use Bio::GMOD::CMap::Constants;
 use POSIX;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.38 $)[-1];
+$VERSION = (qw$Revision: 1.39 $)[-1];
 
 use base 'Exporter';
 
@@ -1070,13 +1070,18 @@ example: 10000 becomes 10K
 
 =cut
                                                                                 
-    my $num = shift or return;
+    my $num        = shift or return;
+    my $sig_digits = shift || 2;
     my $num_str; 
+
+
     # the "''." is to fix a rounding error in perl 
-    my $scale       = int(''.(log($num)/log(10))); 
-    my $scaled_down = int($num/(10**($scale-($scale%3)))+.6);
-    my $unit        = calculate_units($num);
-    $num_str        = $scaled_down.$unit;
+    my $scale          = int(''.(log($num)/log(10))); 
+    my $rounding_power = $scale - $sig_digits +1;
+    my $rounded_temp   = int(($num/(10**$rounding_power))+.5);
+    my $printable_num  = $rounded_temp/(10**(($scale-($scale%3))-$rounding_power)); 
+    my $unit        = calculate_units(10**($scale-($scale%3)));
+    $num_str        = $printable_num." ".$unit;
                                                              
     return $num_str;
 }
