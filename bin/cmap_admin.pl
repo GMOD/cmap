@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.59 2004-02-10 23:07:06 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.60 2004-02-14 02:42:16 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.59 $)[-1];
+$VERSION = (qw$Revision: 1.60 $)[-1];
 
 #
 # Get command-line options
@@ -947,8 +947,6 @@ sub export_as_text {
                  f.feature_name,
                  f.start_position as feature_start,
                  f.stop_position as feature_stop,
-                 f.dbxref_name as feature_dbxref_name,
-                 f.dbxref_url as feature_dbxref_url,
                  f.is_landmark,
                  ft.feature_type,
                  map.map_name, 
@@ -1062,6 +1060,18 @@ sub export_as_sql {
     my $log_fh = $self->log_fh;
     my @tables = (
         {
+            name   => 'cmap_attribute',
+            fields => {
+                attribute_id    => NUM,
+                table_name      => STR,
+                object_id       => NUM,
+                display_order   => NUM,
+                is_public       => NUM,
+                attribute_name  => STR,
+                attribute_value => STR,
+            }
+        },
+        {
             name   => 'cmap_correspondence_evidence',
             fields => {
                 correspondence_evidence_id => NUM,
@@ -1095,17 +1105,6 @@ sub export_as_sql {
             }
         },
         {
-            name   => 'cmap_dbxref',
-            fields => {
-                dbxref_id       => NUM,
-                map_set_id      => NUM,
-                feature_type_id => NUM,
-                species_id      => NUM,
-                dbxref_name     => STR,
-                url             => STR,
-            }
-        },
-        {
             name   => 'cmap_evidence_type',
             fields => {
                 evidence_type_id => NUM,
@@ -1126,15 +1125,14 @@ sub export_as_sql {
                 is_landmark     => NUM,
                 start_position  => NUM,
                 stop_position   => NUM,
-                dbxref_name     => STR,
-                dbxref_url      => STR,
             }
         },
         {
             name   => 'cmap_feature_alias',
             fields => {
-                feature_id      => NUM,
-                alias           => STR,
+                feature_alias_id => NUM,
+                feature_id       => NUM,
+                alias            => STR,
             }
         },
         {
@@ -1158,7 +1156,6 @@ sub export_as_sql {
                 color            => STR,
                 drawing_lane     => NUM,
                 drawing_priority => NUM,
-                description      => STR,
             }
         },
         {
@@ -1202,7 +1199,6 @@ sub export_as_sql {
                 common_name   => STR,
                 full_name     => STR,
                 display_order => STR,
-                ncbi_taxon_id => NUM,
             }
         },
         { 
@@ -1222,7 +1218,18 @@ sub export_as_sql {
                 color                => STR,
                 width                => NUM,
             },
-        }
+        },
+        {
+            name   => 'cmap_xref',
+            fields => {
+                xref_id       => NUM,
+                table_name    => STR,
+                object_id     => NUM,
+                display_order => NUM,
+                xref_name     => STR,
+                xref_url      => STR,
+            }
+        },
     );
 
     #
