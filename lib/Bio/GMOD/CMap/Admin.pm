@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.64 2004-12-02 20:53:02 mwz444 Exp $
+# $Id: Admin.pm,v 1.64.2.1 2005-02-18 17:27:35 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.64 $)[-1];
+$VERSION = (qw$Revision: 1.64.2.1 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -2470,8 +2470,16 @@ If not defined, the object_id will be assigned to it.
     $accession_id ||= $map_set_id;
 
     my $map_units = $self->map_type_data( $map_type_aid, 'map_units' );
+    $color = $self->map_type_data( $map_type_aid, 'color' ) 
+        || $self->config_data("map_color") 
+        || DEFAULT->{'map_color'} 
+        || 'black';
+    $shape = $self->map_type_data( $map_type_aid, 'shape' ) 
+        || $self->config_data("map_shape") 
+        || DEFAULT->{'map_shape'} 
+        || 'box';
     my $is_relational_map =
-      $self->map_type_data( $map_type_aid, 'is_relational_map' );
+      $self->map_type_data( $map_type_aid, 'is_relational_map' ) || 0;
 
     $db->do(
         q[
