@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.55 2003-12-30 21:08:59 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.56 2004-01-05 03:18:33 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.55 $)[-1];
+$VERSION = (qw$Revision: 1.56 $)[-1];
 
 #
 # Get command-line options
@@ -2245,8 +2245,6 @@ sub make_name_correspondences {
         "  Evidence type   : $evidence_type\n",
         "  Target map sets :\n$targets\n",
         "  Skip features   :\n$skip\n"
-#        "  From map sets :\n$from\n",
-#        "  To map sets   :\n$to\n",
     ;
 
     print "\nOK to make correspondences? [Y/n] ";
@@ -2257,11 +2255,10 @@ sub make_name_correspondences {
         db          => $db,
         data_source => $self->data_source,
     );
+
     $corr_maker->make_name_correspondences(
         evidence_type_id      => $evidence_type_id,
         map_set_ids           => \@map_set_ids,
-#        map_set_ids           => \@from_map_set_ids,
-#        target_map_set_ids    => \@to_map_set_ids,
         skip_feature_type_ids => \@skip_feature_type_ids,
         log_fh                => $self->log_fh,
         quiet                 => $Quiet,
