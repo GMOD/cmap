@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.62 2004-03-04 15:21:59 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.62.2.1 2004-05-27 14:34:06 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.62 $)[-1];
+$VERSION = (qw$Revision: 1.62.2.1 $)[-1];
 
 #
 # Get command-line options
@@ -18,7 +18,7 @@ my ( $show_help, $show_version, $no_log, $datasource, $Quiet );
 GetOptions(
     'h|help'         => \$show_help,    # Show help and exit
     'v|version'      => \$show_version, # Show version and exit
-    'no-log'         => \$no_log,       # Don't keep a log
+#    'no-log'         => \$no_log,       # Don't keep a log
     'd|datasource=s' => \$datasource,   # Default data source
     'q|quiet'        => \$Quiet,        # Only print necessities
 ) or pod2usage(2);
@@ -34,7 +34,7 @@ if ( $show_version ) {
 #
 my $cli = Bio::GMOD::CMap::CLI::Admin->new( 
     user       => $>,  # effective UID
-    no_log     => $no_log,
+    no_log     => 1, # $no_log,
     datasource => $datasource,
     file       => shift,
 );
@@ -386,7 +386,7 @@ sub delete_correspondences {
     my @map_set_ids = $self->show_menu(
         title       => 'Select Map Set(s)',
         prompt      => 'Select Map Set(s)',
-        display     => 'common_name,short_name',
+        display     => 'common_name,short_name,accession_id',
         return      => 'map_set_id',
         allow_null  => 0,
         allow_mult  => 1,
@@ -394,6 +394,7 @@ sub delete_correspondences {
         data        => $db->selectall_arrayref(
             q[
                 select   ms.map_set_id,
+                         ms.accession_id,
                          ms.short_name,
                          s.common_name
                 from     cmap_map_set ms,
@@ -799,6 +800,7 @@ sub export_as_text {
 
     my $map_set_sql = q[
         select   ms.map_set_id,
+                 ms.accession_id,
                  ms.short_name,
                  s.common_name,
                  mt.map_type
@@ -818,7 +820,7 @@ sub export_as_text {
     my @map_set_ids = $self->show_menu(
         title       => 'Restrict by Map Sets',
         prompt      => 'Limit export by which map sets (optional)?',
-        display     => 'map_type,common_name,short_name',
+        display     => 'map_type,common_name,short_name,accession_id',
         return      => 'map_set_id',
         allow_null  => 1,
         allow_mult  => 1,
@@ -1549,6 +1551,7 @@ sub get_map_sets {
 
     my $map_set_sql = q[
         select   ms.map_set_id,
+                 ms.accession_id,
                  ms.short_name,
                  s.common_name,
                  mt.map_type
@@ -1568,7 +1571,7 @@ sub get_map_sets {
     my @map_set_ids = $self->show_menu(
         title       => 'Restrict by Map Sets',
         prompt      => 'Limit export by which map sets?',
-        display     => 'map_type,common_name,short_name',
+        display     => 'map_type,common_name,short_name,accession_id',
         return      => 'map_set_id',
         allow_null  => 1,
         allow_mult  => 1,
@@ -1905,13 +1908,14 @@ sub import_correspondences {
     my @map_sets = $self->show_menu(
         title       => 'Restrict by Map Set (optional)',
         prompt      => 'Please select a map set to restrict the search',
-        display     => 'species_name,map_set_name',
+        display     => 'species_name,map_set_name,accession_id',
         return      => 'map_set_id,species_name,map_set_name',
         allow_null  => 1,
         allow_mult  => 1,
         data        => $db->selectall_arrayref(
             q[
                 select   ms.map_set_id, 
+                         ms.accession_id,
                          ms.short_name as map_set_name,
                          s.common_name as species_name
                 from     cmap_map_set ms,
@@ -2186,13 +2190,14 @@ sub make_name_correspondences {
     my @map_sets    =  $self->show_menu(
         title       => 'Map Set (optional)',
         prompt      => 'Please select the map sets to include',
-        display     => 'map_type,species_name,map_set_name',
+        display     => 'map_type,species_name,map_set_name,accession_id',
         return      => 'map_set_id,map_type,species_name,map_set_name',
         allow_null  => 1,
         allow_mult  => 1,
         data        => $db->selectall_arrayref(
             q[
                 select   ms.map_set_id, 
+                         ms.accession_id,
                          ms.short_name as map_set_name,
                          s.common_name as species_name,
                          mt.map_type
