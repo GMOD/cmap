@@ -10,7 +10,7 @@
 <table width="100%">
     <tr>
         <th align="right">Error:</th>
-        <td>[% error.text | html %]</td>
+        <td>[% error.text OR 'Undefined error' | html %]</td>
     </tr>
     [% IF debug %]
         <tr>

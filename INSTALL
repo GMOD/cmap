@@ -417,7 +417,7 @@ To install the cmap modules included in this package, you can either:
     receive crucial updates:
 
     Bio::GMOD::CMap::Constants
-        This file will have the value of the "CONF_FILE" altered
+        This file will have the value of the "CONFIG_FILE" altered
         to match CONF_DIR.
 
     apache_conf/cmap.conf
@@ -448,7 +448,7 @@ To install the cmap modules included in this package, you can either:
         "/usr/local/apache/lib/perl" (assuming, of course, that you
         might have libraries for Java and Python and whatever else
         tickles your fancy).  Be sure to update Bio::GMOD::CMap::Constants
-        to have "CONF_FILE" point to the correct location of your 
+        to have "CONFIG_FILE" point to the correct location of your 
         configuration file ("cmap.conf").
 
     bin

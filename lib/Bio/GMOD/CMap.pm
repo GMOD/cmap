@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap;
 
-# $Id: CMap.pm,v 1.2 2002-08-23 22:31:02 kycl4rk Exp $
+# $Id: CMap.pm,v 1.3 2002-08-26 14:38:45 kycl4rk Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ itself based on Andy Wardley's Class::Base module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Class::Base;
 use Config::General;
@@ -74,17 +74,18 @@ Returns a database handle.  This is the only way into the database.
 
     unless ( defined $self->{'db'} ) {
         my $config     = $self->config('database') or 
-            $self->error('No configuration options');
+            $self->error('No database configuration options');
         my $datasource = $config->{'datasource'}
-            or $self->error('No datasource defined');
+            or $self->error('No database source defined');
         my $user       = $config->{'user'}
             or $self->error('No database user defined');
-        my $password   = $config->{'password'}
-            or $self->error('No database password defined');
-        my $options   = $config->{'options'} || {};
-
-        $self->{'db'} = DBI->connect( $datasource, $user, $password, $options )
-            or return $self->error('No db handle:', $DBI::errstr);
+        my $password   = $config->{'password'} || '';
+        my $options    = $config->{'options'}  || {};
+        eval {
+            $self->{'db'} = 
+                DBI->connect($datasource, $user, $password, $options);
+        };
+        $self->error('No db handle: '. $DBI::errstr) unless $self->{'db'};
     }
 
     return $self->{'db'};

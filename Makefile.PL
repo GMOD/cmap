@@ -191,10 +191,12 @@ if ( my $conf_dir = $OPTIONS{'CONF_DIR'} ) {
     my $constants = <F>;
     close F;
 
+    my $conf_path = "$conf_dir/cmap.conf";
+
     if (
         $constants =~ s
             {use constant CONFIG_FILE => '.+'}
-            {use constant CONFIG_FILE => '$conf_dir'}
+            {use constant CONFIG_FILE => '$conf_path'}
     ) {
         open( F, ">$constants_file" ) or die 
             "Can't write $constants_file: $!\n";
@@ -223,19 +225,21 @@ if ( !$answer || $answer =~ /^[Yy]/ ) {
         AUTHOR        => 'Ken Y. Clark <kclark@cshl.org>',
         ABSTRACT      => 'Modules for drawing comparative and genetic maps.',
         PREREQ_PM     => {
-            Apache          => 1.27,
-            Apache::Request => 1.0,
-            Class::Base     => 0.03,
-            DBI             => 1.23,
+            Apache          => 0,
+            Apache::Request => 0,
+            Class::Base     => 0,
+            DBI             => 1.21,
             Error           => 0.15,
             File::MkTemp    => 0,
-            GD              => 1.40,
-            Template        => 2.07,
+            GD              => 1.33,
+            Template        => 2.00,
+            Time::Object    => 0,
+            Time::ParseDate => 0,
         },
     );
 
     print qq[Now you must run "make" and "make install"\n];
-    print qq[Be sure to edit your "cmap.conf" file with you database info.\n];
+    print qq[Be sure to edit "$conf_path" file with your database info.\n];
 }
 exit(0);
 

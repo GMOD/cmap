@@ -1,13 +1,13 @@
 package Bio::GMOD::CMap::Constants;
 
-# $Id: Constants.pm,v 1.2 2002-08-23 22:31:02 kycl4rk Exp $
+# $Id: Constants.pm,v 1.3 2002-08-26 14:38:45 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -185,7 +185,7 @@ use constant COLORS      => {
 #
 # The location of the configuration file.
 #
-use constant CONFIG_FILE => '/usr/local/apache/conf';
+use constant CONFIG_FILE => '/usr/local/apache/conf/cmap.conf';
 
 #
 # This group represents strings used for the GD package for drawing.
