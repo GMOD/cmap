@@ -14,6 +14,16 @@
 [%- url=apr.url -%]
 
 <div align="center">
+<form method="GET" action="feature_type_info">
+    Display:
+    <select name="feature_type_aid">
+        <option value="">--All Feature Types--</option>
+        [% FOREACH ft=all_feature_types %]
+            <option value="[% ft.feature_type_aid %]"[% IF apr.param('feature_type_aid')==ft.feature_type_aid %] selected[% END %]>[% ft.feature_type %]</option>
+        [% END %]
+    </select>
+    <input type="submit" value="Submit">
+</form>
 <p>
 [% IF feature_types.size == 1 %]
     <b>[</b>&nbsp;<a href="feature_type_info">View All Feature Types</a>&nbsp;<b>]</b>

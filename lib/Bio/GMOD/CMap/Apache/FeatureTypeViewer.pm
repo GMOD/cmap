@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::FeatureTypeViewer;
 # vim: set ft=perl:
 
-# $Id: FeatureTypeViewer.pm,v 1.6 2004-02-10 22:50:09 kycl4rk Exp $
+# $Id: FeatureTypeViewer.pm,v 1.6.2.1 2004-06-18 22:26:18 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.6 $)[-1];
+$VERSION = (qw$Revision: 1.6.2.1 $)[-1];
 
 use Data::Pageset;
 use Bio::GMOD::CMap::Apache;
@@ -23,9 +23,10 @@ sub handler {
     my $page_no           = $apr->param('page_no') || 1;
     my @ft_aids           = split( /,/, $apr->param('feature_type_aid') );
     my $data_module       = $self->data_module;
-    my $feature_types     = $data_module->feature_type_info_data(
+    my $data              = $data_module->feature_type_info_data(
         feature_type_aids => \@ft_aids,
     ) or return $self->error( $data_module->error );
+    my $feature_types     = $data->{'feature_types'};
 
     $PAGE_SIZE ||= $self->config('max_child_elements') || 0;
     $MAX_PAGES ||= $self->config('max_search_pages')   || 1;
@@ -49,13 +50,14 @@ sub handler {
     $t->process( 
         TEMPLATE, 
         { 
-            apr           => $apr,
-            page          => $self->page,
-            stylesheet    => $self->stylesheet,
-            data_sources  => $self->data_sources,
-            feature_types => $feature_types,
-            pager         => $pager,
-            intro         => $INTRO,
+            apr               => $apr,
+            page              => $self->page,
+            stylesheet        => $self->stylesheet,
+            data_sources      => $self->data_sources,
+            feature_types     => $feature_types,
+            all_feature_types => $data->{'all_feature_types'},
+            pager             => $pager,
+            intro             => $INTRO,
         },
         \$html 
     ) or $html = $t->error;
