@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Utils;
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.27 2004-04-01 08:04:24 mwz444 Exp $
+# $Id: Utils.pm,v 1.28 2004-04-01 15:23:37 kycl4rk Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.27 $)[-1];
+$VERSION = (qw$Revision: 1.28 $)[-1];
 
 use base 'Exporter';
 
@@ -39,6 +39,7 @@ my @subs   = qw[
     parse_words
     pk_name
     fake_selectall_arrayref
+    sort_selectall_arrayref
 ];
 @EXPORT_OK = @subs;
 @EXPORT    = @subs;
@@ -462,7 +463,8 @@ sub pk_name {
 }
 
 # ----------------------------------------------------
-sub fake_selectall_arrayref{
+sub fake_selectall_arrayref {
+
 =pod
 
 =head2 fake_selectall_arrayref
@@ -475,17 +477,17 @@ the DBI selectall_arrayref()
     my $self    = shift;
     my $hashref = shift;
     my @columns = @_;
+    my $i       = 0;
     my @return_array;
-    my $i=0;
-    for my $key (keys(%$hashref)){
-     
-	%{$return_array[$i]}= map {$_=>$hashref->{$key}->{$_}} @columns;
-	$i++;
+    for my $key ( keys(%$hashref) ) {
+        %{ $return_array[$i] } = map { $_ => $hashref->{$key}->{$_} } @columns;
+        $i++;
     }
-    @return_array= 
-        sort {$a->{$columns[0]} cmp $b->{$columns[0]}} @return_array; 
+    @return_array =
+      sort { $a->{ $columns[0] } cmp $b->{ $columns[0] } } @return_array;
     return \@return_array;
 }
+
 # ----------------------------------------------------
 =pod
 
@@ -493,22 +495,23 @@ the DBI selectall_arrayref()
 
 
 =cut 
+
 sub sort_selectall_arrayref{
     my $self     = shift;
     my $arrayref = shift;
     my @columns  = @_;
+    my @return   = sort {
+        for ( my $i = 0 ; $i < $#columns ; $i++ ) {
+            if ( $a->{ $columns[$i] } cmp $b->{ $columns[$i] } ) {
+                return $a->{ $columns[$i] } cmp $b->{ $columns[$i] };
+            }
+        }
+        return $a->{ $columns[-1] } cmp $b->{ $columns[-1] };
+    } @$arrayref;
 
-    my @returnArray= 
-	sort{
-	    for (my $i=0; $i<$#columns;$i++){
-		if ($a->{$columns[$i]} cmp $b->{$columns[$i]}){
-		    return $a->{$columns[$i]} cmp $b->{$columns[$i]};
-		}
-	    }
-	    return $a->{$columns[-1]} cmp $b->{$columns[-1]};
-	} @$arrayref;
-    return \@returnArray;
+    return \@return;
 }
+
 1;
 
 # ----------------------------------------------------

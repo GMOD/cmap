@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.102 2004-04-01 08:04:23 mwz444 Exp $
+# $Id: Data.pm,v 1.103 2004-04-01 15:23:36 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.102 $)[-1];
+$VERSION = (qw$Revision: 1.103 $)[-1];
 
 use Data::Dumper;
 use Regexp::Common;
@@ -176,13 +176,17 @@ Gets the specifics on a feature correspondence record.
         { Columns => {} },
         ( $corr->{'feature_correspondence_id'} )
     );
-    foreach my $row (@{$corr->{'evidence'}}){
-	$row->{'rank'}=$self->evidence_type_data($row->{'evidence_type_aid'},'rank');
-	$row->{'evidence_type'}=
-	    $self->evidence_type_data($row->{'evidence_type_aid'},'name');
+
+    foreach my $row ( @{ $corr->{'evidence'} } ) {
+        $row->{'rank'} =
+          $self->evidence_type_data( $row->{'evidence_type_aid'}, 'rank' );
+        $row->{'evidence_type'} =
+          $self->evidence_type_data( $row->{'evidence_type_aid'}, 'name' );
     }
-    $corr->{'evidence'}=
-	 sort_selectall_arrayref($corr->{'evidence'},'rank','evidence_type');
+
+    $corr->{'evidence'} = sort_selectall_arrayref(
+        $corr->{'evidence'}, 'rank', 'evidence_type'
+    );
  
     return {
         correspondence => $corr,
@@ -494,18 +498,18 @@ Returns the feature and correspondence data for the maps in a slot.
                     and    ms.species_id=s.species_id
                 ],
                 { Columns => {} }
-	 );
+         );
 
-	foreach my $row (@{$tempMap}){
-	    $row->{'default_shape'}=
-		$self->map_type_data($row->{'map_type_accession'},'shape');
-	    $row->{'default_color'}=
-		$self->map_type_data($row->{'map_type_accession'},'color');
-	    $row->{'default_width'}=
-		$self->map_type_data($row->{'map_type_accession'},'width');
-	    $row->{'map_type'}=
-		$self->map_type_data($row->{'map_type_accession'},'name');
-	}
+        foreach my $row (@{$tempMap}){
+            $row->{'default_shape'}=
+        	$self->map_type_data($row->{'map_type_accession'},'shape');
+            $row->{'default_color'}=
+        	$self->map_type_data($row->{'map_type_accession'},'color');
+            $row->{'default_width'}=
+        	$self->map_type_data($row->{'map_type_accession'},'width');
+            $row->{'map_type'}=
+        	$self->map_type_data($row->{'map_type_accession'},'name');
+        }
 
          push @maps, @{$tempMap};
     }
@@ -566,18 +570,18 @@ Returns the feature and correspondence data for the maps in a slot.
                     ],
                     { Columns => {} },
                     ( $pid, $ref_slot_no, $map_set_id )
-					 );
-		 foreach my $row (@{$tempMap}){
-		     $row->{'default_shape'}=
-			 $self->map_type_data($row->{'map_type_accession'},'shape');
-		     $row->{'default_color'}=
-			 $self->map_type_data($row->{'map_type_accession'},'color');
-		     $row->{'default_width'}=
-			 $self->map_type_data($row->{'map_type_accession'},'width');
-		     $row->{'map_type'}=
-			 $self->map_type_data($row->{'map_type_accession'},'name');
-		 }
-		 push @maps, @{$tempMap};
+        				 );
+        	 foreach my $row (@{$tempMap}){
+        	     $row->{'default_shape'}=
+        		 $self->map_type_data($row->{'map_type_accession'},'shape');
+        	     $row->{'default_color'}=
+        		 $self->map_type_data($row->{'map_type_accession'},'color');
+        	     $row->{'default_width'}=
+        		 $self->map_type_data($row->{'map_type_accession'},'width');
+        	     $row->{'map_type'}=
+        		 $self->map_type_data($row->{'map_type_accession'},'name');
+        	 }
+        	 push @maps, @{$tempMap};
             }
         }
         else { # no reference maps, just get all the maps in this set
@@ -611,7 +615,7 @@ Returns the feature and correspondence data for the maps in a slot.
                     { Columns => {} },
                     ( $map_set_id )
                 ); 
-	    
+            
             push @maps, @{$tempMap};
         }
     }
@@ -670,25 +674,25 @@ Returns the feature and correspondence data for the maps in a slot.
         my $ft = $db->selectall_hashref(
             $ft_sql, 'feature_type_accession', {}, ( $maps[0]{'map_id'} )
         );
-	
-	foreach my $rowKey (keys %{$ft}){
-	    my $row = $ft->{'$rowKey'};
-	    $row->{'feature_type'}=
-		$self->feature_type_data
-		(
-		 $ft->{$rowKey}->{'feature_type_accession'},'name'
-		 );
-	    $row->{'shape'}=
-		$self->feature_type_data
-		(
-		 $ft->{$rowKey}->{'feature_type_accession'},'shape'
-		 ); 
-	    $row->{'color'}=
-		$self->feature_type_data
-		(
-		 $ft->{$rowKey}->{'feature_type_accession'},'color'
-		 );
-	}
+        
+        foreach my $rowKey (keys %{$ft}){
+            my $row = $ft->{'$rowKey'};
+            $row->{'feature_type'}=
+        	$self->feature_type_data
+        	(
+        	 $ft->{$rowKey}->{'feature_type_accession'},'name'
+        	 );
+            $row->{'shape'}=
+        	$self->feature_type_data
+        	(
+        	 $ft->{$rowKey}->{'feature_type_accession'},'shape'
+        	 ); 
+            $row->{'color'}=
+        	$self->feature_type_data
+        	(
+        	 $ft->{$rowKey}->{'feature_type_accession'},'color'
+        	 );
+        }
 
         $feature_types_seen->{ $_ } = $ft->{ $_ } for keys %$ft;
 
@@ -756,39 +760,39 @@ Returns the feature and correspondence data for the maps in a slot.
                 ],
                 'feature_id', {}, ( $maps[0]{'map_id'} )
             );  
-	    foreach my $rowKey (keys %{$map->{'features'}}){
-		my $row = $map->{'features'}->{'$rowKey'};
-		$row->{'feature_type'}=
-		    $self->feature_type_data
-		    (
-		     $map->{'features'}->{$rowKey}->{'feature_type_accession'},'name'
-		     );
-		$row->{'default_rank'}=
-		    $self->feature_type_data
-		    (
-		     $map->{'features'}->{$rowKey}->{'feature_type_accession'},'default_rank'
-		     ); 
-		$row->{'shape'}=
-		    $self->feature_type_data
-		    (
-		     $map->{'features'}->{$rowKey}->{'feature_type_accession'},'shape'
-		     ); 
-		$row->{'color'}=
-		    $self->feature_type_data
-		    (
-		     $map->{'features'}->{$rowKey}->{'feature_type_accession'},'color'
-		     );
-		$row->{'drawing_lane'}=
-		    $self->feature_type_data
-		    (
-		     $map->{'features'}->{$rowKey}->{'feature_type_accession'},'drawing_lane'
-		     );
-		$row->{'drawing_priority'}=
-		    $self->feature_type_data
-		    (
-		     $map->{'features'}->{$rowKey}->{'feature_type_accession'},'drawing_priority'
-		     );
-	    }
+            foreach my $rowKey (keys %{$map->{'features'}}){
+        	my $row = $map->{'features'}->{'$rowKey'};
+        	$row->{'feature_type'}=
+        	    $self->feature_type_data
+        	    (
+        	     $map->{'features'}->{$rowKey}->{'feature_type_accession'},'name'
+        	     );
+        	$row->{'default_rank'}=
+        	    $self->feature_type_data
+        	    (
+        	     $map->{'features'}->{$rowKey}->{'feature_type_accession'},'default_rank'
+        	     ); 
+        	$row->{'shape'}=
+        	    $self->feature_type_data
+        	    (
+        	     $map->{'features'}->{$rowKey}->{'feature_type_accession'},'shape'
+        	     ); 
+        	$row->{'color'}=
+        	    $self->feature_type_data
+        	    (
+        	     $map->{'features'}->{$rowKey}->{'feature_type_accession'},'color'
+        	     );
+        	$row->{'drawing_lane'}=
+        	    $self->feature_type_data
+        	    (
+        	     $map->{'features'}->{$rowKey}->{'feature_type_accession'},'drawing_lane'
+        	     );
+        	$row->{'drawing_priority'}=
+        	    $self->feature_type_data
+        	    (
+        	     $map->{'features'}->{$rowKey}->{'feature_type_accession'},'drawing_priority'
+        	     );
+            }
         }
 
         $return->{ $map->{'map_id'} } = $map;
@@ -818,24 +822,24 @@ Returns the feature and correspondence data for the maps in a slot.
         my $ft = $db->selectall_hashref(
             $ft_sql, 'feature_type_accession', {}, ( $pid, $this_slot_no )
         );
-	foreach my $rowKey (keys %{$ft}){
-	    my $row = $ft->{'$rowKey'};
-	    $row->{'feature_type'}=
-		$self->feature_type_data
-		(
-		 $ft->{$rowKey}->{'feature_type_accession'},'name'
-		 );
-	    $row->{'shape'}=
-		$self->feature_type_data
-		(
-		 $ft->{$rowKey}->{'feature_type_accession'},'shape'
-		 ); 
-	    $row->{'color'}=
-		$self->feature_type_data
-		(
-		 $ft->{$rowKey}->{'feature_type_accession'},'color'
-		 );
-	}
+        foreach my $rowKey (keys %{$ft}){
+            my $row = $ft->{'$rowKey'};
+            $row->{'feature_type'}=
+        	$self->feature_type_data
+        	(
+        	 $ft->{$rowKey}->{'feature_type_accession'},'name'
+        	 );
+            $row->{'shape'}=
+        	$self->feature_type_data
+        	(
+        	 $ft->{$rowKey}->{'feature_type_accession'},'shape'
+        	 ); 
+            $row->{'color'}=
+        	$self->feature_type_data
+        	(
+        	 $ft->{$rowKey}->{'feature_type_accession'},'color'
+        	 );
+        }
 
         $feature_types_seen->{ $_ } = $ft->{ $_ } for keys %$ft;
 
@@ -1696,13 +1700,16 @@ Returns the data for the correspondence matrix.
         ],
         { Columns => {} } 
     );
-    foreach my $row (@{$map_types}){
-	$row->{'map_type'}=
-	    $self->map_type_data($row->{'map_type_aid'},'name');
-	$row->{'display_order'}=
-	    $self->map_type_data($row->{'map_type_aid'},'display_order');
+    foreach my $row ( @{$map_types} ) {
+        $row->{'map_type'} =
+            $self->map_type_data( $row->{'map_type_aid'}, 'name' );
+        $row->{'display_order'} =
+            $self->map_type_data( $row->{'map_type_aid'}, 'display_order' );
     }
-    $map_types=sort_selectall_arrayref($map_types,'display_order','map_type');
+
+    $map_types =
+        sort_selectall_arrayref( $map_types, 'display_order', 'map_type' );
+
     unless ( $args{'show_matrix'} ) {
         return {
             species_aid => $species_aid,
@@ -1764,17 +1771,22 @@ Returns the data for the correspondence matrix.
         $sql .= "and s.accession_id='$species_aid' "   if $species_aid;
         $sql .= "and ms.map_type_accession='$map_type_aid' " if $map_type_aid;
        
-
         $map_sets = $db->selectall_arrayref( $sql, { Columns => {} } );
-	foreach my $row (@{$map_sets}){
-	    $row->{'default_display_order'}=
-		$self->map_type_data($row->{'map_type_accession'},'display_order');
-	    $row->{'map_type'}=
-		$self->map_type_data($row->{'map_type_accession'},'name');
-	}
-        $map_sets=sort_selectall_arrayref
-		      ($map_sets,'default_display_order','map_type','display_order',
-		       'common_name','display_order','published_on','short_name');
+
+        foreach my $row ( @{$map_sets} ) {
+            $row->{'default_display_order'} = $self->map_type_data( 
+                $row->{'map_type_accession'}, 'display_order' 
+            );
+
+            $row->{'map_type'} = $self->map_type_data( 
+                $row->{'map_type_accession'}, 'name' 
+            );
+        }
+
+        $map_sets = sort_selectall_arrayref( $map_sets, 
+            'default_display_order', 'map_type', 'display_order', 
+            'common_name', 'display_order', 'published_on', 'short_name' 
+        );
 
         my $map_sql = qq[
             select   distinct map.map_name,
@@ -1787,7 +1799,8 @@ Returns the data for the correspondence matrix.
             and      ms.is_enabled=1
             and      ms.species_id=s.species_id
         ];
-        $map_sql .= "and ms.map_type_accession='$map_type_aid' " if $map_type_aid;
+        $map_sql .= "and ms.map_type_accession='$map_type_aid' " 
+                    if $map_type_aid;
         $map_sql .= "and s.accession_id='$species_aid' "   if $species_aid;
         $map_sql .= "and ms.accession_id='$map_set_aid' "  if $map_set_aid;
         $map_sql .= 'order by map.display_order, map.map_name';
@@ -1821,21 +1834,23 @@ Returns the data for the correspondence matrix.
         ];
 
         $map_set_sql .= "and map.map_name='$map_name' " if $map_name;
-
         $map_set_sql .= 'order by map.display_order, map.map_name';
 
-        my $tempMapSet = @{ 
-            $db->selectall_arrayref( $map_set_sql, { Columns => {} } )
-        };
-	foreach my $row (@{$tempMapSet}){
-	    $row->{'map_type_display_order'}=
-		$self->map_type_data($row->{'map_type_accession'},'display_order');
-	    $row->{'map_type'}=
-		$self->map_type_data($row->{'map_type_accession'},'name');
-	}
-	
+        my $tempMapSet = $db->selectall_arrayref( 
+            $map_set_sql, { Columns => {} } 
+        );
 
-	@reference_map_sets =@{$tempMapSet};
+        foreach my $row ( @$tempMapSet ) {
+            $row->{'map_type_display_order'} = $self->map_type_data( 
+                $row->{'map_type_accession'}, 'display_order' 
+            );
+
+            $row->{'map_type'} = $self->map_type_data( 
+                $row->{'map_type_accession'}, 'name' 
+            );
+        }
+
+        @reference_map_sets = @$tempMapSet;
     }
     else {
         my $map_set_sql;
@@ -1912,24 +1927,27 @@ Returns the data for the correspondence matrix.
             ];
         }
 
-	my $tempMapSet = @{ 
+        my $tempMapSet = @{ 
             $db->selectall_arrayref( $map_set_sql, { Columns => {} } )
         };
-	foreach my $row (@{$tempMapSet}){
-	    $row->{'map_type_display_order'}=
-		$self->map_type_data($row->{'map_type_accession'},'display_order');
-	    $row->{'map_type'}=
-		$self->map_type_data($row->{'map_type_accession'},'name');
-	}
-	@reference_map_sets = @{ sort_selectall_arrayref($tempMapSet,
-							 'map_type_display_order',
-							 'map_type',
-							 'species_display_order', 
-							 'species_name',
-							 'map_set_display_order',
-							 'map_set_name',
-							 'published_on desc',
-							 'map_set_name')};
+
+        foreach my $row ( @{$tempMapSet} ) {
+            $row->{'map_type_display_order'} = $self->map_type_data( 
+                $row->{'map_type_accession'}, 'display_order' 
+            );
+
+            $row->{'map_type'} = $self->map_type_data( 
+                $row->{'map_type_accession'}, 'name' 
+            );
+        }
+
+        @reference_map_sets = @{ 
+            sort_selectall_arrayref($tempMapSet,
+                'map_type_display_order', 'map_type', 'species_display_order', 
+                'species_name', 'map_set_display_order', 'map_set_name',
+                'published_on desc', 'map_set_name'
+            )
+        };
     }
 
     #
@@ -2114,11 +2132,11 @@ Returns the data for the correspondence matrix.
             and      ms.species_id=s.species_id
             order by map.display_order, map.map_name
         ];
-	$tempMapSet=$db->selectall_arrayref( $link_map_set_sql, { Columns => {} } );
-	foreach my $row (@{$tempMapSet}){
-	    $row->{'map_type'}=
-		$self->map_type_data($row->{'map_type_accession'},'name');
-	}
+        $tempMapSet=$db->selectall_arrayref( $link_map_set_sql, { Columns => {} } );
+        foreach my $row (@{$tempMapSet}){
+            $row->{'map_type'}=
+        	$self->map_type_data($row->{'map_type_accession'},'name');
+        }
     }
     else {
         $link_map_set_sql = q[
@@ -2141,20 +2159,20 @@ Returns the data for the correspondence matrix.
         $link_map_set_sql .= 
             "and ms.accession_id='$link_map_set_aid' " if $link_map_set_aid;
 
-	$tempMapSet=$db->selectall_arrayref( $link_map_set_sql, { Columns => {} } );
-	foreach my $row (@{$tempMapSet}){
-	    $row->{'map_type'}=
-		map_type_data($row->{'map_type_accession'},'name');
-	    $row->{'map_type_display_order'}=
-		map_type_data($row->{'map_type_accession'},'display_order');
-	}
-	$tempMapSet=sort_selectall_arrayref($tempMapSet, 'map_type_display_order',
-					 'map_type',
-					 'species_display_order', 
-					 'species_name', 
-					 'map_set_display_order',
-					 'published_on',
-					 'map_set_name');
+        $tempMapSet=$db->selectall_arrayref( $link_map_set_sql, { Columns => {} } );
+        foreach my $row (@{$tempMapSet}){
+            $row->{'map_type'}=
+        	map_type_data($row->{'map_type_accession'},'name');
+            $row->{'map_type_display_order'}=
+        	map_type_data($row->{'map_type_accession'},'display_order');
+        }
+        $tempMapSet=sort_selectall_arrayref($tempMapSet, 'map_type_display_order',
+        				 'map_type',
+        				 'species_display_order', 
+        				 'species_name', 
+        				 'map_set_display_order',
+        				 'published_on',
+        				 'map_set_name');
     }
 
     my @all_map_sets = @{ 
@@ -2255,8 +2273,8 @@ Returns the data for the main comparative map HTML form.
     my ( $self, %args )        = @_;
     my $slots                  = $args{'slots'} or return;
     my $min_correspondences    = $args{'min_correspondences'}    ||  0;
-    my $feature_type_aids  = $args{'include_feature_types'}  || [];
-    my $evidence_type_aids = $args{'include_evidence_types'} || [];
+    my $feature_type_aids      = $args{'include_feature_types'}  || [];
+    my $evidence_type_aids     = $args{'include_evidence_types'} || [];
     my $ref_species_aid        = $args{'ref_species_aid'}        || '';
     my $ref_map                = $slots->{ 0 };
     my $ref_map_set_aid        = $ref_map->{'map_set_aid'}       ||  0;
@@ -2388,9 +2406,9 @@ Returns the data for the main comparative map HTML form.
             $ref_map_set_info->{'xrefs'} = $self->get_xrefs(
                 'cmap_map_set', $ref_map_set_info->{'map_set_id'}
             );
-	    $ref_map_set_info->{'map_type'} = $self->$self->map_type_data(
+            $ref_map_set_info->{'map_type'} = $self->map_type_data(
                 $ref_map_set_info->{'map_type_accession'},'name'
-	    );
+            );
         }
     }
 
@@ -2416,8 +2434,8 @@ Returns the data for the main comparative map HTML form.
 
     my $comp_maps_right     =  $self->get_comparative_maps( 
         min_correspondences => $min_correspondences,
-        feature_type_aids    => $feature_type_aids,
-        evidence_type_aids   => $evidence_type_aids,
+        feature_type_aids   => $feature_type_aids,
+        evidence_type_aids  => $evidence_type_aids,
         feature_types       => \%feature_types,
         ref_slot_no         => $slot_nos[-1],
         pid                 => $pid,
@@ -2427,8 +2445,8 @@ Returns the data for the main comparative map HTML form.
         ? $comp_maps_right
         : $self->get_comparative_maps(
             min_correspondences => $min_correspondences,
-            feature_type_aids    => $feature_type_aids,
-            evidence_type_aids   => $evidence_type_aids,
+            feature_type_aids   => $feature_type_aids,
+            evidence_type_aids  => $evidence_type_aids,
             feature_types       => \%feature_types,
             ref_slot_no         => $slot_nos[0],
             pid                 => $pid,
@@ -2487,8 +2505,8 @@ out which maps have relationships.
 
     my ( $self, %args )     = @_;
     my $min_correspondences = $args{'min_correspondences'};
-    my $feature_type_aids    = $args{'feature_type_aids'};
-    my $evidence_type_aids   = $args{'evidence_type_aids'};
+    my $feature_type_aids   = $args{'feature_type_aids'};
+    my $evidence_type_aids  = $args{'evidence_type_aids'};
     my $feature_types       = $args{'feature_types'};
     my $ref_slot_no         = $args{'ref_slot_no'};
     my $pid                 = $args{'pid'};
@@ -2555,7 +2573,7 @@ out which maps have relationships.
         $additional_where .= "
             and fc.feature_correspondence_id=ce.feature_correspondence_id
             and ce.evidence_type_accession in ('" 
-	    . join( "','", @$evidence_type_aids ) . "') "; 
+            . join( "','", @$evidence_type_aids ) . "') "; 
     }
 
     if ( @$feature_type_aids ) {
@@ -2667,13 +2685,17 @@ out which maps have relationships.
             ]
         );
         $sth->execute( $fc->{'map_id'} );
-        my $info         = $sth->fetchrow_hashref;
-	$info->{'map_type'}=$self->map_type_data($info->{'map_type_accession'},'name');
-	$info->{'map_type_display_order'}=$self->map_type_data($info->{'map_type_accession'},'display_order');
+        my $info            = $sth->fetchrow_hashref;
+        $info->{'map_type'} = 
+            $self->map_type_data($info->{'map_type_accession'},'name');
+        $info->{'map_type_display_order'} = 
+            $self->map_type_data($info->{'map_type_accession'},'display_order');
         $info->{'published_on'} = parsedate( $info->{'published_on'} );
-	unless($map_sets{ $info->{'map_set_aid'} }){
+
+        unless( $map_sets{ $info->{'map_set_aid'} } ){
             $map_sets{ $info->{'map_set_aid'} } = $info;
         }
+
         $map_sets{ $info->{'map_set_aid'} }{'maps'}{ $info->{'map_aid'} } = {
             map_name             => $info->{'map_name'},
             map_aid              => $info->{'map_aid'},
@@ -2739,7 +2761,6 @@ out which maps have relationships.
 
     return \@sorted_map_sets;
 }
-
 
 # ----------------------------------------------------
 #sub evidence_type_aid_to_id {
@@ -3026,30 +3047,30 @@ Given a feature acc. id, find out all the details on it.
             { Columns => {} },
             ( $corr->{'feature_correspondence_id'} )
         );
-	foreach my $row (@{$corr->{'evidence'}}){
-	    $row->{'rank'}=$self->evidence_type_data($row->{'evidence_type_aid'},'rank');
-	    $row->{'evidence_type'}=
-		$self->evidence_type_data($row->{'evidence_type_aid'},'name');
-	}
-	$corr->{'evidence'}=
-	    sort_selectall_arrayref($corr->{'evidence'},'rank','evidence_type');
 
+        foreach my $row ( @{ $corr->{'evidence'} } ) {
+            $row->{'rank'} = $self->evidence_type_data( 
+                $row->{'evidence_type_aid'}, 'rank' 
+            );
+            $row->{'evidence_type'} = $self->evidence_type_data( 
+                $row->{'evidence_type_aid'}, 'name' 
+            );
+        }
 
-        $corr->{'aliases'} = [
-            map { $_->[0] } 
-            @{
-                $db->selectall_arrayref(
-                    q[
-                        select   alias 
-                        from     cmap_feature_alias
-                        where    feature_id=?
-                        order by alias
-                    ],
-                    {},
-                    ( $corr->{'feature_id'} )
-                )
-            }
-        ];
+        $corr->{'evidence'} = sort_selectall_arrayref( 
+            $corr->{'evidence'}, 'rank', 'evidence_type' 
+        );
+
+        $corr->{'aliases'} = $db->selectcol_arrayref(
+            q[
+                select   alias 
+                from     cmap_feature_alias
+                where    feature_id=?
+                order by alias
+            ],
+            {},
+            ( $corr->{'feature_id'} )
+        );
     }
 
     $feature->{'correspondences'} = $correspondences;
@@ -3206,10 +3227,10 @@ Given a list of feature names, find any maps they occur on.
         }
 
         my $features = $db->selectall_arrayref( $sql,  { Columns => {} } );
-	foreach my $row (@{$features}){
-	    $row->{'feature_type'}=
-		$self->map_type_data($row->{'feature_type_accession'},'name');
-	}
+        foreach my $row (@{$features}){
+            $row->{'feature_type'}=
+        	$self->map_type_data($row->{'feature_type_accession'},'name');
+        }
         for my $f ( @$features ) {
             $features{ $f->{'feature_id'} } = $f;
         }
@@ -3331,20 +3352,20 @@ Return data for a list of evidence type acc. IDs.
 
     my %supplied_evidence_types;
     if ($args{'evidence_types'}){
-	%supplied_evidence_types = map{$_=>1} @{ $args{'evidence_types'}};
+        %supplied_evidence_types = map{$_=>1} @{ $args{'evidence_types'}};
     }
     foreach my $evidence_type (@evidence_types){
-	if (%supplied_evidence_types){
-	    next unless ($supplied_evidence_types{$evidence_type});
-	}
-	$return_array[++$#return_array]=
-	{
-	     'evidence_type_aid'=>$evidence_type,
-	     'evidence_type'=>$self->evidence_type_data($evidence_type,'name'),
-	     'rank'=>$self->evidence_type_data($evidence_type,'rank'),
-	     'line_color'=>$self->evidence_type_data($evidence_type,'line_color'),
-	     
-	 };
+        if (%supplied_evidence_types){
+            next unless ($supplied_evidence_types{$evidence_type});
+        }
+        $return_array[++$#return_array]=
+        {
+             'evidence_type_aid'=>$evidence_type,
+             'evidence_type'=>$self->evidence_type_data($evidence_type,'name'),
+             'rank'=>$self->evidence_type_data($evidence_type,'rank'),
+             'line_color'=>$self->evidence_type_data($evidence_type,'line_color'),
+             
+         };
     }
     my $default_color = $self->config_data('connecting_line_color');
 
@@ -3373,20 +3394,20 @@ Return data for a list of feature type acc. IDs.
 
     my %supplied_feature_types;
     if ($args{'feature_types'}){
-	%supplied_feature_types = map{$_=>1} @{ $args{'feature_types'}};
+        %supplied_feature_types = map{$_=>1} @{ $args{'feature_types'}};
     }
     foreach my $feature_type (@feature_types){
-	if (%supplied_feature_types){
-	    next unless ($supplied_feature_types{$feature_type});
-	}
-	$return_array[++$#return_array]=
-	{
-	     'feature_type_aid'=>$feature_type,
-	     'feature_type' =>$self->feature_type_data($feature_type,'name'),
-	     'shape'=>$self->feature_type_data($feature_type,'shape'),
-	     'color'=>$self->feature_type_data($feature_type,'color'),
-	     
-	     };
+        if (%supplied_feature_types){
+            next unless ($supplied_feature_types{$feature_type});
+        }
+        $return_array[++$#return_array]=
+        {
+             'feature_type_aid'=>$feature_type,
+             'feature_type' =>$self->feature_type_data($feature_type,'name'),
+             'shape'=>$self->feature_type_data($feature_type,'shape'),
+             'color'=>$self->feature_type_data($feature_type,'color'),
+             
+             };
     }
 
 
@@ -3457,8 +3478,8 @@ Returns the data for drawing comparative maps.
     ]; 
     my $map_sets = $db->selectall_arrayref( $map_set_sql, { Columns => {} } );
     foreach my $row (@{$map_sets}){
-	    $row->{'map_type'}=
-		$self->map_type_data($row->{'map_type_accession'},'name');
+            $row->{'map_type'}=
+        	$self->map_type_data($row->{'map_type_accession'},'name');
     }
     #
     # Maps in the map sets
@@ -3504,8 +3525,8 @@ Returns the data for drawing comparative maps.
     ];
     my $feature_types = $db->selectall_arrayref( $ft_sql,  { Columns => {} } );
     foreach my $row (@{$feature_types}){
-	    $row->{'feature_type'}=
-		$self->feature_type_data($row->{'feature_type_aid'},'name');
+            $row->{'feature_type'}=
+        	$self->feature_type_data($row->{'feature_type_aid'},'name');
     }
     my %ft_lookup;
     for my $ft ( @$feature_types ) {
@@ -3793,8 +3814,8 @@ Returns the detail info for a map.
     my $pid = $$;
     my $tempFeatureTypes=$db->selectall_arrayref( $ft_sql, { Columns => {} }, $pid );
     foreach my $row (@{$tempFeatureTypes}){
-	$row->{'feature_type'}=
-	    $self->feature_type_data($row->{'feature_type_aid'},'name');
+        $row->{'feature_type'}=
+            $self->feature_type_data($row->{'feature_type_aid'},'name');
     }
     my @feature_types = 
         sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} } 
@@ -3960,24 +3981,25 @@ Returns data on map types.
 
     my %supplied_map_types;
     if ($args{'map_types'}){
-	%supplied_map_types = map{$_=>1} @{ $args{'map_types'}};
+        %supplied_map_types = map{$_=>1} @{ $args{'map_types'}};
     }
-    foreach my $map_type (@map_types){
-	if (%supplied_map_types){
-	    next unless ($supplied_map_types{$map_type});
-	}
-	$return_array[++$#return_array]=
-	{
-	     'map_type_aid'=>$map_type,
-	     'map_type'=>$self->map_type_data($map_type,'name'),
-	     'shape'=>$self->map_type_data($map_type,'shape'),
-	     'color'=>$self->map_type_data($map_type,'color'),
-	     'width'=>$self->map_type_data($map_type,'width'),
-	     'display_order'=>$self->map_type_data($map_type,'display_order'),
-	     'is_relational_map'=>$self->map_type_data($map_type,'is_relational_map'),
-	     'map_units'=>$self->map_type_data($map_type,'map_units'),
-	     
-	     };
+
+    foreach my $map_type ( @map_types ) {
+        if ( %supplied_map_types ) {
+            next unless $supplied_map_types{ $map_type };
+        }
+
+        $return_array[ ++$#return_array ] = {
+            map_type_aid  => $map_type,
+            map_type      => $self->map_type_data( $map_type, 'name' ),
+            shape         => $self->map_type_data( $map_type, 'shape' ),
+            color         => $self->map_type_data( $map_type, 'color' ),
+            width         => $self->map_type_data( $map_type, 'width' ),
+            display_order => $self->map_type_data( $map_type, 'display_order' ),
+            map_units     => $self->map_type_data( $map_type, 'map_units' ),
+            is_relational_map =>
+                $self->map_type_data( $map_type, 'is_relational_map' ),
+         };
     }
 
 

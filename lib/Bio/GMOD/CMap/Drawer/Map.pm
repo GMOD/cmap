@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.75 2004-04-01 08:04:26 mwz444 Exp $
+# $Id: Map.pm,v 1.76 2004-04-01 15:23:37 kycl4rk Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.75 $)[-1];
+$VERSION = (qw$Revision: 1.76 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -682,16 +682,16 @@ Lays out the map.
                 #
                 # This causes the map to span the distance covered on the ref.
                 #
-                $min_ref_y = $ref_map_y1 unless defined $min_ref_y;
-                $min_ref_y = $ref_map_y1 if $ref_map_y1 < $min_ref_y;
-                $max_ref_y = $ref_map_y2 unless defined $min_ref_y;
-                $max_ref_y = $ref_map_y2 if $ref_map_y2 > $max_ref_y;
+#                $min_ref_y = $ref_map_y1 unless defined $min_ref_y;
+#                $min_ref_y = $ref_map_y1 if $ref_map_y1 < $min_ref_y;
+#                $max_ref_y = $ref_map_y2 unless defined $min_ref_y;
+#                $max_ref_y = $ref_map_y2 if $ref_map_y2 > $max_ref_y;
 
                 #
                 # This keeps the map a consistent height.
                 #
-#                $min_ref_y = $ref_map_mid_y - $min_map_pixel_height;
-#                $max_ref_y = $ref_map_mid_y + $min_map_pixel_height;
+                $min_ref_y = $ref_map_mid_y - $min_map_pixel_height;
+                $max_ref_y = $ref_map_mid_y + $min_map_pixel_height;
             }
 
             my $map_pix_len = $max_ref_y - $min_ref_y;
