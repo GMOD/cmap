@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 
-# $Id: MapViewer.pm,v 1.18 2003-04-09 00:21:51 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.19 2003-05-16 19:55:38 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $TEMPLATE $PAGE );
-$VERSION = (qw$Revision: 1.18 $)[-1];
+$VERSION = (qw$Revision: 1.19 $)[-1];
 
 use Apache::Constants qw[ :common REDIRECT ];
 use Apache::Request;
@@ -96,6 +96,7 @@ sub show_form {
     my $image_size            = $apr->param('image_size')            || '';
     my $image_type            = $apr->param('image_type')            || '';
     my $label_features        = $apr->param('label_features')        || '';
+    my $collapse_features     = $apr->param('collapse_features')     ||  0;
     my $min_correspondences   = $apr->param('min_correspondences')   ||  0;
     my @feature_types         = ( $apr->param('feature_types') );
     my @evidence_types        = ( $apr->param('evidence_types') );
@@ -219,6 +220,7 @@ sub show_form {
                 image_size             => $image_size,
                 image_type             => $image_type,
                 label_features         => $label_features,
+                collapse_features      => $collapse_features,
                 min_correspondences    => $min_correspondences,
                 include_feature_types  => \@feature_types,
                 include_evidence_types => \@evidence_types,
@@ -268,8 +270,8 @@ sub show_form {
     # The start and stop may have had to be moved as there 
     # were too few or too many features in the selected region.
     #
-    $apr->param( ref_map_start    => $form_data->{'ref_map_start'}    );
-    $apr->param( ref_map_stop     => $form_data->{'ref_map_stop'}     );
+    $apr->param( ref_map_start => $form_data->{'ref_map_start'} );
+    $apr->param( ref_map_stop  => $form_data->{'ref_map_stop'}  );
 
     #
     # Wrap up our current comparative maps so we can store them on 
