@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.18 2004-02-18 23:48:55 kycl4rk Exp $
+# $Id: Build.PL,v 1.19 2004-02-19 00:11:06 kycl4rk Exp $
 
 use strict;
 
@@ -177,15 +177,17 @@ for my $opt (
     my @files;
     find( 
         sub {
-            push @files, $File::Find::name if 
-                !-d $_ && 
-                $File::Find::name !~ /CVS/ &&
-                $File::Find::name !~ /PL$/;
+            push @files, $File::Find::name
+                if -f $_ && $File::Find::name !~ /CVS/
         },
         $dir
     );
 
+    warn "WARNING:  Couldn't find anything to install in '$dir'!\n" 
+        unless @files;
+
     for my $file ( @files ) {
+        $file  =~ s/\.PL$//;
         my $to = $OPTIONS{ $opt_name };
         if ( $file =~ /($dir)(.*)/ ) {
             $to = catdir( $to, $2 );
