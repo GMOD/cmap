@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.92 2004-02-10 23:06:44 kycl4rk Exp $
+# $Id: Data.pm,v 1.93 2004-03-03 21:30:28 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.92 $)[-1];
+$VERSION = (qw$Revision: 1.93 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -790,7 +790,7 @@ Returns the data for drawing comparative maps.
                 join( ',', @$feature_type_ids ).
             ')';
         }
-     
+
         my $ft = $db->selectall_hashref(
             $ft_sql, 'feature_type_id', {}, ( $pid, $slot_no )
         );
