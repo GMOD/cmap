@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.55 2003-09-05 22:57:58 kycl4rk Exp $
+# $Id: Data.pm,v 1.56 2003-09-08 17:32:02 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.55 $)[-1];
+$VERSION = (qw$Revision: 1.56 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -2269,6 +2269,51 @@ Given a list of feature names, find any maps they occur on.
         species       => $species,
         feature_types => $feature_types,
     };
+}
+
+# ----------------------------------------------------
+sub feature_type_info_data {
+
+=pod
+
+=head2 feature_type_info_data
+
+Return data for a list of feature type acc. IDs.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $db              = $self->db; 
+
+    my $sql = q[
+        select ft.feature_type_id,
+               ft.accession_id as feature_type_aid,
+               ft.feature_type,
+               ft.shape,
+               ft.color,
+               ft.description
+        from   cmap_feature_type ft
+    ];
+
+    if ( my @ft_aids = @{ $args{'feature_type_aids'} || [] } ) {
+        $sql .= 'where ft.accession_id in ('.
+            join( ', ', map { qq['$_'] } @ft_aids ).
+        ')';
+    }
+
+    my $feature_types = $db->selectall_arrayref( $sql, { Columns => {} } );
+    my $default_color = $self->config('feature_color');
+
+    for my $ft ( @$feature_types ) {
+        $ft->{'color'} ||= $default_color;
+    }
+
+    $feature_types = [ 
+        sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} }
+        @$feature_types
+    ];
+
+    return $feature_types;
 }
 
 # ----------------------------------------------------
