@@ -24,7 +24,7 @@ use Bio::GMOD::CMap::Constants;
 use Regexp::Common;
 require Class::Base;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use base 'Class::Base';
 
@@ -292,11 +292,8 @@ sub box {
     my $label_side   = $args{'label_side'} || RIGHT;
     my @coords;
 
-    @coords = ( $x_pos2, $y_pos2, $x_pos1, $y_pos1, );
-
-    push @$drawing_data, [ RECTANGLE, @coords, $color ];
-
     @coords = ( $x_pos1, $y_pos2, $x_pos2, $y_pos1, );
+    push @$drawing_data, [ RECTANGLE, @coords, $color ];
 
     return \@coords;
 }

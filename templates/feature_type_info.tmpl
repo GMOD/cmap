@@ -1,7 +1,7 @@
 [% SET title='Feature Type Info' %]
 [% 
     INCLUDE header.tmpl 
-    title=title
+    title='CMap - Feature Type Info'
     cur_sec='feature_type_info'
     help_anchor='feature_type_info'
 %]
@@ -14,17 +14,24 @@
 [%- url=apr.url -%]
 
 <div align="center">
+<form method="GET" action="feature_type_info">
+    Display:
+    <select name="feature_type_aid">
+        <option value="">--All Feature Types--</option>
+        [% FOREACH ft=all_feature_types %]
+            <option value="[% ft.feature_type_aid %]"[% IF apr.param('feature_type_aid')==ft.feature_type_aid %] selected[% END %]>[% ft.feature_type %]</option>
+        [% END %]
+    </select>
+    <input type="submit" value="Submit">
+</form>
 <p>
 [% IF feature_types.size == 1 %]
-    <div align="center">
-    <a href="feature_type_info">View All Feature Types</a>
-    </div>
+    <b>[</b>&nbsp;<a href="feature_type_info">View All Feature Types</a>&nbsp;<b>]</b>
 [% END %]
 </p>
 
 <p>
 [% IF feature_types.size %]
-    <div align="center">
     <table>
         <tr>
             <td colspan="2" align="center">
@@ -38,6 +45,10 @@
                 <td><b>[% ft.feature_type %]</b></td>
             </tr> 
             <tr>
+                <td align="right">Accession&nbsp;ID:</td>
+                <td>[% ft.feature_type_aid %]</td>
+            </tr> 
+            <tr>
                 <td align="right">Color:</td>
                 <td>[% ft.color %]</td>
             </tr> 
@@ -45,9 +56,43 @@
                 <td align="right">Shape:</td>
                 <td>[% ft.shape %]</td>
             </tr> 
+            [% FOREACH att=ft.attributes %]
+                [% NEXT UNLESS att.is_public %]
+                <tr>
+                    <td align="right">
+                        [% att.attribute_name %]:
+                    </td>
+                    <td>
+                        [%- IF att.attribute_value.match('^http://') -%]
+                            <a href="[% att.attribute_value %]">[% att.attribute_value %]</a>
+                        [%- ELSE -%]
+                            [% att.attribute_value %]
+                        [%- END -%]
+                    </td>
+                </tr>
+            [% END %]
+            [% IF ft.xrefs.size %]
+                <tr>
+                    <td align="right" valign="top">Cross-references:</td>
+                    <td>
+                        <ul>
+                        [%- FOREACH xref=ft.xrefs -%]
+                            [% NEXT UNLESS xref.xref_url %]
+                            <li><a href="[% xref.xref_url %]">[% xref.xref_name %]</a></li>
+                        [%- END -%]
+                        </ul>
+                    </td>
+                </tr> 
+            [% END %]
+            <tr>
+                <td>&nbsp;</td>
+                <td>
+                    <b>[</b>&nbsp;<a href="feature_search?features=*&feature_type_aid=[% ft.feature_type_aid %]">Search for All Features of This Type</a>&nbsp;<b>]</b>
+                </td>
+            </tr>
+            <tr><td colspan="2">&nbsp;</td></tr>
         [% END %]
     </table>
-    </div>
 
 [% ELSE %]
 

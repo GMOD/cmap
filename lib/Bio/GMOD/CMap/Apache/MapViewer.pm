@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.45 2004-06-03 19:27:14 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.46 2004-06-22 03:05:35 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.45 $)[-1];
+$VERSION = (qw$Revision: 1.46 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -288,7 +288,7 @@ sub handler {
             data_source       => $self->data_source,
             data_sources      => $self->data_sources,
             comparative_maps  => join( ':', @comp_maps ),
-            title             => 'Comparative Maps',
+            title             => $self->config_data('cmap_title') || 'CMap',
             stylesheet        => $self->stylesheet,
             selected_maps     => { map { $_, 1 } @ref_map_aids   },
             included_features => { map { $_, 1 } @feature_types  },

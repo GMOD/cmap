@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.93 2004-06-17 17:18:06 mwz444 Exp $
+# $Id: Map.pm,v 1.94 2004-06-22 03:05:36 mwz444 Exp $
 
 =pod
 
@@ -25,13 +25,14 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.93 $)[-1];
+$VERSION = (qw$Revision: 1.94 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Utils qw[
   even_label_distribution
+  simple_column_distribution
 ];
 use Bio::GMOD::CMap::Drawer::Glyph;
 use base 'Bio::GMOD::CMap';
@@ -53,7 +54,7 @@ BEGIN {
     my @AUTO_FIELDS = qw[
       map_set_id map_set_aid map_type accession_id species_id
       map_id species_name map_units map_name map_set_name
-      map_type_id begin end
+      map_type_id is_relational_map begin end species_aid map_type_aid
     ];
 
     foreach my $sub_name (@AUTO_FIELDS) {
@@ -739,7 +740,7 @@ Lays out the map.
                     $lane->{'furthest'}
                   ? $label_side eq RIGHT
                   ? $lane->{'furthest'} + 2
-                  : $lane->{'furthest'} - 2
+                  : $lane->{'furthest'} - ( $map_width + 4 )
                   : $base_x;
             }
             my %drawn_glyphs;
@@ -963,13 +964,28 @@ Lays out the map.
             #    url    => $details_url,
             #    alt    => 'Details: ' . $self->map_name,
             #  };
+            push @map_buttons, {   
+                label => 'M',
+                url   => 'matrix?&show_matrix=1'.
+                    '&link_map_set_aid='.$self->map_set_aid( $map_id ),
+                alt   => 'View In Matrix'
+            };
         }
         else {
             push @map_buttons,
               {
                 label => '?',
                 url   => $details_url,
-                alt   => 'Deertails: ' . ( $self->map_name || '' ),
+                alt   => 'Map Details',
+            },   
+            {   
+                label => 'M',
+                url   => 'matrix?map_type_aid='.$self->map_type_aid( $map_id ).
+                    '&species_aid='.$self->species_aid( $map_id ).
+                    '&map_set_aid='.$self->map_set_aid( $map_id ).
+                    '&map_name='.$self->map_name( $map_id ).
+                    '&show_matrix=1',
+                alt   => 'View In Matrix'
               };
         }
 
@@ -1106,8 +1122,10 @@ Lays out the map.
             my @flips;
             my $acc_id = $self->accession_id($map_id);
             for my $rec ( @{ $drawer->flip } ) {
-                if (   $rec->{'slot_no'} != $slot_no
-                    && $rec->{'map_aid'} != $acc_id )
+                unless (   
+                    $rec->{'slot_no'} == $slot_no
+                    && 
+                    $rec->{'map_aid'} == $acc_id )
                 {
                     push @flips, $rec->{'slot_no'} . '%3d' . $rec->{'map_aid'};
                 }
@@ -1504,6 +1522,12 @@ sub layout_map_foundation {
           [ STRING, $reg_font, $f_x, $topper_y, $topper, 'black' ];
         $min_x = $f_x if ( ( not defined($min_x) ) or $f_x < $min_x );
     }
+    if (1 and $drawer->{'data'}{'max_map_units'}{$self->map_units($map_id)}){
+        $pixel_height
+            = ($self->stop_position($map_id)-$self->start_position($map_id))
+            * ($drawer->pixel_height()
+              / $drawer->{'data'}{'max_map_units'}{$self->map_units($map_id)});
+    }
     return ( $base_x, $min_x, $map_base_y, $area, $last_map_x, $last_map_y,
         $pixel_height );
 
@@ -1704,24 +1728,21 @@ sub add_feature_to_map {
 
             my $buffer = 2;
             my $column_index;
-            if (@$fcolumns and 
-                not $self->feature_type_data( $feature->{'feature_type_aid'}, 
+            if ( not $self->feature_type_data( $feature->{'feature_type_aid'}, 
                 'glyph_overlap' )) {
-                for my $i ( 0 .. $#{$fcolumns} ) {
-                    if ( ($is_flipped and $fcolumns->[$i] > $y_pos1) 
-                         or (not $is_flipped and $fcolumns->[$i] < $y_pos1)) {
-                        $column_index = $i;
-                        last;
-                    }
-                }
+                my $column_index = simple_column_distribution(
+                    low          => $y_pos1,
+                    high         => $y_pos2,
+                    columns      => $fcolumns,
+                    map_height   => $pixel_height,
+                    buffer       => $buffer,
+                );
             }
             else {
                 $column_index = 0;
             }
-            $column_index = scalar @$fcolumns
-              unless defined $column_index;
-            $fcolumns->[$column_index] = $y_pos2 + $buffer;
 
+            $feature->{'column'} = $column_index;
             my $offset       = ( $column_index + 1 ) * 7;
             my $vert_line_x1 = $label_side eq RIGHT ? $tick_start : $tick_stop;
             my $vert_line_x2 =
@@ -1904,6 +1925,7 @@ sub collect_labels_to_display {
             feature_id     => $feature->{'feature_id'},
             start_position => $feature->{'start_position'},
             shape          => $feature->{'shape'},
+            column         => $feature->{'column'},
             url            => $feature_details_url . $feature->{'accession_id'},
             alt            => 'Feature Details: '
               . $feature->{'feature_name'} . ' ['
@@ -2014,7 +2036,7 @@ sub add_labels_to_map {
         font_height => $font_height,
         start_y     => $base_y,
     );
-    my $label_offset = 15;
+    my $label_offset = 20;
     $base_x =
         $label_side eq RIGHT
       ? $rightmostf > $base_x ? $rightmostf : $base_x
@@ -2025,11 +2047,12 @@ sub add_labels_to_map {
     for my $label (@$accepted_labels) {
         my $text    = $label->{'text'};
         my $label_y = $label->{'y'};
+        my $label_len = $font_width * length( $text );
         my $label_x =
             $label_side eq RIGHT
           ? $base_x + $label_offset
-          : $base_x - $label_offset - ( $font_width * length($text) );
-        my $label_end = $label_x + $font_width * length($text);
+          : $base_x - ( $label_offset + $label_len );
+        my $label_end = $label_x + $label_len;
         my $color     =
             $label->{'has_corr'}
           ? $feature_corr_color || $label->{'color'}

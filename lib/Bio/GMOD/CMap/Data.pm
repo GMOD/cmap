@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.129 2004-06-16 17:31:27 mwz444 Exp $
+# $Id: Data.pm,v 1.130 2004-06-22 03:05:34 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,13 +26,15 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.129 $)[-1];
+$VERSION = (qw$Revision: 1.130 $)[-1];
 
 use Data::Dumper;
+use Date::Format;
 use Regexp::Common;
 use Time::ParseDate;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Utils;
+use Bio::GMOD::CMap::Admin::Export;
 use base 'Bio::GMOD::CMap';
 use Cache::FileCache;
 use Storable qw(freeze thaw);
@@ -186,6 +188,13 @@ sub correspondence_detail_data {
         $sth->execute( $corr->{'feature_id2'} );
         $feature2 = $sth->fetchrow_hashref;
 
+        for ( $feature1, $feature2 ) {
+            $_->{'aliases'} = $db->selectcol_arrayref(
+                'select alias from cmap_feature_alias where feature_id=?',
+                {}, ( $_->{'feature_id'} )
+            );
+        }
+
         $corr->{'evidence'} = $db->selectall_arrayref(
             qq[
             select   ce.correspondence_evidence_id,
@@ -219,6 +228,161 @@ sub correspondence_detail_data {
         feature1       => $feature1,
         feature2       => $feature2,
     };
+}
+
+# ----------------------------------------------------
+sub data_download {
+
+=pod
+
+=head2 data_download
+
+Returns a string of tab-delimited data for either a map or map set.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $map_set_aid     = $args{'map_set_aid'} || '';
+    my $map_aid         = $args{'map_aid'}     || '';
+    my $format          = uc $args{'format'}   || 'TAB';
+    return $self->error("Not enough arguments for data_download") unless
+        $map_set_aid || $map_aid;
+
+    return $self->error("'$format' not a valid download format") unless
+        $format =~ /^(TAB|GFF|XML)$/;
+
+    return $self->error("XML format only valid for map sets") if
+        $format eq 'XML' && !$map_set_aid;
+
+    my $db = $self->db;
+    my ( $map_set_id, $map_id );
+    if ( $map_aid ) {
+        $map_id = $db->selectrow_array(
+            'select map_id from cmap_map where accession_id=?', {}, ( $map_aid )
+        ) or return $self->error(
+            "'$map_aid' is not a valid map accession ID"
+        );
+    }
+
+    if ( $map_set_aid ) {
+        $map_set_id = $db->selectrow_array(
+            'select map_set_id from cmap_map_set where accession_id=?', 
+            {}, ( $map_set_aid )
+        ) or return $self->error(
+            "'$map_set_aid' is not a valid map set accession ID"
+        );
+    }
+
+    my $return;
+    if ( $format eq 'XML' ) {
+        my $object = $map_set_aid ? 'cmap_map_set' : 'cmap_map';
+        my $exporter    =  Bio::GMOD::CMap::Admin::Export->new(
+            data_source => $self->data_source
+        ) or return $self->error( Bio::GMOD::CMap::Admin::Export->error );
+
+        $exporter->export( 
+            objects       => [ $object ],
+            output        => \$return,
+            map_sets      => $map_set_id ? [{map_set_id => $map_set_id}] : [],
+            no_attributes => 1,
+        ) or do { 
+            print "Error: ", $exporter->error, "\n"; return;
+        }; 
+    }
+    else {
+        my $feature_sql = q[
+            select map.accession_id as map_accession_id,
+                   map.map_name,
+                   map.start_position as map_start,
+                   map.stop_position as map_stop,
+                   f.feature_id,
+                   f.accession_id as feature_accession_id,
+                   f.feature_name,
+                   f.start_position as feature_start,
+                   f.stop_position as feature_stop,
+                   f.is_landmark,
+                   f.feature_type_accession as feature_type_aid
+            from   cmap_map map,
+                   cmap_feature f
+            where  map.%s=?
+            and    map.map_id=f.map_id
+        ];
+
+        my $alias_sql = q[
+            select fa.feature_id, 
+                   fa.alias
+            from   cmap_map map,
+                   cmap_feature f,
+                   cmap_feature_alias fa
+            where  map.%s=?
+            and    map.map_id=f.map_id
+            and    f.feature_id=fa.feature_id
+        ];
+
+        my ( $field_name, $search_val );
+        if ( $map_aid ) {
+            $field_name = 'map_id';
+            $search_val = $map_id;
+        }
+        else {
+            $field_name = 'map_set_id';
+            $search_val = $map_set_id;
+        }
+
+        my $features = $db->selectall_arrayref( 
+            sprintf( $feature_sql, $field_name ), { Columns => {} }, 
+            ( $search_val ) 
+        );
+
+        foreach my $row ( @{$features} ) {
+        $row->{'feature_type'} =
+            $self->feature_type_data( $row->{'feature_type_aid'},
+                'feature_type' );
+        }
+
+
+        if ( $format eq 'TAB' ) {
+            my $aliases = $db->selectall_arrayref( 
+                sprintf( $alias_sql, $field_name ), 
+                { Columns => {} }, ( $search_val ) 
+            );
+            my %alias_lookup = ();
+            for my $alias ( @$aliases ) {
+                push @{ $alias_lookup{ $alias->{'feature_id'} } }, 
+                    $alias->{'alias'};
+            }
+
+            my @cols   = qw[ map_accession_id map_name map_start map_stop 
+                feature_accession_id feature_name feature_aliases feature_start 
+                feature_stop feature_type_aid is_landmark
+            ];
+
+            $return = join( "\t", @cols ) . "\n";
+
+            for my $f( @$features ) {
+                $f->{'feature_aliases'} = join(
+                    ',', sort @{ $alias_lookup{ $f->{'feature_id'} } || [] }
+                );
+                $return .= join( "\t", map { $f->{ $_ } } @cols ) . "\n";
+            }
+        }
+        elsif ( $format eq 'GFF' ) {
+            #
+            # Fields are: <seqname> <source> <feature> <start> <end>
+            # <score> <strand> <frame> [attributes] [comments]
+            # http://www.sanger.ac.uk/Software/formats/GFF/GFF_Spec.shtml
+            #
+            for my $f( @$features ) {
+                $return .= join( "\t", $f->{'feature_name'}, 'CMap', 
+                    $f->{'feature_type_aid'}, $f->{'start_position'}, 
+                    $f->{'stop_position'}, '.', '.', '.', $f->{'map_name'}
+                ) . "\n";
+            }
+
+        }
+    }
+
+    return $return;
 }
 
 # ----------------------------------------------------
@@ -325,6 +489,8 @@ sub cmap_data {
     $data->{'feature_types'}             = \%feature_types;
     $data->{'extra_code'}                = $extra_code;
     $data->{'extra_form'}                = $extra_form;
+    $data->{'max_map_units'}        = $self->get_map_unit_to_height(
+                                            $data->{'slots'});
 
     return $data;
 }
@@ -651,6 +817,7 @@ sub slot_data {
                                  ms.map_units,
                                  ms.is_relational_map,
                                  s.species_id,
+                                 s.accession_id as species_aid,
                                  s.common_name as species_name
                         from     cmap_map map,
                                  cmap_map_set ms,
@@ -689,6 +856,7 @@ sub slot_data {
                                  ms.map_units,
                                  ms.is_relational_map,
                                  s.species_id,
+                                 s.accession_id as species_aid,
                                  s.common_name as species_name
                         from     cmap_map map,
                                  cmap_feature f1, 
@@ -733,6 +901,7 @@ sub slot_data {
                                  ms.map_units,
                                  ms.is_relational_map,
                                  s.species_id,
+                                 s.accession_id as species_aid,
                                  s.common_name as species_name
                         from     cmap_map map,
                                  cmap_map_set ms,
@@ -1673,11 +1842,10 @@ Returns the data for the correspondence matrix.
             $row->{'map_type'} =
               $self->map_type_data( $row->{'map_type_accession'}, 'map_type' );
         }
-
         $map_sets =
           sort_selectall_arrayref( $map_sets, 'default_display_order',
             'map_type', 'display_order', 'common_name', 'display_order',
-            'published_on', 'short_name' );
+            'published_on desc', 'short_name' );
 
         my $map_sql = qq[
             select   distinct map.map_name,
@@ -2514,14 +2682,16 @@ out which maps have relationships.
 
         $corr_sql = qq[ 
             select   count(distinct cl.feature_correspondence_id) as no_corr, 
-                     cl.map_id2 as map_id
+                     cl.map_id2 as map_id, map.map_set_id
             from     cmap_correspondence_lookup cl,
-                     cmap_feature_correspondence fc
+                     cmap_feature_correspondence fc,
+                     cmap_map map
             $additional_tables
             where    cl.feature_correspondence_id=
                      fc.feature_correspondence_id
             and      fc.is_enabled=1
             and      cl.map_id1!=cl.map_id2
+            and      map.map_id=cl.map_id2
             $from_restriction
             $additional_where
         ];
@@ -2530,7 +2700,7 @@ out which maps have relationships.
             " and cl.map_id1 in ('"
           . join( "','", map { $_->[0] } @{ $self->slot_info->{$ref_slot_no} } )
           . "')";
-        $corr_sql .= " group by cl.map_id2";
+        $corr_sql .= " group by cl.map_id2, map.map_set_id";
     }
     else{
         if ( scalar @$ref_maps == 1 ) {
@@ -2594,11 +2764,12 @@ out which maps have relationships.
 
             $corr_sql = qq[ 
             select   count(distinct cl.feature_correspondence_id) as no_corr, 
-                     f2.map_id
+                     f2.map_id, map.map_set_id
             from     cmap_feature f1,
                      cmap_feature f2,
                      cmap_correspondence_lookup cl,
-                     cmap_feature_correspondence fc
+                     cmap_feature_correspondence fc,
+                     cmap_map map
             $additional_tables
             where   f1.feature_id=cl.feature_id1
             $from_restriction
@@ -2607,6 +2778,7 @@ out which maps have relationships.
             and      fc.is_enabled=1
             and      cl.feature_id2=f2.feature_id
             and      f1.map_id!=f2.map_id
+            and      map.map_set_id=f2.map_id
             $additional_where
         ];
 
@@ -2614,7 +2786,7 @@ out which maps have relationships.
             " and f1.map_id in ('"
           . join( "','", map { $_->[0] } @{ $self->slot_info->{$ref_slot_no} } )
           . "')";
-        $corr_sql .= " group by f2.map_id";
+        $corr_sql .= " group by f2.map_id, map.map_set_id";
     }
 
 
@@ -2625,52 +2797,67 @@ out which maps have relationships.
         $self->store_cached_results( $corr_sql, $feature_correspondences );
     }
 
-    my %map_sets;    # the map set info and any maps
-    for my $fc (@$feature_correspondences) {
-        my $sth = $db->prepare(
+    #
+    # Gather info on the maps and map sets.
+    #
+    my %map_set_ids = map { $_->{'map_set_id'}, 1 } @$feature_correspondences;
+    my $ms_sth      = $db->prepare(
+        q[
+            select s.common_name as species_name,
+                   s.display_order as species_display_order,
+                   ms.map_type_accession as map_type_aid,
+                   ms.accession_id as map_set_aid,
+                   ms.short_name as map_set_name,
+                   ms.published_on,
+                   ms.display_order as ms_display_order,
+                   ms.can_be_reference_map
+            from   cmap_map_set ms,
+                   cmap_species s
+            where  ms.map_set_id=?
+            and    ms.species_id=s.species_id
+        ]
+    );
+
+    my ( %map_sets, %comp_maps ); 
+    for my $map_set_id ( keys %map_set_ids ) {
+        $ms_sth->execute( $map_set_id );
+        my $ms_info = $ms_sth->fetchrow_hashref;
+        $ms_info->{'published_on'} = parsedate( $ms_info->{'published_on'} );
+        $ms_info->{'map_type'} 
+            = $self->map_type_data($ms_info->{'map_type_aid'},'map_type');
+        $ms_info->{'map_type_display_order'} 
+            = $self->map_type_data($ms_info->{'map_type_aid'},'display_order');
+        $map_sets{ $ms_info->{'map_set_aid'} } = $ms_info;
+
+        my $maps = $db->selectall_arrayref(
             q[
-                select s.common_name as species_name,
-                       s.display_order as species_display_order,
-                       ms.map_type_accession as map_type_aid,
+                select map.map_id,
                        ms.accession_id as map_set_aid,
-                       ms.short_name as map_set_name,
-                       ms.published_on,
-                       ms.display_order as ms_display_order,
-                       ms.can_be_reference_map,
-                       map.map_id,
                        map.accession_id as map_aid,
                        map.map_name,
-                       map.display_order as map_display_order
+                       map.display_order 
                 from   cmap_map map,
-                       cmap_map_set ms,
-                       cmap_species s
-                where  map.map_id=?
+                       cmap_map_set ms
+                where  map.map_set_id=?
                 and    map.map_set_id=ms.map_set_id
-                and    ms.species_id=s.species_id
-            ]
+            ],
+            { Columns => {} },
+            ( $map_set_id )
         );
-        $sth->execute( $fc->{'map_id'} );
-        my $info = $sth->fetchrow_hashref;
-        $info->{'map_type'} =
-          $self->map_type_data( $info->{'map_type_accession'}, 'map_type' );
-        $info->{'map_type_display_order'} =
-          $self->map_type_data( $info->{'map_type_accession'},
-            'display_order' );
-        $info->{'published_on'} = parsedate( $info->{'published_on'} );
 
-        unless ( $map_sets{ $info->{'map_set_aid'} } ) {
-            $map_sets{ $info->{'map_set_aid'} } = $info;
+        for my $map ( @$maps ) {
+            $comp_maps{ $map->{'map_id'} } = $map;
         }
-
-        $map_sets{ $info->{'map_set_aid'} }{'maps'}{ $info->{'map_aid'} } = {
-            map_name             => $info->{'map_name'},
-            map_aid              => $info->{'map_aid'},
-            display_order        => $info->{'map_display_order'},
-            can_be_reference_map => $info->{'can_be_reference_map'},
-            no_correspondences   => $fc->{'no_corr'},
-        };
     }
 
+    for my $fc ( @$feature_correspondences ) {
+        my $comp_map        = $comp_maps{ $fc->{'map_id'} } or next;
+        my $ref_map_set_aid = $comp_map->{'map_set_aid'}    or next;
+
+        $comp_map->{'no_correspondences'} = $fc->{'no_corr'};
+
+        push @{ $map_sets{ $ref_map_set_aid }{'maps'} }, $comp_map;
+    }
     #
     # Sort the map sets and maps for display, count up correspondences.
     #
@@ -2695,7 +2882,7 @@ out which maps have relationships.
             sort {
                      $a->{'display_order'} <=> $b->{'display_order'}
                   || $a->{'map_name'} cmp $b->{'map_name'}
-            } values %{ $map_set->{'maps'} }
+            } @{ $map_set->{'maps'} }
           )
         {
             next
@@ -2703,7 +2890,7 @@ out which maps have relationships.
               && $map->{'no_correspondences'} < $min_correspondences;
 
             $total_correspondences += $map->{'no_correspondences'};
-            push @maps, $map if $map->{'can_be_reference_map'};
+            push @maps, $map if $map_set->{'can_be_reference_map'};
         }
 
         next unless $total_correspondences;
@@ -3118,6 +3305,15 @@ Given a list of feature names, find any maps they occur on.
     for my $feature_name (@feature_names) {
         my $comparison = $feature_name =~ m/%/ ? 'like' : '=';
         $feature_name = uc $feature_name;
+
+        my ( $fname_where, $aname_where );
+        if ( $feature_name ne '%' ) {
+            $fname_where .= 
+                "and upper(f.feature_name) $comparison '$feature_name' ";
+            $aname_where .= 
+                "and upper(fa.alias) $comparison '$feature_name' ";
+        }
+
         my $where = '';
         if (@$incoming_feature_type_aids) {
             $where .=
@@ -3152,11 +3348,11 @@ Given a list of feature names, find any maps they occur on.
                          cmap_map map,
                          cmap_map_set ms,
                          cmap_species s
-                where    upper(f.feature_name) $comparison '$feature_name'
-                and      f.map_id=map.map_id
+                where    f.map_id=map.map_id
                 and      map.map_set_id=ms.map_set_id
                 and      ms.species_id=s.species_id
                 and      ms.is_enabled=1
+                $fname_where
                 $where
                 UNION
                 select f.feature_id,
@@ -3178,12 +3374,12 @@ Given a list of feature names, find any maps they occur on.
                        cmap_map map,
                        cmap_map_set ms,
                        cmap_species s
-                where  upper(fa.alias) $comparison '$feature_name'
-                and    fa.feature_id=f.feature_id
+                where  fa.feature_id=f.feature_id
                 and    f.map_id=map.map_id
                 and    map.map_set_id=ms.map_set_id
                 and    ms.species_id=s.species_id
                 and    ms.is_enabled=1
+                $aname_where
                 $where
             ];
         }
@@ -3207,13 +3403,15 @@ Given a list of feature names, find any maps they occur on.
                          cmap_map map,
                          cmap_map_set ms,
                          cmap_species s
-                where    upper(f.accession_id) $comparison '$feature_name'
-                and      f.map_id=map.map_id
+                where   f.map_id=map.map_id
                 and      map.map_set_id=ms.map_set_id
                 and      ms.species_id=s.species_id
                 and      ms.is_enabled=1
                 $where
             ];
+            unless ( $feature_name eq '%' ) {
+                $sql .= "and upper(f.accession_id) $comparison '$feature_name'";
+            }
         }
 
         my $features = $db->selectall_arrayref( $sql, { Columns => {} } );
@@ -3356,7 +3554,20 @@ Return data for a list of evidence type acc. IDs.
     for my $ft (@return_array) {
         $ft->{'line_color'} ||= $default_color;
     }
-    return \@return_array;
+
+    my $all_evidence_types =
+        $self->fake_selectall_arrayref( $self->evidence_type_data(),
+            'evidence_type_accession as evidence_type_aid', 'evidence_type' );
+    $all_evidence_types =
+        sort_selectall_arrayref( $all_evidence_types, 'evidence_type' );
+                                                                                
+                                                                                
+    return {
+        all_evidence_types => $all_evidence_types,
+        evidence_types     =>\@return_array,
+    }
+
+
 }
 
 # ----------------------------------------------------
@@ -3404,7 +3615,17 @@ Return data for a list of feature type acc. IDs.
       sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} }
       @return_array;
 
-    return \@return_array;
+    my $all_feature_types =
+        $self->fake_selectall_arrayref( $self->feature_type_data(),
+            'feature_type_accession as feature_type_aid', 'feature_type' );
+    $all_feature_types =
+    sort_selectall_arrayref( $all_feature_types, 'feature_type' );
+
+
+    return {
+        all_feature_types => $all_feature_types,
+        feature_types     =>\@return_array,
+    }
 }
 
 # ----------------------------------------------------
@@ -3449,8 +3670,10 @@ Returns the data for drawing comparative maps.
                  ms.short_name,
                  ms.map_type_accession as map_type_aid, 
                  ms.species_id, 
+                 ms.published_on,
                  ms.can_be_reference_map,
                  ms.map_units, 
+                 ms.is_relational_map, 
                  s.accession_id as species_aid, 
                  s.common_name, 
                  s.full_name
@@ -3462,7 +3685,7 @@ Returns the data for drawing comparative maps.
     my $map_sets = $db->selectall_arrayref( $map_set_sql, { Columns => {} } );
     foreach my $row ( @{$map_sets} ) {
         $row->{'map_type'} =
-          $self->map_type_data( $row->{'map_type_accession'}, 'map_type' );
+          $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
     }
 
     #
@@ -3490,33 +3713,6 @@ Returns the data for drawing comparative maps.
     for my $map (@$maps) {
         push @{ $map_lookup{ $map->{'map_set_id'} } }, $map;
     }
-
-#    #
-#    # Feature types on the maps
-#    #
-#    my $ft_sql = qq[
-#        select   distinct 
-#                 f.feature_type_accession as feature_type_aid, 
-#                 map.map_set_id
-#        from     cmap_feature f,
-#                 cmap_map map,
-#                 cmap_map_set ms, 
-#                 cmap_species s
-#        where    f.map_id=map.map_id
-#        and      map.map_set_id=ms.map_set_id
-#        and      ms.species_id=s.species_id
-#        $restriction
-#    ];
-#    my $feature_types = $db->selectall_arrayref( $ft_sql, { Columns => {} } );
-#    foreach my $row ( @{$feature_types} ) {
-#        $row->{'feature_type'} =
-#          $self->feature_type_data( $row->{'feature_type_aid'},
-#            'feature_type' );
-#    }
-#    my %ft_lookup;
-#    for my $ft (@$feature_types) {
-#        push @{ $ft_lookup{ $ft->{'map_set_id'} } }, $ft;
-#    }
 
     #
     # Attributes of the map sets
@@ -3551,9 +3747,18 @@ Returns the data for drawing comparative maps.
     for my $map_set (@$map_sets) {
         $map_set->{'object_id'}     = $map_set->{'map_set_id'};
         $map_set->{'attributes'}    = $attr_lookup{ $map_set->{'map_set_id'} };
-#        $map_set->{'feature_types'} = $ft_lookup{ $map_set->{'map_set_id'} }
-#          || [];
         $map_set->{'maps'} = $map_lookup{ $map_set->{'map_set_id'} } || [];
+        if ( $map_set->{'published_on'} ) {
+            if ( my $pubdate =
+                parsedate( $map_set->{'published_on'}, VALIDATE=>1)
+            ) {
+                my @time = localtime( $pubdate );
+                $map_set->{'published_on'} = strftime("%d %B, %Y", @time );
+            }
+            else {
+                $map_set->{'published_on'} = '';
+            }
+        }
     }
 
     $self->get_multiple_xrefs(
@@ -4016,7 +4221,13 @@ Returns data on map types.
     }
 
     my $default_color = $self->config_data('map_color');
-
+ 
+    my $all_map_types =
+        $self->fake_selectall_arrayref( $self->map_type_data(),
+            'map_type_accession as map_type_aid', 'map_type' );
+    $all_map_types =
+    sort_selectall_arrayref( $all_map_types, 'map_type' );
+    
     for my $mt (@return_array) {
         $mt->{'width'} ||= DEFAULT->{'map_width'};
         $mt->{'shape'} ||= DEFAULT->{'map_shape'};
@@ -4027,7 +4238,11 @@ Returns data on map types.
       sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} }
       @return_array;
 
-    return \@return_array;
+
+    return {
+        all_map_types => $all_map_types,
+        map_types     => \@return_array,
+    }
 }
 
 # ----------------------------------------------------
@@ -4064,6 +4279,15 @@ Returns data on species.
 
     my $species = $db->selectall_arrayref( $sql, { Columns => {} } );
 
+    my $all_species = $db->selectall_arrayref(
+        q[
+            select   accession_id as species_aid, common_name, full_name
+            from     cmap_species
+            order by common_name
+        ],
+        { Columns => {} }
+    );
+
     my $attributes = $db->selectall_arrayref(
         q[
             select   object_id, display_order, is_public, 
@@ -4084,6 +4308,37 @@ Returns data on species.
     for my $s (@$species) {
         $s->{'object_id'}  = $s->{'species_id'};
         $s->{'attributes'} = $attr_lookup{ $s->{'species_id'} };
+        $s->{'map_sets'}   = $db->selectall_arrayref(
+            q[
+                select   ms.accession_id as map_set_aid,
+                         ms.short_name as map_set_name,
+                         s.accession_id as species_aid,
+                         ms.map_type_accession as map_type_aid,
+                         ms.is_relational_map,
+                         ms.display_order,
+                         ms.published_on
+                from     cmap_map_set ms,
+                         cmap_species s 
+                where    ms.species_id=?
+                and      ms.species_id=s.species_id
+            ],
+            { Columns => {} },
+            ( $s->{'species_id'} )
+        );
+        foreach my $row ( @{$s->{'map_sets'}} ) {
+            $row->{'default_display_order'} =
+              $self->map_type_data( $row->{'map_type_aid'}, 'display_order' );
+            $row->{'default_color'} =
+              $self->map_type_data( $row->{'map_type_aid'}, 'color' );
+            $row->{'default_width'} =
+              $self->map_type_data( $row->{'map_type_aid'}, 'width' );
+            $row->{'map_type'} =
+              $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
+        }
+        $s->{'map_sets'} =
+          sort_selectall_arrayref( $s->{'map_sets'}, 'default_display_order',
+            'map_type', 'display_order',
+            'published_on desc', 'map_set_name' );
     }
 
     $self->get_multiple_xrefs(
@@ -4091,7 +4346,10 @@ Returns data on species.
         objects    => $species,
     );
 
-    return $species;
+    return {
+        all_species => $all_species,
+        species     => $species,
+    };
 }
 
 # ----------------------------------------------------
@@ -4534,14 +4792,6 @@ sub cmap_entry_data {
             or $ref_map->{'map_names'}
           )
         {
-#            $sql_str = q[
-#            select   map.accession_id,
-#                     map.map_name
-#            from     cmap_map map,
-#                     cmap_map_set ms
-#            where    map.map_set_id=ms.map_set_id
-#            and      ms.accession_id=?
-#            ];
             $sql_str = q[
                 select  map.accession_id,
                         map.map_name,
@@ -4694,6 +4944,26 @@ sub get_all_feature_types {
     }
 
     return \@return;
+}
+
+# ----------------------------------------------------
+sub get_map_unit_to_height {
+    my $self  = shift;
+    my $slots = shift;
+    
+    my %max_per_unit;
+
+    foreach my $slot_id (keys %$slots){
+        foreach my $map_id (keys %{$slots->{$slot_id}}){    
+            my $map=$slots->{$slot_id}{$map_id};
+            unless($max_per_unit{$map->{'map_units'}} and $max_per_unit{$map->{'map_units'}} > ($map->{'stop_position'} - $map->{'start_position'})){
+            $max_per_unit{$map->{'map_units'}} 
+                = $map->{'stop_position'} - $map->{'start_position'};
+            }
+        }
+    }    
+
+    return \%max_per_unit;
 }
 
 # ----------------------------------------------------

@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapTypeViewer;
 # vim: set ft=perl:
 
-# $Id: MapTypeViewer.pm,v 1.4 2004-03-25 14:11:57 mwz444 Exp $
+# $Id: MapTypeViewer.pm,v 1.5 2004-06-22 03:05:35 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Data::Pageset;
 use Bio::GMOD::CMap::Apache;
@@ -20,13 +20,13 @@ sub handler {
     my ( $self, $apr ) = @_;
     $self->data_source( $apr->param('data_source') ) or return;
 
-    my $page_no        = $apr->param('page_no') || 1;
-    my @map_types  = split( /,/, $apr->param('map_type') );
+    my $page_no    = $apr->param('page_no') || 1;
+    my @map_types  = split( /,/, $apr->param('map_type_aid') );
     my $data_module    = $self->data_module;
-    my $map_types      = $data_module->map_type_viewer_data(
+    my $data       = $data_module->map_type_viewer_data(
         map_types  => \@map_types,
     ) or return $self->error( $data_module->error );
-
+    my $map_types  = $data->{'map_types'};
     $PAGE_SIZE ||= $self->config_data('max_child_elements') || 0;
     $MAX_PAGES ||= $self->config_data('max_search_pages')   || 1;
 
@@ -53,6 +53,7 @@ sub handler {
             stylesheet   => $self->stylesheet,
             data_sources => $self->data_sources,
             map_types    => $map_types,
+            all_map_types => $data->{'all_map_types'},
             pager        => $pager,
             intro        => $INTRO,
         },

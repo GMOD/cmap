@@ -1,7 +1,7 @@
 [% SET title='Species Info' %]
 [% 
     INCLUDE header.tmpl 
-    title=title
+    title='CMap - Species Info'
     cur_sec='species_info'
     help_anchor='species_info'
 %]
@@ -15,15 +15,22 @@
 
 <div align="center">
 
-[%- IF apr.param('species_aid') -%]
-    <a href="species_info">Show All Species</a>
-[%- END -%]
+<form method="GET" action="species_info">
+    Display:
+    <select name="species_aid">
+        <option value="">--All Species--</option>
+        [% FOREACH s=all_species %]
+            <option value="[% s.species_aid %]"[% IF apr.param('species_aid')==s.species_aid %] selected[% END %]>[% s.common_name %] ([% s.full_name %])</option>
+        [% END %]
+    </select>
+    <input type="submit" value="Submit">
+</form>
 
 <p>
 [% IF species.size %]
     <table>
         <tr>
-            <td colspan="2" align="center">
+            <td colspan="3" align="center">
                 [% SET pager_url="$url/species_info?" %]
                 [% PROCESS pager.tmpl %]
             </td>
@@ -31,28 +38,50 @@
         [% FOREACH s=species %]
             <tr class="colored">
                 <td align="right">Common&nbsp;Name:</td>
-                <td>
-                    <b>[% s.common_name %]</b>
-                </td>
+                <td><b>[% s.common_name %]</b></td>
+                <td align="center"><b>[</b>&nbsp;<a href="species_info?species_aid=[% s.species_aid %]">Show Only This Species</a>&nbsp;<b>]</b></td>
             </tr> 
 
             <tr>
                 <td align="right">Full&nbsp;Name:</td>
-                <td>[% s.full_name %]</td>
+                <td colspan="2">[% s.full_name %]</td>
             </tr>
 
             <tr>
                 <td align="right">Accession&nbsp;ID:</td>
-                <td>[% s.species_aid %]</td>
+                <td colspan="2">[% s.species_aid %]</td>
             </tr>
+
+            [% IF s.map_sets.size %]
+                <tr>
+                    <td valign="top" align="right">Map Sets ([% s.map_sets.size %]):</td>
+                    <td colspan="2" align="center">
+                        <b>[</b>&nbsp;<a href="map_set_info?species_aid=[% s.species_aid %]">Show Map Sets From This Species</a>&nbsp;<b>]</b>
+                        [% SET last_map_type='' %]
+                        <table border="0">
+                        [% FOREACH ms=s.map_sets %]
+                            [% IF ms.map_type_aid != last_map_type %]
+                                <tr>
+                                <th colspan="3" align="left">[% ms.map_type %] Maps</th>
+                                </tr>
+                            [% END %]
+                            <tr>
+                            <td>[% ms.map_set_name %]</td>
+                            <td align="center">&nbsp;<b>[</b>&nbsp;<a href="map_set_info?map_set_aid=[% ms.map_set_aid %]">View&nbsp;Map&nbsp;Set&nbsp;Info</a>&nbsp;<b>]</b>&nbsp;</td>
+                            <td align="center">&nbsp;<b>[</b>&nbsp;<a href="matrix?show_matrix=1&[% IF ms.is_relational_map %]link_map_set_aid=[% ms.map_set_aid %][% ELSE %]map_type_aid=[% ms.map_type_aid %]&species_aid=[% ms.species_aid %]&map_set_aid=[% ms.map_set_aid %][% END %]">View&nbsp;Map&nbsp;Set&nbsp;In&nbsp;Matrix</a>&nbsp;<b>]</b>&nbsp;</td>
+                            </tr>
+                            [% last_map_type=ms.map_type_aid %]
+                        [% END %]
+                        </table>
+                    </td>
+                </tr>
+            [% END %]
 
             [% FOREACH att=s.attributes %]
                 [% NEXT UNLESS att.is_public %]
                 <tr>
-                    <td align="right">
-                        [% att.attribute_name %]:
-                    </td>
-                    <td>
+                    <td align="right">[% att.attribute_name %]:</td>
+                    <td colspan="2">
                         [%- IF att.attribute_value.match('^http://') -%]
                             <a href="[% att.attribute_value %]">[% att.attribute_value %]</a>
                         [%- ELSE -%]
@@ -64,10 +93,8 @@
 
             [% IF s.xrefs.size %]
                 <tr>
-                    <td align="right" valign="top">
-                        Cross-references:
-                    </td>
-                    <td>
+                    <td align="right" valign="top">Cross-references:</td>
+                    <td colspan="2">
                         <ul>
                         [% FOREACH xref=s.xrefs %]
                             [% NEXT UNLESS xref.xref_url %]
@@ -77,6 +104,7 @@
                     </td>
                 </tr>
             [% END %]
+            <tr><td colspan="3">&nbsp;</td></tr>
         [% END %]
     </table>
 [% ELSE %]

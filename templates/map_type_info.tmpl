@@ -1,7 +1,7 @@
 [% SET title='Map Type Info' %]
 [% 
     INCLUDE header.tmpl 
-    title=title
+    title='CMap - Map Type Info'
     cur_sec='map_type_info'
     help_anchor='map_type_info'
 %]
@@ -15,9 +15,16 @@
 
 <div align="center">
 
-[%- IF apr.param('map_type') -%]
-    <a href="map_type_info">Show All Map Types</a>
-[%- END -%]
+<form method="GET" action="map_type_info">
+    Display:
+    <select name="map_type_aid">
+        <option value="">--All Map Types--</option>
+        [% FOREACH mt=all_map_types %]
+            <option value="[% mt.map_type_aid %]"[% IF apr.param('map_type_aid')==mt.map_type_aid %] selected[% END %]>[% mt.map_type %]</option>
+        [% END %]
+    </select>
+    <input type="submit" value="Submit">
+</form>
 
 <p>
 [% IF map_types.size %]
@@ -38,7 +45,7 @@
 
             <tr>
                 <td align="right" valign="top">Accession&nbsp;ID:</td>
-                <td>[% mt.map_type %]</td>
+                <td>[% mt.map_type_aid %]</td>
             </tr>
 
             <tr>
@@ -87,6 +94,14 @@
                     </td>
                 </tr> 
             [% END %]
+
+            <tr>
+                <td>&nbsp;</td>
+                <td>
+                    <b>[</b>&nbsp;<a href="map_set_info?map_type_aid=[% mt.map_type_aid %]">Show All Map Sets Of This Map Type</a>&nbsp;<b>]</b>
+                </td>
+            </tr> 
+            <tr><td colspan="2">&nbsp;</td></tr>
         [% END %]
     </table>
 [% ELSE %]

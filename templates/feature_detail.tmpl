@@ -1,84 +1,72 @@
 [% 
     INCLUDE header.tmpl 
-    title="Feature Detail &quot;$feature.feature_name&quot;"
+    title="CMap - Feature Details &quot;$feature.feature_name&quot; ($feature.feature_aid)"
     cur_sec='feature_details'
     help_anchor='feature_details'
 %]
 
-<h1>Feature Detail &quot;[% feature.feature_name %]&quot;</h1>
+<h1>Feature &quot;[% feature.feature_name %]&quot;</h1>
 
-<table>
+<table border="0">
     <tr>
-        <th align="right">
-            Accession ID:
-        </td>
-        <td>
-            [% feature.feature_aid %]
-        </td>
+        <th align="right">Feature Name:</th>
+        <td colspan="2">[% feature.feature_name %]</td>
     </tr>
 
     <tr>
-        <th align="right">
-            Feature Type:
-        </td>
-        <td>
-            [% feature.feature_type %]
-            <b>[</b>&nbsp;<a href="feature_type_info?feature_type=[% feature.feature_type %]">View&nbsp;Feature&nbsp;Type&nbsp;Info</a>&nbsp;<b>]</b>
-        </td>
-    </tr>
-
-    <tr>
-        <th align="right">
-            Feature Name:
-        </td>
-        <td>
-            [% feature.feature_name %]
-        </td>
-    </tr>
-
-    <tr>
-        <th align="right" valign="top">
-            Aliases:
-        </td>
-        <td>
-            [%- IF feature.defined('aliases') AND feature.aliases.size -%]
+        <th align="right" valign="top"[% IF feature.aliases.size > 1 %] rowspan="[% feature.aliases.size %]"[% END %]>Aliases:</th>
+        [%- IF feature.defined('aliases') AND feature.aliases.size -%]
+            [% SET a1=feature.aliases.shift %]
+            <td>[% a1.alias %]</td>
+            <td align="center"><b>[</b>&nbsp;<a href="feature_alias?feature_aid=[% a1.feature_aid %];feature_alias=[% a1.alias | uri %]">View&nbsp;Alias&nbsp;Details</a>&nbsp;<b>]</b>
+            [% IF feature.aliases.size %]
+                </tr>
                 [%- FOREACH a=feature.aliases -%]
-                    [% a.alias %]&nbsp;<b>[</b>&nbsp;<a href="feature_alias?feature_aid=[% a.feature_aid %];feature_alias=[% a.alias | uri %]">View&nbsp;Alias&nbsp;Details</a>&nbsp;<b>]</b><br>
+                    <tr>
+                        <td>[% a.alias %]</td>
+                        <td align="center"><b>[</b>&nbsp;<a href="feature_alias?feature_aid=[% a.feature_aid %];feature_alias=[% a.alias | uri %]">View&nbsp;Alias&nbsp;Details</a>&nbsp;<b>]</b>
+                        </td>
+                    </tr>
                 [% END %]
-            [%- ELSE -%]
-                None
-            [%- END -%]
-        </td>
+           [% END %]
+        [%- ELSE -%]
+            <td colspan="2">N/A</td>
+        [%- END -%]
     </tr>
 
     <tr>
-        <th align="right">
-            Map:
-        </td>
+        <th align="right">Accession ID:</th>
+        <td colspan="2">[% feature.feature_aid %]</td>
+    </tr>
+
+    <tr>
+        <th align="right">Feature Type:</th>
+        <td>[% feature.feature_type %]</td>
+        <td align="center"><b>[</b>&nbsp;<a href="feature_type_info?feature_type_aid=[% feature.feature_type_aid %]">View&nbsp;Feature&nbsp;Type&nbsp;Info</a>&nbsp;<b>]</b></td>
+    </tr>
+
+    <tr>
+        <th align="right">Map:</th>
         <td>
             [% feature.species_name %]-[% feature.map_set_name %]-[% feature.map_name %]
+        </td>
+        <td align="center">
              <b>[</b>&nbsp;<a href="map_details?ref_map_set_aid=[% feature.map_set_aid %];ref_map_aid=[% feature.map_aid %];highlight=&quot;[% feature.feature_name %]&quot;;label_features=landmarks">View&nbsp;Map&nbsp;Details</a>&nbsp;<b>]</b>
         </td>
     </tr>
 
     <tr>
-        <th align="right">
-            Start:
-        </td>
-        <td>
-            [% feature.start_position | commify %] [% feature.map_units %]
-        </td>
+        <th align="right">Start:</th>
+        <td colspan="2">[% feature.start_position | commify %] [% feature.map_units %]</td>
     </tr>
 
     <tr>
-        <th align="right">
-            Stop:
-        </td>
-        <td>
+        <th align="right">Stop:</th>
+        <td colspan="2">
             [%- IF feature.stop_position.defined -%]
                 [% feature.stop_position | commify %] [% feature.map_units %]
             [%- ELSE -%]
-                NULL
+                &nbsp;
             [%- END -%]
         </td>
     </tr>
@@ -88,8 +76,8 @@
         <tr>
             <th align="right" valign="top">
                 [% att.attribute_name | nbsp %]:
-            </td>
-            <td>
+            </th>
+            <td colspan="2">
                 [%- IF att.attribute_value.match('^http://') -%]
                     <a href="[% att.attribute_value %]">[% att.attribute_value %]</a>
                 [%- ELSE -%]
@@ -101,12 +89,11 @@
 
     [% IF feature.xrefs.size %]
         <tr>
-            <th align="right" valign="top">Cross-references:</td>
-            <td>
-                <ul>
+            <th align="right" valign="top">Cross-references:</th>
+            <td colspan="2" align="center">
                 [%- FOREACH xref=feature.xrefs -%]
                     [% NEXT UNLESS xref.xref_url %]
-                    <li><a href="[% xref.xref_url %]">[% xref.xref_name %]</a></li>
+                    <b>[</b>&nbsp;<a href="[% xref.xref_url %]">[% xref.xref_name %]</a>&nbsp;<b>]</a><br />
                 [%- END -%]
                 </ul>
             </td>
@@ -141,7 +128,7 @@
                 <td>[% IF fc.defined('aliases') AND fc.aliases.size; fc.aliases.join(', '); ELSE; 'None'; END %]</td>
                 <td>
                     [% FOREACH e=fc.evidence %]
-                        <a href="evidence_type_info?evidence_type=[% e.evidence_type %]">[% e.evidence_type %]</a><br>
+                        <a href="evidence_type_info?evidence_type_aid=[% e.evidence_type_aid %]">[% e.evidence_type %]</a><br>
                     [% END %]
                 </td>
                 <td align="center">

@@ -1,7 +1,8 @@
 package Bio::GMOD::CMap::Utils;
+
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.35 2004-05-31 04:55:05 mwz444 Exp $
+# $Id: Utils.pm,v 1.36 2004-06-22 03:05:34 mwz444 Exp $
 
 =head1 NAME
 
@@ -29,22 +30,23 @@ use Bio::GMOD::CMap::Constants;
 use POSIX;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.35 $)[-1];
+$VERSION = (qw$Revision: 1.36 $)[-1];
 
 use base 'Exporter';
 
-my @subs   = qw[ 
-    column_distribution
-    column_distribution2 
-    commify 
-    extract_numbers 
-    even_label_distribution
-    label_distribution 
-    next_number 
-    parse_words
-    pk_name
-    fake_selectall_arrayref
-    sort_selectall_arrayref
+my @subs = qw[
+  column_distribution
+  column_distribution2
+  commify
+  extract_numbers
+  even_label_distribution
+  label_distribution
+  next_number
+  parse_words
+  pk_name
+  simple_column_distribution
+  fake_selectall_arrayref
+  sort_selectall_arrayref
 ];
 @EXPORT_OK = @subs;
 @EXPORT    = @subs;
@@ -61,73 +63,71 @@ Given a reference to some columns, figure out where something can be inserted.
 =cut
 
     my %args        = @_;
-    my $columns     = $args{'columns'}     || []; # array reference
-    my $buffer      = $args{'buffer'}      ||  2; # space b/w things
-    my $collapse    = $args{'collapse'}    ||  0; # whether to collapse
-    my $collapse_on = $args{'collapse_on'} || ''; # on what type of object
-    my $col_span    = $args{'col_span'}    ||  1; # how many cols to occupy
-    my $top         = $args{'top'};               # the top and bottom of
-    my $bottom      = $args{'bottom'};            # the thing being inserted
-    $bottom         = $top unless defined $bottom;
+    my $columns     = $args{'columns'} || [];        # array reference
+    my $buffer      = $args{'buffer'} || 2;          # space b/w things
+    my $collapse    = $args{'collapse'} || 0;        # whether to collapse
+    my $collapse_on = $args{'collapse_on'} || '';    # on what type of object
+    my $col_span    = $args{'col_span'} || 1;        # how many cols to occupy
+    my $top         = $args{'top'};                  # the top and bottom of
+    my $bottom      = $args{'bottom'};               # the thing being inserted
+    $bottom = $top unless defined $bottom;
 
     return unless defined $top && defined $bottom;
 
-    my $column_index; # the number of the column chosen, is returned
-    if ( @$columns ) {
+    my $column_index;    # the number of the column chosen, is returned
+    if (@$columns) {
         my $i = 0;
-        for ( ;; ) {
-            last if $i > $#{ $columns };
-            my $column    = $columns->[ $i ];
-            my @used      = sort { $a->[0] <=> $b->[0] } @{ $column };
+        for ( ; ; ) {
+            last if $i > $#{$columns};
+            my $column    = $columns->[$i];
+            my @used      = sort { $a->[0] <=> $b->[0] } @{$column};
             my $ok        = 1;
             my $collapsed = 0;
 
-            for my $segment ( @used ) {
-                my ( $north, $south, $span, $type ) = @$segment; 
-                if ( 
-                    $collapse             && 
-                    $collapse_on eq $type && 
-                    $north == $top        && 
-                    $south == $bottom 
-                ) {
-                    $ok = 1;
+            for my $segment (@used) {
+                my ( $north, $south, $span, $type ) = @$segment;
+                if (   $collapse
+                    && $collapse_on eq $type
+                    && $north == $top
+                    && $south == $bottom )
+                {
+                    $ok        = 1;
                     $collapsed = 1;
                     last;
                 }
 
                 next if $south + $buffer < $top;
                 next if $north - $buffer > $bottom;
-                $i += $span; # jump past the last taken column
+                $i += $span;    # jump past the last taken column
                 $ok = 0, last;
             }
 
             #
             # If this column looks OK, see if there is clearance in the others.
             #
-            if ( $ok && $col_span > 1 && $i < $#{ $columns } ) {
+            if ( $ok && $col_span > 1 && $i < $#{$columns} ) {
                 for my $n ( $i + 1 .. $i + $col_span - 1 ) {
-                    last if $n > $#{ $columns };
-                    my $ncol  = $columns->[ $n ];
-                    my @nused = sort { $a->[0] <=> $b->[0] } @{ $ncol };
+                    last if $n > $#{$columns};
+                    my $ncol  = $columns->[$n];
+                    my @nused = sort { $a->[0] <=> $b->[0] } @{$ncol};
                     my $nok   = 1;
 
-                    for my $nseg ( @nused ) {
-                        my ( $n, $s, $nspan ) = @$nseg; 
+                    for my $nseg (@nused) {
+                        my ( $n, $s, $nspan ) = @$nseg;
                         next if $s + $buffer < $top;
                         next if $n - $buffer > $bottom;
-                        $i += $nspan; # jump past the last taken column
+                        $i += $nspan;    # jump past the last taken column
                         $ok = 0, last;
                     }
                 }
             }
 
-            if ( $ok ) {
+            if ($ok) {
                 $column_index = $i;
-                unless ( $collapsed ) {
+                unless ($collapsed) {
                     for my $n ( 0 .. $col_span - 1 ) {
-                        push @{ $columns->[ $column_index + $n ] }, [ 
-                            $top, $bottom, $col_span - $n, $collapse_on 
-                        ];
+                        push @{ $columns->[ $column_index + $n ] },
+                          [ $top, $bottom, $col_span - $n, $collapse_on ];
                     }
                 }
                 last;
@@ -135,20 +135,18 @@ Given a reference to some columns, figure out where something can be inserted.
         }
 
         unless ( defined $column_index ) {
-            $column_index = $#{ $columns } + 1;
+            $column_index = $#{$columns} + 1;
             for my $n ( 0 .. $col_span - 1 ) {
-                push @{ $columns->[ $column_index + $n ] }, [ 
-                    $top, $bottom, $col_span - $n, $collapse_on
-                ];
+                push @{ $columns->[ $column_index + $n ] },
+                  [ $top, $bottom, $col_span - $n, $collapse_on ];
             }
         }
     }
     else {
         $column_index = 0;
         for my $n ( 0 .. $col_span - 1 ) {
-            push @{ $columns->[ $n ] }, [ 
-                $top, $bottom, $col_span - $n, $collapse_on
-            ];
+            push @{ $columns->[$n] },
+              [ $top, $bottom, $col_span - $n, $collapse_on ];
         }
     }
 
@@ -156,6 +154,7 @@ Given a reference to some columns, figure out where something can be inserted.
 }
 
 # ----------------------------------------------------
+
 =pod
 
 =head2 column_distribution2
@@ -163,99 +162,109 @@ Given a reference to some columns, figure out where something can be inserted.
 Given a reference to some columns, figure out where something can be inserted.
 
 =cut
-sub column_distribution2 {
 
+sub column_distribution2 {
     my %args        = @_;
-    my $columns     = $args{'columns'}     || []; # array reference
-    my $buffer      = $args{'buffer'}      ||  2; # space b/w things
-    my $collapse    = $args{'collapse'}    ||  0; # whether to collapse
-    my $collapse_on = $args{'collapse_on'} || ''; # on what type of object
-    my $col_span    = $args{'col_span'}    ||  1; # how many cols to occupy
-    my $top         = $args{'top'};               # the top and bottom of
-    my $bottom      = $args{'bottom'};            # the thing being inserted
-    my $bins        = $args{'bins'}        ||  1; # number of bins              
-    my $col_top     = $args{'col_top'}     ||  1; # top of the column     
-    my $col_bottom  = $args{'col_bottom'};        # top of the column
-  
-     $bottom         = $top unless defined $bottom;
+    my $columns     = $args{'columns'} || [];        # array reference
+    my $buffer      = $args{'buffer'} || 2;          # space b/w things
+    my $collapse    = $args{'collapse'} || 0;        # whether to collapse
+    my $collapse_on = $args{'collapse_on'} || '';    # on what type of object
+    my $col_span    = $args{'col_span'} || 1;        # how many cols to occupy
+    my $top         = $args{'top'};                  # the top and bottom of
+    my $bottom      = $args{'bottom'};               # the thing being inserted
+    my $bins        = $args{'bins'} || 1;            # number of bins
+    my $col_top     = $args{'col_top'} || 1;         # top of the column
+    my $col_bottom  = $args{'col_bottom'};           # top of the column
+
+    $bottom = $top unless defined $bottom;
 
     return unless defined $top && defined $bottom && defined $col_bottom;
 
-    ###$columns is an array of columns.  Each column is has a hash of bins.
-    ###  Each bin is an array of object start and stops.
-    my $bin_factor  = ($col_bottom-$col_top)/$bins;
-    ###Define the bins that this object lies in. 
-    my $index_start = POSIX::ceil(($top-$col_top)/$bin_factor);      #first bin 
-    my $index_stop  = POSIX::ceil(($bottom-$col_top)/$bin_factor); #last bin
-  
-    ###When the top of the object is higher than the column, it results 
-    ###  in negative indices.  This fixes the problem by binning them
-    ###  all in the first bin. 
-    $index_start=0 if $index_start<0; 
-    $index_stop=0 if $index_stop<0;
+    # $columns is an array of columns.  Each column is has a hash of bins.
+    #  Each bin is an array of object start and stops.
+    my $bin_factor = ( $col_bottom - $col_top ) / $bins;
 
-    my $column_index; # the number of the column chosen, is returned
-    if ( @$columns ) {
+    # Define the bins that this object lies in.
+    my $index_start =
+      POSIX::ceil( ( $top - $col_top ) / $bin_factor );    # 1st bin
+    my $index_stop =
+      POSIX::ceil( ( $bottom - $col_top ) / $bin_factor );    # last bin
+
+    # When the top of the object is higher than the column, it results
+    # in negative indices.  This fixes the problem by binning them
+    # all in the first bin.
+    $index_start = 0 if $index_start < 0;
+    $index_stop  = 0 if $index_stop < 0;
+
+    my $column_index;    # the number of the column chosen, is returned
+    if (@$columns) {
         my $i = 0;
-        for ( ;; ) {
-            last if $i > $#{ $columns };
-	    my $ok        = 1;
-	    my $collapsed = 0;
-	  BIN:
-	    for (my $bin_no=$index_start; $bin_no<=$index_stop;$bin_no++){
-		my $bin    = $columns->[ $i ]->[$bin_no];
-		if ($bin){
-		    my @used      = sort { $a->[0] <=> $b->[0] } @{ $bin };
-		    
-		    for my $segment ( @used ) {
-			my ( $north, $south, $span, $type ) = @$segment; 
-			if ( 
-			     $collapse             && 
-			     $collapse_on eq $type && 
-			     $north == $top        && 
-			     $south == $bottom 
-			     ) {
-			    $ok = 1;
-			    $collapsed = 1;
-			    return $i;
-			    last BIN;
-			}
-			
-			next if $south + $buffer < $top;
-			next if $north - $buffer > $bottom;
-			$i += $span; # jump past the last taken column
-			$ok = 0, last;
-		    }
-		}
-		#
-		# If this column looks OK, see if there is clearance in the others.
-		#
-		if ( $ok && $col_span > 1 && $i < $#{ $columns } ) {
-		    for my $n ( $i + 1 .. $i + $col_span - 1 ) {
-			last if $n > $#{ $columns };
-			my $nbin  = $columns->[ $n ]->[$bin_no];
-			next unless $nbin;
-			my @nused = sort { $a->[0] <=> $b->[0] } @{ $nbin };
-			my $nok   = 1;
+        for ( ; ; ) {
+            last if $i > $#{$columns};
+            my $ok        = 1;
+            my $collapsed = 0;
+          BIN:
+            for (
+                my $bin_no = $index_start ;
+                $bin_no <= $index_stop ;
+                $bin_no++
+              )
+            {
+                my $bin = $columns->[$i]->[$bin_no];
+                if ($bin) {
+                    my @used = sort { $a->[0] <=> $b->[0] } @{$bin};
 
-			for my $nseg ( @nused ) {
-			    my ( $n, $s, $nspan ) = @$nseg; 
-			    next if $s + $buffer < $top;
-			    next if $n - $buffer > $bottom;
-			    $i += $nspan; # jump past the last taken column
-			    $ok = 0, last;
-			}
-		    }
-		}
-	    }
-            if ( $ok ) {
+                    for my $segment (@used) {
+                        my ( $north, $south, $span, $type ) = @$segment;
+                        if (   $collapse
+                            && $collapse_on eq $type
+                            && $north == $top
+                            && $south == $bottom )
+                        {
+                            $ok        = 1;
+                            $collapsed = 1;
+                            return $i;
+                            last BIN;
+                        }
+
+                        next if $south + $buffer < $top;
+                        next if $north - $buffer > $bottom;
+                        $i += $span;    # jump past the last taken column
+                        $ok = 0, last;
+                    }
+                }
+
+                #
+                # If this column looks OK, see if there is clearance in the
+                # others.
+                #
+                if ( $ok && $col_span > 1 && $i < $#{$columns} ) {
+                    for my $n ( $i + 1 .. $i + $col_span - 1 ) {
+                        last if $n > $#{$columns};
+                        my $nbin = $columns->[$n]->[$bin_no];
+                        next unless $nbin;
+                        my @nused = sort { $a->[0] <=> $b->[0] } @{$nbin};
+                        my $nok   = 1;
+
+                        for my $nseg (@nused) {
+                            my ( $n, $s, $nspan ) = @$nseg;
+                            next if $s + $buffer < $top;
+                            next if $n - $buffer > $bottom;
+                            $i += $nspan;    # jump past the last taken column
+                            $ok = 0, last;
+                        }
+                    }
+                }
+            }
+            if ($ok) {
                 $column_index = $i;
-                unless ( $collapsed ) {
+                unless ($collapsed) {
                     for my $n ( 0 .. $col_span - 1 ) {
-			for (my $k=$index_start; $k<=$index_stop;$k++){
-			    push @{ $columns->[ $column_index + $n ]->[$k] }, 
-			    [$top, $bottom, $col_span - $n, $collapse_on ];
-			}
+                        for ( my $k = $index_start ; $k <= $index_stop ; $k++ )
+                        {
+                            push @{ $columns->[ $column_index + $n ]->[$k] },
+                              [ $top, $bottom, $col_span - $n, $collapse_on ];
+                        }
                     }
                 }
                 last;
@@ -263,22 +272,22 @@ sub column_distribution2 {
         }
 
         unless ( defined $column_index ) {
-            $column_index = $#{ $columns } + 1;
+            $column_index = $#{$columns} + 1;
             for my $n ( 0 .. $col_span - 1 ) {
-		for (my $k=$index_start; $k<=$index_stop;$k++){
-		    push @{ $columns->[ $column_index + $n ]->[$k] }, 
-		    [ $top, $bottom, $col_span - $n, $collapse_on];
-		}
+                for ( my $k = $index_start ; $k <= $index_stop ; $k++ ) {
+                    push @{ $columns->[ $column_index + $n ]->[$k] },
+                      [ $top, $bottom, $col_span - $n, $collapse_on ];
+                }
             }
         }
     }
     else {
         $column_index = 0;
         for my $n ( 0 .. $col_span - 1 ) {
-	    for (my $k=$index_start; $k<=$index_stop;$k++){
-		push @{ $columns->[ $n ]->[$k] }, 
-		[ $top, $bottom, $col_span - $n, $collapse_on];
-	    }
+            for ( my $k = $index_start ; $k <= $index_stop ; $k++ ) {
+                push @{ $columns->[$n]->[$k] },
+                  [ $top, $bottom, $col_span - $n, $collapse_on ];
+            }
         }
 
     }
@@ -309,11 +318,11 @@ database (that supports ANSI-SQL, that is).
 
 =cut
 
-    my %args       = @_;
-    my $db         = $args{'db'}         or return;
-    my $table_name = $args{'table_name'} or return;
-    my $id_field   = $args{'id_field'}   || $table_name.'_id';
-    my $no_requested   = $args{'requested'}   || 1;
+    my %args         = @_;
+    my $db           = $args{'db'} or return;
+    my $table_name   = $args{'table_name'} or return;
+    my $id_field     = $args{'id_field'} || $table_name . '_id';
+    my $no_requested = $args{'requested'} || 1;
 
     my $next_number = $db->selectrow_array(
         q[
@@ -321,10 +330,10 @@ database (that supports ANSI-SQL, that is).
             from   cmap_next_number
             where  table_name=?
         ],
-        {}, ( $table_name )
+        {}, ($table_name)
     );
 
-    unless ( $next_number ) {
+    unless ($next_number) {
         $next_number = $db->selectrow_array(
             qq[
                 select max( $id_field )
@@ -339,7 +348,7 @@ database (that supports ANSI-SQL, that is).
                 into   cmap_next_number ( table_name, next_number )
                 values ( ?, ? )
             ],
-            {}, ( $table_name, $next_number+$no_requested )
+            {}, ( $table_name, $next_number + $no_requested )
         );
     }
     else {
@@ -349,7 +358,7 @@ database (that supports ANSI-SQL, that is).
                 set    next_number=?
                 where  table_name=?
             ],
-            {}, ( $next_number+$no_requested, $table_name )
+            {}, ( $next_number + $no_requested, $table_name )
         );
     }
 
@@ -428,21 +437,22 @@ Special thanks to Noel Yap for suggesting this strategy.
 
     my %args        = @_;
     my $labels      = $args{'labels'};
-    my $map_height  = $args{'map_height'}   || 0;
-    my $buffer      = $args{'buffer'}       || 2;
-    my $start_y     = $args{'start_y'}      || 0;
-    my $font_height = $args{'font_height'}  || 0;
-       $font_height += $buffer;
-    my @accepted    = @{ $labels->{'highlights'} || [] }; # take all highlights
-    my $no_added    = @accepted ? 1 : 0;
+    my $map_height  = $args{'map_height'} || 0;
+    my $buffer      = $args{'buffer'} || 2;
+    my $start_y     = $args{'start_y'} || 0;
+    my $font_height = $args{'font_height'} || 0;
+    $font_height += $buffer;
+    my @accepted = @{ $labels->{'highlights'} || [] };    # take all highlights
+    my $no_added = @accepted ? 1 : 0;
 
-    for my $priority ( qw/ correspondences normal / ) {
+    for my $priority (qw/ correspondences normal /) {
+
         #
-        # See if there's enough room available for all the labels; 
+        # See if there's enough room available for all the labels;
         # if not, just take an even sampling.
         #
         my $no_accepted = scalar @accepted;
-        my $no_present  = scalar @{ $labels->{ $priority } || [] } or next;
+        my $no_present  = scalar @{ $labels->{$priority} || [] } or next;
         my $available   = $map_height - ( $no_accepted * $font_height );
         last if $available < $font_height;
 
@@ -450,38 +460,27 @@ Special thanks to Noel Yap for suggesting this strategy.
         if ( $no_present > $no_possible ) {
             my $skip_val = int( $no_present / $no_possible );
             if ( $skip_val > 1 ) {
-                for ( my $i = 0; $i < $no_present; $i += $skip_val ) {
-                    push @accepted, $labels->{ $priority }[ $i ];
+                for ( my $i = 0 ; $i < $no_present ; $i += $skip_val ) {
+                    push @accepted, $labels->{$priority}[$i];
                 }
             }
             else {
-                my @sample      =  sample(
+                my @sample = sample(
                     set         => [ 0 .. $no_present - 1 ],
                     sample_size => $no_possible,
                 );
-                push @accepted, @{ $labels->{ $priority } }[ @sample ];
+                push @accepted, @{ $labels->{$priority} }[@sample];
             }
         }
         else {
-            push @accepted, @{ $labels->{ $priority } };
+            push @accepted, @{ $labels->{$priority} };
         }
 
         $no_added++;
     }
 
-    #
-    # Resort by the target (reduces crossed lines).
-    #
-    @accepted = 
-        map  { $_->[0] }
-        sort { $a->[1] <=> $b->[1] }
-        map  { [ $_, $_->{'target'} ] }
-        @accepted;
-
     my $no_accepted = scalar @accepted;
     my $no_possible = int( $map_height / $font_height );
-#    print STDERR "no accepted = '$no_accepted', ",
-#        "no_possible = '$no_possible' ($map_height / $font_height)\n";
 
     #
     # If there's only one label, put it right next to the one feature.
@@ -490,143 +489,131 @@ Special thanks to Noel Yap for suggesting this strategy.
         my $label = $accepted[0];
         $label->{'y'} = $label->{'target'};
     }
+
     #
     # If we took fewer than was possible, try to sort them nicely.
     #
     elsif ( $no_accepted > 1 && $no_accepted <= ( $no_possible * .5 ) ) {
+        @accepted =
+          map { $_->[0] }
+          sort { $a->[1] <=> $b->[1] || $b->[2] <=> $a->[2] }
+          map { [ $_, $_->{'target'}, $_->{'column'} ] } @accepted;
+
         my $bin_size  = 2;
         my $half_font = $font_height / 2;
         my $no_bins   = sprintf( "%d", $map_height / $bin_size );
-        my $bins      = Bit::Vector->new( $no_bins );
-#        print STDERR "-----------------------------------------------\n",
-#            "bin size = '$bin_size', no bins = '$no_bins', ",
-#            "map height = '$map_height', start = '$start_y', ",
-#            "half font = '$half_font'\n";
+        my $bins      = Bit::Vector->new($no_bins);
 
         my $i = 1;
-        for my $label ( @accepted ) {
-            my $target   = $label->{'target'};
-            my $low_bin  = sprintf("%d", ( $target - $half_font ) / $bin_size);
-            my $high_bin = sprintf("%d", ( $target + $half_font ) / $bin_size);
+        for my $label (@accepted) {
+            my $target = $label->{'target'};
+            my $low_bin = sprintf( "%d", ( $target - $half_font ) / $bin_size );
+            my $high_bin =
+              sprintf( "%d", ( $target + $half_font ) / $bin_size );
 
             if ( $low_bin < 0 ) {
-                my $diff   = 0 - $low_bin;
+                my $diff = 0 - $low_bin;
                 $low_bin  += $diff;
                 $high_bin += $diff;
             }
 
-#            print STDERR "\nbins = ", $bins->to_ASCII, "\n";
-#            print STDERR "$i: $label->{text} ($label->{start_position}) ",
-#                "target = $label->{target}, bins = ($low_bin, $high_bin)\n";
-
-            my ( $hmin, $hmax )  = $bins->Interval_Scan_inc( $low_bin );
+            my ( $hmin, $hmax ) = $bins->Interval_Scan_inc($low_bin);
             my ( $lmin, $lmax, $next_lmin, $next_lmax );
             if ( $low_bin > 0 ) {
                 ( $lmin, $lmax ) = $bins->Interval_Scan_dec( $low_bin - 1 );
 
                 if ( $lmin > 1 && $lmax == $low_bin - 1 ) {
-                    ( $next_lmin, $next_lmax ) = 
-                        $bins->Interval_Scan_dec( $lmin - 1 );
+                    ( $next_lmin, $next_lmax ) =
+                      $bins->Interval_Scan_dec( $lmin - 1 );
                 }
             }
-#            print STDERR "below = ($lmin, $lmax), above = ($hmin, $hmax), ",
-#                "next below ($next_lmin, $next_lmax)\n";
 
-            my $bin_span = $high_bin - $low_bin;
+            my $bin_span      = $high_bin - $low_bin;
             my $bins_occupied = $bin_span + 1;
-#            print STDERR "bin span = '$bin_span', bins occupied = '$bins_occupied'\n";
 
-            my ($gap_below, $gap_above, $diff_to_gap_below, $diff_to_gap_above);
+            my ( $gap_below, $gap_above, $diff_to_gap_below,
+                $diff_to_gap_above );
+
             # nothing below and enough open space
-            if ( ! defined $lmax && $low_bin - $bin_span > 1 ) {
-#                print STDERR "low decision 1\n";
+            if ( !defined $lmax && $low_bin - $bin_span > 1 ) {
                 $gap_below         = $low_bin - 1;
                 $diff_to_gap_below = $bin_span;
             }
+
             # something below but enough space b/w it and this
             elsif ( defined $lmax && $low_bin - $lmax > $bin_span ) {
-#                print STDERR "low decision 2\n";
                 $gap_below         = $low_bin - $lmax;
                 $diff_to_gap_below = $bins_occupied;
             }
+
             # something immediately below but enough space in next gap
-            elsif ( 
-                defined $lmax && $lmax == $low_bin - 1 &&
-                defined $next_lmax && $lmin - $next_lmax >= $bins_occupied
-            ) {
-#                print STDERR "low decision 3\n";
+            elsif (defined $lmax
+                && $lmax == $low_bin - 1
+                && defined $next_lmax
+                && $lmin - $next_lmax >= $bins_occupied )
+            {
                 $gap_below         = $lmin - $next_lmax;
                 $diff_to_gap_below = ( $low_bin - $lmin ) + $bins_occupied;
             }
+
             # something below and enough space beyond it w/o going past 0
-            elsif ( 
-                ! defined $next_lmax && defined $lmin && $lmin - $bin_span > 0
-            ) {
-#                print STDERR "low decision 4\n";
+            elsif (!defined $next_lmax
+                && defined $lmin
+                && $lmin - $bin_span > 0 )
+            {
                 $gap_below         = $lmin;
                 $diff_to_gap_below = $low_bin - $lmin + $bins_occupied;
             }
 
             # nothing above and space w/in the bins
-            if ( ! defined $hmin && $high_bin + $bin_span < $no_bins ) {
+            if ( !defined $hmin && $high_bin + $bin_span < $no_bins ) {
                 $gap_above         = $no_bins - $low_bin;
                 $diff_to_gap_above = 0;
             }
-            # inside an occupied bin but space just afterwards
-            elsif ( 
-                defined $hmax && 
-                $hmax <= $high_bin && 
-                $hmax + 1 + $bin_span < $no_bins
-            ) {
+
+            # inside an occupied bin but space just above it
+            elsif (defined $hmax
+                && $hmax <= $high_bin
+                && $hmax + 1 + $bin_span < $no_bins )
+            {
                 $gap_above         = $no_bins - $hmax;
                 $diff_to_gap_above = ( $hmax - $low_bin ) + 1;
             }
+
             # collision but space afterwards
             elsif ( defined $hmax && $hmax + $bin_span < $no_bins ) {
-                $gap_above         = $no_bins - ( $hmax + 1 );
+                $gap_above = $no_bins - ( $hmax + 1 );
                 $diff_to_gap_above = ( $hmax + 1 ) - $low_bin;
             }
 
             my $below_open = $gap_below >= $bins_occupied;
             my $above_open = $gap_above >= $bins_occupied;
-            my $closer_gap = 
-                $diff_to_gap_below == $diff_to_gap_above ? 'neither' :
-                defined $diff_to_gap_below && 
-                ($diff_to_gap_below < $diff_to_gap_above) ? 'below'   : 'above';
-
-#            print STDERR "gap below = '$gap_below', ",
-#                "diff to gap below = '$diff_to_gap_below'\n",
-#                "gap above = '$gap_above' ", 
-#                "diff to gap above = '$diff_to_gap_above'\n",
-#                "Below open = '$below_open', above open = ",
-#                "'$above_open', closer gap = '$closer_gap'\n";
+            my $closer_gap =
+              $diff_to_gap_below == $diff_to_gap_above ? 'neither'
+              : defined $diff_to_gap_below
+              && ( $diff_to_gap_below < $diff_to_gap_above ) ? 'below'
+              : 'above';
 
             my $diff = 0;
-            if ( ! defined $hmin ) {
-#                print STDERR "Nothing here, leaving alone\n";
-                ; # do nothing
+            if ( !defined $hmin ) {
+                ;    # do nothing
             }
-            elsif ( 
-                $below_open && (
-                    $closer_gap =~ /^(neither|below)$/ ||
-                    ! $above_open
-                )
-            ) {
+            elsif (
+                $below_open
+                && ( $closer_gap =~ /^(neither|below)$/
+                    || !$above_open )
+              )
+            {
                 $low_bin  -= $diff_to_gap_below;
                 $high_bin -= $diff_to_gap_below;
-                $diff      = -( $bin_size * $diff_to_gap_below );
-#                print STDERR "Moving LOW\n";
+                $diff = -( $bin_size * $diff_to_gap_below );
             }
             else {
                 $diff_to_gap_above ||= ( $hmax - $low_bin ) + 1;
-#                print STDERR "Moving HIGH ($diff_to_gap_above)\n";
                 $low_bin  += $diff_to_gap_above;
                 $high_bin += $diff_to_gap_above;
-                $diff      = $bin_size * $diff_to_gap_above;
+                $diff = $bin_size * $diff_to_gap_above;
             }
-
-#            print STDERR "chose bins = ($low_bin, $high_bin), diff = '$diff',",
-#                " no bins = '", $bins->Size, "'\n";
 
             if ( defined $low_bin && defined $high_bin ) {
                 if ( $high_bin >= $bins->Size ) {
@@ -634,24 +621,72 @@ Special thanks to Noel Yap for suggesting this strategy.
                     my $diff = ( $high_bin - $cur ) + 1;
                     $bins->Resize( $cur + $diff );
                 }
-                $bins->Bit_On( $_ ) for $low_bin..$high_bin;
+                $bins->Interval_Fill( $low_bin, $high_bin );
             }
 
             $label->{'y'} = $target + $diff;
             $i++;
         }
+
+        #
+        # Double-check to see if any look out of place.  To do this,
+        # sort the labels by their "y" position and then see if the
+        # "targets" are in ascending order.  If we find a pair where
+        # this is not the case, then switch the "y" positions until
+        # they're in ascending order.  It's necessary to make multiple
+        # passes, so keep doing it until they're all determined to be
+        # OK.
+        #
+        my $ok = 0;
+        while ( !$ok ) {
+            $ok       = 1;
+            @accepted =
+              map  { $_->[0] }
+              sort { $a->[1] <=> $b->[1] }
+              map  { [ $_, $_->{'y'} ] } @accepted;
+
+            my $last_target = $accepted[0]->{'target'};
+            $i = 0;
+            for my $label (@accepted) {
+                my $this_target = $label->{'target'};
+                if ( $this_target < $last_target ) {
+                    $ok = 0;
+                    my $j    = $i;
+                    my $this = $accepted[ $j - 1 ];    # back up
+                    my $next = $accepted[$j];          # start switching here
+
+                    while ($this->{'target'} > $next->{'target'}
+                        && $this->{'y'} < $next->{'y'} )
+                    {
+                        ( $this->{'y'}, $next->{'y'} ) =
+                          ( $next->{'y'}, $this->{'y'} );
+                        $next = $accepted[ ++$j ];
+                    }
+                }
+
+                $last_target = $this_target;
+                $i++;
+            }
+        }
     }
+
     #
     # If we used all available space, just space evenly.
     #
     else {
+
         #
         # Figure the gap to evenly space the labels in the space.
         #
+        @accepted =
+          map { $_->[0] }
+          sort { $a->[1] <=> $b->[1] || $a->[2] <=> $b->[2] }
+          map { [ $_, $_->{'target'}, $_->{'column'} ] } @accepted;
+
         my $gap = $map_height / ( $no_accepted - 1 );
-        my $i   = 0;
-        for my $label ( @accepted ) {
-            $label->{'y'} = sprintf("%.2f", $start_y + ( $gap * $i++ ) );
+        my $i = 0;
+        for my $label (@accepted) {
+            $label->{'y'} = sprintf( "%.2f", $start_y + ( $gap * $i++ ) );
         }
     }
 
@@ -673,69 +708,67 @@ label can be inserted.
     my %args       = @_;
     my $labels     = $args{'labels'};
     my $accepted   = $args{'accepted'};
-    my $buffer     = $args{'buffer'}     ||     2;
-    my $direction  = $args{'direction'}  || NORTH; # NORTH or SOUTH?
-    my $row_height = $args{'row_height'} ||     1; # how tall a row is
-    my $used       = $args{'used'}       ||    [];
+    my $buffer     = $args{'buffer'} || 2;
+    my $direction  = $args{'direction'} || NORTH;    # NORTH or SOUTH?
+    my $row_height = $args{'row_height'} || 1;       # how tall a row is
+    my $used       = $args{'used'} || [];
     my $reverse    = $direction eq NORTH ? -1 : 1;
-    my @used       = sort { $reverse * ( $a->[0] <=> $b->[0] ) } @$used;
+    my @used = sort { $reverse * ( $a->[0] <=> $b->[0] ) } @$used;
 
     for my $label ( @{ $labels || [] } ) {
         my $max_distance = $label->{'has_corr'}       ? 15 : 10;
-        my $can_skip     = $label->{'is_highlighted'} ?  0 :  1;
-        my $target       = $label->{'target'} || 0; # desired location
-        my $top          = $target;
-        my $bottom       = $target + $row_height;
-        my $ok           = 1; # assume innocent until proven guilty
+        my $can_skip     = $label->{'is_highlighted'} ? 0  : 1;
+        my $target = $label->{'target'} || 0;        # desired location
+        my $top    = $target;
+        my $bottom = $target + $row_height;
+        my $ok = 1;    # assume innocent until proven guilty
 
-        SEGMENT:
+      SEGMENT:
         for my $i ( 0 .. $#used ) {
-            my $segment = $used[ $i ] or next;
-            my ( $north, $south ) = @$segment; 
-            next if $south + $buffer <= $top;    # segment is above our target.
-            next if $north - $buffer >= $bottom; # segment is below our target.
+            my $segment = $used[$i] or next;
+            my ( $north, $south ) = @$segment;
+            next if $south + $buffer <= $top;     # segment is above our target.
+            next if $north - $buffer >= $bottom;  # segment is below our target.
 
             #
             # If there's some overlap, see if it will fit above or below.
             #
-            if (
-                ( $north - $buffer <= $bottom )
-                ||
-                ( $south + $buffer >= $top    )
-            ) {
-                $ok = 0; # now we're guilty until we can prove innocence
+            if (   ( $north - $buffer <= $bottom )
+                || ( $south + $buffer >= $top ) )
+            {
+                $ok = 0;    # now we're guilty until we can prove innocence
 
                 #
                 # Figure out the current frame.
                 #
                 my $prev_segment = $i > 0      ? $used[ $i - 1 ] : undef;
                 my $next_segment = $i < $#used ? $used[ $i + 1 ] : undef;
-                my $ftop         = $direction eq NORTH  
-                    ? defined $next_segment->[1] ? $next_segment->[1] : undef 
-                    : $south
-                ;
-                my $fbottom      = $direction eq NORTH 
-                    ? $north 
-                    : defined $next_segment->[0] ? $next_segment->[0] : undef
-                ;
+                my $ftop         =
+                  $direction eq NORTH
+                  ? defined $next_segment->[1] ? $next_segment->[1] : undef
+                  : $south;
+                my $fbottom =
+                    $direction eq NORTH ? $north
+                  : defined $next_segment->[0] ? $next_segment->[0]
+                  : undef;
 
                 #
                 # Check if we can fit the label into the frame.
                 #
-                if ( defined $ftop &&
-                     defined $fbottom &&
-                     $fbottom - $ftop < $bottom - $top
-                ) {
+                if (   defined $ftop
+                    && defined $fbottom
+                    && $fbottom - $ftop < $bottom - $top )
+                {
                     next SEGMENT;
                 }
 
                 #
                 # See if moving the label to the frame would move it too far.
                 #
-                my $diff = $direction eq NORTH
-                    ? $fbottom - $bottom - $buffer
-                    : $ftop - $top + $buffer
-                ;
+                my $diff =
+                    $direction eq NORTH
+                  ? $fbottom - $bottom - $buffer
+                  : $ftop - $top + $buffer;
                 if ( ( abs $diff > $max_distance ) && $can_skip ) {
                     next SEGMENT;
                 }
@@ -744,18 +777,18 @@ label can be inserted.
                 #
                 # See if it will fit.  Same as two above?
                 #
-                if ( 
-                    ( defined $ftop && 
-                      defined $fbottom && 
-                      $top - $buffer >= $ftop &&
-                      $bottom + $buffer <= $fbottom 
+                if (
+                    (
+                           defined $ftop
+                        && defined $fbottom
+                        && $top - $buffer >= $ftop
+                        && $bottom + $buffer <= $fbottom
                     )
-                    ||
-                    ( defined $ftop && $top - $buffer >= $ftop )
-                    ||
-                    ( defined $fbottom && $bottom + $buffer <= $fbottom )
-                ) {
-                    $ok = 1; 
+                    || ( defined $ftop    && $top - $buffer >= $ftop )
+                    || ( defined $fbottom && $bottom + $buffer <= $fbottom )
+                  )
+                {
+                    $ok = 1;
                     last;
                 }
 
@@ -772,7 +805,7 @@ label can be inserted.
         # label to just beyond the last segment.
         #
         if ( !$ok and !$can_skip ) {
-            my ( $last_top, $last_bottom ) = @{ $used[ -1 ] };
+            my ( $last_top, $last_bottom ) = @{ $used[-1] };
             if ( $direction eq NORTH ) {
                 $bottom = $last_top - $buffer;
                 $top    = $bottom - $row_height;
@@ -802,18 +835,19 @@ label can be inserted.
 
 # ----------------------------------------------------
 sub parse_words {
-#
-# Stole this from String::ParseWords::parse by Christian Gilmore 
-# (CPAN ID: CGILMORE), modified to split on commas or spaces.  Allows
-# quoted phrases within a string to count as a "word," e.g.:
-#
-# "Foo bar" baz
-# 
-# Becomes:
-# 
-# Foo bar
-# baz
-#
+
+    #
+    # Stole this from String::ParseWords::parse by Christian Gilmore
+    # (CPAN ID: CGILMORE), modified to split on commas or spaces.  Allows
+    # quoted phrases within a string to count as a "word," e.g.:
+    #
+    # "Foo bar" baz
+    #
+    # Becomes:
+    #
+    # Foo bar
+    # baz
+    #
     my $string    = shift;
     my @words     = ();
     my $inquote   = 0;
@@ -821,10 +855,10 @@ sub parse_words {
     my $nextquote = 0;
     my $nextspace = 0;
     my $pos       = 0;
-  
+
     # shrink whitespace sets to just a single space
     $string =~ s/\s+/ /g;
-  
+
     # Extract words from list
     while ( $pos < $length ) {
         $nextquote = index( $string, '"', $pos );
@@ -832,42 +866,97 @@ sub parse_words {
         $nextspace = $length if $nextspace < 0;
         $nextquote = $length if $nextquote < 0;
 
-        if ( $inquote ) {
-            push(@words, substr($string, $pos, $nextquote - $pos));
-            $pos = $nextquote + 2;
+        if ($inquote) {
+            push( @words, substr( $string, $pos, $nextquote - $pos ) );
+            $pos     = $nextquote + 2;
             $inquote = 0;
-        } 
+        }
         elsif ( $nextspace < $nextquote ) {
-            push @words, 
-                split /[,\s+]/, substr($string, $pos, $nextspace - $pos);
+            push @words, split /[,\s+]/,
+              substr( $string, $pos, $nextspace - $pos );
             $pos = $nextspace + 1;
-        } 
+        }
         elsif ( $nextspace == $length && $nextquote == $length ) {
+
             # End of the line
-            push @words, 
-                map { s/^\s+|\s+$//g; $_ }
-                split /,/,
-                substr( $string, $pos, $nextspace - $pos );
+            push @words, map { s/^\s+|\s+$//g; $_ }
+              split /,/, substr( $string, $pos, $nextspace - $pos );
             $pos = $nextspace;
-        } 
+        }
         else {
             $inquote = 1;
-            $pos = $nextquote + 1;
+            $pos     = $nextquote + 1;
         }
     }
-  
-    push( @words, $string ) unless scalar( @words );
-  
+
+    push( @words, $string ) unless scalar(@words);
+
     return @words;
 }
 
 # ----------------------------------------------------
 sub pk_name {
     my $table_name = shift;
-    $table_name    =~ s/^cmap_//;
-    $table_name   .=  '_id';
+    $table_name =~ s/^cmap_//;
+    $table_name .= '_id';
     return $table_name;
 }
+
+# ----------------------------------------------------
+
+=pod
+
+=head2 simple_column_distribution
+
+Assumes that items will fit into just one column.
+
+=cut 
+
+sub simple_column_distribution {
+    my %args       = @_;
+    my $columns    = $args{'columns'} || []; # arrayref of columns on horizontal
+    my $map_height = $args{'map_height'};    # in pixels
+    my $low        = $args{'low'};           # lowest pixel value occuppied
+    my $high       = $args{'high'};          # highest pixel value occuppied
+    my $buffer     = $args{'buffer'} || 2;   # min pixel distance b/w items
+    my $selected;                            # the column number returned
+
+    #
+    # Calculate the effect of the buffer.
+    #
+    my ( $scan_low, $scan_high ) = ( $low, $high );
+    $scan_low -= $buffer if $low - $buffer >= 0;
+    $scan_high += $buffer if $high + $buffer <= $map_height;
+    $map_height += $buffer;
+
+    if ( scalar @$columns == 0 ) {
+        my $col = Bit::Vector->new($map_height);
+        $col->Interval_Fill( $low, $high );
+        push @$columns, $col;
+        $selected = 0;
+    }
+    else {
+        for my $i ( 0 .. $#{$columns} ) {
+            my $col = $columns->[$i];
+            my ( $min, $max ) = $col->Interval_Scan_inc($scan_low);
+            if ( !defined $min || $min > $scan_high ) {
+                $col->Interval_Fill( $low, $high );
+                $selected = $i;
+                last;
+            }
+        }
+
+        unless ( defined $selected ) {
+            my $col = Bit::Vector->new($map_height);
+            $col->Interval_Fill( $low, $high );
+            push @$columns, $col;
+            $selected = $#{$columns};
+        }
+    }
+
+    return $selected;
+}
+
 
 # ----------------------------------------------------
 sub fake_selectall_arrayref {
@@ -887,18 +976,18 @@ the DBI selectall_arrayref()
     my $i       = 0;
     my @return_array;
     my %column_name;
-    foreach my $column (@columns){
-	if ($column=~/(\S+)\s+as\s+(\S+)/){
-	    $column=$1;
-            $column_name{$1}=$2;
+    foreach my $column (@columns) {
+        if ( $column =~ /(\S+)\s+as\s+(\S+)/ ) {
+            $column = $1;
+            $column_name{$1} = $2;
         }
-	else{
-            $column_name{$column}=$column;
+        else {
+            $column_name{$column} = $column;
         }
     }
     for my $key ( keys(%$hashref) ) {
-        %{ $return_array[$i] } = map { 
-            $column_name{$_} => $hashref->{$key}->{$_} } @columns;
+        %{ $return_array[$i] } =
+          map { $column_name{$_} => $hashref->{$key}->{$_} } @columns;
         $i++;
     }
     @return_array =
@@ -907,6 +996,7 @@ the DBI selectall_arrayref()
 }
 
 # ----------------------------------------------------
+
 =pod
 
 =head2 sort_selectall_arrayref
@@ -914,16 +1004,31 @@ the DBI selectall_arrayref()
 
 =cut 
 
-sub sort_selectall_arrayref{
+sub sort_selectall_arrayref {
     my $arrayref = shift;
     my @columns  = @_;
     my @return   = sort {
-        for ( my $i = 0 ; $i < $#columns ; $i++ ) {
-            if ( $a->{ $columns[$i] } cmp $b->{ $columns[$i] } ) {
-                return $a->{ $columns[$i] } cmp $b->{ $columns[$i] };
+        for ( my $i = 0 ; $i < $#columns ; $i++ )
+        {
+            my $col=$columns[$i];
+            my $dir=1;
+            if ($col=~/^(\S+)\s+(\S+)/){
+                $col=$1;
+                $dir=-1 if ($2 eq (uc 'DESC'));
+            }
+
+            if ( $dir*($a->{ $col } cmp $b->{ $col }) ) {
+                return $dir*($a->{ $col } cmp $b->{ $col });
             }
         }
-        return $a->{ $columns[-1] } cmp $b->{ $columns[-1] };
+        my $col=$columns[-1];
+            my $dir=1;
+            if ($col=~/^(\S+)\s+(\S+)/){
+                $col=$1;
+                $dir=-1 if ($2 eq (uc 'DESC'));
+            }
+
+        return $dir*($a->{ $col } cmp $b->{ $col });
     } @$arrayref;
 
     return \@return;
@@ -955,3 +1060,4 @@ This library is free software;  you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 =cut
+

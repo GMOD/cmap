@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.68 2004-06-10 12:56:20 mwz444 Exp $
+# $Id: Drawer.pm,v 1.69 2004-06-22 03:05:34 mwz444 Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.68 $)[-1];
+$VERSION = (qw$Revision: 1.69 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -186,33 +186,34 @@ Draws a line from one point to another.
     my @lines = ();
     my $line  = LINE;
 
-    if ( $y1 == $y2 ) {
-        push @lines, [ $line, $x1, $y1, $x2, $y2, $color ];
-    }
-    elsif ( $same_map ) {
-        if ( $label_side eq RIGHT ) {
-            push @lines, [ $line, $x1  , $y1, $x1+5, $y1, $color, $layer ];
-            push @lines, [ $line, $x1+5, $y1, $x2+5, $y2, $color, $layer ];
-            push @lines, [ $line, $x2+5, $y2, $x2  , $y2, $color, $layer ];
-        }
-        else {
-            push @lines, [ $line, $x1  , $y1, $x1-5, $y1, $color, $layer ];
-            push @lines, [ $line, $x1-5, $y1, $x2-5, $y2, $color, $layer ];
-            push @lines, [ $line, $x2-5, $y2, $x2  , $y2, $color, $layer ];
-        }
-    }
-    else {
-        if ( $x1 < $x2 ) {
-            push @lines, [ $line, $x1  , $y1, $x1+5, $y1, $color, $layer ];
-            push @lines, [ $line, $x1+5, $y1, $x2-5, $y2, $color, $layer ];
-            push @lines, [ $line, $x2-5, $y2, $x2  , $y2, $color, $layer ];
-        }
-        else {
-            push @lines, [ $line, $x1  , $y1, $x1-5, $y1, $color, $layer ];
-            push @lines, [ $line, $x1-5, $y1, $x2+5, $y2, $color, $layer ];
-            push @lines, [ $line, $x2+5, $y2, $x2  , $y2, $color, $layer ];
-        }
-    }
+    push @lines, [ $line, $x1, $y1, $x2, $y2, $color, $layer ];
+#    if ( $y1 == $y2 ) {
+#        push @lines, [ $line, $x1, $y1, $x2, $y2, $color ];
+#    }
+#    elsif ( $same_map ) {
+#        if ( $label_side eq RIGHT ) {
+#            push @lines, [ $line, $x1  , $y1, $x1+5, $y1, $color, $layer ];
+#            push @lines, [ $line, $x1+5, $y1, $x2+5, $y2, $color, $layer ];
+#            push @lines, [ $line, $x2+5, $y2, $x2  , $y2, $color, $layer ];
+#        }
+#        else {
+#            push @lines, [ $line, $x1  , $y1, $x1-5, $y1, $color, $layer ];
+#            push @lines, [ $line, $x1-5, $y1, $x2-5, $y2, $color, $layer ];
+#            push @lines, [ $line, $x2-5, $y2, $x2  , $y2, $color, $layer ];
+#        }
+#    }
+#    else {
+#        if ( $x1 < $x2 ) {
+#            push @lines, [ $line, $x1  , $y1, $x1+5, $y1, $color, $layer ];
+#            push @lines, [ $line, $x1+5, $y1, $x2-5, $y2, $color, $layer ];
+#            push @lines, [ $line, $x2-5, $y2, $x2  , $y2, $color, $layer ];
+#        }
+#        else {
+#            push @lines, [ $line, $x1  , $y1, $x1-5, $y1, $color, $layer ];
+#            push @lines, [ $line, $x1-5, $y1, $x2+5, $y2, $color, $layer ];
+#            push @lines, [ $line, $x2+5, $y2, $x2  , $y2, $color, $layer ];
+#        }
+#    }
 
     $self->add_drawing( @lines );
 }
@@ -836,6 +837,7 @@ Lays out the image and writes it to the file system, set the "image_name."
         my @buttons = (
             [ 'i' => 'Map Set Info' ],
             [ '?' => 'Map Details' ],
+            [ 'M' => 'Matrix View' ],
             [ 'X' => 'Delete Map' ],
             [ 'F' => 'Flip Map' ],
             [ 'N' => 'New Map View' ],

@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data::Generic;
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.50 2004-05-10 20:55:55 mwz444 Exp $
+# $Id: Generic.pm,v 1.51 2004-06-22 03:05:36 mwz444 Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.50 $)[-1];
+$VERSION = (qw$Revision: 1.51 $)[-1];
 
 use Data::Dumper; # really just for debugging
 use Bio::GMOD::CMap;
@@ -439,6 +439,7 @@ map.
                      ms.map_units,
                      ms.is_relational_map,
                      s.species_id,
+                     s.accession_id as species_aid,
                      s.common_name as species_name
             from     cmap_map map,
                      cmap_feature f1, 

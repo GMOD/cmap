@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapSetViewer;
 # vim: set ft=perl:
 
-# $Id: MapSetViewer.pm,v 1.16 2004-03-25 14:11:57 mwz444 Exp $
+# $Id: MapSetViewer.pm,v 1.17 2004-06-22 03:05:35 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.16 $)[-1];
+$VERSION = (qw$Revision: 1.17 $)[-1];
 
 use Data::Pageset;
 use Bio::GMOD::CMap::Apache;
@@ -26,7 +26,7 @@ sub handler {
     my $data           = $data_module->map_set_viewer_data(
         map_set_aids   => \@map_set_aids,
         species_aid    => $apr->param('species_aid')  || '',
-        map_type   => $apr->param('map_type') || '',
+        map_type_aid   => $apr->param('map_type_aid') || '',
     ) or return $self->error( $data_module->error );
     my $map_sets       = $data->{'map_sets'};
 
