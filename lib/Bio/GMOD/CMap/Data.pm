@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.161 2004-10-12 22:45:57 mwz444 Exp $
+# $Id: Data.pm,v 1.162 2004-10-15 20:23:43 kycl4rk Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.161 $)[-1];
+$VERSION = (qw$Revision: 1.162 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -2869,14 +2869,16 @@ Given a feature acc. id, find out all the details on it.
 
     $sth->execute($feature_aid);
     my $feature = $sth->fetchrow_hashref
-      or return $self->error( "Invalid feature accession ID ($feature_aid)" );
+        or return $self->error("Invalid feature accession ID ($feature_aid)");
 
-    $feature->{'feature_type'} =
-      $self->feature_type_data( $feature->{'feature_type_aid'}, 'feature_type' );
-    $feature->{'object_id'}  = $feature->{'feature_id'};
-    $feature->{'attributes'} =
-      $self->get_attributes( 'cmap_feature', $feature->{'feature_id'} );
-    $feature->{'aliases'} = $db->selectall_arrayref(
+    $feature->{'feature_type'} = $self->feature_type_data( 
+        $feature->{'feature_type_aid'}, 'feature_type' 
+    );
+    $feature->{'object_id'}    = $feature->{'feature_id'};
+    $feature->{'attributes'}   = $self->get_attributes( 
+        'cmap_feature', $feature->{'feature_id'} 
+    );
+    $feature->{'aliases'}      = $db->selectall_arrayref(
         q[
             select   fa.feature_alias_id, 
                      fa.alias,
@@ -2897,7 +2899,7 @@ Given a feature acc. id, find out all the details on it.
         ( $feature->{'feature_id'} )
     );
 
-    for my $corr (@$correspondences) {
+    for my $corr ( @$correspondences ) {
         $corr->{'evidence'} = $db->selectall_arrayref(
             q[
                 select   ce.accession_id,
@@ -2911,16 +2913,17 @@ Given a feature acc. id, find out all the details on it.
         );
 
         foreach my $row ( @{ $corr->{'evidence'} } ) {
-            $row->{'rank'} =
-              $self->evidence_type_data( $row->{'evidence_type_aid'}, 'rank' );
-            $row->{'evidence_type'} =
-              $self->evidence_type_data( $row->{'evidence_type_aid'},
-                'evidence_type' );
+            $row->{'rank'} = $self->evidence_type_data( 
+                $row->{'evidence_type_aid'}, 'rank' 
+            );
+            $row->{'evidence_type'} = $self->evidence_type_data( 
+                $row->{'evidence_type_aid'}, 'map_type' 
+            );
         }
 
-        $corr->{'evidence'} =
-          sort_selectall_arrayref( $corr->{'evidence'}, 'rank',
-            'evidence_type' );
+        $corr->{'evidence'} = sort_selectall_arrayref( 
+            $corr->{'evidence'}, 'rank', 'evidence_type' 
+        );
 
         $corr->{'aliases'} = $db->selectcol_arrayref(
             q[
