@@ -1,17 +1,16 @@
 package CSHL::CMap::Constants;
 
-# $Id: Constants.pm,v 1.1.1.1 2002-07-31 23:27:26 kycl4rk Exp $
+# $Id: Constants.pm,v 1.2 2002-08-03 04:41:33 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.1.1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 @EXPORT = qw[ 
     ARC
-    CACHE_DIR
     COLORS
     DEFAULT
     FILL
@@ -35,21 +34,6 @@ $VERSION = (qw$Revision: 1.1.1.1 $)[-1];
     URLS
     VALID
 ];
-
-#
-# The directory to store the images.  Note that this directory must
-# actually exist and be writable by the httpd user process.  I would
-# suggest making the directory permissions 700, owned by the
-# user/group of the httpd user.  I would also suggest you purge this
-# directory for old images so you don't fill up your disk.  Here's a
-# simple cron job you can put in your root's crontab:
-#
-# 0 0 * * *  find /tmp/comparative_map_cache/ -type f -mtime +1 \
-# -exec rm -rf {} \;
-#
-# Default: /tmp/comparative_map_cache
-#
-use constant CACHE_DIR => '/tmp/comparative_map_cache'; 
 
 #
 # My palette of colors available for drawing maps
@@ -242,6 +226,21 @@ use constant DEFAULT => {
     # Default: beige
     #
     background_color => 'beige',
+
+    #
+    # The directory to store the images.  Note that this directory must
+    # actually exist and be writable by the httpd user process.  I would
+    # suggest making the directory permissions 700, owned by the
+    # user/group of the httpd user.  I would also suggest you purge this
+    # directory for old images so you don't fill up your disk.  Here's a
+    # simple cron job you can put in your root's crontab:
+    #
+    # 0 0 * * *  find /tmp/comparative_map_cache/ -type f -mtime +1 \
+    # -exec rm -rf {} \;
+    #
+    # Default: /tmp/comparative_map_cache
+    #
+    cache_dir => '/tmp/cmap_cache',
 
     #
     # The color of the line connecting things.

@@ -1,10 +1,10 @@
 package CSHL::CMap::Apache::MapViewer;
 
-# $Id: MapViewer.pm,v 1.1.1.1 2002-07-31 23:27:28 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.2 2002-08-03 04:41:33 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $TEMPLATE $PAGE $DEBUG );
-$VERSION = (qw$Revision: 1.1.1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Apache::Constants;
 use Apache::Request;
@@ -102,6 +102,7 @@ sub handler {
     my $drawer;
     if ( $ref_map_aid ) {
         $drawer              =  CSHL::CMap::Drawer->new(
+            apr              => $apr,
             slots            => \%slots,
             highlight        => $highlight,
             font_size        => $font_size,

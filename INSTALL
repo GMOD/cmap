@@ -95,29 +95,55 @@ hand or use Apache Toolbox to automate the process.
 
 INSTALLING THE PERL MODULES
 
-To install the base modules, execute the following commands from the current
-directory:
+To install the base modules included in this package, you can either:
+
+1)  Execute the following commands from the current directory:
 
     $ perl Makefile.PL
     $ make
     # make install
 
-The first two commands can be run as an unprivileged user, but "make
-install" must be run as root (signified by the typical "#" prompt).
+    The first two commands can be run as an unprivileged user, but "make
+    install" must be run as root (signified by the typical "#" prompt).
 
-You will be asked a couple of questions, such as where to place the
-templates and command-line scripts.  You can place them in any valid
-directory on your system, but you should remember where you put them
-for configuring Apache later.  There are also a number of
-"pre-requisite" modules.  If prompted to install any other modules,
-respond in the affirmative.
+    You will be asked a couple of questions, such as where to place the
+    templates and command-line scripts. You can place them in any valid
+    directory on your system, but you should remember where you put them
+    for configuring Apache later. There are also a number of
+    "pre-requisite" modules. 
+
+2)  Manually place the contents of "lib," "bin," and "templates" into
+    directories of your choosing. Be sure to put a "use lib '...'"
+    statement in your perlstartup.pl file to let Perl know where to find
+    these libraries. Additionally, you'll want to place your library
+    path into your PERL5LIB environment variable for when you run
+    command-line programs which depend on these libraries.
+
+If you install the cmap modules through a CPAN shell and are
+prompted to install any other modules, respond in the affirmative.  If
+you find that you need to install other Perl modules to satisfy
+dependencies, please consider using the CPAN shell to do so as it
+automates the downloading and building of modules and will recursively
+install all dependencies.  To use the CPAN shell, type the following
+(as root):
+
+    # perl -MCPAN -e shell
 
 CONFIGURING APACHE
 
 After installing Apache, mod_perl, and all the necessary modules,
-you're now ready to configure Apache.  You may need to set up a couple
-environment variables for mod_perl by placing the following lines in
-your httpd.conf:
+you're now ready to configure Apache.  Two files are included in the
+"apache_conf" directory of this package: "httpd.conf" and
+"perlstartup.pl."  These files contains all the additions you
+should make to your own httpd.conf and Perl startup files.  If you
+aren't already pre-loading all the Perl modules you use via a
+"PerlRequire" or "PerlModule" statements, then this is a good habit to
+start doing now.  :)  Simply copy the contents of these files to your
+own Apache "conf" directories.
+
+You may not need to use all the httpd.conf.  For example, you should
+only include the following lines in order to set up a couple
+environment variables:
 
     PerlSetVar TEMPLATE_DIR /usr/local/apache/templates/comparative_maps
     PerlSetVar PAGE_OBJECT  GramenePage
@@ -131,20 +157,27 @@ don't have anything like this, you can simply place your site's
 headers and footers directly into the templates provided.  Probably
 you can skip both of the above directives.
 
-You will need to create a directory to place the map images.  This
-directory will need to be writable by the httpd process (usually "web"
-or "nobody"), and the permissions on it should be very restrictive.  I
-would suggest the following (as root, of course):
+The application will need to write the images to a cache directory
+from which Apache will serve the images.  If you do not define a
+directory, then the default ("/tmp/cmap_cache") will be created for
+you when you run.  However, you can specify a better choice, if you
+have a preference, perhaps something in your "/var" directory or
+something on a partiition separate from your web server.  If you
+create a directory on your own, be sure that this directory is
+writable by the httpd process (usually "web" or "nobody"), and that
+the permissions on it are very restrictive.  I would suggest the
+following (as root, of course):
 
     # mkdir /path/to/images
     # chown nobody:nobody /path/to/images 
     # chmod 700 /path/to/images 
 
-Now you will need to alias that directory so that Apache will know
-where to find the images.  So, let's say that you decide to put your
-images into "/var/web/comparative_map_cache" and that you'd like to
-reference those images through a web browser as "/maps/images," you'll
-need to add the following line to your httpd.conf:
+Whether you create the cache directory or not, you will need to alias
+it so that Apache will know where to find the images.  So, let's say
+that you decide to put your images into "/var/web/cmap_cache" and that
+you'd like to reference those images through a web browser as
+"/maps/images," you'll need to add the following line to your
+httpd.conf:
 
     Alias /maps/images /var/web/comparative_map_cache
 

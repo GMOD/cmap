@@ -1,6 +1,6 @@
 package CSHL::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.1.1.1 2002-07-31 23:27:27 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.2 2002-08-03 04:41:33 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.1.1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use CSHL::CMap;
 use CSHL::CMap::Constants;
@@ -30,11 +30,12 @@ use CSHL::CMap::Data;
 use CSHL::CMap::Drawer::Map;
 use GD;
 use File::MkTemp;
+use File::Path;
 use Data::Dumper;
 use base 'CSHL::CMap';
 
 use constant INIT_PARAMS => [
-    qw( slots highlight font_size image_size image_type include_features )
+    qw( apr slots highlight font_size image_size image_type include_features )
 ];
 
 # ----------------------------------------------------
@@ -57,6 +58,21 @@ Initializes the drawing object.
     $Error::Debug = $self->debugging ? 1 : 0;
     $self->draw;
     return $self;
+}
+
+# ----------------------------------------------------
+sub apr {
+
+=pod
+
+=head2 apr
+
+Returns the Apache::Request object.
+
+=cut
+    my $self       = shift;
+    $self->{'apr'} = shift if @_;
+    return $self->{'apr'} || undef;
 }
 
 # ----------------------------------------------------
@@ -213,6 +229,30 @@ Accepts a list of coordinates and a URL for hyperlinking a map area.
 }
 
 # ----------------------------------------------------
+sub cache_dir {
+
+=pod
+
+=head2 cache_dir
+
+Returns the cache directory.
+
+=cut
+    my $self = shift;
+
+    unless ( defined $self->{'cache_dir'} ) {
+        my $apr         = $self->apr;
+        my $cache_dir   = $apr ? $apr->dir_config('CACHE_DIR') : undef;
+           $cache_dir ||= DEFAULT->{'cache_dir'};
+        -d $cache_dir || eval{ mkpath( $cache_dir ) } || 
+            return $self->error('No cache dir');
+        $self->{'cache_dir'} = $cache_dir;
+    }
+
+    return $self->{'cache_dir'};
+}
+
+# ----------------------------------------------------
 sub comparative_map {
 
 =pod
@@ -347,7 +387,8 @@ Lays out the image and writes it to the file system, set the "image_name."
     #
     # Write to a temporary file and remember it.
     #
-    my ( $fh, $filename ) = mkstempt( 'X' x 9, CACHE_DIR );
+    my $cache_dir = $self->cache_dir;
+    my ( $fh, $filename ) = mkstempt( 'X' x 9, $cache_dir );
     my $image_type = $self->image_type;
     print $fh $gd->$image_type();
     $fh->close;
@@ -601,7 +642,7 @@ Gets/sets the current image name.
 
     my $self = shift;
     if ( my $image_name = shift ) {
-        my $path = join( '/', CACHE_DIR, $image_name );
+        my $path = join( '/', $self->cache_dir, $image_name );
         return $self->error(qq[Unable to read image file "$path"])
             unless -r $path;
         $self->{'image_name'} = $image_name;
