@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data::Generic;
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.37 2003-10-01 23:19:31 kycl4rk Exp $
+# $Id: Generic.pm,v 1.38 2003-10-22 00:21:23 kycl4rk Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.37 $)[-1];
+$VERSION = (qw$Revision: 1.38 $)[-1];
 
 use Data::Dumper; # really just for debugging
 use Bio::GMOD::CMap;
@@ -368,8 +368,6 @@ The SQL for finding basic info on a feature.
                    f.is_landmark,
                    f.start_position,
                    f.stop_position,
-                   f.dbxref_name,
-                   f.dbxref_url,
                    ft.feature_type,
                    ft.accession_id as feature_type_aid,
                    map.map_name,
