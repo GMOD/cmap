@@ -1,6 +1,7 @@
 bin/cmap_admin.pl
 bin/cmap_matrix_compare.pl
 bin/cmap_metrics.pl
+bin/cmap_v09_to_v10.pl
 bin/profile-cmap-draw.pl
 BUGS
 Build.PL
@@ -287,10 +288,3 @@ templates/matrix.tmpl
 templates/pager.tmpl
 templates/species_info.tmpl
 TODO
-upgrade/cmap_v09_to_v10.pl
-upgrade/mysql-changes
-upgrade/ora-changes
-upgrade/postgresql-changes
-upgrade/sqlite-changes
-upgrade/sybase-changes
-upgrade/UPGRADE
