@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.165.2.15 2004-12-01 20:10:40 mwz444 Exp $
+# $Id: Data.pm,v 1.165.2.16 2004-12-06 15:59:44 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.165.2.15 $)[-1];
+$VERSION = (qw$Revision: 1.165.2.16 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -4489,6 +4489,10 @@ sub cmap_map_search_data {
         if ($name_search) {
             $map_sql_str .= " and map.map_name='$name_search' ";
         }
+        $map_sql_str .= q[ 
+            group by map.accession_id,map.map_id, map.map_name,
+                map.start_position,map.stop_position,map.display_order 
+        ];
         if ( $min_correspondence_maps and $min_correspondences ) {
             $map_sql_str .=
               " having count(distinct(cl.map_id2)) >=$min_correspondence_maps "
@@ -4502,10 +4506,6 @@ sub cmap_map_search_data {
             $map_sql_str .=
 " having count(distinct(cl.feature_correspondence_id)) >=$min_correspondences ";
         }
-        $map_sql_str .= q[ 
-            group by map.accession_id,map.map_id, map.map_name,
-                map.start_position,map.stop_position,map.display_order 
-        ];
         ###Get map info
         unless ( $map_info =
             $self->get_cached_results( 4, $map_sql_str . "$ref_map_set_id" ) )
@@ -4557,6 +4557,9 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
             where   map.map_set_id=?
             and     map.map_id=f.map_id
         ];
+        if ( $min_correspondence_maps or $min_correspondences ) {
+            $sql_str .= " and map.map_id in (". join(",",keys(%$map_info)).") ";   
+        }
         if ($name_search) {
             $sql_str .= " and map.map_name='$name_search' ";
         }
@@ -4579,12 +4582,10 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
                 $feature_info->{ $row->{'map_id'} }
                   { $row->{'feature_type_aid'} }{'total'} =
                   $row->{'feature_count'};
-                my $raw_no = (
-                    $row->{'feature_count'} / (
-                        $map_info->{ $row->{'map_id'} }{'stop_position'} -
-                          $map_info->{ $row->{'map_id'} }{'start_position'}
-                    )
-                );
+                my $devisor = $map_info->{ $row->{'map_id'} }{'stop_position'} -
+                          $map_info->{ $row->{'map_id'} }{'start_position'} || 1;
+                
+                my $raw_no = ( $row->{'feature_count'} / $devisor );
                 $feature_info->{ $row->{'map_id'} }
                   { $row->{'feature_type_aid'} }{'raw_per'} = $raw_no;
                 $feature_info->{ $row->{'map_id'} }
