@@ -1,6 +1,6 @@
 --
 -- Created by SQL::Translator::Producer::Oracle
--- Created on Fri Jan 10 09:14:44 2003
+-- Created on Tue Jan 28 14:17:32 2003
 --
 
 -- We assume that default NLS_DATE_FORMAT has been changed
@@ -16,7 +16,7 @@ CREATE TABLE cmap_correspondence_evidence (
   accession_id varchar2(20) DEFAULT '' CONSTRAINT nn_accession_id NOT NULL,
   feature_correspondence_id number(11) DEFAULT '0' CONSTRAINT nn_feature_correspondence_id NOT NULL,
   evidence_type_id number(11) DEFAULT '0' CONSTRAINT nn_evidence_type_id NOT NULL,
-  score number(11) DEFAULT NULL,
+  score number DEFAULT NULL,
   remark varchar2(100) DEFAULT NULL,
   CONSTRAINT pk_cmap_correspondence_evidenc PRIMARY KEY (correspondence_evidence_id),
   CONSTRAINT accession_id_cmap_corresponden UNIQUE (accession_id)
@@ -75,6 +75,8 @@ CREATE TABLE cmap_evidence_type (
   accession_id varchar2(20) DEFAULT '' CONSTRAINT nn_accession_id02 NOT NULL,
   evidence_type varchar2(30) DEFAULT '' CONSTRAINT nn_evidence_type NOT NULL,
   rank number(11) DEFAULT '0' CONSTRAINT nn_rank NOT NULL,
+  line_style varchar2(12) DEFAULT NULL,
+  line_color varchar2(20) DEFAULT NULL,
   CONSTRAINT pk_cmap_evidence_type PRIMARY KEY (evidence_type_id),
   CONSTRAINT rank_cmap_evidence_type UNIQUE (rank),
   CONSTRAINT accession_id_cmap_evidence_typ UNIQUE (accession_id)
@@ -149,6 +151,7 @@ CREATE TABLE cmap_map (
   accession_id varchar2(20) DEFAULT '' CONSTRAINT nn_accession_id06 NOT NULL,
   map_set_id number(11) DEFAULT '0' CONSTRAINT nn_map_set_id NOT NULL,
   map_name varchar2(32) DEFAULT '' CONSTRAINT nn_map_name NOT NULL,
+  linkage_group varchar2(10) DEFAULT NULL,
   start_position number(8,2) DEFAULT NULL,
   stop_position number(8,2) DEFAULT NULL,
   CONSTRAINT pk_cmap_map PRIMARY KEY (map_id),

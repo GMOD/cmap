@@ -1,6 +1,6 @@
                            CMAP CODE OVERVIEW
 
-The comparative and genetic maps application ("CMAP") is written
+The comparative and genetic maps application ("CMap") is written
 entirely in Perl and takes advantage of mod_perl, Apache's embedded
 Perl technology.  The application also relies upon a relational
 database management system (RDBMS), such as Oracle, MySQL or
@@ -85,7 +85,7 @@ the HTML to do so without interfering with the code.
 
 5. CONFIGURATION MODULES
 
-All local configuration of CMAP should be done through the "cmap.conf"
+All local configuration of CMap should be done through the "cmap.conf"
 file.  Of course, the file doesn't have to be called "cmap.conf."  It
 can be called whatever you like, so long as the absolute path to the
 file is in the Bio::GMOD::CMap::Constants file.  This path is

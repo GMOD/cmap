@@ -1,6 +1,6 @@
 --
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Fri Jan 10 09:15:03 2003
+-- Created on Tue Jan 28 14:18:12 2003
 --
 
 --
@@ -71,6 +71,8 @@ CREATE TABLE "cmap_evidence_type" (
   "accession_id" character varying(20) DEFAULT '' NOT NULL,
   "evidence_type" character varying(30) DEFAULT '' NOT NULL,
   "rank" integer DEFAULT '0' NOT NULL,
+  "line_style" character varying(12) DEFAULT NULL,
+  "line_color" character varying(20) DEFAULT NULL,
   CONSTRAINT pk_cmap_evidence_type PRIMARY KEY (evidence_type_id),
   CONSTRAINT rank_cmap_evidence_type UNIQUE (rank),
   CONSTRAINT accession_id_cmap_evidence_typ UNIQUE (accession_id)
@@ -145,6 +147,7 @@ CREATE TABLE "cmap_map" (
   "accession_id" character varying(20) DEFAULT '' NOT NULL,
   "map_set_id" integer DEFAULT '0' NOT NULL,
   "map_name" character varying(32) DEFAULT '' NOT NULL,
+  "linkage_group" character varying(10) DEFAULT NULL,
   "start_position" double precision DEFAULT NULL,
   "stop_position" double precision DEFAULT NULL,
   CONSTRAINT pk_cmap_map PRIMARY KEY (map_id),

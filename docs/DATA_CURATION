@@ -16,7 +16,7 @@ mundane administrative tasks or for viewing the data.
 To learn how to import your own data, please read DATA_IMPORT in the
 "docs" directory for information on importing your data.  If you would
 like to see examples of data suitably formatted for importing into
-CMAP, all the raw data from the Gramene project
+CMap, all the raw data from the Gramene project
 (http://www.gramene.org/) have been included with this distribution in
 the "data/datasets/gramene" directory.  You can use this data to
 ensure that your installation is working, or if you'd like examples of
@@ -68,7 +68,7 @@ installation routine.
 2. DATABASE CROSS-REFERENCES
 
 It is possible to set up links from features to other datasources
-outside of CMAP.  These are called "database cross-references."  They
+outside of CMap.  These are called "database cross-references."  They
 can be set up in several different ways:
 
     1)  For a feature type and a species, e.g., all the rice markers
@@ -152,7 +152,7 @@ define a feature as a landmark.
 
 4. LINKING IN
 
-Most likely, you'll want to link directly into the CMAP viewer from
+Most likely, you'll want to link directly into the CMap viewer from
 some other part of your site.  To link to just one map, make it the
 "reference" map like so by using the accession IDs for the map's parent
 "set" and the map itself.  Give the feature (mutant) name to highlight

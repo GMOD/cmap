@@ -51,8 +51,8 @@
     <tr>
         <td colspan="4" align="center">
             <input type="hidden" name="order_by" value="[% apr.param('order_by') %]">
-            <input type="submit" value="Submit">&nbsp;
-            <input type="reset"  value="Reset">
+            <input type="submit" name="submit" value="Submit">&nbsp;
+            <input type="reset"  name="reset"  value="Reset">
         </td>
     </tr>
 </table>
@@ -110,7 +110,7 @@ Use &quot;*&quot; or &quot;%&quot; for wildcards.
   
     [% ELSE %]
   
-        No results returned.
+        No records found.
   
     [% END %]
 [% END %]
