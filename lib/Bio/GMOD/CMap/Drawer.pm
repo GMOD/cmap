@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.49 2004-02-10 23:06:44 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.50 2004-02-11 14:52:24 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,13 +23,14 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.49 $)[-1];
+$VERSION = (qw$Revision: 1.50 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
 use Bio::GMOD::CMap::Drawer::Map;
-use File::MkTemp;
+use File::Basename;
+use File::Temp 'tempfile';
 use File::Path;
 use Data::Dumper;
 use base 'Bio::GMOD::CMap';
@@ -906,7 +907,7 @@ Lays out the image and writes it to the file system, set the "image_name."
     # Write to a temporary file and remember it.
     #
     my $cache_dir = $self->cache_dir;
-    my ( $fh, $filename ) = mkstempt( 'X' x 9, $cache_dir );
+    my ( $fh, $filename ) = tempfile( 'X' x 9, DIR => $cache_dir );
     my $image_type = $self->image_type;
     print $fh $img->$image_type();
     $fh->close;
@@ -1342,10 +1343,11 @@ Gets/sets the current image name.
 =cut
 
     my $self = shift;
-    if ( my $image_name = shift ) {
-        my $path = join( '/', $self->cache_dir, $image_name );
+
+    if ( my $path = shift ) {
         return $self->error(qq[Unable to read image file "$path"])
             unless -r $path;
+        my $image_name = basename( $path );
         $self->{'image_name'} = $image_name;
     }
 
