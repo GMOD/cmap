@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.23 2004-02-24 02:10:47 kycl4rk Exp $
+# $Id: Build.PL,v 1.24 2004-02-24 02:26:33 kycl4rk Exp $
 
 use strict;
 
@@ -169,7 +169,7 @@ print INDEX
     $q->h1( $title ),
     "Congratulations!  CMap has been installed.<br>",
     $q->ul(
-        $q->li( $q->a({ -href => '/cgi-bin/cmap' }, 'CMap') ), 
+        $q->li( $q->a({ -href => '/cgi-bin/cmap/viewer' }, 'CMap Viewer') ), 
         $q->li( $q->a({ -href => '/cgi-bin/cmap/admin' }, 'Web Admin Tool') ), 
         $q->li( $q->a({ -href => 'tutorial/' }, 'User Tutorial') ), 
         $q->li( $q->a({ -href => 'admintut/' }, 'Admin Tutorial') ),
