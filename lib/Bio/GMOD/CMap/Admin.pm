@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin;
 
-# $Id: Admin.pm,v 1.8 2002-11-15 01:13:08 kycl4rk Exp $
+# $Id: Admin.pm,v 1.9 2003-01-01 02:18:49 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils qw[ next_number ];
@@ -284,19 +284,6 @@ Find all the features matching some criteria.
         : qq[where upper(f.$field_name) $comparison '$feature_name']
     ;
 
-    my $count_sql = qq[
-        select count(f.feature_id)
-        from   cmap_feature f,
-               cmap_map map
-        $where
-        and    f.map_id=map.map_id
-    ];
-    $count_sql            .= "and map.accession_id='$map_aid' " if $map_aid;
-    $count_sql            .= "and f.feature_type_id=$feature_type_id " 
-                             if $feature_type_id;
-    my $no_features        = $db->selectrow_array( $count_sql );
-    my $max_child_elements = $self->config('max_child_elements');
-
     my $sql = qq[
         select f.feature_id, 
                f.feature_name,
@@ -327,14 +314,8 @@ Find all the features matching some criteria.
     $sql .= "and map.accession_id='$map_aid' "                if $map_aid;
     $sql .= "and f.feature_type_id=$feature_type_id " if $feature_type_id;
     $sql .= "order by $order_by ";
-#    $sql .= "limit $limit_start," . $max_child_elements;
 
-    my $features = $db->selectall_arrayref( $sql, { Columns => {} } );
-
-    return {
-        total_count => $no_features,
-        features    => $features,
-    };
+    return $db->selectall_arrayref( $sql, { Columns => {} } );
 }
 
 # ----------------------------------------------------
