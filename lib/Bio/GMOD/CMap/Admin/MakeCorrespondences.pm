@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
-# $Id: MakeCorrespondences.pm,v 1.19 2003-07-03 18:38:24 kycl4rk Exp $
+# $Id: MakeCorrespondences.pm,v 1.20 2003-09-02 16:43:51 kycl4rk Exp $
 
 =head1 NAME
 
@@ -30,7 +30,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.19 $)[-1];
+$VERSION = (qw$Revision: 1.20 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -71,6 +71,7 @@ sub make_name_correspondences {
             {},
             ( $ft1 ) 
         );
+        $self->Print("Can't find feature type '$ft1'!\n") unless $ft_id1;
 
         my $ft_id2 = $db->selectrow_array(
             q[
@@ -81,6 +82,7 @@ sub make_name_correspondences {
             {},
             ( $ft2 ) 
         );
+        $self->Print("Can't find feature type '$ft2'!\n") unless $ft_id2;
 
         next unless $ft_id1 && $ft_id2;
         $add_name_correspondences{ $ft_id1 }{ $ft_id2 } = 1;
@@ -179,7 +181,7 @@ sub make_name_correspondences {
                 ) }
             ) {
                 my @allowed_ft_ids = ( $feature->{'feature_type_id'} );
-                push @allowed_ft_ids, values %{ $add_name_correspondences{
+                push @allowed_ft_ids, keys %{ $add_name_correspondences{
                     $feature->{'feature_type_id'}
                 } || {} };
                 my $ft_ids = join(', ', @allowed_ft_ids);
