@@ -1,6 +1,6 @@
-package CSHL::CMap::Apache::MapViewer;
+package Bio::GMOD::CMap::Apache::MapViewer;
 
-# $Id: MapViewer.pm,v 1.2 2002-08-03 04:41:33 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.2 2002-08-23 22:31:02 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $TEMPLATE $PAGE $DEBUG );
@@ -10,13 +10,13 @@ use Apache::Constants;
 use Apache::Request;
 use Template;
 use Error;
-use CSHL::CMap::Apache;
-use CSHL::CMap::Constants;
-use CSHL::CMap::Drawer;
-use CSHL::CMap::Data;
+use Bio::GMOD::CMap::Apache;
+use Bio::GMOD::CMap::Constants;
+use Bio::GMOD::CMap::Drawer;
+use Bio::GMOD::CMap::Data;
 
 use Data::Dumper;
-use base 'CSHL::CMap::Apache';
+use base 'Bio::GMOD::CMap::Apache';
 use constant TEMPLATE => 'cmap_viewer.tmpl';
 
 sub handler {
@@ -101,7 +101,7 @@ sub handler {
     #
     my $drawer;
     if ( $ref_map_aid ) {
-        $drawer              =  CSHL::CMap::Drawer->new(
+        $drawer              =  Bio::GMOD::CMap::Drawer->new(
             apr              => $apr,
             slots            => \%slots,
             highlight        => $highlight,
@@ -110,7 +110,7 @@ sub handler {
             image_type       => $image_type,
             include_features => $include_features,
             debug            => $DEBUG,
-        ) or die CSHL::CMap::Drawer->error;
+        ) or die Bio::GMOD::CMap::Drawer->error;
 
         %slots = %{ $drawer->slots };
     }
@@ -118,7 +118,8 @@ sub handler {
     #
     # Get the data for the form.
     #
-    my $data = CSHL::CMap::Data->new or die CSHL::CMap::Data->error;
+#    my $data = Bio::GMOD::CMap::Data->new or die Bio::GMOD::CMap::Data->error;
+    my $data = $self->data_module;
     my $form_data = $data->cmap_form_data( slots => \%slots ) or 
         die $data->error;
 
@@ -151,6 +152,7 @@ sub handler {
             debug            => $self->debug,
             comparative_maps => join( ':', @comp_maps ),
             title            => 'Comparative Maps',
+            stylesheet       => $self->stylesheet,
         },
         \$html 
     ) or $html = $t->error;
@@ -171,7 +173,7 @@ sub handler {
 
 =head1 NAME
 
-CSHL::CMap::Apache::MapViewer - view comparative maps
+Bio::GMOD::CMap::Apache::MapViewer - view comparative maps
 
 =head1 SYNOPSIS
 
@@ -179,14 +181,14 @@ In httpd.conf:
 
   <Location /cmap/viewer>
       SetHandler  perl-script
-      PerlHandler CSHL::CMap::Apache::MapViewer->super
+      PerlHandler Bio::GMOD::CMap::Apache::MapViewer->super
   </Location>
 
 =head1 DESCRIPTION
 
 This module is a mod_perl handler for displaying the user interface to select
-and display comparative maps.  It inherits from CSHL::CMap::Apache where all
-the error handling occurs (which is why I can just "die" here).
+and display comparative maps.  It inherits from Bio::GMOD::CMap::Apache where
+all the error handling occurs (which is why I can just "die" here).
 
 =head1 SEE ALSO
 

@@ -1,6 +1,6 @@
-package CSHL::CMap::Apache::AdminViewer;
+package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.2 2002-08-09 22:08:42 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.1 2002-08-23 16:07:18 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -8,14 +8,15 @@ use Data::Dumper;
 use Apache::Constants qw[ :common M_GET REDIRECT ];
 use Apache::Request;
 use Template;
+use Time::Object;
+use Time::ParseDate;
 
-use CSHL::CMap::Apache;
-use CSHL::Config;
-use CSHL::CMap::Admin;
-use CSHL::CMap::Constants;
-use CSHL::CMap::Utils;
+use Bio::GMOD::CMap::Apache;
+use Bio::GMOD::CMap::Admin;
+use Bio::GMOD::CMap::Constants;
+use Bio::GMOD::CMap::Utils;
 
-use base 'CSHL::CMap::Apache';
+use base 'Bio::GMOD::CMap::Apache';
 
 use constant ADMIN_HOME_URI => '/cmap/admin';
 
@@ -27,11 +28,10 @@ $COLORS         = [ sort keys %{ +COLORS } ];
 $FEATURE_SHAPES = [ qw( box dumbbell line span ) ];
 $MAP_SHAPES     = [ qw( box dumbbell ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.2 $)[-1];
+$VERSION        = (qw$Revision: 1.1 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
-    error                     => 'admin_error.tmpl',
     confirm_delete            => 'admin_confirm_delete.tmpl',
     corr_evidence_create      => 'admin_corr_evidence_create.tmpl',
     corr_evidence_edit        => 'admin_corr_evidence_edit.tmpl',
@@ -41,6 +41,7 @@ use constant TEMPLATE         => {
     dbxref_create             => 'admin_dbxref_create.tmpl',
     dbxref_edit               => 'admin_dbxref_edit.tmpl',
     dbxrefs_view              => 'admin_dbxrefs_view.tmpl',
+    error                     => 'admin_error.tmpl',
     feature_corr_create       => 'admin_feature_corr_create.tmpl',
     feature_corr_view         => 'admin_feature_corr_view.tmpl',
     feature_edit              => 'admin_feature_edit.tmpl',
@@ -65,7 +66,6 @@ use constant TEMPLATE         => {
     species_view              => 'admin_species_view.tmpl',
 };
 
-
 # ----------------------------------------------------
 sub handler {
 #
@@ -76,7 +76,6 @@ sub handler {
     return $self->$action;
 }
 
-
 # ----------------------------------------------------
 sub admin {
 #
@@ -84,12 +83,11 @@ sub admin {
 #
     my $self = shift;
     unless ( defined $self->{'admin'} ) {
-        $self->{'admin'} = CSHL::CMap::Admin->new;
+        $self->{'admin'} = Bio::GMOD::CMap::Admin->new;
     }
     return $self->{'admin'};
 }
 
-
 # ----------------------------------------------------
 sub admin_home {
     my $self     = shift;
@@ -120,7 +118,6 @@ sub admin_home {
     );
 }
 
-
 # ----------------------------------------------------
 sub confirm_delete {
     my $self        = shift;
@@ -157,14 +154,12 @@ sub confirm_delete {
     );
 }
 
-
 # ----------------------------------------------------
 sub corr_evidence_type_create {
     my $self = shift;
     return $self->process_template( TEMPLATE->{'corr_evidence_type_create'} );
 }
 
-
 # ----------------------------------------------------
 sub corr_evidence_type_insert {
     my $self          = shift;
@@ -196,7 +191,6 @@ sub corr_evidence_type_insert {
     ); 
 }
 
-
 # ----------------------------------------------------
 sub corr_evidence_type_edit {
     my $self             = shift;
@@ -223,7 +217,6 @@ sub corr_evidence_type_edit {
     );
 }
 
-
 # ----------------------------------------------------
 sub corr_evidence_type_update {
     my $self             = shift;
@@ -252,7 +245,6 @@ sub corr_evidence_type_update {
     );
 }
 
-
 # ----------------------------------------------------
 sub corr_evidence_types_view {
     my $self     = shift;
@@ -278,7 +270,6 @@ sub corr_evidence_types_view {
     );
 }
 
-
 # ----------------------------------------------------
 sub dbxref_create {
     my ( $self, %args ) = @_;
@@ -296,7 +287,6 @@ sub dbxref_create {
     );
 }
 
-
 # ----------------------------------------------------
 sub dbxref_edit {
     my ( $self, %args ) = @_;
@@ -341,7 +331,6 @@ sub dbxref_edit {
     );
 }
 
-
 # ----------------------------------------------------
 sub dbxref_insert {
     my $self            = shift;
@@ -424,7 +413,6 @@ sub dbxref_insert {
     return $self->redirect_home( ADMIN_HOME_URI.'?action=dbxrefs_view' ); 
 }
 
-
 # ----------------------------------------------------
 sub dbxref_update {
     my $self            = shift;
@@ -465,7 +453,6 @@ sub dbxref_update {
     return $self->redirect_home( ADMIN_HOME_URI.'?action=dbxrefs_view' ); 
 }
 
-
 # ----------------------------------------------------
 sub dbxrefs_view {
     my $self            = shift;
@@ -511,7 +498,6 @@ sub dbxrefs_view {
     );
 }
 
-
 # ----------------------------------------------------
 sub entity_delete {
     my $self        = shift;
@@ -813,14 +799,12 @@ sub entity_delete {
     return $self->redirect_home( ADMIN_HOME_URI.$uri_args ); 
 }
 
-
 # ----------------------------------------------------
 sub error_template { 
     my $self = shift;
     return TEMPLATE->{'error'};
 }
 
-
 # ----------------------------------------------------
 sub map_create {
     my $self       = shift;
@@ -848,7 +832,6 @@ sub map_create {
     );
 }
 
-
 # ----------------------------------------------------
 sub map_edit {
     my $self   = shift;
@@ -885,7 +868,6 @@ sub map_edit {
     );
 }
 
-
 # ----------------------------------------------------
 sub map_insert {
     my $self           = shift;
@@ -923,7 +905,6 @@ sub map_insert {
     ); 
 }
 
-
 # ----------------------------------------------------
 sub map_view {
     my $self            = shift;
@@ -1032,7 +1013,6 @@ sub map_view {
     );
 }
 
-
 # ----------------------------------------------------
 sub map_update {
     my $self           = shift;
@@ -1064,7 +1044,6 @@ sub map_update {
     ); 
 }
 
-
 # ----------------------------------------------------
 sub feature_create {
     my $self   = shift;
@@ -1108,7 +1087,6 @@ sub feature_create {
     );
 }
 
-
 # ----------------------------------------------------
 sub feature_edit {
     my $self       = shift;
@@ -1996,12 +1974,12 @@ sub map_set_create {
     );
 }
 
-
 # ----------------------------------------------------
 sub map_set_edit {
-    my $self = shift;
-    my $db   = $self->db;
-    my $apr  = $self->apr;
+    my ( $self, %args ) = @_;
+    my $errors          = $args{'errors'};
+    my $db              = $self->db;
+    my $apr             = $self->apr;
 
     my $sth = $db->prepare(
         q[
@@ -2053,6 +2031,7 @@ sub map_set_edit {
             colors    => $COLORS,
             shapes    => $MAP_SHAPES,
             widths    => $WIDTHS,
+            errors    => $errors,
         }
     );
 }
@@ -2072,13 +2051,23 @@ sub map_set_insert {
     my $map_type_id          = $apr->param('map_type_id')
         or push @errors, 'No map type';
     my $accession_id         = $apr->param('accession_id')         || '';
-    my $published_on         = $apr->param('published_on')         || '';
     my $display_order        = $apr->param('display_order')        ||  1;
     my $can_be_reference_map = $apr->param('can_be_reference_map') ||  0;
     my $remarks              = $apr->param('remarks')              || '';
     my $how_to_draw          = $apr->param('how_to_draw')          || '';
     my $color                = $apr->param('color')                || '';
     my $width                = $apr->param('width')                ||  0;
+    my $published_on         = $apr->param('published_on')         || '';
+
+    if ( $published_on ) {{
+        my $pub_date = parsedate($published_on, VALIDATE => 1)
+            or do {
+                push @errors, "Publication date '$published_on' is not valid";
+                last;
+            };
+        my $t = localtime( $pub_date );
+        $published_on = $t->strftime( $self->data_module->sql->date_format );
+    }}
 
     return $self->map_set_create( errors => \@errors ) if @errors;
 
@@ -2177,19 +2166,18 @@ sub map_set_view {
     );
 }
 
-
 # ----------------------------------------------------
 sub map_set_update {
     my $self                 = shift;
     my $db                   = $self->db;
     my $apr                  = $self->apr;
+    my @errors               = ();
     my $map_set_id           = $apr->param('map_set_id')           ||  0;
     my $accession_id         = $apr->param('accession_id')         || '';
     my $map_set_name         = $apr->param('map_set_name')         || '';
     my $short_name           = $apr->param('short_name')           || '';
     my $species_id           = $apr->param('species_id')           ||  0;
     my $map_type_id          = $apr->param('map_type_id')          ||  0;
-    my $published_on         = $apr->param('published_on')         || '';
     my $can_be_reference_map = $apr->param('can_be_reference_map') ||  0;
     my $is_enabled           = $apr->param('is_enabled')           ||  0;
     my $display_order        = $apr->param('display_order')        ||  1;
@@ -2197,6 +2185,19 @@ sub map_set_update {
     my $how_to_draw          = $apr->param('how_to_draw')          || '';
     my $color                = $apr->param('color')                || '';
     my $width                = $apr->param('width')                ||  0;
+    my $published_on         = $apr->param('published_on')         || '';
+
+    if ( $published_on ) {{
+        my $pub_date = parsedate($published_on, VALIDATE => 1)
+            or do {
+                push @errors, "Publication date '$published_on' is not valid";
+                last;
+            };
+        my $t = localtime( $pub_date );
+        $published_on = $t->strftime( $self->data_module->sql->date_format );
+    }}
+
+    return $self->map_set_edit( errors => \@errors ) if @errors;
 
     $db->do(
         q[
@@ -2224,7 +2225,6 @@ sub map_set_update {
     )
 }
 
-
 # ----------------------------------------------------
 sub redirect_home {
     my ( $self, $uri ) = @_;
@@ -2239,7 +2239,6 @@ sub redirect_home {
     return DONE;
 }
 
-
 # ----------------------------------------------------
 sub map_type_create {
     my $self = shift;
@@ -2525,7 +2524,7 @@ sub species_view {
 
 =head1 NAME
 
-CSHL::CMap::Apache::AdminViewer - curate comparative map data
+Bio::GMOD::CMap::Apache::AdminViewer - curate comparative map data
 
 =head1 SYNOPSIS
 
@@ -2537,7 +2536,7 @@ In httpd.conf:
       AuthUserFile /usr/local/apache/passwd/passwords
       Require      valid-user
       SetHandler   perl-script
-      PerlHandler  CSHL::CMap::Admin
+      PerlHandler  Bio::GMOD::CMap::Admin
   </Location>
 
 =head1 DESCRIPTION

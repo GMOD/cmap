@@ -1,13 +1,13 @@
-package CSHL::CMap::Data::Oracle;
+package Bio::GMOD::CMap::Data::Oracle;
 
-# $Id: Oracle.pm,v 1.2 2002-08-09 22:08:43 kycl4rk Exp $
+# $Id: Oracle.pm,v 1.1 2002-08-23 16:07:21 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.1 $)[-1];
 
-use CSHL::CMap::Data::Generic;
-use base 'CSHL::CMap::Data::Generic';
+use Bio::GMOD::CMap::Data::Generic;
+use base 'Bio::GMOD::CMap::Data::Generic';
 
 # ----------------------------------------------------
 sub set_date_format {
@@ -28,6 +28,20 @@ The SQL for setting the proper date format.
     return 1;
 }
 
+# ----------------------------------------------------
+sub date_format {
+
+=pod
+
+=head2 date_format
+
+The strftime string for date format.
+
+=cut
+    my $self = shift;
+    return '%d-%b-%y';
+}
+
 1;
 
 # ----------------------------------------------------
@@ -38,11 +52,11 @@ The SQL for setting the proper date format.
 
 =head1 NAME
 
-CSHL::CMap::Data::Oracle - Oracle module
+Bio::GMOD::CMap::Data::Oracle - Oracle module
 
 =head1 SYNOPSIS
 
-  use CSHL::CMap::Data::Oracle;
+  use Bio::GMOD::CMap::Data::Oracle;
   blah blah blah
 
 =head1 DESCRIPTION

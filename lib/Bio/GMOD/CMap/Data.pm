@@ -1,15 +1,15 @@
-package CSHL::CMap::Data;
+package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.2 2002-08-09 22:08:42 kycl4rk Exp $
+# $Id: Data.pm,v 1.1 2002-08-23 16:07:18 kycl4rk Exp $
 
 =head1 NAME
 
-CSHL::CMap::Data - base data module
+Bio::GMOD::CMap::Data - base data module
 
 =head1 SYNOPSIS
 
-  use CSHL::CMap::Data;
-  my $data = CSHL::CMap::Data->new;
+  use Bio::GMOD::CMap::Data;
+  my $data = Bio::GMOD::CMap::Data->new;
   my $foo  = $data->foo_data;
 
 =head1 DESCRIPTION
@@ -24,13 +24,13 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.1 $)[-1];
 
 use Data::Dumper;
-use CSHL::CMap;
-use CSHL::CMap::Constants;
-use CSHL::CMap::Utils;
-use base 'CSHL::CMap';
+use Bio::GMOD::CMap;
+use Bio::GMOD::CMap::Constants;
+use Bio::GMOD::CMap::Utils;
+use base 'Bio::GMOD::CMap';
 
 # ----------------------------------------------------
 sub acc_id_to_internal_id {
