@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.131 2004-06-23 15:23:14 mwz444 Exp $
+# $Id: Data.pm,v 1.132 2004-06-24 20:43:12 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.131 $)[-1];
+$VERSION = (qw$Revision: 1.132 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -1036,6 +1036,7 @@ sub slot_data {
                              f.start_position,
                              f.stop_position,
                              f.feature_type_accession as feature_type_aid,
+                             f.direction,
                              map.accession_id as map_aid,
                              ms.map_units
                     from     cmap_feature f,

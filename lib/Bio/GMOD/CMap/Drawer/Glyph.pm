@@ -24,7 +24,7 @@ use Bio::GMOD::CMap::Constants;
 use Regexp::Common;
 require Class::Base;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.6 $)[-1];
+$VERSION = (qw$Revision: 1.7 $)[-1];
 
 use base 'Class::Base';
 
@@ -122,6 +122,26 @@ sub span {
 }
 
 # ------------------------------------
+sub direction_arrow {
+    my ( $self, %args ) = @_;
+    my $dir = $args{'direction'} || 0;
+    my $is_flipped = $args{'is_flipped'} || 0;
+
+    unless ( $dir ) {
+        return $self->right_facing_arrow(%args);
+    }
+    if ( ($dir>0 and not $is_flipped )
+        or
+         ($dir<0 and $is_flipped)) {
+        return $self->down_arrow(%args);
+    }
+    else {
+        return $self->up_arrow(%args);
+    }
+}
+
+
+# ------------------------------------
 sub up_arrow {
 
 =pod
@@ -184,6 +204,51 @@ sub down_arrow {
       [ LINE, $x_pos2, $y_pos2, $x_pos2 + 2, $y_pos2 - 2, $color ];
 
     @coords = ( $x_pos2 - 2, $y_pos2, $x_pos2 + 2, $y_pos1, );
+
+    return \@coords;
+}
+
+# ------------------------------------
+sub right_facing_arrow {
+
+=pod
+                                                                                
+=head2
+                                                                                
+                                                                                
+                                                                                
+=cut
+
+    my ( $self, %args ) = @_;
+    my $drawing_data = $args{'drawing_data'};
+    my $x_pos2 = $args{'x_pos2'};
+    my $x_pos1 = $args{'x_pos1'};
+    my $y_pos1       = $args{'y_pos1'};
+    my $y_pos2       = $args{'y_pos2'};
+    my $color        = $args{'color'};
+	my $name        = $args{'name'};
+    my $label_side   = $args{'label_side'} || RIGHT;
+    my @coords;
+
+    my $height = $y_pos2-$y_pos1;
+    my $mid_y  = $y_pos1 + ($height/2);
+    push @$drawing_data,
+      [
+        LINE,          $x_pos1,    $mid_y,
+        $x_pos2, $mid_y, $color
+      ];
+    push @$drawing_data,
+      [
+        LINE,                   $x_pos2-2, $mid_y-2 ,
+        $x_pos2, $mid_y,       $color
+      ];
+    push @$drawing_data,
+      [
+        LINE,                   $x_pos2-2, $mid_y+2 ,
+        $x_pos2, $mid_y,       $color
+      ];
+
+    @coords = ( $x_pos2 , $mid_y+2, $x_pos2, $mid_y+2, );
 
     return \@coords;
 }
@@ -346,10 +411,10 @@ sub in_triangle {
     my $label_side = $args{'label_side'} || RIGHT;
 
     if ( $label_side eq LEFT ) {
-        return right_facing_triangle(%args);
+        return $self->right_facing_triangle(%args);
     }
     else {
-        return left_facing_triangle(%args);
+        return $self->left_facing_triangle(%args);
     }
 }
 
@@ -359,10 +424,10 @@ sub out_triangle {
     my $label_side = $args{'label_side'} || RIGHT;
 
     if ( $label_side eq RIGHT ) {
-        return right_facing_triangle(%args);
+        return $self->right_facing_triangle(%args);
     }
     else {
-        return left_facing_triangle(%args); }
+        return $self->left_facing_triangle(%args); }
 }
 
 # ------------------------------------
@@ -376,7 +441,7 @@ sub right_facing_triangle {
                                                                                 
 =cut
 
-    my (  %args ) = @_;
+    my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
     my $x_pos2 = $args{'x_pos2'};
     my $x_pos1 = $args{'x_pos1'};
@@ -388,28 +453,31 @@ sub right_facing_triangle {
     my @coords;
 
     my $width = 3;
+    my $height = $y_pos2-$y_pos1;
+    my $mid_y  = $y_pos1 + ($height/2);
+
     push @$drawing_data,
       [
-        LINE,          $x_pos2,    $y_pos1 - $width,
-        $x_pos2, $y_pos1 + $width, $color
+        LINE,          $x_pos2,    $mid_y - $width,
+        $x_pos2, $mid_y + $width, $color
       ];
     push @$drawing_data,
       [
-        LINE,                   $x_pos2, $y_pos1 - $width,
-        $x_pos2 + $width, $y_pos1,       $color
+        LINE,                   $x_pos2, $mid_y - $width,
+        $x_pos2 + $width, $mid_y,       $color
       ];
     push @$drawing_data,
       [
-        LINE,                   $x_pos2, $y_pos1 + $width,
-        $x_pos2 + $width, $y_pos1,       $color
+        LINE,                   $x_pos2, $mid_y + $width,
+        $x_pos2 + $width, $mid_y,       $color
       ];
-    push @$drawing_data, [ FILL, $x_pos2 + 1, $y_pos1 + 1, $color ];
+    push @$drawing_data, [ FILL, $x_pos2 + 1, $mid_y + 1, $color ];
 
     @coords = (
         $x_pos2 - $width,
-        $y_pos1 - $width,
+        $mid_y - $width,
         $x_pos2 + $width,
-        $y_pos1 + $width,
+        $mid_y + $width,
     );
 
     return \@coords;
@@ -424,7 +492,7 @@ sub left_facing_triangle {
                                                                                 
 =cut
 
-    my (  %args ) = @_;
+    my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
     my $x_pos2 = $args{'x_pos2'};
     my $x_pos1 = $args{'x_pos1'};
@@ -436,33 +504,36 @@ sub left_facing_triangle {
     my @coords;
 
     my $width = 3;
+    my $height = $y_pos2-$y_pos1;
+    my $mid_y  = $y_pos1 + ($height/2);
+
     push @$drawing_data,
       [
         LINE,
         $x_pos2 + $width,
-        $y_pos1 - $width,
+        $mid_y - $width,
         $x_pos2 + $width,
-        $y_pos1 + $width,
+        $mid_y + $width,
         $color
       ];
     push @$drawing_data,
       [
-        LINE,          $x_pos2 + $width, $y_pos1 - $width,
-        $x_pos2, $y_pos1,                $color
+        LINE,          $x_pos2 + $width, $mid_y - $width,
+        $x_pos2, $mid_y,                $color
       ];
     push @$drawing_data,
       [
-        LINE,                   $x_pos2,    $y_pos1,
-        $x_pos2 + $width, $y_pos1 + $width, $color
+        LINE,                   $x_pos2,    $mid_y,
+        $x_pos2 + $width, $mid_y + $width, $color
       ];
     push @$drawing_data,
-      [ FILL, $x_pos2 + $width - 1, $y_pos1 + 1, $color ];
+      [ FILL, $x_pos2 + $width - 1, $mid_y + 1, $color ];
 
     @coords = (
         $x_pos2 - $width,
-        $y_pos1 - $width,
+        $mid_y - $width,
         $x_pos2 + $width,
-        $y_pos1 + $width,
+        $mid_y + $width,
     );
 
     return \@coords;

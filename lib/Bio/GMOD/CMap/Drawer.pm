@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.69 2004-06-22 03:05:34 mwz444 Exp $
+# $Id: Drawer.pm,v 1.70 2004-06-24 20:43:15 mwz444 Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.69 $)[-1];
+$VERSION = (qw$Revision: 1.70 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -640,104 +640,6 @@ Lays out the image and writes it to the file system, set the "image_name."
                 );
                 $label_y = $feature_y;
             }
-            elsif ( $ft->{'shape'} eq 'span' ) {
-                my @temp_drawing_data;
-                Bio::GMOD::CMap::Drawer::Glyph->span(
-                    drawing_data => \@temp_drawing_data,
-                    x_pos2 => $feature_x + 5,
-                    x_pos1 => $feature_x + 3,
-                    y_pos1=> $feature_y,
-                    y_pos2=> $feature_y + 8,
-                    color => $color,
-                    label_side=> RIGHT,
-                    );
-                $self->add_drawing(@temp_drawing_data);
-                $label_y = $feature_y + 5;
-            }
-            elsif ( $ft->{'shape'} eq 'up-arrow' ) {
-                my @temp_drawing_data;
-                Bio::GMOD::CMap::Drawer::Glyph->up_arrow(
-                    drawing_data => \@temp_drawing_data,
-                    x_pos2 => $feature_x + 5,
-                    x_pos1 => $feature_x + 3,
-                    y_pos1=> $feature_y,
-                    y_pos2=> $feature_y + 8,
-                    color => $color,
-                    label_side=> RIGHT,
-                    );
-                $self->add_drawing(@temp_drawing_data);
-                $label_y = $feature_y + 5;
-            }
-            elsif ( $ft->{'shape'} eq 'down-arrow' ) {
-                my @temp_drawing_data;
-                Bio::GMOD::CMap::Drawer::Glyph->down_arrow(
-                    drawing_data => \@temp_drawing_data,
-                    x_pos2 => $feature_x + 5,
-                    x_pos1 => $feature_x + 3,
-                    y_pos1=> $feature_y,
-                    y_pos2=> $feature_y + 8,
-                    color => $color,
-                    label_side=> RIGHT,
-                    );
-                $self->add_drawing(@temp_drawing_data);
-                $label_y = $feature_y + 5;
-            }
-            elsif ( $ft->{'shape'} eq 'double-arrow' ) {
-                my @temp_drawing_data;
-                Bio::GMOD::CMap::Drawer::Glyph->down_arrow(
-                    drawing_data => \@temp_drawing_data,
-                    x_pos2 => $feature_x + 5,
-                    x_pos1 => $feature_x + 3,
-                    y_pos1=> $feature_y,
-                    y_pos2=> $feature_y + 8,
-                    color => $color,
-                    label_side=> RIGHT,
-                    );
-                $self->add_drawing(@temp_drawing_data);
-                $label_y = $feature_y + 5;
-            }
-            elsif ( $ft->{'shape'} eq 'box' ) {
-                my @temp_drawing_data;
-                Bio::GMOD::CMap::Drawer::Glyph->box(
-                    drawing_data => \@temp_drawing_data,
-                    x_pos2 => $feature_x + 10,
-                    x_pos1 => $feature_x ,
-                    y_pos1=> $feature_y,
-                    y_pos2=> $feature_y + 8,
-                    color => $color,
-                    label_side=> RIGHT,
-                    );
-                $self->add_drawing(@temp_drawing_data);
-                $label_y = $feature_y + 5;
-            }
-            elsif ( $ft->{'shape'} eq 'dumbbell' ) {
-                my @temp_drawing_data;
-                Bio::GMOD::CMap::Drawer::Glyph->dumbell(
-                    drawing_data => \@temp_drawing_data,
-                    x_pos2 => $feature_x + 5,
-                    x_pos1 => $feature_x + 3,
-                    y_pos1=> $feature_y,
-                    y_pos2=> $feature_y + 8,
-                    color => $color,
-                    label_side=> RIGHT,
-                    );
-                $self->add_drawing(@temp_drawing_data);
-                $label_y = $feature_y + 5;
-            }
-            elsif ( $ft->{'shape'} eq 'filled-box' ) {
-                my @temp_drawing_data;
-                Bio::GMOD::CMap::Drawer::Glyph->filled_box(
-                    drawing_data => \@temp_drawing_data,
-                    x_pos2 => $feature_x + 7,
-                    x_pos1 => $feature_x + 3,
-                    y_pos1=> $feature_y,
-                    y_pos2=> $feature_y + 8,
-                    color => $color,
-                    label_side=> RIGHT,
-                    );
-                $self->add_drawing(@temp_drawing_data);
-                $label_y = $feature_y + 5;
-            }
             elsif ( $ft->{'shape'} eq 'in-triangle' ) {
                 my @temp_drawing_data;
                 Bio::GMOD::CMap::Drawer::Glyph->in_triangle(
@@ -752,7 +654,7 @@ Lays out the image and writes it to the file system, set the "image_name."
                 $self->add_drawing(@temp_drawing_data);
                 $label_y = $feature_y + 5;
             }
-            elsif ( $ft->{'shape'} eq 'out-triangle' ) {
+            elsif ( 0 and $ft->{'shape'} eq 'out-triangle' ) {
                 my @temp_drawing_data;
                 Bio::GMOD::CMap::Drawer::Glyph->out_triangle(
                     drawing_data => \@temp_drawing_data,
@@ -767,7 +669,22 @@ Lays out the image and writes it to the file system, set the "image_name."
                 $label_y = $feature_y + 5;
             }
             else {
-                # Do nothing.
+                my @temp_drawing_data;
+                my $glyph = Bio::GMOD::CMap::Drawer::Glyph->new();
+                my $feature_glyph = $ft->{'shape'};
+                $feature_glyph =~s/-/_/g;
+                if ($glyph->can($feature_glyph)){
+                    $glyph->$feature_glyph(
+                        drawing_data => \@temp_drawing_data,
+                        x_pos2 => $feature_x + 7,
+                        x_pos1 => $feature_x + 3,
+                        y_pos1=> $feature_y,
+                        y_pos2=> $feature_y + 8,
+                        color => $color,
+                        label_side=> RIGHT,
+                    );
+                    $self->add_drawing(@temp_drawing_data);
+                }
                 $label_y = $feature_y + 5;
             }
 

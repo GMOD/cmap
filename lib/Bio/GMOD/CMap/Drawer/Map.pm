@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.97 2004-06-23 21:18:49 mwz444 Exp $
+# $Id: Map.pm,v 1.98 2004-06-24 20:43:16 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.97 $)[-1];
+$VERSION = (qw$Revision: 1.98 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1386,7 +1386,7 @@ sub layout_map_foundation {
             = ($self->stop_position($map_id)-$self->start_position($map_id))
             * ($drawer->pixel_height()
               / $drawer->{'data'}{'ref_unit_size'}{$self->map_units($map_id)});
-        my $max_map_pixel_height=(5 * $drawer->pixel_height());
+        my $max_map_pixel_height=(2 * $drawer->pixel_height());
         $scaled_map_pixel_height = $min_map_pixel_height
             if ($scaled_map_pixel_height < $min_map_pixel_height);
         $scaled_map_pixel_height = $max_map_pixel_height
@@ -1803,10 +1803,13 @@ sub add_feature_to_map {
     # However, if a feature has a correspondence, we want to
     # make sure to draw it so it will show up highlighted.
     #
-    my $glyph_key = int($y_pos1) . $feature_shape . int($y_pos2);
+    my $glyph_key = int($y_pos1) . $feature_shape . int($y_pos2)."_".$has_corr;
     my $draw_this = 1;
-    if ( $drawn_glyphs->{$glyph_key} and $collapse_features ) {
-        $draw_this = $has_corr ? 1 : 0;
+    #if ( $drawn_glyphs->{$glyph_key} and $collapse_features ) {
+    #    $draw_this = $has_corr ? 1 : 0;
+    #}
+    if ($drawn_glyphs->{$glyph_key} and $collapse_features){
+        $draw_this = 0;
     }
 
     if ($draw_this) {
@@ -1824,7 +1827,7 @@ sub add_feature_to_map {
             my $column_index;
             if ( not $self->feature_type_data( $feature->{'feature_type_aid'}, 
                 'glyph_overlap' )) {
-                my $column_index = simple_column_distribution(
+                $column_index = simple_column_distribution(
                     low          => $y_pos1,
                     high         => $y_pos2,
                     columns      => $fcolumns,
@@ -1848,15 +1851,22 @@ sub add_feature_to_map {
             my $feature_glyph = $feature_shape;
             $feature_glyph =~s/-/_/g;
             if ($glyph->can($feature_glyph)){
+                ###DEBUGING
+                #push @temp_drawing_data,
+                #[ LINE, $vert_line_x1, $y_pos1, 
+                #    $vert_line_x2, $y_pos2, 'blue', ];
+
                 @coords = @{$glyph->$feature_glyph(
                     drawing_data => \@temp_drawing_data,
-                    x_pos2 => $vert_line_x2,
-                    x_pos1 => $vert_line_x1,
-                    y_pos1=> $y_pos1,
-                    y_pos2=> $y_pos2,
-                    color => $color,
-                    name => $feature->{'feature_name'},
-                    label_side=> $label_side,
+                    x_pos2       => $vert_line_x2,
+                    x_pos1       => $vert_line_x1,
+                    y_pos1       => $y_pos1,
+                    y_pos2       => $y_pos2,
+                    color        => $color,
+                    is_flipped   => $is_flipped,
+                    direction    => $feature->{'direction'},
+                    name         => $feature->{'feature_name'},
+                    label_side   => $label_side,
                 )};
             }
             else{
