@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.86 2004-11-19 18:56:08 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.87 2004-12-16 18:52:15 mwz444 Exp $
 
 =head1 NAME
 
@@ -205,7 +205,7 @@ Set to 1 scale the maps with the same unit.  Default is 1.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.86 $)[-1];
+$VERSION = (qw$Revision: 1.87 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -770,8 +770,32 @@ Lays out the image and writes it to the file system, set the "image_name."
 
     my ( $min_y, $max_y, $min_x, $max_x );
     my $corrs_aggregated = 0;
+    my $slots_capped_max = undef;
+    my $slots_capped_min = undef;
+
     for my $slot_no ( $self->slot_numbers ) {
+
+        # If there is nothing in one of the slots, don't show any slots
+        #  after it.  That is the purpose of the slots_capped variables.
+        next if ( defined($slots_capped_max) and $slots_capped_max < $slot_no );
+        next if ( defined($slots_capped_min) and $slots_capped_min > $slot_no );
         my $data = $self->slot_data($slot_no) or return;
+        unless (%$data) {
+            if ( $slot_no > 0 ) {
+                $slots_capped_max = $slot_no;
+            }
+            elsif ( $slot_no < 0 ) {
+                $slots_capped_min = $slot_no;
+
+            }
+            else {
+
+                # slot is 0
+                $slots_capped_max = $slot_no;
+                $slots_capped_min = $slot_no;
+            }
+            next;
+        }
         my $map = Bio::GMOD::CMap::Drawer::Map->new(
             drawer      => $self,
             slot_no     => $slot_no,

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.196 2004-12-16 05:40:16 mwz444 Exp $
+# $Id: Data.pm,v 1.197 2004-12-16 18:52:11 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.196 $)[-1];
+$VERSION = (qw$Revision: 1.197 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -525,7 +525,7 @@ sub cmap_data {
             pid                         => $pid,
             map_type_aids               => \%map_type_aids,
           )
-          or return;
+          or last;
     }
     ###Get the extra javascript that goes along with the feature_types.
     ### and get extra forms
