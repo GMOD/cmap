@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.37 2003-04-09 20:42:42 kycl4rk Exp $
+# $Id: Map.pm,v 1.38 2003-04-15 20:31:33 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.37 $)[-1];
+$VERSION = (qw$Revision: 1.38 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -438,15 +438,14 @@ Lays out the map.
     #
     # Some common things we'll need later on.
     #
-    my $t                        = $drawer->template or return;
-    my $max_image_pixel_width    = $drawer->config('max_image_pixel_width');
-    my $min_map_pixel_height     = $drawer->config('min_map_pixel_height');
-    my $default_feature_color    = $drawer->config('feature_color');
-    my $feature_details_template = $drawer->config('feature_details_url');
-    my $connecting_line_color    = $drawer->config('connecting_line_color');
-    my $map_details_url          = $drawer->config('map_details_url');
-    my $map_set_info_url         = $drawer->config('map_set_info_url');
-    my $feature_corr_color       =
+    my $max_image_pixel_width = $drawer->config('max_image_pixel_width');
+    my $min_map_pixel_height  = $drawer->config('min_map_pixel_height');
+    my $default_feature_color = $drawer->config('feature_color');
+    my $feature_details_url   = DEFAULT->{'feature_details_url'};
+    my $connecting_line_color = $drawer->config('connecting_line_color');
+    my $map_details_url       = $drawer->config('map_details_url');
+    my $map_set_info_url      = $drawer->config('map_set_info_url');
+    my $feature_corr_color    =
         $drawer->config('feature_correspondence_color') || '';
     my $feature_highlight_fg_color = 
         $drawer->config('feature_highlight_fg_color');
@@ -1027,16 +1026,11 @@ Lays out the map.
                         );
                     }
 
-                    my $url;
-                    $t->process( 
-                        \$feature_details_template, 
-                        { feature => $feature }, 
-                        \$url,
-                    ) or return $self->error( $t->error );
                     
                     $drawer->add_map_area(
                         coords => \@coords,
-                        url    => $url,
+                        url    => 
+                            $feature_details_url.$feature->{'feature_aid'},
                         alt    => 'Details: '.$feature->{'feature_name'},
                     );
                 }
@@ -1077,14 +1071,6 @@ Lays out the map.
                 ) {
                     my $labels = $feature->{'start_position'} < $midpoint
                         ? \@north_labels : \@south_labels;
-                    my $url;
-                    if ( $feature_details_template ) {
-                        $t->process( 
-                            \$feature_details_template, 
-                            { feature => $feature }, 
-                            \$url,
-                        ) or return $self->error( $t->error );
-                    }
 
                     push @$labels, {
                         priority       => $feature->{'drawing_priority'},
@@ -1094,7 +1080,8 @@ Lays out the map.
                         is_highlighted => $is_highlighted,
                         feature_coords => \@coords,
                         feature_type   => $feature->{'feature_type'},
-                        url            => $url,
+                        url            => 
+                            $feature_details_url.$feature->{'feature_aid'},
                         has_corr       => $has_corr,
                         feature_id     => $feature->{'feature_id'},
                         start_position => $feature->{'start_position'},
@@ -1117,62 +1104,63 @@ Lays out the map.
             # must be reverse sorted by start position;  moving south,
             # they should be in ascending order.
             #
-#            my @labels;
-            @north_labels =
-                map  { $_->[0]->{'direction'} = NORTH; $_->[0] }
-                sort { 
-                    $b->[1] <=> $a->[1] || 
-                    $a->[2] <=> $b->[2] ||
-                    $b->[3] <=> $a->[3] ||
-                    $b->[4] <=> $a->[4]
-                }
-                map  { [ 
-                    $_, 
-                    $_->{'start_position'},
-                    $_->{'priority'}, 
-                    $_->{'is_highlighted'} || 0, 
-                    $_->{'has_corr'}       || 0,
-                ] }
-                @north_labels;
-
-            @south_labels =
-                map  { $_->[0]->{'direction'} = SOUTH; $_->[0] }
-                sort { 
-                    $a->[1] <=> $b->[1] || 
-                    $b->[2] <=> $a->[2] ||
-                    $b->[3] <=> $a->[3] ||
-                    $b->[4] <=> $a->[4]
-                }
-                map  { [ 
-                    $_, 
-                    $_->{'start_position'},
-                    $_->{'priority'}, 
-                    $_->{'is_highlighted'} || 0, 
-                    $_->{'has_corr'}       || 0,
-                ] }
-                @south_labels
-            ;
-
             my @accepted_labels; # the labels we keep
             my $buffer    =  2;  # the space between things
-            my @used;
-            label_distribution( 
-                labels     => \@north_labels, 
-                accepted   => \@accepted_labels,
-                used       => \@used,
-                buffer     => $buffer,
-                direction  => NORTH,
-                row_height => $reg_font->height,
-            );
+            if ( @north_labels && @south_labels ) {
+                @north_labels =
+                    map  { $_->[0]->{'direction'} = NORTH; $_->[0] }
+                    sort { 
+                        $b->[1] <=> $a->[1] || 
+                        $a->[2] <=> $b->[2] ||
+                        $b->[3] <=> $a->[3] ||
+                        $b->[4] <=> $a->[4]
+                    }
+                    map  { [ 
+                        $_, 
+                        $_->{'start_position'},
+                        $_->{'priority'}, 
+                        $_->{'is_highlighted'} || 0, 
+                        $_->{'has_corr'}       || 0,
+                    ] }
+                    @north_labels;
 
-            label_distribution( 
-                labels     => \@south_labels, 
-                accepted   => \@accepted_labels,
-                used       => \@used,
-                buffer     => $buffer,
-                direction  => SOUTH,
-                row_height => $reg_font->height,
-            );
+                @south_labels =
+                    map  { $_->[0]->{'direction'} = SOUTH; $_->[0] }
+                    sort { 
+                        $a->[1] <=> $b->[1] || 
+                        $b->[2] <=> $a->[2] ||
+                        $b->[3] <=> $a->[3] ||
+                        $b->[4] <=> $a->[4]
+                    }
+                    map  { [ 
+                        $_, 
+                        $_->{'start_position'},
+                        $_->{'priority'}, 
+                        $_->{'is_highlighted'} || 0, 
+                        $_->{'has_corr'}       || 0,
+                    ] }
+                    @south_labels
+                ;
+
+                my @used;
+                label_distribution( 
+                    labels     => \@north_labels, 
+                    accepted   => \@accepted_labels,
+                    used       => \@used,
+                    buffer     => $buffer,
+                    direction  => NORTH,
+                    row_height => $reg_font->height,
+                );
+
+                label_distribution( 
+                    labels     => \@south_labels, 
+                    accepted   => \@accepted_labels,
+                    used       => \@used,
+                    buffer     => $buffer,
+                    direction  => SOUTH,
+                    row_height => $reg_font->height,
+                );
+            }
 
             my $label_offset = 15;
             $base_x          = $label_side eq RIGHT 
@@ -1547,7 +1535,8 @@ sub map_ids {
 
 =head2 map_ids
 
-Returns the all the map IDs.
+Returns the all the map IDs sorted by the number of correspondences
+(to the reference map), highest to lowest.
 
 =cut
 
