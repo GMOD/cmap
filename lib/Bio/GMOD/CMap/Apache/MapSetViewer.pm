@@ -1,13 +1,14 @@
 package Bio::GMOD::CMap::Apache::MapSetViewer;
 
-# $Id: MapSetViewer.pm,v 1.5 2003-02-11 00:23:11 kycl4rk Exp $
+# $Id: MapSetViewer.pm,v 1.6 2003-02-13 00:32:18 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use Apache::Constants;
 use Bio::GMOD::CMap::Apache;
+use Bio::GMOD::CMap::Utils 'paginate';
 use base 'Bio::GMOD::CMap::Apache';
 
 use constant TEMPLATE => 'map_set_info.tmpl';
@@ -17,6 +18,7 @@ sub handler {
     # Make a jazz noise here...
     #
     my ( $self, $apr ) = @_;
+    my $limit_start    = $apr->param('limit_start') || 0;
     my @map_set_aids   = split( /,/, $apr->param('map_set_aid') );
     $self->data_source( $apr->param('data_source') );
     my $data           = $self->data_module;
@@ -24,15 +26,30 @@ sub handler {
         map_set_aids   => \@map_set_aids
     );
 
+    #
+    # Slice the results up into pages suitable for web viewing.
+    #
+    my $page_data   =  paginate( 
+        self        => $self,
+        data        => $map_sets,
+        limit_start => $limit_start,
+    );
+
     my $html;
     my $t = $self->template;
     $t->process( 
         TEMPLATE, 
         { 
-            map_sets     => $map_sets,
-            page         => $self->page,
-            stylesheet   => $self->stylesheet,
-            data_sources => $self->data_sources,
+            page           => $self->page,
+            stylesheet     => $self->stylesheet,
+            data_sources   => $self->data_sources,
+            map_sets       => $page_data->{'data'},
+            no_elements    => $page_data->{'no_elements'},
+            page_size      => $page_data->{'page_size'},
+            pages          => $page_data->{'pages'},
+            cur_page       => $page_data->{'cur_page'},
+            show_start     => $page_data->{'show_start'},
+            show_stop      => $page_data->{'show_stop'},
         },
         \$html 
     ) or $html = $t->error;
