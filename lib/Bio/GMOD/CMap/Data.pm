@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.3 2002-08-30 02:49:55 kycl4rk Exp $
+# $Id: Data.pm,v 1.4 2002-08-30 21:02:00 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -268,6 +268,18 @@ Returns the data for drawing comparative maps.
             $map_stop  = $map_data->{'stop_position'};
         }
         else {
+            #
+            # Make sure the start and stop are numbers.
+            #
+            for ( $map_start, $map_stop ) {
+                next unless defined $_;
+                unless ( $_ =~ NUMBER_RE ) {
+                    $_ = $self->feature_name_to_position( 
+                        feature_name => $_,
+                        map_id       => $map_id,
+                    ) || 0;
+                }
+            }
             $map_start = $map_data->{'start_position'} 
                 unless defined $map_start;
             $map_start = $map_data->{'start_position'} 
@@ -942,6 +954,19 @@ Returns the data for the main comparative map HTML form.
             acc_id => $ref_map_aid,
         );
 
+        #
+        # Make sure the start and stop are numbers.
+        #
+        for ( $ref_map_start, $ref_map_stop ) {
+            next unless defined $_;
+            unless ( $_ =~ NUMBER_RE ) {
+                $_ = $self->feature_name_to_position( 
+                    feature_name => $_,
+                    map_id       => $map_id,
+                ) || 0;
+            }
+        }
+
 #        my $ref_map_begin = $self->map_start( map_id => $map_id ); 
 #        my $ref_map_end   = $self->map_stop ( map_id => $map_id );
 #        $ref_map_start = $ref_map_start unless defined $ref_map_start;
@@ -1139,6 +1164,29 @@ out which maps have relationships.
     }
 
     return \@return;
+}
+
+# ----------------------------------------------------
+sub feature_name_to_position {
+
+=pod
+
+=head2 feature_name_to_position
+
+Turn a feature name into a position.
+
+=cut
+    my ( $self, %args ) = @_;
+    my $feature_name    = $args{'feature_name'} or return;
+    my $map_id          = $args{'map_id'}       or return;
+    my $db              = $self->db;
+    my $position        = $db->selectrow_array(
+        $self->sql->feature_name_to_position_sql,
+        {},
+        ( $feature_name, $map_id )
+    ) || 0;
+
+    return $position;
 }
 
 # ----------------------------------------------------

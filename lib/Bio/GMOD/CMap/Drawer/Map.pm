@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.3 2002-08-30 02:49:55 kycl4rk Exp $
+# $Id: Map.pm,v 1.4 2002-08-30 21:02:00 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -663,14 +663,6 @@ Lays out the map.
 
             my ( $left_connection, $right_connection );
             if ( $show_labels ) {
-#                my $label_y = $y_pos1 - $reg_font->height/2;
-#                if ( $feature->feature_id == $midpoint_feature_id ) {
-#                    $moving_up = 0;
-#                }
-#                else {
-#                    $prev_label_y = $label_y unless defined $prev_label_y;
-#                }
-
                 my $is_highlighted = 
                     $drawer->highlight_feature( $feature->feature_name );
 
@@ -684,16 +676,18 @@ Lays out the map.
                     $direction = SOUTH;
                 }
 
-                my $debug        =  $is_highlighted; #$direction eq SOUTH;
+                my $debug        =  0;
                 warn "\n---------\n",$feature->feature_name,"\n---------\n"
                     if $debug;
+                my $buffer = 2;
                 $label_y         = label_distribution(
                     rows         => \@rows,
                     target       => $label_y,
                     row_height   => $reg_font->height,
-                    max_distance => $has_corr ? 10 : 5, 
+                    max_distance => $has_corr ? 15 : 10, 
                     can_skip     => $is_highlighted ? 0 : 1,
                     direction    => $direction,
+                    buffer       => $buffer,
                     debug        => $debug,
                 );
 
@@ -705,37 +699,7 @@ Lays out the map.
                     : $base_x - $label_offset - $reg_font->width*length($label)
                 ;
 
-#                my $diff = 0;
-#                if ( $direction eq NORTH ) {
-#                    $diff-- while $label_y + $diff > $prev_label_y;
-#                }
-#                else {
-#                    $diff++ while $label_y + $diff < $prev_label_y;
-#                    $diff++ while $label_y + $diff < $mid_y;
-#                }
-
-#                my $diff = $row_height * $row_index;
-#                if ( $direction eq NORTH ) {
-#                    $label_y -= $diff;
-#                }
-#                else {
-#                    $label_y += $diff;
-#                }
-
-                my $buffer = 2;
-#                if ( 
-#                    $is_highlighted || 
-#                    ( $has_corr && abs $diff < 10 ) ||
-#                    ( $include_features =~ /^all|landmarks$/ && abs $diff < 5 )
-#                ) {
-
                 if ( defined $label_y ) {
-#                    $label_y += $diff;
-#                    $prev_label_y = $direction eq NORTH
-#                        ? $label_y - $reg_font->height 
-#                        : $label_y + $reg_font->height;
-#                    $min_y = $prev_label_y if $prev_label_y < $min_y;
-
                     if ( $direction eq NORTH and !defined $mid_y ) {
                         $mid_y = $label_y + $reg_font->height;
                     }
@@ -869,7 +833,8 @@ Lays out the map.
     }
 
     #
-    # Draw the map titles last for relational maps, centered over all the maps.
+    # Draw the map titles last for relational maps, 
+    # centered over all the maps.
     #
     $top_y -= 10;
     if ( $is_relational && $slot_no != 0 ) {

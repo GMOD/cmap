@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data::Generic;
 
-# $Id: Generic.pm,v 1.1 2002-08-23 16:07:20 kycl4rk Exp $
+# $Id: Generic.pm,v 1.2 2002-08-30 21:02:00 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Bio::GMOD::CMap;
 use base 'Bio::GMOD::CMap';
@@ -320,6 +320,25 @@ The strftime string for date format.
 =cut
     my $self = shift;
     return '%Y-%m-%d';
+}
+
+# ----------------------------------------------------
+sub feature_name_to_position_sql {
+
+=pod
+
+=head2 fill_out_maps_by_map_sql
+
+The SQL for finding basic info on a map.
+
+=cut
+    my $self = shift;
+    return q[
+        select f.start_position
+        from   cmap_feature f
+        where  upper(f.feature_name)=?
+        and    f.map_id=?
+    ];
 }
 
 # ----------------------------------------------------

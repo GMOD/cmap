@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Utils;
 
-# $Id: Utils.pm,v 1.2 2002-08-30 02:49:55 kycl4rk Exp $
+# $Id: Utils.pm,v 1.3 2002-08-30 21:02:00 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use base 'Exporter';
 
@@ -220,26 +220,19 @@ label can be inserted.
     # and see if the label will fit directly across, a little 
     # above, or a little below.
     #
-    my @used = sort { $a->[0] <=> $b->[0] } @$rows;
-    warn "used = ", Dumper( \@used ), "\n" if $debug;
-    my $ok   = 1;
+    my $reverse = $direction eq NORTH ? -1 : 1;
+    my @used    = sort { $reverse * ( $a->[0] <=> $b->[0] ) } @$rows;
+    my $ok      = 1; # assume innocent until proven guilty
+    warn "Used = ", Dumper( \@used ), "\n" if $debug;
+    warn "I want to put this label close to ($top, $bottom)\n" if $debug;
 
+    SEGMENT:
     for my $i ( 0 .. $#used ) {
         my $segment = $used[ $i ];
         my ( $north, $south ) = @$segment; 
-
-#        next if $south + $buffer < $top;    
-#        next if $north - $buffer > $bottom;
-
-        #
-        # See if this segment is above our target.
-        #
-        next if $south + $buffer <= $top;
-
-        #
-        # See if this segment is below our target.
-        #
-        next if $north - $buffer >= $bottom; 
+        warn "Current segment ($north, $south)\n" if $debug;
+        next if $south + $buffer <= $top;    # segment is above our target.
+        next if $north - $buffer >= $bottom; # segment is below our target.
 
         #
         # If there's some overlap, see if it will fit above or below.
@@ -249,63 +242,93 @@ label can be inserted.
             ||
             ( $south + $buffer >= $top    )
         ) {
-            $ok = 0;
-            warn "target = $target, can skip = $can_skip\n" if $debug;
-            warn "north = $north, south = $south\n" if $debug;
-            warn "top = $top, bottom = $bottom\n" if $debug;
+            $ok = 0; # now we're guilty until we can prove innocence
 
-            my ( $ftop, $fbottom ); # the open frame
-            while ( 1 ) { 
-                my $prev_segment = $i > 0      ? $used[ $i - 1 ] : undef;
-                my $next_segment = $i < $#used ? $used[ $i + 1 ] : undef;
-#                my $frame        = $direction eq NORTH 
-#                    ? [ $prev_segment->[1] || undef, $north ]
-#                    : [ $south, $next_segment->[0] || undef ]
-#                ;
-                $ftop    = $direction eq NORTH ? $prev_segment->[1] : $south;
-                $fbottom = $direction eq NORTH ? $north : $next_segment->[0];
+            #
+            # Figure out the current frame.
+            #
+            my $prev_segment = $i > 0      ? $used[ $i - 1 ] : undef;
+            my $next_segment = $i < $#used ? $used[ $i + 1 ] : undef;
+            my $ftop         = 
+                $direction eq NORTH ? $next_segment->[1] || undef : $south;
+            my $fbottom      = 
+                $direction eq NORTH ? $north : $next_segment->[0] || undef;
+            warn "Frame top = $ftop, bottom = $fbottom\n" if $debug;
 
-                #
-                # If the frame is too small, rewind or advance, if possible.
-                #
-                if ( defined $ftop && defined $fbottom ) {
-                    $i--, next if $fbottom - $ftop < $bottom - $top;
-                }
+            #
+            # Check if we can fit the label into the frame.
+            #
+            if ( defined $ftop &&
+                 defined $fbottom &&
+                 $fbottom - $ftop < $bottom - $top
+            ) {
+                warn "Frame too small, moving on.\n" if $debug;
+                next SEGMENT;
+            }
+            warn "Open frame is big enough for label\n" if $debug;
+
+            #
+            # See if moving the label to the frame would move it too far.
+            #
+            my $diff = $direction eq NORTH
+                ? $fbottom - $bottom - $buffer
+                : $ftop - $top + $buffer
+            ;
+#            next SEGMENT if ( abs $diff > $max_distance ) && $can_skip;
+            if ( ( abs $diff > $max_distance ) && $can_skip ) {
+                warn "Diff ($diff) is greater than max distance ",
+                    "($max_distance) and I can skip\n" if $debug;
+                next SEGMENT;
+            }
+            $_ += $diff for $top, $bottom;
+            warn "Applying diff ($diff), new top = $top, bottom = $bottom\n" 
+                if $debug;
+
+            #
+            # See if it will fit.  Same as two above?
+            #
+            if ( 
+                ( defined $ftop && 
+                  defined $fbottom && 
+                  $top - $buffer >= $ftop &&
+                  $bottom + $buffer <= $fbottom 
+                )
+                ||
+                ( defined $ftop && $top - $buffer >= $ftop )
+                ||
+                ( defined $fbottom && $bottom + $buffer <= $fbottom )
+            ) {
+                warn "OK!\n" if $debug;
+                $ok = 1; 
                 last;
             }
-
-            my $diff;
-            warn "frame top = $ftop, bottom = $fbottom\n" if $debug;
-            while ( 1 ) {
-                last if abs ( $diff > $max_distance ) && $can_skip;
-                my $inc = $direction eq NORTH ? -1 : 1;
-                $_     += $inc for $top, $bottom, $diff;
-                warn "top = $top, bottom = $bottom, diff = $diff\n" if $debug;
-
-                if ( 
-                    ( defined $ftop && 
-                      defined $fbottom && 
-                      $top - $buffer >= $ftop &&
-                      $bottom + $buffer <= $fbottom 
-                    )
-                    ||
-                    ( defined $ftop && $top - $buffer >= $ftop )
-                    ||
-                    ( defined $fbottom && $bottom + $buffer <= $fbottom )
-                ) {
-                    warn "OK!\n" if $debug;
-                    $ok = 1; 
-                    last;
-                }
-            }
-            warn ">>>DIFF = $diff\n" if $debug;
-            warn "skipping...\n" if !$ok && $debug;
-            next if !$ok and !$can_skip;
+            warn "Skipping...\n" if !$ok && $debug;
+            next SEGMENT if !$ok and !$can_skip;
             last;
         }
         else {
             $ok = 1;
         }
+    }
+
+    warn "I went through everything, ok = $ok\n" if $debug;
+
+    #
+    # If nothing was found but we can't skip, then move the
+    # label to just beyond the last segment.
+    #
+    if ( !$ok and !$can_skip ) {
+        my ( $last_top, $last_bottom ) = @{ $used[ -1 ] };
+        if ( $direction eq NORTH ) {
+            $bottom = $last_top - $buffer;
+            $top    = $bottom - $row_height;
+        }
+        else {
+            $top    = $last_bottom + $buffer;
+            $bottom = $top + $row_height;
+        }
+        $ok         = 1;
+        warn "I can't skip, so I'll put it at the end\n" if $debug;
     }
 
     #
@@ -314,10 +337,12 @@ label can be inserted.
     # went and return the new location.
     #
     if ( !@$rows || $ok ) {
+        warn "I'm going to add a row for ($top, $bottom)\n" if $debug;
         push @$rows, [ $top, $bottom ];
         return $top;
     }
 
+    warn "I didn't find anything, returning nothing\n" if $debug;
     return undef;
 }
 
