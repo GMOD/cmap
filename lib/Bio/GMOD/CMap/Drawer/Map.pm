@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.144 2004-11-18 21:23:33 mwz444 Exp $
+# $Id: Map.pm,v 1.145 2004-11-19 16:24:23 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.144 $)[-1];
+$VERSION = (qw$Revision: 1.145 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1059,7 +1059,7 @@ Variable Info:
     my $no_of_maps  = scalar @map_ids;
 
     # if more than one map in slot, compress all
-    my $is_compressed  = $drawer->data_module->compress_maps($slot_no);
+    my $is_compressed  = $self->is_compressed($slot_no);
     my $label_features = $drawer->label_features;
     my $config         = $self->config or return;
 
@@ -1747,7 +1747,13 @@ Variable Info:
     #Make aggregated correspondences
     my $corrs_aggregated = 0;
     for my $map_id (@map_ids) {
-        if ( $self->aggregate and $is_compressed ) {
+        if (
+            $self->aggregate
+            and (  $is_compressed
+                or $self->is_compressed( $drawer->reference_slot_no($slot_no) )
+            )
+          )
+        {
             $corrs_aggregated = 1
               if ( $map_aggregate_corr{$map_id}
                 and @{ $map_aggregate_corr{$map_id} } );
@@ -1788,6 +1794,8 @@ Variable Info:
                     $this_map_y,       $line_color,
                     0
                   ];
+
+                # Make anchor 'T's
                 push @drawing_data,
                   [
                     LINE,            $this_map_x,
@@ -1800,7 +1808,6 @@ Variable Info:
                     LINE,        $this_map_x, $this_map_y, $this_map_x2,
                     $this_map_y, 'black',     10
                   ];
-
             }
             $drawer->add_drawing(@drawing_data) if ( scalar(@drawing_data) );
         }
@@ -3330,6 +3337,24 @@ Returns a map's stop position for the range selected.
     my $map_id = shift or return;
     my $map    = $self->map($map_id);
     return $map->{'stop_position'};
+}
+
+# ----------------------------------------------------
+sub is_compressed {
+
+=pod
+
+=head2 is_compressed
+
+Uses Data.pm to figure out if a map is compressed.
+
+=cut
+
+    my $self    = shift;
+    my $slot_no = shift;
+    my $drawer  = $self->drawer;
+
+    return $drawer->data_module->compress_maps($slot_no);
 }
 
 # ----------------------------------------------------

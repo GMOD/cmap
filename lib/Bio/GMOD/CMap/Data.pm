@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.176 2004-11-19 05:02:07 mwz444 Exp $
+# $Id: Data.pm,v 1.177 2004-11-19 16:24:21 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.176 $)[-1];
+$VERSION = (qw$Revision: 1.177 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -4710,15 +4710,19 @@ If it is not aggregated don't compress.
     my $this_slot_no = shift;
 
     return unless defined $this_slot_no;
+    return $self->{'compressed_maps'}{$this_slot_no}
+      if defined( $self->{'compressed_maps'}{$this_slot_no} );
 
     if ( scalar( keys( %{ $self->slot_info->{$this_slot_no} } ) ) > 1
         and $self->aggregate )
     {
-        return 1;
+        $self->{'compressed_maps'}{$this_slot_no} = 1;
+    }
+    else {
+        $self->{'compressed_maps'}{$this_slot_no} = 0;
     }
 
-    return 0;    # Don't compress if not aggregated
-       #return ( scalar( keys( %{ $self->slot_info->{$this_slot_no} } ) ) > 1 );
+    return $self->{'compressed_maps'}{$this_slot_no};
 }
 
 # ----------------------------------------------------
