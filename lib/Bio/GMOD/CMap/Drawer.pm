@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.61 2004-04-19 14:58:30 mwz444 Exp $
+# $Id: Drawer.pm,v 1.62 2004-05-03 19:36:35 mwz444 Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.61 $)[-1];
+$VERSION = (qw$Revision: 1.62 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -39,7 +39,7 @@ my @INIT_PARAMS = qw[
     apr flip slots highlight font_size image_size image_type 
     label_features include_feature_types include_evidence_types
     config data_source min_correspondences collapse_features cache_dir
-    map_view
+    map_view data_module
 ];
 
 # ----------------------------------------------------
@@ -69,7 +69,21 @@ Initializes the drawing object.
 
     return $self;
 }
+# ----------------------------------------
+sub data_module {
 
+=pod
+
+=head2 apr
+
+Returns the CMap::Data object.
+
+=cut
+
+    my $self       = shift;
+    $self->{'data_module'} = shift if @_;
+    return $self->{'data_module'} || undef;
+}
 # ----------------------------------------------------
 sub apr {
 
