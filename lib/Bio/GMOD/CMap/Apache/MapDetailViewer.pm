@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapDetailViewer;
 # vim: set ft=perl:
 
-# $Id: MapDetailViewer.pm,v 1.23 2004-03-18 22:01:00 mwz444 Exp $
+# $Id: MapDetailViewer.pm,v 1.24 2004-04-01 08:04:25 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES );
-$VERSION = (qw$Revision: 1.23 $)[-1];
+$VERSION = (qw$Revision: 1.24 $)[-1];
 
 use URI::Escape;
 use Data::Pageset;
@@ -143,7 +143,7 @@ sub handler {
         include_evidence_types => \@evidence_types,
         debug                  => $self->config_data('debug'),
         map_view               => 'details',
-        config                  => $self->{'config'},
+        config                  => $self->config(),
     ) or die $self->error( "Drawer: ".Bio::GMOD::CMap::Drawer->error );
 
     my $data                   = $data_module->map_detail_data( 

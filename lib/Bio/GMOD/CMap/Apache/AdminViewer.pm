@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.66 2004-03-25 14:11:57 mwz444 Exp $
+# $Id: AdminViewer.pm,v 1.67 2004-04-01 08:04:25 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -32,7 +32,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.66 $)[-1];
+$VERSION        = (qw$Revision: 1.67 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -158,7 +158,7 @@ sub admin {
     unless ( defined $self->{'admin'} ) {
         $self->{'admin'} =  Bio::GMOD::CMap::Admin->new(
             data_source  => $self->data_source,
-	    config       => $self->{'config'},
+	    config       => $self->config,
         );
     }
     return $self->{'admin'};

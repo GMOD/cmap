@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.74 2004-03-30 02:27:35 kycl4rk Exp $
+# $Id: Map.pm,v 1.75 2004-04-01 08:04:26 mwz444 Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.74 $)[-1];
+$VERSION = (qw$Revision: 1.75 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -33,7 +33,7 @@ use Bio::GMOD::CMap::Utils qw[ column_distribution label_distribution ];
 
 use base 'Bio::GMOD::CMap';
 
-my @INIT_FIELDS = qw[ drawer base_x base_y slot_no maps ];
+my @INIT_FIELDS = qw[ drawer base_x base_y slot_no maps config ];
 
 my %SHAPE = (
     'default'  => 'draw_box',

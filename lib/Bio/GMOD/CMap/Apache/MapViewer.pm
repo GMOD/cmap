@@ -1,17 +1,18 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.34 2004-03-30 02:26:05 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.35 2004-04-01 08:04:25 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.34 $)[-1];
+$VERSION = (qw$Revision: 1.35 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer;
 use Bio::GMOD::CMap::Data;
 use Template;
+use Data::Dumper;
 
 use base 'Bio::GMOD::CMap::Apache';
 use constant TEMPLATE     => 'cmap_viewer.tmpl';
@@ -41,9 +42,8 @@ sub handler {
     my $collapse_features     = $apr->param('collapse_features')     ||  0;
     my $flip                  = $apr->param('flip')                  || '';
     my $min_correspondences   = $apr->param('min_correspondences')   ||  0;
-    my $config                = $self->config;
 
-    $INTRO ||= $config->get_config('map_viewer_intro', $self->data_source)||'';
+    $INTRO ||= $self->config_data('map_viewer_intro', $self->data_source)||'';
 
     #
     # Take the feature types either from the query string (first
@@ -182,7 +182,7 @@ sub handler {
             min_correspondences    => $min_correspondences,
             include_feature_types  => \@feature_types,
             include_evidence_types => \@evidence_types,
-            config                 => $config,
+            config                 => $self->config,
         ) or return $self->error( Bio::GMOD::CMap::Drawer->error );
 
         %slots = %{ $drawer->{'slots'} };

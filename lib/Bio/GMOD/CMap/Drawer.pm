@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.57 2004-03-30 02:24:41 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.58 2004-04-01 08:04:24 mwz444 Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.57 $)[-1];
+$VERSION = (qw$Revision: 1.58 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -39,7 +39,7 @@ my @INIT_PARAMS = qw[
     apr flip slots highlight font_size image_size image_type 
     label_features include_feature_types include_evidence_types
     data_source min_correspondences collapse_features cache_dir
-    map_view
+    map_view config
 ];
 
 # ----------------------------------------------------
@@ -483,6 +483,7 @@ Lays out the image and writes it to the file system, set the "image_name."
             drawer  => $self, 
             slot_no => $slot_no,
             maps    => $data,
+            config  => $self->config(),
         ) or return $self->error( Bio::GMOD::CMap::Drawer::Map->error );
 
         my $bounds = $map->layout or return $self->error( $map->error );

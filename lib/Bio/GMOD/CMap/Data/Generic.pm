@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data::Generic;
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.48 2004-03-30 02:26:38 kycl4rk Exp $
+# $Id: Generic.pm,v 1.49 2004-04-01 08:04:26 mwz444 Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.48 $)[-1];
+$VERSION = (qw$Revision: 1.49 $)[-1];
 
 use Data::Dumper; # really just for debugging
 use Bio::GMOD::CMap;
@@ -74,7 +74,7 @@ The SQL for finding all the features on a map.
     my ( $self, %args )  = @_;
     my $order_by         = $args{'order_by'}            || '';
     my $restrict_by      = $args{'restrict_by'}         || '';
-    my @feature_types = @{ $args{'feature_types'} || [] };
+    my @feature_type_aids = @{ $args{'feature_types'} || [] };
 
     my $sql              = qq[
         select   f.feature_id,
@@ -88,7 +88,6 @@ The SQL for finding all the features on a map.
                  map.accession_id as map_aid,
                  ms.map_units
         from     cmap_feature f,
-                 cmap_feature_type ft,
                  cmap_map map,
                  cmap_map_set ms
         where    f.map_id=?
@@ -104,10 +103,10 @@ The SQL for finding all the features on a map.
         and      map.map_set_id=ms.map_set_id
     ];
 
-    if ( @feature_types ) {
-        $sql .= 'and f.feature_type in ('.
-            join( ',', @feature_types ).
-        ')';
+    if ( @feature_type_aids ) {
+        $sql .= "and f.feature_type in ('".
+            join( "','", @feature_type_aids ).
+        "')";
     }
 
     $sql .= "order by $order_by" if $order_by;
@@ -140,7 +139,7 @@ The SQL for finding info on a map.
                ms.shape,
                ms.width,
                ms.color,
-               ms.map_type,
+               ms.map_type_accession,
                ms.map_units,
                ms.is_relational_map,
                s.species_id,
@@ -189,7 +188,7 @@ The SQL for finding correspondences for a feature.
                  f.accession_id as feature_aid,
                  f.start_position,
                  f.stop_position,
-                 f.feature_type,
+                 f.feature_type_accession,
                  map.map_id,
                  map.accession_id as map_aid,
                  map.map_name,
@@ -199,13 +198,13 @@ The SQL for finding correspondences for a feature.
                  ms.short_name as map_set_name,
                  ms.display_order as ms_display_order,
                  ms.published_on,
-                 ms.map_type,
+                 ms.map_type_accession,
                  ms.map_units,
                  s.common_name as species_name,
                  s.display_order as species_display_order,
                  fc.feature_correspondence_id,
                  fc.accession_id as feature_correspondence_aid,
-                 ce.evidence_type
+                 ce.evidence_type_accession
         from     cmap_correspondence_lookup cl, 
                  cmap_feature_correspondence fc,
                  cmap_correspondence_evidence ce,
@@ -230,8 +229,8 @@ The SQL for finding correspondences for a feature.
         $sql .= "and map.accession_id='".$args{'comparative_map_aid'}."' ";
     }
 
-    $sql .= 'and ce.evidence_type in ('.$args{'evidence_types'}.') ' 
-        if $args{'evidence_types'};
+    $sql .= "and ce.evidence_type_accesion in ('".$args{'evidence_type_aids'}."') " 
+        if $args{'evidence_type_aids'};
 
     $sql .= q[
                  order by ms.map_set_name, 
@@ -316,7 +315,7 @@ The SQL for finding basic info on a feature.
                    f.is_landmark,
                    f.start_position,
                    f.stop_position,
-                   f.feature_type,
+                   f.feature_type_accession,
                    map.map_name,
                    map.accession_id as map_aid,
                    ms.map_set_id,
@@ -325,7 +324,7 @@ The SQL for finding basic info on a feature.
                    s.species_id,
                    s.accession_id as species_aid,
                    s.common_name as species_name,
-                   ms.map_type,
+                   ms.map_type_accession,
                    ms.map_units
         from       cmap_feature f
         inner join cmap_map map
@@ -359,20 +358,19 @@ The SQL for finding all reference map sets.
                  ms.published_on,
                  s.common_name as species_name,
                  s.display_order,
-                 mt.map_type
+                 ms.map_type_accession
         from     cmap_map_set ms,
-                 cmap_map_type mt,
                  cmap_species s
         where    ms.can_be_reference_map=1
         and      ms.is_enabled=1
         and      ms.species_id=s.species_id
-        and      ms.map_type_id=mt.map_type_id
     ];
     $sql .= "and s.accession_id='$ref_species_aid' " 
         if $ref_species_aid and $ref_species_aid ne '-1';
     $sql .= q[
+        and      ms.is_relational_map=0
         order by ms.display_order,
-                 mt.map_type,
+                 ms.map_type_accession,
                  s.display_order,
                  species_name,
                  ms.published_on desc,
@@ -421,9 +419,9 @@ map.
 =cut
 
     my ( $self, %args )   = @_;
-    my @evidence_types = @{ $args{'evidence_types'} || [] };
+    my @evidence_type_aids = @{ $args{'evidence_type_aids'} || [] };
 
-    if ( @evidence_types ) {
+    if ( @evidence_type_aids ) {
         return q[
             select   distinct map.map_id,
                      map.accession_id,
@@ -437,7 +435,7 @@ map.
                      ms.shape,
                      ms.width,
                      ms.color,
-                     ms.map_type,
+                     ms.map_type_accession,
                      ms.map_units,
                      ms.is_relational_map,
                      s.species_id,
@@ -464,8 +462,8 @@ map.
             and      cl.feature_correspondence_id=fc.feature_correspondence_id
             and      fc.is_enabled=1
             and      fc.feature_correspondence_id=ce.feature_correspondence_id
-            and      ce.evidence_type in (].
-            join( ',', @evidence_types ).q[)
+            and      ce.evidence_type_accession in ('].
+            join( "','", @evidence_type_aids ).q[')
             and      cl.feature_id2=f2.feature_id
             and      f2.map_id=map.map_id
             and      map.map_set_id=?
@@ -489,7 +487,7 @@ map.
                      ms.shape,
                      ms.width,
                      ms.color,
-                     ms.map_type,
+                     ms.map_type_accession,
                      ms.map_units,
                      ms.is_relational_map,
                      s.species_id,

@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Utils;
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.26 2004-03-26 20:42:10 mwz444 Exp $
+# $Id: Utils.pm,v 1.27 2004-04-01 08:04:24 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.26 $)[-1];
+$VERSION = (qw$Revision: 1.27 $)[-1];
 
 use base 'Exporter';
 
@@ -471,7 +471,7 @@ takes a hash of hashes and makes it look like return from
 the DBI selectall_arrayref()
 
 =cut 
-{
+
     my $self    = shift;
     my $hashref = shift;
     my @columns = @_;
@@ -486,8 +486,29 @@ the DBI selectall_arrayref()
         sort {$a->{$columns[0]} cmp $b->{$columns[0]}} @return_array; 
     return \@return_array;
 }
-}
+# ----------------------------------------------------
+=pod
 
+=head2 sort_selectall_arrayref
+
+
+=cut 
+sub sort_selectall_arrayref{
+    my $self     = shift;
+    my $arrayref = shift;
+    my @columns  = @_;
+
+    my @returnArray= 
+	sort{
+	    for (my $i=0; $i<$#columns;$i++){
+		if ($a->{$columns[$i]} cmp $b->{$columns[$i]}){
+		    return $a->{$columns[$i]} cmp $b->{$columns[$i]};
+		}
+	    }
+	    return $a->{$columns[-1]} cmp $b->{$columns[-1]};
+	} @$arrayref;
+    return \@returnArray;
+}
 1;
 
 # ----------------------------------------------------

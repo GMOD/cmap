@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap;
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.52 2004-03-30 02:22:08 kycl4rk Exp $
+# $Id: CMap.pm,v 1.53 2004-04-01 08:04:21 mwz444 Exp $
 
 =head1 NAME
 
@@ -45,7 +45,7 @@ use base 'Class::Base';
 # ----------------------------------------------------
 sub init {
     my ( $self, $config ) = @_;
-    $self->{'config'}     = $config->{'config'} if defined $config->{'config'}; 
+    $self->config($config->{'config'}); 
     $self->data_source( $config->{'data_source'} ) or return;
     return $self;
 }
@@ -89,8 +89,6 @@ Returns the cache directory.
 }
 
 # ----------------------------------------------------
-sub config {
-
 =pod
 
 =head2 config
@@ -98,8 +96,13 @@ sub config {
 Returns configuration object.
 
 =cut
-    my $self = shift;
+sub config {
 
+    my $self = shift;
+    my $newConfig =shift;
+    if ($newConfig){
+	$self->{'config'}=$newConfig;
+    }
     unless ( defined $self->{'config'} ) {
         $self->{'config'} = Bio::GMOD::CMap::Config->new
             or return Bio::GMOD::CMap::Config->error;
@@ -134,15 +137,15 @@ Return data from config about map type
 
 =cut
     my $self      = shift;
-    my $map_type  = shift;
+    my $map_type_aid  = shift;
     my $attribute = shift;
     my $config    = $self->config or return;
     
     if ( $attribute ) {
-        return $config->get_config('map_type')->{$map_type}{$attribute};
+        return $config->get_config('map_type')->{$map_type_aid}{$attribute};
     }
-    elsif ( $map_type ) {
-        return $config->get_config('map_type')->{$map_type};
+    elsif ( $map_type_aid ) {
+        return $config->get_config('map_type')->{$map_type_aid};
     }
     else {
         return $config->get_config('map_type');
@@ -160,15 +163,15 @@ Return data from config about feature type
 
 =cut
     my $self         = shift;
-    my $feature_type = shift;
+    my $feature_type_aid = shift;
     my $attribute    = shift;
     my $config       = $self->config or return;
 
     if ( $attribute ) {
-        return $config->get_config('feature_type')->{$feature_type}->{$attribute};
+        return $config->get_config('feature_type')->{$feature_type_aid}->{$attribute};
     }
-    elsif ( $feature_type ) {
-        return $config->get_config('feature_type')->{$feature_type}
+    elsif ( $feature_type_aid ) {
+        return $config->get_config('feature_type')->{$feature_type_aid}
     }
     else {
         return $config->get_config('feature_type')
@@ -186,15 +189,15 @@ Return data from config about evidence type
 
 =cut
     my $self          = shift;
-    my $evidence_type = shift;
+    my $evidence_type_aid = shift;
     my $attribute     = shift;
     my $config        = $self->config or return;
 
     if ( $attribute ) {
-        return $config->get_config('evidence_type')->{$evidence_type}->{$attribute};
+        return $config->get_config('evidence_type')->{$evidence_type_aid}->{$attribute};
     }
-    elsif ( $evidence_type ) {
-        return $config->get_config('evidence_type')->{$evidence_type}
+    elsif ( $evidence_type_aid ) {
+        return $config->get_config('evidence_type')->{$evidence_type_aid}
     }
     else{
         $config->get_config('evidence_type')

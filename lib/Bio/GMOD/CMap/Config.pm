@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Config;
 # vim: set ft=perl:
 
-# $Id: Config.pm,v 1.4 2004-03-30 02:32:55 kycl4rk Exp $
+# $Id: Config.pm,v 1.5 2004-04-01 08:04:23 mwz444 Exp $
 
 =head1 NAME
 
@@ -97,7 +97,7 @@ The conf dir and the global conf file are specified in Constants.pm
     return $self->error( 'No database conf files found in ' . CONFIG_DIR ) 
         unless %config_data;
     $self->{'config_data'} = \%config_data;
-
+#print STDERR "Read Config Files\n";
     return 1;
 }
 
@@ -123,7 +123,7 @@ Sets the active config data.
     # If config_name specified, check if it exists.
     #
     if ( $config_name ) {
-print STDERR "looking up '$config_name'\n";
+#print STDERR "looking up '$config_name'\n";
         if ( $self->{'config_data'}{ $config_name } ) {
             $self->{'current_config'} = $config_name;
             return 1;
@@ -134,7 +134,7 @@ print STDERR "looking up '$config_name'\n";
     }
 
     unless ( $self->{'current_config'} ) {
-print STDERR "current config = ", Dumper($self->{'current_config'}), "\n";
+#print STDERR "current config = ", Dumper($self->{'current_config'}), "\n";
         #
         # If the default db is in the global_config
         # and it exists, set that as the config.
