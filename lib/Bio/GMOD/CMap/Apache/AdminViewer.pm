@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.73 2004-10-13 18:29:58 mwz444 Exp $
+# $Id: AdminViewer.pm,v 1.74 2004-10-13 18:56:00 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -33,7 +33,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.73 $)[-1];
+$VERSION        = (qw$Revision: 1.74 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -870,7 +870,7 @@ sub map_view {
         from     cmap_feature f 
         where    f.map_id=?
     ];
-    $sql .= "and f.feature_type_accession=$feature_type_aid " 
+    $sql .= "and f.feature_type_accession='$feature_type_aid' " 
          if $feature_type_aid;
     $sql .= "order by $order_by ";
 
@@ -2049,7 +2049,7 @@ sub map_sets_view {
         inner join  cmap_species s 
         on          ms.species_id=s.species_id
     ];
-    $sql .= qq[ and ms.map_type_accession=$map_type_aid ] if $map_type_aid;
+    $sql .= qq[ and ms.map_type_accession='$map_type_aid' ] if $map_type_aid;
     $sql .= qq[ and ms.species_id=$species_id ]   if $species_id;
     $sql .= qq[ and ms.is_enabled=$is_enabled ]   
         if defined $is_enabled && $is_enabled =~ m/^[01]$/;
