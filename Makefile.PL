@@ -1,4 +1,4 @@
-# $Id: Makefile.PL,v 1.9 2002-09-24 22:39:03 kycl4rk Exp $
+# $Id: Makefile.PL,v 1.10 2002-09-26 19:31:34 kycl4rk Exp $
 
 use strict;
 use FindBin '$Bin';
@@ -22,12 +22,14 @@ my @argv = @ARGV;
 @ARGV    = ();
 foreach ( @argv ) {
     if ( /^--?h(elp)?/i ) {
-        die join("\n", 
+        print join("\n", 
             'To customize install locations, provide one or '.
             'more of the options ',
             join( ', ', @OPTIONS ),
-            "e.g., 'PREFIX=/usr/local/cmap'"
+            "e.g., 'PREFIX=/usr/local/cmap'",
+            ''
         );
+        exit(0);
     }
     elsif ( /($OPTIONS)=(.+)/og ) {
         $OPTIONS{$1} = $2;
@@ -61,8 +63,7 @@ if ( -e CONF_FILE && !%OPTIONS ) {
 #
 # If no options, get interactively.
 #
-unless ( %OPTIONS ) {
-    my $preamble = <<"PREAMBLE";
+my $preamble = <<"PREAMBLE";
 # -----------------------------------------
 # Generic Model Organism Database
 # Comparative and Genetic Maps Installation
@@ -74,34 +75,33 @@ as arguments to this script with the options:
 
 PREAMBLE
 
-    $preamble .= join( "\n", map { "\t$_" } @OPTIONS, '' );
-    print $preamble;
-    my $prefix = $OPTIONS{'PREFIX'} || DEFAULT_PREFIX;
+$preamble .= join( "\n", map { "\t$_" } @OPTIONS, '' );
+print $preamble;
+my $prefix = $OPTIONS{'PREFIX'} || DEFAULT_PREFIX;
 
-    $OPTIONS{'CONF_DIR'}       ||= get_path(
-        prompt   => 'Where would you like the configuration file installed?',
-        optional => 1,
-        default  => $prefix.'/conf',
-    );
+$OPTIONS{'CONF_DIR'}       ||= get_path(
+    prompt   => 'Where would you like the configuration file installed?',
+    optional => 1,
+    default  => $prefix.'/conf',
+);
 
-    $OPTIONS{'TEMPLATE_DIR'}   ||= get_path(
-        prompt   => 'Where would you like the HTML templates installed?',
-        optional => 1,
-        default  => $prefix.'templates/cmap',
-    );
+$OPTIONS{'TEMPLATE_DIR'}   ||= get_path(
+    prompt   => 'Where would you like the HTML templates installed?',
+    optional => 1,
+    default  => $prefix.'/templates/cmap',
+);
 
-    $OPTIONS{'SCRIPT_DIR'}     ||= get_path(
-        prompt   => 'Where would you like the command-line scripts installed?',
-        optional => 1,
-        default  => $OPTIONS{'PREFIX'} ? $prefix.'/bin' : DEFAULT_BIN_DIR,
-    );
+$OPTIONS{'SCRIPT_DIR'}     ||= get_path(
+    prompt   => 'Where would you like the command-line scripts installed?',
+    optional => 1,
+    default  => $OPTIONS{'PREFIX'} ? $prefix.'/bin' : DEFAULT_BIN_DIR,
+);
 
-    $OPTIONS{'STYLESHEET_DIR'} ||= get_path(
-        prompt   => 'Where would you like the HTML stylesheet installed?',
-        optional => 1,
-        default  => $prefix.'htdocs/stylesheets',
-    );
-}
+$OPTIONS{'STYLESHEET_DIR'} ||= get_path(
+    prompt   => 'Where would you like the HTML stylesheet installed?',
+    optional => 1,
+    default  => $prefix.'/htdocs/stylesheets',
+);
 
 #
 # Write out our current config options.
@@ -113,7 +113,7 @@ print F
     "# information used by the cmap installer.\n",
     qq[# To reconfigure, run "perl Makefile.PL `cat ".CONF_FILE."`"\n]
 ;
-foreach ( keys %OPTIONS ) {
+for ( @OPTIONS ) {
     print F "$_=$OPTIONS{$_}\n";
 }
 close F;

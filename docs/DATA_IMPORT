@@ -5,13 +5,17 @@ following:
 
 1.  SET UP SPECIES, MAP TYPES, ETC.
 
-Before you will be able to import any data, you will need to perform some basic
-setup on the empty database.  To begin, open up the web administration
-interface by pointing a web browser to the admin interface (e.g.,
-"http://my.server.org/cmap/admin").  You'll need to set up what types of maps,
-features, species, and evidence types you'll be working with.  For each, go to
-the "View ..." choice from the main menu, then choose "Create New ..." and fill
-in the correct information.  
+Before you will be able to import any data, you will need to perform
+some basic setup on the empty database.  To begin, open up the web
+administration interface by pointing a web browser to the admin
+interface (e.g., "http://my.server.org/cmap/admin").  You'll need to
+set up what types of maps, features, species, and evidence types you'll
+be working with.  For each, go to the "View ..." choice from the main
+menu, then choose "Create New ..." and fill in the correct information.  
+It isn't really necessary to create the feature types as you will be
+prompted to create them when the import process detects one it doesn't
+know about;  however, you'll still want to go back and fix the shape
+and colors of each feature type, probably.
 
 2.  FORMAT YOUR DATA
 
@@ -139,5 +143,11 @@ be sure to run the "Reload correspondence matrix" option of the
 "cmap_admin.pl" script to refresh the data that is pre-computed
 and cached in the "cmap_correspondence_matrix" table.  The only option
 is to completely truncate the table and reload it from scratch.
+
+6.  INSPECT MAPS
+
+Once you've imported your maps, go to the map viewer and see what you
+get.  Remember that only the maps you've defined "can_be_reference_map"
+as TRUE will show up in the "Ref. Set" drop-down box.
 
 __END__

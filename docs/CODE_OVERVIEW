@@ -16,7 +16,7 @@ Care has been given to carefully separate functionally different parts
 of the code into different modules, roughly corresponding to a
 traditional "three-tiered" structure of layers for the data, the
 logic, and the presentation layers.  You'll find all the database
-interaction encapusulated into the Bio::GMOD::CMap::Data* modules, all
+interaction encapsulated into the Bio::GMOD::CMap::Data* modules, all
 the "logic" (the code that lays out the map components) in the
 Bio::GMOD::CMap::Drawer* modules, and all the HTML generation in the
 Bio::GMOD::CMap::Apache* modules.  
@@ -28,7 +28,7 @@ Bio::GMOD::CMap::Data* modules.  One goal of this project has always
 been compatibility with multiple RDBMSs (perhaps if only from
 necessity, as the system was developed using MySQL but is deployed on
 Oracle).  As a consequence, all the SQL will be placed (eventually :-)
-into object-oriented modules where the statements can be subclassed
+into object-oriented modules where the statements can be sub-classed
 and modified to run with a particular database without affecting any
 other SQL.
 
@@ -47,7 +47,7 @@ module.
 
 3. LOGIC MODULES
 
-All the modules that actually do something towards laying out the
+All the modules that actually do something toward laying out the
 comparative maps live in the Bio::GMOD::CMap::Drawer* namespace.  The top
 level, "Drawer.pm," is basically the coordinator of the objects it
 manipulates.  The Drawer creates a "Map" object for each map (or map
@@ -88,12 +88,12 @@ All local configuration of CMAP should be done through the "cmap.conf"
 file.  Of course, the file doesn't have to be called "cmap.conf."  It
 can be called whatever you like, so long as the absolute path to the
 file is in the Bio::GMOD::CMap::Constants file.  This path is
-automatically written during installtion if you do the standard "perl
+automatically written during installation if you do the standard "perl
 Makefile.PL; make; make install" process.  There are defaults provided
 for every option in the local config file with the exception of the
 database connection info and the template directory.  The latter
 should be set during installation, and the latter should be set by the
-installer.  If you comment out any of the options in "cmap.confi"
+installer.  If you comment out any of the options in "cmap.config"
 (except "database" and "template_dir"), there are defaults in the
 Bio::GMOD::CMap::Constants file.
 
@@ -141,7 +141,7 @@ problem are split into specialized modules and objects.
 
 7. SQL CONVENTIONS
 
-The tables used by the comparative maps follow a fairly rigid nameing
+The tables used by the comparative maps follow a fairly rigid naming
 convention so that they should be able to integrate easily with existing
 databases.
 
@@ -179,12 +179,12 @@ databases.
     or "wants" or whatever) some value, always in the affirmative,
     e.g. "is_relational_map."
 
-    o Datetime fields: Datetime fields will be named like "*_on," e.g.,
+    o Date-time fields: Date-time fields will be named like "*_on," e.g.,
     "published_on."
 
 *   There are no stored procedures or referential integrity (RI)
     constraints at the database level (apart from primary key and some
-    unique indeces/constraints). This is intentional in order to make
+    unique indices/constraints). This is intentional in order to make
     the code portable to RDBMSs which don't fully support such features
     (such as MySQL, one of the databases used in the development of the
     code). All such logic and RI is addressed in the Perl code (for

@@ -2,7 +2,6 @@
 use Apache();
 use Apache::Constants();
 use Apache::Cookie();
-use Apache::Reload();
 use Apache::Request();
 use Class::Base();
 use Config::General();
