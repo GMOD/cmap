@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.39 2003-03-25 23:17:30 kycl4rk Exp $
+# $Id: Data.pm,v 1.40 2003-03-27 22:13:46 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.39 $)[-1];
+$VERSION = (qw$Revision: 1.40 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -140,7 +140,7 @@ Organizes the data for drawing comparative maps.
     }
 
     #
-    # Allow only one correspondence evidence per.
+    # Allow only one correspondence evidence per (the top-most ranking).
     #
     for my $fc_id ( keys %correspondence_evidence ) {
         my @evidence = 
@@ -152,9 +152,6 @@ Organizes the data for drawing comparative maps.
     $data->{'correspondences'}         = \%correspondences;
     $data->{'correspondence_evidence'} = \%correspondence_evidence;
     $data->{'feature_types'}           = \%feature_types;
-
-#    warn "correspondences =\n", Dumper($data->{'correspondences'}), "\n";
-#    warn "corr evidence=\n", Dumper($data->{'correspondence_evidence'}), "\n";
 
     return $data;
 }
@@ -452,8 +449,9 @@ Returns the data for drawing comparative maps.
                     evidence_type_ids => $evidence_type_ids,
                 ),
                 { Columns => {} },
-                ( $ref_map_id, $ref_map_start, $ref_map_stop,
-                  $map_id, $map_start, $map_stop
+                ( 
+                    $ref_map_id, $ref_map_start, $ref_map_stop,
+                    $map_id, $map_start, $map_stop,
                 )
             );
         }
@@ -481,10 +479,27 @@ Returns the data for drawing comparative maps.
             }
         }
 
-        if ( $map_correspondences ) {
+        my $self_correspondences = $db->selectall_arrayref(
+            $sql->map_data_feature_correspondence_by_map_sql(
+                evidence_type_ids => $evidence_type_ids,
+                feature_type_ids  => $feature_type_ids,
+            ),
+            { Columns => {} },
+            ( 
+                $map_id, $map_start, $map_stop,
+                $map_id, $map_start, $map_stop,
+            )
+        );
+
+        if ( 
+            @{ $map_correspondences || [] } || @{ $self_correspondences || [] }
+        ) {
             my %distinct_correspondences;
 
-            for my $corr ( @$map_correspondences ) {
+            for my $corr ( 
+                @{ $map_correspondences || [] }, 
+                @{ $self_correspondences || [] }
+            ) {
                 $correspondences->{ 
                     $corr->{'feature_id1'} }{ $corr->{'feature_id2'} 
                 } = $corr->{'feature_correspondence_id'};
@@ -1888,9 +1903,9 @@ Given a list of feature names, find any maps they occur on.
     my @feature_names     = (
         map { 
             s/\*/%/g;       # turn stars into SQL wildcards
-            s/,//g;         # kill commas
-            s/^\s+|\s+$//g; # kill leading/trailing whitespace
-            s/"//g;         # kill double quotes
+            s/,//g;         # remove commas
+            s/^\s+|\s+$//g; # remove leading/trailing whitespace
+            s/"//g;         # remove double quotes
             s/'/\\'/g;      # backslash escape single quotes
             uc $_ || ()     # uppercase what's left
         }
@@ -2179,7 +2194,9 @@ Returns the detail info for a map.
     # Figure out hightlighted features.
     #
     my $highlight_hash = {
-        map  { s/^\s+|\s+$//g; ( uc $_, 1 ) } split( /[,:;\s+]/, $highlight ) 
+        map  { s/^\s+|\s+$//g; ( uc $_, 1 ) } 
+        parse_words( $highlight )
+#        split( /[,:;\s+]/, $highlight ) 
     };
 
     my $sth = $db->prepare(
