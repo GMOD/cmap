@@ -12,6 +12,9 @@ use Data::Pageset();
 use DBI();
 #use DBD::mysql();   # choose the driver that's
 #use DBD::Oracle();  # correct for your installation
+#use DBD::Sybase();  
+#use DBD::Pg();  
+#use DBD::SQLite();  
 use Digest::MD5();
 use GD();
 use IO::Tee();
@@ -29,6 +32,7 @@ use Bio::GMOD::CMap::Apache();
 use Bio::GMOD::CMap::Apache::AdminViewer();
 use Bio::GMOD::CMap::Apache::HelpViewer();
 use Bio::GMOD::CMap::Apache::Index();
+use Bio::GMOD::CMap::Apache::EvidenceTypeViewer();
 use Bio::GMOD::CMap::Apache::FeatureSearch();
 use Bio::GMOD::CMap::Apache::FeatureViewer();
 use Bio::GMOD::CMap::Apache::FeatureTypeViewer();
