@@ -141,7 +141,7 @@ Here are URLs to help you track down everything you need to install libgd:
 
 The CMAP application relies on a relational database management system
 (RDBMS) to store and retrieve data.  If you already have a database
-such as MySQL (version 3.23), Oracle (version 9.x) installed on your
+such as MySQL (version 3.23) or Oracle (version 9.x) installed on your
 system, you can skip ahead to the next section.  If not and you're
 doing this on your own, and aren't a trained DBA, I'd recommend using
 MySQL for your database.  It's free, extremely stable, flexible, and
@@ -150,7 +150,12 @@ this because the code doesn't rely on much of anything from the
 database except joins (no transactions, no referential integrity, no
 stored procedures, etc.).  If you prefer to use Oracle, you're in luck
 because this application was developed concurrently on MySQL and
-Oracle.
+Oracle.  As of version 0.05, a schema is included which seems to work
+with PostgreSQL.  It is an immediate goal to test CMap completely with
+PostgreSQL, but, alas, time has not yet allowed that.  There does seem
+to be some problem with the feature correspondence matrix and PG.  One
+user has also hacked the schema to work with Sybase, and the code
+seems to have no problems.
 
 Note:  Oracle 8.x doesn't support ANSI-standard left joins, so some parts
        of the application will fail. If you can't upgrade, then you can

@@ -1,5 +1,38 @@
                    Revision history for Bio::GMOD::CMap
 
+0.05
+-   Fixed bug in admin map view that showed all features and a 
+    broken pager
+-   Fixed bug in admin feature search that broke in Oracle because
+    double quotes were used instead of single quotes
+-   Fixed bad URL in admin home page that pointed to "/maps" instead
+    of "/cmap"
+-   Fixed bad HTML in admin feature create/edit templates that didn't
+    show feature type because of a missing "</SELECT>"
+-   Fixed SQL in matrix that actually caused a server error, which
+    should never happen
+-   Added missing "</HTML>" tags to templates "feature_search.tmpl,"
+    "feature_detail.tmpl," and "error.tmpl"
+-   Added "alternate_name" to SQL for feature search (was expected by
+    interface but never returned by code)
+-   Added appropriate ending to feature search template (was missing
+    call to page object's "end_body" method, important for Gramene)
+-   Fixed bug in admin when adding a feature correspondence (see bug
+    #632053)
+-   Fixed a bug that allowed a feature to extend beyond the current
+    map range if it wanted to
+-   Added "alternate_name" to SQL for feature correspondences table of
+    the feature detail page (interface was expecting it)
+-   Fixed misplaced angle brackets in feature search template
+-   Changed order of options on admin feature edit page that made IE
+    set the "is_landmark" option to "yes" when it wasn't originally set
+-   Added back in "use DBI;" statement to main CMap.pm module to
+    prevent "Can't call method..." errors
+-   Fixed errors in loading SQL driver in data module
+-   Got rid of "cmap_dump.pl" as that logic has been moved into
+    cmap_admin.pl
+-   Added a schema for PostgreSQL and started initial testing
+
 0.04
 
 -   Added "cmap_dump.pl" script to help dump CMAP tables as
