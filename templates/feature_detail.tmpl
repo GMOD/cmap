@@ -51,7 +51,11 @@
         <td>
             [% IF feature.dbxrefs %]
                 [% FOREACH dbxref=feature.dbxrefs %]
-                    <a href="[% dbxref.url %]">[% dbxref.dbxref_name OR 'Reference' %]</a><br>
+                    [% IF dbxref.url %]
+                        <a href="[% dbxref.url %]">[% dbxref.dbxref_name OR 'Reference' %]</a><br>
+                    [% ELSE %]
+                        [% dbxref.dbxref_name %]<br>
+                    [% END %]
                 [% END %]
             [% ELSE %]
                 No cross-references defined.
