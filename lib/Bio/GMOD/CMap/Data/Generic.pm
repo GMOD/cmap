@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data::Generic;
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.49 2004-04-01 08:04:26 mwz444 Exp $
+# $Id: Generic.pm,v 1.50 2004-05-10 20:55:55 mwz444 Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.49 $)[-1];
+$VERSION = (qw$Revision: 1.50 $)[-1];
 
 use Data::Dumper; # really just for debugging
 use Bio::GMOD::CMap;
@@ -83,7 +83,7 @@ The SQL for finding all the features on a map.
                  f.is_landmark,
                  f.start_position,
                  f.stop_position,
-                 f.feature_type,
+                 f.feature_type_accession as feature_type_aid,
                  f.default_rank,
                  map.accession_id as map_aid,
                  ms.map_units
@@ -104,7 +104,7 @@ The SQL for finding all the features on a map.
     ];
 
     if ( @feature_type_aids ) {
-        $sql .= "and f.feature_type in ('".
+        $sql .= "and f.feature_type_accession in ('".
             join( "','", @feature_type_aids ).
         "')";
     }
@@ -188,7 +188,7 @@ The SQL for finding correspondences for a feature.
                  f.accession_id as feature_aid,
                  f.start_position,
                  f.stop_position,
-                 f.feature_type_accession,
+                 f.feature_type_accession as feature_type_aid,
                  map.map_id,
                  map.accession_id as map_aid,
                  map.map_name,
@@ -198,13 +198,13 @@ The SQL for finding correspondences for a feature.
                  ms.short_name as map_set_name,
                  ms.display_order as ms_display_order,
                  ms.published_on,
-                 ms.map_type_accession,
+                 ms.map_type_accession as map_type_aid,
                  ms.map_units,
                  s.common_name as species_name,
                  s.display_order as species_display_order,
                  fc.feature_correspondence_id,
                  fc.accession_id as feature_correspondence_aid,
-                 ce.evidence_type_accession
+                 ce.evidence_type_accession as evidence_type_aid
         from     cmap_correspondence_lookup cl, 
                  cmap_feature_correspondence fc,
                  cmap_correspondence_evidence ce,
@@ -315,7 +315,7 @@ The SQL for finding basic info on a feature.
                    f.is_landmark,
                    f.start_position,
                    f.stop_position,
-                   f.feature_type_accession,
+                   f.feature_type_accession as feature_type_aid,
                    map.map_name,
                    map.accession_id as map_aid,
                    ms.map_set_id,
@@ -324,7 +324,7 @@ The SQL for finding basic info on a feature.
                    s.species_id,
                    s.accession_id as species_aid,
                    s.common_name as species_name,
-                   ms.map_type_accession,
+                   ms.map_type_accession as map_type_aid,
                    ms.map_units
         from       cmap_feature f
         inner join cmap_map map
@@ -358,7 +358,7 @@ The SQL for finding all reference map sets.
                  ms.published_on,
                  s.common_name as species_name,
                  s.display_order,
-                 ms.map_type_accession
+                 ms.map_type_accession as map_type_aid
         from     cmap_map_set ms,
                  cmap_species s
         where    ms.can_be_reference_map=1
@@ -435,7 +435,7 @@ map.
                      ms.shape,
                      ms.width,
                      ms.color,
-                     ms.map_type_accession,
+                     ms.map_type_accession as map_type_aid,
                      ms.map_units,
                      ms.is_relational_map,
                      s.species_id,
@@ -487,7 +487,7 @@ map.
                      ms.shape,
                      ms.width,
                      ms.color,
-                     ms.map_type_accession,
+                     ms.map_type_accession as map_type_aid,
                      ms.map_units,
                      ms.is_relational_map,
                      s.species_id,
