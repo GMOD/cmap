@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.94 2004-06-22 03:05:36 mwz444 Exp $
+# $Id: Map.pm,v 1.95 2004-06-23 15:23:15 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.94 $)[-1];
+$VERSION = (qw$Revision: 1.95 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1340,6 +1340,22 @@ sub layout_map_foundation {
     my $map_name             = $self->map_name($map_id);
     my $no_features          = $self->no_features($map_id);
     my $min_map_pixel_height = $drawer->config_data('min_map_pixel_height');
+    my $scaled_map_pixel_height = $min_map_pixel_height;
+    if ($drawer->{'data'}{'ref_unit_size'}{$self->map_units($map_id)}){
+        $scaled_map_pixel_height
+            = ($self->stop_position($map_id)-$self->start_position($map_id))
+            * ($drawer->pixel_height()
+              / $drawer->{'data'}{'ref_unit_size'}{$self->map_units($map_id)});
+        my $max_map_pixel_height=(5 * $drawer->pixel_height());
+        $scaled_map_pixel_height = $min_map_pixel_height
+            if ($scaled_map_pixel_height < $min_map_pixel_height);
+        $scaled_map_pixel_height = $max_map_pixel_height
+            if ($scaled_map_pixel_height > $max_map_pixel_height);
+    }
+
+    #
+    #Decide the dimentions of a compressed map
+    #
     my $compressed_map_pix_height = int(
         (
             $drawer->pixel_height -
@@ -1388,6 +1404,8 @@ sub layout_map_foundation {
         my $ref_corrs = $drawer->map_correspondences( $slot_no, $map_id );
         my ( $min_ref_y, $max_ref_y, @ref_connections, $ref_top, $ref_bottom );
         for my $ref_corr ( values %$ref_corrs ) {
+            #
+            #Get the information about the reference map.
             my $pos =
               $drawer->reference_map_y_coords( $ref_slot_no,
                 $ref_corr->{'ref_map_id'} );
@@ -1405,14 +1423,24 @@ sub layout_map_foundation {
               $pos->{'y1'} +
               ( ( $ref_corr->{'max_start'} - $pos->{'map_start'} ) /
                   $ref_map_unit_len ) * $ref_map_pixel_len;
-
+            # Set the avg location of the corr on the ref map
             my $ref_map_mid_y =
                 $pos->{'y1'} +
                 (($ref_corr->{'avg_mid'} - $pos->{'map_start'} ) /
                   $ref_map_unit_len ) * $ref_map_pixel_len;
 
-            push @ref_connections,
-              [ $pos->{'x'}, $ref_map_mid_y, $ref_corr->{'no_corr'}, ];
+            if (0){
+                # Single line to avg corr
+                push @ref_connections,
+                  [ $pos->{'x'}, $ref_map_mid_y, $ref_corr->{'no_corr'}, ];
+            }
+            else{
+                # V showing span of corrs
+                push @ref_connections,
+                  [ $pos->{'x'}, $ref_map_y1, $ref_corr->{'no_corr'}, ];
+                push @ref_connections,
+                  [ $pos->{'x'}, $ref_map_y2, $ref_corr->{'no_corr'}, ];
+            }
 
           #
           # This causes the map to span the distance covered on the ref.
@@ -1425,8 +1453,14 @@ sub layout_map_foundation {
             #
             # This keeps the map a consistent height.
             #
-            $min_ref_y = $ref_map_mid_y - $min_map_pixel_height;
-            $max_ref_y = $ref_map_mid_y + $min_map_pixel_height;
+            if (1){
+                $min_ref_y = $ref_map_mid_y - ($scaled_map_pixel_height/2);
+                $max_ref_y = $ref_map_mid_y + ($scaled_map_pixel_height/2);
+            }
+            else{
+                $min_ref_y = $ref_map_mid_y - $min_map_pixel_height;
+                $max_ref_y = $ref_map_mid_y + $min_map_pixel_height;
+            }
         }
 
         my $map_pix_len = $max_ref_y - $min_ref_y;
@@ -1485,6 +1519,9 @@ sub layout_map_foundation {
             }
         }
     }
+    else{
+        $pixel_height = $scaled_map_pixel_height;
+    }
     $top_y = $map_base_y unless defined $top_y;
     $top_y = $map_base_y if $map_base_y < $top_y;
 
@@ -1522,12 +1559,7 @@ sub layout_map_foundation {
           [ STRING, $reg_font, $f_x, $topper_y, $topper, 'black' ];
         $min_x = $f_x if ( ( not defined($min_x) ) or $f_x < $min_x );
     }
-    if (1 and $drawer->{'data'}{'max_map_units'}{$self->map_units($map_id)}){
-        $pixel_height
-            = ($self->stop_position($map_id)-$self->start_position($map_id))
-            * ($drawer->pixel_height()
-              / $drawer->{'data'}{'max_map_units'}{$self->map_units($map_id)});
-    }
+    
     return ( $base_x, $min_x, $map_base_y, $area, $last_map_x, $last_map_y,
         $pixel_height );
 

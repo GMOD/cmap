@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.130 2004-06-22 03:05:34 mwz444 Exp $
+# $Id: Data.pm,v 1.131 2004-06-23 15:23:14 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.130 $)[-1];
+$VERSION = (qw$Revision: 1.131 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -489,7 +489,9 @@ sub cmap_data {
     $data->{'feature_types'}             = \%feature_types;
     $data->{'extra_code'}                = $extra_code;
     $data->{'extra_form'}                = $extra_form;
-    $data->{'max_map_units'}        = $self->get_map_unit_to_height(
+    $data->{'max_unit_size'}             = $self->get_max_unit_size(
+                                            $data->{'slots'});
+    $data->{'ref_unit_size'}             = $self->get_ref_unit_size(
                                             $data->{'slots'});
 
     return $data;
@@ -4947,7 +4949,7 @@ sub get_all_feature_types {
 }
 
 # ----------------------------------------------------
-sub get_map_unit_to_height {
+sub get_max_unit_size {
     my $self  = shift;
     my $slots = shift;
     
@@ -4964,6 +4966,30 @@ sub get_map_unit_to_height {
     }    
 
     return \%max_per_unit;
+}
+
+
+# ----------------------------------------------------
+sub get_ref_unit_size {
+    my $self  = shift;
+    my $slots = shift;
+    
+    my %ref_for_unit;
+
+    foreach my $slot_id (sort orderOutFromZero keys %$slots){
+        foreach my $map_id (keys %{$slots->{$slot_id}}){    
+            my $map=$slots->{$slot_id}{$map_id};
+            if ($ref_for_unit{$map->{'map_units'}}){
+                last;
+            }
+            else{
+                $ref_for_unit{$map->{'map_units'}} 
+                    = $map->{'stop_position'} - $map->{'start_position'};
+            }
+        }
+    }    
+
+    return \%ref_for_unit;
 }
 
 # ----------------------------------------------------
