@@ -4,19 +4,26 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.2 $
+$Revision: 1.3 $
 
 This document is intended to help you understand how to use the data
-curation tools provided with CMap.  There are two tools you will use:
-the "cmap_admin.pl" command-line interface and the web-base
-administration interface.  The first is used for all long-running
-processes that aren't practical to address over the HTTP protocol.  It
-employs a "wizard"-like approach to accomplishing various tasks by
-asking the curator a series of closed-ended questions and performing
-the desired action using the answers provided.  The web admin tool is
-meant to provide a point-and-click interface for performing the more
-mundane administrative tasks or for viewing the data.  Lastly, you can
-customize many aspects of CMap by altering the your "cmap.conf" file.
+curation tools provided with CMap.  There are three tools you will use:
+the configuration files, the "cmap_admin.pl" command-line interface and 
+the web-base administration interface.  
+
+The configuration file is used to create and customize the look of map, 
+feature and evidence types as well as customizing the CMap experience.  
+
+The "cmap_admin.pl" program is used for all long-running processes that 
+aren't practical to address over the HTTP protocol.  It employs a 
+"wizard"-like approach to accomplishing various tasks by asking the 
+curator a series of questions and performing the desired action using 
+the answers provided.  
+
+The web admin tool is meant to provide a point-and-click interface for 
+performing the more mundane administrative tasks or for viewing the 
+data. 
+
 All of this is discussed in further detail in this document.
 
 =head1 STARTING OUT
@@ -33,6 +40,451 @@ admin tool by pointing your browser to
 installed it).  Depending on whether or not you decided to
 password-protect that URL, you may have to enter a username and
 password when prompted by your browser.
+
+=head1 EDITING CONFIGURATION FILES 
+
+The first step to getting your data into CMap is to correctly set up 
+your configuration files.  The config files tell CMap how to access
+your database.  Also, each map type, feature type and evidence type 
+of the data that you will be installing needs to be defined in the 
+configuration files.
+
+CMap has multiple configuration files.  These files are read out of the 
+"cmap.conf/" directory, likely located in your apache "conf/" directory.
+There are two types of config files.  There is one (and only one) 
+"global.conf" file that holds information applicable to all of the 
+databases.  And in that directory, at least one individual configuration 
+file for each database used.  Everything that can be customized about 
+CMap is controlled by these files, which are described in detail 
+below.
+
+The configuration files are written in a standard Apache-style 
+configuration file syntax.  Comments are defined as anything following 
+a hash sign and are ignored.  Options which are grouped together are in 
+angle brackets ("<>").  Standard options are written in a "Name Value" 
+syntax where the two are separated by whitespace or an equal sign.  For 
+more information on the syntax, read the POD for Config::General (by 
+executing "perldoc Config::General" on your system).
+
+Each configuration setting is documented in comments.  Legal and
+default values are listed along with a brief description of the
+option.  Except for the "database" settings, there is a reasonable 
+default, hard coded value for every configuration setting (so you could 
+actually comment out all of the "optional settings" in the file).
+
+Whenever you make a change to cmap.conf, it will most likely be
+necessary for you to purge the CMap cache to see the change if the 
+change affects something in the viewer since.  This is particularly 
+true if map|feature|evidence type information has been changed because
+that information is cached along with database search results.  
+Purging the query cache can be done by using the cmap_admin.pl program 
+(explained later in this document).
+
+=head2 global.conf
+
+The global.conf contains information which is used by all of the other 
+configurations.  You will want to set the default_db value.
+
+=over 4
+
+=item * template_dir
+
+Automatically set to the path of the directory that contains the html
+templates.
+
+=item * cache_dir
+
+Automatically set to the path of the directory that contains the 
+temporary image files.  This has no relation to the query caching 
+system mentioned earlier (that needs purging).
+
+=item * default_db
+
+Set the name of the database (named in its config file) that will 
+be used as the default.
+
+=back
+
+=head2 INDIVIDUAL CONFIGURATION FILES
+
+CMap supports multiple data sources and multiple customizations 
+for each.  This allows a curator to maintain distinct databases 
+and view them all in CMap.
+
+If you have only one database, then you need only one configuration
+file of this type.  Adding another is as simple as creating a new
+configuration file.  Any file that is in the "cmap.conf/" directory 
+that ends in ".conf" will be read as a configuration file.
+
+The parameters are explained in comments but here some of the more 
+important features are explained.
+
+=head3 Main options
+
+=over 4
+
+=item * is_enabled
+
+Set to 1 to enable and 0 to keep this configuration file from being 
+used.
+
+=item * <database>
+
+Contains the database connection parameters. The 'name' field is the
+name that this config file and the data source will be called.  
+Therefor, it is important to keep it unique.
+
+=item * expanded_correspondence_lookup
+
+Set to 1.  This tells CMap if the database uses a normalized lookup 
+table.  If you have used the upgrade scripts or the table creation 
+scripts that come along with v0.13, you should leave this as 1.
+
+=item * feature_default_display
+
+Dictates the default choice of the feature type display menu.
+
+=item * <scalable>
+
+Dictates which map units can be used to scale maps to each other.  Maps 
+with units described here will be scaled against maps with the same 
+units.  
+
+=back
+
+=head3 Map, Feature and Evidence Type Information
+
+Starting with v0.13 map, feature and evidence types (*_types) are 
+defined in the configuration files and not in the database.  This means
+that to add an object of *_type, its type must be defined here in the
+config file.
+
+The accession id of the *_type is listed in two places for technical 
+reasons.  It is important that both places have the same accession id.  
+One is in the initial tag, <map_type X>, where 'X' is the accession. 
+The other is in the 'evidence_type_accession' field.
+
+It is important to note that some of the information is stored in the 
+database when features and map sets are created.  Fields like map units 
+and default_rank will not change in the database if you change them only
+in the config file.  This may be something to be addressed in the future.
+
+=head4 Common fields.
+
+=over 4
+
+=item * *_type_accession
+
+The accession id that is used in the database to identify the type. 
+No spaces are allowed.  Example: 'maize_marker'
+
+=item * *_type 
+
+The full name of that type, such as "Maize Marker".
+
+=item * color 
+
+The color of the object.
+
+=item * area_code (map and feature types only)
+
+CMap now allows you to specify javascript to be included in the area box
+over the drawings of map and features.  The following example makes the
+map name appear in the status bar of the browser on mouse over.
+
+$code=sprintf("onMouseOver=\"window.status='%s';return true\"",$map->{'map_name'});
+
+This is Perl code that sets the value of $code to be the javascript 
+command.  This evaluated for each map of this type which enables access
+to the internal variable $map (or in the case of features, $feature).  
+
+This allows the administrator the freedom of using javascript to make 
+the page more versatile.
+
+Some useful keys in $map (which are used $map->{'key'}):
+
+=over 4
+
+=item - map_name
+
+=item - map_id
+
+=item - accession_id 
+
+The map accession id
+
+=item - map_type_aid
+
+The accession id of the map type (of course you already know this)
+
+=back 
+
+Some useful keys in $feature (which are used $feature->{'key'}):
+
+=over 4
+
+=item - feature_name
+
+=item - feature_id
+
+=item - accession_id 
+
+The feature accession id
+
+=item - feature_type_aid
+
+The accession id of the feature type (of course you already know this)
+
+=back 
+
+=item * required_page_code (map and feature types only)
+
+This field takes a list of page_code accessions.  Page_code is used 
+to insert functions that map/feature javascript will use.  This is 
+handy if multiple types do the same complex thing.  Creating page_code
+is described later.
+
+=item * extra_forms (map and feature types only)
+
+This field takes a list of extra_form accessions.  Extra_forms are 
+used to add form objects to the options menu.  These can be used for
+anything from hidden fields that store data to buttons that submit
+the page to a different place.  Creating extra_forms is described later.
+
+
+=back
+
+=head4 Feature type specific options
+
+=over 4
+
+=item * Shape: 
+
+The shape to use when drawing the feature.  Here is a short
+description of the shapes and what they're best used for:
+
+=over 4
+
+=item - line: 
+
+This a horizontal line just wider than the map's width intended to
+represent single-point features (e.g., SNPs or markers).  If the
+feature has a length (a defined stop), the line is drawn at the =item
+*midpoint* of the feature. This shape is the most generic and has the
+least tendency to look busy on very crowded maps. It is mostly
+intended to represent single-point features, but is also useful for
+spanning features when you aren't necessarily concerned with showing
+the span.
+
+=item - in-triangle:
+
+Like the "line," this is intended to represent single-point features
+or just the beginning of a spanning feature (e.g., the beginning of an
+insertion). "In" here means pointing at the map, which may mean
+pointing right or left depending on the side of the map which features
+are being drawn.
+
+=item - out-triangle: 
+
+Exactly like the "in-triangle," only pointing away from the map. These
+two glyphs were added for the common representation of insertions and
+deletions.
+
+=item - box: 
+
+Creates an open (unfilled) box that straddles the map. While it's
+possible to place a box in a lane other than "1" (i.e., there's no
+code in place to stop you), it really doesn't look very good.  This
+shape was really intended just to represent infrequently occuring
+features, like a centromere. The boxes get progressively larger as
+they start to collide and are quite confusing when there are many. Use
+sparingly.
+
+=item - dumbbell: 
+
+This is a spanning shape intended for features with both a start and
+stop position. The dumbbell is fairly small and floats in mini-lanes
+within the drawing lane. When a feature with no length (a single-point
+feature) is drawn with a dumbbell, it renders as a dot (just the
+circle on the end), which could be confusing to users.
+
+=item - span: 
+
+Like half a box, the "span" is a three-sided figure made of straight
+lines that was intended for spanning features. Looks very odd when
+applied to single-point feature.
+
+=item - direction-arrow: 
+
+Another spanning shape, this is a straight line with an arrowhead
+pointing in the direction dictated by the 'direction' field. It 
+"floats" like the dumbbell.
+
+=item - up-arrow: 
+
+Exactly like the "direction-arrow," only with the arrowhead always 
+points towards the top of the image.
+
+=item - down-arrow: 
+
+Exactly like the "direction-arrow," only with the arrowhead always 
+points towards the bottom of the image.
+
+=item - double-arrow: 
+
+Like the "up-arrow" and "down-arrow," except with arrowheads on both
+ends.
+
+=item - filled-box: 
+
+Another spanning feature which floats (like the dumbbell), this is a
+filled-in rectangle (trimmed in black).
+
+=item - banding: 
+
+A spanning feature where consecutive banding features alternate in 
+color between black and the chosen color.  For best use set the
+glyph_overlap to 1.
+
+=item - read-depth: 
+
+A spanning feature where the name of the feature dictates how far 
+from the base position a line is drawn.  The name MUST be a number.
+This will create a line graph type of glyph.  Set the glyph_overlap 
+to 1.
+
+=back
+
+=item * glyph_overlap; 
+
+When set to 1 it forces all glyphs of this feature_type into the same
+drawing lane, allowing for overlaps.  This is important for the 
+banding and read-depth glyphs. 
+
+=item * Drawing Lane: 
+
+A positive integer defining the "lane" where the feature will be
+drawn. The idea was taken from Gbrowse's "tracks," this allows you the
+ability to segregate feature types into visually distinct vertical
+areas. Feature types which share the same lane will all be distributed
+before feature types in the next highest lane. The lower the number
+for the lane, the closer to the map the feature will be drawn.
+
+Lanes are not absolute, they are only used to sort the features on
+a map;  therefore, if you have only "Centromeres" and "Markers" in
+lane #1, on any map with either of those types of features, they will
+be drawn =item *on* the map;  on any map without those types, the
+feature type with the next highest lane number will be drawn =item
+*on* the map.  The same is true as you move into higher lanes;  if the
+lanes move like "1," "4," "7," you will have only 3 lanes with no
+gaps.
+
+=item * Drawing Priority: 
+
+A positive integer which determines the order in which feature types
+within the lane are drawn. The lower the number for the priority, the
+sooner the feature will be drawn in the lane.
+
+=back
+
+=head4 Evidence type specific options
+
+A single correspondence can be supported by any number of evidence
+types, so it is necessary that these be ranked from "1" to N (where
+lower numbers have precedence over higher).  When multiple records
+support a correspondence, only the highest ranking evidence will be
+used when determining how to draw the correspondence line.  If you
+intend to use cmap_admin.pl tool to create correspondences for you
+based on simple name/feature type comparisons, you should create a
+special evidence to use just for that purpose (e.g., with the name
+"Automated name-based" or something similar to flag it as a
+machine-created/non-curated correspondence).  Evidence type color 
+will only be used when NOT aggregating.
+
+=over 4
+
+=item * Rank: 
+
+The rank of the evidence relative to the others
+
+=item * Line Style: 
+
+How lines representing this evidence type will be drawn (not currently
+supported)
+
+=back
+
+=head4 Map type specific options
+
+=over 4
+
+=item * Map Units: 
+
+The units of measurement for this type of map.  This text will display
+at the bottom of non-relational maps, so it's best to keep this short,
+like "cM" for "centimorgans."
+
+=item * Display Order: 
+
+Like the same field in the "species" table, this determines the order
+that maps of this type will be displayed, e.g., on Gramene it is
+preferred that "Sequence" maps be listed before "Genetic" maps which
+should come before "Physical" maps.
+
+=item * Shape: 
+
+This determines how maps of this type will be drawn. You can choose to
+make maps of each type visually distinct by specifying different
+shapes and colors. There are three choices for shape: box, dumbbell
+and I-beam. A box will be trimmed in black and will be filled with the
+color of your choice (or a reasonable default). A dumbbell or an
+I-beam will be rendered only in the map's color (no trim).
+
+=item * Width (opt.): 
+
+How wide a map will be drawn.
+
+=back
+
+=head3 Javascript options
+
+These options are only used to allow complex javascript to be specified 
+in the config document.
+
+=over 4
+
+=item * page_code 
+
+Each page_code has one field called "page_code" that takes in script 
+information in plain text.  It is not as complicated as the area_code 
+in map and feature types.  The example is javascript but it really can 
+be anything recognized by your browser.  
+
+This can be used to specify functions that the individual maps or 
+features need to use.  When a feature or map type is used that requests 
+a page_code object, the code is inserted at the top of the page.
+
+=item * extra_form 
+
+Similar to page_code, one or more extra_forms can be called from map or
+feature types.  Each extra_form has one field called 'extra_form' which
+takes standard html and will insert it into the main CMap viewer form. 
+These can be used for anything from hidden fields that store data to 
+buttons that submit the page to a different place.  
+
+=back
+
+=head2 INCLUDING CONFIGURATION FILES IN CONFIGURATION FILES
+
+If there is a section of the individual configuration files that is 
+repeated in multiple files, that section can be placed in a separate
+file.  That file can then be included in each configuration file.
+
+ <<include foo_type_info.cfg>>
+
+It is recommended that any included files be named with a ".cfg" 
+extension.  Do no name it with a ".conf" extension, otherwise it 
+will be read as a separate config file.
 
 =head1 WEB-ADMIN TOOL
 
@@ -65,17 +517,18 @@ all the different actions you can take:
 
 Each link is self-explanatory.  In addition to the above links, you
 will also see the current data source to which you are connected.
-You may configure CMap to connect to different distinct datasources;
-see the section L<CONFIGURING DATABASE CONNECTIONS> later for more
-information on this.  If you have configure more than one datasource,
-you will also see a drop-down control allowing you to connect to a
-different datasource.
+You may configure CMap to connect to different distinct data sources
+by having multiple configuration files; see the section 
+L<EDITING CONFIGURATION FILES> above for more information on this.  
+If you have configured more than one data source, you will also see a 
+drop-down control allowing you to connect to a different data source.
 
-On each "View" page, you have access to edit and delete the
-information there.  Each page will be discussed in detail later.  For
-the moment, let's just focus on what you need to import your first
-data set.  To do that, you'll need to first set up the species and map
-types.
+On each "View" page, you have access to edit and delete the 
+information there (except for map, feature and evidence type 
+information which are defined in the config file).  Each page will 
+be discussed in detail later.  For the moment, let's just focus on 
+what you need to import your first data set.  To do that, you'll 
+need to first set up the species.
 
 =head1 SETTING UP SPECIES
 
@@ -92,7 +545,6 @@ entitled "Species Create" with a form for the following fields:
 The accession ID
 
 =item * Common Name: 
-
 This is the non-scientific name of the species. This field will be
 used most often as a prefix to the map names. If you plan on having
 more than one species that could go by the same common name (e.g., two
@@ -158,217 +610,9 @@ document only mentions the "create" or "edit" page for an object, rest
 assured that the complementary page works the same as the one
 described.
 
-=head1 SETTING UP MAP TYPES
-
-Click on "View Map Types" from the home page of the web-admin tool.
-As you currently have no map types to view, you should see the message
-"No map types to show."  To add a new species, click on the "Create
-New Map Types" link at the top of the page.  You should now see a page
-entitled "Map Type Create" with a form for the following fields:
-
-=over 4
-
-=item * Map Type: 
-
-This is the name of the map type. Common values are "Genetic,"
-"Physical," "Cytogenic," "Sequence," etc. It doesn't matter at all
-what you call your map types, so use whatever names carry the most
-significance for your research community.
-
-=item * Map Units: 
-
-The units of measurement for this type of map.  This text will display
-at the bottom of non-relational maps, so it's best to keep this short,
-like "cM" for "centimorgans."
-
-=item * Is Relational Map Only: 
-
-This field determines whether or not maps of this type can stand alone
-(like most genetic maps) or if they are a special kind of map set that
-CMap calls "relational," meaning that the maps can only be shown *in
-relation to* some other map (of the first, "non-relational" kind, no
-less :-). Examples of this include physical fingerprint contig maps
-(FPC), QTLs, and haplotypes. These maps are usually composed of many
-smaller fragments that have some correspondences to other maps. As
-such, they are just drawn directly across from and to a size relative
-to the distance their correspondences cover on the reference map. To
-see how "relational" maps are rendered, please visit the CMap
-installation on the Gramene website (http://www.gramene.org/cmap).
-From there, inspect the Matrix and choose a comparison to any map of
-the type "Physical." Drill down until you are taken to the viewer
-showing the reference map (probably some "genetic" map) and the
-physical contigs. Notice how their sizes vary according to the
-correspondences to the genetic map.
-
-For more explanation of relational maps, please see the "admintut."
-
-=item * Display Order: 
-
-Like the same field in the "species" table, this determines the order
-that maps of this type will be displayed, e.g., on Gramene it is
-preferred that "Sequence" maps be listed before "Genetic" maps which
-should come before "Physical" maps.
-
-=item * Shape: 
-
-This determines how maps of this type will be drawn. You can choose to
-make maps of each type visually distinct by specifying different
-shapes and colors. There are three choices for shape: box, dummbell
-and I-beam. A box will be trimmed in black and will be filled with the
-color of your choice (or a reasonable default). A dumbbell or an
-I-beam will be rendered only in the map's color (no trim).
-
-=item * Width (opt.): 
-
-How wide a map will be drawn.
-
-=item * Color (opt.): 
-
-The color a map will be drawn.
-
-=back
-
-When you have filled in all the required values, press "Submit."  If
-there are errors, you will have to correct them;  otherwise you will
-be taken to the "Map Types View" page where your new map type will be
-listed.  
-
-Once you've set up all the map types you wish to have in your
-database, click on the "Home" link in the upper-left corner to return
-to the web-admin home page.
-
-=head1 CREATING FEATURE TYPES
-
-Although it's not imperative to create feature types before importing
-data, now is a good time to address them.  Choose the "View Feature
-Types" link from the web admin home page and then click the "Create
-New Feature Type" link to take you to the page entitled "Feature Type
-Create."  From here you can fill in the following fields:
-
-=over 4
-
-=item * Acc. ID (opt.): 
-
-The accession ID
-
-=item * Feature Type: 
-
-The name of the feature type (e.g., "Marker" or "BAC")
-
-=item * Shape: 
-
-The shape to use when drawing the feature.  Here is a short
-description of the shapes and what they're best used for:
-
-=over 4
-
-=item - line: 
-
-This a horizontal line just wider than the map's width intended to
-represent single-point features (e.g., SNPs or markers).  If the
-feature has a length (a defined stop), the line is drawn at the =item
-*midpoint* of the feature. This shape is the most generic and has the
-least tendency to look busy on very crowded maps. It is mostly
-intended to represent single-point features, but is also useful for
-spanning features when you aren't necessarily concerned with showing
-the span.
-
-=item - in-triangle:
-
-Like the "line," this is intended to represent single-point features
-or just the beginning of a spanning feature (e.g., the beginning of an
-insertion). "In" here means pointing at the map, which may mean
-pointing right or left depending on the side of the map which features
-are being drawn.
-
-=item - out-triangle: 
-
-Exactly like the "in-triangle," only pointing away from the map. These
-two glyphs were added for the common representation of insertions and
-deletions.
-
-=item - box: 
-
-Creates an open (unfilled) box that straddles the map. While it's
-possible to place a box in a lane other than "1" (i.e., there's no
-code in place to stop you), it really doesn't look very good.  This
-shape was really intended just to represent infrequently occuring
-features, like a centromere. The boxes get progressively larger as
-they start to collide and are quite confusing when there are many. Use
-sparingly.
-
-=item - dumbbell: 
-
-This is a spanning shape intended for features with both a start and
-stop position. The dumbbell is fairly small and floats in mini-lanes
-within the drawing lane. When a feature with no length (a single-point
-feature) is drawn with a dumbbell, it renders as a dot (just the
-circle on the end), which could be confusing to users.
-
-=item - span: 
-
-Like half a box, the "span" is a three-sided figure made of straight
-lines that was intended for spanning features. Looks very odd when
-applied to single-point feature.
-
-=item - up-arrow: 
-
-Another spanning shape, this is a straight line with an arrowhead
-pointing towards the top of the image. It "floats" like the dumbbell.
-
-=item - down-arrow: 
-
-Exactly like the "up-arrow," only with the arrowhead pointing towards
-the bottom of the image.
-
-=item - double-arrow: 
-
-Like the "up-arrow" and "down-arrow," except with arrowheads on both
-ends.
-
-=item - filled-box: 
-
-Another spanning feature which floats (like the dumbbell), this is a
-filled-in rectangle (trimmed in black).
-
-=back
-
-=item * Color: 
-
-The color the feature will be drawn.
-
-=item * Drawing Lane: 
-
-A positive integer defining the "lane" where the feature will be
-drawn. The idea was taken from Gbrowse's "tracks," this allows you the
-ability to segregate feature types into visually distinct vertical
-areas. Feature types which share the same lane will all be distributed
-before feature types in the next highest lane. The lower the number
-for the lane, the closer to the map the feature will be drawn.
-
-Lanes are not absolute, they are only used to sort the features on
-a map;  therefore, if you have only "Centromeres" and "Markers" in
-lane #1, on any map with either of those types of features, they will
-be drawn =item *on* the map;  on any map without those types, the
-feature type with the next highest lane number will be drawn =item
-*on* the map.  The same is true as you move into higher lanes;  if the
-lanes move like "1," "4," "7," you will have only 3 lanes with no
-gaps.
-
-=item * Drawing Priority: 
-
-A positive integer which determines the order in which feature types
-within the lane are drawn. The lower the number for the priority, the
-sooner the feature will be drawn in the lane.
-
-=back
-
-Please see the "admintut" for examples of each shape and examples of
-how these settings will affect the rendering of maps.
-
 =head1 CREATING A NEW MAP SET
 
-Once you have species and map types set up, you are ready to create a
+Once you have species set up and map types defined, you are ready to create a
 new map set.  Everything in CMap is designed to be generic, so a "map
 set" is simply a collection of maps.  What you group together is
 entirely up to you.  On Gramene, map sets tend to correspond to
@@ -386,12 +630,16 @@ before continuing.  You will see the following fields:
 
 =over 4
 
+=item * Acc. ID (opt.): 
+
+The accession ID
+
 =item * Map Set Name: 
 
 This is the canonical name for the map set. It is expected that this
 name will be quite long and informative, e.g., "Cornell Avena
 atlantica/A. hirtula RFLP 1995," but it doesn't have to be. Given this
-expectaion, the name that appears in this fields won't actually show
+expectation, the name that appears in this fields won't actually show
 up all that often. Mostly, it will show up only on the "map set info"
 page.
 
@@ -402,10 +650,6 @@ This is the short version of the map set name, e.g., "Cornell Diploid
 drop-down boxes and for the map titles on the images and in the
 matrix. The field is limited to 30 characters.
 
-=item * Acc. ID (opt.): 
-
-The accession ID
-
 =item * Species: 
 
 This is the one (and only one) species with which the map set is
@@ -413,7 +657,9 @@ associated.
 
 =item * Map Type: 
 
-The type of maps that are contained in this set.
+The type of maps that are contained in this set.  If there is nothing
+in the menu, please make sure that map_types have been defined in 
+the configuration file in use.
 
 =item * Published On: 
 
@@ -426,21 +672,17 @@ proper format for your database.
 The order in which you'd prefer this map set to sort above others.
 Used before other sorting criteria.
 
-=item * Can Be Reference Map: 
-
-This determines whether or not the map of this map set can serve as
-reference maps, i.e., as a starting point in a user's search, either
-via the main map viewer or the feature search.
-
 =item * Is Enabled: 
 
 Determines whether or not this map set will appear to end users. This
 is intended as a convenient way to temporarily hide some data without
 having to remove it entirely from the database.
 
-=item * Remarks (opt.): 
+=item * Can Be Reference Map: 
 
-A free-form text field for describing the map set.
+This determines whether or not the map of this map set can serve as
+reference maps, i.e., as a starting point in a user's search, either
+via the main map viewer or the feature search.
 
 =item * Shape (opt.): 
 
@@ -489,7 +731,7 @@ you will want to do the latter, so that is the next section.
 
 Using the cmap_admin.pl, you can import a tab-delimited file
 containing the data for a map set with the following fields and
-datatypes:
+data types:
 
 =over 4
 
@@ -539,9 +781,13 @@ The starting position of the feature on the map.
 
 The ending position of the feature on the map.
 
-=item * feature_type (character(32)) [REQUIRED]: 
+=item * feature_direction (double(8,2)) : 
 
-The feature's type.
+The direction of the feature on the map, 1 or -1.  1 is default.
+
+=item * feature_type_accession (character(32)) [REQUIRED]: 
+
+The accession id of the feature's type.
 
 =item * feature_dbxref_name (character(32)) [DEPRECATED]: 
 
@@ -560,7 +806,7 @@ A semi-colon-delimited list of feature attributes.
 =item * is_landmark ("1" or "0"): 
 
 Whether or not the feature should be marked as a landmark feature
-(allowing it to be labelled when a user chooses "Landmarks" for the
+(allowing it to be labeled when a user chooses "Landmarks" for the
 "Label Features" option).
 
 =back
@@ -611,13 +857,10 @@ deleted as it will be assumed that they are no longer present in the
 dataset.  
 
 While the import process is running, it may encounter feature types in
-your data which do not exist in the database.  This will certainly be
-true if you haven't explicitly defined the feature types you plan to
-show on your maps.  When this happens, you will be prompted by
-cmap_admin.pl to create the feature type.  This is provided merely as
-a convenience to the import process;  you should use the web admin
-tool to refine the new feature type (see the section on creating
-feature types).
+your data which do not exist in the database.  If this happens, the 
+program will die right there and you will be left to the task of 
+figuring out what was the last data inserted, defining the feature 
+type in the config file and re-running the remaining data.
 
 When cmap_admin.pl has successfully finished importing your map data,
 you will be returned to the "Main Menu."  From here, choose to "Quit"
@@ -631,20 +874,14 @@ also difficult to indicate hierarchical relationships among data.  As
 such, some experimental has been added to export the concept of
 "objects" from the database.  These objects will contain all the
 information within them necessary to duplicate themselves entirely in
-another CMap database.  For example, a "feature" object has a
-"feature type," so to export it completely, one needs to export all
-the information about both the feature and it's type (including color,
-shape, drawing priority, etc.).  Likewise, to export a "map set"
-object, one must export the map set's type, species, maps, features
-and all the other dependent data (esp. the arbitrary attributes and
-xrefs) on those objects.  This code is functional but still marked
+another CMap database.  This code is functional but still marked
 "experimental" as it appears to be very slow when exporting very large
 map sets.
 
 To try this feature, choose "Export data" and then "Database objects."
 Follow the directions from there.  Then try importing the data (into
 another database, of course) using the "Import data" option and then
-"Import CMap objects."  Database objects are only create on import at
+"Import CMap objects."  Database objects are only created on import at
 this time;  there is no updating of existing objects, so be careful!
 
 =head1 MAKING CORRESPONDENCES
@@ -653,51 +890,9 @@ Once you have more than one set of maps in CMap, you can use it for
 what it was designed:  showing comparisons.  To do this, you must
 first create the correspondences between the features on the maps.
 Before you can do this, you'll need to establish the evidence types
-that can be used to support the correspondences.
-
-=head2 CREATING CORRESPONDENCE EVIDENCE TYPES
-
-From the "Home" page of the web admin tool, choose the link "View
-Correspondence Evidence Types."  There will be no records to view, so
-click on the link "Create New Correspondence Evidence Type."  You
-should be on the "Correspondence Evidence Type Create" page where you
-can fill in the following fields:
-
-=over 4
-
-=item * Acc. ID (opt.): 
-
-The accession ID
-
-=item * Evidence Type: 
-
-The name for the evidence
-
-=item * Rank: 
-
-The rank of the evidence relative to the others
-
-=item * Line Style: 
-
-How lines representing this evidence type will be drawn (not currently
-supported)
-
-=item * Color (opt.):  
-
-The color that lines representing this evidence type will be drawn
-
-=back
-
-A single correspondence can be supported by any number of evidence
-types, so it is necessary that these be ranked from "1" to N (where
-lower numbers have precedence over higher).  When multiple records
-support a correspondence, only the highest ranking evidence will be
-used when determining how to draw the correspondence line.  If you
-intend to use cmap_admin.pl tool to create correspondences for you
-based on simple name/feature type comparisons, you should create a
-special evidence to use just for that purpose (e.g., with the name
-"Automated name-based" or something similar to flag it as a
-machine-created/non-curated correspondence).
+that can be used to support the correspondences.  These are defined
+in the configuration file.  For how to create evidence types, see 
+L<EDITING CONFIGURATION FILES> above.
 
 =head2 CREATING CORRESPONDENCE RECORDS
 
@@ -717,8 +912,6 @@ for easy viewing.)  The tables involved are:
 =item * cmap_correspondence_lookup
 
 =item * cmap_correspondence_evidence
-
-=item * cmap_evidence_type
 
 =back
 
@@ -872,7 +1065,7 @@ headers.  Every object in the web admin tool can be "viewed,"
 "edited," and "deleted" by the respective links which are usually
 displayed to the right.  
 
-B<Note:> On pages that may return a large recordset, the data is
+B<Note:> On pages that may return a large record set, the data is
 "paged" and can be accessed by moving through the pages of the data.
 On all these pages, the total number of records is displayed along
 with which are currently being shown. This is the section that looks
@@ -979,7 +1172,7 @@ The feature's type.
 
 =item * Is Landmark: 
 
-Whether or not this feature is considerd a "landmark." Landmarks can
+Whether or not this feature is considered a "landmark." Landmarks can
 be used by the end user to show maps less dense with feature labels,
 tagging only those that you as the curator have decided are the most
 important.
@@ -1030,63 +1223,7 @@ particular map by specifying the maps accession ID.
 
 =back
 
-=head1 cmap_admin.pl and cmap_matrix_compare.pl
-
-The cmap_admin.pl and cmap_matrix_compare.pl scripts contain full
-documentation in POD format.  To read, please execute "perldoc
-<script_name>".
-
-=head1 cmap.conf
-
-The "cmap.conf" file is CMap's configuration file.  Everything that
-can be customized about CMap is controlled by this file (apart from
-thing things which are driven by the data, such as the shapes and
-colors of maps and features, etc.).  There are two sections which MUST
-be edited by you:  "database" and "template_dir."  For emphasis and
-convenience, they are the first two sections of cmap.conf.  
-
-cmap.conf is written in a standard Apache-style configuration file
-syntax.  Comments are defined as anything following a hash sign and
-are ignored.  Options which are grouped together are in angle brackets
-("<>").  Standard options are written in a "Name Value" syntax where
-the two are separated by whitespace or an equal sign.  For more
-information on the syntax, read the POD for Config::General (by
-executing "perldoc Config::General" on your system).
-
-Each configuration setting is documented in comments.  Legal and
-default values are listed along with a brief description of the
-option.  Except for the "database," "template_dir" and "cache_dir"
-settings, there is a reasonable default, hardcoded value for every
-configuration setting (so you could actually comment out all of the
-"optional settings" in the file).
-
-Whenever you make a change to cmap.conf, it will most likely be
-necessary for you to restart Apache to see the change if the change
-affects something in the viewer.  This is because the configuration
-information is cached by each Apache child after the first time it
-reads the file.  If you do not restart Apache, you may see the changes
-sporadically as some children start up and read the new settings while
-older children used their cached settings.
-
-=head2 CONFIGURING DATABASE CONNECTIONS
-
-CMap supports multiple data sources, allowing a curator to maintain
-distinct databases and view them all in CMap without changing
-cmap.conf to point to the one of interest.  If you have only one
-database, then you need only defined one "database" section in
-cmap.conf.  If, however, you choose to define more than one, you
-should be sure to mark one as "is_default."  The parameters are
-explained in comments.
-
-=head2 CONFIGURING TEMPLATE DIRECTORY
-
-The template directory will be properly set if you went through the
-"perl Build.PL; ./Build; su; ./Build install" routine for installing
-CMap.  You can define this with the "TEMPLATES" arguemnt to "Build.PL"
-or just accept the default.  If you ever wish to change the location
-of the templates, simply update "cmap.conf" with the new directory.
-
-=head2 HTML TEMPLATES
+=head1 CUSTOMIZING HTML TEMPLATES
 
 All the HTML displayed by the application is contained in the
 templates.  These templates are processed by Template Toolkit to
@@ -1100,17 +1237,115 @@ self-explanatory.  If you can't figure out what to change on your own,
 then check out http://www.template-toolkit.com/ for the documentation
 (or type "perldoc Template" on your command line).
 
-=head2 LINKING IN
+=head1 ADMINISTRATION USING cmap_admin.pl 
+
+The cmap_admin.pl script contains full documentation in POD format.  
+To read, please execute "perldoc <script_name>".  However, here is a
+description of the options that cmap_admin.pl provides.
+
+=over 4
+
+=item 1 Change current data source
+
+Changes the data source currently being used.  This choses which 
+configuration file the script will use.
+
+=item 2 Create new map set
+
+After a species has been created using the web admin tool, map sets 
+can be created using cmap_admin.pl
+
+=item 3 Import data
+
+Allows import of data from files.  The files can be tab-delimited map 
+data for an existing map set, tab-delimited correspondence data for 
+existing features or the experimental CMap objects (which are created 
+with the export function).  To see more information about the 
+tab-delimited format required, see the documentation that is in the 
+modules by running "perldoc /path/to/Bio/GMOD/CMap/Admin/Import.pm" 
+and "perldoc /path/to/Bio/GMOD/CMap/Admin/ImportCorrespondences.pm".
+
+=item 4 Export data
+
+Allows export of data to a file.  The data can be represented in a
+tab-delimited text file, as a series of sql insert statements or as 
+the experimental CMap objects.
+
+=item 5 Delete data
+
+Allows sweeping deletion of maps, map sets or correspondences.
+
+=item 6 Make name-based correspondences
+
+Allows the creation of correspondences based on feature name 
+similarities.
+
+=item 7 Reload correspondence matrix
+
+Reloads the lookup table that the matrix uses.  This is vital if the 
+matrix is to have current data after a data change.
+
+=item 8 Purge the cache to view new data
+
+Purge the query cache.  The results of many queries are cached in an 
+effort to reduce time querying the database for common queries.  
+Purging the cache is important after the data has changed or after 
+the configuration file has change.  Otherwise the changes will not 
+be consistently displayed.
+
+There are four layers of the cache.  When one layer is purged all of 
+the layers after it are purged.
+
+=over 4
+
+=item - Cache Level 1 Purge All
+
+Purge all when a map set or species has been added or modified.  A 
+change to map sets or species has potential to impact all of the data.
+
+=item - Cache Level 2 (purge map info on down)
+
+Level 2 is purged when map information is changed.
+
+=item - Cache Level 3 (purge feature info on down)
+
+Level 3 is purged when feature information is changed.
+
+=item - Cache Level 4 (purge correspondence info on down)
+
+Level 3 is purged when correspondence information is changed.
+
+=back
+
+=item 9 Delete duplicate correspondences
+
+If duplicate correspondences may have been added, this will remove them.
+
+=item 10 Manage links
+
+This option is where to import and delete links that will show up in 
+the "Imported Links" section of CMap.  The import takes a tab delimited
+file, see "perldoc /path/to/Bio/GMOD/CMap/Admin/ManageLinks.pm" for 
+more info on the format.
+
+=back
+
+=head1 cmap_matrix_compare.pl
+
+The cmap_matrix_compare.pl script contains full documentation in POD 
+format.  To read, please execute "perldoc <script_name>".
+
+=head1 LINKING IN
 
 Most likely, you'll want to link directly into the CMap viewer from
 some other part of your site.  Following is a list of the components
 of a CMap URL:
 
-=head3 URI
+=head2 URI
 
 /cgi-bin/cmap/viewer?
 
-=head3   Required Arguments: 
+=head2   Required Arguments: 
 
 =over 4
 
@@ -1118,13 +1353,13 @@ of a CMap URL:
 
 The accession ID of the reference map set
 
-=item * ref_map_aid: 
+=item * ref_map_aids: 
 
 The accession ID of the reference map
 
 =back
 
-=head3 Optional Arguments:
+=head2 Optional Arguments:
 
 =over 4
 
@@ -1269,7 +1504,7 @@ out of the author's constant need to make schema changes and quickly
 replicate them amongst the different test databases.  The Oracle,
 PostgreSQL, SQLite and Sybase schemas were also generated by
 SQL::Translator from the MySQL schema, so if you see room for
-improvement, please relay them to the author, prefereably via the
+improvement, please relay them to the author, preferably via the
 SQL:::Translator mailing list.  SQL::Translator is available on CPAN.
 For more information, see here:
 
