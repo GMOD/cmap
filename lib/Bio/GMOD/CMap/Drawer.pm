@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.46 2003-10-16 22:10:34 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.47 2003-12-15 17:23:54 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,13 +23,12 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.46 $)[-1];
+$VERSION = (qw$Revision: 1.47 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
 use Bio::GMOD::CMap::Drawer::Map;
-use GD;
 use File::MkTemp;
 use File::Path;
 use Data::Dumper;
@@ -58,6 +57,10 @@ Initializes the drawing object.
     for my $param ( @INIT_PARAMS ) {
         $self->$param( $config->{ $param } );
     }
+
+    my $gd_class = $self->image_type eq 'svg' ? 'GD::SVG' : 'GD';
+
+    eval "use $gd_class";
 
     return $self->draw;
 }
@@ -867,16 +870,19 @@ Lays out the image and writes it to the file system, set the "image_name."
     #
     $self->adjust_frame;
 
-    my @data   = $self->drawing_data;
-    my $height = $self->map_height;
-    my $width  = $self->map_width;
-    my $gd     = GD::Image->new( $width, $height );
-    my %colors =
-        map { $_, $gd->colorAllocate( map { hex $_ } @{ +COLORS->{$_} } ) }
+    my @data      = $self->drawing_data;
+    my $height    = $self->map_height;
+    my $width     = $self->map_width;
+    my $img_class = $self->image_class;
+    my $img       = $img_class->new( $width, $height );
+    my %colors    =
+        map { $_, $img->colorAllocate( map { hex $_ } @{ +COLORS->{$_} } ) }
         keys %{ +COLORS }
     ;
-    $gd->interlaced( 'true' );
-    $gd->fill( 0, 0, $colors{ $self->config('background_color') } );
+    $img->interlaced( 'true' );
+    $img->filledRectangle( 
+        0, 0, $width, $height, $colors{ $self->config('background_color') } 
+    );
 
     #
     # Sort the drawing data by the layer (which is the last field).
@@ -886,13 +892,13 @@ Lays out the image and writes it to the file system, set the "image_name."
         my $layer  = pop   @$obj;
         my @colors = pop   @$obj;
         push @colors, pop @$obj if $method eq FILL_TO_BORDER;
-        $gd->$method( @$obj, map { $colors{ lc $_ } } @colors );
+        $img->$method( @$obj, map { $colors{ lc $_ } } @colors );
     }
 
     #
     # Add a black box around the whole #!.
     #
-    $gd->rectangle( 0, 0, $width - 1, $height - 1, $colors{'black'} );
+    $img->rectangle( 0, 0, $width - 1, $height - 1, $colors{'black'} );
 
     #
     # Write to a temporary file and remember it.
@@ -900,7 +906,7 @@ Lays out the image and writes it to the file system, set the "image_name."
     my $cache_dir = $self->cache_dir;
     my ( $fh, $filename ) = mkstempt( 'X' x 9, $cache_dir );
     my $image_type = $self->image_type;
-    print $fh $gd->$image_type();
+    print $fh $img->$image_type();
     $fh->close;
     $self->image_name( $filename );
 
@@ -1218,6 +1224,37 @@ Gets/sets the string of highlighted features.
 }
 
 # ----------------------------------------------------
+sub font_class {
+
+=pod
+
+=head2 font_class
+
+Returns 'GD::SVG::Font' if $self->image_type returns 'svg'; otherwise 
+'GD::Font.'
+
+=cut
+
+    my $self = shift;
+    return $self->image_type eq 'svg' ? 'GD::SVG::Font' : 'GD::Font';
+}
+
+# ----------------------------------------------------
+sub image_class {
+
+=pod
+
+=head2 image_class
+
+Returns 'GD::SVG' if $self->image_type returns 'svg'; otherwise 'GD.'
+
+=cut
+
+    my $self = shift;
+    return $self->image_type eq 'svg' ? 'GD::SVG::Image' : 'GD::Image';
+}
+
+# ----------------------------------------------------
 sub image_map_data {
 
 =pod
@@ -1305,27 +1342,6 @@ Gets/sets the current image name.
     }
 
     return $self->{'image_name'} || '';
-}
-
-# ----------------------------------------------------
-sub label_font {
-
-=pod
-
-=head2 label_font
-
-Returns the font for the "label" stuff (titles mostly).
-
-=cut
-
-    my $self = shift;
-    unless ( $self->{'label_font'} ) {
-        my $font_size = $self->font_size;
-        $self->{'label_font'} = VALID->{'font_size'}{ $font_size }{'label'}
-            or $self->error(qq[No label font for font size "$font_size"])
-    }
-
-    return $self->{'label_font'};
 }
 
 # ----------------------------------------------------
@@ -1726,8 +1742,19 @@ Returns the font for the "regular" stuff (feature labels, map names, etc.).
     my $self = shift;
     unless ( $self->{'regular_font'} ) {
         my $font_size = $self->font_size;
-        $self->{'regular_font'} = VALID->{'font_size'}{ $font_size }{'regular'}
-            or $self->error(qq[No "regular" font for "$font_size"])
+        my $font_pkg  = $self->font_class;
+        my %methods   = ( 
+            small     => 'Tiny',
+            medium    => 'Small',
+            large     => 'Large',
+        );
+
+        if ( my $font = $methods{ $font_size } ) {
+            $self->{'regular_font'} = $font_pkg->$font();
+        }
+        else {
+            return $self->error(qq[No "regular" font for "$font_size"])
+        }
     }
 
     return $self->{'regular_font'};
@@ -1789,7 +1816,7 @@ Returns the number of slots.
 
 =head1 SEE ALSO
 
-L<perl>, L<GD>.
+L<perl>, L<GD>, L<GD::SVG>.
 
 =head1 AUTHOR
 
