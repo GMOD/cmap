@@ -1,6 +1,7 @@
 # File: perlstartup.pl
 use Apache();
 use Apache::Constants();
+use Apache::Cookie();
 use Apache::Request();
 use Cache::FileCache();
 use Class::Base();
@@ -34,6 +35,7 @@ use Bio::GMOD::CMap::Apache::CorrespondenceViewer();
 use Bio::GMOD::CMap::Apache::HelpViewer();
 use Bio::GMOD::CMap::Apache::Index();
 use Bio::GMOD::CMap::Apache::EvidenceTypeViewer();
+use Bio::GMOD::CMap::Apache::FeatureAliasViewer();
 use Bio::GMOD::CMap::Apache::FeatureSearch();
 use Bio::GMOD::CMap::Apache::FeatureViewer();
 use Bio::GMOD::CMap::Apache::FeatureTypeViewer();
