@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.32 2003-04-08 18:28:00 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.33 2003-04-14 15:44:00 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.32 $)[-1];
+$VERSION = (qw$Revision: 1.33 $)[-1];
 
 #
 # Get command-line options
@@ -1682,19 +1682,22 @@ sub make_name_correspondences {
     my @from_map_sets = $self->show_menu(
         title       => 'Reference Map Set (optional)',
         prompt      => 'Please select a map set',
-        display     => 'species_name,map_set_name',
-        return      => 'map_set_id,species_name,map_set_name',
+        display     => 'map_type,species_name,map_set_name',
+        return      => 'map_set_id,map_type,species_name,map_set_name',
         allow_null  => 1,
         allow_mult  => 1,
         data        => $db->selectall_arrayref(
             q[
                 select   ms.map_set_id, 
                          ms.short_name as map_set_name,
-                         s.common_name as species_name
+                         s.common_name as species_name,
+                         mt.map_type
                 from     cmap_map_set ms,
-                         cmap_species s
+                         cmap_species s,
+                         cmap_map_type mt
                 where    ms.species_id=s.species_id
-                order by common_name, map_set_name
+                and      ms.map_type_id=mt.map_type_id
+                order by map_type, common_name, map_set_name
             ],
             { Columns => {} },
         ),
@@ -1708,19 +1711,22 @@ sub make_name_correspondences {
     my @to_map_sets = $self->show_menu(
         title       => 'Target Map Set (optional)',
         prompt      => 'Please select a target map set',
-        display     => 'species_name,map_set_name',
-        return      => 'map_set_id,species_name,map_set_name',
+        display     => 'map_type,species_name,map_set_name',
+        return      => 'map_set_id,map_type,species_name,map_set_name',
         allow_null  => 1,
         allow_mult  => 1,
         data        => $db->selectall_arrayref(
             q[
                 select   ms.map_set_id, 
                          ms.short_name as map_set_name,
-                         s.common_name as species_name
+                         s.common_name as species_name,
+                         mt.map_type
                 from     cmap_map_set ms,
-                         cmap_species s
+                         cmap_species s,
+                         cmap_map_type mt
                 where    ms.species_id=s.species_id
-                order by common_name, map_set_name
+                and      ms.map_type_id=mt.map_type_id
+                order by map_type, common_name, map_set_name
             ],
             { Columns => {} },
         ),
@@ -1730,21 +1736,23 @@ sub make_name_correspondences {
 
     my $from = @from_map_sets
         ? join( "\n", 
-            map { "    $_" } map { join('-', $_->[1], $_->[2]) } @from_map_sets
+            map { "    $_" } map { join('-', $_->[1], $_->[2], $_->[3]) } 
+            @from_map_sets
         )
         : '    All'
     ;
 
     my $to = @to_map_sets
         ? join( "\n", 
-            map { "    $_" } map { join('-', $_->[1], $_->[2]) } @to_map_sets
+            map { "    $_" } map { join('-', $_->[1], $_->[2], $_->[3]) } 
+            @to_map_sets
         )
         : '    All'
     ;
 
     print "Make name-based correspondences\n",
         '  Data source   : ' . $self->data_source, "\n",
-        "  Evidence type : $evidence_type",
+        "  Evidence type : $evidence_type\n",
         "  From map sets :\n$from\n",
         "  To map sets   :\n$to\n",
     ;
