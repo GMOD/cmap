@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.29 2004-02-10 23:06:50 kycl4rk Exp $
+# $Id: MakeCorrespondences.pm,v 1.29.2.1 2004-06-07 19:18:05 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.29 $)[-1];
+$VERSION = (qw$Revision: 1.29.2.1 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -107,6 +107,24 @@ sub make_name_correspondences {
                 next if $ft_id1 == $ft_id3;
                 $add_name_correspondences{ $ft_id1 }{ $ft_id3 } = 1;
             }
+        }
+    }
+
+    my %disallow_name_correspondence;
+    for my $line ( $self->config('disallow_name_correspondence') ) {
+        my @feature_types = split /\s+/, $line;
+        for my $ft ( @feature_types ) {
+            my $ft_id = $db->selectrow_array(
+                q[
+                    select feature_type_id
+                    from   cmap_feature_type
+                    where  accession_id=?
+                ],
+                {},
+                ( $ft ) 
+            ) or next;
+
+            $disallow_name_correspondence{ $ft_id } = 1;
         }
     }
 
@@ -229,6 +247,11 @@ sub make_name_correspondences {
                         { $f2->{'feature_type_id'} }
                     ;
                 }
+
+                next if     
+                    $f1->{'feature_type_id'} == $f2->{'feature_type_id'} &&
+                    $disallow_name_correspondence{ $f1->{'feature_type_id'} }
+                ;
 
                 #
                 # If both features are in the same relational map set,
