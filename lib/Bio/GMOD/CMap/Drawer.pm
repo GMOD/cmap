@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.92 2005-02-10 19:06:03 mwz444 Exp $
+# $Id: Drawer.pm,v 1.93 2005-03-03 19:31:00 mwz444 Exp $
 
 =head1 NAME
 
@@ -30,11 +30,14 @@ The base map drawing module.
         image_size => $image_size,
         image_type => $image_type,
         label_features => $label_features,
-        included_feature_types => $included_feature_types,
+        included_feature_types  => $included_feature_types,
         corr_only_feature_types => $corr_only_feature_types,
         included_evidence_types => $included_evidence_types,
-        ignored_evidence_types => $ignored_evidence_types,
-        ignored_feature_types => $ignored_feature_types,
+        ignored_evidence_types  => $ignored_evidence_types,
+        less_evidence_types     => $less_evidence_types,
+        greater_evidence_types  => $greater_evidence_types,
+        evidence_type_score     => $evidence_type_score,
+        ignored_feature_types   => $ignored_feature_types,
         config => $config,
         min_correspondences => $min_correspondences,
         collapse_features => $collapse_features,
@@ -150,13 +153,27 @@ included in the picture only if there is a correspondence.
 
 =item * included_evidence_types
 
-An array reference that holds the feature type accessions that are 
-ignored.
+An array reference that holds the evidence type accessions that are 
+used.
 
 =item * ignored_evidence_types
 
 An array reference that holds the evidence type accessions that are 
 ignored.
+
+=item * less_evidence_types
+
+An array reference that holds the evidence type accessions that are used only if
+their score is less than that of the score specified in evidence_type_score.
+
+=item * greater_evidence_types
+
+An array reference that holds the evidence type accessions that are used only if
+their score is greater than that of the score specified in evidence_type_score.
+
+=item * evidence_type_score
+
+An hash reference that holds the score that evidence is measured against.
 
 =item * ignored_feature_types
 
@@ -248,7 +265,7 @@ on the number of correspondences).  'display_order' is the default.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.92 $)[-1];
+$VERSION = (qw$Revision: 1.93 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -265,6 +282,7 @@ my @INIT_PARAMS = qw[
   apr flip slots highlight font_size image_size image_type
   label_features included_feature_types corr_only_feature_types
   included_evidence_types ignored_evidence_types ignored_feature_types
+  less_evidence_types greater_evidence_types evidence_type_score
   config data_source min_correspondences collapse_features cache_dir
   map_view data_module aggregate cluster_corr show_intraslot_corr clean_view
   magnify_all scale_maps stack_maps ref_map_order comp_menu_order
@@ -757,6 +775,72 @@ Gets/sets which evidence type (accession IDs) to ignore.
       unless $self->{'ignored_evidence_types'};
 
     return $self->{'ignored_evidence_types'};
+}
+
+# ----------------------------------------------------
+sub less_evidence_types {
+
+=pod
+
+=head2 less_evidence_types
+
+Gets/sets which evidence type (accession IDs) to measure against the scores.
+
+=cut
+
+    my $self = shift;
+
+    if ( my $arg = shift ) {
+        push @{ $self->{'less_evidence_types'} }, @$arg;
+    }
+    $self->{'less_evidence_types'} = []
+      unless $self->{'less_evidence_types'};
+
+    return $self->{'less_evidence_types'};
+}
+
+# ----------------------------------------------------
+sub greater_evidence_types {
+
+=pod
+
+=head2 greater_evidence_types
+
+Gets/sets which evidence type (accession IDs) to measure against the scores.
+
+=cut
+
+    my $self = shift;
+
+    if ( my $arg = shift ) {
+        push @{ $self->{'greater_evidence_types'} }, @$arg;
+    }
+    $self->{'greater_evidence_types'} = []
+      unless $self->{'greater_evidence_types'};
+
+    return $self->{'greater_evidence_types'};
+}
+
+# ----------------------------------------------------
+sub evidence_type_score {
+
+=pod
+
+=head2 evidence_type_score
+
+Gets/sets which evidence type scores 
+
+=cut
+
+    my $self = shift;
+
+    if ( my $arg = shift ) {
+        $self->{'evidence_type_score'} = $arg;
+    }
+    $self->{'evidence_type_score'} = {} 
+      unless $self->{'evidence_type_score'};
+
+    return $self->{'evidence_type_score'};
 }
 
 # ----------------------------------------------------
@@ -1270,8 +1354,11 @@ necessary data for drawing.
             included_feature_type_aids  => $self->included_feature_types,
             corr_only_feature_type_aids => $self->corr_only_feature_types,
             ignored_feature_type_aids   => $self->ignored_feature_types,
-            included_evidence_types     => $self->included_evidence_types,
+            included_evidence_type_aids => $self->included_evidence_types,
             ignored_evidence_type_aids  => $self->ignored_evidence_types,
+            less_evidence_type_aids     => $self->less_evidence_types,
+            greater_evidence_type_aids  => $self->greater_evidence_types,
+            evidence_type_score         => $self->evidence_type_score,
           )
           or return $self->error( $data->error );
 
@@ -2413,10 +2500,13 @@ Creates default link parameters for CMap->create_viewer_link()
     my $corr_only_feature_type_aids = $args{'corr_only_feature_type_aids'};
     my $ignored_feature_type_aids   = $args{'ignored_feature_type_aids'};
 
-    my $evidence_type_aids         = $args{'evidence_type_aids'};
-    my $ignored_evidence_type_aids = $args{'ignored_evidence_type_aids'};
-    my $data_source                = $args{'data_source'};
-    my $url                        = $args{'url'};
+    my $included_evidence_type_aids = $args{'included_evidence_type_aids'};
+    my $ignored_evidence_type_aids  = $args{'ignored_evidence_type_aids'};
+    my $less_evidence_type_aids     = $args{'less_evidence_type_aids'};
+    my $greater_evidence_type_aids  = $args{'greater_evidence_type_aids'};
+    my $evidence_type_score         = $args{'evidence_type_score'};
+    my $data_source                 = $args{'data_source'};
+    my $url                         = $args{'url'};
 
     ### Required Fields that Drawer can't figure out.
     unless ( defined($ref_map_set_aid) ) {
@@ -2519,8 +2609,17 @@ Creates default link parameters for CMap->create_viewer_link()
     unless ( defined($ignored_evidence_type_aids) ) {
         $ignored_evidence_type_aids = $self->ignored_evidence_types();
     }
-    unless ( defined($evidence_type_aids) ) {
-        $evidence_type_aids = $self->included_evidence_types();
+    unless ( defined($included_evidence_type_aids) ) {
+        $included_evidence_type_aids = $self->included_evidence_types();
+    }
+    unless ( defined($less_evidence_type_aids) ) {
+        $less_evidence_type_aids = $self->less_evidence_types();
+    }
+    unless ( defined($greater_evidence_type_aids) ) {
+        $greater_evidence_type_aids = $self->greater_evidence_types();
+    }
+    unless ( defined($evidence_type_score) ) {
+        $evidence_type_score = $self->evidence_type_score();
     }
     unless ( defined($data_source) ) {
         $data_source = $self->data_source();
@@ -2561,7 +2660,10 @@ Creates default link parameters for CMap->create_viewer_link()
         corr_only_feature_type_aids => $corr_only_feature_type_aids,
         ignored_feature_type_aids   => $ignored_feature_type_aids,
         ignored_evidence_type_aids  => $ignored_evidence_type_aids,
-        evidence_type_aids          => $evidence_type_aids,
+        included_evidence_type_aids => $included_evidence_type_aids,
+        less_evidence_type_aids     => $less_evidence_type_aids,
+        greater_evidence_type_aids  => $greater_evidence_type_aids,
+        evidence_type_score         => $evidence_type_score,
         data_source                 => $data_source,
         url                         => $url,
     );

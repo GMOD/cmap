@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.88 2005-02-14 20:12:25 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.89 2005-03-03 19:31:00 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.88 $)[-1];
+$VERSION = (qw$Revision: 1.89 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -218,6 +218,9 @@ sub handler {
     my @ignored_feature_types;
     my @included_evidence_types;
     my @ignored_evidence_types;
+    my @less_evidence_types;
+    my @greater_evidence_types;
+    my %evidence_type_score;
     foreach my $param ( $apr->param ) {
         if ( $param =~ /^feature_type_(\S+)/ ) {
             my $ft  = $1;
@@ -232,7 +235,7 @@ sub handler {
                 push @feature_types, $ft;
             }
         }
-        if ( $param =~ /^evidence_type_(\S+)/ ) {
+        elsif ( $param =~ /^evidence_type_(\S+)/ ) {
             my $et  = $1;
             my $val = $apr->param($param);
             if ( $val == 0 ) {
@@ -241,12 +244,22 @@ sub handler {
             elsif ( $val == 1 ) {
                 push @included_evidence_types, $et;
             }
+            elsif ( $val == 2 ) {
+                push @less_evidence_types, $et;
+            }
+            elsif ( $val == 3 ) {
+                push @greater_evidence_types, $et;
+            }
+        }
+        if ( $param =~ /^ets_(\S+)/ ) {
+            my $et  = $1;
+            my $val = $apr->param($param);
+            $evidence_type_score{$et} = $val;
         }
     }
 
     my %included_corr_only_features = map { $_ => 1 } @corr_only_feature_types;
     my %ignored_feature_types       = map { $_ => 1 } @ignored_feature_types;
-    my %ignored_evidence_types      = map { $_ => 1 } @ignored_evidence_types;
 
     #
     # Set the data source.
@@ -411,6 +424,9 @@ sub handler {
             ignored_feature_types   => \@ignored_feature_types,
             ignored_evidence_types  => \@ignored_evidence_types,
             included_evidence_types => \@included_evidence_types,
+            less_evidence_types     => \@less_evidence_types,
+            greater_evidence_types  => \@greater_evidence_types,
+            evidence_type_score     => \%evidence_type_score,
             config                  => $self->config,
             data_module             => $self->data_module,
             aggregate               => $self->aggregate,
@@ -435,9 +451,10 @@ sub handler {
         @ignored_feature_types       = @{ $drawer->ignored_feature_types };
         @ignored_evidence_types      = @{ $drawer->ignored_evidence_types };
         @included_evidence_types     = @{ $drawer->included_evidence_types };
+        @greater_evidence_types      = @{ $drawer->greater_evidence_types };
+        @less_evidence_types         = @{ $drawer->less_evidence_types };
         %included_corr_only_features = map { $_ => 1 } @corr_only_feature_types;
         %ignored_feature_types       = map { $_ => 1 } @ignored_feature_types;
-        %ignored_evidence_types      = map { $_ => 1 } @ignored_evidence_types;
     }
 
     #
@@ -451,6 +468,9 @@ sub handler {
         ignored_feature_types   => \@ignored_feature_types,
         ignored_evidence_types  => \@ignored_evidence_types,
         included_evidence_types => \@included_evidence_types,
+        less_evidence_types     => \@less_evidence_types,
+        greater_evidence_types  => \@greater_evidence_types,
+        evidence_type_score     => \%evidence_type_score,
         ref_species_aid         => $ref_species_aid,
         ref_map_set_aid         => $ref_map_set_aid,
         ref_slot_data           => $drawer->{'data'}->{'slots'}{0},
@@ -487,6 +507,11 @@ sub handler {
         }
     }
 
+    my %evidence_type_menu_select =( 
+        (map { $_ => 0 } @ignored_evidence_types),
+        (map { $_ => 1 } @included_evidence_types),
+        (map { $_ => 2 } @less_evidence_types),
+        (map { $_ => 3 } @greater_evidence_types));
     my $html;
     my $t = $self->template or return;
     $t->process(
@@ -505,10 +530,10 @@ sub handler {
             stylesheet        => $self->stylesheet,
             selected_maps     => { map { $_, 1 } @ref_map_aids },
             included_features => { map { $_, 1 } @feature_types },
-            included_evidence => { map { $_, 1 } @included_evidence_types },
             corr_only_feature_types => \%included_corr_only_features,
             ignored_feature_types   => \%ignored_feature_types,
-            ignored_evidence_types  => \%ignored_evidence_types,
+            evidence_type_menu_select  => \%evidence_type_menu_select,
+            evidence_type_score     => \%evidence_type_score,
             feature_types           => join( ',', @feature_types ),
             evidence_types          => join( ',', @included_evidence_types ),
             extra_code              => $extra_code,
@@ -612,9 +637,6 @@ sub handler {
                     page                  => $self->page,
                     title                 => 'Reference Map Details',
                     stylesheet            => $self->stylesheet,
-                    included_features     => { map { $_, 1 } @feature_types },
-                    included_evidence     =>
-                      { map { $_, 1 } @included_evidence_types },
                     features => $detail_data->{'features'},
                 },
                 \$detail_html

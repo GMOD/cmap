@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.211 2005-03-02 15:24:48 mwz444 Exp $
+# $Id: Data.pm,v 1.212 2005-03-03 19:30:53 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.211 $)[-1];
+$VERSION = (qw$Revision: 1.212 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -431,14 +431,13 @@ sub cmap_data {
     my $slots                       = $args{'slots'};
     my $min_correspondences         = $args{'min_correspondences'} || 0;
     my $included_feature_type_aids  = $args{'included_feature_type_aids'} || [];
-    my $corr_only_feature_type_aids = $args{'corr_only_feature_type_aids'}
-      || [];
-    my $ignored_feature_type_aids = $args{'ignored_feature_type_aids'}
-      || [];
-    my $ignored_evidence_type_aids = $args{'ignored_evidence_type_aids'}
-      || [];
-    my $included_evidence_type_aids = $args{'included_evidence_type_aids'}
-      || [];
+    my $corr_only_feature_type_aids = $args{'corr_only_feature_type_aids'} || [];
+    my $ignored_feature_type_aids   = $args{'ignored_feature_type_aids'} || [];
+    my $ignored_evidence_type_aids  = $args{'ignored_evidence_type_aids'} || [];
+    my $included_evidence_type_aids = $args{'included_evidence_type_aids'} || [];
+    my $less_evidence_type_aids     = $args{'less_evidence_type_aids'} || [];
+    my $greater_evidence_type_aids  = $args{'greater_evidence_type_aids'} || [];
+    my $evidence_type_score         = $args{'evidence_type_score'} || {};
     my $db  = $self->db or return;
     my $pid = $$;
 
@@ -473,8 +472,8 @@ sub cmap_data {
     my $evidence_default_display = $self->evidence_default_display;
 
     my %found_evidence_type;
-    foreach
-      my $et ( @$included_evidence_type_aids, @$ignored_evidence_type_aids )
+    foreach my $et ( @$included_evidence_type_aids, @$ignored_evidence_type_aids,
+                @$less_evidence_type_aids, @$greater_evidence_type_aids,)
     {
         $found_evidence_type{$et} = 1;
     }
@@ -499,7 +498,9 @@ sub cmap_data {
         %map_type_aids
     );
     $self->slot_info( $slots, $ignored_feature_type_aids,
-        $ignored_evidence_type_aids, $min_correspondences,);
+        $included_evidence_type_aids, $less_evidence_type_aids,
+        $greater_evidence_type_aids, $evidence_type_score,
+        $min_correspondences,);
 
     my @slot_nos         = keys %$slots;
     my @pos              = sort { $a <=> $b } grep { $_ >= 0 } @slot_nos;
@@ -529,6 +530,9 @@ sub cmap_data {
             ignored_feature_type_aids   => $ignored_feature_type_aids,
             ignored_evidence_type_aids  => $ignored_evidence_type_aids,
             included_evidence_type_aids => $included_evidence_type_aids,
+            less_evidence_type_aids     => $less_evidence_type_aids,
+            greater_evidence_type_aids  => $greater_evidence_type_aids,
+            evidence_type_score         => $evidence_type_score,
             pid                         => $pid,
             map_type_aids               => \%map_type_aids,
           )
@@ -565,6 +569,9 @@ sub cmap_data {
     $data->{'ignored_feature_type_aids'}   = $ignored_feature_type_aids;
     $data->{'included_evidence_type_aids'} = $included_evidence_type_aids;
     $data->{'ignored_evidence_type_aids'}  = $ignored_evidence_type_aids;
+    $data->{'less_evidence_type_aids'}     = $less_evidence_type_aids;
+    $data->{'greater_evidence_type_aids'}  = $greater_evidence_type_aids;
+    $data->{'evidence_type_score'}         = $evidence_type_score;
     $data->{'extra_code'}                  = $extra_code;
     $data->{'extra_form'}                  = $extra_form;
     $data->{'max_unit_size'} = $self->get_max_unit_size( $data->{'slots'} );
@@ -595,16 +602,19 @@ sub slot_data {
     my $min_correspondences         = $args{'min_correspondences'} || 0;
     my $feature_type_aids           = $args{'feature_type_aids'};
     my $included_evidence_type_aids = $args{'included_evidence_type_aids'};
-    my $slot_map                  = ${ $args{'map'} };                 # hashref
-    my $reference_map             = $args{'reference_map'};
-    my $feature_correspondences   = $args{'feature_correspondences'};
-    my $intraslot_correspondences = $args{'intraslot_correspondences'};
-    my $map_correspondences       = $args{'map_correspondences'};
-    my $correspondence_evidence   = $args{'correspondence_evidence'};
-    my $feature_types_seen        = $args{'feature_types'};
+    my $ignored_evidence_type_aids  = $args{'ignored_evidence_type_aids'};
+    my $less_evidence_type_aids     = $args{'less_evidence_type_aids'};
+    my $greater_evidence_type_aids  = $args{'greater_evidence_type_aids'};
+    my $evidence_type_score         = $args{'evidence_type_score'};
+    my $slot_map                    = ${ $args{'map'} };                 # hashref
+    my $reference_map               = $args{'reference_map'};
+    my $feature_correspondences     = $args{'feature_correspondences'};
+    my $intraslot_correspondences   = $args{'intraslot_correspondences'};
+    my $map_correspondences         = $args{'map_correspondences'};
+    my $correspondence_evidence     = $args{'correspondence_evidence'};
+    my $feature_types_seen          = $args{'feature_types'};
     my $corr_only_feature_type_aids = $args{'corr_only_feature_type_aids'};
     my $ignored_feature_type_aids   = $args{'ignored_feature_type_aids'};
-    my $ignored_evidence_type_aids  = $args{'ignored_evidence_type_aids'};
     my $map_type_aids               = $args{'map_type_aids'};
     my $pid                         = $args{'pid'};
     my $max_no_features             = 200000;
@@ -852,6 +862,9 @@ sub slot_data {
             $self->count_correspondences(
                 included_evidence_type_aids => $included_evidence_type_aids,
                 ignored_evidence_type_aids  => $ignored_evidence_type_aids,
+                less_evidence_type_aids     => $less_evidence_type_aids,
+                greater_evidence_type_aids  => $greater_evidence_type_aids,
+                evidence_type_score         => $evidence_type_score,
                 map_correspondences         => $map_correspondences,
                 this_slot_no                => $this_slot_no,
                 ref_slot_no                 => $ref_slot_no,
@@ -1073,6 +1086,9 @@ sub slot_data {
                     $ref_slot_no,
                     $included_evidence_type_aids,
                     $ignored_evidence_type_aids,
+                    $less_evidence_type_aids,
+                    $greater_evidence_type_aids,
+                    $evidence_type_score,
                     [ @$feature_type_aids, @$corr_only_feature_type_aids ],
                     $map_start,
                     $map_stop
@@ -1116,6 +1132,9 @@ sub slot_data {
             $self->count_correspondences(
                 included_evidence_type_aids => $included_evidence_type_aids,
                 ignored_evidence_type_aids  => $ignored_evidence_type_aids,
+                less_evidence_type_aids     => $less_evidence_type_aids,
+                greater_evidence_type_aids  => $greater_evidence_type_aids,
+                evidence_type_score         => $evidence_type_score,
                 map_correspondences         => $map_correspondences,
                 this_slot_no                => $this_slot_no,
                 ref_slot_no                 => $ref_slot_no,
@@ -1151,6 +1170,9 @@ sub slot_data {
                     $ref_slot_no,
                     $included_evidence_type_aids,
                     $ignored_evidence_type_aids,
+                    $less_evidence_type_aids,
+                    $greater_evidence_type_aids,
+                    $evidence_type_score,
                     [ @$feature_type_aids, @$corr_only_feature_type_aids ],
                     $map_start,
                     $map_stop
@@ -1168,6 +1190,9 @@ sub slot_data {
             $this_slot_no,
             $included_evidence_type_aids,
             $ignored_evidence_type_aids,
+            $less_evidence_type_aids,
+            $greater_evidence_type_aids,
+            $evidence_type_score,
             [ @$feature_type_aids, @$corr_only_feature_type_aids ],
         );
     }
@@ -1259,7 +1284,9 @@ sub get_feature_correspondences {
         $self,                       $feature_correspondences,
         $correspondence_evidence,    $map_id,
         $slot_no,                    $included_evidence_type_aids,
-        $ignored_evidence_type_aids, $feature_type_aids,
+        $ignored_evidence_type_aids, $less_evidence_type_aids, 
+        $greater_evidence_type_aids, $evidence_type_score,
+        $feature_type_aids,
         $map_start,                  $map_stop
       )
       = @_;
@@ -1322,12 +1349,29 @@ sub get_feature_correspondences {
           . join( ",", keys( %{ $self->slot_info->{$slot_no} } ) ) . ")";
     }
 
-    if ( @$included_evidence_type_aids
-        or not @$ignored_evidence_type_aids )
-    {
-        $corr_sql .=
-          " and ce.evidence_type_accession in ('"
-          . join( "','", @$included_evidence_type_aids ) . "')";
+#xx1
+print STDERR Dumper($evidence_type_score)." xx1\n";
+print STDERR Dumper($less_evidence_type_aids)." xx1\n";
+    if ( @$included_evidence_type_aids or @$less_evidence_type_aids
+            or @$greater_evidence_type_aids ) {
+        $corr_sql .= "and ( ";
+        my @join_array;
+        if ( @$included_evidence_type_aids ) {
+            push @join_array,
+              " ce.evidence_type_accession in ('"
+              . join( "','", @$included_evidence_type_aids ) . "')";
+        }
+        foreach my $et_aid (@$less_evidence_type_aids ) {
+            push @join_array,
+                " ( ce.evidence_type_accession = '$et_aid' "
+              . " and ce.score <= ".$evidence_type_score->{$et_aid}." ) ";
+        }
+        foreach my $et_aid (@$greater_evidence_type_aids ) {
+            push @join_array,
+                " ( ce.evidence_type_accession = '$et_aid' "
+              . " and ce.score >= ".$evidence_type_score->{$et_aid}." ) ";
+        }
+        $corr_sql .= join (' or ', @join_array). " ) ";
     }
     else {
         $corr_sql .= " and ce.correspondence_evidence_id = -1 ";
@@ -1339,6 +1383,7 @@ sub get_feature_correspondences {
           . join( "','", @$feature_type_aids ) . "')";
     }
 
+print STDERR "XX1 $corr_sql $map_id \n";
     my $ref_correspondences;
     unless ( $ref_correspondences =
         $self->get_cached_results( 4, $corr_sql . $map_id ) )
@@ -1396,7 +1441,8 @@ sub get_intraslot_correspondences {
         $self,                        $intraslot_correspondences,
         $correspondence_evidence,     $slot_no,
         $included_evidence_type_aids, $ignored_evidence_type_aids,
-        $feature_type_aids
+        $less_evidence_type_aids,     $greater_evidence_type_aids, 
+        $evidence_type_score,         $feature_type_aids
       )
       = @_;
     my $db             = $self->db;
@@ -1433,12 +1479,29 @@ sub get_intraslot_correspondences {
       . join( ",", keys( %{ $self->slot_info->{$slot_no} } ) ) . ")";
     $corr_sql .= ' and cl.map_id1 < cl.map_id2 ';
 
-    if ( @$included_evidence_type_aids
-        or not @$ignored_evidence_type_aids )
-    {
-        $corr_sql .=
-          " and ce.evidence_type_accession in ('"
-          . join( "','", @$included_evidence_type_aids ) . "')";
+#xx2
+print STDERR Dumper($evidence_type_score)." xx2\n";
+print STDERR Dumper($less_evidence_type_aids)." xx2\n";
+    if ( @$included_evidence_type_aids or @$less_evidence_type_aids
+            or @$greater_evidence_type_aids ) {
+        $corr_sql .= "and ( ";
+        my @join_array;
+        if ( @$included_evidence_type_aids ) {
+            push @join_array,
+              " ce.evidence_type_accession in ('"
+              . join( "','", @$included_evidence_type_aids ) . "')";
+        }
+        foreach my $et_aid (@$less_evidence_type_aids ) {
+            push @join_array,
+                " ( ce.evidence_type_accession = '$et_aid' "
+              . " and ce.score <= ".$evidence_type_score->{$et_aid}." ) ";
+        }
+        foreach my $et_aid (@$greater_evidence_type_aids ) {
+            push @join_array,
+                " ( ce.evidence_type_accession = '$et_aid' "
+              . " and ce.score >= ".$evidence_type_score->{$et_aid}." ) ";
+        }
+        $corr_sql .= join (' or ', @join_array). " ) ";
     }
     else {
         $corr_sql .= " and ce.correspondence_evidence_id = -1 ";
@@ -2123,12 +2186,12 @@ sub cmap_form_data {
     my $slots = $args{'slots'} or return;
     my $min_correspondences = $args{'min_correspondences'}    || 0;
     my $feature_type_aids   = $args{'included_feature_types'} || [];
-    my $ignored_feature_type_aids = $args{'ignored_feature_types'}
-      || [];
-    my $included_evidence_type_aids = $args{'included_evidence_types'}
-      || [];
-    my $ignored_evidence_type_aids = $args{'ignored_evidence_types'}
-      || [];
+    my $ignored_feature_type_aids = $args{'ignored_feature_types'} || [];
+    my $included_evidence_type_aids = $args{'included_evidence_types'} || [];
+    my $ignored_evidence_type_aids = $args{'ignored_evidence_types'} || [];
+    my $less_evidence_type_aids = $args{'less_evidence_types'} || [];
+    my $greater_evidence_type_aids = $args{'greater_evidence_types'} || [];
+    my $evidence_type_score = $args{'evidence_type_score'} || {};
     my $ref_species_aid = $args{'ref_species_aid'} || '';
     my $ref_slot_data   = $args{'ref_slot_data'}   || {};
     my $ref_map         = $slots->{0};
@@ -2320,6 +2383,9 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
             ignored_feature_type_aids   => $ignored_feature_type_aids,
             included_evidence_type_aids => $included_evidence_type_aids,
             ignored_evidence_type_aids  => $ignored_evidence_type_aids,
+            less_evidence_type_aids     => $less_evidence_type_aids,
+            greater_evidence_type_aids  => $greater_evidence_type_aids,
+            evidence_type_score         => $evidence_type_score,
             ref_slot_no                 => $slot_nos[-1],
             pid                         => $pid,
         );
@@ -2333,6 +2399,9 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
             ignored_feature_type_aids   => $ignored_feature_type_aids,
             included_evidence_type_aids => $included_evidence_type_aids,
             ignored_evidence_type_aids  => $ignored_evidence_type_aids,
+            less_evidence_type_aids     => $less_evidence_type_aids,
+            greater_evidence_type_aids  => $greater_evidence_type_aids,
+            evidence_type_score         => $evidence_type_score,
             ref_slot_no                 => $slot_nos[0],
             pid                         => $pid,
           );
@@ -2390,6 +2459,9 @@ out which maps have relationships.
     my $ignored_feature_type_aids   = $args{'ignored_feature_type_aids'};
     my $included_evidence_type_aids = $args{'included_evidence_type_aids'};
     my $ignored_evidence_type_aids  = $args{'ignored_evidence_type_aids'};
+    my $less_evidence_type_aids     = $args{'less_evidence_type_aids'};
+    my $greater_evidence_type_aids  = $args{'greater_evidence_type_aids'};
+    my $evidence_type_score         = $args{'evidence_type_score'};
     my $ref_slot_no                 = $args{'ref_slot_no'};
     my $pid                         = $args{'pid'};
     my $db                          = $self->db or return;
@@ -2452,14 +2524,32 @@ out which maps have relationships.
 
     my $additional_where  = '';
     my $additional_tables = '';
-    if ( @$included_evidence_type_aids
-        or not @$ignored_evidence_type_aids )
-    {
+#xx3
+print STDERR Dumper($evidence_type_score)." xx3\n";
+print STDERR Dumper($less_evidence_type_aids)." xx3\n";
+    if ( @$included_evidence_type_aids or @$less_evidence_type_aids
+            or @$greater_evidence_type_aids ) {
         $additional_tables = ', cmap_correspondence_evidence ce';
-        $additional_where .= "
+        $additional_where .= q[
             and fc.feature_correspondence_id=ce.feature_correspondence_id
-            and ce.evidence_type_accession in ('"
-          . join( "','", @$included_evidence_type_aids ) . "') ";
+            and  ( ];
+        my @join_array;
+        if ( @$included_evidence_type_aids ) {
+            push @join_array,
+              " ce.evidence_type_accession in ('"
+              . join( "','", @$included_evidence_type_aids ) . "')";
+        }
+        foreach my $et_aid (@$less_evidence_type_aids ) {
+            push @join_array,
+                " ( ce.evidence_type_accession = '$et_aid' "
+              . " and ce.score <= ".$evidence_type_score->{$et_aid}." ) ";
+        }
+        foreach my $et_aid (@$greater_evidence_type_aids ) {
+            push @join_array,
+                " ( ce.evidence_type_accession = '$et_aid' "
+              . " and ce.score >= ".$evidence_type_score->{$et_aid}." ) ";
+        }
+        $additional_where .= join (' or ', @join_array). " ) ";
     }
     else {    #all are ignored, return nothing
         $additional_where .= " and cl.map_id1 = -1 ";
@@ -2488,6 +2578,7 @@ out which maps have relationships.
     ];
 
     $corr_sql .= " group by cl.map_id2, map.map_set_id";
+print STDERR "XX3 Corr_SQL $corr_sql\n";
 
     my $feature_correspondences;
     unless ( $feature_correspondences =
@@ -3719,6 +3810,9 @@ Returns the detail info for a map.
 
     my $included_evidence_type_aids = $args{'included_evidence_types'};
     my $ignored_evidence_type_aids  = $args{'ignored_evidence_types'};
+    my $less_evidence_type_aids     = $args{'less_evidence_types'};
+    my $greater_evidence_type_aids  = $args{'greater_evidence_types'};
+    my $evidence_type_score         = $args{'evidence_type_score'};
 
     #
     # Figure out hightlighted features.
@@ -3893,6 +3987,9 @@ Returns the detail info for a map.
                 ? join( ',', @$included_evidence_type_aids )
                 : @$included_evidence_type_aids ? "-1"
                 : '',
+                less_evidence_type_aids     => $less_evidence_type_aids,
+                greater_evidence_type_aids  => $greater_evidence_type_aids,
+                evidence_type_score         => $evidence_type_score,
             ),
             { Columns => {} },
             ( $feature->{'feature_id'} )
@@ -4282,6 +4379,9 @@ sub count_correspondences {
     my ( $self, %args ) = @_;
     my $included_evidence_type_aids = $args{'included_evidence_type_aids'};
     my $ignored_evidence_type_aids  = $args{'ignored_evidence_type_aids'};
+    my $less_evidence_type_aids = $args{'less_evidence_type_aids'};
+    my $greater_evidence_type_aids = $args{'greater_evidence_type_aids'};
+    my $evidence_type_score = $args{'evidence_type_score'};
     my $map_correspondences         = $args{'map_correspondences'};
     my $this_slot_no                = $args{'this_slot_no'};
     my $ref_slot_no                 = $args{'ref_slot_no'};
@@ -4299,14 +4399,36 @@ sub count_correspondences {
 # All possible evidence types that aren't ignored are in included_evidence_type_aids
 #  at this point.  If it is empty, either all are ignored or something is wrong.
 #  In the case where all are ignored, the sql is forced to return nothing.
-    my $where =
-      @$included_evidence_type_aids
-      ? " and ce.evidence_type_accession in ('"
-      . join( "','", @$included_evidence_type_aids ) . "')"
-      : @$ignored_evidence_type_aids
-      ? " and ce.correspondence_evidence_id = -1 "
-      : '';
+#xx4
+print STDERR Dumper($evidence_type_score)." xx4\n";
+print STDERR Dumper($less_evidence_type_aids)." xx4\n";
+    my $where = '';
+    if ( @$included_evidence_type_aids or @$less_evidence_type_aids
+            or @$greater_evidence_type_aids ) {
+        $where .= "and ( ";
+        my @join_array;
+        if ( @$included_evidence_type_aids ) {
+            push @join_array,
+              " ce.evidence_type_accession in ('"
+              . join( "','", @$included_evidence_type_aids ) . "')";
+        }
+        foreach my $et_aid (@$less_evidence_type_aids ) {
+            push @join_array,
+                " ( ce.evidence_type_accession = '$et_aid' "
+              . " and ce.score <= ".$evidence_type_score->{$et_aid}." ) ";
+        }
+        foreach my $et_aid (@$greater_evidence_type_aids ) {
+            push @join_array,
+                " ( ce.evidence_type_accession = '$et_aid' "
+              . " and ce.score >= ".$evidence_type_score->{$et_aid}." ) ";
+        }
+        $where .= join (' or ', @join_array). " ) ";
+    }
+    else {
+        $where .= " and ce.correspondence_evidence_id = -1 ";
+    }
 
+print STDERR "XX4 Where $where\n";
     my ( $count_sql, $position_sql, @query_args );
     if ( defined $ref_slot_no or $show_intraslot_corr ) {
         my $base_sql;
@@ -4505,6 +4627,7 @@ sub count_correspondences {
         $count_sql = sprintf( $base_sql, $select_str );
     }
 
+print STDERR "$count_sql\n";
     my %map_id_lookup = map { $_->{'map_id'}, 1 } @$maps;
     my %corr_lookup;
     if ($count_sql) {
@@ -4669,10 +4792,6 @@ sub cmap_map_search_data {
     my $min_correspondence_maps = $args{'min_correspondence_maps'} || 0;
     my $min_correspondences     = $args{'min_correspondences'}     || 0;
     my $feature_type_aids       = $args{'included_feature_types'}  || [];
-    my $included_evidence_type_aids = $args{'included_evidence_types'}
-      || [];
-    my $ignored_evidence_type_aids = $args{'ignored_evidence_types'}
-      || [];
     my $ref_species_aid = $args{'ref_species_aid'}  || '';
     my $page_no         = $args{'page_no'}          || 1;
     my $name_search     = $args{'name_search'}      || '';
@@ -5730,7 +5849,10 @@ original start and stop.
     my $self                  = shift;
     my $slots                 = shift;
     my $ignored_feature_list  = shift;
-    my $ignored_evidence_list = shift;
+    my $included_evidence_type_aids = shift;
+    my $less_evidence_type_aids = shift;
+    my $greater_evidence_type_aids = shift;
+    my $evidence_type_score = shift;
     my $min_correspondences   = shift;
     my $db                    = $self->db;
 
@@ -5840,16 +5962,36 @@ original start and stop.
                   " and cl.feature_type_accession1 not in ('"
                   . join( "','", @$ignored_feature_list ) . "') ";
             }
-            if (    $ignored_evidence_list
-                and @$ignored_evidence_list )
-            {
+#xx5
+print STDERR Dumper($evidence_type_score)." xx5\n";
+print STDERR Dumper($less_evidence_type_aids)." xx5\n";
+            if ( @$included_evidence_type_aids or @$less_evidence_type_aids
+                    or @$greater_evidence_type_aids ) {
                 $from  .= ", cmap_correspondence_evidence ce ";
                 $where .=
                     " and ce.feature_correspondence_id = "
                   . "cl.feature_correspondence_id ";
-                $where .=
-                  " and ce.evidence_type_accession not in ('"
-                  . join( "','", @$ignored_evidence_list ) . "') ";
+                $where .= "and ( ";
+                my @join_array;
+                if ( @$included_evidence_type_aids ) {
+                    push @join_array,
+                      " ce.evidence_type_accession in ('"
+                      . join( "','", @$included_evidence_type_aids ) . "')";
+                }
+                foreach my $et_aid (@$less_evidence_type_aids ) {
+                    push @join_array,
+                        " ( ce.evidence_type_accession = '$et_aid' "
+                      . " and ce.score <= ".$evidence_type_score->{$et_aid}." ) ";
+                }
+                foreach my $et_aid (@$greater_evidence_type_aids ) {
+                    push @join_array,
+                        " ( ce.evidence_type_accession = '$et_aid' "
+                      . " and ce.score >= ".$evidence_type_score->{$et_aid}." ) ";
+                }
+                $where .= join (' or ', @join_array). " ) ";
+            }
+            else {
+                $where .= " and ce.correspondence_evidence_id = -1 ";
             }
 
             # Get Map Sets
