@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.21 2003-03-13 01:26:36 kycl4rk Exp $
+# $Id: Import.pm,v 1.22 2003-03-13 20:03:02 kycl4rk Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.21 $)[-1];
+$VERSION  = (qw$Revision: 1.22 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -380,9 +380,9 @@ have for the map set).
         my $feature_name   = $record{'feature_name'}     #or next;
             or warn "feature name blank! ", Dumper( %record ), "\n";
         my $accession_id   = $record{'feature_accession_id'};
-        my $alternate_name = $record{'feature_alt_name'} || '';
-        my $dbxref_name    = $record{'dbxref_name'}      || '';
-        my $dbxref_url     = $record{'dbxref_url'}       || '';
+        my $alternate_name = $record{'feature_alt_name'}    || '';
+        my $dbxref_name    = $record{'feature_dbxref_name'} || '';
+        my $dbxref_url     = $record{'feature_dbxref_url'}  || '';
         my $start          = $record{'feature_start'};
         my $stop           = $record{'feature_stop'};
         my $is_landmark    = $record{'is_landmark'};
