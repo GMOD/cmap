@@ -105,7 +105,7 @@
             </tr> 
 
             [% FOREACH att=ms.attributes %]
-                [% NEXT UNLESS att.is_public %]
+                [% NEXT IF att.is_public.defined AND att.is_public == 0 %]
                 <tr>
                     <th align="right" valign="top">
                         [% att.attribute_name | nbsp %]:
@@ -162,6 +162,7 @@
                     <td>&nbsp;</td>
                 </tr> 
             [% END %]
+
             <tr>
                 <td colspan="3">&nbsp;</td>
             </tr>
