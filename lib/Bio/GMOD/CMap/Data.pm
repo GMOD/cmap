@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.36 2003-02-20 16:50:03 kycl4rk Exp $
+# $Id: Data.pm,v 1.37 2003-03-05 01:54:52 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.36 $)[-1];
+$VERSION = (qw$Revision: 1.37 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -101,6 +101,7 @@ Organizes the data for drawing comparative maps.
 
     my ( $self, %args )        = @_;
     my $slots                  = $args{'slots'};
+    my $min_correspondences    = $args{'min_correspondences'}    ||  0;
     my $include_feature_types  = $args{'include_feature_types'}  || [];
     my $include_evidence_types = $args{'include_evidence_types'} || [];
     my @slot_nos               = keys %$slots;
@@ -131,6 +132,7 @@ Organizes the data for drawing comparative maps.
             feature_types            => \%feature_types,           # erence
             reference_map            => $ref_map,
             slot_no                  => $slot_no,
+            min_correspondences      => $min_correspondences,
             feature_type_ids         => $feature_type_ids,
             evidence_type_ids        => $evidence_type_ids,
         ) || {};
@@ -175,6 +177,7 @@ Returns the data for drawing comparative maps.
     # Get the arguments.
     #
     my $slot_no                 = $args{'slot_no'};
+    my $min_correspondences     = $args{'min_correspondences'} ||  0;
     my $feature_type_ids        = $args{'feature_type_ids'};
     my $evidence_type_ids       = $args{'evidence_type_ids'};
     my $map                     = ${ $args{'map'} }; # hashref
@@ -242,7 +245,7 @@ Returns the data for drawing comparative maps.
         if ( $ref_map_id ) {
             push @map_ids, @{ $db->selectcol_arrayref(
                 $sql->map_data_map_ids_by_single_reference_map(
-                    evidence_type_ids => $evidence_type_ids,
+                    evidence_type_ids   => $evidence_type_ids,
                 ),
                 {},    
                 ( $ref_map_id, $ref_map_start, $ref_map_stop, 
@@ -506,6 +509,11 @@ Returns the data for drawing comparative maps.
             $map_data->{'no_correspondences'} = 
                 scalar keys %distinct_correspondences;
         }
+
+        next if 
+            $min_correspondences && 
+            $map_correspondences && 
+            $map_data->{'no_correspondences'} < $min_correspondences;
 
         $maps->{ $map_id } = $map_data;
     }
@@ -1128,6 +1136,7 @@ Returns the data for the main comparative map HTML form.
 
     my ( $self, %args )        = @_;
     my $slots                  = $args{'slots'} or return;
+    my $min_correspondences    = $args{'min_correspondences'}    ||  0;
     my $include_feature_types  = $args{'include_feature_types'}  || [];
     my $include_evidence_types = $args{'include_evidence_types'} || [];
     my $ref_map                = $slots->{ 0 };
@@ -1254,21 +1263,23 @@ Returns the data for the main comparative map HTML form.
     my $rightmost_map = $slots->{ $slot_nos[-1] };
     my $leftmost_map  = $slots->{ $slot_nos[ 0] };
 
-    my $comp_maps_right   =  $self->get_comparative_maps( 
-        map               => $rightmost_map,
-        feature_type_ids  => $feature_type_ids,
-        evidence_type_ids => $evidence_type_ids,
+    my $comp_maps_right     =  $self->get_comparative_maps( 
+        map                 => $rightmost_map,
+        min_correspondences => $min_correspondences,
+        feature_type_ids    => $feature_type_ids,
+        evidence_type_ids   => $evidence_type_ids,
     );
 
-    my $comp_maps_left         =  
+    my $comp_maps_left      =  
         $leftmost_map->{'field'} eq $rightmost_map->{'field'}
         &&
         $leftmost_map->{'aid'} eq $rightmost_map->{'aid'}
         ? $comp_maps_right
         : $self->get_comparative_maps(
-            map               => $leftmost_map,
-            feature_type_ids  => $feature_type_ids,
-            evidence_type_ids => $evidence_type_ids,
+            map                 => $leftmost_map,
+            min_correspondences => $min_correspondences,
+            feature_type_ids    => $feature_type_ids,
+            evidence_type_ids   => $evidence_type_ids,
         )
     ;
 
@@ -1334,10 +1345,11 @@ out which maps have relationships.
 
 =cut
 
-    my ( $self, %args )   = @_;
-    my $map               = $args{'map'};
-    my $feature_type_ids  = $args{'feature_type_ids'};
-    my $evidence_type_ids = $args{'evidence_type_ids'};
+    my ( $self, %args )     = @_;
+    my $map                 = $args{'map'};
+    my $min_correspondences = $args{'min_correspondences'};
+    my $feature_type_ids    = $args{'feature_type_ids'};
+    my $evidence_type_ids   = $args{'evidence_type_ids'};
 
     my $aid_field         = $map->{'field'};
     my $ref_map_aid       = $aid_field eq 'map_aid'     ? $map->{'aid'} : '';
@@ -1436,6 +1448,8 @@ out which maps have relationships.
 
     my $correspondences;
     for my $map_aid ( keys %corr_by_map ) {
+        next if $min_correspondences &&
+            $count_by_map{ $map_aid } < $min_correspondences;
         push @$correspondences, {
             no_correspondences => $count_by_map{ $map_aid },
             %{ $corr_by_map{ $map_aid } },
@@ -1445,12 +1459,14 @@ out which maps have relationships.
     my $map_sets;
     my $join_token = '::';
     for my $corr ( @$correspondences ) {
-        my $map_type    = $corr->{'map_type'};
-        my $display     = $corr->{'map_type_display_order'};
-        my $key         = join( $join_token, $display, $map_type );
         my $map_set_aid = $corr->{'map_set_aid'};
+        my $key         = join( $join_token, 
+            $corr->{'map_type_display_order'}, $corr->{'map_type'}
+        );
 
-        for ( qw[ map_set_aid species_name map_set_name ] ) {
+        for ( qw[ 
+            map_set_aid species_name map_set_name species_display_order 
+        ] ) {
             $map_sets->{ $key }{ $map_set_aid }{ $_ } = $corr->{ $_ };
         }
 
@@ -1468,7 +1484,15 @@ out which maps have relationships.
     for ( sort keys %$map_sets ) {
         my ( $display, $map_type ) = split $join_token;
         my @map_sets;
-        for my $map_set ( values %{ $map_sets->{ $_ } } ) {
+        for my $map_set ( 
+            map  { $_->[0] }
+            sort { $a->[1] <=> $b->[1] }
+            map  { [ 
+                $_,
+                $_->{'species_display_order'}, 
+            ] }
+            values %{ $map_sets->{ $_ } } 
+        ) {
             push @map_sets, $map_set;
         }
 
