@@ -1,6 +1,6 @@
                               CMAP INSTALL
 
-                             $Revision: 1.26 $
+                             $Revision: 1.27 $
 
 1.      QUICK START
 
@@ -932,7 +932,15 @@ whole command (starting with the "0") should go on one line.
 Note: Some UNIXs may have a slightly different cron format. Check
       your man page!
 
-17.     CVS ACCESS
+17.     TEMPLATES
+
+Some of the templates may contain language specific to the Gramene
+project (e.g., "matrix.tmpl").  You may wish to scan all your pages
+and remove any language that doesn't pertain to your data.  In fact,
+it's a great idea for you to customize the templates to the types of
+data you wish to highlight or explain.
+
+18.     CVS ACCESS
 
 If you'd like to install the very latest (which is not necessarily
 guaranteed to work!), then you'll want to checkout the "cmap" project
@@ -941,7 +949,7 @@ homepage for instructions:
 
     http://gmod.sourceforge.net/cmap
 
-18.     COMMENTS
+19.     COMMENTS
 
 If you have questions or comments about this document, please write
 the CMap development mailing list at
@@ -950,7 +958,7 @@ in order to stay up on the latest in the development as well as to
 contribute your opinions as to the direction that CMap takes in the
 future.
 
-19.     LET US KNOW!
+20.     LET US KNOW!
 
 Please consider allowing the GMOD project advertise your use of our
 code.  If you have a publicly accessible installation of CMap, we
