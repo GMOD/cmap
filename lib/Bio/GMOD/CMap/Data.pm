@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.86 2004-01-08 18:21:33 kycl4rk Exp $
+# $Id: Data.pm,v 1.87 2004-01-08 20:57:08 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.86 $)[-1];
+$VERSION = (qw$Revision: 1.87 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -1598,7 +1598,7 @@ Returns the data for the correspondence matrix.
     #
     my ( @matrix, %no_ref_by_species_and_type, %no_ref_by_type );
     for my $map_set ( @reference_map_sets ) {
-        my $r_map_aid       = $map_set->{'map_aid'} || 0;
+        my $r_map_aid       = $map_set->{'map_aid'} || '';
         my $r_map_set_aid   = $map_set->{'map_set_aid'};
         my $r_map_type_aid  = $map_set->{'map_type_aid'};
         my $r_species_aid   = $map_set->{'species_aid'};
@@ -1612,10 +1612,11 @@ Returns the data for the correspondence matrix.
 
         for my $comp_map_set ( @all_map_sets ) {
             my $comp_map_set_aid = $comp_map_set->{'map_set_aid'};
-            my $comp_map_aid     = $comp_map_set->{'map_aid'} || 0;
+            my $comp_map_aid     = $comp_map_set->{'map_aid'} || '';
             my $comparative_aid  = $comp_map_aid || $comp_map_set_aid;
             my $correspondences  = 
-                $comp_map_set_aid eq $r_map_set_aid ? 'N/A' :
+                ( $r_map_aid && $comp_map_aid && $r_map_aid eq $comp_map_aid )
+                ? 'N/A' :
                 $lookup{ $reference_aid }{ $comparative_aid } || 0
             ;
 
