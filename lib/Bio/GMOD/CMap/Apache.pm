@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache;
 # vim: set ft=perl:
 
-# $Id: Apache.pm,v 1.14 2004-02-20 16:20:43 kycl4rk Exp $
+# $Id: Apache.pm,v 1.15 2004-03-03 21:01:23 kycl4rk Exp $
 
 =head1 NAME
 
@@ -46,7 +46,7 @@ this class will catch errors and display them correctly.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.14 $)[-1];
+$VERSION = (qw$Revision: 1.15 $)[-1];
 
 use CGI;
 use Data::Dumper;
@@ -154,6 +154,7 @@ the handler to the derived class's "handler" method.
                     $module->error_template, 
                     { 
                         error        => $e, 
+                        apr          => $module->apr, 
                         page         => $module->page,
                         debug        => $module->debug,
                         stylesheet   => $module->stylesheet,
