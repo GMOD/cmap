@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.193 2004-12-15 16:54:12 mwz444 Exp $
+# $Id: Data.pm,v 1.194 2004-12-15 17:36:31 kycl4rk Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.193 $)[-1];
+$VERSION = (qw$Revision: 1.194 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -1007,6 +1007,14 @@ sub slot_data {
             unless ( $map->{'features'} =
                 $self->get_cached_results( 4, $sql_str ) )
             {
+                # Get feature aliases
+                my $alias_results =
+                  $db->selectall_arrayref( $alias_sql, { Columns => {} }, () );
+                my %aliases = ();
+                foreach my $row (@$alias_results) {
+                    push @{ $aliases{ $row->{'feature_id'} } }, $row->{'alias'};
+                }
+
                 $map->{'features'} =
                   $db->selectall_hashref( $sql_str, 'feature_id', {}, () );
 
@@ -1015,24 +1023,11 @@ sub slot_data {
                       $self->feature_type_data(
                         $map->{'features'}{$feature_id}{'feature_type_aid'} );
 
-                    for my $fld (
-                        qw[ feature_type default_rank shape
-                        color drawing_lane drawing_priority ]
-                      )
-                    {
-                        $map->{'features'}{$feature_id}{$fld} = $ft->{$fld};
-                    }
-                }
+                    $map->{'features'}{$feature_id}{$_} = $ft->{$_} for qw[ 
+                        feature_type default_rank shape color 
+                        drawing_lane drawing_priority 
+                    ];
 
-                # Get feature aliases
-
-                my $alias_results =
-                  $db->selectall_arrayref( $alias_sql, { Columns => {} }, () );
-                my %aliases = ();
-                foreach my $row (@$alias_results) {
-                    push @{ $aliases{ $row->{'feature_id'} } }, $row->{'alias'};
-                }
-                for my $feature_id ( keys %{ $map->{'features'} } ) {
                     $map->{'features'}{$feature_id}{'aliases'} =
                       $aliases{$feature_id};
                 }
