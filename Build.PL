@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.32 2004-03-12 22:04:56 kycl4rk Exp $
+# $Id: Build.PL,v 1.33 2004-03-12 22:07:04 kycl4rk Exp $
 
 use strict;
 
@@ -335,7 +335,7 @@ for my $opt (
 
         my $extra = $overwrite_ok ? '' : 
             qq[if !-e '$to' || ].
-            qq[( -e '$to' && \$self->y_n("OK to overwrite '$to'?") )];
+            qq[( -e '$to' && \$self->y_n("OK to overwrite '$to'?"), 'n' )];
 
         $install .= qq[
             \$self->copy_if_modified(
