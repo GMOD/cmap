@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.30 2004-02-26 17:51:54 kycl4rk Exp $
+# $Id: Build.PL,v 1.31 2004-03-03 21:42:13 kycl4rk Exp $
 
 use strict;
 
@@ -98,15 +98,16 @@ if ( !%OPTIONS && -e $install_conf ) {
     );
 
     if ( $yes ) {
-        print STDERR "Using previous settings for file paths.\n";
-        open F, ">$install_conf" or die "Can't read '$install_conf: $!\n";
+        print "Using previous settings from '$install_conf.'\n";
+        open F, $install_conf or die "Can't read '$install_conf: $!\n";
         while ( <F> ) {
             chomp;
-            next if /^\#/;
+            next if /^#/;
             next unless /^($OPTIONS)=(.+)/o;
             $OPTIONS{$1} = $2;
         }
         close F;
+
     }
 }
 
