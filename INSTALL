@@ -1,6 +1,6 @@
                               CMAP INSTALL
 
-                             $Revision: 1.29 $
+                             $Revision: 1.30 $
 
 1.      QUICK START
 
@@ -477,11 +477,11 @@ Note: You'll notice that the first command you give to build most Perl
       entire build/test/install process is handled exclusively by Perl.
       CMap uses this newer process.  Rather than executing "perl
       Makefile.PL; make; make install" you simply run "perl Build.PL;
-      ./Build; ./Build install."  Given that Module::Build is a newer
-      module that is yet to be distributed with the core Perl, you will
-      need to install it before proceeding with the CMap installation
-      process.  For more information on this, execute "perldoc
-      Module::Build" after installing  the module.
+      ./Build; ./Build test; ./Build install."  Given that Module::Build
+      is a newer module that is yet to be distributed with the core
+      Perl, you will need to install it before proceeding with the CMap
+      installation process.  For more information on this, execute
+      "perldoc Module::Build" after installing  the module.
 
 If all goes well, you should see a lot of text go whizzing by and then
 a big text banner saying "You now have successfully built and installed
@@ -644,6 +644,7 @@ latter, I'd recommend choosing the first way.  Here's how to do both:
 
     $ perl Build.PL
     $ ./Build
+    $ ./Build test
     # ./Build install
 
     Several configuration options can be set via arguments to Build.PL.
@@ -793,7 +794,9 @@ can intelligently edit you own entries.
     "/var/cmap_cache" and that you'd like to reference those images
     through a web browser as "/cmap/images," you'll need to edit the
     "Alias" above in your httpd.conf to reflect the default value or
-    your own choice.
+    your own choice.  FWIW, the "4777" permissions will modify the
+    directory to be owned by root, but will prevent anyone but the web
+    server's UID to alter any file it creates.
 
     I'd probably recommend against placing the images directly into your
     DocumentRoot as the space taken by the images is completely dependent
