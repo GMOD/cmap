@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.53 2003-09-04 17:53:24 kycl4rk Exp $
+# $Id: Data.pm,v 1.54 2003-09-05 17:53:14 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.53 $)[-1];
+$VERSION = (qw$Revision: 1.54 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -2434,6 +2434,9 @@ Returns the detail info for a map.
     my $order_by               = $args{'order_by'}          || 'start_position';
     my $comparative_map_field  = $args{'comparative_map_field'} || '';
     my $comparative_map_aid    = $args{'comparative_map_aid'}   || '';
+    my $page_size              = $args{'page_size'}             || 25;
+    my $max_pages              = $args{'max_pages'}             ||  0;
+    my $page_no                = $args{'page_no'}               ||  1;
     my $db                     = $self->db  or return;
     my $sql                    = $self->sql or return;
     my $map_id                 = $self->acc_id_to_internal_id(
@@ -2506,6 +2509,18 @@ Returns the detail info for a map.
         { Columns => {} },
         ( $map_id, $map_start, $map_stop, $map_start, $map_start )
     );
+
+    #
+    # Page the data here so as to reduce the calls below
+    # for the comparative map info.
+    #
+    my $pager = Data::Pageset->new( {
+        total_entries    => scalar @$features,
+        entries_per_page => $page_size,
+        current_page     => $page_no,
+        pages_per_set    => $max_pages,
+    } );
+    $features = [ $pager->splice( $features ) ];
 
     #
     # Get all the map IDs to use to restrict the feature types.
@@ -2703,6 +2718,7 @@ Returns the detail info for a map.
         evidence_types    => \@evidence_types,
         reference_map     => $reference_map,
         comparative_maps  => \@comparative_maps,
+        pager             => $pager,
     }
 }
 
