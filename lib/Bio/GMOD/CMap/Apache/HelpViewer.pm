@@ -1,28 +1,29 @@
 package Bio::GMOD::CMap::Apache::HelpViewer;
 # vim: set ft=perl:
 
-# $Id: HelpViewer.pm,v 1.9 2003-10-01 23:16:08 kycl4rk Exp $
+# $Id: HelpViewer.pm,v 1.10 2003-10-22 23:00:19 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.9 $)[-1];
+$VERSION = (qw$Revision: 1.10 $)[-1];
 
 use Apache::Constants;
 
 use Bio::GMOD::CMap::Apache;
 use base 'Bio::GMOD::CMap::Apache';
 
-use constant TEMPLATES => {
-    default            => 'help_map_viewer.tmpl',
-    feature_details    => 'help_feature_details.tmpl',
-    feature_search     => 'help_feature_search.tmpl',
-    feature_type_info  => 'help_feature_type_info.tmpl',
-    matrix             => 'help_matrix.tmpl',
-    map_set_info       => 'help_map_set_info.tmpl',
-    map_type_info      => 'help_map_type_info.tmpl',
-    map_details        => 'help_map_details.tmpl',
-    map_viewer         => 'help_map_viewer.tmpl',
-    species_info       => 'help_species_info.tmpl',
+use constant TEMPLATES     => {
+    default                => 'help_map_viewer.tmpl',
+    correspondence_details => 'help_correspondence.tmpl',
+    feature_details        => 'help_feature_details.tmpl',
+    feature_search         => 'help_feature_search.tmpl',
+    feature_type_info      => 'help_feature_type_info.tmpl',
+    matrix                 => 'help_matrix.tmpl',
+    map_set_info           => 'help_map_set_info.tmpl',
+    map_type_info          => 'help_map_type_info.tmpl',
+    map_details            => 'help_map_details.tmpl',
+    map_viewer             => 'help_map_viewer.tmpl',
+    species_info           => 'help_species_info.tmpl',
 };
 
 sub handler {
