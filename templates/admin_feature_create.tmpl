@@ -47,10 +47,10 @@
             Feature Type:
         </td>
         <td>
-            <select name="feature_type">
+            <select name="feature_type_aid">
                 <option value="">--Please Select--</option>
-                [% FOREACH ft=feature_types %]
-                    <option value="[% ft %]"[% IF ft==apr.param('feature_type') %] selected[% END %]>[% ft %]</option>
+                [% FOREACH ft_aid=feature_type_aids %]
+                    <option value="[% ft_aid %]"[% IF ft_aid==apr.param('feature_type_aid') %] selected[% END %]>[% feature_type_name_lookup.${ft_aid} %]</option>
                 [% END %]
             </select>
         </td>

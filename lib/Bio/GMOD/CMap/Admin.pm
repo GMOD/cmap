@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.60 2004-09-16 05:39:33 mwz444 Exp $
+# $Id: Admin.pm,v 1.61 2004-10-13 18:29:58 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.60 $)[-1];
+$VERSION = (qw$Revision: 1.61 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -1268,12 +1268,14 @@ Find all the features matching some criteria.
                 join(', ', @$species_ids ) . ') ';
         }
 
-        if ( my $ft = join(', ',  @$feature_type_aids ) ) {
-            $sql .= "and f.feature_type_accession in ($ft) ";
+        if ( my $ft = join("', '",  @$feature_type_aids ) ) {
+            $sql .= "and f.feature_type_accession in ('$ft') ";
         }
 
         my $found = $db->selectall_hashref( $sql, 'feature_id' );
         while ( my ( $id, $f ) = each %$found ) {
+            $f->{'feature_type'}
+                = $self->config_data('feature_type')->{$f->{'feature_type_aid'}}{'feature_type'};
             $features{ $id } = $f;
         }
     }

@@ -1,7 +1,5 @@
 [% INCLUDE admin_header.tmpl title="View Map Type &quot;$map_type.map_type&quot;" %]
 <a href="admin">Home</a> |
-<a href="admin?action=map_type_edit;map_type=[% map_type.map_type %]">Edit</a> |
-<a href="admin?action=confirm_delete;entity_type=cmap_map_type;entity_id=[% map_type.map_type %];entity_name_field=map_type">Delete</a> |
 <a href="admin?action=map_types_view">View All Map Types</a>
 <hr noshade>
 
@@ -9,7 +7,7 @@
     <tr>
         <td align="right">Acc. ID:</td>
         <td>
-            [% map_type.accession_id %]
+            [% map_type.map_type_accession %]
         </td>
     </tr>
 

@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.72 2004-09-10 19:15:28 mwz444 Exp $
+# $Id: AdminViewer.pm,v 1.73 2004-10-13 18:29:58 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -33,7 +33,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.72 $)[-1];
+$VERSION        = (qw$Revision: 1.73 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -507,15 +507,20 @@ sub corr_evidence_types_view {
 
 
     my @evidence_type_aids = keys(%{$self->config_data('evidence_type')});
-    my $evidence_types;
+    my $evidence_types_hash;
     foreach my $type_aid (@evidence_type_aids){
-        $evidence_types->{$type_aid}=
+        $evidence_types_hash->{$type_aid}=
             $self->evidence_type_data($type_aid)
              or return $self->error(
              "No evidence type accession '$type_aid'"
               );
     }
 
+    my $evidence_types;
+    foreach my $type_aid (keys(%{$evidence_types_hash})){
+        $evidence_types_hash->{$type_aid}{'accession_id'}=$type_aid;
+        push @$evidence_types,$evidence_types_hash->{$type_aid};
+    }
     my $pager = Data::Pageset->new( {
         total_entries    => scalar @$evidence_types, 
         entries_per_page => $PAGE_SIZE,
@@ -843,6 +848,8 @@ sub map_view {
         "No map for ID '$map_id'"
     );
 
+    $map->{'map_type'}=$self->config_data('map_type')->{$map->{'map_type_aid'}}{'map_type'};
+
     $map->{'attributes'} = $self->get_attributes( 
         'cmap_map', $map_id, $apr->param('att_order_by')
     );
@@ -860,7 +867,7 @@ sub map_view {
                  f.stop_position, 
                  f.is_landmark,
                  f.feature_type_accession as feature_type_aid
-        from     cmap_feature f, 
+        from     cmap_feature f 
         where    f.map_id=?
     ];
     $sql .= "and f.feature_type_accession=$feature_type_aid " 
@@ -869,6 +876,9 @@ sub map_view {
 
     my $features = $db->selectall_arrayref($sql, { Columns => {} }, ($map_id));
 
+    for my $feature ( @$features ) {
+        $feature->{'feature_type'}=$self->config_data('feature_type')->{$feature->{'feature_type_aid'}}{'feature_type'};
+    }
     #
     # Slice the results up into pages suitable for web viewing.
     #
@@ -919,23 +929,31 @@ sub map_view {
         );
     }
 
-    my $feature_type_aids = $db->selectall_arrayref(
+    my $feature_type_aids_array = $db->selectall_arrayref(
         q[
             select   distinct f.feature_type_accession as feature_type_aid
-            from     cmap_feature f,
+            from     cmap_feature f
             where    f.map_id=?
             order by feature_type_aid
         ],
-        { Columns => {} },
+        {Columns => {}},
         ( $map_id )
     );
+    my @feature_type_aids = map{$_->{'feature_type_aid'}} @$feature_type_aids_array;
+print STDERR Dumper(\@feature_type_aids)."\n";
+    my %feature_type_name_lookup;
+    foreach my $ft_aid (@feature_type_aids){
+        $feature_type_name_lookup{$ft_aid}=$self->config_data('feature_type')->{$ft_aid}{'feature_type'};
+    }
+
 
     return $self->process_template( 
         TEMPLATE->{'map_view'},
         { 
             apr           => $apr,
             map           => $map,
-            feature_type_aids => $feature_type_aids,
+            feature_type_aids => \@feature_type_aids,
+            feature_type_name_lookup => \%feature_type_name_lookup,
             pager         => $pager,
         }
     );
@@ -1149,14 +1167,18 @@ sub feature_create {
         "No map for ID '$map_id'"
     );
 
-    my $feature_type_aids = \keys(%{$self->feature_type_data()});
-
+    my @feature_type_aids = keys(%{$self->feature_type_data()});
+    my %feature_type_name_lookup;
+    foreach my $ft_aid (@feature_type_aids){
+        $feature_type_name_lookup{$ft_aid}=$self->config_data('feature_type')->{$ft_aid}{'feature_type'};
+    }
     return $self->process_template(
         TEMPLATE->{'feature_create'}, 
         { 
             apr           => $apr,
             map           => $map,
-            feature_type_aids => $feature_type_aids,
+            feature_type_aids => \@feature_type_aids,
+            feature_type_name_lookup => \%feature_type_name_lookup,
             errors        => $args{'errors'},
         }
     );
@@ -1197,15 +1219,19 @@ sub feature_edit {
         "No feature for ID '$feature_id'"
     );
 
-    my $feature_type_aids = \keys(%{$self->feature_type_data()});
+    my @feature_type_aids = keys(%{$self->feature_type_data()});
 
-
+    my %feature_type_name_lookup;
+    foreach my $ft_aid (@feature_type_aids){
+        $feature_type_name_lookup{$ft_aid}=$self->config_data('feature_type')->{$ft_aid}{'feature_type'};
+    }
     return $self->process_template(
         TEMPLATE->{'feature_edit'},
         { 
             feature       => $feature,
-            feature_type_aids => $feature_type_aids,
+            feature_type_aids => \@feature_type_aids,
             errors        => $args{'errors'},
+            feature_type_name_lookup => \%feature_type_name_lookup,
         }, 
     );
 }
@@ -1306,6 +1332,7 @@ sub feature_view {
         "No feature for ID '$feature_id'"
     );
 
+    $feature->{'feature_type'}=$self->config_data('feature_type')->{$feature->{'feature_type_aid'}}{'feature_type'};
     $feature->{'aliases'}    = $self->admin->get_aliases( $feature_id );
     $feature->{'attributes'} = $self->get_attributes( 
         'cmap_feature', $feature_id, $apr->param('att_order_by')
@@ -1349,7 +1376,7 @@ sub feature_view {
             $db->selectcol_arrayref(
                 q[
                     select   ce.evidence_type_accession as evidence_type_aid
-                    from     cmap_correspondence_evidence ce,
+                    from     cmap_correspondence_evidence ce
                     where    ce.feature_correspondence_id=?
                     order by ce.rank
                 ],
@@ -1382,12 +1409,19 @@ sub feature_search {
     my @species_ids      = ( $apr->param('species_id')      || () );
     my @feature_type_aids = ( $apr->param('feature_type_aid') || () );
 
+    my @all_feature_type_aids = keys(%{$self->config_data('feature_type')});
+    my %feature_type_name_lookup;
+    foreach my $ft_aid (@all_feature_type_aids){
+        $feature_type_name_lookup{$ft_aid}=$self->config_data('feature_type')->{$ft_aid}{'feature_type'};
+    }
+
     my $params              = {
         apr                 => $apr,
         species             => $admin->species,
-        feature_type_aids       => $admin->feature_type_aids,
+        feature_type_aids   => \@all_feature_type_aids,
         species_lookup      => { map { $_, 1 } @species_ids },
-        feature_type_aid_lookup => { map { $_, 1 } @feature_type_aids },
+        feature_type_aid_lookup  => { map { $_, 1 } @feature_type_aids },
+        feature_type_name_lookup => \%feature_type_name_lookup,
     }; 
 
     #
@@ -1694,7 +1728,7 @@ sub feature_corr_view {
                      ce.evidence_type_accession as evidence_type_aid,
                      ce.score,
                      ce.rank
-            from     cmap_correspondence_evidence ce,
+            from     cmap_correspondence_evidence ce
             where    ce.feature_correspondence_id=?
             order by $order_by
         ],
@@ -1943,15 +1977,20 @@ sub feature_types_view {
 
 
     my @feature_type_aids = keys(%{$self->config_data('feature_type')});
-    my $feature_types;
+    my $feature_types_hash;
     foreach my $type_aid (@feature_type_aids){
-        $feature_types->{$type_aid}=
+        $feature_types_hash->{$type_aid}=
             $self->feature_type_data($type_aid)
              or return $self->error(
              "No feature type accession '$type_aid'"
               );
     }
 
+    my $feature_types;
+    foreach my $type_aid (keys(%{$feature_types_hash})){
+        $feature_types_hash->{$type_aid}{'accession_id'}=$type_aid;
+        push @$feature_types,$feature_types_hash->{$type_aid};
+    }
     #
     # Slice the results up into pages suitable for web viewing.
     #
@@ -2096,25 +2135,29 @@ sub map_set_create {
         'before creating map sets.'
     ) unless @$specie;
 
-    my @map_type_aids_array = keys(%{$self->map_type_data()});
-    my $map_type_aids = \@map_type_aids_array;
+    my @map_type_aids = keys(%{$self->map_type_data()});
 
-print STDERR Dumper($map_type_aids)."\n";
+print STDERR Dumper(\@map_type_aids)."\n";
     return $self->error(
         'Please create map types in your configuration file '.
         'before creating map sets.'
-    ) unless @$map_type_aids;
+    ) unless @map_type_aids;
 
+    my %map_type_name_lookup;
+    foreach my $ft_aid (@map_type_aids){
+        $map_type_name_lookup{$ft_aid}=$self->config_data('map_type')->{$ft_aid}{'map_type'};
+    }
     return $self->process_template( 
         TEMPLATE->{'map_set_create'},
         { 
             apr       => $apr,
             errors    => $errors,
             specie    => $specie,
-            map_type_aids => $map_type_aids,
+            map_type_aids => \@map_type_aids,
             colors    => $COLORS,
             shapes    => $MAP_SHAPES,
             widths    => $WIDTHS,
+            map_type_name_lookup => \%map_type_name_lookup,
         }
     );
 }
@@ -2143,9 +2186,9 @@ sub map_set_edit {
                       ms.color,
                       s.common_name as species_common_name,
                       s.full_name as species_full_name,
-                      ms.map_units,
+                      ms.map_units
             from      cmap_map_set ms, 
-                      cmap_species s, 
+                      cmap_species s 
             where     ms.species_id=s.species_id
             and       ms.map_set_id=?
         ],
@@ -2156,6 +2199,7 @@ sub map_set_edit {
         "No map set for ID '$map_set_id'"
     );
 
+    $map_set->{'map_type'}=$self->config_data('map_type')->{$map_set->{'map_type_aid'}}{'map_type'};
     $map_set->{'attributes'} = $self->get_attributes( 
         'cmap_map_set', $map_set_id, $apr->param('att_order_by')
     );
@@ -2169,20 +2213,21 @@ sub map_set_edit {
     );
 
     my @map_type_aids = keys(%{$self->config_data('map_type')});
-    my $map_types;
-    foreach my $type_aid (@map_type_aids){
-        $map_types->{$type_aid}=
-            $self->map_type_data($type_aid)
-             or return $self->error(
-             "No map type accession '$type_aid'"
-              );
+    my %map_type_name_lookup;
+    my %map_type_unit_lookup;
+    foreach my $ft_aid (@map_type_aids){ 
+        $map_type_name_lookup{$ft_aid}=$self->config_data('map_type')->{$ft_aid}{'map_type'};
+        $map_type_unit_lookup{$ft_aid}=$self->config_data('map_type')->{$ft_aid}{'map_units'};
     }
+
     return $self->process_template( 
         TEMPLATE->{'map_set_edit'},
         { 
             map_set   => $map_set,
             specie    => $specie,
-            map_types => $map_types,
+            map_type_aids => \@map_type_aids,
+            map_type_name_lookup => \%map_type_name_lookup,
+            map_type_unit_lookup => \%map_type_unit_lookup,
             colors    => $COLORS,
             shapes    => $MAP_SHAPES,
             widths    => $WIDTHS,
@@ -2248,6 +2293,7 @@ sub map_set_view {
         "No map set for ID '$map_set_id'"
     );
 
+    $map_set->{'map_type'}=$self->config_data('map_type')->{$map_set->{'map_type_aid'}}{'map_type'};
     $map_set->{'object_id'}  = $map_set_id;
     $map_set->{'attributes'} = $self->get_attributes( 
         'cmap_map_set', $map_set_id, $apr->param('att_order_by')
@@ -2338,13 +2384,16 @@ sub map_set_update {
 
     return $self->map_set_edit( errors => \@errors ) if @errors;
 
+    my $map_units = $self->config_data('map_type')->{$map_type_aid}{'map_units'};
+
+    
     $db->do(
         q[
             update cmap_map_set
             set    accession_id=?, map_set_name=?, short_name=?,
                    species_id=?, map_type_accession=?, published_on=?,
                    can_be_reference_map=?, display_order=?, 
-                   is_enabled=?, shape=?, color=?, width=?
+                   is_enabled=?, shape=?, color=?, width=?,map_units=?
             where  map_set_id=?
         ],
         {},
@@ -2353,7 +2402,7 @@ sub map_set_update {
             $species_id, $map_type_aid, $published_on, 
             $can_be_reference_map, $display_order, 
             $is_enabled, $shape, $color, $width,
-            $map_set_id
+            $map_units, $map_set_id
         )
     );
 
@@ -2428,13 +2477,18 @@ sub map_types_view {
     my $page_no     = $apr->param('page_no')  ||  1;
 
     my @map_type_aids = keys(%{$self->config_data('map_type')});
-    my $map_types;
+    my $map_types_hash;
     foreach my $type_aid (@map_type_aids){
-        $map_types->{$type_aid}=
+        $map_types_hash->{$type_aid}=
             $self->map_type_data($type_aid)
              or return $self->error(
              "No map type accession '$type_aid'"
               );
+    }
+    my $map_types;
+    foreach my $type_aid (keys(%{$map_types_hash})){
+        $map_types_hash->{$type_aid}{'accession_id'}=$type_aid;
+        push @$map_types,$map_types_hash->{$type_aid};
     }
 
     my $pager = Data::Pageset->new( {

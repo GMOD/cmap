@@ -1,7 +1,5 @@
 [% INCLUDE admin_header.tmpl title="Feature Type View &quot;$feature_type.feature_type&quot;" %]
 <a href="admin">Home</a> |
-<a href="admin?action=feature_type_edit;feature_type=[% feature_type.feature_type %]">Edit</a> |
-<a href="admin?action=confirm_delete;entity_type=cmap_feature_type;entity_id=[% feature_type.feature_type %];entity_name_field=feature_type">Delete</a> |
 <a href="admin?action=feature_types_view">View All Feature Types</a>
 <hr noshade>
 
@@ -9,7 +7,7 @@
     <tr>
         <td align="right">Acc. ID <em>(opt.)</em>:</td>
         <td>
-            [% feature_type.accession_id %]
+            [% feature_type.feature_type_accession %]
         </td>
     </tr>
 

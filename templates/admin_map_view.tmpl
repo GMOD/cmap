@@ -103,10 +103,10 @@
         <tr>
             <td align="left">
                 <form action="admin" method="get">
-                    <select name="feature_type">
+                    <select name="feature_type_aid">
                         <option value="">--All--</option>
-                        [% FOREACH ft=feature_types %]
-                            <option value="[% ft.feature_type %]"[% IF ft.feature_type==apr.param('feature_type') %] selected[% END %]>[% ft.feature_type %]</option>
+                        [% FOREACH ft_aid=feature_type_aids %]
+                            <option value="[% ft_aid %]"[% IF ft_aid==apr.param('feature_type_aid') %] selected[% END %]>[% feature_type_name_lookup.${ft_aid} %]</option>
                         [% END %]
                     </select>
                     <input type="hidden" name="action"   value="map_view">
@@ -118,10 +118,10 @@
             <td align="right">
                 <form action="admin" method="get">
                     <input name="feature_name">
-                    <select name="feature_type">
+                    <select name="feature_type_aid">
                         <option value="">--Any--</option>
                         [% FOREACH ft=feature_types %]
-                            <option value="[% ft.feature_type %]"[% IF ft.feature_type==apr.param('feature_type') %] selected[% END %]>[% ft.feature_type %]</option>
+                            <option value="[% ft_aid %]"[% IF ft_aid==apr.param('feature_type_aid') %] selected[% END %]>[% feature_type_name_lookup.${ft_aid} %]</option>
                         [% END %]
                     </select>
                     <input type="hidden" name="action" value="feature_search">

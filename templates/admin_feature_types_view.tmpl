@@ -1,6 +1,5 @@
 [% INCLUDE admin_header.tmpl title='Feature Types View' %]
 <a href="admin">Home</a> |
-<a href="admin?action=feature_type_create">Create New Feature Type</a>
 <hr noshade>
 [% IF feature_types.size %]
     <table width="100%">
@@ -32,14 +31,7 @@
                 <td>[% ft.drawing_lane %]</td>
                 <td>[% ft.drawing_priority %]</td>
                 <td align="center">
-                    <a href="admin?action=feature_type_view;feature_type=[% ft.feature_type %]">View</a>
-                </td>
-                <td align="center">
-                    <a href="admin?action=feature_type_edit;feature_type=[% ft.feature_type %]">Edit</a>
-                </td>
-
-                <td align="center">
-                    <a href="admin?action=confirm_delete;entity_type=cmap_feature_type;entity_id=[% ft.feature_type %];entity_name_field=feature_type">Delete</a>
+                    <a href="admin?action=feature_type_view;feature_type_aid=[% ft.accession_id %]">View</a>
                 </td>
             </tr>
             [% SET i=i+1 %]

@@ -64,12 +64,12 @@
             Map Type:
         </td>
         <td>
-            <select name="map_type">
-                [% FOREACH mt=map_types %]
-                    <option value="[% mt.map_type %]"
-                      [% IF mt.map_type==map_set.map_type%] selected [% END %]
+            <select name="map_type_aid">
+                [% FOREACH mt_aid=map_type_aids %]
+                    <option value="[% mt_aid %]"
+                      [% IF mt_aid==map_set.map_type_aid%] selected [% END %]
                     >
-                      [% mt.map_type %] ( [% mt.map_units %] ) 
+                      [% map_type_name_lookup.${mt_aid} %] ( [% map_type_unit_lookup.${mt_aid} %] ) 
                     </option>
                 [% END %]
             </select>

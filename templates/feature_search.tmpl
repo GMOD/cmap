@@ -8,7 +8,6 @@
 
 [%- IF intro -%]<p>[%- intro -%]</p>[%- END -%]
 [%- url=apr.url %]
-[%- base_url=url.replace('/feature_search\?.*', '') %]
 
 <p>
 <form>
@@ -102,10 +101,10 @@ Use &quot;*&quot; or &quot;%&quot; for wildcards.  To find features with spaces 
                     </td>
                     <td>[% r.aliases.join(', ') | truncate(30) %]</td>
                     <td align="center">
-                        <b>[</b>&nbsp;<a href="[% base_url %]/map_details?ref_map_set_aid=[% r.map_set_aid %];ref_map_aids=[% r.map_aid %];highlight=&quot;[% r.feature_name %]&quot;;data_source=[% apr.param('data_source') %];label_features=landmarks">View&nbsp;on&nbsp;Map</a>&nbsp;<b>]</b>
+                        <b>[</b>&nbsp;<a href="[% url %]/map_details?ref_map_set_aid=[% r.map_set_aid %];ref_map_aids=[% r.map_aid %];highlight=&quot;[% r.feature_name %]&quot;;data_source=[% apr.param('data_source') %];label_features=landmarks">View&nbsp;on&nbsp;Map</a>&nbsp;<b>]</b>
                     </td>
                     <td align="center">
-                        <b>[</b>&nbsp;<a href="[% base_url %]/feature?feature_aid=[% r.feature_aid %];data_source=[% apr.param('data_source') %]">Feature&nbsp;Details</a><b>&nbsp;]</b>
+                        <b>[</b>&nbsp;<a href="feature?feature_aid=[% r.feature_aid %];data_source=[% apr.param('data_source') %]">Feature&nbsp;Details</a><b>&nbsp;]</b>
                     </td>
                 </tr>    
                 [% SET i=i+1 %]

@@ -49,9 +49,9 @@
             Feature Type:
         </td>
         <td>
-            <select name="feature_type">
-                [% FOREACH ft=feature_types %]
-                    <option value="[% ft %]"[% IF ft==feature.feature_type %] selected[% END %]>[% ft %]</option>
+            <select name="feature_type_aid">
+                [% FOREACH ft_aid=feature_type_aids %]
+                    <option value="[% ft_aid %]"[% IF ft_aid==feature.feature_type_aid %] selected[% END %]>[% feature_type_name_lookup.${ft_aid} %]</option>
                 [% END %]
             </select>
         </td>

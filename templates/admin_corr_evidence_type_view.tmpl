@@ -1,13 +1,11 @@
 [% INCLUDE admin_header.tmpl title="View Correspondence Evidence Type &quot;$evidence_type.evidence_type&quot;" %]
 <a href="admin">Home</a> |
-<a href="admin?action=corr_evidence_type_edit;evidence_type=[% evidence_type.evidence_type %]">Edit</a> |
-<a href="admin?action=confirm_delete;entity_type=cmap_evidence_type;entity_id=[% evidence_type.evidence_type %];entity_name_field=evidence_type">Delete</a> |
 <a href="admin?action=corr_evidence_types_view">View All Correspondence Evidence Types</a>
 <hr noshade>
 <table>
     <tr>
         <td align="right">Acc. ID <em>(opt.)</em>:</th>
-        <td>[% evidence_type.accession_id %]</td>
+        <td>[% evidence_type.evidence_type_accession %]</td>
     </tr>
 
     <tr>

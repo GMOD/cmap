@@ -1,6 +1,5 @@
 [% INCLUDE admin_header.tmpl title='Map Types View' %]
 <a href="admin">Home</a> |
-<a href="admin?action=map_type_create">Create New Map Type</a>
 <hr noshade>
 
 [% IF map_types.size %]
@@ -35,13 +34,7 @@
                 <td>[% mt.width %]</td>
                 <td>[% mt.color %]</td>
                 <td align="center">
-                  <a href="admin?action=map_type_view;map_type=[% mt.map_type %]">View</a>
-                </td>
-                <td align="center">
-                  <a href="admin?action=map_type_edit;map_type=[% mt.map_type %]">Edit</a>
-                </td>
-                <td align="center">
-                  <a href="admin?action=confirm_delete;entity_type=cmap_map_type;entity_id=[% mt.map_type %];entity_name_field=map_type">Delete</a>
+                  <a href="admin?action=map_type_view;map_type_aid=[% mt.accession_id %]">View</a>
                 </td>
             </tr>
             [% SET i=i+1 %]
