@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.137 2004-10-28 23:30:40 mwz444 Exp $
+# $Id: Map.pm,v 1.138 2004-10-29 04:33:51 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.137 $)[-1];
+$VERSION = (qw$Revision: 1.138 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1806,7 +1806,8 @@ sub place_map_y {
     if (defined $ref_slot_no){
         # Use Correspondences to figure out where to put this vertically.
         my $ref_corrs = $drawer->map_correspondences( $slot_no, $map_id );
-        my ( $min_ref_y, $max_ref_y,  $ref_top, $ref_bottom );
+        my $min_ref_y;
+        my $max_ref_y;
         for my $ref_corr ( values %$ref_corrs ) {
 
             #
@@ -1828,8 +1829,6 @@ sub place_map_y {
 
             my $ref_map_pixel_len = $ref_pos->{'y2'} - $ref_pos->{'y1'};
             my $ref_map_unit_len  = $ref_pos->{'map_stop'} - $ref_pos->{'map_start'};
-            $ref_top    = $ref_pos->{'y1'};
-            $ref_bottom = $ref_pos->{'y2'};
 
             # Set the avg location of the corr on the ref map
             my $ref_map_mid_y = $ref_pos->{'is_flipped'}
@@ -1886,8 +1885,14 @@ sub place_map_y {
             $max_ref_y = $ref_map_mid_y + ($pixel_height*(1-$rstart));
         }
     
-        $return_y1  = $min_ref_y,
-        $return_y2  = $max_ref_y,
+        unless (%$ref_corrs){
+            $pixel_height=$drawer->config_data('min_map_pixel_height');
+            $min_ref_y = $base_y; 
+            $max_ref_y = $min_ref_y + $pixel_height;
+        }
+
+        $return_y1  = $min_ref_y;
+        $return_y2  = $max_ref_y;
     }
     my $temp_hash = $self->enforce_boundaries(
         return_y1       => $return_y1,
