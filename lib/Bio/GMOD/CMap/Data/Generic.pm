@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data::Generic;
 
-# $Id: Generic.pm,v 1.11 2002-11-05 20:02:07 kycl4rk Exp $
+# $Id: Generic.pm,v 1.12 2003-01-05 04:23:12 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.11 $)[-1];
+$VERSION = (qw$Revision: 1.12 $)[-1];
 
 use Bio::GMOD::CMap;
 use base 'Bio::GMOD::CMap';
@@ -83,6 +83,8 @@ The SQL for finding all the features on a map.
                  ft.is_visible,
                  ft.shape,
                  ft.color,
+                 ft.drawing_lane,
+                 ft.drawing_priority,
                  map.accession_id as map_aid,
                  mt.map_units
         from     cmap_feature f,
@@ -178,12 +180,15 @@ The SQL for finding the number of correspondences by for one map.
                  cmap_species s,
                  cmap_feature f1,
                  cmap_feature f2,
-                 cmap_correspondence_lookup cl
+                 cmap_correspondence_lookup cl,
+                 cmap_feature_correspondence fc
         where    map1.accession_id=?
         and      map1.map_id=f1.map_id
         and      f1.start_position>=? 
         and      f1.start_position<=?
         and      f1.feature_id=cl.feature_id1
+        and      cl.feature_correspondence_id=fc.feature_correspondence_id
+        and      fc.is_enabled=1
         and      cl.feature_id2=f2.feature_id
         and      f2.map_id=map2.map_id
         and      map2.accession_id<>?
@@ -611,11 +616,14 @@ The SQL for finding all correspondences between two maps.
                  cl.feature_correspondence_id
         from     cmap_feature f1, 
                  cmap_feature f2, 
-                 cmap_correspondence_lookup cl
+                 cmap_correspondence_lookup cl,
+                 cmap_feature_correspondence fc
         where    f1.map_id=?
         and      f1.start_position>=?
         and      f1.start_position<=?
         and      f1.feature_id=cl.feature_id1
+        and      cl.feature_correspondence_id=fc.feature_correspondence_id
+        and      fc.is_enabled=1
         and      cl.feature_id2=f2.feature_id
         and      f2.map_id=?
         and      f2.start_position>=?
@@ -642,10 +650,13 @@ The SQL for finding all correspondences between two maps.
         from     cmap_map map,
                  cmap_feature f1, 
                  cmap_feature f2, 
-                 cmap_correspondence_lookup cl
+                 cmap_correspondence_lookup cl,
+                 cmap_feature_correspondences fc
         where    map.map_set_id=?
         and      map.map_id=f1.map_id
         and      f1.feature_id=cl.feature_id1
+        and      cl.feature_correspondence_id=fc.feature_correspondence_id
+        and      fc.is_enabled=1
         and      cl.feature_id2=f2.feature_id
         and      f2.map_id=?
         and      f2.start_position>=?
@@ -672,10 +683,13 @@ The SQL for finding all correspondences between two maps.
         from     cmap_map map,
                  cmap_feature f1, 
                  cmap_feature f2, 
-                 cmap_correspondence_lookup cl
+                 cmap_correspondence_lookup cl,
+                 cmap_feature_correspondence fc
         where    map.map_id in ($map_ids)
         and      map.map_id=f1.map_id
         and      f1.feature_id=cl.feature_id1
+        and      cl.feature_correspondence_id=fc.feature_correspondence_id
+        and      fc.is_enabled=1
         and      cl.feature_id2=f2.feature_id
         and      f2.map_id=?
         and      f2.start_position>=?
