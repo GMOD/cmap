@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.148 2005-01-21 03:37:50 mwz444 Exp $
+# $Id: Map.pm,v 1.149 2005-02-10 19:06:06 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.148 $)[-1];
+$VERSION = (qw$Revision: 1.149 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1661,8 +1661,8 @@ Variable Info:
                 my $all_corrs    = $corrs->{$map_id2};
                 next unless defined($all_corrs);
                 my $drawing_offset=0;
-                foreach my $evidence_type_aid (keys(%$all_corrs)){
-                my $corr = $all_corrs->{$evidence_type_aid};
+                foreach my $corr (@$all_corrs){
+                my $evidence_type_aid = $corrs->{'evidence_type_aid'};
 
                 #
                 # Get the information about the map placement.
@@ -1791,7 +1791,7 @@ Variable Info:
                 );
 
                 # add aggregate correspondences to ref_connections
-                if ( $self->aggregate == 1 ) {
+                if ( $self->aggregate <=> 2 ) {
 
                     # Single line to avg corr
                     push @drawing_data,
@@ -2023,8 +2023,8 @@ sub place_map_y {
             my $all_ref_corrs    = $ref_corrs->{$ref_map_id};
             next unless defined($all_ref_corrs);
             my $drawing_offset=0;
-            foreach my $evidence_type_aid (keys(%$all_ref_corrs)){
-            my $ref_corr = $all_ref_corrs->{$evidence_type_aid};
+            foreach my $ref_corr (@$all_ref_corrs){
+            my $evidence_type_aid = $ref_corrs->{'evidence_type_aid'};
 
             #
             # Get the information about the reference map.
@@ -2089,7 +2089,7 @@ sub place_map_y {
 
             my $ref_map_x1 = $ref_pos->{'x1'} + $drawing_offset;
             # add aggregate correspondences to ref_connections
-            if ( $self->aggregate == 1 ) {
+            if ( $self->aggregate <=> 2 ) {
 
                 # Single line to avg corr
                 push @{ $map_aggregate_corr->{$map_id} },

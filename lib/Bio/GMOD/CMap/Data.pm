@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.204 2005-01-27 23:07:15 mwz444 Exp $
+# $Id: Data.pm,v 1.205 2005-02-10 19:05:42 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.204 $)[-1];
+$VERSION = (qw$Revision: 1.205 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -37,6 +37,7 @@ use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Utils;
 use Bio::GMOD::CMap::Admin::Export;
 use Bio::GMOD::CMap::Admin::ManageLinks;
+use Algorithm::Cluster qw/kcluster/;
 use Storable qw(freeze thaw);
 
 use base 'Bio::GMOD::CMap';
@@ -47,6 +48,7 @@ sub init {
     $self->config( $config->{'config'} );
     $self->data_source( $config->{'data_source'} );
     $self->aggregate( $config->{'aggregate'} );
+    $self->cluster_corr( $config->{'cluster_corr'} );
     $self->show_intraslot_corr( $config->{'show_intraslot_corr'} );
     $self->split_agg_ev( $config->{'split_agg_ev'} );
     $self->ref_map_order( $config->{'ref_map_order'} );
@@ -4285,6 +4287,7 @@ sub count_correspondences {
     my $maps                        = $args{'maps'};
     my $db                          = $args{'db'};
 
+    my $cluster_no = $self->cluster_corr;
     my $show_intraslot_corr =
       ( $self->show_intraslot_corr
           and scalar( keys( %{ $self->slot_info->{$this_slot_no} } ) ) > 1 );
@@ -4469,7 +4472,8 @@ sub count_correspondences {
         $combined_sql =~ s/^\s+or//;
         $base_sql .= " and (" . $combined_sql . ")";
 
-        $base_sql .= " group by map_id2,map_id1,evidence_type_accession";
+        $base_sql .= " group by map_id2,map_id1,evidence_type_accession"
+            unless ($cluster_no);
 
         my $select_str;
         if ($self->split_agg_ev){
@@ -4478,20 +4482,25 @@ sub count_correspondences {
         else {
             $select_str = "'".DEFAULT->{'aggregated_type_substitute'}."' as evidence_type_aid, ";
         }
-
-        $select_str .= 
-            'count(distinct cl.feature_correspondence_id) as no_corr, '
-          . 'min(cl.start_position2) as min_start2, '
-          . 'max(cl.start_position2) as max_start2, '
-          . 'avg(((cl.stop_position2-cl.start_position2)/2)'
-          . '+cl.start_position2) as avg_mid2, '
-          . 'avg(cl.start_position2) as start_avg2,'
-          . 'avg(cl.start_position1) as start_avg1,'
-          . 'min(cl.start_position1) as min_start1, '
-          . 'max(cl.start_position1) as max_start1 , '
-          . 'avg(((cl.stop_position1-cl.start_position1)/2)'
-          . '+cl.start_position1) as avg_mid1, ';
-
+        if ($cluster_no){
+            $select_str .= 
+                'cl.start_position1,cl.stop_position1,'
+              . 'cl.start_position2,cl.stop_position2,';
+        }
+        else{
+            $select_str .= 
+                'count(distinct cl.feature_correspondence_id) as no_corr, '
+              . 'min(cl.start_position2) as min_start2, '
+              . 'max(cl.start_position2) as max_start2, '
+              . 'avg(((cl.stop_position2-cl.start_position2)/2)'
+              . '+cl.start_position2) as avg_mid2, '
+              . 'avg(cl.start_position2) as start_avg2,'
+              . 'avg(cl.start_position1) as start_avg1,'
+              . 'min(cl.start_position1) as min_start1, '
+              . 'max(cl.start_position1) as max_start1 , '
+              . 'avg(((cl.stop_position1-cl.start_position1)/2)'
+              . '+cl.start_position1) as avg_mid1, ';
+        }
         $count_sql = sprintf( $base_sql, $select_str );
     }
 
@@ -4513,26 +4522,130 @@ sub count_correspondences {
                 $count_sql . join( ".", @query_args ),
                 $map_corr_counts );
         }
-        for my $count (@$map_corr_counts) {
-            next unless $map_id_lookup{ $count->{'map_id1'} };
+        if ($cluster_no){
 
-            # The reference map is now number 2
-            # meaning that map_id2 is the old ref_map_id
-            $map_correspondences->{$this_slot_no}{ $count->{'map_id1'} }
-              { $count->{'map_id2'} }{ $count->{'evidence_type_aid'} } = {
-                map_id1    => $count->{'map_id1'},
-                map_id2    => $count->{'map_id2'},
-                no_corr    => $count->{'no_corr'},
-                min_start1 => $count->{'min_start1'},
-                max_start1 => $count->{'max_start1'},
-                min_start2 => $count->{'min_start2'},
-                max_start2 => $count->{'max_start2'},
-                avg_mid1   => $count->{'avg_mid1'},
-                avg_mid2   => $count->{'avg_mid2'},
-                start_avg2 => $count->{'start_avg2'},
-                start_avg1 => $count->{'start_avg1'},
-              };
-            $corr_lookup{ $count->{'map_id1'} } += $count->{'no_corr'};
+            # Make the position values
+            foreach my $row (@$map_corr_counts){
+                $row->{'position1'} = defined($row->{'stop_position1'}) ?
+                    (($row->{'stop_position1'} - $row->{'start_position1'})/2)
+                      +$row->{'start_position1'} :
+                    $row->{'start_position1'} ;
+                $row->{'position2'} = defined($row->{'stop_position2'}) ?
+                    (($row->{'stop_position2'} - $row->{'start_position2'})/2)
+                      +$row->{'start_position2'} :
+                    $row->{'start_position2'} ;
+                if ($row->{'map_id1'}==55571){
+                }
+                    
+            }
+
+            my %params = (
+                nclusters =>  $cluster_no,
+                transpose =>         0,
+                npass     =>       100,
+                method    =>       'a',
+                dist      =>       'e',
+            );
+            
+            my %corr_data;
+            my $cluster_array;
+            my $weight = [1,1];
+            my $mask;
+            my ($no_corr, $min_pos1, $max_pos1, $min_pos2, $max_pos2);
+            my ($avg_pos1, $avg_pos2, $total_pos1, $total_pos2);
+
+            for my $count (@$map_corr_counts) {
+                next unless $map_id_lookup{ $count->{'map_id1'} };
+                push @{ $corr_data{ $count->{'map_id1'} }{ $count->{'map_id2'} }
+                      { $count->{'evidence_type_aid'} } },
+                  [ $count->{'position1'}, $count->{'position2'} ];
+            }
+            foreach my $map_id1 (keys(%corr_data)){
+                foreach my $map_id2 (keys(%{$corr_data{$map_id1}})){
+                    foreach my $et_aid (keys(%{$corr_data{$map_id1}{$map_id2}})){
+                        $cluster_array = $corr_data{$map_id1}{$map_id2}{$et_aid};
+                        foreach (@$cluster_array){
+                            push @$mask,[1,1];
+                        }
+                        my ($clusters, $centroids, $error, $found) = kcluster(
+                            %params,
+                            data      => $cluster_array,
+                            mask      => $mask,
+                            weight    => $weight,
+                        );
+                        foreach my $cluster_id (0..$cluster_no-1){
+                            ### Get the positions of the corrs in this cluster.
+                            my @cluster_positions = map {$cluster_array->[$_]}
+                                grep {$clusters->[$_]==$cluster_id} (0..$#{$cluster_array}); 
+                            $no_corr=0;
+                            $total_pos1 = 0;
+                            $total_pos2 = 0;
+                            ($min_pos1, $max_pos1, $min_pos2, $max_pos2) 
+                                = (undef,undef,undef,undef);
+                            foreach my $pos_array (@cluster_positions){
+                                my ($pos1, $pos2) = @$pos_array;
+                                $no_corr++;
+                                $total_pos1+=$pos1;
+                                $total_pos2+=$pos2;
+                                $min_pos1= $pos1
+                                    if (not defined($min_pos1) or $min_pos1>$pos1);
+                                $max_pos1= $pos1
+                                    if (not defined($max_pos1) or $max_pos1<$pos1);
+                                $min_pos2= $pos2
+                                    if (not defined($min_pos2) or $min_pos2>$pos2);
+                                $max_pos2= $pos2
+                                    if (not defined($max_pos2) or $max_pos2<$pos2);
+                            }
+                            $avg_pos1 = $no_corr ? $total_pos1/$no_corr : 0;
+                            $avg_pos2 = $no_corr ? $total_pos2/$no_corr : 0;
+
+                            # The reference map is now number 2
+                            # meaning that map_id2 is the old ref_map_id
+                            push @{$map_correspondences->{$this_slot_no}{ $map_id1 }
+                              { $map_id2 }} , {
+                                evidence_type_aid => $et_aid,
+                                map_id1    => $map_id1,
+                                map_id2    => $map_id2,
+                                no_corr    => $no_corr,
+                                min_start1 => $min_pos1,
+                                max_start1 => $max_pos1,
+                                min_start2 => $min_pos2,
+                                max_start2 => $max_pos2,
+                                avg_mid1   => $avg_pos1,
+                                avg_mid2   => $avg_pos2,
+                                start_avg2 => $avg_pos1,
+                                start_avg1 => $avg_pos2,
+                            };
+                            $corr_lookup{ $map_id1 } += $no_corr;
+                        }
+                        
+                    }
+                }
+            }
+        }
+        else{
+            for my $count (@$map_corr_counts) {
+                next unless $map_id_lookup{ $count->{'map_id1'} };
+
+                # The reference map is now number 2
+                # meaning that map_id2 is the old ref_map_id
+                push @{$map_correspondences->{$this_slot_no}{ $count->{'map_id1'} }
+                  { $count->{'map_id2'} }},{
+                    evidence_type_aid => $count->{'evidence_type_aid'},
+                    map_id1    => $count->{'map_id1'},
+                    map_id2    => $count->{'map_id2'},
+                    no_corr    => $count->{'no_corr'},
+                    min_start1 => $count->{'min_start1'},
+                    max_start1 => $count->{'max_start1'},
+                    min_start2 => $count->{'min_start2'},
+                    max_start2 => $count->{'max_start2'},
+                    avg_mid1   => $count->{'avg_mid1'},
+                    avg_mid2   => $count->{'avg_mid2'},
+                    start_avg2 => $count->{'start_avg2'},
+                    start_avg1 => $count->{'start_avg1'},
+                  };
+                $corr_lookup{ $count->{'map_id1'} } += $count->{'no_corr'};
+            }
         }
     }
     return \%corr_lookup;

@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.86 2005-02-09 15:11:15 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.87 2005-02-10 19:06:04 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.86 $)[-1];
+$VERSION = (qw$Revision: 1.87 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -71,6 +71,7 @@ sub handler {
     my $label_features        = $apr->param('label_features') || '';
     my $collapse_features     = $apr->param('collapse_features');
     my $aggregate             = $apr->param('aggregate');
+    my $cluster_corr          = $apr->param('cluster_corr');
     my $show_intraslot_corr   = $apr->param('show_intraslot_corr');
     my $split_agg_ev          = $apr->param('split_agg_ev');
     my $clean_view            = $apr->param('clean_view');
@@ -100,6 +101,7 @@ sub handler {
     $collapse_features = $self->config_data('collapse_overlapping_features')
       unless ( defined($collapse_features) );
     $apr->param( 'aggregate', $self->aggregate($aggregate) );
+    $apr->param( 'cluster_corr', $self->cluster_corr($cluster_corr) );
     $apr->param( 'show_intraslot_corr',
         $self->show_intraslot_corr($show_intraslot_corr) );
     $apr->param( 'split_agg_ev',
@@ -410,6 +412,7 @@ sub handler {
             config                  => $self->config,
             data_module             => $self->data_module,
             aggregate               => $self->aggregate,
+            cluster_corr            => $self->cluster_corr,
             show_intraslot_corr     => $self->show_intraslot_corr,
             split_agg_ev            => $self->split_agg_ev,
             clean_view              => $self->clean_view,
