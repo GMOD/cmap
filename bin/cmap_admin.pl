@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.10 2002-11-15 01:13:08 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.11 2002-12-11 23:05:35 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.10 $)[-1];
+$VERSION = (qw$Revision: 1.11 $)[-1];
 
 #
 # Turn off output buffering.
@@ -416,6 +416,13 @@ sub export_as_sql {
                 color             => STR,
                 width             => NUM,
                 display_order     => NUM,
+            }
+        },
+        {
+            name   => 'cmap_next_number',
+            fields => {
+                table_name  => STR,
+                next_number => NUM,
             }
         },
         {
