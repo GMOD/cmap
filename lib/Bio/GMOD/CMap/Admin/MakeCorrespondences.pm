@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.25 2003-12-30 18:46:09 kycl4rk Exp $
+# $Id: MakeCorrespondences.pm,v 1.26 2003-12-31 22:19:43 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.25 $)[-1];
+$VERSION = (qw$Revision: 1.26 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -239,7 +239,7 @@ sub make_name_correspondences {
                     next;
                 }
                 else {
-                    my $fc_id            =  $admin->feature_correspondence_create( 
+                    my $fc_id =  $admin->feature_correspondence_create( 
                         feature_id1      => $f1->{'feature_id'},
                         feature_id2      => $f2->{'feature_id'},
                         evidence_type_id => $evidence_type_id,
@@ -247,7 +247,7 @@ sub make_name_correspondences {
 
                     $self->Print( 
                         $fc_id > 0
-                        ? "Inserted correspondence $s"
+                        ? "Inserted correspondence ($fc_id) $s"
                         : "Correspondence existed $s"
                     ) unless $quiet;
 
