@@ -91,41 +91,58 @@
         feature_correspondence_id, evidence_type_id, score, remark \
         into cmap_correspondence_evidence from foo;
     drop table foo;
--   Added "line_color" and "line_style" to "cmap_evidence_type" table
+-   Added "line_color" to "cmap_evidence_type" table
     For MySQL:
-    alter table cmap_evidence_type add line_style varchar(12);
     alter table cmap_evidence_type add line_color varchar(20);
     For Oracle:
-    alter table cmap_evidence_type add line_style varchar2(12);
     alter table cmap_evidence_type add line_color varchar2(20);
     For PostgreSQL:
-    alter table cmap_evidence_type add line_style character varying(12);
     alter table cmap_evidence_type add line_color character varying(20);
--   Added "connecting_line_style" to cmap.conf for default line style
 -   Added "title" attribute to map areas on templates for viewing maps
 -   Changed "truncate table" in SQL for reloading of correpsondence
     matrix to be a more simple unqualified "delete from" in order to
     get around permissions in PostgreSQL (there was also some
     complaint earlier that this didn't work with some earlier version
     of MySQL)
--   Added "linkage_group" to "cmap_map"
+-   Added "display_order" fields to "cmap_map"
     For MySQL:
-    alter table cmap_map add linkage_group varchar(10);
+    alter table cmap_map add display_order int(11) not null default '1';
     For Oracle:
-    alter table cmap_map add linkage_group varchar2(10);
+    alter table cmap_map add display_order number(11) DEFAULT '1' CONSTRAINT \
+        nn_cmap_map_display_order NOT NULL;
     For PostgreSQL:
-    alter table cmap_map add linkage_group character varying(10);
+    alter table cmap_map add display_order integer default '1' not null;
 -   Fixed bug (#677777) where feature search in the web admin tool
     wasn't case-insensitive
 -   Added trimming of whitespace on column names in data import
 -   Added pagination to map set info page
 -   Added coloring of correspondence lines based on evidence
--   Added new feature glyphs: up-arrow, down-arrow, double-arrow and rectangle
+-   Added new feature glyphs: up-arrow, down-arrow, double-arrow, 
+    filled-box, in-triangle, and out-triangle
 -   Expanded legend into feature types and evidence types
 -   Added support for multiple data sources
 -   Added option to not overwrite map info when importing via cmap_admin.pl
 -   Added exporting of feature correspondence via cmap_admin.pl
 -   Added dbxref_name and dbxref_url to feature export in cmap_admin.pl
+-   Added cmap-schema.png, a diagram of the tables
+-   Removed DATA_IMPORT, DATA_CURATION from docs, consolidated into new
+    ADMINSTRATION document
+-   Fixed bug in user feature search where "All" choice for features types and
+    species wasn't working
+-   Added acceptance of multiple evidence codes (separated by commas) in
+    feature correspondence import file
+-   Removed Bio::GMOD::CMap::Drawer::Feature
+-   Added minimum number of correspondences restriction
+-   Added deleting of maps and map sets to cmap_admin.pl
+-   Added view of color palette in web admin tool
+-   Added ability to create automated name-based correspondences between
+    features of different types via cmap.conf options
+-   Added quoted string support to feature search
+-   Increased size of all "double" fields (in MySQL declarations) from 8 to 11
+-   Added experimental throttling measures (see ADMINISTRATION)
+-   Added ability to highlight features by primary name, alternate name
+    or accesssion ID
+-   Added ability to highlight features with embedded spaces in the name
 
 0.05
 -   Added extra split tokens to highlight string in map detail page 
