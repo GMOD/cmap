@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Import;
 
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.57 2004-11-30 22:31:10 kycl4rk Exp $
+# $Id: Import.pm,v 1.58 2004-12-02 20:53:04 mwz444 Exp $
 
 =pod
 
@@ -33,7 +33,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.57 $)[-1];
+$VERSION = (qw$Revision: 1.58 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -291,7 +291,7 @@ appended to the list of xrefs.
     if ($overwrite) {
         for my $map_name ( keys %maps ) {
             my $map_id = $maps{$map_name}{'map_id'}
-              or return $self->error( "Map '$map_name' has no ID!" );
+              or return $self->error("Map '$map_name' has no ID!");
 
             my $features = $db->selectall_arrayref(
                 q[
@@ -640,7 +640,7 @@ appended to the list of xrefs.
 
             my $pos = join( '-', map { defined $_ ? $_ : () } $start, $stop );
             $self->Print(
-                "$action $feature_type_aid '$feature_name' on map $map_name at $pos.\n"
+"$action $feature_type_aid '$feature_name' on map $map_name at $pos.\n"
             );
         }
         else {
@@ -749,7 +749,7 @@ appended to the list of xrefs.
     if ($overwrite) {
         for my $map_name ( sort keys %maps ) {
             my $map_id = $maps{ uc $map_name }{'map_id'}
-              or return $self->error( "Map '$map_name' has no ID!" );
+              or return $self->error("Map '$map_name' has no ID!");
 
             unless ( $maps{ uc $map_name }{'touched'} ) {
                 $self->Print( "Map '$map_name' ($map_id) ",
@@ -939,7 +939,7 @@ File handle of the log file (default is STDOUT).
     my %feature_ids;
     for my $ms ( @{ $import->{'cmap_map_set'} || [] } ) {
         $self->Print(
-            "Importing map set '$ms->{map_set_name}' ($ms->{accession_id})\n" );
+            "Importing map set '$ms->{map_set_name}' ($ms->{accession_id})\n");
 
         my $species      = $species{ $ms->{'species_id'} };
         my $map_type_aid = $ms->{'map_type_accession'};
@@ -955,7 +955,7 @@ File handle of the log file (default is STDOUT).
             field_names => [
                 qw/ accession_id map_set_name short_name
                   color shape is_enabled display_order can_be_reference_map
-                  published_on width species_id map_type_accession map_units
+                  published_on width species_id map_type_aid map_units
                   is_relational_map
                   /
             ],
@@ -989,7 +989,7 @@ File handle of the log file (default is STDOUT).
                     field_names => [
                         qw/ map_id accession_id
                           feature_name start_position stop_position
-                          is_landmark feature_type_accession default_rank direction
+                          is_landmark feature_type_aid default_rank direction
                           /
                     ],
                   )
@@ -1240,7 +1240,7 @@ Empty feature_array
         $sth->execute( $feature_id, @{ $feature_array->[$i] } );
     }
 
-    $self->Print( "Inserted $no_features features.\n" );
+    $self->Print("Inserted $no_features features.\n");
     $feature_array = [];
     return $feature_array;
 }
