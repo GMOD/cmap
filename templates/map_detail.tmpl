@@ -211,7 +211,7 @@
 [% IF drawer %]
     <map name="zoom">
     [% FOREACH area=drawer.image_map_data %]
-        <area coords="[% area.coords %]" href="[% area.url %]" alt="[% area.alt %]">
+        <area coords="[% area.coords %]" href="[% area.url %]" alt="[% area.alt %]" title="[% area.alt %]">
     [% END %]
     </map>
 [% END %]
