@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.24 2004-02-24 02:26:33 kycl4rk Exp $
+# $Id: Build.PL,v 1.25 2004-02-24 20:06:14 kycl4rk Exp $
 
 use strict;
 
@@ -11,11 +11,13 @@ if ( $@ =~ /Can't locate/ ) {
 use CGI;
 use Cwd;
 use File::Basename;
+use File::Copy;
 use File::Find;
 use File::Path;
 use File::Spec::Functions;
 
-my $install_conf = catfile( cwd(), 'cmap_install.conf' );
+my $cwd          = cwd();
+my $install_conf = catfile( $cwd, 'cmap_install.conf' );
 
 my @ARGS = qw[ PREFIX CONF CGIBIN TEMPLATES HTDOCS CACHE ];
 my %ARGS = ( 
@@ -158,30 +160,86 @@ print F "$_=$OPTIONS{$_}\n" for qw[ CONF CGIBIN TEMPLATES HTDOCS CACHE ];
 close F;
 
 #
+# Prepare a list of the base files to include in the default index page.
+#
+my @html_links = (
+    [ '/cgi-bin/cmap/viewer', 'CMap Viewer' ],
+    [ '/cgi-bin/cmap/admin', 'Web Admin Tool' ],
+    [ '/cmap/tutorial/', 'User Tutorial' ],
+    [ '/cmap/admintut/', 'Admin Tutorial' ],
+);
+
+#
+# Turn all POD files into HTML and install into "htdocs."
+#
+my ( @pod_files, @cleanup );
+find(
+    sub {
+        push @pod_files, $File::Find::name 
+            if -f $_ && $File::Find::name =~ /\.pod$/;
+    },
+    $cwd
+);
+
+for my $pod ( @pod_files ) {
+    my $filename =  basename $pod;
+    my $outfile  =  $filename;
+    $filename    =~ s/[_-]/ /g;
+    $filename    =~ s/\.pod$//;
+    $outfile     =~ s/\.pod$/\.html/;
+    my $outpath  =  catfile( $cwd, 'htdocs', $outfile );
+    system( "pod2html $pod > $outpath" ) == 0 or warn $!;
+    push @html_links, [ $outfile, $filename ];
+    push @cleanup, $outpath;
+}
+
+#
+# Find all the relevant "docs" and install them into "htdocs."
+#
+my @doc_files;
+find(
+    sub {
+        push @doc_files, $File::Find::name 
+            if -f $_ && $File::Find::name =~ /\.(png|html)$/;
+    },
+    'docs'
+);
+
+for my $file ( @doc_files ) {
+    my $filename =  basename $file;
+    my $outpath  =  catfile( $cwd, 'htdocs', $filename );
+    copy( $file, $outpath ) unless -e $outpath;
+    push @html_links, [ $filename, $filename ];
+    push @cleanup, $outpath;
+}
+
+#
 # Create the main CMap index page with a summary of the install.
 #
 my $index = catfile( 'htdocs', 'index.html' );
 open INDEX, ">$index" or die "Can't write new index file '$index': $!\n";
 my $q     = CGI->new;
 my $title = 'CMap Installation Summary';
-print INDEX
-    $q->start_html( { -title => $title } ),
+
+print INDEX join("\n",
+    $q->start_html( { -title => $title } ), 
     $q->h1( $title ),
     "Congratulations!  CMap has been installed.<br>",
+    "Here are some links:<br>",
     $q->ul(
-        $q->li( $q->a({ -href => '/cgi-bin/cmap/viewer' }, 'CMap Viewer') ), 
-        $q->li( $q->a({ -href => '/cgi-bin/cmap/admin' }, 'Web Admin Tool') ), 
-        $q->li( $q->a({ -href => 'tutorial/' }, 'User Tutorial') ), 
-        $q->li( $q->a({ -href => 'admintut/' }, 'Admin Tutorial') ),
+        ( map { $q->li( $q->a({ -href => $_->[0] }, $_->[1]) ) ."\n" } 
+        @html_links )
     ),
-    $q->end_html
-;
+    $q->end_html,
+    ''
+);
 close INDEX; 
 
 #
 # Make the text for copying the templates, CGI, and htdocs.
 #
 my ( $install, $installed_cmap_conf );
+
 for my $opt ( 
     [ 'conf',      'CONF'      ],
     [ 'htdocs',    'HTDOCS'    ],
@@ -307,7 +365,9 @@ $builder->add_to_cleanup(
     'cgi-bin/cmap',
     'conf/cmap.conf',
     'lib/Bio/GMOD/CMap/Constants.pm',
+    @cleanup,
     $tarball,
+    'pod2htm*',
 );
 
 $builder->create_build_script;

@@ -11,12 +11,12 @@ conf/cmap.conf.PL
 CMapBuildConfig.pm
 CREDITS
 data/sample-dump.sql.gz
-docs/ADMINISTRATION
+docs/ADMINISTRATION.pod
 docs/attributes-and-xrefs.pod
 docs/cmap-desc.html
 docs/cmap-graph.png
 docs/cmap-schema.png
-docs/CODE_OVERVIEW
+docs/CODE_OVERVIEW.pod
 htdocs/cmap.css
 htdocs/admintut/drawing-options.html
 htdocs/admintut/feature-lanes.html
@@ -163,7 +163,7 @@ htdocs/tutorial/Slide6.jpg
 htdocs/tutorial/Slide7.jpg
 htdocs/tutorial/Slide8.jpg
 htdocs/tutorial/Slide9.jpg
-INSTALL
+INSTALL.pod
 lib/Bio/GMOD/CMap.pm
 lib/Bio/GMOD/CMap/Admin.pm
 lib/Bio/GMOD/CMap/Admin/Export.pm

@@ -18,7 +18,10 @@ draw the maps.  CMap can also create SVG.
 To verify the integrity of the tarball, run "cpansign -v" (if you have
 installed GnuPG and Module::Signature).
 
-To install, follow the directions in the file called "INSTALL."
+To install, follow the directions in the file called "INSTALL.pod."
+You will probably want to use the "perldoc" application to view this
+file (e.g. "perldoc INSTALL.pod").  After installation, this file will
+exist in the "HTDOCS" directory you indicate as "INSTALL.html."
 
 If you want to understand the code further, especially to customize or
 extend it, read "docs/CODE_OVERVIEW."
