@@ -1,15 +1,17 @@
 package Bio::GMOD::CMap::Apache::MapSetViewer;
 
-# $Id: MapSetViewer.pm,v 1.8 2003-07-08 15:25:47 kycl4rk Exp $
+# $Id: MapSetViewer.pm,v 1.9 2003-09-04 17:48:32 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES );
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 use Apache::Constants;
 use Data::Pageset;
 use Bio::GMOD::CMap::Apache;
 use base 'Bio::GMOD::CMap::Apache';
+
+use Data::Dumper;
 
 use constant TEMPLATE => 'map_set_info.tmpl';
 
@@ -18,13 +20,17 @@ sub handler {
     # Make a jazz noise here...
     #
     my ( $self, $apr ) = @_;
+    $self->data_source( $apr->param('data_source') );
+
     my $page_no        = $apr->param('page_no') || 1;
     my @map_set_aids   = split( /,/, $apr->param('map_set_aid') );
-    $self->data_source( $apr->param('data_source') );
-    my $data           = $self->data_module;
-    my $map_sets       = $data->map_set_viewer_data(
-        map_set_aids   => \@map_set_aids
-    );
+    my $data_module    = $self->data_module;
+    my $data           = $data_module->map_set_viewer_data(
+        map_set_aids   => \@map_set_aids,
+        species_aid    => $apr->param('species_aid')  || '',
+        map_type_aid   => $apr->param('map_type_aid') || '',
+    ) or return $self->error( $data_module->error );
+    my $map_sets       = $data->{'map_sets'};
 
     $PAGE_SIZE ||= $self->config('max_child_elements') || 0;
     $MAX_PAGES ||= $self->config('max_search_pages')   || 1;
@@ -32,24 +38,28 @@ sub handler {
     #
     # Slice the results up into pages suitable for web viewing.
     #
-    my $pager = Data::Pageset->new( {
+    my $pager            =  Data::Pageset->new( {
         total_entries    => scalar @$map_sets,
         entries_per_page => $PAGE_SIZE,
         current_page     => $page_no,
         pages_per_set    => $MAX_PAGES,
     } );
-    $map_sets = [ $pager->splice( $map_sets ) ];
+    $map_sets = [ $pager->splice( $map_sets ) ] if @$map_sets;
 
     my $html;
     my $t = $self->template;
     $t->process( 
         TEMPLATE, 
         { 
-            page           => $self->page,
-            stylesheet     => $self->stylesheet,
-            data_sources   => $self->data_sources,
-            map_sets       => $map_sets,
-            pager          => $pager,
+            apr              => $apr,
+            page             => $self->page,
+            stylesheet       => $self->stylesheet,
+            data_sources     => $self->data_sources,
+            map_sets         => $map_sets,
+            pager            => $pager,
+            show_restriction => @map_set_aids ? 0 : 1,
+            species          => $data->{'species'},
+            map_types        => $data->{'map_types'},
         },
         \$html 
     ) or $html = $t->error;

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.41 2003-09-02 19:55:19 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.42 2003-09-04 17:48:32 kycl4rk Exp $
 
 use strict;
 use Apache::Constants qw[ :common M_GET REDIRECT ];
@@ -32,7 +32,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.41 $)[-1];
+$VERSION        = (qw$Revision: 1.42 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -2489,6 +2489,7 @@ sub map_type_edit {
     my $sth             = $db->prepare(
         q[
             select   map_type_id, 
+                     accession_id, 
                      map_type, 
                      map_units, 
                      is_relational_map,
@@ -2523,6 +2524,8 @@ sub map_type_insert {
     my @errors            = ();
     my $db                = $self->db;
     my $apr               = $self->apr;
+    my $accession_id      = $apr->param('accession_id')  
+        or push @errors, 'No accession ID';
     my $map_type          = $apr->param('map_type')  
         or push @errors, 'No map type';
     my $map_units         = $apr->param('map_units') 
@@ -2545,13 +2548,13 @@ sub map_type_insert {
         q[ 
             insert
             into   cmap_map_type 
-                   ( map_type_id, map_type, map_units, is_relational_map,
-                     display_order, shape, width, color )
-            values ( ?, ?, ?, ?, ?, ?, ?, ? )
+                   ( map_type_id, accession_id, map_type, map_units, 
+                     is_relational_map, display_order, shape, width, color )
+            values ( ?, ?, ?, ?, ?, ?, ?, ?, ? )
         ],
         {}, 
-        ( $map_type_id, $map_type, $map_units, $is_relational_map, 
-          $display_order, $shape, $width, $color )
+        ( $map_type_id, $accession_id, $map_type, $map_units, 
+          $is_relational_map, $display_order, $shape, $width, $color )
     );
 
     return $self->redirect_home( ADMIN_HOME_URI.'?action=map_types_view' ); 
@@ -2565,6 +2568,8 @@ sub map_type_update {
     my $apr               = $self->apr;
     my $map_type_id       = $apr->param('map_type_id') 
         or push @errors, 'No map type id';
+    my $accession_id      = $apr->param('accession_id') 
+        or push @errors, 'No accession ID';
     my $map_type          = $apr->param('map_type')    
         or push @errors, 'No map type';
     my $map_units         = $apr->param('map_units')   
@@ -2582,6 +2587,7 @@ sub map_type_update {
         q[ 
             update cmap_map_type
             set    map_type=?, 
+                   accession_id=?, 
                    map_units=?, 
                    is_relational_map=?, 
                    display_order=?, 
@@ -2591,8 +2597,8 @@ sub map_type_update {
             where  map_type_id=?
         ],
         {}, 
-        ( $map_type, $map_units, $is_relational_map, $display_order,
-          $shape, $width, $color, $map_type_id 
+        ( $map_type, $accession_id, $map_units, $is_relational_map, 
+          $display_order, $shape, $width, $color, $map_type_id 
         )
     );
 
@@ -2610,6 +2616,7 @@ sub map_types_view {
     my $map_types = $db->selectall_arrayref(
         qq[
             select   map_type_id, 
+                     accession_id,
                      map_type, 
                      map_units, 
                      is_relational_map, 
