@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Mon Jul 28 14:12:17 2003
+-- Created on Thu Jul 31 16:06:31 2003
 -- 
 --
 -- Table: cmap_correspondence_evidence
@@ -30,6 +30,8 @@ CREATE TABLE "cmap_correspondence_lookup" (
 );
 
 CREATE INDEX "feature_id1" on cmap_correspondence_lookup (feature_id1);
+
+CREATE INDEX "corr_id" on cmap_correspondence_lookup (feature_correspondence_id);
 
 --
 -- Table: cmap_correspondence_matrix
@@ -100,6 +102,10 @@ CREATE INDEX "feature_name" on cmap_feature (feature_name);
 
 CREATE INDEX "alternate_name" on cmap_feature (alternate_name);
 
+CREATE INDEX "feature_id_map_id" on cmap_feature (feature_id, map_id);
+
+CREATE INDEX "feature_id_map_id_start" on cmap_feature (feature_id, map_id, start_position);
+
 CREATE INDEX "map_id" on cmap_feature (map_id);
 
 --
@@ -117,6 +123,8 @@ CREATE TABLE "cmap_feature_correspondence" (
 );
 
 CREATE INDEX "feature_id1" on cmap_feature_correspondence (feature_id1);
+
+CREATE INDEX "cmap_feature_corresp_idx" on cmap_feature_correspondence (is_enabled, feature_correspondence_id);
 
 --
 -- Table: cmap_feature_note
@@ -170,10 +178,11 @@ CREATE TABLE "cmap_map_cache" (
   "slot_no" smallint(6) DEFAULT '0' NOT NULL,
   "map_id" integer(11) DEFAULT '0' NOT NULL,
   "start_position" double precision(11, 2) DEFAULT NULL,
-  "stop_position" double precision(11, 2) DEFAULT NULL
+  "stop_position" double precision(11, 2) DEFAULT NULL,
+  "requested_on" timestamp NOT NULL
 );
 
-CREATE INDEX "pid" on cmap_map_cache (pid);
+CREATE INDEX "pid_cmap_map_cache" on cmap_map_cache (pid, slot_no, map_id);
 
 --
 -- Table: cmap_map_set
@@ -197,6 +206,8 @@ CREATE TABLE "cmap_map_set" (
   CONSTRAINT pk_cmap_map_set PRIMARY KEY (map_set_id),
   CONSTRAINT accession_id UNIQUE (accession_id)
 );
+
+CREATE INDEX "cmap_map_set_idx" on cmap_map_set (can_be_reference_map, is_enabled, species_id, display_order, published_on, short_name);
 
 --
 -- Table: cmap_map_type
@@ -239,5 +250,5 @@ CREATE TABLE "cmap_species" (
   CONSTRAINT pk_cmap_species PRIMARY KEY (species_id)
 );
 
-CREATE INDEX "accession_id" on cmap_species (accession_id);
+CREATE INDEX "acc_id_species_id" on cmap_species (accession_id, species_id);
 

@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::Oracle
--- Created on Mon Jul 28 14:11:53 2003
+-- Created on Thu Jul 31 16:05:41 2003
 -- 
 -- We assume that default NLS_DATE_FORMAT has been changed
 -- but we set it here anyway to be self-consistent.
@@ -34,6 +34,8 @@ CREATE TABLE cmap_correspondence_lookup (
 );
 
 CREATE INDEX feature_id1_cmap_correspondenc on cmap_correspondence_lookup (feature_id1);
+
+CREATE INDEX corr_id_cmap_correspondence_lo on cmap_correspondence_lookup (feature_correspondence_id);
 
 --
 -- Table: cmap_correspondence_matrix
@@ -104,6 +106,10 @@ CREATE INDEX feature_name_cmap_feature on cmap_feature (feature_name);
 
 CREATE INDEX alternate_name_cmap_feature on cmap_feature (alternate_name);
 
+CREATE INDEX feature_id_map_id_cmap_feature on cmap_feature (feature_id, map_id);
+
+CREATE INDEX feature_id_map_id_start_cmap_f on cmap_feature (feature_id, map_id, start_position);
+
 CREATE INDEX map_id_cmap_feature on cmap_feature (map_id);
 
 --
@@ -121,6 +127,8 @@ CREATE TABLE cmap_feature_correspondence (
 );
 
 CREATE INDEX feature_id1_cmap_feature_corre on cmap_feature_correspondence (feature_id1);
+
+CREATE INDEX cmap_feature_corresp_idx_cmap_ on cmap_feature_correspondence (is_enabled, feature_correspondence_id);
 
 --
 -- Table: cmap_feature_note
@@ -174,10 +182,19 @@ CREATE TABLE cmap_map_cache (
   slot_no number(6) DEFAULT '0' CONSTRAINT nn_slot_no NOT NULL,
   map_id number(11) DEFAULT '0' CONSTRAINT nn_map_id03 NOT NULL,
   start_position number(11, 2) DEFAULT NULL,
-  stop_position number(11, 2) DEFAULT NULL
+  stop_position number(11, 2) DEFAULT NULL,
+  requested_on date CONSTRAINT nn_requested_on NOT NULL
 );
 
-CREATE INDEX pid_cmap_map_cache on cmap_map_cache (pid);
+CREATE OR REPLACE TRIGGER ts_cmap_map_cache_requested_on
+BEFORE INSERT OR UPDATE ON cmap_map_cache
+FOR EACH ROW WHEN (new.requested_on} IS NULL)
+BEGIN 
+ SELECT sysdate INTO :new.requested_on} FROM dual;
+END;
+/
+
+CREATE INDEX pid_cmap_map_cache_cmap_map_ca on cmap_map_cache (pid, slot_no, map_id);
 
 --
 -- Table: cmap_map_set
@@ -201,6 +218,8 @@ CREATE TABLE cmap_map_set (
   CONSTRAINT pk_cmap_map_set PRIMARY KEY (map_set_id),
   CONSTRAINT accession_id UNIQUE (accession_id)
 );
+
+CREATE INDEX cmap_map_set_idx_cmap_map_set on cmap_map_set (can_be_reference_map, is_enabled, species_id, display_order, published_on, short_name);
 
 --
 -- Table: cmap_map_type
@@ -243,5 +262,5 @@ CREATE TABLE cmap_species (
   CONSTRAINT pk_cmap_species PRIMARY KEY (species_id)
 );
 
-CREATE INDEX accession_id_cmap_species on cmap_species (accession_id);
+CREATE INDEX acc_id_species_id_cmap_species on cmap_species (accession_id, species_id);
 

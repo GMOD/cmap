@@ -1,0 +1,254 @@
+-- 
+-- Created by SQL::Translator::Producer::Sybase
+-- Created on Thu Jul 31 16:06:43 2003
+-- 
+--
+-- Table: cmap_correspondence_evidence
+--
+
+CREATE TABLE cmap_correspondence_evidence (
+  correspondence_evidence_id numeric(11) DEFAULT '0' NOT NULL,
+  accession_id varchar(20) DEFAULT '' NOT NULL,
+  feature_correspondence_id numeric(11) DEFAULT '0' NOT NULL,
+  evidence_type_id numeric(11) DEFAULT '0' NOT NULL,
+  score double(8,2) DEFAULT NULL NULL,
+  remark varchar(100) DEFAULT NULL NULL,
+  CONSTRAINT pk_cmap_correspondence_evidenc PRIMARY KEY (correspondence_evidence_id),
+  CONSTRAINT accession_id UNIQUE (accession_id)
+);
+
+CREATE INDEX feature_correspondence_id ON cmap_correspondence_evidence (feature_correspondence_id, evidence_type_id);
+
+--
+-- Table: cmap_correspondence_lookup
+--
+
+CREATE TABLE cmap_correspondence_lookup (
+  feature_id1 numeric(11) DEFAULT NULL NULL,
+  feature_id2 numeric(11) DEFAULT NULL NULL,
+  feature_correspondence_id numeric(11) DEFAULT NULL NULL
+);
+
+CREATE INDEX feature_id1 ON cmap_correspondence_lookup (feature_id1);
+
+CREATE INDEX corr_id ON cmap_correspondence_lookup (feature_correspondence_id);
+
+--
+-- Table: cmap_correspondence_matrix
+--
+
+CREATE TABLE cmap_correspondence_matrix (
+  reference_map_aid varchar(20) DEFAULT '0' NOT NULL,
+  reference_map_name varchar(32) DEFAULT '' NOT NULL,
+  reference_map_set_aid varchar(20) DEFAULT '0' NOT NULL,
+  reference_species_aid varchar(20) DEFAULT '0' NOT NULL,
+  link_map_aid varchar(20) DEFAULT NULL NULL,
+  link_map_name varchar(32) DEFAULT NULL NULL,
+  link_map_set_aid varchar(20) DEFAULT '0' NOT NULL,
+  link_species_aid varchar(20) DEFAULT '0' NOT NULL,
+  no_correspondences numeric(11) DEFAULT '0' NOT NULL
+);
+
+--
+-- Table: cmap_dbxref
+--
+
+CREATE TABLE cmap_dbxref (
+  dbxref_id numeric(11) DEFAULT '0' NOT NULL,
+  map_set_id numeric(11) DEFAULT NULL NULL,
+  feature_type_id numeric(11) DEFAULT NULL NULL,
+  species_id numeric(11) DEFAULT NULL NULL,
+  dbxref_name varchar(32) DEFAULT NULL NULL,
+  url varchar(200) DEFAULT '' NOT NULL,
+  CONSTRAINT pk_cmap_dbxref PRIMARY KEY (dbxref_id)
+);
+
+--
+-- Table: cmap_evidence_type
+--
+
+CREATE TABLE cmap_evidence_type (
+  evidence_type_id numeric(11) DEFAULT '0' NOT NULL,
+  accession_id varchar(20) DEFAULT '' NOT NULL,
+  evidence_type varchar(30) DEFAULT '' NOT NULL,
+  rank numeric(11) DEFAULT '0' NOT NULL,
+  line_color varchar(20) DEFAULT NULL NULL,
+  CONSTRAINT pk_cmap_evidence_type PRIMARY KEY (evidence_type_id),
+  CONSTRAINT accession_id UNIQUE (accession_id),
+  CONSTRAINT rank UNIQUE (rank)
+);
+
+--
+-- Table: cmap_feature
+--
+
+CREATE TABLE cmap_feature (
+  feature_id numeric(11) DEFAULT '0' NOT NULL,
+  accession_id varchar(20) DEFAULT '' NOT NULL,
+  map_id numeric(11) DEFAULT '0' NOT NULL,
+  feature_type_id numeric(11) DEFAULT '0' NOT NULL,
+  feature_name varchar(32) DEFAULT '' NOT NULL,
+  alternate_name varchar(32) DEFAULT NULL NULL,
+  is_landmark smallint(4) DEFAULT '0' NOT NULL,
+  start_position double(11,2) DEFAULT '0.00' NOT NULL,
+  stop_position double(11,2) DEFAULT NULL NULL,
+  dbxref_name varchar(32) DEFAULT NULL NULL,
+  dbxref_url varchar(200) DEFAULT NULL NULL,
+  CONSTRAINT pk_cmap_feature PRIMARY KEY (feature_id),
+  CONSTRAINT accession_id UNIQUE (accession_id)
+);
+
+CREATE INDEX feature_name ON cmap_feature (feature_name);
+
+CREATE INDEX alternate_name ON cmap_feature (alternate_name);
+
+CREATE INDEX feature_id_map_id ON cmap_feature (feature_id, map_id);
+
+CREATE INDEX feature_id_map_id_start ON cmap_feature (feature_id, map_id, start_position);
+
+CREATE INDEX map_id ON cmap_feature (map_id);
+
+--
+-- Table: cmap_feature_correspondence
+--
+
+CREATE TABLE cmap_feature_correspondence (
+  feature_correspondence_id numeric(11) DEFAULT '0' NOT NULL,
+  accession_id varchar(20) DEFAULT '' NOT NULL,
+  feature_id1 numeric(11) DEFAULT '0' NOT NULL,
+  feature_id2 numeric(11) DEFAULT '0' NOT NULL,
+  is_enabled smallint(4) DEFAULT '1' NOT NULL,
+  CONSTRAINT pk_cmap_feature_correspondence PRIMARY KEY (feature_correspondence_id),
+  CONSTRAINT accession_id UNIQUE (accession_id)
+);
+
+CREATE INDEX feature_id1 ON cmap_feature_correspondence (feature_id1);
+
+CREATE INDEX cmap_feature_corresp_idx ON cmap_feature_correspondence (is_enabled, feature_correspondence_id);
+
+--
+-- Table: cmap_feature_note
+--
+
+CREATE TABLE cmap_feature_note (
+  feature_id numeric(11) DEFAULT '0' NOT NULL,
+  note varchar(255) NULL,
+  CONSTRAINT pk_cmap_feature_note PRIMARY KEY (feature_id)
+);
+
+--
+-- Table: cmap_feature_type
+--
+
+CREATE TABLE cmap_feature_type (
+  feature_type_id numeric(11) DEFAULT '0' NOT NULL,
+  accession_id varchar(20) DEFAULT '' NOT NULL,
+  feature_type varchar(32) DEFAULT '' NOT NULL,
+  default_rank numeric(11) DEFAULT '1' NOT NULL,
+  shape varchar(12) DEFAULT NULL NULL,
+  color varchar(20) DEFAULT NULL NULL,
+  drawing_lane numeric(11) DEFAULT '1' NOT NULL,
+  drawing_priority numeric(11) DEFAULT '1' NOT NULL,
+  CONSTRAINT pk_cmap_feature_type PRIMARY KEY (feature_type_id),
+  CONSTRAINT accession_id UNIQUE (accession_id)
+);
+
+--
+-- Table: cmap_map
+--
+
+CREATE TABLE cmap_map (
+  map_id numeric(11) DEFAULT '0' NOT NULL,
+  accession_id varchar(20) DEFAULT '' NOT NULL,
+  map_set_id numeric(11) DEFAULT '0' NOT NULL,
+  map_name varchar(32) DEFAULT '' NOT NULL,
+  display_order numeric(11) DEFAULT '1' NOT NULL,
+  start_position double(11,2) DEFAULT NULL NULL,
+  stop_position double(11,2) DEFAULT NULL NULL,
+  CONSTRAINT pk_cmap_map PRIMARY KEY (map_id),
+  CONSTRAINT accession_id UNIQUE (accession_id)
+);
+
+--
+-- Table: cmap_map_cache
+--
+
+CREATE TABLE cmap_map_cache (
+  pid numeric(11) DEFAULT '0' NOT NULL,
+  slot_no smallint(6) DEFAULT '0' NOT NULL,
+  map_id numeric(11) DEFAULT '0' NOT NULL,
+  start_position double(11,2) DEFAULT NULL NULL,
+  stop_position double(11,2) DEFAULT NULL NULL,
+  requested_on datetime NOT NULL
+);
+
+CREATE INDEX pid_cmap_map_cache ON cmap_map_cache (pid, slot_no, map_id);
+
+--
+-- Table: cmap_map_set
+--
+
+CREATE TABLE cmap_map_set (
+  map_set_id numeric(11) DEFAULT '0' NOT NULL,
+  accession_id varchar(20) DEFAULT '' NOT NULL,
+  map_set_name varchar(64) DEFAULT '' NOT NULL,
+  short_name varchar(30) DEFAULT '' NOT NULL,
+  map_type_id numeric(11) DEFAULT '0' NOT NULL,
+  species_id numeric(11) DEFAULT '0' NOT NULL,
+  published_on date DEFAULT NULL NULL,
+  can_be_reference_map smallint(4) DEFAULT '1' NOT NULL,
+  display_order numeric(11) DEFAULT '1' NOT NULL,
+  is_enabled smallint(4) DEFAULT '1' NOT NULL,
+  remarks varchar(255) NULL,
+  shape varchar(12) DEFAULT NULL NULL,
+  color varchar(20) DEFAULT NULL NULL,
+  width numeric(11) DEFAULT NULL NULL,
+  CONSTRAINT pk_cmap_map_set PRIMARY KEY (map_set_id),
+  CONSTRAINT accession_id UNIQUE (accession_id)
+);
+
+CREATE INDEX cmap_map_set_idx ON cmap_map_set (can_be_reference_map, is_enabled, species_id, display_order, published_on, short_name);
+
+--
+-- Table: cmap_map_type
+--
+
+CREATE TABLE cmap_map_type (
+  map_type_id numeric(11) DEFAULT '0' NOT NULL,
+  map_type varchar(64) DEFAULT '' NOT NULL,
+  map_units varchar(12) DEFAULT '' NOT NULL,
+  is_relational_map smallint(11) DEFAULT '0' NOT NULL,
+  shape varchar(12) DEFAULT NULL NULL,
+  color varchar(20) DEFAULT NULL NULL,
+  width numeric(11) DEFAULT NULL NULL,
+  display_order numeric(11) DEFAULT '1' NOT NULL,
+  CONSTRAINT pk_cmap_map_type PRIMARY KEY (map_type_id),
+  CONSTRAINT map_type UNIQUE (map_type)
+);
+
+--
+-- Table: cmap_next_number
+--
+
+CREATE TABLE cmap_next_number (
+  table_name varchar(40) DEFAULT '' NOT NULL,
+  next_number numeric(11) DEFAULT '0' NOT NULL,
+  CONSTRAINT pk_cmap_next_number PRIMARY KEY (table_name)
+);
+
+--
+-- Table: cmap_species
+--
+
+CREATE TABLE cmap_species (
+  species_id numeric(11) DEFAULT '0' NOT NULL,
+  accession_id varchar(20) DEFAULT '' NOT NULL,
+  common_name varchar(64) DEFAULT '' NOT NULL,
+  full_name varchar(64) DEFAULT '' NOT NULL,
+  display_order numeric(11) DEFAULT '1' NOT NULL,
+  ncbi_taxon_id numeric(11) DEFAULT NULL NULL,
+  CONSTRAINT pk_cmap_species PRIMARY KEY (species_id)
+);
+
+CREATE INDEX acc_id_species_id ON cmap_species (accession_id, species_id);
+
