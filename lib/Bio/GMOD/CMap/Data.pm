@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.98.2.6 2004-06-10 21:47:58 kycl4rk Exp $
+# $Id: Data.pm,v 1.98.2.7 2004-06-15 19:59:03 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.98.2.6 $)[-1];
+$VERSION = (qw$Revision: 1.98.2.7 $)[-1];
 
 use Data::Dumper;
 use Regexp::Common;
@@ -2020,20 +2020,20 @@ out which maps have relationships.
         ]
     );
 
-    my ( %map_sets, %map_info ); 
+    my ( %map_sets, %comp_maps ); 
     for my $map_set_id ( keys %map_set_ids ) {
         $ms_sth->execute( $map_set_id );
         my $ms_info = $ms_sth->fetchrow_hashref;
         $ms_info->{'published_on'} = parsedate( $ms_info->{'published_on'} );
         $map_sets{ $ms_info->{'map_set_aid'} } = $ms_info;
 
-        my $map_info = $db->selectall_arrayref(
+        my $maps = $db->selectall_arrayref(
             q[
                 select map.map_id,
                        ms.accession_id as map_set_aid,
                        map.accession_id as map_aid,
                        map.map_name,
-                       map.display_order as map_display_order
+                       map.display_order 
                 from   cmap_map map,
                        cmap_map_set ms
                 where  map.map_set_id=?
@@ -2043,23 +2043,18 @@ out which maps have relationships.
             ( $map_set_id )
         );
 
-        for my $map ( @$map_info ) {
-            $map_info{ $map->{'map_id'} } = {
-                map_name             => $map->{'map_name'},
-                map_aid              => $map->{'map_aid'},
-                display_order        => $map->{'map_display_order'},
-                can_be_reference_map => $map->{'can_be_reference_map'},
-            };
+        for my $map ( @$maps ) {
+            $comp_maps{ $map->{'map_id'} } = $map;
         }
     }
 
     for my $fc ( @$feature_correspondences ) {
-        my $map_info = $map_info{ $fc->{'map_id'} };
-        $map_info->{'no_correspondences'} = $fc->{'no_corr'};
+        my $comp_map        = $comp_maps{ $fc->{'map_id'} } or next;
+        my $ref_map_set_aid = $comp_map->{'map_set_aid'}    or next;
 
-        $map_sets{
-            $map_info->{'map_set_aid'}{'maps'}{ $map_info->{'map_aid'} } 
-        } = $map_info;
+        $comp_map->{'no_correspondences'} = $fc->{'no_corr'};
+
+        push @{ $map_sets{ $ref_map_set_aid }{'maps'} }, $comp_map;
     }
 
     #
@@ -2094,13 +2089,13 @@ out which maps have relationships.
                 ||
                 $a->{'map_name'}      cmp $b->{'map_name'} 
             }
-            values %{ $map_set->{'maps'} }
+            @{ $map_set->{'maps'} }
         ) {
             next if $min_correspondences &&
                 $map->{'no_correspondences'} < $min_correspondences;
 
             $total_correspondences += $map->{'no_correspondences'};
-            push @maps, $map if $map->{'can_be_reference_map'};
+            push @maps, $map if $map_set->{'can_be_reference_map'};
         }
 
         next unless $total_correspondences;
