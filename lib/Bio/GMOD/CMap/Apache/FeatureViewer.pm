@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::FeatureViewer;
 # vim: set ft=perl:
 
-# $Id: FeatureViewer.pm,v 1.9 2003-09-29 20:49:12 kycl4rk Exp $
+# $Id: FeatureViewer.pm,v 1.10 2003-10-22 00:20:49 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.9 $)[-1];
+$VERSION = (qw$Revision: 1.10 $)[-1];
 
 use Apache::Constants;
 use Apache::Request;
@@ -34,17 +34,17 @@ sub handler {
     # Make the subs in the URL.
     #
     my $t = $self->template or return;
-    for my $dbxref ( @{ $feature->{'dbxrefs'} } ) {
-        if ( my $mini_template = $dbxref->{'url'} ) {
-            my $url;
-            $t->process( 
-                \$mini_template, 
-                { feature => $feature }, 
-                \$url
-            ) or return $self->error( $t->error );
-            $dbxref->{'url'} = $url;
-        }
-    }
+#    for my $dbxref ( @{ $feature->{'dbxrefs'} } ) {
+#        if ( my $mini_template = $dbxref->{'url'} ) {
+#            my $url;
+#            $t->process( 
+#                \$mini_template, 
+#                { feature => $feature }, 
+#                \$url
+#            ) or return $self->error( $t->error );
+#            $dbxref->{'url'} = $url;
+#        }
+#    }
 
     my $html;
     $t->process( 

@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::SpeciesViewer;
 # vim: set ft=perl:
 
-# $Id: SpeciesViewer.pm,v 1.1 2003-10-01 23:16:31 kycl4rk Exp $
+# $Id: SpeciesViewer.pm,v 1.2 2003-10-22 00:20:49 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Apache::Constants;
 use Data::Pageset;
@@ -44,10 +44,20 @@ sub handler {
     } );
     $species = [ $pager->splice( $species ) ] if @$species;
 
+    my $t = $self->template;
+    for my $s ( @$species ) {
+        for my $xref ( @{ $s->{'xrefs'} } ) {
+            next if $xref->{'object_id'} && 
+                $xref->{'object_id'} != $s->{'species_id'};
+            my $url;
+            $t->process( \$xref->{'xref_url'}, { object => $s }, \$url );
+            $xref->{'xref_url'} = $url;
+        }
+    }
+
     $INTRO ||= $self->config('species_info_intro') || '';
 
     my $html;
-    my $t = $self->template;
     $t->process( 
         TEMPLATE, 
         { 
