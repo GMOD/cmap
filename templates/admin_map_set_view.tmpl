@@ -100,6 +100,16 @@
     table_name='cmap_map_set'
 %]
 
+[% 
+    INCLUDE admin_xrefs_view_embedded.tmpl 
+    title='Map Set XRefs'
+    xrefs=map_set.xrefs 
+    return_action='map_set_view'
+    pk_name='map_set_id'
+    object_id=map_set.map_set_id
+    table_name='cmap_map_set'
+%]
+
 <table width="100%">
     <tr bgcolor="lightgrey">
         <th>Maps</td>

@@ -116,6 +116,16 @@
     table_name='cmap_feature'
 %]
 
+[% 
+    INCLUDE admin_xrefs_view_embedded.tmpl 
+    title='Feature XRefs'
+    xrefs=feature.xrefs 
+    return_action='feature_view'
+    pk_name='feature_id'
+    object_id=feature.feature_id
+    table_name='cmap_feature'
+%]
+
 <table width="100%">
     <tr bgcolor="lightgrey">
         <th>Feature Correspondences</th>

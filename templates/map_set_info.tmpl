@@ -1,4 +1,4 @@
-[% SET title='Map Set Info' %]
+[% DEFAULT title='Map Set Info' %]
 [% 
     INCLUDE header.tmpl 
     title=title
@@ -99,9 +99,10 @@
             </tr> 
 
             [% FOREACH att=ms.attributes %]
+                [% NEXT UNLESS att.is_public %]
                 <tr>
-                    <th align="right">
-                        [% att.attribute_name %]:
+                    <th align="right" valign="top">
+                        [% att.attribute_name | nbsp %]:
                     </td>
                     <td>
                         [%- IF att.attribute_value.match('^http://') -%]
@@ -144,6 +145,20 @@
                             [%- SET all_ft = ft_list.join(',') -%]
                             <b>[</b> <a href="/cmap/feature_type_info?feature_type_aid=[%- all_ft -%]">View Info For All Feature Types</a> <b>]</b>
                         [%- END -%]
+                    </td>
+                </tr> 
+            [% END %]
+
+            [% IF ms.xrefs.size %]
+                <tr>
+                    <th align="right" valign="top">Cross-references:</td>
+                    <td>
+                        <ul>
+                        [%- FOREACH xref=ms.xrefs -%]
+                            [% NEXT UNLESS xref.xref_url %]
+                            <li><a href="[% xref.xref_url %]">[% xref.xref_name %]</a></li>
+                        [%- END -%]
+                        </ul>
                     </td>
                 </tr> 
             [% END %]

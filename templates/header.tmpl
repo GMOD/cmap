@@ -4,17 +4,17 @@
         { 
             name    => 'home', 
             url     => '/cmap', 
-            display => 'CMap Home',
+            display => 'Home',
         },
         { 
             name    => 'map_viewer', 
             url     => '/cmap/viewer', 
-            display => 'Map Viewer' 
+            display => 'Maps' 
         },
         { 
             name    => 'feature_search', 
             url     => '/cmap/feature_search',
-            display => 'Feature Search' 
+            display => 'Search' 
         },
         { 
             name    => 'matrix', 
@@ -83,13 +83,12 @@
         <td align="right">
             [%- IF data_sources.size > 1 -%]
                 <form>
-                    Data Source:
+                    <input type="submit" name="submit" value="Data Source:">
                     <select name="data_source">
                         [% FOREACH db=data_sources %]
                             <option value="[% db.name %]"[% IF db.is_current; ' selected'; END %]>[% db.name %]</option>
                         [% END %]
                     </select>
-                    <input type="submit" name="submit" value="Submit">
                 </form>
             [%- ELSE -%]
                 &nbsp;

@@ -1,18 +1,22 @@
 [% DEFAULT title='Attributes' %]
+<hr>
 <table width="100%">
-    <tr bgcolor="lightgrey">
-        <th>[% title %]</th>
+    <tr>
+        <td align="left"><h2>[% title %]</h2></td>
         <td align="right">
             <a href="admin?action=attribute_create;table_name=[% table_name %];object_id=[% object_id %];return_action=[% return_action %]">Add Attribute</a>
         </td>
     </tr>
 </table>
 
-[% IF attributes.size %]
+[% IF attributes.list.size %]
     <table width="100%">
         <tr>
             <th>
                 <a href="admin?action=[% return_action %];[% pk_name %]=[% object_id %];att_order_by=display_order">Display Order</a>
+            </th>
+            <th>
+                <a href="admin?action=[% return_action %];[% pk_name %]=[% object_id %];att_order_by=is_public">Public</a>
             </th>
             <th>
                 <a href="admin?action=[% return_action %];[% pk_name %]=[% object_id %];att_order_by=attribute_name">Name</a>
@@ -26,8 +30,9 @@
         [% FOREACH att=attributes %]
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
                 <td>[% att.display_order %]</td>
+                <td>[% IF att.is_public; 'Yes'; ELSE; 'No'; END %]</td>
                 <td>[% att.attribute_name %]</td>
-                <td>[% att.attribute_value | html %]</td>
+                <td>[% att.attribute_value | truncate(80) | html %]</td>
                 <td align="center">
                     <a href="admin?action=attribute_edit;attribute_id=[% att.attribute_id %];return_action=[% return_action %]">Edit</a>
                 </td>

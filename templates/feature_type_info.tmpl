@@ -49,6 +49,7 @@
                 <td>[% ft.shape %]</td>
             </tr> 
             [% FOREACH att=ft.attributes %]
+                [% NEXT UNLESS att.is_public %]
                 <tr>
                     <td align="right">
                         [% att.attribute_name %]:
@@ -61,6 +62,19 @@
                         [%- END -%]
                     </td>
                 </tr>
+            [% END %]
+            [% IF ft.xrefs.size %]
+                <tr>
+                    <th align="right" valign="top">Cross-references:</td>
+                    <td>
+                        <ul>
+                        [%- FOREACH xref=ft.xrefs -%]
+                            [% NEXT UNLESS xref.xref_url %]
+                            <li><a href="[% xref.xref_url %]">[% xref.xref_name %]</a></li>
+                        [%- END -%]
+                        </ul>
+                    </td>
+                </tr> 
             [% END %]
         [% END %]
     </table>

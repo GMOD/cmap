@@ -1,40 +1,43 @@
 [% INCLUDE admin_header.tmpl title="View Correspondence Evidence Type &quot;$evidence_type.evidence_type&quot;" %]
 <a href="admin">Home</a> |
+<a href="admin?action=corr_evidence_type_edit;evidence_type_id=[% evidence_type.evidence_type_id %]">Edit</a> |
 <a href="admin?action=confirm_delete;entity_type=cmap_evidence_type;entity_id=[% evidence_type.evidence_type_id %];entity_name_field=evidence_type">Delete</a> |
 <a href="admin?action=corr_evidence_types_view">View All Correspondence Evidence Types</a>
 <hr noshade>
 <table>
     <tr>
         <td align="right">Acc. ID <em>(opt.)</em>:</th>
-        <td><input name="accession_id" value="[% evidence_type.accession_id %]"></td>
+        <td>[% evidence_type.accession_id %]</td>
     </tr>
 
     <tr>
         <td align="right">Evidence Type:</th>
-        <td><input name="evidence_type" value="[% evidence_type.evidence_type %]"></td>
+        <td>[% evidence_type.evidence_type %]</td>
     </tr>
 
     <tr>
         <td align="right">Rank:</th>
-        <td><input name="rank" value="[% evidence_type.rank %]"></td>
+        <td>[% evidence_type.rank %]</td>
     </tr>
 
     <tr>
         <td align="right">Color <em>(opt.)</em>:</td>
-        <td>
-            <select name="line_color">
-                <option value="">--Default--</option>
-                [% FOREACH color=line_colors %]
-                    <option value="[% color %]"[% IF evidence_type.line_color==color  %] selected[% END %]>[% color %]</option>
-                [% END %]
-            </select>
-        </td>
+        <td>[% evidence_type.color %]</td>
     </tr>
 </table>
 
 [% 
     INCLUDE admin_attributes_view.tmpl 
     attributes=evidence_type.attributes 
+    pk_name='evidence_type_id'
+    object_id=evidence_type.evidence_type_id
+    table_name='cmap_evidence_type'
+    return_action='corr_evidence_type_view'
+%]
+
+[% 
+    INCLUDE admin_xrefs_view_embedded.tmpl 
+    xrefs=evidence_type.xrefs 
     pk_name='evidence_type_id'
     object_id=evidence_type.evidence_type_id
     table_name='cmap_evidence_type'

@@ -94,9 +94,19 @@
     table_name='cmap_feature_correspondence'
 %]
 
+[% 
+    INCLUDE admin_xrefs_view_embedded.tmpl 
+    title='Feature Correspondence XRefs'
+    xrefs=corr.xrefs 
+    return_action='feature_corr_view'
+    pk_name='feature_correspondence_id'
+    object_id=corr.feature_correspondence_id
+    table_name='cmap_feature_correspondence'
+%]
+
 <table width="100%">
-    <tr bgcolor="lightgrey">
-        <th>Evidence</th>
+    <tr>
+        <td><h2>Evidence</h2></td>
         <td align="right">
             <a href="admin?action=corr_evidence_create;feature_correspondence_id=[% corr.feature_correspondence_id %]">Add Evidence</a>
         </td>

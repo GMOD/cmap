@@ -36,6 +36,14 @@
     </tr>
 
     <tr>
+        <td align="right">Is Public:</td>
+        <td>
+            <input type="radio" name="is_public" value="1"[% IF attribute.is_public==1; ' checked'; END %]>Yes
+            <input type="radio" name="is_public" value="0"[% IF attribute.is_public==0; ' checked'; END %]>No
+        </td>
+    </tr>
+
+    <tr>
         <td colspan="2" align="center">
             <input type="hidden" name="attribute_id" value="[% attribute.attribute_id %]">
             <input type="hidden" name="table_name" value="[% attribute.table_name %]">

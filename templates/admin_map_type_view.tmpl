@@ -71,4 +71,13 @@
     table_name='cmap_map_type'
 %]
 
+[% 
+    INCLUDE admin_xrefs_view_embedded.tmpl 
+    xrefs=map_type.xrefs 
+    return_action='map_type_view'
+    pk_name='map_type_id'
+    object_id=map_type.map_type_id
+    table_name='cmap_map_type'
+%]
+
 [% INCLUDE admin_footer.tmpl %]

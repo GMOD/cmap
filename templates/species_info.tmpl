@@ -45,16 +45,8 @@
                 <td>[% s.species_aid %]</td>
             </tr>
 
-            <tr>
-                <td align="right">NCBI&nbsp;Taxon&nbsp;ID:</td>
-                <td>
-                    [% IF s.ncbi_taxon_id %]
-                        <b>[</b> <a href="http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=[% s.ncbi_taxon_id %]">View at NCBI</a> <b>]</b>
-                    [% END %]
-                </td>
-            </tr>
-
             [% FOREACH att=s.attributes %]
+                [% NEXT UNLESS att.is_public %]
                 <tr>
                     <td align="right">
                         [% att.attribute_name %]:
@@ -65,6 +57,22 @@
                         [%- ELSE -%]
                             [% att.attribute_value %]
                         [%- END -%]
+                    </td>
+                </tr>
+            [% END %]
+
+            [% IF s.xrefs.size %]
+                <tr>
+                    <td align="right" valign="top">
+                        Cross-references:
+                    </td>
+                    <td>
+                        <ul>
+                        [% FOREACH xref=s.xrefs %]
+                            [% NEXT UNLESS xref.xref_url %]
+                            <li><a href="[% xref.xref_url %]">[% xref.xref_name %]</a></li>
+                        [% END %]
+                        </ul>
                     </td>
                 </tr>
             [% END %]

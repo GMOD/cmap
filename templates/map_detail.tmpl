@@ -148,6 +148,64 @@
     </tr>
 </table>
 
+<h2>Map Details</h2>
+<table>
+    <tr>
+        <th align="right">Map&nbsp;Set&nbsp;Name:</th>
+        <td>
+            [% reference_map.species_name %] -
+            [% reference_map.map_set_name %]
+            <b>[</b> <a href="map_set_info?map_set_aid=[% reference_map.map_set_aid %]">View Map Set Info</a> <b>]</b>
+        </td>
+    </tr>
+    <tr>
+        <th align="right">Map&nbsp;Name:</th>
+        <td>[% reference_map.map_name %]</td>
+    </tr>
+    <tr>
+        <th align="right">Map&nbsp;Units:</th>
+        <td>[% reference_map.map_units %]</td>
+    </tr>
+    <tr>
+        <th align="right">Map&nbsp;Start:</th>
+        <td>[% reference_map.start_position %]</td>
+    </tr>
+    <tr>
+        <th align="right">Map&nbsp;Stop:</th>
+        <td>[% IF reference_map.stop_position.defined; reference_map.stop_position; ELSE; 'NULL'; END %]</td>
+    </tr>
+    [% FOREACH att=reference_map.attributes %]
+        [% NEXT UNLESS att.is_public %]
+        <tr>
+            <th align="right" valign="top">
+                [% att.attribute_name | nbsp %]:
+            </td>
+            <td>
+                [%- IF att.attribute_value.match('^http://') -%]
+                    <a href="[% att.attribute_value %]">[% att.attribute_value %]</a>
+                [%- ELSE -%]
+                    [% att.attribute_value %]
+                [%- END -%]
+            </td>
+        </tr>
+    [% END %]
+
+    [% IF reference_map.xrefs.size %]
+        <tr>
+            <th align="right" valign="top">Cross-references:</td>
+            <td>
+                <ul>
+                [%- FOREACH xref=reference_map.xrefs -%]
+                    [% NEXT UNLESS xref.xref_url %]
+                    <li><a href="[% xref.xref_url %]">[% xref.xref_name %]</a></li>
+                [%- END -%]
+                </ul>
+            </td>
+        </tr> 
+    [% END %]
+</table>
+
+<h2>Map Features</h2>
 <a name="details">
 <table border="1">
     <tr>

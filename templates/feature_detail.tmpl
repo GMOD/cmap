@@ -21,7 +21,8 @@
             Feature Type:
         </td>
         <td>
-            <a href="feature_type_info?feature_type_aid=[% feature.feature_type_aid %]">[% feature.feature_type %]</a>
+            [% feature.feature_type %]
+            <b>[</b> <a href="feature_type_info?feature_type_aid=[% feature.feature_type_aid %]">Feature Type Info</a> <b>]</b>
         </td>
     </tr>
 
@@ -39,7 +40,13 @@
             Aliases:
         </td>
         <td>
-            [% feature.aliases.join(', ') %]
+            [%- IF feature.aliases.defined AND feature.aliases.size -%]
+                <ul>
+                [%- FOREACH a=feature.aliases -%]<li>[% a %]</li>[% END %]
+                </ul>
+            [%- ELSE -%]
+                None
+            [%- END -%]
         </td>
     </tr>
 
@@ -49,7 +56,7 @@
         </td>
         <td>
             [% feature.species_name %]-[% feature.map_set_name %]-[% feature.map_name %]
-             <b>[</b> <a href="map_details?ref_map_set_aid=[% feature.map_set_aid %];ref_map_aid=[% feature.map_aid %];highlight=&quot;[% feature.feature_name %]&quot;;label_features=landmarks">View on Map</a> <b>]</b>
+             <b>[</b> <a href="map_details?ref_map_set_aid=[% feature.map_set_aid %];ref_map_aid=[% feature.map_aid %];highlight=&quot;[% feature.feature_name %]&quot;;label_features=landmarks">View Map Details</a> <b>]</b>
         </td>
     </tr>
 
@@ -67,35 +74,19 @@
             Stop:
         </td>
         <td>
-            [% IF feature.stop_position.defined %]
+            [%- IF feature.stop_position.defined -%]
                 [% feature.stop_position %] [% feature.map_units %]
-            [% END %]
-        </td>
-    </tr>
-
-    <tr>
-        <th align="right">
-            Database Cross-References:
-        </td>
-        <td>
-            [% IF feature.dbxrefs.size %]
-                [% FOREACH dbxref=feature.dbxrefs %]
-                    [% IF dbxref.url %]
-                        <a href="[% dbxref.url | uri %]">[% dbxref.dbxref_name OR 'Reference' %]</a><br>
-                    [% ELSE %]
-                        [% dbxref.dbxref_name %]<br>
-                    [% END %]
-                [% END %]
-            [% ELSE %]
-                No cross-references defined.
-            [% END %]
+            [%- ELSE -%]
+                NULL
+            [%- END -%]
         </td>
     </tr>
 
     [% FOREACH att=feature.attributes %]
+        [% NEXT UNLESS att.is_public %]
         <tr>
-            <th align="right">
-                [% att.attribute_name %]:
+            <th align="right" valign="top">
+                [% att.attribute_name | nbsp %]:
             </td>
             <td>
                 [%- IF att.attribute_value.match('^http://') -%]
@@ -106,6 +97,21 @@
             </td>
         </tr>
     [% END %]
+
+    [% IF feature.xrefs.size %]
+        <tr>
+            <th align="right" valign="top">Cross-references:</td>
+            <td>
+                <ul>
+                [%- FOREACH xref=feature.xrefs -%]
+                    [% NEXT UNLESS xref.xref_url %]
+                    <li><a href="[% xref.xref_url %]">[% xref.xref_name %]</a></li>
+                [%- END -%]
+                </ul>
+            </td>
+        </tr> 
+    [% END %]
+
 </table>
 
 <table width="100%">
@@ -136,7 +142,7 @@
                 <td>[% fc.aliases.join(', ') %]</td>
                 <td>
                     [% FOREACH e=fc.evidence %]
-                        [% e.evidence_type %]<br>
+                        <a href="evidence_type_info?evidence_type_aid=[% e.evidence_type_aid %]">[% e.evidence_type %]</a><br>
                     [% END %]
                 </td>
                 <td align="center">

@@ -63,9 +63,19 @@
     table_name='cmap_map'
 %]
 
+[% 
+    INCLUDE admin_xrefs_view_embedded.tmpl 
+    xrefs=map.xrefs 
+    return_action='map_view'
+    pk_name='map_id'
+    object_id=map.map_id
+    table_name='cmap_map'
+%]
+
+<hr>
 <table width="100%">
-    <tr bgcolor="lightgrey">
-        <th>Features</th>
+    <tr>
+        <td><h2>Features</h2></td>
         <td align="right">
             <a href="admin?action=feature_create;map_id=[% map.map_id %]">Add Feature</a>
         </td>

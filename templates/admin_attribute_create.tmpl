@@ -35,6 +35,18 @@
         </td>
     </tr>
 
+    <tr>
+        <td align="right">Is Public:</td>
+        <td>
+            [% IF apr.param('is_public') == 0 %]
+                [% is_public = 0 %]
+            [% ELSE %]
+                [% is_public = 1 %]
+            [% END %]
+            <input type="radio" name="is_public" value="1"[% IF is_public==1; ' checked'; END %]>Yes
+            <input type="radio" name="is_public" value="0"[% IF is_public==0; ' checked'; END %]>No
+        </td>
+    </tr>
 
     <tr>
         <td colspan="2" align="center">

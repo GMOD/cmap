@@ -53,21 +53,12 @@
             </tr> 
 
             <tr>
-                <td align="right">Shape:</td>
-                <td>[% mt.shape %]</td>
-            </tr> 
-
-            <tr>
-                <td align="right">Width:</td>
-                <td>[% mt.width %]</td>
-            </tr> 
-
-            <tr>
-                <td align="right">Color:</td>
-                <td>[% mt.color %]</td>
+                <td align="right">Appearance:</td>
+                <td>[% mt.color %] [% mt.shape %]</td>
             </tr> 
 
             [% FOREACH att=mt.attributes %]
+                [% NEXT UNLESS att.is_public %]
                 <tr>
                     <td align="right">
                         [% att.attribute_name %]:
@@ -80,6 +71,20 @@
                         [%- END -%]
                     </td>
                 </tr>
+            [% END %]
+
+            [% IF mt.xrefs.size %]
+                <tr>
+                    <th align="right" valign="top">Cross-references:</td>
+                    <td>
+                        <ul>
+                        [%- FOREACH xref=mt.xrefs -%]
+                            [% NEXT UNLESS xref.xref_url %]
+                            <li><a href="[% xref.xref_url %]">[% xref.xref_name %]</a></li>
+                        [%- END -%]
+                        </ul>
+                    </td>
+                </tr> 
             [% END %]
         [% END %]
     </table>

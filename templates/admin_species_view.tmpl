@@ -16,7 +16,6 @@
           <th><a href="admin?action=species_view;order_by=common_name">Common Name</a></th>
           <th><a href="admin?action=species_view;order_by=full_name">Full Name</a></th>
           <th><a href="admin?action=species_view;order_by=display_order">Display Order</a></th>
-          <th><a href="admin?action=species_view;order_by=ncbi_taxon_id">NCBI Taxon ID</a></th>
           <th colspan="3" align="center">&nbsp;</th>
         </tr>
       [% SET i=0 %]
@@ -26,7 +25,6 @@
               <td>[% s.common_name %]</td>
               <td>[% s.full_name %]</td>
               <td>[% s.display_order %]</td>
-              <td>[% s.ncbi_taxon_id %]</td>
               <td align="center">
                 <a href="admin?action=species_view;species_id=[% s.species_id %]">View</a>
               </td>
