@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.41 2004-05-25 21:41:26 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.42 2004-05-26 13:08:51 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.41 $)[-1];
+$VERSION = (qw$Revision: 1.42 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -216,7 +216,6 @@ sub handler {
                 lc $a->{'feature_type'} cmp lc $b->{'feature_type'}
             } @{ $self->data_module->get_all_feature_types}
         ];
-}
     #
     # The start and stop may have had to be moved as there 
     # were too few or too many features in the selected region.
