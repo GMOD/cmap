@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.70.2.3 2004-06-01 16:02:51 kycl4rk Exp $
+# $Id: Map.pm,v 1.70.2.4 2004-06-11 18:49:02 kycl4rk Exp $
 
 =pod
 
@@ -24,13 +24,14 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.70.2.3 $)[-1];
+$VERSION = (qw$Revision: 1.70.2.4 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Utils qw[ 
     column_distribution label_distribution even_label_distribution 
+    simple_column_distribution
 ];
 
 use base 'Bio::GMOD::CMap';
@@ -868,26 +869,13 @@ Lays out the map.
                         # Find column to put feature.
                         #
                         my $buffer = 2;
-                        my $column_index;
-                        if ( @fcolumns ) {
-                            for my $i ( 0..$#fcolumns ) {
-                                if ( 
-                                    (!$is_flipped && $fcolumns[ $i ] < $y_pos1)
-                                    || 
-                                    ( $is_flipped && $fcolumns[ $i ] > $y_pos2)
-                                ) {
-                                    $column_index = $i;
-                                    last;
-                                } 
-                            }   
-                        }
-                        else {
-                            $column_index = 0;
-                        }
-                        $column_index = scalar @fcolumns 
-                            unless defined $column_index;
-                        $fcolumns[ $column_index ] = 
-                            $is_flipped ? $y_pos1 - $buffer: $y_pos2 + $buffer;
+                        my $column_index = simple_column_distribution(
+                            low          => $y_pos1,
+                            high         => $y_pos2,
+                            columns      => \@fcolumns,
+                            map_height   => $pixel_height,
+                            buffer       => $buffer,
+                        );
 
                         my $offset       = ( $column_index + 1 ) * 7;
                         my $vert_line_x1 = $label_side eq RIGHT
