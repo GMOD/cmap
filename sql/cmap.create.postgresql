@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Wed Mar 10 16:53:13 2004
+-- Created on Fri Jun  4 14:33:12 2004
 -- 
 --
 -- Table: cmap_attribute
@@ -115,13 +115,14 @@ CREATE TABLE "cmap_feature_alias" (
   "feature_alias_id" bigint DEFAULT '0' NOT NULL,
   "feature_id" bigint DEFAULT '0' NOT NULL,
   "alias" character varying(255) DEFAULT NULL,
-  PRIMARY KEY ("feature_alias_id"),
-  Constraint "feature_id_2" UNIQUE ("feature_id", "alias")
+  PRIMARY KEY ("feature_alias_id")
 );
 
 CREATE INDEX "feature_id" on cmap_feature_alias ("feature_id");
 
 CREATE INDEX "alias" on cmap_feature_alias ("alias");
+
+CREATE INDEX "alias_feature_id" on cmap_feature_alias ("alias", "feature_id");
 
 --
 -- Table: cmap_feature_correspondence
@@ -175,6 +176,8 @@ CREATE TABLE "cmap_map" (
   Constraint "map_id2" UNIQUE ("map_id", "map_set_id", "map_name", "accession_id")
 );
 
+CREATE INDEX "map_set_id" on cmap_map ("map_set_id");
+
 --
 -- Table: cmap_map_cache
 --
@@ -209,7 +212,7 @@ CREATE TABLE "cmap_map_set" (
   "width" bigint DEFAULT NULL,
   PRIMARY KEY ("map_set_id"),
   Constraint "accession_id8" UNIQUE ("accession_id"),
-  Constraint "map_set_id" UNIQUE ("map_set_id", "species_id", "short_name", "accession_id")
+  Constraint "map_set_id2" UNIQUE ("map_set_id", "species_id", "short_name", "accession_id")
 );
 
 CREATE INDEX "cmap_map_set_idx" on cmap_map_set ("can_be_reference_map", "is_enabled", "species_id", "display_order", "published_on", "short_name");

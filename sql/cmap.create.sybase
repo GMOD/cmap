@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::Sybase
--- Created on Wed Mar 10 16:53:22 2004
+-- Created on Fri Jun  4 14:33:22 2004
 -- 
 --
 -- Table: cmap_attribute
@@ -115,13 +115,14 @@ CREATE TABLE cmap_feature_alias (
   feature_alias_id numeric(11) DEFAULT '0' NOT NULL,
   feature_id numeric(11) DEFAULT '0' NOT NULL,
   alias varchar(255) DEFAULT NULL NULL,
-  CONSTRAINT pk_cmap_feature_alias PRIMARY KEY (feature_alias_id),
-  CONSTRAINT feature_id_2 UNIQUE (feature_id, alias)
+  CONSTRAINT pk_cmap_feature_alias PRIMARY KEY (feature_alias_id)
 );
 
 CREATE INDEX feature_id ON cmap_feature_alias (feature_id);
 
 CREATE INDEX alias ON cmap_feature_alias (alias);
+
+CREATE INDEX alias_feature_id ON cmap_feature_alias (alias, feature_id);
 
 --
 -- Table: cmap_feature_correspondence
@@ -174,6 +175,8 @@ CREATE TABLE cmap_map (
   CONSTRAINT accession_id UNIQUE (accession_id),
   CONSTRAINT map_id UNIQUE (map_id, map_set_id, map_name, accession_id)
 );
+
+CREATE INDEX map_set_id ON cmap_map (map_set_id);
 
 --
 -- Table: cmap_map_cache

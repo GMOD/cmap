@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::SQLite
--- Created on Wed Mar 10 16:53:34 2004
+-- Created on Fri Jun  4 14:33:31 2004
 -- 
 BEGIN TRANSACTION;
 
@@ -212,8 +212,10 @@ CREATE INDEX map_id_cmap_feature on cmap_feature (map_id);
 CREATE INDEX map_id_feature_id_cmap_feature on cmap_feature (map_id, feature_id);
 CREATE INDEX feature_id_cmap_feature_alias on cmap_feature_alias (feature_id);
 CREATE INDEX alias_cmap_feature_alias on cmap_feature_alias (alias);
+CREATE INDEX alias_feature_id_cmap_feature_ on cmap_feature_alias (alias, feature_id);
 CREATE INDEX feature_id1_cmap_feature_corre on cmap_feature_correspondence (feature_id1);
 CREATE INDEX cmap_feature_corresp_idx_cmap_ on cmap_feature_correspondence (is_enabled, feature_correspondence_id);
+CREATE INDEX map_set_id_cmap_map on cmap_map (map_set_id);
 CREATE INDEX pid_cmap_map_cache_cmap_map_ca on cmap_map_cache (pid, slot_no, map_id);
 CREATE INDEX cmap_map_set_idx_cmap_map_set on cmap_map_set (can_be_reference_map, is_enabled, species_id, display_order, published_on, short_name);
 CREATE INDEX acc_id_species_id_cmap_species on cmap_species (accession_id, species_id);
@@ -222,7 +224,6 @@ CREATE UNIQUE INDEX accession_id_cmap_corresponden on cmap_correspondence_eviden
 CREATE UNIQUE INDEX accession_id_cmap_evidence_typ on cmap_evidence_type (accession_id);
 CREATE UNIQUE INDEX rank_cmap_evidence_type on cmap_evidence_type (rank);
 CREATE UNIQUE INDEX accession_id_cmap_feature on cmap_feature (accession_id);
-CREATE UNIQUE INDEX feature_id_2_cmap_feature_alia on cmap_feature_alias (feature_id, alias);
 CREATE UNIQUE INDEX accession_id_cmap_feature_corr on cmap_feature_correspondence (accession_id);
 CREATE UNIQUE INDEX accession_id_cmap_feature_type on cmap_feature_type (accession_id);
 CREATE UNIQUE INDEX accession_id_cmap_map on cmap_map (accession_id);
