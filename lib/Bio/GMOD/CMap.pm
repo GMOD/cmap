@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap;
 
-# $Id: CMap.pm,v 1.25 2003-02-20 23:56:22 kycl4rk Exp $
+# $Id: CMap.pm,v 1.26 2003-02-21 16:55:56 kycl4rk Exp $
 
 =head1 NAME
 
@@ -96,7 +96,21 @@ Remembers what has been selected as the current data source.
 
     my $self = shift;
     my $arg  = shift || '';
-    $self->{'data_source'} = $arg if $arg;
+
+    #
+    # If passed a new data source, force a reconnect.
+    #
+    if ( $arg ) {
+        my %valid_ds = map { $_->{'name'}, 1 } @{ $self->data_sources };
+        return $self->error("'$arg' is not a defined data source") 
+            unless $valid_ds{ $arg };
+        $self->{'data_source'} = $arg;
+        if ( defined $self->{'db'} ) {
+            my $db = $self->db;
+            $db->disconnect;
+            $self->{'db'} = undef;
+        }
+    }
 
     unless ( $self->{'data_source'} ) {
         for my $ds ( @{ $self->data_sources } ) {
