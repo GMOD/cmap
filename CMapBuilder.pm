@@ -41,7 +41,7 @@ sub ACTION_install {
     #
     system("mkdir ".$self->notes('CONF')) unless (-d $self->notes('CONF'));
 
-    foreach my $conf_file ('global.conf', 'mysql1.conf', 'pgsql1.conf.o'){
+    foreach my $conf_file ('global.conf', 'example.conf'){
         my $from_conf = 'conf/'.$conf_file;
         my $to_conf   = catfile( $self->notes('CONF'), $conf_file );
         my $copy_conf = 1;

@@ -21,6 +21,25 @@ Please make sure you back up both your database and you config files.
 While this process has been tested, it is best not to take any
 chances.
 
+=head1 INSTALLING VERSION 0.13
+
+The first thing that you want to do is move the old cmap.conf to a new
+name or location.  Leaving the cmap.conf there will result in a failed
+install.
+
+ $ mv /usr/local/apache/cmap.conf /usr/local/apache/cmap.conf.v.12
+
+Then run the build commands as you normally would 
+
+ $ perl Build.PL
+ $ ./Build
+ $ su
+ # ./Build install
+
+Make sure the new template files have been added by doing a 
+
+ # cp -f templates/*.tmpl /usr/local/apache/templates/cmap/
+
 =head1 DATABASE UPDATE
 
 To make the necessary changes to your database, please do the
@@ -72,30 +91,11 @@ To change to the new config file schema, please do the following:
 
 Go into your configuration directory:
 
-  $ cd /usr/local/apache/conf/
+  $ cd /usr/local/apache/conf/cmap.conf/
 
 =item *
 
-Move your cmap.conf file to another file name:
-
-  $ mv cmap.conf cmap.conf.v0.12
-
-=item *
-
-Make the new conf directory (this may have been done for you by the
-install script).
-
-  $ mkdir cmap.conf 
-
-=item *
-
-Go into the CMap config directory:
-
-  $ cd cmap.conf
-
-=item *
-
-Run cmap12conftocmap13.pl on the old cmap.conf
+Run cmap12conftocmap13.pl on the old cmap.conf from the config db.
 
   $ /usr/local/src/cmap/upgrade/cmap12conftocmap13.pl ../cmap.conf.v0.12
 
