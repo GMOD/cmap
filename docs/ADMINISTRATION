@@ -1,6 +1,6 @@
                 CMAP ADMINISTRATION AND DATA CURATION
 
-                          $Revision: 1.6 $
+                          $Revision: 1.7 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are two tools you will use:
@@ -193,6 +193,22 @@ Create."  From here you can fill in the following fields:
 *   Shape: The shape to use when drawing the feature.  Here is a short
     description of the shapes and what they're best used for:
 
+    line: This a horizontal line just wider than the map's width
+    intended to represent single-point features (e.g., SNPs or markers).
+    If the feature has a length (a defined stop), the feature is not
+    drawn differently, therefore it is only useful to denote single-point
+    features (or just the beginning of spanning features).
+
+    in-triangle: Like the "line," this is intended to represent
+    single-point features or just the beginning of a spanning feature
+    (e.g., the beginning of an insertion). "In" here means pointing at
+    the map, which may mean pointing right or left depending on the
+    side of the map which features are being drawn.
+
+    out-triangle: Exactly like the "in-triangle," only pointing away
+    from the map. These two glyphs were added for the common
+    representation of insertions and deletions.
+
     box: Creates an open (unfilled) box that straddles the map. While
     it's possible to place a box in a lane other than "1" (i.e., there's
     no code in place to stop you), it really doesn't look very good.
@@ -206,13 +222,6 @@ Create."  From here you can fill in the following fields:
     mini-lanes within the drawing lane. When a feature with no length (a
     single-point feature) is drawn with a dumbbell, it renders as a dot
     (just the circle on the end), which could be confusing to users.
-
-    line: This a horizontal line just wider than the map's width
-    intended to represent single-point features (e.g., SNPs or markers).
-    If the feature has a length (a defined stop), the feature is not
-    (currently) drawn differently. There has been some discussion about
-    rotating the line to be vertical when there is a length and float it
-    like a dumbbell.
 
     span: Like half a box, the "span" is a three-sided figure made of
     straight lines that was intended for spanning features. Looks very
@@ -228,7 +237,7 @@ Create."  From here you can fill in the following fields:
     double-arrow: Like the "up-arrow" and "down-arrow," except with
     arrowheads on both ends.
 
-    rectangle: Another spanning feature which floats (like the
+    filled-box: Another spanning feature which floats (like the
     dumbbell), this is a filled-in rectangle (trimmed in black).
 
 *   Color: The color the feature will be drawn.
@@ -317,11 +326,11 @@ before continuing.  You will see the following fields:
 6.2     USING THE cmap_admin.pl TOOL TO CREATE A MAP SET
 
 You can also create a new map set by using the "cmap_admin.pl" tool.
-This is the only functionality that exists in both tools, and it was
-only added to cmap_admin.pl in order to make importing new data sets
-more convenient.  You can only specify the species, map type, and give
-the long and short name for the map set.  Everything else about the
-map must be edited using the web admin tool.  
+There are only a couple of functions that exists in both tools, and
+this one was only added to cmap_admin.pl in order to make importing
+new data sets more convenient.  You can only specify the species, map
+type, and give the long and short name for the map set.  Everything
+else about the map must be edited using the web admin tool.  
 
 To create a new map set with cmap_admin.pl, start the script and
 choose the "Create new map set" option.  Answer the questions
