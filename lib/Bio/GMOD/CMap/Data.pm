@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.175 2004-11-17 22:42:53 mwz444 Exp $
+# $Id: Data.pm,v 1.176 2004-11-19 05:02:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.175 $)[-1];
+$VERSION = (qw$Revision: 1.176 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -2497,7 +2497,7 @@ out which maps have relationships.
             sort {
                      $a->{'display_order'} <=> $b->{'display_order'}
                   || $a->{'map_name'} cmp $b->{'map_name'}
-            } @{ $map_set->{'maps'} || []}
+            } @{ $map_set->{'maps'} || [] }
           )
         {
             next
@@ -4991,7 +4991,10 @@ original start and stop.
     my $ignored_evidence_list = shift;
     my $db                    = $self->db;
 
-    my $sql_start = q[
+    # Return slot_info is not setting it.
+    return $self->{'slot_info'} unless ($slots);
+
+    my $sql_base = q[
 	  select distinct m.map_id,
              m.start_position,
              m.stop_position,
@@ -5001,265 +5004,240 @@ original start and stop.
 	  from   cmap_map m
 	  ];
 
-    if ($slots) {
+    #print S#TDERR Dumper($slots)."\n";
+    my $sql_suffix;
+    foreach my $slot_no ( sort orderOutFromZero keys %{$slots} ) {
+        next unless ( $slots->{$slot_no} );
+        my $from      = ' ';
+        my $where     = '';
+        my $aid_where = '';
+        my $sql_str   = '';
+        my $map_sets  = $slots->{$slot_no}{'map_sets'};
+        my $maps      = $slots->{$slot_no}{'maps'};
 
-        #print S#TDERR Dumper($slots)."\n";
-        my $sql_suffix;
-        foreach my $slot_no ( sort orderOutFromZero keys %{$slots} ) {
-            my $from  = '';
-            my $where = '';
-            if ( $slots->{$slot_no} ) {
+        if ( $slot_no == 0 ) {
+            if ( $map_sets and %{$map_sets} ) {
+                $from .= q[,
+                  cmap_map_set ms ];
+                $where .= " m.map_set_id=ms.map_set_id ";
 
-                # Get Map Sets
-                if ( scalar( keys( %{ $slots->{$slot_no}{'map_sets'} } ) ) > 0 )
+                #Map set aid
+                $aid_where .=
+                    " (ms.accession_id = '"
+                  . join( "' or ms.accession_id = '", keys( %{$map_sets} ) )
+                  . "') ";
+            }
+            if ( $maps and %{$maps} ) {
+
+                $aid_where .= ' or ' if ($aid_where);
+                $aid_where .=
+                  " m.accession_id in ('"
+                  . join( "','", keys( %{$maps} ) ) . "')";
+            }
+        }
+        else {
+            my $slot_modifier = $slot_no > 0 ? -1 : 1;
+            $from .= q[,
+              cmap_correspondence_lookup cl
+              ];
+            $where .= q[ m.map_id=cl.map_id1 
+                     and cl.map_id1!=cl.map_id2 ];
+
+            ### Add the information about the adjoinint slot
+            ### including info about the start and end.
+            $where .= " and (";
+            my @ref_map_strs = ();
+            my $ref_slot_id  = $slot_no + $slot_modifier;
+            my $slot_info    = $self->{'slot_info'}{$ref_slot_id};
+            foreach my $m_id ( keys( %{ $self->{'slot_info'}{$ref_slot_id} } ) )
+            {
+                my $r_m_str = " (cl.map_id2 = $m_id ";
+                if (    defined( $slot_info->{$m_id}->[0] )
+                    and defined( $slot_info->{$m_id}->[1] ) )
                 {
-                    $from .= q[,
-                      cmap_map_set ms ];
-                    $where .= "where m.map_set_id=ms.map_set_id ";
-
-                    #Map set aid
-                    my $where2 .= " and ((ms.accession_id = '"
-                      . join( "' or ms.accession_id = '",
-                        keys( %{ $slots->{$slot_no}{'map_sets'} } ) )
-                      . "')";
-                    if ( $slot_no != 0 ) {
-                        my $slot_modifier = $slot_no > 0 ? -1 : 1;
-                        $from .= q[,
-                          cmap_correspondence_lookup cl
-                          ];
-                        $where .=
-q[ and m.map_id=cl.map_id1 and cl.map_id1!=cl.map_id2 ];
-
-                        ### Add the information about the adjoinint slot
-                        ### including info about the start and end.
-                        $where .= " and (";
-                        my @ref_map_strs = ();
-                        my $ref_slot_id  = $slot_no + $slot_modifier;
-                        my $slot_info    = $self->{'slot_info'}{$ref_slot_id};
-                        foreach my $m_id (
-                            keys( %{ $self->{'slot_info'}{$ref_slot_id} } ) )
-                        {
-                            my $r_m_str = " (cl.map_id2 = $m_id ";
-                            if (    defined( $slot_info->{$m_id}->[0] )
-                                and defined( $slot_info->{$m_id}->[1] ) )
-                            {
-                                $r_m_str .=
-                                    " and (( cl.start_position2>="
-                                  . $slot_info->{$m_id}->[0]
-                                  . " and cl.start_position2<="
-                                  . $slot_info->{$m_id}->[1]
-                                  . " ) or ( cl.stop_position2 is not null and "
-                                  . "  cl.start_position2<="
-                                  . $slot_info->{$m_id}->[0]
-                                  . " and cl.stop_position2>="
-                                  . $slot_info->{$m_id}->[0] . " ))) ";
-                            }
-                            elsif ( defined( $slot_info->{$m_id}->[0] ) ) {
-                                $r_m_str .=
-                                    " and (( cl.start_position2>="
-                                  . $slot_info->{$m_id}->[0]
-                                  . " ) or ( cl.stop_position2 is not null "
-                                  . " and cl.stop_position2>="
-                                  . $slot_info->{$m_id}->[0] . " ))) ";
-                            }
-                            elsif ( defined( $slot_info->{$m_id}->[1] ) ) {
-                                $r_m_str .=
-                                  " and cl.start_position2<="
-                                  . $slot_info->{$m_id}->[1] . ") ";
-                            }
-                            else {
-                                $r_m_str .= ") ";
-                            }
-
-                            push @ref_map_strs, $r_m_str;
-                        }
-                        $where .= join( ' or ', @ref_map_strs ) . ") ";
-
-                        ### Add in considerations for feature and evidence types
-                        if ( $ignored_feature_list and @$ignored_feature_list )
-                        {
-                            $where .=
-                              " and cl.feature_type_accession1 not in ('"
-                              . join( "','", @$ignored_feature_list ) . "') ";
-                        }
-                        if (    $ignored_evidence_list
-                            and @$ignored_evidence_list )
-                        {
-                            $from  .= ", cmap_correspondence_evidence ce ";
-                            $where .=
-" and ce.feature_correspondence_id = cl.feature_correspondence_id ";
-                            $where .=
-                              " and ce.evidence_type_accession not in ('"
-                              . join( "','", @$ignored_evidence_list ) . "') ";
-                        }
-
-                    }
-                    if ( scalar( keys( %{ $slots->{$slot_no}{'maps'} } ) ) > 0 )
-                    {
-                        $where2 .= " or (";
-                        $where2 .=
-                          " m.accession_id in ('"
-                          . join( "','",
-                            keys( %{ $slots->{$slot_no}{'maps'} } ) )
-                          . "')";
-                        $where2 .= ")";
-                    }
-                    $where .= $where2 . ")";
+                    $r_m_str .=
+                        " and (( cl.start_position2>="
+                      . $slot_info->{$m_id}->[0]
+                      . " and cl.start_position2<="
+                      . $slot_info->{$m_id}->[1]
+                      . " ) or ( cl.stop_position2 is not null and "
+                      . "  cl.start_position2<="
+                      . $slot_info->{$m_id}->[0]
+                      . " and cl.stop_position2>="
+                      . $slot_info->{$m_id}->[0] . " ))) ";
+                }
+                elsif ( defined( $slot_info->{$m_id}->[0] ) ) {
+                    $r_m_str .=
+                        " and (( cl.start_position2>="
+                      . $slot_info->{$m_id}->[0]
+                      . " ) or ( cl.stop_position2 is not null "
+                      . " and cl.stop_position2>="
+                      . $slot_info->{$m_id}->[0] . " ))) ";
+                }
+                elsif ( defined( $slot_info->{$m_id}->[1] ) ) {
+                    $r_m_str .=
+                      " and cl.start_position2<="
+                      . $slot_info->{$m_id}->[1] . ") ";
+                }
+                else {
+                    $r_m_str .= ") ";
                 }
 
-                # Get Individual Maps
-                elsif ( scalar( keys( %{ $slots->{$slot_no}{'maps'} } ) ) > 0 )
-                {
-                    $where = " where (";
-                    $where .=
-                        " m.accession_id in ('"
-                      . join( "','", keys( %{ $slots->{$slot_no}{'maps'} } ) )
-                      . "')";
-                    $where .= ")";
-                }
-                if ($where) {
-                    ### If aid was found, $sql_suffix will be created
-                    my $slot_results;
-                    my $sql_str = $sql_start . $from . $where;
+                push @ref_map_strs, $r_m_str;
+            }
+            $where .= join( ' or ', @ref_map_strs ) . ") ";
 
-                    #print S#TDERR "SLOT_INFO SQL \n$sql_str\n";
-                    unless ( $slot_results =
-                        $self->get_cached_results( 4, $sql_str ) )
-                    {
-                        $slot_results =
-                          $db->selectall_arrayref( $sql_str, {}, () );
+            ### Add in considerations for feature and evidence types
+            if ( $ignored_feature_list and @$ignored_feature_list ) {
+                $where .=
+                  " and cl.feature_type_accession1 not in ('"
+                  . join( "','", @$ignored_feature_list ) . "') ";
+            }
+            if (    $ignored_evidence_list
+                and @$ignored_evidence_list )
+            {
+                $from  .= ", cmap_correspondence_evidence ce ";
+                $where .=
+                    " and ce.feature_correspondence_id = "
+                  . "cl.feature_correspondence_id ";
+                $where .=
+                  " and ce.evidence_type_accession not in ('"
+                  . join( "','", @$ignored_evidence_list ) . "') ";
+            }
 
-                        $self->store_cached_results( 4, $sql_str,
-                            $slot_results );
-                    }
-                    if ( scalar( keys( %{ $slots->{$slot_no}{'maps'} } ) ) > 0 )
-                    {
-                        foreach my $row (@$slot_results) {
-                            if (
-                                defined(
-                                    $slots->{$slot_no}{'maps'}{ $row->[5] }
-                                      {'start'}
-                                )
-                              )
-                            {
-                                $row->[1] =
-                                  $slots->{$slot_no}{'maps'}{ $row->[5] }
-                                  {'start'};
-                                ### If start is a feature, get the positions
-                                ### and store in both places.
-                                if ( not $row->[1] =~ /^$RE{'num'}{'real'}$/ ) {
-                                    $row->[1] = $self->feature_name_to_position(
-                                        feature_name        => $row->[1],
-                                        map_id              => $row->[0],
-                                        start_position_only => 1,
-                                      )
-                                      || undef;
-                                    $slots->{$slot_no}{'maps'}{ $row->[5] }
-                                      {'start'} = $row->[1];
-                                }
-                            }
-                            else {
-                                $row->[1] = undef;
-                            }
-                            if (
-                                defined(
-                                    $slots->{$slot_no}{'maps'}{ $row->[5] }
-                                      {'stop'}
-                                )
-                              )
-                            {
-                                $row->[2] =
-                                  $slots->{$slot_no}{'maps'}{ $row->[5] }
-                                  {'stop'};
-                                ### If stop is a feature, get the positions.
-                                ### and store in both places.
-                                if ( not $row->[2] =~ /^$RE{'num'}{'real'}$/ ) {
-                                    $row->[2] = $self->feature_name_to_position(
-                                        feature_name        => $row->[2],
-                                        map_id              => $row->[0],
-                                        start_position_only => 0,
-                                      )
-                                      || undef;
-                                    $slots->{$slot_no}{'maps'}{ $row->[5] }
-                                      {'stop'} = $row->[2];
-                                }
-                            }
-                            else {
-                                $row->[2] = undef;
-                            }
-                            ###flip start and end if start>end
-                            ( $row->[1], $row->[2] ) = ( $row->[2], $row->[1] )
-                              if (  defined( $row->[1] )
-                                and defined( $row->[2] )
-                                and $row->[1] > $row->[2] );
-                        }
-                    }
-                    else {
-                        ###No Maps specified, make all start/stops undef
-                        foreach my $row (@$slot_results) {
-                            $row->[1] = undef;
-                            $row->[2] = undef;
-                        }
-                    }
-                    foreach my $row (@$slot_results) {
-                        if ( defined( $row->[1] ) and $row->[1] =~ /(.+)\.0+$/ )
-                        {
-                            $row->[1] = $1;
-                        }
-                        if ( defined( $row->[2] ) and $row->[2] =~ /(.+)\.0+$/ )
-                        {
-                            $row->[2] = $1;
-                        }
-                        if ( $row->[3] =~ /(.+)\.0+$/ ) {
-                            $row->[3] = $1;
-                        }
-                        if ( $row->[4] =~ /(.+)\.0+$/ ) {
-                            $row->[4] = $1;
-                        }
-                        my $magnification = 1;
-                        if (
-                            defined(
-                                $slots->{$slot_no}{'maps'}{ $row->[5] }{'mag'}
-                            )
+            # Get Map Sets
+            if ( $map_sets and %{$map_sets} ) {
+                $from .= q[,
+                  cmap_map_set ms ];
+                $where .= " and m.map_set_id=ms.map_set_id ";
+
+                #Map set aid
+                $aid_where .=
+                    "(ms.accession_id = '"
+                  . join( "' or ms.accession_id = '", keys( %{$map_sets} ) )
+                  . "')";
+            }
+            if ( $maps and %{$maps} ) {
+                $aid_where .= ' or ' if ($aid_where);
+                $aid_where .=
+                  " m.accession_id in ('"
+                  . join( "','", keys( %{$maps} ) ) . "')";
+            }
+        }
+        if ($where) {
+            $where = " where $where and ( $aid_where )";
+        }
+        else {
+            $where = " where $aid_where ";
+        }
+        $sql_str = "$sql_base $from $where\n";
+
+        #print S#TDERR "SLOT_INFO SQL \n$sql_str\n";
+
+        my $slot_results;
+
+        unless ( $slot_results = $self->get_cached_results( 4, $sql_str ) ) {
+            $slot_results = $db->selectall_arrayref( $sql_str, {}, () );
+            $self->store_cached_results( 4, $sql_str, $slot_results );
+        }
+
+        # Add start and end values into slot_info
+        if ( $maps and %{$maps} ) {
+            foreach my $row (@$slot_results) {
+                if ( defined( $maps->{ $row->[5] }{'start'} ) ) {
+                    $row->[1] = $maps->{ $row->[5] }{'start'};
+                    ### If start is a feature, get the positions
+                    ### and store in both places.
+                    if ( not $row->[1] =~ /^$RE{'num'}{'real'}$/ ) {
+                        $row->[1] = $self->feature_name_to_position(
+                            feature_name        => $row->[1],
+                            map_id              => $row->[0],
+                            start_position_only => 1,
                           )
-                        {
-                            $magnification =
-                              $slots->{$slot_no}{'maps'}{ $row->[5] }{'mag'};
-                        }
-
-                        $self->{'slot_info'}{$slot_no}{ $row->[0] } = [
-                            $row->[1], $row->[2], $row->[3],
-                            $row->[4], $magnification
-                        ];
+                          || undef;
+                        $maps->{ $row->[5] }{'start'} = $row->[1];
                     }
                 }
+                else {
+                    $row->[1] = undef;
+                }
+                if ( defined( $maps->{ $row->[5] }{'stop'} ) ) {
+                    $row->[2] = $maps->{ $row->[5] }{'stop'};
+                    ### If stop is a feature, get the positions.
+                    ### and store in both places.
+                    if ( not $row->[2] =~ /^$RE{'num'}{'real'}$/ ) {
+                        $row->[2] = $self->feature_name_to_position(
+                            feature_name        => $row->[2],
+                            map_id              => $row->[0],
+                            start_position_only => 0,
+                          )
+                          || undef;
+                        $maps->{ $row->[5] }{'stop'} = $row->[2];
+                    }
+                }
+                else {
+                    $row->[2] = undef;
+                }
+                ###flip start and end if start>end
+                ( $row->[1], $row->[2] ) = ( $row->[2], $row->[1] )
+                  if (  defined( $row->[1] )
+                    and defined( $row->[2] )
+                    and $row->[1] > $row->[2] );
             }
         }
-
-        # If ever a slot has no maps, remove the slot.
-        my $delete_pos = 0;
-        my $delete_neg = 0;
-        foreach my $slot_no ( sort orderOutFromZero keys %{$slots} ) {
-            if ( scalar( keys( %{ $self->{'slot_info'}{$slot_no} } ) ) <= 0 ) {
-                if ( $slot_no >= 0 ) {
-                    $delete_pos = 1;
-                }
-                if ( $slot_no <= 0 ) {
-                    $delete_neg = 1;
-                }
-            }
-            if ( $slot_no >= 0 and $delete_pos ) {
-                delete $self->{'slot_info'}{$slot_no};
-                delete $slots->{$slot_no};
-            }
-            elsif ( $slot_no < 0 and $delete_neg ) {
-                delete $self->{'slot_info'}{$slot_no};
-                delete $slots->{$slot_no};
+        else {
+            ###No Maps specified, make all start/stops undef
+            foreach my $row (@$slot_results) {
+                $row->[1] = undef;
+                $row->[2] = undef;
             }
         }
+        foreach my $row (@$slot_results) {
+            if ( defined( $row->[1] ) and $row->[1] =~ /(.+)\.0+$/ ) {
+                $row->[1] = $1;
+            }
+            if ( defined( $row->[2] ) and $row->[2] =~ /(.+)\.0+$/ ) {
+                $row->[2] = $1;
+            }
+            if ( $row->[3] =~ /(.+)\.0+$/ ) {
+                $row->[3] = $1;
+            }
+            if ( $row->[4] =~ /(.+)\.0+$/ ) {
+                $row->[4] = $1;
+            }
+            my $magnification = 1;
+            if ( defined( $maps->{ $row->[5] }{'mag'} ) ) {
+                $magnification = $maps->{ $row->[5] }{'mag'};
+            }
 
-        #print S#TDERR Dumper($self->{'slot_info'})."\n";
+            $self->{'slot_info'}{$slot_no}{ $row->[0] } =
+              [ $row->[1], $row->[2], $row->[3], $row->[4], $magnification ];
+        }
     }
+
+    # If ever a slot has no maps, remove the slot.
+    my $delete_pos = 0;
+    my $delete_neg = 0;
+    foreach my $slot_no ( sort orderOutFromZero keys %{$slots} ) {
+        if ( scalar( keys( %{ $self->{'slot_info'}{$slot_no} } ) ) <= 0 ) {
+            if ( $slot_no >= 0 ) {
+                $delete_pos = 1;
+            }
+            if ( $slot_no <= 0 ) {
+                $delete_neg = 1;
+            }
+        }
+        if ( $slot_no >= 0 and $delete_pos ) {
+            delete $self->{'slot_info'}{$slot_no};
+            delete $slots->{$slot_no};
+        }
+        elsif ( $slot_no < 0 and $delete_neg ) {
+            delete $self->{'slot_info'}{$slot_no};
+            delete $slots->{$slot_no};
+        }
+    }
+
+    #print S#TDERR Dumper($self->{'slot_info'})."\n";
     return $self->{'slot_info'};
 }
 
