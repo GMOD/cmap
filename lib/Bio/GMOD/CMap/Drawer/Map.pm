@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.60 2003-11-04 17:19:04 kycl4rk Exp $
+# $Id: Map.pm,v 1.61 2003-11-10 17:32:25 kycl4rk Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.60 $)[-1];
+$VERSION = (qw$Revision: 1.61 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1711,25 +1711,32 @@ Returns the all the map IDs sorted by the number of correspondences
     
     unless ( $self->{'sorted_map_ids'} ) {
         my @map_ids = keys %{ $self->{'maps'} || {} };
-        my ( $sort_on, $reverse );
+
         if ( $self->slot_no == 0 && scalar @map_ids > 1 ) {
-            $sort_on = 'display_order';
-            $reverse = 1;
-        }
-        else {
-            $sort_on = 'no_correspondences';
-            $reverse = -1;
-        }
-
-        my @maps = map { 
-            [ $_, $self->{'maps'}{ $_ }{ $sort_on } ] 
-        } keys %{ $self->{'maps'} || {} };
-
-        if ( @maps ) {
             $self->{'sorted_map_ids'} = [
                 map  { $_->[0] }
-                sort { $reverse * ( $a->[1] <=> $b->[1] ) } 
-                @maps
+                sort { 
+                    $a->[1] <=> $b->[1]
+                    ||
+                    $a->[2] cmp $b->[2]
+                } 
+                map  { [ 
+                    $_, 
+                    $self->{'maps'}{ $_ }{'display_order'},
+                    $self->{'maps'}{ $_ }{'map_name'} 
+                ] }
+                @map_ids
+            ];
+        }
+        else {
+            $self->{'sorted_map_ids'} = [
+                map  { $_->[0] }
+                sort { $b->[1] <=> $a->[1] } 
+                map  { [ 
+                    $_, 
+                    $self->{'maps'}{ $_ }{'no_correspondences'} 
+                ] }
+                @map_ids
             ];
         }
     }
