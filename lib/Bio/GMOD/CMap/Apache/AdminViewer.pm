@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.71 2004-09-10 19:02:48 mwz444 Exp $
+# $Id: AdminViewer.pm,v 1.72 2004-09-10 19:15:28 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -33,7 +33,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.71 $)[-1];
+$VERSION        = (qw$Revision: 1.72 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -2096,8 +2096,10 @@ sub map_set_create {
         'before creating map sets.'
     ) unless @$specie;
 
-    my $map_type_aids = \keys(%{$self->map_type_data()});
+    my @map_type_aids_array = keys(%{$self->map_type_data()});
+    my $map_type_aids = \@map_type_aids_array;
 
+print STDERR Dumper($map_type_aids)."\n";
     return $self->error(
         'Please create map types in your configuration file '.
         'before creating map sets.'
