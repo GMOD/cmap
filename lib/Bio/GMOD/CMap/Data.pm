@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.72 2003-11-03 18:28:16 kycl4rk Exp $
+# $Id: Data.pm,v 1.73 2003-11-04 15:56:45 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.72 $)[-1];
+$VERSION = (qw$Revision: 1.73 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -145,17 +145,20 @@ Gets the specifics on a feature correspondence record.
                    ms.map_set_id,
                    ms.accession_id as map_set_aid,
                    ms.short_name as map_set_name,
-                   s.common_name as species_name
+                   s.common_name as species_name,
+                   mt.map_units
             from   cmap_feature f,
                    cmap_feature_type ft,
                    cmap_map map,
                    cmap_map_set ms,
-                   cmap_species s
+                   cmap_species s,
+                   cmap_map_type mt
             where  f.feature_id=?
             and    f.feature_type_id=ft.feature_type_id
             and    f.map_id=map.map_id
             and    map.map_set_id=ms.map_set_id
             and    ms.species_id=s.species_id
+            and    ms.map_type_id=mt.map_type_id
         ]
     );
     $sth->execute( $corr->{'feature_id1'} );
@@ -2411,7 +2414,8 @@ Given a list of feature names, find any maps they occur on.
                        ms.short_name as map_set_name,
                        ms.can_be_reference_map,
                        s.species_id,
-                       s.common_name as species_name
+                       s.common_name as species_name,
+                       mt.map_units
             from       cmap_feature f
             left join  cmap_feature_alias fa
             on         f.feature_id=fa.feature_id
@@ -2423,6 +2427,8 @@ Given a list of feature names, find any maps they occur on.
             on         map.map_set_id=ms.map_set_id
             inner join cmap_species s
             on         ms.species_id=s.species_id
+            inner join cmap_map_type mt
+            on         ms.map_type_id=mt.map_type_id
             $where
             and        ms.is_enabled=1
         ];
