@@ -1,17 +1,18 @@
 package Bio::GMOD::CMap::Apache::HelpViewer;
 # vim: set ft=perl:
 
-# $Id: HelpViewer.pm,v 1.13 2004-02-10 22:50:09 kycl4rk Exp $
+# $Id: HelpViewer.pm,v 1.13.2.1 2004-07-08 21:15:23 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.13 $)[-1];
+$VERSION = (qw$Revision: 1.13.2.1 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use base 'Bio::GMOD::CMap::Apache';
 
 use constant TEMPLATES     => {
     default                => 'help_map_viewer.tmpl',
+    data_download          => 'help_data_download.tmpl',
     correspondence_details => 'help_correspondence.tmpl',
     evidence_type_info     => 'help_evidence_type_info.tmpl',
     feature_alias_details  => 'help_feature_alias_details.tmpl',
