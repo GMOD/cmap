@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.100 2004-07-02 20:51:56 mwz444 Exp $
+# $Id: Map.pm,v 1.101 2004-07-06 18:15:04 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.100 $)[-1];
+$VERSION = (qw$Revision: 1.101 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -610,6 +610,9 @@ Lays out the map.
         my $max_x;
         my @map_area_data = ();
 
+        my $actual_map_length = $self->map_length($map_id);
+        my $map_length        = $actual_map_length || 1;
+
         unless ($is_compressed) {
             for my $rec ( @{ $drawer->flip } ) {
                 if (   $rec->{'slot_no'} == $slot_no
@@ -642,10 +645,10 @@ Lays out the map.
         # The map.
         #
         ###########################################
-        my ( $min_x, $map_base_y, $area );
+        my ( $min_x, $map_base_y, $area, $capped );
         (
             $base_x, $min_x, $map_base_y,$top_y, $area, 
-            $last_map_x, $last_map_y, $pixel_height
+            $last_map_x, $last_map_y, $pixel_height, $capped
           )
           = $self->layout_map_foundation(
             base_x          => $base_x,
@@ -662,6 +665,7 @@ Lays out the map.
             last_map_x      => $last_map_x,
             last_map_y      => $last_map_y,
             no_of_maps      => $no_of_maps,
+            map_length      => $map_length,
           );
         ###########################################
 
@@ -690,12 +694,46 @@ Lays out the map.
             code => $code,
           };
 
+        # Add an asterisk if the map was capped
+        if ($capped == 1 or $capped == 3){ #top capped
+            # Draw asterisk
+            push @drawing_data,
+                [ STRING, $reg_font, $map_bounds[2]+2, $map_bounds[1] 
+                , '*', 'red' ];
+            # add map over to identify what it means
+            push @map_area_data,
+              {
+                coords => [$map_bounds[2]+2,
+                    $map_bounds[1],
+                    $map_bounds[2]+2+$font_width,
+                    $map_bounds[1]+$font_height],
+                url  => '',
+                alt  => 'Size Capped',
+              };
+
+        }
+        if ($capped >= 2){ #bottom capped
+            # Draw asterisk
+            push @drawing_data,
+                [ STRING, $reg_font, $map_bounds[2]+2
+                , $map_bounds[3] - $font_height*2  
+                , '*', 'red' ];
+            # add map over to identify what it means
+            push @map_area_data,
+              {
+                coords => [$map_bounds[2]+2,
+                    $map_bounds[3] - $font_height*2,
+                    $map_bounds[2]+2+$font_width,
+                    $map_bounds[3] - $font_height],
+                url  => '',
+                alt  => 'Size Capped',
+              };
+        }
+
         $last_map_y = $map_y_end + 2;
 
         my $map_start         = $self->start_position($map_id);
         my $map_stop          = $self->stop_position($map_id);
-        my $actual_map_length = $self->map_length($map_id);
-        my $map_length        = $actual_map_length || 1;
 
         $drawer->register_map_y_coords(
             $slot_no,    $map_id,    $map_start, $map_stop,
@@ -1367,6 +1405,7 @@ sub layout_map_foundation {
     my $last_map_x      = $args{'last_map_x'};
     my $last_map_y      = $args{'last_map_y'};
     my $no_of_maps      = $args{'no_of_maps'};
+    my $map_length      = $args{'map_length'};
 
     my $pixel_height = $drawer->pixel_height;
     my $label_side   = $drawer->label_side($slot_no);
@@ -1381,6 +1420,10 @@ sub layout_map_foundation {
     my $no_features          = $self->no_features($map_id);
     my $min_map_pixel_height = $drawer->config_data('min_map_pixel_height');
     my $scaled_map_pixel_height = $min_map_pixel_height;
+    my $capped               = 0; #represents if the size of the map 
+                                  #was capped. Representation based on binary:
+                                  # 0 = not capped, 1 = top; 2 = bottom
+                                  # 3 = both 
 
     #
     # Set information used to scale.
@@ -1390,11 +1433,11 @@ sub layout_map_foundation {
             = ($self->stop_position($map_id)-$self->start_position($map_id))
             * ($drawer->pixel_height()
               / $drawer->{'data'}{'ref_unit_size'}{$self->map_units($map_id)});
-        my $max_map_pixel_height=(2 * $drawer->pixel_height());
+        #my $max_map_pixel_height=(10 * $drawer->pixel_height());
         $scaled_map_pixel_height = $min_map_pixel_height
             if ($scaled_map_pixel_height < $min_map_pixel_height);
-        $scaled_map_pixel_height = $max_map_pixel_height
-            if ($scaled_map_pixel_height > $max_map_pixel_height);
+        #$scaled_map_pixel_height = $max_map_pixel_height
+        #    if ($scaled_map_pixel_height > $max_map_pixel_height);
     }
     #
     # Get the information about the reference map.
@@ -1415,7 +1458,7 @@ sub layout_map_foundation {
     # Set the boundaries for the top and the bottom that no
     # map shall be allowed to cross.
     #
-    my $boundary_factor=1;
+    my $boundary_factor=0.5;
     my $top_boundary=$ref_y1 - (
         ($ref_y2 - $ref_y1) * $boundary_factor);
     my $bottom_boundary=$ref_y2 + (
@@ -1492,6 +1535,7 @@ sub layout_map_foundation {
               $ref_pos->{'y1'} +
               ( ( $ref_corr->{'max_start'} - $ref_pos->{'map_start'} ) /
                   $ref_map_unit_len ) * $ref_map_pixel_len;
+            my $this_map_corr_y1 = 
             # Set the avg location of the corr on the ref map
             my $ref_map_mid_y =
                 $ref_pos->{'y1'} +
@@ -1501,23 +1545,18 @@ sub layout_map_foundation {
             if (0){
                 # Single line to avg corr
                 push @ref_connections,
-                  [ $ref_pos->{'x'}, $ref_map_mid_y, $ref_corr->{'no_corr'}, ];
+                  [ $ref_pos->{'x'}, $ref_map_mid_y, $ref_corr->{'no_corr'}
+                  ,($ref_corr->{'avg_mid2'}-$self->start_position($map_id))];
             }
             else{
                 # V showing span of corrs
                 push @ref_connections,
-                  [ $ref_pos->{'x'}, $ref_map_y1, $ref_corr->{'no_corr'}, ];
+                  [ $ref_pos->{'x'}, $ref_map_y1, $ref_corr->{'no_corr'} 
+                  ,($ref_corr->{'min_start2'}-$self->start_position($map_id)) ];
                 push @ref_connections,
-                  [ $ref_pos->{'x'}, $ref_map_y2, $ref_corr->{'no_corr'}, ];
+                  [ $ref_pos->{'x'}, $ref_map_y2, $ref_corr->{'no_corr'}
+                  ,($ref_corr->{'max_start2'}-$self->start_position($map_id)) ];
             }
-
-          #
-          # This causes the map to span the distance covered on the ref.
-          #
-          #                $min_ref_y = $ref_map_y1 unless defined $min_ref_y;
-          #                $min_ref_y = $ref_map_y1 if $ref_map_y1 < $min_ref_y;
-          #                $max_ref_y = $ref_map_y2 unless defined $min_ref_y;
-          #                $max_ref_y = $ref_map_y2 if $ref_map_y2 > $max_ref_y;
 
             #
             # This keeps the map a consistent height.
@@ -1570,6 +1609,20 @@ sub layout_map_foundation {
 
         my $map_mid_pix = [ $base_x, $min_ref_y + ( $pixel_height / 2 ) ];
 
+        if (defined $ref_slot_no){
+            my $temp_hash = $self->enforce_boundaries(
+                map_base_y      => $map_base_y,
+                top_boundary    => $top_boundary,
+                bottom_boundary => $bottom_boundary,
+                pixel_height    => $pixel_height,
+                area            => $area,
+            );
+            $map_base_y      = $temp_hash->{'map_base_y'};
+            $top_boundary    = $temp_hash->{'top_boundary'};
+            $bottom_boundary = $temp_hash->{'bottom_boundary'};
+            $pixel_height    = $temp_hash->{'pixel_height'};
+            $capped          = $temp_hash->{'capped'};
+        }
         if ($self->aggregate){
             for my $ref_connect (@ref_connections) {
                 my $line_color =
@@ -1579,42 +1632,57 @@ sub layout_map_foundation {
                   : $ref_connect->[2] <= 50 ? 'purple'
                   : $ref_connect->[2] <= 200 ? 'red'
                   : 'black';
+                my $this_map_x=$label_side eq RIGHT ? $base_x-4 : $base_x+4;
+                my $this_map_y=(($ref_connect->[3]/$map_length)
+                                * $pixel_height)+$map_base_y;
                 push @$drawing_data,
                   [
-                    LINE,              $ref_connect->[0],
-                    $ref_connect->[1], @$map_mid_pix,
+                    LINE,
+                    $ref_connect->[0],
+                    $ref_connect->[1], 
+                    $this_map_x, 
+                    $this_map_y, 
                     $line_color,       0
                   ];
+                push @$drawing_data,
+                  [
+                    LINE,
+                    $this_map_x,
+                    $this_map_y-1, 
+                    $this_map_x,
+                    $this_map_y+1, 
+                    'black',       0
+                  ];
+                push @$drawing_data,
+                  [
+                    LINE,
+                    $this_map_x,
+                    $this_map_y, 
+                    $base_x,
+                    $this_map_y, 
+                    'black',       0
+                  ];
+
             }
         }
     }
     else{
         if ($self->config_data('scalable')->{$self->map_units($map_id)}){
             $pixel_height = $scaled_map_pixel_height;
-        }
-    }
-
-    #
-    # enforce the boundaries
-    #
-    if (defined $ref_slot_no){
-        if ($map_base_y<$top_boundary){
-            $pixel_height -= ($top_boundary-$map_base_y); 
-            $map_base_y    = $top_boundary;
-            if ($area and scalar @$area){
-                if ($area->[1]<$top_boundary){
-                    $area->[1] = $top_boundary;
-                } 
+            if (defined $ref_slot_no){
+                my $temp_hash = $self->enforce_boundaries(
+                    map_base_y      => $map_base_y,
+                    top_boundary    => $top_boundary,
+                    bottom_boundary => $bottom_boundary,
+                    pixel_height    => $pixel_height,
+                    area            => $area,
+                );
+                $map_base_y      = $temp_hash->{'map_base_y'};
+                $top_boundary    = $temp_hash->{'top_boundary'};
+                $bottom_boundary = $temp_hash->{'bottom_boundary'};
+                $pixel_height    = $temp_hash->{'pixel_height'};
+                $capped          = $temp_hash->{'capped'};
             }
-        }
-        if ($bottom_boundary and $pixel_height+$map_base_y>$bottom_boundary){
-            ###Assumes $bottom_boundary is not naturally 0 
-            $pixel_height=$bottom_boundary-$map_base_y;
-                if ($area and scalar @$area){
-                    if ($area->[3]>$bottom_boundary){
-                    $area->[3]     = $bottom_boundary;
-                    } 
-            } 
         }
     }
 
@@ -1657,10 +1725,51 @@ sub layout_map_foundation {
     }
     
     return ( $base_x, $min_x, $map_base_y, $top_y, $area, 
-        $last_map_x, $last_map_y, $pixel_height );
+        $last_map_x, $last_map_y, $pixel_height, $capped );
 
 }
 
+# ----------------------------------------------------------
+sub enforce_boundaries {
+    #
+    # enforce the boundaries of maps
+    #
+    my ($self,%args)    = @_;
+    my $map_base_y      = $args{'map_base_y'};
+    my $top_boundary    =$args{'top_boundary'};
+    my $bottom_boundary =$args{'bottom_boundary'};
+    my $capped          = 0;
+    my $pixel_height    =$args{'pixel_height'};
+    my $area            =$args{'area'};
+     
+    if ($map_base_y<$top_boundary){
+        $capped        = 1; 
+        $pixel_height -= ($top_boundary-$map_base_y); 
+        $map_base_y    = $top_boundary;
+        if ($area and scalar @$area){
+            if ($area->[1]<$top_boundary){
+                $area->[1] = $top_boundary;
+            } 
+        }
+    }
+    if ($bottom_boundary and $pixel_height+$map_base_y>$bottom_boundary){
+        ###Assumes $bottom_boundary is not naturally 0 
+        $capped += 2;
+        $pixel_height=$bottom_boundary-$map_base_y;
+            if ($area and scalar @$area){
+                if ($area->[3]>$bottom_boundary){
+                $area->[3]     = $bottom_boundary;
+                } 
+        } 
+    }
+    return {
+        map_base_y      => $map_base_y,
+		top_boundary    => $top_boundary,
+		bottom_boundary => $bottom_boundary,
+		pixel_height    => $pixel_height,
+		capped          => $capped,
+    }
+}
 # ---------------------------------------------------
 sub add_tick_marks {
 

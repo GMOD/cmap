@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.134 2004-07-02 20:45:48 mwz444 Exp $
+# $Id: Data.pm,v 1.135 2004-07-06 18:15:00 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.134 $)[-1];
+$VERSION = (qw$Revision: 1.135 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -4501,7 +4501,11 @@ sub count_correspondences{
                     'min(cl.start_position1) as min_start, '
                   . 'max(cl.start_position1) as max_start, '                    
                   . 'avg(((cl.stop_position1-cl.start_position1)/2)'
-                  .     '+cl.start_position1) as avg_mid, '  );
+                  .     '+cl.start_position1) as avg_mid, '  
+                  . 'min(cl.start_position2) as min_start2, '
+                  . 'max(cl.start_position2) as max_start2, '
+                  . 'avg(((cl.stop_position2-cl.start_position2)/2)'
+                  .     '+cl.start_position2) as avg_mid2, '  );
         }
         else{
             my $base_sql = qq[ 
@@ -4542,7 +4546,11 @@ sub count_correspondences{
                     'min(f1.start_position) as min_start, '
                   . 'max(f1.start_position) as max_start, '                    
                   . 'avg(((f1.stop_position-f1.start_position)/2)'
-                  .     '+f1.start_position) as avg_mid, '  );
+                  .     '+f1.start_position) as avg_mid, '  
+                  . 'min(f2.start_position) as min_start2, '
+                  . 'max(f2.start_position) as max_start2, '                    
+                  . 'avg(((f2.stop_position-f2.start_position)/2)'
+                  .     '+f2.start_position) as avg_mid2, '  );
         }
         push @query_args, $ref_map_id;
     }
@@ -4586,7 +4594,11 @@ sub count_correspondences{
                     'min(cl.start_position1) as min_start, '
                   . 'max(cl.start_position1) as max_start , '
                   . 'avg(((cl.stop_position1-cl.start_position1)/2)'
-                  .     '+cl.start_position1) as avg_mid, ' );
+                  .     '+cl.start_position1) as avg_mid, '
+                  . 'min(cl.start_position2) as min_start2, '
+                  . 'max(cl.start_position2) as max_start2 , '
+                  . 'avg(((cl.stop_position2-cl.start_position2)/2)'
+                  .     '+cl.start_position2) as avg_mid2, ' );
         }
         else{
             $base_sql = qq[ 
@@ -4630,7 +4642,12 @@ sub count_correspondences{
                     'min(f1.start_position) as min_start, '
                   . 'max(f1.start_position) as max_start , '
                   . 'avg(((f1.stop_position-f1.start_position)/2)'
-                  .     '+f1.start_position) as avg_mid, ' );
+                  .     '+f1.start_position) as avg_mid, '
+                  . 'min(f2.start_position) as min_start2, '
+                  . 'max(f2.start_position) as max_start2 , '
+                  . 'avg(((f2.stop_position-f2.start_position)/2)'
+                  .     '+f2.start_position) as avg_mid2, '
+            );
         }
     }
 
@@ -4670,6 +4687,9 @@ sub count_correspondences{
                 min_start  => $pos->{'min_start'},
                 max_start  => $pos->{'max_start'},
                 avg_mid    => $pos->{'avg_mid'},
+                min_start2 => $pos->{'min_start2'},
+                max_start2 => $pos->{'max_start2'},
+                avg_mid2   => $pos->{'avg_mid2'},
               };
             $corr_lookup{ $count->{'map_id2'} } += $count->{'no_corr'};
         }
