@@ -1,15 +1,13 @@
 package Bio::GMOD::CMap::Apache::MapDetailViewer;
 # vim: set ft=perl:
 
-# $Id: MapDetailViewer.pm,v 1.20 2003-09-29 20:49:12 kycl4rk Exp $
+# $Id: MapDetailViewer.pm,v 1.21 2004-02-10 22:50:09 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES );
-$VERSION = (qw$Revision: 1.20 $)[-1];
+$VERSION = (qw$Revision: 1.21 $)[-1];
 
-use Apache::Constants;
 use URI::Escape;
-use Data::Dumper;
 use Data::Pageset;
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Drawer;
@@ -190,9 +188,7 @@ sub handler {
             }
         }
 
-        $apr->content_type('text/plain');
-        $apr->send_http_header;
-        $apr->print( $text );
+        print $apr->header( -type => 'text/plain' ), $text;
     }
     else {
         my @map_ids    = map {$_||()} keys %{$drawer->{'data'}{'slots'}{'0'}};
@@ -228,12 +224,11 @@ sub handler {
             \$html 
         ) or $html = $t->error;
 
-        $apr->content_type('text/html');
-        $apr->send_http_header;
-        $apr->print( $html );
+        print $apr->header( -type => 'text/html', -cookie => $self->cookie ), 
+            $html;
     }
 
-    return OK;
+    return 1;
 }
 
 1;
@@ -263,11 +258,11 @@ L<perl>.
 
 =head1 AUTHOR
 
-Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
+Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002-3 Cold Spring Harbor Laboratory
+Copyright (c) 2002-4 Cold Spring Harbor Laboratory
 
 This library is free software;  you can redistribute it and/or modify 
 it under the same terms as Perl itself.

@@ -1,14 +1,11 @@
 package Bio::GMOD::CMap::Apache::Index;
 # vim: set ft=perl:
 
-# $Id: Index.pm,v 1.7 2003-10-01 23:16:08 kycl4rk Exp $
+# $Id: Index.pm,v 1.8 2004-02-10 22:50:09 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.7 $)[-1];
-
-use Apache::Constants;
-use Data::Dumper;
+$VERSION = (qw$Revision: 1.8 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use base 'Bio::GMOD::CMap::Apache';
@@ -28,6 +25,7 @@ sub handler {
     $t->process( 
         TEMPLATE, 
         { 
+            apr        => $self->apr,
             page       => $self->page,
             intro      => $INTRO,
             stylesheet => $self->stylesheet,
@@ -35,10 +33,8 @@ sub handler {
         \$html 
     ) or $html = $t->error;
 
-    $apr->content_type('text/html');
-    $apr->send_http_header;
-    $apr->print( $html );
-    return OK;
+    print $apr->header( -type => 'text/html', -cookie => $self->cookie ), $html;
+    return 1;
 }
 
 1;
@@ -72,11 +68,11 @@ L<perl>.
 
 =head1 AUTHOR
 
-Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
+Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002-3 Cold Spring Harbor Laboratory
+Copyright (c) 2002-4 Cold Spring Harbor Laboratory
 
 This library is free software;  you can redistribute it and/or modify 
 it under the same terms as Perl itself.

@@ -1,13 +1,12 @@
 package Bio::GMOD::CMap::Apache::EvidenceTypeViewer;
 # vim: set ft=perl:
 
-# $Id: EvidenceTypeViewer.pm,v 1.1 2003-10-16 22:10:54 kycl4rk Exp $
+# $Id: EvidenceTypeViewer.pm,v 1.2 2004-02-10 22:50:09 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
-use Apache::Constants;
 use Data::Pageset;
 use Bio::GMOD::CMap::Apache;
 use base 'Bio::GMOD::CMap::Apache';
@@ -63,10 +62,8 @@ sub handler {
         \$html 
     ) or $html = $t->error;
 
-    $apr->content_type('text/html');
-    $apr->send_http_header;
-    $apr->print( $html );
-    return OK;
+    print $apr->header( -type => 'text/html', -cookie => $self->cookie ), $html;
+    return 1;
 }
 
 1;
@@ -103,11 +100,11 @@ L<perl>.
 
 =head1 AUTHOR
 
-Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
+Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002-3 Cold Spring Harbor Laboratory
+Copyright (c) 2002-4 Cold Spring Harbor Laboratory
 
 This library is free software;  you can redistribute it and/or modify 
 it under the same terms as Perl itself.

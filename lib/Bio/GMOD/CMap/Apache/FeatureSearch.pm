@@ -1,21 +1,15 @@
 package Bio::GMOD::CMap::Apache::FeatureSearch;
 # vim: set ft=perl:
 
-# $Id: FeatureSearch.pm,v 1.15 2003-10-01 23:15:38 kycl4rk Exp $
+# $Id: FeatureSearch.pm,v 1.16 2004-02-10 22:50:09 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.15 $)[-1];
+$VERSION = (qw$Revision: 1.16 $)[-1];
 
-use Apache::Constants;
-
-use Bio::GMOD::CMap::Apache;
-use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
 use Data::Pageset;
 use base 'Bio::GMOD::CMap::Apache';
-
-use Data::Dumper;
 
 use constant TEMPLATE => 'feature_search.tmpl';
 
@@ -24,13 +18,11 @@ sub handler {
     # Make a jazz noise here...
     #
     my ( $self, $apr )    = @_;
-    my $preferences       = $apr->pnotes('PREFERENCES')       || {};
-    my $features          = $apr->param('features')           || 
-                            $preferences->{'features'}        || 
-                            $preferences->{'highlight'}       || '';
-    my $order_by          = $apr->param('order_by')           || '';
-    my $page_no           = $apr->param('page_no')            ||  1;
-    my $search_field      = $apr->param('search_field')       || '';
+    my $features          = $apr->param('features')     || 
+                            $apr->param('highlight')    || '';
+    my $order_by          = $apr->param('order_by')     || '';
+    my $page_no           = $apr->param('page_no')      ||  1;
+    my $search_field      = $apr->param('search_field') || '';
     my @species_aids      = ( $apr->param('species_aid')      );
     my @feature_type_aids = ( $apr->param('feature_type_aid') );
 
@@ -101,10 +93,8 @@ sub handler {
     ) 
     or $html = $t->error;
 
-    $apr->content_type('text/html');
-    $apr->send_http_header;
-    $apr->print( $html );
-    return OK;
+    print $apr->header( -type => 'text/html', -cookie => $self->cookie ), $html;
+    return 1;
 }
 
 1;
@@ -140,11 +130,11 @@ L<perl>.
 
 =head1 AUTHOR
 
-Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
+Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002-3 Cold Spring Harbor Laboratory
+Copyright (c) 2002-4 Cold Spring Harbor Laboratory
 
 This library is free software;  you can redistribute it and/or modify 
 it under the same terms as Perl itself.

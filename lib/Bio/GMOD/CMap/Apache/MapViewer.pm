@@ -1,20 +1,17 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.28 2004-01-08 18:12:20 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.29 2004-02-10 22:50:09 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.28 $)[-1];
+$VERSION = (qw$Revision: 1.29 $)[-1];
 
-use Apache::Constants qw[ :common REDIRECT ];
-use Apache::Request;
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer;
 use Bio::GMOD::CMap::Data;
 use Template;
-use Data::Dumper;
 
 use base 'Bio::GMOD::CMap::Apache';
 use constant TEMPLATE     => 'cmap_viewer.tmpl';
@@ -224,10 +221,8 @@ sub handler {
         \$html 
     ) or $html = $t->error;
 
-    $apr->content_type('text/html');
-    $apr->send_http_header;
-    $apr->print( $html );
-    return OK;
+    print $apr->header( -type => 'text/html', -cookie => $self->cookie ), $html;
+    return 1;
 }
 
 1;
@@ -268,11 +263,11 @@ L<perl>, L<Template>.
 
 =head1 AUTHOR
 
-Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
+Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002-3 Cold Spring Harbor Laboratory
+Copyright (c) 2002-4 Cold Spring Harbor Laboratory
 
 This library is free software;  you can redistribute it and/or modify 
 it under the same terms as Perl itself.

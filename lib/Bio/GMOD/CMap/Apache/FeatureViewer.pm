@@ -1,16 +1,11 @@
 package Bio::GMOD::CMap::Apache::FeatureViewer;
 # vim: set ft=perl:
 
-# $Id: FeatureViewer.pm,v 1.10 2003-10-22 00:20:49 kycl4rk Exp $
+# $Id: FeatureViewer.pm,v 1.11 2004-02-10 22:50:09 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.10 $)[-1];
-
-use Apache::Constants;
-use Apache::Request;
-
-use Data::Dumper;
+$VERSION = (qw$Revision: 1.11 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Data;
@@ -34,33 +29,20 @@ sub handler {
     # Make the subs in the URL.
     #
     my $t = $self->template or return;
-#    for my $dbxref ( @{ $feature->{'dbxrefs'} } ) {
-#        if ( my $mini_template = $dbxref->{'url'} ) {
-#            my $url;
-#            $t->process( 
-#                \$mini_template, 
-#                { feature => $feature }, 
-#                \$url
-#            ) or return $self->error( $t->error );
-#            $dbxref->{'url'} = $url;
-#        }
-#    }
-
     my $html;
     $t->process( 
         TEMPLATE, 
         { 
-            feature      => $feature,
-            page         => $self->page,
-            stylesheet   => $self->stylesheet,
+            apr        => $self->apr,
+            feature    => $feature,
+            page       => $self->page,
+            stylesheet => $self->stylesheet,
         }, 
         \$html 
     ) or return $self->error( $t->error );
 
-    $apr->content_type('text/html');
-    $apr->send_http_header;
-    $apr->print( $html );
-    return OK;
+    print $apr->header( -type => 'text/html', -cookie => $self->cookie ), $html;
+    return 1;
 }
 
 1;
@@ -87,9 +69,9 @@ In httpd.conf:
 
 =head1 DESCRIPTION
 
-This module is a mod_perl handler for displaying the details of a feature.  It
-inherits from Bio::GMOD::CMap::Apache where all the error handling occurs (which is
-why I can just "die" here).
+This module is a mod_perl handler for displaying the details of a
+feature.  It inherits from Bio::GMOD::CMap::Apache where all the error
+handling occurs (which is why I can just "die" here).
 
 =head1 SEE ALSO
 
@@ -97,11 +79,11 @@ L<perl>, Bio::GMOD::CMap::Apache.
 
 =head1 AUTHOR
 
-Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
+Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002-3 Cold Spring Harbor Laboratory
+Copyright (c) 2002-4 Cold Spring Harbor Laboratory
 
 This library is free software;  you can redistribute it and/or modify 
 it under the same terms as Perl itself.
