@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.27 2003-01-09 16:59:02 kycl4rk Exp $
+# $Id: Data.pm,v 1.28 2003-01-09 21:26:50 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.27 $)[-1];
+$VERSION = (qw$Revision: 1.28 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -390,7 +390,7 @@ Returns the data for drawing comparative maps.
             $sql->cmap_data_features_sql,
             'feature_id',
             {},
-            ( $map_id, $map_start, $map_stop )
+            ( $map_id, $map_start, $map_stop, $map_start, $map_start )
         );
 
         my $map_feature_types = $db->selectall_arrayref(
