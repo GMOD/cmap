@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.49 2003-05-29 20:04:44 kycl4rk Exp $
+# $Id: Data.pm,v 1.50 2003-06-17 15:55:16 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.49 $)[-1];
+$VERSION = (qw$Revision: 1.50 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -229,53 +229,69 @@ Returns the data for drawing comparative maps.
     #
     my @map_ids = ();
     if ( $map_set_aid ) {
-        die "Need a reference map to display an entire map set" 
-            unless $ref_map_id || $ref_map_set_id;
+#        die "Need a reference map to display an entire map set" 
+#            unless $ref_map_id || $ref_map_set_id;
 
         #
         # Turn the accession id into an internal id.
         #
-        my $map_set_id = $self->acc_id_to_internal_id(
-            table  => 'cmap_map_set', 
-            acc_id => $map_set_aid,
+        my $map_set_id =  $self->acc_id_to_internal_id(
+            table      => 'cmap_map_set', 
+            acc_id     => $map_set_aid,
         );
 
-        if ( $ref_map_id ) {
-            push @map_ids, @{ $db->selectcol_arrayref(
-                $sql->map_data_map_ids_by_single_reference_map(
-                    evidence_type_ids   => $evidence_type_ids,
-                ),
-                {},    
-                ( $ref_map_id, $ref_map_start, $ref_map_stop, 
-                  $map_set_id, $ref_map_id
-                )
-            ) };
-        }
-        elsif ( $reference_map->{'map_ids'} ) {
-            push @map_ids, @{ $db->selectcol_arrayref(
-                qq[
-                    select distinct map.map_id
-                    from   cmap_map map,
-                           cmap_feature f1, 
-                           cmap_feature f2, 
-                           cmap_correspondence_lookup cl,
-                           cmap_feature_correspondence fc
-                    where  f1.map_id in ( $reference_map->{'map_ids'} )
-                    and    f1.feature_id=cl.feature_id1
-                    and    cl.feature_correspondence_id=
-                           fc.feature_correspondence_id
-                    and    fc.is_enabled=1
-                    and    cl.feature_id2=f2.feature_id
-                    and    f2.map_id=map.map_id
-                    and    map.map_set_id=?
-                    and    map.map_id not in ( $reference_map->{'map_ids'} )
-                ],
-                {},
-                ( $map_set_id )
-            ) };
+        if ( $ref_map_id || $ref_map_set_id ) {
+
+            if ( $ref_map_id ) {
+                push @map_ids, @{ $db->selectcol_arrayref(
+                    $sql->map_data_map_ids_by_single_reference_map(
+                        evidence_type_ids => $evidence_type_ids,
+                    ),
+                    {},    
+                    ( $ref_map_id, $ref_map_start, $ref_map_stop, 
+                      $map_set_id, $ref_map_id
+                    )
+                ) };
+            }
+            elsif ( $reference_map->{'map_ids'} ) {
+                push @map_ids, @{ $db->selectcol_arrayref(
+                    qq[
+                        select distinct map.map_id
+                        from   cmap_map map,
+                               cmap_feature f1, 
+                               cmap_feature f2, 
+                               cmap_correspondence_lookup cl,
+                               cmap_feature_correspondence fc
+                        where  f1.map_id in ( $reference_map->{'map_ids'} )
+                        and    f1.feature_id=cl.feature_id1
+                        and    cl.feature_correspondence_id=
+                               fc.feature_correspondence_id
+                        and    fc.is_enabled=1
+                        and    cl.feature_id2=f2.feature_id
+                        and    f2.map_id=map.map_id
+                        and    map.map_set_id=?
+                        and    map.map_id not in ( $reference_map->{'map_ids'} )
+                    ],
+                    {},
+                    ( $map_set_id )
+                ) };
+            }
+            else {
+                @map_ids = ();
+            }
         }
         else {
-            @map_ids = ();
+            push @map_ids, @{ 
+                $db->selectcol_arrayref(
+                    q[
+                        select map.map_id
+                        from   cmap_map map
+                        where  map.map_set_id=?
+                    ],
+                    {},
+                    ( $map_set_id )
+                ) 
+            };
         }
 
         $map->{'map_ids'} = join( ',', @map_ids );

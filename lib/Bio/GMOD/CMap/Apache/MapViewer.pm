@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 
-# $Id: MapViewer.pm,v 1.19 2003-05-16 19:55:38 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.20 2003-06-17 15:55:16 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $TEMPLATE $PAGE );
-$VERSION = (qw$Revision: 1.19 $)[-1];
+$VERSION = (qw$Revision: 1.20 $)[-1];
 
 use Apache::Constants qw[ :common REDIRECT ];
 use Apache::Request;
@@ -127,8 +127,8 @@ sub show_form {
 
     my %slots = (
         0 => {
-            field       => 'map_aid',
-            aid         => $ref_map_aid,
+            field       => $ref_map_aid == -1 ? 'map_set_aid' : 'map_aid',
+            aid         => $ref_map_aid == -1 ? $ref_map_set_aid : $ref_map_aid,
             start       => $ref_map_start,
             stop        => $ref_map_stop,
             map_set_aid => $ref_map_set_aid,
