@@ -41,7 +41,7 @@
     <table width="100%">
         <tr>
             <td colspan="7" align="center">
-                [% SET pager_url="admin?action=xrefs_view&species_id=${apr.param('species_id')}&feature_type_id=${apr.param('feature_type_id')}&order_by=${apr.param('order_by')}&generic_only=${apr.param('generic_only')}" %]
+                [% SET pager_url="admin?action=xrefs_view&table_name=${apr.param('table_name')}&generic_only=${apr.param('generic_only')}" %]
                 [% PROCESS pager.tmpl %]
             </td>
         </tr>
