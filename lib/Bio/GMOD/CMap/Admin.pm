@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.53 2004-08-04 04:22:03 mwz444 Exp $
+# $Id: Admin.pm,v 1.54 2004-08-04 18:51:09 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.53 $)[-1];
+$VERSION = (qw$Revision: 1.54 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -1051,6 +1051,22 @@ print STDERR Dumper($duplicates)."\n";
             feature_correspondence_id=>$dup->{'duplicate_id'}
             );        
     }
+
+}
+
+sub purge_cache {
+=pod
+
+=head2 purge_cache
+
+Purge the query cache
+
+=cut
+    my ( $self, ) = @_;
+
+    my %params5=('namespace'=>$self->config_data('database')->{'name'},);
+    my $feature_type_cache=new Cache::FileCache(\%params5 );
+    $feature_type_cache->Clear;
 
 }
 

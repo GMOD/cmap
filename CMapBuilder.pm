@@ -85,7 +85,7 @@ sub ACTION_install {
     print join("\n\n",
         '',
         'CMap has been installed.',
-        "Be sure to edit '$to_conf' with database info!",
+        "Be sure to edit the config files with database info!",
         qq[Then go to "http://$host/cmap"],
         ''       
     );

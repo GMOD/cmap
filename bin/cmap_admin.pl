@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.73 2004-08-04 04:22:03 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.74 2004-08-04 18:51:09 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.73 $)[-1];
+$VERSION = (qw$Revision: 1.74 $)[-1];
 
 #
 # Get command-line options
@@ -239,8 +239,12 @@ sub show_greeting {
                 display => 'Reload correspondence matrix' 
             },
             { 
+                action  => 'purge_query_cache',   
+                display => 'Purge the cache to view new data' 
+            },
+            { 
                 action  => 'delete_duplicate_correspondences',   
-                display => 'Delete Duplicate correspondences' 
+                display => 'Delete duplicate correspondences' 
             },
             { 
                 action  => 'quit',   
@@ -1915,6 +1919,22 @@ sub delete_duplicate_correspondences {
     );
 
     $admin->delete_duplicate_correspondences();
+
+}
+
+# ----------------------------------------------------
+
+sub purge_query_cache {
+
+    my $self  = shift;
+
+    my $admin = Bio::GMOD::CMap::Admin->new(
+	    config      => $self->config,
+        data_source => $self->data_source,
+    );
+    print "Purging cache\n";
+    $admin->purge_cache();
+    print "Cache Purged\n\n"
 
 }
 
