@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.79.2.2 2005-01-19 15:27:01 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.79.2.3 2005-01-19 15:53:04 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.79.2.2 $)[-1];
+$VERSION = (qw$Revision: 1.79.2.3 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -481,6 +481,7 @@ sub handler {
             extra_code              => $extra_code,
             extra_form              => $extra_form,
             feature_default_display => $feature_default_display,
+            no_footer               => $path_info eq 'map_details' ? 1 : 0,
         },
         \$html
       )
