@@ -1,0 +1,123 @@
+# vim: tw=70:
+
+=pod
+
+=head1 NAME
+
+upgrade-12-to-13.pod
+
+=head1 SYNOPSIS
+
+Where we discuss updating your database and config files from CMap's
+version 0.12 to 0.13.
+
+=head1 INTRODUCTION
+
+Congratulations on your decision to upgrade from CMap version 0.12 to
+0.13.  This guide will take you through how to modify your database
+(and the data inside) as well as converting you configuration files.
+
+Please make sure you back up both your database and you config files.
+While this process has been tested, it is best not to take any
+chances.
+
+=head1 DATABASE UPDATE
+
+=over 4
+
+=item * 
+
+Either back up your database or create a new database to work on,
+e.g., for MySQL:
+
+  $ mysqldump cmap12 > cmap13.sql
+  $ mysqladmin create cmap13
+  $ mysql cmap13 < cmap13.sql
+
+And then work on the "cmap13" database.
+
+=item * 
+
+Execute "cmap_12_to_cmap_13.sql" on your database.  This modifies your
+data in place, which is why it is essential that you back up your data
+in case anything happens durring the upgrade process.  
+
+With MySQL the command looks something like this:
+
+  $ mysql -uroot -p CMAP < cmap_12_to_cmap_13.sql
+
+Now your database should have some new columns that are filled with
+data.
+
+=back
+
+=head1 CONFIGURATION FILE UPDATE
+
+CMap version 0.13 has a new configuration scheme.  Whereas previously
+there was just one configuration file for CMap (usually called
+"cmap.conf"), now there are several config files stored in a
+"cmap.conf" directory.  A "global.conf" file contains settings that
+affect all of CMap, while each CMap data source now has its own config
+files.  Anything in "cmap.conf" that ends in ".conf" is considered as
+a config file.
+
+To change to the new config file schema, please do the following:
+
+=over 4
+
+=item *
+
+Go into your configuration directory:
+
+  $ cd /usr/local/apache/conf/
+
+=item *
+
+Move your cmap.conf file to another file name:
+
+  $ mv cmap.conf cmap.conf.v0.12
+
+=item *
+
+Make the new conf directory (this may have been done for you by the
+install script).
+
+  $ mkdir cmap.conf 
+
+=item *
+
+Go into the CMap config directory:
+
+  $ cd cmap.conf
+
+=item *
+
+Run cmap12conftocmap13.pl on the old cmap.conf
+
+  $ /usr/local/src/cmap/upgrade/cmap12conftocmap13.pl ../cmap.conf.v0.12
+
+This will create "global.conf" and one "cmap#.conf" for each data
+source described in the original "cmap.conf" file.
+
+=item *
+
+Add the feature/map/evidence type information into each individual
+config file using "cmap_typetables_to_config.pl."
+
+  $ cmap_typetables_to_config.pl -d datasource -u sql_username [-p sql_password] >>cmap0.conf
+  $ cmap_typetables_to_config.pl -d datasource -u sql_username [-p sql_password] >>cmap1.conf
+
+=back
+
+=head1 CONCLUSION
+
+That should do it for the databases and the configuration.  If you
+have any troubles email the CMap developer's list:
+
+  gmod-cmap@lists.sourceforge.net
+
+=head1 AUTHOR
+
+Ben Faga E<lt>faga@cshl.eduE<gt>.
+
+=cut
