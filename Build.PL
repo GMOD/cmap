@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.29 2004-02-26 17:38:19 kycl4rk Exp $
+# $Id: Build.PL,v 1.30 2004-02-26 17:51:54 kycl4rk Exp $
 
 use strict;
 
@@ -330,12 +330,12 @@ for my $opt (
         }
 
         if ( $opt_name eq 'HTDOCS' && $file =~ m{htdocs/index\.html$} ) {
-            $installed_cmap_conf = $to;
-            $overwrite_ok        = 0;
+            $overwrite_ok = 0;
         }
 
         my $extra = $overwrite_ok ? '' : 
-            qq[if -e '$to' && \$self->y_n("OK to overwrite '$to'?")];
+            qq[if !-e '$to' || ].
+            qq[( -e '$to' && \$self->y_n("OK to overwrite '$to'?") )];
 
         $install .= qq[
             \$self->copy_if_modified(
