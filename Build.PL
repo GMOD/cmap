@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.7 2003-09-24 19:20:18 kycl4rk Exp $
+# $Id: Build.PL,v 1.8 2003-09-24 20:31:44 kycl4rk Exp $
 
 use strict;
 
@@ -15,7 +15,6 @@ use File::Path;
 use File::Spec::Functions;
 
 use constant INSTALL_CONF   => 'cmap_install.conf';
-use constant DEFAULT_PREFIX => catdir('/', 'usr', 'local', 'apache');
 my $cmap_conf_file          =  catfile('conf', 'cmap.conf');
 my $stylesheet_file         =  catfile('conf', 'cmap.css');
 
@@ -23,19 +22,19 @@ my @ARGS = qw[ PREFIX CONF_DIR TEMPLATE_DIR STYLESHEET_DIR ];
 my %ARGS = ( 
     PREFIX         => {
         desc       => 'A directory prefix for all install arguments',
-        default    => DEFAULT_PREFIX,
+        default    => catdir('/', 'usr', 'local', 'apache'),
     },
     CONF_DIR       => {
         desc       => 'Location for the cmap.conf configuration file',
-        default    => catdir(DEFAULT_PREFIX, 'conf'),
+        default    => 'conf',
     },
     TEMPLATE_DIR   => {
         desc       => 'Location for CMap HTML templates',
-        default    => catdir(DEFAULT_PREFIX, 'templates'),
+        default    => 'templates',
     },
     STYLESHEET_DIR => {
         desc       => 'Location for CMap stylesheet',
-        default    => catdir(DEFAULT_PREFIX, 'htdocs'),
+        default    => 'htdocs',
     },
 );
 
@@ -97,33 +96,31 @@ if ( !%OPTIONS && -e INSTALL_CONF ) {
     }
 }
 
+#
+# Make sure we have usable options.
+#
 if ( $OPTIONS{'PREFIX'} ) {
-    unless ( defined $OPTIONS{'CONF_DIR'} ) {
-        $OPTIONS{'CONF_DIR'} = catdir( $OPTIONS{'PREFIX'}, 'conf')
+    for my $option ( qw[ CONF_DIR TEMPLATE_DIR STYLESHEET_DIR ] ) {
+        $OPTIONS{ $option } ||= $ARGS{ $option }{'default'};
+        $OPTIONS{ $option }   = catdir( 
+            $OPTIONS{'PREFIX'}, $OPTIONS{ $option } 
+        );
     }
-
-    unless ( defined $OPTIONS{'TEMPLATE_DIR'} ) {
-        $OPTIONS{'TEMPLATE_DIR'} = catdir( $OPTIONS{'PREFIX'}, 'templates');
-    }
-
-    unless ( defined $OPTIONS{'STYLESHEET_DIR'} ) {
-        $OPTIONS{'STYLESHEET_DIR'} = catdir( $OPTIONS{'PREFIX'}, 'htdocs');
+}
+else {
+    for my $option ( qw[ CONF_DIR TEMPLATE_DIR STYLESHEET_DIR ] ) {
+        $OPTIONS{ $option } ||= catdir( 
+            $ARGS{'PREFIX'}{'default'}, $ARGS{ $option }{'default'}
+        );
     }
 }
 
-#
-# If no options, set with defaults.
-#
-$OPTIONS{'CONF_DIR'}       ||= $ARGS{'CONF_DIR'}{'default'};
-$OPTIONS{'TEMPLATE_DIR'}   ||= $ARGS{'TEMPLATE_DIR'}{'default'};
-$OPTIONS{'STYLESHEET_DIR'} ||= $ARGS{'STYLESHEET_DIR'}{'default'};
-
 print "The following options will be used to install CMap:\n",
-    join( "\n", 
+    join( "\n", '',
         ( map { sprintf( "%20s: %-s", $_, $OPTIONS{ $_ } ) } 
           qw[ CONF_DIR TEMPLATE_DIR STYLESHEET_DIR ] 
         ),
-        ''
+        '', ''
     ),
 ;
 
@@ -137,7 +134,7 @@ print F
     "# information used by the CMap installer.\n",
     qq[# To reconfigure, run "perl Makefile.PL `cat ".INSTALL_CONF."`"\n]
 ;
-print F "$_=$OPTIONS{$_}\n" for keys %OPTIONS;
+print F "$_=$OPTIONS{$_}\n" for qw[ CONF_DIR TEMPLATE_DIR STYLESHEET_DIR ];
 close F;
 
 #
@@ -226,10 +223,7 @@ if ( my $failures = $builder->prereq_failures ) {
 }
 
 $builder->add_to_cleanup( 
-    INSTALL_CONF, 
-    'SIGNATURE.tmp', 
-    'conf/cmap.conf', 
-    'lib/Bio/GMOD/CMap/Constants.pm'
+    INSTALL_CONF, 'conf/cmap.conf', 'lib/Bio/GMOD/CMap/Constants.pm'
 );
 $builder->create_build_script;
 
