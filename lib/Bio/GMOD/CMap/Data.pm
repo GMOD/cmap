@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.78 2003-12-31 22:19:03 kycl4rk Exp $
+# $Id: Data.pm,v 1.79 2004-01-06 18:44:12 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.78 $)[-1];
+$VERSION = (qw$Revision: 1.79 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -2618,6 +2618,8 @@ Return data for a list of evidence type acc. IDs.
             join( ', ', map { qq['$_'] } @et_aids ).
         ')';
     }
+
+    $sql .= ' order by rank, evidence_type';
 
     my $evidence_types = $db->selectall_arrayref( $sql, { Columns => {} } );
 
