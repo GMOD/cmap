@@ -57,7 +57,7 @@ provides:
     version: 1.2
   Bio::GMOD::CMap::Apache::FeatureSearch:
     file: lib/Bio/GMOD/CMap/Apache/FeatureSearch.pm
-    version: 1.16
+    version: 1.17
   Bio::GMOD::CMap::Apache::FeatureTypeViewer:
     file: lib/Bio/GMOD/CMap/Apache/FeatureTypeViewer.pm
     version: 1.6
@@ -105,10 +105,10 @@ provides:
     version: 1.6
   Bio::GMOD::CMap::Drawer:
     file: lib/Bio/GMOD/CMap/Drawer.pm
-    version: 1.51
+    version: 1.52
   Bio::GMOD::CMap::Drawer::Map:
     file: lib/Bio/GMOD/CMap/Drawer/Map.pm
-    version: 1.65
+    version: 1.66
   Bio::GMOD::CMap::Utils:
     file: lib/Bio/GMOD/CMap/Utils.pm
     version: 1.25
