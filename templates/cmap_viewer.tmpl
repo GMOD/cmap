@@ -496,10 +496,10 @@ function addPosToStr(str, slot_no, matchStr, value, command){
                       <tr>
                         <td>[% ft.feature_type %]</td>
                         <td>
-                          <input type=radio name=feature_type_[% ft.feature_type_aid %] value=0 [% IF NOT feature_types_undefined and included_features AND NOT included_features.${ft.feature_type_aid} AND NOT included_corr_only_features.${ft.feature_type_aid}; ' checked'; END %]>
+                          <input type=radio name=feature_type_[% ft.feature_type_aid %] value=0 [% IF ignored_feature_types.${ft.feature_type_aid} ; ' checked'; END %]>
                         </td>
                         <td>
-                          <input type=radio name=feature_type_[% ft.feature_type_aid %] value=1 [% IF feature_types_undefined OR included_corr_only_features.${ft.feature_type_aid}; ' checked'; END %]>
+                          <input type=radio name=feature_type_[% ft.feature_type_aid %] value=1 [% IF NOT included_features.${ft.feature_type_aid} AND NOT ignored_feature_types.${ft.feature_type_aid}; ' checked'; END %]>
                         </td>
                         <td>
                           <input type=radio name=feature_type_[% ft.feature_type_aid %] value=2 [% IF included_features.${ft.feature_type_aid} AND NOT included_corr_only_features.${ft.feature_type_aid}; ' checked'; END %]>

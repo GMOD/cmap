@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.57 2004-09-01 20:50:49 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.58 2004-09-02 14:29:18 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.57 $)[-1];
+$VERSION = (qw$Revision: 1.58 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -146,13 +146,17 @@ sub handler {
 
     my @feature_types;
     my @corr_only_feature_types;
+    my @ignored_feature_types_array;
     my $feature_types_undefined=1;
     foreach my $param ($apr->param){
         if ($param=~/^feature_type_(\S+)/){
             my $ft  = $1;
             $feature_types_undefined=0;
             my $val = $apr->param($param);
-            if ($val==1){
+            if ($val==0){
+                push @ignored_feature_types_array,$ft;
+            }
+            elsif ($val==1){
                 push @corr_only_feature_types,$ft;
             }
             elsif ($val==2){
@@ -162,6 +166,7 @@ sub handler {
     }
 
     my %include_corr_only_features = map{$_=>1} @corr_only_feature_types;
+    my %ignored_feature_types = map{$_=>1} @ignored_feature_types_array;
 
     my @evidence_types;
     if ( $apr->param('evidence_types') ) {
@@ -398,6 +403,7 @@ sub handler {
             included_features => { map { $_, 1 } @feature_types  },
             included_evidence => { map { $_, 1 } @evidence_types },
             included_corr_only_features => \%include_corr_only_features,
+            ignored_feature_types => \%ignored_feature_types,
             feature_types     => join( ',', @feature_types ),
             feature_types_undefined => $feature_types_undefined,
             evidence_types    => join( ',', @evidence_types ),
