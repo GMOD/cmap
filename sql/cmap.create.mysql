@@ -45,7 +45,6 @@ CREATE TABLE cmap_correspondence_matrix (
   link_map_set_aid varchar(20) NOT NULL default '0',
   link_species_aid varchar(20) NOT NULL default '0',
   no_correspondences int(11) NOT NULL default '0',
-  UNIQUE KEY reference_map_aid (reference_map_aid,link_map_aid)
 ) TYPE=MyISAM;
 
 # 

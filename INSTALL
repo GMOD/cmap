@@ -5,7 +5,7 @@ QUICK START
 If you're pretty experienced with Unix systems administration, here is
 the very abbreviated explanation of how to install this application:
 
-* Install libgd with at least libpng and libjpeg
+* Install libpng, libjpeg and libgd
 * Install MySQL or Oracle, create tables with contents of "sql"
     directory, grant appropriate user permissions
 * Install Perl 5.6.1, Apache 1.3.26 and mod_perl 1.27
@@ -204,8 +204,17 @@ for MySQL.  Note:  this is not the same "root" as your system
 <Enter> at the password prompt (though I'd be remiss if I didn't
 suggest you actually protect your MySQL root user with a decent
 password).  Be sure to remember the username and password you'll
-connect to the database with as you'll need it further into the
-configuration process.
+connect to the database with as you'll need to place these values into
+your "cmap.conf" file further into the installation process.  
+
+After you've granted the username access to the system, please test
+that the login works by, well, logging in.  For example, if you used
+the above, try this:
+
+    $ mysql -ujoe -pfoobar CMAP
+
+If you get in, then all is well.  If not, you should consult your
+documentation.  
 
 If you're using something other than MySQL, then you should do the
 equivalent of creating the tables described in the create scripts in
@@ -420,6 +429,46 @@ first one.  After satisfying several dependencies on your own,
 you'll begin to appreciate all the automation the CPAN shell gives
 you.
 
+There are a number of CPAN modules required by the CMAP application.  They
+are listed in the PREREQ_PM hash reference in the Makefile.PL included
+with this distribution.  Here are brief descriptions of some of the major
+ones required:
+
+*   Apache::Request:  Also known as "libapreq" because this is a C library,
+    this module actually bundles many other modules used, including
+    Apache::Request and Apache::Cookie.  The first handles the parsing of
+    the request and other miscellaneous bits about communicating with the
+    user's browser, while the latter is a nice interface to reading and
+    setting cookies, which is important as user preferences are stored in
+    cookies.  Both have their interfaces modeled after Lincoln Stein's
+    CGI.pm module.
+
+*   Class::Base:  A very nice class-building module written by Andy
+    Wardley, the author of Template Toolkit.  All the CMAP modules inherit
+    from Class::Base.
+
+*   Config::General:  A module for reading configuration files, this is
+    what parses "cmap.conf."
+
+*   DBI: The Perl Database Interface, this module standardizes the way
+    that Perl talks to databases.  The specifics of how to communicate
+    with particular databases is handled by lower-level drivers.  This is
+    one of the reasons why it was relatively easy to write this
+    application to talk to either MySQL or Oracle -- only the SQL has to
+    be customized for each vendor's product, but the way the code talks to
+    the database is the same.
+
+*   Template:  The Template Toolkit, this module handles the substitutions
+    made in the template files to create the HTML displayed to browsers.
+
+*   File::MkTemp:  This module is responsible for creating the temporary
+    files where the map images are written.
+
+*   GD:  Lincoln Stein's Perl module that interfaces with Paul Boutell's
+    libgd system library which actually does the drawing of the maps.
+
+*   Time::Object, Time::ParseDate: Two modules for dealing with dates.
+
 INSTALLING THE CMAP PERL MODULES
 
 To install the cmap modules included in this package, you can either
@@ -464,7 +513,7 @@ latter, I'd recommend choosing the first way.  Here's how to do both:
         that will need to read this file (command-line scripts run
         by users and the httpd process) as this file contains 
         database connection info and other runtime options.  Be sure 
-        to change TEMPLATE_DIR yourself to reflect the location of
+        to change "template_dir" yourself to reflect the location of
         the CMAP templates.
 
     conf/cmap.css
@@ -508,7 +557,7 @@ Either way you install, you'll need to be sure to edit your
 "cmap.conf" file to use the correct database connection information.
 (If you forget the location of the configuration file and you
 installed via option #1, then you can look in the "cmap_install.conf"
-file in the source directory of the CMAP application.) The database
+file in the source directory of the CMAP application.)  The database
 section is at the top of the file.  Only the first two options
 ("database" and "template_dir") *must* be set.  Everything else has
 reasonable defaults if nothing is specified in this file.  I would
@@ -591,17 +640,61 @@ the trick.  Add this to your root crontab (e.g., by running "crontab
 
     # clear out old cmap images
     # added by Joe User <juser@foo.com>
-    0 0 * * *  find /var/web/comparative_map_cache/ \
-        -type f -mtime +1 -exec rm -rf {} \;
+    0 0 * * *  find /tmp/cmap_cache/ -type f -mtime +1 -exec rm -rf {} \;
 
-It's always a good idea to comment on what you're doing in a
-system-wide file like a crontab so you and everyone else knows what
-each command does.  Be sure to put in your own name and e-mail
-address.  The whole command (starting with the "0") should go on one
-line, so the first backslash is just my way of indicating to you
-that the command continues on the next line.  The second backslash,
-however, is actually a part of the command.  It tells "find" that
-the semi-colon is part of its "-exec" command.
+If you choose to store your map images in a location other than the
+default of "/tmp/cmap_cache," then you'll need to change the above
+directory to match your choice.
+
+If you're curious, a "crontab" is simply a file which uses a particular
+syntax to describe to the "cron" daemon events which should happen at some
+interval.  (And a "daemon" is a program that runs continuously in the
+background on a system that does function, like listening for HTTP
+requests [httpd] or FTP requests [ftpd] or telnet requests [telnetd], etc.
+You see the pattern:  usually the service and a "d" [for "daemon"] makes
+up the name.)  "Crond" (pronounced "cron-dee," always just say "-dee"
+for the "d") sits around waiting to do something on someones behalf.  As
+you might imagine, the "cron" part implies the time aspect of the program.
+So, if you wanted to download a file every month from an FTP site to see
+if it had changed, you might see up a crontab to tell crond to do just
+that.  You edit your crontab by saying "crontab -e" (for "edit"), then
+enter a line that describes to crond when to run the command and what the
+command is.  Yours might look like this:
+
+    # download the foo.dat file
+    0 0 1 * * <ftp command>
+
+From the man(5) page for crontab (which you get by typing "man 5 crontab"
+on my GNU/Linux system), you get this:
+
+       cron(8) examines cron entries once every minute.
+
+       The time and date fields are:
+
+              field          allowed values
+              -----          --------------
+              minute         0-59
+              hour           0-23
+              day of month   1-31
+              month          1-12 (or names, see below)
+              day of week    0-7 (0 or 7 is Sun, or use names)
+
+Every minute "crond" looks aroundto see if it's time to do something by
+looking at the first 5 fields of each line in everybody's crontabs.  Stars
+mean "all" and numbers mean, well, the number.  So the above would tell
+crond to run <ftp command> (whatever that might be) on the zero-th minute
+of the zero-th hour (i.e., midnight) of the first day of every month,
+regardless of the day of week.  It's a quirky syntax, but pretty powerful.
+I added a comment to the crontab above with the hash at the beginning of
+the first line -- that's just being polite.  It's always a good idea to
+comment on what you're doing in a system-wide file like a crontab so you
+and everyone else knows what each command does.  Be sure to put in your
+own name and e-mail address.  The whole command (starting with the "0")
+should go on one line.  Note:  The backslash in the command you should put
+in the root crontab is actually a part of the command and not an
+indication that the command continues on the following line.  In this
+context, the backslash tells "find" that the semi-colon is part of its
+"-exec" command.
 
 * <Location> directives
 
