@@ -11,6 +11,12 @@
 [% IF map_sets.size %]
 
     <table>
+        <tr>
+            <td colspan="2" align="center">
+                [% SET pager_url="/cmap/map_set_info?" %]
+                [% PROCESS pager.tmpl %]
+            </td>
+        </tr>
         [% FOREACH ms=map_sets %]
             <tr bgcolor="lightgrey">
                 <td align="right">Map Set Name:</td>
