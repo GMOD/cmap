@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data::Generic;
 
-# $Id: Generic.pm,v 1.14 2003-01-08 21:03:24 kycl4rk Exp $
+# $Id: Generic.pm,v 1.15 2003-01-09 21:26:19 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.14 $)[-1];
+$VERSION = (qw$Revision: 1.15 $)[-1];
 
 use Bio::GMOD::CMap;
 use base 'Bio::GMOD::CMap';
@@ -94,9 +94,15 @@ The SQL for finding all the features on a map.
                  cmap_map_set ms,
                  cmap_map_type mt
         where    f.map_id=?
+        and      (
+            ( f.start_position>=? and f.start_position<=? )
+            or   (
+                f.stop_position is not null and
+                f.start_position<=? and
+                f.stop_position>=?
+            )
+        )
         and      f.feature_type_id=ft.feature_type_id
-        and      f.start_position>=?
-        and      f.start_position<=?
         and      f.map_id=map.map_id
         and      map.map_set_id=ms.map_set_id
         and      ms.map_type_id=mt.map_type_id
