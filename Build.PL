@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.17 2004-02-18 22:23:52 kycl4rk Exp $
+# $Id: Build.PL,v 1.18 2004-02-18 23:48:55 kycl4rk Exp $
 
 use strict;
 
@@ -178,7 +178,7 @@ for my $opt (
     find( 
         sub {
             push @files, $File::Find::name if 
-                -f $_ && 
+                !-d $_ && 
                 $File::Find::name !~ /CVS/ &&
                 $File::Find::name !~ /PL$/;
         },
@@ -200,8 +200,8 @@ for my $opt (
         ];
 
         $install .= 
-            qq[chmod 0755, '$to' or die "Cannot make '$to' executable: \$!\\n";]
-            if $opt_name eq 'CGIBIN';
+        qq[chmod 0755, '$to' or die "Cannot make '$to' executable: \$!\\n";\n]
+        if $opt_name eq 'CGIBIN';
     }
 }
 
@@ -252,7 +252,7 @@ my $builder   =  Module::Build->subclass(
         'DBI'                => 1.20,
         'File::MkTemp'       => 0,
         'GD'                 => 2.11,
-        'GD:SVG'             => 0.24,
+        'GD:SVG'             => 0,
         'IO::Tee'            => 0,
         'Regexp::Common'     => 0,
         'Template'           => 2.00,
