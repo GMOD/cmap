@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.52 2003-10-24 20:08:42 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.53 2003-10-29 20:42:45 kycl4rk Exp $
 
 use strict;
 use Apache::Constants qw[ :common M_GET REDIRECT ];
@@ -34,7 +34,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.52 $)[-1];
+$VERSION        = (qw$Revision: 1.53 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -49,6 +49,9 @@ use constant TEMPLATE         => {
     corr_evidence_type_view   => 'admin_corr_evidence_type_view.tmpl',
     colors_view               => 'admin_colors_view.tmpl',
     error                     => 'admin_error.tmpl',
+    feature_alias_create      => 'admin_feature_alias_create.tmpl',
+    feature_alias_edit        => 'admin_feature_alias_edit.tmpl',
+    feature_alias_view        => 'admin_feature_alias_view.tmpl',
     feature_corr_create       => 'admin_feature_corr_create.tmpl',
     feature_corr_view         => 'admin_feature_corr_view.tmpl',
     feature_corr_edit         => 'admin_feature_corr_edit.tmpl',
@@ -752,6 +755,32 @@ sub entity_delete {
         $uri_args ||= "?action=map_view;map_id=$map_id";
     }
     #
+    # Feature Alias
+    #
+    elsif ( $entity_type eq 'cmap_feature_alias' ) {
+        my $feature_id = $db->selectrow_array(
+            q[
+                select feature_id
+                from   cmap_feature_alias
+                where  feature_alias_id=?
+            ],
+            {},
+            ( $entity_id )
+        ) or die "Can't find feature id";
+
+        $db->do(
+            q[
+                delete
+                from   cmap_feature_alias
+                where  feature_alias_id=?
+            ],
+            {},
+            ( $entity_id )
+        );
+
+        $uri_args = "?action=feature_view;feature_id=$feature_id";
+    }
+    #
     # Evidence Type
     #
     elsif ( $entity_type eq 'cmap_evidence_type' ) {
@@ -978,7 +1007,9 @@ sub map_view {
                    ms.map_set_id, 
                    ms.short_name as map_set_name,
                    mt.map_type,
-                   s.common_name as species_name
+                   mt.map_units,
+                   s.common_name as species_name,
+                   s.full_name as species_full_name
             from   cmap_map map, 
                    cmap_map_set ms, 
                    cmap_map_type mt,
@@ -1140,6 +1171,146 @@ sub map_update {
 }
 
 # ----------------------------------------------------
+sub feature_alias_create {
+    my ( $self, %args ) = @_;
+    my $apr             = $self->apr;
+    my $feature_id      = $apr->param('feature_id') or die 'No feature ID';
+    my $db              = $self->db;
+    my $sth             = $db->prepare(
+        q[
+            select feature_id, feature_name
+            from   cmap_feature
+            where  feature_id=?
+        ]
+    );
+    $sth->execute( $feature_id );
+    my $feature = $sth->fetchrow_hashref;
+
+    return $self->process_template( 
+        TEMPLATE->{'feature_alias_create'}, 
+        {
+            apr     => $apr,
+            feature => $feature,
+            errors  => $args{'errors'},
+        }
+    );
+}
+
+# ----------------------------------------------------
+sub feature_alias_edit {
+    my ( $self, %args )  = @_;
+    my $apr              = $self->apr;
+    my $feature_alias_id = $apr->param('feature_alias_id') or 
+                           die 'No feature alias id';
+
+    my $db    = $self->db;
+    my $sth   = $db->prepare(
+        q[
+            select fa.feature_alias_id,
+                   fa.feature_id, 
+                   fa.alias, 
+                   f.feature_name
+            from   cmap_feature_alias fa,
+                   cmap_feature f
+            where  fa.feature_alias_id=?
+            and    fa.feature_id=f.feature_id
+        ]
+    );
+    $sth->execute( $feature_alias_id );
+    my $alias = $sth->fetchrow_hashref;
+
+    return $self->process_template( 
+        TEMPLATE->{'feature_alias_edit'}, 
+        {
+            apr    => $apr,
+            alias  => $alias,
+            errors => $args{'errors'},
+        }
+    );
+}
+
+# ----------------------------------------------------
+sub feature_alias_insert {
+    my $self       = shift;
+    my $apr        = $self->apr;
+    my $admin      = $self->admin;
+    my $feature_id = $apr->param('feature_id') || 0;
+
+    $admin->feature_alias_create(
+        feature_id => $feature_id,
+        alias      => $apr->param('alias')      || '',
+    ) or return $self->feature_alias_create( errors => [ $admin->error ] );
+
+    
+    return $self->redirect_home( 
+        ADMIN_HOME_URI."?action=feature_view;feature_id=$feature_id" 
+    ); 
+}
+
+# ----------------------------------------------------
+sub feature_alias_update {
+    my $self             = shift;
+    my $apr              = $self->apr;
+    my $feature_alias_id = $apr->param('feature_alias_id') or 
+                           die 'No feature alias id';
+    my $alias            = $apr->param('alias') or die 'No alias';
+    my $db               = $self->db;
+
+    $db->do(
+        q[
+            update cmap_feature_alias
+            set    alias=?
+            where  feature_alias_id=?
+        ],
+        {},
+        ( $alias, $feature_alias_id )
+    );
+    
+    return $self->redirect_home( 
+        ADMIN_HOME_URI.
+        "?action=feature_alias_view;feature_alias_id=$feature_alias_id" 
+    ); 
+}
+
+# ----------------------------------------------------
+sub feature_alias_view {
+    my $self             = shift;
+    my $apr              = $self->apr;
+    my $feature_alias_id = $apr->param('feature_alias_id') or 
+                           die 'No feature alias id';
+
+    my $db    = $self->db;
+    my $sth   = $db->prepare(
+        q[
+            select fa.feature_alias_id,
+                   fa.feature_id, 
+                   fa.alias, 
+                   f.feature_name
+            from   cmap_feature_alias fa,
+                   cmap_feature f
+            where  fa.feature_alias_id=?
+            and    fa.feature_id=f.feature_id
+        ]
+    );
+    $sth->execute( $feature_alias_id );
+    my $alias = $sth->fetchrow_hashref;
+
+    $alias->{'attributes'} = 
+        $self->get_attributes( 'cmap_feature_alias', $feature_alias_id );
+
+    $alias->{'xrefs'}      = 
+        $self->get_xrefs( 'cmap_feature_alias', $feature_alias_id );
+
+    return $self->process_template( 
+        TEMPLATE->{'feature_alias_view'}, 
+        {
+            apr   => $apr,
+            alias => $alias,
+        }
+    );
+}
+
+# ----------------------------------------------------
 sub feature_create {
     my ( $self, %args ) = @_;
     my $db              = $self->db or return $self->error;
@@ -1224,11 +1395,6 @@ sub feature_edit {
         "No feature for ID '$feature_id'"
     );
 
-    $feature->{'aliases'} = [
-        map { s/"/\\"/g; qq["$_"] }
-        @{ $self->admin->get_aliases( $feature_id ) }
-    ];
-
     my $feature_types = $db->selectall_arrayref(
         q[
             select   ft.feature_type_id,
@@ -1300,9 +1466,6 @@ sub feature_insert {
         @insert_args
     );
 
-    my @aliases = parse_line(',', 0, $apr->param('aliases') );
-    $self->admin->feature_alias_update( $feature_id, @aliases );
-
     return $self->redirect_home( 
         ADMIN_HOME_URI."?action=map_view;map_id=$map_id" 
     ); 
@@ -1342,9 +1505,6 @@ sub feature_update {
         ( $accession_id, $feature_name, 
           $feature_type_id, $is_landmark, $start_position, $feature_id )
     );
-
-    my @aliases = parse_line(',', 0, $apr->param('aliases') );
-    $self->admin->feature_alias_update( $feature_id, @aliases );
 
     return $self->redirect_home( 
         ADMIN_HOME_URI."?action=feature_view;feature_id=$feature_id" 
@@ -1447,7 +1607,10 @@ sub feature_view {
             )
         } );
 
-        $corr->{'aliases'} = $self->admin->get_aliases( $corr->{'feature_id'} );
+        $corr->{'aliases'} = [
+            map { $_->{'alias'} }
+            @{ $self->admin->get_aliases( $corr->{'feature_id'} ) }
+        ];
     }
     
     $feature->{'correspondences'} = $correspondences;
@@ -3217,7 +3380,7 @@ sub xref_update {
     my $admin           = $self->admin;
     my @errors          = ();
     my $xref_id         = $apr->param('xref_id') or die 'No xref id';
-    my $object_id       = $apr->param('object_id')     ||  0;
+    my $object_id       = $apr->param('object_id')     || undef;
     my $return_action   = $apr->param('return_action') || '';
     my $display_order   = $apr->param('display_order');
     my $table_name      = $apr->param('table_name')
@@ -3253,14 +3416,15 @@ sub xref_update {
 
 # ----------------------------------------------------
 sub xrefs_view {
-    my $self       = shift;
-    my $db         = $self->db or return $self->error;
-    my $admin      = $self->admin;
-    my $apr        = $self->apr;
-    my $order_by   = $apr->param('order_by')        || 'table_name';
-    my $table_name = $apr->param('table_name')      || '';
-    my $page_no    = $apr->param('page_no')         ||  1;
-    my $sql        = q[
+    my $self         = shift;
+    my $db           = $self->db or return $self->error;
+    my $admin        = $self->admin;
+    my $apr          = $self->apr;
+    my $order_by     = $apr->param('order_by') || 'table_name,display_order';
+    my $generic_only = $apr->param('generic_only') || 0;
+    my $table_name   = $apr->param('table_name')   || '';
+    my $page_no      = $apr->param('page_no')      || 1;
+    my $sql          = q[
         select xref_id,
                table_name,
                object_id,
@@ -3268,9 +3432,11 @@ sub xrefs_view {
                xref_name,
                xref_url
         from   cmap_xref
+        where  table_name is not null
     ];
-    $sql .= "where table_name='$table_name' " if $table_name;
-    $sql .= "order by $order_by"              if $order_by;
+    $sql .= "and object_id is null "        if $generic_only;
+    $sql .= "and table_name='$table_name' " if $table_name;
+    $sql .= "order by $order_by"            if $order_by;
 
     my $refs = $db->selectall_arrayref( $sql, { Columns => {} } );
 
