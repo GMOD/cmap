@@ -76,13 +76,13 @@ Use &quot;*&quot; or &quot;%&quot; for wildcards.  To find features with spaces 
                 </td>
             </tr>
             <tr>
-                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=feature_name;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %]">Feature Name</a></th>
-                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=feature_type;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %]">Feature Type</a></th>
-                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=species_name;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aid=[% apr.param('feature_type_aids') %]">Species</a></th>
-                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=map_set_name;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %]">Map Set</a></th>
-                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=map_name;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %]">Map Name</a></th>
-                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=alternate_name;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %]">Alt. Name</a></th>
-                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=start_position;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %]">Position</a></th>
+                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=feature_name;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %];data_source=[% apr.param('data_source') %]">Feature Name</a></th>
+                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=feature_type;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %];data_source=[% apr.param('data_source') %]">Feature Type</a></th>
+                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=species_name;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aid=[% apr.param('feature_type_aids') %];data_source=[% apr.param('data_source') %]">Species</a></th>
+                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=map_set_name;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %];data_source=[% apr.param('data_source') %]">Map Set</a></th>
+                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=map_name;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %];data_source=[% apr.param('data_source') %]">Map Name</a></th>
+                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=alternate_name;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %];data_source=[% apr.param('data_source') %]">Alt. Name</a></th>
+                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=start_position;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %];data_source=[% apr.param('data_source') %]">Position</a></th>
                 <th>&nbsp;</th>
                 <th>&nbsp;</th>
             </tr>
@@ -99,10 +99,10 @@ Use &quot;*&quot; or &quot;%&quot; for wildcards.  To find features with spaces 
                         [% r.start_position %][% IF r.stop_position.defined %]-[% r.stop_position %][% END %]
                     </td>
                     <td>
-                        <b>[</b>&nbsp;<a href="/cmap/map_details?ref_map_set_aid=[% r.map_set_aid %];ref_map_aid=[% r.map_aid %];highlight=[% r.feature_aid %]">View&nbsp;on&nbsp;Map</a>&nbsp;<b>]</b>
+                        <b>[</b>&nbsp;<a href="/cmap/map_details?ref_map_set_aid=[% r.map_set_aid %];ref_map_aid=[% r.map_aid %];highlight=[% r.feature_aid %];data_source=[% apr.param('data_source') %]">View&nbsp;on&nbsp;Map</a>&nbsp;<b>]</b>
                     </td>
                     <td>
-                        <b>[</b>&nbsp;<a href="feature?feature_aid=[% r.feature_aid %]">Feature&nbsp;Details</a><b>&nbsp;]</b>
+                        <b>[</b>&nbsp;<a href="feature?feature_aid=[% r.feature_aid %];data_source=[% apr.param('data_source') %]">Feature&nbsp;Details</a><b>&nbsp;]</b>
                     </td>
                 </tr>    
                 [% SET i=i+1 %]
