@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.167 2004-10-30 07:19:13 mwz444 Exp $
+# $Id: Data.pm,v 1.168 2004-11-04 20:13:57 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.167 $)[-1];
+$VERSION = (qw$Revision: 1.168 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -999,9 +999,9 @@ sub slot_data {
         ];
 
         my $slot_maps='';
-        if ($self->slot_info->{$ref_slot_no}){
+        if ($self->slot_info->{$this_slot_no}){
              $slot_maps
-                = join( "','", keys(%{ $self->slot_info->{$ref_slot_no}}));
+                = join( "','", keys(%{ $self->slot_info->{$this_slot_no}}));
         }
 
         $f_count_sql .=
@@ -5044,10 +5044,10 @@ original start and stop.
                         }
                     } 
                     foreach my $row (@$slot_results){
-                        if ($row->[1]=~/(.+)\.0+$/){
+                        if (defined($row->[1]) and $row->[1]=~/(.+)\.0+$/){
                             $row->[1]=$1;
                         }
-                        if ($row->[2]=~/(.+)\.0+$/){
+                        if (defined($row->[2]) and $row->[2]=~/(.+)\.0+$/){
                             $row->[2]=$1;
                         }
                         if ($row->[3]=~/(.+)\.0+$/){
