@@ -18,7 +18,7 @@ print OUT<<"!GROK!THIS!";
 #
 # Edit this file to customize the look and behavior of
 # the CMap application.  The only sections that *must* 
-# be set are "database" and "template_dir."
+# be set are "database," "template_dir" and "cache_dir."
 #
 # Remember that your webserver must be restarted to 
 # enact any changes here.
@@ -64,12 +64,13 @@ print OUT<<"!GROK!THIS!";
 template_dir $Build{'TEMPLATES'}
 
 #   
-# An absolute path to the directory where images are written
-# I would also suggest you purge this directory for old images so you don't
-# fill up your disk.  Here's a simple cron job you can put in your root's
-# crontab:
+# An absolute path to the directory where images are written I would
+# also suggest you purge this directory for old images so you don't
+# fill up your disk.  Here's a simple cron job you can put in your
+# root's crontab (all on one line, of course):
 #
-# 0 0 * * *  find /tmp/cmap_cache/ -type f -mtime +1 -exec rm -rf {} \;
+# 0 0 * * *  find /usr/local/apache/htdocs/cmap/tmp \
+# -type f -mtime +1 -exec rm -rf {} \;
 #
 # Default: /usr/local/apache/htdocs/cmap/tmp
 #
