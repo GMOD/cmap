@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Utils;
 
-# $Id: Utils.pm,v 1.3 2002-08-30 21:02:00 kycl4rk Exp $
+# $Id: Utils.pm,v 1.4 2002-09-11 01:54:51 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use base 'Exporter';
 
@@ -249,10 +249,14 @@ label can be inserted.
             #
             my $prev_segment = $i > 0      ? $used[ $i - 1 ] : undef;
             my $next_segment = $i < $#used ? $used[ $i + 1 ] : undef;
-            my $ftop         = 
-                $direction eq NORTH ? $next_segment->[1] || undef : $south;
-            my $fbottom      = 
-                $direction eq NORTH ? $north : $next_segment->[0] || undef;
+            my $ftop         = $direction eq NORTH  
+                    ? defined $next_segment->[1] ? $next_segment->[1] : undef 
+                    : $south
+            ;
+            my $fbottom      = $direction eq NORTH 
+                    ? $north 
+                    : defined $next_segment->[0] ? $next_segment->[0] : undef
+            ;
             warn "Frame top = $ftop, bottom = $fbottom\n" if $debug;
 
             #

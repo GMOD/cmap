@@ -113,7 +113,7 @@
             </select>
             <br>
             Restrict by Comparative Map:
-            <select name="comparative_map_set_aid">
+            <select name="comparative_map_aid">
                 <option value="">--All--</option>
                 [% FOREACH ms=comparative_maps %]
                     <option value="[% ms.map_set_aid %]"[% IF ms.map_set_aid==apr.param('map_set_aid'); ' selected'; END %]>[% ms.map_set_name %]</option>

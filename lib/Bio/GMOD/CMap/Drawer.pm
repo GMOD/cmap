@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.7 2002-09-06 22:15:51 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.8 2002-09-11 01:54:51 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.7 $)[-1];
+$VERSION = (qw$Revision: 1.8 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
@@ -102,7 +102,7 @@ so that it's positive.
 =cut
     my $self    = shift;
     my $min_x   = $self->min_x - 10;
-    my $min_y   = $self->min_y;
+    my $min_y   = $self->min_y - 10;
     my $x_shift = $min_x < 0 ? abs $min_x : 0;
     my $y_shift = $min_y < 0 ? abs $min_y : 0;
 
@@ -197,7 +197,7 @@ Accepts a list of attributes to describe how to draw an object.
         # The last field should be a number specifying the layer.
         # If it's not, then push on the default layer of "1."
         #
-        push @attr, 1 unless $attr[ -1 ] =~ m/^\d+$/;
+        push @attr, 1 unless $attr[ -1 ] =~ m/^-?\d+$/;
 
         #
         # Extract the X and Y positions in order to pass them to 
@@ -411,6 +411,7 @@ Lays out the image and writes it to the file system, set the "image_name."
 =cut
     my $self = shift;
 
+    my ( $min_y, $max_y, %slot_sides );
     for my $slot_no ( $self->slot_numbers ) {
         my $data      = $self->slot_data( $slot_no );
         my $map       =  Bio::GMOD::CMap::Drawer::Map->new( 
@@ -420,7 +421,27 @@ Lays out the image and writes it to the file system, set the "image_name."
             slot_no   => $slot_no,
             maps      => $data,
         );
-        $map->layout;
+        my @bounds = $map->layout;
+        $min_y     = $bounds[1] unless defined $min_y;
+        $min_y     = $bounds[1] if $bounds[1] < $min_y;
+        $max_y     = $bounds[3] unless defined $max_y;
+        $max_y     = $bounds[3] if $bounds[3] > $max_y;
+        $slot_sides{ $slot_no } = [ $bounds[0], $bounds[2] ];
+    }
+
+    #
+    # Frame out the slots.
+    #
+    for my $slot_no ( $self->slot_numbers ) {
+        my @bounds = (
+            $slot_sides{ $slot_no }->[0],
+            $min_y,
+            $slot_sides{ $slot_no }->[1],
+            $max_y,
+        );
+
+        $self->add_drawing( FILLED_RECT, @bounds, 'beige', -1 );
+        $self->add_drawing( RECTANGLE,   @bounds, 'khaki', -1 );
     }
     $self->adjust_frame;
 

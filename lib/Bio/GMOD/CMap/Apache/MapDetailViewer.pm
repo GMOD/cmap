@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapDetailViewer;
 
-# $Id: MapDetailViewer.pm,v 1.3 2002-09-10 01:46:47 kycl4rk Exp $
+# $Id: MapDetailViewer.pm,v 1.4 2002-09-11 01:54:51 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Apache::Constants;
 use Data::Dumper;
@@ -63,13 +63,13 @@ sub handler {
         },
     );
 
-    my $data_module             = $self->data_module;
-    my $data                    = $data_module->map_detail_data( 
-        map                     => $slots{0},
-        highlight               => $highlight,
-        order_by                => $apr->param('order_by')               || '',
-        restrict_by             => $apr->param('feature_type_aid')       || '',
-        comparative_map_set_aid => $apr->param('comparative_map_set_aid')|| '',
+    my $data_module         = $self->data_module;
+    my $data                = $data_module->map_detail_data( 
+        map                 => $slots{0},
+        highlight           => $highlight,
+        order_by            => $apr->param('order_by')            || '',
+        restrict_by         => $apr->param('feature_type_aid')    || '',
+        comparative_map_aid => $apr->param('comparative_map_aid') || '',
     ) or return $self->error( "Data: ".$data_module->error );
 
     if ( $action eq 'download' ) {

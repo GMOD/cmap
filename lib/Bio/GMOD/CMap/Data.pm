@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.9 2002-09-10 01:46:47 kycl4rk Exp $
+# $Id: Data.pm,v 1.10 2002-09-11 01:54:51 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.9 $)[-1];
+$VERSION = (qw$Revision: 1.10 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -1690,12 +1690,12 @@ sub map_detail_data {
 Returns the detail info for a map.
 
 =cut
-    my ( $self, %args )         = @_;
-    my $map                     = $args{'map'};
-    my $highlight               = $args{'highlight'}   || '';
-    my $order_by                = $args{'order_by'}    || 'start_position';
-    my $restrict_by             = $args{'restrict_by'} || '';
-    my $comparative_map_set_aid = $args{'comparative_map_set_aid'} || '';
+    my ( $self, %args )     = @_;
+    my $map                 = $args{'map'};
+    my $highlight           = $args{'highlight'}           ||               '';
+    my $order_by            = $args{'order_by'}            || 'start_position';
+    my $restrict_by         = $args{'restrict_by'}         ||               '';
+    my $comparative_map_aid = $args{'comparative_map_aid'} ||               '';
 
     my $db        = $self->db;
     my $sql       = $self->sql;
@@ -1779,15 +1779,15 @@ Returns the detail info for a map.
     for my $feature ( @$features ) {
         my $positions = $db->selectall_arrayref(
             $sql->feature_correspondence_sql(
-                map_set_aid => $comparative_map_set_aid
+                map_aid => $comparative_map_aid
             ),
             { Columns => {} },
             ( $feature->{'feature_id'} )
         ); 
 
         for my $position ( @$positions ) {
-            $comparative_maps{ $position->{'map_set_aid'} } = {
-                map_set_aid  => $position->{'map_set_aid'},
+            $comparative_maps{ $position->{'map_aid'} } = {
+                map_aid      => $position->{'map_aid'},
                 map_set_name => join(' - ',
                     $position->{'species_name'},
                     $position->{'map_set_name'},

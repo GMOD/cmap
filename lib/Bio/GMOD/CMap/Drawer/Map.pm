@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.8 2002-09-06 22:15:51 kycl4rk Exp $
+# $Id: Map.pm,v 1.9 2002-09-11 01:54:51 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -363,6 +363,7 @@ Lays out the map.
     my $pixel_height     = $drawer->pixel_height;
     my $label_font       = $drawer->label_font;
     my $reg_font         = $drawer->regular_font;
+    my $slots            = $drawer->slots;
     my @map_ids          = $self->map_ids;
     my $no_of_maps       = scalar @map_ids;
     my @columns          = ();
@@ -387,13 +388,21 @@ Lays out the map.
     #
     # These are for drawing the map titles last if this is a relational map.
     #
-    my ( $is_relational, $top_y, $min_x, $max_x, @map_titles );
+    my ( 
+        $is_relational, # if one map is relational, the whole map set is
+        $top_y,         # northernmost coord for the slot
+        $bottom_y,      # southernmost coord for the slot
+        $slot_min_x,    # easternmost coord for the slot
+        $slot_max_x,    # westernmost coord for the slot
+        @map_titles     # the titles to put above
+    );
 
     for my $map_id ( @map_ids ) {
+        my ( $min_x, $max_x );
         $is_relational     = $self->is_relational_map( $map_id );
         my $base_x         = $label_side eq RIGHT
                              ? $self->base_x + $half_title_length
-                             : $self->base_x; #- $half_title_length;
+                             : $self->base_x; 
         my $show_labels    = $is_relational && $slot_no != 0 ? 0 :
                              $include_features eq 'none' ? 0 : 1 ;
         my $show_ticks     = $is_relational && $slot_no != 0 ? 0 : 1;
@@ -452,11 +461,6 @@ Lays out the map.
                 ? $original_base_x + ( $column_width * $column_index )
                 : $original_base_x - ( $column_width * $column_index );
 
-            $min_x = $base_x unless defined $min_x;
-            $max_x = $base_x unless defined $max_x;
-            $min_x = $base_x if $base_x < $min_x;
-            $max_x = $base_x if $base_x > $max_x;
-
             my $label_x = $label_side eq RIGHT
                 ? $base_x + $map_width + 6 
                 : $base_x - $reg_font->height - 6;
@@ -465,6 +469,18 @@ Lays out the map.
                 STRING_UP, $reg_font, $label_x, $label_bottom,
                 $map_name, 'black'
             );
+
+            my $leftmost = $label_side eq RIGHT
+                ? $label_x + $reg_font->height
+                : $label_x;
+            my $rightmost = $label_side eq RIGHT
+                ? $label_x
+                : $label_x + $reg_font->height;
+
+            $min_x = $leftmost  unless defined $min_x;
+            $max_x = $rightmost unless defined $max_x;
+            $min_x = $leftmost  if $leftmost  < $min_x;
+            $max_x = $rightmost if $rightmost > $max_x;
         }
 
         $top_y = $base_y unless defined $top_y;
@@ -476,6 +492,12 @@ Lays out the map.
             drawer    => $drawer,
             coords    => [ $base_x, $base_y, $base_y + $pixel_height ],
         );
+        $min_x    = $bounds[0] unless defined $min_x;
+        $min_x    = $bounds[0] if $bounds[0] < $min_x;
+        $max_x    = $bounds[2] unless defined $max_x;
+        $max_x    = $bounds[2] if $bounds[2] > $max_x;
+        $bottom_y = $bounds[3] unless defined $bottom_y;
+        $bottom_y = $bounds[3] if $bounds[3] > $bottom_y;
 
         if ( $show_ticks ) {
             #
@@ -517,6 +539,10 @@ Lays out the map.
                 $drawer->add_drawing(
                     STRING_UP, $reg_font, $label_x, $label_y, $tick_pos, 'grey'
                 );
+
+                my $right = $label_x + $reg_font->height;
+                $max_x    = $right   if $right  > $max_x;
+                $min_x    = $label_x if $label_x < $min_x;
             }
         }
 
@@ -566,13 +592,15 @@ Lays out the map.
 #            ( $is_relational && $slot_no != 0 )
 #            ||
 #            $slot_no == 0
+#            ||
+#            $slots->{ $slot_no }{'field'} eq 'map_set_aid'
 #        ) {
 #            my $buffer     = 4;
 #            my $map_left   = $bounds[0];
 #            my $map_right  = $bounds[2];
 #            my $map_bottom = $bounds[3] + $reg_font->height;
 #            my $map_middle = $map_left + ( ( $map_right - $map_left ) / 2 );
-#            my $string     = 'Delete';
+#            my $string     = '(Delete)';
 #            my $string_x   =
 #                $map_middle - ( $reg_font->width * ( length( $string ) ) / 2 );
 #            my $string_y   = $map_bottom + $buffer;
@@ -585,21 +613,47 @@ Lays out the map.
 #                'black',
 #            );
 #
-#            my $url = $self->config('cmap_viewer_url');
-##                '?ref_map_set_aid='.$self->map_set_aid( $map_id ).
-##                ';ref_map_aid='.$self->accession_id( $map_id ).
-##                ';comparative_maps='.join( ':', @maps );
+#            #
+#            # To select the other comparative maps, we have to cut off
+#            # everything after the current map.  E.g., if there are maps in
+#            # slots -2, -1, 0, 1, and 2, for slot 1 we should choose everything
+#            # less than it (and non-zero).  The opposite is true for negative
+#            # slots.
+#            #
+#            my @ordered_slot_nos = sort { $a <=> $b } keys %$slots;
+#            my @cmap_nos;
+#            if ( $slot_no < 0 ) {
+#                push @cmap_nos, grep { $_>$slot_no && $_!=0 } @ordered_slot_nos;
+#            }
+#            else {
+#                push @cmap_nos, grep { $_<$slot_no && $_!=0 } @ordered_slot_nos;
+#            }
 #
+#            my $cmaps = join('%3a',
+#                map { 
+#                    join('%3d', $_, $slots->{$_}{'field'}, $slots->{$_}{'aid'})
+#                } @cmap_nos
+#            );
+#
+#            my $url = $self->config('cmap_viewer_url').
+#                '?ref_map_set_aid='.$slots->{0}{'map_set_aid'}.
+#                ';ref_map_aid='.$slots->{0}{'aid'}.
+#                ';ref_map_start='.$slots->{0}{'start'}.
+#                ';ref_map_stop='.$slots->{0}{'stop'}.
+#                ";comparative_maps=$cmaps";
+#
+#            my $string_bottom = $string_y + $reg_font->height;
 #            $drawer->add_map_area(
 #                coords => [
 #                    $string_x, 
 #                    $string_y, 
 #                    $string_x + ( $reg_font->width * length( $string ) ),
-#                    $string_y + $reg_font->height,
+#                    $string_bottom,
 #                ], 
 #                url    => $url,
 #                alt    => 'Delete '.$self->map_name,
 #            );
+#            $bottom_y = $string_bottom if $string_bottom > $bottom_y;
 #        }
     
         #
@@ -612,22 +666,23 @@ Lays out the map.
             @features[ reverse 0 .. $midpoint - 1 ],
             @features[ $midpoint .. $no_features - 1 ]
         );
-        
+
         my $mid_y;               # remembers the y value of the middle label
         my $prev_label_y;        # remembers the y value of previous label
         my $direction =   NORTH; # initially we move from the middle up
         my $min_y     = $base_y; # remembers the northermost position
         my @fcolumns  =      (); # for feature east-to-west
         my @rows      =      (); # for labels north-to-south
+
         for my $feature ( @sorted_features ) {
+            my $tick_overhang = 2;
+            my $label_offset  = 30;
             my $y_pos1        = $base_y +
                 ( $pixel_height * $feature->relative_start_position );
             my $y_pos2        = $base_y +
                 ( $pixel_height * $feature->relative_stop_position );
-            my $tick_overhang = 2;
-            my $label_offset  = 30;
-
-            my $has_corr   = $drawer->has_correspondence($feature->feature_id);
+            my $has_corr      = 
+                $drawer->has_correspondence( $feature->feature_id );
 
             #
             # If the map isn't showing labeled features (e.g., it's a
@@ -740,6 +795,10 @@ Lays out the map.
 
             my ( $left_connection, $right_connection );
             if ( $show_labels ) {
+                if ( $feature->feature_id == $midpoint_feature_id ) {
+                    $direction = SOUTH;
+                }
+
                 my $is_highlighted = 
                     $drawer->highlight_feature( $feature->feature_name );
 
@@ -747,10 +806,6 @@ Lays out the map.
                     $include_features eq 'landmarks' && !$feature->is_landmark 
                 ) {
                     next unless $has_corr || $is_highlighted;
-                }
-
-                if ( $feature->feature_id == $midpoint_feature_id ) {
-                    $direction = SOUTH;
                 }
 
                 my $buffer = 2;
@@ -763,6 +818,7 @@ Lays out the map.
                     direction    => $direction,
                     buffer       => $buffer,
                 );
+                $bottom_y = $label_y if $label_y > $bottom_y;
 
                 #
                 # Feature label.
@@ -807,7 +863,11 @@ Lays out the map.
                         alt    => 'Details: '.$feature->feature_name,
                     );
 
-                    $min_y = $label_y if $label_y < $min_y;
+                    $min_x    = $bounds[0] if $bounds[0] < $min_x;
+                    $top_y    = $bounds[1] if $bounds[1] < $top_y;
+                    $max_x    = $bounds[2] if $bounds[2] > $max_x;
+                    $bottom_y = $bounds[3] if $bounds[3] > $bottom_y;
+                    $min_y    = $label_y   if $label_y   < $min_y;
 
                     my $label_connect_x1 = $x_plane;
 
@@ -865,7 +925,7 @@ Lays out the map.
         }
 
         #
-        # The map title.
+        # The map title(s).
         #
         if ( $is_relational && $slot_no != 0 ) {
             unless ( @map_titles ) {
@@ -879,11 +939,24 @@ Lays out the map.
         else {
             my $buffer = 4;
             $min_y    -= $reg_font->height + $buffer * 2;
+            my $mid_x  = $min_x + ( ( $max_x - $min_x ) / 2 );
             my ( $leftmost, $rightmost, $topmost, $bottommost );
+
+#            $drawer->add_drawing( 
+#                LINE, $min_x, $min_y, $min_x, $min_y + 10, 'blue'
+#            );
+#            $drawer->add_drawing( 
+#                LINE, $mid_x, $min_y, $mid_x, $min_y + 10, 'red'
+#            );
+#            $drawer->add_drawing( 
+#                LINE, $max_x, $min_y, $max_x, $min_y + 10, 'green'
+#            );
+
             for my $label ( 
                 map { $self->$_( $map_id ) } reverse @config_map_titles
             ) {
-                my $label_x = $base_x + ( $map_width / 2 ) - 
+#                my $label_x = $base_x + ( $map_width / 2 ) - 
+                my $label_x = $mid_x - 
                     ( ( $reg_font->width * length( $label ) ) / 2 );
 
                 $drawer->add_drawing( 
@@ -917,6 +990,10 @@ Lays out the map.
             $drawer->add_drawing( 
                 RECTANGLE, @bounds, 'black'
             );
+
+            $min_x = $bounds[0] if $bounds[0] < $min_x;
+            $top_y = $bounds[1] if $bounds[1] < $top_y;
+            $max_x = $bounds[2] if $bounds[2] > $max_x;
         }
 
         #
@@ -931,19 +1008,25 @@ Lays out the map.
                 $self->config('connecting_line_color')
             );
         }
+
+        $slot_min_x = $min_x unless defined $slot_min_x;
+        $slot_min_x = $min_x if $min_x < $slot_min_x;
+        $slot_max_x = $max_x unless defined $slot_max_x;
+        $slot_max_x = $max_x if $max_x > $slot_max_x;
     }
 
     #
     # Draw the map titles last for relational maps, 
     # centered over all the maps.
     #
-    $top_y -= 10;
     if ( $is_relational && $slot_no != 0 ) {
         my $buffer = 4;
-        my $min_y = $top_y - ( $reg_font->height + $buffer * 2 );
+        my $min_y = $top_y - 10 - ( $reg_font->height + $buffer * 2 );
+        my $mid_x = $slot_min_x + ( ( $slot_max_x - $slot_min_x ) / 2 ); 
         my ( $leftmost, $rightmost, $topmost, $bottommost );
         for my $label ( @map_titles ) {
-            my $label_x = $min_x + ( ( $max_x - $min_x ) / 2 ) - 
+#            my $label_x = $min_x + ( ( $max_x - $min_x ) / 2 ) - 
+            my $label_x = $mid_x - 
                 ( ( $reg_font->width * length( $label ) ) / 2 );
 
             $drawer->add_drawing( 
@@ -977,21 +1060,22 @@ Lays out the map.
         $drawer->add_drawing( 
             RECTANGLE, @bounds, 'black'
         );
+
+        $slot_min_x = $bounds[0] if $bounds[0] < $slot_min_x;
+        $top_y      = $bounds[1] if $bounds[1] < $top_y;
+        $slot_max_x = $bounds[2] if $bounds[2] > $slot_max_x;
     }
 
-#    #
-#    # Background color
-#    #
-#    $drawer->add_drawing( 
-#        FILLED_RECT, 
-#        $min_x,
-#        $min_y,
-#        $max_x,
-#        $max_y,
-#        'yellow', -1
-#    );
-
-    return 1;
+    #
+    # Background color
+    #
+    my $buffer = 10;
+    return (
+        $slot_min_x - $buffer,
+        $top_y      - $buffer,
+        $slot_max_x + $buffer,
+        $bottom_y   + $buffer,
+    );
 }
 
 # ----------------------------------------------------
