@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.67.2.2 2005-03-04 20:06:24 mwz444 Exp $
+# $Id: CMap.pm,v 1.67.2.3 2005-03-04 20:36:22 mwz444 Exp $
 
 =head1 NAME
 
@@ -147,6 +147,7 @@ Allow for object plugin stuff.
 
     my ( $self, $obj_type, $object ) = @_;
 
+    return unless($self->config_data('object_plugin'));
     my $xref_sub = $self->config_data('object_plugin')->{ $obj_type } 
         or return;
 
