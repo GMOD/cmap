@@ -103,26 +103,16 @@ EOF
 # When making name-based correspondences, the default behavior is to
 # allow correspondences between features of the *exact* same type.  If
 # you wish to expand the feature types allowed when making name-based
-# correspondences, then add them to this section.  The relationships
-# will be reciprocal, so if you say "foo bar" then correspondences
-# from features of type "foo" will be allowed to those of type "bar"
-# and vice versa.  Separate feature types with spaces.  Assert only
-# one pair of feature types per line, e.g., in the examples "foo bar"
-# and "foo baz" are two lines, not "foo bar baz."  The search for the
-# feature types will be case-insensitive.
+# correspondences, then add their accession IDs to this section.  The
+# relationships will be reciprocal, so if you say "foo bar" then
+# correspondences from features with the accession ID "foo" will be
+# allowed to those with the accession ID "bar" and vice versa.
+# Separate feature types with spaces.  Assert all equivalent feature
+# types on one line, e.g., "foo bar baz."
 # Default: Nothing
 #
-#add_name_correspondence foo bar
-#add_name_correspondence foo baz
+#add_name_correspondence foo bar baz
 #add_name_correspondence fee fie
-
-#
-# Whether or not to allow forking of main CMap viewer to let users
-# know that long processes are working.
-# Set to "0" or comment out to disable.
-# Default: 0
-#
-allow_fork 0
 
 #
 # The background color of the map image
@@ -143,15 +133,9 @@ background_color lightgoldenrodyellow
 #
 # 0 0 * * *  find /tmp/cmap_cache/ -type f -mtime +1 -exec rm -rf {} \;
 #
-# Default: /tmp/cmap_cache
+# Default: /usr/local/apache/htdocs/cmap/tmp
 #
-cache_dir /tmp/cmap_cache
-
-#
-# The URL to use for the main viewer.
-# Default: /cmap/viewer
-#
-cmap_viewer_url /cmap/viewer
+cache_dir /usr/local/apache/htdocs/cmap/tmp
 
 #
 # The color of the line connecting feature correspondences
@@ -247,12 +231,6 @@ label_features all
 map_color lightgrey
 
 #
-# The URL to use for map details.
-# Default: /cmap/map_details
-#
-map_details_url /cmap/map_details
-
-#
 # The titles to put atop the individual maps, e.g., "Wheat-2M"
 # Your choices will be stacked in the order defined
 # Values: species_name, map_set_name (short_name), map_name
@@ -277,34 +255,11 @@ map_width 8
 matrix_title Welcome to the Matrix
 
 #
-# The maximum pixel width for any image.
-# Set to "0" (or comment out) to disable.
-# Default: 0
-#
-max_image_pixel_width 0
-
-#
-# Maximum number of seconds before timing out the web request
-# "allow_fork" must be true for this to work.
-# Default: 0 (disabled)
-#
-max_web_timeout 0
-
-#
 # The smallest any map can be drawn, in pixels
 # Values: any positive integer (within reason)
 # Default: 20
 #
 min_map_pixel_height 20
-
-#
-# The maximum number of features allowed on a map
-# Set to "0" (or a negative number) or comment out to disable
-# Values: any positive integer (within reason)
-# Current implementation doesn't support this well
-# Default: 0
-#
-#max_feature_count 0
 
 #
 # The maximum number of elements that can appear on a page
