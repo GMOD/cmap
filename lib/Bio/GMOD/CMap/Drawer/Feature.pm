@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Feature;
 
-# $Id: Feature.pm,v 1.2 2002-08-27 22:18:42 kycl4rk Exp $
+# $Id: Feature.pm,v 1.3 2002-09-06 00:01:17 kycl4rk Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -81,6 +81,31 @@ Returns the color of the feature.
 =cut
     my $self = shift;
     return $self->{'color'} || $self->config('feature_color');
+}
+
+# ----------------------------------------------------
+sub feature_details_url {
+
+=pod
+
+=head2 feature_details_url
+
+Returns the URL for the details on the feature.
+
+=cut
+    my $self = shift;
+
+    my $url;
+    if ( my $mini_template = $self->config('feature_details_url') ) {
+        my $t = $self->template;
+        $t->process( 
+            \$mini_template, 
+            { feature => $self }, 
+            \$url,
+        ) or die $t->error;
+    }
+
+    return $url || '';
 }
 
 # ----------------------------------------------------

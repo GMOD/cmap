@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapDetailViewer;
 
-# $Id: MapDetailViewer.pm,v 1.1 2002-09-05 00:16:54 kycl4rk Exp $
+# $Id: MapDetailViewer.pm,v 1.2 2002-09-06 00:01:17 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Apache::Constants;
 use Data::Dumper;
@@ -105,6 +105,7 @@ sub handler {
         #
         # Add in previous maps.
         #
+        my $no_flanking = $self->config('number_flanking_positions') || 0;
         for my $cmap ( split( /:/, $comparative_maps ) ) {
             my ( $slot_no, $field, $accession_id ) = split(/=/, $cmap) or next;
             my ( $start, $stop );
@@ -114,11 +115,12 @@ sub handler {
                 $stop         = $3;
             }
 
-            $slots{ $slot_no } =  {
-                field          => $field,
-                aid            => $accession_id,
-                start          => $start,
-                stop           => $stop,
+            $slots{ $slot_no }        =  {
+                field                 => $field,
+                aid                   => $accession_id,
+                start                 => $start,
+                stop                  => $stop,
+                no_flanking_positions => $no_flanking,
             }; 
         }
 

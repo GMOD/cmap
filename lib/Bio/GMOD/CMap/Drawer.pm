@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.5 2002-09-05 00:16:54 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.6 2002-09-06 00:01:17 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
@@ -59,6 +59,20 @@ Initializes the drawing object.
     $self->draw;
     return $self;
 }
+
+## ----------------------------------------------------
+#sub add_map_href_bounds {
+#
+#=pod
+#
+#=head2 add_map_href_bounds
+#
+#Stores the coords for making maps clickable.
+#
+#=cut
+#    my ( $self, %args ) = @_;
+#    push @{ $self->{'map_href_bounds'} }, \%args; 
+#}
 
 # ----------------------------------------------------
 sub apr {
@@ -285,6 +299,75 @@ Gets a completed map.
     return $self->{'completed_maps'}{ $map_no };
 }
 
+## ----------------------------------------------------
+#sub get_map_href_bounds {
+#
+#=pod
+#
+#=head2 get_map_href_bounds
+#
+#Retrieves the coords for making maps clickable.
+#
+#=cut
+#    my $self = shift;
+#    return $self->{'map_href_bounds'};
+#}
+
+## ----------------------------------------------------
+#sub hyperlink_maps {
+#
+#=pod
+#
+#=head2 hyperlink_maps
+#
+#Make maps clickable.
+#
+#=cut
+#    my $self  = shift;
+#    my $slots = $self->slots;
+#
+#    for my $href ( @{ $self->get_map_href_bounds } ) {
+#        my $slot_no  = $href->{'slot_no'};
+#        my $map_id   = $href->{'map_id'};
+#        my $map_name = $href->{'map_name'};
+#        my @bounds   = @{ $href->{'bounds'} };
+#        my @maps;
+#        for my $side ( qw[ left right ] ) {
+#            my $no      = $side eq 'left' ? $slot_no - 1 : $slot_no + 1;
+#            my $new_no  = $side eq 'left' ? -1 : 1;
+#            my $map     = $slots->{ $no } or next; 
+#            my $link    = 
+#                join( '%3d', $new_no, map { $map->{$_} } qw[ field aid ] );
+#
+#            if ( 
+#                my @ref_positions = sort { $a <=> $b }
+#                $self->feature_correspondence_map_positions(
+#                    slot_no     => $slot_no,
+#                    map_id      => $map_id,
+#                    ref_slot_no => $no,
+#                )
+#            ) {
+#                my $first = $ref_positions[0];
+#                my $last  = $ref_positions[-1];
+#                $link    .= "[$first,$last]";
+#            }
+#
+#            push @maps, $link;
+#        }
+#
+#        my $url = $self->config('map_details_url').
+#            '?ref_map_set_aid='.$self->map_set_aid( $map_id ).
+#            ';ref_map_aid='.$self->accession_id( $map_id ).
+#            ';comparative_maps='.join( ':', @maps );
+#
+#        $self->add_map_area(
+#            coords => \@bounds,
+#            url    => $url,
+#            alt    => 'Details: '.$map_name,
+#        );
+#    }
+#}
+
 # ----------------------------------------------------
 sub set_completed_map {
 
@@ -492,11 +575,12 @@ region of corresponding features.
     my ( $self, %args ) = @_;
     my $slot_no         = $args{'slot_no'};
     my $map_id          = $args{'map_id'};
-    my $ref_slot_no     = $args{'ref_slot_no'};
-       $ref_slot_no     = $self->reference_slot_no( $slot_no ) 
-                          unless defined $ref_slot_no;
-
-    return unless defined $slot_no and defined $ref_slot_no;
+    my $comp_slot_no    = $args{'comp_slot_no'};
+    my $comp_slot_data  = $self->slot_data( $comp_slot_no );
+    return unless defined $slot_no && defined $comp_slot_no && $comp_slot_data;
+    my @comp_map_ids    = map { $_ || () } keys %$comp_slot_data;
+    return if scalar @comp_map_ids > 1; # too many maps (e.g., contigs)
+    my $comp_map        = $comp_slot_data->{ $comp_map_ids[0] };
 
     my @return = ();
     for my $f1 ( keys %{ $self->{'feature_position'}{ $slot_no } } ) {
@@ -504,14 +588,11 @@ region of corresponding features.
             $self->{'feature_position'}{ $slot_no }{$f1}{'map_id'} != $map_id;
 
         for my $f2 ( $self->feature_correspondences( $f1 ) ) {
-            next unless defined 
-                $self->{'feature_position'}{ $ref_slot_no }{ $f2 }{'start'};
-            push @return, 
-                $self->{'feature_position'}{ $ref_slot_no }{ $f2 }{'start'};
+            next unless defined $comp_map->{'features'}{ $f2 };
+            push @return, $comp_map->{'features'}{ $f2 }{'start_position'};
         }
     }
 
-    warn "returning ", Dumper( \@return ), "\n";
     return @return;
 }
 
@@ -717,6 +798,13 @@ and everything else on the left.
         if ( $slot_no == 0 && $self->total_no_slots == 2 ) {
             my $slot_data = $self->slot_data;
             $side = defined $slot_data->{ -1 } ? RIGHT : LEFT;
+        }
+        elsif ( $slot_no == 0 && $self->total_no_slots == 1 ) {
+            $side = LEFT;
+        }
+        elsif ( $slot_no == 0 ) {
+            my $slot_data = $self->slot_data;
+            $side = defined $slot_data->{ 1 } ? LEFT : RIGHT;
         }
         elsif ( $slot_no > 0 ) {
             $side = RIGHT;
@@ -1014,9 +1102,9 @@ Remembers the feature position on a map.
         right  => $args{'right'},
         left   => $args{'left'},
         tick_y => $args{'tick_y'},
-        start  => $args{'start'},
-        stop   => $args{'stop'},
         map_id => $args{'map_id'},
+#        start  => $args{'start'},
+#        stop   => $args{'stop'},
     };
 }
 

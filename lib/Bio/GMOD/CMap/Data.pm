@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.6 2002-09-05 00:16:54 kycl4rk Exp $
+# $Id: Data.pm,v 1.7 2002-09-06 00:01:17 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.6 $)[-1];
+$VERSION = (qw$Revision: 1.7 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -134,26 +134,27 @@ Returns the data for drawing comparative maps.
 
 =cut
     my ( $self, %args )  = @_;
+    my $db               = $self->db;
+    my $sql              = $self->sql;
 
     #
     # Get the arguments.
     #
     my $slot_no          = $args{'slot_no'};
     my $include_features = $args{'include_features'} || 0;
-    my $map              = ${ $args{'map'} }; # reference
+    my $map              = ${ $args{'map'} }; # hashref
     my $reference_map    = $args{'reference_map'};
     my $correspondences  = $args{'correspondences'};
 
     #
     # Sort out the current map.
     #
-    my $aid_field        = $map->{'field'};
-    my $map_start        = $map->{'start'};
-    my $map_stop         = $map->{'stop'};
-    my $map_aid          = $aid_field eq 'map_aid'     ? $map->{'aid'} : '';
-    my $map_set_aid      = $aid_field eq 'map_set_aid' ? $map->{'aid'} : '';
-    my $db               = $self->db;
-    my $sql              = $self->sql;
+    my $aid_field   = $map->{'field'};
+    my $map_start   = $map->{'start'};
+    my $map_stop    = $map->{'stop'};
+    my $map_aid     = $aid_field eq 'map_aid'     ? $map->{'aid'} : '';
+    my $map_set_aid = $aid_field eq 'map_set_aid' ? $map->{'aid'} : '';
+    my $no_flanking_positions = $map->{'no_flanking_positions'} || 0;
 
 #    warn "\n------------------\nslot no = $slot_no\n";
 #    warn "map = ", Dumper($map), "\n";
@@ -187,7 +188,6 @@ Returns the data for drawing comparative maps.
             : undef
         ;
     }
-#    warn "slot_no = $slot_no, ref_map_id = $ref_map_id\n";
 
     #
     # Whether or not the user choses more than one map (e.g., a 
@@ -282,6 +282,7 @@ Returns the data for drawing comparative maps.
                     ) || 0;
                 }
             }
+
             $map_start = $map_data->{'start_position'} 
                 unless defined $map_start;
             $map_start = $map_data->{'start_position'} 
@@ -290,6 +291,63 @@ Returns the data for drawing comparative maps.
                 unless defined $map_stop;
             $map_stop  = $map_data->{'stop_position'} 
                 if $map_stop > $map_data->{'stop_position'};
+
+            #
+            # If we're supposed to add in flanking features...
+            #
+            if ( $no_flanking_positions > 0 ) {
+                unless ( $map_start == $map_data->{'start_position'} ) {
+                    #
+                    # Find everything before the start...
+                    #
+                    my $positions = $db->selectcol_arrayref(
+                        q[
+                            select   distinct start_position
+                            from     cmap_feature
+                            where    map_id=?
+                            and      start_position<?
+                            order by start_position desc
+                        ],
+                        {},
+                        ( $map_id, $map_start )
+                    );
+
+                    #
+                    # Then take the furthest one out that exists.
+                    #
+                    if ( @$positions ) {
+                        my $i = $no_flanking_positions - 1;
+                        $i-- while !defined $positions->[$i];
+                        $map_start = $positions->[$i];
+                    } 
+                }
+
+                unless ( $map_stop == $map_data->{'stop_position'} ) {
+                    #
+                    # Find all the positions after the current stop...
+                    #
+                    my $positions = $db->selectcol_arrayref(
+                        q[
+                            select   distinct start_position
+                            from     cmap_feature
+                            where    map_id=?
+                            and      start_position>?
+                            order by start_position asc
+                        ],
+                        {},
+                        ( $map_id, $map_stop )
+                    );  
+
+                    #
+                    # The take the furthest one out that exists.
+                    #
+                    if ( @$positions ) {
+                        my $i = $no_flanking_positions - 1;
+                        $i-- while !defined $positions->[$i];
+                        $map_stop = $positions->[$i];
+                    }
+                }
+            }
         }
 
         #
@@ -315,17 +373,12 @@ Returns the data for drawing comparative maps.
         #
         # Get the reference map features.
         #
-        $map_data->{'features'} = $db->selectall_arrayref(
+        $map_data->{'features'} = $db->selectall_hashref(
             $sql->cmap_data_features_sql,
-            { Columns => {} },
+            'feature_id',
+            {},
             ( $map_id, $map_start, $map_stop )
         );
-
-#        my %features;
-#        for my $feature ( @$features ) {
-#            push @{ $features{ $feature->{'start_position'} } }, $feature;
-#        }
-#        $map_data->{'features'} = \%features;
 
         my $map_correspondences;
         if ( $ref_map_id ) {

@@ -1,13 +1,13 @@
 package Bio::GMOD::CMap::Constants;
 
-# $Id: Constants.pm,v 1.8 2002-09-05 00:16:54 kycl4rk Exp $
+# $Id: Constants.pm,v 1.9 2002-09-06 00:01:17 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -278,7 +278,8 @@ use constant DEFAULT => {
     #
     # Where to see feature details.
     #
-    feature_detail_url => '/cmap/feature',
+    feature_details_url => 
+        '/cmap/feature?feature_aid=[% feature.accession_id %]',
 
     #
     # Color of box around a highlighted feature.
@@ -385,6 +386,12 @@ use constant DEFAULT => {
     # Default: 10
     #
     max_search_pages => 10,
+
+    #
+    # The number of positions to have flanking zoomed areas.
+    # Default: 5
+    #
+    number_flanking_positions => 5,
 
     #
     # The module to dispatch to when no path is given to "/cmap."

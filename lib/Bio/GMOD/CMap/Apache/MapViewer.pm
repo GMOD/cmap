@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 
-# $Id: MapViewer.pm,v 1.5 2002-09-04 02:25:46 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.6 2002-09-06 00:01:17 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $TEMPLATE $PAGE );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use Apache::Constants;
 use Apache::Request;
@@ -62,9 +62,17 @@ sub handler {
     #
     for my $cmap ( split( /:/, $comparative_maps ) ) {
         my ( $slot_no, $field, $accession_id ) = split(/=/, $cmap) or next;
+        my ( $start, $stop );
+        if ( $accession_id =~ m/^(.+)\[(.+),(.+)\]$/ ) {
+            $accession_id = $1;
+            $start        = $2;
+            $stop         = $3;
+        }
         $slots{ $slot_no } =  {
-            field        => $field,
-            aid          => $accession_id,
+            field          => $field,
+            aid            => $accession_id,
+            start          => $start,
+            stop           => $stop,
         }; 
     }
 
@@ -80,9 +88,17 @@ sub handler {
         my $cmap    = $side eq RIGHT 
             ? $comparative_map_right : $comparative_map_left;
         my ( $field, $accession_id ) = split( /=/, $cmap ) or next;
+        my ( $start, $stop );
+        if ( $accession_id =~ m/^(.+)\[(.+),(.+)\]$/ ) {
+            $accession_id = $1;
+            $start        = $2;
+            $stop         = $3;
+        }
         $slots{ $slot_no } =  {
-            field        => $field,
-            aid          => $accession_id,
+            field          => $field,
+            aid            => $accession_id,
+            start          => $start,
+            stop           => $stop,
         }; 
     }
 

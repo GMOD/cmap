@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.6 2002-09-05 00:16:54 kycl4rk Exp $
+# $Id: Map.pm,v 1.7 2002-09-06 00:01:17 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.6 $)[-1];
+$VERSION = (qw$Revision: 1.7 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -277,7 +277,8 @@ sub features {
 
 =head2 features
 
-Returns all the features on the map (as objects).
+Returns all the features on the map (as objects).  Features are stored
+in raw format as a hashref keyed on feature_id.
 
 =cut
     my $self   = shift;
@@ -285,7 +286,12 @@ Returns all the features on the map (as objects).
     my $map    = $self->map( $map_id );
 
     unless ( defined $map->{'feature_store'} ) {
-        for my $data ( @{ $map->{'features'} } ) {
+        for my $data ( 
+            map     { $_->[1] }
+            sort    { $a->[0] <=> $b->[0] }
+            map     { [ $_->{'start_position'}, $_ ] }
+            values %{ $map->{'features'} } 
+        ) {
             push @{ $map->{'feature_store'} }, 
                 Bio::GMOD::CMap::Drawer::Feature->new( 
                     map    => $self,
@@ -509,12 +515,12 @@ Lays out the map.
             @features[ $midpoint .. $no_features - 1 ]
         );
         
-        my $prev_label_y;
-        my $direction = NORTH;
-        my $min_y     = $base_y;
-        my @fcolumns  = (); # for feature east-to-west
-        my @rows      = (); # for labels north-to-south
-        my $mid_y;
+        my $mid_y;               # remembers the y value of the middle label
+        my $prev_label_y;        # remembers the y value of previous label
+        my $direction =   NORTH; # initially we move from the middle up
+        my $min_y     = $base_y; # remembers the northermost position
+        my @fcolumns  =      (); # for feature east-to-west
+        my @rows      =      (); # for labels north-to-south
         for my $feature ( @sorted_features ) {
             my $y_pos1        = $base_y +
                 ( $pixel_height * $feature->relative_start_position );
@@ -626,8 +632,7 @@ Lays out the map.
 
                 $drawer->add_map_area(
                     coords => \@coords,
-                    url    => $self->config('feature_details_url').
-                              '?feature_aid='.$feature->accession_id,
+                    url    => $feature->feature_details_url,
                     alt    => 'Details: '.$feature->feature_name,
                 );
 
@@ -700,10 +705,11 @@ Lays out the map.
 
                     $drawer->add_map_area(
                         coords => \@bounds,
-                        url    => $self->config('feature_details_url').
-                                  '?feature_aid='.$feature->accession_id,
+                        url    => $feature->feature_details_url,
                         alt    => 'Details: '.$feature->feature_name,
                     );
+
+                    $min_y = $label_y if $label_y < $min_y;
 
                     my $label_connect_x1 = $x_plane;
 
@@ -760,62 +766,56 @@ Lays out the map.
             }
         }
 
+#        #
+#        # Remember map info to make clickable at the end.
+#        #
+#        $drawer->add_map_href_bounds(
+#            slot_no  => $slot_no,
+#            map_id   => $map_id,
+#            bounds   => \@bounds,
+#            map_name => $self->map_name,
+#        );
+
         #
         # Make map clickable.
         #
-#        if ( $is_relational && $slot_no != 0 ) {
-        if ( $slot_no != 0 ) {
-            my $slots = $drawer->slots;
-            warn "map = ", $self->map_name($map_id), "\n";
+#        warn "map = ", $self->map_name($map_id), "\n";
+        my $slots = $drawer->slots;
+        my @maps;
+        for my $side ( qw[ left right ] ) {
+            my $no      = $side eq 'left' ? $slot_no - 1 : $slot_no + 1;
+            my $new_no  = $side eq 'left' ? -1 : 1;
+            my $map     = $slots->{ $no } or next; 
+            my $link    = 
+                join( '%3d', $new_no, map { $map->{$_} } qw[ field aid ] );
 
-            my @maps;
-            for my $side ( qw[ left right ] ) {
-                my $no      = $side eq 'left' ? $slot_no - 1 : $slot_no + 1;
-                my $new_no  = $side eq 'left' ? -1 : 1;
-                my $map     = $slots->{ $no } or next; 
-                my $link    = 
-                    join( '%3d', $new_no, map { $map->{$_} } qw[ field aid ] );
-
-                if ( 
-                    my @ref_positions = sort { $a <=> $b }
-                    $drawer->feature_correspondence_map_positions(
-                        slot_no     => $slot_no,
-                        map_id      => $map_id,
-                        ref_slot_no => $no,
-                    )
-                ) {
-                    my $first = $ref_positions[0];
-                    my $last  = $ref_positions[-1];
-                    $link    .= "[$first,$last]";
-                }
-
-                push @maps, $link;
+            if ( 
+                my @ref_positions = sort { $a <=> $b }
+                $drawer->feature_correspondence_map_positions(
+                    slot_no      => $slot_no,
+                    map_id       => $map_id,
+                    comp_slot_no => $no,
+                )
+            ) {
+                my $first = $ref_positions[0];
+                my $last  = $ref_positions[-1];
+                $link    .= "[$first,$last]";
             }
 
-            my $url = $self->config('map_details_url').
-                '?ref_map_set_aid='.$self->map_set_aid( $map_id ).
-                ';ref_map_aid='.$self->accession_id( $map_id ).
-                ';comparative_maps='.join( ':', @maps );
-
-            $drawer->add_map_area(
-                coords => \@bounds,
-                url    => $url,
-                alt    => 'Details: '.$self->map_name,
-            );
+            push @maps, $link;
         }
-#        else {
-#            my $url = $self->config('cmap_viewer_url').
-#                '?ref_map_set_aid='.$self->map_set_aid( $map_id ).
-#                ';ref_map_aid='.$self->accession_id( $map_id ).
-#                ';comparative_maps='.join( ':', @maps );
-#
-#            $drawer->add_map_area(
-#                coords => \@bounds,
-#                url    => $url,
-#                alt    => 'Details: '.$self->map_name,
-#            );
-#        }
-        
+
+        my $url = $self->config('map_details_url').
+            '?ref_map_set_aid='.$self->map_set_aid( $map_id ).
+            ';ref_map_aid='.$self->accession_id( $map_id ).
+            ';comparative_maps='.join( ':', @maps );
+
+        $drawer->add_map_area(
+            coords => \@bounds,
+            url    => $url,
+            alt    => 'Details: '.$self->map_name,
+        );
+    
         #
         # The map title.
         #
@@ -831,7 +831,9 @@ Lays out the map.
             }
         }
         else {
-            $min_y -= $reg_font->height + 5;
+            my $buffer = 4;
+            $min_y    -= $reg_font->height + $buffer * 2;
+            my ( $leftmost, $rightmost, $topmost, $bottommost );
             for my $label ( 
                 map { $self->$_( $map_id ) } reverse @config_map_titles
             ) {
@@ -843,8 +845,30 @@ Lays out the map.
                 );
 
                 my $label_end = $label_x + ($reg_font->width * length($label));
+                my $bottom    = $min_y + $reg_font->height;
+                $bottommost   = $bottom unless defined $bottommost;
+                $bottommost   = $bottom if $bottom > $bottommost;
+                $topmost      = $min_y unless defined $topmost;
+                $topmost      = $min_y if $min_y < $topmost;
+                $leftmost     = $label_x unless defined $leftmost;
+                $leftmost     = $label_x if $label_x < $leftmost;
+                $rightmost    = $label_end unless defined $rightmost;
+                $rightmost    = $label_end if $label_end > $rightmost;
                 $min_y       -= $reg_font->height;
             }
+
+            my @bounds = (
+                $leftmost   - $buffer, 
+                $topmost    - $buffer,
+                $rightmost  + $buffer, 
+                $bottommost + $buffer,
+            );
+            $drawer->add_drawing( 
+                FILLED_RECT, @bounds, 'white', 0 # bottom-most layer
+            );
+            $drawer->add_drawing( 
+                RECTANGLE, @bounds, 'black'
+            );
         }
 
         #
@@ -867,7 +891,9 @@ Lays out the map.
     #
     $top_y -= 10;
     if ( $is_relational && $slot_no != 0 ) {
-        my $min_y = $top_y - $reg_font->height + 5;
+        my $buffer = 4;
+        my $min_y = $top_y - ( $reg_font->height + $buffer * 2 );
+        my ( $leftmost, $rightmost, $topmost, $bottommost );
         for my $label ( @map_titles ) {
             my $label_x = $min_x + ( ( $max_x - $min_x ) / 2 ) - 
                 ( ( $reg_font->width * length( $label ) ) / 2 );
@@ -877,8 +903,30 @@ Lays out the map.
             );
 
             my $label_end = $label_x + ($reg_font->width * length($label));
+            my $bottom    = $min_y + $reg_font->height;
+            $bottommost   = $bottom unless defined $bottommost;
+            $bottommost   = $bottom if $bottom > $bottommost;
+            $topmost      = $min_y unless defined $topmost;
+            $topmost      = $min_y if $min_y < $topmost;
+            $leftmost     = $label_x unless defined $leftmost;
+            $leftmost     = $label_x if $label_x < $leftmost;
+            $rightmost    = $label_end unless defined $rightmost;
+            $rightmost    = $label_end if $label_end > $rightmost;
             $min_y       -= $reg_font->height;
         }
+
+        my @bounds = (
+            $leftmost   - $buffer, 
+            $topmost    - $buffer,
+            $rightmost  + $buffer, 
+            $bottommost + $buffer,
+        );
+        $drawer->add_drawing( 
+            FILLED_RECT, @bounds, 'white', 0 # bottom-most layer
+        );
+        $drawer->add_drawing( 
+            RECTANGLE, @bounds, 'black'
+        );
     }
 
     return 1;

@@ -108,23 +108,26 @@
                     <option value="[% ft.feature_type_aid %]"[% IF ft.feature_type_aid==apr.param('feature_type_aid'); ' selected'; END %]>[% ft.feature_type %]</option>
                 [% END %]
             </select>
+            <input type="hidden" name="order"            value="[% apr.param('order') %]">
             <input type="hidden" name="order_by"         value="[% apr.param('order_by') %]">
             <input type="hidden" name="ref_map_set_aid"  value="[% apr.param('ref_map_set_aid') %]">
             <input type="hidden" name="ref_map_aid"      value="[% apr.param('ref_map_aid') %]">
             <input type="hidden" name="comparative_maps" value="[% apr.param('comparative_maps') %]">
             <input type="submit" value="Submit">
             </form>
-            [ <a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];feature_type_aid=[% apr.param('feature_type_aid') %];order_by=[% apr.param('order_by') %];action=download">Download Data</a> ]
+            [ <a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];feature_type_aid=[% apr.param('feature_type_aid') %];order=[% apr.param('order') %];order_by=[% apr.param('order_by') %];action=download">Download Data</a> ]
         </td>
     </tr>
+
     <tr>
         <th colspan="3">[% reference_map.species_name %] - [% reference_map.map_set_name %] - [% reference_map.map_name %]<br><small>(Click headers to resort)</small></th>
         <th colspan="5">Other Maps</th>
     </tr>
+
     <tr>
-        <th><a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];comparative_maps=[% apr.param('comparative_maps') %];feature_type_aid=[% apr.param('feature_type_aid') %];order_by=feature_name">Feature</a></th>
-        <th><a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];comparative_maps=[% apr.param('comparative_maps') %];feature_type_aid=[% apr.param('feature_type_aid') %];order_by=feature_type">Type</a></th>
-        <th><a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];comparative_maps=[% apr.param('comparative_maps') %];feature_type_aid=[% apr.param('feature_type_aid') %];order_by=start_position">Position</a> ([% reference_map.map_units %])</th>
+        <th><a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];comparative_maps=[% apr.param('comparative_maps') %];feature_type_aid=[% apr.param('feature_type_aid') %];order=[% apr.param('order') %];order_by=feature_name">Feature</a></th>
+        <th><a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];comparative_maps=[% apr.param('comparative_maps') %];feature_type_aid=[% apr.param('feature_type_aid') %];order=[% apr.param('order') %];order_by=feature_type">Type</a></th>
+        <th><a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];comparative_maps=[% apr.param('comparative_maps') %];feature_type_aid=[% apr.param('feature_type_aid') %];order=[% apr.param('order') %];order_by=start_position">Position</a> ([% reference_map.map_units %])</th>
         <th>Map</th>
         <th>Feature</th>
         <th>Type</th>

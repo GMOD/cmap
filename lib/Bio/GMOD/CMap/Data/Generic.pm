@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data::Generic;
 
-# $Id: Generic.pm,v 1.4 2002-09-05 00:16:54 kycl4rk Exp $
+# $Id: Generic.pm,v 1.5 2002-09-06 00:01:17 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Bio::GMOD::CMap;
 use base 'Bio::GMOD::CMap';
@@ -68,7 +68,7 @@ The SQL for finding all the features on a map.
 
 =cut
     my ( $self, %args ) = @_;
-    my $order_by        = $args{'order_by'}    || 'start_position';
+    my $order_by        = $args{'order_by'}    || '';
     my $restrict_by     = $args{'restrict_by'} || '';
     my $sql             = qq[
         select   f.feature_id,
@@ -99,7 +99,9 @@ The SQL for finding all the features on a map.
         and      ms.map_type_id=mt.map_type_id
     ];
     $sql .= "and ft.accession_id='$restrict_by' " if $restrict_by;
-    $sql .= "order by $order_by"
+    $sql .= "order by $order_by" if $order_by;
+
+    return $sql;
 }
 
 # ----------------------------------------------------

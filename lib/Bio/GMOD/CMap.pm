@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap;
 
-# $Id: CMap.pm,v 1.6 2002-08-30 23:41:06 kycl4rk Exp $
+# $Id: CMap.pm,v 1.7 2002-09-06 00:01:17 kycl4rk Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ itself based on Andy Wardley's Class::Base module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.6 $)[-1];
+$VERSION = (qw$Revision: 1.7 $)[-1];
 
 use Class::Base;
 use Config::General;
@@ -57,7 +57,11 @@ Returns one or all options from the config file.
     }
 
     if ( $option ) {
-        my $value = $self->{'config'}{ $option } || DEFAULT->{ $option };
+        my $value = defined $self->{'config'}{ $option } 
+            ? $self->{'config'}{ $option } 
+            : DEFAULT->{ $option }
+        ;
+
         if ( $value ) {
             return wantarray && ref $value ? @$value : $value;
         }
@@ -135,6 +139,36 @@ Returns a handle to the data module.
 #    $self->SUPER::error( @_ );
 #    return CMapException->throw( error => $self->SUPER::error );
 #}
+
+# ----------------------------------------------------
+sub template { 
+
+=pod
+
+=head2 template
+
+Returns a Template Toolkit object.
+
+=cut
+    my $self = shift;
+
+    unless ( $self->{'template'} ) {
+        my $template_dir = $self->config('template_dir') || '';
+
+        $self->{'template'} = Template->new( 
+            INCLUDE_PATH    => $template_dir,
+            FILTERS         => {
+                dump        => sub { Dumper( shift() ) },
+                nbsp        => sub { my $s=shift; $s =~ s{\s+}{\&nbsp;}g; $s },
+                commify     => \&Bio::GMOD::CMap::Utils::commify,
+            },
+        ) or $self->error(
+            "Couldn't create Template object: ".Template->error()
+        );
+    }
+
+    return $self->{'template'};
+}
 
 # ----------------------------------------------------
 sub warn {
