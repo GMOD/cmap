@@ -1,5 +1,22 @@
                       Revision history for CMap
 
+0.09
+
+-   Fixed problems in "cache_dir" method where temp dir wasn't being created
+-   Fixed bug in name-based correspondences where extra feature types 
+    weren't being correctly included in checks
+-   Significantly increased speed of making name-based correspondences
+-   Fixed bugs in admin feature search
+-   Added "accession_id" to map type table
+-   Added restriction by species and map type to map set info page
+-   Added expanded ability to indicate number selections in cmap_admin.pl
+-   Added order by species/map type on map viewer "Ref. Map" selection
+-   Fixed errors in map detail page
+-   Added map set names to top of matrix
+-   Added "View All Maps" link to map set info template
+-   Added "description" field to feature type and "feature_type_info" 
+    handler for displaying details on feature types
+
 0.08   2003-08-15
 
 -   Added ability to view all maps in reference map set
@@ -14,6 +31,7 @@
 -   Altered database indices for improved performance
 -   Added "view_feature_on_map" handler to quickly get from a feature
     accession ID to a view of it on a map
+-   Added HTML-based admin tutorial in "docs"
 
 0.07    2003-05-30
 
@@ -39,10 +57,10 @@
 -   Added separate BUGS and TODO files so they are not lost in the 
     Changes file
 -   Added a generic feature search to web admin tool
--   Added new "paginate" sub to Utils for creating pages of recordsets
+-   Added new "paginate" sub to Utils for creating pages of record sets
     for web navigation, added better and more standard paging to 
     user feature search and most of the admin pages that return what
-    could be a large recordset
+    could be a large record set
 -   Fixed bug (#660483) where "IO::Tee=GLOB(0x4d7900)" was being printed
     while exporting data as SQL statements in cmap_admin.pl
 -   Added a DESTROY method to base class to disconnect database so that
@@ -132,7 +150,7 @@
     For PostgreSQL:
     alter table cmap_evidence_type add line_color character varying(20);
 -   Added "title" attribute to map areas on templates for viewing maps
--   Changed "truncate table" in SQL for reloading of correpsondence
+-   Changed "truncate table" in SQL for reloading of correspondence
     matrix to be a more simple unqualified "delete from" in order to
     get around permissions in PostgreSQL (there was also some
     complaint earlier that this didn't work with some earlier version
@@ -159,7 +177,7 @@
 -   Added dbxref_name and dbxref_url to feature export in cmap_admin.pl
 -   Added cmap-schema.png, a diagram of the tables
 -   Removed DATA_IMPORT, DATA_CURATION from docs, consolidated into new
-    ADMINSTRATION document
+    ADMINISTRATION document
 -   Fixed bug in user feature search where "All" choice for features types and
     species wasn't working
 -   Added acceptance of multiple evidence codes (separated by commas) in
@@ -174,7 +192,7 @@
 -   Increased size of all "double" fields (in MySQL declarations) from 8 to 11
 -   Added experimental throttling measures (see ADMINISTRATION)
 -   Added ability to highlight features by primary name, alternate name
-    or accesssion ID
+    or accession ID
 -   Added ability to highlight features with embedded spaces in the name
 
 0.05    2002-12-17
