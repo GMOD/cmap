@@ -1,12 +1,11 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.26 2003-03-05 20:12:37 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.27 2003-03-05 21:32:57 kycl4rk Exp $
 
 use strict;
-use Data::Dumper;
-
 use Apache::Constants qw[ :common M_GET REDIRECT ];
 use Apache::Request;
+use Data::Dumper;
 use Template;
 use Time::Object;
 use Time::ParseDate;
@@ -31,7 +30,7 @@ $FEATURE_SHAPES = [ qw(
 $LINE_STYLES    = [ qw( dashed solid ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.26 $)[-1];
+$VERSION        = (qw$Revision: 1.27 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
