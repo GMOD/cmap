@@ -1,6 +1,6 @@
                               CMAP INSTALL
 
-                             $Revision: 1.36 $
+                             $Revision: 1.37 $
 
 1.      QUICK START
 
@@ -427,7 +427,7 @@ into a directory so that they're side by side, then follow the
 directions included in the INSTALL.apaci file in the mod_perl
 distribution.  Here's an example:
 
-Note: The backslashes ("\") above tell the command-line that you are
+Note: The backslashes ("\") below tell the command-line that you are
       continuing the command on a new line. It's not necessary to do
       this. You can just keep typing, but it's easier to see what you're
       doing when you use multiple lines.
