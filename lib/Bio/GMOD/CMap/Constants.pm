@@ -1,13 +1,13 @@
 package Bio::GMOD::CMap::Constants;
 
-# $Id: Constants.pm,v 1.22 2003-04-09 20:43:04 kycl4rk Exp $
+# $Id: Constants.pm,v 1.23 2003-04-15 21:21:20 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.22 $)[-1];
+$VERSION = (qw$Revision: 1.23 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -290,8 +290,7 @@ use constant DEFAULT => {
     #
     # Where to see feature details.
     #
-    feature_details_url => 
-        '/cmap/feature?feature_aid=[% feature.accession_id %]',
+    feature_details_url => '/cmap/feature?feature_aid=',
 
     #
     # Color of box around a highlighted feature.
