@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin;
 
-# $Id: Admin.pm,v 1.15 2003-01-31 19:28:46 kycl4rk Exp $
+# $Id: Admin.pm,v 1.16 2003-02-11 00:24:30 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.15 $)[-1];
+$VERSION = (qw$Revision: 1.16 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils qw[ next_number ];
@@ -481,7 +481,8 @@ Inserts a correspondence.  Returns -1 if there is nothing to do.
     my $feature_id2      = shift;
     my $evidence_type_id = shift;
     my $accession_id     = shift || '';
-    my $is_enabled       = shift ||  0;
+    my $is_enabled       = shift;
+       $is_enabled       = 1 unless defined $is_enabled;
     my $db               = $self->db or return;
     return -1 if $feature_id1 == $feature_id2;
 
@@ -512,7 +513,7 @@ Inserts a correspondence.  Returns -1 if there is nothing to do.
     #
     # Don't create correspondences among relational maps.
     #
-    next if 
+    return if 
         $feature1->{'map_set_id'} == $feature2->{'map_set_id'} 
         &&
         $feature1->{'is_relational_map'} == 1;
@@ -520,11 +521,11 @@ Inserts a correspondence.  Returns -1 if there is nothing to do.
     #
     # Don't create correspondences among relational map sets.
     #
-    next if $feature1->{'is_relational_map'} && 
+    return if $feature1->{'is_relational_map'} && 
         $feature2->{'is_relational_map'};
 
     #
-    # Skip if a correspondence for this type exists already.
+    # Skip if a correspondence with this evidence type exists already.
     #
     my $count = $db->selectrow_array(
         q[
