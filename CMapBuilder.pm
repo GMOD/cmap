@@ -177,7 +177,7 @@ sub ACTION_build_html {
         map { $_->[1] ? $q->a( {-href => $_->[1]}, $_->[0] ) : $q->b($_->[0]) }
         (
             [ 'CMap Home'      => '' ],
-            [ 'Maps'           => '/cgi-bin/cmap/viewer' ],
+            [ 'Maps'           => '/cgi-bin/cmap/viewer?changeMenu=1' ],
             [ 'Map Search'     => '/cgi-bin/cmap/entry' ],
             [ 'Search'         => '/cgi-bin/cmap/feature_search' ],
             [ 'Matrix'         => '/cgi-bin/cmap/matrix' ],
