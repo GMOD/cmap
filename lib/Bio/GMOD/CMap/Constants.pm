@@ -1,13 +1,13 @@
 package Bio::GMOD::CMap::Constants;
 
-# $Id: Constants.pm,v 1.24 2003-05-20 21:40:18 kycl4rk Exp $
+# $Id: Constants.pm,v 1.25 2003-09-08 17:31:10 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.24 $)[-1];
+$VERSION = (qw$Revision: 1.25 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -323,6 +323,11 @@ use constant DEFAULT => {
     # Default: feature_name
     #
     feature_search_field => 'feature_name',
+
+    #
+    # Where to see feature type details.
+    #
+    feature_type_details_url => '/cmap/feature_type_info?feature_type_aid=',
     
     #
     # The size of the map image.  Note that there are options on the
