@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.97 2004-03-12 21:06:50 kycl4rk Exp $
+# $Id: Data.pm,v 1.98 2004-03-12 21:58:43 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.97 $)[-1];
+$VERSION = (qw$Revision: 1.98 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -2518,6 +2518,7 @@ Given a list of feature names, find any maps they occur on.
     my %features = ();
     for my $feature_name ( @feature_names ) {
         my $comparison = $feature_name =~ m/%/ ? 'like' : '=';
+        $feature_name  = uc $feature_name;
         my $where      = '';
         if ( @$feature_type_aids ) {
             $where .= 'and ft.accession_id in ('.
@@ -2554,7 +2555,7 @@ Given a list of feature names, find any maps they occur on.
                          cmap_map_set ms,
                          cmap_species s,
                          cmap_map_type mt
-                where    f.feature_name $comparison '$feature_name'
+                where    upper(f.feature_name) $comparison '$feature_name'
                 and      f.feature_type_id=ft.feature_type_id
                 and      f.map_id=map.map_id
                 and      map.map_set_id=ms.map_set_id
@@ -2584,7 +2585,7 @@ Given a list of feature names, find any maps they occur on.
                        cmap_map_set ms,
                        cmap_species s,
                        cmap_map_type mt
-                where  fa.alias $comparison '$feature_name'
+                where  upper(fa.alias) $comparison '$feature_name'
                 and    fa.feature_id=f.feature_id
                 and    f.feature_type_id=ft.feature_type_id
                 and    f.map_id=map.map_id
@@ -2617,7 +2618,7 @@ Given a list of feature names, find any maps they occur on.
                          cmap_map_set ms,
                          cmap_species s,
                          cmap_map_type mt
-                where    f.accession_id $comparison '$feature_name'
+                where    upper(f.accession_id) $comparison '$feature_name'
                 and      f.feature_type_id=ft.feature_type_id
                 and      f.map_id=map.map_id
                 and      map.map_set_id=ms.map_set_id
