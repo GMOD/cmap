@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.69 2004-03-10 20:09:39 kycl4rk Exp $
+# $Id: Map.pm,v 1.70 2004-03-11 19:34:25 kycl4rk Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.69 $)[-1];
+$VERSION = (qw$Revision: 1.70 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -88,13 +88,7 @@ Figure out where right-to-left this map belongs.
     my $buffer  = 15;
 
     my $base_x;
-    if ( 
-        ( $slot_no == -1 && $drawer->total_no_slots == 2 )
-        ||
-        $slot_no < 0
-        ||
-        ( $slot_no == 0 && $drawer->label_side eq LEFT )
-    ) {
+    if ( $slot_no < 0 || ( $slot_no == 0 && $drawer->label_side eq LEFT ) ) {
         $base_x = $drawer->min_x - $buffer;
     }
     else {
