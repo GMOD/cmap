@@ -300,7 +300,7 @@
         [% FOREACH att=form_data.ref_map_set_info.attributes %]
             <tr>
                 <th align="right" valign="top">
-                    [% att.attribute_name %]:
+                    [% att.attribute_name | nbsp %]:
                 </td>
                 <td>
                     [%- IF att.attribute_value.match('^http://') -%]
