@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name: cmap
-version: 0.10
+version: 0.11
 author:
   - Ken Y. Clark <kclark@cshl.org>
 abstract: Modules for drawing comparative and genetic maps
@@ -24,7 +24,7 @@ requires:
 provides:
   Bio::GMOD::CMap:
     file: lib/Bio/GMOD/CMap.pm
-    version: 0.10
+    version: 0.11
   Bio::GMOD::CMap::Admin:
     file: lib/Bio/GMOD/CMap/Admin.pm
     version: 1.46
@@ -42,7 +42,7 @@ provides:
     version: 1.29
   Bio::GMOD::CMap::Apache:
     file: lib/Bio/GMOD/CMap/Apache.pm
-    version: 1.14
+    version: 1.16
   Bio::GMOD::CMap::Apache::AdminViewer:
     file: lib/Bio/GMOD/CMap/Apache/AdminViewer.pm
     version: 1.63
@@ -72,7 +72,7 @@ provides:
     version: 1.8
   Bio::GMOD::CMap::Apache::MapDetailViewer:
     file: lib/Bio/GMOD/CMap/Apache/MapDetailViewer.pm
-    version: 1.21
+    version: 1.22
   Bio::GMOD::CMap::Apache::MapSetViewer:
     file: lib/Bio/GMOD/CMap/Apache/MapSetViewer.pm
     version: 1.14
@@ -81,7 +81,7 @@ provides:
     version: 1.2
   Bio::GMOD::CMap::Apache::MapViewer:
     file: lib/Bio/GMOD/CMap/Apache/MapViewer.pm
-    version: 1.29
+    version: 1.30
   Bio::GMOD::CMap::Apache::MatrixViewer:
     file: lib/Bio/GMOD/CMap/Apache/MatrixViewer.pm
     version: 1.10
@@ -93,7 +93,7 @@ provides:
     version: 1.7
   Bio::GMOD::CMap::Data:
     file: lib/Bio/GMOD/CMap/Data.pm
-    version: 1.92
+    version: 1.93
   Bio::GMOD::CMap::Data::Generic:
     file: lib/Bio/GMOD/CMap/Data/Generic.pm
     version: 1.46
@@ -105,10 +105,10 @@ provides:
     version: 1.6
   Bio::GMOD::CMap::Drawer:
     file: lib/Bio/GMOD/CMap/Drawer.pm
-    version: 1.52
+    version: 1.53
   Bio::GMOD::CMap::Drawer::Map:
     file: lib/Bio/GMOD/CMap/Drawer/Map.pm
-    version: 1.66
+    version: 1.69
   Bio::GMOD::CMap::Utils:
     file: lib/Bio/GMOD/CMap/Utils.pm
     version: 1.25

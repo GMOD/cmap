@@ -1,5 +1,9 @@
                       Revision history for CMap
 
+0.11    2004-03-10
+
+-   Various bug fixes
+
 0.10    2004-02-27
 
 -   Added preliminary support for SQLite
