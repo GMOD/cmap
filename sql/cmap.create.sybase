@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::Sybase
--- Created on Thu Sep  4 12:50:32 2003
+-- Created on Wed Oct  1 18:23:55 2003
 -- 
 --
 -- Table: cmap_correspondence_evidence
@@ -88,7 +88,6 @@ CREATE TABLE cmap_feature (
   map_id numeric(11) DEFAULT '0' NOT NULL,
   feature_type_id numeric(11) DEFAULT '0' NOT NULL,
   feature_name varchar(32) DEFAULT '' NOT NULL,
-  alternate_name varchar(32) DEFAULT NULL NULL,
   is_landmark smallint(4) DEFAULT '0' NOT NULL,
   start_position double(11,2) DEFAULT '0.00' NOT NULL,
   stop_position double(11,2) DEFAULT NULL NULL,
@@ -100,13 +99,37 @@ CREATE TABLE cmap_feature (
 
 CREATE INDEX feature_name ON cmap_feature (feature_name);
 
-CREATE INDEX alternate_name ON cmap_feature (alternate_name);
-
 CREATE INDEX feature_id_map_id ON cmap_feature (feature_id, map_id);
 
 CREATE INDEX feature_id_map_id_start ON cmap_feature (feature_id, map_id, start_position);
 
 CREATE INDEX map_id ON cmap_feature (map_id);
+
+--
+-- Table: cmap_feature_alias
+--
+
+CREATE TABLE cmap_feature_alias (
+  feature_id numeric(11) DEFAULT '0' NOT NULL,
+  alias varchar(255) DEFAULT NULL NULL
+);
+
+CREATE INDEX feature_id ON cmap_feature_alias (feature_id, alias);
+
+--
+-- Table: cmap_feature_attribute
+--
+
+CREATE TABLE cmap_feature_attribute (
+  feature_attribute_id numeric(11) DEFAULT '0' NOT NULL,
+  feature_type_id numeric(11) DEFAULT '0' NOT NULL,
+  attribute_name varchar(30) DEFAULT NULL NULL,
+  is_global smallint(4) DEFAULT '0' NOT NULL,
+  is_desired smallint(4) DEFAULT '0' NOT NULL,
+  is_plural smallint(4) DEFAULT '0' NOT NULL,
+  display_order numeric(11) DEFAULT NULL NULL,
+  CONSTRAINT pk_cmap_feature_attribute PRIMARY KEY (feature_attribute_id)
+);
 
 --
 -- Table: cmap_feature_correspondence
@@ -134,6 +157,17 @@ CREATE TABLE cmap_feature_note (
   feature_id numeric(11) DEFAULT '0' NOT NULL,
   note varchar(65535) NULL,
   CONSTRAINT pk_cmap_feature_note PRIMARY KEY (feature_id)
+);
+
+--
+-- Table: cmap_feature_to_attribute
+--
+
+CREATE TABLE cmap_feature_to_attribute (
+  feature_id numeric(11) DEFAULT '0' NOT NULL,
+  feature_attribute_id numeric(11) DEFAULT '0' NOT NULL,
+  value varchar(200) DEFAULT NULL NULL,
+  CONSTRAINT pk_cmap_feature_to_attribute PRIMARY KEY (feature_id, feature_attribute_id)
 );
 
 --
@@ -178,8 +212,7 @@ CREATE TABLE cmap_map_cache (
   slot_no smallint(6) DEFAULT '0' NOT NULL,
   map_id numeric(11) DEFAULT '0' NOT NULL,
   start_position double(11,2) DEFAULT NULL NULL,
-  stop_position double(11,2) DEFAULT NULL NULL,
-  requested_on datetime NOT NULL
+  stop_position double(11,2) DEFAULT NULL NULL
 );
 
 CREATE INDEX pid_cmap_map_cache ON cmap_map_cache (pid, slot_no, map_id);
@@ -199,7 +232,6 @@ CREATE TABLE cmap_map_set (
   can_be_reference_map smallint(4) DEFAULT '1' NOT NULL,
   display_order numeric(11) DEFAULT '1' NOT NULL,
   is_enabled smallint(4) DEFAULT '1' NOT NULL,
-  remarks varchar(65535) NULL,
   shape varchar(12) DEFAULT NULL NULL,
   color varchar(20) DEFAULT NULL NULL,
   width numeric(11) DEFAULT NULL NULL,
@@ -236,6 +268,18 @@ CREATE TABLE cmap_next_number (
   table_name varchar(40) DEFAULT '' NOT NULL,
   next_number numeric(11) DEFAULT '0' NOT NULL,
   CONSTRAINT pk_cmap_next_number PRIMARY KEY (table_name)
+);
+
+--
+-- Table: cmap_note
+--
+
+CREATE TABLE cmap_note (
+  note_id numeric(11) DEFAULT '0' NOT NULL,
+  table_name varchar(30) DEFAULT '' NOT NULL,
+  object_id numeric(11) DEFAULT '0' NOT NULL,
+  note varchar(65535) NULL,
+  CONSTRAINT pk_cmap_note PRIMARY KEY (note_id)
 );
 
 --

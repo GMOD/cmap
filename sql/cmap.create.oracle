@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::Oracle
--- Created on Mon Sep  8 11:14:40 2003
+-- Created on Wed Oct  1 18:23:28 2003
 -- 
 -- We assume that default NLS_DATE_FORMAT has been changed
 -- but we set it here anyway to be self-consistent.
@@ -11,10 +11,10 @@ ALTER SESSION SET NLS_DATE_FORMAT = 'YYYY-MM-DD HH24:MI:SS';
 --
 
 CREATE TABLE cmap_correspondence_evidence (
-  correspondence_evidence_id number(11) DEFAULT '0' CONSTRAINT nn_cmap_correspondence_evidenc NOT NULL,
-  accession_id varchar2(20) DEFAULT '' CONSTRAINT nn_cmap_correspondence_evid00 NOT NULL,
-  feature_correspondence_id number(11) DEFAULT '0' CONSTRAINT nn_cmap_correspondence_evid00 NOT NULL,
-  evidence_type_id number(11) DEFAULT '0' CONSTRAINT nn_cmap_correspondence_evid00 NOT NULL,
+  correspondence_evidence_id number(11) DEFAULT '0' NOT NULL,
+  accession_id varchar2(20) DEFAULT '' NOT NULL,
+  feature_correspondence_id number(11) DEFAULT '0' NOT NULL,
+  evidence_type_id number(11) DEFAULT '0' NOT NULL,
   score number(8, 2) DEFAULT NULL,
   remark varchar2(100) DEFAULT NULL,
   CONSTRAINT pk_cmap_correspondence_evidenc PRIMARY KEY (correspondence_evidence_id),
@@ -27,7 +27,7 @@ COMMENT ON TABLE cmap_correspondence_evidence is
   'MySQL dump 10.2';
 
 COMMENT ON TABLE cmap_correspondence_evidence is
-  'Host: localhost    Database: CMAP';
+  'Host: localhost    Database: CMAP10';
 
 COMMENT ON TABLE cmap_correspondence_evidence is
   '-------------------------------------------------------';
@@ -60,15 +60,15 @@ COMMENT ON TABLE cmap_correspondence_lookup is
 --
 
 CREATE TABLE cmap_correspondence_matrix (
-  reference_map_aid varchar2(20) DEFAULT '0' CONSTRAINT nn_cmap_correspondence_matrix_ NOT NULL,
-  reference_map_name varchar2(32) DEFAULT '' CONSTRAINT nn_cmap_correspondence_matr00 NOT NULL,
-  reference_map_set_aid varchar2(20) DEFAULT '0' CONSTRAINT nn_cmap_correspondence_matr00 NOT NULL,
-  reference_species_aid varchar2(20) DEFAULT '0' CONSTRAINT nn_cmap_correspondence_matr00 NOT NULL,
+  reference_map_aid varchar2(20) DEFAULT '0' NOT NULL,
+  reference_map_name varchar2(32) DEFAULT '' NOT NULL,
+  reference_map_set_aid varchar2(20) DEFAULT '0' NOT NULL,
+  reference_species_aid varchar2(20) DEFAULT '0' NOT NULL,
   link_map_aid varchar2(20) DEFAULT NULL,
   link_map_name varchar2(32) DEFAULT NULL,
-  link_map_set_aid varchar2(20) DEFAULT '0' CONSTRAINT nn_cmap_correspondence_matr00 NOT NULL,
-  link_species_aid varchar2(20) DEFAULT '0' CONSTRAINT nn_cmap_correspondence_matr00 NOT NULL,
-  no_correspondences number(11) DEFAULT '0' CONSTRAINT nn_cmap_correspondence_matr00 NOT NULL
+  link_map_set_aid varchar2(20) DEFAULT '0' NOT NULL,
+  link_species_aid varchar2(20) DEFAULT '0' NOT NULL,
+  no_correspondences number(11) DEFAULT '0' NOT NULL
 );
 
 COMMENT ON TABLE cmap_correspondence_matrix is
@@ -79,12 +79,12 @@ COMMENT ON TABLE cmap_correspondence_matrix is
 --
 
 CREATE TABLE cmap_dbxref (
-  dbxref_id number(11) DEFAULT '0' CONSTRAINT nn_cmap_dbxref_dbxref_id NOT NULL,
+  dbxref_id number(11) DEFAULT '0' NOT NULL,
   map_set_id number(11) DEFAULT NULL,
   feature_type_id number(11) DEFAULT NULL,
   species_id number(11) DEFAULT NULL,
   dbxref_name varchar2(32) DEFAULT NULL,
-  url varchar2(200) DEFAULT '' CONSTRAINT nn_cmap_dbxref_url NOT NULL,
+  url varchar2(200) DEFAULT '' NOT NULL,
   CONSTRAINT pk_cmap_dbxref PRIMARY KEY (dbxref_id)
 );
 
@@ -96,10 +96,10 @@ COMMENT ON TABLE cmap_dbxref is
 --
 
 CREATE TABLE cmap_evidence_type (
-  evidence_type_id number(11) DEFAULT '0' CONSTRAINT nn_cmap_evidence_type_evidence NOT NULL,
-  accession_id varchar2(20) DEFAULT '' CONSTRAINT nn_cmap_evidence_type_accessio NOT NULL,
-  evidence_type varchar2(30) DEFAULT '' CONSTRAINT nn_cmap_evidence_type_evide00 NOT NULL,
-  rank number(11) DEFAULT '0' CONSTRAINT nn_cmap_evidence_type_rank NOT NULL,
+  evidence_type_id number(11) DEFAULT '0' NOT NULL,
+  accession_id varchar2(20) DEFAULT '' NOT NULL,
+  evidence_type varchar2(30) DEFAULT '' NOT NULL,
+  rank number(11) DEFAULT '0' NOT NULL,
   line_color varchar2(20) DEFAULT NULL,
   CONSTRAINT pk_cmap_evidence_type PRIMARY KEY (evidence_type_id),
   CONSTRAINT accession_id UNIQUE (accession_id),
@@ -114,14 +114,13 @@ COMMENT ON TABLE cmap_evidence_type is
 --
 
 CREATE TABLE cmap_feature (
-  feature_id number(11) DEFAULT '0' CONSTRAINT nn_cmap_feature_feature_id NOT NULL,
-  accession_id varchar2(20) DEFAULT '' CONSTRAINT nn_cmap_feature_accession_id NOT NULL,
-  map_id number(11) DEFAULT '0' CONSTRAINT nn_cmap_feature_map_id NOT NULL,
-  feature_type_id number(11) DEFAULT '0' CONSTRAINT nn_cmap_feature_feature_type_i NOT NULL,
-  feature_name varchar2(32) DEFAULT '' CONSTRAINT nn_cmap_feature_feature_name NOT NULL,
-  alternate_name varchar2(32) DEFAULT NULL,
-  is_landmark number(4) DEFAULT '0' CONSTRAINT nn_cmap_feature_is_landmark NOT NULL,
-  start_position number(11, 2) DEFAULT '1' CONSTRAINT nn_cmap_feature_start_position NOT NULL,
+  feature_id number(11) DEFAULT '0' NOT NULL,
+  accession_id varchar2(20) DEFAULT '' NOT NULL,
+  map_id number(11) DEFAULT '0' NOT NULL,
+  feature_type_id number(11) DEFAULT '0' NOT NULL,
+  feature_name varchar2(32) DEFAULT '' NOT NULL,
+  is_landmark number(4) DEFAULT '0' NOT NULL,
+  start_position number(11, 2) DEFAULT '1' NOT NULL,
   stop_position number(11, 2) DEFAULT NULL,
   dbxref_name varchar2(32) DEFAULT NULL,
   dbxref_url varchar2(200) DEFAULT NULL,
@@ -130,8 +129,6 @@ CREATE TABLE cmap_feature (
 );
 
 CREATE INDEX feature_name on cmap_feature (feature_name);
-
-CREATE INDEX alternate_name on cmap_feature (alternate_name);
 
 CREATE INDEX feature_id_map_id on cmap_feature (feature_id, map_id);
 
@@ -143,15 +140,47 @@ COMMENT ON TABLE cmap_feature is
   'Table structure for table 'cmap_feature'';
 
 --
+-- Table: cmap_feature_alias
+--
+
+CREATE TABLE cmap_feature_alias (
+  feature_id number(11) DEFAULT '0' NOT NULL,
+  alias varchar2(255) DEFAULT NULL
+);
+
+CREATE INDEX feature_id on cmap_feature_alias (feature_id, alias);
+
+COMMENT ON TABLE cmap_feature_alias is
+  'Table structure for table 'cmap_feature_alias'';
+
+--
+-- Table: cmap_feature_attribute
+--
+
+CREATE TABLE cmap_feature_attribute (
+  feature_attribute_id number(11) DEFAULT '0' NOT NULL,
+  feature_type_id number(11) DEFAULT '0' NOT NULL,
+  attribute_name varchar2(30) DEFAULT NULL,
+  is_global number(4) DEFAULT '0' NOT NULL,
+  is_desired number(4) DEFAULT '0' NOT NULL,
+  is_plural number(4) DEFAULT '0' NOT NULL,
+  display_order number(11) DEFAULT NULL,
+  CONSTRAINT pk_cmap_feature_attribute PRIMARY KEY (feature_attribute_id)
+);
+
+COMMENT ON TABLE cmap_feature_attribute is
+  'Table structure for table 'cmap_feature_attribute'';
+
+--
 -- Table: cmap_feature_correspondence
 --
 
 CREATE TABLE cmap_feature_correspondence (
-  feature_correspondence_id number(11) DEFAULT '0' CONSTRAINT nn_cmap_feature_correspondence NOT NULL,
-  accession_id varchar2(20) DEFAULT '' CONSTRAINT nn_cmap_feature_corresponde00 NOT NULL,
-  feature_id1 number(11) DEFAULT '0' CONSTRAINT nn_cmap_feature_corresponde00 NOT NULL,
-  feature_id2 number(11) DEFAULT '0' CONSTRAINT nn_cmap_feature_corresponde00 NOT NULL,
-  is_enabled number(4) DEFAULT '1' CONSTRAINT nn_cmap_feature_corresponde00 NOT NULL,
+  feature_correspondence_id number(11) DEFAULT '0' NOT NULL,
+  accession_id varchar2(20) DEFAULT '' NOT NULL,
+  feature_id1 number(11) DEFAULT '0' NOT NULL,
+  feature_id2 number(11) DEFAULT '0' NOT NULL,
+  is_enabled number(4) DEFAULT '1' NOT NULL,
   CONSTRAINT pk_cmap_feature_correspondence PRIMARY KEY (feature_correspondence_id),
   CONSTRAINT accession_id UNIQUE (accession_id)
 );
@@ -168,8 +197,8 @@ COMMENT ON TABLE cmap_feature_correspondence is
 --
 
 CREATE TABLE cmap_feature_note (
-  feature_id number(11) DEFAULT '0' CONSTRAINT nn_cmap_feature_note_feature_i NOT NULL,
-  note varchar2(4000),
+  feature_id number(11) DEFAULT '0' NOT NULL,
+  note clob,
   CONSTRAINT pk_cmap_feature_note PRIMARY KEY (feature_id)
 );
 
@@ -177,19 +206,32 @@ COMMENT ON TABLE cmap_feature_note is
   'Table structure for table 'cmap_feature_note'';
 
 --
+-- Table: cmap_feature_to_attribute
+--
+
+CREATE TABLE cmap_feature_to_attribute (
+  feature_id number(11) DEFAULT '0' NOT NULL,
+  feature_attribute_id number(11) DEFAULT '0' NOT NULL,
+  value varchar2(200) DEFAULT NULL,
+  CONSTRAINT pk_cmap_feature_to_attribute PRIMARY KEY (feature_id, feature_attribute_id)
+);
+
+COMMENT ON TABLE cmap_feature_to_attribute is
+  'Table structure for table 'cmap_feature_to_attribute'';
+
+--
 -- Table: cmap_feature_type
 --
 
 CREATE TABLE cmap_feature_type (
-  feature_type_id number(11) DEFAULT '0' CONSTRAINT nn_cmap_feature_type_feature_t NOT NULL,
-  accession_id varchar2(20) DEFAULT '' CONSTRAINT nn_cmap_feature_type_accession NOT NULL,
-  feature_type varchar2(32) DEFAULT '' CONSTRAINT nn_cmap_feature_type_featur00 NOT NULL,
-  default_rank number(11) DEFAULT '1' CONSTRAINT nn_cmap_feature_type_default_r NOT NULL,
+  feature_type_id number(11) DEFAULT '0' NOT NULL,
+  accession_id varchar2(20) DEFAULT '' NOT NULL,
+  feature_type varchar2(32) DEFAULT '' NOT NULL,
+  default_rank number(11) DEFAULT '1' NOT NULL,
   shape varchar2(12) DEFAULT NULL,
   color varchar2(20) DEFAULT NULL,
-  drawing_lane number(11) DEFAULT '1' CONSTRAINT nn_cmap_feature_type_drawing_l NOT NULL,
-  drawing_priority number(11) DEFAULT '1' CONSTRAINT nn_cmap_feature_type_drawing_p NOT NULL,
-  description varchar2(4000),
+  drawing_lane number(11) DEFAULT '1' NOT NULL,
+  drawing_priority number(11) DEFAULT '1' NOT NULL,
   CONSTRAINT pk_cmap_feature_type PRIMARY KEY (feature_type_id),
   CONSTRAINT accession_id UNIQUE (accession_id)
 );
@@ -202,11 +244,11 @@ COMMENT ON TABLE cmap_feature_type is
 --
 
 CREATE TABLE cmap_map (
-  map_id number(11) DEFAULT '0' CONSTRAINT nn_cmap_map_map_id NOT NULL,
-  accession_id varchar2(20) DEFAULT '' CONSTRAINT nn_cmap_map_accession_id NOT NULL,
-  map_set_id number(11) DEFAULT '0' CONSTRAINT nn_cmap_map_map_set_id NOT NULL,
-  map_name varchar2(32) DEFAULT '' CONSTRAINT nn_cmap_map_map_name NOT NULL,
-  display_order number(11) DEFAULT '1' CONSTRAINT nn_cmap_map_display_order NOT NULL,
+  map_id number(11) DEFAULT '0' NOT NULL,
+  accession_id varchar2(20) DEFAULT '' NOT NULL,
+  map_set_id number(11) DEFAULT '0' NOT NULL,
+  map_name varchar2(32) DEFAULT '' NOT NULL,
+  display_order number(11) DEFAULT '1' NOT NULL,
   start_position number(11, 2) DEFAULT NULL,
   stop_position number(11, 2) DEFAULT NULL,
   CONSTRAINT pk_cmap_map PRIMARY KEY (map_id),
@@ -221,21 +263,12 @@ COMMENT ON TABLE cmap_map is
 --
 
 CREATE TABLE cmap_map_cache (
-  pid number(11) DEFAULT '0' CONSTRAINT nn_cmap_map_cache_pid NOT NULL,
-  slot_no number(6) DEFAULT '0' CONSTRAINT nn_cmap_map_cache_slot_no NOT NULL,
-  map_id number(11) DEFAULT '0' CONSTRAINT nn_cmap_map_cache_map_id NOT NULL,
+  pid number(11) DEFAULT '0' NOT NULL,
+  slot_no number(6) DEFAULT '0' NOT NULL,
+  map_id number(11) DEFAULT '0' NOT NULL,
   start_position number(11, 2) DEFAULT NULL,
-  stop_position number(11, 2) DEFAULT NULL,
-  requested_on date CONSTRAINT nn_cmap_map_cache_requested_on NOT NULL
+  stop_position number(11, 2) DEFAULT NULL
 );
-
-CREATE OR REPLACE TRIGGER ts_cmap_map_cache_requested_on
-BEFORE INSERT OR UPDATE ON cmap_map_cache
-FOR EACH ROW WHEN (new.requested_on IS NULL)
-BEGIN 
- SELECT sysdate INTO :new.requested_on FROM dual;
-END;
-/
 
 CREATE INDEX pid_cmap_map_cache on cmap_map_cache (pid, slot_no, map_id);
 
@@ -247,17 +280,16 @@ COMMENT ON TABLE cmap_map_cache is
 --
 
 CREATE TABLE cmap_map_set (
-  map_set_id number(11) DEFAULT '0' CONSTRAINT nn_cmap_map_set_map_set_id NOT NULL,
-  accession_id varchar2(20) DEFAULT '' CONSTRAINT nn_cmap_map_set_accession_id NOT NULL,
-  map_set_name varchar2(64) DEFAULT '' CONSTRAINT nn_cmap_map_set_map_set_name NOT NULL,
-  short_name varchar2(30) DEFAULT '' CONSTRAINT nn_cmap_map_set_short_name NOT NULL,
-  map_type_id number(11) DEFAULT '0' CONSTRAINT nn_cmap_map_set_map_type_id NOT NULL,
-  species_id number(11) DEFAULT '0' CONSTRAINT nn_cmap_map_set_species_id NOT NULL,
+  map_set_id number(11) DEFAULT '0' NOT NULL,
+  accession_id varchar2(20) DEFAULT '' NOT NULL,
+  map_set_name varchar2(64) DEFAULT '' NOT NULL,
+  short_name varchar2(30) DEFAULT '' NOT NULL,
+  map_type_id number(11) DEFAULT '0' NOT NULL,
+  species_id number(11) DEFAULT '0' NOT NULL,
   published_on date DEFAULT NULL,
-  can_be_reference_map number(4) DEFAULT '1' CONSTRAINT nn_cmap_map_set_can_be_referen NOT NULL,
-  display_order number(11) DEFAULT '1' CONSTRAINT nn_cmap_map_set_display_order NOT NULL,
-  is_enabled number(4) DEFAULT '1' CONSTRAINT nn_cmap_map_set_is_enabled NOT NULL,
-  remarks varchar2(4000),
+  can_be_reference_map number(4) DEFAULT '1' NOT NULL,
+  display_order number(11) DEFAULT '1' NOT NULL,
+  is_enabled number(4) DEFAULT '1' NOT NULL,
   shape varchar2(12) DEFAULT NULL,
   color varchar2(20) DEFAULT NULL,
   width number(11) DEFAULT NULL,
@@ -275,15 +307,15 @@ COMMENT ON TABLE cmap_map_set is
 --
 
 CREATE TABLE cmap_map_type (
-  map_type_id number(11) DEFAULT '0' CONSTRAINT nn_cmap_map_type_map_type_id NOT NULL,
-  accession_id varchar2(20) DEFAULT '' CONSTRAINT nn_cmap_map_type_accession_id NOT NULL,
-  map_type varchar2(64) DEFAULT '' CONSTRAINT nn_cmap_map_type_map_type NOT NULL,
-  map_units varchar2(12) DEFAULT '' CONSTRAINT nn_cmap_map_type_map_units NOT NULL,
-  is_relational_map number(11) DEFAULT '0' CONSTRAINT nn_cmap_map_type_is_relational NOT NULL,
+  map_type_id number(11) DEFAULT '0' NOT NULL,
+  accession_id varchar2(20) DEFAULT '' NOT NULL,
+  map_type varchar2(64) DEFAULT '' NOT NULL,
+  map_units varchar2(12) DEFAULT '' NOT NULL,
+  is_relational_map number(11) DEFAULT '0' NOT NULL,
   shape varchar2(12) DEFAULT NULL,
   color varchar2(20) DEFAULT NULL,
   width number(11) DEFAULT NULL,
-  display_order number(11) DEFAULT '1' CONSTRAINT nn_cmap_map_type_display_order NOT NULL,
+  display_order number(11) DEFAULT '1' NOT NULL,
   CONSTRAINT pk_cmap_map_type PRIMARY KEY (map_type_id),
   CONSTRAINT map_type UNIQUE (map_type),
   CONSTRAINT accession_id UNIQUE (accession_id)
@@ -297,8 +329,8 @@ COMMENT ON TABLE cmap_map_type is
 --
 
 CREATE TABLE cmap_next_number (
-  table_name varchar2(40) DEFAULT '' CONSTRAINT nn_cmap_next_number_table_name NOT NULL,
-  next_number number(11) DEFAULT '0' CONSTRAINT nn_cmap_next_number_next_numbe NOT NULL,
+  table_name varchar2(40) DEFAULT '' NOT NULL,
+  next_number number(11) DEFAULT '0' NOT NULL,
   CONSTRAINT pk_cmap_next_number PRIMARY KEY (table_name)
 );
 
@@ -306,15 +338,30 @@ COMMENT ON TABLE cmap_next_number is
   'Table structure for table 'cmap_next_number'';
 
 --
+-- Table: cmap_note
+--
+
+CREATE TABLE cmap_note (
+  note_id number(11) DEFAULT '0' NOT NULL,
+  table_name varchar2(30) DEFAULT '' NOT NULL,
+  object_id number(11) DEFAULT '0' NOT NULL,
+  note clob,
+  CONSTRAINT pk_cmap_note PRIMARY KEY (note_id)
+);
+
+COMMENT ON TABLE cmap_note is
+  'Table structure for table 'cmap_note'';
+
+--
 -- Table: cmap_species
 --
 
 CREATE TABLE cmap_species (
-  species_id number(11) DEFAULT '0' CONSTRAINT nn_cmap_species_species_id NOT NULL,
-  accession_id varchar2(20) DEFAULT '' CONSTRAINT nn_cmap_species_accession_id NOT NULL,
-  common_name varchar2(64) DEFAULT '' CONSTRAINT nn_cmap_species_common_name NOT NULL,
-  full_name varchar2(64) DEFAULT '' CONSTRAINT nn_cmap_species_full_name NOT NULL,
-  display_order number(11) DEFAULT '1' CONSTRAINT nn_cmap_species_display_order NOT NULL,
+  species_id number(11) DEFAULT '0' NOT NULL,
+  accession_id varchar2(20) DEFAULT '' NOT NULL,
+  common_name varchar2(64) DEFAULT '' NOT NULL,
+  full_name varchar2(64) DEFAULT '' NOT NULL,
+  display_order number(11) DEFAULT '1' NOT NULL,
   ncbi_taxon_id number(11) DEFAULT NULL,
   CONSTRAINT pk_cmap_species PRIMARY KEY (species_id)
 );
