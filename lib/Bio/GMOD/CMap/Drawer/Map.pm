@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.47 2003-05-23 02:16:38 kycl4rk Exp $
+# $Id: Map.pm,v 1.48 2003-05-29 19:16:11 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.47 $)[-1];
+$VERSION = (qw$Revision: 1.48 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -174,9 +174,6 @@ box.
     my $x2               = $x1 + $width;
     my @coords           = ( $x1, $y1, $x2, $y2 ); 
 
-#    $drawer->add_drawing( FILLED_RECT, @coords, $color  );
-#    $drawer->add_drawing( RECTANGLE,   @coords, 'black' );
-
     push @$drawing_data, [ FILLED_RECT, @coords, $color  ];
     push @$drawing_data, [ RECTANGLE,   @coords, 'black' ];
     
@@ -216,16 +213,6 @@ bounds of the image.
     my $x2               = $x1 + $width;
     my $mid_x            = $x1 + $width/2;
     my $arc_width        = $width + 6;
-
-#    $drawer->add_drawing(
-#        ARC, $mid_x, $y1, $arc_width, $arc_width, 0, 360, $color
-#    );
-#    $drawer->add_drawing(
-#        ARC, $mid_x, $y2, $arc_width, $arc_width, 0, 360, $color
-#    );
-#    $drawer->add_drawing( FILL_TO_BORDER, $mid_x, $y1, $color, $color );
-#    $drawer->add_drawing( FILL_TO_BORDER, $mid_x, $y2, $color, $color );
-#    $drawer->add_drawing( FILLED_RECT, $x1, $y1, $x2, $y2, $color );
 
     push @$drawing_data, [ 
         ARC, $mid_x, $y1, $arc_width, $arc_width, 0, 360, $color
@@ -274,10 +261,6 @@ Draws the map as an "I-beam."  Return the bounds of the image.
     my $width            = $self->map_width( $args{'map_id'} );
     my $x2               = $x1 + $width;
     my $x                = $x1 + $width/2;
-
-#    $drawer->add_drawing( LINE, $x , $y1, $x , $y2, $color );
-#    $drawer->add_drawing( LINE, $x1, $y1, $x2, $y1, $color );
-#    $drawer->add_drawing( LINE, $x1, $y2, $x2, $y2, $color );
 
     push @$drawing_data, [ LINE, $x , $y1, $x , $y2, $color ];
     push @$drawing_data, [ LINE, $x1, $y1, $x2, $y1, $color ];
@@ -1509,28 +1492,6 @@ Lays out the map.
         $drawer->add_drawing( @drawing_data );
         $drawer->add_map_area( @map_area_data );
     }
-
-    # drawing guides
-#    for my $i ( 0 .. $#columns ) {
-#        my $map_width      = $self->map_width( $map_ids[0] );
-#        my $column_width   = $map_width + 10;
-#        my $x = $label_side eq RIGHT
-#            ? $original_base_x + $column_width * $i
-#            : $original_base_x - $column_width * $i;
-##        $drawer->add_drawing(LINE, $x, -30, $x, 500, 'lightgrey', 0);
-##        $drawer->add_drawing(STRING, $reg_font, $x, -30, $i, 'black', 0);
-##        $drawer->add_drawing(STRING, $reg_font, $x, 500, $i, 'black', 0);
-#
-#        my $col = $columns[$i];
-#        for my $segment ( @$col ) {
-#            my ( $n, $s, $span ) = @$segment;
-#            $drawer->add_drawing(RECTANGLE, $x, $n, 
-#                $x + $column_width * $span, $s, 'green');
-##            $drawer->add_drawing(LINE, $x - 2, $n, $x + 2, $n, 'red', 0);
-##            $drawer->add_drawing(LINE, $x, $n, $x, $s, 'red', 0);
-##            $drawer->add_drawing(LINE, $x - 2, $s, $x + 2, $s, 'red', 0);
-#        }
-#    }
 
     #
     # Draw the map titles last for relational maps, 
