@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 
-# $Id: MapViewer.pm,v 1.13 2003-02-20 16:50:07 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.14 2003-03-05 01:56:25 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $TEMPLATE $PAGE );
-$VERSION = (qw$Revision: 1.13 $)[-1];
+$VERSION = (qw$Revision: 1.14 $)[-1];
 
 use Apache::Constants;
 use Apache::Request;
@@ -35,6 +35,7 @@ sub handler {
     my $image_size            = $apr->param('image_size')            || '';
     my $image_type            = $apr->param('image_type')            || '';
     my $label_features        = $apr->param('label_features')        || '';
+    my $min_correspondences   = $apr->param('min_correspondences')   ||  0;
     my @feature_types         = ( $apr->param('feature_types') );
     my @evidence_types        = ( $apr->param('evidence_types') );
 
@@ -131,6 +132,7 @@ sub handler {
             image_size             => $image_size,
             image_type             => $image_type,
             label_features         => $label_features,
+            min_correspondences    => $min_correspondences,
             include_feature_types  => \@feature_types,
             include_evidence_types => \@evidence_types,
             debug                  => $self->config('debug'),
@@ -145,6 +147,7 @@ sub handler {
     my $data                   = $self->data_module;
     my $form_data              = $data->cmap_form_data( 
         slots                  => \%slots,
+        min_correspondences    => $min_correspondences,
         include_feature_types  => \@feature_types,
         include_evidence_types => \@evidence_types,
     ) or return $self->error( $data->error );
