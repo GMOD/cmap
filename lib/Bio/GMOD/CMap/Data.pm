@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.148 2004-08-27 08:11:14 mwz444 Exp $
+# $Id: Data.pm,v 1.149 2004-09-01 15:25:43 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.148 $)[-1];
+$VERSION = (qw$Revision: 1.149 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -4913,13 +4913,90 @@ test if the map is truncated
         and %{$self->slot_info->{$slot_no}}
         and @{$self->slot_info->{$slot_no}{$map_id}}) {
         my $map_info = $self->slot_info->{$slot_no}{$map_id};
-        if (defined($map_info->[0]) or defined($map_info->[1])){
+        if (defined($map_info->[0]) and defined($map_info->[1])){
+            return 3;
+        }
+        elsif (defined($map_info->[0])){
             return 1;
+        }
+        elsif (defined($map_info->[1])){
+            return 2;
         }
         return 0;
     }
     return undef;
 }
+
+# ----------------------------------------------------
+sub scroll_data {
+
+=pod
+
+=head2 scroll_data
+
+return the start and stop for the scroll buttons
+
+=cut
+    my $self       = shift;
+    my $slot_no    = shift;
+    my $map_id     = shift;
+    my $is_flipped = shift;
+    my $dir        = shift;
+    my $is_up      = ($dir eq 'UP');
+    return undef 
+        unless (defined($slot_no) and defined($map_id));
+
+    if ($self->slot_info->{$slot_no}
+        and %{$self->slot_info->{$slot_no}}
+        and @{$self->slot_info->{$slot_no}{$map_id}}) {
+        my $map_info = $self->slot_info->{$slot_no}{$map_id};
+
+        return (undef,undef) unless
+            (defined($map_info->[0]) or defined($map_info->[1]));
+
+        my $start = $map_info->[0];
+        my $stop  = $map_info->[1];
+
+        if (($is_up and not $is_flipped) or ($is_flipped and not $is_up)){
+            # Scroll data for up arrow
+            return (undef,undef) unless defined($start);
+            my $view_length=defined($stop)?($stop-$start):$map_info->[3]-$start;
+            my $new_start = $start-($view_length/2);
+            my $new_stop  = $new_start+$view_length;
+            if ($new_start<=$map_info->[2]){
+                # Start is smaller than real map start.  Use the real map start; 
+                $new_start ="''";
+                $new_stop  = $map_info->[2]+$view_length;
+            }
+            if ($new_stop>=$map_info->[3]){
+                # Stop is greater than the real end.
+                $new_stop  ="''";
+            }
+
+            return($new_start,$new_stop);
+        }
+        else {
+            # Scroll data for down arrow
+            return (undef,undef) unless defined($stop);
+            my $view_length=defined($start)?($stop-$start):$stop-$map_info->[2];
+            my $new_stop  = $stop+($view_length/2);
+            my $new_start = $new_stop-$view_length;
+            if ($new_stop>=$map_info->[3]){
+                # Start is smaller than real map start.  Use the real map start; 
+                $new_stop ="''";
+                $new_start  = $map_info->[3]-$view_length;
+            }
+            if ($new_start<=$map_info->[2]){
+                # Stop is greater than the real end.
+                $new_stop  ="''";
+            }
+
+            return($new_start,$new_stop);
+        }
+    }
+    return (undef,undef);
+}
+
 # ----------------------------------------------------
 # store and retrieve the slot info.
 sub slot_info {

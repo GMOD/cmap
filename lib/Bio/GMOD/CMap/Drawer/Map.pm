@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.114 2004-08-31 22:06:51 mwz444 Exp $
+# $Id: Map.pm,v 1.115 2004-09-01 15:25:44 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.114 $)[-1];
+$VERSION = (qw$Revision: 1.115 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -174,23 +174,124 @@ box.
     my ( $x1, $y1, $y2 ) = @{ $args{'coords'} || [] }
       or $self->error('No coordinates');
     my $map_id    = $args{'map_id'};
+    my $map_aid    = $self->map_aid($map_id);
+    my $is_flipped = $args{'is_flipped'};
     my $slot_no   = $args{'slot_no'};
     my $color     = $self->color( $map_id );
     my $width     = $self->map_width( $map_id );
-    my $x2     = $x1 + $width;
+    my $x2        = $x1 + $width;
+    my $x_mid     = $x1 + ($width/2);
+    my $truncated = $drawer->data_module->truncatedMap($slot_no,$map_id);
+    my $trunc_color      ='black';
+    my $trunc_half_width = 6; 
+    my $trunc_height     = 8;
+    my $trunc_line_width = 4;
+    my $trunc_buf        = 2;
     my @coords = ( $x1, $y1, $x2, $y2 );
-
-    push @$drawing_data, [ FILLED_RECT, @coords, $color ];
-    push @$drawing_data, [ RECTANGLE,   @coords, 'black' ];
     my @map_coords = @coords;
+
+    if (($truncated>=2 and $is_flipped) 
+        or (($truncated==1 or $truncated==3) and not $is_flipped)){
+        # Move rest of map down.
+        $map_coords[1]+= $trunc_height+$trunc_buf;
+        $map_coords[3]+= $trunc_height+$trunc_buf;
+        $coords[3]+= $trunc_height+$trunc_buf;
+        # Down Arrow signifying that this has been truncated. 
+        my $y_base     = $map_coords[1]-$trunc_buf;
+        push @$drawing_data, 
+            [ LINE, $x_mid-$trunc_half_width,  $y_base, 
+                $x_mid-($trunc_half_width-$trunc_line_width),  $y_base, $trunc_color ];
+        push @$drawing_data, 
+            [ LINE, $x_mid-$trunc_half_width,  $y_base, 
+                $x_mid,  $y_base-$trunc_height, $trunc_color ];
+        push @$drawing_data, 
+            [ LINE, $x_mid,  $y_base-$trunc_height, 
+                $x_mid+$trunc_half_width,  $y_base, $trunc_color ];
+        push @$drawing_data, 
+            [ LINE, $x_mid+$trunc_half_width,  $y_base, 
+                $x_mid+($trunc_half_width-$trunc_line_width),  $y_base, $trunc_color ];
+        push @$drawing_data, 
+            [ LINE, $x_mid+($trunc_half_width-$trunc_line_width),  
+                $y_base, $x_mid,  $y_base-($trunc_height-$trunc_line_width), $trunc_color ];
+        push @$drawing_data, 
+            [ LINE, $x_mid-($trunc_half_width-$trunc_line_width),  
+                $y_base, $x_mid,  $y_base-($trunc_height-$trunc_line_width), $trunc_color ];
+        push @$drawing_data, 
+            [ FILL, $x_mid, $y_base-$trunc_height+1, $trunc_color ];
+
+        # Create the link
+        my ($scroll_start,$scroll_stop)
+            = $drawer->data_module->scroll_data($slot_no,$map_id,$is_flipped,'UP');
+        my $code=qq[ 
+            onMouseOver="window.status='Scroll up';return true" 
+            onClick="crop($slot_no, '$map_aid', $scroll_start, 0);
+            crop($slot_no, '$map_aid', $scroll_stop, 1);
+            document.comparative_map_form.submit();"
+            ]; 
+        push @$map_area_data,
+          {
+            coords => [$x_mid-$trunc_half_width,$y_base-$trunc_height,
+                $x_mid+$trunc_half_width,$y_base],
+            url  => '',
+            alt  => 'Scroll',
+            code => $code,
+          };
+    }
+
+    push @$drawing_data, [ FILLED_RECT, @map_coords, $color ];
+    push @$drawing_data, [ RECTANGLE,   @map_coords, 'black' ];
+
+    if (($truncated>=2 and not $is_flipped) 
+        or (($truncated==1 or $truncated==3) and $is_flipped)){
+        # Down Arrow signifying that this has been truncated. 
+        my $y_base     = $coords[3]+$trunc_buf;
+        push @$drawing_data, 
+            [ LINE, $x_mid-$trunc_half_width,  $y_base, 
+                $x_mid-($trunc_half_width-$trunc_line_width),  $y_base, $trunc_color ];
+        push @$drawing_data, 
+            [ LINE, $x_mid-$trunc_half_width,  $y_base, 
+                $x_mid,  $y_base+$trunc_height, $trunc_color ];
+        push @$drawing_data, 
+            [ LINE, $x_mid,  $y_base+$trunc_height, 
+                $x_mid+$trunc_half_width,  $y_base, $trunc_color ];
+        push @$drawing_data, 
+            [ LINE, $x_mid+$trunc_half_width,  $y_base, 
+                $x_mid+($trunc_half_width-$trunc_line_width),  $y_base, $trunc_color ];
+        push @$drawing_data, 
+            [ LINE, $x_mid+($trunc_half_width-$trunc_line_width),  
+                $y_base, $x_mid,  $y_base+($trunc_height-$trunc_line_width), $trunc_color ];
+        push @$drawing_data, 
+            [ LINE, $x_mid-($trunc_half_width-$trunc_line_width),  
+                $y_base, $x_mid,  $y_base+($trunc_height-$trunc_line_width), $trunc_color ];
+        push @$drawing_data, 
+            [ FILL, $x_mid, $y_base+$trunc_height-1, $trunc_color ];
+
+        # Create the link
+        my ($scroll_start,$scroll_stop)
+            = $drawer->data_module->scroll_data($slot_no,$map_id,$is_flipped,'DOWN');
+        my $code=qq[ 
+            onMouseOver="window.status='Scroll down';return true" 
+            onClick="crop($slot_no, '$map_aid', $scroll_start, 0);
+            crop($slot_no, '$map_aid', $scroll_stop, 1);
+            document.comparative_map_form.submit();"
+            ]; 
+        push @$map_area_data,
+          {
+            coords => [$x_mid-$trunc_half_width,$y_base,
+                $x_mid+$trunc_half_width,$y_base+$trunc_height],
+            url  => '',
+            alt  => 'Scroll',
+            code => $code,
+          };
+    }
 
     if ( my $map_units = $args{'map_units'} ) {
         $coords[3] =$self->draw_map_bottom(
             map_id  => $map_id,
             slot_no => $slot_no,
-            map_x1  => $x1,
-            map_x2  => $x2,
-            map_y2  => $y2,
+            map_x1  => $map_coords[0],
+            map_x2  => $map_coords[2],
+            map_y2  => $map_coords[3],
             drawer  => $drawer,
             map_area_data => $map_area_data,
             map_units  => $map_units,
@@ -728,6 +829,7 @@ Lays out the map.
             slot_no      => $slot_no,
             map_units    => $self->map_units($map_id), 
             drawer       => $drawer,
+            is_flipped   => $is_flipped,
             coords       => [ $base_x, $map_base_y, $map_y_end ],
             drawing_data => \@drawing_data,
             map_area_data => \@map_area_data,
@@ -825,7 +927,7 @@ Lays out the map.
         if ($show_ticks) {
             ( $max_x, $min_x ) = $self->add_tick_marks(
                 base_x            => $base_x,
-                map_base_y        => $map_base_y,
+                map_base_y        => $map_coords->[1],
                 drawer            => $drawer,
                 map_id            => $map_id,
                 slot_no           => $slot_no,
@@ -837,7 +939,7 @@ Lays out the map.
                 map_length        => $map_length,
                 max_x             => $max_x,
                 min_x             => $min_x,
-                map_bounds        => \@map_bounds,
+                map_coords        => $map_coords,
             );
         }
         #############################################
@@ -1386,11 +1488,8 @@ sub layout_map_foundation {
             = ($self->stop_position($map_id)-$self->start_position($map_id))
             * ($drawer->pixel_height()
               / $drawer->{'data'}{'ref_unit_size'}{$self->map_units($map_id)});
-        #my $max_map_pixel_height=(10 * $drawer->pixel_height());
         $scaled_map_pixel_height = $min_map_pixel_height
             if ($scaled_map_pixel_height < $min_map_pixel_height);
-        #$scaled_map_pixel_height = $max_map_pixel_height
-        #    if ($scaled_map_pixel_height > $max_map_pixel_height);
     }
     #
     # Get the information about the reference map.
@@ -1772,7 +1871,7 @@ sub add_tick_marks {
     my $map_width         = $self->map_width($map_id);
     my $max_x             = $args{'max_x'};
     my $min_x             = $args{'min_x'};
-    my $map_bounds        = $args{'map_bounds'};
+    my $map_coords        = $args{'map_coords'};
     my $map_aid           = $self->map_aid($map_id);
 
     my $label_side = $drawer->label_side($slot_no);
@@ -1812,7 +1911,7 @@ sub add_tick_marks {
         $last_tick_rel_pos = $rel_position;
 
         my $y_pos = $is_flipped
-          ? $map_bounds->[3] - ( $pixel_height * $rel_position )
+          ? $map_coords->[3] - ( $pixel_height * $rel_position )
           : $map_base_y + ( $pixel_height * $rel_position );
 
         my $tick_start =
