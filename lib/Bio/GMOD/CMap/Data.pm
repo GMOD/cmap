@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.21 2002-12-12 14:11:30 kycl4rk Exp $
+# $Id: Data.pm,v 1.22 2003-01-01 02:17:34 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.21 $)[-1];
+$VERSION = (qw$Revision: 1.22 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -1494,7 +1494,6 @@ Given a list of feature names, find any maps they occur on.
     my ( $self, %args )  = @_;
     my $species_aid      = $args{'species_aid'}      ||  0;
     my $feature_type_aid = $args{'feature_type_aid'} || '';
-    my $limit_start      = $args{'limit_start'};
     my $feature_string   = $args{'features'};
     my @feature_names    = (
         # Turn stars into SQL wildcards, kill quotes.
@@ -1564,33 +1563,6 @@ Given a list of feature names, find any maps they occur on.
     }
 
     #
-    # If there are too many results, slice out a section to return and
-    # figure how many pages of results there should be.  This is
-    # really a pretty inefficient way to go about this.  Perhaps in
-    # the future I'll move to selecting all the above results into
-    # temporary tables and then selecting my slice out of there.  I
-    # think I'll still have to do the above loop, however, as I need
-    # to aggregate all the search results before making my final
-    # selection.
-    #
-    my $result_set_size    = scalar @found_features || 0;
-    my $no_pages           = 0;
-    my $max_child_elements = $self->config('max_child_elements') || 0;
-    if ( $result_set_size > $max_child_elements ) {
-        if ( $limit_start ) {
-            $limit_start -= 1;
-        }
-        elsif ( $limit_start < 0 ) {
-            $limit_start = 0;
-        }
-
-        $no_pages = int( ( $result_set_size / $max_child_elements ) + .5 );
-
-        @found_features = 
-            @found_features[ $limit_start .. $limit_start+$max_child_elements ];
-    }
-
-    #
     # If no species was selected, then look at what's in the search
     # results so they can narrow down what they have.  If no search 
     # results, then just show all.
@@ -1619,12 +1591,9 @@ Given a list of feature names, find any maps they occur on.
     );
 
     return {
-        data            => \@found_features,
-        species         => $species,
-        feature_types   => $feature_types,
-        result_set_size => $result_set_size,
-        no_pages        => $no_pages,
-        limit_start     => $limit_start,
+        data          => \@found_features,
+        species       => $species,
+        feature_types => $feature_types,
     };
 }
 
