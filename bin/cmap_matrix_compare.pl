@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: cmap_matrix_compare.pl,v 1.4 2003-02-02 03:00:07 kycl4rk Exp $
+# $Id: cmap_matrix_compare.pl,v 1.5 2003-02-20 16:50:48 kycl4rk Exp $
 
 =head1 NAME
 
@@ -318,5 +318,12 @@ Bio::GMOD::CMap.
 =head1 AUTHOR
 
 Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
+
+=head1 COPYRIGHT
+
+Copyright (c) 2002-3 Cold Spring Harbor Laboratory
+
+This program is free software;  you can redistribute it and/or modify
+it under the same terms as Perl itself.
 
 =cut

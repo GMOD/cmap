@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.19 2003-02-19 01:03:23 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.20 2003-02-20 16:50:47 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.19 $)[-1];
+$VERSION = (qw$Revision: 1.20 $)[-1];
 
 #
 # Turn off output buffering.
@@ -1428,6 +1428,13 @@ log file will be echoed to you when you exit the program.
 =head1 AUTHOR
 
 Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
+
+=head1 COPYRIGHT
+
+Copyright (c) 2002-3 Cold Spring Harbor Laboratory
+
+This program is free software;  you can redistribute it and/or modify
+it under the same terms as Perl itself.
 
 =head1 SEE ALSO
 
