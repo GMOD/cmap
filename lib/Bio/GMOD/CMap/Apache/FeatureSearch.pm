@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::FeatureSearch;
 # vim: set ft=perl:
 
-# $Id: FeatureSearch.pm,v 1.14 2003-09-29 20:49:12 kycl4rk Exp $
+# $Id: FeatureSearch.pm,v 1.15 2003-10-01 23:15:38 kycl4rk Exp $
 
 use strict;
-use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES );
-$VERSION = (qw$Revision: 1.14 $)[-1];
+use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
+$VERSION = (qw$Revision: 1.15 $)[-1];
 
 use Apache::Constants;
 
@@ -36,8 +36,9 @@ sub handler {
 
     $self->data_source( $apr->param('data_source') ) or return;
 
-    $PAGE_SIZE ||= $self->config('max_child_elements') || 0;
-    $MAX_PAGES ||= $self->config('max_search_pages')   || 1;
+    $PAGE_SIZE ||= $self->config('max_child_elements')   ||  0;
+    $MAX_PAGES ||= $self->config('max_search_pages')     ||  1;
+    $INTRO     ||= $self->config('feature_search_intro') || '';
 
     #
     # Because I need a <select> element on the search form, I could
@@ -73,19 +74,11 @@ sub handler {
         search_field      => $search_field,
         species_aids      => \@species_aids,
         feature_type_aids => \@feature_type_aids,
+        page_size         => $PAGE_SIZE,
+        page_no           => $page_no,
+        pages_per_set     => $MAX_PAGES,
+        page_data         => 1,
     ) or return $self->error( $data->error );
-
-    #
-    # Slice the results up into pages suitable for web viewing.
-    #
-    my $no_found         =  scalar @{ $results->{'data'} || [] };
-    my $pager            =  Data::Pageset->new( {
-        total_entries    => $no_found,
-        entries_per_page => $PAGE_SIZE,
-        current_page     => $page_no,
-        pages_per_set    => $MAX_PAGES,
-    } );
-    $results->{'data'} = [ $pager->splice( $results->{'data'} ) ] if $no_found;
 
     my $html;
     my $t = $self->template;
@@ -94,14 +87,15 @@ sub handler {
         { 
             apr                 => $apr, 
             page                => $self->page,
-            pager               => $pager,
             stylesheet          => $self->stylesheet,
+            pager               => $results->{'pager'},
             species             => $results->{'species'},
             feature_types       => $results->{'feature_types'},
             search_results      => $results->{'data'},
             species_lookup      => { map { $_, 1 } @species_aids      },
             feature_type_lookup => { map { $_, 1 } @feature_type_aids },
             data_sources        => $self->data_sources,
+            intro               => $INTRO,
         },
         \$html 
     ) 
