@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Utils;
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.30 2004-04-14 13:36:25 mwz444 Exp $
+# $Id: Utils.pm,v 1.31 2004-04-14 20:46:42 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ use Bio::GMOD::CMap::Constants;
 use POSIX;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.30 $)[-1];
+$VERSION = (qw$Revision: 1.31 $)[-1];
 
 use base 'Exporter';
 
@@ -177,10 +177,20 @@ sub column_distribution2 {
      $bottom         = $top unless defined $bottom;
 
     return unless defined $top && defined $bottom && defined $col_bottom;
+
+    ###$columns is an array of columns.  Each column is has a hash of bins.
+    ###  Each bin is an array of object start and stops.
     my $bin_factor  = ($col_bottom-$col_top)/$bins;
+    ###Define the bins that this object lies in. 
     my $index_start = POSIX::ceil(($top-$col_top)/$bin_factor);      #first bin 
-    my $index_stop = POSIX::ceil(($bottom-$col_top)/$bin_factor); #last bin
-   
+    my $index_stop  = POSIX::ceil(($bottom-$col_top)/$bin_factor); #last bin
+  
+    ###When the top of the object is higher than the column, it results 
+    ###  in negative indices.  This fixes the problem by binning them
+    ###  all in the first bin. 
+    $index_start=0 if $index_start<0; 
+    $index_stop=0 if $index_stop<0;
+
     my $column_index; # the number of the column chosen, is returned
     if ( @$columns ) {
         my $i = 0;
