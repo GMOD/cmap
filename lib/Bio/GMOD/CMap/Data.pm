@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.98.2.15 2004-06-18 22:08:16 kycl4rk Exp $
+# $Id: Data.pm,v 1.98.2.16 2004-06-18 22:25:45 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.98.2.15 $)[-1];
+$VERSION = (qw$Revision: 1.98.2.16 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -2952,6 +2952,15 @@ Return data for a list of feature type acc. IDs.
 
     my $feature_types = $db->selectall_arrayref( $sql, { Columns => {} } );
 
+    my $all_feature_types = $db->selectall_arrayref( 
+        q[
+            select   accession_id as feature_type_aid, feature_type
+            from     cmap_feature_type
+            order by feature_type
+        ],
+        { Columns => {} } 
+    );
+
     my $attributes = $db->selectall_arrayref(
         q[
             select   object_id, display_order, is_public, 
@@ -2990,7 +2999,10 @@ Return data for a list of feature type acc. IDs.
         @$feature_types
     ];
 
-    return $feature_types;
+    return {
+        all_feature_types => $all_feature_types,
+        feature_types     => $feature_types,
+    }
 }
 
 # ----------------------------------------------------
