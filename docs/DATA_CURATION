@@ -1,0 +1,252 @@
+                CMAP ADMINISTRATION AND DATA CURATION
+
+This document is intended to help you understand how to use the data
+curation tools provided with CMap.  There are two tools you will use:
+the "cmap_admin.pl" command-line interface and the web-base
+administration interface.  The first is used for all long-running
+processes that aren't practical to address over the HTTP protocol.  It
+employs a "wizard"-like approach to accomplishing various tasks by
+asking the curator a series of closed-ended questions and performing
+the desired action using the answers provided.  The web admin tool is
+meant to provide a point-and-click interface for performing the more
+mundane administrative tasks or for viewing the data.
+
+1. IMPORTING DATA
+
+To learn how to import your own data, please read DATA_IMPORT in the
+"docs" directory for information on importing your data.  If you would
+like to see examples of data suitably formatted for importing into
+CMAP, all the raw data from the Gramene project
+(http://www.gramene.org/) have been included with this distribution in
+the "data/datasets/gramene" directory.  You can use this data to
+ensure that your installation is working, or if you'd like examples of
+how to format your own data.  
+
+In addition, the entire Gramene database has been made available as a
+dump of "INSERT" statements which you can feed directly into your
+database.  This dump is located in the download section of the GMOD
+site as "Sample Data Files" under the "cmap" project.  If you are
+using MySQL, you can import the database in one step (after creating
+it, of course, with the commands described earlier):
+
+    $ mysql -uroot -p < gramene-dump.sql
+
+It might be helpful for you to create a test database and import the
+Gramene dataset in order to play around with a fully loaded database.
+Once you are comfortable, you can drop the database and create another
+for your own data.
+
+The dump of the Gramene site was created using a script in the "bin"
+directory called "cmap_dump.pl."  You might find it useful if you need
+to move your data around, like from a development machine to a
+production server.  It is especially useful for moving your data
+between different DBMSs, as I used it to dump the Gramene database
+from Oracle into my own MySQL database.  The tool basically mimics
+some of the functionality of MySQL's "mysqldump" facility.  Run
+"perldoc cmap_dump.pl" for more documentation on this tool.  The
+script will not be copied into a system directory, so if you want to
+use it yourself, you'll have to copy it to some directory manually.
+Perhaps after the tool has matured a bit, I'll put it into the
+installation routine.
+
+2. FEATURE TYPES
+
+-   Both "drawing_lane" and "drawing_priority" take positive integers
+-   The lower the number for the lane, the closer to the map the
+    feature will be drawn
+-   The lower the number for the priority, the sooner the feature will
+    be drawn in the lane
+-   Lanes are not absolute, they are only used to sort the features on
+    a map;  therefore, if you have only "Centromeres" and "Markers" in 
+    lane #1, on any map with either of those types of features, they
+    will be drawn *on* the map;  on any map without those types, the 
+    feature type with the next highest lane number will be drawn *on*
+    the map.  The same is true as you move into higher lanes;  if 
+    the lanes move like "1," "4," "7," you will have only 3 lanes with
+    no gaps.
+
+2. DATABASE CROSS-REFERENCES
+
+It is possible to set up links from features to other datasources
+outside of CMAP.  These are called "database cross-references."  They
+can be set up in several different ways:
+
+    1)  For a feature type and a species, e.g., all the rice markers
+
+    2)  For a feature type and a map set, e.g., all the markers in rice
+        map set "Foo"
+
+    3)  For one specific feature, e.g., the "ABC" marker on map "3" of
+        rice map set "Foo"
+
+In the case of the first two, you can create multiple cross-references
+and all will display on the "feature detail" page;  the last case only
+allows a single cross-reference.  In all cases, the more specific
+references beat out all others, so any cross-references created like
+#2 will beat out those from #1, but the "ABC" marker will only use
+those set up as #3.  That is, *only* the most specific
+cross-references will be shown, so if you wanted to include the
+records from #1 with a marker in the "Foo" map set, you'd need to
+duplicate the URLs from #1 for the "Foo" map set.
+
+When setting up database cross-references, you'll have to use some
+extra syntax in the URL field to indicate the field to link out on.
+Here's an example from Gramene for linking to GrainGenes:
+
+    http://www.graingenes.org/cgi-bin/WebAce/webace?db=graingenes \
+    &class=Locus&object=[% feature.feature_name %]
+
+(The backslash is not part of the URL.  I'm using it to break up the
+line and help you see the syntax.)
+
+Here's how the Gramene project links to its own contig viewer:
+
+    /perl/contigview?clone=[% feature.feature_name %]
+
+Notice that you can use either absolute (first) or relative (second)
+URLs.  The funny brackets ("[%" and "%]") are from Template Toolkit,
+the templating system used for the comparative maps.  This allows for
+an extremely flexible system.  For example, at Gramene one URL looks
+like this:
+
+    http://www.genome.arizona.edu/cgi-bin/WebFPC/WebFPC_Direct.cgi? \
+    name=rice&contig=[% feature.map_name.replace("ctg","") %] \
+    &clone=[% feature.feature_name %]
+
+The contig names look like "ctg198," but only integers are legal
+arguments to the "contig" argument above.  We use the "replace"
+virtual method to get rid of the "ctg" part (or just replace it with
+nothing).  To find our more about Template Toolkit, execute "perldoc
+Template::Manual" on your system.  To find out more about Template
+Toolkit's virtual methods, type "perldoc Template::Manual::VMethods."
+
+Here are the fields you can use in the URL:
+
+   feature_id
+   accession_id
+   map_id
+   feature_type_id
+   feature_name
+   alternate_name
+   is_landmark
+   start_position
+   stop_position
+   dbxref_name
+   dbxref_url
+   feature_type
+   map_name
+   map_aid (map accession_id)
+   map_set_id
+   map_set_aid (map set accession_id)
+   map_set_name (actually the "short_name")
+   species_id
+   species_name (actually the "common_name")
+
+3. ESTABLISHING LANDMARKS
+
+You can define certain features on your maps to be "landmarks."  These
+can then be used by the end user to show maps less dense with feature
+labels, tagging only those that you as the curator have decided are
+the most important.  Simply set the "is_landmark" field to "1" to
+define a feature as a landmark.
+
+4. LINKING IN
+
+Most likely, you'll want to link directly into the CMAP viewer from
+some other part of your site.  To link to just one map, make it the
+"reference" map like so by using the accession IDs for the map's parent
+"set" and the map itself.  Give the feature (mutant) name to highlight
+it;  for more than one, separate with commas.  You'll want to make
+sure that the user can see all the feature labels, so include "all" as
+the "include_feature" argument.
+
+    URI:  /cmap/viewer?
+    Args: ref_map_set_aid=<map_set_accession_id>
+          ref_map_aid=<map_accession_id>
+          highlight=<mutant_name>
+          include_features=<none, all, or landmarks>
+    E.g.:
+http://www.gramene.org/cmap/viewer?ref_map_aid=13&ref_map_set_aid=cu-dh-2001&highlight=RM9&include_features=all
+
+Note: I use the abbreviation "aid" to represent "accession_id."
+
+To further include some number of comparative maps, you provide them
+in the "comparative_maps" argument, which is a single structured
+string that lists all the comparative maps and their placement
+relative to the reference map.  Here I'd like to introduce the concept
+of "slots," where the maps (or map sets) fall into a slot moving in
+positive and negative direction away from the reference map, which is
+in slot "0," like so:
+
+                -      -        -         -
+                |      |        |         |
+                |      |      - |  -      |
+                |      |      | -  |      |
+                |      |      |    |      |
+                |      |      |    -      |
+                -      -      -           -
+               -1      0         1        2
+       <----negative --+---------positive----->
+
+
+The above would be representative of genetic maps in slots -1, 0, and
+2, and a physical map in slot 1.  Slots are separated in the string by
+URI-escaped colons and the integral parts of the slot by URI-escaped
+equal signs.  Like so
+
+         "comparative_maps="
+         +
+             .-  <slot_number> + 
+             |  "%3D" + 
+       slot  |  <"map_aid" or "map_set_aid"> + 
+             |  "%3D" +
+             `-  <map_aid or map_set_aid>
+         +
+
+         "%3A"
+
+         +
+
+        <next slot>
+
+Here is a sample that puts "Rice-Cornell RFLP 2001-1" on the left
+(slot "-1") and "Rice-CTIR 2000-1" on the right (slot "1"):
+
+    comparative_maps=1%3Dmap_aid%3D423%3A-1%3Dmap_aid%3D1
+
+The middle part of the slot is one of the literal strings
+"map_set_aid" or "map_aid."  If you wanted to display just a single
+map in a slot, use the string "map_aid" and the map's accession ID.
+If you want a whole map set in a slot (e.g., a physical map set like
+"I-Map"), then use the string "map_set_aid" and the map set's
+accession ID.  You can use the admin interface ("/cmap/admin") to
+easily find the accession IDs.
+
+5. CUSTOMIZING YOUR INSTALLATION
+
+You should edit "cmap.conf" with the proper connection data for your
+database and to reflect your own preferences for how maps are drawn.
+Each entry in the configuration file is commented to help you
+understand its purpose and the possible values and default values are
+also provided.  If you don't understand a configuration, you can just
+leave it alone and use the default.  Remember to restart Apache
+whenever you make a change to this file as these are constants and
+don't change for the life of the Apache process.
+
+You can change the way maps and features are drawn based on
+their types.  Use the web-based admin tool to edit each "map type"
+and "feature type" that you create.  Experiment with the colors,
+shapes, and sizes.
+
+All the HTML displayed by the application is contained in the
+templates.  These templates are processed by Template Toolkit to
+produce the user interface.  For the most part, the files contain
+straight-up HTML and can be altered to your heart's content.  You
+could probably even pass off the care and feeding of these templates
+to a non-technical person (as this was the idea behind having no HTML
+in the code).  The only functional parts of the templates lie in
+between the many "[% %]" tags, and these are often quite
+self-explanatory.  If you can't figure out what to change on your own,
+then check out http://www.template-toolkit.com/ for the documentation
+(or type "perldoc Template" on your command line).
+
