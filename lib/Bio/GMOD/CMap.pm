@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.67 2004-12-09 18:46:44 mwz444 Exp $
+# $Id: CMap.pm,v 1.67.2.1 2005-02-01 22:20:56 kycl4rk Exp $
 
 =head1 NAME
 
@@ -132,6 +132,33 @@ Access configuration.
     my $self = shift;
     my $config = $self->config or return;
     $config->get_config(@_);
+}
+
+# ----------------------------------------------------
+sub object_plugin {
+
+=pod
+
+=head2 object_plugin
+
+Allow for object plugin stuff.
+
+=cut
+
+    my ( $self, $obj_type, $object ) = @_;
+
+    my $xref_sub = $self->config_data('object_plugin')->{ $obj_type } 
+        or return;
+
+    if ( $xref_sub =~ /^\s*sub\s*{/ ) {
+        $xref_sub = eval $xref_sub;
+    }
+    elsif ( $xref_sub =~ /\w+::\w+/ ) {
+        $xref_sub = \&{ $xref_sub };
+    }
+
+    no strict 'refs';
+    $xref_sub->( $object );
 }
 
 # ----------------------------------------------------
