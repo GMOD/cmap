@@ -3,64 +3,79 @@ name: cmap
 version: 0.11
 author:
   - Ken Y. Clark <kclark@cshl.org>
-abstract: Modules for drawing comparative and genetic maps
+abstract: Genetic and comparative maps
 license: gpl
 requires:
+  Algorithm::Numerical::Sample: 0
+  Bit::Vector: 0
+  CGI: 0
+  Cache::FileCache: 0
   Class::Base: 0
   Config::General: 0
   DBI: 1.2
   Data::Page: 0
   Data::Pageset: 0
-  File::MkTemp: 0
+  Date::Format: 0
+  File::Temp: 0
   GD: 2.11
   GD::SVG: 0.25
-  IO::Tee: 0
   Regexp::Common: 0
+  Storable: 0
   Template: 2
   Text::RecordParser: 0.02
   Time::ParseDate: 0
   Time::Piece: 0
+  URI::Escape: 0
   XML::Simple: 0
+recommends: {}
+build_requires: {}
+conflicts: {}
 provides:
   Bio::GMOD::CMap:
     file: lib/Bio/GMOD/CMap.pm
     version: 0.11
   Bio::GMOD::CMap::Admin:
     file: lib/Bio/GMOD/CMap/Admin.pm
-    version: 1.46
+    version: 1.54
   Bio::GMOD::CMap::Admin::Export:
     file: lib/Bio/GMOD/CMap/Admin/Export.pm
-    version: 1.6
+    version: 1.10
   Bio::GMOD::CMap::Admin::Import:
     file: lib/Bio/GMOD/CMap/Admin/Import.pm
-    version: 1.45
+    version: 1.54
   Bio::GMOD::CMap::Admin::ImportCorrespondences:
     file: lib/Bio/GMOD/CMap/Admin/ImportCorrespondences.pm
-    version: 1.16
+    version: 1.21
   Bio::GMOD::CMap::Admin::MakeCorrespondences:
     file: lib/Bio/GMOD/CMap/Admin/MakeCorrespondences.pm
-    version: 1.29
+    version: 1.42
   Bio::GMOD::CMap::Apache:
     file: lib/Bio/GMOD/CMap/Apache.pm
-    version: 1.16
+    version: 1.22
   Bio::GMOD::CMap::Apache::AdminViewer:
     file: lib/Bio/GMOD/CMap/Apache/AdminViewer.pm
-    version: 1.64
+    version: 1.70
   Bio::GMOD::CMap::Apache::CorrespondenceViewer:
     file: lib/Bio/GMOD/CMap/Apache/CorrespondenceViewer.pm
     version: 1.2
+  Bio::GMOD::CMap::Apache::DataDownloader:
+    file: lib/Bio/GMOD/CMap/Apache/DataDownloader.pm
+    version: 1.2
+  Bio::GMOD::CMap::Apache::EntryViewer:
+    file: lib/Bio/GMOD/CMap/Apache/EntryViewer.pm
+    version: 1.1
   Bio::GMOD::CMap::Apache::EvidenceTypeViewer:
     file: lib/Bio/GMOD/CMap/Apache/EvidenceTypeViewer.pm
-    version: 1.2
+    version: 1.5
   Bio::GMOD::CMap::Apache::FeatureAliasViewer:
     file: lib/Bio/GMOD/CMap/Apache/FeatureAliasViewer.pm
     version: 1.2
   Bio::GMOD::CMap::Apache::FeatureSearch:
     file: lib/Bio/GMOD/CMap/Apache/FeatureSearch.pm
-    version: 1.17
+    version: 1.20
   Bio::GMOD::CMap::Apache::FeatureTypeViewer:
     file: lib/Bio/GMOD/CMap/Apache/FeatureTypeViewer.pm
-    version: 1.6
+    version: 1.9
   Bio::GMOD::CMap::Apache::FeatureViewer:
     file: lib/Bio/GMOD/CMap/Apache/FeatureViewer.pm
     version: 1.11
@@ -69,34 +84,36 @@ provides:
     version: 1.13
   Bio::GMOD::CMap::Apache::Index:
     file: lib/Bio/GMOD/CMap/Apache/Index.pm
-    version: 1.8
+    version: 1.9
   Bio::GMOD::CMap::Apache::MapDetailViewer:
     file: lib/Bio/GMOD/CMap/Apache/MapDetailViewer.pm
-    version: 1.22
+    version: 1.26
   Bio::GMOD::CMap::Apache::MapSetViewer:
     file: lib/Bio/GMOD/CMap/Apache/MapSetViewer.pm
-    version: 1.14
+    version: 1.17
   Bio::GMOD::CMap::Apache::MapTypeViewer:
     file: lib/Bio/GMOD/CMap/Apache/MapTypeViewer.pm
-    version: 1.2
+    version: 1.5
   Bio::GMOD::CMap::Apache::MapViewer:
     file: lib/Bio/GMOD/CMap/Apache/MapViewer.pm
-    version: 1.31
+    version: 1.50
   Bio::GMOD::CMap::Apache::MatrixViewer:
     file: lib/Bio/GMOD/CMap/Apache/MatrixViewer.pm
-    version: 1.10
+    version: 1.12
   Bio::GMOD::CMap::Apache::SpeciesViewer:
     file: lib/Bio/GMOD/CMap/Apache/SpeciesViewer.pm
-    version: 1.3
+    version: 1.5
   Bio::GMOD::CMap::Apache::ViewFeatureOnMap:
     file: lib/Bio/GMOD/CMap/Apache/ViewFeatureOnMap.pm
     version: 1.7
+  Bio::GMOD::CMap::Config:
+    file: lib/Bio/GMOD/CMap/Config.pm
   Bio::GMOD::CMap::Data:
     file: lib/Bio/GMOD/CMap/Data.pm
-    version: 1.94
+    version: 1.137
   Bio::GMOD::CMap::Data::Generic:
     file: lib/Bio/GMOD/CMap/Data/Generic.pm
-    version: 1.46
+    version: 1.52
   Bio::GMOD::CMap::Data::MySQL:
     file: lib/Bio/GMOD/CMap/Data/MySQL.pm
     version: 1.4
@@ -105,11 +122,14 @@ provides:
     version: 1.6
   Bio::GMOD::CMap::Drawer:
     file: lib/Bio/GMOD/CMap/Drawer.pm
-    version: 1.53
+    version: 1.73
+  Bio::GMOD::CMap::Drawer::Glyph:
+    file: lib/Bio/GMOD/CMap/Drawer/Glyph.pm
+    version: 1.8
   Bio::GMOD::CMap::Drawer::Map:
     file: lib/Bio/GMOD/CMap/Drawer/Map.pm
-    version: 1.69
+    version: 1.103
   Bio::GMOD::CMap::Utils:
     file: lib/Bio/GMOD/CMap/Utils.pm
-    version: 1.25
-generated_by: Module::Build version 0.23
+    version: 1.40
+generated_by: Module::Build version 0.22
