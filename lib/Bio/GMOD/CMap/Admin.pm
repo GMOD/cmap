@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.35 2003-10-29 20:44:38 kycl4rk Exp $
+# $Id: Admin.pm,v 1.36 2003-10-29 20:53:12 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.35 $)[-1];
+$VERSION = (qw$Revision: 1.36 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -188,6 +188,18 @@ sub feature_alias_create {
     my $feature_id       = $args{'feature_id'} or 
                            return $self->error('No feature id');
     my $alias            = $args{'alias'} or return $self->error('No alias');
+    my $feature_name     = $db->selectrow_array(
+        q[
+            select feature_name
+            from   cmap_feature
+            where  feature_id=?
+        ],
+        {},
+        ( $feature_id )
+    );
+
+    return 1 if $alias eq $feature_name;
+
     my $feature_alias_id = $db->selectrow_array(
         q[
             select feature_alias_id
