@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::FeatureSearch;
 
-# $Id: FeatureSearch.pm,v 1.4 2003-01-01 02:15:00 kycl4rk Exp $
+# $Id: FeatureSearch.pm,v 1.5 2003-01-27 19:59:32 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Apache::Constants;
 
@@ -22,28 +22,45 @@ sub handler {
     #
     # Make a jazz noise here...
     #
-    my ( $self, $apr )   = @_;
-    my $preferences      = $apr->pnotes('PREFERENCES')     || {};
-    my $features         = $apr->param('features')         || 
-                           $preferences->{'features'}      || 
-                           $preferences->{'highlight'}     || '';
-    my $order_by         = $apr->param('order_by')         || '';
-    my $species_id       = $apr->param('species_id')       ||  0;
-    my $feature_type_id  = $apr->param('feature_type_id')  ||  0;
-    my $limit_start      = $apr->param('limit_start')      ||  0;
-    my $limit_end        = $apr->param('limit_end')        ||  0;
-    my $search_field     = $apr->param('search_field')     || '';
-    my $feature_type_aid = $apr->param('feature_type_aid') || '';
+    my ( $self, $apr )    = @_;
+    my $preferences       = $apr->pnotes('PREFERENCES')     || {};
+    my $features          = $apr->param('features')         || 
+                            $preferences->{'features'}      || 
+                            $preferences->{'highlight'}     || '';
+    my $order_by          = $apr->param('order_by')         || '';
+    my $limit_start       = $apr->param('limit_start')      ||  0;
+    my $search_field      = $apr->param('search_field')     || '';
+    my @species_aids      = ( $apr->param('species_aid')      );
+    my @feature_type_aids = ( $apr->param('feature_type_aid') );
 
-    $apr->param( features => $features );
+    #
+    # Because I need a <select> element on the search form, I could
+    # get the species and feature type acc. IDs as an array.  However,
+    # if the user clicks on a link in the pager, then I have to look
+    # in the "*_aids" field, which is a comma-separated string of acc. IDs.
+    #
+    unless ( @species_aids ) {
+        @species_aids = split /,/, $apr->param('species_aids');
+    }
 
-    my $data             =  Bio::GMOD::CMap::Data->new;
-    my $results          =  $data->feature_search_data(
-        features         => $features,
-        order_by         => $order_by,
-        search_field     => $search_field,
-        species_id       => $species_id,
-        feature_type_aid => $feature_type_aid,
+    unless ( @feature_type_aids ) {
+        @feature_type_aids = split /,/, $apr->param('feature_type_aids');
+    }
+
+    #
+    # Set the parameters in the request object.
+    #
+    $apr->param( features               => $features                         );
+    $apr->param( species_aids           => join(',', @species_aids         ) );
+    $apr->param( feature_type_aids      => join(',', @feature_type_aids    ) );
+
+    my $data              =  Bio::GMOD::CMap::Data->new;
+    my $results           =  $data->feature_search_data(
+        features          => $features,
+        order_by          => $order_by,
+        search_field      => $search_field,
+        species_aids      => \@species_aids,
+        feature_type_aids => \@feature_type_aids,
     );
 
     #
@@ -60,18 +77,20 @@ sub handler {
     $t->process( 
         TEMPLATE, 
         { 
-            apr            => $apr, 
-            page           => $self->page,
-            stylesheet     => $self->stylesheet,
-            species        => $results->{'species'},
-            feature_types  => $results->{'feature_types'},
-            search_results => $page_data->{'data'},
-            no_elements    => $page_data->{'no_elements'},
-            page_size      => $page_data->{'page_size'},
-            pages          => $page_data->{'pages'},
-            cur_page       => $page_data->{'cur_page'},
-            show_start     => $page_data->{'show_start'},
-            show_stop      => $page_data->{'show_stop'},
+            apr                 => $apr, 
+            page                => $self->page,
+            stylesheet          => $self->stylesheet,
+            species             => $results->{'species'},
+            feature_types       => $results->{'feature_types'},
+            search_results      => $page_data->{'data'},
+            no_elements         => $page_data->{'no_elements'},
+            page_size           => $page_data->{'page_size'},
+            pages               => $page_data->{'pages'},
+            cur_page            => $page_data->{'cur_page'},
+            show_start          => $page_data->{'show_start'},
+            show_stop           => $page_data->{'show_stop'},
+            species_lookup      => { map { $_, 1 } @species_aids      },
+            feature_type_lookup => { map { $_, 1 } @feature_type_aids },
         },
         \$html 
     ) 
