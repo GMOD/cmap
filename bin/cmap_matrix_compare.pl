@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: cmap_matrix_compare.pl,v 1.3 2003-02-01 21:10:05 kycl4rk Exp $
+# $Id: cmap_matrix_compare.pl,v 1.4 2003-02-02 03:00:07 kycl4rk Exp $
 
 =head1 NAME
 
@@ -91,10 +91,9 @@ die qq[Error:  The "compare" option takes only one or two arguments.\n]
 my $cmap = Bio::GMOD::CMap->new or die Bio::GMOD::CMap->error;
 my $db   = $cmap->db            or die $cmap->error;
 my $data = $cmap->data_module   or die $cmap->error;
-my $sql  = $data->sql           or die $data->error;
 
 #
-# Get the map sets that can act as reference maps.
+# Get the enabled map sets.
 #
 my $map_sets = $db->selectall_hashref(
     q[
