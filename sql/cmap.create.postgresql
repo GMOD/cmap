@@ -1,0 +1,226 @@
+--
+-- Created by SQL::Translator::Producer::PostgreSQL
+-- Created on Tue Dec  3 09:36:11 2002
+--
+
+--
+-- Table: cmap_correspondence_evidence
+--
+
+CREATE TABLE "cmap_correspondence_evidence" (
+  "correspondence_evidence_id" integer DEFAULT '0' NOT NULL,
+  "accession_id" character varying(20) DEFAULT '' NOT NULL,
+  "feature_correspondence_id" integer DEFAULT '0' NOT NULL,
+  "evidence_type_id" integer DEFAULT '0' NOT NULL,
+  "score" integer DEFAULT NULL,
+  "remark" character varying(100) DEFAULT NULL,
+  CONSTRAINT pk_cmap_correspondence_evidence PRIMARY KEY (correspondence_evidence_id),
+  CONSTRAINT accession_id_cmap_correspondenc UNIQUE (accession_id)
+);
+
+CREATE INDEX "feature_correspondence_id_cmap_" on cmap_correspondence_evidence (feature_correspondence_id, evidence_type_id);
+
+--
+-- Table: cmap_correspondence_lookup
+--
+
+CREATE TABLE "cmap_correspondence_lookup" (
+  "feature_id1" integer DEFAULT NULL,
+  "feature_id2" integer DEFAULT NULL,
+  "feature_correspondence_id" integer DEFAULT NULL
+);
+
+CREATE INDEX "feature_id1_cmap_correspondence" on cmap_correspondence_lookup (feature_id1);
+
+--
+-- Table: cmap_correspondence_matrix
+--
+
+CREATE TABLE "cmap_correspondence_matrix" (
+  "reference_map_aid" character varying(20) DEFAULT '0' NOT NULL,
+  "reference_map_name" character varying(32) DEFAULT '' NOT NULL,
+  "reference_map_set_aid" character varying(20) DEFAULT '0' NOT NULL,
+  "reference_species_aid" character varying(20) DEFAULT '0' NOT NULL,
+  "link_map_aid" character varying(20) DEFAULT NULL,
+  "link_map_name" character varying(32) DEFAULT NULL,
+  "link_map_set_aid" character varying(20) DEFAULT '0' NOT NULL,
+  "link_species_aid" character varying(20) DEFAULT '0' NOT NULL,
+  "no_correspondences" integer DEFAULT '0' NOT NULL
+);
+
+--
+-- Table: cmap_dbxref
+--
+
+CREATE TABLE "cmap_dbxref" (
+  "dbxref_id" integer DEFAULT '0' NOT NULL,
+  "map_set_id" integer DEFAULT NULL,
+  "feature_type_id" integer DEFAULT NULL,
+  "species_id" integer DEFAULT NULL,
+  "dbxref_name" character varying(32) DEFAULT NULL,
+  "url" character varying(200) DEFAULT '' NOT NULL,
+  CONSTRAINT pk_cmap_dbxref PRIMARY KEY (dbxref_id)
+);
+
+--
+-- Table: cmap_evidence_type
+--
+
+CREATE TABLE "cmap_evidence_type" (
+  "evidence_type_id" integer DEFAULT '0' NOT NULL,
+  "accession_id" character varying(20) DEFAULT '' NOT NULL,
+  "evidence_type" character varying(30) DEFAULT '' NOT NULL,
+  "rank" integer DEFAULT '0' NOT NULL,
+  CONSTRAINT pk_cmap_evidence_type PRIMARY KEY (evidence_type_id),
+  CONSTRAINT rank_cmap_evidence_type UNIQUE (rank),
+  CONSTRAINT accession_id_cmap_evidence_type UNIQUE (accession_id)
+);
+
+--
+-- Table: cmap_feature
+--
+
+CREATE TABLE "cmap_feature" (
+  "feature_id" integer DEFAULT '0' NOT NULL,
+  "accession_id" character varying(20) DEFAULT '' NOT NULL,
+  "map_id" integer DEFAULT '0' NOT NULL,
+  "feature_type_id" integer DEFAULT '0' NOT NULL,
+  "feature_name" character varying(32) DEFAULT '' NOT NULL,
+  "alternate_name" character varying(32) DEFAULT NULL,
+  "is_landmark" smallint DEFAULT '0' NOT NULL,
+  "start_position" double precision DEFAULT '0.00' NOT NULL,
+  "stop_position" double precision DEFAULT NULL,
+  "dbxref_name" character varying(32) DEFAULT NULL,
+  "dbxref_url" character varying(200) DEFAULT NULL,
+  CONSTRAINT pk_cmap_feature PRIMARY KEY (feature_id),
+  CONSTRAINT accession_id_cmap_feature UNIQUE (accession_id)
+);
+
+CREATE INDEX "feature_name_cmap_feature" on cmap_feature (feature_name);
+
+CREATE INDEX "alternate_name_cmap_feature" on cmap_feature (alternate_name);
+
+CREATE INDEX "map_id_cmap_feature" on cmap_feature (map_id);
+
+--
+-- Table: cmap_feature_correspondence
+--
+
+CREATE TABLE "cmap_feature_correspondence" (
+  "feature_correspondence_id" integer DEFAULT '0' NOT NULL,
+  "accession_id" character varying(20) DEFAULT '' NOT NULL,
+  "feature_id1" integer DEFAULT '0' NOT NULL,
+  "feature_id2" integer DEFAULT '0' NOT NULL,
+  CONSTRAINT pk_cmap_feature_correspondence PRIMARY KEY (feature_correspondence_id),
+  CONSTRAINT accession_id_cmap_feature_corre UNIQUE (accession_id)
+);
+
+CREATE INDEX "feature_id1_cmap_feature_corres" on cmap_feature_correspondence (feature_id1);
+
+--
+-- Table: cmap_feature_type
+--
+
+CREATE TABLE "cmap_feature_type" (
+  "feature_type_id" integer DEFAULT '0' NOT NULL,
+  "accession_id" character varying(20) DEFAULT '' NOT NULL,
+  "feature_type" character varying(32) DEFAULT '' NOT NULL,
+  "default_rank" integer DEFAULT '1' NOT NULL,
+  "is_visible" smallint DEFAULT '1' NOT NULL,
+  "shape" character varying(12) DEFAULT NULL,
+  "color" character varying(20) DEFAULT NULL,
+  CONSTRAINT pk_cmap_feature_type PRIMARY KEY (feature_type_id),
+  CONSTRAINT accession_id_cmap_feature_type UNIQUE (accession_id)
+);
+
+--
+-- Table: cmap_map
+--
+
+CREATE TABLE "cmap_map" (
+  "map_id" integer DEFAULT '0' NOT NULL,
+  "accession_id" character varying(20) DEFAULT '' NOT NULL,
+  "map_set_id" integer DEFAULT '0' NOT NULL,
+  "map_name" character varying(32) DEFAULT '' NOT NULL,
+  "start_position" double precision DEFAULT NULL,
+  "stop_position" double precision DEFAULT NULL,
+  CONSTRAINT pk_cmap_map PRIMARY KEY (map_id),
+  CONSTRAINT accession_id_cmap_map UNIQUE (accession_id)
+);
+
+--
+-- Table: cmap_map_set
+--
+
+CREATE TABLE "cmap_map_set" (
+  "map_set_id" integer DEFAULT '0' NOT NULL,
+  "accession_id" character varying(20) DEFAULT '' NOT NULL,
+  "map_set_name" character varying(64) DEFAULT '' NOT NULL,
+  "short_name" character varying(30) DEFAULT '' NOT NULL,
+  "map_type_id" integer DEFAULT '0' NOT NULL,
+  "species_id" integer DEFAULT '0' NOT NULL,
+  "published_on" date DEFAULT NULL,
+  "can_be_reference_map" smallint DEFAULT '1' NOT NULL,
+  "display_order" integer DEFAULT '1' NOT NULL,
+  "is_enabled" smallint DEFAULT '1' NOT NULL,
+  "remarks" text,
+  "shape" character varying(12) DEFAULT NULL,
+  "color" character varying(20) DEFAULT NULL,
+  "width" integer DEFAULT NULL,
+  CONSTRAINT pk_cmap_map_set PRIMARY KEY (map_set_id),
+  CONSTRAINT accession_id_cmap_map_set UNIQUE (accession_id)
+);
+
+--
+-- Table: cmap_map_set_correspondence
+--
+
+CREATE TABLE "cmap_map_set_correspondence" (
+  "map_set_id1" integer DEFAULT '0' NOT NULL,
+  "map_set_id2" integer DEFAULT '0' NOT NULL,
+  "should_draw_correspondences" smallint DEFAULT '0' NOT NULL,
+  CONSTRAINT pk_cmap_map_set_correspondence PRIMARY KEY (map_set_id1, map_set_id2)
+);
+
+--
+-- Table: cmap_map_type
+--
+
+CREATE TABLE "cmap_map_type" (
+  "map_type_id" integer DEFAULT '0' NOT NULL,
+  "map_type" character varying(64) DEFAULT '' NOT NULL,
+  "map_units" character varying(12) DEFAULT '' NOT NULL,
+  "is_relational_map" smallint DEFAULT '0' NOT NULL,
+  "shape" character varying(12) DEFAULT NULL,
+  "color" character varying(20) DEFAULT NULL,
+  "width" integer DEFAULT NULL,
+  "display_order" integer DEFAULT '1' NOT NULL,
+  CONSTRAINT pk_cmap_map_type PRIMARY KEY (map_type_id),
+  CONSTRAINT map_type_cmap_map_type UNIQUE (map_type)
+);
+
+--
+-- Table: cmap_next_number
+--
+
+CREATE TABLE "cmap_next_number" (
+  "table_name" character varying(40) DEFAULT '' NOT NULL,
+  "next_number" integer DEFAULT '0' NOT NULL,
+  CONSTRAINT pk_cmap_next_number PRIMARY KEY (table_name)
+);
+
+--
+-- Table: cmap_species
+--
+
+CREATE TABLE "cmap_species" (
+  "species_id" integer DEFAULT '0' NOT NULL,
+  "accession_id" character varying(20) DEFAULT '' NOT NULL,
+  "common_name" character varying(64) DEFAULT '' NOT NULL,
+  "full_name" character varying(64) DEFAULT '' NOT NULL,
+  "display_order" integer DEFAULT '1' NOT NULL,
+  "ncbi_taxon_id" integer DEFAULT NULL,
+  CONSTRAINT pk_cmap_species PRIMARY KEY (species_id),
+  CONSTRAINT accession_id_cmap_species UNIQUE (accession_id)
+);
+

@@ -1,12 +1,12 @@
-# MySQL dump 8.21
-#
-# Host: localhost    Database: CMAP
-#-------------------------------------------------------
-# Server version	3.23.49
+-- MySQL dump 8.21
+--
+-- Host: localhost    Database: CMAP
+---------------------------------------------------------
+-- Server version	3.23.49
 
-#
-# Table structure for table 'cmap_correspondence_evidence'
-#
+--
+-- Table structure for table 'cmap_correspondence_evidence'
+--
 
 CREATE TABLE cmap_correspondence_evidence (
   correspondence_evidence_id int(11) NOT NULL default '0',
@@ -20,9 +20,9 @@ CREATE TABLE cmap_correspondence_evidence (
   KEY feature_correspondence_id (feature_correspondence_id,evidence_type_id)
 ) TYPE=MyISAM;
 
-#
-# Table structure for table 'cmap_correspondence_lookup'
-#
+--
+-- Table structure for table 'cmap_correspondence_lookup'
+--
 
 CREATE TABLE cmap_correspondence_lookup (
   feature_id1 int(11) default NULL,
@@ -31,9 +31,9 @@ CREATE TABLE cmap_correspondence_lookup (
   KEY feature_id1 (feature_id1)
 ) TYPE=MyISAM;
 
-#
-# Table structure for table 'cmap_correspondence_matrix'
-#
+--
+-- Table structure for table 'cmap_correspondence_matrix'
+--
 
 CREATE TABLE cmap_correspondence_matrix (
   reference_map_aid varchar(20) NOT NULL default '0',
@@ -47,9 +47,9 @@ CREATE TABLE cmap_correspondence_matrix (
   no_correspondences int(11) NOT NULL default '0'
 ) TYPE=MyISAM;
 
-#
-# Table structure for table 'cmap_dbxref'
-#
+--
+-- Table structure for table 'cmap_dbxref'
+--
 
 CREATE TABLE cmap_dbxref (
   dbxref_id int(11) NOT NULL default '0',
@@ -61,9 +61,9 @@ CREATE TABLE cmap_dbxref (
   PRIMARY KEY  (dbxref_id)
 ) TYPE=MyISAM;
 
-#
-# Table structure for table 'cmap_evidence_type'
-#
+--
+-- Table structure for table 'cmap_evidence_type'
+--
 
 CREATE TABLE cmap_evidence_type (
   evidence_type_id int(11) NOT NULL default '0',
@@ -75,9 +75,9 @@ CREATE TABLE cmap_evidence_type (
   UNIQUE KEY accession_id (accession_id)
 ) TYPE=MyISAM;
 
-#
-# Table structure for table 'cmap_feature'
-#
+--
+-- Table structure for table 'cmap_feature'
+--
 
 CREATE TABLE cmap_feature (
   feature_id int(11) NOT NULL default '0',
@@ -98,9 +98,9 @@ CREATE TABLE cmap_feature (
   KEY map_id (map_id)
 ) TYPE=MyISAM;
 
-#
-# Table structure for table 'cmap_feature_correspondence'
-#
+--
+-- Table structure for table 'cmap_feature_correspondence'
+--
 
 CREATE TABLE cmap_feature_correspondence (
   feature_correspondence_id int(11) NOT NULL default '0',
@@ -112,9 +112,9 @@ CREATE TABLE cmap_feature_correspondence (
   KEY feature_id1 (feature_id1)
 ) TYPE=MyISAM;
 
-#
-# Table structure for table 'cmap_feature_type'
-#
+--
+-- Table structure for table 'cmap_feature_type'
+--
 
 CREATE TABLE cmap_feature_type (
   feature_type_id int(11) NOT NULL default '0',
@@ -128,9 +128,9 @@ CREATE TABLE cmap_feature_type (
   UNIQUE KEY accession_id (accession_id)
 ) TYPE=MyISAM;
 
-#
-# Table structure for table 'cmap_map'
-#
+--
+-- Table structure for table 'cmap_map'
+--
 
 CREATE TABLE cmap_map (
   map_id int(11) NOT NULL default '0',
@@ -143,9 +143,9 @@ CREATE TABLE cmap_map (
   UNIQUE KEY accession_id (accession_id)
 ) TYPE=MyISAM;
 
-#
-# Table structure for table 'cmap_map_set'
-#
+--
+-- Table structure for table 'cmap_map_set'
+--
 
 CREATE TABLE cmap_map_set (
   map_set_id int(11) NOT NULL default '0',
@@ -166,9 +166,9 @@ CREATE TABLE cmap_map_set (
   UNIQUE KEY accession_id (accession_id)
 ) TYPE=MyISAM;
 
-#
-# Table structure for table 'cmap_map_set_correspondence'
-#
+--
+-- Table structure for table 'cmap_map_set_correspondence'
+--
 
 CREATE TABLE cmap_map_set_correspondence (
   map_set_id1 int(11) NOT NULL default '0',
@@ -177,9 +177,9 @@ CREATE TABLE cmap_map_set_correspondence (
   PRIMARY KEY  (map_set_id1,map_set_id2)
 ) TYPE=MyISAM;
 
-#
-# Table structure for table 'cmap_map_type'
-#
+--
+-- Table structure for table 'cmap_map_type'
+--
 
 CREATE TABLE cmap_map_type (
   map_type_id int(11) NOT NULL default '0',
@@ -194,9 +194,9 @@ CREATE TABLE cmap_map_type (
   UNIQUE KEY map_type (map_type)
 ) TYPE=MyISAM;
 
-#
-# Table structure for table 'cmap_next_number'
-#
+--
+-- Table structure for table 'cmap_next_number'
+--
 
 CREATE TABLE cmap_next_number (
   table_name varchar(40) NOT NULL default '',
@@ -204,9 +204,9 @@ CREATE TABLE cmap_next_number (
   PRIMARY KEY  (table_name)
 ) TYPE=MyISAM;
 
-#
-# Table structure for table 'cmap_species'
-#
+--
+-- Table structure for table 'cmap_species'
+--
 
 CREATE TABLE cmap_species (
   species_id int(11) NOT NULL default '0',
