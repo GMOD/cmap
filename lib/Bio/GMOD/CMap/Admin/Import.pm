@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.20 2003-03-05 17:38:21 kycl4rk Exp $
+# $Id: Import.pm,v 1.21 2003-03-13 01:26:36 kycl4rk Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.20 $)[-1];
+$VERSION  = (qw$Revision: 1.21 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -57,6 +57,7 @@ use vars '$LOG_FH';
     feature_stop         => { is_required => 0, datatype => 'number' },
     feature_type         => { is_required => 1, datatype => 'string' },
     linkage_group        => { is_required => 0, datatype => 'string' },
+    is_landmark          => { is_required => 0, datatype => 'number' },
     feature_dbxref_name  => { is_required => 0, datatype => 'string' },
     feature_dbxref_url   => { is_required => 0, datatype => 'string' },
 );
@@ -81,6 +82,7 @@ Imports tab-delimited file with the following fields:
     feature_stop
     feature_type *
     linkage_group
+    is_landmark
     feature_dbxref_name
     feature_dbxref_url
 
@@ -383,6 +385,7 @@ have for the map set).
         my $dbxref_url     = $record{'dbxref_url'}       || '';
         my $start          = $record{'feature_start'};
         my $stop           = $record{'feature_stop'};
+        my $is_landmark    = $record{'is_landmark'};
 
         if ( 
             defined $start &&
@@ -431,13 +434,13 @@ have for the map set).
                     set    accession_id=?, map_id=?, feature_type_id=?, 
                            feature_name=?, alternate_name=?, 
                            start_position=?, stop_position=?,
-                           dbxref_name=?, dbxref_url=?
+                           dbxref_name=?, dbxref_url=?, is_landmark=?
                     where  feature_id=?
                 ],
                 {}, 
                 ( $accession_id, $map_id, $feature_type_id, 
                   $feature_name, $alternate_name, 
-                  $start, $stop, $dbxref_name, $dbxref_url,
+                  $start, $stop, $dbxref_name, $dbxref_url, $is_landmark,
                   $feature_id
                 )
             );
@@ -463,14 +466,14 @@ have for the map set).
                            ( feature_id, accession_id, map_id,
                              feature_type_id, feature_name, alternate_name, 
                              start_position, stop_position,
-                             dbxref_name, dbxref_url
+                             dbxref_name, dbxref_url, is_landmark
                            )
-                    values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
+                    values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
                 ],
                 {}, 
                 ( $feature_id, $accession_id, $map_id, $feature_type_id, 
                   $feature_name, $alternate_name, $start, $stop,
-                  $dbxref_name, $dbxref_url
+                  $dbxref_name, $dbxref_url, $is_landmark
                 )
             );
         }
