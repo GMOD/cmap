@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.43 2003-04-09 00:21:19 kycl4rk Exp $
+# $Id: Data.pm,v 1.44 2003-04-14 16:45:00 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.43 $)[-1];
+$VERSION = (qw$Revision: 1.44 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -1838,6 +1838,7 @@ Given a list of feature names, find any maps they occur on.
                    map.map_name, 
                    ms.accession_id as map_set_aid, 
                    ms.short_name as map_set_name,
+                   ms.can_be_reference_map,
                    s.species_id,
                    s.common_name as species_name
             from   cmap_feature f, 
@@ -1850,7 +1851,6 @@ Given a list of feature names, find any maps they occur on.
             and    f.map_id=map.map_id
             and    map.map_set_id=ms.map_set_id
             and    ms.is_enabled=1
-            and    ms.can_be_reference_map=1
             and    ms.species_id=s.species_id
         ];
 
