@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Utils;
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.25.2.2 2004-05-11 19:31:50 kycl4rk Exp $
+# $Id: Utils.pm,v 1.25.2.3 2004-05-12 16:33:01 kycl4rk Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.25.2.2 $)[-1];
+$VERSION = (qw$Revision: 1.25.2.3 $)[-1];
 
 use base 'Exporter';
 
@@ -320,15 +320,13 @@ Special thanks to Noel Yap for suggesting this strategy.
     }
 
     #
-    # Resort, if necessary.
+    # Resort by the target (reduces crossed lines).
     #
-    if ( $no_added > 1 ) { 
-        @accepted = 
-            map  { $_->[0] }
-            sort { $a->[1] <=> $b->[1] }
-            map  { [ $_, $_->{'start_position'} ] }
-            @accepted;
-    }
+    @accepted = 
+        map  { $_->[0] }
+        sort { $a->[1] <=> $b->[1] }
+        map  { [ $_, $_->{'target'} ] }
+        @accepted;
 
     my $no_accepted = scalar @accepted;
     #
