@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin;
 
-# $Id: Admin.pm,v 1.20 2003-03-17 20:28:08 kycl4rk Exp $
+# $Id: Admin.pm,v 1.21 2003-06-17 15:58:19 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.20 $)[-1];
+$VERSION = (qw$Revision: 1.21 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils qw[ next_number parse_words ];
@@ -280,6 +280,7 @@ Find all the features matching some criteria.
         parse_words( $args{'feature_name'} )
     );
     my $map_aid         = $args{'map_aid'}         ||             '';
+    my $species_id      = $args{'species_id'}      ||              0;
     my $feature_type_id = $args{'feature_type_id'} ||              0;
     my $field_name      = $args{'field_name'}      || 'feature_name';
     my $order_by        = $args{'order_by'}        || 'feature_name';
@@ -328,7 +329,8 @@ Find all the features matching some criteria.
             and ms.species_id=s.species_id
             and ms.map_type_id=mt.map_type_id
         ];
-        $sql .= "and map.accession_id='$map_aid' "                if $map_aid;
+        $sql .= "and map.accession_id='$map_aid' "        if $map_aid;
+        $sql .= "and ms.species_id=$species_id "          if $species_id;
         $sql .= "and f.feature_type_id=$feature_type_id " if $feature_type_id;
         $sql .= "order by $order_by ";
 
