@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.86 2004-05-30 20:28:05 mwz444 Exp $
+# $Id: Map.pm,v 1.87 2004-06-03 19:27:14 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.86 $)[-1];
+$VERSION = (qw$Revision: 1.87 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -36,7 +36,7 @@ use Bio::GMOD::CMap::Utils qw[
 
 use base 'Bio::GMOD::CMap';
 
-my @INIT_FIELDS = qw[ drawer base_x base_y slot_no maps config ];
+my @INIT_FIELDS = qw[ drawer base_x base_y slot_no maps config aggregate ];
 
 my %SHAPE = (
     'default'  => 'draw_box',
@@ -1444,18 +1444,20 @@ sub layout_map_foundation {
 
         my $map_mid_pix = [ $base_x, $min_ref_y + ( $pixel_height / 2 ) ];
 
-        for my $ref_connect (@ref_connections) {
-            my $line_color =
-                $ref_connect->[2] <= 5  ? 'lightblue'
-              : $ref_connect->[2] <= 25 ? 'grey'
-              : $ref_connect->[2] <= 50 ? 'brown'
-              : 'black';
-            push @$drawing_data,
-              [
-                LINE,              $ref_connect->[0],
-                $ref_connect->[1], @$map_mid_pix,
-                $line_color,       0
-              ];
+        if ($self->aggregate){
+            for my $ref_connect (@ref_connections) {
+                my $line_color =
+                    $ref_connect->[2] <= 5  ? 'lightblue'
+                  : $ref_connect->[2] <= 25 ? 'grey'
+                  : $ref_connect->[2] <= 50 ? 'brown'
+                  : 'black';
+                push @$drawing_data,
+                  [
+                    LINE,              $ref_connect->[0],
+                    $ref_connect->[1], @$map_mid_pix,
+                    $line_color,       0
+                  ];
+            }
         }
     }
     $top_y = $map_base_y unless defined $top_y;

@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap;
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.53 2004-04-01 08:04:21 mwz444 Exp $
+# $Id: CMap.pm,v 1.54 2004-06-03 19:27:13 mwz444 Exp $
 
 =head1 NAME
 
@@ -373,6 +373,29 @@ Returns a database handle.  This is the only way into the database.
 }
 
 # ----------------------------------------------------
+sub aggregate{
+                                                                                
+=pod
+                                                                                
+=head2 aggregate
+                                                                                
+Returns the boolean aggregate variable.  This determines 
+if the correspondences are aggregated or individually depicted
+
+The default is 1                                                          
+                      
+=cut
+                                                                                
+    my $self = shift;
+    my $val  = shift;
+    $self->{'aggregate'}=$val if defined($val); 
+    $self->{'aggregate'}=1 unless defined($self->{'aggregate'}); 
+    return $self->{'aggregate'}; 
+
+}
+
+
+# ----------------------------------------------------
 sub data_module {
 
 =pod
@@ -389,6 +412,7 @@ Returns a handle to the data module.
         $self->{'data_module'} =  Bio::GMOD::CMap::Data->new(
             data_source        => $self->data_source, 
             config             => $self->config,
+            aggregate          => $self->aggregate,
         ) or $self->error( Bio::GMOD::CMap::Data->error );
     }
 

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.121 2004-06-01 18:58:00 mwz444 Exp $
+# $Id: Data.pm,v 1.122 2004-06-03 19:27:14 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.121 $)[-1];
+$VERSION = (qw$Revision: 1.122 $)[-1];
 
 use Data::Dumper;
 use Regexp::Common;
@@ -44,6 +44,7 @@ sub init {
     my ( $self, $config ) = @_;
     $self->config( $config->{'config'} );
     $self->data_source( $config->{'data_source'} );
+    $self->aggregate( $config->{'aggregate'} );
     my %cache_params = ( 'namespace' => 'sql_results', );
     $self->{'cache'} = new Cache::FileCache( \%cache_params );
     $self->{'expanded_correspondence_lookup'}=
@@ -764,7 +765,8 @@ sub slot_data {
     # More than one map in the slot?  All are compressed.
     #
     my $return;
-    if ( scalar(@maps) == 1 ) {    # just one map in this slot
+    if (1 and ( scalar(@maps) == 1 or !$self->{'aggregate'})) {   
+         # just one map in this slot
             #
             # Register the feature types on the maps in this slot.
             #
@@ -827,9 +829,24 @@ sub slot_data {
             $count_lookup{ $f->{'map_id'} } = $f->{'no_features'};
         }
 
+        my %corr_lookup= %{$self->count_correspondences(
+            evidence_type_aids  => $evidence_type_aids,
+            ref_map_id          => $ref_map_id,
+            ref_pos_restrict    => $ref_pos_restrict,
+            map_set_id          => $map_set_id,
+            map_correspondences => $map_correspondences,
+            slot_map_ids        => \@slot_map_ids,
+            this_slot_no        => $this_slot_no,
+            ref_slot_no         => $ref_slot_no,
+            maps                => \@maps,
+            db                  => $db,
+                                                                                
+            )};
+
+
         for my $map (@maps) {
-            $map->{'start_position'} = $map_start;
-            $map->{'stop_position'}  = $map_stop;
+            $map->{'start_position'} = $map_start if defined($map_start);
+            $map->{'stop_position'}  = $map_stop  if defined($map_stop);
 
             my $where =
               @$feature_type_aids
@@ -853,7 +870,7 @@ sub slot_data {
                              cmap_map_set ms
 				];
             my $sql_base_bottom = qq[
-                    where    f.map_id=$maps[0]{'map_id'}
+                    where    f.map_id=$map->{'map_id'}
 				   ];
 
             if ( defined($map_start) and defined($map_start) ) {
@@ -929,7 +946,7 @@ if ((  $self->slot_info->{ $this_slot_no + 1 }
                 }
             }
             unless ( $map->{'features'} =
-                $self->get_cached_results( $sql_str . $maps[0]{'map_id'} ) )
+                $self->get_cached_results( $sql_str) )
             {
 
                 $map->{'features'} =
@@ -960,7 +977,7 @@ if ((  $self->slot_info->{ $this_slot_no + 1 }
                         $map->{'features'}->{$rowKey}->{'feature_type_aid'},
                         'drawing_priority' );
                 }
-                $self->store_cached_results( $sql_str . $maps[0]{'map_id'},
+                $self->store_cached_results( $sql_str ,
                     $map->{'features'} );
             }
 
@@ -1042,226 +1059,19 @@ if ((  $self->slot_info->{ $this_slot_no + 1 }
             $count_lookup{ $f->{'map_id'} } = $f->{'no_features'};
         }
 
-        #
-        # Query for the counts of correspondences.
-        #
-        my $where =
-          @$evidence_type_aids
-          ? "and ce.evidence_type_accession in ('"
-          . join( "','", @$evidence_type_aids ) . "')"
-          : '';
+        my %corr_lookup= %{$self->count_correspondences(
+            evidence_type_aids  => $evidence_type_aids,
+            ref_map_id          => $ref_map_id,
+            ref_pos_restrict    => $ref_pos_restrict,
+            map_set_id          => $map_set_id,
+            map_correspondences => $map_correspondences,
+            slot_map_ids        => \@slot_map_ids,
+            this_slot_no        => $this_slot_no,
+            ref_slot_no         => $ref_slot_no,
+            maps                => \@maps,
+            db                  => $db,
 
-        my ( $count_sql, $position_sql, @query_args );
-        if ($ref_map_id) {    # just one reference map
-            if ($self->{'expanded_correspondence_lookup'}){
-                my $base_sql = qq[ 
-                    select   %s
-                             cl.map_id1, 
-                             cl.map_id2
-                    from     cmap_map map2,
-                             cmap_correspondence_lookup cl,
-                             cmap_feature_correspondence fc,
-                             cmap_correspondence_evidence ce
-                    where    cl.map_id1=?
-                    $ref_pos_restrict
-                    and      cl.feature_correspondence_id=
-                             fc.feature_correspondence_id
-                    and      fc.is_enabled=1
-                    and      fc.feature_correspondence_id=
-                             ce.feature_correspondence_id
-                    $where
-                    and      cl.map_id2=map2.map_id
-                ];
-
-                if(defined($map_set_id)){
-                    $base_sql .= " and map2.map_set_id =$map_set_id ";
-                }
-                else{
-                    $base_sql .= " and cl.map_id2 in (".
-                        join(",",@slot_map_ids).
-                        ") ";
-                }
-                $base_sql .= q[ group by map_id1, map_id2
-                ];
-                $count_sql = sprintf( $base_sql,
-                    'count(distinct cl.feature_correspondence_id) as no_corr, ' );
-                $position_sql = sprintf( $base_sql,
-                        'min(cl.start_position1) as min_start, '
-                      . 'max(cl.start_position1) as max_start, '                    
-                      . 'avg(((cl.stop_position1-cl.start_position1)/2)'
-                      .     '+cl.start_position1) as avg_mid, '  );
-            }
-            else{
-                my $base_sql = qq[ 
-                    select   %s
-                             f1.map_id as map_id1, 
-                             f2.map_id as map_id2
-                    from     cmap_feature f1,
-                             cmap_feature f2,
-                             cmap_map map2,
-                             cmap_correspondence_lookup cl,
-                             cmap_feature_correspondence fc,
-                             cmap_correspondence_evidence ce
-                    where    f1.map_id=?
-                    $ref_pos_restrict
-                    and      f1.feature_id=cl.feature_id1
-                    and      cl.feature_correspondence_id=
-                             fc.feature_correspondence_id
-                    and      fc.is_enabled=1
-                    and      fc.feature_correspondence_id=
-                             ce.feature_correspondence_id
-                    $where
-                    and      cl.feature_id2=f2.feature_id
-                    and      f2.map_id=map2.map_id
-                ];
-                if(defined($map_set_id)){
-                    $base_sql .= " and map2.map_set_id =$map_set_id ";
-                }
-                else{
-                    $base_sql .= " and map2.map_id in (".
-                        join(",",@slot_map_ids).
-                        ") ";
-                }
-                $base_sql .= q[ group by map_id1, map_id2
-                ];
-                $count_sql = sprintf( $base_sql,
-                    'count(distinct cl.feature_correspondence_id) as no_corr, ' );
-                $position_sql = sprintf( $base_sql,
-                        'min(f1.start_position) as min_start, '
-                      . 'max(f1.start_position) as max_start, '                    
-                      . 'avg(((f1.stop_position-f1.start_position)/2)'
-                      .     '+f1.start_position) as avg_mid, '  );
-            }
-            push @query_args, $ref_map_id;
-        }
-        elsif ( defined $ref_slot_no ) {    # multiple reference maps
-            my $base_sql;
-            if($self->{'expanded_correspondence_lookup'}){
-                $base_sql = qq[ 
-                    select   %s
-                             cl.map_id1, 
-                             cl.map_id2
-                    from     cmap_map map2,
-                             cmap_correspondence_lookup cl,
-                             cmap_feature_correspondence fc,
-                             cmap_correspondence_evidence ce
-                    where    cl.feature_correspondence_id=
-                             fc.feature_correspondence_id
-                    and      fc.is_enabled=1
-                    and      fc.feature_correspondence_id=
-                             ce.feature_correspondence_id
-                    $where
-                    and      cl.map_id2=map2.map_id
-                ];
-                if(defined($map_set_id)){
-                    $base_sql .= " and map2.map_set_id =$map_set_id ";
-                }
-                else{
-                    $base_sql .= " and cl.map_id2 in (".
-                        join(",",@slot_map_ids).
-                        ") ";
-                }
-
-                $base_sql .= " and cl.map_id1 in ('"
-                  . join( "','",
-                    map { $_->[0] } @{ $self->slot_info->{$ref_slot_no} } )
-                  . "')";
-                $base_sql .= " group by map_id1,map_id2";
-
-                $count_sql = sprintf( $base_sql,
-                    'count(distinct cl.feature_correspondence_id) as no_corr, ' );
-                $position_sql = sprintf( $base_sql,
-                        'min(cl.start_position1) as min_start, '
-                      . 'max(cl.start_position1) as max_start , '
-                      . 'avg(((cl.stop_position1-cl.start_position1)/2)'
-                      .     '+cl.start_position1) as avg_mid, ' );
-            }
-            else{
-                $base_sql = qq[ 
-                    select   %s
-                             f1.map_id as map_id1, 
-                             f2.map_id as map_id2
-                    from     cmap_feature f1,
-                             cmap_feature f2,
-                             cmap_map map2,
-                             cmap_correspondence_lookup cl,
-                             cmap_feature_correspondence fc,
-                             cmap_correspondence_evidence ce
-                    where    f1.feature_id=cl.feature_id1
-                    and      cl.feature_correspondence_id=
-                             fc.feature_correspondence_id
-                    and      fc.is_enabled=1
-                    and      fc.feature_correspondence_id=
-                             ce.feature_correspondence_id
-                    $where
-                    and      cl.feature_id2=f2.feature_id
-                    and      f2.map_id=map2.map_id
-                ];
-                if(defined($map_set_id)){
-                    $base_sql .= " and map2.map_set_id =$map_set_id ";
-                }
-                else{
-                    $base_sql .= " and map2.map_id in (".
-                        join(",",@slot_map_ids).
-                        ") ";
-                }
-
-                $base_sql .= " and f1.map_id in ('"
-                  . join( "','",
-                    map { $_->[0] } @{ $self->slot_info->{$ref_slot_no} } )
-                  . "')";
-                $base_sql .= " group by map_id1,map_id2";
-
-                $count_sql = sprintf( $base_sql,
-                    'count(distinct cl.feature_correspondence_id) as no_corr, ' );
-                $position_sql = sprintf( $base_sql,
-                        'min(f1.start_position) as min_start, '
-                      . 'max(f1.start_position) as max_start , '
-                      . 'avg(((f1.stop_position-f1.start_position)/2)'
-                      .     '+f1.start_position) as avg_mid, ' );
-            }
-        }
-
-        my %map_id_lookup = map { $_->{'map_id'}, 1 } @maps;
-        my %corr_lookup;
-        if ($count_sql) {
-
-            my ( $map_corr_counts, $positions );
-            if (
-                my $arrayref = $self->get_cached_results(
-                    $count_sql . $position_sql . join( ".", @query_args )
-                )
-              )
-            {
-                ( $map_corr_counts, $positions ) = @$arrayref;
-            }
-            else {
-                $map_corr_counts =
-                  $db->selectall_arrayref( $count_sql, { Columns => {} },
-                    @query_args );
-                $positions =
-                  $db->selectall_hashref( $position_sql, 'map_id2', {},
-                    @query_args );
-                $self->get_cached_results(
-                    $count_sql . $position_sql . join( ".", @query_args ),
-                    [ $map_corr_counts, $positions ] );
-            }
-            for my $count (@$map_corr_counts) {
-                next unless $map_id_lookup{ $count->{'map_id2'} };
-                my $pos = $positions->{ $count->{'map_id2'} };
-
-                $map_correspondences->{$this_slot_no}{ $count->{'map_id2'} }
-                  { $count->{'map_id1'} } = {
-                    map_id     => $count->{'map_id2'},
-                    ref_map_id => $count->{'map_id1'},
-                    no_corr    => $count->{'no_corr'},
-                    min_start  => $pos->{'min_start'},
-                    max_start  => $pos->{'max_start'},
-                    avg_mid    => $pos->{'avg_mid'},
-                  };
-                $corr_lookup{ $count->{'map_id2'} } += $count->{'no_corr'};
-            }
-        }
+            )};
 
         for my $map (@maps) {
             $map->{'no_correspondences'} = $corr_lookup{ $map->{'map_id'} };
@@ -1370,7 +1180,7 @@ and the provided id.
 
 sub get_feature_correspondences {
 
-    #print S#TDERR "get_feature_correspondences\n";
+    #p#rint S#TDERR "get_feature_correspondences\n";
     my (
         $self,                    $feature_correspondences,
         $correspondence_evidence, $field,
@@ -4324,7 +4134,245 @@ sub view_feature_on_map {
 
     return ( $map_set_aid, $map_aid, $feature_name );
 }
+# ----------------------------------------------------
+sub count_correspondences{
 
+    my ( $self, %args ) = @_;
+    my $evidence_type_aids  = $args{'evidence_type_aids'};
+    my $ref_map_id          = $args{'ref_map_id'};
+    my $ref_pos_restrict    = $args{'ref_pos_restrict'};
+    my $map_set_id          = $args{'map_set_id'};
+    my $map_correspondences = $args{'map_correspondences'};
+    my $slot_map_ids        = $args{'slot_map_ids'};
+    my $this_slot_no        = $args{'this_slot_no'};
+    my $ref_slot_no         = $args{'ref_slot_no'};
+    my $maps                = $args{'maps'};
+    my $db                  = $args{'db'};
+
+
+
+    #
+    # Query for the counts of correspondences.
+    #
+    my $where =
+      @$evidence_type_aids
+      ? "and ce.evidence_type_accession in ('"
+      . join( "','", @$evidence_type_aids ) . "')"
+      : '';
+
+    my ( $count_sql, $position_sql, @query_args );
+    if ($ref_map_id) {    # just one reference map
+        if ($self->{'expanded_correspondence_lookup'}){
+            my $base_sql = qq[ 
+                select   %s
+                         cl.map_id1, 
+                         cl.map_id2
+                from     cmap_map map2,
+                         cmap_correspondence_lookup cl,
+                         cmap_feature_correspondence fc,
+                         cmap_correspondence_evidence ce
+                where    cl.map_id1=?
+                $ref_pos_restrict
+                and      cl.feature_correspondence_id=
+                         fc.feature_correspondence_id
+                and      fc.is_enabled=1
+                and      fc.feature_correspondence_id=
+                         ce.feature_correspondence_id
+                $where
+                and      cl.map_id2=map2.map_id
+            ];
+
+            if(defined($map_set_id)){
+                $base_sql .= " and map2.map_set_id =$map_set_id ";
+            }
+            else{
+                $base_sql .= " and cl.map_id2 in (".
+                    join(",",@$slot_map_ids).
+                    ") ";
+            }
+            $base_sql .= q[ group by map_id1, map_id2
+            ];
+            $count_sql = sprintf( $base_sql,
+                'count(distinct cl.feature_correspondence_id) as no_corr, ' );
+            $position_sql = sprintf( $base_sql,
+                    'min(cl.start_position1) as min_start, '
+                  . 'max(cl.start_position1) as max_start, '                    
+                  . 'avg(((cl.stop_position1-cl.start_position1)/2)'
+                  .     '+cl.start_position1) as avg_mid, '  );
+        }
+        else{
+            my $base_sql = qq[ 
+                select   %s
+                         f1.map_id as map_id1, 
+                         f2.map_id as map_id2
+                from     cmap_feature f1,
+                         cmap_feature f2,
+                         cmap_map map2,
+                         cmap_correspondence_lookup cl,
+                         cmap_feature_correspondence fc,
+                         cmap_correspondence_evidence ce
+                where    f1.map_id=?
+                $ref_pos_restrict
+                and      f1.feature_id=cl.feature_id1
+                and      cl.feature_correspondence_id=
+                         fc.feature_correspondence_id
+                and      fc.is_enabled=1
+                and      fc.feature_correspondence_id=
+                         ce.feature_correspondence_id
+                $where
+                and      cl.feature_id2=f2.feature_id
+                and      f2.map_id=map2.map_id
+            ];
+            if(defined($map_set_id)){
+                $base_sql .= " and map2.map_set_id =$map_set_id ";
+            }
+            else{
+                $base_sql .= " and map2.map_id in (".
+                    join(",",@$slot_map_ids).
+                    ") ";
+            }
+            $base_sql .= q[ group by map_id1, map_id2
+            ];
+            $count_sql = sprintf( $base_sql,
+                'count(distinct cl.feature_correspondence_id) as no_corr, ' );
+            $position_sql = sprintf( $base_sql,
+                    'min(f1.start_position) as min_start, '
+                  . 'max(f1.start_position) as max_start, '                    
+                  . 'avg(((f1.stop_position-f1.start_position)/2)'
+                  .     '+f1.start_position) as avg_mid, '  );
+        }
+        push @query_args, $ref_map_id;
+    }
+    elsif ( defined $ref_slot_no ) {    # multiple reference maps
+        my $base_sql;
+        if($self->{'expanded_correspondence_lookup'}){
+            $base_sql = qq[ 
+                select   %s
+                         cl.map_id1, 
+                         cl.map_id2
+                from     cmap_map map2,
+                         cmap_correspondence_lookup cl,
+                         cmap_feature_correspondence fc,
+                         cmap_correspondence_evidence ce
+                where    cl.feature_correspondence_id=
+                         fc.feature_correspondence_id
+                and      fc.is_enabled=1
+                and      fc.feature_correspondence_id=
+                         ce.feature_correspondence_id
+                $where
+                and      cl.map_id2=map2.map_id
+            ];
+            if(defined($map_set_id)){
+                $base_sql .= " and map2.map_set_id =$map_set_id ";
+            }
+            else{
+                $base_sql .= " and cl.map_id2 in (".
+                    join(",",@$slot_map_ids).
+                    ") ";
+            }
+
+            $base_sql .= " and cl.map_id1 in ('"
+              . join( "','",
+                map { $_->[0] } @{ $self->slot_info->{$ref_slot_no} } )
+              . "')";
+            $base_sql .= " group by map_id1,map_id2";
+
+            $count_sql = sprintf( $base_sql,
+                'count(distinct cl.feature_correspondence_id) as no_corr, ' );
+            $position_sql = sprintf( $base_sql,
+                    'min(cl.start_position1) as min_start, '
+                  . 'max(cl.start_position1) as max_start , '
+                  . 'avg(((cl.stop_position1-cl.start_position1)/2)'
+                  .     '+cl.start_position1) as avg_mid, ' );
+        }
+        else{
+            $base_sql = qq[ 
+                select   %s
+                         f1.map_id as map_id1, 
+                         f2.map_id as map_id2
+                from     cmap_feature f1,
+                         cmap_feature f2,
+                         cmap_map map2,
+                         cmap_correspondence_lookup cl,
+                         cmap_feature_correspondence fc,
+                         cmap_correspondence_evidence ce
+                where    f1.feature_id=cl.feature_id1
+                and      cl.feature_correspondence_id=
+                         fc.feature_correspondence_id
+                and      fc.is_enabled=1
+                and      fc.feature_correspondence_id=
+                         ce.feature_correspondence_id
+                $where
+                and      cl.feature_id2=f2.feature_id
+                and      f2.map_id=map2.map_id
+            ];
+            if(defined($map_set_id)){
+                $base_sql .= " and map2.map_set_id =$map_set_id ";
+            }
+            else{
+                $base_sql .= " and map2.map_id in (".
+                    join(",",@$slot_map_ids).
+                    ") ";
+            }
+
+            $base_sql .= " and f1.map_id in ('"
+              . join( "','",
+                map { $_->[0] } @{ $self->slot_info->{$ref_slot_no} } )
+              . "')";
+            $base_sql .= " group by map_id1,map_id2";
+
+            $count_sql = sprintf( $base_sql,
+                'count(distinct cl.feature_correspondence_id) as no_corr, ' );
+            $position_sql = sprintf( $base_sql,
+                    'min(f1.start_position) as min_start, '
+                  . 'max(f1.start_position) as max_start , '
+                  . 'avg(((f1.stop_position-f1.start_position)/2)'
+                  .     '+f1.start_position) as avg_mid, ' );
+        }
+    }
+
+    my %map_id_lookup = map { $_->{'map_id'}, 1 } @$maps;
+    my %corr_lookup;
+    if ($count_sql) {
+
+        my ( $map_corr_counts, $positions );
+        if (
+            my $arrayref = $self->get_cached_results(
+                $count_sql . $position_sql . join( ".", @query_args )
+            )
+          )
+        {
+            ( $map_corr_counts, $positions ) = @$arrayref;
+        }
+        else {
+            $map_corr_counts =
+              $db->selectall_arrayref( $count_sql, { Columns => {} },
+                @query_args );
+            $positions =
+              $db->selectall_hashref( $position_sql, 'map_id2', {},
+                @query_args );
+            $self->store_cached_results(
+                $count_sql . $position_sql . join( ".", @query_args ),
+                [ $map_corr_counts, $positions ] );
+        }
+        for my $count (@$map_corr_counts) {
+            next unless $map_id_lookup{ $count->{'map_id2'} };
+            my $pos = $positions->{ $count->{'map_id2'} };
+
+            $map_correspondences->{$this_slot_no}{ $count->{'map_id2'} }
+              { $count->{'map_id1'} } = {
+                map_id     => $count->{'map_id2'},
+                ref_map_id => $count->{'map_id1'},
+                no_corr    => $count->{'no_corr'},
+                min_start  => $pos->{'min_start'},
+                max_start  => $pos->{'max_start'},
+                avg_mid    => $pos->{'avg_mid'},
+              };
+            $corr_lookup{ $count->{'map_id2'} } += $count->{'no_corr'};
+        }
+    }
+    return \%corr_lookup;
+}
 # ----------------------------------------------------
 sub get_all_feature_types {
     my $self = shift;
@@ -4389,7 +4437,6 @@ sub slot_info {
 	  ];
 
     if ($slots) {
-print STDERR Dumper($slots)."\n";
         my $sql_suffix;
         foreach my $slot_no ( sort orderOutFromZero keys %{$slots} ) {
             $sql_suffix = "";

@@ -225,6 +225,16 @@
                         </tr>
 
                         <tr>
+                            <td align="right" valign="top">Aggregate Correspondences:</td>
+
+                            <td>
+                                [% IF apr.param('aggregate')==0; aggregate=0; ELSE; aggregate=1; END %]
+                                <input type="radio" name="aggregate" value="0"[% IF aggregate==0; ' checked'; END %]>No
+                                <input type="radio" name="aggregate" value="1"[% IF aggregate==1; ' checked'; END %]>Yes
+                            </td>
+                        </tr>
+
+                        <tr>
                             <td align="right">Min. No. Correspondences:</td>
 
                             <td>
@@ -244,7 +254,7 @@
                                             <option value="[% ft.feature_type_aid %]"[% IF included_features.${ft.feature_type_aid}; ' selected'; END %]>[% ft.feature_type %]</option>
                                         [% END %]
                                     </select></td></tr>
-                                <tr><td align="right" valign="top">Include only if has correspondence:</td><td>
+                                <tr><td align="right" valign="top">Restrict by correspondence:</td><td>
                                     <select name="corr_only_feature_types" size="4" multiple>
                                         <option value="-2" [% IF included_corr_only_features.-2; ' selected'; END %]>--None--</option>
                                         <option value="-1" [% IF included_corr_only_features.-1; ' selected'; END %]>--ALL--</option> 
