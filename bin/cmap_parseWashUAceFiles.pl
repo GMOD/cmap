@@ -52,7 +52,10 @@ print STDERR "after parse before sort\n";
 my %clusters;
 foreach my $contig_name (keys %contig_data){
     if ($contig_name=~/Contig(\d+)\.(\d+)/){
-	$clusters{$1}->[$2]=1;	
+        $clusters{$1}->[$2]=1;	
+    }
+    elsif ($contig_name=~/Contig(\d+)$/){
+        $clusters{$1}->[0]=1
     }
 }
 print STDERR "afterall\n";
@@ -62,6 +65,7 @@ print "map_name\tfeature_name\tfeature_start\tfeature_stop\tfeature_type_accessi
 
 ###Print Clusters
 my $cluster_name;
+my $contig_name;
 my $cluster_num=1;
 my $offset;
 my $clusterLine;
@@ -71,46 +75,51 @@ foreach my $contig_num (sort {$a <=> $b} keys %clusters){
     $offset=0;
     $output='';
     $cluster_name="Contig".$contig_num;
-    print STDERR "$cluster_name ".$#{$clusters{$contig_num}}."\n";
     ###Map Set
     for (my $i=0; $i<=$#{$clusters{$contig_num}}; $i++){
-	next unless ($clusters{$contig_num}->[$i]);
-	my $contig_name="$cluster_name.$i";
-	my $contig_stop=$contig_data{$contig_name}{'num_of_bases'}+$offset;
+        next unless ($clusters{$contig_num}->[$i]);
+        if ( $i == 0 ){
+            ###Cluster doesn't have sub contigs
+            $contig_name=$cluster_name;
+        }
+        else {
+            $contig_name="$cluster_name.$i";
+        }
+        my $contig_stop=$contig_data{$contig_name}{'num_of_bases'}+$offset;
 
-	print "$cluster_name\t$contig_name\t$offset\t$contig_stop\tcontig\n";
-	###Map
-	foreach my $read_name (
-			       sort {
-				   $read_data{$a}{'padded_start'}
-				   <=>
-       			           $read_data{$b}{'padded_start'}
-			       }
-				    @{$contig_to_reads{$contig_name}}
-			       ){
-	    my $dir='+';
-	    $dir='-' if $read_data{$read_name}{'complement'} eq 'C';
-	    my $read_start =
-		$offset + $read_data{$read_name}{'padded_start'};
-	    my $read_stop  =
-		$read_start + $read_data{$read_name}{'length'};
-	    if ($read_start>$read_stop){
-		print STDERR "rev\n";
-		($read_start,$read_stop)=($read_stop,$read_start);
-	    }
-	    $read_start= $offset>$read_start?
-		$offset+1 : 
-		$read_start;
-	    $read_stop= $read_stop>$contig_stop?
-		$contig_stop: 
-		$read_stop;
-	    		
-	    
-	    print "$cluster_name\t$read_name\t$read_start\t$read_stop\tread\n";
-	    ###Feature
-	    
-	}
-	$offset=$contig_stop;
+        print "$cluster_name\t$contig_name\t$offset\t$contig_stop\tcontig\n";
+        ###Map
+        foreach my $read_name (
+                       sort {
+                       $read_data{$a}{'padded_start'}
+                       <=>
+                               $read_data{$b}{'padded_start'}
+                       }
+                        @{$contig_to_reads{$contig_name}}
+                       ){
+            my $dir='+';
+            $dir='-' if $read_data{$read_name}{'complement'} eq 'C';
+            my $read_start =
+            $offset + $read_data{$read_name}{'padded_start'};
+            my $read_stop  =
+            $read_start + $read_data{$read_name}{'length'};
+            if ($read_start>$read_stop){
+            print STDERR "rev\n";
+            ($read_start,$read_stop)=($read_stop,$read_start);
+            }
+            $read_start= $offset>$read_start?
+            $offset+1 : 
+            $read_start;
+            $read_stop= $read_stop>$contig_stop?
+            $contig_stop: 
+            $read_stop;
+                    
+            
+            print "$cluster_name\t$read_name\t$read_start\t$read_stop\tread\n";
+            ###Feature
+            
+        }
+        $offset=$contig_stop;
     }
     $cluster_num++;
 }

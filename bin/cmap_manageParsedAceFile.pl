@@ -74,12 +74,12 @@ while(<FILE_IN>){
             \@real_read_depths,
             \@remaining_stops
         );
-        if ($read=~/(.+)\.([bg]\d)/){
+        if ($read=~/(.+)\.([A-Za-z]\d+\w{0,1})$/){
             $name  = $1;
             $primer= $2;
         }
         else{
-            die "$name  didn't match\n";
+            die "$read  didn't match\n";
         }
         if ($primer=~/^g/){
             $index=0;
@@ -284,11 +284,13 @@ sub processReadDepth{
             $region->[1]-$region->[0]+1:
             $region->[1]-$w_start+1;
         $new_current_bases=$w_current_bases + $region_length;
-        $w_current_avg=
-            (($w_current_avg*$w_current_bases)
-                +
-             ($region->[2]*$region_length)
-            )/$new_current_bases;
+        if ($new_current_bases > 0){
+            $w_current_avg=
+                (($w_current_avg*$w_current_bases)
+                    +
+                 ($region->[2]*$region_length)
+                )/$new_current_bases;
+        }
         $w_current_bases = $new_current_bases
     }
     print $fh "$contig\t".int($w_current_avg+.5)."\t$w_start\t"
