@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.23 2003-03-05 17:40:18 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.24 2003-03-05 22:26:11 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.23 $)[-1];
+$VERSION = (qw$Revision: 1.24 $)[-1];
 
 #
 # Turn off output buffering.
@@ -291,7 +291,8 @@ sub create_map_set {
     ) or die 'No map set id';
 
 
-    print "OK to create set '$map_set_name'?\n[Y/n] ";
+    print "OK to create set '$map_set_name' in data source '", 
+        $self->data_source, "'?\n[Y/n] ";
     chomp( my $answer = <STDIN> );
     return if $answer =~ m/^[Nn]/;
 
@@ -584,6 +585,7 @@ sub export_as_sql {
     #
     print join("\n",
         'OK to export?',
+        '  Data source  : ' . $self->data_source, 
         '  Tables       : ' . join(', ', @dump_tables),
         '  Add Truncate : ' . ( $add_truncate ? 'Yes' : 'No' ), 
         "  File         : $file",
@@ -764,10 +766,11 @@ sub export_as_text {
     #
     print join("\n",
         'OK to export?',
-        '  Map Sets               : ' . join(', ', @map_set_names),
-        '  Feature Types          : ' . join(', ', @$feature_types),
-        "  Exclude Fields         : $excluded_fields",
-        "  Directory              : $dir",
+        '  Data source     : ' . $self->data_source, 
+        '  Map Sets        : ' . join(', ', @map_set_names),
+        '  Feature Types   : ' . join(', ', @$feature_types),
+        "  Exclude Fields  : $excluded_fields",
+        "  Directory       : $dir",
         "[Y/n] "
     );
     chomp( my $answer = <STDIN> );
@@ -863,6 +866,7 @@ sub export_correspondences {
     #
     print join("\n",
         'OK to export feature correspondences?',
+        '  Data source          : ' . $self->data_source, 
         "  Export Accession IDs : " . ( $export_corr_aid ? "Yes" : "No" ),
         "  Directory            : $dir",
         "[Y/n] "
@@ -983,13 +987,14 @@ sub import_correspondences {
 
     print join("\n",
         'OK to import?',
-        "  File      : $file",
+        '  Data source   : ' . $self->data_source, 
+        "  File          : $file",
     );
 
     if ( @map_sets ) {
         print join("\n", 
             '',
-            '  From map sets:', 
+            '  From map sets :', 
             map { "    $_" } map { join('-', $_->[1], $_->[2]) } @map_sets
         );
     }
@@ -1120,11 +1125,12 @@ sub import_data {
     #
     print join("\n",
         'OK to import?',
-        "  File      : $file",
-        "  Species   : $species",
-        "  Map Type  : $map_type",
-        "  Map Study : $map_set_name",
-        "  Overwrite : " . ( $overwrite ? "Yes" : "No" ),
+        '  Data source : ' . $self->data_source, 
+        "  File        : $file",
+        "  Species     : $species",
+        "  Map Type    : $map_type",
+        "  Map Study   : $map_set_name",
+        "  Overwrite   : " . ( $overwrite ? "Yes" : "No" ),
         "[Y/n] "
     );
     chomp( my $answer = <STDIN> );
@@ -1195,11 +1201,12 @@ sub make_name_correspondences {
     my @map_set_ids = map { $_->[0] } @map_sets;
 
     print "Make name-based correspondences\n",
-        "  Evidence type: $evidence_type";
+        '  Data source   : ' . $self->data_source, "\n",
+        "  Evidence type : $evidence_type";
     if ( @map_sets ) {
         print join("\n", 
             '',
-            '  From map sets:', 
+            '  From map sets :', 
             map { "    $_" } map { join('-', $_->[1], $_->[2]) } @map_sets
         );
     }
@@ -1225,7 +1232,8 @@ sub make_name_correspondences {
 sub reload_correspondence_matrix {
     my $self  = shift;
 
-    print "OK to truncate table and reload? [Y/n] ";
+    print "OK to truncate table in data source '", $self->data_source, 
+        "' and reload? [Y/n] ";
     chomp( my $answer = <STDIN> );
     return if $answer =~ m/^[Nn]/;
 
