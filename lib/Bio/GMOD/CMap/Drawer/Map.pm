@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.98 2004-06-24 20:43:16 mwz444 Exp $
+# $Id: Map.pm,v 1.99 2004-06-30 21:15:50 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.98 $)[-1];
+$VERSION = (qw$Revision: 1.99 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -644,8 +644,8 @@ Lays out the map.
         ###########################################
         my ( $min_x, $map_base_y, $area );
         (
-            $base_x, $min_x, $map_base_y, $area, $last_map_x, $last_map_y,
-            $pixel_height
+            $base_x, $min_x, $map_base_y,$top_y, $area, 
+            $last_map_x, $last_map_y, $pixel_height
           )
           = $self->layout_map_foundation(
             base_x          => $base_x,
@@ -1381,6 +1381,10 @@ sub layout_map_foundation {
     my $no_features          = $self->no_features($map_id);
     my $min_map_pixel_height = $drawer->config_data('min_map_pixel_height');
     my $scaled_map_pixel_height = $min_map_pixel_height;
+
+    #
+    # Set information used to scale.
+    #
     if ($drawer->{'data'}{'ref_unit_size'}{$self->map_units($map_id)}){
         $scaled_map_pixel_height
             = ($self->stop_position($map_id)-$self->start_position($map_id))
@@ -1392,6 +1396,30 @@ sub layout_map_foundation {
         $scaled_map_pixel_height = $max_map_pixel_height
             if ($scaled_map_pixel_height > $max_map_pixel_height);
     }
+    #
+    # Get the information about the reference map.
+    #
+    my ($ref_y1,$ref_y2);
+    my $ref_slot_no = $drawer->reference_slot_no($slot_no);
+    my $ref_corrs = $drawer->map_correspondences( $slot_no, $map_id );
+    for my $ref_corr ( values %$ref_corrs ) {
+        my $ref_pos =
+            $drawer->reference_map_y_coords( $ref_slot_no,
+            $ref_corr->{'ref_map_id'} );
+        $ref_y1 = $ref_pos->{'y1'} 
+            if (!defined($ref_y1) or $ref_y1>$ref_pos->{'y1'}); 
+        $ref_y2 = $ref_pos->{'y2'} 
+            if (!defined($ref_y2) or $ref_y2<$ref_pos->{'y2'}); 
+    }
+    #
+    # Set the boundaries for the top and the bottom that no
+    # map shall be allowed to cross.
+    #
+    my $boundary_factor=1;
+    my $top_boundary=$ref_y1 - (
+        ($ref_y2 - $ref_y1) * $boundary_factor);
+    my $bottom_boundary=$ref_y2 + (
+        ($ref_y2 - $ref_y1) * $boundary_factor);
 
     #
     #Decide the dimentions of a compressed map
@@ -1440,46 +1468,47 @@ sub layout_map_foundation {
         ];
     }
     elsif ($is_compressed) {
-        my $ref_slot_no = $drawer->reference_slot_no($slot_no);
         my $ref_corrs = $drawer->map_correspondences( $slot_no, $map_id );
         my ( $min_ref_y, $max_ref_y, @ref_connections, $ref_top, $ref_bottom );
         for my $ref_corr ( values %$ref_corrs ) {
+
             #
-            #Get the information about the reference map.
-            my $pos =
-              $drawer->reference_map_y_coords( $ref_slot_no,
+            # Get the information about the reference map.
+            #
+            my $ref_pos =
+                $drawer->reference_map_y_coords( $ref_slot_no,
                 $ref_corr->{'ref_map_id'} );
-            
-            my $ref_map_pixel_len = $pos->{'y2'} - $pos->{'y1'};
-            my $ref_map_unit_len  = $pos->{'map_stop'} - $pos->{'map_start'};
-            $ref_top    = $pos->{'y1'};
-            $ref_bottom = $pos->{'y2'};
+
+            my $ref_map_pixel_len = $ref_pos->{'y2'} - $ref_pos->{'y1'};
+            my $ref_map_unit_len  = $ref_pos->{'map_stop'} - $ref_pos->{'map_start'};
+            $ref_top    = $ref_pos->{'y1'};
+            $ref_bottom = $ref_pos->{'y2'};
 
             my $ref_map_y1 =
-              $pos->{'y1'} +
-              ( ( $ref_corr->{'min_start'} - $pos->{'map_start'} ) /
+              $ref_pos->{'y1'} +
+              ( ( $ref_corr->{'min_start'} - $ref_pos->{'map_start'} ) /
                   $ref_map_unit_len ) * $ref_map_pixel_len;
             my $ref_map_y2 =
-              $pos->{'y1'} +
-              ( ( $ref_corr->{'max_start'} - $pos->{'map_start'} ) /
+              $ref_pos->{'y1'} +
+              ( ( $ref_corr->{'max_start'} - $ref_pos->{'map_start'} ) /
                   $ref_map_unit_len ) * $ref_map_pixel_len;
             # Set the avg location of the corr on the ref map
             my $ref_map_mid_y =
-                $pos->{'y1'} +
-                (($ref_corr->{'avg_mid'} - $pos->{'map_start'} ) /
+                $ref_pos->{'y1'} +
+                (($ref_corr->{'avg_mid'} - $ref_pos->{'map_start'} ) /
                   $ref_map_unit_len ) * $ref_map_pixel_len;
 
             if (0){
                 # Single line to avg corr
                 push @ref_connections,
-                  [ $pos->{'x'}, $ref_map_mid_y, $ref_corr->{'no_corr'}, ];
+                  [ $ref_pos->{'x'}, $ref_map_mid_y, $ref_corr->{'no_corr'}, ];
             }
             else{
                 # V showing span of corrs
                 push @ref_connections,
-                  [ $pos->{'x'}, $ref_map_y1, $ref_corr->{'no_corr'}, ];
+                  [ $ref_pos->{'x'}, $ref_map_y1, $ref_corr->{'no_corr'}, ];
                 push @ref_connections,
-                  [ $pos->{'x'}, $ref_map_y2, $ref_corr->{'no_corr'}, ];
+                  [ $ref_pos->{'x'}, $ref_map_y2, $ref_corr->{'no_corr'}, ];
             }
 
           #
@@ -1564,6 +1593,30 @@ sub layout_map_foundation {
             $pixel_height = $scaled_map_pixel_height;
         }
     }
+
+    #
+    # enforce the boundaries
+    #
+    if (defined $ref_slot_no){
+        if ($map_base_y<$top_boundary){
+            $pixel_height -= ($top_boundary-$map_base_y); 
+            $map_base_y    = $top_boundary;
+            if ($area and scalar @$area){
+                if ($area->[1]<$top_boundary){
+                    $area->[1] = $top_boundary;
+                } 
+            }
+        }
+        if ($pixel_height+$map_base_y>$bottom_boundary){
+            $pixel_height=$bottom_boundary-$map_base_y;
+                if ($area and scalar @$area){
+                    if ($area->[3]>$bottom_boundary){
+                    $area->[1]     = $bottom_boundary;
+                    } 
+            } 
+        }
+    }
+
     $top_y = $map_base_y unless defined $top_y;
     $top_y = $map_base_y if $map_base_y < $top_y;
 
@@ -1602,8 +1655,8 @@ sub layout_map_foundation {
         $min_x = $f_x if ( ( not defined($min_x) ) or $f_x < $min_x );
     }
     
-    return ( $base_x, $min_x, $map_base_y, $area, $last_map_x, $last_map_y,
-        $pixel_height );
+    return ( $base_x, $min_x, $map_base_y, $top_y, $area, 
+        $last_map_x, $last_map_y, $pixel_height );
 
 }
 
@@ -1828,8 +1881,8 @@ sub add_feature_to_map {
             if ( not $self->feature_type_data( $feature->{'feature_type_aid'}, 
                 'glyph_overlap' )) {
                 $column_index = simple_column_distribution(
-                    low          => $y_pos1,
-                    high         => $y_pos2,
+                    low          => $y_pos1-$map_base_y,
+                    high         => $y_pos2-$map_base_y,,
                     columns      => $fcolumns,
                     map_height   => $pixel_height,
                     buffer       => $buffer,
