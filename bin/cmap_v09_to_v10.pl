@@ -98,6 +98,30 @@ for my $rem ( @$ms_remarks ) {
 }
 
 #
+# cmap_correspondence_evidence.remarks => cmap_attribute
+#
+my $ce_remarks = $db->selectall_arrayref(
+    q[
+        select correspondence_evidence_id, remark 
+        from   cmap_correspondence_evidence
+        where  remarks is not null
+    ],
+    { Columns => {} }
+);
+
+print "Converting correspondence evidence remarks (", 
+    scalar @$ce_remarks, ")\n";
+for my $rem ( @$ce_remarks ) {
+    $admin->set_attributes(
+        object_id  => $rem->{'correspondence_evidence_id'},
+        table_name => 'cmap_correspondence_evidence',
+        attributes => [ 
+            { name => 'Remarks', value => $rem->{'remark'}  } 
+        ],
+    ) or die $admin->error;
+}
+
+#
 # cmap_feature.alternate_name => cmap_feature_alias
 #
 my $features = $db->selectall_arrayref(
