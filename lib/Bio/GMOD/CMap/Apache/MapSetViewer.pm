@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapSetViewer;
 
-# $Id: MapSetViewer.pm,v 1.1 2002-08-23 16:07:18 kycl4rk Exp $
+# $Id: MapSetViewer.pm,v 1.2 2002-09-04 02:25:46 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Apache::Constants;
 
@@ -17,11 +17,11 @@ sub handler {
     #
     # Make a jazz noise here...
     #
-    my ( $self, $apr )   = @_;
-    my @map_set_aids     = split( /,/, $apr->param('map_set_aid') );
-    my $data             = Bio::GMOD::CMap::Data->new;
-    my $map_sets         = $data->map_set_viewer_data(
-        map_set_aids     => \@map_set_aids
+    my ( $self, $apr ) = @_;
+    my @map_set_aids   = split( /,/, $apr->param('map_set_aid') );
+    my $data           = $self->data_module;
+    my $map_sets       = $data->map_set_viewer_data(
+        map_set_aids   => \@map_set_aids
     );
 
     my $html;

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.4 2002-08-30 21:02:00 kycl4rk Exp $
+# $Id: Map.pm,v 1.5 2002-09-04 02:25:46 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -285,11 +285,7 @@ Returns all the features on the map (as objects).
     my $map    = $self->map( $map_id );
 
     unless ( defined $map->{'feature_store'} ) {
-        for my $data ( 
-            map   { @{ $map->{'features'}{ $_ } } } 
-            sort  { $a <=> $b }
-            keys %{ $map->{'features'} } 
-        ) {
+        for my $data ( @{ $map->{'features'} } ) {
             push @{ $map->{'feature_store'} }, 
                 Bio::GMOD::CMap::Drawer::Feature->new( 
                     map    => $self,
@@ -389,6 +385,7 @@ Lays out the map.
         # The map.
         #
         my $draw_sub_name = HOW_TO_DRAW->{ $self->how_to_draw( $map_id ) };
+#            || DEFAULT->{'map_shape'};
         if ( $is_relational && $slot_no != 0 ) {
             #
             # Relational maps are drawn to a size relative to the distance
@@ -458,30 +455,6 @@ Lays out the map.
             coords    => [ $base_x, $base_y, $base_y + $pixel_height ],
         );
 
-        if ( $is_relational && $slot_no != 0 ) {
-            my $slots = $drawer->slots;
-
-            my @maps;
-            for my $side ( qw[ left right ] ) {
-                my $no  = $side eq 'left' ? $slot_no - 1 : $slot_no + 1;
-                my $new_no  = $side eq 'left' ? -1 : 1;
-                my $map = $slots->{ $no } or next; 
-                push @maps,
-                    join('%3d', $new_no, map { $map->{$_} } qw[ field aid ] );
-            }
-
-            my $url = URLS->{'cmap_viewer'}.
-                '?ref_map_set_aid='.$self->map_set_aid( $map_id ).
-                ';ref_map_aid='.$self->accession_id( $map_id ).
-                ';comparative_maps='.join( ':', @maps );
-
-            $drawer->add_map_area(
-                coords => \@bounds,
-                url    => $url,
-                alt    => 'Details: '.$self->map_name,
-            );
-        }
-        
         if ( $show_ticks ) {
             #
             # Tick marks.
@@ -553,11 +526,12 @@ Lays out the map.
             my $has_corr   = $drawer->has_correspondence($feature->feature_id);
 
             #
-            # New idea: if the map isn't showing labeled features (e.g., 
-            # it's a relational map and hasn't been expanded), then let's
-            # leave off drawing features that don't have correspondences.
+            # If the map isn't showing labeled features (e.g., it's a
+            # relational map and hasn't been expanded), then leave off 
+            # drawing features that don't have correspondences.
             #
-            next if !$has_corr && !$show_labels;
+            next if $is_relational && $slot_no != 0 
+                && !$has_corr && !$show_labels;
 
             my $color      = $has_corr 
                 ? $self->config('feature_correspondence_color') ||
@@ -567,7 +541,7 @@ Lays out the map.
             my $tick_start = $base_x - $tick_overhang;
             my $tick_stop  = $base_x + $map_width + $tick_overhang;
             my $x_plane    =  $label_side eq RIGHT
-                ? $tick_stop  + 2 : $tick_start - 2;
+                ? $tick_stop + 2 : $tick_start - 2;
             my $label_y;
             my @coords;
 
@@ -652,8 +626,8 @@ Lays out the map.
 
                 $drawer->add_map_area(
                     coords => \@coords,
-                    url    => URLS->{'feature_details'}.
-                              $feature->accession_id,
+                    url    => $self->config('feature_details_url').
+                              "?feature_aid=$feature->accession_id",
                     alt    => 'Details: '.$feature->feature_name,
                 );
 
@@ -676,9 +650,6 @@ Lays out the map.
                     $direction = SOUTH;
                 }
 
-                my $debug        =  0;
-                warn "\n---------\n",$feature->feature_name,"\n---------\n"
-                    if $debug;
                 my $buffer = 2;
                 $label_y         = label_distribution(
                     rows         => \@rows,
@@ -688,7 +659,6 @@ Lays out the map.
                     can_skip     => $is_highlighted ? 0 : 1,
                     direction    => $direction,
                     buffer       => $buffer,
-                    debug        => $debug,
                 );
 
                 #
@@ -730,8 +700,8 @@ Lays out the map.
 
                     $drawer->add_map_area(
                         coords => \@bounds,
-                        url    => URLS->{'feature_details'}.
-                                  $feature->accession_id,
+                        url    => $self->config('feature_details_url').
+                                  "?feature_aid=$feature->accession_id",
                         alt    => 'Details: '.$feature->feature_name,
                     );
 
@@ -780,13 +750,71 @@ Lays out the map.
                 $drawer->register_feature_position(
                     feature_id => $feature->feature_id,
                     slot_no    => $slot_no,
+                    map_id     => $map_id,
                     left       => $left_connection,
                     right      => $right_connection,
                     tick_y     => $y_pos1,
+                    start      => $feature->start_position,
+                    stop       => $feature->stop_position,
                 );
             }
         }
 
+        #
+        # Make map clickable.
+        #
+#        if ( $is_relational && $slot_no != 0 ) {
+        if ( $slot_no != 0 ) {
+            my $slots = $drawer->slots;
+
+            my @maps;
+            for my $side ( qw[ left right ] ) {
+                my $no      = $side eq 'left' ? $slot_no - 1 : $slot_no + 1;
+                my $new_no  = $side eq 'left' ? -1 : 1;
+                my $map     = $slots->{ $no } or next; 
+                my $link    = 
+                    join( '%3d', $new_no, map { $map->{$_} } qw[ field aid ] );
+
+                if ( 
+                    my @ref_positions = sort { $a <=> $b }
+                    $drawer->feature_correspondence_map_positions(
+                        slot_no     => $slot_no,
+                        map_id      => $map_id,
+                        ref_slot_no => $no,
+                    )
+                ) {
+                    my $first = $ref_positions[0];
+                    my $last  = $ref_positions[-1];
+                    $link    .= "[$first,$last]";
+                }
+
+                push @maps, $link;
+            }
+
+            my $url = $self->config('relational_map_url').
+                '?ref_map_set_aid='.$self->map_set_aid( $map_id ).
+                ';ref_map_aid='.$self->accession_id( $map_id ).
+                ';comparative_maps='.join( ':', @maps );
+
+            $drawer->add_map_area(
+                coords => \@bounds,
+                url    => $url,
+                alt    => 'Details: '.$self->map_name,
+            );
+        }
+#        else {
+#            my $url = $self->config('cmap_viewer_url').
+#                '?ref_map_set_aid='.$self->map_set_aid( $map_id ).
+#                ';ref_map_aid='.$self->accession_id( $map_id ).
+#                ';comparative_maps='.join( ':', @maps );
+#
+#            $drawer->add_map_area(
+#                coords => \@bounds,
+#                url    => $url,
+#                alt    => 'Details: '.$self->map_name,
+#            );
+#        }
+        
         #
         # The map title.
         #

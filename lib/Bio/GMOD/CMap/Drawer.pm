@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.3 2002-08-30 02:49:55 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.4 2002-09-04 02:25:46 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
@@ -388,7 +388,8 @@ sub data {
 
 =head2 data
 
-Uses the Bio::GMOD::CMap::Data module to retreive the necessary data for drawing.
+Uses the Bio::GMOD::CMap::Data module to retreive the 
+necessary data for drawing.
 
 =cut
     my $self = shift;
@@ -459,15 +460,52 @@ to connect corresponding features on two maps.
 
     my @return = ();
     for my $f1 ( keys %{ $self->{'feature_position'}{ $slot_no } } ) {
-        my $f1_pos =
-            $self->{'feature_position'}{ $slot_no }{ $f1 }{ $cur_side };
+        my @f1_pos = @{
+            $self->{'feature_position'}{ $slot_no }{ $f1 }{ $cur_side }
+            || []
+        } or next;
 
         for my $f2 ( $self->feature_correspondences( $f1 ) ) {
             my @ref_pos = @{ 
                 $self->{'feature_position'}{ $ref_slot_no }{ $f2 }{ $ref_side } 
                 || []
             } or next;
-            push @return, [ @$f1_pos, @ref_pos ];
+            push @return, [ @f1_pos, @ref_pos ];
+        }
+    }
+
+    return @return;
+}
+
+# ----------------------------------------------------
+sub feature_correspondence_map_positions {
+
+=pod
+
+=head2 feature_correspondence_map_positions
+
+Accepts a map number and returns an array of arrayrefs denoting the 
+map positions (start, stop) in the reference slot to use when selecting a
+region of corresponding features.
+
+=cut
+    my ( $self, %args ) = @_;
+    my $slot_no         = $args{'slot_no'};
+    my $map_id          = $args{'map_id'};
+    my $ref_slot_no     = $args{'ref_slot_no'};
+#    warn "slot no = $slot_no, map_id = $map_id, ref slot no = $ref_slot_no\n";
+       $ref_slot_no     = $self->reference_slot_no( $slot_no ) 
+                          unless defined $ref_slot_no;
+
+    return unless defined $slot_no and defined $ref_slot_no;
+
+    my @return = ();
+    for my $f1 ( keys %{ $self->{'feature_position'}{ $slot_no } } ) {
+        next if defined $map_id && 
+            $self->{'feature_position'}{ $slot_no }{$f1}{'map_id'} != $map_id;
+        for my $f2 ( $self->feature_correspondences( $f1 ) ) {
+            push @return, 
+            $self->{'feature_position'}{ $ref_slot_no }{ $f2 }{'start'} || ();
         }
     }
 
@@ -973,6 +1011,9 @@ Remembers the feature position on a map.
         right  => $args{'right'},
         left   => $args{'left'},
         tick_y => $args{'tick_y'},
+        start  => $args{'start'},
+        stop   => $args{'stop'},
+        map_id => $args{'map_id'},
     };
 }
 
@@ -1008,14 +1049,14 @@ Returns the "tick_y" positions of the features IDs in a given slot.
 =cut
     my ( $self, %args ) = @_;
     my $slot_no         = $args{'slot_no'};
-    my @feature_ids     = @{ $args{'feature_ids'} };
+    my $feature_ids     = $args{'feature_ids'};
 
-    return unless defined $slot_no && @feature_ids;
+    return unless defined $slot_no && @$feature_ids;
 
-    push @feature_ids, $self->feature_correspondences( \@feature_ids );
+    push @$feature_ids, $self->feature_correspondences( $feature_ids );
 
     my @return = ();
-    for my $feature_id ( @feature_ids ) {
+    for my $feature_id ( @$feature_ids ) {
         push @return, 
             $self->{'feature_position'}{ $slot_no }{ $feature_id }{'tick_y'} 
             || ()

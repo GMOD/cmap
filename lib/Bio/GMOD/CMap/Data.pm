@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.4 2002-08-30 21:02:00 kycl4rk Exp $
+# $Id: Data.pm,v 1.5 2002-09-04 02:25:46 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -92,6 +92,7 @@ Organizes the data for drawing comparative maps.
 =cut
     my ( $self, %args )  = @_;
     my $slots            = $args{'slots'};
+#    warn "slots = ", Dumper( $slots ), "\n";
     my $include_features = $args{'include_features'} || '';
     my @slot_nos         = keys %$slots;
     my @pos              = sort { $a <=> $b } grep { $_ >= 0 } @slot_nos;
@@ -118,6 +119,7 @@ Organizes the data for drawing comparative maps.
 
     $data->{'correspondences'} = \%correspondences;
 
+#    warn "data = ", Dumper( $data ), "\n";
     return $data;
 }
 
@@ -313,18 +315,17 @@ Returns the data for drawing comparative maps.
         #
         # Get the reference map features.
         #
-        my $features = $db->selectall_arrayref(
-            $sql->cmap_data_features_sql(include_features=>$include_features),
+        $map_data->{'features'} = $db->selectall_arrayref(
+            $sql->cmap_data_features_sql,
             { Columns => {} },
             ( $map_id, $map_start, $map_stop )
         );
 
-        my %features;
-        for my $feature ( @$features ) {
-            push @{ $features{ $feature->{'start_position'} } }, $feature;
-        }
-
-        $map_data->{'features'} = \%features;
+#        my %features;
+#        for my $feature ( @$features ) {
+#            push @{ $features{ $feature->{'start_position'} } }, $feature;
+#        }
+#        $map_data->{'features'} = \%features;
 
         my $map_correspondences;
         if ( $ref_map_id ) {
@@ -373,7 +374,6 @@ Returns the data for drawing comparative maps.
         $maps->{ $map_id } = $map_data;
 #        warn "map data = ", Dumper( $map_data ), "\n";
     }
-
 
     return $maps;
 }
@@ -1631,6 +1631,113 @@ Optionally finds the lowest start for a given feature type. (enhancement)
         or $self->error(qq[Can't determine map start for id "$id"]);
 
     return $start;
+}
+
+# ----------------------------------------------------
+sub relational_map_data {
+
+=pod
+
+=head2 relational_map_data
+
+Returns the detail info for a relational map.
+
+=cut
+    my ( $self, %args ) = @_;
+    my $map             = $args{'map'};
+    my $highlight       = $args{'highlight'}   || '';
+    my $order_by        = $args{'order_by'}    || 'start_position';
+    my $restrict_by     = $args{'restrict_by'} || '';
+    my $db              = $self->db;
+    my $sql             = $self->sql;
+    my $map_id          = $self->acc_id_to_internal_id(
+        table           => 'cmap_map',
+        acc_id          => $map->{'aid'},
+    );
+    my $map_start       = $map->{'start'};
+    my $map_stop        = $map->{'stop'};
+
+    #
+    # Figure out hightlighted features.
+    #
+    my $highlight_hash = {
+        map  { s/^\s+|\s+$//g; ( uc $_, 1 ) } split( /,/, $highlight )
+    };
+
+    #
+    # Get the reference map features.
+    #
+    my $features = $db->selectall_arrayref(
+        $sql->cmap_data_features_sql( 
+            order_by    => $order_by,
+            restrict_by => $restrict_by,
+        ),
+        { Columns => {} },
+        ( $map_id, $map_start, $map_stop )
+    );
+
+    my $feature_types = $db->selectall_arrayref(
+        q[
+            select   distinct ft.accession_id as feature_type_aid,
+                     ft.feature_type
+            from     cmap_feature f,
+                     cmap_feature_type ft
+            where    f.map_id=?
+            and      f.start_position>=?
+            and      f.start_position<=?
+            and      f.feature_type_id=ft.feature_type_id
+            order by feature_type
+        ],
+        { Columns => {} },
+        ( $map_id, $map_start, $map_stop )
+    );
+
+    #
+    # Find every other map position for the features on this map.
+    #
+    for my $feature ( @$features ) {
+        my $positions = $db->selectall_arrayref(
+            q[
+                select   f.feature_id,
+                         f.accession_id,
+                         f.feature_name,
+                         f.alternate_name,
+                         f.is_landmark,
+                         f.start_position,
+                         f.stop_position,
+                         ft.feature_type,
+                         map.map_name,
+                         ms.short_name as map_set_name,
+                         s.common_name as species_name
+                from     cmap_feature_correspondence cl,
+                         cmap_feature f,
+                         cmap_feature_type ft,
+                         cmap_map map,
+                         cmap_map_set ms,
+                         cmap_species s
+                where    cl.feature_id1=?
+                and      cl.feature_id2=f.feature_id
+                and      f.feature_type_id=ft.feature_type_id
+                and      f.map_id=map.map_id
+                and      map.map_set_id=ms.map_set_id
+                and      ms.species_id=s.species_id
+            ],
+            { Columns => {} },
+            ( $feature->{'feature_id'} )
+        ); 
+
+        $feature->{'no_positions'}    = scalar @$positions;
+        $feature->{'positions'}       = $positions;
+        $feature->{'highlight_color'} = 
+            $highlight_hash->{ uc $feature->{'feature_name'} }
+            ? $self->config('feature_highlight_bg_color')
+            : '';
+    }
+
+    return {
+        features      => $features,
+        feature_types => $feature_types,
+    }
 }
 
 # ----------------------------------------------------

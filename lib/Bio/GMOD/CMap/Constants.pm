@@ -1,13 +1,13 @@
 package Bio::GMOD::CMap::Constants;
 
-# $Id: Constants.pm,v 1.6 2002-08-30 02:49:55 kycl4rk Exp $
+# $Id: Constants.pm,v 1.7 2002-09-04 02:25:46 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.6 $)[-1];
+$VERSION = (qw$Revision: 1.7 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -29,7 +29,6 @@ $VERSION = (qw$Revision: 1.6 $)[-1];
     SOUTH
     STRING
     STRING_UP
-    URLS
     VALID
 ];
 
@@ -248,6 +247,11 @@ use constant DEFAULT => {
     cache_dir => '/tmp/cmap_cache',
 
     #
+    # Where the main viewer is located.
+    #
+    cmap_viewer_url => '/cmap/viewer',
+
+    #
     # The color of the line connecting things.
     # Default: lightblue
     #
@@ -270,6 +274,11 @@ use constant DEFAULT => {
     # Default: black
     #
     feature_color => 'black',
+
+    #
+    # Where to see feature details.
+    #
+    feature_detail_url => '/cmap/feature',
 
     #
     # Color of box around a highlighted feature.
@@ -354,6 +363,11 @@ use constant DEFAULT => {
     min_map_pixel_height => 20,
 
     #
+    # How to draw a map.
+    #
+    map_shape => 'box',
+
+    #
     # The maximum number of features allowed on a map.
     # Set to "0" (or a negative number) or undefined to disable.
     # Default: 200
@@ -376,6 +390,11 @@ use constant DEFAULT => {
     # The module to dispatch to when no path is given to "/cmap."
     #
     path_info => 'index',
+
+    #
+    # Where to see more on a map type.
+    #
+    relational_map_url => '/cmap/relational_map',
 
     #
     # The HTML stylesheet.
@@ -415,27 +434,6 @@ use constant PREFERENCE_FIELDS => [ qw(
     image_type  
     include_features
 ) ];
-
-#
-# Some of these URL's are relative, some are absolute.
-#
-use constant BASE_URL => '/cmap';
-use constant URLS     => {
-    #
-    # Where the main viewer is located.
-    #
-    cmap_viewer => BASE_URL.'/viewer',
-
-    #
-    # Where to see feature details.
-    #
-    feature_details => BASE_URL.'/feature?feature_aid=',
-
-    #
-    # Where to see more on a map type.
-    #
-    relational_map_details => BASE_URL.'/relational_map?map_aid=',
-};
 
 #
 # A list of valid options.

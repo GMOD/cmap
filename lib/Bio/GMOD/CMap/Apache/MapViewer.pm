@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 
-# $Id: MapViewer.pm,v 1.4 2002-08-30 02:49:55 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.5 2002-09-04 02:25:46 kycl4rk Exp $
 
 use strict;
-use vars qw( $VERSION $TEMPLATE $PAGE $DEBUG );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+use vars qw( $VERSION $TEMPLATE $PAGE );
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Apache::Constants;
 use Apache::Request;
@@ -22,16 +22,6 @@ use constant TEMPLATE => 'cmap_viewer.tmpl';
 sub handler {
     my ( $self, $apr ) = @_;
 
-    #
-    # User Preferences.
-    #
-    my $preferences = $apr->pnotes('PREFERENCES') || {};
-    for my $field ( @{ +PREFERENCE_FIELDS } ) {
-        $apr->param( $field, $preferences->{ $field } );
-    }
-
-    my $html;
-
     my $prev_ref_map_set_aid  = $apr->param('prev_ref_map_set_aid')  ||  0;
     my $ref_map_set_aid       = $apr->param('ref_map_set_aid')       ||  0;
     my $ref_map_aid           = $apr->param('ref_map_aid')           ||  0;
@@ -42,9 +32,9 @@ sub handler {
     my $comparative_map_left  = $apr->param('comparative_map_left')  || '';
     my $highlight             = $apr->param('highlight')             || '';
     my $font_size             = $apr->param('font_size')             || '';
-    my $image_size            = $apr->param('image_size')            ||  0;
+    my $image_size            = $apr->param('image_size')            || '';
     my $image_type            = $apr->param('image_type')            || '';
-    my $include_features      = $apr->param('include_features')   || '';
+    my $include_features      = $apr->param('include_features')      || '';
 
     if ( 
         $prev_ref_map_set_aid && $prev_ref_map_set_aid != $ref_map_set_aid 
@@ -109,7 +99,7 @@ sub handler {
             image_size       => $image_size,
             image_type       => $image_type,
             include_features => $include_features,
-            debug            => $DEBUG,
+            debug            => $self->config('debug'),
         ) or return $self->error( "Drawer: ".Bio::GMOD::CMap::Drawer->error );
 
         %slots = %{ $drawer->slots };
@@ -140,6 +130,7 @@ sub handler {
         );
     }
 
+    my $html;
     my $t = $self->template or return $self->error( 'No template' );
     $t->process( 
         TEMPLATE, 

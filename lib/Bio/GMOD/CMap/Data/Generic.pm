@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data::Generic;
 
-# $Id: Generic.pm,v 1.2 2002-08-30 21:02:00 kycl4rk Exp $
+# $Id: Generic.pm,v 1.3 2002-09-04 02:25:46 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Bio::GMOD::CMap;
 use base 'Bio::GMOD::CMap';
@@ -67,33 +67,31 @@ sub cmap_data_features_sql {
 The SQL for finding all the features on a map.
 
 =cut
-    my ( $self, %args )  = @_;
-    my $include_features = $args{'include_features'} || '';
-
-    my $sql = q[
-        select f.feature_id,
-               f.accession_id,
-               f.feature_name,
-               f.alternate_name,
-               f.is_landmark,
-               f.start_position,
-               f.stop_position,
-               ft.feature_type,
-               ft.default_rank,
-               ft.is_visible,
-               ft.how_to_draw,
-               ft.color
-        from   cmap_feature f,
-               cmap_feature_type ft
-        where  f.map_id=?
-        and    f.feature_type_id=ft.feature_type_id
-        and    f.start_position>=?
-        and    f.start_position<=?
+    my ( $self, %args ) = @_;
+    my $order_by        = $args{'order_by'}    || 'start_position';
+    my $restrict_by     = $args{'restrict_by'} || '';
+    my $sql             = qq[
+        select   f.feature_id,
+                 f.accession_id,
+                 f.feature_name,
+                 f.alternate_name,
+                 f.is_landmark,
+                 f.start_position,
+                 f.stop_position,
+                 ft.feature_type,
+                 ft.default_rank,
+                 ft.is_visible,
+                 ft.how_to_draw,
+                 ft.color
+        from     cmap_feature f,
+                 cmap_feature_type ft
+        where    f.map_id=?
+        and      f.feature_type_id=ft.feature_type_id
+        and      f.start_position>=?
+        and      f.start_position<=?
     ];
-
-#    $sql .= 'and f.is_landmark=1' if $include_features eq 'landmarks';
-
-    return $sql;
+    $sql .= "and ft.accession_id='$restrict_by' " if $restrict_by;
+    $sql .= "order by $order_by"
 }
 
 # ----------------------------------------------------
