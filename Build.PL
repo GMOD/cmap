@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.14 2004-02-10 23:17:46 kycl4rk Exp $
+# $Id: Build.PL,v 1.15 2004-02-10 23:23:06 kycl4rk Exp $
 
 use strict;
 
@@ -33,11 +33,11 @@ my %ARGS = (
     },
     TEMPLATE_DIR => {
         desc     => 'Location for CMap HTML templates',
-        default  => 'templates',
+        default  => catdir( 'templates', 'cmap' ),
     },
     HTDOCS       => {
         desc     => 'Location for static files',
-        default  => 'htdocs',
+        default  => catdir( 'htdocs', 'cmap' ),
     },
 );
 
