@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.107 2004-08-20 15:41:13 mwz444 Exp $
+# $Id: Map.pm,v 1.108 2004-08-24 13:46:02 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.107 $)[-1];
+$VERSION = (qw$Revision: 1.108 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1503,7 +1503,9 @@ sub layout_map_foundation {
           unless defined $map_lane;
         $map_columns->[$map_lane] = $max_ref_y + $buffer;
 
-        $base_x = $original_base_x + ( $column_width * $map_lane );
+        $base_x = $label_side eq RIGHT
+            ? $original_base_x + ( $column_width * $map_lane )
+            : $original_base_x - ( $column_width * $map_lane );
         $area = [
             $base_x,                                   $min_ref_y,
             $base_x + $font_width * length($map_name), $max_ref_y,
