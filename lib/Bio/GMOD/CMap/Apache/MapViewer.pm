@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.82 2005-01-13 16:35:46 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.83 2005-01-19 19:22:52 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.82 $)[-1];
+$VERSION = (qw$Revision: 1.83 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -504,6 +504,7 @@ sub handler {
             feature_default_display => $feature_default_display,
             no_footer               => $path_info eq 'map_details' ? 1 : 0,
             prev_ref_map_order      => $self->ref_map_order(),
+            no_footer               => $path_info eq 'map_details' ? 1 : 0,
         },
         \$html
       )
@@ -577,11 +578,6 @@ sub handler {
             my $ref_map    = $drawer->{'data'}{'slots'}{'0'}{$ref_map_id};
             $apr->param( 'ref_map_start', $ref_map->{'start'} );
             $apr->param( 'ref_map_stop',  $ref_map->{'stop'} );
-            $apr->param( 'feature_types', join( ',', @feature_types ) );
-            $apr->param( 'evidence_types',
-                join( ',', @included_evidence_types ) );
-            $apr->param( 'highlight_uri',
-                uri_escape( $apr->param('highlight') ) );
 
             my $detail_html;
             my $t = $self->template;
