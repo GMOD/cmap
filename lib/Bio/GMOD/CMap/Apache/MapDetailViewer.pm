@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapDetailViewer;
 
-# $Id: MapDetailViewer.pm,v 1.15 2003-07-31 02:23:53 kycl4rk Exp $
+# $Id: MapDetailViewer.pm,v 1.16 2003-09-05 17:52:36 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES );
-$VERSION = (qw$Revision: 1.15 $)[-1];
+$VERSION = (qw$Revision: 1.16 $)[-1];
 
 use Apache::Constants;
 use URI::Escape;
@@ -134,6 +134,9 @@ sub handler {
         order_by               => $apr->param('order_by') || '',
         comparative_map_field  => $comparative_map_field  || '',
         comparative_map_aid    => $comparative_map_aid    || '',
+        page_size              => $PAGE_SIZE,
+        max_pages              => $MAX_PAGES,
+        page_no                => $page_no,
     ) or return $self->error( "Data: ".$data_module->error );
 
     if ( $action eq 'download' ) {
@@ -197,21 +200,13 @@ sub handler {
         $apr->param('evidence_types', join(',', @evidence_types ) );
         $apr->param('highlight_uri',  uri_escape( $apr->param('highlight') ) );
 
-        my $pager = Data::Pageset->new( {
-            total_entries    => scalar @{ $data->{'features'} },
-            entries_per_page => $PAGE_SIZE,
-            current_page     => $page_no,
-            pages_per_set    => $MAX_PAGES,
-        } );
-        $data->{'features'} = [ $pager->splice( $data->{'features'} ) ];
-
         my $html;
         my $t = $self->template;
         $t->process( 
             TEMPLATE, 
             { 
                 apr                   => $apr,
-                pager                 => $pager,
+                pager                 => $data->{'pager'},
                 feature_types         => $data->{'feature_types'},
                 evidence_types        => $data->{'evidence_types'},
                 reference_map         => $data->{'reference_map'},
