@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Utils;
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.25.2.5 2004-05-27 14:33:02 kycl4rk Exp $
+# $Id: Utils.pm,v 1.25.2.6 2004-05-27 21:33:25 mwz444 Exp $
 
 =head1 NAME
 
@@ -25,21 +25,25 @@ use strict;
 use Bit::Vector;
 use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
+use POSIX;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.25.2.5 $)[-1];
+$VERSION = (qw$Revision: 1.25.2.6 $)[-1];
 
 use base 'Exporter';
 
 my @subs   = qw[ 
-    column_distribution 
-    even_label_distribution 
+    column_distribution
+    column_distribution2 
     commify 
     extract_numbers 
+    even_label_distribution
     label_distribution 
     next_number 
     parse_words
     pk_name
+    fake_selectall_arrayref
+    sort_selectall_arrayref
 ];
 @EXPORT_OK = @subs;
 @EXPORT    = @subs;
@@ -151,6 +155,137 @@ Given a reference to some columns, figure out where something can be inserted.
 }
 
 # ----------------------------------------------------
+=pod
+
+=head2 column_distribution2
+
+Given a reference to some columns, figure out where something can be inserted.
+
+=cut
+sub column_distribution2 {
+
+    my %args        = @_;
+    my $columns     = $args{'columns'}     || []; # array reference
+    my $buffer      = $args{'buffer'}      ||  2; # space b/w things
+    my $collapse    = $args{'collapse'}    ||  0; # whether to collapse
+    my $collapse_on = $args{'collapse_on'} || ''; # on what type of object
+    my $col_span    = $args{'col_span'}    ||  1; # how many cols to occupy
+    my $top         = $args{'top'};               # the top and bottom of
+    my $bottom      = $args{'bottom'};            # the thing being inserted
+    my $bins        = $args{'bins'}        ||  1; # number of bins              
+    my $col_top     = $args{'col_top'}     ||  1; # top of the column     
+    my $col_bottom  = $args{'col_bottom'};        # top of the column
+  
+     $bottom         = $top unless defined $bottom;
+
+    return unless defined $top && defined $bottom && defined $col_bottom;
+
+    ###$columns is an array of columns.  Each column is has a hash of bins.
+    ###  Each bin is an array of object start and stops.
+    my $bin_factor  = ($col_bottom-$col_top)/$bins;
+    ###Define the bins that this object lies in. 
+    my $index_start = POSIX::ceil(($top-$col_top)/$bin_factor);      #first bin 
+    my $index_stop  = POSIX::ceil(($bottom-$col_top)/$bin_factor); #last bin
+  
+    ###When the top of the object is higher than the column, it results 
+    ###  in negative indices.  This fixes the problem by binning them
+    ###  all in the first bin. 
+    $index_start=0 if $index_start<0; 
+    $index_stop=0 if $index_stop<0;
+
+    my $column_index; # the number of the column chosen, is returned
+    if ( @$columns ) {
+        my $i = 0;
+        for ( ;; ) {
+            last if $i > $#{ $columns };
+	    my $ok        = 1;
+	    my $collapsed = 0;
+	  BIN:
+	    for (my $bin_no=$index_start; $bin_no<=$index_stop;$bin_no++){
+		my $bin    = $columns->[ $i ]->[$bin_no];
+		if ($bin){
+		    my @used      = sort { $a->[0] <=> $b->[0] } @{ $bin };
+		    
+		    for my $segment ( @used ) {
+			my ( $north, $south, $span, $type ) = @$segment; 
+			if ( 
+			     $collapse             && 
+			     $collapse_on eq $type && 
+			     $north == $top        && 
+			     $south == $bottom 
+			     ) {
+			    $ok = 1;
+			    $collapsed = 1;
+			    return $i;
+			    last BIN;
+			}
+			
+			next if $south + $buffer < $top;
+			next if $north - $buffer > $bottom;
+			$i += $span; # jump past the last taken column
+			$ok = 0, last;
+		    }
+		}
+		#
+		# If this column looks OK, see if there is clearance in the others.
+		#
+		if ( $ok && $col_span > 1 && $i < $#{ $columns } ) {
+		    for my $n ( $i + 1 .. $i + $col_span - 1 ) {
+			last if $n > $#{ $columns };
+			my $nbin  = $columns->[ $n ]->[$bin_no];
+			next unless $nbin;
+			my @nused = sort { $a->[0] <=> $b->[0] } @{ $nbin };
+			my $nok   = 1;
+
+			for my $nseg ( @nused ) {
+			    my ( $n, $s, $nspan ) = @$nseg; 
+			    next if $s + $buffer < $top;
+			    next if $n - $buffer > $bottom;
+			    $i += $nspan; # jump past the last taken column
+			    $ok = 0, last;
+			}
+		    }
+		}
+	    }
+            if ( $ok ) {
+                $column_index = $i;
+                unless ( $collapsed ) {
+                    for my $n ( 0 .. $col_span - 1 ) {
+			for (my $k=$index_start; $k<=$index_stop;$k++){
+			    push @{ $columns->[ $column_index + $n ]->[$k] }, 
+			    [$top, $bottom, $col_span - $n, $collapse_on ];
+			}
+                    }
+                }
+                last;
+            }
+        }
+
+        unless ( defined $column_index ) {
+            $column_index = $#{ $columns } + 1;
+            for my $n ( 0 .. $col_span - 1 ) {
+		for (my $k=$index_start; $k<=$index_stop;$k++){
+		    push @{ $columns->[ $column_index + $n ]->[$k] }, 
+		    [ $top, $bottom, $col_span - $n, $collapse_on];
+		}
+            }
+        }
+    }
+    else {
+        $column_index = 0;
+        for my $n ( 0 .. $col_span - 1 ) {
+	    for (my $k=$index_start; $k<=$index_stop;$k++){
+		push @{ $columns->[ $n ]->[$k] }, 
+		[ $top, $bottom, $col_span - $n, $collapse_on];
+	    }
+        }
+
+    }
+
+    return $column_index;
+}
+
+# ----------------------------------------------------
 sub next_number {
 
 =pod
@@ -177,6 +312,7 @@ database (that supports ANSI-SQL, that is).
     my $db         = $args{'db'}         or return;
     my $table_name = $args{'table_name'} or return;
     my $id_field   = $args{'id_field'}   || $table_name.'_id';
+    my $no_requested   = $args{'requested'}   || 1;
 
     my $next_number = $db->selectrow_array(
         q[
@@ -202,7 +338,7 @@ database (that supports ANSI-SQL, that is).
                 into   cmap_next_number ( table_name, next_number )
                 values ( ?, ? )
             ],
-            {}, ( $table_name, $next_number+1 )
+            {}, ( $table_name, $next_number+$no_requested )
         );
     }
     else {
@@ -212,7 +348,7 @@ database (that supports ANSI-SQL, that is).
                 set    next_number=?
                 where  table_name=?
             ],
-            {}, ( $next_number + 1, $table_name )
+            {}, ( $next_number+$no_requested, $table_name )
         );
     }
 
@@ -458,6 +594,7 @@ Special thanks to Noel Yap for suggesting this strategy.
     return \@accepted;
 }
 
+
 # ----------------------------------------------------
 sub label_distribution {
 
@@ -667,6 +804,66 @@ sub pk_name {
     $table_name    =~ s/^cmap_//;
     $table_name   .=  '_id';
     return $table_name;
+}
+
+# ----------------------------------------------------
+sub fake_selectall_arrayref {
+
+=pod
+
+=head2 fake_selectall_arrayref
+
+takes a hash of hashes and makes it look like return from 
+the DBI selectall_arrayref()
+
+=cut 
+
+    my $self    = shift;
+    my $hashref = shift;
+    my @columns = @_;
+    my $i       = 0;
+    my @return_array;
+    my %column_name;
+    foreach my $column (@columns){
+	if ($column=~/(\S+)\s+as\s+(\S+)/){
+	    $column=$1;
+            $column_name{$1}=$2;
+        }
+	else{
+            $column_name{$column}=$column;
+        }
+    }
+    for my $key ( keys(%$hashref) ) {
+        %{ $return_array[$i] } = map { 
+            $column_name{$_} => $hashref->{$key}->{$_} } @columns;
+        $i++;
+    }
+    @return_array =
+      sort { $a->{ $columns[0] } cmp $b->{ $columns[0] } } @return_array;
+    return \@return_array;
+}
+
+# ----------------------------------------------------
+=pod
+
+=head2 sort_selectall_arrayref
+
+
+=cut 
+
+sub sort_selectall_arrayref{
+    my $arrayref = shift;
+    my @columns  = @_;
+    my @return   = sort {
+        for ( my $i = 0 ; $i < $#columns ; $i++ ) {
+            if ( $a->{ $columns[$i] } cmp $b->{ $columns[$i] } ) {
+                return $a->{ $columns[$i] } cmp $b->{ $columns[$i] };
+            }
+        }
+        return $a->{ $columns[-1] } cmp $b->{ $columns[-1] };
+    } @$arrayref;
+
+    return \@return;
 }
 
 1;
