@@ -1,13 +1,13 @@
 package Bio::GMOD::CMap::Constants;
 
-# $Id: Constants.pm,v 1.13 2002-10-01 18:42:06 kycl4rk Exp $
+# $Id: Constants.pm,v 1.14 2002-12-06 01:43:39 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.13 $)[-1];
+$VERSION = (qw$Revision: 1.14 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -505,7 +505,7 @@ use constant VALID => {
         generic       => 'Bio::GMOD::CMap::Data::Generic',
         mysql         => 'Bio::GMOD::CMap::Data::MySQL',
         oracle        => 'Bio::GMOD::CMap::Data::Oracle',
-        #postgres     => 'Bio::GMOD::CMap::Data::Generic' or 'My::Postgres',
+#        pg            => 'Bio::GMOD::CMap::Data::Generic',
     },
 
     #

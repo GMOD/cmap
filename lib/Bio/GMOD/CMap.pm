@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap;
 
-# $Id: CMap.pm,v 1.17 2002-11-14 01:50:36 kycl4rk Exp $
+# $Id: CMap.pm,v 1.18 2002-12-06 01:43:39 kycl4rk Exp $
 
 =head1 NAME
 
@@ -105,11 +105,13 @@ Returns a database handle.  This is the only way into the database.
         my $options    = $config->{'options'}  || {};
 
         eval {
-            $self->{'db'} = 
-                DBI->connect( $datasource, $user, $password, $options );
-#                Bio::GMOD::CMap::DB->connect( 
-#                    $datasource, $user, $password, $options 
-#                );
+            $self->{'db'} = DBI->connect( 
+                $datasource, $user, $password, $options 
+            );
+
+#            Bio::GMOD::CMap::DB->connect( 
+#                $datasource, $user, $password, $options 
+#            );
         };
 
         if ( $@ || !defined $self->{'db'} ) {

@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 
-# $Id: MapViewer.pm,v 1.7 2002-10-03 05:37:33 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.8 2002-12-06 01:43:39 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $TEMPLATE $PAGE );
-$VERSION = (qw$Revision: 1.7 $)[-1];
+$VERSION = (qw$Revision: 1.8 $)[-1];
 
 use Apache::Constants;
 use Apache::Request;
@@ -124,7 +124,7 @@ sub handler {
     #
     # Get the data for the form.
     #
-    my $data = $self->data_module;
+    my $data      = $self->data_module;
     my $form_data = $data->cmap_form_data( slots => \%slots ) or 
         return $self->error( $data->error );
 

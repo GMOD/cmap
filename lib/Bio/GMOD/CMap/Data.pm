@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.19 2002-11-05 20:02:07 kycl4rk Exp $
+# $Id: Data.pm,v 1.20 2002-12-06 01:43:39 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.19 $)[-1];
+$VERSION = (qw$Revision: 1.20 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -134,8 +134,8 @@ Returns the data for drawing comparative maps.
 
 =cut
     my ( $self, %args )  = @_;
-    my $db               = $self->db or return;
-    my $sql              = $self->sql;
+    my $db               = $self->db  or return;
+    my $sql              = $self->sql or return;
 
     #
     # Get the arguments.
@@ -1010,8 +1010,8 @@ Returns the data for the main comparative map HTML form.
     my $ref_map_aid     = $ref_map->{'aid'}         || 0;
     my $ref_map_start   = $ref_map->{'start'};
     my $ref_map_stop    = $ref_map->{'stop'};
-    my $db              = $self->db or return;
-    my $sql             = $self->sql;
+    my $db              = $self->db  or return;
+    my $sql             = $self->sql or return;
 
     #
     # Select all the map set that can be reference maps.
@@ -1162,8 +1162,8 @@ out which maps have relationships.
 
     my $ref_map_start   = $args{'start'};
     my $ref_map_stop    = $args{'stop'};
-    my $db              = $self->db or return;
-    my $sql             = $self->sql;
+    my $db              = $self->db  or return;
+    my $sql             = $self->sql or return;
     
     #
     # Find the correspondences to other maps.
@@ -1307,9 +1307,10 @@ Turn a feature name into a position.
     my $feature_name    = $args{'feature_name'} or return;
     my $map_id          = $args{'map_id'}       or return;
     my $db              = $self->db             or return;
+    my $sql             = $self->sql            or return;
     my $upper_name      = uc $feature_name;
     my $position        = $db->selectrow_array(
-        $self->sql->feature_name_to_position_sql,
+        $sql->feature_name_to_position_sql,
         {},
         ( $upper_name, $upper_name, $map_id )
     ) || 0;
@@ -1328,8 +1329,8 @@ Gets the names, IDs, etc., of the maps in the slots.
 
 =cut
     my ( $self, $slots ) = @_;
-    my $db               = $self->db or return;
-    my $sql              = $self->sql;
+    my $db               = $self->db  or return;
+    my $sql              = $self->sql or return;
     my $map_sth          = $db->prepare( $sql->fill_out_maps_by_map_sql );
     my $map_set_sth      = $db->prepare( $sql->fill_out_maps_by_map_set_sql );
     my @ordered_slot_nos = sort { $a <=> $b } keys %$slots;
@@ -1390,8 +1391,8 @@ Given a feature acc. id, find out all the details on it.
 =cut
     my ( $self, %args ) = @_;
     my $feature_aid     = $args{'feature_aid'} or die 'No accession id';
-    my $db              = $self->db or return;
-    my $sql             = $self->sql;
+    my $db              = $self->db  or return;
+    my $sql             = $self->sql or return;
     my $sth             = $db->prepare( $sql->feature_detail_data_sql );
 
     $sth->execute( $feature_aid );
@@ -1506,8 +1507,8 @@ Given a list of feature names, find any maps they occur on.
         $args{'search_field'} || $self->config('feature_search_field');
        $search_field     = DEFAULT->{'feature_search_field'} 
         unless VALID->{'feature_search_field'}{ $search_field };
-    my $db               = $self->db or return;
-    my $sql              = $self->sql;
+    my $db               = $self->db  or return;
+    my $sql              = $self->sql or return;
 
     #
     # We'll get the feature ids first.  Use "like" in case they've
@@ -1715,15 +1716,14 @@ lowest stop for a given feature type. (enhancement)
 
 =cut
     my ( $self, %args ) = @_;
-#    my $feature_type_id = $args{'feature_type_id'} || 0;
-    my $map_aid         = $args{'map_aid'}         || 0;
-    my $map_id          = $args{'map_id'}          || 0;
-    my $id              = ( $map_aid || $map_id )
-        or $self->error("Not enough args to map_stop()");
-    
-    my $sql = $self->sql->map_stop_sql( %args );
+    my $db              = $self->db  or return;
+    my $sql_obj         = $self->sql or return;
+    my $map_aid         = $args{'map_aid'}        || 0;
+    my $map_id          = $args{'map_id'}         || 0;
+    my $id              = ( $map_aid || $map_id ) or return 
+                          $self->error( "Not enough args to map_stop()" );
+    my $sql             = $sql_obj->map_stop_sql( %args );
 
-    my $db               = $self->db or return;
     my ( $start, $stop ) = $db->selectrow_array( $sql, {}, ( $id ) )
         or $self->error(qq[Can't determine map stop for id "$id"]);
 
@@ -1742,15 +1742,16 @@ Optionally finds the lowest start for a given feature type. (enhancement)
 
 =cut
     my ( $self, %args ) = @_;
+    my $db              = $self->db  or return;
+    my $sql_obj         = $self->sql or return;
     my $map_aid         = $args{'map_aid'}         || 0;
     my $map_id          = $args{'map_id'}          || 0;
     my $id              = ( $map_aid || $map_id ) or return $self->error(
         "Not enough args to map_start()"
     );
-    my $sql             = $self->sql->map_start_sql( %args );
-    my $db              = $self->db or return;
-    defined (my $start = $db->selectrow_array( $sql, {}, ( $id ) ) )
-        or $self->error(qq[Can't determine map start for id "$id"]);
+    my $sql             = $sql_obj->map_start_sql( %args );
+    defined ( my $start = $db->selectrow_array( $sql, {}, ( $id ) ) )
+        or return $self->error( qq[Can't determine map start for id "$id"] );
 
     return $start;
 }
@@ -1771,8 +1772,8 @@ Returns the detail info for a map.
     my $order_by            = $args{'order_by'}            || 'start_position';
     my $restrict_by         = $args{'restrict_by'}         ||               '';
     my $comparative_map_aid = $args{'comparative_map_aid'} ||               '';
-    my $db                  = $self->db or return;
-    my $sql                 = $self->sql;
+    my $db                  = $self->db  or return;
+    my $sql                 = $self->sql or return;
     my $map_id              = $self->acc_id_to_internal_id(
         table               => 'cmap_map',
         acc_id              => $map->{'aid'},
@@ -1910,7 +1911,7 @@ Returns the correct SQL module driver for the RDBMS we're using.
         my $db         = $self->db or return;
         $db_driver     = lc $db->{'Driver'}->{'Name'} || '';
         $db_driver     = DEFAULT->{'sql_driver_module'}
-            unless exists VALID->{'sql_driver_module'};
+                         unless VALID->{'sql_driver_module'}{ $db_driver };
         my $sql_module = VALID->{'sql_driver_module'}{ $db_driver };
 
         eval "require $sql_module" or return $self->error(
@@ -1942,8 +1943,8 @@ MAX_FEATURE_COUNT to zero or undefined to disable this.
     my $stop            = $args{'stop'}  =~ NUMBER_RE ? $args{'stop'}  : $end;
     my $max_fcount      = $self->config('max_feature_count') || 0;
     return ( $start, $stop ) unless $max_fcount > 0;
-    my $db              = $self->db or return;
-    my $sql             = $self->sql;
+    my $db              = $self->db  or return;
+    my $sql             = $self->sql or return;
     my $minimum_trunc   = 1.01;
     my $minimum_augment = ( 1.01 * ( $end - $begin ) ) || 1;
 
