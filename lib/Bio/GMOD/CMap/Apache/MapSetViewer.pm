@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapSetViewer;
 # vim: set ft=perl:
 
-# $Id: MapSetViewer.pm,v 1.17 2004-06-22 03:05:35 mwz444 Exp $
+# $Id: MapSetViewer.pm,v 1.18 2005-03-04 20:52:24 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.17 $)[-1];
+$VERSION = (qw$Revision: 1.18 $)[-1];
 
 use Data::Pageset;
 use Bio::GMOD::CMap::Apache;
@@ -43,6 +43,10 @@ sub handler {
         pages_per_set    => $MAX_PAGES,
     } );
     $map_sets = [ $pager->splice( $map_sets ) ] if @$map_sets;
+
+    for my $ms ( @$map_sets ) {
+        $self->object_plugin( 'map_set_info', $ms );
+    }
 
     my $title = '';
     if ( scalar @$map_sets == 1 ) {

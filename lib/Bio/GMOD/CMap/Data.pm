@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.212 2005-03-03 19:30:53 mwz444 Exp $
+# $Id: Data.pm,v 1.213 2005-03-04 20:52:22 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.212 $)[-1];
+$VERSION = (qw$Revision: 1.213 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -882,7 +882,7 @@ sub slot_data {
             $map->{'start_position'} = $map_start if defined($map_start);
             $map->{'stop_position'}  = $map_stop  if defined($map_stop);
             $map->{'no_correspondences'} = $corr_lookup{ $map->{'map_id'} };
-            if (   $min_correspondences
+            if ( $min_correspondences
                 && defined $ref_slot_no
                 && $map->{'no_correspondences'} < $min_correspondences )
             {
@@ -1152,7 +1152,7 @@ sub slot_data {
             $map->{'start_position'} = $map_start if defined($map_start);
             $map->{'stop_position'}  = $map_stop  if defined($map_stop);
             $map->{'no_correspondences'} = $corr_lookup{ $map->{'map_id'} };
-            if (   $min_correspondences
+            if ( $min_correspondences
                 && defined $ref_slot_no
                 && $map->{'no_correspondences'} < $min_correspondences )
             {
@@ -1350,8 +1350,6 @@ sub get_feature_correspondences {
     }
 
 #xx1
-print STDERR Dumper($evidence_type_score)." xx1\n";
-print STDERR Dumper($less_evidence_type_aids)." xx1\n";
     if ( @$included_evidence_type_aids or @$less_evidence_type_aids
             or @$greater_evidence_type_aids ) {
         $corr_sql .= "and ( ";
@@ -1383,7 +1381,6 @@ print STDERR Dumper($less_evidence_type_aids)." xx1\n";
           . join( "','", @$feature_type_aids ) . "')";
     }
 
-print STDERR "XX1 $corr_sql $map_id \n";
     my $ref_correspondences;
     unless ( $ref_correspondences =
         $self->get_cached_results( 4, $corr_sql . $map_id ) )
@@ -1480,8 +1477,6 @@ sub get_intraslot_correspondences {
     $corr_sql .= ' and cl.map_id1 < cl.map_id2 ';
 
 #xx2
-print STDERR Dumper($evidence_type_score)." xx2\n";
-print STDERR Dumper($less_evidence_type_aids)." xx2\n";
     if ( @$included_evidence_type_aids or @$less_evidence_type_aids
             or @$greater_evidence_type_aids ) {
         $corr_sql .= "and ( ";
@@ -2184,18 +2179,18 @@ sub cmap_form_data {
     #p#rint S#TDERR "cmap_form_data\n";
     my ( $self, %args ) = @_;
     my $slots = $args{'slots'} or return;
-    my $min_correspondences = $args{'min_correspondences'}    || 0;
-    my $feature_type_aids   = $args{'included_feature_types'} || [];
-    my $ignored_feature_type_aids = $args{'ignored_feature_types'} || [];
+    my $min_correspondences         = $args{'min_correspondences'}     || 0;
+    my $feature_type_aids           = $args{'included_feature_types'}  || [];
+    my $ignored_feature_type_aids   = $args{'ignored_feature_types'}   || [];
     my $included_evidence_type_aids = $args{'included_evidence_types'} || [];
-    my $ignored_evidence_type_aids = $args{'ignored_evidence_types'} || [];
-    my $less_evidence_type_aids = $args{'less_evidence_types'} || [];
-    my $greater_evidence_type_aids = $args{'greater_evidence_types'} || [];
-    my $evidence_type_score = $args{'evidence_type_score'} || {};
-    my $ref_species_aid = $args{'ref_species_aid'} || '';
-    my $ref_slot_data   = $args{'ref_slot_data'}   || {};
-    my $ref_map         = $slots->{0};
-    my $ref_map_set_aid = $args{'ref_map_set_aid'} || 0;
+    my $ignored_evidence_type_aids  = $args{'ignored_evidence_types'}  || [];
+    my $less_evidence_type_aids     = $args{'less_evidence_types'} || [];
+    my $greater_evidence_type_aids  = $args{'greater_evidence_types'} || [];
+    my $evidence_type_score         = $args{'evidence_type_score'} || {};
+    my $ref_species_aid             = $args{'ref_species_aid'} || '';
+    my $ref_slot_data               = $args{'ref_slot_data'}   || {};
+    my $ref_map                     = $slots->{0};
+    my $ref_map_set_aid             = $args{'ref_map_set_aid'} || 0;
     my $db  = $self->db  or return;
     my $sql = $self->sql or return;
     my $map_type_data = $self->map_type_data();
@@ -2525,8 +2520,6 @@ out which maps have relationships.
     my $additional_where  = '';
     my $additional_tables = '';
 #xx3
-print STDERR Dumper($evidence_type_score)." xx3\n";
-print STDERR Dumper($less_evidence_type_aids)." xx3\n";
     if ( @$included_evidence_type_aids or @$less_evidence_type_aids
             or @$greater_evidence_type_aids ) {
         $additional_tables = ', cmap_correspondence_evidence ce';
@@ -2578,7 +2571,6 @@ print STDERR Dumper($less_evidence_type_aids)." xx3\n";
     ];
 
     $corr_sql .= " group by cl.map_id2, map.map_set_id";
-print STDERR "XX3 Corr_SQL $corr_sql\n";
 
     my $feature_correspondences;
     unless ( $feature_correspondences =
@@ -4085,10 +4077,6 @@ Returns the detail info for a map.
           };
     }
 
-    #
-    # Delete anything from the cache.
-    #
-
     return {
         features              => $features,
         feature_count_by_type => $feature_count_by_type,
@@ -4400,8 +4388,6 @@ sub count_correspondences {
 #  at this point.  If it is empty, either all are ignored or something is wrong.
 #  In the case where all are ignored, the sql is forced to return nothing.
 #xx4
-print STDERR Dumper($evidence_type_score)." xx4\n";
-print STDERR Dumper($less_evidence_type_aids)." xx4\n";
     my $where = '';
     if ( @$included_evidence_type_aids or @$less_evidence_type_aids
             or @$greater_evidence_type_aids ) {
@@ -4428,7 +4414,6 @@ print STDERR Dumper($less_evidence_type_aids)." xx4\n";
         $where .= " and ce.correspondence_evidence_id = -1 ";
     }
 
-print STDERR "XX4 Where $where\n";
     my ( $count_sql, $position_sql, @query_args );
     if ( defined $ref_slot_no or $show_intraslot_corr ) {
         my $base_sql;
@@ -4627,7 +4612,6 @@ print STDERR "XX4 Where $where\n";
         $count_sql = sprintf( $base_sql, $select_str );
     }
 
-print STDERR "$count_sql\n";
     my %map_id_lookup = map { $_->{'map_id'}, 1 } @$maps;
     my %corr_lookup;
     if ($count_sql) {
@@ -5963,8 +5947,6 @@ original start and stop.
                   . join( "','", @$ignored_feature_list ) . "') ";
             }
 #xx5
-print STDERR Dumper($evidence_type_score)." xx5\n";
-print STDERR Dumper($less_evidence_type_aids)." xx5\n";
             if ( @$included_evidence_type_aids or @$less_evidence_type_aids
                     or @$greater_evidence_type_aids ) {
                 $from  .= ", cmap_correspondence_evidence ce ";
