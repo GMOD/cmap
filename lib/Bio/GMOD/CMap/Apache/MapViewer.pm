@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.91 2005-03-17 15:14:35 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.92 2005-03-23 20:13:13 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.91 $)[-1];
+$VERSION = (qw$Revision: 1.92 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -98,7 +98,7 @@ sub handler {
         $path_info =~ s{^/(cmap/)?}{};    # kill superfluous stuff
     }
 
-    $collapse_features = $self->config_data('collapse_overlapping_features')
+    $collapse_features = $self->config_data('collapse_features')
       unless ( defined($collapse_features) );
     # reset the params only if you want the code to be able to change them.
     # otherwise, simply initialize the avalue.
