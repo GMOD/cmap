@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.75 2004-08-17 05:27:41 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.76 2004-08-19 05:38:47 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.75 $)[-1];
+$VERSION = (qw$Revision: 1.76 $)[-1];
 
 #
 # Get command-line options
@@ -2131,12 +2131,42 @@ sub purge_query_cache {
 
     my $self  = shift;
 
+    my $cache_level=$self->show_menu(
+        title   => '  --= Cache Level =--  ',
+        prompt  => 'At which cache level would you like to start the purging?\n(The purges cascade down. ie selecting level 3 removes 3 and 4):',
+        display => 'display',
+        return  => 'level',
+        data    => [
+            { 
+                level  => 1, 
+                display => 'Cache Level 1 (purge all)',
+            },
+            { 
+                level  => 2, 
+                display => 'Cache Level 2',
+            },
+            { 
+                level  => 3, 
+                display => 'Cache Level 3',
+            },
+            { 
+                level  => 4, 
+                display => 'Cache Level 4',
+            },
+            { 
+                level  => 0, 
+                display => 'quit',
+            },
+        ],
+    );
+    return unless $cache_level;
+
     my $admin = Bio::GMOD::CMap::Admin->new(
 	    config      => $self->config,
         data_source => $self->data_source,
     );
     print "Purging cache\n";
-    $admin->purge_cache();
+    $admin->purge_cache($cache_level);
     print "Cache Purged\n\n"
 
 }
