@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.36 2003-05-22 16:51:43 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.37 2003-05-22 16:56:24 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.36 $)[-1];
+$VERSION = (qw$Revision: 1.37 $)[-1];
 
 #
 # Get command-line options
@@ -589,11 +589,11 @@ sub delete_map_set {
     #
     # Get the map set.
     #
-    my ( $map_set_id, $species_name, $map_set_name ) = $self->show_menu(
+    my ( $map_set_id, $map_set_name ) = $self->show_menu(
         title       => 'Choose Map Set',
         prompt      => "Please select a map set (for $map_type, $common_name)",
         display     => 'map_set_name',
-        return      => 'map_set_id,species_name,map_set_name',
+        return      => 'map_set_id,map_set_name',
         allow_null  => 0,
         allow_mult  => 0,
         data        => $db->selectall_arrayref(
@@ -646,7 +646,7 @@ sub delete_map_set {
         map { $_ || () }
         'OK to delete?',
         '  Data source : ' . $self->data_source, 
-        '  Map Set     : ' . $species_name.'-'.$map_set_name,
+        '  Map Set     : ' . $common_name.'-'.$map_set_name,
         ( @{ $map_names || [] }
             ? '  Maps        : ' . join(', ', @$map_names)
             : ''
@@ -667,7 +667,7 @@ sub delete_map_set {
         }
     }
     else {
-        print $log_fh "Deleting map set '$species_name-$map_set_name.'\n";
+        print $log_fh "Deleting map set '$common_name-$map_set_name.'\n";
         $admin->map_set_delete( map_set_id => $map_set_id )
             or return $self->error( $admin->error );
     }
