@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: cmap_typetables_to_config.pl,v 1.4 2004-04-14 13:39:50 mwz444 Exp $
+# $Id: cmap_typetables_to_config.pl,v 1.5 2004-08-20 20:40:54 mwz444 Exp $
 
 =head1 NAME
 
@@ -73,6 +73,11 @@ while (  my $row = $sth->fetchrow_hashref ) {
     print $row->{'drawing_lane'} if $row->{'drawing_lane'};
     print "\ndrawing_priority ";
     print $row->{'drawing_priority'} if $row->{'drawing_priority'};
+    print "\n".q[area_code <<EOF
+$code=sprintf("onMouseOver=\"window.status='%s';return true\"",$feature->{'feature_name'});
+EOF];
+    print "\nrequired_page_code ";
+    print "\nextra_forms ";
     print "\n</feature_type>\n\n";
 }
 ###Get evidence types
@@ -110,5 +115,10 @@ while (  my $row = $sth->fetchrow_hashref ) {
     print $row->{'line_color'} if $row->{'line_color'};
     print "\ndisplay_order ";
     print $row->{'display_order'} if $row->{'display_order'};
+    print "\n".q[area_code <<EOF
+$code=sprintf("onMouseOver=\"window.status='%s';return true\"",$map->{'map_name'});
+EOF];
+    print "\nrequired_page_code ";
+    print "\nextra_forms ";
     print "\n</map_type>\n\n";
 }
