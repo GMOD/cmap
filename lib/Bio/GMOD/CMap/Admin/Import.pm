@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.14 2003-02-14 01:25:36 kycl4rk Exp $
+# $Id: Import.pm,v 1.15 2003-02-19 20:17:47 kycl4rk Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.14 $)[-1];
+$VERSION  = (qw$Revision: 1.15 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -37,7 +37,7 @@ use Bio::GMOD::CMap::Utils 'next_number';
 use base 'Bio::GMOD::CMap';
 
 use constant FIELD_SEP => "\t"; # use tabs for field separator
-use constant STRING_RE => qr{^[\w\s.()-]+$};
+use constant STRING_RE => qr{\S+};    #; qr{^[\w\s.()/-]+$};
 use constant RE_LOOKUP => {
     string => STRING_RE,
     number => NUMBER_RE,
@@ -201,21 +201,27 @@ added.
             my $field_name =  $columns_present[ $i ]  or next;
             my $field_attr =  $COLUMNS{ $field_name } or next;
             my $field_val  =  $fields[ $i ];
-               $field_val  =~ s/^\s+|\s+$//g; # remove leading/trailing space
+               $field_val  =~ s/^\s+|\s+$//g # remove leading/trailing space
+                    if defined $field_val && $field_val =~ /\s/;
 
-            if ( $field_attr->{'is_required'} && !defined $field_val ) {
+            if ( 
+                $field_attr->{'is_required'} && 
+                ( !defined $field_val || $field_val eq '' )
+            ) {
                 return $self->error("Field '$field_name' is required");
             }
 
-            if ( my $datatype = $field_attr->{'datatype'} && 
-                 defined $field_val 
-            ) {
+            my $datatype = $field_attr->{'datatype'} || '';
+            if ( $datatype && defined $field_val && $field_val ne '' ) {
                 if ( my $regex = RE_LOOKUP->{ $datatype } ) {
                     return $self->error(
-                        "Value of '$field_name'  is wrong.  " .
+                        "Value of '$field_name' is wrong.  " .
                         "Expected $datatype and got '$field_val'."
                     ) unless $field_val =~ $regex;
                 }
+            }
+            elsif ( $datatype eq 'number' && $field_val eq '' ) {
+                $field_val = undef;
             }
 
             $record{ $field_name } = $field_val;
@@ -392,17 +398,6 @@ added.
                 ( $accession_id )
             );
         }
-
-        #
-        # Look it up.
-        #
-#        unless ( $feature_id ) {
-#            $feature_id = 
-#                exists $maps{uc $map_name}{'features'}{uc $feature_name} ?
-#                $maps{uc $map_name}{'features'}{uc $feature_name}{'feature_id'}
-#                : 0
-#            ;
-#        }
 
         #
         # Just see if another identical record exists.
