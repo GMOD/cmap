@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.41 2003-12-30 18:44:59 kycl4rk Exp $
+# $Id: Admin.pm,v 1.42 2003-12-31 22:21:11 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.41 $)[-1];
+$VERSION = (qw$Revision: 1.42 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -33,6 +33,7 @@ use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils qw[ next_number parse_words ];
 use base 'Bio::GMOD::CMap';
 use Bio::GMOD::CMap::Constants;
+use Regexp::Common;
 
 # ----------------------------------------------------
 sub attribute_delete {
@@ -140,7 +141,10 @@ sub evidence_type_create {
     my $line_color      = $args{'line_color'} || '';
 
     if ( @missing ) {
-        return $self->error('Missing required fields: ', join(', ', @missing));
+        return $self->error(
+            'Evidence type create failed.  Missing required fields: ', 
+            join(', ', @missing)
+        );
     }
     my $evidence_id     = next_number(
         db              => $db, 
@@ -229,7 +233,7 @@ sub feature_create {
     my $feature_type_id = $args{'feature_type_id'} 
                           or push @missing, 'feature_type_id';
     my $start_position  = $args{'start_position'};
-    push @missing, 'No start' unless $start_position =~ NUMBER_RE;
+    push @missing, 'start' unless $start_position =~ $RE{'num'}{'real'};
     my $stop_position   = $args{'stop_position'};
     my $is_landmark     = $args{'is_landmark'} || 0;
     my $db              = $self->db or return $self->error;
@@ -241,7 +245,10 @@ sub feature_create {
     my $accession_id    = $args{'accession_id'} || $feature_id;
 
     if ( @missing ) {
-        return $self->error('Missing required fields: ', join(', ', @missing));
+        return $self->error(
+            'Feature create failed.  Missing required fields: ', 
+            join(', ', @missing)
+        );
     }
 
     my @insert_args = ( 
@@ -250,7 +257,7 @@ sub feature_create {
     );
 
     my $stop_placeholder; 
-    if ( defined $stop_position && $stop_position =~ NUMBER_RE ) {
+    if ( defined $stop_position && $stop_position =~ $RE{'num'}{'real'} ) {
         $stop_placeholder = '?';
         push @insert_args, $stop_position;
     }
@@ -558,7 +565,7 @@ Inserts a correspondence.  Returns -1 if there is nothing to do.
     # evidence arrayref (of hashrefs).
     #
     if ( $evidence_type_id ) {
-        push @{ $evidence || [] }, {
+        push @$evidence, {
             evidence_type_id => $evidence_type_id
         };
     }
@@ -700,7 +707,10 @@ sub feature_type_create {
     my $shape           = $args{'shape'}        or push @missing, 'shape';
 
     if ( @missing ) {
-        return $self->error('Missing required fields: ', join(', ', @missing));
+        return $self->error(
+            'Feature type create failed.  Missing required fields: ', 
+            join(', ', @missing)
+        );
     }
 
     my $color            = $args{'color'}            || '';
@@ -1088,7 +1098,10 @@ sub map_create {
         defined $stop_position && $stop_position ne '';
 
     if ( @missing ) {
-        return $self->error('Missing required fields: ', join(', ', @missing));
+        return $self->error(
+            'Map create failed.  Missing required fields: ', 
+            join(', ', @missing)
+        );
     }
 
     unless ( $start_position =~ NUMBER_RE ) {
@@ -1201,7 +1214,10 @@ sub map_set_create {
     my $published_on         = $args{'published_on'}    || 'today';
 
     if ( @missing ) {
-        return $self->error('Missing required fields: ', join(', ', @missing));
+        return $self->error(
+            'Map set create failed.  Missing required fields: ', 
+            join(', ', @missing)
+        );
     }
 
     if ( $published_on ) {
@@ -1292,7 +1308,10 @@ sub map_type_create {
     my $shape           = $args{'shape'}     or push @missing, 'shape';
 
     if ( @missing ) {
-        return $self->error('Missing required fields: ', join(', ', @missing));
+        return $self->error(
+            'Map type create failed.  Missing required fields: ', 
+            join(', ', @missing)
+        );
     }
 
     my $width             = $args{'width'}             || '';
@@ -1892,7 +1911,10 @@ sub species_create {
     my $full_name       = $args{'full_name'}   or
                           push @missing, 'full name';
     if ( @missing ) {
-        return $self->error('Missing required fields: ', join(', ', @missing));
+        return $self->error(
+            'Species create failed.  Missing required fields: ', 
+            join(', ', @missing)
+        );
     }
 
     my $display_order   = $args{'display_order'} || 1;
@@ -1977,9 +1999,17 @@ sub xref_create {
     my @missing         = ();
     my $object_id       = $args{'object_id'}  || 0;
     my $table_name      = $args{'table_name'} or
-                          push @missing, 'database object (table name0';
+                          push @missing, 'database object (table name)';
     my $name            = $args{'xref_name'}  or push @missing, 'xref name';
     my $url             = $args{'xref_url'}   or push @missing, 'xref URL';
+
+    if ( @missing ) {
+        return $self->error(
+            'Cross-reference create failed.  Missing required fields: ', 
+            join(', ', @missing)
+        );
+    }
+
     my $display_order   = $args{'display_order'};
     my $xref_id         = $self->set_xrefs(
         object_id       => $object_id,
