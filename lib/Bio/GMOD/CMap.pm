@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap;
 
-# $Id: CMap.pm,v 1.19 2002-12-17 15:54:25 kycl4rk Exp $
+# $Id: CMap.pm,v 1.20 2003-01-01 02:16:18 kycl4rk Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ itself based on Andy Wardley's Class::Base module.
 
 use strict;
 use vars '$VERSION';
-$VERSION = 0.05;
+$VERSION = 0.06;
 
 use Class::Base;
 use Config::General;
@@ -141,6 +141,21 @@ Returns a handle to the data module.
     }
 
     return $self->{'data_module'};
+}
+
+# ----------------------------------------------------
+sub DESTROY {
+
+=pod
+
+=head2 DESTROY
+
+Object clean-up when destroyed by Perl.
+
+=cut
+    my $self = shift;
+    $self->db->disconnect if defined $self->{'db'};
+    return 1;
 }
 
 ## ----------------------------------------------------
