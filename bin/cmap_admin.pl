@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.16 2003-01-31 19:28:21 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.17 2003-02-13 00:40:40 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.16 $)[-1];
+$VERSION = (qw$Revision: 1.17 $)[-1];
 
 #
 # Turn off output buffering.
@@ -614,6 +614,8 @@ sub export_as_text {
         feature_start
         feature_stop
         feature_type
+        feature_dbxref_name
+        feature_dbxref_url
     );
     
     my @map_set_ids = $self->show_menu(
@@ -744,15 +746,20 @@ sub export_as_text {
     my $excluded_fields = 
         @exclude_fields ? join(', ', @exclude_fields) : 'None';
 
+    print "Include feature correspondences? [Y/n] ";
+    chomp( my $export_corr = <STDIN> );
+    $export_corr = ( $export_corr =~ /^[Nn]/ ) ? 0 : 1;
+
     #
     # Confirm decisions.
     #
     print join("\n",
         'OK to export?',
-        '  Map Sets       : ' . join(', ', @map_set_names),
-        '  Feature Types  : ' . join(', ', @$feature_types),
-        "  Exclude Fields : $excluded_fields",
-        "  Directory      : $dir",
+        '  Map Sets               : ' . join(', ', @map_set_names),
+        '  Feature Types          : ' . join(', ', @$feature_types),
+        "  Exclude Fields         : $excluded_fields",
+        "  Export Correspondences : " . $export_corr ? "Yes" : "No",
+        "  Directory              : $dir",
         "[Y/n] "
     );
     chomp( my $answer = <STDIN> );
@@ -793,6 +800,8 @@ sub export_as_text {
                              f.alternate_name as feature_alt_name,
                              f.start_position as feature_start,
                              f.stop_position as feature_stop,
+                             f.dbxref_name as feature_dbxref_name,
+                             f.dbxref_url as feature_dbxref_url,
                              ft.feature_type,
                              map.map_name, 
                              map.accession_id as map_accession_id,
@@ -823,6 +832,56 @@ sub export_as_text {
         }
         
         close $fh;
+    }
+
+    #
+    # Feature correspondences.
+    #
+    if ( $export_corr ) {
+        my $corr_file = "$dir/feature_correspondences.dat";
+        open my $fh, ">$corr_file" or die "Can't write to $corr_file: $!\n";
+        print $log_fh "Dumping feature correspondences to '$corr_file'\n";
+        my $sth = $db->prepare(
+            q[
+                select fc.feature_correspondence_id,
+                       fc.is_enabled,
+                       f1.accession_id as feature_aid1,
+                       f1.feature_name as feature_name1,
+                       f2.accession_id as feature_aid2,
+                       f2.feature_name as feature_name2
+                from   cmap_feature_correspondence fc,
+                       cmap_feature f1,
+                       cmap_feature f2
+                where  fc.feature_id1=f1.feature_id
+                and    fc.feature_id2=f2.feature_id
+            ]
+        );
+        $sth->execute;
+
+        @col_names = ( qw[ feature_name1 feature_name2 evidence ] );
+        print $fh join( OUT_FS, @col_names ), OUT_RS;
+        while ( my $fc = $sth->fetchrow_hashref ) {
+            my $evidences = $db->selectall_arrayref(
+                q[
+                    select ce.score, 
+                           et.evidence_type as evidence
+                    from   cmap_correspondence_evidence ce,
+                           cmap_evidence_type et
+                    where  ce.feature_correspondence_id=?
+                    and    ce.evidence_type_id=et.evidence_type_id
+                ],
+                { Columns => {} },
+                ( $fc->{'feature_correspondence_id'} )
+            );
+
+            for my $evidence ( @$evidences ) {
+                print $fh join( OUT_FS, 
+                    $fc->{'feature_name1'}, 
+                    $fc->{'feature_name1'},
+                    $evidence->{'evidence'}
+                ), OUT_RS;
+            }
+        }
     }
 }
 
@@ -1012,6 +1071,10 @@ sub import_data {
     do { print "There are no map sets for that map type!\n"; return }
          unless $map_set_id;
 
+    print "Remove data in map set not in import file? [Y/n] ";
+    chomp( my $overwrite = <STDIN> );
+    $overwrite = ( $overwrite =~ /^[Nn]/ ) ? 0 : 1;
+
     #
     # Confirm decisions.
     #
@@ -1021,6 +1084,7 @@ sub import_data {
         "  Species   : $species",
         "  Map Type  : $map_type",
         "  Map Study : $map_set_name",
+        "  Overwrite : " . $overwrite ? "Yes" : "No",
         "[Y/n] "
     );
     chomp( my $answer = <STDIN> );
@@ -1032,6 +1096,7 @@ sub import_data {
         fh         => $fh,
         map_type   => $map_type,
         log_fh     => $self->log_fh,
+        overwrite  => $overwrite,
     ) or do { 
         print "Error: ", $importer->error, "\n"; 
         return; 
