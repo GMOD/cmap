@@ -168,11 +168,11 @@
     </tr>
     <tr>
         <th align="right">Map&nbsp;Start:</th>
-        <td>[% reference_map.start_position %]</td>
+        <td>[% reference_map.start_position | commify %]</td>
     </tr>
     <tr>
         <th align="right">Map&nbsp;Stop:</th>
-        <td>[% IF reference_map.stop_position.defined; reference_map.stop_position; ELSE; 'NULL'; END %]</td>
+        <td>[% IF reference_map.stop_position.defined %][% reference_map.stop_position | commify %][% ELSE %]NULL[% END %]</td>
     </tr>
     [% FOREACH att=reference_map.attributes %]
         [% NEXT UNLESS att.is_public %]
@@ -281,7 +281,7 @@
             [% f.feature_type %]
         </td>
         <td [% IF f.no_positions>1 %] rowspan="[% f.no_positions %]"[% END %] align="right">
-            [% f.start_position %] [% IF f.stop_position>f.start_position %]- [% f.stop_position %][% END %]
+            [% f.start_position | commify %] [% IF f.stop_position>f.start_position %]- [% f.stop_position | commify %][% END %]
         </td>
 
         [% IF f.positions.size %]
@@ -299,7 +299,7 @@
                     [% p.feature_type %]
                 </td>
                 <td align="right">
-                    [% p.start_position %] [% IF p.stop_position>p.start_position %]- [% p.stop_position %][% END %] ([% p.map_units %])
+                    [% p.start_position | commify %] [% IF p.stop_position>p.start_position %]- [% p.stop_position | commify %][% END %] ([% p.map_units %])
                 </td>
                 <td>
                     [% p.evidence.join(', ') %]

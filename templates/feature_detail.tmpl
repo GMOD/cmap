@@ -23,7 +23,7 @@
         </td>
         <td>
             [% feature.feature_type %]
-            <b>[</b> <a href="feature_type_info?feature_type_aid=[% feature.feature_type_aid %]">Feature Type Info</a> <b>]</b>
+            <b>[</b>&nbsp;<a href="feature_type_info?feature_type_aid=[% feature.feature_type_aid %]">View&nbsp;Feature&nbsp;Type&nbsp;Info</a>&nbsp;<b>]</b>
         </td>
     </tr>
 
@@ -42,9 +42,9 @@
         </td>
         <td>
             [%- IF feature.defined('aliases') AND feature.aliases.size -%]
-                <ul>
-                [%- FOREACH a=feature.aliases -%]<li>[% a %]</li>[% END %]
-                </ul>
+                [%- FOREACH a=feature.aliases -%]
+                    [% a.alias %]&nbsp;<b>[</b>&nbsp;<a href="feature_alias?feature_aid=[% a.feature_aid %];feature_alias=[% a.alias | uri %]">View&nbsp;Alias&nbsp;Details</a>&nbsp;<b>]</b><br>
+                [% END %]
             [%- ELSE -%]
                 None
             [%- END -%]
@@ -57,7 +57,7 @@
         </td>
         <td>
             [% feature.species_name %]-[% feature.map_set_name %]-[% feature.map_name %]
-             <b>[</b> <a href="map_details?ref_map_set_aid=[% feature.map_set_aid %];ref_map_aid=[% feature.map_aid %];highlight=&quot;[% feature.feature_name %]&quot;;label_features=landmarks">View Map Details</a> <b>]</b>
+             <b>[</b>&nbsp;<a href="map_details?ref_map_set_aid=[% feature.map_set_aid %];ref_map_aid=[% feature.map_aid %];highlight=&quot;[% feature.feature_name %]&quot;;label_features=landmarks">View&nbsp;Map&nbsp;Details</a>&nbsp;<b>]</b>
         </td>
     </tr>
 
@@ -66,7 +66,7 @@
             Start:
         </td>
         <td>
-            [% feature.start_position %] [% feature.map_units %]
+            [% feature.start_position | commify %] [% feature.map_units %]
         </td>
     </tr>
 
@@ -76,7 +76,7 @@
         </td>
         <td>
             [%- IF feature.stop_position.defined -%]
-                [% feature.stop_position %] [% feature.map_units %]
+                [% feature.stop_position | commify %] [% feature.map_units %]
             [%- ELSE -%]
                 NULL
             [%- END -%]

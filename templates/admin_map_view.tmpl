@@ -10,10 +10,18 @@
 <table>
     <tr>
         <td align="right">
+            Species:
+        </td>
+        <td>
+            [% map.species_name %] ([% map.species_full_name %])
+        </td>
+    </tr>
+    <tr>
+        <td align="right">
             Map Set Name:
         </td>
         <td>
-            [% map.species_name %]-[% map.map_set_name %]
+            [% map.map_set_name %]
             (<a href="admin?action=map_set_view;map_set_id=[% map.map_set_id %]">View Map Set</a>)
         </td>
     </tr>
@@ -23,6 +31,13 @@
             Map Name:
         </td>
         <td>[% map.map_name %]</td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Map Type:
+        </td>
+        <td>[% map.map_type %]</td>
     </tr>
 
     <tr>
@@ -43,14 +58,14 @@
         <td align="right">
             Start:
         </td>
-        <td>[% map.start_position %]</td>
+        <td>[% map.start_position | commify %] [% map.map_units %]</td>
     </tr>
 
     <tr>
         <td align="right">
             Stop:
         </td>
-        <td>[% map.stop_position OR '&nbsp;' %]</td>
+        <td>[% map.stop_position | commify %] [% map.map_units %]</td>
     </tr>
 </table>
 

@@ -2,7 +2,7 @@
 
 <a href="admin">Home</a> |
 <a href="admin?action=confirm_delete;entity_type=cmap_feature;entity_id=[% feature.feature_id %]">Delete</a> |
-<a href="admin?action=feature_view;feature_id=[% feature.feature_id %]">View Feature</a>
+<a href="admin?action=feature_view;feature_id=[% feature.feature_id %]">View</a>
 <hr noshade>
 
 [% IF errors.size %]
@@ -46,15 +46,6 @@
 
     <tr>
         <td align="right">
-            Aliases <em>(opt.)</em>:
-        </td>
-        <td>
-            <textarea name="aliases" rows="5" cols="50">[% feature.aliases.join(', ') %]</textarea>
-        </td>
-    </tr>
-
-    <tr>
-        <td align="right">
             Feature Type:
         </td>
         <td>
@@ -93,24 +84,6 @@
         </td>
         <td>
             <input name="stop_position" value="[% feature.stop_position %]">
-        </td>
-    </tr>
-
-    <tr>
-        <td align="right">
-            DB Cross Reference Name <em>(opt.)</em>:
-        </td>
-        <td>
-            <input name="dbxref_name" value="[% feature.dbxref_name %]">
-        </td>
-    </tr>
-
-    <tr>
-        <td align="right">
-            DB Cross Reference URL <em>(opt.)</em>:
-        </td>
-        <td>
-            <input name="dbxref_url" value="[% feature.dbxref_url %]">
         </td>
     </tr>
 

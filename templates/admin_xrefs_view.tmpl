@@ -14,6 +14,10 @@
             <option [% IF o.table_name==apr.param('table_name'); 'selected '; END %]value="[% o.table_name %]">[% o.object_name %]</option>
         [% END %]
     </select>
+    <br>
+    Generic XRefs Only:
+    <input type="radio" name="generic_only" value="1"[% IF apr.param('generic_only')==1; ' checked'; END %]>Yes
+    <input type="radio" name="generic_only" value="0"[% IF !apr.param('generic_only'); ' checked'; END %]>No
 </form>
 </div>
 
@@ -27,19 +31,19 @@
         </tr>
         <tr>
             <th>
-                <a href="admin?action=xrefs_view;table_name=[% apr.param('table_name') %];feature_type_id=[% apr.param('feature_type_id') %];order_by=display_order">Display Order</a>
+                <a href="admin?action=xrefs_view;table_name=[% apr.param('table_name') %];feature_type_id=[% apr.param('feature_type_id') %];order_by=display_order;generic_only=[% apr.param('generic_only') %]">Display Order</a>
             </th>
             <th>
-                <a href="admin?action=xrefs_view;table_name=[% apr.param('table_name') %];feature_type_id=[% apr.param('feature_type_id') %];order_by=table_name">DB Object</a>
+                <a href="admin?action=xrefs_view;table_name=[% apr.param('table_name') %];feature_type_id=[% apr.param('feature_type_id') %];order_by=table_name;generic_only=[% apr.param('generic_only') %]">DB Object</a>
             </th>
             <th>
-                <a href="admin?action=xrefs_view;table_name=[% apr.param('table_name') %];feature_type_id=[% apr.param('feature_type_id') %];order_by=object_name">Object Name</a>
+                <a href="admin?action=xrefs_view;table_name=[% apr.param('table_name') %];feature_type_id=[% apr.param('feature_type_id') %];order_by=object_name;generic_only=[% apr.param('generic_only') %]">Object Name</a>
             </th>
             <th>
-                <a href="admin?action=xrefs_view;table_name=[% apr.param('table_name') %];feature_type_id=[% apr.param('feature_type_id') %];order_by=xref_name">Name</a>
+                <a href="admin?action=xrefs_view;table_name=[% apr.param('table_name') %];feature_type_id=[% apr.param('feature_type_id') %];order_by=xref_name;generic_only=[% apr.param('generic_only') %]">Name</a>
             </th>
             <th>
-                <a href="admin?action=xrefs_view;table_name=[% apr.param('table_name') %];feature_type_id=[% apr.param('feature_type_id') %];order_by=xref_url">URL</a>
+                <a href="admin?action=xrefs_view;table_name=[% apr.param('table_name') %];feature_type_id=[% apr.param('feature_type_id') %];order_by=xref_url;generic_only=[% apr.param('generic_only') %]">URL</a>
             </th>
             <th colspan="2" align="center">&nbsp;</th>
         </tr>
