@@ -1,6 +1,6 @@
                               CMAP INSTALL
 
-                             $Revision: 1.27 $
+                             $Revision: 1.28 $
 
 1.      QUICK START
 
@@ -11,8 +11,7 @@ the very abbreviated explanation of how to install CMap:
 *   Install MySQL, PostgreSQL, Oracle or Sybase, create tables with
     contents of "sql" directory, grant appropriate user permissions
 *   Install Perl 5.6.1 or greater, Apache 1.3.27 and mod_perl 1.28
-*   Execute "perl Makefile.PL" and answer the questions
-*   Execute "make && make install" being sure to install module dependencies
+*   Execute "perl Build.PL; ./Build; ./Build install"
 *   Add contents of "httpd.conf" and "perlstartup.pl" in "conf"
     directory to your own versions of these files
 *   Restart Apache
@@ -407,18 +406,30 @@ installing into "/tmp/" :-).  For the purposes of this document,
 "/usr/local/apache" can be substituted with whatever path you
 choose.
 
-As an aside, you'll notice that the first command you give to build
-most Perl packages is "perl Makefile.PL."  This is the equivalent of
-the "configure" script in standard UNIX packages.  This command
-tells your Perl binary to figure out what needs to happen in the
-"make" process.  Additionally, you'll see that you should "make
-test" when installing.  When testing a package, *all* tests should
-pass (unless you know that certain failures are OK for your system).
-Generally failures in the installation of a Perl module can be
-remedied by installing some dependency (usually another Perl module
-or a system library).  If tests still fail, it is very important
-that you report these errors to the module authors so that they can
-be fixed.
+Note: You'll notice that the first command you give to build most Perl
+      packages is "perl Makefile.PL."  This is the equivalent of the
+      "configure" script in standard UNIX packages.  This command tells
+      your Perl binary to figure out what needs to happen in the "make"
+      process.  Additionally, you'll see that you should "make test"
+      when installing.  When testing a package, *all* tests should pass
+      (unless you know that certain failures are OK for your system).
+      Generally failures in the installation of a Perl module can be
+      remedied by installing some dependency (usually another Perl
+      module or a system library).  If tests still fail, it is very
+      important that you report these errors to the module authors so
+      that they can be fixed.
+
+      A newer way of installing Perl modules involves a module called,
+      appropriately, "Module::Build," and works similarly.  Instead of
+      executing a file called "Makefile.PL" to create a makefile, the
+      entire build/test/install process is handled exclusively by Perl.
+      CMap uses this newer process.  Rather than executing "perl
+      Makefile.PL; make; make install" you simply run "perl Build.PL;
+      ./Build; ./Build install."  Given that Module::Build is a newer
+      module that is yet to be distributed with the core Perl, you will
+      need to install it before proceeding with the CMap installation
+      process.  For more information on this, execute "perldoc
+      Module::Build" after installing  the module.
 
 If all goes well, you should see a lot of text go whizzing by and then
 a big text banner saying "You now have successfully built and installed
@@ -451,12 +462,12 @@ section.
 There are a number of CPAN modules required by the CMap application.
 You will likely need to install these prior to installing the CMap
 modules as they are not in the standard Perl distribution.  These
-modules are listed in the PREREQ_PM hash reference in the Makefile.PL
-included with this distribution.  It is possible to install the
+modules are listed in the "requires" section in the Build.PL build
+script included with this distribution.  It is possible to install the
 CMap application without installing these modules, but you will see a
-lot of errors, and, of course, things won't work in the end.  It's best
-to use the CPAN shell to install all the modules that Perl complains
-about.
+lot of errors, and, of course, things won't work in the end.  It's
+best to use the CPAN shell to install all the modules that Perl
+complains about.
 
 Here are brief descriptions of some of the major modules required:
 
@@ -579,26 +590,15 @@ latter, I'd recommend choosing the first way.  Here's how to do both:
 1)  Execute the following commands in the directory created by
     untarring the CMap distribution:
 
-    $ perl Makefile.PL
-    $ make
-    # make install
+    $ perl Build.PL
+    $ ./Build
+    # ./Build install
 
-    You will be asked several questions, such as where to place the main
-    configuration file, the templates, the "cmap_admin.pl" script, and
-    an HTML style sheet. You can place them in any valid directory on
-    your system, and you will be provided with reasonable defaults. If
-    you don't wish to have the installer put file in a directory (e.g.,
-    you want to use your own style sheet), answer "no" to the default
-    choice and "q" when prompted for a path. All the questions are
-    optional, so you could do this for all of them. If a file of the
-    same name exists in the installation directory for anything but the
-    templates, you will be prompted whether to overwrite this file.
-
-    You can also specify the answers to the installation questions by
-    providing them as KEY=VALUE arguments to "perl Makefile.PL." Give
-    "--help" as the argument to Makfile.PL to find out more about this.
-    Lastly, you can provide the argument "PREFIX" to have everything
-    installed in one location, e.g., "/usr/local/cmap."
+    Several configuration options can be set via arguments to Build.PL.
+    Execute "perl Build.PL -h" to read a brief help message on what they
+    are and how you can specify your choices.  Reasonable defaults are
+    provided for all the options if you have no strong feelings about
+    where to install things.
 
     As you make your choices, two key files will receive crucial updates:
 
