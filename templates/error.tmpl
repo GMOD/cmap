@@ -7,18 +7,6 @@
 
 <h1>Error</h1>
 
-<table width="100%">
-    <tr>
-        <td colspan="2">
-            [% error OR 'Undefined error' | html %]
-        </td>
-    </tr>
-[% # IF debug %]
-    <tr valign="top">
-        <th width="10%">Backtrace:</th>
-        <td>[% error.trace.as_string OR 'No backtrace available' | html %]</td>
-    </tr>
-[% # END %]
-</table>
+[% error OR 'Undefined error' | html %]
 
 [% page.end_body OR '</body>' %]

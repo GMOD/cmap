@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
-# $Id: MakeCorrespondences.pm,v 1.1 2002-08-23 16:07:18 kycl4rk Exp $
+# $Id: MakeCorrespondences.pm,v 1.2 2002-08-30 23:41:06 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils 'next_number';
@@ -31,10 +31,12 @@ sub make_name_correspondences {
     my $sql = q[
         select   ms.map_set_id, 
                  ms.short_name as map_set_name,
-                 ms.is_relational_map
-        from     cmap_map_set ms
+                 mt.is_relational_map
+        from     cmap_map_set ms,
+                 cmap_map_type mt
+        where    ms.map_type_id=mt.map_type_id
     ];
-    $sql .= "where ms.map_set_id=$map_set_id " if $map_set_id;
+    $sql .= "and ms.map_set_id=$map_set_id " if $map_set_id;
     $sql .= 'order by map_set_name';
     my $map_sets = $db->selectall_arrayref( $sql, { Columns => {} } );
 
