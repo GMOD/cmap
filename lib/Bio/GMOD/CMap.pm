@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap;
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.39 2003-10-01 23:08:30 kycl4rk Exp $
+# $Id: CMap.pm,v 1.40 2003-10-16 22:24:27 kycl4rk Exp $
 
 =head1 NAME
 
@@ -317,6 +317,44 @@ Returns a handle to the data module.
     }
 
     return $self->{'data_module'};
+}
+
+# ----------------------------------------------------
+sub get_attributes {
+
+=pod
+
+=head2 get_attributes 
+
+Retrieves the attributes attached to a database object.
+
+=cut
+
+    my $self       = shift;
+    my $table_name = shift or return;
+    my $object_id  = shift or return;
+    my $order_by   = shift || 'display_order,attribute_name';
+    my $db         = $self->db or return;
+    if ( !$order_by || $order_by eq 'display_order' ) {
+        $order_by  = 'display_order,attribute_name';
+    }
+
+    return $db->selectall_arrayref(
+        qq[
+            select   attribute_id,
+                     object_id,
+                     table_name,
+                     display_order,
+                     attribute_name,
+                     attribute_value
+            from     cmap_attribute
+            where    object_id=?
+            and      table_name=?
+            order by $order_by
+        ],
+        { Columns => {} },
+        ( $object_id, $table_name )
+    );
 }
 
 # ----------------------------------------------------
