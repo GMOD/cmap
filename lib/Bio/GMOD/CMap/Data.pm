@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.98.2.10 2004-06-17 14:38:13 kycl4rk Exp $
+# $Id: Data.pm,v 1.98.2.11 2004-06-17 20:13:05 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.98.2.10 $)[-1];
+$VERSION = (qw$Revision: 1.98.2.11 $)[-1];
 
 use Data::Dumper;
 use Regexp::Common;
@@ -140,6 +140,7 @@ Gets the specifics on a feature correspondence record.
                    f.feature_name,
                    f.start_position,
                    f.stop_position,
+                   ft.accession_id as feature_type_aid,
                    ft.feature_type,
                    map.map_name,
                    map.accession_id as map_aid,
@@ -167,6 +168,13 @@ Gets the specifics on a feature correspondence record.
     $sth->execute( $corr->{'feature_id2'} );
     my $feature2 = $sth->fetchrow_hashref;
 
+    for ( $feature1, $feature2 ) {
+        $_->{'aliases'} = $db->selectcol_arrayref(
+            'select alias from cmap_feature_alias where feature_id=?',
+            {}, ( $_->{'feature_id'} )
+        );
+    }
+
     $corr->{'evidence'} = $db->selectall_arrayref(
         qq[
             select   ce.correspondence_evidence_id,
@@ -192,6 +200,104 @@ Gets the specifics on a feature correspondence record.
         feature1       => $feature1,
         feature2       => $feature2,
     };
+}
+
+# ----------------------------------------------------
+sub data_download {
+
+=pod
+
+=head2 data_download
+
+Returns a string of tab-delimited data for either a map or map set.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $map_set_aid     = $args{'map_set_aid'} || '';
+    my $map_aid         = $args{'map_aid'}     || '';
+    return $self->error("Not enough arguments for data_download") unless
+        $map_set_aid || $map_aid;
+
+    my $feature_sql = q[
+        select map.accession_id as map_accession_id,
+               map.map_name,
+               map.start_position as map_start,
+               map.stop_position as map_stop,
+               f.feature_id,
+               f.accession_id as feature_accession_id,
+               f.feature_name,
+               f.start_position as feature_start,
+               f.stop_position as feature_stop,
+               f.is_landmark,
+               ft.feature_type
+        from   cmap_map map,
+               cmap_feature f,
+               cmap_feature_type ft
+        where  map.%s=?
+        and    map.map_id=f.map_id
+        and    f.feature_type_id=ft.feature_type_id
+    ];
+
+    my $alias_sql = q[
+        select fa.feature_id, 
+               fa.alias
+        from   cmap_map map,
+               cmap_feature f,
+               cmap_feature_alias fa
+        where  map.%s=?
+        and    map.map_id=f.map_id
+        and    f.feature_id=fa.feature_id
+    ];
+
+    my $db = $self->db;
+    my ( $field_name, $search_val );
+    if ( $map_aid ) {
+        my $map_id = $db->selectrow_array(
+            'select map_id from cmap_map where accession_id=?', {}, ($map_aid)
+        ) or return $self->error("'$map_aid' is not a valid map accession ID");
+        $field_name = 'map_id';
+        $search_val = $map_id;
+    }
+    else {
+        my $map_set_id = $db->selectrow_array(
+            'select map_set_id from cmap_map_set where accession_id=?', 
+            {}, ( $map_set_aid )
+        ) or return 
+            $self->error("'$map_set_aid' is not a valid map set accession ID");
+
+        $field_name = 'map_set_id';
+        $search_val = $map_set_id;
+    }
+
+    my $features = $db->selectall_arrayref( 
+        sprintf( $feature_sql, $field_name ), { Columns => {} }, ($search_val) 
+    );
+
+    my $aliases  = $db->selectall_arrayref( 
+        sprintf( $alias_sql, $field_name ), { Columns => {} }, ($search_val) 
+    );
+
+    my %alias_lookup = ();
+    for my $alias ( @$aliases ) {
+        push @{ $alias_lookup{ $alias->{'feature_id'} } }, $alias->{'alias'};
+    }
+
+    my @cols   = qw[ map_accession_id map_name map_start map_stop 
+        feature_accession_id feature_name feature_aliases feature_start 
+        feature_stop feature_type is_landmark
+    ];
+
+    my $return = join( "\t", @cols ) . "\n";
+
+    for my $f( @$features ) {
+        $f->{'feature_aliases'} = join(
+            ',', sort @{ $alias_lookup{ $f->{'feature_id'} } || [] }
+        );
+        $return .= join( "\t", map { $f->{ $_ } } @cols ) . "\n";
+    }
+
+    return $return;
 }
 
 # ----------------------------------------------------
