@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Utils;
 
-# $Id: Utils.pm,v 1.17 2003-03-28 18:58:18 kycl4rk Exp $
+# $Id: Utils.pm,v 1.18 2003-04-09 20:41:31 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.17 $)[-1];
+$VERSION = (qw$Revision: 1.18 $)[-1];
 
 use base 'Exporter';
 
@@ -207,132 +207,132 @@ label can be inserted.
 
 =cut
 
-    my %args         = @_;
-    my $rows         = $args{'rows'}         ||    []; # array ref
-    my $target       = $args{'target'}       ||     0; # desired location
-    my $row_height   = $args{'row_height'}   ||     1; # how tall a row is
-    my $buffer       = $args{'buffer'}       ||     2; # space b/w things
-    my $max_distance = $args{'max_distance'} ||     5; # how far from target
-    my $can_skip     = $args{'can_skip'}     ||     0; # skip or not?
-    my $direction    = $args{'direction'}    || NORTH; # NORTH or SOUTH?
-    my $top          = $target;
-    my $bottom       = $target + $row_height;
+    my %args       = @_;
+    my $labels     = $args{'labels'};
+    my $accepted   = $args{'accepted'};
+    my $buffer     = $args{'buffer'}     ||     2;
+    my $direction  = $args{'direction'}  || NORTH; # NORTH or SOUTH?
+    my $row_height = $args{'row_height'} ||     1; # how tall a row is
+    my $used       = $args{'used'}       ||    [];
+    my $reverse    = $direction eq NORTH ? -1 : 1;
+    my @used       = sort { $reverse * ( $a->[0] <=> $b->[0] ) } @$used;
 
-    #
-    # Sort what's been used by the first field.  Go through all
-    # and see if the label will fit directly across, a little 
-    # above, or a little below.
-    #
-    my $reverse = $direction eq NORTH ? -1 : 1;
-    my @used    = sort { $reverse * ( $a->[0] <=> $b->[0] ) } @$rows;
-    my $ok      = 1; # assume innocent until proven guilty
+    for my $label ( @{ $labels || [] } ) {
+        my $max_distance = $label->{'has_corr'}       ? 15 : 10;
+        my $can_skip     = $label->{'is_highlighted'} ?  0 :  1;
+        my $target       = $label->{'target'} || 0; # desired location
+        my $top          = $target;
+        my $bottom       = $target + $row_height;
+        my $ok           = 1; # assume innocent until proven guilty
 
-    SEGMENT:
-    for my $i ( 0 .. $#used ) {
-        my $segment = $used[ $i ];
-        my ( $north, $south ) = @$segment; 
-        next if $south + $buffer <= $top;    # segment is above our target.
-        next if $north - $buffer >= $bottom; # segment is below our target.
-
-        #
-        # If there's some overlap, see if it will fit above or below.
-        #
-        if (
-            ( $north - $buffer <= $bottom )
-            ||
-            ( $south + $buffer >= $top    )
-        ) {
-            $ok = 0; # now we're guilty until we can prove innocence
+        SEGMENT:
+        for my $i ( 0 .. $#{ $used } ) {
+            my $segment = $used->[ $i ];
+            my ( $north, $south ) = @$segment; 
+            next if $south + $buffer <= $top;    # segment is above our target.
+            next if $north - $buffer >= $bottom; # segment is below our target.
 
             #
-            # Figure out the current frame.
+            # If there's some overlap, see if it will fit above or below.
             #
-            my $prev_segment = $i > 0      ? $used[ $i - 1 ] : undef;
-            my $next_segment = $i < $#used ? $used[ $i + 1 ] : undef;
-            my $ftop         = $direction eq NORTH  
+            if (
+                ( $north - $buffer <= $bottom )
+                ||
+                ( $south + $buffer >= $top    )
+            ) {
+                $ok = 0; # now we're guilty until we can prove innocence
+
+                #
+                # Figure out the current frame.
+                #
+                my $prev_segment = $i > 0         ? $used->[ $i - 1 ] : undef;
+                my $next_segment = $i < $#{$used} ? $used->[ $i + 1 ] : undef;
+                my $ftop         = $direction eq NORTH  
                     ? defined $next_segment->[1] ? $next_segment->[1] : undef 
                     : $south
-            ;
-            my $fbottom      = $direction eq NORTH 
+                ;
+                my $fbottom      = $direction eq NORTH 
                     ? $north 
                     : defined $next_segment->[0] ? $next_segment->[0] : undef
-            ;
+                ;
 
-            #
-            # Check if we can fit the label into the frame.
-            #
-            if ( defined $ftop &&
-                 defined $fbottom &&
-                 $fbottom - $ftop < $bottom - $top
-            ) {
-                next SEGMENT;
-            }
+                #
+                # Check if we can fit the label into the frame.
+                #
+                if ( defined $ftop &&
+                     defined $fbottom &&
+                     $fbottom - $ftop < $bottom - $top
+                ) {
+                    next SEGMENT;
+                }
 
-            #
-            # See if moving the label to the frame would move it too far.
-            #
-            my $diff = $direction eq NORTH
-                ? $fbottom - $bottom - $buffer
-                : $ftop - $top + $buffer
-            ;
-            if ( ( abs $diff > $max_distance ) && $can_skip ) {
-                next SEGMENT;
-            }
-            $_ += $diff for $top, $bottom;
+                #
+                # See if moving the label to the frame would move it too far.
+                #
+                my $diff = $direction eq NORTH
+                    ? $fbottom - $bottom - $buffer
+                    : $ftop - $top + $buffer
+                ;
+                if ( ( abs $diff > $max_distance ) && $can_skip ) {
+                    next SEGMENT;
+                }
+                $_ += $diff for $top, $bottom;
 
-            #
-            # See if it will fit.  Same as two above?
-            #
-            if ( 
-                ( defined $ftop && 
-                  defined $fbottom && 
-                  $top - $buffer >= $ftop &&
-                  $bottom + $buffer <= $fbottom 
-                )
-                ||
-                ( defined $ftop && $top - $buffer >= $ftop )
-                ||
-                ( defined $fbottom && $bottom + $buffer <= $fbottom )
-            ) {
-                $ok = 1; 
+                #
+                # See if it will fit.  Same as two above?
+                #
+                if ( 
+                    ( defined $ftop && 
+                      defined $fbottom && 
+                      $top - $buffer >= $ftop &&
+                      $bottom + $buffer <= $fbottom 
+                    )
+                    ||
+                    ( defined $ftop && $top - $buffer >= $ftop )
+                    ||
+                    ( defined $fbottom && $bottom + $buffer <= $fbottom )
+                ) {
+                    $ok = 1; 
+                    last;
+                }
+                next SEGMENT if !$ok and !$can_skip;
                 last;
             }
-            next SEGMENT if !$ok and !$can_skip;
-            last;
+            else {
+                $ok = 1;
+            }
         }
-        else {
+
+        #
+        # If nothing was found but we can't skip, then move the
+        # label to just beyond the last segment.
+        #
+        if ( !$ok and !$can_skip ) {
+            my ( $last_top, $last_bottom ) = @{ $used->[ -1 ] };
+            if ( $direction eq NORTH ) {
+                $bottom = $last_top - $buffer;
+                $top    = $bottom - $row_height;
+            }
+            else {
+                $top    = $last_bottom + $buffer;
+                $bottom = $top + $row_height;
+            }
             $ok = 1;
         }
-    }
 
-    #
-    # If nothing was found but we can't skip, then move the
-    # label to just beyond the last segment.
-    #
-    if ( !$ok and !$can_skip ) {
-        my ( $last_top, $last_bottom ) = @{ $used[ -1 ] };
-        if ( $direction eq NORTH ) {
-            $bottom = $last_top - $buffer;
-            $top    = $bottom - $row_height;
+        #
+        # If there are no rows, we didn't find a collision, or we didn't
+        # move the label too far to make it fit, then record where this one
+        # went and return the new location.
+        #
+        if ( !@$used || $ok ) {
+            push @$used, [ $top, $bottom ];
+            $label->{'y'} = $top;
+            push @$accepted, $label;
         }
-        else {
-            $top    = $last_bottom + $buffer;
-            $bottom = $top + $row_height;
-        }
-        $ok         = 1;
     }
 
-    #
-    # If there are no rows, we didn't find a collision, or we didn't
-    # move the label too far to make it fit, then record where this one
-    # went and return the new location.
-    #
-    if ( !@$rows || $ok ) {
-        push @$rows, [ $top, $bottom ];
-        return $top;
-    }
-
-    return undef;
+    return 1;
 }
 
 # ----------------------------------------------------
