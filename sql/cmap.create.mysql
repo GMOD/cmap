@@ -115,6 +115,16 @@ CREATE TABLE cmap_feature_correspondence (
 ) TYPE=MyISAM;
 
 --
+-- Table structure for table 'cmap_feature_note'
+--
+
+CREATE TABLE cmap_feature_note (
+  feature_id int(11) NOT NULL default '0',
+  note text,
+  PRIMARY KEY  (feature_id)
+) TYPE=MyISAM;
+
+--
 -- Table structure for table 'cmap_feature_type'
 --
 
