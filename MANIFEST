@@ -6,8 +6,10 @@ bin/profile-cmap-draw.pl
 BUGS
 Build.PL
 Changes
+cgi-bin/cmap.PL
 conf/cmap.conf.PL
 CREDITS
+data/sample-dump.sql.gz
 docs/ADMINISTRATION
 docs/attributes-and-xrefs.pod
 docs/cmap-desc.html
