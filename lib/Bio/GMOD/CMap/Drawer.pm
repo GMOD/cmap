@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.87.2.1 2005-03-04 20:06:35 mwz444 Exp $
+# $Id: Drawer.pm,v 1.87.2.2 2005-03-17 06:00:06 mwz444 Exp $
 
 =head1 NAME
 
@@ -30,8 +30,9 @@ The base map drawing module.
         image_size => $image_size,
         image_type => $image_type,
         label_features => $label_features,
-        included_feature_types => $included_feature_types,
+        included_feature_types  => $included_feature_types,
         corr_only_feature_types => $corr_only_feature_types,
+        url_feature_default_display => $url_feature_default_display,
         included_evidence_types => $included_evidence_types,
         ignored_evidence_types  => $ignored_evidence_types,
         less_evidence_types     => $less_evidence_types,
@@ -144,6 +145,15 @@ included in the picture.
 An array reference that holds the feature type accessions that are 
 included in the picture only if there is a correspondence.
 
+=item * url_feature_default_display
+
+This holds the default for how undefined feature types will be treated.  This
+will override the value in the config file.
+
+ 0 = ignore
+ 1 = display only if has correspondence
+ 2 = display
+
 =item * included_evidence_types
 
 An array reference that holds the evidence type accessions that are 
@@ -223,7 +233,7 @@ Set to 1 scale the maps with the same unit.  Default is 1.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.87.2.1 $)[-1];
+$VERSION = (qw$Revision: 1.87.2.2 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -239,6 +249,7 @@ use base 'Bio::GMOD::CMap';
 my @INIT_PARAMS = qw[
   apr flip slots highlight font_size image_size image_type
   label_features included_feature_types corr_only_feature_types
+  url_feature_default_display
   included_evidence_types ignored_evidence_types ignored_feature_types
   less_evidence_types greater_evidence_types evidence_type_score
   config data_source min_correspondences collapse_features cache_dir
@@ -787,6 +798,32 @@ Gets/sets which feature type (accession IDs) to corr_only.
 }
 
 # ----------------------------------------------------
+sub url_feature_default_display {
+
+=pod
+                                                                                
+=head2 url_feature_default_display
+                                                                                
+Gets/sets which the url_feature_default_display
+                                                                                
+=cut
+
+    my $self = shift;
+    my $arg  = shift;
+
+    if ( defined($arg) ) {
+        if ( $arg =~ /^\d$/ ) {
+            $self->{'url_feature_default_display'} = $arg;
+        }
+        else {
+            $self->{'url_feature_default_display'} = undef;
+        }
+    }
+
+    return $self->{'url_feature_default_display'};
+}
+
+# ----------------------------------------------------
 sub ignored_feature_types {
 
 =pod
@@ -1231,6 +1268,7 @@ necessary data for drawing.
             included_feature_type_aids  => $self->included_feature_types,
             corr_only_feature_type_aids => $self->corr_only_feature_types,
             ignored_feature_type_aids   => $self->ignored_feature_types,
+            url_feature_default_display => $self->url_feature_default_display,
             included_evidence_type_aids => $self->included_evidence_types,
             ignored_evidence_type_aids  => $self->ignored_evidence_types,
             less_evidence_type_aids     => $self->less_evidence_types,
@@ -2290,6 +2328,7 @@ Creates default link parameters for CMap->create_viewer_link()
     my $feature_type_aids           = $args{'feature_type_aids'};
     my $corr_only_feature_type_aids = $args{'corr_only_feature_type_aids'};
     my $ignored_feature_type_aids   = $args{'ignored_feature_type_aids'};
+    my $url_feature_default_display = $args{'url_feature_default_display'};
 
     my $included_evidence_type_aids = $args{'included_evidence_type_aids'};
     my $ignored_evidence_type_aids  = $args{'ignored_evidence_type_aids'};
@@ -2370,6 +2409,9 @@ Creates default link parameters for CMap->create_viewer_link()
     unless ( defined($corr_only_feature_type_aids) ) {
         $corr_only_feature_type_aids = $self->corr_only_feature_types();
     }
+    unless ( defined($url_feature_default_display) ) {
+        $url_feature_default_display = $self->url_feature_default_display();
+    }
     unless ( defined($ignored_feature_type_aids) ) {
         $ignored_feature_type_aids = $self->ignored_feature_types();
     }
@@ -2418,6 +2460,7 @@ Creates default link parameters for CMap->create_viewer_link()
         feature_type_aids           => $feature_type_aids,
         corr_only_feature_type_aids => $corr_only_feature_type_aids,
         ignored_feature_type_aids   => $ignored_feature_type_aids,
+        url_feature_default_display => $url_feature_default_display,
         ignored_evidence_type_aids  => $ignored_evidence_type_aids,
         included_evidence_type_aids => $included_evidence_type_aids,
         less_evidence_type_aids     => $less_evidence_type_aids,

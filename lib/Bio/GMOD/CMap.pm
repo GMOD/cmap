@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.67.2.5 2005-03-16 20:46:42 mwz444 Exp $
+# $Id: CMap.pm,v 1.67.2.6 2005-03-17 06:00:05 mwz444 Exp $
 
 =head1 NAME
 
@@ -683,6 +683,7 @@ Given information about the link, creates a url to cmap_viewer.
     my $feature_type_aids           = $args{'feature_type_aids'};
     my $corr_only_feature_type_aids = $args{'corr_only_feature_type_aids'};
     my $ignored_feature_type_aids   = $args{'ignored_feature_type_aids'};
+    my $url_feature_default_display = $args{'url_feature_default_display'};
     my $included_evidence_type_aids = $args{'included_evidence_type_aids'};
     my $ignored_evidence_type_aids  = $args{'ignored_evidence_type_aids'};
     my $less_evidence_type_aids     = $args{'less_evidence_type_aids'};
@@ -804,6 +805,8 @@ Given information about the link, creates a url to cmap_viewer.
     foreach my $aid (@$ignored_feature_type_aids) {
         $url .= "feature_type_" . $aid . "=0;";
     }
+    $url .= "feature_type_DEFAULT=$url_feature_default_display;"
+      if defined($url_feature_default_display);
     foreach my $aid (@$included_evidence_type_aids) {
         $url .= "evidence_type_" . $aid . "=1;";
     }
