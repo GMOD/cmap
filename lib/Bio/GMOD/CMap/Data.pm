@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.60 2003-09-12 21:18:53 kycl4rk Exp $
+# $Id: Data.pm,v 1.61 2003-09-16 16:57:42 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.60 $)[-1];
+$VERSION = (qw$Revision: 1.61 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -108,7 +108,7 @@ Organizes the data for drawing comparative maps.
     my @pos                    = sort { $a <=> $b } grep { $_ >= 0 } @slot_nos;
     my @neg                    = sort { $b <=> $a } grep { $_ <  0 } @slot_nos; 
     my @ordered_slot_nos       = ( @pos, @neg );
-    my $db                     = $self->db;
+    my $db                     = $self->db or return;
     my $pid                    = $$;
 
     #
@@ -1634,14 +1634,13 @@ Returns the data for the main comparative map HTML form.
     #
     # Correspondence evidence types.
     #
-    my @evidence_types = 
-        sort { lc $a->{'evidence_type'} cmp lc $b->{'evidence_type'} } @{
+    my @evidence_types = @{
         $db->selectall_arrayref(
             q[
                 select   et.accession_id as evidence_type_aid,
                          et.evidence_type
                 from     cmap_evidence_type et
-                order by et.evidence_type
+                order by et.rank, et.evidence_type
             ],
             { Columns => {} }
         )
@@ -1688,6 +1687,7 @@ out which maps have relationships.
     my $pid                 = $args{'pid'};
     my $db                  = $self->db  or return;
     my $sql                 = $self->sql or return;
+    return unless defined $ref_slot_no;
 
     #
     # Find out how many reference maps there are 
@@ -1910,7 +1910,7 @@ Takes a list of evidence type accession IDs and returns their table IDs.
     my $self               = shift;
     my @evidence_type_aids = @_;
     my @evidence_type_ids  = ();
-    my $db                 = $self->db;
+    my $db                 = $self->db or return;
 
     for my $aid ( @evidence_type_aids ) {
         next unless defined $aid && $aid ne '';
@@ -1943,7 +1943,7 @@ Takes a list of feature type accession IDs and returns their table IDs.
     my $self              = shift;
     my @feature_type_aids = @_;
     my @feature_type_ids  = ();
-    my $db                = $self->db;
+    my $db                = $self->db or return;
 
     for my $aid ( @feature_type_aids ) {
         next unless defined $aid && $aid ne '';
@@ -2181,6 +2181,7 @@ Given a list of feature names, find any maps they occur on.
 =cut
 
     my ( $self, %args )   = @_;
+    my $db                = $self->db or return;
     my $species_aids      = $args{'species_aids'};
     my $feature_type_aids = $args{'feature_type_aids'};
     my $feature_string    = $args{'features'};
@@ -2201,7 +2202,6 @@ Given a list of feature names, find any maps they occur on.
         $args{'search_field'} || $self->config('feature_search_field');
     $search_field        = DEFAULT->{'feature_search_field'} 
         unless VALID->{'feature_search_field'}{ $search_field };
-    my $db               = $self->db  or return;
 
     #
     # We'll get the feature ids first.  Use "like" in case they've
@@ -2314,7 +2314,7 @@ Return data for a list of feature type acc. IDs.
 =cut
 
     my ( $self, %args ) = @_;
-    my $db              = $self->db; 
+    my $db              = $self->db or return; 
 
     my $sql = q[
         select ft.feature_type_id,
@@ -2861,7 +2861,7 @@ sub view_feature_on_map {
 =cut
 
     my ( $self, $feature_aid )    = @_;
-    my $db                        = $self->db;
+    my $db                        = $self->db or return;
     my ( $map_set_aid, $map_aid, $feature_name ) = $db->selectrow_array(
         q[
             select ms.accession_id,
