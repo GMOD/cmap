@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.17 2003-01-11 20:43:18 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.18 2003-01-11 21:19:50 kycl4rk Exp $
 
 =head1 NAME
 
-Bio::GMOD::CMap::Drawer - draw maps
+Bio::GMOD::CMap::Drawer - draw maps 
 
 =head1 SYNOPSIS
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.17 $)[-1];
+$VERSION = (qw$Revision: 1.18 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
