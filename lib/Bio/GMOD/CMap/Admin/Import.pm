@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Import;
 
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.56 2004-11-01 23:29:58 mwz444 Exp $
+# $Id: Import.pm,v 1.57 2004-11-30 22:31:10 kycl4rk Exp $
 
 =pod
 
@@ -33,7 +33,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.56 $)[-1];
+$VERSION = (qw$Revision: 1.57 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -295,10 +295,10 @@ appended to the list of xrefs.
 
             my $features = $db->selectall_arrayref(
                 q[
-		   select f.feature_id, f.feature_name
-		   from   cmap_feature f
-		   where  f.map_id=?
-		   ],
+           select f.feature_id, f.feature_name
+           from   cmap_feature f
+           where  f.map_id=?
+           ],
                 { Columns => {} },
                 ($map_id)
             );
@@ -442,14 +442,14 @@ appended to the list of xrefs.
                 $map_aid ||= $map_id;
                 $db->do(
                     q[
-			  insert
-			  into   cmap_map 
-			  ( map_id, accession_id, map_set_id, 
-			    map_name, start_position, stop_position,
-			    display_order
-			    )
-			  values ( ?, ?, ?, ?, ?, ?, ? )
-			  ],
+              insert
+              into   cmap_map 
+              ( map_id, accession_id, map_set_id, 
+                map_name, start_position, stop_position,
+                display_order
+                )
+              values ( ?, ?, ?, ?, ?, ?, ? )
+              ],
                     {},
                     (
                         $map_id,    $map_aid,  $map_set_id, $map_name,
@@ -554,10 +554,10 @@ appended to the list of xrefs.
             if ($accession_id) {
                 $feature_id = $db->selectrow_array(
                     q[
-		  select feature_id
-		  from   cmap_feature
-		  where  accession_id=?
-		  ],
+          select feature_id
+          from   cmap_feature
+          where  accession_id=?
+          ],
                     {},
                     ($accession_id)
                 );
@@ -570,11 +570,11 @@ appended to the list of xrefs.
             if ( !$feature_id && !$accession_id ) {
                 $feature_id = $db->selectrow_array(
                     q[
-		       select feature_id
-		       from   cmap_feature
-		       where  map_id=?
-		       and    upper(feature_name)=?
-		       ],
+               select feature_id
+               from   cmap_feature
+               where  map_id=?
+               and    upper(feature_name)=?
+               ],
                     {},
                     ( $map_id, uc $feature_name )
                 );
@@ -586,12 +586,12 @@ appended to the list of xrefs.
                 $accession_id ||= $feature_id;
                 $db->do(
                     q[
-		       update cmap_feature
-		       set    accession_id=?, map_id=?, feature_type_accession=?, 
-		       feature_name=?, start_position=?, stop_position=?,
-		       is_landmark=?, default_rank=?,direction=?
-		       where  feature_id=?
-		       ],
+               update cmap_feature
+               set    accession_id=?, map_id=?, feature_type_accession=?, 
+               feature_name=?, start_position=?, stop_position=?,
+               is_landmark=?, default_rank=?,direction=?
+               where  feature_id=?
+               ],
                     {},
                     (
                         $accession_id, $map_id,     $feature_type_aid,
@@ -620,15 +620,14 @@ appended to the list of xrefs.
 
                 $db->do(
                     q[
-		       insert
-		       into   cmap_feature
-		       ( feature_id, accession_id, map_id,
-			 feature_type_accession, feature_name,
-			 start_position, stop_position,
-			 is_landmark, default_rank,direction
-			 )
-		       values ( ?, ?, ?, ?, ?, ?, ?, ?, ? )
-		       ],
+                        insert
+                        into   cmap_feature
+                        ( feature_id, accession_id, map_id,
+                        feature_type_accession, feature_name,
+                        start_position, stop_position,
+                        is_landmark, default_rank,direction)
+                        values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
+                    ],
                     {},
                     (
                         $feature_id,       $accession_id, $map_id,
@@ -638,9 +637,10 @@ appended to the list of xrefs.
                     )
                 );
             }
+
             my $pos = join( '-', map { defined $_ ? $_ : () } $start, $stop );
             $self->Print(
-"$action $feature_type_aid '$feature_name' on map $map_name at $pos.\n"
+                "$action $feature_type_aid '$feature_name' on map $map_name at $pos.\n"
             );
         }
         else {
@@ -1223,15 +1223,15 @@ Empty feature_array
 
     my $sth = $db->prepare(
         q[
-	      insert
-	      into   cmap_feature
-	      ( feature_id, accession_id, map_id,
-		feature_type_accession, feature_name, 
-		start_position, stop_position,
-		is_landmark, default_rank,direction
-		)
-	      values (?,?,?,?,?,?,?,?,?,?)
-	      ]
+          insert
+          into   cmap_feature
+          ( feature_id, accession_id, map_id,
+        feature_type_accession, feature_name, 
+        start_position, stop_position,
+        is_landmark, default_rank,direction
+        )
+          values (?,?,?,?,?,?,?,?,?,?)
+          ]
     );
 
     for ( my $i = 0 ; $i < $no_features ; $i++ ) {
