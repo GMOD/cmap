@@ -4,7 +4,7 @@ CMap Install
 
 =head1 VERSION
 
-$Revision: 1.5 $
+$Revision: 1.6 $
 
 =head1 QUICK START
 
@@ -25,7 +25,7 @@ capabilites (e.g., Apache 1.3.x or 2.x)
 =item * Execute "perl Build.PL; ./Build; su; ./Build install"; install any
 other Perl modules reported missing by the build process
 
-=item * Modify database information in "cmap.conf"
+=item * Modify database information in "cmap.conf/*.conf"
 
 =item * Import your data or the sample data included in the "data" directory
 
@@ -321,6 +321,14 @@ Here are the CPAN modules required:
 
 =item *   XML::Simple
 
+=item *   Cache::FileCache
+
+=item *   Storable
+
+=item *   Algorithm::Numerical::Sample
+
+=item *   Bit::Vector
+
 =back
 
 Many of the above modules will have dependecies of their own which you
@@ -396,10 +404,12 @@ file, you will have to alter this file.
 
 =item *
 
-The "cmap.conf" file will be created in the "conf" directory and will
-set the "template_dir" and "cache_dir" to match the "TEMPLATES" and
-"CACHE" arguments to "Build.PL," respectively.  It will then be copied
-to the "CONF" location.
+The "cmap.conf" directory will be created in the "conf" directory and will
+contain a global.conf to set the "template_dir" and "cache_dir" to match 
+the "TEMPLATES" and "CACHE" arguments to "Build.PL," respectively.  
+It will then be copied to the "CONF" location.  Additionally, individual
+database config files such as mysql1.conf will be copied into the cmap.conf
+directory.
 
 =item *
 
@@ -437,11 +447,12 @@ arguments will be relative to the prefix.  If you do not specify a
 "PREFIX," then all paths with be considered absolute.  The final
 installation paths will be reported to you before installation occurs.
 
-Be sure to update your "cmap.conf" file after installation with the
-correct database connection information.  (If you forget the location
-of the configuration file and you installed via option #1, then you
-can look in the "cmap_install.conf" file in the source directory of
-the CMap application.)  The database section is at the top of the
+Be sure to update your database specific config files located in "cmap.conf/" after installation with the correct database connection information.  
+(If you forget the location of the configuration file and you installed 
+via option #1, then you can look in the "cmap_install.conf" file in the 
+source directory of the CMap application.  The specific config file you use
+is up to you, some examples have been provided as *.conf.o files)  
+The database section is at the top of the
 file.  I would encourage you to look around this file and change
 things to affect the look and feel of your site.  If you don't like a
 change, comment out the line by placing a pound sign ("#") at the
