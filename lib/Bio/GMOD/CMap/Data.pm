@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.170 2004-11-05 19:28:43 mwz444 Exp $
+# $Id: Data.pm,v 1.171 2004-11-11 00:39:33 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.170 $)[-1];
+$VERSION = (qw$Revision: 1.171 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -5033,7 +5033,7 @@ original start and stop.
                         $from .= q[,
                           cmap_correspondence_lookup cl
                           ];
-                        $where .= q[ and m.map_id=cl.map_id1 ];
+                        $where .= q[ and m.map_id=cl.map_id1 and cl.map_id1!=cl.map_id2 ];
 
                         ### Add the information about the adjoinint slot
                         ### including info about the start and end.
@@ -5126,6 +5126,7 @@ original start and stop.
                     ### If aid was found, $sql_suffix will be created
                     my $slot_results;
                     my $sql_str = $sql_start . $from . $where;
+print STDERR "SLOT_INFO SQL \n$sql_str\n";
                     unless ( $slot_results =
                         $self->get_cached_results( 4, $sql_str ) )
                     {
