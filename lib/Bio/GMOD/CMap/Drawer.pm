@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.36 2003-05-29 19:18:42 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.37 2003-06-17 15:53:44 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.36 $)[-1];
+$VERSION = (qw$Revision: 1.37 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -1280,7 +1280,7 @@ and everything else on the left.
             $side = defined $slot_data->{ -1 } ? RIGHT : LEFT;
         }
         elsif ( $slot_no == 0 && $self->total_no_slots == 1 ) {
-            $side = LEFT;
+            $side = RIGHT;
         }
         elsif ( $slot_no == 0 ) {
             my $slot_data = $self->slot_data;

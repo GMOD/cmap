@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.48 2003-05-29 19:16:11 kycl4rk Exp $
+# $Id: Map.pm,v 1.49 2003-06-17 15:53:44 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.48 $)[-1];
+$VERSION = (qw$Revision: 1.49 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -82,7 +82,7 @@ Figure out where right-to-left this map belongs.
 =cut
 
     my $self        = shift;
-    my $slot_no     = $self->slot_no or return 0; # slot "0" is in the middle
+    my $slot_no     = $self->slot_no;
     my $drawer      = $self->drawer;
     my $buffer      = 15;
 
@@ -576,77 +576,6 @@ Lays out the map.
                 $min_x    = $label_x if $label_x < $min_x;
             }
         }
-
-#        #
-#        # Add "Delete" and "Flip" if appropriate.
-#        #
-#        unless ( 
-#            ( $is_relational && $slot_no != 0 )
-#            ||
-#            $slot_no == 0
-#            ||
-#            $slots->{ $slot_no }{'field'} eq 'map_set_aid'
-#        ) {
-#            my $buffer     = 4;
-#            my $map_left   = $map_bounds[0];
-#            my $map_right  = $map_bounds[2];
-#            my $map_bottom = $map_bounds[3] + $reg_font->height;
-#            my $map_middle = $map_left + ( ( $map_right - $map_left ) / 2 );
-#            my $string     = '(Delete)';
-#            my $string_x   =
-#                $map_middle - ( $reg_font->width * ( length( $string ) ) / 2 );
-#            my $string_y   = $map_bottom + $buffer;
-#            $drawer->add_drawing(
-#                STRING,
-#                $reg_font,
-#                $string_x,
-#                $string_y,
-#                $string,
-#                'black',
-#            );
-#
-#            #
-#            # To select the other comparative maps, we have to cut off
-#            # everything after the current map.  E.g., if there are maps in
-#            # slots -2, -1, 0, 1, and 2, for slot 1 we should choose everything
-#            # less than it (and non-zero).  The opposite is true for negative
-#            # slots.
-#            #
-#            my @ordered_slot_nos = sort { $a <=> $b } keys %$slots;
-#            my @cmap_nos;
-#            if ( $slot_no < 0 ) {
-#                push @cmap_nos, grep { $_>$slot_no && $_!=0 } @ordered_slot_nos;
-#            }
-#            else {
-#                push @cmap_nos, grep { $_<$slot_no && $_!=0 } @ordered_slot_nos;
-#            }
-#
-#            my $cmaps = join('%3a',
-#                map { 
-#                    join('%3d', $_, $slots->{$_}{'field'}, $slots->{$_}{'aid'})
-#                } @cmap_nos
-#            );
-#
-#            my $url = $self->config('cmap_viewer_url').
-#                '?ref_map_set_aid='.$slots->{0}{'map_set_aid'}.
-#                ';ref_map_aid='.$slots->{0}{'aid'}.
-#                ';ref_map_start='.$slots->{0}{'start'}.
-#                ';ref_map_stop='.$slots->{0}{'stop'}.
-#                ";comparative_maps=$cmaps";
-#
-#            my $string_bottom = $string_y + $reg_font->height;
-#            $drawer->add_map_area(
-#                coords => [
-#                    $string_x, 
-#                    $string_y, 
-#                    $string_x + ( $reg_font->width * length( $string ) ),
-#                    $string_bottom,
-#                ], 
-#                url    => $url,
-#                alt    => 'Delete '.$self->map_name,
-#            );
-#            $bottom_y = $string_bottom if $string_bottom > $bottom_y;
-#        }
     
         #
         # Features.
@@ -1336,7 +1265,7 @@ Lays out the map.
             values %features_with_corr;
 
         #
-        # Make map clickable.
+        # Add map details link.
         #
         my $slots = $drawer->slots;
         my @maps;
@@ -1403,6 +1332,77 @@ Lays out the map.
             };
             $bottom_y = $area[3] if $area[3] > $bottom_y;
         }
+
+#        #
+#        # Add "Delete" and "Flip" if appropriate.
+#        #
+#        unless ( 
+#            ( $is_relational && $slot_no != 0 )
+#            ||
+#            $slot_no == 0
+#            ||
+#            $slots->{ $slot_no }{'field'} eq 'map_set_aid'
+#        ) {
+#            my $buffer     = 4;
+#            my $map_left   = $map_bounds[0];
+#            my $map_right  = $map_bounds[2];
+#            my $map_bottom = $map_bounds[3] + $reg_font->height;
+#            my $map_middle = $map_left + ( ( $map_right - $map_left ) / 2 );
+#            my $string     = '(Delete)';
+#            my $string_x   =
+#                $map_middle - ( $reg_font->width * ( length( $string ) ) / 2 );
+#            my $string_y   = $map_bottom + $buffer;
+#            $drawer->add_drawing(
+#                STRING,
+#                $reg_font,
+#                $string_x,
+#                $string_y,
+#                $string,
+#                'black',
+#            );
+#
+#            #
+#            # To select the other comparative maps, we have to cut off
+#            # everything after the current map.  E.g., if there are maps in
+#            # slots -2, -1, 0, 1, and 2, for slot 1 we should choose everything
+#            # less than it (and non-zero).  The opposite is true for negative
+#            # slots.
+#            #
+#            my @ordered_slot_nos = sort { $a <=> $b } keys %$slots;
+#            my @cmap_nos;
+#            if ( $slot_no < 0 ) {
+#                push @cmap_nos, grep { $_>$slot_no && $_!=0 } @ordered_slot_nos;
+#            }
+#            else {
+#                push @cmap_nos, grep { $_<$slot_no && $_!=0 } @ordered_slot_nos;
+#            }
+#
+#            my $cmaps = join('%3a',
+#                map { 
+#                    join('%3d', $_, $slots->{$_}{'field'}, $slots->{$_}{'aid'})
+#                } @cmap_nos
+#            );
+#
+#            my $url = $self->config('cmap_viewer_url').
+#                '?ref_map_set_aid='.$slots->{0}{'map_set_aid'}.
+#                ';ref_map_aid='.$slots->{0}{'aid'}.
+#                ';ref_map_start='.$slots->{0}{'start'}.
+#                ';ref_map_stop='.$slots->{0}{'stop'}.
+#                ";comparative_maps=$cmaps";
+#
+#            my $string_bottom = $string_y + $reg_font->height;
+#            $drawer->add_map_area(
+#                coords => [
+#                    $string_x, 
+#                    $string_y, 
+#                    $string_x + ( $reg_font->width * length( $string ) ),
+#                    $string_bottom,
+#                ], 
+#                url    => $url,
+#                alt    => 'Delete '.$self->map_name,
+#            );
+#            $bottom_y = $string_bottom if $string_bottom > $bottom_y;
+#        }
 
         #
         # The map title(s).
@@ -1596,14 +1596,25 @@ Returns the all the map IDs sorted by the number of correspondences
     my $self = shift;
     
     unless ( $self->{'sorted_map_ids'} ) {
+        my @map_ids = keys %{ $self->{'maps'} || {} };
+        my ( $sort_on, $reverse );
+        if ( $self->slot_no == 0 && scalar @map_ids > 1 ) {
+            $sort_on = 'display_order';
+            $reverse = 1;
+        }
+        else {
+            $sort_on = 'no_correspondences';
+            $reverse = -1;
+        }
+
         my @maps = map { 
-            [ $_, $self->{'maps'}{ $_ }{'no_correspondences'} ] 
+            [ $_, $self->{'maps'}{ $_ }{ $sort_on } ] 
         } keys %{ $self->{'maps'} || {} };
 
         if ( @maps ) {
             $self->{'sorted_map_ids'} = [
                 map  { $_->[0] }
-                sort { $b->[1] <=> $a->[1] } 
+                sort { $reverse * ( $a->[1] <=> $b->[1] ) } 
                 @maps
             ];
         }
