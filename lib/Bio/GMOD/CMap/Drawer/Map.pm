@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.52 2003-07-30 16:55:04 kycl4rk Exp $
+# $Id: Map.pm,v 1.53 2003-08-05 20:24:15 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.52 $)[-1];
+$VERSION = (qw$Revision: 1.53 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1090,10 +1090,11 @@ Lays out the map.
                     }
                     
                     push @map_area_data, {
-                       coords => \@coords,
+                        coords => \@coords,
                         url    => 
                             $feature_details_url.$feature->{'accession_id'},
-                        alt    => 'Details: '.$feature->{'feature_name'},
+                        alt    => 
+                            'Feature Details: '.$feature->{'feature_name'},
                     };
                 }
 
@@ -1280,7 +1281,7 @@ Lays out the map.
                 push @map_area_data, {
                     coords => \@label_bounds,
                     url    => $label->{'url'},
-                    alt    => 'Details: '.$text,
+                    alt    => 'Map Details',
                 };
 
                 $min_x    = $label_bounds[0] if $label_bounds[0] < $min_x;
