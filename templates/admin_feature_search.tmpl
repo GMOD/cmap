@@ -67,9 +67,7 @@
                 <th>
                     <a href="admin?action=feature_search;feature_name=[% fname %];map_aid=[% apr.param('map_aid') %];feature_type_id=[% apr.param('feature_type_id') %];search_field=[% apr.param('search_field') %];order_by=feature_name">Feature Name</a>
                 </th>
-                <th>
-                    <a href="admin?action=feature_search;feature_name=[% fname %];map_aid=[% apr.param('map_aid') %];feature_type_id=[% apr.param('feature_type_id') %];search_field=[% apr.param('search_field') %];order_by=alternate_name">Alt. Name</a>
-                </th>
+                <th>Aliases</th>
                 <th>
                     <a href="admin?action=feature_search;feature_name=[% fname %];map_aid=[% apr.param('map_aid') %];feature_type_id=[% apr.param('feature_type_id') %];search_field=[% apr.param('search_field') %];order_by=feature_type">Feature Type</a>
                 </th>
@@ -96,7 +94,7 @@
                 <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
                     <td>[% f.feature_aid %]</td>
                     <td>[% f.feature_name %]</td>
-                    <td>[% f.alternate_name %]</td>
+                    <td>[% f.aliases.join(', ') | truncate(10) %]</td>
                     <td>[% f.feature_type %]</td>
                     <td>[% f.species_name %]</td>
                     <td>
