@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::Import;
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.45 2004-02-10 23:06:50 kycl4rk Exp $
+# $Id: Import.pm,v 1.45.2.1 2004-06-03 21:52:27 kycl4rk Exp $
 
 =pod
 
@@ -28,7 +28,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.45 $)[-1];
+$VERSION  = (qw$Revision: 1.45.2.1 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -808,6 +808,7 @@ Imports an XML document containing CMap database objects.
     my %species;
     for my $species ( @{ $import->{'cmap_species'} || [] } )  {
         $self->import_object(
+            overwrite   => $overwrite,
             table_name  => 'cmap_species',
             pk_name     => 'species_id',
             object_type => 'species',
@@ -826,6 +827,7 @@ Imports an XML document containing CMap database objects.
     my %map_types;
     for my $map_type ( @{ $import->{'cmap_map_type'} || [] } )  {
         $self->import_object(
+            overwrite   => $overwrite,
             table_name  => 'cmap_map_type',
             pk_name     => 'map_type_id',
             object_type => 'map_type',
@@ -844,6 +846,7 @@ Imports an XML document containing CMap database objects.
     my %feature_types;
     for my $ft ( @{ $import->{'cmap_feature_type'} || [] } )  {
         $self->import_object(
+            overwrite   => $overwrite,
             table_name  => 'cmap_feature_type',
             pk_name     => 'feature_type_id',
             object_type => 'feature_type',
@@ -862,6 +865,7 @@ Imports an XML document containing CMap database objects.
     my %evidence_type_ids;
     for my $et ( @{ $import->{'cmap_evidence_type'} || [] } )  {
         $self->import_object(
+            overwrite   => $overwrite,
             table_name  => 'cmap_evidence_type',
             pk_name     => 'evidence_type_id',
             object_type => 'evidence_type',
@@ -890,6 +894,7 @@ Imports an XML document containing CMap database objects.
             return $self->error('Cannot determine map type id');
 
         $self->import_object(
+            overwrite   => $overwrite,
             table_name  => 'cmap_map_set',
             pk_name     => 'map_set_id',
             object_type => 'map_set',
@@ -903,6 +908,7 @@ Imports an XML document containing CMap database objects.
         for my $map ( @{ $ms->{'map'} || [] } ) {
             $map->{'map_set_id'} = $ms->{'new_map_set_id'};
             $self->import_object(
+                overwrite   => $overwrite,
                 table_name  => 'cmap_map',
                 pk_name     => 'map_id',
                 object_type => 'map',
@@ -917,6 +923,7 @@ Imports an XML document containing CMap database objects.
                 $feature->{'feature_type_id'} = $ft->{'new_feature_type_id'};
                 $feature->{'map_id'}          = $map->{'new_map_id'};
                 $self->import_object(
+                    overwrite   => $overwrite,
                     table_name  => 'cmap_feature',
                     pk_name     => 'feature_id',
                     object_type => 'feature',
@@ -933,6 +940,7 @@ Imports an XML document containing CMap database objects.
                 for my $alias ( @{ $feature->{'feature_alias'} || [] } ) {
                     $alias->{'feature_id'} = $feature->{'new_feature_id'};
                     $self->import_object(
+                        overwrite           => $overwrite,
                         table_name          => 'cmap_feature_alias',
                         pk_name             => 'feature_alias_id',
                         object_type         => 'feature_alias',
@@ -958,6 +966,7 @@ Imports an XML document containing CMap database objects.
         }
 
         $self->import_object(
+            overwrite   => $overwrite,
             table_name  => 'cmap_feature_correspondence',
             pk_name     => 'feature_correspondence_id',
             object_type => 'feature_correspondence',
@@ -1000,7 +1009,6 @@ sub import_object {
     my $admin               = $self->admin;
 
     my $new_object_id;
-
     if ( $lookup_accession_id ) {
         $new_object_id = $db->selectrow_array(
             qq[
@@ -1013,9 +1021,18 @@ sub import_object {
         );
     }
 
-    unless ( $new_object_id ) {
+    if ( $new_object_id && $args{'overwrite'} ) {
+        $self->Print("Updating $table_name\n");
+        my $update_method     = $object_type . '_update';
+        $object->{ $pk_name } = $new_object_id;
+        $admin->$update_method(
+            map { $_, $object->{ $_ } } $pk_name, @$field_names
+        ) or return $self->error( $admin->error );
+    }
+    else {
+        $self->Print("Creating new data in $table_name\n");
         my $create_method = $object_type . '_create';
-        $new_object_id    =  $admin->$create_method(
+        $new_object_id    = $admin->$create_method(
             map { $_, $object->{ $_ } } @$field_names
         ) or return $self->error( $admin->error );
     }
