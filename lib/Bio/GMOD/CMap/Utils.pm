@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.43 2004-09-13 20:55:06 mwz444 Exp $
+# $Id: Utils.pm,v 1.44 2004-11-30 20:31:24 mwz444 Exp $
 
 =head1 NAME
 
@@ -30,7 +30,7 @@ use Bio::GMOD::CMap::Constants;
 use POSIX;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.43 $)[-1];
+$VERSION = (qw$Revision: 1.44 $)[-1];
 
 use base 'Exporter';
 
@@ -762,6 +762,9 @@ the DBI selectall_arrayref()
 
 =head2 sort_selectall_arrayref
 
+give array ref of a hash and a list of keys and it will sort 
+based on the list of keys.  Add a '#' to the front of a key 
+to make it use '<=>' instead of 'cmp'.
 
 =cut 
 
@@ -777,19 +780,32 @@ sub sort_selectall_arrayref {
                 $col=$1;
                 $dir=-1 if ($2 eq (uc 'DESC'));
             }
-
-            if ( $dir*($a->{ $col } cmp $b->{ $col }) ) {
-                return $dir*($a->{ $col } cmp $b->{ $col });
+            if ($col=~/^#(\S+)/){
+                $col = $1;
+                if ( $dir*($a->{ $col } <=> $b->{ $col }) ) {
+                    return $dir*($a->{ $col } <=> $b->{ $col });
+                }
+            }
+            else{
+                if ( $dir*($a->{ $col } cmp $b->{ $col }) ) {
+                    return $dir*($a->{ $col } cmp $b->{ $col });
+                }
             }
         }
         my $col=$columns[-1];
-            my $dir=1;
-            if ($col=~/^(\S+)\s+(\S+)/){
-                $col=$1;
-                $dir=-1 if ($2 eq (uc 'DESC'));
-            }
+        my $dir=1;
+        if ($col=~/^(\S+)\s+(\S+)/){
+            $col=$1;
+            $dir=-1 if ($2 eq (uc 'DESC'));
+        }
 
-        return $dir*($a->{ $col } cmp $b->{ $col });
+        if ($col=~/^#(\S+)/){
+            $col = $1;
+            return $dir*($a->{ $col } <=> $b->{ $col });
+        }
+        else{
+            return $dir*($a->{ $col } cmp $b->{ $col });
+        }
     } @$arrayref;
 
     return \@return;
