@@ -36,6 +36,7 @@ lib/Bio/GMOD/CMap/Drawer/Map.pm
 sql/cmap.create.mysql
 sql/cmap.create.oracle
 sql/cmap.create.postgresql
+sql/cmap.create.sybase
 t/01_ini.t
 templates/index.tmpl
 templates/admin_confirm_delete.tmpl
