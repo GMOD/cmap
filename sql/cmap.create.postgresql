@@ -27,8 +27,9 @@ CREATE TABLE "cmap_correspondence_evidence" (
   "correspondence_evidence_id" bigint DEFAULT '0' NOT NULL,
   "accession_id" character varying(20) DEFAULT '' NOT NULL,
   "feature_correspondence_id" bigint DEFAULT '0' NOT NULL,
-  "evidence_type_id" bigint DEFAULT '0' NOT NULL,
+  "evidence_type_accession" varying(20) DEFAULT '0' NOT NULL,
   "score" numeric(8,2) DEFAULT NULL,
+  "rank" numeric(11,0) DEFAULT '0' NOT NULL,
   PRIMARY KEY ("correspondence_evidence_id"),
   Constraint "accession_id" UNIQUE ("accession_id")
 );
@@ -66,21 +67,6 @@ CREATE TABLE "cmap_correspondence_matrix" (
 );
 
 --
--- Table: cmap_evidence_type
---
-
-CREATE TABLE "cmap_evidence_type" (
-  "evidence_type_id" bigint DEFAULT '0' NOT NULL,
-  "accession_id" character varying(20) DEFAULT '' NOT NULL,
-  "evidence_type" character varying(30) DEFAULT '' NOT NULL,
-  "rank" bigint DEFAULT '0' NOT NULL,
-  "line_color" character varying(20) DEFAULT NULL,
-  PRIMARY KEY ("evidence_type_id"),
-  Constraint "accession_id3" UNIQUE ("accession_id"),
-  Constraint "rank" UNIQUE ("rank")
-);
-
---
 -- Table: cmap_feature
 --
 
@@ -88,11 +74,12 @@ CREATE TABLE "cmap_feature" (
   "feature_id" bigint DEFAULT '0' NOT NULL,
   "accession_id" character varying(20) DEFAULT '' NOT NULL,
   "map_id" bigint DEFAULT '0' NOT NULL,
-  "feature_type_id" bigint DEFAULT '0' NOT NULL,
+  "feature_type_accession" varying(20) DEFAULT '' NOT NULL,
   "feature_name" character varying(32) DEFAULT '' NOT NULL,
   "is_landmark" smallint DEFAULT '0' NOT NULL,
   "start_position" numeric(11,2) DEFAULT '0' NOT NULL,
   "stop_position" numeric(11,2) DEFAULT NULL,
+  "default_rank" bigint DEFAULT '1' NOT NULL,
   PRIMARY KEY ("feature_id"),
   Constraint "accession_id4" UNIQUE ("accession_id")
 );
@@ -142,23 +129,6 @@ CREATE INDEX "feature_id12" on cmap_feature_correspondence ("feature_id1");
 CREATE INDEX "cmap_feature_corresp_idx" on cmap_feature_correspondence ("is_enabled", "feature_correspondence_id");
 
 --
--- Table: cmap_feature_type
---
-
-CREATE TABLE "cmap_feature_type" (
-  "feature_type_id" bigint DEFAULT '0' NOT NULL,
-  "accession_id" character varying(20) DEFAULT '' NOT NULL,
-  "feature_type" character varying(32) DEFAULT '' NOT NULL,
-  "default_rank" bigint DEFAULT '1' NOT NULL,
-  "shape" character varying(12) DEFAULT NULL,
-  "color" character varying(20) DEFAULT NULL,
-  "drawing_lane" bigint DEFAULT '1' NOT NULL,
-  "drawing_priority" bigint DEFAULT '1' NOT NULL,
-  PRIMARY KEY ("feature_type_id"),
-  Constraint "accession_id6" UNIQUE ("accession_id")
-);
-
---
 -- Table: cmap_map
 --
 
@@ -198,7 +168,7 @@ CREATE TABLE "cmap_map_set" (
   "accession_id" character varying(20) DEFAULT '' NOT NULL,
   "map_set_name" character varying(64) DEFAULT '' NOT NULL,
   "short_name" character varying(30) DEFAULT '' NOT NULL,
-  "map_type_id" bigint DEFAULT '0' NOT NULL,
+  "map_type_accession" varying(30) DEFAULT '0' NOT NULL,
   "species_id" bigint DEFAULT '0' NOT NULL,
   "published_on" date,
   "can_be_reference_map" smallint DEFAULT '1' NOT NULL,
@@ -206,6 +176,8 @@ CREATE TABLE "cmap_map_set" (
   "is_enabled" smallint DEFAULT '1' NOT NULL,
   "shape" character varying(12) DEFAULT NULL,
   "color" character varying(20) DEFAULT NULL,
+  "map_units" varying(12) DEFAULT '' NOT NULL,
+  "is_relational_map" smallint DEFAULT '0' NOT NULL,
   "width" bigint DEFAULT NULL,
   PRIMARY KEY ("map_set_id"),
   Constraint "accession_id8" UNIQUE ("accession_id"),
@@ -213,25 +185,6 @@ CREATE TABLE "cmap_map_set" (
 );
 
 CREATE INDEX "cmap_map_set_idx" on cmap_map_set ("can_be_reference_map", "is_enabled", "species_id", "display_order", "published_on", "short_name");
-
---
--- Table: cmap_map_type
---
-
-CREATE TABLE "cmap_map_type" (
-  "map_type_id" bigint DEFAULT '0' NOT NULL,
-  "accession_id" character varying(20) DEFAULT '' NOT NULL,
-  "map_type" character varying(64) DEFAULT '' NOT NULL,
-  "map_units" character varying(12) DEFAULT '' NOT NULL,
-  "is_relational_map" smallint DEFAULT '0' NOT NULL,
-  "shape" character varying(12) DEFAULT NULL,
-  "color" character varying(20) DEFAULT NULL,
-  "width" bigint DEFAULT NULL,
-  "display_order" bigint DEFAULT '1' NOT NULL,
-  PRIMARY KEY ("map_type_id"),
-  Constraint "map_type" UNIQUE ("map_type"),
-  Constraint "accession_id9" UNIQUE ("accession_id")
-);
 
 --
 -- Table: cmap_next_number

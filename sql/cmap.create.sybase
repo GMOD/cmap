@@ -27,8 +27,9 @@ CREATE TABLE cmap_correspondence_evidence (
   correspondence_evidence_id numeric(11) DEFAULT '0' NOT NULL,
   accession_id varchar(20) DEFAULT '' NOT NULL,
   feature_correspondence_id numeric(11) DEFAULT '0' NOT NULL,
-  evidence_type_id numeric(11) DEFAULT '0' NOT NULL,
+  evidence_type_accession varchar(20) DEFAULT '0' NOT NULL,
   score double(8,2) DEFAULT NULL NULL,
+   rank numeric(11) NOT NULL DEFAULT '0',
   CONSTRAINT pk_cmap_correspondence_evidenc PRIMARY KEY (correspondence_evidence_id),
   CONSTRAINT accession_id UNIQUE (accession_id)
 );
@@ -66,21 +67,6 @@ CREATE TABLE cmap_correspondence_matrix (
 );
 
 --
--- Table: cmap_evidence_type
---
-
-CREATE TABLE cmap_evidence_type (
-  evidence_type_id numeric(11) DEFAULT '0' NOT NULL,
-  accession_id varchar(20) DEFAULT '' NOT NULL,
-  evidence_type varchar(30) DEFAULT '' NOT NULL,
-  rank numeric(11) DEFAULT '0' NOT NULL,
-  line_color varchar(20) DEFAULT NULL NULL,
-  CONSTRAINT pk_cmap_evidence_type PRIMARY KEY (evidence_type_id),
-  CONSTRAINT accession_id UNIQUE (accession_id),
-  CONSTRAINT rank UNIQUE (rank)
-);
-
---
 -- Table: cmap_feature
 --
 
@@ -88,11 +74,12 @@ CREATE TABLE cmap_feature (
   feature_id numeric(11) DEFAULT '0' NOT NULL,
   accession_id varchar(20) DEFAULT '' NOT NULL,
   map_id numeric(11) DEFAULT '0' NOT NULL,
-  feature_type_id numeric(11) DEFAULT '0' NOT NULL,
+  feature_type_accession varchar(20) DEFAULT '0' NOT NULL,
   feature_name varchar(32) DEFAULT '' NOT NULL,
   is_landmark smallint(4) DEFAULT '0' NOT NULL,
   start_position double(11,2) DEFAULT '0' NOT NULL,
   stop_position double(11,2) DEFAULT NULL NULL,
+  default_rank numeric(11) NOT NULL DEFAULT '1',
   CONSTRAINT pk_cmap_feature PRIMARY KEY (feature_id),
   CONSTRAINT accession_id UNIQUE (accession_id)
 );
@@ -142,23 +129,6 @@ CREATE INDEX feature_id1 ON cmap_feature_correspondence (feature_id1);
 CREATE INDEX cmap_feature_corresp_idx ON cmap_feature_correspondence (is_enabled, feature_correspondence_id);
 
 --
--- Table: cmap_feature_type
---
-
-CREATE TABLE cmap_feature_type (
-  feature_type_id numeric(11) DEFAULT '0' NOT NULL,
-  accession_id varchar(20) DEFAULT '' NOT NULL,
-  feature_type varchar(32) DEFAULT '' NOT NULL,
-  default_rank numeric(11) DEFAULT '1' NOT NULL,
-  shape varchar(12) DEFAULT NULL NULL,
-  color varchar(20) DEFAULT NULL NULL,
-  drawing_lane numeric(11) DEFAULT '1' NOT NULL,
-  drawing_priority numeric(11) DEFAULT '1' NOT NULL,
-  CONSTRAINT pk_cmap_feature_type PRIMARY KEY (feature_type_id),
-  CONSTRAINT accession_id UNIQUE (accession_id)
-);
-
---
 -- Table: cmap_map
 --
 
@@ -198,7 +168,7 @@ CREATE TABLE cmap_map_set (
   accession_id varchar(20) DEFAULT '' NOT NULL,
   map_set_name varchar(64) DEFAULT '' NOT NULL,
   short_name varchar(30) DEFAULT '' NOT NULL,
-  map_type_id numeric(11) DEFAULT '0' NOT NULL,
+  map_type_accession varchar(20) DEFAULT '0' NOT NULL,
   species_id numeric(11) DEFAULT '0' NOT NULL,
   published_on date DEFAULT NULL NULL,
   can_be_reference_map smallint(4) DEFAULT '1' NOT NULL,
@@ -207,31 +177,14 @@ CREATE TABLE cmap_map_set (
   shape varchar(12) DEFAULT NULL NULL,
   color varchar(20) DEFAULT NULL NULL,
   width numeric(11) DEFAULT NULL NULL,
+  map_units varchar(12) NOT NULL DEFAULT '',
+  is_relational_map smallint(11) NOT NULL DEFAULT '0',
   CONSTRAINT pk_cmap_map_set PRIMARY KEY (map_set_id),
   CONSTRAINT accession_id UNIQUE (accession_id),
   CONSTRAINT map_set_id UNIQUE (map_set_id, species_id, short_name, accession_id)
 );
 
 CREATE INDEX cmap_map_set_idx ON cmap_map_set (can_be_reference_map, is_enabled, species_id, display_order, published_on, short_name);
-
---
--- Table: cmap_map_type
---
-
-CREATE TABLE cmap_map_type (
-  map_type_id numeric(11) DEFAULT '0' NOT NULL,
-  accession_id varchar(20) DEFAULT '' NOT NULL,
-  map_type varchar(64) DEFAULT '' NOT NULL,
-  map_units varchar(12) DEFAULT '' NOT NULL,
-  is_relational_map smallint(11) DEFAULT '0' NOT NULL,
-  shape varchar(12) DEFAULT NULL NULL,
-  color varchar(20) DEFAULT NULL NULL,
-  width numeric(11) DEFAULT NULL NULL,
-  display_order numeric(11) DEFAULT '1' NOT NULL,
-  CONSTRAINT pk_cmap_map_type PRIMARY KEY (map_type_id),
-  CONSTRAINT map_type UNIQUE (map_type),
-  CONSTRAINT accession_id UNIQUE (accession_id)
-);
 
 --
 -- Table: cmap_next_number
