@@ -7,9 +7,11 @@ MANIFEST
 MANIFEST.SKIP
 Build.PL
 README
+SIGNATURE
 TODO
 bin/cmap_admin.pl
 bin/cmap_matrix_compare.pl
+bin/cmap_metrics.pl
 bin/profile-cmap-draw.pl
 conf/cmap.conf
 conf/cmap.css
@@ -143,6 +145,7 @@ templates/header.tmpl
 templates/help_feature_details.tmpl
 templates/help_feature_type_info.tmpl
 templates/help_feature_search.tmpl
+templates/help_header.tmpl
 templates/help_map_details.tmpl
 templates/help_map_set_info.tmpl
 templates/help_map_viewer.tmpl
