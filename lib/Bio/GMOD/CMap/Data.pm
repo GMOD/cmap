@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.198 2004-12-18 00:26:21 mwz444 Exp $
+# $Id: Data.pm,v 1.198.2.1 2005-01-11 20:36:34 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.198 $)[-1];
+$VERSION = (qw$Revision: 1.198.2.1 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -3648,7 +3648,9 @@ Returns the detail info for a map.
     my $map_stop              = $map->{'stop'};
     my $feature_type_data     = $self->feature_type_data();
 
-    my $feature_type_aids           = $args{'included_feature_types'};
+    my $feature_type_aids           = $args{'included_feature_types'}  || [];
+    my $corr_only_feature_type_aids = $args{'corr_only_feature_types'}  || [];
+    my $ignored_feature_type_aids   = $args{'ignored_feature_types'}   || [];
     my $included_evidence_type_aids = $args{'included_evidence_types'};
     my $ignored_evidence_type_aids  = $args{'ignored_evidence_types'};
 
@@ -3704,7 +3706,7 @@ Returns the detail info for a map.
     my $features = $db->selectall_arrayref(
         $sql->cmap_data_features_sql(
             order_by          => $order_by,
-            feature_type_aids => $feature_type_aids,
+            feature_type_aids => [(@$feature_type_aids,@$corr_only_feature_type_aids)] ,
         ),
         { Columns => {} },
         ( $map_id, $map_start, $map_stop, $map_start, $map_start )
