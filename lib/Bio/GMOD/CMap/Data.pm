@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.98.2.4 2004-05-28 20:49:55 kycl4rk Exp $
+# $Id: Data.pm,v 1.98.2.5 2004-06-09 15:48:46 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.98.2.4 $)[-1];
+$VERSION = (qw$Revision: 1.98.2.5 $)[-1];
 
 use Data::Dumper;
 use Regexp::Common;
@@ -3185,7 +3185,7 @@ Returns the detail info for a map.
                      cmap_feature_type ft
             where    f.map_id=?
             and      f.feature_type_id=ft.feature_type_id
-            group by f.feature_type_id
+            group by ft.feature_type
             order by no_by_type desc
         ],
         { Columns => {} },
