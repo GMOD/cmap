@@ -52,14 +52,16 @@
         </td>
         <td>[% map.stop_position OR '&nbsp;' %]</td>
     </tr>
-
-    <tr>
-        <td align="right">
-            Note:
-        </td>
-        <td>[% map.note OR '&nbsp;' %]</td>
-    </tr>
 </table>
+
+[% 
+    INCLUDE admin_attributes_view.tmpl 
+    attributes=map.attributes 
+    return_action='map_view'
+    pk_name='map_id'
+    object_id=map.map_id
+    table_name='cmap_map'
+%]
 
 <table width="100%">
     <tr bgcolor="lightgrey">

@@ -67,10 +67,20 @@
                 <td>[% mt.color %]</td>
             </tr> 
 
-            <tr>
-                <td align="right">Note:</td>
-                <td>[% mt.note %]</td>
-            </tr> 
+            [% FOREACH att=mt.attributes %]
+                <tr>
+                    <td align="right">
+                        [% att.attribute_name %]:
+                    </td>
+                    <td>
+                        [%- IF att.attribute_value.match('^http://') -%]
+                            <a href="[% att.attribute_value %]">[% att.attribute_value %]</a>
+                        [%- ELSE -%]
+                            [% att.attribute_value %]
+                        [%- END -%]
+                    </td>
+                </tr>
+            [% END %]
         [% END %]
     </table>
 [% ELSE %]

@@ -84,6 +84,16 @@
     </tr>
 </table>
 
+[% 
+    INCLUDE admin_attributes_view.tmpl 
+    title='Feature Correspondence Attributes'
+    attributes=corr.attributes 
+    return_action='feature_corr_view'
+    pk_name='feature_correspondence_id'
+    object_id=corr.feature_correspondence_id
+    table_name='cmap_feature_correspondence'
+%]
+
 <table width="100%">
     <tr bgcolor="lightgrey">
         <th>Evidence</th>

@@ -20,7 +20,7 @@
             <th><a href="admin?action=map_types_view;order_by=shape">Shape</a></th>
             <th><a href="admin?action=map_types_view;order_by=width">Width</a></th>
             <th><a href="admin?action=map_types_view;order_by=color">Color</a></th>
-            <th colspan="2" align="center">&nbsp;</th>
+            <th colspan="3" align="center">&nbsp;</th>
         </tr>
 
         [% SET i=0 %]
@@ -34,6 +34,9 @@
                 <td>[% mt.shape %]</td>
                 <td>[% mt.width %]</td>
                 <td>[% mt.color %]</td>
+                <td align="center">
+                  <a href="admin?action=map_type_view;map_type_id=[% mt.map_type_id %]">View</a>
+                </td>
                 <td align="center">
                   <a href="admin?action=map_type_edit;map_type_id=[% mt.map_type_id %]">Edit</a>
                 </td>

@@ -7,9 +7,9 @@
 
 <table>
     <tr>
-        <td align="right">
+        <th align="right">
             Map:
-        </td>
+        </th>
         <td>
             [% feature.species_name %]-[% feature.map_set_name %]-[% feature.map_name %]
             (<a href="admin?action=map_view;map_id=[% feature.map_id %]">View Map</a>)
@@ -17,99 +17,108 @@
     </tr>
 
     <tr>
-        <td align="right">
+        <th align="right">
             Acc ID:
-        </td>
+        </th>
         <td>
             [% feature.accession_id %]
         </td>
     </tr>
 
     <tr>
-        <td align="right">
+        <th align="right">
             Feature Name:
-        </td>
+        </th>
         <td>
             [% feature.feature_name %]
         </td>
     </tr>
 
     <tr>
-        <td align="right">
+        <th align="right" valign="top">
             Aliases:
-        </td>
+        </th>
         <td>
-            [% feature.aliases.join(', ') %]
+            [%- IF feature.aliases.size -%]
+                <ul>
+                [%- FOREACH alias=feature.aliases -%]
+                    <li>[%- alias -%]</li>
+                [%- END -%]
+                <ul>
+            [%- ELSE -%]
+                No aliases.
+            [%- END -%]
         </td>
     </tr>
 
     <tr>
-        <td align="right">
+        <th align="right">
             Feature Type:
-        </td>
+        </th>
         <td>
             [% feature.feature_type %]
         </td>
     </tr>
 
     <tr>
-        <td align="right">
+        <th align="right">
             Is Landmark:
-        </td>
+        </th>
         <td>
             [% IF feature.is_landmark; 'Yes'; ELSE; 'No'; END %]
         </td>
     </tr>
 
     <tr>
-        <td align="right">
+        <th align="right">
             Start:
-        </td>
+        </th>
         <td>
             [% feature.start_position %]
         </td>
     </tr>
 
     <tr>
-        <td align="right">
+        <th align="right">
             Stop:
-        </td>
+        </th>
         <td>
             [% feature.stop_position %]
         </td>
     </tr>
 
     <tr>
-        <td align="right">
+        <th align="right">
             DBXRef Name:
-        </td>
+        </th>
         <td>
             [% feature.dbxref_name %]
         </td>
     </tr>
 
     <tr>
-        <td align="right">
+        <th align="right">
             DBXRef URL:
-        </td>
+        </th>
         <td>
             [% feature.dbxref_url %]
         </td>
     </tr>
-
-    <tr>
-        <td align="right">
-            Note:
-        </td>
-        <td>
-            [% feature.note %]
-        </td>
-    </tr>
 </table>
+
+[% 
+    INCLUDE admin_attributes_view.tmpl 
+    title='Feature Attributes'
+    attributes=feature.attributes 
+    return_action='feature_view'
+    pk_name='feature_id'
+    object_id=feature.feature_id
+    table_name='cmap_feature'
+%]
 
 <table width="100%">
     <tr bgcolor="lightgrey">
-        <th>Correspondences</th>
+        <th>Feature Correspondences</th>
         <td align="right">
             <a href="admin?action=feature_corr_create;feature_id1=[% feature.feature_id %]">Add Correspondence</a>
         </td>
@@ -141,13 +150,13 @@
                 <td>[% fc.aliases.join(', ') %]</td>
                 <td>[% fc.evidence %]</td>
                 <td>[% IF fc.is_enabled; 'Yes'; ELSE; 'No'; END %]</td>
-                <td>
+                <td align="center">
                     <a href="admin?action=feature_corr_view;feature_correspondence_id=[% fc.feature_correspondence_id %]">View</a>
                 </td>
-                <td>
+                <td align="center">
                     <a href="admin?action=feature_corr_edit;feature_correspondence_id=[% fc.feature_correspondence_id %]">Edit</a>
                 </td>
-                <td>
+                <td align="center">
                     <a href="admin?action=confirm_delete;entity_type=cmap_feature_correspondence;entity_name_field=accession_id;entity_id=[% fc.feature_correspondence_id %]">Delete</a>
                 </td>
             </tr>

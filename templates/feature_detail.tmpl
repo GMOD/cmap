@@ -8,7 +8,7 @@
 
 <table>
     <tr>
-        <td align="right">
+        <th align="right">
             Acc ID:
         </td>
         <td>
@@ -17,7 +17,7 @@
     </tr>
 
     <tr>
-        <td align="right">
+        <th align="right">
             Feature Type:
         </td>
         <td>
@@ -26,7 +26,7 @@
     </tr>
 
     <tr>
-        <td align="right">
+        <th align="right">
             Feature Name:
         </td>
         <td>
@@ -35,7 +35,7 @@
     </tr>
 
     <tr>
-        <td align="right">
+        <th align="right">
             Aliases:
         </td>
         <td>
@@ -44,7 +44,7 @@
     </tr>
 
     <tr>
-        <td align="right">
+        <th align="right">
             Map:
         </td>
         <td>
@@ -54,7 +54,7 @@
     </tr>
 
     <tr>
-        <td align="right">
+        <th align="right">
             Start:
         </td>
         <td>
@@ -63,7 +63,7 @@
     </tr>
 
     <tr>
-        <td align="right">
+        <th align="right">
             Stop:
         </td>
         <td>
@@ -74,16 +74,7 @@
     </tr>
 
     <tr>
-        <td align="right">
-            Note:
-        </td>
-        <td>
-            [% feature.note %]
-        </td>
-    </tr>
-
-    <tr>
-        <td align="right">
+        <th align="right">
             Database Cross-References:
         </td>
         <td>
@@ -100,6 +91,21 @@
             [% END %]
         </td>
     </tr>
+
+    [% FOREACH att=feature.attributes %]
+        <tr>
+            <th align="right">
+                [% att.attribute_name %]:
+            </td>
+            <td>
+                [%- IF att.attribute_value.match('^http://') -%]
+                    <a href="[% att.attribute_value %]">[% att.attribute_value %]</a>
+                [%- ELSE -%]
+                    [% att.attribute_value %]
+                [%- END -%]
+            </td>
+        </tr>
+    [% END %]
 </table>
 
 <table width="100%">

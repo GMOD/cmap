@@ -23,9 +23,7 @@
         </td>
         <td valign="top">
             <select name="search_field">
-                <option value="both">--Feature Name and Alt. Name--</option>
                 <option value="feature_name"[% IF apr.param('search_field')=='feature_name' %] selected[% END %]>Feature Name</option>
-                <option value="alternate_name"[% IF apr.param('search_field')=='alternate_name' %] selected[% END %]>Alternate Name</option>
                 <option value="feature_aid"[% IF apr.param('search_field')=='feature_aid' %] selected[% END %]>Feature Acc. ID</option>
             </select>
         </td>

@@ -292,10 +292,20 @@
                 <b>[</b>&nbsp;<a href="map_type_info?map_type_aid=[% form_data.ref_map_set_info.map_type_aid %]">View More Info</a>&nbsp;<b>]</b>
             </td>
         </tr>
-        <tr>
-            <th align="right" valign="top">Note:</th>
-            <td>[% form_data.ref_map_set_info.note %]</td>
-        </tr>
+        [% FOREACH att=form_data.ref_map_set_info.attributes %]
+            <tr>
+                <th align="right">
+                    [% att.attribute_name %]:
+                </td>
+                <td>
+                    [%- IF att.attribute_value.match('^http://') -%]
+                        <a href="[% att.attribute_value %]">[% att.attribute_value %]</a>
+                    [%- ELSE -%]
+                        [% att.attribute_value %]
+                    [%- END -%]
+                </td>
+            </tr>
+        [% END %]
     </table>
 [% END %]
 

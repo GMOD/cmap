@@ -65,47 +65,57 @@
         </tr>
         [% FOREACH ms=map_sets %]
             <tr bgcolor="lightgrey">
-                <td align="right">Map&nbsp;Set&nbsp;Name:</td>
+                <th align="right">Map&nbsp;Set&nbsp;Name:</td>
                 <td>
                     <b>[% IF ms.can_be_reference_map %]<a href="/cmap/viewer?ref_map_set_aid=[% ms.map_set_aid %]">[% END %][% ms.map_set_name %][% IF ms.can_be_reference_map %]</a>[% END %]</b>
                 </td>
             </tr> 
 
             <tr>
-                <td align="right">Accession&nbsp;ID:</td>
+                <th align="right">Accession&nbsp;ID:</td>
                 <td>[% ms.map_set_aid %]</td>
             </tr>
 
             <tr>
-                <td align="right">Abbreviated&nbsp;Name:</td>
+                <th align="right">Abbreviated&nbsp;Name:</td>
                 <td>[% ms.short_name %]</td>
             </tr> 
 
             <tr>
-                <td align="right">Species:</td>
+                <th align="right">Species:</td>
                 <td>
                     <a href="species_info?species_aid=[% ms.species_aid %]">[% ms.full_name %] ([% ms.common_name %])</a>
                 </td>
             </tr> 
 
             <tr>
-                <td align="right">Map&nbsp;Type:</td>
+                <th align="right">Map&nbsp;Type:</td>
                 <td>[% ms.map_type %]</td>
             </tr> 
 
             <tr>
-                <td align="right">Map&nbsp;Units:</td>
+                <th align="right">Map&nbsp;Units:</td>
                 <td>[% ms.map_units %]</td>
             </tr> 
 
-            <tr>
-                <td align="right" valign="top">Note:</td>
-                <td>[% ms.note%]</td>
-            </tr> 
+            [% FOREACH att=ms.attributes %]
+                <tr>
+                    <th align="right">
+                        [% att.attribute_name %]:
+                    </td>
+                    <td>
+                        [%- IF att.attribute_value.match('^http://') -%]
+                            <a href="[% att.attribute_value %]">[% att.attribute_value %]</a>
+                        [%- ELSE -%]
+                            [% att.attribute_value %]
+                        [%- END -%]
+                    </td>
+                </tr>
+            [% END %]
 
             [% IF ms.maps.size %]
                 <tr>
-                    <td align="right" valign="top">Maps:</td>
+                    <th align="right" valign="top">Maps:</td>
                     <td>
                         [%- SET list=[] -%]
                         [%- FOREACH map=ms.maps -%]
@@ -121,7 +131,7 @@
 
             [% IF ms.feature_types.size %]
                 <tr>
-                    <td align="right" valign="top">Feature Types:</td>
+                    <th align="right" valign="top">Feature Types:</td>
                     <td>
                         [%- SET list=[] -%]
                         [%- SET ft_list=[] -%]
