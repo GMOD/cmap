@@ -67,6 +67,39 @@ template_dir $Local{'TEMPLATE_DIR'}
 # ----------------------------------------------------
 
 #
+# Introductory texts for various pages.
+#
+cmap_home_intro <<EOF
+Welcome to the genetic and comparative maps.
+EOF
+
+#map_viewer_intro <<EOF
+#EOF
+
+feature_search_intro <<EOF
+A <b>feature</b> in CMap is any element that can be placed on a
+map, either as a point or an interval.  
+EOF
+
+#feature_type_info_intro <<EOF
+#EOF
+
+#map_type_info_intro <<EOF
+#EOF
+
+#species_info_intro <<EOF
+#EOF
+
+matrix_intro <<EOF
+Each cell in the matrix shows the number of correspondences between
+apair of maps.  A correspondence is any relationship between
+two features. 
+EOF
+
+#map_set_info_intro <<EOF
+#EOF
+
+#
 # When making name-based correspondences, the default behavior is to
 # allow correspondences between features of the *exact* same type.  If
 # you wish to expand the feature types allowed when making name-based
