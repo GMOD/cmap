@@ -3,10 +3,9 @@ CVS
 \.bak$
 \.tmp$
 .*.old
-^Makefile$
 ^blib/
 ^_build/
-Build
+^Build$
 ^data/
 ^#
 (^|/)\.
