@@ -163,7 +163,7 @@
                     <td bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
                         [% IF apr.param('map_set_aid') %]
                             [% IF ms.map_name %]
-                                <b>[% ms.map_name %]</b>
+                                <b>[% ms.map_name | nbsp %]</b>
                             [% ELSE %]
                                 <b>All</b>
                             [% END %]
@@ -252,7 +252,7 @@
                     <td colspan="3">&nbsp;</td>
                     [% FOREACH ms=top_row.map_sets %]
                         <td>
-                            <a href="/cmap/matrix?show_matrix=1;map_set_aid=[% apr.param('map_set_aid') %];species_aid=[% apr.param('species_aid') %];map_name=[% apr.param('map_name') %];link_map_set_aid=[% ms.map_set_aid %]">[% ms.map_set_name %][% IF ms.map_aid %][% END %]</a>
+                            <a href="/cmap/matrix?show_matrix=1;map_set_aid=[% apr.param('map_set_aid') %];species_aid=[% apr.param('species_aid') %];map_name=[% apr.param('map_name') %];link_map_set_aid=[% ms.map_set_aid %]">[% ms.map_set_name %]</a>
                         </td>
                     [% END %]
                     <td colspan="3">&nbsp;</td>
