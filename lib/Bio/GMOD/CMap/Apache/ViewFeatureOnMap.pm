@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::ViewFeatureOnMap;
 # vim: set ft=perl:
 
-# $Id: ViewFeatureOnMap.pm,v 1.7.2.1 2004-04-29 16:16:24 kycl4rk Exp $
+# $Id: ViewFeatureOnMap.pm,v 1.7.2.2 2004-06-08 21:35:09 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.7.2.1 $)[-1];
+$VERSION = (qw$Revision: 1.7.2.2 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use base 'Bio::GMOD::CMap::Apache';
@@ -31,8 +31,10 @@ sub handler {
     return $self->error("Can't find the feature accession ID '$feature_aid'")
         unless $ms_aid && $map_aid;
 
+    my $url = $apr->url;
+
     print $apr->redirect(
-        "/cmap/viewer?ref_map_set_aid=$ms_aid&data_source=$data_source".
+        "$url/viewer?ref_map_set_aid=$ms_aid&data_source=$data_source".
         qq[&ref_map_aid=$map_aid&highlight="$highlight"]
     );
 
