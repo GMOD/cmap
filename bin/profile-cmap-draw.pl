@@ -6,9 +6,15 @@ profile-cmap-draw.pl - profile drawing code for CMap
 
 =head1 SYNOPSIS
 
+To profile the drawing code using DProf:
+
   perl -d:DProf profile-cmap-draw.pl [options]
 
-  Options:
+To profile the drawing code using DBI::ProfileDumper
+
+  DBI_PROFILE=DBI::ProfileDumper profile-cmap-draw.pl [options]
+
+Options:
 
     -h|--help|-?   Print brief help
     -d             The CMap data source to use
