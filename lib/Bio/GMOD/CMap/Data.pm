@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.192 2004-12-15 15:26:14 kycl4rk Exp $
+# $Id: Data.pm,v 1.193 2004-12-15 16:54:12 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.192 $)[-1];
+$VERSION = (qw$Revision: 1.193 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -884,8 +884,16 @@ sub slot_data {
             my $sql_base_bottom = qq[
                     where    f.map_id=$map->{'map_id'}
 				   ];
+            my $alias_sql = qq [
+                    select  fa.feature_id,
+                            fa.alias
+                    from    cmap_feature f,
+                            cmap_feature_alias fa
+                    where   f.map_id=$map->{'map_id'}
+                        and f.feature_id = fa.feature_id 
+            ];
             if ( defined($map_start) and defined($map_stop) ) {
-                $sql_base_bottom .= qq[
+                my $tmp_sql = qq[
 		       and      (
                         ( f.start_position>=$map_start and 
                           f.start_position<=$map_stop )
@@ -895,18 +903,24 @@ sub slot_data {
                             f.stop_position>=$map_start
                         )
 				 )
-		       ];
+		        ];
+                $sql_base_bottom .= $tmp_sql;
+                $alias_sql       .= $tmp_sql;
             }
             elsif ( defined($map_start) ) {
-                $sql_base_bottom .=
+                my $tmp_sql =
                     " and (( f.start_position>="
                   . $map_start
                   . " ) or ( f.stop_position is not null and "
                   . " f.stop_position>="
                   . $map_start . " ))";
+                $sql_base_bottom .= $tmp_sql;
+                $alias_sql       .= $tmp_sql;
             }
             elsif ( defined($map_stop) ) {
-                $sql_base_bottom .= " and f.start_position<=" . $map_stop . " ";
+                my $tmp_sql = " and f.start_position<=" . $map_stop . " ";
+                $sql_base_bottom .= $tmp_sql;
+                $alias_sql       .= $tmp_sql;
             }
 
             $sql_base_bottom .= qq[
@@ -990,23 +1004,37 @@ sub slot_data {
                 #$sql_str = $corr_free_sql . " UNION " . $with_corr_sql;
             }
 
-            unless ( 
-                $map->{'features'} = $self->get_cached_results( 4, $sql_str ) 
-            ) {
+            unless ( $map->{'features'} =
+                $self->get_cached_results( 4, $sql_str ) )
+            {
                 $map->{'features'} =
                   $db->selectall_hashref( $sql_str, 'feature_id', {}, () );
 
                 for my $feature_id ( keys %{ $map->{'features'} } ) {
-                    my $ft = $self->feature_type_data(
-                        $map->{'features'}{$feature_id}{'feature_type_aid'}
-                    );
+                    my $ft =
+                      $self->feature_type_data(
+                        $map->{'features'}{$feature_id}{'feature_type_aid'} );
 
-                    for my $fld ( qw[ feature_type default_rank shape 
-                        color drawing_lane drawing_priority ] 
-                    ) {
-                        $map->{'features'}{ $feature_id }{ $fld } =
-                            $ft->{ $fld };
+                    for my $fld (
+                        qw[ feature_type default_rank shape
+                        color drawing_lane drawing_priority ]
+                      )
+                    {
+                        $map->{'features'}{$feature_id}{$fld} = $ft->{$fld};
                     }
+                }
+
+                # Get feature aliases
+
+                my $alias_results =
+                  $db->selectall_arrayref( $alias_sql, { Columns => {} }, () );
+                my %aliases = ();
+                foreach my $row (@$alias_results) {
+                    push @{ $aliases{ $row->{'feature_id'} } }, $row->{'alias'};
+                }
+                for my $feature_id ( keys %{ $map->{'features'} } ) {
+                    $map->{'features'}{$feature_id}{'aliases'} =
+                      $aliases{$feature_id};
                 }
 
                 $self->store_cached_results( 4, $sql_str, $map->{'features'} );
