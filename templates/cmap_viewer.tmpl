@@ -150,48 +150,48 @@ function changeCompMaps(sel,index,side){
   var map_sets;
   if (side == 'Left'){
     dataArray=new Array(
-      [% SET not_first_map_set=0; %]
-      [% FOREACH ms=form_data.comparative_maps_left %]
-        [% IF not_first_map_set %]
+      [% SET not_first_map_set=0; -%]
+      [%- FOREACH ms=form_data.comparative_maps_left -%]
+        [%- IF not_first_map_set -%]
           ,
-        [% ELSE %]
-          [% SET not_first_map_set=1; %] 
-        [% END %]
-        [% SET not_first_map=0; %]
+        [%- ELSE -%]
+          [%- SET not_first_map_set=1; -%] 
+        [%- END -%]
+        [%- SET not_first_map=0; -%]
         new Array( 
-        [% FOREACH map=ms.maps; %]
-          [% IF not_first_map %]
+        [% FOREACH map=ms.maps; -%]
+          [%- IF not_first_map -%]
             ,
-          [% ELSE %]
-            [% SET not_first_map=1; %] 
-          [% END %]
-          new Array( '[% map.map_name %] [[% map.no_correspondences %]]','[% map.map_aid %]')
-        [% END %]
+          [%- ELSE -%]
+            [%- SET not_first_map=1; -%] 
+          [%- END -%]
+          new Array( '[%- map.map_name %] [[% map.no_correspondences %]]','[% map.map_aid -%]')
+        [% END -%]
         )
-      [% END %]
+      [% END -%]
     );
   }
   else{
     dataArray=new Array(
-      [% SET not_first_map_set=0; %]
-      [% FOREACH ms=form_data.comparative_maps_right %]
-        [% IF not_first_map_set %]
+      [% SET not_first_map_set=0; -%]
+      [%- FOREACH ms=form_data.comparative_maps_right -%]
+        [%- IF not_first_map_set -%]
           ,
-        [% ELSE %]
-          [% SET not_first_map_set=1; %] 
-        [% END %]
-        [% SET not_first_map=0; %]
+        [%- ELSE -%]
+          [%- SET not_first_map_set=1; -%] 
+        [%- END -%]
+        [%- SET not_first_map=0; -%]
         new Array( 
-        [% FOREACH map=ms.maps; %]
-          [% IF not_first_map %]
+        [% FOREACH map=ms.maps; -%]
+          [%- IF not_first_map -%]
             ,
-          [% ELSE %]
-            [% SET not_first_map=1; %] 
-          [% END %]
-          new Array( '[% map.map_name %] [[% map.no_correspondences %]]','[% map.map_aid %]')
-        [% END %]
+          [%- ELSE -%]
+            [%- SET not_first_map=1; -%] 
+          [%- END -%]
+          new Array( '[%- map.map_name %] [[% map.no_correspondences %]]','[% map.map_aid -%]')
+        [% END -%]
         )
-      [% END %]
+      [%- END -%]
     );
   }
 
@@ -735,11 +735,11 @@ function changeCompMaps(sel,index,side){
 
 [% IF drawer AND drawer.image_type!='svg' %]
   <map name="zoom">
-  [% FOREACH area=drawer.image_map_data %]
+  [% FOREACH area=drawer.image_map_data -%]
     <area [% area.code %] coords="[% area.coords.join(',') %]" [% IF area.url %]href="[% area.url %]" [% END %]title="[% area.alt %]">
-  [% END %]
+  [% END -%]
   </map>
-[% END %]
+[% END -%]
 
 [% IF form_data.ref_map_set_info %]
   <hr>
