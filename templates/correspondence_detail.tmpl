@@ -27,9 +27,9 @@
             [% feature1.map_set_name %] -
             [% feature1.map_name %]
         </td>
-        <td>
-            [% feature1.start_position %]
-            [% IF feature1.stop_position.defined; "- $feature1.stop_position"; END %]
+        <td align="right">
+            [% feature1.start_position | commify %]
+            [% IF feature1.stop_position.defined AND feature1.stop_position > feature1.start_position %]- [% feature1.stop_position | commify %][% END %] [% feature2.map_units %]
         </td>
         <td>
             [% feature1.feature_type %]
@@ -55,9 +55,9 @@
             [% feature2.map_set_name %] -
             [% feature2.map_name %] 
         </td>
-        <td>
-            [% feature2.start_position %]
-            [% IF feature2.stop_position.defined; "- $feature2.stop_position"; END %]
+        <td align="right">
+            [% feature2.start_position | commify %]
+            [% IF feature2.stop_position.defined AND feature1.stop_position > feature1.start_position %]- [% feature2.stop_position | commify %][% END %] [% feature2.map_units %]
         </td>
         <td>
             [% feature2.feature_type %]
@@ -123,8 +123,8 @@
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
                 <td>[% e.accession_id %]</td>
                 <td>[% e.evidence_type %]</td>
-                <td>[% e.rank %]</td>
-                <td>[% IF e.score.defined; e.score; ELSE; 'NULL'; END %]</td>
+                <td align="right">[% e.rank %]</td>
+                <td align="right">[% IF e.score.defined; e.score; ELSE; 'NULL'; END %]</td>
                 <td align="center">
                     <b>[</b>&nbsp;<a href="evidence_type_info?evidence_type_aid=[% e.evidence_type_aid %]">View&nbsp;Evidence&nbsp;Type&nbsp;Info</a>&nbsp<b>]</b>
                 </td>

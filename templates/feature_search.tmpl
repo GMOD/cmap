@@ -96,7 +96,7 @@ Use &quot;*&quot; or &quot;%&quot; for wildcards.  To find features with spaces 
                     <td><a href="map_set_info?map_set_aid=[% r.map_set_aid %]">[% r.map_set_name %]</a></td>
                     <td>[% r.map_name %]</td>
                     <td align="right">
-                        [% r.start_position %][% IF r.stop_position.defined %]-[% r.stop_position %][% END %]
+                        [% r.start_position | commify %][% IF r.stop_position.defined AND r.stop_position > r.start_position %]-[% r.stop_position | commify %][% END %] [% r.map_units %]
                     </td>
                     <td>[% r.aliases.join(', ') %]</td>
                     <td align="center">
