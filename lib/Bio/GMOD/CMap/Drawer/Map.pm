@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.143 2004-11-18 19:36:48 mwz444 Exp $
+# $Id: Map.pm,v 1.144 2004-11-18 21:23:33 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.143 $)[-1];
+$VERSION = (qw$Revision: 1.144 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -2188,12 +2188,35 @@ sub add_topper {
         my $map_details_url = DEFAULT->{'map_details_url'};
         my $code            = '';
         eval $self->map_type_data( $map->{'map_type_aid'}, 'area_code' );
+
+        my $slots = $drawer->slots;
+        my %detail_maps;
+        for my $side (qw[ left right ]) {
+            my $next_slot_no = $side eq 'left' ? $slot_no - 1 : $slot_no + 1;
+            my $new_slot_no  = $side eq 'left' ? -1           : 1;
+            $detail_maps{$new_slot_no} = $slots->{$next_slot_no};
+        }
+        my %this_map_info;
+        $this_map_info{ $self->accession_id($map_id) } = {
+            start => $self->start_position($map_id),
+            stop  => $self->stop_position($map_id),
+            mag   => $drawer->data_module->magnification( $slot_no, $map_id ),
+        };
+        my $details_url = $self->create_viewer_link(
+            $drawer->create_link_params(
+                ref_map_set_aid  => $self->map_set_aid($map_id),
+                ref_map_aids     => \%this_map_info,
+                comparative_maps => \%detail_maps,
+                url              => $map_details_url,
+            )
+        );
+
         push @{ $map_area_data->{$map_id} },
           {
             coords => \@topper_bounds,
-            url => $map_details_url . "?ref_map_aids=" . $map->{'accession_id'},
-            alt => 'Map Details: ' . $map->{'map_name'},
-            code => $code,
+            url    => $details_url,
+            alt    => 'Map Details: ' . $map->{'map_name'},
+            code   => $code,
           };
 
         $map_placement_data->{$map_id}{'bounds'}[0] = $f_x1
