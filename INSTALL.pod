@@ -1,15 +1,23 @@
+# vim: tw=70:
+
+=pod
+
 =head1 TITLE
 
 CMap Install
 
 =head1 VERSION
 
-$Revision: 1.8 $
+$Revision: 1.9 $
 
 =head1 QUICK START
 
-If you're pretty experienced with Unix systems administration, here is
-the very abbreviated explanation of how to install CMap:
+If you are upgrading from 0.12, please read the "UPDATE12to13"
+document in the "upgrade" directory.
+
+If you are installing CMap anew and are pretty experienced with Unix
+systems administration, here is the very abbreviated explanation of
+how to install CMap:
 
 =over 4
 
