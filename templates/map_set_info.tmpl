@@ -75,9 +75,9 @@
                 <td align="right">Species:</td>
                 <td>
                     [% ms.full_name %] ([% ms.common_name %])
-                    [% IF ms.ncbi_taxon_id %]
+                    [%- IF ms.ncbi_taxon_id -%]
                         <a href="http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=[% ms.ncbi_taxon_id %]">(View at NCBI)</a>
-                    [% END %]
+                    [%- END -%]
                 </td>
             </tr> 
 
@@ -98,21 +98,23 @@
 
             [% IF ms.maps.size %]
                 <tr>
-                    <td align="right">Maps:</td>
+                    <td align="right" valign="top">Maps:</td>
                     <td>
-                        [% SET list=[] %]
-                        [% ms.maps.push({ map_aid => -1, map_name => 'View All Maps'}) %]
-                        [% FOREACH map=ms.maps %]
-                          [% list.push("<a href=\"/cmap/viewer?ref_map_set_aid=$ms.map_set_aid;ref_map_aid=$map.map_aid\">$map.map_name</a>") %]
-                        [% END %]
-                        [% list.join(', ') %]
+                        [%- SET list=[] -%]
+                        [%- FOREACH map=ms.maps -%]
+                            [%- list.push("<a href=\"/cmap/viewer?ref_map_set_aid=$ms.map_set_aid;ref_map_aid=$map.map_aid\">$map.map_name</a>") -%]
+                        [%- END -%]
+                        [%- list.join(', ') -%]
+                        [%- IF list.size > 1 -%]
+                            <b>[</b><a href="/cmap/viewer?ref_map_set_aid=[%- ms.map_set_aid -%];ref_map_aid=-1">View All Maps</a><b>]</b>
+                        [%- END -%]
                     </td>
                 </tr> 
             [% END %]
 
             [% IF ms.feature_types.size %]
                 <tr>
-                    <td align="right">Feature Types:</td>
+                    <td align="right" valign="top">Feature Types:</td>
                     <td>
                         [%- SET list=[] -%]
                         [%- SET ft_list=[] -%]
@@ -123,7 +125,7 @@
                         [%- list.join(', ') -%]
                         [%- IF ft_list.size > 1 -%]
                             [%- SET all_ft = ft_list.join(',') -%]
-                            <b>[</b> <a href="/cmap/feature_type_info?feature_type_aid=[%- all_ft -%]">View All Feature Types</a> <b>]</b>
+                            <b>[</b> <a href="/cmap/feature_type_info?feature_type_aid=[%- all_ft -%]">View Info For All Feature Types</a> <b>]</b>
                         [%- END -%]
                     </td>
                 </tr> 
