@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.11 2002-12-11 23:05:35 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.12 2003-01-01 02:21:00 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.11 $)[-1];
+$VERSION = (qw$Revision: 1.12 $)[-1];
 
 #
 # Turn off output buffering.
@@ -520,7 +520,7 @@ sub export_as_sql {
     chomp( $answer = <STDIN> );
     return if $answer =~ /^[Nn]/;
 
-    print $log_fh, "Making SQL dump of tables to '$file'\n";
+    print $log_fh "Making SQL dump of tables to '$file'\n";
     open my $fh, ">$file" or die "Can't write to '$file': $!\n";
     print $fh 
         "--\n-- Dumping data for Cmap",
@@ -1003,13 +1003,14 @@ sub make_name_correspondences {
     #
     # Get the map set.
     #
-    my ( $map_set_id, $map_set_name ) = $self->show_menu(
-        title      => 'Reference Map Set (optional)',
-        prompt     => 'Please select a map set',
-        display    => 'common_name,map_set_name',
-        return     => 'map_set_id,map_set_name',
-        allow_null => 1,
-        data       => $db->selectall_arrayref(
+    my @map_set_ids = $self->show_menu(
+        title       => 'Reference Map Set (optional)',
+        prompt      => 'Please select a map set',
+        display     => 'common_name,map_set_name',
+        return      => 'map_set_id,map_set_name',
+        allow_null  => 1,
+        allow_mult  => 1,
+        data        => $db->selectall_arrayref(
             q[
                 select   ms.map_set_id, 
                          ms.map_set_name,
@@ -1030,9 +1031,8 @@ sub make_name_correspondences {
     my $corr_maker = Bio::GMOD::CMap::Admin::MakeCorrespondences->new(db=>$db);
     $corr_maker->make_name_correspondences(
         evidence_type_id => $evidence_type_id,
-        map_set_id       => $map_set_id,
+        map_set_ids      => \@map_set_ids,
         log_fh           => $self->log_fh,
-        
     ) or do { print "Error: ", $corr_maker->error, "\n"; return; };
 
     return 1;

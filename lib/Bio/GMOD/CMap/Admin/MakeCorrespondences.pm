@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
-# $Id: MakeCorrespondences.pm,v 1.9 2002-10-09 23:11:55 kycl4rk Exp $
+# $Id: MakeCorrespondences.pm,v 1.10 2003-01-01 02:21:00 kycl4rk Exp $
 
 =head1 NAME
 
@@ -30,7 +30,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.9 $)[-1];
+$VERSION = (qw$Revision: 1.10 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -40,7 +40,7 @@ use base 'Bio::GMOD::CMap';
 # ----------------------------------------------------
 sub make_name_correspondences {
     my ( $self, %args )  = @_;
-    my $map_set_id       = $args{'map_set_id'} || 0;
+    my @map_set_ids      = @{ $args{'map_set_ids'} || [] };
     my $evidence_type_id = $args{'evidence_type_id'} or 
                            return 'No evidence type id';
     $LOG_FH              = $args{'log_fh'}     || \*STDOUT;
@@ -60,10 +60,13 @@ sub make_name_correspondences {
                  cmap_map_type mt
         where    ms.map_type_id=mt.map_type_id
     ];
-    $sql .= "and ms.map_set_id=$map_set_id " if $map_set_id;
+    if ( @map_set_ids ) {
+        $sql .= 'and ms.map_set_id in (' . join(', ', @map_set_ids) . ')';
+    }
     $sql .= 'order by map_set_name';
     my $map_sets = $db->selectall_arrayref( $sql, { Columns => {} } );
 
+    my %done;
     for my $map_set ( @$map_sets ) {
         #
         # Find all the maps.
