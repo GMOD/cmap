@@ -111,17 +111,29 @@ my $admin = Bio::GMOD::CMap::Admin->new( data_source => $cmap->data_source );
 #);
 #
 #print "Converting feature aliases (", scalar @$features, ")\n";
+#my $id = 1;
 #for my $f ( @$features ) {
 #    next unless defined $f->{'alternate_name'} && $f->{'alternate_name'} ne '';
 #    next if $f->{'feature_name'} eq $f->{'alternate_name'};
 #
 #    $db->do(
-#        'insert into cmap_feature_alias (feature_id, alias) values (?, ?)',
+#        q[
+#            insert
+#            into   cmap_feature_alias2
+#                   (feature_alias_id, feature_id, alias)
+#            values (?, ?, ?)
+#        ],
 #        {},
-#        ( $f->{'feature_id'}, $f->{'alternate_name'} )
+#        ( $id++, $f->{'feature_id'}, $f->{'alternate_name'} )
 #    );
 #}
-
+#
+#$db->do(
+#    'insert into cmap_next_number (table_name, next_number) values (?, ?)',
+#    {},
+#    ( 'cmap_feature_alias', $id )
+#);
+#
 #
 # DBXrefs
 #
