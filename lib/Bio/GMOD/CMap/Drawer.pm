@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.72 2004-07-01 19:25:46 mwz444 Exp $
+# $Id: Drawer.pm,v 1.73 2004-07-29 20:28:23 mwz444 Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.72 $)[-1];
+$VERSION = (qw$Revision: 1.73 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -493,11 +493,10 @@ Gets/sets if the feature types have been specified.
 =cut
                                                                                 
     my $self = shift;
-                                                                                
-    if ( my $arg = shift ) {
+    my $arg = shift; 
+    if (defined($arg)) {
         $self->{'feature_types_undefined'}=  $arg;
     }
-                                                                                
     return $self->{'feature_types_undefined'};
 }
 
@@ -1057,48 +1056,6 @@ to connect corresponding features on two maps.
                 feature_id2 => $f2,
                 positions   => [ @f1_pos, @ref_pos ],
             } if @ref_pos;
-        }
-    }
-
-    return @return;
-}
-
-# ----------------------------------------------------
-sub feature_correspondence_map_positions {
-
-=pod
-
-=head2 feature_correspondence_map_positions
-
-Accepts a slot number and returns an array of arrayrefs denoting the 
-map positions (start, stop) in the reference slot to use when selecting a
-region of corresponding features.
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $slot_no         = $args{'slot_no'};
-    my $map_id          = $args{'map_id'};
-    my $comp_slot_no    = $args{'comp_slot_no'};
-    my $comp_slot_data  = $self->slot_data( $comp_slot_no );
-    return unless defined $slot_no && defined $comp_slot_no && $comp_slot_data;
-
-    my @comp_map_ids    = map { $_ || () } keys %$comp_slot_data;
-    return if scalar @comp_map_ids > 1; # too many maps (e.g., contigs)
-
-    my $comp_map        = $comp_slot_data->{ $comp_map_ids[0] };
-
-    my @return = ();
-    for my $f1 ( keys %{ $self->{'feature_position'}{ $slot_no } } ) {
-        next unless
-            $self->{'feature_position'}{ $slot_no }{$f1}{'map_id'} == $map_id;
-
-        for my $f2 ( $self->feature_correspondences( $f1 ) ) {
-            next unless defined $comp_map->{'features'}{ $f2 };
-            push @return, [
-                $comp_map->{'features'}{ $f2 }{'start_position'},
-                $comp_map->{'features'}{ $f2 }{'stop_position'}
-            ];
         }
     }
 

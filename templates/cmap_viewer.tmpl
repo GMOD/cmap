@@ -44,6 +44,73 @@ function selectFeatureRadio(val){
     }
   }
 }
+function crop(slot_no, map_aid, value, is_start){
+  var positionCount=0;
+  var insertStart=-1;
+  var insertStop=-1;
+  var splitArray;
+  if ( slot_no == 0){
+    document.comparative_map_form.ref_map_aids.value 
+      = addPosToStr(document.comparative_map_form.ref_map_aids.value, slot_no, map_aid, value, is_start)
+  }
+  else{
+    var matchStr=slot_no+"=map_aid="+map_aid;
+    document.comparative_map_form.comparative_maps.value 
+      = addPosToStr(document.comparative_map_form.comparative_maps.value, slot_no, matchStr, value, is_start)
+  }
+}
+
+function addPosToStr(str, slot_no, matchStr, value, is_start){
+  var positionCount=0;
+  var insertStart;
+  var insertStop;
+  var splitArray;
+
+  splitArray=str.split(":");
+  for (var i=0;i<splitArray.length;i++){
+    var bracket = splitArray[i].indexOf("[");
+    if (bracket>=0){
+      this_aid=splitArray[i].substr(0,bracket);
+      if (this_aid==matchStr){
+        if (is_start){
+          insertStart = positionCount+splitArray[i].indexOf("[")+1;
+          insertStop  = positionCount+splitArray[i].indexOf("*");
+        }
+        else{
+          insertStart = positionCount+splitArray[i].indexOf("*")+1;
+          insertStop  = positionCount+splitArray[i].indexOf("]");
+        }
+        str = str.substr(0,insertStart) + value + str.substr(insertStop); 
+        return str;
+      }
+    }
+    else{
+      if (splitArray[i]==matchStr){
+        insertStart = positionCount+splitArray[i].length;
+        if (is_start){
+          str = str.substr(0,insertStart) + "["+value+"*]" + str.substr(insertStart);
+        }
+        else{
+          str = str.substr(0,insertStart) + "[*"+value+"]" + str.substr(insertStart);
+        }
+        return str;
+      }
+    }
+    positionCount+=splitArray[i].length + 1;
+  }
+  //If not found, tack it to the end.
+  if (str!=""){
+    str = str +":";
+  }
+  if (is_start){
+    str = str +matchStr+"["+value+"*]";
+  }
+  else{
+    str = str +matchStr+"[*"+value+"]";
+  }
+    
+  return str;
+}
 
 </script>
 [%- IF extra_code -%]
@@ -99,7 +166,7 @@ function selectFeatureRadio(val){
           
           [% IF form_data.ref_map_sets.size %]
             <tr>
-              <td align="right">Ref. Set:</td>
+              <td align="right">Ref. Set:[% apr.param('ref_map_set_aid') %] == [% ms.accession_id %]</td>
 
               <td>
                 [% SET last_map_type='' %]
@@ -109,6 +176,7 @@ function selectFeatureRadio(val){
                     [%- IF ms.map_type != last_map_type -%]
                       <option value="">--&nbsp;[% ms.map_type %]&nbsp;Maps&nbsp;--</option>
                     [%- END -%]
+[% apr.param('ref_map_set_aid') %] == [% ms.accession_id %]
                     <option [% IF apr.param('ref_map_set_aid') == ms.accession_id OR form_data.ref_map_sets.size==1; ' selected'; END %] value="[% ms.accession_id %]">
                       [% ms.species_name %] - [% ms.map_set_name %]
                     </option>
@@ -125,59 +193,60 @@ function selectFeatureRadio(val){
             </tr>
           [% END %]
           </form>
-        [% IF form_data.ref_maps %]
-          [% form_data.ref_maps.unshift({accession_id=>'-1',map_name=>'--All--'}) %]
-          <form name="ref_map_form">
-          <tr>
-            <td valign="top" align="right">Ref. Map:</td>
-  
-            <td>
-              <select name="ref_map_aids" size="4" multiple
-                [% IF apr.param('ref_map_aid') %]
-                  onchange="javascript:if(document.ref_map_form.ref_map_aid.value!=document.ref_map_form.prev_ref_map_aid.value){document.comparative_map_form.start.value='';document.comparative_map_form.end.value='';document.ref_map_form.submit()}">
-                [% ELSE %]
-                  onchange="javascript:if(document.ref_map_form.ref_map_aid.value!=document.ref_map_form.prev_ref_map_aid.value){document.ref_map_form.submit()}">
-                [% END %]
-
-                [% IF form_data.ref_maps.size %]
-                  <option value="">--Select a Map--</option>
-                  [% FOREACH m=form_data.ref_maps %]
-                    <option[% IF selected_maps.${m.accession_id} OR form_data.ref_maps.size==1; ' selected'; END %] value="[% m.accession_id %]">[% m.map_name %]</option>
+          [% IF form_data.ref_maps %]
+            [% form_data.ref_maps.unshift({accession_id=>'-1',map_name=>'--All--'}) %]
+            <form name="ref_map_form">
+              <tr>
+                <td valign="top" align="right">Ref. Map:</td>
+      
+                <td>
+                  <select name="ref_map_aids" size="4" multiple
+                    [% IF apr.param('ref_map_aids') %]
+                      onchange="javascript:if(document.ref_map_form.ref_map_aids.value!=document.ref_map_form.prev_ref_map_aids.value){document.comparative_map_form.start.value='';document.comparative_map_form.end.value='';document.ref_map_form.submit()}">
+                    [% ELSE %]
+                      onchange="javascript:if(document.ref_map_form.ref_map_aids.value!=document.ref_map_form.prev_ref_map_aids.value){document.ref_map_form.submit()}">
+                    [% END %]
+    
+                    [% IF form_data.ref_maps.size %]
+                      <option value="">--Select a Map--</option>
+                      [% FOREACH m=form_data.ref_maps %]
+                        <option[% IF selected_maps.${m.accession_id} OR form_data.ref_maps.size==1; ' selected'; END %] value="[% m.accession_id %]">[% m.map_name %]</option>
+                      [% END %]
+                    [% ELSE %]
+                      <option value="">--No Maps Available--</option>
+                    [% END %]
+                  </select>
+    
+                  <input type="hidden" name="prev_ref_species_aid" value="[% apr.param('ref_species_aid') %]">
+                  <input type="hidden" name="prev_ref_map_aids" value="[% apr.param('ref_map_aids') %]">
+                  <input type="hidden" name="ref_map_set_aid"  value="[% apr.param('ref_map_set_aid') %]">
+                  <input type="hidden" name="ref_species_aid"  value="[% apr.param('ref_species_aid') %]">
+                  <input type="hidden" name="data_source"      value="[% data_source %]">
+                  [% IF apr.param('comparative_map_field1') %]
+                    <input type="hidden" name="comparative_map1" value="[% apr.param('comparative_map_field1') %]=[% apr.param('comparative_map_value1') %]">
+                    <input type="hidden" name="image_size"     value="[% apr.param('image_size') %]">
+                    <input type="hidden" name="image_type"     value="[% apr.param('image_type') %]">
                   [% END %]
-                [% ELSE %]
-                  <option value="">--No Maps Available--</option>
-                [% END %]
-              </select>
-
-              <input type="hidden" name="prev_ref_species_aid" value="[% apr.param('ref_species_aid') %]">
-              <input type="hidden" name="prev_ref_map_aid" value="[% apr.param('ref_map_aid') %]">
-              <input type="hidden" name="ref_map_set_aid"  value="[% apr.param('ref_map_set_aid') %]">
-              <input type="hidden" name="ref_species_aid"  value="[% apr.param('ref_species_aid') %]">
-              <input type="hidden" name="data_source"      value="[% data_source %]">
-              [% IF apr.param('comparative_map_field1') %]
-                <input type="hidden" name="comparative_map1" value="[% apr.param('comparative_map_field1') %]=[% apr.param('comparative_map_value1') %]">
-                <input type="hidden" name="image_size"     value="[% apr.param('image_size') %]">
-                <input type="hidden" name="image_type"     value="[% apr.param('image_type') %]">
-              [% END %]
-            </td>
-          </tr>
-          <tr>
-            <td align="right">Ref Map Names:</td>
-            <td>
-              <input name="ref_map_names" value="[% apr.param('ref_map_names') %]">
-            </td>
-          </tr>
-          <tr>
-            <td align="center" colspan="2">
-              <input type="submit" value="Change Maps">
-            </td>
-          </tr>
+                </td>
+              </tr>
+              <tr>
+                <td align="right">Ref Map Names:</td>
+                <td>
+                  <input name="ref_map_names" value="[% apr.param('ref_map_names') %]">
+                </td>
+              </tr>
+              <tr>
+                <td align="center" colspan="2">
+                  <input type="submit" value="Change Maps">
+                </td>
+              </tr>
+            </form>
           [% END %]
         </table>
       </div>
     </td>
   </tr>
-  [% IF apr.param('ref_map_aid') OR apr.param('ref_map_aids') OR apr.param('ref_map_names') OR form_data.ref_maps  %]
+  [% IF apr.param('ref_map_aids') OR apr.param('ref_map_names') OR form_data.ref_maps  %]
     <form name="comparative_map_form">
       <tr>
         <td align=left valign=top>
@@ -239,7 +308,7 @@ function selectFeatureRadio(val){
                           [% FOREACH cmap=map.cmaps %]
                             [% cmaps.push( "${cmap.slot_no}%3d${cmap.field}%3d${cmap.aid}" ) %]
                           [% END %]
-                          [% map.species_name %]-[% map.map_set_name %][% IF map.map_name %]-[% map.map_name %][% END %][% IF map.is_reference_map %]&nbsp;(Ref.)[% ELSE %]&nbsp;[&nbsp;<a href="viewer?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% cmaps.join('%3a') %];include_feature_types=[% feature_types %];include_evidence_types=[% evidence_types %];collapse_features=[% apr.param('collapse_features') %];image_type=[% apr.param('image_type') %];min_correspondences=[% apr.param('min_correspondences') %]">Delete</a>&nbsp;]&nbsp;[% END %]<br>
+                          [% map.description %][% apr.param('ref_map_aids') %][% IF map.is_reference_map %]&nbsp;(Ref.)[% ELSE %]&nbsp;[&nbsp;<a href="viewer?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aids=[% apr.param('ref_map_aids') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% cmaps.join('%3a') %];include_feature_types=[% feature_types %];include_evidence_types=[% evidence_types %];collapse_features=[% apr.param('collapse_features') %];image_type=[% apr.param('image_type') %];min_correspondences=[% apr.param('min_correspondences') %]">Delete</a>&nbsp;]&nbsp;[% END %]<br>
                         [% END %]
                       </td>
                     </tr>
@@ -454,7 +523,7 @@ function selectFeatureRadio(val){
               <tr>
                 <td colspan="4" align="center">
                   <input type="hidden" name="ref_map_set_aid" value="[% apr.param('ref_map_set_aid') %]">
-                  <input type="hidden" name="ref_map_aid"   value="[% apr.param('ref_map_aids').join(',') %]">
+                  <input type="hidden" name="ref_map_aids"   value="[% apr.param('ref_map_aids').join(',') %]">
                   <input type="hidden" name="ref_map_names"   value="[% apr.param('ref_map_names') %]">
                   <input type="hidden" name="ref_species_aid"  value="[% apr.param('ref_species_aid') %]">
                   <input type="hidden" name="comparative_maps" value="[% comparative_maps %]">

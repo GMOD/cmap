@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.101 2004-07-06 18:15:04 mwz444 Exp $
+# $Id: Map.pm,v 1.102 2004-07-29 20:28:24 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.101 $)[-1];
+$VERSION = (qw$Revision: 1.102 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -775,6 +775,7 @@ Lays out the map.
                 map_id            => $map_id,
                 slot_no           => $slot_no,
                 drawing_data      => \@drawing_data,
+                map_area_data     => \@map_area_data,
                 pixel_height      => $pixel_height,
                 is_flipped        => $is_flipped,
                 actual_map_length => $actual_map_length,
@@ -903,68 +904,38 @@ Lays out the map.
               $label_side eq RIGHT ? $rightmostf : $leftmostf;
         }
 
-  #
-  # Make sure that the lanes for the maps take into account
-  # the span of all the features.
-  #
-  #        if ( $is_compressed ) {
-  #            my $last_feature_lane = ( sort { $a <=> $b } keys %lanes )[-1];
-  #            my $furthest_feature  = $lanes{ $last_feature_lane }{'furthest'};
-  #            my ( $leftmostf, $rightmostf );
-  #
-  #            if ( $label_side eq RIGHT ) {
-  #                $leftmostf  = $map_bounds[0];
-  #                $rightmostf = $furthest_feature > $map_bounds[2]
-  #                    ? $furthest_feature : $map_bounds[2];
-  #            }
-  #            else {
-  #                $rightmostf = $map_bounds[2];
-  #                $leftmostf  = $furthest_feature < $map_bounds[0]
-  #                    ? $furthest_feature : $map_bounds[0];
-  #            }
-  #
-  #            my $map_lane =  column_distribution(
-  #                columns  => \@columns,
-  #                top      => $map_bounds[1],
-  #                bottom   => $map_bounds[3],
-  #                buffer   => 4,
-  #                col_span => sprintf( "%.0f",
-  #                    ( abs( $leftmostf - $rightmostf ) / $column_width ) + .5
-  #                ),
-  #            );
-  #
-  #            if ( $map_lane ) {
-  #                my $shift       = $column_width * $map_lane;
-  #                $shift         *= -1 if $label_side eq LEFT;
-  #                $map_bounds[0] += $shift;
-  #                $map_bounds[2] += $shift;
-  #                $leftmostf     += $shift;
-  #                $rightmostf    += $shift;
-  #                $slot_min_x = $leftmostf  if $leftmostf  < $slot_min_x;
-  #                $slot_max_x = $rightmostf if $rightmostf > $slot_max_x;
-  #
-  #                for my $rec ( @drawing_data ) {
-  #                    my $shape = $rec->[0];
-  #                    for my $x_field ( @{ SHAPE_XY->{ $shape }{'x'} } ) {
-  #                        $rec->[ $x_field ] += $shift;
-  #                    }
-  #                }
-  #
-  #                for my $rec ( @map_area_data ) {
-  #                    $rec->{'coords'}[ $_ ] += $shift for ( 1, 3 );
-  #                }
-  #
-  #                for my $rec ( values %features_with_corr ) {
-  #                    $rec->{'right'}[0] += $shift;
-  #                    $rec->{'left'}[0]  += $shift;
-  #                }
-  #            }
-  #        }
 
         #
         # Register all the features that have correspondences.
         #
         $drawer->register_feature_position(%$_) for values %features_with_corr;
+
+        #
+        # Buttons
+        #
+        
+        my $ref_map   = $slots->{0} or next;
+        my ($ref_map_link,@rmap_links);
+        for my $field (qw[ maps map_sets ]) {
+            my @aid_info;
+            next unless (defined($ref_map->{$field})); 
+            foreach my $aid (keys %{$ref_map->{$field}}){
+                push @aid_info, $aid.'['.$ref_map->{$field}{$aid}{'start'}.'*'.
+                    $ref_map->{$field}{$aid}{'stop'}.']';
+            }
+            if ($field eq 'maps'){
+                $ref_map_link .= 'ref_map_aids='.
+                    join(';ref_map_aids=',@aid_info).
+                    ';';
+            }
+            else{
+                $ref_map_link .= 'ref_map_set_aids='.
+                    join(';ref_map_set_aids=',@aid_info).
+                    ';';
+            }
+
+            push @rmap_links, $ref_map_link;
+        }
 
         #
         # Map details button.
@@ -975,41 +946,18 @@ Lays out the map.
             my $no     = $side eq 'left' ? $slot_no - 1 : $slot_no + 1;
             my $new_no = $side eq 'left' ? -1           : 1;
             my $map   = $slots->{$no} or next;
-            my $field = $map->{'field'};
-            my $aid   =
-              ref $map->{'aid'} eq 'ARRAY'
-              ? join( ',', @{ $map->{'aid'} } )
-              : $map->{'aid'};
-            my $link = join( '%3d', $new_no, $field, $aid );
+            my $link;
+            for my $field (qw[ maps map_sets ]) {
+                my @aid_info;
+                next unless (defined($map->{$field})); 
+                foreach my $aid (keys %{$map->{$field}}){
+                    push @aid_info, $aid.'['.$map->{$field}{$aid}{'start'}.'*'.
+                        $map->{$field}{$aid}{'stop'}.']';
+                }
 
-            my @ref_positions =
-              sort { $a->[0] <=> $b->[0] }
-              $drawer->feature_correspondence_map_positions(
-                slot_no      => $slot_no,
-                map_id       => $map_id,
-                comp_slot_no => $no,
-              );
-
-            if (@ref_positions) {
-                my $first = $ref_positions[0]->[0];
-                my $last  =
-                  defined $ref_positions[-1]->[1]
-                  ? $ref_positions[-1]->[1]
-                  : $ref_positions[-1]->[0];
-                @ref_positions = ( $first, $last );
+                my $link = join( '%3d', $new_no, $field, join(',',@aid_info) );
+                push @maps, $link;
             }
-            else {
-                my $ref_corrs =
-                  $drawer->map_correspondences( $slot_no, $map_id );
-                my ( $k, $v ) = each %$ref_corrs;
-                @ref_positions = ( $v->{'min_start'}, $v->{'max_start'} );
-            }
-
-            if (@ref_positions) {
-                $link .= '[' . join( ',', @ref_positions ) . ']';
-            }
-
-            push @maps, $link;
         }
 
         my $details_url =
@@ -1085,51 +1033,26 @@ Lays out the map.
 
             my @cmaps;
             for my $slot_no (@cmap_nos) {
-                if(ref( $slots->{$slot_no}{'aid'})eq 'ARRAY'){
-                    my $start_stop="";
-                    if (   scalar(@{$slots->{$slot_no}{'aid'}})==1 
-                        && defined $slots->{$slot_no}{'show_start'}
-                        && defined $slots->{$slot_no}{'show_stop'} )
-                    {
-                        $start_stop = '['
-                          . $slots->{$slot_no}{'show_start'} . ','
-                          . $slots->{$slot_no}{'show_stop'} . ']';
+                my $map   = $slots->{$slot_no} or next;
+                my $link;
+                for my $field (qw[ maps map_sets ]) {
+                    my @aid_info;
+                    next unless (defined($map->{$field})); 
+                    foreach my $aid (keys %{$map->{$field}}){
+                        push @aid_info, $aid.'['.$map->{$field}{$aid}{'start'}.'*'.
+                            $map->{$field}{$aid}{'stop'}.']';
                     }
 
-                    foreach my $aid (@{$slots->{$slot_no}{'aid'}}){
-                        my $s = join( '%3d',
-                        $slot_no,
-                        $slots->{$slot_no}{'field'},
-                        $aid );
-                        push @cmaps, $s.$start_stop;
-                    } 
-                }
-                else{
-                    my $s = join( '%3d',
-                        $slot_no,
-                        $slots->{$slot_no}{'field'},
-                        $slots->{$slot_no}{'aid'} );
-                    if (   defined $slots->{$slot_no}{'show_start'}
-                        && defined $slots->{$slot_no}{'show_stop'} )
-                    {
-                        $s .= '['
-                          . $slots->{$slot_no}{'show_start'} . ','
-                          . $slots->{$slot_no}{'show_stop'} . ']';
-                    }
-                    push @cmaps, $s;
+                    my $link = join( '%3d', $slot_no, $field, join(',',@aid_info) );
+                    push @cmaps, $link;
                 }
             }
 
             my $delete_url = $self_url
               . '?ref_map_set_aid='
               . $slots->{'0'}{'map_set_aid'}
-              . ';ref_map_aid='
-              . $slots->{'0'}{'aid'}
-              . ';ref_map_start='
-              . $slots->{'0'}{'show_start'}
-              . ';ref_map_stop='
-              . $slots->{'0'}{'show_stop'}
-              . ';comparative_maps='
+              . join('',@rmap_links)
+              . 'comparative_maps='
               . join( ':', @cmaps )
               . ';label_features='
               . $drawer->label_features
@@ -1162,38 +1085,18 @@ Lays out the map.
         unless ($is_compressed) {
             my @cmaps;
             for my $slot_no (@ordered_slot_nos) {
-                if(ref( $slots->{$slot_no}{'aid'})eq 'ARRAY'){
-                    my $start_stop="";
-                    if (   scalar(@{$slots->{$slot_no}{'aid'}})==1
-                        && defined $slots->{$slot_no}{'show_start'}
-                        && defined $slots->{$slot_no}{'show_stop'} )
-                    {
-                        $start_stop = '['
-                          . $slots->{$slot_no}{'show_start'} . ','
-                          . $slots->{$slot_no}{'show_stop'} . ']';
+                my $map   = $slots->{$slot_no} or next;
+                my $link;
+                for my $field (qw[ maps map_sets ]) {
+                    my @aid_info;
+                    next unless (defined($map->{$field})); 
+                    foreach my $aid (keys %{$map->{$field}}){
+                        push @aid_info, $aid.'['.$map->{$field}{$aid}{'start'}.'*'.
+                            $map->{$field}{$aid}{'stop'}.']';
                     }
-                                                                                
-                    foreach my $aid (@{$slots->{$slot_no}{'aid'}}){
-                        my $s = join( '%3d',
-                        $slot_no,
-                        $slots->{$slot_no}{'field'},
-                        $aid );
-                        push @cmaps, $s.$start_stop;
-                    }
-                }
-                else{
-                    my $s = join( '%3d',
-                        $slot_no,
-                        $slots->{$slot_no}{'field'},
-                        $slots->{$slot_no}{'aid'} );
-                    if (   defined $slots->{$slot_no}{'show_start'}
-                        && defined $slots->{$slot_no}{'show_stop'} )
-                    {
-                        $s .= '['
-                          . $slots->{$slot_no}{'show_start'} . ','
-                          . $slots->{$slot_no}{'show_stop'} . ']';
-                    }
-                    push @cmaps, $s;
+
+                    my $link = join( '%3d', $slot_no, $field, join(',',@aid_info) );
+                    push @cmaps, $link;
                 }
             }
 
@@ -1210,18 +1113,10 @@ Lays out the map.
             }
             push @flips, "$slot_no%3d$acc_id" unless $is_flipped;
 
-            my $ref_map_aid =
-              $slots->{'0'}{'field'} eq 'map_set_aid'
-              ? '-1'
-              : $slots->{'0'}{'aid'};
             my $flip_url = $self_url
               . '?ref_map_set_aid='
               . $slots->{'0'}{'map_set_aid'}
-              . ";ref_map_aid=$ref_map_aid"
-              . ';ref_map_start='
-              . $slots->{'0'}{'show_start'}
-              . ';ref_map_stop='
-              . $slots->{'0'}{'show_stop'}
+              . join('',@rmap_links)
               . ';comparative_maps='
               . join( ':', @cmaps )
               . ';label_features='
@@ -1257,7 +1152,7 @@ Lays out the map.
                 $map_viewer_url
               . '?ref_map_set_aid='
               . $self->map_set_aid($map_id)
-              . ';ref_map_aid='
+              . ';ref_map_aids='
               . $self->accession_id($map_id)
               . ';ref_map_start='
               . $self->start_position($map_id)
@@ -1773,13 +1668,14 @@ sub enforce_boundaries {
 # ---------------------------------------------------
 sub add_tick_marks {
 
-    my ( $self, %args ) = @_;
+    my ( $self, %args )   = @_;
     my $base_x            = $args{'base_x'};
     my $map_base_y        = $args{'map_base_y'};
     my $drawer            = $args{'drawer'};
     my $map_id            = $args{'map_id'};
     my $slot_no           = $args{'slot_no'};
     my $drawing_data      = $args{'drawing_data'};
+    my $map_area_data     = $args{'map_area_data'};
     my $pixel_height      = $args{'pixel_height'};
     my $is_flipped        = $args{'is_flipped'};
     my $map_start         = $self->start_position($map_id);
@@ -1789,6 +1685,7 @@ sub add_tick_marks {
     my $max_x             = $args{'max_x'};
     my $min_x             = $args{'min_x'};
     my $map_bounds        = $args{'map_bounds'};
+    my $map_aid           = $self->map_aid($map_id);
 
     my $label_side = $drawer->label_side($slot_no);
     my $reg_font   = $drawer->regular_font
@@ -1799,7 +1696,7 @@ sub add_tick_marks {
     my $array_ref     = $self->tick_mark_interval($map_id,$pixel_height);
     my ($interval,$map_scale) =@$array_ref;
     my $no_intervals  = int( $actual_map_length / $interval );
-    my $tick_overhang = 5;
+    my $tick_overhang = 15;
     my @intervals     =
       map { int( $map_start + ( $_ * $interval ) ) } 1 .. $no_intervals;
     my $min_tick_distance= $self->config_data('min_tick_distance') || 40;
@@ -1843,6 +1740,77 @@ sub add_tick_marks {
         push @$drawing_data,
           [ LINE, $tick_start, $y_pos, $tick_stop, $y_pos, 'grey' ];
 
+        my $clip_arrow_color='grey';
+        my $clip_arrow_width  = 6;
+        my $clip_arrow_y1_down = $y_pos+2;
+        my $clip_arrow_y1_up = $y_pos-2;
+        my $clip_arrow_y2_down = $clip_arrow_y1_down+3;
+        my $clip_arrow_y2_up = $clip_arrow_y1_up-3;
+        my $clip_arrow_y3_down = $clip_arrow_y2_down+5;
+        my $clip_arrow_y3_up = $clip_arrow_y2_up-5;
+        my $clip_arrow_x1 = 
+            $label_side eq LEFT 
+          ? $tick_stop-$clip_arrow_width
+          : $tick_start;
+        my $clip_arrow_x2 = $clip_arrow_x1 +$clip_arrow_width;
+        my $clip_arrow_xmid = ($clip_arrow_x1+$clip_arrow_x2)/2; 
+        # First line across
+        push @$drawing_data,
+          [ LINE, $clip_arrow_x1, $clip_arrow_y1_down, $clip_arrow_x2, $clip_arrow_y1_down, $clip_arrow_color ];
+        push @$drawing_data,
+          [ LINE, $clip_arrow_x1, $clip_arrow_y1_up, $clip_arrow_x2, $clip_arrow_y1_up, $clip_arrow_color ];
+        # line to arrow 
+        push @$drawing_data,
+          [ LINE, $clip_arrow_xmid, $clip_arrow_y1_down, $clip_arrow_xmid, $clip_arrow_y2_down, $clip_arrow_color ];
+        push @$drawing_data,
+          [ LINE, $clip_arrow_xmid, $clip_arrow_y1_up, $clip_arrow_xmid, $clip_arrow_y2_up, $clip_arrow_color ];
+        # base of arrow
+        push @$drawing_data,
+          [ LINE, $clip_arrow_x1, $clip_arrow_y2_down, $clip_arrow_x2, $clip_arrow_y2_down, $clip_arrow_color ];
+        push @$drawing_data,
+          [ LINE, $clip_arrow_x1, $clip_arrow_y2_up, $clip_arrow_x2, $clip_arrow_y2_up, $clip_arrow_color ];
+        # left side of arrow
+        push @$drawing_data,
+          [ LINE, $clip_arrow_x1, $clip_arrow_y2_down, $clip_arrow_xmid, $clip_arrow_y3_down, $clip_arrow_color ];
+        push @$drawing_data,
+          [ LINE, $clip_arrow_x1, $clip_arrow_y2_up, $clip_arrow_xmid, $clip_arrow_y3_up, $clip_arrow_color ];
+        # right side of arrow
+        push @$drawing_data,
+          [ LINE, $clip_arrow_x2, $clip_arrow_y2_down, $clip_arrow_xmid, $clip_arrow_y3_down, $clip_arrow_color ];
+        push @$drawing_data,
+          [ LINE, $clip_arrow_x2, $clip_arrow_y2_up, $clip_arrow_xmid, $clip_arrow_y3_up, $clip_arrow_color ];
+        # fill arrow
+        push @$drawing_data,
+          [ FILL, $clip_arrow_xmid, $clip_arrow_y2_down+1, $clip_arrow_color ];
+        push @$drawing_data,
+          [ FILL, $clip_arrow_xmid, $clip_arrow_y2_up-1, $clip_arrow_color ];
+
+        my $down_is_start=$is_flipped ? 'false' : 'true';
+        my $up_is_start=$is_flipped ? 'true' : 'false';
+        my $down_code=qq[ 
+            onMouseOver="window.status='crop down';return true" 
+            onClick="crop($slot_no, $map_aid, $tick_pos, $down_is_start);document.comparative_map_form.submit();"
+            ]; 
+        my $up_code=qq[
+            onMouseOver="window.status='crop up';return true" 
+            onClick="crop($slot_no, $map_aid, $tick_pos, $up_is_start);document.comparative_map_form.submit();"
+            ]; 
+        push @$map_area_data,
+          {
+            coords => [$clip_arrow_x1,$clip_arrow_y1_down,
+                $clip_arrow_x2,$clip_arrow_y3_down],
+            url  => '',
+            alt  => 'Crop from here down',
+            code => $down_code,
+          };
+        push @$map_area_data,
+          {
+            coords => [$clip_arrow_x1,$clip_arrow_y3_up,
+                $clip_arrow_x2,$clip_arrow_y1_up],
+            url  => '',
+            alt  => 'Crop from here up',
+            code => $up_code,
+          };
         my $label_x =
             $label_side eq RIGHT
           ? $tick_start - $font_height - 2
@@ -2620,6 +2588,23 @@ Returns the slot number.
 
     my $self = shift;
     return $self->{'slot_no'};
+}
+
+# ----------------------------------------------------
+sub map_aid {
+
+=pod
+
+=head2 map_aid
+
+Returns a map's map_aid (accession)
+
+=cut
+
+    my $self   = shift;
+    my $map_id = shift or return;
+    my $map    = $self->map($map_id);
+    return $map->{'accession_id'};
 }
 
 # ----------------------------------------------------

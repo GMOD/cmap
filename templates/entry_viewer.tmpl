@@ -89,7 +89,7 @@ url=apr.url( '-full' => 1, '-path_info' => 1 ).replace('\/cmap.*', '/cmap');
                         </tr>
                         [% FOREACH m=form_data.ref_maps %]
                         <tr>
-                            <td><a href="[% url %]/viewer?image_size=small&font_size=small&image_type=png&label_features=all&collapse_features=1&aggregate=1&feature_types=-1&corr_only_feature_types=-1&ref_map_set_aid=[% apr.param('ref_map_set_aid') %]&ref_map_aid=[% m.accession_id %]&ref_species_aid=1&data_source=[% data_source %]&">[% m.map_name %]</a></td>
+                            <td><a href="[% url %]/viewer?image_size=small&font_size=small&image_type=png&label_features=all&collapse_features=1&aggregate=1&feature_types=-1&corr_only_feature_types=-1&ref_map_set_aid=[% apr.param('ref_map_set_aid') %]&ref_map_aids=[% m.accession_id %]&ref_species_aid=1&data_source=[% data_source %]&">[% m.map_name %]</a></td>
                             <td>[% m.comp_map_count %]</td>
                             <td>[% m.start_position %]</td>
                             <td>[% m.stop_position %]</td>

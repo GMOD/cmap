@@ -1,17 +1,18 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.47 2004-07-01 19:22:45 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.48 2004-07-29 20:28:23 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.47 $)[-1];
+$VERSION = (qw$Revision: 1.48 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer;
 use Bio::GMOD::CMap::Data;
 use Template;
+use Regexp::Common;
 use Data::Dumper;
 
 use base 'Bio::GMOD::CMap::Apache';
@@ -54,11 +55,50 @@ sub handler {
     # form <select>.
     #
     my @ref_map_aids;
-    if ( $apr->param('ref_map_aid') ) {
-        @ref_map_aids = split( /,/,  $apr->param('ref_map_aid') );
+    if ( $apr->param('ref_map_aids') ) {
+        @ref_map_aids = split( /,/,  
+            (ref($apr->param('ref_map_aids')) eq 'ARRAY'?
+                join(",",@{$apr->param('ref_map_aids')})
+            :$apr->param('ref_map_aids') ));
     }
-    elsif ( $apr->param('ref_map_aids') ) {
-        @ref_map_aids = ( $apr->param('ref_map_aids') );
+
+    ###For DEBUGGING purposes.  Remove before release
+    if ( $apr->param('ref_map_aid') ) {
+        die "ref_map_aid defined ".$apr->param('ref_map_aid');
+    }
+
+    my %ref_maps;
+    my %ref_map_sets=();
+    foreach my $ref_map_aid (@ref_map_aids){
+        next if ($ref_map_aid == -1);
+        my ($start, $stop) = (undef,undef);
+        if ($ref_map_aid =~/^(\S+)\[(.*)\*(.*)\]/){
+            $ref_map_aid = $1;
+            ($start,$stop)=($2,$3); 
+            $start = undef unless($start =~ $RE{num}{real});
+            $stop  = undef unless($stop  =~ $RE{num}{real});
+            if (defined($start) and defined($stop) 
+                and $stop<$start){
+                ($start,$stop)= ($stop,$start); 
+            }
+        } 
+        $ref_maps{$ref_map_aid} = {start=>$start,stop=>$stop};
+    }
+    if (scalar @ref_map_aids==1){
+        if ($ref_map_start =~ $RE{num}{real}
+             and not defined($ref_maps{$ref_map_aids[0]}{'start'})){
+            $ref_maps{$ref_map_aids[0]}{'start'} =$ref_map_start;
+        }
+        if ($ref_map_stop =~ $RE{num}{real}
+             and not defined($ref_maps{$ref_map_aids[0]}{'stop'})){
+            $ref_maps{$ref_map_aids[0]}{'stop'} =$ref_map_stop;
+        }
+    }
+
+
+    my @ref_map_set_aids=();
+    if ( $apr->param('ref_map_set_aid') ) {
+        @ref_map_set_aids = split( /,/,  $apr->param('ref_map_set_aid') );
     }
 
     my @feature_types;
@@ -97,12 +137,14 @@ sub handler {
         $prev_ref_species_aid && $prev_ref_species_aid ne $ref_species_aid 
     ) {
         $ref_map_set_aid = '';
+        @ref_map_set_aids      = ();
     }
 
     if ( 
         $prev_ref_map_set_aid && $prev_ref_map_set_aid ne $ref_map_set_aid 
     ) {
         @ref_map_aids          = ();
+        @ref_map_set_aids      = ();
         $ref_map_start         = undef;
         $ref_map_stop          = undef;
         $ref_map_names         = '';
@@ -111,26 +153,20 @@ sub handler {
         @comparative_map_left  = ();
     }
 
-    my ( $ref_field, $ref_value );
     if ( grep {/^-1$/} @ref_map_aids ) {
-        $ref_field = 'map_set_aid';
-        $ref_value = $ref_map_set_aid;
-    }
-    else {
-        $ref_field = 'map_aid';
-        $ref_value = \@ref_map_aids;
+        $ref_map_sets{$ref_map_set_aid}=();
     }
 
-    my %slots = (
-        0 => {
-            field       => $ref_field,
-            aid         => $ref_value,
-            start       => $ref_map_start,
-            stop        => $ref_map_stop,
-            map_set_aid => $ref_map_set_aid,
-            map_names   => $ref_map_names,
-        },
-    );
+    my %slots=();
+    #if (%ref_maps or %ref_map_sets){
+        %slots = ( 
+            0 => {
+                map_set_aid => $ref_map_set_aid,
+                map_sets    => \%ref_map_sets,
+                maps        => \%ref_maps,
+                map_names   => $ref_map_names, 
+            });
+    #}
 
     #
     # Add in previous maps.
@@ -138,28 +174,30 @@ sub handler {
     for my $cmap ( split( /:/, $comparative_maps ) ) {
         my ( $slot_no, $field, $accession_id ) = split(/=/, $cmap) or next;
         my ( $start, $stop );
-        if ( $accession_id =~ m/^(.+)\[(.+),(.+)\]$/ ) {
-            $accession_id = $1;
-            $start        = $2;
-            $stop         = $3;
-        }
         foreach my $aid (split /,/,$accession_id){
-            unless ($slots{ $slot_no }){ 
-                $slots{ $slot_no } =  {
-                    field          => $field,
+            if ( $aid =~ m/^(.+)\[(.*)\*(.*)\]$/ ) {
+                $aid=$1;
+                ($start,$stop)=($2,$3); 
+                $start = undef unless($start =~ $RE{num}{real});
+                $stop  = undef unless($stop  =~ $RE{num}{real});
+                if (defined($start) and defined($stop) 
+                    and $stop<$start){
+                    ($start,$stop)= ($stop,$start); 
+                }
+            }
+            if ($field eq 'map_aid'){
+                $slots{$slot_no}->{'maps'}{$aid} =  {
                     start          => $start,
                     stop           => $stop,
                 };
             }
-            push @{$slots{ $slot_no }->{'aid'}}, $aid; 
+            elsif ($field eq 'map_set_aid'){
+                unless(defined($slots{$slot_no}->{'map_sets'}{$aid})){
+                    $slots{$slot_no}->{'map_sets'}{$aid}=();
+                }
+            }
         }
     }
-    for my $slot_no (keys %slots){
-        if (scalar(@{$slots{ $slot_no }->{'aid'}})==1){
-            $slots{ $slot_no }->{'aid'}=$slots{ $slot_no }->{'aid'}->[0];
-        }
-    }
-    
 
     my @slot_nos  = sort { $a <=> $b } keys %slots;
     my $max_right = $slot_nos[-1];
@@ -173,30 +211,28 @@ sub handler {
         my $cmap    = $side eq RIGHT 
             ? \@comparative_map_right : \@comparative_map_left;
         ###Use the first comp_map to determine the field
-        my ( $field, $accession_id ) = split( /=/, $cmap->[0] ) or next;
-        my ( $start, $stop, @comp_ids );
-        ###If it is using start and stop, assume there is only 
-        ###  one comp_map and use start and stop.
-        if ( $accession_id =~ m/^(.+)\[(.+),(.+)\]$/ ) {
-            $accession_id = $1;
-            $start        = $2;
-            $stop         = $3;
-        }
-        ###if there are map_set_aids only use those
-        if (my @msa_list=grep /^map_set_aid/, @$cmap){
-            @$cmap = @msa_list;
-            $field = 'map_set_aid';
-            $start = undef;
-            $stop  = undef;
-        }
- 
-        @comp_ids=map {substr($_,index($_,'=')+1)} @{$cmap};
-        $slots{ $slot_no } =  {
-            field          => $field,
-            aid            => \@comp_ids,
-            start          => $start,
-            stop           => $stop,
-        }; 
+        foreach my $cmap_str (@$cmap){
+            my ( $field, $accession_id ) = split( /=/, $cmap_str ) or next;
+            my ( $start, $stop );
+            if ( $accession_id =~ m/^(.+)\[(.*)\*(.*)\]$/ ) {
+                $accession_id = $1;
+                $start        = $2;
+                $stop         = $3;
+                $start = undef unless($start =~ $RE{num}{real});
+                $stop  = undef unless($stop  =~ $RE{num}{real});
+            }
+            if ($field eq 'map_aid'){
+                $slots{$slot_no}->{'maps'}{$accession_id} =  {
+                    start          => $start,
+                    stop           => $stop,
+                };
+            }
+            elsif ($field eq 'map_set_aid'){
+                unless(defined($slots{$slot_no}->{'map_sets'}{$accession_id})){
+                    $slots{$slot_no}->{'map_sets'}{$accession_id}=();
+                }
+            }
+        } 
     }
 
     #
@@ -241,6 +277,7 @@ sub handler {
         include_feature_types  => \@feature_types,
         include_evidence_types => \@evidence_types,
         ref_species_aid        => $ref_species_aid,
+        ref_map_set_aid        => $ref_map_set_aid,
     ) or return $self->error( $data->error );
 
     $form_data->{'feature_types'} = 
@@ -253,12 +290,10 @@ sub handler {
     # The start and stop may have had to be moved as there 
     # were too few or too many features in the selected region.
     #
-    $apr->param( ref_map_start   => $form_data->{'ref_map_start'}   );
-    $apr->param( ref_map_stop    => $form_data->{'ref_map_stop'}    );
-    $apr->param( ref_map_names   => $ref_map_names                  );
-    $apr->param( ref_map_aids    => join(',', @ref_map_aids)        );
-    $apr->param( ref_species_aid => $form_data->{'ref_species_aid'} );
-    $apr->param( ref_map_set_aid => $form_data->{'ref_map_set_aid'} );
+#    $apr->param( ref_map_names   => $ref_map_names                  );
+#    $apr->param( ref_map_aids    => join(',', @ref_map_aids)        );
+#    $apr->param( ref_species_aid => $form_data->{'ref_species_aid'} );
+#    $apr->param( ref_map_set_aid => $form_data->{'ref_map_set_aid'} );
 
     #
     # Wrap up our current comparative maps so we can store them on 
@@ -266,18 +301,21 @@ sub handler {
     #
     my @comp_maps = ();
     for my $slot_no ( grep { $_ != 0 } keys %slots ) {
-        if (ref($slots{ $slot_no }{ 'aid' }) eq 'ARRAY'){
-            for(my $i=0; $i<= $#{$slots{ $slot_no }{ 'aid' }};$i++){
-                push @comp_maps, join( '=',
-                    $slot_no,
-                    $slots{ $slot_no }{ 'field' },
-                    $slots{ $slot_no }{ 'aid' }->[$i]);
+        foreach my $map_aid (keys(%{$slots{$slot_no}{'maps'}})){
+            my $map_str = join( '=', $slot_no, 'map_aid', $map_aid);
+            if (defined $slots{$slot_no}{'maps'}{$map_aid}{'start'}
+                or 
+                defined $slots{$slot_no}{'maps'}{$map_aid}{'stop'}){
+                $map_str .= "["
+                  . $slots{$slot_no}{'maps'}{$map_aid}{'start'}."*"
+                  . $slots{$slot_no}{'maps'}{$map_aid}{'stop'}
+                  . "]";
             }
+            push @comp_maps, $map_str;
         }
-        else{
-            push @comp_maps, join( '=', 
-                $slot_no, map { $slots{ $slot_no }{ $_ } } qw[ field aid ]
-            );
+        foreach my $map_aid (keys(%{$slots{$slot_no}{'map_sets'}})){
+            my $map_str = join( '=', $slot_no, 'map_set_aid', $map_aid);
+            push @comp_maps, $map_str;
         }
     }
   
