@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.26 2004-02-24 23:30:09 kycl4rk Exp $
+# $Id: Build.PL,v 1.27 2004-02-25 22:33:01 kycl4rk Exp $
 
 use strict;
 
@@ -14,7 +14,9 @@ use File::Basename;
 use File::Copy;
 use File::Find;
 use File::Path;
+use File::Temp 'tempdir';
 use File::Spec::Functions;
+use Pod::Html;
 
 my $cwd          = cwd();
 my $install_conf = catfile( $cwd, 'cmap_install.conf' );
@@ -188,7 +190,14 @@ for my $pod ( @pod_files ) {
     $filename    =~ s/\.pod$//;
     $outfile     =~ s/\.pod$/\.html/;
     my $outpath  =  catfile( $cwd, 'htdocs', $outfile );
-    system( "pod2html $pod > $outpath" ) == 0 or warn $!;
+    print "pod2html $pod -> $outpath\n";
+    pod2html( $pod,
+        "--outfile=$outpath",
+        "--backlink=Back to Top",
+        "--title=$filename",
+        "--css=/cmap/pod-style.css",
+        "--cachedir=".tempdir(),
+    );
     push @html_links, [ $outfile, $filename ];
     push @cleanup, $outpath;
 }
@@ -208,6 +217,7 @@ find(
 for my $file ( @doc_files ) {
     my $filename =  basename $file;
     my $outpath  =  catfile( $cwd, 'htdocs', $filename );
+    print "$file -> $outpath\n";
     copy( $file, $outpath ) unless -e $outpath;
     push @html_links, [ $filename, $filename ];
     push @cleanup, $outpath;
@@ -218,21 +228,54 @@ for my $file ( @doc_files ) {
 #
 my $index = catfile( 'htdocs', 'index.html' );
 open INDEX, ">$index" or die "Can't write new index file '$index': $!\n";
-my $q     = CGI->new;
-my $title = 'CMap Installation Summary';
+my $q      = CGI->new;
+my $title  = 'CMap Installation Summary';
+my $navbar = join( '&nbsp;|&nbsp;', 
+    map { $_->[1] ? $q->a( { -href => $_->[1] }, $_->[0] ) : $q->b($_->[0]) }
+    (
+        [ 'Home'           => '' ],
+        [ 'Maps'           => '/cgi-bin/cmap/viewer' ],
+        [ 'Search'         => '/cgi-bin/cmap/feature_search' ],
+        [ 'Matrix'         => '/cgi-bin/cmap/matrix' ],
+        [ 'Map Sets'       => '/cgi-bin/cmap/map_set_info' ],
+        [ 'Feature Types'  => '/cgi-bin/cmap/feature_type_info' ],
+        [ 'Map Types'      => '/cgi-bin/cmap/map_type_info' ],
+        [ 'Evidence Types' => '/cgi-bin/cmap/evidence_type_info' ],
+        [ 'Species'        => '/cgi-bin/cmap/species_info' ],
+        [ 'Help'           => '/cgi-bin/cmap/help' ],
+        [ 'Tutorial'       => '/cmap/tutorial' ],
+    )
+);
 
+print "Creating htdocs/index.html\n";
 print INDEX join("\n",
-    $q->start_html( { -title => $title } ), 
+    $q->start_html( { -title => $title, -style => 'cmap.css' } ), 
     $q->h1( $title ),
+    $q->br,
+    "<!-- Here's a sample navigation bar you will probably want to use. -->",
+    $navbar,
+    "<!-- End CMap navbar -->",
     $q->p('Congratulations!  CMap has been installed.'),
     $q->p('Eventually you will want to create your own content '.
         'for this intro page.'),
+    $q->p("At the top you'll see a sample navigation bar you may wish ".
+        'to keep on this page as it links to the major CMap sections.'),
     $q->p('For the mean time, here are some links to the installed '.
         'application and supporting docs:'),
     $q->ul(
         ( map { $q->li( $q->a({ -href => $_->[0] }, $_->[1]) ) ."\n" } 
         @html_links )
     ),
+    'CMap was installed on ' . scalar localtime,
+    $q->br,
+    $q->a( { -href => 'http://www.gmod.org' }, 
+        $q->img( { 
+            -src  => 'gmod_logo.jpg', 
+            -alt  => 'Powered by GMOD', 
+        } )
+    ),
+    '<hr>',
+    'Thanks for supporting the <a href="http://www.gmod.org/">GMOD</a> project!',
     $q->end_html,
     ''
 );
@@ -263,8 +306,10 @@ for my $opt (
     warn "WARNING:  Couldn't find anything to install in '$dir'!\n" 
         unless @files;
 
+    my %seen;
     for my $file ( @files ) {
         $file  =~ s/\.PL$//;
+        next if $seen{ $file }++;
         my $to = $OPTIONS{ $opt_name };
         if ( $file =~ /($dir)(.*)/ ) {
             $to = catdir( $to, $2 );
@@ -277,12 +322,13 @@ for my $opt (
             $overwrite_ok        = 0;
         }
 
-        if ( $opt_name eq 'HTDOCS' && $file =~ /index\.html$/ ) {
+        if ( $opt_name eq 'HTDOCS' && $file =~ m{htdocs/index\.html$} ) {
             $installed_cmap_conf = $to;
             $overwrite_ok        = 0;
         }
 
-        my $extra = $overwrite_ok ? '' : "unless -e '$to'";
+        my $extra = $overwrite_ok ? '' : 
+            qq[if -e '$to' && \$self->y_n("OK to overwrite '$to'?")];
 
         $install .= qq[
             \$self->copy_if_modified(
@@ -380,9 +426,9 @@ $builder->add_to_cleanup(
     'lib/Bio/GMOD/CMap/Constants.pm',
     @cleanup,
     $tarball,
+    'htdocs/index.html',
     'pod2htmd.x~~',
-    'pod2htmi.x~~',
-    'htdocs/index.html'
+    'pod2htmi.x~~'
 );
 
 $builder->create_build_script;
