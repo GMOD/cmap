@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.86 2005-02-03 15:22:04 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.87 2005-02-10 19:03:17 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.86 $)[-1];
+$VERSION = (qw$Revision: 1.87 $)[-1];
 
 #
 # Get command-line options
@@ -64,6 +64,7 @@ use Bio::GMOD::CMap::Admin::Export();
 use Bio::GMOD::CMap::Admin::MakeCorrespondences();
 use Bio::GMOD::CMap::Admin::ImportCorrespondences();
 use Bio::GMOD::CMap::Admin::ImportAlignments();
+use Bio::GMOD::CMap::Admin::GBrowseLiason();
 use Bio::GMOD::CMap::Admin::ManageLinks();
 use Benchmark;
 
@@ -206,6 +207,62 @@ sub show_greeting {
     my $self      = shift;
     my $separator = '-=' x 10;
 
+    my $menu_options    = [
+        {
+            action  => 'change_data_source',
+            display => 'Change current data source',
+        },
+        {
+            action  => 'create_map_set',
+            display => 'Create new map set'
+        },
+        {
+            action  => 'import_data',
+            display => 'Import data',
+        },
+        {
+            action  => 'export_data',
+            display => 'Export data'
+        },
+        {
+            action  => 'delete_data',
+            display => 'Delete data',
+        },
+        {
+            action  => 'make_name_correspondences',
+            display => 'Make name-based correspondences'
+        },
+        {
+            action  => 'delete_duplicate_correspondences',
+            display => 'Delete duplicate correspondences'
+        },
+        {
+            action  => 'reload_correspondence_matrix',
+            display => 'Reload correspondence matrix'
+        },
+        {
+            action  => 'purge_query_cache_menu',
+            display => 'Purge the cache to view new data'
+        },
+        {
+            action  => 'manage_links',
+            display => 'Manage imported links'
+        },
+    ];
+
+    if ($self->config_data('gbrowse_compatible')){
+        push @$menu_options, 
+            {
+                action  => 'prepare_for_gbrowse',
+                display => 'Prepare the Database for GBrowse data'
+            };
+    }
+
+    push @$menu_options, 
+        {
+            action  => 'quit',
+            display => 'Quit'
+        };
     print "\nCurrent data source: ", $self->data_source, "\n";
 
     my $action = $self->show_menu(
@@ -213,52 +270,7 @@ sub show_greeting {
         prompt  => 'What would you like to do?',
         display => 'display',
         return  => 'action',
-        data    => [
-            {
-                action  => 'change_data_source',
-                display => 'Change current data source',
-            },
-            {
-                action  => 'create_map_set',
-                display => 'Create new map set'
-            },
-            {
-                action  => 'import_data',
-                display => 'Import data',
-            },
-            {
-                action  => 'export_data',
-                display => 'Export data'
-            },
-            {
-                action  => 'delete_data',
-                display => 'Delete data',
-            },
-            {
-                action  => 'make_name_correspondences',
-                display => 'Make name-based correspondences'
-            },
-            {
-                action  => 'delete_duplicate_correspondences',
-                display => 'Delete duplicate correspondences'
-            },
-            {
-                action  => 'reload_correspondence_matrix',
-                display => 'Reload correspondence matrix'
-            },
-            {
-                action  => 'purge_query_cache_menu',
-                display => 'Purge the cache to view new data'
-            },
-            {
-                action  => 'manage_links',
-                display => 'Manage imported links'
-            },
-            {
-                action  => 'quit',
-                display => 'Quit'
-            },
-        ],
+        data    => $menu_options,
     );
 
     return $action;
@@ -2111,7 +2123,6 @@ sub import_alignments {
         );
     }
 
-## Please see file perltidy.ERR
     #
     # Get the feature type
     #
@@ -2573,6 +2584,86 @@ sub reload_correspondence_matrix {
     };
 
     return 1;
+}
+
+# ----------------------------------------------------
+sub prepare_for_gbrowse {
+
+    #
+    # Gathers the info to import feature correspondences.
+    #
+    my $self = shift;
+    my $db   = $self->db or die $self->error;
+    my $term = $self->term;
+
+    #
+    # Get the map sets.
+    #
+    my $map_sets = $self->get_map_sets(
+        explanation => 'Which map sets do you want to use',
+        allow_mult  => 1,
+        allow_null  => 0,
+    );
+
+    #
+    # Get the feature types
+    #
+    my $feature_type_data = $self->feature_type_data();
+    my $menu_options;
+    foreach my $ft_aid (keys(%$feature_type_data)){
+        if ($feature_type_data->{$ft_aid}->{'gbrowse_class'}){
+            push @$menu_options, {
+                feature_type     => $feature_type_data->{$ft_aid}->{'feature_type'},
+                feature_type_aid => $ft_aid,
+            }
+        }
+    }
+
+    unless ( $menu_options and @$menu_options){
+        print "No eligible feature types\n";
+        return 0;
+    }
+
+    my @feature_types = $self->show_menu(
+        title  => 'Feature Types to be Prepared',
+        prompt =>
+"Select the feature types that should be prepared for GBrowse data.\n"
+          . "Only eligible feature type (that have a 'gbrowse_class' defined in their config) are displayed.",
+        display    => 'feature_type',
+        return     => 'feature_type_aid,feature_type',
+        allow_null => 0,
+        allow_mult => 1,
+        data       => $menu_options,
+    );
+
+
+    print join( "\n",
+        'OK to prepare for GBrowse?',
+        '  Data source     : ' . $self->data_source,
+        '  Map Sets        : '.
+          join( "\n", map { "    ".$_->{'map_set_name'} } @$map_sets ),
+        '  Feature Types   : '.
+          join( "\n", map { "    ".$_->[1] } @feature_types ),
+    );
+
+    print "\n[Y/n] ";
+
+    chomp( my $answer = <STDIN> );
+    return if $answer =~ /^[Nn]/;
+
+    my @map_set_ids = map {$_->{'map_set_id'}} @$map_sets;
+    my @feature_type_aids = map {$_->[0]} @feature_types;
+    my $gbrowse_liason = Bio::GMOD::CMap::Admin::GBrowseLiason->new(
+        data_source => $self->data_source, 
+    );
+    $gbrowse_liason->prepare_data_for_gbrowse(
+        map_set_ids       => \@map_set_ids,
+        feature_type_aids => \@feature_type_aids,
+      )
+      or do {
+        print "Error: ", $gbrowse_liason->error, "\n";
+        return;
+    };
 }
 
 # ----------------------------------------------------
