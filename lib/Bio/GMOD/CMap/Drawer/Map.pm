@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.118 2004-09-02 13:32:28 mwz444 Exp $
+# $Id: Map.pm,v 1.119 2004-09-03 03:38:45 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.118 $)[-1];
+$VERSION = (qw$Revision: 1.119 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -2986,7 +2986,6 @@ Returns the map's tick mark interval.
     unless ( defined $map->{'tick_mark_interval'} ) {
         my $map_length =
           $self->stop_position($map_id) - $self->start_position($map_id);
-        die 'Map Length is 0' if not $map_length;
         my $map_scale  = int(log(abs($map_length))/log(10)); 
         if (int(($map_length/(10**$map_scale))+.5)>=2){
             push @{$map->{'tick_mark_interval'}}, (10**$map_scale, $map_scale);

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.150 2004-09-02 14:20:12 mwz444 Exp $
+# $Id: Data.pm,v 1.151 2004-09-03 03:38:44 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.150 $)[-1];
+$VERSION = (qw$Revision: 1.151 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -890,7 +890,6 @@ sub slot_data {
                 $sql_str = $corr_free_sql."and map.map_id=-1 "; 
                 #$sql_str = $corr_free_sql . " UNION " . $with_corr_sql;
             }
-print STDERR "$sql_str\n";
             unless ( $map->{'features'} =
                 $self->get_cached_results(4, $sql_str) )
             {

@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.58 2004-09-02 14:29:18 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.59 2004-09-03 03:38:45 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.58 $)[-1];
+$VERSION = (qw$Revision: 1.59 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -92,8 +92,13 @@ sub handler {
     my @ref_map_aids;
     if ( $apr->param('ref_map_aids') ) {
         foreach my $aid ($apr->param('ref_map_aids')){
+            # Remove start and stop if they are the same
+            while( $aid=~s/(.+\[)(\d+)\*\2(\D.*)/$1*$3/){};
             push @ref_map_aids,split( /[:,]/,$aid);
         }
+    }
+    if (scalar(@ref_map_aids)){
+        $apr->param('ref_map_aids',join(":",@ref_map_aids));
     }
     ###For DEBUGGING purposes.  Remove before release
     if ( $apr->param('ref_map_aid') ) {
@@ -108,6 +113,7 @@ sub handler {
         if ($ref_map_aid =~/^(\S+)\[(.*)\*(.*)\]/){
             $ref_map_aid = $1;
             ($start,$stop)=($2,$3); 
+            ($start,$stop)=(undef,undef) if ($start==$stop);
             $start = undef unless($start =~ /\S/);
             $stop  = undef unless($stop  =~ /\S/);
             my $start_stop_feature=0;
@@ -224,6 +230,8 @@ sub handler {
     #
     # Add in previous maps.
     #
+    # Remove start and stop if they are the same
+    while( $comparative_maps=~s/(.+\[)(\d+)\*\2(\D.*)/$1*$3/){};
     for my $cmap ( split( /:/, $comparative_maps ) ) {
         my ( $slot_no, $field, $accession_id ) = split(/=/, $cmap) or next;
         my ( $start, $stop );
@@ -231,6 +239,7 @@ sub handler {
             if ( $aid =~ m/^(.+)\[(.*)\*(.*)\]$/ ) {
                 $aid=$1;
                 ($start,$stop)=($2,$3); 
+                ($start,$stop)=(undef,undef) if ($start==$stop);
                 $start = undef unless($start =~ /\S/);
                 $stop  = undef unless($stop  =~ /\S/);
                 my $start_stop_feature=0;
@@ -280,6 +289,7 @@ sub handler {
                 $accession_id = $1;
                 $start        = $2;
                 $stop         = $3;
+                ($start,$stop)=(undef,undef) if ($start==$stop);
                 $start = undef unless($start =~ /\S/);
                 $stop  = undef unless($stop  =~ /\S/);
                 my $start_stop_feature=0;
