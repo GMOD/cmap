@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Utils;
 
-# $Id: Utils.pm,v 1.15 2003-03-13 01:24:53 kycl4rk Exp $
+# $Id: Utils.pm,v 1.16 2003-03-17 20:26:49 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.15 $)[-1];
+$VERSION = (qw$Revision: 1.16 $)[-1];
 
 use base 'Exporter';
 
@@ -36,6 +36,7 @@ my @subs   = qw[
     label_distribution 
     next_number 
     paginate
+    parse_words
 ];
 @EXPORT_OK = @subs;
 @EXPORT    = @subs;
@@ -407,6 +408,64 @@ Given a result set, break it up into pages.
         show_stop   => $limit_stop,
     }
 }
+
+# ----------------------------------------------------
+sub parse_words {
+#
+# Stole this from String::ParseWords::parse by Christian Gilmore 
+# (CPAN ID: CGILMORE).  Allows quoted phrases within a string to 
+# count as a "word," e.g.:
+#
+# "Foo bar" baz
+# 
+# Becomes:
+# 
+# Foo bar
+# baz
+#
+    my $string    = shift;
+    my @words     = ();
+    my $inquote   = 0;
+    my $length    = length($string);
+    my $nextquote = 0;
+    my $nextspace = 0;
+    my $pos       = 0;
+  
+    # shrink whitespace sets to just a single space
+    $string =~ s/\s+/ /g;
+  
+    # Extract words from list
+    while ( $pos < $length ) {
+        $nextquote = index( $string, '"', $pos );
+        $nextspace = index( $string, ' ', $pos );
+        $nextspace = $length if $nextspace < 0;
+        $nextquote = $length if $nextquote < 0;
+
+        if ( $inquote ) {
+            push(@words, substr($string, $pos, $nextquote - $pos));
+            $pos = $nextquote + 2;
+            $inquote = 0;
+        } 
+        elsif ( $nextspace < $nextquote ) {
+            push(@words, substr($string, $pos, $nextspace - $pos));
+            $pos = $nextspace + 1;
+        } 
+        elsif ( $nextspace == $length && $nextquote == $length ) {
+            # End of the line
+            push( @words, substr( $string, $pos, $nextspace - $pos ) );
+            $pos = $nextspace;
+        } 
+        else {
+            $inquote = 1;
+            $pos = $nextquote + 1;
+        }
+    }
+  
+    push( @words, $string ) unless scalar( @words );
+  
+    return @words;
+}
+
 
 1;
 
