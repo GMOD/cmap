@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::Oracle
--- Created on Tue Jul  1 11:25:42 2003
+-- Created on Fri Jul 25 16:50:14 2003
 -- 
 -- We assume that default NLS_DATE_FORMAT has been changed
 -- but we set it here anyway to be self-consistent.
@@ -165,6 +165,20 @@ CREATE TABLE cmap_map (
   CONSTRAINT pk_cmap_map PRIMARY KEY (map_id),
   CONSTRAINT accession_id UNIQUE (accession_id)
 );
+
+--
+-- Table: cmap_map_cache
+--
+
+CREATE TABLE cmap_map_cache (
+  pid number(11) DEFAULT '0' CONSTRAINT nn_pid NOT NULL,
+  slot_no number(6) DEFAULT '0' CONSTRAINT nn_slot_no NOT NULL,
+  map_id number(11) DEFAULT '0' CONSTRAINT nn_map_id03 NOT NULL,
+  start_position number(11, 2) DEFAULT NULL,
+  stop_position number(11, 2) DEFAULT NULL
+);
+
+CREATE INDEX pid_cmap_map_cache on cmap_map_cache (pid);
 
 --
 -- Table: cmap_map_set

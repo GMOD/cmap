@@ -1,20 +1,21 @@
--- MySQL dump 8.21
+-- MySQL dump 10.2
 --
 -- Host: localhost    Database: CMAP
 ---------------------------------------------------------
--- Server version	3.23.49
+-- Server version	4.1.0-alpha-standard
 
 --
 -- Table structure for table 'cmap_correspondence_evidence'
 --
 
+DROP TABLE IF EXISTS cmap_correspondence_evidence;
 CREATE TABLE cmap_correspondence_evidence (
   correspondence_evidence_id int(11) NOT NULL default '0',
-  accession_id varchar(20) NOT NULL default '',
+  accession_id varchar(20) character set latin1 NOT NULL default '',
   feature_correspondence_id int(11) NOT NULL default '0',
   evidence_type_id int(11) NOT NULL default '0',
   score double default NULL,
-  remark varchar(100) default NULL,
+  remark varchar(100) character set latin1 default NULL,
   PRIMARY KEY  (correspondence_evidence_id),
   UNIQUE KEY accession_id (accession_id),
   KEY feature_correspondence_id (feature_correspondence_id,evidence_type_id)
@@ -24,6 +25,7 @@ CREATE TABLE cmap_correspondence_evidence (
 -- Table structure for table 'cmap_correspondence_lookup'
 --
 
+DROP TABLE IF EXISTS cmap_correspondence_lookup;
 CREATE TABLE cmap_correspondence_lookup (
   feature_id1 int(11) default NULL,
   feature_id2 int(11) default NULL,
@@ -35,15 +37,16 @@ CREATE TABLE cmap_correspondence_lookup (
 -- Table structure for table 'cmap_correspondence_matrix'
 --
 
+DROP TABLE IF EXISTS cmap_correspondence_matrix;
 CREATE TABLE cmap_correspondence_matrix (
-  reference_map_aid varchar(20) NOT NULL default '0',
-  reference_map_name varchar(32) NOT NULL default '',
-  reference_map_set_aid varchar(20) NOT NULL default '0',
-  reference_species_aid varchar(20) NOT NULL default '0',
-  link_map_aid varchar(20) default NULL,
-  link_map_name varchar(32) default NULL,
-  link_map_set_aid varchar(20) NOT NULL default '0',
-  link_species_aid varchar(20) NOT NULL default '0',
+  reference_map_aid varchar(20) character set latin1 NOT NULL default '0',
+  reference_map_name varchar(32) character set latin1 NOT NULL default '',
+  reference_map_set_aid varchar(20) character set latin1 NOT NULL default '0',
+  reference_species_aid varchar(20) character set latin1 NOT NULL default '0',
+  link_map_aid varchar(20) character set latin1 default NULL,
+  link_map_name varchar(32) character set latin1 default NULL,
+  link_map_set_aid varchar(20) character set latin1 NOT NULL default '0',
+  link_species_aid varchar(20) character set latin1 NOT NULL default '0',
   no_correspondences int(11) NOT NULL default '0'
 ) TYPE=MyISAM;
 
@@ -51,13 +54,14 @@ CREATE TABLE cmap_correspondence_matrix (
 -- Table structure for table 'cmap_dbxref'
 --
 
+DROP TABLE IF EXISTS cmap_dbxref;
 CREATE TABLE cmap_dbxref (
   dbxref_id int(11) NOT NULL default '0',
   map_set_id int(11) default NULL,
   feature_type_id int(11) default NULL,
   species_id int(11) default NULL,
-  dbxref_name varchar(32) default NULL,
-  url varchar(200) NOT NULL default '',
+  dbxref_name varchar(32) character set latin1 default NULL,
+  url varchar(200) character set latin1 NOT NULL default '',
   PRIMARY KEY  (dbxref_id)
 ) TYPE=MyISAM;
 
@@ -65,12 +69,13 @@ CREATE TABLE cmap_dbxref (
 -- Table structure for table 'cmap_evidence_type'
 --
 
+DROP TABLE IF EXISTS cmap_evidence_type;
 CREATE TABLE cmap_evidence_type (
   evidence_type_id int(11) NOT NULL default '0',
-  accession_id varchar(20) NOT NULL default '',
-  evidence_type varchar(30) NOT NULL default '',
+  accession_id varchar(20) character set latin1 NOT NULL default '',
+  evidence_type varchar(30) character set latin1 NOT NULL default '',
   rank int(11) NOT NULL default '0',
-  line_color varchar(20) default NULL,
+  line_color varchar(20) character set latin1 default NULL,
   PRIMARY KEY  (evidence_type_id),
   UNIQUE KEY accession_id (accession_id),
   UNIQUE KEY rank (rank)
@@ -80,18 +85,19 @@ CREATE TABLE cmap_evidence_type (
 -- Table structure for table 'cmap_feature'
 --
 
+DROP TABLE IF EXISTS cmap_feature;
 CREATE TABLE cmap_feature (
   feature_id int(11) NOT NULL default '0',
-  accession_id varchar(20) NOT NULL default '',
+  accession_id varchar(20) character set latin1 NOT NULL default '',
   map_id int(11) NOT NULL default '0',
   feature_type_id int(11) NOT NULL default '0',
-  feature_name varchar(32) NOT NULL default '',
-  alternate_name varchar(32) default NULL,
+  feature_name varchar(32) character set latin1 NOT NULL default '',
+  alternate_name varchar(32) character set latin1 default NULL,
   is_landmark tinyint(4) NOT NULL default '0',
   start_position double(11,2) NOT NULL default '0.00',
   stop_position double(11,2) default NULL,
-  dbxref_name varchar(32) default NULL,
-  dbxref_url varchar(200) default NULL,
+  dbxref_name varchar(32) character set latin1 default NULL,
+  dbxref_url varchar(200) character set latin1 default NULL,
   PRIMARY KEY  (feature_id),
   UNIQUE KEY accession_id (accession_id),
   KEY feature_name (feature_name),
@@ -103,9 +109,10 @@ CREATE TABLE cmap_feature (
 -- Table structure for table 'cmap_feature_correspondence'
 --
 
+DROP TABLE IF EXISTS cmap_feature_correspondence;
 CREATE TABLE cmap_feature_correspondence (
   feature_correspondence_id int(11) NOT NULL default '0',
-  accession_id varchar(20) NOT NULL default '',
+  accession_id varchar(20) character set latin1 NOT NULL default '',
   feature_id1 int(11) NOT NULL default '0',
   feature_id2 int(11) NOT NULL default '0',
   is_enabled tinyint(4) NOT NULL default '1',
@@ -118,9 +125,10 @@ CREATE TABLE cmap_feature_correspondence (
 -- Table structure for table 'cmap_feature_note'
 --
 
+DROP TABLE IF EXISTS cmap_feature_note;
 CREATE TABLE cmap_feature_note (
   feature_id int(11) NOT NULL default '0',
-  note text,
+  note text character set latin1,
   PRIMARY KEY  (feature_id)
 ) TYPE=MyISAM;
 
@@ -128,14 +136,15 @@ CREATE TABLE cmap_feature_note (
 -- Table structure for table 'cmap_feature_type'
 --
 
+DROP TABLE IF EXISTS cmap_feature_type;
 CREATE TABLE cmap_feature_type (
   feature_type_id int(11) NOT NULL default '0',
-  accession_id varchar(20) NOT NULL default '',
-  feature_type varchar(32) NOT NULL default '',
+  accession_id varchar(20) character set latin1 NOT NULL default '',
+  feature_type varchar(32) character set latin1 NOT NULL default '',
   default_rank int(11) NOT NULL default '1',
   is_visible tinyint(4) NOT NULL default '1',
-  shape varchar(12) default NULL,
-  color varchar(20) default NULL,
+  shape varchar(12) character set latin1 default NULL,
+  color varchar(20) character set latin1 default NULL,
   drawing_lane int(11) NOT NULL default '1',
   drawing_priority int(11) NOT NULL default '1',
   PRIMARY KEY  (feature_type_id),
@@ -146,11 +155,12 @@ CREATE TABLE cmap_feature_type (
 -- Table structure for table 'cmap_map'
 --
 
+DROP TABLE IF EXISTS cmap_map;
 CREATE TABLE cmap_map (
   map_id int(11) NOT NULL default '0',
-  accession_id varchar(20) NOT NULL default '',
+  accession_id varchar(20) character set latin1 NOT NULL default '',
   map_set_id int(11) NOT NULL default '0',
-  map_name varchar(32) NOT NULL default '',
+  map_name varchar(32) character set latin1 NOT NULL default '',
   display_order int(11) NOT NULL default '1',
   start_position double(11,2) default NULL,
   stop_position double(11,2) default NULL,
@@ -159,23 +169,38 @@ CREATE TABLE cmap_map (
 ) TYPE=MyISAM;
 
 --
+-- Table structure for table 'cmap_map_cache'
+--
+
+DROP TABLE IF EXISTS cmap_map_cache;
+CREATE TABLE cmap_map_cache (
+  pid int(11) NOT NULL default '0',
+  slot_no smallint(6) NOT NULL default '0',
+  map_id int(11) NOT NULL default '0',
+  start_position double(11,2) default NULL,
+  stop_position double(11,2) default NULL,
+  KEY pid (pid)
+) TYPE=MyISAM CHARSET=latin1;
+
+--
 -- Table structure for table 'cmap_map_set'
 --
 
+DROP TABLE IF EXISTS cmap_map_set;
 CREATE TABLE cmap_map_set (
   map_set_id int(11) NOT NULL default '0',
-  accession_id varchar(20) NOT NULL default '',
-  map_set_name varchar(64) NOT NULL default '',
-  short_name varchar(30) NOT NULL default '',
+  accession_id varchar(20) character set latin1 NOT NULL default '',
+  map_set_name varchar(64) character set latin1 NOT NULL default '',
+  short_name varchar(30) character set latin1 NOT NULL default '',
   map_type_id int(11) NOT NULL default '0',
   species_id int(11) NOT NULL default '0',
   published_on date default NULL,
   can_be_reference_map tinyint(4) NOT NULL default '1',
   display_order int(11) NOT NULL default '1',
   is_enabled tinyint(4) NOT NULL default '1',
-  remarks text,
-  shape varchar(12) default NULL,
-  color varchar(20) default NULL,
+  remarks text character set latin1,
+  shape varchar(12) character set latin1 default NULL,
+  color varchar(20) character set latin1 default NULL,
   width int(11) default NULL,
   PRIMARY KEY  (map_set_id),
   UNIQUE KEY accession_id (accession_id)
@@ -185,13 +210,14 @@ CREATE TABLE cmap_map_set (
 -- Table structure for table 'cmap_map_type'
 --
 
+DROP TABLE IF EXISTS cmap_map_type;
 CREATE TABLE cmap_map_type (
   map_type_id int(11) NOT NULL default '0',
-  map_type varchar(64) NOT NULL default '',
-  map_units varchar(12) NOT NULL default '',
+  map_type varchar(64) character set latin1 NOT NULL default '',
+  map_units varchar(12) character set latin1 NOT NULL default '',
   is_relational_map tinyint(11) NOT NULL default '0',
-  shape varchar(12) default NULL,
-  color varchar(20) default NULL,
+  shape varchar(12) character set latin1 default NULL,
+  color varchar(20) character set latin1 default NULL,
   width int(11) default NULL,
   display_order int(11) NOT NULL default '1',
   PRIMARY KEY  (map_type_id),
@@ -202,8 +228,9 @@ CREATE TABLE cmap_map_type (
 -- Table structure for table 'cmap_next_number'
 --
 
+DROP TABLE IF EXISTS cmap_next_number;
 CREATE TABLE cmap_next_number (
-  table_name varchar(40) NOT NULL default '',
+  table_name varchar(40) character set latin1 NOT NULL default '',
   next_number int(11) NOT NULL default '0',
   PRIMARY KEY  (table_name)
 ) TYPE=MyISAM;
@@ -212,11 +239,12 @@ CREATE TABLE cmap_next_number (
 -- Table structure for table 'cmap_species'
 --
 
+DROP TABLE IF EXISTS cmap_species;
 CREATE TABLE cmap_species (
   species_id int(11) NOT NULL default '0',
-  accession_id varchar(20) NOT NULL default '',
-  common_name varchar(64) NOT NULL default '',
-  full_name varchar(64) NOT NULL default '',
+  accession_id varchar(20) character set latin1 NOT NULL default '',
+  common_name varchar(64) character set latin1 NOT NULL default '',
+  full_name varchar(64) character set latin1 NOT NULL default '',
   display_order int(11) NOT NULL default '1',
   ncbi_taxon_id int(11) default NULL,
   PRIMARY KEY  (species_id),

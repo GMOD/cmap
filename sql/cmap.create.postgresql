@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Tue Jul  1 11:25:59 2003
+-- Created on Fri Jul 25 16:52:31 2003
 -- 
 --
 -- Table: cmap_correspondence_evidence
@@ -161,6 +161,20 @@ CREATE TABLE "cmap_map" (
   CONSTRAINT pk_cmap_map PRIMARY KEY (map_id),
   CONSTRAINT accession_id UNIQUE (accession_id)
 );
+
+--
+-- Table: cmap_map_cache
+--
+
+CREATE TABLE "cmap_map_cache" (
+  "pid" integer(11) DEFAULT '0' NOT NULL,
+  "slot_no" smallint(6) DEFAULT '0' NOT NULL,
+  "map_id" integer(11) DEFAULT '0' NOT NULL,
+  "start_position" double precision(11, 2) DEFAULT NULL,
+  "stop_position" double precision(11, 2) DEFAULT NULL
+);
+
+CREATE INDEX "pid" on cmap_map_cache (pid);
 
 --
 -- Table: cmap_map_set
