@@ -239,7 +239,7 @@ if ( !$answer || $answer =~ /^[Yy]/ ) {
     );
 
     print qq[Now you must run "make" and "make install"\n];
-    print qq[Be sure to edit "$conf_path" file with your database info.\n];
+    print qq[Be sure to edit your "cmap.conf" file with your database info.\n];
 }
 exit(0);
 
