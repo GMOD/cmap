@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: profile-cmap-draw.pl,v 1.4 2003-09-29 20:49:47 kycl4rk Exp $
+# $Id: profile-cmap-draw.pl,v 1.5 2004-02-10 22:26:50 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,6 +23,7 @@ Options:
     -d             The CMap data source to use
     -f             File containing URL
     -u             String for URL
+    --debug        Show debugging info
 
   Then:
 
@@ -39,21 +40,22 @@ use Data::Dumper;
 use Getopt::Long;
 use CGI;
 use Pod::Usage;
-use Apache::FakeRequest;
-use Bio::GMOD::CMap::Drawer;
+use Bio::GMOD::CMap::Apache::MapViewer;
 use Bio::GMOD::CMap::Constants;
 
-my ( $help, $datasource, $file, $url, $min_correspondences );
+my ( $help, $datasource, $file, $url, $min_correspondences, $debug );
 GetOptions(
     'help|h|?' => \$help,
     'd:s'      => \$datasource,
     'f:s'      => \$file,
     'u:s'      => \$url,
+    'debug'    => \$debug,
 ) or pod2usage;
 
 pod2usage(0) if $help;
 
 if ( $file ) {
+    print "Reading URL from file '$file'\n" if $debug;
     open my $fh, $file or die "Can't read file '$file': $!\n";
     local $/;
     $url = <$fh>;
@@ -62,85 +64,27 @@ if ( $file ) {
 }
 
 pod2usage('No URL or file') unless $url;
+ 
+$url =~ s/^.*\?//; # isolate query string
+$url =~ s/\s*$//;  # remove trailing spaces
 
 my $q = CGI->new( $url );
-my $ref_map_set_aid       = $q->param('ref_map_set_aid')       ||  0;
-my $ref_map_aid           = $q->param('ref_map_aid')           ||  0;
-my $ref_map_start         = $q->param('ref_map_start');
-my $ref_map_stop          = $q->param('ref_map_stop');
-my $comparative_maps      = $q->param('comparative_maps')      || '';
-my $comparative_map_right = $q->param('comparative_map_right') || '';
-my $comparative_map_left  = $q->param('comparative_map_left')  || '';
-$min_correspondences      = $q->param('min_correspondences')   ||  0;
-$datasource             ||= $q->param('data_source') || $datasource;
 
-my %slots = (
-    0 => {
-        field       => $ref_map_aid == -1 ? 'map_set_aid' : 'map_aid',
-        aid         => $ref_map_aid == -1 ? $ref_map_set_aid : $ref_map_aid,
-        start       => $ref_map_start,
-        stop        => $ref_map_stop,
-        map_set_aid => $ref_map_set_aid,
-    },
-);
+my $viewer = Bio::GMOD::CMap::Apache::MapViewer->new( apr => $q )
+    or die Bio::GMOD::CMap::Apache::MapViewer->error;
 
-for my $cmap ( split( /:/, $comparative_maps ) ) {
-    my ( $slot_no, $field, $accession_id ) = split(/=/, $cmap) or next;
-    my ( $start, $stop ); 
-    if ( $accession_id =~ m/^(.+)\[(.+),(.+)\]$/ ) {
-        $accession_id = $1;
-        $start        = $2;
-        $stop         = $3;
-    }
-    $slots{ $slot_no } =  {
-        field          => $field,
-        aid            => $accession_id,
-        start          => $start,
-        stop           => $stop,
-    };
+eval { my $output = $viewer->handler( $q ) };
+
+if ( my $e = $@ || $viewer->error ) {
+    print "Error: $e\n";
 }
 
-my @slot_nos  = sort { $a <=> $b } keys %slots;
-my $max_right = $slot_nos[-1];
-my $max_left  = $slot_nos[ 0];
-
-for my $side ( ( RIGHT, LEFT ) ) {
-    my $slot_no = $side eq RIGHT ? $max_right + 1 : $max_left - 1;
-    my $cmap    = $side eq RIGHT
-        ? $comparative_map_right : $comparative_map_left;
-    my ( $field, $accession_id ) = split( /=/, $cmap ) or next;
-    my ( $start, $stop );
-    if ( $accession_id =~ m/^(.+)\[(.+),(.+)\]$/ ) {
-        $accession_id = $1;
-        $start        = $2;
-        $stop         = $3;
-    }
-    $slots{ $slot_no } =  {
-        field          => $field,
-        aid            => $accession_id,
-        start          => $start,
-        stop           => $stop,
-    };
-}
-
-my $apr                 =  Apache::FakeRequest->new;
-my $drawer              =  Bio::GMOD::CMap::Drawer->new(
-    apr                 => $apr,
-    data_source         => $datasource,
-    cache_dir           => '.',
-    slots               => \%slots,
-    highlight           => '',
-    font_size           => 'small',
-    image_size          => 'small',
-    image_type          => 'png',
-    label_features      => 'all',
-    min_correspondences => $min_correspondences || 0,
-) or die Bio::GMOD::CMap::Drawer->error;
+print "Done\n";
 
 =pod
 
 =head1 AUTHOR
 
-Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
+Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
 
 =cut
