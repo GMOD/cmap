@@ -61,7 +61,7 @@ print OUT<<"!GROK!THIS!";
 # An absolute path to the directory holding the templates
 # Default: Set on install
 #   
-template_dir $Local{'TEMPLATE_DIR'}
+template_dir $Local{'TEMPLATES'}
 
 #   
 # An absolute path to the directory where images are written
@@ -73,7 +73,7 @@ template_dir $Local{'TEMPLATE_DIR'}
 #
 # Default: /usr/local/apache/htdocs/cmap/tmp
 #
-cache_dir $Local{'CACHE_DIR'}
+cache_dir $Local{'CACHE'}
 
 # ----------------------------------------------------
 #
