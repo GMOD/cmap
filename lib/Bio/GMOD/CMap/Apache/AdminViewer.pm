@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.7 2002-09-17 20:30:18 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.8 2002-09-18 16:29:28 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -28,7 +28,7 @@ $COLORS         = [ sort keys %{ +COLORS } ];
 $FEATURE_SHAPES = [ qw( box dumbbell line span ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.7 $)[-1];
+$VERSION        = (qw$Revision: 1.8 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -344,7 +344,9 @@ sub dbxref_edit {
         ]
     );
     $sth->execute( $dbxref_id );
-    my $dbxref = $sth->fetchrow_hashref;
+    my $dbxref = $sth->fetchrow_hashref or return $self->error(
+        "No database cross-reference for ID '$dbxref_id'"
+    );
 
     return $self->process_template( 
         TEMPLATE->{'dbxref_edit'},
@@ -852,7 +854,9 @@ sub map_create {
         ]
     );
     $sth->execute( $map_set_id );
-    my $map_set = $sth->fetchrow_hashref;
+    my $map_set = $sth->fetchrow_hashref or return $self->error(
+        "No map set for ID '$map_set_id'"
+    );
 
     return $self->process_template( 
         TEMPLATE->{'map_create'}, 
@@ -892,7 +896,9 @@ sub map_edit {
         ]
     );
     $sth->execute( $map_id );
-    my $map = $sth->fetchrow_hashref;
+    my $map = $sth->fetchrow_hashref or return $self->error(
+        "No map for ID '$map_id'"
+    );
 
     return $self->process_template( 
         TEMPLATE->{'map_edit'}, 
@@ -977,7 +983,9 @@ sub map_view {
         ]
     );
     $sth->execute( $map_id );
-    my $map = $sth->fetchrow_hashref;
+    my $map = $sth->fetchrow_hashref or return $self->error(
+        "No map for ID '$map_id'"
+    );
 
     my $count_sql = q[
         select   count(f.feature_id)
@@ -1115,7 +1123,9 @@ sub feature_create {
         ]
     );
     $sth->execute( $map_id );
-    my $map = $sth->fetchrow_hashref;
+    my $map = $sth->fetchrow_hashref or return $self->error(
+        "No map for ID '$map_id'"
+    );
 
     my $feature_types = $db->selectall_arrayref(
         q[
@@ -1174,7 +1184,9 @@ sub feature_edit {
         ]
     );
     $sth->execute( $feature_id );
-    my $feature = $sth->fetchrow_hashref;
+    my $feature = $sth->fetchrow_hashref or return $self->error(
+        "No feature for ID '$feature_id'"
+    );
 
     my $feature_types = $db->selectall_arrayref(
         q[
@@ -1729,7 +1741,9 @@ sub corr_evidence_edit {
         ]
     );
     $sth->execute( $correspondence_evidence_id );
-    my $corr = $sth->fetchrow_hashref;
+    my $corr = $sth->fetchrow_hashref or return $self->error(
+        "No correspondence evidence for ID '$correspondence_evidence_id'"
+    );
 
     my $evidence_types = $db->selectall_arrayref(
         q[
@@ -2081,6 +2095,7 @@ sub map_set_edit {
     my $errors          = $args{'errors'};
     my $db              = $self->db;
     my $apr             = $self->apr;
+    my $map_set_id      = $apr->param('map_set_id') or die 'No map set ID';
 
     my $sth = $db->prepare(
         q[
@@ -2104,8 +2119,10 @@ sub map_set_edit {
         ],
     );
 
-    $sth->execute( $apr->param( 'map_set_id' ) );
-    my $map_set = $sth->fetchrow_hashref;
+    $sth->execute( $map_set_id );
+    my $map_set = $sth->fetchrow_hashref or return $self->error(
+        "No map set for ID '$map_set_id'"
+    );
 
     my $specie = $db->selectall_arrayref(
         q[
@@ -2234,7 +2251,9 @@ sub map_set_view {
     );
 
     $sth->execute( $map_set_id );
-    my $map_set = $sth->fetchrow_hashref or die 'Invalid map set id';
+    my $map_set = $sth->fetchrow_hashref or return $self->error(
+        "No map set for ID '$map_set_id'"
+    );
     my @maps = @{ 
         $db->selectall_arrayref( 
             q[
@@ -2362,6 +2381,7 @@ sub map_type_edit {
     my $errors          = $args{'errors'};
     my $db              = $self->db;
     my $apr             = $self->apr;
+    my $map_type_id     = $apr->param('map_type_id') or die 'No map type ID';
     my $sth             = $db->prepare(
         q[
             select   map_type_id, 
@@ -2377,7 +2397,9 @@ sub map_type_edit {
         ]
     );
     $sth->execute( $apr->param('map_type_id') );
-    my $map_type = $sth->fetchrow_hashref;
+    my $map_type = $sth->fetchrow_hashref or return $self->error(
+        "No map type for ID '$map_type_id'"
+    );
 
     return $self->process_template( 
         TEMPLATE->{'map_type_edit'},
@@ -2402,11 +2424,11 @@ sub map_type_insert {
     my $map_units         = $apr->param('map_units') 
         or push @errors, 'No map units';
     my $shape             = $apr->param('shape')     
-        or push @errors, 'How to draw?';
+        or push @errors, 'No shape';
     my $width             = $apr->param('width')             || '';
     my $color             = $apr->param('color')             || '';
     my $display_order     = $apr->param('display_order')     || '';
-    my $is_relational_map = $apr->param('is_relational_map') || 0;
+    my $is_relational_map = $apr->param('is_relational_map') ||  0;
     my $map_type_id       = next_number(
         db                => $db, 
         table_name        => 'cmap_map_type',
@@ -2521,16 +2543,20 @@ sub process_template {
 
 # ----------------------------------------------------
 sub species_create {
-    my $self = shift;
-    return $self->process_template( TEMPLATE->{'species_create'} );
+    my ( $self, %args ) = @_;
+    return $self->process_template( 
+        TEMPLATE->{'species_create'},
+        { errors => $args{'errors'} }
+    );
 }
 
 # ----------------------------------------------------
 sub species_edit {
-    my $self = shift;
-    my $db   = $self->db;
-    my $apr  = $self->apr;
-    my $sth  = $db->prepare(
+    my ( $self, %args ) = @_;
+    my $db              = $self->db;
+    my $apr             = $self->apr;
+    my $species_id      = $apr->param('species_id') or die 'No species_id';
+    my $sth             = $db->prepare(
         q[
             select   accession_id,
                      species_id, 
@@ -2542,30 +2568,40 @@ sub species_edit {
             where    species_id=?
         ]
     );
-    $sth->execute( $apr->param('species_id') );
-    my $species = $sth->fetchrow_hashref;
+    $sth->execute( $species_id );
+    my $species = $sth->fetchrow_hashref or return $self->error(
+        "No species for ID '$species_id'"
+    );
 
     return $self->process_template( 
         TEMPLATE->{'species_edit'},
-        { species => $species } 
+        { 
+            species => $species,
+            errors  => $args{'errors'},
+        } 
     );
 }
 
 # ----------------------------------------------------
 sub species_insert {
     my $self          = shift;
+    my @errors        = ();
     my $db            = $self->db;
     my $apr           = $self->apr;
-    my $common_name   = $apr->param('common_name') or die 'No common name';
-    my $full_name     = $apr->param('full_name')   or die 'No full name';
+    my $common_name   = $apr->param('common_name') or 
+                        push @errors, 'No common name';
+    my $full_name     = $apr->param('full_name')   or 
+                        push @errors, 'No full name';
     my $display_order = $apr->param('display_order')  || 1;
     my $ncbi_taxon_id = $apr->param('ncbi_taxon_id ') || 1;
     my $species_id    = next_number(
         db            => $db, 
         table_name    => 'cmap_species',
         id_field      => 'species_id',
-    ) or die 'No species id';
+    ) or push @errors, "Can't get new species id";
     my $accession_id  = $apr->param('accession_id')  || $species_id;
+
+    return $self->species_create( errors => \@errors ) if @errors;
 
     $db->do(
         q[ 
@@ -2588,14 +2624,21 @@ sub species_insert {
 # ----------------------------------------------------
 sub species_update {
     my $self          = shift;
+    my @errors        = ();
     my $db            = $self->db;
     my $apr           = $self->apr;
-    my $accession_id  = $apr->param('accession_id') or die 'No accession id';
-    my $species_id    = $apr->param('species_id')   or die 'No species id';
-    my $common_name   = $apr->param('common_name')  or die 'No common name';
-    my $full_name     = $apr->param('full_name')    or die 'No full name';
+    my $accession_id  = $apr->param('accession_id') or 
+                        push @errors, 'No accession id';
+    my $species_id    = $apr->param('species_id')   or 
+                        push @errors, 'No species id';
+    my $common_name   = $apr->param('common_name')  or 
+                        push @errors, 'No common name';
+    my $full_name     = $apr->param('full_name')    or 
+                        push @errors, 'No full name';
     my $display_order = $apr->param('display_order') || 1;
     my $ncbi_taxon_id = $apr->param('ncbi_taxon_id') || 1;
+
+    return $self->species_edit( errors => \@errors ) if @errors;
 
     $db->do(
         q[ 

@@ -32,6 +32,7 @@
         <td align="right">Is Relational Map:</td>
         <td>
             <select name="is_relational_map"> 
+                <option value="">--Please Select--</option>
                 <option value="0"[% IF map_type.is_relational_map==0 %] selected[% END %]>No</option>
                 <option value="1"[% IF map_type.is_relational_map==1 %] selected[% END %]>Yes</option>
             </select>
@@ -49,6 +50,7 @@
         <td align="right">Shape:</td>
         <td>
             <select name="shape">
+                <option value="">--Please Select--</option>
                 [% FOREACH shape=shapes %]
                     <option value="[% shape %]"[% IF map_type.shape==shape; ' selected'; END %]>[% shape %]</option>
                 [% END %]
