@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.38 2003-04-15 20:31:33 kycl4rk Exp $
+# $Id: Map.pm,v 1.39 2003-04-15 21:20:22 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.38 $)[-1];
+$VERSION = (qw$Revision: 1.39 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1030,7 +1030,7 @@ Lays out the map.
                     $drawer->add_map_area(
                         coords => \@coords,
                         url    => 
-                            $feature_details_url.$feature->{'feature_aid'},
+                            $feature_details_url.$feature->{'accession_id'},
                         alt    => 'Details: '.$feature->{'feature_name'},
                     );
                 }
@@ -1081,7 +1081,7 @@ Lays out the map.
                         feature_coords => \@coords,
                         feature_type   => $feature->{'feature_type'},
                         url            => 
-                            $feature_details_url.$feature->{'feature_aid'},
+                            $feature_details_url.$feature->{'accession_id'},
                         has_corr       => $has_corr,
                         feature_id     => $feature->{'feature_id'},
                         start_position => $feature->{'start_position'},
