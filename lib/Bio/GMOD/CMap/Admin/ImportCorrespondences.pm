@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 
-# $Id: ImportCorrespondences.pm,v 1.4 2002-10-09 01:07:31 kycl4rk Exp $
+# $Id: ImportCorrespondences.pm,v 1.5 2003-01-31 19:27:41 kycl4rk Exp $
 
 =head1 NAME
 
@@ -42,7 +42,7 @@ than just feature names (which could be duplicated on other maps).
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -87,6 +87,7 @@ use constant FEATURE_SQL => q[
 sub import {
     my ( $self, %args ) = @_;
     my $fh              = $args{'fh'} or return $self->error('No file handle');
+#    my @map_set_ids     = @{ $args{'map_set_ids'} || [] };
     my $db              = $self->db;
     $LOG_FH             = $args{'log_fh'} || \*STDOUT;
     my $admin           = Bio::GMOD::CMap::Admin->new;
@@ -109,6 +110,12 @@ sub import {
             return $self->error("Column name '$column_name' is not valid.");
         }
     }
+
+#    my $sql = FEATURE_SQL;
+#    if ( @map_set_ids ) {
+#        $self->Print("Restricting SQL with map set IDs.\n");
+#        $sql .= 'and ms.map_set_id in (' . join(',', @map_set_ids) . ')';
+#    }
 
     $self->Print("Parsing file...\n");
     my ( %feature_ids, %evidence_type_ids, $inserts, $total );
