@@ -40,25 +40,29 @@ sub ACTION_install {
     #
     # Install config file.
     #
-    my $conf_dir = $self->notes('CONF');
-    unless ( -d $conf_dir ) {
-        eval { mkpath( $conf_dir, 0, 0700 ) };
-        warn "Can't create conf dir $conf_dir: $@\n" if $@;
-    }
-
-    foreach my $conf_file ( 'global.conf', 'example.conf' ) {
-        my $from_conf = catfile( 'conf',    $conf_file );
-        my $to_conf   = catfile( $conf_dir, $conf_file );
-        my $copy_conf = 1;
-        if ( -e $to_conf ) {
-            $copy_conf = $self->y_n( "'$to_conf' exists.  Overwrite?", 'n' );
+    unless ( $args{'noconf'} ) {
+        my $conf_dir = $self->notes('CONF');
+        unless ( -d $conf_dir ) {
+            eval { mkpath( $conf_dir, 0, 0700 ) };
+            warn "Can't create conf dir $conf_dir: $@\n" if $@;
         }
 
-        $self->copy_if_modified(
-            from    => $from_conf,
-            to      => $to_conf,
-            flatten => 0,
-        ) if $copy_conf;
+        foreach my $conf_file ( 'global.conf', 'example.conf' ) {
+            my $from_conf = catfile( 'conf',    $conf_file );
+            my $to_conf   = catfile( $conf_dir, $conf_file );
+            my $copy_conf = 1;
+            if ( -e $to_conf ) {
+                $copy_conf = $self->y_n( 
+                    "'$to_conf' exists.  Overwrite?", 'n' 
+                );
+            }
+
+            $self->copy_if_modified(
+                from    => $from_conf,
+                to      => $to_conf,
+                flatten => 0,
+            ) if $copy_conf;
+        }
     }
 
     #
