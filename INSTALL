@@ -4,7 +4,7 @@ Depending on your comfort level with software installation on UNIX
 environments, you may find some of this document a bit tedious.
 I'll try to assume that you know only the basics, but you do need to
 know the difference between an unprivileged user and the special
-"root" users.  To begin, I'd like to suggest you have many of the
+"root" user.  To begin, I'd like to suggest you have many of the
 GNU project's utilities installed, such as gcc, gmake, gunzip, and
 tar.  If you are installing on a GNU/Linux system, you most likely
 already have these, so don't worry about it.  If you're installing
@@ -57,15 +57,15 @@ unpack them like into "/usr/local/src" like so:
     # tar zxvf ../downloads/my-package.tar.gz
 
 The above command only works with GNU tar.  To unzip and unpack on
-Solaris, so the following:
+Solaris, so the following (assuming you've got "gunzip" installed on 
+your system);
 
     # cd /usr/local/src
-    # gunzip ../downloads/my-package.tar.gz | tar xvf -
+    # gunzip -c ../downloads/my-package.tar.gz | tar xvf -
 
-Of course, this assumes you've got "gunzip" installed on your
-Solaris system.  After that, cd into the directory created by the
-package and follow the directions for installing the software.
-Typically, it will involve the basic triumverate of commands:
+After that, cd into the directory created by the package and follow the
+directions for installing the software.  Typically, it will involve the 
+basic triumverate of commands:
 
     # ./configure
     # make
@@ -76,10 +76,10 @@ REQUIREMENTS
 There are quite a number of prerequisites to getting this running:
 
     * libgd 
-    * an RDBMS (e.g., Oracle or MySQL) 
-    * Perl (5.6.1 suggested)
-    * Apache (version 1.3.24 or higher)
-    * mod_perl (version 1.27 or higher)
+    * a database (MySQL 3.23.x or Oracle 9x) 
+    * Perl (5.00503 or higher, 5.6.1 suggested)
+    * Apache (version 1.3.26 suggested)
+    * mod_perl (version 1.27 suggested)
 
 LIBGD
 
@@ -98,41 +98,48 @@ way to see if you do is to check the directories "/usr/lib" and
 "/usr/local/lib" for files that look like "libgd*," "libjpeg*,"
 "libpng*," and "libgif*".
 
-To install libgd, retrieve the source (tar.gz package) from libgd's
-author's (Paul Boutell) website,
-http://www.boutell.com/[exact_path].  Do note that you should be
-sure to use the only a 1.x version of libgd with a 1.x version of
-GD.pm, or go with 2.x versions of both or you'll get nasty
-segfaults.  When you go to build libgd, it should tell you which
-libraries it can and can't find.  You definitely won't get far
-without zlib installed, so you need to do that first.  Then you can
-look to see which kinds of files libgd will be able to write after
-you run the configure process.  You'll want to be sure that you can
-at least write JPEG and PNG (Portable Network Graphics) formats.
-You can create GIF if you don't mind worrying over ridiculous
-software patents over the LWZ compression algorithm.  PNG was
-created to be a completely open and free alternative to GIF.
+To install libgd, retrieve the source (tar.gz package) from Paul
+Boutell's (author of libgd) website.  Do note that you should be sure
+to use the only a 1.x version of libgd with a 1.x version of GD.pm, or
+go with 2.x versions of both or you'll get nasty segfaults.  When you
+go to build libgd, it should tell you which libraries it can and can't
+find.  You definitely won't get far without zlib installed, so you
+need to do that first.  Then you can look to see which kinds of files
+libgd will be able to write after you run the configure process.
+You'll want to be sure that you can at least write JPEG (Joint
+Photographic Experts Group) and PNG (Portable Network Graphics)
+formats.  You can create GIF if you don't mind worrying about
+ridiculous software patents over the LWZ compression algorithm.  PNG
+was created to be a completely open and free alternative to GIF.
+ 
+Here are URLs to help you track down everything you need to install libgd:
 
-RDBMS
+    * libgd: http://www.boutell.com/gd/
+    * libpng: http://www.libpng.org/pub/png/pngcode.html
+    * zlib: http://www.gzip.org/zlib/
+    * JGEP: http://www.ijg.org/
 
-If you already have a database installed on your system, you can
-skip ahead to the next section.  If not and you're doing this on
-your own, and aren't a trained DBA, I'd recommend using MySQL for
+Database
+
+The CMAP application relies on a relational database management system
+(RDBMS) to store and retrieve data.  If you already have a database
+such as MySQL, Oracle (version 9 or higher) installed on your system,
+you can skip ahead to the next section.  If not and you're doing this
+on your own, and aren't a trained DBA, I'd recommend using MySQL for
 your database.  It's free, extremely stable, flexible, and fun.
 Oracle is really overkill for such a lightweight application as this
-as the code doesn't rely on much of anything from the database
+because the code doesn't rely on much of anything from the database
 except joins (no transactions, no referential integrity, no stored
 procedures, etc.).  If you prefer to use Oracle, you're in luck
 because this application was developed concurrently on MySQL 3.x and
-Oracle 9x.  Note, Oracle 8x doesn't support ANSI-standard left
-joins, so some parts of the application will fail.  If you can't
-upgrade, then you can alter the few SQL statements that cause
-problems.  If you prefer to use some other RDBMS, like PostgreSQL or
-Sybase or whatever, then you're still in luck.  Much has been done
-to make the SQL simple and portable and extendible.  If an SQL
-statement is giving you problems, you can likely create a small
-module and override the statement with one of your own making.  More
-on that later.
+Oracle 9x.  Note, Oracle 8x doesn't support ANSI-standard left joins,
+so some parts of the application will fail.  If you can't upgrade,
+then you can alter the few SQL statements that cause problems.  If you
+prefer to use some other RDBMS, like PostgreSQL or Sybase or whatever,
+then you're still in luck.  Much has been done to make the SQL simple
+and portable and extendible.  If an SQL statement is giving you
+problems, you can likely create a small module and override the
+statement with one of your own making.  More on that later.
 
 I'll assume that you're going to use MySQL.  If you don't already
 have MySQL on your system, you can get everything you need either
@@ -194,7 +201,7 @@ see if you have that, type:
 
 On my current system, the output looks like this:
 
-    This is perl, v5.6.1 built for ppc-linux
+    This is perl, v5.6.1 built for i686-linux
 
     Copyright 1987-2001, Larry Wall
 
@@ -209,19 +216,19 @@ On my current system, the output looks like this:
 
 If your version of Perl is OK, you can likely skip ahead to the next
 section.  If you have anything 5.4 or older, you'll need to upgrade
-your Perl binary.  However, you may still want to consider building
-a new binary from source.  It's actually a little fun (in a geeky
-way), but it also may prove a necessity.  A fair number of mod_perl
-installations fail because people use broken RPM versions of Perl.
-You can just stick with your installed Perl and just see if it
-causes problems.  Obviously, upgrading important system binaries
-like Perl can cause unforeseen problems.  If you're using an
+your Perl binary.  Even if your Perl is new enough, you may still want
+to consider building a new binary from source if you've never done so.
+It's actually fun (in a geeky way), but it also may prove a necessity.
+A fair number of mod_perl installations fail because people use broken
+RPM versions of Perl.  You can just stick with your installed Perl and
+just see if it causes problems.  Obviously, upgrading important system
+binaries like Perl can cause unforeseen problems.  If you're using an
 established machine that is already being used for other tasks,
-upgrading Perl could break a lot of things, so you should discuss
-this with your sysadmin.  If you are lucky enough to have a free
-machine to play with, it's nice to start with a clean slate by
-building everything from source.  You should choose what's
-practical, convenient, and appropriate for you.
+upgrading Perl could break a lot of things, so you should discuss this
+with your sysadmin.  If you are lucky enough to have a free machine to
+play with, it's nice to start with a clean slate by building
+everything from source.  You should choose what's practical,
+convenient, and appropriate for you.
 
 If you want to install a new Perl binary, it only takes a few
 minutes to download and build.  Here's one way:
@@ -292,7 +299,7 @@ ahead to the next section.  If, however, you choose to build Apache
 and mod_perl for your system, either because it's not already
 installed or because you need to upgrade or becaue you're a purist
 or just because it's fun, you'll be happy to know that it's quite
-easy.  Both are available from a number of Apache mirrors.  I'll be
+easy.  Both are available from the Apache mirrors.  I'll be
 referencing "ftp.apache.org," but you should find a mirror near you
 by looking on the Apache website, http://www.apache.org/.  Apache
 can be found in "/pub/dist/httpd/apache_1.3.26.tar.gz" and mod_perl
@@ -300,7 +307,7 @@ can be found in "/pub/dist/perl/mod_perl-1.27.tar.gz."  Note:  This
 application has only been developed under the Apache and mod_perl
 1.x trees.  Apache and mod_perl 2.x are exciting new frontiers for
 mod_perlers, but it will be a while before this application is moved
-to that architecture.  So just stick with the 1.x trees.
+to that architecture.  Just stick with the 1.x trees.
 
 You can install Apache and mod_perl in one fell swoop so long as
 you're not interested in compiling in any other modules (e.g., PHP
@@ -350,8 +357,7 @@ Generally failures in the installation of a Perl module can be
 remedied by installing some dependency (usually another Perl module
 or a system library).  If tests still fail, it is very important
 that you report these errors to the module authors so that they can
-be fixed.  Don't forget that most authors would tell you that
-patches are more welcome than just bug reports!).
+be fixed.)
 
 INSTALLING PERL MODULES
 
@@ -389,8 +395,8 @@ system binaries.  I'd recommend downloading the source into
 Execute "perl Makefile.PL; make; make test; make install" and you're
 generally all done.  If the module requires another module, you'll
 need to track that down, install it, then return to installing the
-first one.  After tracking down several dependencies on your own,
-you'll being to appreciate all the automation the CPAN shell gives
+first one.  After satisfying several dependencies on your own,
+you'll begin to appreciate all the automation the CPAN shell gives
 you.
 
 INSTALLING THE CMAP PERL MODULES
@@ -479,7 +485,7 @@ This is the directory where the application will write the temporary
 images created for each request.  Apache will directly serve the
 images from this cache.  If you do not define a directory, then the
 default ("/tmp/cmap_cache") will be created for you on the first
-request.  You can,however, specify your own choice if you have a
+request.  You can, however, specify your own choice if you have a
 preference, perhaps something in your "/var" directory or something
 on a partition separate from your web server.  If you create a
 directory on your own, be sure that this directory is writable by
@@ -531,8 +537,7 @@ the semi-colon is part of its "-exec" command.
 
 STARTING APACHE
 
-Now see if Apache like what you've done by typing the following
-command (you'll probably have to specify a full path to "apachectl"):
+Now see if Apache like what you've done by typing the following commands:
 
     $ su -
     # cd /usr/local/apache/bin
@@ -559,30 +564,41 @@ Apache at boot on a RedHat system with a default runlevel of "3":
     # cd /etc/rc.d/init.d
     # ln -s /usr/local/apache/bin/apachectl ./httpd
     # cd /etc/rc.d/rc3.d/
-    # ln -s ../init.d/httpd
+    # ln -s ../init.d/httpd ./S99httpd
+    # ln -s ../init.d/httpd ./K99httpd
+
+The "SXX" and "KXX" prefix are conventions used to indicate "start"
+and "kill" scripts.  The number that occurs after the "S" or "K"
+indicates the relative order in which the script.  All "S" scripts are
+passed a command of "start" when the system is booting and are
+processed in alphabetical order, so "S10abc" is started before
+"S10def" which is processed before "S11ghi," etc.  The "K" scripts are
+given an argument of "stop."  Generally, if you start a service in
+this manner, you should cleanly shut it down with a kill script
+rather than just letting the process die with the final kill signals
+the operating system sends out just before shutdown.
 
 MySQL has its own scripts to make sure it starts up on boot.  You
 should follow the directions appropriate for your system.
 
 IMPORTING YOUR DATA
 
-Now you've got some basic setup to do for your data.  First off,
-open up the web administration interface by going to the URL you set
-up for the CSHL::CMap::Apache::AdminViewer module.  You'll need to
-set up what types of maps, features, species, and evidence types
-you'll be working with.  For each, go to the "View ..." choice from
-the main menu, then choose "Create New ..." and fill in the correct
-information.  For information on the correct format for data import,
-"perldoc CSHL::CMap::Admin::Import." When you have your data in the
-correct format, launch the "cmap_admin.pl" script and follow the
-instructions.
+Now you've got some basic setup to do for your data.  First off, open
+up the web administration interface by going to the URL you set up for
+the CSHL::CMap::Apache::AdminViewer module ("/cmap/admin" by default).
+You'll need to set up what types of maps, features, species, and
+evidence types you'll be working with.  For each, go to the "View ..."
+choice from the main menu, then choose "Create New ..." and fill in
+the correct information.  For information on the correct format for
+data import, execute the command "perldoc CSHL::CMap::Admin::Import"
+on your command line.  When you have your data in the correct format,
+launch the "cmap_admin.pl" script and follow the instructions.
 
 When setting up database cross-references, you'll have to use some
 extra syntax in the URL field to indicate the field to link out on.
 Here's an example from Gramene for linking to GrainGenes:
 
-    http://www.graingenes.org/cgi-bin/WebAce/webace?\
-    db=graingenes&class=Locus&object=[% feature.feature_name %]
+    http://www.graingenes.org/cgi-bin/WebAce/webace?db=graingenes&class=Locus&object=[% feature.feature_name %]
 
 Here's how the Gramene project links to its own contig viewer:
 
@@ -600,7 +616,7 @@ For now, the only correspondences supported are name-based, so run the
 "Find name-based correspondences" command from cmap_admin.pl.  Make
 sure that you've created some evidence type to represent this
 automated correspondence.  If you don't run this, then there will be
-no relationships among your maps.  If you run this and don't have
+no relationships among your maps.  If you do run this and don't have
 like-named features on different maps, then you'll have to create the
 correspondences yourself using the admin tool.  I'll write a tool for
 importing some sort of correspondence data RSN.  Suggestions on the
