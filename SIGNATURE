@@ -15,18 +15,18 @@ not run its Makefile.PL or Build.PL.
 Hash: SHA1
 
 SHA1 2fa9cd2cca2ce5664ad0d98d19486531dfa3ec3c BUGS
-SHA1 59281a5ea11ae1b0a90795418bb763c3e4cdaaf9 Build.PL
+SHA1 1bf7d4b484736e4901730d36de3507da1ea1e6cf Build.PL
 SHA1 1bbab0687fa5b69dd6227bd404dd8958177ffa8e CREDITS
 SHA1 b3d56998140303f785149d1ae0ca86322687e848 Changes
 SHA1 94c8d976e5ce2fe81be255cabfffd173b824499f INSTALL
 SHA1 205acc6385a3db1cf69d4a15c38f406443f05b0a LICENSE
-SHA1 073e5738d8a89f97078a2b681719622ab270b750 MANIFEST
+SHA1 523d8a50d5211a2b5c748582b7e69bc08ec791fc MANIFEST
 SHA1 4a3fc9c6b7d7f8bbd7585fd89d1499fcb8b6bdbe MANIFEST.SKIP
-SHA1 5655fb416ec9bfccb0a92e5b0c1e99afc9171975 README
+SHA1 ea080cb4809e5a3bedc754299490d8afa4337c46 README
 SHA1 c92a213fcc3b8bc1abf63ec610c84e76f8b160f0 TODO
 SHA1 0aed25d7a92b0f53c1c4d4dee4ed29db70f1256b bin/cmap_admin.pl
 SHA1 e00cc6b54fa807812e90bcf60f09a44406e5a305 bin/cmap_matrix_compare.pl
-SHA1 bf5296ff7adc1f52f5908fbec7fe65735e9a17bb bin/cmap_metrics.pl
+SHA1 91ec59ae97e336c0a63a7aa6b70b99c02cc22319 bin/cmap_metrics.pl
 SHA1 2d971486805ab81810e6f2f550961823a44d6819 bin/profile-cmap-draw.pl
 SHA1 11b05077e79682f9f00cc7b210b579c211e5cafb conf/cmap.conf
 SHA1 73c4aea59977e490cdffed3592cb4e6d65245f79 conf/cmap.css
@@ -83,7 +83,7 @@ SHA1 6cf7e1e819cabe51c0985f3a3708d77fc9fcc93a docs/admintut/relational-maps.html
 SHA1 47dca66a794c491bb7add1620377962bc02cd8e2 docs/cmap-desc.html
 SHA1 4b806f79a6fe041b30cf386e5f27b32683cb6698 docs/cmap-graph.png
 SHA1 9dadf0862a207d18e2a624949f556ca56fc13067 docs/cmap-schema.png
-SHA1 02be377453094398fb684ebc71dbc5d86a39ff08 lib/Bio/GMOD/CMap.pm
+SHA1 4de099429039ebb08657d15ace1a25793f5c1549 lib/Bio/GMOD/CMap.pm
 SHA1 d6705ec6bb5f6ef376751e9244c3924d1eb57bc4 lib/Bio/GMOD/CMap/Admin.pm
 SHA1 b43b265a7441f8e9310beeeab1bcc670c086c71c lib/Bio/GMOD/CMap/Admin/Import.pm
 SHA1 7a10082597b7bf8bec943a349797c2dc625c9222 lib/Bio/GMOD/CMap/Admin/ImportCorrespondences.pm
@@ -91,7 +91,7 @@ SHA1 5e9c46fd72b82290508cafc5ba78f724f55b9cf3 lib/Bio/GMOD/CMap/Admin/MakeCorres
 SHA1 a04700d6d3960c383afee63a9d576b44ea926194 lib/Bio/GMOD/CMap/Apache.pm
 SHA1 a43514fa23371f45b39326e2169faa0d04362eba lib/Bio/GMOD/CMap/Apache/AdminViewer.pm
 SHA1 fb224f441c7796eb5de5d5f6710e5522a88d04c7 lib/Bio/GMOD/CMap/Apache/FeatureSearch.pm
-SHA1 de381c7105013a2bc50ff15e66703656f756410e lib/Bio/GMOD/CMap/Apache/FeatureTypeViewer.pm
+SHA1 da86670d06f41c4de813debfd23c16c78fab7231 lib/Bio/GMOD/CMap/Apache/FeatureTypeViewer.pm
 SHA1 b4a102c67f48798c9bcfcd43e24588653096a9f4 lib/Bio/GMOD/CMap/Apache/FeatureViewer.pm
 SHA1 8177242a208889896dce05a6874669e2e9a1e67b lib/Bio/GMOD/CMap/Apache/HelpViewer.pm
 SHA1 ca80b30daaa59489b13df8aa29cf71a5050f010e lib/Bio/GMOD/CMap/Apache/Index.pm
@@ -112,7 +112,8 @@ SHA1 0cef7ea54d7328ae1f4bcd861fb8866f190705d2 sql/cmap.create.mysql
 SHA1 345ac659504a9024e609d8883c2982b47bd5ab20 sql/cmap.create.oracle
 SHA1 ccdcf21e7bdafb1b03a2c6e01aded53b296d7e1c sql/cmap.create.postgresql
 SHA1 975061b10497441e10674f6ea3757f7451da7a88 sql/cmap.create.sybase
-SHA1 3415812abbc70a8bde1303c5785f07b121da9c63 t/01_ini.t
+SHA1 ef3370d9d1c953da05731eeb41228b3f888e86f6 t/01_ini.t
+SHA1 49cc959dd0cb4625590c136a1b9a97fff63ea710 t/01_signature.t
 SHA1 36d0e1318b2cacbffc78aadcdd3ecee773a10095 templates/admin_colors_view.tmpl
 SHA1 055a948191b391216de78032d17a15a9f96cda25 templates/admin_confirm_delete.tmpl
 SHA1 c5c7c767b8d6a73811773a6262b4ea8ae2010b25 templates/admin_corr_evidence_create.tmpl
@@ -156,7 +157,7 @@ SHA1 e7a92fabc38632dbbf02f65d16b05e35e6b132f8 templates/error.tmpl
 SHA1 84560c609e621d99da8521b31e4bab84b7bcff08 templates/feature_detail.tmpl
 SHA1 1d67298d811d9e2aeae4e0cdf5e37a32177f93c1 templates/feature_search.tmpl
 SHA1 5635834d87e4aad24435e67ebe67d4fff0fe57fb templates/feature_type_info.tmpl
-SHA1 79a1b5eb4499e4155a1e6d9bee3098cd33f60535 templates/header.tmpl
+SHA1 1fe87e55ad4df8bd69fd273ad8a14bb6fcf29414 templates/header.tmpl
 SHA1 490163d8de5e36eee45138b715ce0621affe65b2 templates/help_feature_details.tmpl
 SHA1 50cf97a562fa9b82205dd9f8317adcb530e9710d templates/help_feature_search.tmpl
 SHA1 83ad3b6a1c3cd454be202369ac2bf7627c2f3480 templates/help_feature_type_info.tmpl
@@ -175,7 +176,7 @@ SHA1 ab1ba40e269487953892c548ad76845b5ba7f5dc templates/pager.tmpl
 Version: GnuPG v1.0.6 (GNU/Linux)
 Comment: For info see http://www.gnupg.org
 
-iD8DBQE/ahaFQK9EdDJV+PIRAttIAKCUAkidEamunva+l4H789MF4VFrMwCfRV5k
-PWibJXoCu6ZkhgcWx4hlno8=
-=Tu9z
+iD8DBQE/a1WlQK9EdDJV+PIRAvhLAKCHcLtEfbfpIfAdCErNWEoKFNSuPgCfdkXs
+VocYipSnrpK9VgQbYl2hmvk=
+=ujjZ
 -----END PGP SIGNATURE-----
