@@ -10,7 +10,7 @@
 <table>
     <tr>
         <th align="right">
-            Acc ID:
+            Accession ID:
         </td>
         <td>
             [% feature.feature_aid %]
@@ -149,7 +149,7 @@
                     <b>[</b>&nbsp;<a href="feature?feature_aid=[% fc.feature_aid %]">Feature&nbsp;Details</a>&nbsp;<b>]</b>
                 </td>
                 <td align="center">
-                    <b>[</b>&nbsp;<a href="viewer?ref_map_set_aid=[% fc.map_set_aid %];ref_map_aid=[% fc.map_aid %];highlight=[% fc.feature_aid %]">View&nbsp;On&nbsp;Map</a>&nbsp;<b>]</b>
+                    <b>[</b>&nbsp;<a href="map_details?ref_map_set_aid=[% fc.map_set_aid %];ref_map_aid=[% fc.map_aid %];highlight=[% fc.feature_aid %]">View&nbsp;On&nbsp;Map</a>&nbsp;<b>]</b>
                 </td>
                 <td align="center">
                     <b>[</b>&nbsp;<a href="viewer?ref_map_set_aid=[% feature.map_set_aid %];ref_map_aid=[% feature.map_aid %];highlight=[% feature.feature_aid %],[% fc.feature_aid %];comparative_maps=1%3dmap_aid%3d[% fc.map_aid %]">Show&nbsp;Maps</a>&nbsp;<b>]</b>
