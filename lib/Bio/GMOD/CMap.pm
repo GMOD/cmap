@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap;
 
-# $Id: CMap.pm,v 1.33 2003-06-17 16:04:19 kycl4rk Exp $
+# $Id: CMap.pm,v 1.34 2003-09-02 18:15:53 kycl4rk Exp $
 
 =head1 NAME
 
@@ -35,6 +35,7 @@ use Config::General;
 use Bio::GMOD::CMap::Data;
 use Bio::GMOD::CMap::Constants;
 use DBI;
+use File::Path;
 use Template;
 
 use base 'Class::Base';
@@ -61,8 +62,15 @@ Returns the cache directory.
 
     unless ( defined $self->{'cache_dir'} ) {
         my $cache_dir   = $self->config('cache_dir');
-        -d $cache_dir || eval{ mkpath( $cache_dir, 0, 0700 ) } || 
-            return $self->error("No cache dir; Using '$cache_dir'");
+        unless ( -d $cache_dir ) {
+            eval { mkpath( $cache_dir, 0, 0700 ) };
+            if ( my $err = $@ ) {
+                return $self->error(
+                    "Cache directory '$cache_dir' can't be created: $err"
+                );
+            }
+        }
+
         $self->{'cache_dir'} = $cache_dir;
     }
 
@@ -333,13 +341,14 @@ Returns a Template Toolkit object.
     my $self = shift;
 
     unless ( $self->{'template'} ) {
+        my $cache_dir    = $self->cache_dir or return;
         my $template_dir = $self->config('template_dir') || '';
         return $self->error("Template directory '$template_dir' doesn't exist")
             unless -d $template_dir;
 
         $self->{'template'} = Template->new( 
             COMPILE_EXT     => '.ttc',
-            COMPILE_DIR     => $self->cache_dir,
+            COMPILE_DIR     => $cache_dir,
             INCLUDE_PATH    => $template_dir,
             FILTERS         => {
                 dump        => sub { Dumper( shift() ) },
