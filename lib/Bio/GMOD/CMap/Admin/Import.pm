@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::Import;
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.52 2004-06-08 16:10:43 mwz444 Exp $
+# $Id: Import.pm,v 1.53 2004-06-11 02:44:34 mwz444 Exp $
 
 =pod
 
@@ -28,7 +28,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.52 $)[-1];
+$VERSION  = (qw$Revision: 1.53 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -220,7 +220,7 @@ sub import_tab {
 
     my %maps     = map { uc $_->[0], { map_id => $_->[1] } } @$map_info;
     my %map_aids = map { $_->[2], $_->[0]                  } @$map_info;
-    my @modified_maps=();
+    my %modified_maps=();
 
     $self->Print(
         "'$map_set_name' currently has ", scalar keys %maps, " maps.\n"
@@ -360,7 +360,7 @@ sub import_tab {
 	    if ( exists $maps{ uc $map_name } ) { 
 		$map_id = $maps{ uc $map_name }{'map_id'};
 		$maps{ uc $map_name }{'touched'} = 1;
-		push @modified_maps, (uc $map_name,);
+		$modified_maps{(uc $map_name,)}=1;
 	    }
 	    
 	    my $display_order = $record->{'map_display_order'} || 1;
@@ -405,7 +405,7 @@ sub import_tab {
 		$self->Print("Created map $map_name ($map_id).\n");
 		$maps{ uc $map_name }{'map_id'}  = $map_id;
 		$maps{ uc $map_name }{'touched'} = 1;
-		push @modified_maps, (uc $map_name,);
+		$modified_maps{(uc $map_name,)}=1;
 		
 		$map_info{ $map_id }{'map_id'}         ||= $map_id;
 		$map_info{ $map_id }{'map_set_id'}     ||= $map_set_id;
@@ -717,7 +717,7 @@ sub import_tab {
     # 
     # Make sure the maps have legitimate starts and stops.
     # 
-    for my $map_name ( sort @modified_maps ) {
+    for my $map_name ( sort keys %modified_maps ) {
         my $map_id = $maps{ $map_name }{'map_id'};
         my ( $map_start, $map_stop ) = $db->selectrow_array(
             q[
