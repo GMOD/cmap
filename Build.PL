@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.19 2004-02-19 00:11:06 kycl4rk Exp $
+# $Id: Build.PL,v 1.20 2004-02-19 18:53:35 kycl4rk Exp $
 
 use strict;
 
@@ -254,7 +254,7 @@ my $builder   =  Module::Build->subclass(
         'DBI'                => 1.20,
         'File::MkTemp'       => 0,
         'GD'                 => 2.11,
-        'GD:SVG'             => 0,
+        'GD::SVG'            => 0.25,
         'IO::Tee'            => 0,
         'Regexp::Common'     => 0,
         'Template'           => 2.00,
