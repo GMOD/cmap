@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.56 2004-08-27 18:20:48 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.57 2004-09-01 20:50:49 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.56 $)[-1];
+$VERSION = (qw$Revision: 1.57 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -165,7 +165,12 @@ sub handler {
 
     my @evidence_types;
     if ( $apr->param('evidence_types') ) {
-        @evidence_types = ( $apr->param('evidence_types') );
+        foreach my $et ($apr->param('evidence_types')){
+            push @evidence_types,split( /[:,]/,$et);
+        }
+        unless(@evidence_types){
+            @evidence_types = split( /,/, $apr->param('evidence_types') );
+        }
     }
     elsif ( $apr->param('include_evidence_types') ) {
         @evidence_types = split( /,/, $apr->param('include_evidence_types') );
