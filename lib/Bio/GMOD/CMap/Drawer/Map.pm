@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.96 2004-06-23 20:53:49 mwz444 Exp $
+# $Id: Map.pm,v 1.97 2004-06-23 21:18:49 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.96 $)[-1];
+$VERSION = (qw$Revision: 1.97 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -307,8 +307,8 @@ such as the units.
     my $y2           = $args{'map_y2'};
     my $drawer       = $args{'drawer'};
     my $map_units    = $args{'map_units'};
-
-    my $buf  = 2;
+    
+    my $buf  = 6;
     my $font = $drawer->regular_font;
     my $map_length =$self->map_length($map_id);
     my $end_str    = presentable_number($map_length).$map_units;
@@ -669,7 +669,7 @@ Lays out the map.
         my $draw_sub_name = $SHAPE{ $self->shape($map_id) };
         my @map_bounds    = $self->$draw_sub_name(
             map_id       => $map_id,
-            map_units    => $show_map_units ? $self->map_units($map_id) : '',
+            map_units    => $self->map_units($map_id), #$show_map_units ? $self->map_units($map_id) : '',
             drawer       => $drawer,
             coords       => [ $base_x, $map_base_y, $map_y_end ],
             drawing_data => \@drawing_data,
@@ -1493,7 +1493,7 @@ sub layout_map_foundation {
             #
             # This keeps the map a consistent height.
             #
-            if (1){
+            if ($self->config_data('scalable')->{$self->map_units($map_id)}){
                 $min_ref_y = $ref_map_mid_y - ($scaled_map_pixel_height/2);
                 $max_ref_y = $ref_map_mid_y + ($scaled_map_pixel_height/2);
             }
@@ -1560,7 +1560,9 @@ sub layout_map_foundation {
         }
     }
     else{
-        $pixel_height = $scaled_map_pixel_height;
+        if ($self->config_data('scalable')->{$self->map_units($map_id)}){
+            $pixel_height = $scaled_map_pixel_height;
+        }
     }
     $top_y = $map_base_y unless defined $top_y;
     $top_y = $map_base_y if $map_base_y < $top_y;
