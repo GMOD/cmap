@@ -161,7 +161,7 @@ function addPosToStr(str, slot_no, matchStr, value, command){
         }
         else{
           insertStart = positionCount+splitArray[i].indexOf("[");
-          insertStop  = positionCount+splitArray[i].indexOf("]")-1;
+          insertStop  = positionCount+splitArray[i].indexOf("]")+1;
         }
         str = str.substr(0,insertStart) + value + str.substr(insertStop); 
         return str;
