@@ -298,15 +298,17 @@
 
 [% IF form_data.ref_map_set_info %]
     <hr>
-    <table width="700">
+    <table>
         <tr>
-            <th colspan="2" align="center" valign="top">Reference Map Set Info</th>
+            <th colspan="3" align="center" valign="top">Reference Map Set Info</th>
         </tr>
         <tr>
             <th align="right" valign="top">Map&nbsp;Set:</th>
             <td>
                 [% form_data.ref_map_set_info.map_set_name %]
                 ([% form_data.ref_map_set_info.short_name %])
+            </td>
+            <td align="center">
                 <b>[</b>&nbsp;<a href="map_set_info?map_set_aid=[% form_data.ref_map_set_info.map_set_aid %]">View More Info</a>&nbsp;<b>]</b>
             </td>
         </tr>
@@ -315,6 +317,8 @@
             <td>
                 [% form_data.ref_map_set_info.species_common_name %]
                 ([% form_data.ref_map_set_info.species_full_name %])
+            </td>
+            <td align="center">
                 <b>[</b>&nbsp;<a href="species_info?species_aid=[% form_data.ref_map_set_info.species_aid %]">View More Info</a>&nbsp;<b>]</b>
             </td>
         </tr>
@@ -323,6 +327,8 @@
             <td>
                 [% form_data.ref_map_set_info.map_type %]
                 ([% form_data.ref_map_set_info.map_units %])
+            </td>
+            <td align="center">
                 <b>[</b>&nbsp;<a href="map_type_info?map_type_aid=[% form_data.ref_map_set_info.map_type_aid %]">View More Info</a>&nbsp;<b>]</b>
             </td>
         </tr>
@@ -332,7 +338,7 @@
                 <th align="right" valign="top">
                     [% att.attribute_name | nbsp %]:
                 </th>
-                <td>
+                <td colspan="2">
                     [%- IF att.attribute_value.match('^http://') -%]
                         <a href="[% att.attribute_value %]">[% att.attribute_value %]</a>
                     [%- ELSE -%]
@@ -344,7 +350,7 @@
         [% IF form_data.ref_map_set_info.xrefs.size %]
             <tr>
                 <th align="right" valign="top">Cross-references:</th>
-                <td>
+                <td colspan="2">
                     <ul>
                     [% FOREACH xref=form_data.ref_map_set_info.xrefs %]
                         <li><a href="[% xref.xref_url %]">[% xref.xref_name %]</a></li>
