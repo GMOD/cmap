@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::GBrowseLiason;
 
 # vim: set ft=perl:
 
-# $Id: GBrowseLiason.pm,v 1.3 2005-02-18 04:41:29 mwz444 Exp $
+# $Id: GBrowseLiason.pm,v 1.4 2005-02-18 19:54:17 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ GBrowse integration at the db level.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -197,10 +197,10 @@ sub copy_data_into_gbrowse {
             $ftype_lookup{$feature_type_aids->[$i]}=$ftype;
         }
         else{
-            print $LOG_FH "Feature Type with aid ".$feature_type_aids->[$i]." does not have the following: \n";
+            print $LOG_FH $feature_type_aids->[$i]." will Not be used because it does not have the following: \n";
             print $LOG_FH "gbrowse_class\n" unless $gclass;
             print $LOG_FH "gbrowse_ftype\n" unless $ftype;
-            print $LOG_FH "If you wish to prepare this feature type, add the missing information to the config file\n";
+            print $LOG_FH "\n";
             splice @$feature_type_aids,$i,1;
             $i--;   
         }
@@ -241,15 +241,15 @@ sub copy_data_into_gbrowse {
     foreach my $ftype (values(%ftype_lookup)){
         next if ($ftypeid_lookup{$ftype});
         $sth->execute($ftype);
-        my $ftype_result = $sth->fetchrow_arrayref;
-        if ($ftype_result and @$ftype_result) {
+        my $ftype_result = $sth->fetchrow_hashref;
+        if ($ftype_result and %$ftype_result) {
             $ftypeid_lookup{$ftype}=$ftype_result->{'ftypeid'};
         }
         else{
             $insert_type_sth->execute($ftype);
             $sth->execute($ftype);
-            my $ftype_result = $sth->fetchrow_arrayref;
-            if ($ftype_result and @$ftype_result) {
+            my $ftype_result = $sth->fetchrow_hashref;
+            if ($ftype_result and %$ftype_result) {
                 $ftypeid_lookup{$ftype}=$ftype_result->{'ftypeid'};
             }
             else{
@@ -267,9 +267,13 @@ sub copy_data_into_gbrowse {
                 f.feature_type_accession as feature_type_aid,
                 f.start_position,
                 f.stop_position,
-                f.direction,
-        from    cmap_feature f,
-                cmap_map m
+                f.direction
+        from    cmap_map m,
+                cmap_feature f
+        LEFT JOIN fdata 
+        on      fdata.feature_id = f.feature_id
+            and fdata.fstart = f.start_position
+            and fdata.fstop = f.stop_position
         where   f.map_id=m.map_id
             and m.map_set_id in ( 
     ].
@@ -279,6 +283,7 @@ sub copy_data_into_gbrowse {
     ].
         join ("','",@$feature_type_aids).
         qq[ ')
+            and fdata.fid is NULL
  
     ];
             

@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.88 2005-02-18 17:36:09 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.89 2005-02-18 19:54:16 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.88 $)[-1];
+$VERSION = (qw$Revision: 1.89 $)[-1];
 
 #
 # Get command-line options
@@ -254,6 +254,11 @@ sub show_greeting {
             {
                 action  => 'prepare_for_gbrowse',
                 display => 'Prepare the Database for GBrowse data'
+            };
+        push @$menu_options, 
+            {
+                action  => 'copy_cmap_into_gbrowse',
+                display => 'Copy CMap into the GBrowse database'
             };
     }
 
@@ -1366,10 +1371,19 @@ sub get_map_sets {
         return unless @$map_sets;
     }
     else {
+        my $map_set_sql = q[
+            select  distinct map_type_accession as map_type_aid
+            from    cmap_map_set
+        ];
         my $map_types =
-          $self->fake_selectall_arrayref( $self->map_type_data(),
-            'map_type_accession as map_type_aid', 'map_type' );
+          $db->selectall_arrayref( $map_set_sql, { Columns => {} } );
+
+        foreach my $row ( @{$map_types} ) {
+            $row->{'map_type'} =
+              $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
+        }
         $map_types = sort_selectall_arrayref( $map_types, 'map_type' );
+
         die "No map types! Please use the config file to create.\n"
           unless @$map_types;
 
@@ -1525,6 +1539,7 @@ sub get_feature_types {
           $self->fake_selectall_arrayref( $self->feature_type_data(),
             'feature_type_aid', 'feature_type' );
     }
+    $ft_sql_data = sort_selectall_arrayref( $ft_sql_data, 'feature_type' );
 
     my @feature_types = $self->show_menu(
         title      => 'Restrict by Feature Types',
@@ -2118,9 +2133,12 @@ sub import_alignments {
         return     => 'feature_type_aid,feature_type',
         allow_null => 0,
         allow_mult => 0,
-        data       => $self->fake_selectall_arrayref(
-            $self->feature_type_data(),
-            'feature_type_accession as feature_type_aid',
+        data       => sort_selectall_arrayref(
+            $self->fake_selectall_arrayref(
+                $self->feature_type_data(),
+                'feature_type_accession as feature_type_aid',
+                'feature_type'
+            ),
             'feature_type'
         ),
     );
@@ -2471,9 +2489,12 @@ sub make_name_correspondences {
         return     => 'feature_type_aid,feature_type',
         allow_null => 1,
         allow_mult => 1,
-        data       => $self->fake_selectall_arrayref(
-            $self->feature_type_data(),
-            'feature_type_accession as feature_type_aid',
+        data       => sort_selectall_arrayref(
+            $self->fake_selectall_arrayref(
+                $self->feature_type_data(),
+                'feature_type_accession as feature_type_aid',
+                'feature_type'
+            ),
             'feature_type'
         ),
     );
@@ -2602,9 +2623,10 @@ sub prepare_for_gbrowse {
             }
         }
     }
+    $menu_options = sort_selectall_arrayref( $menu_options, 'feature_type' );
 
     unless ( $menu_options and @$menu_options){
-        print "No eligible feature types\n";
+        print "No GBrowse eligible feature types\n";
         return 0;
     }
 
@@ -2641,6 +2663,92 @@ sub prepare_for_gbrowse {
         data_source => $self->data_source, 
     );
     $gbrowse_liason->prepare_data_for_gbrowse(
+        map_set_ids       => \@map_set_ids,
+        feature_type_aids => \@feature_type_aids,
+      )
+      or do {
+        print "Error: ", $gbrowse_liason->error, "\n";
+        return;
+    };
+}
+
+# ----------------------------------------------------
+sub copy_cmap_into_gbrowse {
+
+    require Bio::GMOD::CMap::Admin::GBrowseLiason;
+    #
+    # Gathers the info to import feature correspondences.
+    #
+    my $self = shift;
+    my $db   = $self->db or die $self->error;
+    my $term = $self->term;
+
+    #
+    # Get the map sets.
+    #
+    my $map_sets = $self->get_map_sets(
+        explanation => 'Which map sets do you want to copy data from?',
+        allow_mult  => 1,
+        allow_null  => 0,
+    );
+
+    #
+    # Get the feature types
+    #
+    my $feature_type_data = $self->feature_type_data();
+    my $menu_options;
+    foreach my $ft_aid (keys(%$feature_type_data)){
+        if ($feature_type_data->{$ft_aid}->{'gbrowse_class'} 
+            and $feature_type_data->{$ft_aid}->{'gbrowse_ftype'}){
+            push @$menu_options, {
+                feature_type     => $feature_type_data->{$ft_aid}->{'feature_type'},
+                feature_type_aid => $ft_aid,
+            }
+        }
+    }
+    $menu_options = sort_selectall_arrayref( $menu_options, 'feature_type' );
+
+    unless ( $menu_options and @$menu_options){
+        print "No GBrowse eligible feature types\n";
+        return 0;
+    }
+
+    my @feature_types = $self->show_menu(
+        title  => 'Feature Types to be Prepared',
+        prompt =>
+            "Select the feature types that should be prepared for GBrowse data.\n"
+          . "Only eligible feature types ('gbrowse_class' and 'gbrowse_ftype' defined in the config) are displayed.\n"
+          . "Selecting none will select all.",
+        display    => 'feature_type',
+        return     => 'feature_type_aid,feature_type',
+        allow_null => 1,
+        allow_mult => 1,
+        data       => $menu_options,
+    );
+
+
+    print join( "\n",
+        'OK to copy data into GBrowse?',
+        '  Data source     : ' . $self->data_source,
+        '  Map Sets        : '.
+          join( "\n", map { "    ".$_->{'map_set_name'} } @$map_sets ),
+        '  Feature Types   : '.
+         (@feature_types 
+            ? join( "\n", map { "    ".$_->[1] } @feature_types )
+            : 'All'),
+    );
+
+    print "\n[Y/n] ";
+
+    chomp( my $answer = <STDIN> );
+    return if $answer =~ /^[Nn]/;
+
+    my @map_set_ids = map {$_->{'map_set_id'}} @$map_sets;
+    my @feature_type_aids = map {$_->[0]} @feature_types;
+    my $gbrowse_liason = Bio::GMOD::CMap::Admin::GBrowseLiason->new(
+        data_source => $self->data_source, 
+    );
+    $gbrowse_liason->copy_data_into_gbrowse(
         map_set_ids       => \@map_set_ids,
         feature_type_aids => \@feature_type_aids,
       )
