@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.98.2.9 2004-06-17 14:20:01 kycl4rk Exp $
+# $Id: Data.pm,v 1.98.2.10 2004-06-17 14:38:13 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.98.2.9 $)[-1];
+$VERSION = (qw$Revision: 1.98.2.10 $)[-1];
 
 use Data::Dumper;
 use Regexp::Common;
@@ -3532,6 +3532,7 @@ Returns data on species.
                          ms.short_name as map_set_name,
                          s.accession_id as species_aid,
                          mt.accession_id as map_type_aid,
+                         mt.is_relational_map,
                          mt.map_type
                 from     cmap_map_set ms,
                          cmap_species s,
