@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.51 2004-02-17 22:46:20 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.52 2004-02-25 22:37:17 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.51 $)[-1];
+$VERSION = (qw$Revision: 1.52 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -65,7 +65,9 @@ Initializes the drawing object.
 
     return $self->error( @$ ) if @$;
 
-    return $self->draw;
+    $self->draw or return;
+
+    return $self;
 }
 
 # ----------------------------------------------------
@@ -906,7 +908,7 @@ Lays out the image and writes it to the file system, set the "image_name."
     #
     # Write to a temporary file and remember it.
     #
-    my $cache_dir = $self->cache_dir;
+    my $cache_dir = $self->cache_dir or return;
     my ( $fh, $filename ) = tempfile( 'X' x 9, DIR => $cache_dir );
     my $image_type = $self->image_type;
     print $fh $img->$image_type();
