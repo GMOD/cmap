@@ -7,7 +7,7 @@ use vars qw(@ISA %Local @EXPORT);
 
 @ISA     = qw(Exporter);
 @EXPORT  = qw( %Local );
-my $conf = 'cmap_install.conf';
+my $conf = './cmap_install.conf';
 open( CONF, $conf ) or die "Can't read conf file '$conf': $!\n";
 while ( <CONF> ) {
     chomp;
