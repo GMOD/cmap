@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.194 2004-12-15 17:36:31 kycl4rk Exp $
+# $Id: Data.pm,v 1.195 2004-12-15 23:10:12 kycl4rk Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.194 $)[-1];
+$VERSION = (qw$Revision: 1.195 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -4410,34 +4410,30 @@ Returns the data for the map_search page.
 =cut
 
 sub cmap_map_search_data {
-
-    my ( $self, %args ) = @_;
-    my $slots = $args{'slots'} or return;
-    my $min_correspondence_maps     = $args{'min_correspondence_maps'} || 0;
-    my $min_correspondences         = $args{'min_correspondences'}     || 0;
-    my $feature_type_aids           = $args{'included_feature_types'}  || [];
-    my $included_evidence_type_aids = $args{'included_evidence_types'} || [];
-    my $ignored_evidence_type_aids  = $args{'ignored_evidence_types'}  || [];
-    my $ref_species_aid             = $args{'ref_species_aid'}         || '';
-    my $page_index_start            = $args{'page_index_start'}        || 1;
-    my $page_index_stop             = $args{'page_index_stop'}         || 20;
-    my $name_search                 = $args{'name_search'}             || '';
-    my $order_by                    = $args{'order_by'}                || '';
-    my $ref_map                     = $slots->{0};
-    my $ref_map_set_aid             = $ref_map->{'map_set_aid'}        || 0;
-    my $db  = $self->db  or return;
-    my $sql = $self->sql or return;
-    my $pid = $$;
+    my ( $self, %args )         = @_;
+    my $slots                   = $args{'slots'} or return;
+    my $min_correspondence_maps = $args{'min_correspondence_maps'} || 0;
+    my $min_correspondences     = $args{'min_correspondences'}     || 0;
+    my $ref_species_aid         = $args{'ref_species_aid'}         || '';
+    my $page_index_start        = $args{'page_index_start'}        || 1;
+    my $page_index_stop         = $args{'page_index_stop'}         || 20;
+    my $name_search             = $args{'name_search'}             || '';
+    my $order_by                = $args{'order_by'}                || '';
+    my $page_no                 = $args{'page_no'}                 ||  1;
+    my $ref_map                 = $slots->{0};
+    my $ref_map_set_aid         = $ref_map->{'map_set_aid'}        || 0;
+    my $db                      = $self->db  or return;
+    my $sql                     = $self->sql or return;
+    my $pid                     = $$;
     my $no_maps;
 
     my @ref_maps;
-
     if ( $self->slot_info ) {
         foreach my $map_id ( keys( %{ $self->slot_info->{0} } ) ) {
             my %temp_hash = (
-                'map_id'         => $self->slot_info->{0}{$map_id}[0],
-                'start_position' => $self->slot_info->{0}{$map_id}[1],
-                'stop_position'  => $self->slot_info->{0}{$map_id}[2],
+                map_id         => $self->slot_info->{0}{$map_id}[0],
+                start_position => $self->slot_info->{0}{$map_id}[1],
+                stop_position  => $self->slot_info->{0}{$map_id}[2],
             );
             push @ref_maps, \%temp_hash;
         }
@@ -4446,47 +4442,49 @@ sub cmap_map_search_data {
     my $sql_str;
     if ( $ref_map_set_aid && !$ref_species_aid ) {
         $sql_str = q[
-                select s.accession_id
-                from   cmap_map_set ms,
-                       cmap_species s
-                where  ms.accession_id=?
-                and    ms.species_id=s.species_id
-		      ];
-        if ( my $scalar_ref =
-            $self->get_cached_results( 1, $sql_str . $ref_map_set_aid ) )
-        {
+            select s.accession_id
+            from   cmap_map_set ms,
+                   cmap_species s
+            where  ms.accession_id=?
+            and    ms.species_id=s.species_id
+        ];
+
+        if ( 
+            my $scalar_ref =
+            $self->get_cached_results( 1, $sql_str . $ref_map_set_aid ) 
+        ) {
             $ref_species_aid = $$scalar_ref;
         }
         else {
-            $ref_species_aid =
-              $db->selectrow_array( $sql_str, {}, ($ref_map_set_aid) );
-            $self->store_cached_results( 1, $sql_str . $ref_map_set_aid,
-                \$ref_species_aid );
+            $ref_species_aid = $db->selectrow_array( 
+                $sql_str, {}, ($ref_map_set_aid) 
+            );
+            $self->store_cached_results( 
+                1, $sql_str . $ref_map_set_aid, \$ref_species_aid 
+            );
         }
     }
 
     #
     # Select all the map set that can be reference maps.
     #
-
     $sql_str = q[
-            select   distinct s.accession_id as species_aid,
-                     s.display_order,
-                     s.common_name as species_common_name,
-                     s.full_name as species_full_name
-            from     cmap_map_set ms,
-                     cmap_species s
-            where    ms.is_enabled=1
-            and      ms.is_relational_map=0
-            and      ms.species_id=s.species_id
-            order by s.display_order,
-                     s.common_name, 
-                     s.full_name
-	      ];
-    my $ref_species;
-    my $scalar_ref;
+        select   distinct s.accession_id as species_aid,
+                 s.display_order,
+                 s.common_name as species_common_name,
+                 s.full_name as species_full_name
+        from     cmap_map_set ms,
+                 cmap_species s
+        where    ms.is_enabled=1
+        and      ms.is_relational_map=0
+        and      ms.species_id=s.species_id
+        order by s.display_order,
+                 s.common_name, 
+                 s.full_name
+    ];
 
-    if ( $scalar_ref = $self->get_cached_results( 1, $sql_str ) ) {
+    my $ref_species;
+    if ( my $scalar_ref = $self->get_cached_results( 1, $sql_str ) ) {
         $ref_species = $$scalar_ref;
     }
     else {
@@ -4502,14 +4500,16 @@ sub cmap_map_search_data {
     # Select all the map sets that can be reference maps.
     #
     my $ref_map_sets = [];
-    if ($ref_species_aid) {
+    if ( $ref_species_aid ) {
         $sql_str = $sql->form_data_ref_map_sets_sql($ref_species_aid);
         unless ( $ref_map_sets = $self->get_cached_results( 1, $sql_str ) ) {
             $ref_map_sets =
-              $db->selectall_arrayref( $sql_str, { Columns => {} }, );
-            foreach my $row ( @{$ref_map_sets} ) {
-                $row->{'map_type'} =
-                  $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
+              $db->selectall_arrayref( $sql_str, { Columns => {} } );
+
+            foreach my $row ( @$ref_map_sets ) {
+                $row->{'map_type'} = $self->map_type_data( 
+                    $row->{'map_type_aid'}, 'map_type' 
+                );
             }
             $self->store_cached_results( 1, $sql_str, $ref_map_sets );
         }
@@ -4521,24 +4521,27 @@ sub cmap_map_search_data {
     if ( !$ref_map_set_aid && scalar @$ref_map_sets == 1 ) {
         $ref_map_set_aid = $ref_map_sets->[0]{'accession_id'};
     }
+
     my $ref_map_set_id;
     ###Get ref_map_set_id
     if ($ref_map_set_aid) {
         $sql_str = q[
-                select ms.map_set_id
-                from   cmap_map_set ms
-                where  ms.accession_id=?
-		      ];
+            select ms.map_set_id
+            from   cmap_map_set ms
+            where  ms.accession_id=?
+		];
         if ( my $scalar_ref =
             $self->get_cached_results( 1, $sql_str . $ref_map_set_aid ) )
         {
             $ref_map_set_id = $$scalar_ref;
         }
         else {
-            $ref_map_set_id =
-              $db->selectrow_array( $sql_str, {}, ($ref_map_set_aid) );
-            $self->store_cached_results( 1, $sql_str . $ref_map_set_aid,
-                \$ref_map_set_id );
+            $ref_map_set_id = $db->selectrow_array( 
+                $sql_str, {}, ($ref_map_set_aid) 
+            );
+            $self->store_cached_results( 
+                1, $sql_str . $ref_map_set_aid, \$ref_map_set_id 
+            );
         }
     }
 
@@ -4550,54 +4553,59 @@ sub cmap_map_search_data {
     my $map_sql_str;
     if ($ref_map_set_id) {
         $map_sql_str = q[
-            select  map.accession_id,
-                    map.map_name,
-                    map.start_position,
-                    map.stop_position,
-                    map.map_id,
-                    map.display_order,
-                    count(distinct(cl.map_id2)) as cmap_count,
-                    count(distinct(cl.feature_correspondence_id)) 
+            select    map.accession_id,
+                      map.map_name,
+                      map.start_position,
+                      map.stop_position,
+                      map.map_id,
+                      map.display_order,
+                      count(distinct(cl.map_id2)) as cmap_count,
+                      count(distinct(cl.feature_correspondence_id)) 
                         as corr_count
-            from    cmap_map map
-            Left join cmap_correspondence_lookup cl
-                    on map.map_id=cl.map_id1
-            where    map.map_set_id=?
+            from      cmap_map map
+            left join cmap_correspondence_lookup cl
+            on        map.map_id=cl.map_id1
+            where     map.map_set_id=?
         ];
+
         if ($name_search) {
             $map_sql_str .= " and map.map_name='$name_search' ";
         }
+
         $map_sql_str .= q[ 
-            group by map.accession_id,map.map_id, map.map_name,
-                map.start_position,map.stop_position,map.display_order 
+            group by map.accession_id, map.map_id, map.map_name,
+                     map.start_position, map.stop_position, map.display_order 
         ];
+
         if ( $min_correspondence_maps and $min_correspondences ) {
             $map_sql_str .=
-              " having count(distinct(cl.map_id2)) >=$min_correspondence_maps "
-              . " and count(distinct(cl.feature_correspondence_id)) >=$min_correspondences ";
+              " having count(distinct(cl.map_id2))>=$min_correspondence_maps " .
+              " and count(distinct(cl.feature_correspondence_id))>=".
+              "$min_correspondences ";
         }
         elsif ($min_correspondence_maps) {
-            $map_sql_str .=
-" having count(distinct(cl.map_id2)) >='$min_correspondence_maps' ";
+            $map_sql_str .= " having count(distinct(cl.map_id2)) >=" .
+              "'$min_correspondence_maps' ";
         }
         elsif ($min_correspondences) {
-            $map_sql_str .=
-" having count(distinct(cl.feature_correspondence_id)) >=$min_correspondences ";
+            $map_sql_str .= " having count(distinct(".
+              "cl.feature_correspondence_id)) >=$min_correspondences ";
         }
+
         ###Get map info
         unless ( $map_info =
             $self->get_cached_results( 4, $map_sql_str . "$ref_map_set_id" ) )
         {
-            $map_info =
-              $db->selectall_hashref( $map_sql_str, 'map_id', { Columns => {} },
-                ("$ref_map_set_id") );
-            $self->error(
-qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
-              )
-              unless %$map_info;
+            $map_info = $db->selectall_hashref( 
+                $map_sql_str, 'map_id', { Columns => {} }, ("$ref_map_set_id")
+            );
+
+            $self->error( 
+              qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
+            ) unless %$map_info;
 
             ### Work out the numbers per unit and reformat them.
-            foreach my $map_id ( keys(%$map_info) ) {
+            for my $map_id ( keys %$map_info ) {
                 ### Comp Map Count
                 my $raw_no = (
                     $map_info->{$map_id}{'cmap_count'} / (
@@ -4608,6 +4616,7 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
                 $map_info->{$map_id}{'cmap_count_per'} =
                   presentable_number_per($raw_no);
                 $map_info->{$map_id}{'cmap_count_per_raw'} = $raw_no;
+
                 ### Correspondence Count
                 $raw_no = (
                     $map_info->{$map_id}{'corr_count'} / (
@@ -4615,15 +4624,18 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
                           $map_info->{$map_id}{'start_position'}
                     )
                 );
+
                 $map_info->{$map_id}{'corr_count_per'} =
                   presentable_number_per($raw_no);
                 $map_info->{$map_id}{'corr_count_per_raw'} = $raw_no;
-
             }
-            $self->store_cached_results( 4, $map_sql_str . "$ref_map_set_id",
-                $map_info );
+
+            $self->store_cached_results( 
+                4, $map_sql_str . "$ref_map_set_id", $map_info 
+            );
         }
-        @map_ids = keys(%$map_info);
+
+        @map_ids = keys %$map_info;
 
         ### Add feature type information
         $sql_str = q[
@@ -4635,15 +4647,20 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
             where   map.map_set_id=?
             and     map.map_id=f.map_id
         ];
-        if ( $min_correspondence_maps or $min_correspondences ) {
+
+        if ( 
+            ( $min_correspondence_maps || $min_correspondences ) && @map_ids
+        ) {
             $sql_str .=
-              " and map.map_id in (" . join( ",", keys(%$map_info) ) . ") ";
+              " and map.map_id in (" . join( ",", @map_ids ) . ") ";
         }
+
         if ($name_search) {
             $sql_str .= " and map.map_name='$name_search' ";
         }
-        $sql_str .= q[ group by map.map_id, f.feature_type_accession
-            ];
+
+        $sql_str .= q[ group by map.map_id, f.feature_type_accession ];
+
         if ( my $array_ref =
             $self->get_cached_results( 3, $sql_str . "$ref_map_set_id" ) )
         {
@@ -4651,35 +4668,40 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
             @feature_type_aids = @{ $array_ref->[1] };
         }
         else {
+            my $feature_info_results = $db->selectall_arrayref( 
+                $sql_str, { Columns => {} }, ("$ref_map_set_id") 
+            );
 
-            my $feature_info_results =
-              $db->selectall_arrayref( $sql_str, { Columns => {} },
-                ("$ref_map_set_id") );
             my %feature_type_hash;
-            foreach my $row (@$feature_info_results) {
+            for my $row ( @$feature_info_results ) {
                 $feature_type_hash{ $row->{'feature_type_aid'} } = 1;
                 $feature_info->{ $row->{'map_id'} }
                   { $row->{'feature_type_aid'} }{'total'} =
                   $row->{'feature_count'};
+
                 my $raw_no = (
                     $row->{'feature_count'} / (
                         $map_info->{ $row->{'map_id'} }{'stop_position'} -
                           $map_info->{ $row->{'map_id'} }{'start_position'}
                     )
                 );
+
                 $feature_info->{ $row->{'map_id'} }
                   { $row->{'feature_type_aid'} }{'raw_per'} = $raw_no;
+
                 $feature_info->{ $row->{'map_id'} }
                   { $row->{'feature_type_aid'} }{'per'} =
                   presentable_number_per($raw_no);
             }
-            @feature_type_aids = keys(%feature_type_hash);
+
+            @feature_type_aids = keys %feature_type_hash;
             $self->store_cached_results(
                 3,
                 $sql_str . "$ref_map_set_id",
                 [ $feature_info, \@feature_type_aids ]
             );
         }
+
         ###Sort maps
         if (
             my $array_ref = $self->get_cached_results(
@@ -4693,22 +4715,22 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
             if ( $order_by =~ /^feature_total_(\S+)/ ) {
                 my $ft_aid = $1;
                 @map_ids = sort {
-                    $feature_info->{$b}{$ft_aid}
-                      {'total'} <=> $feature_info->{$a}{$ft_aid}{'total'}
+                    $feature_info->{$b}{$ft_aid}{'total'} <=> 
+                    $feature_info->{$a}{$ft_aid}{'total'}
                 } @map_ids;
             }
             elsif ( $order_by =~ /^feature_per_(\S+)/ ) {
                 my $ft_aid = $1;
                 @map_ids = sort {
-                    $feature_info->{$b}{$ft_aid}
-                      {'raw_per'} <=> $feature_info->{$a}{$ft_aid}{'raw_per'}
+                    $feature_info->{$b}{$ft_aid}{'raw_per'} <=> 
+                    $feature_info->{$a}{$ft_aid}{'raw_per'}
                 } @map_ids;
             }
             elsif ( $order_by eq "display_order" or !$order_by ) {
                 ###DEFAULT sort
                 @map_ids = sort {
-                    $map_info->{$a}{'display_order'} <=> $map_info->{$b}
-                      {'display_order'}
+                    $map_info->{$a}{'display_order'} <=> 
+                    $map_info->{$b}{'display_order'}
                 } @map_ids;
             }
             else {
@@ -4716,18 +4738,27 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
                     $map_info->{$b}{$order_by} <=> $map_info->{$a}{$order_by}
                 } @map_ids;
             }
+
             $self->store_cached_results( 4,
                 $map_sql_str . $order_by . "_" . $ref_map_set_id, \@map_ids );
         }
-        ###keep only the page that we want.
-        $no_maps = $map_info ? scalar(@map_ids) : 0;
-        if ( $page_index_stop < $no_maps ) {
-            splice @map_ids, $page_index_stop;
-        }
-        if ( $page_index_start - 1 > 0 ) {
-            splice @map_ids, 0, $page_index_start - 1;
-        }
     }
+
+    my %feature_types = map {
+        $_ => $self->feature_type_data( $_ )
+    } @feature_type_aids;
+
+    #
+    # Slice the results up into pages suitable for web viewing.
+    #
+    my $pager            =  Data::Pageset->new( {
+        total_entries    => scalar @map_ids,
+        current_page     => $page_no,
+        entries_per_page => 25,
+        pages_per_set    => 1,
+    } );
+    @map_ids = $pager->splice( \@map_ids ) if @map_ids;
+    $no_maps = scalar @map_ids;
 
     return {
         ref_species_aid   => $ref_species_aid,
@@ -4739,6 +4770,8 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
         no_maps           => $no_maps,
         map_ids           => \@map_ids,
         feature_type_aids => \@feature_type_aids,
+        feature_types     => \%feature_types,
+        pager             => $pager,
     };
 }
 
