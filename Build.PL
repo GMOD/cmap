@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.28 2004-02-25 22:53:26 kycl4rk Exp $
+# $Id: Build.PL,v 1.29 2004-02-26 17:38:19 kycl4rk Exp $
 
 use strict;
 
@@ -231,7 +231,7 @@ my $title  = 'CMap Installation Summary';
 my $navbar = join( '&nbsp;|&nbsp;', 
     map { $_->[1] ? $q->a( { -href => $_->[1] }, $_->[0] ) : $q->b($_->[0]) }
     (
-        [ 'Home'           => '' ],
+        [ 'CMap Home'      => '' ],
         [ 'Maps'           => '/cgi-bin/cmap/viewer' ],
         [ 'Search'         => '/cgi-bin/cmap/feature_search' ],
         [ 'Matrix'         => '/cgi-bin/cmap/matrix' ],
@@ -258,6 +258,15 @@ print INDEX join("\n",
         'for this intro page.'),
     $q->p("At the top you'll see a sample navigation bar you may wish ".
         'to keep on this page as it links to the major CMap sections.'),
+    $q->p('We would appreciate you would include an acknowlegement of CMap '.
+        'on this page, e.g.:'
+    ),
+    $q->p(
+        $q->a(
+            { -href => 'http://www.gmod.org/cmap' }, 
+            'CMap is free software from the GMOD project'
+        )
+    ),
     $q->p('For the mean time, here are some links to the installed '.
         'application and supporting docs:'),
     $q->ul(
