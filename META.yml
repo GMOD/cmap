@@ -36,7 +36,7 @@ provides:
     version: 1.45
   Bio::GMOD::CMap::Admin::ImportCorrespondences:
     file: lib/Bio/GMOD/CMap/Admin/ImportCorrespondences.pm
-    version: 1.15
+    version: 1.16
   Bio::GMOD::CMap::Admin::MakeCorrespondences:
     file: lib/Bio/GMOD/CMap/Admin/MakeCorrespondences.pm
     version: 1.29
@@ -45,7 +45,7 @@ provides:
     version: 1.16
   Bio::GMOD::CMap::Apache::AdminViewer:
     file: lib/Bio/GMOD/CMap/Apache/AdminViewer.pm
-    version: 1.63
+    version: 1.64
   Bio::GMOD::CMap::Apache::CorrespondenceViewer:
     file: lib/Bio/GMOD/CMap/Apache/CorrespondenceViewer.pm
     version: 1.2
@@ -81,7 +81,7 @@ provides:
     version: 1.2
   Bio::GMOD::CMap::Apache::MapViewer:
     file: lib/Bio/GMOD/CMap/Apache/MapViewer.pm
-    version: 1.30
+    version: 1.31
   Bio::GMOD::CMap::Apache::MatrixViewer:
     file: lib/Bio/GMOD/CMap/Apache/MatrixViewer.pm
     version: 1.10
@@ -93,7 +93,7 @@ provides:
     version: 1.7
   Bio::GMOD::CMap::Data:
     file: lib/Bio/GMOD/CMap/Data.pm
-    version: 1.93
+    version: 1.94
   Bio::GMOD::CMap::Data::Generic:
     file: lib/Bio/GMOD/CMap/Data/Generic.pm
     version: 1.46

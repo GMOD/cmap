@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.31 2004-03-03 21:42:13 kycl4rk Exp $
+# $Id: Build.PL,v 1.32 2004-03-12 22:04:56 kycl4rk Exp $
 
 use strict;
 
@@ -115,7 +115,6 @@ if ( !%OPTIONS && -e $install_conf ) {
 # Make sure we have usable options.
 #
 if ( $OPTIONS{'PREFIX'} ) {
-    print "using PREFIX\n";
     for my $option ( qw[ CONF CGIBIN TEMPLATES CACHE HTDOCS ] ) {
         $OPTIONS{ $option } ||= $option eq 'CACHE'
             ? catdir( 
