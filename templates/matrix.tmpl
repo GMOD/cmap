@@ -30,6 +30,15 @@
 
     &nbsp;
 
+    <select name="map_type_aid">
+        <option value="">--All Map Types--</option>
+        [% FOREACH mt=map_types %]
+            <option [% IF mt.map_type_aid==apr.param('map_type_aid'); 'selected'; END %] value="[% mt.map_type_aid %]">[% mt.map_type %]</option>
+        [% END %]
+    </select>
+
+    &nbsp;
+
     <select name="map_set_aid">
         <option value="">--All Map Sets--</option>
         [% FOREACH ms=map_sets %]
@@ -120,11 +129,24 @@
             [% END %]
 
             [% SET i=0 %]
+            [% SET last_map_type_aid=0 %]
             [% SET last_species_aid=0 %]
+            [% SET no_ref_by_type=matrix.no_by_type %]
             [% SET no_by_species=matrix.no_by_species %]
             [% FOREACH ms=matrix.data %]
                 <tr>
+                    [% SET map_type_aid=ms.map_type_aid %]
                     [% SET species_aid=ms.species_aid %]
+
+                    [% UNLESS ms.map_type_aid==last_map_type_aid %]
+                        [% SET rowspan=no_ref_by_type.$map_type_aid %]
+                        <th[% IF rowspan > 1 %] rowspan="[% rowspan %]"[% END %]>
+                            [% ms.map_type %]
+                            [% IF apr.param('map_set_aid') %]
+                                <br>[% ms.map_set_name | nbsp %]
+                            [% END %]
+                        </th>
+                    [% END %]
 
                     [% UNLESS ms.species_aid==last_species_aid %]
                         [% SET rowspan=no_by_species.$species_aid %]
@@ -186,6 +208,17 @@
                         </th>
                     [% END %]
 
+                    [% UNLESS ms.map_type_aid==last_map_type_aid %]
+                        [% SET rowspan=no_ref_by_type.$map_type_aid %]
+                        <th[% IF rowspan > 1 %] rowspan="[% rowspan %]"[% END %]>
+                            [% ms.map_type %]
+                            [% IF apr.param('map_set_aid') %]
+                                <br>[% ms.map_set_name | nbsp %]
+                            [% END %]
+                        </th>
+                    [% END %]
+
+                    [% SET last_map_type_aid=ms.map_type_aid %]
                     [% SET last_species_aid=ms.species_aid %]
                 </tr>
                 [% SET i = i + 1 %]
