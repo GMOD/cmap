@@ -139,6 +139,9 @@
                 <tr>
                     [% SET map_type_aid=ms.map_type_aid %]
                     [% SET species_aid=ms.species_aid %]
+                    [% IF last_map_type_aid AND last_map_type_aid != ms.map_type_aid %]
+                        [% SET last_species_aid=0 %]
+                    [% END %]
 
                     [% UNLESS ms.map_type_aid==last_map_type_aid %]
                         [% SET rowspan=no_ref_by_type.$map_type_aid %]
