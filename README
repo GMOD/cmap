@@ -16,8 +16,9 @@ species.
 The application is written entirely in Perl and takes advantage of
 Apache's embedded Perl technology, mod_perl.  The application also
 relies upon a relational database management system (RDBMS), such as
-Oracle or MySQL for gathering the data, and uses Paul Boutell's libgd
-c library and Lincoln Stein's GD Perl module to draw the maps.
+Oracle, MySQL, PostgreSQL or Sybase for gathering the data, and uses
+Paul Boutell's libgd c library and Lincoln Stein's GD Perl module to
+draw the maps.
 
 To install: Follow the directions in the file called "INSTALL."
 
