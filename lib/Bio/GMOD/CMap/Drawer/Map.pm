@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.66 2004-02-25 22:37:56 kycl4rk Exp $
+# $Id: Map.pm,v 1.67 2004-03-03 21:00:46 kycl4rk Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.66 $)[-1];
+$VERSION = (qw$Revision: 1.67 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1495,10 +1495,13 @@ Lays out the map.
             ';ref_map_aid='.$self->accession_id( $map_id ).
             ';comparative_maps='.join( ':', @maps ).
             ';label_features='.$drawer->label_features.
-            ';feature_types='.
+            ';include_feature_types='.
             join(',', @{ $drawer->include_feature_types || [] }).
+            ';include_evidence_types='.
+            join(',', @{ $drawer->include_evidence_types || [] }).
             ';highlight='.uri_escape( $drawer->highlight ).
             ';min_correspondences='.$drawer->min_correspondences.
+            ';image_type='.$drawer->image_type.
             ';data_source='.$drawer->data_source;
 
         if ( $is_relational && $slot_no != 0 ) {
@@ -1555,11 +1558,14 @@ Lays out the map.
                 ';ref_map_stop='.$slots->{'0'}{'stop'}.
                 ';comparative_maps='.join( ':', @cmaps ).
                 ';label_features='.$drawer->label_features.
-                ';feature_types='.
+                ';include_feature_types='.
                 join(',', @{ $drawer->include_feature_types || [] }).
+                ';include_evidence_types='.
+                join(',', @{ $drawer->include_evidence_types || [] }).
                 ';highlight='.uri_escape( $drawer->highlight ).
                 ';min_correspondences='.$drawer->min_correspondences.
                 ';flip='.join(':', @flips).
+                ';image_type='.$drawer->image_type.
                 ';data_source='.$drawer->data_source;
 
             push @map_buttons, {
@@ -1612,10 +1618,13 @@ Lays out the map.
                 ';ref_map_stop='.$slots->{'0'}{'stop'}.
                 ';comparative_maps='.join( ':', @cmaps ).
                 ';label_features='.$drawer->label_features.
-                ';feature_types='.
+                ';include_feature_types='.
                 join(',', @{ $drawer->include_feature_types || [] }).
+                ';include_evidence_types='.
+                join(',', @{ $drawer->include_evidence_types || [] }).
                 ';highlight='.uri_escape( $drawer->highlight ).
                 ';min_correspondences='.$drawer->min_correspondences.
+                ';image_type='.$drawer->image_type.
                 ';flip='.join(':', @flips).
                 ';data_source='.$drawer->data_source;
 
@@ -1638,7 +1647,10 @@ Lays out the map.
                 ';label_features='.$drawer->label_features .
                 ';include_feature_types=' .
                 join(',', @{ $drawer->include_feature_types || [] }) .
+                ';include_evidence_types='.
+                join(',', @{ $drawer->include_evidence_types || [] }).
                 ';highlight='.uri_escape( $drawer->highlight ) .
+                ';image_type='.$drawer->image_type .
                 ';data_source='.$drawer->data_source;
 
             push @map_buttons, {
