@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.5 2003-09-19 19:12:42 kycl4rk Exp $
+# $Id: Build.PL,v 1.6 2003-09-24 19:12:08 kycl4rk Exp $
 
 use strict;
 
@@ -162,8 +162,8 @@ closedir TEMPLATES;
 #
 # Write the build script.
 #
-my $conf_file         = catfile('conf', 'cmap.conf');
-my $stylesheet        = catfile('conf', 'cmap.css');
+my $conf_file         =  catfile('conf', 'cmap.conf');
+my $stylesheet        =  catfile('conf', 'cmap.css');
 my $builder           =  Module::Build->subclass(
     class             => 'My::Builder',
     code              => qq[
@@ -194,7 +194,7 @@ my $builder           =  Module::Build->subclass(
     dist_name         => 'cmap',
     dist_version_from => 'lib/Bio/GMOD/CMap.pm',
     license           => 'gpl',
-    scripts           => [ 'bin/cmap_admin.pl' ],
+    script_files      => [ 'bin/cmap_admin.pl' ],
     requires          => {
         'Apache'             => 0,
         'Apache::Request'    => 0,
@@ -211,6 +211,10 @@ my $builder           =  Module::Build->subclass(
         'Time::Object'       => 0,
         'Time::ParseDate'    => 0,
     },
+    PL_files         => {
+        'conf/cmap.conf.PL'  => 'conf/cmap.conf',
+        'lib/Bio/GMOD/CMap/Constants.pm.PL' => 'lib/Bio/GMOD/CMap/Constants.pm',
+    },
 );
 
 if ( my $failures = $builder->prereq_failures ) {
@@ -221,7 +225,7 @@ if ( my $failures = $builder->prereq_failures ) {
     }
 }
 
-$builder->add_to_cleanup( INSTALL_CONF );
+$builder->add_to_cleanup( 'Build', INSTALL_CONF );
 $builder->create_build_script;
 
 print qq[Now run "./Build" and "./Build install"\n];
