@@ -4,7 +4,7 @@
 <td colspan="2">
     [% IF map_sets.size %]
     [% SET last_map_type = "" %]
-        <select name="comparative_map_[% side | lower %]" size="4" multiple>
+        <select name="comparative_map_[% side | lower %]" size="10" multiple>
             [% FOREACH ms=map_sets %]
                 [% IF last_map_type != ms.map_type %]
                     <option value="">==&nbsp;&nbsp;[% ms.map_type %] Maps&nbsp;&nbsp;==</option>
