@@ -16,12 +16,11 @@
 -   Added new export/import system to manipulate hierarchical db objects
 -   Removed forking code in map viewer/dependence on Cache::Cache
 -   Removed dependence on Time::Object (deprecated in favor of Time::Piece)
--   Added initial species restriction for main viewer
+-   Added initial species restriction for main map viewer
 -   Changed matrix view to require a "submit" to reduce initial load times
-    (esp. for big tables)
+    (esp. for big tables);  added additional restrictions on view
 -   Added SVG output (but only for static images, i.e. no hyperlinks)
--   Added restriction by map type to matrix;  other bug fixes to matrix
--   Wrote user tutorial (separate download, see GMOD website)
+-   Wrote user tutorial
 -   Changed the way to assert additional correspondences by feature type;
     now put all equivalent feature types on one line
 -   Moved from mod_perl to plain CGI (but can still run under mod_perl)
