@@ -1,8 +1,9 @@
                       Revision history for CMap
 
-0.11    2004-03-10
+0.11    2004-03-12
 
 -   Various bug fixes
+-   Changes to feature search to use a UNION query for better performance
 
 0.10    2004-02-27
 
