@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.60 2004-09-03 17:23:01 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.61 2004-09-03 18:57:27 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.60 $)[-1];
+$VERSION = (qw$Revision: 1.61 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -73,6 +73,12 @@ sub handler {
     my $page_no               = $apr->param('page_no')               ||      1;
     my $action                = $apr->param('action')                || 'view';
 
+    # If this was submitted by a button, clear the modified map fields.
+    # They are no longer needed.
+    if ($apr->param('sub')){
+        $apr->param('modified_ref_map','');
+        $apr->param('modified_comp_map','');
+    }
 
     my $path_info = $apr->path_info || '';
     if ( $path_info ) {

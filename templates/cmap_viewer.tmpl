@@ -202,7 +202,7 @@ function mod_map_info(slot_no, map_aid, start, stop){
                   <option value="[% s.species_aid %]"[% IF s.species_aid==apr.param('ref_species_aid') OR form_data.ref_species.size==1; ' selected'; END %]>[% s.species_common_name %][% IF s.species_full_name %] ([% s.species_full_name %])[% END %]</option>
                 [%- END -%]
                 </select>
-                <input type="submit" value="Change">
+                <input type="submit" value="Change" name="sub">
               [%- ELSE -%]
                 No species.
               [%- END -%]
@@ -227,7 +227,7 @@ function mod_map_info(slot_no, map_aid, start, stop){
                     </option>
                     [%- SET last_map_type=ms.map_type -%]
                   [%- END -%]
-                </select>&nbsp;<input type="submit" value="Change">
+                </select>&nbsp;<input type="submit" value="Change" name="sub">
                 <input type="hidden" name="prev_ref_species_aid" value="[% apr.param('ref_species_aid') %]">
                 <input type="hidden" name="prev_ref_map_set_aid" value="[% apr.param('ref_map_set_aid') %]">
                 <input type="hidden" name="highlight"      value="[% apr.param('highlight') %]">
@@ -282,7 +282,7 @@ function mod_map_info(slot_no, map_aid, start, stop){
               </tr>
               <tr>
                 <td align="center" colspan="2">
-                  <input type="submit" value="Change Maps">
+                  <input type="submit" value="Change Maps" name="sub">
                 </td>
               </tr>
             </form>
@@ -487,7 +487,7 @@ function mod_map_info(slot_no, map_aid, start, stop){
       </tr>
       <tr>
         <td><hr>
-          <input type="submit" value="Redraw Map">
+          <input type="submit" value="Redraw Map" name="sub">
           <input type="reset"  value="Reset">
         </td>
       </tr>
@@ -598,7 +598,7 @@ function mod_map_info(slot_no, map_aid, start, stop){
               </tr>
               <tr>
                 <td colspan=4>
-                  <input type="submit" value="Redraw Map">
+                  <input type="submit" value="Redraw Map" name="sub">
                   <input type="reset"  value="Reset">
                 </td>
               </tr>
