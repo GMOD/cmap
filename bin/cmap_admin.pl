@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.72 2004-06-08 16:10:42 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.73 2004-08-04 04:22:03 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.72 $)[-1];
+$VERSION = (qw$Revision: 1.73 $)[-1];
 
 #
 # Get command-line options
@@ -237,6 +237,10 @@ sub show_greeting {
             { 
                 action  => 'reload_correspondence_matrix', 
                 display => 'Reload correspondence matrix' 
+            },
+            { 
+                action  => 'delete_duplicate_correspondences',   
+                display => 'Delete Duplicate correspondences' 
             },
             { 
                 action  => 'quit',   
@@ -1895,6 +1899,23 @@ sub import_correspondences {
         print "Error: ", $importer->error, "\n"; 
         return; 
     };
+}
+
+# ----------------------------------------------------
+sub delete_duplicate_correspondences {
+#
+# deletes all duplicate correspondences.
+#
+    my $self  = shift;
+    my $db    = $self->db or die $self->error;
+
+    my $admin = Bio::GMOD::CMap::Admin->new(
+	    config      => $self->config,
+        data_source => $self->data_source,
+    );
+
+    $admin->delete_duplicate_correspondences();
+
 }
 
 # ----------------------------------------------------

@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.52 2004-06-30 21:03:00 mwz444 Exp $
+# $Id: Admin.pm,v 1.53 2004-08-04 04:22:03 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.52 $)[-1];
+$VERSION = (qw$Revision: 1.53 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -140,7 +140,7 @@ sub feature_create {
     my $feature_type_aid    = $args{'feature_type_aid'} 
                           or push @missing, 'feature_type_aid';
     my $start_position  = $args{'start_position'};
-    push @missing, 'start' unless $start_position =~ $RE{'num'}{'real'};
+    push @missing, 'start' unless $start_position =~ /^$RE{'num'}{'real'}$/;
     my $stop_position   = $args{'stop_position'};
     my $is_landmark     = $args{'is_landmark'} || 0;
     my $db              = $self->db or return $self->error;
@@ -165,7 +165,7 @@ sub feature_create {
     );
 
     my $stop_placeholder; 
-    if ( defined $stop_position && $stop_position =~ $RE{'num'}{'real'} ) {
+    if ( defined $stop_position && $stop_position =~ /^$RE{'num'}{'real'}$/ ) {
         $stop_placeholder = '?';
         push @insert_args, $stop_position;
     }
@@ -732,42 +732,42 @@ sub add_feature_correspondence_to_list {
     }
     my $feature_correspondence_id='';
     if ($allow_update){
-	#
-	# Skip if a correspondence with this evidence type exists already.
-	#
+        #
+        # Skip if a correspondence with this evidence type exists already.
+        #
 
-	my $count = $db->selectrow_array
-	    (
-	     q[
-	       select count(*)
-	       from   cmap_correspondence_lookup cl,
-	       cmap_correspondence_evidence ce
-	       where  cl.feature_id1=?
-	       and    cl.feature_id2=?
-	       and    cl.feature_correspondence_id=ce.feature_correspondence_id
-	       and    ce.evidence_type_accession=?
-	       ],
-	     {},
-	     ( $feature_id1, $feature_id2, $evidence_type_aid )
-	     ) || 0;
-	return -1 if $count;   
+        my $count = $db->selectrow_array
+            (
+             q[
+               select count(*)
+               from   cmap_correspondence_lookup cl,
+               cmap_correspondence_evidence ce
+               where  cl.feature_id1=?
+               and    cl.feature_id2=?
+               and    cl.feature_correspondence_id=ce.feature_correspondence_id
+               and    ce.evidence_type_accession=?
+               ],
+             {},
+             ( $feature_id1, $feature_id2, $evidence_type_aid )
+             ) || 0;
+        return -1 if $count;   
 
-   
+       
 
-	#
-	# See if a correspondence exists already.
-	#
-	$feature_correspondence_id = $db->selectrow_array
-	    (
-	     q[
-	       select feature_correspondence_id
-	       from   cmap_correspondence_lookup
-	       where  feature_id1=?
-	       and    feature_id2=?
-	       ],
-	     {},
-	     ( $feature_id1, $feature_id2 )
-	     ) || 0;
+        #
+        # See if a correspondence exists already.
+        #
+        $feature_correspondence_id = $db->selectrow_array
+            (
+             q[
+               select feature_correspondence_id
+               from   cmap_correspondence_lookup
+               where  feature_id1=?
+               and    feature_id2=?
+               ],
+             {},
+             ( $feature_id1, $feature_id2 )
+             ) || 0;
     }
 
     if ($feature_correspondence_id){
@@ -918,7 +918,6 @@ sub insert_feature_correspondence_if_gt{
         #
         # Create the official corr lookups.
         #
-    #xxx
         if ($expanded_correspondence_lookup){
             $sql_str= q[insert
                 into   cmap_correspondence_lookup
@@ -1004,6 +1003,55 @@ sub insert_feature_correspondence_if_gt{
     $self->{'new_corr'}=[];
     $self->{'add_evidence'}=[];
     return 1;
+}
+
+# ----------------------------------------------------
+sub delete_duplicate_correspondences {
+
+    my ( $self, %args )  = @_;
+    my $db               = $self->db or return;
+
+    print "Deleting Duplicate Corresponcences\n";
+    my $dup_sql = q[
+        select min(b.feature_correspondence_id) as original_id,
+               a.feature_correspondence_id as duplicate_id
+        from  cmap_correspondence_lookup a, 
+              cmap_correspondence_lookup b 
+        where a.feature_correspondence_id > b.feature_correspondence_id 
+          and a.feature_id1=b.feature_id1 
+          and a.feature_id2=b.feature_id2
+        group by a.feature_correspondence_id
+        ];
+    
+print STDERR "$dup_sql\n";
+    my $duplicates = $db->selectall_arrayref( $dup_sql, { Columns => {} });
+
+print STDERR Dumper($duplicates)."\n";
+    ### Move any non-duplicate evidence from the duplicate to the original.
+    foreach my $dup (@$duplicates){
+        print "Deleting correspondence id ".$dup->{'duplicate_id'}."\n";
+        my $evidence_move_sql=q[
+            insert into cmap_correspondence_evidence
+            (accession_id,feature_correspondence_id,evidence_type_accession,score,rank)
+            select ce1.accession_id,
+               ] . $dup->{'original_id'}
+                 .q[,
+                   ce1.evidence_type_accession,
+                   ce1.score,
+                   ce1.rank 
+            from   cmap_correspondence_evidence ce1 
+            left join cmap_correspondence_evidence ce2 
+                on ce1.evidence_type_accession=ce2.evidence_type_accession 
+               and ce2.feature_correspondence_id=].$dup->{'original_id'}.q[
+            where  ce1.feature_correspondence_id=].$dup->{'duplicate_id'}.q[ 
+               and ce2.feature_correspondence_id is NULL
+            ];
+        $db->do($evidence_move_sql);
+        $self->feature_correspondence_delete(
+            feature_correspondence_id=>$dup->{'duplicate_id'}
+            );        
+    }
+
 }
 
 # ----------------------------------------------------
@@ -1358,11 +1406,11 @@ sub map_create {
         );
     }
 
-    unless ( $start_position =~ $RE{'num'}{'real'} ) {
+    unless ( $start_position =~ /^$RE{'num'}{'real'}$/ ) {
         return $self->error("Bad start position ($start_position)");
     }
 
-    unless ( $stop_position =~ $RE{'num'}{'real'} ) {
+    unless ( $stop_position =~ /^$RE{'num'}{'real'}$/ ) {
         return $self->error("Bad stop position ($stop_position)");
     }
 
@@ -2286,13 +2334,17 @@ sub xref_create {
     # See if one like this exists already.
     #
     my $sth = $db->prepare(
-        q[
-            select xref_id, display_order
-            from   cmap_xref
-            where  xref_name=?
-            and    xref_url=?
-            and    table_name=?
-        ]
+        sprintf(
+            q[
+                select xref_id, display_order
+                from   cmap_xref
+                where  xref_name=?
+                and    xref_url=?
+                and    table_name=?
+                %s
+            ],
+            $object_id ? "and object_id=$object_id" : ''
+        )
     );
     $sth->execute( $name, $url, $table_name );
     my $xref = $sth->fetchrow_hashref;
