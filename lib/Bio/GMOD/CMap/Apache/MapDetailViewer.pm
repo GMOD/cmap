@@ -1,12 +1,13 @@
 package Bio::GMOD::CMap::Apache::MapDetailViewer;
 
-# $Id: MapDetailViewer.pm,v 1.10 2003-03-25 23:11:44 kycl4rk Exp $
+# $Id: MapDetailViewer.pm,v 1.11 2003-03-27 22:56:06 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.10 $)[-1];
+$VERSION = (qw$Revision: 1.11 $)[-1];
 
 use Apache::Constants;
+use URI::Escape;
 use Data::Dumper;
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Drawer;
@@ -186,6 +187,7 @@ sub handler {
         $apr->param('ref_map_stop',   $ref_map->{'stop'}          );
         $apr->param('feature_types',  join(',', @feature_types )  );
         $apr->param('evidence_types', join(',', @evidence_types ) );
+        $apr->param('highlight_uri',  uri_escape( $apr->param('highlight') ) );
 
         my $pager       =  paginate( 
             self        => $self,
