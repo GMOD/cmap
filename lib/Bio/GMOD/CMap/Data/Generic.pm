@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data::Generic;
 
-# $Id: Generic.pm,v 1.29 2003-06-17 15:55:17 kycl4rk Exp $
+# $Id: Generic.pm,v 1.30 2003-07-01 16:21:24 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.29 $)[-1];
+$VERSION = (qw$Revision: 1.30 $)[-1];
 
 use Data::Dumper; # really just for debugging
 use Bio::GMOD::CMap;
@@ -592,39 +592,42 @@ The SQL for finding basic info on a feature.
 
     my $self = shift;
     return q[
-        select f.feature_id, 
-               f.accession_id, 
-               f.map_id,
-               f.feature_type_id,
-               f.feature_name,
-               f.alternate_name,
-               f.is_landmark,
-               f.start_position,
-               f.stop_position,
-               f.dbxref_name,
-               f.dbxref_url,
-               ft.feature_type,
-               map.map_name,
-               map.accession_id as map_aid,
-               ms.map_set_id,
-               ms.accession_id as map_set_aid,
-               ms.short_name as map_set_name,
-               s.species_id,
-               s.common_name as species_name,
-               mt.map_type,
-               mt.map_units
-        from   cmap_feature f,
-               cmap_feature_type ft,
-               cmap_map map,
-               cmap_map_set ms,
-               cmap_map_type mt,
-               cmap_species s
-        where  f.accession_id=?
-        and    f.feature_type_id=ft.feature_type_id
-        and    f.map_id=map.map_id
-        and    map.map_set_id=ms.map_set_id
-        and    ms.species_id=s.species_id
-        and    ms.map_type_id=mt.map_type_id
+        select     f.feature_id, 
+                   f.accession_id, 
+                   f.map_id,
+                   f.feature_type_id,
+                   f.feature_name,
+                   f.alternate_name,
+                   f.is_landmark,
+                   f.start_position,
+                   f.stop_position,
+                   f.dbxref_name,
+                   f.dbxref_url,
+                   fn.note,
+                   ft.feature_type,
+                   map.map_name,
+                   map.accession_id as map_aid,
+                   ms.map_set_id,
+                   ms.accession_id as map_set_aid,
+                   ms.short_name as map_set_name,
+                   s.species_id,
+                   s.common_name as species_name,
+                   mt.map_type,
+                   mt.map_units
+        from       cmap_feature f
+        left join  cmap_feature_note fn
+        on         f.feature_id=fn.feature_id
+        inner join cmap_feature_type ft
+        on         f.feature_type_id=ft.feature_type_id
+        inner join cmap_map map
+        on         f.map_id=map.map_id
+        inner join cmap_map_set ms
+        on         map.map_set_id=ms.map_set_id
+        inner join cmap_species s
+        on         ms.species_id=s.species_id
+        inner join cmap_map_type mt
+        on         ms.map_type_id=mt.map_type_id
+        where      f.accession_id=?
     ];
 }
 
