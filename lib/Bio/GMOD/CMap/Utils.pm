@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Utils;
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.28 2004-04-01 15:23:37 kycl4rk Exp $
+# $Id: Utils.pm,v 1.29 2004-04-01 22:16:08 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.28 $)[-1];
+$VERSION = (qw$Revision: 1.29 $)[-1];
 
 use base 'Exporter';
 
@@ -497,7 +497,6 @@ the DBI selectall_arrayref()
 =cut 
 
 sub sort_selectall_arrayref{
-    my $self     = shift;
     my $arrayref = shift;
     my @columns  = @_;
     my @return   = sort {

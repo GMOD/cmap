@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.103 2004-04-01 15:23:36 kycl4rk Exp $
+# $Id: Data.pm,v 1.104 2004-04-01 22:16:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.103 $)[-1];
+$VERSION = (qw$Revision: 1.104 $)[-1];
 
 use Data::Dumper;
 use Regexp::Common;
@@ -169,7 +169,7 @@ Gets the specifics on a feature correspondence record.
                      ce.accession_id,
                      ce.feature_correspondence_id,
                      ce.score,
-                     ce.evidence_type_accession as evidence_type_aid,
+                     ce.evidence_type_accession as evidence_type_aid
             from     cmap_correspondence_evidence ce
             where    ce.feature_correspondence_id=?
         ],
@@ -3804,7 +3804,7 @@ Returns the detail info for a map.
     #
     my $ft_sql .= q[
         select   distinct 
-                 f.feature_type_accession as feature_type_aid,
+                 f.feature_type_accession as feature_type_aid
         from     cmap_feature f,
                  cmap_map_cache mc
         where    f.map_id=mc.map_id
