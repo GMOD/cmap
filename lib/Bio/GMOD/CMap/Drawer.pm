@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.29 2003-03-25 23:15:17 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.30 2003-03-27 22:52:28 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,9 +22,10 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.29 $)[-1];
+$VERSION = (qw$Revision: 1.30 $)[-1];
 
 use Bio::GMOD::CMap;
+use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
 use Bio::GMOD::CMap::Drawer::Map;
@@ -132,13 +133,25 @@ Draws a line from one point to another.
 
 =cut
 
-    my ( $self, $x1, $y1, $x2, $y2, $color ) = @_;
+    my ( $self, $x1, $y1, $x2, $y2, $color, $same_map, $label_side ) = @_;
     my $layer = 0; # bottom-most layer of image
     my @lines = ();
     my $line  = LINE;
 
     if ( $y1 == $y2 ) {
         push @lines, [ $line, $x1, $y1, $x2, $y2, $color ];
+    }
+    elsif ( $same_map ) {
+        if ( $label_side eq RIGHT ) {
+            push @lines, [ $line, $x1  , $y1, $x1+5, $y1, $color, $layer ];
+            push @lines, [ $line, $x1+5, $y1, $x2+5, $y2, $color, $layer ];
+            push @lines, [ $line, $x2+5, $y2, $x2  , $y2, $color, $layer ];
+        }
+        else {
+            push @lines, [ $line, $x1  , $y1, $x1-5, $y1, $color, $layer ];
+            push @lines, [ $line, $x1-5, $y1, $x2-5, $y2, $color, $layer ];
+            push @lines, [ $line, $x2-5, $y2, $x2  , $y2, $color, $layer ];
+        }
     }
     else {
         if ( $x1 < $x2 ) {
@@ -503,10 +516,13 @@ Lays out the image and writes it to the file system, set the "image_name."
                 $position_set->{'feature_id1'},
                 $position_set->{'feature_id2'}
             );
+
             $self->add_connection(
                 @positions,
                 $evidence_info->{'line_color'} || 
                     $self->config('connecting_line_color'),
+                $position_set->{'same_map'}    || 0,
+                $position_set->{'label_side'}  || '',
             );
         }
     }
@@ -993,28 +1009,49 @@ to connect corresponding features on two maps.
     my $slot_no         = $args{'slot_no'};
     my $ref_slot_no     = $self->reference_slot_no( $slot_no );
 
-    return unless defined $slot_no and defined $ref_slot_no;
+#    return unless defined $slot_no and defined $ref_slot_no;
 
     my $ref_side = $slot_no > 0 ? RIGHT : LEFT;
     my $cur_side = $slot_no > 0 ? LEFT  : RIGHT;
 
     my @return = ();
     for my $f1 ( keys %{ $self->{'feature_position'}{ $slot_no } } ) {
+        my $self_label_side = $self->label_side( $slot_no );
+
         my @f1_pos = @{
             $self->{'feature_position'}{ $slot_no }{ $f1 }{ $cur_side }
             || []
         } or next;
 
+        my @f1_self_pos = @{
+            $self->{'feature_position'}{ $slot_no }{ $f1 }{ $self_label_side }
+            || []
+        } or next;
+
         for my $f2 ( $self->feature_correspondences( $f1 ) ) {
+            my @same_map = @{ 
+                $self->{'feature_position'}{ $slot_no }{$f2}{$self_label_side}
+                || []
+            };
+
             my @ref_pos = @{ 
                 $self->{'feature_position'}{ $ref_slot_no }{ $f2 }{ $ref_side } 
                 || []
-            } or next;
+            };
+
+            push @return, {
+                feature_id1 => $f1,
+                feature_id2 => $f2,
+                positions   => [ @f1_self_pos, @same_map ],
+                same_map    => 1,
+                label_side  => $self->label_side( $slot_no ),
+            } if @same_map;
+
             push @return, {
                 feature_id1 => $f1,
                 feature_id2 => $f2,
                 positions   => [ @f1_pos, @ref_pos ],
-            }
+            } if @ref_pos;
         }
     }
 
@@ -1132,8 +1169,7 @@ Gets/sets the string of highlighted features.
             # Remove leading and trailing whitespace, convert to uppercase.
             #
             $self->{'highlight_hash'} = {
-                map  { s/^\s+|\s+$//g; ( uc $_, 1 ) }
-                split( /[\s,]/, $highlight )
+                map  { s/^\s+|\s+$//g; ( uc $_, 1 ) } parse_words( $highlight )
             };
         }
         else {
