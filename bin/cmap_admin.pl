@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.15 2003-01-29 00:26:52 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.16 2003-01-31 19:28:21 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.15 $)[-1];
+$VERSION = (qw$Revision: 1.16 $)[-1];
 
 #
 # Turn off output buffering.
@@ -832,6 +832,7 @@ sub import_correspondences {
 # Gathers the info to import feature correspondences.
 #
     my $self = shift;
+    my $db   = $self->db;
     my $file = $self->file;
     my $term = $self->term;
 
@@ -858,18 +859,54 @@ sub import_correspondences {
     $term->addhistory( $file ); 
     $self->file( $file );
 
+    #
+    # Get the map set.
+    #
+#    my @map_sets = $self->show_menu(
+#        title       => 'Reference Map Set (optional)',
+#        prompt      => 'Please select a map set',
+#        display     => 'species_name,map_set_name',
+#        return      => 'map_set_id,species_name,map_set_name',
+#        allow_null  => 1,
+#        allow_mult  => 1,
+#        data        => $db->selectall_arrayref(
+#            q[
+#                select   ms.map_set_id, 
+#                         ms.short_name as map_set_name,
+#                         s.common_name as species_name
+#                from     cmap_map_set ms,
+#                         cmap_species s
+#                where    ms.species_id=s.species_id
+#                order by common_name, map_set_name
+#            ],
+#            { Columns => {} },
+#        ),
+#    );
+#
+#    my @map_set_ids = map { $_->[0] } @map_sets;
+
     print join("\n",
         'OK to import?',
         "  File      : $file",
-        "[Y/n] "
     );
+
+#    if ( @map_sets ) {
+#        print join("\n", 
+#            '',
+#            '  From map sets:', 
+#            map { "    $_" } map { join('-', $_->[1], $_->[2]) } @map_sets
+#        );
+#    }
+    print "\n[Y/n] ";
+
     chomp( my $answer = <STDIN> );
     return if $answer =~ /^[Nn]/;
 
     my $importer = Bio::GMOD::CMap::Admin::ImportCorrespondences->new;
     $importer->import( 
-        fh       => $fh,
-        log_fh   => $self->log_fh,
+        fh          => $fh,
+#        map_set_ids => \@map_set_ids,
+        log_fh      => $self->log_fh,
     ) or do { 
         print "Error: ", $importer->error, "\n"; 
         return; 
@@ -1027,18 +1064,18 @@ sub make_name_correspondences {
     #
     # Get the map set.
     #
-    my @map_set_ids = $self->show_menu(
+    my @map_sets = $self->show_menu(
         title       => 'Reference Map Set (optional)',
         prompt      => 'Please select a map set',
-        display     => 'common_name,map_set_name',
-        return      => 'map_set_id,map_set_name',
+        display     => 'species_name,map_set_name',
+        return      => 'map_set_id,species_name,map_set_name',
         allow_null  => 1,
         allow_mult  => 1,
         data        => $db->selectall_arrayref(
             q[
                 select   ms.map_set_id, 
-                         ms.map_set_name,
-                         s.common_name
+                         ms.short_name as map_set_name,
+                         s.common_name as species_name
                 from     cmap_map_set ms,
                          cmap_species s
                 where    ms.species_id=s.species_id
@@ -1048,7 +1085,19 @@ sub make_name_correspondences {
         ),
     );
 
-    print "OK to make correspondences? [Y/n] ";
+    my @map_set_ids = map { $_->[0] } @map_sets;
+
+    print "Make name-based correspondences\n",
+        "  Evidence type: $evidence_type";
+    if ( @map_sets ) {
+        print join("\n", 
+            '',
+            '  From map sets:', 
+            map { "    $_" } map { join('-', $_->[1], $_->[2]) } @map_sets
+        );
+    }
+
+    print "\nOK to make correspondences? [Y/n] ";
     chomp( my $answer = <STDIN> );
     return if $answer =~ m/^[Nn]/;
 
