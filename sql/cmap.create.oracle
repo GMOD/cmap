@@ -13,7 +13,7 @@ CREATE TABLE cmap_attribute (
   display_order number(11) DEFAULT '1' NOT NULL,
   is_public number(4) DEFAULT '1' NOT NULL,
   attribute_name varchar2(200) DEFAULT '' NOT NULL,
-  attribute_value clob NOT NULL,
+  attribute_value varchar2(4000) NOT NULL,
   CONSTRAINT pk_cmap_attribute PRIMARY KEY (attribute_id)
 );
 
@@ -268,7 +268,7 @@ CREATE TABLE cmap_xref (
   object_id number(11) DEFAULT NULL,
   display_order number(11) DEFAULT '1' NOT NULL,
   xref_name varchar2(200) DEFAULT '' NOT NULL,
-  xref_url clob NOT NULL,
+  xref_url varchar2(4000) NOT NULL,
   CONSTRAINT pk_cmap_xref PRIMARY KEY (xref_id)
 );
 
