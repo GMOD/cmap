@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.109 2004-05-03 19:38:30 mwz444 Exp $
+# $Id: Data.pm,v 1.110 2004-05-06 14:10:23 mwz444 Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.109 $)[-1];
+$VERSION = (qw$Revision: 1.110 $)[-1];
 
 use Data::Dumper;
 use Regexp::Common;
@@ -2208,7 +2208,6 @@ Returns the data for the correspondence matrix.
                          s.common_name as species_name,
                          s.display_order as species_display_order
                 from     cmap_map_set ms,
-                         cmap_map_type mt,
                          cmap_species s
                 where    ms.can_be_reference_map=1
                 and      ms.is_enabled=1
@@ -3910,16 +3909,12 @@ Returns the data for drawing comparative maps.
         { Columns => {} } 
     );
 
-    my $map_types = $db->selectall_arrayref(
-        q[
-            select   mt.accession_id as map_type_aid,
-                     mt.map_type
-            from     cmap_map_type mt
-            order by mt.display_order,
-                     mt.map_type
-        ],
-        { Columns => {} } 
-    );
+    my $map_types = 
+        $self->fake_selectall_arrayref($self->map_type_data(),
+            'map_type_accession as map_type_aid',
+            'map_type');
+    $map_types = sort_selectall_arrayref
+        ( $map_types, 'display_order', 'map_type' );
 
     return {
         species   => $species,
@@ -4161,17 +4156,11 @@ Returns the detail info for a map.
     # Correspondence evidence types.
     #
     my @evidence_types = 
-        sort { lc $a->{'evidence_type'} cmp lc $b->{'evidence_type'} } @{
-        $db->selectall_arrayref(
-            q[
-                select   et.accession_id as evidence_type_aid,
-                         et.evidence_type
-                from     cmap_evidence_type et
-                order by et.evidence_type
-            ],
-            { Columns => {} }
-        )
-    };
+        sort { lc $a->{'evidence_type'} cmp lc $b->{'evidence_type'} }
+            @{$self->fake_selectall_arrayref($self->evidence_type_data(),
+                'evidence_type_accession as evidence_type_aid', 
+                'evidence_type')
+             };
 
     #
     # Find every other map position for the features on this map.
