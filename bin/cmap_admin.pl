@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.57 2004-01-07 18:08:33 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.58 2004-01-09 16:34:37 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.57 $)[-1];
+$VERSION = (qw$Revision: 1.58 $)[-1];
 
 #
 # Get command-line options
@@ -729,7 +729,7 @@ sub export_data {
 # ----------------------------------------------------
 sub export_as_text {
 #
-# Exports data as tab-delimited import format.
+# Exports data in tab-delimited import format.
 #
     my $self   = shift;
     my $db     = $self->db or die $self->error;
@@ -856,6 +856,7 @@ sub export_as_text {
         display          => 'feature_type',
         return           => 'feature_type_id',
         allow_null       => 1,
+        allow_mult       => 1,
         data             => $feature_types,
     );
 
