@@ -1,24 +1,25 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.43 2003-09-04 19:47:10 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.44 2003-09-04 23:52:30 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.43 $)[-1];
+$VERSION = (qw$Revision: 1.44 $)[-1];
 
 #
 # Get command-line options
 #
-my ( $show_help, $show_version, $no_log, $datasource );
+my ( $show_help, $show_version, $no_log, $datasource, $Quiet );
 
 GetOptions(
     'h|help'         => \$show_help,    # Show help and exit
     'v|version'      => \$show_version, # Show version and exit
     'no-log'         => \$no_log,       # Don't keep a log
     'd|datasource=s' => \$datasource,   # Default data source
+    'q|quiet'        => \$Quiet,        # Only print necessities
 ) or pod2usage(2);
 
 pod2usage(0) if $show_help;
@@ -76,6 +77,7 @@ $| = 1;
 sub init {
     my ( $self, $config ) = @_;
     $self->params( $config, qw[ file user no_log ] );
+
     if ( $config->{'datasource'} ) {
         $self->data_source( $config->{'datasource'} ) or die $self->error;
     }
@@ -1713,79 +1715,79 @@ sub make_name_correspondences {
     #
     # Get the source map set(s).
     #
-    my @from_map_sets = $self->show_menu(
-        title       => 'Reference Map Set (optional)',
-        prompt      => 'Please select a map set',
-        display     => 'map_type,species_name,map_set_name',
-        return      => 'map_set_id,map_type,species_name,map_set_name',
-        allow_null  => 1,
-        allow_mult  => 1,
-        data        => $db->selectall_arrayref(
-            q[
-                select   ms.map_set_id, 
-                         ms.short_name as map_set_name,
-                         s.common_name as species_name,
-                         mt.map_type
-                from     cmap_map_set ms,
-                         cmap_species s,
-                         cmap_map_type mt
-                where    ms.species_id=s.species_id
-                and      ms.map_type_id=mt.map_type_id
-                order by map_type, common_name, map_set_name
-            ],
-            { Columns => {} },
-        ),
-    );
-
-    my @from_map_set_ids = map { $_->[0] } @from_map_sets;
-
-    #
-    # Get the source map set(s).
-    #
-    my @to_map_sets;
-    if ( @from_map_sets ) {
-        @to_map_sets = $self->show_menu(
-            title       => 'Target Map Set (optional)',
-            prompt      => 'Please select a target map set',
-            display     => 'map_type,species_name,map_set_name',
-            return      => 'map_set_id,map_type,species_name,map_set_name',
-            allow_null  => 1,
-            allow_mult  => 1,
-            data        => $db->selectall_arrayref(
-                q[
-                    select   ms.map_set_id, 
-                             ms.short_name as map_set_name,
-                             s.common_name as species_name,
-                             mt.map_type
-                    from     cmap_map_set ms,
-                             cmap_species s,
-                             cmap_map_type mt
-                    where    ms.species_id=s.species_id
-                    and      ms.map_type_id=mt.map_type_id
-                    order by map_type, common_name, map_set_name
-                ],
-                { Columns => {} },
-            ),
-        );
-    }
-
-    my @to_map_set_ids = map { $_->[0] } @to_map_sets;
-
-    my $from = @from_map_sets
-        ? join( "\n", 
-            map { "    $_" } map { join('-', $_->[1], $_->[2], $_->[3]) } 
-            @from_map_sets
-        )
-        : '    All'
-    ;
-
-    my $to = @to_map_sets
-        ? join( "\n", 
-            map { "    $_" } map { join('-', $_->[1], $_->[2], $_->[3]) } 
-            @to_map_sets
-        )
-        : '    All'
-    ;
+#    my @from_map_sets = $self->show_menu(
+#        title       => 'Reference Map Set (optional)',
+#        prompt      => 'Please select a map set',
+#        display     => 'map_type,species_name,map_set_name',
+#        return      => 'map_set_id,map_type,species_name,map_set_name',
+#        allow_null  => 1,
+#        allow_mult  => 1,
+#        data        => $db->selectall_arrayref(
+#            q[
+#                select   ms.map_set_id, 
+#                         ms.short_name as map_set_name,
+#                         s.common_name as species_name,
+#                         mt.map_type
+#                from     cmap_map_set ms,
+#                         cmap_species s,
+#                         cmap_map_type mt
+#                where    ms.species_id=s.species_id
+#                and      ms.map_type_id=mt.map_type_id
+#                order by map_type, common_name, map_set_name
+#            ],
+#            { Columns => {} },
+#        ),
+#    );
+#
+#    my @from_map_set_ids = map { $_->[0] } @from_map_sets;
+#
+#    #
+#    # Get the source map set(s).
+#    #
+#    my @to_map_sets;
+#    if ( @from_map_sets ) {
+#        @to_map_sets = $self->show_menu(
+#            title       => 'Target Map Set (optional)',
+#            prompt      => 'Please select a target map set',
+#            display     => 'map_type,species_name,map_set_name',
+#            return      => 'map_set_id,map_type,species_name,map_set_name',
+#            allow_null  => 1,
+#            allow_mult  => 1,
+#            data        => $db->selectall_arrayref(
+#                q[
+#                    select   ms.map_set_id, 
+#                             ms.short_name as map_set_name,
+#                             s.common_name as species_name,
+#                             mt.map_type
+#                    from     cmap_map_set ms,
+#                             cmap_species s,
+#                             cmap_map_type mt
+#                    where    ms.species_id=s.species_id
+#                    and      ms.map_type_id=mt.map_type_id
+#                    order by map_type, common_name, map_set_name
+#                ],
+#                { Columns => {} },
+#            ),
+#        );
+#    }
+#
+#    my @to_map_set_ids = map { $_->[0] } @to_map_sets;
+#
+#    my $from = @from_map_sets
+#        ? join( "\n", 
+#            map { "    $_" } map { join('-', $_->[1], $_->[2], $_->[3]) } 
+#            @from_map_sets
+#        )
+#        : '    All'
+#    ;
+#
+#    my $to = @to_map_sets
+#        ? join( "\n", 
+#            map { "    $_" } map { join('-', $_->[1], $_->[2], $_->[3]) } 
+#            @to_map_sets
+#        )
+#        : '    All'
+#    ;
 
     my @skip_features = $self->show_menu(
         title       => 'Skip Feature Types (optional)',
@@ -1813,8 +1815,8 @@ sub make_name_correspondences {
     print "Make name-based correspondences\n",
         '  Data source   : ' . $self->data_source, "\n",
         "  Evidence type : $evidence_type\n",
-        "  From map sets :\n$from\n",
-        "  To map sets   :\n$to\n",
+#        "  From map sets :\n$from\n",
+#        "  To map sets   :\n$to\n",
         "  Skip features :\n$skip\n"
     ;
 
@@ -1828,10 +1830,11 @@ sub make_name_correspondences {
     );
     $corr_maker->make_name_correspondences(
         evidence_type_id      => $evidence_type_id,
-        map_set_ids           => \@from_map_set_ids,
-        target_map_set_ids    => \@to_map_set_ids,
+#        map_set_ids           => \@from_map_set_ids,
+#        target_map_set_ids    => \@to_map_set_ids,
         skip_feature_type_ids => \@skip_feature_type_ids,
         log_fh                => $self->log_fh,
+        quiet                 => $Quiet,
     ) or do { print "Error: ", $corr_maker->error, "\n"; return; };
 
     return 1;
@@ -1910,13 +1913,14 @@ sub show_menu {
                     # look for ranges
                     map  { $_ =~ m/(\d+)-(\d+)/ ? ( $1..$2 ) : $_ } 
                     # split on space or comma
-                    split /\s+/, $answer
+                    split /[,\s]+/, $answer
                 ;
 
                 $result = [ 
-                    map { $_ || () }      # parse out nulls
-                    map { $lookup{ $_ } } # look it up
-                    keys %numbers         # make unique
+                    map  { $_ || () }      # parse out nulls
+                    map  { $lookup{ $_ } } # look it up
+                    sort { $a <=> $b }     # keep order
+                    keys %numbers          # make unique
                 ];
 
                 next unless @$result;
