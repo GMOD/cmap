@@ -1,28 +1,24 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.28 2003-03-25 23:22:21 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.29 2003-03-27 21:44:48 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.28 $)[-1];
-
-#
-# Turn off output buffering.
-#
-$| = 1;
+$VERSION = (qw$Revision: 1.29 $)[-1];
 
 #
 # Get command-line options
 #
-my ( $show_help, $show_version, $no_log );
+my ( $show_help, $show_version, $no_log, $datasource );
 
 GetOptions(
-    'h|help'    => \$show_help,    # Show help and exit
-    'v|version' => \$show_version, # Show version and exit
-    'no-log'    => \$no_log,       # Don't keep a log
+    'h|help'       => \$show_help,    # Show help and exit
+    'v|version'    => \$show_version, # Show version and exit
+    'no-log'       => \$no_log,       # Don't keep a log
+    'datasource=s' => \$datasource,   # Default data source
 ) or pod2usage(2);
 
 pod2usage(0) if $show_help;
@@ -35,9 +31,10 @@ if ( $show_version ) {
 # Create a CLI object.
 #
 my $cli = Bio::GMOD::CMap::CLI::Admin->new( 
-    user   => $>,  # effective UID
-    no_log => $no_log,
-    file   => shift,
+    user       => $>,  # effective UID
+    no_log     => $no_log,
+    datasource => $datasource,
+    file       => shift,
 );
 
 while ( 1 ) { 
@@ -65,15 +62,23 @@ use Bio::GMOD::CMap::Admin::ImportCorrespondences();
 
 use base 'Bio::GMOD::CMap';
 
-use constant STR    => 'string';
-use constant NUM    => 'number';
-use constant OUT_FS => "\t";     # ouput field separator
-use constant OUT_RS => "\n";     # ouput record separator
+use constant STR => 'string';
+use constant NUM => 'number';
+use constant OFS => "\t";     # ouput field separator
+use constant ORS => "\n";     # ouput record separator
+
+#
+# Turn off output buffering.
+#
+$| = 1;
 
 # ----------------------------------------------------
 sub init {
     my ( $self, $config ) = @_;
     $self->params( $config, qw[ file user no_log ] );
+    if ( $config->{'datasource'} ) {
+        $self->data_source( $config->{'datasource'} ) or die $self->error;
+    }
     return $self;
 }
 
@@ -225,8 +230,8 @@ sub show_greeting {
                 display => 'Export data' 
             },
             { 
-                action  => 'delete_map_set', 
-                display => 'Delete a map or map set' 
+                action  => 'delete_data', 
+                display => 'Delete data',
             },
             { 
                 action  => 'quit',   
@@ -335,6 +340,205 @@ sub create_map_set {
 }
 
 # ----------------------------------------------------
+sub delete_data {
+#
+# Deletes data.
+#
+    my $self = shift;
+    my $db   = $self->db or die $self->error;
+    
+    my $action  = $self->show_menu(
+        title   => 'Delete Options',
+        prompt  => 'What do you want to delete?',
+        display => 'display',
+        return  => 'action',
+        data    => [
+            { 
+                action  => 'delete_map_set',
+                display => 'Delete a map set (or maps within it)',
+            },
+            { 
+                action  => 'delete_correspondences',
+                display => 'Feature correspondences',
+            },
+        ]
+    );
+    
+    $self->$action( $db );
+}
+
+# ----------------------------------------------------
+sub delete_correspondences {
+#
+# Deletes a map set.
+#
+    my $self = shift;
+    my $db   = $self->db or die $self->error;
+
+    #
+    # Get the map set.
+    #
+    my @map_set_ids = $self->show_menu(
+        title       => 'Select Map Set(s)',
+        prompt      => 'Select Map Set(s)',
+        display     => 'common_name,short_name',
+        return      => 'map_set_id',
+        allow_null  => 0,
+        allow_mult  => 1,
+        allow_all   => 1,
+        data        => $db->selectall_arrayref(
+            q[
+                select   ms.map_set_id,
+                         ms.short_name,
+                         s.common_name
+                from     cmap_map_set ms,
+                         cmap_species s
+                where    ms.species_id=s.species_id
+                order by common_name, short_name
+            ],
+            { Columns => {} },
+        )
+    );
+
+    my %map_set_names = @map_set_ids
+        ? 
+            map { 
+                $_->{'map_set_id'},
+                join( '-', $_->{'species_name'}, $_->{'map_set_name'} ),  
+            } @{
+                $db->selectall_arrayref(
+                    q[
+                        select   ms.map_set_id, 
+                                 ms.short_name as map_set_name,
+                                 s.common_name as species_name
+                        from     cmap_map_set ms,
+                                 cmap_species s
+                        where    ms.map_set_id in (].join(',', @map_set_ids).q[)
+                        and      ms.species_id=s.species_id
+                        order by common_name, short_name
+                    ],
+                    { Columns => {} }
+                )
+            }
+        : ()
+    ;
+
+    my @evidence_type_ids = $self->show_menu(
+        title       => 'Select Evidence Type (Optional)',
+        prompt      => 'Select evidence types',
+        display     => 'evidence_type',
+        return      => 'evidence_type_id',
+        allow_null  => 0,
+        allow_mult  => 1,
+        allow_all   => 1,
+        data        => $db->selectall_arrayref(
+            q[
+                select   et.evidence_type_id, et.evidence_type
+                from     cmap_evidence_type et
+                order by evidence_type
+            ],
+            { Columns => {} }
+        )
+    );
+
+    my @evidence_types;
+    if ( @evidence_type_ids ) {
+        @evidence_types = @{
+            $db->selectcol_arrayref(
+                q[
+                    select evidence_type
+                    from   cmap_evidence_type 
+                    where  evidence_type_id in (].
+                    join(', ', @evidence_type_ids).q[)
+                ]
+            )
+        };
+    }
+
+    #
+    # Confirm decisions.
+    #
+    print join("\n",
+        'OK to delete feature correspondences?',
+        '  Data source          : ' . $self->data_source, 
+    );
+    if ( @map_set_ids ) {
+        print "\n  Map Set(s)           :\n", 
+            join( "\n", map { "    $_" } values %map_set_names );
+    }
+    if ( @evidence_types ) {
+        print "\n  Evidence Types       :\n", 
+            join( "\n", map { "    $_" } @evidence_types );
+    }
+    print "\n[Y/n] ";
+    chomp( my $answer = <STDIN> );
+    return if $answer =~ /^[Nn]/;
+
+    my $evidence_type_ids = join( ',', @evidence_type_ids );
+    my %evidence_lookup   = map { $_, 1 } @evidence_type_ids;
+    my $admin             = $self->admin ;
+    my $log_fh            = $self->log_fh;
+    for my $map_set_id ( @map_set_ids ) {
+        my $fc_ids = $db->selectall_hashref(
+            qq[
+                select cl.feature_correspondence_id
+                from   cmap_feature f,
+                       cmap_map map,
+                       cmap_correspondence_lookup cl,
+                       cmap_feature_correspondence fc,
+                       cmap_correspondence_evidence ce
+                where  f.map_id=map.map_id
+                and    map.map_set_id=?
+                and    f.feature_id=cl.feature_id1
+                and    cl.feature_correspondence_id=fc.feature_correspondence_id
+                and    fc.feature_correspondence_id=ce.feature_correspondence_id
+                and    ce.evidence_type_id in ($evidence_type_ids)
+            ],
+            'feature_correspondence_id',
+            {},
+            ( $map_set_id )
+        );
+
+        print $log_fh "Deleting correspondences for ", 
+            $map_set_names{ $map_set_id }, "\n"; 
+
+        #
+        # If there is more evidence supporting the correspondence, 
+        # then just remove the evidence, otherwise remove the 
+        # correspondence (which will remove all the evidence).
+        #
+        for my $fc_id ( keys %$fc_ids ) {
+            my $all_evidence = $db->selectall_arrayref(
+                qq[
+                    select ce.correspondence_evidence_id,
+                           ce.evidence_type_id
+                    from   cmap_correspondence_evidence ce
+                    where  ce.feature_correspondence_id=?
+                ],
+                { Columns => {} },
+                ( $fc_id )
+            );
+
+            my $no_evidence_deleted = 0;
+            for my $evidence ( @$all_evidence ) {
+                next unless $evidence_lookup{ $evidence->{'evidence_type_id'} };
+                $admin->correspondence_evidence_delete(
+                    correspondence_evidence_id => 
+                        $evidence->{'correspondence_evidence_id'}
+                );
+                $no_evidence_deleted++;
+            }
+
+            if ( $no_evidence_deleted == scalar @$all_evidence ) {
+                $admin->feature_correspondence_delete( 
+                    feature_correspondence_id => $fc_id
+                );
+            }
+        }
+    }
+}
+
+# ----------------------------------------------------
 sub delete_map_set {
 #
 # Deletes a map set.
@@ -438,7 +642,7 @@ sub export_data {
     my $db   = $self->db or die $self->error;
     
     my $action  = $self->show_menu(
-        title   => 'Data Export Formats',
+        title   => 'Data Export Options',
         prompt  => 'What do you want to export?',
         display => 'display',
         return  => 'action',
@@ -572,6 +776,7 @@ sub export_as_sql {
                 accession_id   => STR,
                 map_set_id     => NUM,
                 map_name       => STR,
+                display_order  => STR,
                 linkage_group  => STR,
                 start_position => NUM,
                 stop_position  => NUM,
@@ -712,9 +917,8 @@ sub export_as_sql {
     print $log_fh "Making SQL dump of tables to '$file'\n";
     open my $fh, ">$file" or die "Can't write to '$file': $!\n";
     print $fh 
-        "--\n-- Dumping data for Cmap",
-        "\n-- Produced by cmap_admin.pl",
-        "\n-- Version: ", $main::VERSION,
+        "--\n-- Dumping data for CMap v", $Bio::GMOD::CMap::VERSION, 
+        "\n-- Produced by cmap_admin.pl v", $main::VERSION,
         "\n-- ", scalar localtime, "\n--\n";
 
     my %dump_tables = map { $_, 1 } @dump_tables;
@@ -903,7 +1107,7 @@ sub export_as_text {
 
         print $log_fh "Dumping '$species_name-$map_set_name' to '$file_name'\n";
         open my $fh, ">$file_name" or die "Can't write to $file_name: $!\n";
-        print $fh join( OUT_FS, @col_names ), OUT_RS;
+        print $fh join( OFS, @col_names ), ORS;
 
         my $maps = $db->selectall_arrayref(
             q[
@@ -952,8 +1156,8 @@ sub export_as_text {
                 if $feature->{'stop_position'} < $feature->{'start_position'};
 
                 print $fh 
-                    join( OUT_FS, map { $feature->{ $_ } } @col_names ), 
-                    OUT_RS;
+                    join( OFS, map { $feature->{ $_ } } @col_names ), 
+                    ORS;
             }
         }
         
@@ -1000,6 +1204,46 @@ sub export_correspondences {
         };
     }
 
+    my @map_set_ids = $self->show_menu(
+        title       => 'Select Map Sets',
+        prompt      => 'Restrict by Map Set',
+        display     => 'common_name,short_name',
+        return      => 'map_set_id',
+        allow_null  => 1,
+        allow_mult  => 1,
+        data        => $db->selectall_arrayref(
+            q[
+                select   ms.map_set_id,
+                         ms.short_name,
+                         s.common_name
+                from     cmap_map_set ms,
+                         cmap_species s
+                where    ms.species_id=s.species_id
+                order by common_name, short_name
+            ],
+            { Columns => {} },
+        )
+    );
+
+    my @map_set_names = @map_set_ids
+        ?  map { join( '-', $_->{'species_name'}, $_->{'map_set_name'} ) } @{
+            $db->selectall_arrayref(
+                q[
+                    select   ms.map_set_id, 
+                             ms.short_name as map_set_name,
+                             s.common_name as species_name
+                    from     cmap_map_set ms,
+                             cmap_species s
+                    where    ms.map_set_id in (].join(',', @map_set_ids).q[)
+                    and      ms.species_id=s.species_id
+                    order by common_name, short_name
+                ],
+                { Columns => {} }
+            )
+        }
+        : ()
+    ;
+
     print "Include feature accession IDs? [Y/n] ";
     chomp( my $export_corr_aid = <STDIN> );
     $export_corr_aid = ( $export_corr_aid =~ /^[Nn]/ ) ? 0 : 1;
@@ -1017,7 +1261,11 @@ sub export_correspondences {
     );
     if ( @evidence_types ) {
         print "\n  Evidence Types       :\n", 
-            join("\n", map { "    $_" } @evidence_types);
+            join( "\n", map { "    $_" } @evidence_types );
+    }
+    if ( @map_set_ids ) {
+        print "\n  Map Set(s)           :\n", 
+            join( "\n", map { "    $_" } @map_set_names );
     }
     print "\n[Y/n] ";
     chomp( my $answer = <STDIN> );
@@ -1027,21 +1275,35 @@ sub export_correspondences {
     open my $fh, ">$corr_file" or die "Can't write to $corr_file: $!\n";
     my $log_fh = $self->log_fh;
     print $log_fh "Dumping feature correspondences to '$corr_file'\n";
-    my $sth = $db->prepare( 
-        q[
-            select fc.feature_correspondence_id,
-                   fc.is_enabled,
-                   f1.accession_id as feature_accession_id1,
-                   f1.feature_name as feature_name1,
-                   f2.accession_id as feature_accession_id2,
-                   f2.feature_name as feature_name2
-            from   cmap_feature_correspondence fc,
-                   cmap_feature f1,
-                   cmap_feature f2
-            where  fc.feature_id1=f1.feature_id
-            and    fc.feature_id2=f2.feature_id
-        ]
-    );
+
+    my $sql = q[
+        select fc.feature_correspondence_id,
+               fc.is_enabled,
+               f1.accession_id as feature_accession_id1,
+               f1.feature_name as feature_name1,
+               f2.accession_id as feature_accession_id2,
+               f2.feature_name as feature_name2
+        from   cmap_feature_correspondence fc,
+               cmap_feature f1,
+               cmap_feature f2,
+               cmap_map map1,
+               cmap_map map2
+        where  fc.feature_id1=f1.feature_id
+        and    f1.map_id=map1.map_id
+        and    fc.feature_id2=f2.feature_id
+        and    f2.map_id=map2.map_id
+    ];
+
+    if ( my $map_set_ids = join( ',', @map_set_ids ) ) {
+        $sql .= qq[ 
+            and ( 
+                map1.map_set_id in ($map_set_ids) or
+                map2.map_set_id in ($map_set_ids)
+            ) 
+        ];
+    }
+
+    my $sth = $db->prepare( $sql );
     $sth->execute;
 
     my @col_names = ( 
@@ -1069,33 +1331,21 @@ sub export_correspondences {
         ')';
     }
 
-    my %done;
-    print $fh join( OUT_FS, @col_names ), OUT_RS;
+    print $fh join( OFS, @col_names ), ORS;
+    my $no_exported = 0;
     while ( my $fc = $sth->fetchrow_hashref ) {
-#        next if $done{
-#            $fc->{'feature_accession_id1'}}{$fc->{'feature_accession_id2'}
-#        } || $done{
-#            $fc->{'feature_accession_id2'}}{$fc->{'feature_accession_id1'}
-#        };
-
         $fc->{'evidence'} = join(',', @{
             $db->selectcol_arrayref(
                 $evidence_sql,
                 {},
                 ( $fc->{'feature_correspondence_id'} )
             )
-        });
+        }) or next;
 
-        print $fh join( OUT_FS, map { $fc->{ $_ } } @col_names ), OUT_RS;
-
-#        $done{
-#            $fc->{'feature_accession_id1'}}{$fc->{'feature_accession_id2'}
-#        } = 1;
-#
-#        $done{
-#            $fc->{'feature_accession_id2'}}{$fc->{'feature_accession_id1'}
-#        } = 1;
+        print $fh join( OFS, map { $fc->{ $_ } } @col_names ), ORS;
+        $no_exported++;
     }
+    print "\nExported $no_exported records.\n";
 }
 
 # ----------------------------------------------------
