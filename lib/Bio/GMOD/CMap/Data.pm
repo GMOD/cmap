@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.203 2005-01-21 16:29:13 mwz444 Exp $
+# $Id: Data.pm,v 1.204 2005-01-27 23:07:15 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.203 $)[-1];
+$VERSION = (qw$Revision: 1.204 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -5678,6 +5678,7 @@ original start and stop.
             my @ref_map_strs = ();
             my $ref_slot_id  = $slot_no + $slot_modifier;
             my $slot_info    = $self->{'slot_info'}{$ref_slot_id};
+            next unless $slot_info;
             foreach my $m_id ( keys( %{ $self->{'slot_info'}{$ref_slot_id} } ) )
             {
                 my $r_m_str = " (cl.map_id2 = $m_id ";
