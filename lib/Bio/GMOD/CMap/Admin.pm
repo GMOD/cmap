@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.46.2.1 2004-06-03 21:29:41 kycl4rk Exp $
+# $Id: Admin.pm,v 1.46.2.2 2004-06-03 21:51:53 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.46.2.1 $)[-1];
+$VERSION = (qw$Revision: 1.46.2.2 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -2211,6 +2211,7 @@ sub xref_create {
                           push @missing, 'database object (table name)';
     my $name            = $args{'xref_name'}  or push @missing, 'xref name';
     my $url             = $args{'xref_url'}   or push @missing, 'xref URL';
+    my $display_order   = $args{'display_order'};
 
     if ( @missing ) {
         return $self->error(
@@ -2219,18 +2220,46 @@ sub xref_create {
         );
     }
 
-    my $display_order   = $args{'display_order'};
-    my $xref_id         = $self->set_xrefs(
-        object_id       => $object_id,
-        table_name      => $table_name,
-        xrefs           => [
-            { 
-                name          => $name, 
-                url           => $url,
-                display_order => $display_order,
-            },
-        ],
-    ) or return $self->error;
+    #
+    # See if one like this exists already.
+    #
+    my $sth = $db->prepare(
+        q[
+            select xref_id, display_order
+            from   cmap_xref
+            where  xref_name=?
+            and    xref_url=?
+            and    table_name=?
+        ]
+    );
+    $sth->execute( $name, $url, $table_name );
+    my $xref = $sth->fetchrow_hashref;
+
+    my $xref_id;
+    if ( $xref ) {
+        $xref_id = $xref->{'xref_id'};
+        if ( defined $display_order &&
+             $xref->{'display_order'} != $display_order 
+        ) {
+            $db->do(
+                'update cmap_xref set display_order=? where xref_id=?',
+                {}, ( $display_order, $xref_id )
+            );
+        }
+    }
+    else {
+        $xref_id          = $self->set_xrefs(
+            object_id     => $object_id,
+            table_name    => $table_name,
+            xrefs         => [
+                { 
+                    name          => $name, 
+                    url           => $url,
+                    display_order => $display_order,
+                },
+            ],
+        ) or return $self->error;
+    }
 
     return $xref_id;
 }
@@ -2258,6 +2287,21 @@ Delete a cross reference.
     );
 
     return 1;
+}
+
+# ----------------------------------------------------
+sub xref_update {
+    my ( $self, %args ) = @_;
+
+    return $self->generic_update(
+        table    => 'cmap_xref',
+        pk_name  => 'xref_id',
+        values   => \%args,
+        required => [ qw/ xref_name xref_url table_name / ],
+        fields   => [ 
+            qw/ display_order xref_name xref_url table_name /
+        ],
+    );
 }
 
 1;
