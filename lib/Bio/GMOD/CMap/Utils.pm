@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.37 2004-06-23 20:53:48 mwz444 Exp $
+# $Id: Utils.pm,v 1.38 2004-06-30 21:17:30 mwz444 Exp $
 
 =head1 NAME
 
@@ -30,7 +30,7 @@ use Bio::GMOD::CMap::Constants;
 use POSIX;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.37 $)[-1];
+$VERSION = (qw$Revision: 1.38 $)[-1];
 
 use base 'Exporter';
 
@@ -922,6 +922,11 @@ sub simple_column_distribution {
     my $buffer     = $args{'buffer'} || 2;   # min pixel distance b/w items
     my $selected;                            # the column number returned
 
+    $map_height = int($map_height);
+    $low        = int($low);
+    $high       = int($high);
+
+
     #
     # Calculate the effect of the buffer.
     #
@@ -1058,15 +1063,17 @@ sub presentable_number {
                                                                                 
 =pod
                                                                                 
-=head2 tick_mark_interval
-                                                                                
-Returns the map's tick mark interval.
-                                                                                
+=head2 presentable_number 
+
+Takes a number and makes it pretty. 
+example: 10000 becomes 10K
+
 =cut
                                                                                 
     my $num = shift or return;
     my $num_str; 
-    my $scale       = int(log($num)/log(10));
+    # the "''." is to fix a rounding error in perl 
+    my $scale       = int(''.(log($num)/log(10))); 
     my $scaled_down = int($num/(10**($scale-($scale%3)))+.6);
     my $unit        = calculate_units($num);
     $num_str        = $scaled_down.$unit;
