@@ -38,8 +38,8 @@ pod2usage if $help;
 my $cmap = Bio::GMOD::CMap->new or die Bio::GMOD::CMap->error;
 
 if ( $list ) {
-    my @ds = $cmap->data_sources or die "No datasources defined\n";
-    print join("\n", 'Datasources:', ( map { "  $_->{'name'}" } @ds ), '');
+    my $ds = $cmap->data_sources or die "No datasources defined\n";
+    print join("\n", 'Datasources:', ( map { "  $_->{'name'}" } @$ds ), '');
     exit(0);
 }
 
