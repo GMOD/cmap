@@ -49,9 +49,10 @@ if ( $file ) {
     local $/;
     $url = <$fh>;
     close $fh;
+    chomp $url;
 }
 
-die 'No URL' unless $url;
+pod2usage('No URL or file') unless $url;
 
 my $q = CGI->new( $url );
 my $ref_map_set_aid       = $q->param('ref_map_set_aid')       ||  0;
@@ -62,7 +63,7 @@ my $comparative_maps      = $q->param('comparative_maps')      || '';
 my $comparative_map_right = $q->param('comparative_map_right') || '';
 my $comparative_map_left  = $q->param('comparative_map_left')  || '';
 $min_correspondences      = $q->param('min_correspondences')   ||  0;
-$datasource               = $q->param('data_source') || $datasource;
+$datasource             ||= $q->param('data_source') || $datasource;
 
 my %slots = (
     0 => {
@@ -117,6 +118,7 @@ my $apr                 =  Apache::FakeRequest->new;
 my $drawer              =  Bio::GMOD::CMap::Drawer->new(
     apr                 => $apr,
     data_source         => $datasource,
+    cache_dir           => '.',
     slots               => \%slots,
     highlight           => '',
     font_size           => 'small',
