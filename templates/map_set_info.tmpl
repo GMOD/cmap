@@ -60,7 +60,7 @@
     <table width="100%">
         <tr>
             <td colspan="2" align="center">
-                [% SET pager_url="$url/map_set_info?" %]
+                [% SET pager_url="$url/map_set_info?species_aid=${apr.param('species_aid')}&map_type_aid=${apr.param('map_type_aid')}" %]
                 [% PROCESS pager.tmpl %]
             </td>
         </tr>
