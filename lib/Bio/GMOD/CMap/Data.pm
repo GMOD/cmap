@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.159 2004-09-23 16:07:42 mwz444 Exp $
+# $Id: Data.pm,v 1.160 2004-10-12 22:20:01 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.159 $)[-1];
+$VERSION = (qw$Revision: 1.160 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -2871,6 +2871,8 @@ Given a feature acc. id, find out all the details on it.
     my $feature = $sth->fetchrow_hashref
       or return $self->error( "Invalid feature accession ID ($feature_aid)" );
 
+    $feature->{'feature_type'} =
+      $self->feature_type_data( $feature->{'feature_type_aid'}, 'feature_type' );
     $feature->{'object_id'}  = $feature->{'feature_id'};
     $feature->{'attributes'} =
       $self->get_attributes( 'cmap_feature', $feature->{'feature_id'} );
@@ -2913,7 +2915,7 @@ Given a feature acc. id, find out all the details on it.
               $self->evidence_type_data( $row->{'evidence_type_aid'}, 'rank' );
             $row->{'evidence_type'} =
               $self->evidence_type_data( $row->{'evidence_type_aid'},
-                'map_type' );
+                'evidence_type' );
         }
 
         $corr->{'evidence'} =
@@ -2930,6 +2932,8 @@ Given a feature acc. id, find out all the details on it.
             {},
             ( $corr->{'feature_id'} )
         );
+        $corr->{'map_type'} =
+          $self->map_type_data( $corr->{'map_type_aid'}, 'map_type' );
     }
 
     $feature->{'correspondences'} = $correspondences;
