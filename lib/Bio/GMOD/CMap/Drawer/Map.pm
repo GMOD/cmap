@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.34 2003-03-13 01:21:22 kycl4rk Exp $
+# $Id: Map.pm,v 1.35 2003-03-25 23:18:56 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.34 $)[-1];
+$VERSION = (qw$Revision: 1.35 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -1045,8 +1045,11 @@ Lays out the map.
                 #
                 $feature_type_ids{ $feature->{'feature_type_id'} } = 1;
 
-                my $is_highlighted = 
-                    $drawer->highlight_feature( $feature->{'feature_name'} );
+                my $is_highlighted = $drawer->highlight_feature( 
+                    $feature->{'feature_name'},
+                    $feature->{'alternate_name'},
+                    $feature->{'accession_id'},
+                );
 
                 if ( $has_corr ) {
                     my $mid_feature = ( $coords[1] + $coords[3] ) / 2;
