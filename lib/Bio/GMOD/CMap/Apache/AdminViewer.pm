@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.44 2003-09-09 16:27:31 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.45 2003-09-16 16:54:21 kycl4rk Exp $
 
 use strict;
 use Apache::Constants qw[ :common M_GET REDIRECT ];
@@ -32,7 +32,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.44 $)[-1];
+$VERSION        = (qw$Revision: 1.45 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -79,7 +79,7 @@ sub handler {
 #
     my ( $self, $apr ) = @_;
 
-    $self->data_source( $apr->param('data_source') );
+    $self->data_source( $apr->param('data_source') ) or return;
 
     $PAGE_SIZE ||= $self->config('max_child_elements') || 0;
     $MAX_PAGES ||= $self->config('max_search_pages')   || 1;    

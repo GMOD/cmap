@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapDetailViewer;
 
-# $Id: MapDetailViewer.pm,v 1.18 2003-09-09 19:36:17 kycl4rk Exp $
+# $Id: MapDetailViewer.pm,v 1.19 2003-09-16 16:54:21 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES );
-$VERSION = (qw$Revision: 1.18 $)[-1];
+$VERSION = (qw$Revision: 1.19 $)[-1];
 
 use Apache::Constants;
 use URI::Escape;
@@ -63,7 +63,7 @@ sub handler {
     #
     # Set the data source.
     #
-    $self->data_source( $apr->param('data_source') );
+    $self->data_source( $apr->param('data_source') ) or return;
 
     $PAGE_SIZE ||= $self->config('max_child_elements') || 0;
     $MAX_PAGES ||= $self->config('max_search_pages')   || 1;

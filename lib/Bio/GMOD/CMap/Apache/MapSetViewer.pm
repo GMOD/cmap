@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapSetViewer;
 
-# $Id: MapSetViewer.pm,v 1.9 2003-09-04 17:48:32 kycl4rk Exp $
+# $Id: MapSetViewer.pm,v 1.10 2003-09-16 16:54:21 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES );
-$VERSION = (qw$Revision: 1.9 $)[-1];
+$VERSION = (qw$Revision: 1.10 $)[-1];
 
 use Apache::Constants;
 use Data::Pageset;
@@ -20,7 +20,7 @@ sub handler {
     # Make a jazz noise here...
     #
     my ( $self, $apr ) = @_;
-    $self->data_source( $apr->param('data_source') );
+    $self->data_source( $apr->param('data_source') ) or return;
 
     my $page_no        = $apr->param('page_no') || 1;
     my @map_set_aids   = split( /,/, $apr->param('map_set_aid') );

@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::FeatureViewer;
 
-# $Id: FeatureViewer.pm,v 1.7 2003-02-20 16:50:07 kycl4rk Exp $
+# $Id: FeatureViewer.pm,v 1.8 2003-09-16 16:54:21 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.7 $)[-1];
+$VERSION = (qw$Revision: 1.8 $)[-1];
 
 use Apache::Constants;
 use Apache::Request;
@@ -24,7 +24,7 @@ sub handler {
     my ( $self, $apr ) = @_;
     my $feature_aid    = $apr->param('feature_aid') or die 'No accession id';
 
-    $self->data_source( $apr->param('data_source') );
+    $self->data_source( $apr->param('data_source') ) or return;
     my $data           = $self->data_module;
     my $feature        = $data->feature_detail_data(feature_aid=>$feature_aid)
         or return $self->error( $data->error );

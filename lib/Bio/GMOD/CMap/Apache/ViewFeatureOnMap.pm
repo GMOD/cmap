@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::ViewFeatureOnMap;
 
-# $Id: ViewFeatureOnMap.pm,v 1.3 2003-09-12 19:06:16 kycl4rk Exp $
+# $Id: ViewFeatureOnMap.pm,v 1.4 2003-09-16 16:54:21 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Apache::Constants qw[ OK REDIRECT ];
 
@@ -16,7 +16,7 @@ sub handler {
     # Make a jazz noise here...
     #
     my ( $self, $apr ) = @_;
-    $self->data_source( $apr->param('data_source') );
+    $self->data_source( $apr->param('data_source') ) or return;
     my $feature_aid    = $apr->param('feature_aid') || '';
     my $data           = $self->data_module;
     my ( $ms_aid, $map_aid, $feature_name ) = 

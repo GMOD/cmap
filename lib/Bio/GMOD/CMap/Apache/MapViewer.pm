@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 
-# $Id: MapViewer.pm,v 1.22 2003-07-30 02:06:41 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.23 2003-09-16 16:54:21 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $TEMPLATE $PAGE );
-$VERSION = (qw$Revision: 1.22 $)[-1];
+$VERSION = (qw$Revision: 1.23 $)[-1];
 
 use Apache::Constants qw[ :common REDIRECT ];
 use Apache::Request;
@@ -113,7 +113,7 @@ sub show_form {
     #
     # Set the data source.
     #
-    $self->data_source( $apr->param('data_source') );
+    $self->data_source( $apr->param('data_source') ) or return;
 
     if ( 
         $prev_ref_map_set_aid && $prev_ref_map_set_aid != $ref_map_set_aid 

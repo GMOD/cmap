@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MatrixViewer;
 
-# $Id: MatrixViewer.pm,v 1.4 2003-02-20 16:50:07 kycl4rk Exp $
+# $Id: MatrixViewer.pm,v 1.5 2003-09-16 16:54:21 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Apache::Constants;
 use Data::Dumper;
@@ -27,7 +27,7 @@ sub handler {
     my $prev_map_set_aid = $apr->param('prev_map_set_id')  || '';
     my $prev_map_name    = $apr->param('prev_map_name')    || '';
 
-    $self->data_source( $apr->param('data_source') );
+    $self->data_source( $apr->param('data_source') ) or return;
 
     if ( $prev_species_aid && $species_aid != $prev_species_aid ) {
         $map_set_aid = '';
@@ -40,7 +40,7 @@ sub handler {
         map_set_aid      => $map_set_aid,
         map_name         => $map_name,
         link_map_set_aid => $link_map_set_aid,
-    );
+    ) or return $self->error( $data_module->error );
 
     $apr->param( species_aid => $data->{'species_aid'} );
     $apr->param( map_set_aid => $data->{'map_set_aid'} );
@@ -55,7 +55,7 @@ sub handler {
             page         => $self->page,
             top_row      => $data->{'top_row'},
             matrix       => $data->{'matrix'}, 
-            title        => 'Welcome to the Matrix',
+            title        => $self->config('matrix_title'),
             species      => $data->{'species'},
             map_sets     => $data->{'map_sets'},
             maps         => $data->{'maps'},

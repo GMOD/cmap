@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::FeatureSearch;
 
-# $Id: FeatureSearch.pm,v 1.12 2003-07-15 03:11:46 kycl4rk Exp $
+# $Id: FeatureSearch.pm,v 1.13 2003-09-16 16:54:21 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES );
-$VERSION = (qw$Revision: 1.12 $)[-1];
+$VERSION = (qw$Revision: 1.13 $)[-1];
 
 use Apache::Constants;
 
@@ -33,7 +33,7 @@ sub handler {
     my @species_aids      = ( $apr->param('species_aid')      );
     my @feature_type_aids = ( $apr->param('feature_type_aid') );
 
-    $self->data_source( $apr->param('data_source') );
+    $self->data_source( $apr->param('data_source') ) or return;
 
     $PAGE_SIZE ||= $self->config('max_child_elements') || 0;
     $MAX_PAGES ||= $self->config('max_search_pages')   || 1;
@@ -65,25 +65,26 @@ sub handler {
     $apr->param( species_aids           => join(',', @species_aids         ) );
     $apr->param( feature_type_aids      => join(',', @feature_type_aids    ) );
 
-    my $data              = $self->data_module or return;
+    my $data              =  $self->data_module or return;
     my $results           =  $data->feature_search_data(
         features          => $features,
         order_by          => $order_by,
         search_field      => $search_field,
         species_aids      => \@species_aids,
         feature_type_aids => \@feature_type_aids,
-    );
+    ) or return $self->error( $data->error );
 
     #
     # Slice the results up into pages suitable for web viewing.
     #
-    my $pager = Data::Pageset->new( {
-        total_entries    => scalar @{ $results->{'data'} },
+    my $no_found         =  scalar @{ $results->{'data'} || [] };
+    my $pager            =  Data::Pageset->new( {
+        total_entries    => $no_found,
         entries_per_page => $PAGE_SIZE,
         current_page     => $page_no,
         pages_per_set    => $MAX_PAGES,
     } );
-    $results->{'data'} = [ $pager->splice( $results->{'data'} ) ];
+    $results->{'data'} = [ $pager->splice( $results->{'data'} ) ] if $no_found;
 
     my $html;
     my $t = $self->template;
