@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.81 2004-05-12 17:56:34 mwz444 Exp $
+# $Id: Map.pm,v 1.82 2004-05-14 15:55:34 mwz444 Exp $
 
 =pod
 
@@ -25,13 +25,13 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.81 $)[-1];
+$VERSION = (qw$Revision: 1.82 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Utils qw[ 
-    column_distribution2 even_label_distribution label_distribution 
+    even_label_distribution 
     ];
 
 use base 'Bio::GMOD::CMap';
@@ -1368,16 +1368,23 @@ sub layout_map_foundation {
         }
         $map_base_y = $min_ref_y;
 
-        my $map_lane = column_distribution2(
-            columns  => $map_columns,
-            top      => $min_ref_y - $topper_height,
-            bottom   => $max_ref_y,
-            buffer   => 4,
-            col_span => 1,
-	    bins     => int(($ref_bottom-$ref_top)/$min_map_pixel_height),
-	    col_top  => $ref_top,
-            col_bottom => $ref_bottom,
-        );
+        my $map_lane;
+	my $buffer = 4;
+
+	if ( @$map_columns ) {        
+	    for my $i ( 0..$#{$map_columns} ) {
+		if ( $map_columns->[ $i ] < $min_ref_y - $topper_height ) {
+		    $map_lane = $i;
+		    last;
+		}
+	    }
+	}
+	else {
+	    $map_lane = 0;
+	}
+	$map_lane = scalar @$map_columns
+	    unless defined $map_lane;
+	$map_columns->[ $map_lane ] = $max_ref_y + $buffer;
 
         $base_x = $original_base_x + ( $column_width * $map_lane );
         $area = [
@@ -1607,19 +1614,23 @@ sub add_feature_to_map {
         @coords = ( $tick_start, $y_pos1, $tick_stop, $y_pos1 );
     }
     else {
-
+	
         my $buffer       = 2;
-        my $column_index = column_distribution2(
-            columns     => $fcolumns,
-            top         => $y_pos1,
-            bottom      => $y_pos2,
-            buffer      => $buffer,
-            collapse    => $collapse_features,
-            collapse_on => $feature->{'feature_type'},
-	    bins        => $pixel_height,
-	    col_top     => $map_base_y,
-            col_bottom  => $map_base_y+$pixel_height,
-        );
+        my $column_index; 
+	if ( @$fcolumns ) {        
+	    for my $i ( 0..$#{$fcolumns} ) {
+		if ( $fcolumns->[ $i ] < $y_pos1 ) {
+		    $column_index = $i;
+		    last;
+		}
+	    }
+	}
+	else {
+	    $column_index = 0;
+	}
+	$column_index = scalar @$fcolumns
+	    unless defined $column_index;
+	$fcolumns->[ $column_index ] = $y_pos2 + $buffer;
 	
         my $offset       = ( $column_index + 1 ) * 7;
         my $vert_line_x1 = $label_side eq RIGHT ? $tick_start : $tick_stop;
