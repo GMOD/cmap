@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.4 2003-09-19 18:44:16 kycl4rk Exp $
+# $Id: Build.PL,v 1.5 2003-09-19 19:12:42 kycl4rk Exp $
 
 use strict;
 
@@ -167,7 +167,7 @@ my $stylesheet        = catfile('conf', 'cmap.css');
 my $builder           =  Module::Build->subclass(
     class             => 'My::Builder',
     code              => qq[
-        sub ACTION_fakeinstall {
+        sub ACTION_install {
             my \$self = shift;
 
             $template_copy
@@ -184,7 +184,7 @@ my $builder           =  Module::Build->subclass(
                 flatten => 1,
             );
 
-            \$self->SUPER::ACTION_fakeinstall;
+            \$self->SUPER::ACTION_install;
         }
     ]
 )->new(
