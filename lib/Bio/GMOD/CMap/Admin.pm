@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.32 2003-10-23 02:06:02 kycl4rk Exp $
+# $Id: Admin.pm,v 1.33 2003-10-24 20:03:31 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.32 $)[-1];
+$VERSION = (qw$Revision: 1.33 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -1394,15 +1394,14 @@ Set the attributes for a database object.
 =cut
 
     my ( $self, %args ) = @_;
-    my $object_id       = $args{'object_id'} or 
-                          return $self->error('No object id');
+    my $object_id       = $args{'object_id'};
     my $table_name      = $args{'table_name'} or 
                           return $self->error('No table name');
     my @xrefs           = @{ $args{'xrefs'} || [] } or return;
     my $overwrite       = $args{'overwrite'} || 0;
     my $db              = $self->db or return;
 
-    if ( $overwrite ) {
+    if ( $overwrite && $object_id ) {
         $db->do(
             'delete from cmap_xref where object_id=? and table_name=?',
             {},
@@ -1421,28 +1420,33 @@ Set the attributes for a database object.
             defined $xref_url  && $xref_url  ne ''
         ;
 
-        $xref_id ||= $db->selectrow_array(
-            q[
-                select xref_id
-                from   cmap_xref
-                where  object_id=?
-                and    table_name=?
-                and    xref_name=?
-                and    xref_url=?
-            ],
-            {},
-            ( $object_id, $table_name, $xref_name, $xref_url )
-        );
+        if ( $object_id ) {
+            $xref_id ||= $db->selectrow_array(
+                q[
+                    select xref_id
+                    from   cmap_xref
+                    where  object_id=?
+                    and    table_name=?
+                    and    xref_name=?
+                    and    xref_url=?
+                ],
+                {},
+                ( $object_id, $table_name, $xref_name, $xref_url )
+            );
+        }
 
         if ( $xref_id ) {
             my @update_fields =  (
-                [ object_id   => $object_id  ],
                 [ table_name  => $table_name ],
                 [ xref_name   => $xref_name  ],
                 [ xref_url    => $xref_url   ],
             );
 
-            if ( defined $display_order ) {
+            if ( defined $object_id ) {
+                push @update_fields, [ object_id => $object_id ];
+            }
+
+            if ( defined $display_order && $display_order ne '' ) {
                 push @update_fields, [ display_order => $display_order ];
             }
 
@@ -1465,17 +1469,14 @@ Set the attributes for a database object.
                 id_field   => 'xref_id',
             ) or return $self->error( "Can't get next ID for 'cmap_xref'" );
 
-            unless ( defined $display_order ) {
-                $display_order = $db->selectrow_array(
-                    q[
-                        select max(display_order)
-                        from   cmap_xref
-                        where  table_name=?
-                        and    object_id=?
-                    ],
-                    {},
-                    ( $table_name, $object_id )
-                );
+            unless ( defined $display_order && $display_order ne '') {
+                my $do_sql = qq[
+                    select max(display_order)
+                    from   cmap_xref
+                    where  table_name='$table_name'
+                ];
+                $do_sql  .= "and object_id=$object_id" if $object_id;
+                $display_order = $db->selectrow_array( $do_sql );
                 $display_order++;
             }
 
