@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::Import;
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.40 2003-10-29 20:52:35 kycl4rk Exp $
+# $Id: Import.pm,v 1.41 2003-12-20 02:27:16 kycl4rk Exp $
 
 =pod
 
@@ -28,7 +28,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.40 $)[-1];
+$VERSION  = (qw$Revision: 1.41 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -36,6 +36,7 @@ use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Utils 'next_number';
 use Text::RecordParser;
 use Text::ParseWords 'parse_line';
+use XML::Simple;
 
 use base 'Bio::GMOD::CMap';
 
@@ -69,7 +70,7 @@ use vars '$LOG_FH';
 );
 
 # ----------------------------------------------------
-sub import {
+sub import_tab {
 
 =pod
 
@@ -768,9 +769,216 @@ appended to the list of xrefs.
     return 1;
 }
 
+# ----------------------------------------------------
+sub import_objects {
+
+=pod
+
+=head2 import_objects
+
+Imports an XML document containing CMap database objects.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $db              = $self->db           or die 'No database handle';
+    my $fh              = $args{'fh'}         or die     'No file handle';
+    my $overwrite       = $args{'overwrite'}  ||                        0;
+    $LOG_FH             = $args{'log_fh'}     ||                 \*STDOUT;
+
+    my $admin = Bio::GMOD::CMap::Admin->new(
+        data_source => $self->data_source
+    ) or return $self->error(
+        "Can't create admin object: ", Bio::GMOD::CMap::Admin->error
+    );
+
+    my $import        =  XMLin( $fh,
+        KeepRoot      => 0,
+        SuppressEmpty => 1,
+        ForceArray    => [ qw( 
+            cmap_map_set map feature xref attribute cmap_feature_type 
+            cmap_map_type cmap_species alias cmap_evidence_type 
+            cmap_feature_correspondence cmap_xref 
+        ) ],
+    );
+
+#    open my $foo, ">/tmp/foo";
+#    print $foo "data = ", Dumper($data), "\n";
+#    close $foo;
+
+    #
+    # Species.
+    #
+    my %species;
+    for my $species ( @{ $import->{'cmap_species'} || [] } )  {
+        $self->import_object(
+            table_name  => 'cmap_species',
+            pk_name     => 'species_id',
+            object_type => 'species',
+            object      => $species,
+            field_names => [
+                qw/accession_id common_name full_name display_order/
+            ],
+        ) or return;
+
+        $species{ $species->{'object_id'} } = $species;
+    }
+
+    #
+    # Map types.
+    #
+    my %map_types;
+    for my $map_type ( @{ $import->{'cmap_map_type'} || [] } )  {
+        $self->import_object(
+            table_name  => 'cmap_map_type',
+            pk_name     => 'map_type_id',
+            object_type => 'map_type',
+            object      => $map_type,
+            field_names => [ qw/ accession_id map_type map_units color
+                is_relational_map shape display_order
+            / ],
+        ) or return;
+
+        $map_types{ $map_type->{'object_id'} } = $map_type;
+    }
+
+    #
+    # Feature types.
+    #
+    my %feature_types;
+    for my $ft ( @{ $import->{'cmap_feature_type'} || [] } )  {
+        $self->import_object(
+            table_name  => 'cmap_feature_type',
+            pk_name     => 'feature_type_id',
+            object_type => 'feature_type',
+            object      => $ft,
+            field_names => [ qw/ accession_id feature_type shape
+                color default_rank drawing_lane drawing_priority
+            / ],
+        ) or return;
+
+        $feature_types{ $ft->{'object_id'} } = $ft;
+    }
+
+    for my $ms ( @{ $import->{'cmap_map_set'} || [] } ) {
+        $self->Print(
+            "Importing map set '$ms->{map_set_name}' ($ms->{accession_id})\n"
+        );
+
+        my $species     = $species{ $ms->{'species_id'} };
+        my $map_type    = $map_types{ $ms->{'map_type_id'} };
+print "species = ", Dumper($species), "\n";
+        my $species_id  = $species->{'new_species_id'} or 
+            return $self->error('Cannot determine species id');
+        my $map_type_id = $map_type->{'new_map_type_id'} or 
+            return $self->error('Cannot determine map type id');
+
+
+        $self->import_object(
+            table_name  => 'cmap_map_set',
+            pk_name     => 'map_set_id',
+            object_type => 'map_set',
+            object      => $ms,
+            field_names => [ qw/ accession_id map_set_name short_name
+                color shape is_enabled display_order can_be_reference_map
+                published_on width species_id map_type_id
+            / ],
+        ) or return;
+
+        for my $map ( @{ $ms->{'map'} || [] } ) {
+            $self->import_object(
+                table_name  => 'cmap_map',
+                pk_name     => 'map_id',
+                object_type => 'map',
+                object      => $map,
+                field_names => [ qw/ accession_id map_name display_order
+                    start_position stop_position
+                / ],
+            ) or return;
+
+#            for my $feature ( @{ $map->{'feature'} || [] } ) {
+#                $self->import_object(
+#                    table_name  => 'cmap_feature',
+#                    pk_name     => 'feature_id',
+#                    object_type => 'feature',
+#                    object      => $feature,
+#                    field_names => [ qw/ 
+#                    / ],
+#                ) or return;
+#            }
+        }
+    }
+
+    return 1;
+}
+
+# ----------------------------------------------------
+sub import_object {
+    my ( $self, %args ) = @_;
+    my $object_type     = $args{'object_type'};
+    my $object          = $args{'object'};
+    my $table_name      = $args{'table_name'};
+    my $field_names     = $args{'field_names'};
+    my $pk_name         = $args{'pk_name'} || pk_name( $table_name );
+    my $db              = $self->db;
+    my $admin           = $self->admin;
+
+    my $new_object_id = $db->selectrow_array(
+        qq[
+            select $pk_name
+            from   $table_name
+            where  accession_id=?
+        ],
+        {},
+        ( $object->{'accession_id'} )
+    );
+
+    unless ( $new_object_id ) {
+        my $create_method = $object_type . '_create';
+        $new_object_id    =  $admin->$create_method(
+            map { $_, $object->{ $_ } } @$field_names
+        ) or return $self->error( $admin->error );
+    }
+
+    $object->{"new_$pk_name"} = $new_object_id;
+
+    if ( @{ $object->{'attribute'} || [] } ) {
+        $admin->set_attributes(
+            table_name => $table_name,
+            object_id  => $new_object_id,
+            attributes => $object->{'attribute'},
+        );
+    }
+
+    if ( @{ $object->{'xref'} || [] } ) {
+        $admin->set_xrefs(
+            table_name => $table_name,
+            object_id  => $new_object_id,
+            xrefs      => $object->{'xref'},
+        );
+    }
+
+    return 1;
+}
+
+# ----------------------------------------------------
 sub Print {
     my $self = shift;
     print $LOG_FH @_;
+}
+
+sub admin {
+    my $self = shift;
+
+    unless ( defined $self->{'admin'} ) {
+        $self->{'admin'} = Bio::GMOD::CMap::Admin->new(
+            data_source => $self->data_source
+        ) or return $self->error(
+            "Can't create admin object: ", Bio::GMOD::CMap::Admin->error
+        );
+    }
+
+    return $self->{'admin'};
 }
 
 1;
