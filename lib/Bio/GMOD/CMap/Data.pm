@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.42 2003-03-31 15:59:27 kycl4rk Exp $
+# $Id: Data.pm,v 1.43 2003-04-09 00:21:19 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.42 $)[-1];
+$VERSION = (qw$Revision: 1.43 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -1230,12 +1230,14 @@ Returns the data for the main comparative map HTML form.
     my @slot_nos      = sort { $a <=> $b } keys %$slots;
     my $rightmost_map = $slots->{ $slot_nos[-1] };
     my $leftmost_map  = $slots->{ $slot_nos[ 0] };
+    my %feature_types;
 
     my $comp_maps_right     =  $self->get_comparative_maps( 
         map                 => $rightmost_map,
         min_correspondences => $min_correspondences,
         feature_type_ids    => $feature_type_ids,
         evidence_type_ids   => $evidence_type_ids,
+        feature_types       => \%feature_types,
     );
 
     my $comp_maps_left      =  
@@ -1248,73 +1250,8 @@ Returns the data for the main comparative map HTML form.
             min_correspondences => $min_correspondences,
             feature_type_ids    => $feature_type_ids,
             evidence_type_ids   => $evidence_type_ids,
+            feature_types       => \%feature_types,
         )
-    ;
-
-    #
-    # Get all the map IDs to use to restrict the feature types.
-    #
-    my @all_map_ids;
-    for my $slot ( values %$slots ) {
-        if ( $slot->{'field'} eq 'map_set_aid' ) {
-            push @all_map_ids, @{
-                $db->selectcol_arrayref(
-                    q[
-                        select map.map_id
-                        from   cmap_map map,
-                               cmap_map_set ms
-                        where  map.map_set_id=ms.map_set_id
-                        and    ms.accession_id=?
-                    ],
-                    {},
-                    ( $slot->{'aid'} )
-                )
-            };
-        }
-        else {
-            push @all_map_ids, @{
-                $db->selectcol_arrayref(
-                    q[
-                        select map.map_id
-                        from   cmap_map map
-                        where  map.accession_id=?
-                    ],
-                    {},
-                    ( $slot->{'aid'} )
-                )
-            };
-        }
-    }
-
-    #
-    # Feature types.
-    #
-    my $ft_sql;
-    if ( @all_map_ids ) {
-        $ft_sql .= q[
-            select   distinct 
-                     ft.accession_id as feature_type_aid,
-                     ft.feature_type
-            from     cmap_feature_type ft,
-                     cmap_feature f
-            where    f.feature_type_id=ft.feature_type_id
-            and      f.map_id in (].
-            join(',', @all_map_ids).q[)
-            order by ft.feature_type
-        ];
-    }
-    else {
-        $ft_sql .= q[
-            select   ft.accession_id as feature_type_aid,
-                     ft.feature_type
-            from     cmap_feature_type ft
-            order by ft.feature_type
-        ];
-    }
-
-    my @feature_types = 
-        sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} } 
-        @{ $db->selectall_arrayref( $ft_sql, { Columns => {} } ) }
     ;
 
     #
@@ -1346,7 +1283,6 @@ Returns the data for the main comparative map HTML form.
         comparative_maps_right => $comp_maps_right,
         comparative_maps_left  => $comp_maps_left,
         map_info               => $map_info,
-        feature_types          => \@feature_types,
         evidence_types         => \@evidence_types,
     };
 }
@@ -1368,6 +1304,7 @@ out which maps have relationships.
     my $min_correspondences = $args{'min_correspondences'};
     my $feature_type_ids    = $args{'feature_type_ids'};
     my $evidence_type_ids   = $args{'evidence_type_ids'};
+    my $feature_types       = $args{'feature_types'};
 
     my $aid_field         = $map->{'field'};
     my $ref_map_aid       = $aid_field eq 'map_aid'     ? $map->{'aid'} : '';
