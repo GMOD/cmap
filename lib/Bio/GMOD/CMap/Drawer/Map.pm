@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.46 2003-05-20 21:37:31 kycl4rk Exp $
+# $Id: Map.pm,v 1.47 2003-05-23 02:16:38 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.46 $)[-1];
+$VERSION = (qw$Revision: 1.47 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -32,29 +32,26 @@ use Bio::GMOD::CMap::Utils qw[ column_distribution label_distribution ];
 
 use base 'Bio::GMOD::CMap';
 
-use constant AUTO_FIELDS => [
-    qw( map_set_id map_set_aid map_type accession_id species_id map_id 
-        species_name map_units map_name map_set_name map_type_id 
-        is_relational_map begin end 
-    )
-];
+my @INIT_FIELDS = qw[ drawer base_x base_y slot_no maps ];
 
-use constant INIT_FIELDS => [
-    qw( drawer base_x base_y slot_no maps )
-];
-
-use constant SHAPE => {
+my %SHAPE = (
     'default'  => 'draw_box',
     'box'      => 'draw_box',
     'dumbbell' => 'draw_dumbbell',
     'I-beam'   => 'draw_i_beam',
-};
+);
 
 BEGIN {
     #
     # Create automatic accessor methods.
     #
-    foreach my $sub_name ( @{ +AUTO_FIELDS } ) {
+    my @AUTO_FIELDS = qw[
+        map_set_id map_set_aid map_type accession_id species_id 
+        map_id species_name map_units map_name map_set_name 
+        map_type_id is_relational_map begin end 
+    ];
+
+    foreach my $sub_name ( @AUTO_FIELDS ) {
         no strict 'refs';
         unless ( defined &$sub_name ) {
             *{ $sub_name } = sub { 
@@ -69,7 +66,7 @@ BEGIN {
 # ----------------------------------------------------
 sub init {
     my ( $self, $config ) = @_;
-    $self->params( $config, @{ +INIT_FIELDS } );
+    $self->params( $config, @INIT_FIELDS );
     return $self;
 }
 
@@ -167,6 +164,7 @@ box.
 =cut
 
     my ( $self, %args )  = @_;
+    my $drawing_data     = $args{'drawing_data'};
     my $drawer           = $args{'drawer'} || $self->drawer or 
                            $self->error('No drawer');
     my ( $x1, $y1, $y2 ) = @{ $args{'coords'} || [] } or 
@@ -176,8 +174,11 @@ box.
     my $x2               = $x1 + $width;
     my @coords           = ( $x1, $y1, $x2, $y2 ); 
 
-    $drawer->add_drawing( FILLED_RECT, @coords, $color  );
-    $drawer->add_drawing( RECTANGLE,   @coords, 'black' );
+#    $drawer->add_drawing( FILLED_RECT, @coords, $color  );
+#    $drawer->add_drawing( RECTANGLE,   @coords, 'black' );
+
+    push @$drawing_data, [ FILLED_RECT, @coords, $color  ];
+    push @$drawing_data, [ RECTANGLE,   @coords, 'black' ];
     
     if ( my $map_units = $args{'map_units'} ) {
         my $buf  = 2;
@@ -205,6 +206,7 @@ bounds of the image.
 =cut
 
     my ( $self, %args )  = @_;
+    my $drawing_data     = $args{'drawing_data'};
     my $drawer           = $args{'drawer'} || $self->drawer or 
                            $self->error('No drawer');
     my ( $x1, $y1, $y2 ) = @{ $args{'coords'} || [] } or 
@@ -215,15 +217,25 @@ bounds of the image.
     my $mid_x            = $x1 + $width/2;
     my $arc_width        = $width + 6;
 
-    $drawer->add_drawing(
+#    $drawer->add_drawing(
+#        ARC, $mid_x, $y1, $arc_width, $arc_width, 0, 360, $color
+#    );
+#    $drawer->add_drawing(
+#        ARC, $mid_x, $y2, $arc_width, $arc_width, 0, 360, $color
+#    );
+#    $drawer->add_drawing( FILL_TO_BORDER, $mid_x, $y1, $color, $color );
+#    $drawer->add_drawing( FILL_TO_BORDER, $mid_x, $y2, $color, $color );
+#    $drawer->add_drawing( FILLED_RECT, $x1, $y1, $x2, $y2, $color );
+
+    push @$drawing_data, [ 
         ARC, $mid_x, $y1, $arc_width, $arc_width, 0, 360, $color
-    );
-    $drawer->add_drawing(
+    ];
+    push @$drawing_data, [ 
         ARC, $mid_x, $y2, $arc_width, $arc_width, 0, 360, $color
-    );
-    $drawer->add_drawing( FILL_TO_BORDER, $mid_x, $y1, $color, $color );
-    $drawer->add_drawing( FILL_TO_BORDER, $mid_x, $y2, $color, $color );
-    $drawer->add_drawing( FILLED_RECT, $x1, $y1, $x2, $y2, $color );
+    ];
+    push @$drawing_data, [ FILL_TO_BORDER, $mid_x, $y1, $color, $color ];
+    push @$drawing_data, [ FILL_TO_BORDER, $mid_x, $y2, $color, $color ];
+    push @$drawing_data, [ FILLED_RECT, $x1, $y1, $x2, $y2, $color ];
     
     if ( my $map_units = $args{'map_units'} ) {
         my $buf  = 2;
@@ -253,6 +265,7 @@ Draws the map as an "I-beam."  Return the bounds of the image.
 =cut
 
     my ( $self, %args )  = @_;
+    my $drawing_data     = $args{'drawing_data'};
     my $drawer           = $args{'drawer'} || $self->drawer or 
                            $self->error('No drawer');
     my ( $x1, $y1, $y2 ) = @{ $args{'coords'} || [] } or 
@@ -262,9 +275,13 @@ Draws the map as an "I-beam."  Return the bounds of the image.
     my $x2               = $x1 + $width;
     my $x                = $x1 + $width/2;
 
-    $drawer->add_drawing( LINE, $x , $y1, $x , $y2, $color );
-    $drawer->add_drawing( LINE, $x1, $y1, $x2, $y1, $color );
-    $drawer->add_drawing( LINE, $x1, $y2, $x2, $y2, $color );
+#    $drawer->add_drawing( LINE, $x , $y1, $x , $y2, $color );
+#    $drawer->add_drawing( LINE, $x1, $y1, $x2, $y1, $color );
+#    $drawer->add_drawing( LINE, $x1, $y2, $x2, $y2, $color );
+
+    push @$drawing_data, [ LINE, $x , $y1, $x , $y2, $color ];
+    push @$drawing_data, [ LINE, $x1, $y1, $x2, $y1, $color ];
+    push @$drawing_data, [ LINE, $x1, $y2, $x2, $y2, $color ];
 
     if ( my $map_units = $args{'map_units'} ) {
         my $buf  = 2;
@@ -340,7 +357,7 @@ Returns a string describing how to draw the map.
     my $map_id = shift or return;
     my $map    = $self->map( $map_id );
     my $shape  = $map->{'shape'} || $map->{'default_shape'} || '';
-       $shape  = 'default' unless defined SHAPE->{ $shape };
+       $shape  = 'default' unless defined $SHAPE{ $shape };
     return $shape;
 }
 
@@ -441,16 +458,11 @@ Lays out the map.
         # The map.
         #
         my ( $min_x, $max_x, $area );
-        my $draw_sub_name = SHAPE->{ $self->shape( $map_id ) };
+        my $draw_sub_name = $SHAPE{ $self->shape( $map_id ) };
         my $map_name      = $self->map_name( $map_id );
-        my $map_lane;
+        my ( @drawing_data, @map_area_data );
 
         if ( $is_relational && $slot_no != 0 ) {
-            #
-            # Only need to set scratch pad for relational maps.
-            #
-            $drawer->set_scratch_pad(1);
-
             #
             # Relational maps are drawn to a size relative to the distance
             # their features correspond to features on the reference map.
@@ -479,26 +491,18 @@ Lays out the map.
             my $midpoint     = ( $positions[0] + $positions[-1] ) / 2;
             $base_y          = $midpoint - $pixel_height/2;
             my $half_label   = (($reg_font->width*length($map_name))/2);
+            $base_x = $label_side eq RIGHT 
+                ? $original_base_x + $half_label
+                : $original_base_x - $half_label;
+
             my $top          = $base_y - $reg_font->height - 4;
             my $bottom       = $base_y + $pixel_height + 4;
-            my $buffer       = 4;
-            $map_lane        = column_distribution(
-                columns      => \@columns,
-                top          => $top,
-                bottom       => $bottom,
-                buffer       => $buffer,
-            );
+            my $leftmost     = $base_x - $half_label;
+            my $rightmost    = $base_x + $half_label;
 
-            $base_x = $label_side eq RIGHT 
-                ? $original_base_x + ($column_width * $map_lane) + $half_label
-                : $original_base_x - ($column_width * $map_lane) - $half_label;
-
-            my $leftmost  = $base_x - $half_label;
-            my $rightmost = $base_x + $half_label;
-
-            $drawer->add_drawing(
+            push @drawing_data, [
                 STRING, $reg_font, $leftmost, $top, $map_name, 'black'
-            );
+            ];
 
             $min_x = $leftmost  unless defined $min_x;
             $max_x = $rightmost unless defined $max_x;
@@ -510,11 +514,12 @@ Lays out the map.
         $top_y = $base_y unless defined $top_y;
         $top_y = $base_y if $base_y < $top_y;
 
-        my @map_bounds =  $self->$draw_sub_name(
-            map_id     => $map_id,
-            map_units  => $show_map_units ? $self->map_units( $map_id ) : '',
-            drawer     => $drawer,
-            coords     => [ $base_x, $base_y, $base_y + $pixel_height ],
+        my @map_bounds   =  $self->$draw_sub_name(
+            map_id       => $map_id,
+            map_units    => $show_map_units ? $self->map_units( $map_id ) : '',
+            drawer       => $drawer,
+            coords       => [ $base_x, $base_y, $base_y + $pixel_height ],
+            drawing_data => \@drawing_data,
         );
 
         if ( @{ $area || [] } ) {
@@ -525,13 +530,13 @@ Lays out the map.
         }
 
         if ( $drawer->highlight_feature( $map_name ) ) {
-            $drawer->add_drawing(
+            push @drawing_data, [
                 RECTANGLE, @map_bounds, $feature_highlight_fg_color
-            );
+            ];
 
-            $drawer->add_drawing(
+            push @drawing_data, [
                 FILLED_RECT, @map_bounds, $feature_highlight_bg_color, 0
-            );
+            ];
         }
 
         $min_x    = $map_bounds[0] unless defined $min_x;
@@ -568,9 +573,9 @@ Lays out the map.
                     : $base_x + $map_width + $tick_overhang
                 ;
 
-                $drawer->add_drawing(
+                push @drawing_data, [
                     LINE, $tick_start, $y_pos, $tick_stop, $y_pos, 'grey'
-                );
+                ];
 
                 my $label_x = $label_side eq RIGHT 
                     ? $tick_start - $reg_font->height - 2
@@ -579,9 +584,9 @@ Lays out the map.
 
                 my $label_y = $y_pos + ($reg_font->width*length($tick_pos))/2;
 
-                $drawer->add_drawing(
+                push @drawing_data, [
                     STRING_UP, $reg_font, $label_x, $label_y, $tick_pos, 'grey'
-                );
+                ];
 
                 my $right = $label_x + $reg_font->height;
                 $max_x    = $right   if $right  > $max_x;
@@ -763,9 +768,9 @@ Lays out the map.
                 }
 
                 if ( $feature_shape eq LINE ) {
-                    $drawer->add_drawing(
+                    push @drawing_data, [
                         LINE, $tick_start, $y_pos1, $tick_stop, $y_pos1, $color
-                    );
+                    ];
                     @coords = ( $tick_start, $y_pos1, $tick_stop, $y_pos1 );
                 }
                 else {
@@ -778,20 +783,20 @@ Lays out the map.
                         collapse     => $collapse_features,
                         collapse_on  => $feature->{'feature_type'},
                     );
-                    my $offset            = ( $column_index + 1 ) * 6;
-                    my $vert_line_x1      = $label_side eq RIGHT
+                    my $offset       = ( $column_index + 1 ) * 6;
+                    my $vert_line_x1 = $label_side eq RIGHT
                         ? $tick_start : $tick_stop;
-                    my $vert_line_x2      = $label_side eq RIGHT 
+                    my $vert_line_x2 = $label_side eq RIGHT 
                         ? $tick_stop + $offset 
                         : $tick_start - $offset;
 
                     if ( $y_pos1 < $y_pos2 && !$shape_is_triangle ) {
-                        $drawer->add_drawing(
+                        push @drawing_data, [
                             LINE, 
                             $vert_line_x2, $y_pos1, 
                             $vert_line_x2, $y_pos2, 
                             $color,
-                        );
+                        ];
 
                         @coords = (
                             $vert_line_x2, $y_pos1, $vert_line_x2, $y_pos2
@@ -800,38 +805,38 @@ Lays out the map.
 
                     if ( $feature_shape eq 'span' ) {
                         my $reverse = $label_side eq RIGHT ? -1 : 1;
-                        $drawer->add_drawing(
+                        push @drawing_data, [
                             LINE, 
                             $vert_line_x2, $y_pos1, 
                             $vert_line_x2 + ( 3 * $reverse ), $y_pos1, 
                             $color,
-                        );
+                        ];
 
-                        $drawer->add_drawing(
+                        push @drawing_data, [
                             LINE, 
                             $vert_line_x2, $y_pos2, 
                             $vert_line_x2 + ( 3 * $reverse ), $y_pos2, 
                             $color,
-                        );
+                        ];
 
                         @coords = (
                             $vert_line_x2, $y_pos1, $vert_line_x2, $y_pos2
                         );
                     }
                     elsif ( $feature_shape eq 'up-arrow' ) {
-                        $drawer->add_drawing(
+                        push @drawing_data, [
                             LINE,
                             $vert_line_x2, $y_pos1,
                             $vert_line_x2 - 2, $y_pos1 + 2,
                             $color
-                        );
+                        ];
 
-                        $drawer->add_drawing(
+                        push @drawing_data, [
                             LINE,
                             $vert_line_x2, $y_pos1,
                             $vert_line_x2 + 2, $y_pos1 + 2,
                             $color
-                        );
+                        ];
 
                         @coords = (
                             $vert_line_x2 - 2, $y_pos2,
@@ -839,19 +844,19 @@ Lays out the map.
                         );
                     }
                     elsif ( $feature_shape eq 'down-arrow' ) {
-                        $drawer->add_drawing(
+                        push @drawing_data, [
                             LINE,
                             $vert_line_x2, $y_pos2,
                             $vert_line_x2 - 2, $y_pos2 - 2,
                             $color
-                        );
+                        ];
 
-                        $drawer->add_drawing(
+                        push @drawing_data, [
                             LINE,
                             $vert_line_x2, $y_pos2,
                             $vert_line_x2 + 2, $y_pos2 - 2,
                             $color
-                        );
+                        ];
 
                         @coords = (
                             $vert_line_x2 - 2, $y_pos2,
@@ -859,30 +864,30 @@ Lays out the map.
                         );
                     }
                     elsif ( $feature_shape eq 'double-arrow' ) {
-                        $drawer->add_drawing(
+                        push @drawing_data, [
                             LINE,
                             $vert_line_x2, $y_pos1,
                             $vert_line_x2 - 2, $y_pos1 + 2,
                             $color
-                        );
-                        $drawer->add_drawing(
+                        ];
+                        push @drawing_data, [
                             LINE,
                             $vert_line_x2, $y_pos1,
                             $vert_line_x2 + 2, $y_pos1 + 2,
                             $color
-                        );
-                        $drawer->add_drawing(
+                        ];
+                        push @drawing_data, [
                             LINE,
                             $vert_line_x2, $y_pos2,
                             $vert_line_x2 - 2, $y_pos2 - 2,
                             $color
-                        );
-                        $drawer->add_drawing(
+                        ];
+                        push @drawing_data, [
                             LINE,
                             $vert_line_x2, $y_pos2,
                             $vert_line_x2 + 2, $y_pos2 - 2,
                             $color
-                        );
+                        ];
 
                         @coords = (
                             $vert_line_x2 - 2, $y_pos2,
@@ -900,23 +905,20 @@ Lays out the map.
                             $vert_line_x1, $y_pos1, 
                         );
 
-                        $drawer->add_drawing( RECTANGLE, @coords, $color );
+                        push @drawing_data, [ RECTANGLE, @coords, $color ];
                     }
                     elsif ( $feature_shape eq 'dumbbell' ) {
                         my $width = 3;
-                        $drawer->add_drawing(
+                        push @drawing_data, [
                             ARC, 
                             $vert_line_x2, $y_pos1,
                             $width, $width, 0, 360, $color
-                        );
-
-                        if ( $y_pos2 > $y_pos1 ) {
-                            $drawer->add_drawing(
-                                ARC, 
-                                $vert_line_x2, $y_pos2,
-                                $width, $width, 0, 360, $color
-                            );
-                        }
+                        ];
+                        push @drawing_data, [
+                            ARC, 
+                            $vert_line_x2, $y_pos2,
+                            $width, $width, 0, 360, $color
+                        ];
 
                         @coords = (
                             $vert_line_x2 - $width/2, $y_pos1, 
@@ -925,18 +927,18 @@ Lays out the map.
                     }
                     elsif ( $feature_shape eq 'filled-box' ) {
                         my $width = 3;
-                        $drawer->add_drawing(
+                        push @drawing_data, [
                             FILLED_RECT, 
                             $vert_line_x2, $y_pos1,
                             $vert_line_x2 + $width, $y_pos2,
                             $color,
-                        );
-                        $drawer->add_drawing(
+                        ];
+                        push @drawing_data, [
                             RECTANGLE, 
                             $vert_line_x2, $y_pos1,
                             $vert_line_x2 + $width, $y_pos2,
                             'black',
-                        );
+                        ];
                         @coords = (
                             $vert_line_x2 - $width/2, $y_pos1, 
                             $vert_line_x2 + $width/2, $y_pos2
@@ -954,30 +956,29 @@ Lays out the map.
                         )
                     ) {
                         my $width = 3;
-                        $drawer->add_drawing(
+                        push @drawing_data, [
                             LINE,
                             $vert_line_x2, $y_pos1 - $width,
                             $vert_line_x2, $y_pos1 + $width,
                             $color
-                        );
-                        $drawer->add_drawing(
+                        ];
+                        push @drawing_data, [
                             LINE,
                             $vert_line_x2, $y_pos1 - $width,
                             $vert_line_x2 + $width, $y_pos1,
                             $color
-                        );
-                        $drawer->add_drawing(
+                        ];
+                        push @drawing_data, [
                             LINE,
                             $vert_line_x2, $y_pos1 + $width,
                             $vert_line_x2 + $width, $y_pos1,
                             $color
-                        );
-
-                        $drawer->add_drawing(
+                        ];
+                        push @drawing_data, [
                             FILL,
                             $vert_line_x2 + 1, $y_pos1 + 1,
                             $color
-                        );
+                        ];
 
                         @coords = (
                             $vert_line_x2 - $width, $y_pos1 - $width,
@@ -996,29 +997,29 @@ Lays out the map.
                         )
                     ) {
                         my $width = 3;
-                        $drawer->add_drawing(
+                        push @drawing_data, [
                             LINE,
                             $vert_line_x2 + $width, $y_pos1 - $width,
                             $vert_line_x2 + $width, $y_pos1 + $width,
                             $color
-                        );
-                        $drawer->add_drawing(
+                        ];
+                        push @drawing_data, [
                             LINE,
                             $vert_line_x2 + $width, $y_pos1 - $width,
                             $vert_line_x2, $y_pos1,
                             $color
-                        );
-                        $drawer->add_drawing(
+                        ];
+                        push @drawing_data, [
                             LINE,
                             $vert_line_x2, $y_pos1,
                             $vert_line_x2 + $width, $y_pos1 + $width,
                             $color
-                        );
-                        $drawer->add_drawing(
+                        ];
+                        push @drawing_data, [
                             FILL,
                             $vert_line_x2 + $width - 1, $y_pos1 + 1,
                             $color
-                        );
+                        ];
 
                         @coords = (
                             $vert_line_x2 - $width, $y_pos1 - $width,
@@ -1026,12 +1027,12 @@ Lays out the map.
                         );
                     }
                     
-                    $drawer->add_map_area(
-                        coords => \@coords,
+                    push @map_area_data, {
+                       coords => \@coords,
                         url    => 
                             $feature_details_url.$feature->{'accession_id'},
                         alt    => 'Details: '.$feature->{'feature_name'},
-                    );
+                    };
                 }
 
                 #
@@ -1178,9 +1179,10 @@ Lays out the map.
                 my $color     = $label->{'has_corr'}
                     ? $feature_corr_color || $label->{'color'}
                     : $label->{'color'};
-                $drawer->add_drawing( 
+
+                push @drawing_data, [
                     STRING, $reg_font, $label_x, $label_y, $text, $color
-                );
+                ];
 
                 my @label_bounds = (
                     $label_x - $buffer, 
@@ -1196,21 +1198,21 @@ Lays out the map.
                 # Highlighting.
                 #
                 if ( $label->{'is_highlighted'} ) {
-                    $drawer->add_drawing(
+                    push @drawing_data, [
                         RECTANGLE, @label_bounds, $feature_highlight_fg_color
-                    );
+                    ];
 
-                    $drawer->add_drawing(
+                    push @drawing_data, [
                         FILLED_RECT, @label_bounds, 
                         $feature_highlight_bg_color, 0
-                    );
+                    ];
                 }
 
-                $drawer->add_map_area(
+                push @map_area_data, {
                     coords => \@label_bounds,
                     url    => $label->{'url'},
                     alt    => 'Details: '.$text,
-                );
+                };
 
                 $min_x    = $label_bounds[0] if $label_bounds[0] < $min_x;
                 $top_y    = $label_bounds[1] if $label_bounds[1] < $top_y;
@@ -1253,7 +1255,6 @@ Lays out the map.
                     $label_connect_y1,
                     $label_connect_x2, 
                     $label_connect_y2,
-#                    $label->{'color'} || $connecting_line_color,
                     'grey'
                 );
 
@@ -1291,125 +1292,57 @@ Lays out the map.
         # Make sure that the lanes for the maps take into account
         # the span of all the features.
         #
-        if ( defined $map_lane ) {
+        if ( $is_relational && $slot_no != 0 ) {
             my $last_feature_lane = ( sort { $a <=> $b } keys %lanes )[-1];
             my $furthest_feature  = $lanes{ $last_feature_lane }{'furthest'};
+            my ( $leftmostf, $rightmostf );
+
             if ( $label_side eq RIGHT ) {
-                $furthest_feature = 
-                    $map_bounds[2] if $map_bounds[2] > $furthest_feature;
+                $leftmostf  = $map_bounds[0];
+                $rightmostf = $furthest_feature > $map_bounds[2]
+                    ? $furthest_feature : $map_bounds[2];
             }
             else {
-                $furthest_feature = 
-                    $map_bounds[0] if $map_bounds[0] < $furthest_feature;
+                $rightmostf = $map_bounds[2];
+                $leftmostf  = $furthest_feature < $map_bounds[0]
+                    ? $furthest_feature : $map_bounds[0];
             }
 
-            #
-            # If the map overlaps something later, move it to the end.
-            #
-            if ( $map_lane < $#columns ) {
-                my $last_overlap_lane;
-                LANE:
-                for my $i ( $map_lane + 1 .. $#columns ) {
-                    #
-                    # If there's an overlap, check everything.
-                    #
-                    unless ( $last_overlap_lane ) {
-                        if ( $label_side eq RIGHT ) {
-                            next unless $furthest_feature > 
-                                $original_base_x + ( $column_width * ($i + 1) );
-                        }
-                        else {
-                            next unless $furthest_feature < 
-                                $original_base_x - ( $column_width * ($i + 1) );
-                        }
-                    }
+            my $map_lane =  column_distribution(
+                columns  => \@columns,
+                top      => $map_bounds[1],
+                bottom   => $map_bounds[3],
+                buffer   => 4,
+                col_span => sprintf( "%.0f", 
+                    ( abs( $leftmostf - $rightmostf ) / $column_width ) + .5
+                ),
+            );
 
-#                    print STDERR "Looking at lane $i for $map_name because ",
-#                        "furthest feature '$furthest_feature' stretches ",
-#                        "into lane '", 
-#                        $original_base_x + $column_width * ($i + 1), "'\n";
+            if ( $map_lane ) {
+                my $shift       = $column_width * $map_lane;
+                $shift         *= -1 if $label_side eq LEFT;
+                $map_bounds[0] += $shift;
+                $map_bounds[2] += $shift;
+                $leftmostf     += $shift;
+                $rightmostf    += $shift;
+                $slot_min_x = $leftmostf  if $leftmostf  < $slot_min_x;
+                $slot_max_x = $rightmostf if $rightmostf > $slot_max_x;
 
-                    for my $used ( @{ $columns[ $i ] } ) {
-                        my ( $n, $s ) = @$used;
-                        next if $n > $map_bounds[3];
-                        next if $s < $map_bounds[1];
-#                        print STDERR "$map_name ($map_bounds[1],$map_bounds[3]) overlaps in lane $i ($n,$s)\n";
-                        $last_overlap_lane = $i;
-                        next LANE; # no need to check anything else in this lane
+                for my $rec ( @drawing_data ) {
+                    my $shape = $rec->[0];
+                    for my $x_field ( @{ SHAPE_XY->{ $shape }{'x'} } ) {
+                        $rec->[ $x_field ] += $shift;
                     }
                 }
 
-                if ( $last_overlap_lane ) {
-                    my $shift  = $column_width*($last_overlap_lane+1-$map_lane);
-                       $shift *= -1 if $label_side eq LEFT;
-#                    print STDERR "Moving $map_name $shift pixels past lane $last_overlap_lane\n";
-#                    $drawer->add_drawing(LINE, $furthest_feature, 
-#                        $map_bounds[1] - 10, $furthest_feature, 
-#                        $map_bounds[1] - 3, 'red');
-                    $map_bounds[0]    += $shift;
-                    $map_bounds[2]    += $shift;
-                    $furthest_feature += $shift;
-                    $drawer->min_x( $furthest_feature );
-                    $drawer->max_x( $furthest_feature );
-
-                    $drawer->adjust_frame(
-                        x_shift         => $shift,
-                        y_shift         => 0,
-                        leave_max_x_y   => 1,
-                        leave_map_areas => 1,
-                    );
-
-                    for my $rec ( values %features_with_corr ) {
-                        $rec->{'right'}[0] += $shift;
-                        $rec->{'left'}[0]  += $shift;
-                    }
-                }
-            }
-
-            #
-            # Make sure all the lanes that overlap are marked.
-            #
-            my $i = $map_lane > 0 ? $map_lane - 1 : $map_lane;
-            for ( ;; ) {
-                if ( $label_side eq RIGHT ) {
-#                    last if
-#                    $furthest_feature < $original_base_x + $column_width * $i;
-                    if (
-                    $furthest_feature < $original_base_x + $column_width * $i
-                    ) {
-#                        $drawer->add_drawing(
-#                            RECTANGLE, 
-#                            $map_bounds[0], 
-#                            $map_bounds[1], 
-#                            $furthest_feature,
-##                            $map_bounds[2], 
-#                            $map_bounds[3], 
-#                            'green'
-#                        );
-                        last;
-                    }
-                }
-                else {
-#                    last if
-#                    $furthest_feature > $original_base_x - $column_width * $i;
-                    if (
-                    $furthest_feature > $original_base_x - $column_width * $i
-                    ) {
-#                        $drawer->add_drawing(
-#                            RECTANGLE, 
-#                            $map_bounds[0], 
-#                            $map_bounds[1], 
-##                            $furthest_feature,
-#                            $map_bounds[2], 
-#                            $map_bounds[3], 
-#                            'green'
-#                        );
-                        last;
-                    }
+                for my $rec ( @map_area_data ) {
+                    $rec->{'coords'}[ $_ ] += $shift for ( 1, 3 );
                 }
 
-                push @{ $columns[ $i ] }, [ $map_bounds[1], $map_bounds[3] ];
-                $i++;
+                for my $rec ( values %features_with_corr ) {
+                    $rec->{'right'}[0] += $shift;
+                    $rec->{'left'}[0]  += $shift;
+                }
             }
         }
 
@@ -1458,30 +1391,33 @@ Lays out the map.
             ';highlight='.uri_escape( $drawer->highlight );
 
         if ( $is_relational && $slot_no != 0 ) {
-            $drawer->add_map_area(
+            push @map_area_data, {
                 coords => \@map_bounds,
                 url    => $url,
                 alt    => 'Details: '.$self->map_name,
-            );
+            };
         }
         else {
             my $map_bottom_x = $map_bounds[0];
             my $map_bottom_y = $map_bounds[3] + 5;
-            $drawer->add_drawing(
+
+            push @drawing_data, [
                 STRING, $reg_font, $map_bottom_x, $map_bottom_y, '?', 'grey'
-            );
+            ];
+
             my @area = (
                 $map_bottom_x - 2,
                 $map_bottom_y - 2,
                 $map_bottom_x + $reg_font->width + 2,
                 $map_bottom_y + $reg_font->height + 2,
             );
-            $drawer->add_drawing( RECTANGLE, @area, 'grey' );
-            $drawer->add_map_area(
+
+            push @drawing_data, [ RECTANGLE, @area, 'grey' ];
+            push @map_area_data, {
                 coords => \@area,
                 url    => $url,
                 alt    => 'Details: '.( $self->map_name || '' ),
-            );
+            };
             $bottom_y = $area[3] if $area[3] > $bottom_y;
         }
 
@@ -1510,9 +1446,9 @@ Lays out the map.
                 my $label_x = $mid_x - 
                     ( ( $reg_font->width * length( $label ) ) / 2 );
 
-                $drawer->add_drawing( 
+                push @drawing_data, [
                     STRING, $reg_font, $label_x, $min_y, $label, 'black'
-                );
+                ];
 
                 my $label_end = $label_x + ($reg_font->width * length($label));
                 my $bottom    = $min_y + $reg_font->height;
@@ -1534,22 +1470,21 @@ Lays out the map.
                 $bottommost + $buffer,
             );
 
-            $drawer->add_drawing( 
+            push @drawing_data, [
                 FILLED_RECT, @bounds, 'white', 0 # bottom-most layer
-            );
+            ];
 
-            $drawer->add_drawing( 
+            push @drawing_data, [
                 RECTANGLE, @bounds, 'black'
-            );
+            ];
 
-            my $url = $map_set_info_url.
-                      '?map_set_aid='.
+            my $url = "$map_set_info_url?map_set_aid=".
                       $self->map_set_aid( $map_id );
-            $drawer->add_map_area(
+            push @map_area_data, {
                 coords => \@bounds,
                 url    => $url,
                 alt    => 'Map Set Info',
-            );
+            };
 
             $min_x = $bounds[0] if $bounds[0] < $min_x;
             $top_y = $bounds[1] if $bounds[1] < $top_y;
@@ -1571,27 +1506,30 @@ Lays out the map.
             ) if ( abs $drawer->min_x + $slot_max_x ) > $max_image_pixel_width;
         }
 
-        $drawer->set_scratch_pad(0) if defined $map_lane;
+        $drawer->add_drawing( @drawing_data );
+        $drawer->add_map_area( @map_area_data );
     }
 
-#    # drawing guides
+    # drawing guides
 #    for my $i ( 0 .. $#columns ) {
 #        my $map_width      = $self->map_width( $map_ids[0] );
 #        my $column_width   = $map_width + 10;
 #        my $x = $label_side eq RIGHT
 #            ? $original_base_x + $column_width * $i
 #            : $original_base_x - $column_width * $i;
-#        $drawer->add_drawing(LINE, $x, -30, $x, 500, 'lightgrey', 0);
-#        $drawer->add_drawing(STRING, $reg_font, $x, -30, $i, 'black', 0);
-#        $drawer->add_drawing(STRING, $reg_font, $x, 500, $i, 'black', 0);
+##        $drawer->add_drawing(LINE, $x, -30, $x, 500, 'lightgrey', 0);
+##        $drawer->add_drawing(STRING, $reg_font, $x, -30, $i, 'black', 0);
+##        $drawer->add_drawing(STRING, $reg_font, $x, 500, $i, 'black', 0);
 #
-##        my $col = $columns[$i];
-##        for my $segment ( @$col ) {
-##            my ( $n, $s ) = @$segment;
+#        my $col = $columns[$i];
+#        for my $segment ( @$col ) {
+#            my ( $n, $s, $span ) = @$segment;
+#            $drawer->add_drawing(RECTANGLE, $x, $n, 
+#                $x + $column_width * $span, $s, 'green');
 ##            $drawer->add_drawing(LINE, $x - 2, $n, $x + 2, $n, 'red', 0);
 ##            $drawer->add_drawing(LINE, $x, $n, $x, $s, 'red', 0);
 ##            $drawer->add_drawing(LINE, $x - 2, $s, $x + 2, $s, 'red', 0);
-##        }
+#        }
 #    }
 
     #
@@ -1699,16 +1637,18 @@ Returns the all the map IDs sorted by the number of correspondences
     unless ( $self->{'sorted_map_ids'} ) {
         my @maps = map { 
             [ $_, $self->{'maps'}{ $_ }{'no_correspondences'} ] 
-        } keys %{ $self->{'maps'} };
+        } keys %{ $self->{'maps'} || {} };
 
-        $self->{'sorted_map_ids'} = [
-            map  { $_->[0] }
-            sort { $b->[1] <=> $a->[1] } 
-            @maps
-        ];
+        if ( @maps ) {
+            $self->{'sorted_map_ids'} = [
+                map  { $_->[0] }
+                sort { $b->[1] <=> $a->[1] } 
+                @maps
+            ];
+        }
     }
 
-    return @{ $self->{'sorted_map_ids'} };
+    return @{ $self->{'sorted_map_ids'} || [] };
 }
 
 # ----------------------------------------------------
@@ -1902,6 +1842,21 @@ Returns the map's tick mark interval.
     }
 
     return $map->{'tick_mark_interval'};
+}
+
+# ----------------------------------------------------
+sub DESTROY {
+
+=pod
+
+=head2 DESTROY
+
+Break cyclical links.
+
+=cut
+
+    my $self = shift;
+    $self->{'drawer'} = undef;
 }
 
 1;
