@@ -134,13 +134,13 @@
                     [% END %]
                 </td>
                 <td align="center">
-                    <a href="feature?feature_aid=[% fc.feature_aid %]">Feature Details</a>
+                    [&nbsp;<a href="feature?feature_aid=[% fc.feature_aid %]">Feature Details</a>&nbsp;]
                 </td>
                 <td align="center">
-                    <a href="viewer?ref_map_set_aid=[% fc.map_set_aid %];ref_map_aid=[% fc.map_aid %];highlight=[% fc.feature_aid %]">View On Map</a>
+                    [&nbsp;<a href="viewer?ref_map_set_aid=[% fc.map_set_aid %];ref_map_aid=[% fc.map_aid %];highlight=[% fc.feature_aid %]">View On Map</a>&nbsp;]
                 </td>
                 <td align="center">
-                    <a href="viewer?ref_map_set_aid=[% feature.map_set_aid %];ref_map_aid=[% feature.map_aid %];highlight=[% feature.accession_id %],[% fc.feature_aid %];comparative_maps=1%3dmap_aid%3d[% fc.map_aid %]">Show Maps</a>
+                    [&nbsp;<a href="viewer?ref_map_set_aid=[% feature.map_set_aid %];ref_map_aid=[% feature.map_aid %];highlight=[% feature.accession_id %],[% fc.feature_aid %];comparative_maps=1%3dmap_aid%3d[% fc.map_aid %]">Show Maps</a>&nbsp;]
                 </td>
             </tr>
             [% SET i=i+1 %]
