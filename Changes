@@ -1,5 +1,103 @@
                       Revision history for CMap
 
+0.13    2004-12-17
+
+-   Expanded/reorganized/hidden menus.  Many more options for
+    controlling the maps are now available.  As such, most of the
+    menus remain hidden until the user requests to see them.
+-   Added new map glyphs to the maps. Above each map is a number in
+    square brackets indicating the number of features on the map.
+    Running vertically are pairs of arrows pointing up and down which
+    allow you to crop/zoom in on a map.  Below the maps are "-" and "+"
+    magnification buttons.
+-   The selection form for comparative maps is significantly larger
+    now and is hidden beneath the "Comparison" button.  Clicking a map
+    set name causes all the available maps of that map set to display in
+    the map selection form. It's also possible to choose more than one
+    comparative map.
+-   Expanded ability to filter/display features based on their type
+    and whether they have correspondences. Under the "Options" menu is a
+    table allowing the user to choose for each feature type whether to
+    ignore it completely, display only if there is a correspondence, or
+    to always display features of that type.
+-   The user can decrease the number of lines indicating
+    correspondences by aggregating into lines that are color-coded to
+    indicate the number of correspondences.
+-   Maps may be "compressed" such that no feature glyphs are drawn on
+    them allowing more data to be shown with less density.
+-   Map, feature and evidence types definitions, attributes and external 
+    references have been moved out of database tables and into configuration 
+    files.  These tables have been dropped from the schema and the 
+    configuration files have a new structure where the previous single 
+    configuration file has been broken into a "global.conf" file for global 
+    options and other datasource-specific files.
+-   Added the option to draw maps with the same base unit to be drawn to 
+    scale with respect to each other.
+-   Added an optional directionality to the features and added a "direction_arrow" 
+    feature glyph to take advantage of this. 
+-   A new query caching scheme greatly improves performance of map viewer
+    when accessing the same data repeatedly.
+-   Added ability to search maps by name or by number of corresponding maps.
+    The results can then be sorted by the map data, such as total features
+    or average features per base unit.
+-   Added "link viewer" to allow the creation of CMap URLs from imported
+    map location data.
+-   Added instructions for how to integrage CMap with GBrowse using the 
+    Chado database schema.
+
+0.12    2004-07-29
+
+-   Added colors to matrix cells to indicate ranges of correspondences
+-   Added "GIF" image type choice now that GIF is free
+-   Further enhancements to label distribution: if there are as many
+    labels as can possibly fit in the vertical space, they're just
+    placed evenly;  otherwise, they are spaced as closely as possible to
+    the feature glyph.  All labels are taken for highlighted features,
+    then as many will fit of those with correspondences, and lastly any
+    others are taken.
+-   Add new "M" map button for "Matrix" to link a map to its view in
+    the matrix
+-   Additions to map detail page:  added a small table on the map
+    details page just between the image and the feature correspondences
+    to list any information known about the map (e.g., any attributes or
+    xrefs) and a breakdown of the feature counts by type with a summary
+    of how many features total are on the map.  Additionally, there is
+    now an additional link for downloading the map data called "Download
+    Map Data."
+-   Added a new action called "download_data" to allow users to
+    easily request a tab-delimited dump of the features on any map or
+    for an entire map set (XML dump also available if downloading a
+    full map set).
+-   Enhancements to the map set info page: added a link to easily
+    restrict the page to any one map set if looking at more than one;
+    links to download the data for the map set or a single map, see the
+    map set or any single map in the matrix;  expanded view of maps in a
+    set with more links and explicit text to indicate actions; added the
+    display of the publication date of the study, if available.
+-   Added link to feature type info page to search for all features
+    of each type 
+-   Added link to map type info page allowing a user to quickly view all
+    the info (on the "map_set_info" page) of all the maps of a
+    particular type
+-   Species info page now lists all the map sets linked to each
+    species (Pankaj Jaiswal), ability to easily view any single
+    species on the page by clicking the "Show Only This Species" link
+-   Changed the layout of the top table on the correspondence
+    details page from being large on the horizontal to the vertical.
+-   cmap_admin.pl now allows selection of map sets by accession id
+    (very handy if many map sets are defined)
+-   Fixed bug in "Flip" button (Alex Feltus)
+-   Fixed bug in map details page feature type selection (Noel Yap)
+-   Fixed bug in web admin view of xrefs (Pankaj Jaiswal)
+-   Fixed bug in "view_feature_on_map" (Noel Yap)
+-   Added "cmap-fix-map-display-order.pl" script in "bin"
+-   Added ability to disallow automated name-based correspondences
+    based on feature type (e.g., don't create correspondences between
+    features of type "centromere")
+-   Fixed bug in pager URL on map details page
+
+
+
 0.11    2004-03-12
 
 -   Various bug fixes

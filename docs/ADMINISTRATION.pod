@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.4.2.3 $
+$Revision: 1.4.2.4 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -248,6 +248,45 @@ The full name of that type, such as "Maize Marker".
 =item * color 
 
 The color of the object.
+
+=item * attribute
+
+Attributes of feature, evidence and map types have been moved out of the
+database and into the config file.
+
+Attributes are essentially name, value pairs which describe something about the
+type.  They must be definined in <attribute> tags.  Here is an example entry:
+
+ <attribute>
+   name Description
+   value This is the description of the *_type.
+   is_public 1
+ </attribute>
+ <attribute>
+   name History
+   value This type was first discovered in the fourth century BC.
+ </attribute>
+
+Notice that is_public is optional.  If not given it will default to 1.
+
+=item * xref (cross-reference)
+
+Cross-references of feature, evidence and map types have been moved out of the
+database and into the config file.
+
+Cross-references (xrefs) are links from this type to another website.  They
+consist of a name and a url.  If the url is inside the "cmap/" namespace you
+can define just the end portion.  However if you want to link outside this
+website, you must include the "http://".  Here is an example entry:
+
+ <xref>
+   name Map Search
+   url map_search
+ </xref>
+ <xref>
+   name google
+   url http://www.google.com
+ </xref>
 
 =item * area_code (map and feature types only)
 
@@ -1550,6 +1589,35 @@ If you want a whole map set in a slot (e.g., a physical map set like
 "I-Map"), then use the string "map_set_aid" and the map set's
 accession ID.  You can use the admin interface ("/cgi-bin/cmap/admin")
 to easily find the accession IDs.
+
+=head1 USING CMAP MODULES IN CUSTOM SCRIPTS
+
+There are several CMap modules that can be used by scripts outside 
+of the cgi.  To view more documentation on module use, execute 
+'perldoc Module_Name.pm".
+
+Modules that are particularily useful:
+
+=over 4 
+
+=item * Bio::GMOD::CMap::Admin
+
+Modules in the Bio::GMOD::CMap::Admin namespace deal with data 
+manipulation.  There are methods in Bio::GMOD::CMap::Admin to 
+create/destroy all of the CMap objects (i.e. maps, features, etc). 
+Bio::GMOD::CMap::Admin::Import contains a method to import tab 
+delimited files.  View the perldoc of each module in the 
+Bio::GMOD::CMap::Admin namespace to find out more on how to use 
+them.
+
+=item * Bio::GMOD::CMap::Drawer
+
+Use this module to create just the image and the image map.  This 
+would be useful if you wanted to integrate a CMap image on another
+page without the control stuctures.  View the perldoc for instruction
+on how to use Drawer.pm.
+
+=back
 
 =head1 SAMPLE DATA
 

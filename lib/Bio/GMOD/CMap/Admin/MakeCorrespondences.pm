@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.42.2.3 2004-11-05 19:33:08 mwz444 Exp $
+# $Id: MakeCorrespondences.pm,v 1.42.2.4 2004-12-15 21:00:31 mwz444 Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.42.2.3 $)[-1];
+$VERSION = (qw$Revision: 1.42.2.4 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -110,7 +110,9 @@ would match.
 =cut
 
     my ( $self, %args ) = @_;
-    my @map_set_ids            = @{ $args{'map_set_ids'}            || [] };
+    #my @map_set_ids            = @{ $args{'map_set_ids'}            || [] };
+    my @from_map_set_ids       = @{ $args{'from_map_set_ids'}            || [] };
+    my @to_map_set_ids         = @{ $args{'to_map_set_ids'}            || [] };
     my @skip_feature_type_aids = @{ $args{'skip_feature_type_aids'} || [] };
     my $evidence_type_aid      = $args{'evidence_type_aid'}
       or return 'No evidence type';
@@ -170,7 +172,7 @@ would match.
         }
     }
 
-    my $feature_sql = q[
+    my $from_feature_sql = q[
         select f.feature_id,
                f.feature_name,
                f.feature_type_accession as feature_type_aid,
@@ -194,23 +196,35 @@ would match.
         and    f.map_id=map.map_id
         and    map.map_set_id=ms.map_set_id
     ];
+    my $to_feature_sql = $from_feature_sql;
 
-    if (@map_set_ids) {
-        for ( $feature_sql, $alias_sql ) {
-            $_ .= 'and map.map_set_id in (' . join( ', ', @map_set_ids ) . ') ';
+    if (@from_map_set_ids) {
+        for ( $from_feature_sql ) {
+            $_ .= 'and map.map_set_id in (' . join( ', ', @from_map_set_ids ) . ') ';
+        }
+    }
+    if (@to_map_set_ids) {
+        for ( $to_feature_sql  ) {
+            $_ .= 'and map.map_set_id in (' . join( ', ', @to_map_set_ids ) . ') ';
+        }
+    }
+    if (@from_map_set_ids or @to_map_set_ids) {
+        for ( $alias_sql ) {
+            $_ .= 'and map.map_set_id in (' . join( ', ', @from_map_set_ids,@to_map_set_ids ) . ') ';
         }
     }
 
     if (@skip_feature_type_aids) {
-        for ( $feature_sql, $alias_sql ) {
+        for ( $from_feature_sql, $alias_sql, $to_feature_sql ) {
             $_ .=
               "and f.feature_type_accession not in ('"
               . join( "', '", @skip_feature_type_aids ) . "')";
         }
     }
     print STDERR "Getting Features\n";
-    my $features = $db->selectall_hashref( $feature_sql, 'feature_id' );
-    my $aliases  = $db->selectall_arrayref($alias_sql);
+    my $from_features = $db->selectall_hashref( $from_feature_sql, 'feature_id' );
+    my $to_features   = $db->selectall_hashref( $to_feature_sql, 'feature_id' );
+    my $aliases    = $db->selectall_arrayref($alias_sql);
 
     print STDERR "Parsing Features\n";
     my %alias_lookup;
@@ -218,8 +232,8 @@ would match.
         push @{ $alias_lookup{ $a->[0] } }, $a->[1];
     }
 
-    my %names = ();
-    for my $f ( values %$features ) {
+    my %from_names = ();
+    for my $f ( values %$from_features ) {
         for my $name ( $f->{'feature_name'},
             @{ $alias_lookup{ $f->{'feature_id'} } || [] } )
         {
@@ -227,7 +241,20 @@ would match.
             if ( $name_regex and $name =~ /$name_regex/ ) {
                 $name = $1;
             }
-            $names{ lc $name }{ $f->{'feature_id'} } = 0;
+            $from_names{ lc $name }{ $f->{'feature_id'} } = 0;
+        }
+    }
+
+    my %to_names = ();
+    for my $f ( values %$to_features ) {
+        for my $name ( $f->{'feature_name'},
+            @{ $alias_lookup{ $f->{'feature_id'} } || [] } )
+        {
+            next unless $name;
+            if ( $name_regex and $name =~ /$name_regex/ ) {
+                $name = $1;
+            }
+            $to_names{ lc $name }{ $f->{'feature_id'} } = 0;
         }
     }
 
@@ -262,25 +289,26 @@ would match.
     }
     print STDERR "Inserting Features\n";
 
-    for my $name ( keys %names ) {
-        my @feature_ids = keys %{ $names{$name} };
+    for my $from_name ( keys %from_names ) {
+        my @from_feature_ids = keys %{ $from_names{$from_name} };
 
         #
-        # Only one feature has this name, so skip.
+        # Skip unless there is a matching name in %to_names
         #
-        next if scalar @feature_ids == 1;
+        my @to_feature_ids = keys %{ $to_names{$from_name} };
+        next unless @to_feature_ids;
 
         my %done;
-        for my $i ( 0 .. $#feature_ids ) {
-            my $fid1 = $feature_ids[$i];
-            my $f1   = $features->{$fid1};
+        for my $i ( 0 .. $#from_feature_ids ) {
+            my $fid1 = $from_feature_ids[$i];
+            my $f1   = $from_features->{$fid1};
 
-            for my $j ( $i + 1 .. $#feature_ids ) {
-                my $fid2 = $feature_ids[$j];
+            for my $j ( 0 .. $#to_feature_ids ) {
+                my $fid2 = $to_feature_ids[$j];
                 next if $fid1 == $fid2;         # same feature
                 next if $done{$fid1}{$fid2};    # already processed
 
-                my $f2 = $features->{$fid2};
+                my $f2 = $to_features->{$fid2};
 
                 #
                 # Check feature types.

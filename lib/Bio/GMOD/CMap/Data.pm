@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.165.2.17 2004-12-10 17:55:46 mwz444 Exp $
+# $Id: Data.pm,v 1.165.2.18 2004-12-15 21:00:26 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.165.2.17 $)[-1];
+$VERSION = (qw$Revision: 1.165.2.18 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -890,8 +890,17 @@ sub slot_data {
             my $sql_base_bottom = qq[
                     where    f.map_id=$map->{'map_id'}
 				   ];
+            my $alias_sql = qq [
+                    select  fa.feature_id,
+                            fa.alias
+                    from    cmap_feature f,
+                            cmap_feature_alias fa
+                    where   f.map_id=$map->{'map_id'}
+                        and f.feature_id = fa.feature_id
+            ];
+
             if ( defined($map_start) and defined($map_stop) ) {
-                $sql_base_bottom .= qq[
+                my $tmp_sql = qq[
 		       and      (
                         ( f.start_position>=$map_start and 
                           f.start_position<=$map_stop )
@@ -901,18 +910,24 @@ sub slot_data {
                             f.stop_position>=$map_start
                         )
 				 )
-		       ];
+                ];
+                $sql_base_bottom .= $tmp_sql;
+                $alias_sql       .= $tmp_sql;
             }
             elsif ( defined($map_start) ) {
-                $sql_base_bottom .=
+                my $tmp_sql =
                     " and (( f.start_position>="
                   . $map_start
                   . " ) or ( f.stop_position is not null and "
                   . " f.stop_position>="
                   . $map_start . " ))";
+                $sql_base_bottom .= $tmp_sql;
+                $alias_sql       .= $tmp_sql;
             }
             elsif ( defined($map_stop) ) {
-                $sql_base_bottom .= " and f.start_position<=" . $map_stop . " ";
+                my $tmp_sql = " and f.start_position<=" . $map_stop . " ";
+                $sql_base_bottom .= $tmp_sql;
+                $alias_sql       .= $tmp_sql;
             }
 
             $sql_base_bottom .= qq[
@@ -1007,34 +1022,31 @@ sub slot_data {
                 $self->get_cached_results( 4, $sql_str ) )
             {
 
+                # Get feature aliases
+                my $alias_results =
+                  $db->selectall_arrayref( $alias_sql, { Columns => {} }, () );
+                my %aliases = ();
+                foreach my $row (@$alias_results) {
+                    push @{ $aliases{ $row->{'feature_id'} } }, $row->{'alias'};
+                }
+
                 $map->{'features'} =
                   $db->selectall_hashref( $sql_str, 'feature_id', {}, () );
-                foreach my $rowKey ( keys %{ $map->{'features'} } ) {
-                    $map->{'features'}->{$rowKey}->{'feature_type'} =
+
+                for my $feature_id ( keys %{ $map->{'features'} } ) {
+                    my $ft =
                       $self->feature_type_data(
-                        $map->{'features'}->{$rowKey}->{'feature_type_aid'},
-                        'feature_type' );
-                    $map->{'features'}->{$rowKey}->{'default_rank'} =
-                      $self->feature_type_data(
-                        $map->{'features'}->{$rowKey}->{'feature_type_aid'},
-                        'default_rank' );
-                    $map->{'features'}->{$rowKey}->{'shape'} =
-                      $self->feature_type_data(
-                        $map->{'features'}->{$rowKey}->{'feature_type_aid'},
-                        'shape' );
-                    $map->{'features'}->{$rowKey}->{'color'} =
-                      $self->feature_type_data(
-                        $map->{'features'}->{$rowKey}->{'feature_type_aid'},
-                        'color' );
-                    $map->{'features'}->{$rowKey}->{'drawing_lane'} =
-                      $self->feature_type_data(
-                        $map->{'features'}->{$rowKey}->{'feature_type_aid'},
-                        'drawing_lane' );
-                    $map->{'features'}->{$rowKey}->{'drawing_priority'} =
-                      $self->feature_type_data(
-                        $map->{'features'}->{$rowKey}->{'feature_type_aid'},
-                        'drawing_priority' );
+                        $map->{'features'}{$feature_id}{'feature_type_aid'} );
+
+                    $map->{'features'}{$feature_id}{$_} = $ft->{$_} for qw[
+                      feature_type default_rank shape color
+                      drawing_lane drawing_priority
+                    ];
+
+                    $map->{'features'}{$feature_id}{'aliases'} =
+                      $aliases{$feature_id};
                 }
+
                 $self->store_cached_results( 4, $sql_str, $map->{'features'} );
             }
 
@@ -3205,6 +3217,46 @@ Return data for a list of evidence type acc. IDs.
         if (%supplied_evidence_types) {
             next unless ( $supplied_evidence_types{$evidence_type} );
         }
+        my @attributes = ();
+        my @xrefs      = ();
+
+        # Get Attributes from config file
+        my $configured_attributes =
+          $self->evidence_type_data( $evidence_type, 'attribute' );
+        if ( ref($configured_attributes) ne 'ARRAY' ) {
+            $configured_attributes = [ $configured_attributes, ];
+        }
+        foreach my $att (@$configured_attributes) {
+            next
+              unless ( defined( $att->{'name'} )
+                and defined( $att->{'value'} ) );
+            push @attributes,
+              {
+                attribute_name  => $att->{'name'},
+                attribute_value => $att->{'value'},
+                is_public       => defined( $att->{'is_public'} )
+                ? $att->{'is_public'}
+                : 1,
+              };
+        }
+
+        # Get Xrefs from config file
+        my $configured_xrefs =
+          $self->evidence_type_data( $evidence_type, 'xref' );
+        if ( ref($configured_xrefs) ne 'ARRAY' ) {
+            $configured_xrefs = [ $configured_xrefs, ];
+        }
+        foreach my $xref (@$configured_xrefs) {
+            next
+              unless ( defined( $xref->{'name'} )
+                and defined( $xref->{'url'} ) );
+            push @xrefs,
+              {
+                xref_name => $xref->{'name'},
+                xref_url  => $xref->{'url'},
+              };
+        }
+
         $return_array[ ++$#return_array ] = {
             'evidence_type_aid' => $evidence_type,
             'evidence_type'     =>
@@ -3212,7 +3264,8 @@ Return data for a list of evidence type acc. IDs.
             'rank'       => $self->evidence_type_data( $evidence_type, 'rank' ),
             'line_color' =>
               $self->evidence_type_data( $evidence_type, 'line_color' ),
-
+            'attributes' => \@attributes,
+            'xrefs'      => \@xrefs,
         };
     }
     my $default_color = $self->config_data('connecting_line_color');
@@ -3261,13 +3314,54 @@ Return data for a list of feature type acc. IDs.
         if (%supplied_feature_types) {
             next unless ( $supplied_feature_types{$feature_type} );
         }
+        my @attributes = ();
+        my @xrefs      = ();
+
+        # Get Attributes from config file
+        my $configured_attributes =
+          $self->feature_type_data( $feature_type, 'attribute' );
+        if ( ref($configured_attributes) ne 'ARRAY' ) {
+            $configured_attributes = [ $configured_attributes, ];
+        }
+        foreach my $att (@$configured_attributes) {
+            next
+              unless ( defined( $att->{'name'} )
+                and defined( $att->{'value'} ) );
+            push @attributes,
+              {
+                attribute_name  => $att->{'name'},
+                attribute_value => $att->{'value'},
+                is_public       => defined( $att->{'is_public'} )
+                ? $att->{'is_public'}
+                : 1,
+              };
+        }
+
+        # Get Xrefs from config file
+        my $configured_xrefs =
+          $self->feature_type_data( $feature_type, 'xref' );
+        if ( ref($configured_xrefs) ne 'ARRAY' ) {
+            $configured_xrefs = [ $configured_xrefs, ];
+        }
+        foreach my $xref (@$configured_xrefs) {
+            next
+              unless ( defined( $xref->{'name'} )
+                and defined( $xref->{'url'} ) );
+            push @xrefs,
+              {
+                xref_name => $xref->{'name'},
+                xref_url  => $xref->{'url'},
+              };
+        }
+
         $return_array[ ++$#return_array ] = {
             'feature_type_aid' => $feature_type,
             'feature_type'     =>
               $self->feature_type_data( $feature_type, 'feature_type' ),
-            'shape' => $self->feature_type_data( $feature_type, 'shape' ),
-            'color' => $self->feature_type_data( $feature_type, 'color' ),
-
+            'shape'      => $self->feature_type_data( $feature_type, 'shape' ),
+            'color'      => $self->feature_type_data( $feature_type, 'color' ),
+            'attributes' => \@attributes,
+            'xrefs'      => \@xrefs,
         };
     }
 
@@ -3865,6 +3959,44 @@ Returns data on map types.
         if (%supplied_map_types) {
             next unless $supplied_map_types{$map_type};
         }
+        my @attributes = ();
+        my @xrefs      = ();
+
+        # Get Attributes from config file
+        my $configured_attributes =
+          $self->map_type_data( $map_type, 'attribute' );
+        if ( ref($configured_attributes) ne 'ARRAY' ) {
+            $configured_attributes = [ $configured_attributes, ];
+        }
+        foreach my $att (@$configured_attributes) {
+            next
+              unless ( defined( $att->{'name'} )
+                and defined( $att->{'value'} ) );
+            push @attributes,
+              {
+                attribute_name  => $att->{'name'},
+                attribute_value => $att->{'value'},
+                is_public       => defined( $att->{'is_public'} )
+                ? $att->{'is_public'}
+                : 1,
+              };
+        }
+
+        # Get Xrefs from config file
+        my $configured_xrefs = $self->map_type_data( $map_type, 'xref' );
+        if ( ref($configured_xrefs) ne 'ARRAY' ) {
+            $configured_xrefs = [ $configured_xrefs, ];
+        }
+        foreach my $xref (@$configured_xrefs) {
+            next
+              unless ( defined( $xref->{'name'} )
+                and defined( $xref->{'url'} ) );
+            push @xrefs,
+              {
+                xref_name => $xref->{'name'},
+                xref_url  => $xref->{'url'},
+              };
+        }
 
         $return_array[ ++$#return_array ] = {
             map_type_aid  => $map_type,
@@ -3876,6 +4008,8 @@ Returns data on map types.
             map_units     => $self->map_type_data( $map_type, 'map_units' ),
             is_relational_map =>
               $self->map_type_data( $map_type, 'is_relational_map' ),
+            'attributes' => \@attributes,
+            'xrefs'      => \@xrefs,
         };
     }
 

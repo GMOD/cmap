@@ -8,7 +8,7 @@ CMap Install
 
 =head1 VERSION
 
-$Revision: 1.10 $
+$Revision: 1.10.2.1 $
 
 =head1 QUICK START
 
@@ -153,6 +153,10 @@ Once you've settled on your database of choice and have a working
 installation, you need to create the tables that will hold the data for
 the comparative maps.  In the "sql" directory, you will find create
 scripts for all the databases on which CMap is known to run.
+
+If you are installing CMap tables into a Chado database please see the
+documentation in the chado_integration directory.  This will guide you
+through installing the tables.
 
 For MySQL, you can do the following to create the database "CMAP" and
 grant appropriate permissions to a user "joe" with the password
