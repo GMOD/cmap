@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.155 2004-09-09 16:24:46 mwz444 Exp $
+# $Id: Data.pm,v 1.156 2004-09-09 17:38:35 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.155 $)[-1];
+$VERSION = (qw$Revision: 1.156 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -4588,8 +4588,8 @@ sub cmap_entry_data {
             $map_sql_str.=" having count(distinct(cl.feature_correspondence_id)) >=$min_correspondences ";
         }
         $map_sql_str.=q[ 
-            group by map.accession_id, map.map_name,
-                map.start_position,map.stop_position 
+            group by map.accession_id,map.map_id, map.map_name,
+                map.start_position,map.stop_position,map.display_order 
         ];
         ###Get map info
         unless ($map_info 
@@ -4637,7 +4637,7 @@ sub cmap_entry_data {
         if ($name_search){
             $sql_str.=" and map.map_name='$name_search' ";
         }
-        $sql_str .= q[ group by map_id, feature_type_aid
+        $sql_str .= q[ group by map.map_id, feature_type_aid
             ];
         if (my $array_ref =
             $self->get_cached_results(3, $sql_str . "$ref_map_set_id" ) )
