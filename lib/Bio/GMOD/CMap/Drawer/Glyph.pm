@@ -24,7 +24,7 @@ use Bio::GMOD::CMap::Constants;
 use Regexp::Common;
 require Class::Base;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.7 $)[-1];
+$VERSION = (qw$Revision: 1.8 $)[-1];
 
 use base 'Class::Base';
 
@@ -561,7 +561,7 @@ sub read_depth {
     my @coords;
     my $reverse = $label_side eq RIGHT ? 1 : -1;
 
-    if ($name =~ $RE{num}{real}){
+    if ($name =~ /^$RE{'num'}{'real'}$/){
         $x_pos2 = $x_pos1+($name * $reverse);
     }
     else{
