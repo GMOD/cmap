@@ -184,6 +184,24 @@
                         </tr>
 
                         <tr>
+                            <td align="right" valign="top">Include Correspondence Types:</td>
+
+                            <td>
+                                [% IF form_data.evidence_types.size %]
+                                    [% form_data.evidence_types.unshift({evidence_type_aid=>'-1',evidence_type=>'--All--'}) %]
+                                    <select name="evidence_types" size="[% IF form_data.evidence_types.size>5; '5'; ELSE; '3'; END %]" multiple>
+                                        [% FOREACH et=form_data.evidence_types %]
+                                            <option value="[% et.evidence_type_aid %]"[% IF included_evidence.${et.evidence_type_aid}; ' selected'; END %]>[% et.evidence_type %]</option>
+                                        [% END %]
+                                    </select>
+    
+                                [% ELSE %]
+                                    There are no evidence types!
+                                [% END %]
+                            </td>
+                        </tr>
+
+                        <tr>
                             <td colspan="2" align="center">
                                 <input type="hidden" name="ref_map_set_aid" value="[% apr.param('ref_map_set_aid') %]">
                                 <input type="hidden" name="ref_map_aid"     value="[% apr.param('ref_map_aid') %]">

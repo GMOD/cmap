@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.16 2003-01-11 03:46:25 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.17 2003-01-11 20:43:18 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.16 $)[-1];
+$VERSION = (qw$Revision: 1.17 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
@@ -36,7 +36,7 @@ use base 'Bio::GMOD::CMap';
 
 use constant INIT_PARAMS => [ qw(
     apr slots highlight font_size image_size image_type 
-    label_features include_feature_types
+    label_features include_feature_types include_evidence_types
 ) ];
 
 # ----------------------------------------------------
@@ -374,6 +374,25 @@ Gets a completed map.
 #}
 
 # ----------------------------------------------------
+sub include_evidence_types {
+
+=pod
+
+=head2 include_evidence_types
+
+Gets/sets which evidence type (accession IDs) to include.
+
+=cut
+    my $self = shift;
+
+    if ( my $arg = shift ) {
+        push @{ $self->{'include_evidence_types'} }, @$arg; 
+    }
+
+    return $self->{'include_evidence_types'};
+}
+
+# ----------------------------------------------------
 sub include_feature_types {
 
 =pod
@@ -657,10 +676,11 @@ necessary data for drawing.
     my $self = shift;
 
     unless ( $self->{'data'} ) {
-        my $data                  =  Bio::GMOD::CMap::Data->new;
-        $self->{'data'}           =  $data->cmap_data( 
-            slots                 => $self->slots,
-            include_feature_types => $self->include_feature_types,
+        my $data                   =  Bio::GMOD::CMap::Data->new;
+        $self->{'data'}            =  $data->cmap_data( 
+            slots                  => $self->slots,
+            include_feature_types  => $self->include_feature_types,
+            include_evidence_types => $self->include_evidence_types,
         );
     }
 
@@ -680,6 +700,22 @@ Returns whether or not a feature has a correspondence.
     my $self       = shift;
     my $feature_id = shift or return;
     return defined $self->{'data'}{'correspondences'}{ $feature_id };
+}
+
+# ----------------------------------------------------
+sub feature_correspondence_info {
+
+=pod
+
+=head2 feature_correspondence_info
+
+Given a feature correspondence ID, returns what is known about the 
+correspondence.
+
+=cut
+    my $self                      = shift;
+    my $feature_correspondence_id = shift or return;
+    return {};
 }
 
 # ----------------------------------------------------

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.22 2003-01-11 03:46:25 kycl4rk Exp $
+# $Id: Map.pm,v 1.23 2003-01-11 20:43:18 kycl4rk Exp $
 
 =pod
 
@@ -15,7 +15,7 @@ Bio::GMOD::CMap::Drawer::Map - draw a map
 
 =head1 DESCRIPTION
 
-Blah blah blah.
+You'll never directly use this module.
 
 =head1 METHODS
 
@@ -23,7 +23,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.22 $)[-1];
+$VERSION = (qw$Revision: 1.23 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -516,33 +516,33 @@ Lays out the map.
         $top_y = $base_y unless defined $top_y;
         $top_y = $base_y if $base_y < $top_y;
 
-        my @bounds    =  $self->$draw_sub_name(
-            map_id    => $map_id,
-            map_units => $show_map_units ? $self->map_units( $map_id ) : '',
-            drawer    => $drawer,
-            coords    => [ $base_x, $base_y, $base_y + $pixel_height ],
-            area      => $area,
+        my @map_bounds =  $self->$draw_sub_name(
+            map_id     => $map_id,
+            map_units  => $show_map_units ? $self->map_units( $map_id ) : '',
+            drawer     => $drawer,
+            coords     => [ $base_x, $base_y, $base_y + $pixel_height ],
+            area       => $area,
         );
 
         if ( $drawer->highlight_feature( $self->map_name( $map_id ) ) ) {
             $drawer->add_drawing(
-                RECTANGLE, @bounds, 
+                RECTANGLE, @map_bounds, 
                 $self->config('feature_highlight_fg_color')
             );
 
             $drawer->add_drawing(
-                FILLED_RECT, @bounds, 
+                FILLED_RECT, @map_bounds, 
                 $self->config('feature_highlight_bg_color'),
                 0
             );
         }
 
-        $min_x    = $bounds[0] unless defined $min_x;
-        $min_x    = $bounds[0] if $bounds[0] < $min_x;
-        $max_x    = $bounds[2] unless defined $max_x;
-        $max_x    = $bounds[2] if $bounds[2] > $max_x;
-        $bottom_y = $bounds[3] unless defined $bottom_y;
-        $bottom_y = $bounds[3] if $bounds[3] > $bottom_y;
+        $min_x    = $map_bounds[0] unless defined $min_x;
+        $min_x    = $map_bounds[0] if $map_bounds[0] < $min_x;
+        $max_x    = $map_bounds[2] unless defined $max_x;
+        $max_x    = $map_bounds[2] if $map_bounds[2] > $max_x;
+        $bottom_y = $map_bounds[3] unless defined $bottom_y;
+        $bottom_y = $map_bounds[3] if $map_bounds[3] > $bottom_y;
 
         #
         # Tick marks.
@@ -602,9 +602,9 @@ Lays out the map.
 #            $slots->{ $slot_no }{'field'} eq 'map_set_aid'
 #        ) {
 #            my $buffer     = 4;
-#            my $map_left   = $bounds[0];
-#            my $map_right  = $bounds[2];
-#            my $map_bottom = $bounds[3] + $reg_font->height;
+#            my $map_left   = $map_bounds[0];
+#            my $map_right  = $map_bounds[2];
+#            my $map_bottom = $map_bounds[3] + $reg_font->height;
 #            my $map_middle = $map_left + ( ( $map_right - $map_left ) / 2 );
 #            my $string     = '(Delete)';
 #            my $string_x   =
@@ -962,15 +962,15 @@ Lays out the map.
                     STRING, $font, $label_x, $label_y, $text, $color
                 );
 
-                my @bounds = (
+                my @label_bounds = (
                     $label_x - $buffer, 
                     $label_y,
                     $label_end + $buffer, 
                     $label_y + $font->height,
                 );
 
-                $leftmostf  = $bounds[0] if $bounds[0] < $leftmostf;
-                $rightmostf = $bounds[2] if $bounds[2] > $rightmostf;
+                $leftmostf  = $label_bounds[0] if $label_bounds[0]<$leftmostf;
+                $rightmostf = $label_bounds[2] if $label_bounds[2]>$rightmostf;
 
                 #
                 # If the feature got a label, then update the right 
@@ -979,11 +979,13 @@ Lays out the map.
                 #
                 if ( $label_side eq RIGHT ) {
                     $features_with_corr{ $label->{'feature_id'} }{'right'} = 
-                        [ $bounds[2], ($bounds[1]+$bounds[3])/2 ];
+                        [ $label_bounds[2], 
+                          ($label_bounds[1]+$label_bounds[3])/2 ];
                 }
                 else {
                     $features_with_corr{ $label->{'feature_id'} }{'left'} = 
-                        [ $bounds[0], ($bounds[1]+$bounds[3])/2 ];
+                        [ $label_bounds[0], 
+                          ($label_bounds[1]+$label_bounds[3])/2 ];
                 }
 
                 #
@@ -991,28 +993,28 @@ Lays out the map.
                 #
                 if ( $label->{'is_highlighted'} ) {
                     $drawer->add_drawing(
-                        RECTANGLE, @bounds, 
+                        RECTANGLE, @label_bounds, 
                         $self->config('feature_highlight_fg_color')
                     );
 
                     $drawer->add_drawing(
-                        FILLED_RECT, @bounds, 
+                        FILLED_RECT, @label_bounds, 
                         $self->config('feature_highlight_bg_color'),
                         0
                     );
                 }
 
                 $drawer->add_map_area(
-                    coords => \@bounds,
+                    coords => \@label_bounds,
                     url    => $label->{'url'},
                     alt    => 'Details: '.$text,
                 );
 
-                $min_x    = $bounds[0] if $bounds[0] < $min_x;
-                $top_y    = $bounds[1] if $bounds[1] < $top_y;
-                $max_x    = $bounds[2] if $bounds[2] > $max_x;
-                $bottom_y = $bounds[3] if $bounds[3] > $bottom_y;
-                $min_y    = $label_y   if $label_y   < $min_y;
+                $min_x    = $label_bounds[0] if $label_bounds[0] < $min_x;
+                $top_y    = $label_bounds[1] if $label_bounds[1] < $top_y;
+                $max_x    = $label_bounds[2] if $label_bounds[2] > $max_x;
+                $bottom_y = $label_bounds[3] if $label_bounds[3] > $bottom_y;
+                $min_y    = $label_y         if $label_y         < $min_y;
 
                 #
                 # Now connect the label to the middle of the feature.
@@ -1102,11 +1104,33 @@ Lays out the map.
             join(',', @{ $drawer->include_feature_types || [] }).
             ';highlight='.$drawer->highlight;
 
-        $drawer->add_map_area(
-            coords => $area || \@bounds,
-            url    => $url,
-            alt    => 'Details: '.$self->map_name,
-        );
+        if ( $is_relational && $slot_no != 0 ) {
+            $drawer->add_map_area(
+                coords => \@map_bounds,
+                url    => $url,
+                alt    => 'Details: '.$self->map_name,
+            );
+        }
+        else {
+            my $map_bottom_x = $map_bounds[0];
+            my $map_bottom_y = $map_bounds[3] + 5;
+            $drawer->add_drawing(
+                STRING, $reg_font, $map_bottom_x, $map_bottom_y, '?', 'grey'
+            );
+            my @area = (
+                $map_bottom_x - 2,
+                $map_bottom_y - 2,
+                $map_bottom_x + $reg_font->width + 2,
+                $map_bottom_y + $reg_font->height + 2,
+            );
+            $drawer->add_drawing( RECTANGLE, @area, 'grey' );
+            $drawer->add_map_area(
+                coords => \@area,
+                url    => $url,
+                alt    => 'Details: '.$self->map_name,
+            );
+            $bottom_y = $area[3] if $area[3] > $bottom_y;
+        }
 
         #
         # The map title(s).

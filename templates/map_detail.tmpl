@@ -85,7 +85,7 @@
                     <td>
                         [% IF feature_types.size %]
                             [% feature_types.unshift({feature_type_aid=>'-1',feature_type=>'--All--'}) %]
-                            <select name="feature_types" size="5" multiple>
+                            <select name="include_feature_types" size="5" multiple>
                                 [% FOREACH ft=feature_types %]
                                     <option value="[% ft.feature_type_aid %]"[% IF included_features.${ft.feature_type_aid}; ' selected'; END %]>[% ft.feature_type %]</option>
                                 [% END %]
@@ -122,14 +122,6 @@
     <tr>
         <td valign="top" align="center" colspan="4">
             <form method="GET" action="map_details">
-            Restrict by Feature Type:
-            <select name="table_feature_types" size="5" multiple>
-                [% feature_types.unshift({feature_type_aid=>'-1',feature_type=>'--All--'}) %]
-                [% FOREACH ft=feature_types %]
-                    <option value="[% ft.feature_type_aid %]"[% IF ft.feature_type_aid==apr.param('feature_type_aid'); ' selected'; END %]>[% ft.feature_type %]</option>
-                [% END %]
-            </select>
-            <br>
             Restrict by Comparative Map:
             <select name="comparative_map_aid">
                 <option value="">--All--</option>
@@ -143,6 +135,7 @@
             <input type="hidden" name="ref_map_set_aid"  value="[% apr.param('ref_map_set_aid') %]">
             <input type="hidden" name="ref_map_aid"      value="[% apr.param('ref_map_aid') %]">
             <input type="hidden" name="comparative_maps" value="[% apr.param('comparative_maps') %]">
+            <input type="hidden" name="feature_types"    value="[% apr.param('feature_types') %]">
             <input type="submit" value="Submit">
             </form>
         </td>

@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapDetailViewer;
 
-# $Id: MapDetailViewer.pm,v 1.5 2003-01-11 03:46:25 kycl4rk Exp $
+# $Id: MapDetailViewer.pm,v 1.6 2003-01-11 20:43:18 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use Apache::Constants;
 use Data::Dumper;
@@ -40,20 +40,32 @@ sub handler {
     #
     # Make a jazz noise here...
     #
-    my ( $self, $apr )      = @_;
-    my $ref_map_set_aid     = $apr->param('ref_map_set_aid')  ||      0;
-    my $ref_map_aid         = $apr->param('ref_map_aid')      ||     '';
-    my $ref_map_start       = $apr->param('ref_map_start');
-    my $ref_map_stop        = $apr->param('ref_map_stop');
-    my $comparative_maps    = $apr->param('comparative_maps') ||     '';
-    my $highlight           = $apr->param('highlight')        ||     '';
-    my $font_size           = $apr->param('font_size')        ||     '';
-    my $image_size          = $apr->param('image_size')       ||     '';
-    my $image_type          = $apr->param('image_type')       ||     '';
-    my $label_features      = $apr->param('label_features')   ||     '';
-    my $action              = $apr->param('action')           || 'view';
-    my @feature_types       = split(/,/, $apr->param('feature_types') );
-    my @table_feature_types = ( $apr->param('table_feature_types')    );
+    my ( $self, $apr )   = @_;
+    my $ref_map_set_aid  = $apr->param('ref_map_set_aid')  ||      0;
+    my $ref_map_aid      = $apr->param('ref_map_aid')      ||     '';
+    my $ref_map_start    = $apr->param('ref_map_start');
+    my $ref_map_stop     = $apr->param('ref_map_stop');
+    my $comparative_maps = $apr->param('comparative_maps') ||     '';
+    my $highlight        = $apr->param('highlight')        ||     '';
+    my $font_size        = $apr->param('font_size')        ||     '';
+    my $image_size       = $apr->param('image_size')       ||     '';
+    my $image_type       = $apr->param('image_type')       ||     '';
+    my $label_features   = $apr->param('label_features')   ||     '';
+    my $action           = $apr->param('action')           || 'view';
+
+    
+    #
+    # Take the feature types either from the query string (first
+    # choice, splitting the string on commas) or from the POSTed 
+    # form <select>.
+    #
+    my @feature_types;
+    if ( $apr->param('feature_types') ) {
+        @feature_types = split(/,/, $apr->param('feature_types') );
+    }
+    else {
+        @feature_types = ( $apr->param('include_feature_types') );
+    }
 
     my %slots = (
         0 => {
@@ -145,21 +157,23 @@ sub handler {
         my $ref_map = $slots{0};
         $apr->param('ref_map_start', $ref_map->{'start'});
         $apr->param('ref_map_stop',  $ref_map->{'stop'} );
+        $apr->param('feature_types', join(',', @feature_types ) );
 
         my $html;
         my $t = $self->template;
         $t->process( 
             TEMPLATE, 
             { 
-                apr              => $apr,
-                features         => $data->{'features'},
-                feature_types    => $data->{'feature_types'},
-                reference_map    => $data->{'reference_map'},
-                comparative_maps => $data->{'comparative_maps'},
-                drawer           => $drawer,
-                page             => $self->page,
-                title            => 'Reference Map Details',
-                stylesheet       => $self->stylesheet,
+                apr               => $apr,
+                features          => $data->{'features'},
+                feature_types     => $data->{'feature_types'},
+                reference_map     => $data->{'reference_map'},
+                comparative_maps  => $data->{'comparative_maps'},
+                drawer            => $drawer,
+                page              => $self->page,
+                title             => 'Reference Map Details',
+                stylesheet        => $self->stylesheet,
+                included_features => { map { $_, 1 } @feature_types },
             },
             \$html 
         ) or $html = $t->error;

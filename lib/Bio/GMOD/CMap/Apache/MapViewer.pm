@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 
-# $Id: MapViewer.pm,v 1.9 2003-01-11 03:46:25 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.10 2003-01-11 20:43:18 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $TEMPLATE $PAGE );
-$VERSION = (qw$Revision: 1.9 $)[-1];
+$VERSION = (qw$Revision: 1.10 $)[-1];
 
 use Apache::Constants;
 use Apache::Request;
@@ -36,6 +36,7 @@ sub handler {
     my $image_type            = $apr->param('image_type')            || '';
     my $label_features        = $apr->param('label_features')        || '';
     my @feature_types         = ( $apr->param('feature_types') );
+    my @evidence_types        = ( $apr->param('evidence_types') );
 
     if ( 
         $prev_ref_map_set_aid && $prev_ref_map_set_aid != $ref_map_set_aid 
@@ -108,16 +109,17 @@ sub handler {
     #
     my $drawer;
     if ( $ref_map_aid ) {
-        $drawer                   =  Bio::GMOD::CMap::Drawer->new(
-            apr                   => $apr,
-            slots                 => \%slots,
-            highlight             => $highlight,
-            font_size             => $font_size,
-            image_size            => $image_size,
-            image_type            => $image_type,
-            label_features        => $label_features,
-            include_feature_types => \@feature_types,
-            debug                 => $self->config('debug'),
+        $drawer                    =  Bio::GMOD::CMap::Drawer->new(
+            apr                    => $apr,
+            slots                  => \%slots,
+            highlight              => $highlight,
+            font_size              => $font_size,
+            image_size             => $image_size,
+            image_type             => $image_type,
+            label_features         => $label_features,
+            include_feature_types  => \@feature_types,
+            include_evidence_types => \@evidence_types,
+            debug                  => $self->config('debug'),
         ) or return $self->error( "Drawer: ".Bio::GMOD::CMap::Drawer->error );
 
         %slots = %{ $drawer->slots };
@@ -126,9 +128,11 @@ sub handler {
     #
     # Get the data for the form.
     #
-    my $data      = $self->data_module;
-    my $form_data = $data->cmap_form_data( slots => \%slots ) or 
-        return $self->error( $data->error );
+    my $data                  = $self->data_module;
+    my $form_data             = $data->cmap_form_data( 
+        slots                 => \%slots,
+#        include_feature_types => \@feature_types,
+    ) or return $self->error( $data->error );
 
     #
     # The start and stop may have had to be moved as there 
@@ -162,6 +166,7 @@ sub handler {
             title             => 'Comparative Maps',
             stylesheet        => $self->stylesheet,
             included_features => { map { $_, 1 } @feature_types },
+            included_evidence => { map { $_, 1 } @evidence_types },
         },
         \$html 
     ) or $html = $t->error;

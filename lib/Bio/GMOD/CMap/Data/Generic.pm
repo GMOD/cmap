@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data::Generic;
 
-# $Id: Generic.pm,v 1.16 2003-01-11 03:46:25 kycl4rk Exp $
+# $Id: Generic.pm,v 1.17 2003-01-11 20:43:18 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.16 $)[-1];
+$VERSION = (qw$Revision: 1.17 $)[-1];
 
 use Data::Dumper; # really just for debugging
 use Bio::GMOD::CMap;
@@ -113,7 +113,6 @@ The SQL for finding all the features on a map.
     #
     # "-1" is a reserved value meaning "All" feature types.
     #
-    warn "feature type aids =\n", Dumper(@feature_type_aids), "\n";
     if ( @feature_type_aids && grep { !/^-1$/ } @feature_type_aids ) {
         $sql .= 'and ft.accession_id in ('.
             join( ',', map { qq['$_'] } @feature_type_aids ).
@@ -659,27 +658,46 @@ sub map_data_feature_correspondence_by_map_sql {
 The SQL for finding all correspondences between two maps.
 
 =cut
-    my $self = shift;
+    my ( $self, %args )    = @_;
+    my @evidence_type_aids = @{ $args{'evidence_type_aids'} || [] };
     
-    return q[
+    my $sql = q[
         select   f1.feature_id as feature_id1,
-                 f2.feature_id as feature_id2, 
-                 cl.feature_correspondence_id
+                 f2.feature_id as feature_id2,
+                 cl.feature_correspondence_id,
+                 et.accession_id as evidence_type_aid,
+                 et.rank as evidence_rank,
+                 et.evidence_type
         from     cmap_feature f1, 
                  cmap_feature f2, 
-                 cmap_correspondence_lookup cl,
-                 cmap_feature_correspondence fc
+                 cmap_correspondence_lookup cl, 
+                 cmap_feature_correspondence fc,
+                 cmap_correspondence_evidence ce,
+                 cmap_evidence_type et
         where    f1.map_id=?
         and      f1.start_position>=?
         and      f1.start_position<=?
         and      f1.feature_id=cl.feature_id1
         and      cl.feature_correspondence_id=fc.feature_correspondence_id
         and      fc.is_enabled=1
+        and      fc.feature_correspondence_id=ce.feature_correspondence_id
+        and      ce.evidence_type_id=et.evidence_type_id
         and      cl.feature_id2=f2.feature_id
         and      f2.map_id=?
         and      f2.start_position>=?
         and      f2.start_position<=?
     ];
+
+    #
+    # "-1" is a reserved value meaning "All" feature types.
+    #
+    if ( @evidence_type_aids && grep { !/^-1$/ } @evidence_type_aids ) {
+        $sql .= 'and et.accession_id in ('.
+            join( ',', map { qq['$_'] } @evidence_type_aids ).
+        ')';
+    }
+
+    return $sql;
 }
 
 # ----------------------------------------------------
@@ -692,27 +710,46 @@ sub map_data_feature_correspondence_by_map_set_sql{
 The SQL for finding all correspondences between two maps.
 
 =cut
-    my $self = shift;
+    my ( $self, %args )    = @_;
+    my @evidence_type_aids = @{ $args{'evidence_type_aids'} || [] };
     
-    return q[
+    my $sql = q[
         select   f1.feature_id as feature_id1,
                  f2.feature_id as feature_id2, 
-                 cl.feature_correspondence_id
+                 cl.feature_correspondence_id,
+                 et.accession_id as evidence_type_aid,
+                 et.rank as evidence_rank,
+                 et.evidence_type
         from     cmap_map map,
                  cmap_feature f1, 
                  cmap_feature f2, 
                  cmap_correspondence_lookup cl,
-                 cmap_feature_correspondences fc
+                 cmap_feature_correspondences fc,
+                 cmap_correspondence_evidence ce,
+                 cmap_evidence_type et
         where    map.map_set_id=?
         and      map.map_id=f1.map_id
         and      f1.feature_id=cl.feature_id1
         and      cl.feature_correspondence_id=fc.feature_correspondence_id
         and      fc.is_enabled=1
+        and      fc.feature_correspondence_id=ce.feature_correspondence_id
+        and      ce.evidence_type_id=et.evidence_type_id
         and      cl.feature_id2=f2.feature_id
         and      f2.map_id=?
         and      f2.start_position>=?
         and      f2.start_position<=?
     ];
+
+    #
+    # "-1" is a reserved value meaning "All" feature types.
+    #
+    if ( @evidence_type_aids && grep { !/^-1$/ } @evidence_type_aids ) {
+        $sql .= 'and et.accession_id in ('.
+            join( ',', map { qq['$_'] } @evidence_type_aids ).
+        ')';
+    }
+
+    return $sql;
 }
 
 # ----------------------------------------------------
@@ -725,27 +762,47 @@ sub map_data_feature_correspondence_by_multi_maps_sql{
 The SQL for finding all correspondences between two maps.
 
 =cut
-    my ( $self, $map_ids ) = @_;
+    my ( $self, %args )    = @_;
+    my $map_ids            = $args{'reference_map_ids'};
+    my @evidence_type_aids = @{ $args{'evidence_type_aids'} || [] };
     
-    return qq[
+    my $sql = qq[
         select   f1.feature_id as feature_id1,
                  f2.feature_id as feature_id2, 
-                 cl.feature_correspondence_id
+                 cl.feature_correspondence_id,
+                 et.accession_id as evidence_type_aid,
+                 et.rank as evidence_rank,
+                 et.evidence_type
         from     cmap_map map,
                  cmap_feature f1, 
                  cmap_feature f2, 
                  cmap_correspondence_lookup cl,
-                 cmap_feature_correspondence fc
+                 cmap_feature_correspondence fc,
+                 cmap_correspondence_evidence ce,
+                 cmap_evidence_type et
         where    map.map_id in ($map_ids)
         and      map.map_id=f1.map_id
         and      f1.feature_id=cl.feature_id1
         and      cl.feature_correspondence_id=fc.feature_correspondence_id
         and      fc.is_enabled=1
+        and      fc.feature_correspondence_id=ce.feature_correspondence_id
+        and      ce.evidence_type_id=et.evidence_type_id
         and      cl.feature_id2=f2.feature_id
         and      f2.map_id=?
         and      f2.start_position>=?
         and      f2.start_position<=?
     ];
+
+    #
+    # "-1" is a reserved value meaning "All" feature types.
+    #
+    if ( @evidence_type_aids && grep { !/^-1$/ } @evidence_type_aids ) {
+        $sql .= 'and et.accession_id in ('.
+            join( ',', map { qq['$_'] } @evidence_type_aids ).
+        ')';
+    }
+
+    return $sql;
 }
 
 # ----------------------------------------------------
