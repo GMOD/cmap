@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.84 2004-11-05 06:29:22 mwz444 Exp $
+# $Id: Drawer.pm,v 1.85 2004-11-05 16:08:48 mwz444 Exp $
 
 =head1 NAME
 
@@ -205,7 +205,7 @@ Set to 1 scale the maps with the same unit.  Default is 1.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.84 $)[-1];
+$VERSION = (qw$Revision: 1.85 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -1128,6 +1128,18 @@ necessary data for drawing.
           or return $self->error( $data->error );
 
         return $self->error("Problem getting data") unless $self->{'data'};
+
+        # Set the feature and evidence types for later use.
+        $self->included_feature_types(
+            $self->{'data'}{'included_feature_type_aids'} );
+        $self->corr_only_feature_types(
+            $self->{'data'}{'corr_only_feature_type_aids'} );
+        $self->ignored_feature_types(
+            $self->{'data'}{'ignored_feature_type_aids'} );
+        $self->included_evidence_types(
+            $self->{'data'}{'included_evidence_type_aids'} );
+        $self->ignored_evidence_types(
+            $self->{'data'}{'ignored_evidence_type_aids'} );
     }
 
     return $self->{'data'};
@@ -1737,8 +1749,7 @@ Returns the data for one or all slots.
     my $data = $self->data;
 
     if ( defined( my $slot_no = shift ) ) {
-        return
-          exists $data->{'slots'}{$slot_no}
+        return exists $data->{'slots'}{$slot_no}
           ? $data->{'slots'}{$slot_no}
           : undef;
     }
