@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap;
 
-# $Id: CMap.pm,v 1.30 2003-03-14 20:10:13 kycl4rk Exp $
+# $Id: CMap.pm,v 1.31 2003-04-15 02:01:20 kycl4rk Exp $
 
 =head1 NAME
 
@@ -44,6 +44,29 @@ sub init {
     my ( $self, $config ) = @_;
     $self->data_source( $config->{'data_source'} );
     return $self;
+}
+
+# ----------------------------------------------------
+sub cache_dir {
+
+=pod
+
+=head2 cache_dir
+
+Returns the cache directory.
+
+=cut
+
+    my $self = shift;
+
+    unless ( defined $self->{'cache_dir'} ) {
+        my $cache_dir   = $self->config('cache_dir');
+        -d $cache_dir || eval{ mkpath( $cache_dir, 0, 0700 ) } || 
+            return $self->error("No cache dir; Using '$cache_dir'");
+        $self->{'cache_dir'} = $cache_dir;
+    }
+
+    return $self->{'cache_dir'};
 }
 
 # ----------------------------------------------------
@@ -315,6 +338,8 @@ Returns a Template Toolkit object.
             unless -d $template_dir;
 
         $self->{'template'} = Template->new( 
+            COMPILE_EXT     => '.ttc',
+            COMPILE_DIR     => $self->cache_dir,
             INCLUDE_PATH    => $template_dir,
             FILTERS         => {
                 dump        => sub { Dumper( shift() ) },
