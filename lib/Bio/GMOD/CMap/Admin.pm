@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.46 2004-02-10 23:06:44 kycl4rk Exp $
+# $Id: Admin.pm,v 1.46.2.1 2004-06-03 21:29:41 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.46 $)[-1];
+$VERSION = (qw$Revision: 1.46.2.1 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -225,6 +225,19 @@ Delete an evidence type.
 }
 
 # ----------------------------------------------------
+sub evidence_type_update {
+    my ( $self, %args ) = @_;
+
+    return $self->generic_update(
+        table    => 'cmap_evidence_type',
+        pk_name  => 'evidence_type_id',
+        values   => \%args,
+        required => [ qw/ accession_id evidence_type / ],
+        fields   => [ qw/ accession_id evidence_type line_color rank / ],
+    );
+}
+
+# ----------------------------------------------------
 sub feature_create {
     my ( $self, %args ) = @_;
     my @missing         = ();
@@ -335,6 +348,19 @@ sub feature_alias_create {
 }
 
 # ----------------------------------------------------
+sub feature_alias_update {
+    my ( $self, %args ) = @_;
+
+    return $self->generic_update(
+        table    => 'cmap_feature_alias',
+        pk_name  => 'feature_alias_id',
+        values   => \%args,
+        required => [ qw/ feature_id alias / ],
+        fields   => [ qw/ feature_id alias / ],
+    );
+}
+
+# ----------------------------------------------------
 sub feature_delete {
 
 =pod
@@ -400,6 +426,27 @@ Delete a feature.
     );
 
     return $map_id;
+}
+
+# ----------------------------------------------------
+sub feature_update {
+    my ( $self, %args ) = @_;
+
+    return $self->generic_update(
+        table    => 'cmap_feature',
+        pk_name  => 'feature_id',
+        values   => \%args,
+        required => [
+            qw/ accession_id feature_name start_position 
+                map_id feature_type_id
+            /
+        ],
+        fields   => [
+            qw/ accession_id feature_name start_position stop_position 
+                map_id feature_type_id is_landmark
+            /
+        ],
+    );
 }
 
 # ----------------------------------------------------
@@ -1082,6 +1129,22 @@ Delete a feature type.
 }
 
 # ----------------------------------------------------
+sub feature_type_update {
+    my ( $self, %args ) = @_;
+
+    return $self->generic_update(
+        table    => 'cmap_feature_type',
+        pk_name  => 'feature_type_id',
+        values   => \%args,
+        required => [ qw/ accession_id feature_type / ],
+        fields   => [
+            qw/ accession_id feature_type shape color default_rank
+            drawing_lane drawing_priority /
+        ],
+    );
+}
+
+# ----------------------------------------------------
 sub feature_types {
 
 =pod
@@ -1219,6 +1282,23 @@ Delete a map.
 }
 
 # ----------------------------------------------------
+sub map_update {
+    my ( $self, %args ) = @_;
+
+    return $self->generic_update(
+        table    => 'cmap_map',
+        pk_name  => 'map_id',
+        values   => \%args,
+        required => [qw/ accession_id map_name start_position stop_position /],
+        fields   => [
+            qw/ accession_id map_name display_order
+                start_position stop_position map_set_id
+            /
+        ],
+    );
+}
+
+# ----------------------------------------------------
 sub map_set_create {
     my ( $self, %args )      = @_;
     my $db                   = $self->db;
@@ -1326,6 +1406,28 @@ Delete a map set.
 }
 
 # ----------------------------------------------------
+sub map_set_update {
+    my ( $self, %args ) = @_;
+
+    return $self->generic_update(
+        table    => 'cmap_map_set',
+        pk_name  => 'map_set_id',
+        values   => \%args,
+        required => [ 
+            qw/ accession_id map_set_name short_name species_id 
+                map_type_id
+            / 
+        ],
+        fields   => [
+            qw/ accession_id map_set_name short_name
+                color shape is_enabled display_order can_be_reference_map
+                published_on width species_id map_type_id
+            /
+        ],
+    );
+}
+
+# ----------------------------------------------------
 sub map_type_create {
     my ( $self, %args ) = @_;
     my @missing         = ();
@@ -1418,6 +1520,22 @@ Delete a map type.
     }
 
     return 1;
+}
+
+# ----------------------------------------------------
+sub map_type_update {
+    my ( $self, %args ) = @_;
+
+    return $self->generic_update(
+        table    => 'cmap_map_type',
+        pk_name  => 'map_type_id',
+        values   => \%args,
+        required => [ qw/ accession_id map_type map_units / ],
+        fields   => [
+            qw/ accession_id map_type map_units color is_relational_map
+            shape display_order width /
+        ],
+    );
 }
 
 # ----------------------------------------------------
@@ -2023,6 +2141,64 @@ Delete a species.
     }
 
     return 1;
+}
+
+# ----------------------------------------------------
+sub generic_update {
+    my ( $self, %args ) = @_;
+    my $table_name      = $args{'table'}        or die 'No table name';
+    my $pk_name         = $args{'pk_name'}      or die 'No primary key name';
+    my $fields          = $args{'fields'}       or die 'No table fields';
+    my $values          = $args{'values'}       or die 'No values';
+    my $pk_value        = $values->{ $pk_name } or die 'No primary key value';
+    my $db              = $self->db             or return;
+    my $required        = $args{'required'}     || [];
+    die 'No table fields' unless @$fields;
+
+    if ( @$required ) {
+        my @missing;
+        for my $field ( @$required ) {
+            push @missing, $field 
+                if exists $values->{ $field } && ! defined $values->{ $field };
+        }
+
+        return $self->error(
+            'Update missing required fields: ', join(', ', @missing)
+        ) if @missing;
+    }
+
+    my ( @update_fields, @bind_values );
+    for my $field_name ( @$fields ) {
+        next unless exists $values->{ $field_name };
+        my $value = $values->{ $field_name };
+        next unless defined $value;
+        push @update_fields, "$field_name=?";
+        push @bind_values, $value;
+    }
+    die "Error parsing fields, can't create update SQL\n" unless @update_fields;
+
+    my $sql = "update $table_name set " . join(', ', @update_fields) .
+        "where $pk_name=?";
+    push @bind_values, $pk_value;
+
+    $db->do( $sql, {}, @bind_values );
+
+    return 1;
+}
+
+# ----------------------------------------------------
+sub species_update {
+    my ( $self, %args ) = @_;
+
+    return $self->generic_update(
+        table    => 'cmap_species',
+        pk_name  => 'species_id',
+        values   => \%args,
+        required => [ qw/ common_name full_name accession_id / ],
+        fields   => [ 
+            qw/ accession_id full_name common_name display_order /
+        ],
+    );
 }
 
 # ----------------------------------------------------
