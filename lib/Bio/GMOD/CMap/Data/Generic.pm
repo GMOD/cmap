@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data::Generic;
 
-# $Id: Generic.pm,v 1.8 2002-09-11 01:54:51 kycl4rk Exp $
+# $Id: Generic.pm,v 1.9 2002-09-13 23:47:04 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 use Bio::GMOD::CMap;
 use base 'Bio::GMOD::CMap';
@@ -402,7 +402,11 @@ The SQL for finding the position of a given feature name.
     return q[
         select f.start_position
         from   cmap_feature f
-        where  upper(f.feature_name)=?
+        where  (
+            upper(f.feature_name)=?
+            or
+            upper(f.alternate_name)=?
+        )
         and    f.map_id=?
     ];
 }

@@ -1,14 +1,14 @@
 package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 
-# $Id: ImportCorrespondences.pm,v 1.2 2002-09-13 05:28:49 kycl4rk Exp $
+# $Id: ImportCorrespondences.pm,v 1.3 2002-09-13 23:47:04 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION %COLUMNS );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
-use Bio::GMOD::CMap::Utils 'next_number';
+use Bio::GMOD::CMap::Utils qw[ next_number insert_correspondence ];
 use base 'Bio::GMOD::CMap';
 
 %COLUMNS = (
@@ -155,7 +155,7 @@ sub import {
             print(qq[No evidence type like "$record{'evidence'}."\n]);
             print("Create? [Y/n]");
             chomp( my $answer = <STDIN> );
-            if ( $answer =~ m/^[Yy]/ ) {
+            unless ( $answer =~ m/^[Nn]/ ) {
                 $evidence_type_id = next_number(
                     db           => $db, 
                     table_name   => 'cmap_evidence_type',
@@ -167,12 +167,11 @@ sub import {
                         insert 
                         into   cmap_evidence_type
                                ( evidence_type_id, accession_id, 
-                                 evidence_type, rank )
-                        values ( ?, ?, ?, ? )
+                                 evidence_type )
+                        values ( ?, ?, ? )
                     ],
                     {},
-                    ( $evidence_type_id, $evidence_type_id, 
-                      $record{'evidence'}, 0 
+                    ( $evidence_type_id, $evidence_type_id, $record{'evidence'}
                     )
                 );
             }
@@ -208,124 +207,6 @@ sub import {
 
     print "Processed $total records, inserted $inserts correspondences.\n";
 
-    return 1;
-}
-
-sub insert_correspondence {
-    my ( $db, $feature_id1, $feature_id2, $evidence_type_id ) = @_;
-
-    #
-    # Skip if a correspondence for this type exists already.
-    #
-    my $count = $db->selectrow_array(
-        q[
-            select count(*)
-            from   cmap_correspondence_lookup cl,
-                   cmap_correspondence_evidence ce
-            where  cl.feature_id1=?
-            and    cl.feature_id2=?
-            and    cl.feature_correspondence_id=ce.feature_correspondence_id
-            and    ce.evidence_type_id=?
-        ],
-        {},
-        ( $feature_id1, $feature_id2, $evidence_type_id )
-    ) || 0;
-    next LINE if $count;
-
-    #
-    # See if a correspondence exists already.
-    #
-    my $feature_correspondence_id = $db->selectrow_array(
-        q[
-            select feature_correspondence_id
-            from   cmap_correspondence_lookup
-            where  feature_id1=?
-            and    feature_id2=?
-        ],
-        {},
-        ( $feature_id1, $feature_id2 )
-    ) || 0;
-
-    unless ( $feature_correspondence_id ) {
-        $feature_correspondence_id = next_number(
-            db               => $db,
-            table_name       => 'cmap_feature_correspondence',
-            id_field         => 'feature_correspondence_id',
-        ) or die 'No next number for feature correspondence';
-
-        #
-        # Create the official correspondence record.
-        #
-        $db->do(
-            q[
-                insert
-                into   cmap_feature_correspondence
-                       ( feature_correspondence_id, accession_id,
-                         feature_id1, feature_id2 )
-                values ( ?, ?, ?, ? )
-            ],
-            {},
-            ( $feature_correspondence_id, 
-              $feature_correspondence_id, 
-              $feature_id1, 
-              $feature_id2
-            )
-        );
-    }
-
-    #
-    # Create the evidence.
-    #
-    my $correspondence_evidence_id = next_number(
-        db               => $db,
-        table_name       => 'cmap_correspondence_evidence',
-        id_field         => 'correspondence_evidence_id',
-    ) or die 'No next number for correspondence evidence';
-
-    $db->do(
-        q[
-            insert
-            into   cmap_correspondence_evidence
-                   ( correspondence_evidence_id, accession_id,
-                     feature_correspondence_id,     
-                     evidence_type_id 
-                   )
-            values ( ?, ?, ?, ? )
-        ],
-        {},
-        ( $correspondence_evidence_id,  
-          $correspondence_evidence_id, 
-          $feature_correspondence_id,   
-          $evidence_type_id
-        )
-    );
-
-    #
-    # Create the lookup record.
-    #
-    my @insert = (
-        [ $feature_id1, $feature_id2 ],
-        [ $feature_id2, $feature_id1 ],
-    );
-
-    for my $vals ( @insert ) {
-        $db->do(
-            q[
-                insert
-                into   cmap_correspondence_lookup
-                       ( feature_id1, feature_id2,
-                         feature_correspondence_id )
-                values ( ?, ?, ? )
-            ],
-            {},
-            ( $vals->[0],
-              $vals->[1],
-              $feature_correspondence_id
-            )
-        );
-    }
-    
-    print "    Inserted correspondence.\n", 
     return 1;
 }
 

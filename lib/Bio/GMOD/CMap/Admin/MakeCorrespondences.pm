@@ -1,13 +1,13 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
-# $Id: MakeCorrespondences.pm,v 1.5 2002-09-13 05:39:22 kycl4rk Exp $
+# $Id: MakeCorrespondences.pm,v 1.6 2002-09-13 23:47:04 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use Bio::GMOD::CMap;
-use Bio::GMOD::CMap::Utils 'next_number';
+use Bio::GMOD::CMap::Utils qw[ next_number insert_correspondence ];
 use base 'Bio::GMOD::CMap';
 
 # ----------------------------------------------------
@@ -49,7 +49,7 @@ sub make_name_correspondences {
                 select map.map_id, map.map_name
                 from   cmap_map map
                 where  map_set_id=?
-                order by map_name desc
+                order by map_name
             ],
             { Columns => {} },
             ( $map_set->{'map_set_id'} )
@@ -86,20 +86,30 @@ sub make_name_correspondences {
                            cmap_feature f
                     where  map.map_set_id<>$map_set->{'map_set_id'}
                     and    map.map_id=f.map_id
-                    and    upper(f.feature_name)=?
+                    and    (
+                        upper(f.feature_name)=?
+                        or 
+                        upper(f.alternate_name)=?
+                    )
                 ]
                 : qq[
                     select f.feature_id
                     from   cmap_feature f
                     where  f.map_id<>$map->{'map_id'}
-                    and    upper(f.feature_name)=?
+                    and    (
+                        upper(f.feature_name)=?
+                        or 
+                        upper(f.alternate_name)=?
+                    )
                 ]
             ;
 
             for my $feature ( 
                 @{ $db->selectall_arrayref(
                     q[
-                        select f.feature_id, f.feature_name
+                        select f.feature_id, 
+                               f.feature_name,
+                               f.alternate_name
                         from   cmap_feature f
                         where  map_id=?
                     ],
@@ -107,108 +117,38 @@ sub make_name_correspondences {
                     ( $map->{'map_id'} )
                 ) }
             ) {
-                my $upper_name = uc $feature->{'feature_name'};
-                for my $corr_id ( 
-                    @{ $db->selectcol_arrayref(
-                        $corr_sql,
-                        {},
-                        ( $upper_name )
-                    ) }
-                ) {
-                    #
-                    # Skip if a correspondence exists already.
-                    #
-                    my $count = $db->selectrow_array(
-                        q[
-                            select count(*)
-                            from   cmap_correspondence_lookup
-                            where  feature_id1=?
-                            and    feature_id2=?
-                        ],
-                        {},
-                        ( $feature->{'feature_id'}, $corr_id )
-                    ) || 0;
-                    next if $count;
-
-                    my $feature_correspondence_id = next_number(
-                        db               => $db,
-                        table_name       => 'cmap_feature_correspondence',
-                        id_field         => 'feature_correspondence_id',
-                    ) or die 'No next number for feature correspondence';
-
-                    #
-                    # Create the official correspondence record.
-                    #
-                    $db->do(
-                        q[
-                            insert
-                            into   cmap_feature_correspondence
-                                   ( feature_correspondence_id, accession_id,
-                                     feature_id1, feature_id2 )
-                            values ( ?, ?, ?, ? )
-                        ],
-                        {},
-                        ( $feature_correspondence_id, 
-                          $feature_correspondence_id, 
-                          $feature->{'feature_id'}, 
-                          $corr_id
-                        )
-                    );
-
-                    #
-                    # Create the evidence.
-                    #
-                    my $correspondence_evidence_id = next_number(
-                        db               => $db,
-                        table_name       => 'cmap_correspondence_evidence',
-                        id_field         => 'correspondence_evidence_id',
-                    ) or die 'No next number for correspondence evidence';
-
-                    $db->do(
-                        q[
-                            insert
-                            into   cmap_correspondence_evidence
-                                   ( correspondence_evidence_id, accession_id,
-                                     feature_correspondence_id,     
-                                     evidence_type_id 
-                                   )
-                            values ( ?, ?, ?, ? )
-                        ],
-                        {},
-                        ( $correspondence_evidence_id,  
-                          $correspondence_evidence_id, 
-                          $feature_correspondence_id,   
-                          $evidence_type_id
-                        )
-                    );
-
-                    #
-                    # Create the lookup record.
-                    #
-                    my @insert = (
-                        [ $feature->{'feature_id'}, $corr_id ],
-                        [ $corr_id, $feature->{'feature_id'} ],
-                    );
-
-                    for my $vals ( @insert ) {
-                        $db->do(
-                            q[
-                                insert
-                                into   cmap_correspondence_lookup
-                                       ( feature_id1, feature_id2,
-                                         feature_correspondence_id )
-                                values ( ?, ?, ? )
-                            ],
+                for my $field ( qw[ feature_name alternate_name ] ) {
+                    my $upper_name = uc $feature->{ $field } or next;
+#                    warn "Checking $field = '$upper_name'\n";
+                    for my $corr_id ( 
+                        @{ $db->selectcol_arrayref(
+                            $corr_sql,
                             {},
-                            ( $vals->[0],
-                              $vals->[1],
-                              $feature_correspondence_id
-                            )
+                            ( $upper_name, $upper_name )
+                        ) }
+                    ) {
+#                        #
+#                        # Skip if a correspondence exists already.
+#                        #
+#                        my $count = $db->selectrow_array(
+#                            q[
+#                                select count(*)
+#                                from   cmap_correspondence_lookup
+#                                where  feature_id1=?
+#                                and    feature_id2=?
+#                            ],
+#                            {},
+#                            ( $feature->{'feature_id'}, $corr_id )
+#                        ) || 0;
+#                        next if $count;
+
+                        insert_correspondence( 
+                            $db,
+                            $feature->{'feature_id'},
+                            $corr_id,
+                            $evidence_type_id,
                         );
                     }
-                    
-                    print "    Inserted correspondence for feature '", 
-                        $feature->{'feature_name'}, "'.\n";
                 }
             }
         }
@@ -251,3 +191,84 @@ This library is free software;  you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 =cut
+
+#                    my $feature_correspondence_id = next_number(
+#                        db               => $db,
+#                        table_name       => 'cmap_feature_correspondence',
+#                        id_field         => 'feature_correspondence_id',
+#                    ) or die 'No next number for feature correspondence';
+#
+#                    #
+#                    # Create the official correspondence record.
+#                    #
+#                    $db->do(
+#                        q[
+#                            insert
+#                            into   cmap_feature_correspondence
+#                                   ( feature_correspondence_id, accession_id,
+#                                     feature_id1, feature_id2 )
+#                            values ( ?, ?, ?, ? )
+#                        ],
+#                        {},
+#                        ( $feature_correspondence_id, 
+#                          $feature_correspondence_id, 
+#                          $feature->{'feature_id'}, 
+#                          $corr_id
+#                        )
+#                    );
+#
+#                    #
+#                    # Create the evidence.
+#                    #
+#                    my $correspondence_evidence_id = next_number(
+#                        db               => $db,
+#                        table_name       => 'cmap_correspondence_evidence',
+#                        id_field         => 'correspondence_evidence_id',
+#                    ) or die 'No next number for correspondence evidence';
+#
+#                    $db->do(
+#                        q[
+#                            insert
+#                            into   cmap_correspondence_evidence
+#                                   ( correspondence_evidence_id, accession_id,
+#                                     feature_correspondence_id,     
+#                                     evidence_type_id 
+#                                   )
+#                            values ( ?, ?, ?, ? )
+#                        ],
+#                        {},
+#                        ( $correspondence_evidence_id,  
+#                          $correspondence_evidence_id, 
+#                          $feature_correspondence_id,   
+#                          $evidence_type_id
+#                        )
+#                    );
+#
+#                    #
+#                    # Create the lookup record.
+#                    #
+#                    my @insert = (
+#                        [ $feature->{'feature_id'}, $corr_id ],
+#                        [ $corr_id, $feature->{'feature_id'} ],
+#                    );
+#
+#                    for my $vals ( @insert ) {
+#                        $db->do(
+#                            q[
+#                                insert
+#                                into   cmap_correspondence_lookup
+#                                       ( feature_id1, feature_id2,
+#                                         feature_correspondence_id )
+#                                values ( ?, ?, ? )
+#                            ],
+#                            {},
+#                            ( $vals->[0],
+#                              $vals->[1],
+#                              $feature_correspondence_id
+#                            )
+#                        );
+#                    }
+#                    
+#                    print "    Inserted correspondence for feature '", 
+#                        $feature->{'feature_name'}, "'.\n";
+#                }

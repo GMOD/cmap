@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.11 2002-09-12 22:07:42 kycl4rk Exp $
+# $Id: Data.pm,v 1.12 2002-09-13 23:47:04 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.11 $)[-1];
+$VERSION = (qw$Revision: 1.12 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -1233,10 +1233,11 @@ Turn a feature name into a position.
     my $feature_name    = $args{'feature_name'} or return;
     my $map_id          = $args{'map_id'}       or return;
     my $db              = $self->db;
+    my $upper_name      = uc $feature_name;
     my $position        = $db->selectrow_array(
         $self->sql->feature_name_to_position_sql,
         {},
-        ( uc $feature_name, $map_id )
+        ( $upper_name, $upper_name, $map_id )
     ) || 0;
 
     return $position;

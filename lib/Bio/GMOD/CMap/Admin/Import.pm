@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.4 2002-09-12 22:07:42 kycl4rk Exp $
+# $Id: Import.pm,v 1.5 2002-09-13 23:47:04 kycl4rk Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.4 $)[-1];
+$VERSION  = (qw$Revision: 1.5 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -164,7 +164,7 @@ Starred fields are required.  Order of fields is not important.
         unless ( $feature_type_id ) {
             print "Feature type '$feature_type' doesn't exist.  Create?[Y/n] ";
             chomp( my $answer = <STDIN> );
-            if ( $answer =~ m/^[Yy]/ ) {
+            unless ( $answer =~ m/^[Nn]/ ) {
                 $feature_type_id = next_number(
                     db           => $db, 
                     table_name   => 'cmap_feature_type',
