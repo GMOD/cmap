@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.57 2005-01-05 03:04:26 mwz444 Exp $
+# $Id: Generic.pm,v 1.58 2005-01-12 00:07:01 mwz444 Exp $
 
 =head1 NAME
 
@@ -33,7 +33,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.57 $)[-1];
+$VERSION = (qw$Revision: 1.58 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Bio::GMOD::CMap;
@@ -75,7 +75,7 @@ The SQL for finding all the features on a map.
     my ( $self, %args ) = @_;
     my $order_by    = $args{'order_by'}    || '';
     my $restrict_by = $args{'restrict_by'} || '';
-    my @feature_type_aids = @{ $args{'feature_types'} || [] };
+    my @feature_type_aids = @{ $args{'feature_type_aids'} || [] };
 
     my $sql = qq[
         select   f.feature_id,
