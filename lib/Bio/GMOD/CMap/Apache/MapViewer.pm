@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.59 2004-09-03 03:38:45 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.60 2004-09-03 17:23:01 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.59 $)[-1];
+$VERSION = (qw$Revision: 1.60 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -110,26 +110,7 @@ sub handler {
     foreach my $ref_map_aid (@ref_map_aids){
         next if ($ref_map_aid == -1);
         my ($start, $stop) = (undef,undef);
-        if ($ref_map_aid =~/^(\S+)\[(.*)\*(.*)\]/){
-            $ref_map_aid = $1;
-            ($start,$stop)=($2,$3); 
-            ($start,$stop)=(undef,undef) if ($start==$stop);
-            $start = undef unless($start =~ /\S/);
-            $stop  = undef unless($stop  =~ /\S/);
-            my $start_stop_feature=0;
-            if ($start !~ /^$RE{'num'}{'real'}$/){
-                $highlight = join( ',', $highlight, $start );
-                $start_stop_feature=1;
-            }
-            if ($stop !~ /^$RE{'num'}{'real'}$/){
-                $highlight = join( ',', $highlight, $stop );
-                $start_stop_feature=1;
-            }
-            if ((not $start_stop_feature) and defined($start) and defined($stop) 
-                and $stop<$start){
-                ($start,$stop)= ($stop,$start); 
-            }
-        } 
+        ($ref_map_aid,$start,$stop,$highlight)=parse_map_info($ref_map_aid,$highlight);
         $ref_maps{$ref_map_aid} = {start=>$start,stop=>$stop};
     }
     if (scalar @ref_map_aids==1){
@@ -144,6 +125,32 @@ sub handler {
         }
     }
 
+    # Deal with modified ref map
+    # map info specified in this param trumps 'ref_map_aids' info
+    if ( $apr->param('modified_ref_map') ) {
+        my $ref_map_aid=$apr->param('modified_ref_map');
+        # remove duplicate start and end
+        while( $ref_map_aid=~s/(.+\[)(\d+)\*\2(\D.*)/$1*$3/){};
+        $apr->param('modified_ref_map',$ref_map_aid);
+
+        my ($start, $stop) = (undef,undef);
+        ($ref_map_aid,$start,$stop,$highlight)=parse_map_info($ref_map_aid,$highlight);
+        $ref_maps{$ref_map_aid} = {start=>$start,stop=>$stop};
+
+        # Add the modified version into the comparative_maps param
+        my $found=0;
+        for (my $i=0;$i<=$#ref_map_aids;$i++){
+            my $old_map_aid=$ref_map_aids[$i];
+            $old_map_aid =~s/^(.*)\[.*/$1/;
+            if ($old_map_aid eq $ref_map_aid){
+                $ref_map_aids[$i]=$apr->param('modified_ref_map');
+                $found=1;
+                last;
+            }
+        }
+        push @ref_map_aids, $apr->param('modified_ref_map') if (!$found);
+        $apr->param('ref_map_aids',join(":",@ref_map_aids));
+    }
 
     my @ref_map_set_aids=();
     if ( $apr->param('ref_map_set_aid') ) {
@@ -236,26 +243,7 @@ sub handler {
         my ( $slot_no, $field, $accession_id ) = split(/=/, $cmap) or next;
         my ( $start, $stop );
         foreach my $aid (split /,/,$accession_id){
-            if ( $aid =~ m/^(.+)\[(.*)\*(.*)\]$/ ) {
-                $aid=$1;
-                ($start,$stop)=($2,$3); 
-                ($start,$stop)=(undef,undef) if ($start==$stop);
-                $start = undef unless($start =~ /\S/);
-                $stop  = undef unless($stop  =~ /\S/);
-                my $start_stop_feature=0;
-                if ($start !~ /^$RE{'num'}{'real'}$/){
-                    $highlight = join( ',', $highlight, $start );
-                    $start_stop_feature=1;
-                }
-                if ($stop !~ /^$RE{'num'}{'real'}$/){
-                    $highlight = join( ',', $highlight, $stop );
-                    $start_stop_feature=1;
-                }
-                if ((not $start_stop_feature) and defined($start) and defined($stop) 
-                    and $stop<$start){
-                    ($start,$stop)= ($stop,$start); 
-                }
-            }
+            ($aid,$start,$stop,$highlight)=parse_map_info($aid,$highlight);
             if ($field eq 'map_aid'){
                 $slots{$slot_no}->{'maps'}{$aid} =  {
                     start          => $start,
@@ -269,6 +257,45 @@ sub handler {
             }
         }
     }
+    # Deal with modified comp map
+    # map info specified in this param trumps $comparative_maps info
+    if ( $apr->param('modified_comp_map') ) {
+        my $comp_map=$apr->param('modified_comp_map');
+        # remove duplicate start and end
+        while( $comp_map=~s/(.+\[)(\d+)\*\2(\D.*)/$1*$3/){};
+        $apr->param('modified_comp_map',$comp_map);
+
+        my ( $slot_no, $field, $aid ) = split(/=/, $comp_map) or next;
+        my ($start, $stop) = (undef,undef);
+        ($aid,$start,$stop,$highlight)=parse_map_info($aid,$highlight);
+        if ($field eq 'map_aid'){
+            $slots{$slot_no}->{'maps'}{$aid} =  {
+                start          => $start,
+                stop           => $stop,
+            };
+        }
+        elsif ($field eq 'map_set_aid'){
+            unless(defined($slots{$slot_no}->{'map_sets'}{$aid})){
+                $slots{$slot_no}->{'map_sets'}{$aid}=();
+            }
+        }
+        # Add the modified version into the comparative_maps param
+        my @cmaps = split( /:/, $comparative_maps );
+        my $found=0;
+        for (my $i=0;$i<=$#cmaps;$i++){
+            my ( $c_slot_no, $c_field, $c_aid ) = split(/=/, $cmaps[$i]) or next;
+            $aid=~s/^(.*)\[.*/$1/;
+            if (($c_slot_no eq $slot_no) 
+                and ($c_field eq $field) 
+                and ($c_aid eq $aid)){
+                $cmaps[$i]=$comp_map;
+                $found=1;
+                last;
+            }
+        }
+        push @cmaps, $comp_map if (!$found);
+        $apr->param('comparative_maps',join(":",@cmaps));
+    }
 
     my @slot_nos  = sort { $a <=> $b } keys %slots;
     my $max_right = $slot_nos[-1];
@@ -281,27 +308,10 @@ sub handler {
         my $slot_no = $side eq RIGHT ? $max_right + 1 : $max_left - 1;
         my $cmap    = $side eq RIGHT 
             ? \@comparative_map_right : \@comparative_map_left;
-        ###Use the first comp_map to determine the field
         foreach my $cmap_str (@$cmap){
             my ( $field, $accession_id ) = split( /=/, $cmap_str ) or next;
             my ( $start, $stop );
-            if ( $accession_id =~ m/^(.+)\[(.*)\*(.*)\]$/ ) {
-                $accession_id = $1;
-                $start        = $2;
-                $stop         = $3;
-                ($start,$stop)=(undef,undef) if ($start==$stop);
-                $start = undef unless($start =~ /\S/);
-                $stop  = undef unless($stop  =~ /\S/);
-                my $start_stop_feature=0;
-                if ($start !~ /^$RE{'num'}{'real'}$/){
-                    $highlight = join( ',', $highlight, $start );
-                    $start_stop_feature=1;
-                }
-                if ($stop !~ /^$RE{'num'}{'real'}$/){
-                    $highlight = join( ',', $highlight, $stop );
-                    $start_stop_feature=1;
-                }
-            }
+            ($accession_id,$start,$stop,$highlight)=parse_map_info($accession_id,$highlight);
             if ($field eq 'map_aid'){
                 $slots{$slot_no}->{'maps'}{$accession_id} =  {
                     start          => $start,
@@ -522,6 +532,35 @@ sub handler {
     return 1;
 }
 
+# ----------------------------------------
+sub parse_map_info{
+    # parses the map info
+    my $aid       = shift;
+    my $highlight = shift;
+
+    my ($start,$stop)=(undef,undef);
+    if ( $aid =~ m/^(.+)\[(.*)\*(.*)\]$/ ) {
+        $aid=$1;
+        ($start,$stop)=($2,$3); 
+        ($start,$stop)=(undef,undef) if ($start==$stop);
+        $start = undef unless($start =~ /\S/);
+        $stop  = undef unless($stop  =~ /\S/);
+        my $start_stop_feature=0;
+        if ($start !~ /^$RE{'num'}{'real'}$/){
+            $highlight = join( ',', $highlight, $start );
+                $start_stop_feature=1;
+        }
+        if ($stop !~ /^$RE{'num'}{'real'}$/){
+            $highlight = join( ',', $highlight, $stop );
+            $start_stop_feature=1;
+        }
+        if ((not $start_stop_feature) and defined($start) and defined($stop) 
+            and $stop<$start){
+            ($start,$stop)= ($stop,$start); 
+        }
+    }
+    return ($aid,$start,$stop,$highlight);
+}
 1;
 
 # ----------------------------------------------------

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.119 2004-09-03 03:38:45 mwz444 Exp $
+# $Id: Map.pm,v 1.120 2004-09-03 17:23:02 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.119 $)[-1];
+$VERSION = (qw$Revision: 1.120 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -457,7 +457,7 @@ such as the units.
         $drawer->add_drawing( STRING, $font, $x, $y, $full_str, 'grey' );
         my $code=qq[
             onMouseOver="window.status='Make map full sized';return true" 
-            onClick="crop($slot_no, '$map_aid', '', 2);document.comparative_map_form.submit();"
+            onClick="mod_map_info($slot_no, '$map_aid', '', '');document.comparative_map_form.submit();"
             ]; 
         push @$map_area_data,
           {
@@ -554,8 +554,7 @@ Draws the map title.
             = $drawer->data_module->scroll_data($slot_no,$map_id,$is_flipped,'UP');
         my $code=qq[ 
             onMouseOver="window.status='Scroll up';return true" 
-            onClick="crop($slot_no, '$map_aid', $scroll_start, 0);
-            crop($slot_no, '$map_aid', $scroll_stop, 1);
+            onClick="mod_map_info($slot_no, '$map_aid', $scroll_start,$scroll_stop);
             document.comparative_map_form.submit();"
             ]; 
         push @$map_area_data,
@@ -596,8 +595,7 @@ Draws the map title.
             = $drawer->data_module->scroll_data($slot_no,$map_id,$is_flipped,'DOWN');
         my $code=qq[ 
             onMouseOver="window.status='Scroll down';return true" 
-            onClick="crop($slot_no, '$map_aid', $scroll_start, 0);
-            crop($slot_no, '$map_aid', $scroll_stop, 1);
+            onClick="mod_map_info($slot_no, '$map_aid', $scroll_start,$scroll_stop);
             document.comparative_map_form.submit();"
             ]; 
         push @$map_area_data,
@@ -2111,13 +2109,37 @@ sub add_tick_marks {
 
         my $down_command=$is_flipped ? '1' : '0';
         my $up_command=$is_flipped ? '0' : '1';
+        my ($up_start_pos,$up_stop_pos,$down_start_pos,$down_stop_pos);
+        my $slot_info=$drawer->data_module->slot_info->{$slot_no};
+        if ($is_flipped){
+            $up_start_pos    = $tick_pos;
+            $down_stop_pos = $tick_pos;
+            $down_start_pos   = defined($slot_info->{$map_id}->[0])
+                ? $slot_info->{$map_id}->[0]
+                : "''";
+            $up_stop_pos   = defined($slot_info->{$map_id}->[1])
+                ? $slot_info->{$map_id}->[1]
+                : "''";
+
+        }
+        else{
+            $up_stop_pos    = $tick_pos;
+            $down_start_pos = $tick_pos;
+            $up_start_pos   = defined($slot_info->{$map_id}->[0])
+                ? $slot_info->{$map_id}->[0]
+                : "''";
+            $down_stop_pos   = defined($slot_info->{$map_id}->[1])
+                ? $slot_info->{$map_id}->[1]
+                : "''";
+        }
+        
         my $down_code=qq[ 
             onMouseOver="window.status='crop down';return true" 
-            onClick="crop($slot_no, '$map_aid', $tick_pos, $down_command);document.comparative_map_form.submit();"
+            onClick="mod_map_info($slot_no, '$map_aid', $down_start_pos, $down_stop_pos);document.comparative_map_form.submit();"
             ]; 
         my $up_code=qq[
             onMouseOver="window.status='crop up';return true" 
-            onClick="crop($slot_no, '$map_aid', $tick_pos, $up_command);document.comparative_map_form.submit();"
+            onClick="mod_map_info($slot_no, '$map_aid', $up_start_pos, $up_stop_pos);document.comparative_map_form.submit();"
             ]; 
         push @$map_area_data,
           {

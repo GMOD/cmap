@@ -123,76 +123,26 @@ function selectFeatureRadio(val){
     }
   }
 }
-function crop(slot_no, map_aid, value, command){
-  var positionCount=0;
-  var insertStart=-1;
-  var insertStop=-1;
-  var splitArray;
+
+function mod_map_info(slot_no, map_aid, start, stop){
   if ( slot_no == 0){
-    document.comparative_map_form.ref_map_aids.value 
-      = addPosToStr(document.comparative_map_form.ref_map_aids.value, slot_no, map_aid, value, command)
-  }
-  else{
-    var matchStr=slot_no+"=map_aid="+map_aid;
-    document.comparative_map_form.comparative_maps.value 
-      = addPosToStr(document.comparative_map_form.comparative_maps.value, slot_no, matchStr, value, command)
-  }
-}
-
-function addPosToStr(str, slot_no, matchStr, value, command){
-  var positionCount=0;
-  var insertStart;
-  var insertStop;
-  var splitArray;
-
-  splitArray=str.split(":");
-  for (var i=0;i<splitArray.length;i++){
-    var bracket = splitArray[i].indexOf("[");
-    if (bracket>=0){
-      this_aid=splitArray[i].substr(0,bracket);
-      if (this_aid==matchStr){
-        if (command==0){
-          insertStart = positionCount+splitArray[i].indexOf("[")+1;
-          insertStop  = positionCount+splitArray[i].indexOf("*");
-        }
-        else if(command==1){
-          insertStart = positionCount+splitArray[i].indexOf("*")+1;
-          insertStop  = positionCount+splitArray[i].indexOf("]");
-        }
-        else{
-          insertStart = positionCount+splitArray[i].indexOf("[");
-          insertStop  = positionCount+splitArray[i].indexOf("]")+1;
-        }
-        str = str.substr(0,insertStart) + value + str.substr(insertStop); 
-        return str;
-      }
+    if (start!='' && start==stop){
+      document.comparative_map_form.modified_ref_map.value='';
     }
     else{
-      if (splitArray[i]==matchStr){
-        insertStart = positionCount+splitArray[i].length;
-        if (command==0){
-          str = str.substr(0,insertStart) + "["+value+"*]" + str.substr(insertStart);
-        }
-        else if(command==1){
-          str = str.substr(0,insertStart) + "[*"+value+"]" + str.substr(insertStart);
-        }
-        return str;
-      }
+      document.comparative_map_form.modified_ref_map.value
+        =map_aid+"["+start+"*"+stop+"]";
     }
-    positionCount+=splitArray[i].length + 1;
   }
-  //If not found, tack it to the end.
-  if (str!="" && command!=2){
-    str = str +":";
+  else{
+    if (start!='' && start==stop){
+    document.comparative_map_form.modified_comp_map.value=''
+    }
+    else{
+    document.comparative_map_form.modified_comp_map.value
+      =slot_no+":map_aid:"+map_aid+"["+start+"*"+stop+"]";
+    }
   }
-  if (command==0){
-    str = str +matchStr+"["+value+"*]";
-  }
-  else if(command==1){
-    str = str +matchStr+"[*"+value+"]";
-  }
-    
-  return str;
 }
 
 </script>
@@ -656,9 +606,11 @@ function addPosToStr(str, slot_no, matchStr, value, command){
                 <td colspan="4" align="center">
                   <input type="hidden" name="ref_map_set_aid" value="[% apr.param('ref_map_set_aid') %]">
                   <input type="hidden" name="ref_map_aids"   value="[% apr.param('ref_map_aids').join(',') %]">
+                  <input type="hidden" name="modified_ref_map"   value="">
                   <input type="hidden" name="ref_map_names"   value="[% apr.param('ref_map_names') %]">
                   <input type="hidden" name="ref_species_aid"  value="[% apr.param('ref_species_aid') %]">
                   <input type="hidden" name="comparative_maps" value="[% comparative_maps %]">
+                  <input type="hidden" name="modified_comp_map"   value="">
                   <input type="hidden" name="flip"      value="[% apr.param('flip') %]">
                   <input type="hidden" name="data_source"      value="[% data_source %]">
                   <br>
