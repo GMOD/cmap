@@ -142,7 +142,6 @@ CREATE TABLE cmap_feature_type (
   accession_id varchar(20) character set latin1 NOT NULL default '',
   feature_type varchar(32) character set latin1 NOT NULL default '',
   default_rank int(11) NOT NULL default '1',
-  is_visible tinyint(4) NOT NULL default '1',
   shape varchar(12) character set latin1 default NULL,
   color varchar(20) character set latin1 default NULL,
   drawing_lane int(11) NOT NULL default '1',

@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Fri Jul 25 16:52:31 2003
+-- Created on Mon Jul 28 14:12:17 2003
 -- 
 --
 -- Table: cmap_correspondence_evidence
@@ -137,7 +137,6 @@ CREATE TABLE "cmap_feature_type" (
   "accession_id" character varying(20) DEFAULT '' NOT NULL,
   "feature_type" character varying(32) DEFAULT '' NOT NULL,
   "default_rank" integer(11) DEFAULT '1' NOT NULL,
-  "is_visible" smallint(4) DEFAULT '1' NOT NULL,
   "shape" character varying(12) DEFAULT NULL,
   "color" character varying(20) DEFAULT NULL,
   "drawing_lane" integer(11) DEFAULT '1' NOT NULL,
