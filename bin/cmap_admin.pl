@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.83 2004-12-17 17:07:01 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.83.2.1 2005-01-11 19:52:16 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.83 $)[-1];
+$VERSION = (qw$Revision: 1.83.2.1 $)[-1];
 
 #
 # Get command-line options
@@ -767,9 +767,9 @@ sub export_as_text {
     else {
         @map_set_names = ('All');
     }
-
+    my $display_feature_types;
     if ( !@$feature_types ) {
-        $feature_types = [ [ 'All', 'All' ], ];
+        $display_feature_types = [ [ 'All', 'All' ], ];
     }
 
     my $excluded_fields =
@@ -783,7 +783,7 @@ sub export_as_text {
         '  Data source     : ' . $self->data_source,
         "  Map Sets        :\n" . join( "\n", map { "    $_" } @map_set_names ),
         "  Feature Types   :\n"
-          . join( "\n", map { "    $_->[2]" } @$feature_types ),
+          . join( "\n", map { "    $_->[2]" } @$feature_types || @$display_feature_types ),
         "  Exclude Fields  : $excluded_fields",
         "  Directory       : $dir",
         "[Y/n] " );
