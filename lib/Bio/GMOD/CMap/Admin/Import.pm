@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.18 2003-02-25 19:30:18 kycl4rk Exp $
+# $Id: Import.pm,v 1.19 2003-03-04 20:28:27 kycl4rk Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.18 $)[-1];
+$VERSION  = (qw$Revision: 1.19 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -178,13 +178,25 @@ have for the map set).
         map  { s/^\s+|\s+$//g; s/\s+/_/g; lc $_ } 
         split( FIELD_SEP, $header );
 
+    my %required = 
+        map  { $_, 0 }
+        grep { $COLUMNS{ $_ }{'is_required'} }
+        keys %COLUMNS;
+        
     for my $column_name ( @columns_present ) {
         if ( exists $COLUMNS{ $column_name } ) {
-            $self->Print("Column '$column_name' OK.\n")
+            $self->Print("Column '$column_name' OK.\n");
+            $required{ $column_name } = 1 if defined $required{ $column_name };
         }
         else {
             return $self->error("Column name '$column_name' is not valid.");
         }
+    }
+
+    if ( my @missing = grep { $required{ $_ } == 0 } keys %required ) {
+        return $self->error("Missing following required columns: ".
+            join(', ', @missing) 
+        );
     }
 
     $self->Print("Parsing file...\n");
