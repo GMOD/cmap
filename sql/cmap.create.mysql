@@ -54,7 +54,6 @@ CREATE TABLE cmap_correspondence_lookup (
   feature_type_accession2 varchar(20) default NULL,
   KEY feature_id1 (feature_id1),
   KEY corr_id (feature_correspondence_id),
-  KEY feature_id1_index (feature_id1),
   KEY cl_map_id1 (map_id1),
   KEY cl_map_id2 (map_id2),
   KEY cl_map_id1_map_id2 (map_id1,map_id2),
