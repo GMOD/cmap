@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.14 2002-09-16 12:25:09 kycl4rk Exp $
+# $Id: Data.pm,v 1.15 2002-09-16 12:32:34 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.14 $)[-1];
+$VERSION = (qw$Revision: 1.15 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -635,11 +635,11 @@ Returns the data for the correspondence matrix.
                 "and ms.accession_id='$map_set_aid' " if $map_set_aid;
 
             $map_set_sql .= q[
-                order by s.species_display_order, 
-                         s.species_name,
-                         ms.map_set_display_order,
-                         ms.published_on desc,
-                         ms.short_name
+                order by species_display_order, 
+                         species_name,
+                         map_set_display_order,
+                         published_on desc,
+                         map_set_name
             ];
         }
 
