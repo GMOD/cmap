@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.92 2004-06-14 22:35:45 mwz444 Exp $
+# $Id: Map.pm,v 1.93 2004-06-17 17:18:06 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.92 $)[-1];
+$VERSION = (qw$Revision: 1.93 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1708,7 +1708,8 @@ sub add_feature_to_map {
                 not $self->feature_type_data( $feature->{'feature_type_aid'}, 
                 'glyph_overlap' )) {
                 for my $i ( 0 .. $#{$fcolumns} ) {
-                    if ( $fcolumns->[$i] < $y_pos1 ) {
+                    if ( ($is_flipped and $fcolumns->[$i] > $y_pos1) 
+                         or (not $is_flipped and $fcolumns->[$i] < $y_pos1)) {
                         $column_index = $i;
                         last;
                     }
