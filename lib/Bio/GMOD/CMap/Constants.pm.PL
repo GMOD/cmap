@@ -18,14 +18,14 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.11 2004-03-18 16:07:45 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.12 2004-03-25 14:11:56 mwz444 Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.11 $)[-1];
+$VERSION = (qw$Revision: 1.12 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -289,7 +289,7 @@ use constant DEFAULT => {
     #
     # URL for evidence type info
     #
-    evidence_type_details_url => 'evidence_type_info?evidence_type_aid=',
+    evidence_type_details_url => 'evidence_type_info?evidence_type=',
 
     #
     # Color of a feature if not defined
@@ -337,7 +337,7 @@ use constant DEFAULT => {
     #
     # Where to see feature type details.
     #
-    feature_type_details_url => 'feature_type_info?feature_type_aid=',
+    feature_type_details_url => 'feature_type_info?feature_type=',
     
     #
     # The size of the map image.  Note that there are options on the

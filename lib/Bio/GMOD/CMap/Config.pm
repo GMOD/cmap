@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Config;
 # vim: set ft=perl:
 
-# $Id: Config.pm,v 1.1 2004-03-18 21:57:08 mwz444 Exp $
+# $Id: Config.pm,v 1.2 2004-03-25 14:11:56 mwz444 Exp $
 
 =head1 NAME
 
@@ -78,7 +78,7 @@ The conf dir and the global conf file are specified in Constants.pm
     ###Need a global and specific conf file
     return 0 unless (%config_data and $self->{'global_config'});
     $self->{'config_data'}=\%config_data;
-    #print "rcd\n";
+    #print STDERR "+++++++++++++++++ Hit Config ++++++++++++++++\n";
     return 1;
     
 }
@@ -122,7 +122,7 @@ sets the active config data
 	}
     
 	###No preference set.  Just let fate(keys) decide.
-	$self->{'current_config'}=${keys %{$self->{'config_data'}}}->[0];
+	$self->{'current_config'}=(keys %{$self->{'config_data'}})[0];
 	return 1;
     }
     return 1;
@@ -131,12 +131,13 @@ sets the active config data
 }
 }
 
+
 # ----------------------------------------------------
 sub get_config_names {
 
 =pod
 
-=head2 set_config
+=head2 get_config_names
 
 returns an array ref of the keys to self->{'config_data'}
 

@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.46 2004-02-10 23:06:44 kycl4rk Exp $
+# $Id: Admin.pm,v 1.47 2004-03-25 14:11:56 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.46 $)[-1];
+$VERSION = (qw$Revision: 1.47 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -131,108 +131,14 @@ Delete a database cross reference.
 }
 
 # ----------------------------------------------------
-sub evidence_type_create {
-    my ( $self, %args ) = @_;
-    my @missing         = ();
-    my $db              = $self->db or return $self->error;
-    my $evidence_type   = $args{'evidence_type'} or 
-                          push @missing, 'evidence type';
-    my $rank            = $args{'rank'} or
-                          push @missing, 'rank';
-    my $line_color      = $args{'line_color'} || '';
-
-    if ( @missing ) {
-        return $self->error(
-            'Evidence type create failed.  Missing required fields: ', 
-            join(', ', @missing)
-        );
-    }
-    my $evidence_id     = next_number(
-        db              => $db, 
-        table_name      => 'cmap_evidence_type',
-        id_field        => 'evidence_type_id',
-    ) or return $self->error('No next number for evidence type');
-    my $accession_id    = $args{'accession_id'}  || $evidence_id;
-
-    $db->do(
-        q[
-            insert
-            into    cmap_evidence_type
-                    ( evidence_type_id, accession_id, evidence_type, 
-                      rank, line_color )
-            values  ( ?, ?, ?, ?, ? )
-        ],
-        {},
-        ( $evidence_id, $accession_id, $evidence_type, 
-          $rank, $line_color )
-    );
-
-    return $evidence_id;
-}
-
-# ----------------------------------------------------
-sub evidence_type_delete {
-
-=pod
-
-=head2 evidence_type_delete 
-
-Delete an evidence type.
-
-=cut
-
-    my ( $self, %args )  = @_;
-    my $evidence_type_id = $args{'evidence_type_id'} or return $self->error(
-        'No evidence type id'
-    );
-
-    my $db  = $self->db or return;
-    my $sth = $db->prepare(
-        q[
-            select   count(ce.evidence_type_id) as no_evidences, 
-                     et.evidence_type
-            from     cmap_correspondence_evidence ce,
-                     cmap_evidence_type et
-            where    ce.evidence_type_id=?
-            and      ce.evidence_type_id=et.evidence_type_id
-            group by evidence_type
-        ]
-    );
-    $sth->execute( $evidence_type_id );
-    my $hr = $sth->fetchrow_hashref;
-
-    if ( $hr->{'no_evidences'} > 0 ) {
-        return $self->error(
-            "Unable to delete evidence type '", $hr->{'evidence_type'},
-            "' as ", $hr->{'no_evidences'},
-            " evidences are linked to it."
-        );
-    }
-    else {
-        $self->attribute_delete('cmap_evidence_type', $evidence_type_id);
-        $db->do(
-            q[
-                delete
-                from    cmap_evidence_type
-                where   evidence_type_id=?
-            ],
-            {},
-            ( $evidence_type_id )
-        );
-    }
-
-    return 1;
-}
-
-# ----------------------------------------------------
 sub feature_create {
     my ( $self, %args ) = @_;
     my @missing         = ();
     my $map_id          = $args{'map_id'} or push @missing, 'map_id';
     my $feature_name    = $args{'feature_name'} or 
                           push @missing, 'feature_name';
-    my $feature_type_id = $args{'feature_type_id'} 
-                          or push @missing, 'feature_type_id';
+    my $feature_type    = $args{'feature_type'} 
+                          or push @missing, 'feature_type';
     my $start_position  = $args{'start_position'};
     push @missing, 'start' unless $start_position =~ $RE{'num'}{'real'};
     my $stop_position   = $args{'stop_position'};
@@ -244,7 +150,8 @@ sub feature_create {
         id_field        => 'feature_id',
     ) or die 'No feature id';
     my $accession_id    = $args{'accession_id'} || $feature_id;
-
+    my $default_rank    = 
+        $self->feature_type_data($feature_type,'default_rank')|| 1;
     if ( @missing ) {
         return $self->error(
             'Feature create failed.  Missing required fields: ', 
@@ -254,7 +161,7 @@ sub feature_create {
 
     my @insert_args = ( 
         $feature_id, $accession_id, $map_id, $feature_name, 
-        $feature_type_id, $is_landmark, $start_position
+        $feature_type, $is_landmark, $start_position
     );
 
     my $stop_placeholder; 
@@ -271,9 +178,9 @@ sub feature_create {
             insert
             into   cmap_feature
                    ( feature_id, accession_id, map_id, feature_name, 
-                     feature_type_id, is_landmark,
-                     start_position, stop_position )
-            values ( ?, ?, ?, ?, ?, ?, ?, $stop_placeholder )
+                     feature_type, is_landmark,
+                     start_position, stop_position,default_rank )
+            values ( ?, ?, ?, ?, ?, ?, ?, $stop_placeholder,$default_rank )
         ],
         {},
         @insert_args
@@ -418,7 +325,7 @@ Inserts a correspondence.  Returns -1 if there is nothing to do.
     my $feature_id2      = $args{'feature_id2'};
     my $feature_aid1     = $args{'feature_aid1'};
     my $feature_aid2     = $args{'feature_aid2'};
-    my $evidence_type_id = $args{'evidence_type_id'};
+    my $evidence_type    = $args{'evidence_type'};
     my $evidence         = $args{'correspondence_evidence'};
     my $accession_id     = $args{'accession_id'} || '';
     my $is_enabled       = $args{'is_enabled'};
@@ -459,7 +366,7 @@ Inserts a correspondence.  Returns -1 if there is nothing to do.
     # Bail if no evidence.
     #
     return $self->error('No evidence') unless 
-        $evidence_type_id || @{ $evidence || [] };
+        $evidence_type || @{ $evidence || [] };
 
     my $feature_sth = $db->prepare(
         q[
@@ -468,15 +375,13 @@ Inserts a correspondence.  Returns -1 if there is nothing to do.
                    map.accession_id as map_aid,
                    map.map_name,
                    map.map_set_id,
-                   mt.is_relational_map
+                   ms.is_relational_map
             from   cmap_feature f,
                    cmap_map map,
-                   cmap_map_set ms,
-                   cmap_map_type mt
+                   cmap_map_set ms
             where  f.feature_id=?
             and    f.map_id=map.map_id
             and    map.map_set_id=ms.map_set_id
-            and    ms.map_type_id=mt.map_type_id
         ]
     );
 
@@ -510,10 +415,10 @@ Inserts a correspondence.  Returns -1 if there is nothing to do.
             where  cl.feature_id1=?
             and    cl.feature_id2=?
             and    cl.feature_correspondence_id=ce.feature_correspondence_id
-            and    ce.evidence_type_id=?
+            and    ce.evidence_type=?
         ],
         {},
-        ( $feature_id1, $feature_id2, $evidence_type_id )
+        ( $feature_id1, $feature_id2, $evidence_type )
     ) || 0;
     return -1 if $count;
 
@@ -565,9 +470,9 @@ Inserts a correspondence.  Returns -1 if there is nothing to do.
     # To be consistent, push any lone evidence types onto the optional
     # evidence arrayref (of hashrefs).
     #
-    if ( $evidence_type_id ) {
+    if ( $evidence_type ) {
         push @$evidence, {
-            evidence_type_id => $evidence_type_id
+            evidence_type => $evidence_type
         };
     }
 
@@ -575,7 +480,7 @@ Inserts a correspondence.  Returns -1 if there is nothing to do.
     # Create the evidence.
     #
     for my $e ( @$evidence ) {
-        my $et_id            = $e->{'evidence_type_id'};
+        my $et_id            = $e->{'evidence_type'};
         my $score            = $e->{'score'};
         my $corr_evidence_id = next_number(
             db               => $db,
@@ -594,7 +499,7 @@ Inserts a correspondence.  Returns -1 if there is nothing to do.
         else {
             $score_arg = 'NULL';
         }
-
+        my $rank=$self->evidence_type_data($et_id,'rank') || 1;
         $db->do(
             qq[
                 insert
@@ -602,10 +507,11 @@ Inserts a correspondence.  Returns -1 if there is nothing to do.
                        ( correspondence_evidence_id, 
                          accession_id,
                          feature_correspondence_id,     
-                         evidence_type_id,
-                         score
+                         evidence_type,
+                         score,
+                         rank
                        )
-                values ( ?, ?, ?, ?, $score_arg )
+                values ( ?, ?, ?, ?, $score_arg,$rank )
             ],
             {},
             ( @insert_args )
@@ -697,51 +603,6 @@ Delete a feature correspondence.
     $self->attribute_delete( 'cmap_feature_correspondence', $feature_corr_id );
 
     return 1;
-}
-
-# ----------------------------------------------------
-sub feature_type_create {
-    my ( $self, %args ) = @_;
-    my @missing         = ();
-    my $db              = $self->db or return $self->error;
-    my $feature_type    = $args{'feature_type'} or push @missing,'feature type';
-    my $shape           = $args{'shape'}        or push @missing, 'shape';
-
-    if ( @missing ) {
-        return $self->error(
-            'Feature type create failed.  Missing required fields: ', 
-            join(', ', @missing)
-        );
-    }
-
-    my $color            = $args{'color'}            || '';
-    my $default_rank     = $args{'default_rank'}     ||  1;
-    my $drawing_lane     = $args{'drawing_lane'}     ||  1;
-    my $drawing_priority = $args{'drawing_priority'} ||  1;
-    my $feature_type_id  = next_number(
-        db               => $db,
-        table_name       => 'cmap_feature_type',
-        id_field         => 'feature_type_id',
-    ) or return $self->error('No feature type id');
-    my $accession_id     = $args{'accession_id'} || $feature_type_id;
-
-    $db->do(
-        q[
-            insert
-            into   cmap_feature_type
-                   ( accession_id, feature_type_id, feature_type,
-                     shape, color, default_rank, drawing_lane, 
-                     drawing_priority
-                   )
-            values ( ?, ?, ?, ?, ?, ?, ?, ? )
-        ],
-        {},
-        ( $accession_id, $feature_type_id, $feature_type,
-          $shape, $color, $default_rank, $drawing_lane, $drawing_priority
-        )
-    );
-
-    return $feature_type_id;
 }
 
 # ----------------------------------------------------
@@ -845,7 +706,7 @@ Find all the features matching some criteria.
     );
     my $map_aid          = $args{'map_aid'}          ||             '';
     my $species_ids      = $args{'species_ids'}      ||             [];
-    my $feature_type_ids = $args{'feature_type_ids'} ||             [];
+    my $feature_types = $args{'feature_types'} ||             [];
     my $search_field     = $args{'search_field'}     || 'feature_name';
     my $order_by         = $args{'order_by'}         || 
         'feature_name,species_name,map_set_name,map_name,start_position';
@@ -856,7 +717,7 @@ Find all the features matching some criteria.
     # "-1" is a reserved value meaning "all"
     #
     $species_ids      = [] if grep { /^-1$/ } @$species_ids;
-    $feature_type_ids = [] if grep { /^-1$/ } @$feature_type_ids;
+    $feature_types = [] if grep { /^-1$/ } @$feature_types;
 
     my %features;
     for my $feature_name ( map { uc $_ } @feature_names ) {
@@ -883,27 +744,23 @@ Find all the features matching some criteria.
                        f.feature_name,
                        f.start_position,
                        f.stop_position,
-                       ft.feature_type,
+                       f.feature_type,
                        map.map_name,
                        map.map_id,
                        ms.map_set_id,
                        ms.short_name as map_set_name,
                        s.species_id,
                        s.common_name as species_name,
-                       mt.map_type
+                       ms.map_type
             from       cmap_feature f
             left join  cmap_feature_alias fa
             on         f.feature_id=fa.feature_id
-            inner join cmap_feature_type ft
-            on         f.feature_type_id=ft.feature_type_id
             inner join cmap_map map
             on         f.map_id=map.map_id
             inner join cmap_map_set ms
             on         map.map_set_id=ms.map_set_id
             inner join cmap_species s
             on         ms.species_id=s.species_id
-            inner join cmap_map_type mt
-            on         ms.map_type_id=mt.map_type_id
             $where 
         ];
         $sql .= "and map.accession_id='$map_aid' " if $map_aid;
@@ -913,8 +770,8 @@ Find all the features matching some criteria.
                 join(', ', @$species_ids ) . ') ';
         }
 
-        if ( my $ft = join(', ',  @$feature_type_ids ) ) {
-            $sql .= "and f.feature_type_id in ($ft) ";
+        if ( my $ft = join(', ',  @$feature_types ) ) {
+            $sql .= "and f.feature_type in ($ft) ";
         }
 
         my $found = $db->selectall_hashref( $sql, 'feature_id' );
@@ -971,34 +828,6 @@ Find all the features matching some criteria.
 }
 
 # ----------------------------------------------------
-sub feature_type_by_id {
-
-=pod
-
-=head2 feature_type_by_id  
-
-Find all feature types by the internal ID.
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $feature_type_id = $args{'feature_type_id'} or 
-        $self->error('No feature type id');
-    
-    my $db = $self->db or return;
-    return $db->selectrow_array(
-        q[
-            select ft.feature_type
-            from   cmap_feature_type ft
-            where  feature_type_id=?
-        ],
-        {}, 
-        ( $feature_type_id )
-    );
-}
-
-
-# ----------------------------------------------------
 sub feature_name_by_id {
 
 =pod
@@ -1029,57 +858,6 @@ Find a feature's name by either its internal or accession ID.
 }
 
 # ----------------------------------------------------
-sub feature_type_delete {
-
-=pod
-
-=head2 feature_type_delete
-
-Delete a feature type.
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $feature_type_id = $args{'feature_type_id'} or 
-        return $self->error('No feature type id');
-
-    my $db  = $self->db or return;
-    my $sth = $db->prepare(
-        q[
-            select   count(f.feature_type_id) as no_features, 
-                     ft.feature_type
-            from     cmap_feature f,
-                     cmap_feature_type ft
-            where    f.feature_type_id=?
-            and      f.feature_type_id=ft.feature_type_id
-            group by feature_type
-        ]
-    );
-    $sth->execute( $feature_type_id );
-    my $hr = $sth->fetchrow_hashref;
-
-    if ( $hr->{'no_features'} > 0 ) {
-        return $self->error(
-            "Unable to delete feature type '", $hr->{'feature_type'},
-            "' as ", $hr->{'no_features'},
-            " features are linked to it."
-        );
-    }
-    else {
-        $db->do(
-            q[
-                delete
-                from   cmap_feature_type
-                where  feature_type_id=?
-            ],
-            {}, ( $feature_type_id )
-        );
-    }
-
-    $self->attribute_delete( 'cmap_feature_type', $feature_type_id );
-
-    return 1;
-}
 
 # ----------------------------------------------------
 sub feature_types {
@@ -1095,17 +873,16 @@ Find all the feature types.
     my ( $self, %args ) = @_;
     my $order_by        = $args{'order_by'} || 'feature_type';
 
-    my $db = $self->db or return;
-    return $db->selectall_arrayref(
-        qq[
-            select   ft.feature_type_id, 
-                     ft.feature_type, 
-                     ft.shape
-            from     cmap_feature_type ft
-            order by $order_by
-        ], 
-        { Columns => {} }
-    );
+    my @feature_type_names = keys(%{$self->config_data('feature_type')});
+    my $feature_types;
+    foreach my $type (sort {$a->{$order_by} cmp $b->{$order_by}} @feature_type_names){
+        $feature_types->[++$#{$feature_types}]=
+            $self->feature_type_data($type)
+             or return $self->error(
+             "No feature type '$type'"
+              );
+    }
+    return $feature_types;
 }
 
 # ----------------------------------------------------
@@ -1229,7 +1006,7 @@ sub map_set_create {
         or push @missing, 'short_name';
     my $species_id           = $args{'species_id'}
         or push @missing, 'species';
-    my $map_type_id          = $args{'map_type_id'}
+    my $map_type             = $args{'map_type'}
         or push @missing, 'map_type';
     my $accession_id         = $args{'accession_id'}         || '';
     my $display_order        = $args{'display_order'}        ||  1;
@@ -1260,20 +1037,26 @@ sub map_set_create {
     ) or die 'No map set id';
     $accession_id ||= $map_set_id;
 
+    my $map_units= $self->map_type_data($map_type,'map_units');
+    my $is_relational_map=$self->map_type_data($map_type,'is_relational_map');
+
+
     $db->do(
         q[
             insert
             into   cmap_map_set
                    ( map_set_id, accession_id, map_set_name, short_name,
-                     species_id, map_type_id, published_on, display_order, 
-                     can_be_reference_map, shape, width, color )
-            values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
+                     species_id, map_type, published_on, display_order, 
+                     can_be_reference_map, shape, width, color, map_units,
+                     is_relational_map )
+            values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
         ],
         {}, 
         ( 
             $map_set_id, $accession_id, $map_set_name, $short_name,
-            $species_id, $map_type_id, $published_on, $display_order, 
-            $can_be_reference_map, $shape, $width, $color
+            $species_id, $map_type, $published_on, $display_order, 
+            $can_be_reference_map, $shape, $width, $color, $map_units,
+            $is_relational_map
         )
     );
 
@@ -1321,101 +1104,6 @@ Delete a map set.
         {},     
         ( $map_set_id )
     ); 
-
-    return 1;
-}
-
-# ----------------------------------------------------
-sub map_type_create {
-    my ( $self, %args ) = @_;
-    my @missing         = ();
-    my $map_type        = $args{'map_type'}  or push @missing, 'map type';
-    my $map_units       = $args{'map_units'} or push @missing, 'map units';
-    my $shape           = $args{'shape'}     or push @missing, 'shape';
-
-    if ( @missing ) {
-        return $self->error(
-            'Map type create failed.  Missing required fields: ', 
-            join(', ', @missing)
-        );
-    }
-
-    my $width             = $args{'width'}             || '';
-    my $color             = $args{'color'}             || '';
-    my $display_order     = $args{'display_order'}     ||  1;
-    my $is_relational_map = $args{'is_relational_map'} ||  0;
-    my $db                = $self->db;
-    my $map_type_id       = next_number(
-        db                => $db,
-        table_name        => 'cmap_map_type',
-        id_field          => 'map_type_id',
-    ) or return $self->error('No map type id');
-    my $accession_id      = $args{'accession_id'} || $map_type_id;
-
-    $db->do(
-        q[
-            insert
-            into   cmap_map_type
-                   ( map_type_id, accession_id, map_type, map_units,
-                     is_relational_map, display_order, shape, width, color )
-            values ( ?, ?, ?, ?, ?, ?, ?, ?, ? )
-        ],
-        {},
-        ( $map_type_id, $accession_id, $map_type, $map_units,
-          $is_relational_map, $display_order, $shape, $width, $color )
-    );
-
-    return $map_type_id;
-}
-
-# ----------------------------------------------------
-sub map_type_delete {
-
-=pod
-
-=head2 map_type_delete 
-
-Delete a map type.
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $map_type_id     = $args{'map_type_id'} or 
-        return $self->error('No map type id');
-
-    my $db  = $self->db or return;
-    my $sth = $db->prepare(
-        q[
-            select   count(ms.map_set_id) as no_map_sets, 
-                     mt.map_type
-            from     cmap_map_set ms, cmap_map_type mt
-            where    ms.map_type_id=?
-            and      ms.map_type_id=mt.map_type_id
-            group by map_type 
-        ]
-    );
-    $sth->execute( $map_type_id );
-    my $hr = $sth->fetchrow_hashref;
-
-    if ( $hr->{'no_map_sets'} > 0 ) {
-        return $self->error(
-            "Unable to delete map type '", $hr->{'map_type'}, 
-            "' as ", $hr->{'no_map_sets'},
-            " map sets are linked to it."
-        );
-    }       
-    else {  
-        $self->attribute_delete( 'cmap_map_type', $map_type_id );
-
-        $db->do(
-            q[
-                delete
-                from   cmap_map_type
-                where  map_type_id=?
-            ],
-            {}, ( $map_type_id )
-        );
-    }
 
     return 1;
 }

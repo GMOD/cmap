@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::FeatureTypeViewer;
 # vim: set ft=perl:
 
-# $Id: FeatureTypeViewer.pm,v 1.7 2004-03-18 22:01:00 mwz444 Exp $
+# $Id: FeatureTypeViewer.pm,v 1.8 2004-03-25 14:11:57 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.7 $)[-1];
+$VERSION = (qw$Revision: 1.8 $)[-1];
 
 use Data::Pageset;
 use Bio::GMOD::CMap::Apache;
@@ -21,10 +21,10 @@ sub handler {
     $self->data_source( $apr->param('data_source') ) or return;
 
     my $page_no           = $apr->param('page_no') || 1;
-    my @ft_aids           = split( /,/, $apr->param('feature_type_aid') );
+    my @ft_aids           = split( /,/, $apr->param('feature_type') );
     my $data_module       = $self->data_module;
     my $feature_types     = $data_module->feature_type_info_data(
-        feature_type_aids => \@ft_aids,
+        feature_types => \@ft_aids,
     ) or return $self->error( $data_module->error );
 
     $PAGE_SIZE ||= $self->config_data('max_child_elements') || 0;

@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.71 2004-03-18 22:01:00 mwz444 Exp $
+# $Id: Map.pm,v 1.72 2004-03-25 14:11:58 mwz444 Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.71 $)[-1];
+$VERSION = (qw$Revision: 1.72 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -49,7 +49,7 @@ BEGIN {
     my @AUTO_FIELDS = qw[
         map_set_id map_set_aid map_type accession_id species_id 
         map_id species_name map_units map_name map_set_name 
-        map_type_id is_relational_map begin end 
+        map_type is_relational_map begin end 
     ];
 
     foreach my $sub_name ( @AUTO_FIELDS ) {
@@ -142,9 +142,10 @@ Returns the color of the map.
     my $self   = shift;
     my $map_id = shift or return;
     my $map    = $self->map( $map_id );
+
     return 
         $map->{'color'}         || 
-        $map->{'default_color'} || 
+        $self->map_type_data($map->{'map_type'},'color') || 
         $self->config_data('map_color');
 }
 
@@ -426,8 +427,8 @@ in raw format as a hashref keyed on feature_id.
             }
             map  { [
                 $_, 
-                $_->{'drawing_lane'}, 
-                $_->{'drawing_priority'}, 
+                $self->feature_type_data($_->{'feature_type'},'drawing_lane'), 
+                $self->feature_type_data($_->{'feature_type'},'drawing_priority'), 
                 defined $_->{'start_position'} ? $_->{'start_position'} : 0,
                 defined $_->{'stop_position'} ? $_->{'stop_position'} : 0,
             ] }
@@ -456,7 +457,8 @@ Returns a string describing how to draw the map.
     my $self   = shift;
     my $map_id = shift or return;
     my $map    = $self->map( $map_id );
-    my $shape  = $map->{'shape'} || $map->{'default_shape'} || '';
+    my $shape  = $map->{'shape'} ||
+	$self->map_type_data($map->{'map_type'},'shape')|| '';
        $shape  = 'default' unless defined $SHAPE{ $shape };
     return $shape;
 }
@@ -517,7 +519,7 @@ Lays out the map.
         $slot_max_x,       # westernmost coord for the slot
         @map_titles,       # the titles to put above - for relational maps
         $map_set_aid,      # the map set acc. ID - for relational maps
-        %feature_type_ids, # the distinct feature type IDs
+        %feature_types, # the distinct feature type IDs
     );
 
     #
@@ -792,7 +794,7 @@ Lays out the map.
                     !$has_corr     &&          # feature has no correspondences
                     !$show_labels;             # not showing labels
 
-                my $feature_shape     = $feature->{'shape'} || LINE;
+                my $feature_shape     = $self->feature_type_data($feature->{'feature_type'},'shape') || LINE;
                 my $shape_is_triangle = $feature_shape =~ /triangle$/;
                 my $fstart            = $feature->{'start_position'} || 0;
                 my $fstop             = $shape_is_triangle 
@@ -827,8 +829,9 @@ Lays out the map.
                 $y_pos2 = $y_pos1 unless defined $y_pos2 && $y_pos2 > $y_pos1;
 
                 my $color         = $has_corr ? $feature_corr_color : '';
-                   $color       ||= $feature->{'color'} || 
-                                    $default_feature_color;
+                   $color       ||= 
+		       $self->feature_type_data($feature->{'feature_type'},'color') || 
+		       $default_feature_color;
                 my $label         = $feature->{'feature_name'};
                 my $tick_start    = $base_x - $tick_overhang;
                 my $tick_stop     = $base_x + $map_width + $tick_overhang;
@@ -1146,7 +1149,7 @@ Lays out the map.
                 #
                 # Register that we saw this type of feature.
                 #
-                $feature_type_ids{ $feature->{'feature_type_id'} } = 1;
+                $feature_types{ $feature->{'feature_type'} } = 1;
 
                 my $is_highlighted = $drawer->highlight_feature( 
                     $feature->{'feature_name'},
@@ -1763,7 +1766,7 @@ Lays out the map.
     #
     # Register the feature types we saw.
     #
-    $drawer->register_feature_type( keys %feature_type_ids );
+    $drawer->register_feature_type( keys %feature_types );
 
     #
     # Background color

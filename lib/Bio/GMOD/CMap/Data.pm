@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.99 2004-03-18 22:00:59 mwz444 Exp $
+# $Id: Data.pm,v 1.100 2004-03-25 14:11:56 mwz444 Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.99 $)[-1];
+$VERSION = (qw$Revision: 1.100 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -136,30 +136,25 @@ Gets the specifics on a feature correspondence record.
                    f.accession_id as feature_aid, 
                    f.map_id,
                    f.accession_id as map_aid,
-                   f.feature_type_id,
                    f.feature_name,
                    f.start_position,
                    f.stop_position,
-                   ft.feature_type,
+                   f.feature_type,
                    map.map_name,
                    map.accession_id as map_aid,
                    ms.map_set_id,
                    ms.accession_id as map_set_aid,
                    ms.short_name as map_set_name,
                    s.common_name as species_name,
-                   mt.map_units
+                   ms.map_units
             from   cmap_feature f,
-                   cmap_feature_type ft,
                    cmap_map map,
                    cmap_map_set ms,
-                   cmap_species s,
-                   cmap_map_type mt
+                   cmap_species s
             where  f.feature_id=?
-            and    f.feature_type_id=ft.feature_type_id
             and    f.map_id=map.map_id
             and    map.map_set_id=ms.map_set_id
             and    ms.species_id=s.species_id
-            and    ms.map_type_id=mt.map_type_id
         ]
     );
     $sth->execute( $corr->{'feature_id1'} );
@@ -172,15 +167,11 @@ Gets the specifics on a feature correspondence record.
             select   ce.correspondence_evidence_id,
                      ce.accession_id,
                      ce.feature_correspondence_id,
-                     ce.evidence_type_id,
                      ce.score,
-                     et.accession_id as evidence_type_aid,
-                     et.evidence_type,
-                     et.rank
-            from     cmap_correspondence_evidence ce,
-                     cmap_evidence_type et
+                     ce.evidence_type,
+                     ce.rank
+            from     cmap_correspondence_evidence ce
             where    ce.feature_correspondence_id=?
-            and      ce.evidence_type_id=et.evidence_type_id
             order by rank, evidence_type
         ],
         { Columns => {} },
@@ -222,10 +213,7 @@ Organizes the data for drawing comparative maps.
     #
     $include_feature_types  = [] if grep { /^-1$/ } @$include_feature_types;
     $include_evidence_types = [] if grep { /^-1$/ } @$include_evidence_types;
-    my $feature_type_ids    = 
-        $self->feature_type_aid_to_id( @$include_feature_types );
-    my $evidence_type_ids   =
-        $self->evidence_type_aid_to_id( @$include_evidence_types );
+    
 
     #
     # Delete anything from the cache.
@@ -248,8 +236,8 @@ Organizes the data for drawing comparative maps.
             slot_no                  => $slot_no,
             ref_slot_no              => $ref_slot_no,
             min_correspondences      => $min_correspondences,
-            feature_type_ids         => $feature_type_ids,
-            evidence_type_ids        => $evidence_type_ids,
+            include_feature_types    => $include_feature_types,
+            include_evidence_types   => $include_evidence_types,
             pid                      => $pid,
         ) or return;
     }
@@ -292,13 +280,13 @@ Returns the data for drawing comparative maps.
     my $slot_no                 = $args{'slot_no'};
     my $ref_slot_no             = $args{'ref_slot_no'};
     my $min_correspondences     = $args{'min_correspondences'} ||  0;
-    my $feature_type_ids        = $args{'feature_type_ids'};
-    my $evidence_type_ids       = $args{'evidence_type_ids'};
+    my $include_feature_types        = $args{'include_feature_types'};
+    my $include_evidence_types       = $args{'include_evidence_types'};
     my $map                     = ${ $args{'map'} }; # hashref
     my $reference_map           = $args{'reference_map'};
+    my $feature_types           = $args{'feature_types'};
     my $correspondences         = $args{'correspondences'};
     my $correspondence_evidence = $args{'correspondence_evidence'};
-    my $feature_types           = $args{'feature_types'};
     my $pid                     = $args{'pid'};
 
     #
@@ -432,18 +420,15 @@ Returns the data for drawing comparative maps.
                      f2.feature_id as feature_id2, 
                      map.map_id,
                      cl.feature_correspondence_id,
-                     et.evidence_type,
-                     et.accession_id as evidence_type_aid,
-                     et.rank as evidence_rank,
-                     et.line_color
+                     ce.evidence_type,
+                     ce.rank as evidence_rank
             from     cmap_feature f1, 
                      cmap_feature f2, 
                      cmap_map map,
                      cmap_map_cache mc,
                      cmap_correspondence_lookup cl,
                      cmap_feature_correspondence fc,
-                     cmap_correspondence_evidence ce,
-                     cmap_evidence_type et
+                     cmap_correspondence_evidence ce
             where    mc.pid=?
             and      mc.slot_no=?
             and      mc.map_id=f1.map_id
@@ -454,22 +439,21 @@ Returns the data for drawing comparative maps.
             and      fc.is_enabled=1
             and      fc.feature_correspondence_id=
                      ce.feature_correspondence_id
-            and      ce.evidence_type_id=et.evidence_type_id
             and      cl.feature_id2=f2.feature_id
             and      f2.map_id=map.map_id
             and      map.$field=?
             $to_restriction
         ];
 
-        if ( @$evidence_type_ids ) {
-            $corr_sql .= 'and ce.evidence_type_id in ('.
-                join( ',', @$evidence_type_ids ).
+        if ( @$include_evidence_types ) {
+            $corr_sql .= 'and ce.evidence_type in ('.
+                join( ',', @$include_evidence_types ).
             ')';
         }
 
-        if ( @$feature_type_ids ) {
-            $corr_sql .= 'and f1.feature_type_id in ('.
-                join( ',', @$feature_type_ids ).
+        if ( @$include_feature_types ) {
+            $corr_sql .= 'and f1.feature_type in ('.
+                join( ',', @$include_feature_types ).
             ')';
         }
 
@@ -492,7 +476,7 @@ Returns the data for drawing comparative maps.
             if ( $ref_map_id ) { # just one reference map
                 push @maps, @{ $db->selectall_arrayref(
                     $sql->map_data_map_ids_by_single_reference_map(
-                        evidence_type_ids => $evidence_type_ids,
+                        evidence_types => $include_evidence_types,
                     ),
                     { Columns => {} },
                     ( $ref_map_id, $ref_map_start, $ref_map_stop, 
@@ -516,13 +500,9 @@ Returns the data for drawing comparative maps.
                                  ms.shape,
                                  ms.width,
                                  ms.color,
-                                 mt.map_type_id,
-                                 mt.map_type,
-                                 mt.map_units,
-                                 mt.is_relational_map,
-                                 mt.shape as default_shape,
-                                 mt.width as default_width,
-                                 mt.color as default_color,
+                                 ms.map_type,
+                                 ms.map_units,
+                                 ms.is_relational_map
                                  s.species_id,
                                  s.common_name as species_name
                         from     cmap_map map,
@@ -531,7 +511,6 @@ Returns the data for drawing comparative maps.
                                  cmap_map_set ms,
                                  cmap_map_cache mc,
                                  cmap_species s,
-                                 cmap_map_type mt,
                                  cmap_correspondence_lookup cl,
                                  cmap_feature_correspondence fc
                         where    mc.pid=?
@@ -545,7 +524,6 @@ Returns the data for drawing comparative maps.
                         and      f2.map_id=map.map_id
                         and      map.map_set_id=?
                         and      map.map_set_id=ms.map_set_id
-                        and      ms.map_type_id=mt.map_type_id
                         and      ms.species_id=s.species_id
                     ],
                     { Columns => {} },
@@ -569,22 +547,16 @@ Returns the data for drawing comparative maps.
                                  ms.shape,
                                  ms.width,
                                  ms.color,
-                                 mt.map_type_id,
-                                 mt.map_type,
-                                 mt.map_units,
-                                 mt.is_relational_map,
-                                 mt.shape as default_shape,
-                                 mt.width as default_width,
-                                 mt.color as default_color,
+                                 ms.map_type,
+                                 ms.map_units,
+                                 ms.is_relational_map,
                                  s.species_id,
                                  s.common_name as species_name
                         from     cmap_map map,
                                  cmap_map_set ms,
-                                 cmap_species s,
-                                 cmap_map_type mt
+                                 cmap_species s
                         where    map.map_set_id=?
                         and      map.map_set_id=ms.map_set_id
-                        and      ms.map_type_id=mt.map_type_id
                         and      ms.species_id=s.species_id
                     ],
                     { Columns => {} },
@@ -609,22 +581,16 @@ Returns the data for drawing comparative maps.
                            ms.shape,
                            ms.width,
                            ms.color,
-                           mt.map_type_id,
-                           mt.map_type,
-                           mt.map_units,
-                           mt.is_relational_map,
-                           mt.shape as default_shape,
-                           mt.width as default_width,
-                           mt.color as default_color,
+                           ms.map_type,
+                           ms.map_units,
+                           ms.is_relational_map,
                            s.species_id,
                            s.common_name as species_name
                     from   cmap_map map,
                            cmap_map_set ms,
-                           cmap_species s,
-                           cmap_map_type mt
+                           cmap_species s
                     where  map.accession_id=?
                     and    map.map_set_id=ms.map_set_id
-                    and    ms.map_type_id=mt.map_type_id
                     and    ms.species_id=s.species_id
                 ],
                 { Columns => {} },
@@ -696,82 +662,20 @@ Returns the data for drawing comparative maps.
             ];
         }
 
-#        my $corr_sql = qq[
-#            select   f1.feature_id as feature_id1,
-#                     f2.feature_id as feature_id2, 
-#                     map2.map_id,
-#                     map1.map_id as other_map_id,
-#                     cl.feature_correspondence_id,
-#                     et.accession_id as evidence_type_aid,
-#                     et.evidence_type,
-#                     et.rank as evidence_rank,
-#                     et.line_color
-#            from     cmap_feature f1, 
-#                     cmap_map map1,
-#                     cmap_map_cache mc,
-#                     cmap_feature f2, 
-#                     cmap_map map2,
-#                     cmap_correspondence_lookup cl,
-#                     cmap_feature_correspondence fc,
-#                     cmap_correspondence_evidence ce,
-#                     cmap_evidence_type et
-#            where    mc.pid=?
-#            and      mc.slot_no=?
-#            and      mc.map_id=f1.map_id
-#            and      f1.map_id=map1.map_id
-#            $from_restriction
-#            and      f1.feature_id=cl.feature_id1
-#            and      cl.feature_correspondence_id=
-#                     fc.feature_correspondence_id
-#            and      fc.is_enabled=1
-#            and      fc.feature_correspondence_id=
-#                     ce.feature_correspondence_id
-#            and      ce.evidence_type_id=et.evidence_type_id
-#            and      cl.feature_id2=f2.feature_id
-#            and      f2.map_id=map2.map_id
-#            and      map2.map_id=map1.map_id
-#            and      map2.map_id=mc.map_id
-#        ];
-#
-#        if ( @$evidence_type_ids ) {
-#            $corr_sql .= 'and ce.evidence_type_id in ('.
-#                join( ',', @$evidence_type_ids ).
-#            ')';
-#        }
-#
-#        if ( @$feature_type_ids ) {
-#            $corr_sql .= 'and f1.feature_type_id in ('.
-#                join( ',', @$feature_type_ids ).
-#            ')';
-#        }
-#
-#        my $self_correspondences = $db->selectall_arrayref(
-#            $corr_sql, { Columns => {} }, ( $pid, $slot_no )
-#        );
-#
-#        for my $corr ( @{ $self_correspondences || [] } ) {
-#            push @{ $self_correspondences{ $corr->{'map_id'} } }, $corr;
-#        }
 
         #
         # Figure out what kind of features are on the map(s).
         #    
         my $ft_sql = qq[
             select   distinct
-                     ft.feature_type_id,
-                     ft.accession_id as feature_type_aid,
-                     ft.feature_type,
-                     ft.shape,
-                     ft.color
+                     f.feature_type
             from     cmap_feature f,
-                     cmap_feature_type ft,
                      cmap_map map,
                      cmap_map_cache mc
             where    mc.pid=?
             and      mc.slot_no=?
             and      mc.map_id=f.map_id
             and      f.map_id=map.map_id
-            and      f.feature_type_id=ft.feature_type_id
         ];
 
         if ( $this_map_id && defined $map_start && defined $map_stop ) {
@@ -788,14 +692,14 @@ Returns the data for drawing comparative maps.
             ];
         }
 
-        if ( @$feature_type_ids ) {
-            $ft_sql .= 'and f.feature_type_id in ('.
-                join( ',', @$feature_type_ids ).
+        if ( @$include_feature_types ) {
+            $ft_sql .= 'and f.feature_type in ('.
+                join( ',', @$include_feature_types ).
             ')';
         }
 
         my $ft = $db->selectall_hashref(
-            $ft_sql, 'feature_type_id', {}, ( $pid, $slot_no )
+            $ft_sql, 'feature_type', {}, ( $pid, $slot_no )
         );
 
         $feature_types->{$_} = $ft->{$_} for keys %$ft;
@@ -811,28 +715,19 @@ Returns the data for drawing comparative maps.
                      f.is_landmark,
                      f.start_position,
                      f.stop_position,
-                     ft.feature_type_id,
-                     ft.feature_type,
-                     ft.default_rank,
-                     ft.shape,
-                     ft.color,
-                     ft.drawing_lane,
-                     ft.drawing_priority,
+                     f.feature_type,
+                     f.default_rank,
                      map.accession_id as map_aid,
-                     mt.map_units
+                     ms.map_units
             from     cmap_map_cache mc,
                      cmap_feature f,
-                     cmap_feature_type ft,
                      cmap_map map,
-                     cmap_map_set ms,
-                     cmap_map_type mt
+                     cmap_map_set ms
             where    mc.pid=?
             and      mc.slot_no=?
             and      mc.map_id=f.map_id
-            and      f.feature_type_id=ft.feature_type_id
             and      f.map_id=map.map_id
             and      map.map_set_id=ms.map_set_id
-            and      ms.map_type_id=mt.map_type_id
         ];
 
         my $alias_sql = qq[
@@ -864,9 +759,9 @@ Returns the data for drawing comparative maps.
             $alias_sql .= $restrict;
         }
 
-        if ( @$feature_type_ids ) {
-            $f_sql .= 'and ft.feature_type_id in ('.
-                join( ',', @$feature_type_ids ).
+        if ( @$include_feature_types ) {
+            $f_sql .= 'and f.feature_type in ('.
+                join( ',', @$include_feature_types ).
             ')';
         }
 
@@ -916,10 +811,8 @@ Returns the data for drawing comparative maps.
             push @{ $correspondence_evidence->{ 
                 $corr->{'feature_correspondence_id'}
             } }, {
-                evidence_type_aid => $corr->{'evidence_type_aid'}, 
                 evidence_type     => $corr->{'evidence_type'}, 
                 evidence_rank     => $corr->{'evidence_rank'}, 
-                line_color        => $corr->{'line_color'},
             };
         }
 
@@ -1004,7 +897,7 @@ Returns the data for drawing comparative maps.
                 #
                 $map_data->{'features'} = $db->selectall_hashref(
                     $sql->cmap_data_features_sql(
-                        feature_type_ids => $feature_type_ids, 
+                        feature_types => $include_feature_types, 
                     ),
                     'feature_id',
                     {},
@@ -1078,7 +971,7 @@ Returns the data for the correspondence matrix.
     my ( $self, %args )  = @_;
     my $db               = $self->db                 or return;
     my $species_aid      = $args{'species_aid'}      ||     '';
-    my $map_type_aid     = $args{'map_type_aid'}     ||     '';
+    my $map_type     = $args{'map_type'}     ||     '';
     my $map_set_aid      = $args{'map_set_aid'}      ||     '';
     my $map_name         = $args{'map_name'}         ||     ''; 
     my $link_map_set_aid = $args{'link_map_set_aid'} ||      0;
@@ -1106,15 +999,13 @@ Returns the data for the correspondence matrix.
     #
     my $map_types = $db->selectall_arrayref( 
         q[
-            select   distinct mt.accession_id as map_type_aid, 
-                     mt.map_type,
-                     mt.display_order 
-            from     cmap_map_type mt,
-                     cmap_map_set ms
-            where    mt.map_type_id=ms.map_type_id
-            and      ms.can_be_reference_map=1
+            select   distinct  
+                     ms.map_type,
+                     ms.display_order 
+            from     cmap_map_set ms
+            where    ms.can_be_reference_map=1
             and      ms.is_enabled=1
-            order by mt.display_order, mt.map_type
+            order by ms.display_order, ms.map_type
         ],
         { Columns => {} } 
     );
@@ -1145,16 +1036,14 @@ Returns the data for the correspondence matrix.
     }
 
     #
-    # Make sure that map_type_aid is set if map_set_id is.
+    # Make sure that map_type is set if map_set_id is.
     #
-    if ( $map_set_aid && !$map_type_aid ) {
-        $map_type_aid = $db->selectrow_array(
+    if ( $map_set_aid && !$map_type ) {
+        $map_type = $db->selectrow_array(
             q[
-                select mt.accession_id
-                from   cmap_map_set ms,
-                       cmap_map_type mt
+                select ms.map_type
+                from   cmap_map_set ms
                 where  ms.accession_id=?
-                and    ms.map_type_id=mt.map_type_id
             ],
             {},
             ( $map_set_aid )
@@ -1165,29 +1054,27 @@ Returns the data for the correspondence matrix.
     # Get all the map sets for a given species and/or map type.
     #
     my ( $maps, $map_sets );
-    if ( $species_aid || $map_type_aid ) {
+    if ( $species_aid || $map_type ) {
         my $sql = q[
-            select   mt.display_order,
-                     mt.map_type,
+            select   ms.display_order,
+                     ms.map_type,
                      s.display_order,
                      s.common_name as species_name, 
                      ms.accession_id as map_set_aid, 
                      ms.display_order,
                      ms.short_name as map_set_name
             from     cmap_map_set ms,
-                     cmap_map_type mt,
                      cmap_species s
             where    ms.can_be_reference_map=1
             and      ms.is_enabled=1
-            and      ms.map_type_id=mt.map_type_id
             and      ms.species_id=s.species_id
         ];
 
         $sql .= "and s.accession_id='$species_aid' "   if $species_aid;
-        $sql .= "and mt.accession_id='$map_type_aid' " if $map_type_aid;
+        $sql .= "and ms.map_type='$map_type' " if $map_type;
         $sql .= q[
-            order by mt.display_order,
-                     mt.map_type,
+            order by ms.display_order,
+                     ms.map_type,
                      s.display_order,
                      s.common_name,
                      ms.display_order, 
@@ -1202,15 +1089,13 @@ Returns the data for the correspondence matrix.
                      map.display_order
             from     cmap_map map,
                      cmap_map_set ms,
-                     cmap_map_type mt,
                      cmap_species s
             where    map.map_set_id=ms.map_set_id
             and      ms.can_be_reference_map=1
             and      ms.is_enabled=1
-            and      ms.map_type_id=mt.map_type_id
             and      ms.species_id=s.species_id
-        ];
-        $map_sql .= "and mt.accession_id='$map_type_aid' " if $map_type_aid;
+			 ];
+        $map_sql .= "and ms.map_type='$map_type' " if $map_type;
         $map_sql .= "and s.accession_id='$species_aid' "   if $species_aid;
         $map_sql .= "and ms.accession_id='$map_set_aid' "  if $map_set_aid;
         $map_sql .= 'order by map.display_order, map.map_name';
@@ -1229,21 +1114,18 @@ Returns the data for the correspondence matrix.
                      map.map_name, 
                      ms.map_set_id, 
                      ms.accession_id as map_set_aid,
-                     ms.short_name as map_set_name,
-                     mt.accession_id as map_type_aid, 
-                     mt.display_order as map_type_display_order, 
-                     mt.map_type,
+                     ms.short_name as map_set_name, 
+                     ms.display_order, 
+                     ms.map_type,
                      s.species_id,
                      s.accession_id as species_aid,
                      s.common_name as species_name
             from     cmap_map map,
                      cmap_map_set ms,
-                     cmap_map_type mt,
                      cmap_species s
             where    map.map_set_id=ms.map_set_id
             and      ms.is_enabled=1
             and      ms.accession_id='$map_set_aid'
-            and      ms.map_type_id=mt.map_type_id
             and      ms.species_id=s.species_id
         ];
 
@@ -1266,19 +1148,15 @@ Returns the data for the correspondence matrix.
                          ms.short_name as map_set_name,
                          ms.display_order as map_set_display_order,
                          ms.published_on, 
-                         mt.accession_id as map_type_aid, 
-                         mt.display_order as map_type_display_order, 
-                         mt.map_type,
+                         ms.map_type,
                          s.species_id,
                          s.accession_id as species_aid,
                          s.common_name as species_name,
                          s.display_order as species_display_order
                 from     cmap_map map,
                          cmap_map_set ms,
-                         cmap_map_type mt,
                          cmap_species s
                 where    map.map_name='$map_name'
-                and      map.map_type_id=mt.map_type_id
                 and      map.map_set_id=ms.map_set_id
                 and      ms.is_enabled=1
                 and      ms.species_id=s.species_id
@@ -1289,18 +1167,17 @@ Returns the data for the correspondence matrix.
                 "and s.accession_id='$species_aid' "   if $species_aid;
 
             $map_set_sql .= 
-                "and mt.accession_id='$map_type_aid' " if $map_type_aid;
+                "and ms.map_type='$map_type' " if $map_type;
 
             $map_set_sql .= 
                 "and ms.accession_id='$map_set_aid' "  if $map_set_aid;
 
             $map_set_sql .= q[
-                order by map_type_display_order,
+                order by map_set_display_order,
                          map_type,
                          species_display_order, 
                          species_name, 
-                         map_set_display_order,
-                         map_set_name,
+			 map_set_name,
                          published_on,
                          map_set_name
             ];
@@ -1311,19 +1188,15 @@ Returns the data for the correspondence matrix.
                          ms.accession_id as map_set_aid,
                          ms.short_name as map_set_name,
                          ms.display_order as map_set_display_order,
-                         mt.display_order as map_type_display_order, 
-                         mt.accession_id as map_type_aid, 
-                         mt.map_type,
+                         ms.map_type,
                          s.species_id,
                          s.accession_id as species_aid,
                          s.common_name as species_name,
                          s.display_order as species_display_order
                 from     cmap_map_set ms,
-                         cmap_map_type mt,
                          cmap_species s
                 where    ms.can_be_reference_map=1
                 and      ms.is_enabled=1
-                and      ms.map_type_id=mt.map_type_id
                 and      ms.species_id=s.species_id
             ];
 
@@ -1331,17 +1204,16 @@ Returns the data for the correspondence matrix.
                 "and s.accession_id='$species_aid' "   if $species_aid;
 
             $map_set_sql .= 
-                "and mt.accession_id='$map_type_aid' " if $map_type_aid;
+                "and ms.map_type='$map_type' " if $map_type;
 
             $map_set_sql .= 
                 "and ms.accession_id='$map_set_aid' "  if $map_set_aid;
 
             $map_set_sql .= q[
-                order by map_type_display_order,
+                order by map_set_display_order,
                          map_type,
                          species_display_order, 
                          species_name,
-                         map_set_display_order,
                          map_set_name,
                          published_on desc,
                          map_set_name
@@ -1353,13 +1225,6 @@ Returns the data for the correspondence matrix.
         };
     }
 
-    #
-    # If there's only only set, then pretend that the user selected 
-    # this one and expand the relationships to the map level.
-    #
-#    if ( $map_set_aid eq '' && scalar @reference_map_sets == 1 ) {
-#        $map_set_aid = $reference_map_sets[0]->{'map_set_aid'};
-#    }
 
     #
     # Select the relationships from the pre-computed table.
@@ -1524,16 +1389,13 @@ Returns the data for the correspondence matrix.
                      s.species_id,
                      s.accession_id as species_aid,
                      s.common_name as species_name,
-                     mt.map_type_id, 
-                     mt.map_type
+                     ms.map_type
             from     cmap_map map,
                      cmap_map_set ms,
-                     cmap_map_type mt,
                      cmap_species s
             where    map.map_set_id=ms.map_set_id
             and      ms.is_enabled=1
             and      ms.accession_id='$link_map_set_aid'
-            and      ms.map_type_id=mt.map_type_id
             and      ms.species_id=s.species_id
             order by map.display_order, map.map_name
         ];
@@ -1549,14 +1411,10 @@ Returns the data for the correspondence matrix.
                      s.accession_id as species_aid,
                      s.common_name as species_name,
                      s.display_order as species_display_order,
-                     mt.map_type_id, 
-                     mt.map_type,
-                     mt.display_order as map_type_display_order
+                     ms.map_type
             from     cmap_map_set ms,
-                     cmap_map_type mt,
                      cmap_species s
-            where    ms.map_type_id=mt.map_type_id
-            and      ms.is_enabled=1
+            where    ms.is_enabled=1
             and      ms.species_id=s.species_id
         ];
 
@@ -1564,11 +1422,10 @@ Returns the data for the correspondence matrix.
             "and ms.accession_id='$link_map_set_aid' " if $link_map_set_aid;
 
         $link_map_set_sql .= q[
-            order by map_type_display_order,
+            order by map_set_display_order,
                      map_type,
                      species_display_order, 
                      species_name, 
-                     map_set_display_order,
                      published_on,
                      map_set_name
         ];
@@ -1583,11 +1440,11 @@ Returns the data for the correspondence matrix.
     #
     my ( %no_by_type, %no_by_type_and_species );
     for my $map_set ( @all_map_sets ) {
-        my $map_type_id = $map_set->{'map_type_id'};
+        my $map_type = $map_set->{'map_type'};
         my $species_aid = $map_set->{'species_aid'};
 
-        $no_by_type{ $map_type_id }++;
-        $no_by_type_and_species{ $map_type_id }{ $species_aid }++;
+        $no_by_type{ $map_type }++;
+        $no_by_type_and_species{ $map_type }{ $species_aid }++;
     }
 
     #
@@ -1607,15 +1464,15 @@ Returns the data for the correspondence matrix.
     for my $map_set ( @reference_map_sets ) {
         my $r_map_aid       = $map_set->{'map_aid'} || '';
         my $r_map_set_aid   = $map_set->{'map_set_aid'};
-        my $r_map_type_aid  = $map_set->{'map_type_aid'};
+        my $r_map_type  = $map_set->{'map_type'};
         my $r_species_aid   = $map_set->{'species_aid'};
         my $reference_aid   = 
             $map_name && $map_set_aid ? $r_map_aid     : 
             $map_name                 ? $r_map_set_aid : 
             $r_map_aid || $r_map_set_aid;
 
-        $no_ref_by_type{ $r_map_type_aid }++;
-        $no_ref_by_species_and_type{ $r_species_aid }{ $r_map_type_aid }++;
+        $no_ref_by_type{ $r_map_type }++;
+        $no_ref_by_species_and_type{ $r_species_aid }{ $r_map_type }++;
 
         for my $comp_map_set ( @all_map_sets ) {
             my $comp_map_set_aid = $comp_map_set->{'map_set_aid'};
@@ -1647,7 +1504,7 @@ Returns the data for the correspondence matrix.
         top_row      => $top_row,
         species_aid  => $species_aid,
         map_set_aid  => $map_set_aid,
-        map_type_aid => $map_type_aid,
+        map_type     => $map_type,
         map_name     => $map_name,
         matrix       => $matrix_data,
         data         => $data,
@@ -1707,12 +1564,10 @@ Returns the data for the main comparative map HTML form.
                      s.common_name as species_common_name,
                      s.full_name as species_full_name
             from     cmap_map_set ms,
-                     cmap_map_type mt,
                      cmap_species s
             where    ms.is_enabled=1
             and      ms.can_be_reference_map=1
-            and      ms.map_type_id=mt.map_type_id
-            and      mt.is_relational_map=0
+            and      ms.is_relational_map=0
             and      ms.species_id=s.species_id
             order by s.display_order,
                      s.common_name, 
@@ -1748,11 +1603,7 @@ Returns the data for the main comparative map HTML form.
     #
     $include_feature_types  = [] if grep { /^-1$/ } @$include_feature_types;
     $include_evidence_types = [] if grep { /^-1$/ } @$include_evidence_types;
-    my $feature_type_ids    = 
-        $self->feature_type_aid_to_id( @$include_feature_types );
-    my $evidence_type_ids   =
-        $self->evidence_type_aid_to_id( @$include_evidence_types );
-
+    
     #
     # If the user selected a map set, select all the maps in it.
     #
@@ -1774,21 +1625,17 @@ Returns the data for the main comparative map HTML form.
                     select   ms.map_set_id, 
                              ms.accession_id as map_set_aid,
                              ms.map_set_name, 
-                             ms.short_name,
-                             ms.map_type_id, 
+                             ms.short_name, 
                              ms.species_id, 
                              ms.can_be_reference_map,
-                             mt.accession_id as map_type_aid, 
-                             mt.map_type, 
-                             mt.map_units, 
+                             ms.map_type, 
+                             ms.map_units, 
                              s.accession_id as species_aid, 
                              s.common_name as species_common_name, 
                              s.full_name as species_full_name
                     from     cmap_map_set ms, 
-                             cmap_map_type mt, 
                              cmap_species s
                     where    ms.accession_id=?
-                    and      ms.map_type_id=mt.map_type_id
                     and      ms.species_id=s.species_id
                 ]
             );
@@ -1867,8 +1714,8 @@ Returns the data for the main comparative map HTML form.
 
     my $comp_maps_right     =  $self->get_comparative_maps( 
         min_correspondences => $min_correspondences,
-        feature_type_ids    => $feature_type_ids,
-        evidence_type_ids   => $evidence_type_ids,
+        include_feature_types    => $include_feature_types,
+        include_evidence_types   => $include_evidence_types,
         feature_types       => \%feature_types,
         ref_slot_no         => $slot_nos[-1],
         pid                 => $pid,
@@ -1878,8 +1725,8 @@ Returns the data for the main comparative map HTML form.
         ? $comp_maps_right
         : $self->get_comparative_maps(
             min_correspondences => $min_correspondences,
-            feature_type_ids    => $feature_type_ids,
-            evidence_type_ids   => $evidence_type_ids,
+            include_feature_types    => $include_feature_types,
+            include_evidence_types   => $include_evidence_types,
             feature_types       => \%feature_types,
             ref_slot_no         => $slot_nos[0],
             pid                 => $pid,
@@ -1889,17 +1736,7 @@ Returns the data for the main comparative map HTML form.
     #
     # Correspondence evidence types.
     #
-    my @evidence_types = @{
-        $db->selectall_arrayref(
-            q[
-                select   et.accession_id as evidence_type_aid,
-                         et.evidence_type
-                from     cmap_evidence_type et
-                order by et.rank, et.evidence_type
-            ],
-            { Columns => {} }
-        )
-    };
+    my @evidence_types =keys(%{$self->config_data('evidence_type')});
 
     #
     # Fill out all the info we have on every map.
@@ -1938,8 +1775,8 @@ out which maps have relationships.
 
     my ( $self, %args )     = @_;
     my $min_correspondences = $args{'min_correspondences'};
-    my $feature_type_ids    = $args{'feature_type_ids'};
-    my $evidence_type_ids   = $args{'evidence_type_ids'};
+    my $include_feature_types    = $args{'include_feature_types'};
+    my $include_evidence_types   = $args{'include_evidence_types'};
     my $feature_types       = $args{'feature_types'};
     my $ref_slot_no         = $args{'ref_slot_no'};
     my $pid                 = $args{'pid'};
@@ -1988,17 +1825,17 @@ out which maps have relationships.
 
     my $additional_where  = '';
     my $additional_tables = '';
-    if ( @$evidence_type_ids ) {
+    if ( @$include_evidence_types ) {
         $additional_tables = ', cmap_correspondence_evidence ce';
         $additional_where .= q[
             and fc.feature_correspondence_id=ce.feature_correspondence_id
-            and ce.evidence_type_id in (
-        ] . join( ',', @$evidence_type_ids ) . ') ';
+            and ce.evidence_type in (
+        ] . join( ',', @$include_evidence_types ) . ') ';
     }
 
-    if ( @$feature_type_ids ) {
-        $additional_where .= 'and f2.feature_type_id in ('.
-            join( ',', @$feature_type_ids ).
+    if ( @$include_feature_types ) {
+        $additional_where .= 'and f2.feature_type in ('.
+            join( ',', @$include_feature_types ).
         ') ';
     }
 
@@ -2006,13 +1843,12 @@ out which maps have relationships.
         select   fc.feature_correspondence_id,
                  s.common_name as species_name,
                  s.display_order as species_display_order,
-                 mt.map_type,
-                 mt.display_order as map_type_display_order,
+                 ms.map_type,
                  ms.accession_id as map_set_aid,
                  ms.short_name as map_set_name,
                  ms.published_on,
                  ms.can_be_reference_map,
-                 ms.display_order as ms_display_order,
+                 ms.display_order as map_set_display_order,
                  map.map_id,
                  map.accession_id as map_aid,
                  map.map_name,
@@ -2020,7 +1856,6 @@ out which maps have relationships.
         from     cmap_map_cache mc,
                  cmap_map map,
                  cmap_map_set ms,
-                 cmap_map_type mt,
                  cmap_species s,
                  cmap_feature f1,
                  cmap_feature f2,
@@ -2037,7 +1872,6 @@ out which maps have relationships.
         and      cl.feature_id2=f2.feature_id
         and      f2.map_id=map.map_id
         and      map.map_set_id=ms.map_set_id
-        and      ms.map_type_id=mt.map_type_id
         and      ms.species_id=s.species_id
         and      mc.map_id!=map.map_id
         $additional_where
@@ -2074,11 +1908,10 @@ out which maps have relationships.
 
         unless ( defined $map_sets{ $map_set_aid } ) {
             for ( qw[ 
-                map_type_display_order 
+                map_set_display_order 
                 map_type     
                 species_display_order  
-                species_name 
-                ms_display_order       
+                species_name      
                 map_set_name           
                 map_set_aid 
             ] ) {
@@ -2104,15 +1937,13 @@ out which maps have relationships.
     my @sorted_map_sets;
     for my $map_set (
         sort { 
-            $a->{'map_type_display_order'} <=> $b->{'map_type_display_order'} 
+            $a->{'map_set_display_order'} <=> $b->{'map_set_display_order'} 
             ||
             $a->{'map_type'}               cmp $b->{'map_type'} 
             ||
             $a->{'species_display_order'}  <=> $b->{'species_display_order'} 
             ||
             $a->{'species_name'}           cmp $b->{'species_name'} 
-            ||
-            $a->{'ms_display_order'}       <=> $b->{'ms_display_order'} 
             ||
             $b->{'published_on'}           <=> $a->{'published_on'} 
             ||
@@ -2157,38 +1988,6 @@ out which maps have relationships.
 }
 
 
-# ----------------------------------------------------
-sub evidence_type_aid_to_id {
-
-=pod
-
-=head2 evidence_type_aid_to_id
-
-Takes a list of evidence type accession IDs and returns their table IDs.
-
-=cut
-
-    my $self               = shift;
-    my @evidence_type_aids = @_;
-    my @evidence_type_ids  = ();
-    my $db                 = $self->db or return;
-
-    for my $aid ( @evidence_type_aids ) {
-        next unless defined $aid && $aid ne '';
-        my $id = $db->selectrow_array(
-            q[
-                select evidence_type_id
-                from   cmap_evidence_type
-                where  accession_id=?
-            ],
-            {},
-            ( "$aid" )
-        );
-        push @evidence_type_ids, $id;
-    }
-
-    return @evidence_type_ids ? [ @evidence_type_ids ] : [];
-}
 
 # ----------------------------------------------------
 sub feature_alias_detail_data {
@@ -2236,38 +2035,6 @@ Returns the data for the feature alias detail page.
     return $alias;
 }
 
-# ----------------------------------------------------
-sub feature_type_aid_to_id {
-
-=pod
-
-=head2 feature_type_aid_to_id
-
-Takes a list of feature type accession IDs and returns their table IDs.
-
-=cut
-
-    my $self              = shift;
-    my @feature_type_aids = @_;
-    my @feature_type_ids  = ();
-    my $db                = $self->db or return;
-
-    for my $aid ( @feature_type_aids ) {
-        next unless defined $aid && $aid ne '';
-        my $id = $db->selectrow_array(
-            q[
-                select feature_type_id
-                from   cmap_feature_type
-                where  accession_id=?
-            ],
-            {},
-            ( "$aid" )
-        );
-        push @feature_type_ids, $id;
-    }
-
-    return @feature_type_ids ? [ @feature_type_ids ] : [];
-}
 
 # ----------------------------------------------------
 sub feature_correspondence_data {
@@ -2435,14 +2202,11 @@ Given a feature acc. id, find out all the details on it.
             q[
                 select   ce.accession_id,
                          ce.score,
-                         et.rank,
-                         et.accession_id as evidence_type_aid,
-                         et.evidence_type
-                from     cmap_correspondence_evidence ce,
-                         cmap_evidence_type et
+                         ce.rank,
+                         ce.evidence_type
+                from     cmap_correspondence_evidence ce
                 where    ce.feature_correspondence_id=?
-                and      ce.evidence_type_id=et.evidence_type_id
-                order by et.rank
+                order by ce.rank
             ],
             { Columns => {} },
             ( $corr->{'feature_correspondence_id'} )
@@ -2488,7 +2252,7 @@ Given a list of feature names, find any maps they occur on.
     my ( $self, %args )   = @_;
     my $db                = $self->db or return;
     my $species_aids      = $args{'species_aids'};
-    my $feature_type_aids = $args{'feature_type_aids'};
+    my $feature_types     = $args{'feature_types'};
     my $feature_string    = $args{'features'};
     my $page_data         = $args{'page_data'};
     my $page_size         = $args{'page_size'};
@@ -2499,7 +2263,7 @@ Given a list of feature names, find any maps they occur on.
             s/\*/%/g;       # turn stars into SQL wildcards
             s/,//g;         # remove commas
             s/^\s+|\s+$//g; # remove leading/trailing whitespace
-            s/"//g;         # remove double quotes
+            s/"//g;         # remove double quotes "
             s/'/\\'/g;      # backslash escape single quotes
             $_ || ()        
         }
@@ -2521,9 +2285,9 @@ Given a list of feature names, find any maps they occur on.
         my $comparison = $feature_name =~ m/%/ ? 'like' : '=';
         $feature_name  = uc $feature_name;
         my $where      = '';
-        if ( @$feature_type_aids ) {
-            $where .= 'and ft.accession_id in ('.
-                join( ', ', map { qq['$_'] } @$feature_type_aids ). 
+        if ( @$feature_types ) {
+            $where .= 'and f.feature_type in ('.
+                join( ', ', map { qq['$_'] } @$feature_types ). 
             ') ';
         }
 
@@ -2541,7 +2305,7 @@ Given a list of feature names, find any maps they occur on.
                          f.feature_name, 
                          f.start_position,
                          f.stop_position,
-                         ft.feature_type,
+                         f.feature_type,
                          map.accession_id as map_aid,
                          map.map_name, 
                          ms.accession_id as map_set_aid, 
@@ -2549,19 +2313,15 @@ Given a list of feature names, find any maps they occur on.
                          ms.can_be_reference_map,
                          s.species_id,
                          s.common_name as species_name,
-                         mt.map_units
+                         ms.map_units
                 from     cmap_feature f,
-                         cmap_feature_type ft,
                          cmap_map map,
                          cmap_map_set ms,
-                         cmap_species s,
-                         cmap_map_type mt
+                         cmap_species s
                 where    upper(f.feature_name) $comparison '$feature_name'
-                and      f.feature_type_id=ft.feature_type_id
                 and      f.map_id=map.map_id
                 and      map.map_set_id=ms.map_set_id
                 and      ms.species_id=s.species_id
-                and      ms.map_type_id=mt.map_type_id
                 and      ms.is_enabled=1
                 $where
                 UNION
@@ -2570,7 +2330,7 @@ Given a list of feature names, find any maps they occur on.
                        f.feature_name,
                        f.start_position,
                        f.stop_position,
-                       ft.feature_type,
+                       f.feature_type,
                        map.accession_id as map_aid,
                        map.map_name,
                        ms.accession_id as map_set_aid,
@@ -2578,19 +2338,15 @@ Given a list of feature names, find any maps they occur on.
                        ms.can_be_reference_map,
                        s.species_id,
                        s.common_name as species_name,
-                       mt.map_units
+                       ms.map_units
                 from   cmap_feature_alias fa,
                        cmap_feature f,
-                       cmap_feature_type ft,
                        cmap_map map,
                        cmap_map_set ms,
-                       cmap_species s,
-                       cmap_map_type mt
+                       cmap_species s
                 where  upper(fa.alias) $comparison '$feature_name'
                 and    fa.feature_id=f.feature_id
-                and    f.feature_type_id=ft.feature_type_id
                 and    f.map_id=map.map_id
-                and    ms.map_type_id=mt.map_type_id
                 and    map.map_set_id=ms.map_set_id
                 and    ms.species_id=s.species_id
                 and    ms.is_enabled=1
@@ -2604,7 +2360,7 @@ Given a list of feature names, find any maps they occur on.
                          f.feature_name, 
                          f.start_position,
                          f.stop_position,
-                         ft.feature_type,
+                         f.feature_type,
                          map.accession_id as map_aid,
                          map.map_name, 
                          ms.accession_id as map_set_aid, 
@@ -2612,19 +2368,15 @@ Given a list of feature names, find any maps they occur on.
                          ms.can_be_reference_map,
                          s.species_id,
                          s.common_name as species_name,
-                         mt.map_units
+                         ms.map_units
                 from     cmap_feature f,
-                         cmap_feature_type ft,
                          cmap_map map,
                          cmap_map_set ms,
                          cmap_species s,
-                         cmap_map_type mt
                 where    upper(f.accession_id) $comparison '$feature_name'
-                and      f.feature_type_id=ft.feature_type_id
                 and      f.map_id=map.map_id
                 and      map.map_set_id=ms.map_set_id
                 and      ms.species_id=s.species_id
-                and      ms.map_type_id=mt.map_type_id
                 and      ms.is_enabled=1
                 $where
             ];
@@ -2715,20 +2467,11 @@ Given a list of feature names, find any maps they occur on.
     #
     # Get the feature types.
     #
-    my $feature_types = $db->selectall_arrayref(
-        q[
-            select   ft.accession_id as feature_type_aid,
-                     ft.feature_type
-            from     cmap_feature_type ft
-            order by feature_type
-        ],
-        { Columns => {} }
-    );
-
+    my @feature_type_names = keys(%{$self->config_data('feature_type')});
     return {
         data          => \@found_features,
         species       => $species,
-        feature_types => $feature_types,
+        feature_types => \@feature_type_names,
         pager         => $pager,
     };
 }
@@ -2743,61 +2486,37 @@ sub evidence_type_info_data {
 Return data for a list of evidence type acc. IDs.
 
 =cut
-
+{
     my ( $self, %args ) = @_;
-    my $db              = $self->db or return; 
+    
+    my @return_array;
 
-    my $sql = q[
-        select evidence_type_id,
-               accession_id as evidence_type_aid,
-               evidence_type,
-               rank,
-               line_color
-        from   cmap_evidence_type
-    ];
+    my @evidence_types = keys(%{$self->config_data('evidence_type')});
 
-    if ( my @et_aids = @{ $args{'evidence_type_aids'} || [] } ) {
-        $sql .= 'where accession_id in ('.
-            join( ', ', map { qq['$_'] } @et_aids ).
-        ')';
+    my %supplied_evidence_types;
+    if ($args{'evidence_types'}){
+	%supplied_evidence_types = map{$_=>1} @{ $args{'evidence_types'}};
     }
-
-    $sql .= ' order by rank, evidence_type';
-
-    my $evidence_types = $db->selectall_arrayref( $sql, { Columns => {} } );
-
-    my $attributes = $db->selectall_arrayref(
-        q[
-            select   object_id, display_order, is_public, 
-                     attribute_name, attribute_value
-            from     cmap_attribute
-            where    table_name=?
-            order by object_id, display_order, attribute_name
-        ],
-        { Columns => {} },
-        ( 'cmap_evidence_type' )
-    );
-
-    my %attr_lookup;
-    for my $attr ( @$attributes ) {
-        push @{ $attr_lookup{ $attr->{'object_id'} } }, $attr;
+    foreach my $evidence_type (@evidence_types){
+	if (%supplied_evidence_types){
+	    next unless ($supplied_evidence_types{$evidence_type});
+	}
+	$return_array[++$#return_array]=
+	{
+	     'evidence_type'=>$evidence_type,
+	     'rank'=>$self->evidence_type_data($evidence_type,'rank'),
+	     'line_color'=>$self->evidence_type_data($evidence_type,'line_color'),
+	     
+	     };
     }
-
     my $default_color = $self->config_data('connecting_line_color');
-    for my $et ( @$evidence_types ) {
-        $et->{'object_id'}    = $et->{'evidence_type_id'};
-        $et->{'line_color'} ||= $default_color;
-        $et->{'attributes'}   = $attr_lookup{ $et->{'evidence_type_id'} };
+
+    for my $ft ( @return_array ) {
+        $ft->{'line_color'} ||= $default_color;
     }
-
-    $self->get_multiple_xrefs(
-        table_name => 'cmap_evidence_type',
-        objects    => $evidence_types,
-    );
-
-    return $evidence_types;
+    return \@return_array;
 }
-
+}
 # ----------------------------------------------------
 sub feature_type_info_data {
 
@@ -2810,64 +2529,41 @@ Return data for a list of feature type acc. IDs.
 =cut
 
     my ( $self, %args ) = @_;
-    my $db              = $self->db or return; 
+    
+    my @return_array;
 
-    my $sql = q[
-        select ft.feature_type_id,
-               ft.accession_id as feature_type_aid,
-               ft.feature_type,
-               ft.shape,
-               ft.color
-        from   cmap_feature_type ft
-    ];
+    my @feature_types = keys(%{$self->config_data('feature_type')});
 
-    if ( my @ft_aids = @{ $args{'feature_type_aids'} || [] } ) {
-        $sql .= 'where ft.accession_id in ('.
-            join( ', ', map { qq['$_'] } @ft_aids ).
-        ')';
+    my %supplied_feature_types;
+    if ($args{'feature_types'}){
+	%supplied_feature_types = map{$_=>1} @{ $args{'feature_types'}};
+    }
+    foreach my $feature_type (@feature_types){
+	if (%supplied_feature_types){
+	    next unless ($supplied_feature_types{$feature_type});
+	}
+	$return_array[++$#return_array]=
+	{
+	     'feature_type'=>$feature_type,
+	     'shape'=>$self->feature_type_data($feature_type,'shape'),
+	     'color'=>$self->feature_type_data($feature_type,'color'),
+	     
+	     };
     }
 
-    my $feature_types = $db->selectall_arrayref( $sql, { Columns => {} } );
-
-    my $attributes = $db->selectall_arrayref(
-        q[
-            select   object_id, display_order, is_public, 
-                     attribute_name, attribute_value
-            from     cmap_attribute
-            where    table_name=?
-            order by object_id, display_order, attribute_name
-        ],
-        { Columns => {} },
-        ( 'cmap_feature_type' )
-    );
-
-    my %attr_lookup;
-    for my $attr ( @$attributes ) {
-        push @{ $attr_lookup{ $attr->{'object_id'} } }, $attr;
-    }
-
-    for my $ft ( @$feature_types ) {
-        $ft->{'object_id'}  = $ft->{'feature_type_id'};
-        $ft->{'attributes'} = $attr_lookup{ $ft->{'feature_type_id'} };
-    }
-
-    $self->get_multiple_xrefs(
-        table_name => 'cmap_feature_type',
-        objects    => $feature_types,
-    );
 
     my $default_color = $self->config_data('feature_color');
 
-    for my $ft ( @$feature_types ) {
+    for my $ft ( @return_array ) {
         $ft->{'color'} ||= $default_color;
     }
 
-    $feature_types = [ 
+    @return_array = 
         sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} }
-        @$feature_types
-    ];
+        @return_array;
+    
 
-    return $feature_types;
+    return \@return_array;
 }
 
 # ----------------------------------------------------
@@ -2884,10 +2580,10 @@ Returns the data for drawing comparative maps.
     my ( $self, %args ) = @_;
     my @map_set_aids    = @{ $args{'map_set_aids'} || [] };
     my $species_aid     = $args{'species_aid'}  || 0;
-    my $map_type_aid    = $args{'map_type_aid'} || 0;
+    my $map_type        = $args{'map_type'} || 0;
     my $db              = $self->db or return;
 
-    for ( $species_aid, $map_type_aid ) {
+    for ( $species_aid, $map_type ) {
         $_ = 0 if $_ == -1;
     }
 
@@ -2899,7 +2595,7 @@ Returns the data for drawing comparative maps.
     }
 
     $restriction .= qq[and s.accession_id='$species_aid' ]   if $species_aid;
-    $restriction .= qq[and mt.accession_id='$map_type_aid' ] if $map_type_aid;
+    $restriction .= qq[and ms.map_type='$map_type' ] if $map_type;
 
     #
     # Map sets
@@ -2908,20 +2604,17 @@ Returns the data for drawing comparative maps.
         select   ms.map_set_id, 
                  ms.accession_id as map_set_aid,
                  ms.map_set_name, 
-                 ms.short_name,
-                 ms.map_type_id, 
+                 ms.short_name, 
                  ms.species_id, 
                  ms.can_be_reference_map,
-                 mt.map_type, 
-                 mt.map_units, 
+                 ms.map_type, 
+                 ms.map_units, 
                  s.accession_id as species_aid, 
                  s.common_name, 
                  s.full_name
         from     cmap_map_set ms, 
-                 cmap_map_type mt, 
                  cmap_species s
-        where    ms.map_type_id=mt.map_type_id
-        and      ms.species_id=s.species_id
+        where     ms.species_id=s.species_id
         $restriction
     ]; 
     my $map_sets = $db->selectall_arrayref( $map_set_sql, { Columns => {} } );
@@ -2936,11 +2629,9 @@ Returns the data for drawing comparative maps.
                  map.map_name
         from     cmap_map map,
                  cmap_map_set ms, 
-                 cmap_map_type mt, 
                  cmap_species s
         where    map.map_set_id=ms.map_set_id
         and      ms.can_be_reference_map=1
-        and      ms.map_type_id=mt.map_type_id
         and      ms.species_id=s.species_id
         $restriction
         order by map.map_set_id, 
@@ -2959,21 +2650,16 @@ Returns the data for drawing comparative maps.
     #
     my $ft_sql = qq[
         select   distinct 
-                 ft.feature_type,
-                 ft.accession_id as feature_type_aid, 
+                 f.feature_type, 
                  map.map_set_id
         from     cmap_feature f,
-                 cmap_feature_type ft,
                  cmap_map map,
                  cmap_map_set ms, 
-                 cmap_map_type mt, 
                  cmap_species s
         where    f.map_id=map.map_id
         and      map.map_set_id=ms.map_set_id
-        and      ms.map_type_id=mt.map_type_id
         and      ms.species_id=s.species_id
         $restriction
-        and      f.feature_type_id=ft.feature_type_id
     ];
     my $feature_types = $db->selectall_arrayref( $ft_sql,  { Columns => {} } );
     my %ft_lookup;
@@ -3041,16 +2727,7 @@ Returns the data for drawing comparative maps.
         { Columns => {} } 
     );
 
-    my $map_types = $db->selectall_arrayref(
-        q[
-            select   mt.accession_id as map_type_aid,
-                     mt.map_type
-            from     cmap_map_type mt
-            order by mt.display_order,
-                     mt.map_type
-        ],
-        { Columns => {} } 
-    );
+    my $map_types = [keys(%{$self->config_data('map_type')})];
 
     return {
         species   => $species,
@@ -3082,7 +2759,7 @@ lowest stop for a given feature type. (enhancement)
     my $sql             = $sql_obj->map_stop_sql( %args );
 
     my ( $start, $stop ) = $db->selectrow_array( $sql, {}, ( $id ) )
-        or $self->error(qq[Can't determine map stop for id "$id"]);
+        or $self->error(qq[Cannot determine map stop for id "$id"]); 
 
     return $start > $stop ? $start : $stop;
 }
@@ -3109,7 +2786,7 @@ Optionally finds the lowest start for a given feature type. (enhancement)
     );
     my $sql             = $sql_obj->map_start_sql( %args );
     defined ( my $start = $db->selectrow_array( $sql, {}, ( $id ) ) )
-        or return $self->error( qq[Can't determine map start for id "$id"] );
+        or return $self->error( qq[Cannot determine map start for id "$id"] );
 
     return $start;
 }
@@ -3153,10 +2830,7 @@ Returns the detail info for a map.
     #
     $include_feature_types  = [] if grep { /^-1$/ } @$include_feature_types;
     $include_evidence_types = [] if grep { /^-1$/ } @$include_evidence_types;
-    my $feature_type_ids    = 
-        $self->feature_type_aid_to_id( @$include_feature_types );
-    my $evidence_type_ids   =
-        $self->evidence_type_aid_to_id( @$include_evidence_types );
+   
 
     #
     # Figure out hightlighted features.
@@ -3176,15 +2850,13 @@ Returns the detail info for a map.
                    map.map_name,
                    map.start_position,
                    map.stop_position,
-                   mt.map_units
+                   ms.map_units
             from   cmap_map map,
                    cmap_map_set ms,
-                   cmap_species s,
-                   cmap_map_type mt
+                   cmap_species s
             where  map.map_id=?
             and    map.map_set_id=ms.map_set_id
             and    ms.species_id=s.species_id
-            and    ms.map_type_id=mt.map_type_id
         ]
     );
     $sth->execute( $map_id );
@@ -3210,7 +2882,7 @@ Returns the detail info for a map.
     my $features = $db->selectall_arrayref(
         $sql->cmap_data_features_sql( 
             order_by         => $order_by,
-            feature_type_ids => $feature_type_ids,
+            feature_types => $include_feature_types,
         ),
         { Columns => {} },
         ( $map_id, $map_start, $map_stop, $map_start, $map_start )
@@ -3258,15 +2930,12 @@ Returns the detail info for a map.
     #
     my $ft_sql .= q[
         select   distinct 
-                 ft.accession_id as feature_type_aid,
-                 ft.feature_type
-        from     cmap_feature_type ft,
-                 cmap_feature f,
+                 f.feature_type
+        from     cmap_feature f,
                  cmap_map_cache mc
-        where    f.feature_type_id=ft.feature_type_id
-        and      f.map_id=mc.map_id
+        where    f.map_id=mc.map_id
         and      mc.pid=?
-        order by ft.feature_type
+        order by f.feature_type
     ];
 
     my $pid = $$;
@@ -3278,18 +2947,8 @@ Returns the detail info for a map.
     #
     # Correspondence evidence types.
     #
-    my @evidence_types = 
-        sort { lc $a->{'evidence_type'} cmp lc $b->{'evidence_type'} } @{
-        $db->selectall_arrayref(
-            q[
-                select   et.accession_id as evidence_type_aid,
-                         et.evidence_type
-                from     cmap_evidence_type et
-                order by et.evidence_type
-            ],
-            { Columns => {} }
-        )
-    };
+    my @evidence_types =  
+	sort { lc $a cmp lc $b } keys(%{$self->config_data('evidence_type')});
 
     #
     # Find every other map position for the features on this map.
@@ -3300,8 +2959,8 @@ Returns the detail info for a map.
             $sql->feature_correspondence_sql(
                 comparative_map_field => $comparative_map_field,
                 comparative_map_aid   => $comparative_map_aid,
-                evidence_type_ids => 
-                    @$evidence_type_ids ?  join(',', @$evidence_type_ids) : '',
+                evidence_types => 
+                    @$include_evidence_types ?  join(',', @$include_evidence_types) : '',
             ),
             { Columns => {} },
             ( $feature->{'feature_id'} )
@@ -3314,12 +2973,11 @@ Returns the detail info for a map.
 
             unless ( defined $comparative_maps{ $map_set_aid } ) {
                 for ( qw[ 
-                    map_aid      
-                    map_type_display_order 
+                    map_aid        
+                    ms_display_order   
                     map_type              
                     species_display_order
-                    species_name        
-                    ms_display_order   
+                    species_name       
                     map_set           
                     species_name
                     map_set_name
@@ -3370,15 +3028,13 @@ Returns the detail info for a map.
     my @comparative_maps;
     for my $map_set ( 
         sort { 
-            $a->{'map_type_display_order'} <=> $b->{'map_type_display_order'} 
+            $a->{'ms_display_order'} <=> $b->{'ms_display_order'} 
             ||
             $a->{'map_type'}               cmp $b->{'map_type'} 
             ||
             $a->{'species_display_order'}  <=> $b->{'species_display_order'} 
             ||
             $a->{'species_name'}           cmp $b->{'species_name'} 
-            ||
-            $a->{'ms_display_order'}       <=> $b->{'ms_display_order'} 
             ||
             $b->{'published_on'}           <=> $a->{'published_on'} 
             ||
@@ -3429,63 +3085,47 @@ Returns data on map types.
 =cut
 
     my ( $self, %args ) = @_;
-    my @map_type_aids   = @{ $args{'map_type_aids'} || [] };
-    my $db              = $self->db or return;
+    my @return_array;
 
-    my $sql = q[
-        select   mt.map_type_id,
-                 mt.accession_id as map_type_aid,
-                 mt.map_type,
-                 mt.map_units,
-                 mt.is_relational_map,
-                 mt.shape,
-                 mt.color,
-                 mt.width,
-                 mt.display_order
-        from     cmap_map_type mt 
-    ];
+    my @map_types = keys(%{$self->config_data('map_type')});
 
-    if ( @map_type_aids ) {
-        $sql .= 'where mt.accession_id in ('.
-            join( ',', map { qq['$_'] } @map_type_aids ) . 
-        ') ';
+    my %supplied_map_types;
+    if ($args{'map_types'}){
+	%supplied_map_types = map{$_=>1} @{ $args{'map_types'}};
+    }
+    foreach my $map_type (@map_types){
+	if (%supplied_map_types){
+	    next unless ($supplied_map_types{$map_type});
+	}
+	$return_array[++$#return_array]=
+	{
+	     'map_type'=>$map_type,
+	     'shape'=>$self->map_type_data($map_type,'shape'),
+	     'color'=>$self->map_type_data($map_type,'color'),
+	     'width'=>$self->map_type_data($map_type,'width'),
+	     'display_order'=>$self->map_type_data($map_type,'display_order'),
+	     'is_relational_map'=>$self->map_type_data($map_type,'is_relational_map'),
+	     
+	     };
     }
 
-    $sql .= 'order by display_order, map_type';
 
-    my $map_types = $db->selectall_arrayref( $sql, { Columns => {} } );
+    my $default_color = $self->config_data('map_color');
 
-    my $attributes = $db->selectall_arrayref(
-        q[
-            select   object_id, display_order, is_public,
-                     attribute_name, attribute_value
-            from     cmap_attribute
-            where    table_name=?
-            order by object_id, display_order, attribute_name
-        ],
-        { Columns => {} },
-        ( 'cmap_map_type' )
-    );
-
-    my %attr_lookup;
-    for my $attr ( @$attributes ) {
-        push @{ $attr_lookup{ $attr->{'object_id'} } }, $attr;
-    }
-
-    for my $mt ( @$map_types ) {
-        $mt->{'object_id'}  = $mt->{'map_type_id'};
+    for my $mt ( @return_array ) {
         $mt->{'width'}    ||= DEFAULT->{'map_width'};
         $mt->{'shape'}    ||= DEFAULT->{'map_shape'};
         $mt->{'color'}    ||= DEFAULT->{'map_color'};
-        $mt->{'attributes'} = $attr_lookup{ $mt->{'map_type_id'} };
     }
 
-    $self->get_multiple_xrefs(
-        table_name => 'cmap_map_type',
-        objects    => $map_types,
-    );
+    @return_array = 
+        sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} }
+        @return_array;
+    
 
-    return $map_types;
+    return \@return_array;
+
+   
 }
 
 # ----------------------------------------------------

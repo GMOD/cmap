@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MatrixViewer;
 # vim: set ft=perl:
 
-# $Id: MatrixViewer.pm,v 1.11 2004-03-18 22:01:00 mwz444 Exp $
+# $Id: MatrixViewer.pm,v 1.12 2004-03-25 14:11:57 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.11 $)[-1];
+$VERSION = (qw$Revision: 1.12 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use base 'Bio::GMOD::CMap::Apache';
@@ -19,7 +19,7 @@ sub handler {
     my ( $self, $apr )   = @_;
     my $show_matrix      = $apr->param('show_matrix')      ||  0;
     my $species_aid      = $apr->param('species_aid')      || '';
-    my $map_type_aid     = $apr->param('map_type_aid')     || '';
+    my $map_type     = $apr->param('map_type')     || '';
     my $map_set_aid      = $apr->param('map_set_aid')      || '';
     my $map_name         = $apr->param('map_name')         || '';
     my $link_map_set_aid = $apr->param('link_map_set_aid') || '';
@@ -38,14 +38,14 @@ sub handler {
     my $data             =  $data_module->matrix_correspondence_data(
         show_matrix      => $show_matrix,
         species_aid      => $species_aid,
-        map_type_aid     => $map_type_aid,
+        map_type         => $map_type,
         map_set_aid      => $map_set_aid,
         map_name         => $map_name,
         link_map_set_aid => $link_map_set_aid,
     ) or return $self->error( $data_module->error );
 
     $apr->param( species_aid  => $data->{'species_aid'}  );
-    $apr->param( map_type_aid => $data->{'map_type_aid'} );
+    $apr->param( map_type     => $data->{'map_type'} );
     $apr->param( map_set_aid  => $data->{'map_set_aid'}  );
     $apr->param( map_name     => $data->{'map_name'}     );
 

@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.54 2004-03-18 22:00:59 mwz444 Exp $
+# $Id: Drawer.pm,v 1.55 2004-03-25 14:11:57 mwz444 Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.54 $)[-1];
+$VERSION = (qw$Revision: 1.55 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -781,7 +781,7 @@ Lays out the image and writes it to the file system, set the "image_name."
                     $label_x + $font->width * length( $label ), 
                     $ft_y + $font->height,
                 ],
-                url    => $ft_details_url.$ft->{'feature_type_aid'},
+                url    => $ft_details_url.$ft->{'feature_type'},
                 alt    => "Feature Type Details for $label",
             ) unless $ft->{'correspondence_color'};
 
@@ -819,7 +819,7 @@ Lays out the image and writes it to the file system, set the "image_name."
                         $end,
                         $max_y + $font->height,
                     ],
-                    url    => $et_details_url.$et->{'evidence_type_aid'},
+                    url    => $et_details_url.$et->{'evidence_type'},
                     alt    => 'Evidence Type Details for '.
                               $et->{'evidence_type'},
                 );
@@ -1731,8 +1731,8 @@ Remembers a feature type.
 
 =cut
 
-    my ( $self, @feature_type_ids ) = @_;
-    $self->{'data'}{'feature_types'}{ $_ }{'seen'} = 1 for @feature_type_ids;
+    my ( $self, @feature_types ) = @_;
+    $self->{'data'}{'feature_types'}{ $_ }{'seen'} = 1 for @feature_types;
 }
 
 # ----------------------------------------------------

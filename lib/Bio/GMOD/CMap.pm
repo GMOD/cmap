@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap;
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.50 2004-03-19 15:33:10 mwz444 Exp $
+# $Id: CMap.pm,v 1.51 2004-03-25 14:11:56 mwz444 Exp $
 
 =head1 NAME
 
@@ -106,6 +106,81 @@ Access get_config
 	$self->{'config'}=Bio::GMOD::CMap::Config->new();
     }
     return $self->{'config'}->get_config($option,$specific_db);
+}
+}
+# ----------------------------------------------------
+sub map_type_data{
+=pod
+
+=head2 map_type_data
+
+Return data from config about map type 
+
+=cut
+{
+    my $self=shift;
+    my $map_type=shift;
+    my $attribute=shift;
+    
+    if ($attribute){
+	return $self->{'config'}->get_config('map_type')->{$map_type}->{$attribute};
+    }
+    elsif($map_type){
+	return $self->{'config'}->get_config('map_type')->{$map_type};
+    }
+    else{
+	return $self->{'config'}->get_config('map_type');
+    }
+}
+}
+# ----------------------------------------------------
+sub feature_type_data{
+=pod
+
+=head2 feature_type_data
+
+Return data from config about feature type 
+
+=cut
+{
+    my $self=shift;
+    my $feature_type=shift;
+    my $attribute=shift;
+
+    if ($attribute){
+	return $self->{'config'}->get_config('feature_type')->{$feature_type}->{$attribute};
+    }
+    elsif($feature_type){
+	return $self->{'config'}->get_config('feature_type')->{$feature_type}
+    }
+    else{
+	return $self->{'config'}->get_config('feature_type')
+    }
+}
+}
+# ----------------------------------------------------
+sub evidence_type_data{
+=pod
+
+=head2 evidence_type_data
+
+Return data from config about evidence type 
+
+=cut
+{
+    my $self=shift;
+    my $evidence_type=shift;
+    my $attribute=shift;
+
+    if ($attribute){
+	return $self->{'config'}->get_config('evidence_type')->{$evidence_type}->{$attribute};
+    }
+    elsif($evidence_type){
+	return $self->{'config'}->get_config('evidence_type')->{$evidence_type}
+    }
+    else{
+	$self->{'config'}->get_config('evidence_type')
+    }
 }
 }
 

@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.65 2004-03-18 22:01:00 mwz444 Exp $
+# $Id: AdminViewer.pm,v 1.66 2004-03-25 14:11:57 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -32,7 +32,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.65 $)[-1];
+$VERSION        = (qw$Revision: 1.66 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -464,104 +464,29 @@ sub colors_view {
 
 # ----------------------------------------------------
 sub corr_evidence_type_create {
-    my ( $self, %args ) = @_;
-    return $self->process_template( 
-        TEMPLATE->{'corr_evidence_type_create'},
-        { 
-            apr          => $self->apr,
-            line_colors  => $COLORS,
-            errors       => $args{'errors'},
-        }
-    );
+    return 0;
+    ###Do this in Config
 }
 
 # ----------------------------------------------------
 sub corr_evidence_type_insert {
-    my $self          = shift;
-    my $admin         = $self->admin;
-    my $apr           = $self->apr;
-    my $evidence_id   = $admin->evidence_type_create(
-        evidence_type => $apr->param('evidence_type') || '',
-        rank          => $apr->param('rank')          || '',
-        line_color    => $apr->param('line_color')    || '',
-    ) or return $self->corr_evidence_type_create( errors => $admin->error );
-
-    return $self->redirect_home( 
-        ADMIN_HOME_URI.'?action=corr_evidence_types_view'
-    ); 
+    return 0;
+    ###Do this in config
 }
 
 # ----------------------------------------------------
 sub corr_evidence_type_edit {
-    my ( $self, %args )  = @_;
-    my $errors           = $args{'errors'};
-    my $db               = $self->db or return $self->error;
-    my $apr              = $self->apr;
-    my $evidence_type_id = $apr->param('evidence_type_id') 
-        or return $self->error('No evidence type id');
+    my ( $self, %args ) = @_;
+    return 0;
+    #Do this in Config file
 
-    my $sth = $db->prepare(
-        q[
-            select et.evidence_type_id,
-                   et.accession_id,
-                   et.evidence_type,
-                   et.rank,
-                   et.line_color
-            from   cmap_evidence_type et
-            where  et.evidence_type_id=?
-        ]
-    );
-    $sth->execute( $evidence_type_id );
-    my $evidence_type = $sth->fetchrow_hashref or return $self->error(
-        "No evidence type for ID '$evidence_type_id'"
-    );
-
-    $evidence_type->{'attributes'} = 
-        $self->get_attributes( 'cmap_evidence_type', $evidence_type_id );
-
-    return $self->process_template( 
-        TEMPLATE->{'corr_evidence_type_edit'}, 
-        { 
-            evidence_type => $evidence_type,
-            line_colors   => $COLORS,
-            errors        => $errors,
-        }
-    );
 }
 
 # ----------------------------------------------------
 sub corr_evidence_type_update {
-    my $self             = shift;
-    my @errors           = ();
-    my $db               = $self->db or return $self->error;
-    my $apr              = $self->apr;
-    my $evidence_type_id = $apr->param('evidence_type_id') 
-                           or push @errors, 'No evidence type id';
-    my $accession_id     = $apr->param('accession_id')  
-                           or push @errors, 'No accession id';
-    my $evidence_type    = $apr->param('evidence_type') 
-                           or push @errors, 'No evidence type';
-    my $rank             = $apr->param('rank')       or
-        push @errors, 'Please define a rank';
-    my $line_color       = $apr->param('line_color') || '';
-
-    return $self->corr_evidence_type_edit( errors => \@errors ) if @errors;
-
-    $db->do(
-        q[
-            update cmap_evidence_type
-            set    accession_id=?, evidence_type=?, 
-                   rank=?, line_color=?
-            where  evidence_type_id=?
-        ],
-        {},
-        ( $accession_id, $evidence_type, $rank, $line_color, $evidence_type_id )
-    );
-
-    return $self->redirect_home( 
-        ADMIN_HOME_URI.
-        "?action=corr_evidence_type_view;evidence_type_id=$evidence_type_id"
-    );
+    my ( $self, %args ) = @_;
+    return 0;
+    #Do this in Config file
 }
 
 # ----------------------------------------------------
@@ -569,31 +494,22 @@ sub corr_evidence_type_view {
     my ( $self, %args )  = @_;
     my $db               = $self->db or return $self->error;
     my $apr              = $self->apr;
-    my $evidence_type_id = $apr->param('evidence_type_id') 
-        or return $self->error('No evidence type id');
+    my $incoming_evidence_type = $apr->param('evidence_type') 
+        or return $self->error('No evidence type');
 
-    my $sth = $db->prepare(
-        q[
-            select et.evidence_type_id,
-                   et.accession_id,
-                   et.evidence_type,
-                   et.rank,
-                   et.line_color
-            from   cmap_evidence_type et
-            where  et.evidence_type_id=?
-        ]
+    my $evidence_type =
+       $self->evidence_type_data($incoming_evidence_type)
+       or return $self->error(
+        "No evidence type '$incoming_evidence_type'"
     );
-    $sth->execute( $evidence_type_id );
-    my $evidence_type = $sth->fetchrow_hashref or return $self->error(
-        "No evidence type for ID '$evidence_type_id'"
-    );
+
 
     $evidence_type->{'attributes'} = $self->get_attributes( 
-        'cmap_evidence_type', $evidence_type_id, $apr->param('att_order_by')
+        'cmap_evidence_type', $incoming_evidence_type, $apr->param('att_order_by')
     );
 
     $evidence_type->{'xrefs'} = $self->get_xrefs( 
-        'cmap_evidence_type', $evidence_type_id, $apr->param('xref_order_by')
+        'cmap_evidence_type', $incoming_evidence_type, $apr->param('xref_order_by')
     );
 
     return $self->process_template( 
@@ -612,18 +528,16 @@ sub corr_evidence_types_view {
     my $order_by    = $apr->param('order_by') || 'rank,evidence_type';
     my $page_no     = $apr->param('page_no')  ||  1;
 
-    my $evidence_types = $db->selectall_arrayref(
-        qq[
-            select   et.evidence_type_id,
-                     et.accession_id,
-                     et.evidence_type,
-                     et.rank,
-                     et.line_color
-            from     cmap_evidence_type et
-            order by $order_by
-        ],
-        { Columns => {} }
-    );
+
+    my @evidence_type_names = keys(%{$self->config_data('evidence_type')});
+    my $evidence_types;
+    foreach my $type (@evidence_type_names){
+        $evidence_types->{$type}=
+            $self->evidence_type_data($type)
+             or return $self->error(
+             "No evidence type '$type'"
+              );
+    }
 
     my $pager = Data::Pageset->new( {
         total_entries    => scalar @$evidence_types, 
@@ -665,14 +579,6 @@ sub entity_delete {
         $uri_args ||= '?action=map_sets_view';
     }
     #
-    # Map Type
-    #
-    elsif ( $entity_type eq 'cmap_map_type' ) {
-        $admin->map_type_delete( map_type_id => $entity_id ) 
-        or return $self->error( $admin->error );
-        $uri_args ||= '?action=map_types_view';
-    }
-    #
     # Species
     #
     elsif ( $entity_type eq 'cmap_species' ) {
@@ -687,15 +593,6 @@ sub entity_delete {
         $admin->feature_correspondence_delete( 
             feature_correspondence_id => $entity_id 
         ) or return $self->error( $admin->error );
-    }
-    #
-    # Feature Type
-    #
-    elsif ( $entity_type eq 'cmap_feature_type' ) {
-        $admin->feature_type_delete( 
-            feature_type_id => $entity_id 
-        ) or return $self->error( $admin->error );
-        $uri_args ||= '?action=feature_types_view';
     }
     #
     # Attribute
@@ -759,16 +656,6 @@ sub entity_delete {
         );
 
         $uri_args = "?action=feature_view;feature_id=$feature_id";
-    }
-    #
-    # Evidence Type
-    #
-    elsif ( $entity_type eq 'cmap_evidence_type' ) {
-        $admin->evidence_type_delete(
-            evidence_type_id => $entity_id
-        ) or return $self->error( $admin->error );
-
-        $uri_args ||= '?action=corr_evidence_types_view';
     }
     #
     # Map
@@ -897,15 +784,13 @@ sub map_edit {
                    map.stop_position,
                    ms.map_set_id, 
                    ms.map_set_name,
-                   mt.map_type,
+                   ms.map_type,
                    s.common_name as species_name
             from   cmap_map map, 
                    cmap_map_set ms, 
-                   cmap_map_type mt,
                    cmap_species s
             where  map.map_id=?
             and    map.map_set_id=ms.map_set_id
-            and    ms.map_type_id=mt.map_type_id
             and    ms.species_id=s.species_id
         ]
     );
@@ -951,7 +836,7 @@ sub map_view {
     my $apr             = $self->apr;
     my $map_id          = $apr->param('map_id')          or die  'No map id';
     my $order_by        = $apr->param('order_by')        || 'start_position';
-    my $feature_type_id = $apr->param('feature_type_id') ||                0;
+    my $feature_type    = $apr->param('feature_type') ||                0;
     my $page_no         = $apr->param('page_no')         || 1;
 
     my $sth = $db->prepare(
@@ -964,17 +849,15 @@ sub map_view {
                    map.stop_position,
                    ms.map_set_id, 
                    ms.short_name as map_set_name,
-                   mt.map_type,
-                   mt.map_units,
+                   ms.map_type,
+                   ms.map_units,
                    s.common_name as species_name,
                    s.full_name as species_full_name
             from   cmap_map map, 
                    cmap_map_set ms, 
-                   cmap_map_type mt,
                    cmap_species s
             where  map.map_id=?
             and    map.map_set_id=ms.map_set_id
-            and    ms.map_type_id=mt.map_type_id
             and    ms.species_id=s.species_id
         ]
     );
@@ -999,14 +882,11 @@ sub map_view {
                  f.start_position, 
                  f.stop_position, 
                  f.is_landmark,
-                 f.feature_type_id,
-                 ft.feature_type
+                 f.feature_type
         from     cmap_feature f, 
-                 cmap_feature_type ft
         where    f.map_id=?
-        and      f.feature_type_id=ft.feature_type_id
     ];
-    $sql .= "and f.feature_type_id=$feature_type_id " if $feature_type_id;
+    $sql .= "and f.feature_type=$feature_type " if $feature_type;
     $sql .= "order by $order_by ";
 
     my $features = $db->selectall_arrayref($sql, { Columns => {} }, ($map_id));
@@ -1063,11 +943,9 @@ sub map_view {
 
     my $feature_types = $db->selectall_arrayref(
         q[
-            select   distinct ft.feature_type_id, ft.feature_type
+            select   distinct f.feature_type
             from     cmap_feature f,
-                     cmap_feature_type ft
             where    f.map_id=?
-            and      f.feature_type_id=ft.feature_type_id
             order by feature_type
         ],
         { Columns => {} },
@@ -1293,15 +1171,7 @@ sub feature_create {
         "No map for ID '$map_id'"
     );
 
-    my $feature_types = $db->selectall_arrayref(
-        q[
-            select   ft.feature_type_id,
-                     ft.feature_type
-            from     cmap_feature_type ft
-            order by feature_type
-        ],
-        { Columns => {} }
-    );
+    my $feature_types = \keys(%{$self->feature_type_data()});
 
     return $self->process_template(
         TEMPLATE->{'feature_create'}, 
@@ -1326,18 +1196,15 @@ sub feature_edit {
             select     f.feature_id,
                        f.accession_id,
                        f.map_id,
-                       f.feature_type_id,
+                       f.feature_type,
                        f.feature_name,
                        f.start_position,
                        f.stop_position,
                        f.is_landmark,
-                       ft.feature_type,
                        map.map_name,
                        ms.short_name as map_set_name,
                        s.common_name as species_name
             from       cmap_feature f
-            inner join cmap_feature_type ft
-            on         f.feature_type_id=ft.feature_type_id
             inner join cmap_map map
             on         f.map_id=map.map_id
             inner join cmap_map_set ms
@@ -1352,15 +1219,8 @@ sub feature_edit {
         "No feature for ID '$feature_id'"
     );
 
-    my $feature_types = $db->selectall_arrayref(
-        q[
-            select   ft.feature_type_id,
-                     ft.feature_type
-            from     cmap_feature_type ft
-            order by feature_type
-        ],
-        { Columns => {} }
-    );
+    my $feature_types = \keys(%{$self->feature_type_data()});
+
 
     return $self->process_template(
         TEMPLATE->{'feature_edit'},
@@ -1381,7 +1241,7 @@ sub feature_insert {
         map_id          => $apr->param('map_id')          ||  0,
         accession_id    => $apr->param('accession_id')    || '',
         feature_name    => $apr->param('feature_name')    || '',
-        feature_type_id => $apr->param('feature_type_id') ||  0,
+        feature_type    => $apr->param('feature_type') ||  0,
         is_landmark     => $apr->param('is_landmark')     ||  0,
         start_position  => $apr->param('start_position')  ||  0,
         stop_position   => $apr->param('stop_position')
@@ -1404,8 +1264,8 @@ sub feature_update {
                           push @errors, 'No accession id';
     my $feature_name    = $apr->param('feature_name') or 
                           push @errors, 'No feature name';
-    my $feature_type_id = $apr->param('feature_type_id') 
-                          or die 'No feature type id';
+    my $feature_type = $apr->param('feature_type') 
+                          or die 'No feature type';
     my $is_landmark     = $apr->param('is_landmark') || 0;
     my $start_position  = $apr->param('start_position');
     push @errors, "No start" unless $start_position =~ NUMBER_RE;
@@ -1416,7 +1276,7 @@ sub feature_update {
     my $sql = q[
         update cmap_feature
         set    accession_id=?, feature_name=?, 
-               feature_type_id=?, is_landmark=?, start_position=?
+               feature_type=?, is_landmark=?, start_position=?
     ];
     $sql .= ", stop_position=$stop_position " if $stop_position =~ NUMBER_RE;
     $sql .= 'where  feature_id=?';
@@ -1424,7 +1284,7 @@ sub feature_update {
         $sql,
         {},
         ( $accession_id, $feature_name, 
-          $feature_type_id, $is_landmark, $start_position, $feature_id )
+          $feature_type, $is_landmark, $start_position, $feature_id )
     );
 
     return $self->redirect_home( 
@@ -1445,18 +1305,15 @@ sub feature_view {
             select     f.feature_id, 
                        f.accession_id, 
                        f.map_id,
-                       f.feature_type_id,
+                       f.feature_type,
                        f.feature_name,
                        f.is_landmark,
                        f.start_position,
                        f.stop_position,
-                       ft.feature_type,
                        map.map_name,
                        ms.short_name as map_set_name,
                        s.common_name as species_name
             from       cmap_feature f
-            inner join cmap_feature_type ft
-            on         f.feature_type_id=ft.feature_type_id
             inner join cmap_map map
             on         f.map_id=map.map_id
             inner join cmap_map_set ms
@@ -1513,12 +1370,10 @@ sub feature_view {
         $corr->{'evidence'} = join(', ', @{
             $db->selectcol_arrayref(
                 q[
-                    select   et.evidence_type
+                    select   ce.evidence_type
                     from     cmap_correspondence_evidence ce,
-                             cmap_evidence_type et
                     where    ce.feature_correspondence_id=?
-                    and      ce.evidence_type_id=et.evidence_type_id
-                    order by et.rank
+                    order by ce.rank
                 ],
                 {},
                 ( $corr->{'feature_correspondence_id'} )
@@ -1547,14 +1402,14 @@ sub feature_search {
     my $admin            = $self->admin;
     my $page_no          = $apr->param('page_no')           ||    1;
     my @species_ids      = ( $apr->param('species_id')      || () );
-    my @feature_type_ids = ( $apr->param('feature_type_id') || () );
+    my @feature_types = ( $apr->param('feature_type') || () );
 
     my $params              = {
         apr                 => $apr,
         species             => $admin->species,
         feature_types       => $admin->feature_types,
         species_lookup      => { map { $_, 1 } @species_ids },
-        feature_type_lookup => { map { $_, 1 } @feature_type_ids },
+        feature_type_lookup => { map { $_, 1 } @feature_types },
     }; 
 
     #
@@ -1566,7 +1421,7 @@ sub feature_search {
             search_field     => $apr->param('search_field')    || '',
             map_aid          => $apr->param('map_aid')         ||  0,
             species_ids      => \@species_ids,
-            feature_type_ids => \@feature_type_ids,
+            feature_types => \@feature_types,
             order_by         => $apr->param('order_by')        || '', 
             entries_per_page => $PAGE_SIZE,
             current_page     => $page_no,
@@ -1658,16 +1513,15 @@ sub feature_corr_create {
         { Columns => {} }
     );
 
-    my $evidence_types = $db->selectall_arrayref(
-        q[
-            select   et.evidence_type_id,
-                     et.evidence_type,
-                     et.rank
-            from     cmap_evidence_type et
-            order by rank, evidence_type
-        ],
-        { Columns => {} }
-    );
+    my @evidence_type_names = keys(%{$self->config_data('evidence_type')});
+    my $evidence_types;
+    foreach my $type (@evidence_type_names){
+        $evidence_types->{$type}=
+            $self->evidence_type_data($type)
+             or return $self->error(
+             "No evidence type '$type'"
+              );
+    }
 
     return $self->process_template(
         TEMPLATE->{'feature_corr_create'}, 
@@ -1693,7 +1547,7 @@ sub feature_corr_insert {
     my $feature_id2      = $apr->param('feature_id2')  or die 'No feature id2';
     my $accession_id     = $apr->param('accession_id') || '';
     my $is_enabled       = $apr->param('is_enabled')   ||  0;
-    my $evidence_type_id = $apr->param('evidence_type_id') or push @errors,
+    my $evidence_type = $apr->param('evidence_type') or push @errors,
         'Please select an evidence type';
 
     push @errors, 
@@ -1705,7 +1559,7 @@ sub feature_corr_insert {
     my $feature_correspondence_id =  $admin->feature_correspondence_create(
         feature_id1               => $feature_id1, 
         feature_id2               => $feature_id2, 
-        evidence_type_id          => $evidence_type_id, 
+        evidence_type             => $evidence_type, 
         accession_id              => $accession_id, 
         is_enabled                => $is_enabled
     );
@@ -1829,22 +1683,19 @@ sub feature_corr_view {
             select f.feature_id, 
                    f.accession_id, 
                    f.map_id,
-                   f.feature_type_id,
+                   f.feature_type,
                    f.feature_name,
                    f.start_position,
                    f.stop_position,
-                   ft.feature_type,
                    map.map_name,
                    ms.map_set_id,
                    ms.short_name as map_set_name,
                    s.common_name as species_name
             from   cmap_feature f,
-                   cmap_feature_type ft,
                    cmap_map map,
                    cmap_map_set ms,
                    cmap_species s
             where  f.feature_id=?
-            and    f.feature_type_id=ft.feature_type_id
             and    f.map_id=map.map_id
             and    map.map_set_id=ms.map_set_id
             and    ms.species_id=s.species_id
@@ -1860,14 +1711,11 @@ sub feature_corr_view {
             select   ce.correspondence_evidence_id,
                      ce.accession_id,
                      ce.feature_correspondence_id,
-                     ce.evidence_type_id,
+                     ce.evidence_type,
                      ce.score,
-                     et.evidence_type,
-                     et.rank
+                     ce.rank
             from     cmap_correspondence_evidence ce,
-                     cmap_evidence_type et
             where    ce.feature_correspondence_id=?
-            and      ce.evidence_type_id=et.evidence_type_id
             order by $order_by
         ],
         { Columns => {} },
@@ -1913,16 +1761,15 @@ sub corr_evidence_create {
         "No feature correspondence for ID '$feature_correspondence_id'"
     );
 
-    my $evidence_types = $db->selectall_arrayref(
-        q[
-            select   et.evidence_type_id,
-                     et.evidence_type,
-                     et.rank
-            from     cmap_evidence_type et
-            order by et.rank
-        ],
-        { Columns => {} }
-    );
+    my @evidence_type_names = keys(%{$self->config_data('evidence_type')});
+    my $evidence_types;
+    foreach my $type (@evidence_type_names){
+        $evidence_types->{$type}=
+            $self->evidence_type_data($type)
+             or return $self->error(
+             "No evidence type '$type'"
+              );
+    }
 
     return $self->process_template( 
         TEMPLATE->{'corr_evidence_create'}, 
@@ -1947,7 +1794,7 @@ sub corr_evidence_edit {
             select ce.correspondence_evidence_id,
                    ce.accession_id,
                    ce.feature_correspondence_id,
-                   ce.evidence_type_id,
+                   ce.evidence_type,
                    ce.score
             from   cmap_correspondence_evidence ce
             where  ce.correspondence_evidence_id=?
@@ -1958,16 +1805,15 @@ sub corr_evidence_edit {
         "No correspondence evidence for ID '$correspondence_evidence_id'"
     );
 
-    my $evidence_types = $db->selectall_arrayref(
-        q[
-            select   et.evidence_type_id,
-                     et.evidence_type,
-                     et.rank
-            from     cmap_evidence_type et
-            order by rank, evidence_type
-        ],
-        { Columns => {} }
-    );
+    my @evidence_type_names = keys(%{$self->config_data('evidence_type')});
+    my $evidence_types;
+    foreach my $type (@evidence_type_names){
+        $evidence_types->{$type}=
+            $self->evidence_type_data($type)
+             or return $self->error(
+             "No evidence type '$type'"
+              );
+    }
 
     return $self->process_template( 
         TEMPLATE->{'corr_evidence_edit'},
@@ -1987,7 +1833,7 @@ sub corr_evidence_insert {
     my $apr                       = $self->apr;
     my $feature_correspondence_id = $apr->param('feature_correspondence_id') 
         or push @errors, 'No feature correspondence id';
-    my $evidence_type_id          = $apr->param('evidence_type_id') 
+    my $evidence_type          = $apr->param('evidence_type') 
         or push @errors, 'No evidence type';
     my $score                     = $apr->param('score') || '';
 
@@ -2007,12 +1853,12 @@ sub corr_evidence_insert {
             insert
             into   cmap_correspondence_evidence
                    ( correspondence_evidence_id, accession_id, 
-                     feature_correspondence_id, evidence_type_id, score )
+                     feature_correspondence_id, evidence_type, score )
             values ( ?, ?, ?, ?, ? )
         ],
         {},
         ( $correspondence_evidence_id, $accession_id, 
-          $feature_correspondence_id, $evidence_type_id, $score
+          $feature_correspondence_id, $evidence_type, $score
         )
     ); 
 
@@ -2034,7 +1880,7 @@ sub corr_evidence_update {
         || $correspondence_evidence_id;
     my $feature_correspondence_id  = $apr->param('feature_correspondence_id') 
         or push @errors, 'No feature correspondence id';
-    my $evidence_type_id           = $apr->param('evidence_type_id') 
+    my $evidence_type           = $apr->param('evidence_type') 
         or push @errors, 'No evidence type';
     my $score                      = $apr->param('score') || '';
 
@@ -2044,11 +1890,11 @@ sub corr_evidence_update {
         q[
             update cmap_correspondence_evidence
             set    accession_id=?, feature_correspondence_id=?, 
-                   evidence_type_id=?, score=?
+                   evidence_type=?, score=?
             where  correspondence_evidence_id=?
         ],
         {},
-        ( $accession_id, $feature_correspondence_id, $evidence_type_id,
+        ( $accession_id, $feature_correspondence_id, $evidence_type,
           $score, $correspondence_evidence_id
         )
     ); 
@@ -2061,115 +1907,28 @@ sub corr_evidence_update {
 
 # ----------------------------------------------------
 sub feature_type_create {
-    my ( $self, %args ) = @_;
-
-    return $self->process_template( 
-        TEMPLATE->{'feature_type_create'}, 
-        {
-            apr    => $self->apr,
-            colors => $COLORS,
-            shapes => $FEATURE_SHAPES,
-            errors => $args{'errors'},
-        }
-    );
+    return 0;
+    ###Do this in Config
 }
 
 # ----------------------------------------------------
 sub feature_type_edit {
+    ###Do this in config file 
+    return 0;
     my ( $self, %args ) = @_;
-    my $db              = $self->db or return $self->error;
-    my $apr             = $self->apr;
-    my $feature_type_id = $apr->param('feature_type_id') or 
-                          die 'No feature type id';
-    my $sth             = $db->prepare(
-        q[
-            select   accession_id,
-                     feature_type_id, 
-                     feature_type, 
-                     shape, 
-                     color,
-                     default_rank,
-                     drawing_lane,
-                     drawing_priority
-            from     cmap_feature_type
-            where    feature_type_id=?
-        ]
-    );
-    $sth->execute( $feature_type_id );
-    my $feature_type = $sth->fetchrow_hashref or return $self->error(
-        "No feature type for ID '$feature_type_id'"
-    );
-
-    return $self->process_template( 
-        TEMPLATE->{'feature_type_edit'},
-        { 
-            feature_type => $feature_type,
-            colors       => $COLORS,
-            shapes       => $FEATURE_SHAPES,
-            errors       => $args{'errors'},
-        }
-    );
 }
 
 # ----------------------------------------------------
 sub feature_type_insert {
-    my $self  = shift;
-    my $apr   = $self->apr;
-    my $admin = $self->admin;
-    
-    $admin->feature_type_create(
-        feature_type     => $apr->param('feature_type')     || '',
-        shape            => $apr->param('shape')            || '',
-        color            => $apr->param('color')            || '',
-        default_rank     => $apr->param('default_rank')     ||  1,
-        drawing_lane     => $apr->param('drawing_lane')     ||  1,
-        drawing_priority => $apr->param('drawing_priority') ||  1,
-        accession_id     => $apr->param('accession_id')     || '',
-    ) or return $self->feature_type_create( errors => $admin->error );
-
-    return $self->redirect_home( ADMIN_HOME_URI.'?action=feature_types_view' ); 
+    ###Do this in config file
+    return 0;
 }
 
 # ----------------------------------------------------
 sub feature_type_update {
-    my $self             = shift;
-    my @errors           = ();
-    my $db               = $self->db or return $self->error;
-    my $apr              = $self->apr;
-    my $accession_id     = $apr->param('accession_id')
-        or push @errors, 'No accession id';
-    my $shape            = $apr->param('shape')
-        or push @errors, 'No shape';
-    my $color            = $apr->param('color')            || '';
-    my $default_rank     = $apr->param('default_rank')     ||  1;
-    my $drawing_lane     = $apr->param('drawing_lane')     ||  1;
-    my $drawing_priority = $apr->param('drawing_priority') ||  1;
-    my $feature_type_id  = $apr->param('feature_type_id') 
-        or push @errors, 'No feature type id';
-    my $feature_type     = $apr->param('feature_type')    
-        or push @errors, 'No feature type';
-
-    return $self->feature_type_edit( errors => \@errors ) if @errors;
-
-    $db->do(
-        q[ 
-            update cmap_feature_type
-            set    accession_id=?, 
-                   feature_type=?, 
-                   shape=?, 
-                   color=?,
-                   default_rank=?,
-                   drawing_lane=?,
-                   drawing_priority=?
-            where  feature_type_id=?
-        ],
-        {}, 
-        ( $accession_id, $feature_type, $shape, $color, 
-          $default_rank, $drawing_lane, $drawing_priority, $feature_type_id 
-        )
-    );
-
-    return $self->redirect_home( ADMIN_HOME_URI.'?action=feature_types_view' ); 
+    my ( $self, %args ) = @_;
+    return 0;
+    #Do this in Config file
 }
 
 # ----------------------------------------------------
@@ -2177,40 +1936,18 @@ sub feature_type_view {
     my ( $self, %args ) = @_;
     my $db              = $self->db or return $self->error;
     my $apr             = $self->apr;
-    my $feature_type_id = $apr->param('feature_type_id') or 
+    my $incoming_feature_type = $apr->param('feature_type') or 
                           die 'No feature type id';
-    my $sth             = $db->prepare(
-        q[
-            select   accession_id,
-                     feature_type_id, 
-                     feature_type, 
-                     shape, 
-                     color,
-                     default_rank,
-                     drawing_lane,
-                     drawing_priority
-            from     cmap_feature_type
-            where    feature_type_id=?
-        ]
-    );
-    $sth->execute( $feature_type_id );
-    my $feature_type = $sth->fetchrow_hashref or return $self->error(
-        "No feature type for ID '$feature_type_id'"
+    my $feature_types =$self->feature_type_data($incoming_feature_type) 
+        or return $self->error(
+        "No feature type for ID '$incoming_feature_type'"
     );
 
-    $feature_type->{'object_id'}  = $feature_type->{'feature_type_id'};
-    $feature_type->{'color'}    ||= DEFAULT->{'feature_color'};
-    $feature_type->{'attributes'} = $self->get_attributes( 
-        'cmap_feature_type', $feature_type_id, $apr->param('att_order_by')
-    );
-    $feature_type->{'xrefs'}      = $self->get_xrefs( 
-        'cmap_feature_type', $feature_type_id, $apr->param('xref_order_by')
-    );
 
     return $self->process_template( 
         TEMPLATE->{'feature_type_view'},
         { 
-            feature_type => $feature_type,
+            feature_type => $feature_types,
         }
     );
 }
@@ -2223,23 +1960,16 @@ sub feature_types_view {
     my $order_by    = $apr->param('order_by') || 'feature_type';
     my $page_no     = $apr->param('page_no')  || 1;
 
-    $order_by = 'drawing_lane,drawing_priority' if $order_by eq 'drawing_lane';
 
-    my $feature_types = $db->selectall_arrayref(
-        qq[
-            select   accession_id, 
-                     feature_type_id, 
-                     feature_type, 
-                     shape, 
-                     color,
-                     default_rank,
-                     drawing_lane,
-                     drawing_priority
-            from     cmap_feature_type
-            order by $order_by
-        ], 
-        { Columns => {} }
-    );
+    my @feature_type_names = keys(%{$self->config_data('evidence_type')});
+    my $feature_types;
+    foreach my $type (@feature_type_names){
+        $feature_types->{$type}=
+            $self->feature_type_data($type)
+             or return $self->error(
+             "No evidence type '$type'"
+              );
+    }
 
     #
     # Slice the results up into pages suitable for web viewing.
@@ -2267,7 +1997,7 @@ sub map_sets_view {
     my $self        = shift;
     my $db          = $self->db or return $self->error;
     my $apr         = $self->apr;
-    my $map_type_id = $apr->param('map_type_id') || '';
+    my $map_type    = $apr->param('map_type') || '';
     my $species_id  = $apr->param('species_id')  || '';
     my $is_enabled  = $apr->param('is_enabled');
     my $page_no     = $apr->param('page_no')     ||  1;
@@ -2278,7 +2008,7 @@ sub map_sets_view {
     }
     else {
         $order_by =
-            'mt.display_order, mt.map_type, s.display_order, s.common_name, '.
+            'ms.display_order, ms.map_type, s.display_order, s.common_name, '.
             'ms.display_order, ms.published_on desc, ms.short_name';
     }
 
@@ -2291,18 +2021,15 @@ sub map_sets_view {
                     ms.display_order,
                     s.common_name as species_name,
                     s.display_order,
-                    mt.map_type,
-                    mt.display_order,
+                    ms.map_type,
                     count(map.map_id) as no_maps
         from        cmap_map_set ms
         left join   cmap_map map
         on          ms.map_set_id=map.map_set_id
         inner join  cmap_species s 
         on          ms.species_id=s.species_id
-        inner join  cmap_map_type mt
-        on          ms.map_type_id=mt.map_type_id
     ];
-    $sql .= qq[ and ms.map_type_id=$map_type_id ] if $map_type_id;
+    $sql .= qq[ and ms.map_type=$map_type ] if $map_type;
     $sql .= qq[ and ms.species_id=$species_id ]   if $species_id;
     $sql .= qq[ and ms.is_enabled=$is_enabled ]   
         if defined $is_enabled && $is_enabled =~ m/^[01]$/;
@@ -2315,8 +2042,7 @@ sub map_sets_view {
                     ms.display_order,
                     s.common_name,
                     s.display_order,
-                    mt.map_type,            
-                    mt.display_order
+                    ms.map_type,            
         order by $order_by
     ];
 
@@ -2343,15 +2069,7 @@ sub map_sets_view {
         ], { Columns => {} }
     );
 
-    my $map_types = $db->selectall_arrayref(
-        q[
-            select   distinct mt.map_type_id, mt.map_type
-            from     cmap_map_type mt,
-                     cmap_map_set ms
-            where    mt.map_type_id=ms.map_type_id
-            order by map_type
-        ], { Columns => {} }
-    );
+    my $map_types = \keys(%{$self->map_type_data()});
 
     return $self->process_template( 
         TEMPLATE->{'map_sets_view'}, 
@@ -2385,16 +2103,10 @@ sub map_set_create {
         'before creating map sets.'
     ) unless @$specie;
 
-    my $map_types = $db->selectall_arrayref(
-        q[
-            select   mt.map_type_id, mt.map_type
-            from     cmap_map_type mt
-            order by map_type
-        ], { Columns => {} }
-    );
+    my $map_types = \keys(%{$self->map_type_data()});
 
     return $self->error(
-        'Please <a href="admin?action=map_type_create">create map types</a> '.
+        'Please create map types in your configuration file '.
         'before creating map sets.'
     ) unless @$map_types;
 
@@ -2428,7 +2140,7 @@ sub map_set_edit {
                       ms.display_order, 
                       ms.published_on, 
                       ms.can_be_reference_map,
-                      ms.map_type_id, 
+                      ms.map_type, 
                       ms.species_id, 
                       ms.is_enabled,
                       ms.shape, 
@@ -2436,16 +2148,10 @@ sub map_set_edit {
                       ms.color,
                       s.common_name as species_common_name,
                       s.full_name as species_full_name,
-                      mt.map_type, 
-                      mt.map_units,
-                      mt.shape as default_shape,
-                      mt.color as default_color, 
-                      mt.width as default_width
+                      ms.map_units,
             from      cmap_map_set ms, 
                       cmap_species s, 
-                      cmap_map_type mt
             where     ms.species_id=s.species_id
-            and       ms.map_type_id=mt.map_type_id
             and       ms.map_set_id=?
         ],
     );
@@ -2467,14 +2173,15 @@ sub map_set_edit {
         ], { Columns => {} }
     );
 
-    my $map_types = $db->selectall_arrayref(
-        q[
-            select   map_type_id, map_type, map_units
-            from     cmap_map_type
-            order by map_type
-        ], { Columns => {} }
-    );
-
+    my @map_type_names = keys(%{$self->config_data('map_type')});
+    my $map_types;
+    foreach my $type (@map_type_names){
+        $map_types->{$type}=
+            $self->map_type_data($type)
+             or return $self->error(
+             "No map type '$type'"
+              );
+    }
     return $self->process_template( 
         TEMPLATE->{'map_set_edit'},
         { 
@@ -2498,7 +2205,7 @@ sub map_set_insert {
         map_set_name         => $apr->param('map_set_name')         || '',
         short_name           => $apr->param('short_name')           || '',
         species_id           => $apr->param('species_id')           || '',
-        map_type_id          => $apr->param('map_type_id')          || '',
+        map_type             => $apr->param('map_type')          || '',
         accession_id         => $apr->param('accession_id')         || '',
         display_order        => $apr->param('display_order')        ||  1,
         can_be_reference_map => $apr->param('can_be_reference_map') ||  0,
@@ -2526,21 +2233,16 @@ sub map_set_view {
         q[
             select    ms.map_set_id, ms.accession_id, ms.map_set_name,
                       ms.short_name, ms.display_order, ms.published_on,
-                      ms.map_type_id, ms.species_id, 
+                      ms.map_type, ms.species_id, 
                       ms.can_be_reference_map, ms.is_enabled,
                       ms.shape, ms.color, ms.width,
                       s.common_name as species_common_name,
                       s.full_name as species_full_name,
-                      mt.map_type, mt.map_units,
-                      mt.is_relational_map,
-                      mt.shape as default_shape,
-                      mt.color as default_color,
-                      mt.width as default_width
+                      ms.map_units,
+                      ms.is_relational_map,
             from      cmap_map_set ms, 
                       cmap_species s, 
-                      cmap_map_type mt
             where     ms.species_id=s.species_id
-            and       ms.map_type_id=mt.map_type_id
             and       ms.map_set_id=?
         ]
     );
@@ -2619,7 +2321,7 @@ sub map_set_update {
     my $map_set_name         = $apr->param('map_set_name')         || '';
     my $short_name           = $apr->param('short_name')           || '';
     my $species_id           = $apr->param('species_id')           ||  0;
-    my $map_type_id          = $apr->param('map_type_id')          ||  0;
+    my $map_type             = $apr->param('map_type')          ||  0;
     my $can_be_reference_map = $apr->param('can_be_reference_map') ||  0;
     my $is_enabled           = $apr->param('is_enabled')           ||  0;
     my $display_order        = $apr->param('display_order')        ||  1;
@@ -2644,7 +2346,7 @@ sub map_set_update {
         q[
             update cmap_map_set
             set    accession_id=?, map_set_name=?, short_name=?,
-                   species_id=?, map_type_id=?, published_on=?,
+                   species_id=?, map_type=?, published_on=?,
                    can_be_reference_map=?, display_order=?, 
                    is_enabled=?, shape=?, color=?, width=?
             where  map_set_id=?
@@ -2652,7 +2354,7 @@ sub map_set_update {
         {},
         (
             $accession_id, $map_set_name, $short_name, 
-            $species_id, $map_type_id, $published_on, 
+            $species_id, $map_type, $published_on, 
             $can_be_reference_map, $display_order, 
             $is_enabled, $shape, $color, $width,
             $map_set_id
@@ -2674,120 +2376,30 @@ sub redirect_home {
 
 # ----------------------------------------------------
 sub map_type_create {
-    my ( $self, %args ) = @_;
-    return $self->process_template( 
-        TEMPLATE->{'map_type_create'},
-        { 
-            apr    => $self->apr,
-            colors => $COLORS,
-            shapes => $MAP_SHAPES,
-            widths => $WIDTHS,
-            errors => $args{'errors'},
-        }
-    );
+    return 0;
+    ###Do this in Config
 }
 
 # ----------------------------------------------------
 sub map_type_edit {
     my ( $self, %args ) = @_;
-    my $errors          = $args{'errors'};
-    my $db              = $self->db;
-    my $apr             = $self->apr;
-    my $map_type_id     = $apr->param('map_type_id') or die 'No map type ID';
-    my $sth             = $db->prepare(
-        q[
-            select   map_type_id, 
-                     accession_id, 
-                     map_type, 
-                     map_units, 
-                     is_relational_map,
-                     display_order,
-                     shape, 
-                     width, 
-                     color
-            from     cmap_map_type
-            where    map_type_id=?
-        ]
-    );
-    $sth->execute( $map_type_id );
-    my $map_type = $sth->fetchrow_hashref or return $self->error(
-        "No map type for ID '$map_type_id'"
-    );
-
-    return $self->process_template( 
-        TEMPLATE->{'map_type_edit'},
-        { 
-            map_type => $map_type,
-            colors   => $COLORS,
-            shapes   => $MAP_SHAPES,
-            widths   => $WIDTHS,
-            errors   => $errors,
-        }
-    );
+    return 0;
+    #Do this in Config file
 }
 
 # ----------------------------------------------------
 sub map_type_insert {
-    my $self  = shift;
-    my $apr   = $self->apr;
-    my $admin = $self->admin;
-    $admin->map_type_create(
-        accession_id      => $apr->param('accession_id')      || '',
-        map_type          => $apr->param('map_type')          || '',
-        map_units         => $apr->param('map_units')         || '',
-        shape             => $apr->param('shape')             || '',
-        width             => $apr->param('width')             || '',
-        color             => $apr->param('color')             || '',
-        display_order     => $apr->param('display_order')     ||  1,
-        is_relational_map => $apr->param('is_relational_map') ||  0,
-    ) or return $self->map_type_create( errors => $admin->error );
-
-    return $self->redirect_home( ADMIN_HOME_URI.'?action=map_types_view' ); 
+   my ( $self, %args ) = @_;
+    return 0;
+    #Do this in Config file
+ 
 }
 
 # ----------------------------------------------------
 sub map_type_update {
-    my $self              = shift;
-    my @errors            = ();
-    my $db                = $self->db;
-    my $apr               = $self->apr;
-    my $map_type_id       = $apr->param('map_type_id') 
-        or push @errors, 'No map type id';
-    my $accession_id      = $apr->param('accession_id') 
-        or push @errors, 'No accession ID';
-    my $map_type          = $apr->param('map_type')    
-        or push @errors, 'No map type';
-    my $map_units         = $apr->param('map_units')   
-        or push @errors, 'No map units';
-    my $shape             = $apr->param('shape')       
-        or push @errors, 'No shape';
-    my $is_relational_map = $apr->param('is_relational_map') ||  0;
-    my $display_order     = $apr->param('display_order')     ||  1;
-    my $width             = $apr->param('width')             || '';
-    my $color             = $apr->param('color')             || '';
-
-    return $self->map_type_edit( errors => \@errors ) if @errors;
-
-    $db->do(
-        q[ 
-            update cmap_map_type
-            set    map_type=?, 
-                   accession_id=?, 
-                   map_units=?, 
-                   is_relational_map=?, 
-                   display_order=?, 
-                   shape=?, 
-                   width=?, 
-                   color=?
-            where  map_type_id=?
-        ],
-        {}, 
-        ( $map_type, $accession_id, $map_units, $is_relational_map, 
-          $display_order, $shape, $width, $color, $map_type_id 
-        )
-    );
-
-    return $self->redirect_home( ADMIN_HOME_URI.'?action=map_types_view' ); 
+    my ( $self, %args ) = @_;
+    return 0;
+    #Do this in Config file
 }
 
 # ----------------------------------------------------
@@ -2795,33 +2407,10 @@ sub map_type_view {
     my ( $self, %args ) = @_;
     my $db              = $self->db;
     my $apr             = $self->apr;
-    my $map_type_id     = $apr->param('map_type_id') or die 'No map type ID';
-    my $sth             = $db->prepare(
-        q[
-            select   map_type_id, 
-                     accession_id, 
-                     map_type, 
-                     map_units, 
-                     is_relational_map,
-                     display_order,
-                     shape, 
-                     width, 
-                     color
-            from     cmap_map_type
-            where    map_type_id=?
-        ]
-    );
-    $sth->execute( $map_type_id );
-    my $map_type = $sth->fetchrow_hashref or return $self->error(
-        "No map type for ID '$map_type_id'"
-    );
-
-    $map_type->{'attributes'} = $self->get_attributes( 
-        'cmap_map_type', $map_type_id, $apr->param('att_order_by')
-    );
-
-    $map_type->{'xrefs'} = $self->get_xrefs( 
-        'cmap_map_type', $map_type_id, $apr->param('xref_order_by')
+    my $incoming_map_type     = $apr->param('map_type') or die 'No map type ID';
+    my $map_type = $self->map_type_data($incoming_map_type) 
+         or return $self->error(
+        "No map type for ID '$incoming_map_type'"
     );
 
     return $self->process_template( 
@@ -2840,22 +2429,15 @@ sub map_types_view {
     my $order_by    = $apr->param('order_by') || 'display_order,map_type';
     my $page_no     = $apr->param('page_no')  ||  1;
 
-    my $map_types = $db->selectall_arrayref(
-        qq[
-            select   map_type_id, 
-                     accession_id,
-                     map_type, 
-                     map_units, 
-                     is_relational_map, 
-                     display_order, 
-                     shape, 
-                     width, 
-                     color
-            from     cmap_map_type
-            order by $order_by
-        ],
-        { Columns => {} }
-    );
+    my @map_type_names = keys(%{$self->config_data('map_type')});
+    my $map_types;
+    foreach my $type (@map_type_names){
+        $map_types->{$type}=
+            $self->map_type_data($type)
+             or return $self->error(
+             "No map type '$type'"
+              );
+    }
 
     my $pager = Data::Pageset->new( {
         total_entries    => scalar @$map_types, 
