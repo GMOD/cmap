@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.25 2003-03-21 00:36:15 kycl4rk Exp $
+# $Id: Import.pm,v 1.26 2003-03-26 15:50:36 kycl4rk Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.25 $)[-1];
+$VERSION  = (qw$Revision: 1.26 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -48,6 +48,7 @@ use vars '$LOG_FH';
 %COLUMNS = (
     map_name             => { is_required => 1, datatype => 'string' },
     map_accession_id     => { is_required => 0, datatype => 'string' },
+    map_display_order    => { is_required => 0, datatype => 'number' },
     map_start            => { is_required => 0, datatype => 'number' },
     map_stop             => { is_required => 0, datatype => 'number' },
     feature_name         => { is_required => 1, datatype => 'string' },
@@ -73,6 +74,7 @@ Imports tab-delimited file with the following fields:
 
     map_name *
     map_accession_id
+    map_display_order
     map_start
     map_stop
     feature_name *
@@ -91,7 +93,7 @@ Starred fields are required.  Order of fields is not important.
 When you import data for an map set that already has data, all
 existing maps and features will be updated.  If you choose, any of the
 pre-existing maps or features that aren't updated can be deleted (this
-is what you'd want if the import file contained *all* the data you
+is what you'd want if the import file contains *all* the data you
 have for the map set).
 
 =cut
@@ -322,6 +324,7 @@ have for the map set).
             $maps{ uc $map_name }{'touched'} = 1;
         }
 
+        my $display_order = $record{'map_display_order'};
         my $linkage_group = $record{'linkage_group'};
         my $map_start     = $record{'map_start'}    || 0;
         my $map_stop      = $record{'map_stop'}     || 0;
@@ -350,13 +353,14 @@ have for the map set).
                     into   cmap_map 
                            ( map_id, accession_id, map_set_id, 
                              map_name, start_position, stop_position,
-                             linkage_group
+                             linkage_group, display_order
                            )
-                    values ( ?, ?, ?, ?, ?, ?, ? )
+                    values ( ?, ?, ?, ?, ?, ?, ?, ? )
                 ],
                 {}, 
                 ( $map_id, $map_aid, $map_set_id, 
-                  $map_name, $map_start, $map_stop, $linkage_group
+                  $map_name, $map_start, $map_stop, 
+                  $linkage_group, $display_order
                 )
             );
 
@@ -370,6 +374,7 @@ have for the map set).
         $map_info{ $map_id }{'start_position'} ||= $map_start;
         $map_info{ $map_id }{'stop_position'}  ||= $map_stop;
         $map_info{ $map_id }{'linkage_group'}  ||= $linkage_group;
+        $map_info{ $map_id }{'display_order'}  ||= $display_order;
         $map_info{ $map_id }{'accession_id'}   ||= $map_aid;
 
         #
@@ -494,7 +499,8 @@ have for the map set).
                        map_name=?, 
                        start_position=?, 
                        stop_position=?,
-                       linkage_group=?
+                       linkage_group=?,
+                       display_order=?
                 where  map_id=?
             ],
             {}, 
@@ -504,6 +510,7 @@ have for the map set).
                 $map->{'start_position'}, 
                 $map->{'stop_position'}, 
                 $map->{'linkage_group'}, 
+                $map->{'display_order'}, 
                 $map->{'map_id'},
             )
         );
