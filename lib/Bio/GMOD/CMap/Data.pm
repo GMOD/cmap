@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.138 2004-08-07 01:35:53 mwz444 Exp $
+# $Id: Data.pm,v 1.139 2004-08-08 05:46:03 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.138 $)[-1];
+$VERSION = (qw$Revision: 1.139 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -1541,7 +1541,8 @@ Returns the data for the correspondence matrix.
                      s.common_name as species_name, 
                      ms.accession_id as map_set_aid, 
                      ms.display_order,
-                     ms.short_name as map_set_name
+                     ms.short_name as map_set_name,
+                     ms.map_type_accession as map_type_aid
             from     cmap_map_set ms,
                      cmap_species s
             where    ms.is_relational_map=0
@@ -1556,11 +1557,11 @@ Returns the data for the correspondence matrix.
 
         foreach my $row ( @{$map_sets} ) {
             $row->{'default_display_order'} =
-              $self->map_type_data( $row->{'map_type_accession'},
+              $self->map_type_data( $row->{'map_type_aid'},
                 'display_order' );
 
             $row->{'map_type'} =
-              $self->map_type_data( $row->{'map_type_accession'}, 'map_type' );
+              $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
         }
         $map_sets =
           sort_selectall_arrayref( $map_sets, 'default_display_order',
@@ -1620,11 +1621,11 @@ Returns the data for the correspondence matrix.
 
         foreach my $row (@$tempMapSet) {
             $row->{'map_type_display_order'} =
-              $self->map_type_data( $row->{'map_type_accession'},
+              $self->map_type_data( $row->{'map_type_aid'},
                 'display_order' );
 
             $row->{'map_type'} =
-              $self->map_type_data( $row->{'map_type_accession'}, 'map_type' );
+              $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
         }
 
         @reference_map_sets = @$tempMapSet;
@@ -1698,11 +1699,11 @@ Returns the data for the correspondence matrix.
 
         foreach my $row ( @{$tempMapSet} ) {
             $row->{'map_type_display_order'} =
-              $self->map_type_data( $row->{'map_type_accession'},
+              $self->map_type_data( $row->{'map_type_aid'},
                 'display_order' );
 
             $row->{'map_type'} =
-              $self->map_type_data( $row->{'map_type_accession'}, 'map_type' );
+              $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
         }
 
         @reference_map_sets = @{
@@ -1898,7 +1899,7 @@ Returns the data for the correspondence matrix.
           $db->selectall_arrayref( $link_map_set_sql, { Columns => {} } );
         foreach my $row ( @{$tempMapSet} ) {
             $row->{'map_type'} =
-              $self->map_type_data( $row->{'map_type_accession'}, 'map_type' );
+              $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
         }
     }
     else {
@@ -1926,9 +1927,9 @@ Returns the data for the correspondence matrix.
           $db->selectall_arrayref( $link_map_set_sql, { Columns => {} } );
         foreach my $row ( @{$tempMapSet} ) {
             $row->{'map_type'} =
-              $self->map_type_data( $row->{'map_type_accession'}, 'map_type' );
+              $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
             $row->{'map_type_display_order'} =
-              $self->map_type_data( $row->{'map_type_accession'},
+              $self->map_type_data( $row->{'map_type_aid'},
                 'display_order' );
         }
         $tempMapSet = sort_selectall_arrayref(
@@ -1939,15 +1940,14 @@ Returns the data for the correspondence matrix.
         );
     }
 
-    my @all_map_sets =
-      @{ $db->selectall_arrayref( $link_map_set_sql, { Columns => {} } ) };
+    my @all_map_sets =@$tempMapSet;
 
     #
     # Figure out the number by type and species.
     #
     my ( %no_by_type, %no_by_type_and_species );
     for my $map_set (@all_map_sets) {
-        my $map_type_aid = $map_set->{'map_type_accession'};
+        my $map_type_aid = $map_set->{'map_type_aid'};
         my $species_aid  = $map_set->{'species_aid'};
 
         $no_by_type{$map_type_aid}++;
@@ -2203,7 +2203,7 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
                     $ref_map_set_info->{'map_set_id'} );
                 $ref_map_set_info->{'map_type'} =
                   $self->map_type_data(
-                    $ref_map_set_info->{'map_type_accession'}, 'map_type' );
+                    $ref_map_set_info->{'map_type_aid'}, 'map_type' );
                 $self->get_cached_results( $sql_str . $ref_map_set_aid,
                     $ref_map_set_info );
             }

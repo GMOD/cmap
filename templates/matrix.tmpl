@@ -74,31 +74,31 @@
             <tr>
                 <th colspan="3" rowspan="2">Reference Set</th>
                 [% SET no_by_type=top_row.no_by_type %]
-                [% SET last_map_type_id=0 %]
+                [% SET last_map_type_aid=0 %]
 
                 [% FOREACH ms=top_row.map_sets %]
-                    [% SET map_type_id=ms.map_type_id %]
-                    [% NEXT IF map_type_id==last_map_type_id %]
-                    [% SET colspan=no_by_type.$map_type_id %]
+                    [% SET map_type_aid=ms.map_type_aid %]
+                    [% NEXT IF map_type_aid==last_map_type_aid %]
+                    [% SET colspan=no_by_type.$map_type_aid %]
                     <th colspan="[% colspan %]">[% ms.map_type %]</th>
-                    [% SET last_map_type_id=map_type_id %]
+                    [% SET last_map_type_aid=map_type_aid %]
                 [% END %]
                 <th colspan="3" rowspan="2">Reference Set</th>
             </tr>
             <tr>
                 [% SET no_by_type_and_species=top_row.no_by_type_and_species %]
-                [% SET last_map_type_id=0 %]
+                [% SET last_map_type_aid=0 %]
                 [% SET last_species_aid=0 %]
 
                 [% FOREACH ms=top_row.map_sets %]
                     [% SET species_aid=ms.species_aid %]
-                    [% SET map_type_id=ms.map_type_id %]
+                    [% SET map_type_aid=ms.map_type_aid %]
 
-                    [% NEXT IF species_aid==last_species_aid && map_type_id==last_map_type_id %]
+                    [% NEXT IF species_aid==last_species_aid && map_type_aid==last_map_type_aid %]
 
-                    [% SET colspan=no_by_type_and_species.$map_type_id.$species_aid %]
+                    [% SET colspan=no_by_type_and_species.$map_type_aid.$species_aid %]
                     <th colspan="[% colspan %]">[% ms.species_name %]</th>
-                    [% SET last_map_type_id=map_type_id %]
+                    [% SET last_map_type_aid=map_type_aid %]
                     [% SET last_species_aid=species_aid %]
                 [% END %]
             </tr>
