@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.22 2003-02-20 16:50:06 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.23 2003-02-20 23:56:22 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -31,7 +31,7 @@ $FEATURE_SHAPES = [ qw(
 $LINE_STYLES    = [ qw( dashed solid ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.22 $)[-1];
+$VERSION        = (qw$Revision: 1.23 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -2139,7 +2139,7 @@ sub map_set_insert {
     my $shape                = $apr->param('shape')                || '';
     my $color                = $apr->param('color')                || '';
     my $width                = $apr->param('width')                ||  0;
-    my $published_on         = $apr->param('published_on')  || localtime;
+    my $published_on         = $apr->param('published_on')    || 'today';
 
     if ( $published_on ) {{
         my $pub_date = parsedate($published_on, VALIDATE => 1)
@@ -2293,7 +2293,7 @@ sub map_set_update {
     my $shape                = $apr->param('shape')                || '';
     my $color                = $apr->param('color')                || '';
     my $width                = $apr->param('width')                ||  0;
-    my $published_on         = $apr->param('published_on')  || localtime;
+    my $published_on         = $apr->param('published_on')    || 'today';
 
     if ( $published_on ) {{
         my $pub_date = parsedate($published_on, VALIDATE => 1)

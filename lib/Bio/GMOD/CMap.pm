@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap;
 
-# $Id: CMap.pm,v 1.24 2003-02-14 01:28:05 kycl4rk Exp $
+# $Id: CMap.pm,v 1.25 2003-02-20 23:56:22 kycl4rk Exp $
 
 =head1 NAME
 
@@ -333,7 +333,9 @@ L<perl>, L<Class::Base>.
 
 Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
 
-Copyright (c) 2002 Cold Spring Harbor Laboratory
+=head1 COPYRIGHT
+
+Copyright (c) 2002-3 Cold Spring Harbor Laboratory
 
 This library is free software;  you can redistribute it and/or modify 
 it under the same terms as Perl itself.

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin;
 
-# $Id: Admin.pm,v 1.17 2003-02-20 16:50:02 kycl4rk Exp $
+# $Id: Admin.pm,v 1.18 2003-02-20 23:56:22 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.17 $)[-1];
+$VERSION = (qw$Revision: 1.18 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils qw[ next_number ];
@@ -904,7 +904,7 @@ sub reload_correspondence_matrix {
     #
     # Go through each map and figure the number of correspondences.
     #
-    my ( $i, $new_records ); # counters
+    my ( $i, $new_records ) = ( 0, 0 ); # counters
     for my $map ( @reference_maps ) {
         $i++;
         if ( $i % 50 == 0 ) {
