@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.135.2.11 2004-11-12 21:30:55 mwz444 Exp $
+# $Id: Map.pm,v 1.135.2.12 2004-11-16 18:38:59 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.135.2.11 $)[-1];
+$VERSION = (qw$Revision: 1.135.2.12 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1744,7 +1744,7 @@ Variable Info:
 
                 my $line_cushion = 10;
                 my $map1_coords  = $map_placement_data{$map_id1}{'map_coords'};
-                my $map2_coords  = $map_placement_data{$map_id1}{'map_coords'};
+                my $map2_coords  = $map_placement_data{$map_id2}{'map_coords'};
                 my $left_side    = my $map1_x =
                     $label_side eq LEFT
                   ? $map1_coords->[0]
