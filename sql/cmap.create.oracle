@@ -169,7 +169,7 @@ COMMENT ON TABLE cmap_feature_correspondence is
 
 CREATE TABLE cmap_feature_note (
   feature_id number(11) DEFAULT '0' CONSTRAINT nn_cmap_feature_note_feature_i NOT NULL,
-  note clob,
+  note varchar2(4000),
   CONSTRAINT pk_cmap_feature_note PRIMARY KEY (feature_id)
 );
 
@@ -189,7 +189,7 @@ CREATE TABLE cmap_feature_type (
   color varchar2(20) DEFAULT NULL,
   drawing_lane number(11) DEFAULT '1' CONSTRAINT nn_cmap_feature_type_drawing_l NOT NULL,
   drawing_priority number(11) DEFAULT '1' CONSTRAINT nn_cmap_feature_type_drawing_p NOT NULL,
-  description clob,
+  description varchar2(4000),
   CONSTRAINT pk_cmap_feature_type PRIMARY KEY (feature_type_id),
   CONSTRAINT accession_id UNIQUE (accession_id)
 );
@@ -257,7 +257,7 @@ CREATE TABLE cmap_map_set (
   can_be_reference_map number(4) DEFAULT '1' CONSTRAINT nn_cmap_map_set_can_be_referen NOT NULL,
   display_order number(11) DEFAULT '1' CONSTRAINT nn_cmap_map_set_display_order NOT NULL,
   is_enabled number(4) DEFAULT '1' CONSTRAINT nn_cmap_map_set_is_enabled NOT NULL,
-  remarks clob,
+  remarks varchar2(4000),
   shape varchar2(12) DEFAULT NULL,
   color varchar2(20) DEFAULT NULL,
   width number(11) DEFAULT NULL,
