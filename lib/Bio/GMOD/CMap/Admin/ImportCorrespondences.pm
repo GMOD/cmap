@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 # vim: set ft=perl:
 
-# $Id: ImportCorrespondences.pm,v 1.20 2004-04-20 17:40:05 mwz444 Exp $
+# $Id: ImportCorrespondences.pm,v 1.21 2004-08-04 04:19:09 mwz444 Exp $
 
 =head1 NAME
 
@@ -43,7 +43,7 @@ feature names, a correspondence will be created.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.20 $)[-1];
+$VERSION = (qw$Revision: 1.21 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -52,6 +52,7 @@ use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Utils qw[ next_number ];
 use Text::RecordParser;
 use base 'Bio::GMOD::CMap';
+use Regexp::Common;
 
 %COLUMNS = (
     feature_name1         => { is_required => 1, datatype => 'string' },
@@ -68,7 +69,7 @@ use constant STRING_RE => qr{\S+};    #qr{^[\w\s.()-]+$};
 
 use constant RE_LOOKUP => {
     string => STRING_RE,
-    number => NUMBER_RE,
+    number => '^'.$RE{'num'}{'real'}.'$',
 };
 
 use constant FEATURE_SQL_BY_AID => q[
@@ -122,10 +123,13 @@ sub import {
     my %map_set_ids     = map { $_, 1 } @{ $args{'map_set_ids'} || [] };
     my $db              = $self->db;
     $LOG_FH             = $args{'log_fh'} || \*STDOUT;
+    my $allow_update           = $args{'allow_update'};
     my $admin           = Bio::GMOD::CMap::Admin->new(
         config      => $self->config,
         data_source => $self->data_source,
     );
+    my $expanded_correspondence_lookup 
+        = $self->config_data('expanded_correspondence_lookup'); 
 
     $self->Print("Importing feature correspondence data.\n");
 
@@ -273,39 +277,22 @@ sub import {
 
                 for my $evidence_type_aid ( @evidence_type_aids ) {
                     my ( $evidence_type_aid, $evidence ) = @$evidence_type_aid;
-                    my $fc_id = $admin->feature_correspondence_create( 
-                        feature_id1      => $feature1->{'feature_id'},
-                        feature_id2      => $feature2->{'feature_id'},
+                    my $fc_id = $admin->add_feature_correspondence_to_list( 
+                        feature_id1       => $feature1->{'feature_id'},
+                        feature_id2       => $feature2->{'feature_id'},
                         evidence_type_aid => $evidence_type_aid,
-                        is_enabled       => $is_enabled,
+		                allow_update      => $allow_update,
+		                expanded_correspondence_lookup      
+                            => $expanded_correspondence_lookup,
                     ) or return $self->error( $admin->error );
 
-                    my $fname1 = join('-', map { $feature1->{$_} }
-                        @feature_name_fields );
-                    my $fname2 = join('-', map { $feature2->{$_} }
-                        @feature_name_fields );
-
-                    if ( $fc_id > 0 ) {
-                        $self->Print("Created correspondence for ",
-                            "'$fname1' and '$fname2' ($evidence).\n"
-                        );
-                        $inserts++;
-                    }
-                    else {
-                        $self->Print("Correspondence already existed for ",
-                            "'$fname1' and '$fname2' ($evidence).\n"
-                        );
-                    }
+                    $admin->insert_feature_correspondence_if_gt(1000);
                 }
             }
         }
     }
 
-    $total   ||= 0;
-    $inserts ||= 0;
-    $self->Print(
-        "Processed $total records, inserted $inserts correspondences.\n"
-    );
+    $admin->insert_feature_correspondence_if_gt(0);
 
     return 1;
 }
