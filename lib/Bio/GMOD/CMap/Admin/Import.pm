@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.7 2002-10-09 01:07:31 kycl4rk Exp $
+# $Id: Import.pm,v 1.8 2002-10-11 21:37:51 kycl4rk Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.7 $)[-1];
+$VERSION  = (qw$Revision: 1.8 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -79,6 +79,16 @@ Imports tab-delimited file with the following fields:
     feature_type *
 
 Starred fields are required.  Order of fields is not important.
+
+When you import data for an map set that already has data, all 
+existing maps and features will be updated.  Any of the pre-existing 
+maps or features that aren't updated will be deleted as it will be 
+assumed that they are no longer present in the dataset.  If this is 
+what you would like to have happen, just make sure that none of the 
+names of the maps or features are different.  Features, additionally,
+look to see if the newer feature has the same "start_position."  If 
+so, then it will be updated, otherwise the newer feature will be 
+added.
 
 =cut
     my ( $self, %args ) = @_;

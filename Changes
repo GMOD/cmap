@@ -2,6 +2,9 @@
 
 0.04
 
+-   Added "cmap_dump.pl" script to help dump CMAP tables as
+    database-independent "INSERT" statements
+-   Put dump of entire Gramene database on GMOD site
 -   Fixed a bug where a feature's relative start/stop positions could
     return a value less than 0 or greater than 1, which could allow
     features to be drawn outside the bounds of a map
@@ -34,16 +37,43 @@
 
 TODO
 
--   Need to fix bug in matrix where you see zeros when you zoom in on map
+-   Change Makefile.PL to use install targets for copying files
+    instead of doing it myself during the configuration process
+-   Add automatic database audit trail
+-   Add watermark to images ("CMAP" + $VERSION + Date + ???)
+-   Allow dbxrefs and evidences to apply to more objects than just
+    features and correspondences, respectively
+-   Some indicator for when features are dropped out
+-   Add reverse sort on columns in map_details
+-   Make contextual help (use object names from local data)
+-   Add a key to colors/shapes on maps
+-   Allow end user to override map colors (maybe shapes, too?)
+-   Allow clicking/zooming on comparative maps
+-   Move all SQL into modules
+-   Add buttons under maps for "delete," "flip," "details," "zoom in,"
+    and "zoom out."  Most likely I'll try to use icons for each,
+    respectively: "X," some sort of reciprocating arrows, "?," "+", 
+    and "-".
+-   Write some tests!
+-   Keep up with features by feature_id instead of name so that a map
+    that appears more than one doesn't think that some of its features
+    are corresponding when they're not.
+-   Add dropping of existing correspondences when not updated with new
+    correspondence file (as data import does with maps/features) (?)
+-   Create dummy data to include with distribution that is more
+    complicated and much smaller than Gramene data, move raw Gramene
+    data to web download only
+
+BUGS
+
 -   When relational maps have feature shapse that aren't directly on
     the map (like dumbells, I-beams, etc.), they collide with the map
     title which is written vertically beside the map.  Either I need to 
     move the title to a horizontal position above the map (which will
     make it like all the other maps) or I need to delay writing the title
     until after drawing all the features.
--   Change Makefile.PL to use install targets for copying files
-    instead of doing it myself during the configuration process
--   Add automatic database audit trail
+-   Matrix, you see zeros when you zoom in on map
+-   Fix pager of features in admin/map_view
 
 0.03
 

@@ -93,7 +93,20 @@ there is only one choice for any of the above, the tool will select
 that one and move on.)  Lastly, you will need to confirm your choices.
 If all goes well, you should see a lot of lines fly by giving you the
 step-by-step progress, the message "Done," and then you will be
-returned to the "Main Menu."
+returned to the "Main Menu."  A complete log of the actions taken by
+the script will be stored in a file called "cmap_admin_log.X" (where
+"X" is an incrementing number).  See the docs on cmap_admin.pl (by
+typing "perldoc cmap_admin.pl") for more info.
+
+When you import data for an map set that already has data, all
+existing maps and features will be updated.  Any of the pre-existing
+maps or features that aren't updated will be deleted as it will be
+assumed that they are no longer present in the dataset.  If this is
+what you would like to have happen, just make sure that none of the
+names of the maps or features are different.  Features, additionally,
+look to see if the newer feature has the same "start_position."  If
+so, then it will be updated, otherwise the newer feature will be
+added.
 
 5.  MAKE CORRESPONDENCES
 

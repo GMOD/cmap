@@ -2,6 +2,7 @@ MANIFEST
 Changes
 INSTALL
 LICENSE
+bin/cmap_dump.pl
 bin/cmap_admin.pl
 docs/CODE_OVERVIEW
 docs/DATA_IMPORT

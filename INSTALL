@@ -669,6 +669,13 @@ look and feel of your site.  If you don't like a change, comment out
 the line by placing a pound sign ("#") at the beginning of the line.
 Remember to restart Apache to see the changes.
 
+If you are upgrading from an earlier version of CMAP, I would caution
+your to be careful of how you install the latest "cmap.conf."  You'll
+probably want to copy your original to a backup location, then copy
+this file over manually and "diff" the two.  Most likely, you won't
+need to make too many changes to the new one to get things working the
+way you had them before.
+
 13. CONFIGURING APACHE
 
 After installing Apache, mod_perl, and all the necessary modules,
@@ -923,14 +930,41 @@ Note:  Some UNIXs may have a slightly different cron format. Check
 
 17. IMPORTING DATA
 
-Please read DATA_IMPORT in the "docs" directory for information on
-importing your data.  For what it's worth, the data from the Gramene
-project (http://www.gramene.org/) has been included with this
-distribution in the "data/datasets/gramene" directory.  You can use
-this data to ensure that your installation is working, or if you'd like
-examples of how to format your own data.  In addition to the files
-which contain map coordinates and correspondences, there will soon be a 
-dump of a MySQL database.
+To learn how to import your own data, please read DATA_IMPORT in the
+"docs" directory for information on importing your data.  If you would
+like to see examples of data suitably formatted for importing into
+CMAP, all the raw data from the Gramene project
+(http://www.gramene.org/) have been included with this distribution in
+the "data/datasets/gramene" directory.  You can use this data to
+ensure that your installation is working, or if you'd like examples of
+how to format your own data.  
+
+In addition, the entire Gramene database has been made available as a
+dump of "INSERT" statements which you can feed directly into your
+database.  This dump is located in the download section of the GMOD
+site as "Sample Data Files" under the "cmap" project.  If you are
+using MySQL, you can import the database in one step (after creating
+it, of course, with the commands described earlier):
+
+    $ mysql -uroot -p < gramene-dump.sql
+
+It might be helpful for you to create a test database and import the
+Gramene dataset in order to play around with a fully loaded database.
+Once you are comfortable, you can drop the database and create another
+for your own data.
+
+The dump of the Gramene site was created using a script in the "bin"
+directory called "cmap_dump.pl."  You might find it useful if you need
+to move your data around, like from a development machine to a
+production server.  It is especially useful for moving your data
+between different DBMSs, as I used it to dump the Gramene database
+from Oracle into my own MySQL database.  The tool basically mimics
+some of the functionality of MySQL's "mysqldump" facility.  Run
+"perldoc cmap_dump.pl" for more documentation on this tool.  The
+script will not be copied into a system directory, so if you want to
+use it yourself, you'll have to copy it to some directory manually.
+Perhaps after the tool has matured a bit, I'll put it into the
+installation routine.
 
 18. DATABASE CROSS-REFERENCES
 

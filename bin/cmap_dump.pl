@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: cmap_dump.pl,v 1.1 2002-10-11 17:29:20 kycl4rk Exp $
+# $Id: cmap_dump.pl,v 1.2 2002-10-11 21:37:51 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -12,16 +12,16 @@ use constant STR => 'string';
 use constant NUM => 'number';
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 #
 # Get command-line options.
 #
 my ( $show_help, $show_version, $truncate );
 GetOptions(
-    'h|help'     => \$show_help,    # Show help and exit
-    'v|version'  => \$show_version, # Show version and exit
-    't|truncate' => \$truncate,     # Add truncate table statements
+    'h|help'         => \$show_help,    # Show help and exit
+    'v|version'      => \$show_version, # Show version and exit
+    't|add-truncate' => \$truncate,     # Add truncate table statements
 ) or pod2usage(2);
 
 pod2usage(0) if $show_help;
@@ -32,7 +32,7 @@ if ( $show_version ) {
 
 my @tables = (
     {
-        name => 'cmap_correspondence_evidence',
+        name   => 'cmap_correspondence_evidence',
         fields => {
             correspondence_evidence_id => NUM,
             accession_id               => STR,
@@ -43,7 +43,7 @@ my @tables = (
         }
     },
     {
-        name => 'cmap_correspondence_lookup',
+        name   => 'cmap_correspondence_lookup',
         fields => {
             feature_id1               => NUM,
             feature_id2               => NUM,
@@ -52,7 +52,7 @@ my @tables = (
         }
     },
     {
-        name => 'cmap_correspondence_matrix',
+        name   => 'cmap_correspondence_matrix',
         fields => {
             reference_map_aid     => STR,
             reference_map_name    => STR,
@@ -66,7 +66,7 @@ my @tables = (
         }
     },
     {
-        name => 'cmap_dbxref',
+        name   => 'cmap_dbxref',
         fields => {
             dbxref_id       => NUM,
             map_set_id      => NUM,
@@ -77,7 +77,7 @@ my @tables = (
         }
     },
     {
-        name => 'cmap_evidence_type',
+        name   => 'cmap_evidence_type',
         fields => {
             evidence_type_id => NUM,
             accession_id     => STR,
@@ -86,7 +86,7 @@ my @tables = (
         }
     },
     {
-        name => 'cmap_feature',
+        name   => 'cmap_feature',
         fields => {
             feature_id      => NUM,
             accession_id    => STR,
@@ -102,7 +102,7 @@ my @tables = (
         }
     },
     {
-        name => 'cmap_feature_correspondence',
+        name   => 'cmap_feature_correspondence',
         fields => {
             feature_correspondence_id => NUM,
             accession_id              => STR,
@@ -111,7 +111,7 @@ my @tables = (
         }
     },
     {
-        name => 'cmap_feature_type',
+        name   => 'cmap_feature_type',
         fields => {
             feature_type_id => NUM,
             accession_id    => STR,
@@ -123,7 +123,7 @@ my @tables = (
         }
     },
     {
-        name => 'cmap_map',
+        name   => 'cmap_map',
         fields => {
             map_id         => NUM,
             accession_id   => STR,
@@ -134,7 +134,7 @@ my @tables = (
         }
     },
     {
-        name => 'cmap_map_type',
+        name   => 'cmap_map_type',
         fields => {
             map_type_id       => NUM,
             map_type          => STR,
@@ -147,7 +147,7 @@ my @tables = (
         }
     },
     {
-        name => 'cmap_species',
+        name   => 'cmap_species',
         fields => {
             species_id    => NUM,
             accession_id  => STR,
@@ -190,7 +190,7 @@ for my $table_name ( map { $_->{'name'} } @tables ) {
 my $db = Bio::GMOD::CMap->new->db or die 'No db';
 print "--\n-- Dumping data for Cmap",
     "\n-- Produced by cmap_dump.pl",
-    "\n Version: $VERSION",
+    "\n-- Version: $VERSION",
     "\n-- ", scalar localtime, "\n--\n";
 for my $table ( @tables ) {
     my $table_name = $table->{'name'};
@@ -198,7 +198,7 @@ for my $table ( @tables ) {
 
     print "\n--\n-- Data for '$table_name'\n--\n";
     if ( $truncate ) {
-        print "truncate table $table_name;\n" if $truncate;
+        print "TRUNCATE TABLE $table_name;\n" if $truncate;
     }
 
     my %fields     = %{ $table->{'fields'} };
@@ -229,7 +229,7 @@ for my $table ( @tables ) {
     }
 }
 
-print "--\n-- Finished dumping Cmap data\n--\n";
+print "\n--\n-- Finished dumping Cmap data\n--\n";
 
 =pod
 
@@ -243,9 +243,9 @@ cmap_dump.pl - dump data from Cmap tables like "mysqldump"
 
   Options:
 
-    -t|truncate Add 'truncate table' statements
-    -h|help     Display help message
-    -v|version  Display version
+    -t|add-truncate Add 'truncate table' statements
+    -h|help         Display help message
+    -v|version      Display version
 
 =head1 DESCRIPTION
 
