@@ -44,23 +44,23 @@ function selectFeatureRadio(val){
     }
   }
 }
-function crop(slot_no, map_aid, value, is_start){
+function crop(slot_no, map_aid, value, command){
   var positionCount=0;
   var insertStart=-1;
   var insertStop=-1;
   var splitArray;
   if ( slot_no == 0){
     document.comparative_map_form.ref_map_aids.value 
-      = addPosToStr(document.comparative_map_form.ref_map_aids.value, slot_no, map_aid, value, is_start)
+      = addPosToStr(document.comparative_map_form.ref_map_aids.value, slot_no, map_aid, value, command)
   }
   else{
     var matchStr=slot_no+"=map_aid="+map_aid;
     document.comparative_map_form.comparative_maps.value 
-      = addPosToStr(document.comparative_map_form.comparative_maps.value, slot_no, matchStr, value, is_start)
+      = addPosToStr(document.comparative_map_form.comparative_maps.value, slot_no, matchStr, value, command)
   }
 }
 
-function addPosToStr(str, slot_no, matchStr, value, is_start){
+function addPosToStr(str, slot_no, matchStr, value, command){
   var positionCount=0;
   var insertStart;
   var insertStop;
@@ -72,13 +72,17 @@ function addPosToStr(str, slot_no, matchStr, value, is_start){
     if (bracket>=0){
       this_aid=splitArray[i].substr(0,bracket);
       if (this_aid==matchStr){
-        if (is_start){
+        if (command==0){
           insertStart = positionCount+splitArray[i].indexOf("[")+1;
           insertStop  = positionCount+splitArray[i].indexOf("*");
         }
-        else{
+        else if(command==1){
           insertStart = positionCount+splitArray[i].indexOf("*")+1;
           insertStop  = positionCount+splitArray[i].indexOf("]");
+        }
+        else{
+          insertStart = positionCount+splitArray[i].indexOf("[");
+          insertStop  = positionCount+splitArray[i].indexOf("]")-1;
         }
         str = str.substr(0,insertStart) + value + str.substr(insertStop); 
         return str;
@@ -87,10 +91,10 @@ function addPosToStr(str, slot_no, matchStr, value, is_start){
     else{
       if (splitArray[i]==matchStr){
         insertStart = positionCount+splitArray[i].length;
-        if (is_start){
+        if (command==0){
           str = str.substr(0,insertStart) + "["+value+"*]" + str.substr(insertStart);
         }
-        else{
+        else if(command==1){
           str = str.substr(0,insertStart) + "[*"+value+"]" + str.substr(insertStart);
         }
         return str;
@@ -99,13 +103,13 @@ function addPosToStr(str, slot_no, matchStr, value, is_start){
     positionCount+=splitArray[i].length + 1;
   }
   //If not found, tack it to the end.
-  if (str!=""){
+  if (str!="" && command!=2){
     str = str +":";
   }
-  if (is_start){
+  if (command==0){
     str = str +matchStr+"["+value+"*]";
   }
-  else{
+  else if(command==1){
     str = str +matchStr+"[*"+value+"]";
   }
     
