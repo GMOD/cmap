@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.11 2003-09-24 21:37:42 kycl4rk Exp $
+# $Id: Build.PL,v 1.12 2004-01-09 16:24:28 kycl4rk Exp $
 
 use strict;
 
@@ -14,9 +14,9 @@ use File::Basename;
 use File::Path;
 use File::Spec::Functions;
 
-use constant INSTALL_CONF   => 'cmap_install.conf';
-my $cmap_conf_file          =  catfile('conf', 'cmap.conf');
-my $stylesheet_file         =  catfile('conf', 'cmap.css');
+use constant INSTALL_CONF => 'cmap_install.conf';
+my $cmap_conf_file        =  catfile('conf', 'cmap.conf');
+my $stylesheet_file       =  catfile('conf', 'cmap.css');
 
 my @ARGS = qw[ PREFIX CONF_DIR TEMPLATE_DIR STYLESHEET_DIR ];
 my %ARGS = ( 
@@ -196,10 +196,12 @@ my $builder           =  Module::Build->subclass(
         'File::MkTemp'       => 0,
         'GD'                 => 1.33,
         'IO::Tee'            => 0,
+        'Regexp::Common'     => 0,
         'Template'           => 2.00,
         'Text::RecordParser' => 0.02,
-        'Time::Object'       => 0,
+        'Time::Piece'        => 0,
         'Time::ParseDate'    => 0,
+        'XML::Simple'        => 0,
     },
     PL_files         => {
         'conf/cmap.conf.PL'  => 'conf/cmap.conf',
