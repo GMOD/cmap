@@ -205,9 +205,9 @@
                                 -
                             [% ELSE %]
                                 [% IF apr.param('map_set_aid') %]
-                                    <a href="[% url %]/viewer?ref_map_set_aid=[% ms.map_set_aid %];ref_map_aids=[% ms.map_aid %];comparative_maps=[% IF r.map_aid %]1%3dmap_aid%3d[% r.map_aid %][% ELSE %]1%3dmap_set_aid%3d[% r.map_set_aid %][% END %]">[% r.number %]</a>
+                                    <a href="[% url %]/viewer?ref_map_set_aid=[% ms.map_set_aid %];ref_map_aids=[% ms.map_aid %];comparative_maps=[% IF r.map_aid %]1%3dmap_aid%3d[% r.map_aid %][% ELSE %]1%3dmap_set_aid%3d[% r.map_set_aid %][% END %]">[% r.number %] ([% r.map_count %])</a>
                                 [% ELSE %]
-                                    <a href="[% url %]/matrix?show_matrix=1;species_aid=[% apr.param('species_aid') %];map_name=[% apr.param('map_name') %];map_set_aid=[% ms.map_set_aid %];link_map_set_aid=[% r.map_set_aid %];use_colors=[% apr.param('use_colors') %]">[% r.number %]</a>
+                                    <a href="[% url %]/matrix?show_matrix=1;species_aid=[% apr.param('species_aid') %];map_name=[% apr.param('map_name') %];map_set_aid=[% ms.map_set_aid %];link_map_set_aid=[% r.map_set_aid %];use_colors=[% apr.param('use_colors') %]">[% r.number %] ([% r.map_count %])</a>
                                 [% END %]
                             [% END %]
                         </td>
