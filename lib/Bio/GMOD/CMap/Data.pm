@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.59 2003-09-12 19:44:37 kycl4rk Exp $
+# $Id: Data.pm,v 1.60 2003-09-12 21:18:53 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.59 $)[-1];
+$VERSION = (qw$Revision: 1.60 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -1507,7 +1507,7 @@ Returns the data for the main comparative map HTML form.
     #
     # If the user selected a map set, select all the maps in it.
     #
-    my $ref_maps; 
+    my ( $ref_maps, $ref_map_set_info ); 
     if ( $ref_map_set_aid ) {
         $ref_maps = $db->selectall_arrayref(
             $sql->form_data_ref_maps_sql,
@@ -1518,6 +1518,34 @@ Returns the data for the main comparative map HTML form.
         $self->error(
             qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
         ) unless @$ref_maps;
+
+        unless ( $ref_map_aid ) {
+            my $sth = $db->prepare(
+                q[
+                    select   ms.map_set_id, 
+                             ms.accession_id as map_set_aid,
+                             ms.map_set_name, 
+                             ms.short_name,
+                             ms.map_type_id, 
+                             ms.species_id, 
+                             ms.can_be_reference_map,
+                             ms.remarks,
+                             mt.map_type, 
+                             mt.map_units, 
+                             s.common_name as species_common_name, 
+                             s.full_name as species_full_name,
+                             s.ncbi_taxon_id
+                    from     cmap_map_set ms, 
+                             cmap_map_type mt, 
+                             cmap_species s
+                    where    ms.accession_id=?
+                    and      ms.map_type_id=mt.map_type_id
+                    and      ms.species_id=s.species_id
+                ]
+            );
+            $sth->execute( $ref_map_set_aid );
+            $ref_map_set_info = $sth->fetchrow_hashref;
+        }
     }
 
     #
@@ -1631,6 +1659,7 @@ Returns the data for the main comparative map HTML form.
         ref_maps               => $ref_maps,
         ref_map_start          => $ref_map_start,
         ref_map_stop           => $ref_map_stop,
+        ref_map_set_info       => $ref_map_set_info,
         comparative_maps_right => $comp_maps_right,
         comparative_maps_left  => $comp_maps_left,
         map_info               => $map_info,
@@ -2348,7 +2377,6 @@ Returns the data for drawing comparative maps.
 
     $restriction .= qq[and s.accession_id='$species_aid' ]   if $species_aid;
     $restriction .= qq[and mt.accession_id='$map_type_aid' ] if $map_type_aid;
-
 
     my $map_set_sql = qq[
         select   ms.map_set_id, 
