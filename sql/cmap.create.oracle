@@ -1,8 +1,7 @@
---
+-- 
 -- Created by SQL::Translator::Producer::Oracle
--- Created on Thu Apr 17 13:37:00 2003
---
-
+-- Created on Tue Jul  1 11:25:42 2003
+-- 
 -- We assume that default NLS_DATE_FORMAT has been changed
 -- but we set it here anyway to be self-consistent.
 ALTER SESSION SET NLS_DATE_FORMAT = 'YYYY-MM-DD HH24:MI:SS';
@@ -16,10 +15,10 @@ CREATE TABLE cmap_correspondence_evidence (
   accession_id varchar2(20) DEFAULT '' CONSTRAINT nn_accession_id NOT NULL,
   feature_correspondence_id number(11) DEFAULT '0' CONSTRAINT nn_feature_correspondence_id NOT NULL,
   evidence_type_id number(11) DEFAULT '0' CONSTRAINT nn_evidence_type_id NOT NULL,
-  score number DEFAULT NULL,
+  score number(8, 2) DEFAULT NULL,
   remark varchar2(100) DEFAULT NULL,
   CONSTRAINT pk_cmap_correspondence_evidenc PRIMARY KEY (correspondence_evidence_id),
-  CONSTRAINT accession_id_cmap_corresponden UNIQUE (accession_id)
+  CONSTRAINT accession_id UNIQUE (accession_id)
 );
 
 CREATE INDEX feature_correspondence_id_cmap on cmap_correspondence_evidence (feature_correspondence_id, evidence_type_id);
@@ -77,8 +76,8 @@ CREATE TABLE cmap_evidence_type (
   rank number(11) DEFAULT '0' CONSTRAINT nn_rank NOT NULL,
   line_color varchar2(20) DEFAULT NULL,
   CONSTRAINT pk_cmap_evidence_type PRIMARY KEY (evidence_type_id),
-  CONSTRAINT accession_id_cmap_evidence_typ UNIQUE (accession_id),
-  CONSTRAINT rank_cmap_evidence_type UNIQUE (rank)
+  CONSTRAINT accession_id UNIQUE (accession_id),
+  CONSTRAINT rank UNIQUE (rank)
 );
 
 --
@@ -93,12 +92,12 @@ CREATE TABLE cmap_feature (
   feature_name varchar2(32) DEFAULT '' CONSTRAINT nn_feature_name NOT NULL,
   alternate_name varchar2(32) DEFAULT NULL,
   is_landmark number(4) DEFAULT '0' CONSTRAINT nn_is_landmark NOT NULL,
-  start_position number(11,2) DEFAULT '0.00' CONSTRAINT nn_start_position NOT NULL,
-  stop_position number(11,2) DEFAULT NULL,
+  start_position number(11, 2) DEFAULT '0.00' CONSTRAINT nn_start_position NOT NULL,
+  stop_position number(11, 2) DEFAULT NULL,
   dbxref_name varchar2(32) DEFAULT NULL,
   dbxref_url varchar2(200) DEFAULT NULL,
   CONSTRAINT pk_cmap_feature PRIMARY KEY (feature_id),
-  CONSTRAINT accession_id_cmap_feature UNIQUE (accession_id)
+  CONSTRAINT accession_id UNIQUE (accession_id)
 );
 
 CREATE INDEX feature_name_cmap_feature on cmap_feature (feature_name);
@@ -118,10 +117,20 @@ CREATE TABLE cmap_feature_correspondence (
   feature_id2 number(11) DEFAULT '0' CONSTRAINT nn_feature_id2 NOT NULL,
   is_enabled number(4) DEFAULT '1' CONSTRAINT nn_is_enabled NOT NULL,
   CONSTRAINT pk_cmap_feature_correspondence PRIMARY KEY (feature_correspondence_id),
-  CONSTRAINT accession_id_cmap_feature_corr UNIQUE (accession_id)
+  CONSTRAINT accession_id UNIQUE (accession_id)
 );
 
 CREATE INDEX feature_id1_cmap_feature_corre on cmap_feature_correspondence (feature_id1);
+
+--
+-- Table: cmap_feature_note
+--
+
+CREATE TABLE cmap_feature_note (
+  feature_id number(11) DEFAULT '0' CONSTRAINT nn_feature_id02 NOT NULL,
+  note long,
+  CONSTRAINT pk_cmap_feature_note PRIMARY KEY (feature_id)
+);
 
 --
 -- Table: cmap_feature_type
@@ -138,7 +147,7 @@ CREATE TABLE cmap_feature_type (
   drawing_lane number(11) DEFAULT '1' CONSTRAINT nn_drawing_lane NOT NULL,
   drawing_priority number(11) DEFAULT '1' CONSTRAINT nn_drawing_priority NOT NULL,
   CONSTRAINT pk_cmap_feature_type PRIMARY KEY (feature_type_id),
-  CONSTRAINT accession_id_cmap_feature_type UNIQUE (accession_id)
+  CONSTRAINT accession_id UNIQUE (accession_id)
 );
 
 --
@@ -151,10 +160,10 @@ CREATE TABLE cmap_map (
   map_set_id number(11) DEFAULT '0' CONSTRAINT nn_map_set_id NOT NULL,
   map_name varchar2(32) DEFAULT '' CONSTRAINT nn_map_name NOT NULL,
   display_order number(11) DEFAULT '1' CONSTRAINT nn_display_order NOT NULL,
-  start_position number(11,2) DEFAULT NULL,
-  stop_position number(11,2) DEFAULT NULL,
+  start_position number(11, 2) DEFAULT NULL,
+  stop_position number(11, 2) DEFAULT NULL,
   CONSTRAINT pk_cmap_map PRIMARY KEY (map_id),
-  CONSTRAINT accession_id_cmap_map UNIQUE (accession_id)
+  CONSTRAINT accession_id UNIQUE (accession_id)
 );
 
 --
@@ -177,7 +186,7 @@ CREATE TABLE cmap_map_set (
   color varchar2(20) DEFAULT NULL,
   width number(11) DEFAULT NULL,
   CONSTRAINT pk_cmap_map_set PRIMARY KEY (map_set_id),
-  CONSTRAINT accession_id_cmap_map_set UNIQUE (accession_id)
+  CONSTRAINT accession_id UNIQUE (accession_id)
 );
 
 --
@@ -194,7 +203,7 @@ CREATE TABLE cmap_map_type (
   width number(11) DEFAULT NULL,
   display_order number(11) DEFAULT '1' CONSTRAINT nn_display_order03 NOT NULL,
   CONSTRAINT pk_cmap_map_type PRIMARY KEY (map_type_id),
-  CONSTRAINT map_type_cmap_map_type UNIQUE (map_type)
+  CONSTRAINT map_type UNIQUE (map_type)
 );
 
 --
