@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.90 2004-01-13 23:01:36 kycl4rk Exp $
+# $Id: Data.pm,v 1.91 2004-02-10 22:37:31 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.90 $)[-1];
+$VERSION = (qw$Revision: 1.91 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -693,63 +693,62 @@ Returns the data for drawing comparative maps.
             ];
         }
 
-        my $corr_sql = qq[
-            select   f1.feature_id as feature_id1,
-                     f2.feature_id as feature_id2, 
-                     map2.map_id,
-                     map1.map_id as other_map_id,
-                     cl.feature_correspondence_id,
-                     et.accession_id as evidence_type_aid,
-                     et.evidence_type,
-                     et.rank as evidence_rank,
-                     et.line_color
-            from     cmap_feature f1, 
-                     cmap_map map1,
-                     cmap_map_cache mc,
-                     cmap_feature f2, 
-                     cmap_map map2,
-                     cmap_correspondence_lookup cl,
-                     cmap_feature_correspondence fc,
-                     cmap_correspondence_evidence ce,
-                     cmap_evidence_type et
-            where    mc.pid=?
-            and      mc.slot_no=?
-            and      mc.map_id=f1.map_id
-            and      f1.map_id=map1.map_id
-            and      map1.map_id=mc.map_id
-            $from_restriction
-            and      f1.feature_id=cl.feature_id1
-            and      cl.feature_correspondence_id=
-                     fc.feature_correspondence_id
-            and      fc.is_enabled=1
-            and      fc.feature_correspondence_id=
-                     ce.feature_correspondence_id
-            and      ce.evidence_type_id=et.evidence_type_id
-            and      cl.feature_id2=f2.feature_id
-            and      f2.map_id=map2.map_id
-            and      map2.map_id=map1.map_id
-            and      map2.map_id=mc.map_id
-        ];
-
-        if ( @$evidence_type_ids ) {
-            $corr_sql .= 'and ce.evidence_type_id in ('.
-                join( ',', @$evidence_type_ids ).
-            ')';
-        }
-
-        if ( @$feature_type_ids ) {
-            $corr_sql .= 'and f1.feature_type_id in ('.
-                join( ',', @$feature_type_ids ).
-            ')';
-        }
-
-        my $self_correspondences = $db->selectall_arrayref(
-            $corr_sql, { Columns => {} }, ( $pid, $slot_no )
-        );
-
-        for my $corr ( @{ $self_correspondences || [] } ) {
-            push @{ $self_correspondences{ $corr->{'map_id'} } }, $corr;
-        }
+#        my $corr_sql = qq[
+#            select   f1.feature_id as feature_id1,
+#                     f2.feature_id as feature_id2, 
+#                     map2.map_id,
+#                     map1.map_id as other_map_id,
+#                     cl.feature_correspondence_id,
+#                     et.accession_id as evidence_type_aid,
+#                     et.evidence_type,
+#                     et.rank as evidence_rank,
+#                     et.line_color
+#            from     cmap_feature f1, 
+#                     cmap_map map1,
+#                     cmap_map_cache mc,
+#                     cmap_feature f2, 
+#                     cmap_map map2,
+#                     cmap_correspondence_lookup cl,
+#                     cmap_feature_correspondence fc,
+#                     cmap_correspondence_evidence ce,
+#                     cmap_evidence_type et
+#            where    mc.pid=?
+#            and      mc.slot_no=?
+#            and      mc.map_id=f1.map_id
+#            and      f1.map_id=map1.map_id
+#            $from_restriction
+#            and      f1.feature_id=cl.feature_id1
+#            and      cl.feature_correspondence_id=
+#                     fc.feature_correspondence_id
+#            and      fc.is_enabled=1
+#            and      fc.feature_correspondence_id=
+#                     ce.feature_correspondence_id
+#            and      ce.evidence_type_id=et.evidence_type_id
+#            and      cl.feature_id2=f2.feature_id
+#            and      f2.map_id=map2.map_id
+#            and      map2.map_id=map1.map_id
+#            and      map2.map_id=mc.map_id
+#        ];
+#
+#        if ( @$evidence_type_ids ) {
+#            $corr_sql .= 'and ce.evidence_type_id in ('.
+#                join( ',', @$evidence_type_ids ).
+#            ')';
+#        }
+#
+#        if ( @$feature_type_ids ) {
+#            $corr_sql .= 'and f1.feature_type_id in ('.
+#                join( ',', @$feature_type_ids ).
+#            ')';
+#        }
+#
+#        my $self_correspondences = $db->selectall_arrayref(
+#            $corr_sql, { Columns => {} }, ( $pid, $slot_no )
+#        );
+#
+#        for my $corr ( @{ $self_correspondences || [] } ) {
+#            push @{ $self_correspondences{ $corr->{'map_id'} } }, $corr;
+#        }
 
         #
         # Figure out what kind of features are on the map(s).
@@ -1355,9 +1354,9 @@ Returns the data for the correspondence matrix.
     # If there's only only set, then pretend that the user selected 
     # this one and expand the relationships to the map level.
     #
-    if ( $map_set_aid eq '' && scalar @reference_map_sets == 1 ) {
-        $map_set_aid = $reference_map_sets[0]->{'map_set_aid'};
-    }
+#    if ( $map_set_aid eq '' && scalar @reference_map_sets == 1 ) {
+#        $map_set_aid = $reference_map_sets[0]->{'map_set_aid'};
+#    }
 
     #
     # Select the relationships from the pre-computed table.
@@ -1983,6 +1982,22 @@ out which maps have relationships.
         ];
     }
 
+    my $additional_where  = '';
+    my $additional_tables = '';
+    if ( @$evidence_type_ids ) {
+        $additional_tables = ', cmap_correspondence_evidence ce';
+        $additional_where .= q[
+            and fc.feature_correspondence_id=ce.feature_correspondence_id
+            and ce.evidence_type_id in (
+        ] . join( ',', @$evidence_type_ids ) . ') ';
+    }
+
+    if ( @$feature_type_ids ) {
+        $additional_where .= 'and f2.feature_type_id in ('.
+            join( ',', @$feature_type_ids ).
+        ') ';
+    }
+
     my $corr_sql = qq[
         select   fc.feature_correspondence_id,
                  s.common_name as species_name,
@@ -1994,21 +2009,20 @@ out which maps have relationships.
                  ms.published_on,
                  ms.can_be_reference_map,
                  ms.display_order as ms_display_order,
-                 map2.map_id,
-                 map2.accession_id as map_aid,
-                 map2.map_name,
-                 map2.display_order as map_display_order,
-                 mc.map_id as mc_map_id
+                 map.map_id,
+                 map.accession_id as map_aid,
+                 map.map_name,
+                 map.display_order as map_display_order
         from     cmap_map_cache mc,
-                 cmap_map map2,
+                 cmap_map map,
                  cmap_map_set ms,
                  cmap_map_type mt,
                  cmap_species s,
                  cmap_feature f1,
                  cmap_feature f2,
                  cmap_correspondence_lookup cl,
-                 cmap_feature_correspondence fc,
-                 cmap_correspondence_evidence ce
+                 cmap_feature_correspondence fc
+        $additional_tables
         where    mc.pid=?
         and      mc.slot_no=?
         and      mc.map_id=f1.map_id
@@ -2016,28 +2030,16 @@ out which maps have relationships.
         and      f1.feature_id=cl.feature_id1
         and      cl.feature_correspondence_id=fc.feature_correspondence_id
         and      fc.is_enabled=1
-        and      fc.feature_correspondence_id=ce.feature_correspondence_id
         and      cl.feature_id2=f2.feature_id
-        and      f2.map_id=map2.map_id
-        and      map2.map_set_id=ms.map_set_id
+        and      f2.map_id=map.map_id
+        and      map.map_set_id=ms.map_set_id
         and      ms.map_type_id=mt.map_type_id
         and      ms.species_id=s.species_id
-        and      mc.map_id!=map2.map_id
+        and      mc.map_id!=map.map_id
+        $additional_where
     ];
 
-    if ( @$evidence_type_ids ) {
-        $corr_sql .= 'and ce.evidence_type_id in ('.
-            join( ',', @$evidence_type_ids ).
-        ') ';
-    }
-
-    if ( @$feature_type_ids ) {
-        $corr_sql .= 'and f2.feature_type_id in ('.
-            join( ',', @$feature_type_ids ).
-        ') ';
-    }
-
-    my $feature_correspondences= $db->selectall_hashref(
+    my $feature_correspondences = $db->selectall_hashref(
         $corr_sql,
         'feature_correspondence_id',
         { Columns => {} },
@@ -2077,9 +2079,9 @@ out which maps have relationships.
                 map_set_aid 
             ] ) {
                 $map_sets{ $map_set_aid }{ $_ } = $fc->{ $_ };
-                $map_sets{ $map_set_aid }{'published_on'} = 
-                    parsedate( $fc->{'published_on'} );
             }
+            $map_sets{ $map_set_aid }{'published_on'} = 
+                parsedate( $fc->{'published_on'} );
         }
 
         unless ( defined $map_sets{ $map_set_aid }{'maps'}{ $map_aid } ) {
@@ -2126,8 +2128,7 @@ out which maps have relationships.
             }
             values %{ $map_set->{'maps'} }
         ) {
-            $can_be_reference_map        = $map->{'can_be_reference_map'};
-            $map->{'no_correspondences'} = $count_by_map{ $map->{'map_aid'} };
+            $map->{'no_correspondences'} = $count_by_map{$map->{'map_aid'}}||0;
             next if $min_correspondences &&
                 $map->{'no_correspondences'} < $min_correspondences;
 
