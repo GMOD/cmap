@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.52 2003-08-11 19:43:30 kycl4rk Exp $
+# $Id: Data.pm,v 1.53 2003-09-04 17:53:24 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.52 $)[-1];
+$VERSION = (qw$Revision: 1.53 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -2265,7 +2265,13 @@ Returns the data for drawing comparative maps.
 
     my ( $self, %args ) = @_;
     my @map_set_aids    = @{ $args{'map_set_aids'} || [] };
+    my $species_aid     = $args{'species_aid'}  || 0;
+    my $map_type_aid    = $args{'map_type_aid'} || 0;
     my $db              = $self->db or return;
+
+    for ( $species_aid, $map_type_aid ) {
+        $_ = 0 if $_ == -1;
+    }
 
     my $sql = q[
         select   ms.map_set_id, 
@@ -2291,11 +2297,22 @@ Returns the data for drawing comparative maps.
     if ( @map_set_aids ) {
         $sql .= 'and ms.accession_id in ('.
             join( ',', map { qq['$_'] } @map_set_aids ) . 
-        ')';
+        ') ';
     }
-    $sql .= 'order by short_name';
+
+    $sql .= qq[and s.accession_id='$species_aid' ]   if $species_aid;
+    $sql .= qq[and mt.accession_id='$map_type_aid' ] if $map_type_aid;
+
+    print STDERR "sql =\n$sql\n";
 
     my $map_sets = $db->selectall_arrayref( $sql, { Columns => {} } );
+
+    if ( @map_set_aids && scalar @$map_sets == 0 ) {
+        return $self->error(
+            'No map sets match the following accession IDs: '.
+            join(', ', @map_set_aids)
+        );
+    }
 
     for my $map_set ( @$map_sets ) {
         next unless $map_set->{'can_be_reference_map'};
@@ -2315,7 +2332,33 @@ Returns the data for drawing comparative maps.
         $map_set->{'maps'} = \@maps;
     }
 
-    return $map_sets;
+    my $species = $db->selectall_arrayref(
+        q[
+            select   s.accession_id as species_aid,
+                     s.common_name as species_name
+            from     cmap_species s
+            order by s.display_order,
+                     species_name
+        ],
+        { Columns => {} } 
+    );
+
+    my $map_types = $db->selectall_arrayref(
+        q[
+            select   mt.accession_id as map_type_aid,
+                     mt.map_type
+            from     cmap_map_type mt
+            order by mt.display_order,
+                     mt.map_type
+        ],
+        { Columns => {} } 
+    );
+
+    return {
+        species   => $species,
+        map_types => $map_types,
+        map_sets  => $map_sets,
+    };
 }
 
 # ----------------------------------------------------
