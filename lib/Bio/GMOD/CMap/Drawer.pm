@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.45 2003-09-29 20:49:12 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.46 2003-10-16 22:10:34 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.45 $)[-1];
+$VERSION = (qw$Revision: 1.46 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -551,6 +551,7 @@ Lays out the image and writes it to the file system, set the "image_name."
 
         my $corr_color     = $self->config('feature_correspondence_color');
         my $ft_details_url = $self->config('feature_type_details_url');
+        my $et_details_url = $self->config('evidence_type_details_url');
 
         if ( $corr_color && $self->correspondences_exist ) {
             push @feature_types, {
@@ -779,12 +780,27 @@ Lays out the image and writes it to the file system, set the "image_name."
                             $self->config('connecting_line_color');
                 my $string = 
                     ucfirst($color) .' line denotes '.  $et->{'evidence_type'};
+
                 $self->add_drawing( 
                     STRING, $font, $x + 15, $max_y, $string, $color
                 );
-                $max_y += $font->height + 5;
+
                 my $end = $x + 15 + $font->width * length( $string ) + 4;
                 $max_x  = $end if $end > $max_x;
+
+                $self->add_map_area( 
+                    coords => [ 
+                        $x + 15,
+                        $max_y,
+                        $end,
+                        $max_y + $font->height,
+                    ],
+                    url    => $et_details_url.$et->{'evidence_type_aid'},
+                    alt    => 'Evidence Type Details for '.
+                              $et->{'evidence_type'},
+                );
+
+                $max_y += $font->height + 5;
             }
         }
         $max_y += 5;
