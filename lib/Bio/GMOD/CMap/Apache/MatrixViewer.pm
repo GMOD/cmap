@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MatrixViewer;
 # vim: set ft=perl:
 
-# $Id: MatrixViewer.pm,v 1.6 2003-09-29 20:49:12 kycl4rk Exp $
+# $Id: MatrixViewer.pm,v 1.7 2003-10-01 23:16:08 kycl4rk Exp $
 
 use strict;
-use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.6 $)[-1];
+use vars qw( $VERSION $INTRO );
+$VERSION = (qw$Revision: 1.7 $)[-1];
 
 use Apache::Constants;
 use Data::Dumper;
@@ -47,6 +47,8 @@ sub handler {
     $apr->param( map_set_aid => $data->{'map_set_aid'} );
     $apr->param( map_name    => $data->{'map_name'}    );
 
+    $INTRO ||= $self->config('matrix_intro') || '';
+
     my $html;
     my $t = $self->template;
     $t->process( 
@@ -62,6 +64,7 @@ sub handler {
             maps         => $data->{'maps'},
             stylesheet   => $self->stylesheet,
             data_sources => $self->data_sources,
+            intro        => $INTRO,
         },
         \$html 
     ) or $html = $t->error;

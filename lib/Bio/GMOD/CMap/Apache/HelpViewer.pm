@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::HelpViewer;
 # vim: set ft=perl:
 
-# $Id: HelpViewer.pm,v 1.8 2003-09-29 20:49:12 kycl4rk Exp $
+# $Id: HelpViewer.pm,v 1.9 2003-10-01 23:16:08 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 use Apache::Constants;
 
@@ -19,8 +19,10 @@ use constant TEMPLATES => {
     feature_type_info  => 'help_feature_type_info.tmpl',
     matrix             => 'help_matrix.tmpl',
     map_set_info       => 'help_map_set_info.tmpl',
+    map_type_info      => 'help_map_type_info.tmpl',
     map_details        => 'help_map_details.tmpl',
     map_viewer         => 'help_map_viewer.tmpl',
+    species_info       => 'help_species_info.tmpl',
 };
 
 sub handler {

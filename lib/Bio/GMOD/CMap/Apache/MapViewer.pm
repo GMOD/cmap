@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.24 2003-09-29 20:49:12 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.25 2003-10-01 23:16:08 kycl4rk Exp $
 
 use strict;
-use vars qw( $VERSION $TEMPLATE $PAGE );
-$VERSION = (qw$Revision: 1.24 $)[-1];
+use vars qw( $VERSION $INTRO );
+$VERSION = (qw$Revision: 1.25 $)[-1];
 
 use Apache::Constants qw[ :common REDIRECT ];
 use Apache::Request;
@@ -288,6 +288,8 @@ sub show_form {
         );
     }
 
+    $INTRO ||= $self->config('map_viewer_intro') || '';
+
     my $html;
     my $t = $self->template or return;
     $t->process( 
@@ -298,6 +300,7 @@ sub show_form {
             drawer            => $drawer,
             page              => $self->page,
             debug             => $self->debug,
+            intro             => $INTRO,
             data_source       => $self->data_source,
             data_sources      => $self->data_sources,
             comparative_maps  => join( ':', @comp_maps ),

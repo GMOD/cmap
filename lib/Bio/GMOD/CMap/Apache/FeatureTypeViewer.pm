@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::FeatureTypeViewer;
 # vim: set ft=perl:
 
-# $Id: FeatureTypeViewer.pm,v 1.4 2003-09-29 20:49:12 kycl4rk Exp $
+# $Id: FeatureTypeViewer.pm,v 1.5 2003-10-01 23:16:08 kycl4rk Exp $
 
 use strict;
-use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Apache::Constants;
 use Data::Pageset;
@@ -45,6 +45,8 @@ sub handler {
     } );
     $feature_types = [ $pager->splice( $feature_types ) ] if $returned;
 
+    $INTRO ||= $self->config('feature_type_info_intro') || '';
+
     my $html;
     my $t = $self->template;
     $t->process( 
@@ -56,6 +58,7 @@ sub handler {
             data_sources     => $self->data_sources,
             feature_types    => $feature_types,
             pager            => $pager,
+            intro            => $INTRO,
         },
         \$html 
     ) or $html = $t->error;
