@@ -14,21 +14,21 @@
 
         <tr>
             <td>
-                Species:
-                <select name="species_id">
-                    <option value="">--All--</option>
-                    [% FOREACH s=specie %]
-                        <option value="[% s.species_id %]"[% IF apr.param('species_id') == s.species_id %] selected[% END %]>[% s.common_name %] ([% s.full_name %])</option>
-                    [% END %]
-                </select>
-            </td>
-
-            <td>
                 Map Type:
                 <select name="map_type_id">
                     <option value="">--All--</option>
                     [% FOREACH mt=map_types %]
                         <option value="[% mt.map_type_id %]"[% IF apr.param('map_type_id') == mt.map_type_id %] selected[% END %]>[% mt.map_type %]</option>
+                    [% END %]
+                </select>
+            </td>
+
+            <td>
+                Species:
+                <select name="species_id">
+                    <option value="">--All--</option>
+                    [% FOREACH s=specie %]
+                        <option value="[% s.species_id %]"[% IF apr.param('species_id') == s.species_id %] selected[% END %]>[% s.common_name %] ([% s.full_name %])</option>
                     [% END %]
                 </select>
             </td>
@@ -61,10 +61,10 @@
             </td>
         </tr>
         <tr>
-            <th><a href="admin?action=map_sets_view;order_by=accession_id;species_id=[% apr.param('species_id') %];map_type_id=[% apr.param('map_type_id') %];is_enabled=[% apr.param('is_enabled') %]">Acc. ID</a></th>
-            <th><a href="admin?action=map_sets_view;order_by=species_name;species_id=[% apr.param('species_id') %];map_type_id=[% apr.param('map_type_id') %];is_enabled=[% apr.param('is_enabled') %]">Species</a></th>
-            <th><a href="admin?action=map_sets_view;order_by=map_set_name;species_id=[% apr.param('species_id') %];map_type_id=[% apr.param('map_type_id') %];is_enabled=[% apr.param('is_enabled') %]">Set Name</a></th>
             <th><a href="admin?action=map_sets_view;order_by=map_type;species_id=[% apr.param('species_id') %];map_type_id=[% apr.param('map_type_id') %];is_enabled=[% apr.param('is_enabled') %]">Map Type</a></th>
+            <th><a href="admin?action=map_sets_view;order_by=species_name;species_id=[% apr.param('species_id') %];map_type_id=[% apr.param('map_type_id') %];is_enabled=[% apr.param('is_enabled') %]">Species</a></th>
+            <th><a href="admin?action=map_sets_view;order_by=accession_id;species_id=[% apr.param('species_id') %];map_type_id=[% apr.param('map_type_id') %];is_enabled=[% apr.param('is_enabled') %]">Acc. ID</a></th>
+            <th><a href="admin?action=map_sets_view;order_by=map_set_name;species_id=[% apr.param('species_id') %];map_type_id=[% apr.param('map_type_id') %];is_enabled=[% apr.param('is_enabled') %]">Set Name</a></th>
             <th><a href="admin?action=map_sets_view;order_by=is_enabled;species_id=[% apr.param('species_id') %];map_type_id=[% apr.param('map_type_id') %];is_enabled=[% apr.param('is_enabled') %]">Enabled</a></th>
             <th colspan="3" align="center">&nbsp;</th>
         </tr>
@@ -72,10 +72,10 @@
         [% SET i=0 %]
         [% FOREACH ms=map_sets %]
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
-                <td>[% ms.accession_id %]</td>
-                <td>[% ms.species_name %]</td>
-                <td>[% ms.map_set_name %]</td>
                 <td>[% ms.map_type %]</td>
+                <td>[% ms.species_name %]</td>
+                <td>[% ms.accession_id %]</td>
+                <td>[% ms.map_set_name %]</td>
                 <td>[% IF ms.is_enabled %]Yes[% ELSE %]No[% END %]</td>
                 <td align="center">
                     <a href="admin?action=map_set_view;map_set_id=[% ms.map_set_id %]">View</a>
