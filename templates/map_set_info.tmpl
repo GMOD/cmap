@@ -129,8 +129,8 @@
                             [%- FOREACH map=ms.maps -%]
                             <tr>
                                 <td>[% map.map_name %]</td>
-                                <td align="center"><b>[</b>&nbsp;<a href="viewer?ref_map_set_aid=[% ms.map_set_aid %];ref_map_aid=[% map.map_aid %]">Map Viewer</a>&nbsp;<b>]</b></td>
-                                <td align="center"><b>[</b>&nbsp;<a href="map_details?ref_map_set_aid=[% ms.map_set_aid %]&ref_map_aid=[% map.map_aid %]#details">Map Details</a>&nbsp;<b>]</b></td>
+                                <td align="center"><b>[</b>&nbsp;<a href="viewer?ref_map_set_aid=[% ms.map_set_aid %];ref_map_aids=[% map.map_aid %]">Map Viewer</a>&nbsp;<b>]</b></td>
+                                <td align="center"><b>[</b>&nbsp;<a href="map_details?ref_map_set_aid=[% ms.map_set_aid %]&ref_map_aids=[% map.map_aid %]#details">Map Details</a>&nbsp;<b>]</b></td>
                                 <td align="center"><b>[</b>&nbsp;<a href="matrix?show_matrix=1&map_set_aid=[% ms.map_set_aid %]&map_name=[% map.map_name %]">Matrix Viewer</a>&nbsp;<b>]</b></td>
                                 <td align="center"><b>[</b>&nbsp;<a href="download_data?map_aid=[% map.map_aid %]">Download Map Data</a>&nbsp;<b>]</b></td>
                             </tr>
@@ -142,7 +142,7 @@
                     <tr>
                         <td>&nbsp;</td>
                         <td colspan="2" align="center">
-                            <b>[</b>&nbsp;<a href="viewer?ref_map_set_aid=[% ms.map_set_aid %]&ref_map_aid=-1">Display All Maps in Viewer</a>&nbsp;<b>]</b>
+                            <b>[</b>&nbsp;<a href="viewer?ref_map_set_aid=[% ms.map_set_aid %]&ref_map_aids=-1">Display All Maps in Viewer</a>&nbsp;<b>]</b>
                         </td>
                     </tr> 
                 [%- END -%]

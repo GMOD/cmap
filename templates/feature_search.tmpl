@@ -37,7 +37,7 @@
             <select name="feature_type_aid" size="5" multiple>
                 <option value="-1">--All Feature Types--</option>
                 [% FOREACH ft=feature_types %]
-                    <option value="[% ft.feature_type_aid %]"[% IF feature_type_lookup.${ft.feature_type_aid} %] selected[% END %]>[% ft.feature_type %]</option>
+                    <option value="[% ft.feature_type_aid %]"[% IF feature_type_aid_lookup.${ft.feature_type_aid} %] selected[% END %]>[% ft.feature_type %]</option>
                 [% END %]
             </select>
         </td>
@@ -101,7 +101,7 @@ Use &quot;*&quot; or &quot;%&quot; for wildcards.  To find features with spaces 
                     </td>
                     <td>[% r.aliases.join(', ') | truncate(30) %]</td>
                     <td align="center">
-                        <b>[</b>&nbsp;<a href="[% url %]/map_details?ref_map_set_aid=[% r.map_set_aid %];ref_map_aid=[% r.map_aid %];highlight=&quot;[% r.feature_name %]&quot;;data_source=[% apr.param('data_source') %];label_features=landmarks">View&nbsp;on&nbsp;Map</a>&nbsp;<b>]</b>
+                        <b>[</b>&nbsp;<a href="[% url %]/map_details?ref_map_set_aid=[% r.map_set_aid %];ref_map_aids=[% r.map_aid %];highlight=&quot;[% r.feature_name %]&quot;;data_source=[% apr.param('data_source') %];label_features=landmarks">View&nbsp;on&nbsp;Map</a>&nbsp;<b>]</b>
                     </td>
                     <td align="center">
                         <b>[</b>&nbsp;<a href="feature?feature_aid=[% r.feature_aid %];data_source=[% apr.param('data_source') %]">Feature&nbsp;Details</a><b>&nbsp;]</b>

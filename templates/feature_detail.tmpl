@@ -51,7 +51,7 @@
             [% feature.species_name %]-[% feature.map_set_name %]-[% feature.map_name %]
         </td>
         <td align="center">
-             <b>[</b>&nbsp;<a href="map_details?ref_map_set_aid=[% feature.map_set_aid %];ref_map_aid=[% feature.map_aid %];highlight=&quot;[% feature.feature_name %]&quot;;label_features=landmarks">View&nbsp;Map&nbsp;Details</a>&nbsp;<b>]</b>
+             <b>[</b>&nbsp;<a href="map_details?ref_map_set_aid=[% feature.map_set_aid %];ref_map_aids=[% feature.map_aid %];highlight=&quot;[% feature.feature_name %]&quot;;label_features=landmarks">View&nbsp;Map&nbsp;Details</a>&nbsp;<b>]</b>
         </td>
     </tr>
 
@@ -137,10 +137,10 @@
                     <b>[</b>&nbsp;<a href="correspondence?correspondence_aid=[% fc.feature_correspondence_aid %]">Correspondence&nbsp;Details</a>&nbsp;<b>]</b>
                 </td>
                 <td align="center">
-                    <b>[</b>&nbsp;<a href="map_details?ref_map_set_aid=[% fc.map_set_aid %];ref_map_aid=[% fc.map_aid %];highlight=[% fc.feature_aid %]">View&nbsp;On&nbsp;Map</a>&nbsp;<b>]</b>
+                    <b>[</b>&nbsp;<a href="map_details?ref_map_set_aid=[% fc.map_set_aid %];ref_map_aids=[% fc.map_aid %];highlight=[% fc.feature_aid %]">View&nbsp;On&nbsp;Map</a>&nbsp;<b>]</b>
                 </td>
                 <td align="center">
-                    <b>[</b>&nbsp;<a href="viewer?ref_map_set_aid=[% feature.map_set_aid %];ref_map_aid=[% feature.map_aid %];highlight=[% feature.feature_aid %],[% fc.feature_aid %];comparative_maps=1%3dmap_aid%3d[% fc.map_aid %]">Comparative&nbsp;View</a>&nbsp;<b>]</b>
+                    <b>[</b>&nbsp;<a href="viewer?ref_map_set_aid=[% feature.map_set_aid %];ref_map_aids=[% feature.map_aid %];highlight=[% feature.feature_aid %],[% fc.feature_aid %];comparative_maps=1%3dmap_aid%3d[% fc.map_aid %]">Comparative&nbsp;View</a>&nbsp;<b>]</b>
                 </td>
             </tr>
             [% SET i=i+1 %]
