@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Utils;
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.25.2.11 2004-06-14 18:48:09 kycl4rk Exp $
+# $Id: Utils.pm,v 1.25.2.12 2004-06-15 14:53:13 kycl4rk Exp $
 
 =head1 NAME
 
@@ -29,7 +29,7 @@ use Bio::GMOD::CMap::Constants;
 use POSIX;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.25.2.11 $)[-1];
+$VERSION = (qw$Revision: 1.25.2.12 $)[-1];
 
 use base 'Exporter';
 
@@ -558,7 +558,7 @@ Special thanks to Noel Yap for suggesting this strategy.
                 $gap_above         = $no_bins - $low_bin;
                 $diff_to_gap_above = 0;
             }
-            # inside an occupied bin but space just afterwards
+            # inside an occupied bin but space just above it
             elsif ( 
                 defined $hmax && 
                 $hmax <= $high_bin && 
@@ -612,6 +612,49 @@ Special thanks to Noel Yap for suggesting this strategy.
 
             $label->{'y'} = $target + $diff;
             $i++;
+        }
+
+        #
+        # Double-check to see if any look out of place.  To do this,
+        # sort the labels by their "y" position and then see if the
+        # "targets" are in ascending order.  If we find a pair where
+        # this is not the case, then switch the "y" positions until
+        # they're in ascending order.  It's necessary to make multiple
+        # passes, so keep doing it until they're all determined to be
+        # OK.
+        #
+        my $ok = 0;
+        while ( ! $ok ) {
+            $ok = 1;
+            @accepted = 
+                map  { $_->[0] }
+                sort { $a->[1] <=> $b->[1] }
+                map  { [ $_, $_->{'y'} ] }
+                @accepted;
+
+            my $last_target = $accepted[0]->{'target'};
+            $i = 0;
+            for my $label ( @accepted ) {
+                my $this_target = $label->{'target'}; 
+                if ( $this_target < $last_target ) {
+                    $ok      = 0;
+                    my $j    = $i;
+                    my $this = $accepted[ $j - 1 ]; # back up
+                    my $next = $accepted[ $j ]; # start switching here
+
+                    while ( 
+                        $this->{'target'} > $next->{'target'} &&
+                        $this->{'y'}      < $next->{'y'}
+                    ) {
+                        ($this->{'y'}, $next->{'y'}) = 
+                        ($next->{'y'}, $this->{'y'});
+                        $next = $accepted[ ++$j ];
+                    }
+                }
+
+                $last_target = $this_target;
+                $i++;
+            }
         }
     }
     #
