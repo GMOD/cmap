@@ -26,6 +26,7 @@ use Getopt::Long;
 use Pod::Usage;
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
+use Bio::GMOD::CMap::Utils 'next_number';
 
 my ( $ds, $help );
 GetOptions(
@@ -104,7 +105,7 @@ my $ce_remarks = $db->selectall_arrayref(
     q[
         select correspondence_evidence_id, remark 
         from   cmap_correspondence_evidence
-        where  remarks is not null
+        where  remark is not null
     ],
     { Columns => {} }
 );
@@ -134,27 +135,31 @@ my $features = $db->selectall_arrayref(
 );
 
 print "Converting feature aliases (", scalar @$features, ")\n";
-my $id = 1;
 for my $f ( @$features ) {
     next unless defined $f->{'alternate_name'} && $f->{'alternate_name'} ne '';
     next if $f->{'feature_name'} eq $f->{'alternate_name'};
 
+    my $id         =  next_number(
+        db         => $db,
+        table_name => 'cmap_feature_alias',
+        id_field   => 'feature_alias_id',
+    );
+
     $db->do(
         q[
             insert
-            into   cmap_feature_alias2
+            into   cmap_feature_alias
                    (feature_alias_id, feature_id, alias)
             values (?, ?, ?)
         ],
         {},
-        ( $id++, $f->{'feature_id'}, $f->{'alternate_name'} )
+        ( $id, $f->{'feature_id'}, $f->{'alternate_name'} )
     );
 }
 
-$db->do(
-    'insert into cmap_next_number (table_name, next_number) values (?, ?)',
-    {},
-    ( 'cmap_feature_alias', $id )
+my $feature_types = $db->selectall_hashref(
+    'select feature_type_id, accession_id, feature_type from cmap_feature_type',
+    'feature_type_id'
 );
 
 #
@@ -170,10 +175,6 @@ my $dbxrefs = $db->selectall_arrayref(
 );
 
 print "Converting generic dbxrefs (", scalar @$dbxrefs, ")\n";
-my $feature_types = $db->selectall_hashref(
-    'select feature_type_id, accession_id, feature_type from cmap_feature_type',
-    'feature_type_id'
-);
 
 my @new_xrefs;
 for my $dbxref ( @$dbxrefs ) {
@@ -263,6 +264,63 @@ print join("\n",
 
 print "\nDone\n";
 exit(0);
+
+sub convert_xref {
+    my %args            = @_;
+    my $feature_type_id = $args{'feature_type_id'} || 0;
+    my $map_set_id      = $args{'map_set_id'}      || 0;
+    my $species_id      = $args{'species_id'}      || 0;
+    my $feature_id      = $args{'feature_id'}      || 0;
+    my $name            = $args{'name'}            || '';
+    my $url             = $args{'url'}             || '';
+    my $ft              = $feature_types->{ $feature_type_id };
+
+    $url =~ s#\[%\s*feature\.#\[% object.#g;
+    $url =~ s/accession_id/feature_aid/g;
+
+    if ( $url =~ m/alternate_name/ ) {
+        $url =~ s#\[% object\.alternate_name\s*#\[% a #g;
+        $url = '[% FOREACH a=object.aliases %]'.$url.' [% END %]';
+    }
+
+    my $new_url;
+    if ( $map_set_id ) {
+        my $map_set_aid = $db->selectrow_array(
+            'select accession_id from cmap_map_set where map_set_id=?',
+            {},
+            ( $map_set_id )
+        ) or next;
+
+        $new_url = 
+            '[% IF object.feature_type_aid==\'' . $ft->{'accession_id'} .
+            '\' AND object.map_set_aid==\'' . $map_set_aid . '\' %]'.
+            $url . '[% END %]'
+        ;
+    }
+    elsif ( $species_id ) {
+        my $species_aid = $db->selectrow_array(
+            'select accession_id from cmap_species where species_id=?',
+            {},
+            ( $species_id )
+        ) or next;
+
+        $new_url = 
+            '[% IF object.feature_type_aid==\'' . $ft->{'accession_id'} .
+            '\' AND object.species_aid==\'' . $species_aid . '\' %]'.
+            $url . '[% END %]'
+        ;
+    }
+    elsif ( $feature_id ) {
+        if ( $name =~ /^not available$/i ) {
+            $new_url = '';
+        }
+        else {
+            $new_url = $url;
+        }
+    }
+
+    return $new_url;
+}
 
 =pod
 
