@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.53.2.1 2004-06-08 15:44:48 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.53.2.2 2004-06-14 18:48:46 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.53.2.1 $)[-1];
+$VERSION = (qw$Revision: 1.53.2.2 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -170,33 +170,34 @@ Draws a line from one point to another.
     my @lines = ();
     my $line  = LINE;
 
-    if ( $y1 == $y2 ) {
-        push @lines, [ $line, $x1, $y1, $x2, $y2, $color ];
-    }
-    elsif ( $same_map ) {
-        if ( $label_side eq RIGHT ) {
-            push @lines, [ $line, $x1  , $y1, $x1+5, $y1, $color, $layer ];
-            push @lines, [ $line, $x1+5, $y1, $x2+5, $y2, $color, $layer ];
-            push @lines, [ $line, $x2+5, $y2, $x2  , $y2, $color, $layer ];
-        }
-        else {
-            push @lines, [ $line, $x1  , $y1, $x1-5, $y1, $color, $layer ];
-            push @lines, [ $line, $x1-5, $y1, $x2-5, $y2, $color, $layer ];
-            push @lines, [ $line, $x2-5, $y2, $x2  , $y2, $color, $layer ];
-        }
-    }
-    else {
-        if ( $x1 < $x2 ) {
-            push @lines, [ $line, $x1  , $y1, $x1+5, $y1, $color, $layer ];
-            push @lines, [ $line, $x1+5, $y1, $x2-5, $y2, $color, $layer ];
-            push @lines, [ $line, $x2-5, $y2, $x2  , $y2, $color, $layer ];
-        }
-        else {
-            push @lines, [ $line, $x1  , $y1, $x1-5, $y1, $color, $layer ];
-            push @lines, [ $line, $x1-5, $y1, $x2+5, $y2, $color, $layer ];
-            push @lines, [ $line, $x2+5, $y2, $x2  , $y2, $color, $layer ];
-        }
-    }
+    push @lines, [ $line, $x1, $y1, $x2, $y2, $color ];
+#    if ( $y1 == $y2 ) {
+#        push @lines, [ $line, $x1, $y1, $x2, $y2, $color ];
+#    }
+#    elsif ( $same_map ) {
+#        if ( $label_side eq RIGHT ) {
+#            push @lines, [ $line, $x1  , $y1, $x1+5, $y1, $color, $layer ];
+#            push @lines, [ $line, $x1+5, $y1, $x2+5, $y2, $color, $layer ];
+#            push @lines, [ $line, $x2+5, $y2, $x2  , $y2, $color, $layer ];
+#        }
+#        else {
+#            push @lines, [ $line, $x1  , $y1, $x1-5, $y1, $color, $layer ];
+#            push @lines, [ $line, $x1-5, $y1, $x2-5, $y2, $color, $layer ];
+#            push @lines, [ $line, $x2-5, $y2, $x2  , $y2, $color, $layer ];
+#        }
+#    }
+#    else {
+#        if ( $x1 < $x2 ) {
+#            push @lines, [ $line, $x1  , $y1, $x1+5, $y1, $color, $layer ];
+#            push @lines, [ $line, $x1+5, $y1, $x2-5, $y2, $color, $layer ];
+#            push @lines, [ $line, $x2-5, $y2, $x2  , $y2, $color, $layer ];
+#        }
+#        else {
+#            push @lines, [ $line, $x1  , $y1, $x1-5, $y1, $color, $layer ];
+#            push @lines, [ $line, $x1-5, $y1, $x2+5, $y2, $color, $layer ];
+#            push @lines, [ $line, $x2+5, $y2, $x2  , $y2, $color, $layer ];
+#        }
+#    }
 
     $self->add_drawing( @lines );
 }
