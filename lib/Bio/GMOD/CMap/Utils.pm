@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Utils;
 
-# $Id: Utils.pm,v 1.18 2003-04-09 20:41:31 kycl4rk Exp $
+# $Id: Utils.pm,v 1.19 2003-05-16 17:06:16 kycl4rk Exp $
 
 =head1 NAME
 
@@ -16,7 +16,7 @@ Bio::GMOD::CMap::Utils - generalized utilities
 This module contains a couple of general-purpose routines, all of
 which are exported by default.
 
-=head1 Exported Subroutines
+=head1 EXPORTED SUBROUTINES
 
 =cut 
 
@@ -25,7 +25,7 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.18 $)[-1];
+$VERSION = (qw$Revision: 1.19 $)[-1];
 
 use base 'Exporter';
 
@@ -54,9 +54,10 @@ Given a reference to some columns, figure out where something can be inserted.
 
     my %args    = @_;
     my $columns = $args{'columns'} || []; # array reference
-    my $top     = $args{'top'}     ||  0; # the top and bottom
-    my $bottom  = $args{'bottom'}  ||  0; # of the thing being inserted
     my $buffer  = $args{'buffer'}  ||  2; # space b/w things
+    my $top     = $args{'top'};           # the top and bottom
+    my $bottom  = $args{'bottom'};        # of the thing being inserted
+    $bottom     = $top unless defined $bottom;
 
     return unless defined $top && defined $bottom;
 
@@ -226,8 +227,8 @@ label can be inserted.
         my $ok           = 1; # assume innocent until proven guilty
 
         SEGMENT:
-        for my $i ( 0 .. $#{ $used } ) {
-            my $segment = $used->[ $i ];
+        for my $i ( 0 .. $#used ) {
+            my $segment = $used[ $i ] or next;
             my ( $north, $south ) = @$segment; 
             next if $south + $buffer <= $top;    # segment is above our target.
             next if $north - $buffer >= $bottom; # segment is below our target.
@@ -245,8 +246,8 @@ label can be inserted.
                 #
                 # Figure out the current frame.
                 #
-                my $prev_segment = $i > 0         ? $used->[ $i - 1 ] : undef;
-                my $next_segment = $i < $#{$used} ? $used->[ $i + 1 ] : undef;
+                my $prev_segment = $i > 0      ? $used[ $i - 1 ] : undef;
+                my $next_segment = $i < $#used ? $used[ $i + 1 ] : undef;
                 my $ftop         = $direction eq NORTH  
                     ? defined $next_segment->[1] ? $next_segment->[1] : undef 
                     : $south
@@ -295,6 +296,7 @@ label can be inserted.
                     $ok = 1; 
                     last;
                 }
+
                 next SEGMENT if !$ok and !$can_skip;
                 last;
             }
@@ -308,7 +310,7 @@ label can be inserted.
         # label to just beyond the last segment.
         #
         if ( !$ok and !$can_skip ) {
-            my ( $last_top, $last_bottom ) = @{ $used->[ -1 ] };
+            my ( $last_top, $last_bottom ) = @{ $used[ -1 ] };
             if ( $direction eq NORTH ) {
                 $bottom = $last_top - $buffer;
                 $top    = $bottom - $row_height;
@@ -325,13 +327,14 @@ label can be inserted.
         # move the label too far to make it fit, then record where this one
         # went and return the new location.
         #
-        if ( !@$used || $ok ) {
-            push @$used, [ $top, $bottom ];
+        if ( !@used || $ok ) {
+            push @used, [ $top, $bottom ];
             $label->{'y'} = $top;
             push @$accepted, $label;
         }
     }
 
+    return \@used;
     return 1;
 }
 
