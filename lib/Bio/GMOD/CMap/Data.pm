@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.112 2004-05-10 21:44:49 mwz444 Exp $
+# $Id: Data.pm,v 1.113 2004-05-14 20:36:29 mwz444 Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.112 $)[-1];
+$VERSION = (qw$Revision: 1.113 $)[-1];
 
 use Data::Dumper;
 use Regexp::Common;
@@ -227,6 +227,7 @@ sub cmap_data {
     my $slots                  = $args{'slots'};
     my $min_correspondences    = $args{'min_correspondences'}    ||  0;
     my $include_feature_type_aids  = $args{'include_feature_type_aids'}  || [];
+    my $corr_only_feature_type_aids= $args{'corr_only_feature_type_aids'}|| [];
     my $include_evidence_type_aids = $args{'include_evidence_type_aids'} || [];
     my @slot_nos               = keys %$slots;
     my @pos                    = sort { $a <=> $b } grep { $_ >= 0 } @slot_nos;
@@ -236,9 +237,11 @@ sub cmap_data {
     my $pid=$$;
 
     #
-    # "-1" is a reserved value meaning "All."
+    # "-1" is a reserved value meaning "All" for feature and evidence types
+    # "-1" is reserved for "None"
     #
     $include_feature_type_aids  = [] if grep { /^-1$/ } @$include_feature_type_aids;
+    $corr_only_feature_type_aids  = [] if grep { /^-1$/ } @$include_feature_type_aids;
     $include_evidence_type_aids = [] if grep { /^-1$/ } @$include_evidence_type_aids;
    
 
@@ -270,6 +273,7 @@ sub cmap_data {
             ref_slot_no              => $ref_slot_no,
             min_correspondences      => $min_correspondences,
             feature_type_aids        => $include_feature_type_aids,
+            corr_only_feature_type_aids => $corr_only_feature_type_aids,
             evidence_type_aids       => $include_evidence_type_aids,
             pid                      => $pid,
 	    map_type_aids            =>\%map_type_aids,
@@ -327,6 +331,7 @@ sub slot_data {
     my $map_correspondences     = $args{'map_correspondences'};
     my $correspondence_evidence = $args{'correspondence_evidence'};
     my $feature_types_seen      = $args{'feature_types'};
+    my $corr_only_feature_type_aids = $args{'corr_only_feature_type_aids'};
     my $map_type_aids           = $args{'map_type_aids'};
     my $pid                     = $args{'pid'};
     my $max_no_features         = 200000;
@@ -788,7 +793,7 @@ sub slot_data {
                 ? "and f.feature_type_accession in ('".join("','",@$feature_type_aids)."')"
                 : ''
             ;
-            ###'read' IS HARD CODED FOR NOW
+            ###
 	    my $sql_base_top=qq[
                     select   f.feature_id,
                              f.accession_id,
@@ -819,12 +824,17 @@ sub slot_data {
                     and      f.map_id=map.map_id
                     and      map.map_set_id=ms.map_set_id
 			   ];
-	    my $corr_free_sql=$sql_base_top.$sql_base_bottom.
-		q[
-		  and f.feature_type_accession not in ('read')
-		  ];
+	    my $corr_free_sql=$sql_base_top.$sql_base_bottom;
+	    if (@$corr_only_feature_type_aids){
+		$corr_free_sql.="and f.feature_type_accession not in ('".
+		join("','",@$corr_only_feature_type_aids).
+		"')";
+	    }
 	    my $sql_str=$corr_free_sql;
-	    if($self->slot_info->{$this_slot_no+1}||$self->slot_info->{$this_slot_no-1}){
+	    if(@$corr_only_feature_type_aids and 
+	       ($self->slot_info->{$this_slot_no+1}
+		||
+		$self->slot_info->{$this_slot_no-1})){
 		my $map_id_string .= " and f2.map_id in (".
 		    join("", 
 			 ($self->slot_info->{$this_slot_no+1}? 
@@ -846,12 +856,14 @@ sub slot_data {
 		      $sql_base_bottom.
 		      q[
 			and cl.feature_id1=f.feature_id
-			and cl.feature_id2=f2.feature_id
-                        and f.feature_type_accession in ('read')
-			].
-			$map_id_string;
+			and cl.feature_id2=f2.feature_id];
+		$with_corr_sql.=" and f.feature_type_accession in ('".
+		    join("','",@$corr_only_feature_type_aids).
+		    "')".
+		    $map_id_string;
 		$sql_str=$corr_free_sql." UNION ".$with_corr_sql;
 	    }
+
 	    unless($map->{'features'}=$self->get_cached_results($sql_str.$maps[0]{'map_id'})){
 
 		$map->{'features'} = $db->selectall_hashref
@@ -2868,6 +2880,7 @@ sub cmap_form_data {
     };
 }
 
+
 # ----------------------------------------------------
 sub get_comparative_maps {
 
@@ -3007,13 +3020,6 @@ out which maps have relationships.
 							   );
 	$self->store_cached_results($corr_sql,$feature_correspondences);
     }
-
-#    my $map_info = $db->selectall_hashref(
-#        $map_info_sql,
-#        'map_id',
-#        { Columns => {} },
-#        ( $pid, $ref_slot_no )
-#    );
     
     my %map_sets;     # the map set info and any maps
     for my $fc ( @$feature_correspondences ) {
@@ -4571,7 +4577,6 @@ sub slot_info{
 		}
 		if ($sql_suffix){
 		    ###If aid was found, $sql_suffix will be created
-		    print STDERR "$sql_str $sql_suffix\n";
 		    push @{$self->{'slot_info'}{$key}}, 
 		    @{$db->selectall_arrayref($sql_str.$sql_suffix, {},())};
 		}

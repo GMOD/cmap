@@ -233,17 +233,21 @@
                             <td align="right" valign="top">Include Feature Types:</td>
 
                             <td>
-                                [% IF form_data.feature_types.size %]
-                                    [% form_data.feature_types.unshift({feature_type_aid=>'-1',feature_type=>'--All--'}) %]
+
                                     <select name="feature_types" size="4" multiple>
+                                        <option value="-1" [% IF included_features.-1; ' selected'; END %]>--ALL--</option> 
                                         [% FOREACH ft=form_data.feature_types %]
                                             <option value="[% ft.feature_type_aid %]"[% IF included_features.${ft.feature_type_aid}; ' selected'; END %]>[% ft.feature_type %]</option>
                                         [% END %]
-                                    </select>
-    
-                                [% ELSE %]
-                                    There are no feature types!
-                                [% END %]
+                                    </select></td></tr>
+                                <tr><td align="right" valign="top">Include only if has correspondence:</td><td>
+                                    <select name="corr_only_feature_types" size="4" multiple>
+                                        <option value="-1" [% IF included_corr_only_features.-1; ' selected'; END %]>--None--</option>
+
+                                        [% FOREACH ft=form_data.feature_types %]                                            <option value="[% ft.feature_type_aid %]"[% IF included_corr_only_features.${ft.feature_type_aid}; ' selected'; END %]>[% ft.feature_type %]</option>
+                                        [% END %]
+                                    </select>    
+
                             </td>
                         </tr>
 
