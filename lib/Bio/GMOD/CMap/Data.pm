@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.144 2004-08-23 15:59:53 mwz444 Exp $
+# $Id: Data.pm,v 1.145 2004-08-24 18:04:40 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.144 $)[-1];
+$VERSION = (qw$Revision: 1.145 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -4875,12 +4875,12 @@ sub slot_info {
                 if (scalar(keys(%{$slots->{$slot_no}{'map_sets'}}))>0){
                     $from .= q[,
                       cmap_map_set ms ];
-                    $where .=  "where (m.map_set_id=ms.map_set_id ";
+                    $where .=  "where m.map_set_id=ms.map_set_id ";
                     #Map set aid
-                    $where .= "and (ms.accession_id = '"
+                    my $where2 .= "and ((ms.accession_id = '"
                       . join("' or ms.accession_id = '",
                         keys(%{$slots->{$slot_no}{'map_sets'}}))
-                      ."'))";
+                      ."')";
                     if ($slot_no!=0) {
                         my $slot_modifier = $slot_no > 0 ? -1 : 1;
                         if($self->{'expanded_correspondence_lookup'}){
@@ -4921,13 +4921,19 @@ sub slot_info {
                               . ")";
                         }
                     }
-                    #$where .= ")"
+                    if (scalar(keys(%{$slots->{$slot_no}{'maps'}}))>0){
+                        $where2 .= " or ("; 
+                        $where2 .= " m.accession_id in ('"
+                                  . join( "','"
+                                    ,keys(%{ $slots->{$slot_no}{'maps'}}))
+                                  . "')";
+                        $where2 .= ")";
+                    }
+                    $where .=$where2.")";
                 }
                 # Get Individual Maps
-                if (scalar(keys(%{$slots->{$slot_no}{'maps'}}))>0){
-                    $where .= $where  
-                        ? " or (" 
-                        : " where (";
+                elsif (scalar(keys(%{$slots->{$slot_no}{'maps'}}))>0){
+                    $where = " where (";
                     $where .= " m.accession_id in ('"
                               . join( "','"
                                 ,keys(%{ $slots->{$slot_no}{'maps'}}))
@@ -4987,6 +4993,13 @@ sub slot_info {
                                     and $row->[1]>$row->[2]);
                         }
                     }
+                    else{
+                        ###No Maps specified, make all start/stops undef
+                        foreach my $row (@$slot_results){
+                            $row->[1]=undef;
+                            $row->[2]=undef;
+                        }
+                    } 
                     foreach my $row (@$slot_results){
                         $self->{'slot_info'}{$slot_no}{$row->[0]}
                             =[$row->[1],$row->[2]];
