@@ -2,2354 +2,400 @@
 <!DOCTYPE html
 	PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 	 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US"><head><title>Description of Schema</title>
-<meta name="generator" content="SQL::Translator::Producer::HTML, 1.11" />
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US"><head><title>CMap v0.10</title>
+<meta name="generator" content="SQL::Translator::Producer::HTML, 1.12" />
 </head><body>
-
-<!-- 
-	Table listing (16 tables)
- -->
-
+<h1 class="SchemaDescription">CMap v0.10</h1>
+<hr />
+<!-- Table listing (16 tables) -->
 <a name="top" />
-
 <table class="LinkTable" width="100%">
-
-<tr>
-	<td class="LinkTableCell"><h2 class="LinkTableTitle">
-	Tables
-</h2></td>
-</tr>
-
-<!-- 
-	Start link to table 'cmap_attribute'
- -->
-
-<tr class="LinkTableRow">
-	<td class="LinkTableCell"><a id="cmap_attribute-link" href="#cmap_attribute">cmap_attribute</a></td>
-</tr>
-
-<!-- 
-	End link to table 'cmap_attribute'
- -->
-
-<!-- 
-	Start link to table 'cmap_correspondence_matrix'
- -->
-
-<tr class="LinkTableRow">
-	<td class="LinkTableCell"><a id="cmap_correspondence_matrix-link" href="#cmap_correspondence_matrix">cmap_correspondence_matrix</a></td>
-</tr>
-
-<!-- 
-	End link to table 'cmap_correspondence_matrix'
- -->
-
-<!-- 
-	Start link to table 'cmap_correspondence_lookup'
- -->
-
-<tr class="LinkTableRow">
-	<td class="LinkTableCell"><a id="cmap_correspondence_lookup-link" href="#cmap_correspondence_lookup">cmap_correspondence_lookup</a></td>
-</tr>
-
-<!-- 
-	End link to table 'cmap_correspondence_lookup'
- -->
-
-<!-- 
-	Start link to table 'cmap_correspondence_evidence'
- -->
-
-<tr class="LinkTableRow">
-	<td class="LinkTableCell"><a id="cmap_correspondence_evidence-link" href="#cmap_correspondence_evidence">cmap_correspondence_evidence</a></td>
-</tr>
-
-<!-- 
-	End link to table 'cmap_correspondence_evidence'
- -->
-
-<!-- 
-	Start link to table 'cmap_evidence_type'
- -->
-
-<tr class="LinkTableRow">
-	<td class="LinkTableCell"><a id="cmap_evidence_type-link" href="#cmap_evidence_type">cmap_evidence_type</a></td>
-</tr>
-
-<!-- 
-	End link to table 'cmap_evidence_type'
- -->
-
-<!-- 
-	Start link to table 'cmap_feature'
- -->
-
-<tr class="LinkTableRow">
-	<td class="LinkTableCell"><a id="cmap_feature-link" href="#cmap_feature">cmap_feature</a></td>
-</tr>
-
-<!-- 
-	End link to table 'cmap_feature'
- -->
-
-<!-- 
-	Start link to table 'cmap_feature_alias'
- -->
-
-<tr class="LinkTableRow">
-	<td class="LinkTableCell"><a id="cmap_feature_alias-link" href="#cmap_feature_alias">cmap_feature_alias</a></td>
-</tr>
-
-<!-- 
-	End link to table 'cmap_feature_alias'
- -->
-
-<!-- 
-	Start link to table 'cmap_feature_correspondence'
- -->
-
-<tr class="LinkTableRow">
-	<td class="LinkTableCell"><a id="cmap_feature_correspondence-link" href="#cmap_feature_correspondence">cmap_feature_correspondence</a></td>
-</tr>
-
-<!-- 
-	End link to table 'cmap_feature_correspondence'
- -->
-
-<!-- 
-	Start link to table 'cmap_feature_type'
- -->
-
-<tr class="LinkTableRow">
-	<td class="LinkTableCell"><a id="cmap_feature_type-link" href="#cmap_feature_type">cmap_feature_type</a></td>
-</tr>
-
-<!-- 
-	End link to table 'cmap_feature_type'
- -->
-
-<!-- 
-	Start link to table 'cmap_map'
- -->
-
-<tr class="LinkTableRow">
-	<td class="LinkTableCell"><a id="cmap_map-link" href="#cmap_map">cmap_map</a></td>
-</tr>
-
-<!-- 
-	End link to table 'cmap_map'
- -->
-
-<!-- 
-	Start link to table 'cmap_map_cache'
- -->
-
-<tr class="LinkTableRow">
-	<td class="LinkTableCell"><a id="cmap_map_cache-link" href="#cmap_map_cache">cmap_map_cache</a></td>
-</tr>
-
-<!-- 
-	End link to table 'cmap_map_cache'
- -->
-
-<!-- 
-	Start link to table 'cmap_map_set'
- -->
-
-<tr class="LinkTableRow">
-	<td class="LinkTableCell"><a id="cmap_map_set-link" href="#cmap_map_set">cmap_map_set</a></td>
-</tr>
-
-<!-- 
-	End link to table 'cmap_map_set'
- -->
-
-<!-- 
-	Start link to table 'cmap_map_type'
- -->
-
-<tr class="LinkTableRow">
-	<td class="LinkTableCell"><a id="cmap_map_type-link" href="#cmap_map_type">cmap_map_type</a></td>
-</tr>
-
-<!-- 
-	End link to table 'cmap_map_type'
- -->
-
-<!-- 
-	Start link to table 'cmap_species'
- -->
-
-<tr class="LinkTableRow">
-	<td class="LinkTableCell"><a id="cmap_species-link" href="#cmap_species">cmap_species</a></td>
-</tr>
-
-<!-- 
-	End link to table 'cmap_species'
- -->
-
-<!-- 
-	Start link to table 'cmap_next_number'
- -->
-
-<tr class="LinkTableRow">
-	<td class="LinkTableCell"><a id="cmap_next_number-link" href="#cmap_next_number">cmap_next_number</a></td>
-</tr>
-
-<!-- 
-	End link to table 'cmap_next_number'
- -->
-
-<!-- 
-	Start link to table 'cmap_xref'
- -->
-
-<tr class="LinkTableRow">
-	<td class="LinkTableCell"><a id="cmap_xref-link" href="#cmap_xref">cmap_xref</a></td>
-</tr>
-
-<!-- 
-	End link to table 'cmap_xref'
- -->
-
+<tr><td class="LinkTableCell"><h2 class="LinkTableTitle">Tables</h2></td></tr>
+<!-- Start link to table 'cmap_attribute' -->
+<tr class="LinkTableRow"><td class="LinkTableCell"><a id="cmap_attribute-link" href="#cmap_attribute">cmap_attribute</a></td></tr>
+<!-- End link to table 'cmap_attribute' -->
+<!-- Start link to table 'cmap_correspondence_matrix' -->
+<tr class="LinkTableRow"><td class="LinkTableCell"><a id="cmap_correspondence_matrix-link" href="#cmap_correspondence_matrix">cmap_correspondence_matrix</a></td></tr>
+<!-- End link to table 'cmap_correspondence_matrix' -->
+<!-- Start link to table 'cmap_correspondence_lookup' -->
+<tr class="LinkTableRow"><td class="LinkTableCell"><a id="cmap_correspondence_lookup-link" href="#cmap_correspondence_lookup">cmap_correspondence_lookup</a></td></tr>
+<!-- End link to table 'cmap_correspondence_lookup' -->
+<!-- Start link to table 'cmap_correspondence_evidence' -->
+<tr class="LinkTableRow"><td class="LinkTableCell"><a id="cmap_correspondence_evidence-link" href="#cmap_correspondence_evidence">cmap_correspondence_evidence</a></td></tr>
+<!-- End link to table 'cmap_correspondence_evidence' -->
+<!-- Start link to table 'cmap_evidence_type' -->
+<tr class="LinkTableRow"><td class="LinkTableCell"><a id="cmap_evidence_type-link" href="#cmap_evidence_type">cmap_evidence_type</a></td></tr>
+<!-- End link to table 'cmap_evidence_type' -->
+<!-- Start link to table 'cmap_feature' -->
+<tr class="LinkTableRow"><td class="LinkTableCell"><a id="cmap_feature-link" href="#cmap_feature">cmap_feature</a></td></tr>
+<!-- End link to table 'cmap_feature' -->
+<!-- Start link to table 'cmap_feature_alias' -->
+<tr class="LinkTableRow"><td class="LinkTableCell"><a id="cmap_feature_alias-link" href="#cmap_feature_alias">cmap_feature_alias</a></td></tr>
+<!-- End link to table 'cmap_feature_alias' -->
+<!-- Start link to table 'cmap_feature_correspondence' -->
+<tr class="LinkTableRow"><td class="LinkTableCell"><a id="cmap_feature_correspondence-link" href="#cmap_feature_correspondence">cmap_feature_correspondence</a></td></tr>
+<!-- End link to table 'cmap_feature_correspondence' -->
+<!-- Start link to table 'cmap_feature_type' -->
+<tr class="LinkTableRow"><td class="LinkTableCell"><a id="cmap_feature_type-link" href="#cmap_feature_type">cmap_feature_type</a></td></tr>
+<!-- End link to table 'cmap_feature_type' -->
+<!-- Start link to table 'cmap_map' -->
+<tr class="LinkTableRow"><td class="LinkTableCell"><a id="cmap_map-link" href="#cmap_map">cmap_map</a></td></tr>
+<!-- End link to table 'cmap_map' -->
+<!-- Start link to table 'cmap_map_cache' -->
+<tr class="LinkTableRow"><td class="LinkTableCell"><a id="cmap_map_cache-link" href="#cmap_map_cache">cmap_map_cache</a></td></tr>
+<!-- End link to table 'cmap_map_cache' -->
+<!-- Start link to table 'cmap_map_set' -->
+<tr class="LinkTableRow"><td class="LinkTableCell"><a id="cmap_map_set-link" href="#cmap_map_set">cmap_map_set</a></td></tr>
+<!-- End link to table 'cmap_map_set' -->
+<!-- Start link to table 'cmap_map_type' -->
+<tr class="LinkTableRow"><td class="LinkTableCell"><a id="cmap_map_type-link" href="#cmap_map_type">cmap_map_type</a></td></tr>
+<!-- End link to table 'cmap_map_type' -->
+<!-- Start link to table 'cmap_species' -->
+<tr class="LinkTableRow"><td class="LinkTableCell"><a id="cmap_species-link" href="#cmap_species">cmap_species</a></td></tr>
+<!-- End link to table 'cmap_species' -->
+<!-- Start link to table 'cmap_next_number' -->
+<tr class="LinkTableRow"><td class="LinkTableCell"><a id="cmap_next_number-link" href="#cmap_next_number">cmap_next_number</a></td></tr>
+<!-- End link to table 'cmap_next_number' -->
+<!-- Start link to table 'cmap_xref' -->
+<tr class="LinkTableRow"><td class="LinkTableCell"><a id="cmap_xref-link" href="#cmap_xref">cmap_xref</a></td></tr>
+<!-- End link to table 'cmap_xref' -->
 </table>
-
-<!-- 
-	Starting table 'cmap_attribute'
- -->
-
+<!-- Starting table 'cmap_attribute' -->
 <a name="cmap_attribute" />
-
-<table class="TableHeader" width="100%">
-	<tr class="TableHeaderRow">
-		<td class="TableHeaderCell"><h3>
-	cmap_attribute
-</h3></td>
-		<a name="cmap_attribute"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td>
-	</tr>
-</table>
-
+<table class="TableHeader" width="100%"><tr class="TableHeaderRow"><td class="TableHeaderCell"><h3>cmap_attribute</h3></td> <a name="cmap_attribute"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td></tr></table>
 <table border="1">
-
-<tr>
-	<th class="FieldHeader">
-		Field Name
-	</th>
-	<th class="FieldHeader">
-		Data Type
-	</th>
-	<th class="FieldHeader">
-		Size
-	</th>
-	<th class="FieldHeader">
-		Default Value
-	</th>
-	<th class="FieldHeader">
-		Other
-	</th>
-	<th class="FieldHeader">
-		Foreign Key
-	</th>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_attribute-attribute_id">attribute_id</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">PRIMARY KEY, NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_attribute-table_name">table_name</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">30</td>
-	<td class="FieldCellDefault"></td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_attribute-object_id">object_id</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_attribute-display_order">display_order</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">1</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_attribute-is_public">is_public</a></td>
-	<td class="FieldCellType">tinyint</td>
-	<td class="FieldCellSize">4</td>
-	<td class="FieldCellDefault">1</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_attribute-attribute_name">attribute_name</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">200</td>
-	<td class="FieldCellDefault"></td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_attribute-attribute_value">attribute_value</a></td>
-	<td class="FieldCellType">text</td>
-	<td class="FieldCellSize">65535</td>
-	<td class="FieldCellDefault"></td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
+<tr><th class="FieldHeader">Field Name</th> <th class="FieldHeader">Data Type</th> <th class="FieldHeader">Size</th> <th class="FieldHeader">Default Value</th> <th class="FieldHeader">Other</th> <th class="FieldHeader">Foreign Key</th></tr>
+<tr><td class="FieldCellName"><a name="cmap_attribute-attribute_id">attribute_id</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">PRIMARY KEY, NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_attribute-table_name">table_name</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">30</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_attribute-object_id">object_id</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_attribute-display_order">display_order</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">1</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_attribute-is_public">is_public</a></td> <td class="FieldCellType">tinyint</td> <td class="FieldCellSize">4</td> <td class="FieldCellDefault">1</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_attribute-attribute_name">attribute_name</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">200</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_attribute-attribute_value">attribute_value</a></td> <td class="FieldCellType">text</td> <td class="FieldCellSize">65535</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
 </table>
-
-<h3>
-	Indices
-</h3>
-
+<h3>Indices</h3>
 <table border="1">
-
-<tr class="IndexRow">
-	<th>
-		Name
-	</th>
-	<th>
-		Fields
-	</th>
-</tr>
-
-<tr class="IndexCell">
-	<td>table_name</td>
-	<td>table_name, object_id, display_order, attribute_name</td>
-</tr>
-
+<tr class="IndexRow"><th>Name</th> <th>Fields</th></tr>
+<tr class="IndexCell"><td>table_name</td> <td>table_name, object_id, display_order, attribute_name</td></tr>
 </table>
-
 <hr />
-
-<!-- 
-	Starting table 'cmap_correspondence_evidence'
- -->
-
+<!-- Starting table 'cmap_correspondence_evidence' -->
 <a name="cmap_correspondence_evidence" />
-
-<table class="TableHeader" width="100%">
-	<tr class="TableHeaderRow">
-		<td class="TableHeaderCell"><h3>
-	cmap_correspondence_evidence
-</h3></td>
-		<a name="cmap_correspondence_evidence"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td>
-	</tr>
-</table>
-
+<table class="TableHeader" width="100%"><tr class="TableHeaderRow"><td class="TableHeaderCell"><h3>cmap_correspondence_evidence</h3></td> <a name="cmap_correspondence_evidence"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td></tr></table>
 <table border="1">
-
-<tr>
-	<th class="FieldHeader">
-		Field Name
-	</th>
-	<th class="FieldHeader">
-		Data Type
-	</th>
-	<th class="FieldHeader">
-		Size
-	</th>
-	<th class="FieldHeader">
-		Default Value
-	</th>
-	<th class="FieldHeader">
-		Other
-	</th>
-	<th class="FieldHeader">
-		Foreign Key
-	</th>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_correspondence_evidence-correspondence_evidence_id">correspondence_evidence_id</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">PRIMARY KEY, NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_correspondence_evidence-accession_id">accession_id</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">20</td>
-	<td class="FieldCellDefault"></td>
-	<td class="FieldCellOther">UNIQUE, NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_correspondence_evidence-feature_correspondence_id">feature_correspondence_id</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"><a href="#cmap_feature_correspondence-feature_correspondence_id">cmap_feature_correspondence.feature_correspondence_id</a></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_correspondence_evidence-evidence_type_id">evidence_type_id</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"><a href="#cmap_evidence_type-evidence_type_id">cmap_evidence_type.evidence_type_id</a></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_correspondence_evidence-score">score</a></td>
-	<td class="FieldCellType">double</td>
-	<td class="FieldCellSize">8,2</td>
-	<td class="FieldCellDefault">NULL</td>
-	<td class="FieldCellOther"></td>
-	<td class="FieldCellFK"></td>
-</tr>
-
+<tr><th class="FieldHeader">Field Name</th> <th class="FieldHeader">Data Type</th> <th class="FieldHeader">Size</th> <th class="FieldHeader">Default Value</th> <th class="FieldHeader">Other</th> <th class="FieldHeader">Foreign Key</th></tr>
+<tr><td class="FieldCellName"><a name="cmap_correspondence_evidence-correspondence_evidence_id">correspondence_evidence_id</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">PRIMARY KEY, NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_correspondence_evidence-accession_id">accession_id</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">20</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">UNIQUE, NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_correspondence_evidence-feature_correspondence_id">feature_correspondence_id</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"><a href="#cmap_feature_correspondence-feature_correspondence_id">cmap_feature_correspondence.feature_correspondence_id</a></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_correspondence_evidence-evidence_type_id">evidence_type_id</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"><a href="#cmap_evidence_type-evidence_type_id">cmap_evidence_type.evidence_type_id</a></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_correspondence_evidence-score">score</a></td> <td class="FieldCellType">double</td> <td class="FieldCellSize">8,2</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
 </table>
-
-<h3>
-	Indices
-</h3>
-
+<h3>Indices</h3>
 <table border="1">
-
-<tr class="IndexRow">
-	<th>
-		Name
-	</th>
-	<th>
-		Fields
-	</th>
-</tr>
-
-<tr class="IndexCell">
-	<td>feature_correspondence_id</td>
-	<td>feature_correspondence_id</td>
-</tr>
-
+<tr class="IndexRow"><th>Name</th> <th>Fields</th></tr>
+<tr class="IndexCell"><td>feature_correspondence_id</td> <td>feature_correspondence_id</td></tr>
 </table>
-
-<h3>
-	Constraints
-</h3>
-
+<h3>Constraints</h3>
 <table border="1">
-
-<tr class="IndexRow">
-	<th>
-		Type
-	</th>
-	<th>
-		Fields
-	</th>
-</tr>
-
-<tr class="IndexCell">
-	<td>UNIQUE</td>
-	<td>accession_id</td>
-</tr>
-
-<tr class="IndexCell">
-	<td>FOREIGN KEY</td>
-	<td>feature_correspondence_id</td>
-</tr>
-
-<tr class="IndexCell">
-	<td>FOREIGN KEY</td>
-	<td>evidence_type_id</td>
-</tr>
-
+<tr class="IndexRow"><th>Type</th> <th>Fields</th></tr>
+<tr class="IndexCell"><td>UNIQUE</td> <td>accession_id</td></tr>
+<tr class="IndexCell"><td>FOREIGN KEY</td> <td>feature_correspondence_id</td></tr>
+<tr class="IndexCell"><td>FOREIGN KEY</td> <td>evidence_type_id</td></tr>
 </table>
-
 <hr />
-
-<!-- 
-	Starting table 'cmap_correspondence_lookup'
- -->
-
+<!-- Starting table 'cmap_correspondence_lookup' -->
 <a name="cmap_correspondence_lookup" />
-
-<table class="TableHeader" width="100%">
-	<tr class="TableHeaderRow">
-		<td class="TableHeaderCell"><h3>
-	cmap_correspondence_lookup
-</h3></td>
-		<a name="cmap_correspondence_lookup"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td>
-	</tr>
-</table>
-
+<table class="TableHeader" width="100%"><tr class="TableHeaderRow"><td class="TableHeaderCell"><h3>cmap_correspondence_lookup</h3></td> <a name="cmap_correspondence_lookup"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td></tr></table>
 <table border="1">
-
-<tr>
-	<th class="FieldHeader">
-		Field Name
-	</th>
-	<th class="FieldHeader">
-		Data Type
-	</th>
-	<th class="FieldHeader">
-		Size
-	</th>
-	<th class="FieldHeader">
-		Default Value
-	</th>
-	<th class="FieldHeader">
-		Other
-	</th>
-	<th class="FieldHeader">
-		Foreign Key
-	</th>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_correspondence_lookup-feature_id1">feature_id1</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">NULL</td>
-	<td class="FieldCellOther"></td>
-	<td class="FieldCellFK"><a href="#cmap_feature-feature_id">cmap_feature.feature_id</a></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_correspondence_lookup-feature_id2">feature_id2</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">NULL</td>
-	<td class="FieldCellOther"></td>
-	<td class="FieldCellFK"><a href="#cmap_feature-feature_id">cmap_feature.feature_id</a></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_correspondence_lookup-feature_correspondence_id">feature_correspondence_id</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">NULL</td>
-	<td class="FieldCellOther"></td>
-	<td class="FieldCellFK"><a href="#cmap_feature_correspondence-feature_correspondence_id">cmap_feature_correspondence.feature_correspondence_id</a></td>
-</tr>
-
+<tr><th class="FieldHeader">Field Name</th> <th class="FieldHeader">Data Type</th> <th class="FieldHeader">Size</th> <th class="FieldHeader">Default Value</th> <th class="FieldHeader">Other</th> <th class="FieldHeader">Foreign Key</th></tr>
+<tr><td class="FieldCellName"><a name="cmap_correspondence_lookup-feature_id1">feature_id1</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"><a href="#cmap_feature-feature_id">cmap_feature.feature_id</a></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_correspondence_lookup-feature_id2">feature_id2</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"><a href="#cmap_feature-feature_id">cmap_feature.feature_id</a></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_correspondence_lookup-feature_correspondence_id">feature_correspondence_id</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"><a href="#cmap_feature_correspondence-feature_correspondence_id">cmap_feature_correspondence.feature_correspondence_id</a></td></tr>
 </table>
-
-<h3>
-	Indices
-</h3>
-
+<h3>Indices</h3>
 <table border="1">
-
-<tr class="IndexRow">
-	<th>
-		Name
-	</th>
-	<th>
-		Fields
-	</th>
-</tr>
-
-<tr class="IndexCell">
-	<td>feature_id1</td>
-	<td>feature_id1</td>
-</tr>
-
-<tr class="IndexCell">
-	<td>corr_id</td>
-	<td>feature_correspondence_id</td>
-</tr>
-
+<tr class="IndexRow"><th>Name</th> <th>Fields</th></tr>
+<tr class="IndexCell"><td>feature_id1</td> <td>feature_id1</td></tr>
+<tr class="IndexCell"><td>corr_id</td> <td>feature_correspondence_id</td></tr>
 </table>
-
-<h3>
-	Constraints
-</h3>
-
+<h3>Constraints</h3>
 <table border="1">
-
-<tr class="IndexRow">
-	<th>
-		Type
-	</th>
-	<th>
-		Fields
-	</th>
-</tr>
-
-<tr class="IndexCell">
-	<td>FOREIGN KEY</td>
-	<td>feature_id1</td>
-</tr>
-
-<tr class="IndexCell">
-	<td>FOREIGN KEY</td>
-	<td>feature_id2</td>
-</tr>
-
-<tr class="IndexCell">
-	<td>FOREIGN KEY</td>
-	<td>feature_correspondence_id</td>
-</tr>
-
+<tr class="IndexRow"><th>Type</th> <th>Fields</th></tr>
+<tr class="IndexCell"><td>FOREIGN KEY</td> <td>feature_id1</td></tr>
+<tr class="IndexCell"><td>FOREIGN KEY</td> <td>feature_id2</td></tr>
+<tr class="IndexCell"><td>FOREIGN KEY</td> <td>feature_correspondence_id</td></tr>
 </table>
-
 <hr />
-
-<!-- 
-	Starting table 'cmap_correspondence_matrix'
- -->
-
+<!-- Starting table 'cmap_correspondence_matrix' -->
 <a name="cmap_correspondence_matrix" />
-
-<table class="TableHeader" width="100%">
-	<tr class="TableHeaderRow">
-		<td class="TableHeaderCell"><h3>
-	cmap_correspondence_matrix
-</h3></td>
-		<a name="cmap_correspondence_matrix"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td>
-	</tr>
-</table>
-
+<table class="TableHeader" width="100%"><tr class="TableHeaderRow"><td class="TableHeaderCell"><h3>cmap_correspondence_matrix</h3></td> <a name="cmap_correspondence_matrix"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td></tr></table>
 <table border="1">
-
-<tr>
-	<th class="FieldHeader">
-		Field Name
-	</th>
-	<th class="FieldHeader">
-		Data Type
-	</th>
-	<th class="FieldHeader">
-		Size
-	</th>
-	<th class="FieldHeader">
-		Default Value
-	</th>
-	<th class="FieldHeader">
-		Other
-	</th>
-	<th class="FieldHeader">
-		Foreign Key
-	</th>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_correspondence_matrix-reference_map_aid">reference_map_aid</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">20</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_correspondence_matrix-reference_map_name">reference_map_name</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">32</td>
-	<td class="FieldCellDefault"></td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_correspondence_matrix-reference_map_set_aid">reference_map_set_aid</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">20</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_correspondence_matrix-reference_species_aid">reference_species_aid</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">20</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_correspondence_matrix-link_map_aid">link_map_aid</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">20</td>
-	<td class="FieldCellDefault">NULL</td>
-	<td class="FieldCellOther"></td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_correspondence_matrix-link_map_name">link_map_name</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">32</td>
-	<td class="FieldCellDefault">NULL</td>
-	<td class="FieldCellOther"></td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_correspondence_matrix-link_map_set_aid">link_map_set_aid</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">20</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_correspondence_matrix-link_species_aid">link_species_aid</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">20</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_correspondence_matrix-no_correspondences">no_correspondences</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
+<tr><th class="FieldHeader">Field Name</th> <th class="FieldHeader">Data Type</th> <th class="FieldHeader">Size</th> <th class="FieldHeader">Default Value</th> <th class="FieldHeader">Other</th> <th class="FieldHeader">Foreign Key</th></tr>
+<tr><td class="FieldCellName"><a name="cmap_correspondence_matrix-reference_map_aid">reference_map_aid</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">20</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_correspondence_matrix-reference_map_name">reference_map_name</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">32</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_correspondence_matrix-reference_map_set_aid">reference_map_set_aid</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">20</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_correspondence_matrix-reference_species_aid">reference_species_aid</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">20</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_correspondence_matrix-link_map_aid">link_map_aid</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">20</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_correspondence_matrix-link_map_name">link_map_name</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">32</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_correspondence_matrix-link_map_set_aid">link_map_set_aid</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">20</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_correspondence_matrix-link_species_aid">link_species_aid</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">20</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_correspondence_matrix-no_correspondences">no_correspondences</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
 </table>
-
 <hr />
-
-<!-- 
-	Starting table 'cmap_evidence_type'
- -->
-
+<!-- Starting table 'cmap_evidence_type' -->
 <a name="cmap_evidence_type" />
-
-<table class="TableHeader" width="100%">
-	<tr class="TableHeaderRow">
-		<td class="TableHeaderCell"><h3>
-	cmap_evidence_type
-</h3></td>
-		<a name="cmap_evidence_type"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td>
-	</tr>
-</table>
-
+<table class="TableHeader" width="100%"><tr class="TableHeaderRow"><td class="TableHeaderCell"><h3>cmap_evidence_type</h3></td> <a name="cmap_evidence_type"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td></tr></table>
 <table border="1">
-
-<tr>
-	<th class="FieldHeader">
-		Field Name
-	</th>
-	<th class="FieldHeader">
-		Data Type
-	</th>
-	<th class="FieldHeader">
-		Size
-	</th>
-	<th class="FieldHeader">
-		Default Value
-	</th>
-	<th class="FieldHeader">
-		Other
-	</th>
-	<th class="FieldHeader">
-		Foreign Key
-	</th>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_evidence_type-evidence_type_id">evidence_type_id</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">PRIMARY KEY, NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_evidence_type-accession_id">accession_id</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">20</td>
-	<td class="FieldCellDefault"></td>
-	<td class="FieldCellOther">UNIQUE, NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_evidence_type-evidence_type">evidence_type</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">30</td>
-	<td class="FieldCellDefault"></td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_evidence_type-rank">rank</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">UNIQUE, NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_evidence_type-line_color">line_color</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">20</td>
-	<td class="FieldCellDefault">NULL</td>
-	<td class="FieldCellOther"></td>
-	<td class="FieldCellFK"></td>
-</tr>
-
+<tr><th class="FieldHeader">Field Name</th> <th class="FieldHeader">Data Type</th> <th class="FieldHeader">Size</th> <th class="FieldHeader">Default Value</th> <th class="FieldHeader">Other</th> <th class="FieldHeader">Foreign Key</th></tr>
+<tr><td class="FieldCellName"><a name="cmap_evidence_type-evidence_type_id">evidence_type_id</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">PRIMARY KEY, NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_evidence_type-accession_id">accession_id</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">20</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">UNIQUE, NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_evidence_type-evidence_type">evidence_type</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">30</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_evidence_type-rank">rank</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">UNIQUE, NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_evidence_type-line_color">line_color</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">20</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
 </table>
-
-<h3>
-	Constraints
-</h3>
-
+<h3>Constraints</h3>
 <table border="1">
-
-<tr class="IndexRow">
-	<th>
-		Type
-	</th>
-	<th>
-		Fields
-	</th>
-</tr>
-
-<tr class="IndexCell">
-	<td>UNIQUE</td>
-	<td>accession_id</td>
-</tr>
-
-<tr class="IndexCell">
-	<td>UNIQUE</td>
-	<td>rank</td>
-</tr>
-
+<tr class="IndexRow"><th>Type</th> <th>Fields</th></tr>
+<tr class="IndexCell"><td>UNIQUE</td> <td>accession_id</td></tr>
+<tr class="IndexCell"><td>UNIQUE</td> <td>rank</td></tr>
 </table>
-
 <hr />
-
-<!-- 
-	Starting table 'cmap_feature'
- -->
-
+<!-- Starting table 'cmap_feature' -->
 <a name="cmap_feature" />
-
-<table class="TableHeader" width="100%">
-	<tr class="TableHeaderRow">
-		<td class="TableHeaderCell"><h3>
-	cmap_feature
-</h3></td>
-		<a name="cmap_feature"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td>
-	</tr>
-</table>
-
+<table class="TableHeader" width="100%"><tr class="TableHeaderRow"><td class="TableHeaderCell"><h3>cmap_feature</h3></td> <a name="cmap_feature"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td></tr></table>
 <table border="1">
-
-<tr>
-	<th class="FieldHeader">
-		Field Name
-	</th>
-	<th class="FieldHeader">
-		Data Type
-	</th>
-	<th class="FieldHeader">
-		Size
-	</th>
-	<th class="FieldHeader">
-		Default Value
-	</th>
-	<th class="FieldHeader">
-		Other
-	</th>
-	<th class="FieldHeader">
-		Foreign Key
-	</th>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_feature-feature_id">feature_id</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">PRIMARY KEY, NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_feature-accession_id">accession_id</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">20</td>
-	<td class="FieldCellDefault"></td>
-	<td class="FieldCellOther">UNIQUE, NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_feature-map_id">map_id</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"><a href="#cmap_map-map_id">cmap_map.map_id</a></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_feature-feature_type_id">feature_type_id</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"><a href="#cmap_feature_type-feature_type_id">cmap_feature_type.feature_type_id</a></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_feature-feature_name">feature_name</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">32</td>
-	<td class="FieldCellDefault"></td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_feature-is_landmark">is_landmark</a></td>
-	<td class="FieldCellType">tinyint</td>
-	<td class="FieldCellSize">4</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_feature-start_position">start_position</a></td>
-	<td class="FieldCellType">double</td>
-	<td class="FieldCellSize">11,2</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_feature-stop_position">stop_position</a></td>
-	<td class="FieldCellType">double</td>
-	<td class="FieldCellSize">11,2</td>
-	<td class="FieldCellDefault">NULL</td>
-	<td class="FieldCellOther"></td>
-	<td class="FieldCellFK"></td>
-</tr>
-
+<tr><th class="FieldHeader">Field Name</th> <th class="FieldHeader">Data Type</th> <th class="FieldHeader">Size</th> <th class="FieldHeader">Default Value</th> <th class="FieldHeader">Other</th> <th class="FieldHeader">Foreign Key</th></tr>
+<tr><td class="FieldCellName"><a name="cmap_feature-feature_id">feature_id</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">PRIMARY KEY, NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_feature-accession_id">accession_id</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">20</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">UNIQUE, NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_feature-map_id">map_id</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"><a href="#cmap_map-map_id">cmap_map.map_id</a></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_feature-feature_type_id">feature_type_id</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"><a href="#cmap_feature_type-feature_type_id">cmap_feature_type.feature_type_id</a></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_feature-feature_name">feature_name</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">32</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_feature-is_landmark">is_landmark</a></td> <td class="FieldCellType">tinyint</td> <td class="FieldCellSize">4</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_feature-start_position">start_position</a></td> <td class="FieldCellType">double</td> <td class="FieldCellSize">11,2</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_feature-stop_position">stop_position</a></td> <td class="FieldCellType">double</td> <td class="FieldCellSize">11,2</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
 </table>
-
-<h3>
-	Indices
-</h3>
-
+<h3>Indices</h3>
 <table border="1">
-
-<tr class="IndexRow">
-	<th>
-		Name
-	</th>
-	<th>
-		Fields
-	</th>
-</tr>
-
-<tr class="IndexCell">
-	<td>feature_name</td>
-	<td>feature_name</td>
-</tr>
-
-<tr class="IndexCell">
-	<td>feature_id_map_id</td>
-	<td>feature_id, map_id</td>
-</tr>
-
-<tr class="IndexCell">
-	<td>feature_id_map_id_start</td>
-	<td>feature_id, map_id, start_position</td>
-</tr>
-
-<tr class="IndexCell">
-	<td>map_id</td>
-	<td>map_id</td>
-</tr>
-
-<tr class="IndexCell">
-	<td>map_id_feature_id</td>
-	<td>map_id, feature_id</td>
-</tr>
-
+<tr class="IndexRow"><th>Name</th> <th>Fields</th></tr>
+<tr class="IndexCell"><td>feature_name</td> <td>feature_name</td></tr>
+<tr class="IndexCell"><td>feature_id_map_id</td> <td>feature_id, map_id</td></tr>
+<tr class="IndexCell"><td>feature_id_map_id_start</td> <td>feature_id, map_id, start_position</td></tr>
+<tr class="IndexCell"><td>map_id</td> <td>map_id</td></tr>
+<tr class="IndexCell"><td>map_id_feature_id</td> <td>map_id, feature_id</td></tr>
 </table>
-
-<h3>
-	Constraints
-</h3>
-
+<h3>Constraints</h3>
 <table border="1">
-
-<tr class="IndexRow">
-	<th>
-		Type
-	</th>
-	<th>
-		Fields
-	</th>
-</tr>
-
-<tr class="IndexCell">
-	<td>UNIQUE</td>
-	<td>accession_id</td>
-</tr>
-
-<tr class="IndexCell">
-	<td>FOREIGN KEY</td>
-	<td>map_id</td>
-</tr>
-
-<tr class="IndexCell">
-	<td>FOREIGN KEY</td>
-	<td>feature_type_id</td>
-</tr>
-
+<tr class="IndexRow"><th>Type</th> <th>Fields</th></tr>
+<tr class="IndexCell"><td>UNIQUE</td> <td>accession_id</td></tr>
+<tr class="IndexCell"><td>FOREIGN KEY</td> <td>map_id</td></tr>
+<tr class="IndexCell"><td>FOREIGN KEY</td> <td>feature_type_id</td></tr>
 </table>
-
 <hr />
-
-<!-- 
-	Starting table 'cmap_feature_alias'
- -->
-
+<!-- Starting table 'cmap_feature_alias' -->
 <a name="cmap_feature_alias" />
-
-<table class="TableHeader" width="100%">
-	<tr class="TableHeaderRow">
-		<td class="TableHeaderCell"><h3>
-	cmap_feature_alias
-</h3></td>
-		<a name="cmap_feature_alias"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td>
-	</tr>
-</table>
-
+<table class="TableHeader" width="100%"><tr class="TableHeaderRow"><td class="TableHeaderCell"><h3>cmap_feature_alias</h3></td> <a name="cmap_feature_alias"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td></tr></table>
 <table border="1">
-
-<tr>
-	<th class="FieldHeader">
-		Field Name
-	</th>
-	<th class="FieldHeader">
-		Data Type
-	</th>
-	<th class="FieldHeader">
-		Size
-	</th>
-	<th class="FieldHeader">
-		Default Value
-	</th>
-	<th class="FieldHeader">
-		Other
-	</th>
-	<th class="FieldHeader">
-		Foreign Key
-	</th>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_feature_alias-feature_alias_id">feature_alias_id</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">PRIMARY KEY, NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_feature_alias-feature_id">feature_id</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">UNIQUE, NOT NULL</td>
-	<td class="FieldCellFK"><a href="#cmap_feature-feature_id">cmap_feature.feature_id</a></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_feature_alias-alias">alias</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">255</td>
-	<td class="FieldCellDefault">NULL</td>
-	<td class="FieldCellOther">UNIQUE</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
+<tr><th class="FieldHeader">Field Name</th> <th class="FieldHeader">Data Type</th> <th class="FieldHeader">Size</th> <th class="FieldHeader">Default Value</th> <th class="FieldHeader">Other</th> <th class="FieldHeader">Foreign Key</th></tr>
+<tr><td class="FieldCellName"><a name="cmap_feature_alias-feature_alias_id">feature_alias_id</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">PRIMARY KEY, NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_feature_alias-feature_id">feature_id</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">UNIQUE, NOT NULL</td> <td class="FieldCellFK"><a href="#cmap_feature-feature_id">cmap_feature.feature_id</a></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_feature_alias-alias">alias</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">255</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther">UNIQUE</td> <td class="FieldCellFK"></td></tr>
 </table>
-
-<h3>
-	Indices
-</h3>
-
+<h3>Indices</h3>
 <table border="1">
-
-<tr class="IndexRow">
-	<th>
-		Name
-	</th>
-	<th>
-		Fields
-	</th>
-</tr>
-
-<tr class="IndexCell">
-	<td>feature_id</td>
-	<td>feature_id</td>
-</tr>
-
-<tr class="IndexCell">
-	<td>alias</td>
-	<td>alias</td>
-</tr>
-
+<tr class="IndexRow"><th>Name</th> <th>Fields</th></tr>
+<tr class="IndexCell"><td>feature_id</td> <td>feature_id</td></tr>
+<tr class="IndexCell"><td>alias</td> <td>alias</td></tr>
 </table>
-
-<h3>
-	Constraints
-</h3>
-
+<h3>Constraints</h3>
 <table border="1">
-
-<tr class="IndexRow">
-	<th>
-		Type
-	</th>
-	<th>
-		Fields
-	</th>
-</tr>
-
-<tr class="IndexCell">
-	<td>UNIQUE</td>
-	<td>feature_id, alias</td>
-</tr>
-
-<tr class="IndexCell">
-	<td>FOREIGN KEY</td>
-	<td>feature_id</td>
-</tr>
-
+<tr class="IndexRow"><th>Type</th> <th>Fields</th></tr>
+<tr class="IndexCell"><td>UNIQUE</td> <td>feature_id, alias</td></tr>
+<tr class="IndexCell"><td>FOREIGN KEY</td> <td>feature_id</td></tr>
 </table>
-
 <hr />
-
-<!-- 
-	Starting table 'cmap_feature_correspondence'
- -->
-
+<!-- Starting table 'cmap_feature_correspondence' -->
 <a name="cmap_feature_correspondence" />
-
-<table class="TableHeader" width="100%">
-	<tr class="TableHeaderRow">
-		<td class="TableHeaderCell"><h3>
-	cmap_feature_correspondence
-</h3></td>
-		<a name="cmap_feature_correspondence"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td>
-	</tr>
-</table>
-
+<table class="TableHeader" width="100%"><tr class="TableHeaderRow"><td class="TableHeaderCell"><h3>cmap_feature_correspondence</h3></td> <a name="cmap_feature_correspondence"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td></tr></table>
 <table border="1">
-
-<tr>
-	<th class="FieldHeader">
-		Field Name
-	</th>
-	<th class="FieldHeader">
-		Data Type
-	</th>
-	<th class="FieldHeader">
-		Size
-	</th>
-	<th class="FieldHeader">
-		Default Value
-	</th>
-	<th class="FieldHeader">
-		Other
-	</th>
-	<th class="FieldHeader">
-		Foreign Key
-	</th>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_feature_correspondence-feature_correspondence_id">feature_correspondence_id</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">PRIMARY KEY, NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_feature_correspondence-accession_id">accession_id</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">20</td>
-	<td class="FieldCellDefault"></td>
-	<td class="FieldCellOther">UNIQUE, NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_feature_correspondence-feature_id1">feature_id1</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"><a href="#cmap_feature-feature_id">cmap_feature.feature_id</a></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_feature_correspondence-feature_id2">feature_id2</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"><a href="#cmap_feature-feature_id">cmap_feature.feature_id</a></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_feature_correspondence-is_enabled">is_enabled</a></td>
-	<td class="FieldCellType">tinyint</td>
-	<td class="FieldCellSize">4</td>
-	<td class="FieldCellDefault">1</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
+<tr><th class="FieldHeader">Field Name</th> <th class="FieldHeader">Data Type</th> <th class="FieldHeader">Size</th> <th class="FieldHeader">Default Value</th> <th class="FieldHeader">Other</th> <th class="FieldHeader">Foreign Key</th></tr>
+<tr><td class="FieldCellName"><a name="cmap_feature_correspondence-feature_correspondence_id">feature_correspondence_id</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">PRIMARY KEY, NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_feature_correspondence-accession_id">accession_id</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">20</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">UNIQUE, NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_feature_correspondence-feature_id1">feature_id1</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"><a href="#cmap_feature-feature_id">cmap_feature.feature_id</a></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_feature_correspondence-feature_id2">feature_id2</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"><a href="#cmap_feature-feature_id">cmap_feature.feature_id</a></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_feature_correspondence-is_enabled">is_enabled</a></td> <td class="FieldCellType">tinyint</td> <td class="FieldCellSize">4</td> <td class="FieldCellDefault">1</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
 </table>
-
-<h3>
-	Indices
-</h3>
-
+<h3>Indices</h3>
 <table border="1">
-
-<tr class="IndexRow">
-	<th>
-		Name
-	</th>
-	<th>
-		Fields
-	</th>
-</tr>
-
-<tr class="IndexCell">
-	<td>feature_id1</td>
-	<td>feature_id1</td>
-</tr>
-
-<tr class="IndexCell">
-	<td>cmap_feature_corresp_idx</td>
-	<td>is_enabled, feature_correspondence_id</td>
-</tr>
-
+<tr class="IndexRow"><th>Name</th> <th>Fields</th></tr>
+<tr class="IndexCell"><td>feature_id1</td> <td>feature_id1</td></tr>
+<tr class="IndexCell"><td>cmap_feature_corresp_idx</td> <td>is_enabled, feature_correspondence_id</td></tr>
 </table>
-
-<h3>
-	Constraints
-</h3>
-
+<h3>Constraints</h3>
 <table border="1">
-
-<tr class="IndexRow">
-	<th>
-		Type
-	</th>
-	<th>
-		Fields
-	</th>
-</tr>
-
-<tr class="IndexCell">
-	<td>UNIQUE</td>
-	<td>accession_id</td>
-</tr>
-
-<tr class="IndexCell">
-	<td>FOREIGN KEY</td>
-	<td>feature_id1</td>
-</tr>
-
-<tr class="IndexCell">
-	<td>FOREIGN KEY</td>
-	<td>feature_id2</td>
-</tr>
-
+<tr class="IndexRow"><th>Type</th> <th>Fields</th></tr>
+<tr class="IndexCell"><td>UNIQUE</td> <td>accession_id</td></tr>
+<tr class="IndexCell"><td>FOREIGN KEY</td> <td>feature_id1</td></tr>
+<tr class="IndexCell"><td>FOREIGN KEY</td> <td>feature_id2</td></tr>
 </table>
-
 <hr />
-
-<!-- 
-	Starting table 'cmap_feature_type'
- -->
-
+<!-- Starting table 'cmap_feature_type' -->
 <a name="cmap_feature_type" />
-
-<table class="TableHeader" width="100%">
-	<tr class="TableHeaderRow">
-		<td class="TableHeaderCell"><h3>
-	cmap_feature_type
-</h3></td>
-		<a name="cmap_feature_type"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td>
-	</tr>
-</table>
-
+<table class="TableHeader" width="100%"><tr class="TableHeaderRow"><td class="TableHeaderCell"><h3>cmap_feature_type</h3></td> <a name="cmap_feature_type"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td></tr></table>
 <table border="1">
-
-<tr>
-	<th class="FieldHeader">
-		Field Name
-	</th>
-	<th class="FieldHeader">
-		Data Type
-	</th>
-	<th class="FieldHeader">
-		Size
-	</th>
-	<th class="FieldHeader">
-		Default Value
-	</th>
-	<th class="FieldHeader">
-		Other
-	</th>
-	<th class="FieldHeader">
-		Foreign Key
-	</th>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_feature_type-feature_type_id">feature_type_id</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">PRIMARY KEY, NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_feature_type-accession_id">accession_id</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">20</td>
-	<td class="FieldCellDefault"></td>
-	<td class="FieldCellOther">UNIQUE, NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_feature_type-feature_type">feature_type</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">32</td>
-	<td class="FieldCellDefault"></td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_feature_type-default_rank">default_rank</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">1</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_feature_type-shape">shape</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">12</td>
-	<td class="FieldCellDefault">NULL</td>
-	<td class="FieldCellOther"></td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_feature_type-color">color</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">20</td>
-	<td class="FieldCellDefault">NULL</td>
-	<td class="FieldCellOther"></td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_feature_type-drawing_lane">drawing_lane</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">1</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_feature_type-drawing_priority">drawing_priority</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">1</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
+<tr><th class="FieldHeader">Field Name</th> <th class="FieldHeader">Data Type</th> <th class="FieldHeader">Size</th> <th class="FieldHeader">Default Value</th> <th class="FieldHeader">Other</th> <th class="FieldHeader">Foreign Key</th></tr>
+<tr><td class="FieldCellName"><a name="cmap_feature_type-feature_type_id">feature_type_id</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">PRIMARY KEY, NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_feature_type-accession_id">accession_id</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">20</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">UNIQUE, NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_feature_type-feature_type">feature_type</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">32</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_feature_type-default_rank">default_rank</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">1</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_feature_type-shape">shape</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">12</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_feature_type-color">color</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">20</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_feature_type-drawing_lane">drawing_lane</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">1</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_feature_type-drawing_priority">drawing_priority</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">1</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
 </table>
-
-<h3>
-	Constraints
-</h3>
-
+<h3>Constraints</h3>
 <table border="1">
-
-<tr class="IndexRow">
-	<th>
-		Type
-	</th>
-	<th>
-		Fields
-	</th>
-</tr>
-
-<tr class="IndexCell">
-	<td>UNIQUE</td>
-	<td>accession_id</td>
-</tr>
-
+<tr class="IndexRow"><th>Type</th> <th>Fields</th></tr>
+<tr class="IndexCell"><td>UNIQUE</td> <td>accession_id</td></tr>
 </table>
-
 <hr />
-
-<!-- 
-	Starting table 'cmap_map'
- -->
-
+<!-- Starting table 'cmap_map' -->
 <a name="cmap_map" />
-
-<table class="TableHeader" width="100%">
-	<tr class="TableHeaderRow">
-		<td class="TableHeaderCell"><h3>
-	cmap_map
-</h3></td>
-		<a name="cmap_map"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td>
-	</tr>
-</table>
-
+<table class="TableHeader" width="100%"><tr class="TableHeaderRow"><td class="TableHeaderCell"><h3>cmap_map</h3></td> <a name="cmap_map"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td></tr></table>
 <table border="1">
-
-<tr>
-	<th class="FieldHeader">
-		Field Name
-	</th>
-	<th class="FieldHeader">
-		Data Type
-	</th>
-	<th class="FieldHeader">
-		Size
-	</th>
-	<th class="FieldHeader">
-		Default Value
-	</th>
-	<th class="FieldHeader">
-		Other
-	</th>
-	<th class="FieldHeader">
-		Foreign Key
-	</th>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map-map_id">map_id</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">PRIMARY KEY, UNIQUE, NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map-accession_id">accession_id</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">20</td>
-	<td class="FieldCellDefault"></td>
-	<td class="FieldCellOther">UNIQUE, NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map-map_set_id">map_set_id</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">UNIQUE, NOT NULL</td>
-	<td class="FieldCellFK"><a href="#cmap_map_set-map_set_id">cmap_map_set.map_set_id</a></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map-map_name">map_name</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">32</td>
-	<td class="FieldCellDefault"></td>
-	<td class="FieldCellOther">UNIQUE, NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map-display_order">display_order</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">1</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map-start_position">start_position</a></td>
-	<td class="FieldCellType">double</td>
-	<td class="FieldCellSize">11,2</td>
-	<td class="FieldCellDefault">NULL</td>
-	<td class="FieldCellOther"></td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map-stop_position">stop_position</a></td>
-	<td class="FieldCellType">double</td>
-	<td class="FieldCellSize">11,2</td>
-	<td class="FieldCellDefault">NULL</td>
-	<td class="FieldCellOther"></td>
-	<td class="FieldCellFK"></td>
-</tr>
-
+<tr><th class="FieldHeader">Field Name</th> <th class="FieldHeader">Data Type</th> <th class="FieldHeader">Size</th> <th class="FieldHeader">Default Value</th> <th class="FieldHeader">Other</th> <th class="FieldHeader">Foreign Key</th></tr>
+<tr><td class="FieldCellName"><a name="cmap_map-map_id">map_id</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">PRIMARY KEY, UNIQUE, NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map-accession_id">accession_id</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">20</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">UNIQUE, NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map-map_set_id">map_set_id</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">UNIQUE, NOT NULL</td> <td class="FieldCellFK"><a href="#cmap_map_set-map_set_id">cmap_map_set.map_set_id</a></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map-map_name">map_name</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">32</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">UNIQUE, NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map-display_order">display_order</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">1</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map-start_position">start_position</a></td> <td class="FieldCellType">double</td> <td class="FieldCellSize">11,2</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map-stop_position">stop_position</a></td> <td class="FieldCellType">double</td> <td class="FieldCellSize">11,2</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
 </table>
-
-<h3>
-	Constraints
-</h3>
-
+<h3>Constraints</h3>
 <table border="1">
-
-<tr class="IndexRow">
-	<th>
-		Type
-	</th>
-	<th>
-		Fields
-	</th>
-</tr>
-
-<tr class="IndexCell">
-	<td>UNIQUE</td>
-	<td>accession_id</td>
-</tr>
-
-<tr class="IndexCell">
-	<td>UNIQUE</td>
-	<td>map_id, map_set_id, map_name, accession_id</td>
-</tr>
-
-<tr class="IndexCell">
-	<td>FOREIGN KEY</td>
-	<td>map_set_id</td>
-</tr>
-
+<tr class="IndexRow"><th>Type</th> <th>Fields</th></tr>
+<tr class="IndexCell"><td>UNIQUE</td> <td>accession_id</td></tr>
+<tr class="IndexCell"><td>UNIQUE</td> <td>map_id, map_set_id, map_name, accession_id</td></tr>
+<tr class="IndexCell"><td>FOREIGN KEY</td> <td>map_set_id</td></tr>
 </table>
-
 <hr />
-
-<!-- 
-	Starting table 'cmap_map_cache'
- -->
-
+<!-- Starting table 'cmap_map_cache' -->
 <a name="cmap_map_cache" />
-
-<table class="TableHeader" width="100%">
-	<tr class="TableHeaderRow">
-		<td class="TableHeaderCell"><h3>
-	cmap_map_cache
-</h3></td>
-		<a name="cmap_map_cache"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td>
-	</tr>
-</table>
-
+<table class="TableHeader" width="100%"><tr class="TableHeaderRow"><td class="TableHeaderCell"><h3>cmap_map_cache</h3></td> <a name="cmap_map_cache"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td></tr></table>
 <table border="1">
-
-<tr>
-	<th class="FieldHeader">
-		Field Name
-	</th>
-	<th class="FieldHeader">
-		Data Type
-	</th>
-	<th class="FieldHeader">
-		Size
-	</th>
-	<th class="FieldHeader">
-		Default Value
-	</th>
-	<th class="FieldHeader">
-		Other
-	</th>
-	<th class="FieldHeader">
-		Foreign Key
-	</th>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map_cache-pid">pid</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map_cache-slot_no">slot_no</a></td>
-	<td class="FieldCellType">smallint</td>
-	<td class="FieldCellSize">6</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map_cache-map_id">map_id</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"><a href="#cmap_map-map_id">cmap_map.map_id</a></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map_cache-start_position">start_position</a></td>
-	<td class="FieldCellType">double</td>
-	<td class="FieldCellSize">11,2</td>
-	<td class="FieldCellDefault">NULL</td>
-	<td class="FieldCellOther"></td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map_cache-stop_position">stop_position</a></td>
-	<td class="FieldCellType">double</td>
-	<td class="FieldCellSize">11,2</td>
-	<td class="FieldCellDefault">NULL</td>
-	<td class="FieldCellOther"></td>
-	<td class="FieldCellFK"></td>
-</tr>
-
+<tr><th class="FieldHeader">Field Name</th> <th class="FieldHeader">Data Type</th> <th class="FieldHeader">Size</th> <th class="FieldHeader">Default Value</th> <th class="FieldHeader">Other</th> <th class="FieldHeader">Foreign Key</th></tr>
+<tr><td class="FieldCellName"><a name="cmap_map_cache-pid">pid</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map_cache-slot_no">slot_no</a></td> <td class="FieldCellType">smallint</td> <td class="FieldCellSize">6</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map_cache-map_id">map_id</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"><a href="#cmap_map-map_id">cmap_map.map_id</a></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map_cache-start_position">start_position</a></td> <td class="FieldCellType">double</td> <td class="FieldCellSize">11,2</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map_cache-stop_position">stop_position</a></td> <td class="FieldCellType">double</td> <td class="FieldCellSize">11,2</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
 </table>
-
-<h3>
-	Indices
-</h3>
-
+<h3>Indices</h3>
 <table border="1">
-
-<tr class="IndexRow">
-	<th>
-		Name
-	</th>
-	<th>
-		Fields
-	</th>
-</tr>
-
-<tr class="IndexCell">
-	<td>pid_cmap_map_cache</td>
-	<td>pid, slot_no, map_id</td>
-</tr>
-
+<tr class="IndexRow"><th>Name</th> <th>Fields</th></tr>
+<tr class="IndexCell"><td>pid_cmap_map_cache</td> <td>pid, slot_no, map_id</td></tr>
 </table>
-
-<h3>
-	Constraints
-</h3>
-
+<h3>Constraints</h3>
 <table border="1">
-
-<tr class="IndexRow">
-	<th>
-		Type
-	</th>
-	<th>
-		Fields
-	</th>
-</tr>
-
-<tr class="IndexCell">
-	<td>FOREIGN KEY</td>
-	<td>map_id</td>
-</tr>
-
+<tr class="IndexRow"><th>Type</th> <th>Fields</th></tr>
+<tr class="IndexCell"><td>FOREIGN KEY</td> <td>map_id</td></tr>
 </table>
-
 <hr />
-
-<!-- 
-	Starting table 'cmap_map_set'
- -->
-
+<!-- Starting table 'cmap_map_set' -->
 <a name="cmap_map_set" />
-
-<table class="TableHeader" width="100%">
-	<tr class="TableHeaderRow">
-		<td class="TableHeaderCell"><h3>
-	cmap_map_set
-</h3></td>
-		<a name="cmap_map_set"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td>
-	</tr>
-</table>
-
+<table class="TableHeader" width="100%"><tr class="TableHeaderRow"><td class="TableHeaderCell"><h3>cmap_map_set</h3></td> <a name="cmap_map_set"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td></tr></table>
 <table border="1">
-
-<tr>
-	<th class="FieldHeader">
-		Field Name
-	</th>
-	<th class="FieldHeader">
-		Data Type
-	</th>
-	<th class="FieldHeader">
-		Size
-	</th>
-	<th class="FieldHeader">
-		Default Value
-	</th>
-	<th class="FieldHeader">
-		Other
-	</th>
-	<th class="FieldHeader">
-		Foreign Key
-	</th>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map_set-map_set_id">map_set_id</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">PRIMARY KEY, UNIQUE, NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map_set-accession_id">accession_id</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">20</td>
-	<td class="FieldCellDefault"></td>
-	<td class="FieldCellOther">UNIQUE, NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map_set-map_set_name">map_set_name</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">64</td>
-	<td class="FieldCellDefault"></td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map_set-short_name">short_name</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">30</td>
-	<td class="FieldCellDefault"></td>
-	<td class="FieldCellOther">UNIQUE, NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map_set-map_type_id">map_type_id</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"><a href="#cmap_map_type-map_type_id">cmap_map_type.map_type_id</a></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map_set-species_id">species_id</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">UNIQUE, NOT NULL</td>
-	<td class="FieldCellFK"><a href="#cmap_species-species_id">cmap_species.species_id</a></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map_set-published_on">published_on</a></td>
-	<td class="FieldCellType">date</td>
-	<td class="FieldCellSize">0</td>
-	<td class="FieldCellDefault">NULL</td>
-	<td class="FieldCellOther"></td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map_set-can_be_reference_map">can_be_reference_map</a></td>
-	<td class="FieldCellType">tinyint</td>
-	<td class="FieldCellSize">4</td>
-	<td class="FieldCellDefault">1</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map_set-display_order">display_order</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">1</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map_set-is_enabled">is_enabled</a></td>
-	<td class="FieldCellType">tinyint</td>
-	<td class="FieldCellSize">4</td>
-	<td class="FieldCellDefault">1</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map_set-shape">shape</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">12</td>
-	<td class="FieldCellDefault">NULL</td>
-	<td class="FieldCellOther"></td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map_set-color">color</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">20</td>
-	<td class="FieldCellDefault">NULL</td>
-	<td class="FieldCellOther"></td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map_set-width">width</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">NULL</td>
-	<td class="FieldCellOther"></td>
-	<td class="FieldCellFK"></td>
-</tr>
-
+<tr><th class="FieldHeader">Field Name</th> <th class="FieldHeader">Data Type</th> <th class="FieldHeader">Size</th> <th class="FieldHeader">Default Value</th> <th class="FieldHeader">Other</th> <th class="FieldHeader">Foreign Key</th></tr>
+<tr><td class="FieldCellName"><a name="cmap_map_set-map_set_id">map_set_id</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">PRIMARY KEY, UNIQUE, NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map_set-accession_id">accession_id</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">20</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">UNIQUE, NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map_set-map_set_name">map_set_name</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">64</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map_set-short_name">short_name</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">30</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">UNIQUE, NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map_set-map_type_id">map_type_id</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"><a href="#cmap_map_type-map_type_id">cmap_map_type.map_type_id</a></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map_set-species_id">species_id</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">UNIQUE, NOT NULL</td> <td class="FieldCellFK"><a href="#cmap_species-species_id">cmap_species.species_id</a></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map_set-published_on">published_on</a></td> <td class="FieldCellType">date</td> <td class="FieldCellSize">0</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map_set-can_be_reference_map">can_be_reference_map</a></td> <td class="FieldCellType">tinyint</td> <td class="FieldCellSize">4</td> <td class="FieldCellDefault">1</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map_set-display_order">display_order</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">1</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map_set-is_enabled">is_enabled</a></td> <td class="FieldCellType">tinyint</td> <td class="FieldCellSize">4</td> <td class="FieldCellDefault">1</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map_set-shape">shape</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">12</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map_set-color">color</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">20</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map_set-width">width</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
 </table>
-
-<h3>
-	Indices
-</h3>
-
+<h3>Indices</h3>
 <table border="1">
-
-<tr class="IndexRow">
-	<th>
-		Name
-	</th>
-	<th>
-		Fields
-	</th>
-</tr>
-
-<tr class="IndexCell">
-	<td>cmap_map_set_idx</td>
-	<td>can_be_reference_map, is_enabled, species_id, display_order, published_on, short_name</td>
-</tr>
-
+<tr class="IndexRow"><th>Name</th> <th>Fields</th></tr>
+<tr class="IndexCell"><td>cmap_map_set_idx</td> <td>can_be_reference_map, is_enabled, species_id, display_order, published_on, short_name</td></tr>
 </table>
-
-<h3>
-	Constraints
-</h3>
-
+<h3>Constraints</h3>
 <table border="1">
-
-<tr class="IndexRow">
-	<th>
-		Type
-	</th>
-	<th>
-		Fields
-	</th>
-</tr>
-
-<tr class="IndexCell">
-	<td>UNIQUE</td>
-	<td>accession_id</td>
-</tr>
-
-<tr class="IndexCell">
-	<td>UNIQUE</td>
-	<td>map_set_id, species_id, short_name, accession_id</td>
-</tr>
-
-<tr class="IndexCell">
-	<td>FOREIGN KEY</td>
-	<td>map_type_id</td>
-</tr>
-
-<tr class="IndexCell">
-	<td>FOREIGN KEY</td>
-	<td>species_id</td>
-</tr>
-
+<tr class="IndexRow"><th>Type</th> <th>Fields</th></tr>
+<tr class="IndexCell"><td>UNIQUE</td> <td>accession_id</td></tr>
+<tr class="IndexCell"><td>UNIQUE</td> <td>map_set_id, species_id, short_name, accession_id</td></tr>
+<tr class="IndexCell"><td>FOREIGN KEY</td> <td>map_type_id</td></tr>
+<tr class="IndexCell"><td>FOREIGN KEY</td> <td>species_id</td></tr>
 </table>
-
 <hr />
-
-<!-- 
-	Starting table 'cmap_map_type'
- -->
-
+<!-- Starting table 'cmap_map_type' -->
 <a name="cmap_map_type" />
-
-<table class="TableHeader" width="100%">
-	<tr class="TableHeaderRow">
-		<td class="TableHeaderCell"><h3>
-	cmap_map_type
-</h3></td>
-		<a name="cmap_map_type"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td>
-	</tr>
-</table>
-
+<table class="TableHeader" width="100%"><tr class="TableHeaderRow"><td class="TableHeaderCell"><h3>cmap_map_type</h3></td> <a name="cmap_map_type"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td></tr></table>
 <table border="1">
-
-<tr>
-	<th class="FieldHeader">
-		Field Name
-	</th>
-	<th class="FieldHeader">
-		Data Type
-	</th>
-	<th class="FieldHeader">
-		Size
-	</th>
-	<th class="FieldHeader">
-		Default Value
-	</th>
-	<th class="FieldHeader">
-		Other
-	</th>
-	<th class="FieldHeader">
-		Foreign Key
-	</th>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map_type-map_type_id">map_type_id</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">PRIMARY KEY, NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map_type-accession_id">accession_id</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">20</td>
-	<td class="FieldCellDefault"></td>
-	<td class="FieldCellOther">UNIQUE, NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map_type-map_type">map_type</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">64</td>
-	<td class="FieldCellDefault"></td>
-	<td class="FieldCellOther">UNIQUE, NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map_type-map_units">map_units</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">12</td>
-	<td class="FieldCellDefault"></td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map_type-is_relational_map">is_relational_map</a></td>
-	<td class="FieldCellType">tinyint</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map_type-shape">shape</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">12</td>
-	<td class="FieldCellDefault">NULL</td>
-	<td class="FieldCellOther"></td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map_type-color">color</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">20</td>
-	<td class="FieldCellDefault">NULL</td>
-	<td class="FieldCellOther"></td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map_type-width">width</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">NULL</td>
-	<td class="FieldCellOther"></td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_map_type-display_order">display_order</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">1</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
+<tr><th class="FieldHeader">Field Name</th> <th class="FieldHeader">Data Type</th> <th class="FieldHeader">Size</th> <th class="FieldHeader">Default Value</th> <th class="FieldHeader">Other</th> <th class="FieldHeader">Foreign Key</th></tr>
+<tr><td class="FieldCellName"><a name="cmap_map_type-map_type_id">map_type_id</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">PRIMARY KEY, NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map_type-accession_id">accession_id</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">20</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">UNIQUE, NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map_type-map_type">map_type</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">64</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">UNIQUE, NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map_type-map_units">map_units</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">12</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map_type-is_relational_map">is_relational_map</a></td> <td class="FieldCellType">tinyint</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map_type-shape">shape</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">12</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map_type-color">color</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">20</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map_type-width">width</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map_type-display_order">display_order</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">1</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
 </table>
-
-<h3>
-	Constraints
-</h3>
-
+<h3>Constraints</h3>
 <table border="1">
-
-<tr class="IndexRow">
-	<th>
-		Type
-	</th>
-	<th>
-		Fields
-	</th>
-</tr>
-
-<tr class="IndexCell">
-	<td>UNIQUE</td>
-	<td>map_type</td>
-</tr>
-
-<tr class="IndexCell">
-	<td>UNIQUE</td>
-	<td>accession_id</td>
-</tr>
-
+<tr class="IndexRow"><th>Type</th> <th>Fields</th></tr>
+<tr class="IndexCell"><td>UNIQUE</td> <td>map_type</td></tr>
+<tr class="IndexCell"><td>UNIQUE</td> <td>accession_id</td></tr>
 </table>
-
 <hr />
-
-<!-- 
-	Starting table 'cmap_next_number'
- -->
-
+<!-- Starting table 'cmap_next_number' -->
 <a name="cmap_next_number" />
-
-<table class="TableHeader" width="100%">
-	<tr class="TableHeaderRow">
-		<td class="TableHeaderCell"><h3>
-	cmap_next_number
-</h3></td>
-		<a name="cmap_next_number"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td>
-	</tr>
-</table>
-
+<table class="TableHeader" width="100%"><tr class="TableHeaderRow"><td class="TableHeaderCell"><h3>cmap_next_number</h3></td> <a name="cmap_next_number"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td></tr></table>
 <table border="1">
-
-<tr>
-	<th class="FieldHeader">
-		Field Name
-	</th>
-	<th class="FieldHeader">
-		Data Type
-	</th>
-	<th class="FieldHeader">
-		Size
-	</th>
-	<th class="FieldHeader">
-		Default Value
-	</th>
-	<th class="FieldHeader">
-		Other
-	</th>
-	<th class="FieldHeader">
-		Foreign Key
-	</th>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_next_number-table_name">table_name</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">40</td>
-	<td class="FieldCellDefault"></td>
-	<td class="FieldCellOther">PRIMARY KEY, NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_next_number-next_number">next_number</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
+<tr><th class="FieldHeader">Field Name</th> <th class="FieldHeader">Data Type</th> <th class="FieldHeader">Size</th> <th class="FieldHeader">Default Value</th> <th class="FieldHeader">Other</th> <th class="FieldHeader">Foreign Key</th></tr>
+<tr><td class="FieldCellName"><a name="cmap_next_number-table_name">table_name</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">40</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">PRIMARY KEY, NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_next_number-next_number">next_number</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
 </table>
-
 <hr />
-
-<!-- 
-	Starting table 'cmap_species'
- -->
-
+<!-- Starting table 'cmap_species' -->
 <a name="cmap_species" />
-
-<table class="TableHeader" width="100%">
-	<tr class="TableHeaderRow">
-		<td class="TableHeaderCell"><h3>
-	cmap_species
-</h3></td>
-		<a name="cmap_species"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td>
-	</tr>
-</table>
-
+<table class="TableHeader" width="100%"><tr class="TableHeaderRow"><td class="TableHeaderCell"><h3>cmap_species</h3></td> <a name="cmap_species"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td></tr></table>
 <table border="1">
-
-<tr>
-	<th class="FieldHeader">
-		Field Name
-	</th>
-	<th class="FieldHeader">
-		Data Type
-	</th>
-	<th class="FieldHeader">
-		Size
-	</th>
-	<th class="FieldHeader">
-		Default Value
-	</th>
-	<th class="FieldHeader">
-		Other
-	</th>
-	<th class="FieldHeader">
-		Foreign Key
-	</th>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_species-species_id">species_id</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">PRIMARY KEY, NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_species-accession_id">accession_id</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">20</td>
-	<td class="FieldCellDefault"></td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_species-common_name">common_name</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">64</td>
-	<td class="FieldCellDefault"></td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_species-full_name">full_name</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">64</td>
-	<td class="FieldCellDefault"></td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_species-display_order">display_order</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">1</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_species-ncbi_taxon_id">ncbi_taxon_id</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">NULL</td>
-	<td class="FieldCellOther"></td>
-	<td class="FieldCellFK"></td>
-</tr>
-
+<tr><th class="FieldHeader">Field Name</th> <th class="FieldHeader">Data Type</th> <th class="FieldHeader">Size</th> <th class="FieldHeader">Default Value</th> <th class="FieldHeader">Other</th> <th class="FieldHeader">Foreign Key</th></tr>
+<tr><td class="FieldCellName"><a name="cmap_species-species_id">species_id</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">PRIMARY KEY, NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_species-accession_id">accession_id</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">20</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_species-common_name">common_name</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">64</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_species-full_name">full_name</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">64</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_species-display_order">display_order</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">1</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_species-ncbi_taxon_id">ncbi_taxon_id</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
 </table>
-
-<h3>
-	Indices
-</h3>
-
+<h3>Indices</h3>
 <table border="1">
-
-<tr class="IndexRow">
-	<th>
-		Name
-	</th>
-	<th>
-		Fields
-	</th>
-</tr>
-
-<tr class="IndexCell">
-	<td>acc_id_species_id</td>
-	<td>accession_id, species_id</td>
-</tr>
-
+<tr class="IndexRow"><th>Name</th> <th>Fields</th></tr>
+<tr class="IndexCell"><td>acc_id_species_id</td> <td>accession_id, species_id</td></tr>
 </table>
-
 <hr />
-
-<!-- 
-	Starting table 'cmap_xref'
- -->
-
+<!-- Starting table 'cmap_xref' -->
 <a name="cmap_xref" />
-
-<table class="TableHeader" width="100%">
-	<tr class="TableHeaderRow">
-		<td class="TableHeaderCell"><h3>
-	cmap_xref
-</h3></td>
-		<a name="cmap_xref"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td>
-	</tr>
-</table>
-
+<table class="TableHeader" width="100%"><tr class="TableHeaderRow"><td class="TableHeaderCell"><h3>cmap_xref</h3></td> <a name="cmap_xref"> <td class="TableHeaderCell" align="right"><a href="#top">Top</a></td></tr></table>
 <table border="1">
-
-<tr>
-	<th class="FieldHeader">
-		Field Name
-	</th>
-	<th class="FieldHeader">
-		Data Type
-	</th>
-	<th class="FieldHeader">
-		Size
-	</th>
-	<th class="FieldHeader">
-		Default Value
-	</th>
-	<th class="FieldHeader">
-		Other
-	</th>
-	<th class="FieldHeader">
-		Foreign Key
-	</th>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_xref-xref_id">xref_id</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">0</td>
-	<td class="FieldCellOther">PRIMARY KEY, NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_xref-table_name">table_name</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">30</td>
-	<td class="FieldCellDefault"></td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_xref-object_id">object_id</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">NULL</td>
-	<td class="FieldCellOther"></td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_xref-display_order">display_order</a></td>
-	<td class="FieldCellType">integer</td>
-	<td class="FieldCellSize">11</td>
-	<td class="FieldCellDefault">1</td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_xref-xref_name">xref_name</a></td>
-	<td class="FieldCellType">varchar</td>
-	<td class="FieldCellSize">200</td>
-	<td class="FieldCellDefault"></td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
-<tr>
-	<td class="FieldCellName"><a name="cmap_xref-xref_url">xref_url</a></td>
-	<td class="FieldCellType">text</td>
-	<td class="FieldCellSize">65535</td>
-	<td class="FieldCellDefault"></td>
-	<td class="FieldCellOther">NOT NULL</td>
-	<td class="FieldCellFK"></td>
-</tr>
-
+<tr><th class="FieldHeader">Field Name</th> <th class="FieldHeader">Data Type</th> <th class="FieldHeader">Size</th> <th class="FieldHeader">Default Value</th> <th class="FieldHeader">Other</th> <th class="FieldHeader">Foreign Key</th></tr>
+<tr><td class="FieldCellName"><a name="cmap_xref-xref_id">xref_id</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">PRIMARY KEY, NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_xref-table_name">table_name</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">30</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_xref-object_id">object_id</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_xref-display_order">display_order</a></td> <td class="FieldCellType">integer</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">1</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_xref-xref_name">xref_name</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">200</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_xref-xref_url">xref_url</a></td> <td class="FieldCellType">text</td> <td class="FieldCellSize">65535</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
 </table>
-
 <hr />
-
 Created by <a href="http://sqlfairy.sourceforge.net">
 SQL::Translator 0.05</a>
 </body></html>
