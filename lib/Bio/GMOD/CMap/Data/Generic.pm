@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data::Generic;
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.36 2003-09-29 20:49:12 kycl4rk Exp $
+# $Id: Generic.pm,v 1.37 2003-10-01 23:19:31 kycl4rk Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.36 $)[-1];
+$VERSION = (qw$Revision: 1.37 $)[-1];
 
 use Data::Dumper; # really just for debugging
 use Bio::GMOD::CMap;
@@ -75,11 +75,14 @@ The SQL for finding all the features on a map.
     my $order_by         = $args{'order_by'}            || '';
     my $restrict_by      = $args{'restrict_by'}         || '';
     my @feature_type_ids = @{ $args{'feature_type_ids'} || [] };
+
+    #
+    # Removed "alternate_name"
+    #
     my $sql              = qq[
         select   f.feature_id,
                  f.accession_id,
                  f.feature_name,
-                 f.alternate_name,
                  f.is_landmark,
                  f.start_position,
                  f.stop_position,
@@ -196,9 +199,12 @@ The SQL for finding correspondences for a feature.
 
     my $self = shift;
     my %args = @_;
+
+    #
+    # Removed "alternate_name"
+    #
     my $sql  = q[
         select   f.feature_name,
-                 f.alternate_name,
                  f.feature_id,
                  f.accession_id as feature_aid,
                  f.start_position,
@@ -255,10 +261,10 @@ The SQL for finding correspondences for a feature.
         if $args{'evidence_type_ids'};
 
     $sql .= q[
-                 order by map_set_name, 
-                 map_name, 
-                 start_position, 
-                 feature_name
+                 order by ms.map_set_name, 
+                 map.map_name, 
+                 f.start_position, 
+                 f.feature_name
     ];
 
     return $sql;
@@ -359,13 +365,11 @@ The SQL for finding basic info on a feature.
                    f.map_id,
                    f.feature_type_id,
                    f.feature_name,
-                   f.alternate_name,
                    f.is_landmark,
                    f.start_position,
                    f.stop_position,
                    f.dbxref_name,
                    f.dbxref_url,
-                   fn.note,
                    ft.feature_type,
                    ft.accession_id as feature_type_aid,
                    map.map_name,
@@ -378,8 +382,6 @@ The SQL for finding basic info on a feature.
                    mt.map_type,
                    mt.map_units
         from       cmap_feature f
-        left join  cmap_feature_note fn
-        on         f.feature_id=fn.feature_id
         inner join cmap_feature_type ft
         on         f.feature_type_id=ft.feature_type_id
         inner join cmap_map map
