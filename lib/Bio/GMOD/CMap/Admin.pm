@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.38 2003-11-04 17:09:10 kycl4rk Exp $
+# $Id: Admin.pm,v 1.39 2003-12-09 15:37:51 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.38 $)[-1];
+$VERSION = (qw$Revision: 1.39 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -184,10 +184,9 @@ Delete an evidence type.
 sub feature_alias_create {
     my ( $self, %args )  = @_;
     my $db               = $self->db;
-    my @errors           = ();
     my $feature_id       = $args{'feature_id'} or 
                            return $self->error('No feature id');
-    my $alias            = $args{'alias'} or return $self->error('No alias');
+    my $alias            = $args{'alias'} or return 1;
     my $feature_name     = $db->selectrow_array(
         q[
             select feature_name
