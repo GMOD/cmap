@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::Import;
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.45.2.1 2004-06-03 21:52:27 kycl4rk Exp $
+# $Id: Import.pm,v 1.45.2.2 2004-06-07 21:52:46 kycl4rk Exp $
 
 =pod
 
@@ -28,7 +28,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.45.2.1 $)[-1];
+$VERSION  = (qw$Revision: 1.45.2.2 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -1029,7 +1029,7 @@ sub import_object {
             map { $_, $object->{ $_ } } $pk_name, @$field_names
         ) or return $self->error( $admin->error );
     }
-    else {
+    elsif ( ! $new_object_id ) {
         $self->Print("Creating new data in $table_name\n");
         my $create_method = $object_type . '_create';
         $new_object_id    = $admin->$create_method(
