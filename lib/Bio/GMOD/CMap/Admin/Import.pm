@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::Import;
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.36 2003-10-14 23:52:42 kycl4rk Exp $
+# $Id: Import.pm,v 1.37 2003-10-16 22:17:56 kycl4rk Exp $
 
 =pod
 
@@ -28,7 +28,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.36 $)[-1];
+$VERSION  = (qw$Revision: 1.37 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -120,23 +120,22 @@ attribute values, they must be backslash-escapes, e.g.:
 
     DBXRef: "<a href=\"http://www.gramene.org/db/markers/marker_view?marker_name=CDO590\">View At Gramene</a>"
 
-Any attribute of type "Note" (case-insensitive) will automatically be
-appended to the "feature_note" field.  Multiple occurrences of a
-"note" field will be concatenated with semi-colons.
+Version 0.08 of CMap added the "feature_note" field.  This is now
+considered just another type of attribute.  The "feature_note" field
+is provided only for backward-compatibility and will simply be added
+as an attribute of type "Note."
 
-Both attribute names and values can be as wide as 255 characters.  The
-order of the attributes will be used to determine the "display_order."
+Attribute names can be as wide as 255 characters while the values can
+be quite large (exactly how large depends on which database you use
+and how that field is defined).  The order of the attributes will be
+used to determine the "display_order."
 
-Feature notes are defined in the database with much larger datatypes
-than the space alloted for the values of attributes, so it is
-recommended you use the "notes" for anything larger than 255
-characters of data.
+Feature aliases should be a comma-separated list of values.  They may
+either occur in the "feature_aliases" field or in the
+"feature_attributes" field with the key "aliases" (case-insensitive),
+e.g.:
 
-Feature aliases must be defined as a comma-separated list of values.
-They may also be defined in the "feature_attributes" field with the
-key "alias" (case-insensitive), e.g.:
-
-    Alias: "SHO29a, SHO29b"
+    Aliases: "SHO29a, SHO29b"
 
 =cut
 
@@ -445,7 +444,7 @@ key "alias" (case-insensitive), e.g.:
                 $value =~ s/\\"/"/g;
                 push @feature_notes, $value;
             }
-            elsif ( $key =~ /alias/i ) {
+            elsif ( $key =~ /aliases/i ) {
                 push @$aliases, 
                     map { s/^\s+|\s+$//g; s/\\"/"/g; $_ } 
                     parse_line( ',', 1, $value )
@@ -583,8 +582,9 @@ key "alias" (case-insensitive), e.g.:
             note       => $feature_note,
         );
 
-        $admin->set_feature_attributes( 
-            feature_id => $feature_id, 
+        $admin->set_object_attributes( 
+            object_id  => $feature_id, 
+            table_name => 'cmap_feature',
             attributes => \@fattributes,
             overwrite  => $overwrite,
         );
