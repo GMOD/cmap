@@ -4,7 +4,7 @@ CMap Install
 
 =head1 VERSION
 
-$Revision: 1.6 $
+$Revision: 1.7 $
 
 =head1 QUICK START
 
@@ -156,12 +156,16 @@ grant appropriate permissions to a user "joe" with the password
   $ cd /usr/local/src/cmap-0.XX/
   $ mysql -uroot -p -e 'create database CMAP'
   $ mysql -uroot -p CMAP < sql/cmap.create.mysql
+      or
+  $ mysql -uroot -p CMAP < sql/cmap.create.expanded.mysql
   $ mysql -uroot -p CMAP -e 'grant select, insert, update, delete 
     on CMAP.* to joe@localhost identified by "foobar"'
   $ mysqladmin -uroot -p CMAP flush-privileges
 
 In the above example, you'll be required to type the root password
 for MySQL.
+
+!NOTE! If you use the expanded version, make sure to set the expanded_correspondence_lookup to 1 in your config file for this database.
 
 B<Note:> This is not the same "root" as your system "root." If you
 never set MySQL's "root" password, then just hit <Enter> at the
