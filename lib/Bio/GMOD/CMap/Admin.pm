@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin;
 
-# $Id: Admin.pm,v 1.14 2003-01-30 22:11:44 kycl4rk Exp $
+# $Id: Admin.pm,v 1.15 2003-01-31 19:28:46 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.14 $)[-1];
+$VERSION = (qw$Revision: 1.15 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils qw[ next_number ];
@@ -970,7 +970,7 @@ sub reload_correspondence_matrix {
                 from     cmap_feature f1,
                          cmap_feature f2,
                          cmap_correspondence_lookup cl,
-                         cmap_feature_correspondence fc
+                         cmap_feature_correspondence fc,
                          cmap_map map,
                          cmap_map_set ms,
                          cmap_species s
