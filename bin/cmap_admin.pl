@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.41 2003-08-01 17:06:46 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.42 2003-09-02 20:09:12 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.41 $)[-1];
+$VERSION = (qw$Revision: 1.42 $)[-1];
 
 #
 # Get command-line options
@@ -308,11 +308,15 @@ sub create_map_set {
     chomp( my $short_name = <STDIN> );
     $short_name ||= $map_set_name; 
 
+    print "Accession ID (optional): ";
+    chomp( my $map_set_aid = <STDIN> );
+
     my $map_set_id = next_number(
         db           => $db,
         table_name   => 'cmap_map_set',
         id_field     => 'map_set_id',
     ) or die 'No map set id';
+    $map_set_aid ||= '';
 
     print "OK to create set '$map_set_name' in data source '", 
         $self->data_source, "'?\n[Y/n] ";
@@ -330,7 +334,7 @@ sub create_map_set {
         ],
         {},
         (
-            $map_set_id, $map_set_id, $map_set_name, $short_name,
+            $map_set_id, $map_set_aid, $map_set_name, $short_name,
             $species_id, $map_type_id
         )
     );
@@ -1898,8 +1902,13 @@ sub show_menu {
             }
             elsif ( $args{'allow_all'} || $args{'allow_mult'} ) {
                 my %numbers = 
-                    map  { $_, 1 }  # make a lookup
-                    grep { /\d+/ }  # take only numbers
+                    # make a lookup 
+                    map  { $_, 1 }  
+                    # take only numbers
+                    grep { /\d+/ }  
+                    # look for ranges
+                    map  { $_ =~ m/(\d+)-(\d+)/ ? ( $1..$2 ) : $_ } 
+                    # split on space or comma
                     split /\s+/, $answer
                 ;
 
@@ -2033,9 +2042,20 @@ question until you have selected an answer from the list.
 Occassionally the answer is not required, so you can just hit
 "<Return>."  Sometimes more than one answer is acceptable, so you
 should specify all your choices on one line, separating the numbers
-with spaces.  Finally, sometimes a question is never asked if there is
-only one possible answer; the one answer is automatically taken and
-processing moves on to the next question.
+with spaces or commas and alternately specifying ranges with a dash
+(and no spaces around the dash).  For instance, the following are
+eqivalent:
+
+  This:               Equates to:
+  1                   1
+  1-3                 1,2,3
+  1,3-5               1,3,4,5
+  1 3 3-5             1,3,4,5
+  1, 3  5-8 , 10      1,3,5,6,7,8,10
+
+Finally, sometimes a question is never asked if there is only one
+possible answer; the one answer is automatically taken and processing
+moves on to the next question.
 
 =head1 ACTIONS
 
