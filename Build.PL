@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.27 2004-02-25 22:33:01 kycl4rk Exp $
+# $Id: Build.PL,v 1.28 2004-02-25 22:53:26 kycl4rk Exp $
 
 use strict;
 
@@ -14,7 +14,6 @@ use File::Basename;
 use File::Copy;
 use File::Find;
 use File::Path;
-use File::Temp 'tempdir';
 use File::Spec::Functions;
 use Pod::Html;
 
@@ -196,7 +195,6 @@ for my $pod ( @pod_files ) {
         "--backlink=Back to Top",
         "--title=$filename",
         "--css=/cmap/pod-style.css",
-        "--cachedir=".tempdir(),
     );
     push @html_links, [ $outfile, $filename ];
     push @cleanup, $outpath;
