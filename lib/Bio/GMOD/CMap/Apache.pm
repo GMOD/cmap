@@ -1,7 +1,8 @@
 package Bio::GMOD::CMap::Apache;
+
 # vim: set ft=perl:
 
-# $Id: Apache.pm,v 1.24 2004-10-19 13:42:30 kycl4rk Exp $
+# $Id: Apache.pm,v 1.24.2.1 2004-11-24 22:07:24 mwz444 Exp $
 
 =head1 NAME
 
@@ -46,7 +47,7 @@ this class will catch errors and display them correctly.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.24 $)[-1];
+$VERSION = (qw$Revision: 1.24.2.1 $)[-1];
 
 use CGI;
 use Data::Dumper;
@@ -66,6 +67,7 @@ use Bio::GMOD::CMap::Apache::MapSetViewer;
 use Bio::GMOD::CMap::Apache::MapTypeViewer;
 use Bio::GMOD::CMap::Apache::MapViewer;
 use Bio::GMOD::CMap::Apache::EntryViewer;
+use Bio::GMOD::CMap::Apache::SpiderViewer;
 use Bio::GMOD::CMap::Apache::LinkViewer;
 use Bio::GMOD::CMap::Apache::MatrixViewer;
 use Bio::GMOD::CMap::Apache::SpeciesViewer;
@@ -78,26 +80,27 @@ use base 'Bio::GMOD::CMap';
 #
 use constant ERROR_TEMPLATE => 'error.tmpl';
 
-use constant DISPATCH   => {
-    admin               => __PACKAGE__.'::AdminViewer',
-    correspondence      => __PACKAGE__.'::CorrespondenceViewer',
-    evidence_type_info  => __PACKAGE__.'::EvidenceTypeViewer',
-    feature             => __PACKAGE__.'::FeatureViewer',
-    feature_alias       => __PACKAGE__.'::FeatureAliasViewer',
-    feature_search      => __PACKAGE__.'::FeatureSearch',
-    feature_type_info   => __PACKAGE__.'::FeatureTypeViewer',
-    download_data       => __PACKAGE__.'::DataDownloader',
-    help                => __PACKAGE__.'::HelpViewer',
-    index               => __PACKAGE__.'::Index',
-    map_details         => __PACKAGE__.'::MapViewer',
-    map_set_info        => __PACKAGE__.'::MapSetViewer',
-    map_type_info       => __PACKAGE__.'::MapTypeViewer',
-    matrix              => __PACKAGE__.'::MatrixViewer',
-    species_info        => __PACKAGE__.'::SpeciesViewer',
-    view_feature_on_map => __PACKAGE__.'::ViewFeatureOnMap',
-    viewer              => __PACKAGE__.'::MapViewer',
-    entry               => __PACKAGE__.'::EntryViewer',
-    link_viewer         => __PACKAGE__.'::LinkViewer',
+use constant DISPATCH => {
+    admin               => __PACKAGE__ . '::AdminViewer',
+    correspondence      => __PACKAGE__ . '::CorrespondenceViewer',
+    evidence_type_info  => __PACKAGE__ . '::EvidenceTypeViewer',
+    feature             => __PACKAGE__ . '::FeatureViewer',
+    feature_alias       => __PACKAGE__ . '::FeatureAliasViewer',
+    feature_search      => __PACKAGE__ . '::FeatureSearch',
+    feature_type_info   => __PACKAGE__ . '::FeatureTypeViewer',
+    download_data       => __PACKAGE__ . '::DataDownloader',
+    help                => __PACKAGE__ . '::HelpViewer',
+    index               => __PACKAGE__ . '::Index',
+    map_details         => __PACKAGE__ . '::MapViewer',
+    map_set_info        => __PACKAGE__ . '::MapSetViewer',
+    map_type_info       => __PACKAGE__ . '::MapTypeViewer',
+    matrix              => __PACKAGE__ . '::MatrixViewer',
+    species_info        => __PACKAGE__ . '::SpeciesViewer',
+    view_feature_on_map => __PACKAGE__ . '::ViewFeatureOnMap',
+    viewer              => __PACKAGE__ . '::MapViewer',
+    entry               => __PACKAGE__ . '::EntryViewer',
+    spider              => __PACKAGE__ . '::SpiderViewer',
+    link_viewer         => __PACKAGE__ . '::LinkViewer',
 };
 
 use constant FIELD_SEP  => '=';
@@ -120,7 +123,7 @@ Initializes the object.
     if ( my $apr = $self->apr ) {
         $self->data_source( $apr->param('data_source') );
     }
-    return $self; 
+    return $self;
 }
 
 # ----------------------------------------------------
@@ -136,38 +139,40 @@ the handler to the derived class's "handler" method.
 
 =cut
 
-    my $apr       = CGI->new;
+    my $apr = CGI->new;
     my $path_info = $apr->path_info || '';
-    if ( $path_info ) {
-       $path_info =~ s{^/(cmap/)?}{}; # kill superfluous stuff
+    if ($path_info) {
+        $path_info =~ s{^/(cmap/)?}{};    # kill superfluous stuff
     }
 
-    $path_info = DEFAULT->{'path_info'} unless exists DISPATCH->{ $path_info };
-    my $class  = DISPATCH->{ $path_info };
+    $path_info = DEFAULT->{'path_info'} unless exists DISPATCH->{$path_info};
+    my $class = DISPATCH->{$path_info};
     my $module = $class->new( apr => $apr );
     my $status;
 
-    eval { 
+    eval {
         $module->handle_cookie;
-        $status = $module->handler( $apr );
+        $status = $module->handler($apr);
     };
 
     if ( my $e = $@ || $module->error ) {
         my $html;
         eval {
-            if ( my $t = $module->template ) {
-                $t->process( 
-                    $module->error_template, 
-                    { 
-                        error        => $e, 
-                        apr          => $module->apr, 
+            if ( my $t = $module->template )
+            {
+                $t->process(
+                    $module->error_template,
+                    {
+                        error        => $e,
+                        apr          => $module->apr,
                         page         => $module->page,
                         debug        => $module->debug,
                         stylesheet   => $module->stylesheet,
                         data_sources => $module->data_sources,
                     },
-                    \$html 
-                ) or $html =  $e . '<br>' . $t->error;
+                    \$html
+                  )
+                  or $html = $e . '<br>' . $t->error;
             }
             else {
                 $html = $e;
@@ -176,12 +181,12 @@ the handler to the derived class's "handler" method.
 
         print $apr->header('text/html'), $html || $e;
     }
-    
+
     return 1;
 }
 
 # ----------------------------------------------------
-sub apr { 
+sub apr {
 
 =pod
 
@@ -196,7 +201,7 @@ Returns the Apache::Request object.
 }
 
 # ----------------------------------------------------
-sub cookie { 
+sub cookie {
 
 =pod
 
@@ -214,7 +219,7 @@ Get/set the cookie.
 }
 
 # ----------------------------------------------------
-sub debug { 
+sub debug {
 
 =pod
 
@@ -232,7 +237,7 @@ Returns whether or not we're in "debug" mode.
 }
 
 # ----------------------------------------------------
-sub error_template { 
+sub error_template {
 
 =pod
 
@@ -247,7 +252,7 @@ Returns the correct template to use in formatting errors.
 }
 
 # ----------------------------------------------------
-sub page { 
+sub page {
 
 =pod
 
@@ -270,14 +275,15 @@ it, and this method will never return anything.
     unless ( defined $self->{'page'} ) {
         if ( my $page_object = $self->config_data('page_object') ) {
             eval "require Apache";
-            unless ( $@ ) {
+            unless ($@) {
                 my $r = Apache->request;
-                $self->{'page'} = $page_object->new( $r ) or return
-                $self->error( qq[Error creating page object ("$page_object")] );
+                $self->{'page'} = $page_object->new($r)
+                  or return $self->error(
+                    qq[Error creating page object ("$page_object")]);
             }
         }
         else {
-            $self->{'page'} = ''; # define it to nothing
+            $self->{'page'} = '';    # define it to nothing
         }
     }
 
@@ -298,7 +304,7 @@ Return any defined stylesheet.
     my $self = shift;
 
     unless ( defined $self->{'stylesheet'} ) {
-         $self->{'stylesheet'} = $self->config_data('stylesheet') || '';
+        $self->{'stylesheet'} = $self->config_data('stylesheet') || '';
     }
 
     return $self->{'stylesheet'};
@@ -326,12 +332,12 @@ cookie with current settings.
     #
     # Fetch and read the cookie.
     #
-    my $cookie_string = $apr->cookie( $cookie_name ); 
+    my $cookie_string = $apr->cookie($cookie_name);
     my @cookie_fields = split RECORD_SEP, $cookie_string;
 
-    foreach ( @cookie_fields ) {
-        my ( $name, $value )  = split FIELD_SEP;
-        $preferences{ $name } = $value if $value;
+    foreach (@cookie_fields) {
+        my ( $name, $value ) = split FIELD_SEP;
+        $preferences{$name} = $value if $value;
     }
 
     #
@@ -340,31 +346,26 @@ cookie with current settings.
     # request, then we'll leave whatever's there.  If nothing is
     # defined, then we'll set it with the default value.
     #
-    for my $pref ( @preference_fields ) {
+    for my $pref (@preference_fields) {
         my $value =
-            defined $apr->param( $pref )
-                ? $apr->param( $pref ) 
-                : defined $preferences{ $pref }
-                    ? $preferences{ $pref } 
-                    : $self->config_data( $pref ) || '';
-        ;
+            defined $apr->param($pref)  ? $apr->param($pref)
+          : defined $preferences{$pref} ? $preferences{$pref}
+          : $self->config_data($pref) || '';
 
         $apr->param( $pref, $value );
-        $preferences{ $pref } = $value;
+        $preferences{$pref} = $value;
     }
 
     #
     # Set a new cookie with the latest preferences.
     #
     my $cookie_domain = $self->config_data('cookie_domain') || '';
-    my $cookie_value  = join( 
-        RECORD_SEP,
-        map { join( FIELD_SEP, $_, $preferences{ $_ } ) } @preference_fields 
-    );
+    my $cookie_value = join( RECORD_SEP,
+        map { join( FIELD_SEP, $_, $preferences{$_} ) } @preference_fields );
 
     $self->cookie(
-        $apr->cookie( 
-            -name    => $cookie_name, 
+        $apr->cookie(
+            -name    => $cookie_name,
             -value   => $cookie_value,
             -expires => '+1y',
             -domain  => $cookie_domain,
@@ -378,7 +379,7 @@ cookie with current settings.
 1;
 
 # ----------------------------------------------------
-# If the fool would persist in his folly 
+# If the fool would persist in his folly
 # He would become wise.
 # William Blake
 # ----------------------------------------------------
@@ -401,3 +402,4 @@ This library is free software;  you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 =cut
+

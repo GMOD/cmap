@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.61.2.8 2004-11-18 20:04:23 mwz444 Exp $
+# $Id: CMap.pm,v 1.61.2.9 2004-11-24 22:07:14 mwz444 Exp $
 
 =head1 NAME
 
@@ -749,15 +749,16 @@ Given information about the link, creates a url to cmap_viewer.
     $url .= '?' unless $url =~ /\?$/;
 
     ###Required Fields
-    unless (defined($ref_map_set_aid)
+    unless ( ( defined($ref_map_set_aid) or defined($ref_map_aids) )
         and defined($data_source) )
     {
         return '';
     }
-    $url .= "ref_map_set_aid=$ref_map_set_aid;";
     $url .= "data_source=$data_source;";
 
     ### optional
+    $url .= "ref_map_set_aid=$ref_map_set_aid;"
+      if defined($ref_map_set_aid);
     $url .= "ref_species_aid=$ref_species_aid;"
       if defined($ref_species_aid);
     $url .= "prev_ref_species_aid=$prev_ref_species_aid;"

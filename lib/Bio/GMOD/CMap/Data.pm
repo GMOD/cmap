@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.165.2.11 2004-11-19 18:32:37 mwz444 Exp $
+# $Id: Data.pm,v 1.165.2.12 2004-11-24 22:07:24 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.165.2.11 $)[-1];
+$VERSION = (qw$Revision: 1.165.2.12 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -4647,6 +4647,132 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
 }
 
 # ----------------------------------------------------
+
+=pod
+
+=head2 cmap_spider_links
+
+Returns the links for the spider page.
+
+=cut
+
+sub cmap_spider_links {
+
+    my ( $self, %args ) = @_;
+    my $map_aid          = $args{'map_aid'};
+    my $degrees_to_crawl = $args{'degrees_to_crawl'};
+    my $min_corrs        = $args{'min_corrs'};
+    my $apr              = $args{'apr'};
+
+    return []
+      unless ( $map_aid
+        and defined($degrees_to_crawl)
+        and $degrees_to_crawl =~ /^\d+$/ );
+
+    my $db = $self->db or return;
+
+    my %seen_map_ids        = ();
+    my %map_aids_per_degree = ();
+    my @links               = ();
+
+    my $url;
+    if ($apr) {
+        $url = $apr->url . '/';
+    }
+    else {
+        $url = '';
+    }
+    my $map_viewer_url = $url . 'viewer';
+
+    # Set up degree 0.
+    $seen_map_ids{$map_aid} = 1;
+    $map_aids_per_degree{0} = [ $map_aid, ];
+
+    my $link = $self->create_viewer_link(
+        ref_map_aids        => \%seen_map_ids,
+        data_source         => $self->data_source,
+        url                 => $map_viewer_url,
+        min_correspondences => $min_corrs,
+    );
+    push @links,
+      {
+        link       => $link,
+        tier_maps  => scalar( @{ $map_aids_per_degree{0} } ),
+        total_maps => scalar( keys %seen_map_ids ),
+      };
+    for ( my $i = 1 ; $i <= $degrees_to_crawl ; $i++ ) {
+        last unless ( defined( $map_aids_per_degree{ $i - 1 } ) );
+        my $sql_str = q[ 
+          select map1.accession_id as map_aid1, 
+                 map2.accession_id as map_aid2, 
+                 count(cl.feature_correspondence_id) as corr_count 
+          from  cmap_map map1, 
+                cmap_map map2, 
+                cmap_correspondence_lookup cl 
+          where map1.map_id=cl.map_id1 
+            and map2.map_id=cl.map_id2 
+            and map1.map_set_id=map2.map_set_id 
+        ];
+
+        $sql_str .=
+          " and map1.accession_id in ('"
+          . join( "','", sort @{ $map_aids_per_degree{ $i - 1 } } ) . "') \n";
+
+        $sql_str .=
+          " and map2.accession_id not in ('"
+          . join( "','", sort keys(%seen_map_ids) ) . "') ";
+
+        $sql_str .= qq[
+          group by map2.accession_id 
+        ];
+        if ($min_corrs) {
+            $sql_str .= qq[ 
+              having count(cl.feature_correspondence_id)>$min_corrs 
+            ];
+        }
+
+        my $query_results;
+        unless ( $query_results = $self->get_cached_results( 4, $sql_str ) ) {
+            $query_results =
+              $db->selectall_arrayref( $sql_str, { Columns => {} }, );
+            $self->store_cached_results( 4, $sql_str, $query_results );
+        }
+
+        # Add results to data structures.
+        foreach my $row ( @{$query_results} ) {
+            unless ( $seen_map_ids{ $row->{'map_aid2'} } ) {
+                push @{ $map_aids_per_degree{$i} }, $row->{'map_aid2'};
+                $seen_map_ids{ $row->{'map_aid2'} } = 1;
+            }
+        }
+
+        # We're done if there are no new maps
+        last unless ( defined( $map_aids_per_degree{$i} ) );
+
+        my $map_order = '';
+        for ( my $j = 0 ; $j <= $i ; $j++ ) {
+            $map_order .= join( ":", sort @{ $map_aids_per_degree{$j} } ) . ",";
+        }
+
+        $link = $self->create_viewer_link(
+            ref_map_aids        => \%seen_map_ids,
+            data_source         => $self->data_source,
+            url                 => $map_viewer_url,
+            ref_map_order       => $map_order,
+            min_correspondences => $min_corrs,
+        );
+        push @links,
+          {
+            link       => $link,
+            tier_maps  => scalar( @{ $map_aids_per_degree{$i} } ),
+            total_maps => scalar( keys %seen_map_ids ),
+          };
+    }
+
+    return \@links;
+}
+
+# ----------------------------------------------------
 sub get_all_feature_types {
     my $self = shift;
 
@@ -5084,7 +5210,7 @@ Uses ref_map_order() to create a hash designating the maps order.
     my $self          = shift;
     my %return_hash   = ();
     my $ref_map_order = $self->ref_map_order();
-    my @ref_map_aids  = split( /,/, $ref_map_order );
+    my @ref_map_aids  = split( /[,:]/, $ref_map_order );
     for ( my $i = 0 ; $i <= $#ref_map_aids ; $i++ ) {
         my $map_id = $self->acc_id_to_internal_id(
             table    => 'cmap_map',

@@ -1,0 +1,67 @@
+[% 
+    INCLUDE header.tmpl 
+    title=title
+    cur_sec='spider_viewer'
+    help_anchor='spider_viewer'
+%]
+[%-
+url=apr.url( '-full' => 1, '-path_info' => 1 ).replace('\/cmap.*', '/cmap');
+-%]
+
+[%- IF intro -%]
+<p>[% intro %]</p>
+[%- END -%]
+[%- IF map_aid -%]
+  <form name="spider_form">
+    Map Accession: <input type=text name=map_aid id=map_aid value=[% map_aid %]><br>
+    Degrees to Crawl:
+    <select name=degrees_to_crawl id=degrees_to_crawl >
+        <option value=0 [% IF degrees_to_crawl==0 %]selected[% END %]>0</option>
+        <option value=1 [% IF degrees_to_crawl==1 %]selected[% END %]>1</option>
+        <option value=2 [% IF degrees_to_crawl==2 %]selected[% END %]>2</option>
+        <option value=3 [% IF degrees_to_crawl==3 %]selected[% END %]>3</option>
+        <option value=4 [% IF degrees_to_crawl==4 %]selected[% END %]>4</option>
+        <option value=5 [% IF degrees_to_crawl==5 %]selected[% END %]>5</option>
+        <option value=6 [% IF degrees_to_crawl==6 %]selected[% END %]>6</option>
+        <option value=7 [% IF degrees_to_crawl==7 %]selected[% END %]>7</option>
+        <option value=8 [% IF degrees_to_crawl==8 %]selected[% END %]>8</option>
+        <option value=9 [% IF degrees_to_crawl==9 %]selected[% END %]>9</option>
+        <option value=10 [% IF degrees_to_crawl==10 %]selected[% END %]>10</option>
+        <option value=20 [% IF degrees_to_crawl==20 %]selected[% END %]>20</option>
+    </select><br>
+    Minimum Correspondences: <input type=text name=min_corrs id=min_corrs value=[% min_corrs %]>
+    <BR>
+    <input type="submit" value="Submit"><BR>
+  </form> 
+
+  [%- IF link_info -%]
+    <P>Links:</P>
+    [%- SET index=0 -%]
+    
+    <table border="1"> 
+      <tr>
+        <td>Degree From <br>Original Map</td>
+        <td>Number of Maps <br>in This Tier</td>
+        <td>Total Number of Maps</td>
+        <td>Link to CMap View</td>
+      </tr>
+      [%- FOREACH link=link_info -%]
+        <tr>
+          <td align=left valign=top>[%- index -%]</td>
+          <td align=left valign=top>[%- link.tier_maps -%]</td>
+          <td align=left valign=top>[%- link.total_maps -%]</td>
+          <td valign="top" wrap>
+            <a href="[%- link.link -%]">[%- link.link -%]</a> 
+          </td>
+        </tr>
+          [%- SET index= index+1 -%]
+      [%- END -%]
+    </table>
+  [%- END -%]
+[%- ELSE -%]
+  No Map selected.<BR>
+  Please go to the <a href="entry">Map Search</a> to select a map to crawl from.
+[%- END -%]
+
+
+[% INCLUDE footer.tmpl %]
