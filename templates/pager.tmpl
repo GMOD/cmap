@@ -3,17 +3,18 @@
 Items [% pager.first | commify %] to [% pager.last | commify %] of [% pager.total_entries | commify %].
 [% IF pager.last_page > 1 %]
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    [% pager_url = pager_url.replace('page_no=\d*;*','') %]
     [% q = CGI.new( pager_url.replace('^.*?\?', '') ) %]
     [% prev_page = pager.previous_page %]
     [% IF prev_page %]
-        <a href="[% pager_url %][% UNLESS q.param('order_by') %]&order_by=[% apr.param('order_by') %][% END %]&page_no=[% prev_page %]">Previous</a> |
+        <a href="[% pager_url %][% UNLESS q.param('order_by').defined %]&order_by=[% apr.param('order_by') %][% END %]&page_no=[% prev_page %]">Previous</a> |
     [% END %]
 
     [% FOREACH p=q.param %]
         <input type="hidden" name="[% p %]" value="[% q.param(p) %]">
     [% END %]
     <input type="submit" value="Page">
-    [% UNLESS q.param('order_by') %]
+    [% UNLESS q.param('order_by').defined %]
         <input type="hidden" name="order_by" id="order_by" value="[% apr.param('order_by') %]">
     [% END %]
     <input type="text" name="page_no" value="[% apr.param('page_no') OR '1' %]" size="4">
@@ -21,7 +22,7 @@ Items [% pager.first | commify %] to [% pager.last | commify %] of [% pager.tota
 
     [% next_page = pager.next_page %]
     [% IF next_page %]
-        | <a href="[% pager_url %][% UNLESS q.param('order_by') %]&order_by=[% apr.param('order_by') %][% END %]&page_no=[% next_page %]">Next</a>
+        | <a href="[% pager_url %][% UNLESS q.param('order_by').defined %]&order_by=[% apr.param('order_by') %][% END %]&page_no=[% next_page %]">Next</a>
     [% END %]
 [% END %]
 </form>
