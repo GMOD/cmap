@@ -137,7 +137,7 @@
                 <td>[% e.accession_id %]</td>
                 <td>[% e.evidence_type %]</td>
                 <td>[% e.rank %]</td>
-                <td>[% e.score %]</td>
+                <td>[% IF e.score.defined; e.score; ELSE; 'NULL'; END %]</td>
                 <td>
                     <a href="admin?action=corr_evidence_edit;correspondence_evidence_id=[% e.correspondence_evidence_id %]">Edit</a>
                 </td>
