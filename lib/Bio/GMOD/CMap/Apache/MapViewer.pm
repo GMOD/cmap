@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.73 2004-10-29 14:55:45 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.74 2004-10-29 15:27:50 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.73 $)[-1];
+$VERSION = (qw$Revision: 1.74 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -586,7 +586,7 @@ sub parse_map_info {
     my ( $start, $stop, $magnification ) = ( undef, undef, 1 );
 
     # following matches map_id[1*200] and map_id[1*200x2]
-    if ( $aid =~ m/^(.+)\[(.*)\*(.*?)(?:x([\d\.]+)|)\]$/ ) {
+    if ( $aid =~ m/^(.+)\[(.*)\*(.*?)(?:x([\d\.]*)|)\]$/ ) {
         $aid = $1;
         ( $start, $stop ) = ( $2, $3 );
         $magnification = $4 if $4;
