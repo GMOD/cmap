@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.54 2004-08-19 18:10:16 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.55 2004-08-27 08:49:14 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.54 $)[-1];
+$VERSION = (qw$Revision: 1.55 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -111,11 +111,11 @@ sub handler {
             $start = undef unless($start =~ /\S/);
             $stop  = undef unless($stop  =~ /\S/);
             my $start_stop_feature=0;
-            if ($start=~ /^$RE{'num'}{'real'}$/){
+            if ($start !~ /^$RE{'num'}{'real'}$/){
                 $highlight = join( ',', $highlight, $start );
                 $start_stop_feature=1;
             }
-            if ($stop=~ /^$RE{'num'}{'real'}$/){
+            if ($stop !~ /^$RE{'num'}{'real'}$/){
                 $highlight = join( ',', $highlight, $stop );
                 $start_stop_feature=1;
             }
@@ -222,11 +222,11 @@ sub handler {
                 $start = undef unless($start =~ /\S/);
                 $stop  = undef unless($stop  =~ /\S/);
                 my $start_stop_feature=0;
-                if ($start=~ /^$RE{'num'}{'real'}$/){
+                if ($start !~ /^$RE{'num'}{'real'}$/){
                     $highlight = join( ',', $highlight, $start );
                     $start_stop_feature=1;
                 }
-                if ($stop=~ /^$RE{'num'}{'real'}$/){
+                if ($stop !~ /^$RE{'num'}{'real'}$/){
                     $highlight = join( ',', $highlight, $stop );
                     $start_stop_feature=1;
                 }
@@ -271,11 +271,11 @@ sub handler {
                 $start = undef unless($start =~ /\S/);
                 $stop  = undef unless($stop  =~ /\S/);
                 my $start_stop_feature=0;
-                if ($start=~ /^$RE{'num'}{'real'}$/){
+                if ($start !~ /^$RE{'num'}{'real'}$/){
                     $highlight = join( ',', $highlight, $start );
                     $start_stop_feature=1;
                 }
-                if ($stop=~ /^$RE{'num'}{'real'}$/){
+                if ($stop !~ /^$RE{'num'}{'real'}$/){
                     $highlight = join( ',', $highlight, $stop );
                     $start_stop_feature=1;
                 }
