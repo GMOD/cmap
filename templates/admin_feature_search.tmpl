@@ -46,14 +46,11 @@
     [% IF data.size %]
         <table width="100%">
             <tr>
-                <td align="center">
+                <td colspan="9" align="center">
                     [% SET pager_url="admin?action=feature_search&feature_name=${apr.param('feature_name')}&feature_type_id=${apr.param('feature_type_id')}&map_aid=${apr.param('map_aid')}&field_name=${apr.param('field_name')}&order_by=${apr.param('order_by')}" %]
                     [% PROCESS pager.tmpl %]
                 </td>
             </tr>
-        </table>
-
-        <table width="100%">
             <tr>
                 <th>
                     <a href="admin?action=feature_search;feature_name=[% apr.param('feature_name') %];map_aid=[% apr.param('map_aid') %];feature_type_id=[% apr.param('feature_type_id') %];field_name=[% apr.param('field_name') %];order_by=feature_name">Feature Name</a>
@@ -79,7 +76,7 @@
                 <th>
                     <a href="admin?action=feature_search;feature_name=[% apr.param('feature_name') %];map_aid=[% apr.param('map_aid') %];feature_type_id=[% apr.param('feature_type_id') %];field_name=[% apr.param('field_name') %];order_by=stop_position">Stop</a>
                 </th>
-                <th>&nbsp;</th>
+                <th colspan="2">&nbsp;</th>
             </tr>
 
             [% SET i=0 %]
@@ -98,8 +95,11 @@
                     </td>
                     <td align="right">[% f.start_position | commify %]</td>
                     <td align="right">[% f.stop_position | commify %]</td>
-                    <td>
+                    <td align="center">
                         <a href="admin?action=feature_view;feature_id=[% f.feature_id %]">View</a>
+                    </td>
+                    <td align="center">
+                        <a href="admin?action=feature_edit;feature_id=[% f.feature_id %]">Edit</a>
                     </td>
                 </tr>
                 [% SET i=i+1 %]
