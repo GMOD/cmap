@@ -25,10 +25,10 @@ SHA1 616c3d04f7f05e87e5567e038a4c67c07ef221af MANIFEST
 SHA1 abbed3df82d033ab6f7542c34794df8386390ad9 META.yml
 SHA1 ea080cb4809e5a3bedc754299490d8afa4337c46 README
 SHA1 c92a213fcc3b8bc1abf63ec610c84e76f8b160f0 TODO
-SHA1 0aed25d7a92b0f53c1c4d4dee4ed29db70f1256b bin/cmap_admin.pl
-SHA1 e00cc6b54fa807812e90bcf60f09a44406e5a305 bin/cmap_matrix_compare.pl
-SHA1 91ec59ae97e336c0a63a7aa6b70b99c02cc22319 bin/cmap_metrics.pl
-SHA1 2d971486805ab81810e6f2f550961823a44d6819 bin/profile-cmap-draw.pl
+SHA1 ff73b62abd00a9bba0d4f3126d01c2cfcb02e19e bin/cmap_admin.pl
+SHA1 6dc2dec349507b61bfe725d93e11a6222183092a bin/cmap_matrix_compare.pl
+SHA1 e37c414a73e43c4d8891ede559c686145d668649 bin/cmap_metrics.pl
+SHA1 c4ce5e9c4267ce3462a8c357a11f4339d7536302 bin/profile-cmap-draw.pl
 SHA1 d2315cf4874b43bfbe285945598135a648fbede8 conf/cmap.conf.PL
 SHA1 73c4aea59977e490cdffed3592cb4e6d65245f79 conf/cmap.css
 SHA1 0b17feb93f2f8aa03f48dd1f9fe0ac055acbd85e conf/httpd.conf
@@ -84,32 +84,32 @@ SHA1 6cf7e1e819cabe51c0985f3a3708d77fc9fcc93a docs/admintut/relational-maps.html
 SHA1 47dca66a794c491bb7add1620377962bc02cd8e2 docs/cmap-desc.html
 SHA1 4b806f79a6fe041b30cf386e5f27b32683cb6698 docs/cmap-graph.png
 SHA1 9dadf0862a207d18e2a624949f556ca56fc13067 docs/cmap-schema.png
-SHA1 4de099429039ebb08657d15ace1a25793f5c1549 lib/Bio/GMOD/CMap.pm
-SHA1 d6705ec6bb5f6ef376751e9244c3924d1eb57bc4 lib/Bio/GMOD/CMap/Admin.pm
-SHA1 b43b265a7441f8e9310beeeab1bcc670c086c71c lib/Bio/GMOD/CMap/Admin/Import.pm
-SHA1 7a10082597b7bf8bec943a349797c2dc625c9222 lib/Bio/GMOD/CMap/Admin/ImportCorrespondences.pm
-SHA1 5e9c46fd72b82290508cafc5ba78f724f55b9cf3 lib/Bio/GMOD/CMap/Admin/MakeCorrespondences.pm
-SHA1 a04700d6d3960c383afee63a9d576b44ea926194 lib/Bio/GMOD/CMap/Apache.pm
-SHA1 a43514fa23371f45b39326e2169faa0d04362eba lib/Bio/GMOD/CMap/Apache/AdminViewer.pm
-SHA1 fb224f441c7796eb5de5d5f6710e5522a88d04c7 lib/Bio/GMOD/CMap/Apache/FeatureSearch.pm
-SHA1 da86670d06f41c4de813debfd23c16c78fab7231 lib/Bio/GMOD/CMap/Apache/FeatureTypeViewer.pm
-SHA1 b4a102c67f48798c9bcfcd43e24588653096a9f4 lib/Bio/GMOD/CMap/Apache/FeatureViewer.pm
-SHA1 8177242a208889896dce05a6874669e2e9a1e67b lib/Bio/GMOD/CMap/Apache/HelpViewer.pm
-SHA1 ca80b30daaa59489b13df8aa29cf71a5050f010e lib/Bio/GMOD/CMap/Apache/Index.pm
-SHA1 af159149d41df416cd63ed34ed7a764e700db27f lib/Bio/GMOD/CMap/Apache/MapDetailViewer.pm
-SHA1 da3e2f012c8d58e7c4394d7b50267a8c470a359c lib/Bio/GMOD/CMap/Apache/MapSetViewer.pm
-SHA1 f64742fc9fbe7a186748381bd9e6ce198841b3a7 lib/Bio/GMOD/CMap/Apache/MapViewer.pm
-SHA1 ea7f637de48b616dd2b72b148a5bdc6553ab114c lib/Bio/GMOD/CMap/Apache/MatrixViewer.pm
-SHA1 97d9de4ab2196e5c48e1ae082437f4a90b96138a lib/Bio/GMOD/CMap/Apache/ViewFeatureOnMap.pm
-SHA1 e12928b6ac1cad4dc09904e75b3b66e276647275 lib/Bio/GMOD/CMap/Constants.pm.PL
-SHA1 b5c54ed0b78b3bbc0a2b2c5088267a9e619cf5a2 lib/Bio/GMOD/CMap/Data.pm
-SHA1 2ec35594b2d4961d469bdb5aca3ff8c72258e7f8 lib/Bio/GMOD/CMap/Data/Generic.pm
-SHA1 f5ab86a10a739e3af884a41dc12e762ee9851c4d lib/Bio/GMOD/CMap/Data/MySQL.pm
-SHA1 ee7c6038382d2be249317dd2b9a32fdf08f4f729 lib/Bio/GMOD/CMap/Data/Oracle.pm
-SHA1 10778073118872d04d2739f97111de705a76e366 lib/Bio/GMOD/CMap/Drawer.pm
-SHA1 cd255421fc5f994aa6c1ccbd4dce45530815d310 lib/Bio/GMOD/CMap/Drawer/Map.pm
-SHA1 30750e86a11f0ae9080a12d34178888675858558 lib/Bio/GMOD/CMap/Utils.pm
-SHA1 09dd1c45b78bb513915fa855198cb460c6a816c8 sql/cmap.create.mysql
+SHA1 a79d37536fffceb76a2657c8a44caeb07e32115f lib/Bio/GMOD/CMap.pm
+SHA1 55743034c01a6c12f58a91d42b68c0829a7d054d lib/Bio/GMOD/CMap/Admin.pm
+SHA1 4f7ede5100603b2836a3d581d68a72d9e11ec6d1 lib/Bio/GMOD/CMap/Admin/Import.pm
+SHA1 9a9855be0fed84390da9d314fbda13bbe68d9009 lib/Bio/GMOD/CMap/Admin/ImportCorrespondences.pm
+SHA1 c7bf9b2b4de466489db6735845a3a2d240c2d9d5 lib/Bio/GMOD/CMap/Admin/MakeCorrespondences.pm
+SHA1 3c49aab82e60c0a800734734ac0fd9c4e27a4dbe lib/Bio/GMOD/CMap/Apache.pm
+SHA1 c80380fa217494e4b4cfd1a430f978a98b2b41b3 lib/Bio/GMOD/CMap/Apache/AdminViewer.pm
+SHA1 b2f2863dcd71504b62a67a085b1f5a334ef266da lib/Bio/GMOD/CMap/Apache/FeatureSearch.pm
+SHA1 f283dc4026c24dad0e3b843dc02d23c250a39382 lib/Bio/GMOD/CMap/Apache/FeatureTypeViewer.pm
+SHA1 8c799ecf1962dc9f793d189ed541ecf3fbf6af2c lib/Bio/GMOD/CMap/Apache/FeatureViewer.pm
+SHA1 9205073a14ea2f597e80c773a52912d8793d0768 lib/Bio/GMOD/CMap/Apache/HelpViewer.pm
+SHA1 9fdd947c9b5a7637cdc0561ae4d0c2c266edc17f lib/Bio/GMOD/CMap/Apache/Index.pm
+SHA1 ff2ea1cf17e58285076eb5cf240406d601981125 lib/Bio/GMOD/CMap/Apache/MapDetailViewer.pm
+SHA1 d48db9ea5ac8b5ecf2eac619a609d7842d304285 lib/Bio/GMOD/CMap/Apache/MapSetViewer.pm
+SHA1 148050d08b749b4a910e487a4ebacb6b965bb2bc lib/Bio/GMOD/CMap/Apache/MapViewer.pm
+SHA1 b1d3491b864e6010b151ad7c12c8f3d61f340323 lib/Bio/GMOD/CMap/Apache/MatrixViewer.pm
+SHA1 f2f684511faeeb53c2eb21bf6890f8f50753b07b lib/Bio/GMOD/CMap/Apache/ViewFeatureOnMap.pm
+SHA1 a49dea31027c0fb4e7629e93b2350781018dc614 lib/Bio/GMOD/CMap/Constants.pm.PL
+SHA1 c9abf4399fc19e1977d5ce0c03a39c10e42f39c3 lib/Bio/GMOD/CMap/Data.pm
+SHA1 dd33bb4678a4f219ffe6fa741221fcdf298d7570 lib/Bio/GMOD/CMap/Data/Generic.pm
+SHA1 d7749b0db1cf215268830f17bb332746dddc808b lib/Bio/GMOD/CMap/Data/MySQL.pm
+SHA1 3fa5df21d635443922465944fa917c101ceceac2 lib/Bio/GMOD/CMap/Data/Oracle.pm
+SHA1 25a53eadf2e8523086c48677462d93f8c7044953 lib/Bio/GMOD/CMap/Drawer.pm
+SHA1 ec762d574ad740ffe8bf3421521ece219071406c lib/Bio/GMOD/CMap/Drawer/Map.pm
+SHA1 37bda4002a333e7b70924f7d7a274e38e6d6b614 lib/Bio/GMOD/CMap/Utils.pm
+SHA1 d3ccd1b4621eb06b1f25fea67be94fbbe3c59511 sql/cmap.create.mysql
 SHA1 345ac659504a9024e609d8883c2982b47bd5ab20 sql/cmap.create.oracle
 SHA1 ccdcf21e7bdafb1b03a2c6e01aded53b296d7e1c sql/cmap.create.postgresql
 SHA1 975061b10497441e10674f6ea3757f7451da7a88 sql/cmap.create.sybase
@@ -174,7 +174,7 @@ SHA1 ab1ba40e269487953892c548ad76845b5ba7f5dc templates/pager.tmpl
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.2.3 (GNU/Linux)
 
-iD8DBQE/cw2cQK9EdDJV+PIRAlF3AKCpGv6ExTm3BVh6YRELSaqkIoCxFwCfb94N
-oFXdSp/Tax4Q0E4SEvKX8rU=
-=AkJu
+iD8DBQE/eJsQQK9EdDJV+PIRAtH+AJ4z5ahg1THFD+yiBNujsoUr6j2uoQCgmGi8
+y7y4+UxTDJDikozKhwLMFbY=
+=WP86
 -----END PGP SIGNATURE-----
