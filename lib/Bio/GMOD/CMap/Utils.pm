@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Utils;
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.25.2.8 2004-05-28 20:50:22 kycl4rk Exp $
+# $Id: Utils.pm,v 1.25.2.9 2004-05-30 20:56:04 mwz444 Exp $
 
 =head1 NAME
 
@@ -29,7 +29,7 @@ use Bio::GMOD::CMap::Constants;
 use POSIX;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.25.2.8 $)[-1];
+$VERSION = (qw$Revision: 1.25.2.9 $)[-1];
 
 use base 'Exporter';
 
@@ -657,7 +657,6 @@ Special thanks to Noel Yap for suggesting this strategy.
 
     return \@accepted;
 }
-
 
 # ----------------------------------------------------
 sub label_distribution {
