@@ -70,7 +70,8 @@
         IF cur_sec == s.name; 
             links.push("<b>$s.display</b>");
         ELSIF ( s.name == 'help' );
-            links.push("<a href=\"$s.url?section=$cur_sec\">$s.display</a>");
+            SET help_link = cur_sec OR help_anchor;
+            links.push("<a href=\"$s.url?section=$help_link\">$s.display</a>");
         ELSE; 
             links.push("<a href=\"$s.url\">$s.display</a>");
         END;

@@ -485,6 +485,9 @@ function addPosToStr(str, slot_no, matchStr, value, is_start){
                   <input type="radio" name="image_type" value="jpeg"[% IF apr.param('image_type') == 'jpeg'; ' checked'; END %]>JPEG
                 </td>
                 <td>
+                  <input type="radio" name="image_type" value="gif"[% IF apr.param('image_type') == 'gif'; ' checked'; END %]>GIF
+                </td>
+                <td>
                   <input type="radio" name="image_type" value="svg"[% IF apr.param('image_type') == 'svg'; ' checked'; END %]>SVG *
                 </td>
               </tr>

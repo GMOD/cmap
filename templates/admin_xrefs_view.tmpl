@@ -41,25 +41,25 @@
     <table width="100%">
         <tr>
             <td colspan="7" align="center">
-                [% SET pager_url="admin?action=xrefs_view&table_name=${apr.param('table_name')}&generic_only=${apr.param('generic_only')}" %]
+                [% SET pager_url="admin?action=xrefs_view&table_name=${apr.param('table_name')}&generic_only=${apr.param('generic_only')}&order_by=${apr.param('order_by')}" %]
                 [% PROCESS pager.tmpl %]
             </td>
         </tr>
         <tr>
             <th>
-                <a href="admin?action=xrefs_view;table_name=[% apr.param('table_name') %];feature_type=[% apr.param('feature_type') %];order_by=display_order;generic_only=[% apr.param('generic_only') %]">Display Order</a>
+                <a href="admin?action=xrefs_view;table_name=[% apr.param('table_name') %];order_by=display_order;generic_only=[% apr.param('generic_only') %]">Display Order</a>
             </th>
             <th>
-                <a href="admin?action=xrefs_view;table_name=[% apr.param('table_name') %];feature_type=[% apr.param('feature_type') %];order_by=table_name;generic_only=[% apr.param('generic_only') %]">DB Object</a>
+                <a href="admin?action=xrefs_view;table_name=[% apr.param('table_name') %];order_by=table_name;generic_only=[% apr.param('generic_only') %]">DB Object</a>
             </th>
             <th>
-                <a href="admin?action=xrefs_view;table_name=[% apr.param('table_name') %];feature_type=[% apr.param('feature_type') %];order_by=object_name;generic_only=[% apr.param('generic_only') %]">Object Name</a>
+                <a href="admin?action=xrefs_view;table_name=[% apr.param('table_name') %];order_by=object_name;generic_only=[% apr.param('generic_only') %]">Object Name</a>
             </th>
             <th>
-                <a href="admin?action=xrefs_view;table_name=[% apr.param('table_name') %];feature_type=[% apr.param('feature_type') %];order_by=xref_name;generic_only=[% apr.param('generic_only') %]">Name</a>
+                <a href="admin?action=xrefs_view;table_name=[% apr.param('table_name') %];order_by=xref_name;generic_only=[% apr.param('generic_only') %]">Name</a>
             </th>
             <th>
-                <a href="admin?action=xrefs_view;table_name=[% apr.param('table_name') %];feature_type=[% apr.param('feature_type') %];order_by=xref_url;generic_only=[% apr.param('generic_only') %]">URL</a>
+                <a href="admin?action=xrefs_view;table_name=[% apr.param('table_name') %];order_by=xref_url;generic_only=[% apr.param('generic_only') %]">URL</a>
             </th>
             <th colspan="2" align="center">&nbsp;</th>
         </tr>
@@ -90,3 +90,4 @@
 [% END %]
 
 [% INCLUDE admin_footer.tmpl %]
+
