@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.3 2003-09-18 23:17:12 kycl4rk Exp $
+# $Id: Build.PL,v 1.4 2003-09-19 18:44:16 kycl4rk Exp $
 
 use strict;
 
@@ -141,7 +141,7 @@ print F "$_=$OPTIONS{$_}\n" for keys %OPTIONS;
 close F;
 
 #
-# Write the build script.
+# Make the text for copying the templates.
 #
 opendir( TEMPLATES, 'templates' );
 my $template_copy = join("\n",
@@ -159,6 +159,9 @@ my $template_copy = join("\n",
 );
 closedir TEMPLATES;
 
+#
+# Write the build script.
+#
 my $conf_file         = catfile('conf', 'cmap.conf');
 my $stylesheet        = catfile('conf', 'cmap.css');
 my $builder           =  Module::Build->subclass(
