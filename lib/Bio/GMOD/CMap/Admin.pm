@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.39 2003-12-09 15:37:51 kycl4rk Exp $
+# $Id: Admin.pm,v 1.40 2003-12-20 02:28:29 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.39 $)[-1];
+$VERSION = (qw$Revision: 1.40 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -351,44 +351,46 @@ Delete a feature correspondence.
 }
 
 # ----------------------------------------------------
-#sub feature_alias_update {
-#
-#=pod
-#
-#=head2 feature_alias_update 
-#
-#Updates the aliases attached to a feature.
-#
-#=cut
-#
-#    my $self       = shift;
-#    my $feature_id = shift or return $self->error('No feature id');
-#    my @aliases    = @_;
-#    my $db         = $self->db;
-#
-#    if ( @aliases ) {
-#        $db->do(
-#            'delete from cmap_feature_alias where feature_id=?', 
-#            {},
-#            ( $feature_id )
-#        );
-#    }
-#
-#    for my $alias ( @aliases ) {
-#        $alias =~ s/^\s+|\s+$//g;
-#        $db->do(
-#            q[
-#                insert
-#                into   cmap_feature_alias (feature_id, alias)
-#                values (?, ?)
-#            ],
-#            {},
-#            ( $feature_id, $alias )
-#        );
-#    }
-#
-#    return 1;
-#}
+sub feature_type_create {
+    my ( $self, %args ) = @_;
+    my @missing         = ();
+    my $db              = $self->db or return $self->error;
+    my $feature_type    = $args{'feature_type'} or push @missing,'feature type';
+    my $shape           = $args{'shape'}        or push @missing, 'shape';
+
+    if ( @missing ) {
+        return $self->error('Missing required fields: ', join(', ', @missing));
+    }
+
+    my $color            = $args{'color'}            || '';
+    my $default_rank     = $args{'default_rank'}     ||  1;
+    my $drawing_lane     = $args{'drawing_lane'}     ||  1;
+    my $drawing_priority = $args{'drawing_priority'} ||  1;
+    my $feature_type_id  = next_number(
+        db               => $db,
+        table_name       => 'cmap_feature_type',
+        id_field         => 'feature_type_id',
+    ) or return $self->error('No feature type id');
+    my $accession_id     = $args{'accession_id'} || $feature_type_id;
+
+    $db->do(
+        q[
+            insert
+            into   cmap_feature_type
+                   ( accession_id, feature_type_id, feature_type,
+                     shape, color, default_rank, drawing_lane, 
+                     drawing_priority
+                   )
+            values ( ?, ?, ?, ?, ?, ?, ?, ? )
+        ],
+        {},
+        ( $accession_id, $feature_type_id, $feature_type,
+          $shape, $color, $default_rank, $drawing_lane, $drawing_priority
+        )
+    );
+
+    return $feature_type_id;
+}
 
 # ----------------------------------------------------
 sub get_feature_attribute_id {
@@ -916,6 +918,60 @@ Inserts a correspondence.  Returns -1 if there is nothing to do.
 }
 
 # ----------------------------------------------------
+sub map_create {
+    my ( $self, %args ) = @_;
+    my @missing         = ();
+    my $map_set_id      = $args{'map_set_id'} or
+                         push @missing, 'map set id';
+    my $map_name       = $args{'map_name'};
+    push @missing, 'map name' unless defined $map_name && $map_name ne '';
+    my $start_position = $args{'start_position'};
+    push @missing, 'start position' unless 
+        defined $start_position && $start_position ne '';
+    my $stop_position  = $args{'stop_position'};
+    push @missing, 'stop position' unless 
+        defined $stop_position && $stop_position ne '';
+
+    if ( @missing ) {
+        return $self->error('Missing required fields: ', join(', ', @missing));
+    }
+
+    unless ( $start_position =~ NUMBER_RE ) {
+        return $self->error("Bad start position ($start_position)");
+    }
+
+    unless ( $stop_position =~ NUMBER_RE ) {
+        return $self->error("Bad stop position ($stop_position)");
+    }
+
+    my $db              = $self->db or return $self->error;
+    my $map_id          = next_number(
+        db              => $db,
+        table_name      => 'cmap_map',
+        id_field        => 'map_id',
+    ) or die 'No next number for map id';
+
+    my $accession_id   = $args{'accession_id'}  || $map_id;
+    my $display_order  = $args{'display_order'} ||       1;
+
+    $db->do(
+        q[
+            insert
+            into   cmap_map
+                   ( map_id, accession_id, map_set_id, map_name,
+                     display_order, start_position, stop_position )
+            values ( ?, ?, ?, ?, ?, ?, ? )
+        ],
+        {},
+        ( $map_id, $accession_id, $map_set_id, $map_name, $display_order,
+          $start_position, $stop_position,
+        )
+    );
+
+    return $map_id;
+}
+
+# ----------------------------------------------------
 sub map_delete {
 
 =pod
@@ -1011,6 +1067,46 @@ Delete a map set.
     ); 
 
     return 1;
+}
+
+# ----------------------------------------------------
+sub map_type_create {
+    my ( $self, %args ) = @_;
+    my @missing         = ();
+    my $map_type        = $args{'map_type'}  or push @missing, 'map type';
+    my $map_units       = $args{'map_units'} or push @missing, 'map units';
+    my $shape           = $args{'shape'}     or push @missing, 'shape';
+
+    if ( @missing ) {
+        return $self->error('Missing required fields: ', join(', ', @missing));
+    }
+
+    my $width             = $args{'width'}             || '';
+    my $color             = $args{'color'}             || '';
+    my $display_order     = $args{'display_order'}     ||  1;
+    my $is_relational_map = $args{'is_relational_map'} ||  0;
+    my $db                = $self->db;
+    my $map_type_id       = next_number(
+        db                => $db,
+        table_name        => 'cmap_map_type',
+        id_field          => 'map_type_id',
+    ) or return $self->error('No map type id');
+    my $accession_id      = $args{'accession_id'} || $map_type_id;
+
+    $db->do(
+        q[
+            insert
+            into   cmap_map_type
+                   ( map_type_id, accession_id, map_type, map_units,
+                     is_relational_map, display_order, shape, width, color )
+            values ( ?, ?, ?, ?, ?, ?, ?, ?, ? )
+        ],
+        {},
+        ( $map_type_id, $accession_id, $map_type, $map_units,
+          $is_relational_map, $display_order, $shape, $width, $color )
+    );
+
+    return $map_type_id;
 }
 
 # ----------------------------------------------------
@@ -1333,9 +1429,9 @@ Set the attributes for a database object.
     }
 
     for my $attr ( @attributes ) {
-        my $attribute_id  = $attr->{'attribute_id'}  || 0;
-        my $attr_name     = $attr->{'name'}          or next;
-        my $attr_value    = $attr->{'value'}         or next;
+        my $attribute_id  = $attr->{'attribute_id'} || 0;
+        my $attr_name     = $attr->{'name'}  || $attr->{'attribute_name'};
+        my $attr_value    = $attr->{'value'} || $attr->{'attribute_value'};
         my $is_public     = $attr->{'is_public'};
         my $display_order = $attr->{'display_order'};
 
@@ -1458,8 +1554,8 @@ Set the attributes for a database object.
 
     for my $attr ( @xrefs ) {
         my $xref_id       = $attr->{'xref_id'} || 0;
-        my $xref_name     = $attr->{'name'}    or next;
-        my $xref_url      = $attr->{'url'}     or next;
+        my $xref_name     = $attr->{'name'}    || $attr->{'xref_name'};
+        my $xref_url      = $attr->{'url'}     || $attr->{'xref_url'};
         my $display_order = $attr->{'display_order'};
 
         next unless 
@@ -1570,6 +1666,43 @@ Return all the species.
         ], 
         { Columns => {} }
     );
+}
+
+# ----------------------------------------------------
+sub species_create {
+    my ( $self, %args ) = @_;
+    my @missing;
+    my $db              = $self->db;
+    my $common_name     = $args{'common_name'} or
+                          push @missing, 'common name';
+    my $full_name       = $args{'full_name'}   or
+                          push @missing, 'full name';
+    if ( @missing ) {
+        return $self->error('Missing required fields: ', join(', ', @missing));
+    }
+
+    my $display_order   = $args{'display_order'} || 1;
+    my $species_id      = next_number(
+        db              => $db, 
+        table_name      => 'cmap_species',
+        id_field        => 'species_id',
+    ) or return $self->error( "Can't get new species id" );
+    my $accession_id    = $args{'accession_id'} || $species_id;
+            
+    $db->do(         
+        q[           
+            insert   
+            into   cmap_species 
+                   ( accession_id, species_id, full_name, common_name,
+                     display_order
+                   )
+            values ( ?, ?, ?, ?, ? )
+        ],
+        {},
+        ($accession_id, $species_id, $full_name, $common_name, $display_order)
+    );
+
+    return $species_id;
 }
 
 # ----------------------------------------------------
