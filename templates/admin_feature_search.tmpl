@@ -92,7 +92,6 @@
             </tr>
 
             [% SET i=0 %]
-            [% SET start = apr.param('limit_start') OR 1 %]
             [% FOREACH f=features %]
                 <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
                     <td>[% f.feature_aid %]</td>

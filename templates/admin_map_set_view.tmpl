@@ -131,21 +131,21 @@
         </tr>
         <tr>
             <th>
-                <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];limit_start=[% apr.param('limit_start') %];order_by=accession_id">Acc. ID</a>
+                <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];order_by=accession_id">Acc. ID</a>
             </th>
             <th>
-                <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];limit_start=[% apr.param('limit_start') %];order_by=display_order">Display Order</a>
+                <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];order_by=display_order">Display Order</a>
             </th>
             <th>
-                <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];limit_start=[% apr.param('limit_start') %];order_by=map_name">Map Name</a>
+                <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];order_by=map_name">Map Name</a>
             </th>
-            <th><a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];limit_start=[% apr.param('limit_start') %];order_by=start_position">Start</a>
-            </th>
-            <th>
-                <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];limit_start=[% apr.param('limit_start') %];order_by=stop_position">Stop</a>
+            <th><a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];order_by=start_position">Start</a>
             </th>
             <th>
-                <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];limit_start=[% apr.param('limit_start') %];order_by=no_features">No. Features</a>
+                <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];order_by=stop_position">Stop</a>
+            </th>
+            <th>
+                <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];order_by=no_features">No. Features</a>
             </th>
             <th colspan="3">&nbsp;</th>
         </tr>
@@ -155,8 +155,8 @@
                 <td>[% map.accession_id   %]</td>
                 <td>[% map.display_order  %]</td>
                 <td>[% map.map_name       %]</td>
-                <td align="right">[% map.start_position %]</td>
-                <td align="right">[% map.stop_position  %]</td>
+                <td align="right">[% map.start_position | commify %]</td>
+                <td align="right">[% map.stop_position  | commify %]</td>
                 <td align="right">[% map.no_features  %]</td>
                 <td align="center">
                     <a href="admin?action=map_view;map_id=[% map.map_id %]">View</a>
