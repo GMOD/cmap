@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.71 2003-11-03 18:09:57 kycl4rk Exp $
+# $Id: Data.pm,v 1.72 2003-11-03 18:28:16 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.71 $)[-1];
+$VERSION = (qw$Revision: 1.72 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -798,7 +798,6 @@ Returns the data for drawing comparative maps.
 
         #
         # Go ahead and assume we can get all the features right now.
-        # Removed "alternate_name"
         #
         my $f_sql = qq[
             select   f.feature_id,
@@ -832,8 +831,20 @@ Returns the data for drawing comparative maps.
             and      ms.map_type_id=mt.map_type_id
         ];
 
+        my $alias_sql = qq[
+            select   f.feature_id,
+                     fa.alias
+            from     cmap_map_cache mc,
+                     cmap_feature f,
+                     cmap_feature_alias fa
+            where    mc.pid=?
+            and      mc.slot_no=?
+            and      mc.map_id=f.map_id
+            and      f.feature_id=fa.feature_id
+        ];
+
         if ( $this_map_id && defined $map_start && defined $map_stop ) {
-            $f_sql .= qq[
+            my $restrict = qq[
                 and      (
                     ( f.start_position>=$map_start and 
                       f.start_position<=$map_stop )
@@ -844,6 +855,9 @@ Returns the data for drawing comparative maps.
                     )
                 )
             ];
+
+            $f_sql     .= $restrict;
+            $alias_sql .= $restrict;
         }
 
         if ( @$feature_type_ids ) {
@@ -856,7 +870,17 @@ Returns the data for drawing comparative maps.
             $f_sql, { Columns => {} }, ( $pid, $slot_no )
         );
 
+        my $aliases = $db->selectall_arrayref(
+            $alias_sql, {}, ( $pid, $slot_no )
+        );
+
+        my %alias_lookup = ();
+        for my $a ( @$aliases ) {
+            push @{ $alias_lookup{ $a->[0] } }, $a->[1];
+        }
+
         for my $f ( @$features ) {
+            $f->{'aliases'} = $alias_lookup{ $f->{'feature_id'} } || [];
             $feature_lookup{ $f->{'map_id'} }{ $f->{'feature_id'} } = $f;
         }
     }
