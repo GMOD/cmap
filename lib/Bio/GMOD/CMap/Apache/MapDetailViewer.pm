@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapDetailViewer;
 
-# $Id: MapDetailViewer.pm,v 1.14 2003-07-30 16:54:09 kycl4rk Exp $
+# $Id: MapDetailViewer.pm,v 1.15 2003-07-31 02:23:53 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES );
-$VERSION = (qw$Revision: 1.14 $)[-1];
+$VERSION = (qw$Revision: 1.15 $)[-1];
 
 use Apache::Constants;
 use URI::Escape;
@@ -190,7 +190,7 @@ sub handler {
             map_view               => 'details',
         ) or die $self->error( "Drawer: ".Bio::GMOD::CMap::Drawer->error );
 
-        my $ref_map = $slots{0};
+        my $ref_map = $drawer->{'data'}{'slots'}{'0'}{ $ref_map_aid };
         $apr->param('ref_map_start',  $ref_map->{'start'}         );
         $apr->param('ref_map_stop',   $ref_map->{'stop'}          );
         $apr->param('feature_types',  join(',', @feature_types )  );
