@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.15 2003-01-08 22:59:07 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.16 2003-01-11 03:46:25 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.15 $)[-1];
+$VERSION = (qw$Revision: 1.16 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
@@ -34,9 +34,10 @@ use File::Path;
 use Data::Dumper;
 use base 'Bio::GMOD::CMap';
 
-use constant INIT_PARAMS => [
-    qw( apr slots highlight font_size image_size image_type include_features )
-];
+use constant INIT_PARAMS => [ qw(
+    apr slots highlight font_size image_size image_type 
+    label_features include_feature_types
+) ];
 
 # ----------------------------------------------------
 sub init {
@@ -59,20 +60,6 @@ Initializes the drawing object.
     $self->draw;
     return $self;
 }
-
-## ----------------------------------------------------
-#sub add_map_href_bounds {
-#
-#=pod
-#
-#=head2 add_map_href_bounds
-#
-#Stores the coords for making maps clickable.
-#
-#=cut
-#    my ( $self, %args ) = @_;
-#    push @{ $self->{'map_href_bounds'} }, \%args; 
-#}
 
 # ----------------------------------------------------
 sub apr {
@@ -290,6 +277,20 @@ Gets/sets the comparative map.
 }
 
 # ----------------------------------------------------
+sub correspondences_exist {
+
+=pod
+
+=head2 correspondence_exist
+
+Returns whether or not there are any feature correspondences.
+
+=cut
+    my $self = shift;
+    return %{ $self->{'data'}{'correspondences'} || {} } ? 1 : 0;
+}
+
+# ----------------------------------------------------
 sub get_completed_map {
 
 =pod
@@ -371,6 +372,25 @@ Gets a completed map.
 #        );
 #    }
 #}
+
+# ----------------------------------------------------
+sub include_feature_types {
+
+=pod
+
+=head2 include_feature_types
+
+Gets/sets which feature type (accession IDs) to include.
+
+=cut
+    my $self = shift;
+
+    if ( my $arg = shift ) {
+        push @{ $self->{'include_feature_types'} }, @$arg; 
+    }
+
+    return $self->{'include_feature_types'};
+}
 
 # ----------------------------------------------------
 sub set_completed_map {
@@ -471,7 +491,16 @@ Lays out the image and writes it to the file system, set the "image_name."
         my $x      = $min_x + 20;
 
         $self->add_drawing( STRING, $font, $x, $max_y, 'Legend:', 'black' );
-        $max_y += $font->height + 5;
+        $max_y += $font->height + 10;
+
+        my $corr_color = $self->config('feature_correspondence_color');
+        if ( $corr_color && $self->correspondences_exist ) {
+            push @feature_types, {
+                shape        => '',
+                color        => $corr_color,
+                feature_type => ucfirst($corr_color).' denontes correspondence',
+            };
+        }
 
         for my $ft ( @feature_types ) {
             my $color     = $ft->{'color'} || $self->config('feature_color');
@@ -516,7 +545,7 @@ Lays out the image and writes it to the file system, set the "image_name."
                 );
                 $label_y = $feature_y + 5;
             }
-            else { # dumbbell
+            elsif ( $ft->{'shape'} eq 'dumbbell' ) {
                 my $width = 3;
                 $self->add_drawing(
                     ARC, 
@@ -534,6 +563,10 @@ Lays out the image and writes it to the file system, set the "image_name."
                 );
                 $label_y = $feature_y + 5;
             }
+            else {
+                # Do nothing.
+                $label_y = $feature_y + 5;
+            }
 
             $self->add_drawing( 
                 STRING, $font, $label_x, $label_y - $font->height/2, 
@@ -546,7 +579,7 @@ Lays out the image and writes it to the file system, set the "image_name."
             $max_y         = $furthest_y + 10;
         }
 
-        my $watermark = 'CMAP v'.$Bio::GMOD::CMap::VERSION;
+        my $watermark = 'CMap v'.$Bio::GMOD::CMap::VERSION;
         my $wm_x      = $max_x - $font->width * length( $watermark ) - 5;
         my $wm_y      = $max_y;
         $self->add_drawing( STRING, $font, $wm_x, $wm_y, $watermark, 'grey' );
@@ -624,10 +657,10 @@ necessary data for drawing.
     my $self = shift;
 
     unless ( $self->{'data'} ) {
-        my $data             =  Bio::GMOD::CMap::Data->new;
-        $self->{'data'}      =  $data->cmap_data( 
-            slots            => $self->slots,
-            include_features => $self->include_features,
+        my $data                  =  Bio::GMOD::CMap::Data->new;
+        $self->{'data'}           =  $data->cmap_data( 
+            slots                 => $self->slots,
+            include_feature_types => $self->include_feature_types,
         );
     }
 
@@ -666,7 +699,10 @@ Returns all the feature types seen on the maps.
         ];
     }
 
-    return map { $_->{'seen'} ? $_ : () } @{ $self->{'feature_types'} || [] };
+    return 
+        sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} }
+        map  { $_->{'seen'} ? $_ : () } 
+        @{ $self->{'feature_types'} || [] };
 }
 
 # ----------------------------------------------------
@@ -815,7 +851,7 @@ Gets/sets the string of highlighted features.
     unless ( defined $self->{'highlight_hash'} ) {
         if ( my $highlight = $self->highlight ) {
             #
-            # Remove leading and trailing slashes, convert to uppercase.
+            # Remove leading and trailing whitespace, convert to uppercase.
             #
             $self->{'highlight_hash'} = {
                 map  { s/^\s+|\s+$//g; ( uc $_, 1 ) }
@@ -1049,11 +1085,11 @@ Gets/sets the output map image's width.
 }
 
 # ----------------------------------------------------
-sub include_features {
+sub label_features {
 
 =pod
 
-=head2 include_features
+=head2 label_features
 
 Gets/sets whether to show feature labels.
 
@@ -1062,11 +1098,11 @@ Gets/sets whether to show feature labels.
 
     if ( my $arg = shift ) {
         $self->error(qq[Show feature labels input "$arg" invalid])
-            unless VALID->{'include_features'}{ $arg };
-        $self->{'include_features'} = $arg;
+            unless VALID->{'label_features'}{ $arg };
+        $self->{'label_features'} = $arg;
     }
 
-    return $self->{'include_features'} || 0;
+    return $self->{'label_features'} || '';
 }
 
 # ----------------------------------------------------

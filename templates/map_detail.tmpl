@@ -70,12 +70,30 @@
                 </tr>
 
                 <tr>
-                    <td align="right" valign="top">Include Features:</td>
+                    <td align="right" valign="top">Show Labels:</td>
 
                     <td colspan="2">
-                        <input type="radio" name="include_features" value="none"[% IF apr.param('include_features')=='none'; ' checked'; END %]>None
-                        <input type="radio" name="include_features" value="landmarks"[% IF apr.param('include_features')=='landmarks'; ' checked'; END %]>Landmarks
-                        <input type="radio" name="include_features" value="all"[% IF apr.param('include_features')=='all'; ' checked'; END %]>All
+                        <input type="radio" name="label_features" value="none"[% IF apr.param('label_features')=='none'; ' checked'; END %]>None
+                        <input type="radio" name="label_features" value="landmarks"[% IF apr.param('label_features')=='landmarks'; ' checked'; END %]>Landmarks
+                        <input type="radio" name="label_features" value="all"[% IF apr.param('label_features')=='all'; ' checked'; END %]>All
+                    </td>
+                </tr>
+
+                <tr>
+                    <td align="right" valign="top">Include Feature Types:</td>
+
+                    <td>
+                        [% IF feature_types.size %]
+                            [% feature_types.unshift({feature_type_aid=>'-1',feature_type=>'--All--'}) %]
+                            <select name="feature_types" size="5" multiple>
+                                [% FOREACH ft=feature_types %]
+                                    <option value="[% ft.feature_type_aid %]"[% IF included_features.${ft.feature_type_aid}; ' selected'; END %]>[% ft.feature_type %]</option>
+                                [% END %]
+                            </select>
+
+                        [% ELSE %]
+                            There are no feature types!
+                        [% END %]
                     </td>
                 </tr>
 
@@ -102,11 +120,11 @@
 <a name="details">
 <table border="1">
     <tr>
-        <td align="center" colspan="4">
+        <td valign="top" align="center" colspan="4">
             <form method="GET" action="map_details">
             Restrict by Feature Type:
-            <select name="feature_type_aid">
-                <option value="">--All--</option>
+            <select name="table_feature_types" size="5" multiple>
+                [% feature_types.unshift({feature_type_aid=>'-1',feature_type=>'--All--'}) %]
                 [% FOREACH ft=feature_types %]
                     <option value="[% ft.feature_type_aid %]"[% IF ft.feature_type_aid==apr.param('feature_type_aid'); ' selected'; END %]>[% ft.feature_type %]</option>
                 [% END %]
@@ -139,9 +157,9 @@
     </tr>
 
     <tr>
-        <th><a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% apr.param('comparative_maps') %];feature_type_aid=[% apr.param('feature_type_aid') %];highlight=[% apr.param('highlight') %];image_size=[% apr.param('image_size') %];font_size=[% apr.param('font_size') %];image_type=[% apr.param('image_type') %];include_features=[% apr.param('include_features') %];order=[% apr.param('order') %];order_by=feature_name">Feature</a></th>
-        <th><a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% apr.param('comparative_maps') %];feature_type_aid=[% apr.param('feature_type_aid') %];highlight=[% apr.param('highlight') %];image_size=[% apr.param('image_size') %];font_size=[% apr.param('font_size') %];image_type=[% apr.param('image_type') %];include_features=[% apr.param('include_features') %];order=[% apr.param('order') %];order_by=feature_type">Type</a></th>
-        <th><a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% apr.param('comparative_maps') %];feature_type_aid=[% apr.param('feature_type_aid') %];highlight=[% apr.param('highlight') %];image_size=[% apr.param('image_size') %];font_size=[% apr.param('font_size') %];image_type=[% apr.param('image_type') %];include_features=[% apr.param('include_features') %];order=[% apr.param('order') %];order_by=start_position">Position</a> ([% reference_map.map_units %])</th>
+        <th><a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% apr.param('comparative_maps') %];feature_type_aid=[% apr.param('feature_type_aid') %];highlight=[% apr.param('highlight') %];image_size=[% apr.param('image_size') %];font_size=[% apr.param('font_size') %];image_type=[% apr.param('image_type') %];label_features=[% apr.param('label_features') %];order=[% apr.param('order') %];order_by=feature_name">Feature</a></th>
+        <th><a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% apr.param('comparative_maps') %];feature_type_aid=[% apr.param('feature_type_aid') %];highlight=[% apr.param('highlight') %];image_size=[% apr.param('image_size') %];font_size=[% apr.param('font_size') %];image_type=[% apr.param('image_type') %];label_features=[% apr.param('label_features') %];order=[% apr.param('order') %];order_by=feature_type">Type</a></th>
+        <th><a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% apr.param('comparative_maps') %];feature_type_aid=[% apr.param('feature_type_aid') %];highlight=[% apr.param('highlight') %];image_size=[% apr.param('image_size') %];font_size=[% apr.param('font_size') %];image_type=[% apr.param('image_type') %];label_features=[% apr.param('label_features') %];order=[% apr.param('order') %];order_by=start_position">Position</a> ([% reference_map.map_units %])</th>
         <th>Map</th>
         <th>Feature</th>
         <th>Type</th>

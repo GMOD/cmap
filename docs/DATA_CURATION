@@ -158,15 +158,15 @@ some other part of your site.  To link to just one map, make it the
 "set" and the map itself.  Give the feature (mutant) name to highlight
 it;  for more than one, separate with commas.  You'll want to make
 sure that the user can see all the feature labels, so include "all" as
-the "include_feature" argument.
+the "label_features" argument.
 
     URI:  /cmap/viewer?
     Args: ref_map_set_aid=<map_set_accession_id>
           ref_map_aid=<map_accession_id>
           highlight=<mutant_name>
-          include_features=<none, all, or landmarks>
+          label_features=<none, all, or landmarks>
     E.g.:
-http://www.gramene.org/cmap/viewer?ref_map_aid=13&ref_map_set_aid=cu-dh-2001&highlight=RM9&include_features=all
+http://www.gramene.org/cmap/viewer?ref_map_aid=13&ref_map_set_aid=cu-dh-2001&highlight=RM9&label_features=all
 
 Note: I use the abbreviation "aid" to represent "accession_id."
 

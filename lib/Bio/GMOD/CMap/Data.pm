@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.28 2003-01-09 21:26:50 kycl4rk Exp $
+# $Id: Data.pm,v 1.29 2003-01-11 03:46:25 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.28 $)[-1];
+$VERSION = (qw$Revision: 1.29 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -90,13 +90,13 @@ sub cmap_data {
 Organizes the data for drawing comparative maps.
 
 =cut
-    my ( $self, %args )  = @_;
-    my $slots            = $args{'slots'};
-    my $include_features = $args{'include_features'} || '';
-    my @slot_nos         = keys %$slots;
-    my @pos              = sort { $a <=> $b } grep { $_ >= 0 } @slot_nos;
-    my @neg              = sort { $b <=> $a } grep { $_ <  0 } @slot_nos; 
-    my @ordered_slot_nos = ( @pos, @neg );
+    my ( $self, %args )       = @_;
+    my $slots                 = $args{'slots'};
+    my $include_feature_types = $args{'include_feature_types'};
+    my @slot_nos              = keys %$slots;
+    my @pos                   = sort { $a <=> $b } grep { $_ >= 0 } @slot_nos;
+    my @neg                   = sort { $b <=> $a } grep { $_ <  0 } @slot_nos; 
+    my @ordered_slot_nos      = ( @pos, @neg );
 
     my ( $data, %correspondences, %feature_types );
     for my $slot_no ( @ordered_slot_nos ) {
@@ -108,12 +108,12 @@ Organizes the data for drawing comparative maps.
         ;
 
         $data->{'slots'}{ $slot_no } = $self->map_data( 
-            map              => \$cur_map,         # pass
-            correspondences  => \%correspondences, # by
-            feature_types    => \%feature_types,   # reference
-            reference_map    => $ref_map,
-            slot_no          => $slot_no,
-            include_features => $include_features
+            map                   => \$cur_map,         # pass
+            correspondences       => \%correspondences, # by
+            feature_types         => \%feature_types,   # reference
+            reference_map         => $ref_map,
+            slot_no               => $slot_no,
+            include_feature_types => $include_feature_types,
         );
     }
 
@@ -133,19 +133,19 @@ sub map_data {
 Returns the data for drawing comparative maps.
 
 =cut
-    my ( $self, %args )  = @_;
-    my $db               = $self->db  or return;
-    my $sql              = $self->sql or return;
+    my ( $self, %args ) = @_;
+    my $db              = $self->db  or return;
+    my $sql             = $self->sql or return;
 
     #
     # Get the arguments.
     #
-    my $slot_no          = $args{'slot_no'};
-    my $include_features = $args{'include_features'} || 0;
-    my $map              = ${ $args{'map'} }; # hashref
-    my $reference_map    = $args{'reference_map'};
-    my $correspondences  = $args{'correspondences'};
-    my $feature_types    = $args{'feature_types'};
+    my $slot_no               = $args{'slot_no'};
+    my $include_feature_types = $args{'include_feature_types'};
+    my $map                   = ${ $args{'map'} }; # hashref
+    my $reference_map         = $args{'reference_map'};
+    my $correspondences       = $args{'correspondences'};
+    my $feature_types         = $args{'feature_types'};
 
     #
     # Sort out the current map.
@@ -372,7 +372,7 @@ Returns the data for drawing comparative maps.
 #            stop             => $map_stop,
 #            begin            => $map_data->{'begin'},
 #            end              => $map_data->{'end'},
-#            include_features => $include_features,
+#            include_feature_types   => $include_feature_types,
 #        );
 
         #
@@ -387,7 +387,9 @@ Returns the data for drawing comparative maps.
         # Get the reference map features.
         #
         $map_data->{'features'} = $db->selectall_hashref(
-            $sql->cmap_data_features_sql,
+            $sql->cmap_data_features_sql(
+                feature_type_aids => $include_feature_types, 
+            ),
             'feature_id',
             {},
             ( $map_id, $map_start, $map_stop, $map_start, $map_start )
@@ -1150,6 +1152,22 @@ Returns the data for the main comparative map HTML form.
     my $comp_maps_left  = $self->get_comparative_maps( $left_map )  || [];
 
     #
+    # Feature types.
+    #
+    my @feature_types = 
+        sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} } @{
+        $db->selectall_arrayref(
+            q[
+                select   ft.accession_id as feature_type_aid,
+                         ft.feature_type
+                from     cmap_feature_type ft
+                order by ft.feature_type
+            ],
+            { Columns => {} }
+        )
+    };
+
+    #
     # Fill out all the info we have on every map.
     #
     my $map_info = $self->fill_out_maps( $slots );
@@ -1162,6 +1180,7 @@ Returns the data for the main comparative map HTML form.
         comparative_maps_right => $comp_maps_right,
         comparative_maps_left  => $comp_maps_left,
         map_info               => $map_info,
+        feature_types          => \@feature_types,
     };
 }
 
@@ -1762,20 +1781,20 @@ sub map_detail_data {
 Returns the detail info for a map.
 
 =cut
-    my ( $self, %args )     = @_;
-    my $map                 = $args{'map'};
-    my $highlight           = $args{'highlight'}           ||               '';
-    my $order_by            = $args{'order_by'}            || 'start_position';
-    my $restrict_by         = $args{'restrict_by'}         ||               '';
-    my $comparative_map_aid = $args{'comparative_map_aid'} ||               '';
-    my $db                  = $self->db  or return;
-    my $sql                 = $self->sql or return;
-    my $map_id              = $self->acc_id_to_internal_id(
-        table               => 'cmap_map',
-        acc_id              => $map->{'aid'},
+    my ( $self, %args )       = @_;
+    my $map                   = $args{'map'};
+    my $highlight             = $args{'highlight'}         ||               '';
+    my $order_by              = $args{'order_by'}          || 'start_position';
+    my $comparative_map_aid   = $args{'comparative_map_aid'} ||             '';
+    my $include_feature_types = $args{'include_feature_types'};
+    my $db                    = $self->db  or return;
+    my $sql                   = $self->sql or return;
+    my $map_id                = $self->acc_id_to_internal_id(
+        table                 => 'cmap_map',
+        acc_id                => $map->{'aid'},
     );
-    my $map_start           = $map->{'start'};
-    my $map_stop            = $map->{'stop'};
+    my $map_start             = $map->{'start'};
+    my $map_stop              = $map->{'stop'};
 
     #
     # Figure out hightlighted features.
@@ -1820,28 +1839,31 @@ Returns the detail info for a map.
     #
     my $features = $db->selectall_arrayref(
         $sql->cmap_data_features_sql( 
-            order_by    => $order_by,
-            restrict_by => $restrict_by,
+            order_by          => $order_by,
+            feature_type_aids => $include_feature_types,
         ),
         { Columns => {} },
-        ( $map_id, $map_start, $map_stop )
+        ( $map_id, $map_start, $map_stop, $map_start, $map_start )
     );
 
-    my $feature_types = $db->selectall_arrayref(
-        q[
-            select   distinct ft.accession_id as feature_type_aid,
-                     ft.feature_type
-            from     cmap_feature f,
-                     cmap_feature_type ft
-            where    f.map_id=?
-            and      f.start_position>=?
-            and      f.start_position<=?
-            and      f.feature_type_id=ft.feature_type_id
-            order by feature_type
-        ],
-        { Columns => {} },
-        ( $map_id, $map_start, $map_stop )
-    );
+    my @feature_types = 
+        sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} } @{
+        $db->selectall_arrayref(
+            q[
+                select   distinct ft.accession_id as feature_type_aid,
+                         ft.feature_type
+                from     cmap_feature f,
+                         cmap_feature_type ft
+                where    f.map_id=?
+                and      f.start_position>=?
+                and      f.start_position<=?
+                and      f.feature_type_id=ft.feature_type_id
+                order by feature_type
+            ],
+            { Columns => {} },
+            ( $map_id, $map_start, $map_stop )
+        )
+    };
 
     #
     # Find every other map position for the features on this map.
@@ -1883,10 +1905,10 @@ Returns the detail info for a map.
     ;
 
     return {
-        features         => $features,
-        feature_types    => $feature_types,
-        reference_map    => $reference_map,
-        comparative_maps => \@comparative_maps,
+        features          => $features,
+        feature_types     => \@feature_types,
+        reference_map     => $reference_map,
+        comparative_maps  => \@comparative_maps,
     }
 }
 

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.8 2002-10-11 21:37:51 kycl4rk Exp $
+# $Id: Import.pm,v 1.9 2003-01-11 03:46:25 kycl4rk Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.8 $)[-1];
+$VERSION  = (qw$Revision: 1.9 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -289,6 +289,13 @@ added.
             my $accession_id = $record{'accession_id'} || $map_id;
             my $map_start    = $record{'map_start'}    || 0;
             my $map_stop     = $record{'map_stop'}     || 0;
+            if ( 
+                defined $map_start &&
+                defined $map_stop  &&
+                $map_stop > $map_start 
+            ) {
+                ( $map_start, $map_stop ) = ( $map_stop, $map_start );
+            }
 
             $db->do(
                 q[
@@ -317,6 +324,14 @@ added.
         my $alternate_name = $record{'feature_alt_name'} || '';
         my $start          = $record{'feature_start'};
         my $stop           = $record{'feature_stop'};
+        if ( 
+            defined $start &&
+            defined $stop  &&
+            $stop > $start 
+        ) {
+            ( $start, $stop ) = ( $stop, $start );
+        }
+
         my $feature_id;
         if ( $accession_id ) {
             $feature_id = $db->selectrow_array(

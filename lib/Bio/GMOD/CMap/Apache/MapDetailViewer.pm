@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapDetailViewer;
 
-# $Id: MapDetailViewer.pm,v 1.4 2002-09-11 01:54:51 kycl4rk Exp $
+# $Id: MapDetailViewer.pm,v 1.5 2003-01-11 03:46:25 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Apache::Constants;
 use Data::Dumper;
@@ -40,18 +40,20 @@ sub handler {
     #
     # Make a jazz noise here...
     #
-    my ( $self, $apr )   = @_;
-    my $ref_map_set_aid  = $apr->param('ref_map_set_aid')  ||      0;
-    my $ref_map_aid      = $apr->param('ref_map_aid')      ||     '';
-    my $ref_map_start    = $apr->param('ref_map_start');
-    my $ref_map_stop     = $apr->param('ref_map_stop');
-    my $comparative_maps = $apr->param('comparative_maps') ||     '';
-    my $highlight        = $apr->param('highlight')        ||     '';
-    my $font_size        = $apr->param('font_size')        ||     '';
-    my $image_size       = $apr->param('image_size')       ||     '';
-    my $image_type       = $apr->param('image_type')       ||     '';
-    my $include_features = $apr->param('include_features') ||     '';
-    my $action           = $apr->param('action')           || 'view';
+    my ( $self, $apr )      = @_;
+    my $ref_map_set_aid     = $apr->param('ref_map_set_aid')  ||      0;
+    my $ref_map_aid         = $apr->param('ref_map_aid')      ||     '';
+    my $ref_map_start       = $apr->param('ref_map_start');
+    my $ref_map_stop        = $apr->param('ref_map_stop');
+    my $comparative_maps    = $apr->param('comparative_maps') ||     '';
+    my $highlight           = $apr->param('highlight')        ||     '';
+    my $font_size           = $apr->param('font_size')        ||     '';
+    my $image_size          = $apr->param('image_size')       ||     '';
+    my $image_type          = $apr->param('image_type')       ||     '';
+    my $label_features      = $apr->param('label_features')   ||     '';
+    my $action              = $apr->param('action')           || 'view';
+    my @feature_types       = split(/,/, $apr->param('feature_types') );
+    my @table_feature_types = ( $apr->param('table_feature_types')    );
 
     my %slots = (
         0 => {
@@ -63,13 +65,13 @@ sub handler {
         },
     );
 
-    my $data_module         = $self->data_module;
-    my $data                = $data_module->map_detail_data( 
-        map                 => $slots{0},
-        highlight           => $highlight,
-        order_by            => $apr->param('order_by')            || '',
-        restrict_by         => $apr->param('feature_type_aid')    || '',
-        comparative_map_aid => $apr->param('comparative_map_aid') || '',
+    my $data_module           = $self->data_module;
+    my $data                  = $data_module->map_detail_data( 
+        map                   => $slots{0},
+        highlight             => $highlight,
+        include_feature_types => \@feature_types,
+        order_by              => $apr->param('order_by')            || '',
+        comparative_map_aid   => $apr->param('comparative_map_aid') || '',
     ) or return $self->error( "Data: ".$data_module->error );
 
     if ( $action eq 'download' ) {
@@ -128,15 +130,16 @@ sub handler {
         #
         # Instantiate the drawer.
         #
-        my $drawer           =  Bio::GMOD::CMap::Drawer->new(
-            apr              => $apr,
-            slots            => \%slots,
-            highlight        => $highlight,
-            font_size        => $font_size,
-            image_size       => $image_size,
-            image_type       => $image_type,
-            include_features => $include_features,
-            debug            => $self->config('debug'),
+        my $drawer                =  Bio::GMOD::CMap::Drawer->new(
+            apr                   => $apr,
+            slots                 => \%slots,
+            highlight             => $highlight,
+            font_size             => $font_size,
+            image_size            => $image_size,
+            image_type            => $image_type,
+            label_features        => $label_features,
+            include_feature_types => \@feature_types,
+            debug                 => $self->config('debug'),
         ) or die $self->error( "Drawer: ".Bio::GMOD::CMap::Drawer->error );
 
         my $ref_map = $slots{0};

@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 
-# $Id: MapViewer.pm,v 1.8 2002-12-06 01:43:39 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.9 2003-01-11 03:46:25 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $TEMPLATE $PAGE );
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 use Apache::Constants;
 use Apache::Request;
@@ -34,7 +34,8 @@ sub handler {
     my $font_size             = $apr->param('font_size')             || '';
     my $image_size            = $apr->param('image_size')            || '';
     my $image_type            = $apr->param('image_type')            || '';
-    my $include_features      = $apr->param('include_features')      || '';
+    my $label_features        = $apr->param('label_features')        || '';
+    my @feature_types         = ( $apr->param('feature_types') );
 
     if ( 
         $prev_ref_map_set_aid && $prev_ref_map_set_aid != $ref_map_set_aid 
@@ -107,15 +108,16 @@ sub handler {
     #
     my $drawer;
     if ( $ref_map_aid ) {
-        $drawer              =  Bio::GMOD::CMap::Drawer->new(
-            apr              => $apr,
-            slots            => \%slots,
-            highlight        => $highlight,
-            font_size        => $font_size,
-            image_size       => $image_size,
-            image_type       => $image_type,
-            include_features => $include_features,
-            debug            => $self->config('debug'),
+        $drawer                   =  Bio::GMOD::CMap::Drawer->new(
+            apr                   => $apr,
+            slots                 => \%slots,
+            highlight             => $highlight,
+            font_size             => $font_size,
+            image_size            => $image_size,
+            image_type            => $image_type,
+            label_features        => $label_features,
+            include_feature_types => \@feature_types,
+            debug                 => $self->config('debug'),
         ) or return $self->error( "Drawer: ".Bio::GMOD::CMap::Drawer->error );
 
         %slots = %{ $drawer->slots };
@@ -132,8 +134,8 @@ sub handler {
     # The start and stop may have had to be moved as there 
     # were too few or too many features in the selected region.
     #
-    $apr->param( ref_map_start => $form_data->{'ref_map_start'} );
-    $apr->param( ref_map_stop  => $form_data->{'ref_map_stop'}  );
+    $apr->param( ref_map_start    => $form_data->{'ref_map_start'}    );
+    $apr->param( ref_map_stop     => $form_data->{'ref_map_stop'}     );
 
     #
     # Wrap up our current comparative maps so we can store them on 
@@ -151,14 +153,15 @@ sub handler {
     $t->process( 
         TEMPLATE, 
         {
-            apr              => $apr,
-            form_data        => $form_data,
-            drawer           => $drawer,
-            page             => $self->page,
-            debug            => $self->debug,
-            comparative_maps => join( ':', @comp_maps ),
-            title            => 'Comparative Maps',
-            stylesheet       => $self->stylesheet,
+            apr               => $apr,
+            form_data         => $form_data,
+            drawer            => $drawer,
+            page              => $self->page,
+            debug             => $self->debug,
+            comparative_maps  => join( ':', @comp_maps ),
+            title             => 'Comparative Maps',
+            stylesheet        => $self->stylesheet,
+            included_features => { map { $_, 1 } @feature_types },
         },
         \$html 
     ) or $html = $t->error;

@@ -1,13 +1,13 @@
 package Bio::GMOD::CMap::Constants;
 
-# $Id: Constants.pm,v 1.15 2003-01-08 21:09:29 kycl4rk Exp $
+# $Id: Constants.pm,v 1.16 2003-01-11 03:46:25 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.15 $)[-1];
+$VERSION = (qw$Revision: 1.16 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -341,7 +341,7 @@ use constant DEFAULT => {
     # Values: none landmarks all
     # Default: 'all'
     #
-    include_features => 'all',
+    label_features => 'all',
     
     #
     # Color of a map (type) if not defined
@@ -459,7 +459,7 @@ use constant PREFERENCE_FIELDS => [ qw(
     image_size
     font_size
     image_type  
-    include_features
+    label_features
 ) ];
 
 #
@@ -529,9 +529,9 @@ use constant VALID => {
     },
 
     #
-    # The choices for "include_features"
+    # The choices for "label_features"
     #
-    include_features => {
+    label_features => {
         all       => 1,
         landmarks => 1,
         none      => 1,

@@ -156,12 +156,30 @@
                         </tr>
 
                         <tr>
-                            <td align="right" valign="top">Include Features:</td>
+                            <td align="right" valign="top">Show Labels:</td>
 
                             <td>
-                                <input type="radio" name="include_features" value="none"[% IF apr.param('include_features')=='none'; ' checked'; END %]>None
-                                <input type="radio" name="include_features" value="landmarks"[% IF apr.param('include_features')=='landmarks'; ' checked'; END %]>Landmarks
-                                <input type="radio" name="include_features" value="all"[% IF apr.param('include_features')=='all'; ' checked'; END %]>All
+                                <input type="radio" name="label_features" value="none"[% IF apr.param('label_features')=='none'; ' checked'; END %]>None
+                                <input type="radio" name="label_features" value="landmarks"[% IF apr.param('label_features')=='landmarks'; ' checked'; END %]>Landmarks
+                                <input type="radio" name="label_features" value="all"[% IF apr.param('label_features')=='all'; ' checked'; END %]>All
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td align="right" valign="top">Include Feature Types:</td>
+
+                            <td>
+                                [% IF form_data.feature_types.size %]
+                                    [% form_data.feature_types.unshift({feature_type_aid=>'-1',feature_type=>'--All--'}) %]
+                                    <select name="feature_types" size="5" multiple>
+                                        [% FOREACH ft=form_data.feature_types %]
+                                            <option value="[% ft.feature_type_aid %]"[% IF included_features.${ft.feature_type_aid}; ' selected'; END %]>[% ft.feature_type %]</option>
+                                        [% END %]
+                                    </select>
+    
+                                [% ELSE %]
+                                    There are no feature types!
+                                [% END %]
                             </td>
                         </tr>
 

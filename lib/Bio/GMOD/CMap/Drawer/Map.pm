@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.21 2003-01-08 22:51:57 kycl4rk Exp $
+# $Id: Map.pm,v 1.22 2003-01-11 03:46:25 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.21 $)[-1];
+$VERSION = (qw$Revision: 1.22 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -377,19 +377,19 @@ sub layout {
 Lays out the map.
 
 =cut
-    my $self             = shift;
-    my $base_y           = $self->base_y;
-    my $slot_no          = $self->slot_no;
-    my $drawer           = $self->drawer;
-    my $label_side       = $drawer->label_side( $slot_no );
-    my $pixel_height     = $drawer->pixel_height;
-    my $label_font       = $drawer->label_font;
-    my $reg_font         = $drawer->regular_font;
-    my $slots            = $drawer->slots;
-    my @map_ids          = $self->map_ids;
-    my $no_of_maps       = scalar @map_ids;
-    my @columns          = ();
-    my $include_features = $drawer->include_features;
+    my $self           = shift;
+    my $base_y         = $self->base_y;
+    my $slot_no        = $self->slot_no;
+    my $drawer         = $self->drawer;
+    my $label_side     = $drawer->label_side( $slot_no );
+    my $pixel_height   = $drawer->pixel_height;
+    my $label_font     = $drawer->label_font;
+    my $reg_font       = $drawer->regular_font;
+    my $slots          = $drawer->slots;
+    my @map_ids        = $self->map_ids;
+    my $no_of_maps     = scalar @map_ids;
+    my @columns        = ();
+    my $label_features = $drawer->label_features;
 
     #
     # The title is often the widest thing we'll draw, so we need
@@ -430,12 +430,12 @@ Lays out the map.
                              ? $self->base_x + $half_title_length + 10
                              : $self->base_x - $half_title_length - 20;
         my $show_labels    = $is_relational && $slot_no != 0 ? 0 :
-                             $include_features eq 'none' ? 0 : 1 ;
+                             $label_features eq 'none' ? 0 : 1 ;
         my $show_ticks     = $is_relational && $slot_no != 0 ? 0 : 1;
         my $show_map_title = $is_relational && $slot_no != 0 ? 0 : 1;
         my $show_map_units = $is_relational && $slot_no != 0 ? 0 : 1;
         my $map_width      = $self->map_width( $map_id );
-        my $column_width   = $map_width + $reg_font->height + 10;
+        my $column_width   = $map_width + $reg_font->height + 20;
         my $features       = $self->features( $map_id );
 
         #
@@ -465,8 +465,7 @@ Lays out the map.
                 feature_ids => \@corr_feature_ids,
             );
 
-            my $min_map_pixel_height = $self->config('min_map_pixel_height') 
-                || $self->config('min_map_pixel_height');
+            my $min_map_pixel_height = $self->config('min_map_pixel_height');
             $pixel_height    = $positions[-1] - $positions[0];
             $pixel_height    = $min_map_pixel_height
                 if $pixel_height < $min_map_pixel_height;
@@ -732,10 +731,6 @@ Lays out the map.
                 my $label_y;
                 my @coords;
 
-#                warn "feature name = '", $feature->feature_name, "', ",
-#                    "shape = '", $feature->shape, "'\n"
-#                    if $feature->feature_name eq 'Grh4(t)';
-
                 if ( $feature->shape eq LINE ) {
                     $drawer->add_drawing(
                         LINE, $tick_start, $y_pos1, $tick_stop, $y_pos1, $color
@@ -847,11 +842,11 @@ Lays out the map.
 
                 my ( $left_side, $right_side );
                 if ( 
-                    $show_labels                   && (
-                        $has_corr                  || 
-                        $include_features eq 'all' ||
-                        $is_highlighted            || (
-                            $include_features eq 'landmarks' && 
+                    $show_labels                 && (
+                        $has_corr                || 
+                        $label_features eq 'all' ||
+                        $is_highlighted          || (
+                            $label_features eq 'landmarks' && 
                             $feature->is_landmark 
                         )
                     )
@@ -871,6 +866,7 @@ Lays out the map.
                         has_corr       => $has_corr,
                         feature_id     => $feature->feature_id,
                         start_position => $feature->start_position,
+                        shape          => $feature->shape,
                     };
                 }
 
@@ -894,16 +890,16 @@ Lays out the map.
                 map  { $_->[0]->{'direction'} = NORTH; $_->[0] }
                 sort { 
                     $b->[1] <=> $a->[1] || 
-                    $b->[2] <=> $a->[2] ||
+                    $a->[2] <=> $b->[2] ||
                     $b->[3] <=> $a->[3] ||
-                    $a->[4] <=> $b->[4]
+                    $b->[4] <=> $a->[4]
                 }
                 map  { [ 
                     $_, 
                     $_->{'start_position'},
                     $_->{'priority'}, 
-                    $_->{'is_highlighted'}, 
-                    $_->{'has_corr'},
+                    $_->{'is_highlighted'} || 0, 
+                    $_->{'has_corr'}       || 0,
                 ] }
                 @north_labels;
 
@@ -913,14 +909,14 @@ Lays out the map.
                     $a->[1] <=> $b->[1] || 
                     $b->[2] <=> $a->[2] ||
                     $b->[3] <=> $a->[3] ||
-                    $a->[4] <=> $b->[4]
+                    $b->[4] <=> $a->[4]
                 }
                 map  { [ 
                     $_, 
                     $_->{'start_position'},
                     $_->{'priority'}, 
-                    $_->{'is_highlighted'}, 
-                    $_->{'has_corr'},
+                    $_->{'is_highlighted'} || 0, 
+                    $_->{'has_corr'}       || 0,
                 ] }
                 @south_labels;
 
@@ -1023,17 +1019,29 @@ Lays out the map.
                 #
                 my @coords           = @{ $label->{'feature_coords'} || [] };
                 my $label_connect_x1 = $label_side eq RIGHT
-                    ? $coords[2] + $buffer 
+                    ? $coords[2]# + $buffer 
                     : $label_end + $buffer;
                 my $label_connect_y1 = $label_side eq RIGHT
                     ? ($coords[1] + $coords[3])/2 
                     : $label_y + $font->height/2;
                 my $label_connect_x2 = $label_side eq RIGHT
                     ? $label_x - $buffer 
-                    : $coords[0] - $buffer;
+                    : $coords[0];# - $buffer;
                 my $label_connect_y2 = $label_side eq RIGHT
                     ? $label_y + $font->height/2 
                     : ($coords[1] + $coords[3])/2;
+
+                #
+                # If the feature is a horz. line, then back the connection off.
+                #
+                if ( $label->{'shape'} eq LINE ) {
+                    if ( $label_side eq RIGHT ) {
+                        $label_connect_x1 += $buffer;
+                    }
+                    else {
+                        $label_connect_x2 -= $buffer;
+                    }
+                }
 
                 $drawer->add_connection(
                     $label_connect_x1,
@@ -1088,7 +1096,11 @@ Lays out the map.
         my $url = $self->config('map_details_url').
             '?ref_map_set_aid='.$self->map_set_aid( $map_id ).
             ';ref_map_aid='.$self->accession_id( $map_id ).
-            ';comparative_maps='.join( ':', @maps );
+            ';comparative_maps='.join( ':', @maps ).
+            ';label_features='.$drawer->label_features.
+            ';feature_types='.
+            join(',', @{ $drawer->include_feature_types || [] }).
+            ';highlight='.$drawer->highlight;
 
         $drawer->add_map_area(
             coords => $area || \@bounds,

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data::Generic;
 
-# $Id: Generic.pm,v 1.15 2003-01-09 21:26:19 kycl4rk Exp $
+# $Id: Generic.pm,v 1.16 2003-01-11 03:46:25 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,8 +31,9 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.15 $)[-1];
+$VERSION = (qw$Revision: 1.16 $)[-1];
 
+use Data::Dumper; # really just for debugging
 use Bio::GMOD::CMap;
 use base 'Bio::GMOD::CMap';
 
@@ -67,10 +68,11 @@ sub cmap_data_features_sql {
 The SQL for finding all the features on a map.
 
 =cut
-    my ( $self, %args ) = @_;
-    my $order_by        = $args{'order_by'}    || '';
-    my $restrict_by     = $args{'restrict_by'} || '';
-    my $sql             = qq[
+    my ( $self, %args )   = @_;
+    my $order_by          = $args{'order_by'}          || '';
+    my $restrict_by       = $args{'restrict_by'}       || '';
+    my @feature_type_aids = @{ $args{'feature_type_aids'} || [] };
+    my $sql               = qq[
         select   f.feature_id,
                  f.accession_id,
                  f.feature_name,
@@ -107,7 +109,17 @@ The SQL for finding all the features on a map.
         and      map.map_set_id=ms.map_set_id
         and      ms.map_type_id=mt.map_type_id
     ];
-    $sql .= "and ft.accession_id='$restrict_by' " if $restrict_by;
+
+    #
+    # "-1" is a reserved value meaning "All" feature types.
+    #
+    warn "feature type aids =\n", Dumper(@feature_type_aids), "\n";
+    if ( @feature_type_aids && grep { !/^-1$/ } @feature_type_aids ) {
+        $sql .= 'and ft.accession_id in ('.
+            join( ',', map { qq['$_'] } @feature_type_aids ).
+        ')';
+    }
+
     $sql .= "order by $order_by" if $order_by;
 
     return $sql;
@@ -171,6 +183,7 @@ The SQL for finding all the feature typess on a map.
     my $sql             = qq[
         select   distinct
                  ft.feature_type_id,
+                 ft.accession_id as feature_type_aid,
                  ft.feature_type,
                  ft.shape,
                  ft.color
