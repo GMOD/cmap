@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.104 2004-08-06 05:21:48 mwz444 Exp $
+# $Id: Map.pm,v 1.105 2004-08-09 14:21:42 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.104 $)[-1];
+$VERSION = (qw$Revision: 1.105 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -689,7 +689,7 @@ Lays out the map.
                 $map_bounds[1],
                 $map_bounds[2]+2,
                 $map_bounds[3]],
-            url  => $map_details_url . "?ref_map_aid=" . $map->{'accession_id'},
+            url  => $map_details_url . "?ref_map_aids=" . $map->{'accession_id'},
             alt  => 'Map Details: ' . $map->{'map_name'},
             code => $code,
           };
@@ -975,7 +975,7 @@ Lays out the map.
             $map_details_url
           . '?ref_map_set_aid='
           . $self->map_set_aid($map_id)
-          . ';ref_map_aid='
+          . ';ref_map_aids='
           . $self->accession_id($map_id)
           . ';comparative_maps='
           . join( ':', @maps )
@@ -1063,7 +1063,7 @@ Lays out the map.
 
             my $delete_url = $self_url
               . '?ref_map_set_aid='
-              . $slots->{'0'}{'map_set_aid'}
+              . $slots->{'0'}{'map_set_aid'}.";"
               . join('',@rmap_links)
               . 'comparative_maps='
               . join( ':', @cmaps )
@@ -1626,7 +1626,7 @@ sub layout_map_foundation {
         push @$map_area_data,
           {
             coords => \@topper_bounds,
-            url  => $map_details_url . "?ref_map_aid=" . $map->{'accession_id'},            alt  => 'Map Details: ' . $map->{'map_name'},
+            url  => $map_details_url . "?ref_map_aids=" . $map->{'accession_id'},            alt  => 'Map Details: ' . $map->{'map_name'},
             code => $code,
           };
                                                                                 
