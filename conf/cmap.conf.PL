@@ -131,6 +131,18 @@ EOF
 #add_name_correspondence fee fie
 
 #
+# Any entries to "disallow_name_correspondence" will cause the admin
+# tool to NOT make correspondences between features of the types listed.
+# Either list the feature type accessions separated by spaces on one
+# line or individually on separate lines, e.g.:
+#
+# disallow_name_correspondence centromere qtl
+# - or -
+# disallow_name_correspondence centromere
+# disallow_name_correspondence qtl
+#
+
+#
 # The background color of the map image
 # Values: any color found in the COLORS array of Bio::GMOD::CMap::Constants
 # To view this file, either look in the "lib" directory of the original
