@@ -1,17 +1,24 @@
 package Bio::GMOD::CMap::Apache::HelpViewer;
 
-# $Id: HelpViewer.pm,v 1.3 2003-02-20 16:50:07 kycl4rk Exp $
+# $Id: HelpViewer.pm,v 1.4 2003-04-17 17:45:50 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Apache::Constants;
 
 use Bio::GMOD::CMap::Apache;
 use base 'Bio::GMOD::CMap::Apache';
 
-use constant TEMPLATE => 'help.tmpl';
+use constant TEMPLATES => {
+    default            => 'help_map_viewer.tmpl',
+    feature_details    => 'help_feature_details.tmpl',
+    feature_search     => 'help_feature_search.tmpl',
+    matrix             => 'help_matrix.tmpl',
+    map_set_info       => 'help_map_set_info.tmpl',
+    viewer             => 'help_map_viewer.tmpl',
+};
 
 sub handler {
     #
@@ -19,10 +26,14 @@ sub handler {
     #
     my ( $self, $apr ) = @_;
 
+    my $section  = $apr->param('section') || '';
+    $section     = 'default' unless defined TEMPLATES->{ $section };
+    my $template = TEMPLATES->{ $section };
+
     my $html;
     my $t = $self->template;
     $t->process( 
-        TEMPLATE, 
+        $template, 
         { 
             page       => $self->page,
             stylesheet => $self->stylesheet,
