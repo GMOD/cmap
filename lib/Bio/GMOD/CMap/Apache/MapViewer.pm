@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.65 2004-09-08 14:54:19 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.66 2004-09-16 05:21:39 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.65 $)[-1];
+$VERSION = (qw$Revision: 1.66 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -60,6 +60,8 @@ sub handler {
     my $comparative_maps      = $apr->param('comparative_maps')      || '';
     my @comparative_map_right = $apr->param('comparative_map_right');
     my @comparative_map_left  = $apr->param('comparative_map_left');
+    my $comp_map_set_right    = $apr->param('comp_map_set_right');
+    my $comp_map_set_left     = $apr->param('comp_map_set_left');
     my $highlight             = $apr->param('highlight')             || '';
     my $font_size             = $apr->param('font_size')             || '';
     my $image_size            = $apr->param('image_size')            || '';
@@ -313,26 +315,28 @@ sub handler {
     # Add in our next chosen maps.
     #
     for my $side ( ( RIGHT, LEFT ) ) {
-        my $slot_no = $side eq RIGHT ? $max_right + 1 : $max_left - 1;
-        my $cmap    = $side eq RIGHT 
+        my $slot_no  = $side eq RIGHT ? $max_right + 1 : $max_left - 1;
+        my $cmap     = $side eq RIGHT 
             ? \@comparative_map_right : \@comparative_map_left;
-        foreach my $cmap_str (@$cmap){
-            my ( $field, $accession_id ) = split( /=/, $cmap_str ) or next;
-            my ( $start, $stop,$magnification );
-            ($accession_id,$start,$stop,$magnification,$highlight)=parse_map_info($accession_id,$highlight);
-            if ($field eq 'map_aid'){
+        my $cmap_set_aid = $side eq RIGHT 
+            ? $comp_map_set_right : $comp_map_set_left;
+        if (grep {-1} @$cmap){
+            unless(defined($slots{$slot_no}->{'map_sets'}{$cmap_set_aid})){
+                $slots{$slot_no}->{'map_sets'}{$cmap_set_aid}=();
+            }
+        }
+        else{
+            foreach my $accession_id (@$cmap){
+               # my ( $field, $accession_id ) = split( /=/, $cmap_str ) or next;
+                my ( $start, $stop,$magnification );
+                ($accession_id,$start,$stop,$magnification,$highlight)=parse_map_info($accession_id,$highlight);
                 $slots{$slot_no}->{'maps'}{$accession_id} =  {
                     start          => $start,
                     stop           => $stop,
                     mag            => $magnification,
                 };
-            }
-            elsif ($field eq 'map_set_aid'){
-                unless(defined($slots{$slot_no}->{'map_sets'}{$accession_id})){
-                    $slots{$slot_no}->{'map_sets'}{$accession_id}=();
-                }
-            }
-        } 
+            } 
+        }
     }
 
     #

@@ -3,7 +3,7 @@
   title=title
   cur_sec='map_viewer'
   help_anchor='map_viewer'
-  start_body='<body onLoad="setDivObjects()">'
+  start_body='<body onLoad="setDivObjects();document.comparative_map_form.reset()">'
 %]
 <script language="javascript">
                                         
@@ -144,6 +144,85 @@ function mod_map_info(slot_no, map_aid, start, stop,mag){
     }
   }
 }
+
+function changeCompMaps(sel,index,side){
+  var dataArray;
+  var map_sets;
+  if (side == 'Left'){
+    dataArray=new Array(
+      [% SET not_first_map_set=0; %]
+      [% FOREACH ms=form_data.comparative_maps_left %]
+        [% IF not_first_map_set %]
+          ,
+        [% ELSE %]
+          [% SET not_first_map_set=1; %] 
+        [% END %]
+        [% SET not_first_map=0; %]
+        new Array( 
+        [% FOREACH map=ms.maps; %]
+          [% IF not_first_map %]
+            ,
+          [% ELSE %]
+            [% SET not_first_map=1; %] 
+          [% END %]
+          new Array( '[% map.map_name %] [[% map.no_correspondences %]]','[% map.map_aid %]')
+        [% END %]
+        )
+      [% END %]
+    );
+  }
+  else{
+    dataArray=new Array(
+      [% SET not_first_map_set=0; %]
+      [% FOREACH ms=form_data.comparative_maps_right %]
+        [% IF not_first_map_set %]
+          ,
+        [% ELSE %]
+          [% SET not_first_map_set=1; %] 
+        [% END %]
+        [% SET not_first_map=0; %]
+        new Array( 
+        [% FOREACH map=ms.maps; %]
+          [% IF not_first_map %]
+            ,
+          [% ELSE %]
+            [% SET not_first_map=1; %] 
+          [% END %]
+          new Array( '[% map.map_name %] [[% map.no_correspondences %]]','[% map.map_aid %]')
+        [% END %]
+        )
+      [% END %]
+    );
+  }
+
+  var mapSetArray=dataArray[index]
+  var length=mapSetArray.length;
+  var i;
+  for (i=length;i<sel.options.length;i++){
+    sel.options[i]=null;
+    i--;
+  }
+  if (sel.options.length<=0){
+    sel.options[sel.options.length] = new Option("== ALL ==",-1);
+  }
+  else{
+    sel.options[0].value=-1;
+    sel.options[0].text="== ALL ==";
+  }
+  for (i=0;i<length;i++){
+    if (sel.options.length<=i+1){
+      var opt = new Option(mapSetArray[i][0],mapSetArray[i][1]);
+      sel.options[sel.options.length] = opt;
+    }
+    else{
+      sel.options[i+1].value=mapSetArray[i][1];
+      sel.options[i+1].text=mapSetArray[i][0];
+    }
+  }
+  sel.selectedIndex=0;
+}
+
+
 
 </script>
 [%- IF extra_code -%]
