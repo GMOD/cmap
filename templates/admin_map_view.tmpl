@@ -157,7 +157,7 @@
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
                 <td>[% f.accession_id   OR '&nbsp;' %]</td>
                 <td>[% f.feature_name   OR '&nbsp;' %]</td>
-                <td>[% f.aliases.join(', ') OR '&nbsp;' %]</td>
+                <td>[% IF f.aliases.size %][% f.aliases.join(', ') | truncate(40) %][% ELSE; '&nbsp;'; END %]</td>
                 <td>[% f.feature_type   OR '&nbsp;' %]</td>
                 <td>[% IF f.is_landmark; 'Yes'; ELSE; 'No'; END %]</td>
                 <td align="right">[% IF f.start_position!='' %] [% f.start_position | commify %] [% ELSE %] '&nbsp;' [% END %]</td>
