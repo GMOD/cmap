@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap;
 
-# $Id: CMap.pm,v 1.23 2003-02-11 00:23:52 kycl4rk Exp $
+# $Id: CMap.pm,v 1.24 2003-02-14 01:28:05 kycl4rk Exp $
 
 =head1 NAME
 
@@ -95,12 +95,12 @@ Remembers what has been selected as the current data source.
 =cut
 
     my $self = shift;
-    $self->{'data_source'} = shift if @_;
+    my $arg  = shift || '';
+    $self->{'data_source'} = $arg if $arg;
 
-    unless ( defined $self->{'data_source'} ) {
-        for my $ds ( @{ $self->{'data_sources'} } ) {
-            $self->{'data_source'} = $ds->{'name'} 
-                if $ds->{'is_current'};
+    unless ( $self->{'data_source'} ) {
+        for my $ds ( @{ $self->data_sources } ) {
+            $self->{'data_source'} = $ds->{'name'} if $ds->{'is_current'};
         }
     }
 
@@ -124,13 +124,14 @@ Returns all the data souces defined in the configuration file.
         my $config  = $self->config('database') or 
             return $self->error('No database configuration options defined');
         $config     = [ $config ] unless ref $config eq 'ARRAY';
-        my $current = $self->data_source;
 
         my $ok = 0;
-        for my $source ( @$config ) {
-            if ( $current && $source->{'name'} eq $current ) {
-                $source->{'is_current'} = 1;
-                $ok                     = 1;
+        if ( my $current = $self->{'data_source'} ) {
+            for my $source ( @$config ) {
+                if ( $current && $source->{'name'} eq $current ) {
+                    $source->{'is_current'} = 1;
+                    $ok                     = 1;
+                }
             }
         }
 
@@ -141,7 +142,15 @@ Returns all the data souces defined in the configuration file.
                     $ok                     = 1;
                 }
             }
+        }
 
+        #
+        # If there's only one defined, just use it.
+        #
+        if ( !$ok && scalar @$config == 1 ) {
+            $config->[0]->{'is_current'} = 1;
+        }
+        else {
             return $self->error('No default data source defined') unless $ok;
         }
 
