@@ -1,0 +1,144 @@
+[% SET title="Correspondences Detail &quot;$corr.accession_id&quot;" %]
+[% 
+    INCLUDE header.tmpl 
+    title=title
+    cur_sec='correspondence_details'
+    help_anchor='correspondence_details'
+%]
+<h1>[% title %]</h1>
+
+<table width="100%">
+    <tr>
+        <th>&nbsp;</th>
+        <th>Feature</th>
+        <th>Map</th>
+        <th>Position</th>
+        <th>Type</th>
+        <th colspan="3">&nbsp</th>
+    </tr>
+
+    <tr bgcolor="lightgrey">
+        <th align="right">Feature 1:</th>
+        <td>
+            [% feature1.feature_name %]
+        </td>
+        <td> 
+            [% feature1.species_name %] -
+            [% feature1.map_set_name %] -
+            [% feature1.map_name %]
+        </td>
+        <td>
+            [% feature1.start_position %]
+            [% IF feature1.stop_position.defined; "- $feature1.stop_position"; END %]
+        </td>
+        <td>
+            [% feature1.feature_type %]
+        </td>
+        <td align="center">
+            <b>[</b>&nbsp;<a href="map_set_info?map_set_aid=[% feature1.map_set_aid %]">View&nbsp;Map&nbsp;Set</a>&nbsp;<b>]</b>
+        </td>
+        <td align="center">
+            <b>[</b>&nbsp;<a href="map_details?ref_map_set_aid=[% feature1.map_set_aid %];ref_map_aid=[% feature1.map_aid %];highlight=[% feature1.feature_aid %]">View&nbsp;On&nbsp;Map</a>&nbsp;<b>]</b>
+        </td>
+        <td align="center">
+            <b>[</b>&nbsp;<a href="feature?feature_aid=[% feature1.feature_aid %]">View&nbsp;Feature</a>&nbsp;<b>]</b>
+        </td>
+    </tr>
+
+    <tr bgcolor="white">
+        <th align="right">Feature 2:</th>
+        <td>
+            [% feature2.feature_name %]
+        </td>
+        <td>
+            [% feature2.species_name %] -
+            [% feature2.map_set_name %] -
+            [% feature2.map_name %] 
+        </td>
+        <td>
+            [% feature2.start_position %]
+            [% IF feature2.stop_position.defined; "- $feature2.stop_position"; END %]
+        </td>
+        <td>
+            [% feature2.feature_type %]
+        </td>
+        <td align="center">
+            <b>[</b>&nbsp;<a href="map_set_info?map_set_aid=[% feature2.map_set_aid %]">View&nbsp;Map&nbsp;Set</a>&nbsp;<b>]</b>
+        </td>
+        <td align="center">
+            <b>[</b>&nbsp;<a href="map_details?ref_map_set_aid=[% feature2.map_set_aid %];ref_map_aid=[% feature2.map_aid %];highlight=[% feature2.feature_aid %]">View&nbsp;On&nbsp;Map</a>&nbsp;<b>]</b>
+        </td>
+        <td align="center">
+            <b>[</b>&nbsp;<a href="feature?feature_aid=[% feature2.feature_aid %]">View&nbsp;Feature</a>&nbsp;<b>]</b>
+        </td>
+        </td>
+    </tr>
+
+    [% FOREACH att=corr.attributes %]
+        [% NEXT UNLESS att.is_public %]
+        <tr>
+            <th align="right" valign="top">
+                [% att.attribute_name | nbsp %]:
+            </td>
+            <td colspan="6">
+                [%- IF att.attribute_value.match('^http://') -%]
+                    <a href="[% att.attribute_value %]">[% att.attribute_value %]</a>
+                [%- ELSE -%]
+                    [% att.attribute_value %]
+                [%- END -%]
+            </td>
+        </tr>
+    [% END %]
+
+    [% IF corr.xrefs.size %]
+        <tr>
+            <th align="right" valign="top">Cross-references:</td>
+            <td colspan="6">
+                <ul>
+                [%- FOREACH xref=corr.xrefs -%]
+                    [% NEXT UNLESS xref.xref_url %]
+                    <li><a href="[% xref.xref_url %]">[% xref.xref_name %]</a></li>
+                [%- END -%]
+                </ul>
+            </td>
+        </tr> 
+    [% END %]
+</table>
+
+
+<h2>Evidence</h2>
+
+[% IF corr.evidence.size %]
+    <table width="100%">
+        <tr>
+            <th>Acc. ID</th>
+            <th>Evidence Type</th>
+            <th>Evidence Rank</th>
+            <th>Score</th>
+            <th>&nbsp;</th>
+        </tr>
+      
+        [% SET i=0 %]
+        [% FOREACH e=corr.evidence %]
+            <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
+                <td>[% e.accession_id %]</td>
+                <td>[% e.evidence_type %]</td>
+                <td>[% e.rank %]</td>
+                <td>[% IF e.score.defined; e.score; ELSE; 'NULL'; END %]</td>
+                <td align="center">
+                    <b>[</b>&nbsp;<a href="evidence_type_info?evidence_type_aid=[% e.evidence_type_aid %]">View&nbsp;Evidence&nbsp;Type&nbsp;Info</a>&nbsp<b>]</b>
+                </td>
+                </td>
+            </tr>
+            [% SET i=i+1 %]
+        [% END %]
+    </table>
+
+[% ELSE %]
+
+  <p>No evidence to show.</p>
+
+[% END %]
+
+[% page.end_body OR '</body>' %]
+
