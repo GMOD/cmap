@@ -31,6 +31,7 @@ lib/Bio/GMOD/CMap/Data/MySQL.pm
 lib/Bio/GMOD/CMap/Data/Oracle.pm
 lib/Bio/GMOD/CMap/Drawer/Feature.pm
 lib/Bio/GMOD/CMap/Drawer/Map.pm
+lib/Bio/GMOD/CMap/DB.pm
 sql/cmap.create.mysql
 sql/cmap.create.oracle
 t/01_ini.t
@@ -78,10 +79,10 @@ templates/feature_search.tmpl
 templates/header.tmpl
 templates/help.tmpl
 templates/help_body.tmpl
-templates/help_footer.tmpl
 templates/map_set_info.tmpl
 templates/matrix.tmpl
 templates/map_detail.tmpl
+templates/admin_feature_corr_edit.tmpl
 conf/cmap.conf
 conf/cmap.css
 conf/httpd.conf

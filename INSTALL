@@ -75,6 +75,10 @@ your system):
     # cd /usr/local/src
     # gunzip -c ../downloads/my-package.tar.gz | tar xvf -
 
+Alternately, you can always just "gunzip" the "tar.gz" file into just
+a plain tar file, then untar that.  It takes two steps instead of one,
+but it works just as well.
+
 After that, cd into the directory created by the package and follow the
 directions for installing the software.  Typically, it will involve the 
 basic triumvirate of commands:
@@ -224,19 +228,17 @@ whatever user will connect to your database.
 
 It would be hard to imagine that a UNIX system wouldn't have some
 version of Perl installed.  We need a minimum of Perl 5.6.0 (but 5.6.1
-is recommended).  Currently, 5.8.1 is the latest, but this application
-hasn't been thoroughly tested with that version.  Initial results seem
-fine, though, so I would discourage your using 5.8.0.  (Actually, if
-you did use it and found a problem, I'd love to get a bug report!)  To
-inspect your version of Perl, type:
+is recommended).  Currently, 5.8.1 is the latest, and this application
+seems to work just fine that version.  inspect your version of Perl,
+type:
 
     $ perl -v
 
 On my current system, the output looks like this:
 
-    This is perl, v5.6.1 built for i686-linux
+    This is perl, v5.8.0 built for i686-linux
 
-    Copyright 1987-2001, Larry Wall
+    Copyright 1987-2002, Larry Wall
 
     Perl may be copied only under the terms of either the Artistic 
     License or the GNU General Public License, which may be found 
@@ -274,11 +276,11 @@ minutes to download and build.  Here's one way:
     # cd /usr/local/downloads
     # ncftp ftp.cpan.org
     ncftp> cd /pub/CPAN/src
-    ncftp> get perl-5.6.1.tar.gz
+    ncftp> get perl-5.8.0.tar.gz
     ncftp> quit
     # cd ../src
-    # tar zxvf ../downloads/perl-5.6.1.tar.gz
-    # cd perl-5.6.1
+    # tar zxvf ../downloads/perl-5.8.0.tar.gz
+    # cd perl-5.8.0
     # sh Configure -de
     # make
     # make install
@@ -331,6 +333,14 @@ Here's the output of mine:
       mod_perl.c
     suexec: disabled; invalid wrapper /usr/local/apache/bin/suexec
 
+Note:  Apache is extremely modular. This is one of its great strengths.
+       You can compile a very "high-speed/low-drag" binary with very few
+       modules or a great big binary with SSL and PHP and mod_perl and
+       more. Your output may vary from the above depending on how the
+       binary got there, who installed it, etc. I like to compile Apache
+       with mod_rewrite and mod_proxy, which are not standard modules.
+       If you don't see this exact module listing, it's probably OK.
+
 If you see "mod_perl.c" in the list, then you can probably skip
 ahead to the next section.  If, however, you choose to build Apache
 and mod_perl for your system, either because it's not already
@@ -354,6 +364,11 @@ into a directory so that they're side by side, then follow the
 directions included in the INSTALL.apaci file in the mod_perl
 distribution.  Here's an example:
 
+Note:  The backslashes ("\") above tell the command-line that you are
+       continuing the command on a new line. It's not necessary to do
+       this. You can just keep typing, but it's easier to see what
+       you're doing when you use multiple lines.
+
     $ su -
     # cd /usr/local/downloads
     # ncftp ftp.tux.org
@@ -375,11 +390,6 @@ distribution.  Here's an example:
     # make
     # make test
     # make install
-
-The backslashes ("\") above tell the command-line that you are
-continuing the command on a new line.  It's not necessary to do
-this.  You can just keep typing, but it's easier to see what you're
-doing when you use multiple lines.
 
 The APACHE_PREFIX that I list above is not necessarily where you
 should install Apache.  It's a fairly standard location on most
@@ -408,14 +418,27 @@ If all goes well, you should see a lot of text go whizzing by and then
 a big text banner saying "You now have successfully built and installed
 the Apache 1.3 HTTP server...." after you type "make install."  If so,
 follow the directions and check the configuration files and try to
-start Apache.  (You will proabably need to set the ServerName in your
-httpd.conf to get Apache to not complain about the syntax of your
-config.)  If Apache starts up, then open a browser and try to bring up
-your new web server.  There's no need to go further unless all this is
-working.  Finally, verify that mod_perl is indeed compiled into Apache
-by executing your new httpd binary with the "-l" flag as shown above
-and look for "mod_perl.c."  If all that is good, then move on to the
-next section.
+start Apache like so:  
+
+    $ cd /usr/local/apache/bin
+    $ ./apachectl start
+
+If Apache starts up, then open a browser and try to bring up your new
+web server.  If not, then you'll have to troubleshoot what your
+problem is as there's no need to go further unless all this is
+working.  There are a whole host of things you'll need to modify to
+get Apache working just right for you, e.g., you will proabably need
+to set the ServerName in your httpd.conf to get Apache to not complain
+about the syntax of your config.  Unfortunately, thoroughly explaining
+everything to watch for in configuring Apache is a bit out of the
+scope of this document.  There are many fine venues for seeking help
+with Apache, including the docs and mailing lists.  If you have
+troubles, please consult those resources to solve your problems.
+
+Finally, verify that mod_perl is indeed compiled into Apache by
+executing your new httpd binary with the "-l" flag as shown above and
+look for "mod_perl.c."  If all that is good, then move on to the next
+section.
 
 11. INSTALLING PERL MODULES
 
@@ -455,20 +478,37 @@ Here are brief descriptions of some of the major modules required:
     be customized for each vendor's product, but the way the code talks to
     the database is the same.
 
-    Note:  Since this application works with both MySQL and Oracle (and
-           hopefully with even more databases one day), I don't bother
-           specifying which DBD driver to install. Therefore it is up to
-           you to install DBD::mysql or DBD::Oracle yourself, then add
-           it to your "perlstartup.pl" (or equivalent).
+*   DBD::mysql, DBD::Oracle, DBD::*: Since this application works with
+    both MySQL and Oracle (and tentatively with Sybase and hopefully
+    with even more databases one day), I don't bother specifying which
+    DBD driver to install. Therefore it is up to you to install
+    DBD::mysql or DBD::Oracle (or whatever) yourself, then add it to your
+    "perlstartup.pl" (or equivalent).
 
-*   Template:  The Template Toolkit, this module handles the substitutions
-    made in the template files to create the HTML displayed to browsers.
+    Whichever database you choose to use, it is largely up to you to
+    figure out how to get the driver to work. Most DBD drivers require
+    some sort of client software supplied by the vendor to be installed
+    locally. If, for instance, you choose to use Oracle, this
+    installation is likely to be quite a headache if you do not have an
+    administrative background, so you may want to get some help from an
+    experienced systems administrator. I've included fairly detailed
+    instructions for getting everything to work with MySQL because it's
+    my favorite database, and it's free for you to use. If you're not
+    going to use MySQL, you'll have to modify the general ideas
+    (creating the database and table, granting user permissions, etc.)
+    to work with your database.
 
 *   File::MkTemp:  This module is responsible for creating the temporary
     files where the map images are written.
 
 *   GD:  Lincoln Stein's Perl module that interfaces with Paul Boutell's
     libgd system library which actually does the drawing of the maps.
+
+*   IO::Tee: This module mimics the "tee" utility of UNIX allowing
+    simulaneous streaming to multiple outputs (terminals, files, etc.)
+
+*   Template:  The Template Toolkit, this module handles the substitutions
+    made in the template files to create the HTML displayed to browsers.
 
 *   Time::Object, Time::ParseDate: Two modules for dealing with dates.
 
@@ -486,13 +526,15 @@ module, in this case "CPAN.pm," and the "-e" flag tells Perl to execute
 some code.  In this case, we're executing the command "shell," which
 is exported by CPAN.pm.  If you want to see if any of the above
 modules is already installed on your system, simply substitute the
-name of the module where "CPAN" occurs above, e.g., for the DBI
-module, you would do the following:
+name of the module where "CPAN" occurs above, e.g., for the
+Class::Base module, you would do the following:
 
-    $ perl -MDBI -e 'print "OK\n"'
+    $ perl -MClass::Base -e 'print "OK\n"'
 
-If Perl is not able to load DBI, you will certainly know about it;
-otherwise you'll see "OK."
+If Perl is able to load Class::Base, you'll see "OK"; otherwise, you will
+certainly know about it, and you could do this (as root):
+
+    # perl -MCPAN -e 'install Class::Base'
 
 The first time you use the CPAN shell, you will have to answer a few
 questions mostly concerned with choosing a mirror close to you and
@@ -667,24 +709,28 @@ can intelligently edit you own entries.
     images from this cache.  If you do not define a directory, then the
     default ("/tmp/cmap_cache") will be created for you on the first
     request.  This directory will be owned by the user and group of the
-    httpd process and will have 0700 as its permissions .  You can,
-    however, specify your own choice if you have a preference, perhaps
-    something in your "/var" directory or something on a partition
-    separate from your web server.  If you create a directory on your own,
-    I'd recommend making the directory owned by root, and preventing
-    anyone but the web server's uid to alter any file it creates.  To do
-    this, "su" to root and issue the following commands:
+    httpd process and will have 0700 as its permissions .  
+
+    If you do not want to use "/tmp/cmap_cache" for your images, you can
+    specify a different directory, perhaps something in your "/var"
+    directory or something on a partition separate from your web server.
+    If you create a directory on your own, I'd recommend making the
+    directory owned by root, and preventing anyone but the web server's
+    uid to alter any file it creates. To do this, "su" to root and issue
+    the following commands:
 
         # mkdir /path/to/images
         # chown root:root /path/to/images 
         # chmod 4777 /path/to/images 
 
-    Whether you create the cache directory or not, you will need to alias
-    it so that Apache will know where to find the images.  So, let's say
-    that you decide to put your images into "/var/web/cmap_cache" and that
-    you'd like to reference those images through a web browser as
-    "/cmap/images," you'll need to edit the "Alias" above in your
-    httpd.conf to reflect the default value or your own choice.
+    Where "/path/to/images" is probably something like
+    "/var/cmap_cache." Whether you create the cache directory or not,
+    you will need to alias it so that Apache will know where to find the
+    images. So, let's say that you decide to put your images into
+    "/var/cmap_cache" and that you'd like to reference those images
+    through a web browser as "/cmap/images," you'll need to edit the
+    "Alias" above in your httpd.conf to reflect the default value or
+    your own choice.
 
     I'd probably recommend against placing the images directly into your
     DocumentRoot as the space taken by the images is completely dependent
@@ -793,54 +839,38 @@ The map images will only be used for one request, so you'll need to
 include some way to clear out old images.  A simple cron job will do
 the trick, so we'll need to add a line root's crontab.  You edit a
 crontab by typing "crontab -e" on the command line.  If you are "joe"
-when you type this, you'll be editing your own crontab.  So you should
-su to root and do "crontab -e".  Once you're in the editing of the
-crontab, you'll actually be using an editor called "vi" (the VIsual
-editor, progeny of "ex").  vi is an interesting editor;  it requires
-you understand "command" and "insert" modes, and is usually only used
-by somewhat hard-core UNIX-y people.  I don't want to assume an
-understanding of editing files with vi, so here's exactly what you
-should type on the command line:
+when you type this, you'll be editing your own crontab.  Since your
+normal login won't likely have the permissions necessary to remove the
+old images, you should su to root and execute "crontab -e".  
 
-    $ su - 
-    # crontab -e
-    
-At this point, you'll be in vi, so type the following commands (less 
-the comments in square brackets, of course):
-    
-    G <Return> [this takes you to the bottom of the file]
-    o <Return> [this opens a new line]
+The "-e" says that you want to "edit" your crontab using an editor.
+On most GNU/Linux systems, crontab will use the value of whatever
+you've set as in your environment as your EDITOR or VISUAL.  If
+nothing is set, then crontab will use "vi," (the VIsual editor,
+progeny of "ex").  vi is an interesting editor;  it requires you
+understand "command" and "insert" modes, and is usually only used by
+somewhat hard-core UNIX-y people.  Unless you're already familiar with
+vi, I'd suggest you set your EDITOR to something like "pico," a very
+intuitive editor and then run crontab.  How you set your environment
+will depend on the shell you're using.  I like bash (GNU's Bourne
+Again SHell), so I edit my "~/.bashrc" file, add "export
+EDITOR=/usr/bin/pico," then source the file with "source ~/.bashrc."
+I can see that it worked by typing "echo $EDITOR" on the command line.
 
-Now either paste or type the following lines:
+However you choose to edit the file, you'll need to paste or type the
+following lines:
 
     # clear out old CMAP images
     # added by Joe User <juser@foo.com>
     0 0 * * *  find /tmp/cmap_cache/ -type f -mtime +1 -exec rm -rf {} \;
 
-Note:  The backslash in the command you should put in the root crontab
-       is actually a part of the command and not an indication that the
-       command continues on the following line. In this context, the
-       backslash tells "find" that the semi-colon is part of its
-       "-exec" command.
-
 Of course, you'll want to change the "Joe User..." part to reflect
 your own name and e-mail address.  Also, if you choose to store your
 map images in a location other than the default of "/tmp/cmap_cache,"
 then you'll need to change the above directory to match your choice.
-
-Note: You may find that the "backspace" key works funny (maybe doesn't
-      work or deletes the character before the cursor instead of behind,
-      etc.); if so, use Control-H to backspace. For a primer on vi
-      commands, see the vim ("VI iMproved") homepage at
-      http://www.vim.org/.
-
-When you're done typing (or pasting), type:
-
-    ESC [this leave "insert" mode]
-    ZZ  [this saves the file and exits]
-
-If all went well, you should see a message saying that a new crontab 
-was installed.
+When you save the file, crontab will automatically exit.  If all went
+well, you should see a message saying that a new crontab was
+installed.
 
 If you're curious, a "crontab" is simply a file which uses a particular
 syntax to describe to the "cron" daemon events which should happen at some
@@ -888,6 +918,9 @@ file like root's crontab so you and everyone else knows what each
 command does.  Be sure to put in your own name and e-mail address.  The
 whole command (starting with the "0") should go on one line.  
 
+Note:  Some UNIXs may have a slightly different cron format. Check
+       your man page!
+
 17. IMPORTING DATA
 
 Please read DATA_IMPORT in the "docs" directory for information on
@@ -901,21 +934,80 @@ dump of a MySQL database.
 
 18. DATABASE CROSS-REFERENCES
 
+It is possible to set up links from features to other datasources
+outside of CMAP.  These are called "database cross-references."  They
+can be set up in several different ways:
+
+    1)  For a feature type and a species, e.g., all the rice markers
+
+    2)  For a features type and a map set, e.g., all the markers in rice
+        map set "Foo"
+
+    3)  For one specific feature, e.g., the "ABC" marker on map "3" of
+        rice map set "Foo"
+
+In the case of the first two, you can create multiple cross-references
+and all will display on the "feature detail" page;  the last case only
+allows a single cross-reference.  In all cases, the more specific
+references beat out all others, so any cross-references created like
+#2 will beat out those from #1, but the "ABC" marker will only use
+those set up as #3.  That is, *only* the most specific
+cross-references will be shown, so if you wanted to include the
+records from #1 with a marker in the "Foo" map set, you'd need to
+duplicate the URLs from #1 for the "Foo" map set.
+
 When setting up database cross-references, you'll have to use some
 extra syntax in the URL field to indicate the field to link out on.
 Here's an example from Gramene for linking to GrainGenes:
 
-    http://www.graingenes.org/cgi-bin/WebAce/webace?db=graingenes&class=Locus&object=[% feature.feature_name %]
+    http://www.graingenes.org/cgi-bin/WebAce/webace?db=graingenes \
+    &class=Locus&object=[% feature.feature_name %]
+
+(The backslash is not part of the URL.  I'm using it to break up the
+line and help you see the syntax.)
 
 Here's how the Gramene project links to its own contig viewer:
 
     /perl/contigview?clone=[% feature.feature_name %]
 
-The funny brackets ("[%" and "%]") are from Template Toolkit, the
-templating system used for the comparative maps.  Simply use whichever
-field you want from the feature table (accession_id, feature_name, or
-alternate_name) and the above style syntax for either absolute (first)
-or relative (second) URLs.
+Notice that you can use either absolute (first) or relative (second)
+URLs.  The funny brackets ("[%" and "%]") are from Template Toolkit,
+the templating system used for the comparative maps.  This allows for
+an extremely flexible system.  For example, at Gramene one URL looks
+like this:
+
+    http://www.genome.arizona.edu/cgi-bin/WebFPC/WebFPC_Direct.cgi? \
+    name=rice&contig=[% feature.map_name.replace("ctg","") %] \
+    &clone=[% feature.feature_name %]
+
+The contig names look like "ctg198," but only integers are legal
+arguments to the "contig" argument above.  We use the "replace"
+virtual method to get rid of the "ctg" part (or just replace it with
+nothing).  To find our more about Template Toolkit, execute "perldoc
+Template::Manual" on your system.  To find out more about Template
+Toolkit's virtual methods, type "perldoc Template::Manual::VMethods."
+
+Here are the fields you can use in the URL:
+
+   feature_id
+   accession_id
+   map_id
+   feature_type_id
+   feature_name
+   alternate_name
+   is_landmark
+   start_position
+   stop_position
+   dbxref_name
+   dbxref_url
+   feature_type
+   map_name
+   map_aid (map accession_id)
+   map_set_id
+   map_set_aid (map set accession_id)
+   map_set_name (actually the "short_name")
+   species_id
+   species_name (actually the "common_name")
 
 19. ESTABLISHING LANDMARKS
 

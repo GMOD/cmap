@@ -30,6 +30,7 @@
 -   Cleaned up code to handle catastrophic errors better (misplaced
     conf file, bad db connection info, bad template dir, etc.).
 -   Improved POD in cmap_admin.pl
+-   Improved INSTALL docs with feedback from beta testers
 
 TODO
 
@@ -40,6 +41,9 @@ TODO
     move the title to a horizontal position above the map (which will
     make it like all the other maps) or I need to delay writing the title
     until after drawing all the features.
+-   Change Makefile.PL to use install targets for copying files
+    instead of doing it myself during the configuration process
+-   Add automatic database audit trail
 
 0.03
 
