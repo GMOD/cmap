@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.57 2004-09-02 00:27:21 mwz444 Exp $
+# $Id: Admin.pm,v 1.58 2004-09-10 19:02:47 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.57 $)[-1];
+$VERSION = (qw$Revision: 1.58 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -2245,7 +2245,7 @@ Delete a species.
             from     cmap_map_set ms, cmap_species s
             where    s.species_id=?
             and      ms.species_id=s.species_id
-            group by common_name
+            group by s.common_name
         ]
     );
     $sth->execute( $species_id );

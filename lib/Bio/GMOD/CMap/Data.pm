@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.156 2004-09-09 17:38:35 mwz444 Exp $
+# $Id: Data.pm,v 1.157 2004-09-10 19:02:47 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.156 $)[-1];
+$VERSION = (qw$Revision: 1.157 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -3650,7 +3650,7 @@ Returns the detail info for a map.
                       f.feature_type_accession as feature_type_aid
              from     cmap_feature f
              where    f.map_id=?
-             group by f.feature_type_aid
+             group by f.feature_type_accession
              order by no_by_type desc
          ],
          { Columns => {} },
@@ -4637,7 +4637,7 @@ sub cmap_entry_data {
         if ($name_search){
             $sql_str.=" and map.map_name='$name_search' ";
         }
-        $sql_str .= q[ group by map.map_id, feature_type_aid
+        $sql_str .= q[ group by map.map_id, f.feature_type_accession
             ];
         if (my $array_ref =
             $self->get_cached_results(3, $sql_str . "$ref_map_set_id" ) )

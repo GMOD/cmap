@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.70 2004-08-04 04:28:07 mwz444 Exp $
+# $Id: AdminViewer.pm,v 1.71 2004-09-10 19:02:48 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -33,7 +33,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.70 $)[-1];
+$VERSION        = (qw$Revision: 1.71 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -2023,7 +2023,7 @@ sub map_sets_view {
                     ms.display_order,
                     s.common_name,
                     s.display_order,
-                    map_type_aid            
+                    ms.map_type_accession            
         order by $order_by
     ];
 
