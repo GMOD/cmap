@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.36 2003-10-29 20:53:12 kycl4rk Exp $
+# $Id: Admin.pm,v 1.37 2003-10-29 23:51:39 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.36 $)[-1];
+$VERSION = (qw$Revision: 1.37 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -1377,7 +1377,7 @@ Set the attributes for a database object.
             my $update_sql = 
                 'update cmap_attribute set ' .
                 join(', ', map { $_->[0].'=?' } @update_fields) .
-                'where attribute_id=?'
+                ' where attribute_id=?'
             ;
 
             $db->do(
@@ -1501,7 +1501,7 @@ Set the attributes for a database object.
             my $update_sql = 
                 'update cmap_xref set ' .
                 join(', ', map { $_->[0].'=?' } @update_fields) .
-                'where xref_id=?'
+                ' where xref_id=?'
             ;
 
             $db->do(
