@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.37 2004-04-23 17:34:14 mwz444 Exp $
+# $Id: MakeCorrespondences.pm,v 1.38 2004-05-10 21:49:56 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.37 $)[-1];
+$VERSION = (qw$Revision: 1.38 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -48,12 +48,13 @@ sub make_name_correspondences {
                                 return 'No evidence type';
     $LOG_FH                   = $args{'log_fh'} || \*STDOUT;
     my $quiet                 = $args{'quiet'};
+    my $allow_update                 = $args{'allow_update'};
     my $db                    = $self->db;
     my $admin                 = Bio::GMOD::CMap::Admin->new(
 	config      => $self->config,
         data_source => $self->data_source,
     );
-
+    ;
     $self->Print("Making name-based correspondences.\n") unless $quiet;
 
     #
@@ -131,10 +132,11 @@ sub make_name_correspondences {
             "')";
         }
     }
-
+    print STDERR "Getting Features\n";
     my $features = $db->selectall_hashref( $feature_sql, 'feature_id' );
     my $aliases  = $db->selectall_arrayref( $alias_sql );
 
+    print STDERR "Parsing Features\n";
     my %alias_lookup;
     for my $a ( @$aliases ) {
         push @{ $alias_lookup{ $a->[0] } }, $a->[1];
@@ -142,8 +144,8 @@ sub make_name_correspondences {
 
     my %names = ();
     ###Switch the commenting to use the name_regex
-    #my $name_regex='(\S+)\.\w\d$';
-    my $name_regex='';
+    my $name_regex='(\S+)\.\w\d$';
+    #my $name_regex='';
     for my $f ( values %$features ) {
         for my $name ( 
             $f->{'feature_name'}, 
@@ -157,7 +159,9 @@ sub make_name_correspondences {
         }
     }
 
-    my $corr = $db->selectall_hashref(
+    my $corr;
+    if ($allow_update){
+	$corr = $db->selectall_hashref(
         q[
             select fc.feature_id1,
                    fc.feature_id2,
@@ -171,16 +175,20 @@ sub make_name_correspondences {
         'feature_correspondence_id',
         {},
         ( $evidence_type_aid )
-    );
+	);
+    }
 
     my %corr = ();
-    for my $c ( values %$corr ) {
-        $corr{ $c->{'feature_id1'} }{ $c->{'feature_id2'} } = 
-            $c->{'feature_correspondence_id'};
-
-        $corr{ $c->{'feature_id2'} }{ $c->{'feature_id1'} } = 
-            $c->{'feature_correspondence_id'};
+    if ($allow_update){
+	for my $c ( values %$corr ) {
+	    $corr{ $c->{'feature_id1'} }{ $c->{'feature_id2'} } = 
+		$c->{'feature_correspondence_id'};
+	    
+	    $corr{ $c->{'feature_id2'} }{ $c->{'feature_id1'} } = 
+		$c->{'feature_correspondence_id'};
+	}
     }
+    print STDERR "Inserting Features\n";
 
     for my $name ( keys %names ) {
         my @feature_ids = keys %{ $names{ $name } };
@@ -221,33 +229,35 @@ sub make_name_correspondences {
                 # Check if we already know that a correspondence based
                 # on our evidence already exists.
                 #
-                if ( $corr{ $fid1 }{ $fid2 } ) {
+                if ( $allow_update and $corr{ $fid1 }{ $fid2 } ) {
                     $self->Print("Correspondence exists $s") unless $quiet;
                     next;
                 }
                 else {
-                    my $fc_id =  $admin->feature_correspondence_create( 
-                        feature_id1      => $f1->{'feature_id'},
-                        feature_id2      => $f2->{'feature_id'},
+                    my $fc_id = $admin->add_feature_correspondence_to_list( 
+                        feature_id1       => $f1->{'feature_id'},
+                        feature_id2       => $f2->{'feature_id'},
                         evidence_type_aid => $evidence_type_aid,
+		        allow_update      => $allow_update,
                     ) or return $self->error( $admin->error );
+		    $admin->insert_feature_correspondence_if_gt(1000);
+                    #$self->Print( 
+                    #    $fc_id > 0
+                    #    ? "Inserted correspondence ($fc_id) $s"
+                    #    : "Correspondence existed $s"
+                    #) unless $quiet;
 
-                    $self->Print( 
-                        $fc_id > 0
-                        ? "Inserted correspondence ($fc_id) $s"
-                        : "Correspondence existed $s"
-                    ) unless $quiet;
-
-                    $corr{ $fid1 }{ $fid2 } = $fc_id;
-                    $corr{ $fid2 }{ $fid1 } = $fc_id;
-
+		    if ($allow_update){
+			$corr{ $fid1 }{ $fid2 } = $fc_id;
+			$corr{ $fid2 }{ $fid1 } = $fc_id;
+		    }
                     $done{ $fid1 }{ $fid2 } = 1;
                     $done{ $fid2 }{ $fid1 } = 1;
                 }
             }
         }
     }
-
+    $admin->insert_feature_correspondence_if_gt(0);
     $self->Print("Done.\n") unless $quiet;
 
     return 1;

@@ -1,15 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.68 2004-05-06 14:05:14 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.69 2004-05-10 21:49:55 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
-use Benchmark;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.68 $)[-1];
+$VERSION = (qw$Revision: 1.69 $)[-1];
 
 #
 # Get command-line options
@@ -2201,11 +2200,16 @@ sub make_name_correspondences {
         : '    None'
     ;
 
+    print "Check for duplicate data (slow)? [y/N] ";
+    chomp( my $allow_update = <STDIN> );
+    $allow_update = ( $allow_update =~ /^[Yy]/ ) ? 1 : 0;
+
     print "Make name-based correspondences\n",
         '  Data source     : ' . $self->data_source, "\n",
         "  Evidence type   : $evidence_type\n",
         "  Target map sets :\n$targets\n",
-        "  Skip features   :\n$skip\n"
+        "  Skip features   :\n$skip\n",
+        "  Check for dups  : ".($allow_update? "yes":"no");
     ;
     print "\nOK to make correspondences? [Y/n] ";
     chomp( my $answer = <STDIN> );
@@ -2215,13 +2219,20 @@ sub make_name_correspondences {
         db          => $db,
         data_source => $self->data_source,
     );
+
+    my $time_start = new Benchmark;
     $corr_maker->make_name_correspondences(
         evidence_type_aid         => $evidence_type_aid,
         map_set_ids           => \@map_set_ids,
         skip_feature_type_aids    => \@skip_feature_type_aids,
         log_fh                => $self->log_fh,
         quiet                 => $Quiet,
+	allow_update => $allow_update,
     ) or do { print "Error: ", $corr_maker->error, "\n"; return; };
+
+    my $time_end = new Benchmark;
+    print STDERR "make correspondence time: ".
+	timestr(timediff($time_end,$time_start))."\n";
 
     return 1;
 }

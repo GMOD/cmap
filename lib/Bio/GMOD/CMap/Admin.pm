@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.48 2004-04-20 17:39:46 mwz444 Exp $
+# $Id: Admin.pm,v 1.49 2004-05-10 21:49:56 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.48 $)[-1];
+$VERSION = (qw$Revision: 1.49 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -553,6 +553,307 @@ Inserts a correspondence.  Returns -1 if there is nothing to do.
     }
     
     return $feature_correspondence_id;
+}
+
+# ----------------------------------------------------
+sub add_feature_correspondence_to_list {
+
+    my ( $self, %args )  = @_;
+    my $feature_id1      = $args{'feature_id1'};
+    my $feature_id2      = $args{'feature_id2'};
+    my $feature_aid1     = $args{'feature_aid1'};
+    my $feature_aid2     = $args{'feature_aid2'};
+    my $evidence_type_aid    = $args{'evidence_type_aid'};
+    my $evidence         = $args{'correspondence_evidence'};
+    my $accession_id     = $args{'accession_id'} || '';
+    my $allow_update     = defined($args{'allow_update'})?
+	$args{'allow_update'}:
+	2;
+    my $is_enabled       = $args{'is_enabled'};
+       $is_enabled       = 1 unless defined $is_enabled;
+    my $db               = $self->db or return;
+    my $search_sth       = $db->prepare(
+        q[
+            select feature_id
+            from   cmap_feature
+            where  accession_id=?
+        ]
+    );
+    #
+    # See if we have only accession IDs and if we can find feature IDs.
+    #
+    if ( !$feature_id1 && $feature_aid1 ) {
+        $search_sth->execute( $feature_aid1 );
+        $feature_id1 = $search_sth->fetchrow_array;
+    }
+
+    if ( !$feature_id2 && $feature_aid2 ) {
+        $search_sth->execute( $feature_aid2 );
+        $feature_id2 = $search_sth->fetchrow_array;
+    }
+
+    #
+    # Bail if no feature IDs.
+    #
+    return -1 unless $feature_id1 && $feature_id2;
+
+    #
+    # Bail if features are the same.
+    #
+    return -1 if $feature_id1 == $feature_id2;
+
+    #
+    # Bail if no evidence.
+    #$self->error('No evidence')
+    return -1 unless 
+        $evidence_type_aid || @{ $evidence || [] };
+
+    my $feature_sth = $db->prepare(
+        q[
+            select f.feature_id,
+                   f.feature_name,
+                   map.accession_id as map_aid,
+                   map.map_name,
+                   map.map_set_id,
+                   ms.is_relational_map
+            from   cmap_feature f,
+                   cmap_map map,
+                   cmap_map_set ms
+            where  f.feature_id=?
+            and    f.map_id=map.map_id
+            and    map.map_set_id=ms.map_set_id
+        ]
+    );
+
+    $feature_sth->execute( $feature_id1 );
+    my $feature1 = $feature_sth->fetchrow_hashref;
+    $feature_sth->execute( $feature_id2 );
+    my $feature2 = $feature_sth->fetchrow_hashref;
+
+    #
+    # Don't create correspondences among relational maps.
+    #
+    return -1 if 
+        $feature1->{'map_set_id'} == $feature2->{'map_set_id'} 
+        &&
+        $feature1->{'is_relational_map'} == 1;
+
+    #
+    # Don't create correspondences among relational map sets.
+    #
+    return -1 if $feature1->{'is_relational_map'} && 
+        $feature2->{'is_relational_map'};
+    
+    #
+    # To be consistent, push any lone evidence types onto the optional
+    # evidence arrayref (of hashrefs).
+    #
+    if ( $evidence_type_aid ) {
+	push @$evidence, {
+            evidence_type_aid => $evidence_type_aid
+        };
+    }
+    my $feature_correspondence_id='';
+    if ($allow_update){
+	#
+	# Skip if a correspondence with this evidence type exists already.
+	#
+
+	my $count = $db->selectrow_array
+	    (
+	     q[
+	       select count(*)
+	       from   cmap_correspondence_lookup cl,
+	       cmap_correspondence_evidence ce
+	       where  cl.feature_id1=?
+	       and    cl.feature_id2=?
+	       and    cl.feature_correspondence_id=ce.feature_correspondence_id
+	       and    ce.evidence_type_accession=?
+	       ],
+	     {},
+	     ( $feature_id1, $feature_id2, $evidence_type_aid )
+	     ) || 0;
+	return -1 if $count;   
+
+   
+
+	#
+	# See if a correspondence exists already.
+	#
+	$feature_correspondence_id = $db->selectrow_array
+	    (
+	     q[
+	       select feature_correspondence_id
+	       from   cmap_correspondence_lookup
+	       where  feature_id1=?
+	       and    feature_id2=?
+	       ],
+	     {},
+	     ( $feature_id1, $feature_id2 )
+	     ) || 0;
+    }
+
+    if ($feature_correspondence_id){
+	push @{$self->{'add_evidence'}},
+	    [$feature_correspondence_id,$evidence];
+    }
+    else{
+	push @{$self->{'new_corr'}},
+	    [$accession_id, 
+	     $feature_id1, 
+	     $feature_id2,
+	     $is_enabled,
+	     $evidence];
+    }
+
+	return 1;# scalar(@{$self->{'new_corr'}}) + scalar(@{$self->{'add_evidence'}});
+}
+
+# ----------------------------------------------
+sub insert_feature_correspondence_if_gt{
+    my $self             = shift;
+    my $insert_threshold = shift;
+    #p#rint STDERR "insert_feature_correspondence_if_gt \n";
+    my $no_new_corrs= $self->{'new_corr'}?
+	scalar(@{$self->{'new_corr'}}):
+	0;
+    my $no_add_evidences= $self->{'add_evidence'}?
+	scalar(@{$self->{'add_evidence'}}):
+	0;
+    return if (($no_new_corrs+$no_add_evidences)
+	       <=$insert_threshold);
+
+    
+    my $db               = $self->db or return;
+   
+
+    ###First add the new corrs
+    if (@{$self->{'new_corr'}}){
+	my $no_corrs     = scalar(@{$self->{'new_corr'}});
+	my $base_corr_id = next_number
+	(
+	 db           => $db,
+	 table_name   => 'cmap_feature_correspondence',
+	 id_field     => 'feature_correspondence_id',
+	 requested    => $no_corrs,
+        ) or return $self->error('No next number for feature correspondence');
+
+	my $new_corr_values='';
+	my $new_corr_lookup_values='';
+	foreach (my $i=0;$i<$no_corrs;$i++){
+	    my $corr_id=$base_corr_id+$i;
+	    
+	    $self->{'new_corr'}->[$i]->[0] ||= $corr_id;
+
+	    $new_corr_values.=", " if ($i);
+	    $new_corr_values.="($corr_id,".
+		"'".$self->{'new_corr'}->[$i]->[0]."',".
+		"'".$self->{'new_corr'}->[$i]->[1]."',".
+		"'".$self->{'new_corr'}->[$i]->[2]."',".
+		"'".$self->{'new_corr'}->[$i]->[3]."'".
+		")";
+	    $new_corr_lookup_values.=", " if ($i);
+	    $new_corr_lookup_values.="($corr_id,".
+		"'".$self->{'new_corr'}->[$i]->[1]."',".
+		"'".$self->{'new_corr'}->[$i]->[2]."'".
+		"), ($corr_id,".
+		"'".$self->{'new_corr'}->[$i]->[2]."',".
+		"'".$self->{'new_corr'}->[$i]->[1]."'".
+		")";
+	    ###Add this to add_evidence so the evidence
+	    ###  section will handle it.
+	    push @{$self->{'add_evidence'}},
+	      [$corr_id,
+	       $self->{'new_corr'}->[$i]->[4]];
+	}
+	
+	print STDERR "Inserting $no_corrs Correspondences\n";
+        #
+        # Create the official correspondence records.
+        #
+	my $sql_str= q[
+                insert
+                into   cmap_feature_correspondence
+                       ( feature_correspondence_id, accession_id,
+                         feature_id1, feature_id2, is_enabled )
+                values ];
+	$sql_str.=$new_corr_values;
+        $db->do($sql_str, {}, () );
+
+	#
+	# Create the official corr lookups.
+	#
+	$sql_str= q[insert
+		    into   cmap_correspondence_lookup
+		    ( feature_correspondence_id,
+		      feature_id1, feature_id2 )
+		    values ];
+	$sql_str.=$new_corr_lookup_values;
+        $db->do($sql_str, {}, () );
+	print STDERR "Inserted\n";
+    }
+
+ 
+    #
+    # Create the evidence.
+    #
+    
+    ###Count the evidence to be added
+    my $no_evidence=0;
+    for my $evidence_data (@{$self->{'add_evidence'}}){
+	$no_evidence+=scalar(@{$evidence_data->[1]});
+    }
+
+    ###Get the first corr_evidence_id with the number of evidences
+    ###  requested.
+    my $corr_evidence_id = next_number
+	(
+	 db               => $db,
+	 table_name       => 'cmap_correspondence_evidence',
+	 id_field         => 'correspondence_evidence_id',
+	 requested        => $no_evidence,
+	 )
+	or return $self->error('No next number for correspondence evidence');
+
+    my $sql_str=q[    insert
+		      into   cmap_correspondence_evidence
+		      ( correspondence_evidence_id, 
+			accession_id,
+			feature_correspondence_id,     
+			evidence_type_accession,
+			score,
+			rank
+			)
+		      values ];
+
+    for (my $i=0;$i<=$#{$self->{'add_evidence'}};$i++){
+	for my $e ( @{$self->{'add_evidence'}->[$i]->[1]} ) {
+	    my $et_aid            = $e->{'evidence_type_aid'};
+	    my $score            = $e->{'score'};
+	    my $accession_id     = $e->{'accession_id'} || $corr_evidence_id;
+	   
+	    if ( not defined $score ) {
+		$score = 'NULL';
+	    }
+	    my $rank=$self->evidence_type_data($et_aid,'rank') || 1;
+
+	    $sql_str.=", " if ($i);
+	    $sql_str.="($corr_evidence_id, '$accession_id',".
+		$self->{'add_evidence'}->[$i]->[0].", '$et_aid',".
+		"'score','$rank')";
+	    ###Increment the id so the next one can use it.
+	    $corr_evidence_id++;
+	}
+    }
+
+    ###Do the actual evidence insert
+    print STDERR "Inserting $no_evidence Evidences\n";
+    $db->do($sql_str,{},() );
+    print STDERR "Inserted\n";
+
+    $self->{'new_corr'}=[];
+    $self->{'add_evidence'}=[];
+    return 1;
 }
 
 # ----------------------------------------------------
