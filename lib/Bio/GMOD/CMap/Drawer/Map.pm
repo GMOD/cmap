@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.51 2003-07-30 02:05:17 kycl4rk Exp $
+# $Id: Map.pm,v 1.52 2003-07-30 16:55:04 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.51 $)[-1];
+$VERSION = (qw$Revision: 1.52 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -528,6 +528,9 @@ Lays out the map.
     my $feature_highlight_bg_color = 
         $drawer->config('feature_highlight_bg_color');
 
+    my $self_url = $drawer->map_view eq 'details' 
+        ? $map_details_url : $map_viewer_url;
+
     my @ordered_slot_nos = sort { $a <=> $b } grep { $_ != 0 } keys %$slots;
 
     my @map_buttons;
@@ -548,7 +551,7 @@ Lays out the map.
         my $column_width   = $map_width + 10;
         my $is_flipped     = 0;
 
-        unless ( $is_relational ) {
+        if ( !$is_relational || ( $is_relational && $slot_no == 0 ) ) {
             for my $rec ( @{ $drawer->flip } ) {
                 if (
                     $rec->{'slot_no'} == $slot_no
@@ -567,8 +570,9 @@ Lays out the map.
         # Reset map buttons.
         #
         @map_buttons = ( {
-            url      => $map_set_info_url.'?map_set_aid='.
-                        $self->map_set_aid( $map_id ),
+            url      => $map_set_info_url.
+                        '?map_set_aid='.$self->map_set_aid( $map_id ).
+                        ';data_source='.$drawer->data_source,
             alt      => 'Map Set Info',
             label    => 'i',
         } );
@@ -1454,7 +1458,8 @@ Lays out the map.
             ';feature_types='.
             join(',', @{ $drawer->include_feature_types || [] }).
             ';highlight='.uri_escape( $drawer->highlight ).
-            ';min_correspondences='.$drawer->min_correspondences;
+            ';min_correspondences='.$drawer->min_correspondences.
+            ';data_source='.$drawer->data_source;
 
         if ( $is_relational && $slot_no != 0 ) {
             push @map_area_data, {
@@ -1490,7 +1495,7 @@ Lays out the map.
                 join( '%3d', $_, $slots->{$_}{'field'}, $slots->{$_}{'aid'} )
             } @cmap_nos;
 
-            my $delete_url = $map_viewer_url.
+            my $delete_url = $self_url.
                 '?ref_map_set_aid='.$slots->{'0'}{'map_set_aid'}.
                 ';ref_map_aid='.$slots->{'0'}{'aid'}.
                 ';ref_map_start='.$slots->{'0'}{'start'}.
@@ -1501,7 +1506,8 @@ Lays out the map.
                 join(',', @{ $drawer->include_feature_types || [] }).
                 ';highlight='.uri_escape( $drawer->highlight ).
                 ';min_correspondences='.$drawer->min_correspondences.
-                ';flip='.join(':', @flips);
+                ';flip='.join(':', @flips).
+                ';data_source='.$drawer->data_source;
 
             push @map_buttons, {
                 label => 'X',
@@ -1511,9 +1517,9 @@ Lays out the map.
         }
 
         #
-        # Flip and New View buttons.
+        # Flip button.
         # 
-        unless ( $is_relational ) {
+        if ( !$is_relational || ( $is_relational && $slot_no == 0 ) ) {
             my @cmaps = map {
                 join( '%3d', $_, $slots->{$_}{'field'}, $slots->{$_}{'aid'} )
             } @ordered_slot_nos;
@@ -1533,7 +1539,7 @@ Lays out the map.
 
             my $ref_map_aid = $slots->{'0'}{'field'} eq 'map_set_aid'
                 ? '-1' : $slots->{'0'}{'aid'};
-            my $flip_url = $map_viewer_url.
+            my $flip_url = $self_url.
                 '?ref_map_set_aid='.$slots->{'0'}{'map_set_aid'}.
                 ";ref_map_aid=$ref_map_aid".
                 ';ref_map_start='.$slots->{'0'}{'start'}.
@@ -1544,17 +1550,24 @@ Lays out the map.
                 join(',', @{ $drawer->include_feature_types || [] }).
                 ';highlight='.uri_escape( $drawer->highlight ).
                 ';min_correspondences='.$drawer->min_correspondences.
-                ';flip='.join(':', @flips);
+                ';flip='.join(':', @flips).
+                ';data_source='.$drawer->data_source;
 
             push @map_buttons, {
                 label => 'F',
                 url   => $flip_url,
                 alt   => 'Flip Map',
             };
+        }
 
+        #
+        # New View button.
+        #
+        unless ( $is_relational ) {
             my $new_url = $map_viewer_url.
                 '?ref_map_set_aid='.$self->map_set_aid( $map_id ).
-                ';ref_map_aid='.$self->accession_id( $map_id );
+                ';ref_map_aid='.$self->accession_id( $map_id ).
+                ';data_source='.$drawer->data_source;
 
             push @map_buttons, {
                 label => 'N',
