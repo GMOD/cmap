@@ -1,17 +1,17 @@
 package Bio::GMOD::CMap::Apache::FeatureSearch;
 
-# $Id: FeatureSearch.pm,v 1.10 2003-05-19 18:08:07 kycl4rk Exp $
+# $Id: FeatureSearch.pm,v 1.11 2003-07-08 15:25:47 kycl4rk Exp $
 
 use strict;
-use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.10 $)[-1];
+use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES );
+$VERSION = (qw$Revision: 1.11 $)[-1];
 
 use Apache::Constants;
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
-use Bio::GMOD::CMap::Utils 'paginate';
+use Data::Pageset;
 use base 'Bio::GMOD::CMap::Apache';
 
 use Data::Dumper;
@@ -28,12 +28,15 @@ sub handler {
                             $preferences->{'features'}        || 
                             $preferences->{'highlight'}       || '';
     my $order_by          = $apr->param('order_by')           || '';
-    my $limit_start       = $apr->param('limit_start')        ||  0;
+    my $page_no           = $apr->param('page_no')            ||  1;
     my $search_field      = $apr->param('search_field')       || '';
     my @species_aids      = ( $apr->param('species_aid')      || () );
     my @feature_type_aids = ( $apr->param('feature_type_aid') || () );
 
     $self->data_source( $apr->param('data_source') );
+
+    $PAGE_SIZE ||= $self->config('max_child_elements') || 0;
+    $MAX_PAGES ||= $self->config('max_search_pages')   || 1;
 
     #
     # Because I need a <select> element on the search form, I could
@@ -74,11 +77,13 @@ sub handler {
     #
     # Slice the results up into pages suitable for web viewing.
     #
-    my $page_data   =  paginate( 
-        self        => $self,
-        data        => $results->{'data'},
-        limit_start => $limit_start,
-    );
+    my $pager = Data::Pageset->new( {
+        total_entries    => scalar @{ $results->{'data'} },
+        entries_per_page => $PAGE_SIZE,
+        current_page     => $page_no,
+        pages_per_set    => $MAX_PAGES,
+    } );
+    $results->{'data'} = [ $pager->splice( $results->{'data'} ) ];
 
     my $html;
     my $t = $self->template;
@@ -87,16 +92,11 @@ sub handler {
         { 
             apr                 => $apr, 
             page                => $self->page,
+            pager               => $pager,
             stylesheet          => $self->stylesheet,
             species             => $results->{'species'},
             feature_types       => $results->{'feature_types'},
-            search_results      => $page_data->{'data'},
-            no_elements         => $page_data->{'no_elements'},
-            page_size           => $page_data->{'page_size'},
-            pages               => $page_data->{'pages'},
-            cur_page            => $page_data->{'cur_page'},
-            show_start          => $page_data->{'show_start'},
-            show_stop           => $page_data->{'show_stop'},
+            search_results      => $results->{'data'},
             species_lookup      => { map { $_, 1 } @species_aids      },
             feature_type_lookup => { map { $_, 1 } @feature_type_aids },
             data_sources        => $self->data_sources,

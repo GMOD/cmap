@@ -1,17 +1,17 @@
 package Bio::GMOD::CMap::Apache::MapDetailViewer;
 
-# $Id: MapDetailViewer.pm,v 1.12 2003-05-29 19:01:53 kycl4rk Exp $
+# $Id: MapDetailViewer.pm,v 1.13 2003-07-08 15:25:47 kycl4rk Exp $
 
 use strict;
-use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.12 $)[-1];
+use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES );
+$VERSION = (qw$Revision: 1.13 $)[-1];
 
 use Apache::Constants;
 use URI::Escape;
 use Data::Dumper;
+use Data::Pageset;
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Drawer;
-use Bio::GMOD::CMap::Utils 'paginate';
 
 use base 'Bio::GMOD::CMap::Apache';
 
@@ -56,13 +56,16 @@ sub handler {
     my $image_type        = $apr->param('image_type')        ||     '';
     my $label_features    = $apr->param('label_features')    ||     '';
     my $collapse_features = $apr->param('collapse_features') ||      0;
-    my $limit_start       = $apr->param('limit_start')       ||     '';
+    my $page_no           = $apr->param('page_no')           ||      1;
     my $action            = $apr->param('action')            || 'view';
 
     #
     # Set the data source.
     #
     $self->data_source( $apr->param('data_source') );
+
+    $PAGE_SIZE ||= $self->config('max_child_elements') || 0;
+    $MAX_PAGES ||= $self->config('max_search_pages')   || 1;
     
     #
     # Take the feature types either from the query string (first
@@ -191,11 +194,13 @@ sub handler {
         $apr->param('evidence_types', join(',', @evidence_types ) );
         $apr->param('highlight_uri',  uri_escape( $apr->param('highlight') ) );
 
-        my $pager       =  paginate( 
-            self        => $self,
-            data        => $data->{'features'},
-            limit_start => $limit_start,
-        );
+        my $pager = Data::Pageset->new( {
+            total_entries    => scalar @{ $data->{'features'} },
+            entries_per_page => $PAGE_SIZE,
+            current_page     => $page_no,
+            pages_per_set    => $MAX_PAGES,
+        } );
+        $data->{'features'} = [ $pager->splice( $data->{'features'} ) ];
 
         my $html;
         my $t = $self->template;
@@ -203,6 +208,7 @@ sub handler {
             TEMPLATE, 
             { 
                 apr                   => $apr,
+                pager                 => $pager,
                 feature_types         => $data->{'feature_types'},
                 evidence_types        => $data->{'evidence_types'},
                 reference_map         => $data->{'reference_map'},
@@ -215,13 +221,7 @@ sub handler {
                 stylesheet            => $self->stylesheet,
                 included_features     => { map { $_, 1 } @feature_types },
                 included_evidence     => { map { $_, 1 } @evidence_types },
-                features              => $pager->{'data'},
-                no_elements           => $pager->{'no_elements'},
-                page_size             => $pager->{'page_size'},
-                pages                 => $pager->{'pages'},
-                cur_page              => $pager->{'cur_page'},
-                show_start            => $pager->{'show_start'},
-                show_stop             => $pager->{'show_stop'},
+                features              => $data->{'features'},
             },
             \$html 
         ) or $html = $t->error;

@@ -1,14 +1,14 @@
 package Bio::GMOD::CMap::Apache::MapSetViewer;
 
-# $Id: MapSetViewer.pm,v 1.7 2003-02-20 16:50:07 kycl4rk Exp $
+# $Id: MapSetViewer.pm,v 1.8 2003-07-08 15:25:47 kycl4rk Exp $
 
 use strict;
-use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.7 $)[-1];
+use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES );
+$VERSION = (qw$Revision: 1.8 $)[-1];
 
 use Apache::Constants;
+use Data::Pageset;
 use Bio::GMOD::CMap::Apache;
-use Bio::GMOD::CMap::Utils 'paginate';
 use base 'Bio::GMOD::CMap::Apache';
 
 use constant TEMPLATE => 'map_set_info.tmpl';
@@ -18,7 +18,7 @@ sub handler {
     # Make a jazz noise here...
     #
     my ( $self, $apr ) = @_;
-    my $limit_start    = $apr->param('limit_start') || 0;
+    my $page_no        = $apr->param('page_no') || 1;
     my @map_set_aids   = split( /,/, $apr->param('map_set_aid') );
     $self->data_source( $apr->param('data_source') );
     my $data           = $self->data_module;
@@ -26,14 +26,19 @@ sub handler {
         map_set_aids   => \@map_set_aids
     );
 
+    $PAGE_SIZE ||= $self->config('max_child_elements') || 0;
+    $MAX_PAGES ||= $self->config('max_search_pages')   || 1;
+
     #
     # Slice the results up into pages suitable for web viewing.
     #
-    my $page_data   =  paginate( 
-        self        => $self,
-        data        => $map_sets,
-        limit_start => $limit_start,
-    );
+    my $pager = Data::Pageset->new( {
+        total_entries    => scalar @$map_sets,
+        entries_per_page => $PAGE_SIZE,
+        current_page     => $page_no,
+        pages_per_set    => $MAX_PAGES,
+    } );
+    $map_sets = [ $pager->splice( $map_sets ) ];
 
     my $html;
     my $t = $self->template;
@@ -43,13 +48,8 @@ sub handler {
             page           => $self->page,
             stylesheet     => $self->stylesheet,
             data_sources   => $self->data_sources,
-            map_sets       => $page_data->{'data'},
-            no_elements    => $page_data->{'no_elements'},
-            page_size      => $page_data->{'page_size'},
-            pages          => $page_data->{'pages'},
-            cur_page       => $page_data->{'cur_page'},
-            show_start     => $page_data->{'show_start'},
-            show_stop      => $page_data->{'show_stop'},
+            map_sets       => $map_sets,
+            pager          => $pager,
         },
         \$html 
     ) or $html = $t->error;
