@@ -15,6 +15,8 @@
                 <tr>
                     <th colspan="2">
                     [% reference_map.species_name %] - [% reference_map.map_set_name %] - [% reference_map.map_name %]
+                    <br>
+                    [<a href="#details">Feature Details Table</a>]
                     </th>
                 </tr>
                 <tr>
@@ -97,9 +99,10 @@
     </tr>
 </table>
 
+<a name="details">
 <table border="1">
     <tr>
-        <td align="center" colspan="8">
+        <td align="center" colspan="4">
             <form method="GET" action="map_details">
             Restrict by Feature Type:
             <select name="feature_type_aid">
@@ -115,6 +118,8 @@
             <input type="hidden" name="comparative_maps" value="[% apr.param('comparative_maps') %]">
             <input type="submit" value="Submit">
             </form>
+        </td>
+        <td align="center" colspan="4">
             [ <a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];feature_type_aid=[% apr.param('feature_type_aid') %];order=[% apr.param('order') %];order_by=[% apr.param('order_by') %];action=download">Download Data</a> ]
         </td>
     </tr>

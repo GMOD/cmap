@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::FeatureViewer;
 
-# $Id: FeatureViewer.pm,v 1.2 2002-08-27 22:18:42 kycl4rk Exp $
+# $Id: FeatureViewer.pm,v 1.3 2002-09-06 22:15:51 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Apache::Constants;
 use Apache::Request;
@@ -22,29 +22,35 @@ sub handler {
     # Make a jazz noise here...
     #
     my ( $self, $apr ) = @_;
-
-    my $feature_aid = $apr->param('feature_aid') or die 'No accession id';
-    my $data        = Bio::GMOD::CMap::Data->new;
-    my $feature     = $data->feature_detail_data( feature_aid => $feature_aid )
+    my $t              = $self->template or die 'No template';
+    my $feature_aid    = $apr->param('feature_aid') or die 'No accession id';
+    my $data           = Bio::GMOD::CMap::Data->new;
+    my $feature        = $data->feature_detail_data(feature_aid=>$feature_aid)
         or die $data->error;
 
-    my $t = $self->template or die 'No template';
-    if ( my $mini_template = $feature->{'dbxref'}{'url'} ) {
-        $t->process( 
-            \$mini_template, 
-            { feature => $feature }, 
-            \$feature->{'dbxref_url'}
-        ) or die $t->error;
+    #
+    # Make the subs in the URL.
+    #
+    for my $dbxref ( @{ $feature->{'dbxrefs'} } ) {
+        if ( my $mini_template = $dbxref->{'url'} ) {
+            my $url;
+            warn "dbxref template = '$mini_template'\n";
+            $t->process( 
+                \$mini_template, 
+                { feature => $feature }, 
+                \$url
+            ) or die $t->error;
+            $dbxref->{'url'} = $url;
+        }
     }
-
-#    warn "feature = ", Dumper( $feature ), "\n";
 
     my $html;
     $t->process( 
         TEMPLATE, 
         { 
-            feature => $feature,
-            page    => $self->page,
+            feature    => $feature,
+            page       => $self->page,
+            stylesheet => $self->stylesheet,
         }, 
         \$html 
     ) or die $t->error;

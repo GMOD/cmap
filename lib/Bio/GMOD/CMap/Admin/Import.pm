@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.1 2002-08-23 16:07:18 kycl4rk Exp $
+# $Id: Import.pm,v 1.2 2002-09-06 22:15:51 kycl4rk Exp $
 
 =pod
 
@@ -28,7 +28,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.1 $)[-1];
+$VERSION  = (qw$Revision: 1.2 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -179,7 +179,7 @@ Starred fields are required.  Order of fields is not important.
                         into   cmap_feature_type
                                ( feature_type_id, accession_id, 
                                  feature_type, default_rank,
-                                 is_visible, how_to_draw )
+                                 is_visible, shape )
                         values ( ?, ?, ?, ?, ?, ? )
                     ],
                     {},

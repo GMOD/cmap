@@ -1,13 +1,13 @@
 package Bio::GMOD::CMap::Constants;
 
-# $Id: Constants.pm,v 1.9 2002-09-06 00:01:17 kycl4rk Exp $
+# $Id: Constants.pm,v 1.10 2002-09-06 22:15:51 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.9 $)[-1];
+$VERSION = (qw$Revision: 1.10 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -389,9 +389,9 @@ use constant DEFAULT => {
 
     #
     # The number of positions to have flanking zoomed areas.
-    # Default: 5
+    # Default: 3
     #
-    number_flanking_positions => 5,
+    number_flanking_positions => 3,
 
     #
     # The module to dispatch to when no path is given to "/cmap."

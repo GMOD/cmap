@@ -130,12 +130,12 @@
     </tr>
 
     <tr>
-        <td align="right">How To Draw (opt):</td>
+        <td align="right">Shape (opt):</td>
         <td>
-            <select name="how_to_draw">
+            <select name="shape">
                 <option value="">--Default--</option>
                 [% FOREACH shape=shapes %]
-                    <option value="[% shape %]"[% IF apr.param('how_to_draw')==shape; ' selected'; END %]>[% shape %]</option>
+                    <option value="[% shape %]"[% IF apr.param('shape')==shape; ' selected'; END %]>[% shape %]</option>
                 [% END %]
             </select>
         </td>

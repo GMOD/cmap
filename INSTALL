@@ -1,3 +1,24 @@
+                              CMAP INSTALL
+
+QUICK START
+
+If you're pretty experienced with Unix systems administration, here is
+the very abbreviated explanation of how to install this application:
+
+* Install libgd with at least libpng and libjpeg
+* Install MySQL or Oracle, create tables with contents of "sql"
+    directory, grant appropriate user permissions
+* Install Perl, Apache and mod_perl
+* Execute "perl Makefile.PL" and answer the questions
+* Execute "make && make install" being sure to install module dependencies
+* Add contents of "httpd.conf" and "perlstartup.pl" in "conf"
+    directory to your own versions of these files
+* Restart Apache
+* Import your data (or the test data)
+* Compare maps
+
+If you need help, read on.
+
 GETTING STARTED
 
 Depending on your comfort level with software installation on UNIX
@@ -693,5 +714,10 @@ between the many "[% %]" tags, and these are often quite
 self-explanatory.  If you can't figure out what to change on your own,
 then check out http://www.template-toolkit.com/ for the documentation
 (or type "perldoc Template" on your command line).
+
+COMMENTS
+
+If you have questions or comments about this document, please send
+them to Ken Clark, kclark@cshl.org.
 
 __END__

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Feature;
 
-# $Id: Feature.pm,v 1.3 2002-09-06 00:01:17 kycl4rk Exp $
+# $Id: Feature.pm,v 1.4 2002-09-06 22:15:51 kycl4rk Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -36,13 +36,13 @@ use constant AUTO_FIELDS => [
 ];
 
 use constant INIT_FIELDS => [
-    qw( color how_to_draw map )
+    qw( color shape map )
 ];
 
 #
 # Actually, I'm handling all this elsewhere, so just ignore.
 #
-use constant HOW_TO_DRAW => {
+use constant SHAPE => {
     default  => 'draw_line', #'draw_span',
     box      => 'draw_line', #'draw_box',
     line     => 'draw_line',
@@ -119,8 +119,8 @@ Draws the feature.
 
 =cut
     my $self          = shift;
-    my $how_to_draw   = $self->how_to_draw || '';
-    my $draw_sub_name = HOW_TO_DRAW->{ $how_to_draw };
+    my $shape         = $self->shape || '';
+    my $draw_sub_name = SHAPE->{ $shape };
     $self->$draw_sub_name( @_ );
 }
 
@@ -146,31 +146,27 @@ Draws the feature as a line.
 }
 
 # ----------------------------------------------------
-sub how_to_draw {
+sub shape {
 
 =pod
 
-=head2 how_to_draw
+=head2 shape
 
 Returns a string describing how to draw the feature.
 
 =cut
     my $self = shift;
 
-    unless ( $self->{'how_to_draw_vetted'} ) {
-        my $how_to_draw = lc $self->{'how_to_draw'} || '';
-        $how_to_draw    = 'default' 
-            unless defined HOW_TO_DRAW->{ $how_to_draw };
-        $how_to_draw    = 'line' 
+    unless ( $self->{'shape_vetted'} ) {
+        my $shape = lc $self->{'shape'} || '';
+        $shape    = 'default' unless defined SHAPE->{ $shape };
+        $shape    = LINE 
             if $self->start_position == $self->stop_position ||
             !defined $self->stop_position;
-#        $how_to_draw = 'span' 
-#            if $how_to_draw eq 'line' && 
-#            $self->stop_position > $self->start_position;
-        $self->{'how_to_draw_vetted'} = $how_to_draw;
+        $self->{'shape_vetted'} = $shape;
     }
 
-    return $self->{'how_to_draw_vetted'};
+    return $self->{'shape_vetted'};
 }
 
 # ----------------------------------------------------

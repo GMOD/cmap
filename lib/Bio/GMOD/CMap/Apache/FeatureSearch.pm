@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::FeatureSearch;
 
-# $Id: FeatureSearch.pm,v 1.2 2002-08-27 22:18:42 kycl4rk Exp $
+# $Id: FeatureSearch.pm,v 1.3 2002-09-06 22:15:51 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Apache::Constants;
 
@@ -61,6 +61,7 @@ sub handler {
             limit_end       => $results->{'limit_end'},
             page_size       => $max_child_elements,
             no_pages        => $results->{'no_pages'},
+            stylesheet      => $self->stylesheet,
         },
         \$html 
     ) 

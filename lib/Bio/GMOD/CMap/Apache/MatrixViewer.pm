@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MatrixViewer;
 
-# $Id: MatrixViewer.pm,v 1.1 2002-08-23 16:07:18 kycl4rk Exp $
+# $Id: MatrixViewer.pm,v 1.2 2002-09-06 22:15:51 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Apache::Constants;
 use Data::Dumper;
@@ -51,14 +51,15 @@ sub handler {
     $t->process( 
         TEMPLATE, 
         { 
-            apr            => $apr,
-            page           => $self->page,
-            top_row        => $data->{'top_row'},
-            matrix         => $data->{'matrix'}, 
-            title          => 'Welcome to the Matrix',
-            species        => $data->{'species'},
-            map_sets       => $data->{'map_sets'},
-            maps           => $data->{'maps'},
+            apr        => $apr,
+            page       => $self->page,
+            top_row    => $data->{'top_row'},
+            matrix     => $data->{'matrix'}, 
+            title      => 'Welcome to the Matrix',
+            species    => $data->{'species'},
+            map_sets   => $data->{'map_sets'},
+            maps       => $data->{'maps'},
+            stylesheet => $self->stylesheet,
         },
         \$html 
     ) or $html = $t->error;

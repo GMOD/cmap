@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin;
 
-# $Id: Admin.pm,v 1.2 2002-08-27 22:18:42 kycl4rk Exp $
+# $Id: Admin.pm,v 1.3 2002-09-06 22:15:51 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Bio::GMOD::CMap;
 use base 'Bio::GMOD::CMap';
@@ -223,7 +223,7 @@ Find all the feature types.
         qq[
             select   ft.feature_type_id, 
                      ft.feature_type, 
-                     ft.how_to_draw
+                     ft.shape
             from     cmap_feature_type ft
             order by $order_by
         ], 

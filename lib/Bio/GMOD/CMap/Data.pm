@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.7 2002-09-06 00:01:17 kycl4rk Exp $
+# $Id: Data.pm,v 1.8 2002-09-06 22:15:51 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.7 $)[-1];
+$VERSION = (qw$Revision: 1.8 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -1236,7 +1236,7 @@ Turn a feature name into a position.
     my $position        = $db->selectrow_array(
         $self->sql->feature_name_to_position_sql,
         {},
-        ( $feature_name, $map_id )
+        ( uc $feature_name, $map_id )
     ) || 0;
 
     return $position;
@@ -1347,39 +1347,55 @@ Given a feature acc. id, find out all the details on it.
         )
     }
 
-    my $dbxrefs = $db->selectall_arrayref(
-        q[
-            select d.species_id,
-                   d.map_set_id,
-                   d.feature_type_id,
-                   d.url,
-                   d.dbxref_name
-            from   cmap_dbxref d
-            where  d.feature_type_id=?
-            and    (
-                d.species_id=?
-                or     
-                d.map_set_id=?
+    if ( $feature->{'dbxref_url'} ) {
+        $feature->{'dbxrefs'} = [
+            { 
+                dbxref_name => $feature->{'dbxref_name'},
+                url         => $feature->{'dbxref_url'},
+            }
+        ]
+    }
+    else {
+        my $dbxrefs = $db->selectall_arrayref(
+            q[
+                select d.species_id,
+                       d.map_set_id,
+                       d.feature_type_id,
+                       d.url,
+                       d.dbxref_name
+                from   cmap_dbxref d
+                where  d.feature_type_id=?
+                and    (
+                    d.species_id=?
+                    or     
+                    d.map_set_id=?
+                )
+                or     (
+                    d.species_id=?
+                    and     
+                    d.map_set_id=?
+                )
+            ],
+            { Columns => {} },
+            ( 
+                $feature->{'feature_type_id'},
+                $feature->{'species_id'},
+                $feature->{'map_set_id'},
+                $feature->{'species_id'},
+                $feature->{'map_set_id'},
             )
-            or     (
-                d.species_id=?
-                and     
-                d.map_set_id=?
-            )
-        ],
-        { Columns => {} },
-        ( 
-            $feature->{'feature_type_id'},
-            $feature->{'species_id'},
-            $feature->{'map_set_id'},
-            $feature->{'species_id'},
-            $feature->{'map_set_id'},
-        )
-    );
+        );
 
-    for my $dbxref ( @$dbxrefs ) {
-        $feature->{'dbxref'} = $dbxref;
-        last if $dbxref->{'map_set_id'} == $feature->{'map_set_id'};
+        my ( @generic, @specific );
+        for my $dbxref ( @$dbxrefs ) {
+            if ( $dbxref->{'map_set_id'} == $feature->{'map_set_id'} ) {
+                push @specific, $dbxref;
+            }
+            else {
+                push @generic, $dbxref;
+            }
+        }
+        $feature->{'dbxrefs'} = @specific ? \@specific : \@generic;
     }
 
 #    warn "feature = ", Dumper( $feature ), "\n";

@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapSetViewer;
 
-# $Id: MapSetViewer.pm,v 1.2 2002-09-04 02:25:46 kycl4rk Exp $
+# $Id: MapSetViewer.pm,v 1.3 2002-09-06 22:15:51 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Apache::Constants;
 
@@ -29,8 +29,9 @@ sub handler {
     $t->process( 
         TEMPLATE, 
         { 
-            map_sets => $map_sets,
-            page     => $self->page,
+            map_sets   => $map_sets,
+            page       => $self->page,
+            stylesheet => $self->stylesheet,
         },
         \$html 
     ) or $html = $t->error;

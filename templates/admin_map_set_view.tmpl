@@ -46,13 +46,10 @@
     </tr>
 
     <tr>
-        <td align="right">How to Draw:</td>
+        <td align="right">Shape:</td>
         <td>
             [% map_set.color OR map_set.default_color OR 'Default color' %] - 
-            [% map_set.how_to_draw 
-               OR map_set.default_how_to_draw 
-               OR 'Default shape' 
-            %] - 
+            [% map_set.shape OR map_set.default_shape OR 'Default shape' %] - 
             [% map_set.width OR map_set.default_width OR 'Default width' %]
         </td>
     </tr>

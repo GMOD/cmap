@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.7 2002-09-06 00:01:17 kycl4rk Exp $
+# $Id: Map.pm,v 1.8 2002-09-06 22:15:51 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.7 $)[-1];
+$VERSION = (qw$Revision: 1.8 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -44,7 +44,7 @@ use constant INIT_FIELDS => [
     qw( drawer base_x base_y slot_no maps )
 ];
 
-use constant HOW_TO_DRAW => {
+use constant SHAPE => {
     'default'  => 'draw_box',
     'box'      => 'draw_box',
     'dumbbell' => 'draw_dumbbell',
@@ -98,7 +98,7 @@ Figure out where right-to-left this map belongs.
         $base_x = $drawer->min_x - $buffer * 4;
     }
     else {
-        $base_x = $drawer->max_x + $buffer
+        $base_x = $drawer->max_x + $buffer;
     }
 
     return $base_x;
@@ -328,22 +328,21 @@ Returns the feature positions on the map.
 }
 
 # ----------------------------------------------------
-sub how_to_draw {
+sub shape {
 
 =pod
 
-=head2 how_to_draw
+=head2 shape
 
 Returns a string describing how to draw the map.
 
 =cut
-    my $self        = shift;
-    my $map_id      = shift or return;
-    my $map         = $self->map( $map_id );
-    my $how_to_draw = $map->{'how_to_draw'}         ||
-                      $map->{'default_how_to_draw'} || '';
-    $how_to_draw    = 'default' unless defined HOW_TO_DRAW->{ $how_to_draw };
-    return $how_to_draw;
+    my $self   = shift;
+    my $map_id = shift or return;
+    my $map    = $self->map( $map_id );
+    my $shape  = $map->{'shape'} || $map->{'default_shape'} || '';
+       $shape  = 'default' unless defined SHAPE->{ $shape };
+    return $shape;
 }
 
 # ----------------------------------------------------
@@ -367,8 +366,23 @@ Lays out the map.
     my @map_ids          = $self->map_ids;
     my $no_of_maps       = scalar @map_ids;
     my @columns          = ();
-    my $original_base_x  = $self->base_x;
     my $include_features = $drawer->include_features;
+
+    #
+    # The title is often the widest thing we'll draw, so we need
+    # to figure out which is the longest and take half its length
+    # into account when deciding where to start with the map(s).
+    #
+    my @config_map_titles = $self->config('map_titles');
+    my $longest;
+    for my $length ( map { length $_ } @config_map_titles ) {
+        $longest = $length if $length > $longest;
+    }
+    my $half_title_length = ( $reg_font->width * $longest ) / 2 + 10;
+    my $original_base_x   = $label_side eq RIGHT
+        ? $self->base_x + $half_title_length
+        : $self->base_x - $half_title_length
+    ;
 
     #
     # These are for drawing the map titles last if this is a relational map.
@@ -377,7 +391,9 @@ Lays out the map.
 
     for my $map_id ( @map_ids ) {
         $is_relational     = $self->is_relational_map( $map_id );
-        my $base_x         = $self->base_x + 30;
+        my $base_x         = $label_side eq RIGHT
+                             ? $self->base_x + $half_title_length
+                             : $self->base_x; #- $half_title_length;
         my $show_labels    = $is_relational && $slot_no != 0 ? 0 :
                              $include_features eq 'none' ? 0 : 1 ;
         my $show_ticks     = $is_relational && $slot_no != 0 ? 0 : 1;
@@ -390,8 +406,7 @@ Lays out the map.
         #
         # The map.
         #
-        my $draw_sub_name = HOW_TO_DRAW->{ $self->how_to_draw( $map_id ) };
-#            || DEFAULT->{'map_shape'};
+        my $draw_sub_name = SHAPE->{ $self->shape( $map_id ) };
         if ( $is_relational && $slot_no != 0 ) {
             #
             # Relational maps are drawn to a size relative to the distance
@@ -438,6 +453,7 @@ Lays out the map.
                 : $original_base_x - ( $column_width * $column_index );
 
             $min_x = $base_x unless defined $min_x;
+            $max_x = $base_x unless defined $max_x;
             $min_x = $base_x if $base_x < $min_x;
             $max_x = $base_x if $base_x > $max_x;
 
@@ -505,9 +521,91 @@ Lays out the map.
         }
 
         #
+        # Make map clickable.
+        #
+        my $slots = $drawer->slots;
+        my @maps;
+        for my $side ( qw[ left right ] ) {
+            my $no      = $side eq 'left' ? $slot_no - 1 : $slot_no + 1;
+            my $new_no  = $side eq 'left' ? -1 : 1;
+            my $map     = $slots->{ $no } or next; 
+            my $link    = 
+                join( '%3d', $new_no, map { $map->{$_} } qw[ field aid ] );
+
+            if ( 
+                my @ref_positions = sort { $a <=> $b }
+                $drawer->feature_correspondence_map_positions(
+                    slot_no      => $slot_no,
+                    map_id       => $map_id,
+                    comp_slot_no => $no,
+                )
+            ) {
+                my $first = $ref_positions[0];
+                my $last  = $ref_positions[-1];
+                $link    .= "[$first,$last]";
+            }
+
+            push @maps, $link;
+        }
+
+        my $url = $self->config('map_details_url').
+            '?ref_map_set_aid='.$self->map_set_aid( $map_id ).
+            ';ref_map_aid='.$self->accession_id( $map_id ).
+            ';comparative_maps='.join( ':', @maps );
+
+        $drawer->add_map_area(
+            coords => \@bounds,
+            url    => $url,
+            alt    => 'Details: '.$self->map_name,
+        );
+
+#        #
+#        # Add "Delete" and "Flip" if appropriate.
+#        #
+#        unless ( 
+#            ( $is_relational && $slot_no != 0 )
+#            ||
+#            $slot_no == 0
+#        ) {
+#            my $buffer     = 4;
+#            my $map_left   = $bounds[0];
+#            my $map_right  = $bounds[2];
+#            my $map_bottom = $bounds[3] + $reg_font->height;
+#            my $map_middle = $map_left + ( ( $map_right - $map_left ) / 2 );
+#            my $string     = 'Delete';
+#            my $string_x   =
+#                $map_middle - ( $reg_font->width * ( length( $string ) ) / 2 );
+#            my $string_y   = $map_bottom + $buffer;
+#            $drawer->add_drawing(
+#                STRING,
+#                $reg_font,
+#                $string_x,
+#                $string_y,
+#                $string,
+#                'black',
+#            );
+#
+#            my $url = $self->config('cmap_viewer_url');
+##                '?ref_map_set_aid='.$self->map_set_aid( $map_id ).
+##                ';ref_map_aid='.$self->accession_id( $map_id ).
+##                ';comparative_maps='.join( ':', @maps );
+#
+#            $drawer->add_map_area(
+#                coords => [
+#                    $string_x, 
+#                    $string_y, 
+#                    $string_x + ( $reg_font->width * length( $string ) ),
+#                    $string_y + $reg_font->height,
+#                ], 
+#                url    => $url,
+#                alt    => 'Delete '.$self->map_name,
+#            );
+#        }
+    
+        #
         # Features.
         #
-        my $no_features         = scalar @features;
+        my $no_features         = scalar @features or next;
         my $midpoint            = int ( $no_features / 2 ) || 0;
         my $midpoint_feature_id = $features[ $midpoint ]->feature_id;
         my @sorted_features     = (
@@ -551,7 +649,7 @@ Lays out the map.
             my $label_y;
             my @coords;
 
-            if ( $feature->how_to_draw eq 'line' ) {
+            if ( $feature->shape eq LINE ) {
                 $drawer->add_drawing(
                     LINE, $tick_start, $y_pos1, $tick_stop, $y_pos1, $color
                 );
@@ -581,7 +679,7 @@ Lays out the map.
                     $color
                 );
 
-                if ( $feature->how_to_draw eq 'span' ) {
+                if ( $feature->shape eq 'span' ) {
                     $drawer->add_drawing(
                         LINE, 
                         $vert_line_x1, $y_pos1, 
@@ -597,7 +695,7 @@ Lays out the map.
                     );
                     @coords = ($vert_line_x2, $y_pos1, $vert_line_x2, $y_pos2);
                 }
-                elsif ( $feature->how_to_draw eq 'box' ) {
+                elsif ( $feature->shape eq 'box' ) {
                     $vert_line_x1 = $label_side eq RIGHT
                         ? $tick_start - $offset : $tick_stop + $offset;
                     $vert_line_x2 = $label_side eq RIGHT 
@@ -713,7 +811,7 @@ Lays out the map.
 
                     my $label_connect_x1 = $x_plane;
 
-                    my $label_connect_y1 = $feature->how_to_draw eq 'line'
+                    my $label_connect_y1 = $feature->shape eq LINE
                         ? $y_pos1 : $y_pos1 + ($y_pos2 - $y_pos1)/2;
 
                     my $label_connect_x2 = $label_side eq RIGHT
@@ -766,61 +864,9 @@ Lays out the map.
             }
         }
 
-#        #
-#        # Remember map info to make clickable at the end.
-#        #
-#        $drawer->add_map_href_bounds(
-#            slot_no  => $slot_no,
-#            map_id   => $map_id,
-#            bounds   => \@bounds,
-#            map_name => $self->map_name,
-#        );
-
-        #
-        # Make map clickable.
-        #
-#        warn "map = ", $self->map_name($map_id), "\n";
-        my $slots = $drawer->slots;
-        my @maps;
-        for my $side ( qw[ left right ] ) {
-            my $no      = $side eq 'left' ? $slot_no - 1 : $slot_no + 1;
-            my $new_no  = $side eq 'left' ? -1 : 1;
-            my $map     = $slots->{ $no } or next; 
-            my $link    = 
-                join( '%3d', $new_no, map { $map->{$_} } qw[ field aid ] );
-
-            if ( 
-                my @ref_positions = sort { $a <=> $b }
-                $drawer->feature_correspondence_map_positions(
-                    slot_no      => $slot_no,
-                    map_id       => $map_id,
-                    comp_slot_no => $no,
-                )
-            ) {
-                my $first = $ref_positions[0];
-                my $last  = $ref_positions[-1];
-                $link    .= "[$first,$last]";
-            }
-
-            push @maps, $link;
-        }
-
-        my $url = $self->config('map_details_url').
-            '?ref_map_set_aid='.$self->map_set_aid( $map_id ).
-            ';ref_map_aid='.$self->accession_id( $map_id ).
-            ';comparative_maps='.join( ':', @maps );
-
-        $drawer->add_map_area(
-            coords => \@bounds,
-            url    => $url,
-            alt    => 'Details: '.$self->map_name,
-        );
-    
         #
         # The map title.
         #
-        my @config_map_titles = $self->config('map_titles');
-
         if ( $is_relational && $slot_no != 0 ) {
             unless ( @map_titles ) {
                 push @map_titles,
@@ -863,9 +909,11 @@ Lays out the map.
                 $rightmost  + $buffer, 
                 $bottommost + $buffer,
             );
+
             $drawer->add_drawing( 
                 FILLED_RECT, @bounds, 'white', 0 # bottom-most layer
             );
+
             $drawer->add_drawing( 
                 RECTANGLE, @bounds, 'black'
             );
@@ -921,13 +969,27 @@ Lays out the map.
             $rightmost  + $buffer, 
             $bottommost + $buffer,
         );
+
         $drawer->add_drawing( 
             FILLED_RECT, @bounds, 'white', 0 # bottom-most layer
         );
+
         $drawer->add_drawing( 
             RECTANGLE, @bounds, 'black'
         );
     }
+
+#    #
+#    # Background color
+#    #
+#    $drawer->add_drawing( 
+#        FILLED_RECT, 
+#        $min_x,
+#        $min_y,
+#        $max_x,
+#        $max_y,
+#        'yellow', -1
+#    );
 
     return 1;
 }

@@ -27,16 +27,14 @@
                                       [% ms.species_name %] - [% ms.map_set_name %]
                                     </option>
                                 [% END %]
-                            </select>
+                            </select>&nbsp;<input type="submit" value="Submit">
+                            <input type="hidden" name="prev_ref_map_set_aid" value="[% apr.param('ref_map_set_aid') %]">
+                            <input type="hidden" name="highlight"            value="[% apr.param('highlight') %]">
+                            <input type="hidden" name="image_size"           value="[% apr.param('image_size') %]">
+                            <input type="hidden" name="image_type"           value="[% apr.param('image_type') %]">
                         [% ELSE %]
                             No Map Sets
                         [% END %]
-                  
-                        <input type="hidden" name="prev_ref_map_set_aid" value="[% apr.param('ref_map_set_aid') %]">
-                        <input type="hidden" name="highlight"            value="[% apr.param('highlight') %]">
-                        <input type="hidden" name="image_size"           value="[% apr.param('image_size') %]">
-                        <input type="hidden" name="image_type"           value="[% apr.param('image_type') %]">
-                        <input type="submit" value="Submit">
                     </td>
                 </tr>
                 </form>

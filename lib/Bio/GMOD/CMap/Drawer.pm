@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.6 2002-09-06 00:01:17 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.7 2002-09-06 22:15:51 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.6 $)[-1];
+$VERSION = (qw$Revision: 1.7 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
@@ -650,7 +650,7 @@ Gets/sets the string of highlighted features.
             #
             $self->{'highlight_hash'} = {
                 map  { s/^\s+|\s+$//g; ( uc $_, 1 ) }
-                split( /,/, $highlight )
+                split( /[\s,]/, $highlight )
             };
         }
         else {
@@ -973,6 +973,7 @@ Gets/sets the maximum x-coordinate.
     my $self = shift;
 
     if ( my @args = sort { $a <=> $b } @_ ) {
+        $self->{'max_x'} = $args[-1] unless defined $self->{'max_x'};
         $self->{'max_x'} = $args[-1] if $args[-1] > $self->{'max_x'};
     }
 
@@ -992,6 +993,7 @@ Gets/sets the maximum x-coordinate.
     my $self = shift;
 
     if ( my @args = sort { $a <=> $b } @_ ) {
+        $self->{'max_y'} = $args[-1] unless defined $self->{'max_y'};
         $self->{'max_y'} = $args[-1] if $args[-1] > $self->{'max_y'};
     }
 

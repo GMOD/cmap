@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.2 2002-08-27 22:18:42 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.3 2002-09-06 22:15:51 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -28,7 +28,7 @@ $COLORS         = [ sort keys %{ +COLORS } ];
 $FEATURE_SHAPES = [ qw( box dumbbell line span ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.2 $)[-1];
+$VERSION        = (qw$Revision: 1.3 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -114,7 +114,10 @@ sub admin_home {
 
     return $self->process_template( 
         TEMPLATE->{'admin_home'}, 
-        { map_sets => $map_sets }
+        { 
+            map_sets   => $map_sets,
+            stylesheet => $self->stylesheet,
+        }
     );
 }
 
@@ -354,39 +357,39 @@ sub dbxref_insert {
     push @errors, 'Please supply a name'    unless $name;
     push @errors, 'Please supply a URL'     unless $url;
 
-    if ( $species_id ) {
-        my $exists = $db->selectrow_array(
-            q[
-                select count(*)
-                from   cmap_dbxref
-                where  feature_type_id=?
-                and    species_id=?
-            ],
-            {},
-            ( $feature_type_id, $species_id )
-        );
+#    if ( $species_id ) {
+#        my $exists = $db->selectrow_array(
+#            q[
+#                select count(*)
+#                from   cmap_dbxref
+#                where  feature_type_id=?
+#                and    species_id=?
+#            ],
+#            {},
+#            ( $feature_type_id, $species_id )
+#        );
+#
+#        push @errors, 
+#            'A record already exists for that feature type and species.'
+#            if $exists;
+#    }
 
-        push @errors, 
-            'A record already exists for that feature type and species.'
-            if $exists;
-    }
-
-    if ( $map_set_id ) {
-        my $exists = $db->selectrow_array(
-            q[
-                select count(*)
-                from   cmap_dbxref
-                where  feature_type_id=?
-                and    map_set_id=?
-            ],
-            {},
-            ( $feature_type_id, $map_set_id )
-        );
-
-        push @errors, 
-            'A record already exists for that feature type and map set.'
-            if $exists;
-    }
+#    if ( $map_set_id ) {
+#        my $exists = $db->selectrow_array(
+#            q[
+#                select count(*)
+#                from   cmap_dbxref
+#                where  feature_type_id=?
+#                and    map_set_id=?
+#            ],
+#            {},
+#            ( $feature_type_id, $map_set_id )
+#        );
+#
+#        push @errors, 
+#            'A record already exists for that feature type and map set.'
+#            if $exists;
+#    }
 
     return $self->dbxref_create( errors => \@errors ) if @errors;
 
@@ -1106,6 +1109,8 @@ sub feature_edit {
                    f.start_position,
                    f.stop_position,
                    f.is_landmark,
+                   f.dbxref_name,
+                   f.dbxref_url,
                    ft.feature_type,
                    map.map_name,
                    ms.short_name as map_set_name,
@@ -1164,9 +1169,14 @@ sub feature_insert {
     die "No start" unless defined $start_position =~ NUMBER_RE;
     my $stop_position   = $apr->param('stop_position');
     my $is_landmark     = $apr->param('is_landmark') || 0;
+    my $dbxref_name     = $apr->param('dbxref_name') || '';
+    my $dbxref_url      = $apr->param('dbxref_url')  || '';
 
-    my @insert_args = ( $feature_id, $accession_id, $map_id, $feature_name, 
-          $alternate_name, $feature_type_id, $is_landmark, $start_position );
+    my @insert_args = ( 
+        $feature_id, $accession_id, $map_id, $feature_name, 
+        $alternate_name, $feature_type_id, $is_landmark, 
+        $dbxref_name, $dbxref_url, $start_position
+    );
 
     my $stop_placeholder; 
     if ( $stop_position =~ NUMBER_RE ) {
@@ -1183,8 +1193,8 @@ sub feature_insert {
             into   cmap_feature
                    ( feature_id, accession_id, map_id, feature_name, 
                      alternate_name, feature_type_id, is_landmark,
-                     start_position, stop_position )
-            values ( ?, ?, ?, ?, ?, ?, ?, ?, $stop_placeholder )
+                     dbxref_name, dbxref_url, start_position, stop_position )
+            values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, $stop_placeholder )
         ],
         {},
         @insert_args
@@ -1210,11 +1220,14 @@ sub feature_update {
     my $start_position  = $apr->param('start_position');
     die "No start" unless defined $start_position =~ NUMBER_RE;
     my $stop_position   = $apr->param('stop_position');
+    my $dbxref_name     = $apr->param('dbxref_name') || '';
+    my $dbxref_url      = $apr->param('dbxref_url')  || '';
 
     my $sql = q[
         update cmap_feature
         set    accession_id=?, feature_name=?, alternate_name=?,
-               feature_type_id=?, is_landmark=?, start_position=?
+               feature_type_id=?, is_landmark=?, start_position=?,
+               dbxref_name=?, dbxref_url=?
     ];
     $sql .= ", stop_position=$stop_position " if $stop_position =~ NUMBER_RE;
     $sql .= 'where  feature_id=?';
@@ -1222,7 +1235,9 @@ sub feature_update {
         $sql,
         {},
         ( $accession_id, $feature_name, $alternate_name,
-          $feature_type_id, $is_landmark, $start_position, $feature_id
+          $feature_type_id, $is_landmark, $start_position, 
+          $dbxref_name, $dbxref_url,
+          $feature_id
         )
     );
 
@@ -1248,6 +1263,8 @@ sub feature_view {
                    f.is_landmark,
                    f.start_position,
                    f.stop_position,
+                   f.dbxref_name,
+                   f.dbxref_url,
                    ft.feature_type,
                    map.map_name,
                    ms.short_name as map_set_name,
@@ -1774,7 +1791,7 @@ sub feature_type_edit {
             select   accession_id,
                      feature_type_id, 
                      feature_type, 
-                     how_to_draw, 
+                     shape, 
                      color
             from     cmap_feature_type
             where    feature_type_id=?
@@ -1800,7 +1817,7 @@ sub feature_type_insert {
     my $db              = $self->db;
     my $apr             = $self->apr;
     my $feature_type    = $apr->param('feature_type') or die 'No feature type';
-    my $how_to_draw     = $apr->param('how_to_draw')  or die 'How to draw?';
+    my $shape           = $apr->param('shape')        or die 'No shape';
     my $color           = $apr->param('color')        || '';
     my $feature_type_id = next_number(
         db              => $db, 
@@ -1813,12 +1830,11 @@ sub feature_type_insert {
         q[ 
             insert
             into   cmap_feature_type 
-                   ( accession_id, feature_type_id, feature_type, 
-                     how_to_draw, color )
+                   ( accession_id, feature_type_id, feature_type, shape, color )
             values ( ?, ?, ?, ?, ? )
         ],
         {}, 
-        ( $accession_id, $feature_type_id, $feature_type, $how_to_draw, $color )
+        ( $accession_id, $feature_type_id, $feature_type, $shape, $color )
     );
 
     return $self->redirect_home( ADMIN_HOME_URI.'?action=feature_types_view' ); 
@@ -1829,24 +1845,22 @@ sub feature_type_update {
     my $self            = shift;
     my $db              = $self->db;
     my $apr             = $self->apr;
-    my $accession_id    = $apr->param('accession_id') 
-        or die 'No accession id';
+    my $accession_id    = $apr->param('accession_id') or die 'No accession id';
+    my $shape           = $apr->param('shape')        or die 'No shape';
+    my $color           = $apr->param('color')        || '';
     my $feature_type_id = $apr->param('feature_type_id') 
         or die 'No feature type id';
     my $feature_type    = $apr->param('feature_type')    
         or die 'No feature type';
-    my $how_to_draw     = $apr->param('how_to_draw')    
-        or die 'How to draw?';
-    my $color           = $apr->param('color') || '';
 
     $db->do(
         q[ 
             update cmap_feature_type
-            set    accession_id=?, feature_type=?, how_to_draw=?, color=?
+            set    accession_id=?, feature_type=?, shape=?, color=?
             where  feature_type_id=?
         ],
         {}, 
-        ( $accession_id, $feature_type, $how_to_draw, $color, $feature_type_id )
+        ( $accession_id, $feature_type, $shape, $color, $feature_type_id )
     );
 
     return $self->redirect_home( ADMIN_HOME_URI.'?action=feature_types_view' ); 
@@ -1864,7 +1878,7 @@ sub feature_types_view {
             select   accession_id, 
                      feature_type_id, 
                      feature_type, 
-                     how_to_draw, 
+                     shape, 
                      color
             from     cmap_feature_type
             order by $order_by
@@ -1991,11 +2005,11 @@ sub map_set_edit {
                       ms.short_name, ms.display_order, ms.remarks,
                       ms.published_on, ms.can_be_reference_map,
                       ms.map_type_id, ms.species_id, ms.is_enabled,
-                      ms.how_to_draw, ms.width, ms.color,
+                      ms.shape, ms.width, ms.color,
                       s.common_name as species_common_name,
                       s.full_name as species_full_name,
                       mt.map_type, mt.map_units,
-                      mt.how_to_draw as default_how_to_draw,
+                      mt.shape as default_shape,
                       mt.color as default_width, 
                       mt.width as default_color
             from      cmap_map_set ms, 
@@ -2058,7 +2072,7 @@ sub map_set_insert {
     my $display_order        = $apr->param('display_order')        ||  1;
     my $can_be_reference_map = $apr->param('can_be_reference_map') ||  0;
     my $remarks              = $apr->param('remarks')              || '';
-    my $how_to_draw          = $apr->param('how_to_draw')          || '';
+    my $shape                = $apr->param('shape')                || '';
     my $color                = $apr->param('color')                || '';
     my $width                = $apr->param('width')                ||  0;
     my $published_on         = $apr->param('published_on')         || '';
@@ -2088,7 +2102,7 @@ sub map_set_insert {
             into   cmap_map_set
                    ( map_set_id, accession_id, map_set_name, short_name,
                      species_id, map_type_id, published_on, display_order, 
-                     can_be_reference_map, remarks, how_to_draw,
+                     can_be_reference_map, remarks, shape,
                      width, color
                    )
             values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
@@ -2097,7 +2111,7 @@ sub map_set_insert {
         ( 
             $map_set_id, $accession_id, $map_set_name, $short_name,
             $species_id, $map_type_id, $published_on, $display_order, 
-            $can_be_reference_map, $remarks, $how_to_draw, 
+            $can_be_reference_map, $remarks, $shape, 
             $width, $color
         )
     );
@@ -2120,11 +2134,11 @@ sub map_set_view {
                       ms.short_name, ms.display_order, ms.published_on,
                       ms.remarks, ms.map_type_id, ms.species_id, 
                       ms.can_be_reference_map, ms.is_enabled,
-                      ms.how_to_draw, ms.color, ms.width,
+                      ms.shape, ms.color, ms.width,
                       s.common_name as species_common_name,
                       s.full_name as species_full_name,
                       mt.map_type, mt.map_units,
-                      mt.how_to_draw as default_how_to_draw,
+                      mt.shape as default_shape,
                       mt.color as default_color,
                       mt.width as default_width
             from      cmap_map_set ms, 
@@ -2186,7 +2200,7 @@ sub map_set_update {
     my $is_enabled           = $apr->param('is_enabled')           ||  0;
     my $display_order        = $apr->param('display_order')        ||  1;
     my $remarks              = $apr->param('remarks')              || '';
-    my $how_to_draw          = $apr->param('how_to_draw')          || '';
+    my $shape                = $apr->param('shape')                || '';
     my $color                = $apr->param('color')                || '';
     my $width                = $apr->param('width')                ||  0;
     my $published_on         = $apr->param('published_on')         || '';
@@ -2209,7 +2223,7 @@ sub map_set_update {
             set    accession_id=?, map_set_name=?, short_name=?,
                    species_id=?, map_type_id=?, published_on=?,
                    can_be_reference_map=?, display_order=?, 
-                   remarks=?, is_enabled=?, how_to_draw=?,
+                   remarks=?, is_enabled=?, shape=?,
                    color=?, width=?
             where  map_set_id=?
         ],
@@ -2218,7 +2232,7 @@ sub map_set_update {
             $accession_id, $map_set_name, $short_name, 
             $species_id, $map_type_id, $published_on, 
             $can_be_reference_map, $display_order, 
-            $remarks, $is_enabled, $how_to_draw,
+            $remarks, $is_enabled, $shape,
             $color, $width,
             $map_set_id
         )
@@ -2268,7 +2282,7 @@ sub map_type_edit {
                      map_type, 
                      map_units, 
                      is_relational_map,
-                     how_to_draw, 
+                     shape, 
                      width, 
                      color
             from     cmap_map_type
@@ -2294,11 +2308,11 @@ sub map_type_insert {
     my $self              = shift;
     my $db                = $self->db;
     my $apr               = $self->apr;
-    my $map_type          = $apr->param('map_type')    or die 'No map type';
-    my $map_units         = $apr->param('map_units')   or die 'No map units';
-    my $how_to_draw       = $apr->param('how_to_draw') or die 'How to draw?';
-    my $width             = $apr->param('width')       || '';
-    my $color             = $apr->param('color')       || '';
+    my $map_type          = $apr->param('map_type')  or die 'No map type';
+    my $map_units         = $apr->param('map_units') or die 'No map units';
+    my $shape             = $apr->param('shape')     or die 'How to draw?';
+    my $width             = $apr->param('width')     || '';
+    my $color             = $apr->param('color')     || '';
     my $is_relational_map = $apr->param('is_relational_map') || 0;
     my $map_type_id       = next_number(
         db                => $db, 
@@ -2311,12 +2325,12 @@ sub map_type_insert {
             insert
             into   cmap_map_type 
                    ( map_type_id, map_type, map_units, is_relational_map,
-                     how_to_draw, width, color )
+                     shape, width, color )
             values ( ?, ?, ?, ?, ?, ?, ? )
         ],
         {}, 
         ( $map_type_id, $map_type, $map_units, $is_relational_map, 
-          $how_to_draw, $width, $color )
+          $shape, $width, $color )
     );
 
     return $self->redirect_home( ADMIN_HOME_URI.'?action=map_types_view' ); 
@@ -2330,7 +2344,7 @@ sub map_type_update {
     my $map_type_id       = $apr->param('map_type_id') or die 'No map type id';
     my $map_type          = $apr->param('map_type')    or die 'No map type';
     my $map_units         = $apr->param('map_units')   or die 'No map units';
-    my $how_to_draw       = $apr->param('how_to_draw') or die 'How to draw?';
+    my $shape             = $apr->param('shape')       or die 'No shape';
     my $is_relational_map = $apr->param('is_relational_map') || 0;
     my $width             = $apr->param('width') || '';
     my $color             = $apr->param('color') || '';
@@ -2339,11 +2353,11 @@ sub map_type_update {
         q[ 
             update cmap_map_type
             set    map_type=?, map_units=?, is_relational_map=?, 
-                   how_to_draw=?, width=?, color=?
+                   shape=?, width=?, color=?
             where  map_type_id=?
         ],
         {}, 
-        ( $map_type, $map_units, $is_relational_map, $how_to_draw, 
+        ( $map_type, $map_units, $is_relational_map, $shape, 
           $width, $color, $map_type_id )
     );
 
@@ -2363,7 +2377,7 @@ sub map_types_view {
                      map_type, 
                      map_units, 
                      is_relational_map, 
-                     how_to_draw, 
+                     shape, 
                      width, 
                      color
             from     cmap_map_type

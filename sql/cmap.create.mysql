@@ -1,8 +1,8 @@
-# MySQL dump 8.13
+# MySQL dump 8.21
 #
 # Host: localhost    Database: CMAP
-#--------------------------------------------------------
-# Server version	3.23.40
+#-------------------------------------------------------
+# Server version	3.23.49
 
 #
 # Table structure for table 'cmap_correspondence_evidence'
@@ -72,8 +72,8 @@ CREATE TABLE cmap_evidence_type (
   evidence_type varchar(30) NOT NULL default '',
   rank int(11) NOT NULL default '0',
   PRIMARY KEY  (evidence_type_id),
-  UNIQUE KEY accession_id (accession_id),
-  UNIQUE KEY rank (rank)
+  UNIQUE KEY rank (rank),
+  UNIQUE KEY accession_id (accession_id)
 ) TYPE=MyISAM;
 
 #
@@ -90,6 +90,8 @@ CREATE TABLE cmap_feature (
   is_landmark tinyint(4) NOT NULL default '0',
   start_position double(8,2) NOT NULL default '0.00',
   stop_position double(8,2) default NULL,
+  dbxref_name varchar(32) default NULL,
+  dbxref_url varchar(200) default NULL,
   PRIMARY KEY  (feature_id),
   UNIQUE KEY accession_id (accession_id),
   KEY feature_name (feature_name),
@@ -121,7 +123,7 @@ CREATE TABLE cmap_feature_type (
   feature_type varchar(32) NOT NULL default '',
   default_rank int(11) NOT NULL default '1',
   is_visible tinyint(4) NOT NULL default '1',
-  how_to_draw varchar(12) NOT NULL default '',
+  shape varchar(12) default NULL,
   color varchar(20) default NULL,
   PRIMARY KEY  (feature_type_id),
   UNIQUE KEY accession_id (accession_id)
@@ -158,7 +160,7 @@ CREATE TABLE cmap_map_set (
   display_order int(11) NOT NULL default '1',
   is_enabled tinyint(4) NOT NULL default '1',
   remarks text,
-  how_to_draw varchar(12) NOT NULL default '',
+  shape varchar(12) default NULL,
   color varchar(20) default NULL,
   width int(11) default NULL,
   PRIMARY KEY  (map_set_id),
@@ -185,7 +187,7 @@ CREATE TABLE cmap_map_type (
   map_type varchar(64) NOT NULL default '',
   map_units varchar(12) NOT NULL default '',
   is_relational_map tinyint(11) NOT NULL default '0',
-  how_to_draw varchar(12) NOT NULL default '',
+  shape varchar(12) default NULL,
   color varchar(20) default NULL,
   width int(11) default NULL,
   display_order int(11) NOT NULL default '1',

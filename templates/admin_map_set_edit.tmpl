@@ -129,15 +129,15 @@
     </tr>
 
     <tr>
-        <td align="right">How To Draw (opt):</td>
+        <td align="right">Shape (opt):</td>
         <td>
-            <select name="how_to_draw">
+            <select name="shape">
                 <option value="">--Default--</option>
                 [% FOREACH shape=shapes %]
-                    <option value="[% shape %]"[% IF map_set.how_to_draw==shape; ' selected'; END %]>[% shape %]</option>
+                    <option value="[% shape %]"[% IF map_set.shape==shape; ' selected'; END %]>[% shape %]</option>
                 [% END %]
             </select>
-            <small><em>Default: [% map_set.default_how_to_draw %]</em></small>
+            <small><em>Default: [% map_set.default_shape %]</em></small>
         </td>
     </tr>
 

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data::Generic;
 
-# $Id: Generic.pm,v 1.5 2002-09-06 00:01:17 kycl4rk Exp $
+# $Id: Generic.pm,v 1.6 2002-09-06 22:15:51 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use Bio::GMOD::CMap;
 use base 'Bio::GMOD::CMap';
@@ -81,7 +81,7 @@ The SQL for finding all the features on a map.
                  ft.feature_type,
                  ft.default_rank,
                  ft.is_visible,
-                 ft.how_to_draw,
+                 ft.shape,
                  ft.color,
                  map.accession_id as map_aid,
                  mt.map_units
@@ -124,14 +124,14 @@ The SQL for finding info on a map.
                ms.map_set_id,
                ms.accession_id as map_set_aid,
                ms.short_name as map_set_name,
-               ms.how_to_draw,
+               ms.shape,
                ms.width,
                ms.color,
                mt.map_type_id,
                mt.map_type,
                mt.map_units,
                mt.is_relational_map,
-               mt.how_to_draw as default_how_to_draw,
+               mt.shape as default_shape,
                mt.width as default_width,
                mt.color as default_color,
                s.species_id,
@@ -468,6 +468,8 @@ The SQL for finding basic info on a feature.
                f.is_landmark,
                f.start_position,
                f.stop_position,
+               f.dbxref_name,
+               f.dbxref_url,
                ft.feature_type,
                map.map_name,
                map.accession_id as map_aid,

@@ -28,13 +28,15 @@
 
     <tr>
         <td align="right">
-            Database Cross-Reference:
+            Database Cross-References:
         </td>
         <td>
-            [% IF feature.dbxref_url %]
-                View at <a href="[% feature.dbxref_url %]">[% feature.dbxref.dbxref_name OR 'Reference' %]</a>
+            [% IF feature.dbxrefs %]
+                [% FOREACH dbxref=feature.dbxrefs %]
+                    View at <a href="[% dbxref.url %]">[% dbxref.dbxref_name OR 'Reference' %]</a><br>
+                [% END %]
             [% ELSE %]
-                No cross-reference defined.
+                No cross-references defined.
             [% END %]
         </td>
     </tr>
