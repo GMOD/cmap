@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache;
 # vim: set ft=perl:
 
-# $Id: Apache.pm,v 1.15 2004-03-03 21:01:23 kycl4rk Exp $
+# $Id: Apache.pm,v 1.16 2004-03-09 22:41:05 kycl4rk Exp $
 
 =head1 NAME
 
@@ -46,7 +46,7 @@ this class will catch errors and display them correctly.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.15 $)[-1];
+$VERSION = (qw$Revision: 1.16 $)[-1];
 
 use CGI;
 use Data::Dumper;
@@ -263,10 +263,12 @@ it, and this method will never return anything.
 
     unless ( defined $self->{'page'} ) {
         if ( my $page_object = $self->config('page_object') ) {
-            require Apache;
-            my $r = Apache->request;
-            $self->{'page'} = $page_object->new( $r ) 
-            or $self->error( qq[Error creating page object ("$page_object")] );
+            eval "require Apache";
+            unless ( $@ ) {
+                my $r = Apache->request;
+                $self->{'page'} = $page_object->new( $r ) or return
+                $self->error( qq[Error creating page object ("$page_object")] );
+            }
         }
         else {
             $self->{'page'} = ''; # define it to nothing
