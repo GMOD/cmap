@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::Import;
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.39 2003-10-28 21:39:29 kycl4rk Exp $
+# $Id: Import.pm,v 1.40 2003-10-29 20:52:35 kycl4rk Exp $
 
 =pod
 
@@ -28,7 +28,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.39 $)[-1];
+$VERSION  = (qw$Revision: 1.40 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -598,26 +598,10 @@ appended to the list of xrefs.
 
         for my $name ( @$aliases ) {
             next if $name eq $feature_name;
-            next if $db->selectrow_array(
-                q[
-                    select count(fa.feature_id)
-                    from   cmap_feature_alias fa
-                    where  fa.feature_id=?
-                    and    fa.alias=?
-                ],
-                {},
-                ( $feature_id, $name ) 
-            );
-
-            $db->do(
-                q[
-                    insert 
-                    into   cmap_feature_alias (feature_id, alias)
-                    values (?, ?)
-                ],
-                {},
-                ( $feature_id, $name ) 
-            );
+            $admin->feature_alias_create(
+                feature_id => $feature_id,
+                alias      => $name,
+            ) or warn $admin->error;
         }
 
         if ( @fattributes ) {
