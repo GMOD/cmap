@@ -5,6 +5,7 @@
 -- Modify the structure for table `cmap_feature`
 --
 ALTER TABLE cmap_feature CHANGE map_id map_id int(11) NULL default NULL;
+ALTER TABLE cmap_feature ADD COLUMN gclass varchar(100) default NULL;
 CREATE INDEX gclass on cmap_feature (gclass,feature_name);
 --
 -- Table structure for table `fattribute`
