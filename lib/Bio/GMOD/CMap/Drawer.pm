@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.71 2004-06-24 20:46:43 mwz444 Exp $
+# $Id: Drawer.pm,v 1.72 2004-07-01 19:25:46 mwz444 Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.71 $)[-1];
+$VERSION = (qw$Revision: 1.72 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -39,7 +39,7 @@ use base 'Bio::GMOD::CMap';
 my @INIT_PARAMS = qw[
     apr flip slots highlight font_size image_size image_type 
     label_features include_feature_types corr_only_feature_types
-    include_evidence_types
+    include_evidence_types feature_types_undefined
     config data_source min_correspondences collapse_features cache_dir
     map_view data_module aggregate
 ];
@@ -482,6 +482,26 @@ Gets/sets which feature type (accession IDs) to corr_only.
 }
 
 # ----------------------------------------------------
+sub feature_types_undefined {
+                                                                                
+=pod
+                                                                                
+=head2 feature_types_undefined
+                                                                                
+Gets/sets if the feature types have been specified.
+                                                                                
+=cut
+                                                                                
+    my $self = shift;
+                                                                                
+    if ( my $arg = shift ) {
+        $self->{'feature_types_undefined'}=  $arg;
+    }
+                                                                                
+    return $self->{'feature_types_undefined'};
+}
+
+# ----------------------------------------------------
 sub set_completed_map {
 
 =pod
@@ -847,6 +867,7 @@ necessary data for drawing.
             min_correspondences    => $self->min_correspondences,
             include_feature_type_aids  => $self->include_feature_types,
             corr_only_feature_type_aids  => $self->corr_only_feature_types,
+            feature_types_undefined  => $self->feature_types_undefined,
             include_evidence_types => $self->include_evidence_types,
         ) or return $self->error( $data->error );
 
