@@ -41,6 +41,7 @@
                 </form>
               
                 [% IF form_data.ref_maps %]
+                    [% form_data.ref_maps.unshift({accession_id=>'-1',map_name=>'--All--'}) %]
                     <form name="ref_map_form">
                     <tr>
                         <td align="right">Ref. Map:</td>
