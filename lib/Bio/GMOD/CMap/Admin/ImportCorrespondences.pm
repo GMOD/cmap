@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 
-# $Id: ImportCorrespondences.pm,v 1.6 2003-02-14 01:25:36 kycl4rk Exp $
+# $Id: ImportCorrespondences.pm,v 1.7 2003-02-20 01:29:31 kycl4rk Exp $
 
 =head1 NAME
 
@@ -42,8 +42,9 @@ than just feature names (which could be duplicated on other maps).
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.6 $)[-1];
+$VERSION = (qw$Revision: 1.7 $)[-1];
 
+use Data::Dumper;
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
 use Bio::GMOD::CMap::Constants;
@@ -57,7 +58,7 @@ use base 'Bio::GMOD::CMap';
 );
 
 use constant FIELD_SEP => "\t"; # use tabs for field separator
-use constant STRING_RE => qr{^[\w\s.()-]+$};
+use constant STRING_RE => qr{\S+};    #qr{^[\w\s.()-]+$};
 use constant RE_LOOKUP => {
     string => STRING_RE,
     number => NUMBER_RE,
@@ -191,92 +192,88 @@ sub import {
 
         next LINE unless @feature_ids1 && @feature_ids2;
 
-        my $evidence_type_id = $evidence_type_ids{ $record{'evidence'} };
-        unless ( $evidence_type_id ) {
-            $evidence_type_id = $db->selectrow_array(
-                q[
-                    select evidence_type_id
-                    from   cmap_evidence_type
-                    where  upper(evidence_type)=?
-                ],
-                {},
-                ( uc $record{'evidence'} )
-            );
-        } 
-
-        unless ( $evidence_type_id ) {
-            $self->Print(qq[No evidence type like "$record{'evidence'}."\n]);
-            $self->Print("Create? [Y/n]");
-            chomp( my $answer = <STDIN> );
-            unless ( $answer =~ m/^[Nn]/ ) {
-                $evidence_type_id = next_number(
-                    db           => $db, 
-                    table_name   => 'cmap_evidence_type',
-                    id_field     => 'evidence_type_id',
-                ) or return $self->error(
-                    'No next number for evidence type id.'
-                );
-
-                $db->do(
+        my @evidences = map {s/^\s+|\s+$//g;$_} split /,/, $record{'evidence'};
+        my @evidence_types;
+        for my $evidence ( @evidences ) {
+            my $evidence_type_id = $evidence_type_ids{ uc $evidence };
+            unless ( $evidence_type_id ) {
+                $evidence_type_id = $db->selectrow_array(
                     q[
-                        insert 
-                        into   cmap_evidence_type
-                               ( evidence_type_id, accession_id, 
-                                 evidence_type )
-                        values ( ?, ?, ? )
+                        select evidence_type_id
+                        from   cmap_evidence_type
+                        where  upper(evidence_type)=?
                     ],
                     {},
-                    ( $evidence_type_id, $evidence_type_id, $record{'evidence'}
-                    )
+                    ( uc $evidence )
                 );
+                $evidence_type_ids{ uc $evidence } = $evidence_type_id;
+            } 
+
+            unless ( $evidence_type_id ) {
+                $self->Print(
+                    qq[No evidence type like "$evidence."\n]
+                );
+                $self->Print("Create? [Y/n]");
+                chomp( my $answer = <STDIN> );
+                unless ( $answer =~ m/^[Nn]/ ) {
+                    $evidence_type_id = next_number(
+                        db           => $db, 
+                        table_name   => 'cmap_evidence_type',
+                        id_field     => 'evidence_type_id',
+                    ) or return $self->error(
+                        'No next number for evidence type id.'
+                    );
+
+                    $db->do(
+                        q[
+                            insert 
+                            into   cmap_evidence_type
+                                   ( evidence_type_id, accession_id, 
+                                     evidence_type )
+                            values ( ?, ?, ? )
+                        ],
+                        {},
+                        ( $evidence_type_id, $evidence_type_id, $evidence )
+                    );
+
+                    $evidence_type_ids{ uc $evidence } = $evidence_type_id;
+                }
+                else {
+                    $self->Print("OK, then skipping\n");
+                    next LINE;
+                }
             }
-            else {
-                $self->Print("OK, then skipping\n");
-                next LINE;
-            }
+
+            push @evidence_types, [ $evidence_type_id, $evidence ];
         }
 
         for my $feature1 ( @feature_ids1 ) {
             for my $feature2 ( @feature_ids2 ) {
-#                #
-#                # Don't create correspondences among relational maps.
-#                #
-#                next if 
-#                    $feature1->{'map_set_id'} == $feature2->{'map_set_id'} 
-#                    &&
-#                    $feature1->{'is_relational_map'} == 1;
-#
-#                #
-#                # Don't create correspondences among relational map sets.
-#                #
-#                next if $feature1->{'is_relational_map'} && 
-#                    $feature2->{'is_relational_map'};
+                for my $evidence_type ( @evidence_types ) {
+                    my ( $evidence_type_id, $evidence ) = @$evidence_type;
+                    my $fc_id = $admin->insert_correspondence( 
+                        $feature1->{'feature_id'},
+                        $feature2->{'feature_id'},
+                        $evidence_type_id,
+                    ) or return $self->error( $admin->error );
 
-                my $fc_id = $admin->insert_correspondence( 
-                    $feature1->{'feature_id'},
-                    $feature2->{'feature_id'},
-                    $evidence_type_id,
-                ) or return $self->error( $admin->error );
+                    if ( $fc_id > 0 ) {
+                        $self->Print("Created correspondence for '",
+                            $feature1->{'feature_name'}, "' and '", 
+                            $feature2->{'feature_name'}, "' ($evidence).\n"
+                        );
+                    }
+                    else {
+                        $self->Print("Correspondence already existed for '",
+                            $feature1->{'feature_name'}, "' and '", 
+                            $feature2->{'feature_name'}, "' ($evidence).\n"
+                        );
+                    }
 
-                if ( $fc_id > 0 ) {
-                    $self->Print("Created correspondence for '",
-                        $feature1->{'feature_name'}, "' and '", 
-                        $feature2->{'feature_name'}, "' (",
-                        $record{'evidence'}, ").\n"
-                    );
+                    $inserts++;
                 }
-                else {
-                    $self->Print("Correspondence already existed for '",
-                        $feature1->{'feature_name'}, "' and '", 
-                        $feature2->{'feature_name'}, "' (",
-                        $record{'evidence'}, ").\n"
-                    );
-                }
-
-                $inserts++;
             }
         }
-
     }
 
     $self->Print(
