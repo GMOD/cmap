@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.198.2.1 2005-01-11 20:36:34 mwz444 Exp $
+# $Id: Data.pm,v 1.198.2.2 2005-01-27 22:59:37 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.198.2.1 $)[-1];
+$VERSION = (qw$Revision: 1.198.2.2 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -5248,6 +5248,7 @@ original start and stop.
             my @ref_map_strs = ();
             my $ref_slot_id  = $slot_no + $slot_modifier;
             my $slot_info    = $self->{'slot_info'}{$ref_slot_id};
+            next unless $slot_info;
             foreach my $m_id ( keys( %{ $self->{'slot_info'}{$ref_slot_id} } ) )
             {
                 my $r_m_str = " (cl.map_id2 = $m_id ";
@@ -5339,7 +5340,6 @@ original start and stop.
             $slot_results = $db->selectall_arrayref( $sql_str, {}, () );
             $self->store_cached_results( 4, $sql_str, $slot_results );
         }
-
         # Add start and end values into slot_info
         if ( $maps and %{$maps} ) {
             foreach my $row (@$slot_results) {
