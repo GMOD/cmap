@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.34 2003-04-14 19:59:32 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.35 2003-04-23 16:07:14 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.34 $)[-1];
+$VERSION = (qw$Revision: 1.35 $)[-1];
 
 #
 # Get command-line options
@@ -816,7 +816,6 @@ sub export_as_sql {
                 map_set_id     => NUM,
                 map_name       => STR,
                 display_order  => STR,
-                linkage_group  => STR,
                 start_position => NUM,
                 stop_position  => NUM,
             }
