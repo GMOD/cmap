@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Utils;
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.32 2004-04-16 17:49:17 mwz444 Exp $
+# $Id: Utils.pm,v 1.33 2004-05-06 14:06:27 mwz444 Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ use Bio::GMOD::CMap::Constants;
 use POSIX;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.32 $)[-1];
+$VERSION = (qw$Revision: 1.33 $)[-1];
 
 use base 'Exporter';
 
@@ -310,6 +310,7 @@ database (that supports ANSI-SQL, that is).
     my $db         = $args{'db'}         or return;
     my $table_name = $args{'table_name'} or return;
     my $id_field   = $args{'id_field'}   || $table_name.'_id';
+    my $no_requested   = $args{'requested'}   || 1;
 
     my $next_number = $db->selectrow_array(
         q[
@@ -335,7 +336,7 @@ database (that supports ANSI-SQL, that is).
                 into   cmap_next_number ( table_name, next_number )
                 values ( ?, ? )
             ],
-            {}, ( $table_name, $next_number+1 )
+            {}, ( $table_name, $next_number+$no_requested )
         );
     }
     else {
@@ -345,7 +346,7 @@ database (that supports ANSI-SQL, that is).
                 set    next_number=?
                 where  table_name=?
             ],
-            {}, ( $next_number + 1, $table_name )
+            {}, ( $next_number+$no_requested, $table_name )
         );
     }
 
