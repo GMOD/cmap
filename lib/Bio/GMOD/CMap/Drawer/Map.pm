@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.36 2003-03-27 22:54:53 kycl4rk Exp $
+# $Id: Map.pm,v 1.37 2003-04-09 20:42:42 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.36 $)[-1];
+$VERSION = (qw$Revision: 1.37 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1078,17 +1078,19 @@ Lays out the map.
                     my $labels = $feature->{'start_position'} < $midpoint
                         ? \@north_labels : \@south_labels;
                     my $url;
-                    $t->process( 
-                        \$feature_details_template, 
-                        { feature => $feature }, 
-                        \$url,
-                    ) or return $self->error( $t->error );
+                    if ( $feature_details_template ) {
+                        $t->process( 
+                            \$feature_details_template, 
+                            { feature => $feature }, 
+                            \$url,
+                        ) or return $self->error( $t->error );
+                    }
+
                     push @$labels, {
                         priority       => $feature->{'drawing_priority'},
                         text           => $label,
                         target         => $label_y,
                         color          => $color,
-                        font           => $reg_font,
                         is_highlighted => $is_highlighted,
                         feature_coords => \@coords,
                         feature_type   => $feature->{'feature_type'},
@@ -1115,8 +1117,8 @@ Lays out the map.
             # must be reverse sorted by start position;  moving south,
             # they should be in ascending order.
             #
-            my @labels;
-            push @labels, 
+#            my @labels;
+            @north_labels =
                 map  { $_->[0]->{'direction'} = NORTH; $_->[0] }
                 sort { 
                     $b->[1] <=> $a->[1] || 
@@ -1133,7 +1135,7 @@ Lays out the map.
                 ] }
                 @north_labels;
 
-            push @labels, 
+            @south_labels =
                 map  { $_->[0]->{'direction'} = SOUTH; $_->[0] }
                 sort { 
                     $a->[1] <=> $b->[1] || 
@@ -1148,63 +1150,56 @@ Lays out the map.
                     $_->{'is_highlighted'} || 0, 
                     $_->{'has_corr'}       || 0,
                 ] }
-                @south_labels;
-#            my $label_y      =  label_distribution(
-#                rows         => \@rows,
-#                target       => $label->{'target'},
-#                row_height   => $label->{'font'}->height,
-#                max_distance => $label->{'has_corr'}       ? 15 : 10, 
-#                can_skip     => $label->{'is_highlighted'} ?  0 :  1,
-#                direction    => $label->{'direction'},
-#                buffer       => $buffer,
-#            );
+                @south_labels
+            ;
 
             my @accepted_labels; # the labels we keep
-            my @rows      = ();  # for labels north-to-south
             my $buffer    =  2;  # the space between things
-            for my $label ( @labels ) {
-                my $label_y      =  label_distribution(
-                    rows         => \@rows,
-                    target       => $label->{'target'},
-                    row_height   => $label->{'font'}->height,
-                    max_distance => $label->{'has_corr'}       ? 15 : 10, 
-                    can_skip     => $label->{'is_highlighted'} ?  0 :  1,
-                    direction    => $label->{'direction'},
-                    buffer       => $buffer,
-                );
-                $bottom_y = $label_y if $label_y > $bottom_y;
+            my @used;
+            label_distribution( 
+                labels     => \@north_labels, 
+                accepted   => \@accepted_labels,
+                used       => \@used,
+                buffer     => $buffer,
+                direction  => NORTH,
+                row_height => $reg_font->height,
+            );
 
-                if ( defined $label_y ) {
-                    $label->{'y'} = $label_y;
-                    push @accepted_labels, $label;
-                }
-            }
+            label_distribution( 
+                labels     => \@south_labels, 
+                accepted   => \@accepted_labels,
+                used       => \@used,
+                buffer     => $buffer,
+                direction  => SOUTH,
+                row_height => $reg_font->height,
+            );
 
             my $label_offset = 15;
             $base_x          = $label_side eq RIGHT 
                 ? $rightmostf > $base_x ? $rightmostf : $base_x
                 : $leftmostf  < $base_x ? $leftmostf  : $base_x;
 
+            my $font_width  = $reg_font->width;
+            my $font_height = $reg_font->height;
             for my $label ( @accepted_labels ) {
-                my $font      = $label->{'font'};
                 my $text      = $label->{'text'};
                 my $label_y   = $label->{'y'};
                 my $label_x   = $label_side eq RIGHT 
                     ? $base_x + $label_offset
-                    : $base_x - $label_offset - ($font->width * length($text));
-                my $label_end = $label_x + $font->width * length( $text );
+                    : $base_x - $label_offset - ($font_width * length($text));
+                my $label_end = $label_x + $font_width * length( $text );
                 my $color     = $label->{'has_corr'}
                     ? $feature_corr_color || $label->{'color'}
                     : $label->{'color'};
                 $drawer->add_drawing( 
-                    STRING, $font, $label_x, $label_y, $text, $color
+                    STRING, $reg_font, $label_x, $label_y, $text, $color
                 );
 
                 my @label_bounds = (
                     $label_x - $buffer, 
                     $label_y,
                     $label_end + $buffer, 
-                    $label_y + $font->height,
+                    $label_y + $font_height,
                 );
 
                 $leftmostf  = $label_bounds[0] if $label_bounds[0]<$leftmostf;
@@ -1263,12 +1258,12 @@ Lays out the map.
                     : $label_end + $buffer;
                 my $label_connect_y1 = $label_side eq RIGHT
                     ? ($coords[1] + $coords[3])/2 
-                    : $label_y + $font->height/2;
+                    : $label_y + $reg_font->height/2;
                 my $label_connect_x2 = $label_side eq RIGHT
                     ? $label_x - $buffer 
                     : $coords[0];
                 my $label_connect_y2 = $label_side eq RIGHT
-                    ? $label_y + $font->height/2 
+                    ? $label_y + $reg_font->height/2 
                     : ($coords[1] + $coords[3])/2;
 
                 #
