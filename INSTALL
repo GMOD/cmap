@@ -1,6 +1,6 @@
                               CMAP INSTALL
 
-                            $Revision: 1.42 $
+                            $Revision: 1.43 $
 
 1.      QUICK START
 
@@ -76,6 +76,7 @@ are paranoid about losing anything.
     ALTER TABLE cmap_feature_type DROP description;
     ALTER TABLE cmap_map_cache DROP requested_on;
     ALTER TABLE cmap_map_set DROP remarks;
+    ALTER TABLE cmap_species DROP ncbi_taxon_id;
     DROP TABLE cmap_dbxref;
     DROP INDEX feature_correspondence_id on cmap_correspondence_evidence;
     DROP INDEX alternate_name on cmap_feature;
