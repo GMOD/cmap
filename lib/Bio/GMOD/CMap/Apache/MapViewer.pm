@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.50 2004-08-04 04:31:00 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.51 2004-08-06 05:19:56 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.50 $)[-1];
+$VERSION = (qw$Revision: 1.51 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -408,7 +408,7 @@ sub handler {
     ) or $html = $t->error;
 
 
-    if ($path_info eq 'map_details' or scalar(keys(%ref_maps))==1){
+    if ($path_info eq 'map_details' and scalar(keys(%ref_maps))==1){
             
         $PAGE_SIZE ||= $self->config_data('max_child_elements') || 0;
         $MAX_PAGES ||= $self->config_data('max_search_pages')   || 1;
