@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap;
 
-# $Id: CMap.pm,v 1.29 2003-03-05 17:40:19 kycl4rk Exp $
+# $Id: CMap.pm,v 1.30 2003-03-14 20:10:13 kycl4rk Exp $
 
 =head1 NAME
 
@@ -249,7 +249,9 @@ Returns a database handle.  This is the only way into the database.
 
         if ( $@ || !defined $self->{'db'} ) {
             my $error = $@ || $DBI::errstr;
-            return $self->error( "Can't connect to database: $error" );
+            return $self->error( 
+                "Can't connect to data source '$db_name': $error" 
+            );
         }
     }
 

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.22 2003-03-13 20:03:02 kycl4rk Exp $
+# $Id: Import.pm,v 1.23 2003-03-14 20:10:18 kycl4rk Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.22 $)[-1];
+$VERSION  = (qw$Revision: 1.23 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -385,7 +385,7 @@ have for the map set).
         my $dbxref_url     = $record{'feature_dbxref_url'}  || '';
         my $start          = $record{'feature_start'};
         my $stop           = $record{'feature_stop'};
-        my $is_landmark    = $record{'is_landmark'};
+        my $is_landmark    = $record{'is_landmark'} || 0;
 
         if ( 
             defined $start &&
@@ -645,10 +645,10 @@ sub Print {
 
 1;
 
-#-----------------------------------------------------
+# ----------------------------------------------------
 # Which way does your beard point tonight?
 # Allen Ginsberg
-#-----------------------------------------------------
+# ----------------------------------------------------
 
 =pod
 

@@ -1,15 +1,17 @@
 package Bio::GMOD::CMap::Apache::MapDetailViewer;
 
-# $Id: MapDetailViewer.pm,v 1.8 2003-02-25 19:30:20 kycl4rk Exp $
+# $Id: MapDetailViewer.pm,v 1.9 2003-03-14 20:10:23 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 use Apache::Constants;
 use Data::Dumper;
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Drawer;
+use Bio::GMOD::CMap::Utils 'paginate';
+
 use base 'Bio::GMOD::CMap::Apache';
 
 use constant FIELD_SEP       => "\t";
@@ -51,6 +53,7 @@ sub handler {
     my $image_size       = $apr->param('image_size')       ||     '';
     my $image_type       = $apr->param('image_type')       ||     '';
     my $label_features   = $apr->param('label_features')   ||     '';
+    my $limit_start      = $apr->param('limit_start')      ||     '';
     my $action           = $apr->param('action')           || 'view';
 
     #
@@ -81,9 +84,8 @@ sub handler {
         },
     );
 
-    my $data_module           = $self->data_module(
-        data_source           => $self->data_source
-    ) or return;
+    my $data_module = $self->data_module( data_source => $self->data_source ) 
+        or return;
 
     my $data                  = $data_module->map_detail_data( 
         map                   => $slots{0},
@@ -167,13 +169,19 @@ sub handler {
         $apr->param('ref_map_stop',  $ref_map->{'stop'} );
         $apr->param('feature_types', join(',', @feature_types ) );
 
+        my $pager       =  paginate( 
+            self        => $self,
+            data        => $data->{'features'},
+            limit_start => $limit_start,
+        );
+
         my $html;
         my $t = $self->template;
         $t->process( 
             TEMPLATE, 
             { 
                 apr               => $apr,
-                features          => $data->{'features'},
+#                features          => $data->{'features'},
                 feature_types     => $data->{'feature_types'},
                 reference_map     => $data->{'reference_map'},
                 comparative_maps  => $data->{'comparative_maps'},
@@ -182,6 +190,13 @@ sub handler {
                 title             => 'Reference Map Details',
                 stylesheet        => $self->stylesheet,
                 included_features => { map { $_, 1 } @feature_types },
+                features          => $pager->{'data'},
+                no_elements       => $pager->{'no_elements'},
+                page_size         => $pager->{'page_size'},
+                pages             => $pager->{'pages'},
+                cur_page          => $pager->{'cur_page'},
+                show_start        => $pager->{'show_start'},
+                show_stop         => $pager->{'show_stop'},
             },
             \$html 
         ) or $html = $t->error;

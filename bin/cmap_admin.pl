@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.25 2003-03-13 01:31:37 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.26 2003-03-14 20:10:12 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.25 $)[-1];
+$VERSION = (qw$Revision: 1.26 $)[-1];
 
 #
 # Turn off output buffering.
@@ -77,12 +77,14 @@ sub init {
     return $self;
 }
 
+# ----------------------------------------------------
 sub admin {
-    my $self  = shift;
+    my $self = shift;
+    my $db   = $self->db or die $self->error;
 
     unless ( $self->{'admin'} ) {
         $self->{'admin'} = Bio::GMOD::CMap::Admin->new( 
-            db          => $self->db,
+            db          => $db,
             data_source => $self->data_source,
         );
     }
@@ -257,7 +259,7 @@ sub change_data_source {
 # ----------------------------------------------------
 sub create_map_set {
     my $self = shift;
-    my $db   = $self->db;
+    my $db   = $self->db or die $self->error;
     print "Creating new map set.\n";
     
     my ( $map_type_id, $map_type ) = $self->show_menu(
@@ -307,7 +309,6 @@ sub create_map_set {
         id_field     => 'map_set_id',
     ) or die 'No map set id';
 
-
     print "OK to create set '$map_set_name' in data source '", 
         $self->data_source, "'?\n[Y/n] ";
     chomp( my $answer = <STDIN> );
@@ -329,7 +330,8 @@ sub create_map_set {
         )
     );
 
-    print "Map set $map_set_name created\n";
+    my $log_fh = $self->log_fh;
+    print $log_fh "Map set $map_set_name created\n";
 }
 
 # ----------------------------------------------------
@@ -338,7 +340,7 @@ sub delete_map_set {
 # Deletes a map set.
 #
     my $self = shift;
-    my $db   = $self->db;
+    my $db   = $self->db or die $self->error;
 
     #
     # Get the map set.
@@ -433,7 +435,7 @@ sub export_data {
 # Exports data.
 #
     my $self = shift;
-    my $db   = $self->db;
+    my $db   = $self->db or die $self->error;
     
     my $action  = $self->show_menu(
         title   => 'Data Export Formats',
@@ -465,7 +467,7 @@ sub export_as_sql {
 # Exports data as SQL INSERT statements.
 #
     my $self   = shift;
-    my $db     = $self->db;
+    my $db     = $self->db or die $self->error;
     my $log_fh = $self->log_fh;
     my @tables = (
         {
@@ -766,7 +768,7 @@ sub export_as_text {
 # Exports data as tab-delimited import format.
 #
     my $self   = shift;
-    my $db     = $self->db;
+    my $db     = $self->db or die $self->error;
     my $log_fh = $self->log_fh;
 
     my @col_names = qw( 
@@ -842,7 +844,7 @@ sub export_as_text {
         return;
     }
 
-    my $dir = _get_dir();
+    my $dir = _get_dir() or return;
     my $map_sets = $db->selectall_arrayref(
         q[
             select   ms.map_set_id, 
@@ -879,9 +881,9 @@ sub export_as_text {
     #
     print join("\n",
         'OK to export?',
-        '  Data source     : ' . $self->data_source, 
-        '  Map Sets        : ' . join(', ', @map_set_names),
-        '  Feature Types   : ' . join(', ', @$feature_types),
+        '  Data source     : '  . $self->data_source, 
+        "  Map Sets        :\n" . join("\n", map { "    $_" } @map_set_names),
+        "  Feature Types   :\n" . join("\n", map { "    $_" } @$feature_types),
         "  Exclude Fields  : $excluded_fields",
         "  Directory       : $dir",
         "[Y/n] "
@@ -965,15 +967,45 @@ sub export_correspondences {
 #
 # Exports feature correspondences in CMap import format.
 #
-    my $self   = shift;
-    my $db     = $self->db;
-    my $log_fh = $self->log_fh;
+    my $self = shift;
+    my $db   = $self->db or die $self->error;
+
+    my @evidence_type_ids = $self->show_menu(
+        title       => 'Restrict by Evidence Type (Optional)',
+        prompt      => 'Select which evidence types to restrict by',
+        display     => 'evidence_type',
+        return      => 'evidence_type_id',
+        allow_null  => 1,
+        allow_mult  => 1,
+        data        => $db->selectall_arrayref(
+            q[
+                select   et.evidence_type_id, et.evidence_type
+                from     cmap_evidence_type et
+                order by evidence_type
+            ],
+            { Columns => {} }
+        )
+    );
+
+    my @evidence_types;
+    if ( @evidence_type_ids ) {
+        @evidence_types = @{
+            $db->selectcol_arrayref(
+                q[
+                    select evidence_type
+                    from   cmap_evidence_type 
+                    where  evidence_type_id in (].
+                    join(', ', @evidence_type_ids).q[)
+                ]
+            )
+        };
+    }
 
     print "Include feature accession IDs? [Y/n] ";
     chomp( my $export_corr_aid = <STDIN> );
     $export_corr_aid = ( $export_corr_aid =~ /^[Nn]/ ) ? 0 : 1;
 
-    my $dir = _get_dir();
+    my $dir = _get_dir() or return;
 
     #
     # Confirm decisions.
@@ -983,29 +1015,34 @@ sub export_correspondences {
         '  Data source          : ' . $self->data_source, 
         "  Export Accession IDs : " . ( $export_corr_aid ? "Yes" : "No" ),
         "  Directory            : $dir",
-        "[Y/n] "
     );
+    if ( @evidence_types ) {
+        print "\n  Evidence Types       :\n", 
+            join("\n", map { "    $_" } @evidence_types);
+    }
+    print "\n[Y/n] ";
     chomp( my $answer = <STDIN> );
     return if $answer =~ /^[Nn]/;
 
     my $corr_file = "$dir/feature_correspondences.dat";
     open my $fh, ">$corr_file" or die "Can't write to $corr_file: $!\n";
+    my $log_fh = $self->log_fh;
     print $log_fh "Dumping feature correspondences to '$corr_file'\n";
-    my $sth = $db->prepare(
-        q[
-            select fc.feature_correspondence_id,
-                   fc.is_enabled,
-                   f1.accession_id as feature_accession_id1,
-                   f1.feature_name as feature_name1,
-                   f2.accession_id as feature_accession_id2,
-                   f2.feature_name as feature_name2
-            from   cmap_feature_correspondence fc,
-                   cmap_feature f1,
-                   cmap_feature f2
-            where  fc.feature_id1=f1.feature_id
-            and    fc.feature_id2=f2.feature_id
-        ]
-    );
+    my $sql = q[
+        select fc.feature_correspondence_id,
+               fc.is_enabled,
+               f1.accession_id as feature_accession_id1,
+               f1.feature_name as feature_name1,
+               f2.accession_id as feature_accession_id2,
+               f2.feature_name as feature_name2
+        from   cmap_feature_correspondence fc,
+               cmap_feature f1,
+               cmap_feature f2
+        where  fc.feature_id1=f1.feature_id
+        and    fc.feature_id2=f2.feature_id
+    ];
+#    $sql .= 'and 
+    my $sth = $db->prepare( $sql );
     $sth->execute;
 
     my @col_names = ( 
@@ -1046,7 +1083,7 @@ sub import_correspondences {
 # Gathers the info to import feature correspondences.
 #
     my $self = shift;
-    my $db   = $self->db;
+    my $db   = $self->db or die $self->error;
     my $file = $self->file;
     my $term = $self->term;
 
@@ -1137,7 +1174,7 @@ sub import_data {
 # Gathers the info to import physical or genetic maps.
 #
     my $self = shift;
-    my $db   = $self->db;
+    my $db   = $self->db or die $self->error;
     my $term = $self->term;
     my $file = $self->file;
 
@@ -1268,7 +1305,7 @@ sub import_data {
 # ----------------------------------------------------
 sub make_name_correspondences {
     my $self = shift;
-    my $db   = $self->db;
+    my $db   = $self->db or die $self->error;
 
     #
     # Get the evidence type id.
@@ -1408,8 +1445,8 @@ sub show_menu {
             }
             elsif ( $args{'allow_all'} || $args{'allow_mult'} ) {
                 my %numbers = 
-                    map { $_, 1 }         # make a lookup
-                    grep {/\d+/}          # take only numbers
+                    map  { $_, 1 }  # make a lookup
+                    grep { /\d+/ }  # take only numbers
                     split /\s+/, $answer
                 ;
 
@@ -1420,7 +1457,6 @@ sub show_menu {
                 ];
 
                 next unless @$result;
-
                 last;
             }
             elsif ( defined $lookup{ $answer } ) {

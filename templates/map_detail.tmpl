@@ -99,6 +99,7 @@
 
                 <tr>
                     <td colspan="3" align="center">
+                        <input type="hidden" name="limit_start"      value="[% apr.param('limit_start') %]">
                         <input type="hidden" name="ref_map_set_aid"  value="[% apr.param('ref_map_set_aid') %]">
                         <input type="hidden" name="ref_map_aid"      value="[% apr.param('ref_map_aid') %]">
                         <input type="hidden" name="comparative_maps" value="[% apr.param('comparative_maps') %]">
@@ -140,7 +141,15 @@
             </form>
         </td>
         <td align="center" colspan="4">
-            [ <a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];feature_type_aid=[% apr.param('feature_type_aid') %];order=[% apr.param('order') %];order_by=[% apr.param('order_by') %];action=download">Download Data</a> ]
+            [ <a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];feature_type_aid=[% apr.param('feature_type_aid') %];order=[% apr.param('order') %];order_by=[% apr.param('order_by') %];action=download">Download All Feature Data</a> ]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="center" colspan="8">
+            [% SET comp_maps = "${apr.param('comparative_maps')}" %]
+            [% SET pager_url="/cmap/map_details?ref_map_set_aid=${apr.param('ref_map_set_aid')}&ref_map_aid=${apr.param('ref_map_aid')}&comparative_maps=${comp_maps.replace('=', '%3d')}&label_features=${apr.param('label_features')}&feature_types=${apr.param('feature_types')}&highlight=${apr.param('highlight')}" %]
+            [% PROCESS pager.tmpl %]
         </td>
     </tr>
 

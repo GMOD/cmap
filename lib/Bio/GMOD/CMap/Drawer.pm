@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.27 2003-03-13 01:24:11 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.28 2003-03-14 20:10:15 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.27 $)[-1];
+$VERSION = (qw$Revision: 1.28 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
@@ -768,6 +768,32 @@ Lays out the image and writes it to the file system, set the "image_name."
                 my $end = $x + $font->width * length( $string );
                 $max_x  = $end if $end > $max_x;
             }
+        }
+        $max_y += 5;
+
+        #
+        # Extra symbols.
+        #
+        {
+            $self->add_drawing( 
+                STRING, $font, $x, $max_y, 'Map Symbols:', 'black' 
+            );
+            $max_y += $font->height + 10;
+
+            #
+            # Question mark.
+            #
+            $self->add_drawing(
+                STRING, $font, $x + 2, $max_y + 2, '?', 'grey'
+            );
+            my $end = $x + $font->width + 4;
+            $self->add_drawing(
+                RECTANGLE, $x, $max_y, $end, $max_y + $font->height + 4, 'grey'
+            );
+            $self->add_drawing( 
+                STRING, $font, $end + 5, $max_y + 2, 'Map details', 'black' 
+            );
+            $max_y += $font->height + 10;
         }
 
         my $watermark = 'CMap v'.$Bio::GMOD::CMap::VERSION;
