@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Utils;
 
-# $Id: Utils.pm,v 1.19 2003-05-16 17:06:16 kycl4rk Exp $
+# $Id: Utils.pm,v 1.20 2003-05-16 19:57:17 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.19 $)[-1];
+$VERSION = (qw$Revision: 1.20 $)[-1];
 
 use base 'Exporter';
 
@@ -52,16 +52,18 @@ Given a reference to some columns, figure out where something can be inserted.
 
 =cut
 
-    my %args    = @_;
-    my $columns = $args{'columns'} || []; # array reference
-    my $buffer  = $args{'buffer'}  ||  2; # space b/w things
-    my $top     = $args{'top'};           # the top and bottom
-    my $bottom  = $args{'bottom'};        # of the thing being inserted
-    $bottom     = $top unless defined $bottom;
+    my %args        = @_;
+    my $columns     = $args{'columns'}     || []; # array reference
+    my $buffer      = $args{'buffer'}      ||  2; # space b/w things
+    my $collapse    = $args{'collapse'}    ||  0; # whether to collapse
+    my $collapse_on = $args{'collapse_on'} || ''; # on what type of object
+    my $top         = $args{'top'};               # the top and bottom of
+    my $bottom      = $args{'bottom'};            # the thing being inserted
+    $bottom         = $top unless defined $bottom;
 
     return unless defined $top && defined $bottom;
 
-    my $column_index;
+    my $column_index; # the number of the column chosen, is returned
     if ( @$columns ) {
         for my $i ( 0..$#{ $columns } ) {
             my $column = $columns->[ $i ];
@@ -69,7 +71,17 @@ Given a reference to some columns, figure out where something can be inserted.
             my $ok     = 1;
 
             for my $segment ( @used ) {
-                my ( $north, $south ) = @$segment; 
+                my ( $north, $south, $type ) = @$segment; 
+                if ( 
+                    $collapse             && 
+                    $collapse_on eq $type && 
+                    $north == $top        && 
+                    $south == $bottom 
+                ) {
+                    $ok = 1;
+                    last;
+                }
+
                 next if $south + $buffer < $top;
                 next if $north - $buffer > $bottom;
                 $ok = 0, last;
@@ -77,19 +89,19 @@ Given a reference to some columns, figure out where something can be inserted.
 
             if ( $ok ) {
                 $column_index = $i;
-                push @{ $column }, [ $top, $bottom ];
+                push @{ $column }, [ $top, $bottom, $collapse_on ];
                 last;
             }
         }
 
         unless ( defined $column_index ) {
-            push @$columns, [ [ $top, $bottom ] ];
+            push @$columns, [ [ $top, $bottom, $collapse_on ] ];
             $column_index = $#{ $columns };
         }
     }
     else {
         $column_index = 0;
-        push @$columns, [ [ $top, $bottom ] ];
+        push @$columns, [ [ $top, $bottom, $collapse_on ] ];
     }
 
     return $column_index;
