@@ -325,16 +325,29 @@
             </td>
         </tr>
         [% FOREACH att=form_data.ref_map_set_info.attributes %]
+            [% NEXT UNLESS att.is_public %]
             <tr>
                 <th align="right" valign="top">
                     [% att.attribute_name | nbsp %]:
-                </td>
+                </th>
                 <td>
                     [%- IF att.attribute_value.match('^http://') -%]
                         <a href="[% att.attribute_value %]">[% att.attribute_value %]</a>
                     [%- ELSE -%]
                         [% att.attribute_value %]
                     [%- END -%]
+                </td>
+            </tr>
+        [% END %]
+        [% IF form_data.ref_map_set_info.xrefs.size %]
+            <tr>
+                <th align="right" valign="top">Cross-references:</th>
+                <td>
+                    <ul>
+                    [% FOREACH xref=form_data.ref_map_set_info.xrefs %]
+                        <li><a href="[% xref.xref_url %]">[% xref.xref_name %]</a></li>
+                    [% END %]
+                    </ul>
                 </td>
             </tr>
         [% END %]
