@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap;
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.51 2004-03-25 14:11:56 mwz444 Exp $
+# $Id: CMap.pm,v 1.52 2004-03-30 02:22:08 kycl4rk Exp $
 
 =head1 NAME
 
@@ -45,16 +45,14 @@ use base 'Class::Base';
 # ----------------------------------------------------
 sub init {
     my ( $self, $config ) = @_;
-    $self->{'config'}=$config->{'config'}; 
-    unless ($self->{'config'}){
-     	$self->{'config'}=Bio::GMOD::CMap::Config->new(); 
-    }	
+    $self->{'config'}     = $config->{'config'} if defined $config->{'config'}; 
     $self->data_source( $config->{'data_source'} ) or return;
     return $self;
 }
 
 # ----------------------------------------------------
 sub cache_dir {
+
 =pod
 
 =head2 cache_dir
@@ -63,16 +61,18 @@ Returns the cache directory.
 
 =cut
 
-    my $self = shift;
+    my $self   = shift;
+    my $config = $self->config or return;
 
     unless ( defined $self->{'cache_dir'} ) {
-	unless($self->{'config'}){
-	    die "no configuration information\n";
-	}
-	
+        unless($self->{'config'}){
+            die "no configuration information\n";
+        }
     
-        my $cache_dir = $self->config_data('cache_dir') or return
-            $self->error('No cache directory defined in "'.GLOBAL_CONFIG_FILE.'"');
+        my $cache_dir = $config->get_config('cache_dir') or return
+            $self->error('No cache directory defined in "'.
+            GLOBAL_CONFIG_FILE.'"');
+
         unless ( -d $cache_dir ) {
             eval { mkpath( $cache_dir, 0, 0700 ) };
             if ( my $err = $@ ) {
@@ -88,28 +88,44 @@ Returns the cache directory.
     return $self->{'cache_dir'};
 }
 
-
 # ----------------------------------------------------
-sub config_data{
+sub config {
+
 =pod
 
-=head2 data_source
+=head2 config
 
-Access get_config 
+Returns configuration object.
 
 =cut
-{
-    my $self=shift;
-    my $option=shift||'';
-    my $specific_db=shift|'';
-    unless($self->{'config'}){
-	$self->{'config'}=Bio::GMOD::CMap::Config->new();
+    my $self = shift;
+
+    unless ( defined $self->{'config'} ) {
+        $self->{'config'} = Bio::GMOD::CMap::Config->new
+            or return Bio::GMOD::CMap::Config->error;
     }
-    return $self->{'config'}->get_config($option,$specific_db);
+
+    return $self->{'config'};
 }
-}
+
 # ----------------------------------------------------
-sub map_type_data{
+sub config_data {
+
+=pod
+
+=head2 config_data
+
+Access configuration.
+
+=cut
+    my $self   = shift;
+    my $config = $self->config or return;
+    $config->get_config( @_ );
+}
+
+# ----------------------------------------------------
+sub map_type_data {
+
 =pod
 
 =head2 map_type_data
@@ -117,24 +133,25 @@ sub map_type_data{
 Return data from config about map type 
 
 =cut
-{
-    my $self=shift;
-    my $map_type=shift;
-    my $attribute=shift;
+    my $self      = shift;
+    my $map_type  = shift;
+    my $attribute = shift;
+    my $config    = $self->config or return;
     
-    if ($attribute){
-	return $self->{'config'}->get_config('map_type')->{$map_type}->{$attribute};
+    if ( $attribute ) {
+        return $config->get_config('map_type')->{$map_type}{$attribute};
     }
-    elsif($map_type){
-	return $self->{'config'}->get_config('map_type')->{$map_type};
+    elsif ( $map_type ) {
+        return $config->get_config('map_type')->{$map_type};
     }
-    else{
-	return $self->{'config'}->get_config('map_type');
+    else {
+        return $config->get_config('map_type');
     }
 }
-}
+
 # ----------------------------------------------------
-sub feature_type_data{
+sub feature_type_data {
+
 =pod
 
 =head2 feature_type_data
@@ -142,24 +159,25 @@ sub feature_type_data{
 Return data from config about feature type 
 
 =cut
-{
-    my $self=shift;
-    my $feature_type=shift;
-    my $attribute=shift;
+    my $self         = shift;
+    my $feature_type = shift;
+    my $attribute    = shift;
+    my $config       = $self->config or return;
 
-    if ($attribute){
-	return $self->{'config'}->get_config('feature_type')->{$feature_type}->{$attribute};
+    if ( $attribute ) {
+        return $config->get_config('feature_type')->{$feature_type}->{$attribute};
     }
-    elsif($feature_type){
-	return $self->{'config'}->get_config('feature_type')->{$feature_type}
+    elsif ( $feature_type ) {
+        return $config->get_config('feature_type')->{$feature_type}
     }
-    else{
-	return $self->{'config'}->get_config('feature_type')
+    else {
+        return $config->get_config('feature_type')
     }
 }
-}
+
 # ----------------------------------------------------
-sub evidence_type_data{
+sub evidence_type_data {
+
 =pod
 
 =head2 evidence_type_data
@@ -167,21 +185,20 @@ sub evidence_type_data{
 Return data from config about evidence type 
 
 =cut
-{
-    my $self=shift;
-    my $evidence_type=shift;
-    my $attribute=shift;
+    my $self          = shift;
+    my $evidence_type = shift;
+    my $attribute     = shift;
+    my $config        = $self->config or return;
 
-    if ($attribute){
-	return $self->{'config'}->get_config('evidence_type')->{$evidence_type}->{$attribute};
+    if ( $attribute ) {
+        return $config->get_config('evidence_type')->{$evidence_type}->{$attribute};
     }
-    elsif($evidence_type){
-	return $self->{'config'}->get_config('evidence_type')->{$evidence_type}
+    elsif ( $evidence_type ) {
+        return $config->get_config('evidence_type')->{$evidence_type}
     }
     else{
-	$self->{'config'}->get_config('evidence_type')
+        $config->get_config('evidence_type')
     }
-}
 }
 
 # ----------------------------------------------------
@@ -195,28 +212,29 @@ Basically a front for set_config()
 
 =cut
 
-    my $self = shift;
-    my $arg  = shift || '';
-    unless($self->{'config'}){
-	die "No configuration information\n";
-	
-    }
+    my $self   = shift;
+    my $arg    = shift || '';
+    my $config = $self->config or return;
+
     #
     # If passed a new data source, force a reconnect.
     # This may slow things down.
     #
     if ( $arg ) {
-        $self->{'config'}->set_config($arg) or die "couldn't set data_source:$arg\n";  
-	$self->{'data_source'}=$self->config_data('database')->{'name'};
-	if ( defined $self->{'db'} ) {
+        $config->set_config( $arg ) or return $self->error( 
+            "Couldn't set data source to '$arg': " . $config->error
+        );
+        $self->{'data_source'} = $config->get_config('database')->{'name'};
+        if ( defined $self->{'db'} ) {
             my $db = $self->db;
             $db->disconnect;
             $self->{'db'} = undef;
         }
       
     }
-    unless ($self->{'data_source'}){
-	$self->{'data_source'}=$self->config_data('database')->{'name'};
+
+    unless ( $self->{'data_source'} ) {
+        $self->{'data_source'} = $config->get_config('database')->{'name'};
     }  
 
     return $self->{'data_source'} || '';
@@ -233,18 +251,21 @@ Returns all the data souces defined in the configuration files.
 
 =cut
 
-    my $self  = shift;
+    my $self   = shift;
+    my $config = $self->config or return;
 
     unless ( defined $self->{'data_sources'} ) {
-	my @data_sources_result;
-	
-	$self->data_source() unless($self->{'data_source'});
+        my @data_sources_result;
+        
+        $self->data_source() unless($self->{'data_source'});
         
         my $ok = 0;
-	
+        
         if ( my $current = $self->{'data_source'} ) {
-            foreach my $config_name ( @{$self->{'config'}->get_config_names()} ) {
-		my $source=$self->config_data('database',$config_name);
+            foreach my $config_name ( 
+                @{ $config->get_config_names }
+            ) {
+                my $source = $config->get_config( 'database', $config_name );
                 if ( $current && $source->{'name'} eq $current ) {
                     $source->{'is_current'} = 1;
                     $ok                     = 1;
@@ -252,14 +273,15 @@ Returns all the data souces defined in the configuration files.
                 else {
                     $source->{'is_current'} = 0;
                 }
-		$data_sources_result[++$#data_sources_result]=$source;
+
+                $data_sources_result[ ++$#data_sources_result ] = $source;
             }
         }
 
         die "No database defined as default\n" unless ($ok);
 
         $self->{'data_sources'} = 
-	    [ sort { $a->{'name'} cmp $b->{'name'} } @data_sources_result];
+            [ sort { $a->{'name'} cmp $b->{'name'} } @data_sources_result ];
 
     } 
 
@@ -284,10 +306,11 @@ Returns a database handle.  This is the only way into the database.
 
     my $self    = shift;
     my $db_name = shift || $self->data_source();
+    my $config  = $self->config or return;
     return unless $db_name;
 
     unless ( defined $self->{'db'} ) {
-        my $config = $self->config_data('database') or 
+        my $config = $config->get_config('database') or 
             return $self->error('No database configuration options defined');
 
         #
@@ -360,9 +383,9 @@ Returns a handle to the data module.
     my $self = shift;
 
     unless ( $self->{'data_module'} ) { 
-        $self->{'data_module'} = Bio::GMOD::CMap::Data->new(
-            data_source => $self->data_source, 
-	    config => $self->{'config'},
+        $self->{'data_module'} =  Bio::GMOD::CMap::Data->new(
+            data_source        => $self->data_source, 
+            config             => $self->config,
         ) or $self->error( Bio::GMOD::CMap::Data->error );
     }
 
@@ -540,12 +563,16 @@ Returns a Template Toolkit object.
 
 =cut
 
-    my $self = shift;
+    my $self   = shift;
+    my $config = $self->config or return;
 
     unless ( $self->{'template'} ) {
         my $cache_dir    = $self->cache_dir or return;
-        my $template_dir = $self->config_data('template_dir') or return
-            $self->error('No template directory defined in "'.GLOBAL_CONFIG_FILE.'"');
+        my $template_dir = $config->get_config('template_dir') or return
+            $self->error(
+                'No template directory defined in "'.GLOBAL_CONFIG_FILE.'"'
+            )
+        ;
         return $self->error("Template directory '$template_dir' doesn't exist")
             unless -d $template_dir;
 
