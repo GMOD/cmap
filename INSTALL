@@ -422,7 +422,11 @@ you.
 
 INSTALLING THE CMAP PERL MODULES
 
-To install the cmap modules included in this package, you can either:
+To install the cmap modules included in this package, you can either
+use the normal installation routine to place the modules into Perl's
+system-wide library path, or you can put the modules into a directory
+of your own choosing.  Unless you'd like to have reasons to do the
+latter, I'd recommend choosing the first way.  Here's how to do both:
 
 1)  Execute the following commands in the directory created by
     untarring the CMAP distribution:
@@ -431,11 +435,18 @@ To install the cmap modules included in this package, you can either:
     $ make
     # make install
 
-    You will be asked several questions, such as where to place the
-    templates and command-line scripts and such. You can place them in
-    any valid directory on your system, and you will be provided with
-    reasonable defaults.  As you make your choices, two key files will 
-    receive crucial updates:
+    You will be asked several questions, such as where to place the main
+    configuration file, the templates, the "cmap_admin.pl" script, and
+    an HTML stylesheet. You can place them in any valid directory on
+    your system, and you will be provided with reasonable defaults. If
+    you don't wish to have the installer put file in a directory (e.g.,
+    you want to use your own stylesheet), answer "no" to the default
+    choice and "q" when prompted for a path. All the questions are
+    optional, so you could do this for all of them. If a file of the
+    same name exists in the installation directory for anything but the
+    templates, you will be prompted whether to overwrite this file.
+
+    As you make your choices, two key files will receive crucial updates:
 
     Bio::GMOD::CMap::Constants
         This file will have the value of the "CONFIG_FILE" altered
@@ -468,9 +479,11 @@ To install the cmap modules included in this package, you can either:
         like to put custom libraries used by Apache under
         "/usr/local/apache/lib/perl" (assuming, of course, that you
         might have libraries for Java and Python and whatever else
-        tickles your fancy).  Be sure to update Bio::GMOD::CMap::Constants
-        to have "CONFIG_FILE" point to the correct location of your 
-        configuration file ("cmap.conf").
+        tickles your fancy).  
+    
+        Note: Be sure to update Bio::GMOD::CMap::Constants to have
+              "CONFIG_FILE" point to the correct location of your
+              configuration file ("cmap.conf") or things won't work!
 
     bin
         Copy "cmap_admin.pl" to a location suitable for the execution by
@@ -482,6 +495,27 @@ To install the cmap modules included in this package, you can either:
         Copy to a location readable by your mod_perl server. I would
         recommend putting the templates into
         "/usr/local/apache/templates/cmap."
+
+    And why might you want to put the files into your own library path
+    instead of Perl's? Well, if you plan on hacking around with the
+    source, you might rather not have them installed in an inconvient
+    directory and owned by root, which they will be if you choose the
+    first. Of course, if you really plan on hacking around, I would hope
+    that you would consider doing a CVS checkout so you could contribute
+    your work back to the project! More on that later.
+
+Either way you install, you'll need to be sure to edit your
+"cmap.conf" file to use the correct database connection information.
+(If you forget the location of the configuration file and you
+installed via option #1, then you can look in the "cmap_install.conf"
+file in the source directory of the CMAP application.) The database
+section is at the top of the file.  Only the first two options
+("database" and "template_dir") *must* be set.  Everything else has
+reasonable defaults if nothing is specified in this file.  I would
+encourage you to look around this file and change things to affect the
+look and feel of your site.  If you don't like a change, comment out
+the line by placing a pound sign ("#") at the beginning of the line.
+Remember to restart Apache to see the changes.
 
 CONFIGURING APACHE
 
@@ -650,14 +684,14 @@ IMPORTING YOUR DATA
 
 Now you've got some basic setup to do for your data.  First off, open
 up the web administration interface by going to the URL you set up for
-the admin interface ("/cmap/admin" by default).
-You'll need to set up what types of maps, features, species, and
-evidence types you'll be working with.  For each, go to the "View ..."
-choice from the main menu, then choose "Create New ..." and fill in
-the correct information.  For information on the correct format for
-data import, execute the command "perldoc Bio::GMOD::CMap::Admin::Import"
-on your command line.  When you have your data in the correct format,
-launch the "cmap_admin.pl" script and follow the instructions.
+the admin interface ("/cmap/admin" by default).  You'll need to set up
+what types of maps, features, species, and evidence types you'll be
+working with.  For each, go to the "View ..." choice from the main
+menu, then choose "Create New ..." and fill in the correct
+information.  For information on the correct format for data import,
+execute the command "perldoc Bio::GMOD::CMap::Admin::Import" on your
+command line.  When you have your data in the correct format, launch
+the "cmap_admin.pl" script and follow the instructions.
 
 When setting up database cross-references, you'll have to use some
 extra syntax in the URL field to indicate the field to link out on.
@@ -677,15 +711,32 @@ or relative (second) URLs.
 
 MAKING CORRESPONDENCES
 
-For now, the only correspondences supported are name-based, so run the
-"Find name-based correspondences" command from cmap_admin.pl.  Make
-sure that you've created some evidence type to represent this
-automated correspondence.  If you don't run this, then there will be
-no relationships among your maps.  If you do run this and don't have
-like-named features on different maps, then you'll have to create the
-correspondences yourself using the admin tool.  I'll write a tool for
-importing some sort of correspondence data RSN.  Suggestions on the
-format of the data would be welcomed.
+There are several ways to create correspondences among features.
+
+1) Strictly name-base: If you choose the "Find name-based
+   correspondences" command from cmap_admin.pl, a correspondence will be
+   created between any two features with the *exact* same name,
+   irrespective of case. You'll need to select some evidence type to
+   represent this automated correspondence.
+
+2) Import correspondences: Create a tab-delimited file that lists the
+   accession IDs of two features and some evidence to support the
+   correspondence. The first line of the file should contain column
+   headers for "feature_aid1," "feature_aid2," and "evidence." The
+   order is unimportant, as long as the data is ordered the same.
+   Here's a sample:
+
+    feature_aid1	feature_aid2	evidence
+    6058	6214	Insilico
+    6058	6233	Insilico
+    6058	561616	Insilico
+    561259	6214	Insilico
+
+3) Create correspondences by hand using the admin interface.
+
+After creating any new correspondences (or deleting existing ones),
+be sure to run the "Reload correspondence matrix" option of the
+"cmap_admin.pl" script to update the matrix.
 
 ESTABLISHING LANDMARKS
 
@@ -694,6 +745,78 @@ can then be used by the end user to show maps less dense with feature
 labels, tagging only those that you as the curator have decided are
 the most important.  Simply set the "is_landmark" field to "1" to
 define a feature as a landmark.
+
+LINKING IN
+
+Most likely, you'll want to link directly into the CMAP viewer from
+some other part of your site.  To link to just one map, make it the
+"reference" map like so by using the accesion IDs for the map's parent
+"set" and the map itself.  Give the feature (mutant) name to highlight
+it;  for more than one, separate with commas.  You'll want to make
+sure that the user can see all the feature labels, so include "all" as
+the "include_feature" arg.
+
+    URI:  /cmap/viewer?
+    Args: ref_map_set_aid=<map_set_accession_id>
+          ref_map_aid=<map_accession_id>
+          highlight=<mutant_name>
+          include_features=<none, all, or landmarks>
+    E.g.:
+http://www.gramene.org/cmap/viewer?ref_map_aid=13&ref_map_set_aid=cu-dh-2001&highlight=RM9&include_features=all
+
+Note: I use the abbreviation "aid" to represent "accession_id."
+
+To further include some number of comparative maps, you provide them
+in the "comparative_maps" argument, which is a single structured
+string that lists all the comparative maps and their placement
+relative to the reference map.  Here I'd like to introduce the concept
+of "slots," where the maps (or map sets) fall into a slot moving in
+positive and negative direction away from the reference map, which is
+in slot "0," like so:
+
+                -      -        -         -
+                |      |        |         |
+                |      |      - |  -      |
+                |      |      | -  |      |
+                |      |      |    |      |
+                |      |      |    -      |
+                -      -      -           -
+               -1      0         1        2
+       <----negative --+---------positive----->
+
+
+The above would be representative of genetic maps in slots -1, 0, and
+2, and a physical map in slot 1.  Slots are separated in the string by
+URI-escaped colons and the integral parts of the slot by URI-escaped
+equal signs.  Like so
+
+         "comparative_maps="
+         +
+             .-  <slot_number> + 
+             |  "%3D" + 
+       slot  |  <"map_aid" or "map_set_aid"> + 
+             |  "%3D" +
+             `-  <map_aid or map_set_aid>
+         +
+
+         "%3A"
+
+         +
+
+        <next slot>
+
+Here is a sample that puts "Rice-Cornell RFLP 2001-1" on the left
+(slot "-1") and "Rice-CTIR 2000-1" on the right (slot "1"):
+
+    comparative_maps=1%3Dmap_aid%3D423%3A-1%3Dmap_aid%3D1
+
+The middle part of the slot is one of the literal strings
+"map_set_aid" or "map_aid."  If you wanted to display just a single
+map in a slot, use the string "map_aid" and the map's accession ID.
+If you want a whole map set in a slot (e.g., a physical map set like
+"I-Map"), then use the string "map_set_aid" and the map set's
+accession ID.  You can use the admin interface ("/cmap/admin") to
+easily find the accession IDs.
 
 CUSTOMIZING YOUR INSTALLATION
 
@@ -722,6 +845,15 @@ between the many "[% %]" tags, and these are often quite
 self-explanatory.  If you can't figure out what to change on your own,
 then check out http://www.template-toolkit.com/ for the documentation
 (or type "perldoc Template" on your command line).
+
+CVS ACCESS
+
+If you'd like to install the very latest (which is not necessarily
+guaranteed to work!), then you'll want to checkout the "cmap" project
+from the anonymous CVS repository at SourceForge.  See the project
+homepage for instructions:
+
+    http://gmod.sourceforge.net/
 
 COMMENTS
 

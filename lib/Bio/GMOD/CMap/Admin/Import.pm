@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.3 2002-09-10 01:46:47 kycl4rk Exp $
+# $Id: Import.pm,v 1.4 2002-09-12 22:07:42 kycl4rk Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.3 $)[-1];
+$VERSION  = (qw$Revision: 1.4 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -339,7 +339,7 @@ Starred fields are required.  Order of fields is not important.
     # 
     for my $map_name ( sort keys %map_ids ) {
         my $map_id = $map_ids{ $map_name };
-        my ( $start, $stop ) = $db->selectrow_array(
+        my ( $map_start, $map_stop ) = $db->selectrow_array(
             q[
                 select map.start_position, map.stop_position
                 from   cmap_map map
@@ -349,30 +349,33 @@ Starred fields are required.  Order of fields is not important.
             ( $map_id )
         );
 
-        unless ( 
-            defined $start && 
-            defined $stop  && 
-            $stop > $start
-        ) {
-            my ( $min_start, $max_start, $max_stop ) = $db->selectrow_array(
-                q[
-                    select   min(f.start_position), 
-                             max(f.start_position),
-                             max(f.stop_position)
-                    from     cmap_feature f
-                    where    f.map_id=?
-                    group by f.map_id
-                ],
-                {},
-                ( $map_id )
-            );
+        my ( $min_start, $max_start, $max_stop ) = $db->selectrow_array(
+            q[
+                select   min(f.start_position), 
+                         max(f.start_position),
+                         max(f.stop_position)
+                from     cmap_feature f
+                where    f.map_id=?
+                group by f.map_id
+            ],
+            {},
+            ( $map_id )
+        );
 
+        if ( 
+            !defined $map_start      ||
+            !defined $map_stop       ||
+            $map_start <= $map_stop  ||
+            $map_start > $min_start  ||
+            $map_stop  < $max_start  ||
+            ( defined $max_stop && $map_stop < $max_stop )
+        ) {
             $min_start ||= 0;
             $max_start ||= 0;
             $max_stop  ||= 0;
-            $start     ||= $min_start; 
-            $stop      ||= $max_start > $max_stop ? $max_start : $max_stop;
-
+            $max_stop    = $max_start > $max_stop ? $max_start : $max_stop;
+            $map_start   = $min_start if $min_start < $map_start;
+            $map_stop    = $max_stop  if $max_stop  > $map_stop;
 
             $db->do(
                 q[
@@ -382,12 +385,12 @@ Starred fields are required.  Order of fields is not important.
                     where  map_id=?
                 ],
                 {},
-                ( $start, $stop, $map_id )
+                ( $map_start, $map_stop, $map_id )
             );
         }
 
         $self->Print(
-            "Verified start ($start) and stop ($stop) ",
+            "Verified start ($map_start) and stop ($map_stop) ",
             "for map $map_name ($map_id).\n"
         );
     }    

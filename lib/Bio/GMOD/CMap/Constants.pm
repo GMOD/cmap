@@ -1,13 +1,13 @@
 package Bio::GMOD::CMap::Constants;
 
-# $Id: Constants.pm,v 1.11 2002-09-11 16:31:50 kycl4rk Exp $
+# $Id: Constants.pm,v 1.12 2002-09-12 22:07:42 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.11 $)[-1];
+$VERSION = (qw$Revision: 1.12 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -333,9 +333,9 @@ use constant DEFAULT => {
     #
     # What to show for feature labels on the maps.
     # Values: none landmarks all
-    # Default: 'none'
+    # Default: 'all'
     #
-    include_features => 'none',
+    include_features => 'all',
     
     #
     # Color of a map (type) if not defined

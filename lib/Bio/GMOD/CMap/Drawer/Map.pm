@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.10 2002-09-11 14:46:13 kycl4rk Exp $
+# $Id: Map.pm,v 1.11 2002-09-12 22:07:42 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.10 $)[-1];
+$VERSION = (qw$Revision: 1.11 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -87,10 +87,10 @@ Figure out where right-to-left this map belongs.
     my $self        = shift;
     my $slot_no     = $self->slot_no or return 0; # slot "0" is in the middle
     my $drawer      = $self->drawer;
-    my $ref_slot_no = $drawer->reference_slot_no( $slot_no );
+#    my $ref_slot_no = $drawer->reference_slot_no( $slot_no );
     my $buffer      = 15;
-    my ( $ref_left, $ref_right ) = 
-        $drawer->slot_sides( slot_no => $ref_slot_no );
+#    my ( $ref_left, $ref_right ) = 
+#        $drawer->slot_sides( slot_no => $ref_slot_no );
 
     my $base_x;
     if ( 
@@ -98,12 +98,12 @@ Figure out where right-to-left this map belongs.
         ||
         ( $slot_no < 0 )
     ) {
-#        $base_x = $drawer->min_x - $buffer;
-        $base_x = $ref_left - $buffer;
+        $base_x = $drawer->min_x - $buffer;
+#        $base_x = $ref_left - $buffer;
     }
     else {
-#        $base_x = $drawer->max_x + $buffer;
-        $base_x = $ref_right + $buffer;
+        $base_x = $drawer->max_x + $buffer;
+#        $base_x = $ref_right + $buffer;
     }
 
     return $base_x;

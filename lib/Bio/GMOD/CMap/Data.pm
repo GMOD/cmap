@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.10 2002-09-11 01:54:51 kycl4rk Exp $
+# $Id: Data.pm,v 1.11 2002-09-12 22:07:42 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.10 $)[-1];
+$VERSION = (qw$Revision: 1.11 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -1830,7 +1830,8 @@ Returns the correct SQL module driver for the RDBMS we're using.
     my $db_driver = lc shift;
 
     unless ( defined $self->{'sql_module'} ) {
-        $db_driver     = lc $self->db->{'Driver'}->{'Name'} || '';
+        my $db         = $self->db or $self->error('No db handle');
+        $db_driver     = lc $db->{'Driver'}->{'Name'} || '';
         $db_driver     = DEFAULT->{'sql_driver_module'}
             unless exists VALID->{'sql_driver_module'};
         my $sql_module = VALID->{'sql_driver_module'}{ $db_driver };

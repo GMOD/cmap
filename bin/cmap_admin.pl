@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.4 2002-09-10 01:46:47 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.5 2002-09-12 22:07:41 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION $BE_QUIET ];
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 #
 # Turn off output buffering.
@@ -115,7 +115,7 @@ sub show_greeting {
             },
             { 
                 action  => 'import_correspondences', 
-                display => 'Import Feature Correspondences' 
+                display => 'Import feature correspondences' 
             },
             { 
                 action  => 'quit',   

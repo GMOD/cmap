@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap;
 
-# $Id: CMap.pm,v 1.7 2002-09-06 00:01:17 kycl4rk Exp $
+# $Id: CMap.pm,v 1.8 2002-09-12 22:07:41 kycl4rk Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ itself based on Andy Wardley's Class::Base module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.7 $)[-1];
+$VERSION = (qw$Revision: 1.8 $)[-1];
 
 use Class::Base;
 use Config::General;
@@ -95,11 +95,14 @@ Returns a database handle.  This is the only way into the database.
             or $self->error('No database user defined');
         my $password   = $config->{'password'} || '';
         my $options    = $config->{'options'}  || {};
+
         eval {
             $self->{'db'} = 
-                DBI->connect($datasource, $user, $password, $options);
+                DBI->connect( $datasource, $user, $password, $options );
         };
-        $self->error('No db handle: '. $DBI::errstr) unless $self->{'db'};
+
+        return $self->error( 'No db handle: '. $DBI::errstr )
+            unless $self->{'db'};
     }
 
     return $self->{'db'};
