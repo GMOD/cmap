@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.134 2004-10-25 21:05:46 mwz444 Exp $
+# $Id: Map.pm,v 1.135 2004-10-26 17:11:47 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.134 $)[-1];
+$VERSION = (qw$Revision: 1.135 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1041,6 +1041,7 @@ Variable Info:
     my %map_placement_data;
     my %map_aggregate_corr;
     my %features_with_corr_by_map_id;
+    my %flipped_maps;
   MAP:
     for my $map_id (@map_ids) {
         my $map_width    = $self->map_width($map_id);
@@ -1053,14 +1054,13 @@ Variable Info:
         #
         # Find out if it flipped
         #
-        unless ($is_compressed) {
-            for my $rec ( @{ $drawer->flip } ) {
-                if (   $rec->{'slot_no'} == $slot_no
-                    && $rec->{'map_aid'} == $self->accession_id($map_id) )
-                {
-                    $is_flipped = 1;
-                    last;
-                }
+        for my $rec ( @{ $drawer->flip } ) {
+            if (   $rec->{'slot_no'} == $slot_no
+                && $rec->{'map_aid'} == $self->accession_id($map_id) )
+            {
+                $is_flipped = 1;
+                $flipped_maps{$map_id}=1;
+                last;
             }
         }
 
@@ -1101,6 +1101,7 @@ Variable Info:
                 map_id          => $map_id,
                 is_compressed   => $is_compressed,
                 pixel_height    => $pixel_height,
+                is_flipped      => $is_flipped,
                 map_aggregate_corr  => \%map_aggregate_corr,
                 );
         $map_placement_data{$map_id}{'bounds'}=[0,$placed_y1,0,$placed_y2];
@@ -1708,6 +1709,7 @@ Variable Info:
         $drawer->register_map_coords(
             $slot_no,  $map_id,  $map_start, $map_stop,
             @{$map_placement_data{$map_id}{'map_coords'}}, 
+            $flipped_maps{$map_id},
         );
 
     }
@@ -1735,8 +1737,11 @@ Variable Info:
 
                 my $this_map_x=$label_side eq RIGHT ? $map_coords->[0]-4 : $map_coords->[2]+4;
                 my $this_map_x2=$label_side eq RIGHT ? $map_coords->[0] : $map_coords->[2];
-                my $this_map_y=(($ref_connect->[3]/$map_length)
-                                * ($map_coords->[3]-$map_coords->[1]))+$map_coords->[1];
+                my $this_map_y = $flipped_maps{$map_id}
+                  ? ((1-($ref_connect->[3]/$map_length))
+                        * ($map_coords->[3]-$map_coords->[1]))+$map_coords->[1]
+                  : (($ref_connect->[3]/$map_length)
+                        * ($map_coords->[3]-$map_coords->[1]))+$map_coords->[1];
                 push @drawing_data,
                   [
                     LINE,
@@ -1884,6 +1889,7 @@ sub place_map_y {
     my $is_compressed      = $args{'is_compressed'};
     my $pixel_height       = $args{'pixel_height'};
     my $map_aggregate_corr = $args{'map_aggregate_corr'};
+    my $is_flipped         = $args{'is_flipped'};
 
     my ($return_y1,$return_y2);
     
@@ -1936,17 +1942,26 @@ sub place_map_y {
             $ref_bottom = $ref_pos->{'y2'};
 
             # Set the avg location of the corr on the ref map
-            my $ref_map_mid_y =
-                $ref_pos->{'y1'} +
-                (($avg_mid - $ref_pos->{'map_start'} ) /
-                  $ref_map_unit_len ) * $ref_map_pixel_len;
-            my $ref_map_y1 =
-              $ref_pos->{'y1'} +
-              ( ( $ref_corr->{'min_start'} - $ref_pos->{'map_start'} ) /
-                  $ref_map_unit_len ) * $ref_map_pixel_len;
-            my $ref_map_y2 =
-              $ref_pos->{'y1'} +
-              ( ( $ref_corr->{'max_start'} - $ref_pos->{'map_start'} ) /
+            my $ref_map_mid_y = $ref_pos->{'is_flipped'}
+                ? ($ref_pos->{'y2'} -
+                  (($avg_mid - $ref_pos->{'map_start'} ) /
+                  $ref_map_unit_len ) * $ref_map_pixel_len)
+                : ($ref_pos->{'y1'} +
+                  (($avg_mid - $ref_pos->{'map_start'} ) /
+                  $ref_map_unit_len ) * $ref_map_pixel_len);
+            my $ref_map_y1 = $ref_pos->{'is_flipped'}
+              ? ($ref_pos->{'y2'} -
+                ( ( $ref_corr->{'min_start'} - $ref_pos->{'map_start'} ) /
+                  $ref_map_unit_len ) * $ref_map_pixel_len)
+              : ($ref_pos->{'y1'} +
+                ( ( $ref_corr->{'min_start'} - $ref_pos->{'map_start'} ) /
+                  $ref_map_unit_len ) * $ref_map_pixel_len);
+            my $ref_map_y2 = $ref_pos->{'is_flipped'}
+              ? $ref_pos->{'y2'} +
+                ( ( $ref_corr->{'max_start'} - $ref_pos->{'map_start'} ) /
+                  $ref_map_unit_len ) * $ref_map_pixel_len
+              : $ref_pos->{'y1'} +
+                ( ( $ref_corr->{'max_start'} - $ref_pos->{'map_start'} ) /
                   $ref_map_unit_len ) * $ref_map_pixel_len;
 
             # add aggregate correspondences to ref_connections
@@ -1957,13 +1972,19 @@ sub place_map_y {
                   ,($avg_mid2-$self->start_position($map_id))];
             }
             else{
+                my $this_agg_y1 = ($ref_corr->{'min_start2'}-$self->start_position($map_id));
+                my $this_agg_y2 = ($ref_corr->{'max_start2'}-$self->start_position($map_id));
+                ($this_agg_y1,$this_agg_y2) = ($this_agg_y2,$this_agg_y1) 
+                    if ($is_flipped);
+                ($ref_map_y1,$ref_map_y2) = ($ref_map_y2,$ref_map_y1) 
+                    if ($ref_map_y1>$ref_map_y2);
                 # V showing span of corrs
                 push @{$map_aggregate_corr->{$map_id}},
                   [ $ref_pos->{'x1'}, $ref_map_y1, $ref_corr->{'no_corr'} 
-                  ,($ref_corr->{'min_start2'}-$self->start_position($map_id)) ];
+                  ,$this_agg_y1 ];
                 push @{$map_aggregate_corr->{$map_id}},
                   [ $ref_pos->{'x1'}, $ref_map_y2, $ref_corr->{'no_corr'}
-                  ,($ref_corr->{'max_start2'}-$self->start_position($map_id)) ];
+                  ,$this_agg_y2 ];
             }
             #
             # Center map around ref_map_mid_y

@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.80 2004-10-25 21:05:46 mwz444 Exp $
+# $Id: Drawer.pm,v 1.81 2004-10-26 17:11:46 mwz444 Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.80 $)[-1];
+$VERSION = (qw$Revision: 1.81 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -1756,14 +1756,15 @@ Returns the font for the "regular" stuff (feature labels, map names, etc.).
 
 =cut
 
-    my ( $self, $slot_no, $map_id, $start, $stop, $x1, $y1, $x2, $y2 ) = @_;
+    my ( $self, $slot_no, $map_id, $start, $stop, $x1, $y1, $x2, $y2,$is_flipped ) = @_;
     $self->{'map_coords'}{ $slot_no }{ $map_id } = { 
-        map_start => $start,
-        map_stop  => $stop,
-        y1        => $y1, 
-        y2        => $y2,
-        x1        => $x1, 
-        x2        => $x2,
+        map_start  => $start,
+        map_stop   => $stop,
+        y1         => $y1, 
+        y2         => $y2,
+        x1         => $x1, 
+        x2         => $x2,
+        is_flipped => $is_flipped,
     };
 }
 
