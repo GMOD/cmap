@@ -73,9 +73,6 @@ provides:
   Bio::GMOD::CMap::Apache::ViewFeatureOnMap:
     file: lib/Bio/GMOD/CMap/Apache/ViewFeatureOnMap.pm
     version: 1.4
-  Bio::GMOD::CMap::Constants:
-    file: lib/Bio/GMOD/CMap/Constants.pm
-    version: 1.26
   Bio::GMOD::CMap::Data:
     file: lib/Bio/GMOD/CMap/Data.pm
     version: 1.61
