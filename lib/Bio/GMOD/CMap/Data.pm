@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.58 2003-09-12 19:06:56 kycl4rk Exp $
+# $Id: Data.pm,v 1.59 2003-09-12 19:44:37 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.58 $)[-1];
+$VERSION = (qw$Revision: 1.59 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -2339,7 +2339,18 @@ Returns the data for drawing comparative maps.
         $_ = 0 if $_ == -1;
     }
 
-    my $sql = q[
+    my $restriction;
+    if ( @map_set_aids ) {
+        $restriction .= 'and ms.accession_id in ('.
+            join( ',', map { qq['$_'] } @map_set_aids ) . 
+        ') ';
+    }
+
+    $restriction .= qq[and s.accession_id='$species_aid' ]   if $species_aid;
+    $restriction .= qq[and mt.accession_id='$map_type_aid' ] if $map_type_aid;
+
+
+    my $map_set_sql = qq[
         select   ms.map_set_id, 
                  ms.accession_id as map_set_aid,
                  ms.map_set_name, 
@@ -2358,18 +2369,61 @@ Returns the data for drawing comparative maps.
                  cmap_species s
         where    ms.map_type_id=mt.map_type_id
         and      ms.species_id=s.species_id
+        $restriction
     ]; 
 
-    if ( @map_set_aids ) {
-        $sql .= 'and ms.accession_id in ('.
-            join( ',', map { qq['$_'] } @map_set_aids ) . 
-        ') ';
+    my $map_sql = qq[
+        select   map.map_set_id,
+                 map.accession_id as map_aid, 
+                 map.display_order,
+                 map.map_name
+        from     cmap_map map,
+                 cmap_map_set ms, 
+                 cmap_map_type mt, 
+                 cmap_species s
+        where    map.map_set_id=ms.map_set_id
+        and      ms.map_type_id=mt.map_type_id
+        and      ms.species_id=s.species_id
+        $restriction
+        order by map.map_set_id, 
+                 map.display_order, 
+                 map.map_name
+    ];
+
+    my $ft_sql = qq[
+        select   distinct 
+                 ft.feature_type,
+                 ft.accession_id as feature_type_aid, 
+                 map.map_set_id
+        from     cmap_feature f,
+                 cmap_feature_type ft,
+                 cmap_map map,
+                 cmap_map_set ms, 
+                 cmap_map_type mt, 
+                 cmap_species s
+        where    f.map_id=map.map_id
+        and      map.map_set_id=ms.map_set_id
+        and      ms.map_type_id=mt.map_type_id
+        and      ms.species_id=s.species_id
+        $restriction
+        and      f.feature_type_id=ft.feature_type_id
+    ];
+
+    my $maps          = $db->selectall_arrayref( $map_sql, { Columns => {} } );
+    my $feature_types = $db->selectall_arrayref( $ft_sql,  { Columns => {} } );
+    my $map_sets      = $db->selectall_arrayref( 
+        $map_set_sql, { Columns => {} } 
+    );
+
+    my %map_lookup;
+    for my $map ( @$maps ) {
+        push @{ $map_lookup{ $map->{'map_set_id'} } }, $map;
     }
 
-    $sql .= qq[and s.accession_id='$species_aid' ]   if $species_aid;
-    $sql .= qq[and mt.accession_id='$map_type_aid' ] if $map_type_aid;
-
-    my $map_sets = $db->selectall_arrayref( $sql, { Columns => {} } );
+    my %ft_lookup;
+    for my $ft ( @$feature_types ) {
+        push @{ $ft_lookup{ $ft->{'map_set_id'} } }, $ft;
+    }
 
     if ( @map_set_aids && scalar @$map_sets == 0 ) {
         return $self->error(
@@ -2379,21 +2433,10 @@ Returns the data for drawing comparative maps.
     }
 
     for my $map_set ( @$map_sets ) {
+        $map_set->{'feature_types'} = 
+            $ft_lookup{ $map_set->{'map_set_id'} };
         next unless $map_set->{'can_be_reference_map'};
-        my @maps =  @{
-            $db->selectall_arrayref(
-                q[
-                    select   map.accession_id as map_aid, 
-                             map.map_name
-                    from     cmap_map map
-                    where    map.map_set_id=?
-                    order by display_order,map_name
-                ],
-                { Columns => {} }, ( $map_set->{'map_set_id'} )
-            )
-        } or next;
-
-        $map_set->{'maps'} = \@maps;
+        $map_set->{'maps'} = $map_lookup{ $map_set->{'map_set_id'} };
     }
 
     my $species = $db->selectall_arrayref(
