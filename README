@@ -16,7 +16,7 @@ Oracle, MySQL, PostgreSQL or Sybase for gathering the data, and uses
 Paul Boutell's libgd c library and Lincoln Stein's GD Perl module to
 draw the maps.
 
-To install: Follow the directions in the file called "INSTALL."
+To install, follow the directions in the file called "INSTALL."
 
 If you want to understand the code further, esp. to customize or
 extend it, read "docs/CODE_OVERVIEW."
