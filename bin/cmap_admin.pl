@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.12 2003-01-01 02:21:00 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.13 2003-01-09 19:12:19 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.12 $)[-1];
+$VERSION = (qw$Revision: 1.13 $)[-1];
 
 #
 # Turn off output buffering.
@@ -457,6 +457,9 @@ sub export_as_sql {
         }
     );
 
+    #
+    # Ask user what/how/where to dump.
+    #
     my @dump_tables = $self->show_menu(
         title       => 'Select Tables',
         prompt      => 'Which tables do you want to export?',
@@ -506,6 +509,18 @@ sub export_as_sql {
         }
     }
 
+    my $quote_escape = $self->show_menu(
+        title   => 'Quote Style',
+        prompt  => "How should embeded quotes be escaped?\n".
+                   'Hint: Oracle and Sybase like [1], MySQL likes [2]',
+        display => 'display',
+        return  => 'action',
+        data     => [
+            { display => 'Doubled',   action => 'doubled'   },
+            { display => 'Backslash', action => 'backslash' },
+        ],
+    );
+
     #
     # Confirm decisions.
     #
@@ -514,6 +529,7 @@ sub export_as_sql {
         '  Tables       : ' . join(', ', @dump_tables),
         '  Add Truncate : ' . ( $add_truncate ? 'Yes' : 'No' ), 
         "  File         : $file",
+        "  Escape Quotes: $quote_escape",
         "[Y/n] "
     );
 
@@ -554,7 +570,9 @@ sub export_as_sql {
             for my $fld ( @fld_names ) {
                 my $val = $rec->{ $fld };
                 if ( $fields{ $fld } eq STR ) {
-                    $val =~ s/'/\\'/g; # escape existing single quotes
+                    # Escape existing single quotes.
+                    $val =~ s/'/\\'/g if $quote_escape eq 'backslash'; 
+                    $val =~ s/'/''/g  if $quote_escape eq 'doubled'; 
                     $val = defined $val ? qq['$val'] : qq[''];
                 }
                 else {
