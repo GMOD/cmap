@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.42 2003-12-31 22:21:11 kycl4rk Exp $
+# $Id: Admin.pm,v 1.43 2004-01-07 04:07:49 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.42 $)[-1];
+$VERSION = (qw$Revision: 1.43 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -1856,18 +1856,26 @@ Set the attributes for a database object.
                 $display_order++;
             }
 
-            $db->do(
+            my $insert_sql = sprintf(
                 q[
                     insert 
                     into    cmap_xref
-                            (xref_id, object_id, table_name,
-                             display_order, xref_name, xref_url)
-                    values  (?, ?, ?, ?, ?, ?)
+                            (xref_id, table_name, display_order, 
+                            xref_name, xref_url %s)
+                    values  (?, ?, ?, ?, ? %s)
                 ],
-                {}, 
-                ($xref_id, $object_id, $table_name, 
-                 $display_order, $xref_name, $xref_url)
+                ( 
+                    $object_id ? ', object_id' : '',
+                    $object_id ? ', ?' : '',
+                )
             );
+
+            my @insert_args = (
+                $xref_id, $table_name, $display_order, $xref_name, $xref_url
+            );
+            push @insert_args, $object_id if $object_id;
+
+            $db->do( $insert_sql, {}, @insert_args );
         }
     }
 
