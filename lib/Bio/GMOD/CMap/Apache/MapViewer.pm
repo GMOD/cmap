@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.30 2004-03-03 21:28:31 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.31 2004-03-11 01:35:02 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.30 $)[-1];
+$VERSION = (qw$Revision: 1.31 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -194,6 +194,7 @@ sub handler {
     $apr->param( ref_map_start   => $form_data->{'ref_map_start'}   );
     $apr->param( ref_map_stop    => $form_data->{'ref_map_stop'}    );
     $apr->param( ref_species_aid => $form_data->{'ref_species_aid'} );
+    $apr->param( ref_map_set_aid => $form_data->{'ref_map_set_aid'} );
 
     #
     # Wrap up our current comparative maps so we can store them on 
