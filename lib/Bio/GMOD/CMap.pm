@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap;
 
-# $Id: CMap.pm,v 1.8 2002-09-12 22:07:41 kycl4rk Exp $
+# $Id: CMap.pm,v 1.9 2002-09-19 00:58:09 kycl4rk Exp $
 
 =head1 NAME
 
@@ -27,10 +27,11 @@ itself based on Andy Wardley's Class::Base module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 use Class::Base;
 use Config::General;
+use Exception::Class( 'CMapException' );
 use DBI;
 use Bio::GMOD::CMap::Constants;
 
@@ -128,7 +129,7 @@ Returns a handle to the data module.
     return $self->{'data_module'};
 }
 
-# ----------------------------------------------------
+## ----------------------------------------------------
 #sub error {
 #
 #=pod
@@ -138,7 +139,7 @@ Returns a handle to the data module.
 #Overrides Class::Base's "error" just enough to use Exception::Class's "throw."
 #
 #=cut
-#    my $self  = shift;
+#    my $self = shift;
 #    $self->SUPER::error( @_ );
 #    return CMapException->throw( error => $self->SUPER::error );
 #}

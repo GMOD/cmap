@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.11 2002-09-12 22:07:42 kycl4rk Exp $
+# $Id: Map.pm,v 1.12 2002-09-19 00:58:09 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.11 $)[-1];
+$VERSION = (qw$Revision: 1.12 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -381,14 +381,17 @@ Lays out the map.
     #
     my @config_map_titles = $self->config('map_titles');
     my $longest;
-    for my $length ( map { length $_ } @config_map_titles ) {
-        $longest = $length if $length > $longest;
+    for my $map_id ( @map_ids ) {
+        for my $length ( 
+            map { length $self->$_($map_id) } @config_map_titles 
+        ) {
+            $longest = $length if $length > $longest;
+        }
     }
     my $half_title_length = ( $reg_font->width * $longest ) / 2 + 10;
-    my $original_base_x   = $label_side eq RIGHT
+    my $original_base_x = $label_side eq RIGHT
         ? $self->base_x + $half_title_length
-        : $self->base_x - $half_title_length
-    ;
+        : $self->base_x - $half_title_length;
 
     #
     # These are for drawing the map titles last if this is a relational map.
@@ -401,8 +404,19 @@ Lays out the map.
         $slot_max_x,    # westernmost coord for the slot
         @map_titles     # the titles to put above
     );
+#    my $original_base_x = $self->base_x;
 
     for my $map_id ( @map_ids ) {
+        my $longest;
+#        for my $length ( map {length $self->$_($map_id)} @config_map_titles ) {
+#            $longest = $length if $length > $longest;
+#        }
+#        my $half_title_length = ( $reg_font->width * $longest ) / 2 + 10;
+##        my $base_x1 = $self->base_x;
+##        my $original_base_x = $label_side eq RIGHT
+##            ? $original_base_x = $base_x1 + $half_title_length;
+##            : $original_base_x = $base_x1 - $half_title_length;
+
         $is_relational     = $self->is_relational_map( $map_id );
         my $base_x         = $label_side eq RIGHT
                              ? $self->base_x + $half_title_length + 10

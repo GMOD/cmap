@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.15 2002-09-16 12:32:34 kycl4rk Exp $
+# $Id: Data.pm,v 1.16 2002-09-19 00:58:09 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.15 $)[-1];
+$VERSION = (qw$Revision: 1.16 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -291,6 +291,14 @@ Returns the data for drawing comparative maps.
                 unless defined $map_stop;
             $map_stop  = $map_data->{'stop_position'} 
                 if $map_stop > $map_data->{'stop_position'};
+
+            if ( 
+                defined $map_start && 
+                defined $map_stop  &&
+                $map_start > $map_stop
+            ) {
+                ( $map_start, $map_stop ) = ( $map_stop, $map_start );
+            }
 
             #
             # If we're supposed to add in flanking features...
@@ -1043,6 +1051,15 @@ Returns the data for the main comparative map HTML form.
                     map_id       => $map_id,
                 ) || 0;
             }
+        }
+
+        if ( 
+            defined $ref_map_start && 
+            defined $ref_map_stop  &&
+            $ref_map_start > $ref_map_stop
+        ) {
+            ( $ref_map_start, $ref_map_stop ) = 
+            ( $ref_map_stop, $ref_map_start ) ;
         }
 
 #        my $ref_map_begin = $self->map_start( map_id => $map_id ); 
