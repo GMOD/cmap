@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.39 2003-07-11 22:49:21 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.40 2003-07-30 02:06:08 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.39 $)[-1];
+$VERSION = (qw$Revision: 1.40 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -35,7 +35,7 @@ use Data::Dumper;
 use base 'Bio::GMOD::CMap';
 
 my @INIT_PARAMS = qw[
-    apr slots highlight font_size image_size image_type 
+    apr flip slots highlight font_size image_size image_type 
     label_features include_feature_types include_evidence_types
     data_source min_correspondences collapse_features cache_dir
 ];
@@ -129,7 +129,7 @@ so that it's positive.
 
     unless ( $args{'leave_map_areas'} ) {
         for my $rec ( @{ $self->{'image_map_data'} } ) {
-            my @coords       = @{ $rec->{'coords'} };
+            my @coords       = @{ $rec->{'coords'} || [] } or next;
             $coords[ $_ ]   += $y_shift for ( 1, 3 );
             $coords[ $_ ]   += $x_shift for ( 0, 2 );
             $rec->{'coords'} = [ map { int } @coords ];
@@ -230,10 +230,10 @@ Accepts a list of attributes to describe how to draw an object.
         # Extract the X and Y positions in order to pass them to 
         # min and max methods (to know how big the image should be).
         #
-        my $shape       = $attr[  0 ];
+        my $shape       = $attr[  0 ] or next;
         my $layer       = $attr[ -1 ];
-        my @x_locations = @{ SHAPE_XY->{ $shape }{'x'} };
-        my @y_locations = @{ SHAPE_XY->{ $shape }{'y'} };
+        my @x_locations = @{ SHAPE_XY->{ $shape }{'x'} || [] } or next;
+        my @y_locations = @{ SHAPE_XY->{ $shape }{'y'} || [] } or next;
         push @x, @attr[ @x_locations ];
         push @y, @attr[ @y_locations ];
 
@@ -269,8 +269,12 @@ Accepts a list of coordinates and a URL for hyperlinking a map area.
 =cut
 
     my $self = shift;
+
     if ( ref $_[0] eq 'HASH' ) {
         push @{ $self->{'image_map_data'} }, @_;
+    }
+    elsif ( ref $_[0] eq 'ARRAY' && @{ $_[0] } ) {
+        push @{ $self->{'image_map_data'} }, $_ for @_;
     }
     else {
         push @{ $self->{'image_map_data'} }, { @_ } if @_;
@@ -334,6 +338,31 @@ Returns whether or not there are any feature correspondences.
 
     my $self = shift;
     return %{ $self->{'data'}{'correspondences'} || {} } ? 1 : 0;
+}
+
+# ----------------------------------------------------
+sub flip {
+
+=pod
+
+=head2 flip
+
+Gets/sets which maps to flip.
+
+=cut
+
+    my $self = shift;
+    if ( my $arg = shift ) {
+        for my $s ( split /:/, $arg ) {
+            my ( $slot_no, $map_aid ) = split /=/,  $s or next;
+            push @{ $self->{'flip'} }, {
+                slot_no => $slot_no,
+                map_aid => $map_aid,
+            }
+        }
+    }
+
+    return $self->{'flip'} || [];
 }
 
 # ----------------------------------------------------
@@ -552,13 +581,13 @@ Lays out the image and writes it to the file system, set the "image_name."
                 $self->add_drawing(
                     LINE, 
                     $feature_x + 3, $feature_y, 
-                    $feature_x + 3, $feature_y + 10, 
+                    $feature_x + 3, $feature_y + 8, 
                     $color
                 );
                 $self->add_drawing(
                     LINE, 
-                    $feature_x + 3, $feature_y + 10, 
-                    $feature_x + 5, $feature_y + 10, 
+                    $feature_x + 3, $feature_y + 8, 
+                    $feature_x + 5, $feature_y + 8, 
                     $color
                 );
                 $label_y = $feature_y + 5;
@@ -567,7 +596,7 @@ Lays out the image and writes it to the file system, set the "image_name."
                 $feature_x +=5;
                 $self->add_drawing(
                     LINE, 
-                    $feature_x, $feature_y, $feature_x, $feature_y + 10,  
+                    $feature_x, $feature_y, $feature_x, $feature_y + 8,  
                     $color
                 );
                 $self->add_drawing(
@@ -588,18 +617,18 @@ Lays out the image and writes it to the file system, set the "image_name."
                 $feature_x +=5;
                 $self->add_drawing(
                     LINE, 
-                    $feature_x, $feature_y, $feature_x, $feature_y + 10,  
+                    $feature_x, $feature_y, $feature_x, $feature_y + 8,  
                     $color
                 );
                 $self->add_drawing(
                     LINE, 
-                    $feature_x, $feature_y + 10, 
+                    $feature_x, $feature_y + 8, 
                     $feature_x - 2, $feature_y + 8,
                     $color
                 );
                 $self->add_drawing(
                     LINE, 
-                    $feature_x, $feature_y + 10, 
+                    $feature_x, $feature_y + 8, 
                     $feature_x + 2, $feature_y + 8,
                     $color
                 );
@@ -609,18 +638,18 @@ Lays out the image and writes it to the file system, set the "image_name."
                 $feature_x +=5;
                 $self->add_drawing(
                     LINE, 
-                    $feature_x, $feature_y, $feature_x, $feature_y + 10,  
+                    $feature_x, $feature_y, $feature_x, $feature_y + 8,  
                     $color
                 );
                 $self->add_drawing(
                     LINE, 
-                    $feature_x, $feature_y + 10, 
+                    $feature_x, $feature_y + 8, 
                     $feature_x - 2, $feature_y + 8,
                     $color
                 );
                 $self->add_drawing(
                     LINE, 
-                    $feature_x, $feature_y + 10, 
+                    $feature_x, $feature_y + 8, 
                     $feature_x + 2, $feature_y + 8,
                     $color
                 );
@@ -641,7 +670,7 @@ Lays out the image and writes it to the file system, set the "image_name."
             elsif ( $ft->{'shape'} eq 'box' ) {
                 $self->add_drawing(
                     RECTANGLE, 
-                    $feature_x, $feature_y, $feature_x + 10, $feature_y + 10, 
+                    $feature_x, $feature_y, $feature_x + 10, $feature_y + 8, 
                     $color
                 );
                 $label_y = $feature_y + 5;
@@ -654,12 +683,12 @@ Lays out the image and writes it to the file system, set the "image_name."
                 );
                 $self->add_drawing(
                     LINE, 
-                    $feature_x + 5, $feature_y, $feature_x + 5, $feature_y + 10,
+                    $feature_x + 5, $feature_y, $feature_x + 5, $feature_y + 8,
                     $color
                 );
                 $self->add_drawing(
                     ARC, 
-                    $feature_x + 5, $feature_y + 10, $width, $width, 0, 360, 
+                    $feature_x + 5, $feature_y + 8, $width, $width, 0, 360, 
                     $color
                 );
                 $label_y = $feature_y + 5;
@@ -668,12 +697,12 @@ Lays out the image and writes it to the file system, set the "image_name."
                 my $width = 3;
                 $self->add_drawing(
                     FILLED_RECT, 
-                    $feature_x + 3, $feature_y, $feature_x + 7, $feature_y + 10,
+                    $feature_x + 3, $feature_y, $feature_x + 7, $feature_y + 8,
                     $color
                 );
                 $self->add_drawing(
                     RECTANGLE, 
-                    $feature_x + 3, $feature_y, $feature_x + 7, $feature_y + 10,
+                    $feature_x + 3, $feature_y, $feature_x + 7, $feature_y + 8,
                     'black'
                 );
                 $label_y = $feature_y + 5;
@@ -716,9 +745,8 @@ Lays out the image and writes it to the file system, set the "image_name."
             );
 
             my $furthest_x = $label_x + $font->width * length($label) + 5;
-            my $furthest_y = $feature_y > $label_y ? $feature_y : $label_y;
             $max_x         = $furthest_x if $furthest_x > $max_x;
-            $max_y         = $furthest_y + 10;
+            $max_y         = $label_y + $font->height;
         }
 
         #
@@ -748,26 +776,37 @@ Lays out the image and writes it to the file system, set the "image_name."
         #
         # Extra symbols.
         #
+        my @buttons = (
+            [ 'i' => 'Map Set Info' ],
+            [ '?' => 'Map Details' ],
+            [ 'X' => 'Delete Map' ],
+            [ 'F' => 'Flip Map' ],
+            [ 'N' => 'New Map View' ],
+        );
         {
             $self->add_drawing( 
-                STRING, $font, $x, $max_y, 'Map Symbols:', 'black' 
+                STRING, $font, $x, $max_y, 'Menu Symbols:', 'black' 
             );
             $max_y += $font->height + 10;
 
-            #
-            # Question mark.
-            #
-            $self->add_drawing(
-                STRING, $font, $x + 2, $max_y + 2, '?', 'grey'
-            );
-            my $end = $x + $font->width + 4;
-            $self->add_drawing(
-                RECTANGLE, $x, $max_y, $end, $max_y + $font->height + 4, 'grey'
-            );
-            $self->add_drawing( 
-                STRING, $font, $end + 5, $max_y + 2, 'Map details', 'black' 
-            );
-            $max_y += $font->height + 10;
+            for my $button ( @buttons ) {
+                my ( $sym, $caption ) = @$button;
+                $self->add_drawing(
+                    STRING, $font, $x + 2, $max_y + 2, $sym, 'grey'
+                );
+                my $end = $x + $font->width + 4;
+
+                $self->add_drawing(
+                    RECTANGLE, $x, $max_y, $end, 
+                    $max_y + $font->height + 4, 'grey'
+                );
+
+                $self->add_drawing( 
+                    STRING, $font, $end + 5, $max_y + 2, $caption, 'black' 
+                );
+
+                $max_y += $font->height + 10;
+            }
         }
 
         my $watermark = 'CMap v'.$Bio::GMOD::CMap::VERSION;
