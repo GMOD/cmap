@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Utils;
 
-# $Id: Utils.pm,v 1.10 2002-10-09 01:07:31 kycl4rk Exp $
+# $Id: Utils.pm,v 1.11 2003-01-01 02:12:52 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.10 $)[-1];
+$VERSION = (qw$Revision: 1.11 $)[-1];
 
 use base 'Exporter';
 
@@ -35,6 +35,7 @@ my @subs   = qw[
     extract_numbers 
     label_distribution 
     next_number 
+    paginate
 ];
 @EXPORT_OK = @subs;
 @EXPORT    = @subs;
@@ -348,6 +349,73 @@ label can be inserted.
 
     warn "I didn't find anything, returning nothing\n" if $debug;
     return undef;
+}
+
+# ----------------------------------------------------
+sub paginate {
+
+=pod
+
+=head2 paginate
+
+Given a result set, break it up into pages.
+
+=cut
+    my %args        = @_;
+    my $self        = $args{'self'};
+    my $data        = $args{'data'}        || [];
+    my $limit_start = $args{'limit_start'} || 1;
+    my $page_size   = $args{'page_size'}   || 
+                      $self->config('max_child_elements') || 0;
+    my $max_pages   = $args{'max_pages'}   ||
+                      $self->config('max_search_pages')   || 1;    
+    my $no_elements = $args{'no_elements'} || @$data;
+
+    my $limit_stop;
+    if ( $no_elements > $page_size ) {
+        $limit_start  = 1 if $limit_start < 1;
+        $limit_start  = $no_elements if $limit_start > $no_elements;
+        $limit_stop   = ( $limit_start + $page_size >= $no_elements )
+            ? $no_elements
+            : $limit_start + $page_size - 1;
+        $data         = [ @$data[ $limit_start - 1 .. $limit_stop - 1 ] ];
+    }
+    else {
+        $limit_stop = $no_elements;
+    }
+
+    my $no_pages = sprintf( "%.0f", ( $no_elements / $page_size ) + .5 );
+    my $step     = ( $no_pages > $max_pages ) 
+        ? sprintf( "%.0f", ($no_pages/$max_pages) + .5 ) : 1;
+    my $cur_page = int( ( $limit_start + 1 ) / $page_size ) + 1;
+    my ( $done, $prev_page, @pages );
+    for ( my $page = 1; $page <= $no_pages; $page += $step ) {
+        if ( 
+            !$done              &&
+            $page != $cur_page  && 
+            $page  > $cur_page  && 
+            $page  > $prev_page
+        ) {
+            push @pages, $cur_page unless $pages[-1] == $cur_page;
+            $done = 1;
+        }
+        $done = $cur_page == $page unless $done;
+        push @pages, $page;
+    }
+
+    push @pages, $cur_page unless $done;
+    push @pages, $no_pages unless $pages[-1] == $no_pages;
+    
+    return {
+        data        => $data,
+        no_elements => $no_elements,
+        pages       => \@pages,
+        cur_page    => $cur_page,
+        page_size   => $page_size,
+        no_pages    => $no_pages,
+        show_start  => $limit_start,
+        show_stop   => $limit_stop,
+    }
 }
 
 1;
