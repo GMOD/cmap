@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Utils;
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.25.2.10 2004-06-11 18:48:01 kycl4rk Exp $
+# $Id: Utils.pm,v 1.25.2.11 2004-06-14 18:48:09 kycl4rk Exp $
 
 =head1 NAME
 
@@ -29,7 +29,7 @@ use Bio::GMOD::CMap::Constants;
 use POSIX;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.25.2.10 $)[-1];
+$VERSION = (qw$Revision: 1.25.2.11 $)[-1];
 
 use base 'Exporter';
 
@@ -475,15 +475,6 @@ Special thanks to Noel Yap for suggesting this strategy.
         $no_added++;
     }
 
-    #
-    # Resort by the target (reduces crossed lines).
-    #
-    @accepted = 
-        map  { $_->[0] }
-        sort { $a->[1] <=> $b->[1] }
-        map  { [ $_, $_->{'target'} ] }
-        @accepted;
-
     my $no_accepted = scalar @accepted;
     my $no_possible = int( $map_height / $font_height );
 
@@ -498,6 +489,12 @@ Special thanks to Noel Yap for suggesting this strategy.
     # If we took fewer than was possible, try to sort them nicely.
     #
     elsif ( $no_accepted > 1 && $no_accepted <= ( $no_possible * .5 ) ) {
+        @accepted = 
+            map  { $_->[0] }
+            sort { $a->[1] <=> $b->[1] || $b->[2] <=> $a->[2] }
+            map  { [ $_, $_->{'target'}, $_->{'column'} ] }
+            @accepted;
+
         my $bin_size  = 2;
         my $half_font = $font_height / 2;
         my $no_bins   = sprintf( "%d", $map_height / $bin_size );
@@ -624,6 +621,12 @@ Special thanks to Noel Yap for suggesting this strategy.
         #
         # Figure the gap to evenly space the labels in the space.
         #
+        @accepted = 
+            map  { $_->[0] }
+            sort { $a->[1] <=> $b->[1] || $a->[2] <=> $b->[2] }
+            map  { [ $_, $_->{'target'}, $_->{'column'} ] }
+            @accepted;
+
         my $gap = $map_height / ( $no_accepted - 1 );
         my $i   = 0;
         for my $label ( @accepted ) {
