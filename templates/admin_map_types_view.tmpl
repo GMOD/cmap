@@ -12,10 +12,10 @@
             </td>
         </tr>
         <tr>
+            <th><a href="admin?action=map_types_view;order_by=display_order">Display Order</a></th>
             <th><a href="admin?action=map_types_view;order_by=map_type">Map Type</a></th>
             <th><a href="admin?action=map_types_view;order_by=map_units">Map Units</a></th>
             <th><a href="admin?action=map_types_view;order_by=is_relational_map">Is Relational Only</a></th>
-            <th><a href="admin?action=map_types_view;order_by=display_order">Display Order</a></th>
             <th><a href="admin?action=map_types_view;order_by=shape">Shape</a></th>
             <th><a href="admin?action=map_types_view;order_by=width">Width</a></th>
             <th><a href="admin?action=map_types_view;order_by=color">Color</a></th>
@@ -25,10 +25,10 @@
         [% SET i=0 %]
         [% FOREACH mt=map_types %]
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
+                <td>[% mt.display_order %]</td>
                 <td>[% mt.map_type %]</td>
                 <td>[% mt.map_units %]</td>
                 <td>[% IF mt.is_relational_map; 'Yes'; ELSE; 'No'; END %]</td>
-                <td>[% mt.display_order %]</td>
                 <td>[% mt.shape %]</td>
                 <td>[% mt.width %]</td>
                 <td>[% mt.color %]</td>

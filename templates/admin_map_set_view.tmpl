@@ -120,6 +120,9 @@
                 <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];limit_start=[% apr.param('limit_start') %];order_by=accession_id">Acc. ID</a>
             </th>
             <th>
+                <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];limit_start=[% apr.param('limit_start') %];order_by=display_order">Display Order</a>
+            </th>
+            <th>
                 <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];limit_start=[% apr.param('limit_start') %];order_by=map_name">Map Name</a>
             </th>
             <th>
@@ -139,6 +142,7 @@
         [% FOREACH map=map_set.maps %]
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
                 <td>[% map.accession_id   %]</td>
+                <td>[% map.display_order  %]</td>
                 <td>[% map.map_name       %]</td>
                 <td>[% IF map.linkage_group.defined; map.linkage_group; ELSE; '&nbsp;'; END %]</td>
                 <td align="right">[% map.start_position %]</td>
