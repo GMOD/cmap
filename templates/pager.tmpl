@@ -1,25 +1,28 @@
-[% IF no_elements > 1 %]
-    [% no_elements | commify %] record[% IF no_elements > 1 %]s[% END %] found.  Showing [% show_start %] to [% show_stop %].
+[% pager.total_entries | commify %] record[% IF pager.total_entries > 1 %]s[% END %] found.  
+
+[% IF pager.total_entries > 1 %]
+    Showing [% pager.first | commify %] to [% pager.last | commify %].
 [% END %]
-[% IF pages.size > 1 %]
-    [% SET list=[] %]
-    [% pages.unshift('Prev') IF cur_page>1 %]
-    [% pages.push('Next') IF cur_page<pages.last %]
+
+[% IF pager.last_page > 1 %]
+    [% SET page_list=[] %]
+    [% page_no = pager.previous_page %]
+    [% IF page_no %]
+        [% page_list.push("<a href=\"${pager_url}&page_no=${page_no}\">Previous</a>") %]
+    [% END %]
+
     <br>
-    [% FOREACH page=pages %]
-        [% IF page==cur_page %]
-            [% list.push("<b>$page</b>") %]
+    [% FOREACH page_no = pager.pages_in_set %]
+        [% IF page_no == pager.current_page %]
+            [% page_list.push("<b>$page_no</b>") %]
         [% ELSE %]
-            [% IF page=='Prev' %]
-                [% SET page_no=cur_page - 1 %]
-            [% ELSIF page=='Next' %]
-                [% SET page_no=cur_page+1 %]
-            [% ELSE %]
-                [% SET page_no=page %]
-            [% END %]
-            [% SET start=((page_no - 1)*page_size)+1 %]
-            [% list.push("<a href=\"$pager_url&limit_start=$start\">$page</a>") %]
+            [% page_list.push("<a href=\"${pager_url}&page_no=${page_no}\">$page_no</a>") %]
         [% END %]
     [% END %]
-    [% list.join(' | ') %]
+
+    [% next_page_no = pager.current_page + 1 %]
+    [% IF next_page_no <= pager.last_page %]
+        [% page_list.push("<a href=\"${pager_url}&page_no=${next_page_no}\">Next</a>") %]
+    [% END %]
+    [% page_list.join(' | ') %]
 [% END %]
