@@ -4,22 +4,38 @@
 <a href="admin?action=xref_create">Create New Cross-Reference</a>
 <hr noshade>
 
-<div align="center">
 <form action="admin">
-    <input type="submit" value="Restrict by DB Object">
-    <input type="hidden" name="action" value="xrefs_view">
-    <select name="table_name">
-        <option value="">--None--</option>
-        [% FOREACH o=db_objects %]
-            <option [% IF o.table_name==apr.param('table_name'); 'selected '; END %]value="[% o.table_name %]">[% o.object_name %]</option>
-        [% END %]
-    </select>
-    <br>
-    Generic XRefs Only:
-    <input type="radio" name="generic_only" value="1"[% IF apr.param('generic_only')==1; ' checked'; END %]>Yes
-    <input type="radio" name="generic_only" value="0"[% IF !apr.param('generic_only'); ' checked'; END %]>No
+<table width="100%">
+    <tr>
+        <td align="right">
+            Restrict by DB Object:
+        </td>
+        <td>
+            <input type="hidden" name="action" value="xrefs_view">
+            <select name="table_name">
+                <option value="">--None--</option>
+                [% FOREACH o=db_objects %]
+                    <option [% IF o.table_name==apr.param('table_name'); 'selected '; END %]value="[% o.table_name %]">[% o.object_name %]</option>
+                [% END %]
+            </select>
+        </td>
+    </tr>
+    <tr>
+        <td align="right">
+            Show Generic XRefs Only:
+        </td>
+        <td>
+            <input type="radio" name="generic_only" value="1"[% IF apr.param('generic_only')==1; ' checked'; END %]>Yes
+            <input type="radio" name="generic_only" value="0"[% IF !apr.param('generic_only'); ' checked'; END %]>No
+        </td>
+    </tr>
+    <tr>
+        <td align="center" colspan="2">
+            <input type="submit" value="Submit">
+        </td>
+    </tr>
+</table>
 </form>
-</div>
 
 [% IF xrefs.size %]
     <table width="100%">
