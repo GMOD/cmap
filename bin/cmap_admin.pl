@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.20 2003-02-20 16:50:47 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.21 2003-02-20 23:54:37 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.20 $)[-1];
+$VERSION = (qw$Revision: 1.21 $)[-1];
 
 #
 # Turn off output buffering.
@@ -17,16 +17,17 @@ $| = 1;
 #
 # Get command-line options
 #
-my ( $show_help, $show_version );
+my ( $show_help, $show_version, $no_log );
 
 GetOptions(
     'h|help'    => \$show_help,    # Show help and exit
     'v|version' => \$show_version, # Show version and exit
+    'no-log'    => \$no_log,       # Don't keep a log
 ) or pod2usage(2);
 
 pod2usage(0) if $show_help;
 if ( $show_version ) {
-    print "$0 Version: $VERSION\n";
+    print "$0 Version: $VERSION (CMap Version $Bio::GMOD::CMap::VERSION)\n";
     exit(0);
 }
 
@@ -34,8 +35,9 @@ if ( $show_version ) {
 # Create a CLI object.
 #
 my $cli = Bio::GMOD::CMap::CLI::Admin->new( 
-    user => $>,  # effective UID
-    file => shift 
+    user   => $>,  # effective UID
+    no_log => $no_log,
+    file   => shift,
 );
 
 while ( 1 ) { 
@@ -71,7 +73,7 @@ use constant OUT_RS => "\n";     # ouput record separator
 # ----------------------------------------------------
 sub init {
     my ( $self, $config ) = @_;
-    $self->params( $config, qw[ file user ] );
+    $self->params( $config, qw[ file user no_log ] );
     return $self;
 }
 
@@ -80,6 +82,18 @@ sub file {
     my $self = shift;
     $self->{'file'} = shift if @_;
     return $self->{'file'} || '' 
+}
+
+# ----------------------------------------------------
+sub no_log { 
+    my $self = shift;
+    my $arg  = shift;
+    $self->{'no_log'} = $arg if defined $arg;
+
+    unless ( defined $self->{'no_log'} ) {
+        $self->{'no_log'} = 0;
+    }
+    return $self->{'no_log'};
 }
 
 # ----------------------------------------------------
@@ -114,16 +128,20 @@ sub log_filename {
 sub log_fh {
     my $self = shift;
 
-    unless ( $self->{'log_fh'} ) {
-        my $path = $self->log_filename or return;
-        my $fh = IO::Tee->new( \*STDOUT, ">$path" ) or return $self->error(
-            "Unable to open '$path': $!"
-        );
-        print $fh "Log file created '", scalar localtime, ".'\n";
-        $self->{'log_fh'} = $fh;
+    if ( $self->no_log ) {
+        return *STDOUT;
     }
-
-    return $self->{'log_fh'};
+    else {
+        unless ( $self->{'log_fh'} ) {
+            my $path = $self->log_filename or return;
+            my $fh = IO::Tee->new( \*STDOUT, ">$path" ) or return $self->error(
+                "Unable to open '$path': $!"
+            );
+            print $fh "Log file created '", scalar localtime, ".'\n";
+            $self->{'log_fh'} = $fh;
+        }
+        return $self->{'log_fh'};
+    }
 }
 
 # ----------------------------------------------------
@@ -140,9 +158,13 @@ sub term {
 # ----------------------------------------------------
 sub quit {
     my $self   = shift;
-    my $log_fh = $self->log_fh;
-    print $log_fh "Log file closed '", scalar localtime, ".'\n";
-    print "Log file:  ", $self->log_filename, "\nNamaste.\n"; 
+
+    if ( defined $self->{'log_fh'} ) {
+        my $log_fh = $self->log_fh;
+        print $log_fh "Log file closed '", scalar localtime, ".'\n";
+        print "Log file:  ", $self->log_filename, "\nNamaste.\n"; 
+    }
+
     exit(0);
 }
 
@@ -302,17 +324,21 @@ sub export_data {
     
     my $action  = $self->show_menu(
         title   => 'Data Export Formats',
-        prompt  => 'How do you want to export?',
+        prompt  => 'What do you want to export?',
         display => 'display',
         return  => 'action',
         data    => [
             { 
                 action  => 'export_as_sql',
-                display => 'SQL INSERT statements',
+                display => 'All Data as SQL INSERT statements',
             },
             { 
                 action  => 'export_as_text',
-                display => 'CMap import format',
+                display => 'Map Data in CMap import format',
+            },
+            { 
+                action  => 'export_correspondences',
+                display => 'Feature correspondences in CMap import format',
             },
         ]
     );
@@ -701,46 +727,7 @@ sub export_as_text {
         return;
     }
 
-    my $dir;
-    for ( ;; ) {
-        print "\nTo which directory should I write the output files?\n",
-            "['q' to quit, current dir (.) is default] ";
-        chomp( my $answer = <STDIN> );
-        $answer ||= '.';
-        return if $answer =~ m/^[qQ]/;
-
-        if ( -d $answer ) {
-            if ( -w _ ) {
-                $dir = $answer;
-                last;
-            }
-            else {
-                print "\n'$answer' is not writable by you.\n\n";
-                next;
-            }
-        }
-        elsif ( -f $answer ) {
-            print "\n'$answer' is not a directory.  Please try again.\n\n";
-            next;
-        }
-        else {
-            print "\n'$answer' does not exist.  Create? [Y/n] ";
-            chomp( my $response = <STDIN> );
-            $response ||= 'y';
-            if ( $response =~ m/^[Yy]/ ) {
-                eval { mkpath( $answer, 0, 0711 ) };
-                if ( my $err = $@ ) {
-                    print "I couldn't make that directory: $err\n\n";
-                    next;
-                }
-                else  {
-                    $dir = $answer;
-                    last;
-                }
-            }
-        }
-    } 
-
+    my $dir = _get_dir();
     my $map_sets = $db->selectall_arrayref(
         q[
             select   ms.map_set_id, 
@@ -772,10 +759,6 @@ sub export_as_text {
     my $excluded_fields = 
         @exclude_fields ? join(', ', @exclude_fields) : 'None';
 
-    print "Include feature correspondences? [Y/n] ";
-    chomp( my $export_corr = <STDIN> );
-    $export_corr = ( $export_corr =~ /^[Nn]/ ) ? 0 : 1;
-
     #
     # Confirm decisions.
     #
@@ -784,7 +767,6 @@ sub export_as_text {
         '  Map Sets               : ' . join(', ', @map_set_names),
         '  Feature Types          : ' . join(', ', @$feature_types),
         "  Exclude Fields         : $excluded_fields",
-        "  Export Correspondences : " . $export_corr ? "Yes" : "No",
         "  Directory              : $dir",
         "[Y/n] "
     );
@@ -859,55 +841,84 @@ sub export_as_text {
         
         close $fh;
     }
+}
+
+# ----------------------------------------------------
+sub export_correspondences {
+#
+# Exports feature correspondences in CMap import format.
+#
+    my $self   = shift;
+    my $db     = $self->db;
+    my $log_fh = $self->log_fh;
+
+    print "Include feature accession IDs? [Y/n] ";
+    chomp( my $export_corr_aid = <STDIN> );
+    $export_corr_aid = ( $export_corr_aid =~ /^[Nn]/ ) ? 0 : 1;
+
+    my $dir = _get_dir();
 
     #
-    # Feature correspondences.
+    # Confirm decisions.
     #
-    if ( $export_corr ) {
-        my $corr_file = "$dir/feature_correspondences.dat";
-        open my $fh, ">$corr_file" or die "Can't write to $corr_file: $!\n";
-        print $log_fh "Dumping feature correspondences to '$corr_file'\n";
-        my $sth = $db->prepare(
-            q[
-                select fc.feature_correspondence_id,
-                       fc.is_enabled,
-                       f1.accession_id as feature_aid1,
-                       f1.feature_name as feature_name1,
-                       f2.accession_id as feature_aid2,
-                       f2.feature_name as feature_name2
-                from   cmap_feature_correspondence fc,
-                       cmap_feature f1,
-                       cmap_feature f2
-                where  fc.feature_id1=f1.feature_id
-                and    fc.feature_id2=f2.feature_id
-            ]
-        );
-        $sth->execute;
+    print join("\n",
+        'OK to export feature correspondences?',
+        "  Export Accession IDs : " . ( $export_corr_aid ? "Yes" : "No" ),
+        "  Directory            : $dir",
+        "[Y/n] "
+    );
+    chomp( my $answer = <STDIN> );
+    return if $answer =~ /^[Nn]/;
 
-        @col_names = ( qw[ feature_name1 feature_name2 evidence ] );
-        print $fh join( OUT_FS, @col_names ), OUT_RS;
-        while ( my $fc = $sth->fetchrow_hashref ) {
-            my $evidences = $db->selectall_arrayref(
+    my $corr_file = "$dir/feature_correspondences.dat";
+    open my $fh, ">$corr_file" or die "Can't write to $corr_file: $!\n";
+    print $log_fh "Dumping feature correspondences to '$corr_file'\n";
+    my $sth = $db->prepare(
+        q[
+            select fc.feature_correspondence_id,
+                   fc.is_enabled,
+                   f1.accession_id as feature_accession_id1,
+                   f1.feature_name as feature_name1,
+                   f2.accession_id as feature_accession_id2,
+                   f2.feature_name as feature_name2
+            from   cmap_feature_correspondence fc,
+                   cmap_feature f1,
+                   cmap_feature f2
+            where  fc.feature_id1=f1.feature_id
+            and    fc.feature_id2=f2.feature_id
+        ]
+    );
+    $sth->execute;
+
+    my @col_names = ( 
+        map { !$export_corr_aid && $_ =~ /accession/ ? () : $_ }
+        qw[ 
+            feature_name1 
+            feature_accession_id1 
+            feature_name2 
+            feature_accession_id2
+            evidence 
+        ] 
+    );
+
+    print $fh join( OUT_FS, @col_names ), OUT_RS;
+    while ( my $fc = $sth->fetchrow_hashref ) {
+        $fc->{'evidence'} = join(',', @{
+            $db->selectcol_arrayref(
                 q[
-                    select ce.score, 
-                           et.evidence_type as evidence
+                    select et.evidence_type
                     from   cmap_correspondence_evidence ce,
                            cmap_evidence_type et
                     where  ce.feature_correspondence_id=?
                     and    ce.evidence_type_id=et.evidence_type_id
                 ],
-                { Columns => {} },
+                {},
                 ( $fc->{'feature_correspondence_id'} )
-            );
+            )
+        });
 
-            for my $evidence ( @$evidences ) {
-                print $fh join( OUT_FS, 
-                    $fc->{'feature_name1'}, 
-                    $fc->{'feature_name1'},
-                    $evidence->{'evidence'}
-                ), OUT_RS;
-            }
-        }
+
+        print $fh join( OUT_FS, map { $fc->{ $_ } } @col_names ), OUT_RS;
     }
 }
 
@@ -930,8 +941,8 @@ sub import_correspondences {
         $file = '' if $answer =~ m/^[Nn]/;
     }
 
-    while ( ! -r $file ) {
-        print "Unable to read '$file'.\n" if $file;
+    while ( ! -r $file || ! -f _ ) {
+        print "Unable to read '$file' or not a regular file.\n" if $file;
         $file =  $term->readline( 'Where is the file? [q to quit] ');
         $file =~ s/^\s*|\s*$//g;
         return if $file =~ m/^[Qq]/;
@@ -1020,8 +1031,8 @@ sub import_data {
         $file = '' if $answer =~ m/^[Nn]/;
     }
 
-    while ( ! -r $file ) {
-        print "Unable to read '$file'.\n" if $file;
+    while ( ! -r $file || ! -f _ ) {
+        print "Unable to read '$file' or not a regular file.\n" if $file;
         $file =  $term->readline( 'Where is the file? [q to quit] ');
         $file =~ s/^\s*|\s*$//g;
         return if $file =~ m/^[Qq]/;
@@ -1314,6 +1325,53 @@ sub show_menu {
 }
 
 # ----------------------------------------------------
+sub _get_dir {
+#
+# Get a directory for writing files to.
+#
+    my $dir;
+    for ( ;; ) {
+        print "\nTo which directory should I write the output files?\n",
+            "['q' to quit, current dir (.) is default] ";
+        chomp( my $answer = <STDIN> );
+        $answer ||= '.';
+        return if $answer =~ m/^[qQ]/;
+
+        if ( -d $answer ) {
+            if ( -w _ ) {
+                $dir = $answer;
+                last;
+            }
+            else {
+                print "\n'$answer' is not writable by you.\n\n";
+                next;
+            }
+        }
+        elsif ( -f $answer ) {
+            print "\n'$answer' is not a directory.  Please try again.\n\n";
+            next;
+        }
+        else {
+            print "\n'$answer' does not exist.  Create? [Y/n] ";
+            chomp( my $response = <STDIN> );
+            $response ||= 'y';
+            if ( $response =~ m/^[Yy]/ ) {
+                eval { mkpath( $answer, 0, 0711 ) };
+                if ( my $err = $@ ) {
+                    print "I couldn't make that directory: $err\n\n";
+                    next;
+                }
+                else  {
+                    $dir = $answer;
+                    last;
+                }
+            }
+        }
+    } 
+    return $dir;
+}
+
+# ----------------------------------------------------
 # Life is full of misery, loneliness, and suffering --
 # and it's all over much too soon.
 # Woody Allen
@@ -1327,12 +1385,13 @@ cmap_admin.pl - command-line CMap administrative tool
 
 =head1 SYNOPSIS
 
-  ./cmap_admin.pl [options|data_file]
+  ./cmap_admin.pl [options] [data_file]
 
   Options:
 
-    -h|help    Display help message
-    -v|version Display version
+    -h|help     Display help message
+    -v|version  Display version
+    --no-log    Don't keep a log of actions
 
 =head1 DESCRIPTION
 
@@ -1343,44 +1402,89 @@ reloading cache tables) and tasks which require interaction with
 file-based data (i.e., map coordinates, feature correspondences,
 etc.).
 
-There are six actions you can take with this tool:
+The output of the actions taken by the program (i.e., statements of
+what happens, not the menu items, etc.) will be tee'd between your
+terminal and a log file unless you pass the "--no-log" argument on the
+command line.  The log will be placed into your home directory and
+will be called "cmap_admin_log.x" where "x" is a number starting at
+zero and ascending by one for each time you run the program (until you
+delete existing logs, of course).  The name of the log file will be
+echoed to you when you exit the program.
+
+B<Note:> All the questions asked in cmap_admin.pl can be answered
+either by choosing the number of the answer from a pre-defined list or
+by typing something (usually a file path, notice that you can use
+tab-completion if your system supports it).  When the answer must be
+selected from a list and the answer is required, you will not be
+allowed to leave the question until you have selected an answer from
+the list.  Occassionally the answer is not required, so you can just
+hit "<Return>."  Sometimes more than one answer is acceptable, so you
+should specify all your choices on one line, separating the numbers
+with spaces.  Finally, sometimes a question is never asked if there is
+only one possible answer; the one answer is automatically taken and
+processing moves on to the next question.
+
+There are seven actions you can take with this tool:
 
 =over 4
 
-=item 1 Create new map set
+=item 1 
+
+Change data source
+
+Whenever the "Main Menu" is displayed, the current data source is
+displayed.  If you have configured CMap to work with multiple data
+sources, you can use this option to change which one you are currently
+using.  The one defined as the "default" will always be chosen when
+you first begin. See the ADMINISTRATION document for more information
+on creating multiple data sources.
+
+=item 2
+
+Create new map set
 
 This is the only feature duplicated with the web admin tool.  This is
 a very simple implementation, however, meant strictly as a convenience
-when loading new data sets.  You can choose the map type and species
-and give the map set a name, but that's about it.
+when loading new data sets.  You can only specify the species, map
+type, long and short names.  Everything else about the map set must be
+edited with the web admin tool.
 
-=item 2 Import data for existing map set
 
-This option will import the feature coordinates for a new map.  For
-specifics on how the data should be formatted, see the documentation
-("perldoc") for Bio::GMOD::CMap::Admin::Import.  The file can either
-be given as an argument to this script or you can specify the file's
-location when asked.  The map set for which you're importing the data
-must already exist, hence the first item in this list.  Simply answer
-the questions about which map set is the one for the data you have,
-then confirm your choices.
+=item 2 
 
-=item 3 Make name-based correspondences
+Import data for existing map set
+
+This allows you to import the feature data for a map set. The map set
+may be one you just created and is empty or one that already has data
+associated with it.  If the latter, you may choose to remove all the
+data currently in the map set when isn't updated with the new data you
+are importing.  For specifics on how the data should be formatted, see
+the documentation ("perldoc") for Bio::GMOD::CMap::Admin::Import.  The
+file containing the feature data can either be given as an argument to
+this script or you can specify the file's location when asked.  
+
+=item 3 
+
+Make name-based correspondences
 
 This option will create correspondences between any two features with
 the same "feature_name" or "alternate_name," irrespective of case.  It
 is possible to choose to make the correspondences from only one map
-set (for the times when you bring in just one new map set, you don't
-want to rerun this for the whole database -- it can take a long
-time!).
+set (for the occasions when you bring in just one new map set, you
+don't want to rerun this for the whole database -- it can take a long
+time).
 
-=item 4 Import feature correspondences
+=item 4 
+
+Import feature correspondences
 
 Choose this option to import a file containing correspondences between
 your features.  For more information on the format of this file, see
 the documentation for Bio::GMOD::CMap::Admin::ImportCorrespondences.
 
-=item 5 Reload correspondence matrix
+=item 5 
+
+Reload correspondence matrix
 
 You should choose this option whenever you've altered the number of
 correspondences in the database.  This will truncate the
@@ -1389,11 +1493,11 @@ comparison of every map set in the database.
 
 =item 6 Export data
 
-There are two ways to dump the data in CMap:
+There are three ways to dump the data in CMap:
 
 =over 4 
 
-=item 1 SQL INSERT statements
+=item 1 All Data as SQL INSERT statements
 
 This method creates an INSERT statement for every record in every
 table (or just those selected) a la "mysqldump."  This is meant to be
@@ -1404,26 +1508,36 @@ another database to mirror your current one.  You can also choose to
 add "TRUNCATE TABLE" statements just before the INSERT statements so
 as to erase any existing data.
 
-=item 2 Tab-delimited import format
+=item 2 Map data in CMap import format
 
-This method creates a separate file for each map set in the database
-an one for the feature correspondences.  The data is dumped to the
-same tab-delimited format used when importing.  You can choose to dump
-every map set or just particular ones, and you can choose to leave out
-certain fields (e.g., maybe you don't care to export your accession
-IDs).
+This method creates a separate file for each map set in the database.
+The data is dumped to the same tab-delimited format used when
+importing.  You can choose to dump every map set or just particular
+ones, and you can choose to I<leave out> certain fields (e.g., maybe
+you don't care to export your accession IDs).
+
+=item 3 Feature correspondence data in CMap import format
+
+This method dumps the feature correspondence data in the same
+tab-delimited format that is accepted for importing.  You can choose
+to export with or without the feature accession IDs.  If you choose to
+export feature accession IDs, it will affect how the importing of the
+data will work.  When accession IDs are present in the feature
+correspondence import file, only features with the specified accession
+IDs are used to create the correspondences, which is what you'll want
+if you're exporting your correspondences to another database which
+uses the same accession IDs for the same features as the source.  If,
+however, the accession ID can't be found while importing, a name
+lookup is used to find all the features with that name
+(case-insensitively), which is what would happen if the accession IDs
+weren't present at all.  In short, exporting with accession IDs is a
+Good Thing if the importing database has the same accession IDs
+(this was is much faster and more exact), but a very, very Bad Thing
+if the importing database has different accession IDs.
 
 =back
 
 =back
-
-The output of the actions taken by the program (i.e., statements of
-what happens, not the menu items, etc.) will be tee'd between your
-terminal and a log file.  The log will be placed into your home
-directory and will be called "cmap_admin_log.x" where "x" is a number
-starting at zero and ascending by one for each time you run the
-program (until you delete existing logs, of course).  The name of the
-log file will be echoed to you when you exit the program.
 
 =head1 AUTHOR
 
