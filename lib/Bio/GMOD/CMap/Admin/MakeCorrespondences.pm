@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.42 2004-08-04 04:26:06 mwz444 Exp $
+# $Id: MakeCorrespondences.pm,v 1.42.2.1 2004-10-27 22:59:40 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.42 $)[-1];
+$VERSION = (qw$Revision: 1.42.2.1 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -58,14 +58,11 @@ sub make_name_correspondences {
     );
     $self->Print("Making name-based correspondences.\n") unless $quiet;
 
-    my $expanded_correspondence_lookup 
-        = $self->config_data('expanded_correspondence_lookup'); 
     #
     # Normally we only create name-based correspondences between 
     # features of the same type, but this reads the configuration
     # file and adds in other allowed feature types.
     #
-print STDERR "$expanded_correspondence_lookup MAKE \n";
     my %add_name_correspondences;
     for my $line ( $self->config_data('add_name_correspondence') ) {
         my @feature_type_aids = split /\s+/, $line;
@@ -254,8 +251,6 @@ print STDERR "$expanded_correspondence_lookup MAKE \n";
                         feature_id2       => $f2->{'feature_id'},
                         evidence_type_aid => $evidence_type_aid,
 		                allow_update      => $allow_update,
-		                expanded_correspondence_lookup      
-                            => $expanded_correspondence_lookup,
                     ) or return $self->error( $admin->error );
 
                     $admin->insert_feature_correspondence_if_gt(1000);
