@@ -1,7 +1,8 @@
 package Bio::GMOD::CMap;
+
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.64 2004-10-30 07:19:12 mwz444 Exp $
+# $Id: CMap.pm,v 1.65 2004-11-05 06:29:21 mwz444 Exp $
 
 =head1 NAME
 
@@ -46,7 +47,7 @@ use base 'Class::Base';
 # ----------------------------------------------------
 sub init {
     my ( $self, $config ) = @_;
-    $self->config($config->{'config'}); 
+    $self->config( $config->{'config'} );
     $self->data_source( $config->{'data_source'} ) or return;
     return $self;
 }
@@ -62,24 +63,27 @@ Returns the cache directory.
 
 =cut
 
-    my $self   = shift;
-    my $config = $self->config or return;
+    my $self          = shift;
+    my $new_cache_dir = shift;
+    my $config        = $self->config or return;
 
+    if ( defined($new_cache_dir) ) {
+        $self->{'cache_dir'} = $new_cache_dir;
+    }
     unless ( defined $self->{'cache_dir'} ) {
-        unless($self->{'config'}){
+        unless ( $self->{'config'} ) {
             die "no configuration information\n";
         }
-    
-        my $cache_dir = $config->get_config('cache_dir') or return
-            $self->error('No cache directory defined in "'.
-            GLOBAL_CONFIG_FILE.'"');
+
+        my $cache_dir = $config->get_config('cache_dir')
+          or return $self->error(
+            'No cache directory defined in "' . GLOBAL_CONFIG_FILE . '"' );
 
         unless ( -d $cache_dir ) {
             eval { mkpath( $cache_dir, 0, 0700 ) };
             if ( my $err = $@ ) {
                 return $self->error(
-                    "Cache directory '$cache_dir' can't be created: $err"
-                );
+                    "Cache directory '$cache_dir' can't be created: $err" );
             }
         }
 
@@ -90,6 +94,7 @@ Returns the cache directory.
 }
 
 # ----------------------------------------------------
+
 =pod
 
 =head2 config
@@ -100,14 +105,14 @@ Returns configuration object.
 
 sub config {
 
-    my $self = shift;
-    my $newConfig =shift;
-    if ($newConfig){
-	$self->{'config'}=$newConfig;
+    my $self      = shift;
+    my $newConfig = shift;
+    if ($newConfig) {
+        $self->{'config'} = $newConfig;
     }
     unless ( defined $self->{'config'} ) {
         $self->{'config'} = Bio::GMOD::CMap::Config->new
-            or return Bio::GMOD::CMap::Config->error;
+          or return Bio::GMOD::CMap::Config->error;
     }
 
     return $self->{'config'};
@@ -124,9 +129,9 @@ Access configuration.
 
 =cut
 
-    my $self   = shift;
+    my $self = shift;
     my $config = $self->config or return;
-    $config->get_config( @_ );
+    $config->get_config(@_);
 }
 
 # ----------------------------------------------------
@@ -140,15 +145,15 @@ Return data from config about map type
 
 =cut
 
-    my $self      = shift;
-    my $map_type_aid  = shift;
-    my $attribute = shift;
-    my $config    = $self->config or return;
-    
-    if ( $attribute ) {
+    my $self         = shift;
+    my $map_type_aid = shift;
+    my $attribute    = shift;
+    my $config       = $self->config or return;
+
+    if ($attribute) {
         return $config->get_config('map_type')->{$map_type_aid}{$attribute};
     }
-    elsif ( $map_type_aid ) {
+    elsif ($map_type_aid) {
         return $config->get_config('map_type')->{$map_type_aid};
     }
     else {
@@ -167,19 +172,20 @@ Return data from config about feature type
 
 =cut
 
-    my $self         = shift;
+    my $self             = shift;
     my $feature_type_aid = shift;
-    my $attribute    = shift;
-    my $config       = $self->config or return;
+    my $attribute        = shift;
+    my $config           = $self->config or return;
 
-    if ( $attribute ) {
-        return $config->get_config('feature_type')->{$feature_type_aid}->{$attribute};
-    }
-    elsif ( $feature_type_aid ) {
+    if ($attribute) {
         return $config->get_config('feature_type')->{$feature_type_aid}
+          ->{$attribute};
+    }
+    elsif ($feature_type_aid) {
+        return $config->get_config('feature_type')->{$feature_type_aid};
     }
     else {
-        return $config->get_config('feature_type')
+        return $config->get_config('feature_type');
     }
 }
 
@@ -194,19 +200,20 @@ Return data from config about evidence type
 
 =cut
 
-    my $self          = shift;
+    my $self              = shift;
     my $evidence_type_aid = shift;
-    my $attribute     = shift;
-    my $config        = $self->config or return;
+    my $attribute         = shift;
+    my $config            = $self->config or return;
 
-    if ( $attribute ) {
-        return $config->get_config('evidence_type')->{$evidence_type_aid}->{$attribute};
-    }
-    elsif ( $evidence_type_aid ) {
+    if ($attribute) {
         return $config->get_config('evidence_type')->{$evidence_type_aid}
+          ->{$attribute};
     }
-    else{
-        $config->get_config('evidence_type')
+    elsif ($evidence_type_aid) {
+        return $config->get_config('evidence_type')->{$evidence_type_aid};
+    }
+    else {
+        $config->get_config('evidence_type');
     }
 }
 
@@ -229,22 +236,22 @@ Basically a front for set_config()
     # If passed a new data source, force a reconnect.
     # This may slow things down.
     #
-    if ( $arg ) {
-        $config->set_config( $arg ) or return $self->error( 
-            "Couldn't set data source to '$arg': " . $config->error
-        );
+    if ($arg) {
+        $config->set_config($arg)
+          or return $self->error(
+            "Couldn't set data source to '$arg': " . $config->error );
         $self->{'data_source'} = $config->get_config('database')->{'name'};
         if ( defined $self->{'db'} ) {
             my $db = $self->db;
             $db->disconnect;
             $self->{'db'} = undef;
         }
-      
+
     }
 
     unless ( $self->{'data_source'} ) {
         $self->{'data_source'} = $config->get_config('database')->{'name'};
-    }  
+    }
 
     return $self->{'data_source'} || '';
 }
@@ -265,19 +272,17 @@ Returns all the data souces defined in the configuration files.
 
     unless ( defined $self->{'data_sources'} ) {
         my @data_sources_result;
-        
-        $self->data_source() unless($self->{'data_source'});
-        
+
+        $self->data_source() unless ( $self->{'data_source'} );
+
         my $ok = 0;
-        
+
         if ( my $current = $self->{'data_source'} ) {
-            foreach my $config_name ( 
-                @{ $config->get_config_names }
-            ) {
+            foreach my $config_name ( @{ $config->get_config_names } ) {
                 my $source = $config->get_config( 'database', $config_name );
                 if ( $current && $source->{'name'} eq $current ) {
                     $source->{'is_current'} = 1;
-                    $ok                     = 1;
+                    $ok = 1;
                 }
                 else {
                     $source->{'is_current'} = 0;
@@ -289,10 +294,10 @@ Returns all the data souces defined in the configuration files.
 
         die "No database defined as default\n" unless ($ok);
 
-        $self->{'data_sources'} = 
-            [ sort { $a->{'name'} cmp $b->{'name'} } @data_sources_result ];
+        $self->{'data_sources'} =
+          [ sort { $a->{'name'} cmp $b->{'name'} } @data_sources_result ];
 
-    } 
+    }
 
     if ( @{ $self->{'data_sources'} } ) {
         return $self->{'data_sources'};
@@ -319,8 +324,8 @@ Returns a database handle.  This is the only way into the database.
     return unless $db_name;
 
     unless ( defined $self->{'db'} ) {
-        my $config = $config->get_config('database') or 
-            return $self->error('No database configuration options defined');
+        my $config = $config->get_config('database')
+          or return $self->error('No database configuration options defined');
 
         #
         # If more than one datasource is defined, try to find either
@@ -329,12 +334,12 @@ Returns a database handle.  This is the only way into the database.
         my $db_config;
         if ( ref $config eq 'ARRAY' ) {
             my $default;
-            for my $section ( @$config ) {
-                $default = $section if $section->{'is_default'}; 
+            for my $section (@$config) {
+                $default = $section if $section->{'is_default'};
                 if ( $db_name && $section->{'name'} eq $db_name ) {
                     $db_config = $section;
                     last;
-                } 
+                }
             }
             $db_config = $default unless defined $db_config;
         }
@@ -345,15 +350,15 @@ Returns a database handle.  This is the only way into the database.
             return $self->error('DB config not array or hash');
         }
 
-        return $self->error("Couldn't determine database info") unless 
-            defined $db_config;
+        return $self->error("Couldn't determine database info")
+          unless defined $db_config;
 
         my $datasource = $db_config->{'datasource'}
-            or $self->error('No database source defined');
-        my $user       = $db_config->{'user'}
-            or $self->error('No database user defined');
-        my $password   = $db_config->{'password'} || '';
-        my $options    = {
+          or $self->error('No database source defined');
+        my $user = $db_config->{'user'}
+          or $self->error('No database user defined');
+        my $password = $db_config->{'password'} || '';
+        my $options = {
             AutoCommit       => 1,
             FetchHashKeyName => 'NAME_lc',
             LongReadLen      => 3000,
@@ -362,16 +367,14 @@ Returns a database handle.  This is the only way into the database.
         };
 
         eval {
-            $self->{'db'} = DBI->connect( 
-                $datasource, $user, $password, $options 
-            );
+            $self->{'db'} =
+              DBI->connect( $datasource, $user, $password, $options );
         };
 
         if ( $@ || !defined $self->{'db'} ) {
             my $error = $@ || $DBI::errstr;
-            return $self->error( 
-                "Can't connect to data source '$db_name': $error" 
-            );
+            return $self->error(
+                "Can't connect to data source '$db_name': $error" );
         }
     }
 
@@ -380,7 +383,7 @@ Returns a database handle.  This is the only way into the database.
 
 # ----------------------------------------------------
 sub aggregate {
-                                                                                
+
 =pod
                                                                                 
 =head2 aggregate
@@ -396,12 +399,12 @@ The default is 1.
     my $val  = shift;
     $self->{'aggregate'} = $val if defined $val;
     $self->{'aggregate'} = 1 unless defined $self->{'aggregate'};
-    return $self->{'aggregate'}; 
+    return $self->{'aggregate'};
 }
 
 # ----------------------------------------------------
 sub magnify_all {
-                                                                                
+
 =pod
                                                                                 
 =head2 magnify_all
@@ -416,14 +419,15 @@ The default is 1.
     my $self = shift;
     my $val  = shift;
     $self->{'magnify_all'} = $val if defined($val);
+
     # Don't allow Zero as a value
     $self->{'magnify_all'} = 1 unless $self->{'magnify_all'};
-    return $self->{'magnify_all'}; 
+    return $self->{'magnify_all'};
 }
 
 # ----------------------------------------------------
 sub scale_maps {
-                                                                                
+
 =pod
                                                                                 
 =head2 scale_maps
@@ -439,7 +443,7 @@ The default is 1.
     my $val  = shift;
     $self->{'scale_maps'} = $val if defined $val;
     $self->{'scale_maps'} = 1 unless defined $self->{'scale_maps'};
-    return $self->{'scale_maps'}; 
+    return $self->{'scale_maps'};
 }
 
 # ----------------------------------------------------
@@ -455,12 +459,13 @@ Returns a handle to the data module.
 
     my $self = shift;
 
-    unless ( $self->{'data_module'} ) { 
-        $self->{'data_module'} =  Bio::GMOD::CMap::Data->new(
-            data_source        => $self->data_source, 
-            config             => $self->config,
-            aggregate          => $self->aggregate,
-        ) or $self->error( Bio::GMOD::CMap::Data->error );
+    unless ( $self->{'data_module'} ) {
+        $self->{'data_module'} = Bio::GMOD::CMap::Data->new(
+            data_source => $self->data_source,
+            config      => $self->config,
+            aggregate   => $self->aggregate,
+          )
+          or $self->error( Bio::GMOD::CMap::Data->error );
     }
 
     return $self->{'data_module'};
@@ -483,7 +488,7 @@ Retrieves the attributes attached to a database object.
     my $order_by   = shift || 'display_order,attribute_name';
     my $db         = $self->db or return;
     if ( !$order_by || $order_by eq 'display_order' ) {
-        $order_by  = 'display_order,attribute_name';
+        $order_by = 'display_order,attribute_name';
     }
 
     return $db->selectall_arrayref(
@@ -522,7 +527,7 @@ Retrieves the xrefs attached to a database object.
     my $order_by   = shift || 'display_order,xref_name';
     my $db         = $self->db or return;
     if ( !$order_by || $order_by eq 'display_order' ) {
-        $order_by  = 'display_order,xref_name';
+        $order_by = 'display_order,xref_name';
     }
 
     return $db->selectall_arrayref(
@@ -555,9 +560,9 @@ Given a table name and some objects, get the cross-references.
 =cut
 
     my ( $self, %args ) = @_;
-    my $table_name      = $args{'table_name'} or return;
-    my $objects         = $args{'objects'};
-    my $db              = $self->db or return;
+    my $table_name = $args{'table_name'} or return;
+    my $objects    = $args{'objects'};
+    my $db         = $self->db or return;
 
     return unless @{ $objects || [] };
 
@@ -569,11 +574,11 @@ Given a table name and some objects, get the cross-references.
             order by object_id, display_order, xref_name
         ],
         { Columns => {} },
-        ( $table_name )
+        ($table_name)
     );
 
     my ( %xref_specific, @xref_generic );
-    for my $xref ( @$xrefs ) {
+    for my $xref (@$xrefs) {
         if ( $xref->{'object_id'} ) {
             push @{ $xref_specific{ $xref->{'object_id'} } }, $xref;
         }
@@ -583,27 +588,27 @@ Given a table name and some objects, get the cross-references.
     }
 
     my $t = $self->template;
-    for my $o ( @$objects ) {
+    for my $o (@$objects) {
         for my $attr ( @{ $o->{'attributes'} || [] } ) {
-            my $attr_val  =  $attr->{'attribute_value'}   or next;
-            my $attr_name =  lc $attr->{'attribute_name'} or next;
-               $attr_name =~ tr/ /_/s;
-            push @{ $o->{'attribute'}{ $attr_name } }, 
-                $attr->{'attribute_value'};
+            my $attr_val  = $attr->{'attribute_value'}   or next;
+            my $attr_name = lc $attr->{'attribute_name'} or next;
+            $attr_name =~ tr/ /_/s;
+            push @{ $o->{'attribute'}{$attr_name} }, $attr->{'attribute_value'};
         }
 
         my @xrefs = @{ $xref_specific{ $o->{'object_id'} } || [] };
         push @xrefs, @xref_generic;
 
         my @processed;
-        for my $xref ( @xrefs ) {
+        for my $xref (@xrefs) {
             my $url;
             $t->process( \$xref->{'xref_url'}, { object => $o }, \$url );
 
-            push @processed, { 
+            push @processed,
+              {
                 xref_name => $xref->{'xref_name'},
                 xref_url  => $_,
-            } for map { $_ || () } split /\s+/, $url;
+              } for map { $_ || () } split /\s+/, $url;
         }
 
         $o->{'xrefs'} = \@processed;
@@ -622,143 +627,151 @@ Given information about the link, creates a url to cmap_viewer.
 =cut
 
     my ( $self, %args ) = @_;
-    my $prev_ref_species_aid  = $args{'prev_ref_species_aid'};
-    my $prev_ref_map_set_aid  = $args{'prev_ref_map_set_aid'};
-    my $ref_species_aid       = $args{'ref_species_aid'};
-    my $ref_map_set_aid       = $args{'ref_map_set_aid'};
-    my $ref_map_names         = $args{'ref_map_names'};
-    my $ref_map_start         = $args{'ref_map_start'};
-    my $ref_map_stop          = $args{'ref_map_stop'};
-    my $comparative_maps      = $args{'comparative_maps'};
-    my $highlight             = $args{'highlight'};
-    my $font_size             = $args{'font_size'};
-    my $image_size            = $args{'image_size'};
-    my $image_type            = $args{'image_type'};
-    my $label_features        = $args{'label_features'};
-    my $collapse_features     = $args{'collapse_features'};
-    my $aggregate             = $args{'aggregate'};
-    my $magnify_all           = $args{'magnify_all'};
-    my $flip                  = $args{'flip'};
-    my $min_correspondences   = $args{'min_correspondences'};
-    my $ref_map_aids          = $args{'ref_map_aids'};
-    my $feature_type_aids     = $args{'feature_type_aids'};
-    my $corr_only_feature_type_aids 
-                              = $args{'corr_only_feature_type_aids'};
-    my $ignored_feature_type_aids 
-                              = $args{'ignored_feature_type_aids'};
-    my $evidence_type_aids    = $args{'evidence_type_aids'};
-    my $ignored_evidence_type_aids 
-                              = $args{'ignored_evidence_type_aids'};
-    my $data_source           = $args{'data_source'} or return;
-    my $url                   = $args{'url'};
-    $url                     .= '?' unless $url =~ /\?$/;
+    my $prev_ref_species_aid        = $args{'prev_ref_species_aid'};
+    my $prev_ref_map_set_aid        = $args{'prev_ref_map_set_aid'};
+    my $ref_species_aid             = $args{'ref_species_aid'};
+    my $ref_map_set_aid             = $args{'ref_map_set_aid'};
+    my $ref_map_names               = $args{'ref_map_names'};
+    my $ref_map_start               = $args{'ref_map_start'};
+    my $ref_map_stop                = $args{'ref_map_stop'};
+    my $comparative_maps            = $args{'comparative_maps'};
+    my $highlight                   = $args{'highlight'};
+    my $font_size                   = $args{'font_size'};
+    my $image_size                  = $args{'image_size'};
+    my $image_type                  = $args{'image_type'};
+    my $label_features              = $args{'label_features'};
+    my $collapse_features           = $args{'collapse_features'};
+    my $aggregate                   = $args{'aggregate'};
+    my $magnify_all                 = $args{'magnify_all'};
+    my $flip                        = $args{'flip'};
+    my $min_correspondences         = $args{'min_correspondences'};
+    my $ref_map_aids                = $args{'ref_map_aids'};
+    my $feature_type_aids           = $args{'feature_type_aids'};
+    my $corr_only_feature_type_aids = $args{'corr_only_feature_type_aids'};
+    my $ignored_feature_type_aids   = $args{'ignored_feature_type_aids'};
+    my $evidence_type_aids          = $args{'evidence_type_aids'};
+    my $ignored_evidence_type_aids  = $args{'ignored_evidence_type_aids'};
+    my $data_source                 = $args{'data_source'} or return;
+    my $url                         = $args{'url'};
+    $url .= '?' unless $url =~ /\?$/;
 
     ###Required Fields
-    unless(defined($ref_map_set_aid) 
-        and defined($data_source)){
+    unless (defined($ref_map_set_aid)
+        and defined($data_source) )
+    {
         return '';
-    } 
+    }
     $url .= "ref_map_set_aid=$ref_map_set_aid;";
     $url .= "data_source=$data_source;";
 
     ### optional
     $url .= "ref_species_aid=$ref_species_aid;"
-        if defined($ref_species_aid);
-    $url .= "prev_ref_species_aid=$prev_ref_species_aid;" 
-        if defined($prev_ref_species_aid);
-    $url .= "prev_ref_map_set_aid=$prev_ref_map_set_aid;" 
-        if defined($prev_ref_map_set_aid);
-    $url .= "ref_map_start=$ref_map_start;" 
-        if defined($ref_map_start);
-    $url .= "ref_map_stop=$ref_map_stop;" 
-        if defined($ref_map_stop);
-    $url .= "highlight=".uri_escape($highlight).";" 
-        if defined($highlight);
-    $url .= "font_size=$font_size;" 
-        if defined($font_size);
-    $url .= "image_size=$image_size;" 
-        if defined($image_size);
-    $url .= "image_type=$image_type;" 
-        if defined($image_type);
-    $url .= "label_features=$label_features;" 
-        if defined($label_features);
-    $url .= "collapse_features=$collapse_features;" 
-        if defined($collapse_features);
-    $url .= "aggregate=$aggregate;" 
-        if defined($aggregate);
-    $url .= "magnify_all=$magnify_all;" 
-        if defined($magnify_all);
-    $url .= "flip=$flip;" 
-        if defined($flip);
-    $url .= "min_correspondences=$min_correspondences;" 
-        if defined($min_correspondences);
-    
-#multi
-    if ($ref_map_aids and %$ref_map_aids){
+      if defined($ref_species_aid);
+    $url .= "prev_ref_species_aid=$prev_ref_species_aid;"
+      if defined($prev_ref_species_aid);
+    $url .= "prev_ref_map_set_aid=$prev_ref_map_set_aid;"
+      if defined($prev_ref_map_set_aid);
+    $url .= "ref_map_start=$ref_map_start;"
+      if defined($ref_map_start);
+    $url .= "ref_map_stop=$ref_map_stop;"
+      if defined($ref_map_stop);
+    $url .= "highlight=" . uri_escape($highlight) . ";"
+      if defined($highlight);
+    $url .= "font_size=$font_size;"
+      if defined($font_size);
+    $url .= "image_size=$image_size;"
+      if defined($image_size);
+    $url .= "image_type=$image_type;"
+      if defined($image_type);
+    $url .= "label_features=$label_features;"
+      if defined($label_features);
+    $url .= "collapse_features=$collapse_features;"
+      if defined($collapse_features);
+    $url .= "aggregate=$aggregate;"
+      if defined($aggregate);
+    $url .= "magnify_all=$magnify_all;"
+      if defined($magnify_all);
+    $url .= "flip=$flip;"
+      if defined($flip);
+    $url .= "min_correspondences=$min_correspondences;"
+      if defined($min_correspondences);
+
+    #multi
+    if ( $ref_map_aids and %$ref_map_aids ) {
         my @ref_strs;
-        foreach my $ref_map_aid (keys(%$ref_map_aids)){
-            if (defined($ref_map_aids->{'start'})
-                or defined($ref_map_aids->{'stop'})){
-                push @ref_strs, $ref_map_aid.'['
-                    . $ref_map_aids->{'start'}.'*'
-                    . $ref_map_aids->{'stop'}.'x'
-                    . $ref_map_aids->{'magnify'}
-                    .']';
+        foreach my $ref_map_aid ( keys(%$ref_map_aids) ) {
+            if (   defined( $ref_map_aids->{'start'} )
+                or defined( $ref_map_aids->{'stop'} ) )
+            {
+                push @ref_strs,
+                  $ref_map_aid . '['
+                  . $ref_map_aids->{'start'} . '*'
+                  . $ref_map_aids->{'stop'} . 'x'
+                  . $ref_map_aids->{'magnify'} . ']';
             }
-            else{
+            else {
                 push @ref_strs, $ref_map_aid;
             }
         }
-        $url .= "ref_map_aids=".join(',',@ref_strs).";";
+        $url .= "ref_map_aids=" . join( ',', @ref_strs ) . ";";
     }
 
-    $url .= "ref_map_names=$ref_map_names" 
-        if defined($ref_map_names);
+    $url .= "ref_map_names=$ref_map_names"
+      if defined($ref_map_names);
 
-    if ($comparative_maps and %$comparative_maps){
+    if ( $comparative_maps and %$comparative_maps ) {
         my @strs;
-        foreach my $slot_no (keys(%$comparative_maps)){
-            my $map=$comparative_maps->{$slot_no};
+        foreach my $slot_no ( keys(%$comparative_maps) ) {
+            my $map = $comparative_maps->{$slot_no};
             for my $field (qw[ maps map_sets ]) {
-                next unless (defined($map->{$field}));
-                foreach my $aid (keys %{$map->{$field}}){
-                    if ($field eq 'maps'){
-                        push @strs, 
-                            $slot_no
+                next unless ( defined( $map->{$field} ) );
+                foreach my $aid ( keys %{ $map->{$field} } ) {
+                    if ( $field eq 'maps' ) {
+                        my $start =
+                          defined( $map->{$field}{$aid}{'start'} )
+                          ? $map->{$field}{$aid}{'start'}
+                          : '';
+                        my $stop =
+                          defined( $map->{$field}{$aid}{'stop'} )
+                          ? $map->{$field}{$aid}{'stop'}
+                          : '';
+                        my $mag =
+                          defined( $map->{$field}{$aid}{'mag'} )
+                          ? $map->{$field}{$aid}{'mag'}
+                          : 1;
+                        push @strs,
+                          $slot_no
                           . '%3dmap_aid%3d'
-                          . $aid.'['.$map->{$field}{$aid}{'start'}.'*'
-                          . $map->{$field}{$aid}{'stop'}.'x'
-                          . $map->{$field}{$aid}{'magnify'}
-                          .']';
+                          . $aid . '['
+                          . $start . '*'
+                          . $stop . 'x'
+                          . $mag . ']';
 
                     }
-                    else{
-                        push @strs, 
-                            $slot_no
-                          . '%3dmap_set_aid%3d'
-                          . $aid
+                    else {
+                        push @strs, $slot_no . '%3dmap_set_aid%3d' . $aid;
                     }
                 }
             }
         }
 
-        $url .= "comparative_maps=".join(':',@strs).";";
+        $url .= "comparative_maps=" . join( ':', @strs ) . ";";
     }
 
-    foreach my $aid (@$feature_type_aids){
-        $url .= "feature_type_".$aid."=2;";
+    foreach my $aid (@$feature_type_aids) {
+        $url .= "feature_type_" . $aid . "=2;";
     }
-    foreach my $aid (@$corr_only_feature_type_aids){
-        $url .= "feature_type_".$aid."=1;";
+    foreach my $aid (@$corr_only_feature_type_aids) {
+        $url .= "feature_type_" . $aid . "=1;";
     }
-    foreach my $aid (@$ignored_feature_type_aids){
-        $url .= "feature_type_".$aid."=0;";
+    foreach my $aid (@$ignored_feature_type_aids) {
+        $url .= "feature_type_" . $aid . "=0;";
     }
-    foreach my $aid (@$evidence_type_aids){
-        $url .= "evidence_type_".$aid."=1;";
+    foreach my $aid (@$evidence_type_aids) {
+        $url .= "evidence_type_" . $aid . "=1;";
     }
-    foreach my $aid (@$ignored_evidence_type_aids){
-        $url .= "evidence_type_".$aid."=0;";
+    foreach my $aid (@$ignored_evidence_type_aids) {
+        $url .= "evidence_type_" . $aid . "=0;";
     }
 
     return $url;
@@ -776,7 +789,7 @@ This is a consistant way of naming the link name space
 =cut
 
     my $self = shift;
-    return 'imported_links_'.$self->data_source;
+    return 'imported_links_' . $self->data_source;
 }
 
 # ----------------------------------------------------
@@ -791,7 +804,8 @@ This is a consistant way of naming the cache levels.
 =cut
 
     my $self = shift;
-    return map {$self->config_data('database')->{'name'}."_L".$_} (1..4);
+    return
+      map { $self->config_data('database')->{'name'} . "_L" . $_ } ( 1 .. 4 );
 }
 
 # ----------------------------------------------------
@@ -811,7 +825,7 @@ Object clean-up when destroyed by Perl.
 }
 
 # ----------------------------------------------------
-sub template { 
+sub template {
 
 =pod
 
@@ -825,27 +839,25 @@ Returns a Template Toolkit object.
     my $config = $self->config or return;
 
     unless ( $self->{'template'} ) {
-        my $cache_dir    = $self->cache_dir or return;
-        my $template_dir = $config->get_config('template_dir') or return
-            $self->error(
-                'No template directory defined in "'.GLOBAL_CONFIG_FILE.'"'
-            )
-        ;
+        my $cache_dir = $self->cache_dir or return;
+        my $template_dir = $config->get_config('template_dir')
+          or return $self->error(
+            'No template directory defined in "' . GLOBAL_CONFIG_FILE . '"' );
         return $self->error("Template directory '$template_dir' doesn't exist")
-            unless -d $template_dir;
+          unless -d $template_dir;
 
-        $self->{'template'} = Template->new( 
-            COMPILE_EXT     => '.ttc',
-            COMPILE_DIR     => $cache_dir,
-            INCLUDE_PATH    => $template_dir,
-            FILTERS         => {
-                dump        => sub { Dumper( shift() ) },
-                nbsp        => sub { my $s=shift; $s =~ s{\s+}{\&nbsp;}g; $s },
-                commify     => \&Bio::GMOD::CMap::Utils::commify,
+        $self->{'template'} = Template->new(
+            COMPILE_EXT  => '.ttc',
+            COMPILE_DIR  => $cache_dir,
+            INCLUDE_PATH => $template_dir,
+            FILTERS      => {
+                dump => sub { Dumper( shift() ) },
+                nbsp => sub { my $s = shift; $s =~ s{\s+}{\&nbsp;}g; $s },
+                commify => \&Bio::GMOD::CMap::Utils::commify,
             },
-        ) or $self->error(
-            "Couldn't create Template object: ".Template->error()
-        );
+          )
+          or $self->error(
+            "Couldn't create Template object: " . Template->error() );
     }
 
     return $self->{'template'};
@@ -892,3 +904,4 @@ This library is free software;  you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 =cut
+
