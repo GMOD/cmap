@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.63 2004-03-26 20:42:10 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.64 2004-04-14 13:44:59 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.63 $)[-1];
+$VERSION = (qw$Revision: 1.64 $)[-1];
 
 #
 # Get command-line options
@@ -269,16 +269,15 @@ sub change_data_source {
 sub create_map_set {
     my $self = shift;
     my $db   = $self->db or die $self->error;
-    print "Creating new map set.\n";
- 
-    my $map_type = $self->show_menu(
+
+    my ($map_type_aid,$map_type) = $self->show_menu(
         title   => 'Available Map Types',
         prompt  => 'What type of map?',
         display => 'map_type',
-        return  => 'map_type',
+        return  => 'map_type_accession,map_type',
 	data    => $self->fake_selectall_arrayref(
 		$self->map_type_data(),
-		'map_type','map_type')
+		'map_type_accession','map_type')
         #data     => $db->selectall_arrayref(
         #    q[
         #        select   mt.map_type_id, mt.map_type
@@ -288,8 +287,8 @@ sub create_map_set {
         #    { Columns => {} },
         #),
     );
-    die "No map types! Please use the web admin tool to create.\n" 
-        unless $map_type;
+    die "No map types! Please use the config file to add some.\n" 
+        unless $map_type_aid;
 
     my ( $species_id, $common_name ) = $self->show_menu(
         title   => 'Available Species',
@@ -318,7 +317,7 @@ sub create_map_set {
     print "Accession ID (optional): ";
     chomp( my $map_set_aid = <STDIN> );
     
-    my $map_color=$self->map_type_data($map_type,'color') || 
+    my $map_color=$self->map_type_data($map_type_aid,'color') || 
         $self->config_data("map_color");
     
     $map_color  = $self->show_question(
@@ -327,7 +326,7 @@ sub create_map_set {
         valid_hash => COLORS,
     );
     
-    my $map_shape=$self->map_type_data($map_type,'shape') || 
+    my $map_shape=$self->map_type_data($map_type_aid,'shape') || 
         'box';
 
     $map_shape  = $self->show_question(
@@ -336,7 +335,7 @@ sub create_map_set {
         valid_hash => VALID->{'map_shapes'},
     );
 
-    my $map_width=$self->map_type_data($map_type,'width') || 
+    my $map_width=$self->map_type_data($map_type_aid,'width') || 
         $self->config_data("map_width");
 
     $map_width  = $self->show_question(
@@ -344,8 +343,8 @@ sub create_map_set {
         default  => $map_width,
     );
 
-    my $map_units=$self->map_type_data($map_type,'map_units');
-    my $is_relational_map=$self->map_type_data($map_type,'is_relational_map');
+    my $map_units=$self->map_type_data($map_type_aid,'map_units');
+    my $is_relational_map=$self->map_type_data($map_type_aid,'is_relational_map');
 
     my $map_set_id = next_number(
         db           => $db,
@@ -364,7 +363,7 @@ sub create_map_set {
             insert
             into   cmap_map_set
                    ( map_set_id, accession_id, map_set_name, short_name,
-                     species_id, map_type, map_units, is_relational_map, 
+                     species_id, map_type_accession, map_units, is_relational_map, 
 		     color, shape, width
                    )
             values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
@@ -372,7 +371,7 @@ sub create_map_set {
         {},
         (
             $map_set_id, $map_set_aid, $map_set_name, $short_name,
-            $species_id, $map_type, $map_units, $is_relational_map,
+            $species_id, $map_type_aid, $map_units, $is_relational_map,
 	    $map_color, $map_shape, $map_width
         )
     );
@@ -1928,17 +1927,17 @@ sub import_tab_data {
     #
     # Get the map type.
     #
-    my $map_type = $self->show_menu(
+    my ($map_type,$map_type_aid) = $self->show_menu(
         title   => 'Available Map Types',
         prompt  => 'Please select a map type',
         display => 'map_type',
-        return  => 'map_type',
+        return  => 'map_type,map_type_accession',
 	data    => $self->fake_selectall_arrayref(
 		$self->map_type_data(),
-		'map_type','map_type'),
+		'map_type_accession','map_type'),
     );
-    do { print "No map types to select from.\n"; return } unless $map_type;
-
+    do { print "No map types to select from.\n"; return } unless $map_type_aid;
+print STDERR "$map_type_aid $map_type\n";
     #
     # Get the species.
     #
@@ -1953,11 +1952,11 @@ sub import_tab_data {
                 from     cmap_species s,
                          cmap_map_set ms
                 where    ms.species_id=s.species_id
-                and      ms.map_type=?
+                and      ms.map_type_accession=?
                 order by common_name
             ],
             { Columns => {} },
-            ( $map_type )
+            ( $map_type_aid )
         ),
     );
     do { print "No species to select from.\n"; return } unless $species_id;
@@ -1974,12 +1973,12 @@ sub import_tab_data {
             q[
                 select   ms.map_set_id, ms.map_set_name
                 from     cmap_map_set ms
-                where    ms.map_type_id=?
+                where    ms.map_type_accession=?
                 and      ms.species_id=?
                 order by map_set_name
             ],
             { Columns => {} },
-            ( $map_type, $species_id )
+            ( $map_type_aid, $species_id )
         ),
     );
     do { print "There are no map sets for that map type!\n"; return }
@@ -2012,7 +2011,7 @@ sub import_tab_data {
     $importer->import_tab(
         map_set_id => $map_set_id,
         fh         => $fh,
-        map_type   => $map_type,
+        map_type_accession   => $map_type_aid,
         log_fh     => $self->log_fh,
         overwrite  => $overwrite,
     ) or do { 
