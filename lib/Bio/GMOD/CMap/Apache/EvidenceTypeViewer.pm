@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::EvidenceTypeViewer;
 # vim: set ft=perl:
 
-# $Id: EvidenceTypeViewer.pm,v 1.5 2004-06-22 03:05:35 mwz444 Exp $
+# $Id: EvidenceTypeViewer.pm,v 1.5.4.1 2005-03-07 16:41:46 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.5.4.1 $)[-1];
 
 use Data::Pageset;
 use Bio::GMOD::CMap::Apache;
@@ -44,6 +44,10 @@ sub handler {
         pages_per_set    => $MAX_PAGES,
     } );
     $evidence_types = [ $pager->splice( $evidence_types ) ] if $returned;
+
+    for my $et ( @$evidence_types ) {
+        $self->object_plugin( 'evidence_type_info', $et );
+    }
 
     $INTRO ||= $self->config_data('evidence_type_info_intro') || '';
 
