@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Utils;
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.25.2.3 2004-05-12 16:33:01 kycl4rk Exp $
+# $Id: Utils.pm,v 1.25.2.4 2004-05-27 13:58:17 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,11 +22,12 @@ which are exported by default.
 =cut 
 
 use strict;
+use Bit::Vector;
 use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.25.2.3 $)[-1];
+$VERSION = (qw$Revision: 1.25.2.4 $)[-1];
 
 use base 'Exporter';
 
@@ -309,13 +310,14 @@ Special thanks to Noel Yap for suggesting this strategy.
         last if $available < $font_height;
 
         my $no_possible = int( $available / $font_height );
-        my $skip_val    = $no_possible < $no_present 
+        my $skip_val    = $no_present > $no_possible
             ? int( $no_present / $no_possible ) : 1
         ;
 
         for ( my $i = 0; $i < $no_present; $i += $skip_val ) {
             push @accepted, $labels->{ $priority }[ $i ];
         }
+
         $no_added++;
     }
 
@@ -329,6 +331,24 @@ Special thanks to Noel Yap for suggesting this strategy.
         @accepted;
 
     my $no_accepted = scalar @accepted;
+    my $no_possible = int( $map_height / $font_height );
+
+    #
+    # See if we can squeeze the labels into a smaller space,
+    # thereby placing the labels closer to their targets.
+    #
+#    if ( $no_accepted > 1 ) {
+#        my $feature_span = $accepted[-1]->{'target'} - $accepted[0]->{'target'};
+#        if ( 
+#            ( $feature_span < $map_height )
+#            &&
+#            ( ( $no_accepted * $font_height ) < $feature_span )
+#        ) {
+#            $map_height = $feature_span;
+#            $start_y    = $accepted[0]->{'target'};
+#        }
+#    }
+
     #
     # If there's only one label, put it right next to the one feature.
     #
@@ -336,20 +356,93 @@ Special thanks to Noel Yap for suggesting this strategy.
         my $label = $accepted[0];
         $label->{'y'} = $label->{'target'} - $font_height / 2;
     }
-    elsif ( $no_accepted > 1 ) {
-        #
-        # See if we can squeeze the labels into a smaller space,
-        # thereby placing the labels closer to their targets.
-        #
-        my $feature_span = $accepted[-1]->{'target'} - $accepted[0]->{'target'};
-        if ( 
-            ( $feature_span < $map_height )
-            &&
-            ( ( scalar @accepted * $font_height ) < $feature_span )
-        ) {
-            $map_height = $feature_span;
-        }
+    #
+    # If we took fewer than was possible, try to sort them nicely.
+    #
+    elsif ( $no_accepted > 1 && $no_accepted < ( $no_possible / 2 ) ) {
+        my $bin_size  = 3;
+        my $half_font = sprintf( "%d", $font_height / 2 );
+        my $no_bins   = sprintf( "%d", $map_height / $bin_size );
+        my $bins      = Bit::Vector->new( $no_bins );
+#        print STDERR "-----------------------------------------------\n",
+#            "bin size = '$bin_size', no bins = '$no_bins', ",
+#            " start = '$start_y'\n";
 
+        for my $label ( @accepted ) {
+            my $vtarget     = $label->{'target'} - $start_y;
+            my $low         = int( ( $vtarget - $half_font ) / $bin_size );
+            my $high        = int( ( $vtarget + $half_font ) / $bin_size );
+            my $low_bin     = int( ( $low  - $start_y ) / $bin_size );
+            my $high_bin    = int( ( $high - $start_y ) / $bin_size );
+            $low_bin = 0 if $low_bin < 0;
+
+#            print STDERR "\nbins = ", $bins->to_ASCII, "\n";
+#            print STDERR "$label->{text} ($label->{start_position}) ",
+#                "target = '$label->{target}, bins = ($low_bin, $high_bin)\n";
+
+            my ( $hmin, $hmax )  = $bins->Interval_Scan_inc( $low_bin );
+            my ( $lmin, $lmax )  = $low_bin > 1
+                ? $bins->Interval_Scan_dec( $low_bin - 1 ) : ();
+#            print STDERR "below = ($lmin, $lmax), above = ($hmin, $hmax)\n";
+
+            my $bin_span = $high_bin - $low_bin;
+            my $bins_occupied = $bin_span + 1;
+            my $diff = 0;
+            if ( ! defined $hmin ) {
+#                print STDERR "Nothing here, leaving alone\n";
+                ; # do nothing
+            }
+            elsif ( ! defined $lmin ) {
+                $diff        = $bins_occupied * $bin_size;
+                $high_bin    = $low_bin - 1;
+                $low_bin     = $high_bin - $bin_span;
+#                print STDERR "Nothing below, moving down\n";
+            }
+            elsif ( $hmin && $lmin ) {
+                my $hbins    = $hmax + $bin_span <= $no_bins
+                               ? abs( $low_bin - $hmax ) + 1 : undef;
+                my $lbins    = $low_bin - $lmax >= $bin_span ? $lmax :
+                    $lmin - $bin_span > 1 ? $lmin : undef;
+
+                if ( 
+                    ( ! defined $lbins ) 
+                    ||
+                    ( defined $lbins && defined $hbins && $hbins < $lbins )
+                ) {
+                    # move up
+                    $low_bin  += $hbins;
+                    $high_bin += $hbins;
+                    $diff      = $bin_size * $bins_occupied * $hbins;
+#                    print STDERR "Moving HIGH ($bin_size * $bins_occupied * $hbins)\n";
+                }
+                elsif ( defined $lbins ) {
+                    # move down
+                    $diff      = -( $bin_size * $bins_occupied * $lbins );
+                    $lbins    -= 1;
+                    $low_bin  -= $lbins;
+                    $high_bin -= $lbins;
+#                    print STDERR "Moving LOW ($bin_size * $bins_occupied * $lbins)\n";
+                }
+                else {
+                    # can't place?
+                    $low_bin  = undef;
+                    $high_bin = undef;
+                }
+            }
+
+#            print STDERR "chose bins = ($low_bin, $high_bin), diff = '$diff'\n";
+
+            if ( defined $low_bin && defined $high_bin ) {
+                $bins->Bit_On( $_ ) for $low_bin..$high_bin;
+            }
+
+            $label->{'y'} = $vtarget + $diff;
+        }
+    }
+    #
+    # If we used all available space, just space evenly.
+    #
+    else { # if ( $no_accepted >= $no_possible ) {
         #
         # Figure the gap to evenly space the labels in the space.
         #
@@ -359,6 +452,20 @@ Special thanks to Noel Yap for suggesting this strategy.
             $label->{'y'} = sprintf("%.2f", $start_y + ( $gap * $i++ ) );
         }
     }
+
+#    print STDERR "accepted = ", Dumper(\@accepted), "\n";
+
+#    else {
+#
+#        #
+#        # Figure the gap to evenly space the labels in the space.
+#        #
+#        my $gap = $map_height / ( $no_accepted - 1 );
+#        my $i   = 0;
+#        for my $label ( @accepted ) {
+#            $label->{'y'} = sprintf("%.2f", $start_y + ( $gap * $i++ ) );
+#        }
+#    }
 
     return \@accepted;
 }
