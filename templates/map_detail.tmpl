@@ -162,16 +162,12 @@
         <td>[% reference_map.map_name %]</td>
     </tr>
     <tr>
-        <th align="right">Map&nbsp;Units:</th>
-        <td>[% reference_map.map_units %]</td>
-    </tr>
-    <tr>
         <th align="right">Map&nbsp;Start:</th>
-        <td>[% reference_map.start_position | commify %]</td>
+        <td>[% reference_map.start_position | commify %] [% reference_map.map_units %]</td>
     </tr>
     <tr>
         <th align="right">Map&nbsp;Stop:</th>
-        <td>[% IF reference_map.stop_position.defined %][% reference_map.stop_position | commify %][% ELSE %]NULL[% END %]</td>
+        <td>[% IF reference_map.stop_position.defined %][% reference_map.stop_position | commify %][% ELSE %]NULL[% END %] [% reference_map.map_units %]</td>
     </tr>
     [% FOREACH att=reference_map.attributes %]
         [% NEXT UNLESS att.is_public %]
