@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.70.2.4 2004-06-11 18:49:02 kycl4rk Exp $
+# $Id: Map.pm,v 1.70.2.5 2004-06-14 16:20:13 kycl4rk Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.70.2.4 $)[-1];
+$VERSION = (qw$Revision: 1.70.2.5 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -756,7 +756,7 @@ Lays out the map.
                 $base_x  = $lane->{'furthest'} 
                     ? $label_side eq RIGHT
                         ? $lane->{'furthest'} + 2
-                        : $lane->{'furthest'} - 2
+                        : $lane->{'furthest'} - ( $map_width + 4 )
                     : $base_x
                 ;
             }
@@ -1228,10 +1228,11 @@ Lays out the map.
             for my $label ( @$accepted_labels ) {
                 my $text      = $label->{'text'};
                 my $label_y   = $label->{'y'};
+                my $label_len = $font_width * length( $text );
                 my $label_x   = $label_side eq RIGHT 
                     ? $base_x + $label_offset
-                    : $base_x - $label_offset - ($font_width * length($text));
-                my $label_end = $label_x + $font_width * length( $text );
+                    : $base_x - ( $label_offset + $label_len );
+                my $label_end = $label_x + $label_len;
                 my $color     = $label->{'has_corr'}
                     ? $feature_corr_color || $label->{'color'}
                     : $label->{'color'};
