@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Utils;
 
-# $Id: Utils.pm,v 1.14 2003-03-05 01:55:49 kycl4rk Exp $
+# $Id: Utils.pm,v 1.15 2003-03-13 01:24:53 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.14 $)[-1];
+$VERSION = (qw$Revision: 1.15 $)[-1];
 
 use base 'Exporter';
 
@@ -364,11 +364,15 @@ Given a result set, break it up into pages.
             : $limit_start + $page_size - 1;
         $data         = [ @$data[ $limit_start - 1 .. $limit_stop - 1 ] ];
     }
-    else {
+    elsif ( $no_elements ) {
         $limit_stop = $no_elements;
     }
+    else {
+        $limit_stop = 0;
+    }
 
-    my $no_pages = sprintf( "%.0f", ( $no_elements / $page_size ) + .5 );
+    my $no_pages = $no_elements
+        ? sprintf( "%.0f", ( $no_elements / $page_size ) + .5 ) : 0;
     my $step     = ( $no_pages > $max_pages ) 
         ? sprintf( "%.0f", ($no_pages/$max_pages) + .5 ) : 1;
     my $cur_page = int( ( $limit_start + 1 ) / $page_size ) + 1;
@@ -387,9 +391,11 @@ Given a result set, break it up into pages.
         push @pages, $page;
     }
 
-    push @pages, $cur_page unless $done;
-    push @pages, $no_pages unless $pages[-1] == $no_pages;
-    
+    if ( @pages ) {
+        push @pages, $cur_page unless $done;
+        push @pages, $no_pages unless $pages[-1] == $no_pages;
+    }
+        
     return {
         data        => $data,
         no_elements => $no_elements,
