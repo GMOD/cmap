@@ -48,7 +48,6 @@ CREATE TABLE cmap_correspondence_matrix (
   link_species_aid VARCHAR(20) DEFAULT '0' NOT NULL,
   no_correspondences INTEGER DEFAULT '0' NOT NULL
 );
-CREATE UNIQUE INDEX cmap_corresp_reference_map_aid ON cmap_correspondence_matrix (reference_map_aid,link_map_aid);
 
 /* # */
 /* #  Table structure for table 'cmap_dbxref'	*/

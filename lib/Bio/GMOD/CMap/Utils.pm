@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Utils;
 
-# $Id: Utils.pm,v 1.5 2002-09-13 23:47:04 kycl4rk Exp $
+# $Id: Utils.pm,v 1.6 2002-09-15 19:12:52 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use base 'Exporter';
 
@@ -301,6 +301,18 @@ Inserts a correspondence.
     );
 
     for my $vals ( @insert ) {
+        next if $db->selectrow_array(
+            q[
+                select count(*)
+                from   cmap_correspondence_lookup cl
+                where  cl.feature_id1=?
+                and    cl.feature_id2=?
+                and    cl.feature_correspondence_id=?
+            ],
+            {},
+            ( $vals->[0], $vals->[1], $feature_correspondence_id )
+        );
+
         $db->do(
             q[
                 insert
@@ -310,10 +322,7 @@ Inserts a correspondence.
                 values ( ?, ?, ? )
             ],
             {},
-            ( $vals->[0],
-              $vals->[1],
-              $feature_correspondence_id
-            )
+            ( $vals->[0], $vals->[1], $feature_correspondence_id )
         );
     }
     

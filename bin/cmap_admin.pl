@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.5 2002-09-12 22:07:41 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.6 2002-09-15 19:12:52 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION $BE_QUIET ];
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 #
 # Turn off output buffering.
@@ -354,26 +354,12 @@ sub import_data {
     # Ask whether to overwrite or append the data.
     #
     my $overwrite = 1;
-#    my $overwrite = $self->show_menu(
-#        title   => 'Overwrite/Append',
-#        prompt  => 'Do you wish to Overwrite or Append this data? ',
-#        display => 'display',
-#        return  => 'value',
-#        data    => [
-#            { value => 1, display => 'Overwrite' },
-#            { value => 0, display => 'Append'    },
-#        ],
-#    );
-
-    my $overwrite_yes_no = $overwrite ? 'Yes' : 'No';
-
     print join("\n",
         'OK to import?',
         "  File      : $file",
         "  Species   : $species",
         "  Map Type  : $map_type",
         "  Map Study : $map_set_name",
-        "  Overwrite : $overwrite_yes_no",
         "[Y/n] "
     );
     chomp( my $answer = <STDIN> );

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.4 2002-09-11 16:31:50 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.5 2002-09-15 19:12:52 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -28,7 +28,7 @@ $COLORS         = [ sort keys %{ +COLORS } ];
 $FEATURE_SHAPES = [ qw( box dumbbell line span ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.4 $)[-1];
+$VERSION        = (qw$Revision: 1.5 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -837,11 +837,12 @@ sub map_create {
 
 # ----------------------------------------------------
 sub map_edit {
-    my $self   = shift;
-    my $db     = $self->db;
-    my $apr    = $self->apr;
-    my $map_id = $apr->param('map_id');
-    my $sth    = $db->prepare(
+    my ( $self, %args ) = @_;
+    my $errors          = $args{'errors'};
+    my $db              = $self->db;
+    my $apr             = $self->apr;
+    my $map_id          = $apr->param('map_id');
+    my $sth             = $db->prepare(
         q[
             select map.map_id, 
                    map.accession_id, 
@@ -867,7 +868,10 @@ sub map_edit {
 
     return $self->process_template( 
         TEMPLATE->{'map_edit'}, 
-        { map => $map }
+        { 
+            map    => $map,
+            errors => $errors, 
+        }
     );
 }
 
@@ -1022,11 +1026,19 @@ sub map_update {
     my $self           = shift;
     my $db             = $self->db;
     my $apr            = $self->apr;
-    my $map_id         = $apr->param('map_id')         or die 'No map id';
-    my $accession_id   = $apr->param('accession_id')   or die 'No acc. id';
-    my $map_name       = $apr->param('map_name')       or die 'No map name';
-    my $start_position = $apr->param('start_position') or die 'No start';
-    my $stop_position  = $apr->param('stop_position')  or die 'No stop';
+    my @errors         = ();
+    my $map_id         = $apr->param('map_id')         
+        or push @errors, 'No map id';
+    my $accession_id   = $apr->param('accession_id')   
+        or push @errors, 'No accession id';
+    my $map_name       = $apr->param('map_name')       
+        or push @errors, 'No map name';
+    my $start_position = $apr->param('start_position');
+    push @errors, 'No start position' unless defined $start_position;
+    my $stop_position  = $apr->param('stop_position')  
+        or push @errors, 'No stop';
+
+    return $self->map_edit( errors => \@errors ) if @errors;
 
     my $sql = q[
         update cmap_map

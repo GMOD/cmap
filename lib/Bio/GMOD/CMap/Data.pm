@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.12 2002-09-13 23:47:04 kycl4rk Exp $
+# $Id: Data.pm,v 1.13 2002-09-15 19:12:52 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.12 $)[-1];
+$VERSION = (qw$Revision: 1.13 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -484,7 +484,7 @@ Returns the data for the correspondence matrix.
     }
 
     #
-    # Get all the map sets linkage groups for a given species.
+    # Get all the map sets for a given species.
     #
     my ( $maps, $map_sets );
     if ( $species_aid ) {
@@ -502,7 +502,7 @@ Returns the data for the correspondence matrix.
                          ms.short_name
             ],
             { Columns => {} },
-            ( $species_aid )
+            ( "$species_aid" )
         );
 
         my $map_sql = qq[
@@ -635,7 +635,7 @@ Returns the data for the correspondence matrix.
             ];
         }
 
-#            warn "ref map set sql =\n$map_set_sql\n";
+#        warn "ref map set sql =\n$map_set_sql\n";
         @reference_map_sets = @{ 
             $db->selectall_arrayref( $map_set_sql, { Columns => {} } )
         };
@@ -643,7 +643,7 @@ Returns the data for the correspondence matrix.
 
     #
     # If there's only only set, then pretend that the user selected 
-    # this one and expand the relationships to the linkage group level.
+    # this one and expand the relationships to the map level.
     #
     if ( $map_set_aid == '' && scalar @reference_map_sets == 1 ) {
         $map_set_aid = $reference_map_sets[0]->{'map_set_aid'};
@@ -654,11 +654,11 @@ Returns the data for the correspondence matrix.
 
     #
     # Select the relationships from the pre-computed table.
-    # If there's a map_study_id, then we should break down the 
-    # results by linkage group, else we sum it all up on map study ids.
-    # If there's both a map_study_id and a link_map_study_id, then we should
-    # break down the results by linkage group by linkage group, else we sum it
-    # all up on map study ids.
+    # If there's a map_set_id, then we should break down the 
+    # results by map, else we sum it all up on map set ids.
+    # If there's both a map_set_id and a link_map_set_id, then we should
+    # break down the results by map by map, else we sum it
+    # all up on map set ids.
     #
     my $select_sql;
     if ( $map_set_aid and $link_map_set_aid ) {
@@ -800,8 +800,9 @@ Returns the data for the correspondence matrix.
     # the entire map set.
     #
     my $link_map_set_sql;
-#    warn "link ms = $link_map_set_id, map type = $map_type\n";
-    if ( $map_set_aid && $link_map_set_aid && $link_map_can_be_reference ) {
+    if ( 
+        $map_set_aid && $link_map_set_aid && $link_map_can_be_reference 
+    ) {
         $link_map_set_sql = qq[
             select   map.map_id,
                      map.accession_id as map_aid,
@@ -866,7 +867,7 @@ Returns the data for the correspondence matrix.
         ;
     }
 
-#    warn "all map sets =\n", Dumper( @all_map_sets ), "\n";
+#    warn "all map sets =\n", Dumper( \@all_map_sets ), "\n";
 
     #
     # Figure out the number by type and species.
@@ -893,17 +894,22 @@ Returns the data for the correspondence matrix.
 
     #
     # Fill in the matrix with the reference set and all it's correspondences.
+    # Herein lies madness.
     #
     my ( @matrix, %no_by_species );
+#    warn "lookup = ", Dumper( \%lookup ), "\n";
     for my $map_set ( @reference_map_sets ) {
         my $map_aid       = $map_set->{'map_aid'} || 0;
         my $map_set_aid   = $map_set->{'map_set_aid'};
         my $species_aid   = $map_set->{'species_aid'};
         my $reference_aid = $map_aid || $map_set_aid;
+#        my $reference_aid = scalar @all_map_sets > 1
+#            ? $map_set_aid : $map_set_aid || $map_aid;
 
         $no_by_species{ $species_aid }++;
 
         for my $comp_map_set ( @all_map_sets ) {
+#            warn "comp map set = ", Dumper($comp_map_set), "\n";
             my $comp_map_set_aid = $comp_map_set->{'map_set_aid'};
             my $comp_map_aid     = $comp_map_set->{'map_aid'} || 0;
             my $comparative_aid  = $comp_map_aid || $comp_map_set_aid;
@@ -911,6 +917,7 @@ Returns the data for the correspondence matrix.
                 ? 'N/A'
                 : $lookup{ $reference_aid }{ $comparative_aid } || 0
             ;
+#            warn "correspondences = $correspondences\n";
 
             push @{ $map_set->{'correspondences'} }, {
                 map_set_aid => $comp_map_set_aid, 
