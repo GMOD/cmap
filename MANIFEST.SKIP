@@ -13,3 +13,5 @@ cmap_install.conf
 cmap.conf$
 Constants.pm$
 ^MANIFEST\.SKIP$
+^SIGNATURE.tmp$
+^cmap.*\.tar.gz$
