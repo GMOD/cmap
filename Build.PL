@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.21 2004-02-20 20:18:34 kycl4rk Exp $
+# $Id: Build.PL,v 1.22 2004-02-23 21:36:39 kycl4rk Exp $
 
 use strict;
 
@@ -42,7 +42,7 @@ my %ARGS = (
     },
     CACHE       => {
         desc    => 'Location for temporary image files',
-        default => catdir( 'htdocs', 'cmap', 'tmp' ),
+        default => catdir( 'tmp' ),
     },
 );
 
@@ -56,7 +56,9 @@ my $USAGE = join("\n",
         map { 
             sprintf("%10s: %-s\n\t\t(default: %s%s)\n", 
                 $_, $ARGS{$_}{'desc'}, 
-                $_ eq 'PREFIX' ? '' : '$PREFIX + ',
+                $_ eq 'PREFIX' ? ''
+                    : $_ eq 'CACHE' ? '$PREFIX + $HTDOCS + '
+                    : '$PREFIX + ',
                 $ARGS{$_}{'default'}
             ) 
         } 
@@ -110,18 +112,33 @@ if ( !%OPTIONS && -e INSTALL_CONF ) {
 # Make sure we have usable options.
 #
 if ( $OPTIONS{'PREFIX'} ) {
-    for my $option ( qw[ CONF CGIBIN TEMPLATES HTDOCS CACHE ] ) {
-        $OPTIONS{ $option } ||= $ARGS{ $option }{'default'};
-        $OPTIONS{ $option }   = catdir( 
-            $OPTIONS{'PREFIX'}, $OPTIONS{ $option } 
-        );
+    print "using PREFIX\n";
+    for my $option ( qw[ CONF CGIBIN TEMPLATES CACHE HTDOCS ] ) {
+        $OPTIONS{ $option } ||= $option eq 'CACHE'
+            ? catdir( 
+                $OPTIONS{'HTDOCS'} || $ARGS{'HTDOCS'}{'default'}, 
+                $ARGS{'CACHE'}{'default'} 
+            )
+            : $ARGS{ $option }{'default'}
+        ;
+
+        #
+        # Now add the default prefix
+        #
+        $OPTIONS{ $option } = catdir( $OPTIONS{'PREFIX'}, $OPTIONS{ $option } );
     }
 }
 else {
+    my $prefix = $ARGS{'PREFIX'}{'default'};
     for my $option ( qw[ CONF TEMPLATES CGIBIN HTDOCS CACHE ] ) {
-        $OPTIONS{ $option } ||= catdir( 
-            $ARGS{'PREFIX'}{'default'}, $ARGS{ $option }{'default'}
-        );
+        $OPTIONS{ $option } ||= $option eq 'CACHE'
+            ? catdir( 
+                $prefix, 
+                $ARGS{'HTDOCS'}{'default'}, 
+                $ARGS{ $option }{'default'} 
+            )
+            : catdir( $ARGS{'PREFIX'}{'default'}, $ARGS{ $option }{'default'} )
+        ;
     }
 }
 
@@ -213,10 +230,10 @@ for my $opt (
 #
 $install .= qq[
     unless ( -d '$OPTIONS{CACHE}' ) {
-        mkdir '$OPTIONS{CACHE}' or die 
+        mkdir '$OPTIONS{CACHE}' or warn 
             "Can't create image cache dir '$OPTIONS{CACHE}': \$!\\n";
     }
-    chmod 0777, '$OPTIONS{CACHE}' or die
+    chmod 0777, '$OPTIONS{CACHE}' or warn
         "Can't chmod image cache dir '$OPTIONS{CACHE}': \$!\\n";
 ];
 
