@@ -55,7 +55,7 @@
 
     <table width="100%">
         <tr>
-            <td colspan="8" align="center">
+            <td colspan="9" align="center">
                 [% SET pager_url="/cmap/admin?action=map_sets_view&order_by=${apr.param('order_by')}&species_id=${apr.param('species_id')}&map_type_id=${apr.param('map_type_id')}&is_enabled=${apr.param('is_enabled')}" %]
                 [% PROCESS pager.tmpl %]
             </td>
@@ -78,7 +78,7 @@
                 <td>[% ms.accession_id %]</td>
                 <td>[% ms.map_set_name %]</td>
                 <td>[% IF ms.is_enabled %]Yes[% ELSE %]No[% END %]</td>
-                <td>[% ms.no_maps %]</td>
+                <td align="right">[% ms.no_maps %]</td>
                 <td align="center">
                     <a href="admin?action=map_set_view;map_set_id=[% ms.map_set_id %]">View</a>
                 </td>

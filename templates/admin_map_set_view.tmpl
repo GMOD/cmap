@@ -110,7 +110,7 @@
 
     <table width="100%">
         <tr>
-            <td colspan="8" align="center">
+            <td colspan="9" align="center">
                 [% SET pager_url="/cmap/admin?action=map_set_view&map_set_id=${map_set.map_set_id}&order_by=${apr.param('order_by')}" %]
                 [% PROCESS pager.tmpl %]
             </td>
@@ -130,20 +130,20 @@
             <th>
                 <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];limit_start=[% apr.param('limit_start') %];order_by=stop_position">Stop</a>
             </th>
+            <th>
+                <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];limit_start=[% apr.param('limit_start') %];order_by=no_features">No. Features</a>
+            </th>
             <th colspan="3">&nbsp;</th>
         </tr>
         [% SET i=0 %]
         [% FOREACH map=map_set.maps %]
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
-                <td>[% map.accession_id   OR '&nbsp;' %]</td>
-                <td>[% map.map_name       OR '&nbsp;' %]</td>
-                <td>[% map.linkage_group  OR '&nbsp;' %]</td>
-                <td align="right">
-                    [% map.start_position %]
-                </td>
-                <td align="right">
-                    [% map.stop_position  %]
-                </td>
+                <td>[% map.accession_id   %]</td>
+                <td>[% map.map_name       %]</td>
+                <td>[% IF map.linkage_group.defined; map.linkage_group; ELSE; '&nbsp;'; END %]</td>
+                <td align="right">[% map.start_position %]</td>
+                <td align="right">[% map.stop_position  %]</td>
+                <td align="right">[% map.no_features  %]</td>
                 <td align="center">
                     <a href="admin?action=map_view;map_id=[% map.map_id %]">View</a>
                 </td>
