@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: profile-cmap-draw.pl,v 1.5 2004-02-10 22:26:50 kycl4rk Exp $
+# $Id: profile-cmap-draw.pl,v 1.6 2004-03-30 20:56:42 mwz444 Exp $
 
 =head1 NAME
 
@@ -42,6 +42,7 @@ use CGI;
 use Pod::Usage;
 use Bio::GMOD::CMap::Apache::MapViewer;
 use Bio::GMOD::CMap::Constants;
+use Benchmark;
 
 my ( $help, $datasource, $file, $url, $min_correspondences, $debug );
 GetOptions(
@@ -69,15 +70,18 @@ $url =~ s/^.*\?//; # isolate query string
 $url =~ s/\s*$//;  # remove trailing spaces
 
 my $q = CGI->new( $url );
-
+my $time_new_mapView = new Benchmark;
 my $viewer = Bio::GMOD::CMap::Apache::MapViewer->new( apr => $q )
     or die Bio::GMOD::CMap::Apache::MapViewer->error;
 
 eval { my $output = $viewer->handler( $q ) };
+my $time_after_eval = new Benchmark;
 
 if ( my $e = $@ || $viewer->error ) {
     print "Error: $e\n";
 }
+print STDERR "Total:           ".timestr(timediff($time_after_eval,$time_new_mapView))."\n";
+    
 
 print "Done\n";
 
