@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 
-# $Id: ImportCorrespondences.pm,v 1.10 2003-02-25 19:30:19 kycl4rk Exp $
+# $Id: ImportCorrespondences.pm,v 1.11 2003-03-13 01:27:13 kycl4rk Exp $
 
 =head1 NAME
 
@@ -26,6 +26,7 @@ tab-delimited file containing the following fields:
     feature_name2 *
     feature_accession_id2
     evidence *
+    is_enabled
 
 Only the starred fields are required.  The order of the fields is
 unimportant, and the order of the names of the features is, too, as
@@ -41,7 +42,7 @@ each of the two feature names, a correspondence will be created.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.10 $)[-1];
+$VERSION = (qw$Revision: 1.11 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -56,14 +57,18 @@ use base 'Bio::GMOD::CMap';
     feature_name2         => { is_required => 1, datatype => 'string' },
     feature_accession_id2 => { is_required => 0, datatype => 'string' },
     evidence              => { is_required => 1, datatype => 'string' },
+    is_enabled            => { is_required => 0, datatype => 'number' },
 );
 
 use constant FIELD_SEP => "\t"; # use tabs for field separator
+
 use constant STRING_RE => qr{\S+};    #qr{^[\w\s.()-]+$};
+
 use constant RE_LOOKUP => {
     string => STRING_RE,
     number => NUMBER_RE,
 };
+
 use constant FEATURE_SQL_BY_AID => q[
     select f.feature_id,
            f.feature_name,
@@ -84,6 +89,7 @@ use constant FEATURE_SQL_BY_AID => q[
     and    ms.map_type_id=mt.map_type_id
     and    ms.species_id=s.species_id
 ];
+
 use constant FEATURE_SQL_BY_NAME => q[
     select f.feature_id,
            f.feature_name,
@@ -181,8 +187,9 @@ sub import {
         for my $i ( 1, 2 ) {
             my $field_name     = "feature_name$i";
             my $aid_field_name = "feature_accession_id$i";
-            my $feature_name   = $record{ $field_name }     or next;
-            my $accession_id   = $record{ $aid_field_name } ||   '';
+            my $feature_name   = $record{ $field_name }     || '';
+            my $accession_id   = $record{ $aid_field_name } || '';
+            next unless $feature_name || $accession_id;
             my $upper_name     = uc $feature_name;
             my @feature_ids;
 
@@ -291,6 +298,9 @@ sub import {
             push @evidence_types, [ $evidence_type_id, $evidence ];
         }
 
+        my $is_enabled = $record{'is_enabled'};
+           $is_enabled = 1 unless defined $is_enabled;
+
         for my $feature1 ( @feature_ids1 ) {
             for my $feature2 ( @feature_ids2 ) {
                 if ( %map_set_ids ) {
@@ -307,6 +317,8 @@ sub import {
                         $feature1->{'feature_id'},
                         $feature2->{'feature_id'},
                         $evidence_type_id,
+                        '', # accession id
+                        $is_enabled,
                     ) or return $self->error( $admin->error );
 
                     my $fname1 = join('-', map { $feature1->{$_} }
