@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.22 2004-02-23 21:36:39 kycl4rk Exp $
+# $Id: Build.PL,v 1.23 2004-02-24 02:10:47 kycl4rk Exp $
 
 use strict;
 
@@ -9,14 +9,13 @@ if ( $@ =~ /Can't locate/ ) {
 }
 
 use CGI;
-use FindBin '$Bin';
+use Cwd;
 use File::Basename;
 use File::Find;
 use File::Path;
 use File::Spec::Functions;
 
-use constant INSTALL_CONF => 'cmap_install.conf';
-my $cmap_conf_file        =  catfile('conf', 'cmap.conf');
+my $install_conf = catfile( cwd(), 'cmap_install.conf' );
 
 my @ARGS = qw[ PREFIX CONF CGIBIN TEMPLATES HTDOCS CACHE ];
 my %ARGS = ( 
@@ -88,16 +87,16 @@ foreach ( @ARGV ) {
 #
 # See if previous config options exist.
 #
-if ( !%OPTIONS && -e INSTALL_CONF ) {
+if ( !%OPTIONS && -e $install_conf ) {
     my $yes = Module::Build->y_n( 
         "It looks like you have installed cmap before.\n".
-        "Should I use the settings in '". INSTALL_CONF . "'?",
+        "Should I use the settings in '". $install_conf . "'?",
         'y'
     );
 
     if ( $yes ) {
         print STDERR "Using previous settings for file paths.\n";
-        open F, INSTALL_CONF or die "Can't read ".INSTALL_CONF.": $!";
+        open F, ">$install_conf" or die "Can't read '$install_conf: $!\n";
         while ( <F> ) {
             chomp;
             next if /^\#/;
@@ -154,8 +153,7 @@ print "The following options will be used to install CMap:\n",
 #
 # Write out our current config options.
 #
-my $config = "$Bin/".INSTALL_CONF;
-open F,">$config" or warn "Can't open $config for writing: $!\n";
+open F,">$install_conf" or warn "Can't write '$install_conf': $!\n";
 print F "$_=$OPTIONS{$_}\n" for qw[ CONF CGIBIN TEMPLATES HTDOCS CACHE ];
 close F;
 
@@ -183,7 +181,7 @@ close INDEX;
 #
 # Make the text for copying the templates, CGI, and htdocs.
 #
-my $install;
+my ( $install, $installed_cmap_conf );
 for my $opt ( 
     [ 'conf',      'CONF'      ],
     [ 'htdocs',    'HTDOCS'    ],
@@ -209,6 +207,10 @@ for my $opt (
         my $to = $OPTIONS{ $opt_name };
         if ( $file =~ /($dir)(.*)/ ) {
             $to = catdir( $to, $2 );
+        }
+
+        if ( $opt_name eq 'CONF' && $file =~ /cmap\.conf$/ ) {
+            $installed_cmap_conf = $to;
         }
 
         $install .= qq[
@@ -240,10 +242,9 @@ $install .= qq[
 #
 # Write the build script.
 #
-my $conf_file =  catfile('conf', 'cmap.conf');
-my $builder   =  Module::Build->subclass(
-    class     => 'CMap::Builder',
-    code      => qq[
+my $builder      =  Module::Build->subclass(
+    class        => 'CMap::Builder',
+    code         => qq[
         sub ACTION_install {
             my \$self = shift;
 
@@ -252,7 +253,19 @@ my $builder   =  Module::Build->subclass(
             \$self->SUPER::ACTION_install;
 
             chomp( my \$host = `hostname` || 'localhost' );
-            print qq[\\n\\nCMap installed.  Go to "http://\$host/cmap"\\n\\n];
+            print join("\\n\\n",
+                '',
+                'CMap has been installed.',
+                'Be sure to edit "$installed_cmap_conf" with database info!',
+                qq[Then go to "http://\$host/cmap"],
+                ''       
+            );
+        }
+
+        sub ACTION_realclean {
+            my \$self = shift;
+            \$self->delete_filetree( '$install_conf' );
+            \$self->SUPER::ACTION_realclean;
         }
     ]
 )->new(
@@ -286,17 +299,20 @@ my $builder   =  Module::Build->subclass(
         'conf/cmap.conf.PL'  => 'conf/cmap.conf',
         'lib/Bio/GMOD/CMap/Constants.pm.PL' => 'lib/Bio/GMOD/CMap/Constants.pm',
     },
-    add_to_cleanup   => [
-        'cgi-bin/cmap',
-        'conf/cmap.conf',
-        'lib/Bio/GMOD/CMap/Constants.pm',
-    ],
+);
+
+my $tarball = $builder->dist_dir . '.tar.gz';
+
+$builder->add_to_cleanup(
+    'cgi-bin/cmap',
+    'conf/cmap.conf',
+    'lib/Bio/GMOD/CMap/Constants.pm',
+    $tarball,
 );
 
 $builder->create_build_script;
 
 print qq[Now run "./Build" and "./Build install"\n];
-print qq[Be sure to edit your "cmap.conf" file with your database info!\n];
 exit(0);
 
 # ----------------------------------------------------
