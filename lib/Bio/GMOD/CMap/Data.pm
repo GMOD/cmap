@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.181 2004-11-30 20:31:21 mwz444 Exp $
+# $Id: Data.pm,v 1.182 2004-12-01 19:38:39 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.181 $)[-1];
+$VERSION = (qw$Revision: 1.182 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -2155,7 +2155,7 @@ sub cmap_form_data {
                     'display_order' );
             }
 
-            $ref_map_sets = sort_selectall_arrayref( 
+            $ref_map_sets = sort_selectall_arrayref(
                 $ref_map_sets,  '#map_type_display_order',
                 'map_type',     '#species_display_order',
                 'species_name', '#map_set_display_order',
@@ -4262,13 +4262,13 @@ sub count_correspondences {
 
 =pod
 
-=head2 cmap_entry_data
+=head2 cmap_map_search_data
 
-Returns the data for the entry page.
+Returns the data for the map_search page.
 
 =cut
 
-sub cmap_entry_data {
+sub cmap_map_search_data {
 
     my ( $self, %args ) = @_;
     my $slots = $args{'slots'} or return;

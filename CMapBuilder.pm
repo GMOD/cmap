@@ -178,7 +178,7 @@ sub ACTION_build_html {
         (
             [ 'CMap Home'      => '' ],
             [ 'Maps'           => '/cgi-bin/cmap/viewer?changeMenu=1' ],
-            [ 'Map Search'     => '/cgi-bin/cmap/entry' ],
+            [ 'Map Search'     => '/cgi-bin/cmap/map_search' ],
             [ 'Search'         => '/cgi-bin/cmap/feature_search' ],
             [ 'Matrix'         => '/cgi-bin/cmap/matrix' ],
             [ 'Map Sets'       => '/cgi-bin/cmap/map_set_info' ],
