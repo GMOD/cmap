@@ -1,6 +1,6 @@
                 CMAP ADMINISTRATION AND DATA CURATION
 
-                          $Revision: 1.8 $
+                          $Revision: 1.9 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are two tools you will use:
@@ -39,13 +39,22 @@ all the different actions you can take:
 *   View Correspondence Evidence Types
 *   View Database Cross-References
 *   Search for a Feature
+*   View Color Palette
 *   Exit to Map Viewer
 
-Each link is self-explanatory.  On each "View" page, you have access
-to edit and delete the information there.  Each page will be discussed
-in detail later.  For the moment, let's just focus on what you need to
-import your first data set.  To do that, you'll need to first set up
-the species and map types.
+Each link is self-explanatory.  In addition to the above links, you
+will also see the current data source to which you are connected.
+You may configure CMap to connect to different distinct datasources;
+see the section "CONFIGURING DATABASE CONNECTION(S)" later for more
+information on this.  If you have configure more than one datasource,
+you will also see a drop-down control allowing you to connect to a
+different datasource.
+
+On each "View" page, you have access to edit and delete the
+information there.  Each page will be discussed in detail later.  For
+the moment, let's just focus on what you need to import your first
+data set.  To do that, you'll need to first set up the species and map
+types.
 
 3.      SETTING UP SPECIES
 
@@ -114,6 +123,13 @@ Once you've set up all the species you wish to have in your database,
 click on the "Home" link in the upper-left corner to return to the
 web-admin home page.
 
+Note: Throughout the admin interface, the "create" and "edit" pages for
+      any object (e.g., species, map types, map sets, etc.) have the
+      same fields in the same order with the same restriction. If this
+      document only mentions the "create" or "edit" page for an object,
+      rest assured that the complementary page works the same as the one
+      described.
+
 4.      SETTING UP MAP TYPES
 
 Click on "View Map Types" from the home page of the web-admin tool.
@@ -131,7 +147,7 @@ entitled "Map Type Create" with a form for the following fields:
     text will display at the bottom of non-relational maps, so it's
     best to keep this short, like "cM" for "centiMorgans."
 
-*   Is Relational Map: This field determines whether or not maps of
+*   Is Relational Map Only: This field determines whether or not maps of
     this type can stand alone (like most genetic maps) or if they are a
     special kind of map set that CMap calls "relational," meaning that
     the maps can only be shown *in relation to* some other map (of the
@@ -363,12 +379,12 @@ datatypes:
 
 *   map_accession_id (character(20)): The accession ID of the map.
 
+*   map_display_order (integer): The order in which to display the
+    map.
+
 *   map_start (double(8,2)): The start position of the map.
 
 *   map_stop (double(8,2)): The stop position of the map.
-
-*   linkage_group (character(10)): The genetic linkage group the map is
-    associate to.
 
 *   feature_accession_id (character(20)): The accession ID of the
     feature.
@@ -390,6 +406,10 @@ datatypes:
 
 *   feature_dbxref_url (character(200)): The URL of the database cross
     reference.
+
+*   is_landmark ("1" or "0"): Whether or not the feature should be
+    marked as a landmark feature (allowing it to be labelled when a
+    user chooses "Landmarks" for the "Label Features" option).
 
 The first line of the file should be the tab-separated names of the
 fields in whatever order you're supplying them (the order of fields is
@@ -570,21 +590,19 @@ There are three ways to create correspondences:
     down the correspondences from there. This method is the surest
     as you are always directly controlling what gets created.
 
-3)  The third way to create correspondences is to import them. Simply
-    create a tab-delimited file that lists the names of two features and
-    some evidence to support the correspondence. The first line of the
-    file should contain column headers for "feature_name1,"
-    "feature_name2," and "evidence" (the order is unimportant). The
-    "evidence" column may contain mulitple evidences separated by
-    commas. Here's a sample:
+    By default, CMap will only compare features of the same type when
+    making name-based correspondences. You can expand the feature types
+    considered by adding appropriate lines to "cmap.conf." This is
+    documented in that file; look for the string
+    "add_name_correspondence" and follow the directions there.
 
-	feature_name1	feature_name2	evidence
-	C1008	S1633	insilico
-	C11393S	E10074S	insilico
-	C1238	S15180S	insilico
-	bcd386	p-bcd386	name-based, insilico
-	bcd386	p-bcd386	name-based
-	pBF266	p-pBF266	name-based
+3)  The third way to create correspondences is to import them. Simply
+    create a tab-delimited file that lists the names (or accession
+    IDs) of two features and some evidence to support the correspondence.
+    For more information on the format of this file, execute the
+    following on your system:
+
+    perldoc Bio::GMOD::CMap::Admin::ImportCorrespondences
 
 9.      LOADING THE CORRESPONDENCE MATRIX
 
@@ -755,7 +773,27 @@ restrict the features displayed by their feature types.  You can also
 search for a feature;  the search option on the map view page
 automatically restricts the search to the current map being displayed.
 
-11.4    VIEWING A FEATURE
+11.4    EDITING A MAP
+
+If you click on "Edit" while viewing a map, you will be taken to the a
+page with the following fields:
+
+*   Map Set: Shows you the map set to which the map belongs
+
+*   Acc ID (opt.): The map's accession ID.
+
+*   Map Name: The map's name.
+
+*   Display Order (opt.): The order in which to display the map in
+    relation to the other maps in the set.  If all the display orders 
+    are the same, then the maps will be sorted alphabetically by 
+    their names.
+
+*   Start: The map's starting position.
+
+*   Stop: The map's stop position.
+
+11.5    VIEWING A FEATURE
 
 Choose to "view" a feature from the map view page.  You'll be
 presented with all the data stored in the feature table as well as a
@@ -764,7 +802,7 @@ the evidence types supporting the correspondences.  You can also add a
 new correspondence by clicking "Add Correspondence" and following the
 directions discussed earlier in section 8.
 
-11.5    EDITING A FEATURE
+11.6    EDITING A FEATURE
 
 If you click on the "Edit" link from the feature view page, you'll be
 presented a form with the following fields:
@@ -803,7 +841,7 @@ Note: If you wish to nullify a dbxref for a particular feature, you can
       feature details page, they'll see that the dbxref field shows "Not
       available" (with no <A HREF>, of course).
 
-11.6    SEARCHING FOR A FEATURE
+11.7    SEARCHING FOR A FEATURE
 
 Often you will be interested in finding an individual feature in the
 database without having to navigate to the map set, then the map, then
@@ -1041,7 +1079,34 @@ request and a maximum pixel width of 1000) or can all be turned off.
 The author prefers the idea of just using the maximum image width for
 throttling CMap.
 
-17.     AUTHOR
+17.     SAMPLE DATA
+
+If you would like to see sample import data for CMap, you can find
+many examples from the Gramene site:
+
+    ftp://ftp.gramene.org/pub/gramene/maps
+
+18.     MISCELLANEOUS
+
+In the "docs" directory, you will find two images that might help you
+understand the relationships in the CMap tables.  One is called
+"cmap-graph.png" and is a high-level graph showing the table names and
+the direction of their relationship to the other tables.  The other is
+called "cmap-schema.png" and is closer to an entity-relationship
+diagram detailing tables, fields, primary and unique keys, and the
+foreign key relationships between tables.  These images were
+automatically generated from schema definitions via scripts included
+with SQL::Translator, a set of modules which grew out of the author's
+constant need to make schema changes and quickly replicate them
+amongst the different test databases.  The Oracle and PostgreSQL
+schemas were also generated by SQL::Translator from the MySQL schema,
+so if you see room for improvement, please relay them to the author,
+prefereably via the SQL:::Translator mailing list.  SQL::Translator is
+available on CPAN.  For more information, see here:
+
+    http://sqlfairy.sourceforget.net/
+
+19.     AUTHOR
 
 Ken Y. Clark, kclark@cshl.org
 
