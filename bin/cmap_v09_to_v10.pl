@@ -42,6 +42,8 @@ my $db = $cmap->db;
 
 my $admin = Bio::GMOD::CMap::Admin->new( data_source => $cmap->data_source );
 
+print "Converting data in source '", $cmap->data_source, "'\n";
+
 #
 # cmap_feature_note => cmap_attribute
 #
