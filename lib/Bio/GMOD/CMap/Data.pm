@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.198.2.3 2005-02-15 17:43:39 mwz444 Exp $
+# $Id: Data.pm,v 1.198.2.4 2005-02-16 22:03:51 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.198.2.3 $)[-1];
+$VERSION = (qw$Revision: 1.198.2.4 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -2775,8 +2775,9 @@ sub fill_out_maps {
                       )
                     {
                         $aid_line .= "["
-                          . $slots->{$cmap_no}{'maps'}{$map_aid}{'start'} . "."
-                          . $slots->{$cmap_no}{'maps'}{$map_aid}{'stop'} . "]";
+                          . $slots->{$cmap_no}{'maps'}{$map_aid}{'start'} . "*"
+                          . $slots->{$cmap_no}{'maps'}{$map_aid}{'stop'} . "x"
+                          . $slots->{$cmap_no}{'maps'}{$map_aid}{'mag'}. "]";
                     }
                     push @aids, $aid_line;
                 }
