@@ -739,6 +739,13 @@ function changeCompMaps(sel,index,side){
                 </td>
               </tr>
               <tr>
+                <td align="left" valign="top">View Intra-Slot Correspondences:
+                  [% IF apr.param('show_intraslot_corr')==1; show_intraslot_corr=1; ELSE; show_intraslot_corr=0; END %]
+                  <input type="radio" name="show_intraslot_corr" value="0"[% IF show_intraslot_corr==0; ' checked'; END %]>No
+                  <input type="radio" name="show_intraslot_corr" value="1"[% IF show_intraslot_corr==1; ' checked'; END %]>yes
+                </td>
+              </tr>
+              <tr>
                 <td colspan=4>
                   <input type="submit" value="Redraw Map" name="sub">
                   <input type="reset"  value="Reset">

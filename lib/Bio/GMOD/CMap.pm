@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.61.2.4 2004-11-05 21:41:50 mwz444 Exp $
+# $Id: CMap.pm,v 1.61.2.5 2004-11-09 17:52:53 mwz444 Exp $
 
 =head1 NAME
 
@@ -83,7 +83,7 @@ Returns the cache directory.
             eval { mkpath( $cache_dir, 0, 0700 ) };
             if ( my $err = $@ ) {
                 return $self->error(
-                    "Cache directory '$cache_dir' can't be created: $err" );
+                    "Cache directory '$cache_dir' can't be created: $err");
             }
         }
 
@@ -374,7 +374,7 @@ Returns a database handle.  This is the only way into the database.
         if ( $@ || !defined $self->{'db'} ) {
             my $error = $@ || $DBI::errstr;
             return $self->error(
-                "Can't connect to data source '$db_name': $error" );
+                "Can't connect to data source '$db_name': $error");
         }
     }
 
@@ -400,6 +400,28 @@ The default is 1.
     $self->{'aggregate'} = $val if defined $val;
     $self->{'aggregate'} = 1 unless defined $self->{'aggregate'};
     return $self->{'aggregate'};
+}
+
+# ----------------------------------------------------
+sub show_intraslot_corr {
+
+=pod
+                                                                                
+=head2 show_intraslot_corr
+
+Returns the boolean show_intraslot_corr variable.  This determines 
+if the intraslot correspondences are displayed.
+
+The default is 1.
+
+=cut
+
+    my $self = shift;
+    my $val  = shift;
+    $self->{'show_intraslot_corr'} = $val if defined $val;
+    $self->{'show_intraslot_corr'} = 1
+      unless defined $self->{'show_intraslot_corr'};
+    return $self->{'show_intraslot_corr'};
 }
 
 # ----------------------------------------------------
@@ -482,9 +504,10 @@ Returns a handle to the data module.
 
     unless ( $self->{'data_module'} ) {
         $self->{'data_module'} = Bio::GMOD::CMap::Data->new(
-            data_source => $self->data_source,
-            config      => $self->config,
-            aggregate   => $self->aggregate,
+            data_source         => $self->data_source,
+            config              => $self->config,
+            aggregate           => $self->aggregate,
+            show_intraslot_corr => $self->show_intraslot_corr,
           )
           or $self->error( Bio::GMOD::CMap::Data->error );
     }
@@ -663,6 +686,7 @@ Given information about the link, creates a url to cmap_viewer.
     my $label_features              = $args{'label_features'};
     my $collapse_features           = $args{'collapse_features'};
     my $aggregate                   = $args{'aggregate'};
+    my $show_intraslot_corr         = $args{'show_intraslot_corr'};
     my $clean_view                  = $args{'clean_view'};
     my $magnify_all                 = $args{'magnify_all'};
     my $flip                        = $args{'flip'};
@@ -711,6 +735,8 @@ Given information about the link, creates a url to cmap_viewer.
       if defined($collapse_features);
     $url .= "aggregate=$aggregate;"
       if defined($aggregate);
+    $url .= "show_intraslot_corr=$show_intraslot_corr;"
+      if defined($show_intraslot_corr);
     $url .= "clean_view=$clean_view;"
       if defined($clean_view);
     $url .= "magnify_all=$magnify_all;"

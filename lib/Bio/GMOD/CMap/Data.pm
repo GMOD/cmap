@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.165.2.3 2004-11-05 19:32:58 mwz444 Exp $
+# $Id: Data.pm,v 1.165.2.4 2004-11-09 17:52:53 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.165.2.3 $)[-1];
+$VERSION = (qw$Revision: 1.165.2.4 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -47,6 +47,7 @@ sub init {
     $self->config( $config->{'config'} );
     $self->data_source( $config->{'data_source'} );
     $self->aggregate( $config->{'aggregate'} );
+    $self->show_intraslot_corr( $config->{'show_intraslot_corr'} );
 
     ### Create the cache objects for each of the levels
     ### For and explaination of the cache levels, see
@@ -274,8 +275,7 @@ Returns a string of tab-delimited data for either a map or map set.
           $db->selectrow_array(
             'select map_id from cmap_map where accession_id=?',
             {}, ($map_aid) )
-          or
-          return $self->error( "'$map_aid' is not a valid map accession ID" );
+          or return $self->error("'$map_aid' is not a valid map accession ID");
     }
 
     if ($map_set_aid) {
@@ -284,7 +284,7 @@ Returns a string of tab-delimited data for either a map or map set.
             'select map_set_id from cmap_map_set where accession_id=?',
             {}, ($map_set_aid) )
           or return $self->error(
-            "'$map_set_aid' is not a valid map set accession ID" );
+            "'$map_set_aid' is not a valid map set accession ID");
     }
 
     my $return;
@@ -930,7 +930,8 @@ sub slot_data {
             #  if ( $corr_only_feature_type_aids->[0] == -1 );
             if (
                 (@$corr_only_feature_type_aids)
-                and (  $self->slot_info->{ $this_slot_no + 1 }
+                and (  $self->show_intraslot_corr
+                    || $self->slot_info->{ $this_slot_no + 1 }
                     || $self->slot_info->{ $this_slot_no - 1 } )
               )
             {
@@ -946,15 +947,22 @@ sub slot_data {
                         $self->slot_info->{ $this_slot_no - 1 } ?
                           keys( %{ $self->slot_info->{ $this_slot_no - 1 } } )
                         : ()
-                    )
+                    ),
+                    (
+                        $self->show_intraslot_corr ?
+                          keys( %{ $self->slot_info->{$this_slot_no} } )
+                        : ()
+                    ),
                   )
                   . ")";
                 $with_corr_sql = $sql_base_top . q[,
                   cmap_feature f2,
                   cmap_correspondence_lookup cl
                   ] . $sql_base_bottom . q[
-                and cl.feature_id1=f.feature_id
-                and cl.feature_id2=f2.feature_id];
+                  and cl.feature_id1=f.feature_id
+                  and cl.feature_id2=f2.feature_id
+                  and cl.map_id1!=cl.map_id2
+                ];
                 if (   @$corr_only_feature_type_aids
                     or @$ignored_feature_type_aids )
                 {
@@ -1042,10 +1050,11 @@ sub slot_data {
             $return->{ $map->{'map_id'} } = $map;
         }
     }
-    else {    # more than one map in this slot
-              #
-              # Figure out how many features are on each map.
-              #
+    else {
+
+        #
+        # Figure out how many features are on each map.
+        #
         my %count_lookup;
         my $f_count_sql = qq[
             select   count(f.feature_id) as no_features, f.map_id
@@ -1117,9 +1126,15 @@ sub slot_data {
         }
     }
 
-#$self->get_intraslot_correspondences( $intraslot_correspondences,
-#    $correspondence_evidence, $pid, $ref_slot_no, $included_evidence_type_aids,
-#    $feature_type_aids, $map_start, $map_stop );
+    # Get the intra-slot correspondence
+    $self->get_intraslot_correspondences(
+        $intraslot_correspondences,
+        $correspondence_evidence,
+        $this_slot_no,
+        $included_evidence_type_aids,
+        $ignored_evidence_type_aids,
+        [ @$feature_type_aids, @$corr_only_feature_type_aids ],
+    );
 
     return $return;
 
@@ -1205,7 +1220,7 @@ sub get_feature_correspondences {
     #p#rint S#TDERR "get_feature_correspondences\n";
     my (
         $self,                       $feature_correspondences,
-        $correspondence_evidence,    $value,
+        $correspondence_evidence,    $map_id,
         $slot_no,                    $included_evidence_type_aids,
         $ignored_evidence_type_aids, $feature_type_aids,
         $map_start,                  $map_stop
@@ -1286,11 +1301,11 @@ sub get_feature_correspondences {
 
     my $ref_correspondences;
     unless ( $ref_correspondences =
-        $self->get_cached_results( 4, $corr_sql . $value ) )
+        $self->get_cached_results( 4, $corr_sql . $map_id ) )
     {
 
         $ref_correspondences =
-          $db->selectall_arrayref( $corr_sql, { Columns => {} }, ($value) );
+          $db->selectall_arrayref( $corr_sql, { Columns => {} }, ($map_id) );
 
         foreach my $row ( @{$ref_correspondences} ) {
             $row->{'evidence_rank'} =
@@ -1302,7 +1317,7 @@ sub get_feature_correspondences {
               $self->evidence_type_data( $row->{'evidence_type_aid'},
                 'evidence_type' );
         }
-        $self->store_cached_results( 4, $corr_sql . $value,
+        $self->store_cached_results( 4, $corr_sql . $map_id,
             $ref_correspondences );
     }
     for my $corr ( @{$ref_correspondences} ) {
@@ -1327,16 +1342,121 @@ sub get_feature_correspondences {
 # ----------------------------------------------------
 
 =pod
-
+    
 =head2 get_intraslot_correspondences
 
 inserts correspondence info into $intraslot_correspondence and 
 $correspondence_evidence based on corrs from the slot
-and the provided id.
 
 =cut
 
 sub get_intraslot_correspondences {
+
+    my (
+        $self,                        $intraslot_correspondences,
+        $correspondence_evidence,     $slot_no,
+        $included_evidence_type_aids, $ignored_evidence_type_aids,
+        $feature_type_aids
+      )
+      = @_;
+    my $db             = $self->db;
+    my $to_restriction = '';
+    my $corr_sql;
+
+    $corr_sql = qq[
+        select   cl.feature_id1 as feature_id,
+                 f2.feature_id as ref_feature_id, 
+                 f2.feature_name as f2_name,
+                 f2.start_position as f2_start,
+                 f2.map_id,
+                 cl.feature_correspondence_id,
+                 ce.evidence_type_accession as evidence_type_aid
+        from     cmap_feature f2, 
+                 cmap_correspondence_lookup cl,
+                 cmap_feature_correspondence fc,
+                 cmap_correspondence_evidence ce
+        where    cl.feature_correspondence_id=
+                 fc.feature_correspondence_id
+        and      fc.is_enabled=1
+        and      fc.feature_correspondence_id=
+                 ce.feature_correspondence_id
+        and      cl.feature_id2=f2.feature_id
+        $to_restriction
+    ];
+
+    $corr_sql .=
+      " and cl.map_id1 in ("
+      . join( ",", keys( %{ $self->slot_info->{$slot_no} } ) ) . ")";
+    $corr_sql .=
+      " and cl.map_id2 in ("
+      . join( ",", keys( %{ $self->slot_info->{$slot_no} } ) ) . ")";
+    $corr_sql .= ' and cl.map_id1 < cl.map_id2 ';
+
+    if ( @$included_evidence_type_aids or not @$ignored_evidence_type_aids ) {
+        $corr_sql .=
+          " and ce.evidence_type_accession in ('"
+          . join( "','", @$included_evidence_type_aids ) . "')";
+    }
+    else {
+        $corr_sql .= " and ce.correspondence_evidence_id = -1 ";
+    }
+
+    if (@$feature_type_aids) {
+        $corr_sql .=
+          " and cl.feature_type_accession1 in ('"
+          . join( "','", @$feature_type_aids ) . "')";
+    }
+
+    my $ref_correspondences;
+    unless ( $ref_correspondences = $self->get_cached_results( 4, $corr_sql ) )
+    {
+
+        $ref_correspondences =
+          $db->selectall_arrayref( $corr_sql, { Columns => {} }, () );
+
+        foreach my $row ( @{$ref_correspondences} ) {
+            $row->{'evidence_rank'} =
+              $self->evidence_type_data( $row->{'evidence_type_aid'}, 'rank' );
+            $row->{'line_color'} =
+              $self->evidence_type_data( $row->{'evidence_type_aid'},
+                'line_color' );
+            $row->{'evidence_type'} =
+              $self->evidence_type_data( $row->{'evidence_type_aid'},
+                'evidence_type' );
+        }
+        $self->store_cached_results( 4, $corr_sql, $ref_correspondences );
+    }
+    for my $corr ( @{$ref_correspondences} ) {
+        $intraslot_correspondences->{ $corr->{'feature_id'} }
+          { $corr->{'ref_feature_id'} } = $corr->{'feature_correspondence_id'};
+
+        $intraslot_correspondences->{ $corr->{'ref_feature_id'} }
+          { $corr->{'feature_id'} } = $corr->{'feature_correspondence_id'};
+
+        push @{ $correspondence_evidence
+              ->{ $corr->{'feature_correspondence_id'} } },
+          {
+            evidence_type_aid => $corr->{'evidence_type_aid'},
+            evidence_type     => $corr->{'evidence_type'},
+            evidence_rank     => $corr->{'evidence_rank'},
+            line_color        => $corr->{'line_color'},
+          };
+    }
+
+}
+
+# ----------------------------------------------------
+
+=pod
+
+=head2 get_intraslot_correspondences
+
+inserts correspondence info into $intraslot_correspondence and
+$correspondence_evidence based on corrs from the slot and the provided id.
+
+=cut
+
+sub get_intraslot_correspondencesxxx {
     my (
         $self,                    $intraslot_correspondences,
         $correspondence_evidence, $pid,

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.135.2.5 2004-11-05 21:41:58 mwz444 Exp $
+# $Id: Map.pm,v 1.135.2.6 2004-11-09 17:52:56 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.135.2.5 $)[-1];
+$VERSION = (qw$Revision: 1.135.2.6 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -40,8 +40,8 @@ use Bio::GMOD::CMap::Drawer::Glyph;
 use base 'Bio::GMOD::CMap';
 
 my @INIT_FIELDS =
-  qw[ drawer base_x base_y slot_no maps config aggregate 
-      clean_view magnify_all scale_maps ];
+  qw[ drawer base_x base_y slot_no maps config aggregate
+  clean_view magnify_all scale_maps ];
 
 my %SHAPE = (
     'default'  => 'draw_box',
@@ -506,7 +506,8 @@ such as the units.
     my $x;
     my $code;
     my $map_aid = $self->map_aid($map_id);
-    unless($self->clean_view){
+
+    unless ( $self->clean_view ) {
         ###Full size button if needed
         if (   $drawer->data_module->truncatedMap( $slot_no, $map_id )
             or $magnification != 1 )
@@ -843,11 +844,11 @@ Draws the map title.
     my $buffer     = 4;
     my $bottom_buf = 5;
     my $mid_x      = $left_x + ( ( $right_x - $left_x ) / 2 );
-    my $top_y      = $min_y - ( 2 * $bottom_buf ) - 
-        ( ( scalar @$lines ) * ( $font->height + $buffer ) ) - 4;
-    $top_y        -= ( $font->height + $buffer ) if (scalar @$buttons);
-    my $leftmost   = $mid_x;
-    my $rightmost  = $mid_x;
+    my $top_y      = $min_y - ( 2 * $bottom_buf ) -
+      ( ( scalar @$lines ) * ( $font->height + $buffer ) ) - 4;
+    $top_y -= ( $font->height + $buffer ) if ( scalar @$buttons );
+    my $leftmost  = $mid_x;
+    my $rightmost = $mid_x;
 
     #
     # Place the titles.
@@ -869,7 +870,7 @@ Draws the map title.
     #
     # Figure out how much room left-to-right the buttons will take.
     #
-    my $buttons_width=0;
+    my $buttons_width = 0;
     if ( scalar @$buttons ) {
         for my $button (@$buttons) {
             $buttons_width += $font->width * length( $button->{'label'} );
@@ -887,7 +888,8 @@ Draws the map title.
         for my $button (@$buttons) {
             my $len  = $font->width * length( $button->{'label'} );
             my $end  = $label_x + $len;
-            my @area = ( $label_x - 2, $y - 2, $end + 2, $y + $font->height + 2 );
+            my @area =
+              ( $label_x - 2, $y - 2, $end + 2, $y + $font->height + 2 );
             push @drawing_data,
               [ STRING, $font, $label_x, $y, $button->{'label'}, 'grey' ],
               [ RECTANGLE, @area, 'grey' ],;
@@ -904,7 +906,8 @@ Draws the map title.
               };
         }
 
-        push @drawing_data, [ LINE, $sep_x, $sep_y, $label_x - 6, $sep_y, 'grey' ];
+        push @drawing_data,
+          [ LINE, $sep_x, $sep_y, $label_x - 6, $sep_y, 'grey' ];
 
         $leftmost -= $buffer;
         $rightmost += $buffer;
@@ -1709,7 +1712,11 @@ sub get_map_height {
     #
     # Set information used to scale.
     #
-    if ( $drawer->{'data'}{'ref_unit_size'}{ $self->map_units($map_id) } ) {
+    if (    $self->scale_maps
+        and $self->config_data('scalable')
+        and $self->config_data('scalable')->{ $self->map_units($map_id) }
+        and $drawer->{'data'}{'ref_unit_size'}{ $self->map_units($map_id) } )
+    {
         $pixel_height =
           ( $self->stop_position($map_id) - $self->start_position($map_id) ) *
           ( $drawer->pixel_height() /
@@ -1977,9 +1984,9 @@ sub add_topper {
     my $map_name    = $self->map_name($map_id);
     my $reg_font    = $drawer->regular_font
       or return $self->error( $drawer->error );
-    my $font_width      = $reg_font->width;
-    my $font_height     = $reg_font->height;
-    my $buttons = $self->create_buttons(
+    my $font_width  = $reg_font->width;
+    my $font_height = $reg_font->height;
+    my $buttons     = $self->create_buttons(
         map_id     => $map_id,
         drawer     => $drawer,
         slot_no    => $slot_no,
@@ -1988,9 +1995,10 @@ sub add_topper {
     );
     my $button_y_buffer = 4;
     my $button_x_buffer = 6;
-    my $button_height   = ( scalar @$buttons ) 
-        ? $font_height + ( $button_y_buffer * 2 )
-        : 0;
+    my $button_height   =
+      ( scalar @$buttons )
+      ? $font_height + ( $button_y_buffer * 2 )
+      : 0;
 
     my $base_x     = $map_placement_data->{$map_id}{'map_coords'}[0];
     my $map_base_y = $map_placement_data->{$map_id}{'map_coords'}[1];
@@ -2257,7 +2265,8 @@ sub add_tick_marks {
         push @$drawing_data,
           [ LINE, $tick_start, $y_pos, $tick_stop, $y_pos, 'grey' ];
 
-        unless($clean_view){
+        unless ($clean_view) {
+
             # If not clean view, show the crop arrows.
             my $clip_arrow_color   = 'grey';
             my $clip_arrow_width   = 6;
@@ -2335,10 +2344,16 @@ sub add_tick_marks {
               ];
 
             # fill arrows
-            push @$drawing_data, [ FILL, $clip_arrow_xmid, $clip_arrow_y2_down + 1,
-                $clip_arrow_color ];
             push @$drawing_data,
-              [ FILL, $clip_arrow_xmid, $clip_arrow_y2_up - 1, $clip_arrow_color ];
+              [
+                FILL,                    $clip_arrow_xmid,
+                $clip_arrow_y2_down + 1, $clip_arrow_color
+              ];
+            push @$drawing_data,
+              [
+                FILL,                  $clip_arrow_xmid,
+                $clip_arrow_y2_up - 1, $clip_arrow_color
+              ];
             my $down_command = $is_flipped ? '1' : '0';
             my $up_command   = $is_flipped ? '0' : '1';
             my ( $up_start_pos, $up_stop_pos, $down_start_pos, $down_stop_pos );
@@ -3261,13 +3276,13 @@ Button options:
     }
 
     # Specify the base urls
-    my $apr              = $drawer->apr;
+    my $apr = $drawer->apr;
     my $url;
     if ($apr) {
-     $url = $apr->url . '/';
+        $url = $apr->url . '/';
     }
     else {
-     $url = '';
+        $url = '';
     }
     my $map_viewer_url   = $url . 'viewer';
     my $map_details_url  = $url . 'map_details';
