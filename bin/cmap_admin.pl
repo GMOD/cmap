@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.87 2005-02-10 19:03:17 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.88 2005-02-18 17:36:09 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.87 $)[-1];
+$VERSION = (qw$Revision: 1.88 $)[-1];
 
 #
 # Get command-line options
@@ -64,7 +64,6 @@ use Bio::GMOD::CMap::Admin::Export();
 use Bio::GMOD::CMap::Admin::MakeCorrespondences();
 use Bio::GMOD::CMap::Admin::ImportCorrespondences();
 use Bio::GMOD::CMap::Admin::ImportAlignments();
-use Bio::GMOD::CMap::Admin::GBrowseLiason();
 use Bio::GMOD::CMap::Admin::ManageLinks();
 use Benchmark;
 
@@ -366,47 +365,31 @@ sub create_map_set {
         default  => $map_width,
     );
 
-    my $map_units = $self->map_type_data( $map_type_aid, 'map_units' );
-    my $is_relational_map =
-      $self->map_type_data( $map_type_aid, 'is_relational_map' );
-
-    my $map_set_id = next_number(
-        db         => $db,
-        table_name => 'cmap_map_set',
-        id_field   => 'map_set_id',
-      )
-      or die 'No map set id';
-    $map_set_aid ||= $map_set_id;
-
     print "OK to create set '$map_set_name' in data source '",
       $self->data_source, "'?\n[Y/n] ";
     chomp( my $answer = <STDIN> );
     return if $answer =~ m/^[Nn]/;
 
-    $is_relational_map ||= 0;    #make sure this is set to something
-    $db->do(
-        q[
-            insert
-            into   cmap_map_set
-                   ( map_set_id, accession_id, map_set_name, short_name,
-                     species_id, map_type_accession, map_units, is_relational_map, 
-		     color, shape, width
-                   )
-            values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
-        ],
-        {},
-        (
-            $map_set_id, $map_set_aid,       $map_set_name,
-            $short_name, $species_id,        $map_type_aid,
-            $map_units,  $is_relational_map, $map_color,
-            $map_shape,  $map_width
-        )
-    );
+    my $admin           = $self->admin;
+    my $map_set_id           =  $admin->map_set_create(
+        map_set_name         => $map_set_name ,
+        short_name           => $short_name ,
+        species_id           => $species_id ,
+        map_type_aid         => $map_type_aid ,
+        accession_id         => $map_set_aid ,
+        shape                => $map_shape ,
+        color                => $map_color ,
+        width                => $map_width ,
+    ) or do {
+        print "Error: ", $admin->error, "\n";
+        return;
+    };
 
     my $log_fh = $self->log_fh;
     print $log_fh "Map set $map_set_name created\n";
 
     $self->purge_query_cache(1);
+
 }
 
 # ----------------------------------------------------
@@ -2589,6 +2572,7 @@ sub reload_correspondence_matrix {
 # ----------------------------------------------------
 sub prepare_for_gbrowse {
 
+    require Bio::GMOD::CMap::Admin::GBrowseLiason;
     #
     # Gathers the info to import feature correspondences.
     #
@@ -3041,43 +3025,43 @@ entire map set, then answer "0" (or just hit "Return") when given a
 list of maps.
  
 =head2 Purge the cache to view new data
-                                                                                                                             
+
 Purge the query cache.  The results of many queries are cached in an
 effort to reduce time querying the database for common queries.
 Purging the cache is important after the data has changed or after
 the configuration file has change.  Otherwise the changes will not
 be consistantly displayed.
-                                                                                                                             
+
 There are four layers of the cache.  When one layer is purged all of
 the layers after it are purged.
-                                                                                                                             
+
 =over 4
-                                                                                                                             
+
 =item * Cache Level 1 Purge All
-                                                                                                                             
+
 Purge all when a map set or species has been added or modified.  A
 change to map sets or species has potential to impact all of the data.
-                                                                                                                             
+
 =item * Cache Level 2 (purge map info on down)
-                                                                                                                             
+
 Level 2 is purged when map information is changed.
-                                                                                                                             
+
 =item * Cache Level 3 (purge feature info on down)
-                                                                                                                             
+
 Level 3 is purged when feature information is changed.
-                                                                                                                             
+
 =item * Cache Level 4 (purge correspondence info on down)
-                                                                                                                             
+
 Level 3 is purged when correspondence information is changed.
-                                                                                                                             
+
 =back
-                                                                                                                             
+
 =head2 Delete duplicate correspondences
-                                                                                                                             
+
 If duplicate correspondences may have been added, this will remove them.
-                                                                                                                             
+
 =head2 Manage links
-                                                                                                                             
+
 This option is where to import and delete links that will show up in
 the "Imported Links" section of CMap.  The import takes a tab delimited
 file, see "perldoc /path/to/Bio/GMOD/CMap/Admin/ManageLinks.pm" for
