@@ -1,6 +1,12 @@
                    Revision history for Bio::GMOD::CMap
 
 0.05
+-   Added extra split tokens to highlight string in map detail page 
+    as features weren't being highlighted in the table when 
+    multiple highlighted features were specified with anything other
+    than a comma
+-   Added all original parameters in the URL for resorting the 
+    feature table on the map detail page
 -   Fixed bug in admin map view that showed all features and a 
     broken pager
 -   Fixed bug in admin feature search that broke in Oracle because
