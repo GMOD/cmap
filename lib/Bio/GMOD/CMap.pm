@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap;
 
-# $Id: CMap.pm,v 1.27 2003-02-21 17:15:13 kycl4rk Exp $
+# $Id: CMap.pm,v 1.28 2003-02-26 04:05:26 kycl4rk Exp $
 
 =head1 NAME
 
@@ -29,6 +29,7 @@ use strict;
 use vars '$VERSION';
 $VERSION = 0.06;
 
+use Data::Dumper;
 use Class::Base;
 use Config::General;
 use Bio::GMOD::CMap::Data;
@@ -105,6 +106,7 @@ Remembers what has been selected as the current data source.
         return $self->error("'$arg' is not a defined data source") 
             unless $valid_ds{ $arg };
         $self->{'data_source'} = $arg;
+        $self->{'data_sources'} = undef;
         if ( defined $self->{'db'} ) {
             my $db = $self->db;
             $db->disconnect;
@@ -132,7 +134,7 @@ Returns all the data souces defined in the configuration file.
 
 =cut
 
-    my $self = shift;
+    my ( $self, %args ) = @_;
 
     unless ( defined $self->{'data_sources'} ) {
         my $config  = $self->config('database') or 
@@ -145,6 +147,9 @@ Returns all the data souces defined in the configuration file.
                 if ( $current && $source->{'name'} eq $current ) {
                     $source->{'is_current'} = 1;
                     $ok                     = 1;
+                }
+                else {
+                    $source->{'is_current'} = 0;
                 }
             }
         }
@@ -172,6 +177,7 @@ Returns all the data souces defined in the configuration file.
             sort { $a->{'name'} cmp $b->{'name'} }
             @$config
         ];
+
     } 
 
     return $self->{'data_sources'};
