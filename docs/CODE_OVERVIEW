@@ -1,6 +1,6 @@
                            CMAP CODE OVERVIEW
 
-                            $Revision: 1.9 $
+                            $Revision: 1.10 $
 
 The comparative and genetic maps application ("CMap") is written
 entirely in Perl and takes advantage of mod_perl, Apache's embedded
@@ -92,13 +92,13 @@ file.  Of course, the file doesn't have to be called "cmap.conf."  It
 can be called whatever you like, so long as the absolute path to the
 file is in the Bio::GMOD::CMap::Constants file.  This path is
 automatically written during installation if you do the standard "perl
-Makefile.PL; make; make install" process.  There are defaults provided
-for every option in the local config file with the exception of the
-database connection info and the template directory.  The latter
-should be set during installation, and the latter should be set by the
-installer.  If you comment out any of the options in "cmap.config"
-(except "database" and "template_dir"), there are defaults in the
-Bio::GMOD::CMap::Constants file.
+Build.PL; ./Build; ./Build install" process.  There are defaults
+provided for every option in the local config file with the exception
+of the database connection info and the template directory.  The
+latter should be set during installation, and the latter should be set
+by the installer.  If you comment out any of the options in
+"cmap.conf" (except "database" and "template_dir"), there are
+defaults in the Bio::GMOD::CMap::Constants file.
 
 6.      GENERAL FLOW FOR HANDLERS
 
