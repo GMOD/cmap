@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.6 2002-09-15 19:12:52 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.7 2002-10-04 01:14:42 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
-use vars qw[ $VERSION $BE_QUIET ];
-$VERSION = (qw$Revision: 1.6 $)[-1];
+use vars qw[ $VERSION ];
+$VERSION = (qw$Revision: 1.7 $)[-1];
 
 #
 # Turn off output buffering.
@@ -22,7 +22,6 @@ my $show_version;
 
 GetOptions(
     'h|help'    => \$show_help,    # Show help and exit
-    'q|quiet'   => \$BE_QUIET,     # Don't show status messages
     'v|version' => \$show_version, # Show version and exit
 ) or pod2usage(2);
 
@@ -110,12 +109,12 @@ sub show_greeting {
                 display => 'Make name-based correspondences' 
             },
             { 
-                action  => 'reload_correspondence_matrix', 
-                display => 'Reload correspondence matrix' 
-            },
-            { 
                 action  => 'import_correspondences', 
                 display => 'Import feature correspondences' 
+            },
+            { 
+                action  => 'reload_correspondence_matrix', 
+                display => 'Reload correspondence matrix' 
             },
             { 
                 action  => 'quit',   
@@ -351,9 +350,8 @@ sub import_data {
          unless $map_set_id;
 
     #
-    # Ask whether to overwrite or append the data.
+    # Confirm decisions.
     #
-    my $overwrite = 1;
     print join("\n",
         'OK to import?',
         "  File      : $file",
@@ -370,10 +368,8 @@ sub import_data {
     my $importer = Bio::GMOD::CMap::Admin::Import->new( db => $db );
     $importer->import(
         map_set_id => $map_set_id,
-        fh           => $fh,
-        map_type     => $map_type,
-        overwrite    => $overwrite,
-        be_quiet     => 0, #$BE_QUIET,
+        fh         => $fh,
+        map_type   => $map_type,
     ) or do { print "Error: ", $importer->error, "\n"; return; };
 }
 
@@ -513,31 +509,69 @@ sub show_menu {
 
 =head1 NAME
 
-cmap_admin.pl - command-line comparative maps administrative tool
+cmap_admin.pl - command-line CMAP administrative tool
 
 =head1 SYNOPSIS
 
-  ./cmap_admin.pl [options] [map_set_data]
+  ./cmap_admin.pl [options|data_file]
 
   Options:
 
     -h|help    Display help message
-    -q|quiet   Don't print more than is necessary
     -v|version Display version
 
 =head1 DESCRIPTION
 
-This script is meant to be a command-line replacement for the
-web-based creation and importing of map set data.  Why this giant
-leap backwards?  These imports can take a *long* time, so it's awkward
-to handle them in a web interface.
+This script is a complement to the web-based administration tool for
+the GMOD-CMAP application.  This tool handles all of the long-running
+processes and tasks which require interaction with file-based data
+(i.e., map coordinates, feature correspondences, etc.).
 
-If the Bio::GMOD::CMap::* modules are not installed into your standard Perl
-library path, be sure to have your PERL5LIB environment variable set
-to their location (e.g., "/usr/local/apache/lib/perl") or to supply
-that path to Perl when invoking the script, like so:
+There are five tasks which you can do with this tool:
 
-  perl -I/usr/local/apache/lib/perl map_importer.pl
+=over 4
+
+=item 1 Create new map set
+
+This is the only feature duplicated with the web admin tool.  This is
+a very simple implementation, however, meant strictly as a convenience
+when loading new data sets.  You can choose the map type and species
+and give the map set a name, but that's about it.
+
+=item 2 Import data for existing map set
+
+This option will import the feature coordinates for a new map.  For
+specifics on how the data should be formatted, see the documentation
+for Bio::GMOD::CMap::Admin::Import.  The file can either be given as
+an argument to this script or you can specify the file's location when
+asked.  The map set for which you're importing the data must already
+exist, hence the first item in this list.  Simply answer the questions
+about which map set is the one for the data you have, then confirm
+your choices.
+
+=item 3 Make name-based correspondences
+
+This option will create correspondences between any two features with
+the same "feature_name" or "alternate_name," irrespective of case.  It
+is possible to choose to make the correspondences from only one map
+set (for the times when you bring in just one new map set, you don't
+want to rerun this for the whole database -- it can take a long
+time!).
+
+=item 4 Import feature correspondences
+
+Choose this option to import a file containing correspondences between
+your features.  For more information on the format of this file, see
+the documentation for Bio::GMOD::CMap::Admin::ImportCorrespondences.
+
+=item 5 Reload correspondence matrix
+
+You should choose this option whenever you've altered the number of
+correspondences in the database.  This will truncate the
+"cmap_correspondence_matrix" table and reload it with the pair-wise
+comparison of every map set in the database.
+
+=back
 
 =head1 AUTHOR
 
@@ -545,6 +579,6 @@ Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
 
 =head1 SEE ALSO
 
-L<perl>.
+Bio::GMOD::CMap::Admin::Import, Bio::GMOD::CMap::Admin::ImportCorrespondences.
 
 =cut

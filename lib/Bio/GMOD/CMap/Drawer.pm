@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.11 2002-09-24 22:39:04 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.12 2002-10-04 01:14:42 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.11 $)[-1];
+$VERSION = (qw$Revision: 1.12 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
@@ -610,14 +610,17 @@ region of corresponding features.
     my $comp_slot_no    = $args{'comp_slot_no'};
     my $comp_slot_data  = $self->slot_data( $comp_slot_no );
     return unless defined $slot_no && defined $comp_slot_no && $comp_slot_data;
+
     my @comp_map_ids    = map { $_ || () } keys %$comp_slot_data;
     return if scalar @comp_map_ids > 1; # too many maps (e.g., contigs)
+
     my $comp_map        = $comp_slot_data->{ $comp_map_ids[0] };
 
     my @return = ();
     for my $f1 ( keys %{ $self->{'feature_position'}{ $slot_no } } ) {
         next if defined $map_id && 
             $self->{'feature_position'}{ $slot_no }{$f1}{'map_id'} != $map_id;
+        my @corr = $self->feature_correspondences( $f1 );
 
         for my $f2 ( $self->feature_correspondences( $f1 ) ) {
             next unless defined $comp_map->{'features'}{ $f2 };

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin;
 
-# $Id: Admin.pm,v 1.4 2002-10-03 05:37:32 kycl4rk Exp $
+# $Id: Admin.pm,v 1.5 2002-10-04 01:14:42 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Bio::GMOD::CMap;
 use base 'Bio::GMOD::CMap';
@@ -114,7 +114,8 @@ Delete an evidence type.
     my $db  = $self->db or return;
     my $sth = $db->prepare(
         q[
-            select   count(ce.evidence_type_id) as count, et.evidence_type
+            select   count(ce.evidence_type_id) as no_evidences, 
+                     et.evidence_type
             from     cmap_correspondence_evidence ce,
                      cmap_evidence_type et
             where    ce.evidence_type_id=?
@@ -125,10 +126,10 @@ Delete an evidence type.
     $sth->execute( $evidence_type_id );
     my $hr = $sth->fetchrow_hashref;
 
-    if ( $hr->{'count'} > 0 ) {
+    if ( $hr->{'no_evidences'} > 0 ) {
         return $self->error(
             "Unable to delete evidence type '", $hr->{'evidence_type'},
-            "' as ", $hr->{'count'},
+            "' as ", $hr->{'no_evidences'},
             " evidences are linked to it."
         );
     }
@@ -289,9 +290,10 @@ Find all the features matching some criteria.
         $where
         and    f.map_id=map.map_id
     ];
-    $count_sql .= "and map.accession_id=$map_aid "                  if $map_aid;
-    $count_sql .= "and f.feature_type_id=$feature_type_id " if $feature_type_id;
-    my $no_features = $db->selectrow_array( $count_sql );
+    $count_sql            .= "and map.accession_id=$map_aid " if $map_aid;
+    $count_sql            .= "and f.feature_type_id=$feature_type_id " 
+                             if $feature_type_id;
+    my $no_features        = $db->selectrow_array( $count_sql );
     my $max_child_elements = $self->config('max_child_elements');
 
     my $sql = qq[
@@ -407,7 +409,8 @@ Delete a feature type.
     my $db  = $self->db or return;
     my $sth = $db->prepare(
         q[
-            select   count(f.feature_type_id) as count, ft.feature_type
+            select   count(f.feature_type_id) as no_features, 
+                     ft.feature_type
             from     cmap_feature f,
                      cmap_feature_type ft
             where    f.feature_type_id=?
@@ -418,10 +421,10 @@ Delete a feature type.
     $sth->execute( $feature_type_id );
     my $hr = $sth->fetchrow_hashref;
 
-    if ( $hr->{'count'} > 0 ) {
+    if ( $hr->{'no_features'} > 0 ) {
         return $self->error(
             "Unable to delete feature type '", $hr->{'feature_type'},
-            "' as ", $hr->{'count'},
+            "' as ", $hr->{'no_features'},
             " features are linked to it."
         );
     }
@@ -574,7 +577,8 @@ Delete a map type.
     my $db  = $self->db or return;
     my $sth = $db->prepare(
         q[
-            select   count(ms.map_set_id) as count, mt.map_type
+            select   count(ms.map_set_id) as no_map_sets, 
+                     mt.map_type
             from     cmap_map_set ms, cmap_map_type mt
             where    ms.map_type_id=?
             and      ms.map_type_id=mt.map_type_id
@@ -584,10 +588,10 @@ Delete a map type.
     $sth->execute( $map_type_id );
     my $hr = $sth->fetchrow_hashref;
 
-    if ( $hr->{'count'} > 0 ) {
+    if ( $hr->{'no_map_sets'} > 0 ) {
         return $self->error(
             "Unable to delete map type '", $hr->{'map_type'}, 
-            "' as ", $hr->{'count'},
+            "' as ", $hr->{'no_map_sets'},
             " map sets are linked to it."
         );
     }       
@@ -878,7 +882,8 @@ Delete a species.
     my $db  = $self->db or return;
     my $sth = $db->prepare(
         q[
-            select   count(ms.map_set_id) as count, s.common_name
+            select   count(ms.map_set_id) as no_map_sets, 
+                     s.common_name
             from     cmap_map_set ms, cmap_species s
             where    s.species_id=?
             and      ms.species_id=s.species_id
@@ -888,10 +893,10 @@ Delete a species.
     $sth->execute( $species_id );
     my $hr = $sth->fetchrow_hashref;
 
-    if ( $hr->{'count'} > 0 ) {
+    if ( $hr->{'no_map_sets'} > 0 ) {
         return $self->error(
             'Unable to delete ', $hr->{'common_name'},
-            ' because ', $hr->{'count'}, ' map sets are linked to it.'
+            ' because ', $hr->{'no_map_sets'}, ' map sets are linked to it.'
         );
     }
     else {

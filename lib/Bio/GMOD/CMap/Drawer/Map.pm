@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.13 2002-10-01 18:42:06 kycl4rk Exp $
+# $Id: Map.pm,v 1.14 2002-10-04 01:14:42 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.13 $)[-1];
+$VERSION = (qw$Revision: 1.14 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -568,45 +568,6 @@ Lays out the map.
             }
         }
 
-        #
-        # Make map clickable.
-        #
-        my $slots = $drawer->slots;
-        my @maps;
-        for my $side ( qw[ left right ] ) {
-            my $no      = $side eq 'left' ? $slot_no - 1 : $slot_no + 1;
-            my $new_no  = $side eq 'left' ? -1 : 1;
-            my $map     = $slots->{ $no } or next; 
-            my $link    = 
-                join( '%3d', $new_no, map { $map->{$_} } qw[ field aid ] );
-
-            if ( 
-                my @ref_positions = sort { $a <=> $b }
-                $drawer->feature_correspondence_map_positions(
-                    slot_no      => $slot_no,
-                    map_id       => $map_id,
-                    comp_slot_no => $no,
-                )
-            ) {
-                my $first = $ref_positions[0];
-                my $last  = $ref_positions[-1];
-                $link    .= "[$first,$last]";
-            }
-
-            push @maps, $link;
-        }
-
-        my $url = $self->config('map_details_url').
-            '?ref_map_set_aid='.$self->map_set_aid( $map_id ).
-            ';ref_map_aid='.$self->accession_id( $map_id ).
-            ';comparative_maps='.join( ':', @maps );
-
-        $drawer->add_map_area(
-            coords => $area || \@bounds,
-            url    => $url,
-            alt    => 'Details: '.$self->map_name,
-        );
-
 #        #
 #        # Add "Delete" and "Flip" if appropriate.
 #        #
@@ -945,6 +906,46 @@ Lays out the map.
                 );
             }
         }
+
+        #
+        # Make map clickable.
+        #
+        my $slots = $drawer->slots;
+        my @maps;
+        for my $side ( qw[ left right ] ) {
+            my $no      = $side eq 'left' ? $slot_no - 1 : $slot_no + 1;
+            my $new_no  = $side eq 'left' ? -1 : 1;
+            my $map     = $slots->{ $no } or next; 
+            my $link    = 
+                join( '%3d', $new_no, map { $map->{$_} } qw[ field aid ] );
+
+            my @ref_positions = sort { $a <=> $b }
+                $drawer->feature_correspondence_map_positions(
+                    slot_no      => $slot_no,
+                    map_id       => $map_id,
+                    comp_slot_no => $no,
+                )
+            ;
+
+            if ( @ref_positions ) {
+                my $first = $ref_positions[0];
+                my $last  = $ref_positions[-1];
+                $link    .= "[$first,$last]";
+            }
+
+            push @maps, $link;
+        }
+
+        my $url = $self->config('map_details_url').
+            '?ref_map_set_aid='.$self->map_set_aid( $map_id ).
+            ';ref_map_aid='.$self->accession_id( $map_id ).
+            ';comparative_maps='.join( ':', @maps );
+
+        $drawer->add_map_area(
+            coords => $area || \@bounds,
+            url    => $url,
+            alt    => 'Details: '.$self->map_name,
+        );
 
         #
         # The map title(s).
