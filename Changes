@@ -71,6 +71,12 @@
     form to "label_features" in preparation for allowing users to actually
     choose which feature types to show.  Be sure to use the new "cmap.conf"
     if you're upgrading (or change "include_features" to "label_features")
+-   Added restriction by feature type to map detail page
+-   Changed link to map details page for non-relational maps to be a 
+    question mark underneath the map rather than a click on the whole
+    map;  this is less ambiguous and also frees up the map for clicking
+    to zoom on specific areas
+-   Added ability to restrict correspondences by type
 
 0.05
 -   Added extra split tokens to highlight string in map detail page 
