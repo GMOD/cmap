@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.49 2003-10-01 23:26:17 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.50 2003-10-30 23:23:27 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.49 $)[-1];
+$VERSION = (qw$Revision: 1.50 $)[-1];
 
 #
 # Get command-line options
@@ -59,6 +59,7 @@ use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
 use Bio::GMOD::CMap::Utils;
 use Bio::GMOD::CMap::Admin::Import();
+use Bio::GMOD::CMap::Admin::Export();
 use Bio::GMOD::CMap::Admin::MakeCorrespondences();
 use Bio::GMOD::CMap::Admin::ImportCorrespondences();
 
@@ -722,6 +723,10 @@ sub export_data {
                 action  => 'export_correspondences',
                 display => 'Feature correspondences in CMap import format',
             },
+            { 
+                action  => 'export_objects',
+                display => 'Serialized database objects',
+            },
         ]
     );
     
@@ -1199,6 +1204,10 @@ sub export_as_text {
                  cmap_species s
         where    ms.species_id=s.species_id
     ];
+    $map_set_sql .= 'and ms.species_id in ('.join(',', @species_ids).') '
+        if @species_ids;
+    $map_set_sql .= 'and ms.map_type_id in ('.join(',', @map_type_ids).') '
+        if @map_type_ids;
     $map_set_sql .= 'and ms.map_set_id in ('.join(',', @map_set_ids).') '
         if @map_set_ids;
     $map_set_sql .= 'order by common_name, short_name';
@@ -1539,6 +1548,68 @@ sub export_correspondences {
         $no_exported++;
     }
     print "\nExported $no_exported records.\n";
+}
+
+# ----------------------------------------------------
+sub export_objects {
+#
+# Exports serialized database objects.
+#
+    my $self = shift;
+
+    #
+    # Which objects?
+    #
+    my @db_objects  =  $self->show_menu(
+        title       => 'Which objects?',
+        prompt      => 'Please select the objects you wish to export',
+        display     => 'object_name',
+        return      => 'object_type',
+        allow_null  => 0,
+        allow_mult  => 1,
+        allow_all   => 1,
+        data        => [
+            {
+                object_type => 'map_set',
+                object_name => 'Map Sets',
+            },
+            {
+                object_type => 'map_type',
+                object_name => 'Map Types',
+            },
+            {
+                object_type => 'species',
+                object_name => 'Species',
+            },
+            {
+                object_type => 'evidence_type',
+                object_name => 'Evidence Types',
+            },
+            {
+                object_type => 'feature_type',
+                object_name => 'Feature Types',
+            },
+            {
+                object_type => 'feature_correspondence',
+                object_name => 'Feature Correspondence',
+            },
+            {
+                object_type => 'xref',
+                object_name => 'Cross-references',
+            },
+        ]
+    );
+
+    my $exporter = Bio::GMOD::CMap::Admin::Export->new( 
+        data_source => $self->data_source 
+    );
+
+    $exporter->export( 
+        objects => \@db_objects,
+        log_fh  => $self->log_fh,
+    );
+    
+    return 1;
 }
 
 # ----------------------------------------------------
