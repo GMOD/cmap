@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.45 2003-05-16 19:53:49 kycl4rk Exp $
+# $Id: Map.pm,v 1.46 2003-05-20 21:37:31 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.45 $)[-1];
+$VERSION = (qw$Revision: 1.46 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -406,14 +406,16 @@ Lays out the map.
     #
     # Some common things we'll need later on.
     #
-    my $collapse_features     = $drawer->collapse_features;
-    my $max_image_pixel_width = $drawer->config('max_image_pixel_width');
-    my $min_map_pixel_height  = $drawer->config('min_map_pixel_height');
-    my $default_feature_color = $drawer->config('feature_color');
-    my $feature_details_url   = DEFAULT->{'feature_details_url'};
-    my $connecting_line_color = $drawer->config('connecting_line_color');
-    my $map_details_url       = $drawer->config('map_details_url');
-    my $map_set_info_url      = $drawer->config('map_set_info_url');
+    my $collapse_features      = $drawer->collapse_features;
+    my $max_image_pixel_width  = $drawer->config('max_image_pixel_width');
+    my $min_map_pixel_height   = $drawer->config('min_map_pixel_height');
+    my $default_feature_color  = $drawer->config('feature_color');
+    my $feature_details_url    = DEFAULT->{'feature_details_url'};
+    my $connecting_line_color  = $drawer->config('connecting_line_color');
+    my $map_details_url        = $drawer->config('map_details_url');
+    my $map_set_info_url       = $drawer->config('map_set_info_url');
+    my $rel_map_show_corr_only =
+        $drawer->config('relational_maps_show_only_correspondences') || 0;
     my $feature_corr_color    =
         $drawer->config('feature_correspondence_color') || '';
     my $feature_highlight_fg_color = 
@@ -432,8 +434,7 @@ Lays out the map.
         my $show_map_title = $is_relational && $slot_no != 0 ? 0 : 1;
         my $show_map_units = $is_relational && $slot_no != 0 ? 0 : 1;
         my $map_width      = $self->map_width( $map_id );
-#        my $column_width   = $map_width + $reg_font->height + 20;
-        my $column_width   = $map_width + 40;
+        my $column_width   = $map_width + 10;
         my $features       = $self->features( $map_id );
 
         #
@@ -441,7 +442,15 @@ Lays out the map.
         #
         my ( $min_x, $max_x, $area );
         my $draw_sub_name = SHAPE->{ $self->shape( $map_id ) };
+        my $map_name      = $self->map_name( $map_id );
+        my $map_lane;
+
         if ( $is_relational && $slot_no != 0 ) {
+            #
+            # Only need to set scratch pad for relational maps.
+            #
+            $drawer->set_scratch_pad(1);
+
             #
             # Relational maps are drawn to a size relative to the distance
             # their features correspond to features on the reference map.
@@ -469,12 +478,11 @@ Lays out the map.
                 if $pixel_height < $min_map_pixel_height;
             my $midpoint     = ( $positions[0] + $positions[-1] ) / 2;
             $base_y          = $midpoint - $pixel_height/2;
-            my $map_name     = $self->map_name( $map_id );
-            my $half_label   = ( $reg_font->width * length( $map_name ) ) / 2;
+            my $half_label   = (($reg_font->width*length($map_name))/2);
             my $top          = $base_y - $reg_font->height - 4;
             my $bottom       = $base_y + $pixel_height + 4;
             my $buffer       = 4;
-            my $column_index = column_distribution(
+            $map_lane        = column_distribution(
                 columns      => \@columns,
                 top          => $top,
                 bottom       => $bottom,
@@ -482,24 +490,15 @@ Lays out the map.
             );
 
             $base_x = $label_side eq RIGHT 
-                ? $original_base_x + ( $column_width * $column_index )
-                : $original_base_x - ( $column_width * $column_index );
+                ? $original_base_x + ($column_width * $map_lane) + $half_label
+                : $original_base_x - ($column_width * $map_lane) - $half_label;
 
-            my $label_x = $label_side eq RIGHT
-                ? $base_x + $map_width + 6 
-                : $base_x - $reg_font->height - 6;
+            my $leftmost  = $base_x - $half_label;
+            my $rightmost = $base_x + $half_label;
 
             $drawer->add_drawing(
-                STRING, $reg_font, $base_x - $half_label, $top,
-                $map_name, 'black'
+                STRING, $reg_font, $leftmost, $top, $map_name, 'black'
             );
-
-            my $leftmost = $label_side eq RIGHT
-                ? $base_x
-                : $label_x;
-            my $rightmost = $label_side eq RIGHT
-                ? $label_x + $reg_font->height
-                : $base_x + $map_width + 6;
 
             $min_x = $leftmost  unless defined $min_x;
             $max_x = $rightmost unless defined $max_x;
@@ -516,10 +515,16 @@ Lays out the map.
             map_units  => $show_map_units ? $self->map_units( $map_id ) : '',
             drawer     => $drawer,
             coords     => [ $base_x, $base_y, $base_y + $pixel_height ],
-            area       => $area,
         );
 
-        if ( $drawer->highlight_feature( $self->map_name( $map_id ) ) ) {
+        if ( @{ $area || [] } ) {
+            $map_bounds[0] = $area->[0] if $area->[0] < $map_bounds[0];
+            $map_bounds[1] = $area->[1] if $area->[1] < $map_bounds[1];
+            $map_bounds[2] = $area->[2] if $area->[2] > $map_bounds[2];
+            $map_bounds[3] = $area->[3] if $area->[3] > $map_bounds[3];
+        }
+
+        if ( $drawer->highlight_feature( $map_name ) ) {
             $drawer->add_drawing(
                 RECTANGLE, @map_bounds, $feature_highlight_fg_color
             );
@@ -660,11 +665,10 @@ Lays out the map.
         #
         my $min_y = $base_y;          # remembers the northermost position
         my %lanes;                    # associate priority with a lane
-        my $prev_lane_no;             # the previous lane
+        my %features_with_corr;       # features w/correspondences
         my ($leftmostf, $rightmostf); # furthest features
 
         for my $lane ( sort { $a <=> $b } keys %$features ) {
-            my %features_with_corr;           # features w/correspondences
             my (@north_labels,@south_labels); # holds label coordinates
             my $lane_features = $features->{ $lane };
             my $midpoint      = (
@@ -703,10 +707,11 @@ Lays out the map.
                     $drawer->has_correspondence( $feature->{'feature_id'} );
 
                 next if 
-                    $is_relational && # a relational map
-                    $slot_no != 0  && # that isn't the reference map
-                    !$has_corr     && # it has no correspondences
-                    !$show_labels;    # we're not showing labels
+                    $is_relational &&          # a relational map
+                    $rel_map_show_corr_only && # showing only corr. only
+                    $slot_no != 0  &&          # isn't the reference map
+                    !$has_corr     &&          # feature has no correspondences
+                    !$show_labels;             # not showing labels
 
                 my $fstart = $feature->{'start_position'} || 0;
                 my $fstop  = $feature->{'stop_position'};
@@ -1020,7 +1025,6 @@ Lays out the map.
                             $vert_line_x2 + $width, $y_pos1 + $width,
                         );
                     }
-
                     
                     $drawer->add_map_area(
                         coords => \@coords,
@@ -1249,7 +1253,8 @@ Lays out the map.
                     $label_connect_y1,
                     $label_connect_x2, 
                     $label_connect_y2,
-                    $label->{'color'} || $connecting_line_color,
+#                    $label->{'color'} || $connecting_line_color,
+                    'grey'
                 );
 
                 #
@@ -1275,17 +1280,144 @@ Lays out the map.
                 }
             }
 
-            #
-            # Register all the features that have correspondences.
-            #
-            $drawer->register_feature_position( %$_ ) for 
-                values %features_with_corr;
-
             $min_x = $leftmostf  if $leftmostf  < $min_x;
             $max_x = $rightmostf if $rightmostf > $max_x;
+
             $lanes{ $lane }{'furthest'} = $label_side eq RIGHT
                 ? $rightmostf : $leftmostf;
         }
+
+        #
+        # Make sure that the lanes for the maps take into account
+        # the span of all the features.
+        #
+        if ( defined $map_lane ) {
+            my $last_feature_lane = ( sort { $a <=> $b } keys %lanes )[-1];
+            my $furthest_feature  = $lanes{ $last_feature_lane }{'furthest'};
+            if ( $label_side eq RIGHT ) {
+                $furthest_feature = 
+                    $map_bounds[2] if $map_bounds[2] > $furthest_feature;
+            }
+            else {
+                $furthest_feature = 
+                    $map_bounds[0] if $map_bounds[0] < $furthest_feature;
+            }
+
+            #
+            # If the map overlaps something later, move it to the end.
+            #
+            if ( $map_lane < $#columns ) {
+                my $last_overlap_lane;
+                LANE:
+                for my $i ( $map_lane + 1 .. $#columns ) {
+                    #
+                    # If there's an overlap, check everything.
+                    #
+                    unless ( $last_overlap_lane ) {
+                        if ( $label_side eq RIGHT ) {
+                            next unless $furthest_feature > 
+                                $original_base_x + ( $column_width * ($i + 1) );
+                        }
+                        else {
+                            next unless $furthest_feature < 
+                                $original_base_x - ( $column_width * ($i + 1) );
+                        }
+                    }
+
+#                    print STDERR "Looking at lane $i for $map_name because ",
+#                        "furthest feature '$furthest_feature' stretches ",
+#                        "into lane '", 
+#                        $original_base_x + $column_width * ($i + 1), "'\n";
+
+                    for my $used ( @{ $columns[ $i ] } ) {
+                        my ( $n, $s ) = @$used;
+                        next if $n > $map_bounds[3];
+                        next if $s < $map_bounds[1];
+#                        print STDERR "$map_name ($map_bounds[1],$map_bounds[3]) overlaps in lane $i ($n,$s)\n";
+                        $last_overlap_lane = $i;
+                        next LANE; # no need to check anything else in this lane
+                    }
+                }
+
+                if ( $last_overlap_lane ) {
+                    my $shift  = $column_width*($last_overlap_lane+1-$map_lane);
+                       $shift *= -1 if $label_side eq LEFT;
+#                    print STDERR "Moving $map_name $shift pixels past lane $last_overlap_lane\n";
+#                    $drawer->add_drawing(LINE, $furthest_feature, 
+#                        $map_bounds[1] - 10, $furthest_feature, 
+#                        $map_bounds[1] - 3, 'red');
+                    $map_bounds[0]    += $shift;
+                    $map_bounds[2]    += $shift;
+                    $furthest_feature += $shift;
+                    $drawer->min_x( $furthest_feature );
+                    $drawer->max_x( $furthest_feature );
+
+                    $drawer->adjust_frame(
+                        x_shift         => $shift,
+                        y_shift         => 0,
+                        leave_max_x_y   => 1,
+                        leave_map_areas => 1,
+                    );
+
+                    for my $rec ( values %features_with_corr ) {
+                        $rec->{'right'}[0] += $shift;
+                        $rec->{'left'}[0]  += $shift;
+                    }
+                }
+            }
+
+            #
+            # Make sure all the lanes that overlap are marked.
+            #
+            my $i = $map_lane > 0 ? $map_lane - 1 : $map_lane;
+            for ( ;; ) {
+                if ( $label_side eq RIGHT ) {
+#                    last if
+#                    $furthest_feature < $original_base_x + $column_width * $i;
+                    if (
+                    $furthest_feature < $original_base_x + $column_width * $i
+                    ) {
+#                        $drawer->add_drawing(
+#                            RECTANGLE, 
+#                            $map_bounds[0], 
+#                            $map_bounds[1], 
+#                            $furthest_feature,
+##                            $map_bounds[2], 
+#                            $map_bounds[3], 
+#                            'green'
+#                        );
+                        last;
+                    }
+                }
+                else {
+#                    last if
+#                    $furthest_feature > $original_base_x - $column_width * $i;
+                    if (
+                    $furthest_feature > $original_base_x - $column_width * $i
+                    ) {
+#                        $drawer->add_drawing(
+#                            RECTANGLE, 
+#                            $map_bounds[0], 
+#                            $map_bounds[1], 
+##                            $furthest_feature,
+#                            $map_bounds[2], 
+#                            $map_bounds[3], 
+#                            'green'
+#                        );
+                        last;
+                    }
+                }
+
+                push @{ $columns[ $i ] }, [ $map_bounds[1], $map_bounds[3] ];
+                $i++;
+            }
+        }
+
+        #
+        # Register all the features that have correspondences.
+        #
+        $drawer->register_feature_position( %$_ ) for 
+            values %features_with_corr;
 
         #
         # Make map clickable.
@@ -1438,7 +1570,29 @@ Lays out the map.
                 "exceeded.  Please choose fewer maps."
             ) if ( abs $drawer->min_x + $slot_max_x ) > $max_image_pixel_width;
         }
+
+        $drawer->set_scratch_pad(0) if defined $map_lane;
     }
+
+#    # drawing guides
+#    for my $i ( 0 .. $#columns ) {
+#        my $map_width      = $self->map_width( $map_ids[0] );
+#        my $column_width   = $map_width + 10;
+#        my $x = $label_side eq RIGHT
+#            ? $original_base_x + $column_width * $i
+#            : $original_base_x - $column_width * $i;
+#        $drawer->add_drawing(LINE, $x, -30, $x, 500, 'lightgrey', 0);
+#        $drawer->add_drawing(STRING, $reg_font, $x, -30, $i, 'black', 0);
+#        $drawer->add_drawing(STRING, $reg_font, $x, 500, $i, 'black', 0);
+#
+##        my $col = $columns[$i];
+##        for my $segment ( @$col ) {
+##            my ( $n, $s ) = @$segment;
+##            $drawer->add_drawing(LINE, $x - 2, $n, $x + 2, $n, 'red', 0);
+##            $drawer->add_drawing(LINE, $x, $n, $x, $s, 'red', 0);
+##            $drawer->add_drawing(LINE, $x - 2, $s, $x + 2, $s, 'red', 0);
+##        }
+#    }
 
     #
     # Draw the map titles last for relational maps, 
