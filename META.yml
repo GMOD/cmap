@@ -45,7 +45,7 @@ provides:
     version: 1.14
   Bio::GMOD::CMap::Apache::AdminViewer:
     file: lib/Bio/GMOD/CMap/Apache/AdminViewer.pm
-    version: 1.62
+    version: 1.63
   Bio::GMOD::CMap::Apache::CorrespondenceViewer:
     file: lib/Bio/GMOD/CMap/Apache/CorrespondenceViewer.pm
     version: 1.2

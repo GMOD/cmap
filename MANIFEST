@@ -13,11 +13,13 @@ CREDITS
 data/sample-dump.sql.gz
 docs/ADMINISTRATION.pod
 docs/attributes-and-xrefs.pod
-docs/cmap-desc.html
-docs/cmap-graph.png
 docs/cmap-schema.png
+docs/cmap-schema-graph.png
+docs/cmap-schema-desc.html
 docs/CODE_OVERVIEW.pod
 htdocs/cmap.css
+htdocs/pod-style.css
+htdocs/gmod_logo.jpg
 htdocs/admintut/drawing-options.html
 htdocs/admintut/feature-lanes.html
 htdocs/admintut/feature-shapes.html
