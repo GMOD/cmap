@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.126 2004-06-11 02:48:52 mwz444 Exp $
+# $Id: Data.pm,v 1.127 2004-06-11 16:02:35 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.126 $)[-1];
+$VERSION = (qw$Revision: 1.127 $)[-1];
 
 use Data::Dumper;
 use Regexp::Common;
@@ -4394,6 +4394,259 @@ sub count_correspondences{
     }
     return \%corr_lookup;
 }
+
+# ----------------------------------------------------
+
+=pod
+
+=head2 cmap_entry_data
+
+Returns the data for the entry page.
+
+=cut
+
+sub cmap_entry_data {
+
+    my ( $self, %args ) = @_;
+    my $slots = $args{'slots'} or return;
+    my $min_correspondences = $args{'min_correspondences'}    || 0;
+    my $feature_type_aids   = $args{'include_feature_types'}  || [];
+    my $evidence_type_aids  = $args{'include_evidence_types'} || [];
+    my $ref_species_aid     = $args{'ref_species_aid'}        || '';
+    my $page_index_start    = $args{'page_index_start'}       || 1;
+    my $page_index_stop     = $args{'page_index_stop'}        || 20;
+    my $name_search         = $args{'name_search'}            || '';
+    my $ref_map             = $slots->{0};
+    my $ref_map_set_aid     = $ref_map->{'map_set_aid'}       || 0;
+    my $db  = $self->db  or return;
+    my $sql = $self->sql or return;
+    my $pid = $$;
+    my $no_maps;
+
+    my @ref_maps;
+
+    if ( $self->slot_info ) {
+        foreach my $map ( @{ $self->slot_info->{0} } ) {
+            my %temp_hash = (
+                'map_id'         => $map->[0],
+                'start_position' => $map->[1],
+                'stop_position'  => $map->[2],
+            );
+            push @ref_maps, \%temp_hash;
+        }
+    }
+
+    my $sql_str;
+    if ( $ref_map_set_aid && !$ref_species_aid ) {
+        $sql_str = q[
+                select s.accession_id
+                from   cmap_map_set ms,
+                       cmap_species s
+                where  ms.accession_id=?
+                and    ms.species_id=s.species_id
+		      ];
+        if ( my $scalar_ref =
+            $self->get_cached_results( $sql_str . $ref_map_set_aid ) )
+        {
+            $ref_species_aid = $$scalar_ref;
+        }
+        else {
+            $ref_species_aid =
+              $db->selectrow_array( $sql_str, {}, ($ref_map_set_aid) );
+            $self->store_cached_results( $sql_str . $ref_map_set_aid,
+                \$ref_species_aid );
+        }
+    }
+
+    #
+    # Select all the map set that can be reference maps.
+    #
+
+    $sql_str = q[
+            select   distinct s.accession_id as species_aid,
+                     s.display_order,
+                     s.common_name as species_common_name,
+                     s.full_name as species_full_name
+            from     cmap_map_set ms,
+                     cmap_species s
+            where    ms.is_enabled=1
+            and      ms.can_be_reference_map=1
+            and      ms.species_id=s.species_id
+            order by s.display_order,
+                     s.common_name, 
+                     s.full_name
+	      ];
+    my $ref_species;
+    my $scalar_ref;
+
+    if ( $scalar_ref = $self->get_cached_results($sql_str) ) {
+        $ref_species = $$scalar_ref;
+    }
+    else {
+        $ref_species = $db->selectall_arrayref( $sql_str, { Columns => {} } );
+        $self->store_cached_results( $sql_str, \$ref_species );
+    }
+
+    if ( @$ref_species && !$ref_species_aid ) {
+        $ref_species_aid = $ref_species->[0]{'species_aid'};
+    }
+
+
+
+    #
+    # Select all the map set that can be reference maps.
+    #
+    my $ref_map_sets = [];
+    if ($ref_species_aid) {
+        $sql_str = $sql->form_data_ref_map_sets_sql($ref_species_aid);
+        unless ( $ref_map_sets = $self->get_cached_results($sql_str) ) {
+            $ref_map_sets =
+              $db->selectall_arrayref( $sql_str, { Columns => {} }, );
+            $self->store_cached_results( $sql_str, $ref_map_sets );
+        }
+    }
+
+    #
+    # If there's only one map set, pretend it was submitted.
+    #
+    if ( !$ref_map_set_aid && scalar @$ref_map_sets == 1 ) {
+        $ref_map_set_aid = $ref_map_sets->[0]{'accession_id'};
+    }
+
+    #
+    # "-1" is a reserved value meaning "All."
+    #
+    $feature_type_aids  = [] if grep { /^-1$/ } @$feature_type_aids;
+    $evidence_type_aids = [] if grep { /^-1$/ } @$evidence_type_aids;
+
+    #
+    # If the user selected a map set, select all the maps in it.
+    #
+    my ( $ref_maps, $ref_map_set_info );
+
+    if ($ref_map_set_aid) {
+        unless (
+            (
+                ref( $ref_map->{'aid'} ) eq 'ARRAY'
+                ? @{ $ref_map->{'aid'} }
+                : $ref_map->{'aid'}
+            )
+            or $ref_map->{'map_names'}
+          )
+        {
+#            $sql_str = q[
+#            select   map.accession_id,
+#                     map.map_name
+#            from     cmap_map map,
+#                     cmap_map_set ms
+#            where    map.map_set_id=ms.map_set_id
+#            and      ms.accession_id=?
+#            ];
+            $sql_str = q[
+                select  map.accession_id,
+                        map.map_name,
+                        map.start_position,
+                        map.stop_position,
+                        count(distinct(cl.map_id2)) as comp_map_count
+                from    cmap_map_set ms, 
+                        cmap_map map
+                Left join cmap_correspondence_lookup cl
+                        on map.map_id=cl.map_id1
+                where    map.map_set_id=ms.map_set_id
+                and      ms.accession_id=?
+            ];
+            if ($name_search){
+                $sql_str.=" and map.map_name='$name_search' ";
+            }
+            $sql_str.=q[ 
+                group by map.accession_id, map.map_name,
+                    map.start_position,map.stop_position 
+            ];
+            if ($min_correspondences){
+                $sql_str.=" having count(distinct(cl.map_id2)) >='$min_correspondences' ";
+            }
+            $sql_str.=q[
+                order by map.display_order,
+                map.map_name
+            ];
+            nless ( $ref_maps =
+                $self->get_cached_results( $sql_str . "$ref_map_set_aid" ) )
+            {
+                $ref_maps =
+                  $db->selectall_arrayref( $sql_str, { Columns => {} },
+                    ("$ref_map_set_aid") );
+                $self->store_cached_results( $sql_str . "$ref_map_set_aid",
+                    $ref_maps );
+            }
+            $self->error(
+qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
+              )
+              unless @$ref_maps;
+        }
+        $no_maps=scalar(@$ref_maps);
+        ###keep only the page that we want.
+        if($page_index_stop<$no_maps){
+            splice @$ref_maps ,$page_index_stop;
+        }
+        if ($page_index_start-1){
+            splice @$ref_maps,0,$page_index_start-1;
+        }
+    }
+
+
+    my @slot_nos      = sort { $a <=> $b } keys %$slots;
+    my $rightmost_map = $slots->{ $slot_nos[-1] };
+    my $leftmost_map  = $slots->{ $slot_nos[0] };
+    my %feature_types;
+    my ( $comp_maps_right, $comp_maps_left );
+    if ( $self->slot_info ) {
+        $comp_maps_right = $self->get_comparative_maps(
+            min_correspondences => $min_correspondences,
+            feature_type_aids   => $feature_type_aids,
+            evidence_type_aids  => $evidence_type_aids,
+            feature_types       => \%feature_types,
+            ref_slot_no         => $slot_nos[-1],
+            pid                 => $pid,
+        );
+
+        $comp_maps_left =
+            $slot_nos[0] == $slot_nos[-1]
+          ? $comp_maps_right
+          : $self->get_comparative_maps(
+            min_correspondences => $min_correspondences,
+            feature_type_aids   => $feature_type_aids,
+            evidence_type_aids  => $evidence_type_aids,
+            feature_types       => \%feature_types,
+            ref_slot_no         => $slot_nos[0],
+            pid                 => $pid,
+          );
+    }
+
+    #
+    # Correspondence evidence types.
+    #
+    my @evidence_types = @{
+        $self->fake_selectall_arrayref(
+            $self->evidence_type_data(),
+            'evidence_type_accession as evidence_type_aid',
+            'evidence_type'
+        )
+      };
+
+
+
+    return {
+        ref_species_aid        => $ref_species_aid,
+        ref_species            => $ref_species,
+        ref_map_sets           => $ref_map_sets,
+        ref_map_set_aid        => $ref_map_set_aid,
+        ref_maps               => $ref_maps,
+        no_maps                => $no_maps,
+    };
+}
+
+
+
 # ----------------------------------------------------
 sub get_all_feature_types {
     my $self = shift;
