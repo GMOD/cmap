@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.90 2004-06-10 12:56:21 mwz444 Exp $
+# $Id: Map.pm,v 1.91 2004-06-11 02:48:52 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.90 $)[-1];
+$VERSION = (qw$Revision: 1.91 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1603,7 +1603,6 @@ sub add_feature_to_map {
 #                    !$has_corr     &&          # feature has no correspondences
 #                    !$show_labels;             # not showing labels
 
-print STDERR Dumper($feature)."\n";
     my $feature_shape = $feature->{'shape'} || LINE;
     my $shape_is_triangle = $feature_shape =~ /triangle$/;
     my $fstart = $feature->{'start_position'} || 0;
@@ -1683,7 +1682,9 @@ print STDERR Dumper($feature)."\n";
 
             my $buffer = 2;
             my $column_index;
-            if (@$fcolumns) {
+            if (@$fcolumns and 
+                not $self->feature_type_data( $feature->{'feature_type_aid'}, 
+                'glyph_overlap' )) {
                 for my $i ( 0 .. $#{$fcolumns} ) {
                     if ( $fcolumns->[$i] < $y_pos1 ) {
                         $column_index = $i;
