@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.62 2004-05-03 19:36:35 mwz444 Exp $
+# $Id: Drawer.pm,v 1.63 2004-05-06 14:39:02 mwz444 Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.62 $)[-1];
+$VERSION = (qw$Revision: 1.63 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -884,8 +884,8 @@ Lays out the image and writes it to the file system, set the "image_name."
         my $wm_y      = $max_y;
         $self->add_drawing( STRING, $font, $wm_x, $wm_y, $watermark, 'grey' );
         $self->add_map_area(
-            coords => [ $wm_x, $wm_y + $font->height, 
-                        $wm_x + $font->width * length( $watermark ), $wm_y ],
+            coords => [ $wm_x, $wm_y , 
+                        $wm_x + $font->width * length( $watermark ), $wm_y + $font->height ],
             url    => CMAP_URL,
             alt    => 'GMOD-CMap website',
         );
