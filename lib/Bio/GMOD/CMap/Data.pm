@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.89 2004-01-12 19:03:47 kycl4rk Exp $
+# $Id: Data.pm,v 1.90 2004-01-13 23:01:36 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.89 $)[-1];
+$VERSION = (qw$Revision: 1.90 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -2295,12 +2295,22 @@ Turn a feature name into a position.
     my $feature_name    = $args{'feature_name'} or return;
     my $map_id          = $args{'map_id'}       or return;
     my $db              = $self->db             or return;
-    my $sql             = $self->sql            or return;
     my $upper_name      = uc $feature_name;
     my $position        = $db->selectrow_array(
-        $sql->feature_name_to_position_sql,
+        q[
+            select    f.start_position
+            from      cmap_feature f
+            left join cmap_feature_alias fa
+            on        f.feature_id=fa.feature_id
+            where     f.map_id=?
+            and       (
+                upper(f.feature_name)=?
+                or
+                upper(fa.alias)=?
+            )
+        ],
         {},
-        ( $upper_name, $upper_name, $map_id )
+        ( $map_id, $upper_name, $upper_name )
     ) || 0;
 
     return $position;
