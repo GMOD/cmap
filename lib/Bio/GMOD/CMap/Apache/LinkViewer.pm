@@ -4,7 +4,7 @@ package Bio::GMOD::CMap::Apache::LinkViewer;
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Data::Pageset;
 use Bio::GMOD::CMap::Apache;
@@ -27,8 +27,6 @@ sub handler {
     my $links      = $data->{'links'};
     my $link_sets  = $data->{'link_sets'};
 
-print STDERR Dumper($links)."\n";
-print STDERR Dumper($link_sets)."\n";
     $PAGE_SIZE ||= $self->config_data('max_child_elements') || 0;
     $MAX_PAGES ||= $self->config_data('max_search_pages')   || 1;
 

@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::ManageLinks;
 # vim: set ft=perl:
 
-# $Id: ManageLinks.pm,v 1.1 2004-08-18 15:37:47 mwz444 Exp $
+# $Id: ManageLinks.pm,v 1.2 2004-08-23 15:50:51 mwz444 Exp $
 
 =pod
 
@@ -28,7 +28,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.1 $)[-1];
+$VERSION  = (qw$Revision: 1.2 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -68,6 +68,7 @@ Imports tab-delimited file with the following fields:
     map_accession_id
     map_start
     map_stop
+    link_name
 
 =cut
 
@@ -163,13 +164,11 @@ sub import_links {
             }
         }
 
-
-
         my $map_aid    = $record->{'map_accession_id'};
         my $map_name   = $record->{'map_name'};
         my $map_start  = $record->{'map_start'};
         my $map_stop   = $record->{'map_stop'};
-        
+        my $link_name  = $record->{'link_name'};
         my $sth = $db->prepare(qq[
             select accession_id
             from   cmap_map map
@@ -189,9 +188,24 @@ sub import_links {
                 "$map_name was not in the dataset\n"
                 ) unless(defined($map_aid));
         }
+        unless($link_name){
+            $link_name       = $map_name ? $map_name:"map_aid:$map_aid";
+            if (defined($map_start) and defined($map_stop)
+                and !($map_start eq '') and !($map_stop eq '')){
+                $link_name.=" from $map_start to $map_stop.";
+            }
+            elsif(defined($map_start)and !($map_start eq '')){
+                $link_name.=" from $map_start to the end.";
+            }
+            elsif(defined($map_stop)and !($map_stop eq '')){
+                $link_name.=" from the start to $map_stop.";
+            }
+        }
+
         my %ref_map_aids_hash;
         $ref_map_aids_hash{$map_aid}=();
         my %temp_hash=(
+            link_name            => $link_name,
             ref_map_set_aid => $map_set_aid,
             ref_map_aids    => \%ref_map_aids_hash,
             ref_map_start   => $map_start,
@@ -283,7 +297,11 @@ Lists all the link sets in this namespace
     my @links;
     my $link_data_set=thaw($cache->get($link_set_name)); 
     foreach my $link_data (@$link_data_set){
-        push @links,$self->create_viewer_link(%$link_data);
+        my %temp_array=(
+            name => $link_data->{'link_name'},
+            link => $self->create_viewer_link(%$link_data),
+        );
+        push @links,\%temp_array;
     }
     return @links; 
 }
