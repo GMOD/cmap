@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.82 2004-05-14 15:55:34 mwz444 Exp $
+# $Id: Map.pm,v 1.83 2004-05-16 19:38:10 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.82 $)[-1];
+$VERSION = (qw$Revision: 1.83 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -740,7 +740,7 @@ Lays out the map.
                   : $lane->{'furthest'} - 2
                   : $base_x;
             }
-
+	    my %drawn_glyphs;
             for my $feature (@$lane_features) {
                 ########################################
                 my $coords;
@@ -763,6 +763,7 @@ Lays out the map.
                     map_length        => $map_length,
                     leftmostf         => $leftmostf,
                     rightmostf        => $rightmostf,
+		    drawn_glyphs      => \%drawn_glyphs,
                     feature_type_aids => \%feature_type_aids,
                   );
                 $self->collect_labels_to_display(
@@ -1523,6 +1524,7 @@ sub add_feature_to_map {
     my $leftmostf         = $args{'leftmostf'};
     my $fcolumns          = $args{'fcolumns'};
     my $feature_type_aids = $args{'feature_type_aids'};
+    my $drawn_glyphs      = $args{'drawn_glyphs'};
 
     my $map_width = $self->map_width($map_id);
     my $reg_font  = $drawer->regular_font
@@ -1604,8 +1606,22 @@ sub add_feature_to_map {
 
         $feature->{'mid_y'} = ( $y_pos1 + $y_pos2 ) / 2;
     }
-    
-    my ( %drawn_glyphs, @temp_drawing_data );
+    #
+    # Here we try to reduce the redundant drawing of glyphs.
+    # However, if a feature has a correspondence, we want to
+    # make sure to draw it so it will show up highlighted.
+    #
+    my $glyph_key = int($y_pos1) . $feature_shape . int($y_pos2);
+    my $draw_this = 1;
+    #print STDERR "$glyph_key\n";
+    if ( $drawn_glyphs->{$glyph_key} ) {
+        $draw_this = $has_corr ? 1 : 0;
+	#print STDERR "$drawn_glyphs->{$glyph_key}\n";
+    }
+
+    if ($draw_this) {
+        $drawn_glyphs->{$glyph_key} = 1;
+    my (  @temp_drawing_data );
     if ( $feature_shape eq LINE ) {
         $y_pos1 = ( $y_pos1 + $y_pos2 ) / 2;
         push @temp_drawing_data,
@@ -1884,21 +1900,9 @@ sub add_feature_to_map {
 	
     }
 
-    #
-    # Here we try to reduce the redundant drawing of glyphs.
-    # However, if a feature has a correspondence, we want to
-    # make sure to draw it so it will show up highlighted.
-    #
-    my $glyph_key = int($y_pos1) . $feature_shape . int($y_pos2);
-    my $draw_this = 1;
-    if ( $drawn_glyphs{$glyph_key} ) {
-        $draw_this = $has_corr ? 1 : 0;
-    }
-
-    if ($draw_this) {
-        $drawn_glyphs{$glyph_key} = 1;
+    
         push @$drawing_data, @temp_drawing_data;
-    }
+    
 
     #
     # Register that we saw this type of feature.
@@ -1914,7 +1918,7 @@ sub add_feature_to_map {
     $rightmostf = $right_side unless defined $rightmostf;
     $leftmostf  = $left_side if $left_side < $leftmostf;
     $rightmostf = $right_side if $right_side > $rightmostf;
-
+}
     return ( $leftmostf, $rightmostf, \@coords, $color, $label_y );
 }
 
