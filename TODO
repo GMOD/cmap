@@ -1,11 +1,10 @@
                       Planned enhancements for CMap
     
-                             $Revision: 1.2 $
+                             $Revision: 1.3 $
 
 -   Some indicator for when features are dropped out
 -   Allow clicking/zooming on comparative maps
 -   Add reverse sort on columns in map_details
--   Improve documentation for curators, make tutorial
 -   Add buttons under maps for "delete," "flip," "zoom in," and "zoom
     out." Most likely I'll try to use icons for each, respectively: "X,"
     some sort of reciprocating arrows, "+", and "-".
@@ -15,29 +14,11 @@
 -   Possibly add "attributes" table a la Bio::DB::GFF for things like
     curator notes, dbxrefs, evidences, misc. extra data, multiple
     alternative names to features
--   Draw correspondence lines between features on the same map
-    (currently they only go from one map to another)
--   Allow multiple map sets to be selected as the "reference" set
-    when making correspondences, also allow curator to select target 
-    sets
--   In admin tool, keep track of sets between which name-based
-    correspondences have been determined so as to speed up loading
--   Allow curator to determine which features types are allowed for
-    creating automated correspondences between
 -   Make help more contextual (use object names from local data)
 -   Add automatic database audit trail (perhaps use GMOD Chado
     mechanisms?)
--   Allow end user to override map colors (maybe shapes, too?)
--   Move all SQL into modules
--   Change Makefile.PL to use install targets for copying files
-    instead of doing it myself during the configuration process
 -   Write some (post-installation) tests!  (Tests need to assume some
     data in the database, a working Apache installation, etc.)
--   Add dropping of existing correspondences when not updated with new
-    correspondence file (as data import does with maps/features) (?)
--   Create dummy data to include with distribution that is more
-    complicated and much smaller than Gramene data, move raw Gramene
-    data to web download only
 -   Add "remarks" (and maybe "code") column to cmap_feature_type and
     cmap_evidence_type, allow clicking on description in map legend to
     go to a page describing the object
