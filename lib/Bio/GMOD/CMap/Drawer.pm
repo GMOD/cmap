@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.38 2003-07-01 15:19:51 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.39 2003-07-11 22:49:21 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.38 $)[-1];
+$VERSION = (qw$Revision: 1.39 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -37,7 +37,7 @@ use base 'Bio::GMOD::CMap';
 my @INIT_PARAMS = qw[
     apr slots highlight font_size image_size image_type 
     label_features include_feature_types include_evidence_types
-    data_source min_correspondences collapse_features
+    data_source min_correspondences collapse_features cache_dir
 ];
 
 # ----------------------------------------------------
