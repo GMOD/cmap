@@ -8,11 +8,11 @@ CMap Install
 
 =head1 VERSION
 
-$Revision: 1.9 $
+$Revision: 1.10 $
 
 =head1 QUICK START
 
-If you are upgrading from 0.12, please read the "UPDATE12to13"
+If you are upgrading from 0.12, please read the "upgrade-12-to-13.pod"
 document in the "upgrade" directory.
 
 If you are installing CMap anew and are pretty experienced with Unix
