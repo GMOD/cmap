@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Wed Feb 11 14:17:52 2004
+-- Created on Fri Feb 20 12:11:35 2004
 -- 
 --
 -- Table: cmap_attribute
@@ -253,7 +253,6 @@ CREATE TABLE "cmap_species" (
   "common_name" character varying(64) DEFAULT '' NOT NULL,
   "full_name" character varying(64) DEFAULT '' NOT NULL,
   "display_order" bigint DEFAULT '1' NOT NULL,
-  "ncbi_taxon_id" bigint DEFAULT NULL,
   PRIMARY KEY ("species_id")
 );
 

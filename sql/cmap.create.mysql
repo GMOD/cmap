@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::MySQL
--- Created on Wed Feb 11 14:18:19 2004
+-- Created on Fri Feb 20 12:11:19 2004
 -- 
 SET foreign_key_checks=0;
 
@@ -225,7 +225,6 @@ CREATE TABLE cmap_species (
   common_name varchar(64) NOT NULL DEFAULT '',
   full_name varchar(64) NOT NULL DEFAULT '',
   display_order integer(11) NOT NULL DEFAULT '1',
-  ncbi_taxon_id integer(11) DEFAULT NULL,
   INDEX acc_id_species_id (accession_id, species_id),
   PRIMARY KEY (species_id)
 );

@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::SQLite
--- Created on Wed Feb 11 14:18:10 2004
+-- Created on Fri Feb 20 12:11:43 2004
 -- 
 BEGIN TRANSACTION;
 
@@ -186,8 +186,7 @@ CREATE TABLE cmap_species (
   accession_id varchar(20) NOT NULL DEFAULT '',
   common_name varchar(64) NOT NULL DEFAULT '',
   full_name varchar(64) NOT NULL DEFAULT '',
-  display_order int(11) NOT NULL DEFAULT '1',
-  ncbi_taxon_id int(11) DEFAULT NULL
+  display_order int(11) NOT NULL DEFAULT '1'
 );
 
 --

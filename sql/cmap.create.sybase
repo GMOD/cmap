@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::Sybase
--- Created on Wed Feb 11 14:17:46 2004
+-- Created on Fri Feb 20 12:11:51 2004
 -- 
 --
 -- Table: cmap_attribute
@@ -253,7 +253,6 @@ CREATE TABLE cmap_species (
   common_name varchar(64) DEFAULT '' NOT NULL,
   full_name varchar(64) DEFAULT '' NOT NULL,
   display_order numeric(11) DEFAULT '1' NOT NULL,
-  ncbi_taxon_id numeric(11) DEFAULT NULL NULL,
   CONSTRAINT pk_cmap_species PRIMARY KEY (species_id)
 );
 
