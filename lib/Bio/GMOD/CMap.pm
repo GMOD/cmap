@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap;
 
-# $Id: CMap.pm,v 1.21 2003-01-29 00:23:48 kycl4rk Exp $
+# $Id: CMap.pm,v 1.22 2003-01-30 22:24:46 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,6 +31,7 @@ $VERSION = 0.06;
 
 use Class::Base;
 use Config::General;
+use Bio::GMOD::CMap::Data;
 use Bio::GMOD::CMap::Constants;
 use DBI;
 #use Bio::GMOD::CMap::DB;
