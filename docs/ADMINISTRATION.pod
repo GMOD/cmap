@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.5 $
+$Revision: 1.6 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -149,6 +149,26 @@ Dictates the default choice of the feature type display menu.
 Dictates which map units can be used to scale maps to each other.  Maps 
 with units described here will be scaled against maps with the same 
 units.  
+
+=item * <aggregated_correspondence_colors>
+
+This option dictates the color of aggregated correspondence lines based on the
+number of correspondences between the maps.  The default is black.
+
+The format is "upper_bound color" where upper_bound is the cap that this color
+is used for.  In the following example, from 0-1 corr, the line will be light
+grey.  If there are 2 corr, the line will be blue.  From 3-5 (inclusive), the
+line will be purple.  Anything ABOVE 20 will be black, which is denoted by an
+upper_bound of 0 (in this case it means infinity).
+
+ <aggregated_correspondence_colors>
+    1    lightgrey
+    2   blue
+    5   purple
+    20  red
+    0    black
+ </aggregated_correspondence_colors>
+
 
 =item * disable_cache
 

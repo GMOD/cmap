@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.177 2004-11-19 16:24:21 mwz444 Exp $
+# $Id: Data.pm,v 1.178 2004-11-19 19:08:29 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.177 $)[-1];
+$VERSION = (qw$Revision: 1.178 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -4980,7 +4980,7 @@ Creates and returns some map info for each slot.
 Data Structure:
   slot_info  =  {
     slot_no  => {
-      map_id => [ current_start, current_stop, ori_start, ori_stop ]
+      map_id => [ current_start, current_stop, ori_start, ori_stop, magnification ]
     }
   }
 
