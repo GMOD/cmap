@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::Export;
 # vim: set ft=perl:
 
-# $Id: Export.pm,v 1.6 2004-02-10 23:06:50 kycl4rk Exp $
+# $Id: Export.pm,v 1.6.2.1 2004-06-18 21:17:42 kycl4rk Exp $
 
 =pod
 
@@ -28,7 +28,7 @@ of data out of CMap.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.6 $)[-1];
+$VERSION  = (qw$Revision: 1.6.2.1 $)[-1];
 
 use Data::Dumper;
 use File::Spec::Functions;
@@ -52,15 +52,16 @@ Exports data.
 
     my ( $self, %args ) = @_;
     my $objects         = $args{'objects'};
-    my $output_path     = $args{'output_path'} or 
-                          return $self->error('No output path');
+    my $output          = $args{'output'};
+    my $output_path     = $args{'output_path'};
+    return $self->error('No output argument') unless $output || $output_path;
+    return $self->error('Output arg not a scalar reference') unless
+        ref $output eq 'SCALAR';
     my $db              = $self->db or 
                           return $self->error('No database handle');
     $LOG_FH             = $args{'log_fh'} || \*STDOUT;
 
     return $self->error('No objects to export') unless @$objects;
-
-    open my $out_fh, ">$output_path" or die "Can't open '$output_path'\n";
 
     local $| = 1;
 
@@ -99,19 +100,27 @@ Exports data.
         "Created on $date"
     );
 
-    print $out_fh 
-        "<?xml version='1.0'?>\n",
+    my $xml = join( "\n",
+        "<?xml version='1.0'?>",
         ( join( "\n", map { "<!-- $_ -->" } @comments ) ),
-        "\n\n",
+        '', '', 
         XMLout( \%dump, 
             RootName      => 'cmap_export',
             NoAttr        => 1,
             SuppressEmpty => 1,
             XMLDecl       => 0,
         )
-    ;
-    close $out_fh;
+    );
 
+    if ( $output_path ) {
+        open my $out_fh, ">$output_path" or die "Can't open '$output_path'\n";
+        print $out_fh 
+        close $out_fh;
+    }
+    else {
+        $$output = $xml;
+    }
+    
     return 1;
 }
 
@@ -192,7 +201,9 @@ sub get_cmap_evidence_type {
 
     my $et = $db->selectall_arrayref( $sql, { Columns => {} } );
 
-    $self->get_attributes_and_xrefs( 'cmap_evidence_type', $et );
+    unless ( $args{'no_attributes'} ) {
+        $self->get_attributes_and_xrefs( 'cmap_evidence_type', $et );
+    }
 
     return $et;
 }
@@ -231,7 +242,9 @@ sub get_cmap_feature_correspondence {
     my $db = $self->db or return;
     my $fc = $db->selectall_arrayref( $fc_sql, { Columns => {} } );
 
-    $self->get_attributes_and_xrefs( 'cmap_feature_correspondence', $fc );
+    unless ( $args{'no_attributes'} ) {
+        $self->get_attributes_and_xrefs( 'cmap_feature_correspondence', $fc );
+    }
 
     my $evidence_sql;
     if ( $map_set_ids )  {
@@ -304,7 +317,9 @@ sub get_cmap_feature_type {
 
     my $ft = $db->selectall_arrayref( $sql, { Columns => {} } );
 
-    $self->get_attributes_and_xrefs( 'cmap_feature_type', $ft );
+    unless ( $args{'no_attributes'} ) {
+        $self->get_attributes_and_xrefs( 'cmap_feature_type', $ft );
+    }
 
     return $ft;
 }
@@ -361,7 +376,9 @@ sub get_cmap_map_set {
             ( $ms->{'object_id'} )
         );
 
-        $self->get_attributes_and_xrefs( 'cmap_map', $ms->{'map'} );
+        unless ( $args{'no_attributes'} ) {
+            $self->get_attributes_and_xrefs( 'cmap_map', $ms->{'map'} );
+        }
 
         for my $map ( @{ $ms->{'map'} } ) {
             $map->{'feature'} = $db->selectall_arrayref(
@@ -394,7 +411,11 @@ sub get_cmap_map_set {
                 ( $map->{'object_id'} )
             );
 
-            $self->get_attributes_and_xrefs( 'cmap_feature_alias', $aliases );
+            unless ( $args{'no_attributes'} ) {
+                $self->get_attributes_and_xrefs( 
+                    'cmap_feature_alias', $aliases 
+                );
+            }
 
             my %alias_lookup = ();
             for my $alias ( @$aliases ) {
@@ -410,11 +431,13 @@ sub get_cmap_map_set {
 
             $self->get_attributes_and_xrefs( 
                 'cmap_feature', $map->{'feature'} 
-            );
+            ) unless $args{'no_attributes'};
         }
     }
 
-    $self->get_attributes_and_xrefs( 'cmap_map_set', $map_sets );
+    unless ( $args{'no_attributes'} ) {
+        $self->get_attributes_and_xrefs( 'cmap_map_set', $map_sets );
+    }
 
     my @species;
     for my $species_id ( keys %species_ids ) {
@@ -469,7 +492,9 @@ sub get_cmap_map_type {
 
     my $mt = $db->selectall_arrayref( $sql, { Columns => {} } );
 
-    $self->get_attributes_and_xrefs( 'cmap_map_type', $mt );
+    unless ( $args{'no_attributes'} ) {
+        $self->get_attributes_and_xrefs( 'cmap_map_type', $mt );
+    }
 
     return $mt;
 }
@@ -494,7 +519,9 @@ sub get_cmap_species {
 
     my $species = $db->selectall_arrayref( $sql, { Columns => {} } );
 
-    $self->get_attributes_and_xrefs( 'cmap_species', $species );
+    unless ( $args{'no_attributes'} ) {
+        $self->get_attributes_and_xrefs( 'cmap_species', $species );
+    }
 
     return $species;
 }
