@@ -18,14 +18,14 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.3 2003-10-16 22:22:53 kycl4rk Exp $
+# $Id: Constants.pm.PL,v 1.4 2003-12-15 17:30:58 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -530,6 +530,7 @@ use constant VALID => {
     image_type  => { 
         png     => 1, 
         jpeg    => 1,
+        svg     => 1,
     },
 
     #
@@ -550,15 +551,6 @@ use constant VALID => {
     },
 
     #
-    # Font sizes, pretty much just "small," "medium" and "large."
-    #
-    font_size  => {
-        small  => { regular => gdTinyFont,  label => gdMediumBoldFont },
-        medium => { regular => gdSmallFont, label => gdLargeFont      },
-        large  => { regular => gdLargeFont, label => gdGiantFont      },
-    },
-
-    #
     # SQL driver modules used by Bio::GMOD::CMap::Data
     # If you use a different database, then just point the driver
     # name to the module you want to use.  Or write your own module
@@ -568,7 +560,6 @@ use constant VALID => {
         generic       => 'Bio::GMOD::CMap::Data::Generic',
         mysql         => 'Bio::GMOD::CMap::Data::MySQL',
         oracle        => 'Bio::GMOD::CMap::Data::Oracle',
-#        pg            => 'Bio::GMOD::CMap::Data::Generic',
     },
 
     #
