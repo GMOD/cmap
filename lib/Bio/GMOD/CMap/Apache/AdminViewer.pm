@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.15 2003-01-01 02:14:29 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.16 2003-01-05 04:24:38 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -28,7 +28,7 @@ $COLORS         = [ sort keys %{ +COLORS } ];
 $FEATURE_SHAPES = [ qw( box dumbbell line span ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.15 $)[-1];
+$VERSION        = (qw$Revision: 1.16 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -1169,6 +1169,7 @@ sub feature_view {
                    fc.accession_id,
                    fc.feature_id1,
                    fc.feature_id2,
+                   fc.is_enabled,
                    f.feature_id,
                    f.feature_name as feature_name,
                    f.alternate_name as alternate_name,
@@ -1369,6 +1370,7 @@ sub feature_corr_insert {
     my $feature_id1      = $apr->param('feature_id1')  or die 'No feature id1';
     my $feature_id2      = $apr->param('feature_id2')  or die 'No feature id2';
     my $accession_id     = $apr->param('accession_id') || '';
+    my $is_enabled       = $apr->param('is_enabled')   ||  0;
     my $evidence_type_id = $apr->param('evidence_type_id') or push @errors,
         'Please select an evidence type';
 
@@ -1379,7 +1381,8 @@ sub feature_corr_insert {
     return $self->feature_corr_create( errors => \@errors ) if @errors;
 
     my $feature_correspondence_id = $admin->insert_correspondence(
-        $feature_id1, $feature_id2, $evidence_type_id, $accession_id
+        $feature_id1, $feature_id2, $evidence_type_id, 
+        $accession_id, $is_enabled
     );
 
     return $self->redirect_home( 
@@ -1401,7 +1404,8 @@ sub feature_corr_edit {
             select fc.feature_correspondence_id,
                    fc.accession_id,
                    fc.feature_id1,
-                   fc.feature_id2
+                   fc.feature_id2,
+                   fc.is_enabled
             from   cmap_feature_correspondence fc
             where  fc.feature_correspondence_id=?
         ]
@@ -1427,15 +1431,17 @@ sub feature_corr_update {
         or return $self->error('No feature correspondence id');
     my $accession_id              = $apr->param('accession_id') || 
         $feature_correspondence_id;
+    my $is_enabled                = $apr->param('is_enabled')   || 0;
 
     $db->do(
         q[
             update cmap_feature_correspondence
-            set    accession_id=?
+            set    accession_id=?,
+                   is_enabled=?
             where  feature_correspondence_id=?
         ],
         {},
-        ( $accession_id, $feature_correspondence_id )
+        ( $accession_id, $is_enabled, $feature_correspondence_id )
     );
 
     return $self->redirect_home( 
@@ -1458,7 +1464,8 @@ sub feature_corr_view {
             select fc.feature_correspondence_id,
                    fc.accession_id,
                    fc.feature_id1,
-                   fc.feature_id2
+                   fc.feature_id2,
+                   fc.is_enabled
             from   cmap_feature_correspondence fc
             where  fc.feature_correspondence_id=?
         ]
@@ -1738,7 +1745,9 @@ sub feature_type_edit {
                      feature_type_id, 
                      feature_type, 
                      shape, 
-                     color
+                     color,
+                     drawing_lane,
+                     drawing_priority
             from     cmap_feature_type
             where    feature_type_id=?
         ]
@@ -1762,21 +1771,23 @@ sub feature_type_edit {
 
 # ----------------------------------------------------
 sub feature_type_insert {
-    my $self            = shift;
-    my @errors          = ();
-    my $db              = $self->db;
-    my $apr             = $self->apr;
-    my $feature_type    = $apr->param('feature_type') or 
-                          push @errors, 'No feature type';
-    my $shape           = $apr->param('shape')        or 
-                          push @errors, 'No shape';
-    my $color           = $apr->param('color')        || '';
-    my $feature_type_id = next_number(
-        db              => $db, 
-        table_name      => 'cmap_feature_type',
-        id_field        => 'feature_type_id',
+    my $self             = shift;
+    my @errors           = ();
+    my $db               = $self->db;
+    my $apr              = $self->apr;
+    my $feature_type     = $apr->param('feature_type') or 
+                           push @errors, 'No feature type';
+    my $shape            = $apr->param('shape')        or 
+                           push @errors, 'No shape';
+    my $color            = $apr->param('color')            || '';
+    my $drawing_lane     = $apr->param('drawing_lane')     ||  1;
+    my $drawing_priority = $apr->param('drawing_priority') ||  1;
+    my $feature_type_id  = next_number(
+        db               => $db, 
+        table_name       => 'cmap_feature_type',
+        id_field         => 'feature_type_id',
     ) or push @errors, 'No feature type id';
-    my $accession_id    = $apr->param('accession_id') || $feature_type_id;
+    my $accession_id     = $apr->param('accession_id') || $feature_type_id;
 
     return $self->feature_type_create( errors => \@errors ) if @errors;
 
@@ -1784,11 +1795,13 @@ sub feature_type_insert {
         q[ 
             insert
             into   cmap_feature_type 
-                   ( accession_id, feature_type_id, feature_type, shape, color )
-            values ( ?, ?, ?, ?, ? )
+                   ( accession_id, feature_type_id, feature_type, 
+                     shape, color, drawing_lane, drawing_priority )
+            values ( ?, ?, ?, ?, ?, ?, ? )
         ],
         {}, 
-        ( $accession_id, $feature_type_id, $feature_type, $shape, $color )
+        ( $accession_id, $feature_type_id, $feature_type, 
+          $shape, $color, $drawing_lane, $drawing_priority )
     );
 
     return $self->redirect_home( ADMIN_HOME_URI.'?action=feature_types_view' ); 
@@ -1796,18 +1809,20 @@ sub feature_type_insert {
 
 # ----------------------------------------------------
 sub feature_type_update {
-    my $self            = shift;
-    my @errors          = ();
-    my $db              = $self->db;
-    my $apr             = $self->apr;
-    my $accession_id    = $apr->param('accession_id') or 
-                          push @errors, 'No accession id';
-    my $shape           = $apr->param('shape')        or 
-                          push @errors, 'No shape';
-    my $color           = $apr->param('color')        || '';
-    my $feature_type_id = $apr->param('feature_type_id') 
+    my $self             = shift;
+    my @errors           = ();
+    my $db               = $self->db;
+    my $apr              = $self->apr;
+    my $accession_id     = $apr->param('accession_id')
+        or push @errors, 'No accession id';
+    my $shape            = $apr->param('shape')
+        or push @errors, 'No shape';
+    my $color            = $apr->param('color')            || '';
+    my $drawing_lane     = $apr->param('drawing_lane')     || 1;
+    my $drawing_priority = $apr->param('drawing_priority') || 1;
+    my $feature_type_id  = $apr->param('feature_type_id') 
         or push @errors, 'No feature type id';
-    my $feature_type    = $apr->param('feature_type')    
+    my $feature_type     = $apr->param('feature_type')    
         or push @errors, 'No feature type';
 
     return $self->feature_type_edit( errors => \@errors ) if @errors;
@@ -1815,11 +1830,18 @@ sub feature_type_update {
     $db->do(
         q[ 
             update cmap_feature_type
-            set    accession_id=?, feature_type=?, shape=?, color=?
+            set    accession_id=?, 
+                   feature_type=?, 
+                   shape=?, 
+                   color=?,
+                   drawing_lane=?,
+                   drawing_priority=?
             where  feature_type_id=?
         ],
         {}, 
-        ( $accession_id, $feature_type, $shape, $color, $feature_type_id )
+        ( $accession_id, $feature_type, $shape, $color, 
+          $drawing_lane, $drawing_priority, $feature_type_id 
+        )
     );
 
     return $self->redirect_home( ADMIN_HOME_URI.'?action=feature_types_view' ); 
@@ -1833,13 +1855,17 @@ sub feature_types_view {
     my $order_by    = $apr->param('order_by')    || 'feature_type';
     my $limit_start = $apr->param('limit_start') ||              0;
 
+    $order_by = 'drawing_lane,drawing_priority' if $order_by eq 'drawing_lane';
+
     my $feature_types = $db->selectall_arrayref(
         qq[
             select   accession_id, 
                      feature_type_id, 
                      feature_type, 
                      shape, 
-                     color
+                     color,
+                     drawing_lane,
+                     drawing_priority
             from     cmap_feature_type
             order by $order_by
         ], 
