@@ -1,34 +1,32 @@
-package CSHL::CMap::Constants;
+package Bio::GMOD::CMap::Constants;
 
-# $Id: Constants.pm,v 1.2 2002-08-03 04:41:33 kycl4rk Exp $
+# $Id: Constants.pm,v 1.6 2002-08-30 02:49:55 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 @EXPORT = qw[ 
     ARC
     COLORS
+    CONFIG_FILE
     DEFAULT
     FILL
     FILLED_RECT
     FILL_TO_BORDER
     LEFT
     LINE
-    MIN_MAP_PIXEL_HEIGHT
-    MAX_CHILD_ELEMENTS
-    MAX_FEATURE_COUNT
-    MAX_SEARCH_PAGES
-    MAP_TITLES
     NUMBER_RE
+    NORTH
     PREFERENCE_FIELDS
     TEMPLATE_DIR
     RECTANGLE
     RIGHT
     SHAPE_XY
+    SOUTH
     STRING
     STRING_UP
     URLS
@@ -182,6 +180,11 @@ use constant COLORS      => {
 };
 
 #
+# The location of the configuration file.
+#
+use constant CONFIG_FILE => '/usr/local/apache/conf/cmap.conf';
+
+#
 # This group represents strings used for the GD package for drawing.
 # I'd rather use constants in order to get compile-time spell-checking
 # rather than using plain strings (even though that would be somewhat
@@ -202,6 +205,8 @@ use constant STRING_UP      => 'stringUp';
 #
 use constant RIGHT => 'right';
 use constant LEFT  => 'left';
+use constant NORTH => 'north';
+use constant SOUTH => 'south';
 
 #
 # Describes where the X and Y attributes of a shape are.
@@ -244,9 +249,21 @@ use constant DEFAULT => {
 
     #
     # The color of the line connecting things.
-    # Default: green
+    # Default: lightblue
     #
     connecting_line_color => 'lightblue',
+
+    #
+    # The domain of the cookies.
+    # Default: empty
+    #
+    cookie_domain => '',
+
+    #
+    # Whether or not to be in debug mode ("0" or "1").
+    # Default: 0
+    #
+    debug => 0,
 
     #
     # Color of a feature if not defined
@@ -258,7 +275,13 @@ use constant DEFAULT => {
     # Color of box around a highlighted feature.
     # Default: red
     #
-    feature_highlight_color => 'red',
+    feature_highlight_fg_color => 'red',
+
+    #
+    # Color of background behind a highlighted feature.
+    # Default: yellow
+    #
+    feature_highlight_bg_color => 'yellow',
 
     #
     # Color of a feature label when it has a correspondence.
@@ -281,13 +304,6 @@ use constant DEFAULT => {
     feature_search_field => 'feature_name',
     
     #
-    # The way to deliver the image, 'png' or 'jpeg'
-    # (or whatever your compilation of GD offers, perhaps 'gif'?).
-    # Default: png
-    #
-    image_type => 'png',
-    
-    #
     # The size of the map image.  Note that there are options on the
     # template for the user to choose the size of the image they're
     # given.  You should make sure that what you place here
@@ -297,6 +313,20 @@ use constant DEFAULT => {
     #
     image_size => 'small',
 
+    #
+    # The way to deliver the image, 'png' or 'jpeg'
+    # (or whatever your compilation of GD offers, perhaps 'gif'?).
+    # Default: png
+    #
+    image_type => 'png',
+
+    #
+    # What to show for feature labels on the maps.
+    # Values: none landmarks all
+    # Default: 'none'
+    #
+    include_features => 'none',
+    
     #
     # Color of a map (type) if not defined
     # Default: lightgrey
@@ -310,10 +340,48 @@ use constant DEFAULT => {
     map_width => 8,
 
     #
-    # What to show for feature labels on the maps.
-    # Default: 'none'
+    # The titles to put atop the individual maps, e.g., "Wheat-2M."
+    # Your choices will be stacked in the order defined.
+    # Choices: species_name, map_set_name (short_name), map_name
+    # Default: species_name, map_name
     #
-    include_features => 'none',
+    map_titles => [ qw( species_name map_set_name map_name) ],
+
+    #
+    # The smallest any map can be drawn, in pixels.
+    # Default: 20
+    #
+    min_map_pixel_height => 20,
+
+    #
+    # The maximum number of features allowed on a map.
+    # Set to "0" (or a negative number) or undefined to disable.
+    # Default: 200
+    #
+    max_feature_count => 0,
+
+    #
+    # The maximum number of elements that can appear on a page 
+    # (like in search results).
+    #
+    max_child_elements => 25,
+
+    #
+    # How many pages of results to show in searches.
+    # Default: 10
+    #
+    max_search_pages => 10,
+
+    #
+    # The module to dispatch to when no path is given to "/cmap."
+    #
+    path_info => 'index',
+
+    #
+    # The HTML stylesheet.
+    # Default: empty
+    #
+    stylesheet => '',
     
     #
     # The name of the SQL driver module to use if nothing else is specified.
@@ -322,59 +390,20 @@ use constant DEFAULT => {
     sql_driver_module => 'generic',
 
     #
+    # Location of templates.
+    #
+    template_dir => '/usr/local/apache/templates/comparative_maps',
+
+    #
     # What to name the cookie containing user preferences.
     #
     user_pref_cookie_name => 'CMAP_USER_PREF', 
 };
 
 #
-# The smallest any map can be drawn, in pixels.
-# Default: 20
-#
-use constant MIN_MAP_PIXEL_HEIGHT => 20;
-
-#
-# The titles to put atop the individual maps, e.g., "Wheat-2M."
-# Your choices will be stacked in the order defined.
-# Choices: species_name, map_set_name (short_name), map_name
-# Default: species_name, map_name
-#
-use constant MAP_TITLES => [ qw(
-    species_name
-    map_set_name
-    map_name
-) ];
-
-#
-# The maximum number of features allowed on a map.
-# Set to "0" (or a negative number) or undefined to disable.
-# Default: 200
-#
-use constant MAX_FEATURE_COUNT => 0;
-
-#
-# The maximum number of elements that can appear on a page 
-# (like in search results).
-#
-use constant MAX_CHILD_ELEMENTS => 25;
-
-#
-# How many pages of results to show in searches.
-# Default: 10
-#
-use constant MAX_SEARCH_PAGES => 10;
-
-#
 # A regular expression for determining valid numbers.
 #
 use constant NUMBER_RE => qr{^\-?\d+(?:\.\d+)?$};
-
-#
-# The absolute path of the directory holding the templates.
-# At run time, this can be overridden by an Apache dir_config, e.g.:
-# PerlSetVar TEMPLATE_DIR '/web/templates/'
-#
-use constant TEMPLATE_DIR => '/usr/local/apache/templates/comparative_maps';
 
 #
 # The fields to remember between requests and sessions.
@@ -448,16 +477,16 @@ use constant VALID => {
     },
 
     #
-    # SQL driver modules used by CSHL::CMap::Data
+    # SQL driver modules used by Bio::GMOD::CMap::Data
     # If you use a different database, then just point the driver
     # name to the module you want to use.  Or write your own module
     # and point your driver to it.  Use only lowercase for the keys.
     #
     sql_driver_module => {
-        generic       => 'CSHL::CMap::Data::Generic',
-        mysql         => 'CSHL::CMap::Data::MySQL',
-        oracle        => 'CSHL::CMap::Data::Oracle',
-        #postgres     => 'CSHL::CMap::Data::Generic' or 'My::Postgres',
+        generic       => 'Bio::GMOD::CMap::Data::Generic',
+        mysql         => 'Bio::GMOD::CMap::Data::MySQL',
+        oracle        => 'Bio::GMOD::CMap::Data::Oracle',
+        #postgres     => 'Bio::GMOD::CMap::Data::Generic' or 'My::Postgres',
     },
 
     #
@@ -493,11 +522,11 @@ use constant VALID => {
 
 =head1 NAME
 
-CSHL::CMap::Constants - constants module
+Bio::GMOD::CMap::Constants - constants module
 
 =head1 SYNOPSIS
 
-  use CSHL::CMap::Constants;
+  use Bio::GMOD::CMap::Constants;
   blah blah blah
 
 =head1 DESCRIPTION

@@ -1,18 +1,18 @@
-package CSHL::CMap::Admin::Import;
+package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.3 2002-08-12 17:17:56 kycl4rk Exp $
+# $Id: Import.pm,v 1.1 2002-08-23 16:07:18 kycl4rk Exp $
 
 =pod
 
 =head1 NAME
 
-CSHL::CMap::Admin::DataImport - import map data
+Bio::GMOD::CMap::Admin::DataImport - import map data
 
 =head1 SYNOPSIS
 
-  use CSHL::CMap::Admin::DataImport;
+  use Bio::GMOD::CMap::Admin::DataImport;
 
-  my $importer = CSHL::CMap::Admin::DataImport->new(db=>$db);
+  my $importer = Bio::GMOD::CMap::Admin::DataImport->new(db=>$db);
   $importer->import(
       map_set_id => $map_set_id,
       fh           => $fh,
@@ -28,14 +28,14 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.3 $)[-1];
+$VERSION  = (qw$Revision: 1.1 $)[-1];
 
 use Data::Dumper;
-use CSHL::CMap;
-use CSHL::CMap::Constants;
-use CSHL::CMap::Utils 'next_number';
+use Bio::GMOD::CMap;
+use Bio::GMOD::CMap::Constants;
+use Bio::GMOD::CMap::Utils 'next_number';
 
-use base 'CSHL::CMap';
+use base 'Bio::GMOD::CMap';
 
 use constant FIELD_SEP => "\t"; # use tabs for field separator
 use constant STRING_RE => qr{^[\w\s.()-]+$};

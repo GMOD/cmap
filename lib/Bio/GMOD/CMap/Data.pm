@@ -1,15 +1,15 @@
-package CSHL::CMap::Data;
+package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.2 2002-08-09 22:08:42 kycl4rk Exp $
+# $Id: Data.pm,v 1.4 2002-08-30 21:02:00 kycl4rk Exp $
 
 =head1 NAME
 
-CSHL::CMap::Data - base data module
+Bio::GMOD::CMap::Data - base data module
 
 =head1 SYNOPSIS
 
-  use CSHL::CMap::Data;
-  my $data = CSHL::CMap::Data->new;
+  use Bio::GMOD::CMap::Data;
+  my $data = Bio::GMOD::CMap::Data->new;
   my $foo  = $data->foo_data;
 
 =head1 DESCRIPTION
@@ -24,13 +24,13 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Data::Dumper;
-use CSHL::CMap;
-use CSHL::CMap::Constants;
-use CSHL::CMap::Utils;
-use base 'CSHL::CMap';
+use Bio::GMOD::CMap;
+use Bio::GMOD::CMap::Constants;
+use Bio::GMOD::CMap::Utils;
+use base 'Bio::GMOD::CMap';
 
 # ----------------------------------------------------
 sub acc_id_to_internal_id {
@@ -259,28 +259,35 @@ Returns the data for drawing comparative maps.
 #        warn "map data =\n", Dumper( $map_data ), "\n";
 
         #
-        # Confirm the start and stop.
-        #
-#        $map_data->{'begin'} = $self->map_start( map_id => $map_id );
-#        $map_data->{'end'}   = $self->map_stop ( map_id => $map_id );
-
-        #
         # If we're looking at more than one map (a whole map set), 
         # then we'll use the "start" and "stop" found for the current map.
         # Otherwise, we'll use the arguments supplied (if any).
         #
         if ( scalar @map_ids > 1 ) { 
-#            $map_start = $map_data->{'begin'};
-#            $map_stop  = $map_data->{'end'};
             $map_start = $map_data->{'start_position'};
             $map_stop  = $map_data->{'stop_position'};
         }
         else {
-#            $map_start = $map_data->{'begin'} unless defined $map_start;
-#            $map_stop  = $map_data->{'end'}   unless defined $map_stop;
+            #
+            # Make sure the start and stop are numbers.
+            #
+            for ( $map_start, $map_stop ) {
+                next unless defined $_;
+                unless ( $_ =~ NUMBER_RE ) {
+                    $_ = $self->feature_name_to_position( 
+                        feature_name => $_,
+                        map_id       => $map_id,
+                    ) || 0;
+                }
+            }
             $map_start = $map_data->{'start_position'} 
                 unless defined $map_start;
-            $map_stop  = $map_data->{'stop_position'} unless defined $map_stop;
+            $map_start = $map_data->{'start_position'} 
+                if $map_start < $map_data->{'start_position'};
+            $map_stop  = $map_data->{'stop_position'} 
+                unless defined $map_stop;
+            $map_stop  = $map_data->{'stop_position'} 
+                if $map_stop > $map_data->{'stop_position'};
         }
 
         #
@@ -306,16 +313,11 @@ Returns the data for drawing comparative maps.
         #
         # Get the reference map features.
         #
-#        warn "slot_no = $slot_no, sql =\n",
-#            $sql->cmap_data_features_sql(include_features => $include_features),
-#            "\nargs = ( $map_id, $map_start, $map_stop )\n";
         my $features = $db->selectall_arrayref(
-            $sql->cmap_data_features_sql(include_features => $include_features),
+            $sql->cmap_data_features_sql(include_features=>$include_features),
             { Columns => {} },
             ( $map_id, $map_start, $map_stop )
         );
-
-#        warn "features =\n", Dumper( $features ), "\n";
 
         my %features;
         for my $feature ( @$features ) {
@@ -952,6 +954,19 @@ Returns the data for the main comparative map HTML form.
             acc_id => $ref_map_aid,
         );
 
+        #
+        # Make sure the start and stop are numbers.
+        #
+        for ( $ref_map_start, $ref_map_stop ) {
+            next unless defined $_;
+            unless ( $_ =~ NUMBER_RE ) {
+                $_ = $self->feature_name_to_position( 
+                    feature_name => $_,
+                    map_id       => $map_id,
+                ) || 0;
+            }
+        }
+
 #        my $ref_map_begin = $self->map_start( map_id => $map_id ); 
 #        my $ref_map_end   = $self->map_stop ( map_id => $map_id );
 #        $ref_map_start = $ref_map_start unless defined $ref_map_start;
@@ -968,8 +983,9 @@ Returns the data for the main comparative map HTML form.
                 ( $map_id )
             );
 
-            $ref_map_start = $ref_map_start unless defined $ref_map_start;
-            $ref_map_stop  = $ref_map_stop  unless defined $ref_map_stop;
+            $ref_map_start = $ref_map_begin unless defined $ref_map_start;
+            $ref_map_start = $ref_map_begin if $ref_map_start < $ref_map_begin;
+            $ref_map_stop  = $ref_map_end   if $ref_map_stop  > $ref_map_stop;
         }
 
         #
@@ -1148,6 +1164,29 @@ out which maps have relationships.
     }
 
     return \@return;
+}
+
+# ----------------------------------------------------
+sub feature_name_to_position {
+
+=pod
+
+=head2 feature_name_to_position
+
+Turn a feature name into a position.
+
+=cut
+    my ( $self, %args ) = @_;
+    my $feature_name    = $args{'feature_name'} or return;
+    my $map_id          = $args{'map_id'}       or return;
+    my $db              = $self->db;
+    my $position        = $db->selectrow_array(
+        $self->sql->feature_name_to_position_sql,
+        {},
+        ( $feature_name, $map_id )
+    ) || 0;
+
+    return $position;
 }
 
 # ----------------------------------------------------
@@ -1342,7 +1381,8 @@ Given a list of feature names, find any maps they occur on.
     );
     my $order_by         = $args{'order_by'} || 
         'feature_name,species_name,map_set_name,map_name,start_position';
-    my $search_field     = $args{'search_field'}     || '';
+    my $search_field     = 
+        $args{'search_field'} || $self->config('feature_search_field');
        $search_field     = DEFAULT->{'feature_search_field'} 
         unless VALID->{'feature_search_field'}{ $search_field };
 
@@ -1411,9 +1451,10 @@ Given a list of feature names, find any maps they occur on.
     # to aggregate all the search results before making my final
     # selection.
     #
-    my $result_set_size = scalar @found_features || 0;
-    my $no_pages        = 0;
-    if ( $result_set_size > MAX_CHILD_ELEMENTS ) {
+    my $result_set_size    = scalar @found_features || 0;
+    my $no_pages           = 0;
+    my $max_child_elements = $self->config('max_child_elements') || 0;
+    if ( $result_set_size > $max_child_elements ) {
         if ( $limit_start ) {
             $limit_start -= 1;
         }
@@ -1421,10 +1462,10 @@ Given a list of feature names, find any maps they occur on.
             $limit_start = 0;
         }
 
-        $no_pages = int( ( $result_set_size / MAX_CHILD_ELEMENTS ) + .5 );
+        $no_pages = int( ( $result_set_size / $max_child_elements ) + .5 );
 
         @found_features = 
-            @found_features[ $limit_start .. $limit_start+MAX_CHILD_ELEMENTS ];
+            @found_features[ $limit_start .. $limit_start+$max_child_elements ];
     }
 
     #
@@ -1638,7 +1679,8 @@ MAX_FEATURE_COUNT to zero or undefined to disable this.
     my $end             = $args{'end'}   || $self->map_stop (map_id => $map_id);
     my $start           = $args{'start'} =~ NUMBER_RE ? $args{'start'} : $begin;
     my $stop            = $args{'stop'}  =~ NUMBER_RE ? $args{'stop'}  : $end;
-    return ( $start, $stop ) unless MAX_FEATURE_COUNT > 0;
+    my $max_fcount      = $self->config('max_feature_count') || 0;
+    return ( $start, $stop ) unless $max_fcount > 0;
     my $db              = $self->db;
     my $sql             = $self->sql;
     my $minimum_trunc   = 1.01;
@@ -1679,9 +1721,9 @@ MAX_FEATURE_COUNT to zero or undefined to disable this.
         # Porridge is too hot.  Decrease search range by some factor 
         # of the number of results.
         #
-        elsif ( $feature_count > MAX_FEATURE_COUNT ) {
-#            my $factor = sprintf( "%0.1f", $feature_count/MAX_FEATURE_COUNT );
-            my $factor = $feature_count/MAX_FEATURE_COUNT;
+        elsif ( $feature_count > $max_fcount ) {
+#            my $factor = sprintf( "%0.1f", $feature_count/$max_fcount );
+            my $factor = $feature_count/$max_fcount;
             $factor    = $minimum_trunc if $factor < $minimum_trunc;
             $stop      = int ( $start + ( ( $stop - $start ) / $factor ) );
             next;

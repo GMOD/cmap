@@ -1,15 +1,15 @@
-package CSHL::CMap::Drawer;
+package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.2 2002-08-03 04:41:33 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.3 2002-08-30 02:49:55 kycl4rk Exp $
 
 =head1 NAME
 
-CSHL::CMap::Drawer - draw maps
+Bio::GMOD::CMap::Drawer - draw maps
 
 =head1 SYNOPSIS
 
-  use CSHL::CMap::Drawer;
-  my $drawer = CSHL::CMap::Drawer( ref_map_id => 12345 );
+  use Bio::GMOD::CMap::Drawer;
+  my $drawer = Bio::GMOD::CMap::Drawer( ref_map_id => 12345 );
   $drawer->image_name;
 
 =head1 DESCRIPTION
@@ -22,17 +22,17 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
-use CSHL::CMap;
-use CSHL::CMap::Constants;
-use CSHL::CMap::Data;
-use CSHL::CMap::Drawer::Map;
+use Bio::GMOD::CMap;
+use Bio::GMOD::CMap::Constants;
+use Bio::GMOD::CMap::Data;
+use Bio::GMOD::CMap::Drawer::Map;
 use GD;
 use File::MkTemp;
 use File::Path;
 use Data::Dumper;
-use base 'CSHL::CMap';
+use base 'Bio::GMOD::CMap';
 
 use constant INIT_PARAMS => [
     qw( apr slots highlight font_size image_size image_type include_features )
@@ -55,7 +55,7 @@ Initializes the drawing object.
         $self->$param( $config->{ $param } );
     }
 
-    $Error::Debug = $self->debugging ? 1 : 0;
+#    $Error::Debug = $self->debugging ? 1 : 0;
     $self->draw;
     return $self;
 }
@@ -241,11 +241,9 @@ Returns the cache directory.
     my $self = shift;
 
     unless ( defined $self->{'cache_dir'} ) {
-        my $apr         = $self->apr;
-        my $cache_dir   = $apr ? $apr->dir_config('CACHE_DIR') : undef;
-           $cache_dir ||= DEFAULT->{'cache_dir'};
+        my $cache_dir   = $self->config('cache_dir');
         -d $cache_dir || eval{ mkpath( $cache_dir ) } || 
-            return $self->error('No cache dir');
+            return $self->error("No cache dir; Using '$cache_dir'");
         $self->{'cache_dir'} = $cache_dir;
     }
 
@@ -312,7 +310,6 @@ Returns the drawing data.
 
 =cut
     my $self = shift;
-#    return @{ $self->{'drawing_data'} };
     return 
         map   { @{ $self->{'drawing_data'}{ $_ } } }
         sort  { $a <=> $b } 
@@ -330,31 +327,18 @@ Lays out the image and writes it to the file system, set the "image_name."
 
 =cut
     my $self = shift;
-#    warn "self = \n", Dumper( $self ), "\n";
 
     for my $slot_no ( $self->slot_numbers ) {
         my $data      = $self->slot_data( $slot_no );
-#        my $reference = $self->get_completed_map( 
-#            $self->reference_map_no( $slot_no ) 
-#        );
-
-#        warn "data =\n", Dumper( $data ), "\n" if $slot_no == 0;
-
-        my $map       =  CSHL::CMap::Drawer::Map->new( 
+        my $map       =  Bio::GMOD::CMap::Drawer::Map->new( 
             drawer    => $self, 
             base_x    => $self->max_x,
             base_y    => 0,
             slot_no   => $slot_no,
-#            reference => $reference,
             maps      => $data,
         );
         $map->layout;
-#        $self->set_completed_map( 
-#            slot_no => $slot_no,
-#            map     => $map
-#        );
     }
-#    $self->layout_menu;
     $self->adjust_frame;
 
     my @data   = $self->drawing_data;
@@ -366,7 +350,7 @@ Lays out the image and writes it to the file system, set the "image_name."
         keys %{ +COLORS }
     ;
     $gd->interlaced( 'true' );
-    $gd->fill( 0, 0, $colors{ DEFAULT->{'background_color'} } );
+    $gd->fill( 0, 0, $colors{ $self->config('background_color') } );
 
     #
     # Sort the drawing data by the layer (which is the last field).
@@ -376,7 +360,7 @@ Lays out the image and writes it to the file system, set the "image_name."
         my $layer  = pop   @$obj;
         my @colors = pop   @$obj;
         push @colors, pop @$obj if $method eq FILL_TO_BORDER;
-        $gd->$method( @$obj, map { $colors{ $_ } } @colors );
+        $gd->$method( @$obj, map { $colors{ lc $_ } } @colors );
     }
 
     #
@@ -404,19 +388,17 @@ sub data {
 
 =head2 data
 
-Uses the CSHL::CMap::Data module to retreive the necessary data for drawing.
+Uses the Bio::GMOD::CMap::Data module to retreive the necessary data for drawing.
 
 =cut
     my $self = shift;
 
     unless ( $self->{'data'} ) {
-        my $data =  CSHL::CMap::Data->new;
-
+        my $data             =  Bio::GMOD::CMap::Data->new;
         $self->{'data'}      =  $data->cmap_data( 
             slots            => $self->slots,
             include_features => $self->include_features,
         );
-#        warn "data =\n", Dumper( $self->{'data'} ), "\n";
     }
 
     return $self->{'data'};
@@ -597,7 +579,7 @@ Returns the set image size.
     }
 
     unless ( defined $self->{'image_size'} ) {
-        $self->{'image_size'} = DEFAULT->{'image_size'};
+        $self->{'image_size'} = $self->config('image_size');
     }
 
     return $self->{'image_size'};
@@ -623,7 +605,7 @@ Gets/sets the current image type.
     }
 
     unless ( defined $self->{'image_type'} ) {
-        $self->{'image_type'} = DEFAULT->{'image_type'};
+        $self->{'image_type'} = $self->config('image_type');
     }
 
     return $self->{'image_type'};

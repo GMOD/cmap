@@ -86,7 +86,7 @@
     </tr>
   
     <tr>
-        <td align="right">Description:</td>
+        <td align="right">Remarks:</td>
         <td>
             [% map_set.remarks %]
         </td>
@@ -117,8 +117,8 @@
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
                 <td>[% map.accession_id   OR '&nbsp;' %]</td>
                 <td>[% map.map_name       OR '&nbsp;' %]</td>
-                <td>[% map.start_position OR '&nbsp;' %]</td>
-                <td>[% map.stop_position  OR '&nbsp;' %]</td>
+                <td>[% map.start_position %]</td>
+                <td>[% map.stop_position  %]</td>
                 <td>
                     <a href="admin?action=map_view;map_id=[% map.map_id %]">View</a>
                 </td>

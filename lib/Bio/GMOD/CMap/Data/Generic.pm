@@ -1,17 +1,17 @@
-package CSHL::CMap::Data::Generic;
+package Bio::GMOD::CMap::Data::Generic;
 
-# $Id: Generic.pm,v 1.2 2002-08-09 22:08:42 kycl4rk Exp $
+# $Id: Generic.pm,v 1.2 2002-08-30 21:02:00 kycl4rk Exp $
 
 =head1 NAME
 
-CSHL::CMap::Data::Generic - generic SQL module
+Bio::GMOD::CMap::Data::Generic - generic SQL module
 
 =head1 SYNOPSIS
 
-  package CSHL::CMap::Data::FooDB;
+  package Bio::GMOD::CMap::Data::FooDB;
 
-  use CSHL::CMap::Data::Generic;
-  use base 'CSHL::CMap::Data::Generic';
+  use Bio::GMOD::CMap::Data::Generic;
+  use base 'Bio::GMOD::CMap::Data::Generic';
   
   sub sql_method_that_doesnt_work {
       return $sql_tailored_to_my_db;
@@ -33,8 +33,8 @@ use strict;
 use vars qw( $VERSION );
 $VERSION = (qw$Revision: 1.2 $)[-1];
 
-use CSHL::CMap;
-use base 'CSHL::CMap';
+use Bio::GMOD::CMap;
+use base 'Bio::GMOD::CMap';
 
 # ----------------------------------------------------
 sub cmap_data_feature_count_sql {
@@ -305,6 +305,39 @@ The SQL for finding the number of correspondences for many maps
                  map2.map_id,
                  map2.accession_id,
                  map2.map_name
+    ];
+}
+
+# ----------------------------------------------------
+sub date_format {
+
+=pod
+
+=head2 date_format
+
+The strftime string for date format.
+
+=cut
+    my $self = shift;
+    return '%Y-%m-%d';
+}
+
+# ----------------------------------------------------
+sub feature_name_to_position_sql {
+
+=pod
+
+=head2 fill_out_maps_by_map_sql
+
+The SQL for finding basic info on a map.
+
+=cut
+    my $self = shift;
+    return q[
+        select f.start_position
+        from   cmap_feature f
+        where  upper(f.feature_name)=?
+        and    f.map_id=?
     ];
 }
 
