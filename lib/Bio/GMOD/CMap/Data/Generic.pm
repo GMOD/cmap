@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data::Generic;
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.40 2003-11-05 16:44:52 kycl4rk Exp $
+# $Id: Generic.pm,v 1.41 2003-11-10 18:38:13 kycl4rk Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.40 $)[-1];
+$VERSION = (qw$Revision: 1.41 $)[-1];
 
 use Data::Dumper; # really just for debugging
 use Bio::GMOD::CMap;
@@ -414,7 +414,9 @@ The SQL for finding all reference map sets.
                  ms.display_order,
                  ms.published_on,
                  s.common_name as species_name,
-                 s.display_order
+                 s.display_order,
+                 mt.display_order,
+                 mt.map_type
         from     cmap_map_set ms,
                  cmap_species s,
                  cmap_map_type mt
@@ -423,9 +425,10 @@ The SQL for finding all reference map sets.
         and      ms.species_id=s.species_id
         and      ms.map_type_id=mt.map_type_id
         and      mt.is_relational_map=0
-        order by s.display_order,
+        order by mt.display_order,
+                 mt.map_type,
+                 s.display_order,
                  species_name,
-                 mt.display_order,
                  ms.display_order,
                  ms.published_on desc,
                  ms.map_set_name
