@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.72 2004-10-29 04:35:08 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.73 2004-10-29 14:55:45 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.72 $)[-1];
+$VERSION = (qw$Revision: 1.73 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -463,7 +463,7 @@ sub handler {
               selected_maps     => { map { $_, 1 } @ref_map_aids },
               included_features => { map { $_, 1 } @feature_types },
               included_evidence => { map { $_, 1 } @evidence_types },
-              corr_only_features_types => \%include_corr_only_features,
+              corr_only_feature_types => \%include_corr_only_features,
               ignored_feature_types    => \%ignored_feature_types,
               feature_types            => join( ',', @feature_types ),
               evidence_types           => join( ',', @evidence_types ),
