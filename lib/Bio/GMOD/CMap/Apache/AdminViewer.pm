@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.49 2003-10-16 22:11:55 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.50 2003-10-22 00:19:15 kycl4rk Exp $
 
 use strict;
 use Apache::Constants qw[ :common M_GET REDIRECT ];
@@ -34,7 +34,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.49 $)[-1];
+$VERSION        = (qw$Revision: 1.50 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -48,9 +48,9 @@ use constant TEMPLATE         => {
     corr_evidence_type_edit   => 'admin_corr_evidence_type_edit.tmpl',
     corr_evidence_type_view   => 'admin_corr_evidence_type_view.tmpl',
     colors_view               => 'admin_colors_view.tmpl',
-    dbxref_create             => 'admin_dbxref_create.tmpl',
-    dbxref_edit               => 'admin_dbxref_edit.tmpl',
-    dbxrefs_view              => 'admin_dbxrefs_view.tmpl',
+#    dbxref_create             => 'admin_dbxref_create.tmpl',
+#    dbxref_edit               => 'admin_dbxref_edit.tmpl',
+#    dbxrefs_view              => 'admin_dbxrefs_view.tmpl',
     error                     => 'admin_error.tmpl',
     feature_corr_create       => 'admin_feature_corr_create.tmpl',
     feature_corr_view         => 'admin_feature_corr_view.tmpl',
@@ -78,7 +78,65 @@ use constant TEMPLATE         => {
     species_create            => 'admin_species_create.tmpl',
     species_view              => 'admin_species_view.tmpl',
     species_view_one          => 'admin_species_view_one.tmpl',
+    xref_create               => 'admin_xref_create.tmpl',
+    xref_edit                 => 'admin_xref_edit.tmpl',
+    xrefs_view                => 'admin_xrefs_view.tmpl',
 };
+
+use constant XREF_OBJECTS     => [ 
+    {
+        table_name            => 'cmap_correspondence_evidence',
+        object_name           => 'Correspondence Evidence',
+        name_field            => 'accession_id',
+    },
+    {
+        table_name            => 'cmap_evidence_type',
+        object_name           => 'Evidence Type',
+        name_field            => 'evidence_type',
+    },
+    {
+        table_name            => 'cmap_feature',
+        object_name           => 'Feature',
+        name_field            => 'feature_name',
+    },
+    {
+        table_name            => 'cmap_feature_alias',
+        object_name           => 'Feature Alias',
+        name_field            => 'alias',
+    },
+    {
+        table_name            => 'cmap_feature_correspondence',
+        object_name           => 'Feature Correspondence',
+        name_field            => 'accession_id',
+    },
+    {
+        table_name            => 'cmap_feature_type',
+        object_name           => 'Feature Type',
+        name_field            => 'feature_type',
+    },
+    {
+        table_name            => 'cmap_map',
+        object_name           => 'Map',
+        name_field            => 'map_name',
+    },
+    {
+        table_name            => 'cmap_map_set',
+        object_name           => 'Map Set',
+        name_field            => 'map_set_name',
+    },
+    {
+        table_name            => 'cmap_map_type',
+        object_name           => 'Map Type',
+        name_field            => 'map_type',
+    },
+    {
+        table_name            => 'cmap_species',
+        object_name           => 'Species',
+        name_field            => 'common_name',
+    },
+];
+
+my %XREF_OBJ_LOOKUP = map { $_->{'table_name'}, $_ } @{ +XREF_OBJECTS };
 
 # ----------------------------------------------------
 sub handler {
@@ -159,6 +217,7 @@ sub attribute_edit {
                      table_name,
                      object_id,
                      display_order,
+                     is_public,
                      attribute_name,
                      attribute_value
             from     cmap_attribute
@@ -201,17 +260,22 @@ sub attribute_insert {
     my $apr             = $self->apr;
     my $db              = $self->db    or return;
     my $admin           = $self->admin or return;
-    my $object_id       = $apr->param('object_id')   or die 'No object id';
-    my $table_name      = $apr->param('table_name')  or die 'No table name';
-    my $object_type     = $apr->param('object_type') or die 'No object type';
-    my $pk_name         = $apr->param('pk_name')     or die 'No PK name';
-    my $ret_action      = $apr->param('return_action') || "${object_type}_view";
     my @errors          = ();
+    my $object_id       = $apr->param('object_id')   or 
+                          push @errors, 'No object id';
+    my $table_name      = $apr->param('table_name')  or 
+                          push @errors, 'No table name';
+    my $object_type     = $apr->param('object_type') or 
+                          push @errors, 'No object type';
+    my $pk_name         = $apr->param('pk_name')     or 
+                          push @errors, 'No PK name';
+    my $ret_action      = $apr->param('return_action') || "${object_type}_view";
     my $attribute_name  = $apr->param('attribute_name') or
                           push @errors, 'No attribute name';
     my $attribute_value = $apr->param('attribute_value') or
                           push @errors, 'No attribute value';
     my $display_order   = $apr->param('display_order') || 0;
+    my $is_public       = $apr->param('is_public');
 
     $admin->set_attributes(
         object_id  => $object_id,
@@ -221,6 +285,7 @@ sub attribute_insert {
                 name          => $attribute_name, 
                 value         => $attribute_value,
                 display_order => $display_order,
+                is_public     => $is_public,
             },
         ],
     ) or return $self->error( $admin->error );
@@ -253,6 +318,7 @@ sub attribute_update {
                           push @errors, 'No object type';
     my $display_order   = $apr->param('display_order') || 0;
     my $ret_action      = $apr->param('return_action') || "${object_type}_view";
+    my $is_public       = $apr->param('is_public');
 
     return $self->attribute_edit(
         apr    => $apr,
@@ -267,6 +333,7 @@ sub attribute_update {
                 attribute_id  => $attribute_id,
                 name          => $attribute_name, 
                 value         => $attribute_value,
+                is_public     => $is_public,
                 display_order => $display_order,
             },
         ],
@@ -454,7 +521,7 @@ sub corr_evidence_type_edit {
     );
 
     $evidence_type->{'attributes'} = 
-        $self->admin->get_attributes( 'cmap_evidence_type', $evidence_type_id );
+        $self->get_attributes( 'cmap_evidence_type', $evidence_type_id );
 
     return $self->process_template( 
         TEMPLATE->{'corr_evidence_type_edit'}, 
@@ -495,14 +562,9 @@ sub corr_evidence_type_update {
         ( $accession_id, $evidence_type, $rank, $line_color, $evidence_type_id )
     );
 
-    $self->admin->object_note_insert_or_update( 
-        table_name => 'cmap_evidence_type',
-        object_id  => $evidence_type_id, 
-        note       => $apr->param('note'),
-    );
-
     return $self->redirect_home( 
-        ADMIN_HOME_URI.'?action=corr_evidence_types_view'
+        ADMIN_HOME_URI.
+        "?action=corr_evidence_type_view;evidence_type_id=$evidence_type_id"
     );
 }
 
@@ -530,8 +592,12 @@ sub corr_evidence_type_view {
         "No evidence type for ID '$evidence_type_id'"
     );
 
-    $evidence_type->{'attributes'} = $self->admin->get_attributes( 
+    $evidence_type->{'attributes'} = $self->get_attributes( 
         'cmap_evidence_type', $evidence_type_id, $apr->param('att_order_by')
+    );
+
+    $evidence_type->{'xrefs'} = $self->get_xrefs( 
+        'cmap_evidence_type', $evidence_type_id, $apr->param('xref_order_by')
     );
 
     return $self->process_template( 
@@ -582,286 +648,48 @@ sub corr_evidence_types_view {
 }
 
 # ----------------------------------------------------
-sub dbxref_create {
-    my ( $self, %args ) = @_;
-    my $admin           = $self->admin;
-
-    return $self->process_template( 
-        TEMPLATE->{'dbxref_create'},
-        {
-            apr           => $self->apr,
-            errors        => $args{'errors'},
-            specie        => $admin->species,
-            map_sets      => $admin->map_sets,
-            feature_types => $admin->feature_types,
-        }
-    );
-}
-
-# ----------------------------------------------------
-sub dbxref_edit {
-    my ( $self, %args ) = @_;
-    my $apr             = $self->apr;
-    my $dbxref_id       = $apr->param('dbxref_id') or die 'No dbxref id';
-    my $admin           = $self->admin;
-    my $db              = $self->db or return $self->error;
-    my $sth             = $db->prepare(
-        q[
-            select    d.dbxref_id,
-                      d.map_set_id,
-                      d.feature_type_id,
-                      d.species_id,
-                      d.dbxref_name,
-                      d.url,
-                      ft.feature_type,
-                      ms.short_name as map_set_name,
-                      s.common_name as species_name
-            from      cmap_dbxref d
-            left join cmap_map_set ms
-            on        d.map_set_id=ms.map_set_id
-            left join cmap_species s
-            on        d.species_id=s.species_id
-            inner join cmap_feature_type ft
-            on        d.feature_type_id=ft.feature_type_id
-            where     d.dbxref_id=?
-        ]
-    );
-    $sth->execute( $dbxref_id );
-    my $dbxref = $sth->fetchrow_hashref or return $self->error(
-        "No database cross-reference for ID '$dbxref_id'"
-    );
-
-    return $self->process_template( 
-        TEMPLATE->{'dbxref_edit'},
-        {
-            apr           => $self->apr,
-            errors        => $args{'errors'},
-            dbxref        => $dbxref,
-            specie        => $admin->species,
-            map_sets      => $admin->map_sets,
-            feature_types => $admin->feature_types,
-        }
-    );
-}
-
-# ----------------------------------------------------
-sub dbxref_insert {
-    my $self            = shift;
-    my $db              = $self->db or return $self->error;
-    my $apr             = $self->apr;
-    my $admin           = $self->admin;
-    my @errors          = ();
-    my $species_id      = $apr->param('species_id')      ||  0;
-    my $map_set_id      = $apr->param('map_set_id')      ||  0;
-    my $feature_type_id = $apr->param('feature_type_id') ||  0;
-    my $name            = $apr->param('dbxref_name')     || '';
-    my $url             = $apr->param('url')             || '';
-
-    unless ( $species_id || $map_set_id ) {
-        push @errors, 'Please choose either a species or a map set';
-    }
-    if ( $species_id && $map_set_id ) {
-        push @errors, 'Please choose only one of either a species or a map set';
-    }
-    push @errors, 'Please supply a feature' unless $feature_type_id;
-    push @errors, 'Please supply a name'    unless $name;
-    push @errors, 'Please supply a URL'     unless $url;
-
-#    if ( $species_id ) {
-#        my $exists = $db->selectrow_array(
-#            q[
-#                select count(*)
-#                from   cmap_dbxref
-#                where  feature_type_id=?
-#                and    species_id=?
-#            ],
-#            {},
-#            ( $feature_type_id, $species_id )
-#        );
-#
-#        push @errors, 
-#            'A record already exists for that feature type and species.'
-#            if $exists;
-#    }
-
-#    if ( $map_set_id ) {
-#        my $exists = $db->selectrow_array(
-#            q[
-#                select count(*)
-#                from   cmap_dbxref
-#                where  feature_type_id=?
-#                and    map_set_id=?
-#            ],
-#            {},
-#            ( $feature_type_id, $map_set_id )
-#        );
-#
-#        push @errors, 
-#            'A record already exists for that feature type and map set.'
-#            if $exists;
-#    }
-
-    return $self->dbxref_create( errors => \@errors ) if @errors;
-
-    my $dbxref_id  = next_number(
-        db         => $db, 
-        table_name => 'cmap_dbxref',
-        id_field   => 'dbxref_id',
-    ) or die 'No next number for dbxref id';
-
-    $db->do(
-        q[
-            insert
-            into   cmap_dbxref
-                   (dbxref_id, species_id, map_set_id, 
-                    feature_type_id, dbxref_name, url)
-            values (?, ?, ?, ?, ?, ?)
-        ],
-        {},
-        ( $dbxref_id, $species_id, $map_set_id, 
-          $feature_type_id, $name, $url 
-        )
-    );
-
-    return $self->redirect_home( ADMIN_HOME_URI.'?action=dbxrefs_view' ); 
-}
-
-# ----------------------------------------------------
-sub dbxref_update {
-    my $self            = shift;
-    my $db              = $self->db or return $self->error;
-    my $apr             = $self->apr;
-    my $admin           = $self->admin;
-    my @errors          = ();
-    my $dbxref_id       = $apr->param('dbxref_id') or die 'No dbxref id';
-    my $species_id      = $apr->param('species_id')      ||  0;
-    my $map_set_id      = $apr->param('map_set_id')      ||  0;
-    my $feature_type_id = $apr->param('feature_type_id') ||  0;
-    my $name            = $apr->param('dbxref_name')     || '';
-    my $url             = $apr->param('url')             || '';
-
-    unless ( $species_id || $map_set_id ) {
-        push @errors, 'Please choose either a species or a map set';
-    }
-    if ( $species_id && $map_set_id ) {
-        push @errors, 'Please choose only one of either a species or a map set';
-    }
-    push @errors, 'Please supply a feature' unless $feature_type_id;
-    push @errors, 'Please supply a name'    unless $name;
-    push @errors, 'Please supply a URL'     unless $url;
-
-    return $self->dbxref_edit( errors => \@errors ) if @errors;
-
-    $db->do(
-        q[
-            update cmap_dbxref
-            set    species_id=?, map_set_id=?, feature_type_id=?, 
-                   dbxref_name=?, url=?
-            where  dbxref_id=?
-        ],
-        {},
-        ( $species_id, $map_set_id, $feature_type_id, $name, $url, $dbxref_id )
-    );
-
-    return $self->redirect_home( ADMIN_HOME_URI.'?action=dbxrefs_view' ); 
-}
-
-# ----------------------------------------------------
-sub dbxrefs_view {
-    my $self            = shift;
-    my $db              = $self->db or return $self->error;
-    my $admin           = $self->admin;
-    my $apr             = $self->apr;
-    my $order_by        = $apr->param('order_by')        ||
-                          'feature_type,species_name';
-    my $species_id      = $apr->param('species_id')      || 0;
-    my $feature_type_id = $apr->param('feature_type_id') || 0;
-    my $page_no         = $apr->param('page_no')         || 1;
-
-    my $sql = qq[
-        select     d.dbxref_id,
-                   d.map_set_id,
-                   d.feature_type_id,
-                   d.species_id,
-                   d.dbxref_name,
-                   d.url,
-                   ft.feature_type,
-                   ms.short_name as map_set_name,
-                   s.common_name as species_name
-        from       cmap_dbxref d
-        left join  cmap_map_set ms
-        on         d.map_set_id=ms.map_set_id
-        left join  cmap_species s
-        on         d.species_id=s.species_id
-        inner join cmap_feature_type ft
-        on         d.feature_type_id=ft.feature_type_id
-    ];
-    $sql .= "and d.species_id=$species_id "           if $species_id;
-    $sql .= "and d.feature_type_id=$feature_type_id " if $feature_type_id;
-    $sql .= "order by $order_by";
-
-    my $refs = $db->selectall_arrayref( $sql, { Columns => {} } );
-
-    my $pager = Data::Pageset->new( {
-        total_entries    => scalar @$refs, 
-        entries_per_page => $PAGE_SIZE,
-        current_page     => $page_no,
-        pages_per_set    => $MAX_PAGES,
-    } );
-    $refs = @$refs ? [ $pager->splice( $refs ) ] : []; 
-
-    return $self->process_template( 
-        TEMPLATE->{'dbxrefs_view'}, 
-        { 
-            apr           => $apr,
-            specie        => $admin->species,
-            feature_types => $admin->feature_types,
-            dbxrefs       => $refs,
-            pager         => $pager,
-        }
-    );
-}
-
-# ----------------------------------------------------
 sub entity_delete {
-    my $self        = shift;
-    my $db          = $self->db or return $self->error;
-    my $apr         = $self->apr;
-    my $admin       = $self->admin;
-    my $entity_type = $apr->param('entity_type') or die 'No entity type';
-    my $uri_args;
+    my $self          = shift;
+    my $db            = $self->db or return $self->error;
+    my $apr           = $self->apr;
+    my $admin         = $self->admin;
+    my $entity_type   = $apr->param('entity_type')   or die 'No entity type';
+    my $entity_id     = $apr->param('entity_id')     or die 'No entity ID';
+    my $return_action = $apr->param('return_action') || '';
+    my $pk_name       = pk_name( $entity_type );
+    my $uri_args      = $return_action && $pk_name && $entity_id ?
+                        "?action=$return_action;$pk_name=$entity_id" : '';
 
     #
     # Map Set
     #
     if ( $entity_type eq 'cmap_map_set' ) {
-        $admin->map_set_delete( map_set_id => $apr->param('entity_id') )
+        $admin->map_set_delete( map_set_id => $entity_id )
             or return $self->error( $admin->error );
-        $uri_args = '?action=map_sets_view';
+        $uri_args ||= '?action=map_sets_view';
     }
     #
     # Map Type
     #
     elsif ( $entity_type eq 'cmap_map_type' ) {
-        $admin->map_type_delete(
-            map_type_id => $apr->param('entity_id') 
-        ) or return $self->error( $admin->error );
-        $uri_args = '?action=map_types_view';
+        $admin->map_type_delete( map_type_id => $entity_id ) 
+        or return $self->error( $admin->error );
+        $uri_args ||= '?action=map_types_view';
     }
     #
     # Species
     #
     elsif ( $entity_type eq 'cmap_species' ) {
-        $admin->species_delete( species_id => $apr->param('entity_id') ) or
+        $admin->species_delete( species_id => $entity_id ) or
             return $self->error( $admin->error );
-        $uri_args = '?action=species_view';
+        $uri_args ||= '?action=species_view';
     }
     #
     # Feature Correspondence
     #
     elsif ( $entity_type eq 'cmap_feature_correspondence' ) {
         $admin->feature_correspondence_delete( 
-            feature_correspondence_id => $apr->param('entity_id') 
+            feature_correspondence_id => $entity_id 
         ) or return $self->error( $admin->error );
     }
     #
@@ -869,9 +697,9 @@ sub entity_delete {
     #
     elsif ( $entity_type eq 'cmap_feature_type' ) {
         $admin->feature_type_delete( 
-            feature_type_id => $apr->param('entity_id') 
+            feature_type_id => $entity_id 
         ) or return $self->error( $admin->error );
-        $uri_args = '?action=feature_types_view';
+        $uri_args ||= '?action=feature_types_view';
     }
     #
     # Attribute
@@ -906,26 +734,26 @@ sub entity_delete {
     #
     elsif ( $entity_type eq 'cmap_feature' ) {
         my $map_id = $admin->feature_delete(
-            feature_id => $apr->param('entity_id')
+            feature_id => $entity_id
         ) or return $self->error( $admin->error );
-        $uri_args = "?action=map_view;map_id=$map_id";
+        $uri_args ||= "?action=map_view;map_id=$map_id";
     }
     #
     # Evidence Type
     #
     elsif ( $entity_type eq 'cmap_evidence_type' ) {
         $admin->evidence_type_delete(
-            evidence_type_id => $apr->param('entity_id')
+            evidence_type_id => $entity_id
         ) or return $self->error( $admin->error );
 
-        $uri_args = '?action=corr_evidence_types_view';
+        $uri_args ||= '?action=corr_evidence_types_view';
     }
     #
     # Map
     #
     elsif ( $entity_type eq 'cmap_map' ) {
         my $map_set_id  = $admin->map_delete( 
-            map_id => $apr->param('entity_id') 
+            map_id      => $entity_id 
         ) or return $self->error( $admin->error );
         $uri_args = "?action=map_set_view;map_set_id=$map_set_id";
     }
@@ -934,22 +762,45 @@ sub entity_delete {
     #
     elsif ( $entity_type eq 'cmap_correspondence_evidence' ) {
         my $feature_corr_id = $admin->correspondence_evidence_delete(
-            correspondence_evidence_id => $apr->param('entity_id') 
+            correspondence_evidence_id => $entity_id 
         ) or return $self->error( $admin->error );
 
         $uri_args = 
         "?action=feature_corr_view;feature_correspondence_id=$feature_corr_id";
     }
     #
-    # DB Cross-References
+    # Cross-Reference
     #
-    elsif ( $entity_type eq 'cmap_dbxref' ) {
-        $admin->dbxref_delete(
-            dbxref_id => $apr->param('entity_id') 
-        ) or return $self->error( $admin->error );
+    elsif ( $entity_type eq 'cmap_xref' ) {
+        my $sth = $db->prepare( 
+            q[
+                select table_name, object_id
+                from   cmap_xref 
+                where  xref_id=?
+            ],
+        );
+        $sth->execute( $entity_id );
+        my $attr        = $sth->fetchrow_hashref;
+        my $object_id   = $attr->{'object_id'};
+        my $object_type = $attr->{'table_name'};
+        $object_type    =~ s/^cmap_//;
+        my $pk_name     =  $object_type;
+        $pk_name       .=  '_id';
 
-        $uri_args = '?action=dbxrefs_view';
+        if ( $return_action && $pk_name && $object_id ) {
+            $uri_args = "?action=$return_action;$pk_name=$object_id";
+        }
+        else {
+            $uri_args = '?action=xrefs_view';
+        }
+
+        $admin->xref_delete(
+            xref_id => $entity_id 
+        ) or return $self->error( $admin->error );
     }
+    #
+    # Unknown
+    #
     else {
         return $self->error(
             "You are not allowed to delete entities of type '$entity_type.'"
@@ -1032,8 +883,6 @@ sub map_edit {
         "No map for ID '$map_id'"
     );
 
-    $map->{'note'} = $self->admin->get_note( 'cmap_map', $map_id );
-
     return $self->process_template( 
         TEMPLATE->{'map_edit'}, 
         { 
@@ -1081,12 +930,6 @@ sub map_insert {
         )
     );
 
-    $self->admin->object_note_insert_or_update( 
-        table_name => 'cmap_map',
-        object_id  => $map_id, 
-        note       => $apr->param('note'),
-    );
-
     return $self->redirect_home( 
         ADMIN_HOME_URI."?action=map_view;map_id=$map_id" 
     ); 
@@ -1129,7 +972,11 @@ sub map_view {
         "No map for ID '$map_id'"
     );
 
-    $map->{'attributes'} = $self->admin->get_attributes( 
+    $map->{'attributes'} = $self->get_attributes( 
+        'cmap_map', $map_id, $apr->param('att_order_by')
+    );
+
+    $map->{'xrefs'} = $self->get_xrefs( 
         'cmap_map', $map_id, $apr->param('att_order_by')
     );
 
@@ -1265,12 +1112,6 @@ sub map_update {
         ) 
     );
 
-    $self->admin->object_note_insert_or_update( 
-        table_name => 'cmap_map',
-        object_id  => $map_id, 
-        note       => $apr->param('note'),
-    );
-
     return $self->redirect_home( 
         ADMIN_HOME_URI."?action=map_view;map_id=$map_id" 
     ); 
@@ -1340,8 +1181,6 @@ sub feature_edit {
                        f.start_position,
                        f.stop_position,
                        f.is_landmark,
-                       f.dbxref_name,
-                       f.dbxref_url,
                        ft.feature_type,
                        map.map_name,
                        ms.short_name as map_set_name,
@@ -1362,8 +1201,6 @@ sub feature_edit {
     my $feature = $sth->fetchrow_hashref or return $self->error(
         "No feature for ID '$feature_id'"
     );
-
-    $feature->{'note'} = $self->admin->get_note( 'cmap_feature', $feature_id );
 
     $feature->{'aliases'} = [
         map { s/"/\\"/g; qq["$_"] }
@@ -1411,15 +1248,12 @@ sub feature_insert {
     push @errors, "No start" unless $start_position =~ NUMBER_RE;
     my $stop_position   = $apr->param('stop_position');
     my $is_landmark     = $apr->param('is_landmark') || 0;
-    my $dbxref_name     = $apr->param('dbxref_name') || '';
-    my $dbxref_url      = $apr->param('dbxref_url')  || '';
 
     return $self->feature_create( errors => \@errors ) if @errors;
 
     my @insert_args = ( 
         $feature_id, $accession_id, $map_id, $feature_name, 
-        $feature_type_id, $is_landmark, 
-        $dbxref_name, $dbxref_url, $start_position
+        $feature_type_id, $is_landmark, $start_position
     );
 
     my $stop_placeholder; 
@@ -1437,8 +1271,8 @@ sub feature_insert {
             into   cmap_feature
                    ( feature_id, accession_id, map_id, feature_name, 
                      feature_type_id, is_landmark,
-                     dbxref_name, dbxref_url, start_position, stop_position )
-            values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, $stop_placeholder )
+                     start_position, stop_position )
+            values ( ?, ?, ?, ?, ?, ?, ?, $stop_placeholder )
         ],
         {},
         @insert_args
@@ -1446,12 +1280,6 @@ sub feature_insert {
 
     my @aliases = parse_line(',', 0, $apr->param('aliases') );
     $self->admin->feature_alias_update( $feature_id, @aliases );
-
-    $self->admin->object_note_insert_or_update( 
-        table_name => 'cmap_feature',
-        object_id  => $feature_id, 
-        note       => $apr->param('note'),
-    );
 
     return $self->redirect_home( 
         ADMIN_HOME_URI."?action=map_view;map_id=$map_id" 
@@ -1476,16 +1304,13 @@ sub feature_update {
     my $start_position  = $apr->param('start_position');
     push @errors, "No start" unless $start_position =~ NUMBER_RE;
     my $stop_position   = $apr->param('stop_position');
-    my $dbxref_name     = $apr->param('dbxref_name') || '';
-    my $dbxref_url      = $apr->param('dbxref_url')  || '';
 
     return $self->feature_edit( errors => \@errors ) if @errors;
 
     my $sql = q[
         update cmap_feature
         set    accession_id=?, feature_name=?, 
-               feature_type_id=?, is_landmark=?, start_position=?,
-               dbxref_name=?, dbxref_url=?
+               feature_type_id=?, is_landmark=?, start_position=?
     ];
     $sql .= ", stop_position=$stop_position " if $stop_position =~ NUMBER_RE;
     $sql .= 'where  feature_id=?';
@@ -1493,16 +1318,7 @@ sub feature_update {
         $sql,
         {},
         ( $accession_id, $feature_name, 
-          $feature_type_id, $is_landmark, $start_position, 
-          $dbxref_name, $dbxref_url,
-          $feature_id
-        )
-    );
-
-    $self->admin->object_note_insert_or_update( 
-        table_name => 'cmap_feature',
-        object_id  => $feature_id, 
-        note       => $apr->param('note'),
+          $feature_type_id, $is_landmark, $start_position, $feature_id )
     );
 
     my @aliases = parse_line(',', 0, $apr->param('aliases') );
@@ -1531,8 +1347,6 @@ sub feature_view {
                        f.is_landmark,
                        f.start_position,
                        f.stop_position,
-                       f.dbxref_name,
-                       f.dbxref_url,
                        ft.feature_type,
                        map.map_name,
                        ms.short_name as map_set_name,
@@ -1555,8 +1369,11 @@ sub feature_view {
     );
 
     $feature->{'aliases'}    = $self->admin->get_aliases( $feature_id );
-    $feature->{'attributes'} = $self->admin->get_attributes( 
+    $feature->{'attributes'} = $self->get_attributes( 
         'cmap_feature', $feature_id, $apr->param('att_order_by')
+    );
+    $feature->{'xrefs'}      = $self->get_xrefs( 
+        'cmap_feature', $feature_id, $apr->param('xref_order_by')
     );
 
     #
@@ -1898,9 +1715,14 @@ sub feature_corr_view {
         "No record for feature correspondence ID '$feature_correspondence_id'"
     );
 
-    $corr->{'attributes'} = $self->admin->get_attributes(
+    $corr->{'attributes'} = $self->get_attributes(
         'cmap_feature_correspondence', $feature_correspondence_id,
         $apr->param('att_order_by')
+    );
+
+    $corr->{'xrefs'} = $self->get_xrefs(
+        'cmap_feature_correspondence', $feature_correspondence_id,
+        $apr->param('xref_order_by')
     );
 
     $sth = $db->prepare(
@@ -2184,9 +2006,6 @@ sub feature_type_edit {
         "No feature type for ID '$feature_type_id'"
     );
 
-    $feature_type->{'note'} = 
-        $self->admin->get_note( 'cmap_feature_type', $feature_type_id );
-
     return $self->process_template( 
         TEMPLATE->{'feature_type_edit'},
         { 
@@ -2236,12 +2055,6 @@ sub feature_type_insert {
         )
     );
 
-    $self->admin->object_note_insert_or_update(
-        table_name => 'cmap_feature_type',
-        object_id  => $feature_type_id,
-        note       => $apr->param('note'),
-    );
-
     return $self->redirect_home( ADMIN_HOME_URI.'?action=feature_types_view' ); 
 }
 
@@ -2282,12 +2095,6 @@ sub feature_type_update {
         )
     );
 
-    $self->admin->object_note_insert_or_update(
-        table_name => 'cmap_feature_type',
-        object_id  => $feature_type_id,
-        note       => $apr->param('note'),
-    );
-
     return $self->redirect_home( ADMIN_HOME_URI.'?action=feature_types_view' ); 
 }
 
@@ -2316,9 +2123,13 @@ sub feature_type_view {
         "No feature type for ID '$feature_type_id'"
     );
 
+    $feature_type->{'object_id'}  = $feature_type->{'feature_type_id'};
     $feature_type->{'color'}    ||= DEFAULT->{'feature_color'};
-    $feature_type->{'attributes'} = $self->admin->get_attributes( 
+    $feature_type->{'attributes'} = $self->get_attributes( 
         'cmap_feature_type', $feature_type_id, $apr->param('att_order_by')
+    );
+    $feature_type->{'xrefs'}      = $self->get_xrefs( 
+        'cmap_feature_type', $feature_type_id, $apr->param('xref_order_by')
     );
 
     return $self->process_template( 
@@ -2568,7 +2379,9 @@ sub map_set_edit {
         "No map set for ID '$map_set_id'"
     );
 
-    $map_set->{'note'} = $self->admin->get_note( 'cmap_map_set', $map_set_id );
+    $map_set->{'attributes'} = $self->get_attributes( 
+        'cmap_map_set', $map_set_id, $apr->param('att_order_by')
+    );
 
     my $specie = $db->selectall_arrayref(
         q[
@@ -2659,12 +2472,6 @@ sub map_set_insert {
         )
     );
 
-    $self->admin->object_note_insert_or_update( 
-        table_name => 'cmap_map_set',
-        object_id  => $map_set_id, 
-        note       => $apr->param('note'),
-    );
-
     return $self->redirect_home( 
         ADMIN_HOME_URI."?action=map_set_view;map_set_id=$map_set_id",
     );
@@ -2707,8 +2514,12 @@ sub map_set_view {
         "No map set for ID '$map_set_id'"
     );
 
-    $map_set->{'attributes'} = $self->admin->get_attributes( 
+    $map_set->{'object_id'}  = $map_set_id;
+    $map_set->{'attributes'} = $self->get_attributes( 
         'cmap_map_set', $map_set_id, $apr->param('att_order_by')
+    );
+    $map_set->{'xrefs'}      = $self->get_xrefs( 
+        'cmap_map_set', $map_set_id, $apr->param('xref_order_by')
     );
 
     my @maps = @{ 
@@ -2813,12 +2624,6 @@ sub map_set_update {
         )
     );
 
-    $self->admin->object_note_insert_or_update( 
-        table_name => 'cmap_map_set',
-        object_id  => $map_set_id, 
-        note       => $apr->param('note'),
-    );
-
     return $self->redirect_home( 
         ADMIN_HOME_URI."?action=map_set_view;map_set_id=$map_set_id",
     )
@@ -2880,9 +2685,6 @@ sub map_type_edit {
         "No map type for ID '$map_type_id'"
     );
 
-    $map_type->{'note'} = 
-        $self->admin->get_note( 'cmap_map_type', $map_type_id );
-
     return $self->process_template( 
         TEMPLATE->{'map_type_edit'},
         { 
@@ -2934,12 +2736,6 @@ sub map_type_insert {
           $is_relational_map, $display_order, $shape, $width, $color )
     );
 
-    $self->admin->object_note_insert_or_update(
-        table_name => 'cmap_map_type',
-        object_id  => $map_type_id,
-        note       => $apr->param('note'),
-    );
-
     return $self->redirect_home( ADMIN_HOME_URI.'?action=map_types_view' ); 
 }
 
@@ -2985,12 +2781,6 @@ sub map_type_update {
         )
     );
 
-    $self->admin->object_note_insert_or_update(
-        table_name => 'cmap_map_type',
-        object_id  => $map_type_id,
-        note       => $apr->param('note'),
-    );
-
     return $self->redirect_home( ADMIN_HOME_URI.'?action=map_types_view' ); 
 }
 
@@ -3020,8 +2810,12 @@ sub map_type_view {
         "No map type for ID '$map_type_id'"
     );
 
-    $map_type->{'attributes'} = $self->admin->get_attributes( 
+    $map_type->{'attributes'} = $self->get_attributes( 
         'cmap_map_type', $map_type_id, $apr->param('att_order_by')
+    );
+
+    $map_type->{'xrefs'} = $self->get_xrefs( 
+        'cmap_map_type', $map_type_id, $apr->param('xref_order_by')
     );
 
     return $self->process_template( 
@@ -3114,8 +2908,7 @@ sub species_edit {
                      species_id, 
                      common_name, 
                      full_name,
-                     display_order, 
-                     ncbi_taxon_id
+                     display_order
             from     cmap_species
             where    species_id=?
         ]
@@ -3124,8 +2917,6 @@ sub species_edit {
     my $species = $sth->fetchrow_hashref or return $self->error(
         "No species for ID '$species_id'"
     );
-
-    $species->{'note'} = $self->admin->get_note('cmap_species', $species_id);
 
     return $self->process_template( 
         TEMPLATE->{'species_edit'},
@@ -3147,7 +2938,6 @@ sub species_insert {
     my $full_name     = $apr->param('full_name')   or 
                         push @errors, 'No full name';
     my $display_order = $apr->param('display_order') || 1;
-    my $ncbi_taxon_id = $apr->param('ncbi_taxon_id') || 1;
     my $species_id    = next_number(
         db            => $db, 
         table_name    => 'cmap_species',
@@ -3162,20 +2952,12 @@ sub species_insert {
             insert
             into   cmap_species 
                    ( accession_id, species_id, full_name, common_name, 
-                     display_order, ncbi_taxon_id
+                     display_order
                    )
-            values ( ?, ?, ?, ?, ?, ? )
+            values ( ?, ?, ?, ?, ? )
         ],
         {}, 
-        ( $accession_id, $species_id, $full_name, 
-          $common_name, $display_order, $ncbi_taxon_id
-        )
-    );
-
-    $self->admin->object_note_insert_or_update( 
-        table_name => 'cmap_species',
-        object_id  => $species_id, 
-        note       => $apr->param('note'),
+        ($accession_id, $species_id, $full_name, $common_name, $display_order)
     );
 
     return $self->redirect_home( ADMIN_HOME_URI.'?action=species_view' ); 
@@ -3196,7 +2978,6 @@ sub species_update {
     my $full_name     = $apr->param('full_name')    or 
                         push @errors, 'No full name';
     my $display_order = $apr->param('display_order') || 1;
-    my $ncbi_taxon_id = $apr->param('ncbi_taxon_id') || 1;
 
     return $self->species_edit( errors => \@errors ) if @errors;
 
@@ -3206,20 +2987,11 @@ sub species_update {
             set    accession_id=?,
                    common_name=?, 
                    full_name=?,
-                   display_order=?,
-                   ncbi_taxon_id=?
+                   display_order=?
             where  species_id=?
         ],
         {}, 
-        ( $accession_id, $common_name, $full_name, 
-          $display_order, $ncbi_taxon_id, $species_id 
-        )
-    );
-
-    $self->admin->object_note_insert_or_update( 
-        table_name => 'cmap_species',
-        object_id  => $species_id, 
-        note       => $apr->param('note'),
+        ($accession_id, $common_name, $full_name, $display_order, $species_id)
     );
 
     return $self->redirect_home( ADMIN_HOME_URI.'?action=species_view' ); 
@@ -3238,8 +3010,7 @@ sub species_view {
                  species_id, 
                  full_name, 
                  common_name,
-                 display_order, 
-                 ncbi_taxon_id
+                 display_order
         from     cmap_species
     ];
 
@@ -3249,7 +3020,11 @@ sub species_view {
         $sth->execute( $species_id );
         my $species = $sth->fetchrow_hashref;
 
-        $species->{'attributes'} = $self->admin->get_attributes(
+        $species->{'attributes'} = $self->get_attributes(
+            'cmap_species', $species_id, $apr->param('att_order_by')
+        );
+
+        $species->{'xrefs'} = $self->get_xrefs(
             'cmap_species', $species_id, $apr->param('att_order_by')
         );
 
@@ -3280,6 +3055,233 @@ sub species_view {
             }
         );
     }
+}
+
+# ----------------------------------------------------
+sub xref_create {
+    my ( $self, %args ) = @_;
+    my $apr             = $self->apr or return;
+    my $table_name      = $apr->param('table_name') || '';
+    my $object_id       = $apr->param('object_id')  ||  0;
+    my $db_object;
+    
+    if ( $table_name && $object_id ) {
+        my $pk_name =  pk_name( $table_name );
+        my $db      = $self->db or return;
+        my $sth     = $db->prepare(
+            "select * from $table_name where $pk_name=$object_id"
+        );
+        $sth->execute;
+        $db_object = $sth->fetchrow_hashref;
+
+        my $obj                     = $XREF_OBJ_LOOKUP{ $table_name };
+        $db_object->{'name'}        = $db_object->{ $obj->{'name_field'} };
+        $db_object->{'object_name'} = $obj->{'object_name'};
+    }
+
+    return $self->process_template( 
+        TEMPLATE->{'xref_create'},
+        {
+            apr          => $self->apr,
+            errors       => $args{'errors'},
+            xref_objects => XREF_OBJECTS,
+            table_name   => $table_name,
+            object_id    => $object_id,
+            db_object    => $db_object,
+        }
+    );
+}
+
+# ----------------------------------------------------
+sub xref_edit {
+    my ( $self, %args ) = @_;
+    my $apr             = $self->apr;
+    my $xref_id         = $apr->param('xref_id') or die 'No xref id';
+    my $admin           = $self->admin;
+    my $db              = $self->db or return $self->error;
+    my $sth             = $db->prepare(
+        q[
+            select xref_id,
+                   table_name,
+                   object_id,
+                   display_order,
+                   xref_name,
+                   xref_url
+            from   cmap_xref
+            where  xref_id=?
+        ]
+    );
+    $sth->execute( $xref_id );
+    my $xref = $sth->fetchrow_hashref or return $self->error(
+        "No database cross-reference for ID '$xref_id'"
+    );
+
+    my $table_name = $xref->{'table_name'} || '';
+    my $object_id  = $xref->{'object_id'}  || '';
+    my $db_object;
+
+    if ( $table_name && $object_id ) {
+        my $pk_name = pk_name( $table_name );
+        my $db      = $self->db or return;
+        my $sth     = $db->prepare(
+            "select * from $table_name where $pk_name=$object_id"
+        );
+        $sth->execute;
+        $db_object = $sth->fetchrow_hashref;
+
+        my $obj                     = $XREF_OBJ_LOOKUP{ $table_name };
+        $db_object->{'name'}        = $db_object->{ $obj->{'name_field'} };
+        $db_object->{'object_name'} = $obj->{'object_name'};
+        $db_object->{'object_type'} = $obj->{'object_name'};
+    }
+
+    return $self->process_template( 
+        TEMPLATE->{'xref_edit'},
+        {
+            apr          => $self->apr,
+            errors       => $args{'errors'},
+            xref         => $xref,
+            xref_objects => XREF_OBJECTS,
+            table_name   => $table_name,
+            object_id    => $object_id,
+            db_object    => $db_object,
+        }
+    );
+}
+
+# ----------------------------------------------------
+sub xref_insert {
+    my $self            = shift;
+    my $db              = $self->db or return $self->error;
+    my $apr             = $self->apr;
+    my $admin           = $self->admin;
+    my @errors          = ();
+    my $object_id       = $apr->param('object_id')  ||  0;
+    my $table_name      = $apr->param('table_name') or
+                          push @errors, 'No database object';
+    my $name            = $apr->param('xref_name')  or
+                          push @errors, 'No xref name';
+    my $url             = $apr->param('xref_url')   or
+                          push @errors, 'No xref URL';
+    my $display_order   = $apr->param('display_order') ||  1;
+    my $return_action   = $apr->param('return_action') || '';
+    my $pk_name         = $apr->param('pk_name')       || '';
+
+    return $self->xref_create( errors => \@errors ) if @errors;
+
+    my $xref_id    = next_number(
+        db         => $db, 
+        table_name => 'cmap_xref',
+        id_field   => 'xref_id',
+    ) or die 'No next number for xref id';
+
+    $db->do(
+        q[
+            insert
+            into   cmap_xref
+                   (xref_id, table_name, object_id, 
+                    display_order, xref_name, xref_url)
+            values (?, ?, ?, ?, ?, ?)
+        ],
+        {},
+        ( $xref_id, $table_name, $object_id, 
+          $display_order, $name, $url 
+        )
+    );
+
+    my $action = $return_action && $pk_name 
+        ? "$return_action;$pk_name=$object_id" : 'xrefs_view';
+
+    return $self->redirect_home( ADMIN_HOME_URI."?action=$action" ); 
+}
+
+# ----------------------------------------------------
+sub xref_update {
+    my $self            = shift;
+    my $db              = $self->db or return $self->error;
+    my $apr             = $self->apr;
+    my $admin           = $self->admin;
+    my @errors          = ();
+    my $xref_id         = $apr->param('xref_id') or die 'No xref id';
+    my $object_id       = $apr->param('object_id')     ||  0;
+    my $display_order   = $apr->param('display_order') ||  0;
+    my $table_name      = $apr->param('table_name')
+                          or push @errors, 'No table name';
+    my $name            = $apr->param('xref_name')
+                          or push @errors, 'No xref name';
+    my $url             = $apr->param('xref_url')      
+                          or push @errors, 'No URL';
+
+    return $self->xref_edit( errors => \@errors ) if @errors;
+
+    $db->do(
+        q[
+            update cmap_xref
+            set    table_name=?, object_id=?, display_order=?, 
+                   xref_name=?, xref_url=?
+            where  xref_id=?
+        ],
+        {},
+        ( $table_name, $object_id, $display_order, $name, $url, $xref_id )
+    );
+
+    return $self->redirect_home( ADMIN_HOME_URI.'?action=xrefs_view' ); 
+}
+
+# ----------------------------------------------------
+sub xrefs_view {
+    my $self       = shift;
+    my $db         = $self->db or return $self->error;
+    my $admin      = $self->admin;
+    my $apr        = $self->apr;
+    my $order_by   = $apr->param('order_by')        || 'table_name';
+    my $table_name = $apr->param('table_name')      || '';
+    my $page_no    = $apr->param('page_no')         ||  1;
+    my $sql        = q[
+        select xref_id,
+               table_name,
+               object_id,
+               display_order,
+               xref_name,
+               xref_url
+        from   cmap_xref
+    ];
+    $sql .= "where table_name='$table_name' " if $table_name;
+
+    my $refs = $db->selectall_arrayref( $sql, { Columns => {} } );
+
+    my $pager = Data::Pageset->new( {
+        total_entries    => scalar @$refs, 
+        entries_per_page => $PAGE_SIZE,
+        current_page     => $page_no,
+        pages_per_set    => $MAX_PAGES,
+    } );
+    $refs = @$refs ? [ $pager->splice( $refs ) ] : []; 
+
+    for my $ref ( @$refs ) {
+        my $object_id            = $ref->{'object_id'};
+        my $table                = $ref->{'table_name'};
+        my $obj                  = $XREF_OBJ_LOOKUP{ $table };
+        my $pk_name              = pk_name( $table );
+        my $name_field           = $obj->{'name_field'};
+        $ref->{'db_object_name'} = $obj->{'object_name'};
+
+        if ( $ref->{'object_id'} ) {
+            $ref->{'actual_object_name'} = $db->selectrow_array(
+                "select $name_field from $table where $pk_name=$object_id"
+            );
+        }
+    }
+
+    return $self->process_template( 
+        TEMPLATE->{'xrefs_view'}, 
+        { 
+            apr        => $apr,
+            xrefs      => $refs,
+            pager      => $pager,
+            db_objects => XREF_OBJECTS,
+        }
+    );
 }
 
 1;
