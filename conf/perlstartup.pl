@@ -5,6 +5,7 @@ use Apache::Cookie();
 use Apache::Request();
 use Cache::FileCache();
 use Class::Base();
+use Cache::Cache();
 use Config::General();
 use Data::Dumper();
 use DBI();
