@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache;
 
 # vim: set ft=perl:
 
-# $Id: Apache.pm,v 1.26 2005-01-05 03:03:58 mwz444 Exp $
+# $Id: Apache.pm,v 1.27 2005-03-23 21:56:12 mwz444 Exp $
 
 =head1 NAME
 
@@ -47,7 +47,7 @@ this class will catch errors and display them correctly.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.26 $)[-1];
+$VERSION = (qw$Revision: 1.27 $)[-1];
 
 use CGI;
 use Data::Dumper;
@@ -166,7 +166,6 @@ the handler to the derived class's "handler" method.
                         error        => $e,
                         apr          => $module->apr,
                         page         => $module->page,
-                        debug        => $module->debug,
                         stylesheet   => $module->stylesheet,
                         data_sources => $module->data_sources,
                     },
@@ -216,24 +215,6 @@ Get/set the cookie.
     $self->{'cookie'} = shift if @_;
 
     return $self->{'cookie'};
-}
-
-# ----------------------------------------------------
-sub debug {
-
-=pod
-
-=head2 debug
-
-Returns whether or not we're in "debug" mode.
-
-=cut
-
-    my $self = shift;
-
-    unless ( defined $self->{'debug'} ) {
-        $self->{'debug'} = $self->config_data('debug') || 0;
-    }
 }
 
 # ----------------------------------------------------

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.77 2005-03-23 20:25:50 mwz444 Exp $
+# $Id: CMap.pm,v 1.78 2005-03-23 21:56:30 mwz444 Exp $
 
 =head1 NAME
 
@@ -1089,8 +1089,7 @@ sub warn {
 
 =head2 warn
 
-Provides a simple way to print messages to STDERR.  Also, I could
-easily turn off warnings glabally with the "debug" flag.
+Provides a simple way to print messages to STDERR.
 
 =cut
 
