@@ -436,6 +436,7 @@ feature_default_display=display
 #
 ];
     $handled{'collapse_features'}=1;
+    $config{'collapse_features'} = 1 unless defined($config{'collapse_features'});
     print $fh "collapse_features ".$config{'collapse_features'}."\n\n";
 
     print $fh q[#
@@ -446,6 +447,7 @@ feature_default_display=display
 #
 ];
     $handled{'scale_maps'}=1;
+    $config{'scale_maps'} = 1 unless defined($config{'scale_maps'});
     print $fh "scale_maps ".$config{'scale_maps'}."\n\n";
 
     print $fh q[#
@@ -456,6 +458,7 @@ feature_default_display=display
 #
 ];
     $handled{'stack_maps'}=0;
+    $config{'stack_maps'} = 0 unless defined($config{'stack_maps'});
     print $fh "stack_maps ".$config{'stack_maps'}."\n\n";
 
     print $fh q[#
@@ -466,6 +469,7 @@ feature_default_display=display
 #
 ];
     $handled{'clean_view'}=0;
+    $config{'clean_view'} = 0 unless defined($config{'clean_view'});
     print $fh "clean_view ".$config{'clean_view'}."\n\n";
 
     print $fh q[#
@@ -476,6 +480,7 @@ feature_default_display=display
 #
 ];
     $handled{'show_intraslot_correspondences'}=0;
+    $config{'show_intraslot_correspondences'} = 0 unless defined($config{'show_intraslot_correspondences'});
     print $fh "show_intraslot_correspondences ".$config{'show_intraslot_correspondences'}."\n\n";
 
     print $fh q[#
@@ -485,6 +490,7 @@ feature_default_display=display
 #
 ];
     $handled{'aggregate_correspondences'}=1;
+    $config{'aggregate_correspondences'} = 0 unless defined($config{'aggregate_correspondences'});
     print $fh "aggregate_correspondences ".$config{'aggregate_correspondences'}."\n\n";
 
     print $fh q[#
@@ -607,6 +613,7 @@ feature_default_display=display
     print $fh "user_pref_cookie_name ".$config{'user_pref_cookie_name'}."\n\n";
 
     $handled{'page_object'}=1;
+    $config{'page_object'} = '' unless defined($config{'page_object'});
     print $fh "page_object ".$config{'page_object'}."\n\n";
 }
 foreach my $key (keys(%config)){
