@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.29 2003-04-17 18:36:11 kycl4rk Exp $
+# $Id: Import.pm,v 1.30 2003-05-09 21:51:36 kycl4rk Exp $
 
 =pod
 
@@ -27,12 +27,13 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.29 $)[-1];
+$VERSION  = (qw$Revision: 1.30 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Utils 'next_number';
+use Text::RecordParser;
 
 use base 'Bio::GMOD::CMap';
 
@@ -175,17 +176,20 @@ have for the map set).
     # (e.g., make "Feature Name" => "feature_name").
     #
     $self->Print("Checking headers.\n");
-    chomp( my $header   = <$fh> );
-    my @columns_present = 
-        map  { s/^\s+|\s+$//g; s/\s+/_/g; lc $_ } 
-        split( FIELD_SEP, $header );
+    my $parser = Text::RecordParser->new(
+        fh              => $fh,
+        field_separator => FIELD_SEP,
+        header_filter   => sub { $_ = shift; s/\s+/_/g; lc $_ },
+        field_filter    => sub { $_ = shift; s/^\s+|\s+$//g; $_ },
+    );
+    $parser->bind_header;
 
     my %required = 
         map  { $_, 0 }
         grep { $COLUMNS{ $_ }{'is_required'} }
         keys %COLUMNS;
         
-    for my $column_name ( @columns_present ) {
+    for my $column_name ( $parser->field_list ) {
         if ( exists $COLUMNS{ $column_name } ) {
             $self->Print("Column '$column_name' OK.\n");
             $required{ $column_name } = 1 if defined $required{ $column_name };
@@ -203,19 +207,10 @@ have for the map set).
 
     $self->Print("Parsing file...\n");
     my ( %feature_type_ids, %feature_ids, %map_info );
-    while ( <$fh> ) {
-        chomp;
-        my @fields = split FIELD_SEP;
-        return $self->error("Odd number of fields") 
-            if @fields > @columns_present;
-
-        my %record;
-        for my $i ( 0 .. $#columns_present ) {
-            my $field_name =  $columns_present[ $i ]  or next;
-            my $field_attr =  $COLUMNS{ $field_name } or next;
-            my $field_val  =  $fields[ $i ];
-               $field_val  =~ s/^\s+|\s+$//g # remove leading/trailing space
-                    if defined $field_val && $field_val =~ /\s/;
+    while ( my $record = $parser->fetchrow_hashref ) {
+        for my $field_name ( $parser->field_list ) {
+            my $field_attr = $COLUMNS{ $field_name } or next;
+            my $field_val  = $record->{ $field_name };
 
             if ( 
                 $field_attr->{'is_required'} && 
@@ -243,11 +238,9 @@ have for the map set).
             elsif ( $datatype eq 'number' && $field_val eq '' ) {
                 $field_val = undef;
             }
-
-            $record{ $field_name } = $field_val;
         }
 
-        my $feature_type    = $record{'feature_type'};
+        my $feature_type    = $record->{'feature_type'};
         my $feature_type_id = $feature_type_ids{ uc $feature_type };
 
         #
@@ -311,20 +304,20 @@ have for the map set).
         # Figure out the map id (or create it).
         #
         my ( $map_id, $map_name );
-        my $map_aid  = $record{'map_accession_id'} || '';
+        my $map_aid  = $record->{'map_accession_id'} || '';
         if ( $map_aid ) {
             $map_name = $map_aids{ $map_aid } || '';
         }
  
-        $map_name ||= $record{'map_name'};
+        $map_name ||= $record->{'map_name'};
         if ( exists $maps{ uc $map_name } ) { 
             $map_id = $maps{ uc $map_name }{'map_id'};
             $maps{ uc $map_name }{'touched'} = 1;
         }
 
-        my $display_order = $record{'map_display_order'} || 1;
-        my $map_start     = $record{'map_start'}         || 0;
-        my $map_stop      = $record{'map_stop'}          || 0;
+        my $display_order = $record->{'map_display_order'} || 1;
+        my $map_start     = $record->{'map_start'}         || 0;
+        my $map_stop      = $record->{'map_stop'}          || 0;
 
         if ( 
             defined $map_start &&
@@ -378,15 +371,15 @@ have for the map set).
         #
         # See if the acc. id already exists.
         #
-        my $feature_name   = $record{'feature_name'}     #or next;
-            or warn "feature name blank! ", Dumper( %record ), "\n";
-        my $accession_id   = $record{'feature_accession_id'};
-        my $alternate_name = $record{'feature_alt_name'}    || '';
-        my $dbxref_name    = $record{'feature_dbxref_name'} || '';
-        my $dbxref_url     = $record{'feature_dbxref_url'}  || '';
-        my $start          = $record{'feature_start'};
-        my $stop           = $record{'feature_stop'};
-        my $is_landmark    = $record{'is_landmark'} || 0;
+        my $feature_name   = $record->{'feature_name'}     #or next;
+            or warn "feature name blank! ", Dumper( $record ), "\n";
+        my $accession_id   = $record->{'feature_accession_id'};
+        my $alternate_name = $record->{'feature_alt_name'}    || '';
+        my $dbxref_name    = $record->{'feature_dbxref_name'} || '';
+        my $dbxref_url     = $record->{'feature_dbxref_url'}  || '';
+        my $start          = $record->{'feature_start'};
+        my $stop           = $record->{'feature_stop'};
+        my $is_landmark    = $record->{'is_landmark'} || 0;
 
         if ( 
             defined $start &&

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 
-# $Id: ImportCorrespondences.pm,v 1.11 2003-03-13 01:27:13 kycl4rk Exp $
+# $Id: ImportCorrespondences.pm,v 1.12 2003-05-09 21:51:36 kycl4rk Exp $
 
 =head1 NAME
 
@@ -42,13 +42,14 @@ each of the two feature names, a correspondence will be created.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.11 $)[-1];
+$VERSION = (qw$Revision: 1.12 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Utils qw[ next_number ];
+use Text::RecordParser;
 use base 'Bio::GMOD::CMap';
 
 %COLUMNS = (
@@ -127,16 +128,21 @@ sub import {
     );
 
     $self->Print("Importing feature correspondence data.\n");
-    $self->Print("Checking headers.\n");
 
     #
     # Make column names lowercase, convert spaces to underscores 
     # (e.g., make "Feature Name" => "feature_name").
     #
-    chomp( my $header   = <$fh> );
-    my @columns_present = map { s/\s+/_/g; lc $_ } split(FIELD_SEP, $header);
+    $self->Print("Checking headers.\n");
+    my $parser = Text::RecordParser->new(
+        fh              => $fh,
+        field_separator => FIELD_SEP,
+        header_filter   => sub { $_ = shift; s/\s+/_/g; lc $_ },
+        field_filter    => sub { $_ = shift; s/^\s+|\s+$//g; $_ },
+    );
+    $parser->bind_header;
 
-    for my $column_name ( @columns_present ) {
+    for my $column_name ( $parser->field_list ) {
         if ( exists $COLUMNS{ $column_name } ) {
             $self->Print("Column '$column_name' OK.\n")
         }
@@ -152,25 +158,20 @@ sub import {
     $self->Print("Parsing file...\n");
     my ( %feature_ids, %evidence_type_ids, $inserts, $total );
     LINE:
-    while ( <$fh> ) {
-        chomp;
-        my @fields = split FIELD_SEP;
-        return $self->error("Odd number of fields") 
-            if scalar @fields > scalar @columns_present;
-
-        my %record;
-        for my $i ( 0 .. $#columns_present ) {
-            my $field_name = $columns_present[ $i ]  or next;
+    while ( my $record = $parser->fetchrow_hashref ) {
+        for my $field_name ( $parser->field_list ) {
             my $field_attr = $COLUMNS{ $field_name } or next;
-            my $field_val  = $fields[ $i ];
+            my $field_val  = $record->{ $field_name };
 
-            if ( $field_attr->{'is_required'} && !defined $field_val ) {
+            if ( 
+                $field_attr->{'is_required'} && 
+                ( !defined $field_val || $field_val eq '' )
+            ) {
                 return $self->error("Field '$field_name' is required");
             }
 
-            if ( my $datatype = $field_attr->{'datatype'} && 
-                 defined $field_val 
-            ) {
+            my $datatype = $field_attr->{'datatype'} || '';
+            if ( $datatype && defined $field_val && $field_val ne '' ) {
                 if ( my $regex = RE_LOOKUP->{ $datatype } ) {
                     return $self->error(
                         "Value of '$field_name'  is wrong.  " .
@@ -178,8 +179,6 @@ sub import {
                     ) unless $field_val =~ $regex;
                 }
             }
-
-            $record{ $field_name } = $field_val;
         }
         $total++;
 
@@ -187,8 +186,8 @@ sub import {
         for my $i ( 1, 2 ) {
             my $field_name     = "feature_name$i";
             my $aid_field_name = "feature_accession_id$i";
-            my $feature_name   = $record{ $field_name }     || '';
-            my $accession_id   = $record{ $aid_field_name } || '';
+            my $feature_name   = $record->{ $field_name }     || '';
+            my $accession_id   = $record->{ $aid_field_name } || '';
             next unless $feature_name || $accession_id;
             my $upper_name     = uc $feature_name;
             my @feature_ids;
@@ -243,7 +242,8 @@ sub import {
 
         next LINE unless @feature_ids1 && @feature_ids2;
 
-        my @evidences = map {s/^\s+|\s+$//g;$_} split /,/, $record{'evidence'};
+        my @evidences = map {s/^\s+|\s+$//g;$_} 
+            split /,/, $record->{'evidence'};
         my @evidence_types;
         for my $evidence ( @evidences ) {
             my $evidence_type_id = $evidence_type_ids{ uc $evidence };
@@ -298,7 +298,7 @@ sub import {
             push @evidence_types, [ $evidence_type_id, $evidence ];
         }
 
-        my $is_enabled = $record{'is_enabled'};
+        my $is_enabled = $record->{'is_enabled'};
            $is_enabled = 1 unless defined $is_enabled;
 
         for my $feature1 ( @feature_ids1 ) {
