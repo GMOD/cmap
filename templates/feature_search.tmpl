@@ -1,7 +1,7 @@
 [% 
     INCLUDE header.tmpl 
     title='Feature Search'
-    no_link='feature_search'
+    cur_sec='feature_search'
     help_anchor='feature_search'
 %]
 <h1>Feature Search</h1>
@@ -78,7 +78,7 @@ Use &quot;*&quot; or &quot;%&quot; for wildcards.  To find features with spaces 
         [% SET i=0 %]
         <table border="0" width="100%">
             <tr>
-                <td colspan="8" align="center">
+                <td colspan="9" align="center">
                     [% SET pager_url="/cmap/feature_search?features=${apr.param('features')}&order_by=${apr.param('order_by')}&species_aids=${apr.param('species_aids')}&feature_type_aids=${apr.param('feature_type_aids')}" %]
                     [% PROCESS pager.tmpl %]
                 </td>
@@ -107,7 +107,7 @@ Use &quot;*&quot; or &quot;%&quot; for wildcards.  To find features with spaces 
                         [% r.start_position %][% IF r.stop_position.defined %]-[% r.stop_position %][% END %]
                     </td>
                     <td align="center">
-                        <b>[</b>&nbsp;<a href="/cmap/map_details?ref_map_set_aid=[% r.map_set_aid %];ref_map_aid=[% r.map_aid %];highlight=[% r.feature_aid %];data_source=[% apr.param('data_source') %];label_features=landmarks">View&nbsp;on&nbsp;Map</a>&nbsp;<b>]</b>
+                        <b>[</b>&nbsp;<a href="/cmap/map_details?ref_map_set_aid=[% r.map_set_aid %];ref_map_aid=[% r.map_aid %];highlight=&quot;[% r.feature_name %]&quot;;data_source=[% apr.param('data_source') %];label_features=landmarks">View&nbsp;on&nbsp;Map</a>&nbsp;<b>]</b>
                     </td>
                     <td align="center">
                         <b>[</b>&nbsp;<a href="feature?feature_aid=[% r.feature_aid %];data_source=[% apr.param('data_source') %]">Feature&nbsp;Details</a><b>&nbsp;]</b>

@@ -1,12 +1,61 @@
-[% DEFAULT title='Compartive &amp; Genetic Maps' %]
+[%-
+    DEFAULT title='Compartive &amp; Genetic Maps';
+    SET menu = [
+        { 
+            name    => 'home', 
+            url     => '/cmap', 
+            display => 'CMap Home',
+        },
+        { 
+            name    => 'map_viewer', 
+            url     => '/cmap/viewer', 
+            display => 'Map Viewer' 
+        },
+        { 
+            name    => 'feature_search', 
+            url     => '/cmap/feature_search',
+            display => 'Feature Search' 
+        },
+        { 
+            name    => 'matrix', 
+            url     => '/cmap/matrix', 
+            display => 'Matrix' 
+        },
+        { 
+            name    => 'map_set_info', 
+            url     => '/cmap/map_set_info', 
+            display => 'Map Set Info',
+        },
+        { 
+            name    => 'feature_type_info', 
+            url     => '/cmap/feature_type_info', 
+            display => 'Feature Type Info',
+        },
+        { 
+            name    => 'help', 
+            url     => '/cmap/help', 
+            display => 'Help',
+        },
+    ];
+
+    SET links=[];
+
+    FOREACH s=menu;
+        IF cur_sec == s.name; 
+            links.push("<b>$s.display</b>");
+        ELSIF ( s.name == 'help' );
+            links.push("<a href=\"$s.url?section=$cur_sec\">$s.display</a>");
+        ELSE; 
+            links.push("<a href=\"$s.url\">$s.display</a>");
+        END;
+    END;
+-%]
 <!DOCTYPE HTML PUBLIC "-//IETF//Dtd HTML//EN">
 <html>
 <head>
 <title>[% title %]</title>
 </head>
-[% IF stylesheet -%]
-    <link rel="stylesheet" href="[% stylesheet %]" type="text/css">
-[%- END %]
+[% IF stylesheet %]<link rel="stylesheet" href="[% stylesheet %]" type="text/css">[% END %]
 
 [% page.start_body OR '<body>' %]
 
@@ -14,13 +63,7 @@
     <tr>
         <td align="left">
             [% IF page %]<img src="/images/icons/grain_icon.jpg" alt="grain_icon" height="16" width="16">[% END %]
-            [% IF no_link != 'home' %]<a href="/cmap">[% ELSE %]<b>[% END %]CMap Home[% IF no_link != 'home' %]</a>[% ELSE %]</b>[% END %] |
-            [% IF no_link != 'maps' %]<a href="/cmap/viewer">[% ELSE %]<b>[% END %]Map Viewer[% IF no_link != 'maps' %]</a>[% ELSE %]</b>[% END %] |
-            [% IF no_link != 'matrix' %]<a href="/cmap/matrix">[% ELSE %]<b>[% END %]Matrix[% IF no_link != 'matrix' %]</a>[% ELSE %]</b>[% END %] |
-            [% IF no_link != 'feature_search' %]<a href="/cmap/feature_search">[% ELSE %]<b>[% END %]Feature Search[% IF no_link != 'feature_search' %]</a>[% ELSE %]</b>[% END %] |
-            [% IF no_link != 'map_set_info' %]<a href="/cmap/map_set_info">[% ELSE %]<b>[% END %]Map Set Info[% IF no_link != 'map_set_info' %]</a>[% ELSE %]</b>[% END %] |
-            [% IF no_link != 'feature_type_info' %]<a href="/cmap/feature_type_info">[% ELSE %]<b>[% END %]Feature Type Info[% IF no_link != 'feature_type_info' %]</a>[% ELSE %]</b>[% END %] |
-            [% IF no_link != 'help' %]<a href="/cmap/help[% IF help_anchor; "?section=$help_anchor"; END %]">[% ELSE %]<b>[% END %]Help[% IF no_link != 'help' %]</a>[% ELSE %]</b>[% END %]
+            [% links.join( ' | ' ) %]
         </td>
         <td align="right">
             [% IF data_sources.size > 1 %]
