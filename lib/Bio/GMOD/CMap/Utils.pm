@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Utils;
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.25.2.9 2004-05-30 20:56:04 mwz444 Exp $
+# $Id: Utils.pm,v 1.25.2.10 2004-06-11 18:48:01 kycl4rk Exp $
 
 =head1 NAME
 
@@ -29,7 +29,7 @@ use Bio::GMOD::CMap::Constants;
 use POSIX;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.25.2.9 $)[-1];
+$VERSION = (qw$Revision: 1.25.2.10 $)[-1];
 
 use base 'Exporter';
 
@@ -43,8 +43,7 @@ my @subs   = qw[
     next_number 
     parse_words
     pk_name
-    fake_selectall_arrayref
-    sort_selectall_arrayref
+    simple_column_distribution
 ];
 @EXPORT_OK = @subs;
 @EXPORT    = @subs;
@@ -163,99 +162,106 @@ Given a reference to some columns, figure out where something can be inserted.
 Given a reference to some columns, figure out where something can be inserted.
 
 =cut
-sub column_distribution2 {
 
+sub column_distribution2 {
     my %args        = @_;
-    my $columns     = $args{'columns'}     || []; # array reference
-    my $buffer      = $args{'buffer'}      ||  2; # space b/w things
-    my $collapse    = $args{'collapse'}    ||  0; # whether to collapse
-    my $collapse_on = $args{'collapse_on'} || ''; # on what type of object
-    my $col_span    = $args{'col_span'}    ||  1; # how many cols to occupy
-    my $top         = $args{'top'};               # the top and bottom of
-    my $bottom      = $args{'bottom'};            # the thing being inserted
-    my $bins        = $args{'bins'}        ||  1; # number of bins              
-    my $col_top     = $args{'col_top'}     ||  1; # top of the column     
-    my $col_bottom  = $args{'col_bottom'};        # top of the column
-  
-     $bottom         = $top unless defined $bottom;
+    my $columns     = $args{'columns'} || [];        # array reference
+    my $buffer      = $args{'buffer'} || 2;          # space b/w things
+    my $collapse    = $args{'collapse'} || 0;        # whether to collapse
+    my $collapse_on = $args{'collapse_on'} || '';    # on what type of object
+    my $col_span    = $args{'col_span'} || 1;        # how many cols to occupy
+    my $top         = $args{'top'};                  # the top and bottom of
+    my $bottom      = $args{'bottom'};               # the thing being inserted
+    my $bins        = $args{'bins'} || 1;            # number of bins
+    my $col_top     = $args{'col_top'} || 1;         # top of the column
+    my $col_bottom  = $args{'col_bottom'};           # top of the column
+
+    $bottom = $top unless defined $bottom;
 
     return unless defined $top && defined $bottom && defined $col_bottom;
 
-    ###$columns is an array of columns.  Each column is has a hash of bins.
-    ###  Each bin is an array of object start and stops.
-    my $bin_factor  = ($col_bottom-$col_top)/$bins;
-    ###Define the bins that this object lies in. 
-    my $index_start = POSIX::ceil(($top-$col_top)/$bin_factor);      #first bin 
-    my $index_stop  = POSIX::ceil(($bottom-$col_top)/$bin_factor); #last bin
-  
-    ###When the top of the object is higher than the column, it results 
-    ###  in negative indices.  This fixes the problem by binning them
-    ###  all in the first bin. 
-    $index_start=0 if $index_start<0; 
-    $index_stop=0 if $index_stop<0;
+    # $columns is an array of columns.  Each column is has a hash of bins.
+    #  Each bin is an array of object start and stops.
+    my $bin_factor = ( $col_bottom - $col_top ) / $bins;
+    # Define the bins that this object lies in. 
+    my $index_start = POSIX::ceil(($top - $col_top)/$bin_factor);    # 1st bin
+    my $index_stop  = POSIX::ceil(($bottom - $col_top)/$bin_factor); # last bin
 
-    my $column_index; # the number of the column chosen, is returned
-    if ( @$columns ) {
+    # When the top of the object is higher than the column, it results 
+    # in negative indices.  This fixes the problem by binning them
+    # all in the first bin. 
+    $index_start = 0 if $index_start < 0;
+    $index_stop  = 0 if $index_stop < 0;
+
+    my $column_index;    # the number of the column chosen, is returned
+    if (@$columns) {
         my $i = 0;
-        for ( ;; ) {
-            last if $i > $#{ $columns };
-	    my $ok        = 1;
-	    my $collapsed = 0;
-	  BIN:
-	    for (my $bin_no=$index_start; $bin_no<=$index_stop;$bin_no++){
-		my $bin    = $columns->[ $i ]->[$bin_no];
-		if ($bin){
-		    my @used      = sort { $a->[0] <=> $b->[0] } @{ $bin };
-		    
-		    for my $segment ( @used ) {
-			my ( $north, $south, $span, $type ) = @$segment; 
-			if ( 
-			     $collapse             && 
-			     $collapse_on eq $type && 
-			     $north == $top        && 
-			     $south == $bottom 
-			     ) {
-			    $ok = 1;
-			    $collapsed = 1;
-			    return $i;
-			    last BIN;
-			}
-			
-			next if $south + $buffer < $top;
-			next if $north - $buffer > $bottom;
-			$i += $span; # jump past the last taken column
-			$ok = 0, last;
-		    }
-		}
-		#
-		# If this column looks OK, see if there is clearance in the others.
-		#
-		if ( $ok && $col_span > 1 && $i < $#{ $columns } ) {
-		    for my $n ( $i + 1 .. $i + $col_span - 1 ) {
-			last if $n > $#{ $columns };
-			my $nbin  = $columns->[ $n ]->[$bin_no];
-			next unless $nbin;
-			my @nused = sort { $a->[0] <=> $b->[0] } @{ $nbin };
-			my $nok   = 1;
+        for (;;) {
+            last if $i > $#{$columns};
+            my $ok        = 1;
+            my $collapsed = 0;
+            BIN:
+            for (
+                my $bin_no = $index_start ;
+                $bin_no <= $index_stop ;
+                $bin_no++
+              )
+            {
+                my $bin = $columns->[$i]->[$bin_no];
+                if ($bin) {
+                    my @used = sort { $a->[0] <=> $b->[0] } @{$bin};
 
-			for my $nseg ( @nused ) {
-			    my ( $n, $s, $nspan ) = @$nseg; 
-			    next if $s + $buffer < $top;
-			    next if $n - $buffer > $bottom;
-			    $i += $nspan; # jump past the last taken column
-			    $ok = 0, last;
-			}
-		    }
-		}
-	    }
-            if ( $ok ) {
+                    for my $segment (@used) {
+                        my ( $north, $south, $span, $type ) = @$segment;
+                        if (   $collapse
+                            && $collapse_on eq $type
+                            && $north == $top
+                            && $south == $bottom )
+                        {
+                            $ok        = 1;
+                            $collapsed = 1;
+                            return $i;
+                            last BIN;
+                        }
+
+                        next if $south + $buffer < $top;
+                        next if $north - $buffer > $bottom;
+                        $i += $span;    # jump past the last taken column
+                        $ok = 0, last;
+                    }
+                }
+
+                #
+                # If this column looks OK, see if there is clearance in the
+                # others.
+                #
+                if ( $ok && $col_span > 1 && $i < $#{$columns} ) {
+                    for my $n ( $i + 1 .. $i + $col_span - 1 ) {
+                        last if $n > $#{$columns};
+                        my $nbin = $columns->[$n]->[$bin_no];
+                        next unless $nbin;
+                        my @nused = sort { $a->[0] <=> $b->[0] } @{$nbin};
+                        my $nok   = 1;
+
+                        for my $nseg (@nused) {
+                            my ( $n, $s, $nspan ) = @$nseg;
+                            next if $s + $buffer < $top;
+                            next if $n - $buffer > $bottom;
+                            $i += $nspan;    # jump past the last taken column
+                            $ok = 0, last;
+                        }
+                    }
+                }
+            }
+            if ($ok) {
                 $column_index = $i;
-                unless ( $collapsed ) {
+                unless ($collapsed) {
                     for my $n ( 0 .. $col_span - 1 ) {
-			for (my $k=$index_start; $k<=$index_stop;$k++){
-			    push @{ $columns->[ $column_index + $n ]->[$k] }, 
-			    [$top, $bottom, $col_span - $n, $collapse_on ];
-			}
+                        for ( my $k = $index_start ; $k <= $index_stop ; $k++ )
+                        {
+                            push @{ $columns->[ $column_index + $n ]->[$k] },
+                              [ $top, $bottom, $col_span - $n, $collapse_on ];
+                        }
                     }
                 }
                 last;
@@ -263,22 +269,22 @@ sub column_distribution2 {
         }
 
         unless ( defined $column_index ) {
-            $column_index = $#{ $columns } + 1;
+            $column_index = $#{$columns} + 1;
             for my $n ( 0 .. $col_span - 1 ) {
-		for (my $k=$index_start; $k<=$index_stop;$k++){
-		    push @{ $columns->[ $column_index + $n ]->[$k] }, 
-		    [ $top, $bottom, $col_span - $n, $collapse_on];
-		}
+                for ( my $k = $index_start ; $k <= $index_stop ; $k++ ) {
+                    push @{ $columns->[ $column_index + $n ]->[$k] },
+                      [ $top, $bottom, $col_span - $n, $collapse_on ];
+                }
             }
         }
     }
     else {
         $column_index = 0;
         for my $n ( 0 .. $col_span - 1 ) {
-	    for (my $k=$index_start; $k<=$index_stop;$k++){
-		push @{ $columns->[ $n ]->[$k] }, 
-		[ $top, $bottom, $col_span - $n, $collapse_on];
-	    }
+            for ( my $k = $index_start ; $k <= $index_stop ; $k++ ) {
+                push @{ $columns->[$n]->[$k] },
+                  [ $top, $bottom, $col_span - $n, $collapse_on ];
+            }
         }
 
     }
@@ -480,8 +486,6 @@ Special thanks to Noel Yap for suggesting this strategy.
 
     my $no_accepted = scalar @accepted;
     my $no_possible = int( $map_height / $font_height );
-#    print STDERR "no accepted = '$no_accepted', ",
-#        "no_possible = '$no_possible' ($map_height / $font_height)\n";
 
     #
     # If there's only one label, put it right next to the one feature.
@@ -498,10 +502,6 @@ Special thanks to Noel Yap for suggesting this strategy.
         my $half_font = $font_height / 2;
         my $no_bins   = sprintf( "%d", $map_height / $bin_size );
         my $bins      = Bit::Vector->new( $no_bins );
-#        print STDERR "-----------------------------------------------\n",
-#            "bin size = '$bin_size', no bins = '$no_bins', ",
-#            "map height = '$map_height', start = '$start_y', ",
-#            "half font = '$half_font'\n";
 
         my $i = 1;
         for my $label ( @accepted ) {
@@ -515,10 +515,6 @@ Special thanks to Noel Yap for suggesting this strategy.
                 $high_bin += $diff;
             }
 
-#            print STDERR "\nbins = ", $bins->to_ASCII, "\n";
-#            print STDERR "$i: $label->{text} ($label->{start_position}) ",
-#                "target = $label->{target}, bins = ($low_bin, $high_bin)\n";
-
             my ( $hmin, $hmax )  = $bins->Interval_Scan_inc( $low_bin );
             my ( $lmin, $lmax, $next_lmin, $next_lmax );
             if ( $low_bin > 0 ) {
@@ -529,23 +525,18 @@ Special thanks to Noel Yap for suggesting this strategy.
                         $bins->Interval_Scan_dec( $lmin - 1 );
                 }
             }
-#            print STDERR "below = ($lmin, $lmax), above = ($hmin, $hmax), ",
-#                "next below ($next_lmin, $next_lmax)\n";
 
             my $bin_span = $high_bin - $low_bin;
             my $bins_occupied = $bin_span + 1;
-#            print STDERR "bin span = '$bin_span', bins occupied = '$bins_occupied'\n";
 
             my ($gap_below, $gap_above, $diff_to_gap_below, $diff_to_gap_above);
             # nothing below and enough open space
             if ( ! defined $lmax && $low_bin - $bin_span > 1 ) {
-#                print STDERR "low decision 1\n";
                 $gap_below         = $low_bin - 1;
                 $diff_to_gap_below = $bin_span;
             }
             # something below but enough space b/w it and this
             elsif ( defined $lmax && $low_bin - $lmax > $bin_span ) {
-#                print STDERR "low decision 2\n";
                 $gap_below         = $low_bin - $lmax;
                 $diff_to_gap_below = $bins_occupied;
             }
@@ -554,7 +545,6 @@ Special thanks to Noel Yap for suggesting this strategy.
                 defined $lmax && $lmax == $low_bin - 1 &&
                 defined $next_lmax && $lmin - $next_lmax >= $bins_occupied
             ) {
-#                print STDERR "low decision 3\n";
                 $gap_below         = $lmin - $next_lmax;
                 $diff_to_gap_below = ( $low_bin - $lmin ) + $bins_occupied;
             }
@@ -562,7 +552,6 @@ Special thanks to Noel Yap for suggesting this strategy.
             elsif ( 
                 ! defined $next_lmax && defined $lmin && $lmin - $bin_span > 0
             ) {
-#                print STDERR "low decision 4\n";
                 $gap_below         = $lmin;
                 $diff_to_gap_below = $low_bin - $lmin + $bins_occupied;
             }
@@ -594,16 +583,8 @@ Special thanks to Noel Yap for suggesting this strategy.
                 defined $diff_to_gap_below && 
                 ($diff_to_gap_below < $diff_to_gap_above) ? 'below'   : 'above';
 
-#            print STDERR "gap below = '$gap_below', ",
-#                "diff to gap below = '$diff_to_gap_below'\n",
-#                "gap above = '$gap_above' ", 
-#                "diff to gap above = '$diff_to_gap_above'\n",
-#                "Below open = '$below_open', above open = ",
-#                "'$above_open', closer gap = '$closer_gap'\n";
-
             my $diff = 0;
             if ( ! defined $hmin ) {
-#                print STDERR "Nothing here, leaving alone\n";
                 ; # do nothing
             }
             elsif ( 
@@ -615,18 +596,13 @@ Special thanks to Noel Yap for suggesting this strategy.
                 $low_bin  -= $diff_to_gap_below;
                 $high_bin -= $diff_to_gap_below;
                 $diff      = -( $bin_size * $diff_to_gap_below );
-#                print STDERR "Moving LOW\n";
             }
             else {
                 $diff_to_gap_above ||= ( $hmax - $low_bin ) + 1;
-#                print STDERR "Moving HIGH ($diff_to_gap_above)\n";
                 $low_bin  += $diff_to_gap_above;
                 $high_bin += $diff_to_gap_above;
                 $diff      = $bin_size * $diff_to_gap_above;
             }
-
-#            print STDERR "chose bins = ($low_bin, $high_bin), diff = '$diff',",
-#                " no bins = '", $bins->Size, "'\n";
 
             if ( defined $low_bin && defined $high_bin ) {
                 if ( $high_bin >= $bins->Size ) {
@@ -634,7 +610,7 @@ Special thanks to Noel Yap for suggesting this strategy.
                     my $diff = ( $high_bin - $cur ) + 1;
                     $bins->Resize( $cur + $diff );
                 }
-                $bins->Bit_On( $_ ) for $low_bin..$high_bin;
+                $bins->Interval_Fill( $low_bin, $high_bin );
             }
 
             $label->{'y'} = $target + $diff;
@@ -870,63 +846,57 @@ sub pk_name {
 }
 
 # ----------------------------------------------------
-sub fake_selectall_arrayref {
-
 =pod
 
-=head2 fake_selectall_arrayref
+=head2 simple_column_distribution
 
-takes a hash of hashes and makes it look like return from 
-the DBI selectall_arrayref()
+Assumes that items will fit into just one column.
 
 =cut 
 
-    my $self    = shift;
-    my $hashref = shift;
-    my @columns = @_;
-    my $i       = 0;
-    my @return_array;
-    my %column_name;
-    foreach my $column (@columns){
-	if ($column=~/(\S+)\s+as\s+(\S+)/){
-	    $column=$1;
-            $column_name{$1}=$2;
-        }
-	else{
-            $column_name{$column}=$column;
-        }
+sub simple_column_distribution {
+    my %args       = @_;
+    my $columns    = $args{'columns'} || []; # arrayref of columns on horizontal
+    my $map_height = $args{'map_height'};    # in pixels
+    my $low        = $args{'low'};           # lowest pixel value occuppied 
+    my $high       = $args{'high'};          # highest pixel value occuppied
+    my $buffer     = $args{'buffer'} || 2;   # min pixel distance b/w items
+    my $selected;                            # the column number returned
+
+    #
+    # Calculate the effect of the buffer.
+    #
+    my ( $scan_low, $scan_high ) = ( $low, $high );
+    $scan_low   -= $buffer if $low - $buffer >= 0;
+    $scan_high  += $buffer if $high + $buffer <= $map_height;
+    $map_height += $buffer;
+
+    if ( scalar @$columns == 0 ) {
+        my $col = Bit::Vector->new( $map_height );
+        $col->Interval_Fill( $low, $high );
+        push @$columns, $col;
+        $selected = 0;
     }
-    for my $key ( keys(%$hashref) ) {
-        %{ $return_array[$i] } = map { 
-            $column_name{$_} => $hashref->{$key}->{$_} } @columns;
-        $i++;
-    }
-    @return_array =
-      sort { $a->{ $columns[0] } cmp $b->{ $columns[0] } } @return_array;
-    return \@return_array;
-}
-
-# ----------------------------------------------------
-=pod
-
-=head2 sort_selectall_arrayref
-
-
-=cut 
-
-sub sort_selectall_arrayref{
-    my $arrayref = shift;
-    my @columns  = @_;
-    my @return   = sort {
-        for ( my $i = 0 ; $i < $#columns ; $i++ ) {
-            if ( $a->{ $columns[$i] } cmp $b->{ $columns[$i] } ) {
-                return $a->{ $columns[$i] } cmp $b->{ $columns[$i] };
+    else {
+        for my $i ( 0 .. $#{ $columns } ) {
+            my $col           = $columns->[ $i ];
+            my ( $min, $max ) = $col->Interval_Scan_inc( $scan_low );
+            if ( !defined $min || $min > $scan_high ) {
+                $col->Interval_Fill( $low, $high );
+                $selected = $i;
+                last;
             }
         }
-        return $a->{ $columns[-1] } cmp $b->{ $columns[-1] };
-    } @$arrayref;
 
-    return \@return;
+        unless ( defined $selected ) {
+            my $col = Bit::Vector->new( $map_height );
+            $col->Interval_Fill( $low, $high );
+            push @$columns, $col;
+            $selected = $#{ $columns };
+        }
+    }
+
+    return $selected;
 }
 
 1;
