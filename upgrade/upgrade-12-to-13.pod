@@ -113,8 +113,8 @@ everything ending in ".conf" but not the "global.conf" file), so:
 
 Or, specify each config file separately:
 
-  $ cmap_typetables_to_config.pl /path/to/cmap.conf/foo.conf \
-  > /path/to/cmap.conf/bar.conf
+  $ cmap_typetables_to_config.pl /path/to/cmap.conf/foo.conf
+  
 
 =back
 
