@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.98.2.19 2004-07-08 15:33:00 kycl4rk Exp $
+# $Id: Data.pm,v 1.98.2.20 2004-07-09 13:45:34 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.98.2.19 $)[-1];
+$VERSION = (qw$Revision: 1.98.2.20 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -3102,7 +3102,7 @@ Returns the data for drawing comparative maps.
                  cmap_species s
         where    map.map_set_id=ms.map_set_id
         and      ms.can_be_reference_map=1
-        and      mt.is_relational_map=1
+        and      mt.is_relational_map=0
         and      ms.map_type_id=mt.map_type_id
         and      ms.species_id=s.species_id
         $restriction
