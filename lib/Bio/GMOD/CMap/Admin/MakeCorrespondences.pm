@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
-# $Id: MakeCorrespondences.pm,v 1.13 2003-02-20 16:50:05 kycl4rk Exp $
+# $Id: MakeCorrespondences.pm,v 1.14 2003-03-17 18:03:18 kycl4rk Exp $
 
 =head1 NAME
 
@@ -30,12 +30,13 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.13 $)[-1];
+$VERSION = (qw$Revision: 1.14 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
 use Bio::GMOD::CMap::Utils qw[ next_number ];
 use base 'Bio::GMOD::CMap';
+use Data::Dumper;
 
 # ----------------------------------------------------
 sub make_name_correspondences {
@@ -51,16 +52,48 @@ sub make_name_correspondences {
 
     $self->Print("Making name-based correspondences.\n");
 
+    my %add_name_correspondences;
+    for my $line ( $self->config('add_name_correspondence') ) {
+        my ( $ft1, $ft2 ) = split /\s+/, $line, 2;
+        my $ft_id1 = $db->selectrow_array(
+            q[
+                select ft.feature_type_id
+                from   cmap_feature_type ft
+                where  upper(ft.feature_type)=?
+            ],
+            {},
+            ( uc $ft1 ) 
+        );
+
+        my $ft_id2 = $db->selectrow_array(
+            q[
+                select ft.feature_type_id
+                from   cmap_feature_type ft
+                where  upper(ft.feature_type)=?
+            ],
+            {},
+            ( uc $ft2 ) 
+        );
+
+        next unless $ft_id1 && $ft_id2;
+        push @{ $add_name_correspondences{ $ft_id1 } }, $ft_id2;
+        push @{ $add_name_correspondences{ $ft_id2 } }, $ft_id1;
+    }
+    warn "add =\n", Dumper( \%add_name_correspondences ), "\n";
+
     #
     # Get all the map sets.
     #
     my $sql = q[
         select   ms.map_set_id, 
                  ms.short_name as map_set_name,
-                 mt.is_relational_map
+                 mt.is_relational_map,
+                 s.common_name as species_name
         from     cmap_map_set ms,
-                 cmap_map_type mt
+                 cmap_map_type mt,
+                 cmap_species s
         where    ms.map_type_id=mt.map_type_id
+        and      ms.species_id=s.species_id
     ];
     if ( @map_set_ids ) {
         $sql .= 'and ms.map_set_id in (' . join(', ', @map_set_ids) . ')';
@@ -84,8 +117,8 @@ sub make_name_correspondences {
         );
 
         $self->Print(
-            "Map set $map_set->{'map_set_name'} has ", 
-            scalar @$maps, " maps.\n"
+            "Map set $map_set->{'species_name'}-$map_set->{'map_set_name'} ",
+            "has ", scalar @$maps, " maps.\n"
         );
 
         for my $map ( @$maps ) {
@@ -106,56 +139,6 @@ sub make_name_correspondences {
                 "  Map $map->{'map_name'} has $no_features features.\n"
             );
 
-            #
-            # Make SQL to find all the places something by this 
-            # name occurs on another map.  If it's a relational
-            # map, then we'll skip every other map in the map set.
-            #
-            my $corr_sql =  $map_set->{'is_relational_map'}
-                ? qq[
-                    select f.feature_id, 
-                           f.feature_name, 
-                           map.map_name,
-                           ms.short_name as map_set_name, 
-                           s.common_name as species_name
-                    from   cmap_map map,
-                           cmap_feature f,
-                           cmap_map_set ms,
-                           cmap_species s
-                    where  map.map_set_id<>$map_set->{'map_set_id'}
-                    and    map.map_id=f.map_id
-                    and    (
-                        upper(f.feature_name)=?
-                        or 
-                        upper(f.alternate_name)=?
-                    )
-                    and    f.feature_type_id=?
-                    and    map.map_set_id=ms.map_set_id
-                    and    ms.species_id=s.species_id
-                ]
-                : qq[
-                    select f.feature_id, 
-                           f.feature_name, 
-                           map.map_name,
-                           ms.short_name as map_set_name, 
-                           s.common_name as species_name
-                    from   cmap_feature f,
-                           cmap_map map,
-                           cmap_map_set ms,
-                           cmap_species s
-                    where  f.map_id<>$map->{'map_id'}
-                    and    (
-                        upper(f.feature_name)=?
-                        or 
-                        upper(f.alternate_name)=?
-                    )
-                    and    f.feature_type_id=?
-                    and    f.map_id=map.map_id
-                    and    map.map_set_id=ms.map_set_id
-                    and    ms.species_id=s.species_id
-                ]
-            ;
-
             for my $feature ( 
                 @{ $db->selectall_arrayref(
                     q[
@@ -170,6 +153,62 @@ sub make_name_correspondences {
                     ( $map->{'map_id'} )
                 ) }
             ) {
+                my @allowed_ft_ids = ( $feature->{'feature_type_id'} );
+                push @allowed_ft_ids, @{ $add_name_correspondences{
+                    $feature->{'feature_type_id'}
+                } || [] };
+                my $ft_ids = join(', ', @allowed_ft_ids);
+
+                #
+                # Make SQL to find all the places something by this 
+                # name occurs on another map.  If it's a relational
+                # map, then we'll skip every other map in the map set.
+                #
+                my $corr_sql =  $map_set->{'is_relational_map'}
+                    ? qq[
+                        select f.feature_id, 
+                               f.feature_name, 
+                               map.map_name,
+                               ms.short_name as map_set_name, 
+                               s.common_name as species_name
+                        from   cmap_map map,
+                               cmap_feature f,
+                               cmap_map_set ms,
+                               cmap_species s
+                        where  map.map_set_id<>$map_set->{'map_set_id'}
+                        and    map.map_id=f.map_id
+                        and    (
+                            upper(f.feature_name)=?
+                            or 
+                            upper(f.alternate_name)=?
+                        )
+                        and    f.feature_type_id in ($ft_ids)
+                        and    map.map_set_id=ms.map_set_id
+                        and    ms.species_id=s.species_id
+                    ]
+                    : qq[
+                        select f.feature_id, 
+                               f.feature_name, 
+                               map.map_name,
+                               ms.short_name as map_set_name, 
+                               s.common_name as species_name
+                        from   cmap_feature f,
+                               cmap_map map,
+                               cmap_map_set ms,
+                               cmap_species s
+                        where  f.map_id<>$map->{'map_id'}
+                        and    (
+                            upper(f.feature_name)=?
+                            or 
+                            upper(f.alternate_name)=?
+                        )
+                        and    f.feature_type_id in ($ft_ids)
+                        and    f.map_id=map.map_id
+                        and    map.map_set_id=ms.map_set_id
+                        and    ms.species_id=s.species_id
+                    ]
+                ;
+
                 for my $field ( qw[ feature_name alternate_name ] ) {
                     my $upper_name = uc $feature->{ $field } or next;
                     $self->Print("    Checking $field = '$upper_name'\n");
@@ -178,7 +217,6 @@ sub make_name_correspondences {
                             $corr_sql,
                             { Columns => {} },
                             ( $upper_name, $upper_name, 
-                              $feature->{'feature_type_id'} 
                             )
                         ) }
                     ) {
