@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.30 2004-03-18 22:00:59 mwz444 Exp $
+# $Id: MakeCorrespondences.pm,v 1.31 2004-03-19 15:33:26 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.30 $)[-1];
+$VERSION = (qw$Revision: 1.31 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -50,7 +50,8 @@ sub make_name_correspondences {
     my $quiet                 = $args{'quiet'};
     my $db                    = $self->db;
     my $admin                 = Bio::GMOD::CMap::Admin->new(
-        data_source => $self->data_source
+	config      => $self->{'config'},
+        data_source => $self->data_source,
     );
 
     $self->Print("Making name-based correspondences.\n") unless $quiet;

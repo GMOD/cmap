@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap;
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.49 2004-03-18 22:02:21 mwz444 Exp $
+# $Id: CMap.pm,v 1.50 2004-03-19 15:33:10 mwz444 Exp $
 
 =head1 NAME
 
@@ -46,6 +46,9 @@ use base 'Class::Base';
 sub init {
     my ( $self, $config ) = @_;
     $self->{'config'}=$config->{'config'}; 
+    unless ($self->{'config'}){
+     	$self->{'config'}=Bio::GMOD::CMap::Config->new(); 
+    }	
     $self->data_source( $config->{'data_source'} ) or return;
     return $self;
 }

@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::Import;
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.45 2004-02-10 23:06:50 kycl4rk Exp $
+# $Id: Import.pm,v 1.46 2004-03-19 15:33:10 mwz444 Exp $
 
 =pod
 
@@ -28,7 +28,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.45 $)[-1];
+$VERSION  = (qw$Revision: 1.46 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -173,6 +173,7 @@ appended to the list of xrefs.
     $LOG_FH             = $args{'log_fh'}     ||                 \*STDOUT;
 
     my $admin = Bio::GMOD::CMap::Admin->new(
+	config      => $self->{'config'},
         data_source => $self->data_source
     ) or return $self->error(
         "Can't create admin object: ", Bio::GMOD::CMap::Admin->error
@@ -787,6 +788,7 @@ Imports an XML document containing CMap database objects.
     $LOG_FH             = $args{'log_fh'}     ||                 \*STDOUT;
 
     my $admin = Bio::GMOD::CMap::Admin->new(
+        config      => $self->{'config'},
         data_source => $self->data_source
     ) or return $self->error(
         "Can't create admin object: ", Bio::GMOD::CMap::Admin->error
@@ -1053,6 +1055,7 @@ sub admin {
 
     unless ( defined $self->{'admin'} ) {
         $self->{'admin'} = Bio::GMOD::CMap::Admin->new(
+            config      => $self->{'config'},
             data_source => $self->data_source
         ) or return $self->error(
             "Can't create admin object: ", Bio::GMOD::CMap::Admin->error

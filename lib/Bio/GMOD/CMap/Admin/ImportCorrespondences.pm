@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 # vim: set ft=perl:
 
-# $Id: ImportCorrespondences.pm,v 1.16 2004-03-11 00:57:25 kycl4rk Exp $
+# $Id: ImportCorrespondences.pm,v 1.17 2004-03-19 15:33:11 mwz444 Exp $
 
 =head1 NAME
 
@@ -43,7 +43,7 @@ feature names, a correspondence will be created.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.16 $)[-1];
+$VERSION = (qw$Revision: 1.17 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -127,6 +127,7 @@ sub import {
     my $db              = $self->db;
     $LOG_FH             = $args{'log_fh'} || \*STDOUT;
     my $admin           = Bio::GMOD::CMap::Admin->new(
+        config      => $self->{'config'},
         data_source => $self->data_source,
     );
 
