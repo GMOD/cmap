@@ -1,0 +1,54 @@
+[% 
+    INCLUDE header.tmpl 
+    title='CMap - Data Download'
+    cur_sec=''
+    help_anchor='data_download'
+%]
+
+<h1>[% title %]</h1>
+
+[%- url=apr.url -%]
+
+[%- 
+    SET object = apr.param('map_set_aid') ? 'Map Set' : 'Map';
+    SET field_name = apr.param('map_set_aid') ? 'map_set_aid' : 'map_aid' 
+-%]
+<form action="[% url %]/download_data">
+<h1>Download Data</h1>
+<br>
+<table>
+    <tr>
+        <th align="right">Object:</th>
+        <td>[% object %]</td>
+    </tr>
+    <tr>
+        <th align="right">Accession ID:</th>
+        <td>[% apr.param(field_name) %]</td>
+    </tr>
+    <tr>
+        <th align="right" valign="top">Format:</th>
+        <td>
+            <input type="radio" name="format" value="tab" checked>CMap (tab-delimited)<br>
+            <input type="radio" name="format" value="gff">GFF (tab-delimited)<br>
+            [%- IF field_name == 'map_set_aid' %]
+            <input type="radio" name="format" value="xml">XML
+            [% END -%]
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2" align="center">
+            <input type="hidden" name="[% field_name %]" value="[% apr.param(field_name) %]">
+            <input type="hidden" name="download" value="1">
+            <input type="submit" value="Download">
+        </td>
+    </tr>
+</table>
+</form>
+
+<br>
+<br>
+<br>
+<br>
+<br>
+[% page.end_body OR '</body>' %]
+</html>
