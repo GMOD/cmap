@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.67 2004-03-03 21:00:46 kycl4rk Exp $
+# $Id: Map.pm,v 1.68 2004-03-04 15:24:07 kycl4rk Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.67 $)[-1];
+$VERSION = (qw$Revision: 1.68 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1473,7 +1473,7 @@ Lays out the map.
             my $link    = 
                 join( '%3d', $new_no, map { $map->{$_} } qw[ field aid ] );
 
-            my @ref_positions = sort { $a <=> $b }
+            my @ref_positions = sort { $a->[0] <=> $b->[0] }
                 $drawer->feature_correspondence_map_positions(
                     slot_no      => $slot_no,
                     map_id       => $map_id,
@@ -1482,8 +1482,9 @@ Lays out the map.
             ;
 
             if ( @ref_positions ) {
-                my $first = $ref_positions[0];
-                my $last  = $ref_positions[-1];
+                my $first = $ref_positions[0]->[0];
+                my $last  = defined $ref_positions[-1]->[1]
+                    ? $ref_positions[-1]->[1] : $ref_positions[-1]->[0];
                 $link    .= "[$first,$last]";
             }
 
