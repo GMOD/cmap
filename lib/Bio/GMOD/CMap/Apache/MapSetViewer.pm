@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapSetViewer;
 # vim: set ft=perl:
 
-# $Id: MapSetViewer.pm,v 1.12 2003-10-01 23:16:08 kycl4rk Exp $
+# $Id: MapSetViewer.pm,v 1.13 2003-10-22 00:19:55 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.12 $)[-1];
+$VERSION = (qw$Revision: 1.13 $)[-1];
 
 use Apache::Constants;
 use Data::Pageset;
@@ -47,6 +47,11 @@ sub handler {
     } );
     $map_sets = [ $pager->splice( $map_sets ) ] if @$map_sets;
 
+    my $title = '';
+    if ( scalar @$map_sets == 1 ) {
+        $title = 'Map Set Info &quot;'.$map_sets->[0]{'short_name'}.'&quot;';
+    }
+
     $INTRO ||= $self->config('map_set_info_intro') || '';
 
     my $html;
@@ -64,6 +69,7 @@ sub handler {
             species          => $data->{'species'},
             map_types        => $data->{'map_types'},
             intro            => $INTRO,
+            title            => $title,
         },
         \$html 
     ) or $html = $t->error;
