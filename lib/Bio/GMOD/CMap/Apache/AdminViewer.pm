@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.55 2003-11-04 15:55:05 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.56 2003-12-12 03:21:04 kycl4rk Exp $
 
 use strict;
 use Apache::Constants qw[ :common M_GET REDIRECT ];
@@ -9,7 +9,7 @@ use Apache::Request;
 use Data::Dumper;
 use Data::Pageset;
 use Template;
-use Time::Object;
+use Time::Piece;
 use Time::ParseDate;
 use Text::ParseWords 'parse_line';
 
@@ -34,7 +34,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.55 $)[-1];
+$VERSION        = (qw$Revision: 1.56 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
