@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.116 2004-09-01 20:52:52 mwz444 Exp $
+# $Id: Map.pm,v 1.117 2004-09-02 01:42:59 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.116 $)[-1];
+$VERSION = (qw$Revision: 1.117 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -319,7 +319,7 @@ bounds of the image.
     push @$drawing_data, [ FILLED_RECT,    $map_coords[0],    $map_coords[1], $map_coords[2],    $map_coords[3], $color ];
 
     if ( my $map_units = $args{'map_units'} ) {
-       $map_coords[3]=$self->draw_map_bottom(
+        $coords[3]=$self->draw_map_bottom(
             map_id  => $map_id,
             slot_no => $slot_no,
             map_x1  => $map_coords[0],
@@ -2054,7 +2054,7 @@ sub add_tick_marks {
 
         my $y_pos = $is_flipped
           ? $map_coords->[3] - ( $pixel_height * $rel_position )
-          : $map_base_y + ( $pixel_height * $rel_position );
+          : $map_coords->[1] + ( $pixel_height * $rel_position );
 
         my $tick_start =
             $label_side eq RIGHT
