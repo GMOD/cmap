@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::FeatureSearch;
 
-# $Id: FeatureSearch.pm,v 1.9 2003-03-21 00:36:32 kycl4rk Exp $
+# $Id: FeatureSearch.pm,v 1.10 2003-05-19 18:08:07 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.9 $)[-1];
+$VERSION = (qw$Revision: 1.10 $)[-1];
 
 use Apache::Constants;
 
@@ -23,15 +23,15 @@ sub handler {
     # Make a jazz noise here...
     #
     my ( $self, $apr )    = @_;
-    my $preferences       = $apr->pnotes('PREFERENCES')     || {};
-    my $features          = $apr->param('features')         || 
-                            $preferences->{'features'}      || 
-                            $preferences->{'highlight'}     || '';
-    my $order_by          = $apr->param('order_by')         || '';
-    my $limit_start       = $apr->param('limit_start')      ||  0;
-    my $search_field      = $apr->param('search_field')     || '';
-    my @species_aids      = ( $apr->param('species_aid')      );
-    my @feature_type_aids = ( $apr->param('feature_type_aid') );
+    my $preferences       = $apr->pnotes('PREFERENCES')       || {};
+    my $features          = $apr->param('features')           || 
+                            $preferences->{'features'}        || 
+                            $preferences->{'highlight'}       || '';
+    my $order_by          = $apr->param('order_by')           || '';
+    my $limit_start       = $apr->param('limit_start')        ||  0;
+    my $search_field      = $apr->param('search_field')       || '';
+    my @species_aids      = ( $apr->param('species_aid')      || () );
+    my @feature_type_aids = ( $apr->param('feature_type_aid') || () );
 
     $self->data_source( $apr->param('data_source') );
 
