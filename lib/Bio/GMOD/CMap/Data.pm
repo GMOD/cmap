@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.171 2004-11-11 00:39:33 mwz444 Exp $
+# $Id: Data.pm,v 1.172 2004-11-11 17:30:02 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.171 $)[-1];
+$VERSION = (qw$Revision: 1.172 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -5126,7 +5126,7 @@ original start and stop.
                     ### If aid was found, $sql_suffix will be created
                     my $slot_results;
                     my $sql_str = $sql_start . $from . $where;
-print STDERR "SLOT_INFO SQL \n$sql_str\n";
+#print S#TDERR "SLOT_INFO SQL \n$sql_str\n";
                     unless ( $slot_results =
                         $self->get_cached_results( 4, $sql_str ) )
                     {
