@@ -4,8 +4,9 @@
 <td colspan="2">
     [% IF map_sets.size %]
     [% SET last_map_type = "" %]
-        <select name="comp_map_set_[% side | lower %]" size="4" 
-         onChange="changeCompMaps(document.comparative_map_form.comparative_map_[% side | lower %],this.selectedIndex, '[% side %]')"   >
+        <select name="comp_map_set_[% side | lower %]" size=1 
+         onChange="changeCompMaps(document.comparative_map_form.comparative_map_[% side | lower %],this.selectedIndex - 1, '[% side %]')"   >
+            <option value=''>Select Map Set</option>
             [% FOREACH ms=map_sets %]
                 <option value="[% ms.map_set_aid %]">
                 [% ms.map_type %] : [% ms.species_name %] - [% ms.map_set_name %] [[% ms.no_correspondences %]]</option>      
@@ -13,7 +14,8 @@
                 [% SET last_map_type = ms.map_type %]
             [% END %]
         </select>
-        <select name="comparative_map_[% side | lower %]"  style="width:100%" size="10" multiple>
+        <select name="comparative_map_[% side | lower %]"  style="width:90%" size="10" multiple>
+           <option value=''>No Map Set Selected</option> 
         </select>
     [% ELSE %]
         No maps available.

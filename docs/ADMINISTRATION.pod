@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.4.2.2 $
+$Revision: 1.4.2.3 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -1390,6 +1390,10 @@ This option is where to import and delete links that will show up in
 the "Imported Links" section of CMap.  The import takes a tab delimited
 file, see "perldoc /path/to/Bio/GMOD/CMap/Admin/ManageLinks.pm" for 
 more info on the format.
+
+Important Note:  As it is written, the links are stored in the temparary
+directory '/tmp'.  When this directory is wiped, the links go away.  In future
+versions of CMap this will change, but for now, you are warned.
 
 =back
 

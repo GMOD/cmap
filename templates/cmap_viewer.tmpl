@@ -43,20 +43,20 @@ function hideAll(){
 function startPage(){
   var divs=document.getElementsByTagName("DIV");
   for (var i=0; i < divs.length; i++){
-    if (divs[i].id == "displayChangeMenu"){
-        if ("[% apr.param('changeMenu') %]" == "1"){
-            divs[i].style.display='block';
+    if (divs[i].id == "displayRefMenu"){
+        if ("[% apr.param('refMenu') %]" == "0"){
+            divs[i].style.display='none';
         }
         else{
-            divs[i].style.display='none';
+            divs[i].style.display='block';
         }
     }
-    else if (divs[i].id == "hiddenChangeMenu"){
-        if ("[% apr.param('changeMenu') %]" == "1"){
-            divs[i].style.display='none';
+    else if (divs[i].id == "hiddenRefMenu"){
+        if ("[% apr.param('refMenu') %]" == "0"){
+            divs[i].style.display='block';
         }
         else{
-            divs[i].style.display='block';
+            divs[i].style.display='none';
         }
     }
     else if (divs[i].id == "displayCompMenu"){
@@ -92,7 +92,7 @@ function startPage(){
         }
     }
     else if (divs[i].id == "displayImageMenu"){
-        if ("[% apr.param('imageMenu') %]" == "1"){
+        if ("[% apr.param('addOpMenu') %]" == "1"){
             divs[i].style.display='block';
         }
         else{
@@ -100,7 +100,7 @@ function startPage(){
         }
     }
     else if (divs[i].id == "hiddenImageMenu"){
-        if ("[% apr.param('imageMenu') %]" == "1"){
+        if ("[% apr.param('addOpMenu') %]" == "1"){
             divs[i].style.display='none';
         }
         else{
@@ -175,6 +175,18 @@ function mod_map_info(slot_no, map_aid, start, stop,mag){
 function changeCompMaps(sel,index,side){
   var dataArray;
   var map_sets;
+  if (index == -1){
+    //None selected clear and return
+    var i;
+    for (i=0;i<sel.options.length;i++){
+      sel.options[i]=null;
+      i--;
+    }
+    var opt = new Option("No Map Set Selected","");
+    sel.options[0] = opt;
+    return;
+  }
+
   if (side == 'Left'){
     dataArray=new Array(
       [% SET not_first_map_set=0; -%]
@@ -295,34 +307,34 @@ function selectAllOptions(select){
 <table border="0"> 
   <tr>
     <td align="left" valign="top">
-      <div id="hiddenChangeMenu">
+      <div id="hiddenRefMenu">
         <span  
-          onclick="toggleDiv(document.getElementById('hiddenChangeMenu'));
+          onclick="toggleDiv(document.getElementById('hiddenRefMenu'));
           setMenuObjects(
-          window.document.ref_map_set_form.changeMenu,
-          window.document.comparative_map_form.changeMenu,
-          toggleDiv(document.getElementById('displayChangeMenu')));"
+          window.document.ref_map_set_form.refMenu,
+          window.document.comparative_map_form.refMenu,
+          toggleDiv(document.getElementById('displayRefMenu')));"
         >
-        <img src="/cmap/plus.png">&nbsp;<b>Click to Show Change Menu</b>
+        <img src="/cmap/plus.png">&nbsp;<b>Show Reference Menu</b>
         </span>
       </div>
-      <div id="displayChangeMenu">
+      <div id="displayRefMenu">
         <span  
           onclick="setMenuObjects(
-          window.document.ref_map_set_form.changeMenu,
-          window.document.comparative_map_form.changeMenu,
-          toggleDiv(document.getElementById('displayChangeMenu')));
-          toggleDiv(document.getElementById('hiddenChangeMenu'));"
+          window.document.ref_map_set_form.refMenu,
+          window.document.comparative_map_form.refMenu,
+          toggleDiv(document.getElementById('displayRefMenu')));
+          toggleDiv(document.getElementById('hiddenRefMenu'));"
         >
-        <img src="/cmap/minus.png">&nbsp;<b>Hide Menu</b>
+        <img src="/cmap/minus.png">&nbsp;<b>Hide Reference Menu</b>
         </span>
  
         <table border="0">
           <form name="ref_map_set_form">
-          <input type="hidden" name="changeMenu" id="changeMenu" value="[% apr.param('changeMenu') %]">
+          <input type="hidden" name="refMenu" id="refMenu" value="[% apr.param('refMenu') %]">
           <input type="hidden" name="compMenu" id="compMenu" value="[% apr.param('compMenu') %]">
           <input type="hidden" name="optionMenu" id="optionMenu" value="[% apr.param('optionMenu') %]">
-          <input type="hidden" name="imageMenu" id="imageMenu" value="[% apr.param('imageMenu') %]">
+          <input type="hidden" name="addOpMenu" id="addOpMenu" value="[% apr.param('addOpMenu') %]">
           <tr>
             <td align="right">Ref. Species:</td>
   
@@ -340,7 +352,9 @@ function selectAllOptions(select){
                   <option value="[% s.species_aid %]"[% IF s.species_aid==apr.param('ref_species_aid') OR form_data.ref_species.size==1; ' selected'; END %]>[% s.species_common_name %][% IF s.species_full_name %] ([% s.species_full_name %])[% END %]</option>
                 [%- END -%]
                 </select>
-                <input type="submit" value="Change" name="sub">
+              </td>
+              <td>
+                <input type="submit" value="Change Species" name="sub">
               [%- ELSE -%]
                 No species.
               [%- END -%]
@@ -361,7 +375,10 @@ function selectAllOptions(select){
                     </option>
                     [%- SET last_map_type=ms.map_type -%]
                   [%- END -%]
-                </select>&nbsp;<input type="submit" value="Change" name="sub">
+                </select>
+              </td>
+              <td>
+                <input type="submit" value="Change Map Set" name="sub">
                 <input type="hidden" name="prev_ref_species_aid" value="[% apr.param('ref_species_aid') %]">
                 <input type="hidden" name="prev_ref_map_set_aid" value="[% apr.param('ref_map_set_aid') %]">
                 <input type="hidden" name="highlight"      value="[% apr.param('highlight') %]">
@@ -375,14 +392,14 @@ function selectAllOptions(select){
           [% IF form_data.ref_maps %]
             [% form_data.ref_maps.unshift({accession_id=>'-1',map_name=>'--All--'}) %]
             <form name="ref_map_form">
-              <input type="hidden" name="changeMenu" id="changeMenu" value="[% apr.param('changeMenu') %]">
+              <input type="hidden" name="refMenu" id="refMenu" value="[% apr.param('refMenu') %]">
               <input type="hidden" name="compMenu" id="compMenu" value="[% apr.param('compMenu') %]">
               <input type="hidden" name="optionMenu" id="optionMenu" value="[% apr.param('optionMenu') %]">
-              <input type="hidden" name="imageMenu" id="imageMenu" value="[% apr.param('imageMenu') %]">
+              <input type="hidden" name="addOpMenu" id="addOpMenu" value="[% apr.param('addOpMenu') %]">
               <tr>
                 <td valign="top" align="right">Ref. Map:</td>
       
-                <td>
+                <td valign="top">
                   <select name="ref_map_aids" size="14" multiple
                     [% IF apr.param('ref_map_aids') %]
                       onchange="javascript:if(document.ref_map_form.ref_map_aids.value!=document.ref_map_form.prev_ref_map_aids.value){document.comparative_map_form.start.value='';document.comparative_map_form.end.value='';}">
@@ -391,7 +408,6 @@ function selectAllOptions(select){
                     [% END %]
     
                     [% IF form_data.ref_maps.size %]
-                      <option value="">--Select a Map--</option>
                       [% FOREACH m=form_data.ref_maps %]
                         <option[% IF selected_maps.${m.accession_id} OR form_data.ref_maps.size==1; ' selected'; END %] value="[% m.accession_id %]">[% m.map_name %]</option>
                       [% END %]
@@ -411,15 +427,7 @@ function selectAllOptions(select){
                     <input type="hidden" name="image_type"     value="[% apr.param('image_type') %]">
                   [% END %]
                 </td>
-              </tr>
-              <tr>
-                <td align="right">Ref Map Names:</td>
-                <td>
-                  <input name="ref_map_names" value="[% apr.param('ref_map_names') %]">
-                </td>
-              </tr>
-              <tr>
-                <td align="center" colspan="2">
+                <td valign=top>
                   <input type="submit" value="Change Maps" name="sub">
                 </td>
               </tr>
@@ -429,14 +437,14 @@ function selectAllOptions(select){
       </div>
     </td>
   </tr>
-  [% IF apr.param('ref_map_aids') OR apr.param('ref_map_names') OR form_data.ref_maps  %]
+  [% IF apr.param('ref_map_aids') OR apr.param('ref_map_names') #OR form_data.ref_maps  %]
     <form name="comparative_map_form" onSubmit="beforeSubmit()">
       <tr>
         <td align=left valign=top>
-          <input type="hidden" name="changeMenu" id="changeMenu" value="[% apr.param('changeMenu') %]">
+          <input type="hidden" name="refMenu" id="refMenu" value="[% apr.param('refMenu') %]">
           <input type="hidden" name="compMenu" id="compMenu" value="[% apr.param('compMenu') %]">
           <input type="hidden" name="optionMenu" id="optionMenu" value="[% apr.param('optionMenu') %]">
-          <input type="hidden" name="imageMenu" id="imageMenu" value="[% apr.param('imageMenu') %]">
+          <input type="hidden" name="addOpMenu" id="addOpMenu" value="[% apr.param('addOpMenu') %]">
           <div id="hiddenCompMenu">
             <span  
               onclick="toggleDiv(document.getElementById('hiddenCompMenu'));
@@ -445,7 +453,7 @@ function selectAllOptions(select){
               window.document.comparative_map_form.compMenu,
               toggleDiv(document.getElementById('displayCompMenu')));"
             >
-            <img src="/cmap/plus.png">&nbsp;<b>Click to Show Comparison Menu</b>
+            <img src="/cmap/plus.png">&nbsp;<b>Show Comparison Menu</b>
             </span>
           </div>
           <div id="displayCompMenu">
@@ -456,8 +464,37 @@ function selectAllOptions(select){
               toggleDiv(document.getElementById('displayCompMenu')));
               toggleDiv(document.getElementById('hiddenCompMenu'));"
             >
-              <img src="/cmap/minus.png">&nbsp;<b>Hide Menu</b>
+              <img src="/cmap/minus.png">&nbsp;<b>Hide Comparison Menu</b>
             </span>
+              <table border="0">
+              <tr>
+                <td align="left" colspan=2>Ref Map Start:
+                  <input name="ref_map_start" value="[% apr.param('ref_map_start') %]">
+                </td>
+              </tr>
+              <tr>
+                <td align="left" colspan=2>Ref Map End:
+                  <input name="ref_map_stop" value="[% apr.param('ref_map_stop') %]">
+                </td>
+              </tr>
+
+              <tr>
+                <td align="left" valign="top">Current Map Sets:</td>
+                <td>
+                  [% FOREACH map=form_data.map_info %]
+                    [% SET cmaps=[] %]
+                    [% FOREACH cmap=map.cmaps %]
+                      [% cmaps.push( "${cmap.slot_no}%3d${cmap.field}%3d${cmap.aid}" ) %]
+                    [% END %]
+                    [% map.description %][% IF map.is_reference_map %]&nbsp;(Ref.)[% ELSE %]&nbsp;[&nbsp;<a href="viewer?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aids=[% apr.param('ref_map_aids') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% cmaps.join('%3a') %];include_feature_types=[% feature_types %];included_evidence_types=[% evidence_types %];collapse_features=[% apr.param('collapse_features') %];image_type=[% apr.param('image_type') %];min_correspondences=[% apr.param('min_correspondences') %]">Delete</a>&nbsp;]&nbsp;[% END %]<br>
+                  [% END %]
+                </td>
+              </tr>
+              <tr>
+                <td align="left" colspan=2>Min. No. Correspondences: 
+                <input name="min_correspondences" value="[% apr.param('min_correspondences') %]"> </td>
+              </tr>
+            </table>
             <table>
               <tr>
                 <td align="right" valign="top">
@@ -470,53 +507,6 @@ function selectAllOptions(select){
                     </tr>
                   </table>
                 </td> 
-                <td align="center" valign="top">
-                  <table border="0">
-                    <tr>
-                      <td align="right">Start:</td>
-  
-                      <td>
-                        <input name="ref_map_start" value="[% apr.param('ref_map_start') %]">
-                      </td>
-                    </tr>
-              
-                    <tr>
-                      <td align="right">End:</td>
-                      <td>
-                        <input name="ref_map_stop" value="[% apr.param('ref_map_stop') %]">
-                      </td>
-                    </tr>
-              
-                    <tr>
-                      <td align="right">Highlight:</td>
-  
-                      <td>
-                        <input name="highlight" value="[% apr.param('highlight') | html %]">
-                      </td>
-                    </tr>
-
-                    <tr>
-                      <td align="right" valign="top">Current Maps:</td>
-                      <td>
-                        [% FOREACH map=form_data.map_info %]
-                          [% SET cmaps=[] %]
-                          [% FOREACH cmap=map.cmaps %]
-                            [% cmaps.push( "${cmap.slot_no}%3d${cmap.field}%3d${cmap.aid}" ) %]
-                          [% END %]
-                          [% map.description %][% IF map.is_reference_map %]&nbsp;(Ref.)[% ELSE %]&nbsp;[&nbsp;<a href="viewer?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aids=[% apr.param('ref_map_aids') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% cmaps.join('%3a') %];include_feature_types=[% feature_types %];included_evidence_types=[% evidence_types %];collapse_features=[% apr.param('collapse_features') %];image_type=[% apr.param('image_type') %];min_correspondences=[% apr.param('min_correspondences') %]">Delete</a>&nbsp;]&nbsp;[% END %]<br>
-                        [% END %]
-                      </td>
-                    </tr>
-                    <tr>
-                      <td align="right">Min. No. Correspondences:</td> 
-                      <td><input name="min_correspondences" value="[% apr.param('min_correspondences') %]"> </td>
-                    </tr>
-                    <tr>
-                      <td align="right"> <input type="submit" value="Redraw Map" name="sub"></td>
-                      <td><input type="reset"  value="Reset"></td>
-                    </tr>
-                  </table>
-                </td>
                 <td align=left valign=top>
                   <table border=0>
                     <tr>
@@ -529,6 +519,8 @@ function selectAllOptions(select){
                 </td>
               </tr>
             </table>
+            <input type="submit" value="Redraw Map" name="sub">
+            <input type="reset"  value="Reset">
           </div>
         </td>
       </tr>
@@ -542,7 +534,7 @@ function selectAllOptions(select){
               window.document.comparative_map_form.optionMenu,
               toggleDiv(document.getElementById('displayOptionMenu')));"
             >
-             <img src="/cmap/plus.png">&nbsp;<b>Click to Show Options Menu</b>
+             <img src="/cmap/plus.png">&nbsp;<b>Show Options Menu</b>
             </span>
           </div>
           <div id="displayOptionMenu">
@@ -553,7 +545,7 @@ function selectAllOptions(select){
               toggleDiv(document.getElementById('displayOptionMenu')));
               toggleDiv(document.getElementById('hiddenOptionMenu'));"
             >
-              <img src="/cmap/minus.png">&nbsp;<b>Hide Menu</b>
+              <img src="/cmap/minus.png">&nbsp;<b>Hide Options Menu</b>
             </span>
             <table>
               <tr>
@@ -570,7 +562,7 @@ function selectAllOptions(select){
                     </tr>
                     [% FOREACH ft=form_data.feature_types %]
                       <tr>
-                        <td>[% ft.feature_type %]</td>
+                        <td><a href="feature_type_info?feature_type_aid=[% ft.feature_type_aid %]">[% ft.feature_type %]</a></td>
                         <td>
                           <input type="radio" name="feature_type_[% ft.feature_type_aid %]" value="0" [% IF (ignored_feature_types.${ft.feature_type_aid} OR (feature_default_display=='ignore' AND NOT included_features.${ft.feature_type_aid} AND NOT corr_only_feature_types.${ft.feature_type_aid})) ; ' checked'; END %]>
                         </td>
@@ -605,7 +597,7 @@ function selectAllOptions(select){
                       </tr>
                       [% FOREACH et=form_data.evidence_types %]
                         <tr>
-                          <td>[% et.evidence_type %]</td>
+                          <td><a href="evidence_type_info?evidence_type_aid=[% et.evidence_type_aid %]">[% et.evidence_type %]</a></td>
                         <td>
                           <input type="radio" name="evidence_type_[% et.evidence_type_aid %]" value="0" [% IF ignored_evidence_types.${et.evidence_type_aid}; ' checked'; END %]>
                         </td>
@@ -623,6 +615,11 @@ function selectAllOptions(select){
                   [% ELSE %]
                     There are no evidence types!
                   [% END %]
+                </td>
+              </tr>
+              <tr>
+                <td align="left">Highlight Feature: 
+                      <input name="highlight" value="[% apr.param('highlight') | html %]">
                 </td>
               </tr>
               <tr>
@@ -678,22 +675,22 @@ function selectAllOptions(select){
             <span  
               onclick="toggleDiv(document.getElementById('hiddenImageMenu'));
               setMenuObjects(
-              window.document.ref_map_set_form.imageMenu,
-              window.document.comparative_map_form.imageMenu,
+              window.document.ref_map_set_form.addOpMenu,
+              window.document.comparative_map_form.addOpMenu,
               toggleDiv(document.getElementById('displayImageMenu')));"
             >
-            <img src="/cmap/plus.png">&nbsp;<b>Click to Show Additional Options Menu</b>
+            <img src="/cmap/plus.png">&nbsp;<b>Show Additional Options Menu</b>
             </span>
           </div>
           <div id="displayImageMenu">
             <span  
               onclick="setMenuObjects(
-              window.document.ref_map_set_form.imageMenu,
-              window.document.comparative_map_form.imageMenu,
+              window.document.ref_map_set_form.addOpMenu,
+              window.document.comparative_map_form.addOpMenu,
               toggleDiv(document.getElementById('displayImageMenu')));
               toggleDiv(document.getElementById('hiddenImageMenu'));"
             >
-              <img src="/cmap/minus.png">&nbsp;<b>Hide Menu</b>
+              <img src="/cmap/minus.png">&nbsp;<b>Hide Additional Options Menu</b>
             </span>
 
             <table border="0">
@@ -804,7 +801,7 @@ function selectAllOptions(select){
                 </td>
               </tr>
               <tr>
-                <td align="left" valign="top">Draw Maps to Scale:</td>
+                <td align="left" valign="top">Draw Maps Using Same Scale:</td>
                 [% IF apr.param('scale_maps')==0; scale_maps=0; ELSE; scale_maps=1; END %]
                 <td><input type="radio" name="scale_maps" value="0"[% IF scale_maps==0; ' checked'; END %]>No</td>
                 <td><input type="radio" name="scale_maps" value="1"[% IF scale_maps==1; ' checked'; END %]>Yes</td>
@@ -861,10 +858,10 @@ function selectAllOptions(select){
     </form>
   [% ELSE %]
     <form name="comparative_map_form">
-      <input type="hidden" name="changeMenu" id="changeMenu" value="[% apr.param('changeMenu') %]">
+      <input type="hidden" name="refMenu" id="refMenu" value="[% apr.param('refMenu') %]">
       <input type="hidden" name="compMenu" id="compMenu" value="[% apr.param('compMenu') %]">
       <input type="hidden" name="optionMenu" id="optionMenu" value="[% apr.param('optionMenu') %]">
-      <input type="hidden" name="imageMenu" id="imageMenu" value="[% apr.param('imageMenu') %]">
+      <input type="hidden" name="addOpMenu" id="addOpMenu" value="[% apr.param('addOpMenu') %]">
     </form>
   [% END %]    
 </table>
