@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
-# $Id: MakeCorrespondences.pm,v 1.14 2003-03-17 18:03:18 kycl4rk Exp $
+# $Id: MakeCorrespondences.pm,v 1.15 2003-03-17 18:18:38 kycl4rk Exp $
 
 =head1 NAME
 
@@ -30,7 +30,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.14 $)[-1];
+$VERSION = (qw$Revision: 1.15 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -59,27 +59,26 @@ sub make_name_correspondences {
             q[
                 select ft.feature_type_id
                 from   cmap_feature_type ft
-                where  upper(ft.feature_type)=?
+                where  ft.accession_id=?
             ],
             {},
-            ( uc $ft1 ) 
+            ( $ft1 ) 
         );
 
         my $ft_id2 = $db->selectrow_array(
             q[
                 select ft.feature_type_id
                 from   cmap_feature_type ft
-                where  upper(ft.feature_type)=?
+                where  ft.accession_id=?
             ],
             {},
-            ( uc $ft2 ) 
+            ( $ft2 ) 
         );
 
         next unless $ft_id1 && $ft_id2;
         push @{ $add_name_correspondences{ $ft_id1 } }, $ft_id2;
         push @{ $add_name_correspondences{ $ft_id2 } }, $ft_id1;
     }
-    warn "add =\n", Dumper( \%add_name_correspondences ), "\n";
 
     #
     # Get all the map sets.
