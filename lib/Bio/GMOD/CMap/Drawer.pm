@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.66 2004-06-08 17:40:13 mwz444 Exp $
+# $Id: Drawer.pm,v 1.67 2004-06-09 15:02:39 mwz444 Exp $
 
 =head1 NAME
 
@@ -23,12 +23,13 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.66 $)[-1];
+$VERSION = (qw$Revision: 1.67 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
 use Bio::GMOD::CMap::Drawer::Map;
+use Bio::GMOD::CMap::Drawer::Glyph;
 use File::Basename;
 use File::Temp 'tempfile';
 use File::Path;
@@ -639,166 +640,130 @@ Lays out the image and writes it to the file system, set the "image_name."
                 $label_y = $feature_y;
             }
             elsif ( $ft->{'shape'} eq 'span' ) {
-                $self->add_drawing(
-                    LINE, 
-                    $feature_x + 3, $feature_y, $feature_x + 5, $feature_y, 
-                    $color
-                );
-                $self->add_drawing(
-                    LINE, 
-                    $feature_x + 3, $feature_y, 
-                    $feature_x + 3, $feature_y + 8, 
-                    $color
-                );
-                $self->add_drawing(
-                    LINE, 
-                    $feature_x + 3, $feature_y + 8, 
-                    $feature_x + 5, $feature_y + 8, 
-                    $color
-                );
+                my @temp_drawing_data;
+                span(
+                    drawing_data => \@temp_drawing_data,
+                    x_pos2 => $feature_x + 5,
+                    x_pos1 => $feature_x + 3,
+                    y_pos1=> $feature_y,
+                    y_pos2=> $feature_y + 8,
+                    color => $color,
+                    label_side=> RIGHT,
+                    );
+                $self->add_drawing(@temp_drawing_data);
                 $label_y = $feature_y + 5;
             }
             elsif ( $ft->{'shape'} eq 'up-arrow' ) {
-                $feature_x +=5;
-                $self->add_drawing(
-                    LINE, 
-                    $feature_x, $feature_y, $feature_x, $feature_y + 8,  
-                    $color
-                );
-                $self->add_drawing(
-                    LINE, 
-                    $feature_x, $feature_y,
-                    $feature_x - 2, $feature_y + 2, 
-                    $color
-                );
-                $self->add_drawing(
-                    LINE, 
-                    $feature_x, $feature_y,
-                    $feature_x + 2, $feature_y + 2, 
-                    $color
-                );
+                my @temp_drawing_data;
+                up_arrow(
+                    drawing_data => \@temp_drawing_data,
+                    x_pos2 => $feature_x + 5,
+                    x_pos1 => $feature_x + 3,
+                    y_pos1=> $feature_y,
+                    y_pos2=> $feature_y + 8,
+                    color => $color,
+                    label_side=> RIGHT,
+                    );
+                $self->add_drawing(@temp_drawing_data);
                 $label_y = $feature_y + 5;
             }
             elsif ( $ft->{'shape'} eq 'down-arrow' ) {
-                $feature_x +=5;
-                $self->add_drawing(
-                    LINE, 
-                    $feature_x, $feature_y, $feature_x, $feature_y + 8,  
-                    $color
-                );
-                $self->add_drawing(
-                    LINE, 
-                    $feature_x, $feature_y + 8, 
-                    $feature_x - 2, $feature_y + 6,
-                    $color
-                );
-                $self->add_drawing(
-                    LINE, 
-                    $feature_x, $feature_y + 8, 
-                    $feature_x + 2, $feature_y + 6,
-                    $color
-                );
+                my @temp_drawing_data;
+                down_arrow(
+                    drawing_data => \@temp_drawing_data,
+                    x_pos2 => $feature_x + 5,
+                    x_pos1 => $feature_x + 3,
+                    y_pos1=> $feature_y,
+                    y_pos2=> $feature_y + 8,
+                    color => $color,
+                    label_side=> RIGHT,
+                    );
+                $self->add_drawing(@temp_drawing_data);
                 $label_y = $feature_y + 5;
             }
             elsif ( $ft->{'shape'} eq 'double-arrow' ) {
-                $feature_x +=5;
-                $self->add_drawing(
-                    LINE, 
-                    $feature_x, $feature_y, $feature_x, $feature_y + 8,  
-                    $color
-                );
-                $self->add_drawing(
-                    LINE, 
-                    $feature_x, $feature_y + 8, 
-                    $feature_x - 2, $feature_y + 6,
-                    $color
-                );
-                $self->add_drawing(
-                    LINE, 
-                    $feature_x, $feature_y + 8, 
-                    $feature_x + 2, $feature_y + 6,
-                    $color
-                );
-                $self->add_drawing(
-                    LINE, 
-                    $feature_x, $feature_y,
-                    $feature_x - 2, $feature_y + 2, 
-                    $color
-                );
-                $self->add_drawing(
-                    LINE, 
-                    $feature_x, $feature_y,
-                    $feature_x + 2, $feature_y + 2, 
-                    $color
-                );
+                my @temp_drawing_data;
+                down_arrow(
+                    drawing_data => \@temp_drawing_data,
+                    x_pos2 => $feature_x + 5,
+                    x_pos1 => $feature_x + 3,
+                    y_pos1=> $feature_y,
+                    y_pos2=> $feature_y + 8,
+                    color => $color,
+                    label_side=> RIGHT,
+                    );
+                $self->add_drawing(@temp_drawing_data);
                 $label_y = $feature_y + 5;
             }
             elsif ( $ft->{'shape'} eq 'box' ) {
-                $self->add_drawing(
-                    RECTANGLE, 
-                    $feature_x, $feature_y, $feature_x + 10, $feature_y + 8, 
-                    $color
-                );
+                my @temp_drawing_data;
+                box(
+                    drawing_data => \@temp_drawing_data,
+                    x_pos2 => $feature_x + 10,
+                    x_pos1 => $feature_x ,
+                    y_pos1=> $feature_y,
+                    y_pos2=> $feature_y + 8,
+                    color => $color,
+                    label_side=> RIGHT,
+                    );
+                $self->add_drawing(@temp_drawing_data);
                 $label_y = $feature_y + 5;
             }
             elsif ( $ft->{'shape'} eq 'dumbbell' ) {
-                my $width = 3;
-                $self->add_drawing(
-                    ARC, 
-                    $feature_x + 5, $feature_y, $width, $width, 0, 360, $color
-                );
-                $self->add_drawing(
-                    LINE, 
-                    $feature_x + 5, $feature_y, $feature_x + 5, $feature_y + 8,
-                    $color
-                );
-                $self->add_drawing(
-                    ARC, 
-                    $feature_x + 5, $feature_y + 8, $width, $width, 0, 360, 
-                    $color
-                );
+                my @temp_drawing_data;
+                dumbell(
+                    drawing_data => \@temp_drawing_data,
+                    x_pos2 => $feature_x + 5,
+                    x_pos1 => $feature_x + 3,
+                    y_pos1=> $feature_y,
+                    y_pos2=> $feature_y + 8,
+                    color => $color,
+                    label_side=> RIGHT,
+                    );
+                $self->add_drawing(@temp_drawing_data);
                 $label_y = $feature_y + 5;
             }
             elsif ( $ft->{'shape'} eq 'filled-box' ) {
-                my $width = 3;
-                $self->add_drawing(
-                    FILLED_RECT, 
-                    $feature_x + 3, $feature_y, $feature_x + 7, $feature_y + 8,
-                    $color
-                );
-                $self->add_drawing(
-                    RECTANGLE, 
-                    $feature_x + 3, $feature_y, $feature_x + 7, $feature_y + 8,
-                    'black'
-                );
+                my @temp_drawing_data;
+                filled_box(
+                    drawing_data => \@temp_drawing_data,
+                    x_pos2 => $feature_x + 7,
+                    x_pos1 => $feature_x + 3,
+                    y_pos1=> $feature_y,
+                    y_pos2=> $feature_y + 8,
+                    color => $color,
+                    label_side=> RIGHT,
+                    );
+                $self->add_drawing(@temp_drawing_data);
                 $label_y = $feature_y + 5;
             }
-            elsif ( $ft->{'shape'} =~ /triangle$/ ) {
-                $self->add_drawing(
-                    LINE,
-                    $feature_x + 3, $feature_y,
-                    $feature_x + 3, $feature_y + 6,
-                    $color
-                );
-                $self->add_drawing(
-                    LINE,
-                    $feature_x + 3, $feature_y,
-                    $feature_x + 6, $feature_y + 3,
-                    $color
-                );
-                $self->add_drawing(
-                    LINE,
-                    $feature_x + 6, $feature_y + 3,
-                    $feature_x + 3, $feature_y + 6,
-                    $color
-                );
-                $self->add_drawing(
-                    FILL,
-                    $feature_x + 4, $feature_y + 4,
-                    $color
-                );
-
-                $label_y = $feature_y + 3;
+            elsif ( $ft->{'shape'} eq 'in-triangle' ) {
+                my @temp_drawing_data;
+                in_triangle(
+                    drawing_data => \@temp_drawing_data,
+                    x_pos2 => $feature_x + 6,
+                    x_pos1 => $feature_x + 3,
+                    y_pos1=> $feature_y + 3,
+                    y_pos2=> $feature_y + 8,
+                    color => $color,
+                    label_side=> RIGHT,
+                    );
+                $self->add_drawing(@temp_drawing_data);
+                $label_y = $feature_y + 5;
+            }
+            elsif ( $ft->{'shape'} eq 'out-triangle' ) {
+                my @temp_drawing_data;
+                out_triangle(
+                    drawing_data => \@temp_drawing_data,
+                    x_pos2 => $feature_x + 6,
+                    x_pos1 => $feature_x + 3,
+                    y_pos1=> $feature_y + 3,
+                    y_pos2=> $feature_y + 8,
+                    color => $color,
+                    label_side=> RIGHT,
+                    );
+                $self->add_drawing(@temp_drawing_data);
+                $label_y = $feature_y + 5;
             }
             else {
                 # Do nothing.
