@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.27 2003-12-11 22:50:56 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.28 2004-01-08 18:12:20 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.27 $)[-1];
+$VERSION = (qw$Revision: 1.28 $)[-1];
 
 use Apache::Constants qw[ :common REDIRECT ];
 use Apache::Request;
@@ -26,9 +26,11 @@ sub handler {
 # read session data.  Calls "show_form."
 #
     my ( $self, $apr ) = @_;
-    my $prev_ref_map_set_aid  = $apr->param('prev_ref_map_set_aid')  ||  0;
-    my $ref_map_set_aid       = $apr->param('ref_map_set_aid')       ||  0;
-    my $ref_map_aid           = $apr->param('ref_map_aid')           ||  0;
+    my $prev_ref_species_aid  = $apr->param('prev_ref_species_aid')  || '';
+    my $prev_ref_map_set_aid  = $apr->param('prev_ref_map_set_aid')  || '';
+    my $ref_species_aid       = $apr->param('ref_species_aid')       || '';
+    my $ref_map_set_aid       = $apr->param('ref_map_set_aid')       || '';
+    my $ref_map_aid           = $apr->param('ref_map_aid')           || '';
     my $ref_map_start         = $apr->param('ref_map_start');
     my $ref_map_stop          = $apr->param('ref_map_stop');
     my $comparative_maps      = $apr->param('comparative_maps')      || '';
@@ -59,7 +61,13 @@ sub handler {
     $self->data_source( $apr->param('data_source') ) or return;
 
     if ( 
-        $prev_ref_map_set_aid && $prev_ref_map_set_aid != $ref_map_set_aid 
+        $prev_ref_species_aid && $prev_ref_species_aid ne $ref_species_aid 
+    ) {
+        $ref_map_set_aid = '';
+    }
+
+    if ( 
+        $prev_ref_map_set_aid && $prev_ref_map_set_aid ne $ref_map_set_aid 
     ) {
         $ref_map_aid           = undef;
         $ref_map_start         = undef;
@@ -159,7 +167,7 @@ sub handler {
         min_correspondences    => $min_correspondences,
         include_feature_types  => \@feature_types,
         include_evidence_types => \@evidence_types,
-        ref_species_aid        => $apr->param('ref_species_aid'),
+        ref_species_aid        => $ref_species_aid,
     ) or return $self->error( $data->error );
 
     $form_data->{'feature_types'} = $drawer 
