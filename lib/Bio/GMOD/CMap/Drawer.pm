@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.25 2003-02-20 16:50:04 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.26 2003-03-05 01:54:02 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.25 $)[-1];
+$VERSION = (qw$Revision: 1.26 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
@@ -37,7 +37,7 @@ use base 'Bio::GMOD::CMap';
 use constant INIT_PARAMS => [ qw(
     apr slots highlight font_size image_size image_type 
     label_features include_feature_types include_evidence_types
-    data_source
+    data_source min_correspondences
 ) ];
 
 # ----------------------------------------------------
@@ -135,7 +135,7 @@ Draws a line from one point to another.
     my ( $self, $x1, $y1, $x2, $y2, $color, $line_style ) = @_;
     my $layer = 0; # bottom-most layer of image
     my @lines = ();
-    my $line  = $line_style eq 'dashed' ? DASHED_LINE : LINE;
+    my $line  = LINE; #$line_style eq 'dashed' ? DASHED_LINE : LINE;
 
     if ( $y1 == $y2 ) {
         push @lines, [ $line, $x1, $y1, $x2, $y2, $color ];
@@ -195,10 +195,8 @@ Accepts a list of attributes to describe how to draw an object.
         # Extract the X and Y positions in order to pass them to 
         # min and max methods (to know how big the image should be).
         #
-        my $shape = $attr[  0 ];
-        my $layer = $attr[ -1 ];
-        $self->error( qq[Shape "$shape" is not valid] )
-            unless VALID->{'shape'}{ $shape };
+        my $shape       = $attr[  0 ];
+        my $layer       = $attr[ -1 ];
         my @x_locations = @{ SHAPE_XY->{ $shape }{'x'} };
         my @y_locations = @{ SHAPE_XY->{ $shape }{'y'} };
         push @x, @attr[ @x_locations ];
@@ -494,6 +492,25 @@ Lays out the image and writes it to the file system, set the "image_name."
             left    => $bounds[0], 
             right   => $bounds[2],
         );
+
+        #
+        # Draw feature correspondences to reference map.
+        #
+        for my $position_set ( 
+            $self->feature_correspondence_positions( slot_no => $slot_no ) 
+        ) {
+            my @positions     = @{ $position_set->{'positions'} || [] } or next;
+            my $evidence_info = $self->feature_correspondence_evidence(
+                $position_set->{'feature_id1'},
+                $position_set->{'feature_id2'}
+            );
+            $self->add_connection(
+                @positions,
+                $evidence_info->{'line_color'} || 
+                    $self->config('connecting_line_color'),
+            );
+        }
+
     }
 
     #
@@ -806,6 +823,7 @@ necessary data for drawing.
         my $data                   =  $self->data_module or return;
         $self->{'data'}            =  $data->cmap_data( 
             slots                  => $self->slots,
+            min_correspondences    => $self->min_correspondences,
             include_feature_types  => $self->include_feature_types,
             include_evidence_types => $self->include_evidence_types,
         );
@@ -909,7 +927,7 @@ sub feature_correspondence_positions {
 
 =head2 feature_correspondence_positions
 
-Accepts a map number and returns an array of arrayrefs denoting the positions
+Accepts a slot number and returns an array of arrayrefs denoting the positions
 to connect corresponding features on two maps.
 
 =cut
@@ -953,7 +971,7 @@ sub feature_correspondence_map_positions {
 
 =head2 feature_correspondence_map_positions
 
-Accepts a map number and returns an array of arrayrefs denoting the 
+Accepts a slot number and returns an array of arrayrefs denoting the 
 map positions (start, stop) in the reference slot to use when selecting a
 region of corresponding features.
 
@@ -1289,6 +1307,22 @@ Gets/sets the output map image's width.
 
     my $self = shift;
     return $self->max_x + 10;
+}
+
+# ----------------------------------------------------
+sub min_correspondences {
+
+=pod
+
+=head2 min_correspondences
+
+Gets/sets the minimum number of correspondences.
+
+=cut
+
+    my $self = shift;
+    $self->{'min_correspondences'} = shift if @_;
+    return $self->{'min_correspondences'} || 0;
 }
 
 # ----------------------------------------------------
