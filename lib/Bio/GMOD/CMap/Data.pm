@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.23 2003-01-05 04:23:57 kycl4rk Exp $
+# $Id: Data.pm,v 1.24 2003-01-07 16:10:53 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.23 $)[-1];
+$VERSION = (qw$Revision: 1.24 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -119,7 +119,7 @@ Organizes the data for drawing comparative maps.
 
     $data->{'correspondences'} = \%correspondences;
 
-#    warn "data = ", Dumper( $data ), "\n";
+#    warn "corr = ", Dumper( $data->{'correspondences'} ), "\n";
     return $data;
 }
 
