@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.103 2004-08-04 04:33:40 mwz444 Exp $
+# $Id: Map.pm,v 1.104 2004-08-06 05:21:48 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.103 $)[-1];
+$VERSION = (qw$Revision: 1.104 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -925,19 +925,26 @@ Lays out the map.
                     $ref_map->{$field}{$aid}{'stop'}.']';
             }
             if ($field eq 'maps'){
-                $ref_map_link .= 'ref_map_aids='.
+                $ref_map_link = 'ref_map_aids='.
                     join(';ref_map_aids=',@aid_info).
                     ';';
             }
             else{
-                $ref_map_link .= 'ref_map_set_aids='.
+                $ref_map_link = 'ref_map_set_aids='.
                     join(';ref_map_set_aids=',@aid_info).
                     ';';
             }
 
-            push @rmap_links, $ref_map_link;
+            if(@aid_info){
+                push @rmap_links, $ref_map_link;
+            }
         }
 
+        my $feature_type_selection='';
+        $feature_type_selection.='feature_type_'.$_.'=2;' 
+            foreach (@{$drawer->include_feature_types});
+        $feature_type_selection.='feature_type_'.$_.'=1;' 
+            foreach (@{$drawer->corr_only_feature_types});
         #
         # Map details button.
         #
@@ -955,8 +962,11 @@ Lays out the map.
                     push @aid_info, $aid.'['.$map->{$field}{$aid}{'start'}.'*'.
                         $map->{$field}{$aid}{'stop'}.']';
                 }
-
-                my $link = join( '%3d', $new_no, $field, join(',',@aid_info) );
+                my $field_type='map_set_aid';
+                if ($field eq 'maps'){
+                    $field_type='map_aid';
+                }
+                my $link = join( '%3d', $new_no, $field_type, join(',',@aid_info) );
                 push @maps, $link;
             }
         }
@@ -971,9 +981,8 @@ Lays out the map.
           . join( ':', @maps )
           . ';label_features='
           . $drawer->label_features
-          . ';include_feature_types='
-          . join( ',', @{ $drawer->include_feature_types || [] } )
-          . ';include_evidence_types='
+          . ';' . $feature_type_selection
+          . 'include_evidence_types='
           . join( ',', @{ $drawer->include_evidence_types || [] } )
           . ';highlight='
           . uri_escape( $drawer->highlight )
@@ -1043,8 +1052,11 @@ Lays out the map.
                         push @aid_info, $aid.'['.$map->{$field}{$aid}{'start'}.'*'.
                             $map->{$field}{$aid}{'stop'}.']';
                     }
-
-                    my $link = join( '%3d', $slot_no, $field, join(',',@aid_info) );
+                    my $field_type='map_set_aid';
+                    if ($field eq 'maps'){
+                        $field_type='map_aid';
+                    }
+                    my $link = join( '%3d', $slot_no, $field_type, join(',',@aid_info) );
                     push @cmaps, $link;
                 }
             }
@@ -1057,9 +1069,8 @@ Lays out the map.
               . join( ':', @cmaps )
               . ';label_features='
               . $drawer->label_features
-              . ';include_feature_types='
-              . join( ',', @{ $drawer->include_feature_types || [] } )
-              . ';include_evidence_types='
+              . ';' . $feature_type_selection
+              . 'include_evidence_types='
               . join( ',', @{ $drawer->include_evidence_types || [] } )
               . ';highlight='
               . uri_escape( $drawer->highlight )
@@ -1092,12 +1103,19 @@ Lays out the map.
                     my @aid_info;
                     next unless (defined($map->{$field})); 
                     foreach my $aid (keys %{$map->{$field}}){
-                        push @aid_info, $aid.'['.$map->{$field}{$aid}{'start'}.'*'.
-                            $map->{$field}{$aid}{'stop'}.']';
+                        push @aid_info, $aid
+                          . '['.$map->{$field}{$aid}{'start'}.'*'
+                          . $map->{$field}{$aid}{'stop'}.']';
                     }
-
-                    my $link = join( '%3d', $slot_no, $field, join(',',@aid_info) );
-                    push @cmaps, $link;
+                    if(@aid_info){
+                        my $field_type='map_set_aid';
+                        if ($field eq 'maps'){
+                            $field_type='map_aid';
+                        }
+                        my $link 
+                          = join('%3d',$slot_no,$field_type,join(',',@aid_info));
+                        push @cmaps, $link;
+                    }
                 }
             }
 
@@ -1116,15 +1134,14 @@ Lays out the map.
 
             my $flip_url = $self_url
               . '?ref_map_set_aid='
-              . $slots->{'0'}{'map_set_aid'}
+              . $slots->{'0'}{'map_set_aid'}.";"
               . join('',@rmap_links)
-              . ';comparative_maps='
+              . 'comparative_maps='
               . join( ':', @cmaps )
               . ';label_features='
               . $drawer->label_features
-              . ';include_feature_types='
-              . join( ',', @{ $drawer->include_feature_types || [] } )
-              . ';include_evidence_types='
+              . ';' . $feature_type_selection
+              . 'include_evidence_types='
               . join( ',', @{ $drawer->include_evidence_types || [] } )
               . ';highlight='
               . uri_escape( $drawer->highlight )
@@ -1161,8 +1178,7 @@ Lays out the map.
               . $self->stop_position($map_id)
               . ';label_features='
               . $drawer->label_features
-              . ';include_feature_types='
-              . join( ',', @{ $drawer->include_feature_types || [] } )
+              . ';' . $feature_type_selection
               . ';include_evidence_types='
               . join( ',', @{ $drawer->include_evidence_types || [] } )
               . ';highlight='
@@ -1183,7 +1199,7 @@ Lays out the map.
         #
         # The map title(s).
         #
-        if ($is_compressed) {    #&& $slot_no != 0 ) {
+        if ($is_compressed) {    
             unless (@map_titles) {
                 push @map_titles, map { $self->$_($map_id) }
                   grep { !/map_name/ }
