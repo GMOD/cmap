@@ -8,16 +8,24 @@
 <script language="javascript">
                                         
 function setDivObjects(){
-  hideAll();
+  startPage();
 }
 
 function toggleDiv(obj){
   if (obj.style.display == 'block'){
     obj.style.display = 'none';
+    return "0";
   }
   else{
     obj.style.display = 'block';
+    return "1";
   }
+}
+
+function setMenuObjects(obj1,obj2,txt){
+    obj1.value=txt;
+    obj2.value=txt;
+    return 1;
 }
 
 function hideAll(){
@@ -31,6 +39,77 @@ function hideAll(){
     }
   }
 }
+
+function startPage(){
+  var divs=document.getElementsByTagName("DIV");
+  for (var i=0; i < divs.length; i++){
+    if (divs[i].id == "displayChangeMenu"){
+        if ("[% apr.param('changeMenu') %]" == "1"){
+            divs[i].style.display='block';
+        }
+        else{
+            divs[i].style.display='none';
+        }
+    }
+    else if (divs[i].id == "hiddenChangeMenu"){
+        if ("[% apr.param('changeMenu') %]" == "1"){
+            divs[i].style.display='none';
+        }
+        else{
+            divs[i].style.display='block';
+        }
+    }
+    else if (divs[i].id == "displayCompMenu"){
+        if ("[% apr.param('compMenu') %]" == "1"){
+            divs[i].style.display='block';
+        }
+        else{
+            divs[i].style.display='none';
+        }
+    }
+    else if (divs[i].id == "hiddenCompMenu"){
+        if ("[% apr.param('compMenu') %]" == "1"){
+            divs[i].style.display='none';
+        }
+        else{
+            divs[i].style.display='block';
+        }
+    }
+    else if (divs[i].id == "displayOptionMenu"){
+        if ("[% apr.param('optionMenu') %]" == "1"){
+            divs[i].style.display='block';
+        }
+        else{
+            divs[i].style.display='none';
+        }
+    }
+    else if (divs[i].id == "hiddenOptionMenu"){
+        if ("[% apr.param('optionMenu') %]" == "1"){
+            divs[i].style.display='none';
+        }
+        else{
+            divs[i].style.display='block';
+        }
+    }
+    else if (divs[i].id == "displayImageMenu"){
+        if ("[% apr.param('imageMenu') %]" == "1"){
+            divs[i].style.display='block';
+        }
+        else{
+            divs[i].style.display='none';
+        }
+    }
+    else if (divs[i].id == "hiddenImageMenu"){
+        if ("[% apr.param('imageMenu') %]" == "1"){
+            divs[i].style.display='none';
+        }
+        else{
+            divs[i].style.display='block';
+        }
+    }
+  }
+} 
+
 function selectFeatureRadio(val){
   var radios=document.getElementsByTagName("INPUT");
   for (var i=0; i < radios.length; i++){
@@ -130,20 +209,32 @@ function addPosToStr(str, slot_no, matchStr, value, command){
     <td align="left" valign="top">
       <div id="hiddenChangeMenu" >
         <span  
-        onclick="toggleDiv(document.getElementById('hiddenChangeMenu'));
-          toggleDiv(document.getElementById('displayChangeMenu'));">
+          onclick="toggleDiv(document.getElementById('hiddenChangeMenu'));
+          setMenuObjects(
+          window.document.ref_map_set_form.changeMenu,
+          window.document.comparative_map_form.changeMenu,
+          toggleDiv(document.getElementById('displayChangeMenu')));"
+        >
         <img src="/cmap/plus.png"> <b> Click to Show Change Menu</b>
         </span>
       </div>
       <div id="displayChangeMenu" this.display="none" >
         <span  
-        onclick="toggleDiv(document.getElementById('displayChangeMenu'));
-          toggleDiv(document.getElementById('hiddenChangeMenu'));">
+          onclick="setMenuObjects(
+          window.document.ref_map_set_form.changeMenu,
+          window.document.comparative_map_form.changeMenu,
+          toggleDiv(document.getElementById('displayChangeMenu')));
+          toggleDiv(document.getElementById('hiddenChangeMenu'));"
+        >
         <img src="/cmap/minus.png"> <b> Hide Menu</b>
         </span>
  
         <table border="0">
           <form name="ref_map_set_form">
+          <input type=hidden name=changeMenu id=changeMenu value=[% apr.param('changeMenu') %]>
+          <input type=hidden name=compMenu id=compMenu value=[% apr.param('compMenu') %]>
+          <input type=hidden name=optionMenu id=optionMenu value=[% apr.param('optionMenu') %]>
+          <input type=hidden name=imageMenu id=imageMenu value=[% apr.param('imageMenu') %]>
           <tr>
             <td align="right">Ref. Species:</td>
   
@@ -254,17 +345,29 @@ function addPosToStr(str, slot_no, matchStr, value, command){
     <form name="comparative_map_form">
       <tr>
         <td align=left valign=top>
+      <input type=hidden name=changeMenu id=changeMenu value=[% apr.param('changeMenu') %]>
+      <input type=hidden name=compMenu id=compMenu value=[% apr.param('compMenu') %]>
+      <input type=hidden name=optionMenu id=optionMenu value=[% apr.param('optionMenu') %]>
+      <input type=hidden name=imageMenu id=imageMenu value=[% apr.param('imageMenu') %]>
           <div id="hiddenCompMenu" >
-            <span 
-            onclick="toggleDiv(document.getElementById('hiddenCompMenu'));
-              toggleDiv(document.getElementById('displayCompMenu'));">
+            <span  
+              onclick="toggleDiv(document.getElementById('hiddenCompMenu'));
+              setMenuObjects(
+              window.document.ref_map_set_form.compMenu,
+              window.document.comparative_map_form.compMenu,
+              toggleDiv(document.getElementById('displayCompMenu')));"
+            >
             <img src="/cmap/plus.png"> <b> Click to Show Comparison Menu</b>
             </span>
           </div>
           <div id="displayCompMenu" this.display="none" >
-            <span 
-              onclick="toggleDiv(document.getElementById('displayCompMenu'));
-              toggleDiv(document.getElementById('hiddenCompMenu'));">
+            <span  
+              onclick="setMenuObjects(
+              window.document.ref_map_set_form.compMenu,
+              window.document.comparative_map_form.compMenu,
+              toggleDiv(document.getElementById('displayCompMenu')));
+              toggleDiv(document.getElementById('hiddenCompMenu'));"
+            >
               <img src="/cmap/minus.png"> <b> Hide Menu</b>
             </span>
             <table>
@@ -336,16 +439,24 @@ function addPosToStr(str, slot_no, matchStr, value, command){
       <tr>
         <td align=left valign=top>
           <div id="hiddenOptionMenu" >
-            <span 
+            <span  
               onclick="toggleDiv(document.getElementById('hiddenOptionMenu'));
-              toggleDiv(document.getElementById('displayOptionMenu'));">
+              setMenuObjects(
+              window.document.ref_map_set_form.optionMenu,
+              window.document.comparative_map_form.optionMenu,
+              toggleDiv(document.getElementById('displayOptionMenu')));"
+            >
              <img src="/cmap/plus.png"> <b> Click to Show options Menu</b>
             </span>
           </div>
           <div id="displayOptionMenu" this.display="none" >
-            <span 
-              onclick="toggleDiv(document.getElementById('displayOptionMenu'));
-              toggleDiv(document.getElementById('hiddenOptionMenu'));">
+            <span  
+              onclick="setMenuObjects(
+              window.document.ref_map_set_form.optionMenu,
+              window.document.comparative_map_form.optionMenu,
+              toggleDiv(document.getElementById('displayOptionMenu')));
+              toggleDiv(document.getElementById('hiddenOptionMenu'));"
+            >
               <img src="/cmap/minus.png"> <b> Hide Menu</b>
             </span>
             <table>
@@ -444,16 +555,24 @@ function addPosToStr(str, slot_no, matchStr, value, command){
       <tr>
         <td align=left valign=top>
           <div id="hiddenImageMenu" >
-            <span 
-            onclick="toggleDiv(document.getElementById('hiddenImageMenu'));
-              toggleDiv(document.getElementById('displayImageMenu'));">
+            <span  
+              onclick="toggleDiv(document.getElementById('hiddenImageMenu'));
+              setMenuObjects(
+              window.document.ref_map_set_form.imageMenu,
+              window.document.comparative_map_form.imageMenu,
+              toggleDiv(document.getElementById('displayImageMenu')));"
+            >
             <img src="/cmap/plus.png"> <b> Click to Show Image Menu</b>
             </span>
           </div>
           <div id="displayImageMenu" this.display="none" >
-            <span 
-              onclick="toggleDiv(document.getElementById('displayImageMenu'));
-              toggleDiv(document.getElementById('hiddenImageMenu'));">
+            <span  
+              onclick="setMenuObjects(
+              window.document.ref_map_set_form.imageMenu,
+              window.document.comparative_map_form.imageMenu,
+              toggleDiv(document.getElementById('displayImageMenu')));
+              toggleDiv(document.getElementById('hiddenImageMenu'));"
+            >
               <img src="/cmap/minus.png"> <b> Hide Menu</b>
             </span>
 
