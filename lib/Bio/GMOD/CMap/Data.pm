@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.98.2.8 2004-06-15 20:03:53 kycl4rk Exp $
+# $Id: Data.pm,v 1.98.2.9 2004-06-17 14:20:01 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.98.2.8 $)[-1];
+$VERSION = (qw$Revision: 1.98.2.9 $)[-1];
 
 use Data::Dumper;
 use Regexp::Common;
@@ -543,6 +543,7 @@ Returns the data for drawing comparative maps.
                                  ms.width,
                                  ms.color,
                                  mt.map_type_id,
+                                 mt.accession_id as map_type_aid,
                                  mt.map_type,
                                  mt.map_units,
                                  mt.is_relational_map,
@@ -550,6 +551,7 @@ Returns the data for drawing comparative maps.
                                  mt.width as default_width,
                                  mt.color as default_color,
                                  s.species_id,
+                                 s.accession_id as species_aid,
                                  s.common_name as species_name
                         from     cmap_map map,
                                  cmap_feature f1, 
@@ -597,12 +599,14 @@ Returns the data for drawing comparative maps.
                                  ms.color,
                                  mt.map_type_id,
                                  mt.map_type,
+                                 mt.accession_id as map_type_aid,
                                  mt.map_units,
                                  mt.is_relational_map,
                                  mt.shape as default_shape,
                                  mt.width as default_width,
                                  mt.color as default_color,
                                  s.species_id,
+                                 s.accession_id as species_aid,
                                  s.common_name as species_name
                         from     cmap_map map,
                                  cmap_map_set ms,
@@ -637,12 +641,14 @@ Returns the data for drawing comparative maps.
                            ms.color,
                            mt.map_type_id,
                            mt.map_type,
+                           mt.accession_id as map_type_aid,
                            mt.map_units,
                            mt.is_relational_map,
                            mt.shape as default_shape,
                            mt.width as default_width,
                            mt.color as default_color,
                            s.species_id,
+                           s.accession_id as species_aid,
                            s.common_name as species_name
                     from   cmap_map map,
                            cmap_map_set ms,
@@ -2870,7 +2876,9 @@ Returns the data for drawing comparative maps.
                  ms.species_id, 
                  ms.can_be_reference_map,
                  mt.map_type, 
+                 mt.accession_id as map_type_aid, 
                  mt.map_units, 
+                 mt.is_relational_map, 
                  s.accession_id as species_aid, 
                  s.common_name, 
                  s.full_name
@@ -3518,6 +3526,28 @@ Returns data on species.
     for my $s ( @$species ) {
         $s->{'object_id'}  = $s->{'species_id'};
         $s->{'attributes'} = $attr_lookup{ $s->{'species_id'} };
+        $s->{'map_sets'}   = $db->selectall_arrayref(
+            q[
+                select   ms.accession_id as map_set_aid,
+                         ms.short_name as map_set_name,
+                         s.accession_id as species_aid,
+                         mt.accession_id as map_type_aid,
+                         mt.map_type
+                from     cmap_map_set ms,
+                         cmap_species s,
+                         cmap_map_type mt
+                where    ms.species_id=?
+                and      ms.map_type_id=mt.map_type_id
+                and      ms.species_id=s.species_id
+                order by mt.display_order,
+                         mt.map_type,
+                         ms.display_order,
+                         ms.published_on,
+                         ms.short_name
+            ],
+            { Columns => {} },
+            ( $s->{'species_id'} )
+        );
     }
 
     $self->get_multiple_xrefs(
