@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.26 2003-03-05 01:54:02 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.27 2003-03-13 01:24:11 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.26 $)[-1];
+$VERSION = (qw$Revision: 1.27 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
@@ -57,8 +57,8 @@ Initializes the drawing object.
         $self->$param( $config->{ $param } );
     }
 
-    $self->draw;
-    return $self;
+    return $self->draw;# or return $self->error;
+#    return $self;
 }
 
 # ----------------------------------------------------
@@ -470,27 +470,26 @@ Lays out the image and writes it to the file system, set the "image_name."
     my ( $min_y, $max_y, $min_x, $max_x );
     for my $slot_no ( $self->slot_numbers ) {
         my $data    = $self->slot_data( $slot_no );
-#        warn "slot no = '$slot_no', data =\n", Dumper( $data ), "\n";
         my $map     =  Bio::GMOD::CMap::Drawer::Map->new( 
             drawer  => $self, 
             slot_no => $slot_no,
             maps    => $data,
         );
 
-        my @bounds = $map->layout;
-        $min_x     = $bounds[0] unless defined $min_x;
-        $min_y     = $bounds[1] unless defined $min_y;
-        $max_x     = $bounds[2] unless defined $max_x;
-        $max_y     = $bounds[3] unless defined $max_y;
-        $min_x     = $bounds[0] if $bounds[0] < $min_x;
-        $min_y     = $bounds[1] if $bounds[1] < $min_y;
-        $max_x     = $bounds[2] if $bounds[2] > $max_x;
-        $max_y     = $bounds[3] if $bounds[3] > $max_y;
+        my $bounds = $map->layout or return $self->error( $map->error );
+        $min_x     = $bounds->[0] unless defined $min_x;
+        $min_y     = $bounds->[1] unless defined $min_y;
+        $max_x     = $bounds->[2] unless defined $max_x;
+        $max_y     = $bounds->[3] unless defined $max_y;
+        $min_x     = $bounds->[0] if $bounds->[0] < $min_x;
+        $min_y     = $bounds->[1] if $bounds->[1] < $min_y;
+        $max_x     = $bounds->[2] if $bounds->[2] > $max_x;
+        $max_y     = $bounds->[3] if $bounds->[3] > $max_y;
 
         $self->slot_sides( 
             slot_no => $slot_no,
-            left    => $bounds[0], 
-            right   => $bounds[2],
+            left    => $bounds->[0], 
+            right   => $bounds->[2],
         );
 
         #
@@ -510,7 +509,6 @@ Lays out the image and writes it to the file system, set the "image_name."
                     $self->config('connecting_line_color'),
             );
         }
-
     }
 
     #
@@ -539,11 +537,13 @@ Lays out the image and writes it to the file system, set the "image_name."
         my @bounds = ( $min_x, $max_y - 10 );
         my $font   = $self->regular_font;
         my $x      = $min_x + 20;
-
+        my $string = 'Feature Types:';
         $self->add_drawing( 
-            STRING, $font, $x, $max_y, 'Feature Types:', 'black' 
+            STRING, $font, $x, $max_y, $string, 'black' 
         );
         $max_y += $font->height + 10;
+        my $end = $x + $font->width * length( $string );
+        $max_x  = $end if $end > $max_x;
 
         my $corr_color = $self->config('feature_correspondence_color');
         if ( $corr_color && $self->correspondences_exist ) {
@@ -690,7 +690,7 @@ Lays out the image and writes it to the file system, set the "image_name."
                 );
                 $label_y = $feature_y + 5;
             }
-            elsif ( $ft->{'shape'} eq 'rectangle' ) {
+            elsif ( $ft->{'shape'} eq 'filled-box' ) {
                 my $width = 3;
                 $self->add_drawing(
                     FILLED_RECT, 
@@ -703,6 +703,33 @@ Lays out the image and writes it to the file system, set the "image_name."
                     'black'
                 );
                 $label_y = $feature_y + 5;
+            }
+            elsif ( $ft->{'shape'} =~ /triangle$/ ) {
+                $self->add_drawing(
+                    LINE,
+                    $feature_x + 3, $feature_y,
+                    $feature_x + 3, $feature_y + 6,
+                    $color
+                );
+                $self->add_drawing(
+                    LINE,
+                    $feature_x + 3, $feature_y,
+                    $feature_x + 6, $feature_y + 3,
+                    $color
+                );
+                $self->add_drawing(
+                    LINE,
+                    $feature_x + 6, $feature_y + 3,
+                    $feature_x + 3, $feature_y + 6,
+                    $color
+                );
+                $self->add_drawing(
+                    FILL,
+                    $feature_x + 4, $feature_y + 4,
+                    $color
+                );
+
+                $label_y = $feature_y + 3;
             }
             else {
                 # Do nothing.
@@ -732,12 +759,14 @@ Lays out the image and writes it to the file system, set the "image_name."
             for my $et ( @evidence_types ) {
                 my $color = $et->{'line_color'} || 
                             $self->config('connecting_line_color');
+                my $string = 
+                    ucfirst($color) .' line denotes '.  $et->{'evidence_type'};
                 $self->add_drawing( 
-                    STRING, $font, $x + 15, $max_y,
-                    ucfirst($color) .' line denotes '.  $et->{'evidence_type'}, 
-                    $color
+                    STRING, $font, $x + 15, $max_y, $string, $color
                 );
                 $max_y += $font->height + 5;
+                my $end = $x + $font->width * length( $string );
+                $max_x  = $end if $end > $max_x;
             }
         }
 
@@ -802,7 +831,7 @@ Lays out the image and writes it to the file system, set the "image_name."
     $fh->close;
     $self->image_name( $filename );
 
-    return 1;
+    return $self;
 }
 
 # ----------------------------------------------------
@@ -991,9 +1020,8 @@ region of corresponding features.
 
     my @return = ();
     for my $f1 ( keys %{ $self->{'feature_position'}{ $slot_no } } ) {
-        next if defined $map_id && 
-            $self->{'feature_position'}{ $slot_no }{$f1}{'map_id'} != $map_id;
-        my @corr = $self->feature_correspondences( $f1 );
+        next unless
+            $self->{'feature_position'}{ $slot_no }{$f1}{'map_id'} == $map_id;
 
         for my $f2 ( $self->feature_correspondences( $f1 ) ) {
             next unless defined $comp_map->{'features'}{ $f2 };
