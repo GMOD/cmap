@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.146 2004-12-07 17:50:08 mwz444 Exp $
+# $Id: Map.pm,v 1.146.2.1 2005-01-11 20:46:52 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.146 $)[-1];
+$VERSION = (qw$Revision: 1.146.2.1 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1500,8 +1500,10 @@ Variable Info:
 
         #
         # Delete button.
+        # Can't delete the reference and can't delete individual maps
+        #  in multi-map slot
         #
-        if ( $slot_no != 0 ) {
+        if ( $slot_no != 0 and scalar(@map_ids)<1 ) { 
             my @cmap_nos;
             if ( $slot_no < 0 ) {
                 push @cmap_nos, grep { $_ > $slot_no } @ordered_slot_nos;
@@ -1534,8 +1536,10 @@ Variable Info:
 
         #
         # Flip button.
+        # Don't use if this slot is compressed and
+        #  you can't delete individual maps in multi-map slot
         #
-        unless ($is_compressed) {
+        unless ($is_compressed or scalar(@map_ids)>1) {
             my @flipping_flips;
             my $acc_id = $self->accession_id($map_id);
             for my $rec ( @{ $drawer->flip } ) {
