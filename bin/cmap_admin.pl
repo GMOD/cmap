@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.77 2004-09-20 19:27:43 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.78 2004-10-23 23:43:18 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.77 $)[-1];
+$VERSION = (qw$Revision: 1.78 $)[-1];
 
 #
 # Get command-line options
@@ -249,7 +249,7 @@ sub show_greeting {
             },
             { 
                 action  => 'manage_links',   
-                display => 'manage_links' 
+                display => 'Manage imported links' 
             },
             { 
                 action  => 'quit',   
@@ -2894,6 +2894,49 @@ To remove just one (or more) map of a map set, first choose the map
 set and then the map (or maps) within it.  If you wish to remove an
 entire map set, then answer "0" (or just hit "Return") when given a
 list of maps.
+ 
+=head2 Purge the cache to view new data
+                                                                                                                             
+Purge the query cache.  The results of many queries are cached in an
+effort to reduce time querying the database for common queries.
+Purging the cache is important after the data has changed or after
+the configuration file has change.  Otherwise the changes will not
+be consistantly displayed.
+                                                                                                                             
+There are four layers of the cache.  When one layer is purged all of
+the layers after it are purged.
+                                                                                                                             
+=over 4
+                                                                                                                             
+=item * Cache Level 1 Purge All
+                                                                                                                             
+Purge all when a map set or species has been added or modified.  A
+change to map sets or species has potential to impact all of the data.
+                                                                                                                             
+=item * Cache Level 2 (purge map info on down)
+                                                                                                                             
+Level 2 is purged when map information is changed.
+                                                                                                                             
+=item * Cache Level 3 (purge feature info on down)
+                                                                                                                             
+Level 3 is purged when feature information is changed.
+                                                                                                                             
+=item * Cache Level 4 (purge correspondence info on down)
+                                                                                                                             
+Level 3 is purged when correspondence information is changed.
+                                                                                                                             
+=back
+                                                                                                                             
+=head2 Delete duplicate correspondences
+                                                                                                                             
+If duplicate correspondences may have been added, this will remove them.
+                                                                                                                             
+=head2 Manage links
+                                                                                                                             
+This option is where to import and delete links that will show up in
+the "Imported Links" section of CMap.  The import takes a tab delimited
+file, see "perldoc /path/to/Bio/GMOD/CMap/Admin/ManageLinks.pm" for
+more info on the format.
 
 =head1 AUTHOR
 
