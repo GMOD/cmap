@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.76 2003-12-11 03:03:01 kycl4rk Exp $
+# $Id: Data.pm,v 1.77 2003-12-11 22:50:36 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.76 $)[-1];
+$VERSION = (qw$Revision: 1.77 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -1651,6 +1651,10 @@ Returns the data for the main comparative map HTML form.
         ],
         { Columns => {} }
     );
+
+    if ( @$ref_species && !$ref_species_aid ) {
+        $ref_species_aid = $ref_species->[0]{'species_aid'};
+    }
 
     #
     # Select all the map set that can be reference maps.
