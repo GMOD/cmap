@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapDetailViewer;
 
-# $Id: MapDetailViewer.pm,v 1.9 2003-03-14 20:10:23 kycl4rk Exp $
+# $Id: MapDetailViewer.pm,v 1.10 2003-03-25 23:11:44 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.9 $)[-1];
+$VERSION = (qw$Revision: 1.10 $)[-1];
 
 use Apache::Constants;
 use Data::Dumper;
@@ -23,7 +23,8 @@ use constant COLUMN_NAMES    => [
         map_accession_id map_name
         feature_accession_id feature_name feature_type start_position 
         stop_position alt_species_name alt_map_set_name alt_map_name 
-        alt_map alt_feature_type alt_start_position alt_stop_position 
+        alt_feature_type alt_start_position alt_stop_position 
+        evidence
     ]
 ];
 use constant MAP_FIELDS      => [
@@ -34,7 +35,7 @@ use constant FEATURE_FIELDS  => [
 ];
 use constant POSITION_FIELDS => [
     qw[ species_name map_set_name map_name feature_type 
-        start_position stop_position 
+        start_position stop_position evidence
     ]
 ];
 
@@ -74,6 +75,14 @@ sub handler {
         @feature_types = ( $apr->param('include_feature_types') );
     }
 
+    my @evidence_types;
+    if ( $apr->param('evidence_types') ) {
+        @evidence_types = split(/,/, $apr->param('evidence_types') );
+    }
+    else {
+        @evidence_types = ( $apr->param('include_evidence_types') );
+    }
+
     my %slots = (
         0 => {
             field       => 'map_aid',
@@ -84,15 +93,41 @@ sub handler {
         },
     );
 
+    #
+    # Add in previous maps.
+    #
+    my $no_flanking = $self->config('number_flanking_positions') || 0;
+    for my $cmap ( split( /:/, $comparative_maps ) ) {
+        my ( $slot_no, $field, $accession_id ) = split(/=/, $cmap) or next;
+        my ( $start, $stop );
+        if ( $accession_id =~ m/^(.+)\[(.+),(.+)\]$/ ) {
+            $accession_id = $1;
+            $start        = $2;
+            $stop         = $3;
+        }
+
+        $slots{ $slot_no }        =  {
+            field                 => $field,
+            aid                   => $accession_id,
+            start                 => $start,
+            stop                  => $stop,
+            no_flanking_positions => $no_flanking,
+        }; 
+    }
+
     my $data_module = $self->data_module( data_source => $self->data_source ) 
         or return;
+    my ( $comparative_map_field, $comparative_map_aid ) = 
+        split( /=/, $apr->param('comparative_map') );
 
-    my $data                  = $data_module->map_detail_data( 
-        map                   => $slots{0},
-        highlight             => $highlight,
-        include_feature_types => \@feature_types,
-        order_by              => $apr->param('order_by')            || '',
-        comparative_map_aid   => $apr->param('comparative_map_aid') || '',
+    my $data                   = $data_module->map_detail_data( 
+        slots                  => \%slots,
+        highlight              => $highlight,
+        include_feature_types  => \@feature_types,
+        include_evidence_types => \@evidence_types,
+        order_by               => $apr->param('order_by') || '',
+        comparative_map_field  => $comparative_map_field  || '',
+        comparative_map_aid    => $comparative_map_aid    || '',
     ) or return $self->error( "Data: ".$data_module->error );
 
     if ( $action eq 'download' ) {
@@ -109,10 +144,13 @@ sub handler {
 
             if ( @{ $feature->{'positions'} } ) {
                 for my $position ( @{ $feature->{'positions'} } ) {
+                    $position->{'evidence'} = 
+                        join( ',', @{ $position->{'evidence'} } );
                     $text .= join(
                         FIELD_SEP, 
                         $row,
-                        map { $position->{$_} } @{ +POSITION_FIELDS }
+                        map { defined $position->{$_} ? $position->{$_} : '' } 
+                            @{ +POSITION_FIELDS }
                     ) . RECORD_SEP;
                 }
             }
@@ -127,47 +165,27 @@ sub handler {
     }
     else {
         #
-        # Add in previous maps.
-        #
-        my $no_flanking = $self->config('number_flanking_positions') || 0;
-        for my $cmap ( split( /:/, $comparative_maps ) ) {
-            my ( $slot_no, $field, $accession_id ) = split(/=/, $cmap) or next;
-            my ( $start, $stop );
-            if ( $accession_id =~ m/^(.+)\[(.+),(.+)\]$/ ) {
-                $accession_id = $1;
-                $start        = $2;
-                $stop         = $3;
-            }
-
-            $slots{ $slot_no }        =  {
-                field                 => $field,
-                aid                   => $accession_id,
-                start                 => $start,
-                stop                  => $stop,
-                no_flanking_positions => $no_flanking,
-            }; 
-        }
-
-        #
         # Instantiate the drawer.
         #
-        my $drawer                =  Bio::GMOD::CMap::Drawer->new(
-            data_source           => $self->data_source,
-            apr                   => $apr,
-            slots                 => \%slots,
-            highlight             => $highlight,
-            font_size             => $font_size,
-            image_size            => $image_size,
-            image_type            => $image_type,
-            label_features        => $label_features,
-            include_feature_types => \@feature_types,
-            debug                 => $self->config('debug'),
+        my $drawer                 =  Bio::GMOD::CMap::Drawer->new(
+            data_source            => $self->data_source,
+            apr                    => $apr,
+            slots                  => \%slots,
+            highlight              => $highlight,
+            font_size              => $font_size,
+            image_size             => $image_size,
+            image_type             => $image_type,
+            label_features         => $label_features,
+            include_feature_types  => \@feature_types,
+            include_evidence_types => \@evidence_types,
+            debug                  => $self->config('debug'),
         ) or die $self->error( "Drawer: ".Bio::GMOD::CMap::Drawer->error );
 
         my $ref_map = $slots{0};
-        $apr->param('ref_map_start', $ref_map->{'start'});
-        $apr->param('ref_map_stop',  $ref_map->{'stop'} );
-        $apr->param('feature_types', join(',', @feature_types ) );
+        $apr->param('ref_map_start',  $ref_map->{'start'}         );
+        $apr->param('ref_map_stop',   $ref_map->{'stop'}          );
+        $apr->param('feature_types',  join(',', @feature_types )  );
+        $apr->param('evidence_types', join(',', @evidence_types ) );
 
         my $pager       =  paginate( 
             self        => $self,
@@ -180,23 +198,26 @@ sub handler {
         $t->process( 
             TEMPLATE, 
             { 
-                apr               => $apr,
-#                features          => $data->{'features'},
-                feature_types     => $data->{'feature_types'},
-                reference_map     => $data->{'reference_map'},
-                comparative_maps  => $data->{'comparative_maps'},
-                drawer            => $drawer,
-                page              => $self->page,
-                title             => 'Reference Map Details',
-                stylesheet        => $self->stylesheet,
-                included_features => { map { $_, 1 } @feature_types },
-                features          => $pager->{'data'},
-                no_elements       => $pager->{'no_elements'},
-                page_size         => $pager->{'page_size'},
-                pages             => $pager->{'pages'},
-                cur_page          => $pager->{'cur_page'},
-                show_start        => $pager->{'show_start'},
-                show_stop         => $pager->{'show_stop'},
+                apr                   => $apr,
+                feature_types         => $data->{'feature_types'},
+                evidence_types        => $data->{'evidence_types'},
+                reference_map         => $data->{'reference_map'},
+                comparative_maps      => $data->{'comparative_maps'},
+                comparative_map_field => $comparative_map_field,
+                comparative_map_aid   => $comparative_map_aid,
+                drawer                => $drawer,
+                page                  => $self->page,
+                title                 => 'Reference Map Details',
+                stylesheet            => $self->stylesheet,
+                included_features     => { map { $_, 1 } @feature_types },
+                included_evidence     => { map { $_, 1 } @evidence_types },
+                features              => $pager->{'data'},
+                no_elements           => $pager->{'no_elements'},
+                page_size             => $pager->{'page_size'},
+                pages                 => $pager->{'pages'},
+                cur_page              => $pager->{'cur_page'},
+                show_start            => $pager->{'show_start'},
+                show_stop             => $pager->{'show_stop'},
             },
             \$html 
         ) or $html = $t->error;
