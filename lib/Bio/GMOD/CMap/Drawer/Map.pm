@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.20 2003-01-08 21:03:28 kycl4rk Exp $
+# $Id: Map.pm,v 1.21 2003-01-08 22:51:57 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.20 $)[-1];
+$VERSION = (qw$Revision: 1.21 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -414,13 +414,14 @@ Lays out the map.
     # These are for drawing the map titles last if this is a relational map.
     #
     my ( 
-        $is_relational, # if one map is relational, the whole map set is
-        $top_y,         # northernmost coord for the slot
-        $bottom_y,      # southernmost coord for the slot
-        $slot_min_x,    # easternmost coord for the slot
-        $slot_max_x,    # westernmost coord for the slot
-        @map_titles,    # the titles to put above - for relational maps
-        $map_set_aid,   # the map set acc. ID - for relational maps
+        $is_relational,    # if one map is relational, the whole map set is
+        $top_y,            # northernmost coord for the slot
+        $bottom_y,         # southernmost coord for the slot
+        $slot_min_x,       # easternmost coord for the slot
+        $slot_max_x,       # westernmost coord for the slot
+        @map_titles,       # the titles to put above - for relational maps
+        $map_set_aid,      # the map set acc. ID - for relational maps
+        %feature_type_ids, # the distinct feature type IDs
     );
 
     for my $map_id ( @map_ids ) {
@@ -731,6 +732,10 @@ Lays out the map.
                 my $label_y;
                 my @coords;
 
+#                warn "feature name = '", $feature->feature_name, "', ",
+#                    "shape = '", $feature->shape, "'\n"
+#                    if $feature->feature_name eq 'Grh4(t)';
+
                 if ( $feature->shape eq LINE ) {
                     $drawer->add_drawing(
                         LINE, $tick_start, $y_pos1, $tick_stop, $y_pos1, $color
@@ -754,12 +759,14 @@ Lays out the map.
                     $label_y = ( $y_pos1 + ( $y_pos2 - $y_pos1 ) / 2 ) -
                         $reg_font->height/2;
 
-                    $drawer->add_drawing(
-                        LINE, 
-                        $vert_line_x2, $y_pos1, 
-                        $vert_line_x2, $y_pos2, 
-                        $color,
-                    );
+                    if ( $y_pos1 < $y_pos2 ) {
+                        $drawer->add_drawing(
+                            LINE, 
+                            $vert_line_x2, $y_pos1, 
+                            $vert_line_x2, $y_pos2, 
+                            $color,
+                        );
+                    }
 
                     if ( $feature->shape eq 'span' ) {
                         $drawer->add_drawing(
@@ -785,15 +792,12 @@ Lays out the map.
                         $vert_line_x2 = $label_side eq RIGHT 
                             ? $tick_stop + $offset : $tick_start - $offset;
 
-                        $drawer->add_drawing(
-                            RECTANGLE, 
-                            $vert_line_x1, $y_pos1, 
-                            $vert_line_x2, $y_pos2, 
-                            $color,
-                        );
                         @coords = (
-                            $vert_line_x1, $y_pos1, $vert_line_x2, $y_pos2
+                            $vert_line_x2, $y_pos2,
+                            $vert_line_x1, $y_pos1, 
                         );
+
+                        $drawer->add_drawing( RECTANGLE, @coords, $color );
                     }
                     else {
                         my $width = 3;
@@ -824,9 +828,8 @@ Lays out the map.
                 #
                 # Register that we saw this type of feature.
                 #
-                $drawer->register_feature_type( $feature->feature_type_id );
+                $feature_type_ids{ $feature->feature_type_id } = 1;
 
-                my ( $left_side, $right_side );
                 my $is_highlighted = 
                     $drawer->highlight_feature( $feature->feature_name );
 
@@ -842,6 +845,7 @@ Lays out the map.
                     };
                 }
 
+                my ( $left_side, $right_side );
                 if ( 
                     $show_labels                   && (
                         $has_corr                  || 
@@ -924,13 +928,6 @@ Lays out the map.
             my @rows      =    (); # for labels north-to-south
             my $buffer    = 2;
             for my $label ( @labels ) {
-#                warn "label = '", $label->{'text'}, "', ",
-#                    "start = '", $label->{'start_position'}, "', ",
-#                    "direction = '", $label->{'direction'}, "', ",
-#                    "priority = '", $label->{'priority'}, "', ",
-#                    "type = '", $label->{'feature_type'}, "', ",
-#                    "\n";
-
                 my $label_y      = label_distribution(
                     rows         => \@rows,
                     target       => $label->{'target'},
@@ -1246,6 +1243,11 @@ Lays out the map.
         $top_y      = $bounds[1] if $bounds[1] < $top_y;
         $slot_max_x = $bounds[2] if $bounds[2] > $slot_max_x;
     }
+
+    #
+    # Register the feature types we saw.
+    #
+    $drawer->register_feature_type( keys %feature_type_ids );
 
     #
     # Background color

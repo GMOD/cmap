@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Feature;
 
-# $Id: Feature.pm,v 1.8 2003-01-08 21:03:26 kycl4rk Exp $
+# $Id: Feature.pm,v 1.9 2003-01-08 22:51:57 kycl4rk Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -160,9 +160,9 @@ Returns a string describing how to draw the feature.
     unless ( $self->{'shape_vetted'} ) {
         my $shape = lc $self->{'shape'} || '';
         $shape    = 'default' unless defined SHAPE->{ $shape };
-        $shape    = LINE 
-            if $self->start_position == $self->stop_position ||
-            !defined $self->stop_position;
+#        $shape    = LINE 
+#            if $self->start_position == $self->stop_position ||
+#            !defined $self->stop_position;
         $self->{'shape_vetted'} = $shape;
     }
 
