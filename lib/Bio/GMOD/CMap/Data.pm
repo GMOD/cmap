@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.185 2004-12-09 16:05:30 mwz444 Exp $
+# $Id: Data.pm,v 1.186 2004-12-09 20:01:36 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.185 $)[-1];
+$VERSION = (qw$Revision: 1.186 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -2179,7 +2179,7 @@ sub cmap_form_data {
     my ( $ref_maps, $ref_map_set_info );
 
     if ($ref_map_set_aid) {
-        unless ( ( $ref_map->{'maps'} and %{ $ref_map->{'maps'} } ) 
+        unless ( ( $ref_map->{'maps'} and %{ $ref_map->{'maps'} } )
             or ( $ref_map->{'map_sets'} and %{ $ref_map->{'map_sets'} } ) )
         {
             $sql_str = $sql->form_data_ref_maps_sql;
@@ -2240,7 +2240,7 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
 
     my @slot_nos = sort { $a <=> $b } keys %$slots;
     my ( $comp_maps_right, $comp_maps_left );
-    if ( $self->slot_info and @slot_nos) {
+    if ( $self->slot_info and @slot_nos ) {
         $comp_maps_right = $self->get_comparative_maps(
             min_correspondences         => $min_correspondences,
             feature_type_aids           => $feature_type_aids,
@@ -4495,7 +4495,8 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
             and     map.map_id=f.map_id
         ];
         if ( $min_correspondence_maps or $min_correspondences ) {
-            $sql_str .= " and map.map_id in (". join(",",keys(%$map_info)).") ";
+            $sql_str .=
+              " and map.map_id in (" . join( ",", keys(%$map_info) ) . ") ";
         }
         if ($name_search) {
             $sql_str .= " and map.map_name='$name_search' ";
@@ -4718,6 +4719,7 @@ If it is not aggregated don't compress.
     my $this_slot_no = shift;
 
     return unless defined $this_slot_no;
+    return 0 if ($this_slot_no==0);
     return $self->{'compressed_maps'}{$this_slot_no}
       if defined( $self->{'compressed_maps'}{$this_slot_no} );
 
@@ -5254,11 +5256,8 @@ original start and stop.
 }
 
 sub orderOutFromZero {
-    ###Return the sort in this order (0,1,2,3,-1,-2,-3)
-    ###If both are positive (or 0) give the cmp.
-    return $a cmp $b if ( $a >= 0 and $b >= 0 );
-    ###Otherwise reverse the compare.
-    return $b cmp $a;
+    ###Return the sort in this order (0,1,-1,-2,2,-3,3,)
+    return ( abs($a) cmp abs($b) );
 }
 ###########################################
 
