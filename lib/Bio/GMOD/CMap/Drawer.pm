@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.53.2.2 2004-06-14 18:48:46 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.53.2.3 2004-06-15 19:59:38 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.53.2.2 $)[-1];
+$VERSION = (qw$Revision: 1.53.2.3 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -170,7 +170,7 @@ Draws a line from one point to another.
     my @lines = ();
     my $line  = LINE;
 
-    push @lines, [ $line, $x1, $y1, $x2, $y2, $color ];
+    push @lines, [ $line, $x1, $y1, $x2, $y2, $color, $layer ];
 #    if ( $y1 == $y2 ) {
 #        push @lines, [ $line, $x1, $y1, $x2, $y2, $color ];
 #    }
