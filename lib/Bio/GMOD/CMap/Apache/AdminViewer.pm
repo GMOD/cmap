@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.36 2003-06-02 15:49:05 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.37 2003-06-27 01:48:32 kycl4rk Exp $
 
 use strict;
 use Apache::Constants qw[ :common M_GET REDIRECT ];
@@ -30,7 +30,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.36 $)[-1];
+$VERSION        = (qw$Revision: 1.37 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -2014,13 +2014,16 @@ sub map_sets_view {
     my $map_type_id = $apr->param('map_type_id') || '';
     my $species_id  = $apr->param('species_id')  || '';
     my $is_enabled  = $apr->param('is_enabled');
-    my $limit_start = $apr->param('limit_start') || 0;
-    my $order_by    = $apr->param('order_by')    || 
-        'mt.display_order, mt.map_type, s.display_order, s.common_name, '.
-        'ms.display_order, ms.published_on desc, ms.short_name';
+    my $limit_start = $apr->param('limit_start') ||  0;
+    my $order_by    = $apr->param('order_by')    || '';
 
-    unless ( $order_by eq 'map_set_name' ) {
-        $order_by .= ',map_set_name';
+    if ( $order_by ) {
+        $order_by .= ',map_set_name' unless $order_by eq 'map_set_name';
+    }
+    else {
+        $order_by =
+            'mt.display_order, mt.map_type, s.display_order, s.common_name, '.
+            'ms.display_order, ms.published_on desc, ms.short_name';
     }
 
     my $sql = q[
