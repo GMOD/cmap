@@ -33,6 +33,7 @@ use Bio::GMOD::CMap::Apache::MapViewer();
 use Bio::GMOD::CMap::Apache::MapDetailViewer();
 use Bio::GMOD::CMap::Apache::MapSetViewer();
 use Bio::GMOD::CMap::Apache::MatrixViewer();
+use Bio::GMOD::CMap::Apache::ViewFeatureOnMap();
 use Bio::GMOD::CMap::Constants();
 use Bio::GMOD::CMap::Data();
 use Bio::GMOD::CMap::Data::Generic();
