@@ -184,7 +184,6 @@ lib/Bio/GMOD/CMap/Apache/MapDetailViewer.pm
 lib/Bio/GMOD/CMap/Apache/MapSetViewer.pm
 lib/Bio/GMOD/CMap/Apache/MapTypeViewer.pm
 lib/Bio/GMOD/CMap/Apache/MapViewer.pm
-lib/Bio/GMOD/CMap/Apache/MatrixRev.pm
 lib/Bio/GMOD/CMap/Apache/MatrixViewer.pm
 lib/Bio/GMOD/CMap/Apache/SpeciesViewer.pm
 lib/Bio/GMOD/CMap/Apache/ViewFeatureOnMap.pm
