@@ -1,4 +1,4 @@
-# $Id: Makefile.PL,v 1.12 2003-04-17 20:22:20 kycl4rk Exp $
+# $Id: Makefile.PL,v 1.13 2003-05-09 21:51:59 kycl4rk Exp $
 
 use strict;
 use FindBin '$Bin';
@@ -222,17 +222,18 @@ WriteMakefile(
     AUTHOR        => 'Ken Y. Clark <kclark@cshl.org>',
     ABSTRACT      => 'Modules for drawing comparative and genetic maps.',
     PREREQ_PM     => {
-        'Apache'           => 0,
-        'Apache::Request'  => 0,
-        'Class::Base'      => 0,
-        'Config::General'  => 0,
-        'DBI'              => 1.20,
-        'File::MkTemp'     => 0,
-        'GD'               => 1.33,
-        'IO::Tee'          => 0,
-        'Template'         => 2.00,
-        'Time::Object'     => 0,
-        'Time::ParseDate'  => 0,
+        'Apache'             => 0,
+        'Apache::Request'    => 0,
+        'Class::Base'        => 0,
+        'Config::General'    => 0,
+        'DBI'                => 1.20,
+        'File::MkTemp'       => 0,
+        'GD'                 => 1.33,
+        'IO::Tee'            => 0,
+        'Template'           => 2.00,
+        'Text::RecordParser' => 0.02,
+        'Time::Object'       => 0,
+        'Time::ParseDate'    => 0,
     },
     EXE_FILES    => [
         'bin/cmap_admin.pl',
