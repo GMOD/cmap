@@ -1,7 +1,7 @@
 [% INCLUDE admin_header.tmpl title="View Correspondence Evidence Type &quot;$evidence_type.evidence_type&quot;" %]
 <a href="admin">Home</a> |
-<a href="admin?action=corr_evidence_type_edit;evidence_type_id=[% evidence_type.evidence_type_id %]">Edit</a> |
-<a href="admin?action=confirm_delete;entity_type=cmap_evidence_type;entity_id=[% evidence_type.evidence_type_id %];entity_name_field=evidence_type">Delete</a> |
+<a href="admin?action=corr_evidence_type_edit;evidence_type=[% evidence_type.evidence_type %]">Edit</a> |
+<a href="admin?action=confirm_delete;entity_type=cmap_evidence_type;entity_id=[% evidence_type.evidence_type %];entity_name_field=evidence_type">Delete</a> |
 <a href="admin?action=corr_evidence_types_view">View All Correspondence Evidence Types</a>
 <hr noshade>
 <table>
@@ -29,8 +29,8 @@
 [% 
     INCLUDE admin_attributes_view.tmpl 
     attributes=evidence_type.attributes 
-    pk_name='evidence_type_id'
-    object_id=evidence_type.evidence_type_id
+    pk_name='evidence_type'
+    object_id=evidence_type.evidence_type
     table_name='cmap_evidence_type'
     return_action='corr_evidence_type_view'
 %]
@@ -38,8 +38,8 @@
 [% 
     INCLUDE admin_xrefs_view_embedded.tmpl 
     xrefs=evidence_type.xrefs 
-    pk_name='evidence_type_id'
-    object_id=evidence_type.evidence_type_id
+    pk_name='evidence_type'
+    object_id=evidence_type.evidence_type
     table_name='cmap_evidence_type'
     return_action='corr_evidence_type_view'
 %]

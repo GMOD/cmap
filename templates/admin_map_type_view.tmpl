@@ -1,7 +1,7 @@
 [% INCLUDE admin_header.tmpl title="View Map Type &quot;$map_type.map_type&quot;" %]
 <a href="admin">Home</a> |
-<a href="admin?action=map_type_edit;map_type_id=[% map_type.map_type_id %]">Edit</a> |
-<a href="admin?action=confirm_delete;entity_type=cmap_map_type;entity_id=[% map_type.map_type_id %];entity_name_field=map_type">Delete</a> |
+<a href="admin?action=map_type_edit;map_type=[% map_type.map_type %]">Edit</a> |
+<a href="admin?action=confirm_delete;entity_type=cmap_map_type;entity_id=[% map_type.map_type %];entity_name_field=map_type">Delete</a> |
 <a href="admin?action=map_types_view">View All Map Types</a>
 <hr noshade>
 
@@ -67,8 +67,8 @@
     INCLUDE admin_attributes_view.tmpl 
     attributes=map_type.attributes 
     return_action='map_type_view'
-    pk_name='map_type_id'
-    object_id=map_type.map_type_id
+    pk_name='map_type'
+    object_id=map_type.map_type
     table_name='cmap_map_type'
 %]
 
@@ -76,8 +76,8 @@
     INCLUDE admin_xrefs_view_embedded.tmpl 
     xrefs=map_type.xrefs 
     return_action='map_type_view'
-    pk_name='map_type_id'
-    object_id=map_type.map_type_id
+    pk_name='map_type'
+    object_id=map_type.map_type
     table_name='cmap_map_type'
 %]
 

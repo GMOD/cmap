@@ -1,6 +1,6 @@
 [% INCLUDE admin_header.tmpl title="Edit Correspondence Evidence Type &quot;$evidence_type.evidence_type&quot;" %]
 <a href="admin">Home</a> |
-<a href="admin?action=confirm_delete;entity_type=cmap_evidence_type;entity_id=[% evidence_type.evidence_type_id %];entity_name_field=evidence_type">Delete</a> |
+<a href="admin?action=confirm_delete;entity_type=cmap_evidence_type;entity_id=[% evidence_type.evidence_type %];entity_name_field=evidence_type">Delete</a> |
 <a href="admin?action=corr_evidence_types_view">View Correspondence Evidence Types</a>
 <hr noshade>
 
@@ -44,7 +44,7 @@
 
         <tr>
             <td colspan="2" align="center">
-                <input type="hidden" name="evidence_type_id" value="[% evidence_type.evidence_type_id %]">
+                <input type="hidden" name="evidence_type" value="[% evidence_type.evidence_type %]">
                 <input type="hidden" name="action" value="corr_evidence_type_update">
                 <input type="submit" value="Submit">
             </th>

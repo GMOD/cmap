@@ -25,10 +25,10 @@
 
             <td>
                 Feature Type:
-                <select name="feature_type_id">
+                <select name="feature_type">
                     <option value="">--All--</option>
                     [% FOREACH ft=feature_types %]
-                        <option value="[% ft.feature_type_id %]"[% IF apr.param('feature_type_id') == ft.feature_type_id %] selected[% END %]>[% ft.feature_type %]</option>
+                        <option value="[% ft.feature_type %]"[% IF apr.param('feature_type') == ft.feature_type %] selected[% END %]>[% ft.feature_type %]</option>
                     [% END %]
                 </select>
             </td>
@@ -47,16 +47,16 @@
     <table width="100%">
         <tr>
             <td colspan="7" align="center">
-                [% SET pager_url="admin?action=dbxrefs_view&species_id=${apr.param('species_id')}&feature_type_id=${apr.param('feature_type_id')}&order_by=${apr.param('order_by')}" %]
+                [% SET pager_url="admin?action=dbxrefs_view&species_id=${apr.param('species_id')}&feature_type=${apr.param('feature_type')}&order_by=${apr.param('order_by')}" %]
                 [% PROCESS pager.tmpl %]
             </td>
         </tr>
         <tr>
-            <th><a href="admin?action=dbxrefs_view;species_id=[% apr.param('species_id') %];feature_type_id=[% apr.param('feature_type_id') %];order_by=feature_type">Feature Type</a></th>
-            <th><a href="admin?action=dbxrefs_view;species_id=[% apr.param('species_id') %];feature_type_id=[% apr.param('feature_type_id') %];order_by=species_name">Species</a></th>
-            <th><a href="admin?action=dbxrefs_view;species_id=[% apr.param('species_id') %];feature_type_id=[% apr.param('feature_type_id') %];order_by=map_set_name">Map Set Name</a></th>
-            <th><a href="admin?action=dbxrefs_view;species_id=[% apr.param('species_id') %];feature_type_id=[% apr.param('feature_type_id') %];order_by=dbxref_name">Name</a></th>
-            <th><a href="admin?action=dbxrefs_view;species_id=[% apr.param('species_id') %];feature_type_id=[% apr.param('feature_type_id') %];order_by=url">URL</a></th>
+            <th><a href="admin?action=dbxrefs_view;species_id=[% apr.param('species_id') %];feature_type=[% apr.param('feature_type') %];order_by=feature_type">Feature Type</a></th>
+            <th><a href="admin?action=dbxrefs_view;species_id=[% apr.param('species_id') %];feature_type=[% apr.param('feature_type') %];order_by=species_name">Species</a></th>
+            <th><a href="admin?action=dbxrefs_view;species_id=[% apr.param('species_id') %];feature_type=[% apr.param('feature_type') %];order_by=map_set_name">Map Set Name</a></th>
+            <th><a href="admin?action=dbxrefs_view;species_id=[% apr.param('species_id') %];feature_type=[% apr.param('feature_type') %];order_by=dbxref_name">Name</a></th>
+            <th><a href="admin?action=dbxrefs_view;species_id=[% apr.param('species_id') %];feature_type=[% apr.param('feature_type') %];order_by=url">URL</a></th>
             <th colspan="2" align="center">&nbsp;</th>
         </tr>
 

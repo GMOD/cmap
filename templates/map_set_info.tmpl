@@ -33,10 +33,10 @@
                 </select>
             </td>
             <td>
-                <select name="map_type_aid">
+                <select name="map_type">
                     <option value="-1">--All Map Types--</option>
                     [% FOREACH mt=map_types %]
-                        <option value="[% mt.map_type_aid %]"[% IF apr.param('map_type_aid')==mt.map_type_aid %] selected[% END %]>[% mt.map_type %]</option>
+                        <option value="[% mt %]"[% IF apr.param('map_type')==mt %] selected[% END %]>[% mt %]</option>
                     [% END %]
                 </select>
             </td>
@@ -60,7 +60,7 @@
     <table width="100%">
         <tr>
             <td colspan="2" align="center">
-                [% SET pager_url="$url/map_set_info?species_aid=${apr.param('species_aid')}&map_type_aid=${apr.param('map_type_aid')}" %]
+                [% SET pager_url="$url/map_set_info?species_aid=${apr.param('species_aid')}&map_type=${apr.param('map_type')}" %]
                 [% PROCESS pager.tmpl %]
             </td>
         </tr>
@@ -138,13 +138,13 @@
                         [%- SET list=[] -%]
                         [%- SET ft_list=[] -%]
                         [%- FOREACH ft=ms.feature_types -%]
-                            [%- list.push("<a href=\"feature_type_info?feature_type_aid=$ft.feature_type_aid\">$ft.feature_type</a>") -%]
-                            [%- ft_list.push(ft.feature_type_aid) -%]
+                            [%- list.push("<a href=\"feature_type_info?feature_type=$ft.feature_type\">$ft.feature_type</a>") -%]
+                            [%- ft_list.push(ft.feature_type_) -%]
                         [%- END -%]
                         [%- list.join(', ') -%]
                         [%- IF ft_list.size > 1 -%]
                             [%- SET all_ft = ft_list.join(',') -%]
-                            <b>[</b> <a href="feature_type_info?feature_type_aid=[%- all_ft -%]">View Info For All Feature Types</a> <b>]</b>
+                            <b>[</b> <a href="feature_type_info?feature_type=[%- all_ft -%]">View Info For All Feature Types</a> <b>]</b>
                         [%- END -%]
                     </td>
                 </tr> 

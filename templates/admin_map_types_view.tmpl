@@ -35,13 +35,13 @@
                 <td>[% mt.width %]</td>
                 <td>[% mt.color %]</td>
                 <td align="center">
-                  <a href="admin?action=map_type_view;map_type_id=[% mt.map_type_id %]">View</a>
+                  <a href="admin?action=map_type_view;map_type=[% mt.map_type %]">View</a>
                 </td>
                 <td align="center">
-                  <a href="admin?action=map_type_edit;map_type_id=[% mt.map_type_id %]">Edit</a>
+                  <a href="admin?action=map_type_edit;map_type=[% mt.map_type %]">Edit</a>
                 </td>
                 <td align="center">
-                  <a href="admin?action=confirm_delete;entity_type=cmap_map_type;entity_id=[% mt.map_type_id %];entity_name_field=map_type">Delete</a>
+                  <a href="admin?action=confirm_delete;entity_type=cmap_map_type;entity_id=[% mt.map_type %];entity_name_field=map_type">Delete</a>
                 </td>
             </tr>
             [% SET i=i+1 %]

@@ -23,10 +23,10 @@
 <form>
     Restrict Reference Sets By:
 
-    <select name="map_type_aid">
+    <select name="map_type">
         <option value="">--All Map Types--</option>
         [% FOREACH mt=map_types %]
-            <option [% IF mt.map_type_aid==apr.param('map_type_aid'); 'selected'; END %] value="[% mt.map_type_aid %]">[% mt.map_type %]</option>
+            <option [% IF mt.map_type==apr.param('map_type'); 'selected'; END %] value="[% mt.map_type %]">[% mt.map_type %]</option>
         [% END %]
     </select>
 
@@ -73,31 +73,31 @@
             <tr>
                 <th colspan="3" rowspan="2">Reference Set</th>
                 [% SET no_by_type=top_row.no_by_type %]
-                [% SET last_map_type_id=0 %]
+                [% SET last_map_type=0 %]
 
                 [% FOREACH ms=top_row.map_sets %]
-                    [% SET map_type_id=ms.map_type_id %]
-                    [% NEXT IF map_type_id==last_map_type_id %]
-                    [% SET colspan=no_by_type.$map_type_id %]
+                    [% SET map_type=ms.map_type %]
+                    [% NEXT IF map_type==last_map_type %]
+                    [% SET colspan=no_by_type.$map_type %]
                     <th colspan="[% colspan %]">[% ms.map_type %]</th>
-                    [% SET last_map_type_id=map_type_id %]
+                    [% SET last_map_type=map_type %]
                 [% END %]
                 <th colspan="3" rowspan="2">Reference Set</th>
             </tr>
             <tr>
                 [% SET no_by_type_and_species=top_row.no_by_type_and_species %]
-                [% SET last_map_type_id=0 %]
+                [% SET last_map_type=0 %]
                 [% SET last_species_aid=0 %]
 
                 [% FOREACH ms=top_row.map_sets %]
                     [% SET species_aid=ms.species_aid %]
-                    [% SET map_type_id=ms.map_type_id %]
+                    [% SET map_type=ms.map_type %]
 
-                    [% NEXT IF species_aid==last_species_aid && map_type_id==last_map_type_id %]
+                    [% NEXT IF species_aid==last_species_aid && map_type==last_map_type %]
 
-                    [% SET colspan=no_by_type_and_species.$map_type_id.$species_aid %]
+                    [% SET colspan=no_by_type_and_species.$map_type.$species_aid %]
                     <th colspan="[% colspan %]">[% ms.species_name %]</th>
-                    [% SET last_map_type_id=map_type_id %]
+                    [% SET last_map_type=map_type %]
                     [% SET last_species_aid=species_aid %]
                 [% END %]
             </tr>
@@ -132,27 +132,27 @@
             [% END %]
 
             [% SET i=0 %]
-            [% SET last_map_type_aid=0 %]
-            [% SET last_species_aid=0 %]
+            [% SET last_map_type=0 %]
+            [% SET last_species=0 %]
             [% SET no_ref_by_type=matrix.no_by_type %]
             [% SET no_ref_by_species_and_type=matrix.no_by_species_and_type %]
             [% FOREACH ms=matrix.data %]
                 <tr>
-                    [% SET map_type_aid=ms.map_type_aid %]
+                    [% SET map_type=ms.map_type %]
                     [% SET species_aid=ms.species_aid %]
-                    [% IF last_map_type_aid AND last_map_type_aid != ms.map_type_aid %]
+                    [% IF last_map_type AND last_map_type != ms.map_type %]
                         [% SET last_species_aid=0 %]
                     [% END %]
 
-                    [% UNLESS ms.map_type_aid==last_map_type_aid %]
-                        [% SET rowspan=no_ref_by_type.$map_type_aid %]
+                    [% UNLESS ms.map_type==last_map_type %]
+                        [% SET rowspan=no_ref_by_type.$map_type %]
                         <th[% IF rowspan > 1 %] rowspan="[% rowspan %]"[% END %]>
                             [% ms.map_type %]
                         </th>
                     [% END %]
 
                     [% UNLESS ms.species_aid==last_species_aid %]
-                        [% SET rowspan=no_ref_by_species_and_type.$species_aid.$map_type_aid %]
+                        [% SET rowspan=no_ref_by_species_and_type.$species_aid.$map_type %]
                         <th[% IF rowspan > 1 %] rowspan="[% rowspan %]"[% END %]>
                             [% ms.species_name %]
                             [% IF apr.param('map_set_aid') %]
@@ -202,7 +202,7 @@
                     </td>
 
                     [% UNLESS ms.species_aid==last_species_aid %]
-                        [% SET rowspan=no_ref_by_species_and_type.$species_aid.$map_type_aid %]
+                        [% SET rowspan=no_ref_by_species_and_type.$species_aid.$map_type %]
                         <th[% IF rowspan > 1 %] rowspan="[% rowspan %]"[% END %]>
                             [% ms.species_name %]
                             [% IF apr.param('map_set_aid') %]
@@ -211,14 +211,14 @@
                         </th>
                     [% END %]
 
-                    [% UNLESS ms.map_type_aid==last_map_type_aid %]
-                        [% SET rowspan=no_ref_by_type.$map_type_aid %]
+                    [% UNLESS ms.map_type==last_map_type %]
+                        [% SET rowspan=no_ref_by_type.$map_type %]
                         <th[% IF rowspan > 1 %] rowspan="[% rowspan %]"[% END %]>
                             [% ms.map_type %]
                         </th>
                     [% END %]
 
-                    [% SET last_map_type_aid=ms.map_type_aid %]
+                    [% SET last_map_type=ms.map_type %]
                     [% SET last_species_aid=ms.species_aid %]
                 </tr>
                 [% SET i = i + 1 %]

@@ -1,7 +1,7 @@
 [% INCLUDE admin_header.tmpl title="Feature Type View &quot;$feature_type.feature_type&quot;" %]
 <a href="admin">Home</a> |
-<a href="admin?action=feature_type_edit;feature_type_id=[% feature_type.feature_type_id %]">Edit</a> |
-<a href="admin?action=confirm_delete;entity_type=cmap_feature_type;entity_id=[% feature_type.feature_type_id %];entity_name_field=feature_type">Delete</a> |
+<a href="admin?action=feature_type_edit;feature_type=[% feature_type.feature_type %]">Edit</a> |
+<a href="admin?action=confirm_delete;entity_type=cmap_feature_type;entity_id=[% feature_type.feature_type %];entity_name_field=feature_type">Delete</a> |
 <a href="admin?action=feature_types_view">View All Feature Types</a>
 <hr noshade>
 
@@ -60,8 +60,8 @@
     INCLUDE admin_attributes_view.tmpl 
     attributes=feature_type.attributes 
     return_action='feature_type_view'
-    pk_name='feature_type_id'
-    object_id=feature_type.feature_type_id
+    pk_name='feature_type'
+    object_id=feature_type.feature_type
     table_name='cmap_feature_type'
 %]
 
@@ -69,8 +69,8 @@
     INCLUDE admin_xrefs_view_embedded.tmpl 
     xrefs=feature_type.xrefs 
     return_action='feature_type_view'
-    pk_name='feature_type_id'
-    object_id=feature_type.feature_type_id
+    pk_name='feature_type'
+    object_id=feature_type.feature_type
     table_name='cmap_feature_type'
 %]
 

@@ -23,7 +23,7 @@
         </td>
         <td>
             [% feature.feature_type %]
-            <b>[</b>&nbsp;<a href="feature_type_info?feature_type_aid=[% feature.feature_type_aid %]">View&nbsp;Feature&nbsp;Type&nbsp;Info</a>&nbsp;<b>]</b>
+            <b>[</b>&nbsp;<a href="feature_type_info?feature_type=[% feature.feature_type %]">View&nbsp;Feature&nbsp;Type&nbsp;Info</a>&nbsp;<b>]</b>
         </td>
     </tr>
 
@@ -141,7 +141,7 @@
                 <td>[% IF fc.defined('aliases') AND fc.aliases.size; fc.aliases.join(', '); ELSE; 'None'; END %]</td>
                 <td>
                     [% FOREACH e=fc.evidence %]
-                        <a href="evidence_type_info?evidence_type_aid=[% e.evidence_type_aid %]">[% e.evidence_type %]</a><br>
+                        <a href="evidence_type_info?evidence_type=[% e.evidence_type %]">[% e.evidence_type %]</a><br>
                     [% END %]
                 </td>
                 <td align="center">

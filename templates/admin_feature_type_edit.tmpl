@@ -1,7 +1,7 @@
 [% INCLUDE admin_header.tmpl title="Feature Type Edit &quot;$feature_type.feature_type&quot;" %]
 <a href="admin">Home</a> |
-<a href="admin?action=feature_type_view;feature_type_id=[% feature_type.feature_type_id %]">View</a> |
-<a href="admin?action=confirm_delete;entity_type=cmap_feature_type;entity_id=[% feature_type.feature_type_id %];entity_name_field=feature_type">Delete</a> |
+<a href="admin?action=feature_type_view;feature_type=[% feature_type.feature_type %]">View</a> |
+<a href="admin?action=confirm_delete;entity_type=cmap_feature_type;entity_id=[% feature_type.feature_type %];entity_name_field=feature_type">Delete</a> |
 <a href="admin?action=feature_types_view">View All Feature Types</a>
 <hr noshade>
 
@@ -78,7 +78,7 @@
     <tr>
         <td colspan="2">
             <input type="submit" value="Submit">
-            <input type="hidden" name="feature_type_id" value="[% feature_type.feature_type_id %]">
+            <input type="hidden" name="feature_type" value="[% feature_type.feature_type %]">
             <input type="hidden" name="action" value="feature_type_update">
         </td>
     </tr>

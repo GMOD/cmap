@@ -38,10 +38,6 @@
                 <td><b>[% ft.feature_type %]</b></td>
             </tr> 
             <tr>
-                <td align="right">Accession&nbsp;ID:</td>
-                <td>[% ft.feature_type_aid %]</td>
-            </tr> 
-            <tr>
                 <td align="right">Color:</td>
                 <td>[% ft.color %]</td>
             </tr> 
@@ -49,34 +45,6 @@
                 <td align="right">Shape:</td>
                 <td>[% ft.shape %]</td>
             </tr> 
-            [% FOREACH att=ft.attributes %]
-                [% NEXT UNLESS att.is_public %]
-                <tr>
-                    <td align="right">
-                        [% att.attribute_name %]:
-                    </td>
-                    <td>
-                        [%- IF att.attribute_value.match('^http://') -%]
-                            <a href="[% att.attribute_value %]">[% att.attribute_value %]</a>
-                        [%- ELSE -%]
-                            [% att.attribute_value %]
-                        [%- END -%]
-                    </td>
-                </tr>
-            [% END %]
-            [% IF ft.xrefs.size %]
-                <tr>
-                    <td align="right" valign="top">Cross-references:</td>
-                    <td>
-                        <ul>
-                        [%- FOREACH xref=ft.xrefs -%]
-                            [% NEXT UNLESS xref.xref_url %]
-                            <li><a href="[% xref.xref_url %]">[% xref.xref_name %]</a></li>
-                        [%- END -%]
-                        </ul>
-                    </td>
-                </tr> 
-            [% END %]
         [% END %]
     </table>
     </div>

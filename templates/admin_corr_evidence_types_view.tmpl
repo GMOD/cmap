@@ -26,13 +26,13 @@
                 <td>[% et.evidence_type %]</td>
                 <td>[% et.line_color %]</td>
                 <td align="center">
-                    <a href="admin?action=corr_evidence_type_view;evidence_type_id=[% et.evidence_type_id %]">View</a>
+                    <a href="admin?action=corr_evidence_type_view;evidence_type=[% et.evidence_type %]">View</a>
                 </td>
                 <td align="center">
-                    <a href="admin?action=corr_evidence_type_edit;evidence_type_id=[% et.evidence_type_id %]">Edit</a>
+                    <a href="admin?action=corr_evidence_type_edit;evidence_type=[% et.evidence_type %]">Edit</a>
                 </td>
                 <td align="center">
-                    <a href="admin?action=confirm_delete;entity_type=cmap_evidence_type;entity_id=[% et.evidence_type_id %];entity_name_field=evidence_type">Delete</a>
+                    <a href="admin?action=confirm_delete;entity_type=cmap_evidence_type;entity_id=[% et.evidence_type %];entity_name_field=evidence_type">Delete</a>
                 </td>
             </tr>
             [% SET i=i+1 %]

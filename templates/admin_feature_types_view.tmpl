@@ -32,14 +32,14 @@
                 <td>[% ft.drawing_lane %]</td>
                 <td>[% ft.drawing_priority %]</td>
                 <td align="center">
-                    <a href="admin?action=feature_type_view;feature_type_id=[% ft.feature_type_id %]">View</a>
+                    <a href="admin?action=feature_type_view;feature_type=[% ft.feature_type %]">View</a>
                 </td>
                 <td align="center">
-                    <a href="admin?action=feature_type_edit;feature_type_id=[% ft.feature_type_id %]">Edit</a>
+                    <a href="admin?action=feature_type_edit;feature_type=[% ft.feature_type %]">Edit</a>
                 </td>
 
                 <td align="center">
-                    <a href="admin?action=confirm_delete;entity_type=cmap_feature_type;entity_id=[% ft.feature_type_id %];entity_name_field=feature_type">Delete</a>
+                    <a href="admin?action=confirm_delete;entity_type=cmap_feature_type;entity_id=[% ft.feature_type %];entity_name_field=feature_type">Delete</a>
                 </td>
             </tr>
             [% SET i=i+1 %]

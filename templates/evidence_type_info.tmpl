@@ -38,10 +38,6 @@
                 <td><b>[% et.evidence_type %]</b></td>
             </tr> 
             <tr>
-                <td align="right">Accession&nbsp;ID:</td>
-                <td>[% et.evidence_type_aid %]</td>
-            </tr> 
-            <tr>
                 <td align="right">Rank:</td>
                 <td>[% et.rank %]</td>
             </tr> 
@@ -49,34 +45,6 @@
                 <td align="right">Line&nbsp;Color:</td>
                 <td>[% et.line_color %]</td>
             </tr> 
-            [% FOREACH att=et.attributes %]
-                [% NEXT UNLESS att.is_public %]
-                <tr>
-                    <td align="right">
-                        [% att.attribute_name %]:
-                    </td>
-                    <td>
-                        [%- IF att.attribute_value.match('^http://') -%]
-                            <a href="[% att.attribute_value %]">[% att.attribute_value %]</a>
-                        [%- ELSE -%]
-                            [% att.attribute_value %]
-                        [%- END -%]
-                    </td>
-                </tr>
-            [% END %]
-            [% IF et.xrefs.size %]
-                <tr>
-                    <td align="right" valign="top">Cross-references:</td>
-                    <td>
-                        <ul>
-                        [%- FOREACH xref=et.xrefs -%]
-                            [% NEXT UNLESS xref.xref_url %]
-                            <li><a href="[% xref.xref_url %]">[% xref.xref_name %]</a></li>
-                        [%- END -%]
-                        </ul>
-                    </td>
-                </tr> 
-            [% END %]
         [% END %]
     </table>
     </div>

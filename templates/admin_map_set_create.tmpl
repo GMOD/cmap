@@ -64,13 +64,13 @@
             Map Type:
         </td>
         <td>
-            <select name="map_type_id">
+            <select name="map_type">
                 <option value="">--Select--</option>
                 [% FOREACH mt=map_types %]
-                    <option value="[% mt.map_type_id %]"
-                      [% IF mt.map_type_id==apr.param('map_type_id') %] selected [% END %]
+                    <option value="[% mt %]"
+                      [% IF mt==apr.param('map_type') %] selected [% END %]
                     >
-                      [% mt.map_type %]
+                      [% mt %]
                     </option>
                 [% END %]
             </select>

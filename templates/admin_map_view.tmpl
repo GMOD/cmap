@@ -103,10 +103,10 @@
         <tr>
             <td align="left">
                 <form action="admin" method="get">
-                    <select name="feature_type_id">
+                    <select name="feature_type">
                         <option value="">--All--</option>
                         [% FOREACH ft=feature_types %]
-                            <option value="[% ft.feature_type_id %]"[% IF ft.feature_type_id==apr.param('feature_type_id') %] selected[% END %]>[% ft.feature_type %]</option>
+                            <option value="[% ft.feature_type %]"[% IF ft.feature_type==apr.param('feature_type') %] selected[% END %]>[% ft.feature_type %]</option>
                         [% END %]
                     </select>
                     <input type="hidden" name="action"   value="map_view">
@@ -118,10 +118,10 @@
             <td align="right">
                 <form action="admin" method="get">
                     <input name="feature_name">
-                    <select name="feature_type_id">
+                    <select name="feature_type">
                         <option value="">--Any--</option>
                         [% FOREACH ft=feature_types %]
-                            <option value="[% ft.feature_type_id %]"[% IF ft.feature_type_id==apr.param('feature_type_id') %] selected[% END %]>[% ft.feature_type %]</option>
+                            <option value="[% ft.feature_type %]"[% IF ft.feature_type==apr.param('feature_type') %] selected[% END %]>[% ft.feature_type %]</option>
                         [% END %]
                     </select>
                     <input type="hidden" name="action" value="feature_search">
@@ -135,19 +135,19 @@
     <table width="100%">
         <tr>
             <td colspan="10" align="center">
-                [% SET pager_url="admin?action=map_view&map_id=${map.map_id}&feature_type_id=${apr.param('feature_type_id')}&order_by=${apr.param('order_by')}" %]
+                [% SET pager_url="admin?action=map_view&map_id=${map.map_id}&feature_type=${apr.param('feature_type')}&order_by=${apr.param('order_by')}" %]
                 [% PROCESS pager.tmpl %]
             </td>
         </tr>
 
         <tr>
-            <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type_id=[% apr.param('feature_type_id') %];order_by=accession_id">Acc. ID</a></th>
-            <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type_id=[% apr.param('feature_type_id') %];order_by=feature_name">Name</a></th>
+            <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type=[% apr.param('feature_type') %];order_by=accession_id">Acc. ID</a></th>
+            <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type=[% apr.param('feature_type') %];order_by=feature_name">Name</a></th>
             <th>Aliases</th>
-            <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type_id=[% apr.param('feature_type_id') %];order_by=feature_type">Type</a></th>
-            <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type_id=[% apr.param('feature_type_id') %];order_by=is_landmark">Landmark</a></th>
-            <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type_id=[% apr.param('feature_type_id') %];order_by=start_position">Start</a></th>
-            <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type_id=[% apr.param('feature_type_id') %];order_by=stop_position">Stop</a></th>
+            <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type=[% apr.param('feature_type') %];order_by=feature_type">Type</a></th>
+            <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type=[% apr.param('feature_type') %];order_by=is_landmark">Landmark</a></th>
+            <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type=[% apr.param('feature_type') %];order_by=start_position">Start</a></th>
+            <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type=[% apr.param('feature_type') %];order_by=stop_position">Stop</a></th>
             <th>No. Corr.</th>
             <th colspan="3">&nbsp;</th>
         </tr>
