@@ -1,6 +1,6 @@
 --
 -- Created by SQL::Translator::Producer::Oracle
--- Created on Tue Jan 28 14:17:32 2003
+-- Created on Mon Mar 24 12:58:39 2003
 --
 
 -- We assume that default NLS_DATE_FORMAT has been changed
@@ -75,7 +75,6 @@ CREATE TABLE cmap_evidence_type (
   accession_id varchar2(20) DEFAULT '' CONSTRAINT nn_accession_id02 NOT NULL,
   evidence_type varchar2(30) DEFAULT '' CONSTRAINT nn_evidence_type NOT NULL,
   rank number(11) DEFAULT '0' CONSTRAINT nn_rank NOT NULL,
-  line_style varchar2(12) DEFAULT NULL,
   line_color varchar2(20) DEFAULT NULL,
   CONSTRAINT pk_cmap_evidence_type PRIMARY KEY (evidence_type_id),
   CONSTRAINT rank_cmap_evidence_type UNIQUE (rank),
@@ -94,8 +93,8 @@ CREATE TABLE cmap_feature (
   feature_name varchar2(32) DEFAULT '' CONSTRAINT nn_feature_name NOT NULL,
   alternate_name varchar2(32) DEFAULT NULL,
   is_landmark number(4) DEFAULT '0' CONSTRAINT nn_is_landmark NOT NULL,
-  start_position number(8,2) DEFAULT '0.00' CONSTRAINT nn_start_position NOT NULL,
-  stop_position number(8,2) DEFAULT NULL,
+  start_position number(11,2) DEFAULT '0.00' CONSTRAINT nn_start_position NOT NULL,
+  stop_position number(11,2) DEFAULT NULL,
   dbxref_name varchar2(32) DEFAULT NULL,
   dbxref_url varchar2(200) DEFAULT NULL,
   CONSTRAINT pk_cmap_feature PRIMARY KEY (feature_id),
@@ -152,8 +151,8 @@ CREATE TABLE cmap_map (
   map_set_id number(11) DEFAULT '0' CONSTRAINT nn_map_set_id NOT NULL,
   map_name varchar2(32) DEFAULT '' CONSTRAINT nn_map_name NOT NULL,
   linkage_group varchar2(10) DEFAULT NULL,
-  start_position number(8,2) DEFAULT NULL,
-  stop_position number(8,2) DEFAULT NULL,
+  start_position number(11,2) DEFAULT NULL,
+  stop_position number(11,2) DEFAULT NULL,
   CONSTRAINT pk_cmap_map PRIMARY KEY (map_id),
   CONSTRAINT accession_id_cmap_map UNIQUE (accession_id)
 );
@@ -219,7 +218,8 @@ CREATE TABLE cmap_species (
   full_name varchar2(64) DEFAULT '' CONSTRAINT nn_full_name NOT NULL,
   display_order number(11) DEFAULT '1' CONSTRAINT nn_display_order03 NOT NULL,
   ncbi_taxon_id number(11) DEFAULT NULL,
-  CONSTRAINT pk_cmap_species PRIMARY KEY (species_id),
-  CONSTRAINT accession_id_cmap_species UNIQUE (accession_id)
+  CONSTRAINT pk_cmap_species PRIMARY KEY (species_id)
 );
+
+CREATE INDEX accession_id_cmap_species on cmap_species (accession_id);
 

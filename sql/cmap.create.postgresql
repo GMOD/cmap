@@ -1,6 +1,6 @@
 --
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Tue Jan 28 14:18:12 2003
+-- Created on Mon Mar 24 13:00:27 2003
 --
 
 --
@@ -71,7 +71,6 @@ CREATE TABLE "cmap_evidence_type" (
   "accession_id" character varying(20) DEFAULT '' NOT NULL,
   "evidence_type" character varying(30) DEFAULT '' NOT NULL,
   "rank" integer DEFAULT '0' NOT NULL,
-  "line_style" character varying(12) DEFAULT NULL,
   "line_color" character varying(20) DEFAULT NULL,
   CONSTRAINT pk_cmap_evidence_type PRIMARY KEY (evidence_type_id),
   CONSTRAINT rank_cmap_evidence_type UNIQUE (rank),
@@ -215,7 +214,8 @@ CREATE TABLE "cmap_species" (
   "full_name" character varying(64) DEFAULT '' NOT NULL,
   "display_order" integer DEFAULT '1' NOT NULL,
   "ncbi_taxon_id" integer DEFAULT NULL,
-  CONSTRAINT pk_cmap_species PRIMARY KEY (species_id),
-  CONSTRAINT accession_id_cmap_species UNIQUE (accession_id)
+  CONSTRAINT pk_cmap_species PRIMARY KEY (species_id)
 );
+
+CREATE INDEX "accession_id_cmap_species" on cmap_species (accession_id);
 

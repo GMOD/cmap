@@ -1,6 +1,6 @@
 -- MySQL dump 8.21
 --
--- Host: localhost    Database: CMAP
+-- Host: localhost    Database: CMAP4
 ---------------------------------------------------------
 -- Server version	3.23.49
 
@@ -70,7 +70,6 @@ CREATE TABLE cmap_evidence_type (
   accession_id varchar(20) NOT NULL default '',
   evidence_type varchar(30) NOT NULL default '',
   rank int(11) NOT NULL default '0',
-  line_style varchar(12) default NULL,
   line_color varchar(20) default NULL,
   PRIMARY KEY  (evidence_type_id),
   UNIQUE KEY rank (rank),
@@ -89,8 +88,8 @@ CREATE TABLE cmap_feature (
   feature_name varchar(32) NOT NULL default '',
   alternate_name varchar(32) default NULL,
   is_landmark tinyint(4) NOT NULL default '0',
-  start_position double(8,2) NOT NULL default '0.00',
-  stop_position double(8,2) default NULL,
+  start_position double(11,2) NOT NULL default '0.00',
+  stop_position double(11,2) default NULL,
   dbxref_name varchar(32) default NULL,
   dbxref_url varchar(200) default NULL,
   PRIMARY KEY  (feature_id),
@@ -143,8 +142,8 @@ CREATE TABLE cmap_map (
   map_set_id int(11) NOT NULL default '0',
   map_name varchar(32) NOT NULL default '',
   linkage_group varchar(10) default NULL,
-  start_position double(8,2) default NULL,
-  stop_position double(8,2) default NULL,
+  start_position double(11,2) default NULL,
+  stop_position double(11,2) default NULL,
   PRIMARY KEY  (map_id),
   UNIQUE KEY accession_id (accession_id)
 ) TYPE=MyISAM;
@@ -211,6 +210,6 @@ CREATE TABLE cmap_species (
   display_order int(11) NOT NULL default '1',
   ncbi_taxon_id int(11) default NULL,
   PRIMARY KEY  (species_id),
-  UNIQUE KEY accession_id (accession_id)
+  KEY accession_id (accession_id)
 ) TYPE=MyISAM;
 
