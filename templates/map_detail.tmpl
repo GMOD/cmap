@@ -98,7 +98,7 @@
                     <td>
                         [% IF feature_types.size %]
                             [% feature_types.unshift({feature_type_aid=>'-1',feature_type=>'--All--'}) %]
-                            <select name="include_feature_types" size="5" multiple>
+                            <select name="feature_types" size="5" multiple>
                                 [% FOREACH ft=feature_types %]
                                     <option value="[% ft.feature_type_aid %]"[% IF included_features.${ft.feature_type_aid}; ' selected'; END %]>[% ft.feature_type %]</option>
                                 [% END %]
