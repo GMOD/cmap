@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.102 2004-07-29 20:28:24 mwz444 Exp $
+# $Id: Map.pm,v 1.103 2004-08-04 04:33:40 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.102 $)[-1];
+$VERSION = (qw$Revision: 1.103 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -865,6 +865,7 @@ Lays out the map.
                     label_y            => $label_y,
                     feature_type_aids  => \%feature_type_aids,
                     features_with_corr => \%features_with_corr,
+                    map_base_y        => $map_base_y,
                 );
                 ########################################
             }
@@ -2086,6 +2087,7 @@ sub collect_labels_to_display {
     my $midpoint           = $args{'midpoint'};
     my $feature_type_aids  = $args{'feature_type_aids'};
     my $features_with_corr = $args{'features_with_corr'};
+    my $map_base_y         = $args{'map_base_y'},
 
     my $label    = $feature->{'feature_name'};
     my $has_corr = $drawer->has_correspondence( $feature->{'feature_id'} );
@@ -2157,6 +2159,7 @@ sub collect_labels_to_display {
             priority       => $feature->{'drawing_priority'},
             text           => $label,
             target         => $label_y,
+            map_base_y     => $map_base_y,
             color          => $color,
             is_highlighted => $is_highlighted,
             feature_coords => $coords,
