@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.58 2003-11-03 18:29:06 kycl4rk Exp $
+# $Id: Map.pm,v 1.59 2003-11-03 18:35:46 kycl4rk Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.58 $)[-1];
+$VERSION = (qw$Revision: 1.59 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1576,6 +1576,9 @@ Lays out the map.
             my $new_url = $map_viewer_url.
                 '?ref_map_set_aid='.$self->map_set_aid( $map_id ).
                 ';ref_map_aid='.$self->accession_id( $map_id ).
+                ';label_features='.$drawer->label_features.
+                ';feature_types='.
+                join(',', @{ $drawer->include_feature_types || [] }).
                 ';highlight='.uri_escape( $drawer->highlight ).
                 ';data_source='.$drawer->data_source;
 
