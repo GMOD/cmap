@@ -15,9 +15,16 @@
 
 <div align="center">
 
-[%- IF apr.param('species_aid') -%]
-    <b>[</b>&nbsp;<a href="species_info">Show All Species</a>&nbsp;<b>]</b>
-[%- END -%]
+<form method="GET" action="species_info">
+    Display:
+    <select name="species_aid">
+        <option value="">--All Species--</option>
+        [% FOREACH s=all_species %]
+            <option value="[% s.species_aid %]"[% IF apr.param('species_aid')==s.species_aid %] selected[% END %]>[% s.common_name %] ([% s.full_name %])</option>
+        [% END %]
+    </select>
+    <input type="submit" value="Submit">
+</form>
 
 <p>
 [% IF species.size %]

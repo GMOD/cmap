@@ -15,9 +15,16 @@
 
 <div align="center">
 
-[%- IF apr.param('map_type_aid') -%]
-    <b>[</b>&nbsp;<a href="map_type_info">Show All Map Types</a>&nbsp;<b>]</b>
-[%- END -%]
+<form method="GET" action="map_type_info">
+    Display:
+    <select name="map_type_aid">
+        <option value="">--All Map Types--</option>
+        [% FOREACH mt=all_map_types %]
+            <option value="[% mt.map_type_aid %]"[% IF apr.param('map_type_aid')==mt.map_type_aid %] selected[% END %]>[% mt.map_type %]</option>
+        [% END %]
+    </select>
+    <input type="submit" value="Submit">
+</form>
 
 <p>
 [% IF map_types.size %]
