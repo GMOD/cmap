@@ -11,6 +11,7 @@
 [%- IF intro -%]
 <p>[% intro %]</p>
 [%- END -%]
+[%- url=apr.url -%]
 
 <div align="center">
 <p>
@@ -27,12 +28,12 @@
     <table>
         <tr>
             <td colspan="2" align="center">
-                [% SET pager_url="/cmap/evidence_type_info?" %]
+                [% SET pager_url="$url/evidence_type_info?" %]
                 [% PROCESS pager.tmpl %]
             </td>
         </tr>
         [% FOREACH et=evidence_types %]
-            <tr bgcolor="lightgrey">
+            <tr class="colored">
                 <td align="right"><b>Evidence&nbsp;Type:<b></td>
                 <td><b>[% et.evidence_type %]</b></td>
             </tr> 

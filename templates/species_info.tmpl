@@ -11,6 +11,7 @@
 [%- IF intro -%]
 <p>[% intro %]</p>
 [%- END -%]
+[%- url=apr.url -%]
 
 <div align="center">
 
@@ -23,12 +24,12 @@
     <table>
         <tr>
             <td colspan="2" align="center">
-                [% SET pager_url="/cmap/species_info?" %]
+                [% SET pager_url="$url/species_info?" %]
                 [% PROCESS pager.tmpl %]
             </td>
         </tr>
         [% FOREACH s=species %]
-            <tr bgcolor="lightgrey">
+            <tr class="colored">
                 <td align="right">Common&nbsp;Name:</td>
                 <td>
                     <b>[% s.common_name %]</b>

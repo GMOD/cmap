@@ -146,9 +146,9 @@
 
         <td valign="top">
             [% IF drawer.image_type=='svg' %]
-              <object type="image/svg+xml" data="/cmap/images/[% drawer.image_name %]" height="[% drawer.map_height %]" width="[% drawer.map_width %]"></object>
+              <object type="image/svg+xml" data="/cmap/tmp/[% drawer.image_name %]" height="[% drawer.map_height %]" width="[% drawer.map_width %]"></object>
             [% ELSE %]
-              <img src="/cmap/images/[% drawer.image_name %]" height="[% drawer.map_height %]" width="[% drawer.map_width %]" usemap="#zoom" border="0" alt="map_image">
+              <img src="/cmap/tmp/[% drawer.image_name %]" height="[% drawer.map_height %]" width="[% drawer.map_width %]" usemap="#zoom" border="0" alt="map_image">
             [% END %]
         </td>
     </tr>

@@ -11,6 +11,7 @@
 [%- IF intro -%]
 <p>[% intro %]</p>
 [%- END -%]
+[%- url=apr.url -%]
 
 <div align="center">
 
@@ -23,44 +24,44 @@
     <table>
         <tr>
             <td colspan="2" align="center">
-                [% SET pager_url="/cmap/map_type_info?" %]
+                [% SET pager_url="$url/map_type_info?" %]
                 [% PROCESS pager.tmpl %]
             </td>
         </tr>
         [% FOREACH mt=map_types %]
-            <tr bgcolor="lightgrey">
-                <td align="right">Map&nbsp;Type:</td>
+            <tr class="colored">
+                <td align="right" valign="top">Map&nbsp;Type:</td>
                 <td>
                     <b>[% mt.map_type %]</b>
                 </td>
             </tr> 
 
             <tr>
-                <td align="right">Accession&nbsp;ID:</td>
+                <td align="right" valign="top">Accession&nbsp;ID:</td>
                 <td>[% mt.map_type_aid %]</td>
             </tr>
 
             <tr>
-                <td align="right">Map&nbsp;Units:</td>
+                <td align="right" valign="top">Map&nbsp;Units:</td>
                 <td>[% mt.map_units %]</td>
             </tr>
 
             <tr>
-                <td align="right">Is&nbsp;Relational&nbsp;Only:</td>
+                <td align="right" valign="top">Is&nbsp;Relational&nbsp;Only:</td>
                 <td>
                     [% IF mt.ncbi_taxon_id; 'Yes'; ELSE; 'No'; END %] 
                 </td>
             </tr> 
 
             <tr>
-                <td align="right">Appearance:</td>
+                <td align="right" valign="top">Appearance:</td>
                 <td>[% mt.color %] [% mt.shape %]</td>
             </tr> 
 
             [% FOREACH att=mt.attributes %]
                 [% NEXT UNLESS att.is_public %]
                 <tr>
-                    <td align="right">
+                    <td align="right" valign="top">
                         [% att.attribute_name %]:
                     </td>
                     <td>

@@ -17,7 +17,7 @@
         <th colspan="3">&nbsp</th>
     </tr>
 
-    <tr bgcolor="lightgrey">
+    <tr class="colored">
         <th align="right">Feature 1:</th>
         <td>
             [% feature1.feature_name %]
@@ -45,7 +45,7 @@
         </td>
     </tr>
 
-    <tr bgcolor="white">
+    <tr class="monotonic">
         <th align="right">Feature 2:</th>
         <td>
             [% feature2.feature_name %]
@@ -120,7 +120,7 @@
       
         [% SET i=0 %]
         [% FOREACH e=corr.evidence %]
-            <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
+            <tr class="[% IF i % 2 == 0 %]colored[% ELSE %]monotonic[% END %]">
                 <td>[% e.accession_id %]</td>
                 <td>[% e.evidence_type %]</td>
                 <td align="right">[% e.rank %]</td>

@@ -116,7 +116,7 @@
 </table>
 
 <table width="100%">
-    <tr bgcolor="lightgrey">
+    <tr class="colored">
         <th>Correspondences</th>
     </tr>
 </table>
@@ -133,7 +133,7 @@
       
         [% SET i=0 %]
         [% FOREACH fc=feature.correspondences %]
-            <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
+            <tr class="[% IF i % 2 == 0 %]colored[% ELSE %]monotonic[% END %]">
                 <td>[% fc.species_name %]-[% fc.map_set_name %]-[% fc.map_name %]</td>
                 <td>[% fc.feature_name %]</td>
                 <td>[% IF fc.defined('aliases') AND fc.aliases.size; fc.aliases.join(', '); ELSE; 'None'; END %]</td>

@@ -8,53 +8,54 @@
 [%- IF intro -%]
 <p>[% intro %]</p>
 [%- END -%]
+[%- url=apr.url( '-full' => 1, '-path_info' => 1 ).replace('\/$', '') -%]
 
 <p>
 Here you can do the following:
 
 <ul>
     <li>
-        <a href="/cmap/viewer"><b>Map Viewer</b></a>: 
+        <a href="[% url %]/viewer"><b>Map Viewer</b></a>: 
         View and compare maps
     </li>
 
     <li>
-        <a href="/cmap/feature_search"><b>Feature Search</b></a>: 
+        <a href="[% url %]/feature_search"><b>Feature Search</b></a>: 
         Find a particular feature
     </li>
 
     <li>
-        <a href="/cmap/matrix"><b>Matrix</b></a>: 
+        <a href="[% url %]/matrix"><b>Matrix</b></a>: 
         See the number of correspondences among all maps
     </li>
 
     <li>
-        <a href="/cmap/map_set_info"><b>Map Set Info</b></a>: 
+        <a href="[% url %]/map_set_info"><b>Map Set Info</b></a>: 
         Get a description of one or all map sets
     </li>
 
     <li>
-        <a href="/cmap/feature_type_info"><b>Feature Type Info</b></a>: 
+        <a href="[% url %]/feature_type_info"><b>Feature Type Info</b></a>: 
         Browse the feature types
     </li>
 
     <li>
-        <a href="/cmap/map_type_info"><b>Map Type Info</b></a>: 
+        <a href="[% url %]/map_type_info"><b>Map Type Info</b></a>: 
         Get a description of the map sets
     </li>
 
     <li>
-        <a href="/cmap/evidence_type_info"><b>Evidence Type Info</b></a>: 
+        <a href="[% url %]/evidence_type_info"><b>Evidence Type Info</b></a>: 
         Get a description of the correspondence evidence types
     </li>
 
     <li>
-        <a href="/cmap/species_info"><b>Species Info</b></a>: 
+        <a href="[% url %]/species_info"><b>Species Info</b></a>: 
         Get a description of the species
     </li>
 
     <li>
-        <a href="/cmap/help"><b>Help</b></a>: Read the help
+        <a href="[% url %]/help"><b>Help</b></a>: Read the help
     </li>
 </ul>
 [% page.end_body OR '</body>' %]

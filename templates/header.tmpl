@@ -1,54 +1,55 @@
 [%-
+    url=apr.url( '-full' => 1, '-path_info' => 1 ).replace('\/cmap.*', '/cmap');
     DEFAULT title='Compartive &amp; Genetic Maps';
     SET menu = [
         { 
             name    => 'home', 
-            url     => '/cmap', 
+            url     => url,
             display => 'Home',
         },
         { 
             name    => 'map_viewer', 
-            url     => '/cmap/viewer', 
+            url     => "$url/viewer", 
             display => 'Maps' 
         },
         { 
             name    => 'feature_search', 
-            url     => '/cmap/feature_search',
+            url     => "$url/feature_search",
             display => 'Search' 
         },
         { 
             name    => 'matrix', 
-            url     => '/cmap/matrix', 
+            url     => "$url/matrix", 
             display => 'Matrix' 
         },
         { 
             name    => 'map_set_info', 
-            url     => '/cmap/map_set_info', 
+            url     => "$url/map_set_info", 
             display => 'Map Sets',
         },
         { 
             name    => 'feature_type_info', 
-            url     => '/cmap/feature_type_info', 
+            url     => "$url/feature_type_info", 
             display => 'Feature Types',
         },
         { 
             name    => 'map_type_info', 
-            url     => '/cmap/map_type_info', 
+            url     => "$url/map_type_info", 
             display => 'Map Types',
         },
         { 
             name    => 'evidence_type_info', 
-            url     => '/cmap/evidence_type_info', 
+            url     => "$url/evidence_type_info", 
             display => 'Evidence Types',
         },
         { 
             name    => 'species_info', 
-            url     => '/cmap/species_info', 
+            url     => "$url/species_info", 
             display => 'Species',
         },
         { 
             name    => 'help', 
-            url     => '/cmap/help', 
+            url     => "$url/help", 
             display => 'Help',
         },
     ];
