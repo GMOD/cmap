@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.108 2004-08-24 13:46:02 mwz444 Exp $
+# $Id: Map.pm,v 1.109 2004-08-24 18:07:04 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.108 $)[-1];
+$VERSION = (qw$Revision: 1.109 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -592,7 +592,7 @@ Lays out the map.
         $is_compressed ? 0
       : $label_features eq 'none' ? 0
       : 1;
-    my $show_ticks     = $is_compressed ? 0 : 1;
+    my $show_ticks     = 1;#Always show ticks 
     my $show_map_title = $is_compressed ? 0 : 1;
     my $show_map_units = $is_compressed ? 0 : 1;
 
