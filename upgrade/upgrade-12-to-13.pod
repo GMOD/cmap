@@ -23,6 +23,9 @@ chances.
 
 =head1 DATABASE UPDATE
 
+To make the necessary changes to your database, please do the
+following:
+
 =over 4
 
 =item * 
@@ -40,7 +43,7 @@ And then work on the "cmap13" database.
 
 Execute "cmap_12_to_cmap_13.sql" on your database.  This modifies your
 data in place, which is why it is essential that you back up your data
-in case anything happens durring the upgrade process.  
+in case anything happens during the upgrade process.  
 
 With MySQL the command looks something like this:
 
@@ -101,11 +104,17 @@ source described in the original "cmap.conf" file.
 
 =item *
 
-Add the feature/map/evidence type information into each individual
-config file using "cmap_typetables_to_config.pl."
+Add the feature/map/evidence type information into the configs file
+using "cmap_typetables_to_config.pl."  The script accepts either the
+directory where all the files live (in which case it will process
+everything ending in ".conf" but not the "global.conf" file), so:
 
-  $ cmap_typetables_to_config.pl -d datasource -u sql_username [-p sql_password] >>cmap0.conf
-  $ cmap_typetables_to_config.pl -d datasource -u sql_username [-p sql_password] >>cmap1.conf
+  $ cmap_typetables_to_config.pl /path/to/cmap.conf/
+
+Or, specify each config file separately:
+
+  $ cmap_typetables_to_config.pl /path/to/cmap.conf/foo.conf \
+  > /path/to/cmap.conf/bar.conf
 
 =back
 
