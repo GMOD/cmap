@@ -4,6 +4,9 @@
     cur_sec='map_viewer'
     help_anchor='map_viewer'
 %]
+[%- IF extra_code -%]
+  [% extra_code %]
+[%- END -%]
 
 [%- IF intro -%]
 <p>[% intro %]</p>
@@ -50,7 +53,7 @@
                                     [%- IF ms.map_type != last_map_type -%]
                                         <option value="">--&nbsp;[% ms.map_type %]&nbsp;Maps&nbsp;--</option>
                                     [%- END -%]
-                                    <option [% IF apr.param('ref_map_set_aid') == ms.accession_id OR form_data.ref_map_sets.size==1;' selected'; END %] value="[% ms.accession_id %]">
+                                    <option [% IF apr.param('ref_map_set_aid') == ms.accession_id OR form_data.ref_map_sets.size==1; ' selected'; END %] value="[% ms.accession_id %]">
                                       [% ms.species_name %] - [% ms.map_set_name %]
                                     </option>
                                     [%- SET last_map_type=ms.map_type -%]
@@ -84,7 +87,7 @@
                                 [% IF form_data.ref_maps.size %]
                                     <option value="">--Select a Map--</option>
                                     [% FOREACH m=form_data.ref_maps %]
-                                        <option[% IF selected_maps.${m.accession_id} OR form_data.ref_maps.size==1;' selected'; END %] value="[% m.accession_id %]">[% m.map_name %]</option>
+                                        <option[% IF selected_maps.${m.accession_id} OR form_data.ref_maps.size==1; ' selected'; END %] value="[% m.accession_id %]">[% m.map_name %]</option>
                                     [% END %]
                                 [% ELSE %]
                                     <option value="">--No Maps Available--</option>
@@ -278,7 +281,9 @@
                                 printing only (no hyperlinks).</em>
                             </td>
                         </tr>
-                
+                        [%- IF extra_form -%]
+                            [% extra_form %]
+                        [%- END -%]
                         </form>
                     [% END %]
                 [% END %]
@@ -302,7 +307,7 @@
 [% IF drawer AND drawer.image_type!='svg' %]
     <map name="zoom">
     [% FOREACH area=drawer.image_map_data %]
-        <area coords="[% area.coords.join(',') %]" href="[% area.url %]" title="[% area.alt %]">
+        <area [% area.code %] coords="[% area.coords.join(',') %]" [% IF !area.code %]href="[% area.url %]" [% END %] title="[% area.alt %]">
     [% END %]
     </map>
 [% END %]
