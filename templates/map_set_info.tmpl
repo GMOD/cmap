@@ -101,6 +101,7 @@
                     <td align="right">Maps:</td>
                     <td>
                         [% SET list=[] %]
+                        [% ms.maps.push({ map_aid => -1, map_name => 'View All Maps'}) %]
                         [% FOREACH map=ms.maps %]
                           [% list.push("<a href=\"/cmap/viewer?ref_map_set_aid=$ms.map_set_aid;ref_map_aid=$map.map_aid\">$map.map_name</a>") %]
                         [% END %]
