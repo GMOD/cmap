@@ -1,0 +1,181 @@
+This file contains message digests of all files listed in MANIFEST,
+signed via the Module::Signature module, version 0.35.
+
+To verify the content in this distribution, first make sure you have
+Module::Signature installed, then type:
+
+    % cpansign -v
+
+It would check each file's integrity, as well as the signature's
+validity.  If "==> Signature verified OK! <==" is not displayed,
+the distribution may already have been compromised, and you should
+not run its Makefile.PL or Build.PL.
+
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+SHA1 2fa9cd2cca2ce5664ad0d98d19486531dfa3ec3c BUGS
+SHA1 59281a5ea11ae1b0a90795418bb763c3e4cdaaf9 Build.PL
+SHA1 1bbab0687fa5b69dd6227bd404dd8958177ffa8e CREDITS
+SHA1 b3d56998140303f785149d1ae0ca86322687e848 Changes
+SHA1 94c8d976e5ce2fe81be255cabfffd173b824499f INSTALL
+SHA1 205acc6385a3db1cf69d4a15c38f406443f05b0a LICENSE
+SHA1 073e5738d8a89f97078a2b681719622ab270b750 MANIFEST
+SHA1 4a3fc9c6b7d7f8bbd7585fd89d1499fcb8b6bdbe MANIFEST.SKIP
+SHA1 5655fb416ec9bfccb0a92e5b0c1e99afc9171975 README
+SHA1 c92a213fcc3b8bc1abf63ec610c84e76f8b160f0 TODO
+SHA1 0aed25d7a92b0f53c1c4d4dee4ed29db70f1256b bin/cmap_admin.pl
+SHA1 e00cc6b54fa807812e90bcf60f09a44406e5a305 bin/cmap_matrix_compare.pl
+SHA1 bf5296ff7adc1f52f5908fbec7fe65735e9a17bb bin/cmap_metrics.pl
+SHA1 2d971486805ab81810e6f2f550961823a44d6819 bin/profile-cmap-draw.pl
+SHA1 11b05077e79682f9f00cc7b210b579c211e5cafb conf/cmap.conf
+SHA1 73c4aea59977e490cdffed3592cb4e6d65245f79 conf/cmap.css
+SHA1 0b17feb93f2f8aa03f48dd1f9fe0ac055acbd85e conf/httpd.conf
+SHA1 403c8b730761777d6f352a4ac6d5a11ca8ba3b6e conf/perlstartup.pl
+SHA1 71bb677647bd0ea0d3be032a12139ffeceba1c76 docs/ADMINISTRATION
+SHA1 dee06d94f30256d373ece44e9da23e8d0615e142 docs/CODE_OVERVIEW
+SHA1 b701d2d7742fe01eddc7cb76800c8cd9dc64dd5b docs/admintut/drawing-options.html
+SHA1 fbe0ead308c8fa0e5daf86d6446bf49684c51e4d docs/admintut/feature-lanes.html
+SHA1 8fe1bde6630c55bd183d3b220d772aa7fddc03ad docs/admintut/feature-shapes.html
+SHA1 36d6255250c00352f94fa82839249d87fd455de2 docs/admintut/images/feature-box.jpg
+SHA1 b18c6b13c0c94dfb12384f99d91e42cf358fdf77 docs/admintut/images/feature-db.jpg
+SHA1 fac788358cb3bd69331de00d75725067efc36b36 docs/admintut/images/feature-double-arrow.jpg
+SHA1 b3cb495adb2a42b8e298e14c4c21a38a0f8a7fb6 docs/admintut/images/feature-down-arrow.jpg
+SHA1 d86235d618f4ecbe59c731987232ac48189264be docs/admintut/images/feature-filled-box.jpg
+SHA1 544f9f88f4fe7ba3104d7405ffaee6487883ff71 docs/admintut/images/feature-in-triangle.jpg
+SHA1 713ec0ebe757bad1c3e04b7c3be238e19cf61dba docs/admintut/images/feature-line.jpg
+SHA1 e67eb3f134c5163da3f6ce2f989a2f69b85fc3fd docs/admintut/images/feature-out-triangle.jpg
+SHA1 d950f2e720448430b87c669c23f94e0c87038421 docs/admintut/images/feature-span.jpg
+SHA1 208934354911cec7b0a24a49c60ff55943963dab docs/admintut/images/feature-up-arrow.jpg
+SHA1 43fe7e1a490eba00fe9554695ada2fb036cdab78 docs/admintut/images/lanes-cluttered.jpg
+SHA1 d9775b5e1dc9d895aabf9a21d55e40673ba085f8 docs/admintut/images/lanes-eq-priority.jpg
+SHA1 c457d4bb56e328f3314be937e233de5e329ac48f docs/admintut/images/lanes-uncluttered1.jpg
+SHA1 6cfedf8f759d800f204b5fc0f3abfca421c1711b docs/admintut/images/lanes-uncluttered2.jpg
+SHA1 da974c80b1c3f37b95c3253193c1fa42913acf6a docs/admintut/images/lanes-with-priority.jpg
+SHA1 647c51a29c29a1005ef24828d3819f6cfb816b6a docs/admintut/images/options-baseline.jpg
+SHA1 c023a8fbd12a53a7dc5717b2b54aaeae87489e63 docs/admintut/images/options-ce.jpg
+SHA1 2e6ebe10dac4eb1c616d2309f508c245dc18285f docs/admintut/images/options-collapse-features.jpg
+SHA1 3d995334c9c94f0bfc2c752b018847d5d2913414 docs/admintut/images/options-font-size.jpg
+SHA1 abf73f64de15d36dbf1daf0fe62979a02c6f39ef docs/admintut/images/options-ft.jpg
+SHA1 71166be4881191fd8eb233e60e8b64b7352ed7f9 docs/admintut/images/options-highlight.jpg
+SHA1 dafddfaf80b3d85122324ef7376015198fa9a0cd docs/admintut/images/options-image-size.jpg
+SHA1 5bfa707f5cdeea186655031c90ca4d1392f191e6 docs/admintut/images/options-label-landmarks.jpg
+SHA1 b81abe692a4fbbad60503cbf00e160457d43b4ad docs/admintut/images/options-label-none.jpg
+SHA1 73dbe078a12e26e3dd8a161a03ced44583b17479 docs/admintut/images/options-min-corr.jpg
+SHA1 70a5756f7ae12857f782e1b0612d7c1f90f01875 docs/admintut/images/options-start.jpg
+SHA1 5131e767636785e6ed3f47d6a3b6df9794e20f1f docs/admintut/images/options-stop.jpg
+SHA1 a41d41a15d99ff7441d933a476a1129b5e35c155 docs/admintut/images/options-with-comp-map.jpg
+SHA1 a1b644652e154d1776d4a77400f53b117d2c4686 docs/admintut/images/rel-map1.jpg
+SHA1 6b67e4afae88e1c69614b999ae5294a7163c5ff3 docs/admintut/images/rel-map2.jpg
+SHA1 eb883775b2ab95d2d22f332ca60dda50bddb3b3f docs/admintut/images/rel-map3.jpg
+SHA1 64586464b3fbbc611ffa52bb184c9176b11565e1 docs/admintut/images/shape-box.jpg
+SHA1 3eedd1197c0c893a590886819483f73c1ae01e13 docs/admintut/images/shape-dumbbell.jpg
+SHA1 9eefc721d1258bc0d1044af4a5f8a524ccd382e5 docs/admintut/images/shape-fat-box.jpg
+SHA1 2e516f93b69bb9a35c8ae4d38354717a659ad706 docs/admintut/images/shape-fat-db.jpg
+SHA1 8be0f05757e18dc727cab9d026305ba3cdcc91d1 docs/admintut/images/shape-ibeam.jpg
+SHA1 008b88e46e6fc723a65fe6a0508ce2056c50f727 docs/admintut/images/shape-skinny-box.jpg
+SHA1 a05ae032713930bdd5ccae8e592e659601ef707d docs/admintut/images/shape-skinny-db.jpg
+SHA1 a3e36dd3039036e087b3f47045132aa498c9ad64 docs/admintut/images/shape-too-dark.jpg
+SHA1 a317bea63e62dba773ac4f5cf53da7619831bbef docs/admintut/index.html
+SHA1 8a6e49560ce66d019deaa72a7cd188d42a2a10fb docs/admintut/map-shapes.html
+SHA1 03d431cfaaa7b243b4c65d1a93b3a8265cf27f53 docs/admintut/multiple-data-sources.html
+SHA1 6cf7e1e819cabe51c0985f3a3708d77fc9fcc93a docs/admintut/relational-maps.html
+SHA1 47dca66a794c491bb7add1620377962bc02cd8e2 docs/cmap-desc.html
+SHA1 4b806f79a6fe041b30cf386e5f27b32683cb6698 docs/cmap-graph.png
+SHA1 9dadf0862a207d18e2a624949f556ca56fc13067 docs/cmap-schema.png
+SHA1 02be377453094398fb684ebc71dbc5d86a39ff08 lib/Bio/GMOD/CMap.pm
+SHA1 d6705ec6bb5f6ef376751e9244c3924d1eb57bc4 lib/Bio/GMOD/CMap/Admin.pm
+SHA1 b43b265a7441f8e9310beeeab1bcc670c086c71c lib/Bio/GMOD/CMap/Admin/Import.pm
+SHA1 7a10082597b7bf8bec943a349797c2dc625c9222 lib/Bio/GMOD/CMap/Admin/ImportCorrespondences.pm
+SHA1 5e9c46fd72b82290508cafc5ba78f724f55b9cf3 lib/Bio/GMOD/CMap/Admin/MakeCorrespondences.pm
+SHA1 a04700d6d3960c383afee63a9d576b44ea926194 lib/Bio/GMOD/CMap/Apache.pm
+SHA1 a43514fa23371f45b39326e2169faa0d04362eba lib/Bio/GMOD/CMap/Apache/AdminViewer.pm
+SHA1 fb224f441c7796eb5de5d5f6710e5522a88d04c7 lib/Bio/GMOD/CMap/Apache/FeatureSearch.pm
+SHA1 de381c7105013a2bc50ff15e66703656f756410e lib/Bio/GMOD/CMap/Apache/FeatureTypeViewer.pm
+SHA1 b4a102c67f48798c9bcfcd43e24588653096a9f4 lib/Bio/GMOD/CMap/Apache/FeatureViewer.pm
+SHA1 8177242a208889896dce05a6874669e2e9a1e67b lib/Bio/GMOD/CMap/Apache/HelpViewer.pm
+SHA1 ca80b30daaa59489b13df8aa29cf71a5050f010e lib/Bio/GMOD/CMap/Apache/Index.pm
+SHA1 af159149d41df416cd63ed34ed7a764e700db27f lib/Bio/GMOD/CMap/Apache/MapDetailViewer.pm
+SHA1 da3e2f012c8d58e7c4394d7b50267a8c470a359c lib/Bio/GMOD/CMap/Apache/MapSetViewer.pm
+SHA1 f64742fc9fbe7a186748381bd9e6ce198841b3a7 lib/Bio/GMOD/CMap/Apache/MapViewer.pm
+SHA1 ea7f637de48b616dd2b72b148a5bdc6553ab114c lib/Bio/GMOD/CMap/Apache/MatrixViewer.pm
+SHA1 97d9de4ab2196e5c48e1ae082437f4a90b96138a lib/Bio/GMOD/CMap/Apache/ViewFeatureOnMap.pm
+SHA1 6aef3c01077b97aad2314cd5ed592f2cee78d9b1 lib/Bio/GMOD/CMap/Constants.pm
+SHA1 b5c54ed0b78b3bbc0a2b2c5088267a9e619cf5a2 lib/Bio/GMOD/CMap/Data.pm
+SHA1 2ec35594b2d4961d469bdb5aca3ff8c72258e7f8 lib/Bio/GMOD/CMap/Data/Generic.pm
+SHA1 f5ab86a10a739e3af884a41dc12e762ee9851c4d lib/Bio/GMOD/CMap/Data/MySQL.pm
+SHA1 ee7c6038382d2be249317dd2b9a32fdf08f4f729 lib/Bio/GMOD/CMap/Data/Oracle.pm
+SHA1 10778073118872d04d2739f97111de705a76e366 lib/Bio/GMOD/CMap/Drawer.pm
+SHA1 cd255421fc5f994aa6c1ccbd4dce45530815d310 lib/Bio/GMOD/CMap/Drawer/Map.pm
+SHA1 30750e86a11f0ae9080a12d34178888675858558 lib/Bio/GMOD/CMap/Utils.pm
+SHA1 0cef7ea54d7328ae1f4bcd861fb8866f190705d2 sql/cmap.create.mysql
+SHA1 345ac659504a9024e609d8883c2982b47bd5ab20 sql/cmap.create.oracle
+SHA1 ccdcf21e7bdafb1b03a2c6e01aded53b296d7e1c sql/cmap.create.postgresql
+SHA1 975061b10497441e10674f6ea3757f7451da7a88 sql/cmap.create.sybase
+SHA1 3415812abbc70a8bde1303c5785f07b121da9c63 t/01_ini.t
+SHA1 36d0e1318b2cacbffc78aadcdd3ecee773a10095 templates/admin_colors_view.tmpl
+SHA1 055a948191b391216de78032d17a15a9f96cda25 templates/admin_confirm_delete.tmpl
+SHA1 c5c7c767b8d6a73811773a6262b4ea8ae2010b25 templates/admin_corr_evidence_create.tmpl
+SHA1 8d832a1365cae4dc2a2716a909a40c30e5602aa9 templates/admin_corr_evidence_edit.tmpl
+SHA1 92ea6fcddbe1b2cd55245bdd9656562e4d989e4b templates/admin_corr_evidence_type_create.tmpl
+SHA1 e961237f1231c4576a92bea63d79e6b0664ccd14 templates/admin_corr_evidence_type_edit.tmpl
+SHA1 dca8882a34b5ef9d7e44c87eb688a5ea63b26eb9 templates/admin_corr_evidence_types_view.tmpl
+SHA1 3c3023a16a08d20c120c88712b4a6a8af8760498 templates/admin_dbxref_create.tmpl
+SHA1 d864645be146ffbd6df3f4fd84d05fdbfb7320c1 templates/admin_dbxref_edit.tmpl
+SHA1 8e6da2044b121b87aed55bacef5491efec3f38f7 templates/admin_dbxrefs_view.tmpl
+SHA1 d425fab1e200a74f4d4914d9e69001513fcd872f templates/admin_error.tmpl
+SHA1 a6a133a4e99e390c487cf9e242a0d00b93135964 templates/admin_feature_corr_create.tmpl
+SHA1 bda7819aa3863108bf33672848e37b0eb4ebd0be templates/admin_feature_corr_edit.tmpl
+SHA1 cbec41ed0dc15da7e3091165951b398c31195c39 templates/admin_feature_corr_view.tmpl
+SHA1 65d933366ef310bb4e27da6d90a49922a37b01d4 templates/admin_feature_create.tmpl
+SHA1 5665edf32c227fdb28e093c69c4cfa7a28434ab9 templates/admin_feature_edit.tmpl
+SHA1 0457c34bb2dc2c65262107c354c51db70f47956f templates/admin_feature_search.tmpl
+SHA1 e05422c0474c669d49d7b659a2308023e46e28c7 templates/admin_feature_type_create.tmpl
+SHA1 998dbf35f4500ef9ca85355896eb0d795e8e1c23 templates/admin_feature_type_edit.tmpl
+SHA1 b7dc0a1e0bef7b62d30dc98a6d8c53e6989c1484 templates/admin_feature_types_view.tmpl
+SHA1 b05f5b24f8d9a2973c734b6f13c02be04434f56d templates/admin_feature_view.tmpl
+SHA1 ed57a4b54077848adf83db0c58457db93ab80dad templates/admin_footer.tmpl
+SHA1 143e107cc4393a41f7c456c230cd335dd52134f6 templates/admin_header.tmpl
+SHA1 959517e1691b01ee0ff3ca00fdbfc2f7a2dcabb8 templates/admin_home.tmpl
+SHA1 635e9fefdee447134bb32cc828481c8876a30844 templates/admin_map_create.tmpl
+SHA1 308ff58f60751f83cbd3934c8882be51f68bf494 templates/admin_map_edit.tmpl
+SHA1 7d74b435cc4c045391c3cf9b7c6fae3570bd8fa3 templates/admin_map_set_create.tmpl
+SHA1 718bbece8331f9da1cbea08232ed90278bbf46a4 templates/admin_map_set_edit.tmpl
+SHA1 5ae86793c2b1e9d6b799b3669dce28ac221823f9 templates/admin_map_set_view.tmpl
+SHA1 1ed8dc2e09b60665ba37ec34c1ff63fa22e463ea templates/admin_map_sets_view.tmpl
+SHA1 93acb182454f4ba5c8d7b9951fb208cda979f5ff templates/admin_map_type_create.tmpl
+SHA1 e4149ff79d0ed4807220709cb1ef3b69e2d78729 templates/admin_map_type_edit.tmpl
+SHA1 3f1a6ab6f27ee93955a047768d3c0d402a6572d7 templates/admin_map_types_view.tmpl
+SHA1 1440a86df4964d7b5efc21017accc4782519a281 templates/admin_map_view.tmpl
+SHA1 af92e25e73125305cbf91be3caa5ea38849f1b2e templates/admin_species_create.tmpl
+SHA1 46a632fbb740234ca6bc506d6e3e063e512cb23e templates/admin_species_edit.tmpl
+SHA1 1a8487a1cb5c21a7c1ea77f9e331089599027709 templates/admin_species_view.tmpl
+SHA1 a809a90f99c7f39bd45f10c0f80d6331d9a17146 templates/cmap_viewer.tmpl
+SHA1 8b88a37a19a88e98cf9681637eed55a1b3d066e0 templates/cmap_viewer_comparative_map_select.tmpl
+SHA1 e7a92fabc38632dbbf02f65d16b05e35e6b132f8 templates/error.tmpl
+SHA1 84560c609e621d99da8521b31e4bab84b7bcff08 templates/feature_detail.tmpl
+SHA1 1d67298d811d9e2aeae4e0cdf5e37a32177f93c1 templates/feature_search.tmpl
+SHA1 5635834d87e4aad24435e67ebe67d4fff0fe57fb templates/feature_type_info.tmpl
+SHA1 79a1b5eb4499e4155a1e6d9bee3098cd33f60535 templates/header.tmpl
+SHA1 490163d8de5e36eee45138b715ce0621affe65b2 templates/help_feature_details.tmpl
+SHA1 50cf97a562fa9b82205dd9f8317adcb530e9710d templates/help_feature_search.tmpl
+SHA1 83ad3b6a1c3cd454be202369ac2bf7627c2f3480 templates/help_feature_type_info.tmpl
+SHA1 3c9240632a29be1fd71f12cc7395909b23aeab1b templates/help_header.tmpl
+SHA1 aa530bae6953862b40a57527dcb91c5bd261725b templates/help_map_details.tmpl
+SHA1 38b19989b85bb213da0b419972326f2ef2efd051 templates/help_map_set_info.tmpl
+SHA1 80c841304efac7e194d11cbf7d1a65bface04d09 templates/help_map_viewer.tmpl
+SHA1 ac6d86c8b0807c7d16c86f5570b24a88b2c53479 templates/help_matrix.tmpl
+SHA1 a94058fcd9bd02d08d709219e81cd4a500519075 templates/help_quick_start.tmpl
+SHA1 c935e9c75b1cab8a16ee4cf046dd5d6cb421634e templates/index.tmpl
+SHA1 70ddbe88f54a4e330238686f8527175c88f3a123 templates/map_detail.tmpl
+SHA1 16bbf292d57e636fa710024c225e71a27ba6906e templates/map_set_info.tmpl
+SHA1 c31426078d02aeeac6fb99ea3cd8378554b29e24 templates/matrix.tmpl
+SHA1 ab1ba40e269487953892c548ad76845b5ba7f5dc templates/pager.tmpl
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.0.6 (GNU/Linux)
+Comment: For info see http://www.gnupg.org
+
+iD8DBQE/ahaFQK9EdDJV+PIRAttIAKCUAkidEamunva+l4H789MF4VFrMwCfRV5k
+PWibJXoCu6ZkhgcWx4hlno8=
+=Tu9z
+-----END PGP SIGNATURE-----
