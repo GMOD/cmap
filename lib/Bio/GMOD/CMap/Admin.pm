@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.44 2004-01-08 20:54:04 kycl4rk Exp $
+# $Id: Admin.pm,v 1.45 2004-01-13 23:03:49 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,9 +24,10 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.44 $)[-1];
+$VERSION = (qw$Revision: 1.45 $)[-1];
 
 use Data::Dumper;
+use Data::Pageset;
 use Time::ParseDate;
 use Time::Piece;
 use Bio::GMOD::CMap;
@@ -941,7 +942,32 @@ Find all the features matching some criteria.
         ;
     }
 
-    return \@results;
+    #
+    # Slice the results up into pages suitable for web viewing.
+    #
+    my $pager = Data::Pageset->new( {
+        total_entries    => scalar @results, 
+        entries_per_page => $args{'entries_per_page'},
+        current_page     => $args{'current_page'},
+        pages_per_set    => $args{'pages_per_set'},
+    } );
+
+    if ( @results ) {
+        @results = $pager->splice( \@results );
+
+        for my $f ( @results ) {
+            $f->{'aliases'} = $db->selectcol_arrayref(
+                'select alias from cmap_feature_alias where feature_id=?',
+                {},
+                ( $f->{'feature_id'} )
+            );
+        }
+    }
+
+    return {
+        results => \@results,
+        pager   => $pager,
+    };
 }
 
 # ----------------------------------------------------
