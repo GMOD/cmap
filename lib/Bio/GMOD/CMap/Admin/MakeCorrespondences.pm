@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
-# $Id: MakeCorrespondences.pm,v 1.21 2003-09-04 23:51:27 kycl4rk Exp $
+# $Id: MakeCorrespondences.pm,v 1.22 2003-09-05 00:35:47 kycl4rk Exp $
 
 =head1 NAME
 
@@ -30,7 +30,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.21 $)[-1];
+$VERSION = (qw$Revision: 1.22 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -41,7 +41,7 @@ use Data::Dumper;
 # ----------------------------------------------------
 sub make_name_correspondences {
     my ( $self, %args )       = @_;
-#    my @map_set_ids           = @{ $args{'map_set_ids'}        || [] };
+    my @map_set_ids           = @{ $args{'map_set_ids'}        || [] };
 #    my @target_map_set_ids    = @{ $args{'target_map_set_ids'} || [] };
     my @skip_feature_type_ids = @{ $args{'skip_feature_type_ids'} || [] };
     my $evidence_type_id      = $args{'evidence_type_id'} or 
@@ -278,6 +278,12 @@ sub make_name_correspondences {
         and    map.map_set_id=ms.map_set_id
         and    ms.map_type_id=mt.map_type_id
     ];
+
+    if ( @map_set_ids ) {
+        $feature_sql .= 'and map.map_set_id in (' .
+            join( ', ', @map_set_ids ) .
+        ') ';
+    }
 
     if ( @skip_feature_type_ids ) {
         $feature_sql .= 'and f.feature_type_id not in (' .

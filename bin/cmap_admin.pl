@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.44 2003-09-04 23:52:30 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.45 2003-09-05 00:34:48 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.44 $)[-1];
+$VERSION = (qw$Revision: 1.45 $)[-1];
 
 #
 # Get command-line options
@@ -1713,6 +1713,33 @@ sub make_name_correspondences {
         unless $evidence_type_id;
 
     #
+    # Get the target map sets.
+    #
+    my @map_sets    =  $self->show_menu(
+        title       => 'Map Set (optional)',
+        prompt      => 'Please select the map sets to include',
+        display     => 'map_type,species_name,map_set_name',
+        return      => 'map_set_id,map_type,species_name,map_set_name',
+        allow_null  => 1,
+        allow_mult  => 1,
+        data        => $db->selectall_arrayref(
+            q[
+                select   ms.map_set_id, 
+                         ms.short_name as map_set_name,
+                         s.common_name as species_name,
+                         mt.map_type
+                from     cmap_map_set ms,
+                         cmap_species s,
+                         cmap_map_type mt
+                where    ms.species_id=s.species_id
+                and      ms.map_type_id=mt.map_type_id
+                order by map_type, common_name, map_set_name
+            ],
+            { Columns => {} },
+        ),
+    );
+
+    #
     # Get the source map set(s).
     #
 #    my @from_map_sets = $self->show_menu(
@@ -1789,6 +1816,15 @@ sub make_name_correspondences {
 #        : '    All'
 #    ;
 
+    my @map_set_ids = map { $_->[0] } @map_sets;
+    my $targets     = @map_sets
+        ? join( "\n", 
+            map { "    $_" } map { join('-', $_->[1], $_->[2], $_->[3]) } 
+            @map_sets
+        )
+        : '    All'
+    ;
+
     my @skip_features = $self->show_menu(
         title       => 'Skip Feature Types (optional)',
         prompt      => 'Select any feature types to skip in check',
@@ -1813,11 +1849,12 @@ sub make_name_correspondences {
     ;
 
     print "Make name-based correspondences\n",
-        '  Data source   : ' . $self->data_source, "\n",
-        "  Evidence type : $evidence_type\n",
+        '  Data source     : ' . $self->data_source, "\n",
+        "  Evidence type   : $evidence_type\n",
+        "  Target map sets :\n$targets\n",
+        "  Skip features   :\n$skip\n"
 #        "  From map sets :\n$from\n",
 #        "  To map sets   :\n$to\n",
-        "  Skip features :\n$skip\n"
     ;
 
     print "\nOK to make correspondences? [Y/n] ";
@@ -1830,6 +1867,7 @@ sub make_name_correspondences {
     );
     $corr_maker->make_name_correspondences(
         evidence_type_id      => $evidence_type_id,
+        map_set_ids           => \@map_set_ids,
 #        map_set_ids           => \@from_map_set_ids,
 #        target_map_set_ids    => \@to_map_set_ids,
         skip_feature_type_ids => \@skip_feature_type_ids,
