@@ -7,8 +7,6 @@ BUGS
 Build.PL
 Changes
 conf/cmap.conf.PL
-conf/httpd.conf
-conf/perlstartup.pl
 CREDITS
 docs/ADMINISTRATION
 docs/attributes-and-xrefs.pod
