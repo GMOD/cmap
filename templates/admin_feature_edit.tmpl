@@ -71,8 +71,8 @@
         </td>
         <td>
             <select name="is_landmark">
-                <option value="1"[% IF feature.is_landmark; ' selected'; END %]">Yes</option>
-                <option value="0"[% IF !feature.is_landmark; ' selected'; END %]">No</option>
+                <option value="0"[% IF feature.is_landmark==0; ' selected'; END %]">No</option>
+                <option value="1"[% IF feature.is_landmark==1; ' selected'; END %]">Yes</option>
             </select>
         </td>
     </tr>
