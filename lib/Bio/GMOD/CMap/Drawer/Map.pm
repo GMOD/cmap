@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.145 2004-11-19 16:24:23 mwz444 Exp $
+# $Id: Map.pm,v 1.146 2004-12-07 17:50:08 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.145 $)[-1];
+$VERSION = (qw$Revision: 1.146 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -627,13 +627,6 @@ such as the units.
       if ( $bounds->[2] < $x + ( $font->width * length($start_str) ) );
     $bounds->[3] = $y
       if ( $bounds->[3] < $y );
-    ###Map Length
-    #    my $map_length =$self->map_length($map_id);
-    #    my $size_str    = presentable_number($map_length,3).$map_units;
-    #    $x    = $x_mid -
-    #      ( ( $font->width * length($size_str) ) / 2 );
-    #    push @$drawing_data, [ STRING, $font, $x, $y, $size_str, 'grey' ];
-    #    $y2 = $font->height +$y+$buf;
 }
 
 # ----------------------------------------------------
@@ -2562,9 +2555,10 @@ sub add_tick_marks {
         # going down to the $interval size.
         #
         my $sig_figs =
-          int( '' . ( log( abs($tick_pos) ) / log(10) ) ) -
-          int( '' . ( log( abs($interval) ) / log(10) ) ) + 1;
+          int( '' . ( log( abs($tick_pos) || 1 ) / log(10) ) ) -
+          int( '' . ( log( abs($interval) || 1 ) / log(10) ) ) + 1;
         my $tick_pos_str = presentable_number( $tick_pos, $sig_figs );
+        $tick_pos_str = '0' unless ($tick_pos_str);
         my $label_y = $y_pos + ( $font_width * length($tick_pos_str) ) / 2;
 
         push @$drawing_data,
@@ -3376,7 +3370,7 @@ Returns the map's tick mark interval.
     unless ( defined $map->{'tick_mark_interval'} ) {
         my $map_length =
           $self->stop_position($map_id) - $self->start_position($map_id);
-        my $map_scale = int( log( abs($map_length) ) / log(10) );
+        my $map_scale = int( log( abs($map_length) || 1 ) / log(10) );
 
         #if (int(($map_length/(10**$map_scale))+.5)>=2){
         #    push @{$map->{'tick_mark_interval'}}, (10**$map_scale, $map_scale);

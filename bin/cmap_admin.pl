@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.79 2004-12-06 19:23:37 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.80 2004-12-07 17:50:08 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.79 $)[-1];
+$VERSION = (qw$Revision: 1.80 $)[-1];
 
 #
 # Get command-line options
@@ -2278,7 +2278,7 @@ sub import_tab_data {
     chomp( my $overwrite = <STDIN> );
     $overwrite = ( $overwrite =~ /^[Yy]/ ) ? 1 : 0;
     
-    print "Check for duplicate data (slow)? [y/N] ";
+    print "\nNOTE: If yes to the following, features on the same map with the same name \nwill be treated as duplicates.  Be sure to select the default, 'NO', if that \nwill create problems for your data.\nCheck for duplicate data (slow)? [y/N]";
     chomp( my $allow_update = <STDIN> );
     $allow_update = ( $allow_update =~ /^[Yy]/ ) ? 1 : 0;
 
@@ -2472,8 +2472,8 @@ sub make_name_correspondences {
     $allow_update = ( $allow_update =~ /^[Yy]/ ) ? 1 : 0;
 
     my $name_regex = $self->show_menu(
-        title       => 'Match Type',
-        prompt      => 'Select the match type that you desire',
+        title       => "Match Type\n(You can add your own match types by editing cmap_admin.pl)",
+        prompt      => "Select the match type that you desire",
         display     => 'regex_title',
         return      => 'regex',
         allow_null  => 0,
@@ -2484,7 +2484,7 @@ sub make_name_correspondences {
                     regex       => '',
                 },
                 {
-                    regex_title => 'read pairs',
+                    regex_title => q[read pairs '(\S+)\.\w\d$'],
                     regex => '(\S+)\.\w\d$',
                 },
             ],
