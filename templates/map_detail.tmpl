@@ -192,7 +192,7 @@
     <tr>
         <td align="center" colspan="9">
             [% SET comp_maps = "${apr.param('comparative_maps')}" %]
-            [% SET pager_url="/cmap/map_details?ref_map_set_aid=${apr.param('ref_map_set_aid')}&ref_map_aid=${apr.param('ref_map_aid')}&comparative_maps=${comp_maps.replace('=', '%3d')}&label_features=${apr.param('label_features')}&feature_types=${apr.param('feature_types')}&evidence_types=${apr.param('evidence_types')}&highlight=${apr.param('highlight_uri')}&comparative_map=${apr.param('comparative_map')}" %]
+            [% SET pager_url="/cmap/map_details?ref_map_set_aid=${apr.param('ref_map_set_aid')}&ref_map_aid=${apr.param('ref_map_aid')}&comparative_maps=${comp_maps.replace('=', '%3d')}&label_features=${apr.param('label_features')}&feature_types=${apr.param('feature_types')}&evidence_types=${apr.param('evidence_types')}&highlight=${apr.param('highlight_uri')}&order_by=${apr.param('order_by')}&comparative_map=${apr.param('comparative_map')}" %]
             [% PROCESS pager.tmpl %]
         </td>
     </tr>
