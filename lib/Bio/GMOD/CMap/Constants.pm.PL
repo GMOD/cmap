@@ -16,15 +16,16 @@ open OUT, ">$file" or die "Can't write file '$file': $!\n";
 print "Extracting $file (with variable substitutions)\n";
 print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
+# vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.1 2003-09-24 19:06:35 kycl4rk Exp $
+# $Id: Constants.pm.PL,v 1.2 2003-09-29 20:49:12 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 @EXPORT = qw[ 
     ARC

@@ -1,10 +1,11 @@
 package Bio::GMOD::CMap::Apache::HelpViewer;
+# vim: set ft=perl:
 
-# $Id: HelpViewer.pm,v 1.7 2003-09-11 20:37:20 kycl4rk Exp $
+# $Id: HelpViewer.pm,v 1.8 2003-09-29 20:49:12 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.7 $)[-1];
+$VERSION = (qw$Revision: 1.8 $)[-1];
 
 use Apache::Constants;
 

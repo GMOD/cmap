@@ -1,6 +1,7 @@
 package Bio::GMOD::CMap::Data;
+# vim: set ft=perl:
 
-# $Id: Data.pm,v 1.61 2003-09-16 16:57:42 kycl4rk Exp $
+# $Id: Data.pm,v 1.62 2003-09-29 20:49:12 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.61 $)[-1];
+$VERSION = (qw$Revision: 1.62 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;

@@ -1,10 +1,11 @@
 package Bio::GMOD::CMap::Apache::ViewFeatureOnMap;
+# vim: set ft=perl:
 
-# $Id: ViewFeatureOnMap.pm,v 1.4 2003-09-16 16:54:21 kycl4rk Exp $
+# $Id: ViewFeatureOnMap.pm,v 1.5 2003-09-29 20:49:12 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Apache::Constants qw[ OK REDIRECT ];
 

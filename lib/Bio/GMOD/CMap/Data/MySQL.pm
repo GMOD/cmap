@@ -1,10 +1,11 @@
 package Bio::GMOD::CMap::Data::MySQL;
+# vim: set ft=perl:
 
-# $Id: MySQL.pm,v 1.2 2003-02-20 16:50:08 kycl4rk Exp $
+# $Id: MySQL.pm,v 1.3 2003-09-29 20:49:12 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Bio::GMOD::CMap::Data::Generic;
 use base 'Bio::GMOD::CMap::Data::Generic';

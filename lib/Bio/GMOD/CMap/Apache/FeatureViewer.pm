@@ -1,10 +1,11 @@
 package Bio::GMOD::CMap::Apache::FeatureViewer;
+# vim: set ft=perl:
 
-# $Id: FeatureViewer.pm,v 1.8 2003-09-16 16:54:21 kycl4rk Exp $
+# $Id: FeatureViewer.pm,v 1.9 2003-09-29 20:49:12 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 use Apache::Constants;
 use Apache::Request;

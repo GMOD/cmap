@@ -1,10 +1,11 @@
 package Bio::GMOD::CMap::Apache::Index;
+# vim: set ft=perl:
 
-# $Id: Index.pm,v 1.5 2003-07-09 22:03:31 kycl4rk Exp $
+# $Id: Index.pm,v 1.6 2003-09-29 20:49:12 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use Apache::Constants;
 use Data::Dumper;

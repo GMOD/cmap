@@ -1,6 +1,7 @@
 package Bio::GMOD::CMap::Data::Oracle;
+# vim: set ft=perl:
 
-# $Id: Oracle.pm,v 1.4 2003-02-20 16:50:08 kycl4rk Exp $
+# $Id: Oracle.pm,v 1.5 2003-09-29 20:49:12 kycl4rk Exp $
 
 =head1 NAME
 
@@ -19,7 +20,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Bio::GMOD::CMap::Data::Generic;
 use base 'Bio::GMOD::CMap::Data::Generic';

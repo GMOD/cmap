@@ -1,6 +1,7 @@
 package Bio::GMOD::CMap::Utils;
+# vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.22 2003-07-08 15:43:41 kycl4rk Exp $
+# $Id: Utils.pm,v 1.23 2003-09-29 20:49:12 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +26,7 @@ use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.22 $)[-1];
+$VERSION = (qw$Revision: 1.23 $)[-1];
 
 use base 'Exporter';
 

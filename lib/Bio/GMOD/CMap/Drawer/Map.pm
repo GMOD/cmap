@@ -1,6 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
+# vim: set ft=perl:
 
-# $Id: Map.pm,v 1.54 2003-08-14 15:11:52 kycl4rk Exp $
+# $Id: Map.pm,v 1.55 2003-09-29 20:49:12 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +24,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.54 $)[-1];
+$VERSION = (qw$Revision: 1.55 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;

@@ -1,10 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
+# vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.23 2003-09-16 16:54:21 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.24 2003-09-29 20:49:12 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $TEMPLATE $PAGE );
-$VERSION = (qw$Revision: 1.23 $)[-1];
+$VERSION = (qw$Revision: 1.24 $)[-1];
 
 use Apache::Constants qw[ :common REDIRECT ];
 use Apache::Request;

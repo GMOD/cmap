@@ -1,10 +1,11 @@
 package Bio::GMOD::CMap::Apache::FeatureTypeViewer;
+# vim: set ft=perl:
 
-# $Id: FeatureTypeViewer.pm,v 1.3 2003-09-19 19:10:55 kycl4rk Exp $
+# $Id: FeatureTypeViewer.pm,v 1.4 2003-09-29 20:49:12 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Apache::Constants;
 use Data::Pageset;

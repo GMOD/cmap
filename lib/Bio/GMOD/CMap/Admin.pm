@@ -1,6 +1,7 @@
 package Bio::GMOD::CMap::Admin;
+# vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.26 2003-09-02 20:06:11 kycl4rk Exp $
+# $Id: Admin.pm,v 1.27 2003-09-29 20:49:11 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.26 $)[-1];
+$VERSION = (qw$Revision: 1.27 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils qw[ next_number parse_words ];

@@ -1,6 +1,7 @@
 package Bio::GMOD::CMap::Data::Generic;
+# vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.35 2003-09-16 16:58:26 kycl4rk Exp $
+# $Id: Generic.pm,v 1.36 2003-09-29 20:49:12 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,7 +32,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.35 $)[-1];
+$VERSION = (qw$Revision: 1.36 $)[-1];
 
 use Data::Dumper; # really just for debugging
 use Bio::GMOD::CMap;

@@ -1,6 +1,7 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
+# vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.22 2003-09-05 00:35:47 kycl4rk Exp $
+# $Id: MakeCorrespondences.pm,v 1.23 2003-09-29 20:49:12 kycl4rk Exp $
 
 =head1 NAME
 
@@ -30,7 +31,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.22 $)[-1];
+$VERSION = (qw$Revision: 1.23 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;

@@ -1,6 +1,7 @@
 package Bio::GMOD::CMap::Admin::Import;
+# vim: set ft=perl:
 
-# $Id: Import.pm,v 1.33 2003-07-30 02:09:08 kycl4rk Exp $
+# $Id: Import.pm,v 1.34 2003-09-29 20:49:12 kycl4rk Exp $
 
 =pod
 
@@ -27,7 +28,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.33 $)[-1];
+$VERSION  = (qw$Revision: 1.34 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;

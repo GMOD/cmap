@@ -1,6 +1,7 @@
 package Bio::GMOD::CMap::Drawer;
+# vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.44 2003-09-08 17:59:03 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.45 2003-09-29 20:49:12 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +23,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.44 $)[-1];
+$VERSION = (qw$Revision: 1.45 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;

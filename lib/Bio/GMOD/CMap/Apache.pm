@@ -1,6 +1,7 @@
 package Bio::GMOD::CMap::Apache;
+# vim: set ft=perl:
 
-# $Id: Apache.pm,v 1.3 2003-09-16 16:56:40 kycl4rk Exp $
+# $Id: Apache.pm,v 1.4 2003-09-29 20:49:12 kycl4rk Exp $
 
 =head1 NAME
 
@@ -45,7 +46,7 @@ this class will catch errors and display them correctly.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Apache;
 use Apache::Constants;
