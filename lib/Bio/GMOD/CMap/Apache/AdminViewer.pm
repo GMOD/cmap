@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.51 2003-10-23 02:04:53 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.52 2003-10-24 20:08:42 kycl4rk Exp $
 
 use strict;
 use Apache::Constants qw[ :common M_GET REDIRECT ];
@@ -34,7 +34,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.51 $)[-1];
+$VERSION        = (qw$Revision: 1.52 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -3197,13 +3197,13 @@ sub xref_insert {
         xrefs      => [
             { 
                 name          => $name, 
-                value         => $url,
+                url           => $url,
                 display_order => $display_order,
             },
         ],
     ) or return $self->error( $admin->error );
 
-    my $action = $return_action && $pk_name 
+    my $action = $return_action && $pk_name && $object_id
         ? "$return_action;$pk_name=$object_id" : 'xrefs_view';
 
     return $self->redirect_home( ADMIN_HOME_URI."?action=$action" ); 
@@ -3236,7 +3236,7 @@ sub xref_update {
             { 
                 xref_id       => $xref_id,
                 name          => $name, 
-                value         => $url,
+                url           => $url,
                 display_order => $display_order,
             },
         ],
@@ -3270,6 +3270,7 @@ sub xrefs_view {
         from   cmap_xref
     ];
     $sql .= "where table_name='$table_name' " if $table_name;
+    $sql .= "order by $order_by"              if $order_by;
 
     my $refs = $db->selectall_arrayref( $sql, { Columns => {} } );
 
