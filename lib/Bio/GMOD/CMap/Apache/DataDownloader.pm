@@ -1,33 +1,55 @@
 package Bio::GMOD::CMap::Apache::DataDownloader;
 # vim: set ft=perl:
 
-# $Id: DataDownloader.pm,v 1.1.2.1 2004-06-17 18:21:57 kycl4rk Exp $
+# $Id: DataDownloader.pm,v 1.1.2.2 2004-06-18 21:23:44 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.1.2.1 $)[-1];
+$VERSION = (qw$Revision: 1.1.2.2 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use base 'Bio::GMOD::CMap::Apache';
+
+use constant TEMPLATE => 'data_downloader.tmpl';
 
 sub handler {
     #
     # Make a jazz noise here...
     #
     my ( $self, $apr ) = @_;
-    $self->data_source( $apr->param('data_source') ) or return;
 
-    my $page_no        = $apr->param('page_no') || 1;
-    my $map_set_aid    = $apr->param('map_set_aid');
-    my $map_aid        = $apr->param('map_aid');
-    my $data_module    = $self->data_module;
-    my $data           = $data_module->data_download(
-        map_set_aid    => $map_set_aid,
-        map_aid        => $map_aid,
-    ) or return $self->error( $data_module->error );
+    if ( $apr->param('download') ) {
+        $self->data_source( $apr->param('data_source') ) or return;
 
-    print $apr->header( -type => 'text/plain', -cookie => $self->cookie ), 
-        $data;
+        my $page_no        = $apr->param('page_no') || 1;
+        my $data_module    = $self->data_module;
+        my $data           = $data_module->data_download(
+            map_set_aid    => $apr->param('map_set_aid') || '',
+            map_aid        => $apr->param('map_aid')     || '',
+            format         => $apr->param('format')      || '',
+        ) or return $self->error( $data_module->error );
+
+        print $apr->header( -type => 'text/plain', -cookie => $self->cookie ), 
+            $data;
+    }
+    else {
+        my $html;
+        my $t = $self->template;
+        $t->process( 
+            TEMPLATE, 
+            { 
+                apr        => $apr,
+                page       => $self->page,
+                stylesheet => $self->stylesheet,
+            },
+            \$html 
+        ) or $html = $t->error;
+
+        print $apr->header( -type => 'text/html', -cookie => $self->cookie ), 
+            $html;
+
+    }
+
     return 1;
 }
 
