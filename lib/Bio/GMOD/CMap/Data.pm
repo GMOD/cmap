@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.183 2004-12-05 17:55:51 mwz444 Exp $
+# $Id: Data.pm,v 1.184 2004-12-06 15:57:01 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.183 $)[-1];
+$VERSION = (qw$Revision: 1.184 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -4494,6 +4494,9 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
             where   map.map_set_id=?
             and     map.map_id=f.map_id
         ];
+        if ( $min_correspondence_maps or $min_correspondences ) {
+            $sql_str .= " and map.map_id in (". join(",",keys(%$map_info)).") ";
+        }
         if ($name_search) {
             $sql_str .= " and map.map_name='$name_search' ";
         }
