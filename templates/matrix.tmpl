@@ -11,6 +11,14 @@
 <p>[% intro %]</p>
 [%- END -%]
 
+[% UNLESS apr.param('show_matrix') %]
+    <p>
+    <em>
+    Please use the form below to display the matrix.  Note that choosing "All 
+    Species" may result in a very large table.
+    </em>
+    </p>
+[% END %]
 <form>
     Restrict Reference Sets By:
     <select name="species_aid">
@@ -40,186 +48,188 @@
 
     &nbsp;
 
+    <input type="hidden" name="show_matrix" value="1">
     <input type="hidden" name="prev_species_aid" value="[% apr.param('species_aid') %]">
     <input type="hidden" name="prev_map_set_aid" value="[% apr.param('map_set_aid') %]">
     <input type="hidden" name="prev_map_name"    value="[% apr.param('map_name') %]">
     <input type="submit" value="Submit">
 </form>
 
-[% IF matrix.data.size %]
+[% IF apr.param('show_matrix') %]
+    [% IF matrix.data.size %]
+        <table border="1">
+            <tr>
+                <th colspan="2" rowspan="2">Reference Set</th>
+                [% SET no_by_type=top_row.no_by_type %]
+                [% SET last_map_type_id=0 %]
 
-    <table border="1">
-        <tr>
-            <th colspan="2" rowspan="2">Reference Set</th>
-            [% SET no_by_type=top_row.no_by_type %]
-            [% SET last_map_type_id=0 %]
+                [% FOREACH ms=top_row.map_sets %]
+                    [% SET map_type_id=ms.map_type_id %]
+                    [% NEXT IF map_type_id==last_map_type_id %]
+                    [% SET colspan=no_by_type.$map_type_id %]
+                    <th colspan="[% colspan %]">[% ms.map_type %]</th>
+                    [% SET last_map_type_id=map_type_id %]
+                [% END %]
+                <th colspan="2" rowspan="2">Reference Set</th>
+            </tr>
+            <tr>
+                [% SET no_by_type_and_species=top_row.no_by_type_and_species %]
+                [% SET last_map_type_id=0 %]
+                [% SET last_species_aid=0 %]
 
-            [% FOREACH ms=top_row.map_sets %]
-                [% SET map_type_id=ms.map_type_id %]
-                [% NEXT IF map_type_id==last_map_type_id %]
-                [% SET colspan=no_by_type.$map_type_id %]
-                <th colspan="[% colspan %]">[% ms.map_type %]</th>
-                [% SET last_map_type_id=map_type_id %]
+                [% FOREACH ms=top_row.map_sets %]
+                    [% SET species_aid=ms.species_aid %]
+                    [% SET map_type_id=ms.map_type_id %]
+
+                    [% NEXT IF species_aid==last_species_aid && map_type_id==last_map_type_id %]
+
+                    [% SET colspan=no_by_type_and_species.$map_type_id.$species_aid %]
+                    <th colspan="[% colspan %]">[% ms.species_name %]</th>
+                    [% SET last_map_type_id=map_type_id %]
+                    [% SET last_species_aid=species_aid %]
+                [% END %]
+            </tr>
+
+            [% IF apr.param('link_map_set_aid') %]
+                <tr>
+                    <td colspan="2">&nbsp;</td>
+                    <th colspan="[% top_row.map_sets.size %]">[% top_row.map_sets.0.map_set_name %]</th>
+                    <td colspan="2">&nbsp;</td>
+                </tr>
+
+                <tr>
+                    <td colspan="2">&nbsp;</td>
+                    [% FOREACH map=top_row.map_sets %]
+                        <th>
+                            [% map.map_name %]
+                        </th>
+                    [% END %]
+                    <td colspan="2">&nbsp;</td>
+                </tr>
+
+            [% ELSE %]
+                <tr>
+                    <td colspan="2">&nbsp;</td>
+                    [% FOREACH ms=top_row.map_sets %]
+                        <td>
+                            <a href="/cmap/matrix?map_set_aid=[% apr.param('map_set_aid') %];species_aid=[% apr.param('species_aid') %];map_name=[% apr.param('map_name') %];link_map_set_aid=[% ms.map_set_aid %]">[% ms.map_set_name %][% IF ms.map_aid %][% END %]</a>
+                        </td>
+                    [% END %]
+                    <td colspan="2">&nbsp;</td>
+                </tr>
             [% END %]
-            <th colspan="2" rowspan="2">Reference Set</th>
-        </tr>
-        <tr>
-            [% SET no_by_type_and_species=top_row.no_by_type_and_species %]
-            [% SET last_map_type_id=0 %]
+
+            [% SET i=0 %]
             [% SET last_species_aid=0 %]
+            [% SET no_by_species=matrix.no_by_species %]
+            [% FOREACH ms=matrix.data %]
+                <tr>
+                    [% SET species_aid=ms.species_aid %]
 
-            [% FOREACH ms=top_row.map_sets %]
-                [% SET species_aid=ms.species_aid %]
-                [% SET map_type_id=ms.map_type_id %]
-
-                [% NEXT IF species_aid==last_species_aid && map_type_id==last_map_type_id %]
-
-                [% SET colspan=no_by_type_and_species.$map_type_id.$species_aid %]
-                <th colspan="[% colspan %]">[% ms.species_name %]</th>
-                [% SET last_map_type_id=map_type_id %]
-                [% SET last_species_aid=species_aid %]
-            [% END %]
-        </tr>
-
-        [% IF apr.param('link_map_set_aid') %]
-            <tr>
-                <td colspan="2">&nbsp;</td>
-                <th colspan="[% top_row.map_sets.size %]">[% top_row.map_sets.0.map_set_name %]</th>
-                <td colspan="2">&nbsp;</td>
-            </tr>
-
-            <tr>
-                <td colspan="2">&nbsp;</td>
-                [% FOREACH map=top_row.map_sets %]
-                    <th>
-                        [% map.map_name %]
-                    </th>
-                [% END %]
-                <td colspan="2">&nbsp;</td>
-            </tr>
-
-        [% ELSE %]
-            <tr>
-                <td colspan="2">&nbsp;</td>
-                [% FOREACH ms=top_row.map_sets %]
-                    <td>
-                        <a href="/cmap/matrix?map_set_aid=[% apr.param('map_set_aid') %];species_aid=[% apr.param('species_aid') %];map_name=[% apr.param('map_name') %];link_map_set_aid=[% ms.map_set_aid %]">[% ms.map_set_name %][% IF ms.map_aid %][% END %]</a>
-                    </td>
-                [% END %]
-                <td colspan="2">&nbsp;</td>
-            </tr>
-        [% END %]
-
-        [% SET i=0 %]
-        [% SET last_species_aid=0 %]
-        [% SET no_by_species=matrix.no_by_species %]
-        [% FOREACH ms=matrix.data %]
-            <tr>
-                [% SET species_aid=ms.species_aid %]
-
-                [% UNLESS ms.species_aid==last_species_aid %]
-                    [% SET rowspan=no_by_species.$species_aid %]
-                    <th[% IF rowspan > 1 %] rowspan="[% rowspan %]"[% END %]>
-                        [% ms.species_name %]
-                        [% IF apr.param('map_set_aid') %]
-                            <br>[% ms.map_set_name | nbsp %]
-                        [% END %]
-                    </th>
-                [% END %]
-
-                <td bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
-                    [% IF apr.param('map_set_aid') %]
-                        [% IF ms.map_name %]
-                            <b>[% ms.map_name %]</b>
-                        [% ELSE %]
-                            <b>All</b>
-                        [% END %]
-                    [% ELSE %]
-                        <a href="/cmap/matrix?species_aid=[% apr.param('species_aid') %];map_set_aid=[% ms.map_set_aid %]">[% ms.map_set_name | nbsp %]</a>
-                    [% END %]
-                </td>
-
-                [% FOREACH r=ms.correspondences %]
-                    <td align="center" bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
-                        [% IF r.number=='N/A' %]
-                            [% r.number %]
-                        [% ELSIF r.number==0 %]
-                            -
-                        [% ELSE %]
+                    [% UNLESS ms.species_aid==last_species_aid %]
+                        [% SET rowspan=no_by_species.$species_aid %]
+                        <th[% IF rowspan > 1 %] rowspan="[% rowspan %]"[% END %]>
+                            [% ms.species_name %]
                             [% IF apr.param('map_set_aid') %]
-                                <a href="/cmap/viewer?ref_map_set_aid=[% ms.map_set_aid %];ref_map_aid=[% ms.map_aid %];comparative_maps=[% IF r.map_aid %]1%3dmap_aid%3d[% r.map_aid %][% ELSE %]1%3dmap_set_aid%3d[% r.map_set_aid %][% END %]">[% r.number %]</a>
-                            [% ELSE %]
-                                <a href="/cmap/matrix?species_aid=[% apr.param('species_aid') %];map_name=[% apr.param('map_name') %];map_set_aid=[% ms.map_set_aid %];link_map_set_aid=[% r.map_set_aid %]">[% r.number %]</a>
+                                <br>[% ms.map_set_name | nbsp %]
                             [% END %]
-                        [% END %]
-                    </td>
-                [% END %]
-
-                <td bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
-                    [% IF apr.param('map_set_aid') %]
-                        [% IF ms.map_name %]
-                            <b>[% ms.map_name %]</b>
-                        [% ELSE %]
-                            <b>All</b>
-                        [% END %]
-                    [% ELSE %]
-                        <a href="/cmap/matrix?species_aid=[% apr.param('species_aid') %];map_set_aid=[% ms.map_set_aid %]">[% ms.map_set_name | nbsp %]</a>
+                        </th>
                     [% END %]
-                </td>
 
-                [% UNLESS ms.species_aid==last_species_aid %]
-                    [% SET rowspan=no_by_species.$species_aid %]
-                    <th[% IF rowspan > 1 %] rowspan="[% rowspan %]"[% END %]>
-                        [% ms.species_name %]
+                    <td bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
                         [% IF apr.param('map_set_aid') %]
-                            <br>[% ms.map_set_name | nbsp %]
+                            [% IF ms.map_name %]
+                                <b>[% ms.map_name %]</b>
+                            [% ELSE %]
+                                <b>All</b>
+                            [% END %]
+                        [% ELSE %]
+                            <a href="/cmap/matrix?species_aid=[% apr.param('species_aid') %];map_set_aid=[% ms.map_set_aid %]">[% ms.map_set_name | nbsp %]</a>
                         [% END %]
-                    </th>
-                [% END %]
-
-                [% SET last_species_aid=ms.species_aid %]
-            </tr>
-            [% SET i = i + 1 %]
-        [% END %]
-
-        [% IF apr.param('link_map_set_aid') %]
-            [% SET no_columns=0 %]
-            [% SET map_set_name="" %]
-            <tr>
-                <td colspan="2">&nbsp;</td>
-                [% FOREACH map=top_row.map_sets %]
-                    <th>
-                        [% map.map_name %]
-                    </th>
-                    [% SET no_columns=no_columns+1 %]
-                    [% SET map_set_name=map.map_set_name %]
-                [% END %]
-                <td colspan="2">&nbsp;</td>
-            </tr>
-
-            <tr>
-                <td colspan="2">&nbsp;</td>
-                <th colspan="[% no_columns %]">[% map_set_name %]</th>
-                <td colspan="2">&nbsp;</td>
-            </tr>
-
-        [% ELSE %]
-            <tr>
-                <td colspan="2">&nbsp;</td>
-                [% FOREACH ms=top_row.map_sets %]
-                    <td>
-                        <a href="/cmap/matrix?map_set_aid=[% apr.param('map_set_aid') %];species_aid=[% apr.param('species_aid') %];map_name=[% apr.param('map_name') %];link_map_set_aid=[% ms.map_set_aid %]">[% ms.map_set_name %][% IF ms.map_aid %][% END %]</a>
                     </td>
-                [% END %]
-                <td colspan="2">&nbsp;</td>
-            </tr>
-        [% END %]
-    </table>
 
-[% ELSE %]
+                    [% FOREACH r=ms.correspondences %]
+                        <td align="center" bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
+                            [% IF r.number=='N/A' %]
+                                [% r.number %]
+                            [% ELSIF r.number==0 %]
+                                -
+                            [% ELSE %]
+                                [% IF apr.param('map_set_aid') %]
+                                    <a href="/cmap/viewer?ref_map_set_aid=[% ms.map_set_aid %];ref_map_aid=[% ms.map_aid %];comparative_maps=[% IF r.map_aid %]1%3dmap_aid%3d[% r.map_aid %][% ELSE %]1%3dmap_set_aid%3d[% r.map_set_aid %][% END %]">[% r.number %]</a>
+                                [% ELSE %]
+                                    <a href="/cmap/matrix?species_aid=[% apr.param('species_aid') %];map_name=[% apr.param('map_name') %];map_set_aid=[% ms.map_set_aid %];link_map_set_aid=[% r.map_set_aid %]">[% r.number %]</a>
+                                [% END %]
+                            [% END %]
+                        </td>
+                    [% END %]
 
-    No correspondences for those criteria.
+                    <td bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
+                        [% IF apr.param('map_set_aid') %]
+                            [% IF ms.map_name %]
+                                <b>[% ms.map_name %]</b>
+                            [% ELSE %]
+                                <b>All</b>
+                            [% END %]
+                        [% ELSE %]
+                            <a href="/cmap/matrix?species_aid=[% apr.param('species_aid') %];map_set_aid=[% ms.map_set_aid %]">[% ms.map_set_name | nbsp %]</a>
+                        [% END %]
+                    </td>
 
+                    [% UNLESS ms.species_aid==last_species_aid %]
+                        [% SET rowspan=no_by_species.$species_aid %]
+                        <th[% IF rowspan > 1 %] rowspan="[% rowspan %]"[% END %]>
+                            [% ms.species_name %]
+                            [% IF apr.param('map_set_aid') %]
+                                <br>[% ms.map_set_name | nbsp %]
+                            [% END %]
+                        </th>
+                    [% END %]
+
+                    [% SET last_species_aid=ms.species_aid %]
+                </tr>
+                [% SET i = i + 1 %]
+            [% END %]
+
+            [% IF apr.param('link_map_set_aid') %]
+                [% SET no_columns=0 %]
+                [% SET map_set_name="" %]
+                <tr>
+                    <td colspan="2">&nbsp;</td>
+                    [% FOREACH map=top_row.map_sets %]
+                        <th>
+                            [% map.map_name %]
+                        </th>
+                        [% SET no_columns=no_columns+1 %]
+                        [% SET map_set_name=map.map_set_name %]
+                    [% END %]
+                    <td colspan="2">&nbsp;</td>
+                </tr>
+
+                <tr>
+                    <td colspan="2">&nbsp;</td>
+                    <th colspan="[% no_columns %]">[% map_set_name %]</th>
+                    <td colspan="2">&nbsp;</td>
+                </tr>
+
+            [% ELSE %]
+                <tr>
+                    <td colspan="2">&nbsp;</td>
+                    [% FOREACH ms=top_row.map_sets %]
+                        <td>
+                            <a href="/cmap/matrix?map_set_aid=[% apr.param('map_set_aid') %];species_aid=[% apr.param('species_aid') %];map_name=[% apr.param('map_name') %];link_map_set_aid=[% ms.map_set_aid %]">[% ms.map_set_name %][% IF ms.map_aid %][% END %]</a>
+                        </td>
+                    [% END %]
+                    <td colspan="2">&nbsp;</td>
+                </tr>
+            [% END %]
+        </table>
+
+    [% ELSE %]
+
+        No correspondences for those criteria.
+
+    [% END %]
 [% END %]
 
 [% page.end_body OR '</body>' %]
