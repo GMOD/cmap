@@ -1,5 +1,6 @@
-[% INCLUDE admin_header.tmpl title="Edit Map Type &quot;$map_type.map_type&quot;" %]
+[% INCLUDE admin_header.tmpl title="View Map Type &quot;$map_type.map_type&quot;" %]
 <a href="admin">Home</a> |
+<a href="admin?action=map_type_edit;map_type_id=[% map_type.map_type_id %]">Edit</a> |
 <a href="admin?action=confirm_delete;entity_type=cmap_map_type;entity_id=[% map_type.map_type_id %];entity_name_field=map_type">Delete</a> |
 <a href="admin?action=map_types_view">View All Map Types</a>
 <hr noshade>
