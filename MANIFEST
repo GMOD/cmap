@@ -32,7 +32,6 @@ lib/Bio/GMOD/CMap/Data/MySQL.pm
 lib/Bio/GMOD/CMap/Data/Oracle.pm
 lib/Bio/GMOD/CMap/Drawer/Feature.pm
 lib/Bio/GMOD/CMap/Drawer/Map.pm
-lib/Bio/GMOD/CMap/DB.pm
 sql/cmap.create.mysql
 sql/cmap.create.oracle
 t/01_ini.t
