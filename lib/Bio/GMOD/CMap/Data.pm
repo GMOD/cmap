@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.153 2004-09-08 04:52:41 mwz444 Exp $
+# $Id: Data.pm,v 1.154 2004-09-08 14:54:18 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.153 $)[-1];
+$VERSION = (qw$Revision: 1.154 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -2067,6 +2067,7 @@ sub cmap_form_data {
     my $slots = $args{'slots'} or return;
     my $min_correspondences = $args{'min_correspondences'}    || 0;
     my $feature_type_aids   = $args{'include_feature_types'}  || [];
+    my $ignored_feature_type_aids  = $args{'ignored_feature_types'}  || [];
     my $evidence_type_aids  = $args{'include_evidence_types'} || [];
     my $ref_species_aid     = $args{'ref_species_aid'}        || '';
     my $ref_map             = $slots->{0};
@@ -2167,7 +2168,6 @@ sub cmap_form_data {
     #
     # "-1" is a reserved value meaning "All."
     #
-#    $feature_type_aids  = [] if grep { /^-1$/ } @$feature_type_aids;
     $evidence_type_aids = [] if grep { /^-1$/ } @$evidence_type_aids;
 
     #
@@ -2238,14 +2238,13 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
     }
 
     my @slot_nos      = sort { $a <=> $b } keys %$slots;
-    my %feature_types;
     my ( $comp_maps_right, $comp_maps_left );
     if ( $self->slot_info ) {
         $comp_maps_right = $self->get_comparative_maps(
             min_correspondences => $min_correspondences,
             feature_type_aids   => $feature_type_aids,
+            ignored_feature_type_aids   => $ignored_feature_type_aids,
             evidence_type_aids  => $evidence_type_aids,
-            feature_types       => \%feature_types,
             ref_slot_no         => $slot_nos[-1],
             pid                 => $pid,
         );
@@ -2256,8 +2255,8 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
           : $self->get_comparative_maps(
             min_correspondences => $min_correspondences,
             feature_type_aids   => $feature_type_aids,
+            ignored_feature_type_aids   => $ignored_feature_type_aids,
             evidence_type_aids  => $evidence_type_aids,
-            feature_types       => \%feature_types,
             ref_slot_no         => $slot_nos[0],
             pid                 => $pid,
           );
@@ -2313,8 +2312,8 @@ out which maps have relationships.
     my ( $self, %args ) = @_;
     my $min_correspondences = $args{'min_correspondences'};
     my $feature_type_aids   = $args{'feature_type_aids'};
+    my $ignored_feature_type_aids   = $args{'ignored_feature_type_aids'};
     my $evidence_type_aids  = $args{'evidence_type_aids'};
-    my $feature_types       = $args{'feature_types'};
     my $ref_slot_no         = $args{'ref_slot_no'};
     my $pid                 = $args{'pid'};
     my $db                  = $self->db or return;
@@ -2377,10 +2376,10 @@ out which maps have relationships.
               . join( "','", @$evidence_type_aids ) . "') ";
         }
 
-        if (@$feature_type_aids) {
+        if (@$ignored_feature_type_aids) {
             $additional_where .=
-              "and cl.feature_type_accession2 in ('"
-              . join( "','", @$feature_type_aids ) . "') ";
+              "and cl.feature_type_accession2 not in ('"
+              . join( "','", @$ignored_feature_type_aids ) . "') ";
         }
 
         
@@ -2455,10 +2454,10 @@ out which maps have relationships.
               . join( "','", @$evidence_type_aids ) . "') ";
         }
 
-        if (@$feature_type_aids) {
+        if (@$ignored_feature_type_aids) {
             $additional_where .=
               "and f2.feature_type_accession in ('"
-              . join( "','", @$feature_type_aids ) . "') ";
+              . join( "','", @$ignored_feature_type_aids ) . "') ";
         }
 
 
