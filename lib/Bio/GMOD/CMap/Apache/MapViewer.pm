@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 
-# $Id: MapViewer.pm,v 1.21 2003-07-22 18:57:48 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.22 2003-07-30 02:06:41 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $TEMPLATE $PAGE );
-$VERSION = (qw$Revision: 1.21 $)[-1];
+$VERSION = (qw$Revision: 1.22 $)[-1];
 
 use Apache::Constants qw[ :common REDIRECT ];
 use Apache::Request;
@@ -97,6 +97,7 @@ sub show_form {
     my $image_type            = $apr->param('image_type')            || '';
     my $label_features        = $apr->param('label_features')        || '';
     my $collapse_features     = $apr->param('collapse_features')     ||  0;
+    my $flip                  = $apr->param('flip')                  || '';
     my $min_correspondences   = $apr->param('min_correspondences')   ||  0;
     my @feature_types         = ( $apr->param('feature_types') );
     my @evidence_types        = ( $apr->param('evidence_types') );
@@ -216,6 +217,7 @@ sub show_form {
                 apr                    => $apr,
                 data_source            => $self->data_source,
                 slots                  => \%slots,
+                flip                   => $flip,
                 highlight              => $highlight,
                 font_size              => $font_size,
                 image_size             => $image_size,
