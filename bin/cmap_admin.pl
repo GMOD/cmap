@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.53 2003-12-20 02:29:37 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.54 2003-12-30 18:43:54 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.53 $)[-1];
+$VERSION = (qw$Revision: 1.54 $)[-1];
 
 #
 # Get command-line options
@@ -49,6 +49,7 @@ package Bio::GMOD::CMap::CLI::Admin;
 
 use strict;
 use File::Path;
+use File::Spec::Functions;
 use IO::File;
 use IO::Tee;
 use Data::Dumper;
@@ -248,7 +249,7 @@ sub change_data_source {
     my $self = shift;
     
     my $data_source = $self->show_menu(
-        title   => 'Available Date Sources',
+        title   => 'Available Data Sources',
         prompt  => 'Which data source?',
         display => 'display',
         return  => 'value',
@@ -1366,7 +1367,29 @@ sub export_objects {
 #
     my $self = shift;
 
-    my $dir = _get_dir() or return;
+    my $export_path;
+    for ( ;; ) {
+        my $dir = _get_dir() or return;
+
+        print 'What file name [cmap_export.xml]? ';
+        chomp( my $file_name = <STDIN> );
+        $file_name ||= 'cmap_export.xml';
+
+        $export_path = catfile ( $dir, $file_name );
+
+        if ( -e $export_path ) {
+            print "The file '$export_path' exists.  Overwrite? [Y/n] ";
+            chomp( my $answer = <STDIN> );
+            if ( $answer =~ /^[Nn]/ ) {
+                next;
+            }
+            else {
+                last;
+            }
+        }
+
+        last if $export_path;
+    }
 
     #
     # Which objects?
@@ -1417,7 +1440,7 @@ sub export_objects {
     my @confirm = ( 
         '  Data source  : ' . $self->data_source,
         '  Objects      : ' . join(', ', @object_names),
-        "  Directory    : $dir",
+        "  File name    : $export_path",
     );
 
     my ( $map_sets, $feature_types );
@@ -1455,11 +1478,13 @@ sub export_objects {
 
     $exporter->export( 
         objects       => \@db_objects,
-        output_dir    => $dir,
+        output_path   => $export_path,
         log_fh        => $self->log_fh,
         map_sets      => $map_sets,
         feature_types => $feature_types,
-    );
+    ) or do { 
+        print "Error: ", $exporter->error, "\n"; return; 
+    };
     
     return 1;
 }
