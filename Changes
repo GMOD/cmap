@@ -1,5 +1,22 @@
                       Revision history for CMap
 
+0.14    2005-01-05
+
+-   Allow individual maps in slot to be flipped.  The flip button for flipped
+    maps is labeled "UF" for un-flip. 
+-   Allow maps of different base units to be scaled using a conversion factor
+    specified in the config file.
+-   A "clean view" is now offered that does not have the navigation buttons on
+    the picture.  This is to make the image more apealling for publishing.
+-   Reference maps can be stacked vertically or placed in multiple rows.
+-   The order of the reference maps can be specified.
+-   Intra-slot correspondences can be displayed.
+-   A "Spidering" feature has been created to allow you to see how a map is
+    related to other maps in its map set.  The spider crawls the intra-slot
+    correspondences to a selected depth.  It returns an image with a row of maps
+    for each level.
+-   Individual control buttons for each map in a slot have been created.
+
 0.13    2004-12-17
 
 -   Expanded/reorganized/hidden menus.  Many more options for
