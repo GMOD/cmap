@@ -320,6 +320,10 @@ function changeCompMaps(sel,index,side){
           [% IF form_data.ref_maps %]
             [% form_data.ref_maps.unshift({accession_id=>'-1',map_name=>'--All--'}) %]
             <form name="ref_map_form">
+              <input type=hidden name=changeMenu id=changeMenu value=[% apr.param('changeMenu') %]>
+              <input type=hidden name=compMenu id=compMenu value=[% apr.param('compMenu') %]>
+              <input type=hidden name=optionMenu id=optionMenu value=[% apr.param('optionMenu') %]>
+              <input type=hidden name=imageMenu id=imageMenu value=[% apr.param('imageMenu') %]>
               <tr>
                 <td valign="top" align="right">Ref. Map:</td>
       
@@ -513,13 +517,13 @@ function changeCompMaps(sel,index,side){
                       <tr>
                         <td>[% ft.feature_type %]</td>
                         <td>
-                          <input type=radio name=feature_type_[% ft.feature_type_aid %] value=0 [% IF ignored_feature_types.${ft.feature_type_aid} ; ' checked'; END %]>
+                          <input type=radio name=feature_type_[% ft.feature_type_aid %] value=0 [% IF (ignored_feature_types.${ft.feature_type_aid} OR (feature_default_display=='ignore' AND NOT included_features.${ft.feature_type_aid} AND NOT corr_only_feature_types.${ft.feature_type_aid})) ; ' checked'; END %]>
                         </td>
                         <td>
-                          <input type=radio name=feature_type_[% ft.feature_type_aid %] value=1 [% IF NOT included_features.${ft.feature_type_aid} AND NOT ignored_feature_types.${ft.feature_type_aid}; ' checked'; END %]>
+                          <input type=radio name=feature_type_[% ft.feature_type_aid %] value=1 [% IF (corr_only_feature_types.${ft.feature_type_aid} OR (feature_default_display=='corr_only' AND NOT included_features.${ft.feature_type_aid} AND NOT ignored_feature_types.${ft.feature_type_aid})); ' checked'; END %]>
                         </td>
                         <td>
-                          <input type=radio name=feature_type_[% ft.feature_type_aid %] value=2 [% IF included_features.${ft.feature_type_aid} AND NOT included_corr_only_features.${ft.feature_type_aid}; ' checked'; END %]>
+                          <input type=radio name=feature_type_[% ft.feature_type_aid %] value=2 [% IF (included_features.${ft.feature_type_aid} OR (feature_default_display=='display' AND NOT corr_only_features_types.${ft.feature_type_aid} AND NOT ignored_feature_types.${ft.feature_type_aid})); ' checked'; END %]>
                         </td>
                       </tr>
                     [% END %]

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.158 2004-09-20 20:36:13 mwz444 Exp $
+# $Id: Data.pm,v 1.159 2004-09-23 16:07:42 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.158 $)[-1];
+$VERSION = (qw$Revision: 1.159 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -431,17 +431,28 @@ sub cmap_data {
     $include_evidence_type_aids = [-1]
       if grep { /^-1$/ } @$include_evidence_type_aids;
 
-    # Fill corr_only_feature_type_aids with any feature types not accounted for.
-    # This ensures that corr_only is the default
+    # Fill the default array with any feature types not accounted for.
+    my $feature_default_display= $self->feature_default_display;
+
     my %found_feature_type;
     foreach my $ft (@$include_feature_type_aids,@$corr_only_feature_type_aids,@$ignore_feature_type_aids){
         $found_feature_type{$ft}=1;
     }
     my $all_feature_types = $self->feature_type_data();
+
+
     foreach my $key (keys(%$all_feature_types)){
         my $aid=$all_feature_types->{$key}{'feature_type_accession'};
         unless($found_feature_type{$aid}){
-            push @$corr_only_feature_type_aids,$aid;
+            if ($feature_default_display eq 'corr_only'){
+                push @$corr_only_feature_type_aids,$aid;
+            }
+            elsif ($feature_default_display eq 'ignore'){
+                push @$ignore_feature_type_aids,$aid;
+            }
+            else{
+                push @$include_feature_type_aids,$aid;
+            }
         }
     }
 
@@ -508,6 +519,7 @@ sub cmap_data {
                                             $data->{'slots'});
     $data->{'ref_unit_size'}             = $self->get_ref_unit_size(
                                             $data->{'slots'});
+    $data->{'feature_default_display'}   = $feature_default_display;
 
     return $data;
 }
@@ -5047,6 +5059,32 @@ given the slot_no and map_id
         }
     }
     return 1;
+}
+
+# ----------------------------------------------------
+sub feature_default_display {
+                                                                                                                             
+=pod
+                                                                                                                             
+=head2 feature_default_display
+                                                                                                                             
+given the slot_no and map_id
+                                                                                                                             
+=cut
+    my $self     = shift;
+
+    unless ($self->{'feature_default_display'}){
+        my $feature_default_display= $self->config_data('feature_default_display');
+        $feature_default_display = lc($feature_default_display);
+        unless ($feature_default_display eq 'corr_only' 
+                or
+                $feature_default_display eq 'ignore'){
+            $feature_default_display='display'; #Default value
+        }
+        $self->{'feature_default_display'} = $feature_default_display;
+    }
+
+    return $self->{'feature_default_display'};
 }
 
 

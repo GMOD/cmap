@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.67 2004-09-16 16:20:37 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.68 2004-09-23 16:07:44 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.67 $)[-1];
+$VERSION = (qw$Revision: 1.68 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -387,6 +387,7 @@ sub handler {
         ref_map_set_aid        => $ref_map_set_aid,
     ) or return $self->error( $data->error );
 
+    my $feature_default_display=$data->feature_default_display;
     $form_data->{'feature_types'} = 
         [
         sort {
@@ -438,12 +439,13 @@ sub handler {
             selected_maps     => { map { $_, 1 } @ref_map_aids   },
             included_features => { map { $_, 1 } @feature_types  },
             included_evidence => { map { $_, 1 } @evidence_types },
-            included_corr_only_features => \%include_corr_only_features,
+            corr_only_features_types => \%include_corr_only_features,
             ignored_feature_types => \%ignored_feature_types,
             feature_types     => join( ',', @feature_types ),
             evidence_types    => join( ',', @evidence_types ),
             extra_code        => $extra_code,
             extra_form        => $extra_form,
+            feature_default_display => $feature_default_display,
         },
         \$html 
     ) or $html = $t->error;
