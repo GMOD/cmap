@@ -1,0 +1,60 @@
+[% SET title='Imported Links' %]
+[% 
+    INCLUDE header.tmpl 
+    title='CMap - Imported Links'
+    cur_sec='link_viewer'
+    help_anchor='link_viewer'
+%]
+
+<h1>[% title %]</h1>
+
+[%- IF intro -%]
+<p>[% intro %]</p>
+[%- END -%]
+[%- url=apr.url -%]
+
+<div align="center">
+
+<form method="GET" action="link_viewer">
+    Display:
+    <select name="selected_link_set">
+        <option value="">--Select a Link Set--</option>
+        [% FOREACH link_set=link_sets %]
+            <option value="[% link_set %]"[% IF apr.param('selected_link_set')==link_set %] selected[% END %]>[% link_set %]</option>
+        [% END %]
+    </select>
+    <input type="submit" value="Submit">
+</form>
+
+<p>
+[% IF links.size %]
+    <table>
+        <tr>
+            <td colspan="1" align="center">
+                [% SET pager_url="$url/link_viewer?" %]
+                [% PROCESS pager.tmpl %]
+            </td>
+        </tr>
+        [% FOREACH link=links %]
+            <tr class="colored">
+                <td align="right" valign="top">[% apr.param('selected_link_set') %]:</td>
+                <td>
+                    <a href="[% link %]">[% link %]</a>
+                </td>
+            </tr> 
+
+        [% END %]
+    </table>
+[% ELSE %]
+
+
+[% END %]
+</div>
+
+<br>
+<br>
+<br>
+<br>
+<br>
+[% page.end_body OR '</body>' %]
+</html>

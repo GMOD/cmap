@@ -186,6 +186,7 @@ sub ACTION_build_html {
             [ 'Map Types'      => '/cgi-bin/cmap/map_type_info' ],
             [ 'Evidence Types' => '/cgi-bin/cmap/evidence_type_info' ],
             [ 'Species'        => '/cgi-bin/cmap/species_info' ],
+            [ 'Imported Links' => '/cgi-bin/cmap/link_viewer' ],
             [ 'Help'           => '/cgi-bin/cmap/help' ],
             [ 'Tutorial'       => '/cmap/tutorial' ],
         )

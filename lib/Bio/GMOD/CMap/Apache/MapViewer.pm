@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.52 2004-08-07 01:35:54 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.53 2004-08-17 05:27:42 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.52 $)[-1];
+$VERSION = (qw$Revision: 1.53 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -67,6 +67,7 @@ sub handler {
     my $label_features        = $apr->param('label_features')        || '';
     my $collapse_features     = $apr->param('collapse_features')     ||  0;
     my $aggregate             = $apr->param('aggregate')             ;
+    my $scale_maps            = $apr->param('scale_maps')             ;
     my $flip                  = $apr->param('flip')                  || '';
     my $min_correspondences   = $apr->param('min_correspondences')   ||  0;
     my $page_no               = $apr->param('page_no')               ||      1;
@@ -79,6 +80,7 @@ sub handler {
     }
 
     $self->aggregate($aggregate);
+    $self->scale_maps($scale_maps);
 
     $INTRO ||= $self->config_data('map_viewer_intro', $self->data_source)||'';
 
@@ -317,6 +319,7 @@ sub handler {
             config                 => $self->config,
             data_module            => $self->data_module,
             aggregate              => $self->aggregate,
+            scale_maps              => $self->scale_maps,
             feature_types_undefined => $feature_types_undefined,
         ) or return $self->error( Bio::GMOD::CMap::Drawer->error );
 

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.105 2004-08-09 14:21:42 mwz444 Exp $
+# $Id: Map.pm,v 1.106 2004-08-17 05:27:43 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.105 $)[-1];
+$VERSION = (qw$Revision: 1.106 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -39,7 +39,7 @@ use Bio::GMOD::CMap::Utils qw[
 use Bio::GMOD::CMap::Drawer::Glyph;
 use base 'Bio::GMOD::CMap';
 
-my @INIT_FIELDS = qw[ drawer base_x base_y slot_no maps config aggregate ];
+my @INIT_FIELDS = qw[ drawer base_x base_y slot_no maps config aggregate scale_maps ];
 
 my %SHAPE = (
     'default'  => 'draw_box',
@@ -917,6 +917,8 @@ Lays out the map.
         
         my $ref_map   = $slots->{0} or next;
         my ($ref_map_link,@rmap_links);
+        my $ref_map_aids_hash=$ref_map->{'maps'};
+        my $ref_map_set_aids_hash=$ref_map->{'map_sets'};
         for my $field (qw[ maps map_sets ]) {
             my @aid_info;
             next unless (defined($ref_map->{$field})); 
@@ -939,6 +941,24 @@ Lays out the map.
                 push @rmap_links, $ref_map_link;
             }
         }
+
+        my @flips;
+        my @flipping_flips;
+        my $acc_id = $self->accession_id($map_id);
+        for my $rec ( @{ $drawer->flip } ) {
+            push @flips, $rec->{'slot_no'} . '%3d' . $rec->{'map_aid'};
+            unless (   
+                $rec->{'slot_no'} == $slot_no
+                && 
+                $rec->{'map_aid'} == $acc_id )
+            {
+                push @flipping_flips,   
+                    $rec->{'slot_no'} . '%3d' . $rec->{'map_aid'};
+            }
+        }
+        push @flipping_flips, "$slot_no%3d$acc_id" unless $is_flipped;
+        my $flip_str=join(":",@flips);
+        my $flipping_flip_str=join(":",@flipping_flips);
 
         my $feature_type_selection='';
         $feature_type_selection.='feature_type_'.$_.'=2;' 
@@ -1036,10 +1056,11 @@ Lays out the map.
             else {
                 push @cmap_nos, grep { $_ < $slot_no } @ordered_slot_nos;
             }
-
-            my @flips =
-              map { $_->{'slot_no'} . '%3d' . $_->{'map_aid'} }
-              @{ $drawer->flip };
+            my %delete_comparative_map_hash;
+            foreach my $slot_no (@cmap_nos){
+                next if ($slot_no==0);
+                $delete_comparative_map_hash{$slot_no}=$slots->{$slot_no};
+            }
 
             my @cmaps;
             for my $slot_no (@cmap_nos) {
@@ -1061,27 +1082,23 @@ Lays out the map.
                 }
             }
 
-            my $delete_url = $self_url
-              . '?ref_map_set_aid='
-              . $slots->{'0'}{'map_set_aid'}.";"
-              . join('',@rmap_links)
-              . 'comparative_maps='
-              . join( ':', @cmaps )
-              . ';label_features='
-              . $drawer->label_features
-              . ';' . $feature_type_selection
-              . 'include_evidence_types='
-              . join( ',', @{ $drawer->include_evidence_types || [] } )
-              . ';highlight='
-              . uri_escape( $drawer->highlight )
-              . ';min_correspondences='
-              . $drawer->min_correspondences
-              . ';flip='
-              . join( ':', @flips )
-              . ';image_type='
-              . $drawer->image_type
-              . ';data_source='
-              . $drawer->data_source;
+            my $delete_url=$self->create_viewer_link(
+                ref_map_set_aid   => $slots->{'0'}{'map_set_aid'},
+                ref_map_aids      => $ref_map_aids_hash,
+                ref_map_set_aids  => $ref_map_set_aids_hash,
+                comparative_maps  => \%delete_comparative_map_hash,
+                label_features    => $drawer->label_features,
+                feature_type_aids => $drawer->include_feature_types,
+                corr_only_feature_type_aids 
+                                  => $drawer->corr_only_feature_types,
+                evidence_type_aids  
+                                  => $drawer->include_evidence_types,
+                highlight         => uri_escape( $drawer->highlight ),
+                min_correspondences => $drawer->min_correspondences,
+                image_type        => $drawer->image_type,
+                flip              => $flip_str,
+                data_source       => $drawer->data_source,
+                );
 
             push @map_buttons,
               {
@@ -1095,64 +1112,29 @@ Lays out the map.
         # Flip button.
         #
         unless ($is_compressed) {
-            my @cmaps;
-            for my $slot_no (@ordered_slot_nos) {
-                my $map   = $slots->{$slot_no} or next;
-                my $link;
-                for my $field (qw[ maps map_sets ]) {
-                    my @aid_info;
-                    next unless (defined($map->{$field})); 
-                    foreach my $aid (keys %{$map->{$field}}){
-                        push @aid_info, $aid
-                          . '['.$map->{$field}{$aid}{'start'}.'*'
-                          . $map->{$field}{$aid}{'stop'}.']';
-                    }
-                    if(@aid_info){
-                        my $field_type='map_set_aid';
-                        if ($field eq 'maps'){
-                            $field_type='map_aid';
-                        }
-                        my $link 
-                          = join('%3d',$slot_no,$field_type,join(',',@aid_info));
-                        push @cmaps, $link;
-                    }
-                }
+            my %flip_comparative_map_hash;
+            foreach my $slot_no (keys(%$slots)){
+                next if ($slot_no==0);
+                $flip_comparative_map_hash{$slot_no}=$slots->{$slot_no};
             }
 
-            my @flips;
-            my $acc_id = $self->accession_id($map_id);
-            for my $rec ( @{ $drawer->flip } ) {
-                unless (   
-                    $rec->{'slot_no'} == $slot_no
-                    && 
-                    $rec->{'map_aid'} == $acc_id )
-                {
-                    push @flips, $rec->{'slot_no'} . '%3d' . $rec->{'map_aid'};
-                }
-            }
-            push @flips, "$slot_no%3d$acc_id" unless $is_flipped;
-
-            my $flip_url = $self_url
-              . '?ref_map_set_aid='
-              . $slots->{'0'}{'map_set_aid'}.";"
-              . join('',@rmap_links)
-              . 'comparative_maps='
-              . join( ':', @cmaps )
-              . ';label_features='
-              . $drawer->label_features
-              . ';' . $feature_type_selection
-              . 'include_evidence_types='
-              . join( ',', @{ $drawer->include_evidence_types || [] } )
-              . ';highlight='
-              . uri_escape( $drawer->highlight )
-              . ';min_correspondences='
-              . $drawer->min_correspondences
-              . ';image_type='
-              . $drawer->image_type
-              . ';flip='
-              . join( ':', @flips )
-              . ';data_source='
-              . $drawer->data_source;
+            my $flip_url=$self->create_viewer_link(
+                ref_map_set_aid   => $slots->{'0'}{'map_set_aid'},
+                ref_map_aids      => $ref_map_aids_hash,
+                ref_map_set_aids  => $ref_map_set_aids_hash,
+                comparative_maps  => \%flip_comparative_map_hash,
+                label_features    => $drawer->label_features,
+                feature_type_aids => $drawer->include_feature_types,
+                corr_only_feature_type_aids 
+                                  => $drawer->corr_only_feature_types,
+                evidence_type_aids  
+                                  => $drawer->include_evidence_types,
+                highlight         => uri_escape( $drawer->highlight ),
+                min_correspondences => $drawer->min_correspondences,
+                image_type        => $drawer->image_type,
+                flip              => $flipping_flip_str,
+                data_source       => $drawer->data_source,
+                );
 
             push @map_buttons,
               {
@@ -1471,9 +1453,13 @@ sub layout_map_foundation {
             }
 
             #
-            # This keeps the map a consistent height.
+            # If desired, draw maps to scale otherwise
+            #  keep the map a consistent height.
             #
-            if ($self->config_data('scalable')->{$self->map_units($map_id)}){
+            if ($self->scale_maps 
+                and $self->config_data('scalable')
+                and
+                $self->config_data('scalable')->{$self->map_units($map_id)}){
                 $min_ref_y = $ref_map_mid_y - ($scaled_map_pixel_height/2);
                 $max_ref_y = $ref_map_mid_y + ($scaled_map_pixel_height/2);
             }
@@ -1579,7 +1565,10 @@ sub layout_map_foundation {
         }
     }
     else{
-        if ($self->config_data('scalable')->{$self->map_units($map_id)}){
+        if ($self->scale_maps
+            and $self->config_data('scalable')
+            and
+            $self->config_data('scalable')->{$self->map_units($map_id)}){
             $pixel_height = $scaled_map_pixel_height;
             if (defined $ref_slot_no){
                 my $temp_hash = $self->enforce_boundaries(

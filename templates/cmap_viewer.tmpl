@@ -352,7 +352,13 @@ function addPosToStr(str, slot_no, matchStr, value, is_start){
                   <input type="radio" name="aggregate" value="1"[% IF aggregate==1; ' checked'; END %]>Yes
                 </td>
               </tr>
-  
+              <tr>
+                <td align="left" valign="top">Draw Maps to Scale:
+                  [% IF apr.param('scale_maps')==0; scale_maps=0; ELSE; scale_maps=1; END %]
+                  <input type="radio" name="scale_maps" value="0"[% IF scale_maps==0; ' checked'; END %]>No
+                  <input type="radio" name="scale_maps" value="1"[% IF scale_maps==1; ' checked'; END %]>Yes
+                </td>
+              </tr>
               <tr>
                 <td align="left">Min. No. Correspondences: 
                   <input name="min_correspondences" value="[% apr.param('min_correspondences') %]">

@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.74 2004-08-04 18:51:09 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.75 2004-08-17 05:27:41 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.74 $)[-1];
+$VERSION = (qw$Revision: 1.75 $)[-1];
 
 #
 # Get command-line options
@@ -63,6 +63,7 @@ use Bio::GMOD::CMap::Admin::Import();
 use Bio::GMOD::CMap::Admin::Export();
 use Bio::GMOD::CMap::Admin::MakeCorrespondences();
 use Bio::GMOD::CMap::Admin::ImportCorrespondences();
+use Bio::GMOD::CMap::Admin::ManageLinks();
 use Benchmark;
 
 use base 'Bio::GMOD::CMap';
@@ -245,6 +246,10 @@ sub show_greeting {
             { 
                 action  => 'delete_duplicate_correspondences',   
                 display => 'Delete duplicate correspondences' 
+            },
+            { 
+                action  => 'manage_links',   
+                display => 'manage_links' 
             },
             { 
                 action  => 'quit',   
@@ -1815,6 +1820,204 @@ sub import_data {
 }
 
 # ----------------------------------------------------
+sub manage_links {
+#
+# Determine what kind of data to import (new or old)
+#
+    my $self    = shift;
+    my $db   = $self->db or die $self->error;
+    my $term = $self->term;
+
+    my $action  =  $self->show_menu(
+        title   => 'Import Options',
+        prompt  => 'What would you like to import?',
+        display => 'display',
+        return  => 'action',
+        data    => [
+            { 
+                action  => 'import_links', 
+                display => 'Import Links' 
+            },
+            { 
+                action  => 'delete_links', 
+                display => 'Remove Link Set' 
+            },
+        ],
+    );
+
+    $self->$action();
+}
+
+# ----------------------------------------------------
+sub import_links {
+#
+# Imports links in simple tab-delimited format
+#
+    my ($self,%args) = @_;
+    my $db   = $self->db or die $self->error;
+    my $term = $self->term;
+
+    #
+    # Get the species.
+    #
+    my ( $species_id, $species_name ) = $self->show_menu(
+        title   => "Available Species",
+        prompt  => 'Please select a species',
+        display => 'common_name',
+        return  => 'species_id,common_name',
+        data     => $db->selectall_arrayref(
+            q[
+                select   distinct s.species_id, s.common_name
+                from     cmap_species s,
+                         cmap_map_set ms
+                where    ms.species_id=s.species_id
+                order by common_name
+            ],
+            { Columns => {} },
+            (  )
+        ),
+    );
+    do { print "No species to select from.\n"; return } unless $species_id;
+    
+    #
+    # Get the map set.
+    #
+    my ( $map_set_id, $map_set_name ) = $self->show_menu(
+        title   => "Available Map Sets (for $species_name)",
+        prompt  => 'Please select a map set',
+        display => 'map_set_name',
+        return  => 'map_set_id,map_set_name',
+        data    => $db->selectall_arrayref(
+            q[
+                select   ms.map_set_id, ms.map_set_name
+                from     cmap_map_set ms
+                where    ms.species_id=?
+                order by map_set_name
+            ],
+            { Columns => {} },
+            ( $species_id )
+        ),
+    );
+    do { print "There are no map sets!\n"; return }
+         unless $map_set_id;
+
+    ###New File Handling
+    my $file_str =  $term->readline( 
+    'Where is the file?[q to quit] '
+     );
+    return if $file_str =~ m/^[Qq]$/;
+    my @file_strs    =  split(/\s+/,$file_str);
+    my @files=();
+    foreach my $str (@file_strs){
+        push @files,glob($str);
+    }
+    foreach (my $i=0;$i<=$#files;$i++){
+        unless( -r $files[$i] and -f $files[$i]){
+            print "Unable to read $files[$i]\n";
+            splice(@files,$i,1);
+            $i--;
+        }
+    }
+    return unless(scalar(@files));
+
+    my $link_set_name  = $self->show_question(
+        question   => 'What should this link set be named (default='
+                      .$files[0].')?',
+        default    => $files[0],
+    );
+    $link_set_name = "map set $map_set_id:".$link_set_name;
+
+    #
+    # Confirm decisions.
+    #
+    print join("\n",
+        'OK to import?',
+        '  Data source     : ' . $self->data_source, 
+	"  File            : ".join(", ",@files),
+        "  Species         : $species_name",
+        "  Map Study       : $map_set_name",
+        "  Link Set        : $link_set_name",
+        "[Y/n] "
+    );
+    chomp( my $answer = <STDIN> );
+    return if $answer =~ /^[Nn]/;
+
+    my $link_manager = Bio::GMOD::CMap::Admin::ManageLinks->new(
+        data_source => $self->data_source,
+    );
+
+    foreach my $file (@files){
+        my $fh = IO::File->new( $file ) or die "Can't read $file: $!";
+        $link_manager->import_links
+	    (
+	     map_set_id => $map_set_id,
+	     fh         => $fh,
+	     link_set_name => $link_set_name,
+	     log_fh     => $self->log_fh,
+	     name_space => $self->get_link_name_space,
+	     ) or do { 
+		 print "Error: ", $link_manager->error, "\n"; 
+		 return; 
+	     };
+    } 
+}
+
+# ----------------------------------------------------
+sub delete_links {
+#
+# Removes links
+#
+    my ($self,%args) = @_;
+    my $name_space   = $self->get_link_name_space;
+    my $db   = $self->db or die $self->error;
+    my $term = $self->term;
+
+    my $link_manager = Bio::GMOD::CMap::Admin::ManageLinks->new(
+        data_source => $self->data_source,
+    );
+    my @link_set_names=$link_manager->list_set_names(
+        name_space => $self->get_link_name_space,
+        ); 
+    my @link_set_name_display;
+    foreach my $name (@link_set_names){
+        $link_set_name_display[++$#link_set_name_display]->{'link_set_name'}
+                = $name;
+    }
+    my $link_set_name  =  $self->show_menu(
+        title   => join("\n"),
+        prompt  => 'Which would you like to remove?',
+        display => 'link_set_name',
+        return  => 'link_set_name',
+        data    => \@link_set_name_display,
+        );
+    unless ($link_set_name){
+        print "No Link Sets\n";
+        return;
+    }
+    #
+    # Confirm decisions.
+    #
+    print join("\n",
+        'OK to remove?',
+        '  Data source     : ' . $self->data_source, 
+        "  Link Set        : $link_set_name",
+        "[Y/n] "
+    );
+    chomp( my $answer = <STDIN> );
+    return if $answer =~ /^[Nn]/;
+
+    $link_manager->delete_links
+	    (
+	     link_set_name => $link_set_name,
+	     log_fh     => $self->log_fh,
+	     name_space => $self->get_link_name_space,
+	     ) or do { 
+		 print "Error: ", $link_manager->error, "\n"; 
+		 return; 
+	     };
+}
+
+# ----------------------------------------------------
 sub import_correspondences {
 #
 # Gathers the info to import feature correspondences.
@@ -1946,35 +2149,10 @@ sub import_tab_data {
     my $self = shift;
     my $db   = $self->db or die $self->error;
     my $term = $self->term;
-    my $file = $self->file;
-
-    ###Old file handling
-    #
-    # Make sure we have a file to parse.
-    #
-    #if ( $file ) {
-    #    print "OK to use '$file'? [Y/n] ";
-    #    chomp( my $answer = <STDIN> );
-    #    $file = '' if $answer =~ m/^[Nn]/;
-    #}
-    #
-    #while ( ! -r $file || ! -f _ ) {
-    #    print "Unable to read '$file' or not a regular file.\n" if $file;
-    #    $file =  $term->readline( 'Where is the file? [q to quit] ');
-    #    $file =~ s/^\s*|\s*$//g;
-    #    return if $file =~ m/^[Qq]/;
-    #}
-    #
-    #
-    # Open the file.  If it's good, remember it.
-    #
-    #my $fh = IO::File->new( $file ) or die "Can't read $file: $!";
-    #$term->addhistory($file); 
-    #$self->file( $file );
 
     ###New File Handling
     my $file_str =  $term->readline( 
-     'Where is the files? \nSeparate Multiple files with a space. [q to quit] '
+    'Where is the file(s)? \nSeparate Multiple files with a space. [q to quit] '
      );
     return if $file_str =~ m/^[Qq]$/;
     my @file_strs    =  split(/\s+/,$file_str);
@@ -1983,11 +2161,11 @@ sub import_tab_data {
 	push @files,glob($str);
     }
     foreach (my $i=0;$i<=$#files;$i++){
-	unless( -r $files[$i] and -f $files[$i]){
-	    print "Unable to read $files[$i]\n";
-	    splice(@files,$i,1);
-	    $i--;
-	}
+        unless( -r $files[$i] and -f $files[$i]){
+            print "Unable to read $files[$i]\n";
+            splice(@files,$i,1);
+            $i--;
+        }
     }
 
 
@@ -2321,15 +2499,20 @@ sub show_question {
     my %args     = @_;
     my $question = $args{'question'}   or return;
     my $default  = $args{'default'} || '';
-    my $validHashRef = $args{'valid_hash'} || [];
+    my $validHashRef = $args{'valid_hash'} || ();
 
     my $answer;
     while(1){
         print "$question <Default: $default>:";
-	chomp( $answer = <STDIN> );
+        chomp( $answer = <STDIN> );
         if ($validHashRef and $answer and not $validHashRef->{$answer}){
             print "Options:\n".join("\n",keys %{$validHashRef})."\n";
             print "Your input was not valid, please choose from the above list\n";
+            print "$question <Default: $default>:";
+            next;
+        }
+        elsif($answer and $answer!~/^\S+$/){
+            print "Your input was not valid.\n";
             print "$question <Default: $default>:";
             next;
         }
@@ -2422,6 +2605,9 @@ sub show_menu {
     }
     else {
         $result   = [ map { $data->[0]->{ $_ } } @return ];
+        unless(wantarray or scalar(@$result)!=1){
+            $result=$result->[0];
+        }
         my $value = join(' : ', map { $data->[0]->{ $_ } } @display);
         my $title = $args{'title'} || '';
         print $title ? "\n$title\n" : "\n";

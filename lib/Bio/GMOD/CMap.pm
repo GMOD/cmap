@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap;
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.54 2004-06-03 19:27:13 mwz444 Exp $
+# $Id: CMap.pm,v 1.55 2004-08-17 05:27:41 mwz444 Exp $
 
 =head1 NAME
 
@@ -394,6 +394,28 @@ The default is 1
 
 }
 
+# ----------------------------------------------------
+sub scale_maps{
+                                                                                
+=pod
+                                                                                
+=head2 scale_maps
+                                                                                
+Returns the boolean scale_maps variable.  This determines 
+if the maps are drawn to scale 
+
+The default is 1                                                          
+                      
+=cut
+                                                                                
+    my $self = shift;
+    my $val  = shift;
+    $self->{'scale_maps'}=$val if defined($val); 
+    $self->{'scale_maps'}=1 unless defined($self->{'scale_maps'}); 
+    return $self->{'scale_maps'}; 
+
+}
+
 
 # ----------------------------------------------------
 sub data_module {
@@ -561,6 +583,158 @@ Given a table name and some objects, get the cross-references.
 
         $o->{'xrefs'} = \@processed;
     }
+}
+
+# ----------------------------------------------------
+sub create_viewer_link {
+
+=pod
+
+=head2 create_viewer_link
+
+Given information about the link, creates a url to cmap_viewer.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $prev_ref_species_aid  = $args{'prev_ref_species_aid'};
+    my $prev_ref_map_set_aid  = $args{'prev_ref_map_set_aid'};
+    my $ref_species_aid       = $args{'ref_species_aid'};
+    my $ref_map_set_aid       = $args{'ref_map_set_aid'};
+    my $ref_map_names         = $args{'ref_map_names'};
+    my $ref_map_start         = $args{'ref_map_start'};
+    my $ref_map_stop          = $args{'ref_map_stop'};
+    my $comparative_maps      = $args{'comparative_maps'};
+    my @comparative_map_right = $args{'comparative_map_right'};
+    my @comparative_map_left  = $args{'comparative_map_left'};
+    my $highlight             = $args{'highlight'};
+    my $font_size             = $args{'font_size'};
+    my $image_size            = $args{'image_size'};
+    my $image_type            = $args{'image_type'};
+    my $label_features        = $args{'label_features'};
+    my $collapse_features     = $args{'collapse_features'};
+    my $aggregate             = $args{'aggregate'};
+    my $flip                  = $args{'flip'};
+    my $min_correspondences   = $args{'min_correspondences'};
+    my $ref_map_aids          = $args{'ref_map_aids'};
+    my $feature_type_aids     = $args{'feature_type_aids'};
+    my $corr_only_feature_type_aids 
+                              = $args{'corr_only_feature_type_aids'};
+    my $evidence_type_aids    = $args{'evidence_type_aids'};
+    my $data_source           = $args{'data_source'} or return;
+
+    my $url ='/cgi-bin/cmap/viewer?';
+    ###Required Fields
+    unless(defined($ref_map_set_aid) 
+        and defined($data_source)){
+        return '';
+    } 
+    $url .= "ref_map_set_aid=$ref_map_set_aid;";
+    $url .= "data_source=$data_source;";
+
+    ### optional
+    $url .= "ref_species_aid=$ref_species_aid;"
+        if defined($ref_species_aid);
+    $url .= "prev_ref_species_aid=$prev_ref_species_aid;" 
+        if defined($prev_ref_species_aid);
+    $url .= "prev_ref_map_set_aid=$prev_ref_map_set_aid;" 
+        if defined($prev_ref_map_set_aid);
+    $url .= "ref_map_start=$ref_map_start;" 
+        if defined($ref_map_start);
+    $url .= "ref_map_stop=$ref_map_stop;" 
+        if defined($ref_map_stop);
+    $url .= "highlight=$highlight;" 
+        if defined($highlight);
+    $url .= "font_size=$font_size;" 
+        if defined($font_size);
+    $url .= "image_size=$image_size;" 
+        if defined($image_size);
+    $url .= "image_type=$image_type;" 
+        if defined($image_type);
+    $url .= "label_features=$label_features;" 
+        if defined($label_features);
+    $url .= "collapse_features=$collapse_features;" 
+        if defined($collapse_features);
+    $url .= "aggregate=$aggregate;" 
+        if defined($aggregate);
+    $url .= "flip=$flip;" 
+        if defined($flip);
+    $url .= "min_correspondences=$min_correspondences;" 
+        if defined($min_correspondences);
+    
+#multi
+    if ($ref_map_aids and %$ref_map_aids){
+        my @ref_strs;
+        foreach my $ref_map_aid (keys(%$ref_map_aids)){
+            if (defined($ref_map_aids->{'start'})
+                or defined($ref_map_aids->{'stop'})){
+                push @ref_strs, $ref_map_aid.'['
+                    . $ref_map_aids->{'start'}.'*'
+                    . $ref_map_aids->{'stop'}. ']';
+            }
+            else{
+                push @ref_strs, $ref_map_aid;
+            }
+        }
+        $url .= "ref_map_aids=".join(',',@ref_strs).";";
+    }
+
+    $url .= "ref_map_names=$ref_map_names" 
+        if defined($ref_map_names);
+
+    if ($comparative_maps and %$comparative_maps){
+        my @strs;
+        foreach my $slot_no (keys(%$comparative_maps)){
+            my $map=$comparative_maps->{$slot_no};
+            for my $field (qw[ maps map_sets ]) {
+                next unless (defined($map->{$field}));
+                foreach my $aid (keys %{$map->{$field}}){
+                    if ($field eq 'maps'){
+                        push @strs, 
+                            $slot_no
+                          . '%3dmap_aid%3d'
+                          . $aid.'['.$map->{$field}{$aid}{'start'}.'*'
+                          . $map->{$field}{$aid}{'stop'}.']';
+                    }
+                    else{
+                        push @strs, 
+                            $slot_no
+                          . '%3dmap_set_aid%3d'
+                          . $aid
+                    }
+                }
+            }
+        }
+
+        $url .= "comparative_maps=".join(':',@strs).";";
+    }
+
+    foreach my $aid (@$feature_type_aids){
+        $url .= "feature_type_".$aid."=2;";
+    }
+    foreach my $aid (@$corr_only_feature_type_aids){
+        $url .= "feature_type_".$aid."=1;";
+    }
+    if ($evidence_type_aids and @$evidence_type_aids){
+        $url .= "evidence_types=".join(',',@$evidence_type_aids);
+    }
+
+    return $url;
+}
+
+# ----------------------------------------------------
+sub get_link_name_space{
+
+=pod
+
+=head2 get_link_name_space
+
+This is a consistant way of naming the link name space
+
+=cut
+
+    my $self = shift;
+    return 'imported_links_'.$self->data_source;
 }
 
 # ----------------------------------------------------

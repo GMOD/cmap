@@ -36,7 +36,7 @@ provides:
     version: 0.11
   Bio::GMOD::CMap::Admin:
     file: lib/Bio/GMOD/CMap/Admin.pm
-    version: 1.54
+    version: 1.55
   Bio::GMOD::CMap::Admin::Export:
     file: lib/Bio/GMOD/CMap/Admin/Export.pm
     version: 1.10
@@ -72,7 +72,7 @@ provides:
     version: 1.2
   Bio::GMOD::CMap::Apache::FeatureSearch:
     file: lib/Bio/GMOD/CMap/Apache/FeatureSearch.pm
-    version: 1.20
+    version: 1.21
   Bio::GMOD::CMap::Apache::FeatureTypeViewer:
     file: lib/Bio/GMOD/CMap/Apache/FeatureTypeViewer.pm
     version: 1.9
@@ -96,7 +96,7 @@ provides:
     version: 1.5
   Bio::GMOD::CMap::Apache::MapViewer:
     file: lib/Bio/GMOD/CMap/Apache/MapViewer.pm
-    version: 1.50
+    version: 1.52
   Bio::GMOD::CMap::Apache::MatrixViewer:
     file: lib/Bio/GMOD/CMap/Apache/MatrixViewer.pm
     version: 1.12
@@ -110,7 +110,7 @@ provides:
     file: lib/Bio/GMOD/CMap/Config.pm
   Bio::GMOD::CMap::Data:
     file: lib/Bio/GMOD/CMap/Data.pm
-    version: 1.137
+    version: 1.139
   Bio::GMOD::CMap::Data::Generic:
     file: lib/Bio/GMOD/CMap/Data/Generic.pm
     version: 1.52
@@ -128,7 +128,7 @@ provides:
     version: 1.8
   Bio::GMOD::CMap::Drawer::Map:
     file: lib/Bio/GMOD/CMap/Drawer/Map.pm
-    version: 1.103
+    version: 1.105
   Bio::GMOD::CMap::Utils:
     file: lib/Bio/GMOD/CMap/Utils.pm
     version: 1.40

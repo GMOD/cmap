@@ -4,7 +4,7 @@ package Bio::GMOD::CMap::Apache::EntryViewer;
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -23,13 +23,12 @@ sub handler {
 # read session data.  Calls "show_form."
 #
     my ( $self, $apr ) = @_;
-    my $prev_ref_species_aid  = $apr->param('prev_ref_species_aid')  || '';
-    my $prev_ref_map_set_aid  = $apr->param('prev_ref_map_set_aid')  || '';
     my $ref_species_aid       = $apr->param('ref_species_aid')       || '';
     my $ref_map_set_aid       = $apr->param('ref_map_set_aid')       || '';
     my $ref_map_names         = $apr->param('ref_map_names')         || '';
-    my $min_correspondences   = $apr->param('min_correspondences')   || 0;
+    my $min_correspondence_maps   = $apr->param('min_correspondence_maps')   || 0;
     my $name_search           = $apr->param('name_search')           || '';
+    my $order_by              = $apr->param('order_by')              || '';
     my $page_index_start      = $apr->param('page_index_start')      || 1;
     my $page_index_stop       = $apr->param('page_index_stop')       || 20;
 
@@ -74,19 +73,6 @@ sub handler {
     #
     $self->data_source( $apr->param('data_source') ) or return;
 
-    if ( 
-        $prev_ref_species_aid && $prev_ref_species_aid ne $ref_species_aid 
-    ) {
-        $ref_map_set_aid = '';
-    }
-
-    if ( 
-        $prev_ref_map_set_aid && $prev_ref_map_set_aid ne $ref_map_set_aid 
-    ) {
-        @ref_map_aids          = ();
-        $ref_map_names         = '';
-    }
-
     my ( $ref_field, $ref_value );
     if ( grep {/^-1$/} @ref_map_aids ) {
         $ref_field = 'map_set_aid';
@@ -115,13 +101,14 @@ sub handler {
     my $data                   = $self->data_module;
     my $form_data              = $data->cmap_entry_data( 
         slots                  => \%slots,
-        min_correspondences    => $min_correspondences,
+        min_correspondence_maps    => $min_correspondence_maps,
         include_feature_types  => \@feature_types,
         include_evidence_types => \@evidence_types,
         ref_species_aid        => $ref_species_aid,
         page_index_start       => $page_index_start,
         page_index_stop        => $page_index_stop,
         name_search            => $name_search,
+        order_by               => $order_by,
     ) or return $self->error( $data->error );
 
     #
@@ -135,6 +122,8 @@ sub handler {
     $apr->param( ref_species_aid => $form_data->{'ref_species_aid'} );
     $apr->param( ref_map_set_aid => $form_data->{'ref_map_set_aid'} );
 
+    my $url_sort_tmpl = "/entry?ref_species_aid=$ref_species_aid&ref_map_set_aid=$ref_map_set_aid&ref_map_names=$ref_map_names&min_correspondence_maps=$min_correspondence_maps&name_search=$name_search&page_index_start=$page_index_start&page_index_stop=$page_index_stop";
+
     my $html;
     my $t = $self->template or return;
     $t->process( 
@@ -145,10 +134,13 @@ sub handler {
             page_index_start    => $page_index_start,
             page_index_stop     => $page_index_stop,
             name_search         => $name_search,
-            min_correspondences => $min_correspondences,
+            cur_order_by        => $order_by,
+            url_sort_tmpl       => $url_sort_tmpl,
+            min_correspondence_maps => $min_correspondence_maps,
             page                => $self->page,
             debug               => $self->debug,
             intro               => $INTRO,
+            url_sort_tmpl       => $url_sort_tmpl,
             data_source         => $self->data_source,
             data_sources        => $self->data_sources,
             title               => 'Welcome to CMap',

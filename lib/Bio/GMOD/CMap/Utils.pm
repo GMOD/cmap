@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.40 2004-08-04 04:35:50 mwz444 Exp $
+# $Id: Utils.pm,v 1.41 2004-08-17 05:27:42 mwz444 Exp $
 
 =head1 NAME
 
@@ -30,13 +30,14 @@ use Bio::GMOD::CMap::Constants;
 use POSIX;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.40 $)[-1];
+$VERSION = (qw$Revision: 1.41 $)[-1];
 
 use base 'Exporter';
 
 my @subs = qw[
   commify
   presentable_number
+  presentable_number_per
   extract_numbers
   even_label_distribution
   label_distribution
@@ -837,6 +838,36 @@ example: 10000 becomes 10K
     my $unit        = calculate_units(10**($scale-($scale%3)));
     $num_str        = $printable_num." ".$unit;
                                                              
+    return $num_str;
+}
+
+# ----------------------------------------------------
+sub presentable_number_per {
+                                                                                
+=pod
+                                                                                
+=head2 presentable_number_per 
+
+Takes a number and makes it pretty. 
+example: .001 becomes "1/K"
+
+=cut
+                                                                                
+    my $num        = shift;
+    my $num_str; 
+
+    return "0/unit" unless $num;
+
+    # the "''." is to fix a rounding error in perl 
+    my $scale          = int(''.(log($num)/log(10))); 
+    my $denom_power    = $scale-($scale%3);
+
+    my $printable_num  = $num ? $num / (10**$denom_power) : 0;
+    $printable_num     = sprintf("%.2f",$printable_num) if $printable_num;
+    
+    my $unit        = calculate_units(10**(-1*$denom_power));
+    $num_str        = $unit ? $printable_num."/".$unit
+                            : $printable_num."/unit";
     return $num_str;
 }
 
