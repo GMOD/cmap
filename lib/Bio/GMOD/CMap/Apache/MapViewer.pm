@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.94 2005-03-24 15:19:05 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.95 2005-03-30 22:18:06 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.94 $)[-1];
+$VERSION = (qw$Revision: 1.95 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -222,15 +222,18 @@ sub handler {
     my @greater_evidence_types;
     my %evidence_type_score;
     foreach my $param ( $apr->param ) {
-        if ( $param =~ /^feature_type_(\S+)/ ) {
+        if ( $param =~ /^ft_(\S+)/ or $param =~ /^feature_type_(\S+)/ ) {
             my $ft  = $1;
             my $val = $apr->param($param);
             if ( $ft eq 'DEFAULT' ) {
                 if ( $val =~ /^\d$/ ) {
                     $url_feature_default_display = $val;
+                    $apr->param( 'ft_DEFAULT', $val );
+                    $apr->param( 'feature_type_DEFAULT', undef );
                 }
                 else {
                     $url_feature_default_display = undef;
+                    $apr->param( 'ft_DEFAULT', undef );
                     $apr->param( 'feature_type_DEFAULT', undef );
                 }
                 next;
@@ -245,7 +248,7 @@ sub handler {
                 push @feature_types, $ft;
             }
         }
-        elsif ( $param =~ /^evidence_type_(\S+)/ ) {
+        elsif ( $param =~ /^et_(\S+)/ or $param =~ /^evidence_type_(\S+)/ ) {
             my $et  = $1;
             my $val = $apr->param($param);
             if ( $val == 0 ) {

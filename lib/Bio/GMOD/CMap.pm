@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.79 2005-03-24 15:19:05 mwz444 Exp $
+# $Id: CMap.pm,v 1.80 2005-03-30 22:17:51 mwz444 Exp $
 
 =head1 NAME
 
@@ -29,7 +29,7 @@ itself based on Andy Wardley's Class::Base module.
 
 use strict;
 use vars '$VERSION';
-$VERSION = '0.13';
+$VERSION = '0.15';
 
 use Data::Dumper;
 use Class::Base;
@@ -963,27 +963,27 @@ Given information about the link, creates a url to cmap_viewer.
     }
 
     foreach my $aid (@$feature_type_aids) {
-        $url .= "feature_type_" . $aid . "=2;";
+        $url .= "ft_" . $aid . "=2;";
     }
     foreach my $aid (@$corr_only_feature_type_aids) {
-        $url .= "feature_type_" . $aid . "=1;";
+        $url .= "ft_" . $aid . "=1;";
     }
     foreach my $aid (@$ignored_feature_type_aids) {
-        $url .= "feature_type_" . $aid . "=0;";
+        $url .= "ft_" . $aid . "=0;";
     }
-    $url .= "feature_type_DEFAULT=$url_feature_default_display;"
+    $url .= "ft_DEFAULT=$url_feature_default_display;"
       if defined($url_feature_default_display);
     foreach my $aid (@$included_evidence_type_aids) {
-        $url .= "evidence_type_" . $aid . "=1;";
+        $url .= "et_" . $aid . "=1;";
     }
     foreach my $aid (@$ignored_evidence_type_aids) {
-        $url .= "evidence_type_" . $aid . "=0;";
+        $url .= "et_" . $aid . "=0;";
     }
     foreach my $aid (@$less_evidence_type_aids) {
-        $url .= "evidence_type_" . $aid . "=2;";
+        $url .= "et_" . $aid . "=2;";
     }
     foreach my $aid (@$greater_evidence_type_aids) {
-        $url .= "evidence_type_" . $aid . "=3;";
+        $url .= "et_" . $aid . "=3;";
     }
     foreach my $aid (keys(%$evidence_type_score)) {
         $url .= "ets_" . $aid . "=".$evidence_type_score->{$aid}.";";
