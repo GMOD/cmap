@@ -1,0 +1,91 @@
+-- This file will adapt a currently installed CMap schema into the 
+-- integrated CMap/GBrowse schema.
+
+--
+-- Modify the structure for table `cmap_feature`
+--
+ALTER TABLE cmap_feature CHANGE map_id map_id int(11) NULL default NULL;
+CREATE INDEX gclass on cmap_feature (gclass,feature_name);
+--
+-- Table structure for table `fattribute`
+--
+
+CREATE TABLE fattribute (
+  fattribute_id int(10) unsigned NOT NULL auto_increment,
+  fattribute_name varchar(255) NOT NULL default '',
+  PRIMARY KEY  (fattribute_id)
+) TYPE=MyISAM;
+
+--
+-- Table structure for table `fattribute_to_feature`
+--
+
+CREATE TABLE fattribute_to_feature (
+  fid int(10) NOT NULL default '0',
+  fattribute_id int(10) NOT NULL default '0',
+  fattribute_value text,
+  KEY fid (fid,fattribute_id),
+  KEY fattribute_value (fattribute_value(48)),
+  FULLTEXT KEY fattribute_value_2 (fattribute_value)
+) TYPE=MyISAM;
+
+--
+-- Table structure for table `fdata`
+--
+
+CREATE TABLE fdata (
+  fid int(11) NOT NULL auto_increment,
+  fref varchar(100) NOT NULL default '',
+  fstart int(10) unsigned NOT NULL default '0',
+  fstop int(10) unsigned NOT NULL default '0',
+  fbin double(20,6) NOT NULL default '0.000000',
+  ftypeid int(11) NOT NULL default '0',
+  fscore float default NULL,
+  fstrand enum('+','-') default NULL,
+  fphase enum('0','1','2') default NULL,
+  feature_id int(11) NOT NULL default '0',
+  ftarget_start int(10) unsigned default NULL,
+  ftarget_stop int(10) unsigned default NULL,
+  PRIMARY KEY  (fid),
+  UNIQUE KEY fref (fref,fbin,fstart,fstop,ftypeid,feature_id),
+  KEY ftypeid (ftypeid),
+  KEY feature_id (feature_id)
+) TYPE=MyISAM;
+
+--
+-- Table structure for table `fdna`
+--
+
+CREATE TABLE fdna (
+  fref varchar(100) NOT NULL default '',
+  foffset int(10) unsigned NOT NULL default '0',
+  fdna longblob,
+  PRIMARY KEY  (fref,foffset)
+) TYPE=MyISAM;
+
+--
+-- Table structure for table `fmeta`
+--
+
+CREATE TABLE fmeta (
+  fname varchar(255) NOT NULL default '',
+  fvalue varchar(255) NOT NULL default '',
+  PRIMARY KEY  (fname)
+) TYPE=MyISAM;
+
+--
+-- Table structure for table `ftype`
+--
+
+CREATE TABLE ftype (
+  ftypeid int(11) NOT NULL auto_increment,
+  fmethod varchar(100) NOT NULL default '',
+  fsource varchar(100) default NULL,
+  PRIMARY KEY  (ftypeid),
+  UNIQUE KEY ftype (fmethod,fsource),
+  KEY fmethod (fmethod),
+  KEY fsource (fsource)
+) TYPE=MyISAM;
+
+
+

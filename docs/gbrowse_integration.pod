@@ -1,0 +1,144 @@
+=head1 NAME
+
+CMap and GBrowse integration
+
+=head1 INTRODUCTION
+
+There has been considerable interest in integrating GBrowse and CMap.  The solution presented here is to interweave their database schemas by merging the cmap_feature table (from CMap) and the fgroup table (from GBrowse).  This enables features/groups from each to be referenced from each program.
+
+The process of setting up an integrated is explained in this document.
+
+=head1 CREATE THE DATABASE
+
+There are several different ways to create the integrated database.
+
+=head2 Fresh Install
+
+If you are installing both for the first time, you can use the sql/cmap_gbrowse_create.mysql file.  This will create a usable CMap database and also include the integraded GBrowse schema.  For instructions on how to install a sql file, see INSTALL.pod.
+
+You can also install the regular cmap database and use the following the "Previous Install" directions.
+
+=head2 Previous Install
+
+If you currently have a CMap version of 0.13 or higher, don't panic.  The database update is non-destructive to the CMap side.  (If you are running and older version of CMap, you will need to upgrade first.)
+
+Simply, run the upgrade sql script, sql/cmap_gbrowse.adapt.mysql.  This will add the GBrowse tables and the new columns in the CMap tables.
+
+    Example:
+        $ mysql CMAP_GBROWSE < sql/cmap_gbrowse.adapt.mysql
+
+=head1 CONFIGURATION
+
+Starting with a regular CMap config, configuring for integration can be fun and easy.  (If you need help with the CMap configuration part, please see ADMINISTRATION.pl in the docs folder.)
+
+=head2 New Fields
+
+The following fields need to be added to the individual config file for this data source.
+
+=over 4
+
+=item * gbrowse_compatible
+
+Set to 1 or 0.  Setting to "1" indicates that this data source is integrated with GBrowse.
+
+=item * gbrowse_default_map_class
+
+Set to the reference class as will be defined in the GBrowse config file.  Features of this class will be seen by GBrowse as the "map".  When CMap map data is converted into GBrowse, a feature with this class will be created that spans the whole length of the CMap map.
+
+=item * gbrowse_default_map_feature_type_aid
+
+This is the CMap feature type accession that the "map" feature will have in the cmap database.  This must also be definded as a feature type.
+
+=back
+
+The following is an example of how that would look.
+
+    #
+    # The database includes gbrowse tables.
+    #
+    gbrowse_compatible 1
+                                                                                                                             
+    #
+    # The GBrowse class that a map will have.
+    #
+    gbrowse_default_map_class CMap_Map
+                                                                                                                             
+    #
+    # The CMap feature_type_accession that a map "feature" will have.
+    #
+    gbrowse_default_map_feature_type_aid gbrowse_map
+                                                                                                                             
+    <feature_type gbrowse_map>
+        feature_type_accession gbrowse_map
+        feature_type GBrowse Map
+        default_rank 10
+        color
+        shape in-triangle
+        drawing_lane 10
+        drawing_priority 1
+    </feature_type>
+ 
+=head2 Modifying feature types
+
+Each feature type whose features you to be able view in GBrowse will need a "gbrowse_class" entry added.  This is the class that will be assigned to the features.  If a class does not have a gbrowse_class assigned to it, it will be unavailable from GBrowse.
+
+IMPORTANT NOTE: The Combination of the gbrowse_class (gclass) and feature_name must be unique.  Therefore, it is important to not give a gbrowse_class to feature types that can have redundant names, such as markers or read depth.  A non-unique set will result in an error when preparing the CMap data for GBrowse and also possibly only allowing the first of that name to be displayed.
+
+    Example:
+    <feature_type read>
+        feature_type_accession read
+        feature_type Read
+        default_rank 3
+        color
+        shape out-triangle
+        drawing_lane 3
+        drawing_priority 1
+        gbrowse_class read
+    </feature_type>
+
+=head1 LOAD CMAP DATA
+
+You can load the CMap data as normal.  Keep in mind that (currently) it is essential that the CMap data be loaded in first.  Under this system, there can be CMap data not displayed in GBrowse but not the other way around.
+
+=head1 PREPARE CMAP DATA
+
+Using cmap_admin.pl, select the correct data source and then choose the "Prepare the Database for GBrowse data" option.  It will ask you to select a map set and some feature types to prepare.  You will want to prepare the data that corresponds to the GBrowse data you will be then importing.
+
+=head1 CONFIGURING GBROWSE 
+
+To use the integrated database, you must select the dbi::mysqlcmap adaptor as in the following example.
+
+    description   = CMap Integrated 
+    db_adaptor    = Bio::DB::GFF
+    db_args       = -adaptor dbi::mysqlcmap
+                    -dsn     CMAP_GBROWSE
+    user          = mysql
+    pass          = mysql
+
+Also, remember to make the "reference class" the same as what was defined in the cmap config file. 
+
+=head1 IMPORT THE GBROWSE DATA
+
+You can use bp_load_gff.pl to load Data into the GBrowse side of the database (making sure that the data is already prepared in the CMap side, of course).  Use the dbi::mysqlcmap adaptor as follows.
+
+    /usr/bin/bp_load_gff.pl --dns CMAP_GBROWSE --adaptor dbi::mysqlcmap file_name.gff
+
+=head1 LINK THE TWO
+
+Now you will want to link from each to the other.  I'll be working on how to do this.
+
+=head2 Link to GBrowse from CMap
+
+I will work this out later but it promises to be simple.
+
+=head2 Link to CMap from GBrowse
+
+You can add javascript to a cmap feature by defining it in the config file.  I will add an example later.
+
+=head1 Conclusion
+
+Then your done and you can happily use both CMap and GBrowse in concert.
+
+=head1 AUTHOR
+
+Ben Faga E<lt>faga@cshl.orgE<gt>
