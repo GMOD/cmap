@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.140 2004-08-17 05:27:41 mwz444 Exp $
+# $Id: Data.pm,v 1.141 2004-08-18 21:53:33 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.140 $)[-1];
+$VERSION = (qw$Revision: 1.141 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -48,10 +48,26 @@ sub init {
     $self->config( $config->{'config'} );
     $self->data_source( $config->{'data_source'} );
     $self->aggregate( $config->{'aggregate'} );
+    ### Create the cache objects for each of the levels
+    ### For and explaination of the cache levels, see
+    ### the comments above the cache subroutines 
+    ### titled "Query Caching"
     my %cache_params = ( 
-        'namespace' => $self->config_data('database')->{'name'},
+        'namespace' => $self->config_data('database')->{'name'}."_L1",
          );
-    $self->{'cache'} = new Cache::FileCache( \%cache_params );
+    $self->{'L1_cache'} = new Cache::FileCache( \%cache_params );
+    %cache_params = ( 
+        'namespace' => $self->config_data('database')->{'name'}."_L2",
+         );
+    $self->{'L2_cache'} = new Cache::FileCache( \%cache_params );
+    %cache_params = ( 
+        'namespace' => $self->config_data('database')->{'name'}."_L3",
+         );
+    $self->{'L3_cache'} = new Cache::FileCache( \%cache_params );
+    %cache_params = ( 
+        'namespace' => $self->config_data('database')->{'name'}."_L4",
+         );
+    $self->{'L4_cache'} = new Cache::FileCache( \%cache_params );
     $self->{'expanded_correspondence_lookup'}=
         $self->config_data('expanded_correspondence_lookup');
     return $self;
@@ -97,7 +113,7 @@ Given an accession id for a particular table, find the internal id.  Expects:
             where  accession_id=?
 	  ];
     my $id;
-    if ( my $scalarref = $self->get_cached_results( $sql_str . $acc_id ) ) {
+    if ( my $scalarref = $self->get_cached_results('', $sql_str . $acc_id ) ) {
         $id = $$scalarref;
     }
     else {
@@ -105,7 +121,7 @@ Given an accession id for a particular table, find the internal id.  Expects:
           or $self->error(
 qq[Unable to find internal id for acc. id "$acc_id" in table "$table"]
           );
-        $self->store_cached_results( $sql_str . $acc_id, \$id );
+        $self->store_cached_results('', $sql_str . $acc_id, \$id );
     }
     return $id;
 }
@@ -137,7 +153,7 @@ sub correspondence_detail_data {
             where  accession_id=?
 		 ];
     my ( $corr, $feature1, $feature2 );
-    if (my $array_ref=$self->get_cached_results( $sql . $correspondence_aid)){
+    if (my $array_ref=$self->get_cached_results(4, $sql . $correspondence_aid)){
         ( $corr, $feature1, $feature2 ) = @$array_ref;
     }
     else{
@@ -222,7 +238,7 @@ sub correspondence_detail_data {
         $corr->{'evidence'} =
           sort_selectall_arrayref( $corr->{'evidence'}, 'rank',
             'evidence_type' );
-        $self->store_cached_results( $sql . $correspondence_aid,
+        $self->store_cached_results(4, $sql . $correspondence_aid,
             [ $corr, $feature1, $feature2 ] );
     }
     return {
@@ -591,7 +607,7 @@ sub slot_data {
                     and    map.map_set_id=ms.map_set_id
                     and    ms.species_id=s.species_id
 		  ];
-        my $tempMap = $self->cache_array_results( $sql, { Columns => {} },
+        my $tempMap = $self->cache_array_results(2, $sql, { Columns => {} },
             [], $db, 'selectall_arrayref', $map_sub );
 
         foreach my $row (@$tempMap){
@@ -652,7 +668,7 @@ sub slot_data {
           . join( "','", @$feature_type_aids ) . "')";
     }
     my $ft;
-    unless ( $ft = $self->get_cached_results($ft_sql) ) {
+    unless ( $ft = $self->get_cached_results(3,$ft_sql) ) {
         $ft = $db->selectall_hashref( $ft_sql, 'feature_type_aid', {}, () );            foreach my $rowKey ( keys %{$ft} ) {
             $ft->{$rowKey}->{'feature_type'} =
               $self->feature_type_data(
@@ -665,7 +681,7 @@ sub slot_data {
               $self->feature_type_data(
                 $ft->{$rowKey}->{'feature_type_aid'}, 'color' );
         }
-        $self->store_cached_results( $ft_sql, $ft );
+        $self->store_cached_results( 3,$ft_sql, $ft );
     }
     $feature_types_seen->{$_} = $ft->{$_} for keys %$ft;
                                                                                 
@@ -728,7 +744,7 @@ sub slot_data {
         $f_count_sql =~ s/where\s+and/where /;
         $f_count_sql .= " group by f.map_id";
         my $f_counts =
-          $self->cache_array_results( $f_count_sql, { Columns => {} },
+          $self->cache_array_results(3, $f_count_sql, { Columns => {} },
             [], $db, 'selectall_arrayref' );
 
         for my $f (@$f_counts) {
@@ -880,7 +896,7 @@ sub slot_data {
                 $sql_str = $corr_free_sql . " UNION " . $with_corr_sql;
             }
             unless ( $map->{'features'} =
-                $self->get_cached_results( $sql_str) )
+                $self->get_cached_results(4, $sql_str) )
             {
 
                 $map->{'features'} =
@@ -911,7 +927,7 @@ sub slot_data {
                         $map->{'features'}->{$rowKey}->{'feature_type_aid'},
                         'drawing_priority' );
                 }
-                $self->store_cached_results( $sql_str ,
+                $self->store_cached_results(4, $sql_str ,
                     $map->{'features'} );
             }
 
@@ -944,10 +960,10 @@ sub slot_data {
           . "')";
         $f_count_sql .= " group by f.map_id";
         my $f_counts;
-        unless ( $f_counts = $self->get_cached_results($f_count_sql) ) {
+        unless ( $f_counts = $self->get_cached_results(3,$f_count_sql) ) {
             $f_counts =
               $db->selectall_arrayref( $f_count_sql, { Columns => {} }, () );
-            $self->get_cached_results( $f_count_sql, $f_counts );
+            $self->store_cached_results(3, $f_count_sql, $f_counts );
         }
 
         for my $f (@$f_counts) {
@@ -1221,7 +1237,7 @@ sub get_feature_correspondences {
     }
     my $ref_correspondences;
     unless ( $ref_correspondences =
-        $self->get_cached_results( $corr_sql . $value ) )
+        $self->get_cached_results(4, $corr_sql . $value ) )
     {
 
         $ref_correspondences =
@@ -1237,7 +1253,7 @@ sub get_feature_correspondences {
               $self->evidence_type_data( $row->{'evidence_type_aid'},
                 'evidence_type' );
         }
-        $self->store_cached_results( $corr_sql . $value, $ref_correspondences );
+        $self->store_cached_results(4, $corr_sql . $value, $ref_correspondences );
     }
     for my $corr ( @{$ref_correspondences} ) {
         $feature_correspondences->{ $corr->{'feature_id'} }
@@ -1397,7 +1413,7 @@ sub get_intraslot_correspondences {
 
     }
     my $ref_correspondences;
-    unless ( $ref_correspondences = $self->get_cached_results($corr_sql) ) {
+    unless ( $ref_correspondences = $self->get_cached_results(4,$corr_sql) ) {
         $ref_correspondences =
           $db->selectall_arrayref( $corr_sql, { Columns => {} }, () );
 
@@ -1411,7 +1427,7 @@ sub get_intraslot_correspondences {
               $self->evidence_type_data( $row->{'evidence_type_aid'},
                 'evidence_type' );
         }
-        $self->store_cached_results( $corr_sql, $ref_correspondences );
+        $self->store_cached_results(4, $corr_sql, $ref_correspondences );
 
     }
 
@@ -2073,14 +2089,14 @@ sub cmap_form_data {
                 and    ms.species_id=s.species_id
 		      ];
         if ( my $scalar_ref =
-            $self->get_cached_results( $sql_str . $ref_map_set_aid ) )
+            $self->get_cached_results(1, $sql_str . $ref_map_set_aid ) )
         {
             $ref_species_aid = $$scalar_ref;
         }
         else {
             $ref_species_aid =
               $db->selectrow_array( $sql_str, {}, ($ref_map_set_aid) );
-            $self->store_cached_results( $sql_str . $ref_map_set_aid,
+            $self->store_cached_results(1, $sql_str . $ref_map_set_aid,
                 \$ref_species_aid );
         }
     }
@@ -2106,12 +2122,12 @@ sub cmap_form_data {
     my $ref_species;
     my $scalar_ref;
 
-    if ( $scalar_ref = $self->get_cached_results($sql_str) ) {
+    if ( $scalar_ref = $self->get_cached_results(1,$sql_str) ) {
         $ref_species = $$scalar_ref;
     }
     else {
         $ref_species = $db->selectall_arrayref( $sql_str, { Columns => {} } );
-        $self->store_cached_results( $sql_str, \$ref_species );
+        $self->store_cached_results(1, $sql_str, \$ref_species );
     }
 
     if ( @$ref_species && !$ref_species_aid ) {
@@ -2124,10 +2140,10 @@ sub cmap_form_data {
     my $ref_map_sets = [];
     if ($ref_species_aid) {
         $sql_str = $sql->form_data_ref_map_sets_sql($ref_species_aid);
-        unless ( $ref_map_sets = $self->get_cached_results($sql_str) ) {
+        unless ( $ref_map_sets = $self->get_cached_results(1,$sql_str) ) {
             $ref_map_sets =
               $db->selectall_arrayref( $sql_str, { Columns => {} }, );
-            $self->store_cached_results( $sql_str, $ref_map_sets );
+            $self->store_cached_results(1, $sql_str, $ref_map_sets );
         }
     }
 
@@ -2157,12 +2173,12 @@ sub cmap_form_data {
         {
             $sql_str = $sql->form_data_ref_maps_sql;
             unless ( $ref_maps =
-                $self->get_cached_results( $sql_str . "$ref_map_set_aid" ) )
+                $self->get_cached_results(1, $sql_str . "$ref_map_set_aid" ) )
             {
                 $ref_maps =
                   $db->selectall_arrayref( $sql_str, { Columns => {} },
                     ("$ref_map_set_aid") );
-                $self->store_cached_results( $sql_str . "$ref_map_set_aid",
+                $self->store_cached_results(1, $sql_str . "$ref_map_set_aid",
                     $ref_maps );
             }
             $self->error(
@@ -2191,7 +2207,7 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
                     and      ms.species_id=s.species_id
 		       ];
             unless ( $ref_map_set_info =
-                $self->get_cached_results( $sql_str . $ref_map_set_aid ) )
+                $self->get_cached_results(1, $sql_str . $ref_map_set_aid ) )
             {
                 my $sth = $db->prepare($sql_str);
                 $sth->execute($ref_map_set_aid);
@@ -2205,7 +2221,7 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
                 $ref_map_set_info->{'map_type'} =
                   $self->map_type_data(
                     $ref_map_set_info->{'map_type_aid'}, 'map_type' );
-                $self->get_cached_results( $sql_str . $ref_map_set_aid,
+                $self->store_cached_results(1, $sql_str . $ref_map_set_aid,
                     $ref_map_set_info );
             }
         }
@@ -2461,10 +2477,10 @@ out which maps have relationships.
 
 
     my $feature_correspondences;
-    unless ( $feature_correspondences = $self->get_cached_results($corr_sql) ) {
+    unless ( $feature_correspondences = $self->get_cached_results(4,$corr_sql) ) {
         $feature_correspondences =
           $db->selectall_arrayref( $corr_sql, { Columns => {} }, () );
-        $self->store_cached_results( $corr_sql, $feature_correspondences );
+        $self->store_cached_results(4, $corr_sql, $feature_correspondences );
     }
 
     #
@@ -2515,9 +2531,9 @@ out which maps have relationships.
             . join("','", map {$_->{'map_id'}} @$feature_correspondences)
             . "')";
         my $maps;
-        unless ( $maps = $self->get_cached_results( $maps_sql) ) {
+        unless ( $maps = $self->get_cached_results(2, $maps_sql) ) {
             $maps = $db->selectall_arrayref( $maps_sql, { Columns => {} });
-            $self->store_cached_results( $maps_sql, $maps ) if ($maps);
+            $self->store_cached_results(2, $maps_sql, $maps ) if ($maps);
         }
         for my $map ( @$maps ) {
             $comp_maps{ $map->{'map_id'} } = $map;
@@ -2678,7 +2694,7 @@ Turn a feature name into a position.
 		  ];
     my ($start,$stop);
     if ( my $arrayref =
-        $self->get_cached_results( $sql_str . $map_id . $upper_name ) )
+        $self->get_cached_results(3, $sql_str . $map_id . $upper_name ) )
    {
         ( $start, $stop ) = @$arrayref;
     }
@@ -2686,7 +2702,7 @@ Turn a feature name into a position.
         ( $start, $stop ) =
           $db->selectrow_array( $sql_str, {},
             ( $map_id, $upper_name, $upper_name ) );
-        $self->store_cached_results( $sql_str . $map_id . $upper_name,
+        $self->store_cached_results(3, $sql_str . $map_id . $upper_name,
             [$start,$stop] );
     }
     
@@ -2731,9 +2747,9 @@ sub fill_out_maps {
           . join(",", keys(%$slot_info))
           . ") ";
         my $map_info;
-        unless ( $map_info = $self->get_cached_results( $sql_str ) ) {
+        unless ( $map_info = $self->get_cached_results(2, $sql_str ) ) {
             $map_info = $db->selectall_arrayref( $sql_str, { Columns => {} } );
-            $self->store_cached_results( $sql_str, $map_info ) if ($map_info);
+            $self->store_cached_results(2, $sql_str, $map_info ) if ($map_info);
         }
         my %desc_by_species;
         foreach my $row (@$map_info){
@@ -3480,13 +3496,13 @@ lowest stop for a given feature type. (enhancement)
     my $sql = $sql_obj->map_stop_sql(%args);
     my ( $start, $stop );
 
-    if ( my $arrayref = $self->get_cached_results( $sql . $id ) ) {
+    if ( my $arrayref = $self->get_cached_results(3, $sql . $id ) ) {
         ( $start, $stop ) = @$arrayref;
     }
     else {
         ( $start, $stop ) = $db->selectrow_array( $sql, {}, ($id) )
           or $self->error(qq[Cannot determine map stop for id "$id"]);
-        $self->store_cached_results( $sql . $id, [ $start, $stop ] );
+        $self->store_cached_results(3, $sql . $id, [ $start, $stop ] );
     }
     return $start > $stop ? $start : $stop;
 }
@@ -3514,13 +3530,13 @@ Optionally finds the lowest start for a given feature type. (enhancement)
     my $sql = $sql_obj->map_start_sql(%args);
     my ( $start, $stop );
 
-    if ( my $arrayref = $self->get_cached_results( $sql . $id ) ) {
+    if ( my $arrayref = $self->get_cached_results(3, $sql . $id ) ) {
         ( $start, $stop ) = @$arrayref;
     }
     else {
         defined( my $start = $db->selectrow_array( $sql, {}, ($id) ) )
           or return $self->error(qq[Cannot determine map start for id "$id"]);
-        $self->store_cached_results( $sql . $id, [ $start, $stop ] );
+        $self->store_cached_results(3, $sql . $id, [ $start, $stop ] );
     }
     return $start;
 }
@@ -4343,7 +4359,7 @@ sub count_correspondences{
 
         my ( $map_corr_counts, $positions );
         if (
-            my $arrayref = $self->get_cached_results(
+            my $arrayref = $self->get_cached_results(4,
                 $count_sql . $position_sql . join( ".", @query_args )
             )
           )
@@ -4357,7 +4373,7 @@ sub count_correspondences{
             $positions =
               $db->selectall_hashref( $position_sql, 'map_id2', {},
                 @query_args );
-            $self->store_cached_results(
+            $self->store_cached_results(4,
                 $count_sql . $position_sql . join( ".", @query_args ),
                 [ $map_corr_counts, $positions ] );
         }
@@ -4436,14 +4452,14 @@ sub cmap_entry_data {
                 and    ms.species_id=s.species_id
 		      ];
         if ( my $scalar_ref =
-            $self->get_cached_results( $sql_str . $ref_map_set_aid ) )
+            $self->get_cached_results(1, $sql_str . $ref_map_set_aid ) )
         {
             $ref_species_aid = $$scalar_ref;
         }
         else {
             $ref_species_aid =
               $db->selectrow_array( $sql_str, {}, ($ref_map_set_aid) );
-            $self->store_cached_results( $sql_str . $ref_map_set_aid,
+            $self->store_cached_results(1, $sql_str . $ref_map_set_aid,
                 \$ref_species_aid );
         }
     }
@@ -4468,12 +4484,12 @@ sub cmap_entry_data {
     my $ref_species;
     my $scalar_ref;
 
-    if ( $scalar_ref = $self->get_cached_results($sql_str) ) {
+    if ( $scalar_ref = $self->get_cached_results(1,$sql_str) ) {
         $ref_species = $$scalar_ref;
     }
     else {
         $ref_species = $db->selectall_arrayref( $sql_str, { Columns => {} } );
-        $self->store_cached_results( $sql_str, \$ref_species );
+        $self->store_cached_results(1, $sql_str, \$ref_species );
     }
 
     if ( @$ref_species && !$ref_species_aid ) {
@@ -4488,10 +4504,10 @@ sub cmap_entry_data {
     my $ref_map_sets = [];
     if ($ref_species_aid) {
         $sql_str = $sql->form_data_ref_map_sets_sql($ref_species_aid);
-        unless ( $ref_map_sets = $self->get_cached_results($sql_str) ) {
+        unless ( $ref_map_sets = $self->get_cached_results(1,$sql_str) ) {
             $ref_map_sets =
               $db->selectall_arrayref( $sql_str, { Columns => {} }, );
-            $self->store_cached_results( $sql_str, $ref_map_sets );
+            $self->store_cached_results(1, $sql_str, $ref_map_sets );
         }
     }
 
@@ -4510,14 +4526,14 @@ sub cmap_entry_data {
                 where  ms.accession_id=?
 		      ];
         if ( my $scalar_ref =
-            $self->get_cached_results( $sql_str . $ref_map_set_aid ) )
+            $self->get_cached_results(1, $sql_str . $ref_map_set_aid ) )
         {
             $ref_map_set_id = $$scalar_ref;
         }
         else {
             $ref_map_set_id =
               $db->selectrow_array( $sql_str, {}, ($ref_map_set_aid) );
-            $self->store_cached_results( $sql_str . $ref_map_set_aid,
+            $self->store_cached_results(1, $sql_str . $ref_map_set_aid,
                 \$ref_map_set_id );
         }
     }
@@ -4562,7 +4578,7 @@ sub cmap_entry_data {
         ];
         ###Get map info
         unless ($map_info 
-            = $self->get_cached_results( $map_sql_str . "$ref_map_set_id" )) {
+            = $self->get_cached_results(4, $map_sql_str . "$ref_map_set_id" )) {
             $map_info =
               $db->selectall_hashref( $map_sql_str, 'map_id',{ Columns => {} },
                 ("$ref_map_set_id") );
@@ -4588,7 +4604,7 @@ sub cmap_entry_data {
                 $map_info->{$map_id}{'corr_count_per_raw'}=$raw_no;
                 
             }
-            $self->store_cached_results( $map_sql_str . "$ref_map_set_id",
+            $self->store_cached_results(4, $map_sql_str . "$ref_map_set_id",
                 $map_info );
         }
         @map_ids = keys(%$map_info);
@@ -4609,7 +4625,7 @@ sub cmap_entry_data {
         $sql_str .= q[ group by map_id, feature_type_aid
             ];
         if (my $array_ref =
-            $self->get_cached_results( $sql_str . "$ref_map_set_id" ) )
+            $self->get_cached_results(3, $sql_str . "$ref_map_set_id" ) )
         {
             $feature_info=$array_ref->[0];
             @feature_type_aids=@{$array_ref->[1]};
@@ -4633,12 +4649,12 @@ sub cmap_entry_data {
                     = presentable_number_per($raw_no);
             }
             @feature_type_aids=keys(%feature_type_hash);
-            $self->store_cached_results( $sql_str . "$ref_map_set_id",
+            $self->store_cached_results(3, $sql_str . "$ref_map_set_id",
                 [$feature_info,\@feature_type_aids] );
         }
         ###Sort maps
         if (my $array_ref
-            =$self->get_cached_results($map_sql_str.$order_by."_".$ref_map_set_id)){
+            =$self->get_cached_results(4,$map_sql_str.$order_by."_".$ref_map_set_id)){
             @map_ids=@$array_ref;
         }
         else{
@@ -4673,7 +4689,7 @@ sub cmap_entry_data {
                       $map_info->{$a}{$order_by} 
                     } @map_ids;
             }
-            $self->store_cached_results($map_sql_str.$order_by."_".$ref_map_set_id,
+            $self->store_cached_results(4,$map_sql_str.$order_by."_".$ref_map_set_id,
                 \@map_ids);
         }
         ###keep only the page that we want.
@@ -4723,10 +4739,7 @@ sub get_all_feature_types {
     $sql_str .= ")";
     $sql_str .= "  order by feature_type_aid";
 
-    #    @$returnArrayRef=map {$_->[0]} @{$self->cache_array_results
-    #        ($sql_str,{}, [],$db, 'selectall_arrayref')};
-
-    unless ( $ra = $self->get_cached_results($sql_str) ) {
+    unless ( $ra = $self->get_cached_results(3,$sql_str) ) {
         $ra = $db->selectall_hashref( $sql_str, 'feature_type_aid', {}, () );
         foreach my $rowKey ( keys %{$ra} ) {
             $ra->{$rowKey}->{'feature_type'} =
@@ -4739,7 +4752,7 @@ sub get_all_feature_types {
               $self->feature_type_data( $ra->{$rowKey}->{'feature_type_aid'},
                 'color' );
         }
-        $self->store_cached_results( $sql_str, $ra );
+        $self->store_cached_results(3, $sql_str, $ra );
     }
 
     my @return = ();
@@ -4883,11 +4896,11 @@ sub slot_info {
                     my $slot_results;
                     my $sql_str=$sql_start.$from.$where;
                     unless ( $slot_results =
-                        $self->get_cached_results( $sql_str )){
+                        $self->get_cached_results(4, $sql_str )){
                         $slot_results =
                           $db->selectall_arrayref( $sql_str, {}, () );
 
-                        $self->store_cached_results($sql_str ,$slot_results);
+                        $self->store_cached_results(4,$sql_str ,$slot_results);
                     }
                     if (scalar(keys(%{$slots->{$slot_no}{'maps'}}))>0){
                         foreach my $row (@$slot_results){
@@ -4950,42 +4963,65 @@ sub orderOutFromZero {
     ###Otherwise reverse the compare.
     return $b cmp $a;
 }
+###########################################
+=pod
+                                                                                
+=head2 Query Caching
+                                                                                
+Query results (and subsequent manipulations) are cached 
+in a Cache::FileCache file.
+
+There are four levels of caching.  This is so that if some part of 
+the database is changed, the whole chache does not have to be purged.  
+Only the cache level and the levels above it need to be cached.
+
+Level 1: Species or Map Sets.
+Level 2: Maps
+Level 3: Features
+Level 4: Correspondences
+
+For example if features are added, then Level 3 and 4 need to be purged.
+If a new Map is added, Levels 2,3 and 4 need to be purged.
+
+=cut
 
 # ----------------------------------------------------
 sub cache_array_results {
 
-    my ( $self, $sql, $attr, $args, $db, $select_type, $sub ) = @_;
+    my ( $self,$cache_level, $sql, $attr, $args, $db, $select_type, $sub ) = @_;
+    $cache_level    = 1 unless $cache_level;    
     my $data;
     my $cache_key = $sql . join( '-', @$args );
-#print S#TDERR "|$cache_key|\n------------------\n";
-    unless ( $data = thaw( $self->{'cache'}->get($cache_key) ) ) {
+    unless ( $data 
+        = thaw( $self->{'L'.$cache_level.'_cache'}->get($cache_key) ) ) {
         $data = $db->$select_type( $sql, $attr, @$args );
         if ( ref $sub eq 'CODE' ) {
             $sub->( $data, $db );
         }
-        $self->{'cache'}->set( $cache_key, freeze($data) );
+        $self->{'L'.$cache_level.'_cache'}->set( $cache_key, freeze($data) );
     }
     return $data;
 }
 
 # ----------------------------------------------------
 sub get_cached_results {
-    my $self  = shift;
-    my $query = shift;
-#print S#TDERR "|$query|\n------------------\n";
+    my $self        = shift;
+    my $cache_level = shift;
+    my $query       = shift;
+    $cache_level    = 1 unless $cache_level;    
+
     return undef unless($query);
-    return thaw( $self->{'cache'}->get($query) );
+    return thaw( $self->{"L".$cache_level."_cache"}->get($query) );
 }
 
 sub store_cached_results {
-    my $self   = shift;
-    my $query  = shift;
-    my $object = shift;
+    my $self        = shift;
+    my $cache_level = shift;
+    my $query       = shift;
+    my $object      = shift;
+    $cache_level    = 1 unless $cache_level;    
 
-    #print S#TDERR Dumper($self->get_cached_results($query));
-    #print S#TDERR "$query\n";
-    #print S#TDERR Dumper($object)."---------------------\n";
-    $self->{'cache'}->set( $query, freeze($object) );
+    $self->{"L".$cache_level."_cache"}->set( $query, freeze($object) );
 }
 
 1;
