@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.39 2004-07-02 20:51:56 mwz444 Exp $
+# $Id: Utils.pm,v 1.40 2004-08-04 04:35:50 mwz444 Exp $
 
 =head1 NAME
 
@@ -30,13 +30,11 @@ use Bio::GMOD::CMap::Constants;
 use POSIX;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.39 $)[-1];
+$VERSION = (qw$Revision: 1.40 $)[-1];
 
 use base 'Exporter';
 
 my @subs = qw[
-  column_distribution
-  column_distribution2
   commify
   presentable_number
   extract_numbers
@@ -51,250 +49,6 @@ my @subs = qw[
 ];
 @EXPORT_OK = @subs;
 @EXPORT    = @subs;
-
-# ----------------------------------------------------
-sub column_distribution {
-
-=pod
-
-=head2 column_distribution
-
-Given a reference to some columns, figure out where something can be inserted.
-
-=cut
-
-    my %args        = @_;
-    my $columns     = $args{'columns'} || [];        # array reference
-    my $buffer      = $args{'buffer'} || 2;          # space b/w things
-    my $collapse    = $args{'collapse'} || 0;        # whether to collapse
-    my $collapse_on = $args{'collapse_on'} || '';    # on what type of object
-    my $col_span    = $args{'col_span'} || 1;        # how many cols to occupy
-    my $top         = $args{'top'};                  # the top and bottom of
-    my $bottom      = $args{'bottom'};               # the thing being inserted
-    $bottom = $top unless defined $bottom;
-
-    return unless defined $top && defined $bottom;
-
-    my $column_index;    # the number of the column chosen, is returned
-    if (@$columns) {
-        my $i = 0;
-        for ( ; ; ) {
-            last if $i > $#{$columns};
-            my $column    = $columns->[$i];
-            my @used      = sort { $a->[0] <=> $b->[0] } @{$column};
-            my $ok        = 1;
-            my $collapsed = 0;
-
-            for my $segment (@used) {
-                my ( $north, $south, $span, $type ) = @$segment;
-                if (   $collapse
-                    && $collapse_on eq $type
-                    && $north == $top
-                    && $south == $bottom )
-                {
-                    $ok        = 1;
-                    $collapsed = 1;
-                    last;
-                }
-
-                next if $south + $buffer < $top;
-                next if $north - $buffer > $bottom;
-                $i += $span;    # jump past the last taken column
-                $ok = 0, last;
-            }
-
-            #
-            # If this column looks OK, see if there is clearance in the others.
-            #
-            if ( $ok && $col_span > 1 && $i < $#{$columns} ) {
-                for my $n ( $i + 1 .. $i + $col_span - 1 ) {
-                    last if $n > $#{$columns};
-                    my $ncol  = $columns->[$n];
-                    my @nused = sort { $a->[0] <=> $b->[0] } @{$ncol};
-                    my $nok   = 1;
-
-                    for my $nseg (@nused) {
-                        my ( $n, $s, $nspan ) = @$nseg;
-                        next if $s + $buffer < $top;
-                        next if $n - $buffer > $bottom;
-                        $i += $nspan;    # jump past the last taken column
-                        $ok = 0, last;
-                    }
-                }
-            }
-
-            if ($ok) {
-                $column_index = $i;
-                unless ($collapsed) {
-                    for my $n ( 0 .. $col_span - 1 ) {
-                        push @{ $columns->[ $column_index + $n ] },
-                          [ $top, $bottom, $col_span - $n, $collapse_on ];
-                    }
-                }
-                last;
-            }
-        }
-
-        unless ( defined $column_index ) {
-            $column_index = $#{$columns} + 1;
-            for my $n ( 0 .. $col_span - 1 ) {
-                push @{ $columns->[ $column_index + $n ] },
-                  [ $top, $bottom, $col_span - $n, $collapse_on ];
-            }
-        }
-    }
-    else {
-        $column_index = 0;
-        for my $n ( 0 .. $col_span - 1 ) {
-            push @{ $columns->[$n] },
-              [ $top, $bottom, $col_span - $n, $collapse_on ];
-        }
-    }
-
-    return $column_index;
-}
-
-# ----------------------------------------------------
-
-=pod
-
-=head2 column_distribution2
-
-Given a reference to some columns, figure out where something can be inserted.
-
-=cut
-
-sub column_distribution2 {
-    my %args        = @_;
-    my $columns     = $args{'columns'} || [];        # array reference
-    my $buffer      = $args{'buffer'} || 2;          # space b/w things
-    my $collapse    = $args{'collapse'} || 0;        # whether to collapse
-    my $collapse_on = $args{'collapse_on'} || '';    # on what type of object
-    my $col_span    = $args{'col_span'} || 1;        # how many cols to occupy
-    my $top         = $args{'top'};                  # the top and bottom of
-    my $bottom      = $args{'bottom'};               # the thing being inserted
-    my $bins        = $args{'bins'} || 1;            # number of bins
-    my $col_top     = $args{'col_top'} || 1;         # top of the column
-    my $col_bottom  = $args{'col_bottom'};           # top of the column
-
-    $bottom = $top unless defined $bottom;
-
-    return unless defined $top && defined $bottom && defined $col_bottom;
-
-    # $columns is an array of columns.  Each column is has a hash of bins.
-    #  Each bin is an array of object start and stops.
-    my $bin_factor = ( $col_bottom - $col_top ) / $bins;
-
-    # Define the bins that this object lies in.
-    my $index_start =
-      POSIX::ceil( ( $top - $col_top ) / $bin_factor );    # 1st bin
-    my $index_stop =
-      POSIX::ceil( ( $bottom - $col_top ) / $bin_factor );    # last bin
-
-    # When the top of the object is higher than the column, it results
-    # in negative indices.  This fixes the problem by binning them
-    # all in the first bin.
-    $index_start = 0 if $index_start < 0;
-    $index_stop  = 0 if $index_stop < 0;
-
-    my $column_index;    # the number of the column chosen, is returned
-    if (@$columns) {
-        my $i = 0;
-        for ( ; ; ) {
-            last if $i > $#{$columns};
-            my $ok        = 1;
-            my $collapsed = 0;
-          BIN:
-            for (
-                my $bin_no = $index_start ;
-                $bin_no <= $index_stop ;
-                $bin_no++
-              )
-            {
-                my $bin = $columns->[$i]->[$bin_no];
-                if ($bin) {
-                    my @used = sort { $a->[0] <=> $b->[0] } @{$bin};
-
-                    for my $segment (@used) {
-                        my ( $north, $south, $span, $type ) = @$segment;
-                        if (   $collapse
-                            && $collapse_on eq $type
-                            && $north == $top
-                            && $south == $bottom )
-                        {
-                            $ok        = 1;
-                            $collapsed = 1;
-                            return $i;
-                            last BIN;
-                        }
-
-                        next if $south + $buffer < $top;
-                        next if $north - $buffer > $bottom;
-                        $i += $span;    # jump past the last taken column
-                        $ok = 0, last;
-                    }
-                }
-
-                #
-                # If this column looks OK, see if there is clearance in the
-                # others.
-                #
-                if ( $ok && $col_span > 1 && $i < $#{$columns} ) {
-                    for my $n ( $i + 1 .. $i + $col_span - 1 ) {
-                        last if $n > $#{$columns};
-                        my $nbin = $columns->[$n]->[$bin_no];
-                        next unless $nbin;
-                        my @nused = sort { $a->[0] <=> $b->[0] } @{$nbin};
-                        my $nok   = 1;
-
-                        for my $nseg (@nused) {
-                            my ( $n, $s, $nspan ) = @$nseg;
-                            next if $s + $buffer < $top;
-                            next if $n - $buffer > $bottom;
-                            $i += $nspan;    # jump past the last taken column
-                            $ok = 0, last;
-                        }
-                    }
-                }
-            }
-            if ($ok) {
-                $column_index = $i;
-                unless ($collapsed) {
-                    for my $n ( 0 .. $col_span - 1 ) {
-                        for ( my $k = $index_start ; $k <= $index_stop ; $k++ )
-                        {
-                            push @{ $columns->[ $column_index + $n ]->[$k] },
-                              [ $top, $bottom, $col_span - $n, $collapse_on ];
-                        }
-                    }
-                }
-                last;
-            }
-        }
-
-        unless ( defined $column_index ) {
-            $column_index = $#{$columns} + 1;
-            for my $n ( 0 .. $col_span - 1 ) {
-                for ( my $k = $index_start ; $k <= $index_stop ; $k++ ) {
-                    push @{ $columns->[ $column_index + $n ]->[$k] },
-                      [ $top, $bottom, $col_span - $n, $collapse_on ];
-                }
-            }
-        }
-    }
-    else {
-        $column_index = 0;
-        for my $n ( 0 .. $col_span - 1 ) {
-            for ( my $k = $index_start ; $k <= $index_stop ; $k++ ) {
-                push @{ $columns->[$n]->[$k] },
-                  [ $top, $bottom, $col_span - $n, $collapse_on ];
-            }
-        }
-
-    }
-
-    return $column_index;
-}
 
 # ----------------------------------------------------
 sub next_number {
@@ -507,7 +261,7 @@ Special thanks to Noel Yap for suggesting this strategy.
 
         my $i = 1;
         for my $label (@accepted) {
-            my $target = $label->{'target'};
+            my $target = $label->{'target'}-$label->{'map_base_y'};
             my $low_bin = sprintf( "%d", ( $target - $half_font ) / $bin_size );
             my $high_bin =
               sprintf( "%d", ( $target + $half_font ) / $bin_size );
