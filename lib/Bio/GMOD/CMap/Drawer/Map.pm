@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.62 2003-12-15 17:22:18 kycl4rk Exp $
+# $Id: Map.pm,v 1.63 2003-12-16 23:54:46 kycl4rk Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.62 $)[-1];
+$VERSION = (qw$Revision: 1.63 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -974,7 +974,12 @@ Lays out the map.
                         push @drawing_data, [ RECTANGLE, @coords, $color ];
                     }
                     elsif ( $feature_shape eq 'dumbbell' ) {
-                        my $width = 3;
+                        my $width  = 4;
+                        unless ( $y_pos1 == $y_pos2 ) {
+                            $y_pos1 += 2;
+                            $y_pos2 -= 2;
+                        }
+
                         push @drawing_data, [
                             ARC, 
                             $vert_line_x2, $y_pos1,
