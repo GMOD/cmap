@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Fri Feb 20 12:11:35 2004
+-- Created on Wed Mar 10 16:53:13 2004
 -- 
 --
 -- Table: cmap_attribute
@@ -271,4 +271,6 @@ CREATE TABLE "cmap_xref" (
   "xref_url" text NOT NULL,
   PRIMARY KEY ("xref_id")
 );
+
+CREATE INDEX "table_name2" on cmap_xref ("table_name", "object_id", "display_order");
 

@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::SQLite
--- Created on Fri Feb 20 12:11:43 2004
+-- Created on Wed Mar 10 16:53:34 2004
 -- 
 BEGIN TRANSACTION;
 
@@ -217,6 +217,7 @@ CREATE INDEX cmap_feature_corresp_idx_cmap_ on cmap_feature_correspondence (is_e
 CREATE INDEX pid_cmap_map_cache_cmap_map_ca on cmap_map_cache (pid, slot_no, map_id);
 CREATE INDEX cmap_map_set_idx_cmap_map_set on cmap_map_set (can_be_reference_map, is_enabled, species_id, display_order, published_on, short_name);
 CREATE INDEX acc_id_species_id_cmap_species on cmap_species (accession_id, species_id);
+CREATE INDEX table_name_cmap_xref on cmap_xref (table_name, object_id, display_order);
 CREATE UNIQUE INDEX accession_id_cmap_corresponden on cmap_correspondence_evidence (accession_id);
 CREATE UNIQUE INDEX accession_id_cmap_evidence_typ on cmap_evidence_type (accession_id);
 CREATE UNIQUE INDEX rank_cmap_evidence_type on cmap_evidence_type (rank);

@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::Oracle
--- Created on Fri Feb 20 12:11:27 2004
+-- Created on Wed Mar 10 16:52:50 2004
 -- 
 --
 -- Table: cmap_attribute
@@ -271,4 +271,6 @@ CREATE TABLE cmap_xref (
   xref_url varchar2(4000) NOT NULL,
   CONSTRAINT pk_cmap_xref PRIMARY KEY (xref_id)
 );
+
+CREATE INDEX table_name on cmap_xref (table_name, object_id, display_order);
 

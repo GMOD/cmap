@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::Sybase
--- Created on Fri Feb 20 12:11:51 2004
+-- Created on Wed Mar 10 16:53:22 2004
 -- 
 --
 -- Table: cmap_attribute
@@ -271,4 +271,6 @@ CREATE TABLE cmap_xref (
   xref_url varchar(65535) NOT NULL,
   CONSTRAINT pk_cmap_xref PRIMARY KEY (xref_id)
 );
+
+CREATE INDEX table_name ON cmap_xref (table_name, object_id, display_order);
 

@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::MySQL
--- Created on Fri Feb 20 12:11:19 2004
+-- Created on Wed Mar 10 16:52:21 2004
 -- 
 SET foreign_key_checks=0;
 
@@ -83,7 +83,7 @@ CREATE TABLE cmap_feature (
   feature_type_id integer(11) NOT NULL DEFAULT '0',
   feature_name varchar(32) NOT NULL DEFAULT '',
   is_landmark tinyint(4) NOT NULL DEFAULT '0',
-  start_position double(11, 2) NOT NULL DEFAULT '0',
+  start_position double(11, 2) NOT NULL DEFAULT '0.00',
   stop_position double(11, 2) DEFAULT NULL,
   INDEX feature_name (feature_name),
   INDEX feature_id_map_id (feature_id, map_id),
@@ -239,6 +239,7 @@ CREATE TABLE cmap_xref (
   display_order integer(11) NOT NULL DEFAULT '1',
   xref_name varchar(200) NOT NULL DEFAULT '',
   xref_url text NOT NULL,
+  INDEX table_name (table_name, object_id, display_order),
   PRIMARY KEY (xref_id)
 );
 
