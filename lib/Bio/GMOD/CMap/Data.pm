@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.81 2004-01-07 17:44:14 kycl4rk Exp $
+# $Id: Data.pm,v 1.82 2004-01-07 17:45:24 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.81 $)[-1];
+$VERSION = (qw$Revision: 1.82 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -2695,11 +2695,6 @@ Return data for a list of evidence type acc. IDs.
         table_name => 'cmap_evidence_type',
         objects    => $evidence_types,
     );
-
-    $evidence_types = [ 
-        sort { lc $a->{'evidence_type'} cmp lc $b->{'evidence_type'} }
-        @$evidence_types
-    ];
 
     return $evidence_types;
 }
