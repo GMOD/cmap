@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 
-# $Id: ImportCorrespondences.pm,v 1.5 2003-01-31 19:27:41 kycl4rk Exp $
+# $Id: ImportCorrespondences.pm,v 1.6 2003-02-14 01:25:36 kycl4rk Exp $
 
 =head1 NAME
 
@@ -42,7 +42,7 @@ than just feature names (which could be duplicated on other maps).
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -90,7 +90,9 @@ sub import {
 #    my @map_set_ids     = @{ $args{'map_set_ids'} || [] };
     my $db              = $self->db;
     $LOG_FH             = $args{'log_fh'} || \*STDOUT;
-    my $admin           = Bio::GMOD::CMap::Admin->new;
+    my $admin           = Bio::GMOD::CMap::Admin->new(
+        data_source => $self->data_source,
+    );
 
     $self->Print("Importing feature correspondence data.\n");
     $self->Print("Checking headers.\n");

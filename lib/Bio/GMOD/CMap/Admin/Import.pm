@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.13 2003-02-10 21:28:19 kycl4rk Exp $
+# $Id: Import.pm,v 1.14 2003-02-14 01:25:36 kycl4rk Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.13 $)[-1];
+$VERSION  = (qw$Revision: 1.14 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -57,6 +57,8 @@ use vars '$LOG_FH';
     feature_stop         => { is_required => 0, datatype => 'number' },
     feature_type         => { is_required => 1, datatype => 'string' },
     linkage_group        => { is_required => 0, datatype => 'string' },
+    feature_dbxref_name  => { is_required => 0, datatype => 'string' },
+    feature_dbxref_url   => { is_required => 0, datatype => 'string' },
 );
 
 # ----------------------------------------------------
@@ -79,6 +81,8 @@ Imports tab-delimited file with the following fields:
     feature_stop
     feature_type *
     linkage_group
+    feature_dbxref_name
+    feature_dbxref_url
 
 Starred fields are required.  Order of fields is not important.
 
@@ -98,6 +102,7 @@ added.
     my $db              = $self->db           or die 'No database handle';
     my $map_set_id      = $args{'map_set_id'} or die      'No map set id';
     my $fh              = $args{'fh'}         or die     'No file handle';
+    my $overwrite       = $args{'overwrite'}  ||                        0;
     $LOG_FH             = $args{'log_fh'}     ||                 \*STDOUT;
 
     #
@@ -244,6 +249,7 @@ added.
                 "Feature type '$feature_type' doesn't exist.  Create?[Y/n] "
             );
             chomp( my $answer = <STDIN> );
+            
             unless ( $answer =~ m/^[Nn]/ ) {
                 $feature_type_id = next_number(
                     db           => $db, 
@@ -361,8 +367,11 @@ added.
             or warn "feature name blank! ", Dumper( %record ), "\n";
         my $accession_id   = $record{'accession_id'};
         my $alternate_name = $record{'feature_alt_name'} || '';
+        my $dbxref_name    = $record{'dbxref_name'}      || '';
+        my $dbxref_url     = $record{'dbxref_url'}       || '';
         my $start          = $record{'feature_start'};
         my $stop           = $record{'feature_stop'};
+
         if ( 
             defined $start &&
             defined $stop  &&
@@ -405,10 +414,9 @@ added.
                     from   cmap_feature
                     where  map_id=?
                     and    upper(feature_name)=?
-                    and    start_position=?
                 ],
                 {},
-                ( $map_id, uc $feature_name, $start )
+                ( $map_id, uc $feature_name )
             );
         }
 
@@ -421,13 +429,15 @@ added.
                     update cmap_feature
                     set    accession_id=?, map_id=?, feature_type_id=?, 
                            feature_name=?, alternate_name=?, 
-                           start_position=?, stop_position=?
+                           start_position=?, stop_position=?,
+                           dbxref_name=?, dbxref_url=?
                     where  feature_id=?
                 ],
                 {}, 
                 ( $accession_id, $map_id, $feature_type_id, 
                   $feature_name, $alternate_name, 
-                  $start, $stop, $feature_id
+                  $start, $stop, $dbxref_name, $dbxref_url,
+                  $feature_id
                 )
             );
 
@@ -451,12 +461,15 @@ added.
                     into   cmap_feature
                            ( feature_id, accession_id, map_id,
                              feature_type_id, feature_name, alternate_name, 
-                             start_position, stop_position )
-                    values ( ?, ?, ?, ?, ?, ?, ?, ? )
+                             start_position, stop_position,
+                             dbxref_name, dbxref_url
+                           )
+                    values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
                 ],
                 {}, 
                 ( $feature_id, $accession_id, $map_id, $feature_type_id, 
-                  $feature_name, $alternate_name, $start, $stop 
+                  $feature_name, $alternate_name, $start, $stop,
+                  $dbxref_name, $dbxref_url
                 )
             );
         }
@@ -468,40 +481,45 @@ added.
     }
 
     #
-    # Go through existing maps and features, delete any that weren't updated.
+    # Go through existing maps and features, delete any that weren't 
+    # updated, if necessary.
     #
-    my $admin = Bio::GMOD::CMap::Admin->new or return $self->error(
-        "Can't create admin object: ", Bio::GMOD::CMap::Admin->error
-    );
-
-    for my $map_name ( sort keys %maps ) {
-        my $map_id = $maps{ uc $map_name }{'map_id'} or return $self->error(
-            "Map '$map_name' has no ID!"
+    if ( $overwrite ) {
+        my $admin = Bio::GMOD::CMap::Admin->new(
+            data_source => $self->data_source
+        ) or return $self->error(
+            "Can't create admin object: ", Bio::GMOD::CMap::Admin->error
         );
 
-        unless ( $maps{ uc $map_name }{'touched'} ) {
-            $self->Print(
-                "Map '$map_name' ($map_id) ",
-                "wasn't updated or inserted, so deleting\n"
+        for my $map_name ( sort keys %maps ) {
+            my $map_id = $maps{ uc $map_name }{'map_id'} or return $self->error(
+                "Map '$map_name' has no ID!"
             );
-            $admin->map_delete( map_id => $map_id ) or return 
-                $self->error( $admin->error );
-            delete $maps{ uc $map_name };
-            next;
-        }
 
-        while ( 
-            my ( $feature_name, $feature ) =  
-                each %{ $maps{ uc $map_name }{'features'} } 
-        ) {
-            next if $feature->{'touched'};
-            my $feature_id = $feature->{'feature_id'} or next;
-            $self->Print(
-                "Feature '$feature_name' ($feature_id) ",
-                "wasn't updated or inserted, so deleting\n"
-            );
-            $admin->feature_delete( feature_id => $feature_id ) or return 
-                $self->error( $admin->error );
+            unless ( $maps{ uc $map_name }{'touched'} ) {
+                $self->Print(
+                    "Map '$map_name' ($map_id) ",
+                    "wasn't updated or inserted, so deleting\n"
+                );
+                $admin->map_delete( map_id => $map_id ) or return 
+                    $self->error( $admin->error );
+                delete $maps{ uc $map_name };
+                next;
+            }
+
+            while ( 
+                my ( $feature_name, $feature ) =  
+                    each %{ $maps{ uc $map_name }{'features'} } 
+            ) {
+                next if $feature->{'touched'};
+                my $feature_id = $feature->{'feature_id'} or next;
+                $self->Print(
+                    "Feature '$feature_name' ($feature_id) ",
+                    "wasn't updated or inserted, so deleting\n"
+                );
+                $admin->feature_delete( feature_id => $feature_id ) or return 
+                    $self->error( $admin->error );
+            }
         }
     }
 
@@ -533,14 +551,17 @@ added.
             ( $map_id )
         );
 
-        if ( 
-            !defined $map_start      ||
-            !defined $map_stop       ||
-            $map_start <= $map_stop  ||
-            $map_start > $min_start  ||
-            $map_stop  < $max_start  ||
-            ( defined $max_stop && $map_stop < $max_stop )
-        ) {
+        #
+        # For now, I've decided to always do this.  2003-02-11
+        #
+#        if ( 
+#            !defined $map_start      ||
+#            !defined $map_stop       ||
+#            $map_start <= $map_stop  ||
+#            $map_start > $min_start  ||
+#            $map_stop  < $max_start  ||
+#            ( defined $max_stop && $map_stop < $max_stop )
+#        ) {
             $min_start ||= 0;
             $max_start ||= 0;
             $max_stop  ||= 0;
@@ -558,7 +579,7 @@ added.
                 {},
                 ( $map_start, $map_stop, $map_id )
             );
-        }
+#        }
 
         $self->Print(
             "Verified map $map_name ($map_id) ",
