@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache;
 
-# $Id: Apache.pm,v 1.2 2003-09-08 17:19:03 kycl4rk Exp $
+# $Id: Apache.pm,v 1.3 2003-09-16 16:56:40 kycl4rk Exp $
 
 =head1 NAME
 
@@ -45,7 +45,7 @@ this class will catch errors and display them correctly.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Apache;
 use Apache::Constants;
@@ -142,10 +142,11 @@ the handler to the derived class's "handler" method.
                 $t->process( 
                     $module->error_template, 
                     { 
-                        error      => $e, 
-                        page       => $module->page,
-                        debug      => $module->debug,
-                        stylesheet => $module->stylesheet,
+                        error        => $e, 
+                        page         => $module->page,
+                        debug        => $module->debug,
+                        stylesheet   => $module->stylesheet,
+                        data_sources => $module->data_sources,
                     },
                     \$html 
                 ) or $html =  $e . '<br>' . $t->error;
