@@ -8,7 +8,16 @@
 <h1>[% title %]</h1>
 
 <p>
+[% IF feature_types.size == 1 %]
+    <div align="center">
+    <a href="feature_type_info">View All Feature Types</a>
+    </div>
+[% END %]
+</p>
+
+<p>
 [% IF feature_types.size %]
+    <div align="center">
     <table>
         <tr>
             <td colspan="2" align="center">
@@ -39,6 +48,7 @@
             </tr> 
         [% END %]
     </table>
+    </div>
 
 [% ELSE %]
 
