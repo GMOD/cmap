@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 
 # vim: set ft=perl:
 
-# $Id: ImportCorrespondences.pm,v 1.24 2005-01-05 03:04:22 mwz444 Exp $
+# $Id: ImportCorrespondences.pm,v 1.25 2005-03-04 05:58:17 mwz444 Exp $
 
 =head1 NAME
 
@@ -44,7 +44,7 @@ feature names, a correspondence will be created.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.24 $)[-1];
+$VERSION = (qw$Revision: 1.25 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -254,9 +254,16 @@ which is slow.  Setting to 0 is recommended.
             }
 
             unless (@feature_ids) {
+                my $sql_str = FEATURE_SQL_BY_NAME;
+                if (%map_set_ids){
+                    $sql_str .= 
+                        " and ms.map_set_id in ("
+                        . join (",", keys(%map_set_ids))
+                        . ") ";
+                }
                 @feature_ids = @{
                     $db->selectall_arrayref(
-                        FEATURE_SQL_BY_NAME,
+                        $sql_str,
                         { Columns => {} },
                         ( $upper_name, $upper_name )
                       )
@@ -297,8 +304,17 @@ which is slow.  Setting to 0 is recommended.
         my @evidences = map { s/^\s+|\s+$//g; $_ }
           split /,/, $record->{'evidence'};
         my @evidence_type_aids;
+        my $evidence_type_aid;
+        my $score;
         for my $evidence (@evidences) {
-            my $evidence_type_aid = $evidence;
+            if ($evidence =~ /(\S+):(\S+)/){
+                $evidence_type_aid = $1;
+                $score             = $2;
+            }
+            else{
+                $evidence_type_aid = $evidence;
+                $score             = undef;
+            }
 
             unless ( $self->evidence_type_data($evidence_type_aid) ) {
                 $self->Print(
@@ -307,7 +323,7 @@ which is slow.  Setting to 0 is recommended.
                 chomp( my $answer = <STDIN> );
             }
 
-            push @evidence_type_aids, [ $evidence_type_aid, $evidence ];
+            push @evidence_type_aids, [ $evidence_type_aid, $score ];
         }
 
         my $is_enabled = $record->{'is_enabled'};
@@ -322,11 +338,12 @@ which is slow.  Setting to 0 is recommended.
                 }
 
                 for my $evidence_type_aid (@evidence_type_aids) {
-                    my ( $evidence_type_aid, $evidence ) = @$evidence_type_aid;
+                    my ( $evidence_type_aid, $score ) = @$evidence_type_aid;
                     my $fc_id = $admin->add_feature_correspondence_to_list(
                         feature_id1       => $feature1->{'feature_id'},
                         feature_id2       => $feature2->{'feature_id'},
                         evidence_type_aid => $evidence_type_aid,
+                        score             => $score,
                         allow_update      => $allow_update,
                       )
                       or return $self->error( $admin->error );
