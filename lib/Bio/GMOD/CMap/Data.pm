@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.142 2004-08-19 05:40:46 mwz444 Exp $
+# $Id: Data.pm,v 1.143 2004-08-20 15:32:49 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.142 $)[-1];
+$VERSION = (qw$Revision: 1.143 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -570,7 +570,8 @@ sub slot_data {
             $row->{'map_type'} = $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
         }
     };
-    if (%{$self->slot_info->{$this_slot_no}}) {  
+    if ($self->slot_info->{$this_slot_no} 
+        and %{$self->slot_info->{$this_slot_no}}) {  
         my $sql = q[
                     select map.map_id,
                            map.accession_id,
@@ -678,9 +679,9 @@ sub slot_data {
     $feature_types_seen->{$_} = $ft->{$_} for keys %$ft;
                                                                                 
     #
-    # More than one map in the slot?  All are compressed.
+    # check to see if it is compressed 
     #
-    if ( scalar(@maps) == 1 or !$self->{'aggregate'}) {
+    if (!$self->compress_maps($this_slot_no)){
         #
         # Figure out how many features are on each map.
         #
@@ -946,9 +947,15 @@ sub slot_data {
             where    
         ];
 
+        my $slot_maps='';
+        if ($self->slot_info->{$ref_slot_no}){
+             $slot_maps
+                = join( "','", keys(%{ $self->slot_info->{$ref_slot_no}}));
+        }
+
         $f_count_sql .=
             " f.map_id in ('"
-          . join( "','", keys(%{ $self->slot_info->{$ref_slot_no}}))
+          . $slot_maps 
           . "')";
         $f_count_sql .= " group by f.map_id";
         my $f_counts;
@@ -4782,22 +4789,66 @@ sub get_ref_unit_size {
     my $slots = shift;
     
     my %ref_for_unit;
-
+    my %set_by_slot;
     foreach my $slot_id (sort orderOutFromZero keys %$slots){
         foreach my $map_id (keys %{$slots->{$slot_id}}){    
             my $map=$slots->{$slot_id}{$map_id};
-            if ($ref_for_unit{$map->{'map_units'}}){
+            if (defined($set_by_slot{$map->{'map_units'}})
+                and $set_by_slot{$map->{'map_units'}}!=$slot_id
+                and $ref_for_unit{$map->{'map_units'}}){
                 last;
             }
             else{
-                $ref_for_unit{$map->{'map_units'}} 
-                    = $map->{'stop_position'} - $map->{'start_position'};
+                $set_by_slot{$map->{'map_units'}}=$slot_id;
+                if (!$ref_for_unit{$map->{'map_units'}}
+                    or 
+                    $ref_for_unit{$map->{'map_units'}}<
+                    $map->{'stop_position'} - $map->{'start_position'}){
+                    $ref_for_unit{$map->{'map_units'}} 
+                        = $map->{'stop_position'} - $map->{'start_position'};
+                }
             }
         }
     }    
 
     return \%ref_for_unit;
 }
+
+# ----------------------------------------------------
+sub compress_maps {
+                                                                                                                             
+=pod
+                                                                                                                             
+=head2 compress_maps
+                                                                                                                             
+Decide if the maps should be compressed.
+If it is aggregated, compress unless all the slots contain only 1 map
+If it is not aggregated, compress unless this slot contains only 1 map.
+                                                                                                                             
+=cut
+                                                                                                                             
+    my $self     = shift;
+    my $this_slot_no  = shift;
+    return unless (defined($this_slot_no));
+
+    if ($self->aggregate){
+        if (defined($self->{'compress_aggregates'})){
+            return($self->{'compress_aggregates'});
+        }
+        my $slot_info
+            = $self->slot_info;
+        foreach my $slot_no (keys(%$slot_info)){
+            if ( scalar(keys(%{$slot_info->{$slot_no}}))>1){
+                $self->{'compress_aggregates'}=1;
+                return ($self->{'compress_aggregates'});
+            }
+        }
+        $self->{'compress_aggregates'}=0;
+        return ($self->{'compress_aggregates'});
+    }
+    return (scalar(keys(%{$self->slot_info->{$this_slot_no}}))>1);
+}
+
 
 # ----------------------------------------------------
 # store and retrieve the slot info.
