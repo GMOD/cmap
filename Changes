@@ -1,11 +1,19 @@
                       Revision history for CMap
 
-0.08    
+0.08   2003-08-01 
 
 -   Added ability to view all maps in reference map set
 -   Added "cmap_feature_note" table to allow free text notes on features
 -   Changed legend text back to using color of feature type
 -   Fixed bugs in admin feature search, made as powerful as user search
+-   Removed custom data paging code (Utils::paginate) in favor of 
+    Data::Pageset, pager modeled after PubMed
+-   Added "cmap_map_cache" helper table to consolidate and reduce 
+    number of SQL calls
+-   Added map buttons for info, details, delete, flip, and new view
+-   Altered database indices for improved performance
+-   Added "view_feature_on_map" handler to quickly get from a feature
+    accession ID to a view of it on a map
 
 0.07    2003-05-30
 
