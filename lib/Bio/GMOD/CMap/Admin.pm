@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.46.2.3 2004-06-04 19:39:30 kycl4rk Exp $
+# $Id: Admin.pm,v 1.46.2.4 2004-06-04 19:56:43 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.46.2.3 $)[-1];
+$VERSION = (qw$Revision: 1.46.2.4 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -2178,7 +2178,7 @@ sub generic_update {
     die "Error parsing fields, can't create update SQL\n" unless @update_fields;
 
     my $sql = "update $table_name set " . join(', ', @update_fields) .
-        "where $pk_name=?";
+        " where $pk_name=?";
     push @bind_values, $pk_value;
 
     $db->do( $sql, {}, @bind_values );
