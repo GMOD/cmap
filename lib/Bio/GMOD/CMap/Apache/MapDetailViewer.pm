@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapDetailViewer;
 
-# $Id: MapDetailViewer.pm,v 1.13 2003-07-08 15:25:47 kycl4rk Exp $
+# $Id: MapDetailViewer.pm,v 1.14 2003-07-30 16:54:09 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES );
-$VERSION = (qw$Revision: 1.13 $)[-1];
+$VERSION = (qw$Revision: 1.14 $)[-1];
 
 use Apache::Constants;
 use URI::Escape;
@@ -57,6 +57,7 @@ sub handler {
     my $label_features    = $apr->param('label_features')    ||     '';
     my $collapse_features = $apr->param('collapse_features') ||      0;
     my $page_no           = $apr->param('page_no')           ||      1;
+    my $flip              = $apr->param('flip')              ||     '';
     my $action            = $apr->param('action')            || 'view';
 
     #
@@ -176,6 +177,7 @@ sub handler {
             data_source            => $self->data_source,
             apr                    => $apr,
             slots                  => \%slots,
+            flip                   => $flip,
             highlight              => $highlight,
             font_size              => $font_size,
             image_size             => $image_size,
@@ -185,6 +187,7 @@ sub handler {
             include_feature_types  => \@feature_types,
             include_evidence_types => \@evidence_types,
             debug                  => $self->config('debug'),
+            map_view               => 'details',
         ) or die $self->error( "Drawer: ".Bio::GMOD::CMap::Drawer->error );
 
         my $ref_map = $slots{0};
