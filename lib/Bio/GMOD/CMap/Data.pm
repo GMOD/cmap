@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.98.2.12 2004-06-17 21:16:40 kycl4rk Exp $
+# $Id: Data.pm,v 1.98.2.13 2004-06-17 21:20:19 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.98.2.12 $)[-1];
+$VERSION = (qw$Revision: 1.98.2.13 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -3070,7 +3070,7 @@ Returns the data for drawing comparative maps.
                 parsedate( $map_set->{'published_on'}, VALIDATE=>1)
             ) {
                 my @time = localtime( $pubdate );
-                $map_set->{'published_on'} = strftime("%B %d, %Y", @time );
+                $map_set->{'published_on'} = strftime("%d %B %Y", @time );
             }
             else {
                 $map_set->{'published_on'} = '';
@@ -3634,7 +3634,7 @@ Returns data on species.
                 order by mt.display_order,
                          mt.map_type,
                          ms.display_order,
-                         ms.published_on,
+                         ms.published_on desc,
                          ms.short_name
             ],
             { Columns => {} },
