@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.31 2003-05-29 18:25:51 kycl4rk Exp $
+# $Id: Import.pm,v 1.32 2003-07-01 21:48:41 kycl4rk Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.31 $)[-1];
+$VERSION  = (qw$Revision: 1.32 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -58,6 +58,7 @@ use vars '$LOG_FH';
     feature_start        => { is_required => 1, datatype => 'number' },
     feature_stop         => { is_required => 0, datatype => 'number' },
     feature_type         => { is_required => 1, datatype => 'string' },
+    feature_note         => { is_required => 0, datatype => 'string' },
     is_landmark          => { is_required => 0, datatype => 'number' },
     feature_dbxref_name  => { is_required => 0, datatype => 'string' },
     feature_dbxref_url   => { is_required => 0, datatype => 'string' },
@@ -83,6 +84,7 @@ Imports tab-delimited file with the following fields:
     feature_start *
     feature_stop
     feature_type *
+    feature_note
     is_landmark
     feature_dbxref_name
     feature_dbxref_url
@@ -103,6 +105,13 @@ have for the map set).
     my $fh              = $args{'fh'}         or die     'No file handle';
     my $overwrite       = $args{'overwrite'}  ||                        0;
     $LOG_FH             = $args{'log_fh'}     ||                 \*STDOUT;
+
+    my $admin = Bio::GMOD::CMap::Admin->new(
+        data_source => $self->data_source
+    ) or return $self->error(
+        "Can't create admin object: ", Bio::GMOD::CMap::Admin->error
+    );
+
 
     #
     # Examine map set.
@@ -375,6 +384,7 @@ have for the map set).
         my $alternate_name = $record->{'feature_alt_name'}    || '';
         my $dbxref_name    = $record->{'feature_dbxref_name'} || '';
         my $dbxref_url     = $record->{'feature_dbxref_url'}  || '';
+        my $feature_note   = $record->{'feature_note'}        || '';
         my $start          = $record->{'feature_start'};
         my $stop           = $record->{'feature_stop'};
         my $is_landmark    = $record->{'is_landmark'} || 0;
@@ -474,6 +484,10 @@ have for the map set).
             );
         }
 
+        $admin->feature_note_insert_or_update( 
+            $feature_id, $feature_note 
+        );
+
         my $pos = join('-', map { defined $_ ? $_ : () } $start, $stop);
         $self->Print(
             "$action $feature_type '$feature_name' on map $map_name at $pos.\n"
@@ -525,12 +539,6 @@ have for the map set).
     # updated, if necessary.
     #
     if ( $overwrite ) {
-        my $admin = Bio::GMOD::CMap::Admin->new(
-            data_source => $self->data_source
-        ) or return $self->error(
-            "Can't create admin object: ", Bio::GMOD::CMap::Admin->error
-        );
-
         for my $map_name ( sort keys %maps ) {
             my $map_id = $maps{ uc $map_name }{'map_id'} or return $self->error(
                 "Map '$map_name' has no ID!"
