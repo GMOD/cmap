@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.30 2003-03-24 18:44:52 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.31 2003-03-25 23:13:08 kycl4rk Exp $
 
 use strict;
 use Apache::Constants qw[ :common M_GET REDIRECT ];
@@ -30,7 +30,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.30 $)[-1];
+$VERSION        = (qw$Revision: 1.31 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -773,6 +773,7 @@ sub map_edit {
             select map.map_id, 
                    map.accession_id, 
                    map.map_name, 
+                   map.display_order, 
                    map.linkage_group, 
                    map.start_position, 
                    map.stop_position,
@@ -815,7 +816,8 @@ sub map_insert {
         table_name     => 'cmap_map',
         id_field       => 'map_id',
     ) or die 'No next number for map id';
-    my $accession_id   = $apr->param('accession_id') || $map_id;
+    my $accession_id   = $apr->param('accession_id')  || $map_id;
+    my $display_order  = $apr->param('display_order') ||       1;
     my $map_name       = $apr->param('map_name');
     push @errors, 'No map name' unless defined $map_name && $map_name ne '';
     my $map_set_id     = $apr->param('map_set_id')   or 
@@ -832,12 +834,12 @@ sub map_insert {
         q[
             insert
             into   cmap_map
-                   ( map_id, accession_id, map_set_id, map_name, 
+                   ( map_id, accession_id, map_set_id, map_name, display_order,
                      linkage_group, start_position, stop_position )
-            values ( ?, ?, ?, ?, ?, ?, ? )
+            values ( ?, ?, ?, ?, ?, ?, ?, ? )
         ],
         {},
-        ( $map_id, $accession_id, $map_set_id, $map_name, 
+        ( $map_id, $accession_id, $map_set_id, $map_name, $display_order,
           $linkage_group, $start_position, $stop_position 
         )
     );
@@ -862,6 +864,7 @@ sub map_view {
             select map.map_id, 
                    map.accession_id, 
                    map.map_name, 
+                   map.display_order, 
                    map.linkage_group, 
                    map.start_position, 
                    map.stop_position,
@@ -955,6 +958,7 @@ sub map_update {
         or push @errors, 'No map id';
     my $accession_id   = $apr->param('accession_id')   
         or push @errors, 'No accession id';
+    my $display_order  = $apr->param('display_order') || 1;
     my $map_name       = $apr->param('map_name');
     push @errors, 'No map name' unless defined $map_name && $map_name ne '';
     my $linkage_group  = $apr->param('linkage_group') || '';
@@ -969,6 +973,7 @@ sub map_update {
         update cmap_map
         set    accession_id=?, 
                map_name=?, 
+               display_order=?, 
                linkage_group=?, 
                start_position=?,
                stop_position=?
@@ -978,7 +983,7 @@ sub map_update {
     $db->do( 
         $sql, 
         {}, 
-        ( $accession_id, $map_name, $linkage_group, 
+        ( $accession_id, $map_name, $display_order, $linkage_group, 
           $start_position, $stop_position, $map_id 
         ) 
     );
@@ -2000,7 +2005,7 @@ sub map_sets_view {
     my $limit_start = $apr->param('limit_start') || 0;
     my $order_by    = $apr->param('order_by')    || 
         'mt.display_order, mt.map_type, s.display_order, s.common_name, '.
-        'ms.display_order, ms.published_on, ms.short_name';
+        'ms.display_order, ms.published_on desc, ms.short_name';
 
     unless ( $order_by eq 'map_set_name' ) {
         $order_by .= ',map_set_name';
@@ -2285,7 +2290,7 @@ sub map_set_view {
     my $db          = $self->db;
     my $apr         = $self->apr;
     my $map_set_id  = $apr->param('map_set_id') or die 'No map set id';
-    my $order_by    = $apr->param('order_by')    || 'map_name';
+    my $order_by    = $apr->param('order_by')    || 'display_order,map_name';
     my $limit_start = $apr->param('limit_start') || 0;
 
     my $sth = $db->prepare(
@@ -2321,6 +2326,7 @@ sub map_set_view {
                 select    map.map_id, 
                           map.accession_id, 
                           map.map_name, 
+                          map.display_order, 
                           map.linkage_group, 
                           map.start_position, 
                           map.stop_position,
@@ -2521,7 +2527,7 @@ sub map_type_insert {
         or push @errors, 'No shape';
     my $width             = $apr->param('width')             || '';
     my $color             = $apr->param('color')             || '';
-    my $display_order     = $apr->param('display_order')     || '';
+    my $display_order     = $apr->param('display_order')     ||  1;
     my $is_relational_map = $apr->param('is_relational_map') ||  0;
     my $map_type_id       = next_number(
         db                => $db, 
@@ -2561,10 +2567,10 @@ sub map_type_update {
         or push @errors, 'No map units';
     my $shape             = $apr->param('shape')       
         or push @errors, 'No shape';
-    my $is_relational_map = $apr->param('is_relational_map') || 0;
-    my $display_order     = $apr->param('display_order');
-    my $width             = $apr->param('width') || '';
-    my $color             = $apr->param('color') || '';
+    my $is_relational_map = $apr->param('is_relational_map') ||  0;
+    my $display_order     = $apr->param('display_order')     ||  1;
+    my $width             = $apr->param('width')             || '';
+    my $color             = $apr->param('color')             || '';
 
     return $self->map_type_edit( errors => \@errors ) if @errors;
 
@@ -2594,8 +2600,8 @@ sub map_types_view {
     my $self        = shift;
     my $db          = $self->db;
     my $apr         = $self->apr;
-    my $order_by    = $apr->param('order_by')    || 'map_type';
-    my $limit_start = $apr->param('limit_start') ||          0;
+    my $order_by    = $apr->param('order_by')    || 'display_order,map_type';
+    my $limit_start = $apr->param('limit_start') || 0;
 
     my $map_types = $db->selectall_arrayref(
         qq[
