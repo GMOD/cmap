@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.56.2.4 2005-03-09 21:26:15 mwz444 Exp $
+# $Id: Generic.pm,v 1.56.2.5 2005-03-15 14:40:14 mwz444 Exp $
 
 =head1 NAME
 
@@ -33,7 +33,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.56.2.4 $)[-1];
+$VERSION = (qw$Revision: 1.56.2.5 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Bio::GMOD::CMap;
@@ -234,9 +234,11 @@ The SQL for finding correspondences for a feature.
     my $less_evidence_type_aids     = $args{'less_evidence_type_aids'}     || [];
     my $greater_evidence_type_aids  = $args{'greater_evidence_type_aids'}  || [];
     my $evidence_type_score         = $args{'evidence_type_score'}         || {};
+    my $disregard_evidence_type     = $args{'disregard_evidence_type'}     || 0;
 
-    if ( @$included_evidence_type_aids or @$less_evidence_type_aids
-            or @$greater_evidence_type_aids ) {
+    if ( !$disregard_evidence_type 
+        and (@$included_evidence_type_aids or @$less_evidence_type_aids
+            or @$greater_evidence_type_aids) ) {
         $sql .= "and ( ";
         my @join_array;
         if ( @$included_evidence_type_aids ) {
@@ -256,7 +258,7 @@ The SQL for finding correspondences for a feature.
         }
         $sql .= join (' or ', @join_array). " ) ";
     }
-    else{
+    elsif( !$disregard_evidence_type ) {
         $sql .= " and ce.evidence_type_accession = '-1' ";
     }
 
