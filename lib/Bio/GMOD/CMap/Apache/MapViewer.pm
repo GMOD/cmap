@@ -1,11 +1,12 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
+
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.75 2004-10-30 07:19:14 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.76 2004-11-29 23:17:24 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.75 $)[-1];
+$VERSION = (qw$Revision: 1.76 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -22,59 +23,60 @@ use constant DETAIL_TEMPLATE => 'map_detail_bottom.tmpl';
 use constant FIELD_SEP       => "\t";
 use constant RECORD_SEP      => "\n";
 use constant COLUMN_NAMES    => [
-    qw[ species_accession_id species_name 
-        map_set_accession_id map_set_name
-        map_accession_id map_name
-        feature_accession_id feature_name feature_type start_position 
-        stop_position alt_species_name alt_map_set_name alt_map_name 
-        alt_feature_type alt_start_position alt_stop_position 
-        evidence
-    ]
+    qw[ species_accession_id species_name
+      map_set_accession_id map_set_name
+      map_accession_id map_name
+      feature_accession_id feature_name feature_type start_position
+      stop_position alt_species_name alt_map_set_name alt_map_name
+      alt_feature_type alt_start_position alt_stop_position
+      evidence
+      ]
 ];
-use constant MAP_FIELDS      => [
+use constant MAP_FIELDS => [
     qw[ species_aid species_name map_set_aid map_set_name map_aid map_name ]
 ];
-use constant FEATURE_FIELDS  => [
+use constant FEATURE_FIELDS => [
     qw[ accession_id feature_name feature_type start_position stop_position ]
 ];
 use constant POSITION_FIELDS => [
-    qw[ species_name map_set_name map_name feature_type 
-        start_position stop_position evidence
-    ]
+    qw[ species_name map_set_name map_name feature_type
+      start_position stop_position evidence
+      ]
 ];
 
 # ----------------------------------------------------
 sub handler {
-#
-# Main entry point.  Decides whether we forked and whether to 
-# read session data.  Calls "show_form."
-#
+
+    #
+    # Main entry point.  Decides whether we forked and whether to
+    # read session data.  Calls "show_form."
+    #
     my ( $self, $apr ) = @_;
-    my $prev_ref_species_aid  = $apr->param('prev_ref_species_aid')  || '';
-    my $prev_ref_map_set_aid  = $apr->param('prev_ref_map_set_aid')  || '';
-    my $ref_species_aid       = $apr->param('ref_species_aid')       || '';
-    my $ref_map_set_aid       = $apr->param('ref_map_set_aid')       || '';
-    my $ref_map_names         = $apr->param('ref_map_names')         || '';
-    my $ref_map_start         = $apr->param('ref_map_start');
-    my $ref_map_stop          = $apr->param('ref_map_stop');
-    my $comparative_maps      = $apr->param('comparative_maps')      || '';
+    my $prev_ref_species_aid = $apr->param('prev_ref_species_aid') || '';
+    my $prev_ref_map_set_aid = $apr->param('prev_ref_map_set_aid') || '';
+    my $ref_species_aid      = $apr->param('ref_species_aid')      || '';
+    my $ref_map_set_aid      = $apr->param('ref_map_set_aid')      || '';
+    my $ref_map_names        = $apr->param('ref_map_names')        || '';
+    my $ref_map_start        = $apr->param('ref_map_start');
+    my $ref_map_stop         = $apr->param('ref_map_stop');
+    my $comparative_maps     = $apr->param('comparative_maps')     || '';
     my @comparative_map_right = $apr->param('comparative_map_right');
     my @comparative_map_left  = $apr->param('comparative_map_left');
     my $comp_map_set_right    = $apr->param('comp_map_set_right');
     my $comp_map_set_left     = $apr->param('comp_map_set_left');
-    my $highlight             = $apr->param('highlight')             || '';
-    my $font_size             = $apr->param('font_size')             || '';
-    my $image_size            = $apr->param('image_size')            || '';
-    my $image_type            = $apr->param('image_type')            || '';
-    my $label_features        = $apr->param('label_features')        || '';
-    my $collapse_features     = $apr->param('collapse_features')     ||  0;
-    my $aggregate             = $apr->param('aggregate')             ;
-    my $magnify_all           = $apr->param('magnify_all')             ;
-    my $scale_maps            = $apr->param('scale_maps')             ;
-    my $flip                  = $apr->param('flip')                  || '';
-    my $min_correspondences   = $apr->param('min_correspondences')   ||  0;
-    my $page_no               = $apr->param('page_no')               ||      1;
-    my $action                = $apr->param('action')                || 'view';
+    my $highlight             = $apr->param('highlight') || '';
+    my $font_size             = $apr->param('font_size') || '';
+    my $image_size            = $apr->param('image_size') || '';
+    my $image_type            = $apr->param('image_type') || '';
+    my $label_features        = $apr->param('label_features') || '';
+    my $collapse_features     = $apr->param('collapse_features');
+    my $aggregate             = $apr->param('aggregate');
+    my $magnify_all           = $apr->param('magnify_all');
+    my $scale_maps            = $apr->param('scale_maps');
+    my $flip                  = $apr->param('flip') || '';
+    my $min_correspondences   = $apr->param('min_correspondences') || 0;
+    my $page_no               = $apr->param('page_no') || 1;
+    my $action                = $apr->param('action') || 'view';
 
     # If this was submitted by a button, clear the modified map fields.
     # They are no longer needed.
@@ -84,24 +86,29 @@ sub handler {
     }
 
     my $path_info = $apr->path_info || '';
-    if ( $path_info ) {
-       $path_info =~ s{^/(cmap/)?}{}; # kill superfluous stuff
+    if ($path_info) {
+        $path_info =~ s{^/(cmap/)?}{};    # kill superfluous stuff
     }
+
+    $collapse_features = $self->config_data('collapse_overlapping_features')
+      unless ( defined($collapse_features) );
 
     $self->aggregate($aggregate);
     $self->magnify_all($magnify_all);
     $self->scale_maps($scale_maps);
 
-    $INTRO ||= $self->config_data('map_viewer_intro', $self->data_source)||'';
+    $INTRO ||= $self->config_data( 'map_viewer_intro', $self->data_source )
+      || '';
 
     #
     # Take the feature types either from the query string (first
-    # choice, splitting the string on commas) or from the POSTed 
+    # choice, splitting the string on commas) or from the POSTed
     # form <select>.
     #
     my @ref_map_aids;
     if ( $apr->param('ref_map_aids') ) {
         foreach my $aid ( $apr->param('ref_map_aids') ) {
+
             # Remove start and stop if they are the same
             while ( $aid =~ s/(.+\[)(\d+)\*\2(\D.*)/$1*$3/ ) { }
             push @ref_map_aids, split( /[:,]/, $aid );
@@ -114,11 +121,11 @@ sub handler {
 
     ###For DEBUGGING purposes.  Remove before release
     if ( $apr->param('ref_map_aid') ) {
-        die "ref_map_aid defined ".$apr->param('ref_map_aid');
+        die "ref_map_aid defined " . $apr->param('ref_map_aid');
     }
 
     my %ref_maps;
-    my %ref_map_sets=();
+    my %ref_map_sets = ();
     foreach my $ref_map_aid (@ref_map_aids) {
         next if $ref_map_aid == -1;
         my ( $start, $stop, $magnification ) = ( undef, undef, 1 );
@@ -128,7 +135,7 @@ sub handler {
           { start => $start, stop => $stop, mag => $magnification };
     }
 
-    if ( scalar @ref_map_aids == 1 ){
+    if ( scalar @ref_map_aids == 1 ) {
         unless ( $ref_map_aids[0] == '-1' ) {
             if ( defined $ref_map_start
                 and not defined( $ref_maps{ $ref_map_aids[0] }{'start'} ) )
@@ -175,7 +182,7 @@ sub handler {
 
     my @ref_map_set_aids = ();
     if ( $apr->param('ref_map_set_aid') ) {
-        @ref_map_set_aids = split( /,/,  $apr->param('ref_map_set_aid') );
+        @ref_map_set_aids = split( /,/, $apr->param('ref_map_set_aid') );
     }
 
     my @feature_types;
@@ -210,7 +217,7 @@ sub handler {
     }
 
     my %included_corr_only_features = map { $_ => 1 } @corr_only_feature_types;
-    my %ignored_feature_types      = map { $_ => 1 } @ignored_feature_types;
+    my %ignored_feature_types       = map { $_ => 1 } @ignored_feature_types;
     my %ignored_evidence_types      = map { $_ => 1 } @ignored_evidence_types;
 
     #
@@ -218,16 +225,12 @@ sub handler {
     #
     $self->data_source( $apr->param('data_source') ) or return;
 
-    if ( 
-        $prev_ref_species_aid && $prev_ref_species_aid ne $ref_species_aid 
-    ) {
+    if ( $prev_ref_species_aid && $prev_ref_species_aid ne $ref_species_aid ) {
         $ref_map_set_aid  = '';
         @ref_map_set_aids = ();
     }
 
-    if ( 
-        $prev_ref_map_set_aid && $prev_ref_map_set_aid ne $ref_map_set_aid 
-    ) {
+    if ( $prev_ref_map_set_aid && $prev_ref_map_set_aid ne $ref_map_set_aid ) {
         @ref_map_aids          = ();
         @ref_map_set_aids      = ();
         $ref_map_start         = undef;
@@ -247,7 +250,7 @@ sub handler {
             map_set_aid => $ref_map_set_aid,
             map_sets    => \%ref_map_sets,
             maps        => \%ref_maps,
-            map_names   => $ref_map_names, 
+            map_names   => $ref_map_names,
         }
     );
 
@@ -264,15 +267,15 @@ sub handler {
             ( $aid, $start, $stop, $magnification, $highlight ) =
               parse_map_info( $aid, $highlight );
             if ( $field eq 'map_aid' ) {
-                $slots{ $slot_no }{'maps'}{ $aid } = {
+                $slots{$slot_no}{'maps'}{$aid} = {
                     start => $start,
                     stop  => $stop,
                     mag   => $magnification,
                 };
             }
             elsif ( $field eq 'map_set_aid' ) {
-                unless ( defined( $slots{ $slot_no }{'map_sets'}{ $aid } ) ) {
-                    $slots{$slot_no}{'map_sets'}{ $aid } = ();
+                unless ( defined( $slots{$slot_no}{'map_sets'}{$aid} ) ) {
+                    $slots{$slot_no}{'map_sets'}{$aid} = ();
                 }
             }
         }
@@ -326,7 +329,7 @@ sub handler {
 
     my @slot_nos  = sort { $a <=> $b } keys %slots;
     my $max_right = $slot_nos[-1];
-    my $max_left  = $slot_nos[ 0];
+    my $max_left  = $slot_nos[0];
 
     #
     # Add in our next chosen maps.
@@ -349,7 +352,7 @@ sub handler {
                 ( $accession_id, $start, $stop, $magnification, $highlight ) =
                   parse_map_info( $accession_id, $highlight );
 
-                $slots{ $slot_no }{'maps'}{ $accession_id } = {
+                $slots{$slot_no}{'maps'}{$accession_id} = {
                     start => $start,
                     stop  => $stop,
                     mag   => $magnification,
@@ -375,11 +378,11 @@ sub handler {
             label_features          => $label_features,
             collapse_features       => $collapse_features,
             min_correspondences     => $min_correspondences,
-            included_feature_types   => \@feature_types,
+            included_feature_types  => \@feature_types,
             corr_only_feature_types => \@corr_only_feature_types,
             ignored_feature_types   => \@ignored_feature_types,
             ignored_evidence_types  => \@ignored_evidence_types,
-            included_evidence_types  => \@included_evidence_types,
+            included_evidence_types => \@included_evidence_types,
             config                  => $self->config,
             data_module             => $self->data_module,
             aggregate               => $self->aggregate,
@@ -401,37 +404,36 @@ sub handler {
         %ignored_feature_types       = map { $_ => 1 } @ignored_feature_types;
         %ignored_evidence_types      = map { $_ => 1 } @ignored_evidence_types;
     }
-    
+
     #
     # Get the data for the form.
     #
-    my $data                   = $self->data_module;
-    my $form_data              = $data->cmap_form_data(
-        slots                  => \%slots,
-        min_correspondences    => $min_correspondences,
+    my $data      = $self->data_module;
+    my $form_data = $data->cmap_form_data(
+        slots                   => \%slots,
+        min_correspondences     => $min_correspondences,
         included_feature_types  => \@feature_types,
-        ignored_feature_types  => \@ignored_feature_types,
+        ignored_feature_types   => \@ignored_feature_types,
         ignored_evidence_types  => \@ignored_evidence_types,
         included_evidence_types => \@included_evidence_types,
-        ref_species_aid        => $ref_species_aid,
-        ref_map_set_aid        => $ref_map_set_aid,
-    ) or return $self->error( $data->error );
+        ref_species_aid         => $ref_species_aid,
+        ref_map_set_aid         => $ref_map_set_aid,
+      )
+      or return $self->error( $data->error );
 
-    my $feature_default_display=$data->feature_default_display;
-    $form_data->{'feature_types'} = [
-        sort {
-            lc $a->{'feature_type'} cmp lc $b->{'feature_type'}
-        } @{ $self->data_module->get_all_feature_types }
-    ];
+    my $feature_default_display = $data->feature_default_display;
+    $form_data->{'feature_types'} =
+      [ sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} }
+          @{ $self->data_module->get_all_feature_types } ];
 
     #
-    # Wrap up our current comparative maps so we can store them on 
+    # Wrap up our current comparative maps so we can store them on
     # the next page the user sees.
     #
     my @comp_maps = ();
     for my $slot_no ( grep { $_ != 0 } keys %slots ) {
-        foreach my $map_aid (keys(%{$slots{$slot_no}{'maps'}})){
-            my $map_str = join( '=', $slot_no, 'map_aid', $map_aid);
+        foreach my $map_aid ( keys( %{ $slots{$slot_no}{'maps'} } ) ) {
+            my $map_str = join( '=', $slot_no, 'map_aid', $map_aid );
             if (   defined $slots{$slot_no}{'maps'}{$map_aid}{'start'}
                 or defined $slots{$slot_no}{'maps'}{$map_aid}{'stop'} )
             {
@@ -448,82 +450,84 @@ sub handler {
             push @comp_maps, $map_str;
         }
     }
-  
+
     my $html;
     my $t = $self->template or return;
-    $t->process( 
-        TEMPLATE, 
+    $t->process(
+        TEMPLATE,
         {
-            apr                 => $apr,
-              form_data         => $form_data,
-              drawer            => $drawer,
-              page              => $self->page,
-              debug             => $self->debug,
-              intro             => $INTRO,
-              data_source       => $self->data_source,
-              data_sources      => $self->data_sources,
-              comparative_maps  => join( ':', @comp_maps ),
-              title             => $self->config_data('cmap_title') || 'CMap',
-              stylesheet        => $self->stylesheet,
-              selected_maps     => { map { $_, 1 } @ref_map_aids },
-              included_features => { map { $_, 1 } @feature_types },
-              included_evidence => { map { $_, 1 } @included_evidence_types },
-              corr_only_feature_types  => \%included_corr_only_features,
-              ignored_feature_types    => \%ignored_feature_types,
-              ignored_evidence_types   => \%ignored_evidence_types,
-              feature_types            => join( ',', @feature_types ),
-              evidence_types           => join( ',', @included_evidence_types ),
-              extra_code               => $extra_code,
-              extra_form               => $extra_form,
-              feature_default_display  => $feature_default_display,
+            apr               => $apr,
+            form_data         => $form_data,
+            drawer            => $drawer,
+            page              => $self->page,
+            debug             => $self->debug,
+            intro             => $INTRO,
+            data_source       => $self->data_source,
+            data_sources      => $self->data_sources,
+            comparative_maps  => join( ':', @comp_maps ),
+            title             => $self->config_data('cmap_title') || 'CMap',
+            stylesheet        => $self->stylesheet,
+            selected_maps     => { map { $_, 1 } @ref_map_aids },
+            included_features => { map { $_, 1 } @feature_types },
+            included_evidence => { map { $_, 1 } @included_evidence_types },
+            corr_only_feature_types => \%included_corr_only_features,
+            ignored_feature_types   => \%ignored_feature_types,
+            ignored_evidence_types  => \%ignored_evidence_types,
+            feature_types           => join( ',', @feature_types ),
+            evidence_types          => join( ',', @included_evidence_types ),
+            extra_code              => $extra_code,
+            extra_form              => $extra_form,
+            feature_default_display => $feature_default_display,
         },
-        \$html 
-    ) or $html = $t->error;
+        \$html
+      )
+      or $html = $t->error;
 
     if ( $path_info eq 'map_details' and scalar keys %ref_maps == 1 ) {
         $PAGE_SIZE ||= $self->config_data('max_child_elements') || 0;
         $MAX_PAGES ||= $self->config_data('max_search_pages')   || 1;
         my ($map_id) = keys %ref_maps;
 
-        my $detail_data            = $data->map_detail_data(
-            ref_map                => $drawer->{'data'}{'slots'}{0}{$map_id},
-            map_id                 => $map_id,
-            highlight              => $highlight,
+        my $detail_data = $data->map_detail_data(
+            ref_map                 => $drawer->{'data'}{'slots'}{0}{$map_id},
+            map_id                  => $map_id,
+            highlight               => $highlight,
             included_feature_types  => \@feature_types,
             included_evidence_types => \@included_evidence_types,
-            ignored_evidence_types => \@ignored_evidence_types,
-            order_by               => $apr->param('order_by') || '',
-            comparative_map_field  => '',
-            comparative_map_aid    => '',
-            page_size              => $PAGE_SIZE,
-            max_pages              => $MAX_PAGES,
-            page_no                => $page_no,
-            page_data              => $action eq 'download' ? 0 : 1,
-        ) or return $self->error( "Data: ".$data->error );
+            ignored_evidence_types  => \@ignored_evidence_types,
+            order_by                => $apr->param('order_by') || '',
+            comparative_map_field   => '',
+            comparative_map_aid     => '',
+            page_size               => $PAGE_SIZE,
+            max_pages               => $MAX_PAGES,
+            page_no                 => $page_no,
+            page_data               => $action eq 'download' ? 0 : 1,
+          )
+          or return $self->error( "Data: " . $data->error );
 
         if ( $action eq 'download' ) {
-            my $text       = join( FIELD_SEP, @{ +COLUMN_NAMES } ).RECORD_SEP;
+            my $text = join( FIELD_SEP, @{ +COLUMN_NAMES } ) . RECORD_SEP;
             my $map_fields = join( FIELD_SEP,
-                map { $detail_data->{'reference_map'}{$_} } @{ +MAP_FIELDS } 
-            );
+                map { $detail_data->{'reference_map'}{$_} } @{ +MAP_FIELDS } );
 
             for my $feature ( @{ $detail_data->{'features'} } ) {
-                my $row = join(
-                    FIELD_SEP, 
-                    $map_fields, map { $feature->{$_} } @{ +FEATURE_FIELDS }
-                );
+                my $row = join( FIELD_SEP,
+                    $map_fields, map { $feature->{$_} } @{ +FEATURE_FIELDS } );
 
                 if ( @{ $feature->{'positions'} } ) {
                     for my $position ( @{ $feature->{'positions'} } ) {
-                        $position->{'evidence'} = 
-                            join( ',', @{ $position->{'evidence'} } );
+                        $position->{'evidence'} =
+                          join( ',', @{ $position->{'evidence'} } );
                         $text .= join(
-                            FIELD_SEP, 
+                            FIELD_SEP,
                             $row,
                             map {
-                                defined $position->{$_} ? $position->{$_} : ''
-                            } @{ +POSITION_FIELDS }
-                        ) . RECORD_SEP;
+                                defined $position->{$_}
+                                  ? $position->{$_}
+                                  : ''
+                              } @{ +POSITION_FIELDS }
+                          )
+                          . RECORD_SEP;
                     }
                 }
                 else {
@@ -534,26 +538,28 @@ sub handler {
             print $apr->header( -type => 'text/plain' ), $text;
         }
         else {
-            my @map_ids    = map { $_ || () } 
-                             keys %{ $drawer->{'data'}{'slots'}{'0'} };
+            my @map_ids = map { $_ || () }
+              keys %{ $drawer->{'data'}{'slots'}{'0'} };
             my $ref_map_id = shift @map_ids;
-            my $ref_map    = $drawer->{'data'}{'slots'}{'0'}{ $ref_map_id };
-            $apr->param('ref_map_start',  $ref_map->{'start'}         );
-            $apr->param('ref_map_stop',   $ref_map->{'stop'}          );
-            $apr->param('feature_types',  join(',', @feature_types )  );
-            $apr->param('evidence_types', join(',', @included_evidence_types ) );
-            $apr->param('highlight_uri',  uri_escape($apr->param('highlight')));
+            my $ref_map    = $drawer->{'data'}{'slots'}{'0'}{$ref_map_id};
+            $apr->param( 'ref_map_start', $ref_map->{'start'} );
+            $apr->param( 'ref_map_stop',  $ref_map->{'stop'} );
+            $apr->param( 'feature_types', join( ',', @feature_types ) );
+            $apr->param( 'evidence_types',
+                join( ',', @included_evidence_types ) );
+            $apr->param( 'highlight_uri',
+                uri_escape( $apr->param('highlight') ) );
 
             my $detail_html;
             my $t = $self->template;
-            $t->process( 
-                DETAIL_TEMPLATE, 
-                { 
+            $t->process(
+                DETAIL_TEMPLATE,
+                {
                     apr                   => $apr,
                     pager                 => $detail_data->{'pager'},
                     feature_types         => $detail_data->{'feature_types'},
-                    feature_count_by_type => 
-                        $detail_data->{'feature_count_by_type'},
+                    feature_count_by_type =>
+                      $detail_data->{'feature_count_by_type'},
                     evidence_types        => $detail_data->{'evidence_types'},
                     reference_map         => $detail_data->{'reference_map'},
                     comparative_maps      => $detail_data->{'comparative_maps'},
@@ -564,21 +570,26 @@ sub handler {
                     title                 => 'Reference Map Details',
                     stylesheet            => $self->stylesheet,
                     included_features     => { map { $_, 1 } @feature_types },
-                    included_evidence     => { map { $_, 1 } @included_evidence_types },
-                    features              => $detail_data->{'features'},
+                    included_evidence     =>
+                      { map { $_, 1 } @included_evidence_types },
+                    features => $detail_data->{'features'},
                 },
-                \$detail_html 
-            ) or $detail_html = $t->error;
+                \$detail_html
+              )
+              or $detail_html = $t->error;
 
-            print $apr->header( 
-                -type => 'text/html', -cookie => $self->cookie
-            ), $html, $detail_html;
+            print $apr->header(
+                -type   => 'text/html',
+                -cookie => $self->cookie
+              ),
+              $html, $detail_html;
         }
     }
-    else{
+    else {
+
         # Regular map viewing
-        print $apr->header( -type => 'text/html', -cookie => $self->cookie ), 
-            $html;
+        print $apr->header( -type => 'text/html', -cookie => $self->cookie ),
+          $html;
     }
 
     return 1;
@@ -586,6 +597,7 @@ sub handler {
 
 # ----------------------------------------------------
 sub parse_map_info {
+
     # parses the map info
     my $aid       = shift;
     my $highlight = shift;
@@ -602,19 +614,20 @@ sub parse_map_info {
         $stop  = undef unless ( $stop  =~ /\S/ );
         my $start_stop_feature = 0;
         my @highlight_array;
-        push @highlight_array,$highlight if $highlight;
+        push @highlight_array, $highlight if $highlight;
+
         if ( $start !~ /^$RE{'num'}{'real'}$/ ) {
-            push @highlight_array,$start if $start;
+            push @highlight_array, $start if $start;
             $start_stop_feature = 1;
         }
 
         if ( $stop !~ /^$RE{'num'}{'real'}$/ ) {
-            push @highlight_array,$stop if $stop;
+            push @highlight_array, $stop if $stop;
             $start_stop_feature = 1;
         }
-        $highlight = join( ',', @highlight_array);
+        $highlight = join( ',', @highlight_array );
 
-        if ( ! $start_stop_feature
+        if (    !$start_stop_feature
             and defined($start)
             and defined($stop)
             and $stop < $start )
@@ -674,3 +687,4 @@ This library is free software;  you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 =cut
+

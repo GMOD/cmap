@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.65 2004-11-05 06:29:21 mwz444 Exp $
+# $Id: CMap.pm,v 1.66 2004-11-29 23:17:23 mwz444 Exp $
 
 =head1 NAME
 
@@ -83,7 +83,7 @@ Returns the cache directory.
             eval { mkpath( $cache_dir, 0, 0700 ) };
             if ( my $err = $@ ) {
                 return $self->error(
-                    "Cache directory '$cache_dir' can't be created: $err" );
+                    "Cache directory '$cache_dir' can't be created: $err");
             }
         }
 
@@ -374,7 +374,7 @@ Returns a database handle.  This is the only way into the database.
         if ( $@ || !defined $self->{'db'} ) {
             my $error = $@ || $DBI::errstr;
             return $self->error(
-                "Can't connect to data source '$db_name': $error" );
+                "Can't connect to data source '$db_name': $error");
         }
     }
 
@@ -398,7 +398,8 @@ The default is 1.
     my $self = shift;
     my $val  = shift;
     $self->{'aggregate'} = $val if defined $val;
-    $self->{'aggregate'} = 1 unless defined $self->{'aggregate'};
+    $self->{'aggregate'} = $self->config_data('scale_maps') || 1
+      unless defined $self->{'aggregate'};
     return $self->{'aggregate'};
 }
 
@@ -442,7 +443,8 @@ The default is 1.
     my $self = shift;
     my $val  = shift;
     $self->{'scale_maps'} = $val if defined $val;
-    $self->{'scale_maps'} = 1 unless defined $self->{'scale_maps'};
+    $self->{'scale_maps'} = $self->config_data('scale_maps') || 1
+      unless defined $self->{'scale_maps'};
     return $self->{'scale_maps'};
 }
 

@@ -428,6 +428,65 @@ feature_default_display=display
     $handled{'label_features'}=1;
     print $fh "label_features ".$config{'label_features'}."\n\n";
 
+
+    print $fh q[#
+# Collapse features glyphs into one glyph if they overlap by default
+# Values: 0 (don't collapse), 1 (collapse)
+# Default: 1 
+#
+];
+    $handled{'collapse_features'}=1;
+    print $fh "collapse_features ".$config{'collapse_features'}."\n\n";
+
+    print $fh q[#
+# Set default value for scale_maps
+# Allow scaleable (set by scalable) maps to be drawn in scale
+# Values: 0 (don't scale), 1 (scale)
+# Default: 1
+#
+];
+    $handled{'scale_maps'}=1;
+    print $fh "scale_maps ".$config{'scale_maps'}."\n\n";
+
+    print $fh q[#
+# Set default value for stack_maps
+# Stack the reference maps vertically instead of side-by-side.
+# Values: 0 (don't stack), 1 (stack)
+# Default: 1
+#
+];
+    $handled{'stack_maps'}=0;
+    print $fh "stack_maps ".$config{'stack_maps'}."\n\n";
+
+    print $fh q[#
+# Set default value for clean_view
+# In the clean view, navigation buttons are removed from the picture
+# Values: 0 (don't clean), 1 (clean)
+# Default: 1
+#
+];
+    $handled{'clean_view'}=0;
+    print $fh "clean_view ".$config{'clean_view'}."\n\n";
+
+    print $fh q[#
+# Set default value for show_intraslot_correspondences
+# Show correspondences between maps in the same slot.
+# Values: 0 (don't show), 1 (show)
+# Default: 1
+#
+];
+    $handled{'show_intraslot_correspondences'}=0;
+    print $fh "show_intraslot_correspondences ".$config{'show_intraslot_correspondences'}."\n\n";
+
+    print $fh q[#
+# Set default, aggregate correspondences into one or two lines.
+# Values: 0 (don't aggregate), 1 (one line), 2 (two lines)
+# Default: 1 
+#
+];
+    $handled{'aggregate_correspondences'}=1;
+    print $fh "aggregate_correspondences ".$config{'aggregate_correspondences'}."\n\n";
+
     print $fh q[#
 # Default color of a map if the "color" field of both the map type
 # and the map set are "Default"
