@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.41 2003-05-02 18:35:28 kycl4rk Exp $
+# $Id: Map.pm,v 1.42 2003-05-02 18:55:42 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.41 $)[-1];
+$VERSION = (qw$Revision: 1.42 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -787,13 +787,12 @@ Lays out the map.
                     $label_y = ( $y_pos1 + ( $y_pos2 - $y_pos1 ) / 2 ) 
                         - $reg_font->height/2;
                 }
-#                warn $feature->{'feature_name'}, " label_y = '$label_y' : $fstart-$fstop ($y_pos1,$y_pos2)\n";
+                warn $feature->{'feature_name'}, " label_y = '$label_y' : $fstart-$fstop ($y_pos1,$y_pos2)\n";
 
                 if ( $feature_shape eq LINE ) {
                     $drawer->add_drawing(
                         LINE, $tick_start, $y_pos1, $tick_stop, $y_pos1, $color
                     );
-#                    $label_y = $y_pos1 - $reg_font->height/2;
                     @coords  = ( $tick_start, $y_pos1, $tick_stop, $y_pos1 );
                 }
                 else {
@@ -810,11 +809,6 @@ Lays out the map.
                     my $vert_line_x2      = $label_side eq RIGHT 
                         ? $tick_stop + $offset 
                         : $tick_start - $offset;
-#                    my $shape_is_triangle = $feature_shape =~ /triangle$/;
-#
-#                    $label_y = $shape_is_triangle
-#                        ? $y_pos1 - $reg_font->height/2
-#                        : ( ( $y_pos1 + ( $y_pos2 - $y_pos1 ) / 2 ) ) - $reg_font->height/2;
 
                     if ( $y_pos1 < $y_pos2 && !$shape_is_triangle ) {
                         $drawer->add_drawing(
@@ -932,6 +926,7 @@ Lays out the map.
                         $drawer->add_drawing( RECTANGLE, @coords, $color );
                     }
                     elsif ( $feature_shape eq 'dumbbell' ) {
+                        warn "adding dumbbell ($y_pos1 to $y_pos2)\n";
                         my $width = 3;
                         $drawer->add_drawing(
                             ARC, 
@@ -939,11 +934,14 @@ Lays out the map.
                             $width, $width, 0, 360, $color
                         );
 
-                        $drawer->add_drawing(
-                            ARC, 
-                            $vert_line_x2, $y_pos2,
-                            $width, $width, 0, 360, $color
-                        );
+                        if ( $y_pos2 > $y_pos1 ) {
+                            $drawer->add_drawing(
+                                ARC, 
+                                $vert_line_x2, $y_pos2,
+                                $width, $width, 0, 360, $color
+                            );
+                        }
+
                         @coords = (
                             $vert_line_x2 - $width/2, $y_pos1, 
                             $vert_line_x2 + $width/2, $y_pos2
@@ -1135,7 +1133,7 @@ Lays out the map.
             #
             my @accepted_labels; # the labels we keep
             my $buffer    =  2;  # the space between things
-            if ( @north_labels && @south_labels ) {
+            if ( @north_labels || @south_labels ) {
                 @north_labels =
                     map  { $_->[0] }
                     sort { 
