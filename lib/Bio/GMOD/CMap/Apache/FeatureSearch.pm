@@ -1,17 +1,20 @@
 package Bio::GMOD::CMap::Apache::FeatureSearch;
 
-# $Id: FeatureSearch.pm,v 1.3 2002-09-06 22:15:51 kycl4rk Exp $
+# $Id: FeatureSearch.pm,v 1.4 2003-01-01 02:15:00 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Apache::Constants;
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Data;
+use Bio::GMOD::CMap::Utils 'paginate';
 use base 'Bio::GMOD::CMap::Apache';
+
+use Data::Dumper;
 
 use constant TEMPLATE => 'feature_search.tmpl';
 
@@ -32,6 +35,8 @@ sub handler {
     my $search_field     = $apr->param('search_field')     || '';
     my $feature_type_aid = $apr->param('feature_type_aid') || '';
 
+    $apr->param( features => $features );
+
     my $data             =  Bio::GMOD::CMap::Data->new;
     my $results          =  $data->feature_search_data(
         features         => $features,
@@ -39,29 +44,34 @@ sub handler {
         search_field     => $search_field,
         species_id       => $species_id,
         feature_type_aid => $feature_type_aid,
-        limit_start      => $limit_start,
-        limit_end        => $limit_end,
     );
 
-    $apr->param( features => $features );
-    my $max_child_elements = $self->config('max_child_elements') || 1;
+    #
+    # Slice the results up into pages suitable for web viewing.
+    #
+    my $page_data   =  paginate( 
+        self        => $self,
+        data        => $results->{'data'},
+        limit_start => $limit_start,
+    );
 
     my $html;
     my $t = $self->template;
     $t->process( 
         TEMPLATE, 
         { 
-            apr             => $apr, 
-            page            => $self->page,
-            species         => $results->{'species'},
-            feature_types   => $results->{'feature_types'},
-            search_results  => $results->{'data'},
-            result_set_size => $results->{'result_set_size'},
-            limit_start     => $results->{'limit_start'},
-            limit_end       => $results->{'limit_end'},
-            page_size       => $max_child_elements,
-            no_pages        => $results->{'no_pages'},
-            stylesheet      => $self->stylesheet,
+            apr            => $apr, 
+            page           => $self->page,
+            stylesheet     => $self->stylesheet,
+            species        => $results->{'species'},
+            feature_types  => $results->{'feature_types'},
+            search_results => $page_data->{'data'},
+            no_elements    => $page_data->{'no_elements'},
+            page_size      => $page_data->{'page_size'},
+            pages          => $page_data->{'pages'},
+            cur_page       => $page_data->{'cur_page'},
+            show_start     => $page_data->{'show_start'},
+            show_stop      => $page_data->{'show_stop'},
         },
         \$html 
     ) 
