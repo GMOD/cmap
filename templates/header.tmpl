@@ -3,9 +3,9 @@
 <head>
 <title>[% title %]</title>
 </head>
-[% IF stylesheet %]
-    <link rel="stylesheet" href="/stylesheets/gramene.css" type="text/css">
-[% END %]
+[% IF stylesheet -%]
+    <link rel="stylesheet" href="[% stylesheet %]" type="text/css">
+[%- END %]
 
 [% page.start_body OR '<body bgcolor="white">' %]
 

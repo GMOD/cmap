@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 
-# $Id: MapViewer.pm,v 1.1 2002-08-23 16:07:18 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.2 2002-08-23 22:31:02 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $TEMPLATE $PAGE $DEBUG );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Apache::Constants;
 use Apache::Request;
@@ -152,6 +152,7 @@ sub handler {
             debug            => $self->debug,
             comparative_maps => join( ':', @comp_maps ),
             title            => 'Comparative Maps',
+            stylesheet       => $self->stylesheet,
         },
         \$html 
     ) or $html = $t->error;

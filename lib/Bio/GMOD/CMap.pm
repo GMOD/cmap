@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap;
 
-# $Id: CMap.pm,v 1.1 2002-08-23 16:07:18 kycl4rk Exp $
+# $Id: CMap.pm,v 1.2 2002-08-23 22:31:02 kycl4rk Exp $
 
 =head1 NAME
 
@@ -27,7 +27,7 @@ itself based on Andy Wardley's Class::Base module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Class::Base;
 use Config::General;
@@ -47,14 +47,17 @@ sub config {
 Returns one or all options from the config file.
 
 =cut
-    my $self   = shift;
-    my $option = shift || '';
-    my $conf       = Config::General->new( CONFIG_FILE ) or
-        $self->error('Error reading config file: '.CONFIG_FILE);
-    my %config     = $conf->getall or 
-        $self->error('No configuration options');
+    my ( $self, $option ) = @_;
 
-    return $option ? $config{ $option } : \%config;
+    unless ( $self->{'config'} ) {
+        my $conf          = Config::General->new( CONFIG_FILE ) or
+            $self->error('Error reading config file: '.CONFIG_FILE);
+        my %config        = $conf->getall or 
+            $self->error('No configuration options');
+        $self->{'config'} = \%config;
+    }
+
+    return $option ? $self->{'config'}{ $option } : $self->{'config'};
 }
 
 # ----------------------------------------------------

@@ -119,7 +119,7 @@ Here are URLs to help you track down everything you need to install libgd:
     * zlib: http://www.gzip.org/zlib/
     * JGEP: http://www.ijg.org/
 
-Database
+DATABASE
 
 The CMAP application relies on a relational database management system
 (RDBMS) to store and retrieve data.  If you already have a database
@@ -410,29 +410,57 @@ To install the cmap modules included in this package, you can either:
     $ make
     # make install
 
-    You will be asked a couple of questions, such as where to place the
-    templates and command-line scripts. You can place them in any valid
-    directory on your system, but you should remember where you put them
-    for configuring Apache later. There are also a number of
-    "pre-requisite" modules. 
+    You will be asked several questions, such as where to place the
+    templates and command-line scripts and such. You can place them in
+    any valid directory on your system, and you will be provided with
+    reasonable defaults.  As you make your choices, two key files will 
+    receive crucial updates:
 
-2)  Manually place the contents of "lib," "bin," and "templates" into
-    directories of your choosing.
+    Bio::GMOD::CMap::Constants
+        This file will have the value of the "CONF_FILE" altered
+        to match CONF_DIR.
 
-At this point in the package's maturity, I'd recommend the latter.
-I like to put custom libraries used by Apache under
-"/usr/local/apache/lib/perl" (assuming, of course, that you might
-have libraries for Java and Python and whatever else tickles your
-fancy).  I would recommend putting the templates into
-"/usr/local/apache/templates/cmap," and the binaries (really just
-"cmap_admin.pl") into some system binary (or just in your $HOME
-directory if you're the only one who'll be using it).  If you do put
-the libraries into a custom directory, you'll need to let Perl know
-about the existence of these non-standard library paths.  Set your
-your PERL5LIB environment variable to the directory you chose and
-then place a "use lib '...'" statement in your perlstartup.pl file
-to let Perl know where to find these libraries.  More on that last
-part in a bit.
+    apache_conf/cmap.conf
+        This file will have the value of "template_dir" altered 
+        to match TEMPLATE_DIR.
+
+2)  Manually place the contents of "apache_conf," "lib," "bin," and
+    "templates" into directories of your choosing like so:
+    
+    apache_conf/cmap.conf
+        Copy to a location readable by all scripts and processes
+        that will need to read this file (command-line scripts run
+        by users and the httpd process) as this file contains 
+        database connection info and other runtime options.  Be sure 
+        to change TEMPLATE_DIR yourself to reflect the location of
+        the CMAP templates.
+
+    apache_conf/cmap.css
+        This is the cascading stylesheet used by the maps. Copy to a
+        location where a web browser can retreive, such as a
+        "stylesheets" directory.
+
+    lib
+        Copy to a location visible to all Perl/mod_perl processes. Be
+        sure to update your PERL5LIB environment variable and the
+        "perlstartup.pl" script to reflect your custom installation. I
+        like to put custom libraries used by Apache under
+        "/usr/local/apache/lib/perl" (assuming, of course, that you
+        might have libraries for Java and Python and whatever else
+        tickles your fancy).  Be sure to update Bio::GMOD::CMap::Constants
+        to have "CONF_FILE" point to the correct location of your 
+        configuration file ("cmap.conf").
+
+    bin
+        Copy "cmap_admin.pl" to a location suitable for the execution by
+        the curator(s) of your data, such as "/usr/local/bin/". If you
+        are the only one who will run the script, perhaps place it into
+        $HOME/bin.
+
+    templates
+        Copy to a location readable by your mod_perl server. I would
+        recommend putting the templates into
+        "/usr/local/apache/templates/cmap."
 
 CONFIGURING APACHE
 
@@ -442,7 +470,7 @@ you're now ready to configure Apache.  Two files are included in the
 "httpd.conf" and "perlstartup.pl."  The first of these files
 contains all the additions you should make to your own httpd.conf in
 order to configure the Apache environment and to set up the various
-handlers for the cmap application.  The second file, typically
+handlers for the CMAP application.  The second file, typically
 called something like "perlstartup.pl" (but you can call it whatever
 you like) is used to let Apache know about the modules it will use
 in its lifetime, and is placed in the same directory as the
@@ -464,22 +492,7 @@ httpd.conf so you can intelligently edit you own entries.
 This is the location of the file that lists all your Perl modules.
 Generally the path would be "/usr/local/apache/conf/perlstartup.pl."
 
-* PerlSetVar TEMPLATE_DIR /usr/local/apache/templates/cmap
-
-This is the directory where you placed the cmap templates.  You
-actually don't need to set if you set the path in the
-"CSHL::CMap::Constants" module.
-
-* PerlSetVar PAGE_OBJECT  GramenePage
-
-This will likely never be used by anyone but the original Gramene site
-where the "GramenePage" module automagically inserts proper headers
-and footers and navigation bars depending on the page being
-requested.  If you don't have anything like this, you can simply
-place your site's headers and footers directly into the templates
-provided.  Probably you can skip both of the above directives.
-
-* Alias /cmap/images /tmp/cmap_cache
+* Alias /images/cmap /tmp/cmap_cache
 
 This is the directory where the application will write the temporary
 images created for each request.  Apache will directly serve the
@@ -534,6 +547,37 @@ line, so the first backslash is just my way of indicating to you
 that the command continues on the next line.  The second backslash,
 however, is actually a part of the command.  It tells "find" that
 the semi-colon is part of its "-exec" command.
+
+* <Location> directives
+
+You'll add two directives to your httpd.conf, the second of which is
+only necessary if you wish to password-protect your administrative
+interface (which I'm sure you will).  An actual directory called
+"cmap" can exist in your DocumentRoot, but there's no reason for it.
+You may want to place the CMAP stylesheet there, but it's probably
+just as easy to create a site-wide "stylesheets" directory.  However,
+the code is written in such a way that any files in a "/cmap"
+directory will be properly served by Apache.
+
+To protect the administrative interface with a password, you'll need
+to use the "htpasswd" program that is distributed with Apache.  It is
+usually located in the same directory as the "httpd" binary
+(e.g., "/usr/local/apache/bin").  If you've never used htpasswd
+before, you can get the quick synopsis by giving it a single argument
+of "-h" or "--help."  You should read the help to make sure that you
+create your password file correctly (making sure not to overwrite an
+existing file!), but this will probably work just fine for you:
+
+    $ su -
+    # cd /usr/local/apache/bin
+    # mkdir passwd
+    # ./htpasswd -c /usr/local/apache/passwd/cmap admin
+
+In the last command, the last argument is the username which you'll
+use when prompted by your web browser to see the admin tool, and the
+argument before that is the name of the new password file that will be
+created by the "-c" argument.  If the file already exists, then don't
+use "-c."
 
 STARTING APACHE
 
