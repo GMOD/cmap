@@ -16,11 +16,15 @@ Oracle, MySQL, PostgreSQL or Sybase for gathering the data, and uses
 Paul Boutell's libgd c library and Lincoln Stein's GD Perl module to
 draw the maps.
 
-To verify the integrity of the tarball, run "cpansign -v."
+To verify the integrity of the tarball, run "cpansign -v" (if you have
+installed GnuPG and Module::Signature).
 
-To install, follow the directions in the file called "INSTALL."
+To install, follow the directions in the file called "INSTALL."  The
+installation process changed significantly with the 0.09 release.  If
+you have comments (good or bad), please submit them to the CMap list
+(address below)!
 
-If you want to understand the code further, esp. to customize or
+If you want to understand the code further, especially to customize or
 extend it, read "docs/CODE_OVERVIEW."
 
 To understand how to load and curate data as well as how to generally
