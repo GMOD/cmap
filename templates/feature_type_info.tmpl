@@ -1,7 +1,7 @@
 [% SET title='Feature Type Info' %]
 [% 
     INCLUDE header.tmpl 
-    title=title
+    title='CMap - Feature Type Info'
     cur_sec='feature_type_info'
     help_anchor='feature_type_info'
 %]
@@ -16,15 +16,12 @@
 <div align="center">
 <p>
 [% IF feature_types.size == 1 %]
-    <div align="center">
-    <a href="feature_type_info">View All Feature Types</a>
-    </div>
+    <b>[</b>&nbsp;<a href="feature_type_info">View All Feature Types</a>&nbsp;<b>]</b>
 [% END %]
 </p>
 
 <p>
 [% IF feature_types.size %]
-    <div align="center">
     <table>
         <tr>
             <td colspan="2" align="center">
@@ -77,9 +74,15 @@
                     </td>
                 </tr> 
             [% END %]
+            <tr>
+                <td>&nbsp;</td>
+                <td>
+                    <b>[</b>&nbsp;<a href="feature_search?features=*&feature_type_aid=[% ft.feature_type_aid %]">Search for All Features of This Type</a>&nbsp;<b>]</b>
+                </td>
+            </tr>
+            <tr><td colspan="2">&nbsp;</td></tr>
         [% END %]
     </table>
-    </div>
 
 [% ELSE %]
 

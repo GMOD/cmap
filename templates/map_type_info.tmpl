@@ -1,7 +1,7 @@
 [% SET title='Map Type Info' %]
 [% 
     INCLUDE header.tmpl 
-    title=title
+    title='CMap - Map Type Info'
     cur_sec='map_type_info'
     help_anchor='map_type_info'
 %]
@@ -16,7 +16,7 @@
 <div align="center">
 
 [%- IF apr.param('map_type_aid') -%]
-    <a href="map_type_info">Show All Map Types</a>
+    <b>[</b>&nbsp;<a href="map_type_info">Show All Map Types</a>&nbsp;<b>]</b>
 [%- END -%]
 
 <p>
@@ -87,6 +87,13 @@
                     </td>
                 </tr> 
             [% END %]
+
+            <tr>
+                <td>&nbsp;</td>
+                <td>
+                    <b>[</b>&nbsp;<a href="map_set_info?map_type_aid=[% mt.map_type_aid %]">Show Info For All Map Sets Of This Map Type</a>&nbsp;<b>]</b>
+                </td>
+            </tr> 
         [% END %]
     </table>
 [% ELSE %]

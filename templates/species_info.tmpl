@@ -1,7 +1,7 @@
 [% SET title='Species Info' %]
 [% 
     INCLUDE header.tmpl 
-    title=title
+    title='CMap - Species Info'
     cur_sec='species_info'
     help_anchor='species_info'
 %]
@@ -16,7 +16,7 @@
 <div align="center">
 
 [%- IF apr.param('species_aid') -%]
-    <a href="species_info">Show All Species</a>
+    <b>[</b>&nbsp;<a href="species_info">Show All Species</a>&nbsp;<b>]</b>
 [%- END -%]
 
 <p>
@@ -49,7 +49,8 @@
             [% IF s.map_sets.size %]
                 <tr>
                     <td valign="top" align="right">Map Sets ([% s.map_sets.size %]):</td>
-                    <td>
+                    <td align="center">
+                        <b>[</b>&nbsp;<a href="map_set_info?species_aid=[% s.species_aid %]">Show Info For All Map Sets From This Species</a>&nbsp;<b>]</b>
                         [% SET last_map_type='' %]
                         <table border="0">
                         [% FOREACH ms=s.map_sets %]

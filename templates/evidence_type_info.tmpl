@@ -1,7 +1,7 @@
 [% SET title='Evidence Type Info' %]
 [% 
     INCLUDE header.tmpl 
-    title=title
+    title='CMap - Evidence Type Info'
     cur_sec='evidence_type_info'
     help_anchor='evidence_type_info'
 %]
@@ -16,15 +16,12 @@
 <div align="center">
 <p>
 [% IF evidence_types.size == 1 %]
-    <div align="center">
-    <a href="evidence_type_info">View All Evidence Types</a>
-    </div>
+    <b>[</b>&nbsp;<a href="evidence_type_info">View All Evidence Types</a>&nbsp;<b>]</b>
 [% END %]
 </p>
 
 <p>
 [% IF evidence_types.size %]
-    <div align="center">
     <table>
         <tr>
             <td colspan="2" align="center">
@@ -77,9 +74,9 @@
                     </td>
                 </tr> 
             [% END %]
+            <tr><td colspan="2">&nbsp;</td></tr>
         [% END %]
     </table>
-    </div>
 
 [% ELSE %]
 
