@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.53 2003-10-29 20:42:45 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.54 2003-10-29 23:52:17 kycl4rk Exp $
 
 use strict;
 use Apache::Constants qw[ :common M_GET REDIRECT ];
@@ -34,7 +34,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.53 $)[-1];
+$VERSION        = (qw$Revision: 1.54 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -1064,7 +1064,7 @@ sub map_view {
     } );
     $map->{'features'} = @$features ? [ $pager->splice( $features ) ] : []; 
 
-    my @feature_ids = map { $_->{'feature_id'} } @$features;
+    my @feature_ids = map { $_->{'feature_id'} } @{ $map->{'features'} };
     if ( @feature_ids ) {
         my $aliases = $db->selectall_arrayref(
             q[
