@@ -1,6 +1,6 @@
                 CMAP ADMINISTRATION AND DATA CURATION
 
-                          $Revision: 1.11 $
+                          $Revision: 1.12 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are two tools you will use:
@@ -918,13 +918,13 @@ are explained in comments.
 
 13.2    CONFIGURING TEMPLATE DIRECTORY
 
-You template directory will probably be properly set if you went
-through the "perl Makefile.PL; make; make install" routine for
-installing CMap.  The question of where to install the templates and
-where to install cmap.conf are both asked during this process, and the
-values are placed into the appropriate files.  If you installed
-everything by hand (or you ever move your templates), then you'll just
-need to make sure that the path is properly set in cmap.conf.
+The template directory will be properly set if you went through the
+"perl Build.PL; ./Build; ./Build install" routine for installing CMap.
+The question of where to install the templates and where to install
+cmap.conf are both asked during this process, and the values are
+placed into the appropriate files.  If you installed everything by
+hand (or you ever move your templates), then you'll just need to make
+sure that the path is properly set in cmap.conf.
 
 14.     HTML TEMPLATES
 
