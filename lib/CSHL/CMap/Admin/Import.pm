@@ -1,6 +1,6 @@
 package CSHL::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.2 2002-08-09 22:08:42 kycl4rk Exp $
+# $Id: Import.pm,v 1.3 2002-08-12 17:17:56 kycl4rk Exp $
 
 =pod
 
@@ -28,8 +28,9 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.2 $)[-1];
+$VERSION  = (qw$Revision: 1.3 $)[-1];
 
+use Data::Dumper;
 use CSHL::CMap;
 use CSHL::CMap::Constants;
 use CSHL::CMap::Utils 'next_number';
@@ -350,7 +351,11 @@ Starred fields are required.  Order of fields is not important.
             ( $map_id )
         );
 
-        unless ( defined $start && defined $stop ) {
+        unless ( 
+            defined $start && 
+            defined $stop  && 
+            $stop > $start
+        ) {
             my ( $min_start, $max_start, $max_stop ) = $db->selectrow_array(
                 q[
                     select   min(f.start_position), 
@@ -369,6 +374,7 @@ Starred fields are required.  Order of fields is not important.
             $max_stop  ||= 0;
             $start     ||= $min_start; 
             $stop      ||= $max_start > $max_stop ? $max_start : $max_stop;
+
 
             $db->do(
                 q[
