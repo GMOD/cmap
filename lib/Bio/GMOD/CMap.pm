@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.74 2005-03-10 18:30:07 mwz444 Exp $
+# $Id: CMap.pm,v 1.75 2005-03-16 20:52:21 mwz444 Exp $
 
 =head1 NAME
 
@@ -924,14 +924,14 @@ Given information about the link, creates a url to cmap_viewer.
     if ( $ref_map_aids and %$ref_map_aids ) {
         my @ref_strs;
         foreach my $ref_map_aid ( keys(%$ref_map_aids) ) {
-            if (   defined( $ref_map_aids->{'start'} )
-                or defined( $ref_map_aids->{'stop'} ) )
+            if (   defined( $ref_map_aids->{$ref_map_aid}{'start'} )
+                or defined( $ref_map_aids->{$ref_map_aid}{'stop'} ) )
             {
                 push @ref_strs,
                   $ref_map_aid . '['
-                  . $ref_map_aids->{'start'} . '*'
-                  . $ref_map_aids->{'stop'} . 'x'
-                  . $ref_map_aids->{'magnify'} . ']';
+                  . $ref_map_aids->{$ref_map_aid}{'start'} . '*'
+                  . $ref_map_aids->{$ref_map_aid}{'stop'} . 'x'
+                  . $ref_map_aids->{$ref_map_aid}{'magnify'} . ']';
             }
             else {
                 push @ref_strs, $ref_map_aid;
