@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.61 2004-02-10 22:50:09 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.62 2004-02-13 22:28:59 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -32,7 +32,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.61 $)[-1];
+$VERSION        = (qw$Revision: 1.62 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -2886,7 +2886,8 @@ sub process_template {
     $t->process( $template, $params, \$output ) or $output = $t->error;
 
     my $apr = $self->apr;
-    print $apr->header('text/html'), $output;
+    print $apr->header( -type => 'text/html', -cookie => $self->cookie ), 
+        $output;
     return 1;
 }
 
