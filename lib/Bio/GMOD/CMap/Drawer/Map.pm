@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.135.2.14 2004-11-18 20:04:42 mwz444 Exp $
+# $Id: Map.pm,v 1.135.2.15 2004-11-19 18:32:39 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.135.2.14 $)[-1];
+$VERSION = (qw$Revision: 1.135.2.15 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1069,7 +1069,7 @@ Variable Info:
     my $no_of_maps  = scalar @map_ids;
 
     # if more than one map in slot, compress all
-    my $is_compressed  = $drawer->data_module->compress_maps($slot_no);
+    my $is_compressed  = $self->is_compressed($slot_no);
     my $label_features = $drawer->label_features;
     my $config         = $self->config or return;
 
@@ -1575,7 +1575,13 @@ Variable Info:
 
     #Make aggregated correspondences
     my $corrs_aggregated = 0;
-    if ( $self->aggregate and $is_compressed ) {
+    if (
+        $self->aggregate
+        and (  $is_compressed
+            or $self->is_compressed( $drawer->reference_slot_no($slot_no) ) )
+      )
+    {
+
         for my $map_id (@map_ids) {
             $corrs_aggregated = 1
               if ( $map_aggregate_corr{$map_id}
@@ -1610,6 +1616,8 @@ Variable Info:
                     $this_map_y,       $line_color,
                     0
                   ];
+
+                # Make Anchor T
                 push @drawing_data,
                   [
                     LINE,            $this_map_x,
@@ -2257,12 +2265,21 @@ sub add_topper {
         my $map_details_url = DEFAULT->{'map_details_url'};
         my $code            = '';
         eval $self->map_type_data( $map->{'map_type_aid'}, 'area_code' );
+        my $buttons = $self->create_buttons(
+            map_id     => $map_id,
+            drawer     => $drawer,
+            slot_no    => $slot_no,
+            is_flipped => $is_flipped,
+            buttons    => [ 'map_detail', ],
+        );
+        my $url = $buttons->[0]{'url'};
+        my $alt = $buttons->[0]{'alt'};
         push @{ $map_area_data->{$map_id} },
           {
             coords => \@topper_bounds,
-            url => $map_details_url . "?ref_map_aids=" . $map->{'accession_id'},
-            alt => 'Map Details: ' . $map->{'map_name'},
-            code => $code,
+            url    => $url,
+            alt    => $alt,
+            code   => $code,
           };
 
         $map_placement_data->{$map_id}{'bounds'}[0] = $f_x1
@@ -3756,6 +3773,24 @@ Break cyclical links.
         }
     }
     return $line_color;
+}
+
+# ----------------------------------------------------
+sub is_compressed {
+
+=pod
+
+=head2 is_compressed
+
+Uses Data.pm to figure out if a map is compressed.
+
+=cut
+
+    my $self    = shift;
+    my $slot_no = shift;
+    my $drawer  = $self->drawer;
+
+    return $drawer->data_module->compress_maps($slot_no);
 }
 
 # ----------------------------------------------------

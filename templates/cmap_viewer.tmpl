@@ -699,20 +699,35 @@ function selectAllOptions(select){
             <table border="0">
               [%- IF form_data.ordered_ref_maps.size > 1; -%]
                 <tr>
-                  <td align="left" valign="center">Reference Map Order<br>
-                    <select name="ori_ref_map_order" multiple size=5>
-                      [%- FOREACH map=form_data.ordered_ref_maps -%]
-                        <option value='[% map.map_aid %]'>[% map.map_name %]</option>
-                      [%- END -%]
-                    </select><br>
-                    <input type=button value='Select All' onclick="selectAllOptions(ori_ref_map_order)">
-                  </td>
-                  <td>
-                    <input type=button value='Order -->' onclick="moveOrderedMaps()"><br>
-                    <input type=button value='Reverse -->' onclick="moveOrderedMapsRev()">
-                    <textarea name=ref_map_order_display rows=1 disabled=1></textarea>
-                    <input type=hidden name=ref_map_order>
-                    <input type=hidden name=prev_ref_map_order value="[% prev_ref_map_order %]">
+                  <td align="left" valign="center" colspan=5>
+                    <table border=0>
+                      <tr>
+                        <td colspan=3>Reference Map Order:</td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <select name="ori_ref_map_order" multiple size=5>
+                          [%- FOREACH map=form_data.ordered_ref_maps -%]
+                            <option value='[% map.map_aid %]'>[% map.map_name %]</option>
+                          [%- END -%]
+                          </select>
+                        </td>
+                        <td>
+                          <input type=button value='Order -->' onclick="moveOrderedMaps()"><br>
+                          <input type=button value='Reverse -->' onclick="moveOrderedMapsRev()">
+                        </td>
+                        <td>
+                          <textarea name=ref_map_order_display rows=1 disabled=1></textarea>
+                          <input type=hidden name=ref_map_order>
+                          <input type=hidden name=prev_ref_map_order value="[% prev_ref_map_order %]">
+                        </td>
+                      </tr>
+                      <tr>
+                        <td colspan=2>
+                          <input type=button value='Select All' onclick="selectAllOptions(ori_ref_map_order)">
+                        </td>
+                      </tr>
+                    </table>
                   </td>
                 </tr>
               [%- END -%]
