@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.51 2003-07-11 22:49:03 kycl4rk Exp $
+# $Id: Data.pm,v 1.52 2003-08-11 19:43:30 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,11 +24,10 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.51 $)[-1];
+$VERSION = (qw$Revision: 1.52 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
-#use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Utils;
 use base 'Bio::GMOD::CMap';
@@ -49,7 +48,7 @@ sub acc_id_to_internal_id {
 
 Given an accession id for a particular table, find the internal id.  Expects:
 
-    table   : the name of the table from which to select
+    table   : the name of the table from which to select 
     acc_id  : the value of the accession id
     id_field: (opt.) the name of the internal id field
 
@@ -109,6 +108,8 @@ Organizes the data for drawing comparative maps.
     my @pos                    = sort { $a <=> $b } grep { $_ >= 0 } @slot_nos;
     my @neg                    = sort { $b <=> $a } grep { $_ <  0 } @slot_nos; 
     my @ordered_slot_nos       = ( @pos, @neg );
+    my $db                     = $self->db;
+    my $pid                    = $$;
 
     #
     # "-1" is a reserved value meaning "All."
@@ -120,11 +121,17 @@ Organizes the data for drawing comparative maps.
     my $evidence_type_ids   =
         $self->evidence_type_aid_to_id( @$include_evidence_types );
 
+    #
+    # Delete anything from the cache.
+    #
+    $db->do("delete from cmap_map_cache where pid=$pid");
+
     my ( $data, %correspondences, %correspondence_evidence, %feature_types );
     for my $slot_no ( @ordered_slot_nos ) {
-        my $cur_map = $slots->{ $slot_no };
-        my $ref_map = $slot_no == 0 ? undef :
-            $slot_no > 0 ? $slots->{ $slot_no - 1 } : $slots->{ $slot_no + 1 };
+        my $cur_map     = $slots->{ $slot_no };
+        my $ref_slot_no = $slot_no == 0 ? undef :
+            $slot_no > 0 ? $slot_no - 1 : $slot_no + 1;
+        my $ref_map     = defined $ref_slot_no ? $slots->{$ref_slot_no} : undef;
 
         $data->{'slots'}{ $slot_no } =  $self->map_data( 
             map                      => \$cur_map,                 # pass
@@ -133,10 +140,12 @@ Organizes the data for drawing comparative maps.
             feature_types            => \%feature_types,           # erence
             reference_map            => $ref_map,
             slot_no                  => $slot_no,
+            ref_slot_no              => $ref_slot_no,
             min_correspondences      => $min_correspondences,
             feature_type_ids         => $feature_type_ids,
             evidence_type_ids        => $evidence_type_ids,
-        ) || {};
+            pid                      => $pid,
+        ) or return $self->error("Can't find data for map.");
     }
 
     #
@@ -175,6 +184,7 @@ Returns the data for drawing comparative maps.
     # Get the arguments.
     #
     my $slot_no                 = $args{'slot_no'};
+    my $ref_slot_no             = $args{'ref_slot_no'};
     my $min_correspondences     = $args{'min_correspondences'} ||  0;
     my $feature_type_ids        = $args{'feature_type_ids'};
     my $evidence_type_ids       = $args{'evidence_type_ids'};
@@ -183,6 +193,7 @@ Returns the data for drawing comparative maps.
     my $correspondences         = $args{'correspondences'};
     my $correspondence_evidence = $args{'correspondence_evidence'};
     my $feature_types           = $args{'feature_types'};
+    my $pid                     = $args{'pid'};
 
     #
     # Sort out the current map.
@@ -190,38 +201,11 @@ Returns the data for drawing comparative maps.
     my $aid_field   = $map->{'field'};
     my $map_start   = $map->{'start'};
     my $map_stop    = $map->{'stop'};
+    $map_start      = undef if $map_start eq '';
+    $map_stop       = undef if $map_stop  eq '';
     my $map_aid     = $aid_field eq 'map_aid'     ? $map->{'aid'} : '';
     my $map_set_aid = $aid_field eq 'map_set_aid' ? $map->{'aid'} : '';
     my $no_flanking_positions = $map->{'no_flanking_positions'} || 0;
-
-    #
-    # Understand our reference map.  We can either be comparing our
-    # current map to a single reference map or to an entire map set.
-    #
-    my ( $ref_map_start, $ref_map_stop, $ref_map_set_id, $ref_map_id );
-    if ( $reference_map ) {
-        my $field      =  $reference_map->{'field'};
-        $ref_map_start =  $field eq 'map_set_aid' 
-                          ? undef : $reference_map->{'start'};
-        $ref_map_stop  =  $field eq 'map_set_aid'
-                          ? undef : $reference_map->{'stop'};
-
-        $ref_map_id    =  $field eq 'map_aid'
-            ? $self->acc_id_to_internal_id(
-                table      => 'cmap_map',
-                acc_id     => $reference_map->{'aid'},
-            )
-            : undef
-        ;
-
-        $ref_map_set_id =  $field eq 'map_set_aid'
-            ? $self->acc_id_to_internal_id(
-                table      => 'cmap_map_set',
-                acc_id     => $reference_map->{'aid'},
-            )
-            : undef
-        ;
-    }
 
     #
     # Turn the accession id into an internal id.
@@ -234,25 +218,71 @@ Returns the data for drawing comparative maps.
         : undef
     ;
 
-    my %corr_lookup;
-    if ( $ref_map_id || $ref_map_set_id ) {
-        my $single_map_id = $map_aid
-            ? $self->acc_id_to_internal_id(
-                table      => 'cmap_map', 
-                acc_id     => $map_aid,
-            )
-            : undef
-        ;
+    my $this_map_id = $map_aid
+        ? $self->acc_id_to_internal_id(
+            table      => 'cmap_map', 
+            acc_id     => $map_aid,
+        )
+        : undef
+    ;
 
-        my ( $from_field, $from_restriction, $to_field, 
-            $to_restriction, @corr_args );
+    return $self->error("argh!") unless $map_set_id || $this_map_id;
 
-        if ( $ref_map_set_id ) {
-            $from_field = 'map_set_id';
-            push @corr_args, $ref_map_set_id;
+    if ( $this_map_id ) {
+        for ( $map_start, $map_stop ) {
+            next unless defined $_;
+            unless ( $_ =~ NUMBER_RE ) {
+                $_ = $self->feature_name_to_position( 
+                    feature_name => $_,
+                    map_id       => $this_map_id,
+                ) || 0;
+            }
         }
-        else {
-            $from_field = 'map_id';
+    }
+
+    if ( 
+        defined $map_start && 
+        defined $map_stop  &&
+        $map_start > $map_stop
+    ) {
+        ( $map_start, $map_stop ) = ( $map_stop, $map_start );
+    }
+
+    #
+    # Understand our reference map.  We can either be comparing our
+    # current map to a single reference map or to an entire map set.
+    #
+    my ( $ref_map_id, $ref_map_start, $ref_map_stop, $ref_maps, %corr_lookup );
+    if ( defined $ref_slot_no ) {
+        $ref_maps = $db->selectall_arrayref(
+            q[
+                select map_id, start_position, stop_position
+                from   cmap_map_cache
+                where  pid=?
+                and    slot_no=?
+            ],
+            { Columns => {} },
+            ( $pid, $ref_slot_no )
+        );
+
+        return $self->error('No ref maps') unless @$ref_maps;
+
+        #
+        # If there's just one reference map, take note of the 
+        # map's ID and start/stop positions.
+        #
+        if ( scalar @$ref_maps == 1 ) {
+            $ref_map_id    = $ref_maps->[0]->{'map_id'};
+            $ref_map_start = $ref_maps->[0]->{'start_position'};
+            $ref_map_stop  = $ref_maps->[0]->{'stop_position'};
+        }
+
+        #
+        # Lookup all the correspondences from the reference map set
+        # to this map or map set.
+        #
+        my $from_restriction;
+        if ( $ref_map_id && defined $ref_map_start && defined $ref_map_stop ) {
             $from_restriction = qq[
                 and      (
                     ( f1.start_position>=$ref_map_start and 
@@ -264,42 +294,50 @@ Returns the data for drawing comparative maps.
                     )
                 )
             ];
-            push @corr_args, $ref_map_id;
         }
 
+        my ( $field, $value, $to_restriction );
         if ( $map_set_id ) { 
-            $to_field = 'map_set_id';
-            push @corr_args, $map_set_id;
+            $field = 'map_set_id';
+            $value = $map_set_id;
         }
         else {
-            $to_field = 'map_id';
-            push @corr_args, $single_map_id;
+            $field = 'map_id';
+            $value = $this_map_id;
             if ( defined $map_start && defined $map_stop ) {
                 $to_restriction = qq[
-                    and f2.start_position>=$map_start
-                    and f2.stop_position<=$map_stop
+                    and      (
+                        ( f2.start_position>=$map_start and 
+                          f2.start_position<=$map_stop )
+                        or   (
+                            f2.stop_position is not null and
+                            f2.start_position<=$map_start and
+                            f2.stop_position>=$map_stop
+                        )
+                    )
                 ];
             }
         }
 
-        my $sql = qq[
+        my $corr_sql = qq[
             select   f1.feature_id as feature_id1,
                      f2.feature_id as feature_id2, 
-                     map2.map_id,
+                     map.map_id,
                      cl.feature_correspondence_id,
                      et.evidence_type,
                      et.rank as evidence_rank,
                      et.line_color
             from     cmap_feature f1, 
-                     cmap_map map1,
                      cmap_feature f2, 
-                     cmap_map map2,
+                     cmap_map map,
+                     cmap_map_cache mc,
                      cmap_correspondence_lookup cl,
                      cmap_feature_correspondence fc,
                      cmap_correspondence_evidence ce,
                      cmap_evidence_type et
-            where    f1.map_id=map1.map_id
-            and      map1.$from_field=?
+            where    mc.pid=?
+            and      mc.slot_no=?
+            and      mc.map_id=f1.map_id
             $from_restriction
             and      f1.feature_id=cl.feature_id1
             and      cl.feature_correspondence_id=
@@ -309,33 +347,30 @@ Returns the data for drawing comparative maps.
                      ce.feature_correspondence_id
             and      ce.evidence_type_id=et.evidence_type_id
             and      cl.feature_id2=f2.feature_id
-            and      f2.map_id=map2.map_id
-            and      map2.$to_field=?
+            and      f2.map_id=map.map_id
+            and      map.$field=?
             $to_restriction
         ];
 
         if ( @$evidence_type_ids ) {
-            $sql .= 'and ce.evidence_type_id in ('.
+            $corr_sql .= 'and ce.evidence_type_id in ('.
                 join( ',', @$evidence_type_ids ).
             ')';
         }
 
         if ( @$feature_type_ids ) {
-            $sql .= 'and f1.feature_type_id in ('.
+            $corr_sql .= 'and f1.feature_type_id in ('.
                 join( ',', @$feature_type_ids ).
             ')';
         }
 
         my $ref_map_correspondences = $db->selectall_arrayref(
-            $sql, { Columns => {} }, ( @corr_args )
+            $corr_sql, { Columns => {} }, ( $pid, $ref_slot_no, $value )
         );
 
         for my $corr ( @{ $ref_map_correspondences || [] } ) {
             push @{ $corr_lookup{ $corr->{'map_id'} } }, $corr;
         }
-
-#        print STDERR "ref map corr = ", Dumper( $ref_map_correspondences ), "\n";
-#        print STDERR "sql =\n$sql\nargs = ", join(', ', @corr_args), "\n";
     }
 
     #
@@ -344,21 +379,22 @@ Returns the data for drawing comparative maps.
     #
     my @maps = ();
     if ( $map_set_id ) {
-        if ( $ref_map_id || $ref_map_set_id ) {
-            if ( $ref_map_id ) {
+        if ( @{ $ref_maps || [] } ) {
+            if ( $ref_map_id ) { # just one reference map
                 push @maps, @{ $db->selectall_arrayref(
                     $sql->map_data_map_ids_by_single_reference_map(
                         evidence_type_ids => $evidence_type_ids,
                     ),
                     { Columns => {} },
                     ( $ref_map_id, $ref_map_start, $ref_map_stop, 
+                      $ref_map_start, $ref_map_stop, 
                       $map_set_id, $ref_map_id
                     )
                 ) };
             }
-            elsif ( $reference_map->{'map_ids'} ) {
+            else { # many reference maps, use map_cache
                 push @maps, @{ $db->selectall_arrayref(
-                    qq[
+                    q[
                         select distinct map.map_id,
                                map.accession_id,
                                map.map_name,
@@ -384,11 +420,14 @@ Returns the data for drawing comparative maps.
                                cmap_feature f1, 
                                cmap_feature f2, 
                                cmap_map_set ms,
+                               cmap_map_cache mc,
                                cmap_species s,
                                cmap_map_type mt,
                                cmap_correspondence_lookup cl,
                                cmap_feature_correspondence fc
-                        where  f1.map_id in ( $reference_map->{'map_ids'} )
+                        where  mc.pid=?
+                        and    mc.slot_no=?
+                        and    mc.map_id=f1.map_id
                         and    f1.feature_id=cl.feature_id1
                         and    cl.feature_correspondence_id=
                                fc.feature_correspondence_id
@@ -396,20 +435,16 @@ Returns the data for drawing comparative maps.
                         and    cl.feature_id2=f2.feature_id
                         and    f2.map_id=map.map_id
                         and    map.map_set_id=?
-                        and    map.map_id not in ( $reference_map->{'map_ids'} )
                         and    map.map_set_id=ms.map_set_id
                         and    ms.map_type_id=mt.map_type_id
                         and    ms.species_id=s.species_id
                     ],
-                    {},
-                    ( $map_set_id )
+                    { Columns => {} },
+                    ( $pid, $ref_slot_no, $map_set_id )
                 ) };
             }
-            else {
-                @maps = ();
-            }
         }
-        else {
+        else { # no reference maps, just get all the maps in this set
             push @maps, @{ 
                 $db->selectall_arrayref(
                     q[
@@ -448,13 +483,8 @@ Returns the data for drawing comparative maps.
                 ) 
             };
         }
-
-        $map->{'map_ids'} = join( ',', map { $_->{'map_id'} } @maps );
     }
-    else {
-        #
-        # Turn the accession id into an internal id.
-        #
+    else { # just get the info on this one map
         push @maps, @{ 
             $db->selectall_arrayref(
                 q[
@@ -495,11 +525,269 @@ Returns the data for drawing comparative maps.
     }
 
     #
+    # Find out how many correspondences exist from each map to the ref
+    # map(s).  If there is a minimum correspondence number, skip the
+    # maps that don't meet the requirement;  otherwise, cache current
+    # maps for next slot out and to find all the features and self
+    # correspondences.
+    #
+    for my $map_data ( @maps ) {
+        my %distinct;
+        for my $corr ( @{ $corr_lookup{ $map_data->{'map_id'} } || [] } ) {
+            $distinct{ $corr->{'feature_correspondence_id'} } = 1;
+        }
+
+        $map_data->{'no_correspondences'} = scalar keys %distinct;
+
+        if ( 
+            $min_correspondences && 
+            defined $ref_slot_no &&
+            $map_data->{'no_correspondences'} < $min_correspondences
+        ) {
+            $map_data->{'skip'} = 1;
+        }
+        else {
+            $map_data->{'skip'} = 0;
+            my ( $start, $stop ) = 
+                scalar @maps == 1 && defined $map_start && defined $map_stop
+                ? ($map_start, $map_stop)
+                : ($map_data->{'start_position'}, $map_data->{'stop_position'})
+            ;
+
+            $db->do(
+                q[
+                    insert 
+                    into   cmap_map_cache 
+                           (pid, slot_no, map_id, start_position, stop_position)
+                    values ( ?, ?, ?, ?, ? )
+                ],
+                {},
+                ( $pid, $slot_no, $map_data->{'map_id'}, $start, $stop )
+            );
+        }
+    }
+
+    #
+    # Get the correspondences among features on each map.
+    #
+    my ( %self_correspondences, %feature_lookup );
+    {
+        my $from_restriction;
+        if ( $this_map_id && defined $map_start && defined $map_stop ) {
+            $from_restriction = qq[
+                and      (
+                    ( f1.start_position>=$map_start and 
+                      f1.start_position<=$map_stop )
+                    or   (
+                        f1.stop_position is not null and
+                        f1.start_position<=$map_start and
+                        f1.stop_position>=$map_stop
+                    )
+                )
+            ];
+        }
+
+        my $corr_sql = qq[
+            select   f1.feature_id as feature_id1,
+                     f2.feature_id as feature_id2, 
+                     map2.map_id,
+                     map1.map_id as other_map_id,
+                     cl.feature_correspondence_id,
+                     et.evidence_type,
+                     et.rank as evidence_rank,
+                     et.line_color
+            from     cmap_feature f1, 
+                     cmap_map map1,
+                     cmap_map_cache mc,
+                     cmap_feature f2, 
+                     cmap_map map2,
+                     cmap_correspondence_lookup cl,
+                     cmap_feature_correspondence fc,
+                     cmap_correspondence_evidence ce,
+                     cmap_evidence_type et
+            where    mc.pid=?
+            and      mc.slot_no=?
+            and      mc.map_id=f1.map_id
+            and      f1.map_id=map1.map_id
+            and      map1.map_id=mc.map_id
+            $from_restriction
+            and      f1.feature_id=cl.feature_id1
+            and      cl.feature_correspondence_id=
+                     fc.feature_correspondence_id
+            and      fc.is_enabled=1
+            and      fc.feature_correspondence_id=
+                     ce.feature_correspondence_id
+            and      ce.evidence_type_id=et.evidence_type_id
+            and      cl.feature_id2=f2.feature_id
+            and      f2.map_id=map2.map_id
+            and      map2.map_id=map1.map_id
+            and      map2.map_id=mc.map_id
+        ];
+
+        if ( @$evidence_type_ids ) {
+            $corr_sql .= 'and ce.evidence_type_id in ('.
+                join( ',', @$evidence_type_ids ).
+            ')';
+        }
+
+        if ( @$feature_type_ids ) {
+            $corr_sql .= 'and f1.feature_type_id in ('.
+                join( ',', @$feature_type_ids ).
+            ')';
+        }
+
+        my $self_correspondences = $db->selectall_arrayref(
+            $corr_sql, { Columns => {} }, ( $pid, $slot_no )
+        );
+
+        for my $corr ( @{ $self_correspondences || [] } ) {
+            push @{ $self_correspondences{ $corr->{'map_id'} } }, $corr;
+        }
+
+        #
+        # Figure out what kind of features are on the map(s).
+        #    
+        my $ft_sql = qq[
+            select   distinct
+                     ft.feature_type_id,
+                     ft.accession_id as feature_type_aid,
+                     ft.feature_type,
+                     ft.shape,
+                     ft.color
+            from     cmap_feature f,
+                     cmap_feature_type ft,
+                     cmap_map map,
+                     cmap_map_cache mc
+            where    mc.pid=?
+            and      mc.slot_no=?
+            and      mc.map_id=f.map_id
+            and      f.map_id=map.map_id
+            and      f.feature_type_id=ft.feature_type_id
+        ];
+
+        if ( $this_map_id && defined $map_start && defined $map_stop ) {
+            $ft_sql .= qq[
+                and      (
+                    ( f.start_position>=$map_start and 
+                      f.start_position<=$map_stop )
+                    or   (
+                        f.stop_position is not null and
+                        f.start_position<=$map_start and
+                        f.stop_position>=$map_stop
+                    )
+                )
+            ];
+        }
+
+        if ( @$feature_type_ids ) {
+            $ft_sql .= 'and f.feature_type_id in ('.
+                join( ',', @$feature_type_ids ).
+            ')';
+        }
+     
+        my $ft = $db->selectall_hashref(
+            $ft_sql, 'feature_type_id', {}, ( $pid, $slot_no )
+        );
+
+        $feature_types->{$_} = $ft->{$_} for keys %$ft;
+
+        #
+        # Go ahead and assume we can get all the features right now.
+        #
+        my $f_sql = qq[
+            select   f.feature_id,
+                     f.accession_id,
+                     f.map_id,
+                     f.feature_name,
+                     f.alternate_name,
+                     f.is_landmark,
+                     f.start_position,
+                     f.stop_position,
+                     ft.feature_type_id,
+                     ft.feature_type,
+                     ft.default_rank,
+                     ft.shape,
+                     ft.color,
+                     ft.drawing_lane,
+                     ft.drawing_priority,
+                     map.accession_id as map_aid,
+                     mt.map_units
+            from     cmap_map_cache mc,
+                     cmap_feature f,
+                     cmap_feature_type ft,
+                     cmap_map map,
+                     cmap_map_set ms,
+                     cmap_map_type mt
+            where    mc.pid=?
+            and      mc.slot_no=?
+            and      mc.map_id=f.map_id
+            and      f.feature_type_id=ft.feature_type_id
+            and      f.map_id=map.map_id
+            and      map.map_set_id=ms.map_set_id
+            and      ms.map_type_id=mt.map_type_id
+        ];
+
+        if ( $this_map_id && defined $map_start && defined $map_stop ) {
+            $f_sql .= qq[
+                and      (
+                    ( f.start_position>=$map_start and 
+                      f.start_position<=$map_stop )
+                    or   (
+                        f.stop_position is not null and
+                        f.start_position<=$map_start and
+                        f.stop_position>=$map_stop
+                    )
+                )
+            ];
+        }
+
+        if ( @$feature_type_ids ) {
+            $f_sql .= 'and ft.feature_type_id in ('.
+                join( ',', @$feature_type_ids ).
+            ')';
+        }
+
+        my $features = $db->selectall_arrayref(
+            $f_sql, { Columns => {} }, ( $pid, $slot_no )
+        );
+
+        for my $f ( @$features ) {
+            $feature_lookup{ $f->{'map_id'} }{ $f->{'feature_id'} } = $f;
+        }
+    }
+
+    #
     # For each map, go through and figure out the features involved.
     #
     my $maps;
     for my $map_data ( @maps ) {
-        my $map_id = $map_data->{'map_id'};
+        #
+        # Count the correspondences and see if there are enough.
+        #
+        next if $map_data->{'skip'}; # we've already determined to skip
+        my $map_id               = $map_data->{'map_id'};
+        my $ref_correspondences  = $corr_lookup{ $map_id } || [];
+        my $self_correspondences = $corr_lookup{ $map_id } || [];
+
+        for my $corr ( 
+            @{ $ref_correspondences }, @{ $self_correspondences } 
+        ) {
+            $correspondences->{ 
+                $corr->{'feature_id1'} }{ $corr->{'feature_id2'} 
+            } = $corr->{'feature_correspondence_id'};
+
+            $correspondences->{
+                $corr->{'feature_id2'} }{ $corr->{'feature_id1'}
+            } = $corr->{'feature_correspondence_id'};
+
+            push @{ $correspondence_evidence->{ 
+                $corr->{'feature_correspondence_id'}
+            } }, {
+                evidence_type => $corr->{'evidence_type'}, 
+                evidence_rank => $corr->{'evidence_rank'}, 
+                line_color    => $corr->{'line_color'},
+            };
+        }
 
         #
         # If we're looking at more than one map (a whole map set), 
@@ -509,24 +797,9 @@ Returns the data for drawing comparative maps.
         if ( scalar @maps > 1 ) { 
             $map_start = $map_data->{'start_position'};
             $map_stop  = $map_data->{'stop_position'};
+            $map_data->{'features'} = $feature_lookup{ $map_id };
         }
         else {
-            #
-            # Make sure the start and stop are numbers.
-            #
-            $map_start = undef if $map_start eq '';
-            $map_stop  = undef if $map_stop  eq '';
-
-            for ( $map_start, $map_stop ) {
-                next unless defined $_;
-                unless ( $_ =~ NUMBER_RE ) {
-                    $_ = $self->feature_name_to_position( 
-                        feature_name => $_,
-                        map_id       => $map_id,
-                    ) || 0;
-                }
-            }
-
             $map_start = $map_data->{'start_position'} 
                 unless defined $map_start;
             $map_start = $map_data->{'start_position'} 
@@ -535,14 +808,6 @@ Returns the data for drawing comparative maps.
                 unless defined $map_stop;
             $map_stop  = $map_data->{'stop_position'} 
                 if $map_stop > $map_data->{'stop_position'};
-
-            if ( 
-                defined $map_start && 
-                defined $map_stop  &&
-                $map_start > $map_stop
-            ) {
-                ( $map_start, $map_stop ) = ( $map_stop, $map_start );
-            }
 
             #
             # If we're supposed to add in flanking features...
@@ -599,6 +864,21 @@ Returns the data for drawing comparative maps.
                         $map_stop = $positions->[$i];
                     }
                 }
+
+                #
+                # Get the map features.
+                #
+                $map_data->{'features'} = $db->selectall_hashref(
+                    $sql->cmap_data_features_sql(
+                        feature_type_ids => $feature_type_ids, 
+                    ),
+                    'feature_id',
+                    {},
+                    ( $map_id, $map_start, $map_stop, $map_start, $map_start )
+                );
+            }
+            else {
+                $map_data->{'features'} = $feature_lookup{ $map_id };
             }
         }
 
@@ -607,108 +887,7 @@ Returns the data for drawing comparative maps.
         #
         $map_data->{'start'} = $map_start;
         $map_data->{'stop'}  = $map_stop;
-        $map->{'start'}      = $map_start;
-        $map->{'stop'}       = $map_stop;
-
-        #
-        # Count the correspondences and see if there are enough.
-        #
-        my $map_correspondences = $corr_lookup{ $map_id };
-
-#        my $map_correspondences;
-#        if ( $ref_map_id ) {
-#            $map_correspondences = $db->selectall_arrayref(
-#                $sql->map_data_feature_correspondence_by_map_sql(
-#                    feature_type_ids  => $feature_type_ids,
-#                    evidence_type_ids => $evidence_type_ids,
-#                ),
-#                { Columns => {} },
-#                ( 
-#                    $ref_map_id, $ref_map_start, $ref_map_stop,
-#                    $map_id, $map_id, $map_start, $map_stop
-#                )
-#            );
-#        }
-#        elsif ( $ref_map_set_id ) {
-#            if ( my $ref_map_ids = $reference_map->{'map_ids'} ) {
-#                $map_correspondences = $db->selectall_arrayref(
-#                    $sql->map_data_feature_correspondence_by_multi_maps_sql(
-#                        reference_map_ids => "$ref_map_ids,$map_id",
-#                        evidence_type_ids => $evidence_type_ids,
-#                        feature_type_ids  => $feature_type_ids,
-#                    ),
-#                    { Columns => {} },
-#                    ( $map_id, $map_start, $map_stop )
-#                );
-#            }
-#            else {
-#                $map_correspondences = $db->selectall_arrayref(
-#                    $sql->map_data_feature_correspondence_by_map_set_sql(
-#                        evidence_type_ids => $evidence_type_ids,
-#                        feature_type_ids  => $feature_type_ids,
-#                    ),
-#                    { Columns => {} },
-#                    ( $ref_map_set_id, $map_id, $map_id, $map_start, $map_stop )
-#                );
-#            }
-#        }
-
-        if ( @{ $map_correspondences || [] } ) {
-            my %distinct_correspondences;
-
-            for my $corr ( @{ $map_correspondences || [] } ) {
-                $correspondences->{ 
-                    $corr->{'feature_id1'} }{ $corr->{'feature_id2'} 
-                } = $corr->{'feature_correspondence_id'};
-
-                $correspondences->{
-                    $corr->{'feature_id2'} }{ $corr->{'feature_id1'}
-                } = $corr->{'feature_correspondence_id'};
-
-                $distinct_correspondences{
-                    $corr->{'feature_correspondence_id'}
-                } = 1;
-
-                push @{ $correspondence_evidence->{ 
-                    $corr->{'feature_correspondence_id'}
-                } }, {
-                    evidence_type => $corr->{'evidence_type'}, 
-                    evidence_rank => $corr->{'evidence_rank'}, 
-                    line_color    => $corr->{'line_color'},
-                };
-            }
-
-            $map_data->{'no_correspondences'} = 
-                scalar keys %distinct_correspondences;
-        }
-
-        next if 
-            $min_correspondences && 
-            $map_correspondences && 
-            $map_data->{'no_correspondences'} < $min_correspondences;
-
-        #
-        # Get the map features.
-        #
-        $map_data->{'features'} = $db->selectall_hashref(
-            $sql->cmap_data_features_sql(
-                feature_type_ids => $feature_type_ids, 
-            ),
-            'feature_id',
-            {},
-            ( $map_id, $map_start, $map_stop, $map_start, $map_start )
-        );
-
-        my $map_feature_types = $db->selectall_arrayref(
-            $sql->cmap_data_feature_types_sql,
-            { Columns => {} },
-            ( $map_id, $map_start, $map_stop )
-        );
-
-        $feature_types->{ $_->{'feature_type_id'} } = $_ 
-            for @$map_feature_types;
-
-        $maps->{ $map_id } = $map_data;
+        $maps->{ $map_id }   = $map_data;
     }
 
     #
@@ -1355,11 +1534,6 @@ Returns the data for the main comparative map HTML form.
             ( $ref_map_stop, $ref_map_start ) ;
         }
 
-#        my $ref_map_begin = $self->map_start( map_id => $map_id ); 
-#        my $ref_map_end   = $self->map_stop ( map_id => $map_id );
-#        $ref_map_start = $ref_map_start unless defined $ref_map_start;
-#        $ref_map_stop  = $ref_map_stop  unless defined $ref_map_stop;
-
         unless ( defined $ref_map_start && defined $ref_map_stop ) {
             my ( $ref_map_begin, $ref_map_end ) = $db->selectrow_array(
                 q[
@@ -1372,21 +1546,11 @@ Returns the data for the main comparative map HTML form.
             );
 
             $ref_map_start = $ref_map_begin unless defined $ref_map_start;
+            $ref_map_stop  = $ref_map_end   unless defined $ref_map_stop;
             $ref_map_start = $ref_map_begin if $ref_map_start < $ref_map_begin;
             $ref_map_stop  = $ref_map_end   if $ref_map_stop  > $ref_map_stop;
         }
 
-        #
-        # This feature doesn't really work right now.
-        #
-#        ( $ref_map_start, $ref_map_stop ) = $self->verify_map_range( 
-#            map_id => $map_id,
-#            start  => $ref_map_start,
-#            stop   => $ref_map_stop,
-#            begin  => $ref_map_begin,
-#            end    => $ref_map_end,
-#        );
-        
         $slots->{ 0 }->{'start'} = $ref_map_start;
         $slots->{ 0 }->{'stop'}  = $ref_map_stop;
     }
@@ -1394,27 +1558,27 @@ Returns the data for the main comparative map HTML form.
     my @slot_nos      = sort { $a <=> $b } keys %$slots;
     my $rightmost_map = $slots->{ $slot_nos[-1] };
     my $leftmost_map  = $slots->{ $slot_nos[ 0] };
+    my $pid           = $$;
     my %feature_types;
 
     my $comp_maps_right     =  $self->get_comparative_maps( 
-        map                 => $rightmost_map,
         min_correspondences => $min_correspondences,
         feature_type_ids    => $feature_type_ids,
         evidence_type_ids   => $evidence_type_ids,
         feature_types       => \%feature_types,
+        ref_slot_no         => $slot_nos[-1],
+        pid                 => $pid,
     );
 
-    my $comp_maps_left      =  
-        $leftmost_map->{'field'} eq $rightmost_map->{'field'}
-        &&
-        $leftmost_map->{'aid'} eq $rightmost_map->{'aid'}
+    my $comp_maps_left      =  $slot_nos[0] == $slot_nos[-1]
         ? $comp_maps_right
         : $self->get_comparative_maps(
-            map                 => $leftmost_map,
             min_correspondences => $min_correspondences,
             feature_type_ids    => $feature_type_ids,
             evidence_type_ids   => $evidence_type_ids,
             feature_types       => \%feature_types,
+            ref_slot_no         => $slot_nos[0],
+            pid                 => $pid,
         )
     ;
 
@@ -1438,6 +1602,8 @@ Returns the data for the main comparative map HTML form.
     # Fill out all the info we have on every map.
     #
     my $map_info = $self->fill_out_maps( $slots );
+
+    $db->do("delete from cmap_map_cache where pid=$pid");
     
     return {
         ref_map_sets           => $ref_map_sets,
@@ -1464,101 +1630,115 @@ out which maps have relationships.
 =cut
 
     my ( $self, %args )     = @_;
-    my $map                 = $args{'map'};
     my $min_correspondences = $args{'min_correspondences'};
     my $feature_type_ids    = $args{'feature_type_ids'};
     my $evidence_type_ids   = $args{'evidence_type_ids'};
     my $feature_types       = $args{'feature_types'};
+    my $ref_slot_no         = $args{'ref_slot_no'};
+    my $pid                 = $args{'pid'};
+    my $db                  = $self->db  or return;
+    my $sql                 = $self->sql or return;
 
-    my $aid_field         = $map->{'field'};
-    my $ref_map_aid       = $aid_field eq 'map_aid'     ? $map->{'aid'} : '';
-    my $ref_map_set_aid   = $aid_field eq 'map_set_aid' ? $map->{'aid'} : '';
-    return unless $ref_map_aid || $ref_map_set_aid;
+    #
+    # Find out how many reference maps there are 
+    # (and make sure there are some!).
+    #
+    my $ref_maps = $db->selectall_arrayref(
+        q[
+            select map_id, start_position, stop_position
+            from   cmap_map_cache
+            where  pid=?
+            and    slot_no=?
+        ],
+        { Columns => {} },
+        ( $pid, $ref_slot_no )
+    );
 
-    my $ref_map_start     = $map->{'start'};
-    my $ref_map_stop      = $map->{'stop'};
-    my $db                = $self->db  or return;
-    my $sql               = $self->sql or return;
+    return $self->error('No ref maps') unless @$ref_maps;
+
+    my ( $ref_map_id, $ref_map_start, $ref_map_stop );
+    if ( scalar @$ref_maps == 1 ) {
+        $ref_map_id    = $ref_maps->[0]->{'map_id'};
+        $ref_map_start = $ref_maps->[0]->{'start_position'};
+        $ref_map_stop  = $ref_maps->[0]->{'stop_position'};
+    }
+
+    my $from_restriction = '';
+    if ( $ref_map_id && defined $ref_map_start && defined $ref_map_stop ) {
+        $from_restriction = qq[
+            and      (
+                ( f1.start_position>=$ref_map_start and 
+                  f1.start_position<=$ref_map_stop )
+                or   (
+                    f1.stop_position is not null and
+                    f1.start_position<=$ref_map_start and
+                    f1.stop_position>=$ref_map_stop
+                )
+            )
+        ];
+    }
+
+    my $corr_sql = qq[
+        select   fc.feature_correspondence_id,
+                 s.common_name as species_name,
+                 s.display_order as species_display_order,
+                 mt.map_type,
+                 mt.display_order as map_type_display_order,
+                 ms.accession_id as map_set_aid,
+                 ms.short_name as map_set_name,
+                 ms.published_on,
+                 ms.can_be_reference_map,
+                 ms.display_order as ms_display_order,
+                 map2.map_id,
+                 map2.accession_id as map_aid,
+                 map2.map_name,
+                 map2.display_order as map_display_order,
+                 mc.map_id as mc_map_id
+        from     cmap_map_cache mc,
+                 cmap_map map2,
+                 cmap_map_set ms,
+                 cmap_map_type mt,
+                 cmap_species s,
+                 cmap_feature f1,
+                 cmap_feature f2,
+                 cmap_correspondence_lookup cl,
+                 cmap_feature_correspondence fc,
+                 cmap_correspondence_evidence ce
+        where    mc.pid=?
+        and      mc.slot_no=?
+        and      mc.map_id=f1.map_id
+        $from_restriction
+        and      f1.feature_id=cl.feature_id1
+        and      cl.feature_correspondence_id=fc.feature_correspondence_id
+        and      fc.is_enabled=1
+        and      fc.feature_correspondence_id=ce.feature_correspondence_id
+        and      cl.feature_id2=f2.feature_id
+        and      f2.map_id=map2.map_id
+        and      map2.map_set_id=ms.map_set_id
+        and      ms.map_type_id=mt.map_type_id
+        and      ms.species_id=s.species_id
+        and      mc.map_id!=map2.map_id
+    ];
+
+    if ( @$evidence_type_ids ) {
+        $corr_sql .= 'and ce.evidence_type_id in ('.
+            join( ',', @$evidence_type_ids ).
+        ') ';
+    }
+
+    if ( @$feature_type_ids ) {
+        $corr_sql .= 'and f2.feature_type_id in ('.
+            join( ',', @$feature_type_ids ).
+        ') ';
+    }
+
+    my $feature_correspondences= $db->selectall_hashref(
+        $corr_sql,
+        'feature_correspondence_id',
+        { Columns => {} },
+        ( $pid, $ref_slot_no )
+    );
     
-    #
-    # Find the correspondences to other maps.
-    #
-    my $feature_correspondences;
-    if ( $ref_map_set_aid ) {
-        #
-        # If by an entire map set, make sure it's a relational set.
-        #
-        return unless $db->selectrow_array(
-            q[
-                select mt.is_relational_map
-                from   cmap_map_set ms,
-                       cmap_map_type mt
-                where  ms.accession_id=?
-                and    ms.map_type_id=mt.map_type_id
-            ],
-            {},
-            ( $ref_map_set_aid ) 
-        );
-
-        if ( my $map_ids = $map->{'map_ids'} ) {
-            $feature_correspondences = $db->selectall_hashref(
-                $sql->correspondences_count_by_multi_maps_sql( 
-                    map_ids           => $map_ids,
-                    feature_type_ids  => $feature_type_ids,
-                    evidence_type_ids => $evidence_type_ids,
-                ),
-                'feature_correspondence_id',
-                { Columns => {} },
-            );
-        }
-        else {
-            my $map_set_id =  $self->acc_id_to_internal_id(
-                table      => 'cmap_map_set', 
-                acc_id     => $ref_map_set_aid,
-            );
-        
-            $feature_correspondences = $db->selectall_hashref(
-                $sql->correspondences_count_by_map_set_sql(
-                    feature_type_ids  => $feature_type_ids,
-                    evidence_type_ids => $evidence_type_ids,
-                ),
-                'feature_correspondence_id',
-                { Columns => {} },
-                ( $map_set_id, $map_set_id )
-            );
-        }
-    }
-    else {
-        #
-        # Make sure we have a start and stop.
-        #
-        my ( $ref_map_begin, $ref_map_end ) = $db->selectrow_array(
-            q[
-                select start_position, stop_position
-                from   cmap_map
-                where  accession_id=?
-            ],
-            {},
-            ( $ref_map_aid )
-        );
-
-        $ref_map_start = $ref_map_begin
-            unless defined $ref_map_start && $ref_map_stop ne '';
-
-        $ref_map_stop = $ref_map_end
-            unless defined $ref_map_stop && $ref_map_stop ne '';
-
-        $feature_correspondences = $db->selectall_hashref(
-            $sql->correspondences_count_by_single_map_sql(
-                feature_type_ids  => $feature_type_ids,
-                evidence_type_ids => $evidence_type_ids,
-            ),
-            'feature_correspondence_id',
-            { Columns => {} },
-            ( $ref_map_aid, $ref_map_start, $ref_map_stop, $ref_map_aid )
-        );
-    }
-
     #
     # Because of the mess with having to join down to the
     # correspondence evidence table, it's hard to get the
@@ -2237,9 +2417,8 @@ Returns the detail info for a map.
     # Figure out hightlighted features.
     #
     my $highlight_hash = {
-        map  { s/^\s+|\s+$//g; ( uc $_, 1 ) } 
+        map  { s/^\s+|\s+$//g; defined $_ && $_ ne '' ? ( uc $_, 1 ) : () } 
         parse_words( $highlight )
-#        split( /[,:;\s+]/, $highlight ) 
     };
 
     my $sth = $db->prepare(
@@ -2432,6 +2611,10 @@ Returns the detail info for a map.
         $feature->{'positions'}       = [ values %distinct_positions ];
         $feature->{'highlight_color'} = 
             $highlight_hash->{ uc $feature->{'feature_name'} }
+            ||
+            $highlight_hash->{ $feature->{'alternate_name'} }
+            ||
+            $highlight_hash->{ $feature->{'accession_id'} }
             ? $self->config('feature_highlight_bg_color')
             : '';
     }
@@ -2512,80 +2695,33 @@ Returns the correct SQL module driver for the RDBMS we're using.
 }
 
 # ----------------------------------------------------
-sub verify_map_range {
+sub view_feature_on_map {
 
 =pod
 
-=head2 verify_map_range
+=head2 view_feature_on_map
 
-Makes sure that a map doesn't include too many or too few features.  Set
-MAX_FEATURE_COUNT to zero or undefined to disable this.
 
 =cut
 
-    my ( $self, %args ) = @_;
-    my $map_id          = $args{'map_id'} or return;
-    my $begin           = $args{'begin'} || $self->map_start(map_id => $map_id);
-    my $end             = $args{'end'}   || $self->map_stop (map_id => $map_id);
-    my $start           = $args{'start'} =~ NUMBER_RE ? $args{'start'} : $begin;
-    my $stop            = $args{'stop'}  =~ NUMBER_RE ? $args{'stop'}  : $end;
-    my $max_fcount      = $self->config('max_feature_count') || 0;
-    return ( $start, $stop ) unless $max_fcount > 0;
-    my $db              = $self->db  or return;
-    my $sql             = $self->sql or return;
-    my $minimum_trunc   = 1.01;
-    my $minimum_augment = ( 1.01 * ( $end - $begin ) ) || 1;
+    my ( $self, $feature_aid )    = @_;
+    my $db                        = $self->db;
+    my ( $map_set_aid, $map_aid ) = $db->selectrow_array(
+        q[
+            select ms.accession_id,
+                   map.accession_id
+            from   cmap_map_set ms,
+                   cmap_map map,
+                   cmap_feature f
+            where  f.accession_id=?
+            and    f.map_id=map.map_id
+            and    map.map_set_id=ms.map_set_id
+        ],
+        {},
+        ( $feature_aid )
+    );
 
-    #
-    # Make sure of how many features we'll be selecting.
-    #
-    while ( 1 ) {
-        my $feature_count = $db->selectrow_array(
-            $sql->cmap_data_feature_count_sql,
-            { Columns => {} },
-            ( $map_id, $start, $stop )
-        );
-#        warn "start = $start, stop = $stop, feature count = $feature_count\n";
-
-        #
-        # Porridge is too cold.  Increase search range incrementally.
-        #
-        if ( $feature_count <= 0 ) {
-            if ( $stop + $minimum_augment <= $end ) {
-                $stop += $minimum_augment;
-            }
-            elsif ( $start - $minimum_augment >= $begin ) {
-                $start -= $minimum_augment;
-            }
-            else {
-                $start -= $minimum_augment/2;
-                $stop  += $minimum_augment/2;
-            }
-
-            next;
-        }
-
-        #
-        # Porridge is too hot.  Decrease search range by some factor 
-        # of the number of results.
-        #
-        elsif ( $feature_count > $max_fcount ) {
-#            my $factor = sprintf( "%0.1f", $feature_count/$max_fcount );
-            my $factor = $feature_count/$max_fcount;
-            $factor    = $minimum_trunc if $factor < $minimum_trunc;
-            $stop      = int ( $start + ( ( $stop - $start ) / $factor ) );
-            next;
-        }
-
-        #
-        # This one's just right.
-        #
-        else {
-            last;
-        }
-    }
-
-    return ( $start, $stop );
+    return ( $map_set_aid, $map_aid );
 }
 
 1;
