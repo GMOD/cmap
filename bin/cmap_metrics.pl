@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_metrics.pl,v 1.3 2003-09-29 20:49:47 kycl4rk Exp $
+# $Id: cmap_metrics.pl,v 1.4 2004-03-09 20:28:22 kycl4rk Exp $
 
 =head1 NAME
 
@@ -53,11 +53,23 @@ $ds = $cmap->data_source;
 
 my $db = $cmap->db or die $cmap->error;
 
-my @tables = qw[ cmap_correspondence_evidence cmap_correspondence_lookup
-    cmap_correspondence_matrix cmap_dbxref cmap_evidence_type
-    cmap_feature cmap_feature_correspondence cmap_feature_note
-    cmap_feature_type cmap_map cmap_map_set
-    cmap_map_type cmap_next_number cmap_species
+my @tables = qw[
+    cmap_attribute
+    cmap_correspondence_evidence
+    cmap_correspondence_lookup
+    cmap_correspondence_matrix
+    cmap_evidence_type
+    cmap_feature
+    cmap_feature_alias
+    cmap_feature_correspondence
+    cmap_feature_type
+    cmap_map
+    cmap_map_cache
+    cmap_map_set
+    cmap_map_type
+    cmap_next_number
+    cmap_species
+    cmap_xref
 ];
 
 my ( @counts, $longest );
