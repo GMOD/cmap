@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.37 2003-05-22 16:56:24 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.38 2003-07-01 16:23:30 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.37 $)[-1];
+$VERSION = (qw$Revision: 1.38 $)[-1];
 
 #
 # Get command-line options
@@ -547,28 +547,10 @@ sub delete_map_set {
     my $db   = $self->db or die $self->error;
 
     #
-    # Restrict by map type.
-    #
-    my ( $map_type_id, $map_type ) = $self->show_menu(
-        title   => 'Available Map Types',
-        prompt  => 'What type of map?',
-        display => 'map_type',
-        return  => 'map_type_id,map_type',
-        data     => $db->selectall_arrayref(
-            q[
-                select   mt.map_type_id, mt.map_type
-                from     cmap_map_type mt
-                order by map_type
-            ],
-            { Columns => {} },
-        ),
-    );
-
-    #
     # Get the species.
     #
     my ( $species_id, $common_name ) = $self->show_menu(
-        title   => "Available Species (for $map_type)",
+        title   => 'Available Species',
         prompt  => 'Please select a species',
         display => 'common_name',
         return  => 'species_id,common_name',
@@ -578,11 +560,31 @@ sub delete_map_set {
                 from     cmap_species s,
                          cmap_map_set ms
                 where    ms.species_id=s.species_id
-                and      ms.map_type_id=?
                 order by common_name
             ],
             { Columns => {} },
-            ( $map_type_id )
+        ),
+    );
+
+    #
+    # Restrict by map type.
+    #
+    my ( $map_type_id, $map_type ) = $self->show_menu(
+        title   => "Available Map Types (for $common_name)",
+        prompt  => 'What type of map?',
+        display => 'map_type',
+        return  => 'map_type_id,map_type',
+        data     => $db->selectall_arrayref(
+            q[
+                select   distinct mt.map_type_id, mt.map_type
+                from     cmap_map_type mt,
+                         cmap_map_set ms
+                where    mt.map_type_id=ms.map_type_id
+                and      ms.species_id=?
+                order by map_type
+            ],
+            { Columns => {} },
+            ( $species_id )
         ),
     );
 
@@ -590,8 +592,8 @@ sub delete_map_set {
     # Get the map set.
     #
     my ( $map_set_id, $map_set_name ) = $self->show_menu(
-        title       => 'Choose Map Set',
-        prompt      => "Please select a map set (for $map_type, $common_name)",
+        title       => "Available Map Sets (for $common_name, $map_type)",
+        prompt      => 'Please select a map set',
         display     => 'map_set_name',
         return      => 'map_set_id,map_set_name',
         allow_null  => 0,
@@ -610,25 +612,39 @@ sub delete_map_set {
         ),
     );
 
-    my @map_ids     =  $self->show_menu(
-        title       => 'Restrict by Map (optional)',
-        prompt      => 'Select one or more maps',
-        display     => 'map_name',
-        return      => 'map_id',
-        allow_null  => 1,
-        allow_mult  => 1,
-        data        => $db->selectall_arrayref(
-            q[
-                select   map.map_id, 
-                         map.map_name
-                from     cmap_map map
-                where    map.map_set_id=?
-                order by map_name
-            ],
-            { Columns => {} },
-            ( $map_set_id )
-        ),
+    my $delete_what = $self->show_menu(
+        title   => 'Delete',
+        prompt  => 'How much to delete?',
+        display => 'display',
+        return  => 'value',
+        data     => [
+            { value => 'entire', display => 'Delete entire map set' },
+            { value => 'some',   display => 'Delete just some maps in it' }
+        ],
     );
+
+    my @map_ids;
+    if ( $delete_what eq 'some' ) {
+        @map_ids     =  $self->show_menu(
+            title       => 'Restrict by Map (optional)',
+            prompt      => 'Select one or more maps',
+            display     => 'map_name',
+            return      => 'map_id',
+            allow_null  => 1,
+            allow_mult  => 1,
+            data        => $db->selectall_arrayref(
+                q[
+                    select   map.map_id, 
+                             map.map_name
+                    from     cmap_map map
+                    where    map.map_set_id=?
+                    order by map_name
+                ],
+                { Columns => {} },
+                ( $map_set_id )
+            ),
+        );
+    }
 
     my $map_names;
     if ( @map_ids ) {
