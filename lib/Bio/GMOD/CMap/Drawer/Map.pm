@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.53 2003-08-05 20:24:15 kycl4rk Exp $
+# $Id: Map.pm,v 1.54 2003-08-14 15:11:52 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.53 $)[-1];
+$VERSION = (qw$Revision: 1.54 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -537,11 +537,12 @@ Lays out the map.
     for my $map_id ( @map_ids ) {
         $is_relational     = $self->is_relational_map( $map_id );
         my $base_x         = $label_side eq RIGHT
-            ? $slot_no == 0 
+            ? $slot_no == 0 && $map_id == $map_ids[0]
                 ? $self->base_x 
                 : $self->base_x + $half_title_length + 10
             : $self->base_x - $half_title_length - 20
         ;
+
         my $show_labels    = $is_relational && $slot_no != 0 ? 0 :
                              $label_features eq 'none' ? 0 : 1 ;
         my $show_ticks     = $is_relational && $slot_no != 0 ? 0 : 1;
@@ -775,8 +776,12 @@ Lays out the map.
                     !$has_corr     &&          # feature has no correspondences
                     !$show_labels;             # not showing labels
 
-                my $fstart = $feature->{'start_position'} || 0;
-                my $fstop  = $feature->{'stop_position'};
+                my $feature_shape     = $feature->{'shape'} || LINE;
+                my $shape_is_triangle = $feature_shape =~ /triangle$/;
+                my $fstart            = $feature->{'start_position'} || 0;
+                my $fstop             = $shape_is_triangle 
+                                        ? undef : $feature->{'stop_position'};
+
                 my $rstart = sprintf( "%.2f", 
                     ( $fstart - $map_start ) / $map_length
                 );
@@ -809,8 +814,6 @@ Lays out the map.
                 my $label             = $feature->{'feature_name'};
                 my $tick_start        = $base_x - $tick_overhang;
                 my $tick_stop         = $base_x + $map_width + $tick_overhang;
-                my $feature_shape     = $feature->{'shape'} || LINE;
-                my $shape_is_triangle = $feature_shape =~ /triangle$/;
 
                 my ( $label_y, @coords );
                 if ( $shape_is_triangle || $y_pos2 <= $y_pos1 ) {
@@ -1601,6 +1604,7 @@ Lays out the map.
                 font    => $reg_font,
             );
 
+            $min_x = $bounds->[0] unless defined $min_x;
             $min_x = $bounds->[0] if $bounds->[0] < $min_x;
             $top_y = $bounds->[1] if $bounds->[1] < $top_y;
             $max_x = $bounds->[2] if $bounds->[2] > $max_x;
