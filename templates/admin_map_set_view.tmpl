@@ -1,0 +1,166 @@
+[% INCLUDE admin_header.tmpl title="View &quot;$map_set.map_set_name&quot;" %]
+<a href="admin">Home</a> |
+<a href="admin?action=map_sets_view">View All Map Sets</a> |
+<a href="admin?action=map_set_edit;map_set_id=[% map_set.map_set_id %]">Edit</a> |
+<a href="admin?action=confirm_delete;entity_type=cmap_map_set;entity_id=[% map_set.map_set_id %]">Delete</a>
+[% IF map_set.can_be_reference_map %]
+  | <a href="/cmap/viewer?ref_map_set_aid=[% map_set.accession_id %]">View in CMap Viewer</a>
+[% END %]
+<hr noshade>
+
+<table>
+    <tr>
+        <td align="right">Map Set Name:</td>
+        <td>
+            [% map_set.map_set_name %]
+        </td>
+    </tr>
+  
+    <tr>
+        <td align="right">Short Name:</td>
+        <td>
+            [% map_set.short_name %]
+        </td>
+    </tr>
+  
+    <tr>
+        <td align="right">Acc. ID:</td>
+        <td>
+            [% map_set.accession_id %]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Species:</td>
+        <td>
+            [% map_set.species_common_name %]
+            ( [% map_set.species_full_name %] )
+        </td>
+    </tr>
+  
+    <tr>
+        <td align="right">Map Type:</td>
+        <td>
+            [% map_set.map_type %] ( [% map_set.map_units %] )
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Is Relational Map Only:</td>
+        <td>
+            [% IF map_set.is_relational_map %]Yes[% ELSE %]No[% END %]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Shape:</td>
+        <td>
+            [% map_set.color OR map_set.default_color OR 'Default color' %] - 
+            [% map_set.shape OR map_set.default_shape OR 'Default shape' %] - 
+            [% map_set.width OR map_set.default_width OR 'Default width' %]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Display Order:</td>
+        <td>
+            [% map_set.display_order %]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Published On:</td>
+        <td>
+            [% map_set.published_on %]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Is Enabled:</td>
+        <td>
+            [% IF map_set.is_enabled %]Yes[% ELSE %]No[% END %]
+        </td>
+    </tr>
+  
+    <tr>
+        <td align="right">Can Be Reference Map:</td>
+        <td>
+            [% IF map_set.can_be_reference_map %]Yes[% ELSE %]No[% END %]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right" valign="top">Remarks:</td>
+        <td>
+            [% map_set.remarks %]
+        </td>
+    </tr>
+</table>
+
+<table width="100%">
+    <tr bgcolor="lightgrey">
+        <th>Maps</td>
+        <td align="right">
+            <a href="admin?action=map_create;map_set_id=[% map_set.map_set_id %]">Add Map</a>
+        </td>
+    </tr>
+</table>
+
+[% IF map_set.maps.size %]
+
+    <table width="100%">
+        <tr>
+            <td colspan="9" align="center">
+                [% SET pager_url="/cmap/admin?action=map_set_view&map_set_id=${map_set.map_set_id}&order_by=${apr.param('order_by')}" %]
+                [% PROCESS pager.tmpl %]
+            </td>
+        </tr>
+        <tr>
+            <th>
+                <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];limit_start=[% apr.param('limit_start') %];order_by=accession_id">Acc. ID</a>
+            </th>
+            <th>
+                <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];limit_start=[% apr.param('limit_start') %];order_by=display_order">Display Order</a>
+            </th>
+            <th>
+                <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];limit_start=[% apr.param('limit_start') %];order_by=map_name">Map Name</a>
+            </th>
+            <th><a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];limit_start=[% apr.param('limit_start') %];order_by=start_position">Start</a>
+            </th>
+            <th>
+                <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];limit_start=[% apr.param('limit_start') %];order_by=stop_position">Stop</a>
+            </th>
+            <th>
+                <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];limit_start=[% apr.param('limit_start') %];order_by=no_features">No. Features</a>
+            </th>
+            <th colspan="3">&nbsp;</th>
+        </tr>
+        [% SET i=0 %]
+        [% FOREACH map=map_set.maps %]
+            <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
+                <td>[% map.accession_id   %]</td>
+                <td>[% map.display_order  %]</td>
+                <td>[% map.map_name       %]</td>
+                <td align="right">[% map.start_position %]</td>
+                <td align="right">[% map.stop_position  %]</td>
+                <td align="right">[% map.no_features  %]</td>
+                <td align="center">
+                    <a href="admin?action=map_view;map_id=[% map.map_id %]">View</a>
+                </td>
+                <td align="center">
+                    <a href="admin?action=map_edit;map_id=[% map.map_id %]">Edit</a>
+                </td>
+                <td align="center">
+                    <a href="admin?action=confirm_delete;entity_type=cmap_map;entity_id=[% map.map_id %]">Delete</a>
+                </td>
+            </tr>
+            [% SET i=i+1 %]
+        [% END %]
+    </table>
+
+[% ELSE %]
+
+  <p>This set has no maps.</p>
+
+[% END %]
+[% INCLUDE admin_footer.tmpl %]

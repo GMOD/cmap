@@ -1,0 +1,51 @@
+[% INCLUDE admin_header.tmpl title='Map Types View' %]
+<a href="admin">Home</a> |
+<a href="admin?action=map_type_create">Create New Map Type</a>
+<hr noshade>
+
+[% IF map_types.size %]
+    <table width="100%">
+        <tr>
+            <td colspan="9" align="center">
+                [% SET pager_url="admin?action=map_types_view&order_by=${apr.param('order_by')}" %]
+                [% PROCESS pager.tmpl %]
+            </td>
+        </tr>
+        <tr>
+            <th><a href="admin?action=map_types_view;order_by=display_order">Display Order</a></th>
+            <th><a href="admin?action=map_types_view;order_by=map_type">Map Type</a></th>
+            <th><a href="admin?action=map_types_view;order_by=map_units">Map Units</a></th>
+            <th><a href="admin?action=map_types_view;order_by=is_relational_map">Is Relational Only</a></th>
+            <th><a href="admin?action=map_types_view;order_by=shape">Shape</a></th>
+            <th><a href="admin?action=map_types_view;order_by=width">Width</a></th>
+            <th><a href="admin?action=map_types_view;order_by=color">Color</a></th>
+            <th colspan="2" align="center">&nbsp;</th>
+        </tr>
+
+        [% SET i=0 %]
+        [% FOREACH mt=map_types %]
+            <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
+                <td>[% mt.display_order %]</td>
+                <td>[% mt.map_type %]</td>
+                <td>[% mt.map_units %]</td>
+                <td>[% IF mt.is_relational_map; 'Yes'; ELSE; 'No'; END %]</td>
+                <td>[% mt.shape %]</td>
+                <td>[% mt.width %]</td>
+                <td>[% mt.color %]</td>
+                <td align="center">
+                  <a href="admin?action=map_type_edit;map_type_id=[% mt.map_type_id %]">Edit</a>
+                </td>
+                <td align="center">
+                  <a href="admin?action=confirm_delete;entity_type=cmap_map_type;entity_id=[% mt.map_type_id %];entity_name_field=map_type">Delete</a>
+                </td>
+            </tr>
+            [% SET i=i+1 %]
+        [% END %]
+    </table>
+
+[% ELSE %]
+
+    <p>No map types to show.</p>
+
+[% END %]
+[% INCLUDE admin_footer.tmpl %]

@@ -1,0 +1,45 @@
+[% 
+    INCLUDE header.tmpl 
+    title='Feature Search Help'
+    no_link='help'
+    help_anchor=''
+%]
+
+<h2>Feature Search Help</h2>
+<ul>
+<li>
+    The Feature Search page allows a user to search for particular
+    features.  Simply type in one or more names in the "Feature
+    Names" box, separating them with whitespace or commas.  
+</li>
+<li>
+    If the feature you are searching for has spaces in the name, then
+    enclose the feature name in double quotes. You can use &quot;*&quot;
+    or &quot;%&quot; as wildcards.  
+</li>
+<li>
+    By default, both the feature name and alternate name fields will be
+    searched, but this may be restricted to one or the other.  
+</li>
+<li>
+    You can filter the results by species and by feature type.  
+</li>
+<li>
+    Click on any of the hyperlinked column headers will resort the search
+    by that column.  
+</li>
+<li>
+    If too many results are returned, then you will see several pages of
+    results.  You can navigate the results using the &quot;Previous&quot;
+    and &quot;Next&quot; links or by clicking on a specific page number.
+</li>
+<li>
+    For each name found, all the maps on which they occur will be
+    displayed.  Clicking on &quot;View On Map&quot; will take you to
+    the map details page with the appropriate feature highlighted, and
+    the &quot;Feature Details&quot; link will take you directly to the 
+    detailed information on the feature.
+</li>
+</ul>
+[% page.end_body OR '</body>' %]
+</html>

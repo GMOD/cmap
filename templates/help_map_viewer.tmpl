@@ -1,0 +1,201 @@
+[% 
+    INCLUDE header.tmpl 
+    title='Map Viewer Help'
+    no_link='help'
+    help_anchor=''
+%]
+
+<h2 id="concepts">CMap Concepts</h2>
+
+<h3 id="map_sets">Maps and Map Sets</h3>
+<p> 
+  In CMap, a <b>map</b> is a linear array of interconnected
+  features.  This could represent a single linkage group in the
+  case of a genetic map, or a single contig for physical maps.
+  Related maps are grouped into <b>map sets</b>.  Generally, these
+  are the result of a particular study, such as the set of linkage
+  groups produced by a genetic mapping study.  For more
+  information about the map sets contained in the database, visit
+  the <a href="/cmap/map_set_info">Map Set Info</a> page.
+</p>
+
+<h3 id="ref_and_comp_maps">Reference and Comparative Maps</h3> 
+<p> 
+  To set up a comparison, a user first selects a reference map
+  set, then a <b>reference map</b>.  This serves as the basis for
+  any comparisons that the user chooses to make.  Once the
+  reference map image has been rendered, the user is given the
+  option to select one or two <b>comparative maps</b>.  These
+  comparative maps may be added to both the left and the right of
+  the reference map.  The user may keep adding additional maps for
+  as long as valid comparisons are available.
+</p>
+
+<h3 id="features">Features and Feature Types</h3>
+<p> 
+  Any item that is positioned on a map is called a <b>feature</b>.
+  The position may be either a point or an interval.  Different
+  <b>feature types</b> are represented by different shapes (such
+  as horizontal tick marks [for points], line intervals, boxes,
+  arrows, etc.) or different colors.  For more information on any
+  feature, click on it to view the corresponding <b>feature
+  detail</b> page.
+</p>
+
+<h3 id="correspondences">Correspondences</h3>
+<p>
+  The lines that connect features on one map to features on
+  another map denote <b>correspondences</b>.  These
+  correspondences are assigned either automatically (based on
+  feature name) or manually by the data curator to designate
+  features on different maps that are equivalent in some manner.
+  Different colors represent different <b>correspondence
+  types</b>.
+</p>
+
+<hr>
+<h2 id="options">Map Viewer Options</h2>
+<dl>
+  <dt>Ref. Set</dt>
+  <dd>
+    Select a reference map set from the drop-down list. For
+    descriptions of all the map sets, see the <a
+    href="map_set_info">Map Set Info</a> page.  You must select a
+    reference map set before any of the other options become
+    available. <i>Note that selecting a new reference map set will
+    reset all other map options.</i>
+  </dd>
+  <dt>Ref. Map</dt>
+  <dd>
+    Select a reference map from the drop-down list.  The list is
+    limited to maps that are part of the selected map set.  You
+    must first select a reference map set before this option
+    becomes available.  Choosing a reference map allows other
+    options to become available.
+  </dd>
+  <dt>Start</dt>
+  <dd>
+    Enter a position to begin drawing the map.  By default, the
+    actual start position of the map is used.  Use this in
+    conjuction with the &quot;End&quot; option below to zoom in to
+    a particular region of the map.
+  </dd>
+  <dt>End</dt>
+  <dd>
+    Enter a position at which map drawing shall stop.  By default,
+    is the actual end position of the map is used.  Use this in
+    conjuction with the &quot;Start&quot; option above to zoom in
+    to a particular region of the map.
+  </dd>
+  <dt>Highlight</dt>
+  <dd>
+    Enter features to highlight on the map.  Separate multiple
+    features with commas or spaces.  If you wish to highlight a feature
+    that has spaces in its name, then enclose the feature name in double
+    quotes.
+  </dd>
+  <dt>Comp. Map (Left)</dt>
+  <dd>
+    Select a comparative map to add to the left of the map
+    display.  Only maps which have some correspondence to the
+    leftmost map are listed.  The number of correspondences is
+    shown in square brackets.  <br> [See also &quot;Comp. Map
+    (Right)&quot;.]
+  </dd>
+  <dt>Current Maps</dt>
+  <dd>
+    From top to bottom, lists the names of the maps currently
+    being displayed from left to right.  To remove a map
+    (including those exterior to it), click on &quot;Delete&quot;.
+    The main reference map is denoted with &quot;(Ref.)&quot; and
+    cannot be deleted.
+  </dd>
+  <dt>Comp. Map (Right)</dt>
+  <dd>
+    Select a comparative map to add to the right of the map
+    display.  Only maps which have some correspondence to the
+    rightmost map are listed.  The number of correspondences is
+    shown in square brackets.  <br> [See also &quot;Comp. Map
+    (Left)&quot;.]
+  </dd>
+  <dt>Image Size</dt>
+  <dd>
+    Select the desired size of the image.
+  </dd>
+  <dt>Font size</dt>
+  <dd>
+    Select the desired size of the fonts.
+  </dd>
+  <dt>Image type</dt>
+  <dd>
+    Select the image format you prefer.
+  </dd>
+  <dt>Show labels</dt>
+  <dd>
+    Select which class of feature labels to show.
+    <ul>
+      <li>
+        <b>None</b>: Show no labels.
+      </li>
+      <li>
+        <b>Landmarks</b>: Show labels of features designated as
+        landmarks or those with correspondences.
+      </li>
+      <li>
+        <b>All</b>: Show all labels that will fit in the image.
+      </li>
+    </ul>
+  </dd>
+  <dt>Min. No. Correspondences</dt>
+  <dd>
+    Indicate an integer values of the minimum number of correspondences
+    that a map must have to another map in order to be displayed.
+  </dd>
+  <dt>Include Feature Types</dt>
+  <dd>
+    Show only the selected feature types.  Multiple types may be
+    selected (Ctrl-Click on most systems).
+  </dd>
+  <dt>Include Correspondence Types</dt>
+  <dd>
+    Show only the selected correspondence types.  Multiple types
+    may be selected (Ctrl-Click on most systems).
+  </dd>
+</dl>
+
+<h2 id="map_image">Map Image</h2>
+<p>
+  Once a user has selected a reference map set and a reference
+  map, it is immediately rendered as a map image.  By default, the
+  entire length of the map is displayed.  At the top of the image
+  is a box in which is printed the species, map set name, and map
+  name.  Click on the box to view the corresponding Map Set Info
+  page.
+</p>
+<p>
+  A vertical scale bar indicates positions along the length of the
+  map.  The distance measure (e.g., cM) being used in printed at
+  the bottom of the scale bar.  Features are drawn at appropriate
+  positions.  A legend for the various feature types shown on the
+  map is printed at the bottom of the image.  Click on a feature
+  label to view the <a href="help?section=feature_details">feature
+  details</a> page for that feature.  
+</p>
+<p>
+  <i>Note that not every feature may be labeled.</i> The drawing
+  algorithm will try to fit as many labels as it can, until there
+  is no more available space.  To see more labels, you may wish to
+  increase the image size or decrease the font size.  You may also
+  specify "Start" and "End" positions to zoom in to a particular
+  region.
+</p>
+<p>
+  If two or more maps are being compared, each map will be drawn
+  in a separate regions.  Adjacent maps will have correspondence
+  lines that connect corresponding features.  The color of the
+  line depends on the type of correspondence, indicated in the
+  legend at the bottom of the map image.
+</p>
+
+[% page.end_body OR '</body>' %]
+</html>

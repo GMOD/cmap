@@ -1,0 +1,45 @@
+[% INCLUDE admin_header.tmpl title='Correspondence Evidence Types View' %]
+<a href="admin">Home</a> |
+<a href="admin?action=corr_evidence_type_create">Create New Correspondence Evidence Type</a>
+<hr noshade>
+[% IF evidence_types.size %]
+    <table width="100%">
+        <tr>
+            <td colspan="7" align="center">
+                [% SET pager_url="admin?action=corr_evidence_types_view&order_by=${apr.param('order_by')}" %]
+                [% PROCESS pager.tmpl %]
+            </td>
+        </tr>
+        <tr>
+            <th><a href="admin?action=corr_evidence_types_view;order_by=accession_id">Acc. ID</a></th>
+            <th><a href="admin?action=corr_evidence_types_view;order_by=rank">Rank</a></th>
+            <th><a href="admin?action=corr_evidence_types_view;order_by=evidence_type">Evidence Type</a></th>
+            <th><a href="admin?action=corr_evidence_types_view;order_by=line_color">Line Color</a></th>
+            <th colspan="2">&nbsp;</th>
+        </tr>
+      
+        [% SET i=0 %]
+        [% FOREACH et=evidence_types %]
+            <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
+                <td>[% et.accession_id %]</td>
+                <td>[% et.rank %]</td>
+                <td>[% et.evidence_type %]</td>
+                <td>[% et.line_color %]</td>
+                <td align="center">
+                    <a href="admin?action=corr_evidence_type_edit;evidence_type_id=[% et.evidence_type_id %]">Edit</a>
+                </td>
+                <td align="center">
+                    <a href="admin?action=confirm_delete;entity_type=cmap_evidence_type;entity_id=[% et.evidence_type_id %];entity_name_field=evidence_type">Delete</a>
+                </td>
+            </tr>
+            [% SET i=i+1 %]
+        [% END %]
+    </table>
+
+[% ELSE %]
+
+    <p>No correspondence evidence types to display.</p>
+
+[% END %]
+
+[% INCLUDE admin_footer.tmpl %]

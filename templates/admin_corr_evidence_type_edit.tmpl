@@ -1,0 +1,54 @@
+[% INCLUDE admin_header.tmpl title="Edit Correspondence Evidence Type &quot;$evidence_type.evidence_type&quot;" %]
+<a href="admin">Home</a> |
+<a href="admin?action=confirm_delete;entity_type=cmap_evidence_type;entity_id=[% evidence_type.evidence_type_id %];entity_name_field=evidence_type">Delete</a> |
+<a href="admin?action=corr_evidence_types_view">View Correspondence Evidence Types</a>
+<hr noshade>
+
+[% IF errors.size %]
+    <b>There were errors:</b>
+    <ul>
+        [% FOREACH e=errors %] 
+          <li>[% e %]</li> 
+        [% END %]
+    </ul>
+[% END %]
+
+<form action="admin" method="post">
+    <table>
+        <tr>
+            <td align="right">Acc. ID <em>(opt.)</em>:</th>
+            <td><input name="accession_id" value="[% evidence_type.accession_id %]"></td>
+        </tr>
+
+        <tr>
+            <td align="right">Evidence Type:</th>
+            <td><input name="evidence_type" value="[% evidence_type.evidence_type %]"></td>
+        </tr>
+
+        <tr>
+            <td align="right">Rank:</th>
+            <td><input name="rank" value="[% evidence_type.rank %]"></td>
+        </tr>
+
+        <tr>
+            <td align="right">Color <em>(opt.)</em>:</td>
+            <td>
+                <select name="line_color">
+                    <option value="">--Default--</option>
+                    [% FOREACH color=line_colors %]
+                        <option value="[% color %]"[% IF evidence_type.line_color==color  %] selected[% END %]>[% color %]</option>
+                    [% END %]
+                </select>
+            </td>
+        </tr>
+
+        <tr>
+            <td colspan="2" align="center">
+                <input type="hidden" name="evidence_type_id" value="[% evidence_type.evidence_type_id %]">
+                <input type="hidden" name="action" value="corr_evidence_type_update">
+                <input type="submit" value="Submit">
+            </th>
+        </tr>
+    </table>
+</form>
+[% INCLUDE admin_footer.tmpl %]

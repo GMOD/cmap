@@ -1,0 +1,77 @@
+[% INCLUDE admin_header.tmpl title='Feature Type Create' %]
+<a href="admin">Home</a> |
+<a href="admin?action=feature_types_view">View Feature Types</a>
+<hr noshade>
+
+[% IF errors.size %]
+    <b>There were errors:</b>
+    <ul>
+        [% FOREACH e=errors %]
+          <li>[% e %]</li>
+        [% END %]
+    </ul>
+[% END %]
+
+<form action="admin" method="post">
+<table>
+    <tr>
+        <td align="right">Acc. ID <em>(opt.)</em>:</td>
+        <td>
+            <input name="accession_id" value="[% apr.param('accession_id') %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Feature Type:</td>
+        <td>
+            <input name="feature_type" value="[% apr.param('feature_type') %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Shape:</td>
+        <td>
+            <select name="shape">
+                <option value="">--Please Select--</option>
+                [% FOREACH shape=shapes %]
+                    <option value="[% shape %]">[% shape %]</option>
+                [% END %]
+            </select>
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Color:</td>
+        <td>
+            <select name="color">
+                <option value="">--Default--</option>
+                [% FOREACH color=colors %]
+                    <option value="[% color %]">[% color %]</option>
+                [% END %]
+            </select>
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Drawing Lane:</td>
+        <td>
+            <input name="drawing_lane" value="[% apr.param('drawing_lane') %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Drawing Priority:</td>
+        <td>
+            <input name="drawing_priority" value="[% apr.param('drawing_priority') %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td colspan="2" align="center">
+            <input type="hidden" name="action" value="feature_type_insert">
+            <input type="submit" value="Submit">
+        </td>
+    </tr>
+</table>
+</form>
+[% INCLUDE admin_footer.tmpl %]

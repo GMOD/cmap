@@ -1,0 +1,50 @@
+[% INCLUDE admin_header.tmpl title='Feature Types View' %]
+<a href="admin">Home</a> |
+<a href="admin?action=feature_type_create">Create New Feature Type</a>
+<hr noshade>
+[% IF feature_types.size %]
+    <table width="100%">
+        <tr>
+            <td colspan="8" align="center">
+                [% SET pager_url="admin?action=feature_types_view&order_by=${apr.param('order_by')}" %]
+                [% PROCESS pager.tmpl %]
+            </td>
+        </tr>
+        <tr>
+            <th><a href="admin?action=feature_types_view;order_by=accession_id">Acc. ID</a></th>
+            <th><a href="admin?action=feature_types_view;order_by=feature_type">Feature Type</a></th>
+            <th><a href="admin?action=feature_types_view;order_by=shape">Shape</a></th>
+            <th><a href="admin?action=feature_types_view;order_by=color">Color</a></th>
+            <th><a href="admin?action=feature_types_view;order_by=drawing_lane">Drawing Lane</a></th>
+            <th><a href="admin?action=feature_types_view;order_by=drawing_priority">Drawing Priority</a></th>
+            <th colspan="2">&nbsp;</th>
+        </tr>
+      
+        [% SET i=0 %]
+        [% FOREACH ft=feature_types %]
+            <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
+                <td>[% ft.accession_id %]</td>
+                <td>[% ft.feature_type %]</td>
+                <td>[% ft.shape %]</td>
+                <td>[% ft.color %]</td>
+                <td>[% ft.drawing_lane %]</td>
+                <td>[% ft.drawing_priority %]</td>
+                <td align="center">
+                    <a href="admin?action=feature_type_edit;feature_type_id=[% ft.feature_type_id %]">Edit</a>
+                </td>
+
+                <td align="center">
+                    <a href="admin?action=confirm_delete;entity_type=cmap_feature_type;entity_id=[% ft.feature_type_id %];entity_name_field=feature_type">Delete</a>
+                </td>
+            </tr>
+            [% SET i=i+1 %]
+        [% END %]
+    </table>
+
+[% ELSE %]
+
+    <p>No feature types to display.</p>
+
+[% END %]
+
+[% INCLUDE admin_footer.tmpl %]

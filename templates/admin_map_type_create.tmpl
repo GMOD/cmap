@@ -1,0 +1,93 @@
+[% INCLUDE admin_header.tmpl title='Map Type Create' %]
+<a href="admin">Home</a> |
+<a href="admin?action=map_types_view">View Map Types</a>
+<hr noshade>
+
+[% IF errors.size %]
+    <b>There were errors:</b>
+    <ul>
+        [% FOREACH e=errors %] 
+          <li>[% e %]</li> 
+        [% END %]
+    </ul>
+[% END %]
+
+<form method="post" action="admin">
+<table>
+    <tr>
+        <td align="right">Map Type:</td>
+        <td>
+            <input name="map_type" value="[% apr.param('map_type') %]">
+        </td>
+    </tr>
+  
+    <tr>
+        <td align="right">Map Units:</td>
+        <td>
+            <input name="map_units" value="[% apr.param('map_units') %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Is Relational Map Only:</td>
+        <td>
+            <select name="is_relational_map"> 
+                <option value="">--Please Select--</option>
+                <option value="0"[% IF apr.param('is_relational_map')==0 %] selected[% END %]>No</option>
+                <option value="1"[% IF apr.param('is_relational_map')==1 %] selected[% END %]>Yes</option>
+            </select>
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Display Order:</td>
+        <td>
+            <input name="display_order" value="[% apr.param('display_order') %]">
+        </td>
+    </tr>
+  
+    <tr>
+        <td align="right">Shape:</td>
+        <td>
+            <select name="shape">
+                <option value="">--Please Select--</option>
+                [% FOREACH shape=shapes %]
+                    <option value="[% shape %]"[% IF apr.param('shape')==shape  %] selected[% END %]>[% shape %]</option>
+                [% END %]
+            </select>
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Width <em>(opt.)</em>:</td>
+        <td>
+            <select name="width">
+                <option value="">--Default--</option>
+                [% FOREACH width=widths %]
+                    <option value="[% width %]"[% IF apr.param('width')==width  %] selected[% END %]>[% width %]</option>
+                [% END %]
+            </select>
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">Color <em>(opt.)</em>:</td>
+        <td>
+            <select name="color">
+                <option value="">--Default--</option>
+                [% FOREACH color=colors %]
+                    <option value="[% color %]"[% IF apr.param('color')==color  %] selected[% END %]>[% color %]</option>
+                [% END %]
+            </select>
+        </td>
+    </tr>
+  
+    <tr>
+        <td colspan="2">
+            <input type="submit" value="Submit">
+            <input type="hidden" name="action" value="map_type_insert">
+        </td>
+    </tr>
+</table>
+</form>
+[% INCLUDE admin_footer.tmpl %]

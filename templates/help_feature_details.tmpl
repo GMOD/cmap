@@ -1,0 +1,60 @@
+[% 
+    INCLUDE header.tmpl 
+    title='Feature Details Help'
+    no_link='help'
+    help_anchor=''
+%]
+
+<h2>Feature Details Help</h2>
+<p>
+  The feature details page lists what is known about a feature and
+  its correspondences.
+<dl>
+  <dt id="acc_id">Acc ID</dt>
+  <dd>
+    Unique accession ID.
+  </dd>
+  <dt id="feature_type">Feature Type</dt>
+  <dd>
+    The type of a feature.
+  </dd>
+  <dt id="feature_name">Feature Name</dt>
+  <dd>
+    The name of the feature.  This is the text that is displayed
+    as the feature label in the map image.
+  </dd>
+  <dt id="alternate_name">Alternate Name</dt>
+  <dd>
+    Synonym, alias, or other name by which a feature may be known.
+  </dd>
+  <dt id="map">Map</dt>
+  <dd>
+    Map on which this feature may be found.  Click on &quot;View on
+    Map&quot; to see the map with the feature highlighted.
+  </dd>
+  <dt id="start">Start</dt>
+  <dd>
+    The start position of a feature.
+  </dd>
+  <dt id="stop">Stop</dt>
+  <dd>
+    The stop position of a feature.  No entry means that the
+    feature is a point.
+  </dd>
+  <dt id="dbxref">Database Cross-References</dt>
+  <dd>
+    Link to an external database that may have more information.
+  </dd>
+  <dt>Correspondences</dt>
+  <dd>
+    This table lists all the corresponding features from other maps associated
+with the feature.  Click on &quot;Feature Details&quot; to view the feature
+details page for the corresponding feature.  &quot;View On Map&quot; takes you
+to the appropriate map with the corresponding feature highlighted.  &quot;Show
+Maps&quot; also takes you to the Map Viewer, but with both the original
+reference map and the corresponding map being compared.
+  </dd>        
+</dl>
+</p>
+[% page.end_body OR '</body>' %]
+</html>

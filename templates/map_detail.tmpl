@@ -1,0 +1,275 @@
+[% DEFAULT title='Reference Map Details' %]
+[% 
+    INCLUDE header.tmpl 
+    title=title
+    no_link=''
+    help_anchor=''
+%]
+<h1>[% title %]</h1>
+
+<table>
+    <tr>
+        <td valign="top">
+            <form method="GET" action="map_details">
+            <table>
+                <tr>
+                    <th colspan="2">
+                    [% reference_map.species_name %] - [% reference_map.map_set_name %] - [% reference_map.map_name %]
+                    <br>
+                    [<a href="#details">Feature Details Table</a>]
+                    </th>
+                </tr>
+                <tr>
+                    <td align="right" valign="top">Start:</td>
+
+                    <td colspan="2">
+                        <input name="ref_map_start" value="[% apr.param('ref_map_start') %]">
+                    </td>
+                </tr>
+                <tr>
+                    <td align="right" valign="top">Stop:</td>
+
+                    <td colspan="2">
+                        <input name="ref_map_stop" value="[% apr.param('ref_map_stop') %]">
+                    </td>
+                </tr>
+                <tr>
+                    <td align="right" valign="top">Highlight:</td>
+
+                    <td colspan="2">
+                        <input name="highlight" value="[% apr.param('highlight') | html %]">
+                    </td>
+                </tr>
+                <tr>
+                    <td align="right" valign="top">Image Size:</td>
+
+                    <td colspan="2">
+                        <input type="radio" name="image_size" value="small"[% IF apr.param('image_size') == 'small'; ' checked'; END %]>Small
+                        <input type="radio" name="image_size" value="medium"[% IF apr.param('image_size') == 'medium'; ' checked'; END %]>Medium
+                        <input type="radio" name="image_size" value="large"[% IF apr.param('image_size') == 'large'; ' checked'; END %]>Large
+                    </td>
+                </tr>
+        
+                <tr>
+                    <td align="right" valign="top">Font Size:</td>
+
+                    <td colspan="2">
+                        <input type="radio" name="font_size" value="small"[% IF apr.param('font_size') == 'small'; ' checked'; END %]>Small
+                        <input type="radio" name="font_size" value="medium"[% IF apr.param('font_size') == 'medium'; ' checked'; END %]>Medium
+                        <input type="radio" name="font_size" value="large"[% IF apr.param('font_size') == 'large'; ' checked'; END %]>Large
+                    </td>
+                </tr>
+            
+                <tr>
+                    <td align="right" valign="top">Image Type:</td>
+
+                    <td colspan="2">
+                        <input type="radio" name="image_type" value="png"[% IF apr.param('image_type') == 'png'; ' checked'; END %]>PNG
+                        <input type="radio" name="image_type" value="jpeg"[% IF apr.param('image_type') == 'jpeg'; ' checked'; END %]>JPEG
+                    </td>
+                </tr>
+
+                <tr>
+                    <td align="right" valign="top">Show Labels:</td>
+
+                    <td colspan="2">
+                        <input type="radio" name="label_features" value="none"[% IF apr.param('label_features')=='none'; ' checked'; END %]>None
+                        <input type="radio" name="label_features" value="landmarks"[% IF apr.param('label_features')=='landmarks'; ' checked'; END %]>Landmarks
+                        <input type="radio" name="label_features" value="all"[% IF apr.param('label_features')=='all'; ' checked'; END %]>All
+                    </td>
+                </tr>
+
+                <tr>
+                    <td align="right" valign="top">Collapse Overlapping Features:</td>
+
+                    <td>
+                        [% IF apr.param('collapse_features')==1; collapse=1; ELSE; collapse=0; END %]
+                        <input type="radio" name="collapse_features" value="0"[% IF collapse==0; ' checked'; END %]>No
+                        <input type="radio" name="collapse_features" value="1"[% IF collapse==1; ' checked'; END %]>Yes
+                    </td>
+                </tr>
+
+
+                <tr>
+                    <td align="right" valign="top">Include Feature Types:</td>
+
+                    <td>
+                        [% IF feature_types.size %]
+                            [% feature_types.unshift({feature_type_aid=>'-1',feature_type=>'--All--'}) %]
+                            <select name="include_feature_types" size="5" multiple>
+                                [% FOREACH ft=feature_types %]
+                                    <option value="[% ft.feature_type_aid %]"[% IF included_features.${ft.feature_type_aid}; ' selected'; END %]>[% ft.feature_type %]</option>
+                                [% END %]
+                            </select>
+
+                        [% ELSE %]
+                            There are no feature types!
+                        [% END %]
+                    </td>
+                </tr>
+
+                <tr>
+                    <td align="right" valign="top">Include Correspondence Types:</td>
+
+                    <td>
+                        [% IF evidence_types.size %]
+                            [% evidence_types.unshift({evidence_type_aid=>'-1',evidence_type=>'--All--'}) %]
+                            <select name="include_evidence_types" size="4" multiple>
+                                [% FOREACH et=evidence_types %]
+                                    <option value="[% et.evidence_type_aid %]"[% IF included_evidence.${et.evidence_type_aid}; ' selected'; END %]>[% et.evidence_type %]</option>
+                                [% END %]
+                            </select>
+
+                        [% ELSE %]
+                            There are no evidence types!
+                        [% END %]
+                    </td>
+                </tr>
+
+                <tr>
+                    <td colspan="3" align="center">
+                        <input type="hidden" name="limit_start"         value="[% apr.param('limit_start') %]">
+                        <input type="hidden" name="ref_map_set_aid"     value="[% apr.param('ref_map_set_aid') %]">
+                        <input type="hidden" name="ref_map_aid"         value="[% apr.param('ref_map_aid') %]">
+                        <input type="hidden" name="comparative_maps"    value="[% apr.param('comparative_maps') %]">
+                        <input type="hidden" name="comparative_map_aid" value="[% apr.param('comparative_map_aid') %]">
+                        <input type="reset"  value="Reset">
+                        <input type="submit" value="Submit">
+                    </td>
+                </tr>
+            </table>
+            </form>
+        </td>
+
+        <td valign="top">
+            <img src="/cmap/images/[% drawer.image_name %]" height="[% drawer.map_height %]" width="[% drawer.map_width %]" usemap="#zoom" border="0">
+
+        </td>
+    </tr>
+</table>
+
+<a name="details">
+<table border="1">
+    <tr>
+        <td valign="top" align="center" colspan="4">
+            <form method="GET" action="map_details">
+            Restrict by Map:
+            [% SET last_map_type = "" %]
+            <select name="comparative_map">
+                <option value="">--All--</option>
+                [% FOREACH ms=comparative_maps %]
+                    [% IF last_map_type != ms.map_type %]
+                        <option value="">== [% ms.map_type %] Maps ==</option>
+                    [% END %]
+                    [% IF ms.maps.size > 1 %]
+                        <option value="map_set_aid=[% ms.map_set_aid %]"[% IF comparative_map_field=='map_set_aid' && ms.map_set_aid==comparative_map_aid; ' selected'; END %]>[% ms.map_set_name %] (All)</option>
+                        [% FOREACH map=ms.maps %]
+                            <option value="map_aid=[% map.map_aid %]"[% IF comparative_map_field=='map_aid' && map.map_aid==comparative_map_aid; ' selected'; END %]>&nbsp;&nbsp;[% map.map_name %]</option>
+                        [% END %]
+                    [% ELSIF ms.maps.size == 1 %]
+                        [% SET map = ms.maps.0 %]
+                        <option value="map_aid=[% map.map_aid %]"[% IF comparative_map_field=='map_aid' && map.map_aid==comparative_map_aid; ' selected'; END %]>[% ms.map_set_name %]-[% map.map_name %]</option>
+                    [% END %]
+                    [% SET last_map_type = ms.map_type %]
+                [% END %]
+            </select>
+
+            <input type="hidden" name="order"            value="[% apr.param('order') %]">
+            <input type="hidden" name="order_by"         value="[% apr.param('order_by') %]">
+            <input type="hidden" name="ref_map_set_aid"  value="[% apr.param('ref_map_set_aid') %]">
+            <input type="hidden" name="ref_map_aid"      value="[% apr.param('ref_map_aid') %]">
+            <input type="hidden" name="comparative_maps" value="[% apr.param('comparative_maps') %]">
+            <input type="hidden" name="feature_types"    value="[% apr.param('feature_types') %]">
+            <input type="hidden" name="evidence_types"   value="[% apr.param('evidence_types') %]">
+            <input type="submit" value="Submit">
+            </form>
+        </td>
+        <td align="center" colspan="5">
+            [ <a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];feature_type_aid=[% apr.param('feature_type_aid') %];order=[% apr.param('order') %];order_by=[% apr.param('order_by') %];action=download">Download Feature Data</a> ]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="center" colspan="9">
+            [% SET comp_maps = "${apr.param('comparative_maps')}" %]
+            [% SET pager_url="/cmap/map_details?ref_map_set_aid=${apr.param('ref_map_set_aid')}&ref_map_aid=${apr.param('ref_map_aid')}&comparative_maps=${comp_maps.replace('=', '%3d')}&label_features=${apr.param('label_features')}&feature_types=${apr.param('feature_types')}&evidence_types=${apr.param('evidence_types')}&highlight=${apr.param('highlight_uri')}&comparative_map=${apr.param('comparative_map')}" %]
+            [% PROCESS pager.tmpl %]
+        </td>
+    </tr>
+
+    <tr>
+        <th colspan="3">[% reference_map.species_name %] - [% reference_map.map_set_name %] - [% reference_map.map_name %]<br><small>(Click headers to resort)</small></th>
+        <th colspan="6">Comparative Maps</th>
+    </tr>
+
+    <tr>
+        <th><a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% apr.param('comparative_maps') %];feature_type_aid=[% apr.param('feature_type_aid') %];highlight=[% apr.param('highlight_uri') %];image_size=[% apr.param('image_size') %];font_size=[% apr.param('font_size') %];image_type=[% apr.param('image_type') %];label_features=[% apr.param('label_features') %];order=[% apr.param('order') %];order_by=feature_name;comparative_map_aid=[% apr.param('comparative_map_aid') %]">Feature</a></th>
+        <th><a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% apr.param('comparative_maps') %];feature_type_aid=[% apr.param('feature_type_aid') %];highlight=[% apr.param('highlight_uri') %];image_size=[% apr.param('image_size') %];font_size=[% apr.param('font_size') %];image_type=[% apr.param('image_type') %];label_features=[% apr.param('label_features') %];order=[% apr.param('order') %];order_by=feature_type;comparative_map_aid=[% apr.param('comparative_map_aid') %]">Type</a></th>
+        <th><a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% apr.param('comparative_maps') %];feature_type_aid=[% apr.param('feature_type_aid') %];highlight=[% apr.param('highlight_uri') %];image_size=[% apr.param('image_size') %];font_size=[% apr.param('font_size') %];image_type=[% apr.param('image_type') %];label_features=[% apr.param('label_features') %];order=[% apr.param('order') %];order_by=start_position;comparative_map_aid=[% apr.param('comparative_map_aid') %]">Position</a> ([% reference_map.map_units %])</th>
+        <th>Map</th>
+        <th>Feature</th>
+        <th>Type</th>
+        <th>Position</th>
+        <th>Evidence</th>
+        <th>Actions</th>
+    </tr>
+
+    [% FOREACH f=features %]
+    <tr>
+        <td[% IF f.no_positions>1 %] rowspan="[% f.no_positions %]"[% END %][% IF f.highlight_color %] bgcolor="[% f.highlight_color %]"[% END %]>
+            <a href="feature?feature_aid=[% f.accession_id %]">[% f.feature_name %]</a>
+        </td>
+        <td [% IF f.no_positions>1 %] rowspan="[% f.no_positions %]"[% END %]>
+            [% f.feature_type %]
+        </td>
+        <td [% IF f.no_positions>1 %] rowspan="[% f.no_positions %]"[% END %] align="right">
+            [% f.start_position %] [% IF f.stop_position>f.start_position %]- [% f.stop_position %][% END %]
+        </td>
+
+        [% IF f.positions.size %]
+            [% SET i=0 %]
+            [% FOREACH p=f.positions %]
+                [% IF i>0 %]<tr>[% END %]
+
+                <td>
+                    [% p.species_name %] - [% p.map_set_name %] - [% p.map_name %]
+                </td>
+                <td>
+                    <a href="feature?feature_aid=[% p.feature_aid %]">[% p.feature_name %]</a>
+                </td>
+                <td>
+                    [% p.feature_type %]
+                </td>
+                <td align="right">
+                    [% p.start_position %] [% IF p.stop_position>p.start_position %]- [% p.stop_position %][% END %] ([% p.map_units %])
+                </td>
+                <td>
+                    [% p.evidence.join(', ') %]
+                </td>
+                <td align="center">
+                    <a href="map_details?ref_map_set_aid=[% reference_map.map_set_aid%];ref_map_aid=[% reference_map.map_aid %];comparative_maps=1%3dmap_aid%3d[% p.map_aid %];feature_types=[% apr.param('feature_types') %];evidence_types=[% apr.param('evidence_types') %];highlight=&quot;[% f.feature_name %]&quot;[% IF p.feature_name != f.feature_name %],&quot;[% p.feature_name %]&quot;[% END %]">View Maps</a>
+                </td>
+
+                [% IF i>0 %]</tr>[% END %]
+                [% SET i=i+1 %]
+            [% END %]
+            
+        [% ELSE %]
+
+                <td colspan="6" align="center"><em>No other positions</em></td>
+
+        [% END %]
+    </tr>
+    [% END %]
+</table>
+
+[% IF drawer %]
+    <map name="zoom">
+    [% FOREACH area=drawer.image_map_data %]
+        <area coords="[% area.coords.join(',') %]" href="[% area.url %]" alt="[% area.alt %]" title="[% area.alt %]">
+    [% END %]
+    </map>
+[% END %]
+
+[% page.end_body OR '</body>' %]
+</html>

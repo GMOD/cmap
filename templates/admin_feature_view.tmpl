@@ -1,0 +1,154 @@
+[% INCLUDE admin_header.tmpl title="View Feature &quot;$feature.feature_name&quot;" %]
+
+<a href="admin">Home</a> |
+<a href="admin?action=confirm_delete;entity_type=cmap_feature;entity_id=[% feature.feature_id %]">Delete</a> |
+<a href="admin?action=feature_edit;feature_id=[% feature.feature_id %]">Edit</a>
+<hr noshade>
+
+<table>
+    <tr>
+        <td align="right">
+            Map:
+        </td>
+        <td>
+            [% feature.species_name %]-[% feature.map_set_name %]-[% feature.map_name %]
+            (<a href="admin?action=map_view;map_id=[% feature.map_id %]">View Map</a>)
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Acc ID:
+        </td>
+        <td>
+            [% feature.accession_id %]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Feature Name:
+        </td>
+        <td>
+            [% feature.feature_name %]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Alternate Name:
+        </td>
+        <td>
+            [% feature.alternate_name %]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Feature Type:
+        </td>
+        <td>
+            [% feature.feature_type %]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Is Landmark:
+        </td>
+        <td>
+            [% IF feature.is_landmark; 'Yes'; ELSE; 'No'; END %]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Start:
+        </td>
+        <td>
+            [% feature.start_position %]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Stop:
+        </td>
+        <td>
+            [% feature.stop_position %]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            DBXRef Name:
+        </td>
+        <td>
+            [% feature.dbxref_name %]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            DBXRef URL:
+        </td>
+        <td>
+            [% feature.dbxref_url %]
+        </td>
+    </tr>
+</table>
+
+<table width="100%">
+    <tr bgcolor="lightgrey">
+        <th>Correspondences</th>
+        <td align="right">
+            <a href="admin?action=feature_corr_create;feature_id1=[% feature.feature_id %]">Add Correspondence</a>
+        </td>
+    </tr>
+</table>
+
+[% IF feature.correspondences.size %]
+    <table width="100%">
+        <tr>
+            <th>Acc. ID</th>
+            <th>Map</th>
+            <th>Feature Name</th>
+            <th>Alt. Name</th>
+            <th>Evidence</th>
+            <th>Is Enabled</th>
+            <th colspan="3">&nbsp;</th>
+        </tr>
+      
+        [% SET i=0 %]
+        [% FOREACH fc=feature.correspondences %]
+            <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
+                <td>[% fc.accession_id %]</td>
+                <td>
+                    <a href="admin?action=map_view;map_id=[% fc.map_id %]">[% fc.species_name %]-[% fc.map_set_name %]-[% fc.map_name %]</a>
+                </td>
+                <td>
+                    <a href="admin?action=feature_view;feature_id=[% fc.feature_id %]">[% fc.feature_name %]</a>
+                </td>
+                <td>[% fc.alternate_name %]</td>
+                <td>[% fc.evidence %]</td>
+                <td>[% IF fc.is_enabled; 'Yes'; ELSE; 'No'; END %]</td>
+                <td>
+                    <a href="admin?action=feature_corr_view;feature_correspondence_id=[% fc.feature_correspondence_id %]">View</a>
+                </td>
+                <td>
+                    <a href="admin?action=feature_corr_edit;feature_correspondence_id=[% fc.feature_correspondence_id %]">Edit</a>
+                </td>
+                <td>
+                    <a href="admin?action=confirm_delete;entity_type=cmap_feature_correspondence;entity_name_field=accession_id;entity_id=[% fc.feature_correspondence_id %]">Delete</a>
+                </td>
+            </tr>
+            [% SET i=i+1 %]
+        [% END %]
+    </table>
+
+[% ELSE %]
+
+  <p>No correspondences to show.</p>
+
+[% END %]
+[% INCLUDE admin_footer.tmpl %]

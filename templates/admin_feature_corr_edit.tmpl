@@ -1,0 +1,35 @@
+[% INCLUDE admin_header.tmpl title="Edit Feature Correspondence &quot;$corr.accession_id&quot;" %]
+
+<a href="admin">Home</a> |
+<a href="admin?action=feature_corr_view;feature_correspondence_id=[% corr.feature_correspondence_id %]">View Correspondence</a> |
+<a href="admin?action=confirm_delete;entity_type=cmap_feature_correspondence;entity_name_field=accession_id;entity_id=[% corr.feature_correspondence_id %]">Delete</a>
+<hr noshade>
+
+<br>
+<form action="admin" method="get">
+<table>
+    <tr>
+        <th align="right">Acc ID <em>(opt.)</em>:</th>
+        <td><input name="accession_id" value="[% corr.accession_id %]"></td>
+    </tr>
+    <tr>
+        <th align="right">Is Enabled:</th>
+        <td>
+            <select name="is_enabled">
+                <option value="1"[% IF corr.is_enabled==1; ' selected'; END %]>Yes</option>
+                <option value="0"[% IF corr.is_enabled==0; ' selected'; END %]>No</option>
+            </select>
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2" align="center">
+            <input type="hidden" name="feature_correspondence_id" value="[% corr.feature_correspondence_id %]">
+            <input type="hidden" name="action" value="feature_corr_update">
+            <input type="reset" value="Reset">
+            <input type="submit" value="Submit">
+        </td>
+    </tr>
+</table>
+</form>
+
+[% INCLUDE admin_footer.tmpl %]

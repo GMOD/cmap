@@ -1,0 +1,152 @@
+[% INCLUDE admin_header.tmpl title="View Map &quot;$map.map_name&quot;" %]
+
+<a href="admin">Home</a> |
+<a href="admin?action=confirm_delete;entity_type=cmap_map;entity_id=[% map.map_id %]">Delete</a> |
+<a href="admin?action=map_edit;map_id=[% map.map_id %]">Edit</a>
+[% IF map.can_be_reference_map %]
+  | <a href="/maps/viewer?reference_map_set_id=[% map.map_set_id %];reference_map_id=[% map.map_id %]">View in CMap Viewer</a>
+[% END %]
+
+<table>
+    <tr>
+        <td align="right">
+            Map Set Name:
+        </td>
+        <td>
+            [% map.species_name %]-[% map.map_set_name %]
+            (<a href="admin?action=map_set_view;map_set_id=[% map.map_set_id %]">View Map Set</a>)
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Map Name:
+        </td>
+        <td>[% map.map_name %]</td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Display Order:
+        </td>
+        <td>[% map.display_order %]</td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Acc. ID:
+        </td>
+        <td>[% map.accession_id OR '&nbsp;' %]</td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Start:
+        </td>
+        <td>[% map.start_position %]</td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Stop:
+        </td>
+        <td>[% map.stop_position OR '&nbsp;' %]</td>
+    </tr>
+</table>
+
+<table width="100%">
+    <tr bgcolor="lightgrey">
+        <th>Features</th>
+        <td align="right">
+            <a href="admin?action=feature_create;map_id=[% map.map_id %]">Add Feature</a>
+        </td>
+    </tr>
+</table>
+
+[% IF map.features.size %]
+
+    <table width="100%">
+        <tr>
+            <td align="left">
+                <form action="admin" method="get">
+                    <select name="feature_type_id">
+                        <option value="">--All--</option>
+                        [% FOREACH ft=feature_types %]
+                            <option value="[% ft.feature_type_id %]"[% IF ft.feature_type_id==apr.param('feature_type_id') %] selected[% END %]>[% ft.feature_type %]</option>
+                        [% END %]
+                    </select>
+                    <input type="hidden" name="action"   value="map_view">
+                    <input type="hidden" name="map_id"   value="[% apr.param('map_id') %]">
+                    <input type="hidden" name="order_by" value="[% apr.param('order_by') %]">
+                    <input type="submit" value="Restrict by Feature Type">
+                </form>
+            </td>
+            <td align="right">
+                <form action="admin" method="get">
+                    <input name="feature_name">
+                    <select name="feature_type_id">
+                        <option value="">--Any--</option>
+                        [% FOREACH ft=feature_types %]
+                            <option value="[% ft.feature_type_id %]"[% IF ft.feature_type_id==apr.param('feature_type_id') %] selected[% END %]>[% ft.feature_type %]</option>
+                        [% END %]
+                    </select>
+                    <input type="hidden" name="action" value="feature_search">
+                    <input type="hidden" name="map_aid" value="[% map.accession_id %]">
+                    <input type="Submit" value="Search for Feature">*
+                </form>
+            </td>
+        </tr>
+    </table>
+
+    <table width="100%">
+        <tr>
+            <td colspan="10" align="center">
+                [% SET pager_url="admin?action=map_view&map_id=${map.map_id}&feature_type_id=${apr.param('feature_type_id')}&order_by=${apr.param('order_by')}" %]
+                [% PROCESS pager.tmpl %]
+            </td>
+        </tr>
+
+        <tr>
+            <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type_id=[% apr.param('feature_type_id') %];order_by=accession_id">Acc. ID</a></th>
+            <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type_id=[% apr.param('feature_type_id') %];order_by=feature_name">Name</a></th>
+            <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type_id=[% apr.param('feature_type_id') %];order_by=is_landmark">Landmark</a></th>
+            <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type_id=[% apr.param('feature_type_id') %];order_by=alternate_name">Alt. Name</a></th>
+            <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type_id=[% apr.param('feature_type_id') %];order_by=feature_type">Type</a></th>
+            <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type_id=[% apr.param('feature_type_id') %];order_by=start_position">Start</a></th>
+            <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type_id=[% apr.param('feature_type_id') %];order_by=stop_position">Stop</a></th>
+            <th>No. Corr.</th>
+            <th colspan="3">&nbsp;</th>
+        </tr>
+      
+        [% SET i=0 %]
+        [% FOREACH f=map.features %]
+            <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
+                <td>[% f.accession_id   OR '&nbsp;' %]</td>
+                <td>[% f.feature_name   OR '&nbsp;' %]</td>
+                <td>[% IF f.is_landmark; 'Yes'; ELSE; 'No'; END %]</td>
+                <td>[% f.alternate_name OR '&nbsp;' %]</td>
+                <td>[% f.feature_type   OR '&nbsp;' %]</td>
+                <td align="right">[% IF f.start_position!='' %] [% f.start_position | commify %] [% ELSE %] '&nbsp;' [% END %]</td>
+                <td align="right">[% f.stop_position  OR '&nbsp;' %]</td>
+                <td align="right">[% f.no_correspondences %]</td>
+                <td>
+                  <a href="admin?action=feature_view;feature_id=[% f.feature_id %]">View</a>
+                </td>
+                <td>
+                  <a href="admin?action=feature_edit;feature_id=[% f.feature_id %]">Edit</a>
+                </td>
+                <td>
+                  <a href="admin?action=confirm_delete;entity_type=cmap_feature;entity_id=[% f.feature_id %]">Delete</a>
+                </td>
+            </tr>
+            [% SET i=i+1 %]
+        [% END %]
+    </table>
+
+[% ELSE %]
+
+    <p>No features to show.</p>
+
+[% END %]
+<small>* -- On this map</small>
+[% INCLUDE admin_footer.tmpl %]

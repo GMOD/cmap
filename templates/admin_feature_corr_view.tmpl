@@ -1,0 +1,137 @@
+[% INCLUDE admin_header.tmpl title="View Feature Correspondence &quot;$corr.accession_id&quot;" %]
+
+<a href="admin">Home</a> |
+<a href="admin?action=feature_corr_edit;feature_correspondence_id=[% corr.feature_correspondence_id %]">Edit</a> |
+<a href="admin?action=confirm_delete;entity_type=cmap_feature_correspondence;entity_name_field=accession_id;entity_id=[% corr.feature_correspondence_id %]">Delete</a>
+<hr noshade>
+
+<br>
+<table width="100%">
+    <tr>
+        <th>&nbsp;</th>
+        <th>Species</th>
+        <th>Map Set</th>
+        <th>Map</th>
+        <th>Feature</th>
+        <th>Type</th>
+        <th colspan="3">&nbsp</th>
+    </tr>
+
+    <tr bgcolor="lightgrey">
+        <th align="right">Feature 1:</th>
+        <td> 
+            [% feature1.species_name %]
+        </td>
+        <td> 
+            [% feature1.map_set_name %]
+        </td>
+        <td> 
+            [% feature1.map_name %]
+        </td>
+        <td>
+            [% feature1.feature_name %]
+        </td>
+        <td>
+            [% feature1.feature_type %]
+        </td>
+        <td align="center">
+            <a href="admin?action=map_set_view;map_set_id=[% feature1.map_set_id %]">View Map Set</a> 
+        </td>
+        <td align="center">
+            <a href="admin?action=map_view;map_id=[% feature1.map_id %]">View Map</a> 
+        </td>
+        <td align="center">
+            <a href="admin?action=feature_view;feature_id=[% feature1.feature_id %]">View Feature</a> 
+        </td>
+    </tr>
+
+    <tr bgcolor="white">
+        <th align="right">Feature 2:</th>
+        <td>
+            [% feature2.species_name %]
+        </td>
+        <td>
+            [% feature2.map_set_name %]-[% feature2.map_name %] 
+        </td>
+        <td>
+            [% feature2.map_name %] 
+        </td>
+        <td>
+            [% feature2.feature_name %]
+        </td>
+        <td>
+            [% feature2.feature_type %]
+        </td>
+        <td align="center">
+            <a href="admin?action=map_set_view;map_set_id=[% feature2.map_set_id %]">View Map Set</a> 
+        </td>
+        <td align="center">
+            <a href="admin?action=map_view;map_id=[% feature2.map_id %]">View Map</a> 
+        </td>
+        <td align="center">
+            <a href="admin?action=feature_view;feature_id=[% feature2.feature_id %]">View Feature</a>
+        </td>
+    </tr>
+
+    <tr>
+        <th align="right">Acc ID:</th>
+        <td>[% corr.accession_id %]</td>
+    </tr>
+
+    <tr>
+        <th align="right">Is Enabled:</th>
+        <td>[% IF corr.is_enabled; 'Yes'; ELSE; 'No'; END %]</td>
+    </tr>
+</table>
+
+<table width="100%">
+    <tr bgcolor="lightgrey">
+        <th>Evidence</th>
+        <td align="right">
+            <a href="admin?action=corr_evidence_create;feature_correspondence_id=[% corr.feature_correspondence_id %]">Add Evidence</a>
+        </td>
+    </tr>
+</table>
+
+[% IF corr.evidence.size %]
+    <table width="100%">
+        <tr>
+            <th>
+                <a href="admin?action=feature_corr_view;feature_correspondence_id=[% corr.feature_correspondence_id %];order_by=accession_id">Acc. ID</a>
+            </th>
+            <th>
+                <a href="admin?action=feature_corr_view;feature_correspondence_id=[% corr.feature_correspondence_id %];order_by=evidence_type">Evidence Type</a>
+            </th>
+            <th>
+                <a href="admin?action=feature_corr_view;feature_correspondence_id=[% corr.feature_correspondence_id %];order_by=rank">Evidence Rank</a>
+            </th>
+            <th>
+                <a href="admin?action=feature_corr_view;feature_correspondence_id=[% corr.feature_correspondence_id %];order_by=score">Score</a>
+            </th>
+            <th colspan="2">&nbsp;</th>
+        </tr>
+      
+        [% SET i=0 %]
+        [% FOREACH e=corr.evidence %]
+            <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
+                <td>[% e.accession_id %]</td>
+                <td>[% e.evidence_type %]</td>
+                <td>[% e.rank %]</td>
+                <td>[% e.score %]</td>
+                <td>
+                    <a href="admin?action=corr_evidence_edit;correspondence_evidence_id=[% e.correspondence_evidence_id %]">Edit</a>
+                </td>
+                <td>
+                    <a href="admin?action=confirm_delete;entity_type=cmap_correspondence_evidence;entity_name_field=accession_id;entity_id=[% e.correspondence_evidence_id %]">Delete</a>
+                </td>
+            </tr>
+            [% SET i=i+1 %]
+        [% END %]
+    </table>
+
+[% ELSE %]
+
+  <p>No evidence to show.</p>
+
+[% END %]
+[% INCLUDE admin_footer.tmpl %]

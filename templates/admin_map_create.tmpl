@@ -1,0 +1,82 @@
+[% INCLUDE admin_header.tmpl title="Create Map" %]
+
+<a href="admin">Home</a>
+<hr noshade>
+
+[% IF errors.size %]
+    There were errors:
+    <ul>
+        [% FOREACH e=errors %]
+            <li>[% e %]</li>
+        [% END %]
+    </ul>
+[% END %]
+
+<form action="admin" method="post">
+<table>
+    <tr>
+        <td align="right">
+            Map Set:
+        </td>
+        <td>
+            [% map_set.species_name %]-[% map_set.map_set_name %]
+            (<a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %]">View Map Set</a>)
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Acc ID <em>(opt.)</em>:
+        </td>
+        <td>
+            <input name="accession_id" value="[% apr.param('accession_id') %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Map Name:
+        </td>
+        <td>
+            <input name="map_name" value="[% apr.param('map_name') %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Display Order:
+        </td>
+        <td>
+            <input name="display_order" value="[% apr.param('display_order') %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Start:
+        </td>
+        <td>
+            <input name="start_position" value="[% apr.param('start_position') %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Stop:
+        </td>
+        <td>
+            <input name="stop_position" value="[% apr.param('stop_position') %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="center" colspan="2">
+            <input type="hidden" name="map_set_id" value="[% map_set.map_set_id %]">
+            <input type="hidden" name="action"     value="map_insert">
+            <input type="reset"  value="Reset">
+            <input type="submit" value="Submit">
+        </td>
+    </tr>
+</table>
+</form>
+[% INCLUDE admin_footer.tmpl %]

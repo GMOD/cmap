@@ -1,0 +1,12 @@
+[% INCLUDE admin_header.tmpl title='Confirm Delete' %]
+<hr noshade>
+
+<p>
+Are you sure you want to delete [% entity.type %] &quot;<b>[% entity.name %]</b>&quot;?
+</p>
+
+<p>
+<a href="admin">No</a> |
+<a href="admin?action=entity_delete;entity_type=[% entity.type %];entity_id=[% entity.id %]">Yes</a>
+<p>
+[% INCLUDE admin_footer.tmpl %]
