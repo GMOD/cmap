@@ -1,6 +1,6 @@
                               CMAP INSTALL
 
-                            $Revision: 1.38 $
+                            $Revision: 1.39 $
 
 1.      QUICK START
 
@@ -404,6 +404,16 @@ probably want to copy your original to a backup location, then copy
 this file over manually and "diff" the two.  Most likely, you won't
 need to make too many changes to the new one to get things working the
 way you had them before.
+
+A small set of sample data is included in the "data" directory.
+Simply gunzip the file and then run it into your database (the file 
+simply contains SQL statements to empty each table and fill it with
+values -- so don't run this file into an existing database unless you
+don't mind losing all your data).  E.g., with MySQL you could do this:
+
+    $ cd data
+    $ gunzip sample-dump.sql.gz
+    $ mysql CMAP < sample-dump.sql
 
 4.      PROTECTING WEB ADMIN WITH A PASSWORD 
 
