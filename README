@@ -9,29 +9,22 @@ altered to be able to handle more types of data than just plants and
 was subsequently incorporated into the Generic Model Organism Database
 toolkit (http://www.gmod.org/).
 
-The application is written entirely in Perl and takes advantage of
-Apache's embedded Perl technology, mod_perl.  The application also
+The application is written entirely in Perl.  The application also
 relies upon a relational database management system (RDBMS), such as
 Oracle, MySQL, PostgreSQL or Sybase for gathering the data, and uses
 Paul Boutell's libgd c library and Lincoln Stein's GD Perl module to
-draw the maps.
+draw the maps.  CMap can also create SVG.
 
 To verify the integrity of the tarball, run "cpansign -v" (if you have
 installed GnuPG and Module::Signature).
 
-To install, follow the directions in the file called "INSTALL."  The
-installation process changed significantly with the 0.09 release.  If
-you have comments (good or bad), please submit them to the CMap list
-(address below)!
+To install, follow the directions in the file called "INSTALL."
 
 If you want to understand the code further, especially to customize or
 extend it, read "docs/CODE_OVERVIEW."
 
 To understand how to load and curate data as well as how to generally
 administrate CMap, please read "docs/ADMINISTRATION."
-
-For a guided tour of setting up maps and features and such, use a web
-browser to view the tutorial in "docs/admintut."
 
 If you have questions, write the CMap development list at
 "gmod-cmap@lists.sourceforge.net" or the author at "kclark@cshl.org".
