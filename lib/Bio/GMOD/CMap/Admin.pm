@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin;
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.29 2003-10-14 23:53:23 kycl4rk Exp $
+# $Id: Admin.pm,v 1.30 2003-10-16 22:19:53 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,12 +24,35 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.29 $)[-1];
+$VERSION = (qw$Revision: 1.30 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils qw[ next_number parse_words ];
 use base 'Bio::GMOD::CMap';
 use Bio::GMOD::CMap::Constants;
+
+# ----------------------------------------------------
+sub attribute_delete {
+
+=pod
+
+=head2 attribute_delete
+
+Delete an object's attributes.
+
+=cut
+
+    my $self       = shift;
+    my $table_name = shift     or return;
+    my $object_id  = shift     or return;
+    my $db         = $self->db or return;
+
+    $db->do(
+        'delete from cmap_attribute where table_name=? and object_id=?',
+        {},
+        ( $table_name, $object_id )
+    );
+}
 
 # ----------------------------------------------------
 sub correspondence_evidence_delete {
@@ -45,6 +68,8 @@ Delete a correspondence evidence.
     my ( $self, %args ) = @_;
     my $corr_evidence_id = $args{'correspondence_evidence_id'} 
         or return $self->error('No correspondence evidence id');
+
+    $self->attribute_delete('cmap_correspondence_evidence', $corr_evidence_id);
 
     my $db = $self->db or return;
     my $feature_correspondence_id = $db->selectrow_array(
@@ -139,6 +164,7 @@ Delete an evidence type.
         );
     }
     else {
+        $self->attribute_delete('cmap_evidence_type', $evidence_type_id);
         $db->do(
             q[
                 delete
@@ -149,11 +175,6 @@ Delete an evidence type.
             ( $evidence_type_id )
         );
     }
-
-    $self->object_note_insert_or_update(
-        table_name => 'cmap_evidence_type',
-        object_id  => $evidence_type_id,
-    );
 
     return 1;
 }
@@ -201,25 +222,12 @@ Delete a feature.
         ) or return;
     }
 
-    $self->object_note_insert_or_update(
-        table_name => 'cmap_feature',
-        object_id  => $feature_id,
-    );
+    $self->attribute_delete( 'cmap_feature', $feature_id );
 
     $db->do(
         q[
             delete
             from    cmap_feature_alias
-            where   feature_id=?
-        ],
-        {},
-        ( $feature_id )
-    );
-
-    $db->do(
-        q[
-            delete
-            from    cmap_feature_attribute
             where   feature_id=?
         ],
         {},
@@ -284,10 +292,7 @@ Delete a feature correspondence.
         );
     }
 
-    $self->object_note_insert_or_update(
-        table_name => 'cmap_feature_correspondence',
-        object_id  => $feature_corr_id,
-    );
+    $self->attribute_delete( 'cmap_feature_correspondence', $feature_corr_id );
 
     return 1;
 }
@@ -330,41 +335,6 @@ Updates the aliases attached to a feature.
     }
 
     return 1;
-}
-
-# ----------------------------------------------------
-sub get_attributes {
-
-=pod
-
-=head2 get_attributes 
-
-Retrieves the attributes attached to a feature type.
-
-=cut
-
-    my $self       = shift;
-    my $feature_id = shift or return;
-    my $order_by   = shift || 'display_order,attribute_name';
-    my $db         = $self->db or return;
-    if ( !$order_by || $order_by eq 'display_order' ) {
-        $order_by  = 'display_order,attribute_name';
-    }
-
-    return $db->selectall_arrayref(
-        qq[
-            select   fa.feature_attribute_id,
-                     fa.feature_id,
-                     fa.display_order,
-                     fa.attribute_name,
-                     fa.attribute_value
-            from     cmap_feature_attribute fa
-            where    fa.feature_id=?
-            order by $order_by
-        ],
-        { Columns => {} },
-        ( $feature_id )
-    );
 }
 
 # ----------------------------------------------------
@@ -449,106 +419,6 @@ Retrieves the aliases attached to a feature.
 }
 
 # ----------------------------------------------------
-sub get_note {
-
-=pod
-
-=head2 get_note 
-
-Retrieves the note attached to an object.
-
-=cut
-
-    my ( $self, $table, $object_id ) = @_;
-    my $db = $self->db or return;
-
-    return $db->selectrow_array(
-        q[
-            select note
-            from   cmap_note
-            where  table_name=?
-            and    object_id=?
-        ],
-        {},
-        ( $table, $object_id )
-    );
-}
-
-# ----------------------------------------------------
-sub object_note_insert_or_update {
-
-=pod
-
-=head2 object_note_insert_or_update 
-
-Inserts, updates or deletes the note attached to an object.
-
-=cut
-
-    my $self      = shift;
-    my %args      = @_;
-    my $object_id = $args{'object_id'} or return $self->error('No object id');
-    my $table     = $args{'table_name'} or return $self->error('No table name');
-    my $note      = $args{'note'} || '';
-    my $db        = $self->db;
-
-    my $note_id = $db->selectrow_array(
-        q[
-            select note_id
-            from   cmap_note
-            where  table_name=?
-            and    object_id=?
-        ],
-        {},
-        ( $table, $object_id )
-    );
-
-    if ( $note_id ) {
-        if ( $note ) {
-            $db->do(
-                q[
-                    update cmap_note
-                    set    note=?
-                    where  note_id=?
-                ],
-                {},
-                ( $note, $note_id )
-            );
-        }
-        else {
-            $db->do(
-                q[
-                    delete 
-                    from   cmap_note
-                    where  note_id=?
-                ],
-                {},
-                ( $note_id )
-            );
-        }
-    }
-    elsif ( $note ) {
-        $note_id = next_number( 
-            db               => $db,
-            table_name       => 'cmap_note',
-            id_field         => 'note_id',
-        ) or die "Can't get next ID for 'cmap_note'";
-
-        $db->do(
-            q[
-                insert
-                into   cmap_note ( note_id, table_name, object_id, note )
-                values ( ?, ?, ?, ? )
-            ],
-            {},
-            ( $note_id, $table, $object_id, $note )
-        );
-    }
-
-    return 1;
-}
-
-# ----------------------------------------------------
 sub feature_search {
 
 =pod
@@ -575,10 +445,10 @@ Find all the features matching some criteria.
     my $species_ids      = $args{'species_ids'}      ||             [];
     my $feature_type_ids = $args{'feature_type_ids'} ||             [];
     my $search_field     = $args{'search_field'}     || 'feature_name';
-    my $order_by         = $args{'order_by'}         || 'feature_name';
+    my $order_by         = $args{'order_by'}         || 
+        'feature_name,species_name,map_set_name,map_name,start_position';
     my $limit_start      = $args{'limit_start'}      ||              0;
     my $db               = $self->db or return;
-    my @results;
 
     #
     # "-1" is a reserved value meaning "all"
@@ -586,55 +456,53 @@ Find all the features matching some criteria.
     $species_ids      = [] if grep { /^-1$/ } @$species_ids;
     $feature_type_ids = [] if grep { /^-1$/ } @$feature_type_ids;
 
+    my %features;
     for my $feature_name ( map { uc $_ } @feature_names ) {
         my $comparison = $feature_name =~ m/%/ ? 'like' : '=';
 
-        my $where = $search_field eq 'both'
-            ? qq[
+        my $where;
+        if ( $search_field eq 'feature_name' ) {
+            $feature_name = uc $feature_name;
+            $where = qq[
                 where  (
                     upper(f.feature_name) $comparison '$feature_name'
                     or
-                    upper(f.alternate_name) $comparison '$feature_name'
+                    upper(fa.alias) $comparison '$feature_name'
                 )
-            ]
-            : $search_field =~ /(feature_name|alternate_name)/
-            ? qq[where upper(f.$search_field) $comparison '$feature_name']
-            : $search_field eq 'feature_aid'
-            ? qq[where f.accession_id $comparison '$feature_name']
-            : ''
-        ;
+            ];
+        }
+        else {
+            $where = qq[where f.accession_id $comparison '$feature_name'];
+        }
 
-        die "Invalid search field '$search_field'" unless $where;
-
-        #
-        # Removed "alternate_name"
-        #
         my $sql = qq[
-            select f.feature_id, 
-                   f.accession_id as feature_aid,
-                   f.feature_name,
-                   f.start_position,
-                   f.stop_position,
-                   ft.feature_type,
-                   map.map_name,
-                   map.map_id,
-                   ms.map_set_id,
-                   ms.short_name as map_set_name,
-                   s.species_id,
-                   s.common_name as species_name,
-                   mt.map_type
-            from   cmap_feature f,
-                   cmap_feature_type ft,
-                   cmap_map map,
-                   cmap_map_set ms,
-                   cmap_species s,
-                   cmap_map_type mt
+            select    f.feature_id, 
+                      f.accession_id as feature_aid,
+                      f.feature_name,
+                      f.start_position,
+                      f.stop_position,
+                      ft.feature_type,
+                      map.map_name,
+                      map.map_id,
+                      ms.map_set_id,
+                      ms.short_name as map_set_name,
+                      s.species_id,
+                      s.common_name as species_name,
+                      mt.map_type
+            from      cmap_feature f,
+                      cmap_feature_type ft,
+                      cmap_map map,
+                      cmap_map_set ms,
+                      cmap_species s,
+                      cmap_map_type mt
+            left join cmap_feature_alias fa
+            on        f.feature_id=fa.feature_id
             $where 
-            and f.feature_type_id=ft.feature_type_id
-            and f.map_id=map.map_id
-            and map.map_set_id=ms.map_set_id
-            and ms.species_id=s.species_id
-            and ms.map_type_id=mt.map_type_id
+            and       f.feature_type_id=ft.feature_type_id
+            and       f.map_id=map.map_id
+            and       map.map_set_id=ms.map_set_id
+            and       ms.species_id=s.species_id
+            and       ms.map_type_id=mt.map_type_id
         ];
         $sql .= "and map.accession_id='$map_aid' "        if $map_aid;
 
@@ -647,20 +515,28 @@ Find all the features matching some criteria.
             $sql .= "and f.feature_type_id in ($ft) ";
         }
 
-        push @results, @{ $db->selectall_arrayref( $sql, { Columns => {} } ) };
+        my $found = $db->selectall_hashref( $sql, 'feature_id' );
+        while ( my ( $id, $f ) = each %$found ) {
+            $features{ $id } = $f;
+        }
     }
 
-    if ( $order_by ) {
-        my $sort = $order_by =~ m/position$/ 
-            ? sub { $a->[0] <=> $b->[0] } 
-            : sub { $a->[0] cmp $b->[0] }
-        ;
-
+    my @results = ();
+    if ( $order_by =~ /position/ ) {
         @results = 
             map  { $_->[1] }
-            sort $sort
+            sort { $a->[0] <=> $b->[0] }
             map  { [ $_->{ $order_by }, $_ ] }
-            @results
+            values %features
+        ;
+    }
+    else {
+        my @sort_fields = split( /,/, $order_by );
+        @results = 
+            map  { $_->[1] }
+            sort { $a->[0] cmp $b->[0] }
+            map  { [ join('', @{ $_ }{ @sort_fields } ), $_ ] }
+            values %features
         ;
     }
 
@@ -773,10 +649,7 @@ Delete a feature type.
         );
     }
 
-    $self->object_note_insert_or_update(
-        table_name => 'cmap_feature_type',
-        object_id  => $feature_type_id,
-    );
+    $self->attribute_delete( 'cmap_feature_type', $feature_type_id );
 
     return 1;
 }
@@ -1032,10 +905,7 @@ Delete a map.
         $self->feature_delete( feature_id => $feature_id ) or return;
     }
 
-    $self->object_note_insert_or_update(
-        table_name => 'cmap_map',
-        object_id  => $map_id,
-    );
+    $self->attribute_delete( 'cmap_map', $map_id );
     
     $db->do(
         q[
@@ -1080,10 +950,7 @@ Delete a map set.
         $self->map_delete( map_id => $map_id ) or return;
     }
 
-    $self->object_note_insert_or_update(
-        table_name => 'cmap_map_set',
-        object_id  => $map_set_id,
-    );
+    $self->attribute_delete( 'cmap_map_set', $map_set_id );
 
     $db->do(    
         q[         
@@ -1135,10 +1002,7 @@ Delete a map type.
         );
     }       
     else {  
-        $self->object_note_insert_or_update(
-            table_name => 'cmap_map_type',
-            object_id  => $map_type_id,
-        );
+        $self->attribute_delete( 'cmap_map_type', $map_type_id );
 
         $db->do(
             q[
@@ -1393,90 +1257,112 @@ sub reload_correspondence_matrix {
 }
 
 # ----------------------------------------------------
-sub set_feature_attributes {
+sub set_attributes {
 
 =pod
 
-=head2 set_feature_attributes
+=head2 set_attributes
 
-Set the attributes for a features
+Set the attributes for a database object.
 
 =cut
 
     my ( $self, %args ) = @_;
-    my $feature_id      = $args{'feature_id'} or 
-                          return $self->error('No feature id');
+    my $object_id       = $args{'object_id'} or 
+                          return $self->error('No object id');
+    my $table_name      = $args{'table_name'} or 
+                          return $self->error('No table name');
     my @attributes      = @{ $args{'attributes'} || [] } or return;
     my $overwrite       = $args{'overwrite'} || 0;
     my $db              = $self->db or return;
 
     if ( $overwrite ) {
         $db->do(
-            'delete from cmap_feature_attribute where feature_id=?',
+            'delete from cmap_attribute where object_id=? and table_name=?',
             {},
-            $feature_id
+            $object_id, $table_name
         );
     }
 
-    my $attr_order;
     for my $attr ( @attributes ) {
-        my $attr_name     = $attr->{'name'};
-        my $attr_value    = $attr->{'value'};
-        my $display_order = $attr->{'display_order'} || ++$attr_order;
+        my $attribute_id  = $attr->{'attribute_id'}  || 0;
+        my $display_order = $attr->{'display_order'} || 0;
+        my $attr_name     = $attr->{'name'}          or next;
+        my $attr_value    = $attr->{'value'}         or next;
+
+        unless ( $display_order ) {
+            $display_order = $db->selectrow_array(
+                q[
+                    select max(display_order)
+                    from   cmap_attribute
+                    where  table_name=?
+                    and    object_id=?
+                ],
+                {},
+                ( $table_name, $object_id )
+            );
+            $display_order++;
+        }
 
         next unless 
             defined $attr_name  && $attr_name  ne '' && 
             defined $attr_value && $attr_value ne ''
         ;
-        
-        my $feature_attribute_id = $db->selectrow_array(
+
+        $attribute_id ||= $db->selectrow_array(
             q[
-                select feature_attribute_id
-                from   cmap_feature_attribute
-                where  feature_id=?
+                select attribute_id
+                from   cmap_attribute
+                where  object_id=?
+                and    table_name=?
                 and    attribute_name=?
                 and    attribute_value=?
             ],
             {},
-            ( $feature_id, $attr_name, $attr_value )
+            ( $object_id, $table_name, $attr_name, $attr_value )
         );
 
-        if ( $feature_attribute_id ) {
+        if ( $attribute_id ) {
             $db->do(
                 q[
-                    update  cmap_feature_attribute
-                    set     feature_id=?, display_order=?,
-                            attribute_name=?, attribute_value=?
-                    where   feature_attribute_id=?
+                    update cmap_attribute
+                    set    object_id=?, 
+                           table_name=?,
+                           display_order=?,
+                           attribute_name=?, 
+                           attribute_value=?
+                    where  attribute_id=?
                 ],
                 {}, 
-                ($feature_id, $display_order, $attr_name, 
-                 $attr_value, $feature_attribute_id)
+                ($object_id, $table_name, $display_order, $attr_name, 
+                 $attr_value, $attribute_id)
             ); 
         }
         else {
-            $feature_attribute_id = next_number( 
-                db               => $db,
-                table_name       => 'cmap_feature_attribute',
-                id_field         => 'feature_attribute_id',
+            $attribute_id  =  next_number( 
+                db         => $db,
+                table_name => 'cmap_attribute',
+                id_field   => 'attribute_id',
             ) or return $self->error(
-                "Can't get next ID for 'cmap_feature_attribute'"
+                "Can't get next ID for 'cmap_attribute'"
             );
 
             $db->do(
                 q[
                     insert 
-                    into    cmap_feature_attribute
-                            (feature_attribute_id, feature_id, display_order,
-                             attribute_name, attribute_value)
-                    values  (?, ?, ?, ?, ?)
+                    into    cmap_attribute
+                            (attribute_id, object_id, table_name,
+                             display_order, attribute_name, attribute_value)
+                    values  (?, ?, ?, ?, ?, ?)
                 ],
                 {}, 
-                ($feature_attribute_id, $feature_id, $display_order, 
+                ($attribute_id, $object_id, $table_name, $display_order, 
                  $attr_name, $attr_value)
             );
         }
     }
+
+    return 1;
 }
 
 # ----------------------------------------------------
@@ -1542,10 +1428,7 @@ Delete a species.
         );
     }
     else {
-        $self->object_note_insert_or_update(
-            table_name => 'cmap_species',
-            object_id  => $species_id,
-        );
+        $self->attribute_delete( 'cmap_species', $species_id );
 
         $db->do(
             q[
