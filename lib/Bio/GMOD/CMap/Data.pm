@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.1 2002-08-23 16:07:18 kycl4rk Exp $
+# $Id: Data.pm,v 1.2 2002-08-27 22:18:42 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -1342,7 +1342,8 @@ Given a list of feature names, find any maps they occur on.
     );
     my $order_by         = $args{'order_by'} || 
         'feature_name,species_name,map_set_name,map_name,start_position';
-    my $search_field     = $args{'search_field'}     || '';
+    my $search_field     = 
+        $args{'search_field'} || $self->config('feature_search_field');
        $search_field     = DEFAULT->{'feature_search_field'} 
         unless VALID->{'feature_search_field'}{ $search_field };
 
@@ -1411,9 +1412,10 @@ Given a list of feature names, find any maps they occur on.
     # to aggregate all the search results before making my final
     # selection.
     #
-    my $result_set_size = scalar @found_features || 0;
-    my $no_pages        = 0;
-    if ( $result_set_size > MAX_CHILD_ELEMENTS ) {
+    my $result_set_size    = scalar @found_features || 0;
+    my $no_pages           = 0;
+    my $max_child_elements = $self->config('max_child_elements') || 0;
+    if ( $result_set_size > $max_child_elements ) {
         if ( $limit_start ) {
             $limit_start -= 1;
         }
@@ -1421,10 +1423,10 @@ Given a list of feature names, find any maps they occur on.
             $limit_start = 0;
         }
 
-        $no_pages = int( ( $result_set_size / MAX_CHILD_ELEMENTS ) + .5 );
+        $no_pages = int( ( $result_set_size / $max_child_elements ) + .5 );
 
         @found_features = 
-            @found_features[ $limit_start .. $limit_start+MAX_CHILD_ELEMENTS ];
+            @found_features[ $limit_start .. $limit_start+$max_child_elements ];
     }
 
     #
@@ -1638,7 +1640,8 @@ MAX_FEATURE_COUNT to zero or undefined to disable this.
     my $end             = $args{'end'}   || $self->map_stop (map_id => $map_id);
     my $start           = $args{'start'} =~ NUMBER_RE ? $args{'start'} : $begin;
     my $stop            = $args{'stop'}  =~ NUMBER_RE ? $args{'stop'}  : $end;
-    return ( $start, $stop ) unless MAX_FEATURE_COUNT > 0;
+    my $max_fcount      = $self->config('max_feature_count') || 0;
+    return ( $start, $stop ) unless $max_fcount > 0;
     my $db              = $self->db;
     my $sql             = $self->sql;
     my $minimum_trunc   = 1.01;
@@ -1679,9 +1682,9 @@ MAX_FEATURE_COUNT to zero or undefined to disable this.
         # Porridge is too hot.  Decrease search range by some factor 
         # of the number of results.
         #
-        elsif ( $feature_count > MAX_FEATURE_COUNT ) {
-#            my $factor = sprintf( "%0.1f", $feature_count/MAX_FEATURE_COUNT );
-            my $factor = $feature_count/MAX_FEATURE_COUNT;
+        elsif ( $feature_count > $max_fcount ) {
+#            my $factor = sprintf( "%0.1f", $feature_count/$max_fcount );
+            my $factor = $feature_count/$max_fcount;
             $factor    = $minimum_trunc if $factor < $minimum_trunc;
             $stop      = int ( $start + ( ( $stop - $start ) / $factor ) );
             next;

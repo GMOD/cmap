@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.1 2002-08-23 16:07:21 kycl4rk Exp $
+# $Id: Map.pm,v 1.2 2002-08-27 22:18:42 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -45,9 +45,10 @@ use constant INIT_FIELDS => [
 ];
 
 use constant HOW_TO_DRAW => {
-    default  => 'draw_box',
-    box      => 'draw_box',
-    dumbbell => 'draw_dumbbell',
+    'default'  => 'draw_box',
+    'box'      => 'draw_box',
+    'dumbbell' => 'draw_dumbbell',
+    'I-beam'   => 'draw_i_beam',
 };
 
 BEGIN {
@@ -131,9 +132,9 @@ Returns the color of the map.
     my $map_id = shift or return;
     my $map    = $self->map( $map_id );
     return 
-        lc $map->{'color'}         || 
-        lc $map->{'default_color'} || 
-        lc DEFAULT->{'map_color'};
+        $map->{'color'}         || 
+        $map->{'default_color'} || 
+        $self->config('map_color');
 }
 
 # ----------------------------------------------------
@@ -205,7 +206,7 @@ bounds of the image.
     my $color            = $self->color( $args{'map_id'} );
     my $width            = $self->map_width( $args{'map_id'} );
     my $x2               = $x1 + $width;
-    my $mid_x            = $x1 + ( ( $x2 - $x1 ) / 2 );
+    my $mid_x            = $x1 + $width/2;
     my $arc_width        = $width + 6;
 
     $drawer->add_drawing(
@@ -231,6 +232,66 @@ bounds of the image.
         $mid_x - $arc_width/2, $y1 - $arc_width/2,
         $mid_x + $arc_width/2, $y2 + $arc_width/2,
     );
+}
+
+# ----------------------------------------------------
+sub draw_i_beam {
+
+=pod
+
+=head2 draw_i_beam
+
+Draws the map as an "I-beam."  Return the bounds of the image.
+
+=cut
+    my ( $self, %args )  = @_;
+    my $drawer           = $args{'drawer'} || $self->drawer or 
+                           $self->error('No drawer');
+    my ( $x1, $y1, $y2 ) = @{ $args{'coords'} || [] } or 
+                           $self->error('No coordinates');
+    my $color            = $self->color( $args{'map_id'} );
+    my $width            = $self->map_width( $args{'map_id'} );
+    my $half_width       = $width/2;
+#    my $qtr_width        = $width/4;
+    my $x2               = $x1 + $width;
+    my @coords           = ( $x1, $y1, $x2, $y2 ); 
+    my $x                = $x1 + $half_width;
+
+    $drawer->add_drawing( LINE, $x , $y1, $x , $y2, $color );
+    $drawer->add_drawing( LINE, $x1, $y1, $x2, $y1, $color );
+    $drawer->add_drawing( LINE, $x1, $y2, $x2, $y2, $color );
+
+#    $drawer->add_drawing( 
+#        FILLED_RECT, 
+#        $x - $qtr_width, $y1, 
+#        $x + $qtr_width, $y2, 
+#        $color 
+#    );
+#
+#    $drawer->add_drawing( 
+#        FILLED_RECT, 
+#        $x1, $y1,
+#        $x2, $y1 + $half_width, 
+#        $color 
+#    );
+#
+#    $drawer->add_drawing( 
+#        FILLED_RECT, 
+#        $x1, $y2 - $half_width,
+#        $x2, $y2,
+#        $color 
+#    );
+    
+    if ( my $map_units = $args{'map_units'} ) {
+        my $buf  = 2;
+        my $font = $drawer->regular_font;
+        my $x    = $x1 + ( ( $x2 - $x1 ) / 2 ) -
+                   ( ( $font->width * length( $map_units ) ) / 2 );
+        my $y    = $y2 + $buf;
+        $drawer->add_drawing( STRING, $font, $x, $y, $map_units, 'grey' );
+    }
+
+    return @coords;
 }
 
 # ----------------------------------------------------
@@ -301,8 +362,8 @@ Returns a string describing how to draw the map.
     my $self        = shift;
     my $map_id      = shift or return;
     my $map         = $self->map( $map_id );
-    my $how_to_draw = lc $map->{'how_to_draw'}         ||
-                      lc $map->{'default_how_to_draw'} || '';
+    my $how_to_draw = $map->{'how_to_draw'}         ||
+                      $map->{'default_how_to_draw'} || '';
     $how_to_draw    = 'default' unless defined HOW_TO_DRAW->{ $how_to_draw };
     return $how_to_draw;
 }
@@ -371,9 +432,11 @@ Lays out the map.
                 feature_ids => \@corr_feature_ids,
             );
 
+            my $min_map_pixel_height = $self->config('min_map_pixel_height') 
+                || $self->config('min_map_pixel_height');
             $pixel_height = $positions[-1] - $positions[0];
-            $pixel_height = MIN_MAP_PIXEL_HEIGHT 
-                if $pixel_height < MIN_MAP_PIXEL_HEIGHT;
+            $pixel_height = $min_map_pixel_height
+                if $pixel_height < $min_map_pixel_height;
             my $midpoint  = ( $positions[0] + $positions[-1] ) / 2;
             $base_y       = $midpoint - $pixel_height/2;
 
@@ -512,8 +575,17 @@ Lays out the map.
             my $label_offset  = 30;
 
             my $has_corr   = $drawer->has_correspondence($feature->feature_id);
+
+            #
+            # New idea: if the map isn't showing labeled features (e.g., 
+            # it's a relational map and hasn't been expanded), then let's
+            # leave off drawing features that don't have correspondences.
+            #
+            next if !$has_corr && !$show_labels;
+
             my $color      = $has_corr 
-                ? DEFAULT->{'feature_correspondence_color'} || $feature->color
+                ? $self->config('feature_correspondence_color') ||
+                  $feature->color
                 : $feature->color;
             my $label      = $feature->feature_name;
             my $tick_start = $base_x - $tick_overhang;
@@ -662,7 +734,13 @@ Lays out the map.
                     if ( $is_highlighted ) {
                         $drawer->add_drawing(
                             RECTANGLE, @bounds, 
-                            DEFAULT->{'feature_highlight_color'}
+                            $self->config('feature_highlight_fg_color')
+                        );
+
+                        $drawer->add_drawing(
+                            FILLED_RECT, @bounds, 
+                            $self->config('feature_highlight_bg_color'),
+                            0
                         );
                     }
 
@@ -690,7 +768,7 @@ Lays out the map.
                         $label_connect_y1,
                         $label_connect_x2, 
                         $label_connect_y2,
-                        $color || DEFAULT->{'connecting_line_color'}
+                        $color || $self->config('connecting_line_color')
                     );
 
                     $left_connection  = $label_side eq RIGHT
@@ -728,19 +806,21 @@ Lays out the map.
         #
         # The map title.
         #
+        my @config_map_titles = $self->config('map_titles');
+
         if ( $is_relational && $slot_no != 0 ) {
             unless ( @map_titles ) {
                 push @map_titles,
                     map  { $self->$_( $map_id ) } 
                     grep { !/map_name/ }
-                    reverse @{ +MAP_TITLES } 
+                    reverse @config_map_titles
                 ;
             }
         }
         else {
             $min_y -= $reg_font->height + 5;
             for my $label ( 
-                map { $self->$_( $map_id ) } reverse @{ +MAP_TITLES } 
+                map { $self->$_( $map_id ) } reverse @config_map_titles
             ) {
                 my $label_x = $base_x + ( $map_width / 2 ) - 
                     ( ( $reg_font->width * length( $label ) ) / 2 );
@@ -763,7 +843,7 @@ Lays out the map.
         ) {
             $drawer->add_connection(
                 @$position_set,
-                DEFAULT->{'connecting_line_color'}    
+                $self->config('connecting_line_color')
             );
         }
     }
@@ -881,7 +961,7 @@ Returns a string describing how to draw the map.
     return 
         $map->{'width'}         || 
         $map->{'default_width'} || 
-        DEFAULT->{'map_width'};
+        $self->config('map_width');
 }
 
 

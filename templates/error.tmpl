@@ -5,27 +5,20 @@
     help_anchor=''
 %]
 
-<h1>Genetic &amp; Comparative Maps - Error</h1>
+<h1>Error</h1>
 
 <table width="100%">
     <tr>
-        <th align="right">Error:</th>
-        <td>[% error.text OR 'Undefined error' | html %]</td>
+        <td colspan="2">
+            [% error OR 'Undefined error' | html %]
+        </td>
     </tr>
-    [% IF debug %]
-        <tr>
-            <th align="right">File:</th>
-            <td>[% error.file %]</td>
-        </tr>
-        <tr>
-            <th align="right">Line:</th>
-            <td>[% error.line %]</td>
-        </tr>
-        <tr>
-            <th align="right" valign="top">Stacktrace:</th>
-            <td>[% error.stacktrace | html %]</td>
-        </tr>
-    [% END %]
+[% # IF debug %]
+    <tr valign="top">
+        <th width="10%">Backtrace:</th>
+        <td>[% error.trace.as_string OR 'No backtrace available' | html %]</td>
+    </tr>
+[% # END %]
 </table>
 
 [% page.end_body OR '</body>' %]

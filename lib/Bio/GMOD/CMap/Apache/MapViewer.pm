@@ -1,20 +1,20 @@
 package Bio::GMOD::CMap::Apache::MapViewer;
 
-# $Id: MapViewer.pm,v 1.2 2002-08-23 22:31:02 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.3 2002-08-27 22:18:42 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $TEMPLATE $PAGE $DEBUG );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Apache::Constants;
 use Apache::Request;
 use Template;
-use Error;
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer;
 use Bio::GMOD::CMap::Data;
 
+use Carp;
 use Data::Dumper;
 use base 'Bio::GMOD::CMap::Apache';
 use constant TEMPLATE => 'cmap_viewer.tmpl';
@@ -110,7 +110,7 @@ sub handler {
             image_type       => $image_type,
             include_features => $include_features,
             debug            => $DEBUG,
-        ) or die Bio::GMOD::CMap::Drawer->error;
+        ) or return $self->error( "Drawer: ".Bio::GMOD::CMap::Drawer->error );
 
         %slots = %{ $drawer->slots };
     }
@@ -118,10 +118,9 @@ sub handler {
     #
     # Get the data for the form.
     #
-#    my $data = Bio::GMOD::CMap::Data->new or die Bio::GMOD::CMap::Data->error;
     my $data = $self->data_module;
     my $form_data = $data->cmap_form_data( slots => \%slots ) or 
-        die $data->error;
+        return $self->error( "Data: ".$data->error );
 
     #
     # The start and stop may have had to be moved as there 
@@ -141,7 +140,7 @@ sub handler {
         );
     }
 
-    my $t = $self->template or die 'No template';
+    my $t = $self->template or return $self->error( 'No template' );
     $t->process( 
         TEMPLATE, 
         {
@@ -188,7 +187,7 @@ In httpd.conf:
 
 This module is a mod_perl handler for displaying the user interface to select
 and display comparative maps.  It inherits from Bio::GMOD::CMap::Apache where
-all the error handling occurs (which is why I can just "die" here).
+all the error handling occurs.
 
 =head1 SEE ALSO
 

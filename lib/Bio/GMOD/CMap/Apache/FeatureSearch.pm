@@ -1,10 +1,10 @@
 package Bio::GMOD::CMap::Apache::FeatureSearch;
 
-# $Id: FeatureSearch.pm,v 1.1 2002-08-23 16:07:18 kycl4rk Exp $
+# $Id: FeatureSearch.pm,v 1.2 2002-08-27 22:18:42 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Apache::Constants;
 
@@ -44,6 +44,7 @@ sub handler {
     );
 
     $apr->param( features => $features );
+    my $max_child_elements = $self->config('max_child_elements') || 1;
 
     my $html;
     my $t = $self->template;
@@ -58,7 +59,7 @@ sub handler {
             result_set_size => $results->{'result_set_size'},
             limit_start     => $results->{'limit_start'},
             limit_end       => $results->{'limit_end'},
-            page_size       => MAX_CHILD_ELEMENTS,
+            page_size       => $max_child_elements,
             no_pages        => $results->{'no_pages'},
         },
         \$html 

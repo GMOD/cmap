@@ -1,17 +1,16 @@
 package Bio::GMOD::CMap::Apache::FeatureViewer;
 
-# $Id: FeatureViewer.pm,v 1.1 2002-08-23 16:07:18 kycl4rk Exp $
+# $Id: FeatureViewer.pm,v 1.2 2002-08-27 22:18:42 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Apache::Constants;
 use Apache::Request;
 
 use Data::Dumper;
 
-use Error;
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Data;
 use base 'Bio::GMOD::CMap::Apache';
@@ -35,7 +34,7 @@ sub handler {
             \$mini_template, 
             { feature => $feature }, 
             \$feature->{'dbxref_url'}
-        ) or throw Error::Simple $t->error;
+        ) or die $t->error;
     }
 
 #    warn "feature = ", Dumper( $feature ), "\n";
@@ -48,7 +47,7 @@ sub handler {
             page    => $self->page,
         }, 
         \$html 
-    ) or throw Error::Simple $t->error;
+    ) or die $t->error;
 
     $apr->content_type('text/html');
     $apr->send_http_header;

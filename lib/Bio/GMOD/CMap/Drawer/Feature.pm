@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Feature;
 
-# $Id: Feature.pm,v 1.1 2002-08-23 16:07:21 kycl4rk Exp $
+# $Id: Feature.pm,v 1.2 2002-08-27 22:18:42 kycl4rk Exp $
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ Blah blah blah.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -80,7 +80,7 @@ Returns the color of the feature.
 
 =cut
     my $self = shift;
-    return lc $self->{'color'} || lc DEFAULT->{'feature_color'};
+    return $self->{'color'} || $self->config('feature_color');
 }
 
 # ----------------------------------------------------

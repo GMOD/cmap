@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap;
 
-# $Id: CMap.pm,v 1.4 2002-08-27 12:42:29 kycl4rk Exp $
+# $Id: CMap.pm,v 1.5 2002-08-27 22:18:42 kycl4rk Exp $
 
 =head1 NAME
 
@@ -27,12 +27,12 @@ itself based on Andy Wardley's Class::Base module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Class::Base;
 use Config::General;
 use DBI;
-use Error;
+use Exception::Class ( 'CMapException' );
 use Bio::GMOD::CMap::Constants;
 
 use base 'Class::Base';
@@ -57,7 +57,18 @@ Returns one or all options from the config file.
         $self->{'config'} = \%config;
     }
 
-    return $option ? $self->{'config'}{ $option } : $self->{'config'};
+    if ( $option ) {
+        my $value = $self->{'config'}{ $option } || DEFAULT->{ $option };
+        if ( $value ) {
+            return wantarray && ref $value ? @$value : $value;
+        }
+        else {
+            return wantarray ? () : '';
+        }
+    }
+    else {
+        return wantarray ? @{ $self->{'config'} } : $self->{'config'};
+    }
 }
 
 # ----------------------------------------------------
@@ -112,19 +123,19 @@ Returns a handle to the data module.
 }
 
 # ----------------------------------------------------
-sub error {
-
-=pod
-
-=head2 error
-
-Overrides Class::Base's "error" just enough to use Error::Simple's "throw."
-
-=cut
-    my $self = shift;
-    $self->SUPER::error( @_ );
-    return throw Error::Simple( $self->SUPER::error );
-}
+#sub error {
+#
+#=pod
+#
+#=head2 error
+#
+#Overrides Class::Base's "error" just enough to use Exception::Class's "throw."
+#
+#=cut
+#    my $self  = shift;
+#    $self->SUPER::error( @_ );
+#    return CMapException->throw( error => $self->SUPER::error );
+#}
 
 # ----------------------------------------------------
 sub warn {

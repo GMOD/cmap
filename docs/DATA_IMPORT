@@ -45,6 +45,11 @@ names, if you like, as spaces will be converted to underscores and the
 names lowercased (e.g. "Feature Alt Name" instead of
 "feature_alt_name").
 
+If the fields "map_start" and "map_stop" are not supplied, then the
+start and stop positions of the map will be determined after importing
+all the features by selecting the MIN and MAX start and stop positions
+from the "cmap_feature" table.
+
 2)  CREATE A NEW MAP SET
 
 To create a map set to receive the data, you can either use the

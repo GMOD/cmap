@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin;
 
-# $Id: Admin.pm,v 1.1 2002-08-23 16:07:18 kycl4rk Exp $
+# $Id: Admin.pm,v 1.2 2002-08-27 22:18:42 kycl4rk Exp $
 
 =head1 NAME
 
@@ -23,7 +23,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Bio::GMOD::CMap;
 use base 'Bio::GMOD::CMap';
@@ -72,6 +72,7 @@ Find all the features matching some criteria.
     $count_sql .= "and map.accession_id=$map_aid "                  if $map_aid;
     $count_sql .= "and f.feature_type_id=$feature_type_id " if $feature_type_id;
     my $no_features = $db->selectrow_array( $count_sql );
+    my $max_child_elements = $self->config('max_child_elements');
 
     my $sql = qq[
         select f.feature_id, 
@@ -103,7 +104,7 @@ Find all the features matching some criteria.
     $sql .= "and map.accession_id=$map_aid "                  if $map_aid;
     $sql .= "and f.feature_type_id=$feature_type_id " if $feature_type_id;
     $sql .= "order by $order_by ";
-    $sql .= "limit $limit_start," . MAX_CHILD_ELEMENTS;
+    $sql .= "limit $limit_start," . $max_child_elements;
 
     my $features = $db->selectall_arrayref( $sql, { Columns => {} } );
 

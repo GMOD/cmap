@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.1 2002-08-23 16:07:18 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.2 2002-08-27 22:18:42 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -26,9 +26,9 @@ use vars qw(
 
 $COLORS         = [ sort keys %{ +COLORS } ];
 $FEATURE_SHAPES = [ qw( box dumbbell line span ) ];
-$MAP_SHAPES     = [ qw( box dumbbell ) ];
+$MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.1 $)[-1];
+$VERSION        = (qw$Revision: 1.2 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -948,8 +948,9 @@ sub map_view {
 
     my $no_features = $db->selectrow_array( $count_sql, {}, ( $map_id ) );
     my @pages;
-    if ( $no_features > MAX_CHILD_ELEMENTS ) {
-        my $no_pages  = int( ( $no_features / MAX_CHILD_ELEMENTS ) + .5 );
+    my $max_child_elements = $self->config('max_child_elements') || 1;
+    if ( $max_child_elements && ( $no_features > $max_child_elements ) ) {
+        my $no_pages  = int( ( $no_features / $max_child_elements ) + .5 );
         my $max_pages = 13;
         if ( $no_pages > $max_pages ) {
             my $step = $no_pages / $max_pages;
@@ -1006,9 +1007,9 @@ sub map_view {
             feature_types => $feature_types,
             no_features   => $no_features,
             limit_start   => $limit_start,
-            page_size     => MAX_CHILD_ELEMENTS,
+            page_size     => $max_child_elements,
             pages         => \@pages,
-            cur_page      => int( ($limit_start + 1)/MAX_CHILD_ELEMENTS ) + 1,
+            cur_page      => int( ($limit_start + 1)/$max_child_elements ) + 1,
         }
     );
 }
@@ -1327,10 +1328,13 @@ sub feature_search {
         order_by        => $apr->param('order_by')        || '', 
     );
 
+    my $max_child_elements = $self->config('max_child_elements') || 1;
+    my $max_search_pages   = $self->config('max_search_pages')   || 1;
+
     my $no_features = $feature_search->{'total_count'} || 0;
-    my $no_pages    = sprintf("%.0f", ( $no_features/MAX_CHILD_ELEMENTS ) + .5);
-    my $step        = $no_pages > MAX_SEARCH_PAGES ?
-                      $no_pages / MAX_SEARCH_PAGES : 1;
+    my $no_pages    = sprintf("%.0f", ($no_features/$max_child_elements) + .5);
+    my $step        = $no_pages > $max_search_pages ?
+                      $no_pages / $max_search_pages : 1;
     my @pages       = map { int ( $_ * $step ) } 1..$no_pages;
     unshift @pages, 1 unless $pages[0] == 1;
 
@@ -1340,8 +1344,8 @@ sub feature_search {
         no_features   => $no_features,
         pages         => \@pages,
         feature_types => $admin->feature_types,
-        cur_page      => int( ($limit_start + 1)/MAX_CHILD_ELEMENTS ) + 1,
-        page_size     => MAX_CHILD_ELEMENTS,
+        cur_page      => int( ($limit_start + 1)/$max_child_elements ) + 1,
+        page_size     => $max_child_elements,
     }; 
 
     return $self->process_template( TEMPLATE->{'feature_search'}, $params );

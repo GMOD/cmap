@@ -1,13 +1,13 @@
 package Bio::GMOD::CMap::Constants;
 
-# $Id: Constants.pm,v 1.4 2002-08-27 12:42:29 kycl4rk Exp $
+# $Id: Constants.pm,v 1.5 2002-08-27 22:18:42 kycl4rk Exp $
 
 use strict;
 use GD;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -250,6 +250,18 @@ use constant DEFAULT => {
     connecting_line_color => 'lightblue',
 
     #
+    # The domain of the cookies.
+    # Default: empty
+    #
+    cookie_domain => '',
+
+    #
+    # Whether or not to be in debug mode ("0" or "1").
+    # Default: 0
+    #
+    debug => 0,
+
+    #
     # Color of a feature if not defined
     # Default: black
     #
@@ -259,7 +271,13 @@ use constant DEFAULT => {
     # Color of box around a highlighted feature.
     # Default: red
     #
-    feature_highlight_color => 'red',
+    feature_highlight_fg_color => 'red',
+
+    #
+    # Color of background behind a highlighted feature.
+    # Default: yellow
+    #
+    feature_highlight_bg_color => 'yellow',
 
     #
     # Color of a feature label when it has a correspondence.
@@ -282,13 +300,6 @@ use constant DEFAULT => {
     feature_search_field => 'feature_name',
     
     #
-    # The way to deliver the image, 'png' or 'jpeg'
-    # (or whatever your compilation of GD offers, perhaps 'gif'?).
-    # Default: png
-    #
-    image_type => 'png',
-    
-    #
     # The size of the map image.  Note that there are options on the
     # template for the user to choose the size of the image they're
     # given.  You should make sure that what you place here
@@ -299,12 +310,19 @@ use constant DEFAULT => {
     image_size => 'small',
 
     #
+    # The way to deliver the image, 'png' or 'jpeg'
+    # (or whatever your compilation of GD offers, perhaps 'gif'?).
+    # Default: png
+    #
+    image_type => 'png',
+
+    #
     # What to show for feature labels on the maps.
     # Values: none landmarks all
     # Default: 'none'
     #
     include_features => 'none',
-
+    
     #
     # Color of a map (type) if not defined
     # Default: lightgrey
@@ -357,9 +375,9 @@ use constant DEFAULT => {
 
     #
     # The HTML stylesheet.
-    # Default: '/cmap/cmap.css'
+    # Default: empty
     #
-    stylesheet => '/cmap/cmap.css',
+    stylesheet => '',
     
     #
     # The name of the SQL driver module to use if nothing else is specified.
