@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.70 2004-06-07 15:07:04 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.71 2004-06-07 15:08:43 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.70 $)[-1];
+$VERSION = (qw$Revision: 1.71 $)[-1];
 
 #
 # Get command-line options
@@ -2209,7 +2209,7 @@ sub make_name_correspondences {
         prompt      => 'Select the match type that you desire',
         display     => 'regex_title',
         return      => 'regex',
-        allow_null  => 1,
+        allow_null  => 0,
         allow_mult  => 0,
         data    => [
                 {
