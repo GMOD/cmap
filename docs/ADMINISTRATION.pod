@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.1 $
+$Revision: 1.2 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are two tools you will use:
@@ -19,7 +19,7 @@ mundane administrative tasks or for viewing the data.  Lastly, you can
 customize many aspects of CMap by altering the your "cmap.conf" file.
 All of this is discussed in further detail in this document.
 
-=head1 1. STARTING OUT
+=head1 STARTING OUT
 
 If you've just installed CMap, then your database is probably
 completely empty.  (Of course, a small but complete dataset is
@@ -30,11 +30,11 @@ you've already been through all the steps described in the
 INSTALL.pod document, so you should be able to pull up the web-based
 admin tool by pointing your browser to
 "http://your.host.name/cgi-bin/cmap/admin" (or where ever you have
-installed it).  Depending on whether or not you decided to protect
-that URL, you may have to enter a username and password when prompted
-by your browser.
+installed it).  Depending on whether or not you decided to
+password-protect that URL, you may have to enter a username and
+password when prompted by your browser.
 
-=head1 2. WEB-ADMIN TOOL
+=head1 WEB-ADMIN TOOL
 
 The home page for the web-based CMap administration tool has links for
 all the different actions you can take:
@@ -53,7 +53,7 @@ all the different actions you can take:
 
 =item *   View Correspondence Evidence Types
 
-=item *   View Database Cross-References
+=item *   View Cross-References
 
 =item *   Search for a Feature
 
@@ -66,7 +66,7 @@ all the different actions you can take:
 Each link is self-explanatory.  In addition to the above links, you
 will also see the current data source to which you are connected.
 You may configure CMap to connect to different distinct datasources;
-see the section "CONFIGURING DATABASE CONNECTION(S)" later for more
+see the section L<CONFIGURING DATABASE CONNECTIONS> later for more
 information on this.  If you have configure more than one datasource,
 you will also see a drop-down control allowing you to connect to a
 different datasource.
@@ -77,7 +77,7 @@ the moment, let's just focus on what you need to import your first
 data set.  To do that, you'll need to first set up the species and map
 types.
 
-=head1 3. SETTING UP SPECIES
+=head1 SETTING UP SPECIES
 
 Click on "View Species" from the home page of the web-admin tool.  As
 you currently have no species to view, you should see the message "No
@@ -158,7 +158,7 @@ document only mentions the "create" or "edit" page for an object, rest
 assured that the complementary page works the same as the one
 described.
 
-=head1 4. SETTING UP MAP TYPES
+=head1 SETTING UP MAP TYPES
 
 Click on "View Map Types" from the home page of the web-admin tool.
 As you currently have no map types to view, you should see the message
@@ -206,9 +206,8 @@ For more explanation of relational maps, please see the "admintut."
 
 Like the same field in the "species" table, this determines the order
 that maps of this type will be displayed, e.g., on Gramene it is
-preferred that "Genetic" maps be listed before "Physical" which should
-come before "Sequence" (even though a simple alphabetical listing
-could accomplish the same thing in this case).
+preferred that "Sequence" maps be listed before "Genetic" maps which
+should come before "Physical" maps.
 
 =item * Shape: 
 
@@ -238,7 +237,7 @@ Once you've set up all the map types you wish to have in your
 database, click on the "Home" link in the upper-left corner to return
 to the web-admin home page.
 
-=head1 5. CREATING FEATURE TYPES
+=head1 CREATING FEATURE TYPES
 
 Although it's not imperative to create feature types before importing
 data, now is a good time to address them.  Choose the "View Feature
@@ -364,7 +363,10 @@ sooner the feature will be drawn in the lane.
 
 =back
 
-=head1 6. CREATING A NEW MAP SET
+Please see the "admintut" for examples of each shape and examples of
+how these settings will affect the rendering of maps.
+
+=head1 CREATING A NEW MAP SET
 
 Once you have species and map types set up, you are ready to create a
 new map set.  Everything in CMap is designed to be generic, so a "map
@@ -375,7 +377,7 @@ chromosomes, linkage groups, FPC contigs, and such.  As the database
 design allows only one species and one map type to be linked to a map
 set, it is best to keep these narrowly defined.
 
-=head2 6.1 USING THE WEB ADMIN TOOL TO CREATE A MAP SET
+=head2 USING THE WEB ADMIN TOOL TO CREATE A MAP SET
 
 To create a new map set, click on the "Create New Map Set" link from
 the admin home page or from the "Map Sets View" page.  If you have
@@ -454,14 +456,14 @@ The color that maps of this set will be drawn.
 
 =back
 
-=head2 6.2 USING THE cmap_admin.pl TOOL TO CREATE A MAP SET
+=head2 USING THE cmap_admin.pl TOOL TO CREATE A MAP SET
 
 You can also create a new map set by using the "cmap_admin.pl" tool.
-There are only a couple of functions that exists in both tools, and
+There are only a few functions that exists in both tools, and
 this one was only added to cmap_admin.pl in order to make importing
 new data sets more convenient.  You can only specify the species, map
-type, and give the long and short name for the map set.  Everything
-else about the map must be edited using the web admin tool.  
+type, long and short names, and accession ID for the map set.
+Everything else about the map must be edited using the web admin tool.  
 
 To create a new map set with cmap_admin.pl, start the script and
 choose the "Create new map set" option.  Answer the questions
@@ -474,16 +476,16 @@ if you had only one species in the database, cmap_admin.pl will not
 ask you which species to associate with the new map set. There can
 only be one answer, so it answers the question automatically.
 
-=head2 6.3 VIEWING NEW MAP SET
+=head2 VIEWING NEW MAP SET
 
-Once you have successfully created a map set, you will be taken to the
-view of that map set.  You should see the data that you entered and
-that the set currently has no maps associated with it.  You can either
-create each map for the map set individually or you can import the
-data for the map set.  Most likely, you will want to do the latter, so
-that is the next section.
+Once you have successfully created a map set with the web admin tool,
+you will be taken to the view of that map set.  You should see the
+data that you entered and that the set currently has no maps
+associated with it.  You can either create each map for the map set
+individually or you can import the data for the map set.  Most likely,
+you will want to do the latter, so that is the next section.
 
-=head1 7. IMPORTING MAP DATA
+=head1 IMPORTING MAP DATA
 
 Using the cmap_admin.pl, you can import a tab-delimited file
 containing the data for a map set with the following fields and
@@ -582,7 +584,7 @@ Use the "cmap_admin.pl" script to bring in your correctly formatted
 data.  Run the script, optionally passing your data file as an
 argument, like so:
 
-  $ cmap_admin.pl my_groovy_data.dat
+  $ cmap_admin.pl my_groovy_maps.dat
 
 If you pass a file as an argument, you will be asked to confirm that
 that is the file you want to use.  If you answer "no" or did not pass
@@ -621,7 +623,31 @@ When cmap_admin.pl has successfully finished importing your map data,
 you will be returned to the "Main Menu."  From here, choose to "Quit"
 as the rest of the functionality will be covered later.
 
-=head1 8. MAKING CORRESPONDENCES
+=head2 IMPORTING XML DATA (EXPERIMENTAL)
+
+As of 0.10, CMap exports and imports data in XML format.  The standard
+tab-delimited format is very convenient and easy to generate, but it's
+also difficult to indicate hierarchical relationships among data.  As
+such, some experimental has been added to export the concept of
+"objects" from the database.  These objects will contain all the
+information within them necessary to duplicate themselves entirely in
+another CMap database.  For example, a "feature" object has a
+"feature type," so to export it completely, one needs to export all
+the information about both the feature and it's type (including color,
+shape, drawing priority, etc.).  Likewise, to export a "map set"
+object, one must export the map set's type, species, maps, features
+and all the other dependent data (esp. the arbitrary attributes and
+xrefs) on those objects.  This code is functional but still marked
+"experimental" as it appears to be very slow when exporting very large
+map sets.
+
+To try this feature, choose "Export data" and then "Database objects."
+Follow the directions from there.  Then try importing the data (into
+another database, of course) using the "Import data" option and then
+"Import CMap objects."  Database objects are only create on import at
+this time;  there is no updating of existing objects, so be careful!
+
+=head1 MAKING CORRESPONDENCES
 
 Once you have more than one set of maps in CMap, you can use it for
 what it was designed:  showing comparisons.  To do this, you must
@@ -629,7 +655,7 @@ first create the correspondences between the features on the maps.
 Before you can do this, you'll need to establish the evidence types
 that can be used to support the correspondences.
 
-=head2 8.1 CREATING CORRESPONDENCE EVIDENCE TYPES
+=head2 CREATING CORRESPONDENCE EVIDENCE TYPES
 
 From the "Home" page of the web admin tool, choose the link "View
 Correspondence Evidence Types."  There will be no records to view, so
@@ -673,12 +699,14 @@ special evidence to use just for that purpose (e.g., with the name
 "Automated name-based" or something similar to flag it as a
 machine-created/non-curated correspondence).
 
-=head2 8.2 CREATING CORRESPONDENCE RECORDS
+=head2 CREATING CORRESPONDENCE RECORDS
 
 Once you have evidence types, you can create the correspondence
 records.  It might be helpful to you to inspect "cmap-schema.png" and
-"cmap-graph.png" images in the "docs" directory that visualize the
-CMap tables and their relationships.  The tables involved are:
+"cmap-schema-graph.png" images in the "docs" directory that visualize
+the CMap tables and their relationships.  (Also included is
+"cmap-schema-desc.html," a breakdown of the tables into HTML tables
+for easy viewing.)  The tables involved are:
 
 =over 4
 
@@ -701,10 +729,9 @@ There are three ways to create correspondences:
 
 =over 4
 
-=item 1 
+=item 1 Create each by hand using the web admin tool.  
 
-Create each by hand using the web admin tool.  To do this, locate a
-feature on a map by:
+To do this, locate a feature on a map by:
 
 A)  "View" a map set, then "view" a map, then "view" the feature
 
@@ -768,29 +795,24 @@ The evidence type.
 A floating-point number representing some value associated with the
 correspondence, e.g., a BLAST similarity score or an e-value.
 
-=item * Remark (opt.): 
-
-A textual description of the correspondence.
-
 =back
 
-=item 2 
+=item 2 Automatic name-based correspondences
 
 The second method for creating correspondences is to allow CMap to
-create a relationship between any two features with the =item *exact*
-same name, irrespective of case. To do this, start cmap_admin.pl and
-choose "Find name-based correspondences." It's recommended that you
-define special evidence type to represent this automated
-correspondence. This method is likely to be both incomplete and
-overly-optimistic. For example, it will create correspondences between
-features called "Centromere," which is probably not desirable. The
-name comparisons happen on both the "feature_name" and
-"alternate_name" from the "cmap_feature" table. Every feature has each
-of these fields compared to those fields for every other feature, so
-this can take a long time to complete. For all of its problems, this
-can be a good way to get started, and you can pare down the
-correspondences from there. This method is the surest as you are
-always directly controlling what gets created.
+create a relationship between any two features with the exact same
+name, irrespective of case. To do this, start cmap_admin.pl and choose
+"Make name-based correspondences."  It is recommended that you define
+special evidence type to represent this automated correspondence. This
+method is likely to be both incomplete and overly-optimistic. For
+example, it will create correspondences between features called
+"Centromere," which is probably not desirable.  The name comparisons
+happen on both the "feature_name" in the "cmap_feature" table as well
+as any aliases from the "cmap_feature_alias" table. Every feature has
+each of these fields compared to those fields for every other feature,
+so this can take a long time to complete. For all of its problems,
+this can be a good way to get started, and you can pare down the
+correspondences from there. 
 
 By default, CMap will only compare features of the same type when
 making name-based correspondences. You can expand the feature types
@@ -798,19 +820,22 @@ considered by adding appropriate lines to "cmap.conf." This is
 documented in that file; look for the string "add_name_correspondence"
 and follow the directions there.
 
-=item 3
+=item 3 Import
 
-The third way to create correspondences is to import them. Simply
-create a tab-delimited file that lists the names (or accession IDs) of
-two features and some evidence to support the correspondence.  For
-more information on the format of this file, execute the following on
-your system:
+The third way to create correspondences is to import them.
+Simply create a tab-delimited file that lists the names (or accession
+IDs) of two features and some evidence to support the correspondence.
+For more information on the format of this file, execute the following
+on your system:
 
   perldoc Bio::GMOD::CMap::Admin::ImportCorrespondences
 
+This method is the surest as you are always directly controlling what
+gets created.
+
 =back
 
-=head1 9. LOADING THE CORRESPONDENCE MATRIX
+=head1 LOADING THE CORRESPONDENCE MATRIX
 
 The data underlying the correspondence matrix is all precomputed.  As
 it is an intensive operation on seldom-changing data, it was
@@ -823,16 +848,16 @@ cmap_admin.pl and choose the "Reload correspondence matrix" option.
 The only option is to completely truncate the table and reload it from
 scratch.
 
-=head1 10. ESTABLISHING DATABASE CROSS-REFERENCES
+=head1 ESTABLISHING DATABASE CROSS-REFERENCES
 
 See the "attributes-and-xrefs.pod" document.
 
-=head1 11. VIEWING DATA
+=head1 VIEWING DATA
 
 Now that we've stepped through the basics of setting up the CMap data,
 let's go over some of the more basic operations of curating the data.
 
-=head2 11.1 VIEWING ALL MAP SETS
+=head2 VIEWING ALL MAP SETS
 
 From the home page of the web admin tool, you'll see that you can
 "View Map Sets."  Selecting this link takes you to the "Map Sets View"
@@ -842,7 +867,7 @@ can restrict them by species, map type, and whether or not they are
 currently enabled.  There is no automatic submission of the form when
 you make a choice (as you might want to use more than one criteria),
 so be sure to hit "Submit" when you've made your choices.  As noted
-before, you can resort the data by clicking on the hyperlinked column
+before, you can re-sort the data by clicking on the hyperlinked column
 headers.  Every object in the web admin tool can be "viewed,"
 "edited," and "deleted" by the respective links which are usually
 displayed to the right.  
@@ -855,7 +880,7 @@ like "52 records found. Showing 1 to 25." (The page size is determined
 by the "max_child_elements" option in the CMap configuration file
 which will be discussed shortly.)
 
-=head2 11.2 VIEWING A MAP SET
+=head2 VIEWING A MAP SET
 
 Choose to "view" one of your map sets.  You'll be taken to the a page
 which lists all the data in the map set table as well as a summary of
@@ -871,11 +896,11 @@ correspondence). Deleting a map set deletes all the maps (which
 deletes all the features which ... you get the picture).  Basically,
 just be very sure that you want to delete something as it can have
 cascading effects, and, as noted earlier, THERE IS NO UNDO. There is,
-however, the option to dump your data before messing with it giving
-you the ability to recover. This is discussed in the POD documentation
-of cmap_admin.pl.
+however, the option to dump your data before messing with it exists,
+giving you the ability to recover. This is discussed in the POD
+documentation of cmap_admin.pl.
 
-=head2 11.3 VIEWING A MAP
+=head2 VIEWING A MAP
 
 Choose to "view" a map to see a summary of all the data in the map
 table as well as all the features on the map.  Notice that you can
@@ -883,7 +908,7 @@ restrict the features displayed by their feature types.  You can also
 search for a feature;  the search option on the map view page
 automatically restricts the search to the current map being displayed.
 
-=head2 11.4 EDITING A MAP
+=head2 EDITING A MAP
 
 If you click on "Edit" while viewing a map, you will be taken to the a
 page with the following fields:
@@ -918,16 +943,16 @@ The map's stop position.
 
 =back
 
-=head2 11.5 VIEWING A FEATURE
+=head2 VIEWING A FEATURE
 
 Choose to "view" a feature from the map view page.  You'll be
-presented with all the data stored in the feature table as well as a
-summary of the correspondences the feature has to other features and
-the evidence types supporting the correspondences.  You can also add a
-new correspondence by clicking "Add Correspondence" and following the
+presented with all the data stored in the feature table as well as the
+feature's aliases, correspondences to other features and the evidence
+types supporting the correspondences.  You can also add a new
+correspondence by clicking "Add Correspondence" and following the
 directions discussed earlier in section 8.
 
-=head2 11.6 EDITING A FEATURE
+=head2 EDITING A FEATURE
 
 If you click on the "Edit" link from the feature view page, you'll be
 presented a form with the following fields:
@@ -947,10 +972,6 @@ The accession ID.
 =item * Feature Name: 
 
 The feature's primary name.
-
-=item * Alternate Name (opt.): 
-
-The feature's alternate name.
 
 =item * Feature Type: 
 
@@ -974,7 +995,7 @@ The ending position of the feature, if any.
 
 =back
 
-=head2 11.7 SEARCHING FOR A FEATURE
+=head2 SEARCHING FOR A FEATURE
 
 Often you will be interested in finding an individual feature in the
 database without having to navigate to the map set, then the map, then
@@ -986,8 +1007,17 @@ web admin tool, you can choose the "Search for a Feature" link.  The
 
 =item * Name: 
 
-The names of the features you wish to search for.  Separate multiple
-features with spaces or commas.
+The strings you wish to search for.  Separate multiple search strings
+with spaces or commas.
+
+=item * Search: 
+
+Search for the string(s) either in feature's "feature_name" (and
+aliases) or "accession_id."
+
+=item * Species (opt.): 
+
+You can restrict by species.
 
 =item * Feature Type (opt.): 
 
@@ -998,21 +1028,15 @@ You can restrict by feature type the features which will be searched.
 You can restrict the search to only those features falling on a
 particular map by specifying the maps accession ID.
 
-=item * Field: 
-
-If you have a very large database, you may wish to only search either
-the "feature_name" or "alternate_name" field rather than both (which
-is the default option).
-
 =back
 
-=head1 12. cmap_admin.pl and cmap_matrix_compare.pl
+=head1 cmap_admin.pl and cmap_matrix_compare.pl
 
 The cmap_admin.pl and cmap_matrix_compare.pl scripts contain full
 documentation in POD format.  To read, please execute "perldoc
 <script_name>".
 
-=head1 13. cmap.conf
+=head1 cmap.conf
 
 The "cmap.conf" file is CMap's configuration file.  Everything that
 can be customized about CMap is controlled by this file (apart from
@@ -1031,10 +1055,10 @@ executing "perldoc Config::General" on your system).
 
 Each configuration setting is documented in comments.  Legal and
 default values are listed along with a brief description of the
-option.  Except for the "database" and "template_dir" settings, there
-is a reasonable default, hardcoded value for every configuration
-setting (so you could actually comment out all of the "optional
-settings" in the file).
+option.  Except for the "database," "template_dir" and "cache_dir"
+settings, there is a reasonable default, hardcoded value for every
+configuration setting (so you could actually comment out all of the
+"optional settings" in the file).
 
 Whenever you make a change to cmap.conf, it will most likely be
 necessary for you to restart Apache to see the change if the change
@@ -1044,7 +1068,7 @@ reads the file.  If you do not restart Apache, you may see the changes
 sporadically as some children start up and read the new settings while
 older children used their cached settings.
 
-=head2 13.1 CONFIGURING DATABASE CONNECTION(S)
+=head2 CONFIGURING DATABASE CONNECTIONS
 
 CMap supports multiple data sources, allowing a curator to maintain
 distinct databases and view them all in CMap without changing
@@ -1054,17 +1078,15 @@ cmap.conf.  If, however, you choose to define more than one, you
 should be sure to mark one as "is_default."  The parameters are
 explained in comments.
 
-=head2 13.2 CONFIGURING TEMPLATE DIRECTORY
+=head2 CONFIGURING TEMPLATE DIRECTORY
 
 The template directory will be properly set if you went through the
-"perl Build.PL; ./Build; ./Build install" routine for installing CMap.
-The question of where to install the templates and where to install
-cmap.conf are both asked during this process, and the values are
-placed into the appropriate files.  If you installed everything by
-hand (or you ever move your templates), then you'll just need to make
-sure that the path is properly set in cmap.conf.
+"perl Build.PL; ./Build; su; ./Build install" routine for installing
+CMap.  You can define this with the "TEMPLATES" arguemnt to "Build.PL"
+or just accept the default.  If you ever wish to change the location
+of the templates, simply update "cmap.conf" with the new directory.
 
-=head2 14. HTML TEMPLATES
+=head2 HTML TEMPLATES
 
 All the HTML displayed by the application is contained in the
 templates.  These templates are processed by Template Toolkit to
@@ -1078,7 +1100,7 @@ self-explanatory.  If you can't figure out what to change on your own,
 then check out http://www.template-toolkit.com/ for the documentation
 (or type "perldoc Template" on your command line).
 
-=head2 15. LINKING IN
+=head2 LINKING IN
 
 Most likely, you'll want to link directly into the CMap viewer from
 some other part of your site.  Following is a list of the components
@@ -1134,7 +1156,7 @@ How large to make the font, legal values are "small," "medium" or
 =item * image_type
 
 The output type of the image, legal value are whatever image libraries
-you've installed (usually at least "png" or "jpeg")
+you've installed (usually at least "png" or "jpeg" or "svg")
 
 =item * feature_types
 
@@ -1158,8 +1180,13 @@ The minimum number of correspondences to require between two maps
 
 =item * comparative_maps
 
-See below for a full discussion of how to
-    construct this argument
+See below for a full discussion of how to construct this argument
+
+=item * data_source
+
+The "name" from the "<database>" section of "cmap.conf" identifying
+the database to use.  If none is supplied, then the "<database>"
+section marked "is_default 1" will be used.
 
 =back
 
@@ -1168,7 +1195,7 @@ the accession IDs for the map's parent "set" and the map itself.
 Here's an example showing just one map on Gramene, showing all the
 feature labels and highlighting the feature "RM9":
 
-  http://www.gramene.org/db/cmap/viewer?ref_map_aid=13&ref_map_set_aid=cu-dh-2001&highlight=RM9&label_features=all
+  http://www.gramene.org/db/cmap/map_details?ref_map_set_aid=cu-dh-2001;ref_map_aid=cu-dh-2001-1;highlight="RM9";data_source=Gramene;label_features=all
 
 To include some number of comparative maps, you provide them in the
 "comparative_maps" argument, which is a single structured string that
@@ -1219,30 +1246,32 @@ The middle part of the slot is one of the literal strings
 map in a slot, use the string "map_aid" and the map's accession ID.
 If you want a whole map set in a slot (e.g., a physical map set like
 "I-Map"), then use the string "map_set_aid" and the map set's
-accession ID.  You can use the admin interface ("/cmap/admin") to
-easily find the accession IDs.
+accession ID.  You can use the admin interface ("/cgi-bin/cmap/admin")
+to easily find the accession IDs.
 
-=head1 16. SAMPLE DATA
+=head1 SAMPLE DATA
 
 If you would like to see sample import data for CMap, you can find
 many examples from the Gramene site:
 
   ftp://ftp.gramene.org/pub/gramene/maps
 
-=head1 17. MISCELLANEOUS
+=head1 MISCELLANEOUS
 
 In the "docs" directory, you will find two images that might help you
-understand the relationships in the CMap tables, "cmap-graph.png" and
-"cmap-schema.png," both of which attempt to describe the tables and
-fields and their relationships.  These images were automatically
-generated from schema definitions via scripts included with
-SQL::Translator, a set of modules which grew out of the author's
-constant need to make schema changes and quickly replicate them
-amongst the different test databases.  The Oracle, PostgreSQL and
-Sybase schemas were also generated by SQL::Translator from the MySQL
-schema, so if you see room for improvement, please relay them to the
-author, prefereably via the SQL:::Translator mailing list.
-SQL::Translator is available on CPAN.  For more information, see here:
+understand the relationships in the CMap tables,
+"cmap-schema-graph.png" and "cmap-schema.png," both of which attempt
+to describe the tables and fields and their relationships.  See also 
+"cmap-schema-desc.html" for an HTML document describing the schema.
+These documents were automatically generated from schema definitions
+via scripts included with SQL::Translator, a set of modules which grew
+out of the author's constant need to make schema changes and quickly
+replicate them amongst the different test databases.  The Oracle,
+PostgreSQL, SQLite and Sybase schemas were also generated by
+SQL::Translator from the MySQL schema, so if you see room for
+improvement, please relay them to the author, prefereably via the
+SQL:::Translator mailing list.  SQL::Translator is available on CPAN.
+For more information, see here:
 
   http://sqlfairy.sourceforget.net/
 

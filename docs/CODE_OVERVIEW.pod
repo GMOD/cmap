@@ -4,14 +4,14 @@ CMap Code Overview
 
 =head1 VERSION
 
-$Revision: 1.1 $
+$Revision: 1.2 $
 
-The comparative and genetic maps application ("CMap") is written
-entirely in Perl and takes advantage of mod_perl, Apache's embedded
-Perl technology.  The application also relies upon a relational
-database management system (RDBMS), such as Oracle, MySQL or
-PostgreSQL for gathering the data, and uses Paul Boutell's "libgd" and
-Lincoln Stein's "GD" Perl module to draw the maps.  The code was
+CMap is a CGI application for viewing comparative and genetic maps.
+Written entirely in Perl, this application will run on many different
+operating systems and relational database management systems (RDBMS),
+including Oracle, MySQL, Sybase and PostgreSQL.  CMap can create
+images using "libgd" for standard image formats like PNG and JPEG as
+well as creating SVG (Scalable Vector Graphics).  The code was
 originally written for the Gramene project (http://www.gramene.org/),
 a comparative mapping resource for crop grasses, but much has been
 done to make the application generic enough to be used with many
@@ -76,7 +76,7 @@ command-line interfaces simply invoke methods on this Admin object.
 
 The modules in the Bio::GMOD::CMap::Apache namespace are responsible
 for actually displaying the maps through a web interface.  All of the
-modules are basic mod_perl handlers and are objects inheriting from
+modules are basic Perl classes and are objects inheriting from
 the Bio::GMOD::CMap::Apache superclass.  This superclass creates the
 Template Toolkit object, the "page" object (see perldocs), and handles
 any errors thrown by the derived classes, reducing the amount of code
@@ -97,19 +97,21 @@ can be called whatever you like, so long as the absolute path to the
 file is in the Bio::GMOD::CMap::Constants file.  This path is
 automatically written during installation if you do the standard "perl
 Build.PL; ./Build; ./Build install" process.  There are defaults
-provided for every option in the local config file with the exception
-of the database connection info and the template directory.  The
-latter should be set during installation, and the latter should be set
-by the installer.  If you comment out any of the options in
-"cmap.conf" (except "database" and "template_dir"), there are
-defaults in the Bio::GMOD::CMap::Constants file.
+provided for most every option in the local config file with the
+exception of the database connection info and the template and image
+cache directories.  The latter two should be set during installation,
+and the first should be set by the installer after installation (they
+are promted to do this after "./Build install").  If you comment out
+any of the options in "cmap.conf" (except "database," "template_dir"
+and "cache_dir"), there are defaults in the Bio::GMOD::CMap::Constants
+file.
 
 =head1 6. GENERAL FLOW FOR HANDLERS
 
 The web presentation modules are all located under the
-Bio::GMOD::CMap::Apache namespace and are called as mod_perl handlers.
-In order to understand how they are invoked, I will describe how the
-main map viewer (Bio::GMOD::CMap::Apache::MapViewer) works.
+Bio::GMOD::CMap::Apache namespace and are instantiated as objects.  In
+order to understand how they are invoked, I will describe how the main
+map viewer (Bio::GMOD::CMap::Apache::MapViewer) works.
 
 =over 4
 
