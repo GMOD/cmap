@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.71.2.7 2004-11-17 19:08:34 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.71.2.8 2004-11-29 23:20:14 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.71.2.7 $)[-1];
+$VERSION = (qw$Revision: 1.71.2.8 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -69,7 +69,7 @@ sub handler {
     my $image_size            = $apr->param('image_size') || '';
     my $image_type            = $apr->param('image_type') || '';
     my $label_features        = $apr->param('label_features') || '';
-    my $collapse_features     = $apr->param('collapse_features') || 0;
+    my $collapse_features     = $apr->param('collapse_features');
     my $aggregate             = $apr->param('aggregate');
     my $show_intraslot_corr   = $apr->param('show_intraslot_corr');
     my $clean_view            = $apr->param('clean_view');
@@ -95,12 +95,15 @@ sub handler {
         $path_info =~ s{^/(cmap/)?}{};    # kill superfluous stuff
     }
 
+    $collapse_features = $self->config_data('collapse_overlapping_features')
+      unless ( defined($collapse_features) );
     $self->aggregate($aggregate);
     $self->show_intraslot_corr($show_intraslot_corr);
     $self->clean_view($clean_view);
     $self->magnify_all($magnify_all);
     $self->scale_maps($scale_maps);
     $self->stack_maps($stack_maps);
+
     if ($ref_map_order) {
         $self->ref_map_order($ref_map_order);
     }

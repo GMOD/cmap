@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.61.2.9 2004-11-24 22:07:14 mwz444 Exp $
+# $Id: CMap.pm,v 1.61.2.10 2004-11-29 23:20:13 mwz444 Exp $
 
 =head1 NAME
 
@@ -398,7 +398,8 @@ The default is 1.
     my $self = shift;
     my $val  = shift;
     $self->{'aggregate'} = $val if defined $val;
-    $self->{'aggregate'} = 1 unless defined $self->{'aggregate'};
+    $self->{'aggregate'} = $self->config_data('aggregate_correspondences') || 1
+      unless defined $self->{'aggregate'};
     return $self->{'aggregate'};
 }
 
@@ -419,7 +420,8 @@ The default is 1.
     my $self = shift;
     my $val  = shift;
     $self->{'show_intraslot_corr'} = $val if defined $val;
-    $self->{'show_intraslot_corr'} = 1
+    $self->{'show_intraslot_corr'} =
+      $self->config_data('show_intraslot_correspondences') || 0
       unless defined $self->{'show_intraslot_corr'};
     return $self->{'show_intraslot_corr'};
 }
@@ -441,7 +443,8 @@ The default is 1.
     my $self = shift;
     my $val  = shift;
     $self->{'clean_view'} = $val if defined $val;
-    $self->{'clean_view'} = 0 unless defined $self->{'clean_view'};
+    $self->{'clean_view'} = $self->config_data('clean_view') || 0
+      unless defined $self->{'clean_view'};
     return $self->{'clean_view'};
 }
 
@@ -485,7 +488,8 @@ The default is 1.
     my $self = shift;
     my $val  = shift;
     $self->{'scale_maps'} = $val if defined $val;
-    $self->{'scale_maps'} = 1 unless defined $self->{'scale_maps'};
+    $self->{'scale_maps'} = $self->config_data('scale_maps') || 1
+      unless defined $self->{'scale_maps'};
     return $self->{'scale_maps'};
 }
 
@@ -506,7 +510,8 @@ The default is 0.
     my $self = shift;
     my $val  = shift;
     $self->{'stack_maps'} = $val if defined $val;
-    $self->{'stack_maps'} = 0 unless defined $self->{'stack_maps'};
+    $self->{'stack_maps'} = $self->config_data('stack_maps') || 0
+      unless defined $self->{'stack_maps'};
     return $self->{'stack_maps'};
 }
 
