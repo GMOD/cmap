@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::Import;
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.53 2004-06-11 02:44:34 mwz444 Exp $
+# $Id: Import.pm,v 1.54 2004-08-04 04:26:58 mwz444 Exp $
 
 =pod
 
@@ -28,7 +28,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.53 $)[-1];
+$VERSION  = (qw$Revision: 1.54 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -37,14 +37,14 @@ use Bio::GMOD::CMap::Utils 'next_number';
 use Text::RecordParser;
 use Text::ParseWords 'parse_line';
 use XML::Simple;
-
+use Regexp::Common;
 use base 'Bio::GMOD::CMap';
 
 use constant FIELD_SEP => "\t"; # use tabs for field separator
 use constant STRING_RE => qr{\S+}; 
 use constant RE_LOOKUP => {
     string => STRING_RE,
-    number => NUMBER_RE,
+    number => '^'.$RE{'num'}{'real'}.'$',
 };
 
 use vars '$LOG_FH';

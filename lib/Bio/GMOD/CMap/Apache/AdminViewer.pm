@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.69 2004-04-23 16:23:01 mwz444 Exp $
+# $Id: AdminViewer.pm,v 1.70 2004-08-04 04:28:07 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -15,6 +15,7 @@ use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Admin;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Utils;
+use Regexp::Common;
 
 use base 'Bio::GMOD::CMap::Apache';
 
@@ -32,7 +33,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.69 $)[-1];
+$VERSION        = (qw$Revision: 1.70 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -1245,7 +1246,7 @@ sub feature_update {
                           or die 'No feature type';
     my $is_landmark     = $apr->param('is_landmark') || 0;
     my $start_position  = $apr->param('start_position');
-    push @errors, "No start" unless $start_position =~ NUMBER_RE;
+    push @errors, "No start" unless $start_position =~ /^$RE{'num'}{'real'}$/;
     my $stop_position   = $apr->param('stop_position');
 
     return $self->feature_edit( errors => \@errors ) if @errors;
@@ -1255,7 +1256,7 @@ sub feature_update {
         set    accession_id=?, feature_name=?, 
                feature_type_accession=?, is_landmark=?, start_position=?
     ];
-    $sql .= ", stop_position=$stop_position " if $stop_position =~ NUMBER_RE;
+    $sql .= ", stop_position=$stop_position " if $stop_position =~ /^$RE{'num'}{'real'}$/; 
     $sql .= 'where  feature_id=?';
     $db->do(
         $sql,
