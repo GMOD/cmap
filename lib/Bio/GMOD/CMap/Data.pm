@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.127 2004-06-11 16:02:35 mwz444 Exp $
+# $Id: Data.pm,v 1.128 2004-06-11 16:50:00 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.127 $)[-1];
+$VERSION = (qw$Revision: 1.128 $)[-1];
 
 use Data::Dumper;
 use Regexp::Common;
@@ -4569,7 +4569,7 @@ sub cmap_entry_data {
                 order by map.display_order,
                 map.map_name
             ];
-            nless ( $ref_maps =
+            unless ( $ref_maps =
                 $self->get_cached_results( $sql_str . "$ref_map_set_aid" ) )
             {
                 $ref_maps =
