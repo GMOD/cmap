@@ -1,5 +1,7 @@
 #!/usr/bin/perl
 
+# $Id: cmap_matrix_compare.pl,v 1.2 2003-01-31 19:50:25 kycl4rk Exp $
+
 =head1 NAME
 
 cmap_matrix_compare.pl - compare matrix correspondences before and after a load
@@ -83,7 +85,8 @@ GetOptions(
 );
 pod2usage if $help;
 
-die "--compare takes only two arguments\n" if scalar @compare > 2;
+die qq[Error:  The "compare" option takes only one or two arguments.\n] 
+    if scalar @compare > 2;
 
 my $cmap = Bio::GMOD::CMap->new or die Bio::GMOD::CMap->error;
 my $db   = $cmap->db            or die $cmap->error;
@@ -271,7 +274,8 @@ sub store_data {
     die "File '$file' exists\n" if -e $file;
 
     #
-    # Turn the arrayref of correspondences into a hashref lookup.
+    # Turn the arrayref of correspondences into a hashref lookup
+    # for use in future comparisons.
     #
     for my $ms ( values %$ref_map_sets ) {
         my %corr = 
@@ -284,6 +288,12 @@ sub store_data {
     print "Data stored in '$file.'\n",
         "Run '$0 --compare $file' to compare.\n";
 }
+
+=pod
+
+=head1 SEE ALSO
+
+Bio::GMOD::CMap.
 
 =head1 AUTHOR
 
