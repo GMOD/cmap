@@ -1,0 +1,84 @@
+[% INCLUDE admin_header.tmpl title='Cross-References Edit' %]
+
+<a href="admin">Home</a> |
+<a href="admin?action=confirm_delete;entity_type=cmap_xref;entity_id=[% xref.xref_id %];entity_name=[% xref.xref_name | uri %]">Delete</a> |
+<a href="admin?action=xrefs_view">View All Cross-References</a>
+<hr noshade>
+
+[% IF errors.size %]
+    There were errors:
+    <ul>
+        [% FOREACH e=errors %]
+            <li>[% e %]</li>
+        [% END %]
+    </ul>
+[% END %]
+
+<form action="admin" method="POST">
+    <table>
+        [% IF db_object %]
+            <tr>
+                <td align="right">
+                    Database Object:
+                </td>
+                <td>
+                    <input type="hidden" name="return_action" value="[% apr.param('return_action') %]">
+                    <input type="hidden" name="table_name" value="[% table_name %]">
+                    <input type="hidden" name="object_id" value="[% object_id %]">
+                    [% db_object.name %] ([% db_object.object_name %]) 
+                </td>
+            </tr>
+        [% ELSE %]
+            <tr>
+                <td align="right">
+                    Database Object:
+                </td>
+                <td>
+                    <select name="table_name">
+                        <option value="">--Please Select--</option>
+                        [% FOREACH o=xref_objects %]
+                            <option value="[% o.table_name %]"[% IF xref.table_name == o.table_name %] selected[% END %]>[% o.object_name %]</option>
+                        [% END %]
+                    </select>
+                </td>
+            </tr>
+        [% END %]
+
+        <tr>
+            <td align="right">
+                Display Order:
+            </td>
+            <td>
+                <input name="display_order" value="[% xref.display_order %]">
+            </td>
+        </tr>
+
+        <tr>
+            <td align="right">
+                Cross-Reference Name:
+            </td>
+            <td>
+                <input name="xref_name" value="[% xref.xref_name %]">
+            </td>
+        </tr>
+
+        <tr>
+            <td align="right" valign="top">
+                URL:
+            </td>
+            <td>
+                <textarea name="xref_url" rows="20" cols="80" wrap="virtual">[% xref.xref_url %]</textarea>
+            </td>
+        </tr>
+
+        <tr>
+            <td colspan="2" align="center">
+                <input type="hidden" name="xref_id" value="[% xref.xref_id %]">
+                <input type="hidden" name="action" value="xref_update">
+                <input type="submit" value="Submit">
+            </td>
+        </tr>
+    </table>
+</form>
+
+[% INCLUDE admin_footer.tmpl %]

@@ -1,0 +1,72 @@
+[% INCLUDE admin_header.tmpl title='Cross-References View' %]
+
+<a href="admin">Home</a> |
+<a href="admin?action=xref_create">Create New Cross-Reference</a>
+<hr noshade>
+
+<div align="center">
+<form action="admin">
+    <input type="submit" value="Restrict by DB Object">
+    <input type="hidden" name="action" value="xrefs_view">
+    <select name="table_name">
+        <option value="">--None--</option>
+        [% FOREACH o=db_objects %]
+            <option [% IF o.table_name==apr.param('table_name'); 'selected '; END %]value="[% o.table_name %]">[% o.object_name %]</option>
+        [% END %]
+    </select>
+</form>
+</div>
+
+[% IF xrefs.size %]
+    <table width="100%">
+        <tr>
+            <td colspan="7" align="center">
+                [% SET pager_url="admin?action=xrefs_view&species_id=${apr.param('species_id')}&feature_type_id=${apr.param('feature_type_id')}&order_by=${apr.param('order_by')}" %]
+                [% PROCESS pager.tmpl %]
+            </td>
+        </tr>
+        <tr>
+            <th>
+                <a href="admin?action=xrefs_view;table_name=[% apr.param('table_name') %];feature_type_id=[% apr.param('feature_type_id') %];order_by=display_order">Display Order</a>
+            </th>
+            <th>
+                <a href="admin?action=xrefs_view;table_name=[% apr.param('table_name') %];feature_type_id=[% apr.param('feature_type_id') %];order_by=table_name">DB Object</a>
+            </th>
+            <th>
+                <a href="admin?action=xrefs_view;table_name=[% apr.param('table_name') %];feature_type_id=[% apr.param('feature_type_id') %];order_by=object_name">Object Name</a>
+            </th>
+            <th>
+                <a href="admin?action=xrefs_view;table_name=[% apr.param('table_name') %];feature_type_id=[% apr.param('feature_type_id') %];order_by=xref_name">Name</a>
+            </th>
+            <th>
+                <a href="admin?action=xrefs_view;table_name=[% apr.param('table_name') %];feature_type_id=[% apr.param('feature_type_id') %];order_by=xref_url">URL</a>
+            </th>
+            <th colspan="2" align="center">&nbsp;</th>
+        </tr>
+
+        [% SET i=0 %]
+        [% FOREACH ref=xrefs %]
+            <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
+                <td>[% ref.display_order %]</td>
+                <td>[% ref.db_object_name %]</td>
+                <td>[% ref.actual_object_name %]</td>
+                <td>[% ref.xref_name %]</td>
+                <td>[% ref.xref_url | truncate(40) %]</td>
+                <td align="center">
+                    <a href="admin?action=xref_edit;xref_id=[% ref.xref_id %]">Edit</a>
+                </td>
+                <td align="center">
+                    <a href="admin?action=confirm_delete;entity_type=cmap_xref;entity_id=[% ref.xref_id %];entity_name=[% ref.xref_name | uri%]">Delete</a>
+                </td>
+            </tr>
+            [% SET i=i+1 %]
+        [% END %]
+    </table>
+  
+[% ELSE %]
+
+  <p>No cross-references to show.</p>
+
+[% END %]
+
+[% INCLUDE admin_footer.tmpl %]

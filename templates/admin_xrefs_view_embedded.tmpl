@@ -1,0 +1,48 @@
+[% DEFAULT title='XRefs' %]
+<hr>
+<table width="100%">
+    <tr>
+        <td><h2>[% title %]</h2></td>
+        <td align="right">
+            <a href="admin?action=xref_create;table_name=[% table_name %];object_id=[% object_id %];return_action=[% return_action %];pk_name=[% pk_name %]">Add XRef</a>
+        </td>
+    </tr>
+</table>
+
+[% IF xrefs.size %]
+    <table width="100%">
+        <tr>
+            <th>
+                <a href="admin?action=[% return_action %];[% pk_name %]=[% object_id %];xref_order_by=display_order">Display Order</a>
+            </th>
+            <th>
+                <a href="admin?action=[% return_action %];[% pk_name %]=[% object_id %];xref_order_by=xref_name">Name</a>
+            </th>
+            <th>
+                <a href="admin?action=[% return_action %];[% pk_name %]=[% object_id %];xref_order_by=xref_url">URL</a>
+            </th>
+            <td colspan="2">&nbsp</td>
+        </tr>
+        [% SET i=0 %]
+        [% FOREACH xref=xrefs %]
+            <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
+                <td>[% xref.display_order %]</td>
+                <td>[% xref.xref_name %]</td>
+                <td>[% xref.xref_url | html %]</td>
+                <td align="center">
+                    <a href="admin?action=xref_edit;xref_id=[% xref.xref_id %];return_action=[% return_action %]">Edit</a>
+                </td>
+                <td align="center">
+                    <a href="admin?action=confirm_delete;entity_id=[% xref.xref_id %];entity_type=cmap_xref;entity_name_field=xref_name;return_action=[% return_action %]">Delete</a>
+                </td>
+            </tr>
+            [% SET i=i+1 %]
+        [% END %]
+    </table>
+[% ELSE %]
+    <div align="center">
+        No cross-references defined.
+    </div>
+[% END %]
+<br>
+<br>
