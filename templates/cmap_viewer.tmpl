@@ -369,6 +369,14 @@ function mod_map_info(slot_no, map_aid, start, stop,mag){
                         [% END %]
                       </td>
                     </tr>
+                    <tr>
+                      <td align="right">Min. No. Correspondences:</td> 
+                      <td><input name="min_correspondences" value="[% apr.param('min_correspondences') %]"> </td>
+                    </tr>
+                    <tr>
+                      <td align="right"> <input type="submit" value="Redraw Map" name="sub"></td>
+                      <td><input type="reset"  value="Reset"></td>
+                    </tr>
                   </table>
                 </td>
                 <td align=left valign=top>
@@ -410,26 +418,6 @@ function mod_map_info(slot_no, map_aid, start, stop,mag){
               <img src="/cmap/minus.png"> <b> Hide Menu</b>
             </span>
             <table>
-              <tr>
-                <td align="left" valign="top">Aggregate Correspondences:
-                  [% IF apr.param('aggregate')==0; aggregate=0; ELSE; aggregate=1; END %]
-                  <input type="radio" name="aggregate" value="0"[% IF aggregate==0; ' checked'; END %]>No
-                  <input type="radio" name="aggregate" value="1"[% IF aggregate==1; ' checked'; END %]>Yes
-                </td>
-              </tr>
-              <tr>
-                <td align="left" valign="top">Draw Maps to Scale:
-                  [% IF apr.param('scale_maps')==0; scale_maps=0; ELSE; scale_maps=1; END %]
-                  <input type="radio" name="scale_maps" value="0"[% IF scale_maps==0; ' checked'; END %]>No
-                  <input type="radio" name="scale_maps" value="1"[% IF scale_maps==1; ' checked'; END %]>Yes
-                </td>
-              </tr>
-              <tr>
-                <td align="left">Min. No. Correspondences: 
-                  <input name="min_correspondences" value="[% apr.param('min_correspondences') %]">
-                </td>
-              </tr>
-  
               <tr>
                 <td align="left" valign="bottom" Colspan=2><b>Feature Types:</b></td>
               </tr>
@@ -481,6 +469,30 @@ function mod_map_info(slot_no, map_aid, start, stop,mag){
                   [% END %]
                 </td>
               </tr>
+              <tr>
+                <td align="left" valign="top">Aggregate Correspondences:
+                  [% IF apr.param('aggregate')==0; aggregate=0; ELSE; aggregate=1; END %]
+                  <input type="radio" name="aggregate" value="0"[% IF aggregate==0; ' checked'; END %]>No
+                  <input type="radio" name="aggregate" value="1"[% IF aggregate==1; ' checked'; END %]>Yes
+                </td>
+              </tr>
+              <tr>
+                <td align="left" valign="top">Total Magnification: 
+                  <select name="magnify_all" >
+                    <option value="0.125"[% IF 0.125==apr.param('magnify_all'); ' selected'; END %]>1/8</option>
+                    <option value="0.25"[% IF 0.25==apr.param('magnify_all'); ' selected'; END %]>1/4</option>
+                    <option value="0.5"[% IF 0.5==apr.param('magnify_all'); ' selected'; END %]>1/2</option>
+                    <option value="1"[% IF 1==apr.param('magnify_all') OR NOT apr.param('magnify_all'); ' selected'; 
+                                       END %]>Original Magnification</option>
+                    <option value="2"[% IF 2==apr.param('magnify_all'); ' selected'; END %]>2</option>
+                    <option value="3"[% IF 3==apr.param('magnify_all'); ' selected'; END %]>3</option>
+                    <option value="4"[% IF 4==apr.param('magnify_all'); ' selected'; END %]>4</option>
+                    <option value="5"[% IF 5==apr.param('magnify_all'); ' selected'; END %]>5</option>
+                    <option value="10"[% IF 10==apr.param('magnify_all'); ' selected'; END %]>10</option>
+                    <option value="20"[% IF 20==apr.param('magnify_all'); ' selected'; END %]>20</option>
+                  </select>
+                </td>
+              </tr>
             </table>
           </div>
         </td>
@@ -512,7 +524,7 @@ function mod_map_info(slot_no, map_aid, start, stop,mag){
               window.document.comparative_map_form.imageMenu,
               toggleDiv(document.getElementById('displayImageMenu')));"
             >
-            <img src="/cmap/plus.png"> <b> Click to Show Image Menu</b>
+            <img src="/cmap/plus.png"> <b> Click to Show Additional Options Menu</b>
             </span>
           </div>
           <div id="displayImageMenu" >
@@ -595,6 +607,12 @@ function mod_map_info(slot_no, map_aid, start, stop,mag){
                 <td>
                   <input type="radio" name="collapse_features" value="1"[% IF collapse==1; ' checked'; END %]>Yes
                 </td>
+              </tr>
+              <tr>
+                <td align="left" valign="top">Draw Maps to Scale:</td>
+                [% IF apr.param('scale_maps')==0; scale_maps=0; ELSE; scale_maps=1; END %]
+                <td><input type="radio" name="scale_maps" value="0"[% IF scale_maps==0; ' checked'; END %]>No</td>
+                <td><input type="radio" name="scale_maps" value="1"[% IF scale_maps==1; ' checked'; END %]>Yes</td>
               </tr>
               <tr>
                 <td colspan=4>
