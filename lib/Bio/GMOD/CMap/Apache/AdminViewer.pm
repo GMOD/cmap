@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.38 2003-07-01 16:06:58 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.39 2003-07-01 17:40:29 kycl4rk Exp $
 
 use strict;
 use Apache::Constants qw[ :common M_GET REDIRECT ];
@@ -30,7 +30,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.38 $)[-1];
+$VERSION        = (qw$Revision: 1.39 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -1330,28 +1330,33 @@ sub feature_view {
 
 # ----------------------------------------------------
 sub feature_search {
-    my $self          = shift;
-    my $db            = $self->db or return $self->error;
-    my $apr           = $self->apr;
-    my $admin         = $self->admin;
-    my $limit_start   = $apr->param('limit_start')  ||  0;
-    my $params        = {
-        apr           => $apr,
-        feature_types => $admin->feature_types,
-        species       => $admin->species,
+    my $self             = shift;
+    my $db               = $self->db or return $self->error;
+    my $apr              = $self->apr;
+    my $admin            = $self->admin;
+    my $limit_start      = $apr->param('limit_start')       ||    0;
+    my @species_ids      = ( $apr->param('species_id')      );
+    my @feature_type_ids = ( $apr->param('feature_type_id') );
+
+    my $params              = {
+        apr                 => $apr,
+        species             => $admin->species,
+        feature_types       => $admin->feature_types,
+        species_lookup      => { map { $_, 1 } @species_ids },
+        feature_type_lookup => { map { $_, 1 } @feature_type_ids },
     }; 
 
     #
     # If given a feature to search for ...
     #
-    if ( my $feature_name   = $apr->param('feature_name') ) {
-        my $features        =  $admin->feature_search(
-            feature_name    => $feature_name,
-            map_aid         => $apr->param('map_aid')         ||  0,
-            species_id      => $apr->param('species_id')      ||  0,
-            feature_type_id => $apr->param('feature_type_id') ||  0,
-            field_name      => $apr->param('field_name')      || '',
-            order_by        => $apr->param('order_by')        || '', 
+    if ( my $feature_name    = $apr->param('feature_name') ) {
+        my $features         =  $admin->feature_search(
+            feature_name     => $feature_name,
+            map_aid          => $apr->param('map_aid')         ||  0,
+            species_ids      => \@species_ids,
+            feature_type_ids => \@feature_type_ids,
+            field_name       => $apr->param('field_name')      || '',
+            order_by         => $apr->param('order_by')        || '', 
         );
 
         #

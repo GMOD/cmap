@@ -3,7 +3,7 @@
 <a href="admin">Home</a>
 <hr noshade>
 
-<form action="admin" method="get">
+<form action="admin" method="GET">
 <table>
     <tr>
         <td>Name:</td>
@@ -11,36 +11,36 @@
         <td>Feature Type <em>(opt.)</em>:</td>
         <td>Map Acc. ID <em>(opt.)</em>:</td>
         <td>Field:</td>
-        <td rowspan="2" align="center" valign="bottom">
+        <td rowspan="2" align="center" valign="middle">
             <input type="hidden" name="action" value="feature_search">
             <input type="hidden" name="order_by" value="[% apr.param('order_by') %]">
             <input type="Submit" value="Submit">
         <td>
     </tr>
     <tr>
-        <td>
+        <td valign="top">
             <input name="feature_name" value="[% apr.param('feature_name') | html_entity %]">
         </td>
         <td valign="top">
-            <select name="species_id">
-                <option value="-1">--All Species--</option>
+            [% species.unshift({ species_id => -1, common_name => '--All--' }) %]
+            <select name="species_id" size="5" multiple>
                 [% FOREACH s=species %]
-                    <option value="[% s.species_id %]"[% IF s.species_id==apr.param('species_id') %] selected[% END %]>[% s.common_name %]</option>
+                    <option value="[% s.species_id %]"[% IF species_lookup.${s.species_id} %] selected[% END %]>[% s.common_name %]</option>
                 [% END %]
             </select>
         </td>
-        <td>
-            <select name="feature_type_id">
-                <option value="">--Any--</option>
+        <td valign="top">
+            [% feature_types.unshift({ feature_type_id => -1, feature_type => '--All--' }) %]
+            <select name="feature_type_id" size="5" multiple>
                 [% FOREACH ft=feature_types %]
-                    <option value="[% ft.feature_type_id %]"[% IF ft.feature_type_id==apr.param('feature_type_id') %] selected[% END %]>[% ft.feature_type %]</option>
+                    <option value="[% ft.feature_type_id %]"[% IF feature_type_lookup.${ft.feature_type_id} %] selected[% END %]>[% ft.feature_type %]</option>
                 [% END %]
             </select>
         </td>
-        <td>
+        <td valign="top">
             <input name="map_aid" value="[% apr.param('map_aid') %]">
         </td>
-        <td>
+        <td valign="top">
             <select name="field_name">
                 <option value="both">--Both--</option>
                 <option value="feature_name"[% IF apr.param('field_name')=='feature_name' %] selected[% END %]>Feature Name</option>
