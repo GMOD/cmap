@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.25 2003-03-05 19:43:35 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.26 2003-03-05 20:12:37 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -31,7 +31,7 @@ $FEATURE_SHAPES = [ qw(
 $LINE_STYLES    = [ qw( dashed solid ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.25 $)[-1];
+$VERSION        = (qw$Revision: 1.26 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -2248,24 +2248,24 @@ sub map_set_view {
     my @maps = @{ 
         $db->selectall_arrayref( 
             qq[
-                select   map.map_id, 
-                         map.accession_id, 
-                         map.map_name, 
-                         map.linkage_group, 
-                         map.start_position, 
-                         map.stop_position,
-                         count(f.map_id) as no_features
-                from     cmap_map map,
-                         cmap_feature f
-                where    map.map_set_id=?
-                and      map.map_id=f.map_id
-                group by map.map_id, 
-                         map.accession_id, 
-                         map.map_name, 
-                         map.linkage_group, 
-                         map.start_position, 
-                         map.stop_position
-                order by $order_by
+                select    map.map_id, 
+                          map.accession_id, 
+                          map.map_name, 
+                          map.linkage_group, 
+                          map.start_position, 
+                          map.stop_position,
+                          count(f.map_id) as no_features
+                from      cmap_map map
+                left join cmap_feature f
+                on        map.map_id=f.map_id
+                where     map.map_set_id=?
+                group by  map.map_id, 
+                          map.accession_id, 
+                          map.map_name, 
+                          map.linkage_group, 
+                          map.start_position, 
+                          map.stop_position
+                order by  $order_by
             ],
             { Columns => {} }, 
             ( $map_set_id ) 
