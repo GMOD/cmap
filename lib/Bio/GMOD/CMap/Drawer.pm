@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.34 2003-05-20 21:39:26 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.35 2003-05-23 02:17:20 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.34 $)[-1];
+$VERSION = (qw$Revision: 1.35 $)[-1];
 
 #use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Utils 'parse_words';
@@ -35,11 +35,11 @@ use File::Path;
 use Data::Dumper;
 use base 'Bio::GMOD::CMap';
 
-use constant INIT_PARAMS => [ qw(
+my @INIT_PARAMS = qw[
     apr slots highlight font_size image_size image_type 
     label_features include_feature_types include_evidence_types
     data_source min_correspondences collapse_features
-) ];
+];
 
 # ----------------------------------------------------
 sub init {
@@ -54,12 +54,11 @@ Initializes the drawing object.
 
     my ( $self, $config ) = @_;
 
-    for my $param ( @{ +INIT_PARAMS } ) {
+    for my $param ( @INIT_PARAMS ) {
         $self->$param( $config->{ $param } );
     }
 
-    return $self->draw;# or return $self->error;
-#    return $self;
+    return $self->draw;
 }
 
 # ----------------------------------------------------
@@ -271,7 +270,12 @@ Accepts a list of coordinates and a URL for hyperlinking a map area.
 =cut
 
     my $self = shift;
-    push @{ $self->{'image_map_data'} }, { @_ } if @_;
+    if ( ref $_[0] eq 'HASH' ) {
+        push @{ $self->{'image_map_data'} }, @_;
+    }
+    else {
+        push @{ $self->{'image_map_data'} }, { @_ } if @_;
+    }
 }
 
 # ----------------------------------------------------
@@ -1704,35 +1708,6 @@ Returns the "tick_y" positions of the features IDs in a given slot.
     }
 
     return @return;
-}
-
-# ----------------------------------------------------
-sub set_scratch_pad {
-
-=pod
-
-=head2 set_scratch_pad
-
-Set the scratch pad.
-
-=cut
-
-    my ( $self, $arg ) = @_;
-
-    if ( $arg ) {
-        $self->{'scratch_pad_draw'} = $self->{'drawing_data'};
-        $self->{'drawing_data'}     = undef;
-    }
-    else {
-        for my $layer ( keys %{ $self->{'scratch_pad_draw'} || {} } ) {
-            push @{ $self->{'drawing_data'}{ $layer } }, 
-                @{ $self->{'scratch_pad_draw'}{ $layer } };
-        }
-
-        $self->{'scratch_pad_draw'} = undef;
-    }
-
-    return 1;
 }
 
 # ----------------------------------------------------
