@@ -1,4 +1,20 @@
 [% INCLUDE admin_header.tmpl title='Admin Home' %]
+
+[% IF data_sources.size > 1 %]
+    <br>
+    <div align="center">
+    <form name="data_source_form">
+        Change Data Source:
+        <select name="data_source" onChange="javascript:data_source_form.submit()">
+            [% FOREACH db=data_sources %]
+                <option value="[% db.name %]"[% IF db.is_current; ' selected'; END %]>[% db.name %]</option>
+            [% END %]
+        </select>
+        <input type="submit" name="submit" value="Submit">
+    </form>
+    </div>
+[% END %]
+
 <hr noshade>
 <ul>
   <li><a href="admin?action=map_set_create">Create New Map Set</a></li>

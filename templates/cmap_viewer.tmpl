@@ -32,6 +32,7 @@
                             <input type="hidden" name="highlight"            value="[% apr.param('highlight') %]">
                             <input type="hidden" name="image_size"           value="[% apr.param('image_size') %]">
                             <input type="hidden" name="image_type"           value="[% apr.param('image_type') %]">
+                            <input type="hidden" name="data_source"          value="[% data_source %]">
                         [% ELSE %]
                             No Map Sets
                         [% END %]
@@ -64,6 +65,7 @@
 
                             <input type="hidden" name="prev_ref_map_aid" value="[% apr.param('ref_map_aid') %]">
                             <input type="hidden" name="ref_map_set_aid"  value="[% apr.param('ref_map_set_aid') %]">
+                            <input type="hidden" name="data_source"          value="[% data_source %]">
                             [% IF apr.param('comparative_map_field1') %]
                                 <input type="hidden" name="comparative_map1" value="[% apr.param('comparative_map_field1') %]=[% apr.param('comparative_map_value1') %]">
                                 <input type="hidden" name="image_size"       value="[% apr.param('image_size') %]">
@@ -114,7 +116,7 @@
                                     [% FOREACH cmap=map.cmaps %]
                                         [% cmaps.push( "${cmap.slot_no}%3d${cmap.field}%3d${cmap.aid}" ) %]
                                     [% END %]
-                                    [% map.species_name %]-[% map.map_set_name %][% IF map.map_name %]-[% map.map_name %][% END %][% IF map.is_reference_map %]&nbsp;(Ref.)[% ELSE %]&nbsp;[&nbsp;<a href="viewer?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% cmaps.join('%3a') %]">Delete</a>&nbsp;]&nbsp;[% END %]<br>
+                                    [% map.species_name %]-[% map.map_set_name %][% IF map.map_name %]-[% map.map_name %][% END %][% IF map.is_reference_map %]&nbsp;(Ref.)[% ELSE %]&nbsp;[&nbsp;<a href="viewer?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aid=[% apr.param('ref_map_aid') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% cmaps.join('%3a') %];feature_types=[% feature_types %];evidence_types=[% evidence_types %]">Delete</a>&nbsp;]&nbsp;[% END %]<br>
                                 [% END %]
                             </td>
                         </tr>
@@ -207,6 +209,7 @@
                                 <input type="hidden" name="ref_map_aid"     value="[% apr.param('ref_map_aid') %]">
                                 <input type="hidden" name="comparative_maps" value="[% comparative_maps %]">
                                 <input type="hidden" name="flip"            value="[% apr.param('flip') %]">
+                                <input type="hidden" name="data_source"          value="[% data_source %]">
                                 <input type="reset"  value="Reset">
                                 <input type="submit" value="Show Map">
                             </td>
