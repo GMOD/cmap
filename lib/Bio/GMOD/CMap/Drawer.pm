@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer;
 
-# $Id: Drawer.pm,v 1.40 2003-07-30 02:06:08 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.41 2003-07-30 16:55:31 kycl4rk Exp $
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ The base map drawing module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.40 $)[-1];
+$VERSION = (qw$Revision: 1.41 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -38,6 +38,7 @@ my @INIT_PARAMS = qw[
     apr flip slots highlight font_size image_size image_type 
     label_features include_feature_types include_evidence_types
     data_source min_correspondences collapse_features cache_dir
+    map_view
 ];
 
 # ----------------------------------------------------
@@ -1366,6 +1367,22 @@ Gets/sets the output map image's width.
 
     my $self = shift;
     return $self->max_x + 10;
+}
+
+# ----------------------------------------------------
+sub map_view {
+
+=pod
+
+=head2 map_view
+
+Gets/sets whether we're looking at the regular viewer or details.
+
+=cut
+
+    my $self = shift;
+    $self->{'map_view'} = shift if @_;
+    return $self->{'map_view'} || 'viewer';
 }
 
 # ----------------------------------------------------
