@@ -61,7 +61,7 @@ foreach my $contig_name (keys %contig_data){
 print STDERR "afterall\n";
 
 ###Print lead line
-print "map_name\tfeature_name\tfeature_start\tfeature_stop\tfeature_type_accession\n";
+print "map_name\tfeature_name\tfeature_start\tfeature_stop\tfeature_type_accession\tdirection\n";
 
 ###Print Clusters
 my $cluster_name;
@@ -87,7 +87,7 @@ foreach my $contig_num (sort {$a <=> $b} keys %clusters){
         }
         my $contig_stop=$contig_data{$contig_name}{'num_of_bases'}+$offset;
 
-        print "$cluster_name\t$contig_name\t$offset\t$contig_stop\tcontig\n";
+        print "$cluster_name\t$contig_name\t$offset\t$contig_stop\tcontig\t1\n";
         ###Map
         foreach my $read_name (
                        sort {
@@ -97,8 +97,8 @@ foreach my $contig_num (sort {$a <=> $b} keys %clusters){
                        }
                         @{$contig_to_reads{$contig_name}}
                        ){
-            my $dir='+';
-            $dir='-' if $read_data{$read_name}{'complement'} eq 'C';
+            my $dir='1';
+            $dir='-1' if $read_data{$read_name}{'complement'} eq 'C';
             my $read_start =
             $offset + $read_data{$read_name}{'padded_start'};
             my $read_stop  =
@@ -108,14 +108,14 @@ foreach my $contig_num (sort {$a <=> $b} keys %clusters){
             ($read_start,$read_stop)=($read_stop,$read_start);
             }
             $read_start= $offset>$read_start?
-            $offset+1 : 
-            $read_start;
+                $offset+1 : 
+                $read_start;
             $read_stop= $read_stop>$contig_stop?
-            $contig_stop: 
-            $read_stop;
+                $contig_stop: 
+                $read_stop;
                     
             
-            print "$cluster_name\t$read_name\t$read_start\t$read_stop\tread\n";
+            print "$cluster_name\t$read_name\t$read_start\t$read_stop\tread\t$dir\n";
             ###Feature
             
         }
