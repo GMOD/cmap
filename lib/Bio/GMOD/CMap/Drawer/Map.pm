@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.142 2004-11-11 17:29:22 mwz444 Exp $
+# $Id: Map.pm,v 1.143 2004-11-18 19:36:48 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.142 $)[-1];
+$VERSION = (qw$Revision: 1.143 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1163,7 +1163,7 @@ Variable Info:
         #
         for my $rec ( @{ $drawer->flip } ) {
             if (   $rec->{'slot_no'} == $slot_no
-                && $rec->{'map_aid'} == $self->accession_id($map_id) )
+                && $rec->{'map_aid'} eq $self->accession_id($map_id) )
             {
                 $is_flipped = 1;
                 $flipped_maps{$map_id} = 1;
