@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.8 2002-09-06 22:15:51 kycl4rk Exp $
+# $Id: Data.pm,v 1.9 2002-09-10 01:46:47 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -1690,19 +1690,21 @@ sub map_detail_data {
 Returns the detail info for a map.
 
 =cut
-    my ( $self, %args ) = @_;
-    my $map             = $args{'map'};
-    my $highlight       = $args{'highlight'}   || '';
-    my $order_by        = $args{'order_by'}    || 'start_position';
-    my $restrict_by     = $args{'restrict_by'} || '';
-    my $db              = $self->db;
-    my $sql             = $self->sql;
-    my $map_id          = $self->acc_id_to_internal_id(
-        table           => 'cmap_map',
-        acc_id          => $map->{'aid'},
+    my ( $self, %args )         = @_;
+    my $map                     = $args{'map'};
+    my $highlight               = $args{'highlight'}   || '';
+    my $order_by                = $args{'order_by'}    || 'start_position';
+    my $restrict_by             = $args{'restrict_by'} || '';
+    my $comparative_map_set_aid = $args{'comparative_map_set_aid'} || '';
+
+    my $db        = $self->db;
+    my $sql       = $self->sql;
+    my $map_id    = $self->acc_id_to_internal_id(
+        table     => 'cmap_map',
+        acc_id    => $map->{'aid'},
     );
-    my $map_start       = $map->{'start'};
-    my $map_stop        = $map->{'stop'};
+    my $map_start = $map->{'start'};
+    my $map_stop  = $map->{'stop'};
 
     #
     # Figure out hightlighted features.
@@ -1773,12 +1775,26 @@ Returns the detail info for a map.
     #
     # Find every other map position for the features on this map.
     #
+    my %comparative_maps;
     for my $feature ( @$features ) {
         my $positions = $db->selectall_arrayref(
-            $sql->feature_correspondence_sql,
+            $sql->feature_correspondence_sql(
+                map_set_aid => $comparative_map_set_aid
+            ),
             { Columns => {} },
             ( $feature->{'feature_id'} )
         ); 
+
+        for my $position ( @$positions ) {
+            $comparative_maps{ $position->{'map_set_aid'} } = {
+                map_set_aid  => $position->{'map_set_aid'},
+                map_set_name => join(' - ',
+                    $position->{'species_name'},
+                    $position->{'map_set_name'},
+                    $position->{'map_name'}
+                )
+            };
+        }
 
         $feature->{'no_positions'}    = scalar @$positions;
         $feature->{'positions'}       = $positions;
@@ -1788,10 +1804,15 @@ Returns the detail info for a map.
             : '';
     }
 
+    my @comparative_maps = 
+        sort { $a->{'name'} cmp $b->{'name'} } 
+        values %comparative_maps;
+
     return {
-        features      => $features,
-        feature_types => $feature_types,
-        reference_map => $reference_map,
+        features         => $features,
+        feature_types    => $feature_types,
+        reference_map    => $reference_map,
+        comparative_maps => \@comparative_maps,
     }
 }
 

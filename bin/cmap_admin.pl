@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.3 2002-08-30 02:49:55 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.4 2002-09-10 01:46:47 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION $BE_QUIET ];
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 #
 # Turn off output buffering.
@@ -55,6 +55,7 @@ use Bio::GMOD::CMap::Data;
 use Bio::GMOD::CMap::Utils;
 use Bio::GMOD::CMap::Admin::Import();
 use Bio::GMOD::CMap::Admin::MakeCorrespondences();
+use Bio::GMOD::CMap::Admin::ImportCorrespondences();
 
 use base 'Bio::GMOD::CMap';
 
@@ -112,10 +113,10 @@ sub show_greeting {
                 action  => 'reload_correspondence_matrix', 
                 display => 'Reload correspondence matrix' 
             },
-#            { 
-#                action  => 'correspondences', 
-#                display => 'Import Feature Correspondences' 
-#            },
+            { 
+                action  => 'import_correspondences', 
+                display => 'Import Feature Correspondences' 
+            },
             { 
                 action  => 'quit',   
                 display => 'Quit' 
@@ -233,27 +234,9 @@ sub import_correspondences {
     $term->addhistory( $file ); 
     $self->file( $file );
 
-    #
-    # Ask whether to overwrite or append the data.
-    #
-    my $overwrite = 1;
-#    my $overwrite = $self->show_menu(
-#        title   => 'Overwrite/Append',
-#        prompt  => 'Do you wish to Overwrite or Append this data? ',
-#        display => 'display',
-#        return  => 'value',
-#        data    => [
-#            { value => 1, display => 'Overwrite' },
-#            { value => 0, display => 'Append'    },
-#        ],
-#    );
-
-    my $overwrite_yes_no = $overwrite ? 'Yes' : 'No';
-
     print join("\n",
         'OK to import?',
         "  File      : $file",
-        "  Overwrite : $overwrite_yes_no",
         "[Y/n] "
     );
     chomp( my $answer = <STDIN> );
@@ -261,12 +244,11 @@ sub import_correspondences {
 
     print "Importing data...\n";
 
-    my $importer = Bio::GMOD::CMap::Admin::FeatureCorrespondenceImport->new;
-    $importer->import(
-        fh           => $fh,
-        overwrite    => $overwrite,
-        be_quiet     => 0, #$BE_QUIET,
-    ) or do { print "Error: ", $importer->error, "\n"; return; };
+    my $importer = Bio::GMOD::CMap::Admin::ImportCorrespondences->new;
+    $importer->import( fh => $fh ) or do { 
+        print "Error: ", $importer->error, "\n"; 
+        return; 
+    };
 }
 
 # ----------------------------------------------------

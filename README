@@ -7,11 +7,13 @@ comparing genomic maps.  It was originally written for the Gramene
 comparative mapping website (http://www.gramene.org/) under the
 supervision of Dr. Lincoln Stein at Cold Spring Harbor Laboratories
 for comparing across species of crop grasses (rice, wheat, oat,
-barley, sorghum, etc.).  As a project funded by public money and
-written using freely available, open-source tools, it has always been
-a primary goal to release this code for the benefit of other genomic
-communities to help their efforts to draw correlations between
-different mapping studies across a variety of species.
+barley, sorghum, etc.).  The project now falls under the rubrik of the
+Generic Model Organism Database (http://www.gmod.org/).  As a project
+funded by public money and written using freely available, open-source
+tools, it has always been a primary goal to release this code for the
+benefit of other genomic communities to help their efforts to draw
+correlations between different mapping studies across a variety of
+species.
 
 The application is written entirely in Perl and takes advantage of
 Apache's embedded Perl technology, mod_perl.  The application also
@@ -19,12 +21,12 @@ relies upon a relational database management system (RDBMS), such as
 Oracle or MySQL for gathering the data, and uses Paul Boutell's libgd
 c library and Lincoln Stein's GD Perl module to draw the maps.
 
-To install: Read "INSTALL."
+To install: Follow the directions in the file called "INSTALL."
 
 If you want to understant the code further, esp. to customize or
 extend it, read "docs/CODE_OVERVIEW."
 
-If you have questions, write the Gramene development list at
-"gramene-dev@cshl.org" or the author at "kclark@cshl.org".
+If you have questions, write the CMAP development list at
+"gmod-cmap@lists.sourceforge.net" or the author at "kclark@cshl.org".
 
 __END__

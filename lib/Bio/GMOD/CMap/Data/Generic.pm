@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data::Generic;
 
-# $Id: Generic.pm,v 1.6 2002-09-06 22:15:51 kycl4rk Exp $
+# $Id: Generic.pm,v 1.7 2002-09-10 01:46:47 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.6 $)[-1];
+$VERSION = (qw$Revision: 1.7 $)[-1];
 
 use Bio::GMOD::CMap;
 use base 'Bio::GMOD::CMap';
@@ -341,7 +341,8 @@ The SQL for finding correspondences for a feature.
 
 =cut
     my $self = shift;
-    return q[
+    my %args = @_;
+    my $sql  = q[
         select   f.feature_name,
                  f.accession_id as feature_aid,
                  f.start_position,
@@ -373,8 +374,19 @@ The SQL for finding correspondences for a feature.
         and      map.map_set_id=ms.map_set_id
         and      ms.species_id=s.species_id
         and      ms.map_type_id=mt.map_type_id
-        order by map_set_name, map_name
     ];
+
+    $sql .= "and ms.accession_id='".$args{'map_set_aid'}."'" 
+            if $args{'map_set_aid'};
+
+    $sql .= q[
+                 order by map_set_name, 
+                 map_name, 
+                 start_position, 
+                 feature_name
+    ];
+
+    return $sql;
 }
 
 # ----------------------------------------------------

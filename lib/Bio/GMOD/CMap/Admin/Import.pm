@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Admin::Import;
 
-# $Id: Import.pm,v 1.2 2002-09-06 22:15:51 kycl4rk Exp $
+# $Id: Import.pm,v 1.3 2002-09-10 01:46:47 kycl4rk Exp $
 
 =pod
 
@@ -15,8 +15,7 @@ Bio::GMOD::CMap::Admin::DataImport - import map data
   my $importer = Bio::GMOD::CMap::Admin::DataImport->new(db=>$db);
   $importer->import(
       map_set_id => $map_set_id,
-      fh           => $fh,
-      map_type     => $map_type,
+      fh         => $fh,
   ) or print "Error: ", $importer->error, "\n";
 
 =head1 DESCRIPTION
@@ -28,7 +27,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.2 $)[-1];
+$VERSION  = (qw$Revision: 1.3 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -56,7 +55,6 @@ use constant RE_LOOKUP => {
     feature_stop         => { is_required => 0, datatype => 'number' },
     feature_type         => { is_required => 1, datatype => 'string' },
 );
-
 
 # ----------------------------------------------------
 sub import {
@@ -166,7 +164,7 @@ Starred fields are required.  Order of fields is not important.
         unless ( $feature_type_id ) {
             print "Feature type '$feature_type' doesn't exist.  Create?[Y/n] ";
             chomp( my $answer = <STDIN> );
-            if ( $answer =~ m/[Yy]/ ) {
+            if ( $answer =~ m/^[Yy]/ ) {
                 $feature_type_id = next_number(
                     db           => $db, 
                     table_name   => 'cmap_feature_type',

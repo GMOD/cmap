@@ -111,6 +111,15 @@
                     <option value="[% ft.feature_type_aid %]"[% IF ft.feature_type_aid==apr.param('feature_type_aid'); ' selected'; END %]>[% ft.feature_type %]</option>
                 [% END %]
             </select>
+            <br>
+            Restrict by Comparative Map:
+            <select name="comparative_map_set_aid">
+                <option value="">--All--</option>
+                [% FOREACH ms=comparative_maps %]
+                    <option value="[% ms.map_set_aid %]"[% IF ms.map_set_aid==apr.param('map_set_aid'); ' selected'; END %]>[% ms.map_set_name %]</option>
+                [% END %]
+            </select>
+
             <input type="hidden" name="order"            value="[% apr.param('order') %]">
             <input type="hidden" name="order_by"         value="[% apr.param('order_by') %]">
             <input type="hidden" name="ref_map_set_aid"  value="[% apr.param('ref_map_set_aid') %]">
@@ -126,7 +135,7 @@
 
     <tr>
         <th colspan="3">[% reference_map.species_name %] - [% reference_map.map_set_name %] - [% reference_map.map_name %]<br><small>(Click headers to resort)</small></th>
-        <th colspan="5">Other Maps</th>
+        <th colspan="5">Comparative Maps</th>
     </tr>
 
     <tr>

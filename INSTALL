@@ -687,6 +687,14 @@ correspondences yourself using the admin tool.  I'll write a tool for
 importing some sort of correspondence data RSN.  Suggestions on the
 format of the data would be welcomed.
 
+ESTABLISHING LANDMARKS
+
+You can define certain features on your maps to be "landmarks."  These
+can then be used by the end user to show maps less dense with feature
+labels, tagging only those that you as the curator have decided are
+the most important.  Simply set the "is_landmark" field to "1" to
+define a feature as a landmark.
+
 CUSTOMIZING YOUR INSTALLATION
 
 You should edit "cmap.conf" with the proper connection data for your
@@ -717,7 +725,7 @@ then check out http://www.template-toolkit.com/ for the documentation
 
 COMMENTS
 
-If you have questions or comments about this document, please send
-them to Ken Clark, kclark@cshl.org.
+If you have questions or comments about this document, please write
+the CMAP development mailing list at "gmod-cmap@lists.sourceforge.net."
 
 __END__
