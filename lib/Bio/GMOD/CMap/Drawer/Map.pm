@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.32 2003-03-04 01:13:30 kycl4rk Exp $
+# $Id: Map.pm,v 1.33 2003-03-05 01:52:37 kycl4rk Exp $
 
 =pod
 
@@ -23,12 +23,11 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.32 $)[-1];
+$VERSION = (qw$Revision: 1.33 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
-use Bio::GMOD::CMap::Drawer::Feature;
 use Bio::GMOD::CMap::Utils qw[ column_distribution label_distribution ];
 
 use base 'Bio::GMOD::CMap';
@@ -435,9 +434,22 @@ Lays out the map.
         %feature_type_ids, # the distinct feature type IDs
     );
 
-    my $default_feature_color    = $self->config('feature_color');
-    my $feature_details_template = $self->config('feature_details_url');
-    my $t = $self->template or return;
+    #
+    # Some common things we'll need later on.
+    #
+    my $t                        = $drawer->template or return;
+    my $min_map_pixel_height     = $drawer->config('min_map_pixel_height');
+    my $default_feature_color    = $drawer->config('feature_color');
+    my $feature_details_template = $drawer->config('feature_details_url');
+    my $connecting_line_color    = $drawer->config('connecting_line_color');
+    my $map_details_url          = $drawer->config('map_details_url');
+    my $map_set_info_url         = $drawer->config('map_set_info_url');
+    my $feature_corr_color       =
+        $drawer->config('feature_correspondence_color') || '';
+    my $feature_highlight_fg_color = 
+        $drawer->config('feature_highlight_fg_color');
+    my $feature_highlight_bg_color = 
+        $drawer->config('feature_highlight_bg_color');
 
     for my $map_id ( @map_ids ) {
         $is_relational     = $self->is_relational_map( $map_id );
@@ -481,7 +493,6 @@ Lays out the map.
                 feature_ids => \@corr_feature_ids,
             );
 
-            my $min_map_pixel_height = $self->config('min_map_pixel_height');
             $pixel_height    = $positions[-1] - $positions[0];
             $pixel_height    = $min_map_pixel_height
                 if $pixel_height < $min_map_pixel_height;
@@ -542,14 +553,11 @@ Lays out the map.
 
         if ( $drawer->highlight_feature( $self->map_name( $map_id ) ) ) {
             $drawer->add_drawing(
-                RECTANGLE, @map_bounds, 
-                $self->config('feature_highlight_fg_color')
+                RECTANGLE, @map_bounds, $feature_highlight_fg_color
             );
 
             $drawer->add_drawing(
-                FILLED_RECT, @map_bounds, 
-                $self->config('feature_highlight_bg_color'),
-                0
+                FILLED_RECT, @map_bounds, $feature_highlight_bg_color, 0
             );
         }
 
@@ -686,8 +694,6 @@ Lays out the map.
         my %lanes;                    # associate priority with a lane
         my $prev_lane_no;             # the previous lane
         my ($leftmostf, $rightmostf); # furthest features
-        my $feature_corr_color = 
-            $self->config('feature_correspondence_color') || '';
 
         for my $lane ( sort { $a <=> $b } keys %$features ) {
             my %features_with_corr;           # features w/correspondences
@@ -746,17 +752,17 @@ Lays out the map.
                 my $tick_overhang = 2;
                 my $y_pos1        = $base_y + ( $pixel_height * $rstart );
                 my $y_pos2        = $base_y + ( $pixel_height * $rstop  );
-
-                my $color      = $has_corr ? $feature_corr_color : '';
-                   $color    ||= $feature->{'color'} || $default_feature_color;
-                my $label      = $feature->{'feature_name'};
-                my $tick_start = $base_x - $tick_overhang;
-                my $tick_stop  = $base_x + $map_width + $tick_overhang;
+                my $color         = $has_corr ? $feature_corr_color : '';
+                   $color       ||= $feature->{'color'} || 
+                                    $default_feature_color;
+                my $label         = $feature->{'feature_name'};
+                my $tick_start    = $base_x - $tick_overhang;
+                my $tick_stop     = $base_x + $map_width + $tick_overhang;
+                my $feature_shape = $feature->{'shape'} || 'line';
                 my $label_y;
                 my @coords;
-                $feature->{'shape'} ||= 'line';
 
-                if ( $feature->{'shape'} eq LINE ) {
+                if ( $feature_shape eq LINE ) {
                     $drawer->add_drawing(
                         LINE, $tick_start, $y_pos1, $tick_stop, $y_pos1, $color
                     );
@@ -792,7 +798,7 @@ Lays out the map.
                         );
                     }
 
-                    if ( $feature->{'shape'} eq 'span' ) {
+                    if ( $feature_shape eq 'span' ) {
                         $drawer->add_drawing(
                             LINE, 
                             $vert_line_x1, $y_pos1, 
@@ -810,7 +816,7 @@ Lays out the map.
                             $vert_line_x2, $y_pos1, $vert_line_x2, $y_pos2
                         );
                     }
-                    elsif ( $feature->{'shape'} eq 'up-arrow' ) {
+                    elsif ( $feature_shape eq 'up-arrow' ) {
                         $drawer->add_drawing(
                             LINE,
                             $vert_line_x2, $y_pos1,
@@ -830,7 +836,7 @@ Lays out the map.
                             $vert_line_x2 + 2, $y_pos1, $color
                         );
                     }
-                    elsif ( $feature->{'shape'} eq 'down-arrow' ) {
+                    elsif ( $feature_shape eq 'down-arrow' ) {
                         $drawer->add_drawing(
                             LINE,
                             $vert_line_x2, $y_pos2,
@@ -850,7 +856,7 @@ Lays out the map.
                             $vert_line_x2 + 2, $y_pos1, $color
                         );
                     }
-                    elsif ( $feature->{'shape'} eq 'double-arrow' ) {
+                    elsif ( $feature_shape eq 'double-arrow' ) {
                         $drawer->add_drawing(
                             LINE,
                             $vert_line_x2, $y_pos1,
@@ -881,7 +887,7 @@ Lays out the map.
                             $vert_line_x2 + 2, $y_pos1, $color
                         );
                     }
-                    elsif ( $feature->{'shape'} eq 'box' ) {
+                    elsif ( $feature_shape eq 'box' ) {
                         $vert_line_x1 = $label_side eq RIGHT
                             ? $tick_start - $offset : $tick_stop + $offset;
                         $vert_line_x2 = $label_side eq RIGHT 
@@ -894,7 +900,7 @@ Lays out the map.
 
                         $drawer->add_drawing( RECTANGLE, @coords, $color );
                     }
-                    elsif ( $feature->{'shape'} eq 'dumbbell' ) {
+                    elsif ( $feature_shape eq 'dumbbell' ) {
                         my $width = 3;
                         $drawer->add_drawing(
                             ARC, 
@@ -912,7 +918,7 @@ Lays out the map.
                             $vert_line_x2 + $width/2, $y_pos2
                         );
                     }
-                    elsif ( $feature->{'shape'} eq 'rectangle' ) {
+                    elsif ( $feature_shape eq 'rectangle' ) {
                         my $width = 3;
                         $drawer->add_drawing(
                             FILLED_RECT, 
@@ -932,9 +938,16 @@ Lays out the map.
                         );
                     }
 
+                    my $url;
+                    $t->process( 
+                        \$feature_details_template, 
+                        { feature => $feature }, 
+                        \$url,
+                    ) or return $self->error( $t->error );
+                    
                     $drawer->add_map_area(
                         coords => \@coords,
-                        url    => $feature->{'feature_details_url'},
+                        url    => $url,
                         alt    => 'Details: '.$feature->{'feature_name'},
                     );
                 }
@@ -975,7 +988,7 @@ Lays out the map.
                     my $url;
                     $t->process( 
                         \$feature_details_template, 
-                        { feature => $self }, 
+                        { feature => $feature }, 
                         \$url,
                     ) or return $self->error( $t->error );
                     push @$labels, {
@@ -1044,12 +1057,21 @@ Lays out the map.
                     $_->{'has_corr'}       || 0,
                 ] }
                 @south_labels;
+#            my $label_y      =  label_distribution(
+#                rows         => \@rows,
+#                target       => $label->{'target'},
+#                row_height   => $label->{'font'}->height,
+#                max_distance => $label->{'has_corr'}       ? 15 : 10, 
+#                can_skip     => $label->{'is_highlighted'} ?  0 :  1,
+#                direction    => $label->{'direction'},
+#                buffer       => $buffer,
+#            );
 
-            my @accepted_labels;   # the labels we keep
-            my @rows      =    (); # for labels north-to-south
-            my $buffer    = 2;
+            my @accepted_labels; # the labels we keep
+            my @rows      = ();  # for labels north-to-south
+            my $buffer    =  2;  # the space between things
             for my $label ( @labels ) {
-                my $label_y      = label_distribution(
+                my $label_y      =  label_distribution(
                     rows         => \@rows,
                     target       => $label->{'target'},
                     row_height   => $label->{'font'}->height,
@@ -1117,14 +1139,12 @@ Lays out the map.
                 #
                 if ( $label->{'is_highlighted'} ) {
                     $drawer->add_drawing(
-                        RECTANGLE, @label_bounds, 
-                        $self->config('feature_highlight_fg_color')
+                        RECTANGLE, @label_bounds, $feature_highlight_fg_color
                     );
 
                     $drawer->add_drawing(
                         FILLED_RECT, @label_bounds, 
-                        $self->config('feature_highlight_bg_color'),
-                        0
+                        $feature_highlight_bg_color, 0
                     );
                 }
 
@@ -1174,7 +1194,7 @@ Lays out the map.
                     $label_connect_y1,
                     $label_connect_x2, 
                     $label_connect_y2,
-                    $label->{'color'} || $self->config('connecting_line_color')
+                    $label->{'color'} || $connecting_line_color,
                 );
             }
 
@@ -1219,7 +1239,7 @@ Lays out the map.
             push @maps, $link;
         }
 
-        my $url = $self->config('map_details_url').
+        my $url = $map_details_url.
             '?ref_map_set_aid='.$self->map_set_aid( $map_id ).
             ';ref_map_aid='.$self->accession_id( $map_id ).
             ';comparative_maps='.join( ':', @maps ).
@@ -1313,7 +1333,7 @@ Lays out the map.
                 RECTANGLE, @bounds, 'black'
             );
 
-            my $url = $self->config('map_set_info_url').
+            my $url = $map_set_info_url.
                       '?map_set_aid='.
                       $self->map_set_aid( $map_id );
             $drawer->add_map_area(
@@ -1327,25 +1347,25 @@ Lays out the map.
             $max_x = $bounds[2] if $bounds[2] > $max_x;
         }
 
-        #
-        # Draw feature correspondences to reference map.
-        # This could be moved into the Drawer and be done at the end (?).
-        #
-        for my $position_set ( 
-            $drawer->feature_correspondence_positions( slot_no => $slot_no ) 
-        ) {
-            my @positions     = @{ $position_set->{'positions'} || [] } or next;
-            my $evidence_info = $drawer->feature_correspondence_evidence(
-                $position_set->{'feature_id1'},
-                $position_set->{'feature_id2'}
-            );
-            $drawer->add_connection(
-                @positions,
-                $evidence_info->{'line_color'} || 
-                    $self->config('connecting_line_color'),
-            );
-        }
-
+#        #
+#        # Draw feature correspondences to reference map.
+#        # This could be moved into the Drawer and be done at the end (?).
+#        #
+#        for my $position_set ( 
+#            $drawer->feature_correspondence_positions( slot_no => $slot_no ) 
+#        ) {
+#            my @positions     = @{ $position_set->{'positions'} || [] } or next;
+#            my $evidence_info = $drawer->feature_correspondence_evidence(
+#                $position_set->{'feature_id1'},
+#                $position_set->{'feature_id2'}
+#            );
+#            $drawer->add_connection(
+#                @positions,
+#                $evidence_info->{'line_color'} || 
+#                    $self->config('connecting_line_color'),
+#            );
+#        }
+#
         $slot_min_x = $min_x unless defined $slot_min_x;
         $slot_min_x = $min_x if $min_x < $slot_min_x;
         $slot_max_x = $max_x unless defined $slot_max_x;
@@ -1414,8 +1434,7 @@ Lays out the map.
 
         $drawer->add_map_area(
             coords => \@bounds,
-            url    => $self->config('map_set_info_url').
-                      "?map_set_aid=$map_set_aid",
+            url    => "$map_set_info_url?map_set_aid=$map_set_aid",
             alt    => 'Map Set Info',
         );
 
