@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.198.2.5 2005-02-24 22:51:15 mwz444 Exp $
+# $Id: Data.pm,v 1.198.2.6 2005-02-25 05:25:06 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.198.2.5 $)[-1];
+$VERSION = (qw$Revision: 1.198.2.6 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -2719,6 +2719,7 @@ sub fill_out_maps {
         my $map;
         my $slot_no   = $ordered_slot_nos[$i];
         my $slot_info = $self->slot_info->{$slot_no};
+        next unless ($slot_info and %$slot_info);
         my $sql_str   = $base_sql
           . " and map.map_id in ("
           . join( ",", keys(%$slot_info) ) . ") ";
@@ -5346,6 +5347,11 @@ original start and stop.
             $where = " where $aid_where ";
         }
         $sql_str = "$sql_base $from $where $group_by $having\n";
+
+        # The min_correspondences sql code doesn't play nice with distinct
+        if ($min_correspondences and $slot_no != 0){
+            $sql_str =~ s/distinct//;
+        }
 
         #print S#TDERR "SLOT_INFO SQL \n$sql_str\n";
 
