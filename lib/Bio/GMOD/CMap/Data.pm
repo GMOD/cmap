@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.57 2003-09-10 19:59:19 kycl4rk Exp $
+# $Id: Data.pm,v 1.58 2003-09-12 19:06:56 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.57 $)[-1];
+$VERSION = (qw$Revision: 1.58 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -2791,10 +2791,11 @@ sub view_feature_on_map {
 
     my ( $self, $feature_aid )    = @_;
     my $db                        = $self->db;
-    my ( $map_set_aid, $map_aid ) = $db->selectrow_array(
+    my ( $map_set_aid, $map_aid, $feature_name ) = $db->selectrow_array(
         q[
             select ms.accession_id,
-                   map.accession_id
+                   map.accession_id,
+                   f.feature_name
             from   cmap_map_set ms,
                    cmap_map map,
                    cmap_feature f
@@ -2806,7 +2807,7 @@ sub view_feature_on_map {
         ( $feature_aid )
     );
 
-    return ( $map_set_aid, $map_aid );
+    return ( $map_set_aid, $map_aid, $feature_name );
 }
 
 1;
