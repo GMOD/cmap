@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.50 2003-07-03 18:36:27 kycl4rk Exp $
+# $Id: Map.pm,v 1.51 2003-07-30 02:05:17 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.50 $)[-1];
+$VERSION = (qw$Revision: 1.51 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -81,10 +81,10 @@ Figure out where right-to-left this map belongs.
 
 =cut
 
-    my $self        = shift;
-    my $slot_no     = $self->slot_no;
-    my $drawer      = $self->drawer;
-    my $buffer      = 15;
+    my $self    = shift;
+    my $slot_no = $self->slot_no;
+    my $drawer  = $self->drawer;
+    my $buffer  = 15;
 
     my $base_x;
     if ( 
@@ -280,6 +280,108 @@ Draws the map as an "I-beam."  Return the bounds of the image.
 }
 
 # ----------------------------------------------------
+sub draw_map_title {
+
+=pod
+
+=head2 draw_map_title
+
+Draws the map title.
+
+=cut
+
+    my $self       = shift; 
+    my %args       = @_;
+    my $min_y      = $args{'min_y'}   ||  0;
+    my $left_x     = $args{'left_x'}  ||  0;
+    my $right_x    = $args{'right_x'} ||  0;
+    my $lines      = $args{'lines'}   || [];
+    my $buttons    = $args{'buttons'} || [];
+    my $font       = $args{'font'};
+    my $buffer     = 4;
+    my $mid_x      = $left_x + ( ( $right_x - $left_x ) / 2 );
+    my $top_y      = $min_y - (scalar @$lines + 1) * ($font->height+$buffer)-4;
+    my $leftmost   = $mid_x;
+    my $rightmost  = $mid_x;
+
+    #
+    # Place the titles.
+    #
+    my ( @drawing_data, @map_area_data );
+    my $y = $top_y;
+    for my $label ( @$lines ) {
+        my $len     = $font->width * length( $label );
+        my $label_x = $mid_x - $len / 2;
+        my $end     = $label_x + $len;
+
+        push @drawing_data, [ STRING, $font, $label_x, $y, $label, 'black' ];
+
+        $y        += $font->height + $buffer;
+        $leftmost  = $label_x if $label_x < $leftmost;
+        $rightmost = $end     if $end     > $rightmost;
+    }
+
+    #
+    # Figure out how much room left-to-right the buttons will take.
+    #
+    my $buttons_width;
+    for my $button ( @$buttons ) {
+        $buttons_width += $font->width * length( $button->{'label'} );
+    }
+    $buttons_width += 6 * ( scalar @$buttons - 1 );
+
+    #
+    # Place the buttons.
+    #
+    my $label_x = $mid_x - $buttons_width / 2;
+    my $sep_x   = $label_x;
+    my $sep_y   = $y;
+    $y         += 6;
+
+    for my $button ( @$buttons ) {
+        my $len  = $font->width * length( $button->{'label'} );
+        my $end  = $label_x + $len;
+        my @area = ( $label_x - 2, $y - 2, $end + 2, $y + $font->height + 2 );
+        push @drawing_data, 
+            [ STRING, $font, $label_x, $y, $button->{'label'}, 'grey' ],
+            [ RECTANGLE, @area, 'grey' ],
+        ;
+
+        $leftmost  = $label_x if $label_x < $leftmost;
+        $rightmost = $end     if $end     > $rightmost;
+        $label_x  += $len + 6;
+
+        push @map_area_data, {
+            coords => \@area,
+            url    => $button->{'url'},
+            alt    => $button->{'alt'},
+        };
+    }
+
+    push @drawing_data, [ LINE, $sep_x, $sep_y, $label_x - 6, $sep_y, 'grey' ];
+
+    #
+    # Enclose the whole area in black-edged white box.
+    #
+    my @bounds = (
+        $leftmost  - $buffer, 
+        $top_y     - $buffer,
+        $rightmost + $buffer, 
+        $min_y     + $buffer,
+    );
+
+    push @drawing_data, [
+        FILLED_RECT, @bounds, 'white', 0 # bottom-most layer
+    ];
+
+    push @drawing_data, [
+        RECTANGLE, @bounds, 'black'
+    ];
+
+    return ( \@bounds, \@drawing_data, \@map_area_data );
+}
+
+# ----------------------------------------------------
 sub features {
 
 =pod
@@ -291,11 +393,13 @@ in raw format as a hashref keyed on feature_id.
 
 =cut
 
-    my $self   = shift;
-    my $map_id = shift or return;
-    my $map    = $self->map( $map_id );
+    my $self       = shift;
+    my $map_id     = shift or return;
+    my $map        = $self->map( $map_id );
+    my $is_flipped = shift || 0;
 
     unless ( defined $map->{'feature_store'} ) {
+        my $reverse = $is_flipped ? -1 : 1;
         for my $data ( 
             map  { $_->[0] }
             sort { 
@@ -303,7 +407,7 @@ in raw format as a hashref keyed on feature_id.
                 ||
                 $a->[2] <=> $b->[2]
                 ||
-                $a->[3] <=> $b->[3] 
+                $reverse * ( $a->[3] <=> $b->[3] )
                 ||
                 $a->[4] <=> $b->[4] 
             }
@@ -412,6 +516,7 @@ Lays out the map.
     my $default_feature_color  = $drawer->config('feature_color');
     my $feature_details_url    = DEFAULT->{'feature_details_url'};
     my $connecting_line_color  = $drawer->config('connecting_line_color');
+    my $map_viewer_url         = $drawer->config('cmap_viewer_url');
     my $map_details_url        = $drawer->config('map_details_url');
     my $map_set_info_url       = $drawer->config('map_set_info_url');
     my $rel_map_show_corr_only =
@@ -423,11 +528,17 @@ Lays out the map.
     my $feature_highlight_bg_color = 
         $drawer->config('feature_highlight_bg_color');
 
+    my @ordered_slot_nos = sort { $a <=> $b } grep { $_ != 0 } keys %$slots;
+
+    my @map_buttons;
     for my $map_id ( @map_ids ) {
         $is_relational     = $self->is_relational_map( $map_id );
         my $base_x         = $label_side eq RIGHT
-                             ? $self->base_x + $half_title_length + 10
-                             : $self->base_x - $half_title_length - 20;
+            ? $slot_no == 0 
+                ? $self->base_x 
+                : $self->base_x + $half_title_length + 10
+            : $self->base_x - $half_title_length - 20
+        ;
         my $show_labels    = $is_relational && $slot_no != 0 ? 0 :
                              $label_features eq 'none' ? 0 : 1 ;
         my $show_ticks     = $is_relational && $slot_no != 0 ? 0 : 1;
@@ -435,7 +546,32 @@ Lays out the map.
         my $show_map_units = $is_relational && $slot_no != 0 ? 0 : 1;
         my $map_width      = $self->map_width( $map_id );
         my $column_width   = $map_width + 10;
-        my $features       = $self->features( $map_id );
+        my $is_flipped     = 0;
+
+        unless ( $is_relational ) {
+            for my $rec ( @{ $drawer->flip } ) {
+                if (
+                    $rec->{'slot_no'} == $slot_no
+                    &&
+                    $rec->{'map_aid'} == $self->accession_id( $map_id ) 
+                ) {
+                    $is_flipped = 1;
+                    last;
+                }
+            }
+        }
+
+        my $features = $self->features( $map_id );
+
+        #
+        # Reset map buttons.
+        #
+        @map_buttons = ( {
+            url      => $map_set_info_url.'?map_set_aid='.
+                        $self->map_set_aid( $map_id ),
+            alt      => 'Map Set Info',
+            label    => 'i',
+        } );
 
         #
         # The map.
@@ -545,7 +681,12 @@ Lays out the map.
 
             for my $tick_pos ( @intervals ) {
                 my $rel_position = ( $tick_pos - $map_start ) / $map_length;
-                my $y_pos        = $base_y + ( $pixel_height * $rel_position );
+
+                my $y_pos        = $is_flipped
+                    ? $map_bounds[3] - ( $pixel_height * $rel_position )
+                    : $base_y + ( $pixel_height * $rel_position )
+                ;
+
                 my $tick_start   = $label_side eq RIGHT
                     ? $base_x - $tick_overhang
                     : $base_x
@@ -643,13 +784,21 @@ Lays out the map.
                     ? 1 
                     : defined $rstop && $rstop < 0 ? 0 : $rstop;
 
+                if ( $is_flipped && defined $rstop ) {
+                    ( $rstart, $rstop ) = ( $rstop, $rstart );
+                }
+
                 my $tick_overhang     = 2;
-                my $y_pos1            = $base_y + ( $pixel_height * $rstart );
+                my $y_pos1            = $is_flipped 
+                    ? $base_y + $pixel_height - ( $pixel_height * $rstart )
+                    : $base_y + ( $pixel_height * $rstart );
                 my $y_pos2            = defined $rstop
-                                        ? $base_y + ( $pixel_height * $rstop  )
-                                        : undef;
-                   $y_pos2            = $y_pos1 unless 
-                                        defined $y_pos2 && $y_pos2 > $y_pos1;
+                    ? $is_flipped
+                        ? $base_y + $pixel_height - ( $pixel_height * $rstop  )
+                        : $base_y + ( $pixel_height * $rstop  )
+                    : undef;
+                $y_pos2 = $y_pos1 unless defined $y_pos2 && $y_pos2 > $y_pos1;
+
                 my $color             = $has_corr ? $feature_corr_color : '';
                    $color           ||= $feature->{'color'} || 
                                         $default_feature_color;
@@ -660,11 +809,7 @@ Lays out the map.
                 my $shape_is_triangle = $feature_shape =~ /triangle$/;
 
                 my ( $label_y, @coords );
-                if ( 
-                    $shape_is_triangle     ||
-#                    $feature_shape eq LINE || 
-                    $y_pos2 <= $y_pos1
-                ) {
+                if ( $shape_is_triangle || $y_pos2 <= $y_pos1 ) {
                     $label_y               = $y_pos1 - $reg_font->height/2;
                     $feature->{'midpoint'} = $fstart;
                     $feature->{'mid_y'}    = $y_pos1;
@@ -982,8 +1127,15 @@ Lays out the map.
                         )
                     )
                 ) {
-                    my $labels = $feature->{'midpoint'} < $midpoint
-                        ? \@north_labels : \@south_labels;
+                    my $labels = 
+                        $feature->{'midpoint'} < $midpoint && $is_flipped
+                        ||
+                        $feature->{'midpoint'} > $midpoint && $is_flipped
+                        ||
+                        $feature->{'midpoint'} < $midpoint && !$is_flipped
+                        ? \@north_labels
+                        : \@south_labels 
+                    ;
 
                     push @$labels, {
                         priority       => $feature->{'drawing_priority'},
@@ -1266,7 +1418,7 @@ Lays out the map.
             values %features_with_corr;
 
         #
-        # Add map details link.
+        # Map details button.
         #
         my $slots = $drawer->slots;
         my @maps;
@@ -1294,116 +1446,122 @@ Lays out the map.
             push @maps, $link;
         }
 
-        my $url = $map_details_url.
+        my $details_url = $map_details_url.
             '?ref_map_set_aid='.$self->map_set_aid( $map_id ).
             ';ref_map_aid='.$self->accession_id( $map_id ).
             ';comparative_maps='.join( ':', @maps ).
             ';label_features='.$drawer->label_features.
             ';feature_types='.
             join(',', @{ $drawer->include_feature_types || [] }).
-            ';highlight='.uri_escape( $drawer->highlight );
+            ';highlight='.uri_escape( $drawer->highlight ).
+            ';min_correspondences='.$drawer->min_correspondences;
 
         if ( $is_relational && $slot_no != 0 ) {
             push @map_area_data, {
                 coords => \@map_bounds,
-                url    => $url,
+                url    => $details_url,
                 alt    => 'Details: '.$self->map_name,
             };
         }
         else {
-            my $map_bottom_x = $map_bounds[0];
-            my $map_bottom_y = $map_bounds[3] + 5;
-
-            push @drawing_data, [
-                STRING, $reg_font, $map_bottom_x, $map_bottom_y, '?', 'grey'
-            ];
-
-            my @area = (
-                $map_bottom_x - 2,
-                $map_bottom_y - 2,
-                $map_bottom_x + $reg_font->width + 2,
-                $map_bottom_y + $reg_font->height + 2,
-            );
-
-            push @drawing_data, [ RECTANGLE, @area, 'grey' ];
-            push @map_area_data, {
-                coords => \@area,
-                url    => $url,
-                alt    => 'Details: '.( $self->map_name || '' ),
+            push @map_buttons, {
+                label => '?',
+                url   => $details_url,
+                alt   => 'Details: '.( $self->map_name || '' ),
             };
-            $bottom_y = $area[3] if $area[3] > $bottom_y;
         }
 
-#        #
-#        # Add "Delete" and "Flip" if appropriate.
-#        #
-#        unless ( 
-#            ( $is_relational && $slot_no != 0 )
-#            ||
-#            $slot_no == 0
-#            ||
-#            $slots->{ $slot_no }{'field'} eq 'map_set_aid'
-#        ) {
-#            my $buffer     = 4;
-#            my $map_left   = $map_bounds[0];
-#            my $map_right  = $map_bounds[2];
-#            my $map_bottom = $map_bounds[3] + $reg_font->height;
-#            my $map_middle = $map_left + ( ( $map_right - $map_left ) / 2 );
-#            my $string     = '(Delete)';
-#            my $string_x   =
-#                $map_middle - ( $reg_font->width * ( length( $string ) ) / 2 );
-#            my $string_y   = $map_bottom + $buffer;
-#            $drawer->add_drawing(
-#                STRING,
-#                $reg_font,
-#                $string_x,
-#                $string_y,
-#                $string,
-#                'black',
-#            );
-#
-#            #
-#            # To select the other comparative maps, we have to cut off
-#            # everything after the current map.  E.g., if there are maps in
-#            # slots -2, -1, 0, 1, and 2, for slot 1 we should choose everything
-#            # less than it (and non-zero).  The opposite is true for negative
-#            # slots.
-#            #
-#            my @ordered_slot_nos = sort { $a <=> $b } keys %$slots;
-#            my @cmap_nos;
-#            if ( $slot_no < 0 ) {
-#                push @cmap_nos, grep { $_>$slot_no && $_!=0 } @ordered_slot_nos;
-#            }
-#            else {
-#                push @cmap_nos, grep { $_<$slot_no && $_!=0 } @ordered_slot_nos;
-#            }
-#
-#            my $cmaps = join('%3a',
-#                map { 
-#                    join('%3d', $_, $slots->{$_}{'field'}, $slots->{$_}{'aid'})
-#                } @cmap_nos
-#            );
-#
-#            my $url = $self->config('cmap_viewer_url').
-#                '?ref_map_set_aid='.$slots->{0}{'map_set_aid'}.
-#                ';ref_map_aid='.$slots->{0}{'aid'}.
-#                ';ref_map_start='.$slots->{0}{'start'}.
-#                ';ref_map_stop='.$slots->{0}{'stop'}.
-#                ";comparative_maps=$cmaps";
-#
-#            my $string_bottom = $string_y + $reg_font->height;
-#            $drawer->add_map_area(
-#                coords => [
-#                    $string_x, 
-#                    $string_y, 
-#                    $string_x + ( $reg_font->width * length( $string ) ),
-#                    $string_bottom,
-#                ], 
-#                url    => $url,
-#                alt    => 'Delete '.$self->map_name,
-#            );
-#            $bottom_y = $string_bottom if $string_bottom > $bottom_y;
-#        }
+        #
+        # Delete button.
+        # 
+        if ( $slot_no != 0 ) {
+            my @cmap_nos;
+            if ( $slot_no < 0 ) {
+                push @cmap_nos, grep { $_ > $slot_no } @ordered_slot_nos;
+            }
+            else {
+                push @cmap_nos, grep { $_ < $slot_no } @ordered_slot_nos;
+            }
+
+            my @flips = map { $_->{'slot_no'}.'%3d'.$_->{'map_aid'} } 
+                @{ $drawer->flip };
+
+            my @cmaps = map {
+                join( '%3d', $_, $slots->{$_}{'field'}, $slots->{$_}{'aid'} )
+            } @cmap_nos;
+
+            my $delete_url = $map_viewer_url.
+                '?ref_map_set_aid='.$slots->{'0'}{'map_set_aid'}.
+                ';ref_map_aid='.$slots->{'0'}{'aid'}.
+                ';ref_map_start='.$slots->{'0'}{'start'}.
+                ';ref_map_stop='.$slots->{'0'}{'stop'}.
+                ';comparative_maps='.join( ':', @cmaps ).
+                ';label_features='.$drawer->label_features.
+                ';feature_types='.
+                join(',', @{ $drawer->include_feature_types || [] }).
+                ';highlight='.uri_escape( $drawer->highlight ).
+                ';min_correspondences='.$drawer->min_correspondences.
+                ';flip='.join(':', @flips);
+
+            push @map_buttons, {
+                label => 'X',
+                url   => $delete_url,
+                alt   => 'Delete Map',
+            };
+        }
+
+        #
+        # Flip and New View buttons.
+        # 
+        unless ( $is_relational ) {
+            my @cmaps = map {
+                join( '%3d', $_, $slots->{$_}{'field'}, $slots->{$_}{'aid'} )
+            } @ordered_slot_nos;
+
+            my @flips;
+            my $acc_id = $self->accession_id( $map_id );
+            for my $rec ( @{ $drawer->flip } ) {
+                if ( 
+                    $rec->{'slot_no'} != $slot_no
+                    &&
+                    $rec->{'map_aid'} != $acc_id
+                ) {
+                    push @flips, $rec->{'slot_no'}.'%3d'.$rec->{'map_aid'};
+                }
+            }
+            push @flips, "$slot_no%3d$acc_id" unless $is_flipped;
+
+            my $ref_map_aid = $slots->{'0'}{'field'} eq 'map_set_aid'
+                ? '-1' : $slots->{'0'}{'aid'};
+            my $flip_url = $map_viewer_url.
+                '?ref_map_set_aid='.$slots->{'0'}{'map_set_aid'}.
+                ";ref_map_aid=$ref_map_aid".
+                ';ref_map_start='.$slots->{'0'}{'start'}.
+                ';ref_map_stop='.$slots->{'0'}{'stop'}.
+                ';comparative_maps='.join( ':', @cmaps ).
+                ';label_features='.$drawer->label_features.
+                ';feature_types='.
+                join(',', @{ $drawer->include_feature_types || [] }).
+                ';highlight='.uri_escape( $drawer->highlight ).
+                ';min_correspondences='.$drawer->min_correspondences.
+                ';flip='.join(':', @flips);
+
+            push @map_buttons, {
+                label => 'F',
+                url   => $flip_url,
+                alt   => 'Flip Map',
+            };
+
+            my $new_url = $map_viewer_url.
+                '?ref_map_set_aid='.$self->map_set_aid( $map_id ).
+                ';ref_map_aid='.$self->accession_id( $map_id );
+
+            push @map_buttons, {
+                label => 'N',
+                url   => $new_url,
+                alt   => 'New Map View',
+            };
+        }
 
         #
         # The map title(s).
@@ -1419,60 +1577,22 @@ Lays out the map.
             $map_set_aid = $self->map_set_aid( $map_id );
         }
         else {
-            my $buffer = 4;
-            $min_y    -= $reg_font->height + $buffer * 2;
-            my $mid_x  = $min_x + ( ( $max_x - $min_x ) / 2 );
-            my ( $leftmost, $rightmost, $topmost, $bottommost );
-
-            for my $label ( 
-                map { $self->$_( $map_id ) } reverse @config_map_titles
-            ) {
-                my $label_x = $mid_x - 
-                    ( ( $reg_font->width * length( $label ) ) / 2 );
-
-                push @drawing_data, [
-                    STRING, $reg_font, $label_x, $min_y, $label, 'black'
-                ];
-
-                my $label_end = $label_x + ($reg_font->width * length($label));
-                my $bottom    = $min_y + $reg_font->height;
-                $bottommost   = $bottom     unless defined $bottommost;
-                $topmost      = $min_y      unless defined $topmost;
-                $leftmost     = $label_x    unless defined $leftmost;
-                $rightmost    = $label_end  unless defined $rightmost;
-                $bottommost   = $bottom     if $bottom     > $bottommost;
-                $topmost      = $min_y      if $min_y      < $topmost;
-                $leftmost     = $label_x    if $label_x    < $leftmost;
-                $rightmost    = $label_end  if $label_end  > $rightmost;
-                $min_y       -= $reg_font->height;
-            }
-
-            my @bounds = (
-                $leftmost   - $buffer, 
-                $topmost    - $buffer,
-                $rightmost  + $buffer, 
-                $bottommost + $buffer,
+            my @lines = map { $self->$_($map_id) } @config_map_titles;
+            my ( $bounds, $drawing_data, $map_data ) = $self->draw_map_title(
+                left_x  => $min_x,
+                right_x => $max_x,
+                min_y   => $min_y - $reg_font->height - 8,
+                lines   => \@lines,
+                buttons => \@map_buttons,
+                font    => $reg_font,
             );
 
-            push @drawing_data, [
-                FILLED_RECT, @bounds, 'white', 0 # bottom-most layer
-            ];
+            $min_x = $bounds->[0] if $bounds->[0] < $min_x;
+            $top_y = $bounds->[1] if $bounds->[1] < $top_y;
+            $max_x = $bounds->[2] if $bounds->[2] > $max_x;
 
-            push @drawing_data, [
-                RECTANGLE, @bounds, 'black'
-            ];
-
-            my $url = "$map_set_info_url?map_set_aid=".
-                      $self->map_set_aid( $map_id );
-            push @map_area_data, {
-                coords => \@bounds,
-                url    => $url,
-                alt    => 'Map Set Info',
-            };
-
-            $min_x = $bounds[0] if $bounds[0] < $min_x;
-            $top_y = $bounds[1] if $bounds[1] < $top_y;
-            $max_x = $bounds[2] if $bounds[2] > $max_x;
+            push @drawing_data, @$drawing_data;
+            push @map_area_data, @$map_data;
         }
 
         $slot_min_x = $min_x unless defined $slot_min_x;
@@ -1505,64 +1625,29 @@ Lays out the map.
         $slot_min_x = $base_x unless defined $slot_min_x;
         $slot_max_x = $base_x unless defined $slot_max_x;
 
-        my $buffer = 4;
-        my $min_y = $top_y - 10 - ( $reg_font->height + $buffer * 2 );
-        my $mid_x = ( $slot_min_x + $slot_max_x ) / 2; 
-
         unless ( @map_titles ) {
             push @map_titles,
                 map  { $self->$_( $map_ids[0] ) } 
                 grep { !/map_name/ }
-                reverse @config_map_titles
+                @config_map_titles
             ;
         }
-        
-        my ( $leftmost, $rightmost, $topmost, $bottommost );
-        for my $label ( @map_titles ) {
-            my $label_x = $mid_x - 
-                ( ( $reg_font->width * length( $label ) ) / 2 );
 
-            $drawer->add_drawing( 
-                STRING, $reg_font, $label_x, $min_y, $label, 'black'
-            );
-
-            my $label_end = $label_x + ($reg_font->width * length($label));
-            my $bottom    = $min_y + $reg_font->height;
-            $bottommost   = $bottom     unless defined $bottommost;
-            $topmost      = $min_y      unless defined $topmost;
-            $leftmost     = $label_x    unless defined $leftmost;
-            $rightmost    = $label_end  unless defined $rightmost;
-            $bottommost   = $bottom     if $bottom     > $bottommost;
-            $topmost      = $min_y      if $min_y      < $topmost;
-            $leftmost     = $label_x    if $label_x    < $leftmost;
-            $rightmost    = $label_end  if $label_end  > $rightmost;
-            $min_y       -= $reg_font->height;
-        }
-
-        my @bounds = (
-            $leftmost   - $buffer, 
-            $topmost    - $buffer,
-            $rightmost  + $buffer, 
-            $bottommost + $buffer,
+        my ( $bounds, $drawing_data, $map_data ) = $self->draw_map_title(
+            left_x  => $slot_min_x,
+            right_x => $slot_max_x,
+            min_y   => $top_y - 10 - ( $reg_font->height + 8 ),
+            lines   => \@map_titles,
+            buttons => \@map_buttons,
+            font    => $reg_font,
         );
 
-        $drawer->add_drawing( 
-            FILLED_RECT, @bounds, 'white', 0 # bottom-most layer
-        );
+        $slot_min_x = $bounds->[0] if $bounds->[0] < $slot_min_x;
+        $top_y      = $bounds->[1] if $bounds->[1] < $top_y;
+        $slot_max_x = $bounds->[2] if $bounds->[2] > $slot_max_x;
 
-        $drawer->add_drawing( 
-            RECTANGLE, @bounds, 'black'
-        );
-
-        $drawer->add_map_area(
-            coords => \@bounds,
-            url    => "$map_set_info_url?map_set_aid=$map_set_aid",
-            alt    => 'Map Set Info',
-        );
-
-        $slot_min_x = $bounds[0] if $bounds[0] < $slot_min_x;
-        $top_y      = $bounds[1] if $bounds[1] < $top_y;
-        $slot_max_x = $bounds[2] if $bounds[2] > $slot_max_x;
+        $drawer->add_drawing( @$drawing_data );
+        $drawer->add_map_area( @$map_data );
     }
 
     #
@@ -1669,6 +1754,7 @@ Returns the map's length (stop - start).
 
     my $self   = shift;
     my $map_id = shift or return;
+    
     return $self->stop_position($map_id) - $self->start_position($map_id);
 }
 
