@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Data;
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.98.2.1 2004-05-11 19:30:50 kycl4rk Exp $
+# $Id: Data.pm,v 1.98.2.2 2004-05-11 19:35:52 kycl4rk Exp $
 
 =head1 NAME
 
@@ -25,7 +25,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.98.2.1 $)[-1];
+$VERSION = (qw$Revision: 1.98.2.2 $)[-1];
 
 use Data::Dumper;
 use Regexp::Common;
@@ -1985,7 +1985,7 @@ out which maps have relationships.
         and      cl.feature_id2=f2.feature_id
         and      mc.map_id!=f2.map_id
         $additional_where
-        group by map_id
+        group by f2.map_id
     ];
 
     my $feature_correspondences = $db->selectall_arrayref(
