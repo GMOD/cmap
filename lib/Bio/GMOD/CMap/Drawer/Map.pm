@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Drawer::Map;
 
-# $Id: Map.pm,v 1.44 2003-05-16 17:03:55 kycl4rk Exp $
+# $Id: Map.pm,v 1.45 2003-05-16 19:53:49 kycl4rk Exp $
 
 =pod
 
@@ -23,7 +23,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.44 $)[-1];
+$VERSION = (qw$Revision: 1.45 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -406,6 +406,7 @@ Lays out the map.
     #
     # Some common things we'll need later on.
     #
+    my $collapse_features     = $drawer->collapse_features;
     my $max_image_pixel_width = $drawer->config('max_image_pixel_width');
     my $min_map_pixel_height  = $drawer->config('min_map_pixel_height');
     my $default_feature_color = $drawer->config('feature_color');
@@ -431,7 +432,8 @@ Lays out the map.
         my $show_map_title = $is_relational && $slot_no != 0 ? 0 : 1;
         my $show_map_units = $is_relational && $slot_no != 0 ? 0 : 1;
         my $map_width      = $self->map_width( $map_id );
-        my $column_width   = $map_width + $reg_font->height + 20;
+#        my $column_width   = $map_width + $reg_font->height + 20;
+        my $column_width   = $map_width + 40;
         my $features       = $self->features( $map_id );
 
         #
@@ -469,11 +471,8 @@ Lays out the map.
             $base_y          = $midpoint - $pixel_height/2;
             my $map_name     = $self->map_name( $map_id );
             my $half_label   = ( $reg_font->width * length( $map_name ) ) / 2;
-            my $label_top    = $midpoint - $half_label;
-            my $label_bottom = $midpoint + $half_label;
-            my $top          = $base_y < $label_top ? $base_y : $label_top;
-            my $bottom       = $base_y + $pixel_height > $label_bottom ?
-                               $base_y + $pixel_height : $label_bottom ;
+            my $top          = $base_y - $reg_font->height - 4;
+            my $bottom       = $base_y + $pixel_height + 4;
             my $buffer       = 4;
             my $column_index = column_distribution(
                 columns      => \@columns,
@@ -491,7 +490,7 @@ Lays out the map.
                 : $base_x - $reg_font->height - 6;
 
             $drawer->add_drawing(
-                STRING_UP, $reg_font, $label_x, $label_bottom,
+                STRING, $reg_font, $base_x - $half_label, $top,
                 $map_name, 'black'
             );
 
@@ -711,9 +710,6 @@ Lays out the map.
 
                 my $fstart = $feature->{'start_position'} || 0;
                 my $fstop  = $feature->{'stop_position'};
-#                   $fstart = 0 unless defined $fstart;
-#                   $fstop  = 0 unless defined $fstop;
-#                   $fstop  = 0 if !defined $fstop || $fstop <= $fstart;
                 my $rstart = sprintf( "%.2f", 
                     ( $fstart - $map_start ) / $map_length
                 );
@@ -774,6 +770,8 @@ Lays out the map.
                         top          => $y_pos1,
                         bottom       => $y_pos2,
                         buffer       => $buffer,
+                        collapse     => $collapse_features,
+                        collapse_on  => $feature->{'feature_type'},
                     );
                     my $offset            = ( $column_index + 1 ) * 6;
                     my $vert_line_x1      = $label_side eq RIGHT
