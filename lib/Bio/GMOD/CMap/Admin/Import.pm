@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::Import;
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.41 2003-12-20 02:27:16 kycl4rk Exp $
+# $Id: Import.pm,v 1.42 2003-12-30 18:45:45 kycl4rk Exp $
 
 =pod
 
@@ -28,7 +28,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.41 $)[-1];
+$VERSION  = (qw$Revision: 1.42 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -797,8 +797,8 @@ Imports an XML document containing CMap database objects.
         SuppressEmpty => 1,
         ForceArray    => [ qw( 
             cmap_map_set map feature xref attribute cmap_feature_type 
-            cmap_map_type cmap_species alias cmap_evidence_type 
-            cmap_feature_correspondence cmap_xref 
+            cmap_map_type cmap_species feature_alias cmap_evidence_type 
+            cmap_feature_correspondence cmap_xref correspondence_evidence
         ) ],
     );
 
@@ -835,7 +835,7 @@ Imports an XML document containing CMap database objects.
             object_type => 'map_type',
             object      => $map_type,
             field_names => [ qw/ accession_id map_type map_units color
-                is_relational_map shape display_order
+                is_relational_map shape display_order width
             / ],
         ) or return;
 
@@ -860,19 +860,38 @@ Imports an XML document containing CMap database objects.
         $feature_types{ $ft->{'object_id'} } = $ft;
     }
 
+    #
+    # Evidence types.
+    #
+    my %evidence_type_ids;
+    for my $et ( @{ $import->{'cmap_evidence_type'} || [] } )  {
+        $self->import_object(
+            table_name  => 'cmap_evidence_type',
+            pk_name     => 'evidence_type_id',
+            object_type => 'evidence_type',
+            object      => $et,
+            field_names => [ qw/ accession_id evidence_type line_color rank / ],
+        ) or return;
+
+        $evidence_type_ids{ $et->{'object_id'} } = 
+            $et->{'new_evidence_type_id'};
+    }
+
+    #
+    # Map sets, maps, features
+    #
+    my %feature_ids;
     for my $ms ( @{ $import->{'cmap_map_set'} || [] } ) {
         $self->Print(
             "Importing map set '$ms->{map_set_name}' ($ms->{accession_id})\n"
         );
 
-        my $species     = $species{ $ms->{'species_id'} };
-        my $map_type    = $map_types{ $ms->{'map_type_id'} };
-print "species = ", Dumper($species), "\n";
-        my $species_id  = $species->{'new_species_id'} or 
+        my $species          = $species{ $ms->{'species_id'} };
+        my $map_type         = $map_types{ $ms->{'map_type_id'} };
+        $ms->{'species_id'}  = $species->{'new_species_id'} or 
             return $self->error('Cannot determine species id');
-        my $map_type_id = $map_type->{'new_map_type_id'} or 
+        $ms->{'map_type_id'} = $map_type->{'new_map_type_id'} or 
             return $self->error('Cannot determine map type id');
-
 
         $self->import_object(
             table_name  => 'cmap_map_set',
@@ -886,27 +905,86 @@ print "species = ", Dumper($species), "\n";
         ) or return;
 
         for my $map ( @{ $ms->{'map'} || [] } ) {
+            $map->{'map_set_id'} = $ms->{'new_map_set_id'};
             $self->import_object(
                 table_name  => 'cmap_map',
                 pk_name     => 'map_id',
                 object_type => 'map',
                 object      => $map,
                 field_names => [ qw/ accession_id map_name display_order
-                    start_position stop_position
+                    start_position stop_position map_set_id
                 / ],
             ) or return;
 
-#            for my $feature ( @{ $map->{'feature'} || [] } ) {
-#                $self->import_object(
-#                    table_name  => 'cmap_feature',
-#                    pk_name     => 'feature_id',
-#                    object_type => 'feature',
-#                    object      => $feature,
-#                    field_names => [ qw/ 
-#                    / ],
-#                ) or return;
-#            }
+            for my $feature ( @{ $map->{'feature'} || [] } ) {
+                my $ft = $feature_types{ $feature->{'feature_type_id'} };
+                $feature->{'feature_type_id'} = $ft->{'new_feature_type_id'};
+                $feature->{'map_id'}          = $map->{'new_map_id'};
+                $self->import_object(
+                    table_name  => 'cmap_feature',
+                    pk_name     => 'feature_id',
+                    object_type => 'feature',
+                    object      => $feature,
+                    field_names => [ qw/ map_id accession_id
+                        feature_name start_position stop_position
+                        is_landmark feature_type_id
+                    / ],
+                ) or return;
+
+                $feature_ids{ $feature->{'object_id'} } = 
+                    $feature->{'new_feature_id'};
+
+                for my $alias ( @{ $feature->{'feature_alias'} || [] } ) {
+                    $alias->{'feature_id'} = $feature->{'new_feature_id'};
+                    $self->import_object(
+                        table_name          => 'cmap_feature_alias',
+                        pk_name             => 'feature_alias_id',
+                        object_type         => 'feature_alias',
+                        object              => $alias,
+                        field_names         => [ qw/ feature_id alias / ],
+                        lookup_accession_id => 0,
+                    ) or return;
+                }
+            }
         }
+    }
+
+    #
+    # Feature correspondences
+    #
+    for my $fc ( @{ $import->{'cmap_feature_correspondence'} || [] } )  {
+        $fc->{'feature_id1'} = $feature_ids{ $fc->{'feature_id1'} };
+        $fc->{'feature_id2'} = $feature_ids{ $fc->{'feature_id2'} };
+
+        for my $e ( @{ $fc->{'correspondence_evidence'} } ) {
+            $e->{'evidence_type_id'} = 
+                $evidence_type_ids{ $e->{'evidence_type_id'} };
+        }
+
+        $self->import_object(
+            table_name  => 'cmap_feature_correspondence',
+            pk_name     => 'feature_correspondence_id',
+            object_type => 'feature_correspondence',
+            object      => $fc,
+            field_names => [ qw/ 
+                accession_id feature_aid1 feature_aid2 is_enabled  
+                correspondence_evidence
+            / ],
+        ) or return;
+    }
+
+    #
+    # Cross-references
+    #
+    for my $xref ( @{ $import->{'cmap_xref'} || [] } )  {
+        $self->import_object(
+            table_name  => 'cmap_xref',
+            pk_name     => 'xref_id',
+            object_type => 'xref',
+            object      => $xref,
+            field_names => [ qw/display_order xref_name xref_url table_name/ ],
+            lookup_accession_id => 0,
+        ) or return;
     }
 
     return 1;
@@ -914,24 +992,30 @@ print "species = ", Dumper($species), "\n";
 
 # ----------------------------------------------------
 sub import_object {
-    my ( $self, %args ) = @_;
-    my $object_type     = $args{'object_type'};
-    my $object          = $args{'object'};
-    my $table_name      = $args{'table_name'};
-    my $field_names     = $args{'field_names'};
-    my $pk_name         = $args{'pk_name'} || pk_name( $table_name );
-    my $db              = $self->db;
-    my $admin           = $self->admin;
+    my ( $self, %args )     = @_;
+    my $object_type         = $args{'object_type'};
+    my $object              = $args{'object'};
+    my $table_name          = $args{'table_name'};
+    my $field_names         = $args{'field_names'};
+    my $pk_name             = $args{'pk_name'} || pk_name( $table_name );
+    my $lookup_accession_id = defined $args{'lookup_accession_id'}
+                              ? $args{'lookup_accession_id'} : 1;
+    my $db                  = $self->db;
+    my $admin               = $self->admin;
 
-    my $new_object_id = $db->selectrow_array(
-        qq[
-            select $pk_name
-            from   $table_name
-            where  accession_id=?
-        ],
-        {},
-        ( $object->{'accession_id'} )
-    );
+    my $new_object_id;
+
+    if ( $lookup_accession_id ) {
+        $new_object_id = $db->selectrow_array(
+            qq[
+                select $pk_name
+                from   $table_name
+                where  accession_id=?
+            ],
+            {},
+            ( $object->{'accession_id'} )
+        );
+    }
 
     unless ( $new_object_id ) {
         my $create_method = $object_type . '_create';
@@ -967,6 +1051,7 @@ sub Print {
     print $LOG_FH @_;
 }
 
+# ----------------------------------------------------
 sub admin {
     my $self = shift;
 
