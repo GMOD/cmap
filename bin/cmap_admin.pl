@@ -1,14 +1,15 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.65 2004-04-20 17:39:25 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.66 2004-04-23 16:20:57 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
+use Benchmark;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.65 $)[-1];
+$VERSION = (qw$Revision: 1.66 $)[-1];
 
 #
 # Get command-line options
@@ -63,6 +64,7 @@ use Bio::GMOD::CMap::Admin::Import();
 use Bio::GMOD::CMap::Admin::Export();
 use Bio::GMOD::CMap::Admin::MakeCorrespondences();
 use Bio::GMOD::CMap::Admin::ImportCorrespondences();
+use Benchmark;
 
 use base 'Bio::GMOD::CMap';
 
@@ -1942,7 +1944,6 @@ sub import_tab_data {
 		'map_type_accession as map_type_aid','map_type'),
     );
     do { print "No map types to select from.\n"; return } unless $map_type_aid;
-print STDERR "$map_type_aid $map_type\n";
     #
     # Get the species.
     #
@@ -2013,6 +2014,7 @@ print STDERR "$map_type_aid $map_type\n";
         data_source => $self->data_source,
     );
 
+my $time_start = new Benchmark;
     $importer->import_tab(
         map_set_id => $map_set_id,
         fh         => $fh,
@@ -2023,6 +2025,10 @@ print STDERR "$map_type_aid $map_type\n";
         print "Error: ", $importer->error, "\n"; 
         return; 
     };
+
+my $time_end = new Benchmark;
+print STDERR "import time: ".timestr(timediff($time_end,$time_start))."\n";
+
 }
 
 # ----------------------------------------------------
