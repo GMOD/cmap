@@ -1,13 +1,13 @@
 #!/usr/bin/perl
 
-# $Id: cmap_admin.pl,v 1.7 2002-10-04 01:14:42 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.8 2002-10-04 23:38:58 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.7 $)[-1];
+$VERSION = (qw$Revision: 1.8 $)[-1];
 
 #
 # Turn off output buffering.
@@ -70,6 +70,14 @@ sub file {
     my $self = shift;
     $self->{'file'} = shift if @_;
     return $self->{'file'} || '' 
+}
+
+# ----------------------------------------------------
+sub log_fh {
+    my $self = shift;
+    unless ( $self->{'log_fh'} ) {
+        $self->{'log_fh'} = '';
+    }
 }
 
 # ----------------------------------------------------
@@ -524,10 +532,11 @@ cmap_admin.pl - command-line CMAP administrative tool
 
 This script is a complement to the web-based administration tool for
 the GMOD-CMAP application.  This tool handles all of the long-running
-processes and tasks which require interaction with file-based data
+processes (e.g., importing data and correspondences, reloading cache
+tables) and tasks which require interaction with file-based data
 (i.e., map coordinates, feature correspondences, etc.).
 
-There are five tasks which you can do with this tool:
+There are five actions you can take with this tool:
 
 =over 4
 
@@ -542,12 +551,12 @@ and give the map set a name, but that's about it.
 
 This option will import the feature coordinates for a new map.  For
 specifics on how the data should be formatted, see the documentation
-for Bio::GMOD::CMap::Admin::Import.  The file can either be given as
-an argument to this script or you can specify the file's location when
-asked.  The map set for which you're importing the data must already
-exist, hence the first item in this list.  Simply answer the questions
-about which map set is the one for the data you have, then confirm
-your choices.
+("perldoc") for Bio::GMOD::CMap::Admin::Import.  The file can either
+be given as an argument to this script or you can specify the file's
+location when asked.  The map set for which you're importing the data
+must already exist, hence the first item in this list.  Simply answer
+the questions about which map set is the one for the data you have,
+then confirm your choices.
 
 =item 3 Make name-based correspondences
 

@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap;
 
-# $Id: CMap.pm,v 1.12 2002-10-03 05:37:32 kycl4rk Exp $
+# $Id: CMap.pm,v 1.13 2002-10-04 23:38:58 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,10 +31,17 @@ $VERSION = 0.03;
 
 use Class::Base;
 use Config::General;
-use DBI;
 use Bio::GMOD::CMap::Constants;
+use Bio::GMOD::CMap::DB;
 
 use base 'Class::Base';
+
+## ----------------------------------------------------
+#sub init {
+#    my ( $self, $config ) = $_;
+#    $self->{'db'} = $config->{'db'} || undef;
+#    return $self;
+#}
 
 # ----------------------------------------------------
 sub config {
@@ -98,11 +105,15 @@ Returns a database handle.  This is the only way into the database.
 
         eval {
             $self->{'db'} = 
-                DBI->connect( $datasource, $user, $password, $options );
+#                DBI->connect( $datasource, $user, $password, $options );
+                Bio::GMOD::CMap::DB->connect( 
+                    $datasource, $user, $password, $options 
+                );
         };
 
-        return $self->error( "Can't connect to database: ". $DBI::errstr )
-            unless $self->{'db'};
+        return $self->error( 
+            "Can't connect to database: ". $Bio::GMOD::CMap::DB::errstr 
+        ) unless $self->{'db'};
     }
 
     return $self->{'db'};
