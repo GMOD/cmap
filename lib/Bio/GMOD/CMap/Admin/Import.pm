@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::Import;
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.34 2003-09-29 20:49:12 kycl4rk Exp $
+# $Id: Import.pm,v 1.35 2003-10-01 23:13:09 kycl4rk Exp $
 
 =pod
 
@@ -28,18 +28,19 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION  = (qw$Revision: 1.34 $)[-1];
+$VERSION  = (qw$Revision: 1.35 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Utils 'next_number';
 use Text::RecordParser;
+use Text::ParseWords 'parse_line';
 
 use base 'Bio::GMOD::CMap';
 
 use constant FIELD_SEP => "\t"; # use tabs for field separator
-use constant STRING_RE => qr{\S+};    #; qr{^[\w\s.()/-]+$};
+use constant STRING_RE => qr{\S+}; 
 use constant RE_LOOKUP => {
     string => STRING_RE,
     number => NUMBER_RE,
@@ -55,7 +56,7 @@ use vars '$LOG_FH';
     map_stop             => { is_required => 0, datatype => 'number' },
     feature_name         => { is_required => 1, datatype => 'string' },
     feature_accession_id => { is_required => 0, datatype => 'string' },
-    feature_alt_name     => { is_required => 0, datatype => 'string' },
+    feature_aliases      => { is_required => 0, datatype => 'string' },
     feature_start        => { is_required => 1, datatype => 'number' },
     feature_stop         => { is_required => 0, datatype => 'number' },
     feature_type         => { is_required => 1, datatype => 'string' },
@@ -81,7 +82,7 @@ Imports tab-delimited file with the following fields:
     map_stop
     feature_name *
     feature_accession_id
-    feature_alt_name
+    feature_aliases
     feature_start *
     feature_stop
     feature_type *
@@ -189,6 +190,9 @@ have for the map set).
         field_separator => FIELD_SEP,
         header_filter   => sub { $_ = shift; s/\s+/_/g; lc $_ },
         field_filter    => sub { $_ = shift; s/^\s+|\s+$//g; $_ },
+    );
+    $parser->field_compute(
+        'feature_aliases', sub { [ parse_line( ',', 0, shift() ) ] }
     );
     $parser->bind_header;
 
@@ -379,16 +383,16 @@ have for the map set).
         #
         # See if the acc. id already exists.
         #
-        my $feature_name   = $record->{'feature_name'}     #or next;
+        my $feature_name    = $record->{'feature_name'}     #or next;
             or warn "feature name blank! ", Dumper( $record ), "\n";
-        my $accession_id   = $record->{'feature_accession_id'};
-        my $alternate_name = $record->{'feature_alt_name'}    || '';
-        my $dbxref_name    = $record->{'feature_dbxref_name'} || '';
-        my $dbxref_url     = $record->{'feature_dbxref_url'}  || '';
-        my $feature_note   = $record->{'feature_note'}        || '';
-        my $start          = $record->{'feature_start'};
-        my $stop           = $record->{'feature_stop'};
-        my $is_landmark    = $record->{'is_landmark'} || 0;
+        my $accession_id    = $record->{'feature_accession_id'};
+        my $aliases         = $record->{'feature_aliases'};
+        my $dbxref_name     = $record->{'feature_dbxref_name'} || '';
+        my $dbxref_url      = $record->{'feature_dbxref_url'}  || '';
+        my $feature_note    = $record->{'feature_note'}        || '';
+        my $start           = $record->{'feature_start'};
+        my $stop            = $record->{'feature_stop'};
+        my $is_landmark     = $record->{'is_landmark'} || 0;
 
         if ( 
             defined $start &&
@@ -438,15 +442,14 @@ have for the map set).
                 q[
                     update cmap_feature
                     set    accession_id=?, map_id=?, feature_type_id=?, 
-                           feature_name=?, alternate_name=?, 
-                           start_position=?, stop_position=?,
+                           feature_name=?, start_position=?, stop_position=?,
                            dbxref_name=?, dbxref_url=?, is_landmark=?
                     where  feature_id=?
                 ],
                 {}, 
                 ( $accession_id, $map_id, $feature_type_id, 
-                  $feature_name, $alternate_name, 
-                  $start, $stop, $dbxref_name, $dbxref_url, $is_landmark,
+                  $feature_name, $start, $stop, 
+                  $dbxref_name, $dbxref_url, $is_landmark,
                   $feature_id
                 )
             );
@@ -471,22 +474,48 @@ have for the map set).
                     insert
                     into   cmap_feature
                            ( feature_id, accession_id, map_id,
-                             feature_type_id, feature_name, alternate_name, 
+                             feature_type_id, feature_name, 
                              start_position, stop_position,
                              dbxref_name, dbxref_url, is_landmark
                            )
-                    values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
+                    values ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
                 ],
                 {}, 
                 ( $feature_id, $accession_id, $map_id, $feature_type_id, 
-                  $feature_name, $alternate_name, $start, $stop,
+                  $feature_name, $start, $stop,
                   $dbxref_name, $dbxref_url, $is_landmark
                 )
             );
         }
 
-        $admin->feature_note_insert_or_update( 
-            $feature_id, $feature_note 
+        for my $name ( @$aliases ) {
+            next if $name eq $feature_name;
+            next if $db->selectrow_array(
+                q[
+                    select count(fa.feature_id)
+                    from   cmap_feature_alias fa
+                    where  fa.feature_id=?
+                    and    fa.alias=?
+                ],
+                {},
+                ( $feature_id, $name ) 
+            );
+
+            $db->do(
+                q[
+                    insert 
+                    into   cmap_feature_alias (feature_id, alias)
+                    values (?, ?)
+                ],
+                {},
+                ( $feature_id, $name ) 
+            );
+        }
+
+        $admin->object_note_insert_or_update( 
+            table_name => 'cmap_feature',
+            object_id  => $feature_id, 
+            note       => $feature_note,
         );
 
         my $pos = join('-', map { defined $_ ? $_ : () } $start, $stop);
