@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.73 2004-03-26 21:12:48 kycl4rk Exp $
+# $Id: Map.pm,v 1.74 2004-03-30 02:27:35 kycl4rk Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.73 $)[-1];
+$VERSION = (qw$Revision: 1.74 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -130,7 +130,7 @@ Returns the color of the map.
     return 
         $map->{'color'}         || 
         $map->{'default_color'} || 
-        $self->config('map_color');
+        $self->config_data('map_color');
 }
 
 # ----------------------------------------------------
@@ -488,13 +488,14 @@ Lays out the map.
     # if more than one map in slot, compress all
     my $is_compressed  = $no_of_maps > 1;
     my $label_features = $drawer->label_features;
+    my $config         = $self->config or return;
 
     #
     # The title is often the widest thing we'll draw, so we need
     # to figure out which is the longest and take half its length
     # into account when deciding where to start with the map(s).
     #
-    my @config_map_titles = $self->config('map_titles');
+    my @config_map_titles = $config->get_config('map_titles');
     my $longest;
     for my $map_id ( @map_ids ) {
         for my $length ( 
@@ -526,23 +527,23 @@ Lays out the map.
     # Some common things we'll need later on.
     #
     my $collapse_features      = $drawer->collapse_features;
-    my $min_map_pixel_height   = $drawer->config('min_map_pixel_height');
-    my $default_feature_color  = $drawer->config('feature_color');
+    my $min_map_pixel_height   = $drawer->config_data('min_map_pixel_height');
+    my $default_feature_color  = $drawer->config_data('feature_color');
     my $feature_details_url    = DEFAULT->{'feature_details_url'};
-    my $connecting_line_color  = $drawer->config('connecting_line_color');
+    my $connecting_line_color  = $drawer->config_data('connecting_line_color');
     my $apr                    = $drawer->apr;
     my $url                    = $apr->url;
     my $map_viewer_url         = $url.'/viewer';
     my $map_details_url        = $url.'/map_details';
     my $map_set_info_url       = $url.'/map_set_info';
     my $rel_map_show_corr_only =
-        $drawer->config('relational_maps_show_only_correspondences') || 0;
+        $drawer->config_data('relational_maps_show_only_correspondences') || 0;
     my $feature_corr_color    =
-        $drawer->config('feature_correspondence_color') || '';
+        $drawer->config_data('feature_correspondence_color') || '';
     my $feature_highlight_fg_color = 
-        $drawer->config('feature_highlight_fg_color');
+        $drawer->config_data('feature_highlight_fg_color');
     my $feature_highlight_bg_color = 
-        $drawer->config('feature_highlight_bg_color');
+        $drawer->config_data('feature_highlight_bg_color');
 
     my $self_url = $drawer->map_view eq 'details' 
         ? $map_details_url : $map_viewer_url;
@@ -2029,7 +2030,7 @@ Returns a string describing how to draw the map.
     return 
         $map->{'width'}         || 
         $map->{'default_width'} || 
-        $self->config('map_width');
+        $self->config_data('map_width');
 }
 
 # ----------------------------------------------------
