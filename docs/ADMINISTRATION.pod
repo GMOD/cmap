@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.8 $
+$Revision: 1.8.2.1 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -116,10 +116,14 @@ file of this type.  Adding another is as simple as creating a new
 configuration file.  Any file that is in the "cmap.conf/" directory 
 that ends in ".conf" will be read as a configuration file.
 
-The parameters are explained in comments but here some of the more 
-important features are explained.
+All of the parameters that can be specified in an individual config file
+are described here.
 
-=head3 Main options
+The required elements are the L<Required General Options> and the L<Map,
+Feature and Evidence Type Information>.
+
+
+=head3 Required General Options
 
 =over 4
 
@@ -133,47 +137,6 @@ used.
 Contains the database connection parameters. The 'name' field is the
 name that this config file and the data source will be called.  
 Therefor, it is important to keep it unique.
-
-=item * expanded_correspondence_lookup
-
-Set to 1.  This tells CMap if the database uses a normalized lookup 
-table.  If you have used the upgrade scripts or the table creation 
-scripts that come along with v0.13, you should leave this as 1.
-
-=item * feature_default_display
-
-Dictates the default choice of the feature type display menu.
-
-=item * <scalable>
-
-Dictates which map units can be used to scale maps to each other.  Maps 
-with units described here will be scaled against maps with the same 
-units.  
-
-=item * <aggregated_correspondence_colors>
-
-This option dictates the color of aggregated correspondence lines based on the
-number of correspondences between the maps.  The default is black.
-
-The format is "upper_bound color" where upper_bound is the cap that this color
-is used for.  In the following example, from 0-1 corr, the line will be light
-grey.  If there are 2 corr, the line will be blue.  From 3-5 (inclusive), the
-line will be purple.  Anything ABOVE 20 will be black, which is denoted by an
-upper_bound of 0 (in this case it means infinity).
-
- <aggregated_correspondence_colors>
-    1    lightgrey
-    2   blue
-    5   purple
-    20  red
-    0    black
- </aggregated_correspondence_colors>
-
-
-=item * disable_cache
-
-Set to one if the query cache should not be used.  This is handy for 
-speed testing or debugging.
 
 =back
 
@@ -252,18 +215,25 @@ website, you must include the "http://".  Here is an example entry:
 
 =item * area_code (map and feature types only)
 
-CMap now allows you to specify javascript to be included in the area box
-over the drawings of map and features.  The following example makes the
-map name appear in the status bar of the browser on mouse over.
+CMap allows you to change the url, the alternet message or specify javascript
+to be included in the area box over the drawings of map and features.  The
+following example makes the map name appear in the status bar of the browser on
+mouse over.  It also changes the alternate message to the map name and makes
+the url search google.
 
-$code=sprintf("onMouseOver=\"window.status='%s';return true\"",$map->{'map_name'});
+ $code=sprintf("onMouseOver=\"window.status='%s';return true\"",$map->{'map_name'});
+ $alt =sprintf("%s",$map->{'map_name'});
+ $url=sprintf("www.google.com/search?q=%s",$map->{'map_name'});
 
-This is Perl code that sets the value of $code to be the javascript 
-command.  This evaluated for each map of this type which enables access
-to the internal variable $map (or in the case of features, $feature).  
+This is Perl code that lets you change the values of three variables; $code,
+$alt and $url.  $code hold the javascript commands that the area will use.
+$alt holds the alternate message that will pop up when the mouse is hovered
+over the area box.  $url is the URL that the browser will go to when clicking
+the area box.  These are evaluated for each map of this type which enables
+access to the internal variable $map (or in the case of features, $feature).  
 
-This allows the administrator the freedom of using javascript to make 
-the page more versatile.
+This allows the administrator the freedom to make the page more versatile.
+Each variable has usable defaults. 
 
 Some useful keys in $map (which are used $map->{'key'}):
 
@@ -510,10 +480,325 @@ How wide a map will be drawn.
 
 =back
 
+=head3 Data Drawing Options
+
+=over 4
+
+=item * label_features [ default: all ]
+
+Which features to show by default
+
+Values: none, landmarks, all
+
+=item * collapse_features  [ default: 1 ]
+
+Collapse features glyphs into one glyph if they overlap 
+
+ Values: 
+    0:  don't collapse
+    1:  collapse
+
+=item * scale_maps [ default: 1 ]
+
+Allow scaleable (set by scalable) maps to be drawn in scale
+
+ Values: 
+    0:  don't scale
+    1:  scale
+
+=item * <scalable> [ Optional ]
+
+Dictates which map units can be used to scale maps to each other.  Maps 
+with units described here will be scaled against maps with the same 
+units.  
+
+=item * aggregate_correspondences [ default: 1 ]
+
+Set default, aggregate correspondences into one or two lines.
+
+ Values: 
+    0:  don't aggregate 
+    1:  one line 
+    2:  two lines
+
+=item * feature_default_display [ default: display ]
+
+Dictates the default choice of the feature type display menu.
+
+ Values:
+    display:   Display all features of this type
+    corr_only: Display only features of this type with displayed correspondences
+    ignore:    Completely ignore features of this type.  
+
+=item * evidence_default_display [ default: display ]
+
+Dictates the default choice of the evidence type display menu.  You cannot
+default to the greater than or less than score options.
+
+ Values:
+    display:      Display all correspondences with evidence of this type
+    ignore:       Completely ignore the evidence of this type when considering correspondences.  
+
+=back
+
+=head3 Drawing Defaults
+
+=over 4
+
+=item * font_size [ default: small ]
+
+How large to make the font
+
+Values: small, medium, large
+
+=item * image_size [ default: small ]
+
+How large to make the image
+
+Values: small, medium, large
+
+=item * image_type [ default: png ]
+
+The output type of the image, legal value are whatever image libraries
+installed 
+
+Values: png, jpeg, svg and maybe gif
+
+=item * min_map_pixel_height [ default: 20 ]
+
+The smallest any map can be drawn, in pixels
+
+Values: any positive integer (within reason)
+
+=item * min_tick_distance  [ default: 40 ]
+
+Set the minimum number of pixels between tick marks on map.
+
+=item * background_color [ default: lightgoldenrodyellow ]
+
+The background color of the map image
+
+Values: any color found in the COLORS array of Bio::GMOD::CMap::Constants To
+view this file, either look in the "lib" directory of the original CMap source
+directory, or, if you have the very handy "pmtools" installed on your system,
+type "pmcat Bio::GMOD::CMap::Constants" on your command-line.
+
+=item * slot_background_color [ default: beige ]
+
+The colors of the slot background and border.
+
+Values: see background_color
+
+=item * slot_border_color [ default: khaki ]
+
+The colors of the slot border.
+
+Values: see background_color
+
+=item * feature_color [ default: black ]
+
+Default color of a feature if the feature type's "color" is "Default"
+
+Values: see background_color
+
+=item * connecting_line_color [ default: lightblue ]
+
+The color of the line connecting feature correspondences
+
+Values: see background_color
+
+=item * feature_highlight_bg_color [ default: red ]
+
+Color of box around a highlighted feature
+
+Values: see background_color
+
+=item * feature_highlight_fg_color [ default: yellow ]
+
+Color of background behind a highlighted feature
+
+Values: see background_color
+
+=item * feature_correspondence_color [ default: red ]
+
+Color of a feature label when it has a correspondence.  Comment out to use the
+feature's own color
+
+Values: see background_color
+
+=item * aggregated_correspondence_colors [ Optional ]
+
+This option dictates the color of aggregated correspondence lines based on the
+number of correspondences between the maps.  The default is black.
+
+The format is "upper_bound color" where upper_bound is the cap that this color
+is used for.  In the following example, from 0-1 corr, the line will be light
+grey.  If there are 2 corr, the line will be blue.  From 3-5 (inclusive), the
+line will be purple.  Anything ABOVE 20 will be black, which is denoted by an
+upper_bound of 0 (in this case it means infinity).
+
+ <aggregated_correspondence_colors>
+    1    lightgrey
+    2   blue
+    5   purple
+    20  red
+    0    black
+ </aggregated_correspondence_colors>
+
+=item * map_color [ default: lightgrey ]
+
+Default color of a map if the "color" field of both the map type and the map
+set are "Default"
+
+Values: see background_color
+
+=item * map_shape [ default: box ]
+
+Default shape of a map if the "shape" field of both the map type and the map
+set are "Default"
+
+Values: any shape found in the VALID hash under map_shape in Bio::GMOD::CMap::Constants 
+
+=item * map_width [ default: 8 ]
+
+Default width of the maps
+
+Value: any number from 1 to 10
+
+=back
+
+
+=head3 Title and Intro Text
+
+Titles and Introductory texts for various pages.
+
+=over 4
+
+=item * cmap_title [ default: CMap ]
+
+=item * cmap_home_intro [ Optional ]
+
+=item * map_viewer_intro [ Optional ]
+
+=item * species_info_intro [ Optional ]
+
+=item * map_set_info_intro [ Optional ]
+
+=item * feature_type_info_intro [ Optional ]
+
+=item * map_type_info_intro [ Optional ]
+
+=item * evidence_type_info_intro [ Optional ]
+
+=item * feature_search_intro [ Optional ]
+
+=item * matrix_title [ Optional ]
+
+=item * matrix_intro [ Optional ]
+
+=item * link_info_intro [ Optional ]
+
+=back
+
+=head3 Web Related Options
+
+=over 4
+
+=item * user_pref_cookie_name [ default: CMAP_USER_PREF ]
+
+Name of the cookie holding user preferences
+
+=item * cookie_domain [ Optional  ]
+
+=item * stylesheet [ default: /cmap/cmap.css ]
+
+The css formatted stylesheet to use.
+
+=item * feature_type_details_url [ default: feature_type_info?feature_type ]
+
+This is the base url for the page that describes the feature type.  
+
+=item * evidence_type_details_url [ default: evidence_type_info?evidence_type ]
+
+This is the base url for the page that describes the evidence type.
+
+=back 
+
+=head3 Data Manipulation
+
+=over 4
+
+=item * add_name_correspondence [ Optional ]
+
+When making name-based correspondences, the default behavior is to allow
+correspondences between features of the *exact* same type.  If you wish to
+expand the feature types allowed when making name-based correspondences, then
+add their accession IDs to this section.  The relationships will be reciprocal,
+so if you say "foo bar" then correspondences from features with the accession
+ID "foo" will be allowed to those with the accession ID "bar" and vice versa.
+Separate feature types with spaces.  Assert all equivalent feature types on one
+line, e.g., "foo bar baz."
+
+
+=item * disallow_name_correspondence [ Optional ]
+
+List of feature types that cannot have name correspondences with features of
+the SAME type.
+
+=back
+
+=head3 Miscellaneous Options
+
+=over 4
+
+=item * disable_cache [ default: 0 ]
+
+Set to 1 isable the query caching feature.  This is good for speed testing or
+debugging.
+
+=item * feature_search_field [ default: feature_name ]
+
+Set the default search field.
+
+Values: feature_name, feature_aid
+
+=item * max_search_pages [ default: 10 ]
+
+How many pages of results to show in searches.  Set to "0" (or a negative
+number) or comment out to disable
+
+Values: any positive integer (within reason)
+
+=item * max_child_elements [ default: 25 ]
+
+The maximum number of elements that can appear on a page (like in search
+results).  Set to "0" or a negative number or comment out to disable
+
+Values: any positive integer (within reason)
+
+=item * object_plugin [ optional ]
+
+See object-plugins.pod for further details.
+
+=item * page_object [ optional ]
+
+Returns the "page" object.  In the original Gramene project
+(http://www.gramene.org/), there is a Perl object that handles inserting
+appropriate page headers and footers.  This object can be passed into the
+templates to print out these elements as necessary.
+
+If you wish to have something like this, I'm sure you can glean the basic ideas
+from Lincoln's "GramenePage.pm" module.  Then define the "page_object" in your
+cmap.conf.  Otherwise, just don't worry about it, and this method will never
+return anything.
+
+=back
+
 =head3 Javascript options
 
-These options are only used to allow complex javascript to be specified 
-in the config document.
+These options are only used to allow complex javascript to be specified in the
+config document.  These can be used in conjunction with the area_code of
+feature_types and map_types.
 
 =over 4
 
@@ -1406,8 +1691,16 @@ format.  To read, please execute "perldoc <script_name>".
 =head1 LINKING IN
 
 Most likely, you'll want to link directly into the CMap viewer from
-some other part of your site.  Following is a list of the components
-of a CMap URL:
+some other part of your site.  
+
+To link to just one map, make it the "reference" map by using the accession IDs
+for the map itself and optionally,the map's parent "set".  Here's an example
+showing just one map on Gramene, showing all the feature labels and
+highlighting the feature "RM9":
+
+  http://www.gramene.org/db/cmap/map_details?ref_map_set_aid=cu-dh-2001;ref_map_aids=cu-dh-2001-1;highlight="RM9";data_source=Gramene;label_features=all
+
+Following should help you create your own CMap URL:
 
 =head2 URI
 
@@ -1417,88 +1710,358 @@ of a CMap URL:
 
 =over 4
 
+=item * ref_map_aids: 
+
+The accession ID[s] of the reference map[s].  Multiple map aids can be
+separated by a ":".
+
+Information about the map such as start and stop can be stored in this
+argument.  See L<Map Accession Information Format> for more details.  
+
+=back
+
+=head2 Operational Arguments
+
+=over 4
+
+=item * data_source
+
+The "name" from the "<database>" section of the individual configuration file
+identifying the database and config file to use.  If none is supplied, then the
+config file identified as "the default_db" in the global.conf file will be
+used.
+
 =item * ref_map_set_aid: 
 
 The accession ID of the reference map set
 
-=item * ref_map_aids: 
+=item * ref_species_aid: 
 
-The accession ID of the reference map
+The accession ID of the reference species
+
+=item * comparative_maps
+
+Describes the comparative maps.  See L<Comparative Map Construction> for a full
+discussion of how to construct this argument
+
+Information about the map such as start and stop can be stored in this
+argument.  See L<Map Accession Information Format> for more details.  
 
 =back
 
-=head2 Optional Arguments:
+=head2 Arguments for Speed and Clarity
 
 =over 4
 
-=item * ref_map_start
+=item * aggregate [ default: set in config ]
 
-The start position of the reference map
+CMap has the ability to aggregate correspondences into one or two lines.  This
+is faster and produces more easily decifered results on views with many
+correspondences. 
 
-=item * ref_map_stop
+ Values: 
+    0:  don't aggregate 
+    1:  one line 
+    2:  two lines
 
-The stop position of the reference map
-
-=item * highlight
-
-A space-less, comma-separated list of feature_names to highlight
-
-=item * label_features
-
-Which features to label, legal values are "none," "all," or "landmarks"
-
-=item * image_size
-
-How large to make the image, legal values are "small," "medium" or "large"
-
-=item * font_size
-
-How large to make the font, legal values are "small," "medium" or
-"large"
-
-=item * image_type
-
-The output type of the image, legal value are whatever image libraries
-you've installed (usually at least "png" or "jpeg" or "svg")
-
-=item * feature_types
-
-A space-less, comma-separated list of the accession IDs of the feature
-types to display on the map
-
-=item * evidence_types
-
-A space-less, comma-separated list of the accession IDs of the
-evidence types to use in drawing correspondence lines
-
-=item * collapse_features
+=item * collapse_features [ default: set in config ]
 
 A "1" or "0" ("Yes" or "No," respectively) indicating whether to
 collapse spanning features of the same type and with the same
 coordinates to overlap rather than pushing out
 
-=item * min_correspondences
+=item * feature_type_DEFAULT
 
-The minimum number of correspondences to require between two maps
+This will define the how to display feature types that are not explicitly
+defined in feature_type_*, overriding the config setting.  Setting the features
+to be ignored or display only when there is a correspondence can help speed the
+page drastically.
 
-=item * comparative_maps
-
-See below for a full discussion of how to construct this argument
-
-=item * data_source
-
-The "name" from the "<database>" section of "cmap.conf" identifying
-the database to use.  If none is supplied, then the "<database>"
-section marked "is_default 1" will be used.
+ Values:
+    0 :  Completely ignore features of this type.  
+    1 :  Display only features of this type with displayed correspondences
+    2 :  Display all features of this type
 
 =back
 
-To link to just one map, make it the "reference" map like so by using
-the accession IDs for the map's parent "set" and the map itself.
-Here's an example showing just one map on Gramene, showing all the
-feature labels and highlighting the feature "RM9":
+=head2 Menu Arguments
 
-  http://www.gramene.org/db/cmap/map_details?ref_map_set_aid=cu-dh-2001;ref_map_aid=cu-dh-2001-1;highlight="RM9";data_source=Gramene;label_features=all
+=over 4
+
+=item * feature_type_* [ default: set in config ]
+
+These define how to display each feature type.  The "*" is replaced by the
+feature type's accession (example: feature_type_marker=2).  Setting the
+features to be ignored or display only when there is a correspondence can help
+speed the page drastically.
+
+ Values:
+    0 :  Completely ignore features of this type.  
+    1 :  Display only features of this type with displayed correspondences
+    2 :  Display all features of this type
+
+=item * evidence_type_* [ default: set in config ]
+
+These define how to handle each evidence type.  The "*" is replaced by the
+evidence type's accession (example: feature_type_blast=2).  
+
+You can use this to ignore or display certain evidence types.  You can also
+filter evidence based on the score.  If you do this, there MUST be an ets_*
+value for this evidence type accession.
+
+If a correspondence has multiple evidences of different types and ANY are
+displayed, that correspondence will be displayed.
+
+ Values:
+    0 :  Completely ignore this evidence type
+    1 :  Display all features of this type
+    2 :  Display if score is less than or equal the est_* score
+    3 :  Display if score is greater than or equal the est_* score
+
+=item * ets_* (evidence type score) [ Optional ]
+
+These define the score that the evidence of this type are measured against.
+The "*" is replaced by the evidence type's accession (example: ets_blast=97).  
+
+=item * magnify_all [ default: 1 ]
+
+This holds the multiplier to determine the height of all the maps.  For example, if magnify_all is 3 than all the maps are drawn 3 times taller.  This can be handy if you want to see more detail.
+
+Any individual map magnification is then added on top of this.
+
+=item * label_features [ default: all ]
+
+Which features to label, legal values are "none," "all," or "landmarks"
+
+=item * scale_maps [ default: 1 ]
+
+Allow scaleable (set by scalable) maps to be drawn in scale
+
+ Values: 
+    0:  don't scale
+    1:  scale
+
+=item * highlight [ Optional ]
+
+A space-less, comma-separated list of feature_names to highlight
+
+=item * image_size [ default: set in config ]
+
+How large to make the image, legal values are "small," "medium" or "large"
+
+=item * font_size [ default: set in config ]
+
+How large to make the font, legal values are "small," "medium" or
+"large"
+
+=item * image_type [ default: set in config ]
+
+The output type of the image, legal value are whatever image libraries
+you've installed (usually at least "png" or "jpeg" or "svg")
+
+=item * min_correspondences [ default: 0 ]
+
+The minimum number of correspondences to require between two maps
+
+=item * ref_map_start [ default: start of map ]
+
+The start position of the reference map.  This will only be used if there is
+only one reference map.
+
+=item * ref_map_stop [ default: end of map ]
+
+The stop position of the reference map.  This will only be used if there is
+only one reference map.
+
+=back
+
+=head2 Just in case you see it
+
+These will probably not be used in a constructed URL but they are discribed
+here in case you run across them and wondered what they do.  Also, it's good to
+document them anyway.
+
+=over 4
+
+=item * flip
+
+This holds the accessions of maps that are flipped.  The format is "slot_number=map_aid".  Multiple maps are separated by a ":".
+
+Example: "1=map_A:-1=map_D:0=map_C:1=map_B"
+
+=item * comp_map_set_[left|right]
+
+This is the menu object that the form passes to tell CMap the map set of the
+comparative maps on the [left|right]. 
+
+=item * comparative_map_[left|right]
+
+This is the value that the form passes to dictate CMap comparative maps on the
+[left|right].  It holds the map accession of the map.  Multiple maps can be
+specified by defining multiple comparative_map_[left|right] arguments.  
+
+If the accession is defined as "-1" than all of the eligible maps in the map set are used.
+
+See L<Map Accession Information Format> for details on the format.  
+
+=item * sub
+
+The sub argument is part of a scheme to fix a javascript problem.  The problem was that when a javascript, area-box button (on the image) was clicked, it would modify some menu objects and submit.  Then if the user hit the back button, those menu objects would be the modified values, causing unexpected behavior.
+
+To fix this, modified_ref_map and modified_comp_map were added.  When a javascript, area-box button is clicked, it modifies modified_ref_map or modified_comp_map instead of ref_map_aids or comparative_maps.  That way, those fields always keep their original values.
+
+To determine if the "modified" values should be used, CMap looks at the value of sub.  If there is NO value, then it assumes that it is a javascript link and uses the "modified" values preferentially over the regular values.
+
+=item * modified_ref_map
+
+See the description for "sub" above for the use of modified_ref_map.
+
+Information about the map such as start and stop can be stored in this
+argument.  See L<Map Accession Information Format> for more details.  
+
+=item * modified_comp_map
+
+See the description for "sub" above for the use of modified_comp_map.
+
+Information about the map such as start and stop can be stored in this
+argument.  See L<Map Accession Information Format> for more details.  
+
+=item * prev_ref_map_set_aid
+
+If the user is looking at a map (so they picked a ref_map_set_aid and a
+ref_map_aid), and then they choose a different reference map set, then current
+map is sent with the new (and different) map set.  CMap uses this to compare
+the current map set against the previous.  If they're different, CMap wipes out
+the map selection w/o making a db call to find out if the map is from the
+chosen map set.
+
+=item * prev_ref_species_aid
+
+See the above description forprev_ref_map_set_aid and extrapolate.
+
+=back
+
+=head2 Map Details Arguments
+
+Recently, the Map Details page has been folded into the regular viewer.  
+
+The URI of the Map Details page is "/cgi-bin/cmap/map_details?"
+
+=over 4
+
+=item * order_by [ Optional ]
+
+Order the details by this column.
+
+Values: feature_name, feature_type_aid, start_position
+
+=item * page_no [ default: 1 ]
+
+If there is enough data to be displayed on multiple pages, page_no dictates which page is diplayed.
+
+=item * comparative_map [ Optional ]
+
+Only display the comparative map data for this map or map set.
+
+ Format:
+    map_set_aid=set1
+    map_aid=map1
+
+=item * action [ Optional ]
+
+Set the action to "download" to get a tab delimited file of the data.
+
+=back
+
+=head2 Depricated Arguments
+
+If you a are using these in a URL, please change the URL.  They are not guaranteed to work.
+
+=over 4
+
+=item * ref_map_aid
+
+=item * ref_map_names 
+
+=back
+
+=head2 Map Accession Information Format
+
+Drawing information about maps (cropping and magnification) can be inserted
+with the map accession in the following fields.
+
+=over 4
+
+=item * ref_map_aids
+
+=item * comparative_maps
+
+=item * comparative_map_right
+
+=item * comparative_map_left
+
+=item * modified_ref_map
+
+=item * modified_comp_map
+
+=back 
+
+The format is "accession[start*stopxmagnification]".  Any position can be left
+out but the "*" is required.  The "x" can be left out if there is no
+magnification.
+
+=over 4
+
+=item * start
+
+The start position of the map to display if the map is to be cropped.  If left
+blank it will default to the start of the map.
+
+=item * stop
+
+The stop position of the map to display if the map is to be cropped.  If left
+blank it will default to the stop of the map.
+
+=item * magnification
+
+This is the magnification value of the map.  If increased to 2 the map will be
+2 times taller, if decreased to .5 it will be half the size.  All positive
+values are allowed but there is a minimum map size.  The default is 1.
+
+=back
+
+Examples:
+
+=over 4
+
+=item cu-sl-1994-2[200*400x1]  
+
+Correct, crops from 200 to 400 with normal magnification
+
+=item cu-sl-1994-2
+
+Correct, no cropping with normal magnification
+
+=item cu-sl-1994-2[*400]
+
+Correct, crops from the start to 400 with normal magnification
+
+=item cu-sl-1994-2[*x3]
+
+Correct, no cropping with 3 times magnification
+
+=item cu-sl-1994-2[200]
+
+Incorrect, need the "*" otherwise we can't tell if you want this to be start of
+end.
+
+=item cu-sl-1994-2[x3]
+
+Incorrect, need the "*" because we say so.
+
+=back
+
+=head2 Comparative Map Construction
 
 To include some number of comparative maps, you provide them in the
 "comparative_maps" argument, which is a single structured string that
@@ -1610,5 +2173,6 @@ For more information, see here:
 =head1 AUTHOR
 
 Ken Y. Clark, kclark@cshl.org
+Ben Faga, faga@cshl.org
 
-Copyright (c) 2002-4 Cold Spring Harbor Laboratory
+Copyright (c) 2002-5 Cold Spring Harbor Laboratory
