@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Utils;
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.34 2004-05-12 17:56:33 mwz444 Exp $
+# $Id: Utils.pm,v 1.35 2004-05-31 04:55:05 mwz444 Exp $
 
 =head1 NAME
 
@@ -22,12 +22,14 @@ which are exported by default.
 =cut 
 
 use strict;
+use Algorithm::Numerical::Sample 'sample';
+use Bit::Vector;
 use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
 use POSIX;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.34 $)[-1];
+$VERSION = (qw$Revision: 1.35 $)[-1];
 
 use base 'Exporter';
 
@@ -385,7 +387,9 @@ Turns "12345" into "12,345"
     1 while $number =~ s/^(-?\d+)(\d{3})/$1,$2/;
     return $number;
 }
+
 # ----------------------------------------------------
+sub even_label_distribution {
 
 =pod
 
@@ -395,25 +399,25 @@ Simply space (a sample of) the labels evenly in the given vertical space.
 
 Given:
 
-  labels: a hashref of arrayrefs, the keys of the hashref being one of
-    "highlights" - highlighted features, all will be taken
-    "correspondences" - features with correspondences
-    "normal" - all other features
+  labels: a hashref of arrayrefs, the keys of the hashref being one of
+    "highlights" - highlighted features, all will be taken
+    "correspondences" - features with correspondences
+    "normal" - all other features
 
-  map_height: the pixel height of the map (the bounds in which 
-    labels can be drawn
+  map_height: the pixel height of the map (the bounds in which 
+    labels can be drawn
 
-  buffer: the space between labels (optional, default = "2")
+  buffer: the space between labels (optional, default = "2")
 
-  start_y: the starting Y value from which to start assigning labels Y values
+  start_y: the starting Y value from which to start assigning labels Y values
 
-  font_height: how many pixels tall the label font is
+  font_height: how many pixels tall the label font is
 
 Basically, we just divide the total vertical pixel space available 
 (map_height) by the number of labels we want to place and decide how many 
-will fit.  For each of the keys of the "labels" hashref, we try to add
-as many labels as will fit.  As space becomes limited, we start taking an
-even sampling of the available labels.  Once we've selected all the labels
+will fit.  For each of the keys of the "labels" hashref, we try to add
+as many labels as will fit.  As space becomes limited, we start taking an
+even sampling of the available labels.  Once we've selected all the labels
 that will fit, we sort them (if needed) by "start_position," figure out the
 gaps to put b/w the labels, and then space them evenly from top to bottom
 using the gap interval.
@@ -421,7 +425,7 @@ using the gap interval.
 Special thanks to Noel Yap for suggesting this strategy.
 
 =cut
-sub even_label_distribution {
+
     my %args        = @_;
     my $labels      = $args{'labels'};
     my $map_height  = $args{'map_height'}   || 0;
@@ -443,13 +447,25 @@ sub even_label_distribution {
         last if $available < $font_height;
 
         my $no_possible = int( $available / $font_height );
-        my $skip_val    = $no_possible < $no_present 
-            ? int( $no_present / $no_possible ) : 1
-        ;
-
-        for ( my $i = 0; $i < $no_present; $i += $skip_val ) {
-            push @accepted, $labels->{ $priority }[ $i ];
+        if ( $no_present > $no_possible ) {
+            my $skip_val = int( $no_present / $no_possible );
+            if ( $skip_val > 1 ) {
+                for ( my $i = 0; $i < $no_present; $i += $skip_val ) {
+                    push @accepted, $labels->{ $priority }[ $i ];
+                }
+            }
+            else {
+                my @sample      =  sample(
+                    set         => [ 0 .. $no_present - 1 ],
+                    sample_size => $no_possible,
+                );
+                push @accepted, @{ $labels->{ $priority } }[ @sample ];
+            }
         }
+        else {
+            push @accepted, @{ $labels->{ $priority } };
+        }
+
         $no_added++;
     }
 
@@ -457,33 +473,178 @@ sub even_label_distribution {
     # Resort by the target (reduces crossed lines).
     #
     @accepted = 
-	map  { $_->[0] }
-    sort { $a->[1] <=> $b->[1] }
-    map  { [ $_, $_->{'target'} ] }
-    @accepted;
+        map  { $_->[0] }
+        sort { $a->[1] <=> $b->[1] }
+        map  { [ $_, $_->{'target'} ] }
+        @accepted;
 
     my $no_accepted = scalar @accepted;
+    my $no_possible = int( $map_height / $font_height );
+#    print STDERR "no accepted = '$no_accepted', ",
+#        "no_possible = '$no_possible' ($map_height / $font_height)\n";
+
     #
     # If there's only one label, put it right next to the one feature.
     #
     if ( $no_accepted == 1 ) {
         my $label = $accepted[0];
-        $label->{'y'} = $label->{'target'} - $font_height / 2;
+        $label->{'y'} = $label->{'target'};
     }
-    elsif ( $no_accepted > 1 ) {
-        #
-        # See if we can squeeze the labels into a smaller space,
-        # thereby placing the labels closer to their targets.
-        #
-        my $feature_span = $accepted[-1]->{'target'} - $accepted[0]->{'target'};
-        if ( 
-            ( $feature_span < $map_height )
-            &&
-            ( ( scalar @accepted * $font_height ) < $feature_span )
-        ) {
-            $map_height = $feature_span;
-        }
+    #
+    # If we took fewer than was possible, try to sort them nicely.
+    #
+    elsif ( $no_accepted > 1 && $no_accepted <= ( $no_possible * .5 ) ) {
+        my $bin_size  = 2;
+        my $half_font = $font_height / 2;
+        my $no_bins   = sprintf( "%d", $map_height / $bin_size );
+        my $bins      = Bit::Vector->new( $no_bins );
+#        print STDERR "-----------------------------------------------\n",
+#            "bin size = '$bin_size', no bins = '$no_bins', ",
+#            "map height = '$map_height', start = '$start_y', ",
+#            "half font = '$half_font'\n";
 
+        my $i = 1;
+        for my $label ( @accepted ) {
+            my $target   = $label->{'target'};
+            my $low_bin  = sprintf("%d", ( $target - $half_font ) / $bin_size);
+            my $high_bin = sprintf("%d", ( $target + $half_font ) / $bin_size);
+
+            if ( $low_bin < 0 ) {
+                my $diff   = 0 - $low_bin;
+                $low_bin  += $diff;
+                $high_bin += $diff;
+            }
+
+#            print STDERR "\nbins = ", $bins->to_ASCII, "\n";
+#            print STDERR "$i: $label->{text} ($label->{start_position}) ",
+#                "target = $label->{target}, bins = ($low_bin, $high_bin)\n";
+
+            my ( $hmin, $hmax )  = $bins->Interval_Scan_inc( $low_bin );
+            my ( $lmin, $lmax, $next_lmin, $next_lmax );
+            if ( $low_bin > 0 ) {
+                ( $lmin, $lmax ) = $bins->Interval_Scan_dec( $low_bin - 1 );
+
+                if ( $lmin > 1 && $lmax == $low_bin - 1 ) {
+                    ( $next_lmin, $next_lmax ) = 
+                        $bins->Interval_Scan_dec( $lmin - 1 );
+                }
+            }
+#            print STDERR "below = ($lmin, $lmax), above = ($hmin, $hmax), ",
+#                "next below ($next_lmin, $next_lmax)\n";
+
+            my $bin_span = $high_bin - $low_bin;
+            my $bins_occupied = $bin_span + 1;
+#            print STDERR "bin span = '$bin_span', bins occupied = '$bins_occupied'\n";
+
+            my ($gap_below, $gap_above, $diff_to_gap_below, $diff_to_gap_above);
+            # nothing below and enough open space
+            if ( ! defined $lmax && $low_bin - $bin_span > 1 ) {
+#                print STDERR "low decision 1\n";
+                $gap_below         = $low_bin - 1;
+                $diff_to_gap_below = $bin_span;
+            }
+            # something below but enough space b/w it and this
+            elsif ( defined $lmax && $low_bin - $lmax > $bin_span ) {
+#                print STDERR "low decision 2\n";
+                $gap_below         = $low_bin - $lmax;
+                $diff_to_gap_below = $bins_occupied;
+            }
+            # something immediately below but enough space in next gap
+            elsif ( 
+                defined $lmax && $lmax == $low_bin - 1 &&
+                defined $next_lmax && $lmin - $next_lmax >= $bins_occupied
+            ) {
+#                print STDERR "low decision 3\n";
+                $gap_below         = $lmin - $next_lmax;
+                $diff_to_gap_below = ( $low_bin - $lmin ) + $bins_occupied;
+            }
+            # something below and enough space beyond it w/o going past 0
+            elsif ( 
+                ! defined $next_lmax && defined $lmin && $lmin - $bin_span > 0
+            ) {
+#                print STDERR "low decision 4\n";
+                $gap_below         = $lmin;
+                $diff_to_gap_below = $low_bin - $lmin + $bins_occupied;
+            }
+
+            # nothing above and space w/in the bins
+            if ( ! defined $hmin && $high_bin + $bin_span < $no_bins ) {
+                $gap_above         = $no_bins - $low_bin;
+                $diff_to_gap_above = 0;
+            }
+            # inside an occupied bin but space just afterwards
+            elsif ( 
+                defined $hmax && 
+                $hmax <= $high_bin && 
+                $hmax + 1 + $bin_span < $no_bins
+            ) {
+                $gap_above         = $no_bins - $hmax;
+                $diff_to_gap_above = ( $hmax - $low_bin ) + 1;
+            }
+            # collision but space afterwards
+            elsif ( defined $hmax && $hmax + $bin_span < $no_bins ) {
+                $gap_above         = $no_bins - ( $hmax + 1 );
+                $diff_to_gap_above = ( $hmax + 1 ) - $low_bin;
+            }
+
+            my $below_open = $gap_below >= $bins_occupied;
+            my $above_open = $gap_above >= $bins_occupied;
+            my $closer_gap = 
+                $diff_to_gap_below == $diff_to_gap_above ? 'neither' :
+                defined $diff_to_gap_below && 
+                ($diff_to_gap_below < $diff_to_gap_above) ? 'below'   : 'above';
+
+#            print STDERR "gap below = '$gap_below', ",
+#                "diff to gap below = '$diff_to_gap_below'\n",
+#                "gap above = '$gap_above' ", 
+#                "diff to gap above = '$diff_to_gap_above'\n",
+#                "Below open = '$below_open', above open = ",
+#                "'$above_open', closer gap = '$closer_gap'\n";
+
+            my $diff = 0;
+            if ( ! defined $hmin ) {
+#                print STDERR "Nothing here, leaving alone\n";
+                ; # do nothing
+            }
+            elsif ( 
+                $below_open && (
+                    $closer_gap =~ /^(neither|below)$/ ||
+                    ! $above_open
+                )
+            ) {
+                $low_bin  -= $diff_to_gap_below;
+                $high_bin -= $diff_to_gap_below;
+                $diff      = -( $bin_size * $diff_to_gap_below );
+#                print STDERR "Moving LOW\n";
+            }
+            else {
+                $diff_to_gap_above ||= ( $hmax - $low_bin ) + 1;
+#                print STDERR "Moving HIGH ($diff_to_gap_above)\n";
+                $low_bin  += $diff_to_gap_above;
+                $high_bin += $diff_to_gap_above;
+                $diff      = $bin_size * $diff_to_gap_above;
+            }
+
+#            print STDERR "chose bins = ($low_bin, $high_bin), diff = '$diff',",
+#                " no bins = '", $bins->Size, "'\n";
+
+            if ( defined $low_bin && defined $high_bin ) {
+                if ( $high_bin >= $bins->Size ) {
+                    my $cur  = $bins->Size;
+                    my $diff = ( $high_bin - $cur ) + 1;
+                    $bins->Resize( $cur + $diff );
+                }
+                $bins->Bit_On( $_ ) for $low_bin..$high_bin;
+            }
+
+            $label->{'y'} = $target + $diff;
+            $i++;
+        }
+    }
+    #
+    # If we used all available space, just space evenly.
+    #
+    else {
         #
         # Figure the gap to evenly space the labels in the space.
         #
@@ -493,7 +654,7 @@ sub even_label_distribution {
             $label->{'y'} = sprintf("%.2f", $start_y + ( $gap * $i++ ) );
         }
     }
-   
+
     return \@accepted;
 }
 
