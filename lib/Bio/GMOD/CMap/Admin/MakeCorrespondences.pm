@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.38 2004-05-10 21:49:56 mwz444 Exp $
+# $Id: MakeCorrespondences.pm,v 1.39 2004-06-07 15:07:05 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.38 $)[-1];
+$VERSION = (qw$Revision: 1.39 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -41,27 +41,31 @@ use Data::Dumper;
 
 # ----------------------------------------------------
 sub make_name_correspondences {
-    my ( $self, %args )       = @_;
-    my @map_set_ids           = @{ $args{'map_set_ids'}        || [] };
-    my @skip_feature_type_aids    = @{ $args{'skip_feature_type_aids'} || [] };
-    my $evidence_type_aid         = $args{'evidence_type_aid'} or 
-                                return 'No evidence type';
-    $LOG_FH                   = $args{'log_fh'} || \*STDOUT;
-    my $quiet                 = $args{'quiet'};
-    my $allow_update                 = $args{'allow_update'};
-    my $db                    = $self->db;
-    my $admin                 = Bio::GMOD::CMap::Admin->new(
-	config      => $self->config,
+    my ( $self, %args )        = @_;
+    my @map_set_ids            = @{ $args{'map_set_ids'}        || [] };
+    my @skip_feature_type_aids    
+        = @{ $args{'skip_feature_type_aids'} || [] };
+    my $evidence_type_aid      = $args{'evidence_type_aid'} or 
+                                 return 'No evidence type';
+    $LOG_FH                    = $args{'log_fh'} || \*STDOUT;
+    my $name_regex             = $args{'name_regex'} ||'';
+    my $quiet                  = $args{'quiet'};
+    my $allow_update           = $args{'allow_update'};
+    my $db                     = $self->db;
+    my $admin                  = Bio::GMOD::CMap::Admin->new(
+	    config      => $self->config,
         data_source => $self->data_source,
     );
-    ;
     $self->Print("Making name-based correspondences.\n") unless $quiet;
 
+    my $expanded_correspondence_lookup 
+        = $self->config_data('expanded_correspondence_lookup'); 
     #
     # Normally we only create name-based correspondences between 
     # features of the same type, but this reads the configuration
     # file and adds in other allowed feature types.
     #
+print STDERR "$expanded_correspondence_lookup MAKE \n";
     my %add_name_correspondences;
     for my $line ( $self->config_data('add_name_correspondence') ) {
         my @feature_type_aids = split /\s+/, $line;
@@ -143,9 +147,6 @@ sub make_name_correspondences {
     }   
 
     my %names = ();
-    ###Switch the commenting to use the name_regex
-    my $name_regex='(\S+)\.\w\d$';
-    #my $name_regex='';
     for my $f ( values %$features ) {
         for my $name ( 
             $f->{'feature_name'}, 
@@ -237,8 +238,18 @@ sub make_name_correspondences {
                     my $fc_id = $admin->add_feature_correspondence_to_list( 
                         feature_id1       => $f1->{'feature_id'},
                         feature_id2       => $f2->{'feature_id'},
+                        map_id1           => $f1->{'map_id'},
+                        map_id2           => $f2->{'map_id'},
+                        start_position1   => $f1->{'start_position'},
+                        start_position2   => $f2->{'start_position'},
+                        stop_position1    => $f1->{'stop_position'},
+                        stop_position2    => $f2->{'stop_position'},
+                        feature_type_aid1 => $f1->{'feature_type_aid'},
+                        feature_type_aid2 => $f2->{'feature_type_aid'},
                         evidence_type_aid => $evidence_type_aid,
-		        allow_update      => $allow_update,
+		                allow_update      => $allow_update,
+		                expanded_correspondence_lookup      
+                            => $expanded_correspondence_lookup,
                     ) or return $self->error( $admin->error );
 		    $admin->insert_feature_correspondence_if_gt(1000);
                     #$self->Print( 

@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.69 2004-05-10 21:49:55 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.70 2004-06-07 15:07:04 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.69 $)[-1];
+$VERSION = (qw$Revision: 1.70 $)[-1];
 
 #
 # Get command-line options
@@ -2204,6 +2204,25 @@ sub make_name_correspondences {
     chomp( my $allow_update = <STDIN> );
     $allow_update = ( $allow_update =~ /^[Yy]/ ) ? 1 : 0;
 
+    my $name_regex = $self->show_menu(
+        title       => 'Match Type',
+        prompt      => 'Select the match type that you desire',
+        display     => 'regex_title',
+        return      => 'regex',
+        allow_null  => 1,
+        allow_mult  => 0,
+        data    => [
+                {
+                    regex_title => 'exact match only',
+                    regex       => '',
+                },
+                {
+                    regex_title => 'read pairs',
+                    regex => '(\S+)\.\w\d$',
+                },
+            ],
+        );
+
     print "Make name-based correspondences\n",
         '  Data source     : ' . $self->data_source, "\n",
         "  Evidence type   : $evidence_type\n",
@@ -2222,11 +2241,12 @@ sub make_name_correspondences {
 
     my $time_start = new Benchmark;
     $corr_maker->make_name_correspondences(
-        evidence_type_aid         => $evidence_type_aid,
+        evidence_type_aid     => $evidence_type_aid,
         map_set_ids           => \@map_set_ids,
         skip_feature_type_aids    => \@skip_feature_type_aids,
         log_fh                => $self->log_fh,
         quiet                 => $Quiet,
+        name_regex            => $name_regex,
 	allow_update => $allow_update,
     ) or do { print "Error: ", $corr_maker->error, "\n"; return; };
 
