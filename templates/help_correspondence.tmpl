@@ -1,0 +1,26 @@
+[% SET title='Correspondence Detail Help' %]
+[% 
+    INCLUDE header.tmpl 
+    title=title
+    cur_sec='help'
+    help_anchor=''
+%]
+
+[% INCLUDE help_header.tmpl cur_sec='correspondence_detail' %]
+
+<h2>[% title %]</h2>
+<p>
+This page provides details about a correspondence between two
+features in CMap.  At the top, the features are listed along with
+their maps, positions and feature types.  There are links present
+to take you to the details on the map sets, maps, or the features
+themselves.  Also present are any attributes and cross-references
+which have been defined by the curators.
+</p>
+
+<p>
+Below you will see all the evidence supporting the correspondence
+along with a link to the details on each evidence.
+</p>
+[% page.end_body OR '</body>' %]
+</html>
