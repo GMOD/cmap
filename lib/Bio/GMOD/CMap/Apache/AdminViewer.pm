@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.32 2003-03-25 23:52:56 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.33 2003-04-09 16:38:41 kycl4rk Exp $
 
 use strict;
 use Apache::Constants qw[ :common M_GET REDIRECT ];
@@ -30,7 +30,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.32 $)[-1];
+$VERSION        = (qw$Revision: 1.33 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -917,6 +917,21 @@ sub map_view {
         limit_start => $limit_start,
     );
     $map->{'features'} = $data->{'data'};
+
+    for my $feature ( @{ $map->{'features'} } ) {
+        $feature->{'no_correspondences'} = $db->selectrow_array(
+            q[
+                select count(fc.feature_correspondence_id)
+                from   cmap_correspondence_lookup cl,
+                       cmap_feature_correspondence fc
+                where  cl.feature_id1=?
+                and    cl.feature_correspondence_id=
+                       fc.feature_correspondence_id
+            ],
+            {},
+            ( $feature->{'feature_id'} )
+        );
+    }
 
     my $feature_types = $db->selectall_arrayref(
         q[
