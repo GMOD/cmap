@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::Oracle
--- Created on Tue Feb 10 17:12:32 2004
+-- Created on Wed Feb 11 14:17:42 2004
 -- 
 --
 -- Table: cmap_attribute
@@ -13,7 +13,7 @@ CREATE TABLE cmap_attribute (
   display_order number(11) DEFAULT '1' NOT NULL,
   is_public number(4) DEFAULT '1' NOT NULL,
   attribute_name varchar2(200) DEFAULT '' NOT NULL,
-  attribute_value varchar2(4000) NOT NULL,
+  attribute_value clob NOT NULL,
   CONSTRAINT pk_cmap_attribute PRIMARY KEY (attribute_id)
 );
 
@@ -66,20 +66,6 @@ CREATE TABLE cmap_correspondence_matrix (
 );
 
 --
--- Table: cmap_dbxref
---
-
-CREATE TABLE cmap_dbxref (
-  dbxref_id number(11) DEFAULT '0' NOT NULL,
-  map_set_id number(11) DEFAULT NULL,
-  feature_type_id number(11) DEFAULT NULL,
-  species_id number(11) DEFAULT NULL,
-  dbxref_name varchar2(32) DEFAULT NULL,
-  url varchar2(200) DEFAULT '' NOT NULL,
-  CONSTRAINT pk_cmap_dbxref PRIMARY KEY (dbxref_id)
-);
-
---
 -- Table: cmap_evidence_type
 --
 
@@ -107,8 +93,6 @@ CREATE TABLE cmap_feature (
   is_landmark number(4) DEFAULT '0' NOT NULL,
   start_position number(11, 2) DEFAULT '0' NOT NULL,
   stop_position number(11, 2) DEFAULT NULL,
-  dbxref_name varchar2(32) DEFAULT NULL,
-  dbxref_url varchar2(200) DEFAULT NULL,
   CONSTRAINT pk_cmap_feature PRIMARY KEY (feature_id),
   CONSTRAINT accession_id UNIQUE (accession_id)
 );
@@ -285,7 +269,7 @@ CREATE TABLE cmap_xref (
   object_id number(11) DEFAULT NULL,
   display_order number(11) DEFAULT '1' NOT NULL,
   xref_name varchar2(200) DEFAULT '' NOT NULL,
-  xref_url varchar2(4000) NOT NULL,
+  xref_url clob NOT NULL,
   CONSTRAINT pk_cmap_xref PRIMARY KEY (xref_id)
 );
 

@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::Sybase
--- Created on Tue Feb 10 17:13:14 2004
+-- Created on Wed Feb 11 14:17:46 2004
 -- 
 --
 -- Table: cmap_attribute
@@ -66,20 +66,6 @@ CREATE TABLE cmap_correspondence_matrix (
 );
 
 --
--- Table: cmap_dbxref
---
-
-CREATE TABLE cmap_dbxref (
-  dbxref_id numeric(11) DEFAULT '0' NOT NULL,
-  map_set_id numeric(11) DEFAULT NULL NULL,
-  feature_type_id numeric(11) DEFAULT NULL NULL,
-  species_id numeric(11) DEFAULT NULL NULL,
-  dbxref_name varchar(32) DEFAULT NULL NULL,
-  url varchar(200) DEFAULT '' NOT NULL,
-  CONSTRAINT pk_cmap_dbxref PRIMARY KEY (dbxref_id)
-);
-
---
 -- Table: cmap_evidence_type
 --
 
@@ -107,8 +93,6 @@ CREATE TABLE cmap_feature (
   is_landmark smallint(4) DEFAULT '0' NOT NULL,
   start_position double(11,2) DEFAULT '0' NOT NULL,
   stop_position double(11,2) DEFAULT NULL NULL,
-  dbxref_name varchar(32) DEFAULT NULL NULL,
-  dbxref_url varchar(200) DEFAULT NULL NULL,
   CONSTRAINT pk_cmap_feature PRIMARY KEY (feature_id),
   CONSTRAINT accession_id UNIQUE (accession_id)
 );

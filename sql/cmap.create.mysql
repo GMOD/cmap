@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::MySQL
--- Created on Tue Feb 10 17:12:12 2004
+-- Created on Wed Feb 11 14:18:19 2004
 -- 
 SET foreign_key_checks=0;
 
@@ -60,19 +60,6 @@ CREATE TABLE cmap_correspondence_matrix (
 );
 
 --
--- Table: cmap_dbxref
---
-CREATE TABLE cmap_dbxref (
-  dbxref_id integer(11) NOT NULL DEFAULT '0',
-  map_set_id integer(11) DEFAULT NULL,
-  feature_type_id integer(11) DEFAULT NULL,
-  species_id integer(11) DEFAULT NULL,
-  dbxref_name varchar(32) DEFAULT NULL,
-  url varchar(200) NOT NULL DEFAULT '',
-  PRIMARY KEY (dbxref_id)
-);
-
---
 -- Table: cmap_evidence_type
 --
 CREATE TABLE cmap_evidence_type (
@@ -98,8 +85,6 @@ CREATE TABLE cmap_feature (
   is_landmark tinyint(4) NOT NULL DEFAULT '0',
   start_position double(11, 2) NOT NULL DEFAULT '0',
   stop_position double(11, 2) DEFAULT NULL,
-  dbxref_name varchar(32) DEFAULT NULL,
-  dbxref_url varchar(200) DEFAULT NULL,
   INDEX feature_name (feature_name),
   INDEX feature_id_map_id (feature_id, map_id),
   INDEX feature_id_map_id_start (feature_id, map_id, start_position),
