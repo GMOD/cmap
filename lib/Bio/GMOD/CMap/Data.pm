@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Data;
 
-# $Id: Data.pm,v 1.56 2003-09-08 17:32:02 kycl4rk Exp $
+# $Id: Data.pm,v 1.57 2003-09-10 19:59:19 kycl4rk Exp $
 
 =head1 NAME
 
@@ -24,7 +24,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.56 $)[-1];
+$VERSION = (qw$Revision: 1.57 $)[-1];
 
 use Data::Dumper;
 use Time::ParseDate;
@@ -765,7 +765,7 @@ Returns the data for drawing comparative maps.
         # Count the correspondences and see if there are enough.
         #
         next if $map_data->{'skip'}; # we've already determined to skip
-        my $map_id               = $map_data->{'map_id'};
+        my $map_id               = $map_data->{'map_id'} or next;
         my $ref_correspondences  = $corr_lookup{ $map_id } || [];
         my $self_correspondences = $corr_lookup{ $map_id } || [];
 
@@ -920,9 +920,11 @@ Returns the data for drawing comparative maps.
             );
         }
 
-        my $sth = $db->prepare( $sql->cmap_data_map_info_sql );
-        $sth->execute( $map_id );
-        $maps->{ $map_id } = $sth->fetchrow_hashref;
+        if ( $map_id ) {
+            my $sth = $db->prepare( $sql->cmap_data_map_info_sql );
+            $sth->execute( $map_id );
+            $maps->{ $map_id } = $sth->fetchrow_hashref;
+        }
     }
 
     return $maps;
@@ -2366,8 +2368,6 @@ Returns the data for drawing comparative maps.
 
     $sql .= qq[and s.accession_id='$species_aid' ]   if $species_aid;
     $sql .= qq[and mt.accession_id='$map_type_aid' ] if $map_type_aid;
-
-    print STDERR "sql =\n$sql\n";
 
     my $map_sets = $db->selectall_arrayref( $sql, { Columns => {} } );
 
