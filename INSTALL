@@ -1,6 +1,6 @@
                               CMAP INSTALL
 
-                             $Revision: 1.30 $
+                             $Revision: 1.31 $
 
 1.      QUICK START
 
@@ -477,11 +477,11 @@ Note: You'll notice that the first command you give to build most Perl
       entire build/test/install process is handled exclusively by Perl.
       CMap uses this newer process.  Rather than executing "perl
       Makefile.PL; make; make install" you simply run "perl Build.PL;
-      ./Build; ./Build test; ./Build install."  Given that Module::Build
-      is a newer module that is yet to be distributed with the core
-      Perl, you will need to install it before proceeding with the CMap
-      installation process.  For more information on this, execute
-      "perldoc Module::Build" after installing  the module.
+      ./Build; ./Build install."  Given that Module::Build is a newer
+      module that is yet to be distributed with the core Perl, you will
+      need to install it before proceeding with the CMap installation
+      process.  For more information on this, execute "perldoc
+      Module::Build" after installing  the module.
 
 If all goes well, you should see a lot of text go whizzing by and then
 a big text banner saying "You now have successfully built and installed
@@ -644,7 +644,6 @@ latter, I'd recommend choosing the first way.  Here's how to do both:
 
     $ perl Build.PL
     $ ./Build
-    $ ./Build test
     # ./Build install
 
     Several configuration options can be set via arguments to Build.PL.
