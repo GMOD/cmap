@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.85 2005-01-11 23:46:15 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.86 2005-02-03 15:22:04 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.85 $)[-1];
+$VERSION = (qw$Revision: 1.86 $)[-1];
 
 #
 # Get command-line options
@@ -63,6 +63,7 @@ use Bio::GMOD::CMap::Admin::Import();
 use Bio::GMOD::CMap::Admin::Export();
 use Bio::GMOD::CMap::Admin::MakeCorrespondences();
 use Bio::GMOD::CMap::Admin::ImportCorrespondences();
+use Bio::GMOD::CMap::Admin::ImportAlignments();
 use Bio::GMOD::CMap::Admin::ManageLinks();
 use Benchmark;
 
@@ -238,16 +239,16 @@ sub show_greeting {
                 display => 'Make name-based correspondences'
             },
             {
+                action  => 'delete_duplicate_correspondences',
+                display => 'Delete duplicate correspondences'
+            },
+            {
                 action  => 'reload_correspondence_matrix',
                 display => 'Reload correspondence matrix'
             },
             {
                 action  => 'purge_query_cache_menu',
                 display => 'Purge the cache to view new data'
-            },
-            {
-                action  => 'delete_duplicate_correspondences',
-                display => 'Delete duplicate correspondences'
             },
             {
                 action  => 'manage_links',
@@ -778,15 +779,18 @@ sub export_as_text {
     #
     # Confirm decisions.
     #
-    print join( "\n",
+    print join(
+        "\n",
         'OK to export?',
         '  Data source     : ' . $self->data_source,
         "  Map Sets        :\n" . join( "\n", map { "    $_" } @map_set_names ),
         "  Feature Types   :\n"
-          . join( "\n", map { "    $_->[2]" } @$feature_types || @$display_feature_types ),
+          . join( "\n",
+            map { "    $_->[2]" } @$feature_types || @$display_feature_types ),
         "  Exclude Fields  : $excluded_fields",
         "  Directory       : $dir",
-        "[Y/n] " );
+        "[Y/n] "
+    );
     chomp( my $answer = <STDIN> );
     return if $answer =~ /^[Nn]/;
 
@@ -1746,6 +1750,10 @@ sub import_data {
                 display => 'Import feature correspondences'
             },
             {
+                action  => 'import_alignments',
+                display => 'Import Alignment (ex: BLAST)'
+            },
+            {
                 action  => 'import_object_data',
                 display => 'Import CMap objects [experimental]'
             },
@@ -2045,6 +2053,157 @@ sub import_correspondences {
         return;
       };
     $self->purge_query_cache(4);
+}
+
+# ----------------------------------------------------
+sub import_alignments {
+
+    #
+    # Gathers the info to import feature correspondences.
+    #
+    my $self = shift;
+    my $db   = $self->db or die $self->error;
+    my $file = $self->file;
+    my $term = $self->term;
+
+    #
+    # Make sure we have a file to parse.
+    #
+    if ($file) {
+        print "OK to use '$file'? [Y/n] ";
+        chomp( my $answer = <STDIN> );
+        $file = '' if $answer =~ m/^[Nn]/;
+    }
+
+    while ( !-r $file || !-f _ ) {
+        print "Unable to read '$file' or not a regular file.\n" if $file;
+        $file = $term->readline('Where is the file? [q to quit] ');
+        $file =~ s/^\s*|\s*$//g;
+        return if $file =~ m/^[Qq]/;
+    }
+
+    #
+    # If it's good, remember it.
+    #
+    $term->addhistory($file);
+    $self->file($file);
+
+    #
+    # Get the map set.
+    #
+    my $query_map_sets = $self->get_map_sets(
+        explanation => 'First you will select the map set of the Query',
+        allow_mult  => 0,
+        allow_null  => 0,
+    );
+    my $use_query_as_hit_answer =
+      $self->show_question( question =>
+          'Do you want to use the query map set as the Subject set? [y|N]', );
+    my $hit_map_sets;
+    if ( $use_query_as_hit_answer =~ /^y/ ) {
+        $hit_map_sets = $query_map_sets;
+    }
+    else {
+        $hit_map_sets = $self->get_map_sets(
+            explanation => 'Now you will select the subject map set',
+            allow_mult  => 0,
+            allow_null  => 0,
+        );
+    }
+
+## Please see file perltidy.ERR
+    #
+    # Get the feature type
+    #
+    my @feature_type = $self->show_menu(
+        title  => 'Feature Type of the Hits',
+        prompt =>
+"Select the feature type that the newly created features will be assigned.\n"
+          . "It is recommended that alignment features have their own feature type such as blast_alignment.",
+        display    => 'feature_type',
+        return     => 'feature_type_aid,feature_type',
+        allow_null => 0,
+        allow_mult => 0,
+        data       => $self->fake_selectall_arrayref(
+            $self->feature_type_data(),
+            'feature_type_accession as feature_type_aid',
+            'feature_type'
+        ),
+    );
+
+    #
+    # Get the evidence type
+    #
+    my @evidence_type = $self->show_menu(
+        title  => 'Evidence Type of the Hits',
+        prompt =>
+"Select the evidence type that the newly created evidences will be assigned.\n"
+          . "It is recommended that alignment evidences have their own evidence type such as blast_alignment.",
+        display    => 'evidence_type',
+        return     => 'evidence_type_aid,evidence_type',
+        allow_null => 0,
+        allow_mult => 0,
+        data       => $self->fake_selectall_arrayref(
+            $self->evidence_type_data(),
+            'evidence_type_accession as evidence_type_aid',
+            'evidence_type'
+        ),
+    );
+
+    #
+    # Get the format of the alignment (BLAST...)
+    #
+    # SearchIO.pm from BioPerl has a list of available formats.
+    # Currently only BLAST is included because that is the only one
+    # that I have files to test.
+
+    my $formats = [
+        {
+            display => 'BLAST',
+            format  => 'blast'
+        },
+    ];
+    my $format = $self->show_menu(
+        title   => 'Alignment Format',
+        prompt  => 'What format is the alignment in?',
+        display => 'display',
+        return  => 'format',
+        data    => $formats,
+    );
+
+    print join( "\n",
+        'OK to import?',
+        '  Data source     : ' . $self->data_source,
+        "  File            : $file",
+        '  Query Map Set   : ' . $query_map_sets->[0]{'map_set_name'},
+        '  Subject Map Set : ' . $hit_map_sets->[0]{'map_set_name'},
+        '  Feature Type    : ' . $feature_type[1],
+        '  Evidence Type   : ' . $evidence_type[1],
+        '  Format          : ' . $format,
+    );
+
+    print "\n[Y/n] ";
+
+    chomp( my $answer = <STDIN> );
+    return if $answer =~ /^[Nn]/;
+
+    my $importer =
+      Bio::GMOD::CMap::Admin::ImportAlignments->new(
+        data_source => $self->data_source, );
+    $importer->import_alignments(
+        file_name         => $file,
+        query_map_set_id  => $query_map_sets->[0]{'map_set_id'},
+        hit_map_set_id    => $hit_map_sets->[0]{'map_set_id'},
+        feature_type_aid  => $feature_type[0],
+        evidence_type_aid => $evidence_type[0],
+        format            => $format,
+        log_fh            => $self->log_fh,
+      )
+      or do {
+        print "Error: ", $importer->error, "\n";
+        return;
+      };
+    $self->purge_query_cache(2);
 }
 
 # ----------------------------------------------------
