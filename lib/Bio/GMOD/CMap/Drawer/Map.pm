@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.109 2004-08-24 18:07:04 mwz444 Exp $
+# $Id: Map.pm,v 1.110 2004-08-25 05:15:29 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.109 $)[-1];
+$VERSION = (qw$Revision: 1.110 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -168,11 +168,13 @@ box.
 
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
+    my $map_area_data = $args{'map_area_data'};
     my $drawer = $args{'drawer'} || $self->drawer
       or $self->error('No drawer');
     my ( $x1, $y1, $y2 ) = @{ $args{'coords'} || [] }
       or $self->error('No coordinates');
     my $map_id    = $args{'map_id'};
+    my $slot_no   = $args{'slot_no'};
     my $color     = $self->color( $map_id );
     my $width     = $self->map_width( $map_id );
     my $x2     = $x1 + $width;
@@ -180,19 +182,22 @@ box.
 
     push @$drawing_data, [ FILLED_RECT, @coords, $color ];
     push @$drawing_data, [ RECTANGLE,   @coords, 'black' ];
+    my @map_coords = @coords;
 
     if ( my $map_units = $args{'map_units'} ) {
         $coords[3] =$self->draw_map_bottom(
             map_id  => $map_id,
+            slot_no => $slot_no,
             map_x1  => $x1,
             map_x2  => $x2,
             map_y2  => $y2,
             drawer  => $drawer,
+            map_area_data => $map_area_data,
             map_units  => $map_units,
         );
     }
 
-    return @coords;
+    return (\@coords,\@map_coords);
 }
 
 # ----------------------------------------------------
@@ -209,11 +214,13 @@ bounds of the image.
 
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
+    my $map_area_data = $args{'map_area_data'};
     my $drawer = $args{'drawer'} || $self->drawer
       or $self->error('No drawer');
     my ( $x1, $y1, $y2 ) = @{ $args{'coords'} || [] }
       or $self->error('No coordinates');
     my $map_id    = $args{'map_id'};
+    my $slot_no   = $args{'slot_no'};
     my $color     = $self->color( $map_id );
     my $width     = $self->map_width( $map_id );
     my $x2        = $x1 + $width;
@@ -227,23 +234,27 @@ bounds of the image.
     push @$drawing_data, [ FILL_TO_BORDER, $mid_x, $y1, $color, $color ];
     push @$drawing_data, [ FILL_TO_BORDER, $mid_x, $y2, $color, $color ];
     push @$drawing_data, [ FILLED_RECT,    $x1,    $y1, $x2,    $y2, $color ];
+    my $map_coords = [$x1,$y1,$x2,$y2];
 
     if ( my $map_units = $args{'map_units'} ) {
        $y2=$self->draw_map_bottom(
             map_id  => $map_id,
+            slot_no => $slot_no,
             map_x1  => $x1,
             map_x2  => $x2,
             map_y2  => $y2,
             drawer  => $drawer,
+            map_area_data => $map_area_data,
             map_units  => $map_units,
         );
     }
 
     return (
-        $mid_x - $arc_width / 2,
+        [$mid_x - $arc_width / 2,
         $y1 - $arc_width / 2,
         $mid_x + $arc_width / 2,
-        $y2 + $arc_width / 2,
+        $y2 + $arc_width / 2,],
+        $map_coords
     );
 }
 
@@ -260,11 +271,13 @@ Draws the map as an "I-beam."  Return the bounds of the image.
 
     my ( $self, %args ) = @_;
     my $drawing_data = $args{'drawing_data'};
+    my $map_area_data = $args{'map_area_data'};
     my $drawer = $args{'drawer'} || $self->drawer
       or $self->error('No drawer');
     my ( $x1, $y1, $y2 ) = @{ $args{'coords'} || [] }
       or $self->error('No coordinates');
     my $map_id= $args{'map_id'};
+    my $slot_no   = $args{'slot_no'};
     my $color = $self->color( $map_id );
     my $width = $self->map_width( $map_id );
     my $x2    = $x1 + $width;
@@ -273,19 +286,21 @@ Draws the map as an "I-beam."  Return the bounds of the image.
     push @$drawing_data, [ LINE, $x,  $y1, $x,  $y2, $color ];
     push @$drawing_data, [ LINE, $x1, $y1, $x2, $y1, $color ];
     push @$drawing_data, [ LINE, $x1, $y2, $x2, $y2, $color ];
-
+    my $map_coords=[$x,  $y1, $x,  $y2];
     if ( my $map_units = $args{'map_units'} ) {
         $y2=$self->draw_map_bottom(
             map_id  => $map_id,
+            slot_no => $slot_no,
             map_x1  => $x1,
             map_x2  => $x2,
             map_y2  => $y2,
             drawer  => $drawer,
+            map_area_data => $map_area_data,
             map_units  => $map_units,
         );
     }
 
-    return ( $x1, $y1, $x2, $y2 );
+    return ( [$x1, $y1, $x2, $y2],$map_coords );
 }
 
 # ----------------------------------------------------
@@ -302,21 +317,58 @@ such as the units.
 
     my ($self,%args) = @_;
     my $map_id       = $args{'map_id'};
+    my $slot_no      = $args{'slot_no'};
     my $x1           = $args{'map_x1'};
     my $x2           = $args{'map_x2'};
     my $y2           = $args{'map_y2'};
     my $drawer       = $args{'drawer'};
+    my $map_area_data = $args{'map_area_data'};
     my $map_units    = $args{'map_units'};
-    
-    my $buf  = 6;
-    my $font = $drawer->regular_font;
-    my $map_length =$self->map_length($map_id);
-    my $end_str    = presentable_number($map_length,3).$map_units;
-    my $x    = $x1 + ( ( $x2 - $x1 ) / 2 ) -
-      ( ( $font->width * length($end_str) ) / 2 );
-    my $y = $y2 + $buf;
-    $drawer->add_drawing( STRING, $font, $x, $y, $end_str, 'grey' );
-    $y2 += $font->height;
+    my $top_buf          = 12;
+    my $buf              = 2;
+    my $font         = $drawer->regular_font;
+    my $y            = $y2 + $top_buf;
+    my $x_mid        = $x1 + ( ( $x2 - $x1 ) / 2 );    
+    my $x;
+    my $map_aid      = $self->map_aid($map_id);
+    ###Full size button if needed
+    if ($drawer->data_module->truncatedMap($slot_no,$map_id)){
+        my $full_str="full-size"; 
+        $x  = $x_mid -
+            (($font->width * length($full_str)) / 2);
+        $drawer->add_drawing( STRING, $font, $x, $y, $full_str, 'grey' );
+        my $code=qq[
+            onMouseOver="window.status='Make map full sized';return true" 
+            onClick="crop($slot_no, $map_aid, '', 2);document.comparative_map_form.submit();"
+            ]; 
+        push @$map_area_data,
+          {
+            coords => [
+                $x,
+                $y, 
+                $x+($font->width * length($full_str)),
+                $y+$font->height],
+            url  => '',
+            alt  => 'Make map full sized',
+            code => $code,
+          };
+        $y += $font->height + $buf;
+    }
+    ###Start and stop
+    my ($start,$stop)
+        = $drawer->data_module->getDisplayedStartStop($slot_no,$map_id);
+    my $start_str = commify($start)."-".commify($stop);
+    $x    = $x_mid -
+      ( ( $font->width * length($start_str) ) / 2 );
+    $drawer->add_drawing( STRING, $font, $x, $y, $start_str, 'grey' );
+    $y += $font->height + $buf;
+    ###Map Length
+#    my $map_length =$self->map_length($map_id);
+#    my $size_str    = presentable_number($map_length,3).$map_units;
+#    $x    = $x_mid -
+#      ( ( $font->width * length($size_str) ) / 2 );
+#    $drawer->add_drawing( STRING, $font, $x, $y, $size_str, 'grey' );
+    $y2 = $font->height +$y+$buf;
     return $y2;
 }
 
@@ -671,13 +723,16 @@ Lays out the map.
 
         my $map_y_end     = $map_base_y + $pixel_height;
         my $draw_sub_name = $SHAPE{ $self->shape($map_id) };
-        my @map_bounds    = $self->$draw_sub_name(
+        my ($map_bounds_ref,$map_coords) = $self->$draw_sub_name(
             map_id       => $map_id,
-            map_units    => $self->map_units($map_id), #$show_map_units ? $self->map_units($map_id) : '',
+            slot_no      => $slot_no,
+            map_units    => $self->map_units($map_id), 
             drawer       => $drawer,
             coords       => [ $base_x, $map_base_y, $map_y_end ],
             drawing_data => \@drawing_data,
+            map_area_data => \@map_area_data,
         );
+        my @map_bounds=@$map_bounds_ref;
 
         my $map_details_url = DEFAULT->{'map_details_url'};
         my $map             = $self->map($map_id);
@@ -698,15 +753,15 @@ Lays out the map.
         if ($capped == 1 or $capped == 3){ #top capped
             # Draw asterisk
             push @drawing_data,
-                [ STRING, $reg_font, $map_bounds[2]+2, $map_bounds[1] 
+                [ STRING, $reg_font, $map_coords->[2]+2, $map_coords->[1] 
                 , '*', 'red' ];
             # add map over to identify what it means
             push @map_area_data,
               {
-                coords => [$map_bounds[2]+2,
-                    $map_bounds[1],
-                    $map_bounds[2]+2+$font_width,
-                    $map_bounds[1]+$font_height],
+                coords => [$map_coords->[2]+2,
+                    $map_coords->[1],
+                    $map_coords->[2]+2+$font_width,
+                    $map_coords->[1]+$font_height],
                 url  => '',
                 alt  => 'Size Capped',
               };
@@ -715,16 +770,16 @@ Lays out the map.
         if ($capped >= 2){ #bottom capped
             # Draw asterisk
             push @drawing_data,
-                [ STRING, $reg_font, $map_bounds[2]+2
-                , $map_bounds[3] - $font_height*2  
+                [ STRING, $reg_font, $map_coords->[2]+2
+                , $map_coords->[3] - $font_height   
                 , '*', 'red' ];
             # add map over to identify what it means
             push @map_area_data,
               {
-                coords => [$map_bounds[2]+2,
-                    $map_bounds[3] - $font_height*2,
-                    $map_bounds[2]+2+$font_width,
-                    $map_bounds[3] - $font_height],
+                coords => [$map_coords->[2]+2,
+                    $map_coords->[3] - $font_height,
+                    $map_coords->[2]+2+$font_width,
+                    $map_coords->[3]],
                 url  => '',
                 alt  => 'Size Capped',
               };
@@ -1798,15 +1853,15 @@ sub add_tick_marks {
         push @$drawing_data,
           [ FILL, $clip_arrow_xmid, $clip_arrow_y2_up-1, $clip_arrow_color ];
 
-        my $down_is_start=$is_flipped ? 'false' : 'true';
-        my $up_is_start=$is_flipped ? 'true' : 'false';
+        my $down_command=$is_flipped ? '1' : '0';
+        my $up_command=$is_flipped ? '0' : '1';
         my $down_code=qq[ 
             onMouseOver="window.status='crop down';return true" 
-            onClick="crop($slot_no, $map_aid, $tick_pos, $down_is_start);document.comparative_map_form.submit();"
+            onClick="crop($slot_no, $map_aid, $tick_pos, $down_command);document.comparative_map_form.submit();"
             ]; 
         my $up_code=qq[
             onMouseOver="window.status='crop up';return true" 
-            onClick="crop($slot_no, $map_aid, $tick_pos, $up_is_start);document.comparative_map_form.submit();"
+            onClick="crop($slot_no, $map_aid, $tick_pos, $up_command);document.comparative_map_form.submit();"
             ]; 
         push @$map_area_data,
           {

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.145 2004-08-24 18:04:40 mwz444 Exp $
+# $Id: Data.pm,v 1.146 2004-08-25 05:15:29 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.145 $)[-1];
+$VERSION = (qw$Revision: 1.146 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -4849,16 +4849,97 @@ If it is not aggregated, compress unless this slot contains only 1 map.
     return (scalar(keys(%{$self->slot_info->{$this_slot_no}}))>1);
 }
 
+# ----------------------------------------------------
+sub getDisplayedStartStop {
 
+=pod
+
+=head2 getDisplayedStartStop
+
+get start and stop of a map set.
+
+=cut
+    my $self     = shift;
+    my $slot_no  = shift;
+    my $map_id   = shift;
+    return (undef,undef) 
+        unless (defined($slot_no) and defined($map_id));
+
+    my ($start,$stop);
+    if ($self->slot_info->{$slot_no}
+        and %{$self->slot_info->{$slot_no}}
+        and @{$self->slot_info->{$slot_no}{$map_id}}) {
+        my $map_info = $self->slot_info->{$slot_no}{$map_id};
+        if (defined($map_info->[0])){
+            $start=$map_info->[0];
+        }
+        else{
+            $start=$map_info->[2];
+        }
+        if (defined($map_info->[1])){
+            $stop=$map_info->[1];
+        }
+        else{
+            $stop=$map_info->[3];
+        }
+    }
+    return ($start,$stop);        
+
+}
+
+# ----------------------------------------------------
+sub truncatedMap {
+
+=pod
+
+=head2 truncatedMap
+
+test if the map is truncated
+
+=cut
+    my $self     = shift;
+    my $slot_no  = shift;
+    my $map_id   = shift;
+    return undef 
+        unless (defined($slot_no) and defined($map_id));
+
+    if ($self->slot_info->{$slot_no}
+        and %{$self->slot_info->{$slot_no}}
+        and @{$self->slot_info->{$slot_no}{$map_id}}) {
+        my $map_info = $self->slot_info->{$slot_no}{$map_id};
+        if (defined($map_info->[0]) or defined($map_info->[1])){
+            return 1;
+        }
+        return 0;
+    }
+    return undef;
+}
 # ----------------------------------------------------
 # store and retrieve the slot info.
 sub slot_info {
+
+=pod
+                                                                                
+=head2 slot_info
+                                                                                
+Creates and returns some map info for each slot.
+Data Structure:
+slot_info={slot_no=>{map_id=>
+   [current_start, current_stop, ori_start,ori_stop]}}
+
+current_start and current_stop are undef if using the 
+original start and stop. 
+                                                                                
+=cut
+
     my $self  = shift;
     my $slots = shift;
     my $db    = $self->db;
 
     my $sql_start = q[
 	  select distinct m.map_id,
+             m.start_position,
+             m.stop_position,
              m.start_position,
              m.stop_position
 	  from   cmap_map m
@@ -5001,8 +5082,20 @@ sub slot_info {
                         }
                     } 
                     foreach my $row (@$slot_results){
+                        if ($row->[1]=~/(.+)\.0+$/){
+                            $row->[1]=$1;
+                        }
+                        if ($row->[2]=~/(.+)\.0+$/){
+                            $row->[2]=$1;
+                        }
+                        if ($row->[3]=~/(.+)\.0+$/){
+                            $row->[3]=$1;
+                        }
+                        if ($row->[4]=~/(.+)\.0+$/){
+                            $row->[4]=$1;
+                        }
                         $self->{'slot_info'}{$slot_no}{$row->[0]}
-                            =[$row->[1],$row->[2]];
+                            =[$row->[1],$row->[2],$row->[3],$row->[4]];
                     }
                 }
             }
