@@ -306,7 +306,9 @@ function changeCompMaps(sel,index,side){
                   <option value="[% s.species_aid %]"[% IF s.species_aid==apr.param('ref_species_aid') OR form_data.ref_species.size==1; ' selected'; END %]>[% s.species_common_name %][% IF s.species_full_name %] ([% s.species_full_name %])[% END %]</option>
                 [%- END -%]
                 </select>
-                <input type="submit" value="Change" name="sub">
+              </td>
+              <td>
+                <input type="submit" value="Change Species" name="sub">
               [%- ELSE -%]
                 No species.
               [%- END -%]
@@ -325,7 +327,10 @@ function changeCompMaps(sel,index,side){
                       [% ms.map_type %] : [% ms.species_name %] - [% ms.map_set_name %]
                     </option>
                   [%- END -%]
-                </select>&nbsp;<input type="submit" value="Change" name="sub">
+                </select>
+              </td>
+              <td>
+                <input type="submit" value="Change Map Set" name="sub">
                 <input type="hidden" name="prev_ref_species_aid" value="[% apr.param('ref_species_aid') %]">
                 <input type="hidden" name="prev_ref_map_set_aid" value="[% apr.param('ref_map_set_aid') %]">
                 <input type="hidden" name="highlight"      value="[% apr.param('highlight') %]">
@@ -355,7 +360,6 @@ function changeCompMaps(sel,index,side){
                     [% END %]
     
                     [% IF form_data.ref_maps.size %]
-                      <option value="">--Select a Map--</option>
                       [% FOREACH m=form_data.ref_maps %]
                         <option[% IF selected_maps.${m.accession_id} OR form_data.ref_maps.size==1; ' selected'; END %] value="[% m.accession_id %]">[% m.map_name %]</option>
                       [% END %]
@@ -363,6 +367,9 @@ function changeCompMaps(sel,index,side){
                       <option value="">--No Maps Available--</option>
                     [% END %]
                   </select>
+                <td valign="top">
+                  <input type="submit" value="Change Maps" name="sub">
+                </td>
     
                   <input type="hidden" name="prev_ref_species_aid" value="[% apr.param('ref_species_aid') %]">
                   <input type="hidden" name="prev_ref_map_aids" value="[% apr.param('ref_map_aids') %]">
@@ -374,11 +381,6 @@ function changeCompMaps(sel,index,side){
                     <input type="hidden" name="image_size"     value="[% apr.param('image_size') %]">
                     <input type="hidden" name="image_type"     value="[% apr.param('image_type') %]">
                   [% END %]
-                </td>
-              </tr>
-              <tr>
-                <td align="center" colspan="2">
-                  <input type="submit" value="Change Maps" name="sub">
                 </td>
               </tr>
             </form>
@@ -443,7 +445,7 @@ function changeCompMaps(sel,index,side){
               </tr>
               <tr>
                 <td align="left" colspan=2>Min. No. Correspondences:
-                  <input name="min_correspondences" value="[% apr.param('min_correspondences') %]"> </td>
+                <input name="min_correspondences" value="[% apr.param('min_correspondences') %]"> </td>
               </tr>
             </table>
             <table>
