@@ -29,7 +29,7 @@
         <td align="right">
             Linkage Group:
         </td>
-        <td>[% map.linkage_group OR '&nbsp;' %]</td>
+        <td>[% IF map.linkage_group.defined; map.linkage_group; ELSE; '&nbsp;'; END %]</td>
     </tr>
 
     <tr>
