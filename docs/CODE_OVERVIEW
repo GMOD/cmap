@@ -1,77 +1,51 @@
-=pod
+                           CMAP CODE OVERVIEW
 
-=head1 NAME
+The comparative and genetic maps application ("CMAP") is written entirely in
+Perl and takes advantage of mod_perl, Apache's embedded Perl technology.  The
+application also relies upon a relational database management system (RDBMS),
+such as Oracle or MySQL for gathering the data, and uses Paul Boutell's "libgd"
+and Lincoln Stein's "GD" Perl module to draw the maps.  The code was
+originally written for the Gramene project (http://www.gramene.org/),
+a comparative mapping resource for crop grasses, but much has been
+done to make the application generic enough to be used with many
+different types of data.
 
-Comparative and Genetic Maps Code Overview
+1. ARCHITECTURE OVERVIEW
 
-=head1 DESCRIPTION
-
-These files represent a web-based application for graphically
-comparing genomic maps.  It was originally written for the Gramene
-comparative mapping website (http://www.gramene.org/) under the
-supervision of Dr. Lincoln Stein at Cold Spring Harbor Laboratories
-for comparing across species of crop grasses (rice, wheat, oat,
-barley, sorghum, etc.).  As a project funded by public money and
-written using freely available, open-source tools, it has always been
-a primary goal to release this code for the benefit of other genomic
-communities to help their efforts to draw correlations between
-different mapping studies across a variety of species.
-
-The application is written entirely in Perl and takes advantage of
-Apache's embedded Perl technology, mod_perl.  The application also
-relies upon a relational database management system (RDBMS), such as
-Oracle or MySQL for gathering the data, and uses Paul Boutell's libgd
-c library and Lincoln Stein's GD Perl module to draw the maps.
-
-The code contained in this distribution is the latest revision and is
-not currently available on the Gramene site.  It can be seen on the
-development sites:
-
-    http://brie2.cshl.org:8082/cmap/viewer
-
-As the administration interface isn't advertised, here are links to those:
-
-    http://brie2.cshl.org:8082/cmap/admin
-
-=head1 ARCHITECTURE OVERVIEW
-
-Much care has been given to carefully separate functionally different
-parts of the code into different modules, roughly corresponding to a
+Care has been given to carefully separate functionally different parts
+of the code into different modules, roughly corresponding to a
 traditional "three-tiered" structure of layers for the data, the
-logic, and the presentation layers (HTML).  You'll find all the
-database interaction encapusulated into the Bio::GMOD::CMap::Data* modules,
-all the "logic" (the code that lays out the map components) in the
+logic, and the presentation layers.  You'll find all the database
+interaction encapusulated into the Bio::GMOD::CMap::Data* modules, all
+the "logic" (the code that lays out the map components) in the
 Bio::GMOD::CMap::Drawer* modules, and all the HTML generation in the
-Bio::GMOD::CMap::Apache* modules.  Additionally, there is no HTML mixed
-with Perl code as all the web pages are generated with the Template
-Toolkit by Andy Wardley (http://www.template-toolkit.com/), a very
-powerful and freely available Perl templating system.  This allows
-non-technical people who want to tweak the HTML to do so without
-interfering with the code.
+Bio::GMOD::CMap::Apache* modules.  
 
-=head1 DATA MODULES
+2. DATA MODULES
 
 As stated above, all the database interaction happens in the
-Bio::GMOD::CMap::Data* modules.  One goal of this project has always been
-compatibility with multiple RDBMSs (perhaps if only from necessity, as
-the system was developed using MySQL but is deployed on Oracle).  As a
-consequence, all the SQL will be placed (eventually :-) into modules
-where the statements can be modified to run with a particular database
-without affecting any other SQL.
+Bio::GMOD::CMap::Data* modules.  One goal of this project has always
+been compatibility with multiple RDBMSs (perhaps if only from
+necessity, as the system was developed using MySQL but is deployed on
+Oracle).  As a consequence, all the SQL will be placed (eventually :-)
+into object-oriented modules where the statements can be subclassed
+and modified to run with a particular database without affecting any
+other SQL.
 
-The Bio::GMOD::CMap::Data module has as a component an "SQL" object, with
-the choices right now confined to Bio::GMOD::CMap::Data::[Generic|MySQL|Oracle].
-The "Generic" module is the superclass of the other two (and
-conceivably any others, such as classes for PostgreSQL or Sybase).
-All SQL statement methods are defined in the Generic module, and any
-that don't work for a particular RDBMS can be overridden in a
-subclass.  This also allows users of other systems to create their own
-modules and drop them into place with very little effort.  All that
-need happen is to subclass Bio::GMOD::CMap::Data::Generic (as noted in the
-perldocs), and then add a line to the Bio::GMOD::CMap::Constants to point
-to the new module.
+The Bio::GMOD::CMap::Data module has as a component an "SQL" object,
+with the choices right now confined to
+Bio::GMOD::CMap::Data::[Generic|MySQL|Oracle].  The "Generic" module
+is the superclass of the other two (and conceivably any others, such
+as classes for PostgreSQL, Sybase, etc.).  All SQL statement methods
+are defined in the Generic module, and any that don't work for a
+particular RDBMS can be overridden in a subclass.  This also allows
+users of other systems to create their own modules and drop them into
+place with very little effort.  All that need happen is to subclass
+Bio::GMOD::CMap::Data::Generic (as noted in the perldocs), and then
+add a line to the Bio::GMOD::CMap::Constants to point to the new
+module.
 
-=head1 MAP LAYOUT MODULES
+3. LOGIC MODULES
 
 All the modules that actually do something towards laying out the
 comparative maps live in the Bio::GMOD::CMap::Drawer* namespace.  The top
@@ -82,17 +56,33 @@ then it adjusts the frame, and writes the image to a file.  It then is
 able to tell the calling object the filename of the image and its
 height and width.
 
-=head1 PRESENTATION MODULES
+Eventually other modules should fall within this classification,
+especially the module for administrative functions such as creating
+and editing maps sets, maps, features, correspondences, etc.  All of
+those functions are currently spread around in the
+Bio::GMOD::CMap::Admin and Bio::GMOD::CMap::Apache::AdminViewer
+modules and the cmap_admin.pl script.  Eventually I hope to move all
+the logic into Bio::GMOD::CMap::Admin and have the web- and
+command-line interfaces simply invoke methods on this Admin object.
 
-The modules in the Bio::GMOD::CMap::Apache namespace are responsible for
-actually displaying the maps through a web interface.  Almost all of
-the modules here are basic mod_perl handlers and are objects
-inheriting from the Bio::GMOD::CMap::Apache superclass.  This superclass
-creates the Template Toolkit object, the "page" object (see perldocs),
-and handles any errors thrown by the derived classes, reducing the
-amount of code to create a new handler.
+4. PRESENTATION MODULES
 
-=head1 CONFIGURATION MODULES
+The modules in the Bio::GMOD::CMap::Apache namespace are responsible
+for actually displaying the maps through a web interface.  All of the
+modules are basic mod_perl handlers and are objects inheriting from
+the Bio::GMOD::CMap::Apache superclass.  This superclass creates the
+Template Toolkit object, the "page" object (see perldocs), and handles
+any errors thrown by the derived classes, reducing the amount of code
+to create a new handler.
+
+You'll notice that there is no HTML mixed with Perl code as all the
+web pages are generated with the Template Toolkit Perl module
+(http://www.template-toolkit.com/) written by Andy Wardley.  Template
+Toolkit is powerful and freely available Perl templating system, and
+the hope is that by using it, non-technical people who want to tweak
+the HTML to do so without interfering with the code.
+
+5. CONFIGURATION MODULES
 
 All local configuration of CMAP should be done through the "cmap.conf"
 file.  Of course, the file doesn't have to be called "cmap.conf."  It
@@ -103,247 +93,202 @@ Makefile.PL; make; make install" process.  There are defaults provided
 for every option in the local config file with the exception of the
 database connection info and the template directory.  The latter
 should be set during installation, and the latter should be set by the
-installer.
+installer.  If you comment out any of the options in "cmap.confi"
+(except "database" and "template_dir"), there are defaults in the
+Bio::GMOD::CMap::Constants file.
 
-=head1 GENERAL FLOW FOR HANDLERS
+6. GENERAL FLOW FOR HANDLERS
 
-The "presentation modules" listed above are called as mod_perl
-handlers.  Let's take the Bio::GMOD::CMap::Apache::MapViewer module.  Here
-is what it does in order to show the user something:
+The web presentation modules are all located under the
+Bio::GMOD::CMap::Apache namespace and are called as mod_perl handlers.
+In order to understand how they are invoked, I will describe how the
+main map viewer (Bio::GMOD::CMap::Apache::MapViewer) works.
 
-=over 4
+*   A user goes to "/cmap/viewer" with a browser.
 
-=item 1 
+*   Apache passes control to Bio::GMOD::CMap::Apache because of the
+    <Location> directive for "/cmap" passes control to this module.
 
-The module is installed as a handler by editing the proper Apache
-configuration files.
+*   Bio::GMOD::CMap::Apache inspects the "path_info" and sees that the
+    user is asking for the "viewer." It looks up an internal table to
+    see if that is a valid path. It is, so the module then instantiates
+    an object of the proper type (in this case,
+    Bio::GMOD::CMap::Apache::MapViewer) which is a subclass to handle
+    the request. Control is then passed to the new object.
 
-=item 2  
+*   The module needs some data for the <form> elements it has, so it
+    calls the appropriate methods Bio::GMOD::CMap::Data module for
+    what it needs.
 
-The module needs some data for the <form> elements it has, so it calls the
-appropriate methods Bio::GMOD::CMap::Data module for what it needs.
+*   If there are enough arguments to display a map, it will create a
+    Bio::GMOD::CMap::Drawer object. The drawer will call the
+    Bio::GMOD::CMap::Data object for the data it needs to draw the
+    map(s) (features, relationships, map titles, etc.), layout all the
+    map elements, and finally write the image out to a temporary file.
 
-=item 3  
+*   If the image is created properly, then the drawer passes back to the
+    map viewer handler the name of the map image and the coordinates on
+    the map of elements (to make the image clickable) that the browser
+    needs to display the map.
 
-If there are enough arguments to display a map, it will create a
-Bio::GMOD::CMap::Drawer object. The drawer will call the
-Bio::GMOD::CMap::Data object for the data it needs to draw the map(s)
-(features, relationships, map titles, etc.), layout all the map
-elements, and finally write the image out to a temporary file.
-
-=item 4  
-
-If the image is created properly, then the drawer passes back to the map viewer
-handler the name of the map image and the coordinates on the map of elements
-(to make the image clickable) that the browser needs to display the map.
-
-=item 5  
-
-If all goes well, then the handler uses Template Toolkit to format the HTML so
-that the user sees a map that they can click on to see other things.
-
-=back
+*   If all goes well, then the handler uses Template Toolkit to format
+    the HTML so that the user sees a map that they can click on to see
+    other things.
 
 The above scenario is probably the most involved process in the
 comparative maps, but it shows the way that distinct pieces of the
 problem are split into specialized modules and objects.
 
-=head1 SQL CONVENTIONS
+7. SQL CONVENTIONS
 
 The tables used by the comparative maps follow a fairly rigid nameing
 convention so that they should be able to integrate easily with existing
 databases.
 
-=over 4
+*   Every table used by the comparative maps begins with the prefix
+    "cmap_" so that it would be highly unlikely that table names would
+    conflict with those in an existing database.
 
-=item *
+*   Tables are always named in the singular ("cmap_feature" not
+    "cmap_features").
 
-Every table used by the comparative maps begins with the prefix "cmap_" so that
-it would be highly unlikely that our tables would conflict with those in an
-existing database.
+*   Every descriptor (table, field, index names, etc.) is named in lower
+    case letters (and some numbers) with underscores separating words.
+    Additionally, certain conventions are followed for fields
+    according to their function:
 
-=item *
+    o Primary key: The primary key of the table is always defined as the
+    first field in the table (though the first field in a table is not
+    always guaranteed to be the primary key). A table's primary key will
+    be the name of the table minus the "cmap_" prefix and the token
+    "_id." So, for example, the table "cmap_feature" has as its primary
+    key "feature_id." Additionally, the primary key of a table will
+    always be an ascending integer value (like MySQL's "auto_increment"
+    field, only handled in Perl code so as to be portable to databases
+    without such types of fields). This naming convention is never used
+    for any other type of field except the "accession_id," so it is
+    always obvious the type and purpose of any field ending in "_id": if
+    it is the same name as the table, then it is a primary key, else it
+    is a foreign key.
 
-Tables are always named in the singular ("cmap_feature" not "cmap_features").
+    o Boolean fields: Since not all databases have a boolean datatype
+    ("Yes/No," "On/Off" kind of data), the fields that hold this kind of
+    data are declared using a small integer datatype
+    (e.g., "tinyint" in MySQL). Names of boolean fields include a verb
+    indicating something that the records "is" or "has" (or "can"
+    or "wants" or whatever) some value, always in the affirmative,
+    e.g. "is_relational_map."
 
-=item *
+    o Datetime fields: Datetime fields will be named like "*_on," e.g.,
+    "published_on."
 
-Every descriptor (table, field, index names, etc.) is named in lower case
-letters (and some numbers) with underscores separating words.  These
-conventions are followed for fields according to their type:
+*   There are no stored procedures or referential integrity (RI)
+    constraints at the database level (apart from primary key and some
+    unique indeces/constraints). This is intentional in order to make
+    the code portable to RDBMSs which don't fully support such features
+    (such as MySQL, one of the databases used in the development of the
+    code). All such logic and RI is addressed in the Perl code (for
+    better or worse :-).
 
-=over 4
+*   Table Aliases: When writing queries using multiple tables, a query
+    uses table aliases, e.g.:
 
-=item o Primary key 
+        select map.map_name,
+               f.start_position,
+        from   cmap_map map,
+               cmap_feature f
+        where  upper(f.feature_name)=?
+        and    f.map_id=map.map_id
 
-The primary key of the table is defined as the first field in the table.  A
-table's primary key will be the name of the table (less the "cmap_" prefix) and
-the token "_id."  So, for example, the table "cmap_feature" has as its primary
-key "feature_id."  Additionally, the primary key of a table will always be an
-ascending integer value (like MySQL's "auto_increment" field, only handled in
-Perl code so as to be portable to databases without such types of fields).
-This naming convention is never used for any other type of field except the
-"accession_id," so it is always obvious the type and purpose of any field
-ending in "_id": if it is the same name as the table, then it is a primary key,
-else it is a foreign key.
+*   Placeholders: Whenever possible, placeholders are used in the SQL
+    instead of direct variable substitution. The only places where this
+    is not feasible is in "IN" statements [e.g., "foo_id in (1,2,3)"].
+    The advantages are numerous, the biggest being that the database
+    ends up correctly quoting and escaping your parameters.
 
-=item o Boolean fields
-
-Since not all databases have a boolean datatype ("Yes/No," "On/Off" kind of
-data), the fields that hold this kind of data are declared using the smallest
-possible integer datatype (e.g., "tinyint" in MySQL).  Names of boolean fields
-include a verb indicating something that the records "is" or "has" (or "can" or
-"wants" or whatever) some value, always in the affirmative, e.g.
-"is_relational_map."
-
-=item o Datetime fields
-
-Datetime fields will be named like "*_on," e.g., "published_on."
-
-=back
-
-=item *
-
-There are no stored procedures or referential integrity (RI) constraints at the
-database level (apart from primary key and some unique indeces/constraints).
-This is intentional in order to make the code portable to RDBMSs which don't
-fully support such features (such as MySQL, one of the databases used in the
-development of the code).  All such logic and RI is addressed in the Perl code
-(for better or worse :-).
-
-=item *
-
-Table Aliases: When writing queries using multiple tables, a query uses table
-aliases, e.g.:
-
-  select map.map_name,
-         f.start_position,
-  from   cmap_map map,
-         cmap_feature f
-  where  upper(f.feature_name)=?
-  and    f.map_id=map.map_id
-
-=item *
-
-Placeholders: Whenever possible, placeholders are used in the SQL instead of
-direct variable substitution. The only places where this is not feasible is in
-"IN" statements [e.g., "foo_id in (1,2,3)"].  The advantages are numerous, the
-biggest being that the database ends up correctly quoting and escaping your
-parameters.
-
-=back
-
-=head1 TABLE DESCRIPTIONS
+8. TABLE DESCRIPTIONS
 
 In the "sql" directory, you will find create statements of the tables
 for both MySQL and Oracle.  Following is a general description of each
 table, what kind of data it is supposed to hold, and how it fits in
 with the others:
 
-=over 4
+*   cmap_map_set: Arguably the "base" table, a "map set" is a collection
+    of "maps," which themselves are just points on a line. Generally a
+    map set will contain maps that can each stand alone, like the
+    chromosomes of a human or the linkage groups of rice, but there is a
+    special kind of map set that I call "relational," meaning that the
+    maps can only be shown in relation to some other map (of the first,
+    "non-relational" kind, no less :-). Examples of this include
+    physical fingerprint contig maps (FPC), QTLs, and haplotypes. These
+    maps are usually composed of many smaller fragments that have some
+    correspondences to other maps. As such, they are just drawn to a
+    size relative to the distance their correspondences cover on the
+    reference map.
 
-=item * cmap_map_set
+*   cmap_map_type: Maps are of some type determined by the data
+    curator. It is useful to researchers to know that a map is a
+    "genetic" map and that the distances given are in "centimorgans" as
+    opposed to a "physical" map where the distances are "bands." More
+    importantly, though, the curator can decide how different maps are
+    drawn so as to make them visually distinctive. By selecting from
+    shapes, colors and widths, the curator has great discretion over
+    the presentation of maps.
 
-Arguably the "base" table, a "map set" is a collection of "maps,"
-which themselves are just points on a line.  Generally a map set will
-contain maps that can each stand alone, like the chromosomes of a
-human or the linkage groups of rice, but there is a special kind of
-map set that I call "relational," meaning that the maps can only be
-shown in relation to some other map (of the first, "non-relational"
-kind, no less :-).  Examples of this include physical fingerprint
-contig maps (FPC), QTLs, and haplotypes.  These maps are usually
-composed of many smaller fragments that have some correspondences to
-other maps.  As such, they are just drawn to a size relative to the
-distance their correspondences cover on the reference map.  Here's an
-example:
+*   cmap_species: A fairly obvious table, given that we hold genetic
+    data. Map sets are tied to both a map type and a species.
 
-  http://brie2.cshl.org:8082/cmap/viewer?ref_map_set_aid=2&ref_map_aid=13&ref_map_start=0&ref_map_stop=196.5&comparative_map_right=map_set_aid%3D6
+*   cmap_map: Like a "map" from Picayune to New Orleans might tell you
+    that the distance is 50 miles and that there is a coffee shop on
+    exit 3, a map says that it is some measure of distance long and that
+    some "feature" can be found at some location.
 
-=item * cmap_map 
+*   cmap_feature: This is the "something" that occurs on a map. It has a
+    name and a starting position. The feature may span, in which case it
+    will have a stop position, too. Certain features can be designated
+    as being "landmarks," and the user can decide to only view landmarks
+    so as to make the maps simpler.
 
-Like a "map" from Picayune to New Orleans might tell you that the
-distance is 50 miles and that there is a coffee shop on exit 3, a map
-says that it is some measure of distance long and that some "feature"
-can be found at some location.  (Actually, maps don't have to say how
-long they are.  Many map lengths are determined just by looking at the
-distance from the first feature to the last.)
+*   cmap_feature_type: Each feature is of some type. What particular
+    types of features exist are completely determined by the data
+    curator. The data curator decides how to draw the feature on the
+    map, selecting from pre-determined shapes and colors.
 
-=item * cmap_map_type
+*   cmap_feature_correspondence: The whole point of comparative maps is
+    to show the relationships among maps. These correspondences are all
+    held in this table, and they simply state that one feature is
+    related to another.
 
-Maps are of some type determined by the data curator.  It is useful to
-researchers to know that a map is a "genetic" map and that the
-distances given are in "centimorgans" as opposed to a "physical" map
-where the distances are "bands."  More importantly, though, the
-curator can decide how different maps are drawn so as to make them
-visually distinctive.  By selecting from shapes, colors and widths,
-the curator has great discretion over the presentation of maps.
+*   cmap_correspondence_evidence: This table holds the reasons why we
+    can say that one feature has some correspondence to another. There
+    may be several reasons, each of a different type, optionally with
+    some sort of score.
 
-=item * cmap_species
+*   cmap_evidence_type: These are the types of evidence that we can use
+    in the previous table. For instance, we can say two features are
+    related because they have the same name or the same sequence. Some
+    evidences are stronger than others, so they can be ranked
+    accordingly.
 
-A fairly obvious table, given that we hold genetic data.  Map sets are
-tied to both a map type and a species.
+*   cmap_correspondence_lookup: This is sort of a cheater table I
+    introduced in order to make it easier to find correspondences. It
+    doubles the number of records for any single correspondence. E.g.,
+    if "foo" corresponds to "bar," then two records go into this table,
+    one saying "foo=>bar" and the other saying "bar=>foo" and both
+    pointing to the "canonical" correspondence record in the
+    "cmap_feature_correspondence" table.
 
-=item * cmap_feature
+*   cmap_next_number: This table stores the next number for the primary
+    key of every table needing such. It's basically a simple workaround
+    for MySQL's "auto_increment" feature and Oracle's "sequence" type.
+    By implementing this in Perl, I don't have to worry how (or even
+    "if") a particular RDBMS supports some one-up field.
 
-This is the "something" that occurs on a map.  It has a name an a
-starting position.  The feature may span, in which case it will have a
-stop position, too.  Certain features can be designated as being
-"landmarks," and the user can decide to only view landmarks so as to
-make the maps simpler.
+*   cmap_map_set_correspondence: This table is not currently used and
+    may be dropped.
 
-=item * cmap_feature_type
+9. AUTHOR
 
-Each feature is of some type.  What particular types of features
-exist are completely determined by the data curator.  On Gramene, we
-have "markers" mostly, but also "centromeres" and "clones."  Very soon
-we'll have QTLs.  The data curator decides how to draw the feature on
-the map, selecting from pre-determined shapes and colors.
-
-=item * cmap_feature_correspondence
-
-The whole point of comparative maps is to show the relationships
-among maps.  These correspondences are all help in this table, and
-they simply state that one feature is related to another.
-
-=item * cmap_correspondence_evidence
-
-This table holds the reasons why we can say that one feature has some
-correspondence to another.  There may be several reasons, each of a
-different type, optionally with some sort of score.
-
-=item * cmap_evidence_type
-
-These are the types of evidence that we can use in the previous table.
-For instance, we can say two features are related because they have
-the same name or the same sequence.  Some evidences are stronger than
-others, so they can be ranked accordingly.
-
-=item * cmap_correspondence_lookup
-
-This is sort of a cheater table I introduced in order to make it
-easier to find correspondences.  It doubles the number of records for
-any single correspondence.  E.g., if "foo" corresponds to "bar," then
-two records go into this table, one saying "foo=>bar" and the other
-saying "bar=>foo."
-
-=item * cmap_next_number
-
-This table stores the next number for the primary key of every table
-needing such.  It's basically a simple workaround for MySQL's
-"auto_increment" feature and Oracle's "sequence" type.  By
-implementing this in Perl, I don't have to worry how (or even "if") a
-particular RDBMS supports some one-up field.
-
-=item * cmap_map_set_correspondence
-
-This table is not currently used and may be dropped.
-
-=back
-
-=head1 AUTHOR
-
-Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
+Ken Y. Clark, kclark@cshl.org
 
 Copyright (c) 2002 Cold Spring Harbor Laboratory
-
-=cut

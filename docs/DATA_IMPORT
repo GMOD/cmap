@@ -1,9 +1,19 @@
-HOW TO IMPORT DATA INTO CMAP
+                      IMPORTING DATA INTO CMAP
 
 To import your data into the CMAP application, you will need to do the
 following:
 
-1)  FORMAT YOUR DATA
+1.  SET UP SPECIES, MAP TYPES, ETC.
+
+Before you will be able to import any data, you will need to perform some basic
+setup on the empty database.  To begin, open up the web administration
+interface by pointing a web browser to the admin interface (e.g.,
+"http://my.server.org/cmap/admin").  You'll need to set up what types of maps,
+features, species, and evidence types you'll be working with.  For each, go to
+the "View ..." choice from the main menu, then choose "Create New ..." and fill
+in the correct information.  
+
+2.  FORMAT YOUR DATA
 
 Create a tab-delimited file with the following fields and datatypes:
 
@@ -50,7 +60,7 @@ start and stop positions of the map will be determined after importing
 all the features by selecting the MIN and MAX start and stop positions
 from the "cmap_feature" table.
 
-2)  CREATE A NEW MAP SET
+3.  CREATE A NEW MAP SET
 
 To create a map set to receive the data, you can either use the
 "cmap_admin.pl" tool or the web-base admin tool.  For the first,
@@ -59,17 +69,11 @@ type of map and species and provide a name and an abbreviated name.
 For the latter, choose "Create New Map Set" from the "Admin Home"
 page, fill in the form and hit "Submit."  
 
-NOTE: You'll need to be sure that map types and species are set up
-before you can create map sets.  These actions can only be performed
-from the web-based admin tool.  Choose "View Map Types" and then
-"Create New Map Type" to create a new map type.  Do the same kind of
-thing to create your species.
+4.  IMPORT DATA
 
-3)  IMPORT DATA
-
-You'll use the "cmap_admin.pl" script to bring in your correctly
-formatted data.  Run the script, optionally passing your data file as
-an argument, like so:
+Use the "cmap_admin.pl" script to bring in your correctly formatted
+data.  Run the script, optionally passing your data file as an
+argument, like so:
 
     $ cmap_admin.pl my_groovy_data.tsv
 
@@ -87,27 +91,52 @@ If all goes well, you should see a lot of lines fly by giving you the
 step-by-step progress, the message "Done," and then you will be
 returned to the "Main Menu."
 
-4)  MAKE CORRESPONDENCES
+5.  MAKE CORRESPONDENCES
 
-The only automated correspondences available currently are name-based,
-so if you have a feature named "RG-14" on more than one map,
-correspondences will be made among all the maps.  After you import a
-new map set, you'll need to run the "Make name-based correspondences"
-option from "cmap_admin.pl" to make these correspondences.  When doing
-this, you'll need to choose the evidence type to support this
-correspondence, so be sure to use the web-based admin tool to create
-the evidence by selecting "View Correspondence Evidence Types" and
-then "Create New...."  If you like, you can choose to only make
-correspondences from one map set to all others.  This is the proper
-choice if you have only just imported a new map set.  Not selecting a
-map set isn't wrong, however, it just takes longer as ALL the
-correspondences will be redone.  As above, you'll need to confirm you
-choices before the corrrepondences will be made.
+There are several ways to create correspondences among features.
 
-5)  UPDATE CORRESPONDENCE MATRIX (OPTIONAL)
+A) Strictly name-base: If you choose the "Find name-based
+   correspondences" command from cmap_admin.pl, a correspondence will be
+   created between any two features with the *exact* same name,
+   irrespective of case. You'll need to select some evidence type to
+   represent this automated correspondence.
 
-If you perform step #4, then you should run "Reload correspondence
-matrix" from "cmap_admin.pl" to refresh the data that is pre-computed
+B) Import correspondences: Create a tab-delimited file that lists the
+   names of two features and some evidence to support the
+   correspondence. The first line of the file should contain column
+   headers for "feature_name1," "feature_name2," and "evidence" (the
+   order is unimportant).  Here's a sample:
+
+	feature_name1	feature_name2	evidence
+	C1008	S1633	insilico
+	C11393S	E10074S	insilico
+	C1238	S15180S	insilico
+	bcd386	p-bcd386	name-based
+	bcd386	p-bcd386	name-based
+	pBF266	p-pBF266	name-based
+
+C) Create correspondences by hand using the admin interface: Choose to
+   "view" a map set in the web-based administrative tool. "View" an
+   individual map, then choose to "view" a feature. From there, you will
+   have the option to "Add Correspondence." Click this, and then search
+   for the feature to which you wish to create a correspondence. Add
+   your evidence, and you're done.
+
+The first method is likely to be both incomplete and overly-optimistic.
+For example, it will create correspondences between features called
+"Centromere," which is probably not desirable.  The name comparisons
+happen on both the "feature_name" and "alternate_name" from the
+"cmap_feature" table.  Every feature has each of these fields compared
+to those fields for every other feature, so this can take a long time
+to complete.  For all of its problems, this can be a good way to get
+started, and you can pare down the correspondences from there.  The
+second method is the surest method as you are controlling what gets
+created.  The third method is also very exact but very tedious.  I
+wouldn't recommend it for creating more than a few correspondences.
+
+After creating any new correspondences (or deleting existing ones),
+be sure to run the "Reload correspondence matrix" option of the
+"cmap_admin.pl" script to refresh the data that is pre-computed
 and cached in the "cmap_correspondence_matrix" table.  The only option
 is to completely truncate the table and reload it from scratch.
 
