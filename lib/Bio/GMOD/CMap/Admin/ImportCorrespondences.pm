@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 # vim: set ft=perl:
 
-# $Id: ImportCorrespondences.pm,v 1.21 2004-08-04 04:19:09 mwz444 Exp $
+# $Id: ImportCorrespondences.pm,v 1.22 2004-10-27 22:56:35 mwz444 Exp $
 
 =head1 NAME
 
@@ -43,7 +43,7 @@ feature names, a correspondence will be created.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.21 $)[-1];
+$VERSION = (qw$Revision: 1.22 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -128,8 +128,6 @@ sub import {
         config      => $self->config,
         data_source => $self->data_source,
     );
-    my $expanded_correspondence_lookup 
-        = $self->config_data('expanded_correspondence_lookup'); 
 
     $self->Print("Importing feature correspondence data.\n");
 
@@ -282,8 +280,6 @@ sub import {
                         feature_id2       => $feature2->{'feature_id'},
                         evidence_type_aid => $evidence_type_aid,
 		                allow_update      => $allow_update,
-		                expanded_correspondence_lookup      
-                            => $expanded_correspondence_lookup,
                     ) or return $self->error( $admin->error );
 
                     $admin->insert_feature_correspondence_if_gt(1000);
