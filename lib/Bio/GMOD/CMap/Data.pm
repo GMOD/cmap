@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.165.2.5 2004-11-11 05:55:57 mwz444 Exp $
+# $Id: Data.pm,v 1.165.2.6 2004-11-12 17:30:13 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.165.2.5 $)[-1];
+$VERSION = (qw$Revision: 1.165.2.6 $)[-1];
 
 use Cache::FileCache;
 use Data::Dumper;
@@ -1127,14 +1127,16 @@ sub slot_data {
     }
 
     # Get the intra-slot correspondence
-    $self->get_intraslot_correspondences(
-        $intraslot_correspondences,
-        $correspondence_evidence,
-        $this_slot_no,
-        $included_evidence_type_aids,
-        $ignored_evidence_type_aids,
-        [ @$feature_type_aids, @$corr_only_feature_type_aids ],
-    );
+    if ( $self->show_intraslot_corr ) {
+        $self->get_intraslot_correspondences(
+            $intraslot_correspondences,
+            $correspondence_evidence,
+            $this_slot_no,
+            $included_evidence_type_aids,
+            $ignored_evidence_type_aids,
+            [ @$feature_type_aids, @$corr_only_feature_type_aids ],
+        );
+    }
 
     return $return;
 
@@ -1443,121 +1445,6 @@ sub get_intraslot_correspondences {
           };
     }
 
-}
-
-# ----------------------------------------------------
-
-=pod
-
-=head2 get_intraslot_correspondences
-
-inserts correspondence info into $intraslot_correspondence and
-$correspondence_evidence based on corrs from the slot and the provided id.
-
-=cut
-
-sub get_intraslot_correspondencesxxx {
-    my (
-        $self,                    $intraslot_correspondences,
-        $correspondence_evidence, $pid,
-        $slot_no,                 $included_evidence_type_aids,
-        $feature_type_aids,       $map_start,
-        $map_stop
-      )
-      = @_;
-    my $db             = $self->db;
-    my $to_restriction = '';
-    my $corr_sql;
-    $slot_no = 0 unless $slot_no;
-    if ( defined $map_start && defined $map_stop ) {
-        $to_restriction = qq[
-        and      (
-              ( cl.start_position2>=$map_start and 
-            cl.start_position2<=$map_stop )
-              or   (
-                cl.stop_position2 is not null and
-                cl.start_position2<=$map_start and
-                cl.stop_position2>=$map_stop
-                )
-              )
-                 ];
-    }
-
-    $corr_sql = qq[
-        select   cl.feature_id1 as feature_id,
-                 f2.feature_id as ref_feature_id, 
-                 f2.feature_name as f2_name,
-                 f2.start_position as f2_start,
-                 f2.map_id,
-                 cl.feature_correspondence_id,
-                 ce.evidence_type_accession as evidence_type_aid
-        from     cmap_feature f2,
-                 cmap_correspondence_lookup cl,
-                 cmap_feature_correspondence fc,
-                 cmap_correspondence_evidence ce
-        where    cl.feature_correspondence_id=
-                 fc.feature_correspondence_id
-        and      fc.is_enabled=1
-        and      fc.feature_correspondence_id=
-                 ce.feature_correspondence_id
-        and      cl.feature_id2=f2.feature_id
-        $to_restriction
-    ];
-
-    $corr_sql .=
-      " and cl.map_id2 in ('"
-      . join( "','", keys( %{ $self->slot_info->{$slot_no} } ) ) . "')";
-    $corr_sql .=
-      " and cl.map_id2 in ('"
-      . join( "','", keys( %{ $self->slot_info->{$slot_no} } ) ) . "')";
-
-    if (@$included_evidence_type_aids) {
-        $corr_sql .=
-          " and ce.evidence_type_accession in ('"
-          . join( "','", @$included_evidence_type_aids ) . "')";
-    }
-
-    if (@$feature_type_aids) {
-        $corr_sql .=
-          " and cl.feature_type_accession1 in ('"
-          . join( "','", @$feature_type_aids ) . "')";
-    }
-    my $ref_correspondences;
-    unless ( $ref_correspondences = $self->get_cached_results( 4, $corr_sql ) )
-    {
-        $ref_correspondences =
-          $db->selectall_arrayref( $corr_sql, { Columns => {} }, () );
-
-        foreach my $row ( @{$ref_correspondences} ) {
-            $row->{'evidence_rank'} =
-              $self->evidence_type_data( $row->{'evidence_type_aid'}, 'rank' );
-            $row->{'line_color'} =
-              $self->evidence_type_data( $row->{'evidence_type_aid'},
-                'line_color' );
-            $row->{'evidence_type'} =
-              $self->evidence_type_data( $row->{'evidence_type_aid'},
-                'evidence_type' );
-        }
-        $self->store_cached_results( 4, $corr_sql, $ref_correspondences );
-
-    }
-
-    for my $corr ( @{$ref_correspondences} ) {
-        $intraslot_correspondences->{ $corr->{'feature_id'} }
-          { $corr->{'ref_feature_id'} } = $corr->{'feature_correspondence_id'};
-
-        $intraslot_correspondences->{ $corr->{'ref_feature_id'} }
-          { $corr->{'feature_id'} } = $corr->{'feature_correspondence_id'};
-
-        push @{ $correspondence_evidence
-              ->{ $corr->{'feature_correspondence_id'} } },
-          {
-            evidence_type_aid => $corr->{'evidence_type_aid'},
-            evidence_type     => $corr->{'evidence_type'},
-            evidence_rank     => $corr->{'evidence_rank'},
-            line_color        => $corr->{'line_color'},
-          };
-    }
 }
 
 # ----------------------------------------------------
@@ -4167,6 +4054,10 @@ sub count_correspondences {
     my $maps                        = $args{'maps'};
     my $db                          = $args{'db'};
 
+    my $show_intraslot_corr =
+      ( $self->show_intraslot_corr
+          and scalar( keys( %{ $self->slot_info->{$this_slot_no} } ) ) > 1 );
+
 #
 # Query for the counts of correspondences.
 #
@@ -4182,7 +4073,7 @@ sub count_correspondences {
       : '';
 
     my ( $count_sql, $position_sql, @query_args );
-    if ( defined $ref_slot_no ) {    # multiple reference maps
+    if ( defined $ref_slot_no or $show_intraslot_corr ) {
         my $base_sql;
         $base_sql = qq[ 
             select   %s
@@ -4196,21 +4087,24 @@ sub count_correspondences {
             and      fc.is_enabled=1
             and      fc.feature_correspondence_id=
                      ce.feature_correspondence_id
+            and      cl.map_id1!=cl.map_id2 
             $where
         ];
 
         # Include current slot maps
         my $slot_info            = $self->slot_info->{$this_slot_no};
         my @unrestricted_map_ids = ();
-        my $unrestricted_sql     = '';
-        my $restricted_sql       = '';
+        my $unrestricted_sql_2   = '';
+        my $restricted_sql_2     = '';
+        my $unrestricted_sql_1   = '';
+        my $restricted_sql_1     = '';
         foreach my $slot_map_id ( keys( %{$slot_info} ) ) {
 
             # $slot_info->{$slot_map_id}->[0] is start [1] is stop
             if (    defined( $slot_info->{$slot_map_id}->[0] )
                 and defined( $slot_info->{$slot_map_id}->[1] ) )
             {
-                $restricted_sql .=
+                $restricted_sql_2 .=
                     " or (cl.map_id2="
                   . $slot_map_id
                   . " and (( cl.start_position2>="
@@ -4222,9 +4116,24 @@ sub count_correspondences {
                   . $slot_info->{$slot_map_id}->[0]
                   . " and cl.stop_position2>="
                   . $slot_info->{$slot_map_id}->[0] . " )))";
+                if ($show_intraslot_corr) {
+                    $restricted_sql_1 .=
+                        " or (cl.map_id1="
+                      . $slot_map_id
+                      . " and (( cl.start_position1>="
+                      . $slot_info->{$slot_map_id}->[0]
+                      . " and cl.start_position1<="
+                      . $slot_info->{$slot_map_id}->[1]
+                      . " ) or ( cl.stop_position1 is not null and "
+                      . "  cl.start_position1<="
+                      . $slot_info->{$slot_map_id}->[0]
+                      . " and cl.stop_position1>="
+                      . $slot_info->{$slot_map_id}->[0] . " )))";
+                }
+
             }
             elsif ( defined( $slot_info->{$slot_map_id}->[0] ) ) {
-                $restricted_sql .=
+                $restricted_sql_2 .=
                     " or (cl.map_id2="
                   . $slot_map_id
                   . " and (( cl.start_position2>="
@@ -4232,76 +4141,100 @@ sub count_correspondences {
                   . " ) or ( cl.stop_position2 is not null "
                   . " and cl.stop_position2>="
                   . $slot_info->{$slot_map_id}->[0] . " )))";
+                if ($show_intraslot_corr) {
+                    $restricted_sql_1 .=
+                        " or (cl.map_id1="
+                      . $slot_map_id
+                      . " and (( cl.start_position1>="
+                      . $slot_info->{$slot_map_id}->[0]
+                      . " ) or ( cl.stop_position1 is not null "
+                      . " and cl.stop_position1>="
+                      . $slot_info->{$slot_map_id}->[0] . " )))";
+                }
             }
             elsif ( defined( $slot_info->{$slot_map_id}->[1] ) ) {
-                $restricted_sql .=
+                $restricted_sql_2 .=
                     " or (cl.map_id2="
                   . $slot_map_id
                   . " and cl.start_position2<="
                   . $slot_info->{$slot_map_id}->[1] . ") ";
+                if ($show_intraslot_corr) {
+                    $restricted_sql_1 .=
+                        " or (cl.map_id1="
+                      . $slot_map_id
+                      . " and cl.start_position1<="
+                      . $slot_info->{$slot_map_id}->[1] . ") ";
+                }
             }
             else {
                 push @unrestricted_map_ids, $slot_map_id;
             }
         }
         if (@unrestricted_map_ids) {
-            $unrestricted_sql =
+            $unrestricted_sql_2 .=
               " or cl.map_id2 in (" . join( ',', @unrestricted_map_ids ) . ") ";
+            if ($show_intraslot_corr) {
+                $unrestricted_sql_1 .=
+                  " or cl.map_id1 in ("
+                  . join( ',', @unrestricted_map_ids ) . ") ";
+            }
         }
-        my $combined_sql = $restricted_sql . $unrestricted_sql;
+        my $combined_sql = $restricted_sql_2 . $unrestricted_sql_2;
         $combined_sql =~ s/^\s+or//;
         $base_sql .= " and (" . $combined_sql . ")";
 
-        # Include reference slot maps
-        $slot_info            = $self->slot_info->{$ref_slot_no};
-        @unrestricted_map_ids = ();
-        $unrestricted_sql     = '';
-        $restricted_sql       = '';
-        foreach my $slot_map_id ( keys( %{$slot_info} ) ) {
+        if ( defined $ref_slot_no ) {
 
-            # $slot_info->{$slot_map_id}->[0] is start [1] is stop
-            if (    defined( $slot_info->{$slot_map_id}->[0] )
-                and defined( $slot_info->{$slot_map_id}->[1] ) )
-            {
-                $restricted_sql .=
-                    " or (cl.map_id1="
-                  . $slot_map_id
-                  . " and (( cl.start_position1>="
-                  . $slot_info->{$slot_map_id}->[0]
-                  . " and cl.start_position1<="
-                  . $slot_info->{$slot_map_id}->[1]
-                  . " ) or ( cl.stop_position1 is not null and "
-                  . "  cl.start_position1<="
-                  . $slot_info->{$slot_map_id}->[0]
-                  . " and cl.stop_position1>="
-                  . $slot_info->{$slot_map_id}->[0] . " )))";
+            # Include reference slot maps
+            $slot_info            = $self->slot_info->{$ref_slot_no};
+            @unrestricted_map_ids = ();
+            foreach my $slot_map_id ( keys( %{$slot_info} ) ) {
+
+                # $slot_info->{$slot_map_id}->[0] is start [1] is stop
+                if (    defined( $slot_info->{$slot_map_id}->[0] )
+                    and defined( $slot_info->{$slot_map_id}->[1] ) )
+                {
+                    $restricted_sql_1 .=
+                        " or (cl.map_id1="
+                      . $slot_map_id
+                      . " and (( cl.start_position1>="
+                      . $slot_info->{$slot_map_id}->[0]
+                      . " and cl.start_position1<="
+                      . $slot_info->{$slot_map_id}->[1]
+                      . " ) or ( cl.stop_position1 is not null and "
+                      . "  cl.start_position1<="
+                      . $slot_info->{$slot_map_id}->[0]
+                      . " and cl.stop_position1>="
+                      . $slot_info->{$slot_map_id}->[0] . " )))";
+                }
+                elsif ( defined( $slot_info->{$slot_map_id}->[0] ) ) {
+                    $restricted_sql_1 .=
+                        " or (cl.map_id1="
+                      . $slot_map_id
+                      . " and (( cl.start_position1>="
+                      . $slot_info->{$slot_map_id}->[0]
+                      . " ) or ( cl.stop_position1 is not null "
+                      . " and cl.stop_position1>="
+                      . $slot_info->{$slot_map_id}->[0] . " )))";
+                }
+                elsif ( defined( $slot_info->{$slot_map_id}->[1] ) ) {
+                    $restricted_sql_1 .=
+                        " or (cl.map_id1="
+                      . $slot_map_id
+                      . " and cl.start_position1<="
+                      . $slot_info->{$slot_map_id}->[1] . ") ";
+                }
+                else {
+                    push @unrestricted_map_ids, $slot_map_id;
+                }
             }
-            elsif ( defined( $slot_info->{$slot_map_id}->[0] ) ) {
-                $restricted_sql .=
-                    " or (cl.map_id1="
-                  . $slot_map_id
-                  . " and (( cl.start_position1>="
-                  . $slot_info->{$slot_map_id}->[0]
-                  . " ) or ( cl.stop_position1 is not null "
-                  . " and cl.stop_position1>="
-                  . $slot_info->{$slot_map_id}->[0] . " )))";
-            }
-            elsif ( defined( $slot_info->{$slot_map_id}->[1] ) ) {
-                $restricted_sql .=
-                    " or (cl.map_id1="
-                  . $slot_map_id
-                  . " and cl.start_position1<="
-                  . $slot_info->{$slot_map_id}->[1] . ") ";
-            }
-            else {
-                push @unrestricted_map_ids, $slot_map_id;
+            if (@unrestricted_map_ids) {
+                $unrestricted_sql_1 .=
+                  " or cl.map_id1 in ("
+                  . join( ',', @unrestricted_map_ids ) . ") ";
             }
         }
-        if (@unrestricted_map_ids) {
-            $unrestricted_sql =
-              " or cl.map_id1 in (" . join( ',', @unrestricted_map_ids ) . ") ";
-        }
-        $combined_sql = $restricted_sql . $unrestricted_sql;
+        $combined_sql = $restricted_sql_1 . $unrestricted_sql_1;
         $combined_sql =~ s/^\s+or//;
         $base_sql .= " and (" . $combined_sql . ")";
 

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.135.2.9 2004-11-11 05:55:59 mwz444 Exp $
+# $Id: Map.pm,v 1.135.2.10 2004-11-12 17:30:16 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.135.2.9 $)[-1];
+$VERSION = (qw$Revision: 1.135.2.10 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1150,9 +1150,10 @@ Variable Info:
         my $map_width  = $self->map_width($map_id);
         my $is_flipped = 0;
         my $max_x;
+
         # must create these arrays otherwise they don't get passed by reference.
         $map_drawing_data{$map_id} = [];
-        $map_area_data{$map_id} = [];
+        $map_area_data{$map_id}    = [];
 
         my $actual_map_length = $self->map_length($map_id);
         my $map_length        = $actual_map_length || 1;
@@ -1574,26 +1575,19 @@ Variable Info:
 
     #Make aggregated correspondences
     my $corrs_aggregated = 0;
-    for my $map_id (@map_ids) {
-        if ( $self->aggregate and $is_compressed ) {
+    if ( $self->aggregate and $is_compressed ) {
+        for my $map_id (@map_ids) {
             $corrs_aggregated = 1
               if ( $map_aggregate_corr{$map_id}
                 and @{ $map_aggregate_corr{$map_id} } );
             my @drawing_data = ();
             my $map_length   = $self->map_length($map_id);
             for my $ref_connect ( @{ $map_aggregate_corr{$map_id} } ) {
-                my $map_coords  = $map_placement_data{$map_id}{'map_coords'};
-                my $corr_colors = $drawer->aggregated_correspondence_colors;
-                my $corr_color_bounds =
-                  $drawer->aggregated_correspondence_color_bounds;
-                my $line_color =
-                  $drawer->default_aggregated_correspondence_color;
-                foreach my $color_bound (@$corr_color_bounds) {
-                    if ( $ref_connect->[2] <= $color_bound ) {
-                        $line_color = $corr_colors->{$color_bound};
-                        last;
-                    }
-                }
+                my $map_coords = $map_placement_data{$map_id}{'map_coords'};
+                my $line_color = $self->aggregated_line_color(
+                    corr_no => $ref_connect->[2],
+                    drawer  => $drawer,
+                );
 
                 my $this_map_x =
                     $label_side eq RIGHT
@@ -1629,6 +1623,193 @@ Variable Info:
                     $this_map_y, 'black',     10
                   ];
 
+            }
+            $drawer->add_drawing(@drawing_data) if ( scalar(@drawing_data) );
+        }
+
+        # Draw intraslot aggregated corrs.
+
+        # Use Correspondences to figure out where to put this vertically.
+        my ( $min_ref_y, $max_ref_y );
+        for ( my $i = 0 ; $i <= $#map_ids ; $i++ ) {
+            my @drawing_data = ();
+            my $map_id1      = $map_ids[$i];
+            my $corrs = $drawer->map_correspondences( $slot_no, $map_id1 );
+            for ( my $j = $i + 1 ; $j <= $#map_ids ; $j++ ) {
+                my $map_id2 = $map_ids[$j];
+                my $corr    = $corrs->{$map_id2};
+
+                #
+                # Get the information about the map placement.
+                #
+                my $map1_pos =
+                  $drawer->reference_map_coords( $slot_no, $map_id1 );
+                my $map2_pos =
+                  $drawer->reference_map_coords( $slot_no, $map_id2 );
+
+                # average of corr on map1
+                my $avg_mid1 =
+                  defined( $corr->{'avg_mid'} )
+                  ? $corr->{'avg_mid'}
+                  : $corr->{'start_avg1'};
+
+                # average of corr on map 2
+                my $avg_mid2 =
+                  defined( $corr->{'avg_mid2'} )
+                  ? $corr->{'avg_mid2'}
+                  : $corr->{'start_avg2'};
+
+                my $map1_pixel_len = $map1_pos->{'y2'} - $map1_pos->{'y1'};
+                my $map2_pixel_len = $map2_pos->{'y2'} - $map2_pos->{'y1'};
+                my $map1_unit_len  =
+                  $map1_pos->{'map_stop'} - $map1_pos->{'map_start'};
+                my $map2_unit_len =
+                  $map2_pos->{'map_stop'} - $map2_pos->{'map_start'};
+
+                # Set the avg location of the corr on the ref map
+                my $map1_mid_y =
+                  $map1_pos->{'is_flipped'}
+                  ? (
+                    $map1_pos->{'y2'} - (
+                        ( $avg_mid1 - $map1_pos->{'map_start'} ) /
+                          $map1_unit_len
+                      ) * $map1_pixel_len
+                  )
+                  : (
+                    $map1_pos->{'y1'} + (
+                        ( $avg_mid1 - $map1_pos->{'map_start'} ) /
+                          $map1_unit_len
+                      ) * $map1_pixel_len
+                  );
+                my $map2_mid_y =
+                  $map2_pos->{'is_flipped'}
+                  ? (
+                    $map2_pos->{'y2'} - (
+                        ( $avg_mid2 - $map2_pos->{'map_start'} ) /
+                          $map2_unit_len
+                      ) * $map2_pixel_len
+                  )
+                  : (
+                    $map2_pos->{'y1'} + (
+                        ( $avg_mid2 - $map2_pos->{'map_start'} ) /
+                          $map2_unit_len
+                      ) * $map2_pixel_len
+                  );
+                my $map1_y1 =
+                  $map1_pos->{'is_flipped'}
+                  ? (
+                    $map1_pos->{'y2'} - (
+                        ( $corr->{'min_start'} - $map1_pos->{'map_start'} ) /
+                          $map1_unit_len
+                      ) * $map1_pixel_len
+                  )
+                  : (
+                    $map1_pos->{'y1'} + (
+                        ( $corr->{'min_start'} - $map1_pos->{'map_start'} ) /
+                          $map1_unit_len
+                      ) * $map1_pixel_len
+                  );
+                my $map2_y1 =
+                  $map2_pos->{'is_flipped'}
+                  ? (
+                    $map2_pos->{'y2'} - (
+                        ( $corr->{'min_start2'} - $map2_pos->{'map_start2'} ) /
+                          $map2_unit_len
+                      ) * $map2_pixel_len
+                  )
+                  : (
+                    $map2_pos->{'y1'} + (
+                        ( $corr->{'min_start2'} - $map2_pos->{'map_start2'} ) /
+                          $map2_unit_len
+                      ) * $map2_pixel_len
+                  );
+                my $map1_y2 =
+                    $map1_pos->{'is_flipped'}
+                  ? $map1_pos->{'y2'} +
+                  ( ( $corr->{'max_start'} - $map1_pos->{'map_start'} ) /
+                      $map1_unit_len ) * $map1_pixel_len
+                  : $map1_pos->{'y1'} +
+                  ( ( $corr->{'max_start'} - $map1_pos->{'map_start'} ) /
+                      $map1_unit_len ) * $map1_pixel_len;
+
+                my $map2_y2 =
+                    $map2_pos->{'is_flipped'}
+                  ? $map2_pos->{'y2'} +
+                  ( ( $corr->{'max_start2'} - $map2_pos->{'map_start2'} ) /
+                      $map2_unit_len ) * $map2_pixel_len
+                  : $map2_pos->{'y1'} +
+                  ( ( $corr->{'max_start2'} - $map2_pos->{'map_start2'} ) /
+                      $map2_unit_len ) * $map2_pixel_len;
+
+                my $line_cushion = 10;
+                my $map1_coords  = $map_placement_data{$map_id1}{'map_coords'};
+                my $map2_coords  = $map_placement_data{$map_id1}{'map_coords'};
+                my $left_side    = my $map1_x =
+                    $label_side eq LEFT
+                  ? $map1_coords->[0]
+                  : $map1_coords->[2];
+                my $map2_x =
+                    $label_side eq LEFT
+                  ? $map2_coords->[0]
+                  : $map2_coords->[2];
+                my $map1_x2 =
+                    $label_side eq LEFT
+                  ? $map1_coords->[0] - $line_cushion
+                  : $map1_coords->[2] + $line_cushion;
+                my $map2_x2 =
+                    $label_side eq LEFT
+                  ? $map2_coords->[0] - ( $line_cushion * 2 )
+                  : $map2_coords->[2] + ( $line_cushion * 2 );
+                my $line_color = $self->aggregated_line_color(
+                    corr_no => $corr->{'no_corr'},
+                    drawer  => $drawer,
+                );
+
+                # add aggregate correspondences to ref_connections
+                if ( $self->aggregate == 1 ) {
+
+                    # Single line to avg corr
+                    push @drawing_data,
+                      [
+                        LINE,        $map1_x,     $map1_mid_y, $map1_x2,
+                        $map1_mid_y, $line_color, 0
+                      ];
+                    push @drawing_data,
+                      [
+                        LINE,        $map1_x2,    $map1_mid_y, $map2_x2,
+                        $map2_mid_y, $line_color, 0
+                      ];
+                    push @drawing_data,
+                      [
+                        LINE,        $map2_x2,    $map2_mid_y, $map2_x,
+                        $map2_mid_y, $line_color, 0
+                      ];
+                }
+                else {
+
+#                my $this_agg_y1 =
+#                  ( $corr->{'min_start2'} - $self->start_position($map_id)
+#                  );
+#                my $this_agg_y2 =
+#                  ( $corr->{'max_start2'} - $self->start_position($map_id)
+#                  );
+#                ( $this_agg_y1, $this_agg_y2 ) = ( $this_agg_y2, $this_agg_y1 )
+#                  if ($is_flipped);
+#                ( $ref_map_y1, $ref_map_y2 ) = ( $ref_map_y2, $ref_map_y1 )
+#                  if ( $ref_map_y1 > $ref_map_y2 );
+#
+                    ##                # V showing span of corrs
+                    #                push @{ $map_aggregate_corr->{$map_id} },
+                    #                  [
+                    #                    $ref_pos->{'x1'},       $ref_map_y1,
+                    #                    $corr->{'no_corr'}, $this_agg_y1
+                    #                  ];
+                    #                push @{ $map_aggregate_corr->{$map_id} },
+                    #                  [
+                    #                    $ref_pos->{'x1'},       $ref_map_y2,
+                    #                    $corr->{'no_corr'}, $this_agg_y2
+                    #                  ];
+                }
             }
             $drawer->add_drawing(@drawing_data) if ( scalar(@drawing_data) );
         }
@@ -1792,11 +1973,15 @@ sub place_map_y {
     $return_y2 = $this_map_y + $pixel_height;
     if ( defined $ref_slot_no ) {
 
+        my $ref_slot_info = $drawer->data_module->slot_info->{$ref_slot_no};
+
         # Use Correspondences to figure out where to put this vertically.
         my $ref_corrs = $drawer->map_correspondences( $slot_no, $map_id );
         my ( $min_ref_y, $max_ref_y );
         my $placed = 0;
-        for my $ref_corr ( values %$ref_corrs ) {
+        for my $ref_map_id ( keys(%$ref_slot_info) ) {
+
+            my $ref_corr = $ref_corrs->{$ref_map_id};
 
             #
             # Get the information about the reference map.
@@ -3545,6 +3730,34 @@ Button options:
           };
     }
     return \@map_buttons;
+}
+
+# ----------------------------------------------------
+
+sub aggregated_line_color {
+
+=pod
+                                                                                                                             
+=head2 DESTROY
+                                                                                                                             
+Break cyclical links.
+                                                                                                                             
+=cut
+
+    my ( $self, %args ) = @_;
+    my $corr_no = $args{'corr_no'};
+    my $drawer  = $args{'drawer'};
+
+    my $corr_colors       = $drawer->aggregated_correspondence_colors;
+    my $corr_color_bounds = $drawer->aggregated_correspondence_color_bounds;
+    my $line_color        = $drawer->default_aggregated_correspondence_color;
+    foreach my $color_bound (@$corr_color_bounds) {
+        if ( $corr_no <= $color_bound ) {
+            $line_color = $corr_colors->{$color_bound};
+            last;
+        }
+    }
+    return $line_color;
 }
 
 # ----------------------------------------------------
