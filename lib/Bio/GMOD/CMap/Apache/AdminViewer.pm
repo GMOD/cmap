@@ -1,6 +1,6 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 
-# $Id: AdminViewer.pm,v 1.12 2002-10-09 01:07:31 kycl4rk Exp $
+# $Id: AdminViewer.pm,v 1.13 2002-12-11 16:57:46 kycl4rk Exp $
 
 use strict;
 use Data::Dumper;
@@ -28,7 +28,7 @@ $COLORS         = [ sort keys %{ +COLORS } ];
 $FEATURE_SHAPES = [ qw( box dumbbell line span ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.12 $)[-1];
+$VERSION        = (qw$Revision: 1.13 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -800,29 +800,6 @@ sub map_view {
         "No map for ID '$map_id'"
     );
 
-    my $count_sql = q[
-        select   count(f.feature_id)
-        from     cmap_feature f
-        where    f.map_id=?
-    ];
-    $count_sql .= "and f.feature_type_id=$feature_type_id " if $feature_type_id;
-
-    my $no_features = $db->selectrow_array( $count_sql, {}, ( $map_id ) );
-    my @pages;
-    my $max_child_elements = $self->config('max_child_elements') || 1;
-    if ( $max_child_elements && ( $no_features > $max_child_elements ) ) {
-        my $no_pages  = int( ( $no_features / $max_child_elements ) + .5 );
-        my $max_pages = 13;
-        if ( $no_pages > $max_pages ) {
-            my $step = $no_pages / $max_pages;
-            @pages   = map { int ( $_ * $step ) } 1..$max_pages;
-            unshift @pages, 1 unless $pages[0] == 1;
-        }
-        else {
-            @pages = ( 1..$max_pages );
-        }
-    }
-
     my $sql = q[
         select   f.feature_id, 
                  f.accession_id, 
@@ -841,11 +818,29 @@ sub map_view {
     ];
     $sql .= "and f.feature_type_id=$feature_type_id " if $feature_type_id;
     $sql .= "order by $order_by ";
-#    $sql .= "limit $limit_start, ".MAX_CHILD_ELEMENTS;
 
-    $map->{'features'} = $db->selectall_arrayref( 
-        $sql, { Columns => {} }, ( $map_id ) 
-    );
+    my @features = @{ 
+        $db->selectall_arrayref( $sql, { Columns => {} }, ( $map_id ) )
+    };
+
+    my $no_features        = scalar @features || 0;
+    my $no_pages           = 0;
+    my $max_child_elements = $self->config('max_child_elements') || 0;
+    if ( $no_features > $max_child_elements ) {
+        if ( $limit_start ) {
+            $limit_start -= 1;
+        }
+        elsif ( $limit_start < 0 ) {
+            $limit_start = 0;
+        }
+        
+        $no_pages = int( ( $no_features / $max_child_elements ) + .5 );
+        
+        @features =
+            @features[ $limit_start .. $limit_start+$max_child_elements ];
+    }
+
+    $map->{'features'} = \@features;
 
     my $feature_types = $db->selectall_arrayref(
         q[
@@ -869,7 +864,7 @@ sub map_view {
             no_features   => $no_features,
             limit_start   => $limit_start,
             page_size     => $max_child_elements,
-            pages         => \@pages,
+            pages         => [ 1 .. $no_pages ],
             cur_page      => int( ($limit_start + 1)/$max_child_elements ) + 1,
         }
     );
