@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.64 2004-02-10 23:06:50 kycl4rk Exp $
+# $Id: Map.pm,v 1.65 2004-02-18 20:58:25 kycl4rk Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.64 $)[-1];
+$VERSION = (qw$Revision: 1.65 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -400,7 +400,7 @@ in raw format as a hashref keyed on feature_id.
     my $is_flipped = shift || 0;
 
     unless ( defined $map->{'feature_store'} ) {
-        my $reverse = $is_flipped ? -1 : 1;
+#        my $reverse = $is_flipped ? -1 : 1;
         for my $data ( 
             map  { $_->[0] }
             sort { 
@@ -408,7 +408,8 @@ in raw format as a hashref keyed on feature_id.
                 ||
                 $a->[2] <=> $b->[2]
                 ||
-                $reverse * ( $a->[3] <=> $b->[3] )
+#                $reverse * ( $a->[3] <=> $b->[3] )
+                $a->[3] <=> $b->[3]
                 ||
                 $a->[4] <=> $b->[4] 
             }
@@ -785,6 +786,7 @@ Lays out the map.
                 my $fstart            = $feature->{'start_position'} || 0;
                 my $fstop             = $shape_is_triangle 
                                         ? undef : $feature->{'stop_position'};
+                $fstop                = undef if $fstop < $fstart;
 
                 my $rstart = sprintf( "%.2f", 
                     ( $fstart - $map_start ) / $map_length
@@ -793,31 +795,32 @@ Lays out the map.
                 my $rstop  = defined $fstop 
                     ? sprintf( "%.2f", ( $fstop - $map_start ) / $map_length )
                     : undef;
-                $rstop     = defined $rstop && $rstop > 1 
-                    ? 1 
-                    : defined $rstop && $rstop < 0 ? 0 : $rstop;
-
-                if ( $is_flipped && defined $rstop ) {
-                    ( $rstart, $rstop ) = ( $rstop, $rstart );
+                if ( defined $rstop ) {
+                    $rstop = $rstop > 1 ? 1 : $rstop < 0 ? 0 : $rstop;
                 }
 
-                my $tick_overhang     = 2;
-                my $y_pos1            = $is_flipped 
+                my $tick_overhang = 2;
+                my $y_pos1        = $is_flipped 
                     ? $base_y + $pixel_height - ( $pixel_height * $rstart )
                     : $base_y + ( $pixel_height * $rstart );
-                my $y_pos2            = defined $rstop
+
+                my $y_pos2        = defined $rstop
                     ? $is_flipped
                         ? $base_y + $pixel_height - ( $pixel_height * $rstop  )
                         : $base_y + ( $pixel_height * $rstop  )
                     : undef;
+
+                if ( $is_flipped && defined $y_pos2 ) {
+                    ( $y_pos2, $y_pos1 ) = ( $y_pos1, $y_pos2 );
+                }
                 $y_pos2 = $y_pos1 unless defined $y_pos2 && $y_pos2 > $y_pos1;
 
-                my $color             = $has_corr ? $feature_corr_color : '';
-                   $color           ||= $feature->{'color'} || 
-                                        $default_feature_color;
-                my $label             = $feature->{'feature_name'};
-                my $tick_start        = $base_x - $tick_overhang;
-                my $tick_stop         = $base_x + $map_width + $tick_overhang;
+                my $color         = $has_corr ? $feature_corr_color : '';
+                   $color       ||= $feature->{'color'} || 
+                                    $default_feature_color;
+                my $label         = $feature->{'feature_name'};
+                my $tick_start    = $base_x - $tick_overhang;
+                my $tick_stop     = $base_x + $map_width + $tick_overhang;
 
                 my ( $label_y, @coords );
                 if ( $shape_is_triangle || $y_pos2 <= $y_pos1 ) {
@@ -854,14 +857,14 @@ Lays out the map.
                         collapse     => $collapse_features,
                         collapse_on  => $feature->{'feature_type'},
                     );
-                    my $offset       = ( $column_index + 1 ) * 6;
+                    my $offset       = ( $column_index + 1 ) * 7;
                     my $vert_line_x1 = $label_side eq RIGHT
                         ? $tick_start : $tick_stop;
                     my $vert_line_x2 = $label_side eq RIGHT 
                         ? $tick_stop + $offset 
                         : $tick_start - $offset;
 
-                    if ( $y_pos1 < $y_pos2 && !$shape_is_triangle ) {
+                    unless ( $shape_is_triangle ) {
                         push @temp_drawing_data, [
                             LINE, 
                             $vert_line_x2, $y_pos1, 
@@ -979,7 +982,7 @@ Lays out the map.
                         push @temp_drawing_data, [ RECTANGLE, @coords, $color ];
                     }
                     elsif ( $feature_shape eq 'dumbbell' ) {
-                        my $width  = 4;
+                        my $width = 4;
                         unless ( $y_pos1 == $y_pos2 ) {
                             $y_pos1 += 2;
                             $y_pos2 -= 2;
@@ -1347,11 +1350,13 @@ Lays out the map.
                 #
                 # Back the connection off.
                 #
-                if ( $label_side eq RIGHT ) {
-                    $label_connect_x1 += $buffer;
-                }
-                else {
-                    $label_connect_x2 -= $buffer;
+                if ( $label->{'shape'} eq LINE ) {
+                    if ( $label_side eq RIGHT ) {
+                        $label_connect_x1 += $buffer;
+                    }
+                    else {
+                        $label_connect_x2 -= $buffer;
+                    }
                 }
 
                 $drawer->add_connection(
