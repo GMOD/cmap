@@ -40,25 +40,40 @@ print OUT<<"!GROK!THIS!";
 #               multiple data sources
 #
 <database>
-    name       FooDB
-    datasource dbi:mysql:FOO
+    name       CMap
+    datasource dbi:mysql:CMAP
     user       guest
     password   password
     is_default 1
 </database>
 
-<database>
-    name       BarDB
-    datasource dbi:mysql:BAR
-    user       guest
-    password   password
-</database>
+#
+# Configure more as needed...
+#
+#<database>
+#    name       BarDB
+#    datasource dbi:mysql:BAR
+#    user       guest
+#    password   password
+#</database>
 
 #   
 # An absolute path to the directory holding the templates
 # Default: Set on install
 #   
 template_dir $Local{'TEMPLATE_DIR'}
+
+#   
+# An absolute path to the directory where images are written
+# I would also suggest you purge this directory for old images so you don't
+# fill up your disk.  Here's a simple cron job you can put in your root's
+# crontab:
+#
+# 0 0 * * *  find /tmp/cmap_cache/ -type f -mtime +1 -exec rm -rf {} \;
+#
+# Default: /usr/local/apache/htdocs/cmap/tmp
+#
+cache_dir $Local{'CACHE_DIR'}
 
 # ----------------------------------------------------
 #
@@ -124,18 +139,6 @@ EOF
 # Default: lightgoldenrodyellow
 #
 background_color lightgoldenrodyellow
-
-#   
-# An absolute path to the directory where images are written
-# I would also suggest you purge this directory for old images so you don't
-# fill up your disk.  Here's a simple cron job you can put in your root's
-# crontab:
-#
-# 0 0 * * *  find /tmp/cmap_cache/ -type f -mtime +1 -exec rm -rf {} \;
-#
-# Default: /usr/local/apache/htdocs/cmap/tmp
-#
-cache_dir /usr/local/apache/htdocs/cmap/tmp
 
 #
 # The color of the line connecting feature correspondences
