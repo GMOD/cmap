@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Drawer::Map;
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.70.2.1 2004-05-07 21:54:02 kycl4rk Exp $
+# $Id: Map.pm,v 1.70.2.2 2004-05-07 21:55:56 kycl4rk Exp $
 
 =pod
 
@@ -24,7 +24,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.70.2.1 $)[-1];
+$VERSION = (qw$Revision: 1.70.2.2 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1163,35 +1163,35 @@ Lays out the map.
                         )
                     )
                 ) {
-                    my $labels = 
-                        $feature->{'midpoint'} < $midpoint && $is_flipped
-                        ||
-                        $feature->{'midpoint'} > $midpoint && $is_flipped
-                        ||
-                        $feature->{'midpoint'} < $midpoint && !$is_flipped
-                        ? \@north_labels
-                        : \@south_labels 
-                    ;
-
-                    push @$labels, {
-                        priority       => $feature->{'drawing_priority'},
-                        text           => $label,
-                        target         => $label_y,
-                        color          => $color,
-                        is_highlighted => $is_highlighted,
-                        feature_coords => \@coords,
-                        feature_mid_y  => $feature->{'mid_y'},
-                        feature_type   => $feature->{'feature_type'},
-                        has_corr       => $has_corr,
-                        feature_id     => $feature->{'feature_id'},
-                        start_position => $feature->{'start_position'},
-                        shape          => $feature->{'shape'},
-                        url            => 
-                            $feature_details_url.$feature->{'accession_id'},
-                        alt            => 
-                            'Feature Details: ' . $feature->{'feature_name'}.
-                            ' [' . $feature->{'accession_id'} . ']',
-                    };
+#                    my $labels = 
+#                        $feature->{'midpoint'} < $midpoint && $is_flipped
+#                        ||
+#                        $feature->{'midpoint'} > $midpoint && $is_flipped
+#                        ||
+#                        $feature->{'midpoint'} < $midpoint && !$is_flipped
+#                        ? \@north_labels
+#                        : \@south_labels 
+#                    ;
+#
+#                    push @$labels, {
+#                        priority       => $feature->{'drawing_priority'},
+#                        text           => $label,
+#                        target         => $label_y,
+#                        color          => $color,
+#                        is_highlighted => $is_highlighted,
+#                        feature_coords => \@coords,
+#                        feature_mid_y  => $feature->{'mid_y'},
+#                        feature_type   => $feature->{'feature_type'},
+#                        has_corr       => $has_corr,
+#                        feature_id     => $feature->{'feature_id'},
+#                        start_position => $feature->{'start_position'},
+#                        shape          => $feature->{'shape'},
+#                        url            => 
+#                            $feature_details_url.$feature->{'accession_id'},
+#                        alt            => 
+#                            'Feature Details: ' . $feature->{'feature_name'}.
+#                            ' [' . $feature->{'accession_id'} . ']',
+#                    };
 
                     my $even_label_key = $is_highlighted ? 'highlights'
                         : $has_corr ? 'correspondences' : 'normal';
