@@ -1,6 +1,6 @@
                               CMAP INSTALL
 
-                             $Revision: 1.32 $
+                             $Revision: 1.33 $
 
 1.      QUICK START
 
@@ -140,7 +140,7 @@ basic triumvirate of commands:
 There are quite a number of prerequisites to getting this running:
 
     * libgd 
-    * a database (MySQL 3.23.x/4.1, Oracle 9x, Sybase, PostgreSQL) 
+    * a database (MySQL 4.1, Oracle 9x, Sybase, PostgreSQL) 
     * Perl (5.6.1 or higher)
     * Apache (version 1.3.27 suggested)
     * mod_perl (version 1.28 suggested)
@@ -193,7 +193,7 @@ Here are URLs to help you track down everything you need to install libgd:
 
 The CMap application relies on a relational database management system
 (RDBMS) to store and retrieve data.  If you already have a database
-such as MySQL (version 3.23) or Oracle (version 9.x) installed on your
+such as MySQL (version 4.1) or Oracle (version 9.x) installed on your
 system, you can skip ahead to the next section.  If not and you're
 doing this on your own, and aren't a trained DBA, I'd recommend using
 MySQL for your database.  It's free, extremely stable, flexible, and
