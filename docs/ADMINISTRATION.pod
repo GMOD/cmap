@@ -1,10 +1,12 @@
+# vim: tw=70:
+
 =head1 TITLE
 
 CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.8.2.2 $
+$Revision: 1.8.2.3 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -32,10 +34,11 @@ If you've just installed CMap, then your database is probably
 completely empty.  (Of course, a small but complete dataset is
 provided in the "data" directory, but the database for your own data
 will be empty.)  So let's start by discussing what you need to do to
-get a usable installation with your data.  This document assumes that
-you've already been through all the steps described in the
-INSTALL.pod document, so you should be able to pull up the web-based
-admin tool by pointing your browser to
+get a usable installation with your data.  
+
+This document assumes that you've already been through all the steps
+described in the INSTALL.pod document, so you should be able to pull
+up the web-based admin tool by pointing your browser to
 "http://your.host.name/cgi-bin/cmap/admin" (or where ever you have
 installed it).  Depending on whether or not you decided to
 password-protect that URL, you may have to enter a username and
@@ -120,8 +123,13 @@ All of the parameters that can be specified in an individual config file
 are described here.
 
 The required elements are the L<Required General Options> and the L<Map,
-Feature and Evidence Type Information>.
+Feature and Evidence Type Information>.  The other elements all have
+reasonable defaults and can be ignored until you want to tweak them.
 
+The file "example.conf" (which is installed in the cmap.conf/
+directory) provides a good starting point for your configuration.
+When you are done customizing your config file, make sure you set
+"is_enabled" to 1.
 
 =head3 Required General Options
 
@@ -823,7 +831,7 @@ buttons that submit the page to a different place.
 
 =back
 
-=head2 INCLUDING CONFIGURATION FILES IN CONFIGURATION FILES
+=head2 INCLUDING OTHER CONFIGURATION FILES
 
 If there is a section of the individual configuration files that is 
 repeated in multiple files, that section can be placed in a separate
@@ -1706,7 +1714,9 @@ Following should help you create your own CMap URL:
 
 /cgi-bin/cmap/viewer?
 
-=head2   Required Arguments: 
+=head2 URL Arguments
+
+=head3 Required Arguments: 
 
 =over 4
 
@@ -1720,7 +1730,7 @@ argument.  See L<Map Accession Information Format> for more details.
 
 =back
 
-=head2 Operational Arguments
+=head3 Operational Arguments
 
 =over 4
 
@@ -1749,7 +1759,7 @@ argument.  See L<Map Accession Information Format> for more details.
 
 =back
 
-=head2 Arguments for Speed and Clarity
+=head3 Arguments for Speed and Clarity
 
 =over 4
 
@@ -1788,7 +1798,7 @@ be consistant and use ft_*.
 
 =back
 
-=head2 Menu Arguments
+=head3 Menu Arguments
 
 =over 4
 
@@ -1887,7 +1897,24 @@ only one reference map.
 
 =back
 
-=head2 Just in case you see it
+=head3 Hide/Display Menus
+
+These arguments allow you to hide or show individual menus.  Set to 1 to
+display and 0 to hide.  They are hidden by default.
+
+=over 4
+
+=item * refMenu: Reference Menu
+
+=item * compMenu:  Comparison Menu
+
+=item * optionMenu: Options Menu
+
+=item * addOpMenu: Additional Options Menu
+
+=back
+
+=head3 Just in case you see it
 
 These will probably not be used in a constructed URL but they are discribed
 here in case you run across them and wondered what they do.  Also, it's good to
@@ -1953,7 +1980,7 @@ See the above description forprev_ref_map_set_aid and extrapolate.
 
 =back
 
-=head2 Map Details Arguments
+=head3 Map Details Arguments
 
 Recently, the Map Details page has been folded into the regular viewer.  
 
@@ -1985,7 +2012,7 @@ Set the action to "download" to get a tab delimited file of the data.
 
 =back
 
-=head2 Depricated Arguments
+=head3 Depricated Arguments
 
 If you a are using these in a URL, please change the URL.  They are not guaranteed to work.
 
