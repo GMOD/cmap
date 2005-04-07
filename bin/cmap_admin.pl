@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.83.2.9 2005-03-17 16:50:29 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.83.2.10 2005-04-07 20:10:31 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.83.2.9 $)[-1];
+$VERSION = (qw$Revision: 1.83.2.10 $)[-1];
 
 #
 # Get command-line options
@@ -368,15 +368,16 @@ sub create_map_set {
         shape                => $map_shape ,
         color                => $map_color ,
         width                => $map_width ,
-    ) or do { 
+    ) or do {
         print "Error: ", $admin->error, "\n";
         return;
     };
-    
+
     my $log_fh = $self->log_fh;
     print $log_fh "Map set $map_set_name created\n";
 
     $self->purge_query_cache(1);
+
 }
 
 # ----------------------------------------------------
@@ -687,7 +688,7 @@ sub export_as_text {
       feature_attributes
     );
 
-    my $map_sets      = $self->get_map_sets;
+    my $map_sets      = $self->get_map_sets or return;
     my $feature_types = $self->get_feature_types;
 
     my @exclude_fields = $self->show_menu(
@@ -1206,7 +1207,7 @@ sub export_objects {
 
     my ( $map_sets, $feature_types );
     if ( grep { /map_set/ } @db_objects ) {
-        $map_sets      = $self->get_map_sets;
+        $map_sets      = $self->get_map_sets or return;
         $feature_types = $self->get_feature_types;
         my @ft_names = map { $_->{'feature_type'} } @$feature_types;
         my @map_set_names =
@@ -1250,6 +1251,49 @@ sub export_objects {
       };
 
     return 1;
+}
+
+# ----------------------------------------------------
+sub get_files {
+
+    #
+    # Ask the user for files.
+    #
+    my ( $self, %args ) = @_;
+    my $allow_mult = defined $args{'allow_mult'} ? $args{'allow_mult'} : 1;
+    my $prompt     = defined $args{'prompt'} ? $args{'prompt'} :
+        $allow_mult ? 'Please specify the files?[q to quit] '
+            : 'Please specify the file?[q to quit] ';
+    my $term = $self->term;
+
+    ###New File Handling
+    my $file_str;
+    while (1){
+        $file_str = $term->readline($prompt);
+        last if $file_str =~ /\S/;
+    }
+    return undef if $file_str =~ m/^[Qq]$/;
+    $term->addhistory($file_str);
+
+    my @file_strs = split( /\s+/, $file_str );
+    my @files = ();
+
+    # allow filename expantion and put into @files
+    foreach my $str (@file_strs) {
+        push @files, glob($str);
+    }
+    foreach ( my $i = 0 ; $i <= $#files ; $i++ ) {
+        if ( -r $files[$i] and -f $files[$i] ) {
+            print "$files[$i] read correctly.\n";
+        }
+        else{
+            print "WARNING: Unable to read file '$files[$i]'!\n";
+            splice( @files, $i, 1 );
+            $i--;
+        }
+    }
+    return \@files if (@files);
+    return undef;
 }
 
 # ----------------------------------------------------
@@ -1310,21 +1354,43 @@ sub get_map_sets {
                 ]
             );
             $sth->execute($acc);
-            push @{$map_sets}, $sth->fetchrow_hashref;
+            my $result = $sth->fetchrow_hashref;
+            push @{$map_sets}, $result if $result;
+        }
+        unless ($map_sets and @$map_sets){
+            print "Those map sets were not in the database!\n";
+            return;
         }
         foreach my $row ( @{$map_sets} ) {
             $row->{'map_type'} =
-              $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
+              $self->map_type_data( $row->{'map_type_aid'}, 'map_type' )
+                or die "Map type accession "
+                . $row->{'map_type_aid'}
+                . " not defined in config file\n";
         }
         return unless @$map_sets;
     }
     else {
+        my $map_set_sql = q[
+            select  distinct map_type_accession as map_type_aid
+            from    cmap_map_set
+        ];
         my $map_types =
-          $self->fake_selectall_arrayref( $self->map_type_data(),
-            'map_type_accession as map_type_aid', 'map_type' );
+          $db->selectall_arrayref( $map_set_sql, { Columns => {} } );
+        unless (@$map_types){
+            print "No map sets in the database!  Use cmap_admin.pl to create.\n";
+            return;
+        }
+
+        foreach my $row ( @{$map_types} ) {
+            $row->{'map_type'} =
+              $self->map_type_data( $row->{'map_type_aid'}, 'map_type' )
+                or die "Map type accession "
+                . $row->{'map_type_aid'}
+                . " not defined in config file\n";
+        }
         $map_types = sort_selectall_arrayref( $map_types, 'map_type' );
-        die "No map types! Please use the config file to create.\n"
-          unless @$map_types;
+
 
         my @map_types = $self->show_menu(
             title      => 'Restrict by Map Set by Map Types',
@@ -1478,6 +1544,7 @@ sub get_feature_types {
           $self->fake_selectall_arrayref( $self->feature_type_data(),
             'feature_type_aid', 'feature_type' );
     }
+    $ft_sql_data = sort_selectall_arrayref( $ft_sql_data, 'feature_type' );
 
     my @feature_types = $self->show_menu(
         title      => 'Restrict by Feature Types',
@@ -1705,7 +1772,6 @@ sub import_data {
     );
 
     $self->$action();
-    $self->purge_query_cache(1);
 }
 
 # ----------------------------------------------------
@@ -1746,7 +1812,6 @@ sub import_links {
     #
     my ( $self, %args ) = @_;
     my $db   = $self->db or die $self->error;
-    my $term = $self->term;
 
     #
     # Get the species.
@@ -1793,26 +1858,12 @@ sub import_links {
       unless $map_set_id;
 
     ###New File Handling
-    my $file_str = $term->readline('Where is the file?[q to quit] ');
-    return if $file_str =~ m/^[Qq]$/;
-    my @file_strs = split( /\s+/, $file_str );
-    my @files = ();
-    foreach my $str (@file_strs) {
-        push @files, glob($str);
-    }
-    foreach ( my $i = 0 ; $i <= $#files ; $i++ ) {
-        unless ( -r $files[$i] and -f $files[$i] ) {
-            print "Unable to read $files[$i]\n";
-            splice( @files, $i, 1 );
-            $i--;
-        }
-    }
-    return unless ( scalar(@files) );
+    my $files = $self->get_files() or return;
 
     my $link_set_name = $self->show_question(
         question => 'What should this link set be named (default='
-          . $files[0] . ')?',
-        default => $files[0],
+          . $files->[0] . ')?',
+        default => $files->[0],
     );
     $link_set_name = "map set $map_set_id:" . $link_set_name;
 
@@ -1822,7 +1873,7 @@ sub import_links {
     print join( "\n",
         'OK to import?',
         '  Data source     : ' . $self->data_source,
-        "  File            : " . join( ", ", @files ),
+        "  File            : " . join( ", ", @$files ),
         "  Species         : $species_name",
         "  Map Study       : $map_set_name",
         "  Link Set        : $link_set_name",
@@ -1834,7 +1885,7 @@ sub import_links {
       Bio::GMOD::CMap::Admin::ManageLinks->new(
         data_source => $self->data_source, );
 
-    foreach my $file (@files) {
+    foreach my $file (@$files) {
         my $fh = IO::File->new($file) or die "Can't read $file: $!";
         $link_manager->import_links(
             map_set_id    => $map_set_id,
@@ -2082,26 +2133,9 @@ sub import_tab_data {
     #
     my $self = shift;
     my $db   = $self->db or die $self->error;
-    my $term = $self->term;
 
     ###New File Handling
-    my $file_str =
-      $term->readline(
-'Where is the file(s)? \nSeparate Multiple files with a space. [q to quit] '
-      );
-    return if $file_str =~ m/^[Qq]$/;
-    my @file_strs = split( /\s+/, $file_str );
-    my @files = ();
-    foreach my $str (@file_strs) {
-        push @files, glob($str);
-    }
-    foreach ( my $i = 0 ; $i <= $#files ; $i++ ) {
-        unless ( -r $files[$i] and -f $files[$i] ) {
-            print "Unable to read $files[$i]\n";
-            splice( @files, $i, 1 );
-            $i--;
-        }
-    }
+    my $files = $self->get_files() or return;
 
     my $map_sets = $self->get_map_sets( allow_mult => 0, allow_null => 0 );
     return unless @{ $map_sets || [] };
@@ -2122,7 +2156,7 @@ sub import_tab_data {
     print join( "\n",
         'OK to import?',
         '  Data source : ' . $self->data_source,
-        "  File        : " . join( ", ", @files ),
+        "  File        : " . join( ", ", @$files ),
         "  Species     : " . $map_set->{species_name},
         "  Map Type    : " . $map_set->{map_type},
         "  Map Set     : " . $map_set->{map_set_name},
@@ -2137,7 +2171,7 @@ sub import_tab_data {
       Bio::GMOD::CMap::Admin::Import->new( data_source => $self->data_source, );
 
     my $time_start = new Benchmark;
-    foreach my $file (@files) {
+    foreach my $file (@$files) {
         my $fh = IO::File->new($file) or die "Can't read $file: $!";
         $importer->import_tab(
             map_set_id   => $map_set->{'map_set_id'},
@@ -2248,7 +2282,7 @@ sub make_name_correspondences {
 
     my $from_map_sets =
       $self->get_map_sets(
-        explanation => 'First you will select the starting map sets' );
+        explanation => 'First you will select the starting map sets' ) or return;
 
     my $use_from_as_target_answer =
       $self->show_question( question =>
@@ -2261,7 +2295,7 @@ sub make_name_correspondences {
     else {
         $to_map_sets =
           $self->get_map_sets(
-            explanation => 'Now you will select the target map sets' );
+            explanation => 'Now you will select the target map sets' ) or return;
     }
 
     my @skip_features = $self->show_menu(
@@ -2271,9 +2305,12 @@ sub make_name_correspondences {
         return     => 'feature_type_aid,feature_type',
         allow_null => 1,
         allow_mult => 1,
-        data       => $self->fake_selectall_arrayref(
-            $self->feature_type_data(),
-            'feature_type_accession as feature_type_aid',
+        data       => sort_selectall_arrayref(
+            $self->fake_selectall_arrayref(
+                $self->feature_type_data(),
+                'feature_type_accession as feature_type_aid',
+                'feature_type'
+            ),
             'feature_type'
         ),
     );
@@ -2745,45 +2782,45 @@ To remove just one (or more) map of a map set, first choose the map
 set and then the map (or maps) within it.  If you wish to remove an
 entire map set, then answer "0" (or just hit "Return") when given a
 list of maps.
- 
+
 =head2 Purge the cache to view new data
-                                                                                                                             
+
 Purge the query cache.  The results of many queries are cached in an
 effort to reduce time querying the database for common queries.
 Purging the cache is important after the data has changed or after
 the configuration file has change.  Otherwise the changes will not
 be consistantly displayed.
-                                                                                                                             
+
 There are four layers of the cache.  When one layer is purged all of
 the layers after it are purged.
-                                                                                                                             
+
 =over 4
-                                                                                                                             
+
 =item * Cache Level 1 Purge All
-                                                                                                                             
+
 Purge all when a map set or species has been added or modified.  A
 change to map sets or species has potential to impact all of the data.
-                                                                                                                             
+
 =item * Cache Level 2 (purge map info on down)
-                                                                                                                             
+
 Level 2 is purged when map information is changed.
-                                                                                                                             
+
 =item * Cache Level 3 (purge feature info on down)
-                                                                                                                             
+
 Level 3 is purged when feature information is changed.
-                                                                                                                             
+
 =item * Cache Level 4 (purge correspondence info on down)
-                                                                                                                             
+
 Level 3 is purged when correspondence information is changed.
-                                                                                                                             
+
 =back
-                                                                                                                             
+
 =head2 Delete duplicate correspondences
-                                                                                                                             
+
 If duplicate correspondences may have been added, this will remove them.
-                                                                                                                             
+
 =head2 Manage links
-                                                                                                                             
+
 This option is where to import and delete links that will show up in
 the "Imported Links" section of CMap.  The import takes a tab delimited
 file, see "perldoc /path/to/Bio/GMOD/CMap/Admin/ManageLinks.pm" for
@@ -2792,10 +2829,11 @@ more info on the format.
 =head1 AUTHOR
 
 Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
+Ben Faga E<lt>faga@cshl.eduE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002-4 Cold Spring Harbor Laboratory
+Copyright (c) 2002-5 Cold Spring Harbor Laboratory
 
 This program is free software;  you can redistribute it and/or modify
 it under the same terms as Perl itself.
