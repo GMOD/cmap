@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.96 2005-03-17 19:33:14 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.97 2005-04-07 20:11:11 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.96 $)[-1];
+$VERSION = (qw$Revision: 1.97 $)[-1];
 
 #
 # Get command-line options
@@ -365,7 +365,7 @@ sub create_map_set {
         ),
     );
     my ( $species_id, $common_name ) = @$species_info;
-    
+
     unless ($species_id){
         print "No species!  Please use cmap_admin.pl to create.\n";
         return;
@@ -608,7 +608,8 @@ sub delete_map_set {
     my $self = shift;
     my $db   = $self->db or die $self->error;
 
-    my $map_sets = $self->get_map_sets( allow_mult => 0, allow_null => 0 ) or return;
+    my $map_sets = $self->get_map_sets( allow_mult => 0, allow_null => 0 );
+    return unless @{ $map_sets || [] };
     my $map_set    = $map_sets->[0];
     my $map_set_id = $map_set->{'map_set_id'};
 
@@ -797,18 +798,15 @@ sub export_as_text {
     #
     # Confirm decisions.
     #
-    print join(
-        "\n",
+    print join( "\n",
         'OK to export?',
         '  Data source     : ' . $self->data_source,
         "  Map Sets        :\n" . join( "\n", map { "    $_" } @map_set_names ),
         "  Feature Types   :\n"
-          . join( "\n",
-            map { "    $_->[2]" } @$display_feature_types ),
+          . join( "\n", map { "    $_->[2]" } @$display_feature_types ),
         "  Exclude Fields  : $excluded_fields",
         "  Directory       : $dir",
-        "[Y/n] "
-    );
+        "[Y/n] " );
     chomp( my $answer = <STDIN> );
     return if $answer =~ /^[Nn]/;
 
@@ -1323,6 +1321,49 @@ sub export_objects {
 }
 
 # ----------------------------------------------------
+sub get_files {
+
+    #
+    # Ask the user for files.
+    #
+    my ( $self, %args ) = @_;
+    my $allow_mult = defined $args{'allow_mult'} ? $args{'allow_mult'} : 1;
+    my $prompt     = defined $args{'prompt'} ? $args{'prompt'} :
+        $allow_mult ? 'Please specify the files?[q to quit] '
+            : 'Please specify the file?[q to quit] ';
+    my $term = $self->term;
+
+    ###New File Handling
+    my $file_str;
+    while (1){
+        $file_str = $term->readline($prompt);
+        last if $file_str =~ /\S/;
+    }
+    return undef if $file_str =~ m/^[Qq]$/;
+    $term->addhistory($file_str);
+
+    my @file_strs = split( /\s+/, $file_str );
+    my @files = ();
+
+    # allow filename expantion and put into @files
+    foreach my $str (@file_strs) {
+        push @files, glob($str);
+    }
+    foreach ( my $i = 0 ; $i <= $#files ; $i++ ) {
+        if ( -r $files[$i] and -f $files[$i] ) {
+            print "$files[$i] read correctly.\n";
+        }
+        else{
+            print "WARNING: Unable to read file '$files[$i]'!\n";
+            splice( @files, $i, 1 );
+            $i--;
+        }
+    }
+    return \@files if (@files);
+    return undef;
+}
+
+# ----------------------------------------------------
 sub get_map_sets {
 
     #
@@ -1380,9 +1421,10 @@ sub get_map_sets {
                 ]
             );
             $sth->execute($acc);
-            push @{$map_sets}, $sth->fetchrow_hashref;
+            my $result = $sth->fetchrow_hashref;
+            push @{$map_sets}, $result if $result;
         }
-        unless (@$map_sets){
+        unless ($map_sets and @$map_sets){
             print "Those map sets were not in the database!\n";
             return;
         }
@@ -1801,7 +1843,6 @@ sub import_data {
     );
 
     $self->$action();
-    $self->purge_query_cache(1);
 }
 
 # ----------------------------------------------------
@@ -1842,7 +1883,6 @@ sub import_links {
     #
     my ( $self, %args ) = @_;
     my $db   = $self->db or die $self->error;
-    my $term = $self->term;
 
     #
     # Get the species.
@@ -1889,26 +1929,12 @@ sub import_links {
       unless $map_set_id;
 
     ###New File Handling
-    my $file_str = $term->readline('Where is the file?[q to quit] ');
-    return if $file_str =~ m/^[Qq]$/;
-    my @file_strs = split( /\s+/, $file_str );
-    my @files = ();
-    foreach my $str (@file_strs) {
-        push @files, glob($str);
-    }
-    foreach ( my $i = 0 ; $i <= $#files ; $i++ ) {
-        unless ( -r $files[$i] and -f $files[$i] ) {
-            print "Unable to read $files[$i]\n";
-            splice( @files, $i, 1 );
-            $i--;
-        }
-    }
-    return unless ( scalar(@files) );
+    my $files = $self->get_files() or return;
 
     my $link_set_name = $self->show_question(
         question => 'What should this link set be named (default='
-          . $files[0] . ')?',
-        default => $files[0],
+          . $files->[0] . ')?',
+        default => $files->[0],
     );
     $link_set_name = "map set $map_set_id:" . $link_set_name;
 
@@ -1918,7 +1944,7 @@ sub import_links {
     print join( "\n",
         'OK to import?',
         '  Data source     : ' . $self->data_source,
-        "  File            : " . join( ", ", @files ),
+        "  File            : " . join( ", ", @$files ),
         "  Species         : $species_name",
         "  Map Study       : $map_set_name",
         "  Link Set        : $link_set_name",
@@ -1930,7 +1956,7 @@ sub import_links {
       Bio::GMOD::CMap::Admin::ManageLinks->new(
         data_source => $self->data_source, );
 
-    foreach my $file (@files) {
+    foreach my $file (@$files) {
         my $fh = IO::File->new($file) or die "Can't read $file: $!";
         $link_manager->import_links(
             map_set_id    => $map_set_id,
@@ -2331,28 +2357,12 @@ sub import_tab_data {
     #
     my $self = shift;
     my $db   = $self->db or die $self->error;
-    my $term = $self->term;
 
     ###New File Handling
-    my $file_str =
-      $term->readline(
-'Where is the file(s)? \nSeparate Multiple files with a space. [q to quit] '
-      );
-    return if $file_str =~ m/^[Qq]$/;
-    my @file_strs = split( /\s+/, $file_str );
-    my @files = ();
-    foreach my $str (@file_strs) {
-        push @files, glob($str);
-    }
-    foreach ( my $i = 0 ; $i <= $#files ; $i++ ) {
-        unless ( -r $files[$i] and -f $files[$i] ) {
-            print "Unable to read $files[$i]\n";
-            splice( @files, $i, 1 );
-            $i--;
-        }
-    }
+    my $files = $self->get_files() or return;
 
-    my $map_sets = $self->get_map_sets( allow_mult => 0, allow_null => 0 ) or return;
+    my $map_sets = $self->get_map_sets( allow_mult => 0, allow_null => 0 );
+    return unless @{ $map_sets || [] };
     my $map_set = $map_sets->[0];
 
     print "Remove data in map set not in import file? [y/N] ";
@@ -2370,7 +2380,7 @@ sub import_tab_data {
     print join( "\n",
         'OK to import?',
         '  Data source : ' . $self->data_source,
-        "  File        : " . join( ", ", @files ),
+        "  File        : " . join( ", ", @$files ),
         "  Species     : " . $map_set->{species_name},
         "  Map Type    : " . $map_set->{map_type},
         "  Map Set     : " . $map_set->{map_set_name},
@@ -2385,7 +2395,7 @@ sub import_tab_data {
       Bio::GMOD::CMap::Admin::Import->new( data_source => $self->data_source, );
 
     my $time_start = new Benchmark;
-    foreach my $file (@files) {
+    foreach my $file (@$files) {
         my $fh = IO::File->new($file) or die "Can't read $file: $!";
         $importer->import_tab(
             map_set_id   => $map_set->{'map_set_id'},
@@ -2866,7 +2876,6 @@ sub show_question {
     }
 }
 
-
 # ----------------------------------------------------
 sub show_menu {
     my $self   = shift;
@@ -3210,7 +3219,7 @@ To remove just one (or more) map of a map set, first choose the map
 set and then the map (or maps) within it.  If you wish to remove an
 entire map set, then answer "0" (or just hit "Return") when given a
 list of maps.
- 
+
 =head2 Purge the cache to view new data
 
 Purge the query cache.  The results of many queries are cached in an
@@ -3257,10 +3266,11 @@ more info on the format.
 =head1 AUTHOR
 
 Ken Y. Clark E<lt>kclark@cshl.orgE<gt>.
+Ben Faga E<lt>faga@cshl.eduE<gt>.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2002-4 Cold Spring Harbor Laboratory
+Copyright (c) 2002-5 Cold Spring Harbor Laboratory
 
 This program is free software;  you can redistribute it and/or modify
 it under the same terms as Perl itself.
