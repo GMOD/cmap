@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.46 2005-01-05 03:04:22 mwz444 Exp $
+# $Id: MakeCorrespondences.pm,v 1.47 2005-04-09 19:45:47 mwz444 Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.46 $)[-1];
+$VERSION = (qw$Revision: 1.47 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -175,9 +175,7 @@ would match.
     my $from_feature_sql = q[
         select f.feature_id,
                f.feature_name,
-               f.feature_type_accession as feature_type_aid,
-               map.map_id,
-               ms.map_set_id
+               f.feature_type_accession as feature_type_aid
         from   cmap_feature f,
                cmap_map map,
                cmap_map_set ms
@@ -232,7 +230,7 @@ would match.
         push @{ $alias_lookup{ $a->[0] } }, $a->[1];
     }
 
-    my %from_names = ();
+    my %from_name_to_ids = ();
     for my $f ( values %$from_features ) {
         for my $name ( $f->{'feature_name'},
             @{ $alias_lookup{ $f->{'feature_id'} } || [] } )
@@ -241,11 +239,11 @@ would match.
             if ( $name_regex and $name =~ /$name_regex/ ) {
                 $name = $1;
             }
-            $from_names{ lc $name }{ $f->{'feature_id'} } = 0;
+            push @{$from_name_to_ids{ lc $name }}, $f->{'feature_id'};
         }
     }
 
-    my %to_names = ();
+    my %to_name_to_ids = ();
     for my $f ( values %$to_features ) {
         for my $name ( $f->{'feature_name'},
             @{ $alias_lookup{ $f->{'feature_id'} } || [] } )
@@ -254,7 +252,7 @@ would match.
             if ( $name_regex and $name =~ /$name_regex/ ) {
                 $name = $1;
             }
-            $to_names{ lc $name }{ $f->{'feature_id'} } = 0;
+            push @{$to_name_to_ids{ lc $name }}, $f->{'feature_id'};
         }
     }
 
@@ -289,22 +287,19 @@ would match.
     }
     print STDERR "Inserting Features\n";
 
-    for my $from_name ( keys %from_names ) {
-        my @from_feature_ids = keys %{ $from_names{$from_name} };
-
+    for my $from_name ( keys %from_name_to_ids ) {
         #
-        # Skip unless there is a matching name in %to_names
+        # Skip unless there is a matching name in %to_name_to_ids
         #
-        my @to_feature_ids = keys %{ $to_names{$from_name} };
-        next unless @to_feature_ids;
+        next unless @{$to_name_to_ids{$from_name}};
 
         my %done;
-        for my $i ( 0 .. $#from_feature_ids ) {
-            my $fid1 = $from_feature_ids[$i];
+        for my $i ( 0 .. $#{$from_name_to_ids{$from_name}} ) {
+            my $fid1 = $from_name_to_ids{$from_name}->[$i];
             my $f1   = $from_features->{$fid1};
 
-            for my $j ( 0 .. $#to_feature_ids ) {
-                my $fid2 = $to_feature_ids[$j];
+            for my $j ( 0 .. $#{$to_name_to_ids{$from_name}} ) {
+                my $fid2 = $to_name_to_ids{$from_name}->[$j];
                 next if $fid1 == $fid2;         # same feature
                 next if $done{$fid1}{$fid2};    # already processed
 
