@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.83.2.11 2005-04-12 20:20:29 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.83.2.12 2005-04-13 16:34:37 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.83.2.11 $)[-1];
+$VERSION = (qw$Revision: 1.83.2.12 $)[-1];
 
 #
 # Get command-line options
@@ -353,6 +353,11 @@ sub create_map_set {
         default  => $map_width,
     );
 
+    my $can_be_reference_map = 1;
+    print "Can the maps in this set be reference maps?[Y/n]";
+    chomp( my $answer = <STDIN> );
+    $can_be_reference_map = 0 if $answer =~ m/^[Nn]/;
+
     print "OK to create set '$map_set_name' in data source '",
       $self->data_source, "'?\n[Y/n] ";
     chomp( my $answer = <STDIN> );
@@ -365,6 +370,7 @@ sub create_map_set {
         species_id           => $species_id ,
         map_type_aid         => $map_type_aid ,
         accession_id         => $map_set_aid ,
+        can_be_reference_map => $can_be_reference_map,
         shape                => $map_shape ,
         color                => $map_color ,
         width                => $map_width ,
