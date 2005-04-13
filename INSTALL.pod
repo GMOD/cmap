@@ -8,12 +8,12 @@ CMap Install
 
 =head1 VERSION
 
-$Revision: 1.13 $
+$Revision: 1.14 $
 
 =head1 QUICK START
 
-If you are upgrading from 0.12, please read the "upgrade-12-to-13.pod"
-document in the "upgrade" directory.
+If you are upgrading from a previous version of Cmap, please see the
+"upgrade" directory.
 
 If you are installing CMap anew and are pretty experienced with Unix
 systems administration, here is the very abbreviated explanation of
@@ -426,13 +426,16 @@ file, you will have to alter this file.
 
 =item *
 
-The "cmap.conf" directory will be created in the "conf" directory and will
-contain a global.conf to set the "template_dir" and "cache_dir" to match 
-the "TEMPLATES" and "CACHE" arguments to "Build.PL," respectively.  
-It will then be copied to the "CONF" location.  Additionally, individual
-database config files such as mysql1.conf will be copied into the cmap.conf
-directory.  These individual config files should be edited with specific 
-database information.
+The "cmap.conf" directory will be created in the "conf" directory and
+will contain a global.conf to set the "template_dir" and "cache_dir"
+to match the "TEMPLATES" and "CACHE" arguments to "Build.PL,"
+respectively.  It will then be copied to the "CONF" location.
+Additionally, an example individual database config file, example.conf
+will be copied into the cmap.conf directory.  Individual config files
+should be edited with specific database information.
+
+For additional information on editing config files see
+ADMINISTRATION.pod.
 
 =item *
 
@@ -470,20 +473,19 @@ arguments will be relative to the prefix.  If you do not specify a
 "PREFIX," then all paths with be considered absolute.  The final
 installation paths will be reported to you before installation occurs.
 
-Be sure to update your database specific config files located in 
-"cmap.conf/" after installation with the correct database connection information.  
-(If you forget the location of the configuration file and you installed 
-via option #1, then you can look in the "cmap_install.conf" file in the 
-source directory of the CMap application.)  Multiple specific .conf files
-can be used.  "mysql1.conf" is provided as a default conf file but should
-be edited to your liking.  Also, additional examples have been provided as
-*.conf.o files.
+Be sure to update your database specific config files located in
+"cmap.conf/" after installation with the correct database connection
+information.  (If you forget the location of the configuration file
+and you installed via option #1, then you can look in the
+"cmap_install.conf" file in the source directory of the CMap
+application.)  Multiple specific .conf files can be used.
+"example.conf" is provided as an example conf file but should be
+edited to your liking.  
 
-The database section is at the top of the
-file.  I would encourage you to look around this file and change
-things to affect the look and feel of your site.  If you don't like a
-change, comment out the line by placing a pound sign ("#") at the
-beginning of the line.
+The database section is at the top of the file.  I would encourage you
+to look around this file and change things to affect the look and feel
+of your site.  If you don't like a change, comment out the line by
+placing a pound sign ("#") at the beginning of the line.
 
 The files B<will not> be overwritten if they exist unless you give the
 OK:
@@ -694,3 +696,5 @@ instructions:
 =head1 AUTHOR
 
 Ken Y. Clark E<lt>kclark@cshl.orgE<gt>
+
+Ben Faga E<lt>faga@cshl.orgE<gt>
