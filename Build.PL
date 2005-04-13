@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.42 2004-12-17 20:00:08 mwz444 Exp $
+# $Id: Build.PL,v 1.42.2.1 2005-04-13 18:51:15 mwz444 Exp $
 
 use strict;
 use CMapBuilder;
@@ -171,28 +171,28 @@ my $builder           =  CMapBuilder->new(
     script_files      => [ 'bin/cmap_admin.pl' ],
     sign              => 1,
     requires          => {
+        'Algorithm::Numerical::Sample' => 0,
+        'Bit::Vector'        => 0,
+        'Cache::FileCache'   => 0,
         'Class::Base'        => 0,
+        'CGI'                => 0,
         'Config::General'    => 0,
         'Data::Page'         => 0,
         'Data::Pageset'      => 0,
+        'Date::Format'       => 0,
         'DBI'                => 1.20,
         'File::Temp'         => 0,
         'IO::Tee'            => 0,
         'GD'                 => 2.11,
         'GD::SVG'            => 0.25,
         'Regexp::Common'     => 0,
+        'Storable'           => 0,
         'Template'           => 2.00,
         'Text::RecordParser' => 0.02,
         'Time::Piece'        => 0,
         'Time::ParseDate'    => 0,
-        'XML::Simple'        => 0,
-        'Cache::FileCache'   => 0,
-        'Storable'           => 0,
-        'Algorithm::Numerical::Sample' => 0,
-        'Bit::Vector'        => 0,
-        'CGI'                => 0,
         'URI::Escape'        => 0,
-        'Date::Format'       => 0,
+        'XML::Simple'        => 0,
     },
     PL_files         => {
         'cgi-bin/cmap.PL'    => 'cgi-bin/cmap',
