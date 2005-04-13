@@ -100,3 +100,6 @@ f1.feature_id=fc.feature_id1 and f2.feature_id=fc.feature_id2
 --DROP TABLE cmap_feature_type;
 --DROP TABLE cmap_map_cache;
 --DROP TABLE cmap_map_type;
+--alter table cmap_correspondence_evidence drop column evidence_type_id ;
+--alter table cmap_feature drop column feature_type_id ;
+--alter table cmap_map_set drop column map_type_id ;
