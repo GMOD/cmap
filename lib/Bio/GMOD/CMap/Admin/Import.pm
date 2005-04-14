@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Import;
 
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.60 2004-12-06 19:23:37 mwz444 Exp $
+# $Id: Import.pm,v 1.60.2.1 2005-04-14 18:45:10 mwz444 Exp $
 
 =pod
 
@@ -33,7 +33,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.60 $)[-1];
+$VERSION = (qw$Revision: 1.60.2.1 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -226,11 +226,12 @@ appended to the list of xrefs.
     my $db         = $self->db           or die 'No database handle';
     my $map_set_id = $args{'map_set_id'} or die 'No map set id';
     my $fh         = $args{'fh'}         or die 'No file handle';
-    my $overwrite = $args{'overwrite'} || 0;
+    my $overwrite  = $args{'overwrite'} || 0;
     my $allow_update =
       defined( $args{'allow_update'} )
       ? $args{'allow_update'}
       : 2;
+    my $maps       = $args{'maps'};
 
     $LOG_FH = $args{'log_fh'} || \*STDOUT;
 
@@ -275,13 +276,15 @@ appended to the list of xrefs.
         ($map_set_id)
     );
 
-    my %maps = map { uc $_->[0], { map_id => $_->[1] } } @$map_info;
+    unless ($maps and %$maps){
+        %$maps = map { uc $_->[0], { map_id => $_->[1] } } @$map_info;
+    }
     my %map_aids      = map { $_->[2], $_->[0] } @$map_info;
     my %modified_maps = ();
 
     $self->Print(
         "'$map_set_name' currently has ",
-        scalar keys %maps,
+        scalar keys %$maps,
         " maps.\n"
     );
 
@@ -289,8 +292,8 @@ appended to the list of xrefs.
     # Memorize the features currently on each map.
     #
     if ($overwrite) {
-        for my $map_name ( keys %maps ) {
-            my $map_id = $maps{$map_name}{'map_id'}
+        for my $map_name ( keys %$maps ) {
+            my $map_id = $maps->{$map_name}{'map_id'}
               or return $self->error("Map '$map_name' has no ID!");
 
             my $features = $db->selectall_arrayref(
@@ -304,7 +307,7 @@ appended to the list of xrefs.
             );
 
             for (@$features) {
-                $maps{$map_name}{'features'}{ $_->{'feature_id'} } = 0;
+                $maps->{$map_name}{'features'}{ $_->{'feature_id'} } = 1;
             }
 
             $self->Print(
@@ -412,9 +415,9 @@ appended to the list of xrefs.
             $map_id = $last_map_id;
         }
         else {
-            if ( exists $maps{ uc $map_name } ) {
-                $map_id = $maps{ uc $map_name }{'map_id'};
-                $maps{ uc $map_name }{'touched'} = 1;
+            if ( exists $maps->{ uc $map_name } ) {
+                $map_id = $maps->{ uc $map_name }{'map_id'};
+                $maps->{ uc $map_name }{'touched'} = 1;
                 $modified_maps{ ( uc $map_name, ) } = 1;
             }
 
@@ -458,8 +461,8 @@ appended to the list of xrefs.
                 );
 
                 $self->Print("Created map $map_name ($map_id).\n");
-                $maps{ uc $map_name }{'map_id'}  = $map_id;
-                $maps{ uc $map_name }{'touched'} = 1;
+                $maps->{ uc $map_name }{'map_id'}  = $map_id;
+                $maps->{ uc $map_name }{'touched'} = 1;
                 $modified_maps{ ( uc $map_name, ) } = 1;
 
                 $map_info{$map_id}{'map_id'}         ||= $map_id;
@@ -601,8 +604,8 @@ appended to the list of xrefs.
                     )
                 );
 
-                $maps{ uc $map_name }{'features'}{$feature_id} = 1
-                  if defined $maps{ uc $map_name }{'features'}{$feature_id};
+                $maps->{ uc $map_name }{'features'}{$feature_id} = 1
+                  if defined $maps->{ uc $map_name }{'features'}{$feature_id};
             }
             else {
 
@@ -752,21 +755,21 @@ appended to the list of xrefs.
     # updated, if necessary.
     #
     if ($overwrite) {
-        for my $map_name ( sort keys %maps ) {
-            my $map_id = $maps{ uc $map_name }{'map_id'}
+        for my $map_name ( sort keys %$maps ) {
+            my $map_id = $maps->{ uc $map_name }{'map_id'}
               or return $self->error("Map '$map_name' has no ID!");
 
-            unless ( $maps{ uc $map_name }{'touched'} ) {
+            unless ( $maps->{ uc $map_name }{'touched'} ) {
                 $self->Print( "Map '$map_name' ($map_id) ",
                     "wasn't updated or inserted, so deleting\n" );
                 $admin->map_delete( map_id => $map_id )
                   or return $self->error( $admin->error );
-                delete $maps{ uc $map_name };
+                delete $maps->{ uc $map_name };
                 next;
             }
 
             while ( my ( $feature_id, $touched ) =
-                each %{ $maps{ uc $map_name }{'features'} } )
+                each %{ $maps->{ uc $map_name }{'features'} } )
             {
                 next if $touched;
                 $self->Print( "Feature '$feature_id' ",
@@ -781,7 +784,7 @@ appended to the list of xrefs.
     # Make sure the maps have legitimate starts and stops.
     #
     for my $map_name ( sort keys %modified_maps ) {
-        my $map_id = $maps{$map_name}{'map_id'};
+        my $map_id = $maps->{$map_name}{'map_id'};
         my ( $map_start, $map_stop ) = $db->selectrow_array(
             q[
                 select map.start_position, map.stop_position

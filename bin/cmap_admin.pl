@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.83.2.12 2005-04-13 16:34:37 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.83.2.13 2005-04-14 18:45:08 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.83.2.12 $)[-1];
+$VERSION = (qw$Revision: 1.83.2.13 $)[-1];
 
 #
 # Get command-line options
@@ -471,7 +471,7 @@ sub delete_correspondences {
     chomp( my $answer = <STDIN> );
     return if $answer =~ /^[Nn]/;
 
-    my $evidence_types =
+    my $evidence_type_str =
       "'" . join( "','", map { $_->[0] } @evidence_types ) . "'";
     my %evidence_lookup = map { $_->[0], 1 } @evidence_types;
     my $admin           = $self->admin;
@@ -492,7 +492,7 @@ sub delete_correspondences {
                 and    f.feature_id=cl.feature_id1
                 and    cl.feature_correspondence_id=fc.feature_correspondence_id
                 and    fc.feature_correspondence_id=ce.feature_correspondence_id
-                and    ce.evidence_type_accession in ($evidence_types)
+                and    ce.evidence_type_accession in ($evidence_type_str)
             ],
             'feature_correspondence_id',
             {},
@@ -1286,7 +1286,9 @@ sub get_files {
 
     # allow filename expantion and put into @files
     foreach my $str (@file_strs) {
-        push @files, glob($str);
+        my @tmp_files = glob($str);
+        print "WARNING: Unable to read '$str'!\n" unless (@tmp_files);
+        push @files, @tmp_files;
     }
     foreach ( my $i = 0 ; $i <= $#files ; $i++ ) {
         if ( -r $files[$i] and -f $files[$i] ) {
@@ -2177,6 +2179,7 @@ sub import_tab_data {
       Bio::GMOD::CMap::Admin::Import->new( data_source => $self->data_source, );
 
     my $time_start = new Benchmark;
+    my %maps; #stores the maps info between each file
     foreach my $file (@$files) {
         my $fh = IO::File->new($file) or die "Can't read $file: $!";
         $importer->import_tab(
@@ -2186,6 +2189,7 @@ sub import_tab_data {
             log_fh       => $self->log_fh,
             overwrite    => $overwrite,
             allow_update => $allow_update,
+            maps         => \%maps,
           )
           or do {
             print "Error: ", $importer->error, "\n";
@@ -2531,6 +2535,7 @@ sub show_menu {
     else {
         # only one choice, use it.
         $result =  [ map { $data->[0]->{$_} } @return ] ;
+        $result = [ $result ] if ($args{'allow_mult'});
         unless ( wantarray or scalar(@$result) != 1 ) {
             $result = $result->[0];
         }
