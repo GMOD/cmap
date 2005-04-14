@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 
 # vim: set ft=perl:
 
-# $Id: ImportCorrespondences.pm,v 1.26 2005-03-04 21:17:05 mwz444 Exp $
+# $Id: ImportCorrespondences.pm,v 1.27 2005-04-14 19:15:39 mwz444 Exp $
 
 =head1 NAME
 
@@ -51,7 +51,7 @@ feature names, a correspondence will be created.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.26 $)[-1];
+$VERSION = (qw$Revision: 1.27 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -325,9 +325,10 @@ which is slow.  Setting to 0 is recommended.
 
             unless ( $self->evidence_type_data($evidence_type_aid) ) {
                 $self->Print(
-"Evidence type accession '$evidence_type_aid' doesn't exist.  After import, please add it to your configuration file.[<enter> to continue] "
+"Evidence type accession '$evidence_type_aid' doesn't exist.  Please add it to your configuration file.[<enter> to continue] "
                 );
                 chomp( my $answer = <STDIN> );
+                return;
             }
 
             push @evidence_type_aids, [ $evidence_type_aid, $score ];
@@ -344,8 +345,8 @@ which is slow.  Setting to 0 is recommended.
                       || $map_set_ids{ $feature2->{'map_set_id'} };
                 }
 
-                for my $evidence_type_aid (@evidence_type_aids) {
-                    my ( $evidence_type_aid, $score ) = @$evidence_type_aid;
+                for my $evidence_type_aid_list (@evidence_type_aids) {
+                    my ( $evidence_type_aid, $score ) = @$evidence_type_aid_list;
                     my $fc_id = $admin->add_feature_correspondence_to_list(
                         feature_id1       => $feature1->{'feature_id'},
                         feature_id2       => $feature2->{'feature_id'},
