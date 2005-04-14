@@ -1,5 +1,14 @@
                       Revision history for CMap
 
+0.14    2005-04-14
+
+-   Fixed Bugs.
+-   Utilized evidence score.
+-   Decreased the length of viewer URLs by reducing "feature_type_*" to "ft_*".
+-   Added the ability to change the alt text and the url of area boxes in the 
+    config (just like the $code var).
+-   Added object plugin code for the *_details pages.
+
 0.13    2004-12-17
 
 -   Expanded/reorganized/hidden menus.  Many more options for
