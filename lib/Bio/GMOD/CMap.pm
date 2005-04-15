@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.67.2.11 2005-03-30 22:02:12 mwz444 Exp $
+# $Id: CMap.pm,v 1.67.2.12 2005-04-15 15:22:52 mwz444 Exp $
 
 =head1 NAME
 
@@ -352,23 +352,23 @@ Returns a database handle.  This is the only way into the database.
     return unless $db_name;
 
     unless ( defined $self->{'db'} ) {
-        my $config = $config->get_config('database')
+        my $database_info = $config->get_config('database')
           or return $self->error('No database configuration options defined');
 
-        unless ( ref $config eq 'HASH' ) {
+        unless ( ref $database_info eq 'HASH' ) {
             return $self->error( 'DB config not a hash.  '
                   . 'You may have more than one "database" specified in the config file'
             );
         }
 
         return $self->error("Couldn't determine database info")
-          unless defined $config;
+          unless defined $database_info;
 
-        my $datasource = $config->{'datasource'}
+        my $datasource = $database_info->{'datasource'}
           or $self->error('No database source defined');
-        my $user = $config->{'user'}
+        my $user = $database_info->{'user'}
           or $self->error('No database user defined');
-        my $password = $config->{'password'} || '';
+        my $password = $database_info->{'password'} || '';
         my $options = {
             AutoCommit       => 1,
             FetchHashKeyName => 'NAME_lc',
