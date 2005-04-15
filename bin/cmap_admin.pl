@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.100 2005-04-14 18:46:52 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.101 2005-04-15 17:19:46 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.100 $)[-1];
+$VERSION = (qw$Revision: 1.101 $)[-1];
 
 #
 # Get command-line options
@@ -809,7 +809,7 @@ sub export_as_text {
         '  Data source     : ' . $self->data_source,
         "  Map Sets        :\n" . join( "\n", map { "    $_" } @map_set_names ),
         "  Feature Types   :\n"
-          . join( "\n", map { "    $_->[2]" } @$display_feature_types ),
+          . join( "\n", map { "    $_->[1]" } @$display_feature_types ),
         "  Exclude Fields  : $excluded_fields",
         "  Directory       : $dir",
         "[Y/n] " );
@@ -1353,7 +1353,9 @@ sub get_files {
 
     # allow filename expantion and put into @files
     foreach my $str (@file_strs) {
-        push @files, glob($str);
+        my @tmp_files = glob($str);
+        print "WARNING: Unable to read '$str'!\n" unless (@tmp_files);
+        push @files, @tmp_files;
     }
     foreach ( my $i = 0 ; $i <= $#files ; $i++ ) {
         if ( -r $files[$i] and -f $files[$i] ) {
@@ -1615,7 +1617,7 @@ sub get_feature_types {
     else {
         $ft_sql_data =
           $self->fake_selectall_arrayref( $self->feature_type_data(),
-            'feature_type_aid', 'feature_type' );
+            'feature_type_accession as feature_type_aid', 'feature_type' );
     }
     $ft_sql_data = sort_selectall_arrayref( $ft_sql_data, 'feature_type' );
 
