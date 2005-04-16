@@ -1,0 +1,36 @@
+[% 
+    INCLUDE header.tmpl 
+    title=title
+    cur_sec=''
+    help_anchor=''
+%]
+
+[%- IF intro -%]
+<p>[% intro %]</p>
+[%- END -%]
+
+<h1>Login Required</h1>
+<p>
+[% err_msg %]
+</p>
+<form method="POST" action="/db/cmap/login">
+<table>
+  <tr>
+    <th align="right">User Name:</th>
+    <td><input type="text" size="30" name="user_name" value="[% apr.param('user_name') %]"></td>
+  </tr>
+  <tr>
+    <th align="right">Password:</th>
+    <td><input type="password" size="30" name="password" value="[% apr.param('password') %]"></td>
+  </tr>
+  <tr>
+    <td colspan="2">
+      <input type="hidden" name="redirect_url" value="[% redirect_url %]">
+      <input type="reset" value="Reset">
+      <input type="submit" value="Login">
+    </td>
+  </tr>
+</table>
+</form>
+
+[% INCLUDE footer.tmpl %]
