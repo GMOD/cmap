@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache;
 
 # vim: set ft=perl:
 
-# $Id: Apache.pm,v 1.27 2005-03-23 21:56:12 mwz444 Exp $
+# $Id: Apache.pm,v 1.28 2005-04-16 01:35:08 kycl4rk Exp $
 
 =head1 NAME
 
@@ -47,10 +47,12 @@ this class will catch errors and display them correctly.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.27 $)[-1];
+$VERSION = (qw$Revision: 1.28 $)[-1];
 
 use CGI;
+use Apache::Htpasswd;
 use Data::Dumper;
+use Digest::MD5 'md5';
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Apache::AdminViewer;
@@ -63,6 +65,7 @@ use Bio::GMOD::CMap::Apache::FeatureSearch;
 use Bio::GMOD::CMap::Apache::FeatureTypeViewer;
 use Bio::GMOD::CMap::Apache::HelpViewer;
 use Bio::GMOD::CMap::Apache::Index;
+use Bio::GMOD::CMap::Apache::Login;
 use Bio::GMOD::CMap::Apache::MapSetViewer;
 use Bio::GMOD::CMap::Apache::MapTypeViewer;
 use Bio::GMOD::CMap::Apache::MapViewer;
@@ -91,6 +94,7 @@ use constant DISPATCH => {
     download_data       => __PACKAGE__ . '::DataDownloader',
     help                => __PACKAGE__ . '::HelpViewer',
     index               => __PACKAGE__ . '::Index',
+    login               => __PACKAGE__ . '::Login',
     map_details         => __PACKAGE__ . '::MapViewer',
     map_set_info        => __PACKAGE__ . '::MapSetViewer',
     map_type_info       => __PACKAGE__ . '::MapTypeViewer',
@@ -146,13 +150,24 @@ the handler to the derived class's "handler" method.
     }
 
     $path_info = DEFAULT->{'path_info'} unless exists DISPATCH->{$path_info};
-    my $class = DISPATCH->{$path_info};
+    my $class  = DISPATCH->{$path_info};
     my $module = $class->new( apr => $apr );
     my $status;
 
     eval {
         $module->handle_cookie;
-        $status = $module->handler($apr);
+
+        unless ( $path_info eq 'login' ) {
+            unless ( $module->check_datasource_credentials ) {
+                $class  = DISPATCH->{'login'};
+                $module = $class->new( 
+                    apr          => $apr,
+                    redirect_url => $apr->url( -path => 1, -query => 1 )
+                );
+            }
+        }
+
+        $status = $module->handler( $apr );
     };
 
     if ( my $e = $@ || $module->error ) {
@@ -197,6 +212,39 @@ Returns the Apache::Request object.
 
     my $self = shift;
     return $self->{'apr'};
+}
+
+# ----------------------------------------------------
+sub check_datasource_credentials {
+
+=pod
+
+=head2 check_datasource_credentials
+
+See if we need to prompt for user/pass for the given datasource.
+
+=cut
+
+    my $self    = shift;
+    my $apr     = $self->apr;
+    my $ds      = $self->data_source($apr->param('data_source')) or return;
+    my $config  = $self->config or return;
+    my $db_conf = $config->get_config('database');
+
+    if ( my $passwd_file = $db_conf->{'passwd_file'} ) {
+        if ( my $cookie = $apr->cookie('CMAP_LOGIN') ) {
+            my $sekrit  = 'r1ce1sn2c3';
+            my ( $user, $ds2, $auth ) = split( /:/, $cookie );
+            return $ds eq $ds2 &&
+                md5( $user . $ds . $sekrit ) eq $auth;
+        }
+        else {
+            return 0;    
+        }
+    }
+    else {
+        return 1;
+    }
 }
 
 # ----------------------------------------------------
