@@ -130,6 +130,8 @@ sub add_to_read_depth{
     my $current_depth = shift;
     my $depth_data    = shift;
     my $stop_data     = shift;
+
+    ### Adjust current depth and stops
     while (scalar(@$stop_data)){
         if ($start>$stop_data->[0]){
             ###There is a stop before this start
@@ -204,6 +206,7 @@ sub processContig{
     my $depth_data   = shift;
     my $main_output  = shift;
     my $clone_output = shift;
+    my @read_pair_data;
     my %count=('singlet'=>0,'far'=>0,'good'=>0);
     foreach my $name (keys %{$read_data}){
         if (not $read_data->{$name}[0] or 
@@ -213,29 +216,71 @@ sub processContig{
             printSinglet($name,$read_data,$main_output);
             next;
         }
-        
-        if (abs($read_data->{$name}[0][0] - 
+        elsif (abs($read_data->{$name}[0][0] - 
             $read_data->{$name}[1][0]) >300000){
             #p#rint S#TDERR "distance $name\n";
                 $count{'far'}++;
             printDistance($name,$read_data,$contig,$main_output);
             next;
         }
-        $count{'good'}++;
-        printClone($name,$read_data,$contig,$clone_output);
+        else{
+            $count{'good'}++;
+            my $start = $read_data->{$name}[0][0];
+            my $stop  = $read_data->{$name}[1][0];
+            ($start,$stop) = ($stop,$start) if ($start>$stop);
+            push @read_pair_data, [ $start, $stop ];
+            printClone($name,$read_data,$contig,$clone_output);
+        }
     }
     foreach my $key (keys %count){
         print STDERR "$contig $key $count{$key}\n";;
     }
-    processReadDepth($contig,$depth_data,$main_output);
+    processReadDepth(
+        contig     => $contig,
+        depth_data => $depth_data,
+        fh         => $main_output,
+        type       => 'read_depth',
+    );
+
+    ### deal read pair depth
+    my $current_pair_depth = 0;
+    my @real_read_depths   = ();
+    my @remaining_stops    = ();
+    @read_pair_data = sort sort_read_pairs @read_pair_data;
+    foreach my $data (@read_pair_data){
+        my $pair_start = $data->[0];
+        my $pair_stop  = $data->[1];
+    
+        
+        $current_pair_depth=add_to_read_depth(
+            $pair_start,
+            $pair_stop,
+            $current_pair_depth,
+            \@real_read_depths,
+            \@remaining_stops
+        );
+    }
+    finish_read_depth(
+        $current_pair_depth,
+        \@real_read_depths,
+        \@remaining_stops
+    );
+    processReadDepth(
+        contig     => $contig,
+        depth_data => \@real_read_depths,
+        fh         => $main_output,
+        type       => 'pair_depth',
+    ) if (scalar(@real_read_depths));
 }
 
 sub processReadDepth{
-    my $contig      = shift;
-    my $depth_data  = shift;
-    my $fh          = shift;
-    
-    my $w_size          =5000;
+    my %args        = @_;
+    my $contig      = $args{'contig'};
+    my $depth_data  = $args{'depth_data'};
+    my $fh          = $args{'fh'};
+    my $type        = $args{'type'};
+    my $w_size      = $args{'w_size'}|| 5000;
+
     my $w_start         =undef;
     my $w_stop          =$w_size;
     my $w_current_avg   =0;
@@ -264,7 +309,7 @@ sub processReadDepth{
                  ($region->[2]*$segment_length)
                 )/$new_current_bases;
             print $fh "$contig\t".int($w_current_avg+.5)."\t$w_start\t"
-                . ($w_start + $new_current_bases-1)."\tread_depth\n";
+                . ($w_start + $new_current_bases-1)."\t$type\n";
             $w_start = $w_stop+1;
             $w_stop += $w_size; 
             $w_current_bases = 0;
@@ -272,7 +317,7 @@ sub processReadDepth{
             #Deal with any windows that will fit inside the region
             while ($region->[1]>$w_stop){
                 print $fh "$contig\t".$region->[2]."\t$w_start\t"
-                . $w_stop."\tread_depth\n";
+                . $w_stop."\t$type\n";
                 $w_start = $w_stop+1;
                 $w_stop += $w_size;
                 $w_current_bases = 0;
@@ -291,10 +336,10 @@ sub processReadDepth{
                  ($region->[2]*$region_length)
                 )/$new_current_bases;
         }
-        $w_current_bases = $new_current_bases
+        $w_current_bases = $new_current_bases;
     }
     print $fh "$contig\t".int($w_current_avg+.5)."\t$w_start\t"
-                . ($w_start + $new_current_bases-1)."\tread_depth\n";
+                . ($w_start + $new_current_bases-1)."\t$type\n";
 
 }
 
@@ -347,3 +392,8 @@ sub ordered_insert{
     push @$array,$value;
 }
 
+sub sort_read_pairs {
+    return ($a->[0] <=> $b->[0]) if ($a->[0] <=> $b->[0]);
+    return ($a->[1] <=> $b->[1]);
+}
+    
