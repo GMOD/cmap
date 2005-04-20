@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.63 2005-03-15 15:04:16 mwz444 Exp $
+# $Id: Generic.pm,v 1.64 2005-04-20 17:09:51 mwz444 Exp $
 
 =head1 NAME
 
@@ -33,33 +33,11 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.63 $)[-1];
+$VERSION = (qw$Revision: 1.64 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Bio::GMOD::CMap;
 use base 'Bio::GMOD::CMap';
-
-# ----------------------------------------------------
-sub cmap_data_feature_count_sql {
-
-=pod
-
-=head2 cmap_data_feature_count_sql
-
-The SQL for finding the number of features on a map.
-
-=cut
-
-    my ( $self, %args ) = @_;
-
-    return q[
-        select count(f.feature_id)
-        from   cmap_feature f
-        where  f.map_id=?
-        and    f.start_position>=?
-        and    f.start_position<=?
-    ];
-}
 
 # ----------------------------------------------------
 sub cmap_data_features_sql {
@@ -113,45 +91,6 @@ The SQL for finding all the features on a map.
     $sql .= "order by $order_by" if $order_by;
 
     return $sql;
-}
-
-# ----------------------------------------------------
-sub cmap_data_map_info_sql {
-
-=pod
-
-=head2 cmap_data_map_info_sql
-
-The SQL for finding info on a map.
-
-=cut
-
-    my $self = shift;
-    return q[
-        select map.map_id,
-               map.accession_id,
-               map.map_name,
-               map.start_position,
-               map.stop_position,
-               map.display_order,
-               ms.map_set_id,
-               ms.accession_id as map_set_aid,
-               ms.short_name as map_set_name,
-               ms.shape,
-               ms.width,
-               ms.color,
-               ms.map_type_accession,
-               ms.map_units,
-               ms.is_relational_map,
-               s.species_id,
-               s.common_name as species_name
-        from   cmap_map map,
-               cmap_map_set ms,
-               cmap_species s,
-        where  map.map_id=?
-        and    map.map_set_id=ms.map_set_id
-        and    ms.species_id=s.species_id
-    ];
 }
 
 # ----------------------------------------------------
@@ -269,59 +208,6 @@ The SQL for finding correspondences for a feature.
     ];
 
     return $sql;
-}
-
-# ----------------------------------------------------
-sub fill_out_maps_by_map_sql {
-
-=pod
-
-=head2 fill_out_maps_by_map_sql
-
-The SQL for finding basic info on a map.
-
-=cut
-
-    my $self = shift;
-    return q[
-        select map.map_id,
-               map.accession_id as map_aid,
-               map.map_name,
-               ms.map_set_id,
-               ms.accession_id as map_set_aid,
-               ms.short_name as map_set_name,
-               s.common_name as species_name
-        from   cmap_map map,
-               cmap_map_set ms,
-               cmap_species s
-        where  map.accession_id=?
-        and    map.map_set_id=ms.map_set_id
-        and    ms.species_id=s.species_id
-    ];
-}
-
-# ----------------------------------------------------
-sub fill_out_maps_by_map_set_sql {
-
-=pod
-
-=head2 fill_out_maps_by_map_set_sql
-
-The SQL for finding basic info on a map.
-
-=cut
-
-    my $self = shift;
-    return q[
-        select ms.map_set_id,
-               ms.short_name as map_set_name,
-               ms.accession_id as map_set_aid,
-               s.common_name as species_name
-        from   cmap_map_set ms,
-               cmap_species s
-        where  ms.accession_id=?
-        and    ms.species_id=s.species_id
-    ];
 }
 
 # ----------------------------------------------------
@@ -478,127 +364,6 @@ The SQL for finding all reference maps.
 }
 
 # ----------------------------------------------------
-sub map_data_map_ids_by_single_reference_map {
-
-=pod
-
-=head2 map_data_map_ids_by_single_reference_map
-
-The SQL for finding all the maps of a given study which
-have some correspondence to a given region of a reference
-map.
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my @evidence_type_aids = @{ $args{'evidence_type_aids'} || [] };
-
-    if (@evidence_type_aids) {
-        return q[
-            select   distinct map.map_id,
-                     map.accession_id,
-                     map.map_name,
-                     map.start_position,
-                     map.stop_position,
-                     map.display_order,
-                     ms.map_set_id,
-                     ms.accession_id as map_set_aid,
-                     ms.short_name as map_set_name,
-                     ms.shape,
-                     ms.width,
-                     ms.color,
-                     ms.map_type_accession as map_type_aid,
-                     ms.map_units,
-                     ms.is_relational_map,
-                     s.species_id,
-                     s.accession_id as species_aid,
-                     s.common_name as species_name
-            from     cmap_map map,
-                     cmap_feature f1, 
-                     cmap_feature f2, 
-                     cmap_correspondence_lookup cl,
-                     cmap_feature_correspondence fc,
-                     cmap_correspondence_evidence ce,
-                     cmap_map_set ms,
-                     cmap_species s,
-            where    f1.map_id=?
-            and      (
-                ( f1.start_position>=? and
-                  f1.start_position<=? )
-                or   (
-                    f1.stop_position is not null and
-                    f1.start_position<=? and
-                    f1.stop_position>=?
-                )
-            )
-            and      f1.feature_id=cl.feature_id1
-            and      cl.feature_correspondence_id=fc.feature_correspondence_id
-            and      fc.is_enabled=1
-            and      fc.feature_correspondence_id=ce.feature_correspondence_id
-            and      ce.evidence_type_accession in (']
-          . join( "','", @evidence_type_aids ) . q[')
-            and      cl.feature_id2=f2.feature_id
-            and      f2.map_id=map.map_id
-            and      map.map_set_id=?
-            and      map.map_id<>?
-            and      map.map_set_id=ms.map_set_id
-            and      ms.species_id=s.species_id
-            order by map.display_order, map.map_name
-        ];
-    }
-    else {
-        return q[
-            select   distinct map.map_id,
-                     map.accession_id,
-                     map.map_name,
-                     map.start_position,
-                     map.stop_position,
-                     map.display_order,
-                     ms.map_set_id,
-                     ms.accession_id as map_set_aid,
-                     ms.short_name as map_set_name,
-                     ms.shape,
-                     ms.width,
-                     ms.color,
-                     ms.map_type_accession as map_type_aid,
-                     ms.map_units,
-                     ms.is_relational_map,
-                     s.species_id,
-                     s.common_name as species_name
-            from     cmap_map map,
-                     cmap_feature f1, 
-                     cmap_feature f2, 
-                     cmap_map_set ms,
-                     cmap_species s,
-                     cmap_correspondence_lookup cl,
-                     cmap_feature_correspondence fc
-            where    f1.map_id=?
-            and      (
-                ( f1.start_position>=? and
-                  f1.start_position<=? )
-                or   (
-                    f1.stop_position is not null and
-                    f1.start_position<=? and
-                    f1.stop_position>=?
-                )
-            )
-            and      f1.feature_id=cl.feature_id1
-            and      cl.feature_correspondence_id=fc.feature_correspondence_id
-            and      fc.is_enabled=1
-            and      cl.feature_id2=f2.feature_id
-            and      f2.map_id=map.map_id
-            and      map.map_set_id=?
-            and      map.map_id<>?
-            and      map.map_set_id=ms.map_set_id
-            and      ms.species_id=s.species_id
-            order by map.display_order, map.map_name
-        ];
-    }
-
-    return 1;
-}
-
-# ----------------------------------------------------
 sub map_stop_sql {
 
 =pod
@@ -670,20 +435,6 @@ The SQL for finding the minimum position of features.
     }
 
     return $sql;
-}
-
-# ----------------------------------------------------
-sub set_date_format {
-
-=pod
-
-=head2 set_date_format
-
-The SQL for setting the proper date format.
-
-=cut
-
-    return 1;
 }
 
 1;
