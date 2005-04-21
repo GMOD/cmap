@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.95 2005-03-30 22:18:06 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.96 2005-04-21 15:10:59 kycl4rk Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.95 $)[-1];
+$VERSION = (qw$Revision: 1.96 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -488,6 +488,10 @@ sub handler {
         ref_slot_data           => $drawer->{'data'}->{'slots'}{0},
       )
       or return $self->error( $data->error );
+    
+    for my $key ( qw[ ref_species_aid ref_map_set_aid ] ) {
+        $apr->param( $key, $form_data->{ $key } );
+    }
 
     my $feature_default_display = $data->feature_default_display;
 
