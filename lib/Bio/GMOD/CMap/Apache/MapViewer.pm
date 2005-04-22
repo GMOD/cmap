@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.96 2005-04-21 15:10:59 kycl4rk Exp $
+# $Id: MapViewer.pm,v 1.97 2005-04-22 21:21:31 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.96 $)[-1];
+$VERSION = (qw$Revision: 1.97 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -569,10 +569,10 @@ sub handler {
         my ( $comparative_map_field, $comparative_map_aid ) = 
             split( /=/, $apr->param('comparative_map') );
         my ($map_aid) = keys %ref_maps;
-        my $map_id = $drawer->data_module->acc_id_to_internal_id(
-            table    => 'cmap_map',
-            acc_id   => $map_aid,
-            field_id => 'map_id'
+        my $map_id = $self->sql->acc_id_to_internal_id(
+            cmap_object => $self,
+            object_name => 'map',
+            acc_id      => $map_aid,
         );
 
         my $detail_data = $data->map_detail_data(

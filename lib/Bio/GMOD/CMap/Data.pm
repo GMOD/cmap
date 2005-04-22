@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.221 2005-04-22 15:22:15 mwz444 Exp $
+# $Id: Data.pm,v 1.222 2005-04-22 21:21:14 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.221 $)[-1];
+$VERSION = (qw$Revision: 1.222 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -56,58 +56,58 @@ sub init {
 }
 
 # ----------------------------------------------------
-sub acc_id_to_internal_id {
-
-=pod
-
-=head2 acc_id_to_internal_id
-
-Given an accession id for a particular table, find the internal id.  Expects:
-
-    table   : the name of the table from which to select 
-    acc_id  : the value of the accession id
-    id_field: (opt.) the name of the internal id field
-
-=cut
-
-#REPLACED 1
-    my ( $self, %args ) = @_;
-    my $table  = $args{'table'}  or $self->error('No table');
-    my $acc_id = $args{'acc_id'} or $self->error('No accession id');
-    my $id_field = $args{'id_field'} || '';
-
-    #
-    # If no "id_field" param, then strip "cmap_" off the table
-    # name and append "_id".
-    #
-    unless ($id_field) {
-        if ( $table =~ m/^cmap_(.+)$/ ) {
-            $id_field = $1 . '_id';
-        }
-        else {
-            $self->error(qq[No id field and I cannot figure it out]);
-        }
-    }
-
-    my $db      = $self->db or return;
-    my $sql_str = qq[
-            select $id_field
-            from   $table
-            where  accession_id=?
-	  ];
-    my $id;
-    if ( my $scalarref = $self->get_cached_results( '', $sql_str . $acc_id ) ) {
-        $id = $$scalarref;
-    }
-    else {
-        $id = $db->selectrow_array( $sql_str, {}, ($acc_id) )
-          or $self->error(
-qq[Unable to find internal id for acc. id "$acc_id" in table "$table"]
-          );
-        $self->store_cached_results( '', $sql_str . $acc_id, \$id );
-    }
-    return $id;
-}
+#sub acc_id_to_internal_id {
+#
+#=pod
+#
+#=head2 acc_id_to_internal_id
+#
+#Given an accession id for a particular table, find the internal id.  Expects:
+#
+#    table   : the name of the table from which to select 
+#    acc_id  : the value of the accession id
+#    id_field: (opt.) the name of the internal id field
+#
+#=cut
+#
+##REPLACED 1
+#    my ( $self, %args ) = @_;
+#    my $table  = $args{'table'}  or $self->error('No table');
+#    my $acc_id = $args{'acc_id'} or $self->error('No accession id');
+#    my $id_field = $args{'id_field'} || '';
+#
+#    #
+#    # If no "id_field" param, then strip "cmap_" off the table
+#    # name and append "_id".
+#    #
+#    unless ($id_field) {
+#        if ( $table =~ m/^cmap_(.+)$/ ) {
+#            $id_field = $1 . '_id';
+#        }
+#        else {
+#            $self->error(qq[No id field and I cannot figure it out]);
+#        }
+#    }
+#
+#    my $db      = $self->db or return;
+#    my $sql_str = qq[
+#            select $id_field
+#            from   $table
+#            where  accession_id=?
+#	  ];
+#    my $id;
+#    if ( my $scalarref = $self->get_cached_results( '', $sql_str . $acc_id ) ) {
+#        $id = $$scalarref;
+#    }
+#    else {
+#        $id = $db->selectrow_array( $sql_str, {}, ($acc_id) )
+#          or $self->error(
+#qq[Unable to find internal id for acc. id "$acc_id" in table "$table"]
+#          );
+#        $self->store_cached_results( '', $sql_str . $acc_id, \$id );
+#    }
+#    return $id;
+#}
 
 # ----------------------------------------------------
 
@@ -128,43 +128,35 @@ sub correspondence_detail_data {
       or return $self->error('No correspondence accession ID');
     my $evidence_type_data = $self->evidence_type_data();
     my $db                 = $self->db;
-    my $sql                = q[
-            select feature_correspondence_id,
-                   accession_id,
-                   feature_id1,
-                   feature_id2,
-                   is_enabled
-            from   cmap_feature_correspondence
-            where  accession_id=?
-		 ];
+    my $sql_object         = $self->sql;
+    my $cache_key          = "correspondence_detail_data_".$correspondence_aid;
     my ( $corr, $feature1, $feature2 );
 
     if ( my $array_ref =
-        $self->get_cached_results( 4, $sql . $correspondence_aid ) )
+        $self->get_cached_results( 4, $cache_key ) )
     {
         ( $corr, $feature1, $feature2 ) = @$array_ref;
     }
     else {
-        my $sth = $db->prepare($sql);
-        $sth->execute($correspondence_aid);
+        $corr = $sql_object->get_correspondence_by_accession(
+            cmap_object => $self,
+            correspondence_aid => $correspondence_aid,
+        )
+          or return $sql_object->error();
 
-        $corr = $sth->fetchrow_hashref
-          or return $self->error(
-            "No record for correspondence accession ID '$correspondence_aid'");
-
-        $corr->{'attributes'} = $self->sql->get_attributes(
+        $corr->{'attributes'} = $sql_object->get_attributes(
             cmap_object => $self,
             object_name      => 'feature_correspondence',
             object_id   => $corr->{'feature_correspondence_id'},
         );
 
-        $corr->{'xrefs'} = $self->sql->get_xrefs(
+        $corr->{'xrefs'} = $sql_object->get_xrefs(
             cmap_object => $self,
             object_name      => 'feature_correspondence',
             object_id   => $corr->{'feature_correspondence_id'},
         );
 
-        $sth = $db->prepare(
+        my $sth = $db->prepare(
             q[
             select f.feature_id, 
                    f.accession_id as feature_aid, 
@@ -230,7 +222,7 @@ sub correspondence_detail_data {
             'evidence_type' );
         $self->store_cached_results(
             4,
-            $sql . $correspondence_aid,
+            $cache_key,
             [ $corr, $feature1, $feature2 ]
         );
     }
@@ -1288,119 +1280,21 @@ sub get_feature_correspondences {
         $map_start,                  $map_stop
       )
       = @_;
-    my $db             = $self->db;
-    my $to_restriction = '';
-    my $corr_sql;
-    my $evidence_type_data = $self->evidence_type_data();
-    if ( defined $map_start && defined $map_stop ) {
-        $to_restriction = qq[
-        and      (
-        ( cl.start_position2>=$map_start and 
-            cl.start_position2<=$map_stop )
-          or   (
-            cl.stop_position2 is not null and
-            cl.start_position2<=$map_start and
-            cl.stop_position2>=$map_start
-            )
-         )
-         ];
-    }
-    elsif ( defined($map_start) ) {
-        $to_restriction .=
-            " and (( cl.start_position2>="
-          . $map_start
-          . " ) or ( cl.stop_position2 is not null and "
-          . " cl.stop_position2>="
-          . $map_start . " ))";
-    }
-    elsif ( defined($map_stop) ) {
-        $to_restriction .= " and cl.start_position2<=" . $map_stop . " ";
-    }
 
-# REPLACE 12
-    $corr_sql = qq[
-        select   cl.feature_id1 as feature_id,
-                 f2.feature_id as ref_feature_id, 
-                 f2.feature_name as f2_name,
-                 f2.start_position as f2_start,
-                 f2.map_id,
-                 cl.feature_correspondence_id,
-                 ce.evidence_type_accession as evidence_type_aid
-        from     cmap_feature f2, 
-                 cmap_correspondence_lookup cl,
-                 cmap_feature_correspondence fc,
-                 cmap_correspondence_evidence ce
-        where    cl.feature_correspondence_id=
-                 fc.feature_correspondence_id
-        and      fc.is_enabled=1
-        and      fc.feature_correspondence_id=
-                 ce.feature_correspondence_id
-        and      cl.feature_id2=f2.feature_id
-        and      f2.map_id=?
-        $to_restriction
-    ];
-
-    if ( $self->slot_info->{$slot_no}
-        and %{ $self->slot_info->{$slot_no} } )
-    {
-        $corr_sql .=
-          " and cl.map_id1 in ("
-          . join( ",", keys( %{ $self->slot_info->{$slot_no} } ) ) . ")";
-    }
-
-#xx1
-    if ( @$included_evidence_type_aids or @$less_evidence_type_aids
-            or @$greater_evidence_type_aids ) {
-        $corr_sql .= "and ( ";
-        my @join_array;
-        if ( @$included_evidence_type_aids ) {
-            push @join_array,
-              " ce.evidence_type_accession in ('"
-              . join( "','", @$included_evidence_type_aids ) . "')";
-        }
-        foreach my $et_aid (@$less_evidence_type_aids ) {
-            push @join_array,
-                " ( ce.evidence_type_accession = '$et_aid' "
-              . " and ce.score <= ".$evidence_type_score->{$et_aid}." ) ";
-        }
-        foreach my $et_aid (@$greater_evidence_type_aids ) {
-            push @join_array,
-                " ( ce.evidence_type_accession = '$et_aid' "
-              . " and ce.score >= ".$evidence_type_score->{$et_aid}." ) ";
-        }
-        $corr_sql .= join (' or ', @join_array). " ) ";
-    }
-    else {
-        $corr_sql .= " and ce.correspondence_evidence_id = -1 ";
-    }
-
-    if (@$feature_type_aids) {
-        $corr_sql .=
-          " and cl.feature_type_accession1 in ('"
-          . join( "','", @$feature_type_aids ) . "')";
-    }
-
-    my $ref_correspondences;
-    unless ( $ref_correspondences =
-        $self->get_cached_results( 4, $corr_sql . $map_id ) )
-    {
-
-        $ref_correspondences =
-          $db->selectall_arrayref( $corr_sql, { Columns => {} }, ($map_id) );
-
-        foreach my $row ( @{$ref_correspondences} ) {
-            $row->{'evidence_rank'} =
-              $evidence_type_data->{ $row->{'evidence_type_aid'} }{'rank'};
-            $row->{'line_color'} =
-              $evidence_type_data->{ $row->{'evidence_type_aid'} }
-              {'line_color'};
-            $row->{'evidence_type'} =
-              $evidence_type_data->{ $row->{'evidence_type_aid'} }
-              {'evidence_type'};
-        }
-        $self->store_cached_results( 4, $corr_sql . $map_id,
-            $ref_correspondences );
-    }
+    my $ref_correspondences =
+        $self->sql->get_correspondences(
+            cmap_object  => $self,
+            map_id       => $map_id,
+            ref_map_info => $self->slot_info->{$slot_no} ,
+            map_start    => $map_start,
+            map_stop     => $map_stop,
+            included_evidence_type_aids => $included_evidence_type_aids,
+            less_evidence_type_aids     => $less_evidence_type_aids,
+            greater_evidence_type_aids  => $greater_evidence_type_aids,
+            evidence_type_score         => $evidence_type_score,
+            feature_type_aids           => $feature_type_aids,
+        );
+            
     for my $corr ( @{$ref_correspondences} ) {
         $feature_correspondences->{ $corr->{'feature_id'} }
           { $corr->{'ref_feature_id'} } = $corr->{'feature_correspondence_id'};
@@ -1429,6 +1323,10 @@ sub get_feature_correspondences {
 inserts correspondence info into $intraslot_correspondence and 
 $correspondence_evidence based on corrs from the slot
 
+This is basically the same as get_feature_correspondences (but with the
+intraslot value) but I am keeping it separate in case we decide to make it
+fancier.
+
 =cut
 
 sub get_intraslot_correspondences {
@@ -1441,92 +1339,19 @@ sub get_intraslot_correspondences {
         $evidence_type_score,         $feature_type_aids
       )
       = @_;
-    my $db             = $self->db;
-    my $to_restriction = '';
-    my $corr_sql;
-    my $evidence_type_data = $self->evidence_type_data();
 
-# REPLACE 13
-    $corr_sql = qq[
-        select   cl.feature_id1 as feature_id,
-                 f2.feature_id as ref_feature_id, 
-                 f2.feature_name as f2_name,
-                 f2.start_position as f2_start,
-                 f2.map_id,
-                 cl.feature_correspondence_id,
-                 ce.evidence_type_accession as evidence_type_aid
-        from     cmap_feature f2, 
-                 cmap_correspondence_lookup cl,
-                 cmap_feature_correspondence fc,
-                 cmap_correspondence_evidence ce
-        where    cl.feature_correspondence_id=
-                 fc.feature_correspondence_id
-        and      fc.is_enabled=1
-        and      fc.feature_correspondence_id=
-                 ce.feature_correspondence_id
-        and      cl.feature_id2=f2.feature_id
-        $to_restriction
-    ];
-
-    $corr_sql .=
-      " and cl.map_id1 in ("
-      . join( ",", keys( %{ $self->slot_info->{$slot_no} } ) ) . ")";
-    $corr_sql .=
-      " and cl.map_id2 in ("
-      . join( ",", keys( %{ $self->slot_info->{$slot_no} } ) ) . ")";
-    $corr_sql .= ' and cl.map_id1 < cl.map_id2 ';
-
-#xx2
-    if ( @$included_evidence_type_aids or @$less_evidence_type_aids
-            or @$greater_evidence_type_aids ) {
-        $corr_sql .= "and ( ";
-        my @join_array;
-        if ( @$included_evidence_type_aids ) {
-            push @join_array,
-              " ce.evidence_type_accession in ('"
-              . join( "','", @$included_evidence_type_aids ) . "')";
-        }
-        foreach my $et_aid (@$less_evidence_type_aids ) {
-            push @join_array,
-                " ( ce.evidence_type_accession = '$et_aid' "
-              . " and ce.score <= ".$evidence_type_score->{$et_aid}." ) ";
-        }
-        foreach my $et_aid (@$greater_evidence_type_aids ) {
-            push @join_array,
-                " ( ce.evidence_type_accession = '$et_aid' "
-              . " and ce.score >= ".$evidence_type_score->{$et_aid}." ) ";
-        }
-        $corr_sql .= join (' or ', @join_array). " ) ";
-    }
-    else {
-        $corr_sql .= " and ce.correspondence_evidence_id = -1 ";
-    }
-
-    if (@$feature_type_aids) {
-        $corr_sql .=
-          " and cl.feature_type_accession1 in ('"
-          . join( "','", @$feature_type_aids ) . "')";
-    }
-
-    my $ref_correspondences;
-    unless ( $ref_correspondences = $self->get_cached_results( 4, $corr_sql ) )
-    {
-
-        $ref_correspondences =
-          $db->selectall_arrayref( $corr_sql, { Columns => {} }, () );
-
-        foreach my $row ( @{$ref_correspondences} ) {
-            $row->{'evidence_rank'} =
-              $evidence_type_data->{ $row->{'evidence_type_aid'} }{'rank'};
-            $row->{'line_color'} =
-              $evidence_type_data->{ $row->{'evidence_type_aid'} }
-              {'line_color'};
-            $row->{'evidence_type'} =
-              $evidence_type_data->{ $row->{'evidence_type_aid'} }
-              {'evidence_type'};
-        }
-        $self->store_cached_results( 4, $corr_sql, $ref_correspondences );
-    }
+    my $ref_correspondences =
+        $self->sql->get_correspondences(
+            cmap_object  => $self,
+            ref_map_info => $self->slot_info->{$slot_no} ,
+            included_evidence_type_aids => $included_evidence_type_aids,
+            less_evidence_type_aids     => $less_evidence_type_aids,
+            greater_evidence_type_aids  => $greater_evidence_type_aids,
+            evidence_type_score         => $evidence_type_score,
+            feature_type_aids           => $feature_type_aids,
+            intraslot                   => 1,
+        );
+            
     for my $corr ( @{$ref_correspondences} ) {
         $intraslot_correspondences->{ $corr->{'feature_id'} }
           { $corr->{'ref_feature_id'} } = $corr->{'feature_correspondence_id'};
@@ -4842,6 +4667,7 @@ sub cmap_map_search_data {
             $self->store_cached_results( 1, $sql_str . $ref_map_set_aid,
                 \$ref_species_aid );
         }
+print STDERR "$ref_species_aid ref_species_aid\n";
     }
 
     #
@@ -4870,6 +4696,7 @@ sub cmap_map_search_data {
         $ref_species = $db->selectall_arrayref( $sql_str, { Columns => {} } );
         $self->store_cached_results( 1, $sql_str, \$ref_species );
     }
+print STDERR "$ref_species ref_species\n";
 
     if ( @$ref_species && !$ref_species_aid ) {
         $ref_species_aid = $ref_species->[0]{'species_aid'};
@@ -4891,6 +4718,7 @@ sub cmap_map_search_data {
             }
             $self->store_cached_results( 1, $sql_str, $ref_map_sets );
         }
+print STDERR Dumper($ref_map_sets)." REF MAP SETS\n";
     }
 
     #
@@ -4901,13 +4729,17 @@ sub cmap_map_search_data {
     }
     my $ref_map_set_id;
     ###Get ref_map_set_id
+print STDERR "H1\n";
     if ($ref_map_set_aid) {
 # REPLACED 58
         $ref_map_set_id = $self->sql->acc_id_to_internal_id(
-            table    => 'cmap_map_set',
-            acc_id   => $ref_map_set_aid,
-        );
+            cmap_object => $self,
+            object_name => 'map_set',
+            acc_id      => $ref_map_set_aid,
+        ) ;
     }
+print STDERR "$ref_map_set_id ref_map_set_id\n";
+print STDERR "H2\n";
 
     #
     # If the user selected a map set, select all the maps in it.
@@ -4991,6 +4823,7 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
             $self->store_cached_results( 4, $map_sql_str . "$ref_map_set_id",
                 $map_info );
         }
+print STDERR Dumper($map_info)." MAPINFO\n";
         @map_ids = keys(%$map_info);
 
         ### Add feature type information
@@ -5051,6 +4884,8 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
                 [ $feature_info, \@feature_type_aids ]
             );
         }
+print STDERR Dumper($feature_info)."FEATURE_INFO\n";
+print STDERR Dumper(\@feature_type_aids)." FT_AIDS\n";
         ###Sort maps
         if (
             my $array_ref = $self->get_cached_results(
@@ -5718,8 +5553,9 @@ Uses ref_map_order() to create a hash designating the maps order.
             my @ref_map_aids = split( /[:]/, $ref_map_aid_list[$i] );
             foreach my $aid (@ref_map_aids) {
                 my $map_id = $self->sql->acc_id_to_internal_id(
-                    table    => 'cmap_map',
-                    acc_id   => $aid,
+                    cmap_object => $self,
+                    object_name => 'map',
+                    acc_id      => $aid,
                 );
                 $return_hash{$map_id} = $i + 1;
             }

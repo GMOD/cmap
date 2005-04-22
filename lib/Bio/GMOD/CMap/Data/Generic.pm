@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.65 2005-04-22 00:50:33 mwz444 Exp $
+# $Id: Generic.pm,v 1.66 2005-04-22 21:21:31 mwz444 Exp $
 
 =head1 NAME
 
@@ -33,7 +33,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.65 $)[-1];
+$VERSION = (qw$Revision: 1.66 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -540,37 +540,42 @@ Not using cache because this query is quicker.
 =cut
 
     my ( $self, %args ) = @_;
+print STDERR "acc_id_to_internal_id\n";
+print STDERR Dumper(\%args)."\n";
     my $cmap_object = $args{'cmap_object'} or return;
-    my $table       = $args{'table'}       or $self->error('No table');
+    my $object_name = $args{'object_name'}       or $self->error('No object name');
     my $acc_id      = $args{'acc_id'}      or $self->error('No accession id');
-    my $id_field  = $self->{'ID_FIELDS'}->{$table};
+    my $table_name = $self->{'TABLE_NAMES'}->{$object_name};
+    my $id_field  = $self->{'ID_FIELDS'}->{$table_name};
     my $aid_field = 'accession_id';
 
+print STDERR "$object_name $acc_id $table_name $id_field\n";
     my $db = $cmap_object->db;
     my $return_object;
 
     my $sql_str = qq[
             select $id_field
-            from   $table
+            from   $table_name
             where  $aid_field=?
       ];
     $return_object = $db->selectrow_array( $sql_str, {}, ($acc_id) )
       or $self->error(
-        qq[Unable to find internal id for acc. id "$acc_id" in table "$table"]);
+        qq[Unable to find internal id for acc. id "$acc_id" in table "$table_name"]);
 
+print STDERR Dumper($return_object)."\n";
     return $return_object;
 }
 
 #-----------------------------------------------
-sub get_attribute { #YYY 
+sub get_attributes { #YYY 
 
 =pod
 
-=head2 get_attribute
+=head2 get_attributes
 
 =head3 Description
 
-etrieves the attributes attached to a database object.
+Retrieves the attributes attached to a database object.
 
 =head3 Input
 
@@ -590,6 +595,17 @@ that have non-null object_ids.
 =back
 
 =head3 Output
+
+Array of Hashes:
+
+  Keys:
+    attribute_id,
+    object_id,
+    table_name,
+    display_order,
+    is_public,
+    attribute_name,
+    attribute_value
 
 =head3 Cache Level (If Used): 4
 
@@ -673,6 +689,15 @@ that have non-null object_ids.
 
 =head3 Output
 
+Array of Hashes:
+
+  Keys:
+    xref_id
+    object_id
+    display_order
+    xref_name
+    xref_url
+
 =head3 Cache Level (If Used): 4
 
 Not using cache because this query is quicker.
@@ -745,6 +770,14 @@ attributes attached to all features and all maps, etc.
 
 =head3 Output
 
+Array of Hashes:
+
+  Keys:
+    table_name,
+    display_order,
+    xref_name,
+    xref_url
+
 =head3 Cache Level (If Used): 4
 
 Not using cache because this query is quicker.
@@ -773,6 +806,292 @@ Not using cache because this query is quicker.
 }
 
 #-----------------------------------------------
+sub get_correspondence_by_accession { #YYY 2
+
+=pod
+
+=head2 get_correspondence_by_accession
+
+=head3 Description
+
+Get the correspondence information based on the accession id.
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item * Correspondence Accession (correspondence_aid)
+
+=back
+
+=head3 Output
+
+Hash:
+
+  Keys:
+    feature_correspondence_id,
+    accession_id,
+    feature_id1,
+    feature_id2,
+    is_enabled
+
+=head3 Cache Level (If Used): 4
+
+Not using cache because this query is quicker.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $cmap_object = $args{'cmap_object'} or return;
+    my $correspondence_aid = $args{'correspondence_aid'}
+      or return $self->error('No correspondence accession ID');
+    my $db = $cmap_object->db;
+    my $return_object;
+
+    my $sql_str = q[
+      select feature_correspondence_id,
+             accession_id,
+             feature_id1,
+             feature_id2,
+             is_enabled
+      from   cmap_feature_correspondence
+      where  accession_id=?
+    ];
+
+    $return_object =
+      $db->selectrow_hashref( $sql_str, {}, $correspondence_aid )
+      or return $self->error(
+        "No record for correspondence accession ID '$correspondence_aid'");
+
+    return $return_object;
+}
+
+#-----------------------------------------------
+sub get_correspondences { #YYY 
+
+=pod
+
+=head2 get_correspondences
+
+Gets corr
+
+=head3 Description
+
+Given a map and a set of reference maps, this will return the correspondences between the two.
+
+=head3 Caveats
+
+If no evidence types are supplied in
+included_evidence_type_aids,less_evidence_type_aids or
+greater_evidence_type_aids assume that all are ignored and return empty hash.
+
+If the $intraslot variable is set to one, compare the maps in the $ref_map_info
+against each other, instead of against the map_id.
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item * Map id of the comparative map (map_id)
+
+=item * The "slot_info" of the reference maps (ref_map_info)
+
+ Structure:
+    {
+      map_id => [ current_start, current_stop, ori_start, ori_stop, magnification ],
+    }
+
+=item * [Comp map Start (map_start)]
+
+=item * [Comp map stop (map_stop)]
+
+=item * Included evidence types (included_evidence_type_aids)
+
+=item * Ev. types that must be less than score (less_evidence_type_aids)
+
+=item * Ev. types that must be greater than score (greater_evidence_type_aids)
+
+=item * Scores for comparing to evidence types (evidence_type_score)
+
+=item * [Allowed feature types (feature_type_aids)]
+
+=item * Is intraslot? (intraslot)
+
+Set to one to get correspondences between maps in the same slot.
+
+=back
+
+=head3 Output
+
+Array of Hashes:
+
+  Keys:
+    feature_id, 
+    ref_feature_id,
+    feature_correspondence_id,
+    evidence_type_aid,
+    evidence_type,
+    line_color,
+    evidence_rank,
+
+
+=head3 Cache Level (If Used): 
+
+Not using cache because this query is quicker.
+
+=cut
+
+    my ($self,%args)    = @_;
+    my $cmap_object     = $args{'cmap_object'} or return;
+
+    my $map_id          = $args{'map_id'};
+    my $ref_map_info     = $args{'ref_map_info'};
+    my $map_start       = $args{'map_start'};
+    my $map_stop        = $args{'map_stop'};
+    my $included_evidence_type_aids = $args{'included_evidence_type_aids'} || [];
+    my $less_evidence_type_aids     = $args{'less_evidence_type_aids'} || [];
+    my $greater_evidence_type_aids  = $args{'greater_evidence_type_aids'} || [];
+    my $evidence_type_score         = $args{'evidence_type_score'} || {};
+    my $feature_type_aids           = $args{'feature_type_aids'} || [];
+    my $intraslot       = $args{'intraslot'};
+
+    unless ($map_id or $intraslot){
+        return $self->error("No map_id in query for specific map's correspondences\n");
+    }
+    my $db              = $cmap_object->db;
+    my $evidence_type_data = $cmap_object->evidence_type_data();
+    my $return_object;
+
+    my $sql_str = qq[
+        select   cl.feature_id1 as feature_id,
+                 f2.feature_id as ref_feature_id, 
+                 cl.feature_correspondence_id,
+                 ce.evidence_type_accession as evidence_type_aid
+        from     cmap_feature f2, 
+                 cmap_correspondence_lookup cl,
+                 cmap_feature_correspondence fc,
+                 cmap_correspondence_evidence ce
+        where    cl.feature_correspondence_id=
+                 fc.feature_correspondence_id
+        and      fc.is_enabled=1
+        and      fc.feature_correspondence_id=
+                 ce.feature_correspondence_id
+        and      cl.feature_id2=f2.feature_id
+    ];
+    if (!$intraslot){
+        $sql_str .= q[
+            and      f2.map_id=?
+        ];
+    }
+
+    if ( defined $map_start && defined $map_stop ) {
+        $sql_str .= qq[
+        and      (
+        ( cl.start_position2>=$map_start and 
+            cl.start_position2<=$map_stop )
+          or   (
+            cl.stop_position2 is not null and
+            cl.start_position2<=$map_start and
+            cl.stop_position2>=$map_start
+            )
+         )
+         ];
+    }
+    elsif ( defined($map_start) ) {
+        $sql_str .=
+            " and (( cl.start_position2>="
+          . $map_start
+          . " ) or ( cl.stop_position2 is not null and "
+          . " cl.stop_position2>="
+          . $map_start . " ))";
+    }
+    elsif ( defined($map_stop) ) {
+        $sql_str .= " and cl.start_position2<=" . $map_stop . " ";
+    }
+
+
+    if ( $ref_map_info
+        and %$ref_map_info )
+    {
+        $sql_str .=
+          " and cl.map_id1 in ("
+          . join( ",", keys(%$ref_map_info) ) . ")";
+
+        if ($intraslot){
+            $sql_str .=
+              " and cl.map_id2 in ("
+              . join( ",", keys(%$ref_map_info) ) . ")";
+            # We don't want intramap corrs
+            $sql_str .= ' and cl.map_id1 < cl.map_id2 ';
+        }
+    }
+
+    if ( @$included_evidence_type_aids or @$less_evidence_type_aids
+            or @$greater_evidence_type_aids ) {
+        $sql_str .= "and ( ";
+        my @join_array;
+        if ( @$included_evidence_type_aids ) {
+            push @join_array,
+              " ce.evidence_type_accession in ('"
+              . join( "','", @$included_evidence_type_aids ) . "')";
+        }
+        foreach my $et_aid (@$less_evidence_type_aids ) {
+            push @join_array,
+                " ( ce.evidence_type_accession = '$et_aid' "
+              . " and ce.score <= ".$evidence_type_score->{$et_aid}." ) ";
+        }
+        foreach my $et_aid (@$greater_evidence_type_aids ) {
+            push @join_array,
+                " ( ce.evidence_type_accession = '$et_aid' "
+              . " and ce.score >= ".$evidence_type_score->{$et_aid}." ) ";
+        }
+        $sql_str .= join (' or ', @join_array). " ) ";
+    }
+    else {
+        $sql_str .= " and ce.correspondence_evidence_id = -1 ";
+    }
+
+    if (@$feature_type_aids) {
+        $sql_str .=
+          " and cl.feature_type_accession1 in ('"
+          . join( "','", @$feature_type_aids ) . "')";
+    }
+
+    unless ( $return_object =
+        $self->get_cached_results( 4, $sql_str . $map_id ) )
+    {
+
+        if ($intraslot){
+            $return_object =
+              $db->selectall_arrayref( $sql_str, { Columns => {} }, () );
+        }
+        else{
+            $return_object =
+              $db->selectall_arrayref( $sql_str, { Columns => {} }, ($map_id) );
+        }
+
+        foreach my $row ( @{$return_object} ) {
+            $row->{'evidence_rank'} =
+              $evidence_type_data->{ $row->{'evidence_type_aid'} }{'rank'};
+            $row->{'line_color'} =
+              $evidence_type_data->{ $row->{'evidence_type_aid'} }
+              {'line_color'};
+            $row->{'evidence_type'} =
+              $evidence_type_data->{ $row->{'evidence_type_aid'} }
+              {'evidence_type'};
+        }
+        $self->store_cached_results( 4, $sql_str . $map_id,
+            $return_object );
+    }
+
+    return $return_object;
+}
+
+#-----------------------------------------------
 sub stub { #YYY 
 
 =pod
@@ -793,7 +1112,13 @@ sub stub { #YYY
 
 =head3 Output
 
+Array of Hashes:
+
+  Keys:
+
 =head3 Cache Level (If Used): 
+
+Not using cache because this query is quicker.
 
 =cut
 
