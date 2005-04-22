@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache;
 
 # vim: set ft=perl:
 
-# $Id: Apache.pm,v 1.28 2005-04-16 01:35:08 kycl4rk Exp $
+# $Id: Apache.pm,v 1.29 2005-04-22 00:38:37 kycl4rk Exp $
 
 =head1 NAME
 
@@ -47,7 +47,7 @@ this class will catch errors and display them correctly.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.28 $)[-1];
+$VERSION = (qw$Revision: 1.29 $)[-1];
 
 use CGI;
 use Apache::Htpasswd;
@@ -157,7 +157,7 @@ the handler to the derived class's "handler" method.
     eval {
         $module->handle_cookie;
 
-        unless ( $path_info eq 'login' ) {
+        unless ( $path_info =~ /^(login|admin)$/ ) {
             unless ( $module->check_datasource_credentials ) {
                 $class  = DISPATCH->{'login'};
                 $module = $class->new( 
