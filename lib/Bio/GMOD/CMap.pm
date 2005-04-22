@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.80 2005-03-30 22:17:51 mwz444 Exp $
+# $Id: CMap.pm,v 1.81 2005-04-22 00:50:30 mwz444 Exp $
 
 =head1 NAME
 
@@ -40,6 +40,7 @@ use Bio::GMOD::CMap::Config;
 use URI::Escape;
 use DBI;
 use File::Path;
+use Storable qw(freeze thaw);
 use Template;
 
 use base 'Class::Base';
@@ -657,82 +658,6 @@ Returns a handle to the data module.
 }
 
 # ----------------------------------------------------
-sub get_attributes {
-
-=pod
-
-=head2 get_attributes 
-
-Retrieves the attributes attached to a database object.
-
-=cut
-
-    my $self       = shift;
-    my $table_name = shift or return;
-    my $object_id  = shift or return;
-    my $order_by   = shift || 'display_order,attribute_name';
-    my $db         = $self->db or return;
-    if ( !$order_by || $order_by eq 'display_order' ) {
-        $order_by = 'display_order,attribute_name';
-    }
-
-    return $db->selectall_arrayref(
-        qq[
-            select   attribute_id,
-                     object_id,
-                     table_name,
-                     display_order,
-                     is_public,
-                     attribute_name,
-                     attribute_value
-            from     cmap_attribute
-            where    object_id=?
-            and      table_name=?
-            order by $order_by
-        ],
-        { Columns => {} },
-        ( $object_id, $table_name )
-    );
-}
-
-# ----------------------------------------------------
-sub get_xrefs {
-
-=pod
-
-=head2 get_xrefs 
-Retrieves the xrefs attached to a database object.
-
-=cut
-
-    my $self       = shift;
-    my $table_name = shift or return;
-    my $object_id  = shift or return;
-    my $order_by   = shift || 'display_order,xref_name';
-    my $db         = $self->db or return;
-    if ( !$order_by || $order_by eq 'display_order' ) {
-        $order_by = 'display_order,xref_name';
-    }
-
-    return $db->selectall_arrayref(
-        qq[
-            select   xref_id,
-                     object_id,
-                     table_name,
-                     display_order,
-                     xref_name,
-                     xref_url
-            from     cmap_xref
-            where    object_id=?
-            and      table_name=?
-            order by $order_by
-        ],
-        { Columns => {} },
-        ( $object_id, $table_name )
-    );
-}
-
-# ----------------------------------------------------
 sub get_multiple_xrefs {
 
 =pod
@@ -1008,19 +933,22 @@ This is a consistant way of naming the link name space
 }
 
 # ----------------------------------------------------
-sub cache_level_names {
+sub cache_level_name {
 
 =pod
 
-=head2 cache_level_names
+=head2 cache_level_name
 
 This is a consistant way of naming the cache levels. 
 
 =cut
 
-    my $self = shift;
-    return
-      map { $self->config_data('database')->{'name'} . "_L" . $_ } ( 1 .. 4 );
+    my $self  = shift;
+    my $level = shift;
+    return $self->ERROR(
+        "Cache Level: $level should not be higher than " . CACHE_LEVELS )
+      unless ( $level <= CACHE_LEVELS );
+    return $self->config_data('database')->{'name'} . "_L" . $level;
 }
 
 # ----------------------------------------------------
@@ -1091,6 +1019,146 @@ Provides a simple way to print messages to STDERR.
 
     my $self = shift;
     print STDERR @_;
+}
+
+# ----------------------------------------------------
+sub sql {
+
+=pod
+
+=head2 sql
+
+Returns the correct SQL module driver for the RDBMS we're using.
+
+=cut
+
+    my $self      = shift;
+    my $db_driver = lc shift;
+
+    unless ( defined $self->{'sql_module'} ) {
+        my $db = $self->db or return;
+        $db_driver = lc $db->{'Driver'}->{'Name'} || '';
+        $db_driver = DEFAULT->{'sql_driver_module'}
+          unless VALID->{'sql_driver_module'}{$db_driver};
+        my $sql_module = VALID->{'sql_driver_module'}{$db_driver};
+
+        eval "require $sql_module"
+          or return $self->error(
+            qq[Unable to require SQL module "$sql_module": $@]);
+
+        $self->{'sql_module'} = $sql_module->new( config => $self->config );
+    }
+
+    return $self->{'sql_module'};
+}
+
+###########################################
+
+=pod
+                                                                                
+=head2 Query Caching
+                                                                                
+Query results (and subsequent manipulations) are cached 
+in a Cache::FileCache file.
+
+There are four levels of caching.  This is so that if some part of 
+the database is changed, the whole chache does not have to be purged.  
+Only the cache level and the levels above it need to be cached.
+
+Level 1: Species or Map Sets.
+Level 2: Maps
+Level 3: Features
+Level 4: Correspondences
+
+For example if features are added, then Level 3 and 4 need to be purged.
+If a new Map is added, Levels 2,3 and 4 need to be purged.
+
+=cut
+
+# ----------------------------------------------------
+sub cache_array_results {
+
+    my ( $self, $cache_level, $sql, $attr, $args, $db, $select_type, $sub ) =
+      @_;
+    $cache_level = 1 unless $cache_level;
+    my $cache_name = "L" . $cache_level . "_cache";
+
+    unless ( $self->{$cache_name} ) {
+        $self->{$cache_name} = $self->init_cache($cache_level)
+            or return;
+    }
+
+    my $data;
+    my $cache_key = $sql . join( '-', @$args );
+    unless ( $self->{'disable_cache'}
+        or $data =
+        thaw( $self->{ $cache_name }->get($cache_key) ) )
+    {
+        $data = $db->$select_type( $sql, $attr, @$args );
+        if ( ref $sub eq 'CODE' ) {
+            $sub->( $data, $db );
+        }
+        $self->{ $cache_name }->set( $cache_key, freeze($data) );
+    }
+    return $data;
+}
+# ----------------------------------------------------
+sub get_cached_results {
+    my $self        = shift;
+    my $cache_level = shift;
+    my $query       = shift;
+
+    $cache_level = 1 unless $cache_level;
+    my $cache_name = "L" . $cache_level . "_cache";
+#print STDERR "GET: $cache_level $cache_name\n";
+
+    unless ( $self->{$cache_name} ) {
+        $self->{$cache_name} = $self->init_cache($cache_level)
+            or return;
+    }
+
+    # can only check for disabled cache after init_cache is called.
+    return undef if ( $self->{'disable_cache'} );
+
+    return undef unless ($query);
+    return thaw( $self->{$cache_name}->get($query) );
+}
+
+sub store_cached_results {
+    my $self        = shift;
+    my $cache_level = shift;
+    my $query       = shift;
+    my $object      = shift;
+    $cache_level = 1 unless $cache_level;
+    my $cache_name = "L" . $cache_level . "_cache";
+#print STDERR "STORE: $cache_level $cache_name\n";
+
+    unless ( $self->{$cache_name} ) {
+        $self->{$cache_name} = $self->init_cache($cache_level)
+            or return;
+    }
+
+    # can only check for disabled cache after init_cache is called.
+    return undef if ( $self->{'disable_cache'} );
+
+    $self->{$cache_name}->set( $query, freeze($object) );
+}
+
+sub init_cache {
+    my $self        = shift;
+    my $cache_level = shift;
+
+    # We need to read from the config file if the cache is diabled.
+    $self->{'disable_cache'} = $self->config_data('disable_cache');
+
+    my $namespace = $self->cache_level_name($cache_level);
+    return unless ($namespace);
+
+    my %cache_params = ( 'namespace' => $namespace, );
+
+    my $cache = new Cache::FileCache( \%cache_params );
+
+    return $cache;
 }
 
 1;

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Export;
 
 # vim: set ft=perl:
 
-# $Id: Export.pm,v 1.13 2005-01-05 03:04:19 mwz444 Exp $
+# $Id: Export.pm,v 1.14 2005-04-22 00:50:32 mwz444 Exp $
 
 =pod
 
@@ -29,7 +29,7 @@ of data out of CMap.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.13 $)[-1];
+$VERSION = (qw$Revision: 1.14 $)[-1];
 
 use Data::Dumper;
 use File::Spec::Functions;
@@ -199,36 +199,17 @@ get_attributes_and_xrefs
 
 =cut
 
-    my ( $self, $table_name, $objects ) = @_;
+    my ( $self, $object_type, $objects ) = @_;
     my $db = $self->db or return;
 
-    my $attributes = $db->selectall_arrayref(
-        q[
-            select object_id,
-                   attribute_name,
-                   attribute_value,
-                   display_order,
-                   is_public
-            from   cmap_attribute
-            where  object_id is not null
-            and    table_name=?
-        ],
-        { Columns => {} },
-        ($table_name)
+    my $attributes = $self->sql->get_attributes(
+        cmap_object => $self,
+        object      => $object_type,
     );
 
-    my $xrefs = $db->selectall_arrayref(
-        q[
-            select object_id,
-                   display_order,
-                   xref_name,
-                   xref_url
-            from   cmap_xref
-            where  object_id is not null
-            and    table_name=?
-        ],
-        { Columns => {} },
-        ($table_name)
+    my $xrefs = $self->sql->get_xrefs(
+        cmap_object => $self,
+        object      => $object_type,
     );
 
     my %attr_lookup;
@@ -323,7 +304,7 @@ Feature correspondence
     my $fc = $db->selectall_arrayref( $fc_sql, { Columns => {} } );
 
     unless ( $args{'no_attributes'} ) {
-        $self->get_attributes_and_xrefs( 'cmap_feature_correspondence', $fc );
+        $self->get_attributes_and_xrefs( 'feature_correspondence', $fc );
     }
 
     my $evidence_sql;
@@ -464,10 +445,10 @@ hash with map set and species
             ( $ms->{'object_id'} )
         );
 
-        $self->get_attributes_and_xrefs( 'cmap_map', $ms->{'map'} );
+        $self->get_attributes_and_xrefs( 'map', $ms->{'map'} );
 
         unless ( $args{'no_attributes'} ) {
-            $self->get_attributes_and_xrefs( 'cmap_map', $ms->{'map'} );
+            $self->get_attributes_and_xrefs( 'map', $ms->{'map'} );
         }
 
         for my $map ( @{ $ms->{'map'} } ) {
@@ -504,7 +485,7 @@ hash with map set and species
             );
 
             unless ( $args{'no_attributes'} ) {
-                $self->get_attributes_and_xrefs( 'cmap_feature_alias',
+                $self->get_attributes_and_xrefs( 'feature_alias',
                     $aliases );
             }
 
@@ -520,13 +501,13 @@ hash with map set and species
                 }
             }
 
-            $self->get_attributes_and_xrefs( 'cmap_feature', $map->{'feature'} )
+            $self->get_attributes_and_xrefs( 'feature', $map->{'feature'} )
               unless $args{'no_attributes'};
         }
     }
 
     unless ( $args{'no_attributes'} ) {
-        $self->get_attributes_and_xrefs( 'cmap_map_set', $map_sets );
+        $self->get_attributes_and_xrefs( '_map_set', $map_sets );
     }
 
     my @species;
@@ -600,53 +581,10 @@ Species object
     my $species = $db->selectall_arrayref( $sql, { Columns => {} } );
 
     unless ( $args{'no_attributes'} ) {
-        $self->get_attributes_and_xrefs( 'cmap_species', $species );
+        $self->get_attributes_and_xrefs( 'species', $species );
     }
 
     return $species;
-}
-
-# ----------------------------------------------------
-sub get_cmap_xref {
-
-=pod
-
-=head2 get_cmap_xref
-
-=head3 NOT For External Use
-
-=over 4
-
-=item * Description
-
-get_cmap_xref
-
-=item * Usage
-
-    $exporter->get_cmap_xref();
-
-=item * Returns
-
-Xref data
-
-=back
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $db = $self->db or return;
-    return $db->selectall_arrayref(
-        q[
-            select table_name,
-                   display_order,
-                   xref_name,
-                   xref_url
-            from   cmap_xref
-            where  object_id is null
-            or     object_id=0
-        ],
-        { Columns => {} }
-    );
 }
 
 # ----------------------------------------------------

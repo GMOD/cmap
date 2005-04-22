@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.64 2005-04-20 17:09:51 mwz444 Exp $
+# $Id: Generic.pm,v 1.65 2005-04-22 00:50:33 mwz444 Exp $
 
 =head1 NAME
 
@@ -33,14 +33,53 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.64 $)[-1];
+$VERSION = (qw$Revision: 1.65 $)[-1];
 
 use Data::Dumper;    # really just for debugging
+use Time::ParseDate;
+use Bio::GMOD::CMap::Utils;
 use Bio::GMOD::CMap;
 use base 'Bio::GMOD::CMap';
 
 # ----------------------------------------------------
-sub cmap_data_features_sql {
+sub init {
+
+=pod
+
+=head2 init 
+
+Initialize values that will be needed.
+
+=cut
+
+    my ( $self, $config ) = @_;
+    $self->{'ID_FIELDS'}  = { 
+        cmap_attribute               => 'attribute_id',
+        cmap_correspondence_evidence => 'correspondence_evidence_id',
+        cmap_feature                 => 'feature_id',
+        cmap_feature_alias           => 'feature_alias_id',
+        cmap_feature_correspondence  => 'feature_correspondence_id',
+        cmap_map                     => 'map_id',
+        cmap_map_set                 => 'map_set_id',
+        cmap_species                 => 'species_id',
+        cmap_xref                    => 'xref_id',
+    };
+    $self->{'TABLE_NAMES'} = {
+        correspondence_evidence => 'cmap_correspondence_evidence',
+        feature                 => 'cmap_feature',
+        feature_alias           => 'cmap_feature_alias',
+        feature_correspondence  => 'cmap_feature_correspondence',
+        map                     => 'cmap_map',
+        map_set                 => 'cmap_map_set',
+        species                 => 'cmap_species',
+        xref                    => 'cmap_xref',
+    };
+
+    return $self;
+}
+
+# ----------------------------------------------------
+sub cmap_data_features_sql { #NOTCHANGED 70
 
 =pod
 
@@ -94,7 +133,7 @@ The SQL for finding all the features on a map.
 }
 
 # ----------------------------------------------------
-sub date_format {
+sub date_format { #NOTCHANGED
 
 =pod
 
@@ -109,7 +148,7 @@ The strftime string for date format.
 }
 
 # ----------------------------------------------------
-sub feature_correspondence_sql {
+sub feature_correspondence_sql { #NOTCHANGED 67 71
 
 =pod
 
@@ -211,7 +250,7 @@ The SQL for finding correspondences for a feature.
 }
 
 # ----------------------------------------------------
-sub feature_detail_data_sql {
+sub feature_detail_data_sql { #NOTCHANGED 66
 
 =pod
 
@@ -253,19 +292,24 @@ The SQL for finding basic info on a feature.
 }
 
 # ----------------------------------------------------
-sub form_data_ref_map_sets_sql {
+sub form_data_ref_map_sets { 
 
 =pod
 
-=head2 form_data_ref_map_sets_sql
+=head2 form_data_ref_map_sets
 
 The SQL for finding all reference map sets.
 
 =cut
 
-    my $self            = shift;
-    my $ref_species_aid = shift || 0;
-    my $sql             = q[
+    my ($self,%args)    = @_;
+    my $ref_species_aid = $args{'ref_species_aid'} || 0;
+    my $cmap_object     = $args{'cmap_object'} or return;
+    my $db              = $args{'db'} or return;
+    my $return_object;
+    my $map_type_data   = $self->map_type_data();
+
+    my $sql_str             = q[
         select   ms.accession_id, 
                  ms.map_set_id,
                  ms.short_name as map_set_name,
@@ -280,10 +324,10 @@ The SQL for finding all reference map sets.
         and      ms.is_enabled=1
         and      ms.species_id=s.species_id
     ];
-    $sql .= "and s.accession_id='$ref_species_aid' "
+    $sql_str .= "and s.accession_id='$ref_species_aid' "
       if $ref_species_aid
       and $ref_species_aid ne '-1';
-    $sql .= q[
+    $sql_str .= q[
         and      ms.is_relational_map=0
         order by ms.display_order,
                  ms.map_type_accession,
@@ -293,11 +337,34 @@ The SQL for finding all reference map sets.
                  ms.map_set_name
     ];
 
-    return $sql;
+    unless ( $return_object = $cmap_object->get_cached_results( 1, $sql_str ) ) {
+        $return_object =
+          $db->selectall_arrayref( $sql_str, { Columns => {} }, );
+                                                                                                                             
+        foreach my $row (@$return_object) {
+            $row->{'map_type'} =
+              $map_type_data->{ $row->{'map_type_aid'} }{'map_type'};
+            $row->{'map_type_display_order'} =
+              $map_type_data->{ $row->{'map_type_aid'} }{'display_order'};
+            $row->{'epoch_published_on'} =
+              parsedate( $row->{'published_on'} );
+        }
+                                                                                                                             
+        $return_object = sort_selectall_arrayref(
+            $return_object,             '#map_type_display_order',
+            'map_type',                '#species_display_order',
+            'species_name',            '#map_set_display_order',
+            'epoch_published_on desc', 'map_set_name',
+        );
+                                                                                                                             
+        $cmap_object->store_cached_results( 1, $sql_str, $return_object );
+    }
+
+    return $return_object;
 }
 
 # ----------------------------------------------------
-sub form_data_map_sets_sql {
+sub form_data_map_sets_sql { #NOTCHANGED 72
 
 =pod
 
@@ -339,7 +406,7 @@ The SQL for finding all map sets.
 }
 
 # ----------------------------------------------------
-sub form_data_ref_maps_sql {
+sub form_data_ref_maps_sql { #NOTCHANGED 65
 
 =pod
 
@@ -364,7 +431,7 @@ The SQL for finding all reference maps.
 }
 
 # ----------------------------------------------------
-sub map_stop_sql {
+sub map_stop_sql { #NOTCHANGED 68
 
 =pod
 
@@ -402,7 +469,7 @@ The SQL for finding the maximum position of features.
 }
 
 # ----------------------------------------------------
-sub map_start_sql {
+sub map_start_sql { #NOTCHANGED 69
 
 =pod
 
@@ -435,6 +502,307 @@ The SQL for finding the minimum position of features.
     }
 
     return $sql;
+}
+
+#------------NEW METHODS--------------------------------------------------
+
+#-----------------------------------------------
+sub acc_id_to_internal_id { #YYY 1 58
+
+=pod
+
+=head2 acc_id_to_internal_id
+
+=head3 Description
+
+Return the internal id that corresponds to the accession id
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item * Accession ID (acc_id)
+
+=item * table name (table)
+
+=back
+
+=head3 Output
+
+ID Scalar
+
+=head3 Cache Level (If Used): 4  
+
+Not using cache because this query is quicker.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $cmap_object = $args{'cmap_object'} or return;
+    my $table       = $args{'table'}       or $self->error('No table');
+    my $acc_id      = $args{'acc_id'}      or $self->error('No accession id');
+    my $id_field  = $self->{'ID_FIELDS'}->{$table};
+    my $aid_field = 'accession_id';
+
+    my $db = $cmap_object->db;
+    my $return_object;
+
+    my $sql_str = qq[
+            select $id_field
+            from   $table
+            where  $aid_field=?
+      ];
+    $return_object = $db->selectrow_array( $sql_str, {}, ($acc_id) )
+      or $self->error(
+        qq[Unable to find internal id for acc. id "$acc_id" in table "$table"]);
+
+    return $return_object;
+}
+
+#-----------------------------------------------
+sub get_attribute { #YYY 
+
+=pod
+
+=head2 get_attribute
+
+=head3 Description
+
+etrieves the attributes attached to a database object.
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item * Object such as feature or map_set (object_name)
+
+=item * [ Object ID (object_id) ]
+
+If object_id is not supplied, this will return all attributes for this object_name
+that have non-null object_ids.
+
+=item * [ Order by clause (order_by) ]
+
+=back
+
+=head3 Output
+
+=head3 Cache Level (If Used): 4
+
+Not using cache because this query is quicker.
+
+=cut
+
+    my ($self,%args)    = @_;
+    my $cmap_object     = $args{'cmap_object'} or return;
+    my $object_name          = $args{'object_name'} or return;
+    my $object_id       = $args{'object_id'};
+    my $order_by        = $args{'order_by'};
+    my $db              = $cmap_object->db;
+    my $return_object;
+
+    my $table_name = $self->{'TABLE_NAMES'}->{$object_name};
+    if ( !$order_by || $order_by eq 'display_order' ) {
+        $order_by = 'display_order,attribute_name';
+    }
+                                                                                                                             
+    my $sql_str = qq[
+        select   attribute_id,
+                 object_id,
+                 table_name,
+                 display_order,
+                 is_public,
+                 attribute_name,
+                 attribute_value
+        from     cmap_attribute
+        where    
+    ];
+    $sql_str .= $object_id ?
+        " object_id=? " :
+        " object_id is not null ";
+    $sql_str .= qq[
+            and      table_name=?
+            order by $order_by
+    ];
+    if ($object_id) {
+        $return_object = $db->selectall_arrayref(
+            $sql_str,
+            { Columns => {} },
+            ( $object_id, $table_name )
+        );
+    }
+    else {
+        $return_object =
+          $db->selectall_arrayref( $sql_str, { Columns => {} }, ($table_name) );
+    }
+
+    return $return_object;
+}
+
+#-----------------------------------------------
+sub get_xrefs { #YYY 
+
+=pod
+
+=head2 get_xrefs
+
+=head3 Description
+
+etrieves the attributes attached to a database object.
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item * Object such as feature or map_set (object_name)
+
+=item * [ Object ID (object_id) ]
+
+If object_id is not supplied, this will return all attributes for this object_name
+that have non-null object_ids.
+
+=item * [ Order by clause (order_by) ]
+
+=back
+
+=head3 Output
+
+=head3 Cache Level (If Used): 4
+
+Not using cache because this query is quicker.
+
+=cut
+
+    my ($self,%args)    = @_;
+    my $cmap_object     = $args{'cmap_object'} or return;
+    my $object_name          = $args{'object_name'} or return;
+    my $object_id       = $args{'object_id'};
+    my $order_by        = $args{'order_by'};
+    my $db              = $cmap_object->db;
+    my $return_object;
+
+    my $table_name = $self->{'TABLE_NAMES'}->{$object_name};
+    if ( !$order_by || $order_by eq 'display_order' ) {
+        $order_by = 'display_order,xref_name';
+    }
+                                                                                                                             
+    my $sql_str = qq[
+            select   xref_id,
+                     object_id,
+                     display_order,
+                     xref_name,
+                     xref_url
+            from     cmap_xref
+            where    
+    ];
+    $sql_str .= $object_id ?
+        " object_id=? " :
+        " object_id is not null ";
+    $sql_str .= qq[
+            and      table_name=?
+            order by $order_by
+    ];
+    if ($object_id) {
+        $return_object = $db->selectall_arrayref(
+            $sql_str,
+            { Columns => {} },
+            ( $object_id, $table_name )
+        );
+    }
+    else {
+        $return_object =
+          $db->selectall_arrayref( $sql_str, { Columns => {} }, ($table_name) );
+    }
+
+    return $return_object;
+}
+
+#-----------------------------------------------
+sub get_generic_xrefs { #YYY 
+
+=pod
+
+=head2 get_generic_xrefs
+
+=head3 Description
+
+Retrieves the attributes attached to all generic objects.  That means
+attributes attached to all features and all maps, etc.
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=back
+
+=head3 Output
+
+=head3 Cache Level (If Used): 4
+
+Not using cache because this query is quicker.
+
+=cut
+
+    my ($self,%args)    = @_;
+    my $cmap_object     = $args{'cmap_object'} or return;
+    my $db              = $cmap_object->db;
+    my $return_object;
+
+    $return_object = $db->selectall_arrayref(
+        q[
+            select table_name,
+                   display_order,
+                   xref_name,
+                   xref_url
+            from   cmap_xref
+            where  object_id is null
+            or     object_id=0
+        ],
+        { Columns => {} }
+    );
+
+    return $return_object;
+}
+
+#-----------------------------------------------
+sub stub { #YYY 
+
+=pod
+
+=head2 stub
+
+=head3 Description
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item *
+
+=back
+
+=head3 Output
+
+=head3 Cache Level (If Used): 
+
+=cut
+
+    my ($self,%args)    = @_;
+    my $cmap_object     = $args{'cmap_object'} or return;
+    my $db              = $cmap_object->db;
+    my $return_object;
+
+    return $return_object;
 }
 
 1;

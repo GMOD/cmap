@@ -19,18 +19,19 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.20 2005-03-23 21:49:50 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.21 2005-04-22 00:50:31 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.20 $)[-1];
+$VERSION = (qw$Revision: 1.21 $)[-1];
 
 @EXPORT = qw[ 
     ARC
     COLORS
     GLOBAL_CONFIG_FILE
+    CACHE_LEVELS
     CONFIG_DIR
     CMAP_URL
     DASHED_LINE
@@ -59,6 +60,12 @@ print OUT<<"!GROK!THIS!";
 #
 use constant CONFIG_DIR => '$conf_dir';
 use constant GLOBAL_CONFIG_FILE => 'global.conf';
+
+#
+# The number of cache levels
+# DO NOT ALTER UNLESS YOU ARE CHANGING ALL OF THE LEVELS.
+#
+use constant CACHE_LEVELS => '4';
 
 !GROK!THIS!
 

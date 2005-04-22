@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.75 2005-03-04 20:56:38 mwz444 Exp $
+# $Id: AdminViewer.pm,v 1.76 2005-04-22 00:50:33 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -33,7 +33,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.75 $)[-1];
+$VERSION        = (qw$Revision: 1.76 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -850,12 +850,18 @@ sub map_view {
 
     $map->{'map_type'}=$self->config_data('map_type')->{$map->{'map_type_aid'}}{'map_type'};
 
-    $map->{'attributes'} = $self->get_attributes( 
-        'cmap_map', $map_id, $apr->param('att_order_by')
+    $map->{'attributes'} = $self->sql->get_attributes(
+        cmap_object => $self,
+        object_name      => 'map',
+        object_id   => $map_id,
+        order_by    => $apr->param('att_order_by')
     );
 
-    $map->{'xrefs'} = $self->get_xrefs( 
-        'cmap_map', $map_id, $apr->param('att_order_by')
+    $map->{'xrefs'} = $self->sql->get_xrefs(
+        cmap_object => $self,
+        object_name      => 'map',
+        object_id   => $map_id,
+        order_by    => $apr->param('att_order_by')
     );
 
     my $sql = q[
@@ -1126,11 +1132,17 @@ sub feature_alias_view {
     $sth->execute( $feature_alias_id );
     my $alias = $sth->fetchrow_hashref;
 
-    $alias->{'attributes'} = 
-        $self->get_attributes( 'cmap_feature_alias', $feature_alias_id );
+    $alias->{'attributes'} = $self->sql->get_attributes(
+        cmap_object => $self,
+        object_name      => 'cmap_feature_alias',
+        object_id   => $feature_alias_id,
+    );
 
-    $alias->{'xrefs'}      = 
-        $self->get_xrefs( 'cmap_feature_alias', $feature_alias_id );
+    $alias->{'xrefs'} = $self->sql->get_xrefs(
+        cmap_object => $self,
+        object_name      => 'cmap_feature_alias',
+        object_id   => $feature_alias_id,
+    );
 
     return $self->process_template( 
         TEMPLATE->{'feature_alias_view'}, 
@@ -1334,11 +1346,18 @@ sub feature_view {
 
     $feature->{'feature_type'}=$self->config_data('feature_type')->{$feature->{'feature_type_aid'}}{'feature_type'};
     $feature->{'aliases'}    = $self->admin->get_aliases( $feature_id );
-    $feature->{'attributes'} = $self->get_attributes( 
-        'cmap_feature', $feature_id, $apr->param('att_order_by')
+    $feature->{'attributes'} = $self->sql->get_attributes(
+        cmap_object => $self,
+        object_name      => 'feature',
+        object_id   => $feature_id,
+        order_by    => $apr->param('att_order_by'),
     );
-    $feature->{'xrefs'}      = $self->get_xrefs( 
-        'cmap_feature', $feature_id, $apr->param('xref_order_by')
+
+    $feature->{'xrefs'} = $self->sql->get_xrefs(
+        cmap_object => $self,
+        object_name      => 'feature',
+        object_id   => $feature_id,
+        order_by    => $apr->param('att_order_by'),
     );
 
     my $correspondences = $db->selectall_arrayref(
@@ -1682,14 +1701,18 @@ sub feature_corr_view {
         "No record for feature correspondence ID '$feature_correspondence_id'"
     );
 
-    $corr->{'attributes'} = $self->get_attributes(
-        'cmap_feature_correspondence', $feature_correspondence_id,
-        $apr->param('att_order_by')
+    $corr->{'attributes'} = $self->sql->get_attributes(
+        cmap_object => $self,
+        object_name      => 'feature_correspondence',
+        object_id   => $feature_correspondence_id,,
+        order_by    => $apr->param('att_order_by'),
     );
 
-    $corr->{'xrefs'} = $self->get_xrefs(
-        'cmap_feature_correspondence', $feature_correspondence_id,
-        $apr->param('xref_order_by')
+    $corr->{'xrefs'} = $self->sql->get_xrefs(
+        cmap_object => $self,
+        object_name      => 'feature_correspondence',
+        object_id   => $feature_correspondence_id,,
+        order_by    => $apr->param('att_order_by'),
     );
 
     $sth = $db->prepare(
@@ -2201,8 +2224,11 @@ sub map_set_edit {
     );
 
     $map_set->{'map_type'}=$self->config_data('map_type')->{$map_set->{'map_type_aid'}}{'map_type'};
-    $map_set->{'attributes'} = $self->get_attributes( 
-        'cmap_map_set', $map_set_id, $apr->param('att_order_by')
+    $map_set->{'attributes'} = $self->sql->get_attributes(
+        cmap_object => $self,
+        object_name      => 'map_set',
+        object_id   => $map_set_id,,
+        order_by    => $apr->param('att_order_by'),
     );
 
     my $specie = $db->selectall_arrayref(
@@ -2298,11 +2324,17 @@ sub map_set_view {
 
     $map_set->{'map_type'}=$self->config_data('map_type')->{$map_set->{'map_type_aid'}}{'map_type'};
     $map_set->{'object_id'}  = $map_set_id;
-    $map_set->{'attributes'} = $self->get_attributes( 
-        'cmap_map_set', $map_set_id, $apr->param('att_order_by')
+    $map_set->{'attributes'} = $self->sql->get_attributes(
+        cmap_object => $self,
+        object_name      => 'map_set',
+        object_id   => $map_set_id,,
+        order_by    => $apr->param('att_order_by'),
     );
-    $map_set->{'xrefs'}      = $self->get_xrefs( 
-        'cmap_map_set', $map_set_id, $apr->param('xref_order_by')
+    $map_set->{'xrefs'} = $self->sql->get_xrefs(
+        cmap_object => $self,
+        object_name      => 'map_set',
+        object_id   => $map_set_id,,
+        order_by    => $apr->param('att_order_by'),
     );
 
     my @maps = @{ 
@@ -2648,12 +2680,18 @@ sub species_view {
         $sth->execute( $species_id );
         my $species = $sth->fetchrow_hashref;
 
-        $species->{'attributes'} = $self->get_attributes(
-            'cmap_species', $species_id, $apr->param('att_order_by')
+        $species->{'attributes'} = $self->sql->get_attributes(
+            cmap_object => $self,
+            object_name      => 'species',
+            object_id   => $species_id,,
+            order_by    => $apr->param('att_order_by'),
         );
 
-        $species->{'xrefs'} = $self->get_xrefs(
-            'cmap_species', $species_id, $apr->param('att_order_by')
+        $species->{'xrefs'} = $self->sql->get_xrefs(
+            cmap_object => $self,
+            object_name      => 'species',
+            object_id   => $species_id,,
+            order_by    => $apr->param('att_order_by'),
         );
 
         return $self->process_template( 
