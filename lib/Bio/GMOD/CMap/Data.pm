@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.220 2005-04-22 00:50:31 mwz444 Exp $
+# $Id: Data.pm,v 1.221 2005-04-22 15:22:15 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.220 $)[-1];
+$VERSION = (qw$Revision: 1.221 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -5163,7 +5163,7 @@ sub cmap_spider_links {
     my $map_viewer_url = $url . 'viewer';
 
     # Set up degree 0.
-    $seen_map_ids{$map_aid} = 1;
+    $seen_map_ids{$map_aid} = {};
     $map_aids_per_degree{0} = [ $map_aid, ];
 
     my $link = $self->create_viewer_link(
@@ -5221,7 +5221,7 @@ sub cmap_spider_links {
         foreach my $row ( @{$query_results} ) {
             unless ( $seen_map_ids{ $row->{'map_aid2'} } ) {
                 push @{ $map_aids_per_degree{$i} }, $row->{'map_aid2'};
-                $seen_map_ids{ $row->{'map_aid2'} } = 1;
+                $seen_map_ids{ $row->{'map_aid2'} } = {};
             }
         }
 
