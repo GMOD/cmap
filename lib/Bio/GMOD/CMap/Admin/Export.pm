@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Export;
 
 # vim: set ft=perl:
 
-# $Id: Export.pm,v 1.14 2005-04-22 00:50:32 mwz444 Exp $
+# $Id: Export.pm,v 1.15 2005-04-22 14:26:32 mwz444 Exp $
 
 =pod
 
@@ -29,7 +29,7 @@ of data out of CMap.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.14 $)[-1];
+$VERSION = (qw$Revision: 1.15 $)[-1];
 
 use Data::Dumper;
 use File::Spec::Functions;
@@ -585,6 +585,37 @@ Species object
     }
 
     return $species;
+}
+
+# ----------------------------------------------------
+sub get_cmap_xref {
+
+=pod    
+
+=head2 get_cmap_xref    
+
+=head3 NOT For External Use
+
+=over 4
+
+=item * Description
+
+calls sql->get_generic_xrefs
+
+=item * Usage   
+
+    $exporter->get_cmap_xref();
+
+=item * Returns 
+
+Xref data   
+
+=back
+
+=cut
+
+    my ( $self, %args ) = @_;   
+    return $self->sql->get_generic_xrefs(cmap_object => $self);
 }
 
 # ----------------------------------------------------
