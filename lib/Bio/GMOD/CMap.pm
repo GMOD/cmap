@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.81 2005-04-22 00:50:30 mwz444 Exp $
+# $Id: CMap.pm,v 1.82 2005-04-25 22:22:30 mwz444 Exp $
 
 =head1 NAME
 
@@ -1046,6 +1046,10 @@ Returns the correct SQL module driver for the RDBMS we're using.
           or return $self->error(
             qq[Unable to require SQL module "$sql_module": $@]);
 
+        # IF YOU ARE GETTING A BIZZARE WARNING:
+        # It might be that the $sql_module has errors in it
+        #  aren't being reported.  This might manifest as "$self->sql" 
+        #  returning nothing or as "cannot find method new".
         $self->{'sql_module'} = $sql_module->new( config => $self->config );
     }
 

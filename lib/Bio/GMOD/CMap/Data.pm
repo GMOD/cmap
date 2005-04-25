@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.222 2005-04-22 21:21:14 mwz444 Exp $
+# $Id: Data.pm,v 1.223 2005-04-25 22:22:30 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.222 $)[-1];
+$VERSION = (qw$Revision: 1.223 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -70,7 +70,7 @@ sub init {
 #
 #=cut
 #
-##REPLACED 1
+##REPLACE 1
 #    my ( $self, %args ) = @_;
 #    my $table  = $args{'table'}  or $self->error('No table');
 #    my $acc_id = $args{'acc_id'} or $self->error('No accession id');
@@ -156,44 +156,14 @@ sub correspondence_detail_data {
             object_id   => $corr->{'feature_correspondence_id'},
         );
 
-        my $sth = $db->prepare(
-            q[
-            select f.feature_id, 
-                   f.accession_id as feature_aid, 
-                   f.map_id,
-                   f.accession_id as map_aid,
-                   f.feature_type_accession as feature_type_aid,
-                   f.feature_name,
-                   f.start_position,
-                   f.stop_position,
-                   map.map_name,
-                   map.accession_id as map_aid,
-                   ms.map_set_id,
-                   ms.accession_id as map_set_aid,
-                   ms.short_name as map_set_name,
-                   s.common_name as species_name,
-                   ms.map_units
-            from   cmap_feature f,
-                   cmap_map map,
-                   cmap_map_set ms,
-                   cmap_species s
-            where  f.feature_id=?
-            and    f.map_id=map.map_id
-            and    map.map_set_id=ms.map_set_id
-            and    ms.species_id=s.species_id
-	      ]
+        $feature1 = $sql_object->get_feature_details(
+            cmap_object => $self,
+            feature_id => $corr->{'feature_id1'},
         );
-        $sth->execute( $corr->{'feature_id1'} );
-        $feature1 = $sth->fetchrow_hashref;
-        $sth->execute( $corr->{'feature_id2'} );
-        $feature2 = $sth->fetchrow_hashref;
-
-        for ( $feature1, $feature2 ) {
-            $_->{'aliases'} =
-              $db->selectcol_arrayref(
-                'select alias from cmap_feature_alias where feature_id=?',
-                {}, ( $_->{'feature_id'} ) );
-        }
+        $feature2 = $sql_object->get_feature_details(
+            cmap_object => $self,
+            feature_id => $corr->{'feature_id2'},
+        );
 
         $corr->{'evidence'} = $db->selectall_arrayref(
             qq[
@@ -258,23 +228,25 @@ Returns a string of tab-delimited data for either a map or map set.
       if $format eq 'XML' && !$map_set_aid;
 
     my $feature_type_data = $self->feature_type_data();
-    my $db                = $self->db;
+    my $sql_object        = $self->sql;
     my ( $map_set_id, $map_id );
-#REPLACE 3
+#REPLACE 3 YYY
     if ($map_aid) {
-        $map_id =
-          $db->selectrow_array(
-            'select map_id from cmap_map where accession_id=?',
-            {}, ($map_aid) )
+        $map_id = $sql_object->acc_id_to_internal_id(
+            cmap_object => $self,
+            object_name => 'map',
+            acc_id      => $map_aid,
+        ) 
           or return $self->error("'$map_aid' is not a valid map accession ID");
     }
 
-#REPLACE 4
+#REPLACE 4 YYY
     if ($map_set_aid) {
-        $map_set_id =
-          $db->selectrow_array(
-            'select map_set_id from cmap_map_set where accession_id=?',
-            {}, ($map_set_aid) )
+        $map_set_id = $sql_object->acc_id_to_internal_id(
+            cmap_object => $self,
+            object_name => 'map_set',
+            acc_id      => $map_set_aid,
+        )
           or return $self->error(
             "'$map_set_aid' is not a valid map set accession ID");
     }
@@ -299,82 +271,43 @@ Returns a string of tab-delimited data for either a map or map set.
           };
     }
     else {
-#REPLACE 5 map_id
-#REPLACE 6 map_set_id
-        my $feature_sql = q[
-            select map.accession_id as map_accession_id,
-                   map.map_name,
-                   map.start_position as map_start,
-                   map.stop_position as map_stop,
-                   f.feature_id,
-                   f.accession_id as feature_accession_id,
-                   f.feature_name,
-                   f.start_position as feature_start,
-                   f.stop_position as feature_stop,
-                   f.is_landmark,
-                   f.feature_type_accession as feature_type_aid
-            from   cmap_map map,
-                   cmap_feature f
-            where  map.%s=?
-            and    map.map_id=f.map_id
-        ];
+#REPLACE 5 map_id YYY
+#REPLACE 6 map_set_id YYY
 
-        my $alias_sql = q[
-            select fa.feature_id, 
-                   fa.alias
-            from   cmap_map map,
-                   cmap_feature f,
-                   cmap_feature_alias fa
-            where  map.%s=?
-            and    map.map_id=f.map_id
-            and    f.feature_id=fa.feature_id
-        ];
+#REPLACE 73 map_id ALIAS YYY
+#REPLACE 74 map_set_id ALIAS YYY
 
-        my ( $field_name, $search_val );
+        my $features;
         if ($map_aid) {
-            $field_name = 'map_id';
-            $search_val = $map_id;
+            $features = $sql_object->get_feature_details(
+                cmap_object => $self,
+                map_id => $map_id,
+            );
         }
         else {
-            $field_name = 'map_set_id';
-            $search_val = $map_set_id;
-        }
-
-        my $features = $db->selectall_arrayref(
-            sprintf( $feature_sql, $field_name ),
-            { Columns => {} },
-            ($search_val)
-        );
-
-        foreach my $row ( @{$features} ) {
-            $row->{'feature_type'} =
-              $feature_type_data->{ $row->{'feature_type_aid'} }
-              {'feature_type'};
+            $features = $sql_object->get_feature_details(
+                cmap_object => $self,
+                map_set_id => $map_set_id,
+            );
         }
 
         if ( $format eq 'TAB' ) {
-            my $aliases = $db->selectall_arrayref(
-                sprintf( $alias_sql, $field_name ),
-                { Columns => {} },
-                ($search_val)
-            );
-            my %alias_lookup = ();
-            for my $alias (@$aliases) {
-                push @{ $alias_lookup{ $alias->{'feature_id'} } },
-                  $alias->{'alias'};
-            }
 
-            my @cols = qw[ map_accession_id map_name map_start map_stop
+            my @col_headers = qw[ map_accession_id map_name map_start map_stop
               feature_accession_id feature_name feature_aliases feature_start
               feature_stop feature_type_aid is_landmark
             ];
+            my @col_names = qw[ map_aid map_name map_start map_stop
+              feature_aid feature_name feature_aliases start_position
+              stop_position feature_type_aid is_landmark
+            ];
 
-            $return = join( "\t", @cols ) . "\n";
+            $return = join( "\t", @col_headers ) . "\n";
 
             for my $f (@$features) {
                 $f->{'feature_aliases'} = join( ',',
-                    sort @{ $alias_lookup{ $f->{'feature_id'} } || [] } );
-                $return .= join( "\t", map { $f->{$_} } @cols ) . "\n";
+                    sort @{ $f->{'aliases'}  || [] } );
+                $return .= join( "\t", map { $f->{$_} } @col_names ) . "\n";
             }
         }
         elsif ( $format eq 'GFF' ) {
@@ -905,6 +838,7 @@ sub slot_data {
             my $sql_base_bottom = qq[
                     where    f.map_id=$map->{'map_id'}
 				   ];
+# REPLACE 75 ALIAS
             my $alias_sql = qq [
                     select  fa.feature_id,
                             fa.alias
@@ -2564,7 +2498,7 @@ Returns the data for the feature alias detail page.
       or return $self->error('No feature alias');
 
     my $db  = $self->db;
-# REPLACE 32
+# REPLACE 32 ALIAS
     my $sth = $db->prepare(
         q[
             select fa.feature_alias_id,
@@ -2802,19 +2736,17 @@ Given a feature acc. id, find out all the details on it.
     my ( $self, %args ) = @_;
     my $feature_aid = $args{'feature_aid'} or die 'No accession id';
     my $db          = $self->db            or return;
-    my $sql         = $self->sql           or return;
-# REPLACE 66
-    my $sth = $db->prepare( $sql->feature_detail_data_sql );
+    my $sql_object         = $self->sql           or return;
+# REPLACE 66 YYY
+    my $feature_array = $sql_object->get_feature_details(
+        cmap_object => $self,
+        feature_aid => $feature_aid,
+    );
+    my $feature = $feature_array->[0];
 
     my $map_type_data      = $self->map_type_data();
-    my $feature_type_data  = $self->feature_type_data();
     my $evidence_type_data = $self->evidence_type_data();
-    $sth->execute($feature_aid);
-    my $feature = $sth->fetchrow_hashref
-      or return $self->error("Invalid feature accession ID ($feature_aid)");
 
-    $feature->{'feature_type'} =
-      $feature_type_data->{ $feature->{'feature_type_aid'} }{'feature_type'};
     $feature->{'object_id'}  = $feature->{'feature_id'};
     $feature->{'attributes'} =
       $self->sql->get_attributes(
@@ -2822,25 +2754,11 @@ Given a feature acc. id, find out all the details on it.
         object_name      => 'feature',
         object_id   => $feature->{'feature_id'},
       );
-# REPLACE 35
-    $feature->{'aliases'} = $db->selectall_arrayref(
-        q[
-            select   fa.feature_alias_id, 
-                     fa.alias,
-                     f.accession_id as feature_aid
-            from     cmap_feature_alias fa,
-                     cmap_feature f
-            where    fa.feature_id=?
-            and      fa.feature_id=f.feature_id
-            order by alias
-        ],
-        { Columns => {} },
-        ( $feature->{'feature_id'} )
-    );
+# REPLACE 35 ALIAS YYY
 
 # REPLACE 67
     my $correspondences = $db->selectall_arrayref(
-        $sql->feature_correspondence_sql(
+        $sql_object->feature_correspondence_sql(
             disregard_evidence_type => 1,
         ),
         { Columns => {} },
@@ -2941,7 +2859,6 @@ Given a list of feature names, find any maps they occur on.
 =cut
 
     my ( $self, %args ) = @_;
-    my $db                         = $self->db or return;
     my $species_aids               = $args{'species_aids'};
     my $incoming_feature_type_aids = $args{'feature_type_aids'};
     my $feature_string             = $args{'features'};
@@ -2950,6 +2867,8 @@ Given a list of feature names, find any maps they occur on.
     my $page_no                    = $args{'page_no'};
     my $pages_per_set              = $args{'pages_per_set'};
     my $feature_type_data          = $self->feature_type_data();
+    my $sql_object                 = $self->sql or return;
+    my $db                 = $self->db or return;
     my @feature_names              = (
         map {
             s/\*/%/g;          # turn stars into SQL wildcards
@@ -2973,126 +2892,16 @@ Given a list of feature names, find any maps they occur on.
     #
     my %features = ();
     for my $feature_name (@feature_names) {
-        my $comparison = $feature_name =~ m/%/ ? 'like' : '=';
-        $feature_name = uc $feature_name;
+# REPLACE 38 YYY
+# REPLACE 39 YYY
+        my $features = $sql_object->get_feature_details(
+            cmap_object => $self,
+            feature_name => $feature_name,
+            feature_type_aids => $incoming_feature_type_aids,
+            species_aids      => $species_aids,
+            aliases_get_rows  => 1,
+        );
 
-        my ( $fname_where, $aname_where );
-        if ( $feature_name ne '%' ) {
-            $fname_where .=
-              " and upper(f.feature_name) $comparison '$feature_name' ";
-            $aname_where .= " and upper(fa.alias) $comparison '$feature_name' ";
-        }
-
-        my $where = '';
-        if (@$incoming_feature_type_aids) {
-            $where .=
-                'and f.feature_type_accession in ('
-              . join( ', ', map { qq['$_'] } @$incoming_feature_type_aids )
-              . ') ';
-        }
-
-        if (@$species_aids) {
-            $where .=
-              'and s.accession_id in ('
-              . join( ', ', map { qq['$_'] } @$species_aids ) . ') ';
-        }
-
-        my $sql;
-        if ( $search_field eq 'feature_name' ) {
-# REPLACE 38
-            $sql = qq[
-                select   f.feature_id,
-                         f.accession_id as feature_aid,
-                         f.feature_name, 
-                         f.start_position,
-                         f.stop_position,
-                         f.feature_type_accession as feature_type_aid,
-                         map.accession_id as map_aid,
-                         map.map_name, 
-                         ms.accession_id as map_set_aid, 
-                         ms.short_name as map_set_name,
-                         ms.can_be_reference_map,
-                         s.species_id,
-                         s.common_name as species_name,
-                         ms.map_units
-                from     cmap_feature f,
-                         cmap_map map,
-                         cmap_map_set ms,
-                         cmap_species s
-                where    f.map_id=map.map_id
-                and      map.map_set_id=ms.map_set_id
-                and      ms.species_id=s.species_id
-                and      ms.is_enabled=1
-                $fname_where
-                $where
-                UNION
-                select f.feature_id,
-                       f.accession_id as feature_aid,
-                       f.feature_name,
-                       f.start_position,
-                       f.stop_position,
-                       f.feature_type_accession as feature_type_aid,
-                       map.accession_id as map_aid,
-                       map.map_name,
-                       ms.accession_id as map_set_aid,
-                       ms.short_name as map_set_name,
-                       ms.can_be_reference_map,
-                       s.species_id,
-                       s.common_name as species_name,
-                       ms.map_units
-                from   cmap_feature_alias fa,
-                       cmap_feature f,
-                       cmap_map map,
-                       cmap_map_set ms,
-                       cmap_species s
-                where  fa.feature_id=f.feature_id
-                and    f.map_id=map.map_id
-                and    map.map_set_id=ms.map_set_id
-                and    ms.species_id=s.species_id
-                and    ms.is_enabled=1
-                $aname_where
-                $where
-            ];
-        }
-        else {
-# REPLACE 39
-            $sql = qq[
-                select   f.feature_id,
-                         f.accession_id as feature_aid,
-                         f.feature_name, 
-                         f.start_position,
-                         f.stop_position,
-                         f.feature_type_accession as feature_type_aid,
-                         map.accession_id as map_aid,
-                         map.map_name, 
-                         ms.accession_id as map_set_aid, 
-                         ms.short_name as map_set_name,
-                         ms.can_be_reference_map,
-                         s.species_id,
-                         s.common_name as species_name,
-                         ms.map_units
-                from     cmap_feature f,
-                         cmap_map map,
-                         cmap_map_set ms,
-                         cmap_species s
-                where   f.map_id=map.map_id
-                and      map.map_set_id=ms.map_set_id
-                and      ms.species_id=s.species_id
-                and      ms.is_enabled=1
-                $where
-            ];
-            unless ( $feature_name eq '%' ) {
-                $sql .=
-                  " and upper(f.accession_id) $comparison '$feature_name'";
-            }
-        }
-
-        my $features = $db->selectall_arrayref( $sql, { Columns => {} } );
-        foreach my $row ( @{$features} ) {
-            $row->{'feature_type'} =
-              $feature_type_data->{ $row->{'feature_type_aid'} }
-              {'feature_type'};
-        }
         for my $f (@$features) {
             $features{ $f->{'feature_id'} } = $f;
         }
@@ -3135,18 +2944,14 @@ Given a list of feature names, find any maps they occur on.
 
     my @feature_ids = map { $_->{'feature_id'} } @found_features;
     if (@feature_ids) {
-# REPLACE 40
-        my $aliases = $db->selectall_arrayref(
-            q[
-                select fa.feature_id, fa.alias
-                from   cmap_feature_alias fa
-                where  feature_id in (] . join( ',', @feature_ids ) . q[)
-            ],
+# REPLACE 40 YYY
+        my $aliases = $sql_object->get_feature_aliases(
+            cmap_object => $self,
+            feature_ids => \@feature_ids,
         );
-
         my %aliases;
         for my $alias (@$aliases) {
-            push @{ $aliases{ $alias->[0] } }, $alias->[1];
+            push @{ $aliases{ $alias->{'feature_id'} } }, $alias->{'alias'};
         }
 
         for my $f (@found_features) {
@@ -3650,7 +3455,7 @@ Returns the detail info for a map.
     my $page_no               = $args{'page_no'} || 1;
     my $page_data             = $args{'page_data'};
     my $db                    = $self->db or return;
-    my $sql                   = $self->sql or return;
+    my $sql_object            = $self->sql or return;
     my $map_id                = $map->{'map_id'};
     my $map_start             = $map->{'start'};
     my $map_stop              = $map->{'stop'};
@@ -3723,15 +3528,15 @@ Returns the detail info for a map.
     #
     # Get the reference map features.
     #
-    my $features = $db->selectall_arrayref(
-# REPLACE 70
-        $sql->cmap_data_features_sql(
-            order_by          => $order_by,
-            feature_type_aids => [(@$feature_type_aids,@$corr_only_feature_type_aids)] ,
-        ),
-        { Columns => {} },
-        ( $map_id, $map_start, $map_stop, $map_start, $map_start )
+    my $features = $sql_object->get_feature_details(
+        cmap_object       => $self,
+        fmap_id           => $map_id,
+        feature_type_aids =>
+          [ ( @$feature_type_aids, @$corr_only_feature_type_aids ) ],
+        map_start => $map_start,
+        map_stop  => $map_stop,
     );
+# REPLACE 70 YYY
 
 # REPLACE 47
     my $feature_count_by_type = $db->selectall_arrayref(
@@ -3766,35 +3571,7 @@ Returns the detail info for a map.
     $features = [ $pager->splice($features) ]
       if $page_data && @$features;
 
-    #
-    # Feature aliases.
-    #
-# REPLACE 48
-    my $aliases = $db->selectall_arrayref(
-        q[
-            select f.feature_id,
-                   fa.alias
-            from   cmap_feature f,
-                   cmap_feature_alias fa
-            where  f.map_id=?
-            and    f.feature_id=fa.feature_id
-        ],
-        {},
-        ($map_id)
-    );
-
-    my %alias_lookup;
-    for my $alias (@$aliases) {
-        push @{ $alias_lookup{ $alias->[0] } }, $alias->[1];
-    }
-
-    for my $feature (@$features) {
-        $feature->{'aliases'} = $alias_lookup{ $feature->{'feature_id'} } || [];
-        $feature->{'feature_type'} =
-          $feature_type_data->{ $feature->{'feature_type_aid'} }
-          {'feature_type'};
-
-    }
+# REPLACE 48 ALIAS YYY
 
     #
     # Get all the feature types on all the maps.
@@ -3842,7 +3619,7 @@ Returns the detail info for a map.
     for my $feature (@$features) {
         my $positions = $db->selectall_arrayref(
 # REPLACE 71
-            $sql->feature_correspondence_sql(
+            $sql_object->feature_correspondence_sql(
                 comparative_map_field       => $comparative_map_field,
                 comparative_map_aid         => $comparative_map_aid,
                 included_evidence_type_aids => \@$included_evidence_type_aids,
@@ -4731,7 +4508,7 @@ print STDERR Dumper($ref_map_sets)." REF MAP SETS\n";
     ###Get ref_map_set_id
 print STDERR "H1\n";
     if ($ref_map_set_aid) {
-# REPLACED 58
+# REPLACE 58 YYY
         $ref_map_set_id = $self->sql->acc_id_to_internal_id(
             cmap_object => $self,
             object_name => 'map_set',

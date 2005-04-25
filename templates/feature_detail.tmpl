@@ -16,15 +16,15 @@
     <tr>
         <th align="right" valign="top"[% IF feature.aliases.size > 1 %] rowspan="[% feature.aliases.size %]"[% END %]>Aliases:</th>
         [%- IF feature.defined('aliases') AND feature.aliases.size -%]
-            [% SET a1=feature.aliases.shift %]
-            <td>[% a1.alias %]</td>
-            <td align="center"><b>[</b>&nbsp;<a href="feature_alias?feature_aid=[% a1.feature_aid %];feature_alias=[% a1.alias | uri %]">View&nbsp;Alias&nbsp;Details</a>&nbsp;<b>]</b>
+            [% SET alias=feature.aliases.shift %]
+            <td>[% alias %]</td>
+            <td align="center"><b>[</b>&nbsp;<a href="feature_alias?feature_aid=[% feature.feature_aid %];feature_alias=[% alias | uri %]">View&nbsp;Alias&nbsp;Details</a>&nbsp;<b>]</b>
             [% IF feature.aliases.size %]
                 </tr>
-                [%- FOREACH a=feature.aliases -%]
+                [%- FOREACH alias=feature.aliases -%]
                     <tr>
-                        <td>[% a.alias %]</td>
-                        <td align="center"><b>[</b>&nbsp;<a href="feature_alias?feature_aid=[% a.feature_aid %];feature_alias=[% a.alias | uri %]">View&nbsp;Alias&nbsp;Details</a>&nbsp;<b>]</b>
+                        <td>[% alias %]</td>
+                        <td align="center"><b>[</b>&nbsp;<a href="feature_alias?feature_aid=[% feature.feature_aid %];feature_alias=[% alias | uri %]">View&nbsp;Alias&nbsp;Details</a>&nbsp;<b>]</b>
                         </td>
                     </tr>
                 [% END %]
