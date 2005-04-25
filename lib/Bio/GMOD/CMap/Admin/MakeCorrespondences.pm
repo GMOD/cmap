@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.47 2005-04-09 19:45:47 mwz444 Exp $
+# $Id: MakeCorrespondences.pm,v 1.48 2005-04-25 17:14:08 mwz444 Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.47 $)[-1];
+$VERSION = (qw$Revision: 1.48 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -291,7 +291,7 @@ would match.
         #
         # Skip unless there is a matching name in %to_name_to_ids
         #
-        next unless @{$to_name_to_ids{$from_name}};
+        next unless ($to_name_to_ids{$from_name} and @{$to_name_to_ids{$from_name}});
 
         my %done;
         for my $i ( 0 .. $#{$from_name_to_ids{$from_name}} ) {
