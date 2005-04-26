@@ -12,7 +12,7 @@
     <tr>
         <th align="right">Map&nbsp;Set&nbsp;Name:</th>
         <td>
-            [% reference_map.species_name %] -
+            [% reference_map.species_common_name %] -
             [% reference_map.map_set_name %]
             <b>[</b> <a href="map_set_info?map_set_aid=[% reference_map.map_set_aid %]">View Map Set Info</a> <b>]</b>
         </td>
@@ -132,7 +132,7 @@
     </tr>
 
     <tr>
-        <th colspan="3">[% reference_map.species_name %] - [% reference_map.map_set_name %] - [% reference_map.map_name %]<br><small>(Click headers to resort)</small></th>
+        <th colspan="3">[% reference_map.species_common_name %] - [% reference_map.map_set_name %] - [% reference_map.map_name %]<br><small>(Click headers to resort)</small></th>
         <th colspan="6">Comparative Maps</th>
     </tr>
 
@@ -166,7 +166,7 @@
                 [% IF i>0 %]<tr>[% END %]
 
                 <td>
-                    [% p.species_name %] - [% p.map_set_name %] - [% p.map_name %]
+                    [% p.species_common_name %] - [% p.map_set_name %] - [% p.map_name %]
                 </td>
                 <td>
                     <a href="feature?feature_aid=[% p.feature_aid %]">[% p.feature_name %]</a>

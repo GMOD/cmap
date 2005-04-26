@@ -158,8 +158,8 @@ DROP TABLE cmap_species;
 CREATE TABLE cmap_species (
   species_id INTEGER PRIMARY KEY NOT NULL DEFAULT '0',
   accession_id varchar(20) NOT NULL DEFAULT '',
-  common_name varchar(64) NOT NULL DEFAULT '',
-  full_name varchar(64) NOT NULL DEFAULT '',
+  species_common_name varchar(64) NOT NULL DEFAULT '',
+  species_full_name varchar(64) NOT NULL DEFAULT '',
   display_order int(11) NOT NULL DEFAULT '1'
 );
 

@@ -28,7 +28,7 @@
                 <select name="species_aid">
                     <option value="-1">--All Species--</option>
                     [% FOREACH s=species %]
-                        <option value="[% s.species_aid %]"[% IF apr.param('species_aid')==s.species_aid %] selected[% END %]>[% s.species_name %]</option>
+                        <option value="[% s.species_aid %]"[% IF apr.param('species_aid')==s.species_aid %] selected[% END %]>[% s.species_common_name %]</option>
                     [% END %]
                 </select>
             </td>
@@ -82,7 +82,7 @@
 
             <tr>
                 <th align="right">Species:</th>
-                <td>[% ms.full_name %] ([% ms.common_name %])</td>
+                <td>[% ms.species_full_name %] ([% ms.species_common_name %])</td>
                 <td align="center"><b>[</b>&nbsp;<a href="species_info?species_aid=[% ms.species_aid %]">View Species Info</a>&nbsp;<b>]</b></td>
             </tr> 
 

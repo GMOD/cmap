@@ -13,8 +13,8 @@
         </tr>
         <tr>
           <th><a href="admin?action=species_view;order_by=accession_id">Acc. ID</a></th>
-          <th><a href="admin?action=species_view;order_by=common_name">Common Name</a></th>
-          <th><a href="admin?action=species_view;order_by=full_name">Full Name</a></th>
+          <th><a href="admin?action=species_view;order_by=species_common_name">Common Name</a></th>
+          <th><a href="admin?action=species_view;order_by=species_full_name">Full Name</a></th>
           <th><a href="admin?action=species_view;order_by=display_order">Display Order</a></th>
           <th colspan="3" align="center">&nbsp;</th>
         </tr>
@@ -22,8 +22,8 @@
       [% FOREACH s=species %]
           <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
               <td>[% s.accession_id %]</td>
-              <td>[% s.common_name %]</td>
-              <td>[% s.full_name %]</td>
+              <td>[% s.species_common_name %]</td>
+              <td>[% s.species_full_name %]</td>
               <td>[% s.display_order %]</td>
               <td align="center">
                 <a href="admin?action=species_view;species_id=[% s.species_id %]">View</a>
@@ -32,7 +32,7 @@
                 <a href="admin?action=species_edit;species_id=[% s.species_id %]">Edit</a>
               </td>
               <td align="center">
-                <a href="admin?action=confirm_delete;entity_type=cmap_species;entity_id=[% s.species_id %];entity_name_field=common_name">Delete</a>
+                <a href="admin?action=confirm_delete;entity_type=cmap_species;entity_id=[% s.species_id %];entity_name_field=species_common_name">Delete</a>
               </td>
           </tr>
           [% SET i = i + 1 %]

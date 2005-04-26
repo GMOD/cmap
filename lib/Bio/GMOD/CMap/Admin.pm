@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.71 2005-04-22 00:50:31 mwz444 Exp $
+# $Id: Admin.pm,v 1.72 2005-04-26 23:26:25 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.71 $)[-1];
+$VERSION = (qw$Revision: 1.72 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -1834,7 +1834,7 @@ Eather 'feature_name' or 'feature_accession'
 =item - order_by
 
 List of columns (in order) to order by. Options are
-feature_name, species_name, map_set_name, map_name and start_position.
+feature_name, species_common_name, map_set_name, map_name and start_position.
 
 =item - map_aid
 
@@ -1862,7 +1862,7 @@ feature_name, species_name, map_set_name, map_name and start_position.
     my $feature_type_aids = $args{'feature_type_aids'} || [];
     my $search_field      = $args{'search_field'}      || 'feature_name';
     my $order_by          = $args{'order_by'}
-      || 'feature_name,species_name,map_set_name,map_name,start_position';
+      || 'feature_name,species_common_name,map_set_name,map_name,start_position';
     my $db = $self->db or return;
 
     #
@@ -1902,7 +1902,7 @@ feature_name, species_name, map_set_name, map_name and start_position.
                        ms.map_set_id,
                        ms.short_name as map_set_name,
                        s.species_id,
-                       s.common_name as species_name,
+                       s.species_common_name,
                        ms.map_type_accession as map_type_aid
             from       cmap_feature f
             left join  cmap_feature_alias fa
@@ -2657,7 +2657,7 @@ Hashref of map info
                ms.map_set_id,
                ms.map_set_name,
                s.species_id,
-               s.common_name as species_name
+               s.species_common_name
         from   cmap_map map,
                cmap_map_set ms,
                cmap_species s
@@ -2710,14 +2710,14 @@ Arrayref of map set info
 =cut
 
     my ( $self, %args ) = @_;
-    my $order_by = $args{'order_by'} || 'species_name,map_set_name';
+    my $order_by = $args{'order_by'} || 'species_common_name,map_set_name';
 
     my $db = $self->db or return;
     return $db->selectall_arrayref(
         qq[
             select   ms.map_set_id, 
                      ms.short_name as map_set_name,
-                     s.common_name as species_name
+                     s.species_common_name
             from     cmap_map_set ms,
                      cmap_species s
             where    ms.species_id=s.species_id
@@ -2774,7 +2774,7 @@ Nothing
                          ms.accession_id as map_set_aid,
                          ms.short_name as map_set_name,
                          s.accession_id as species_aid,
-                         s.common_name as species_name
+                         s.species_common_name
                 from     cmap_map map,
                          cmap_map_set ms,
                          cmap_species s
@@ -2814,7 +2814,7 @@ Nothing
                          count(f2.feature_id) as no_correspondences, 
                          ms.short_name as map_set_name,
                          s.accession_id as species_aid,
-                         s.common_name as species_name
+                         s.species_common_name
                 from     cmap_feature f1, 
                          cmap_feature f2, 
                          cmap_correspondence_lookup cl,
@@ -2838,7 +2838,7 @@ Nothing
                          ms.accession_id,
                          ms.short_name,
                          s.accession_id,
-                         s.common_name
+                         s.species_common_name
                 order by map_set_name, map_name
             ],
             { Columns => {} },
@@ -2855,7 +2855,7 @@ Nothing
                          ms.accession_id as map_set_aid,
                          ms.short_name as map_set_name,
                          s.accession_id as species_aid,
-                         s.common_name as species_name
+                         s.species_common_name
                 from     cmap_feature f1,
                          cmap_feature f2,
                          cmap_correspondence_lookup cl,
@@ -2876,7 +2876,7 @@ Nothing
                 group by ms.accession_id,
                          ms.short_name,
                          s.accession_id,
-                         s.common_name
+                         s.species_common_name
                 order by map_set_name
             ],
             { Columns => {} },
@@ -3268,14 +3268,14 @@ Arrayref with species info
 =cut
 
     my ( $self, %args ) = @_;
-    my $order_by = $args{'order_by'} || 'common_name';
+    my $order_by = $args{'order_by'} || 'species_common_name';
     my $db = $self->db or return;
 
     return $db->selectall_arrayref(
         qq[
             select   s.species_id, 
-                     s.common_name, 
-                     s.full_name
+                     s.species_common_name, 
+                     s.species_full_name
             from     cmap_species s
             order by $order_by
         ],
@@ -3301,8 +3301,8 @@ species_create
 =item * Usage
 
     $admin->species_create(
-        full_name => $full_name,
-        common_name => $common_name,
+        species_full_name => $species_full_name,
+        species_common_name => $species_common_name,
         display_order => $display_order,
         accession_id => $accession_id,
     );
@@ -3315,11 +3315,11 @@ Species ID
 
 =over 4
 
-=item - full_name
+=item - species_full_name
 
 Full name of the species, such as "Homo Sapiens".
 
-=item - common_name
+=item - species_common_name
 
 Short name of the species, such as "Human".
 
@@ -3339,9 +3339,9 @@ If not defined, the object_id will be assigned to it.
     my ( $self, %args ) = @_;
     my @missing;
     my $db          = $self->db;
-    my $common_name = $args{'common_name'}
+    my $species_common_name = $args{'species_common_name'}
       or push @missing, 'common name';
-    my $full_name = $args{'full_name'}
+    my $species_full_name = $args{'species_full_name'}
       or push @missing, 'full name';
     if (@missing) {
         return $self->error(
@@ -3362,14 +3362,14 @@ If not defined, the object_id will be assigned to it.
         q[           
             insert   
             into   cmap_species 
-                   ( accession_id, species_id, full_name, common_name,
+                   ( accession_id, species_id, species_full_name, species_common_name,
                      display_order
                    )
             values ( ?, ?, ?, ?, ? )
         ],
         {},
         (
-            $accession_id, $species_id, $full_name, $common_name, $display_order
+            $accession_id, $species_id, $species_full_name, $species_common_name, $display_order
         )
     );
 
@@ -3421,11 +3421,11 @@ Nothing
     my $sth = $db->prepare(
         q[
             select   count(ms.map_set_id) as no_map_sets, 
-                     s.common_name
+                     s.species_common_name
             from     cmap_map_set ms, cmap_species s
             where    s.species_id=?
             and      ms.species_id=s.species_id
-            group by s.common_name
+            group by s.species_common_name
         ]
     );
     $sth->execute($species_id);
@@ -3433,7 +3433,7 @@ Nothing
 
     if ( $hr->{'no_map_sets'} > 0 ) {
         return $self->error( 'Unable to delete ',
-            $hr->{'common_name'}, ' because ', $hr->{'no_map_sets'},
+            $hr->{'species_common_name'}, ' because ', $hr->{'no_map_sets'},
             ' map sets are linked to it.' );
     }
     else {
@@ -3591,9 +3591,9 @@ a key/value pair with the pk_name as key and the id as the value.
         table    => 'cmap_species',
         pk_name  => 'species_id',
         values   => \%args,
-        required => [qw/ common_name full_name accession_id /],
+        required => [qw/ species_common_name species_full_name accession_id /],
         fields   => [
-            qw/ accession_id full_name common_name display_order /
+            qw/ accession_id species_full_name species_common_name display_order /
         ],
     );
 }

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.224 2005-04-26 19:00:22 mwz444 Exp $
+# $Id: Data.pm,v 1.225 2005-04-26 23:26:25 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.224 $)[-1];
+$VERSION = (qw$Revision: 1.225 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -599,7 +599,7 @@ sub slot_data {
                            ms.is_relational_map,
                            s.species_id,
                            s.accession_id as species_aid,
-                           s.common_name as species_name
+                           s.species_common_name
                     from   cmap_map map,
                            cmap_map_set ms,
                            cmap_species s
@@ -1145,31 +1145,23 @@ Returns the data for the correspondence matrix.
 =cut
 
     my ( $self, %args ) = @_;
-    my $db = $self->db or return;
     my $species_aid      = $args{'species_aid'}      || '';
     my $map_type_aid     = $args{'map_type_aid'}     || '';
     my $map_set_aid      = $args{'map_set_aid'}      || '';
     my $map_name         = $args{'map_name'}         || '';
     my $link_map_set_aid = $args{'link_map_set_aid'} || 0;
     my $map_type_data    = $self->map_type_data();
+    my $db = $self->db or return;
+    my $sql_object = $self->sql or return;
 
     #
     # Get all the species.
     #
-# REPLACE 14
-    my $species = $db->selectall_arrayref(
-        q[
-            select   distinct s.accession_id as species_aid, 
-                     s.common_name,
-                     s.display_order 
-            from     cmap_species s,
-                     cmap_map_set ms
-            where    s.species_id=ms.species_id
-            and      ms.is_relational_map=0
-            and      ms.is_enabled=1
-            order by s.display_order, s.common_name
-        ],
-        { Columns => {} }
+# REPLACE 14 YYY
+    my $species = $sql_object->get_species(
+        cmap_object => $self,
+        is_relational_map => 0,
+        is_enabled        => 1,
     );
 
     #
@@ -1245,7 +1237,7 @@ Returns the data for the correspondence matrix.
 # REPLACE 18
         my $sql = q[
             select   s.display_order,
-                     s.common_name as species_name, 
+                     s.species_common_name, 
                      ms.accession_id as map_set_aid, 
                      ms.display_order,
                      ms.short_name as map_set_name,
@@ -1274,7 +1266,7 @@ Returns the data for the correspondence matrix.
         $map_sets = sort_selectall_arrayref(
             $map_sets,                 '#default_display_order',
             'map_type',                '#display_order',
-            'common_name',             '#display_order',
+            'species_common_name',             '#display_order',
             'epoch_published_on desc', 'short_name'
         );
 
@@ -1317,7 +1309,7 @@ Returns the data for the correspondence matrix.
                      ms.map_type_accession as map_type_aid, 
                      s.species_id,
                      s.accession_id as species_aid,
-                     s.common_name as species_name
+                     s.species_common_name
             from     cmap_map map,
                      cmap_map_set ms,
                      cmap_species s
@@ -1358,7 +1350,7 @@ Returns the data for the correspondence matrix.
                          ms.map_type_accession as map_type_aid, 
                          s.species_id,
                          s.accession_id as species_aid,
-                         s.common_name as species_name,
+                         s.species_common_name,
                          s.display_order as species_display_order
                 from     cmap_map map,
                          cmap_map_set ms,
@@ -1389,7 +1381,7 @@ Returns the data for the correspondence matrix.
                          ms.map_type_accession as map_type_aid, 
                          s.species_id,
                          s.accession_id as species_aid,
-                         s.common_name as species_name,
+                         s.species_common_name,
                          s.display_order as species_display_order
                 from     cmap_map_set ms,
                          cmap_species s
@@ -1425,7 +1417,7 @@ Returns the data for the correspondence matrix.
             sort_selectall_arrayref(
                 $tempMapSet,    '#map_type_display_order',
                 'map_type',     '#species_display_order',
-                'species_name', '#map_set_display_order',
+                'species_common_name', '#map_set_display_order',
                 'map_set_name', 'epoch_published_on desc',
                 'map_set_name'
             )
@@ -1614,7 +1606,7 @@ Returns the data for the correspondence matrix.
                      ms.short_name as map_set_name,
                      s.species_id,
                      s.accession_id as species_aid,
-                     s.common_name as species_name,
+                     s.species_common_name,
                      ms.map_type_accession as map_type_aid
             from     cmap_map map,
                      cmap_map_set ms,
@@ -1642,7 +1634,7 @@ Returns the data for the correspondence matrix.
                      ms.published_on,
                      s.species_id,
                      s.accession_id as species_aid,
-                     s.common_name as species_name,
+                     s.species_common_name,
                      s.display_order as species_display_order,
                      ms.map_type_accession as map_type_aid
             from     cmap_map_set ms,
@@ -1666,7 +1658,7 @@ Returns the data for the correspondence matrix.
         $tempMapSet = sort_selectall_arrayref(
             $tempMapSet,               '#map_type_display_order',
             'map_type',                '#species_display_order',
-            'species_name',            '#map_set_display_order',
+            'species_common_name',            '#map_set_display_order',
             'epoch_published_on desc', 'map_set_name'
         );
     }
@@ -1792,7 +1784,7 @@ sub cmap_form_data {
     my $ref_map                     = $slots->{0};
     my $ref_map_set_aid             = $args{'ref_map_set_aid'} || 0;
     my $db  = $self->db  or return;
-    my $sql = $self->sql or return;
+    my $sql_object = $self->sql or return;
     my $map_type_data = $self->map_type_data();
 
     my $pid = $$;
@@ -1839,31 +1831,12 @@ sub cmap_form_data {
     # Select all the map set that can be reference maps.
     #
 
-# REPLACE 28
-    $sql_str = q[
-            select   distinct s.accession_id as species_aid,
-                     s.display_order,
-                     s.common_name as species_common_name,
-                     s.full_name as species_full_name
-            from     cmap_map_set ms,
-                     cmap_species s
-            where    ms.is_enabled=1
-            and      ms.is_relational_map=0
-            and      ms.species_id=s.species_id
-            order by s.display_order,
-                     s.common_name, 
-                     s.full_name
-	      ];
-    my $ref_species;
-    my $scalar_ref;
-
-    if ( $scalar_ref = $self->get_cached_results( 1, $sql_str ) ) {
-        $ref_species = $$scalar_ref;
-    }
-    else {
-        $ref_species = $db->selectall_arrayref( $sql_str, { Columns => {} } );
-        $self->store_cached_results( 1, $sql_str, \$ref_species );
-    }
+# REPLACE 28 YYY
+    my $ref_species = $sql_object->get_species(
+        cmap_object => $self,
+        is_relational_map => 0,
+        is_enabled        => 1,
+    );
 
     if ( @$ref_species && !$ref_species_aid ) {
         $ref_species_aid = $ref_species->[0]{'species_aid'};
@@ -1875,7 +1848,7 @@ sub cmap_form_data {
     my $ref_map_sets = [];
     if ($ref_species_aid) {
 # REPLACE 64
-        $ref_map_sets = $sql->form_data_ref_map_sets(
+        $ref_map_sets = $sql_object->form_data_ref_map_sets(
             cmap_object     => $self,
             db              => $db,
             ref_species_aid =>$ref_species_aid
@@ -1899,7 +1872,7 @@ sub cmap_form_data {
             or ( $ref_map->{'map_sets'} and %{ $ref_map->{'map_sets'} } ) )
         {
 # REPLACE 65
-            $sql_str = $sql->form_data_ref_maps_sql;
+            $sql_str = $sql_object->form_data_ref_maps_sql;
             unless ( $ref_maps =
                 $self->get_cached_results( 1, $sql_str . "$ref_map_set_aid" ) )
             {
@@ -1928,8 +1901,8 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
                              ms.is_relational_map, 
                              ms.map_units, 
                              s.accession_id as species_aid, 
-                             s.common_name as species_common_name, 
-                             s.full_name as species_full_name
+                             s.species_common_name, 
+                             s.species_full_name
                     from     cmap_map_set ms, 
                              cmap_species s
                     where    ms.accession_id=?
@@ -2183,7 +2156,7 @@ out which maps have relationships.
 # REPLACE 31
     my $ms_sth = $db->prepare(
         q[
-            select s.common_name as species_name,
+            select s.species_common_name,
                    s.display_order as species_display_order,
                    ms.map_type_accession as map_type_aid,
                    ms.accession_id as map_set_aid,
@@ -2252,7 +2225,7 @@ out which maps have relationships.
             $a->{'map_type_display_order'} <=> $b->{'map_type_display_order'}
               || $a->{'map_type'} cmp $b->{'map_type'}
               || $a->{'species_display_order'} <=> $b->{'species_display_order'}
-              || $a->{'species_name'} cmp $b->{'species_name'}
+              || $a->{'species_common_name'} cmp $b->{'species_common_name'}
               || $a->{'ms_display_order'} <=> $b->{'ms_display_order'}
               || $b->{'published_on'} <=> $a->{'published_on'}
               || $a->{'map_set_name'} cmp $b->{'map_set_name'}
@@ -2297,7 +2270,7 @@ out which maps have relationships.
         push @sorted_map_sets,
           {
             map_type           => $map_set->{'map_type'},
-            species_name       => $map_set->{'species_name'},
+            species_common_name       => $map_set->{'species_common_name'},
             map_set_name       => $map_set->{'map_set_name'},
             map_set_aid        => $map_set->{'map_set_aid'},
             no_correspondences => $total_correspondences,
@@ -2440,7 +2413,7 @@ sub fill_out_maps {
     my $base_sql = q[ 
         select distinct ms.map_set_id,
                ms.short_name as map_set_name,
-               s.common_name as species_name
+               s.species_common_name
         from   cmap_map_set ms,
                cmap_species s,
                cmap_map map 
@@ -2463,13 +2436,13 @@ sub fill_out_maps {
         }
         my %desc_by_species;
         foreach my $row (@$map_info) {
-            if ( $desc_by_species{ $row->{'species_name'} } ) {
-                $desc_by_species{ $row->{'species_name'} } .=
+            if ( $desc_by_species{ $row->{'species_common_name'} } ) {
+                $desc_by_species{ $row->{'species_common_name'} } .=
                   "," . $row->{'map_set_name'};
             }
             else {
-                $desc_by_species{ $row->{'species_name'} } .=
-                  $row->{'species_name'} . "-" . $row->{'map_set_name'};
+                $desc_by_species{ $row->{'species_common_name'} } .=
+                  $row->{'species_common_name'} . "-" . $row->{'map_set_name'};
             }
         }
         $map->{'description'} =
@@ -2693,7 +2666,7 @@ Given a list of feature names, find any maps they occur on.
           } parse_words($feature_string)
     );
     my $order_by = $args{'order_by'}
-      || 'feature_name,species_name,map_set_name,map_name,start_position';
+      || 'feature_name,species_common_name,map_set_name,map_name,start_position';
     my $search_field = $args{'search_field'}
       || $self->config_data('feature_search_field');
     $search_field = DEFAULT->{'feature_search_field'}
@@ -2779,15 +2752,9 @@ Given a list of feature names, find any maps they occur on.
     # results so they can narrow down what they have.  If no search
     # results, then just show all.
     #
-# REPLACE 41
-    my $species = $db->selectall_arrayref(
-        q[
-            select   s.accession_id as species_aid,
-                     s.common_name as species_name
-            from     cmap_species s
-            order by species_name
-        ],
-        { Columns => {} }
+# REPLACE 41 YYY
+    my $species = $sql_object->get_species(
+        cmap_object => $self,
     );
 
     #
@@ -3020,6 +2987,7 @@ Returns the data for drawing comparative maps.
     my $species_aid  = $args{'species_aid'}  || 0;
     my $map_type_aid = $args{'map_type_aid'} || 0;
     my $db = $self->db or return;
+    my $sql_object = $self->sql or return;
 
     my $map_type_data = $self->map_type_data();
     for ( $species_aid, $map_type_aid ) {
@@ -3054,8 +3022,8 @@ Returns the data for drawing comparative maps.
                  ms.map_units, 
                  ms.is_relational_map, 
                  s.accession_id as species_aid, 
-                 s.common_name, 
-                 s.full_name
+                 s.species_common_name, 
+                 s.species_full_name
         from     cmap_map_set ms,  
                  cmap_species s
         where    ms.species_id=s.species_id
@@ -3151,16 +3119,9 @@ Returns the data for drawing comparative maps.
     #
     # Grab species and map type info for form restriction controls.
     #
-# REPLACE 45
-    my $species = $db->selectall_arrayref(
-        q[
-            select   s.accession_id as species_aid,
-                     s.common_name as species_name
-            from     cmap_species s
-            order by s.display_order,
-                     species_name
-        ],
-        { Columns => {} }
+# REPLACE 45 YYY
+    my $species = $sql_object->get_species(
+        cmap_object => $self,
     );
 
     my $map_types =
@@ -3298,7 +3259,7 @@ Returns the detail info for a map.
     my $sth = $db->prepare(
         q[
             select s.accession_id as species_aid,
-                   s.common_name as species_name,
+                   s.species_common_name,
                    ms.accession_id as map_set_aid,
                    ms.short_name as map_set_name,
                    map.accession_id as map_aid,
@@ -3459,10 +3420,9 @@ Returns the detail info for a map.
                     map_type_display_order
                     map_type
                     species_display_order
-                    species_name
+                    species_common_name
                     ms_display_order
                     map_set
-                    species_name
                     map_set_name
                     map_set_aid
                     ]
@@ -3515,7 +3475,7 @@ Returns the detail info for a map.
             $a->{'map_type_display_order'} <=> $b->{'map_type_display_order'}
               || $a->{'map_type'} cmp $b->{'map_type'}
               || $a->{'species_display_order'} <=> $b->{'species_display_order'}
-              || $a->{'species_name'} cmp $b->{'species_name'}
+              || $a->{'species_common_name'} cmp $b->{'species_common_name'}
               || $a->{'ms_display_order'} <=> $b->{'ms_display_order'}
               || $b->{'published_on'} <=> $a->{'published_on'}
               || $a->{'map_set_name'} cmp $b->{'map_set_name'}
@@ -3529,7 +3489,7 @@ Returns the detail info for a map.
 
         push @comparative_maps,
           {
-            map_set_name => $map_set->{'species_name'} . ' - '
+            map_set_name => $map_set->{'species_common_name'} . ' - '
               . $map_set->{'map_set_name'},
             map_set_aid => $map_set->{'map_set_aid'},
             map_type    => $map_set->{'map_type'},
@@ -3664,36 +3624,18 @@ Returns data on species.
     my ( $self, %args ) = @_;
     my @species_aids = @{ $args{'species_aids'} || [] };
     my $db = $self->db or return;
+    my $sql_object         = $self->sql;
 
     my $map_type_data = $self->map_type_data();
-# REPLACE 50
-    my $sql           = q[
-        select   s.species_id,
-                 s.accession_id as species_aid,
-                 s.common_name,
-                 s.full_name,
-                 s.display_order
-        from     cmap_species s 
-    ];
+# REPLACE 50 YYY
+    my $species = $sql_object->get_species(
+        cmap_object => $self,
+        species_aids => \@species_aids,
+    );
 
-    if (@species_aids) {
-        $sql .=
-          'where s.accession_id in ('
-          . join( ',', map { qq['$_'] } @species_aids ) . ') ';
-    }
-
-    $sql .= 'order by display_order, common_name';
-
-    my $species = $db->selectall_arrayref( $sql, { Columns => {} } );
-
-# REPLACE 51
-    my $all_species = $db->selectall_arrayref(
-        q[
-            select   accession_id as species_aid, common_name, full_name
-            from     cmap_species
-            order by common_name
-        ],
-        { Columns => {} }
+# REPLACE 51 YYY
+    my $all_species = $sql_object->get_species(
+        cmap_object => $self,
     );
 
 # REPLACE 52
@@ -4218,7 +4160,7 @@ sub cmap_map_search_data {
     my $ref_map         = $slots->{0};
     my $ref_map_set_aid = $ref_map->{'map_set_aid'} || 0;
     my $db  = $self->db  or return;
-    my $sql = $self->sql or return;
+    my $sql_object = $self->sql or return;
     my $pid = $$;
     my $no_maps;
 
@@ -4263,28 +4205,11 @@ sub cmap_map_search_data {
     # Select all Species with map set
     #
 
-# REPLACE 57
-    $sql_str = q[
-            select   distinct s.accession_id as species_aid,
-                     s.display_order,
-                     s.common_name as species_common_name,
-                     s.full_name as species_full_name
-            from     cmap_map_set ms,
-                     cmap_species s
-            where    ms.is_enabled=1
-            and      ms.species_id=s.species_id
-            order by s.display_order,
-                     s.common_name, 
-                     s.full_name
-	      ];
-    my $ref_species;
-    if ( my $scalar_ref = $self->get_cached_results( 1, $sql_str ) ) {
-        $ref_species = $$scalar_ref;
-    }
-    else {
-        $ref_species = $db->selectall_arrayref( $sql_str, { Columns => {} } );
-        $self->store_cached_results( 1, $sql_str, \$ref_species );
-    }
+# REPLACE 57 YYY
+    my $ref_species = $sql_object->get_species(
+        cmap_object => $self,
+        is_enabled        => 1,
+    );
 
     if ( @$ref_species && !$ref_species_aid ) {
         $ref_species_aid = $ref_species->[0]{'species_aid'};
@@ -4296,7 +4221,7 @@ sub cmap_map_search_data {
     my $ref_map_sets = [];
     if ($ref_species_aid) {
 # REPLACE 72
-        $sql_str = $sql->form_data_map_sets_sql($ref_species_aid);
+        $sql_str = $sql_object->form_data_map_sets_sql($ref_species_aid);
         unless ( $ref_map_sets = $self->get_cached_results( 1, $sql_str ) ) {
             $ref_map_sets =
               $db->selectall_arrayref( $sql_str, { Columns => {} }, );

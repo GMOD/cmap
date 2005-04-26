@@ -23,7 +23,7 @@
                 <select name="species_id">
                     <option value="">--Please Select--</option>
                     [% FOREACH s=specie %]
-                        <option value="[% s.species_id %]"[% IF apr.param('species_id') == s.species_id %] selected[% END %]>[% s.common_name %] ([% s.full_name %])</option>
+                        <option value="[% s.species_id %]"[% IF apr.param('species_id') == s.species_id %] selected[% END %]>[% s.species_common_name %] ([% s.species_full_name %])</option>
                     [% END %]
                 </select>
             </td>
@@ -43,7 +43,7 @@
                 <select name="map_set_id">
                     <option value="">--Please Select--</option>
                     [% FOREACH ms=map_sets %]
-                        <option value="[% ms.map_set_id %]"[% IF apr.param('map_set_id') == ms.map_set_id %] selected[% END %]>[% ms.species_name %] - [% ms.map_set_name %]</option>
+                        <option value="[% ms.map_set_id %]"[% IF apr.param('map_set_id') == ms.map_set_id %] selected[% END %]>[% ms.species_common_name %] - [% ms.map_set_name %]</option>
                     [% END %]
                 </select>
             </td>

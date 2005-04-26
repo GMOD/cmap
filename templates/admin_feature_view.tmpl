@@ -11,7 +11,7 @@
             Map:
         </th>
         <td>
-            [% feature.species_name %]-[% feature.map_set_name %]-[% feature.map_name %]
+            [% feature.species_common_name %]-[% feature.map_set_name %]-[% feature.map_name %]
             (<a href="admin?action=map_view;map_id=[% feature.map_id %]">View Map</a>)
         </td>
     </tr>
@@ -158,7 +158,7 @@
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
                 <td>[% fc.accession_id %]</td>
                 <td>
-                    <a href="admin?action=map_view;map_id=[% fc.map_id %]">[% fc.species_name %]-[% fc.map_set_name %]-[% fc.map_name %]</a>
+                    <a href="admin?action=map_view;map_id=[% fc.map_id %]">[% fc.species_common_name %]-[% fc.map_set_name %]-[% fc.map_name %]</a>
                 </td>
                 <td>
                     <a href="admin?action=feature_view;feature_id=[% fc.feature_id %]">[% fc.feature_name %]</a>

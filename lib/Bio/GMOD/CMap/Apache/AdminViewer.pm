@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.76 2005-04-22 00:50:33 mwz444 Exp $
+# $Id: AdminViewer.pm,v 1.77 2005-04-26 23:26:28 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -33,7 +33,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.76 $)[-1];
+$VERSION        = (qw$Revision: 1.77 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -111,7 +111,7 @@ use constant XREF_OBJECTS     => [
     {
         table_name            => 'cmap_species',
         object_name           => 'Species',
-        name_field            => 'common_name',
+        name_field            => 'species_common_name',
     },
 ];
 
@@ -727,7 +727,7 @@ sub map_create {
         q[
             select ms.map_set_id, 
                    ms.short_name as map_set_name,
-                   s.common_name as species_name
+                   s.species_common_name
             from   cmap_map_set ms,
                    cmap_species s
             where  ms.map_set_id=?
@@ -767,7 +767,7 @@ sub map_edit {
                    ms.map_set_id, 
                    ms.map_set_name,
                    ms.map_type_accession as map_type_aid,
-                   s.common_name as species_name
+                   s.species_common_name
             from   cmap_map map, 
                    cmap_map_set ms, 
                    cmap_species s
@@ -833,8 +833,8 @@ sub map_view {
                    ms.short_name as map_set_name,
                    ms.map_type_accession as map_type_aid,
                    ms.map_units,
-                   s.common_name as species_name,
-                   s.full_name as species_full_name
+                   s.species_common_name,
+                   s.species_full_name
             from   cmap_map map, 
                    cmap_map_set ms, 
                    cmap_species s
@@ -1165,7 +1165,7 @@ sub feature_create {
             select map.map_id, 
                    map.map_name,
                    ms.short_name as map_set_name,
-                   s.common_name as species_name
+                   s.species_common_name
             from   cmap_map map,
                    cmap_map_set ms,
                    cmap_species s
@@ -1215,7 +1215,7 @@ sub feature_edit {
                        f.is_landmark,
                        map.map_name,
                        ms.short_name as map_set_name,
-                       s.common_name as species_name
+                       s.species_common_name
             from       cmap_feature f
             inner join cmap_map map
             on         f.map_id=map.map_id
@@ -1328,7 +1328,7 @@ sub feature_view {
                        f.stop_position,
                        map.map_name,
                        ms.short_name as map_set_name,
-                       s.common_name as species_name
+                       s.species_common_name
             from       cmap_feature f
             inner join cmap_map map
             on         f.map_id=map.map_id
@@ -1372,7 +1372,7 @@ sub feature_view {
                    map.map_id,
                    map.map_name,
                    ms.short_name as map_set_name,
-                   s.common_name as species_name
+                   s.species_common_name
             from   cmap_correspondence_lookup cl,
                    cmap_feature_correspondence fc,
                    cmap_feature f,
@@ -1483,7 +1483,7 @@ sub feature_corr_create {
                    map.map_name,
                    ms.short_name as map_set_name,
                    s.species_id,
-                   s.common_name as species_name
+                   s.species_common_name
             from   cmap_feature f,
                    cmap_map map,
                    cmap_map_set ms,
@@ -1519,7 +1519,7 @@ sub feature_corr_create {
                    map.map_name,
                    ms.short_name as map_set_name,
                    s.species_id,
-                   s.common_name as species_name
+                   s.species_common_name
             from   cmap_feature f,
                    cmap_map map,
                    cmap_map_set ms,
@@ -1536,10 +1536,10 @@ sub feature_corr_create {
     my $species = $db->selectall_arrayref(
         q[
             select   s.species_id,
-                     s.common_name,
-                     s.full_name
+                     s.species_common_name,
+                     s.species_full_name
             from     cmap_species s
-            order by common_name
+            order by species_common_name
         ],
         { Columns => {} }
     );
@@ -1727,7 +1727,7 @@ sub feature_corr_view {
                    map.map_name,
                    ms.map_set_id,
                    ms.short_name as map_set_name,
-                   s.common_name as species_name
+                   s.species_common_name
             from   cmap_feature f,
                    cmap_map map,
                    cmap_map_set ms,
@@ -2051,7 +2051,7 @@ sub map_sets_view {
     }
     else {
         $order_by =
-            'ms.display_order, map_type_aid, s.display_order, s.common_name, '.
+            'ms.display_order, map_type_aid, s.display_order, s.species_common_name, '.
             'ms.display_order, ms.published_on desc, ms.short_name';
     }
 
@@ -2062,7 +2062,7 @@ sub map_sets_view {
                     ms.published_on,
                     ms.is_enabled,
                     ms.display_order,
-                    s.common_name as species_name,
+                    s.species_common_name,
                     s.display_order,
                     ms.map_type_accession as map_type_aid,
                     count(map.map_id) as no_maps
@@ -2083,7 +2083,7 @@ sub map_sets_view {
                     ms.published_on,
                     ms.is_enabled,
                     ms.display_order,
-                    s.common_name,
+                    s.species_common_name,
                     s.display_order,
                     ms.map_type_accession            
         order by $order_by
@@ -2110,11 +2110,11 @@ sub map_sets_view {
 
     my $specie = $db->selectall_arrayref(
         q[
-            select   distinct s.species_id, s.full_name, s.common_name
+            select   distinct s.species_id, s.species_full_name, s.species_common_name
             from     cmap_species s,
                      cmap_map_set ms
             where    s.species_id=ms.species_id
-            order by common_name
+            order by species_common_name
         ], { Columns => {} }
     );
     my $map_types;
@@ -2147,9 +2147,9 @@ sub map_set_create {
 
     my $specie = $db->selectall_arrayref(
         q[
-            select   s.species_id, s.full_name, s.common_name
+            select   s.species_id, s.species_full_name, s.species_common_name
             from     cmap_species s
-            order by common_name
+            order by species_common_name
         ], { Columns => {} }
     );
 
@@ -2208,8 +2208,8 @@ sub map_set_edit {
                       ms.shape, 
                       ms.width, 
                       ms.color,
-                      s.common_name as species_common_name,
-                      s.full_name as species_full_name,
+                      s.species_common_name,
+                      s.species_full_name,
                       ms.map_units
             from      cmap_map_set ms, 
                       cmap_species s 
@@ -2233,9 +2233,9 @@ sub map_set_edit {
 
     my $specie = $db->selectall_arrayref(
         q[
-            select   species_id, full_name, common_name
+            select   species_id, species_full_name, species_common_name
             from     cmap_species
-            order by common_name
+            order by species_common_name
         ], { Columns => {} }
     );
 
@@ -2306,8 +2306,8 @@ sub map_set_view {
                       ms.is_relational_map,
                       ms.can_be_reference_map, ms.is_enabled,
                       ms.shape, ms.color, ms.width,
-                      s.common_name as species_common_name,
-                      s.full_name as species_full_name,
+                      s.species_common_name,
+                      s.species_full_name,
                       ms.map_units,
                       ms.is_relational_map
             from      cmap_map_set ms, 
@@ -2586,8 +2586,8 @@ sub species_edit {
         q[
             select   accession_id,
                      species_id, 
-                     common_name, 
-                     full_name,
+                     species_common_name, 
+                     species_full_name,
                      display_order
             from     cmap_species
             where    species_id=?
@@ -2615,8 +2615,8 @@ sub species_insert {
 
     $admin->species_create( 
         accession_id  => $apr->param('accession_id')  || '', 
-        common_name   => $apr->param('common_name')   || '', 
-        full_name     => $apr->param('full_name')     || '', 
+        species_common_name   => $apr->param('species_common_name')   || '', 
+        species_full_name     => $apr->param('species_full_name')     || '', 
         display_order => $apr->param('display_order') || '', 
     ) or return $self->species_create( errors => $admin->error );
 
@@ -2633,9 +2633,9 @@ sub species_update {
                         push @errors, 'No accession id';
     my $species_id    = $apr->param('species_id')   or 
                         push @errors, 'No species id';
-    my $common_name   = $apr->param('common_name')  or 
+    my $species_common_name   = $apr->param('species_common_name')  or 
                         push @errors, 'No common name';
-    my $full_name     = $apr->param('full_name')    or 
+    my $species_full_name     = $apr->param('species_full_name')    or 
                         push @errors, 'No full name';
     my $display_order = $apr->param('display_order') || 1;
 
@@ -2645,13 +2645,13 @@ sub species_update {
         q[ 
             update cmap_species
             set    accession_id=?,
-                   common_name=?, 
-                   full_name=?,
+                   species_common_name=?, 
+                   species_full_name=?,
                    display_order=?
             where  species_id=?
         ],
         {}, 
-        ($accession_id, $common_name, $full_name, $display_order, $species_id)
+        ($accession_id, $species_common_name, $species_full_name, $display_order, $species_id)
     );
 
     return $self->redirect_home( ADMIN_HOME_URI.'?action=species_view' ); 
@@ -2663,13 +2663,13 @@ sub species_view {
     my $db          = $self->db;
     my $apr         = $self->apr;
     my $species_id  = $apr->param('species_id') || 0;
-    my $order_by    = $apr->param('order_by')   || 'display_order,common_name';
+    my $order_by    = $apr->param('order_by')   || 'display_order,species_common_name';
     my $page_no     = $apr->param('page_no')    ||  1;
     my $sql         = q[
         select   accession_id, 
                  species_id, 
-                 full_name, 
-                 common_name,
+                 species_full_name, 
+                 species_common_name,
                  display_order
         from     cmap_species
     ];

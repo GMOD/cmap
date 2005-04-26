@@ -140,8 +140,8 @@ Table: cmap_map_set
   can_be_reference_map
   map_units
   species_aid          [cmap_species.accession_id]
-  common_name          [cmap_species]
-  full_name            [cmap_species]
+  species_common_name          [cmap_species]
+  species_full_name            [cmap_species]
 
 =head2 Map Details (/cmap/map_details)
 
@@ -155,7 +155,7 @@ Table: cmap_map
   map_set_aid  [cmap_map_set.accession_id]
   map_set_name [cmap_map_set.short_name]
   species_aid  [cmap_species.accession_id]
-  species_name [cmap_species.common_name]
+  species_common_name [cmap_species.species_common_name]
 
 =head2 Feature Details (/cmap/feature)
 
@@ -177,7 +177,7 @@ Table: cmap_feature
   map_set_aid      [cmap_map_set.accession_id]
   map_set_name     [cmap_map_set.short_name ]
   species_id       [cmap_species]
-  species_name     [cmap_species.common_name]
+  species_common_name     [cmap_species.species_common_name]
   map_type_aid     [cmap_map.accession_id]
   map_units        [cmap_map_set.map_units]
 
@@ -227,8 +227,8 @@ Table: cmap_species
 
   species_id
   species_aid (accession_id)
-  common_name
-  full_name
+  species_common_name
+  species_full_name
   display_order
 
 =head2 Correspondence Details (/cmap/correspondence)

@@ -20,7 +20,7 @@
     <select name="species_aid">
         <option value="">--All Species--</option>
         [% FOREACH s=all_species %]
-            <option value="[% s.species_aid %]"[% IF apr.param('species_aid')==s.species_aid %] selected[% END %]>[% s.common_name %] ([% s.full_name %])</option>
+            <option value="[% s.species_aid %]"[% IF apr.param('species_aid')==s.species_aid %] selected[% END %]>[% s.species_common_name %] ([% s.species_full_name %])</option>
         [% END %]
     </select>
     <input type="submit" value="Submit">
@@ -38,13 +38,13 @@
         [% FOREACH s=species %]
             <tr class="colored">
                 <td align="right">Common&nbsp;Name:</td>
-                <td><b>[% s.common_name %]</b></td>
+                <td><b>[% s.species_common_name %]</b></td>
                 <td align="center"><b>[</b>&nbsp;<a href="species_info?species_aid=[% s.species_aid %]">Show Only This Species</a>&nbsp;<b>]</b></td>
             </tr> 
 
             <tr>
                 <td align="right">Full&nbsp;Name:</td>
-                <td colspan="2">[% s.full_name %]</td>
+                <td colspan="2">[% s.species_full_name %]</td>
             </tr>
 
             <tr>

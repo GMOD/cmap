@@ -28,7 +28,7 @@
                 <select name="species_id">
                     <option value="">--All--</option>
                     [% FOREACH s=specie %]
-                        <option value="[% s.species_id %]"[% IF apr.param('species_id') == s.species_id %] selected[% END %]>[% s.common_name %] ([% s.full_name %])</option>
+                        <option value="[% s.species_id %]"[% IF apr.param('species_id') == s.species_id %] selected[% END %]>[% s.species_common_name %] ([% s.species_full_name %])</option>
                     [% END %]
                 </select>
             </td>
@@ -62,7 +62,7 @@
         </tr>
         <tr>
             <th><a href="admin?action=map_sets_view;order_by=map_type_accession;species_id=[% apr.param('species_id') %];map_type_aid=[% apr.param('map_type_aid') %];is_enabled=[% apr.param('is_enabled') %]">Map Type</a></th>
-            <th><a href="admin?action=map_sets_view;order_by=species_name;species_id=[% apr.param('species_id') %];map_type_aid=[% apr.param('map_type_aid') %];is_enabled=[% apr.param('is_enabled') %]">Species</a></th>
+            <th><a href="admin?action=map_sets_view;order_by=species_common_name;species_id=[% apr.param('species_id') %];map_type_aid=[% apr.param('map_type_aid') %];is_enabled=[% apr.param('is_enabled') %]">Species</a></th>
             <th><a href="admin?action=map_sets_view;order_by=accession_id;species_id=[% apr.param('species_id') %];map_type_aid=[% apr.param('map_type_aid') %];is_enabled=[% apr.param('is_enabled') %]">Acc. ID</a></th>
             <th><a href="admin?action=map_sets_view;order_by=map_set_name;species_id=[% apr.param('species_id') %];map_type_aid=[% apr.param('map_type_aid') %];is_enabled=[% apr.param('is_enabled') %]">Set Name</a></th>
             <th><a href="admin?action=map_sets_view;order_by=is_enabled;species_id=[% apr.param('species_id') %];map_type_aid=[% apr.param('map_type_aid') %];is_enabled=[% apr.param('is_enabled') %]">Enabled</a></th>
@@ -74,7 +74,7 @@
         [% FOREACH ms=map_sets %]
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
                 <td>[% ms.map_type %]</td>
-                <td>[% ms.species_name %]</td>
+                <td>[% ms.species_common_name %]</td>
                 <td>[% ms.accession_id %]</td>
                 <td>[% ms.map_set_name %]</td>
                 <td>[% IF ms.is_enabled %]Yes[% ELSE %]No[% END %]</td>

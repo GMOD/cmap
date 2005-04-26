@@ -18,7 +18,7 @@
                 <select name="species_id">
                     <option value="">--All--</option>
                     [% FOREACH s=specie %]
-                        <option value="[% s.species_id %]"[% IF apr.param('species_id') == s.species_id %] selected[% END %]>[% s.common_name %] ([% s.full_name %])</option>
+                        <option value="[% s.species_id %]"[% IF apr.param('species_id') == s.species_id %] selected[% END %]>[% s.species_common_name %] ([% s.species_full_name %])</option>
                     [% END %]
                 </select>
             </td>
@@ -53,7 +53,7 @@
         </tr>
         <tr>
             <th><a href="admin?action=dbxrefs_view;species_id=[% apr.param('species_id') %];feature_type=[% apr.param('feature_type') %];order_by=feature_type">Feature Type</a></th>
-            <th><a href="admin?action=dbxrefs_view;species_id=[% apr.param('species_id') %];feature_type=[% apr.param('feature_type') %];order_by=species_name">Species</a></th>
+            <th><a href="admin?action=dbxrefs_view;species_id=[% apr.param('species_id') %];feature_type=[% apr.param('feature_type') %];order_by=species_common_name">Species</a></th>
             <th><a href="admin?action=dbxrefs_view;species_id=[% apr.param('species_id') %];feature_type=[% apr.param('feature_type') %];order_by=map_set_name">Map Set Name</a></th>
             <th><a href="admin?action=dbxrefs_view;species_id=[% apr.param('species_id') %];feature_type=[% apr.param('feature_type') %];order_by=dbxref_name">Name</a></th>
             <th><a href="admin?action=dbxrefs_view;species_id=[% apr.param('species_id') %];feature_type=[% apr.param('feature_type') %];order_by=url">URL</a></th>
@@ -64,7 +64,7 @@
         [% FOREACH ref=dbxrefs %]
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
                 <td>[% ref.feature_type %]</td>
-                <td>[% ref.species_name %]</td>
+                <td>[% ref.species_common_name %]</td>
                 <td>[% ref.map_set_name %]</td>
                 <td>[% ref.dbxref_name %]</td>
                 <td>[% ref.url | truncate(25) %]</td>

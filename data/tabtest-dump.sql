@@ -131,7 +131,7 @@ INSERT INTO cmap_next_number (table_name, next_number) VALUES ('cmap_corresponde
 --
 
 
-INSERT INTO cmap_species (species_id, accession_id, common_name, full_name, display_order) VALUES (1,'1','Test_Species','Test Species',1);
+INSERT INTO cmap_species (species_id, accession_id, species_common_name, species_full_name, display_order) VALUES (1,'1','Test_Species','Test Species',1);
 
 --
 -- Dumping data for table `cmap_xref`

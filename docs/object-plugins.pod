@@ -207,8 +207,8 @@ parentheses) and the hashref's fields you can use:
 =head2 Map Set (map_set_info)
 
   can_be_reference_map
-  common_name
-  full_name
+  species_common_name
+  species_full_name
   is_relational_map
   map_set_aid
   map_set_id
@@ -232,7 +232,7 @@ parentheses) and the hashref's fields you can use:
   map_units
   object_id
   species_aid
-  species_name
+  species_common_name
   start
   start_position
   stop
@@ -259,7 +259,7 @@ parentheses) and the hashref's fields you can use:
   object_id
   species_aid
   species_id
-  species_name
+  species_common_name
   start_position
   stop_position
 
@@ -290,9 +290,9 @@ parentheses) and the hashref's fields you can use:
 
 =head2 Species (species_info)
 
-  common_name
+  species_common_name
   display_order
-  full_name
+  species_full_name
   species_aid
   species_id
 

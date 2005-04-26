@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Export;
 
 # vim: set ft=perl:
 
-# $Id: Export.pm,v 1.15 2005-04-22 14:26:32 mwz444 Exp $
+# $Id: Export.pm,v 1.16 2005-04-26 23:26:28 mwz444 Exp $
 
 =pod
 
@@ -29,7 +29,7 @@ of data out of CMap.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.15 $)[-1];
+$VERSION = (qw$Revision: 1.16 $)[-1];
 
 use Data::Dumper;
 use File::Spec::Functions;
@@ -568,8 +568,8 @@ Species object
     my $sql = q[
         select species_id as object_id,
                accession_id,
-               common_name, 
-               full_name, 
+               species_common_name, 
+               species_full_name, 
                display_order
         from   cmap_species
     ];

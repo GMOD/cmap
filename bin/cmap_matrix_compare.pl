@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_matrix_compare.pl,v 1.7 2004-02-10 23:07:07 kycl4rk Exp $
+# $Id: cmap_matrix_compare.pl,v 1.8 2005-04-26 23:26:23 mwz444 Exp $
 
 =head1 NAME
 
@@ -101,13 +101,13 @@ my $map_sets = $db->selectall_hashref(
         select   ms.accession_id, 
                  ms.short_name as map_set_name,
                  ms.can_be_reference_map,
-                 s.common_name as species_name
+                 s.species_common_name
         from     cmap_map_set ms,
                  cmap_species s
         where    ms.is_enabled=1
         and      ms.species_id=s.species_id
         order by s.display_order,
-                 species_name,
+                 species_common_name,
                  ms.display_order,
                  ms.published_on desc,
                  ms.map_set_name
@@ -190,12 +190,12 @@ sub compare {
     for my $ms ( 
         map  { $_->[2] }
         sort { $a->[0] cmp $b->[0] || $a->[1] cmp $b->[1] }
-        map  { [ $_->{'species_name'}, $_->{'map_set_name'}, $_ ] }
+        map  { [ $_->{'species_common_name'}, $_->{'map_set_name'}, $_ ] }
         values %$map_sets 
     ) {
         next unless $ms->{'can_be_reference_map'};
         my $map_set_name = join(
-            '-', $ms->{'species_name'}, $ms->{'map_set_name'} 
+            '-', $ms->{'species_common_name'}, $ms->{'map_set_name'} 
         );
 
         my $table = Text::TabularDisplay->new(
@@ -211,7 +211,7 @@ sub compare {
                 { $ms->{'accession_id'} } || '-';
 
             push @corr, [
-                $link_ms->{'species_name'},
+                $link_ms->{'species_common_name'},
                 $link_ms->{'map_set_name'},
                 $cur,
                 $old,
@@ -245,12 +245,12 @@ sub show_current {
     for my $ms ( 
         map  { $_->[2] }
         sort { $a->[0] cmp $b->[0] || $a->[1] cmp $b->[1] }
-        map  { [ $_->{'species_name'}, $_->{'map_set_name'}, $_ ] }
+        map  { [ $_->{'species_common_name'}, $_->{'map_set_name'}, $_ ] }
         values %$map_sets 
     ) {
         next unless $ms->{'can_be_reference_map'};
         my $map_set_name = join(
-            '-', $ms->{'species_name'}, $ms->{'map_set_name'} 
+            '-', $ms->{'species_common_name'}, $ms->{'map_set_name'} 
         );
 
         my $table = Text::TabularDisplay->new( $map_set_name, '# Corr.' );
@@ -259,7 +259,7 @@ sub show_current {
         for my $rec ( @{ $ms->{'correspondences'} } ) {
             my $link_ms = $map_sets->{ $rec->{'link_map_set_aid'} } or next;
             push @corr, [
-                $link_ms->{'species_name'}, 
+                $link_ms->{'species_common_name'}, 
                 $link_ms->{'map_set_name'},
                 $rec->{'correspondences'},
             ];

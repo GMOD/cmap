@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.153 2005-03-28 21:00:18 mwz444 Exp $
+# $Id: Map.pm,v 1.154 2005-04-26 23:26:30 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.153 $)[-1];
+$VERSION = (qw$Revision: 1.154 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -57,7 +57,7 @@ BEGIN {
     #
     my @AUTO_FIELDS = qw[
       map_set_id map_set_aid map_type accession_id species_id
-      map_id species_name map_units map_name map_set_name
+      map_id species_common_name map_units map_name map_set_name
       map_type_id is_relational_map begin end species_aid map_type_aid
     ];
 

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.68 2005-04-26 19:00:31 mwz444 Exp $
+# $Id: Generic.pm,v 1.69 2005-04-26 23:26:29 mwz444 Exp $
 
 =head1 NAME
 
@@ -33,7 +33,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.68 $)[-1];
+$VERSION = (qw$Revision: 1.69 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -179,7 +179,7 @@ The SQL for finding correspondences for a feature.
                  ms.published_on,
                  ms.map_type_accession as map_type_aid,
                  ms.map_units,
-                 s.common_name as species_name,
+                 s.species_common_name,
                  s.display_order as species_display_order,
                  fc.feature_correspondence_id,
                  fc.accession_id as feature_correspondence_aid,
@@ -248,7 +248,7 @@ The SQL for finding correspondences for a feature.
     }
 
     $sql .= q[
-            order by species_display_order, species_name, 
+            order by species_display_order, species_common_name, 
             ms_display_order, map_set_name, map_display_order,
             map_name, start_position, feature_name
     ];
@@ -284,7 +284,7 @@ The SQL for finding basic info on a feature.
                    ms.short_name as map_set_name,
                    s.species_id,
                    s.accession_id as species_aid,
-                   s.common_name as species_name,
+                   s.species_common_name,
                    ms.map_type_accession as map_type_aid,
                    ms.map_units
         from       cmap_feature f
@@ -322,7 +322,7 @@ The SQL for finding all reference map sets.
                  ms.short_name as map_set_name,
                  ms.display_order as map_set_display_order,
                  ms.published_on,
-                 s.common_name as species_name,
+                 s.species_common_name,
                  s.display_order as species_display_order,
                  ms.map_type_accession as map_type_aid
         from     cmap_map_set ms,
@@ -339,7 +339,7 @@ The SQL for finding all reference map sets.
         order by ms.display_order,
                  ms.map_type_accession,
                  s.display_order,
-                 species_name,
+                 species_common_name,
                  ms.published_on desc,
                  ms.map_set_name
     ];
@@ -360,7 +360,7 @@ The SQL for finding all reference map sets.
         $return_object = sort_selectall_arrayref(
             $return_object,            '#map_type_display_order',
             'map_type',                '#species_display_order',
-            'species_name',            '#map_set_display_order',
+            'species_common_name',            '#map_set_display_order',
             'epoch_published_on desc', 'map_set_name',
         );
 
@@ -389,7 +389,7 @@ The SQL for finding all map sets.
                  ms.short_name as map_set_name,
                  ms.display_order as map_set_display_order,
                  ms.published_on,
-                 s.common_name as species_name,
+                 s.species_common_name,
                  s.display_order as species_display_order,
                  ms.map_type_accession as map_type_aid
         from     cmap_map_set ms,
@@ -404,7 +404,7 @@ The SQL for finding all map sets.
         order by ms.display_order,
                  ms.map_type_accession,
                  s.display_order,
-                 species_name,
+                 species_common_name,
                  ms.published_on desc,
                  ms.map_set_name
     ];
@@ -1173,7 +1173,7 @@ Array of Hashes:
     map_units,
     species_id,
     species_aid
-    species_name,
+    species_common_name,
     feature_type,
     default_rank,
     aliases - a list of aliases,
@@ -1207,8 +1207,8 @@ Not using cache because this query is quicker.
     my $return_object;
     my %alias_lookup;
 
-    my @identifiers;    #holds the value of the feature_id or map_id, etc
-    my $select_sql = qq[
+    my @identifiers = ();    #holds the value of the feature_id or map_id, etc
+    my $select_sql  = qq[
         select  f.feature_id,
                 f.accession_id as feature_aid,
                 f.feature_type_accession as feature_type_aid,
@@ -1229,7 +1229,7 @@ Not using cache because this query is quicker.
                 ms.map_units,
                 s.species_id,
                 s.accession_id as species_aid,
-                s.common_name as species_name
+                s.species_common_name
     ];
     my $from_sql = qq[
         from    cmap_feature f,
@@ -1573,7 +1573,7 @@ Array of Hashes:
       || [];
     my $show_intraslot_corr = $args{'show_intraslot_corr'};
 
-    my $db = $cmap_object->db;
+    my $db                = $cmap_object->db;
     my $feature_type_data = $cmap_object->feature_type_data();
     my $return_object;
     my $sql_str;
@@ -1752,6 +1752,98 @@ Array of Hashes:
 
         $self->store_cached_results( 4, $sql_str, $return_object );
     }
+
+    return $return_object;
+}
+
+#-----------------------------------------------
+sub get_species {    #YYY
+
+=pod
+
+=head2 get_species
+
+=head3 Description
+
+Gets species information
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item *
+
+=back
+
+=head3 Output
+
+Array of Hashes:
+
+  Keys:
+
+=head3 Cache Level (If Used): 
+
+Not using cache because this query is quicker.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $cmap_object = $args{'cmap_object'} or return;
+    my $species_aids      = $args{'species_aids'} || [];
+    my $is_relational_map = $args{'is_relational_map'};
+    my $is_enabled        = $args{'is_enabled'};
+    my $db                = $cmap_object->db;
+    my $return_object;
+    my @identifiers  = ();
+    my $join_map_set = ( defined($is_relational_map) or defined($is_enabled) );
+
+    my $select_sql    = "select ";
+    my $distinct_sql  = '';
+    my $select_values = q[
+                 s.species_id,
+                 s.accession_id as species_aid,
+                 s.species_common_name,
+                 s.species_full_name,
+                 s.display_order
+    ];
+    my $from_sql = q[
+        from     cmap_species s
+    ];
+    my $where_sql = '';
+    my $order_sql = q[
+        order by s.display_order,
+                 species_common_name
+    ];
+
+    if (@$species_aids) {
+        $where_sql .= $where_sql ? ' and ' : ' where ';
+        $where_sql .=
+          ' s.accession_id in (' . join( "', '", @$species_aids ) . ') ';
+    }
+
+    if ($join_map_set) {
+
+        # cmap_map_set needs to be joined
+        $distinct_sql = ' distinct ';
+        $from_sql  .= ", cmap_map_set ms ";
+        $where_sql .= $where_sql ? ' and ' : ' where ';
+        $where_sql .= " s.species_id=ms.species_id ";
+
+        if ( defined($is_relational_map) ) {
+            $where_sql .= " and ms.is_relational_map = $is_relational_map";
+        }
+        if ( defined($is_enabled) ) {
+            $where_sql .= " and ms.is_enabled = $is_enabled";
+        }
+    }
+
+    my $sql_str =
+      $select_sql . $distinct_sql . $select_values . $from_sql . $where_sql . $order_sql;
+
+    $return_object =
+      $db->selectall_arrayref( $sql_str, { Columns => {} }, @identifiers );
 
     return $return_object;
 }

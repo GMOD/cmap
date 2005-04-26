@@ -191,8 +191,8 @@ CREATE TABLE cmap_next_number (
 CREATE TABLE cmap_species (
   species_id int(11) NOT NULL default '0',
   accession_id varchar(20) NOT NULL default '',
-  common_name varchar(64) NOT NULL default '',
-  full_name varchar(64) NOT NULL default '',
+  species_common_name varchar(64) NOT NULL default '',
+  species_full_name varchar(64) NOT NULL default '',
   display_order int(11) NOT NULL default '1',
   PRIMARY KEY  (species_id),
   KEY acc_id_species_id (accession_id,species_id)

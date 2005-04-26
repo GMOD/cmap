@@ -1,6 +1,6 @@
-[% INCLUDE admin_header.tmpl title="Species View &quot;$species.common_name&quot;" %]
+[% INCLUDE admin_header.tmpl title="Species View &quot;$species.species_common_name&quot;" %]
 <a href="admin">Home</a> |
-<a href="admin?action=confirm_delete;entity_type=cmap_species;entity_id=[% species.species_id %];entity_name_field=common_name">Delete</a> |
+<a href="admin?action=confirm_delete;entity_type=cmap_species;entity_id=[% species.species_id %];entity_name_field=species_common_name">Delete</a> |
 <a href="admin?action=species_view">View All Species</a>
 <hr noshade>
 
@@ -15,14 +15,14 @@
     <tr>
         <td align="right">Common Name:</td>
         <td>
-            [% species.common_name %]
+            [% species.species_common_name %]
         </td>
     </tr>
 
     <tr>
         <td align="right">Full Name:</td>
         <td>
-            [% species.full_name %]
+            [% species.species_full_name %]
         </td>
     </tr>
 

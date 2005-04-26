@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.21 2005-04-22 00:50:31 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.22 2005-04-26 23:26:25 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.21 $)[-1];
+$VERSION = (qw$Revision: 1.22 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -379,10 +379,10 @@ use constant DEFAULT => {
     #
     # The titles to put atop the individual maps, e.g., "Wheat-2M."
     # Your choices will be stacked in the order defined.
-    # Choices: species_name, map_set_name (short_name), map_name
-    # Default: species_name, map_name
+    # Choices: species_common_name, map_set_name (short_name), map_name
+    # Default: species_common_name, map_name
     #
-    map_titles => [ qw( species_name map_set_name map_name) ],
+    map_titles => [ qw( species_common_name map_set_name map_name) ],
 
     #
     # Width of a map.

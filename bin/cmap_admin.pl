@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.101 2005-04-15 17:19:46 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.102 2005-04-26 23:26:22 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.101 $)[-1];
+$VERSION = (qw$Revision: 1.102 $)[-1];
 
 #
 # Get command-line options
@@ -314,16 +314,16 @@ sub create_species {
     print "Creating new map set.\n";
 
     print "Full Species Name (long): ";
-    chomp( my $full_name = <STDIN> || 'New Species' );
+    chomp( my $species_full_name = <STDIN> || 'New Species' );
 
-    print "Common Name [$full_name]: ";
-    chomp( my $common_name = <STDIN> );
-    $common_name ||= $full_name;
+    print "Common Name [$species_full_name]: ";
+    chomp( my $species_common_name = <STDIN> );
+    $species_common_name ||= $species_full_name;
 
     print "Accession ID (optional): ";
     chomp( my $species_aid = <STDIN> );
 
-    print "OK to create species '$full_name' in data source '",
+    print "OK to create species '$species_full_name' in data source '",
       $self->data_source, "'?\n[Y/n] ";
     chomp( my $answer = <STDIN> );
     return if $answer =~ m/^[Nn]/;
@@ -331,15 +331,15 @@ sub create_species {
     my $admin           = $self->admin;
     $admin->species_create(
         accession_id  => $species_aid  || '',
-        common_name   => $common_name  || '',
-        full_name     => $full_name    || '',
+        species_common_name   => $species_common_name  || '',
+        species_full_name     => $species_full_name    || '',
     ) or do {
         print "Error: ", $admin->error, "\n";
         return;
     };
 
     my $log_fh = $self->log_fh;
-    print $log_fh "Species $common_name created\n";
+    print $log_fh "Species $species_common_name created\n";
 
     $self->purge_query_cache(1);
 }
@@ -353,18 +353,18 @@ sub create_map_set {
     my $species_info = $self->show_menu(
         title   => 'Available Species',
         prompt  => 'What species?',
-        display => 'common_name',
-        return  => 'species_id,common_name',
+        display => 'species_common_name',
+        return  => 'species_id,species_common_name',
         data    => $db->selectall_arrayref(
             q[
-                select   s.species_id, s.common_name
+                select   s.species_id, s.species_common_name
                 from     cmap_species s
-                order by common_name
+                order by species_common_name
             ],
             { Columns => {} },
         ),
     );
-    my ( $species_id, $common_name ) = @$species_info;
+    my ( $species_id, $species_common_name ) = @$species_info;
 
     unless ($species_id){
         print "No species!  Please use cmap_admin.pl to create.\n";
@@ -497,7 +497,7 @@ sub delete_correspondences {
     my @map_set_names;
     if ( @{ $map_sets || [] } ) {
         @map_set_names =
-          map { join( '-', $_->{'species_name'}, $_->{'map_set_name'} ) }
+          map { join( '-', $_->{'species_common_name'}, $_->{'map_set_name'} ) }
           @$map_sets;
     }
     else {
@@ -567,7 +567,7 @@ sub delete_correspondences {
         );
 
         print $log_fh "Deleting correspondences for ",
-          $map_set->{'species_name'}, '-', $map_set->{'map_set_name'}, "\n";
+          $map_set->{'species_common_name'}, '-', $map_set->{'map_set_name'}, "\n";
 
         #
         # If there is more evidence supporting the correspondence,
@@ -669,7 +669,7 @@ sub delete_map_set {
         map { $_ || () } 'OK to delete?',
         '  Data source : ' . $self->data_source,
         '  Map Set     : '
-          . $map_set->{'species_name'} . '-'
+          . $map_set->{'species_common_name'} . '-'
           . $map_set->{'map_set_name'},
         (
             @{ $map_names || [] }
@@ -693,7 +693,7 @@ sub delete_map_set {
     }
     else {
         print $log_fh "Deleting map set "
-          . $map_set->{'species_name'} . '-'
+          . $map_set->{'species_common_name'} . '-'
           . $map_set->{'map_set_name'} . "'\n";
         $admin->map_set_delete( map_set_id => $map_set_id )
           or return $self->error( $admin->error );
@@ -784,7 +784,7 @@ sub export_as_text {
     my @map_set_names;
     if ( @{ $map_sets || [] } ) {
         @map_set_names =
-          map { join( '-', $_->{'species_name'}, $_->{'map_set_name'} ) }
+          map { join( '-', $_->{'species_common_name'}, $_->{'map_set_name'} ) }
           @$map_sets;
     }
     else {
@@ -845,12 +845,12 @@ sub export_as_text {
     for my $map_set (@$map_sets) {
         my $map_set_id   = $map_set->{'map_set_id'};
         my $map_set_name = $map_set->{'map_set_name'};
-        my $species_name = $map_set->{'species_name'};
-        my $file_name    = join( '-', $species_name, $map_set_name );
+        my $species_common_name = $map_set->{'species_common_name'};
+        my $file_name    = join( '-', $species_common_name, $map_set_name );
         $file_name =~ tr/a-zA-Z0-9-/_/cs;
         $file_name = "$dir/$file_name.dat";
 
-        print $log_fh "Dumping '$species_name-$map_set_name' to '$file_name'\n";
+        print $log_fh "Dumping '$species_common_name-$map_set_name' to '$file_name'\n";
         open my $fh, ">$file_name" or die "Can't write to $file_name: $!\n";
         print $fh join( OFS, @col_names ), ORS;
 
@@ -1038,8 +1038,8 @@ sub export_as_sql {
             fields => {
                 species_id    => NUM,
                 accession_id  => STR,
-                common_name   => STR,
-                full_name     => STR,
+                species_common_name   => STR,
+                species_full_name     => STR,
                 display_order => STR,
             }
         },
@@ -1285,7 +1285,7 @@ sub export_objects {
         my @ft_names = map { $_->{'feature_type'} } @$feature_types;
         my @map_set_names =
           map {
-                $_->{'species_name'} . '-'
+                $_->{'species_common_name'} . '-'
               . $_->{'map_set_name'} . ' ('
               . $_->{'map_type'} . ')'
           } @$map_sets;
@@ -1420,7 +1420,7 @@ sub get_map_sets {
                     select   ms.map_set_id, 
                              ms.accession_id as map_set_aid,
                              ms.short_name as map_set_name,
-                             s.common_name as species_name,
+                             s.species_common_name,
                              ms.map_type_accession as map_type_aid
                     from     cmap_map_set ms,
                              cmap_species s
@@ -1482,7 +1482,7 @@ sub get_map_sets {
 
         my $species_sql = q[
             select   distinct s.species_id, 
-                     s.common_name
+                     s.species_common_name
             from     cmap_species s,
                      cmap_map_set ms
             where    s.species_id=ms.species_id
@@ -1491,7 +1491,7 @@ sub get_map_sets {
           "and ms.map_type_accession in ('"
           . join( "','", map { $_->[0] } @map_types ) . "') "
           if @map_types;
-        $species_sql .= 'order by common_name';
+        $species_sql .= 'order by species_common_name';
         my $species =
           $db->selectall_arrayref( $species_sql, { Columns => {} } );
         die "No species! Please use the web admin tool to create.\n"
@@ -1500,7 +1500,7 @@ sub get_map_sets {
         my $species_ids = $self->show_menu(
             title      => 'Restrict by Species',
             prompt     => 'Limit by which species?',
-            display    => 'common_name',
+            display    => 'species_common_name',
             return     => 'species_id',
             allow_null => $allow_null,
             allow_mult => $allow_mult,
@@ -1515,7 +1515,7 @@ sub get_map_sets {
             select   ms.map_set_id,
                      ms.accession_id,
                      ms.short_name,
-                     s.common_name,
+                     s.species_common_name,
                      ms.map_type_accession as map_type_aid
             from     cmap_map_set ms,
                      cmap_species s
@@ -1540,7 +1540,7 @@ sub get_map_sets {
         my $map_set_ids = $self->show_menu(
             title      => 'Restrict by Map Sets',
             prompt     => 'Limit by which map sets?',
-            display    => 'map_type,common_name,short_name',
+            display    => 'map_type,species_common_name,short_name',
             return     => 'map_set_id',
             allow_null => $allow_null,
             allow_mult => $allow_mult,
@@ -1564,14 +1564,14 @@ sub get_map_sets {
             select   ms.map_set_id, 
                      ms.accession_id as map_set_aid,
                      ms.short_name as map_set_name,
-                     s.common_name as species_name,
+                     s.species_common_name,
                      ms.map_type_accession as map_type_aid
             from     cmap_map_set ms,
                      cmap_species s
             where    ms.species_id=s.species_id
             $where
         ];
-        $map_set_sql .= 'order by common_name, short_name';
+        $map_set_sql .= 'order by species_common_name, short_name';
 
         $map_sets = $db->selectall_arrayref( $map_set_sql, { Columns => {} } );
         foreach my $row ( @{$map_sets} ) {
@@ -1676,7 +1676,7 @@ sub get_feature_types {
 #    my @map_set_ids = $self->show_menu(
 #        title       => 'Select Map Sets',
 #        prompt      => 'Restrict by Map Set',
-#        display     => 'common_name,short_name',
+#        display     => 'species_common_name,short_name',
 #        return      => 'map_set_id',
 #        allow_null  => 1,
 #        allow_mult  => 1,
@@ -1684,28 +1684,28 @@ sub get_feature_types {
 #            q[
 #                select   ms.map_set_id,
 #                         ms.short_name,
-#                         s.common_name
+#                         s.species_common_name
 #                from     cmap_map_set ms,
 #                         cmap_species s
 #                where    ms.species_id=s.species_id
-#                order by common_name, short_name
+#                order by species_common_name, short_name
 #            ],
 #            { Columns => {} },
 #        )
 #    );
 #
 #    my @map_set_names = @map_set_ids
-#        ?  map { join( '-', $_->{'species_name'}, $_->{'map_set_name'} ) } @{
+#        ?  map { join( '-', $_->{'species_common_name'}, $_->{'map_set_name'} ) } @{
 #            $db->selectall_arrayref(
 #                q[
 #                    select   ms.map_set_id,
 #                             ms.short_name as map_set_name,
-#                             s.common_name as species_name
+#                             s.species_common_name as species_common_name
 #                    from     cmap_map_set ms,
 #                             cmap_species s
 #                    where    ms.map_set_id in (].join(',', @map_set_ids).q[)
 #                    and      ms.species_id=s.species_id
-#                    order by common_name, short_name
+#                    order by species_common_name, short_name
 #                ],
 #                { Columns => {} }
 #            )
@@ -1895,18 +1895,18 @@ sub import_links {
     #
     # Get the species.
     #
-    my ( $species_id, $species_name ) = $self->show_menu(
+    my ( $species_id, $species_common_name ) = $self->show_menu(
         title   => "Available Species",
         prompt  => 'Please select a species',
-        display => 'common_name',
-        return  => 'species_id,common_name',
+        display => 'species_common_name',
+        return  => 'species_id,species_common_name',
         data    => $db->selectall_arrayref(
             q[
-                select   distinct s.species_id, s.common_name
+                select   distinct s.species_id, s.species_common_name
                 from     cmap_species s,
                          cmap_map_set ms
                 where    ms.species_id=s.species_id
-                order by common_name
+                order by species_common_name
             ],
             { Columns => {} },
             ()
@@ -1918,7 +1918,7 @@ sub import_links {
     # Get the map set.
     #
     my ( $map_set_id, $map_set_name ) = $self->show_menu(
-        title   => "Available Map Sets (for $species_name)",
+        title   => "Available Map Sets (for $species_common_name)",
         prompt  => 'Please select a map set',
         display => 'map_set_name',
         return  => 'map_set_id,map_set_name',
@@ -1953,7 +1953,7 @@ sub import_links {
         'OK to import?',
         '  Data source     : ' . $self->data_source,
         "  File            : " . join( ", ", @$files ),
-        "  Species         : $species_name",
+        "  Species         : $species_common_name",
         "  Map Study       : $map_set_name",
         "  Link Set        : $link_set_name",
         "[Y/n] " );
@@ -2076,19 +2076,19 @@ sub import_correspondences {
     my @map_sets = $self->show_menu(
         title      => 'Restrict by Map Set (optional)',
         prompt     => 'Please select a map set to restrict the search',
-        display    => 'species_name,map_set_name',
-        return     => 'map_set_id,species_name,map_set_name',
+        display    => 'species_common_name,map_set_name',
+        return     => 'map_set_id,species_common_name,map_set_name',
         allow_null => 1,
         allow_mult => 1,
         data       => $db->selectall_arrayref(
             q[
                 select   ms.map_set_id, 
                          ms.short_name as map_set_name,
-                         s.common_name as species_name
+                         s.species_common_name
                 from     cmap_map_set ms,
                          cmap_species s
                 where    ms.species_id=s.species_id
-                order by common_name, map_set_name
+                order by species_common_name, map_set_name
             ],
             { Columns => {} },
         ),
@@ -2389,7 +2389,7 @@ sub import_tab_data {
         'OK to import?',
         '  Data source : ' . $self->data_source,
         "  File        : " . join( ", ", @$files ),
-        "  Species     : " . $map_set->{species_name},
+        "  Species     : " . $map_set->{species_common_name},
         "  Map Type    : " . $map_set->{map_type},
         "  Map Set     : " . $map_set->{map_set_name},
         "  Map Set Acc : " . $map_set->{map_set_aid},
@@ -2579,11 +2579,11 @@ sub make_name_correspondences {
     );
 
     my $from = join( "\n",
-        map { "    $_->{species_name}-$_->{map_set_name} ($_->{map_set_aid})" }
+        map { "    $_->{species_common_name}-$_->{map_set_name} ($_->{map_set_aid})" }
           @{$from_map_sets} );
 
     my $to = join( "\n",
-        map { "    $_->{species_name}-$_->{map_set_name} ($_->{map_set_aid})" }
+        map { "    $_->{species_common_name}-$_->{map_set_name} ($_->{map_set_aid})" }
           @{$to_map_sets} );
     print "Make name-based correspondences\n",
       '  Data source   : ' . $self->data_source, "\n",

@@ -52,7 +52,7 @@
                     <option value="[% s.species_id %]" 
                       [% IF s.species_id==apr.param('species_id') %] selected [% END %]
                     >
-                      [% s.common_name %] ( [% s.full_name %] )
+                      [% s.species_common_name %] ( [% s.species_full_name %] )
                     </option>
                 [% END %]
             </select>

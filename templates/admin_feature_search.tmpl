@@ -28,10 +28,10 @@
             </select>
         </td>
         <td valign="top">
-            [% species.unshift({ species_id => -1, common_name => '--All--' }) %]
+            [% species.unshift({ species_id => -1, species_common_name => '--All--' }) %]
             <select name="species_id" size="5" multiple>
                 [% FOREACH s=species %]
-                    <option value="[% s.species_id %]"[% IF species_lookup.${s.species_id} %] selected[% END %]>[% s.common_name %]</option>
+                    <option value="[% s.species_id %]"[% IF species_lookup.${s.species_id} %] selected[% END %]>[% s.species_common_name %]</option>
                 [% END %]
             </select>
         </td>
@@ -73,7 +73,7 @@
                     <a href="admin?action=feature_search;feature_name=[% fname %];map_aid=[% apr.param('map_aid') %];feature_type_aid=[% apr.param('feature_type_aid') %];search_field=[% apr.param('search_field') %];order_by=feature_type_aid">Feature Type</a>
                 </th>
                 <th>
-                    <a href="admin?action=feature_search;feature_name=[% fname %];map_aid=[% apr.param('map_aid') %];feature_type_aid=[% apr.param('feature_type_aid') %];search_field=[% apr.param('search_field') %];order_by=common_name">Species</a>
+                    <a href="admin?action=feature_search;feature_name=[% fname %];map_aid=[% apr.param('map_aid') %];feature_type_aid=[% apr.param('feature_type_aid') %];search_field=[% apr.param('search_field') %];order_by=species_common_name">Species</a>
                 </th>
                 <th>
                     <a href="admin?action=feature_search;feature_name=[% fname %];map_aid=[% apr.param('map_aid') %];feature_type_aid=[% apr.param('feature_type_aid') %];search_field=[% apr.param('search_field') %];order_by=map_set_name">Map Set Name</a>
@@ -97,7 +97,7 @@
                     <td>[% f.feature_name %]</td>
                     <td>[% f.aliases.join(', ') | truncate(10) %]</td>
                     <td>[% f.feature_type %]</td>
-                    <td>[% f.species_name %]</td>
+                    <td>[% f.species_common_name %]</td>
                     <td>
                         <a href="admin?action=map_set_view;map_set_id=[% f.map_set_id %]">[% f.map_set_name %]</a>
                     </td>

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 
 # vim: set ft=perl:
 
-# $Id: ImportCorrespondences.pm,v 1.27 2005-04-14 19:15:39 mwz444 Exp $
+# $Id: ImportCorrespondences.pm,v 1.28 2005-04-26 23:26:28 mwz444 Exp $
 
 =head1 NAME
 
@@ -51,7 +51,7 @@ feature names, a correspondence will be created.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.27 $)[-1];
+$VERSION = (qw$Revision: 1.28 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -87,7 +87,7 @@ use constant FEATURE_SQL_BY_AID => q[
            map.map_name,
            map.map_set_id,
            ms.short_name as map_set_name,
-           s.common_name as species_name,
+           s.species_common_name,
            ms.is_relational_map
     from   cmap_feature f,
            cmap_map map,
@@ -106,7 +106,7 @@ use constant FEATURE_SQL_BY_NAME => q[
                map.map_name, 
                ms.map_set_id, 
                ms.short_name as map_set_name,
-               s.common_name as species_name,
+               s.species_common_name,
                ms.is_relational_map
     from       cmap_feature f
     left join  cmap_feature_alias fa
@@ -210,7 +210,7 @@ which is slow.  Setting to 0 is recommended.
     }
 
     my @feature_name_fields = qw[
-      species_name map_set_name map_name feature_name
+      species_common_name map_set_name map_name feature_name
     ];
 
     $self->Print("Parsing file...\n");

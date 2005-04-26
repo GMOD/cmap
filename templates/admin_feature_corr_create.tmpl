@@ -15,7 +15,7 @@
     <tr>
         <td align="right"><em>From</em> Feature 1:</th>
         <td>
-            <a href="admin?action=map_view;map_id=[% feature1.map_id %]">[% feature1.species_name %]-[% feature1.map_set_name %]-[% feature1.map_name %]</a> : 
+            <a href="admin?action=map_view;map_id=[% feature1.map_id %]">[% feature1.species_common_name %]-[% feature1.map_set_name %]-[% feature1.map_name %]</a> : 
             <a href="admin?action=feature_view;feature_id=[% feature1.feature_id %]">[% feature1.feature_name %]</a>
         </td>
     </tr>
@@ -24,7 +24,7 @@
         <td align="right"><em>To</em> Feature 2:</td>
         <td>
             [% IF feature2 %]
-                <a href="admin?action=map_view;map_id=[% feature2.map_id %]">[% feature2.species_name %]-[% feature2.map_set_name %]-[% feature2.map_name %]</a> : 
+                <a href="admin?action=map_view;map_id=[% feature2.map_id %]">[% feature2.species_common_name %]-[% feature2.map_set_name %]-[% feature2.map_name %]</a> : 
                 <a href="admin?action=feature_view;feature_id=[% feature2.feature_id %]">[% feature2.feature_name %]</a>
             [% ELSE %]
                 Please use the form below to search.
@@ -86,7 +86,7 @@
             <select name="species_id">
                 <option value="">--All--</option>
                 [% FOREACH s=species %]
-                    <option value="[% s.species_id %]"[% IF s.species_id==apr.param('species_id') %] selected[% END %]>[% s.common_name %]</option>
+                    <option value="[% s.species_id %]"[% IF s.species_id==apr.param('species_id') %] selected[% END %]>[% s.species_common_name %]</option>
                 [% END %]
             </select>
             <input type="hidden" name="action"      value="feature_corr_create">
@@ -110,7 +110,7 @@
         [% FOREACH f=feature2_choices %]
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
                 <td>
-                    [% f.species_name %]
+                    [% f.species_common_name %]
                 </td>
                 <td>
                     [% f.map_set_name %]
