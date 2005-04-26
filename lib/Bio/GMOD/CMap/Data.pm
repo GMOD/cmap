@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.223 2005-04-25 22:22:30 mwz444 Exp $
+# $Id: Data.pm,v 1.224 2005-04-26 19:00:22 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.223 $)[-1];
+$VERSION = (qw$Revision: 1.224 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -445,7 +445,7 @@ sub cmap_data {
             slot_no                     => $slot_no,
             ref_slot_no                 => $ref_slot_no,
             min_correspondences         => $min_correspondences,
-            feature_type_aids           => $included_feature_type_aids,
+            included_feature_type_aids  => $included_feature_type_aids,
             corr_only_feature_type_aids => $corr_only_feature_type_aids,
             ignored_feature_type_aids   => $ignored_feature_type_aids,
             ignored_evidence_type_aids  => $ignored_evidence_type_aids,
@@ -515,11 +515,10 @@ sub slot_data {
 
     #print S#TDERR "slot_data\n";
     my ( $self, %args ) = @_;
-    my $db  = $self->db  or return;
     my $this_slot_no                = $args{'slot_no'};
     my $ref_slot_no                 = $args{'ref_slot_no'};
     my $min_correspondences         = $args{'min_correspondences'} || 0;
-    my $feature_type_aids           = $args{'feature_type_aids'};
+    my $included_feature_type_aids  = $args{'included_feature_type_aids'};
     my $included_evidence_type_aids = $args{'included_evidence_type_aids'};
     my $ignored_evidence_type_aids  = $args{'ignored_evidence_type_aids'};
     my $less_evidence_type_aids     = $args{'less_evidence_type_aids'};
@@ -539,6 +538,8 @@ sub slot_data {
     my $max_no_features             = 200000;
     my $map_type_data               = $self->map_type_data();
     my $feature_type_data           = $self->feature_type_data();
+    my $db  = $self->db  or return;
+    my $sql_object  = $self->sql  or return;
 
     #
     # If there is more than 1 map in this slot, we will return totals
@@ -671,10 +672,10 @@ sub slot_data {
     $ft_sql .=
       " f.map_id in ('"
       . join( "','", keys( %{ $self->slot_info->{$this_slot_no} } ) ) . "')";
-    if (@$feature_type_aids) {
+    if (@$included_feature_type_aids) {
         $ft_sql .=
           " and f.feature_type_accession in ('"
-          . join( "','", @$feature_type_aids ) . "')";
+          . join( "','", @$included_feature_type_aids ) . "')";
     }
     my $ft;
     unless ( $ft = $self->get_cached_results( 3, $ft_sql ) ) {
@@ -812,193 +813,20 @@ sub slot_data {
                 next;
             }
             $map->{'no_features'} = $count_lookup{ $map->{'map_id'} };
-            my $where =
-              @$feature_type_aids
-              ? " and f.feature_type_accession in ('"
-              . join( "','", @$feature_type_aids ) . "')"
-              : '';
-            ###
-# REPLACE 10
-            my $sql_base_top = qq[
-                    select   f.feature_id,
-                             f.accession_id,
-                             f.map_id,
-                             f.feature_name,
-                             f.is_landmark,
-                             f.start_position,
-                             f.stop_position,
-                             f.feature_type_accession as feature_type_aid,
-                             f.direction,
-                             map.accession_id as map_aid,
-                             ms.map_units
-                    from     cmap_feature f,
-                             cmap_map map,
-                             cmap_map_set ms
-				];
-            my $sql_base_bottom = qq[
-                    where    f.map_id=$map->{'map_id'}
-				   ];
-# REPLACE 75 ALIAS
-            my $alias_sql = qq [
-                    select  fa.feature_id,
-                            fa.alias
-                    from    cmap_feature f,
-                            cmap_feature_alias fa
-                    where   f.map_id=$map->{'map_id'}
-                        and f.feature_id = fa.feature_id
-            ];
-
-            if ( defined($map_start) and defined($map_stop) ) {
-                my $tmp_sql = qq[
-		       and      (
-                        ( f.start_position>=$map_start and 
-                          f.start_position<=$map_stop )
-                        or   (
-                            f.stop_position is not null and
-                            f.start_position<=$map_start and
-                            f.stop_position>=$map_start
-                        )
-				 )
-                ];
-                $sql_base_bottom .= $tmp_sql;
-                $alias_sql       .= $tmp_sql;
-            }
-            elsif ( defined($map_start) ) {
-                my $tmp_sql =
-                    " and (( f.start_position>="
-                  . $map_start
-                  . " ) or ( f.stop_position is not null and "
-                  . " f.stop_position>="
-                  . $map_start . " ))";
-                $sql_base_bottom .= $tmp_sql;
-                $alias_sql       .= $tmp_sql;
-            }
-            elsif ( defined($map_stop) ) {
-                my $tmp_sql = " and f.start_position<=" . $map_stop . " ";
-                $sql_base_bottom .= $tmp_sql;
-                $alias_sql       .= $tmp_sql;
-            }
-
-            $sql_base_bottom .= qq[
-                    and      f.map_id=map.map_id
-                    and      map.map_set_id=ms.map_set_id
-			   ];
-            my $corr_free_sql = $sql_base_top . $sql_base_bottom . $where;
-            my $with_corr_sql = '';
-            if (   @$corr_only_feature_type_aids
-                or @$ignored_feature_type_aids )
-            {
-                $corr_free_sql .= " and f.feature_type_accession not in ('"
-                  . join( "','",
-                    @$corr_only_feature_type_aids,
-                    @$ignored_feature_type_aids )
-                  . "')";
-            }
-            my $sql_str = $corr_free_sql;
-
-            #$sql_str .= " and f.feature_id=-1 "
-            #  if ( $corr_only_feature_type_aids->[0] == -1 );
-            if (
-                (@$corr_only_feature_type_aids)
-                and (  $self->show_intraslot_corr
-                    || $self->slot_info->{ $this_slot_no + 1 }
-                    || $self->slot_info->{ $this_slot_no - 1 } )
-              )
-            {
-                my $map_id_string .= " and f2.map_id in ("
-                  . join(
-                    ",",
-                    (
-                        $self->slot_info->{ $this_slot_no + 1 } ?
-                          keys( %{ $self->slot_info->{ $this_slot_no + 1 } } )
-                        : ()
-                    ),
-                    (
-                        $self->slot_info->{ $this_slot_no - 1 } ?
-                          keys( %{ $self->slot_info->{ $this_slot_no - 1 } } )
-                        : ()
-                    ),
-                    (
-                        $self->show_intraslot_corr ?
-                          keys( %{ $self->slot_info->{$this_slot_no} } )
-                        : ()
-                    ),
-                  )
-                  . ")";
-                $with_corr_sql = $sql_base_top . q[,
-                  cmap_feature f2,
-                  cmap_correspondence_lookup cl
-                  ] . $sql_base_bottom . q[
-                  and cl.feature_id1=f.feature_id
-                  and cl.feature_id2=f2.feature_id
-                  and cl.map_id1!=cl.map_id2
-                ];
-                if (   @$corr_only_feature_type_aids
-                    or @$ignored_feature_type_aids )
-                {
-                    $with_corr_sql .=
-                      " and f.feature_type_accession in ('"
-                      . join( "','", @$corr_only_feature_type_aids ) . "')";
-                }
-                $with_corr_sql .= $map_id_string;
-            }
-
-            #
-            # Decide what sql will be used
-            #
-            if ( @$corr_only_feature_type_aids and @$feature_type_aids ) {
-                $sql_str = $corr_free_sql;
-                $sql_str .= " UNION " . $with_corr_sql if ($with_corr_sql);
-            }
-            elsif (@$corr_only_feature_type_aids) {
-                if ($with_corr_sql) {
-                    $sql_str = $with_corr_sql;
-                }
-                else {
-                    ###Return nothing
-                    $sql_str = $corr_free_sql . " and map.map_id=-1 ";
-                }
-            }
-            elsif (@$feature_type_aids) {
-                $sql_str = $corr_free_sql;
-            }
-            else {
-                ###Return nothing
-                $sql_str = $corr_free_sql . " and map.map_id=-1 ";
-
-                #$sql_str = $corr_free_sql . " UNION " . $with_corr_sql;
-            }
-            unless ( $map->{'features'} =
-                $self->get_cached_results( 4, $sql_str ) )
-            {
-
-                # Get feature aliases
-                my $alias_results =
-                  $db->selectall_arrayref( $alias_sql, { Columns => {} }, () );
-                my %aliases = ();
-                foreach my $row (@$alias_results) {
-                    push @{ $aliases{ $row->{'feature_id'} } }, $row->{'alias'};
-                }
-
-                $map->{'features'} =
-                  $db->selectall_hashref( $sql_str, 'feature_id', {}, () );
-
-                for my $feature_id ( keys %{ $map->{'features'} } ) {
-                    my $ft =
-                      $feature_type_data->{ $map->{'features'}{$feature_id}
-                          {'feature_type_aid'} };
-
-                    $map->{'features'}{$feature_id}{$_} = $ft->{$_} for qw[
-                      feature_type default_rank shape color
-                      drawing_lane drawing_priority
-                    ];
-
-                    $map->{'features'}{$feature_id}{'aliases'} =
-                      $aliases{$feature_id};
-                }
-
-                $self->store_cached_results( 4, $sql_str, $map->{'features'} );
-            }
+# REPLACE 10 YYY
+# REPLACE 75 ALIAS YYY
+            $map->{'features'} = $sql_object->slot_data_features(
+                cmap_object => $self,
+                map_id => $map->{'map_id'},
+                map_start => $map_start,
+                map_stop => $map_stop,
+                slot_info => $self->slot_info,
+                this_slot_no => $this_slot_no,
+                included_feature_type_aids => $included_feature_type_aids,
+                ignored_feature_type_aids => $ignored_feature_type_aids,
+                corr_only_feature_type_aids => $corr_only_feature_type_aids,
+                show_intraslot_corr => $self->show_intraslot_corr,
+            );
 
             ###set $feature_correspondences and$correspondence_evidence
             if ( defined $ref_slot_no ) {
@@ -1012,7 +840,7 @@ sub slot_data {
                     $less_evidence_type_aids,
                     $greater_evidence_type_aids,
                     $evidence_type_score,
-                    [ @$feature_type_aids, @$corr_only_feature_type_aids ],
+                    [ @$included_feature_type_aids, @$corr_only_feature_type_aids ],
                     $map_start,
                     $map_stop
                 );
@@ -1097,7 +925,7 @@ sub slot_data {
                     $less_evidence_type_aids,
                     $greater_evidence_type_aids,
                     $evidence_type_score,
-                    [ @$feature_type_aids, @$corr_only_feature_type_aids ],
+                    [ @$included_feature_type_aids, @$corr_only_feature_type_aids ],
                     $map_start,
                     $map_stop
                 );
@@ -1117,7 +945,7 @@ sub slot_data {
             $less_evidence_type_aids,
             $greater_evidence_type_aids,
             $evidence_type_score,
-            [ @$feature_type_aids, @$corr_only_feature_type_aids ],
+            [ @$included_feature_type_aids, @$corr_only_feature_type_aids ],
         );
     }
 
@@ -2497,24 +2325,14 @@ Returns the data for the feature alias detail page.
     my $feature_alias = $args{'feature_alias'}
       or return $self->error('No feature alias');
 
-    my $db  = $self->db;
-# REPLACE 32 ALIAS
-    my $sth = $db->prepare(
-        q[
-            select fa.feature_alias_id,
-                   fa.alias,
-                   f.accession_id as feature_aid,
-                   f.feature_name
-            from   cmap_feature_alias fa,
-                   cmap_feature f
-            where  fa.alias=?
-            and    fa.feature_id=f.feature_id
-            and    f.accession_id=?
-        ]
-    );
-    $sth->execute( $feature_alias, $feature_aid );
-    my $alias = $sth->fetchrow_hashref
-      or return $self->error('No alias');
+    my $sql_object  = $self->sql;
+# REPLACE 32 ALIAS YYY
+    my $alias_array = $sql_object->get_feature_aliases(
+        cmap_object => $self,
+        feature_aid => $feature_aid,
+        alias       => $feature_alias,
+    ) or return $self->error('No alias');
+    my $alias = $alias_array->[0];
 
     $alias->{'object_id'}  = $alias->{'feature_alias_id'};
     $alias->{'attributes'} =
@@ -2790,17 +2608,12 @@ Given a feature acc. id, find out all the details on it.
           sort_selectall_arrayref( $corr->{'evidence'}, '#rank',
             'evidence_type' );
 
-# REPLACE 37
-        $corr->{'aliases'} = $db->selectcol_arrayref(
-            q[
-                select   alias 
-                from     cmap_feature_alias
-                where    feature_id=?
-                order by alias
-            ],
-            {},
-            ( $corr->{'feature_id'} )
+# REPLACE 37 ALIAS YYY
+        my $aliases = $sql_object->get_feature_aliases(
+            cmap_object => $self,
+            feature_id  => $corr->{'feature_id'},
         );
+        $corr->{'aliases'} = [map {$_->{'alias'}} @$aliases];
         $corr->{'map_type'} =
           $map_type_data->{ $corr->{'map_type_aid'} }{'map_type'};
     }
@@ -4444,7 +4257,6 @@ sub cmap_map_search_data {
             $self->store_cached_results( 1, $sql_str . $ref_map_set_aid,
                 \$ref_species_aid );
         }
-print STDERR "$ref_species_aid ref_species_aid\n";
     }
 
     #
@@ -4473,7 +4285,6 @@ print STDERR "$ref_species_aid ref_species_aid\n";
         $ref_species = $db->selectall_arrayref( $sql_str, { Columns => {} } );
         $self->store_cached_results( 1, $sql_str, \$ref_species );
     }
-print STDERR "$ref_species ref_species\n";
 
     if ( @$ref_species && !$ref_species_aid ) {
         $ref_species_aid = $ref_species->[0]{'species_aid'};
@@ -4495,7 +4306,6 @@ print STDERR "$ref_species ref_species\n";
             }
             $self->store_cached_results( 1, $sql_str, $ref_map_sets );
         }
-print STDERR Dumper($ref_map_sets)." REF MAP SETS\n";
     }
 
     #
@@ -4506,7 +4316,6 @@ print STDERR Dumper($ref_map_sets)." REF MAP SETS\n";
     }
     my $ref_map_set_id;
     ###Get ref_map_set_id
-print STDERR "H1\n";
     if ($ref_map_set_aid) {
 # REPLACE 58 YYY
         $ref_map_set_id = $self->sql->acc_id_to_internal_id(
@@ -4515,8 +4324,6 @@ print STDERR "H1\n";
             acc_id      => $ref_map_set_aid,
         ) ;
     }
-print STDERR "$ref_map_set_id ref_map_set_id\n";
-print STDERR "H2\n";
 
     #
     # If the user selected a map set, select all the maps in it.
@@ -4600,7 +4407,6 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
             $self->store_cached_results( 4, $map_sql_str . "$ref_map_set_id",
                 $map_info );
         }
-print STDERR Dumper($map_info)." MAPINFO\n";
         @map_ids = keys(%$map_info);
 
         ### Add feature type information
@@ -4661,8 +4467,6 @@ print STDERR Dumper($map_info)." MAPINFO\n";
                 [ $feature_info, \@feature_type_aids ]
             );
         }
-print STDERR Dumper($feature_info)."FEATURE_INFO\n";
-print STDERR Dumper(\@feature_type_aids)." FT_AIDS\n";
         ###Sort maps
         if (
             my $array_ref = $self->get_cached_results(

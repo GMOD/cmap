@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.67 2005-04-25 22:22:35 mwz444 Exp $
+# $Id: Generic.pm,v 1.68 2005-04-26 19:00:31 mwz444 Exp $
 
 =head1 NAME
 
@@ -33,7 +33,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.67 $)[-1];
+$VERSION = (qw$Revision: 1.68 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -567,7 +567,6 @@ Not using cache because this query is quicker.
 qq[Unable to find internal id for acc. id "$acc_id" in table "$table_name"]
       );
 
-    print STDERR Dumper($return_object) . "\n";
     return $return_object;
 }
 
@@ -1197,8 +1196,8 @@ Not using cache because this query is quicker.
     my $map_set_id        = $args{'map_set_id'};
     my $map_start         = $args{'map_start'};
     my $map_stop          = $args{'map_stop'};
-    my $feature_type_aids = $args{'feature_type_aids'};
-    my $species_aids      = $args{'species_aids'};
+    my $feature_type_aids = $args{'feature_type_aids'} || [];
+    my $species_aids      = $args{'species_aids'} || [];
     my $aliases_get_rows  = $args{'aliases_get_rows'} || 0;
 
     $aliases_get_rows = 0 if ( $feature_name eq '%' );
@@ -1314,8 +1313,6 @@ Not using cache because this query is quicker.
         push @identifiers, @identifiers;
     }
 
-    print STDERR "$sql_str FEATURE\n";
-    print STDERR Dumper( \@identifiers ) . "IDENTIFIERS\n";
     $return_object =
       $db->selectall_arrayref( $sql_str, { Columns => {} }, @identifiers );
 
@@ -1353,13 +1350,32 @@ sub get_feature_aliases {    #YYY
 
 =head3 Description
 
+Gets aliases for features identified by the identification fields.  One row per
+alias.
+
+=head3 Caveats
+
+It must check for "alias" separately since at least one call gives it both
+feature_aid and alias to match.
+
 =head3 Input
 
 =over 4
 
 =item * Object that inherits from CMap.pm (cmap_object)
 
-=item *
+=item * Identification fields
+
+At least one of the following needs to be specified otherwise it will return
+all features in the database,
+
+ Feature ID (feature_id)
+ List of Feature IDs (feature_ids)
+ Feature Accession (feature_aid)
+ alias, including '%' as wildcard (alias)
+ Map ID (map_id)
+ Map Accession (map_aid)
+ Map Set ID (map_set_id)
 
 =back
 
@@ -1368,8 +1384,14 @@ sub get_feature_aliases {    #YYY
 Array of Hashes:
 
   Keys:
+    feature_alias_id,
+    alias,
+    feature_id,
+    feature_aid,
+    feature_name
 
-=head3 Cache Level (If Used): 
+
+=head3 Cache Level (If Used): 3
 
 Not using cache because this query is quicker.
 
@@ -1378,7 +1400,7 @@ Not using cache because this query is quicker.
     my ( $self, %args ) = @_;
     my $cmap_object = $args{'cmap_object'} or return;
     my $feature_id  = $args{'feature_id'};
-    my $feature_ids = $args{'feature_ids'};
+    my $feature_ids = $args{'feature_ids'} || [];
     my $feature_aid = $args{'feature_aid'};
     my $alias       = $args{'alias'};
     my $map_id      = $args{'map_id'};
@@ -1392,7 +1414,8 @@ Not using cache because this query is quicker.
             select  fa.feature_alias_id,
                     fa.alias,
                     f.feature_id,
-                    f.accession_id as feature_aid
+                    f.accession_id as feature_aid,
+                    f.feature_name
     ];
     my $from_sql = qq[
             from    cmap_feature_alias fa,
@@ -1403,7 +1426,7 @@ Not using cache because this query is quicker.
     ];
 
     # add the were clause for each possible identifier
-    if ( $feature_ids and @$feature_ids ) {
+    if (@$feature_ids) {
         $where_sql .=
           " and f.feature_id in (" . join( ",", @$feature_ids ) . ") ";
     }
@@ -1447,6 +1470,288 @@ Not using cache because this query is quicker.
 
     $return_object =
       $db->selectall_arrayref( $sql_str, { Columns => {} }, @identifiers );
+
+    return $return_object;
+}
+
+#-----------------------------------------------
+sub slot_data_features {    #YYY
+
+=pod
+
+=head2 slot_data_features
+
+=head3 Description
+
+This is a method specifically for slot_data to call, since it will be called multiple times in most map views.  It does only what slot_data needs it to do and nothing more.  
+
+It takes into account the corr_only_feature_types, returning only those types with displayed correspondences.  
+
+The way it works, is that it creates one sql query for those types that will always be displayed ($included_feature_type_aids) and a separate query for those types that need a correpsondence in order to be displayed ($corr_only_feature_type_aids).  Then it unions them together.
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item * Map ID (map_id)
+
+=item * [Map Start (map_start)]
+
+=item * [Map Stop (map_stop)]
+
+=item * The "slot_info" object (slot_info)
+
+ Structure:
+    { 
+      slot_no => {
+        map_id => [ current_start, current_stop, ori_start, ori_stop, magnification ],
+      }
+    }
+
+=item * Slot number (this_slot_no)
+
+=item * Included Feature Type Accessions (included_feature_type_aids)
+
+List of feature type aids that will be displayed even if they don't have
+correspondences.
+
+=item * Ignored Feature Type Accessions (ingnored_feature_type_aids)
+
+List of feature type aids that will not be displayed.
+
+=item * Correspondence Only Feature Type Accessions (corr_only_feature_type_aids)
+
+List of feature type aids that will be displayed ONLY if they have
+correspondences.
+
+=item * [show_intraslot_corr (show_intraslot_corr)]
+
+Boolean value to check if intraslot correspondences count when deciding to
+display a corr_only feature.
+
+=back
+
+=head3 Output
+
+Array of Hashes:
+
+  Keys:
+    feature_id,
+    accession_id,
+    map_id,
+    feature_name,
+    is_landmark,
+    start_position,
+    stop_position,
+    feature_type_aid,
+    direction,
+    map_aid,
+    map_units,
+    feature_type,
+    default_rank,
+    shape color
+    drawing_lane,
+    drawing_priority,
+    aliases - a list of aliases,
+
+=head3 Cache Level: 4
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $cmap_object                 = $args{'cmap_object'} or return;
+    my $map_id                      = $args{'map_id'};
+    my $map_start                   = $args{'map_start'};
+    my $map_stop                    = $args{'map_stop'};
+    my $slot_info                   = $args{'slot_info'};
+    my $this_slot_no                = $args{'this_slot_no'};
+    my $included_feature_type_aids  = $args{'included_feature_type_aids'} || [];
+    my $ignored_feature_type_aids   = $args{'ingnored_feature_type_aids'} || [];
+    my $corr_only_feature_type_aids = $args{'corr_only_feature_type_aids'}
+      || [];
+    my $show_intraslot_corr = $args{'show_intraslot_corr'};
+
+    my $db = $cmap_object->db;
+    my $feature_type_data = $cmap_object->feature_type_data();
+    my $return_object;
+    my $sql_str;
+
+    my $select_sql = qq[
+        select   f.feature_id,
+                 f.accession_id,
+                 f.map_id,
+                 f.feature_name,
+                 f.is_landmark,
+                 f.start_position,
+                 f.stop_position,
+                 f.feature_type_accession as feature_type_aid,
+                 f.direction,
+                 map.accession_id as map_aid,
+                 ms.map_units
+    ];
+    my $from_sql = qq[
+        from     cmap_feature f,
+                 cmap_map map,
+                 cmap_map_set ms
+    ];
+    my $where_sql = qq[
+        where    f.map_id=$map_id
+        and      f.map_id=map.map_id
+        and      map.map_set_id=ms.map_set_id
+    ];
+
+    # Handle Map Start and Stop
+    if ( defined($map_start) and defined($map_stop) ) {
+        $where_sql .= qq[
+            and (
+                 ( f.start_position>=$map_start and
+                   f.start_position<=$map_stop )
+                 or (
+                   f.stop_position is not null and
+                   f.start_position<=$map_start and
+                   f.stop_position>=$map_start
+                 )
+                )
+        ];
+    }
+    elsif ( defined($map_start) ) {
+        $where_sql .=
+            " and (( f.start_position>="
+          . $map_start
+          . " ) or ( f.stop_position is not null and "
+          . " f.stop_position>="
+          . $map_start . " ))";
+    }
+    elsif ( defined($map_stop) ) {
+        $where_sql = " and f.start_position<=" . $map_stop . " ";
+    }
+
+    # Create the query that doesn't get any of the correspondence
+    # only features.
+    my $corr_free_sql = $select_sql . $from_sql . $where_sql;
+    if (   @$corr_only_feature_type_aids
+        or @$ignored_feature_type_aids )
+    {
+        if (@$included_feature_type_aids) {
+            $corr_free_sql .=
+              " and f.feature_type_accession in ('"
+              . join( "','", @$included_feature_type_aids ) . "')";
+        }
+        else {    #return nothing
+            $corr_free_sql .= " and f.feature_type_accession = -1 ";
+        }
+    }
+
+    # Create the query that gets the corr only features.
+    my $with_corr_sql = '';
+    if (
+        (@$corr_only_feature_type_aids)
+        and (  $show_intraslot_corr
+            || $slot_info->{ $this_slot_no + 1 }
+            || $slot_info->{ $this_slot_no - 1 } )
+      )
+    {
+        $with_corr_sql = $select_sql . $from_sql . q[,
+                  cmap_feature f2,
+                  cmap_correspondence_lookup cl
+                  ] . $where_sql . q[
+                  and cl.feature_id1=f.feature_id
+                  and cl.feature_id2=f2.feature_id
+                  and cl.map_id1!=cl.map_id2
+                ];
+        if (   @$included_feature_type_aids
+            or @$ignored_feature_type_aids )
+        {
+            $with_corr_sql .=
+              " and f.feature_type_accession in ('"
+              . join( "','", @$corr_only_feature_type_aids ) . "') ";
+        }
+        $with_corr_sql .= " and f2.map_id in ("
+          . join(
+            ",",
+            (
+                $slot_info->{ $this_slot_no + 1 } ?
+                  keys( %{ $slot_info->{ $this_slot_no + 1 } } )
+                : ()
+            ),
+            (
+                $slot_info->{ $this_slot_no - 1 } ?
+                  keys( %{ $slot_info->{ $this_slot_no - 1 } } )
+                : ()
+            ),
+            (
+                $show_intraslot_corr ? keys( %{ $slot_info->{$this_slot_no} } )
+                : ()
+            ),
+          )
+          . ")";
+    }
+
+    #
+    # Decide what sql will be used
+    #
+    if ( @$corr_only_feature_type_aids and @$included_feature_type_aids ) {
+        $sql_str = $corr_free_sql;
+
+        # If $with_corr_sql is blank, that likely means that there
+        # are no slots to have corrs with.
+        $sql_str .= " UNION " . $with_corr_sql if ($with_corr_sql);
+    }
+    elsif (@$corr_only_feature_type_aids) {
+        if ($with_corr_sql) {
+            $sql_str = $with_corr_sql;
+        }
+        else {
+            ###Return nothing because there are no maps to correspond with
+            return {};
+        }
+    }
+    elsif (@$included_feature_type_aids) {
+        $sql_str = $corr_free_sql;
+    }
+    else {
+        ###Return nothing because all features are ignored
+        return {};
+    }
+
+    unless ( $return_object = $self->get_cached_results( 4, $sql_str ) ) {
+
+        # Get feature aliases
+        my %aliases = ();
+
+        $return_object =
+          $db->selectall_hashref( $sql_str, 'feature_id', {}, () );
+        return {} unless $return_object;
+
+        my @feature_ids = keys(%$return_object);
+        if (@feature_ids) {
+            my $aliases_array = $self->get_feature_aliases(
+                cmap_object => $cmap_object,
+                feature_ids => \@feature_ids,
+            );
+
+            for my $alias (@$aliases_array) {
+                push @{ $aliases{ $alias->{'feature_id'} } }, $alias->{'alias'};
+            }
+        }
+
+        for my $feature_id ( keys %{$return_object} ) {
+            my $ft =
+              $feature_type_data->{ $return_object->{$feature_id}
+                  {'feature_type_aid'} };
+
+            $return_object->{$feature_id}{$_} = $ft->{$_} for qw[
+              feature_type default_rank shape color
+              drawing_lane drawing_priority
+            ];
+
+            $return_object->{$feature_id}{'aliases'} = $aliases{$feature_id};
+        }
+
+        $self->store_cached_results( 4, $sql_str, $return_object );
+    }
 
     return $return_object;
 }
