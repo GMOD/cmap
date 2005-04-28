@@ -44,7 +44,7 @@ illustrates both of these methods.
               push @{ $map_set->{'xrefs'} }, {
                   xref_name => 'Google',
                   xref_url  => "http://www.google.com/?q=".
-                      $map_set->{'short_name'}
+                      $map_set->{'map_set_short_name'}
               };
           
               push @{ $map_set->{'attributes'} }, {
@@ -218,7 +218,7 @@ parentheses) and the hashref's fields you can use:
   map_units
   object_id
   published_on
-  short_name
+  map_set_short_name
   species_aid
   species_id
 

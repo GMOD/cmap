@@ -127,7 +127,7 @@ CREATE TABLE cmap_map_set (
   map_set_id INTEGER PRIMARY KEY NOT NULL DEFAULT '0',
   accession_id varchar(20) NOT NULL DEFAULT '',
   map_set_name varchar(64) NOT NULL DEFAULT '',
-  short_name varchar(30) NOT NULL DEFAULT '',
+  map_set_short_name varchar(30) NOT NULL DEFAULT '',
   map_type_accession varchar(20) NOT NULL DEFAULT '0',
   species_id int(11) NOT NULL DEFAULT '0',
   published_on date DEFAULT NULL,
@@ -195,7 +195,7 @@ CREATE INDEX alias_cmap_feature_alias on cmap_feature_alias (alias);
 CREATE INDEX feature_id1_cmap_feature_corre on cmap_feature_correspondence (feature_id1);
 CREATE INDEX cmap_feature_corresp_idx_cmap_ on cmap_feature_correspondence (is_enabled, feature_correspondence_id);
 CREATE INDEX map_set_id_index_cmap_map on cmap_map (map_set_id);
-CREATE INDEX cmap_map_set_idx_cmap_map_set on cmap_map_set (can_be_reference_map, is_enabled, species_id, display_order, published_on, short_name);
+CREATE INDEX cmap_map_set_idx_cmap_map_set on cmap_map_set (can_be_reference_map, is_enabled, species_id, display_order, published_on, map_set_short_name);
 CREATE INDEX acc_id_species_id_cmap_species on cmap_species (accession_id, species_id);
 CREATE INDEX table_name_cmap_xref on cmap_xref (table_name, object_id, display_order);
 CREATE UNIQUE INDEX accession_id_cmap_corresponden on cmap_correspondence_evidence (accession_id);
@@ -205,5 +205,5 @@ CREATE UNIQUE INDEX accession_id_cmap_feature_corr on cmap_feature_correspondenc
 CREATE UNIQUE INDEX accession_id_cmap_map on cmap_map (accession_id);
 CREATE UNIQUE INDEX map_id_cmap_map on cmap_map (map_id, map_set_id, map_name, accession_id);
 CREATE UNIQUE INDEX accession_id_cmap_map_set on cmap_map_set (accession_id);
-CREATE UNIQUE INDEX map_set_id_cmap_map_set on cmap_map_set (map_set_id, species_id, short_name, accession_id);
+CREATE UNIQUE INDEX map_set_id_cmap_map_set on cmap_map_set (map_set_id, species_id, map_set_short_name, accession_id);
 COMMIT;

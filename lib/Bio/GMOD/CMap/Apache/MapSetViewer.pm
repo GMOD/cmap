@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MapSetViewer;
 # vim: set ft=perl:
 
-# $Id: MapSetViewer.pm,v 1.18 2005-03-04 20:52:24 mwz444 Exp $
+# $Id: MapSetViewer.pm,v 1.19 2005-04-28 21:49:23 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.18 $)[-1];
+$VERSION = (qw$Revision: 1.19 $)[-1];
 
 use Data::Pageset;
 use Bio::GMOD::CMap::Apache;
@@ -50,7 +50,7 @@ sub handler {
 
     my $title = '';
     if ( scalar @$map_sets == 1 ) {
-        $title = 'Map Set Info &quot;'.$map_sets->[0]{'short_name'}.'&quot;';
+        $title = 'Map Set Info &quot;'.$map_sets->[0]{'map_set_short_name'}.'&quot;';
     }
 
     $INTRO ||= $self->config_data('map_set_info_intro') || '';

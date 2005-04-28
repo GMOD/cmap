@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.73 2005-04-28 05:28:35 mwz444 Exp $
+# $Id: Admin.pm,v 1.74 2005-04-28 21:49:20 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.73 $)[-1];
+$VERSION = (qw$Revision: 1.74 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -1834,7 +1834,7 @@ Eather 'feature_name' or 'feature_accession'
 =item - order_by
 
 List of columns (in order) to order by. Options are
-feature_name, species_common_name, map_set_name, map_name and start_position.
+feature_name, species_common_name, map_set_short_name, map_name and start_position.
 
 =item - map_aid
 
@@ -1862,7 +1862,7 @@ feature_name, species_common_name, map_set_name, map_name and start_position.
     my $feature_type_aids = $args{'feature_type_aids'} || [];
     my $search_field      = $args{'search_field'}      || 'feature_name';
     my $order_by          = $args{'order_by'}
-      || 'feature_name,species_common_name,map_set_name,map_name,start_position';
+      || 'feature_name,species_common_name,map_set_short_name,map_name,start_position';
     my $db = $self->db or return;
 
     #
@@ -1900,7 +1900,7 @@ feature_name, species_common_name, map_set_name, map_name and start_position.
                        map.map_name,
                        map.map_id,
                        ms.map_set_id,
-                       ms.short_name as map_set_name,
+                       ms.map_set_short_name,
                        s.species_id,
                        s.species_common_name,
                        ms.map_type_accession as map_type_aid
@@ -2365,12 +2365,12 @@ a key/value pair with the pk_name as key and the id as the value.
         pk_name  => 'map_set_id',
         values   => \%args,
         required => [
-            qw/ accession_id map_set_name short_name species_id
+            qw/ accession_id map_set_name map_set_short_name species_id
               map_type_accession
               /
         ],
         fields => [
-            qw/ accession_id map_set_name short_name
+            qw/ accession_id map_set_name map_set_short_name
               color shape is_enabled display_order can_be_reference_map
               published_on width species_id map_type_accession
               /
@@ -2402,7 +2402,7 @@ map_set_create
         width => $width,
         can_be_reference_map => $can_be_reference_map,
         published_on => $published_on,
-        short_name => $short_name,
+        map_set_short_name => $map_set_short_name,
         display_order => $display_order,
         species_id => $species_id,
         color => $color,
@@ -2438,7 +2438,7 @@ Pixel width of the map
 
 =item - published_on
 
-=item - short_name
+=item - map_set_short_name
 
 =item - display_order
 
@@ -2462,8 +2462,8 @@ If not defined, the object_id will be assigned to it.
     my @missing      = ();
     my $map_set_name = $args{'map_set_name'}
       or push @missing, 'map_set_name';
-    my $short_name = $args{'short_name'}
-      or push @missing, 'short_name';
+    my $map_set_short_name = $args{'map_set_short_name'}
+      or push @missing, 'map_set_short_name';
     my $species_id = $args{'species_id'}
       or push @missing, 'species';
     my $map_type_aid = $args{'map_type_aid'}
@@ -2514,7 +2514,7 @@ If not defined, the object_id will be assigned to it.
         q[
             insert
             into   cmap_map_set
-                   ( map_set_id, accession_id, map_set_name, short_name,
+                   ( map_set_id, accession_id, map_set_name, map_set_short_name,
                      species_id, map_type_accession, published_on, display_order, 
                      can_be_reference_map, shape, width, color, map_units,
                      is_relational_map )
@@ -2523,7 +2523,7 @@ If not defined, the object_id will be assigned to it.
         {},
         (
             $map_set_id,   $map_set_aid,  $map_set_name,
-            $short_name,   $species_id,    $map_type_aid,
+            $map_set_short_name,   $species_id,    $map_type_aid,
             $published_on, $display_order, $can_be_reference_map,
             $shape,        $width,         $color,
             $map_units,    $is_relational_map
@@ -2710,13 +2710,13 @@ Arrayref of map set info
 =cut
 
     my ( $self, %args ) = @_;
-    my $order_by = $args{'order_by'} || 'species_common_name,map_set_name';
+    my $order_by = $args{'order_by'} || 'species_common_name,map_set_short_name';
 
     my $db = $self->db or return;
     return $db->selectall_arrayref(
         qq[
             select   ms.map_set_id, 
-                     ms.short_name as map_set_name,
+                     ms.map_set_short_name,
                      s.species_common_name
             from     cmap_map_set ms,
                      cmap_species s
@@ -2772,7 +2772,7 @@ Nothing
                          map.accession_id as map_aid,
                          map.map_name,
                          ms.accession_id as map_set_aid,
-                         ms.short_name as map_set_name,
+                         ms.map_set_short_name,
                          s.accession_id as species_aid,
                          s.species_common_name
                 from     cmap_map map,
@@ -2781,7 +2781,7 @@ Nothing
                 where    map.map_set_id=ms.map_set_id
                 and      ms.can_be_reference_map=1
                 and      ms.species_id=s.species_id
-                order by map_set_name, map_name
+                order by map_set_short_name, map_name
             ],
             { Columns => {} }
         )
@@ -2812,7 +2812,7 @@ Nothing
                          map.map_name,
                          ms.accession_id as map_set_aid,
                          count(f2.feature_id) as no_correspondences, 
-                         ms.short_name as map_set_name,
+                         ms.map_set_short_name,
                          s.accession_id as species_aid,
                          s.species_common_name
                 from     cmap_feature f1, 
@@ -2836,10 +2836,10 @@ Nothing
                 group by map.accession_id,
                          map.map_name,
                          ms.accession_id,
-                         ms.short_name,
+                         ms.map_set_short_name,
                          s.accession_id,
                          s.species_common_name
-                order by map_set_name, map_name
+                order by map_set_short_name, map_name
             ],
             { Columns => {} },
             ( $map->{'map_id'}, $map->{'map_id'} )
@@ -2853,7 +2853,7 @@ Nothing
             q[
                 select   count(f2.feature_id) as no_correspondences,
                          ms.accession_id as map_set_aid,
-                         ms.short_name as map_set_name,
+                         ms.map_set_short_name,
                          s.accession_id as species_aid,
                          s.species_common_name
                 from     cmap_feature f1,
@@ -2874,10 +2874,10 @@ Nothing
                 and      ms.can_be_reference_map=0
                 and      ms.species_id=s.species_id
                 group by ms.accession_id,
-                         ms.short_name,
+                         ms.map_set_short_name,
                          s.accession_id,
                          s.species_common_name
-                order by map_set_name
+                order by map_set_short_name
             ],
             { Columns => {} },
             ( $map->{'map_id'} )

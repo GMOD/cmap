@@ -111,8 +111,8 @@ INSERT INTO cmap_map (map_id, accession_id, map_set_id, map_name, display_order,
 --
 
 
-INSERT INTO cmap_map_set (map_set_id, accession_id, map_set_name, short_name, map_type_accession, species_id, published_on, can_be_reference_map, display_order, is_enabled, shape, color, width, map_units, is_relational_map) VALUES (1,'MST1','Map Set Test 1','MST1','Seq',1,'2005-04-13',1,1,1,'span','lightgrey',0,'bp',0);
-INSERT INTO cmap_map_set (map_set_id, accession_id, map_set_name, short_name, map_type_accession, species_id, published_on, can_be_reference_map, display_order, is_enabled, shape, color, width, map_units, is_relational_map) VALUES (2,'MST2','Map Set Test 2','MST2','Seq',1,'2005-04-13',1,1,1,'span','lightgrey',0,'bp',0);
+INSERT INTO cmap_map_set (map_set_id, accession_id, map_set_name, map_set_short_name, map_type_accession, species_id, published_on, can_be_reference_map, display_order, is_enabled, shape, color, width, map_units, is_relational_map) VALUES (1,'MST1','Map Set Test 1','MST1','Seq',1,'2005-04-13',1,1,1,'span','lightgrey',0,'bp',0);
+INSERT INTO cmap_map_set (map_set_id, accession_id, map_set_name, map_set_short_name, map_type_accession, species_id, published_on, can_be_reference_map, display_order, is_enabled, shape, color, width, map_units, is_relational_map) VALUES (2,'MST2','Map Set Test 2','MST2','Seq',1,'2005-04-13',1,1,1,'span','lightgrey',0,'bp',0);
 
 --
 -- Dumping data for table `cmap_next_number`

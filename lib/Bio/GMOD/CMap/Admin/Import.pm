@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Import;
 
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.66 2005-04-28 05:28:36 mwz444 Exp $
+# $Id: Import.pm,v 1.67 2005-04-28 21:49:22 mwz444 Exp $
 
 =pod
 
@@ -33,7 +33,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.66 $)[-1];
+$VERSION = (qw$Revision: 1.67 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -1101,7 +1101,7 @@ File handle of the log file (default is STDOUT).
             object_type => 'map_set',
             object      => $ms,
             field_names => [
-                qw/ accession_id map_set_name short_name
+                qw/ accession_id map_set_name map_set_short_name
                   color shape is_enabled display_order can_be_reference_map
                   published_on width species_id map_type_aid map_units
                   is_relational_map

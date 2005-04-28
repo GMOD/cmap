@@ -242,7 +242,7 @@ CREATE TABLE cmap_map_set (
   map_set_id int(11) NOT NULL default '0',
   accession_id varchar(20) NOT NULL default '',
   map_set_name varchar(64) NOT NULL default '',
-  short_name varchar(30) NOT NULL default '',
+  map_set_short_name varchar(30) NOT NULL default '',
   map_type_accession varchar(20) NOT NULL default '0',
   species_id int(11) NOT NULL default '0',
   published_on date default NULL,
@@ -256,8 +256,8 @@ CREATE TABLE cmap_map_set (
   is_relational_map tinyint(11) NOT NULL default '0',
   PRIMARY KEY  (map_set_id),
   UNIQUE KEY accession_id (accession_id),
-  UNIQUE KEY map_set_id (map_set_id,species_id,short_name,accession_id),
-  KEY cmap_map_set_idx (can_be_reference_map,is_enabled,species_id,display_order,published_on,short_name)
+  UNIQUE KEY map_set_id (map_set_id,species_id,map_set_short_name,accession_id),
+  KEY cmap_map_set_idx (can_be_reference_map,is_enabled,species_id,display_order,published_on,map_set_short_name)
 ) TYPE=MyISAM;
 
 --

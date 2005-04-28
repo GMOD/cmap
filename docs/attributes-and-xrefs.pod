@@ -134,7 +134,7 @@ Table: cmap_map_set
   map_set_id
   map_set_aid          (accession_id)
   map_set_name
-  short_name
+  map_set_short_name
   map_type_accession
   species_id
   can_be_reference_map
@@ -153,7 +153,7 @@ Table: cmap_map
   stop_position
   map_units
   map_set_aid  [cmap_map_set.accession_id]
-  map_set_name [cmap_map_set.short_name]
+  map_set_name [cmap_map_set.map_set_short_name]
   species_aid  [cmap_species.accession_id]
   species_common_name [cmap_species.species_common_name]
 
@@ -175,7 +175,7 @@ Table: cmap_feature
   map_name         [cmap_map]
   map_aid          [cmap_map.accession_id]
   map_set_aid      [cmap_map_set.accession_id]
-  map_set_name     [cmap_map_set.short_name ]
+  map_set_name     [cmap_map_set.map_set_short_name ]
   species_id       [cmap_species]
   species_common_name     [cmap_species.species_common_name]
   map_type_aid     [cmap_map.accession_id]

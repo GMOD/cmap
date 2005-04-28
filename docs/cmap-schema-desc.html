@@ -224,7 +224,7 @@
 <tr><td class="FieldCellName"><a name="cmap_map_set-map_set_id">map_set_id</a></td> <td class="FieldCellType">int</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">PRIMARY KEY, UNIQUE, NOT NULL</td> <td class="FieldCellFK"></td></tr>
 <tr><td class="FieldCellName"><a name="cmap_map_set-accession_id">accession_id</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">20</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">UNIQUE, NOT NULL</td> <td class="FieldCellFK"></td></tr>
 <tr><td class="FieldCellName"><a name="cmap_map_set-map_set_name">map_set_name</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">64</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
-<tr><td class="FieldCellName"><a name="cmap_map_set-short_name">short_name</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">30</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">UNIQUE, NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map_set-map_set_short_name">map_set_short_name</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">30</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">UNIQUE, NOT NULL</td> <td class="FieldCellFK"></td></tr>
 <tr><td class="FieldCellName"><a name="cmap_map_set-map_type_accession">map_type_accession</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">20</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
 <tr><td class="FieldCellName"><a name="cmap_map_set-species_id">species_id</a></td> <td class="FieldCellType">int</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">UNIQUE, NOT NULL</td> <td class="FieldCellFK"></td></tr>
 <tr><td class="FieldCellName"><a name="cmap_map_set-published_on">published_on</a></td> <td class="FieldCellType">date</td> <td class="FieldCellSize">0</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
@@ -240,7 +240,7 @@
 <h3>Indices</h3>
 <table border="1">
 <tr class="IndexRow"><th>Name</th> <th>Fields</th></tr>
-<tr class="IndexCell"><td>cmap_map_set_idx</td> <td>can_be_reference_map, is_enabled, species_id, display_order, published_on, short_name</td></tr>
+<tr class="IndexCell"><td>cmap_map_set_idx</td> <td>can_be_reference_map, is_enabled, species_id, display_order, published_on, map_set_short_name</td></tr>
 </table>
 <hr />
 <!-- Starting table 'cmap_next_number' -->

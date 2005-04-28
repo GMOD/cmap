@@ -158,6 +158,7 @@
         </td>
         <td [% IF f.no_positions>1 %] rowspan="[% f.no_positions %]"[% END %] align="right">
             [% f.start_position | commify %] [% IF f.stop_position>f.start_position %]- [% f.stop_position | commify %][% END %]
+
         </td>
 
         [% IF f.positions.size %]

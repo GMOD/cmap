@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.70 2005-04-28 05:28:37 mwz444 Exp $
+# $Id: Generic.pm,v 1.71 2005-04-28 21:49:24 mwz444 Exp $
 
 =head1 NAME
 
@@ -33,7 +33,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.70 $)[-1];
+$VERSION = (qw$Revision: 1.71 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -174,7 +174,7 @@ The SQL for finding correspondences for a feature.
                  map.display_order as map_display_order,
                  ms.map_set_id,
                  ms.accession_id as map_set_aid,
-                 ms.short_name as map_set_name,
+                 ms.map_set_short_name,
                  ms.display_order as ms_display_order,
                  ms.published_on,
                  ms.map_type_accession as map_type_aid,
@@ -249,7 +249,7 @@ The SQL for finding correspondences for a feature.
 
     $sql .= q[
             order by species_display_order, species_common_name, 
-            ms_display_order, map_set_name, map_display_order,
+            ms_display_order, map_set_short_name, map_display_order,
             map_name, start_position, feature_name
     ];
 
@@ -281,7 +281,7 @@ The SQL for finding basic info on a feature.
                    map.accession_id as map_aid,
                    ms.map_set_id,
                    ms.accession_id as map_set_aid,
-                   ms.short_name as map_set_name,
+                   ms.map_set_short_name,
                    s.species_id,
                    s.accession_id as species_aid,
                    s.species_common_name,
@@ -296,78 +296,6 @@ The SQL for finding basic info on a feature.
         on         ms.species_id=s.species_id
         where      f.accession_id=?
     ];
-}
-
-# ----------------------------------------------------
-sub form_data_ref_map_sets {
-
-=pod
-
-=head2 form_data_ref_map_sets
-
-The SQL for finding all reference map sets.
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $ref_species_aid = $args{'ref_species_aid'} || 0;
-    my $cmap_object = $args{'cmap_object'} or return;
-    my $db          = $args{'db'}          or return;
-    my $return_object;
-    my $map_type_data = $self->map_type_data();
-
-    my $sql_str = q[
-        select   ms.accession_id as map_set_aid, 
-                 ms.map_set_id,
-                 ms.short_name as map_set_name,
-                 ms.display_order as map_set_display_order,
-                 ms.published_on,
-                 s.species_common_name,
-                 s.display_order as species_display_order,
-                 ms.map_type_accession as map_type_aid
-        from     cmap_map_set ms,
-                 cmap_species s
-        where    ms.can_be_reference_map=1
-        and      ms.is_enabled=1
-        and      ms.species_id=s.species_id
-    ];
-    $sql_str .= "and s.accession_id='$ref_species_aid' "
-      if $ref_species_aid
-      and $ref_species_aid ne '-1';
-    $sql_str .= q[
-        and      ms.is_relational_map=0
-        order by ms.display_order,
-                 ms.map_type_accession,
-                 s.display_order,
-                 species_common_name,
-                 ms.published_on desc,
-                 ms.map_set_name
-    ];
-
-    unless ( $return_object = $cmap_object->get_cached_results( 1, $sql_str ) )
-    {
-        $return_object =
-          $db->selectall_arrayref( $sql_str, { Columns => {} }, );
-
-        foreach my $row (@$return_object) {
-            $row->{'map_type'} =
-              $map_type_data->{ $row->{'map_type_aid'} }{'map_type'};
-            $row->{'map_type_display_order'} =
-              $map_type_data->{ $row->{'map_type_aid'} }{'display_order'};
-            $row->{'epoch_published_on'} = parsedate( $row->{'published_on'} );
-        }
-
-        $return_object = sort_selectall_arrayref(
-            $return_object,            '#map_type_display_order',
-            'map_type',                '#species_display_order',
-            'species_common_name',     '#map_set_display_order',
-            'epoch_published_on desc', 'map_set_name',
-        );
-
-        $cmap_object->store_cached_results( 1, $sql_str, $return_object );
-    }
-
-    return $return_object;
 }
 
 # ----------------------------------------------------
@@ -386,7 +314,7 @@ The SQL for finding all map sets.
     my $sql             = q[
         select   ms.accession_id as map_set_aid, 
                  ms.map_set_id,
-                 ms.short_name as map_set_name,
+                 ms.map_set_short_name,
                  ms.display_order as map_set_display_order,
                  ms.published_on,
                  s.species_common_name,
@@ -406,7 +334,7 @@ The SQL for finding all map sets.
                  s.display_order,
                  species_common_name,
                  ms.published_on desc,
-                 ms.map_set_name
+                 ms.map_set_short_name
     ];
 
     return $sql;
@@ -596,6 +524,11 @@ that have non-null object_ids.
 
 =item * [ Order by clause (order_by) ]
 
+=item * [ Get All Flag (get_all) ]
+
+Boolean value.  If set to 1, return all without regard to whether object_id is
+null.  Specifying an object_id overrides this.
+
 =back
 
 =head3 Output
@@ -622,8 +555,10 @@ Not using cache because this query is quicker.
     my $object_name = $args{'object_name'} or return;
     my $object_id   = $args{'object_id'};
     my $order_by    = $args{'order_by'};
+    my $get_all     = $args{'get_all'} || 0;
     my $db          = $cmap_object->db;
     my $return_object;
+    my @identifiers = ();
 
     my $table_name = $self->{'TABLE_NAMES'}->{$object_name};
     if ( !$order_by || $order_by eq 'display_order' ) {
@@ -639,26 +574,23 @@ Not using cache because this query is quicker.
                  attribute_name,
                  attribute_value
         from     cmap_attribute
-        where    
+        where    table_name = ?
     ];
-    $sql_str .= $object_id
-      ? " object_id=? "
-      : " object_id is not null ";
+    push @identifiers,$table_name;
+    
+    if ($object_id){
+        push @identifiers,$object_id;
+        $sql_str .= " and object_id=? ";
+    }
+    elsif(!$get_all){
+        $sql_str .=  " object_id is not null ";
+    }
+
     $sql_str .= qq[
-            and      table_name=?
             order by $order_by
     ];
-    if ($object_id) {
-        $return_object = $db->selectall_arrayref(
-            $sql_str,
-            { Columns => {} },
-            ( $object_id, $table_name )
-        );
-    }
-    else {
-        $return_object =
-          $db->selectall_arrayref( $sql_str, { Columns => {} }, ($table_name) );
-    }
+    $return_object =
+      $db->selectall_arrayref( $sql_str, { Columns => {} }, @identifiers );
 
     return $return_object;
 }
@@ -1036,11 +968,11 @@ Not using cache because this query is quicker.
         and %$ref_map_info )
     {
         $sql_str .=
-          " and cl.map_id1 in (" . join( ",", keys(%$ref_map_info) ) . ")";
+          " and cl.map_id1 in (" . join( ",", sort keys(%$ref_map_info) ) . ")";
 
         if ($intraslot) {
             $sql_str .=
-              " and cl.map_id2 in (" . join( ",", keys(%$ref_map_info) ) . ")";
+              " and cl.map_id2 in (" . join( ",", sort keys(%$ref_map_info) ) . ")";
 
             # We don't want intramap corrs
             $sql_str .= ' and cl.map_id1 < cl.map_id2 ';
@@ -1056,7 +988,7 @@ Not using cache because this query is quicker.
         if (@$included_evidence_type_aids) {
             push @join_array,
               " ce.evidence_type_accession in ('"
-              . join( "','", @$included_evidence_type_aids ) . "')";
+              . join( "','", sort @$included_evidence_type_aids ) . "')";
         }
         foreach my $et_aid (@$less_evidence_type_aids) {
             push @join_array,
@@ -1079,7 +1011,7 @@ Not using cache because this query is quicker.
     if (@$feature_type_aids) {
         $sql_str .=
           " and cl.feature_type_accession1 in ('"
-          . join( "','", @$feature_type_aids ) . "')";
+          . join( "','", sort @$feature_type_aids ) . "')";
     }
 
     unless ( $return_object =
@@ -1182,6 +1114,7 @@ Array of Hashes:
     map_set_id,
     map_set_aid,
     map_set_name,
+    map_set_short_name,
     can_be_reference_map,
     map_type_aid,
     map_units,
@@ -1237,7 +1170,8 @@ Not using cache because this query is quicker.
                 map.stop_position as map_stop,
                 ms.map_set_id,
                 ms.accession_id as map_set_aid,
-                ms.short_name as map_set_name,
+                ms.map_set_name,
+                ms.map_set_short_name,
                 ms.can_be_reference_map,
                 ms.map_type_accession as map_type_aid,
                 ms.map_units,
@@ -1260,12 +1194,12 @@ Not using cache because this query is quicker.
     if ( $feature_type_aids and @$feature_type_aids ) {
         $where_sql .=
           "and f.feature_type_accession in ('"
-          . join( "','", @$feature_type_aids ) . "')";
+          . join( "','", sort @$feature_type_aids ) . "')";
     }
 
     if ( $species_aids and @$species_aids ) {
         $where_sql .=
-          'and s.accession_id in (' . join( "','", @$species_aids ) . "')";
+          'and s.accession_id in (' . join( "','", sort @$species_aids ) . "')";
     }
 
     # add the were clause for each possible identifier
@@ -1444,7 +1378,7 @@ Not using cache because this query is quicker.
     # add the were clause for each possible identifier
     if (@$feature_ids) {
         $where_sql .=
-          " and f.feature_id in (" . join( ",", @$feature_ids ) . ") ";
+          " and f.feature_id in (" . join( ",", sort @$feature_ids ) . ") ";
     }
     elsif ($feature_id) {
         push @identifiers, $feature_id;
@@ -1653,7 +1587,7 @@ Array of Hashes:
         if (@$included_feature_type_aids) {
             $corr_free_sql .=
               " and f.feature_type_accession in ('"
-              . join( "','", @$included_feature_type_aids ) . "')";
+              . join( "','", sort @$included_feature_type_aids ) . "')";
         }
         else {    #return nothing
             $corr_free_sql .= " and f.feature_type_accession = -1 ";
@@ -1682,14 +1616,14 @@ Array of Hashes:
         {
             $with_corr_sql .=
               " and f.feature_type_accession in ('"
-              . join( "','", @$corr_only_feature_type_aids ) . "') ";
+              . join( "','", sort @$corr_only_feature_type_aids ) . "') ";
         }
         $with_corr_sql .= " and f2.map_id in ("
           . join(
             ",",
             (
                 $slot_info->{ $this_slot_no + 1 } ?
-                  keys( %{ $slot_info->{ $this_slot_no + 1 } } )
+                  sort keys( %{ $slot_info->{ $this_slot_no + 1 } } )
                 : ()
             ),
             (
@@ -1836,7 +1770,7 @@ Not using cache because this query is quicker.
     if (@$species_aids) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
         $where_sql .=
-          " s.accession_id in ('" . join( "', '", @$species_aids ) . "') ";
+          " s.accession_id in ('" . join( "', '", sort @$species_aids ) . "') ";
     }
 
     if ($join_map_set) {
@@ -1922,6 +1856,7 @@ Array of Hashes:
     map_set_id,
     map_set_aid,
     map_set_name,
+    map_set_short_name,
     ms.published_on,
     shape,
     width,
@@ -1965,7 +1900,8 @@ Array of Hashes:
                 map.display_order,
                 ms.map_set_id,
                 ms.accession_id as map_set_aid,
-                ms.short_name as map_set_name,
+                ms.map_set_name,
+                ms.map_set_short_name,
                 ms.published_on,
                 ms.shape,
                 ms.width,
@@ -2039,6 +1975,317 @@ Array of Hashes:
 
         $cmap_object->store_cached_results( 2, $sql_str, $return_object );
     }
+    return $return_object;
+}
+
+#-----------------------------------------------
+sub get_used_feature_types {    #YYY
+
+=pod
+
+=head2 get_used_feature_types
+
+=head3 Description
+
+Get feature type info for features in the db
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item * List of Map IDs (map_ids)
+
+=item * List of feature types to check (included_feature_type_aids)
+
+=back
+
+=head3 Output
+
+Array of Hashes:
+
+  Keys:
+    feature_type_aid,
+    feature_type,
+    shape,
+    color
+
+=head3 Cache Level (If Used): 3
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $cmap_object = $args{'cmap_object'} or return;
+    my $map_ids = $args{'map_ids'} || [];
+    my $included_feature_type_aids = $args{'included_feature_type_aids'} || [];
+    my $db = $cmap_object->db;
+    my $feature_type_data = $cmap_object->feature_type_data();
+    my $return_object;
+
+    my $sql_str = qq[
+        select   distinct
+                 f.feature_type_accession as feature_type_aid
+        from     cmap_feature f
+    ];
+    my $where_sql = '';
+
+    if (@$map_ids){
+        $where_sql .= $where_sql ? ' and ' : ' where ';
+        $where_sql .=
+          " f.map_id in ('"
+          . join( "','", sort @$map_ids ) . "')";
+    }
+    if (@$included_feature_type_aids) {
+        $where_sql .= $where_sql ? ' and ' : ' where ';
+        $where_sql .=
+          " f.feature_type_accession in ('"
+          . join( "','", sort @$included_feature_type_aids ) . "') ";
+    }
+
+    $sql_str .= $where_sql;
+
+    unless ( $return_object = $self->get_cached_results( 3, $sql_str ) ) {
+        $return_object = $db->selectall_arrayref( $sql_str, {Columns => {}} , () );
+        foreach my $row ( @$return_object ) {
+            $row->{'feature_type'} =
+              $feature_type_data->{ $row->{'feature_type_aid'} }
+              {'feature_type'};
+            $row->{'shape'} =
+              $feature_type_data->{ $row->{'feature_type_aid'} } {'shape'};
+            $row->{'color'} =
+              $feature_type_data->{ $row->{'feature_type_aid'} } {'color'};
+        }
+        $self->store_cached_results( 3, $sql_str, $return_object );
+    }
+
+    return $return_object;
+}
+
+#-----------------------------------------------
+sub get_map_sets {    #YYY
+
+=pod
+
+=head2 stub
+
+=head3 Description
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item *
+
+=back
+
+=head3 Output
+
+Array of Hashes:
+
+  Keys:
+
+=head3 Cache Level (If Used): 1
+
+Not using cache because this query is quicker.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $cmap_object = $args{'cmap_object'} or return;
+    my $species_id = $args{'species_id'};
+    my $species_aid = $args{'species_aid'};
+    my $map_set_aid = $args{'map_set_aid'};
+    my $map_set_aids = $args{'map_set_aids'} || [];
+    my $map_type_aid = $args{'map_type_aid'};
+    my $is_relational_map = $args{'is_relational_map'};
+    my $can_be_reference_map = $args{'can_be_reference_map'};
+    my $is_enabled = $args{'is_enabled'};
+    my $db = $cmap_object->db;
+    my $map_type_data = $cmap_object->map_type_data();
+    my $return_object;
+
+    my $sql_str = q[
+        select  ms.map_set_id,
+                ms.accession_id as map_set_aid,
+                ms.map_set_name,
+                ms.map_set_short_name,
+                ms.map_type_accession as map_type_aid,
+                ms.published_on,
+                ms.can_be_reference_map,
+                ms.is_enabled,
+                ms.is_relational_map,
+                ms.map_units,
+                ms.display_order as map_set_display_order,
+                s.species_id,
+                s.accession_id as species_aid,
+                s.species_common_name,
+                s.species_full_name,
+                s.display_order as species_display_order
+        from    cmap_map_set ms,
+                cmap_species s
+        where   ms.species_id=s.species_id
+    ];
+
+    if ($map_set_aid) {
+        $sql_str .= " and ms.accession_id = '$map_set_aid' ";
+    }
+    elsif (@$map_set_aids) {
+        $sql_str .=
+          " and ms.accession_id in ('"
+          . join( "','", sort @$map_set_aids ) 
+          . "') ";
+    }
+    if($species_id ){
+        $sql_str .= " and s.species_id= '$species_id' "
+    }
+    elsif($species_aid and $species_aid ne '-1'){
+        $sql_str .= " and s.accession_id= '$species_aid' "
+    }
+    if ($map_type_aid) {
+        $sql_str .= " and ms.map_type_accession = '$map_type_aid' ";
+    }
+    if ( defined($is_relational_map) ) {
+        $sql_str .= " and ms.is_relational_map = $is_relational_map ";
+    }
+    if ( defined($can_be_reference_map) ) {
+        $sql_str .= " and ms.can_be_reference_map = $can_be_reference_map ";
+    }
+    if ( defined($is_enabled) ) {
+        $sql_str .= " and ms.is_enabled = $is_enabled ";
+    }
+
+    unless ( $return_object = $cmap_object->get_cached_results( 1, $sql_str ) )
+    {
+        $return_object =
+          $db->selectall_arrayref( $sql_str, { Columns => {} }, );
+
+        foreach my $row (@$return_object) {
+            $row->{'map_type'} =
+              $map_type_data->{ $row->{'map_type_aid'} }{'map_type'};
+            $row->{'map_type_display_order'} =
+              $map_type_data->{ $row->{'map_type_aid'} }{'display_order'};
+            $row->{'epoch_published_on'} = parsedate( $row->{'published_on'} );
+        }
+
+        $return_object = sort_selectall_arrayref(
+            $return_object,            '#map_type_display_order',
+            'map_type',                '#species_display_order',
+            'species_common_name',     '#map_set_display_order',
+            'epoch_published_on desc', 'map_set_short_name',
+        );
+
+        $cmap_object->store_cached_results( 1, $sql_str, $return_object );
+    }
+
+
+    return $return_object;
+}
+
+# --------------------------------------------------
+sub get_just_map_sets {    #YYY
+
+=pod
+
+=head2 stub
+
+=head3 Description
+
+Get just the info from the map set table
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item *
+
+=back
+
+=head3 Output
+
+Array of Hashes:
+
+  Keys:
+
+=head3 Cache Level (If Used): 
+
+Not using cache because this query is quicker.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $cmap_object = $args{'cmap_object'} or return;
+    my $map_set_aid = $args{'map_set_aid'};
+    my $map_set_aids = $args{'map_set_aids'} || [];
+    my $map_type_aid = $args{'map_type_aid'};
+    my $is_relational_map = $args{'is_relational_map'};
+    my $can_be_reference_map = $args{'can_be_reference_map'};
+    my $is_enabled = $args{'is_enabled'};
+    my $db = $cmap_object->db;
+    my $map_type_data = $cmap_object->map_type_data();
+    my $return_object;
+
+    my $sql_str = q[
+        select  ms.map_set_id,
+                ms.accession_id as map_set_aid,
+                ms.map_set_name,
+                ms.map_set_short_name,
+                ms.map_type_accession as map_type_aid,
+                ms.published_on,
+                ms.can_be_reference_map,
+                ms.is_enabled,
+                ms.is_relational_map,
+                ms.map_units,
+                ms.display_order as map_set_display_order
+        from    cmap_map_set ms
+    ];
+    my $where_sql='';
+
+    if ($map_set_aid) {
+        $where_sql .= $where_sql ? ' and ' : ' where ';
+        $where_sql .= " ms.accession_id = '$map_set_aid' ";
+    }
+    elsif (@$map_set_aids) {
+        $where_sql .= $where_sql ? ' and ' : ' where ';
+        $where_sql .=
+          " ms.accession_id in ('"
+          . join( "','", sort @$map_set_aids ) 
+          . "') ";
+    }
+    if ($map_type_aid) {
+        $where_sql .= $where_sql ? ' and ' : ' where ';
+        $where_sql .= " ms.map_type_accession = '$map_type_aid' ";
+    }
+    if ( defined($is_relational_map) ) {
+        $where_sql .= $where_sql ? ' and ' : ' where ';
+        $where_sql .= " ms.is_relational_map = $is_relational_map ";
+    }
+    if ( defined($can_be_reference_map) ) {
+        $where_sql .= $where_sql ? ' and ' : ' where ';
+        $where_sql .= " ms.can_be_reference_map = $can_be_reference_map ";
+    }
+    if ( defined($is_enabled) ) {
+        $where_sql .= $where_sql ? ' and ' : ' where ';
+        $where_sql .= " ms.is_enabled = $is_enabled ";
+    }
+
+    $sql_str .= $where_sql;
+
+    $return_object =
+      $db->selectall_arrayref( $sql_str, { Columns => {} }, );
+
+    foreach my $row (@$return_object) {
+        $row->{'map_type'} =
+          $map_type_data->{ $row->{'map_type_aid'} }{'map_type'};
+        $row->{'map_type_display_order'} =
+          $map_type_data->{ $row->{'map_type_aid'} }{'display_order'};
+        $row->{'epoch_published_on'} = parsedate( $row->{'published_on'} );
+    }
+
     return $return_object;
 }
 

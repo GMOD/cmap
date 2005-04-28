@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.78 2005-04-28 05:28:36 mwz444 Exp $
+# $Id: AdminViewer.pm,v 1.79 2005-04-28 21:49:23 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -33,7 +33,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.78 $)[-1];
+$VERSION        = (qw$Revision: 1.79 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -106,7 +106,7 @@ use constant XREF_OBJECTS     => [
     {
         table_name            => 'cmap_map_set',
         object_name           => 'Map Set',
-        name_field            => 'map_set_name',
+        name_field            => 'map_set_short_name',
     },
     {
         table_name            => 'cmap_species',
@@ -726,7 +726,7 @@ sub map_create {
     my $sth = $db->prepare(
         q[
             select ms.map_set_id, 
-                   ms.short_name as map_set_name,
+                   ms.map_set_short_name,
                    s.species_common_name
             from   cmap_map_set ms,
                    cmap_species s
@@ -830,7 +830,7 @@ sub map_view {
                    map.start_position, 
                    map.stop_position,
                    ms.map_set_id, 
-                   ms.short_name as map_set_name,
+                   ms.map_set_short_name,
                    ms.map_type_accession as map_type_aid,
                    ms.map_units,
                    s.species_common_name,
@@ -1164,7 +1164,7 @@ sub feature_create {
         q[
             select map.map_id, 
                    map.map_name,
-                   ms.short_name as map_set_name,
+                   ms.map_set_short_name,
                    s.species_common_name
             from   cmap_map map,
                    cmap_map_set ms,
@@ -1214,7 +1214,7 @@ sub feature_edit {
                        f.stop_position,
                        f.is_landmark,
                        map.map_name,
-                       ms.short_name as map_set_name,
+                       ms.map_set_short_name,
                        s.species_common_name
             from       cmap_feature f
             inner join cmap_map map
@@ -1327,7 +1327,7 @@ sub feature_view {
                        f.start_position,
                        f.stop_position,
                        map.map_name,
-                       ms.short_name as map_set_name,
+                       ms.map_set_short_name,
                        s.species_common_name
             from       cmap_feature f
             inner join cmap_map map
@@ -1371,7 +1371,7 @@ sub feature_view {
                    f.feature_name as feature_name,
                    map.map_id,
                    map.map_name,
-                   ms.short_name as map_set_name,
+                   ms.map_set_short_name,
                    s.species_common_name
             from   cmap_correspondence_lookup cl,
                    cmap_feature_correspondence fc,
@@ -1481,7 +1481,7 @@ sub feature_corr_create {
                    f.feature_name,
                    map.map_id,
                    map.map_name,
-                   ms.short_name as map_set_name,
+                   ms.map_set_short_name,
                    s.species_id,
                    s.species_common_name
             from   cmap_feature f,
@@ -1517,7 +1517,7 @@ sub feature_corr_create {
                    f.feature_name,
                    map.map_id,
                    map.map_name,
-                   ms.short_name as map_set_name,
+                   ms.map_set_short_name,
                    s.species_id,
                    s.species_common_name
             from   cmap_feature f,
@@ -2038,17 +2038,17 @@ sub map_sets_view {
     my $order_by    = $apr->param('order_by')    || '';
     
     if ( $order_by ) {
-        $order_by .= ',map_set_name' unless $order_by eq 'map_set_name';
+        $order_by .= ',map_set_short_name' unless $order_by eq 'map_set_short_name';
     }
     else {
         $order_by =
             'ms.display_order, map_type_aid, s.display_order, s.species_common_name, '.
-            'ms.display_order, ms.published_on desc, ms.short_name';
+            'ms.display_order, ms.published_on desc, ms.map_set_short_name';
     }
 
     my $sql = q[
         select      ms.map_set_id,
-                    ms.short_name as map_set_name,
+                    ms.map_set_short_name,
                     ms.accession_id as map_set_aid,
                     ms.published_on,
                     ms.is_enabled,
@@ -2069,7 +2069,7 @@ sub map_sets_view {
         if defined $is_enabled && $is_enabled =~ m/^[01]$/;
     $sql .= qq[ 
         group by    ms.map_set_id,
-                    ms.short_name,
+                    ms.map_set_short_name,
                     ms.accession_id,
                     ms.published_on,
                     ms.is_enabled,
@@ -2188,7 +2188,7 @@ sub map_set_edit {
         q[
             select    ms.map_set_id, 
                       ms.accession_id, ms.map_set_name,
-                      ms.short_name, 
+                      ms.map_set_short_name, 
                       ms.display_order, 
                       ms.published_on, 
                       ms.is_relational_map,
@@ -2261,7 +2261,7 @@ sub map_set_insert {
     my $admin                =  $self->admin;
     my $map_set_id           =  $admin->map_set_create(
         map_set_name         => $apr->param('map_set_name')         || '',
-        short_name           => $apr->param('short_name')           || '',
+        map_set_short_name           => $apr->param('map_set_short_name')           || '',
         species_id           => $apr->param('species_id')           || '',
         map_type_aid         => $apr->param('map_type_aid')          || '',
         map_set_aid         => $apr->param('map_set_aid')         || '',
@@ -2291,7 +2291,7 @@ sub map_set_view {
     my $sth = $db->prepare(
         q[
             select    ms.map_set_id, ms.accession_id as map_set_aid, ms.map_set_name,
-                      ms.short_name, ms.display_order, ms.published_on,
+                      ms.map_set_short_name, ms.display_order, ms.published_on,
                       ms.map_type_accession as map_type_aid,
                       ms.species_id, 
                       ms.is_relational_map,
@@ -2387,7 +2387,7 @@ sub map_set_update {
     my $map_set_id           = $apr->param('map_set_id')           ||  0;
     my $map_set_aid         = $apr->param('map_set_aid')         || '';
     my $map_set_name         = $apr->param('map_set_name')         || '';
-    my $short_name           = $apr->param('short_name')           || '';
+    my $map_set_short_name           = $apr->param('map_set_short_name')           || '';
     my $species_id           = $apr->param('species_id')           ||  0;
     my $map_type_aid         = $apr->param('map_type_aid')         ||  0;
     my $is_relational_map    = $apr->param('is_relational_map')    ||  0;
@@ -2417,7 +2417,7 @@ sub map_set_update {
     $db->do(
         q[
             update cmap_map_set
-            set    accession_id=?, map_set_name=?, short_name=?,
+            set    accession_id=?, map_set_name=?, map_set_short_name=?,
                    species_id=?, map_type_accession=?, published_on=?,
                    is_relational_map=?,
                    can_be_reference_map=?, display_order=?, 
@@ -2426,7 +2426,7 @@ sub map_set_update {
         ],
         {},
         (
-            $map_set_aid, $map_set_name, $short_name, 
+            $map_set_aid, $map_set_name, $map_set_short_name, 
             $species_id, $map_type_aid, $published_on, 
             $is_relational_map,
             $can_be_reference_map, $display_order, 

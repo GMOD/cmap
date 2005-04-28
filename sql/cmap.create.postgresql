@@ -183,7 +183,7 @@ CREATE TABLE "cmap_map_set" (
   "map_set_id" bigint DEFAULT '0' NOT NULL,
   "accession_id" character varying(20) DEFAULT '' NOT NULL,
   "map_set_name" character varying(64) DEFAULT '' NOT NULL,
-  "short_name" character varying(30) DEFAULT '' NOT NULL,
+  "map_set_short_name" character varying(30) DEFAULT '' NOT NULL,
   "map_type_accession" character varying(20) DEFAULT '0' NOT NULL,
   "species_id" bigint DEFAULT '0' NOT NULL,
   "published_on" date,
@@ -197,10 +197,10 @@ CREATE TABLE "cmap_map_set" (
   "is_relational_map" smallint DEFAULT '0' NOT NULL,
   PRIMARY KEY ("map_set_id"),
   Constraint "accession_id6" UNIQUE ("accession_id"),
-  Constraint "map_set_id" UNIQUE ("map_set_id", "species_id", "short_name", "accession_id")
+  Constraint "map_set_id" UNIQUE ("map_set_id", "species_id", "map_set_short_name", "accession_id")
 );
 
-CREATE INDEX "cmap_map_set_idx" on cmap_map_set ("can_be_reference_map", "is_enabled", "species_id", "display_order", "published_on", "short_name");
+CREATE INDEX "cmap_map_set_idx" on cmap_map_set ("can_be_reference_map", "is_enabled", "species_id", "display_order", "published_on", "map_set_short_name");
 
 --
 -- Table: cmap_next_number

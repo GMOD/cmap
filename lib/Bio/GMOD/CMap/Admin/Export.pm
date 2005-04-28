@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Export;
 
 # vim: set ft=perl:
 
-# $Id: Export.pm,v 1.16 2005-04-26 23:26:28 mwz444 Exp $
+# $Id: Export.pm,v 1.17 2005-04-28 21:49:22 mwz444 Exp $
 
 =pod
 
@@ -29,7 +29,7 @@ of data out of CMap.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.16 $)[-1];
+$VERSION = (qw$Revision: 1.17 $)[-1];
 
 use Data::Dumper;
 use File::Spec::Functions;
@@ -400,7 +400,7 @@ hash with map set and species
         select map_set_id as object_id,
                accession_id,
                map_set_name, 
-               short_name, 
+               map_set_short_name, 
                map_type_accession as map_type_aid,
                species_id,
                published_on,

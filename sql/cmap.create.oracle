@@ -231,7 +231,7 @@ CREATE TABLE cmap_map_set (
   map_set_id number(11) DEFAULT '0' NOT NULL,
   accession_id varchar2(20) DEFAULT '' NOT NULL,
   map_set_name varchar2(64) DEFAULT '' NOT NULL,
-  short_name varchar2(30) DEFAULT '' NOT NULL,
+  map_set_short_name varchar2(30) DEFAULT '' NOT NULL,
   map_type_accession varchar2(20) DEFAULT '0' NOT NULL,
   species_id number(11) DEFAULT '0' NOT NULL,
   published_on date DEFAULT NULL,
@@ -245,11 +245,11 @@ CREATE TABLE cmap_map_set (
   is_relational_map number(11) DEFAULT '0' NOT NULL,
   CONSTRAINT pk_cmap_map_set PRIMARY KEY (map_set_id),
   CONSTRAINT accession_id UNIQUE (accession_id),
-  CONSTRAINT map_set_id UNIQUE (map_set_id, species_id, short_name, accession_id)
+  CONSTRAINT map_set_id UNIQUE (map_set_id, species_id, map_set_short_name, accession_id)
 )
 TYPE    MyISAM;
 
-CREATE INDEX cmap_map_set_idx on cmap_map_set (can_be_reference_map, is_enabled, species_id, display_order, published_on, short_name);
+CREATE INDEX cmap_map_set_idx on cmap_map_set (can_be_reference_map, is_enabled, species_id, display_order, published_on, map_set_short_name);
 
 COMMENT ON TABLE cmap_map_set is
   'Table structure for table `cmap_map_set`';
