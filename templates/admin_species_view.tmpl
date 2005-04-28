@@ -21,7 +21,7 @@
       [% SET i=0 %]
       [% FOREACH s=species %]
           <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
-              <td>[% s.accession_id %]</td>
+              <td>[% s.species_aid %]</td>
               <td>[% s.species_common_name %]</td>
               <td>[% s.species_full_name %]</td>
               <td>[% s.display_order %]</td>

@@ -17,13 +17,13 @@
     <tr>
         <td align="right">Feature Correspondence Acc. ID:</td>
         <td>
-            <a href="admin?action=feature_corr_view;feature_correspondence_id=[% corr.feature_correspondence_id %]">[% corr.accession_id %]</a>
+            <a href="admin?action=feature_corr_view;feature_correspondence_id=[% corr.feature_correspondence_id %]">[% corr.feature_correspondence_aid %]</a>
         </td>
     </tr>
 
     <tr>
         <td align="right">Acc. ID <em>(opt.)</em>:</td>
-        <td><input name="accession_id"></td>
+        <td><input name="correspondence_evidence_aid"></td>
     </tr>
 
     <tr>
@@ -32,6 +32,7 @@
             <select name="evidence_type">
                 <option value="">--Please Select--</option>
                 [% FOREACH et=evidence_types %]
+
                     <option value="[% et.evidence_type %]">[% et.evidence_type %]([% et.rank %])</option>
                 [% END %]
             </select>

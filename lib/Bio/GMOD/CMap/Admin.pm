@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.72 2005-04-26 23:26:25 mwz444 Exp $
+# $Id: Admin.pm,v 1.73 2005-04-28 05:28:35 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.72 $)[-1];
+$VERSION = (qw$Revision: 1.73 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -243,7 +243,7 @@ Create a feature.
     $admin->feature_create(
         map_id => $map_id,
         feature_name => $feature_name,
-        accession_id => $accession_id,
+        feature_aid => $feature_aid,
         start_position => $start_position,
         stop_position => $stop_position,
         is_landmark => $is_landmark,
@@ -266,7 +266,7 @@ Identifier of the map that this is on.
 
 =item - feature_name
 
-=item - accession_id
+=item - feature_aid
 
 Identifier that is used to access this object.  Can be alpha-numeric.  
 If not defined, the object_id will be assigned to it.
@@ -323,7 +323,7 @@ integrated with GBrowse and should not be used otherwise.
         id_field   => 'feature_id',
       )
       or die 'No feature id';
-    my $accession_id = $args{'accession_id'} || $feature_id;
+    my $feature_aid = $args{'feature_aid'} || $feature_id;
     my $default_rank =
       $self->feature_type_data( $feature_type_aid, 'default_rank' ) || 1;
 
@@ -334,7 +334,7 @@ integrated with GBrowse and should not be used otherwise.
     }
 
     my @insert_args = (
-        $feature_id, $accession_id, $map_id, $feature_name, $feature_type_aid,
+        $feature_id, $feature_aid, $map_id, $feature_name, $feature_type_aid,
         $is_landmark, $direction, $start_position
     );
 
@@ -681,7 +681,7 @@ Requires feature_ids or feature accessions for both features.
         is_enabled => $is_enabled,
         evidence_type_aid => $evidence_type_aid,
         correspondence_evidence => $correspondence_evidence,
-        accession_id => $accession_id,
+        feature_correspondence_aid => $feature_correspondence_aid,
     );
 
 =item * Returns
@@ -712,7 +712,7 @@ List of evidence hashes that correspond to the evidence types that this
 correspondence should have.  The hashes must have a "evidence_type_aid"
 key.
 
-=item - accession_id
+=item - feature_correspondence_aid
 
 Identifier that is used to access this object.  Can be alpha-numeric.  
 If not defined, the object_id will be assigned to it.
@@ -730,7 +730,7 @@ If not defined, the object_id will be assigned to it.
     my $feature_aid2      = $args{'feature_aid2'};
     my $evidence_type_aid = $args{'evidence_type_aid'};
     my $evidence          = $args{'correspondence_evidence'};
-    my $accession_id      = $args{'accession_id'} || '';
+    my $feature_correspondence_aid      = $args{'feature_correspondence_aid'} || '';
     my $is_enabled        = $args{'is_enabled'};
     $is_enabled = 1 unless defined $is_enabled;
     my $db = $self->db or return;
@@ -848,7 +848,7 @@ If not defined, the object_id will be assigned to it.
             id_field   => 'feature_correspondence_id',
           )
           or return $self->error('No next number for feature correspondence');
-        $accession_id ||= $feature_correspondence_id;
+        $feature_correspondence_aid ||= $feature_correspondence_id;
 
         #
         # Create the official correspondence record.
@@ -863,7 +863,7 @@ If not defined, the object_id will be assigned to it.
             ],
             {},
             (
-                $feature_correspondence_id, $accession_id,
+                $feature_correspondence_id, $feature_correspondence_aid,
                 $feature_id1,               $feature_id2,
                 $is_enabled
             )
@@ -890,10 +890,10 @@ If not defined, the object_id will be assigned to it.
             id_field   => 'correspondence_evidence_id',
           )
           or return $self->error('No next number for correspondence evidence');
-        my $accession_id = $e->{'accession_id'} || $corr_evidence_id;
+        my $correspondence_evidence_aid = $e->{'correspondence_evidence_aid'} || $corr_evidence_id;
         my $rank = $self->evidence_type_data( $et_id, 'rank' ) || 1;
         my @insert_args = (
-            $corr_evidence_id, $accession_id, $feature_correspondence_id,
+            $corr_evidence_id, $correspondence_evidence_aid, $feature_correspondence_id,
             $et_id, $score, $rank,
         );
 
@@ -1009,7 +1009,7 @@ the list.
         is_enabled => $is_enabled,
         evidence_type_aid => $evidence_type_aid,
         correspondence_evidence => $correspondence_evidence,
-        accession_id => $accession_id,
+        feature_correspondence_aid => $feature_correspondence_aid,
     );
 
 =item * Returns
@@ -1040,7 +1040,7 @@ List of evidence hashes that correspond to the evidence types that this
 correspondence should have.  The hashes must have a "evidence_type_aid"
 key.
 
-=item - accession_id
+=item - feature_correspondence_aid
 
 Identifier that is used to access this object.  Can be alpha-numeric.  
 If not defined, the object_id will be assigned to it.
@@ -1058,7 +1058,7 @@ If not defined, the object_id will be assigned to it.
     my $feature_aid2      = $args{'feature_aid2'};
     my $evidence_type_aid = $args{'evidence_type_aid'};
     my $evidence          = $args{'correspondence_evidence'};
-    my $accession_id      = $args{'accession_id'} || '';
+    my $feature_correspondence_aid      = $args{'feature_correspondence_aid'} || '';
     my $score             = $args{'score'};
     my $allow_update      =
       defined( $args{'allow_update'} )
@@ -1211,7 +1211,7 @@ If not defined, the object_id will be assigned to it.
             stop_position2    => $feature2->{'stop_position'},
             feature_type_aid1 => $feature1->{'feature_type_aid'},
             feature_type_aid2 => $feature2->{'feature_type_aid'},
-            accession_id      => $accession_id,
+            feature_correspondence_aid      => $feature_correspondence_aid,
             is_enabled        => $is_enabled,
             evidence          => $evidence,
           };
@@ -1261,7 +1261,7 @@ a time.
             is_enabled => $is_enabled,
             evidence_type_aid => $evidence_type_aid,
             correspondence_evidence => $correspondence_evidence,
-            accession_id => $accession_id,
+            feature_correspondence_aid => $feature_correspondence_aid,
         );
         $admin->insert_feature_correspondence_if_gt( $insert_threshold);
     }
@@ -1341,11 +1341,11 @@ threshold.
         foreach ( my $i = 0 ; $i < $no_corrs ; $i++ ) {
             my $corr_id = $base_corr_id + $i;
 
-            $self->{'new_corr'}->[$i]->{'accession_id'} ||= $corr_id;
+            $self->{'new_corr'}->[$i]->{'feature_correspondence_aid'} ||= $corr_id;
 
             $corr_sth->execute(
                 $corr_id,
-                $self->{'new_corr'}->[$i]->{'accession_id'},
+                $self->{'new_corr'}->[$i]->{'feature_correspondence_aid'},
                 $self->{'new_corr'}->[$i]->{'feature_id1'},
                 $self->{'new_corr'}->[$i]->{'feature_id2'},
                 $self->{'new_corr'}->[$i]->{'is_enabled'}
@@ -1423,14 +1423,14 @@ threshold.
         for my $e ( @{ $self->{'add_evidence'}->[$i]->[1] } ) {
             my $et_aid       = $e->{'evidence_type_aid'};
             my $score        = $e->{'score'};
-            my $accession_id = $e->{'accession_id'} || $corr_evidence_id;
+            my $correspondence_evidence_aid = $e->{'correspondence_evidence_aid'} || $corr_evidence_id;
 
             if ( not defined $score ) {
                 $score = undef;
             }
             my $rank = $self->evidence_type_data( $et_aid, 'rank' ) || 1;
 
-            $evidence_sth->execute( $corr_evidence_id, $accession_id,
+            $evidence_sth->execute( $corr_evidence_id, $correspondence_evidence_aid,
                 $self->{'add_evidence'}->[$i]->[0],
                 $et_aid, $score, $rank );
             ###Increment the id so the next one can use it.
@@ -2108,7 +2108,7 @@ map_create
     $admin->map_create(
         map_name => $map_name,
         map_set_id => $map_set_id,
-        accession_id => $accession_id,
+        map_aid => $map_aid,
         start_position => $start_position,
         stop_position => $stop_position,
         display_order => $display_order,
@@ -2128,7 +2128,7 @@ Name of the map being created
 
 =item - map_set_id
 
-=item - accession_id
+=item - map_aid
 
 Identifier that is used to access this object.  Can be alpha-numeric.  
 If not defined, the object_id will be assigned to it.
@@ -2183,7 +2183,7 @@ End point of the map.
       )
       or die 'No next number for map id';
 
-    my $accession_id  = $args{'accession_id'}  || $map_id;
+    my $map_aid  = $args{'map_aid'}  || $map_id;
     my $display_order = $args{'display_order'} || 1;
 
     $db->do(
@@ -2196,7 +2196,7 @@ End point of the map.
         ],
         {},
         (
-            $map_id,        $accession_id,   $map_set_id, $map_name,
+            $map_id,        $map_aid,   $map_set_id, $map_name,
             $display_order, $start_position, $stop_position,
         )
     );
@@ -2397,7 +2397,7 @@ map_set_create
 
     $admin->map_set_create(
         map_set_name => $map_set_name,
-        accession_id => $accession_id,
+        map_set_aid => $map_set_aid,
         map_type_aid => $map_type_aid,
         width => $width,
         can_be_reference_map => $can_be_reference_map,
@@ -2421,7 +2421,7 @@ Map Set ID
 
 Name of the map set being created
 
-=item - accession_id
+=item - map_set_aid
 
 Identifier that is used to access this object.  Can be alpha-numeric.  
 If not defined, the object_id will be assigned to it.
@@ -2468,7 +2468,7 @@ If not defined, the object_id will be assigned to it.
       or push @missing, 'species';
     my $map_type_aid = $args{'map_type_aid'}
       or push @missing, 'map_type_aid';
-    my $accession_id         = $args{'accession_id'}         || '';
+    my $map_set_aid         = $args{'map_set_aid'}         || '';
     my $display_order        = $args{'display_order'}        || 1;
     my $can_be_reference_map = $args{'can_be_reference_map'} || 0;
     my $shape                = $args{'shape'}                || '';
@@ -2496,7 +2496,7 @@ If not defined, the object_id will be assigned to it.
         id_field   => 'map_set_id',
       )
       or die 'No map set id';
-    $accession_id ||= $map_set_id;
+    $map_set_aid ||= $map_set_id;
 
     my $map_units = $self->map_type_data( $map_type_aid, 'map_units' );
     $color = $self->map_type_data( $map_type_aid, 'color' ) 
@@ -2522,7 +2522,7 @@ If not defined, the object_id will be assigned to it.
         ],
         {},
         (
-            $map_set_id,   $accession_id,  $map_set_name,
+            $map_set_id,   $map_set_aid,  $map_set_name,
             $short_name,   $species_id,    $map_type_aid,
             $published_on, $display_order, $can_be_reference_map,
             $shape,        $width,         $color,
@@ -3304,7 +3304,7 @@ species_create
         species_full_name => $species_full_name,
         species_common_name => $species_common_name,
         display_order => $display_order,
-        accession_id => $accession_id,
+        species_aid => $species_aid,
     );
 
 =item * Returns
@@ -3325,7 +3325,7 @@ Short name of the species, such as "Human".
 
 =item - display_order
 
-=item - accession_id
+=item - species_aid
 
 Identifier that is used to access this object.  Can be alpha-numeric.  
 If not defined, the object_id will be assigned to it.
@@ -3356,7 +3356,7 @@ If not defined, the object_id will be assigned to it.
         id_field   => 'species_id',
       )
       or return $self->error("Can't get new species id");
-    my $accession_id = $args{'accession_id'} || $species_id;
+    my $species_aid = $args{'species_aid'} || $species_id;
 
     $db->do(
         q[           
@@ -3369,7 +3369,7 @@ If not defined, the object_id will be assigned to it.
         ],
         {},
         (
-            $accession_id, $species_id, $species_full_name, $species_common_name, $display_order
+            $species_aid, $species_id, $species_full_name, $species_common_name, $display_order
         )
     );
 

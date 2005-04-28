@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Import;
 
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.65 2005-04-26 23:26:28 mwz444 Exp $
+# $Id: Import.pm,v 1.66 2005-04-28 05:28:36 mwz444 Exp $
 
 =pod
 
@@ -33,7 +33,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.65 $)[-1];
+$VERSION = (qw$Revision: 1.66 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -276,7 +276,7 @@ appended to the list of xrefs.
         q[
             select map.map_name, 
                    map.map_id,
-                   map.accession_id
+                   map.accession_id as map_aid
             from   cmap_map map
             where  map.map_set_id=?
         ],
@@ -480,7 +480,7 @@ appended to the list of xrefs.
                 $map_info{$map_id}{'start_position'} ||= $map_start;
                 $map_info{$map_id}{'stop_position'}  ||= $map_stop;
                 $map_info{$map_id}{'display_order'}  ||= $display_order;
-                $map_info{$map_id}{'accession_id'}   ||= $map_aid;
+                $map_info{$map_id}{'map_aid'}   ||= $map_aid;
 
                 $last_map_id   = $map_id;
                 $last_map_name = $map_name;
@@ -492,7 +492,7 @@ appended to the list of xrefs.
         #
         my $feature_name = $record->{'feature_name'}
           or warn "feature name blank! ", Dumper($record), "\n";
-        my $accession_id = $record->{'feature_accession_id'};
+        my $feature_aid = $record->{'feature_accession_id'};
         my $aliases      = $record->{'feature_aliases'};
         my $attributes   = $record->{'feature_attributes'} || '';
         my $start        = $record->{'feature_start'};
@@ -563,7 +563,7 @@ appended to the list of xrefs.
 
         my $feature_id = '';
         if ($allow_update) {
-            if ($accession_id) {
+            if ($feature_aid) {
                 $feature_id = $db->selectrow_array(
                     q[
           select feature_id
@@ -571,7 +571,7 @@ appended to the list of xrefs.
           where  accession_id=?
           ],
                     {},
-                    ($accession_id)
+                    ($feature_aid)
                 );
             }
 
@@ -579,7 +579,7 @@ appended to the list of xrefs.
             # If there's no accession ID, see if another feature
             # with the same name exists.
             #
-            if ( !$feature_id && !$accession_id ) {
+            if ( !$feature_id && !$feature_aid ) {
                 $feature_id = $db->selectrow_array(
                     q[
                select feature_id
@@ -595,7 +595,7 @@ appended to the list of xrefs.
             my $action = 'Inserted';
             if ($feature_id) {
                 $action = 'Updated';
-                $accession_id ||= $feature_id;
+                $feature_aid ||= $feature_id;
                 $db->do(
                     q[
                update cmap_feature
@@ -606,7 +606,7 @@ appended to the list of xrefs.
                ],
                     {},
                     (
-                        $accession_id, $map_id,       $feature_type_aid,
+                        $feature_aid, $map_id,       $feature_type_aid,
                         $feature_name, $start,        $stop,
                         $is_landmark,  $default_rank, $direction,
                         $feature_id
@@ -628,7 +628,7 @@ appended to the list of xrefs.
                   )
                   or die 'No feature id';
 
-                $accession_id ||= $feature_id;
+                $feature_aid ||= $feature_id;
 
                 $db->do(
                     q[
@@ -642,7 +642,7 @@ appended to the list of xrefs.
                     ],
                     {},
                     (
-                        $feature_id,       $accession_id, $map_id,
+                        $feature_id,       $feature_aid, $map_id,
                         $feature_type_aid, $feature_name, $start,
                         $stop,             $is_landmark,  $default_rank,
                         $direction
@@ -692,7 +692,7 @@ appended to the list of xrefs.
 
             $insert_features[ ++$#insert_features ] = [
                 [
-                    $accession_id, $map_id,       $feature_type_aid,
+                    $feature_aid, $map_id,       $feature_type_aid,
                     $feature_name, $start,        $stop,
                     $is_landmark,  $default_rank, $direction,
                 ],
@@ -744,7 +744,7 @@ appended to the list of xrefs.
             )
         );
 
-        if ( $map->{'accession_id'} ) {
+        if ( $map->{'map_aid'} ) {
             $db->do(
                 q[
                     update cmap_map 
@@ -752,7 +752,7 @@ appended to the list of xrefs.
                     where  map_id=?
                 ],
                 {},
-                ( $map->{'accession_id'}, $map->{'map_id'} )
+                ( $map->{'map_aid'}, $map->{'map_id'} )
             );
         }
 

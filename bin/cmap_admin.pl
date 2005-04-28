@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.102 2005-04-26 23:26:22 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.103 2005-04-28 05:28:35 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.102 $)[-1];
+$VERSION = (qw$Revision: 1.103 $)[-1];
 
 #
 # Get command-line options
@@ -330,7 +330,7 @@ sub create_species {
 
     my $admin           = $self->admin;
     $admin->species_create(
-        accession_id  => $species_aid  || '',
+        species_aid  => $species_aid  || '',
         species_common_name   => $species_common_name  || '',
         species_full_name     => $species_full_name    || '',
     ) or do {
@@ -436,7 +436,7 @@ sub create_map_set {
         short_name           => $short_name ,
         species_id           => $species_id ,
         map_type_aid         => $map_type_aid ,
-        accession_id         => $map_set_aid ,
+        map_set_aid         => $map_set_aid ,
         can_be_reference_map => $can_be_reference_map,
         shape                => $map_shape ,
         color                => $map_color ,
@@ -1513,7 +1513,7 @@ sub get_map_sets {
 
         my $map_set_sql = q[
             select   ms.map_set_id,
-                     ms.accession_id,
+                     ms.accession_id map_set_accession,
                      ms.short_name,
                      s.species_common_name,
                      ms.map_type_accession as map_type_aid

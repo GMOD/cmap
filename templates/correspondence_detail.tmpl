@@ -1,4 +1,4 @@
-[% SET title="Correspondences Detail &quot;$corr.accession_id&quot;" %]
+[% SET title="Correspondences Detail &quot;$corr.feature_correspondence_aid&quot;" %]
 [% 
     INCLUDE header.tmpl 
     title='CMap - Correspondence Details'
@@ -79,7 +79,7 @@
         [% SET i=0 %]
         [% FOREACH e=corr.evidence %]
             <tr class="[% IF i % 2 == 0 %]colored[% ELSE %]monotonic[% END %]">
-                <td>[% e.accession_id %]</td>
+                <td>[% e.correspondence_evidence_id %]</td>
                 <td>[% e.evidence_type %]</td>
                 <td align="right">[% e.rank %]</td>
                 <td align="right">[% IF e.score.defined; e.score; ELSE; 'N/A'; END %]</td>

@@ -23,7 +23,7 @@
         [% SET i=0 %]
         [% FOREACH ft=feature_types %]
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
-                <td>[% ft.accession_id %]</td>
+                <td>[% ft.feature_type_aid %]</td>
                 <td>[% ft.feature_type %]</td>
                 <td>[% ft.shape %]</td>
                 <td>[% ft.color %]</td>
@@ -31,7 +31,7 @@
                 <td>[% ft.drawing_lane %]</td>
                 <td>[% ft.drawing_priority %]</td>
                 <td align="center">
-                    <a href="admin?action=feature_type_view;feature_type_aid=[% ft.accession_id %]">View</a>
+                    <a href="admin?action=feature_type_view;feature_type_aid=[% ft.feature_type_aid %]">View</a>
                 </td>
             </tr>
             [% SET i=i+1 %]

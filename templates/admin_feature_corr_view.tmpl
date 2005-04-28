@@ -1,8 +1,8 @@
-[% INCLUDE admin_header.tmpl title="View Feature Correspondence &quot;$corr.accession_id&quot;" %]
+[% INCLUDE admin_header.tmpl title="View Feature Correspondence &quot;$corr.feature_correspondence_aid&quot;" %]
 
 <a href="admin">Home</a> |
 <a href="admin?action=feature_corr_edit;feature_correspondence_id=[% corr.feature_correspondence_id %]">Edit</a> |
-<a href="admin?action=confirm_delete;entity_type=cmap_feature_correspondence;entity_name_field=accession_id;entity_id=[% corr.feature_correspondence_id %]">Delete</a>
+<a href="admin?action=confirm_delete;entity_type=cmap_feature_correspondence;entity_name_field=feature_correspondence_aid;entity_id=[% corr.feature_correspondence_id %]">Delete</a>
 <hr noshade>
 
 <br>
@@ -75,7 +75,7 @@
 
     <tr>
         <th align="right">Acc ID:</th>
-        <td>[% corr.accession_id %]</td>
+        <td>[% corr.feature_correspondence_aid %]</td>
     </tr>
 
     <tr>
@@ -134,7 +134,7 @@
         [% SET i=0 %]
         [% FOREACH e=corr.evidence %]
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
-                <td>[% e.accession_id %]</td>
+                <td>[% e.correspondence_evidence_aid %]</td>
                 <td>[% e.evidence_type %]</td>
                 <td>[% e.rank %]</td>
                 <td>[% IF e.score.defined; e.score; ELSE; 'NULL'; END %]</td>
@@ -142,7 +142,7 @@
                     <a href="admin?action=corr_evidence_edit;correspondence_evidence_id=[% e.correspondence_evidence_id %]">Edit</a>
                 </td>
                 <td>
-                    <a href="admin?action=confirm_delete;entity_type=cmap_correspondence_evidence;entity_name_field=accession_id;entity_id=[% e.correspondence_evidence_id %]">Delete</a>
+                    <a href="admin?action=confirm_delete;entity_type=cmap_correspondence_evidence;entity_name_field=correspondence_evidence_aid;entity_id=[% e.correspondence_evidence_id %]">Delete</a>
                 </td>
             </tr>
             [% SET i=i+1 %]

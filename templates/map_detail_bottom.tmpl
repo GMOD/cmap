@@ -151,7 +151,7 @@
     [% FOREACH f=features %]
     <tr>
         <td[% IF f.no_positions>1 %] rowspan="[% f.no_positions %]"[% END %][% IF f.highlight_color %] bgcolor="[% f.highlight_color %]"[% END %]>
-            <a href="feature?feature_aid=[% f.accession_id %]">[% f.feature_name %]</a>
+            <a href="feature?feature_aid=[% f.feature_aid %]">[% f.feature_name %]</a>
         </td>
         <td [% IF f.no_positions>1 %] rowspan="[% f.no_positions %]"[% END %]>
             [% f.feature_type %]

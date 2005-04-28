@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.154 2005-04-26 23:26:30 mwz444 Exp $
+# $Id: Map.pm,v 1.155 2005-04-28 05:28:38 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.154 $)[-1];
+$VERSION = (qw$Revision: 1.155 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -56,7 +56,7 @@ BEGIN {
     # Create automatic accessor methods.
     #
     my @AUTO_FIELDS = qw[
-      map_set_id map_set_aid map_type accession_id species_id
+      map_set_id map_set_aid map_type map_aid species_id
       map_id species_common_name map_units map_name map_set_name
       map_type_id is_relational_map begin end species_aid map_type_aid
     ];
@@ -1162,7 +1162,7 @@ Variable Info:
         #
         for my $rec ( @{ $drawer->flip } ) {
             if (    $rec->{'slot_no'} == $slot_no
-                and $rec->{'map_aid'} eq $self->accession_id($map_id) )
+                and $rec->{'map_aid'} eq $self->map_aid($map_id) )
             {
                 $is_flipped = 1;
                 $flipped_maps{$map_id} = 1;
@@ -2953,10 +2953,10 @@ sub add_feature_to_map {
             }
             else {
                 my $code = '';
-                my $url  = $feature_details_url . $feature->{'accession_id'}; 
+                my $url  = $feature_details_url . $feature->{'feature_aid'}; 
                 my $alt  = 'Feature Details: '
                       . $feature->{'feature_name'} . ' ['
-                      . $feature->{'accession_id'} . ']';
+                      . $feature->{'feature_aid'} . ']';
                 eval $self->feature_type_data( $feature->{'feature_type_aid'},
                     'area_code' );
                 push @$map_area_data,
@@ -3029,7 +3029,7 @@ sub collect_labels_to_display {
     my $is_highlighted = $drawer->highlight_feature(
         $feature->{'feature_name'},
         @{ $feature->{'aliases'} || [] },
-        $feature->{'accession_id'},
+        $feature->{'feature_aid'},
     );
 
     if ($has_corr) {
@@ -3058,10 +3058,10 @@ sub collect_labels_to_display {
     {
 
         my $code = '';
-        my $url  = $feature_details_url . $feature->{'accession_id'}; 
+        my $url  = $feature_details_url . $feature->{'feature_aid'}; 
         my $alt  = 'Feature Details: '
               . $feature->{'feature_name'} . ' ['
-              . $feature->{'accession_id'} . ']';
+              . $feature->{'feature_aid'} . ']';
         eval $self->feature_type_data( $feature->{'feature_type_aid'}, 'area_code' );
         my $even_label_key =
             $is_highlighted ? 'highlights'
@@ -3431,23 +3431,6 @@ Returns the slot number.
 }
 
 # ----------------------------------------------------
-sub map_aid {
-
-=pod
-
-=head2 map_aid
-
-Returns a map's map_aid (accession)
-
-=cut
-
-    my $self   = shift;
-    my $map_id = shift or return;
-    my $map    = $self->map($map_id);
-    return $map->{'accession_id'};
-}
-
-# ----------------------------------------------------
 sub start_position {
 
 =pod
@@ -3608,7 +3591,7 @@ Button options:
         }
 
         unless (%this_map_info) {
-            $this_map_info{ $self->accession_id($map_id) } = {
+            $this_map_info{ $self->map_aid($map_id) } = {
                 start => $self->start_position($map_id),
                 stop  => $self->stop_position($map_id),
                 mag => $drawer->data_module->magnification( $slot_no, $map_id ),
@@ -3707,7 +3690,7 @@ Button options:
     #
     if ( $requested_buttons{'flip'} ) {
         my @flipping_flips;
-        my $acc_id = $self->accession_id($map_id);
+        my $acc_id = $self->map_aid($map_id);
         for my $rec ( @{ $drawer->flip } ) {
             unless ( $rec->{'slot_no'} == $slot_no
                 && $rec->{'map_aid'} eq $acc_id )
@@ -3754,7 +3737,7 @@ Button options:
     #
     if ( $requested_buttons{'new_view'} ) {
         unless (%this_map_info) {
-            $this_map_info{ $self->accession_id($map_id) } = {
+            $this_map_info{ $self->map_aid($map_id) } = {
                 start => $self->start_position($map_id),
                 stop  => $self->stop_position($map_id),
                 mag => $drawer->data_module->magnification( $slot_no, $map_id ),

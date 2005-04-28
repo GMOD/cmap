@@ -25,7 +25,7 @@
         [% SET i=0 %]
         [% FOREACH mt=map_types %]
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
-                <td>[% mt.accession_id %]</td>
+                <td>[% mt.map_type_aid %]</td>
                 <td>[% mt.display_order %]</td>
                 <td>[% mt.map_type %]</td>
                 <td>[% mt.map_units %]</td>
@@ -34,7 +34,7 @@
                 <td>[% mt.width %]</td>
                 <td>[% mt.color %]</td>
                 <td align="center">
-                  <a href="admin?action=map_type_view;map_type_aid=[% mt.accession_id %]">View</a>
+                  <a href="admin?action=map_type_view;map_type_aid=[% mt.map_type_aid %]">View</a>
                 </td>
             </tr>
             [% SET i=i+1 %]

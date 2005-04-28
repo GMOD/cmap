@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_matrix_compare.pl,v 1.8 2005-04-26 23:26:23 mwz444 Exp $
+# $Id: cmap_matrix_compare.pl,v 1.9 2005-04-28 05:28:35 mwz444 Exp $
 
 =head1 NAME
 
@@ -98,7 +98,7 @@ my $data = $cmap->data_module   or die $cmap->error;
 #
 my $map_sets = $db->selectall_hashref(
     q[
-        select   ms.accession_id, 
+        select   ms.accession_id as map_set_aid, 
                  ms.short_name as map_set_name,
                  ms.can_be_reference_map,
                  s.species_common_name
@@ -112,7 +112,7 @@ my $map_sets = $db->selectall_hashref(
                  ms.published_on desc,
                  ms.map_set_name
     ],
-    'accession_id',
+    'map_set_aid',
     { Columns => {} }
 );
 
@@ -208,7 +208,7 @@ sub compare {
             my $link_ms     = $map_sets->{ $link_ms_aid } or next;
             my $cur         = $rec->{'correspondences'};
             my $old = $old_map_sets->{ $link_ms_aid }{'correspondence_lookup'}
-                { $ms->{'accession_id'} } || '-';
+                { $ms->{'map_set_aid'} } || '-';
 
             push @corr, [
                 $link_ms->{'species_common_name'},

@@ -51,7 +51,7 @@
         <td align="right">
             Acc. ID:
         </td>
-        <td>[% map.accession_id OR '&nbsp;' %]</td>
+        <td>[% map.map_aid OR '&nbsp;' %]</td>
     </tr>
 
     <tr>
@@ -125,7 +125,7 @@
                         [% END %]
                     </select>
                     <input type="hidden" name="action" value="feature_search">
-                    <input type="hidden" name="map_aid" value="[% map.accession_id %]">
+                    <input type="hidden" name="map_aid" value="[% map.map_aid %]">
                     <input type="Submit" value="Search for Feature">*
                 </form>
             </td>
@@ -155,7 +155,7 @@
         [% SET i=0 %]
         [% FOREACH f=map.features %]
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
-                <td>[% f.accession_id   OR '&nbsp;' %]</td>
+                <td>[% f.feature_aid   OR '&nbsp;' %]</td>
                 <td>[% f.feature_name   OR '&nbsp;' %]</td>
                 <td>[% IF f.aliases.size %][% f.aliases.join(', ') | truncate(40) %][% ELSE; '&nbsp;'; END %]</td>
                 <td>[% f.feature_type   OR '&nbsp;' %]</td>

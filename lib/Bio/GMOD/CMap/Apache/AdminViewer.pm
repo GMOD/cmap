@@ -1,7 +1,7 @@
 package Bio::GMOD::CMap::Apache::AdminViewer;
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.77 2005-04-26 23:26:28 mwz444 Exp $
+# $Id: AdminViewer.pm,v 1.78 2005-04-28 05:28:36 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -33,7 +33,7 @@ $FEATURE_SHAPES = [ qw(
 ) ];
 $MAP_SHAPES     = [ qw( box dumbbell I-beam ) ];
 $WIDTHS         = [ 1 .. 10 ];
-$VERSION        = (qw$Revision: 1.77 $)[-1];
+$VERSION        = (qw$Revision: 1.78 $)[-1];
 
 use constant TEMPLATE         => {
     admin_home                => 'admin_home.tmpl',
@@ -518,7 +518,7 @@ sub corr_evidence_types_view {
 
     my $evidence_types;
     foreach my $type_aid (keys(%{$evidence_types_hash})){
-        $evidence_types_hash->{$type_aid}{'accession_id'}=$type_aid;
+        $evidence_types_hash->{$type_aid}{'evidence_type_aid'}=$type_aid;
         push @$evidence_types,$evidence_types_hash->{$type_aid};
     }
     my $pager = Data::Pageset->new( {
@@ -759,7 +759,7 @@ sub map_edit {
     my $sth             = $db->prepare(
         q[
             select map.map_id, 
-                   map.accession_id, 
+                   map.accession_id as map_aid, 
                    map.map_name, 
                    map.display_order, 
                    map.start_position, 
@@ -796,7 +796,7 @@ sub map_insert {
     my $admin          =  $self->admin;
     my $apr            =  $self->apr;
     my $map_id         =  $admin->map_create(
-        accession_id   => $apr->param('accession_id')  || '',
+        map_aid   => $apr->param('map_aid')  || '',
         display_order  => $apr->param('display_order') ||  1,
         map_name       => $apr->param('map_name')      || '',
         map_set_id     => $apr->param('map_set_id')    ||  0,
@@ -824,7 +824,7 @@ sub map_view {
     my $sth = $db->prepare(
         q[
             select map.map_id, 
-                   map.accession_id, 
+                   map.accession_id as map_aid, 
                    map.map_name, 
                    map.display_order, 
                    map.start_position, 
@@ -866,7 +866,7 @@ sub map_view {
 
     my $sql = q[
         select   f.feature_id, 
-                 f.accession_id, 
+                 f.accession_id as feature_aid, 
                  f.feature_name, 
                  f.map_id, 
                  f.start_position, 
@@ -973,7 +973,7 @@ sub map_update {
     my @errors         = ();
     my $map_id         = $apr->param('map_id')         
         or push @errors, 'No map id';
-    my $accession_id   = $apr->param('accession_id')   
+    my $map_aid   = $apr->param('map_aid')   
         or push @errors, 'No accession id';
     my $display_order  = $apr->param('display_order') || 1;
     my $map_name       = $apr->param('map_name');
@@ -998,7 +998,7 @@ sub map_update {
     $db->do( 
         $sql, 
         {}, 
-        ( $accession_id, $map_name, $display_order, 
+        ( $map_aid, $map_name, $display_order, 
           $start_position, $stop_position, $map_id 
         ) 
     );
@@ -1206,7 +1206,7 @@ sub feature_edit {
     my $sth = $db->prepare(
         q[
             select     f.feature_id,
-                       f.accession_id,
+                       f.accession_id as feature_aid,
                        f.map_id,
                        f.feature_type_accession as feature_type_aid,
                        f.feature_name,
@@ -1255,7 +1255,7 @@ sub feature_insert {
     my $apr             = $self->apr;
     my $feature_id      = $admin->feature_create(
         map_id          => $apr->param('map_id')          ||  0,
-        accession_id    => $apr->param('accession_id')    || '',
+        feature_aid    => $apr->param('feature_aid')    || '',
         feature_name    => $apr->param('feature_name')    || '',
         feature_type_aid    => $apr->param('feature_type_aid') ||  0,
         is_landmark     => $apr->param('is_landmark')     ||  0,
@@ -1276,7 +1276,7 @@ sub feature_update {
     my $apr             = $self->apr;
     my $feature_id      = $apr->param('feature_id')   or 
                           push @errors, 'No feature id';
-    my $accession_id    = $apr->param('accession_id') or 
+    my $feature_aid    = $apr->param('feature_aid') or 
                           push @errors, 'No accession id';
     my $feature_name    = $apr->param('feature_name') or 
                           push @errors, 'No feature name';
@@ -1299,7 +1299,7 @@ sub feature_update {
     $db->do(
         $sql,
         {},
-        ( $accession_id, $feature_name, 
+        ( $feature_aid, $feature_name, 
           $feature_type_aid, $is_landmark, $start_position, $feature_id )
     );
 
@@ -1319,7 +1319,7 @@ sub feature_view {
     my $sth = $db->prepare(
         q[
             select     f.feature_id, 
-                       f.accession_id, 
+                       f.accession_id as feature_aid, 
                        f.map_id,
                        f.feature_type_accession as feature_type_aid,
                        f.feature_name,
@@ -1363,7 +1363,7 @@ sub feature_view {
     my $correspondences = $db->selectall_arrayref(
         q[
             select fc.feature_correspondence_id,
-                   fc.accession_id,
+                   fc.accession_id as feature_correspondence_aid,
                    fc.feature_id1,
                    fc.feature_id2,
                    fc.is_enabled,
@@ -1547,7 +1547,7 @@ sub feature_corr_create {
     my @evidence_type_aids = keys(%{$self->config_data('evidence_type')});
     my $evidence_types;
     foreach my $type_aid (@evidence_type_aids){
-        $evidence_types->{$type_aid}=
+        push @$evidence_types,
             $self->evidence_type_data($type_aid)
              or return $self->error(
              "No evidence type accession '$type_aid'"
@@ -1576,7 +1576,7 @@ sub feature_corr_insert {
     my $apr              = $self->apr;
     my $feature_id1      = $apr->param('feature_id1')  or die 'No feature id1';
     my $feature_id2      = $apr->param('feature_id2')  or die 'No feature id2';
-    my $accession_id     = $apr->param('accession_id') || '';
+    my $feature_correspondence_aid     = $apr->param('feature_correspondence_aid') || '';
     my $is_enabled       = $apr->param('is_enabled')   ||  0;
     my $evidence_type_aid = $apr->param('evidence_type_aid') or push @errors,
         'Please select an evidence type';
@@ -1591,7 +1591,7 @@ sub feature_corr_insert {
         feature_id1               => $feature_id1, 
         feature_id2               => $feature_id2, 
         evidence_type_aid             => $evidence_type_aid, 
-        accession_id              => $accession_id, 
+        feature_correspondence_aid              => $feature_correspondence_aid, 
         is_enabled                => $is_enabled
     );
 
@@ -1626,7 +1626,7 @@ sub feature_corr_edit {
     my $sth = $db->prepare(
         q[
             select fc.feature_correspondence_id,
-                   fc.accession_id,
+                   fc.accession_id as feature_correspondence_aid,
                    fc.feature_id1,
                    fc.feature_id2,
                    fc.is_enabled
@@ -1654,7 +1654,7 @@ sub feature_corr_update {
                                     || 'evidence_type_aid';
     my $feature_correspondence_id = $apr->param('feature_correspondence_id')
         or return $self->error('No feature correspondence id');
-    my $accession_id              = $apr->param('accession_id') || 
+    my $feature_correspondence_aid              = $apr->param('feature_correspondence_aid') || 
         $feature_correspondence_id;
     my $is_enabled                = $apr->param('is_enabled')   || 0;
 
@@ -1666,7 +1666,7 @@ sub feature_corr_update {
             where  feature_correspondence_id=?
         ],
         {},
-        ( $accession_id, $is_enabled, $feature_correspondence_id )
+        ( $feature_correspondence_aid, $is_enabled, $feature_correspondence_id )
     );
 
     return $self->redirect_home( 
@@ -1679,74 +1679,65 @@ sub feature_corr_update {
 sub feature_corr_view {
     my $self                      = shift;
     my $db                        = $self->db or return $self->error;
+    my $sql_object                = $self->sql or return $self->error;
     my $apr                       = $self->apr;
     my $order_by                  = $apr->param('order_by') 
                                     || 'evidence_type_aid';
     my $feature_correspondence_id = $apr->param('feature_correspondence_id')
         or return $self->error('No feature correspondence id');
 
-    my $sth = $db->prepare(
-        q[
-            select fc.feature_correspondence_id,
-                   fc.accession_id,
-                   fc.feature_id1,
-                   fc.feature_id2,
-                   fc.is_enabled
-            from   cmap_feature_correspondence fc
-            where  fc.feature_correspondence_id=?
-        ]
-    );
-    $sth->execute( $feature_correspondence_id ); 
-    my $corr = $sth->fetchrow_hashref or return $self->error(
-        "No record for feature correspondence ID '$feature_correspondence_id'"
-    );
+    my $corr = $sql_object->get_correspondences(
+        cmap_object => $self,
+        feature_correspondence_id => $feature_correspondence_id,
+    )
+      or return $sql_object->error();
 
-    $corr->{'attributes'} = $self->sql->get_attributes(
+#    my $sth = $db->prepare(
+#        q[
+#            select fc.feature_correspondence_id,
+#                   fc.accession_id as feature_correspondence_aid,
+#                   fc.feature_id1,
+#                   fc.feature_id2,
+#                   fc.is_enabled
+#            from   cmap_feature_correspondence fc
+#            where  fc.feature_correspondence_id=?
+#        ]
+#    );
+#    $sth->execute( $feature_correspondence_id ); 
+#    my $corr = $sth->fetchrow_hashref or return $self->error(
+#        "No record for feature correspondence ID '$feature_correspondence_id'"
+#    );
+
+    $corr->{'attributes'} = $sql_object->get_attributes(
         cmap_object => $self,
         object_name      => 'feature_correspondence',
-        object_id   => $feature_correspondence_id,,
+        object_id   => $feature_correspondence_id,
         order_by    => $apr->param('att_order_by'),
     );
 
-    $corr->{'xrefs'} = $self->sql->get_xrefs(
+    $corr->{'xrefs'} = $sql_object->get_xrefs(
         cmap_object => $self,
         object_name      => 'feature_correspondence',
-        object_id   => $feature_correspondence_id,,
+        object_id   => $feature_correspondence_id,
         order_by    => $apr->param('att_order_by'),
     );
 
-    $sth = $db->prepare(
-        q[
-            select f.feature_id, 
-                   f.accession_id, 
-                   f.map_id,
-                   f.feature_type_accession as feature_type_aid,
-                   f.feature_name,
-                   f.start_position,
-                   f.stop_position,
-                   map.map_name,
-                   ms.map_set_id,
-                   ms.short_name as map_set_name,
-                   s.species_common_name
-            from   cmap_feature f,
-                   cmap_map map,
-                   cmap_map_set ms,
-                   cmap_species s
-            where  f.feature_id=?
-            and    f.map_id=map.map_id
-            and    map.map_set_id=ms.map_set_id
-            and    ms.species_id=s.species_id
-        ]
+    my $feature1 = $sql_object->get_feature_details(
+        cmap_object => $self,
+        feature_id => $corr->{'feature_id1'},
     );
-    $sth->execute( $corr->{'feature_id1'} );
-    my $feature1 = $sth->fetchrow_hashref;
-    $sth->execute( $corr->{'feature_id2'} );
-    my $feature2 = $sth->fetchrow_hashref;
+    $feature1 = $feature1->[0] if $feature1;
+
+    my $feature2 = $sql_object->get_feature_details(
+        cmap_object => $self,
+        feature_id => $corr->{'feature_id2'},
+    );
+    $feature2 = $feature2->[0] if $feature2;
 
     $corr->{'evidence'} = $db->selectall_arrayref(
         qq[
             select   ce.correspondence_evidence_id,
-                     ce.accession_id,
+                     ce.accession_id as correspondence_evidence_aid,
                      ce.feature_correspondence_id,
                      ce.evidence_type_accession as evidence_type_aid,
                      ce.score,
@@ -1780,7 +1771,7 @@ sub corr_evidence_create {
     my $sth = $db->prepare(
         q[
             select fc.feature_correspondence_id,
-                   fc.accession_id,
+                   fc.accession_id as feature_correspondence_aid,
                    fc.feature_id1,
                    fc.feature_id2,
                    f1.feature_name as feature_name1,
@@ -1801,7 +1792,7 @@ sub corr_evidence_create {
     my @evidence_type_aids = keys(%{$self->config_data('evidence_type')});
     my $evidence_types;
     foreach my $type_aid (@evidence_type_aids){
-        $evidence_types->{$type_aid}=
+        push @$evidence_types,
             $self->evidence_type_data($type_aid)
              or return $self->error(
              "No evidence type accession '$type_aid'"
@@ -1829,7 +1820,7 @@ sub corr_evidence_edit {
     my $sth = $db->prepare(
         q[
             select ce.correspondence_evidence_id,
-                   ce.accession_id,
+                   ce.accession_id as correspondence_evidence_aid,
                    ce.feature_correspondence_id,
                    ce.evidence_type_accession as evidence_type_aid,
                    ce.score
@@ -1845,7 +1836,7 @@ sub corr_evidence_edit {
     my @evidence_type_aids = keys(%{$self->config_data('evidence_type')});
     my $evidence_types;
     foreach my $type_aid (@evidence_type_aids){
-        $evidence_types->{$type_aid}=
+        push @$evidence_types,
             $self->evidence_type_data($type_aid)
              or return $self->error(
              "No evidence type accession '$type_aid'"
@@ -1882,7 +1873,7 @@ sub corr_evidence_insert {
 
     return $self->corr_evidence_create( errors => \@errors ) if @errors;
 
-    my $accession_id = $apr->param('accession_id') ||
+    my $correspondence_evidence_aid = $apr->param('correspondence_evidence_aid') ||
         $correspondence_evidence_id;
     
     $db->do(
@@ -1895,7 +1886,7 @@ sub corr_evidence_insert {
             values ( ?, ?, ?, ?, ? )
         ],
         {},
-        ( $correspondence_evidence_id, $accession_id, 
+        ( $correspondence_evidence_id, $correspondence_evidence_aid, 
           $feature_correspondence_id, $evidence_type_aid, $score
         )
     ); 
@@ -1914,7 +1905,7 @@ sub corr_evidence_update {
     my $apr                        = $self->apr;
     my $correspondence_evidence_id = $apr->param('correspondence_evidence_id') 
         or push @errors, 'No correspondence evidence id';
-    my $accession_id               = $apr->param('accession_id')
+    my $correspondence_evidence_aid               = $apr->param('correspondence_evidence_aid')
         || $correspondence_evidence_id;
     my $feature_correspondence_id  = $apr->param('feature_correspondence_id') 
         or push @errors, 'No feature correspondence id';
@@ -1932,7 +1923,7 @@ sub corr_evidence_update {
             where  correspondence_evidence_id=?
         ],
         {},
-        ( $accession_id, $feature_correspondence_id, $evidence_type_aid,
+        ( $correspondence_evidence_aid, $feature_correspondence_id, $evidence_type_aid,
           $score, $correspondence_evidence_id
         )
     ); 
@@ -2011,7 +2002,7 @@ sub feature_types_view {
 
     my $feature_types;
     foreach my $type_aid (keys(%{$feature_types_hash})){
-        $feature_types_hash->{$type_aid}{'accession_id'}=$type_aid;
+        $feature_types_hash->{$type_aid}{'feature_type_aid'}=$type_aid;
         push @$feature_types,$feature_types_hash->{$type_aid};
     }
     #
@@ -2058,7 +2049,7 @@ sub map_sets_view {
     my $sql = q[
         select      ms.map_set_id,
                     ms.short_name as map_set_name,
-                    ms.accession_id,
+                    ms.accession_id as map_set_aid,
                     ms.published_on,
                     ms.is_enabled,
                     ms.display_order,
@@ -2227,7 +2218,7 @@ sub map_set_edit {
     $map_set->{'attributes'} = $self->sql->get_attributes(
         cmap_object => $self,
         object_name      => 'map_set',
-        object_id   => $map_set_id,,
+        object_id   => $map_set_id,
         order_by    => $apr->param('att_order_by'),
     );
 
@@ -2273,7 +2264,7 @@ sub map_set_insert {
         short_name           => $apr->param('short_name')           || '',
         species_id           => $apr->param('species_id')           || '',
         map_type_aid         => $apr->param('map_type_aid')          || '',
-        accession_id         => $apr->param('accession_id')         || '',
+        map_set_aid         => $apr->param('map_set_aid')         || '',
         display_order        => $apr->param('display_order')        ||  1,
         is_relational_map    => $apr->param('is_relational_map')    ||  0,
         can_be_reference_map => $apr->param('can_be_reference_map') ||  0,
@@ -2299,7 +2290,7 @@ sub map_set_view {
 
     my $sth = $db->prepare(
         q[
-            select    ms.map_set_id, ms.accession_id, ms.map_set_name,
+            select    ms.map_set_id, ms.accession_id as map_set_aid, ms.map_set_name,
                       ms.short_name, ms.display_order, ms.published_on,
                       ms.map_type_accession as map_type_aid,
                       ms.species_id, 
@@ -2327,13 +2318,13 @@ sub map_set_view {
     $map_set->{'attributes'} = $self->sql->get_attributes(
         cmap_object => $self,
         object_name      => 'map_set',
-        object_id   => $map_set_id,,
+        object_id   => $map_set_id,
         order_by    => $apr->param('att_order_by'),
     );
     $map_set->{'xrefs'} = $self->sql->get_xrefs(
         cmap_object => $self,
         object_name      => 'map_set',
-        object_id   => $map_set_id,,
+        object_id   => $map_set_id,
         order_by    => $apr->param('att_order_by'),
     );
 
@@ -2341,7 +2332,7 @@ sub map_set_view {
         $db->selectall_arrayref( 
             qq[
                 select    map.map_id, 
-                          map.accession_id, 
+                          map.accession_id as map_aid, 
                           map.map_name, 
                           map.display_order, 
                           map.start_position, 
@@ -2394,7 +2385,7 @@ sub map_set_update {
     my $apr                  = $self->apr;
     my @errors               = ();
     my $map_set_id           = $apr->param('map_set_id')           ||  0;
-    my $accession_id         = $apr->param('accession_id')         || '';
+    my $map_set_aid         = $apr->param('map_set_aid')         || '';
     my $map_set_name         = $apr->param('map_set_name')         || '';
     my $short_name           = $apr->param('short_name')           || '';
     my $species_id           = $apr->param('species_id')           ||  0;
@@ -2435,7 +2426,7 @@ sub map_set_update {
         ],
         {},
         (
-            $accession_id, $map_set_name, $short_name, 
+            $map_set_aid, $map_set_name, $short_name, 
             $species_id, $map_type_aid, $published_on, 
             $is_relational_map,
             $can_be_reference_map, $display_order, 
@@ -2525,7 +2516,7 @@ sub map_types_view {
     }
     my $map_types;
     foreach my $type_aid (keys(%{$map_types_hash})){
-        $map_types_hash->{$type_aid}{'accession_id'}=$type_aid;
+        $map_types_hash->{$type_aid}{'map_type_aid'}=$type_aid;
         push @$map_types,$map_types_hash->{$type_aid};
     }
 
@@ -2584,7 +2575,7 @@ sub species_edit {
     my $species_id      = $apr->param('species_id') or die 'No species_id';
     my $sth             = $db->prepare(
         q[
-            select   accession_id,
+            select   accession_id as species_aid,
                      species_id, 
                      species_common_name, 
                      species_full_name,
@@ -2614,7 +2605,7 @@ sub species_insert {
     my $admin = $self->admin;
 
     $admin->species_create( 
-        accession_id  => $apr->param('accession_id')  || '', 
+        species_aid  => $apr->param('species_aid')  || '', 
         species_common_name   => $apr->param('species_common_name')   || '', 
         species_full_name     => $apr->param('species_full_name')     || '', 
         display_order => $apr->param('display_order') || '', 
@@ -2629,7 +2620,7 @@ sub species_update {
     my @errors        = ();
     my $db            = $self->db;
     my $apr           = $self->apr;
-    my $accession_id  = $apr->param('accession_id') or 
+    my $species_aid  = $apr->param('species_aid') or 
                         push @errors, 'No accession id';
     my $species_id    = $apr->param('species_id')   or 
                         push @errors, 'No species id';
@@ -2651,7 +2642,7 @@ sub species_update {
             where  species_id=?
         ],
         {}, 
-        ($accession_id, $species_common_name, $species_full_name, $display_order, $species_id)
+        ($species_aid, $species_common_name, $species_full_name, $display_order, $species_id)
     );
 
     return $self->redirect_home( ADMIN_HOME_URI.'?action=species_view' ); 
@@ -2666,7 +2657,7 @@ sub species_view {
     my $order_by    = $apr->param('order_by')   || 'display_order,species_common_name';
     my $page_no     = $apr->param('page_no')    ||  1;
     my $sql         = q[
-        select   accession_id, 
+        select   accession_id as species_aid, 
                  species_id, 
                  species_full_name, 
                  species_common_name,
@@ -2683,14 +2674,14 @@ sub species_view {
         $species->{'attributes'} = $self->sql->get_attributes(
             cmap_object => $self,
             object_name      => 'species',
-            object_id   => $species_id,,
+            object_id   => $species_id,
             order_by    => $apr->param('att_order_by'),
         );
 
         $species->{'xrefs'} = $self->sql->get_xrefs(
             cmap_object => $self,
             object_name      => 'species',
-            object_id   => $species_id,,
+            object_id   => $species_id,
             order_by    => $apr->param('att_order_by'),
         );
 

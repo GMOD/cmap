@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.98 2005-04-26 23:26:29 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.99 2005-04-28 05:28:36 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.98 $)[-1];
+$VERSION = (qw$Revision: 1.99 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -33,7 +33,7 @@ use constant COLUMN_NAMES    => [
       ]
 ];
 use constant MAP_FIELDS => [
-    qw[ species_aid species_common_name map_set_aid map_set_name map_aid map_name ]
+    qw[ species_accession_id species_common_name map_set_accession_id map_set_name map_accession_id map_name ]
 ];
 use constant FEATURE_FIELDS => [
     qw[ accession_id feature_name feature_type start_position stop_position ]
@@ -313,9 +313,9 @@ sub handler {
     while ( $comparative_maps =~ s/(.+\[)(\d+)\*\2(\D.*)/$1*$3/ ) { }
 
     for my $cmap ( split( /:/, $comparative_maps ) ) {
-        my ( $slot_no, $field, $accession_id ) = split( /=/, $cmap ) or next;
+        my ( $slot_no, $field, $map_aid ) = split( /=/, $cmap ) or next;
         my ( $start, $stop, $magnification );
-        foreach my $aid ( split /,/, $accession_id ) {
+        foreach my $aid ( split /,/, $map_aid ) {
             ( $aid, $start, $stop, $magnification, $highlight ) =
               parse_map_info( $aid, $highlight );
             if ( $field eq 'map_aid' ) {
@@ -399,12 +399,12 @@ sub handler {
             }
         }
         else {
-            foreach my $accession_id (@$cmap) {
+            foreach my $map_aid (@$cmap) {
                 my ( $start, $stop, $magnification );
-                ( $accession_id, $start, $stop, $magnification, $highlight ) =
-                  parse_map_info( $accession_id, $highlight );
+                ( $map_aid, $start, $stop, $magnification, $highlight ) =
+                  parse_map_info( $map_aid, $highlight );
 
-                $slots{$slot_no}{'maps'}{$accession_id} = {
+                $slots{$slot_no}{'maps'}{$map_aid} = {
                     start => $start,
                     stop  => $stop,
                     mag   => $magnification,

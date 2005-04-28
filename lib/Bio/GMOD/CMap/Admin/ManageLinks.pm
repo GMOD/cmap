@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::ManageLinks;
 
 # vim: set ft=perl:
 
-# $Id: ManageLinks.pm,v 1.5 2005-01-05 03:04:23 mwz444 Exp $
+# $Id: ManageLinks.pm,v 1.6 2005-04-28 05:28:36 mwz444 Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ This module encapsulates the logic for handling imported links.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -161,7 +161,7 @@ under and is displayed when the accessing the links.
     }
 
     my $sql_str = q[
-        select accession_id 
+        select accession_id as map_set_aid
         from cmap_map_set ms
         where ms.map_set_id=?
         ];
@@ -209,7 +209,7 @@ under and is displayed when the accessing the links.
         my $link_name = $record->{'link_name'};
         my $sth       = $db->prepare(
             qq[
-            select accession_id
+            select accession_id as map_aid
             from   cmap_map map
             where  map.map_set_id=?
                and map.map_name=?
@@ -223,7 +223,7 @@ under and is displayed when the accessing the links.
 
             $sth->execute( $map_set_id, $map_name );
             my $hr = $sth->fetchrow_hashref;
-            $map_aid = $hr->{'accession_id'};
+            $map_aid = $hr->{'map_aid'};
             return $self->error( "$map_name was not in the dataset\n" )
               unless ( defined($map_aid) );
         }

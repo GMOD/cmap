@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::ImportAlignments;
 
 # vim: set ft=perl:
 
-# $Id: ImportAlignments.pm,v 1.1 2005-02-03 15:22:05 mwz444 Exp $
+# $Id: ImportAlignments.pm,v 1.2 2005-04-28 05:28:36 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ alignments from blast files.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use Data::Dumper;
 use Bio::SearchIO;
@@ -204,7 +204,7 @@ sub get_map_id {
         $map_id = $self->{'admin'}->map_create(
             map_name       => $map_name,
             map_set_id     => $map_set_id,
-            accession_id   => $map_accession,
+            map_aid        => $map_accession,
             start_position => '1',
             stop_position  => $map_length,
         );

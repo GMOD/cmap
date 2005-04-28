@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 
 # vim: set ft=perl:
 
-# $Id: ImportCorrespondences.pm,v 1.28 2005-04-26 23:26:28 mwz444 Exp $
+# $Id: ImportCorrespondences.pm,v 1.29 2005-04-28 05:28:36 mwz444 Exp $
 
 =head1 NAME
 
@@ -51,7 +51,7 @@ feature names, a correspondence will be created.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.28 $)[-1];
+$VERSION = (qw$Revision: 1.29 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -243,14 +243,14 @@ which is slow.  Setting to 0 is recommended.
             my $field_name     = "feature_name$i";
             my $aid_field_name = "feature_accession_id$i";
             my $feature_name   = $record->{$field_name} || '';
-            my $accession_id   = $record->{$aid_field_name} || '';
-            next unless $feature_name || $accession_id;
+            my $feature_aid   = $record->{$aid_field_name} || '';
+            next unless $feature_name || $feature_aid;
             my $upper_name = uc $feature_name;
             my @feature_ids;
 
-            if ($accession_id) {
+            if ($feature_aid) {
                 my $sth = $db->prepare(FEATURE_SQL_BY_AID);
-                $sth->execute("$accession_id");
+                $sth->execute("$feature_aid");
                 my $feature = $sth->fetchrow_hashref;
                 push @feature_ids, $feature if $feature;
             }

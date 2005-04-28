@@ -48,7 +48,7 @@
                 <select name="ref_map_set_aid">
                     <option value="">--Select--</option>
                     [%- FOREACH ms=form_data.ref_map_sets -%]
-                        <option [% IF apr.param('ref_map_set_aid') == ms.accession_id OR form_data.ref_map_sets.size==1; ' selected'; END %] value="[% ms.accession_id %]">
+                        <option [% IF apr.param('ref_map_set_aid') == ms.map_set_aid OR form_data.ref_map_sets.size==1; ' selected'; END %] value="[% ms.map_set_aid %]">
                           [% ms.map_type %] : [% ms.species_common_name %] - [% ms.map_set_name %]
                         </option>
                     [%- END -%]
@@ -115,7 +115,7 @@
                 [% SET map_info=form_data.map_info.$map_id %]
                 <tr>
                     <td>
-                        <a href="[% apr.url %]/viewer?ref_map_set_aid=[% apr.param('ref_map_set_aid') %]&ref_map_aids=[% map_info.accession_id %]&ref_species_aid=1&data_source=[% data_source %]">[% map_info.map_name | nbsp %]</a>&nbsp(<a href="[% apr.url %]/spider?map_aid=[% map_info.accession_id %]">spider</a>)</td>
+                        <a href="[% apr.url %]/viewer?ref_map_set_aid=[% apr.param('ref_map_set_aid') %]&ref_map_aids=[% map_info.map_aid %]&ref_species_aid=1&data_source=[% data_source %]">[% map_info.map_name | nbsp %]</a>&nbsp(<a href="[% apr.url %]/spider?map_aid=[% map_info.map_aid %]">spider</a>)</td>
                     </td>
                     <td>[% map_info.cmap_count %]</td>
                     <td>[% map_info.cmap_count_per %]</td>

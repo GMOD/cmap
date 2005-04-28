@@ -382,7 +382,7 @@ function selectAllOptions(select){
                 <select name="ref_map_set_aid" >
                   <option value="">--Select--</option>
                   [%- FOREACH ms=form_data.ref_map_sets -%]
-                    <option [% IF apr.param('ref_map_set_aid') == ms.accession_id OR form_data.ref_map_sets.size==1; apr.param('ref_map_set_aid') = ms.accession_id; ' selected'; END %] value="[% ms.accession_id %]">
+                    <option [% IF apr.param('ref_map_set_aid') == ms.map_set_aid OR form_data.ref_map_sets.size==1; apr.param('ref_map_set_aid') = ms.map_set_aid; ' selected'; END %] value="[% ms.map_set_aid %]">
                       [% ms.map_type %] : [% ms.species_common_name %] - [% ms.map_set_name %]
                     </option>
                     [%- SET last_map_type=ms.map_type -%]
@@ -402,7 +402,7 @@ function selectAllOptions(select){
           [% END %]
           </form>
           [% IF form_data.ref_maps %]
-            [% form_data.ref_maps.unshift({accession_id=>'-1',map_name=>'--All--'}) %]
+            [% form_data.ref_maps.unshift({map_aid=>'-1',map_name=>'--All--'}) %]
             <form name="ref_map_form">
               <input type="hidden" name="refMenu" id="refMenu" value="[% apr.param('refMenu') %]">
               <input type="hidden" name="compMenu" id="compMenu" value="[% apr.param('compMenu') %]">
@@ -421,7 +421,7 @@ function selectAllOptions(select){
     
                     [% IF form_data.ref_maps.size %]
                       [% FOREACH m=form_data.ref_maps %]
-                        <option[% IF selected_maps.${m.accession_id} OR form_data.ref_maps.size==1; ' selected'; END %] value="[% m.accession_id %]">[% m.map_name %]</option>
+                        <option[% IF selected_maps.${m.map_aid} OR form_data.ref_maps.size==1; ' selected'; END %] value="[% m.map_aid %]">[% m.map_name %]</option>
                       [% END %]
                     [% ELSE %]
                       <option value="">--No Maps Available--</option>

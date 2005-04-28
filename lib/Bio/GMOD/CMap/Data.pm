@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.225 2005-04-26 23:26:25 mwz444 Exp $
+# $Id: Data.pm,v 1.226 2005-04-28 05:28:35 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.225 $)[-1];
+$VERSION = (qw$Revision: 1.226 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -138,9 +138,9 @@ sub correspondence_detail_data {
         ( $corr, $feature1, $feature2 ) = @$array_ref;
     }
     else {
-        $corr = $sql_object->get_correspondence_by_accession(
+        $corr = $sql_object->get_correspondences(
             cmap_object => $self,
-            correspondence_aid => $correspondence_aid,
+            feature_correspondence_aid => $correspondence_aid,
         )
           or return $sql_object->error();
 
@@ -160,15 +160,17 @@ sub correspondence_detail_data {
             cmap_object => $self,
             feature_id => $corr->{'feature_id1'},
         );
+        $feature1 = $feature1->[0] if $feature1;
         $feature2 = $sql_object->get_feature_details(
             cmap_object => $self,
             feature_id => $corr->{'feature_id2'},
         );
+        $feature2 = $feature2->[0] if $feature2;
 
         $corr->{'evidence'} = $db->selectall_arrayref(
             qq[
             select   ce.correspondence_evidence_id,
-                     ce.accession_id,
+                     ce.accession_id as correspondence_evidence_aid,
                      ce.feature_correspondence_id,
                      ce.score,
                      ce.evidence_type_accession as evidence_type_aid
@@ -538,8 +540,9 @@ sub slot_data {
     my $max_no_features             = 200000;
     my $map_type_data               = $self->map_type_data();
     my $feature_type_data           = $self->feature_type_data();
-    my $db  = $self->db  or return;
-    my $sql_object  = $self->sql  or return;
+    my $db                          = $self->db  or return;
+    my $sql_object                  = $self->sql  or return;
+    my $slot_info                   = $self->slot_info or return;
 
     #
     # If there is more than 1 map in this slot, we will return totals
@@ -564,82 +567,36 @@ sub slot_data {
     # Gather necessary info on all the maps in this slot.
     #
     my @maps = ();
-    my $map_sub = sub {
-        my $data = shift;
-        foreach my $row ( @{$data} ) {
-            $row->{'default_shape'} =
-              $map_type_data->{ $row->{'map_type_aid'} }{'shape'};
-            $row->{'default_color'} =
-              $map_type_data->{ $row->{'map_type_aid'} }{'color'};
-            $row->{'default_width'} =
-              $map_type_data->{ $row->{'map_type_aid'} }{'width'};
-            $row->{'map_type'} =
-              $map_type_data->{ $row->{'map_type_aid'} }{'map_type'};
-        }
-    };
-#REPLACE 7
-    if ( $self->slot_info->{$this_slot_no}
-        and %{ $self->slot_info->{$this_slot_no} } )
+#REPLACE 7 MAPS YYY
+    if ( $slot_info->{$this_slot_no}
+        and %{ $slot_info->{$this_slot_no} } )
     {
-        my $sql = q[
-                    select map.map_id,
-                           map.accession_id,
-                           map.map_name,
-                           map.start_position,
-                           map.stop_position,
-                           map.display_order,
-                           ms.map_set_id,
-                           ms.accession_id as map_set_aid,
-                           ms.short_name as map_set_name,
-                           ms.shape,
-                           ms.width,
-                           ms.color,
-                           ms.map_type_accession as map_type_aid,
-                           ms.map_units,
-                           ms.is_relational_map,
-                           s.species_id,
-                           s.accession_id as species_aid,
-                           s.species_common_name
-                    from   cmap_map map,
-                           cmap_map_set ms,
-                           cmap_species s
-                    where  map.map_id in (]
-          . join( ',', keys( %{ $self->slot_info->{$this_slot_no} } ) ) . q[)
-                    and    map.map_set_id=ms.map_set_id
-                    and    ms.species_id=s.species_id
-		  ];
-        my $tempMap = $self->cache_array_results( 2, $sql, { Columns => {} },
-            [], $db, 'selectall_arrayref', $map_sub );
+        my $tempMap = $sql_object->get_maps(
+            cmap_object => $self,
+            map_ids     => [ keys( %{ $slot_info->{$this_slot_no} } ) ],
+        );
 
         foreach my $row (@$tempMap) {
             if (
-                defined(
-                    $self->slot_info->{$this_slot_no}{ $row->{'map_id'} }
-                )
-                and defined(
-                    $self->slot_info->{$this_slot_no}{ $row->{'map_id'} }[0]
-                )
-                and ( $self->slot_info->{$this_slot_no}{ $row->{'map_id'} }[0] >
+                $slot_info->{$this_slot_no}{ $row->{'map_id'} }
+                and
+                defined( $slot_info->{$this_slot_no}{ $row->{'map_id'} }[0] )
+                and ( $slot_info->{$this_slot_no}{ $row->{'map_id'} }[0] >
                     $row->{'start_position'} )
               )
             {
                 $row->{'start_position'} =
-                  $self->slot_info->{$this_slot_no}{ $row->{'map_id'} }[0];
+                  $slot_info->{$this_slot_no}{ $row->{'map_id'} }[0];
             }
-            if (
-                defined(
-                    $self->slot_info->{$this_slot_no}{ $row->{'map_id'} }
-                )
-                and defined(
-                    $self->slot_info->{$this_slot_no}{ $row->{'map_id'} }[1]
-                )
+            if ( $slot_info->{$this_slot_no}{ $row->{'map_id'} }
+                and
+                defined( $slot_info->{$this_slot_no}{ $row->{'map_id'} }[1] )
                 and defined( $row->{'stop_position'} )
-                and ( $self->slot_info->{$this_slot_no}{ $row->{'map_id'} }[1] )
-                < $row->{'stop_position'}
-              )
+                and ( $slot_info->{$this_slot_no}{ $row->{'map_id'} }[1] ) <
+                $row->{'stop_position'} )
             {
                 $row->{'stop_position'} =
-                  $self->slot_info->{$this_slot_no}{ $row->{'map_id'} }[1];
+                  $slot_info->{$this_slot_no}{ $row->{'map_id'} }[1];
             }
         }
         push @maps, @{$tempMap};
@@ -671,7 +628,7 @@ sub slot_data {
     ];
     $ft_sql .=
       " f.map_id in ('"
-      . join( "','", keys( %{ $self->slot_info->{$this_slot_no} } ) ) . "')";
+      . join( "','", keys( %{ $slot_info->{$this_slot_no} } ) ) . "')";
     if (@$included_feature_type_aids) {
         $ft_sql .=
           " and f.feature_type_accession in ('"
@@ -712,45 +669,45 @@ sub slot_data {
         ];
 
         # Include current slot maps
-        my $slot_info            = $self->slot_info->{$this_slot_no};
+        my $this_slot_info            = $slot_info->{$this_slot_no};
         my @unrestricted_map_ids = ();
         my $unrestricted_sql     = '';
         my $restricted_sql       = '';
-        foreach my $slot_map_id ( keys( %{$slot_info} ) ) {
+        foreach my $slot_map_id ( keys( %{$this_slot_info} ) ) {
 
-            # $slot_info->{$slot_map_id}->[0] is start [1] is stop
-            if (    defined( $slot_info->{$slot_map_id}->[0] )
-                and defined( $slot_info->{$slot_map_id}->[1] ) )
+            # $this_slot_info->{$slot_map_id}->[0] is start [1] is stop
+            if (    defined( $this_slot_info->{$slot_map_id}->[0] )
+                and defined( $this_slot_info->{$slot_map_id}->[1] ) )
             {
                 $restricted_sql .=
                     " or (f.map_id="
                   . $slot_map_id
                   . " and (( f.start_position>="
-                  . $slot_info->{$slot_map_id}->[0]
+                  . $this_slot_info->{$slot_map_id}->[0]
                   . " and f.start_position<="
-                  . $slot_info->{$slot_map_id}->[1]
+                  . $this_slot_info->{$slot_map_id}->[1]
                   . " ) or ( f.stop_position is not null and "
                   . "  f.start_position<="
-                  . $slot_info->{$slot_map_id}->[0]
+                  . $this_slot_info->{$slot_map_id}->[0]
                   . " and f.stop_position>="
-                  . $slot_info->{$slot_map_id}->[0] . " )))";
+                  . $this_slot_info->{$slot_map_id}->[0] . " )))";
             }
-            elsif ( defined( $slot_info->{$slot_map_id}->[0] ) ) {
+            elsif ( defined( $this_slot_info->{$slot_map_id}->[0] ) ) {
                 $restricted_sql .=
                     " or (f.map_id="
                   . $slot_map_id
                   . " and (( f.start_position>="
-                  . $slot_info->{$slot_map_id}->[0]
+                  . $this_slot_info->{$slot_map_id}->[0]
                   . " ) or ( f.stop_position is not null "
                   . " and f.stop_position>="
-                  . $slot_info->{$slot_map_id}->[0] . " )))";
+                  . $this_slot_info->{$slot_map_id}->[0] . " )))";
             }
-            elsif ( defined( $slot_info->{$slot_map_id}->[1] ) ) {
+            elsif ( defined( $this_slot_info->{$slot_map_id}->[1] ) ) {
                 $restricted_sql .=
                     " or (f.map_id="
                   . $slot_map_id
                   . " and f.start_position<="
-                  . $slot_info->{$slot_map_id}->[1] . ") ";
+                  . $this_slot_info->{$slot_map_id}->[1] . ") ";
             }
             else {
                 push @unrestricted_map_ids, $slot_map_id;
@@ -799,9 +756,9 @@ sub slot_data {
 
         for my $map (@maps) {
             my $map_start =
-              $self->slot_info->{$this_slot_no}{ $map->{'map_id'} }[0];
+              $slot_info->{$this_slot_no}{ $map->{'map_id'} }[0];
             my $map_stop =
-              $self->slot_info->{$this_slot_no}{ $map->{'map_id'} }[1];
+              $slot_info->{$this_slot_no}{ $map->{'map_id'} }[1];
             $map->{'start_position'} = $map_start if defined($map_start);
             $map->{'stop_position'}  = $map_stop  if defined($map_stop);
             $map->{'no_correspondences'} = $corr_lookup{ $map->{'map_id'} };
@@ -820,7 +777,7 @@ sub slot_data {
                 map_id => $map->{'map_id'},
                 map_start => $map_start,
                 map_stop => $map_stop,
-                slot_info => $self->slot_info,
+                slot_info => $slot_info,
                 this_slot_no => $this_slot_no,
                 included_feature_type_aids => $included_feature_type_aids,
                 ignored_feature_type_aids => $ignored_feature_type_aids,
@@ -862,9 +819,9 @@ sub slot_data {
         ];
 
         my $slot_maps = '';
-        if ( $self->slot_info->{$this_slot_no} ) {
+        if ( $slot_info->{$this_slot_no} ) {
             $slot_maps =
-              join( "','", keys( %{ $self->slot_info->{$this_slot_no} } ) );
+              join( "','", keys( %{ $slot_info->{$this_slot_no} } ) );
         }
 
         $f_count_sql .= " f.map_id in ('" . $slot_maps . "')";
@@ -898,9 +855,9 @@ sub slot_data {
 
         for my $map (@maps) {
             my $map_start =
-              $self->slot_info->{$this_slot_no}{ $map->{'map_id'} }[0];
+              $slot_info->{$this_slot_no}{ $map->{'map_id'} }[0];
             my $map_stop =
-              $self->slot_info->{$this_slot_no}{ $map->{'map_id'} }[1];
+              $slot_info->{$this_slot_no}{ $map->{'map_id'} }[1];
             $map->{'start_position'} = $map_start if defined($map_start);
             $map->{'stop_position'}  = $map_stop  if defined($map_stop);
             $map->{'no_correspondences'} = $corr_lookup{ $map->{'map_id'} };
@@ -1044,7 +1001,7 @@ sub get_feature_correspondences {
       = @_;
 
     my $ref_correspondences =
-        $self->sql->get_correspondences(
+        $self->sql->get_correspondences_by_maps(
             cmap_object  => $self,
             map_id       => $map_id,
             ref_map_info => $self->slot_info->{$slot_no} ,
@@ -1103,7 +1060,7 @@ sub get_intraslot_correspondences {
       = @_;
 
     my $ref_correspondences =
-        $self->sql->get_correspondences(
+        $self->sql->get_correspondences_by_maps(
             cmap_object  => $self,
             ref_map_info => $self->slot_info->{$slot_no} ,
             included_evidence_type_aids => $included_evidence_type_aids,
@@ -1202,7 +1159,7 @@ Returns the data for the correspondence matrix.
     if ( $map_set_aid && !$species_aid ) {
         $species_aid = $db->selectrow_array(
             q[
-                select s.accession_id
+                select s.accession_id as species_aid
                 from   cmap_map_set ms,
                        cmap_species s
                 where  ms.accession_id=?
@@ -1270,26 +1227,15 @@ Returns the data for the correspondence matrix.
             'epoch_published_on desc', 'short_name'
         );
 
-# REPLACE 19
-        my $map_sql = qq[
-            select   distinct map.map_name,
-                     map.display_order
-            from     cmap_map map,
-                     cmap_map_set ms,
-                     cmap_species s
-            where    map.map_set_id=ms.map_set_id
-            and      ms.is_relational_map=0
-            and      ms.is_enabled=1
-            and      ms.species_id=s.species_id
-        ];
-        $map_sql .= " and ms.map_type_accession='$map_type_aid' "
-          if $map_type_aid;
-        $map_sql .= " and s.accession_id='$species_aid' "
-          if $species_aid;
-        $map_sql .= " and ms.accession_id='$map_set_aid' "
-          if $map_set_aid;
-        $map_sql .= 'order by map.display_order, map.map_name';
-        $maps = $db->selectall_arrayref( $map_sql, { Columns => {} } );
+# REPLACE 19 MAPS YYY
+        $maps = $sql_object->get_maps(
+            cmap_object => $self,
+            is_relational_map => 0,
+            is_enabled        => 1,
+            map_type_aid      => $map_type_aid,
+            species_aid       => $species_aid,
+            map_set_aid       => $map_set_aid,
+        );
     }
 
     #
@@ -1298,82 +1244,34 @@ Returns the data for the correspondence matrix.
     #
     my @reference_map_sets = ();
     if ($map_set_aid) {
-# REPLACE 20
-        my $map_set_sql = qq[
-            select   map.map_id, 
-                     map.accession_id as map_aid,
-                     map.map_name, 
-                     ms.map_set_id, 
-                     ms.accession_id as map_set_aid,
-                     ms.short_name as map_set_name,
-                     ms.map_type_accession as map_type_aid, 
-                     s.species_id,
-                     s.accession_id as species_aid,
-                     s.species_common_name
-            from     cmap_map map,
-                     cmap_map_set ms,
-                     cmap_species s
-            where    map.map_set_id=ms.map_set_id
-            and      ms.is_enabled=1
-            and      ms.accession_id='$map_set_aid'
-            and      ms.species_id=s.species_id
-        ];
-
-        $map_set_sql .= " and map.map_name='$map_name' " if $map_name;
-        $map_set_sql .= 'order by map.display_order, map.map_name';
-
-        my $tempMapSet =
-          $db->selectall_arrayref( $map_set_sql, { Columns => {} } );
-
-        foreach my $row (@$tempMapSet) {
-            $row->{'map_type_display_order'} =
-              $map_type_data->{ $row->{'map_type_aid'} }{'display_order'};
-
-            $row->{'map_type'} =
-              $map_type_data->{ $row->{'map_type_aid'} }{'map_type'};
-        }
+# REPLACE 20 MAPS YYY
+        my $tempMapSet = $sql_object->get_maps(
+            cmap_object => $self,
+            is_enabled  => 1,
+            map_set_aid => $map_set_aid,
+            map_name    => $map_name,
+        );
 
         @reference_map_sets = @$tempMapSet;
     }
     else {
-        my $map_set_sql;
+
+        my $tempMapSet;
         if ($map_name) {
-# REPLACE 21
-            $map_set_sql = qq[
-                select   map.map_name,
-                         map.accession_id as map_aid, 
-                         ms.map_set_id, 
-                         ms.accession_id as map_set_aid, 
-                         ms.short_name as map_set_name,
-                         ms.display_order as map_set_display_order,
-                         ms.published_on, 
-                         ms.map_type_accession as map_type_aid, 
-                         s.species_id,
-                         s.accession_id as species_aid,
-                         s.species_common_name,
-                         s.display_order as species_display_order
-                from     cmap_map map,
-                         cmap_map_set ms,
-                         cmap_species s
-                where    map.map_name='$map_name'
-                and      map.map_set_id=ms.map_set_id
-                and      ms.is_enabled=1
-                and      ms.species_id=s.species_id
-                and      ms.is_relational_map=0
-            ];
-
-            $map_set_sql .= " and s.accession_id='$species_aid' "
-              if $species_aid;
-
-            $map_set_sql .= " and ms.map_type_accession='$map_type_aid' "
-              if $map_type_aid;
-
-            $map_set_sql .= " and ms.accession_id='$map_set_aid' "
-              if $map_set_aid;
+# REPLACE 21 MAPS YYY
+            $tempMapSet = $sql_object->get_maps(
+                cmap_object => $self,
+                is_enabled  => 1,
+                is_relational_map => 0,
+                map_type_aid      => $map_type_aid,
+                species_aid       => $species_aid,
+                map_set_aid       => $map_set_aid,
+                map_name    => $map_name,
+            );
         }
-        else {
-# REPLACE 22
-            $map_set_sql = q[
+        else{        
+# REPLACE 22 MAP_SET
+            my $map_set_sql = q[
                 select   ms.map_set_id, 
                          ms.accession_id as map_set_aid,
                          ms.short_name as map_set_name,
@@ -1399,18 +1297,18 @@ Returns the data for the correspondence matrix.
             $map_set_sql .= " and ms.accession_id='$map_set_aid' "
               if $map_set_aid;
 
-        }
 
-        my $tempMapSet =
-          $db->selectall_arrayref( $map_set_sql, { Columns => {} } );
+            $tempMapSet =
+              $db->selectall_arrayref( $map_set_sql, { Columns => {} } );
 
-        foreach my $row ( @{$tempMapSet} ) {
-            $row->{'map_type_display_order'} =
-              $map_type_data->{ $row->{'map_type_aid'} }{'display_order'};
+            foreach my $row ( @{$tempMapSet} ) {
+                $row->{'map_type_display_order'} =
+                  $map_type_data->{ $row->{'map_type_aid'} }{'display_order'};
 
-            $row->{'map_type'} =
-              $map_type_data->{ $row->{'map_type_aid'} }{'map_type'};
-            $row->{'epoch_published_on'} = parsedate( $row->{'published_on'} );
+                $row->{'map_type'} =
+                  $map_type_data->{ $row->{'map_type_aid'} }{'map_type'};
+                $row->{'epoch_published_on'} = parsedate( $row->{'published_on'} );
+            }
         }
 
         @reference_map_sets = @{
@@ -1596,33 +1494,12 @@ Returns the data for the correspondence matrix.
         && $link_map_set_aid
         && $link_map_can_be_reference )
     {
-# REPLACE 25
-        $link_map_set_sql = qq[
-            select   map.map_id,
-                     map.accession_id as map_aid,
-                     map.map_name,
-                     ms.map_set_id, 
-                     ms.accession_id as map_set_aid, 
-                     ms.short_name as map_set_name,
-                     s.species_id,
-                     s.accession_id as species_aid,
-                     s.species_common_name,
-                     ms.map_type_accession as map_type_aid
-            from     cmap_map map,
-                     cmap_map_set ms,
-                     cmap_species s
-            where    map.map_set_id=ms.map_set_id
-            and      ms.is_enabled=1
-            and      ms.accession_id='$link_map_set_aid'
-            and      ms.species_id=s.species_id
-            order by map.display_order, map.map_name
-        ];
-        $tempMapSet =
-          $db->selectall_arrayref( $link_map_set_sql, { Columns => {} } );
-        foreach my $row ( @{$tempMapSet} ) {
-            $row->{'map_type'} =
-              $map_type_data->{ $row->{'map_type_aid'} }{'map_type'};
-        }
+# REPLACE 25 MAPS YYY
+        $tempMapSet = $sql_object->get_maps(
+            cmap_object => $self,
+            is_enabled  => 1,
+            map_set_aid       => $link_map_set_aid,
+        );
     }
     else {
 # REPLACE 26
@@ -1795,7 +1672,7 @@ sub cmap_form_data {
         foreach my $map_id ( @{ $self->sorted_map_ids(0) } ) {
             my %temp_hash = (
                 'map_id'         => $map_id,
-                'map_aid'        => $ref_slot_data->{$map_id}{'accession_id'},
+                'map_aid'        => $ref_slot_data->{$map_id}{'map_aid'},
                 'map_name'       => $ref_slot_data->{$map_id}{'map_name'},
                 'start_position' => $self->slot_info->{0}{$map_id}[0],
                 'stop_position'  => $self->slot_info->{0}{$map_id}[1],
@@ -1808,7 +1685,7 @@ sub cmap_form_data {
     if ( $ref_map_set_aid && !$ref_species_aid ) {
 # REPLACE 27
         $sql_str = q[
-                select s.accession_id
+                select s.accession_id as species_aid
                 from   cmap_map_set ms,
                        cmap_species s
                 where  ms.accession_id=?
@@ -1859,7 +1736,7 @@ sub cmap_form_data {
     # If there's only one map set, pretend it was submitted.
     #
     if ( !$ref_map_set_aid && scalar @$ref_map_sets == 1 ) {
-        $ref_map_set_aid = $ref_map_sets->[0]{'accession_id'};
+        $ref_map_set_aid = $ref_map_sets->[0]{'map_set_aid'};
     }
 
     #
@@ -2353,39 +2230,23 @@ Turn a feature name into a position.
     my $feature_name = $args{'feature_name'} or return;
     my $map_id       = $args{'map_id'}       or return;
     my $start_position_only = $args{'start_position_only'};
-    my $db                  = $self->db or return;
-    my $upper_name          = uc $feature_name;
-# REPLACE 33
-    my $sql_str             = q[
-            select    f.start_position,
-                      f.stop_position
-            from      cmap_feature f
-            left join cmap_feature_alias fa
-            on        f.feature_id=fa.feature_id
-            where     f.map_id=?
-            and       (
-                upper(f.feature_name)=?
-                or
-                upper(fa.alias)=?
-            )
-		  ];
-    my ( $start, $stop );
-
-    if ( my $arrayref =
-        $self->get_cached_results( 3, $sql_str . $map_id . $upper_name ) )
-    {
-        ( $start, $stop ) = @$arrayref;
+    my $sql_object          = $self->sql or return;
+# REPLACE 33 YYY
+    # Using get_feature_detail is a little overkill 
+    # but this method isn't used much and it makes for
+    # simplified code.
+    my $feature_array = $sql_object->get_feature_details(
+        cmap_object => $self,
+        map_id => $map_id,
+        feature_name => $feature_name,
+        aliases_get_rows => 1,
+    );
+    unless ($feature_array and @$feature_array){
+        return undef;
     }
-    else {
-        ( $start, $stop ) =
-          $db->selectrow_array( $sql_str, {},
-            ( $map_id, $upper_name, $upper_name ) );
-        $self->store_cached_results(
-            3,
-            $sql_str . $map_id . $upper_name,
-            [ $start, $stop ]
-        );
-    }
+    
+    my $start = $feature_array->[0]{'start_position'};
+    my $stop  = $feature_array->[0]{'stop_position'};
 
     return $start_position_only ? $start
       : defined $stop           ? $stop
@@ -2560,7 +2421,7 @@ Given a feature acc. id, find out all the details on it.
 # REPLACE 36
         $corr->{'evidence'} = $db->selectall_arrayref(
             q[
-                select   ce.accession_id,
+                select   ce.accession_id as correspondence_evidence_aid,
                          ce.score,
                          ce.evidence_type_accession as evidence_type_aid
                 from     cmap_correspondence_evidence ce
@@ -3038,25 +2899,14 @@ Returns the data for drawing comparative maps.
     #
     # Maps in the map sets
     #
-# REPLACE 43
-    my $map_sql = qq[
-        select   map.map_set_id,
-                 map.accession_id as map_aid, 
-                 map.display_order,
-                 map.map_name
-        from     cmap_map map,
-                 cmap_map_set ms,  
-                 cmap_species s
-        where    map.map_set_id=ms.map_set_id
-        and      ms.is_relational_map=0
-        and      ms.species_id=s.species_id
-        $restriction
-        order by map.map_set_id, 
-                 map.display_order, 
-                 map.map_name
-    ];
-
-    my $maps = $db->selectall_arrayref( $map_sql, { Columns => {} } );
+# REPLACE 43 MAPS YYY
+    my $maps = $sql_object->get_maps(
+        cmap_object => $self,
+        is_relational_map  => 0,
+        map_set_aids      => \@map_set_aids,
+        species_aid       => $species_aid,
+        map_type_aid      => $map_type_aid,
+    );
     my %map_lookup;
     for my $map (@$maps) {
         push @{ $map_lookup{ $map->{'map_set_id'} } }, $map;
@@ -3255,29 +3105,12 @@ Returns the detail info for a map.
           } parse_words($highlight)
     };
 
-# REPLACE 46
-    my $sth = $db->prepare(
-        q[
-            select s.accession_id as species_aid,
-                   s.species_common_name,
-                   ms.accession_id as map_set_aid,
-                   ms.short_name as map_set_name,
-                   map.accession_id as map_aid,
-                   map.map_name,
-                   map.start_position,
-                   map.stop_position,
-                   ms.map_units,
-                   ms.map_type_accession as map_type_aid
-            from   cmap_map map,
-                   cmap_map_set ms,
-                   cmap_species s
-            where  map.map_id=?
-            and    map.map_set_id=ms.map_set_id
-            and    ms.species_id=s.species_id
-        ]
+# REPLACE 46 MAPS YYY
+    my $maps = $sql_object->get_maps(
+        cmap_object => $self,
+        map_id      => $map_id,
     );
-    $sth->execute($map_id);
-    my $reference_map = $sth->fetchrow_hashref;
+    my $reference_map = $maps->[0] if $maps;
 
     $map_start = $reference_map->{'start_position'}
       unless defined $map_start
@@ -3459,7 +3292,7 @@ Returns the detail info for a map.
         for my $val (
             $feature->{'feature_name'},
             @{ $feature->{'aliases'} || [] },
-            $feature->{'accession_id'}
+            $feature->{'feature_aid'}
           )
         {
             if ( $highlight_hash->{ uc $val } ) {
@@ -3720,8 +3553,8 @@ sub view_feature_on_map {
 # REPLACE 54
     my ( $map_set_aid, $map_aid, $feature_name ) = $db->selectrow_array(
         q[
-            select ms.accession_id,
-                   map.accession_id,
+            select ms.accession_id as map_set_aid,
+                   map.accession_id as map_aid,
                    f.feature_name
             from   cmap_map_set ms,
                    cmap_map map,
@@ -4182,7 +4015,7 @@ sub cmap_map_search_data {
     if ( $ref_map_set_aid && !$ref_species_aid ) {
 # REPLACE 56
         $sql_str = q[
-                select s.accession_id
+                select s.accession_id as species_aid
                 from   cmap_map_set ms,
                        cmap_species s
                 where  ms.accession_id=?
@@ -4237,7 +4070,7 @@ sub cmap_map_search_data {
     # If there's only one map set, pretend it was submitted.
     #
     if ( !$ref_map_set_aid && scalar @$ref_map_sets == 1 ) {
-        $ref_map_set_aid = $ref_map_sets->[0]{'accession_id'};
+        $ref_map_set_aid = $ref_map_sets->[0]{'map_set_aid'};
     }
     my $ref_map_set_id;
     ###Get ref_map_set_id
@@ -4259,7 +4092,7 @@ sub cmap_map_search_data {
 # REPLACE 59
     if ($ref_map_set_id) {
         $map_sql_str = q[
-            select  map.accession_id,
+            select  map.accession_id as map_set_aid,
                     map.map_name,
                     map.start_position,
                     map.stop_position,
@@ -5221,7 +5054,7 @@ original start and stop.
              m.stop_position,
              m.start_position,
              m.stop_position,
-             m.accession_id
+             m.accession_id as map_set_aid
 	  from   cmap_map m
 	  ];
 
@@ -5404,7 +5237,7 @@ original start and stop.
                              m.stop_position,
                              m.start_position,
                              m.stop_position,
-                             m.accession_id
+                             m.accession_id as map_aid
                     ];
                 $having   = " having count(cl.feature_correspondence_id)>=$min_correspondences ";
             }
