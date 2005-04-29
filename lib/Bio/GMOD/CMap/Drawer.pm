@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.95 2005-03-24 15:19:05 mwz444 Exp $
+# $Id: Drawer.pm,v 1.96 2005-04-29 13:20:12 mwz444 Exp $
 
 =head1 NAME
 
@@ -275,7 +275,7 @@ on the number of correspondences).  'display_order' is the default.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.95 $)[-1];
+$VERSION = (qw$Revision: 1.96 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -2459,7 +2459,7 @@ the value in Constants.pm for aggregated_correspondence_color.
         }
         unless ( $self->{'default_corr_color'}{$evidence_type_aid} ) {
             $self->{'default_corr_color'}{$evidence_type_aid}
-                = DEFAULT->{'aggregated_correspondence_color'};
+                = DEFAULT->{'connecting_line_color'};
         }
     }
 
