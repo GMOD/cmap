@@ -37,9 +37,9 @@
         [% SET total=0 %]
         [% FOREACH ft=feature_count_by_type %]
             <tr>
-                <td align="right">[% ft.no_by_type | commify %]</td>
+                <td align="right">[% ft.feature_count | commify %]</td>
                 <td align="left"><a href="feature_type_info?feature_type_aid=[% ft.feature_type_aid %]">[% ft.feature_type %]</a></td>
-                [% total = total + ft.no_by_type -%]
+                [% total = total + ft.feature_count -%]
             </tr>
         [% END %]
             <tr>

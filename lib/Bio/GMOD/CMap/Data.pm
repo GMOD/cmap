@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.227 2005-04-28 21:49:20 mwz444 Exp $
+# $Id: Data.pm,v 1.228 2005-04-29 20:41:23 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.227 $)[-1];
+$VERSION = (qw$Revision: 1.228 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -635,82 +635,18 @@ sub slot_data {
         #
         # Figure out how many features are on each map.
         #
-#REPLACE 9
+#REPLACE 9 FCOUNT YYY
         my %count_lookup;
-        my $f_count_sql = qq[
-            select   count(f.feature_id) as no_features, f.map_id
-            from     cmap_feature f
-            where    
-        ];
 
         # Include current slot maps
-        my $this_slot_info            = $slot_info->{$this_slot_no};
-        my @unrestricted_map_ids = ();
-        my $unrestricted_sql     = '';
-        my $restricted_sql       = '';
-        foreach my $slot_map_id ( keys( %{$this_slot_info} ) ) {
-
-            # $this_slot_info->{$slot_map_id}->[0] is start [1] is stop
-            if (    defined( $this_slot_info->{$slot_map_id}->[0] )
-                and defined( $this_slot_info->{$slot_map_id}->[1] ) )
-            {
-                $restricted_sql .=
-                    " or (f.map_id="
-                  . $slot_map_id
-                  . " and (( f.start_position>="
-                  . $this_slot_info->{$slot_map_id}->[0]
-                  . " and f.start_position<="
-                  . $this_slot_info->{$slot_map_id}->[1]
-                  . " ) or ( f.stop_position is not null and "
-                  . "  f.start_position<="
-                  . $this_slot_info->{$slot_map_id}->[0]
-                  . " and f.stop_position>="
-                  . $this_slot_info->{$slot_map_id}->[0] . " )))";
-            }
-            elsif ( defined( $this_slot_info->{$slot_map_id}->[0] ) ) {
-                $restricted_sql .=
-                    " or (f.map_id="
-                  . $slot_map_id
-                  . " and (( f.start_position>="
-                  . $this_slot_info->{$slot_map_id}->[0]
-                  . " ) or ( f.stop_position is not null "
-                  . " and f.stop_position>="
-                  . $this_slot_info->{$slot_map_id}->[0] . " )))";
-            }
-            elsif ( defined( $this_slot_info->{$slot_map_id}->[1] ) ) {
-                $restricted_sql .=
-                    " or (f.map_id="
-                  . $slot_map_id
-                  . " and f.start_position<="
-                  . $this_slot_info->{$slot_map_id}->[1] . ") ";
-            }
-            else {
-                push @unrestricted_map_ids, $slot_map_id;
-            }
-        }
-        if (@unrestricted_map_ids) {
-            $unrestricted_sql =
-              " or f.map_id in (" . join( ',', @unrestricted_map_ids ) . ") ";
-        }
-
-        my $combined_sql = $restricted_sql . $unrestricted_sql;
-        $combined_sql =~ s/^\s+or//;
-        if ($combined_sql) {
-            $f_count_sql .= " and (" . $combined_sql . ")";
-        }
-        else {    #No maps
-            $f_count_sql .= " f.feature_id = -1 ";
-        }
-
-        # Remove the instance of "where and"
-        $f_count_sql =~ s/where\s+and/where /;
-        $f_count_sql .= " group by f.map_id";
-        my $f_counts =
-          $self->cache_array_results( 3, $f_count_sql, { Columns => {} },
-            [], $db, 'selectall_arrayref' );
+        my $f_counts = $sql_object->get_feature_count(
+            cmap_object => $self,
+            this_slot_info => $slot_info->{$this_slot_no},
+            group_by_map_id => 1,
+        );
 
         for my $f (@$f_counts) {
-            $count_lookup{ $f->{'map_id'} } = $f->{'no_features'};
+            $count_lookup{ $f->{'map_id'} } = $f->{'feature_count'};
         }
 
         my %corr_lookup = %{
@@ -785,31 +721,16 @@ sub slot_data {
         #
         # Figure out how many features are on each map.
         #
-# REPLACE 11
+# REPLACE 11 FCOUNT YYY
         my %count_lookup;
-        my $f_count_sql = qq[
-            select   count(f.feature_id) as no_features, f.map_id
-            from     cmap_feature f
-            where    
-        ];
-
-        my $slot_maps = '';
-        if ( $slot_info->{$this_slot_no} ) {
-            $slot_maps =
-              join( "','", keys( %{ $slot_info->{$this_slot_no} } ) );
-        }
-
-        $f_count_sql .= " f.map_id in ('" . $slot_maps . "')";
-        $f_count_sql .= " group by f.map_id";
-        my $f_counts;
-        unless ( $f_counts = $self->get_cached_results( 3, $f_count_sql ) ) {
-            $f_counts =
-              $db->selectall_arrayref( $f_count_sql, { Columns => {} }, () );
-            $self->store_cached_results( 3, $f_count_sql, $f_counts );
-        }
+        my $f_counts = $sql_object->get_feature_count(
+            cmap_object => $self,
+            map_ids => [keys( %{ $slot_info->{$this_slot_no} } )],
+            group_by_map_id => 1,
+        );
 
         for my $f (@$f_counts) {
-            $count_lookup{ $f->{'map_id'} } = $f->{'no_features'};
+            $count_lookup{ $f->{'map_id'} } = $f->{'feature_count'};
         }
 
         my %corr_lookup = %{
@@ -1099,25 +1020,12 @@ Returns the data for the correspondence matrix.
     #
     # And map types.
     #
-# REPLACE 15
-    my $map_types = $db->selectall_arrayref(
-        q[
-            select   distinct ms.map_type_accession as map_type_aid
-            from     cmap_map_set ms
-            where    ms.is_relational_map=0
-            and      ms.is_enabled=1
-        ],
-        { Columns => {} }
+# REPLACE 15 YYY
+    my $map_types = $sql_object->get_used_map_types(
+        cmap_object       => $self,
+        is_relational_map => 0,
+        is_enabled        => 1,
     );
-    foreach my $row ( @{$map_types} ) {
-        $row->{'map_type'} =
-          $map_type_data->{ $row->{'map_type_aid'} }{'map_type'};
-        $row->{'display_order'} =
-          $map_type_data->{ $row->{'map_type_aid'} }{'display_order'};
-    }
-
-    $map_types =
-      sort_selectall_arrayref( $map_types, '#display_order', 'map_type' );
 
     unless ( $args{'show_matrix'} ) {
         return {
@@ -1130,18 +1038,11 @@ Returns the data for the correspondence matrix.
     #
     # Make sure that species_aid is set if map_set_id is.
     #
-# REPLACE 16
+# REPLACE 16 SPID YYY
     if ( $map_set_aid && !$species_aid ) {
-        $species_aid = $db->selectrow_array(
-            q[
-                select s.accession_id as species_aid
-                from   cmap_map_set ms,
-                       cmap_species s
-                where  ms.accession_id=?
-                and    ms.species_id=s.species_id
-            ],
-            {},
-            ($map_set_aid)
+        $species_aid = $sql_object->get_species_aid(
+            cmap_object      => $self,
+            map_set_aid      => $map_set_aid,
         );
     }
 
@@ -1150,14 +1051,9 @@ Returns the data for the correspondence matrix.
     #
 # REPLACE 17
     if ( $map_set_aid && !$map_type_aid ) {
-        $map_type_aid = $db->selectrow_array(
-            q[
-                select ms.map_type_accession as map_type_aid
-                from   cmap_map_set ms
-                where  ms.accession_id=?
-            ],
-            {},
-            ($map_set_aid)
+        $map_type_aid = $sql_object->get_map_type_aid(
+            cmap_object      => $self,
+            map_set_aid      => $map_set_aid,
         );
     }
 
@@ -1248,105 +1144,14 @@ Returns the data for the correspondence matrix.
     # all up on map set ids.
     #
     my $select_sql;
-# REPLACE 23
-    if ( $map_set_aid and $link_map_set_aid ) {
-        $select_sql = qq[
-            select   sum(cm.no_correspondences) as correspondences,
-                     count(cm.link_map_aid) as map_count,
-                     cm.reference_map_aid,
-                     cm.reference_map_set_aid,
-                     cm.reference_species_aid,
-                     cm.link_map_aid,
-                     cm.link_map_set_aid,
-                     cm.link_species_aid
-            from     cmap_correspondence_matrix cm,
-                     cmap_map_set ms
-            where    cm.reference_map_set_aid='$map_set_aid'
-            and      cm.link_map_set_aid='$link_map_set_aid'
-            and      cm.reference_map_set_aid=ms.accession_id
-            and      ms.is_enabled=1
-        ];
-
-        $select_sql .= " and cm.reference_species_aid='$species_aid' "
-          if $species_aid;
-
-        $select_sql .= " and cm.reference_map_name='$map_name' "
-          if $map_name;
-
-        $select_sql .= q[
-            group by cm.reference_map_aid,
-                     cm.reference_map_set_aid,
-                     cm.link_map_set_aid,
-                     cm.reference_species_aid,
-                     cm.link_map_aid,
-                     cm.link_species_aid,
-                     cm.link_map_set_aid
-        ];
-    }
-    elsif ($map_set_aid) {
-        $select_sql = qq[
-            select   sum(cm.no_correspondences) as correspondences,
-                     count(cm.link_map_aid) as map_count,
-                     cm.reference_map_aid,
-                     cm.reference_map_set_aid,
-                     cm.reference_species_aid,
-                     cm.link_map_set_aid,
-                     cm.link_species_aid
-            from     cmap_correspondence_matrix cm,
-                     cmap_map_set ms
-            where    cm.reference_map_set_aid='$map_set_aid'
-            and      cm.reference_map_set_aid=ms.accession_id
-        ];
-
-        $select_sql .= " and cm.reference_species_aid='$species_aid' "
-          if $species_aid;
-
-        $select_sql .= " and cm.reference_map_name='$map_name' "
-          if $map_name;
-
-        $select_sql .= q[
-            group by cm.reference_map_aid,
-                     cm.reference_map_set_aid,
-                     cm.link_map_set_aid,
-                     cm.reference_species_aid,
-                     cm.link_species_aid
-        ];
-    }
-    else {
-
-        #
-        # This is the most generic SQL, showing all the possible
-        # combinations of map sets to map sets.
-        #
-        $select_sql = q[
-            select   sum(cm.no_correspondences) as correspondences,
-                     count(cm.link_map_aid) as map_count,
-                     cm.reference_map_set_aid,
-                     cm.reference_species_aid,
-                     cm.link_map_set_aid,
-                     cm.link_species_aid
-            from     cmap_correspondence_matrix cm
-        ];
-
-        #
-        # I shouldn't have to worry about not having "WHERE" as
-        # the user shouldn't be able to select a map name
-        # without having first selected a species.
-        #
-        $select_sql .= "where cm.reference_species_aid='$species_aid' "
-          if $species_aid;
-
-        $select_sql .= " and cm.reference_map_name='$map_name' "
-          if $map_name;
-
-        $select_sql .= q[
-            group by cm.reference_map_set_aid,
-                     cm.link_map_set_aid,
-                     cm.reference_species_aid,
-                     cm.link_species_aid
-        ];
-    }
-    my $data = $db->selectall_arrayref( $select_sql, { Columns => {} } );
+# REPLACE 23 YYY
+    my $data = $sql_object->get_matrix_relationships(
+        cmap_object      => $self,
+        map_set_aid      => $map_set_aid,
+        link_map_set_aid => $link_map_set_aid,
+        species_aid      => $species_aid,
+        map_name         => $map_name,
+    );
 
     #
     # Create a lookup hash from the data.
@@ -1567,25 +1372,11 @@ sub cmap_form_data {
 
     my $sql_str;
     if ( $ref_map_set_aid && !$ref_species_aid ) {
-# REPLACE 27
-        $sql_str = q[
-                select s.accession_id as species_aid
-                from   cmap_map_set ms,
-                       cmap_species s
-                where  ms.accession_id=?
-                and    ms.species_id=s.species_id
-		      ];
-        if ( my $scalar_ref =
-            $self->get_cached_results( 1, $sql_str . $ref_map_set_aid ) )
-        {
-            $ref_species_aid = $$scalar_ref;
-        }
-        else {
-            $ref_species_aid =
-              $db->selectrow_array( $sql_str, {}, ($ref_map_set_aid) );
-            $self->store_cached_results( 1, $sql_str . $ref_map_set_aid,
-                \$ref_species_aid );
-        }
+# REPLACE 27 SPID YYY
+        $ref_species_aid = $sql_object->get_species_aid(
+            cmap_object      => $self,
+            map_set_aid      => $ref_map_set_aid,
+        );
     }
 
     #
@@ -1858,7 +1649,7 @@ out which maps have relationships.
           . join( "','", @$ignored_feature_type_aids ) . "') ";
     }
 
-# REPLACE 30
+# REPLACE 30 CORRCOUNTS
     $corr_sql = qq[ 
         select   count(distinct cl.feature_correspondence_id) as no_corr, 
                  cl.map_id2 as map_id, 
@@ -2930,6 +2721,7 @@ Returns the detail info for a map.
     #
     # Get the reference map features.
     #
+# REPLACE 70 YYY
     my $features = $sql_object->get_feature_details(
         cmap_object       => $self,
         fmap_id           => $map_id,
@@ -2938,25 +2730,13 @@ Returns the detail info for a map.
         map_start => $map_start,
         map_stop  => $map_stop,
     );
-# REPLACE 70 YYY
 
-# REPLACE 47
-    my $feature_count_by_type = $db->selectall_arrayref(
-        q[
-             select   count(f.feature_type_accession) as no_by_type, 
-                      f.feature_type_accession as feature_type_aid
-             from     cmap_feature f
-             where    f.map_id=?
-             group by f.feature_type_accession
-             order by no_by_type desc
-         ],
-        { Columns => {} },
-        ($map_id)
+# REPLACE 47 FCOUNT YYY
+    my $feature_count_by_type = $sql_object->get_feature_count(
+        cmap_object => $self,
+        map_id => $map_id,
+        group_by_feature_type => 1,
     );
-    foreach my $row ( @{$feature_count_by_type} ) {
-        $row->{'feature_type'} =
-          $feature_type_data->{ $row->{'feature_type_aid'} }{'feature_type'};
-    }
 
     #
     # Page the data here so as to reduce the calls below
@@ -3379,7 +3159,7 @@ sub count_correspondences {
 
     my ( $count_sql, $position_sql, @query_args );
     if ( defined $ref_slot_no or $show_intraslot_corr ) {
-# REPLACE 55
+# REPLACE 55 CORRCOUNTS
         my $base_sql;
         $base_sql = qq[ 
             select   %s
@@ -3767,25 +3547,11 @@ sub cmap_map_search_data {
 
     my $sql_str;
     if ( $ref_map_set_aid && !$ref_species_aid ) {
-# REPLACE 56
-        $sql_str = q[
-                select s.accession_id as species_aid
-                from   cmap_map_set ms,
-                       cmap_species s
-                where  ms.accession_id=?
-                and    ms.species_id=s.species_id
-		      ];
-        if ( my $scalar_ref =
-            $self->get_cached_results( 1, $sql_str . $ref_map_set_aid ) )
-        {
-            $ref_species_aid = $$scalar_ref;
-        }
-        else {
-            $ref_species_aid =
-              $db->selectrow_array( $sql_str, {}, ($ref_map_set_aid) );
-            $self->store_cached_results( 1, $sql_str . $ref_map_set_aid,
-                \$ref_species_aid );
-        }
+# REPLACE 56 SPID YYY
+        $ref_species_aid = $sql_object->get_species_aid(
+            cmap_object      => $self,
+            map_set_aid      => $ref_map_set_aid,
+        );
     }
 
     #
@@ -3841,7 +3607,7 @@ sub cmap_map_search_data {
 # REPLACE 59
     if ($ref_map_set_id) {
         $map_sql_str = q[
-            select  map.accession_id as map_set_aid,
+            select  map.accession_id as map_aid,
                     map.map_name,
                     map.start_position,
                     map.stop_position,
@@ -3917,63 +3683,47 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
         @map_ids = keys(%$map_info);
 
         ### Add feature type information
-# REPLACE 60
-        $sql_str = q[
-            select  map.map_id,
-                    f.feature_type_accession as feature_type_aid,
-                    count(distinct(f.feature_id)) as feature_count
-            from    cmap_map map,
-                    cmap_feature f 
-            where   map.map_set_id=?
-            and     map.map_id=f.map_id
-        ];
-        if ( @map_ids
-            and ( $min_correspondence_maps or $min_correspondences ) )
-        {
-            $sql_str .=
-              " and map.map_id in (" . join( ",", keys(%$map_info) ) . ") ";
-        }
-        if ($name_search) {
-            $sql_str .= " and map.map_name='$name_search' ";
-        }
-        $sql_str .= q[ group by map.map_id, f.feature_type_accession
-            ];
-        if ( my $array_ref =
-            $self->get_cached_results( 3, $sql_str . "$ref_map_set_id" ) )
-        {
-            $feature_info      = $array_ref->[0];
-            @feature_type_aids = @{ $array_ref->[1] };
-        }
-        else {
-
-            my $feature_info_results =
-              $db->selectall_arrayref( $sql_str, { Columns => {} },
-                ("$ref_map_set_id") );
-            my %feature_type_hash;
-            foreach my $row (@$feature_info_results) {
-                $feature_type_hash{ $row->{'feature_type_aid'} } = 1;
-                $feature_info->{ $row->{'map_id'} }
-                  { $row->{'feature_type_aid'} }{'total'} =
-                  $row->{'feature_count'};
-                my $devisor =
-                  $map_info->{ $row->{'map_id'} }{'stop_position'} -
-                  $map_info->{ $row->{'map_id'} }{'start_position'}
-                  || 1;
-
-                my $raw_no = ( $row->{'feature_count'} / $devisor );
-                $feature_info->{ $row->{'map_id'} }
-                  { $row->{'feature_type_aid'} }{'raw_per'} = $raw_no;
-                $feature_info->{ $row->{'map_id'} }
-                  { $row->{'feature_type_aid'} }{'per'} =
-                  presentable_number_per($raw_no);
-            }
-            @feature_type_aids = keys(%feature_type_hash);
-            $self->store_cached_results(
-                3,
-                $sql_str . "$ref_map_set_id",
-                [ $feature_info, \@feature_type_aids ]
+# REPLACE 60 FCOUNT YYY
+        my $feature_info_results;
+        if ( @map_ids and ( $min_correspondence_maps or $min_correspondences ) ) {
+            $feature_info_results = $sql_object->get_feature_count(
+                cmap_object => $self,
+                map_ids     => keys(%$map_info),
+                map_name    => $name_search,
+                group_by_map_id => 1,
+                group_by_feature_type => 1,
             );
         }
+        else{
+            $feature_info_results = $sql_object->get_feature_count(
+                cmap_object => $self,
+                map_set_id     => $ref_map_set_id,
+                map_name    => $name_search,
+                group_by_map_id => 1,
+                group_by_feature_type => 1,
+            );
+        }
+        
+        my %feature_type_hash;
+        foreach my $row (@$feature_info_results) {
+            $feature_type_hash{ $row->{'feature_type_aid'} } = 1;
+            $feature_info->{ $row->{'map_id'} }
+              { $row->{'feature_type_aid'} }{'total'} =
+              $row->{'feature_count'};
+            my $devisor =
+              $map_info->{ $row->{'map_id'} }{'stop_position'} -
+              $map_info->{ $row->{'map_id'} }{'start_position'}
+              || 1;
+
+            my $raw_no = ( $row->{'feature_count'} / $devisor );
+            $feature_info->{ $row->{'map_id'} }
+              { $row->{'feature_type_aid'} }{'raw_per'} = $raw_no;
+            $feature_info->{ $row->{'map_id'} }
+              { $row->{'feature_type_aid'} }{'per'} =
+              presentable_number_per($raw_no);
+        }
+        @feature_type_aids = keys(%feature_type_hash);
+
         ###Sort maps
         if (
             my $array_ref = $self->get_cached_results(
@@ -4103,7 +3853,7 @@ sub cmap_spider_links {
       };
     for ( my $i = 1 ; $i <= $degrees_to_crawl ; $i++ ) {
         last unless ( defined( $map_aids_per_degree{ $i - 1 } ) );
-# REPLACE 61
+# REPLACE 61 CORRCOUNTS
         my $sql_str = q[ 
           select map1.accession_id as map_aid1, 
                  map2.accession_id as map_aid2, 
