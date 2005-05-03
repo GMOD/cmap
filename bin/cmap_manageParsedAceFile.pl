@@ -217,7 +217,7 @@ sub processContig{
             next;
         }
         elsif (abs($read_data->{$name}[0][0] - 
-            $read_data->{$name}[1][0]) >300000){
+            $read_data->{$name}[1][0]) >100000){
             #p#rint S#TDERR "distance $name\n";
                 $count{'far'}++;
             printDistance($name,$read_data,$contig,$main_output);
@@ -279,7 +279,7 @@ sub processReadDepth{
     my $depth_data  = $args{'depth_data'};
     my $fh          = $args{'fh'};
     my $type        = $args{'type'};
-    my $w_size      = $args{'w_size'}|| 5000;
+    my $w_size      = $args{'w_size'}|| 1000;
 
     my $w_start         =undef;
     my $w_stop          =$w_size;

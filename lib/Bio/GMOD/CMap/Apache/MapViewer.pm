@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.99 2005-04-28 05:28:36 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.100 2005-05-03 23:41:26 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.99 $)[-1];
+$VERSION = (qw$Revision: 1.100 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -507,8 +507,12 @@ sub handler {
     for my $slot_no ( grep { $_ != 0 } keys %slots ) {
         foreach my $map_aid ( keys( %{ $slots{$slot_no}{'maps'} } ) ) {
             my $map_str = join( '=', $slot_no, 'map_aid', $map_aid );
-            if (   defined $slots{$slot_no}{'maps'}{$map_aid}{'start'}
-                or defined $slots{$slot_no}{'maps'}{$map_aid}{'stop'} )
+            if (
+                   defined $slots{$slot_no}{'maps'}{$map_aid}{'start'}
+                or defined $slots{$slot_no}{'maps'}{$map_aid}{'stop'}
+                or ( defined $slots{$slot_no}{'maps'}{$map_aid}{'mag'}
+                    and $slots{$slot_no}{'maps'}{$map_aid}{'mag'} <=> 1 )
+              )
             {
                 $map_str .= "["
                   . $slots{$slot_no}{'maps'}{$map_aid}{'start'} . "*"
@@ -566,7 +570,7 @@ sub handler {
     if ( $path_info eq 'map_details' and scalar keys %ref_maps == 1 ) {
         $PAGE_SIZE ||= $self->config_data('max_child_elements') || 0;
         $MAX_PAGES ||= $self->config_data('max_search_pages')   || 1;
-        my ( $comparative_map_field, $comparative_map_aid ) = 
+        my ( $comparative_map_field, $comparative_map_field_aid ) = 
             split( /=/, $apr->param('comparative_map') );
         my ($map_aid) = keys %ref_maps;
         my $map_id = $self->sql->acc_id_to_internal_id(
@@ -576,21 +580,21 @@ sub handler {
         );
 
         my $detail_data = $data->map_detail_data(
-            ref_map                 => $drawer->{'data'}{'slots'}{0}{$map_id},
-            map_id                  => $map_id,
-            highlight               => $highlight,
-            included_feature_types  => \@feature_types,
-            corr_only_feature_types => \@corr_only_feature_types,
-            ignored_feature_types   => \@ignored_feature_types,
-            included_evidence_types => \@included_evidence_types,
-            ignored_evidence_types  => \@ignored_evidence_types,
-            order_by                => $apr->param('order_by') || '',
-            comparative_map_field   => $comparative_map_field || '',
-            comparative_map_aid     => $comparative_map_aid || '',
-            page_size               => $PAGE_SIZE,
-            max_pages               => $MAX_PAGES,
-            page_no                 => $page_no,
-            page_data               => $action eq 'download' ? 0 : 1,
+            ref_map                   => $drawer->{'data'}{'slots'}{0}{$map_id},
+            map_id                    => $map_id,
+            highlight                 => $highlight,
+            included_feature_types    => \@feature_types,
+            corr_only_feature_types   => \@corr_only_feature_types,
+            ignored_feature_types     => \@ignored_feature_types,
+            included_evidence_types   => \@included_evidence_types,
+            ignored_evidence_types    => \@ignored_evidence_types,
+            order_by                  => $apr->param('order_by') || '',
+            comparative_map_field     => $comparative_map_field || '',
+            comparative_map_field_aid => $comparative_map_field_aid || '',
+            page_size                 => $PAGE_SIZE,
+            max_pages                 => $MAX_PAGES,
+            page_no                   => $page_no,
+            page_data                 => $action eq 'download' ? 0 : 1,
           )
           or return $self->error( "Data: " . $data->error );
 

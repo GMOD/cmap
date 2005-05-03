@@ -128,6 +128,7 @@
                 <td>[% fc.map_type %]</td>
                 <td>[% IF fc.defined('aliases') AND fc.aliases.size; fc.aliases.join(', '); ELSE; 'None'; END %]</td>
                 <td>
+
                     [% FOREACH e=fc.evidence %]
                         <a href="evidence_type_info?evidence_type_aid=[% e.evidence_type_aid %]">[% e.evidence_type %]</a><br>
                     [% END %]

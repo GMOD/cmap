@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.155 2005-04-28 05:28:38 mwz444 Exp $
+# $Id: Map.pm,v 1.156 2005-05-03 23:41:27 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.155 $)[-1];
+$VERSION = (qw$Revision: 1.156 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1081,7 +1081,7 @@ Variable Info:
     my @config_map_titles = $config->get_config('map_titles');
     my $longest           = 0;
     for my $map_id (@map_ids) {
-        for my $length ( map { length $self->$_($map_id) } @config_map_titles )
+        for my $length ( map { length $self->$_($map_id) if ( $self->can($_) )  } @config_map_titles )
         {
             $length ||= 0;
             $longest = $length if $length > $longest;
@@ -1433,7 +1433,7 @@ Variable Info:
             $map_set_aid = $self->map_set_aid($map_id);
         }
         else {
-            my @lines = map { $self->$_($map_id) } @config_map_titles;
+            my @lines = map { $self->$_($map_id) if ( $self->can($_) )  } @config_map_titles;
             my ( $bounds, $drawing_data, $map_data ) = $self->draw_map_title(
                 left_x  => $map_placement_data{$map_id}{'bounds'}[0],
                 right_x => $map_placement_data{$map_id}{'bounds'}[2],
