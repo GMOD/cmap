@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.73 2005-05-03 23:41:26 mwz444 Exp $
+# $Id: Generic.pm,v 1.74 2005-05-04 21:38:22 mwz444 Exp $
 
 =head1 NAME
 
@@ -33,7 +33,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.73 $)[-1];
+$VERSION = (qw$Revision: 1.74 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -856,7 +856,8 @@ Not using cache because this query is quicker.
 
     if ( $species_aids and @$species_aids ) {
         $where_sql .=
-          "and s.accession_id in ('" . join( "','", sort @$species_aids ) . "')";
+          "and s.accession_id in ('"
+          . join( "','", sort @$species_aids ) . "')";
     }
 
     # add the were clause for each possible identifier
@@ -3337,6 +3338,511 @@ Not using cache because this query is quicker.
           $evidence_type_data->{ $row->{'evidence_type_aid'} }{'rank'};
         $row->{'evidence_type'} =
           $evidence_type_data->{ $row->{'evidence_type_aid'} }{'evidence_type'};
+    }
+
+    return $return_object;
+}
+
+#-----------------------------------------------
+sub get_comparative_maps_with_count {    #YYY
+
+=pod
+
+=head2 get_comparative_maps_with_count
+
+=head3 Description
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item *
+
+=back
+
+=head3 Output
+
+Array of Hashes:
+
+  Keys:
+
+=head3 Cache Level (If Used): 
+
+Not using cache because this query is quicker.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $cmap_object                 = $args{'cmap_object'} or return;
+    my $min_correspondences         = $args{'min_correspondences'};
+    my $slot_info                   = $args{'slot_info'} || {};
+    my $map_aids                    = $args{'map_aids'} || [];
+    my $ignore_map_aids             = $args{'ignore_map_aids'} || [];
+    my $included_evidence_type_aids = $args{'included_evidence_type_aids'}
+      || [];
+    my $ignored_evidence_type_aids = $args{'ignored_evidence_type_aids'}
+      || [];
+    my $less_evidence_type_aids    = $args{'less_evidence_type_aids'}    || [];
+    my $greater_evidence_type_aids = $args{'greater_evidence_type_aids'} || [];
+    my $evidence_type_score        = $args{'evidence_type_score'}        || {};
+    my $ignored_feature_type_aids  = $args{'ignored_feature_type_aids'}  || [];
+    my $include_map1_data  = $args{'include_map1_data'};
+    $include_map1_data = 1 unless (defined $include_map1_data);
+
+    my $db                         = $cmap_object->db;
+    my $return_object;
+
+    my $select_sql = qq[
+        select   count(distinct cl.feature_correspondence_id) as no_corr,
+                 cl.map_id2,
+                 map2.accession_id as map_aid2,
+                 map2.map_set_id as map_set_id2
+    ];
+    my $from_sql = qq[
+        from     cmap_correspondence_lookup cl,
+                 cmap_feature_correspondence fc,
+                 cmap_map map1,
+                 cmap_map map2
+    ];
+    my $where_sql = qq[
+        where    cl.feature_correspondence_id=
+                 fc.feature_correspondence_id
+        and      fc.is_enabled=1
+        and      cl.map_id1!=cl.map_id2
+        and      map1.map_id=cl.map_id1
+        and      map2.map_id=cl.map_id2
+    ];
+    my $group_by_sql = qq[
+        group by cl.map_id2,
+                 map2.accession_id,
+                 map2.map_set_id 
+    ];
+    if ($include_map1_data){ 
+        $select_sql .= qq[
+                 cl.map_id1,
+                 map1.accession_id as map_aid1,
+                 map1.map_set_id as map_set_id1
+        ];
+        $group_by_sql .= qq[
+                 , cl.map_id1,
+                 map1.accession_id,
+                 map1.map_set_id
+        ];
+    }
+    my $having_sql = '';
+
+    if (@$map_aids) {
+        $where_sql .=
+          " and map1.accession_id in ('"
+          . join( "','", sort @{$map_aids} ) . "') \n";
+    }
+
+    if (@$ignore_map_aids) {
+        $where_sql .=
+          " and map2.accession_id not in ('"
+          . join( "','", sort @{$ignore_map_aids} ) . "') ";
+    }
+
+    my @unrestricted_map_ids;
+    my $restricted_sql   = '';
+    my $unrestricted_sql = '';
+    foreach my $ref_map_id ( keys( %{$slot_info} ) ) {
+        my $ref_map_start = $slot_info->{$ref_map_id}[0];
+        my $ref_map_stop  = $slot_info->{$ref_map_id}[1];
+        if ( defined($ref_map_start) and defined($ref_map_stop) ) {
+            $restricted_sql .=
+                " or (cl.map_id1="
+              . $ref_map_id
+              . " and (( cl.start_position1>="
+              . $ref_map_start
+              . " and cl.start_position1<="
+              . $ref_map_stop
+              . " ) or ( cl.stop_position1 is not null and "
+              . "  cl.start_position1<="
+              . $ref_map_start
+              . " and cl.stop_position1>="
+              . $ref_map_start . " )))";
+        }
+        elsif ( defined($ref_map_start) ) {
+            $restricted_sql .=
+                " or (cl.map_id1="
+              . $ref_map_id
+              . " and (( cl.start_position1>="
+              . $ref_map_start
+              . " ) or ( cl.stop_position1 is not null and "
+              . " cl.stop_position1>="
+              . $ref_map_start . " )))";
+        }
+        elsif ( defined($ref_map_stop) ) {
+            $restricted_sql .=
+                " or (cl.map_id1="
+              . $ref_map_id
+              . " and cl.start_position1<="
+              . $ref_map_stop . ") ";
+        }
+        else {
+            push @unrestricted_map_ids, $ref_map_id;
+        }
+    }
+    if (@unrestricted_map_ids) {
+        $unrestricted_sql =
+          " or cl.map_id1 in (" . join( ',', @unrestricted_map_ids ) . ") ";
+    }
+    my $from_restriction = $restricted_sql . $unrestricted_sql;
+    $from_restriction =~ s/^\s+or//;
+    $where_sql .= " and (" . $from_restriction . ")"
+      if $from_restriction;
+
+    if (   @$included_evidence_type_aids
+        or @$less_evidence_type_aids
+        or @$greater_evidence_type_aids )
+    {
+        $from_sql  .= ', cmap_correspondence_evidence ce';
+        $where_sql .= q[
+            and fc.feature_correspondence_id=ce.feature_correspondence_id
+            and  ( ];
+        my @join_array;
+        if (@$included_evidence_type_aids) {
+            push @join_array,
+              " ce.evidence_type_accession in ('"
+              . join( "','", @$included_evidence_type_aids ) . "')";
+        }
+        foreach my $et_aid (@$less_evidence_type_aids) {
+            push @join_array,
+              " ( ce.evidence_type_accession = '$et_aid' "
+              . " and ce.score <= "
+              . $evidence_type_score->{$et_aid} . " ) ";
+        }
+        foreach my $et_aid (@$greater_evidence_type_aids) {
+            push @join_array,
+              " ( ce.evidence_type_accession = '$et_aid' "
+              . " and ce.score >= "
+              . $evidence_type_score->{$et_aid} . " ) ";
+        }
+        $where_sql .= join( ' or ', @join_array ) . " ) ";
+    }
+    elsif (@$ignored_evidence_type_aids) {
+
+        #all are ignored, return nothing
+        return [];
+    }
+
+    if (@$ignored_feature_type_aids) {
+        $where_sql .=
+          " and cl.feature_type_accession2 not in ('"
+          . join( "','", @$ignored_feature_type_aids ) . "') ";
+    }
+
+    if ($min_correspondences) {
+        $having_sql .= qq[
+              having count(cl.feature_correspondence_id)>$min_correspondences
+            ];
+    }
+
+    my $sql_str =
+      $select_sql . $from_sql . $where_sql . $group_by_sql . $having_sql;
+
+    unless ( $return_object = $cmap_object->get_cached_results( 4, $sql_str ) )
+    {
+        $return_object =
+          $db->selectall_arrayref( $sql_str, { Columns => {} }, );
+        $self->store_cached_results( 4, $sql_str, $return_object );
+    }
+
+    return $return_object;
+}
+
+#-----------------------------------------------
+sub get_correspondence_count {    #YYY
+
+=pod
+
+=head2 get_correspondence_count
+
+=head3 Description
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item *
+
+=back
+
+=head3 Output
+
+Array of Hashes:
+
+  Keys:
+
+=head3 Cache Level (If Used): 
+
+Not using cache because this query is quicker.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $cmap_object                 = $args{'cmap_object'} or return;
+    my $clustering                  = $args{'clustering'};
+    my $split_evidence_types        = $args{'split_evidence_types'};
+    my $show_intraslot_corr         = $args{'show_intraslot_corr'};
+    my $slot_info                   = $args{'slot_info'} || {};
+    my $slot_info2                  = $args{'slot_info2'} || {};
+    my $map_aids                    = $args{'map_aids'} || [];
+    my $ignore_map_aids             = $args{'ignore_map_aids'} || [];
+    my $included_evidence_type_aids = $args{'included_evidence_type_aids'}
+      || [];
+    my $ignored_evidence_type_aids = $args{'ignored_evidence_type_aids'}
+      || [];
+    my $less_evidence_type_aids    = $args{'less_evidence_type_aids'}    || [];
+    my $greater_evidence_type_aids = $args{'greater_evidence_type_aids'} || [];
+    my $evidence_type_score        = $args{'evidence_type_score'}        || {};
+    my $ignored_feature_type_aids  = $args{'ignored_feature_type_aids'}  || [];
+    my $db                         = $cmap_object->db;
+    my $return_object;
+
+    my $select_sql = qq[
+        select   cl.map_id1,
+                 cl.map_id2
+    ];
+
+    my $from_sql = qq[
+        from     cmap_correspondence_lookup cl,
+                 cmap_feature_correspondence fc,
+                 cmap_correspondence_evidence ce
+    ];
+    my $where_sql = qq[
+        where    cl.feature_correspondence_id=
+                 fc.feature_correspondence_id
+        and      fc.is_enabled=1
+        and      fc.feature_correspondence_id=
+                 ce.feature_correspondence_id
+        and      cl.map_id1!=cl.map_id2
+    ];
+
+    my $group_by_sql = qq[
+        group by cl.map_id1,
+                 cl.map_id2,
+                 ce.evidence_type_accession
+    ];
+
+    if ($split_evidence_types) {
+        $select_sql .= ", ce.evidence_type_accession as evidence_type_aid \n";
+    }
+    else {
+        $select_sql .= ", '"
+          . DEFAULT->{'aggregated_type_substitute'}
+          . "' as evidence_type_aid \n ";
+    }
+    if ($clustering) {
+        $select_sql .=
+            ', cl.start_position1,cl.stop_position1,'
+          . 'cl.start_position2,cl.stop_position2';
+        $group_by_sql = '';
+    }
+    else {
+        $select_sql .= qq[
+            , count(distinct cl.feature_correspondence_id) as no_corr, 
+            min(cl.start_position2) as min_start2, 
+            max(cl.start_position2) as max_start2, 
+            avg(((cl.stop_position2-cl.start_position2)/2)
+            +cl.start_position2) as avg_mid2, 
+            avg(cl.start_position2) as start_avg2,
+            avg(cl.start_position1) as start_avg1,
+            min(cl.start_position1) as min_start1, 
+            max(cl.start_position1) as max_start1 , 
+            avg(((cl.stop_position1-cl.start_position1)/2)
+            +cl.start_position1) as avg_mid1 
+        ];
+    }
+
+    # Deal with slot_info
+    my @unrestricted_map_ids = ();
+    my $unrestricted_sql_1   = '';
+    my $restricted_sql_1     = '';
+    my $unrestricted_sql_2   = '';
+    my $restricted_sql_2     = '';
+    foreach my $slot_map_id ( keys( %{$slot_info} ) ) {
+        my $this_start = $slot_info->{$slot_map_id}->[0];
+        my $this_stop  = $slot_info->{$slot_map_id}->[1];
+
+        if (    defined($this_start)
+            and defined($this_stop) )
+        {
+            $restricted_sql_1 .=
+                " or (cl.map_id1="
+              . $slot_map_id
+              . " and (( cl.start_position1>="
+              . $this_start
+              . " and cl.start_position1<="
+              . $this_stop
+              . " ) or ( cl.stop_position1 is not null and "
+              . "  cl.start_position1<="
+              . $this_start
+              . " and cl.stop_position1>="
+              . $this_start . " )))";
+            if ($show_intraslot_corr) {
+                $restricted_sql_2 .=
+                    " or (cl.map_id2="
+                  . $slot_map_id
+                  . " and (( cl.start_position2>="
+                  . $this_start
+                  . " and cl.start_position2<="
+                  . $this_stop
+                  . " ) or ( cl.stop_position2 is not null and "
+                  . "  cl.start_position2<="
+                  . $this_start
+                  . " and cl.stop_position2>="
+                  . $this_start . " )))";
+            }
+
+        }
+        elsif ( defined($this_start) ) {
+            $restricted_sql_1 .=
+                " or (cl.map_id1="
+              . $slot_map_id
+              . " and (( cl.start_position1>="
+              . $this_start
+              . " ) or ( cl.stop_position1 is not null "
+              . " and cl.stop_position1>="
+              . $this_start . " )))";
+            if ($show_intraslot_corr) {
+                $restricted_sql_2 .=
+                    " or (cl.map_id2="
+                  . $slot_map_id
+                  . " and (( cl.start_position2>="
+                  . $this_start
+                  . " ) or ( cl.stop_position2 is not null "
+                  . " and cl.stop_position2>="
+                  . $this_start . " )))";
+            }
+        }
+        elsif ( defined($this_stop) ) {
+            $restricted_sql_1 .=
+                " or (cl.map_id1="
+              . $slot_map_id
+              . " and cl.start_position1<="
+              . $this_stop . ") ";
+            if ($show_intraslot_corr) {
+                $restricted_sql_2 .=
+                    " or (cl.map_id2="
+                  . $slot_map_id
+                  . " and cl.start_position2<="
+                  . $this_stop . ") ";
+            }
+        }
+        else {
+            push @unrestricted_map_ids, $slot_map_id;
+        }
+    }
+    if (@unrestricted_map_ids) {
+        $unrestricted_sql_1 .=
+          " or cl.map_id1 in (" . join( ',', @unrestricted_map_ids ) . ") ";
+        if ($show_intraslot_corr) {
+            $unrestricted_sql_2 .=
+              " or cl.map_id2 in (" . join( ',', @unrestricted_map_ids ) . ") ";
+        }
+    }
+    my $combined_sql = $restricted_sql_1 . $unrestricted_sql_1;
+    $combined_sql =~ s/^\s+or//;
+    $where_sql .= " and (" . $combined_sql . ")";
+
+    if (%$slot_info2) {
+
+        # Include reference slot maps
+        @unrestricted_map_ids = ();
+        foreach my $slot_map_id ( keys( %{$slot_info2} ) ) {
+            my $this_start = $slot_info2->{$slot_map_id}->[0];
+            my $this_stop  = $slot_info2->{$slot_map_id}->[1];
+
+            # $this_start is start [1] is stop
+            if (    defined( $this_start )
+                and defined( $this_start ) )
+            {
+                $restricted_sql_2 .=
+                    " or (cl.map_id2="
+                  . $slot_map_id
+                  . " and (( cl.start_position2>="
+                  . $this_start
+                  . " and cl.start_position2<="
+                  . $this_stop
+                  . " ) or ( cl.stop_position2 is not null and "
+                  . "  cl.start_position2<="
+                  . $this_start
+                  . " and cl.stop_position2>="
+                  . $this_start . " )))";
+            }
+            elsif ( defined($this_start) ) {
+                $restricted_sql_2 .=
+                    " or (cl.map_id2="
+                  . $slot_map_id
+                  . " and (( cl.start_position2>="
+                  . $this_start
+                  . " ) or ( cl.stop_position2 is not null "
+                  . " and cl.stop_position2>="
+                  . $this_start . " )))";
+            }
+            elsif ( defined($this_stop) ) {
+                $restricted_sql_2 .=
+                    " or (cl.map_id2="
+                  . $slot_map_id
+                  . " and cl.start_position2<="
+                  . $this_stop . ") ";
+            }
+            else {
+                push @unrestricted_map_ids, $slot_map_id;
+            }
+        }
+        if (@unrestricted_map_ids) {
+            $unrestricted_sql_2 .=
+              " or cl.map_id2 in (" . join( ',', @unrestricted_map_ids ) . ") ";
+        }
+    }
+    $combined_sql = $restricted_sql_2 . $unrestricted_sql_2;
+    $combined_sql =~ s/^\s+or//;
+    $where_sql .= " and (" . $combined_sql . ")";
+
+    if (   @$included_evidence_type_aids
+        or @$less_evidence_type_aids
+        or @$greater_evidence_type_aids )
+    {
+        my @join_array;
+        if (@$included_evidence_type_aids) {
+            push @join_array,
+              " ce.evidence_type_accession in ('"
+              . join( "','", @$included_evidence_type_aids ) . "')";
+        }
+        foreach my $et_aid (@$less_evidence_type_aids) {
+            push @join_array,
+              " ( ce.evidence_type_accession = '$et_aid' "
+              . " and ce.score <= "
+              . $evidence_type_score->{$et_aid} . " ) ";
+        }
+        foreach my $et_aid (@$greater_evidence_type_aids) {
+            push @join_array,
+              " ( ce.evidence_type_accession = '$et_aid' "
+              . " and ce.score >= "
+              . $evidence_type_score->{$et_aid} . " ) ";
+        }
+        $where_sql .= " and ( " . join( ' or ', @join_array ) . " ) ";
+    }
+    elsif (@$ignored_evidence_type_aids) {
+
+        #all are ignored, return nothing
+        return [];
+    }
+
+    my $sql_str = $select_sql . $from_sql . $where_sql . $group_by_sql;
+
+    unless ( $return_object = $cmap_object->get_cached_results( 4, $sql_str ) )
+    {
+        $return_object =
+          $db->selectall_arrayref( $sql_str, { Columns => {} }, );
+        $self->store_cached_results( 4, $sql_str, $return_object );
     }
 
     return $return_object;

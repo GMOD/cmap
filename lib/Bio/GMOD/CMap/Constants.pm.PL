@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.24 2005-04-28 21:49:20 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.25 2005-05-04 21:38:20 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.24 $)[-1];
+$VERSION = (qw$Revision: 1.25 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -264,6 +264,13 @@ use constant SHAPE_XY => {
 # Holds default values for misc items.
 #
 use constant DEFAULT => {
+    
+    #
+    # the value of the evidence type place holder
+    # Default: DEFAULT_EVIDENCE
+    #
+    aggregated_type_substitute => 'DEFAULT_EVIDENCE',
+
     #
     # The background color of the map image.
     # Default: lightgoldenrodyellow
