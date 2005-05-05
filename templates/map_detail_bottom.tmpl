@@ -167,22 +167,22 @@
                 [% IF i>0 %]<tr>[% END %]
 
                 <td>
-                    [% p.species_common_name %] - [% p.map_set_name %] - [% p.map_name %]
+                    [% p.species_common_name2 %] - [% p.map_set_short_name2 %] - [% p.map_name2 %]
                 </td>
                 <td>
-                    <a href="feature?feature_aid=[% p.feature_aid %]">[% p.feature_name %]</a>
+                    <a href="feature?feature_aid=[% p.feature_aid2 %]">[% p.feature_name2 %]</a>
                 </td>
                 <td>
-                    [% p.feature_type %]
+                    [% p.feature_type2 %]
                 </td>
                 <td align="right">
-                    [% p.start_position | commify %] [% IF p.stop_position>p.start_position %]- [% p.stop_position | commify %][% END %] ([% p.map_units %])
+                    [% p.start_position2 | commify %] [% IF p.stop_position2>p.start_position2 %]- [% p.stop_position2 | commify %][% END %] ([% p.map_units2 %])
                 </td>
                 <td>
                     [% p.evidence.join(', ') %]
                 </td>
                 <td align="center">
-                    <a href="map_details?ref_map_set_aid=[% reference_map.map_set_aid%];ref_map_aids=[% reference_map.map_aid %];comparative_maps=1%3dmap_aid%3d[% p.map_aid %];highlight=&quot;[% f.feature_name %]&quot;[% IF p.feature_name != f.feature_name %],&quot;[% p.feature_name %]&quot;[% END %]">View&nbsp;Maps</a>
+                    <a href="map_details?ref_map_set_aid=[% reference_map.map_set_aid%];ref_map_aids=[% reference_map.map_aid %];comparative_maps=1%3dmap_aid%3d[% p.map_aid2 %];highlight=&quot;[% f.feature_name %]&quot;[% IF p.feature_name2 != f.feature_name %],&quot;[% p.feature_name2 %]&quot;[% END %]">View&nbsp;Maps</a>
                 </td>
 
                 [% IF i>0 %]</tr>[% END %]

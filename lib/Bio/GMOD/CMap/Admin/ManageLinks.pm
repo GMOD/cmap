@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::ManageLinks;
 
 # vim: set ft=perl:
 
-# $Id: ManageLinks.pm,v 1.6 2005-04-28 05:28:36 mwz444 Exp $
+# $Id: ManageLinks.pm,v 1.7 2005-05-05 20:10:06 mwz444 Exp $
 
 =pod
 
@@ -14,7 +14,7 @@ Bio::GMOD::CMap::Admin::ManageLinks - imports and drops links
 
   use Bio::GMOD::CMap::Admin::ManageLinks;
 
-  my $link_manager = Bio::GMOD::CMap::Admin::ManageLinks->new(db=>$db);
+  my $link_manager = Bio::GMOD::CMap::Admin::ManageLinks->new();
   $link_manager->import(
        data_source => $data_source,
   ) or print "Error: ", $link_manager->error, "\n";
@@ -27,7 +27,7 @@ This module encapsulates the logic for handling imported links.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.6 $)[-1];
+$VERSION = (qw$Revision: 1.7 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -117,7 +117,7 @@ under and is displayed when the accessing the links.
 =cut
 
     my ( $self, %args ) = @_;
-    my $db            = $self->db              or die 'No database handle';
+    my $sql_object    = $self->sql             or die 'No sql handle';
     my $map_set_id    = $args{'map_set_id'}    or die 'No map set id';
     my $link_set_name = $args{'link_set_name'} or die 'No link set name';
     my $fh            = $args{'fh'}            or die 'No file handle';
@@ -160,13 +160,11 @@ under and is displayed when the accessing the links.
             "Missing following required columns: " . join( ', ', @missing ) );
     }
 
-    my $sql_str = q[
-        select accession_id as map_set_aid
-        from cmap_map_set ms
-        where ms.map_set_id=?
-        ];
-    my ( $map_set_aid, ) = $db->selectrow_array( $sql_str, {}, ($map_set_id) )
-      or return $self->error("$map_set_id is not a real map set id");
+    my $map_set_aid = $sql_object->internal_id_to_acc_id(
+        cmap_object => $self,
+        object_name => 'map_set',
+        id      => $map_set_id,
+    );
 
     $self->Print("Parsing file...\n");
     my ( $last_map_name, $last_map_id ) = ( '', '' );
@@ -207,25 +205,21 @@ under and is displayed when the accessing the links.
         my $map_start = $record->{'map_start'};
         my $map_stop  = $record->{'map_stop'};
         my $link_name = $record->{'link_name'};
-        my $sth       = $db->prepare(
-            qq[
-            select accession_id as map_aid
-            from   cmap_map map
-            where  map.map_set_id=?
-               and map.map_name=?
-            ]
-        );
 
         unless ( defined($map_aid) ) {
             return $self->error(
                 "Must specify a map_accession_id or a map_name\n" )
               unless ( defined($map_name) );
 
-            $sth->execute( $map_set_id, $map_name );
-            my $hr = $sth->fetchrow_hashref;
-            $map_aid = $hr->{'map_aid'};
+            my $temp_maps = $sql_object->get_maps(
+                cmap_object => $self,
+                map_set_id => $map_set_id,
+                map_name      => $map_name,
+            );
+            
             return $self->error( "$map_name was not in the dataset\n" )
-              unless ( defined($map_aid) );
+              unless ( $temp_maps and @$temp_maps );
+            $map_aid = $temp_maps->[0]{'map_aid'};
         }
         unless ($link_name) {
             $link_name = $map_name ? $map_name : "map_aid:$map_aid";

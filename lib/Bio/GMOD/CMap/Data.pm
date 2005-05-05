@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.230 2005-05-04 21:38:20 mwz444 Exp $
+# $Id: Data.pm,v 1.231 2005-05-05 20:10:01 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.230 $)[-1];
+$VERSION = (qw$Revision: 1.231 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -2459,9 +2459,9 @@ Returns the detail info for a map.
 # REPLACE 71 FCS
         my $positions = $sql_object->get_correspondence_details(
             cmap_object                 => $self,
-            feature_id                  => $feature->{'feature_id'},
-            map_set_aid                 => $comparative_map_set_aid,
-            map_aid                     => $comparative_map_aid,
+            feature_id1                  => $feature->{'feature_id'},
+            map_set_aid2                 => $comparative_map_set_aid,
+            map_aid2                     => $comparative_map_aid,
             included_evidence_type_aids => \@$included_evidence_type_aids,
             less_evidence_type_aids     => $less_evidence_type_aids,
             greater_evidence_type_aids  => $greater_evidence_type_aids,
@@ -2470,53 +2470,45 @@ Returns the detail info for a map.
 
         my ( %distinct_positions, %evidence );
         for my $position (@$positions) {
-            my $map_set_aid = $position->{'map_set_aid'};
-            my $map_aid     = $position->{'map_aid'};
-            $position->{'feature_type'} =
-              $feature_type_data->{ $position->{'feature_type_aid'} }
-              {'feature_type'};
-            $position->{'evidence_type'} =
-              $evidence_type_data->{ $position->{'evidence_type_aid'} }
-              {'evidence_type'};
-
-            unless ( defined $comparative_maps{$map_set_aid} ) {
-                for (
-                    qw[
-                    map_aid
-                    map_type_display_order
-                    map_type
-                    species_display_order
-                    species_common_name
-                    ms_display_order
-                    map_set
-                    map_set_name
-                    map_set_aid
-                    ]
-                  )
-                {
-                    $comparative_maps{$map_set_aid}{$_} = $position->{$_};
-                }
-
-                $comparative_maps{$map_set_aid}{'published_on'} =
-                  parsedate( $position->{'published_on'} );
-            }
+            my $map_set_aid = $position->{'map_set_aid2'};
+            my $map_aid     = $position->{'map_aid2'};
+            $comparative_maps{$map_set_aid}{'map_aid'} =
+              $position->{'map_aid2'};
+            $comparative_maps{$map_set_aid}{'map_type_display_order'} =
+              $position->{'map_type_display_order2'};
+            $comparative_maps{$map_set_aid}{'map_type'} =
+              $position->{'map_type2'};
+            $comparative_maps{$map_set_aid}{'species_display_order'} =
+              $position->{'species_display_order2'};
+            $comparative_maps{$map_set_aid}{'species_common_name'} =
+              $position->{'species_common_name2'};
+            $comparative_maps{$map_set_aid}{'ms_display_order'} =
+              $position->{'ms_display_order2'};
+            $comparative_maps{$map_set_aid}{'map_set'} =
+              $position->{'map_set2'};
+            $comparative_maps{$map_set_aid}{'map_set_name'} =
+              $position->{'map_set_name2'};
+            $comparative_maps{$map_set_aid}{'map_set_aid'} =
+              $position->{'map_set_aid2'};
+            $comparative_maps{$map_set_aid}{'published_on'} =
+              parsedate( $position->{'published_on'} );
 
             unless ( defined $comparative_maps{$map_set_aid}{'maps'}{$map_aid} )
             {
                 $comparative_maps{$map_set_aid}{'maps'}{$map_aid} = {
-                    display_order => $position->{'map_display_order'},
-                    map_name      => $position->{'map_name'},
-                    map_aid       => $position->{'map_aid'},
+                    display_order => $position->{'map_display_order2'},
+                    map_name      => $position->{'map_name2'},
+                    map_aid       => $position->{'map_aid2'},
                 };
             }
 
-            $distinct_positions{ $position->{'feature_id'} } = $position;
-            push @{ $evidence{ $position->{'feature_id'} } },
-              $position->{'evidence_type'};
+            $distinct_positions{ $position->{'feature_id2'} } = $position;
+            push @{ $evidence{ $position->{'feature_id2'} } },
+              $position->{'evidence_type2'};
         }
 
         for my $position ( values %distinct_positions ) {
-            $position->{'evidence'} = $evidence{ $position->{'feature_id'} };
+            $position->{'evidence'} = $evidence{ $position->{'feature_id2'} };
         }
 
         $feature->{'no_positions'} = scalar keys %distinct_positions;
