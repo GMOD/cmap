@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.45 2005-01-05 03:04:18 mwz444 Exp $
+# $Id: Utils.pm,v 1.46 2005-05-06 21:35:29 mwz444 Exp $
 
 =head1 NAME
 
@@ -30,7 +30,7 @@ use Bio::GMOD::CMap::Constants;
 use POSIX;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.45 $)[-1];
+$VERSION = (qw$Revision: 1.46 $)[-1];
 
 use base 'Exporter';
 
@@ -43,7 +43,6 @@ my @subs = qw[
   label_distribution
   next_number
   parse_words
-  pk_name
   simple_column_distribution
   fake_selectall_arrayref
   sort_selectall_arrayref
@@ -650,13 +649,6 @@ sub parse_words {
     return @words;
 }
 
-# ----------------------------------------------------
-sub pk_name {
-    my $table_name = shift;
-    $table_name =~ s/^cmap_//;
-    $table_name .= '_id';
-    return $table_name;
-}
 
 # ----------------------------------------------------
 

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Export;
 
 # vim: set ft=perl:
 
-# $Id: Export.pm,v 1.18 2005-05-05 20:10:06 mwz444 Exp $
+# $Id: Export.pm,v 1.19 2005-05-06 21:35:29 mwz444 Exp $
 
 =pod
 
@@ -29,7 +29,7 @@ of data out of CMap.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.18 $)[-1];
+$VERSION = (qw$Revision: 1.19 $)[-1];
 
 use Data::Dumper;
 use File::Spec::Functions;
@@ -275,22 +275,28 @@ Feature correspondence
 
     my $sql_object = $self->sql or return;
     my @map_set_ids = map { $_->{'map_set_id'} } @{ $args{'map_sets'} || [] }; 
-    my $fc = $sql_object->get_correspondences_for_export(
+    my $fc = $sql_object->get_correspondences_simple(
         cmap_object => $self,
         map_set_ids1      => \@map_set_ids,
         map_set_ids2      => \@map_set_ids,
     );
+    foreach my $row (@$fc){
+        $row->{'object_id'} = $row->{'feature_correspondence_id'};
+        delete($row->{'feature_correspondence_id'});
+    }
 
     unless ( $args{'no_attributes'} ) {
         $self->get_attributes_and_xrefs( 'feature_correspondence', $fc );
     }
 
-    my $evidence = $sql_object->get_evidence_for_export(
+    my $evidence = $sql_object->get_evidence_simple(
         cmap_object => $self,
         map_set_ids     => \@map_set_ids,
     );
     my %evidence_lookup = ();
     for my $e (@$evidence) {
+        $e->{'object_id'} = $row->{'correspondence_evidence_id'};
+        delete($e->{'correspondence_evidence_id'});
         push @{ $evidence_lookup{ $e->{'object_id'} } }, $e;
     }
 
@@ -342,21 +348,29 @@ hash with map set and species
     my ( $self, %args ) = @_;
     my $sql_object  = $self->sql or return;
 
-    my $map_sets = $sql_object->get_map_sets_for_export(
+    my $map_sets = $sql_object->get_map_sets_simple(
         cmap_object => $self,
         map_set_ids =>
           [ map { $_->{'map_set_id'} } @{ $args{'map_sets'} || [] } ],
     );
+    foreach my $row (@$map_sets){
+        $row->{'object_id'} = $row->{'map_set_id'};
+        delete($row->{'map_set_id'});
+    }
 
     my ( %species_ids, %map_type_aids, %ft_ids );
     for my $ms (@$map_sets) {
         $species_ids{ $ms->{'species_id'} }     = 1;
         $map_type_aids{ $ms->{'map_type_aid'} } = 1;
 
-        $ms->{'map'} = $sql_object->get_maps_for_export(
+        $ms->{'map'} = $sql_object->get_maps_simple(
             cmap_object => $self,
             map_set_id  => $ms->{'object_id'},
         );
+        foreach my $row (@{$ms->{'map'}}){
+            $row->{'object_id'} = $row->{'map_id'};
+            delete($row->{'map_id'});
+        }
 
         $self->get_attributes_and_xrefs( 'map', $ms->{'map'} );
 
@@ -365,10 +379,14 @@ hash with map set and species
         }
 
         for my $map ( @{ $ms->{'map'} } ) {
-            $map->{'feature'} = $sql_object->get_features_for_export(
+            $map->{'feature'} = $sql_object->get_features_simple(
                 cmap_object => $self,
                 map_id  => $map->{'object_id'},
             );
+            foreach my $row (@{$map->{'feature'}}){
+                $row->{'object_id'} = $row->{'feature_id'};
+                delete($row->{'feature_id'});
+            }
 
             my $aliases = $sql_object->get_feature_aliases(
                 cmap_object => $self,

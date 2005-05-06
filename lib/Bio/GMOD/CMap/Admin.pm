@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.74 2005-04-28 21:49:20 mwz444 Exp $
+# $Id: Admin.pm,v 1.75 2005-05-06 21:35:18 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.74 $)[-1];
+$VERSION = (qw$Revision: 1.75 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -897,14 +897,6 @@ If not defined, the object_id will be assigned to it.
             $et_id, $score, $rank,
         );
 
-        #my $score_arg;
-        #if ( defined $score ) {
-        #    push @insert_args, $score;
-        #    $score_arg = '?';
-        #}
-        #else {
-        #    $score_arg = undef;
-        #}
         $db->do(
             qq[
                 insert

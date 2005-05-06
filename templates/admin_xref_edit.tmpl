@@ -23,7 +23,7 @@
                 </td>
                 <td>
                     <input type="hidden" name="return_action" value="[% apr.param('return_action') %]">
-                    <input type="hidden" name="table_name" value="[% table_name %]">
+                    <input type="hidden" name="object_name" value="[% object_name %]">
                     <input type="hidden" name="object_id" value="[% object_id %]">
                     [% db_object.name %] ([% db_object.object_name %]) 
                 </td>
@@ -34,10 +34,10 @@
                     Database Object:
                 </td>
                 <td>
-                    <select name="table_name">
+                    <select name="object_name">
                         <option value="">--Please Select--</option>
                         [% FOREACH o=xref_objects %]
-                            <option value="[% o.table_name %]"[% IF xref.table_name == o.table_name %] selected[% END %]>[% o.object_name %]</option>
+                            <option value="[% o.object_name %]"[% IF xref.object_name == o.object_name %] selected[% END %]>[% o.object_name %]</option>
                         [% END %]
                     </select>
                 </td>

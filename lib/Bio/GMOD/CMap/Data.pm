@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.231 2005-05-05 20:10:01 mwz444 Exp $
+# $Id: Data.pm,v 1.232 2005-05-06 21:35:28 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.231 $)[-1];
+$VERSION = (qw$Revision: 1.232 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -96,13 +96,13 @@ sub correspondence_detail_data {
 
         $corr->{'attributes'} = $sql_object->get_attributes(
             cmap_object => $self,
-            object_name      => 'feature_correspondence',
+            object_type      => 'feature_correspondence',
             object_id   => $corr->{'feature_correspondence_id'},
         );
 
         $corr->{'xrefs'} = $sql_object->get_xrefs(
             cmap_object => $self,
-            object_name      => 'feature_correspondence',
+            object_type      => 'feature_correspondence',
             object_id   => $corr->{'feature_correspondence_id'},
         );
 
@@ -168,7 +168,7 @@ Returns a string of tab-delimited data for either a map or map set.
     if ($map_aid) {
         $map_id = $sql_object->acc_id_to_internal_id(
             cmap_object => $self,
-            object_name => 'map',
+            object_type => 'map',
             acc_id      => $map_aid,
         ) 
           or return $self->error("'$map_aid' is not a valid map accession ID");
@@ -178,7 +178,7 @@ Returns a string of tab-delimited data for either a map or map set.
     if ($map_set_aid) {
         $map_set_id = $sql_object->acc_id_to_internal_id(
             cmap_object => $self,
-            object_name => 'map_set',
+            object_type => 'map_set',
             acc_id      => $map_set_aid,
         )
           or return $self->error(
@@ -1369,12 +1369,12 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
             $ref_map_set_info->{'attributes'} = 
               $sql_object->get_attributes(
                 cmap_object => $self,
-                object_name      => 'map_set',
+                object_type      => 'map_set',
                 object_id   => $ref_map_set_info->{'map_set_id'},
               );
             $ref_map_set_info->{'xrefs'} = $sql_object->get_xrefs(
                 cmap_object => $self,
-                object_name      => 'cmap_map_set',
+                object_type      => 'cmap_map_set',
                 object_id   => $ref_map_set_info->{'map_set_id'},
             );
         }
@@ -1615,7 +1615,7 @@ Returns the data for the feature alias detail page.
     $alias->{'attributes'} =
       $self->sql->get_attributes(
         cmap_object => $self,
-        object_name      => 'feature_alias',
+        object_type      => 'feature_alias',
         object_id   => $alias->{'feature_alias_id'},
       );
     $self->get_multiple_xrefs(
@@ -1776,7 +1776,7 @@ Given a feature acc. id, find out all the details on it.
     $feature->{'attributes'} =
       $self->sql->get_attributes(
         cmap_object => $self,
-        object_name      => 'feature',
+        object_type      => 'feature',
         object_id   => $feature->{'feature_id'},
       );
 # REPLACE 35 ALIAS YYY
@@ -2240,7 +2240,7 @@ Returns the data for drawing comparative maps.
 # REPLACE 44 ATT YYY
     my $attributes = $sql_object->get_attributes(
         cmap_object => $self,
-        object_name => 'map_set',
+        object_type => 'map_set',
         get_all     => 1,
         order_by    => ' object_id, display_order, attribute_name ',
     );
@@ -2378,7 +2378,7 @@ Returns the detail info for a map.
     $reference_map->{'attributes'} =
       $self->sql->get_attributes(
         cmap_object => $self,
-        object_name      => 'map',
+        object_type      => 'map',
         object_id   => $map_id,
       );
     $self->get_multiple_xrefs(
@@ -2697,7 +2697,7 @@ Returns data on species.
 # REPLACE 52 ATT YYY
     my $attributes = $sql_object->get_attributes(
         cmap_object => $self,
-        object_name => 'species',
+        object_type => 'species',
         get_all     => 1,
         order_by    => ' object_id, display_order, attribute_name ',
     );
@@ -3020,7 +3020,7 @@ sub cmap_map_search_data {
 # REPLACE 58 YYY
         $ref_map_set_id = $self->sql->acc_id_to_internal_id(
             cmap_object => $self,
-            object_name => 'map_set',
+            object_type => 'map_set',
             acc_id      => $ref_map_set_aid,
         ) ;
     }
@@ -3735,7 +3735,7 @@ Uses ref_map_order() to create a hash designating the maps order.
             foreach my $aid (@ref_map_aids) {
                 my $map_id = $self->sql->acc_id_to_internal_id(
                     cmap_object => $self,
-                    object_name => 'map',
+                    object_type => 'map',
                     acc_id      => $aid,
                 );
                 $return_hash{$map_id} = $i + 1;

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.75 2005-05-05 20:10:07 mwz444 Exp $
+# $Id: Generic.pm,v 1.76 2005-05-06 21:35:30 mwz444 Exp $
 
 =head1 NAME
 
@@ -33,7 +33,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.75 $)[-1];
+$VERSION = (qw$Revision: 1.76 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -76,6 +76,16 @@ Initialize values that will be needed.
         species                 => 'cmap_species',
         xref                    => 'cmap_xref',
     };
+    $self->{'OBJECT_TYPES'} = {
+        cmap_correspondence_evidence => 'correspondence_evidence',
+        cmap_feature                 => 'feature',
+        cmap_feature_alias           => 'feature_alias',
+        cmap_feature_correspondence  => 'feature_correspondence',
+        cmap_map                     => 'map',
+        cmap_map_set                 => 'map_set',
+        cmap_species                 => 'species',
+        cmap_xref                    => 'xref',
+    };
 
     return $self;
 }
@@ -95,7 +105,7 @@ The strftime string for date format.
     return '%Y-%m-%d';
 }
 
-#------------NEW METHODS--------------------------------------------------
+# __________________NEW METHODS_______________________________
 
 #-----------------------------------------------
 sub acc_id_to_internal_id {    #YYY 1 58
@@ -132,9 +142,9 @@ Not using cache because this query is quicker.
 
     my ( $self, %args ) = @_;
     my $cmap_object = $args{'cmap_object'} or return;
-    my $object_name = $args{'object_name'} or $self->error('No object name');
+    my $object_type = $args{'object_type'} or $self->error('No object name');
     my $acc_id      = $args{'acc_id'}      or $self->error('No accession id');
-    my $table_name = $self->{'TABLE_NAMES'}->{$object_name};
+    my $table_name = $self->{'TABLE_NAMES'}->{$object_type};
     my $id_field   = $self->{'ID_FIELDS'}->{$table_name};
     my $aid_field  = 'accession_id';
 
@@ -189,9 +199,9 @@ Not using cache because this query is quicker.
 
     my ( $self, %args ) = @_;
     my $cmap_object = $args{'cmap_object'} or return;
-    my $object_name = $args{'object_name'} or $self->error('No object name');
+    my $object_type = $args{'object_type'} or $self->error('No object name');
     my $id          = $args{'id'}          or $self->error('No id');
-    my $table_name = $self->{'TABLE_NAMES'}->{$object_name};
+    my $table_name = $self->{'TABLE_NAMES'}->{$object_type};
     my $id_field   = $self->{'ID_FIELDS'}->{$table_name};
     my $aid_field  = 'accession_id';
 
@@ -199,13 +209,82 @@ Not using cache because this query is quicker.
     my $return_object;
 
     my $sql_str = qq[
-            select $aid_field as ] . $object_name . qq[_aid 
+            select $aid_field as ] . $object_type . qq[_aid 
             from   $table_name
             where  $id_field=?
       ];
     $return_object = $db->selectrow_array( $sql_str, {}, ($id) )
       or $self->error(
-        qq[Unable to find accession id for id "$id" in table "$table_name"] );
+        qq[Unable to find accession id for id "$id" in table "$table_name"]);
+
+    return $return_object;
+}
+
+#-----------------------------------------------
+sub get_object_name {    #YYY
+
+=pod
+
+=head2 get_object_name
+
+=head3 Description
+
+Retrieves the name attached to a database object.
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item * Object such as feature or map_set (object_type)
+
+=item * Object ID (object_id) 
+
+=back
+
+=head3 Output
+
+Array of Hashes:
+
+  Keys:
+    attribute_id,
+    object_id,
+    table_name,
+    display_order,
+    is_public,
+    attribute_name,
+    attribute_value
+
+=head3 Cache Level (If Used): 4
+
+Not using cache because this query is quicker.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $cmap_object       = $args{'cmap_object'} or return;
+    my $object_type       = $args{'object_type'};
+    my $object_id         = $args{'object_id'};
+    my $object_name_field = $object_type . "_name";
+    my $object_id_field   = $object_type . "_id";
+
+    my $db = $cmap_object->db;
+    my $return_object;
+    my @identifiers = ();
+
+    my $table_name = $self->{'TABLE_NAMES'}->{$object_type};
+    if ( !$order_by || $order_by eq 'display_order' ) {
+        $order_by = 'display_order,attribute_name';
+    }
+
+    my $sql_str = qq[
+        select $object_name_field
+        from   $table_name
+        where  $object_id_field=$object_id
+    ];
+
+    $return_object = $db->selectrow_array($sql_str);
 
     return $return_object;
 }
@@ -227,11 +306,11 @@ Retrieves the attributes attached to a database object.
 
 =item * Object that inherits from CMap.pm (cmap_object)
 
-=item * Object such as feature or map_set (object_name)
+=item * Object such as feature or map_set (object_type)
 
 =item * [ Object ID (object_id) ]
 
-If object_id is not supplied, this will return all attributes for this object_name
+If object_id is not supplied, this will return all attributes for this object_type
 that have non-null object_ids.
 
 =item * [ Order by clause (order_by) ]
@@ -263,16 +342,17 @@ Not using cache because this query is quicker.
 =cut
 
     my ( $self, %args ) = @_;
-    my $cmap_object = $args{'cmap_object'} or return;
-    my $object_name = $args{'object_name'} or return;
-    my $object_id   = $args{'object_id'};
-    my $order_by    = $args{'order_by'};
-    my $get_all = $args{'get_all'} || 0;
-    my $db = $cmap_object->db;
+    my $cmap_object  = $args{'cmap_object'} or return;
+    my $object_type  = $args{'object_type'};
+    my $attribute_id = $args{'attribute_id'};
+    my $object_id    = $args{'object_id'};
+    my $order_by     = $args{'order_by'};
+    my $get_all      = $args{'get_all'} || 0;
+    my $db           = $cmap_object->db;
     my $return_object;
     my @identifiers = ();
 
-    my $table_name = $self->{'TABLE_NAMES'}->{$object_name};
+    my $table_name = $self->{'TABLE_NAMES'}->{$object_type};
     if ( !$order_by || $order_by eq 'display_order' ) {
         $order_by = 'display_order,attribute_name';
     }
@@ -286,23 +366,39 @@ Not using cache because this query is quicker.
                  attribute_name,
                  attribute_value
         from     cmap_attribute
-        where    table_name = ?
     ];
-    push @identifiers, $table_name;
+    my $where_sql = '';
+    my $order_by  = '';
+    if ($table_name) {
+        push @identifiers, $table_name;
+        $where_sql .= $where_sql ? " and " : " where ";
+        $where_sql .= " table_name = ? ";
+    }
 
     if ($object_id) {
         push @identifiers, $object_id;
-        $sql_str .= " and object_id=? ";
+        $where_sql .= $where_sql ? " and " : " where ";
+        $where_sql .= " object_id=? ";
     }
     elsif ( !$get_all ) {
-        $sql_str .= " object_id is not null ";
+        $where_sql .= $where_sql ? " and " : " where ";
+        $where_sql .= " object_id is not null ";
     }
 
-    $sql_str .= qq[
-            order by $order_by
-    ];
+    if ($order_by) {
+        $order_by .= " order by $order_by ";
+    }
+
+    my $sql_str = $select_sql . $where_sql . $order_by;
+
     $return_object =
       $db->selectall_arrayref( $sql_str, { Columns => {} }, @identifiers );
+
+    foreach my $row (@$return_object) {
+        $row->{'object_type'} =
+          $self->{'OBJECT_TYPES'}->{ $row->{'table_name'} };
+        delete( $row->{'table_name'} );
+    }
 
     return $return_object;
 }
@@ -324,11 +420,11 @@ etrieves the attributes attached to a database object.
 
 =item * Object that inherits from CMap.pm (cmap_object)
 
-=item * Object such as feature or map_set (object_name)
+=item * Object such as feature or map_set (object_type)
 
 =item * [ Object ID (object_id) ]
 
-If object_id is not supplied, this will return all attributes for this object_name
+If object_id is not supplied, this will return all attributes for this object_type
 that have non-null object_ids.
 
 =item * [ Order by clause (order_by) ]
@@ -354,43 +450,55 @@ Not using cache because this query is quicker.
 
     my ( $self, %args ) = @_;
     my $cmap_object = $args{'cmap_object'} or return;
-    my $object_name = $args{'object_name'} or return;
+    my $object_type = $args{'object_type'};
+    my $xref_id     = $args{'xref_id'};
     my $object_id   = $args{'object_id'};
     my $order_by    = $args{'order_by'};
     my $db          = $cmap_object->db;
     my $return_object;
+    my @identifiers = ();
 
-    my $table_name = $self->{'TABLE_NAMES'}->{$object_name};
+    my $table_name = $self->{'TABLE_NAMES'}->{$object_type};
     if ( !$order_by || $order_by eq 'display_order' ) {
         $order_by = 'display_order,xref_name';
     }
 
     my $sql_str = qq[
-            select   xref_id,
-                     object_id,
-                     display_order,
-                     xref_name,
-                     xref_url
-            from     cmap_xref
-            where    
+        select   xref_id,
+                 object_id,
+                 table_name,
+                 display_order,
+                 xref_name,
+                 xref_url
+        from     cmap_xref
     ];
-    $sql_str .= $object_id
-      ? " object_id=? "
-      : " object_id is not null ";
-    $sql_str .= qq[
-            and      table_name=?
-            order by $order_by
-    ];
-    if ($object_id) {
-        $return_object = $db->selectall_arrayref(
-            $sql_str,
-            { Columns => {} },
-            ( $object_id, $table_name )
-        );
+    my $where_sql = '';
+    my $order_by  = '';
+    if ($table_name) {
+        push @identifiers, $table_name;
+        $where_sql .= $where_sql ? " and " : " where ";
+        $where_sql .= " table_name = ? ";
     }
-    else {
-        $return_object =
-          $db->selectall_arrayref( $sql_str, { Columns => {} }, ($table_name) );
+
+    if ($object_id) {
+        push @identifiers, $object_id;
+        $where_sql .= $where_sql ? " and " : " where ";
+        $where_sql .= " object_id=? ";
+    }
+
+    if ($order_by) {
+        $order_by .= " order by $order_by ";
+    }
+
+    my $sql_str = $select_sql . $where_sql . $order_by;
+
+    $return_object =
+      $db->selectall_arrayref( $sql_str, { Columns => {} }, @identifiers );
+
+    foreach my $row (@$return_object) {
+        $row->{'object_type'} =
+          $self->{'OBJECT_TYPES'}->{ $row->{'table_name'} };
+        delete( $row->{'table_name'} );
     }
 
     return $return_object;
@@ -421,7 +529,7 @@ attributes attached to all features and all maps, etc.
 Array of Hashes:
 
   Keys:
-    table_name,
+    object_type,
     display_order,
     xref_name,
     xref_url
@@ -434,21 +542,35 @@ Not using cache because this query is quicker.
 
     my ( $self, %args ) = @_;
     my $cmap_object = $args{'cmap_object'} or return;
-    my $db = $cmap_object->db;
+    my $object_type = $args{'object_type'};
+    my $order_by    = $args{'order_by'};
+    my $db          = $cmap_object->db;
     my $return_object;
 
-    $return_object = $db->selectall_arrayref(
-        q[
-            select table_name,
-                   display_order,
-                   xref_name,
-                   xref_url
-            from   cmap_xref
-            where  object_id is null
-            or     object_id=0
-        ],
-        { Columns => {} }
-    );
+    my $sql_str = qq[
+        select table_name,
+               display_order,
+               xref_name,
+               xref_url
+        from   cmap_xref
+        where  (object_id is null
+        or     object_id=0)
+    ];
+    if ($object_type) {
+        my $table_name = $self->{'TABLE_NAMES'}->{$object_type};
+        $sql_str .= " and table_name = '$table_name' ";
+    }
+
+    if ($order_by) {
+        $sql_str .= " order by $order_by ";
+    }
+
+    $return_object = $db->selectall_arrayref( $sql_str, { Columns => {} } );
+    foreach my $row (@$return_object) {
+        $row->{'object_type'} =
+          $self->{'OBJECT_NAMES'}->{ $row->{'table_name'} };
+        delete( $row->{'table_name'} );
+    }
 
     return $return_object;
 }
@@ -1064,6 +1186,7 @@ Not using cache because this query is quicker.
     my ( $self, %args ) = @_;
     my $cmap_object = $args{'cmap_object'} or return;
     my $feature_id  = $args{'feature_id'};
+    my $feature_alias_id  = $args{'feature_alias_id'};
     my $feature_ids = $args{'feature_ids'} || [];
     my $feature_aid = $args{'feature_aid'};
     my $alias       = $args{'alias'};
@@ -1090,7 +1213,11 @@ Not using cache because this query is quicker.
     ];
 
     # add the were clause for each possible identifier
-    if (@$feature_ids) {
+    if ($feature_alias_id) {
+        push @identifiers, $feature_alias_id;
+        $where_sql .= " and fa.feature_alias_id = ? ";
+    }
+    elsif (@$feature_ids) {
         $where_sql .=
           " and f.feature_id in (" . join( ",", sort @$feature_ids ) . ") ";
     }
@@ -1464,8 +1591,8 @@ Not using cache because this query is quicker.
 =cut
 
     my ( $self, %args ) = @_;
-    my $cmap_object = $args{'cmap_object'} or return;
-    my $species_id      = $args{'species_id'} ;
+    my $cmap_object       = $args{'cmap_object'} or return;
+    my $species_id        = $args{'species_id'};
     my $species_aids      = $args{'species_aids'} || [];
     my $is_relational_map = $args{'is_relational_map'};
     my $is_enabled        = $args{'is_enabled'};
@@ -1494,7 +1621,7 @@ Not using cache because this query is quicker.
 
     if ($species_id) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
-        $where_sql .= " s.species_id = $species_id "; 
+        $where_sql .= " s.species_id = $species_id ";
     }
     elsif (@$species_aids) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
@@ -2628,9 +2755,9 @@ Not using cache because this query is quicker.
 
     my ( $self, %args ) = @_;
     my $cmap_object                 = $args{'cmap_object'} or return;
-    my $feature_id1                  = $args{'feature_id1'};
-    my $map_set_aid2                 = $args{'map_set_aid2'};
-    my $map_aid2                     = $args{'map_aid2'};
+    my $feature_id1                 = $args{'feature_id1'};
+    my $map_set_aid2                = $args{'map_set_aid2'};
+    my $map_aid2                    = $args{'map_aid2'};
     my $included_evidence_type_aids = $args{'included_evidence_type_aids'}
       || [];
     my $less_evidence_type_aids    = $args{'less_evidence_type_aids'}    || [];
@@ -2639,8 +2766,8 @@ Not using cache because this query is quicker.
     my $disregard_evidence_type    = $args{'disregard_evidence_type'}    || 0;
     my $db                         = $cmap_object->db;
     my $map_type_data              = $cmap_object->map_type_data();
-    my $feature_type_data              = $cmap_object->feature_type_data();
-    my $evidence_type_data              = $cmap_object->evidence_type_data();
+    my $feature_type_data          = $cmap_object->feature_type_data();
+    my $evidence_type_data         = $cmap_object->evidence_type_data();
     my $return_object;
 
     my $sql_str = q[
@@ -2687,7 +2814,7 @@ Not using cache because this query is quicker.
         and      ms2.species_id=s2.species_id
     ];
 
-    if ($feature_id1){ 
+    if ($feature_id1) {
         $sql_str .= " and cl.feature_id1=$feature_id1 ";
     }
 
@@ -2736,28 +2863,25 @@ Not using cache because this query is quicker.
             map2.map_name, f2.start_position, f2.feature_name
     ];
 
-    $return_object =
-      $db->selectall_arrayref( $sql_str, { Columns => {} } );
+    $return_object = $db->selectall_arrayref( $sql_str, { Columns => {} } );
 
     foreach my $row ( @{$return_object} ) {
         $row->{'map_type2'} =
           $map_type_data->{ $row->{'map_type_aid2'} }{'map_type'};
         $row->{'feature_type2'} =
-          $feature_type_data->{ $row->{'feature_type_aid2'} }
-          {'feature_type'};
+          $feature_type_data->{ $row->{'feature_type_aid2'} }{'feature_type'};
         $row->{'evidence_type'} =
-          $evidence_type_data->{ $row->{'evidence_type_aid'} }
-          {'evidence_type'};
+          $evidence_type_data->{ $row->{'evidence_type_aid'} }{'evidence_type'};
     }
     return $return_object;
 }
 
 #-----------------------------------------------
-sub get_correspondences_for_export {    #YYY
+sub get_correspondences_simple {    #YYY
 
 =pod
 
-=head2 get_correspondences_for_export
+=head2 get_correspondences_simple
 
 =head3 Description
 
@@ -2786,14 +2910,14 @@ Not using cache because this query is quicker.
 =cut
 
     my ( $self, %args ) = @_;
-    my $cmap_object                 = $args{'cmap_object'} or return;
-    my $map_set_ids1                 = $args{'map_set_ids1'} || [];
-    my $map_set_ids2                 = $args{'map_set_ids2'} || [];
-    my $db                         = $cmap_object->db;
+    my $cmap_object = $args{'cmap_object'} or return;
+    my $map_set_ids1 = $args{'map_set_ids1'} || [];
+    my $map_set_ids2 = $args{'map_set_ids2'} || [];
+    my $db           = $cmap_object->db;
     my $return_object;
 
     my $sql_str = q[
-        select fc.feature_correspondence_id as object_id,
+        select fc.feature_correspondence_id,
                fc.accession_id,
                fc.is_enabled,
                f1.accession_id as feature_aid1,
@@ -2809,20 +2933,17 @@ Not using cache because this query is quicker.
         and      f2.map_id=map2.map_id
     ];
 
-    if (@$map_set_ids1){
-        $sql_str .= "and map1.map_set_id in ("
-          . join(",",sort @$map_set_ids1)
-          . ") ";
+    if (@$map_set_ids1) {
+        $sql_str .=
+          "and map1.map_set_id in (" . join( ",", sort @$map_set_ids1 ) . ") ";
     }
 
-    if (@$map_set_ids2){
-        $sql_str .= "and map2.map_set_id in ("
-          . join(",",sort @$map_set_ids2)
-          . ") ";
+    if (@$map_set_ids2) {
+        $sql_str .=
+          "and map2.map_set_id in (" . join( ",", sort @$map_set_ids2 ) . ") ";
     }
 
-    $return_object =
-      $db->selectall_arrayref( $sql_str, { Columns => {} } );
+    $return_object = $db->selectall_arrayref( $sql_str, { Columns => {} } );
 
     return $return_object;
 }
@@ -3043,7 +3164,6 @@ Not using cache because this query is quicker.
                   . join( "','", @$ignored_feature_type_aids ) . "') ";
             }
 
-            #xx5
             if (   @$included_evidence_type_aids
                 or @$less_evidence_type_aids
                 or @$greater_evidence_type_aids )
@@ -3331,22 +3451,6 @@ Not using cache because this query is quicker.
 }
 
 #-----------------------------------------------
-sub orderOutFromZero {    #YYY
-
-=pod
-
-=head2 orderOutFromZero
-
-=head3 Description
-
-Sorting method: Return the sort in this order (0,1,-1,-2,2,-3,3,)
-
-=cut
-
-    return ( abs($a) cmp abs($b) );
-}
-
-#-----------------------------------------------
 sub get_map_search_info {    #YYY
 
 =pod
@@ -3496,11 +3600,11 @@ Not using cache because this query is quicker.
 }
 
 #-----------------------------------------------
-sub get_evidence_for_export {    #YYY
+sub get_evidence_simple {    #YYY
 
 =pod
 
-=head2 get_evidence_for_export
+=head2 get_evidence_simple
 
 =head3 Description
 
@@ -3527,21 +3631,21 @@ Not using cache because this query is quicker.
 =cut
 
     my ( $self, %args ) = @_;
-    my $cmap_object               = $args{'cmap_object'} or return;
-    my $map_set_ids = $args{'map_set_ids'}||[];
-    my $db                        = $cmap_object->db;
-    my $evidence_type_data        = $cmap_object->evidence_type_data();
+    my $cmap_object = $args{'cmap_object'} or return;
+    my $map_set_ids        = $args{'map_set_ids'} || [];
+    my $db                 = $cmap_object->db;
+    my $evidence_type_data = $cmap_object->evidence_type_data();
     my $return_object;
 
     my $sql_str = q[
-        select ce.correspondence_evidence_id as object_id,
+        select ce.correspondence_evidence_id,
                    ce.feature_correspondence_id,
                    ce.accession_id,
                    ce.evidence_type_accession as evidence_type_aid,
                    ce.score
             from   cmap_correspondence_evidence ce
     ];
-    if (@$map_set_ids){
+    if (@$map_set_ids) {
         $sql_str .= q[
                  , cmap_feature_correspondence fc,
                    cmap_feature f1,
@@ -3554,14 +3658,12 @@ Not using cache because this query is quicker.
             and    fc.feature_id2=f2.feature_id
             and    f2.map_id=map2.map_id
         ];
-        $sql_str .= "and map1.map_set_id in ("
-          . join(",",sort @$map_set_ids)
-          . ") ";
-        $sql_str .= "and map2.map_set_id in ("
-          . join(",",sort @$map_set_ids)
-          . ") ";
+        $sql_str .=
+          "and map1.map_set_id in (" . join( ",", sort @$map_set_ids ) . ") ";
+        $sql_str .=
+          "and map2.map_set_id in (" . join( ",", sort @$map_set_ids ) . ") ";
     }
-    $return_object = $db->selectall_arrayref( $sql_str, { Columns => {} });
+    $return_object = $db->selectall_arrayref( $sql_str, { Columns => {} } );
 
     foreach my $row ( @{$return_object} ) {
         $row->{'rank'} =
@@ -4078,11 +4180,11 @@ Not using cache because this query is quicker.
 }
 
 #-----------------------------------------------
-sub get_map_sets_for_export {    #YYY
+sub get_map_sets_simple {    #YYY
 
 =pod
 
-=head2 get_map_sets_for_export
+=head2 get_map_sets_simple
 
 =head3 Description
 
@@ -4110,11 +4212,11 @@ Not using cache because this query is quicker.
 
     my ( $self, %args ) = @_;
     my $cmap_object = $args{'cmap_object'} or return;
-    my $map_set_ids           = $args{'map_set_ids'}||[];
-    my $db          = $cmap_object->db;
+    my $map_set_ids = $args{'map_set_ids'} || [];
+    my $db = $cmap_object->db;
     my $return_object;
     my $sql_str = qq[
-        select map_set_id as object_id,
+        select map_set_id,
                accession_id,
                map_set_name,
                map_set_short_name,
@@ -4131,7 +4233,7 @@ Not using cache because this query is quicker.
                map_units
         from   cmap_map_set ms
     ];
-    if (@$map_set_ids){
+    if (@$map_set_ids) {
         $sql_str .= 'where map_set_id in (' . join( ',', @$map_set_ids ) . ')';
     }
 
@@ -4141,11 +4243,11 @@ Not using cache because this query is quicker.
 }
 
 #-----------------------------------------------
-sub get_maps_for_export {    #YYY
+sub get_maps_simple {    #YYY
 
 =pod
 
-=head2 get_maps_for_export
+=head2 get_maps_simple
 
 =head3 Description
 
@@ -4173,11 +4275,11 @@ Not using cache because this query is quicker.
 
     my ( $self, %args ) = @_;
     my $cmap_object = $args{'cmap_object'} or return;
-    my $map_set_id           = $args{'map_set_id'} or return [];
-    my $db          = $cmap_object->db;
+    my $map_set_id = $args{'map_set_id'} or return [];
+    my $db = $cmap_object->db;
     my $return_object;
     my $sql_str = qq[
-        select map_id as object_id,
+        select map_id,
                accession_id,
                map_name,
                display_order,
@@ -4187,17 +4289,18 @@ Not using cache because this query is quicker.
         where  map_set_id=?
     ];
 
-    $return_object = $db->selectall_arrayref( $sql_str, { Columns => {} },$map_set_id );
+    $return_object =
+      $db->selectall_arrayref( $sql_str, { Columns => {} }, $map_set_id );
 
     return $return_object;
 }
 
 #-----------------------------------------------
-sub get_features_for_export {    #YYY
+sub get_features_simple {    #YYY
 
 =pod
 
-=head2 get_features_for_export
+=head2 get_features_simple
 
 =head3 Description
 
@@ -4225,11 +4328,12 @@ Not using cache because this query is quicker.
 
     my ( $self, %args ) = @_;
     my $cmap_object = $args{'cmap_object'} or return;
-    my $map_id           = $args{'map_id'} or return [];
-    my $db          = $cmap_object->db;
+    my $map_id = $args{'map_id'} or return [];
+    my $feature_type_aid = $args{'feature_type_aid'};
+    my $db = $cmap_object->db;
     my $return_object;
     my $sql_str = qq[
-         select feature_id as object_id,
+         select feature_id,
                accession_id,
                feature_name,
                is_landmark,
@@ -4242,7 +4346,647 @@ Not using cache because this query is quicker.
         where  map_id=?
     ];
 
-    $return_object = $db->selectall_arrayref( $sql_str, { Columns => {} },$map_id );
+    if ($feature_type_aid){
+        $sql_str .= " and feature_type_accession = '$feature_type_aid' ";
+    }
+
+    $return_object =
+      $db->selectall_arrayref( $sql_str, { Columns => {} }, $map_id );
+
+    return $return_object;
+}
+
+#-----------------------------------------------
+sub delete_attribute {    #YYY
+
+=pod
+
+=head2 delete_attribute
+
+=head3 Description
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item *
+
+=back
+
+=head3 Output
+
+Array of Hashes:
+
+  Keys:
+
+=head3 Cache Level (If Used): 
+
+Not using cache because this query is quicker.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $cmap_object  = $args{'cmap_object'} or return;
+    my $attribute_id = $args{'attribute_id'};
+    my $db           = $cmap_object->db;
+
+    $db->do( 'delete from cmap_attribute where attribute_id=?',
+        {}, ($attribute_id) );
+
+}
+
+#-----------------------------------------------
+sub delete_xref {    #YYY
+
+=pod
+
+=head2 delete_xref
+
+=head3 Description
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item *
+
+=back
+
+=head3 Output
+
+Array of Hashes:
+
+  Keys:
+
+=head3 Cache Level (If Used): 
+
+Not using cache because this query is quicker.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $cmap_object = $args{'cmap_object'} or return;
+    my $xref_id     = $args{'xref_id'};
+    my $db          = $cmap_object->db;
+
+    $db->do( 'delete from cmap_xref where xref_id=?', {}, ($xref_id) );
+
+}
+
+#-----------------------------------------------
+sub delete_feature_alias {    #YYY
+
+=pod
+
+=head2 delete_feature_alias
+
+=head3 Description
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item *
+
+=back
+
+=head3 Output
+
+Array of Hashes:
+
+  Keys:
+
+=head3 Cache Level (If Used): 
+
+Not using cache because this query is quicker.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $cmap_object      = $args{'cmap_object'} or return;
+    my $feature_alias_id = $args{'feature_alias_id'};
+    my $db               = $cmap_object->db;
+
+    $db->do( 'delete from cmap_feature_alias where feature_alias_id=?',
+        {}, ($attribute_id) );
+
+}
+
+#-----------------------------------------------
+sub insert_correspondence_evidence {    #YYY
+
+=pod
+
+=head2 insert_correspondence_evidence
+
+=head3 Description
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item *
+
+=back
+
+=head3 Output
+
+Array of Hashes:
+
+  Keys:
+
+=head3 Cache Level (If Used): 
+
+Not using cache because this query is quicker.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $cmap_object       = $args{'cmap_object'}       or return;
+    my $evidence_type_aid = $args{'evidence_type_aid'} or return;
+    my $score             = $args{'score'};
+    my $correspondence_evidence_aid = $args{'correspondence_evidence_aid'};
+    my $feature_correspondence_id   = $args{'feature_correspondence_id'};
+    my $db                          = $cmap_object->db;
+    my $evidence_type_data          = $cmap_object->evidence_type_data();
+    my $return_object;
+    my $corr_evidence_id =
+      self->next_number( object_type => 'correspondence_evidence', )
+      or return $self->error('No next number for correspondence evidence');
+    my $correspondence_evidence_aid ||= $corr_evidence_id;
+    my $rank = $self->evidence_type_data( $et_id, 'rank' ) || 1;
+    my @insert_args = (
+        $corr_evidence_id, $correspondence_evidence_aid,
+        $feature_correspondence_id, $evidence_type_aid, $score, $rank,
+    );
+
+    $db->do(
+        qq[
+            insert
+            into   cmap_correspondence_evidence
+                   ( correspondence_evidence_id,
+                     accession_id,
+                     feature_correspondence_id,
+                     evidence_type_accession,
+                     score,
+                     rank
+                   )
+            values ( ?, ?, ?, ?, ?, ? )
+        ],
+        {},
+        (@insert_args)
+    );
+
+    return $corr_evidence_id;
+}
+
+#-----------------------------------------------
+sub update_correspondence_evidence {    #YYY
+
+=pod
+
+=head2 update_correspondence_evidence
+
+=head3 Description
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item *
+
+=back
+
+=head3 Output
+
+Array of Hashes:
+
+  Keys:
+
+=head3 Cache Level (If Used): 
+
+Not using cache because this query is quicker.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $cmap_object = $args{'cmap_object'} or return;
+    my $correspondence_evidence_id = $args{'correspondence_evidence_id'}
+      or return;
+    my $evidence_type_aid           = $args{'evidence_type_aid'};
+    my $score                       = $args{'score'};
+    my $rank                        = $args{'rank'};
+    my $correspondence_evidence_aid = $args{'correspondence_evidence_aid'};
+    my $feature_correspondence_id   = $args{'feature_correspondence_id'};
+    my $db                          = $cmap_object->db;
+    my $evidence_type_data          = $cmap_object->evidence_type_data();
+    my $return_object;
+
+    my @update_args = ();
+    my $update_sql  = qq[
+        update cmap_correspondence_evidence
+    ];
+    my $set_sql   = '';
+    my $where_sql = " where correspondence_evidence_id=? ";
+
+    if ($evidence_type_aid) {
+        push @update_args, $evidence_type_aid;
+        $set_sql .= $set_sql ? ", " : " set ";
+        $set_sql .= " evidence_type_accession = ? ";
+    }
+    if ($score) {
+        push @update_args, $score;
+        $set_sql .= $set_sql ? ", " : " set ";
+        $set_sql .= " score = ? ";
+    }
+    if ($rank) {
+        push @update_args, $rank;
+        $set_sql .= $set_sql ? ", " : " set ";
+        $set_sql .= " rank = ? ";
+    }
+    if ($feature_correspondence_id) {
+        push @update_args, $feature_correspondence_id;
+        $set_sql .= $set_sql ? ", " : " set ";
+        $set_sql .= " feature_correspondence_id = ? ";
+    }
+    if ($correspondence_evidence_aid) {
+        push @update_args, $correspondence_evidence_aid;
+        $set_sql .= $set_sql ? ", " : " set ";
+        $set_sql .= " accession_id = ? ";
+    }
+
+    push @update_args, $correspondence_evidence_id;
+
+    my $sql_str = $update_sql . $set_sql . $where_sql;
+    $db->do( $sql_str, {}, @update_args );
+
+}
+
+#-----------------------------------------------
+sub update_map {    #YYY
+
+=pod
+
+=head2 update_map
+
+=head3 Description
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item *
+
+=back
+
+=head3 Output
+
+Array of Hashes:
+
+  Keys:
+
+=head3 Cache Level (If Used): 
+
+Not using cache because this query is quicker.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $cmap_object = $args{'cmap_object'} or return;
+    my $map_id         = $args{'map_id'}            or return;
+    my $map_aid           = $args{'map_aid'};
+    my $map_set_id           = $args{'map_set_id'};
+    my $map_name           = $args{'map_name'};
+    my $display_order           = $args{'display_order'};
+    my $start_position           = $args{'start_position'};
+    my $stop_position           = $args{'stop_position'};
+    my $db          = $cmap_object->db;
+    my $return_object;
+
+    #xxx
+    my @update_args = ();
+    my $update_sql  = qq[
+        update cmap_map
+    ];
+    my $set_sql   = '';
+    my $where_sql = " where map_id = ? ";    # ID
+
+    if ($map_aid) {
+        push @update_args, $map_aid;
+        $set_sql .= $set_sql ? ", " : " set ";
+        $set_sql .= " accession_id = ? ";
+    }
+    if ($map_set_id) {
+        push @update_args, $map_set_id;
+        $set_sql .= $set_sql ? ", " : " set ";
+        $set_sql .= " map_set_id = ? ";
+    }
+    if ($map_name) {
+        push @update_args, $map_name;
+        $set_sql .= $set_sql ? ", " : " set ";
+        $set_sql .= " map_name = ? ";
+    }
+    if ($display_order) {
+        push @update_args, $display_order;
+        $set_sql .= $set_sql ? ", " : " set ";
+        $set_sql .= " display_order = ? ";
+    }
+    if (defined($start_position)) {
+        push @update_args, $start_position;
+        $set_sql .= $set_sql ? ", " : " set ";
+        $set_sql .= " start_position = ? ";
+    }
+    if (defined($stop_position)) {
+        push @update_args, $stop_position;
+        $set_sql .= $set_sql ? ", " : " set ";
+        $set_sql .= " stop_position = ? ";
+    }
+
+    push @update_args, $map_id;
+
+    my $sql_str = $update_sql . $set_sql . $where_sql;
+    $db->do( $sql_str, {}, @update_args );
+
+}
+
+#-----------------------------------------------
+sub update_feature_alias{    #YYY
+
+=pod
+
+=head2 update_feature_alias
+
+=head3 Description
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item *
+
+=back
+
+=head3 Output
+
+Array of Hashes:
+
+  Keys:
+
+=head3 Cache Level (If Used): 
+
+Not using cache because this query is quicker.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $cmap_object = $args{'cmap_object'} or return;
+    my $feature_alias_id = $args{'feature_alias_id'}            or return;
+    my $alias = $args{'alias'};
+    my $db          = $cmap_object->db;
+
+    my @update_args = ();
+    my $update_sql  = qq[
+        update cmap_feature_alias
+    ];
+    my $set_sql   = '';
+    my $where_sql = " where = ? ";    # ID
+
+    if ($alias) {
+        push @update_args, $alias;
+        $set_sql .= $set_sql ? ", " : " set ";
+        $set_sql .= " alias = ? ";
+    }
+
+    push @update_args, $feature_alias_id;
+
+    my $sql_str = $update_sql . $set_sql . $where_sql;
+    $db->do( $sql_str, {}, @update_args );
+
+}
+
+#-----------------------------------------------
+sub update_feature {    #YYY
+
+=pod
+
+=head2 update_feature
+
+=head3 Description
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item *
+
+=back
+
+=head3 Output
+
+Array of Hashes:
+
+  Keys:
+
+=head3 Cache Level (If Used): 
+
+Not using cache because this query is quicker.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $cmap_object = $args{'cmap_object'} or return;
+    my $feature_id = $args{'feature_id'}            or return;
+    my $feature_aid = $args{'feature_aid'};
+    my $map_id = $args{'map_id'};
+    my $feature_type_aid = $args{'feature_type_aid'};
+    my $feature_name = $args{'feature_name'};
+    my $is_landmark = $args{'is_landmark'};
+    my $start_position = $args{'start_position'};
+    my $stop_position = $args{'stop_position'};
+    my $default_rank = $args{'default_rank'};
+    my $direction = $args{'direction'};
+    my $db          = $cmap_object->db;
+
+    my @update_args = ();
+    my $update_sql  = qq[
+        update cmap_feature
+    ];
+    my $set_sql   = '';
+    my $where_sql = " where feature_id = ? ";    # ID
+
+    if ($feature_aid) {
+        push @update_args, $feature_aid;
+        $set_sql .= $set_sql ? ", " : " set ";
+        $set_sql .= " accession_id = ? ";
+    }
+    if ($map_id) {
+        push @update_args, $map_id;
+        $set_sql .= $set_sql ? ", " : " set ";
+        $set_sql .= " map_id = ? ";
+    }
+    if ($feature_type_aid) {
+        push @update_args, $feature_type_aid;
+        $set_sql .= $set_sql ? ", " : " set ";
+        $set_sql .= " feature_type_accession = ? ";
+    }
+    if ($feature_name) {
+        push @update_args, $feature_name;
+        $set_sql .= $set_sql ? ", " : " set ";
+        $set_sql .= " feature_name = ? ";
+    }
+    if ($is_landmark) {
+        push @update_args, $is_landmark;
+        $set_sql .= $set_sql ? ", " : " set ";
+        $set_sql .= " is_landmark = ? ";
+    }
+    if ($start_position) {
+        push @update_args, $start_position;
+        $set_sql .= $set_sql ? ", " : " set ";
+        $set_sql .= " start_position = ? ";
+    }
+    if ($stop_position) {
+        push @update_args, $stop_position;
+        $set_sql .= $set_sql ? ", " : " set ";
+        $set_sql .= " stop_position = ? ";
+    }
+    if ($default_rank) {
+        push @update_args, $default_rank;
+        $set_sql .= $set_sql ? ", " : " set ";
+        $set_sql .= " default_rank = ? ";
+    }
+    if ($direction) {
+        push @update_args, $direction;
+        $set_sql .= $set_sql ? ", " : " set ";
+        $set_sql .= " direction = ? ";
+    }
+
+    push @update_args, $feature_id;
+
+    my $sql_str = $update_sql . $set_sql . $where_sql;
+    $db->do( $sql_str, {}, @update_args );
+
+}
+
+#-----------------------------------------------
+sub update_stub {    #YYY
+
+=pod
+
+=head2 update_stub
+
+=head3 Description
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item *
+
+=back
+
+=head3 Output
+
+Array of Hashes:
+
+  Keys:
+
+=head3 Cache Level (If Used): 
+
+Not using cache because this query is quicker.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $cmap_object = $args{'cmap_object'} or return;
+    my $_id = $args{''}            or return;
+    my $x = $args{'x'};
+    my $db          = $cmap_object->db;
+
+    my @update_args = ();
+    my $update_sql  = qq[
+        update 
+    ];
+    my $set_sql   = '';
+    my $where_sql = " where = ? ";    # ID
+
+    if ($x) {
+        push @update_args, $x;
+        $set_sql .= $set_sql ? ", " : " set ";
+        $set_sql .= " x = ? ";
+    }
+
+    push @update_args, $_id;
+
+    my $sql_str = $update_sql . $set_sql . $where_sql;
+    $db->do( $sql_str, {}, @update_args );
+
+}
+
+#-----------------------------------------------
+sub get_correspondence_count_for_feature {    #YYY
+
+=pod
+
+=head2 get_correspondence_counts_for_feature
+
+=head3 Description
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item *
+
+=back
+
+=head3 Output
+
+Array of Hashes:
+
+  Keys:
+
+=head3 Cache Level (If Used): 
+
+Not using cache because this query is quicker.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $cmap_object = $args{'cmap_object'} or return;
+    my $feature_id  = $args{'feature_id'};
+    my $db          = $cmap_object->db;
+    my $return_object;
+
+    $sql_str = q[
+        select count(fc.feature_correspondence_id)
+        from   cmap_correspondence_lookup cl,
+               cmap_feature_correspondence fc
+        where  cl.feature_id1=?
+        and    cl.feature_correspondence_id=
+               fc.feature_correspondence_id
+    ];
+
+    $return_object = $db->selectrow_array( $sql_str, {}, $feature_id );
 
     return $return_object;
 }
@@ -4285,6 +5029,103 @@ Not using cache because this query is quicker.
     my $return_object;
 
     return $return_object;
+}
+
+# ___________________UTIL________________________________
+# ----------------------------------------------------
+sub pk_name {
+    my $self        = shift;
+    my $object_type = shift;
+    $object_type .= '_id';
+    return $object_type;
+}
+
+# ----------------------------------------------------
+sub next_number {
+
+=pod
+                                                                                                                             
+=head2 next_number
+                                                                                                                             
+A generic routine for retrieving (and possibly setting) the next
+number for an ID field in a table.  Given a table "foo," the
+expected ID field would be "foo_id," but this isn't always the case.
+Therefore, "id_field" tells us what field to look at.  Basically, we
+look to see if there's an entry in the "next_number" table.  If not
+we do a MAX on the ID field given (or ascertained).  Either way, the
+"next_number" table gets told what the next number will be (on the
+next call), and we pass back what is the next number this time.
+                                                                                                                             
+So why not just use "auto_increment" (MySQL) or a "sequence"
+(Oracle)?  Just to make sure that this stays completely portable.
+By coding all this in Perl, I know that it will work with any
+database (that supports ANSI-SQL, that is).
+                                                                                                                             
+=cut
+
+    my ( $self, %args ) = @_;
+    my $db          = $self->db            or return;
+    my $object_type = $args{'object_type'} or return;
+    my $no_requested = $args{'requested'} || 1;
+    my $id_field     = $self->pk_name($object_type);
+    my $table_name   = $self->{'TABLE_NAMES'}->{$object_type};
+
+    my $next_number = $db->selectrow_array(
+        q[
+            select next_number
+            from   cmap_next_number
+            where  table_name=?
+        ],
+        {}, ($table_name)
+    );
+
+    unless ($next_number) {
+        $next_number = $db->selectrow_array(
+            qq[
+                select max( $id_field )
+                from   $table_name
+            ]
+        ) || 0;
+        $next_number++;
+
+        $db->do(
+            q[
+                insert
+                into   cmap_next_number ( table_name, next_number )
+                values ( ?, ? )
+            ],
+            {}, ( $table_name, $next_number + $no_requested )
+        );
+    }
+    else {
+        $db->do(
+            q[
+                update cmap_next_number
+                set    next_number=?
+                where  table_name=?
+            ],
+            {}, ( $next_number + $no_requested, $table_name )
+        );
+    }
+
+    return $next_number;
+}
+
+# ____________________HELPER____________________________
+#-----------------------------------------------
+sub orderOutFromZero {    #YYY
+
+=pod
+
+=head2 orderOutFromZero
+
+=head3 Description
+
+Sorting method: Return the sort in this order (0,1,-1,-2,2,-3,3,)
+
+=cut
+
+    return ( abs($a) cmp abs($b) );
 }
 
 1;
