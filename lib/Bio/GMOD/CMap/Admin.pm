@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.75 2005-05-06 21:35:18 mwz444 Exp $
+# $Id: Admin.pm,v 1.76 2005-05-10 07:06:34 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.75 $)[-1];
+$VERSION = (qw$Revision: 1.76 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -65,7 +65,7 @@ Delete an object's attributes.
 =item * Usage
 
     $admin->attribute_delete(
-        $table_name,
+        $object_type,
         $object_id
     );
 
@@ -77,9 +77,9 @@ Nothing
 
 =over 4
 
-=item - table_name
+=item - object_type
 
-The name of the table being reference.
+The name of the object being reference.
 
 =item - object_id
 
@@ -92,12 +92,15 @@ The primary key of the object.
 =cut
 
     my $self       = shift;
-    my $table_name = shift or return;
+    my $object_type = shift or return;
     my $object_id  = shift or return;
-    my $db         = $self->db or return;
+    my $sql_object         = $self->sql or return;
 
-    $db->do( 'delete from cmap_attribute where table_name=? and object_id=?',
-        {}, ( $table_name, $object_id ) );
+    $sql_object->delete_attribute(
+        cmap_object => $self,
+        object_type => $object_type,
+        object_id   => $object_id,
+    );
 }
 
 # ----------------------------------------------------
@@ -141,86 +144,23 @@ Nothing
     my $corr_evidence_id = $args{'correspondence_evidence_id'}
       or return $self->error('No correspondence evidence id');
 
-    $self->attribute_delete( 'cmap_correspondence_evidence',
+    $self->attribute_delete( 'correspondence_evidence',
         $corr_evidence_id );
 
-    my $db = $self->db or return;
-    my $feature_correspondence_id = $db->selectrow_array(
-        q[
-            select feature_correspondence_id
-            from   cmap_correspondence_evidence
-            where  correspondence_evidence_id=?
-        ],
-        {},
-        ($corr_evidence_id)
-      )
-      or return $self->error('Invalid correspondence evidence id');
+    my $sql_object = $self->sql or return;
+    my $evidences = $sql_object->get_evidences(
+        cmap_object => $self,
+        correspondence_evidence_id => $corr_evidence_id,
+      );
+    return $self->error('Invalid correspondence evidence id') unless (@$evidences)
+    my $feature_correspondence_id = $evidence->[0]{'feature_correspondence_id'};
 
-    $db->do(
-        q[
-            delete
-            from   cmap_correspondence_evidence
-            where  correspondence_evidence_id=?
-        ],
-        {},
-        ($corr_evidence_id)
+    $sql_object->delete_evidence(
+        cmap_object => $self,
+        correspondence_evidence_id   => $corr_evidence_id,
     );
 
     return $feature_correspondence_id;
-}
-
-# ----------------------------------------------------
-sub dbxref_delete {
-
-=pod
-
-=head2 dbxref_delete
-
-=head3 For External Use
-
-=over 4
-
-=item * Description
-
-Delete a database cross reference.
-
-=item * Returns
-
-Nothing
-
-=item * Usage
-
-    $admin->dbxref_delete(
-        dbxref_id => $dbxref_id,
-    );
-
-=item * Fields
-
-=over 4
-
-=item - dbxref_id
-
-=back
-
-=back
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $dbxref_id = $args{'dbxref_id'} or return $self->error('No dbxref id');
-
-    my $db = $self->db or return;
-    $db->do(
-        q[
-            delete
-            from   cmap_dbxref
-            where  dbxref_id=?
-        ],
-        {},
-        ($dbxref_id)
-    );
-
-    return 1;
 }
 
 # ----------------------------------------------------
@@ -471,47 +411,6 @@ Create an alias for a feature.  The alias is searchable.
 }
 
 # ----------------------------------------------------
-sub feature_alias_update {
-
-=pod
-
-=head2 feature_alias_update
-
-=head3 For External Use
-
-=over 4
-
-=item * Description
-
-feature_alias_update
-
-=item * Usage
-
-Given a hash of table columns with values, will update.  Must include 
-a key/value pair with the pk_name as key and the id as the value.
-
-    $admin->feature_alias_update();
-
-=item * Returns
-
-1
-
-=back
-
-=cut
-
-    my ( $self, %args ) = @_;
-
-    return $self->generic_update(
-        table    => 'cmap_feature_alias',
-        pk_name  => 'feature_alias_id',
-        values   => \%args,
-        required => [qw/ feature_id alias /],
-        fields   => [qw/ feature_id alias /],
-    );
-}
-
-# ----------------------------------------------------
 sub feature_delete {
 
 =pod
@@ -552,106 +451,38 @@ Nothing
     my $feature_id = $args{'feature_id'}
       or return $self->error('No feature id');
 
-    my $db = $self->db or return;
-    my $map_id = $db->selectrow_array(
-        q[
-            select map_id
-            from   cmap_feature
-            where  feature_id=?
-        ],
-        {},
-        ($feature_id)
-      )
-      or return $self->error("Invalid feature id ($feature_id)");
+    my $sql_object = $self->sql or return;
 
-    my $feature_correspondence_ids = $db->selectcol_arrayref(
-        q[
-            select feature_correspondence_id
-            from   cmap_correspondence_lookup
-            where  feature_id1=?
-        ],
-        {},
-        ($feature_id)
+    my $features = $sql_object->get_features(
+        cmap_object => $self,
+        feature_id => $feature_id,
+      );
+    return $self->error('Invalid feature id') unless (@$features)
+    my $map_id = $features->[0]{'map_id'};
+
+    my $corrs = $sql_object->get_correspondence_details(
+        cmap_object => $self,
+        feature_id  => $feature_id,
     );
-
-    for my $feature_correspondence_id (@$feature_correspondence_ids) {
+    foreach my $corr (@$corrs){
         $self->feature_correspondence_delete(
-            feature_correspondence_id => $feature_correspondence_id )
-          or return;
+            feature_correspondence_id  => $corr->{'feature_correspondence_id'};
+        );
     }
 
-    $self->attribute_delete( 'cmap_feature', $feature_id );
+    $self->attribute_delete( 'feature', $feature_id );
 
-    $db->do(
-        q[
-            delete
-            from    cmap_feature_alias
-            where   feature_id=?
-        ],
-        {},
-        ($feature_id)
+    $sql_object->delete_feature_alias(
+        cmap_object => $self,
+        feature_id  => $feature_id,
     );
 
-    $db->do(
-        q[
-            delete
-            from    cmap_feature
-            where   feature_id=?
-        ],
-        {},
-        ($feature_id)
+    $sql_object->delete_feature(
+        cmap_object => $self,
+        feature_id  => $feature_id,
     );
 
     return $map_id;
-}
-
-# ----------------------------------------------------
-sub feature_update {
-
-=pod
-
-=head2 feature_update
-
-=head3 For External Use
-
-=over 4
-
-=item * Description
-
-feature_update
-
-=item * Usage
-
-Given a hash of table columns with values, will update.  Must include 
-a key/value pair with the pk_name as key and the id as the value.
-
-    $admin->feature_update();
-
-=item * Returns
-
-1
-
-=back
-
-=cut
-
-    my ( $self, %args ) = @_;
-
-    return $self->generic_update(
-        table    => 'cmap_feature',
-        pk_name  => 'feature_id',
-        values   => \%args,
-        required => [
-            qw/ accession_id feature_name start_position
-              map_id feature_type_accession
-              /
-        ],
-        fields => [
-            qw/ accession_id feature_name start_position stop_position
-              map_id feature_type_accession is_landmark direction
-              /
-        ],
-    );
 }
 
 # ----------------------------------------------------
@@ -1614,39 +1445,25 @@ Nothing
     my ( $self, %args ) = @_;
     my $feature_corr_id = $args{'feature_correspondence_id'}
       or return $self->error('No feature correspondence id');
-    my $db = $self->db or return;
-    my $evidence_ids = $db->selectcol_arrayref(
-        q[
-            select correspondence_evidence_id
-            from   cmap_correspondence_evidence
-            where  feature_correspondence_id=?
-        ],
-        {},
-        ($feature_corr_id)
+
+    my $sql_object = $self->sql or return;
+    my $evidences = $sql_object->get_evidences(
+        cmap_object => $self,
+        feature_correspondence_id => $feature_correspondence_id,
+      );
+    return $self->error('Invalid correspondence evidence id') unless (@$evidences)
+
+    $sql_object->delete_evidence(
+        cmap_object => $self,
+        feature_correspondence_id => $feature_correspondence_id,
     );
 
-    for my $evidence_id (@$evidence_ids) {
-        $self->correspondence_evidence_delete(
-            correspondence_evidence_id => $evidence_id )
-          or return;
-    }
+    $sql_object->delete_correspondence(
+        cmap_object => $self,
+        feature_correspondence_id => $feature_correspondence_id,
+    );
 
-    for my $table (
-        qw[ cmap_correspondence_lookup cmap_feature_correspondence ]
-      )
-    {
-        $db->do(
-            qq[
-                delete
-                from   $table
-                where  feature_correspondence_id=?
-            ],
-            {},
-            ($feature_corr_id)
-        );
-    }
-
-    $self->attribute_delete( 'cmap_feature_correspondence', $feature_corr_id );
+    $self->attribute_delete( 'feature_correspondence', $feature_corr_id );
 
     return 1;
 }
@@ -2235,139 +2052,34 @@ Nothing
 
     my ( $self, %args ) = @_;
     my $map_id = $args{'map_id'} or return $self->error('No map id');
-    my $db     = $self->db       or return;
-    my $map_set_id = $db->selectrow_array(
-        q[
-            select map_set_id
-            from   cmap_map
-            where  map_id=?
-        ],
-        {},
-        ($map_id)
-    );
+    my $sql_object = $self->sql or return;
 
-    my $feature_ids = $db->selectcol_arrayref(
-        q[
-            select feature_id
-            from   cmap_feature
-            where  map_id=?
-        ],
-        {},
-        ($map_id)
-    );
+    my $maps = $sql_object->get_maps(
+        cmap_object => $self,
+        map_id => $map_id,
+      );
+    return $self->error('Invalid map id') unless (@$maps)
+    my $map_set_id = $maps->[0]{'map_set_id'};
 
-    for my $feature_id (@$feature_ids) {
-        $self->feature_delete( feature_id => $feature_id ) or return;
+    my $features = $sql_object->get_features_simple(
+        cmap_object => $self,
+        map_id => $map_id,
+      );
+
+    foreach my $feature (@$features){
+        $self->feature_delete(
+            feature_id  => $feature->{'feature_id'},
+        );
     }
 
-    $self->attribute_delete( 'cmap_map', $map_id );
+    $self->attribute_delete( 'map', $map_id );
 
-    $db->do(
-        q[
-            delete
-            from    cmap_map
-            where   map_id=?
-        ],
-        {},
-        ($map_id)
+    $sql_object->delete_map(
+        cmap_object => $self,
+        map_id  => $map_id,
     );
 
     return $map_set_id;
-}
-
-# ----------------------------------------------------
-sub map_update {
-
-=pod
-
-=head2 map_update
-
-=head3 For External Use
-
-=over 4
-
-=item * Description
-
-map_update
-
-=item * Usage
-
-Given a hash of table columns with values, will update.  Must include 
-a key/value pair with the pk_name as key and the id as the value.
-
-    $admin->map_update();
-
-=item * Returns
-
-1
-
-=back
-
-=cut
-
-    my ( $self, %args ) = @_;
-
-    return $self->generic_update(
-        table    => 'cmap_map',
-        pk_name  => 'map_id',
-        values   => \%args,
-        required => [qw/ accession_id map_name start_position stop_position /],
-        fields   => [
-            qw/ accession_id map_name display_order
-              start_position stop_position map_set_id
-              /
-        ],
-    );
-}
-
-# ----------------------------------------------------
-sub map_set_update {
-
-=pod
-
-=head2 map_set_update
-
-=head3 For External Use
-
-=over 4
-
-=item * Description
-
-map_set_update
-
-=item * Usage
-
-Given a hash of table columns with values, will update.  Must include 
-a key/value pair with the pk_name as key and the id as the value.
-
-    $admin->map_set_update();
-
-=item * Returns
-
-1
-
-=back
-
-=cut
-
-    my ( $self, %args ) = @_;
-
-    return $self->generic_update(
-        table    => 'cmap_map_set',
-        pk_name  => 'map_set_id',
-        values   => \%args,
-        required => [
-            qw/ accession_id map_set_name map_set_short_name species_id
-              map_type_accession
-              /
-        ],
-        fields => [
-            qw/ accession_id map_set_name map_set_short_name
-              color shape is_enabled display_order can_be_reference_map
-              published_on width species_id map_type_accession
-              /
-        ],
-    );
 }
 
 # ----------------------------------------------------
@@ -2566,22 +2278,23 @@ Nothing
     my $map_set_id = $args{'map_set_id'}
       or return $self->error('No map set id');
     my $db = $self->db or return;
-    my $map_ids = $db->selectcol_arrayref(
-        q[          
-            select map_id
-            from   cmap_map
-            where  map_set_id=?
-        ],
-        {},
-        ($map_set_id)
-    );
+    my $maps = $sql_object->get_maps(
+        cmap_object => $self,
+        map_set_id => $map_set_id,
+      );
 
-    for my $map_id (@$map_ids) {
-        $self->map_delete( map_id => $map_id ) or return;
+    foreach my $map (@$maps){
+        $self->map_delete(
+            map_id  => $map->{'map_id'},
+        );
     }
 
-    $self->attribute_delete( 'cmap_map_set', $map_set_id );
+    $self->attribute_delete( 'map_set', $map_set_id );
 
+    $sql_object->delete_map_set(
+        cmap_object => $self,
+        map_set_id  => $map_set_id,
+    );
     $db->do(
         q[         
             delete  
@@ -2929,7 +2642,7 @@ Set the attributes for a database object.
     $admin->set_attributes(
         object_id => $object_id,
         overwrite => $overwrite,
-        table_name => $table_name,
+        object_type => $object_type,
     );
 
 =item * Returns
@@ -2948,9 +2661,9 @@ The primary key of the object.
 
 Set to 1 to delete old data first.
 
-=item - table_name
+=item - object_type
 
-The name of the table being reference.
+The name of the object being reference.
 
 =back
 
@@ -2961,16 +2674,18 @@ The name of the table being reference.
     my ( $self, %args ) = @_;
     my $object_id = $args{'object_id'}
       or return $self->error('No object id');
-    my $table_name = $args{'table_name'}
+    my $object_type = $args{'object_type'}
       or return $self->error('No table name');
     my @attributes = @{ $args{'attributes'} || [] } or return;
     my $overwrite = $args{'overwrite'} || 0;
     my $db = $self->db or return;
 
     if ($overwrite) {
-        $db->do(
-            'delete from cmap_attribute where object_id=? and table_name=?',
-            {}, $object_id, $table_name );
+        $sql_object->delete_attribute(
+            cmap_object => $self,
+            object_id => $object_id,
+            object_type => $object_type,
+        );
     }
 
     for my $attr (@attributes) {
@@ -2986,82 +2701,38 @@ The name of the table being reference.
           && defined $attr_value
           && $attr_value ne '';
 
-        $attribute_id ||= $db->selectrow_array(
-            q[
-                select attribute_id
-                from   cmap_attribute
-                where  object_id=?
-                and    table_name=?
-                and    attribute_name=?
-                and    attribute_value=?
-            ],
-            {},
-            ( $object_id, $table_name, $attr_name, $attr_value )
+        
+        my $attributes_array = $sql_object->get_attributes(
+            cmap_object => $self,
+            object_id => $object_id,
+            object_type => $object_type,
+            attribute_name => $attr_name,
+            attribute_value => $attr_value,
         );
+        $attribute_id = $attributes_array->[0]{'attribute_id'} if (@$map_set_array);
 
         if ($attribute_id) {
-            my @update_fields = (
-                [ object_id       => $object_id ],
-                [ table_name      => $table_name ],
-                [ attribute_name  => $attr_name ],
-                [ attribute_value => $attr_value ],
+            $sql_object->update_attribute(
+                cmap_object => $self,
+                attribute_id => $attribute_id,
+                object_id       => $object_id ,
+                object_type      => $object_type ,
+                attribute_name  => $attr_name ,
+                attribute_value => $attr_value ,
+                display_order => $display_order,
+                is_public => $is_public,
             );
-
-            if ( defined $display_order ) {
-                push @update_fields, [ display_order => $display_order ];
-            }
-
-            if ( defined $is_public ) {
-                push @update_fields, [ is_public => $is_public ];
-            }
-
-            my $update_sql =
-                'update cmap_attribute set '
-              . join( ', ', map { $_->[0] . '=?' } @update_fields )
-              . ' where attribute_id=?';
-
-            $db->do( $update_sql, {},
-                ( ( map { $_->[1] } @update_fields ), $attribute_id ) );
         }
         else {
-            $attribute_id = next_number(
-                db         => $db,
-                table_name => 'cmap_attribute',
-                id_field   => 'attribute_id',
-              )
-              or return $self->error("Can't get next ID for 'cmap_attribute'");
-
-            unless ($display_order) {
-                $display_order = $db->selectrow_array(
-                    q[
-                        select max(display_order)
-                        from   cmap_attribute
-                        where  table_name=?
-                        and    object_id=?
-                    ],
-                    {},
-                    ( $table_name, $object_id )
-                );
-                $display_order++;
-            }
-
             $is_public = 1 unless defined $is_public;
-
-            $db->do(
-                q[
-                    insert 
-                    into    cmap_attribute
-                            (attribute_id, object_id, table_name,
-                             display_order, is_public, 
-                             attribute_name, attribute_value)
-                    values  (?, ?, ?, ?, ?, ?, ?)
-                ],
-                {},
-                (
-                    $attribute_id,  $object_id, $table_name,
-                    $display_order, $is_public, $attr_name,
-                    $attr_value
-                )
+            $attribute_id = $sql_object->insert_attribute(
+                cmap_object => $self,
+                object_id       => $object_id ,
+                object_type      => $object_type ,
+                attribute_name  => $attr_name ,
+                attribute_value => $attr_value ,
+                display_order => $display_order,
+                is_public => $is_public,
             );
         }
     }
@@ -3089,7 +2760,7 @@ Set the attributes for a database object.
     $admin->set_xrefs(
         object_id => $object_id,
         overwrite => $overwrite,
-        table_name => $table_name,
+        object_type => $object_type,
     );
 
 =item * Returns
@@ -3108,9 +2779,9 @@ The primary key of the object.
 
 Set to 1 to delete old data first.
 
-=item - table_name
+=item - object_type
 
-The name of the table being reference.
+The name of the object being reference.
 
 =back
 
@@ -3120,22 +2791,25 @@ The name of the table being reference.
 
     my ( $self, %args ) = @_;
     my $object_id  = $args{'object_id'};
-    my $table_name = $args{'table_name'}
-      or return $self->error('No table name');
+    my $object_type = $args{'object_type'}
+      or return $self->error('No object name');
     my @xrefs = @{ $args{'xrefs'} || [] } or return;
     my $overwrite = $args{'overwrite'} || 0;
     my $db = $self->db or return;
 
     if ( $overwrite && $object_id ) {
-        $db->do( 'delete from cmap_xref where object_id=? and table_name=?',
-            {}, $object_id, $table_name );
+        $sql_object->delete_xref(
+            cmap_object => $self,
+            object_id => $object_id,
+            object_type => $object_type,
+        );
     }
 
-    for my $attr (@xrefs) {
-        my $xref_id   = $attr->{'xref_id'} || 0;
-        my $xref_name = $attr->{'name'}    || $attr->{'xref_name'};
-        my $xref_url  = $attr->{'url'}     || $attr->{'xref_url'};
-        my $display_order = $attr->{'display_order'};
+    for my $xref (@xrefs) {
+        my $xref_id   = $xref->{'xref_id'} || 0;
+        my $xref_name = $xref->{'name'}    || $xref->{'xref_name'};
+        my $xref_url  = $xref->{'url'}     || $xref->{'xref_url'};
+        my $display_order = $xref->{'display_order'};
 
         next
           unless defined $xref_name
@@ -3143,79 +2817,37 @@ The name of the table being reference.
           && defined $xref_url
           && $xref_url ne '';
 
-        if ($object_id) {
-            $xref_id ||= $db->selectrow_array(
-                q[
-                    select xref_id
-                    from   cmap_xref
-                    where  object_id=?
-                    and    table_name=?
-                    and    xref_name=?
-                    and    xref_url=?
-                ],
-                {},
-                ( $object_id, $table_name, $xref_name, $xref_url )
-            );
-        }
+        my $xrefs_array = $sql_object->get_xrefs(
+            cmap_object => $self,
+            object_id => $object_id,
+            object_type => $object_type,
+            xref_name => $xref_name,
+            xref_url => $xref_url,
+        );
+        $xref_id = $xrefs_array->[0]{'xref_id'} if (@$map_set_array);
 
         if ($xref_id) {
-            my @update_fields = (
-                [ table_name => $table_name ],
-                [ xref_name  => $xref_name ],
-                [ xref_url   => $xref_url ],
+            $sql_object->update_xref(
+                cmap_object => $self,
+                xref_id => $xref_id,
+                object_id       => $object_id ,
+                object_type      => $object_type ,
+                xref_name  => $xref_name ,
+                xref_url => $xref_url ,
+                display_order => $display_order,
             );
-
-            if ( defined $object_id && $object_id ) {
-                push @update_fields, [ object_id => $object_id ];
-            }
-
-            if ( defined $display_order && $display_order ne '' ) {
-                push @update_fields, [ display_order => $display_order ];
-            }
-
-            my $update_sql =
-                'update cmap_xref set '
-              . join( ', ', map { $_->[0] . '=?' } @update_fields )
-              . ' where xref_id=?';
-
-            $db->do( $update_sql, {},
-                ( ( map { $_->[1] } @update_fields ), $xref_id ) );
         }
         else {
-            $xref_id = next_number(
-                db         => $db,
-                table_name => 'cmap_xref',
-                id_field   => 'xref_id',
-              )
-              or return $self->error("Can't get next ID for 'cmap_xref'");
-
-            unless ( defined $display_order && $display_order ne '' ) {
-                my $do_sql = qq[
-                    select max(display_order)
-                    from   cmap_xref
-                    where  table_name='$table_name'
-                ];
-                $do_sql .= "and object_id=$object_id" if $object_id;
-                $display_order = $db->selectrow_array($do_sql);
-                $display_order++;
-            }
-
-            my $insert_sql = sprintf(
-                q[
-                    insert 
-                    into    cmap_xref
-                            (xref_id, table_name, display_order, 
-                            xref_name, xref_url %s)
-                    values  (?, ?, ?, ?, ? %s)
-                ],
-                ( $object_id ? ', object_id' : '', $object_id ? ', ?' : '', )
+            $is_public = 1 unless defined $is_public;
+            $xref_id = $sql_object->insert_xref(
+                cmap_object => $self,
+                object_id       => $object_id ,
+                object_type      => $object_type ,
+                xref_name  => $xref_name ,
+                xref_url => $xref_url ,
+                display_order => $display_order,
             );
-
-            my @insert_args =
-              ( $xref_id, $table_name, $display_order, $xref_name, $xref_url );
-            push @insert_args, $object_id if $object_id;
-
-            $db->do( $insert_sql, {}, @insert_args );
+        }
         }
     }
 
@@ -3409,185 +3041,28 @@ Nothing
     my $species_id = $args{'species_id'}
       or return $self->error('No species id');
 
-    my $db = $self->db or return;
-    my $sth = $db->prepare(
-        q[
-            select   count(ms.map_set_id) as no_map_sets, 
-                     s.species_common_name
-            from     cmap_map_set ms, cmap_species s
-            where    s.species_id=?
-            and      ms.species_id=s.species_id
-            group by s.species_common_name
-        ]
-    );
-    $sth->execute($species_id);
-    my $hr = $sth->fetchrow_hashref;
+    my $sql_object = $self->sql or return;
 
-    if ( $hr->{'no_map_sets'} > 0 ) {
+    my $map_sets=$sql_object->get_map_sets(
+        cmap_object => $self,
+        species_id  => $species_id,
+    );
+    
+    if ( scalar(@$map_sets) > 0 ) {
         return $self->error( 'Unable to delete ',
-            $hr->{'species_common_name'}, ' because ', $hr->{'no_map_sets'},
+            $map_sets->[0]{'species_common_name'}, ' because ', scalar(@$map_sets),
             ' map sets are linked to it.' );
     }
     else {
-        $self->attribute_delete( 'cmap_species', $species_id );
+        $self->attribute_delete( 'species', $species_id );
 
-        $db->do(
-            q[
-                delete
-                from   cmap_species
-                where  species_id=?
-            ],
-            {}, ($species_id)
+        $sql_object->delete_species(
+            cmap_object => $self,
+            species_id  => $species_id,
         );
     }
 
     return 1;
-}
-
-# ----------------------------------------------------
-sub generic_update {
-
-=pod
-
-=head2 generic_update
-
-=head3 For External Use
-
-=over 4
-
-=item * Description
-
-generic_update
-
-=item * Usage
-
-    $admin->generic_update(
-        table => $table,
-        values => $values,
-        fields => $fields,
-        required => $required,
-        pk_name => $pk_name,
-    );
-
-=item * Returns
-
-1
-
-=item * Fields
-
-=over 4
-
-=item - table
-
-Table name to be updated
-
-=item - values
-
-A hash of table columns values values to be updated.  Must include 
-a key/value pair with the pk_name as key and the id as the value.
-
-=item - fields
-
-A list of fields to be updated if values are provided.
-
-=item - required
-
-A list of fields that are required.
-
-=item - pk_name
-
-Name of the primary key.
-
-=back
-
-=back
-
-=cut
-
-    my ( $self, %args ) = @_;
-    my $table_name = $args{'table'}      or die 'No table name';
-    my $pk_name    = $args{'pk_name'}    or die 'No primary key name';
-    my $fields     = $args{'fields'}     or die 'No table fields';
-    my $values     = $args{'values'}     or die 'No values';
-    my $pk_value   = $values->{$pk_name} or die 'No primary key value';
-    my $db         = $self->db           or return;
-    my $required = $args{'required'} || [];
-    die 'No table fields' unless @$fields;
-
-    if (@$required) {
-        my @missing;
-        for my $field (@$required) {
-            push @missing, $field
-              if exists $values->{$field} && !defined $values->{$field};
-        }
-
-        return $self->error( 'Update missing required fields: ',
-            join( ', ', @missing ) )
-          if @missing;
-    }
-
-    my ( @update_fields, @bind_values );
-    for my $field_name (@$fields) {
-        next unless exists $values->{$field_name};
-        my $value = $values->{$field_name};
-        next unless defined $value;
-        push @update_fields, "$field_name=?";
-        push @bind_values,   $value;
-    }
-    die "Error parsing fields, can't create update SQL\n" unless @update_fields;
-
-    my $sql =
-        "update $table_name set "
-      . join( ', ', @update_fields )
-      . " where $pk_name=?";
-    push @bind_values, $pk_value;
-
-    $db->do( $sql, {}, @bind_values );
-
-    return 1;
-}
-
-# ----------------------------------------------------
-sub species_update {
-
-=pod
-
-=head2 species_update
-
-=head3 For External Use
-
-=over 4
-
-=item * Description
-
-species_update
-
-=item * Usage
-
-Given a hash of table columns with values, will update.  Must include 
-a key/value pair with the pk_name as key and the id as the value.
-
-    $admin->species_update();
-
-=item * Returns
-
-1
-
-=back
-
-=cut
-
-    my ( $self, %args ) = @_;
-
-    return $self->generic_update(
-        table    => 'cmap_species',
-        pk_name  => 'species_id',
-        values   => \%args,
-        required => [qw/ species_common_name species_full_name accession_id /],
-        fields   => [
-            qw/ accession_id species_full_name species_common_name display_order /
-        ],
-    );
 }
 
 # ----------------------------------------------------
@@ -3724,7 +3199,7 @@ Delete a cross reference.
 =item * Usage
 
     $admin->xref_delete(
-        $table_name,
+        $object_type,
         $object_id
     );
 
@@ -3736,7 +3211,7 @@ Nothing
 
 =over 4
 
-=item - table_name
+=item - object_type
 
 The name of the table being reference.
 
@@ -3751,57 +3226,17 @@ The primary key of the object.
 =cut
 
     my $self       = shift;
-    my $table_name = shift or return;
+    my $object_type = shift or return;
     my $object_id  = shift or return;
-    my $db         = $self->db or return;
+    my $sql_object         = $self->sql or return;
 
-    $db->do( 'delete from cmap_xref where table_name=? and object_id=?',
-        {}, ( $table_name, $object_id ) );
+    $sql_object->delete_xref(
+        cmap_object => $self,
+        object_type => $object_type,
+        object_id   => $object_id,
+    );
 
     return 1;
-}
-
-# ----------------------------------------------------
-sub xref_update {
-
-=pod
-
-=head2 xref_update
-
-=head3 For External Use
-
-=over 4
-
-=item * Description
-
-xref_update
-
-=item * Usage
-
-Given a hash of table columns with values, will update.  Must include 
-a key/value pair with the pk_name as key and the id as the value.
-
-    $admin->xref_update();
-
-=item * Returns
-
-1
-
-=back
-
-=cut
-
-    my ( $self, %args ) = @_;
-
-    return $self->generic_update(
-        table    => 'cmap_xref',
-        pk_name  => 'xref_id',
-        values   => \%args,
-        required => [qw/ xref_name xref_url table_name /],
-        fields   => [
-            qw/ display_order xref_name xref_url table_name /
-        ],
-    );
 }
 
 1;

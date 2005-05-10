@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::GBrowseLiason;
 
 # vim: set ft=perl:
 
-# $Id: GBrowseLiason.pm,v 1.7 2005-03-14 18:57:31 mwz444 Exp $
+# $Id: GBrowseLiason.pm,v 1.8 2005-05-10 07:06:35 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ GBrowse integration at the db level.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.7 $)[-1];
+$VERSION = (qw$Revision: 1.8 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -63,6 +63,7 @@ sub prepare_data_for_gbrowse {
     $LOG_FH = $args{'log_fh'} || \*STDOUT;
     print $LOG_FH "Preparing Data for GBrowse\n";
     my $admin = $self->admin;
+    my $sql_object = $self->sql;
 
     for (my $i=0;$i<=$#{$feature_type_aids}; $i++){
         my $gclass = $self->feature_type_data($feature_type_aids->[$i],'gbrowse_class');
@@ -442,7 +443,8 @@ sub copy_data_into_cmap {
         $ft_aid = $fmethod_to_ft_aid{$row->{'feature_method'}};
         
 
-        $admin->feature_update(
+        $sql_object->update_feature(
+                cmap_object => $self,
                 map_id => $map_id,
                 feature_id => $row->{'feature_id'},
                 feature_name => $row->{'feature_name'},

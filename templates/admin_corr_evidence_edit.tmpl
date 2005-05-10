@@ -1,7 +1,7 @@
-[% INCLUDE admin_header.tmpl title="Edit Correspondence Evidence &quot;$corr.correspondence_evidence_aid&quot;" %]
+[% INCLUDE admin_header.tmpl title="Edit Correspondence Evidence &quot;$evidence.correspondence_evidence_aid&quot;" %]
 <a href="admin">Home</a> |
-<a href="admin?action=feature_corr_view;feature_correspondence_id=[% corr.feature_correspondence_id %]">View Correspondence</a> |
-<a href="admin?action=confirm_delete;entity_type=cmap_correspondence_evidence;entity_name_field=correspondence_evidence_aid;entity_id=[% corr.correspondence_evidence_id %]">Delete</a>
+<a href="admin?action=feature_corr_view;feature_correspondence_id=[% evidence.feature_correspondence_id %]">View Correspondence</a> |
+<a href="admin?action=confirm_delete;entity_type=cmap_correspondence_evidence;entity_name_field=correspondence_evidence_aid;entity_id=[% evidence.correspondence_evidence_id %]">Delete</a>
 <hr noshade>
 
 [% IF errors.size %]
@@ -20,7 +20,7 @@
             Acc. ID <em>(opt.)</em>:
         </td>
         <td>
-            <input name="correspondence_evidence_aid" value="[% corr.correspondence_evidence_aid %]">
+            <input name="correspondence_evidence_aid" value="[% evidence.correspondence_evidence_aid %]">
         </td>
     </tr>
 
@@ -32,7 +32,7 @@
             <select name="evidence_type">
                 <option value="">--Please Select--</option>
                 [% FOREACH et=evidence_types %]
-                    <option value="[% et.evidence_type %]"[% IF et.evidence_type==corr.evidence_type %] selected[% END %]>[% et.evidence_type %]([% et.rank %])</option>
+                    <option value="[% et.evidence_type %]"[% IF et.evidence_type==evidence.evidence_type %] selected[% END %]>[% et.evidence_type %]([% et.rank %])</option>
                 [% END %]
             </select>
         </td>
@@ -40,13 +40,13 @@
 
     <tr>
         <td align="right">Score <em>(opt.)</em>:</td>
-        <td><input name="score" value="[% corr.score %]"></td>
+        <td><input name="score" value="[% evidence.score %]"></td>
     </tr>
 
     <tr>
         <td colspan="2">
-            <input type="hidden" name="correspondence_evidence_id" value="[% corr.correspondence_evidence_id %]">
-            <input type="hidden" name="feature_correspondence_id" value="[% corr.feature_correspondence_id %]">
+            <input type="hidden" name="correspondence_evidence_id" value="[% evidence.correspondence_evidence_id %]">
+            <input type="hidden" name="feature_correspondence_id" value="[% evidence.feature_correspondence_id %]">
             <input type="hidden" name="action" value="corr_evidence_update">
             <input type="submit" value="Submit">
         </td>

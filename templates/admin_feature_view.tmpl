@@ -158,13 +158,13 @@
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
                 <td>[% fc.feature_correspondence_aid %]</td>
                 <td>
-                    <a href="admin?action=map_view;map_id=[% fc.map_id %]">[% fc.species_common_name %]-[% fc.map_set_name %]-[% fc.map_name %]</a>
+                    <a href="admin?action=map_view;map_id=[% fc.map_id2 %]">[% fc.species_common_name2 %]-[% fc.map_set_short_name2 %]-[% fc.map_name2 %]</a>
                 </td>
                 <td>
-                    <a href="admin?action=feature_view;feature_id=[% fc.feature_id %]">[% fc.feature_name %]</a>
+                    <a href="admin?action=feature_view;feature_id=[% fc.feature_id2 %]">[% fc.feature_name2 %]</a>
                 </td>
-                <td>[% fc.aliases.join(', ') %]</td>
-                <td>[% fc.evidence %]</td>
+                <td>[% fc.aliases2.join(', ') %]</td>
+                <td>[% fc.evidence.evidence_type %]</td>
                 <td>[% IF fc.is_enabled; 'Yes'; ELSE; 'No'; END %]</td>
                 <td align="center">
                     <a href="admin?action=feature_corr_view;feature_correspondence_id=[% fc.feature_correspondence_id %]">View</a>
