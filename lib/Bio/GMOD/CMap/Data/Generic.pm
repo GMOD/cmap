@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.77 2005-05-10 07:06:37 mwz444 Exp $
+# $Id: Generic.pm,v 1.78 2005-05-11 03:36:51 mwz444 Exp $
 
 =head1 NAME
 
@@ -33,7 +33,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.77 $)[-1];
+$VERSION = (qw$Revision: 1.78 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -467,6 +467,8 @@ Not using cache because this query is quicker.
     my $cmap_object = $args{'cmap_object'} or return;
     my $object_type = $args{'object_type'};
     my $xref_id     = $args{'xref_id'};
+    my $xref_name   = $args{'xref_name'};
+    my $xref_url    = $args{'xref_url'};
     my $object_id   = $args{'object_id'};
     my $order_by    = $args{'order_by'};
     my $db          = $cmap_object->db;
@@ -499,6 +501,21 @@ Not using cache because this query is quicker.
         push @identifiers, $object_id;
         $where_sql .= $where_sql ? " and " : " where ";
         $where_sql .= " object_id=? ";
+    }
+    if ($xref_id) {
+        push @identifiers, $xref_id;
+        $where_sql .= $where_sql ? " and " : " where ";
+        $where_sql .= " xref_id=? ";
+    }
+    if ($xref_url) {
+        push @identifiers, $xref_url;
+        $where_sql .= $where_sql ? " and " : " where ";
+        $where_sql .= " xref_url=? ";
+    }
+    if ($xref_value) {
+        push @identifiers, $xref_value;
+        $where_sql .= $where_sql ? " and " : " where ";
+        $where_sql .= " xref_value=? ";
     }
 
     if ($order_by) {
@@ -966,6 +983,7 @@ Array of Hashes:
     map_set_name,
     map_set_short_name,
     can_be_reference_map,
+    is_relational_map,
     map_type_aid,
     map_units,
     species_id,
@@ -991,10 +1009,15 @@ Not using cache because this query is quicker.
     my $map_id            = $args{'map_id'};
     my $map_aid           = $args{'map_aid'};
     my $map_set_id        = $args{'map_set_id'};
+    my $map_set_ids       = $args{'map_set_ids'} || [];
+    my $feature_start     = $args{'feature_start'};
+    my $feature_stop      = $args{'feature_stop'};
+    my $direction         = $args{'direction'};
     my $map_start         = $args{'map_start'};
     my $map_stop          = $args{'map_stop'};
     my $feature_type_aids = $args{'feature_type_aids'} || [];
     my $species_id        = $args{'species_id'};
+    my $species_ids       = $args{'species_ids'} || [];
     my $species_aids      = $args{'species_aids'} || [];
     my $aliases_get_rows  = $args{'aliases_get_rows'} || 0;
 
@@ -1024,6 +1047,7 @@ Not using cache because this query is quicker.
                 ms.map_set_name,
                 ms.map_set_short_name,
                 ms.can_be_reference_map,
+                ms.is_relational_map,
                 ms.map_type_accession as map_type_aid,
                 ms.map_units,
                 s.species_id,
@@ -1048,10 +1072,27 @@ Not using cache because this query is quicker.
           . join( "','", sort @$feature_type_aids ) . "')";
     }
 
+    if ( defined($feature_start) ) {
+        push @identifiers, $feature_start;
+        $where_sql .= " and f.start_position = ? ";
+    }
+    if ( defined($feature_stop) ) {
+        push @identifiers, $feature_stop;
+        $where_sql .= " and f.stop_position = ? ";
+
+    }
+    if ( defined($direction) ) {
+        push @identifiers, $direction;
+        $where_sql .= " and f.direction = ? ";
+    }
     if ($species_id) {
         push @identifiers, $species_id;
         $where_sql .= " and s.species_id = ? ";
 
+    }
+    elsif ( $species_ids and @$species_ids ) {
+        $where_sql .=
+          "and s.species_id in ('" . join( "','", sort @$species_ids ) . "')";
     }
     elsif ( $species_aids and @$species_aids ) {
         $where_sql .=
@@ -1065,8 +1106,11 @@ Not using cache because this query is quicker.
         $where_sql .= " and f.feature_id = ? ";
     }
     elsif ($feature_aid) {
-        push @identifiers, $feature_aid;
-        $where_sql .= " and f.accession_id = ? ";
+        my $comparison = $feature_name =~ m/%/ ? 'like' : '=';
+        if ( $feature_name ne '%' ) {
+            push @identifiers, $feature_aid;
+            $where_sql .= " and f.accession_id $comparison ? ";
+        }
     }
     if ($map_id) {
         push @identifiers, $map_id;
@@ -1079,6 +1123,10 @@ Not using cache because this query is quicker.
     elsif ($map_set_id) {
         push @identifiers, $map_set_id;
         $where_sql .= " and map.map_set_id = ? ";
+    }
+    elsif (@$map_set_ids) {
+        $where_sql .=
+          "and map.map_set_id in ('" . join( "','", sort @$map_set_ids ) . "')";
     }
 
     # I'm defining the alias sql so late so they can have a true copy
@@ -1205,16 +1253,18 @@ Not using cache because this query is quicker.
 =cut
 
     my ( $self, %args ) = @_;
-    my $cmap_object      = $args{'cmap_object'} or return;
-    my $feature_id       = $args{'feature_id'};
-    my $feature_alias_id = $args{'feature_alias_id'};
-    my $feature_ids      = $args{'feature_ids'} || [];
-    my $feature_aid      = $args{'feature_aid'};
-    my $alias            = $args{'alias'};
-    my $map_id           = $args{'map_id'};
-    my $map_aid          = $args{'map_aid'};
-    my $map_set_id       = $args{'map_set_id'};
-    my $db               = $cmap_object->db;
+    my $cmap_object              = $args{'cmap_object'} or return;
+    my $feature_id               = $args{'feature_id'};
+    my $feature_alias_id         = $args{'feature_alias_id'};
+    my $feature_ids              = $args{'feature_ids'} || [];
+    my $feature_aid              = $args{'feature_aid'};
+    my $alias                    = $args{'alias'};
+    my $map_id                   = $args{'map_id'};
+    my $map_aid                  = $args{'map_aid'};
+    my $map_set_id               = $args{'map_set_id'};
+    my $map_set_ids              = $args{'map_set_ids'};
+    my $ignore_feature_type_aids = $args{'ignore_feature_type_aids'} || [];
+    my $db                       = $cmap_object->db;
     my $return_object;
     my @identifiers = ();
 
@@ -1273,6 +1323,16 @@ Not using cache because this query is quicker.
         push @identifiers, $map_set_id;
         $from_sql  .= ", cmap_map map ";
         $where_sql .= " and map.map_set_id = ? ";
+    }
+    elsif (@$map_set_ids) {
+        $from_sql  .= ", cmap_map map ";
+        $where_sql .=
+          " and map.map_set_id in (" . join( ",", sort @$map_set_ids ) . ") ";
+    }
+    if (@$ignore_feature_type_aids) {
+        $sql_str .=
+          " and f.feature_type_accession not in ('"
+          . join( "','", sort @$ignore_feature_type_aids ) . "') ";
     }
 
     my $sql_str = $select_sql . $from_sql . $where_sql;
@@ -1761,6 +1821,7 @@ Array of Hashes:
     my $map_set_aid       = $args{'map_set_aid'};
     my $map_set_aids      = $args{'map_set_aids'} || [];
     my $map_name          = $args{'map_name'};
+    my $map_length        = $args{'map_length'};
     my $map_type_aid      = $args{'map_type_aid'};
     my $species_aid       = $args{'species_aid'};
     my $is_relational_map = $args{'is_relational_map'};
@@ -1813,6 +1874,10 @@ Array of Hashes:
     }
     if ($map_name) {
         $where_sql .= " and map.map_name='$map_name' ";
+    }
+    if ($map_length) {
+        $where_sql .=
+          " and (map.stop_position - map.start_position + 1 = $map_length) ";
     }
 
     if ($map_set_id) {
@@ -1938,6 +2003,7 @@ Array of Hashes:
     my ( $self, %args ) = @_;
     my $cmap_object = $args{'cmap_object'} or return;
     my $map_ids                    = $args{'map_ids'}                    || [];
+    my $map_set_ids                = $args{'map_set_ids'}                || [];
     my $included_feature_type_aids = $args{'included_feature_type_aids'} || [];
     my $db                         = $cmap_object->db;
     my $feature_type_data          = $cmap_object->feature_type_data();
@@ -1953,6 +2019,14 @@ Array of Hashes:
     if (@$map_ids) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
         $where_sql .= " f.map_id in ('" . join( "','", sort @$map_ids ) . "')";
+    }
+    if (@$map_set_ids) {
+        $sql_str   .= ", cmap_map map ";
+        $where_sql .= $where_sql ? ' and ' : ' where ';
+        $where_sql .= " f.map_id = map.map_id ";
+        $where_sql .=
+          " and map.map_set_id in ('"
+          . join( "','", sort @$map_set_ids ) . "')";
     }
     if (@$included_feature_type_aids) {
         $where_sql .= $where_sql ? ' and ' : ' where ';
@@ -2136,8 +2210,10 @@ Array of Hashes:
     my ( $self, %args ) = @_;
     my $cmap_object          = $args{'cmap_object'} or return;
     my $species_id           = $args{'species_id'};
+    my $species_ids          = $args{'species_ids'} || [];
     my $species_aid          = $args{'species_aid'};
     my $map_set_id           = $args{'map_set_id'};
+    my $map_set_ids          = $args{'map_set_ids'} || [];
     my $map_set_aid          = $args{'map_set_aid'};
     my $map_set_aids         = $args{'map_set_aids'} || [];
     my $map_type_aid         = $args{'map_type_aid'};
@@ -2179,6 +2255,10 @@ Array of Hashes:
     if ($map_set_id) {
         $where_sql .= " and ms.map_set_id = '$map_set_id' ";
     }
+    elsif (@$map_set_ids) {
+        $where_sql .=
+          " and ms.map_set_id in (" . join( ",", sort @$map_set_ids ) . ") ";
+    }
     elsif ($map_set_aid) {
         $where_sql .= " and ms.accession_id = '$map_set_aid' ";
     }
@@ -2189,6 +2269,10 @@ Array of Hashes:
     }
     if ($species_id) {
         $where_sql .= " and s.species_id= '$species_id' ";
+    }
+    if (@$species_ids) {
+        $where_sql .=
+          " and s.species_id in (" . join( ",", sort @$species_ids ) . ") ";
     }
     elsif ( $species_aid and $species_aid ne '-1' ) {
         $where_sql .= " and s.accession_id= '$species_aid' ";
@@ -2865,6 +2949,7 @@ Not using cache because this query is quicker.
     my $feature_correspondence_id   = $args{'feature_correspondence_id'};
     my $feature_id1                 = $args{'feature_id1'};
     my $feature_id2                 = $args{'feature_id2'};
+    my $map_set_id2                 = $args{'map_set_id2'};
     my $map_set_aid2                = $args{'map_set_aid2'};
     my $map_aid2                    = $args{'map_aid2'};
     my $included_evidence_type_aids = $args{'included_evidence_type_aids'}
@@ -2934,7 +3019,10 @@ Not using cache because this query is quicker.
         $sql_str .= " and cl.feature_id2=$feature_id2 ";
     }
 
-    if ($map_set_aid2) {
+    if ($map_set_id2) {
+        $sql_str .= " and map2.map_set_id='" . $map_set_id2 . "' ";
+    }
+    elsif ($map_set_aid2) {
         $sql_str .= " and ms2.accession_id='" . $map_set_aid2 . "' ";
     }
     elsif ($map_aid2) {
@@ -2993,11 +3081,11 @@ Not using cache because this query is quicker.
 }
 
 #-----------------------------------------------
-sub get_correspondences_simple {    #YYY
+sub get_feature_correspondences_simple {    #YYY
 
 =pod
 
-=head2 get_correspondences_simple
+=head2 get_feature_correspondences_simple
 
 =head3 Description
 
@@ -3693,6 +3781,7 @@ Not using cache because this query is quicker.
     my $cmap_object                = $args{'cmap_object'} or return;
     my $feature_correspondence_id  = $args{'feature_correspondence_id'};
     my $correspondence_evidence_id = $args{'correspondence_evidence_id'};
+    my $evidence_type_aid          = $args{'evidence_type_aid'};
     my $order_by                   = $args{'order_by'};
     my $db                         = $cmap_object->db;
     my $evidence_type_data         = $cmap_object->evidence_type_data();
@@ -3716,6 +3805,11 @@ Not using cache because this query is quicker.
         $where_sql .= $where_sql ? " and " : " where ";
         $where_sql .= " ce.correspondence_evidence_id = ? ";
     }
+    if ($evidence_type_aid) {
+        push @identifiers, $evidence_type_aid;
+        $where_sql .= $where_sql ? " and " : " where ";
+        $where_sql .= " ce.evidence_type_aid = ? ";
+    }
     if ($feature_correspondence_id) {
         push @identifiers, $feature_correspondence_id;
         $where_sql .= $where_sql ? " and " : " where ";
@@ -3738,11 +3832,11 @@ Not using cache because this query is quicker.
 }
 
 #-----------------------------------------------
-sub get_evidence_simple {    #YYY
+sub get_correspondence_evidences_simple {    #YYY
 
 =pod
 
-=head2 get_evidence_simple
+=head2 get_correspondence_evidences_simple
 
 =head3 Description
 
@@ -4482,6 +4576,7 @@ Not using cache because this query is quicker.
     my ( $self, %args ) = @_;
     my $cmap_object      = $args{'cmap_object'} or return;
     my $map_id           = $args{'map_id'};
+    my $feature_id       = $args{'feature_id'};
     my $feature_aid      = $args{'feature_aid'};
     my $feature_name     = $args{'feature_name'};
     my $feature_type_aid = $args{'feature_type_aid'};
@@ -4501,7 +4596,11 @@ Not using cache because this query is quicker.
     ];
     my $where_sql = '';
 
-    if ($feature_aid) {
+    if ($feature_id) {
+        $where_sql .= $where_sql ? " and " : " where ";
+        $where_sql .= " and feature_id = $feature_id ";
+    }
+    elsif ($feature_aid) {
         $where_sql .= $where_sql ? " and " : " where ";
         $where_sql .= " and accession_id = '$feature_aid' ";
     }
@@ -5261,7 +5360,7 @@ Not using cache because this query is quicker.
     my $map_aid        = $args{'map_aid'} || $args{'accession_id'};
     my $map_set_id     = $args{'map_set_id'};
     my $map_name       = $args{'map_name'};
-    my $display_order  = $args{'display_order'};
+    my $display_order  = $args{'display_order'} || 1;
     my $start_position = $args{'start_position'};
     my $stop_position  = $args{'stop_position'};
     my $db             = $cmap_object->db;
@@ -5459,44 +5558,76 @@ Not using cache because this query is quicker.
     my $stop_position    = $args{'stop_position'};
     my $default_rank     = $args{'default_rank'};
     my $direction        = $args{'direction'};
+    my $gclass           = $args{'gclass'};
     my $threshold        = $args{'threshold'} || 0;
     my $db               = $cmap_object->db;
-    push $self->{'insert_features'},
-      [
-        $feature_aid,   $map_id,       $feature_type_aid,
-        $feature_name,  $is_landmark,  $start_position,
-        $stop_position, $default_rank, $direction
-      ]
-      if ($feature_type_aid);
 
-    my $base_feature_id;
+    $gclass = undef unless ( $cmap_object->config_data('gbrowse_compatible') );
+
+    $stop_position = $start_position unless ( defined($stop_position) );
+
+    if ($feature_type_aid) {
+        push @{ $self->{'insert_features'} },
+          [
+            $feature_aid,   $map_id,       $feature_type_aid,
+            $feature_name,  $is_landmark,  $start_position,
+            $stop_position, $default_rank, $direction
+          ];
+        push @{ $self->{'insert_features'}[-1] }, $gclass
+          if (gclass);
+    }
+
     if (    scalar( @{ $self->{'insert_features'} } ) >= $threshold
         and scalar( @{ $self->{'insert_features'} } ) )
     {
-        my $no_features = scalar( @{ $self->{'insert_features'} } );
-        $base_feature_id = $self->next_number(
+        my $no_features     = scalar( @{ $self->{'insert_features'} } );
+        my $base_feature_id = $self->next_number(
             object_type => 'feature',
             requested   => scalar( @{ $self->{'insert_features'} } )
           )
           or return $self->error('No next number for feature ');
-        my $sth = $db->prepare(
-            qq[
-                insert into cmap_feature
-                (
-                    feature_id,
-                    accession_id,
-                    map_id,
-                    feature_type_aid,
-                    feature_name,
-                    is_landmark,
-                    start_position,
-                    stop_position,
-                    default_rank,
-                    direction 
-                 )
-                 values ( ?,?,?,?,?,?,?,?,?,? )
-                ]
-        );
+        my $sth;
+        if ($gclass) {
+            $sth = $db->prepare(
+                qq[
+                    insert into cmap_feature
+                    (
+                        feature_id,
+                        accession_id,
+                        map_id,
+                        feature_type_aid,
+                        feature_name,
+                        is_landmark,
+                        start_position,
+                        stop_position,
+                        default_rank,
+                        direction,
+                        gclass
+                     )
+                     values ( ?,?,?,?,?,?,?,?,?,?,? )
+                    ]
+            );
+        }
+        else {
+            $sth = $db->prepare(
+                qq[
+                    insert into cmap_feature
+                    (
+                        feature_id,
+                        accession_id,
+                        map_id,
+                        feature_type_aid,
+                        feature_name,
+                        is_landmark,
+                        start_position,
+                        stop_position,
+                        default_rank,
+                        direction 
+                     )
+                     values ( ?,?,?,?,?,?,?,?,?,? )
+                    ]
+            );
+        }
         for ( my $i = 0 ; $i < $no_features ; $i++ ) {
             my $feature_id = $base_feature_id + $i;
             $self->{'insert_features'}[$i][0] ||= $feature_id;
@@ -5541,32 +5672,161 @@ Not using cache because this query is quicker.
 
     my ( $self, %args ) = @_;
     my $cmap_object = $args{'cmap_object'} or return;
+    my $feature_id1 = $args{'feature_id1'};
+    my $feature_id2 = $args{'feature_id2'};
+    my $is_enabled  = $args{'is_enabled'};
+    $is_enabled = 1 unless ( defined($is_enabled) );
+    my $evidence_type_aid          = $args{'evidence_type_aid'};
+    my $evidence                   = $args{'evidence'} || [];
     my $feature_correspondence_aid = $args{'feature_correspondence_aid'}
       || $args{'accession_id'};
-    my $is_enabled                = $args{'is_enabled'};
-    my $feature_id1               = $args{'feature_id1'};
-    my $feature_id2               = $args{'feature_id2'};
-    my $db                        = $cmap_object->db;
-    my $feature_correspondence_id =
-      $self->next_number( object_type => 'feature_correspondence', )
-      or return $self->error('No next number for feature_correspondence ');
-    my $feature_correspondence_aid ||= $feature_correspondence_id;
-    my @insert_args = (
-        $feature_correspondence_id, $feature_correspondence_aid, $is_enabled,
-        $feature_id1, $feature_id2
-    );
+    my $score = $args{'score'};
 
-    $db->do(
-        qq[
-        insert into cmap_feature_correspondence
-        (feature_correspondence_id,accession_id,is_enabled,feature_id1,feature_id2 )
-         values ( ?,?,?,?,? )
-        ],
-        {},
-        (@insert_args)
-    );
+    my $threshold = $args{'threshold'} || 0;
+    my $db        = $cmap_object->db;
 
-    return $feature_correspondence_id;
+    if ($evidence_type_aid) {
+        push @$evidence,
+          {
+            evidence_type_aid => $evidence_type_aid,
+            score             => $score,
+          };
+    }
+
+    if ($feature_id1) {
+        push @{ $self->{'insert_correspondences'} },
+          [
+            $feature_correspondence_aid,
+            $feature_id1, $feature_id2, $is_enabled, $evidence
+          ];
+    }
+
+    my $base_corr_id;
+    if (    scalar( @{ $self->{'insert_correspondences'} } ) >= $threshold
+        and scalar( @{ $self->{'insert_correspondences'} } ) )
+    {
+        my $no_correspondences =
+          scalar( @{ $self->{'insert_correspondences'} } );
+        my $base_corr_id = $self->next_number(
+            object_type => 'feature_correspondence',
+            requested   => $no_correspondences,
+          )
+          or return $self->error('No next number for correspondence ');
+        my $sth_fc = $db->prepare(
+            qq[
+                insert into cmap_feature_correspondence
+                (
+                    feature_correspondence_id,
+                    accession_id,
+                    feature_id1,
+                    feature_id2,
+                    is_enabled
+                 )
+                 values ( ?,?,?,?,? )
+                ]
+        );
+        my $sth_cl = $db->prepare(
+            qq[
+                insert into cmap_correspondence_lookup
+                (
+                    feature_correspondence_id,
+                    feature_id1,
+                    feature_id2,
+                    start_position1,
+                    start_position2,
+                    stop_position1,
+                    stop_position2,
+                    map_id1,
+                    map_id2,
+                    feature_type_accession1,
+                    feature_type_accession2
+                 )
+                 values ( ?,?,?,?,?,?,?,?,?,?,? )
+                ]
+        );
+        my (
+            $corr_id,     $corr_aid,   $feature_id1,
+            $feature_id2, $is_enabled, $evidence
+        );
+        for ( my $i = 0 ; $i < $no_correspondences ; $i++ ) {
+            my $corr_id = $base_corr_id + $i;
+            ( $corr_aid, $feature_id1, $feature_id2, $is_enabled, $evidences ) =
+              @{ $self->{'insert_correspondences'}[$i] };
+            $corr_aid ||= $corr_id;
+
+            my $feature1 = $self->get_feature_details(
+                cmap_object => $cmap_object,
+                feature_id  => $feature_id1,
+            );
+            $feature1 = $feature1->[0] if $feature1;
+            my $feature2 = $self->get_feature_details(
+                cmap_object => $cmap_object,
+                feature_id  => $feature_id2,
+            );
+            $feature2 = $feature2->[0] if $feature2;
+
+            #
+            # Don't create correspondences among relational maps.
+            #
+            return -1
+              if $feature1->{'map_set_id'} == $feature2->{'map_set_id'}
+              && $feature1->{'is_relational_map'} == 1;
+
+            #
+            # Don't create correspondences among relational map sets.
+            #
+            return -1
+              if $feature1->{'is_relational_map'}
+              && $feature2->{'is_relational_map'};
+
+            $sth_fc->execute(
+                $corr_id,     $corr_aid, $feature_id1,
+                $feature_id2, $is_enabled
+            );
+
+            $sth_cl->execute(
+                $corr_id,
+                $feature_id1,
+                $feature_id2,
+                $feature1->{'start_position'},
+                $feature2->{'start_position'},
+                $feature1->{'stop_position'},
+                $feature2->{'stop_position'},
+                $feature1->{'map_id'},
+                $feature2->{'map_id'},
+                $feature1->{'feature_aid'},
+                $feature2->{'feature_aid'},
+
+            );
+            $sth_cl->execute(
+                $corr_id,
+                $feature_id2,
+                $feature_id1,
+                $feature2->{'start_position'},
+                $feature1->{'start_position'},
+                $feature2->{'stop_position'},
+                $feature1->{'stop_position'},
+                $feature2->{'map_id'},
+                $feature1->{'map_id'},
+                $feature2->{'feature_aid'},
+                $feature1->{'feature_aid'},
+
+            );
+
+            # Deal with Evidence
+            foreach my $evidence (@$evidences) {
+                $self->insert_correspondence_evidence(
+                    cmap_object               => $cmap_object,
+                    feature_correspondence_id => $corr_id,
+                    evidence_type_aid => $evidence->{'evidence_type_aid'},
+                    score             => $evidence->{'score'},
+                );
+            }
+        }
+        $self->{'insert_correspondences'} = [];
+        return $base_corr_id + $no_corrs - 1;
+    }
+    return undef;
 }
 
 #-----------------------------------------------
@@ -5730,20 +5990,20 @@ Not using cache because this query is quicker.
 =cut
 
     my ( $self, %args ) = @_;
-    my $cmap_object  = $args{'cmap_object'} or return;
-    my $db           = $cmap_object->db;
-    my $xref_id = $self->next_number( object_type => 'xref', )
+    my $cmap_object = $args{'cmap_object'} or return;
+    my $db          = $cmap_object->db;
+    my $xref_id     = $self->next_number( object_type => 'xref', )
       or return $self->error('No next number for xref ');
-    my $display_order   = $args{'display_order'};
-    my $object_type     = $args{'object_type'};
-    my $xref_name  = $args{'xref_name'};
-    my $xref_url = $args{'xref_url'};
-    my $object_id       = $args{'object_id'};
-    my $table_name      = $self->{'TABLE_NAMES'}->{$object_type};
-    my $db              = $cmap_object->db;
-    my @insert_args     = (
-        $xref_id, $table_name, $object_id, $xref_url,
-        $xref_name, $display_order
+    my $display_order = $args{'display_order'};
+    my $object_type   = $args{'object_type'};
+    my $xref_name     = $args{'xref_name'};
+    my $xref_url      = $args{'xref_url'};
+    my $object_id     = $args{'object_id'};
+    my $table_name    = $self->{'TABLE_NAMES'}->{$object_type};
+    my $db            = $cmap_object->db;
+    my @insert_args   = (
+        $xref_id,  $table_name, $object_id,
+        $xref_url, $xref_name,  $display_order
     );
 
     unless ( defined($display_order) ) {
@@ -5805,14 +6065,14 @@ Not using cache because this query is quicker.
 =cut
 
     my ( $self, %args ) = @_;
-    my $cmap_object = $args{'cmap_object'} or return;
-    my $db          = $cmap_object->db;
-    my $attribute_id       = $args{'attribute_id'};
-    my $object_type       = $args{'object_type'};
-    my $object_id       = $args{'object_id'};
-    my $table_name = $self->{'TABLE_NAMES'}->{$object_type};
-    my @delete_args = ();
-    my $delete_sql  = qq[
+    my $cmap_object  = $args{'cmap_object'} or return;
+    my $db           = $cmap_object->db;
+    my $attribute_id = $args{'attribute_id'};
+    my $object_type  = $args{'object_type'};
+    my $object_id    = $args{'object_id'};
+    my $table_name   = $self->{'TABLE_NAMES'}->{$object_type};
+    my @delete_args  = ();
+    my $delete_sql   = qq[
         delete from cmap_attribute
     ];
     my $where_sql = '';
@@ -5874,10 +6134,10 @@ Not using cache because this query is quicker.
     my ( $self, %args ) = @_;
     my $cmap_object = $args{'cmap_object'} or return;
     my $db          = $cmap_object->db;
-    my $xref_id       = $args{'xref_id'};
-    my $object_type       = $args{'object_type'};
-    my $object_id       = $args{'object_id'};
-    my $table_name = $self->{'TABLE_NAMES'}->{$object_type};
+    my $xref_id     = $args{'xref_id'};
+    my $object_type = $args{'object_type'};
+    my $object_id   = $args{'object_id'};
+    my $table_name  = $self->{'TABLE_NAMES'}->{$object_type};
     my @delete_args = ();
     my $delete_sql  = qq[
         delete from cmap_xref
@@ -5939,16 +6199,15 @@ Not using cache because this query is quicker.
 =cut
 
     my ( $self, %args ) = @_;
-    my $cmap_object = $args{'cmap_object'} or return;
-    my $db          = $cmap_object->db;
-    my $correspondence_evidence_id       = $args{'correspondence_evidence_id'};
-    my $feature_correspondence_id       = $args{'feature_correspondence_id'};
-    my @delete_args = ();
-    my $delete_sql  = qq[
+    my $cmap_object                = $args{'cmap_object'} or return;
+    my $db                         = $cmap_object->db;
+    my $correspondence_evidence_id = $args{'correspondence_evidence_id'};
+    my $feature_correspondence_id  = $args{'feature_correspondence_id'};
+    my @delete_args                = ();
+    my $delete_sql                 = qq[
         delete from cmap_correspondence_evidence
     ];
     my $where_sql = '';
-
 
     if ($correspondence_evidence_id) {
         push @delete_args, $correspondence_evidence_id;
@@ -6000,15 +6259,15 @@ Not using cache because this query is quicker.
 =cut
 
     my ( $self, %args ) = @_;
-    my $cmap_object = $args{'cmap_object'} or return;
-    my $db          = $cmap_object->db;
-    my $feature_correspondence_id       = $args{'feature_correspondence_id'};
-    my $feature_id       = $args{'feature_id'};
-    my @delete_args = ();
-    my $delete_sql_fc  = qq[
+    my $cmap_object               = $args{'cmap_object'} or return;
+    my $db                        = $cmap_object->db;
+    my $feature_correspondence_id = $args{'feature_correspondence_id'};
+    my $feature_id                = $args{'feature_id'};
+    my @delete_args               = ();
+    my $delete_sql_fc             = qq[
         delete from cmap_feature_correspondence
     ];
-    my $delete_sql_cl  = qq[
+    my $delete_sql_cl = qq[
         delete from cmap_correspondence_lookup
     ];
     my $where_sql_fc = '';
@@ -6071,16 +6330,15 @@ Not using cache because this query is quicker.
 =cut
 
     my ( $self, %args ) = @_;
-    my $cmap_object = $args{'cmap_object'} or return;
-    my $db          = $cmap_object->db;
-    my $feature_alias_id       = $args{'feature_alias_id'};
+    my $cmap_object      = $args{'cmap_object'} or return;
+    my $db               = $cmap_object->db;
+    my $feature_alias_id = $args{'feature_alias_id'};
     my $feature_id       = $args{'feature_id'};
-    my @delete_args = ();
-    my $delete_sql  = qq[
+    my @delete_args      = ();
+    my $delete_sql       = qq[
         delete from cmap_feature_alias
     ];
     my $where_sql = '';
-
 
     if ($feature_alias_id) {
         push @delete_args, $feature_alias_id;
@@ -6134,14 +6392,13 @@ Not using cache because this query is quicker.
     my ( $self, %args ) = @_;
     my $cmap_object = $args{'cmap_object'} or return;
     my $db          = $cmap_object->db;
-    my $feature_id       = $args{'feature_id'};
-    my $map_id       = $args{'map_id'};
+    my $feature_id  = $args{'feature_id'};
+    my $map_id      = $args{'map_id'};
     my @delete_args = ();
     my $delete_sql  = qq[
         delete from cmap_feature
     ];
     my $where_sql = '';
-
 
     if ($feature_id) {
         push @delete_args, $feature_id;
@@ -6195,14 +6452,13 @@ Not using cache because this query is quicker.
     my ( $self, %args ) = @_;
     my $cmap_object = $args{'cmap_object'} or return;
     my $db          = $cmap_object->db;
-    my $map_id       = $args{'map_id'}
+    my $map_id      = $args{'map_id'}
       or return $self->error('No ID given for map to delete ');
     my @delete_args = ();
     my $delete_sql  = qq[
         delete from cmap_map
     ];
     my $where_sql = '';
-
 
     if ($map_id) {
         push @delete_args, $map_id;
@@ -6251,14 +6507,13 @@ Not using cache because this query is quicker.
     my ( $self, %args ) = @_;
     my $cmap_object = $args{'cmap_object'} or return;
     my $db          = $cmap_object->db;
-    my $map_set_id       = $args{'map_set_id'}
+    my $map_set_id  = $args{'map_set_id'}
       or return $self->error('No ID given for map_set to delete ');
     my @delete_args = ();
     my $delete_sql  = qq[
         delete from cmap_map_set
     ];
     my $where_sql = '';
-
 
     if ($map_set_id) {
         push @delete_args, $map_set_id;
@@ -6307,14 +6562,13 @@ Not using cache because this query is quicker.
     my ( $self, %args ) = @_;
     my $cmap_object = $args{'cmap_object'} or return;
     my $db          = $cmap_object->db;
-    my $species_id       = $args{'species_id'}
+    my $species_id  = $args{'species_id'}
       or return $self->error('No ID given for species to delete ');
     my @delete_args = ();
     my $delete_sql  = qq[
         delete from cmap_species
     ];
     my $where_sql = '';
-
 
     if ($species_id) {
         push @delete_args, $species_id;
@@ -6328,7 +6582,6 @@ Not using cache because this query is quicker.
 
     return 1;
 }
-
 
 #-----------------------------------------------
 sub delete_stub {    #YYY
@@ -6371,7 +6624,6 @@ Not using cache because this query is quicker.
         delete from cmap_yy
     ];
     my $where_sql = '';
-
 
     if ($yy_id) {
         push @delete_args, $yy_id;
@@ -6559,14 +6811,14 @@ Not using cache because this query is quicker.
 =cut
 
     my ( $self, %args ) = @_;
-    my $cmap_object  = $args{'cmap_object'}  or return;
-    my $xref_id = $args{'xref_id'} or return;
-    my $display_order   = $args{'display_order'};
-    my $object_type     = $args{'object_type'};
-    my $xref_name  = $args{'xref_name'};
-    my $xref_url = $args{'xref_url'};
-    my $object_id       = $args{'object_id'};
-    my $db              = $cmap_object->db;
+    my $cmap_object = $args{'cmap_object'} or return;
+    my $xref_id     = $args{'xref_id'}     or return;
+    my $display_order = $args{'display_order'};
+    my $object_type   = $args{'object_type'};
+    my $xref_name     = $args{'xref_name'};
+    my $xref_url      = $args{'xref_url'};
+    my $object_id     = $args{'object_id'};
+    my $db            = $cmap_object->db;
 
     my $table_name = $self->{'TABLE_NAMES'}->{$object_type};
 
@@ -6773,6 +7025,540 @@ Not using cache because this query is quicker.
     );
 
     return ( $min_start, $max_start, $max_stop );
+}
+
+#-----------------------------------------------
+sub get_duplicate_correspondences {    #YYY
+
+=pod
+
+=head2 delete_duplicate_correspondences
+
+=head3 Description
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item *
+
+=back
+
+=head3 Output
+
+Array of Hashes:
+
+  Keys:
+
+=head3 Cache Level (If Used): 
+
+Not using cache because this query is quicker.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $cmap_object = $args{'cmap_object'} or return;
+    my $db          = $cmap_object->db;
+
+    my $dup_sql = q[
+        select min(b.feature_correspondence_id) as original_id,
+               a.feature_correspondence_id as duplicate_id
+        from  cmap_correspondence_lookup a,
+              cmap_correspondence_lookup b
+        where a.feature_correspondence_id > b.feature_correspondence_id
+          and a.feature_id1=b.feature_id1
+          and a.feature_id2=b.feature_id2
+        group by a.feature_correspondence_id
+        ];
+
+    return $db->selectall_arrayref( $dup_sql, { Columns => {} } );
+
+}
+
+#-----------------------------------------------
+sub get_moveable_evidence {    #YYY
+
+=pod
+
+=head2 get_moveable_evidence
+
+=head3 Description
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item *
+
+=back
+
+=head3 Output
+
+Array of Hashes:
+
+  Keys:
+
+=head3 Cache Level (If Used): 
+
+Not using cache because this query is quicker.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $cmap_object  = $args{'cmap_object'} or return;
+    my $original_id  = $args{'original_id'};
+    my $duplicate_id = $args{'duplicate_id'};
+    my $db           = $cmap_object->db;
+    my $return_object;
+
+    my $evidence_move_sql = qq[
+        select distinct ce1.correspondence_evidence_id
+        from   cmap_correspondence_evidence ce1
+        left join cmap_correspondence_evidence ce2
+            on ce1.evidence_type_accession=ce2.evidence_type_accession
+           and ce2.feature_correspondence_id=$original_id
+        where  ce1.feature_correspondence_id=$duplicate_id
+           and ce2.feature_correspondence_id is NULL
+    ];
+    $return_object = $db->selectcol_arrayref( $evidence_move_sql, {}, () );
+
+    return $return_object;
+}
+
+#-----------------------------------------------
+sub reload_correspondence_matrix {    #YYY
+
+=pod
+
+=head2 reload_correspondence_matrix
+
+=head3 Description
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item *
+
+=back
+
+=head3 Output
+
+Array of Hashes:
+
+  Keys:
+
+=head3 Cache Level (If Used): 
+
+Not using cache because this query is quicker.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $cmap_object = $args{'cmap_object'} or return;
+    my $db          = $cmap_object->db;
+
+    #
+    # Empty the table.
+    #
+    $db->do('delete from cmap_correspondence_matrix');
+
+    #
+    # Select all the reference maps.
+    #
+    my @reference_maps = @{
+        $db->selectall_arrayref(
+            q[
+                select   map.map_id,
+                         map.accession_id as map_aid,
+                         map.map_name,
+                         ms.accession_id as map_set_aid,
+                         ms.map_set_short_name,
+                         s.accession_id as species_aid,
+                         s.species_common_name
+                from     cmap_map map,
+                         cmap_map_set ms,
+                         cmap_species s
+                where    map.map_set_id=ms.map_set_id
+                and      ms.can_be_reference_map=1
+                and      ms.species_id=s.species_id
+                order by map_set_short_name, map_name
+            ],
+            { Columns => {} }
+        )
+      };
+
+    #
+    # Go through each map and figure the number of correspondences.
+    #
+    my ( $i, $new_records ) = ( 0, 0 );    # counters
+    for my $map (@reference_maps) {
+        $i++;
+        if ( $i % 50 == 0 ) {
+            print(" $i\n");
+        }
+        else {
+            print('#');
+        }
+
+        #
+        # This gets the number of correspondences to each individual
+        # map that can serve as a reference map.
+        #
+        my $map_correspondences = $db->selectall_arrayref(
+            q[
+                select   map.accession_id as map_aid,
+                         map.map_name,
+                         ms.accession_id as map_set_aid,
+                         count(f2.feature_id) as no_correspondences,
+                         ms.map_set_short_name,
+                         s.accession_id as species_aid,
+                         s.species_common_name
+                from     cmap_feature f1,
+                         cmap_feature f2,
+                from     cmap_feature f1,
+                         cmap_feature f2,
+                         cmap_correspondence_lookup cl,
+                         cmap_feature_correspondence fc,
+                         cmap_map map,
+                         cmap_map_set ms,
+                         cmap_species s
+                where    f1.map_id=?
+                and      f1.feature_id=cl.feature_id1
+                and      cl.feature_correspondence_id=
+                         fc.feature_correspondence_id
+                and      fc.is_enabled=1
+                and      cl.feature_id2=f2.feature_id
+                and      f2.map_id<>?
+                and      f2.map_id=map.map_id
+                and      map.map_set_id=ms.map_set_id
+                and      ms.can_be_reference_map=1
+                and      ms.species_id=s.species_id
+                group by map.accession_id,
+                         map.map_name,
+                         ms.accession_id,
+                         ms.map_set_short_name,
+                         s.accession_id,
+                         s.species_common_name
+                order by map_set_short_name, map_name
+            ],
+            { Columns => {} },
+            ( $map->{'map_id'}, $map->{'map_id'} )
+        );
+
+        #
+        # This gets the number of correspondences to each whole
+        # map set that cannot serve as a reference map.
+        #
+        my $map_set_correspondences = $db->selectall_arrayref(
+            q[
+                select   count(f2.feature_id) as no_correspondences,
+                         ms.accession_id as map_set_aid,
+                         ms.map_set_short_name,
+                         s.accession_id as species_aid,
+                         s.species_common_name
+                from     cmap_feature f1,
+                         cmap_feature f2,
+                         cmap_correspondence_lookup cl,
+                         cmap_feature_correspondence fc,
+                         cmap_map map,
+                         cmap_map_set ms,
+                         cmap_species s
+                where    f1.map_id=?
+                and      f1.feature_id=cl.feature_id1
+                and      cl.feature_id2=f2.feature_id
+                and      cl.feature_correspondence_id=
+                         fc.feature_correspondence_id
+                and      fc.is_enabled=1
+                and      f2.map_id=map.map_id
+                and      map.map_set_id=ms.map_set_id
+                and      ms.can_be_reference_map=0
+                and      ms.species_id=s.species_id
+                group by ms.accession_id,
+                         ms.map_set_short_name,
+                         s.accession_id,
+                         s.species_common_name
+                order by map_set_short_name
+            ],
+            { Columns => {} },
+            ( $map->{'map_id'} )
+        );
+
+        for my $corr ( @$map_correspondences, @$map_set_correspondences ) {
+            $db->do(
+                q[
+                    insert
+                    into   cmap_correspondence_matrix
+                           ( reference_map_aid,
+                             reference_map_name,
+                             reference_map_set_aid,
+                             reference_species_aid,
+                             link_map_aid,
+                             link_map_name,
+                             link_map_set_aid,
+                             link_species_aid,
+                             no_correspondences
+                           )
+                    values ( ?, ?, ?, ?, ?, ?, ?, ?, ? )
+                ],
+                {},
+                (
+                    $map->{'map_aid'},      $map->{'map_name'},
+                    $map->{'map_set_aid'},  $map->{'species_aid'},
+                    $corr->{'map_aid'},     $corr->{'map_name'},
+                    $corr->{'map_set_aid'}, $corr->{'species_aid'},
+                    $corr->{'no_correspondences'},
+                )
+            );
+
+            $new_records++;
+        }
+    }
+    return $new_records;
+}
+
+#-----------------------------------------------
+sub get_features_for_correspondence_making {    #YYY
+
+=pod
+
+=head2 get_features_for_correspondence_making
+
+=head3 Description
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item *
+
+=back
+
+=head3 Output
+
+Array of Hashes:
+
+  Keys:
+
+=head3 Cache Level (If Used): 
+
+Not using cache because this query is quicker.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $cmap_object = $args{'cmap_object'} or return;
+    my $map_set_ids              = $args{'map_set_ids'}              || [];
+    my $ignore_feature_type_aids = $args{'ignore_feature_type_aids'} || [];
+    my $db                       = $cmap_object->db;
+    my $return_object;
+
+    my $sql_str = q[
+        select f.feature_id,
+               f.feature_name,
+               f.feature_type_accession as feature_type_aid
+        from   cmap_feature f,
+               cmap_map map
+        where  f.map_id=map.map_id
+    ];
+
+    if (@$map_set_ids) {
+        $sql_str .=
+          " and map.map_set_id in (" . join( ",", sort @$map_set_ids ) . ") ";
+    }
+    if (@$ignore_feature_type_aids) {
+        $sql_str .=
+          " and f.feature_type_accession not in ('"
+          . join( "','", sort @$ignore_feature_type_aids ) . "') ";
+    }
+
+    $return_object = $db->selectall_hashref( $sql_str, 'feature_id' );
+
+    return $return_object;
+}
+
+#-----------------------------------------------
+sub get_table_info {    #YYY
+
+=pod
+
+=head2 get_table_info
+
+=head3 Description
+
+=head3 Input
+
+=over 4
+
+=item * Object that inherits from CMap.pm (cmap_object)
+
+=item *
+
+=back
+
+=head3 Output
+
+Array of Hashes:
+
+  Keys:
+
+=head3 Cache Level (If Used): 
+
+Not using cache because this query is quicker.
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my @tables = (
+        {
+            name   => 'cmap_attribute',
+            fields => {
+                attribute_id    => NUM,
+                table_name      => STR,
+                object_id       => NUM,
+                display_order   => NUM,
+                is_public       => NUM,
+                attribute_name  => STR,
+                attribute_value => STR,
+            }
+        },
+        {
+            name   => 'cmap_correspondence_evidence',
+            fields => {
+                correspondence_evidence_id => NUM,
+                accession_id               => STR,
+                feature_correspondence_id  => NUM,
+                evidence_type_accession    => STR,
+                score                      => NUM,
+                rank                       => NUM,
+            }
+        },
+        {
+            name   => 'cmap_correspondence_lookup',
+            fields => {
+                feature_id1               => NUM,
+                feature_id2               => NUM,
+                feature_correspondence_id => NUM,
+
+            }
+        },
+        {
+            name   => 'cmap_correspondence_matrix',
+            fields => {
+                reference_map_aid     => STR,
+                reference_map_name    => STR,
+                reference_map_set_aid => STR,
+                reference_species_aid => STR,
+                link_map_aid          => STR,
+                link_map_name         => STR,
+                link_map_set_aid      => STR,
+                link_species_aid      => STR,
+                no_correspondences    => NUM,
+            }
+        },
+        {
+            name   => 'cmap_feature',
+            fields => {
+                feature_id             => NUM,
+                accession_id           => STR,
+                map_id                 => NUM,
+                feature_type_accession => STR,
+                feature_name           => STR,
+                is_landmark            => NUM,
+                start_position         => NUM,
+                stop_position          => NUM,
+                default_rank           => NUM,
+            }
+        },
+        {
+            name   => 'cmap_feature_alias',
+            fields => {
+                feature_alias_id => NUM,
+                feature_id       => NUM,
+                alias            => STR,
+            }
+        },
+        {
+            name   => 'cmap_feature_correspondence',
+            fields => {
+                feature_correspondence_id => NUM,
+                accession_id              => STR,
+                feature_id1               => NUM,
+                feature_id2               => NUM,
+                is_enabled                => NUM,
+            }
+        },
+        {
+            name   => 'cmap_map',
+            fields => {
+                map_id         => NUM,
+                accession_id   => STR,
+                map_set_id     => NUM,
+                map_name       => STR,
+                display_order  => NUM,
+                start_position => NUM,
+                stop_position  => NUM,
+            }
+        },
+        {
+            name   => 'cmap_next_number',
+            fields => {
+                table_name  => STR,
+                next_number => NUM,
+            }
+        },
+        {
+            name   => 'cmap_species',
+            fields => {
+                species_id          => NUM,
+                accession_id        => STR,
+                species_common_name => STR,
+                species_full_name   => STR,
+                display_order       => STR,
+            }
+        },
+        {
+            name   => 'cmap_map_set',
+            fields => {
+                map_set_id           => NUM,
+                accession_id         => STR,
+                map_set_short_name   => STR,
+                map_set_short_name   => STR,
+                map_type_accession   => STR,
+                species_id           => NUM,
+                published_on         => STR,
+                can_be_reference_map => NUM,
+                display_order        => NUM,
+                is_enabled           => NUM,
+                shape                => STR,
+                color                => STR,
+                width                => NUM,
+                map_units            => STR,
+                is_relational_map    => NUM,
+            },
+        },
+        {
+            name   => 'cmap_xref',
+            fields => {
+                xref_id       => NUM,
+                table_name    => STR,
+                object_id     => NUM,
+                display_order => NUM,
+                xref_name     => STR,
+                xref_url      => STR,
+            }
+        },
+    );
+
+    return \@tables;
 }
 
 #-----------------------------------------------

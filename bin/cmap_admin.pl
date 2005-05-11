@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.104 2005-04-28 21:49:18 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.105 2005-05-11 03:36:47 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.104 $)[-1];
+$VERSION = (qw$Revision: 1.105 $)[-1];
 
 #
 # Get command-line options
@@ -96,11 +96,10 @@ sub init {
 # ----------------------------------------------------
 sub admin {
     my $self = shift;
-    my $db   = $self->db or die $self->error;
 
     unless ( $self->{'admin'} ) {
         $self->{'admin'} = Bio::GMOD::CMap::Admin->new(
-            db          => $db,
+            db          => $self->db,
             data_source => $self->data_source,
         );
     }
@@ -206,7 +205,7 @@ sub show_greeting {
     my $self      = shift;
     my $separator = '-=' x 10;
 
-    my $menu_options    = [
+    my $menu_options = [
         {
             action  => 'change_data_source',
             display => 'Change current data source',
@@ -253,29 +252,29 @@ sub show_greeting {
         },
     ];
 
-    if ($self->config_data('gbrowse_compatible')){
-        push @$menu_options, 
-            {
-                action  => 'prepare_for_gbrowse',
-                display => 'Prepare the Database for GBrowse data'
-            };
-        push @$menu_options, 
-            {
-                action  => 'copy_cmap_into_gbrowse',
-                display => 'Copy CMap into the GBrowse database'
-            };
-        push @$menu_options, 
-            {
-                action  => 'copy_gbrowse_into_cmap',
-                display => 'Copy GBrowse into the CMap database'
-            };
+    if ( $self->config_data('gbrowse_compatible') ) {
+        push @$menu_options,
+          {
+            action  => 'prepare_for_gbrowse',
+            display => 'Prepare the Database for GBrowse data'
+          };
+        push @$menu_options,
+          {
+            action  => 'copy_cmap_into_gbrowse',
+            display => 'Copy CMap into the GBrowse database'
+          };
+        push @$menu_options,
+          {
+            action  => 'copy_gbrowse_into_cmap',
+            display => 'Copy GBrowse into the CMap database'
+          };
     }
 
-    push @$menu_options, 
-        {
-            action  => 'quit',
-            display => 'Quit'
-        };
+    push @$menu_options,
+      {
+        action  => 'quit',
+        display => 'Quit'
+      };
     print "\nCurrent data source: ", $self->data_source, "\n";
 
     my $action = $self->show_menu(
@@ -310,7 +309,6 @@ sub change_data_source {
 # ----------------------------------------------------
 sub create_species {
     my $self = shift;
-    my $db = $self->db or die $self->error;
     print "Creating new map set.\n";
 
     print "Full Species Name (long): ";
@@ -328,15 +326,16 @@ sub create_species {
     chomp( my $answer = <STDIN> );
     return if $answer =~ m/^[Nn]/;
 
-    my $admin           = $self->admin;
+    my $admin = $self->admin;
     $admin->species_create(
-        species_aid  => $species_aid  || '',
-        species_common_name   => $species_common_name  || '',
-        species_full_name     => $species_full_name    || '',
-    ) or do {
+        species_aid         => $species_aid         || '',
+        species_common_name => $species_common_name || '',
+        species_full_name   => $species_full_name   || '',
+      )
+      or do {
         print "Error: ", $admin->error, "\n";
         return;
-    };
+      };
 
     my $log_fh = $self->log_fh;
     print $log_fh "Species $species_common_name created\n";
@@ -347,7 +346,7 @@ sub create_species {
 # ----------------------------------------------------
 sub create_map_set {
     my $self = shift;
-    my $db = $self->db or die $self->error;
+    my $sql_object = $self->sql or die $self->error;
     print "Creating new map set.\n";
 
     my $species_info = $self->show_menu(
@@ -355,18 +354,11 @@ sub create_map_set {
         prompt  => 'What species?',
         display => 'species_common_name',
         return  => 'species_id,species_common_name',
-        data    => $db->selectall_arrayref(
-            q[
-                select   s.species_id, s.species_common_name
-                from     cmap_species s
-                order by species_common_name
-            ],
-            { Columns => {} },
-        ),
+        data    => $sql_object->get_species( cmap_object => $self ),
     );
     my ( $species_id, $species_common_name ) = @$species_info;
 
-    unless ($species_id){
+    unless ($species_id) {
         print "No species!  Please use cmap_admin.pl to create.\n";
         return;
     }
@@ -430,21 +422,22 @@ sub create_map_set {
     chomp( my $answer = <STDIN> );
     return if $answer =~ m/^[Nn]/;
 
-    my $admin           = $self->admin;
-    my $map_set_id           =  $admin->map_set_create(
-        map_set_name         => $map_set_name ,
-        map_set_short_name           => $map_set_short_name ,
-        species_id           => $species_id ,
-        map_type_aid         => $map_type_aid ,
-        map_set_aid         => $map_set_aid ,
+    my $admin      = $self->admin;
+    my $map_set_id = $admin->map_set_create(
+        map_set_name         => $map_set_name,
+        map_set_short_name   => $map_set_short_name,
+        species_id           => $species_id,
+        map_type_aid         => $map_type_aid,
+        map_set_aid          => $map_set_aid,
         can_be_reference_map => $can_be_reference_map,
-        shape                => $map_shape ,
-        color                => $map_color ,
-        width                => $map_width ,
-    ) or do {
+        shape                => $map_shape,
+        color                => $map_color,
+        width                => $map_width,
+      )
+      or do {
         print "Error: ", $admin->error, "\n";
         return;
-    };
+      };
 
     my $log_fh = $self->log_fh;
     print $log_fh "Map set $map_set_name created\n";
@@ -460,7 +453,6 @@ sub delete_data {
     # Deletes data.
     #
     my $self = shift;
-    my $db   = $self->db or die $self->error;
 
     my $action = $self->show_menu(
         title   => 'Delete Options',
@@ -479,7 +471,7 @@ sub delete_data {
         ]
     );
 
-    $self->$action($db);
+    $self->$action();
     $self->purge_query_cache(1);
 }
 
@@ -489,16 +481,17 @@ sub delete_correspondences {
     #
     # Deletes a map set.
     #
-    my $self = shift;
-    my $db   = $self->db or die $self->error;
+    my $self       = shift;
+    my $sql_object = $self->sql or die $self->error;
 
     my $map_sets = $self->get_map_sets;
     return unless @{ $map_sets || [] };
     my @map_set_names;
     if ( @{ $map_sets || [] } ) {
         @map_set_names =
-          map { join( '-', $_->{'species_common_name'}, $_->{'map_set_short_name'} ) }
-          @$map_sets;
+          map {
+            join( '-', $_->{'species_common_name'}, $_->{'map_set_short_name'} )
+          } @$map_sets;
     }
     else {
         @map_set_names = ('All');
@@ -526,11 +519,11 @@ sub delete_correspondences {
         'OK to delete feature correspondences?',
         '  Data source          : ' . $self->data_source,
     );
-    if ( @$map_sets ) {
+    if (@$map_sets) {
         print "\n  Map Set(s)           :\n",
           join( "\n", map { "    $_" } @map_set_names );
     }
-    if ( @evidence_types ) {
+    if (@evidence_types) {
         print "\n  Evidence Types       :\n",
           join( "\n", map { "    $_->[1]" } @evidence_types );
     }
@@ -538,52 +531,32 @@ sub delete_correspondences {
     chomp( my $answer = <STDIN> );
     return if $answer =~ /^[Nn]/;
 
-    my $evidence_type_str =
-      "'" . join( "','", map { $_->[0] } @evidence_types ) . "'";
     my %evidence_lookup = map { $_->[0], 1 } @evidence_types;
     my $admin           = $self->admin;
     my $log_fh          = $self->log_fh;
 
-    for my $map_set ( @$map_sets ) {
+    for my $map_set (@$map_sets) {
         my $map_set_id = $map_set->{'map_set_id'};
-        my $fc_ids = $db->selectall_hashref(
-            qq[
-                select cl.feature_correspondence_id
-                from   cmap_feature f,
-                       cmap_map map,
-                       cmap_correspondence_lookup cl,
-                       cmap_feature_correspondence fc,
-                       cmap_correspondence_evidence ce
-                where  f.map_id=map.map_id
-                and    map.map_set_id=?
-                and    f.feature_id=cl.feature_id1
-                and    cl.feature_correspondence_id=fc.feature_correspondence_id
-                and    fc.feature_correspondence_id=ce.feature_correspondence_id
-                and    ce.evidence_type_accession in ($evidence_type_str)
-            ],
-            'feature_correspondence_id',
-            {},
-            ($map_set_id)
+        my $corrs      = $sql_object->get_correspondence_details(
+            cmap_object                 => $self,
+            included_evidence_type_aids => \@evidence_types,
+            map_set_id                  => $map_set_id2,
         );
 
         print $log_fh "Deleting correspondences for ",
-          $map_set->{'species_common_name'}, '-', $map_set->{'map_set_short_name'}, "\n";
+          $map_set->{'species_common_name'}, '-',
+          $map_set->{'map_set_short_name'},  "\n";
 
         #
         # If there is more evidence supporting the correspondence,
         # then just remove the evidence, otherwise remove the
         # correspondence (which will remove all the evidence).
         #
-        for my $fc_id ( keys %$fc_ids ) {
-            my $all_evidence = $db->selectall_arrayref(
-                qq[
-                    select ce.correspondence_evidence_id,
-                           ce.evidence_type_accession as evidence_type_aid
-                    from   cmap_correspondence_evidence ce
-                    where  ce.feature_correspondence_id=?
-                ],
-                { Columns => {} },
-                ($fc_id)
+        for my $corr (@$corrs) {
+            my $all_evidence = $sql_object->get_evidence(
+                cmap_object               => $self,
+                feature_correspondence_id =>
+                  $corr->{'feature_correspondence_id'},
             );
 
             my $no_evidence_deleted = 0;
@@ -598,7 +571,8 @@ sub delete_correspondences {
 
             if ( $no_evidence_deleted == scalar @$all_evidence ) {
                 $admin->feature_correspondence_delete(
-                    feature_correspondence_id => $fc_id );
+                    feature_correspondence_id =>
+                      $corr->{'feature_correspondence_id'} );
             }
         }
     }
@@ -611,8 +585,8 @@ sub delete_map_set {
     #
     # Deletes a map set.
     #
-    my $self = shift;
-    my $db   = $self->db or die $self->error;
+    my $self       = shift;
+    my $sql_object = $self->sql or die $self->error;
 
     my $map_sets = $self->get_map_sets( allow_mult => 0, allow_null => 0 );
     return unless @{ $map_sets || [] };
@@ -639,29 +613,23 @@ sub delete_map_set {
             return     => 'map_id',
             allow_null => 1,
             allow_mult => 1,
-            data       => $db->selectall_arrayref(
-                q[
-                    select   map.map_id, 
-                             map.map_name
-                    from     cmap_map map
-                    where    map.map_set_id=?
-                    order by display_order, map_name
-                ],
-                { Columns => {} },
-                ($map_set_id)
+            data       => data => $sql_object->get_maps(
+                cmap_object => $self,
+                map_set_id  => $map_set_id
             ),
         );
     }
 
     my $map_names;
     if (@map_ids) {
-        $map_names = $db->selectcol_arrayref(
-            q[
-                select map.map_name
-                from   cmap_map map
-                where  map.map_id in (] . join( ', ', @map_ids ) . q[)
-            ]
-        );
+        foreach $map_id (@map_ids) {
+            push @$map_names,
+              $sql_object->get_object_name(
+                cmap_object => $self,
+                object_id   => $map_id,
+                object_type => 'map',
+              );
+        }
     }
 
     print join(
@@ -708,7 +676,6 @@ sub export_data {
     # Exports data.
     #
     my $self = shift;
-    my $db   = $self->db or die $self->error;
 
     my $action = $self->show_menu(
         title   => 'Data Export Options',
@@ -740,9 +707,9 @@ sub export_as_text {
     #
     # Exports data in tab-delimited import format.
     #
-    my $self   = shift;
-    my $db     = $self->db or die $self->error;
-    my $log_fh = $self->log_fh;
+    my $self       = shift;
+    my $sql_object = $self->sql or die $self->error;
+    my $log_fh     = $self->log_fh;
 
     my @col_names = qw(
       map_accession_id
@@ -784,14 +751,15 @@ sub export_as_text {
     my @map_set_names;
     if ( @{ $map_sets || [] } ) {
         @map_set_names =
-          map { join( '-', $_->{'species_common_name'}, $_->{'map_set_short_name'} ) }
-          @$map_sets;
+          map {
+            join( '-', $_->{'species_common_name'}, $_->{'map_set_short_name'} )
+          } @$map_sets;
     }
     else {
         @map_set_names = ('All');
     }
     my $display_feature_types;
-    if ( @$feature_types ) {
+    if (@$feature_types) {
         $display_feature_types = $feature_types;
     }
     else {
@@ -819,62 +787,27 @@ sub export_as_text {
     my %exclude = map { $_, 1 } @exclude_fields;
     @col_names = grep { !$exclude{$_} } @col_names;
 
-    my $ft_sql = q[
-        select   f.feature_id, 
-                 f.accession_id as feature_accession_id,
-                 f.feature_name,
-                 f.start_position as feature_start,
-                 f.stop_position as feature_stop,
-                 f.is_landmark,
-                 f.feature_type_accession,
-                 map.map_name, 
-                 map.accession_id as map_accession_id,
-                 map.start_position as map_start,
-                 map.stop_position as map_stop
-        from     cmap_feature f,
-                 cmap_map map
-        where    f.map_id=?
-        and      f.map_id=map.map_id
-    ];
-    $ft_sql .=
-      "and f.feature_type_accession in ('"
-      . join( "','", map { $_->[0] } @$feature_types ) . "') "
-      if @$feature_types;
-    $ft_sql .= 'order by f.start_position';
-
     for my $map_set (@$map_sets) {
-        my $map_set_id   = $map_set->{'map_set_id'};
-        my $map_set_short_name = $map_set->{'map_set_short_name'};
+        my $map_set_id          = $map_set->{'map_set_id'};
+        my $map_set_short_name  = $map_set->{'map_set_short_name'};
         my $species_common_name = $map_set->{'species_common_name'};
-        my $file_name    = join( '-', $species_common_name, $map_set_short_name );
+        my $file_name = join( '-', $species_common_name, $map_set_short_name );
         $file_name =~ tr/a-zA-Z0-9-/_/cs;
         $file_name = "$dir/$file_name.dat";
 
-        print $log_fh "Dumping '$species_common_name-$map_set_short_name' to '$file_name'\n";
+        print $log_fh
+"Dumping '$species_common_name-$map_set_short_name' to '$file_name'\n";
         open my $fh, ">$file_name" or die "Can't write to $file_name: $!\n";
         print $fh join( OFS, @col_names ), ORS;
 
-        my $maps = $db->selectall_arrayref(
-            q[
-                select   map_id
-                from     cmap_map
-                where    map_set_id=?
-                order by map_name
-            ],
-            { Columns => {} },
-            ($map_set_id)
+        my $maps = $sql_object->get_maps_simple(
+            cmap_object => $self,
+            map_set_id  => $map_set_id,
         );
 
-        my $attributes = $db->selectall_arrayref(
-            q[
-                select object_id, 
-                       attribute_name,
-                       attribute_value
-                from   cmap_attribute
-                where  table_name=?
-            ],
-            {},
-            ('cmap_feature')
+        my $attributes = $sql_object->get_attributes(
+            cmap_object => $self,
+            object_type => 'feature',
         );
 
         my %attr_lookup = ();
@@ -883,23 +816,15 @@ sub export_as_text {
         }
 
         for my $map (@$maps) {
-            my $features = $db->selectall_arrayref(
-                $ft_sql,
-                { Columns => {} },
-                ( $map->{'map_id'} )
+            my $features = $sql_object->get_feature_details(
+                cmap_object       => $self,
+                feature_type_aids => $feature_types,
+                map_id            => $map->{'map_id'},
             );
 
-            my $aliases = $db->selectall_arrayref(
-                q[
-                    select fa.feature_id,
-                           fa.alias 
-                    from   cmap_feature_alias fa,
-                           cmap_feature f
-                    where  fa.feature_id=f.feature_id
-                    and    f.map_id=?
-                ],
-                {},
-                ( $map->{'map_id'} )
+            my $aliases = $sql_object->get_feature_aliases(
+                cmap_object => $self,
+                map_id      => $map->{'map_id'},
             );
 
             my %alias_lookup = ();
@@ -932,149 +857,12 @@ sub export_as_sql {
     #
     # Exports data as SQL INSERT statements.
     #
-    my $self   = shift;
-    my $db     = $self->db or die $self->error;
-    my $log_fh = $self->log_fh;
-    my @tables = (
-        {
-            name   => 'cmap_attribute',
-            fields => {
-                attribute_id    => NUM,
-                table_name      => STR,
-                object_id       => NUM,
-                display_order   => NUM,
-                is_public       => NUM,
-                attribute_name  => STR,
-                attribute_value => STR,
-            }
-        },
-        {
-            name   => 'cmap_correspondence_evidence',
-            fields => {
-                correspondence_evidence_id => NUM,
-                accession_id               => STR,
-                feature_correspondence_id  => NUM,
-                evidence_type_accession    => STR,
-                score                      => NUM,
-                rank                       => NUM,
-            }
-        },
-        {
-            name   => 'cmap_correspondence_lookup',
-            fields => {
-                feature_id1               => NUM,
-                feature_id2               => NUM,
-                feature_correspondence_id => NUM,
+    my $self       = shift;
+    my $sql_object = $self->sql or die $self->error;
+    my $db         = $self->db or die $self->error;
+    my $log_fh     = $self->log_fh;
 
-            }
-        },
-        {
-            name   => 'cmap_correspondence_matrix',
-            fields => {
-                reference_map_aid     => STR,
-                reference_map_name    => STR,
-                reference_map_set_aid => STR,
-                reference_species_aid => STR,
-                link_map_aid          => STR,
-                link_map_name         => STR,
-                link_map_set_aid      => STR,
-                link_species_aid      => STR,
-                no_correspondences    => NUM,
-            }
-        },
-        {
-            name   => 'cmap_feature',
-            fields => {
-                feature_id             => NUM,
-                accession_id           => STR,
-                map_id                 => NUM,
-                feature_type_accession => STR,
-                feature_name           => STR,
-                is_landmark            => NUM,
-                start_position         => NUM,
-                stop_position          => NUM,
-                default_rank           => NUM,
-            }
-        },
-        {
-            name   => 'cmap_feature_alias',
-            fields => {
-                feature_alias_id => NUM,
-                feature_id       => NUM,
-                alias            => STR,
-            }
-        },
-        {
-            name   => 'cmap_feature_correspondence',
-            fields => {
-                feature_correspondence_id => NUM,
-                accession_id              => STR,
-                feature_id1               => NUM,
-                feature_id2               => NUM,
-                is_enabled                => NUM,
-            }
-        },
-        {
-            name   => 'cmap_map',
-            fields => {
-                map_id         => NUM,
-                accession_id   => STR,
-                map_set_id     => NUM,
-                map_name       => STR,
-                display_order  => NUM,
-                start_position => NUM,
-                stop_position  => NUM,
-            }
-        },
-        {
-            name   => 'cmap_next_number',
-            fields => {
-                table_name  => STR,
-                next_number => NUM,
-            }
-        },
-        {
-            name   => 'cmap_species',
-            fields => {
-                species_id    => NUM,
-                accession_id  => STR,
-                species_common_name   => STR,
-                species_full_name     => STR,
-                display_order => STR,
-            }
-        },
-        {
-            name   => 'cmap_map_set',
-            fields => {
-                map_set_id           => NUM,
-                accession_id         => STR,
-                map_set_short_name         => STR,
-                map_set_short_name           => STR,
-                map_type_accession   => STR,
-                species_id           => NUM,
-                published_on         => STR,
-                can_be_reference_map => NUM,
-                display_order        => NUM,
-                is_enabled           => NUM,
-                shape                => STR,
-                color                => STR,
-                width                => NUM,
-                map_units            => STR,
-                is_relational_map    => NUM,
-            },
-        },
-        {
-            name   => 'cmap_xref',
-            fields => {
-                xref_id       => NUM,
-                table_name    => STR,
-                object_id     => NUM,
-                display_order => NUM,
-                xref_name     => STR,
-                xref_url      => STR,
-            }
-        },
-    );
+    my @tables = @{ $sql_object->get_table_info() };
 
     #
     # Ask user what/how/where to dump.
@@ -1280,7 +1068,7 @@ sub export_objects {
 
     my ( $map_sets, $feature_types );
     if ( grep { /map_set/ } @db_objects ) {
-        $map_sets      = $self->get_map_sets or return;
+        $map_sets = $self->get_map_sets or return;
         $feature_types = $self->get_feature_types;
         my @ft_names = map { $_->{'feature_type'} } @$feature_types;
         my @map_set_names =
@@ -1334,14 +1122,15 @@ sub get_files {
     #
     my ( $self, %args ) = @_;
     my $allow_mult = defined $args{'allow_mult'} ? $args{'allow_mult'} : 1;
-    my $prompt     = defined $args{'prompt'} ? $args{'prompt'} :
-        $allow_mult ? 'Please specify the files?[q to quit] '
-            : 'Please specify the file?[q to quit] ';
+    my $prompt =
+        defined $args{'prompt'} ? $args{'prompt'}
+      : $allow_mult             ? 'Please specify the files?[q to quit] '
+      : 'Please specify the file?[q to quit] ';
     my $term = $self->term;
 
     ###New File Handling
     my $file_str;
-    while (1){
+    while (1) {
         $file_str = $term->readline($prompt);
         last if $file_str =~ /\S/;
     }
@@ -1349,7 +1138,7 @@ sub get_files {
     $term->addhistory($file_str);
 
     my @file_strs = split( /\s+/, $file_str );
-    my @files = ();
+    my @files     = ();
 
     # allow filename expantion and put into @files
     foreach my $str (@file_strs) {
@@ -1361,7 +1150,7 @@ sub get_files {
         if ( -r $files[$i] and -f $files[$i] ) {
             print "$files[$i] read correctly.\n";
         }
-        else{
+        else {
             print "WARNING: Unable to read file '$files[$i]'!\n";
             splice( @files, $i, 1 );
             $i--;
@@ -1380,8 +1169,8 @@ sub get_map_sets {
     my ( $self, %args ) = @_;
     my $allow_mult = defined $args{'allow_mult'} ? $args{'allow_mult'} : 1;
     my $allow_null = defined $args{'allow_null'} ? $args{'allow_null'} : 1;
-    my $db     = $self->db or die $self->error;
-    my $log_fh = $self->log_fh;
+    my $sql_object = $self->sql or die $self->error;
+    my $log_fh     = $self->log_fh;
 
     if ( my $explanation = $args{'explanation'} ) {
         print join( "\n",
@@ -1414,58 +1203,27 @@ sub get_map_sets {
         chomp( my $answer = <STDIN> );
         my @accessions = split( /[,\s+]/, $answer );
         return unless @accessions;
-        for my $acc (@accessions) {
-            my $sth = $db->prepare(
-                q[
-                    select   ms.map_set_id, 
-                             ms.accession_id as map_set_aid,
-                             ms.map_set_short_name,
-                             s.species_common_name,
-                             ms.map_type_accession as map_type_aid
-                    from     cmap_map_set ms,
-                             cmap_species s
-                    where    ms.accession_id=?
-                    and      ms.species_id=s.species_id
-                ]
-            );
-            $sth->execute($acc);
-            my $result = $sth->fetchrow_hashref;
-            push @{$map_sets}, $result if $result;
-        }
-        unless ($map_sets and @$map_sets){
+        $map_sets = $sql_object->get_map_sets(
+            cmap_object  => $self,
+            map_set_aids => \@accessions,
+        );
+        unless ( $map_sets and @$map_sets ) {
             print "Those map sets were not in the database!\n";
             return;
-        }
-        foreach my $row ( @{$map_sets} ) {
-            $row->{'map_type'} =
-              $self->map_type_data( $row->{'map_type_aid'}, 'map_type' )
-                or die "Map type accession "
-                . $row->{'map_type_aid'}
-                . " not defined in config file\n";
         }
         return unless @$map_sets;
     }
     else {
-        my $map_set_sql = q[
-            select  distinct map_type_accession as map_type_aid
-            from    cmap_map_set
-        ];
-        my $map_types =
-          $db->selectall_arrayref( $map_set_sql, { Columns => {} } );
-        unless (@$map_types){
-            print "No map sets in the database!  Use cmap_admin.pl to create.\n";
+        my $map_type_results =
+          $sql_object->get_used_map_types( cmap_object => $self, );
+        unless (@$map_type_results) {
+            print
+              "No map sets in the database!  Use cmap_admin.pl to create.\n";
             return;
         }
 
-        foreach my $row ( @{$map_types} ) {
-            $row->{'map_type'} =
-              $self->map_type_data( $row->{'map_type_aid'}, 'map_type' )
-                or die "Map type accession "
-                . $row->{'map_type_aid'}
-                . " not defined in config file\n";
-        }
-        $map_types = sort_selectall_arrayref( $map_types, 'map_type' );
-
+        $map_type_results =
+          sort_selectall_arrayref( $map_type_results, 'map_type' );
 
         my @map_types = $self->show_menu(
             title      => 'Restrict by Map Set by Map Types',
@@ -1474,28 +1232,31 @@ sub get_map_sets {
             return     => 'map_type_aid,map_type',
             allow_null => $allow_null,
             allow_mult => $allow_mult,
-            data       => $map_types,
+            data       => $map_type_results,
         );
         if ( @map_types and ref $map_types[0] ne 'ARRAY' ) {
             @map_types = @{ [ [@map_types] ] };
         }
 
-        my $species_sql = q[
-            select   distinct s.species_id, 
-                     s.species_common_name
-            from     cmap_species s,
-                     cmap_map_set ms
-            where    s.species_id=ms.species_id
-        ];
-        $species_sql .=
-          "and ms.map_type_accession in ('"
-          . join( "','", map { $_->[0] } @map_types ) . "') "
-          if @map_types;
         $species_sql .= 'order by species_common_name';
-        my $species =
-          $db->selectall_arrayref( $species_sql, { Columns => {} } );
-        die "No species! Please use the web admin tool to create.\n"
-          unless @$species;
+        my $map_set_species = $sql_object->get_map_sets(
+            cmap_object   => $self,
+            map_type_aids => \@map_types,
+        );
+        die "No species! Please create.\n"
+          unless @$map_set_species;
+
+        # eliminate redundancy
+        $map_set_species =
+          sort_selectall_arrayref( $map_set_species, 'species_id' );
+        my $tmp_species_id;
+        for ( my $i = 0 ; $i <= $#{$map_set_species} ; $i++ ) {
+            if ( $tmp_species_id == $map_set_species->[$i]{'species_id'} ) {
+                splice( @$map_set_species, $i, 1 );
+                $i--;
+            }
+            $tmp_species_id = $map_set_species->[$i]{'species_id'};
+        }
 
         my $species_ids = $self->show_menu(
             title      => 'Restrict by Species',
@@ -1504,38 +1265,18 @@ sub get_map_sets {
             return     => 'species_id',
             allow_null => $allow_null,
             allow_mult => $allow_mult,
-            data       => $species,
+            data       => $map_set_species,
         );
 
         if ( ref $species_ids ne 'ARRAY' ) {
             $species_ids = [ $species_ids, ];
         }
 
-        my $map_set_sql = q[
-            select   ms.map_set_id,
-                     ms.accession_id map_set_accession,
-                     ms.map_set_short_name,
-                     s.species_common_name,
-                     ms.map_type_accession as map_type_aid
-            from     cmap_map_set ms,
-                     cmap_species s
-            where    ms.species_id=s.species_id
-        ];
-        $map_set_sql .=
-          'and ms.species_id in (' . join( ',', @$species_ids ) . ') '
-          if ( @$species_ids and defined $species_ids->[0] );
-        $map_set_sql .=
-          "and ms.map_type_accession in ('"
-          . join( "','", map { $_->[0] } @map_types ) . "') "
-          if @map_types;
-        $map_set_sql .= 'order by map_set_short_name';
-        my $ms_choices =
-          $db->selectall_arrayref( $map_set_sql, { Columns => {} } );
-
-        foreach my $row ( @{$ms_choices} ) {
-            $row->{'map_type'} =
-              $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
-        }
+        my $ms_choices = $sql_object->get_map_sets(
+            cmap_object   => $self,
+            map_type_aids => \@map_types,
+            species_ids   => $species_ids,
+        );
 
         my $map_set_ids = $self->show_menu(
             title      => 'Restrict by Map Sets',
@@ -1550,34 +1291,15 @@ sub get_map_sets {
             $map_set_ids = [ $map_set_ids, ];
         }
 
-        my $where;
-        $where .= 'and ms.species_id in  (' . join( ',', @$species_ids ) . ') '
-          if ( @$species_ids and defined $species_ids->[0] );
-        $where .=
-          "and ms.map_type_accession in ('"
-          . join( "','", map { $_->[0] } @map_types ) . "') "
-          if @map_types;
-        $where .= 'and ms.map_set_id in  (' . join( ',', @$map_set_ids ) . ') '
-          if ( @$map_set_ids and defined $map_set_ids->[0] );
+        $map_sets = $sql_object->get_map_sets(
+            cmap_object => $self,
+            map_set_ids => $map_set_ids,
+            species_ids => $species_ids,
+        );
+        $map_sets =
+          sort_selectall_arrayref( $map_sets,
+            'species_common_name, map_set_short_name' );
 
-        $map_set_sql = qq[
-            select   ms.map_set_id, 
-                     ms.accession_id as map_set_aid,
-                     ms.map_set_short_name,
-                     s.species_common_name,
-                     ms.map_type_accession as map_type_aid
-            from     cmap_map_set ms,
-                     cmap_species s
-            where    ms.species_id=s.species_id
-            $where
-        ];
-        $map_set_sql .= 'order by species_common_name, map_set_short_name';
-
-        $map_sets = $db->selectall_arrayref( $map_set_sql, { Columns => {} } );
-        foreach my $row ( @{$map_sets} ) {
-            $row->{'map_type'} =
-              $self->map_type_data( $row->{'map_type_aid'}, 'map_type' );
-        }
     }
     return $map_sets;
 }
@@ -1593,31 +1315,18 @@ sub get_feature_types {
     my $ft_sql;
     my $ft_sql_data;
     if (@map_set_ids) {
-        my $db = $self->db or die $self->error;
-        $ft_sql_data = $db->selectall_arrayref(
-            qq[
-            select   distinct  
-                     f.feature_type_accession as feature_type_aid
-            from     cmap_map_set ms,
-                     cmap_map map,
-                     cmap_feature f
-            where    ms.map_set_id in (] . join( ',', @map_set_ids ) . qq[
-            and      ms.map_set_id=map.map_set_id
-            and      map.map_id=f.map_id
-            order by feature_type_aid
-	    ], { Columns => {} }
+        my $sql_object = $self->sql or die $self->error;
+        $ft_sql_data = $sql_object->get_used_feature_types(
+            cmap_object => $self,
+            map_set_ids => \@map_set_ids,
         );
-        foreach my $row ( @{$ft_sql_data} ) {
-            $row->{'feature_type'} =
-              $self->feature_type_data( $row->{'feature_type_aid'},
-                'feature_type' );
-        }
-
     }
     else {
-        $ft_sql_data =
-          $self->fake_selectall_arrayref( $self->feature_type_data(),
-            'feature_type_accession as feature_type_aid', 'feature_type' );
+        $ft_sql_data = $self->fake_selectall_arrayref(
+            $self->feature_type_data(),
+            'feature_type_accession as feature_type_aid',
+            'feature_type'
+        );
     }
     $ft_sql_data = sort_selectall_arrayref( $ft_sql_data, 'feature_type' );
 
@@ -1633,189 +1342,6 @@ sub get_feature_types {
 
     return \@feature_types;
 }
-
-# ----------------------------------------------------
-#sub export_correspondences {
-##
-## Exports feature correspondences in CMap import format.
-##
-#    my $self = shift;
-#    my $db   = $self->db or die $self->error;
-#
-#    my @evidence_type_ids = $self->show_menu(
-#        title       => 'Restrict by Evidence Type (Optional)',
-#        prompt      => 'Select which evidence types to restrict by',
-#        display     => 'evidence_type',
-#        return      => 'evidence_type_id',
-#        allow_null  => 1,
-#        allow_mult  => 1,
-#        data        => $db->selectall_arrayref(
-#            q[
-#                select   et.evidence_type_id, et.evidence_type
-#                from     cmap_evidence_type et
-#                order by evidence_type
-#            ],
-#            { Columns => {} }
-#        )
-#    );
-#
-#    my @evidence_types;
-#    if ( @evidence_type_ids ) {
-#        @evidence_types = @{
-#            $db->selectcol_arrayref(
-#                q[
-#                    select evidence_type
-#                    from   cmap_evidence_type
-#                    where  evidence_type_id in (].
-#                    join(', ', @evidence_type_ids).q[)
-#                ]
-#            )
-#        };
-#    }
-#
-#    my @map_set_ids = $self->show_menu(
-#        title       => 'Select Map Sets',
-#        prompt      => 'Restrict by Map Set',
-#        display     => 'species_common_name,map_set_short_name',
-#        return      => 'map_set_id',
-#        allow_null  => 1,
-#        allow_mult  => 1,
-#        data        => $db->selectall_arrayref(
-#            q[
-#                select   ms.map_set_id,
-#                         ms.map_set_short_name,
-#                         s.species_common_name
-#                from     cmap_map_set ms,
-#                         cmap_species s
-#                where    ms.species_id=s.species_id
-#                order by species_common_name, map_set_short_name
-#            ],
-#            { Columns => {} },
-#        )
-#    );
-#
-#    my @map_set_names = @map_set_ids
-#        ?  map { join( '-', $_->{'species_common_name'}, $_->{'map_set_short_name'} ) } @{
-#            $db->selectall_arrayref(
-#                q[
-#                    select   ms.map_set_id,
-#                             ms.map_set_short_name,
-#                             s.species_common_name as species_common_name
-#                    from     cmap_map_set ms,
-#                             cmap_species s
-#                    where    ms.map_set_id in (].join(',', @map_set_ids).q[)
-#                    and      ms.species_id=s.species_id
-#                    order by species_common_name, map_set_short_name
-#                ],
-#                { Columns => {} }
-#            )
-#        }
-#        : ()
-#    ;
-#
-#    print "Include feature accession IDs? [Y/n] ";
-#    chomp( my $export_corr_aid = <STDIN> );
-#    $export_corr_aid = ( $export_corr_aid =~ /^[Nn]/ ) ? 0 : 1;
-#
-#    my $dir = _get_dir() or return;
-#
-#    #
-#    # Confirm decisions.
-#    #
-#    print join("\n",
-#        'OK to export feature correspondences?',
-#        '  Data source          : ' . $self->data_source,
-#        "  Export Accession IDs : " . ( $export_corr_aid ? "Yes" : "No" ),
-#        "  Directory            : $dir",
-#    );
-#    if ( @evidence_types ) {
-#        print "\n  Evidence Types       :\n",
-#            join( "\n", map { "    $_" } @evidence_types );
-#    }
-#    if ( @map_set_ids ) {
-#        print "\n  Map Set(s)           :\n",
-#            join( "\n", map { "    $_" } @map_set_names );
-#    }
-#    print "\n[Y/n] ";
-#    chomp( my $answer = <STDIN> );
-#    return if $answer =~ /^[Nn]/;
-#
-#    my $corr_file = "$dir/feature_correspondences.dat";
-#    open my $fh, ">$corr_file" or die "Can't write to $corr_file: $!\n";
-#    my $log_fh = $self->log_fh;
-#    print $log_fh "Dumping feature correspondences to '$corr_file'\n";
-#
-#    my $sql = q[
-#        select fc.feature_correspondence_id,
-#               fc.is_enabled,
-#               f1.accession_id as feature_accession_id1,
-#               f1.feature_name as feature_name1,
-#               f2.accession_id as feature_accession_id2,
-#               f2.feature_name as feature_name2
-#        from   cmap_feature_correspondence fc,
-#               cmap_feature f1,
-#               cmap_feature f2,
-#               cmap_map map1,
-#               cmap_map map2
-#        where  fc.feature_id1=f1.feature_id
-#        and    f1.map_id=map1.map_id
-#        and    fc.feature_id2=f2.feature_id
-#        and    f2.map_id=map2.map_id
-#    ];
-#
-#    if ( my $map_set_ids = join( ',', @map_set_ids ) ) {
-#        $sql .= qq[
-#            and (
-#                map1.map_set_id in ($map_set_ids) or
-#                map2.map_set_id in ($map_set_ids)
-#            )
-#        ];
-#    }
-#
-#    my $sth = $db->prepare( $sql );
-#    $sth->execute;
-#
-#    my @col_names = (
-#        map { !$export_corr_aid && $_ =~ /accession/ ? () : $_ }
-#        qw[
-#            feature_name1
-#            feature_accession_id1
-#            feature_name2
-#            feature_accession_id2
-#            evidence
-#            is_enabled
-#        ]
-#    );
-#
-#    my $evidence_sql = q[
-#        select et.evidence_type
-#        from   cmap_correspondence_evidence ce,
-#               cmap_evidence_type et
-#        where  ce.feature_correspondence_id=?
-#        and    ce.evidence_type_id=et.evidence_type_id
-#    ];
-#    if ( @evidence_type_ids ) {
-#        $evidence_sql .= 'and ce.evidence_type_id in ('.
-#            join( ', ', @evidence_type_ids ).
-#        ')';
-#    }
-#
-#    print $fh join( OFS, @col_names ), ORS;
-#    my $no_exported = 0;
-#    while ( my $fc = $sth->fetchrow_hashref ) {
-#        $fc->{'evidence'} = join(',', @{
-#            $db->selectcol_arrayref(
-#                $evidence_sql,
-#                {},
-#                ( $fc->{'feature_correspondence_id'} )
-#            )
-#        }) or next;
-#
-#        print $fh join( OFS, map { $fc->{ $_ } } @col_names ), ORS;
-#        $no_exported++;
-#    }
-#    print "\nExported $no_exported records.\n";
-#}
 
 # ----------------------------------------------------
 sub import_data {
@@ -1860,7 +1386,6 @@ sub manage_links {
     # Determine what kind of data to import (new or old)
     #
     my $self = shift;
-    my $db   = $self->db or die $self->error;
     my $term = $self->term;
 
     my $action = $self->show_menu(
@@ -1890,7 +1415,7 @@ sub import_links {
     # Imports links in simple tab-delimited format
     #
     my ( $self, %args ) = @_;
-    my $db   = $self->db or die $self->error;
+    my $sql_object = $self->sql or die $self->error;
 
     #
     # Get the species.
@@ -1900,17 +1425,7 @@ sub import_links {
         prompt  => 'Please select a species',
         display => 'species_common_name',
         return  => 'species_id,species_common_name',
-        data    => $db->selectall_arrayref(
-            q[
-                select   distinct s.species_id, s.species_common_name
-                from     cmap_species s,
-                         cmap_map_set ms
-                where    ms.species_id=s.species_id
-                order by species_common_name
-            ],
-            { Columns => {} },
-            ()
-        ),
+        data    => $sql_object->get_species( cmap_object => $self ),
     );
     do { print "No species to select from.\n"; return } unless $species_id;
 
@@ -1922,15 +1437,9 @@ sub import_links {
         prompt  => 'Please select a map set',
         display => 'map_set_name',
         return  => 'map_set_id,map_set_name',
-        data    => $db->selectall_arrayref(
-            q[
-                select   ms.map_set_id, ms.map_set_name
-                from     cmap_map_set ms
-                where    ms.species_id=?
-                order by map_set_name
-            ],
-            { Columns => {} },
-            ($species_id)
+        data    => $sql_object->get_map_sets(
+            cmap_object => $self,
+            species_id  => $species_id
         ),
     );
     do { print "There are no map sets!\n"; return }
@@ -1988,7 +1497,6 @@ sub delete_links {
     #
     my ( $self, %args ) = @_;
     my $name_space = $self->get_link_name_space;
-    my $db         = $self->db or die $self->error;
     my $term       = $self->term;
 
     my $link_manager =
@@ -2042,10 +1550,10 @@ sub import_correspondences {
     #
     # Gathers the info to import feature correspondences.
     #
-    my $self = shift;
-    my $db   = $self->db or die $self->error;
-    my $file = $self->file;
-    my $term = $self->term;
+    my $self       = shift;
+    my $sql_object = $self->sql or die $self->error;
+    my $file       = $self->file;
+    my $term       = $self->term;
 
     #
     # Make sure we have a file to parse.
@@ -2080,17 +1588,10 @@ sub import_correspondences {
         return     => 'map_set_id,species_common_name,map_set_short_name',
         allow_null => 1,
         allow_mult => 1,
-        data       => $db->selectall_arrayref(
-            q[
-                select   ms.map_set_id, 
-                         ms.map_set_short_name,
-                         s.species_common_name
-                from     cmap_map_set ms,
-                         cmap_species s
-                where    ms.species_id=s.species_id
-                order by species_common_name, map_set_short_name
-            ],
-            { Columns => {} },
+        data       => sort_selectall_arrayref(
+            $sql_object->get_map_sets( cmap_object => $self, ),
+            species_common_name,
+            map_set_short_name
         ),
     );
 
@@ -2136,7 +1637,6 @@ sub import_alignments {
     # Gathers the info to import feature correspondences.
     #
     my $self = shift;
-    my $db   = $self->db or die $self->error;
     my $file = $self->file;
     my $term = $self->term;
 
@@ -2169,7 +1669,8 @@ sub import_alignments {
         explanation => 'First you will select the map set of the Query',
         allow_mult  => 0,
         allow_null  => 0,
-    ) or return;
+      )
+      or return;
     my $use_query_as_hit_answer =
       $self->show_question( question =>
           'Do you want to use the query map set as the Subject set? [y|N]', );
@@ -2182,7 +1683,8 @@ sub import_alignments {
             explanation => 'Now you will select the subject map set',
             allow_mult  => 0,
             allow_null  => 0,
-        ) or return;
+          )
+          or return;
     }
 
     #
@@ -2289,7 +1791,6 @@ sub delete_duplicate_correspondences {
     # deletes all duplicate correspondences.
     #
     my $self = shift;
-    my $db   = $self->db or die $self->error;
 
     my $admin = Bio::GMOD::CMap::Admin->new(
         config      => $self->config,
@@ -2309,8 +1810,7 @@ sub purge_query_cache_menu {
 
     my $cache_level = $self->show_menu(
         title  => '  --= Cache Level =--  ',
-        prompt =>
-            "At which cache level would you like to start the purging?\n"
+        prompt => "At which cache level would you like to start the purging?\n"
           . "(The purges cascade down. ie selecting level 3 removes 3 and 4):",
         display => 'display',
         return  => 'level',
@@ -2364,7 +1864,6 @@ sub import_tab_data {
     # Imports simple (old) tab-delimited format
     #
     my $self = shift;
-    my $db   = $self->db or die $self->error;
 
     ###New File Handling
     my $files = $self->get_files() or return;
@@ -2403,7 +1902,7 @@ sub import_tab_data {
       Bio::GMOD::CMap::Admin::Import->new( data_source => $self->data_source, );
 
     my $time_start = new Benchmark;
-    my %maps; #stores the maps info between each file
+    my %maps;    #stores the maps info between each file
     foreach my $file (@$files) {
         my $fh = IO::File->new($file) or die "Can't read $file: $!";
         $importer->import_tab(
@@ -2435,7 +1934,6 @@ sub import_object_data {
     # Gathers the info to import physical or genetic maps.
     #
     my $self = shift;
-    my $db   = $self->db or die $self->error;
     my $term = $self->term;
     my $file = $self->file;
 
@@ -2495,7 +1993,6 @@ sub import_object_data {
 # ----------------------------------------------------
 sub make_name_correspondences {
     my $self = shift;
-    my $db   = $self->db or die $self->error;
 
     #
     # Get the evidence type id.
@@ -2516,7 +2013,8 @@ sub make_name_correspondences {
 
     my $from_map_sets =
       $self->get_map_sets(
-        explanation => 'First you will select the starting map sets' ) or return;
+        explanation => 'First you will select the starting map sets' )
+      or return;
 
     my $use_from_as_target_answer =
       $self->show_question( question =>
@@ -2529,7 +2027,8 @@ sub make_name_correspondences {
     else {
         $to_map_sets =
           $self->get_map_sets(
-            explanation => 'Now you will select the target map sets' ) or return;
+            explanation => 'Now you will select the target map sets' )
+          or return;
     }
 
     my @skip_features = $self->show_menu(
@@ -2578,13 +2077,19 @@ sub make_name_correspondences {
         ],
     );
 
-    my $from = join( "\n",
-        map { "    $_->{species_common_name}-$_->{map_set_short_name} ($_->{map_set_aid})" }
-          @{$from_map_sets} );
+    my $from = join(
+        "\n",
+        map {
+"    $_->{species_common_name}-$_->{map_set_short_name} ($_->{map_set_aid})"
+          } @{$from_map_sets}
+    );
 
-    my $to = join( "\n",
-        map { "    $_->{species_common_name}-$_->{map_set_short_name} ($_->{map_set_aid})" }
-          @{$to_map_sets} );
+    my $to = join(
+        "\n",
+        map {
+"    $_->{species_common_name}-$_->{map_set_short_name} ($_->{map_set_aid})"
+          } @{$to_map_sets}
+    );
     print "Make name-based correspondences\n",
       '  Data source   : ' . $self->data_source, "\n",
       "  Evidence type : $evidence_type\n", "  From map sets :\n$from\n",
@@ -2595,7 +2100,7 @@ sub make_name_correspondences {
     return if $answer =~ m/^[Nn]/;
 
     my $corr_maker = Bio::GMOD::CMap::Admin::MakeCorrespondences->new(
-        db          => $db,
+        db          => $self->db,
         data_source => $self->data_source,
     );
 
@@ -2644,11 +2149,11 @@ sub reload_correspondence_matrix {
 sub prepare_for_gbrowse {
 
     require Bio::GMOD::CMap::Admin::GBrowseLiason;
+
     #
     # Gathers the info to import feature correspondences.
     #
     my $self = shift;
-    my $db   = $self->db or die $self->error;
     my $term = $self->term;
 
     #
@@ -2658,24 +2163,26 @@ sub prepare_for_gbrowse {
         explanation => 'Which map sets do you want to use',
         allow_mult  => 1,
         allow_null  => 0,
-    ) or return;
+      )
+      or return;
 
     #
     # Get the feature types
     #
     my $feature_type_data = $self->feature_type_data();
     my $menu_options;
-    foreach my $ft_aid (keys(%$feature_type_data)){
-        if ($feature_type_data->{$ft_aid}->{'gbrowse_class'}){
-            push @$menu_options, {
-                feature_type     => $feature_type_data->{$ft_aid}->{'feature_type'},
+    foreach my $ft_aid ( keys(%$feature_type_data) ) {
+        if ( $feature_type_data->{$ft_aid}->{'gbrowse_class'} ) {
+            push @$menu_options,
+              {
+                feature_type => $feature_type_data->{$ft_aid}->{'feature_type'},
                 feature_type_aid => $ft_aid,
-            }
+              };
         }
     }
     $menu_options = sort_selectall_arrayref( $menu_options, 'feature_type' );
 
-    unless ( $menu_options and @$menu_options){
+    unless ( $menu_options and @$menu_options ) {
         print "No GBrowse eligible feature types\n";
         return 0;
     }
@@ -2683,7 +2190,7 @@ sub prepare_for_gbrowse {
     my @feature_types = $self->show_menu(
         title  => 'Feature Types to be Prepared',
         prompt =>
-"Select the feature types that should be prepared for GBrowse data.\n"
+          "Select the feature types that should be prepared for GBrowse data.\n"
           . "Only eligible feature type (that have a 'gbrowse_class' defined in their config) are displayed.",
         display    => 'feature_type',
         return     => 'feature_type_aid,feature_type',
@@ -2692,14 +2199,14 @@ sub prepare_for_gbrowse {
         data       => $menu_options,
     );
 
-
     print join( "\n",
         'OK to prepare for GBrowse?',
         '  Data source     : ' . $self->data_source,
-        '  Map Sets        : '.
-          join( "\n", map { "    ".$_->{'map_set_short_name'} } @$map_sets ),
-        '  Feature Types   : '.
-          join( "\n", map { "    ".$_->[1] } @feature_types ),
+        '  Map Sets        : '
+          . join( "\n",
+            map { "    " . $_->{'map_set_short_name'} } @$map_sets ),
+        '  Feature Types   : '
+          . join( "\n", map { "    " . $_->[1] } @feature_types ),
     );
 
     print "\n[Y/n] ";
@@ -2707,11 +2214,11 @@ sub prepare_for_gbrowse {
     chomp( my $answer = <STDIN> );
     return if $answer =~ /^[Nn]/;
 
-    my @map_set_ids = map {$_->{'map_set_id'}} @$map_sets;
-    my @feature_type_aids = map {$_->[0]} @feature_types;
-    my $gbrowse_liason = Bio::GMOD::CMap::Admin::GBrowseLiason->new(
-        data_source => $self->data_source, 
-    );
+    my @map_set_ids       = map { $_->{'map_set_id'} } @$map_sets;
+    my @feature_type_aids = map { $_->[0] } @feature_types;
+    my $gbrowse_liason    =
+      Bio::GMOD::CMap::Admin::GBrowseLiason->new(
+        data_source => $self->data_source, );
     $gbrowse_liason->prepare_data_for_gbrowse(
         map_set_ids       => \@map_set_ids,
         feature_type_aids => \@feature_type_aids,
@@ -2719,18 +2226,18 @@ sub prepare_for_gbrowse {
       or do {
         print "Error: ", $gbrowse_liason->error, "\n";
         return;
-    };
+      };
 }
 
 # ----------------------------------------------------
 sub copy_cmap_into_gbrowse {
 
     require Bio::GMOD::CMap::Admin::GBrowseLiason;
+
     #
     # Gathers the info to import feature correspondences.
     #
     my $self = shift;
-    my $db   = $self->db or die $self->error;
     my $term = $self->term;
 
     #
@@ -2740,25 +2247,28 @@ sub copy_cmap_into_gbrowse {
         explanation => 'Which map sets do you want to copy data from?',
         allow_mult  => 1,
         allow_null  => 0,
-    ) or return;
+      )
+      or return;
 
     #
     # Get the feature types
     #
     my $feature_type_data = $self->feature_type_data();
     my $menu_options;
-    foreach my $ft_aid (keys(%$feature_type_data)){
-        if ($feature_type_data->{$ft_aid}->{'gbrowse_class'} 
-            and $feature_type_data->{$ft_aid}->{'gbrowse_ftype'}){
-            push @$menu_options, {
-                feature_type     => $feature_type_data->{$ft_aid}->{'feature_type'},
+    foreach my $ft_aid ( keys(%$feature_type_data) ) {
+        if (    $feature_type_data->{$ft_aid}->{'gbrowse_class'}
+            and $feature_type_data->{$ft_aid}->{'gbrowse_ftype'} )
+        {
+            push @$menu_options,
+              {
+                feature_type => $feature_type_data->{$ft_aid}->{'feature_type'},
                 feature_type_aid => $ft_aid,
-            }
+              };
         }
     }
     $menu_options = sort_selectall_arrayref( $menu_options, 'feature_type' );
 
-    unless ( $menu_options and @$menu_options){
+    unless ( $menu_options and @$menu_options ) {
         print "No GBrowse eligible feature types\n";
         return 0;
     }
@@ -2766,7 +2276,7 @@ sub copy_cmap_into_gbrowse {
     my @feature_types = $self->show_menu(
         title  => 'Feature Types to be Prepared',
         prompt =>
-            "Select the feature types that should be prepared for GBrowse data.\n"
+          "Select the feature types that should be prepared for GBrowse data.\n"
           . "Only eligible feature types ('gbrowse_class' and 'gbrowse_ftype' defined in the config) are displayed.\n"
           . "Selecting none will select all.",
         display    => 'feature_type',
@@ -2776,16 +2286,19 @@ sub copy_cmap_into_gbrowse {
         data       => $menu_options,
     );
 
-
-    print join( "\n",
+    print join(
+        "\n",
         'OK to copy data into GBrowse?',
         '  Data source     : ' . $self->data_source,
-        '  Map Sets        : '.
-          join( "\n", map { "    ".$_->{'map_set_short_name'} } @$map_sets ),
-        '  Feature Types   : '.
-         (@feature_types 
-            ? join( "\n", map { "    ".$_->[1] } @feature_types )
-            : 'All'),
+        '  Map Sets        : '
+          . join( "\n",
+            map { "    " . $_->{'map_set_short_name'} } @$map_sets ),
+        '  Feature Types   : '
+          . (
+            @feature_types
+            ? join( "\n", map { "    " . $_->[1] } @feature_types )
+            : 'All'
+          ),
     );
 
     print "\n[Y/n] ";
@@ -2793,11 +2306,11 @@ sub copy_cmap_into_gbrowse {
     chomp( my $answer = <STDIN> );
     return if $answer =~ /^[Nn]/;
 
-    my @map_set_ids = map {$_->{'map_set_id'}} @$map_sets;
-    my @feature_type_aids = map {$_->[0]} @feature_types;
-    my $gbrowse_liason = Bio::GMOD::CMap::Admin::GBrowseLiason->new(
-        data_source => $self->data_source, 
-    );
+    my @map_set_ids       = map { $_->{'map_set_id'} } @$map_sets;
+    my @feature_type_aids = map { $_->[0] } @feature_types;
+    my $gbrowse_liason    =
+      Bio::GMOD::CMap::Admin::GBrowseLiason->new(
+        data_source => $self->data_source, );
     $gbrowse_liason->copy_data_into_gbrowse(
         map_set_ids       => \@map_set_ids,
         feature_type_aids => \@feature_type_aids,
@@ -2805,35 +2318,38 @@ sub copy_cmap_into_gbrowse {
       or do {
         print "Error: ", $gbrowse_liason->error, "\n";
         return;
-    };
+      };
 }
 
 # ----------------------------------------------------
 sub copy_gbrowse_into_cmap {
 
     require Bio::GMOD::CMap::Admin::GBrowseLiason;
+
     #
     # Gathers the info to import feature correspondences.
     #
     my $self = shift;
-    my $db   = $self->db or die $self->error;
     my $term = $self->term;
 
     #
     # Get the map sets.
     #
     my $map_sets = $self->get_map_sets(
-        explanation => 'Which map set do you want the copied data to be part of?',
-        allow_mult  => 0,
-        allow_null  => 0,
-    ) or return;
+        explanation =>
+          'Which map set do you want the copied data to be part of?',
+        allow_mult => 0,
+        allow_null => 0,
+      )
+      or return;
     my $map_set_id = $map_sets->[0]{'map_set_id'};
 
     print join( "\n",
         'OK to copy data into CMap?',
         '  Data source     : ' . $self->data_source,
-        '  Map Set         : '.
-          join( "\n", map { "    ".$_->{'map_set_short_name'} } @$map_sets ),
+        '  Map Set         : '
+          . join( "\n",
+            map { "    " . $_->{'map_set_short_name'} } @$map_sets ),
     );
 
     print "\n[Y/n] ";
@@ -2841,16 +2357,14 @@ sub copy_gbrowse_into_cmap {
     chomp( my $answer = <STDIN> );
     return if $answer =~ /^[Nn]/;
 
-    my $gbrowse_liason = Bio::GMOD::CMap::Admin::GBrowseLiason->new(
-        data_source => $self->data_source, 
-    );
-    $gbrowse_liason->copy_data_into_cmap(
-        map_set_id       => $map_set_id,
-      )
+    my $gbrowse_liason =
+      Bio::GMOD::CMap::Admin::GBrowseLiason->new(
+        data_source => $self->data_source, );
+    $gbrowse_liason->copy_data_into_cmap( map_set_id => $map_set_id, )
       or do {
         print "Error: ", $gbrowse_liason->error, "\n";
         return;
-    };
+      };
     $self->purge_query_cache(1);
 }
 
@@ -2861,7 +2375,7 @@ sub show_question {
     my $default      = $args{'default'};
     my $allow_null   = $args{'allow_null'};
     my $validHashRef = $args{'valid_hash'} || ();
-    $allow_null = 1 unless ( defined($allow_null));
+    $allow_null = 1 unless ( defined($allow_null) );
 
     $question .= "<Default: $default>:" if ( defined $default );
     my $answer;
@@ -2875,8 +2389,9 @@ sub show_question {
             print $question;
             next;
         }
-        elsif ( (!$allow_null and not defined($answer) )
-            or (defined($answer) and $answer =~ /\s+/) ) {
+        elsif (( !$allow_null and not defined($answer) )
+            or ( defined($answer) and $answer =~ /\s+/ ) )
+        {
             print "Your input was not valid.\n";
             print $question;
             next;
@@ -2971,9 +2486,10 @@ sub show_menu {
         $result = undef;
     }
     else {
+
         # only one choice, use it.
-        $result =  [ map { $data->[0]->{$_} } @return ] ;
-        $result = [ $result ] if ($args{'allow_mult'});
+        $result = [ map { $data->[0]->{$_} } @return ];
+        $result = [$result] if ( $args{'allow_mult'} );
         unless ( wantarray or scalar(@$result) != 1 ) {
             $result = $result->[0];
         }

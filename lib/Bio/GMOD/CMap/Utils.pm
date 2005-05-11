@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.46 2005-05-06 21:35:29 mwz444 Exp $
+# $Id: Utils.pm,v 1.47 2005-05-11 03:36:49 mwz444 Exp $
 
 =head1 NAME
 
@@ -11,7 +11,6 @@ Bio::GMOD::CMap::Utils - generalized utilities
 =head1 SYNOPSIS
 
   use Bio::GMOD::CMap::Utils;
-  my $next_number = next_number(...);
 
 =head1 DESCRIPTION
 
@@ -30,7 +29,7 @@ use Bio::GMOD::CMap::Constants;
 use POSIX;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.46 $)[-1];
+$VERSION = (qw$Revision: 1.47 $)[-1];
 
 use base 'Exporter';
 
@@ -41,7 +40,6 @@ my @subs = qw[
   extract_numbers
   even_label_distribution
   label_distribution
-  next_number
   parse_words
   simple_column_distribution
   fake_selectall_arrayref
@@ -49,76 +47,6 @@ my @subs = qw[
 ];
 @EXPORT_OK = @subs;
 @EXPORT    = @subs;
-
-# ----------------------------------------------------
-sub next_number {
-
-=pod
-
-=head2 next_number
-
-A generic routine for retrieving (and possibly setting) the next
-number for an ID field in a table.  Given a table "foo," the
-expected ID field would be "foo_id," but this isn't always the case.
-Therefore, "id_field" tells us what field to look at.  Basically, we
-look to see if there's an entry in the "next_number" table.  If not
-we do a MAX on the ID field given (or ascertained).  Either way, the
-"next_number" table gets told what the next number will be (on the
-next call), and we pass back what is the next number this time.
-
-So why not just use "auto_increment" (MySQL) or a "sequence"
-(Oracle)?  Just to make sure that this stays completely portable.
-By coding all this in Perl, I know that it will work with any
-database (that supports ANSI-SQL, that is).
-
-=cut
-
-    my %args         = @_;
-    my $db           = $args{'db'} or return;
-    my $table_name   = $args{'table_name'} or return;
-    my $id_field     = $args{'id_field'} || $table_name . '_id';
-    my $no_requested = $args{'requested'} || 1;
-
-    my $next_number = $db->selectrow_array(
-        q[
-            select next_number
-            from   cmap_next_number
-            where  table_name=?
-        ],
-        {}, ($table_name)
-    );
-
-    unless ($next_number) {
-        $next_number = $db->selectrow_array(
-            qq[
-                select max( $id_field )
-                from   $table_name
-            ]
-        ) || 0;
-        $next_number++;
-
-        $db->do(
-            q[
-                insert
-                into   cmap_next_number ( table_name, next_number )
-                values ( ?, ? )
-            ],
-            {}, ( $table_name, $next_number + $no_requested )
-        );
-    }
-    else {
-        $db->do(
-            q[
-                update cmap_next_number
-                set    next_number=?
-                where  table_name=?
-            ],
-            {}, ( $next_number + $no_requested, $table_name )
-        );
-    }
-
-    return $next_number;
-}
 
 # ----------------------------------------------------
 sub extract_numbers {
@@ -261,8 +189,9 @@ Special thanks to Noel Yap for suggesting this strategy.
 
         my $i = 1;
         for my $label (@accepted) {
-            my $target = $label->{'target'};
-            my $low_bin = sprintf( "%d", ( $target - $start_y - $half_font ) / $bin_size );
+            my $target  = $label->{'target'};
+            my $low_bin =
+              sprintf( "%d", ( $target - $start_y - $half_font ) / $bin_size );
             my $high_bin =
               sprintf( "%d", ( $target - $start_y + $half_font ) / $bin_size );
 
@@ -649,7 +578,6 @@ sub parse_words {
     return @words;
 }
 
-
 # ----------------------------------------------------
 
 =pod
@@ -672,7 +600,6 @@ sub simple_column_distribution {
     $map_height = int($map_height);
     $low        = int($low);
     $high       = int($high);
-
 
     #
     # Calculate the effect of the buffer.
@@ -709,7 +636,6 @@ sub simple_column_distribution {
 
     return $selected;
 }
-
 
 # ----------------------------------------------------
 sub fake_selectall_arrayref {
@@ -766,37 +692,37 @@ sub sort_selectall_arrayref {
     my @return   = sort {
         for ( my $i = 0 ; $i < $#columns ; $i++ )
         {
-            my $col=$columns[$i];
-            my $dir=1;
-            if ($col=~/^(\S+)\s+(\S+)/){
-                $col=$1;
-                $dir=-1 if ($2 eq (uc 'DESC'));
-            }
-            if ($col=~/^#(\S+)/){
+            my $col = $columns[$i];
+            my $dir = 1;
+            if ( $col =~ /^(\S+)\s+(\S+)/ ) {
                 $col = $1;
-                if ( $dir*($a->{ $col } <=> $b->{ $col }) ) {
-                    return $dir*($a->{ $col } <=> $b->{ $col });
+                $dir = -1 if ( $2 eq ( uc 'DESC' ) );
+            }
+            if ( $col =~ /^#(\S+)/ ) {
+                $col = $1;
+                if ( $dir * ( $a->{$col} <=> $b->{$col} ) ) {
+                    return $dir * ( $a->{$col} <=> $b->{$col} );
                 }
             }
-            else{
-                if ( $dir*($a->{ $col } cmp $b->{ $col }) ) {
-                    return $dir*($a->{ $col } cmp $b->{ $col });
+            else {
+                if ( $dir * ( $a->{$col} cmp $b->{$col} ) ) {
+                    return $dir * ( $a->{$col} cmp $b->{$col} );
                 }
             }
         }
-        my $col=$columns[-1];
-        my $dir=1;
-        if ($col=~/^(\S+)\s+(\S+)/){
-            $col=$1;
-            $dir=-1 if ($2 eq (uc 'DESC'));
+        my $col = $columns[-1];
+        my $dir = 1;
+        if ( $col =~ /^(\S+)\s+(\S+)/ ) {
+            $col = $1;
+            $dir = -1 if ( $2 eq ( uc 'DESC' ) );
         }
 
-        if ($col=~/^#(\S+)/){
+        if ( $col =~ /^#(\S+)/ ) {
             $col = $1;
-            return $dir*($a->{ $col } <=> $b->{ $col });
+            return $dir * ( $a->{$col} <=> $b->{$col} );
         }
-        else{
-            return $dir*($a->{ $col } cmp $b->{ $col });
+        else {
+            return $dir * ( $a->{$col} cmp $b->{$col} );
         }
     } @$arrayref;
 
@@ -809,21 +735,21 @@ sub sort_selectall_arrayref {
 # with Bioperl
 # Modified slightly
 sub calculate_units {
-  my ($length) = @_;
-  return 'G' if $length >= 1e9;
-  return 'M' if $length >= 1e6;   
-  return 'K' if $length >= 1e3;
-  return ''  if $length >= 1;
-  return 'c' if $length >= 1e-2;
-  return 'm' if $length >= 1e-3;   
-  return 'u' if $length >= 1e-6;
-  return 'n' if $length >= 1e-9;
-  return 'p';
+    my ($length) = @_;
+    return 'G' if $length >= 1e9;
+    return 'M' if $length >= 1e6;
+    return 'K' if $length >= 1e3;
+    return ''  if $length >= 1;
+    return 'c' if $length >= 1e-2;
+    return 'm' if $length >= 1e-3;
+    return 'u' if $length >= 1e-6;
+    return 'n' if $length >= 1e-9;
+    return 'p';
 }
 
 # ----------------------------------------------------
 sub presentable_number {
-                                                                                
+
 =pod
                                                                                 
 =head2 presentable_number 
@@ -832,26 +758,26 @@ Takes a number and makes it pretty.
 example: 10000 becomes 10K
 
 =cut
-                                                                                
-    my $num        = shift or return;
+
+    my $num = shift or return;
     my $sig_digits = shift || 2;
-    my $num_str; 
+    my $num_str;
 
+    # the "''." is to fix a rounding error in perl
+    my $scale          = int( '' . ( log( abs($num) ) / log(10) ) );
+    my $rounding_power = $scale - $sig_digits + 1;
+    my $rounded_temp   = int( ( $num / ( 10**$rounding_power ) ) + .5 );
+    my $printable_num  =
+      $rounded_temp / ( 10**( ( $scale - ( $scale % 3 ) ) - $rounding_power ) );
+    my $unit = calculate_units( 10**( $scale - ( $scale % 3 ) ) );
+    $num_str = $printable_num . " " . $unit;
 
-    # the "''." is to fix a rounding error in perl 
-    my $scale          = int(''.(log(abs($num))/log(10))); 
-    my $rounding_power = $scale - $sig_digits +1;
-    my $rounded_temp   = int(($num/(10**$rounding_power))+.5);
-    my $printable_num  = $rounded_temp/(10**(($scale-($scale%3))-$rounding_power)); 
-    my $unit        = calculate_units(10**($scale-($scale%3)));
-    $num_str        = $printable_num." ".$unit;
-                                                             
     return $num_str;
 }
 
 # ----------------------------------------------------
 sub presentable_number_per {
-                                                                                
+
 =pod
                                                                                 
 =head2 presentable_number_per 
@@ -860,27 +786,25 @@ Takes a number and makes it pretty.
 example: .001 becomes "1/K"
 
 =cut
-                                                                                
-    my $num        = shift;
-    my $num_str; 
+
+    my $num = shift;
+    my $num_str;
 
     return "0/unit" unless $num;
 
-    # the "''." is to fix a rounding error in perl 
-    my $scale          = int(''.(log(abs($num))/log(10))); 
-    my $denom_power    = $scale-($scale%3);
+    # the "''." is to fix a rounding error in perl
+    my $scale = int( '' . ( log( abs($num) ) / log(10) ) );
+    my $denom_power = $scale - ( $scale % 3 );
 
-    my $printable_num  = $num ? $num / (10**$denom_power) : 0;
-    $printable_num     = sprintf("%.2f",$printable_num) if $printable_num;
-    
-    my $unit        = calculate_units(10**(-1*$denom_power));
-    $num_str        = $unit ? $printable_num."/".$unit
-                            : $printable_num."/unit";
+    my $printable_num = $num ? $num / ( 10**$denom_power ) : 0;
+    $printable_num = sprintf( "%.2f", $printable_num ) if $printable_num;
+
+    my $unit = calculate_units( 10**( -1 * $denom_power ) );
+    $num_str = $unit
+      ? $printable_num . "/" . $unit
+      : $printable_num . "/unit";
     return $num_str;
 }
-
-
-
 
 1;
 

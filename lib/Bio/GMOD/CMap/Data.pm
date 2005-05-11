@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.232 2005-05-06 21:35:28 mwz444 Exp $
+# $Id: Data.pm,v 1.233 2005-05-11 03:36:48 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.232 $)[-1];
+$VERSION = (qw$Revision: 1.233 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -73,47 +73,45 @@ Gets the specifics on a feature correspondence record.
 
 sub correspondence_detail_data {
 
-#REPLACE 2
+    #REPLACE 2
     #p#rint S#TDERR "correspondence_detail_data\n";
     my ( $self, %args ) = @_;
     my $correspondence_aid = $args{'correspondence_aid'}
       or return $self->error('No correspondence accession ID');
-    my $sql_object         = $self->sql;
-    my $cache_key          = "correspondence_detail_data_".$correspondence_aid;
+    my $sql_object = $self->sql;
+    my $cache_key  = "correspondence_detail_data_" . $correspondence_aid;
     my ( $corr, $feature1, $feature2 );
 
-    if ( my $array_ref =
-        $self->get_cached_results( 4, $cache_key ) )
-    {
+    if ( my $array_ref = $self->get_cached_results( 4, $cache_key ) ) {
         ( $corr, $feature1, $feature2 ) = @$array_ref;
     }
     else {
         $corr = $sql_object->get_correspondences(
-            cmap_object => $self,
+            cmap_object                => $self,
             feature_correspondence_aid => $correspondence_aid,
-        )
+          )
           or return $sql_object->error();
 
         $corr->{'attributes'} = $sql_object->get_attributes(
             cmap_object => $self,
-            object_type      => 'feature_correspondence',
+            object_type => 'feature_correspondence',
             object_id   => $corr->{'feature_correspondence_id'},
         );
 
         $corr->{'xrefs'} = $sql_object->get_xrefs(
             cmap_object => $self,
-            object_type      => 'feature_correspondence',
+            object_type => 'feature_correspondence',
             object_id   => $corr->{'feature_correspondence_id'},
         );
 
         $feature1 = $sql_object->get_feature_details(
             cmap_object => $self,
-            feature_id => $corr->{'feature_id1'},
+            feature_id  => $corr->{'feature_id1'},
         );
         $feature1 = $feature1->[0] if $feature1;
         $feature2 = $sql_object->get_feature_details(
             cmap_object => $self,
-            feature_id => $corr->{'feature_id2'},
+            feature_id  => $corr->{'feature_id2'},
         );
         $feature2 = $feature2->[0] if $feature2;
 
@@ -125,11 +123,8 @@ sub correspondence_detail_data {
         $corr->{'evidence'} =
           sort_selectall_arrayref( $corr->{'evidence'}, '#rank',
             'evidence_type' );
-        $self->store_cached_results(
-            4,
-            $cache_key,
-            [ $corr, $feature1, $feature2 ]
-        );
+        $self->store_cached_results( 4, $cache_key,
+            [ $corr, $feature1, $feature2 ] );
     }
     return {
         correspondence => $corr,
@@ -162,25 +157,26 @@ Returns a string of tab-delimited data for either a map or map set.
     return $self->error("XML format only valid for map sets")
       if $format eq 'XML' && !$map_set_aid;
 
-    my $sql_object        = $self->sql;
+    my $sql_object = $self->sql;
     my ( $map_set_id, $map_id );
-#REPLACE 3 YYY
+
+    #REPLACE 3 YYY
     if ($map_aid) {
         $map_id = $sql_object->acc_id_to_internal_id(
             cmap_object => $self,
             object_type => 'map',
             acc_id      => $map_aid,
-        ) 
+          )
           or return $self->error("'$map_aid' is not a valid map accession ID");
     }
 
-#REPLACE 4 YYY
+    #REPLACE 4 YYY
     if ($map_set_aid) {
         $map_set_id = $sql_object->acc_id_to_internal_id(
             cmap_object => $self,
             object_type => 'map_set',
             acc_id      => $map_set_aid,
-        )
+          )
           or return $self->error(
             "'$map_set_aid' is not a valid map set accession ID");
     }
@@ -205,23 +201,24 @@ Returns a string of tab-delimited data for either a map or map set.
           };
     }
     else {
-#REPLACE 5 map_id YYY
-#REPLACE 6 map_set_id YYY
 
-#REPLACE 73 map_id ALIAS YYY
-#REPLACE 74 map_set_id ALIAS YYY
+        #REPLACE 5 map_id YYY
+        #REPLACE 6 map_set_id YYY
+
+        #REPLACE 73 map_id ALIAS YYY
+        #REPLACE 74 map_set_id ALIAS YYY
 
         my $features;
         if ($map_aid) {
             $features = $sql_object->get_feature_details(
                 cmap_object => $self,
-                map_id => $map_id,
+                map_id      => $map_id,
             );
         }
         else {
             $features = $sql_object->get_feature_details(
                 cmap_object => $self,
-                map_set_id => $map_set_id,
+                map_set_id  => $map_set_id,
             );
         }
 
@@ -239,8 +236,8 @@ Returns a string of tab-delimited data for either a map or map set.
             $return = join( "\t", @col_headers ) . "\n";
 
             for my $f (@$features) {
-                $f->{'feature_aliases'} = join( ',',
-                    sort @{ $f->{'aliases'}  || [] } );
+                $f->{'feature_aliases'} =
+                  join( ',', sort @{ $f->{'aliases'} || [] } );
                 $return .= join( "\t", map { $f->{$_} } @col_names ) . "\n";
             }
         }
@@ -284,18 +281,21 @@ sub cmap_data {
     my $slots                       = $args{'slots'};
     my $min_correspondences         = $args{'min_correspondences'} || 0;
     my $included_feature_type_aids  = $args{'included_feature_type_aids'} || [];
-    my $corr_only_feature_type_aids = $args{'corr_only_feature_type_aids'} || [];
+    my $corr_only_feature_type_aids = $args{'corr_only_feature_type_aids'}
+      || [];
     my $ignored_feature_type_aids   = $args{'ignored_feature_type_aids'} || [];
     my $url_feature_default_display = $args{'url_feature_default_display'};
     my $ignored_evidence_type_aids  = $args{'ignored_evidence_type_aids'} || [];
-    my $included_evidence_type_aids = $args{'included_evidence_type_aids'} || [];
-    my $less_evidence_type_aids     = $args{'less_evidence_type_aids'} || [];
-    my $greater_evidence_type_aids  = $args{'greater_evidence_type_aids'} || [];
-    my $evidence_type_score         = $args{'evidence_type_score'} || {};
-    my $pid = $$;
+    my $included_evidence_type_aids = $args{'included_evidence_type_aids'}
+      || [];
+    my $less_evidence_type_aids    = $args{'less_evidence_type_aids'}    || [];
+    my $greater_evidence_type_aids = $args{'greater_evidence_type_aids'} || [];
+    my $evidence_type_score        = $args{'evidence_type_score'}        || {};
+    my $pid                        = $$;
 
     # Fill the default array with any feature types not accounted for.
-    my $feature_default_display = $self->feature_default_display($url_feature_default_display);
+    my $feature_default_display =
+      $self->feature_default_display($url_feature_default_display);
 
     my %found_feature_type;
     foreach
@@ -325,8 +325,10 @@ sub cmap_data {
     my $evidence_default_display = $self->evidence_default_display;
 
     my %found_evidence_type;
-    foreach my $et ( @$included_evidence_type_aids, @$ignored_evidence_type_aids,
-                @$less_evidence_type_aids, @$greater_evidence_type_aids,)
+    foreach my $et (
+        @$included_evidence_type_aids, @$ignored_evidence_type_aids,
+        @$less_evidence_type_aids,     @$greater_evidence_type_aids,
+      )
     {
         $found_evidence_type{$et} = 1;
     }
@@ -350,10 +352,12 @@ sub cmap_data {
         %correspondence_evidence,   %feature_types,
         %map_type_aids
     );
-    $self->slot_info( $slots, $ignored_feature_type_aids,
+    $self->slot_info(
+        $slots,                       $ignored_feature_type_aids,
         $included_evidence_type_aids, $less_evidence_type_aids,
-        $greater_evidence_type_aids, $evidence_type_score,
-        $min_correspondences,);
+        $greater_evidence_type_aids,  $evidence_type_score,
+        $min_correspondences,
+    );
 
     my @slot_nos         = keys %$slots;
     my @pos              = sort { $a <=> $b } grep { $_ >= 0 } @slot_nos;
@@ -457,19 +461,19 @@ sub slot_data {
     my $less_evidence_type_aids     = $args{'less_evidence_type_aids'};
     my $greater_evidence_type_aids  = $args{'greater_evidence_type_aids'};
     my $evidence_type_score         = $args{'evidence_type_score'};
-    my $slot_map                    = ${ $args{'map'} };                 # hashref
-    my $reference_map               = $args{'reference_map'};
-    my $feature_correspondences     = $args{'feature_correspondences'};
-    my $intraslot_correspondences   = $args{'intraslot_correspondences'};
-    my $map_correspondences         = $args{'map_correspondences'};
-    my $correspondence_evidence     = $args{'correspondence_evidence'};
-    my $feature_types_seen          = $args{'feature_types'};
+    my $slot_map                  = ${ $args{'map'} };                 # hashref
+    my $reference_map             = $args{'reference_map'};
+    my $feature_correspondences   = $args{'feature_correspondences'};
+    my $intraslot_correspondences = $args{'intraslot_correspondences'};
+    my $map_correspondences       = $args{'map_correspondences'};
+    my $correspondence_evidence   = $args{'correspondence_evidence'};
+    my $feature_types_seen        = $args{'feature_types'};
     my $corr_only_feature_type_aids = $args{'corr_only_feature_type_aids'};
     my $ignored_feature_type_aids   = $args{'ignored_feature_type_aids'};
     my $map_type_aids               = $args{'map_type_aids'};
     my $pid                         = $args{'pid'};
     my $max_no_features             = 200000;
-    my $sql_object                  = $self->sql  or return;
+    my $sql_object                  = $self->sql or return;
     my $slot_info                   = $self->slot_info or return;
 
     #
@@ -495,7 +499,8 @@ sub slot_data {
     # Gather necessary info on all the maps in this slot.
     #
     my @maps = ();
-#REPLACE 7 MAPS YYY
+
+    #REPLACE 7 MAPS YYY
     if ( $slot_info->{$this_slot_no}
         and %{ $slot_info->{$this_slot_no} } )
     {
@@ -547,13 +552,13 @@ sub slot_data {
     #
     # Register the feature types on the maps in this slot.
     #
-#REPLACE 8 FT YYY
+    #REPLACE 8 FT YYY
     my $ft = $sql_object->get_used_feature_types(
         cmap_object => $self,
-        map_ids     => [keys( %{ $slot_info->{$this_slot_no} } )],
+        map_ids     => [ keys( %{ $slot_info->{$this_slot_no} } ) ],
         included_feature_type_aids => $included_feature_type_aids,
     );
-    $feature_types_seen->{$_->{'feature_type_aid'}} = $_ for @$ft;
+    $feature_types_seen->{ $_->{'feature_type_aid'} } = $_ for @$ft;
 
     #
     # check to see if it is compressed
@@ -563,13 +568,13 @@ sub slot_data {
         #
         # Figure out how many features are on each map.
         #
-#REPLACE 9 FCOUNT YYY
+        #REPLACE 9 FCOUNT YYY
         my %count_lookup;
 
         # Include current slot maps
         my $f_counts = $sql_object->get_feature_count(
-            cmap_object => $self,
-            this_slot_info => $slot_info->{$this_slot_no},
+            cmap_object     => $self,
+            this_slot_info  => $slot_info->{$this_slot_no},
             group_by_map_id => 1,
         );
 
@@ -593,14 +598,12 @@ sub slot_data {
           };
 
         for my $map (@maps) {
-            my $map_start =
-              $slot_info->{$this_slot_no}{ $map->{'map_id'} }[0];
-            my $map_stop =
-              $slot_info->{$this_slot_no}{ $map->{'map_id'} }[1];
+            my $map_start = $slot_info->{$this_slot_no}{ $map->{'map_id'} }[0];
+            my $map_stop  = $slot_info->{$this_slot_no}{ $map->{'map_id'} }[1];
             $map->{'start_position'} = $map_start if defined($map_start);
             $map->{'stop_position'}  = $map_stop  if defined($map_stop);
             $map->{'no_correspondences'} = $corr_lookup{ $map->{'map_id'} };
-            if ( $min_correspondences
+            if (   $min_correspondences
                 && defined $ref_slot_no
                 && $map->{'no_correspondences'} < $min_correspondences )
             {
@@ -608,19 +611,20 @@ sub slot_data {
                 next;
             }
             $map->{'no_features'} = $count_lookup{ $map->{'map_id'} };
-# REPLACE 10 YYY
-# REPLACE 75 ALIAS YYY
+
+            # REPLACE 10 YYY
+            # REPLACE 75 ALIAS YYY
             $map->{'features'} = $sql_object->slot_data_features(
-                cmap_object => $self,
-                map_id => $map->{'map_id'},
-                map_start => $map_start,
-                map_stop => $map_stop,
-                slot_info => $slot_info,
-                this_slot_no => $this_slot_no,
-                included_feature_type_aids => $included_feature_type_aids,
-                ignored_feature_type_aids => $ignored_feature_type_aids,
+                cmap_object                 => $self,
+                map_id                      => $map->{'map_id'},
+                map_start                   => $map_start,
+                map_stop                    => $map_stop,
+                slot_info                   => $slot_info,
+                this_slot_no                => $this_slot_no,
+                included_feature_type_aids  => $included_feature_type_aids,
+                ignored_feature_type_aids   => $ignored_feature_type_aids,
                 corr_only_feature_type_aids => $corr_only_feature_type_aids,
-                show_intraslot_corr => $self->show_intraslot_corr,
+                show_intraslot_corr         => $self->show_intraslot_corr,
             );
 
             ###set $feature_correspondences and$correspondence_evidence
@@ -635,7 +639,10 @@ sub slot_data {
                     $less_evidence_type_aids,
                     $greater_evidence_type_aids,
                     $evidence_type_score,
-                    [ @$included_feature_type_aids, @$corr_only_feature_type_aids ],
+                    [
+                        @$included_feature_type_aids,
+                        @$corr_only_feature_type_aids
+                    ],
                     $map_start,
                     $map_stop
                 );
@@ -648,11 +655,11 @@ sub slot_data {
         #
         # Figure out how many features are on each map.
         #
-# REPLACE 11 FCOUNT YYY
+        # REPLACE 11 FCOUNT YYY
         my %count_lookup;
         my $f_counts = $sql_object->get_feature_count(
-            cmap_object => $self,
-            map_ids => [keys( %{ $slot_info->{$this_slot_no} } )],
+            cmap_object     => $self,
+            map_ids         => [ keys( %{ $slot_info->{$this_slot_no} } ) ],
             group_by_map_id => 1,
         );
 
@@ -676,14 +683,12 @@ sub slot_data {
           };
 
         for my $map (@maps) {
-            my $map_start =
-              $slot_info->{$this_slot_no}{ $map->{'map_id'} }[0];
-            my $map_stop =
-              $slot_info->{$this_slot_no}{ $map->{'map_id'} }[1];
+            my $map_start = $slot_info->{$this_slot_no}{ $map->{'map_id'} }[0];
+            my $map_stop  = $slot_info->{$this_slot_no}{ $map->{'map_id'} }[1];
             $map->{'start_position'} = $map_start if defined($map_start);
             $map->{'stop_position'}  = $map_stop  if defined($map_stop);
             $map->{'no_correspondences'} = $corr_lookup{ $map->{'map_id'} };
-            if ( $min_correspondences
+            if (   $min_correspondences
                 && defined $ref_slot_no
                 && $map->{'no_correspondences'} < $min_correspondences )
             {
@@ -704,7 +709,10 @@ sub slot_data {
                     $less_evidence_type_aids,
                     $greater_evidence_type_aids,
                     $evidence_type_score,
-                    [ @$included_feature_type_aids, @$corr_only_feature_type_aids ],
+                    [
+                        @$included_feature_type_aids,
+                        @$corr_only_feature_type_aids
+                    ],
                     $map_start,
                     $map_stop
                 );
@@ -815,27 +823,26 @@ sub get_feature_correspondences {
         $self,                       $feature_correspondences,
         $correspondence_evidence,    $map_id,
         $slot_no,                    $included_evidence_type_aids,
-        $ignored_evidence_type_aids, $less_evidence_type_aids, 
+        $ignored_evidence_type_aids, $less_evidence_type_aids,
         $greater_evidence_type_aids, $evidence_type_score,
-        $feature_type_aids,
-        $map_start,                  $map_stop
+        $feature_type_aids,          $map_start,
+        $map_stop
       )
       = @_;
 
-    my $ref_correspondences =
-        $self->sql->get_correspondences_by_maps(
-            cmap_object  => $self,
-            map_id       => $map_id,
-            ref_map_info => $self->slot_info->{$slot_no} ,
-            map_start    => $map_start,
-            map_stop     => $map_stop,
-            included_evidence_type_aids => $included_evidence_type_aids,
-            less_evidence_type_aids     => $less_evidence_type_aids,
-            greater_evidence_type_aids  => $greater_evidence_type_aids,
-            evidence_type_score         => $evidence_type_score,
-            feature_type_aids           => $feature_type_aids,
-        );
-            
+    my $ref_correspondences = $self->sql->get_correspondences_by_maps(
+        cmap_object                 => $self,
+        map_id                      => $map_id,
+        ref_map_info                => $self->slot_info->{$slot_no},
+        map_start                   => $map_start,
+        map_stop                    => $map_stop,
+        included_evidence_type_aids => $included_evidence_type_aids,
+        less_evidence_type_aids     => $less_evidence_type_aids,
+        greater_evidence_type_aids  => $greater_evidence_type_aids,
+        evidence_type_score         => $evidence_type_score,
+        feature_type_aids           => $feature_type_aids,
+    );
+
     for my $corr ( @{$ref_correspondences} ) {
         $feature_correspondences->{ $corr->{'feature_id'} }
           { $corr->{'ref_feature_id'} } = $corr->{'feature_correspondence_id'};
@@ -876,23 +883,22 @@ sub get_intraslot_correspondences {
         $self,                        $intraslot_correspondences,
         $correspondence_evidence,     $slot_no,
         $included_evidence_type_aids, $ignored_evidence_type_aids,
-        $less_evidence_type_aids,     $greater_evidence_type_aids, 
+        $less_evidence_type_aids,     $greater_evidence_type_aids,
         $evidence_type_score,         $feature_type_aids
       )
       = @_;
 
-    my $ref_correspondences =
-        $self->sql->get_correspondences_by_maps(
-            cmap_object  => $self,
-            ref_map_info => $self->slot_info->{$slot_no} ,
-            included_evidence_type_aids => $included_evidence_type_aids,
-            less_evidence_type_aids     => $less_evidence_type_aids,
-            greater_evidence_type_aids  => $greater_evidence_type_aids,
-            evidence_type_score         => $evidence_type_score,
-            feature_type_aids           => $feature_type_aids,
-            intraslot                   => 1,
-        );
-            
+    my $ref_correspondences = $self->sql->get_correspondences_by_maps(
+        cmap_object                 => $self,
+        ref_map_info                => $self->slot_info->{$slot_no},
+        included_evidence_type_aids => $included_evidence_type_aids,
+        less_evidence_type_aids     => $less_evidence_type_aids,
+        greater_evidence_type_aids  => $greater_evidence_type_aids,
+        evidence_type_score         => $evidence_type_score,
+        feature_type_aids           => $feature_type_aids,
+        intraslot                   => 1,
+    );
+
     for my $corr ( @{$ref_correspondences} ) {
         $intraslot_correspondences->{ $corr->{'feature_id'} }
           { $corr->{'ref_feature_id'} } = $corr->{'feature_correspondence_id'};
@@ -934,9 +940,9 @@ Returns the data for the correspondence matrix.
     #
     # Get all the species.
     #
-# REPLACE 14 YYY
+    # REPLACE 14 YYY
     my $species = $sql_object->get_species(
-        cmap_object => $self,
+        cmap_object       => $self,
         is_relational_map => 0,
         is_enabled        => 1,
     );
@@ -944,7 +950,7 @@ Returns the data for the correspondence matrix.
     #
     # And map types.
     #
-# REPLACE 15 YYY
+    # REPLACE 15 YYY
     my $map_types = $sql_object->get_used_map_types(
         cmap_object       => $self,
         is_relational_map => 0,
@@ -962,22 +968,22 @@ Returns the data for the correspondence matrix.
     #
     # Make sure that species_aid is set if map_set_id is.
     #
-# REPLACE 16 SPID YYY
+    # REPLACE 16 SPID YYY
     if ( $map_set_aid && !$species_aid ) {
         $species_aid = $sql_object->get_species_aid(
-            cmap_object      => $self,
-            map_set_aid      => $map_set_aid,
+            cmap_object => $self,
+            map_set_aid => $map_set_aid,
         );
     }
 
     #
     # Make sure that map_type_aid is set if map_set_id is.
     #
-# REPLACE 17
+    # REPLACE 17
     if ( $map_set_aid && !$map_type_aid ) {
         $map_type_aid = $sql_object->get_map_type_aid(
-            cmap_object      => $self,
-            map_set_aid      => $map_set_aid,
+            cmap_object => $self,
+            map_set_aid => $map_set_aid,
         );
     }
 
@@ -986,7 +992,8 @@ Returns the data for the correspondence matrix.
     #
     my ( $maps, $map_sets );
     if ( $species_aid || $map_type_aid ) {
-# REPLACE 18 MAP_SET YYY
+
+        # REPLACE 18 MAP_SET YYY
         $map_sets = $sql_object->get_map_sets(
             cmap_object       => $self,
             species_aid       => $species_aid,
@@ -995,9 +1002,9 @@ Returns the data for the correspondence matrix.
             is_enabled        => 1,
         );
 
-# REPLACE 19 MAPS YYY
+        # REPLACE 19 MAPS YYY
         $maps = $sql_object->get_maps(
-            cmap_object => $self,
+            cmap_object       => $self,
             is_relational_map => 0,
             is_enabled        => 1,
             map_type_aid      => $map_type_aid,
@@ -1012,7 +1019,8 @@ Returns the data for the correspondence matrix.
     #
     my @reference_map_sets = ();
     if ($map_set_aid) {
-# REPLACE 20 MAPS YYY
+
+        # REPLACE 20 MAPS YYY
         my $tempMapSet = $sql_object->get_maps(
             cmap_object => $self,
             is_enabled  => 1,
@@ -1026,19 +1034,21 @@ Returns the data for the correspondence matrix.
 
         my $tempMapSet;
         if ($map_name) {
-# REPLACE 21 MAPS YYY
+
+            # REPLACE 21 MAPS YYY
             $tempMapSet = $sql_object->get_maps(
-                cmap_object => $self,
-                is_enabled  => 1,
+                cmap_object       => $self,
+                is_enabled        => 1,
                 is_relational_map => 0,
                 map_type_aid      => $map_type_aid,
                 species_aid       => $species_aid,
                 map_set_aid       => $map_set_aid,
-                map_name    => $map_name,
+                map_name          => $map_name,
             );
         }
-        else{        
-# REPLACE 22 MAP_SET YYY
+        else {
+
+            # REPLACE 22 MAP_SET YYY
             $tempMapSet = $sql_object->get_map_sets(
                 cmap_object       => $self,
                 map_set_aid       => $map_set_aid,
@@ -1051,10 +1061,10 @@ Returns the data for the correspondence matrix.
 
         @reference_map_sets = @{
             sort_selectall_arrayref(
-                $tempMapSet,    '#map_type_display_order',
-                'map_type',     '#species_display_order',
+                $tempMapSet,           '#map_type_display_order',
+                'map_type',            '#species_display_order',
                 'species_common_name', '#map_set_display_order',
-                'map_set_short_name', 'epoch_published_on desc',
+                'map_set_short_name',  'epoch_published_on desc',
             )
           };
     }
@@ -1068,7 +1078,8 @@ Returns the data for the correspondence matrix.
     # all up on map set ids.
     #
     my $select_sql;
-# REPLACE 23 YYY
+
+    # REPLACE 23 YYY
     my $data = $sql_object->get_matrix_relationships(
         cmap_object      => $self,
         map_set_aid      => $map_set_aid,
@@ -1114,15 +1125,16 @@ Returns the data for the correspondence matrix.
 
     my $link_map_can_be_reference;
     if ($link_map_set_aid) {
-# REPLACE 24 MAP_SET YYY
+
+        # REPLACE 24 MAP_SET YYY
         my $map_sets = $sql_object->get_just_map_sets(
-            cmap_object       => $self,
-            map_set_aid       => $link_map_set_aid,
+            cmap_object => $self,
+            map_set_aid => $link_map_set_aid,
         );
         my $is_rel;
         $is_rel = $map_sets->[0]{'is_relational_map'} if $map_sets;
 
-        $link_map_can_be_reference = (!$is_rel)
+        $link_map_can_be_reference = ( !$is_rel );
     }
 
     #
@@ -1137,19 +1149,21 @@ Returns the data for the correspondence matrix.
         && $link_map_set_aid
         && $link_map_can_be_reference )
     {
-# REPLACE 25 MAPS YYY
+
+        # REPLACE 25 MAPS YYY
         $tempMapSet = $sql_object->get_maps(
             cmap_object => $self,
             is_enabled  => 1,
-            map_set_aid       => $link_map_set_aid,
+            map_set_aid => $link_map_set_aid,
         );
     }
     else {
-# REPLACE 26 MAP_SET YYY
+
+        # REPLACE 26 MAP_SET YYY
         $tempMapSet = $sql_object->get_map_sets(
-            cmap_object       => $self,
-            map_set_aid       => $link_map_set_aid,
-            is_enabled        => 1,
+            cmap_object => $self,
+            map_set_aid => $link_map_set_aid,
+            is_enabled  => 1,
         );
     }
 
@@ -1266,13 +1280,13 @@ sub cmap_form_data {
     my $ignored_feature_type_aids   = $args{'ignored_feature_types'}   || [];
     my $included_evidence_type_aids = $args{'included_evidence_types'} || [];
     my $ignored_evidence_type_aids  = $args{'ignored_evidence_types'}  || [];
-    my $less_evidence_type_aids     = $args{'less_evidence_types'} || [];
-    my $greater_evidence_type_aids  = $args{'greater_evidence_types'} || [];
-    my $evidence_type_score         = $args{'evidence_type_score'} || {};
-    my $ref_species_aid             = $args{'ref_species_aid'} || '';
-    my $ref_slot_data               = $args{'ref_slot_data'}   || {};
+    my $less_evidence_type_aids     = $args{'less_evidence_types'}     || [];
+    my $greater_evidence_type_aids  = $args{'greater_evidence_types'}  || [];
+    my $evidence_type_score         = $args{'evidence_type_score'}     || {};
+    my $ref_species_aid             = $args{'ref_species_aid'}         || '';
+    my $ref_slot_data               = $args{'ref_slot_data'}           || {};
     my $ref_map                     = $slots->{0};
-    my $ref_map_set_aid             = $args{'ref_map_set_aid'} || 0;
+    my $ref_map_set_aid             = $args{'ref_map_set_aid'}         || 0;
     my $sql_object = $self->sql or return;
 
     my $pid = $$;
@@ -1294,10 +1308,11 @@ sub cmap_form_data {
 
     my $sql_str;
     if ( $ref_map_set_aid && !$ref_species_aid ) {
-# REPLACE 27 SPID YYY
+
+        # REPLACE 27 SPID YYY
         $ref_species_aid = $sql_object->get_species_aid(
-            cmap_object      => $self,
-            map_set_aid      => $ref_map_set_aid,
+            cmap_object => $self,
+            map_set_aid => $ref_map_set_aid,
         );
     }
 
@@ -1305,9 +1320,9 @@ sub cmap_form_data {
     # Select all the map set that can be reference maps.
     #
 
-# REPLACE 28 YYY
+    # REPLACE 28 YYY
     my $ref_species = $sql_object->get_species(
-        cmap_object => $self,
+        cmap_object       => $self,
         is_relational_map => 0,
         is_enabled        => 1,
     );
@@ -1321,7 +1336,8 @@ sub cmap_form_data {
     #
     my $ref_map_sets = [];
     if ($ref_species_aid) {
-# REPLACE 64 MAP_SET YYY
+
+        # REPLACE 64 MAP_SET YYY
         $ref_map_sets = $sql_object->get_map_sets(
             cmap_object          => $self,
             species_aid          => $ref_species_aid,
@@ -1347,7 +1363,8 @@ sub cmap_form_data {
         unless ( ( $ref_map->{'maps'} and %{ $ref_map->{'maps'} } )
             or ( $ref_map->{'map_sets'} and %{ $ref_map->{'map_sets'} } ) )
         {
-# REPLACE 65 YYY
+
+            # REPLACE 65 YYY
             $ref_maps = $sql_object->get_maps_from_map_set(
                 cmap_object => $self,
                 map_set_aid => $ref_map_set_aid,
@@ -1359,22 +1376,22 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
         }
 
         unless (@ref_maps) {
-# REPLACE 29 MAP_SET YYY
+
+            # REPLACE 29 MAP_SET YYY
             my $tempMapSet = $sql_object->get_map_sets(
-                cmap_object       => $self,
-                map_set_aid       => $ref_map_set_aid,
+                cmap_object => $self,
+                map_set_aid => $ref_map_set_aid,
             );
             $ref_map_set_info = $tempMapSet->[0];
 
-            $ref_map_set_info->{'attributes'} = 
-              $sql_object->get_attributes(
+            $ref_map_set_info->{'attributes'} = $sql_object->get_attributes(
                 cmap_object => $self,
-                object_type      => 'map_set',
+                object_type => 'map_set',
                 object_id   => $ref_map_set_info->{'map_set_id'},
-              );
+            );
             $ref_map_set_info->{'xrefs'} = $sql_object->get_xrefs(
                 cmap_object => $self,
-                object_type      => 'cmap_map_set',
+                object_type => 'cmap_map_set',
                 object_id   => $ref_map_set_info->{'map_set_id'},
             );
         }
@@ -1473,17 +1490,17 @@ out which maps have relationships.
     my $sql_object                  = $self->sql or return;
     return unless defined $ref_slot_no;
 
-# REPLACE 30 CORRCOUNTS YYY
+    # REPLACE 30 CORRCOUNTS YYY
     my $feature_correspondences = $sql_object->get_comparative_maps_with_count(
-        cmap_object => $self,
-        slot_info   => $self->slot_info->{$ref_slot_no},
+        cmap_object                 => $self,
+        slot_info                   => $self->slot_info->{$ref_slot_no},
         included_evidence_type_aids => $included_evidence_type_aids,
-        ignored_evidence_type_aids => $ignored_evidence_type_aids,
-        less_evidence_type_aids=>$less_evidence_type_aids,
-        greater_evidence_type_aids=>$greater_evidence_type_aids,
-        evidence_type_score=>$evidence_type_score,
-        ignored_feature_type_aids=>$ignored_feature_type_aids,
-        include_map1_data => 0,
+        ignored_evidence_type_aids  => $ignored_evidence_type_aids,
+        less_evidence_type_aids     => $less_evidence_type_aids,
+        greater_evidence_type_aids  => $greater_evidence_type_aids,
+        evidence_type_score         => $evidence_type_score,
+        ignored_feature_type_aids   => $ignored_feature_type_aids,
+        include_map1_data           => 0,
     );
 
     #
@@ -1491,13 +1508,14 @@ out which maps have relationships.
     #
     my %map_set_ids =
       map { $_->{'map_set_id2'}, 1 } @$feature_correspondences;
-# REPLACE 31 MAP_SET YYY
+
+    # REPLACE 31 MAP_SET YYY
 
     my ( %map_sets, %comp_maps );
     for my $map_set_id ( keys %map_set_ids ) {
         my $tempMapSet = $sql_object->get_map_sets(
-            cmap_object       => $self,
-            map_set_id       => $map_set_id,
+            cmap_object => $self,
+            map_set_id  => $map_set_id,
         );
         my $ms_info = $tempMapSet->[0];
         $map_sets{ $ms_info->{'map_set_aid'} } = $ms_info;
@@ -1505,7 +1523,7 @@ out which maps have relationships.
     if (@$feature_correspondences) {
         my $maps = $sql_object->get_maps(
             cmap_object => $self,
-            map_ids     => [ map { $_->{'map_id2'} } @$feature_correspondences ],
+            map_ids => [ map { $_->{'map_id2'} } @$feature_correspondences ],
         );
         for my $map (@$maps) {
             $comp_maps{ $map->{'map_id'} } = $map;
@@ -1513,7 +1531,7 @@ out which maps have relationships.
     }
     for my $fc (@$feature_correspondences) {
         my $comp_map        = $comp_maps{ $fc->{'map_id2'} } or next;
-        my $ref_map_set_aid = $comp_map->{'map_set_aid'}    or next;
+        my $ref_map_set_aid = $comp_map->{'map_set_aid'}     or next;
 
         $comp_map->{'no_correspondences'} = $fc->{'no_corr'};
 
@@ -1542,24 +1560,23 @@ out which maps have relationships.
 
         my $display_order_sort = sub {
             $a->{'display_order'} <=> $b->{'display_order'}
-            || $a->{'map_name'} cmp $b->{'map_name'}
+              || $a->{'map_name'} cmp $b->{'map_name'};
         };
         my $no_corr_sort = sub {
             $b->{'no_correspondences'} <=> $a->{'no_correspondences'}
-            || $a->{'display_order'} <=> $b->{'display_order'}
-            || $a->{'map_name'} cmp $b->{'map_name'}
+              || $a->{'display_order'} <=> $b->{'display_order'}
+              || $a->{'map_name'} cmp $b->{'map_name'};
         };
 
         my $sort_sub;
-        if ($self->comp_menu_order eq 'corrs'){
+        if ( $self->comp_menu_order eq 'corrs' ) {
             $sort_sub = $no_corr_sort;
         }
-        else{
+        else {
             $sort_sub = $display_order_sort;
         }
-    
-        for my $map ( sort $sort_sub @{ $map_set->{'maps'} || [] })
-        {
+
+        for my $map ( sort $sort_sub @{ $map_set->{'maps'} || [] } ) {
             next
               if $min_correspondences
               && $map->{'no_correspondences'} < $min_correspondences;
@@ -1573,12 +1590,12 @@ out which maps have relationships.
 
         push @sorted_map_sets,
           {
-            map_type           => $map_set->{'map_type'},
-            species_common_name       => $map_set->{'species_common_name'},
-            map_set_name       => $map_set->{'map_set_name'},
-            map_set_aid        => $map_set->{'map_set_aid'},
-            no_correspondences => $total_correspondences,
-            maps               => \@maps,
+            map_type            => $map_set->{'map_type'},
+            species_common_name => $map_set->{'species_common_name'},
+            map_set_name        => $map_set->{'map_set_name'},
+            map_set_aid         => $map_set->{'map_set_aid'},
+            no_correspondences  => $total_correspondences,
+            maps                => \@maps,
           };
     }
 
@@ -1602,25 +1619,26 @@ Returns the data for the feature alias detail page.
     my $feature_alias = $args{'feature_alias'}
       or return $self->error('No feature alias');
 
-    my $sql_object  = $self->sql;
-# REPLACE 32 ALIAS YYY
+    my $sql_object = $self->sql;
+
+    # REPLACE 32 ALIAS YYY
     my $alias_array = $sql_object->get_feature_aliases(
         cmap_object => $self,
         feature_aid => $feature_aid,
         alias       => $feature_alias,
-    ) or return $self->error('No alias');
+      )
+      or return $self->error('No alias');
     my $alias = $alias_array->[0];
 
     $alias->{'object_id'}  = $alias->{'feature_alias_id'};
-    $alias->{'attributes'} =
-      $self->sql->get_attributes(
+    $alias->{'attributes'} = $self->sql->get_attributes(
         cmap_object => $self,
-        object_type      => 'feature_alias',
+        object_type => 'feature_alias',
         object_id   => $alias->{'feature_alias_id'},
-      );
+    );
     $self->get_multiple_xrefs(
-        table_name => 'cmap_feature_alias',
-        objects    => [$alias],
+        object_type => 'feature_alias',
+        objects     => [$alias],
     );
 
     return $alias;
@@ -1659,17 +1677,16 @@ sub fill_out_maps {
     my $sql_object = $self->sql or return;
     my @ordered_slot_nos = sort { $a <=> $b } keys %$slots;
 
-# REPLACE 34 MAP_SET YYY
+    # REPLACE 34 MAP_SET YYY
 
     my @maps;
     for my $i ( 0 .. $#ordered_slot_nos ) {
         my $map;
-        my $slot_no   = $ordered_slot_nos[$i];
-        my $slot_info = $self->slot_info->{$slot_no};
-        my $map_set_aid = 
-        my $map_sets = $sql_object->get_map_sets(
-            cmap_object       => $self,
-            map_set_aid      => $slot_info->{'map_set_aid'},
+        my $slot_no     = $ordered_slot_nos[$i];
+        my $slot_info   = $self->slot_info->{$slot_no};
+        my $map_set_aid = my $map_sets = $sql_object->get_map_sets(
+            cmap_object => $self,
+            map_set_aid => $slot_info->{'map_set_aid'},
         );
         my %desc_by_species;
         foreach my $row (@$map_sets) {
@@ -1679,7 +1696,8 @@ sub fill_out_maps {
             }
             else {
                 $desc_by_species{ $row->{'species_common_name'} } .=
-                  $row->{'species_common_name'} . "-" . $row->{'map_set_short_name'};
+                    $row->{'species_common_name'} . "-"
+                  . $row->{'map_set_short_name'};
             }
         }
         $map->{'description'} =
@@ -1763,25 +1781,25 @@ Given a feature acc. id, find out all the details on it.
 
     my ( $self, %args ) = @_;
     my $feature_aid = $args{'feature_aid'} or die 'No accession id';
-    my $sql_object         = $self->sql           or return;
-# REPLACE 66 YYY
+    my $sql_object  = $self->sql           or return;
+
+    # REPLACE 66 YYY
     my $feature_array = $sql_object->get_feature_details(
         cmap_object => $self,
         feature_aid => $feature_aid,
     );
     my $feature = $feature_array->[0];
 
-
     $feature->{'object_id'}  = $feature->{'feature_id'};
-    $feature->{'attributes'} =
-      $self->sql->get_attributes(
+    $feature->{'attributes'} = $self->sql->get_attributes(
         cmap_object => $self,
-        object_type      => 'feature',
+        object_type => 'feature',
         object_id   => $feature->{'feature_id'},
-      );
-# REPLACE 35 ALIAS YYY
+    );
 
-# REPLACE 67 FCS YYY
+    # REPLACE 35 ALIAS YYY
+
+    # REPLACE 67 FCS YYY
     my $correspondences = $sql_object->get_correspondence_details(
         cmap_object             => $self,
         feature_id              => $feature->{'feature_id'},
@@ -1789,7 +1807,8 @@ Given a feature acc. id, find out all the details on it.
     );
 
     for my $corr (@$correspondences) {
-# REPLACE 36 YYY
+
+        # REPLACE 36 YYY
         $corr->{'evidence'} = $sql_object->get_evidence(
             cmap_object               => $self,
             feature_correspondence_id => $corr->{'feature_correspondence_id'},
@@ -1798,19 +1817,19 @@ Given a feature acc. id, find out all the details on it.
           sort_selectall_arrayref( $corr->{'evidence'}, '#rank',
             'evidence_type' );
 
-# REPLACE 37 ALIAS YYY
+        # REPLACE 37 ALIAS YYY
         my $aliases = $sql_object->get_feature_aliases(
             cmap_object => $self,
             feature_id  => $corr->{'feature_id'},
         );
-        $corr->{'aliases'} = [map {$_->{'alias'}} @$aliases];
+        $corr->{'aliases'} = [ map { $_->{'alias'} } @$aliases ];
     }
 
     $feature->{'correspondences'} = $correspondences;
 
     $self->get_multiple_xrefs(
-        table_name => 'cmap_feature',
-        objects    => [$feature],
+        object_type => 'feature',
+        objects     => [$feature],
     );
 
     return $feature;
@@ -1892,11 +1911,12 @@ Given a list of feature names, find any maps they occur on.
     #
     my %features = ();
     for my $feature_name (@feature_names) {
-# REPLACE 38 YYY
-# REPLACE 39 YYY
+
+        # REPLACE 38 YYY
+        # REPLACE 39 YYY
         my $features = $sql_object->get_feature_details(
-            cmap_object => $self,
-            feature_name => $feature_name,
+            cmap_object       => $self,
+            feature_name      => $feature_name,
             feature_type_aids => $incoming_feature_type_aids,
             species_aids      => $species_aids,
             aliases_get_rows  => 1,
@@ -1944,7 +1964,8 @@ Given a list of feature names, find any maps they occur on.
 
     my @feature_ids = map { $_->{'feature_id'} } @found_features;
     if (@feature_ids) {
-# REPLACE 40 YYY
+
+        # REPLACE 40 YYY
         my $aliases = $sql_object->get_feature_aliases(
             cmap_object => $self,
             feature_ids => \@feature_ids,
@@ -1966,19 +1987,15 @@ Given a list of feature names, find any maps they occur on.
     # results so they can narrow down what they have.  If no search
     # results, then just show all.
     #
-# REPLACE 41 YYY
-    my $species = $sql_object->get_species(
-        cmap_object => $self,
-    );
+    # REPLACE 41 YYY
+    my $species = $sql_object->get_species( cmap_object => $self, );
 
     #
     # Get the feature types.
     #
-    my $feature_types = $self->fake_selectall_arrayref(
-        $feature_type_data,
-        'feature_type',
-        'feature_type_accession as feature_type_aid'
-    );
+    my $feature_types =
+      $self->fake_selectall_arrayref( $feature_type_data, 'feature_type',
+        'feature_type_accession as feature_type_aid' );
 
     return {
         data          => \@found_features,
@@ -2210,21 +2227,21 @@ Returns the data for drawing comparative maps.
     #
     # Map sets
     #
-# REPLACE 42 MAP_SET YYY
+    # REPLACE 42 MAP_SET YYY
     my $map_sets = $sql_object->get_map_sets(
-        cmap_object       => $self,
-        map_set_aids      => \@map_set_aids,
-        species_aid       => $species_aid,
-        map_type_aid      => $map_type_aid,
+        cmap_object  => $self,
+        map_set_aids => \@map_set_aids,
+        species_aid  => $species_aid,
+        map_type_aid => $map_type_aid,
     );
 
     #
     # Maps in the map sets
     #
-# REPLACE 43 MAPS YYY
+    # REPLACE 43 MAPS YYY
     my $maps = $sql_object->get_maps(
-        cmap_object => $self,
-        is_relational_map  => 0,
+        cmap_object       => $self,
+        is_relational_map => 0,
         map_set_aids      => \@map_set_aids,
         species_aid       => $species_aid,
         map_type_aid      => $map_type_aid,
@@ -2237,7 +2254,7 @@ Returns the data for drawing comparative maps.
     #
     # Attributes of the map sets
     #
-# REPLACE 44 ATT YYY
+    # REPLACE 44 ATT YYY
     my $attributes = $sql_object->get_attributes(
         cmap_object => $self,
         object_type => 'map_set',
@@ -2279,17 +2296,15 @@ Returns the data for drawing comparative maps.
     }
 
     $self->get_multiple_xrefs(
-        table_name => 'cmap_map_set',
-        objects    => $map_sets,
+        object_type => 'map_set',
+        objects     => $map_sets,
     );
 
     #
     # Grab species and map type info for form restriction controls.
     #
-# REPLACE 45 YYY
-    my $species = $sql_object->get_species(
-        cmap_object => $self,
-    );
+    # REPLACE 45 YYY
+    my $species = $sql_object->get_species( cmap_object => $self, );
 
     my $map_types =
       $self->fake_selectall_arrayref( $map_type_data,
@@ -2333,7 +2348,7 @@ Returns the detail info for a map.
     my $evidence_type_data        = $self->evidence_type_data();
 
     my $feature_type_aids           = $args{'included_feature_types'}  || [];
-    my $corr_only_feature_type_aids = $args{'corr_only_feature_types'}  || [];
+    my $corr_only_feature_type_aids = $args{'corr_only_feature_types'} || [];
     my $ignored_feature_type_aids   = $args{'ignored_feature_types'}   || [];
     my $included_evidence_type_aids = $args{'included_evidence_types'};
     my $ignored_evidence_type_aids  = $args{'ignored_evidence_types'};
@@ -2359,7 +2374,7 @@ Returns the detail info for a map.
           } parse_words($highlight)
     };
 
-# REPLACE 46 MAPS YYY
+    # REPLACE 46 MAPS YYY
     my $maps = $sql_object->get_maps(
         cmap_object => $self,
         map_id      => $map_id,
@@ -2375,21 +2390,20 @@ Returns the detail info for a map.
     $reference_map->{'start'}      = $map_start;
     $reference_map->{'stop'}       = $map_stop;
     $reference_map->{'object_id'}  = $map_id;
-    $reference_map->{'attributes'} =
-      $self->sql->get_attributes(
+    $reference_map->{'attributes'} = $self->sql->get_attributes(
         cmap_object => $self,
-        object_type      => 'map',
+        object_type => 'map',
         object_id   => $map_id,
-      );
+    );
     $self->get_multiple_xrefs(
-        table_name => 'cmap_map',
-        objects    => [$reference_map]
+        object_type => 'map',
+        objects     => [$reference_map]
     );
 
     #
     # Get the reference map features.
     #
-# REPLACE 70 YYY
+    # REPLACE 70 YYY
     my $features = $sql_object->get_feature_details(
         cmap_object       => $self,
         fmap_id           => $map_id,
@@ -2399,10 +2413,10 @@ Returns the detail info for a map.
         map_stop  => $map_stop,
     );
 
-# REPLACE 47 FCOUNT YYY
+    # REPLACE 47 FCOUNT YYY
     my $feature_count_by_type = $sql_object->get_feature_count(
-        cmap_object => $self,
-        map_id => $map_id,
+        cmap_object           => $self,
+        map_id                => $map_id,
         group_by_feature_type => 1,
     );
 
@@ -2421,7 +2435,7 @@ Returns the detail info for a map.
     $features = [ $pager->splice($features) ]
       if $page_data && @$features;
 
-# REPLACE 48 ALIAS YYY
+    # REPLACE 48 ALIAS YYY
 
     #
     # Get all the feature types on all the maps.
@@ -2456,12 +2470,13 @@ Returns the detail info for a map.
     #
     my %comparative_maps;
     for my $feature (@$features) {
-# REPLACE 71 FCS
+
+        # REPLACE 71 FCS
         my $positions = $sql_object->get_correspondence_details(
             cmap_object                 => $self,
-            feature_id1                  => $feature->{'feature_id'},
-            map_set_aid2                 => $comparative_map_set_aid,
-            map_aid2                     => $comparative_map_aid,
+            feature_id1                 => $feature->{'feature_id'},
+            map_set_aid2                => $comparative_map_set_aid,
+            map_aid2                    => $comparative_map_aid,
             included_evidence_type_aids => \@$included_evidence_type_aids,
             less_evidence_type_aids     => $less_evidence_type_aids,
             greater_evidence_type_aids  => $greater_evidence_type_aids,
@@ -2681,20 +2696,18 @@ Returns data on species.
 
     my ( $self, %args ) = @_;
     my @species_aids = @{ $args{'species_aids'} || [] };
-    my $sql_object         = $self->sql;
+    my $sql_object   = $self->sql;
 
-# REPLACE 50 YYY
+    # REPLACE 50 YYY
     my $species = $sql_object->get_species(
-        cmap_object => $self,
+        cmap_object  => $self,
         species_aids => \@species_aids,
     );
 
-# REPLACE 51 YYY
-    my $all_species = $sql_object->get_species(
-        cmap_object => $self,
-    );
+    # REPLACE 51 YYY
+    my $all_species = $sql_object->get_species( cmap_object => $self, );
 
-# REPLACE 52 ATT YYY
+    # REPLACE 52 ATT YYY
     my $attributes = $sql_object->get_attributes(
         cmap_object => $self,
         object_type => 'species',
@@ -2710,16 +2723,17 @@ Returns data on species.
     for my $s (@$species) {
         $s->{'object_id'}  = $s->{'species_id'};
         $s->{'attributes'} = $attr_lookup{ $s->{'species_id'} };
-# REPLACE 53 MAP_SET YYY
+
+        # REPLACE 53 MAP_SET YYY
         $s->{'map_sets'} = $sql_object->get_map_sets(
-            cmap_object  => $self,
-            species_id   => $s->{'species_id'},
+            cmap_object => $self,
+            species_id  => $s->{'species_id'},
         );
     }
 
     $self->get_multiple_xrefs(
-        table_name => 'cmap_species',
-        objects    => $species,
+        object_type => 'species',
+        objects     => $species,
     );
 
     return {
@@ -2740,16 +2754,17 @@ sub view_feature_on_map {
 
     my ( $self, $feature_aid ) = @_;
     my $sql_object = $self->sql or return;
-# REPLACE 54 YYY
+
+    # REPLACE 54 YYY
     my ( $map_set_aid, $map_aid, $feature_name );
     my $return_object = $sql_object->get_feature_details(
         cmap_object => $self,
         feature_aid => $feature_aid,
     );
 
-    if ($return_object and $return_object->[0]){
-        $map_set_aid = $return_object->[0]{'map_set_aid'};
-        $map_aid = $return_object->[0]{'map_aid'};
+    if ( $return_object and $return_object->[0] ) {
+        $map_set_aid  = $return_object->[0]{'map_set_aid'};
+        $map_aid      = $return_object->[0]{'map_aid'};
         $feature_name = $return_object->[0]{'feature_name'};
     }
 
@@ -2771,17 +2786,18 @@ sub count_correspondences {
     my $maps                        = $args{'maps'};
     my $sql_object                  = $self->sql;
 
-    my $cluster_no = $self->cluster_corr;
+    my $cluster_no          = $self->cluster_corr;
     my $show_intraslot_corr =
       ( $self->show_intraslot_corr
           and scalar( keys( %{ $self->slot_info->{$this_slot_no} } ) ) > 1 );
 
-#
-# Query for the counts of correspondences.
-#
+    #
+    # Query for the counts of correspondences.
+    #
     my $map_corr_counts = [];
     if ( defined $ref_slot_no or $show_intraslot_corr ) {
-# REPLACE 55 CORRCOUNTS YYY
+
+        # REPLACE 55 CORRCOUNTS YYY
         $map_corr_counts = $sql_object->get_correspondence_count(
             cmap_object => $self,
             slot_info   => $self->slot_info->{$this_slot_no},
@@ -2803,37 +2819,39 @@ sub count_correspondences {
     my %map_id_lookup = map { $_->{'map_id'}, 1 } @$maps;
     my %corr_lookup;
     if (@$map_corr_counts) {
-        if ($cluster_no){
+        if ($cluster_no) {
 
             # Make the position values
-            foreach my $row (@$map_corr_counts){
-                $row->{'position1'} = defined($row->{'stop_position1'}) ?
-                    (($row->{'stop_position1'} - $row->{'start_position1'})/2)
-                      +$row->{'start_position1'} :
-                    $row->{'start_position1'} ;
-                $row->{'position2'} = defined($row->{'stop_position2'}) ?
-                    (($row->{'stop_position2'} - $row->{'start_position2'})/2)
-                      +$row->{'start_position2'} :
-                    $row->{'start_position2'} ;
-                if ($row->{'map_id1'}==55571){
+            foreach my $row (@$map_corr_counts) {
+                $row->{'position1'} =
+                  defined( $row->{'stop_position1'} )
+                  ? ( ( $row->{'stop_position1'} - $row->{'start_position1'} ) /
+                      2 ) + $row->{'start_position1'}
+                  : $row->{'start_position1'};
+                $row->{'position2'} =
+                  defined( $row->{'stop_position2'} )
+                  ? ( ( $row->{'stop_position2'} - $row->{'start_position2'} ) /
+                      2 ) + $row->{'start_position2'}
+                  : $row->{'start_position2'};
+                if ( $row->{'map_id1'} == 55571 ) {
                 }
-                    
+
             }
 
             my %params = (
-                nclusters =>  $cluster_no,
-                transpose =>         0,
-                npass     =>       100,
-                method    =>       'a',
-                dist      =>       'e',
+                nclusters => $cluster_no,
+                transpose => 0,
+                npass     => 100,
+                method    => 'a',
+                dist      => 'e',
             );
-            
+
             my %corr_data;
             my $cluster_array;
-            my $weight = [1,1];
+            my $weight = [ 1, 1 ];
             my $mask;
-            my ($no_corr, $min_pos1, $max_pos1, $min_pos2, $max_pos2);
-            my ($avg_pos1, $avg_pos2, $total_pos1, $total_pos2);
+            my ( $no_corr, $min_pos1, $max_pos1, $min_pos2, $max_pos2 );
+            my ( $avg_pos1, $avg_pos2, $total_pos1, $total_pos2 );
 
             for my $count (@$map_corr_counts) {
                 next unless $map_id_lookup{ $count->{'map_id1'} };
@@ -2841,89 +2859,100 @@ sub count_correspondences {
                       { $count->{'evidence_type_aid'} } },
                   [ $count->{'position1'}, $count->{'position2'} ];
             }
-            foreach my $map_id1 (keys(%corr_data)){
-                foreach my $map_id2 (keys(%{$corr_data{$map_id1}})){
-                    foreach my $et_aid (keys(%{$corr_data{$map_id1}{$map_id2}})){
-                        $cluster_array = $corr_data{$map_id1}{$map_id2}{$et_aid};
-                        foreach (@$cluster_array){
-                            push @$mask,[1,1];
+            foreach my $map_id1 ( keys(%corr_data) ) {
+                foreach my $map_id2 ( keys( %{ $corr_data{$map_id1} } ) ) {
+                    foreach
+                      my $et_aid ( keys( %{ $corr_data{$map_id1}{$map_id2} } ) )
+                    {
+                        $cluster_array =
+                          $corr_data{$map_id1}{$map_id2}{$et_aid};
+                        foreach (@$cluster_array) {
+                            push @$mask, [ 1, 1 ];
                         }
-                        my ($clusters, $centroids, $error, $found) = kcluster(
+                        my ( $clusters, $centroids, $error, $found ) = kcluster(
                             %params,
-                            data      => $cluster_array,
-                            mask      => $mask,
-                            weight    => $weight,
+                            data   => $cluster_array,
+                            mask   => $mask,
+                            weight => $weight,
                         );
-                        foreach my $cluster_id (0..$cluster_no-1){
+                        foreach my $cluster_id ( 0 .. $cluster_no - 1 ) {
                             ### Get the positions of the corrs in this cluster.
-                            my @cluster_positions = map {$cluster_array->[$_]}
-                                grep {$clusters->[$_]==$cluster_id} (0..$#{$cluster_array}); 
-                            $no_corr=0;
+                            my @cluster_positions = map { $cluster_array->[$_] }
+                              grep { $clusters->[$_] == $cluster_id }
+                              ( 0 .. $#{$cluster_array} );
+                            $no_corr    = 0;
                             $total_pos1 = 0;
                             $total_pos2 = 0;
-                            ($min_pos1, $max_pos1, $min_pos2, $max_pos2) 
-                                = (undef,undef,undef,undef);
-                            foreach my $pos_array (@cluster_positions){
-                                my ($pos1, $pos2) = @$pos_array;
+                            ( $min_pos1, $max_pos1, $min_pos2, $max_pos2 ) =
+                              ( undef, undef, undef, undef );
+                            foreach my $pos_array (@cluster_positions) {
+                                my ( $pos1, $pos2 ) = @$pos_array;
                                 $no_corr++;
-                                $total_pos1+=$pos1;
-                                $total_pos2+=$pos2;
-                                $min_pos1= $pos1
-                                    if (not defined($min_pos1) or $min_pos1>$pos1);
-                                $max_pos1= $pos1
-                                    if (not defined($max_pos1) or $max_pos1<$pos1);
-                                $min_pos2= $pos2
-                                    if (not defined($min_pos2) or $min_pos2>$pos2);
-                                $max_pos2= $pos2
-                                    if (not defined($max_pos2) or $max_pos2<$pos2);
+                                $total_pos1 += $pos1;
+                                $total_pos2 += $pos2;
+                                $min_pos1 = $pos1
+                                  if ( not defined($min_pos1)
+                                    or $min_pos1 > $pos1 );
+                                $max_pos1 = $pos1
+                                  if ( not defined($max_pos1)
+                                    or $max_pos1 < $pos1 );
+                                $min_pos2 = $pos2
+                                  if ( not defined($min_pos2)
+                                    or $min_pos2 > $pos2 );
+                                $max_pos2 = $pos2
+                                  if ( not defined($max_pos2)
+                                    or $max_pos2 < $pos2 );
                             }
-                            $avg_pos1 = $no_corr ? $total_pos1/$no_corr : 0;
-                            $avg_pos2 = $no_corr ? $total_pos2/$no_corr : 0;
+                            $avg_pos1 = $no_corr ? $total_pos1 / $no_corr : 0;
+                            $avg_pos2 = $no_corr ? $total_pos2 / $no_corr : 0;
 
                             # The reference map is now number 2
                             # meaning that map_id2 is the old ref_map_id
-                            push @{$map_correspondences->{$this_slot_no}{ $map_id1 }
-                              { $map_id2 }} , {
+                            push
+                              @{ $map_correspondences->{$this_slot_no}{$map_id1}
+                                  {$map_id2} },
+                              {
                                 evidence_type_aid => $et_aid,
-                                map_id1    => $map_id1,
-                                map_id2    => $map_id2,
-                                no_corr    => $no_corr,
-                                min_start1 => $min_pos1,
-                                max_start1 => $max_pos1,
-                                min_start2 => $min_pos2,
-                                max_start2 => $max_pos2,
-                                avg_mid1   => $avg_pos1,
-                                avg_mid2   => $avg_pos2,
-                                start_avg2 => $avg_pos1,
-                                start_avg1 => $avg_pos2,
-                            };
-                            $corr_lookup{ $map_id1 } += $no_corr;
+                                map_id1           => $map_id1,
+                                map_id2           => $map_id2,
+                                no_corr           => $no_corr,
+                                min_start1        => $min_pos1,
+                                max_start1        => $max_pos1,
+                                min_start2        => $min_pos2,
+                                max_start2        => $max_pos2,
+                                avg_mid1          => $avg_pos1,
+                                avg_mid2          => $avg_pos2,
+                                start_avg2        => $avg_pos1,
+                                start_avg1        => $avg_pos2,
+                              };
+                            $corr_lookup{$map_id1} += $no_corr;
                         }
-                        
+
                     }
                 }
             }
         }
-        else{
+        else {
             for my $count (@$map_corr_counts) {
                 next unless $map_id_lookup{ $count->{'map_id1'} };
 
                 # The reference map is now number 2
                 # meaning that map_id2 is the old ref_map_id
-                push @{$map_correspondences->{$this_slot_no}{ $count->{'map_id1'} }
-                  { $count->{'map_id2'} }},{
+                push @{ $map_correspondences->{$this_slot_no}
+                      { $count->{'map_id1'} }{ $count->{'map_id2'} } },
+                  {
                     evidence_type_aid => $count->{'evidence_type_aid'},
-                    map_id1    => $count->{'map_id1'},
-                    map_id2    => $count->{'map_id2'},
-                    no_corr    => $count->{'no_corr'},
-                    min_start1 => $count->{'min_start1'},
-                    max_start1 => $count->{'max_start1'},
-                    min_start2 => $count->{'min_start2'},
-                    max_start2 => $count->{'max_start2'},
-                    avg_mid1   => $count->{'avg_mid1'},
-                    avg_mid2   => $count->{'avg_mid2'},
-                    start_avg2 => $count->{'start_avg2'},
-                    start_avg1 => $count->{'start_avg1'},
+                    map_id1           => $count->{'map_id1'},
+                    map_id2           => $count->{'map_id2'},
+                    no_corr           => $count->{'no_corr'},
+                    min_start1        => $count->{'min_start1'},
+                    max_start1        => $count->{'max_start1'},
+                    min_start2        => $count->{'min_start2'},
+                    max_start2        => $count->{'max_start2'},
+                    avg_mid1          => $count->{'avg_mid1'},
+                    avg_mid2          => $count->{'avg_mid2'},
+                    start_avg2        => $count->{'start_avg2'},
+                    start_avg1        => $count->{'start_avg1'},
                   };
                 $corr_lookup{ $count->{'map_id1'} } += $count->{'no_corr'};
             }
@@ -2949,12 +2978,12 @@ sub cmap_map_search_data {
     my $min_correspondence_maps = $args{'min_correspondence_maps'} || 0;
     my $min_correspondences     = $args{'min_correspondences'}     || 0;
     my $feature_type_aids       = $args{'included_feature_types'}  || [];
-    my $ref_species_aid = $args{'ref_species_aid'}  || '';
-    my $page_no         = $args{'page_no'}          || 1;
-    my $name_search     = $args{'name_search'}      || '';
-    my $order_by        = $args{'order_by'}         || '';
-    my $ref_map         = $slots->{0};
-    my $ref_map_set_aid = $ref_map->{'map_set_aid'} || 0;
+    my $ref_species_aid         = $args{'ref_species_aid'}         || '';
+    my $page_no                 = $args{'page_no'}                 || 1;
+    my $name_search             = $args{'name_search'}             || '';
+    my $order_by                = $args{'order_by'}                || '';
+    my $ref_map                 = $slots->{0};
+    my $ref_map_set_aid         = $ref_map->{'map_set_aid'}        || 0;
     my $sql_object = $self->sql or return;
     my $pid = $$;
     my $no_maps;
@@ -2974,10 +3003,11 @@ sub cmap_map_search_data {
 
     my $sql_str;
     if ( $ref_map_set_aid && !$ref_species_aid ) {
-# REPLACE 56 SPID YYY
+
+        # REPLACE 56 SPID YYY
         $ref_species_aid = $sql_object->get_species_aid(
-            cmap_object      => $self,
-            map_set_aid      => $ref_map_set_aid,
+            cmap_object => $self,
+            map_set_aid => $ref_map_set_aid,
         );
     }
 
@@ -2985,10 +3015,10 @@ sub cmap_map_search_data {
     # Select all Species with map set
     #
 
-# REPLACE 57 YYY
+    # REPLACE 57 YYY
     my $ref_species = $sql_object->get_species(
         cmap_object => $self,
-        is_enabled        => 1,
+        is_enabled  => 1,
     );
 
     if ( @$ref_species && !$ref_species_aid ) {
@@ -3000,11 +3030,12 @@ sub cmap_map_search_data {
     #
     my $ref_map_sets = [];
     if ($ref_species_aid) {
-# REPLACE 72 MAP_SET YYY
+
+        # REPLACE 72 MAP_SET YYY
         $ref_map_sets = $sql_object->get_map_sets(
-            cmap_object       => $self,
-            species_aid       => $ref_species_aid,
-            is_enabled        => 1,
+            cmap_object => $self,
+            species_aid => $ref_species_aid,
+            is_enabled  => 1,
         );
     }
 
@@ -3017,12 +3048,13 @@ sub cmap_map_search_data {
     my $ref_map_set_id;
     ###Get ref_map_set_id
     if ($ref_map_set_aid) {
-# REPLACE 58 YYY
+
+        # REPLACE 58 YYY
         $ref_map_set_id = $self->sql->acc_id_to_internal_id(
             cmap_object => $self,
             object_type => 'map_set',
             acc_id      => $ref_map_set_aid,
-        ) ;
+        );
     }
 
     #
@@ -3030,22 +3062,24 @@ sub cmap_map_search_data {
     #
     my ( $map_info, @map_ids, $ref_map_set_info );
     my ( $feature_info, @feature_type_aids );
-# REPLACE 59
-    my $cache_key = $ref_map_set_id
-        . "-" . $name_search
-        . "-" . $min_correspondence_maps
-        . "-" . $min_correspondences;
+
+    # REPLACE 59
+    my $cache_key =
+        $ref_map_set_id . "-"
+      . $name_search . "-"
+      . $min_correspondence_maps . "-"
+      . $min_correspondences;
     if ($ref_map_set_id) {
         ###Get map info
         unless ( $map_info =
-            $self->get_cached_results( 4, "get_map_search_info".$cache_key ) )
+            $self->get_cached_results( 4, "get_map_search_info" . $cache_key ) )
         {
             $map_info = $sql_object->get_map_search_info(
-                cmap_object       => $self,
-                map_set_id  => $ref_map_set_id,
-                map_name     => $name_search,
+                cmap_object             => $self,
+                map_set_id              => $ref_map_set_id,
+                map_name                => $name_search,
                 min_correspondence_maps => $min_correspondence_maps,
-                min_correspondences => $min_correspondences,
+                min_correspondences     => $min_correspondences,
             );
             $self->error(
 qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
@@ -3076,57 +3110,56 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
                 $map_info->{$map_id}{'corr_count_per_raw'} = $raw_no;
 
             }
-            $self->store_cached_results( 4, "get_map_search_info".$cache_key,
+            $self->store_cached_results( 4, "get_map_search_info" . $cache_key,
                 $map_info );
         }
         @map_ids = keys(%$map_info);
 
         ### Add feature type information
-# REPLACE 60 FCOUNT YYY
+        # REPLACE 60 FCOUNT YYY
         my $feature_info_results;
-        if ( @map_ids and ( $min_correspondence_maps or $min_correspondences ) ) {
+        if ( @map_ids and ( $min_correspondence_maps or $min_correspondences ) )
+        {
             $feature_info_results = $sql_object->get_feature_count(
-                cmap_object => $self,
-                map_ids     => [keys(%$map_info)],
-                map_name    => $name_search,
-                group_by_map_id => 1,
+                cmap_object           => $self,
+                map_ids               => [ keys(%$map_info) ],
+                map_name              => $name_search,
+                group_by_map_id       => 1,
                 group_by_feature_type => 1,
             );
         }
-        else{
+        else {
             $feature_info_results = $sql_object->get_feature_count(
-                cmap_object => $self,
-                map_set_id     => $ref_map_set_id,
-                map_name    => $name_search,
-                group_by_map_id => 1,
+                cmap_object           => $self,
+                map_set_id            => $ref_map_set_id,
+                map_name              => $name_search,
+                group_by_map_id       => 1,
                 group_by_feature_type => 1,
             );
         }
-        
+
         my %feature_type_hash;
         foreach my $row (@$feature_info_results) {
             $feature_type_hash{ $row->{'feature_type_aid'} } = 1;
-            $feature_info->{ $row->{'map_id'} }
-              { $row->{'feature_type_aid'} }{'total'} =
-              $row->{'feature_count'};
+            $feature_info->{ $row->{'map_id'} }{ $row->{'feature_type_aid'} }
+              {'total'} = $row->{'feature_count'};
             my $devisor =
               $map_info->{ $row->{'map_id'} }{'stop_position'} -
               $map_info->{ $row->{'map_id'} }{'start_position'}
               || 1;
 
             my $raw_no = ( $row->{'feature_count'} / $devisor );
-            $feature_info->{ $row->{'map_id'} }
-              { $row->{'feature_type_aid'} }{'raw_per'} = $raw_no;
-            $feature_info->{ $row->{'map_id'} }
-              { $row->{'feature_type_aid'} }{'per'} =
-              presentable_number_per($raw_no);
+            $feature_info->{ $row->{'map_id'} }{ $row->{'feature_type_aid'} }
+              {'raw_per'} = $raw_no;
+            $feature_info->{ $row->{'map_id'} }{ $row->{'feature_type_aid'} }
+              {'per'} = presentable_number_per($raw_no);
         }
         @feature_type_aids = keys(%feature_type_hash);
 
         ###Sort maps
         if (
             my $array_ref = $self->get_cached_results(
-                4, "sort_maps_".$cache_key . $order_by 
+                4, "sort_maps_" . $cache_key . $order_by
             )
           )
         {
@@ -3160,7 +3193,7 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
                 } @map_ids;
             }
             $self->store_cached_results( 4,
-                "sort_maps_".$cache_key . $order_by , \@map_ids );
+                "sort_maps_" . $cache_key . $order_by, \@map_ids );
         }
     }
 
@@ -3252,11 +3285,12 @@ sub cmap_spider_links {
       };
     for ( my $i = 1 ; $i <= $degrees_to_crawl ; $i++ ) {
         last unless ( defined( $map_aids_per_degree{ $i - 1 } ) );
-# REPLACE 61 CORRCOUNTS YYY
+
+        # REPLACE 61 CORRCOUNTS YYY
         my $query_results = $sql_object->get_comparative_maps_with_count(
-            cmap_object => $self,
-            map_aids    => $map_aids_per_degree{ $i - 1 },
-            ignore_map_aids => [keys(%seen_map_ids)],
+            cmap_object         => $self,
+            map_aids            => $map_aids_per_degree{ $i - 1 },
+            ignore_map_aids     => [ keys(%seen_map_ids) ],
             min_correspondences => $min_corrs,
         );
 
@@ -3298,15 +3332,15 @@ sub cmap_spider_links {
 sub get_all_feature_types {
     my $self = shift;
 
-    my $slot_info   = $self->slot_info;
-    my $sql_object  = $self->sql;
+    my $slot_info  = $self->slot_info;
+    my $sql_object = $self->sql;
     my @map_id_list;
     foreach my $slot_no ( keys %{$slot_info} ) {
         push @map_id_list, keys( %{ $slot_info->{$slot_no} } );
     }
     return [] unless @map_id_list;
 
-# REPLACE 62 FT YYY
+    # REPLACE 62 FT YYY
     my $return = $sql_object->get_used_feature_types(
         cmap_object => $self,
         map_ids     => \@map_id_list,
@@ -3875,20 +3909,20 @@ original start and stop.
 
 =cut
 
-    my $self                  = shift;
-    my $slots                 = shift;
-    my $ignored_feature_list  = shift;
+    my $self                        = shift;
+    my $slots                       = shift;
+    my $ignored_feature_list        = shift;
     my $included_evidence_type_aids = shift;
-    my $less_evidence_type_aids = shift;
-    my $greater_evidence_type_aids = shift;
-    my $evidence_type_score = shift;
-    my $min_correspondences   = shift;
-    my $sql_object            = $self->sql;
+    my $less_evidence_type_aids     = shift;
+    my $greater_evidence_type_aids  = shift;
+    my $evidence_type_score         = shift;
+    my $min_correspondences         = shift;
+    my $sql_object                  = $self->sql;
 
     # Return slot_info is not setting it.
     return $self->{'slot_info'} unless ($slots);
 
-# REPLACE 63 YYY
+    # REPLACE 63 YYY
     $self->{'slot_info'} = $sql_object->get_slot_info(
         cmap_object                 => $self,
         slots                       => $slots,

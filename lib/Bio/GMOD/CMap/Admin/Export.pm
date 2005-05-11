@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Export;
 
 # vim: set ft=perl:
 
-# $Id: Export.pm,v 1.19 2005-05-06 21:35:29 mwz444 Exp $
+# $Id: Export.pm,v 1.20 2005-05-11 03:36:49 mwz444 Exp $
 
 =pod
 
@@ -29,7 +29,7 @@ of data out of CMap.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.19 $)[-1];
+$VERSION = (qw$Revision: 1.20 $)[-1];
 
 use Data::Dumper;
 use File::Spec::Functions;
@@ -274,29 +274,29 @@ Feature correspondence
       join( ', ', map { $_->{'map_set_id'} } @{ $args{'map_sets'} || [] } );
 
     my $sql_object = $self->sql or return;
-    my @map_set_ids = map { $_->{'map_set_id'} } @{ $args{'map_sets'} || [] }; 
-    my $fc = $sql_object->get_correspondences_simple(
-        cmap_object => $self,
-        map_set_ids1      => \@map_set_ids,
-        map_set_ids2      => \@map_set_ids,
+    my @map_set_ids = map { $_->{'map_set_id'} } @{ $args{'map_sets'} || [] };
+    my $fc = $sql_object->get_feature_correspondences_simple(
+        cmap_object  => $self,
+        map_set_ids1 => \@map_set_ids,
+        map_set_ids2 => \@map_set_ids,
     );
-    foreach my $row (@$fc){
+    foreach my $row (@$fc) {
         $row->{'object_id'} = $row->{'feature_correspondence_id'};
-        delete($row->{'feature_correspondence_id'});
+        delete( $row->{'feature_correspondence_id'} );
     }
 
     unless ( $args{'no_attributes'} ) {
         $self->get_attributes_and_xrefs( 'feature_correspondence', $fc );
     }
 
-    my $evidence = $sql_object->get_evidence_simple(
+    my $evidence = $sql_object->get_correspondence_evidences_simple(
         cmap_object => $self,
-        map_set_ids     => \@map_set_ids,
+        map_set_ids => \@map_set_ids,
     );
     my %evidence_lookup = ();
     for my $e (@$evidence) {
         $e->{'object_id'} = $row->{'correspondence_evidence_id'};
-        delete($e->{'correspondence_evidence_id'});
+        delete( $e->{'correspondence_evidence_id'} );
         push @{ $evidence_lookup{ $e->{'object_id'} } }, $e;
     }
 
@@ -346,16 +346,16 @@ hash with map set and species
 =cut
 
     my ( $self, %args ) = @_;
-    my $sql_object  = $self->sql or return;
+    my $sql_object = $self->sql or return;
 
     my $map_sets = $sql_object->get_map_sets_simple(
         cmap_object => $self,
         map_set_ids =>
           [ map { $_->{'map_set_id'} } @{ $args{'map_sets'} || [] } ],
     );
-    foreach my $row (@$map_sets){
+    foreach my $row (@$map_sets) {
         $row->{'object_id'} = $row->{'map_set_id'};
-        delete($row->{'map_set_id'});
+        delete( $row->{'map_set_id'} );
     }
 
     my ( %species_ids, %map_type_aids, %ft_ids );
@@ -367,9 +367,9 @@ hash with map set and species
             cmap_object => $self,
             map_set_id  => $ms->{'object_id'},
         );
-        foreach my $row (@{$ms->{'map'}}){
+        foreach my $row ( @{ $ms->{'map'} } ) {
             $row->{'object_id'} = $row->{'map_id'};
-            delete($row->{'map_id'});
+            delete( $row->{'map_id'} );
         }
 
         $self->get_attributes_and_xrefs( 'map', $ms->{'map'} );
@@ -381,27 +381,26 @@ hash with map set and species
         for my $map ( @{ $ms->{'map'} } ) {
             $map->{'feature'} = $sql_object->get_features_simple(
                 cmap_object => $self,
-                map_id  => $map->{'object_id'},
+                map_id      => $map->{'object_id'},
             );
-            foreach my $row (@{$map->{'feature'}}){
+            foreach my $row ( @{ $map->{'feature'} } ) {
                 $row->{'object_id'} = $row->{'feature_id'};
-                delete($row->{'feature_id'});
+                delete( $row->{'feature_id'} );
             }
 
             my $aliases = $sql_object->get_feature_aliases(
                 cmap_object => $self,
-                map_id => $map->{'object_id'},
+                map_id      => $map->{'object_id'},
             );
-            foreach my $row (@$aliases){
+            foreach my $row (@$aliases) {
                 $row->{'object_id'} = $row->{'feature_alias_id'};
-                delete($row->{'feature_alias_id'});
-                delete($row->{'feature_aid'});
-                delete($row->{'feature_name'});
+                delete( $row->{'feature_alias_id'} );
+                delete( $row->{'feature_aid'} );
+                delete( $row->{'feature_name'} );
             }
 
             unless ( $args{'no_attributes'} ) {
-                $self->get_attributes_and_xrefs( 'feature_alias',
-                    $aliases );
+                $self->get_attributes_and_xrefs( 'feature_alias', $aliases );
             }
 
             my %alias_lookup = ();
@@ -479,16 +478,16 @@ Species object
 
     my ( $self, %args ) = @_;
 
-    my $sql_object  = $self->sql or return;
+    my $sql_object = $self->sql or return;
     my $species = $sql_object->get_species(
         cmap_object => $self,
-        species_id => $args{'species_id'},
+        species_id  => $args{'species_id'},
     );
-    foreach my $row (@$species){
+    foreach my $row (@$species) {
         $row->{'object_id'} = $row->{'species_id'};
-        delete($row->{'species_id'});
+        delete( $row->{'species_id'} );
         $row->{'accession_id'} = $row->{'species_aid'};
-        delete($row->{'species_aid'});
+        delete( $row->{'species_aid'} );
     }
 
     unless ( $args{'no_attributes'} ) {
@@ -525,8 +524,8 @@ Xref data
 
 =cut
 
-    my ( $self, %args ) = @_;   
-    return $self->sql->get_generic_xrefs(cmap_object => $self);
+    my ( $self, %args ) = @_;
+    return $self->sql->get_generic_xrefs( cmap_object => $self );
 }
 
 # ----------------------------------------------------

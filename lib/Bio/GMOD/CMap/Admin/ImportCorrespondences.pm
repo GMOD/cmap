@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 
 # vim: set ft=perl:
 
-# $Id: ImportCorrespondences.pm,v 1.30 2005-04-28 21:49:22 mwz444 Exp $
+# $Id: ImportCorrespondences.pm,v 1.31 2005-05-11 03:36:49 mwz444 Exp $
 
 =head1 NAME
 
@@ -51,7 +51,7 @@ feature names, a correspondence will be created.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.30 $)[-1];
+$VERSION = (qw$Revision: 1.31 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -79,50 +79,6 @@ use constant RE_LOOKUP => {
     string => STRING_RE,
     number => '^' . $RE{'num'}{'real'} . '$',
 };
-
-use constant FEATURE_SQL_BY_AID => q[
-    select f.feature_id,
-           f.feature_name,
-           map.accession_id as map_aid,
-           map.map_name,
-           map.map_set_id,
-           ms.map_set_short_name,
-           s.species_common_name,
-           ms.is_relational_map
-    from   cmap_feature f,
-           cmap_map map,
-           cmap_map_set ms,
-           cmap_species s
-    where  f.accession_id=?
-    and    f.map_id=map.map_id
-    and    map.map_set_id=ms.map_set_id
-    and    ms.species_id=s.species_id
-];
-
-use constant FEATURE_SQL_BY_NAME => q[
-    select     f.feature_id,
-               f.feature_name, 
-               map.accession_id as map_aid,
-               map.map_name, 
-               ms.map_set_id, 
-               ms.map_set_short_name,
-               s.species_common_name,
-               ms.is_relational_map
-    from       cmap_feature f
-    left join  cmap_feature_alias fa
-    on         f.feature_id=fa.feature_id
-    inner join cmap_map map
-    on         f.map_id=map.map_id
-    inner join cmap_map_set ms
-    on         map.map_set_id=ms.map_set_id
-    inner join cmap_species s
-    on         ms.species_id=s.species_id
-    where      (
-        upper(f.feature_name)=?
-        or
-        upper(fa.alias)=?
-    )
-];
 
 # ----------------------------------------------------
 sub import {
@@ -177,7 +133,7 @@ which is slow.  Setting to 0 is recommended.
     my ( $self, %args ) = @_;
     my $fh = $args{'fh'} or return $self->error('No file handle');
     my %map_set_ids = map { $_, 1 } @{ $args{'map_set_ids'} || [] };
-    my $db = $self->db;
+    my $sql_object = $self->sql;
     $LOG_FH = $args{'log_fh'} || \*STDOUT;
     my $allow_update = $args{'allow_update'};
     my $admin        = Bio::GMOD::CMap::Admin->new(
@@ -243,16 +199,17 @@ which is slow.  Setting to 0 is recommended.
             my $field_name     = "feature_name$i";
             my $aid_field_name = "feature_accession_id$i";
             my $feature_name   = $record->{$field_name} || '';
-            my $feature_aid   = $record->{$aid_field_name} || '';
+            my $feature_aid    = $record->{$aid_field_name} || '';
             next unless $feature_name || $feature_aid;
             my $upper_name = uc $feature_name;
             my @feature_ids;
 
             if ($feature_aid) {
-                my $sth = $db->prepare(FEATURE_SQL_BY_AID);
-                $sth->execute("$feature_aid");
-                my $feature = $sth->fetchrow_hashref;
-                push @feature_ids, $feature if $feature;
+                my $features = $sql_object->get_feature_details(
+                    cmap_object => $self,
+                    feature_aid => $feature_aid,
+                );
+                push @feature_ids, $features->[0] if @$features;
             }
             else {
                 if ( defined $feature_ids{$upper_name} ) {
@@ -261,22 +218,13 @@ which is slow.  Setting to 0 is recommended.
             }
 
             unless (@feature_ids) {
-                my $sql_str = FEATURE_SQL_BY_NAME;
-                if (%map_set_ids){
-                    $sql_str .= 
-                        " and ms.map_set_id in ("
-                        . join (",", keys(%map_set_ids))
-                        . ") ";
-                }
-                @feature_ids = @{
-                    $db->selectall_arrayref(
-                        $sql_str,
-                        { Columns => {} },
-                        ( $upper_name, $upper_name )
-                      )
-                      || []
+                $feature_ids = @{
+                    $sql_object->get_feature_details(
+                        cmap_object  => $self,
+                        feature_name => $upper_name,
+                        map_set_ids  => $map_set_ids,
+                    )
                   };
-
             }
 
             if (@feature_ids) {
@@ -314,11 +262,11 @@ which is slow.  Setting to 0 is recommended.
         my $evidence_type_aid;
         my $score;
         for my $evidence (@evidences) {
-            if ($evidence =~ /(\S+):(\S+)/){
+            if ( $evidence =~ /(\S+):(\S+)/ ) {
                 $evidence_type_aid = $1;
                 $score             = $2;
             }
-            else{
+            else {
                 $evidence_type_aid = $evidence;
                 $score             = undef;
             }
@@ -346,25 +294,25 @@ which is slow.  Setting to 0 is recommended.
                 }
 
                 for my $evidence_type_aid_list (@evidence_type_aids) {
-                    my ( $evidence_type_aid, $score ) = @$evidence_type_aid_list;
-                    my $fc_id = $admin->add_feature_correspondence_to_list(
+                    my ( $evidence_type_aid, $score ) =
+                      @$evidence_type_aid_list;
+                    my $fc_id = $admin->feature_correspondence_create(
                         feature_id1       => $feature1->{'feature_id'},
                         feature_id2       => $feature2->{'feature_id'},
                         evidence_type_aid => $evidence_type_aid,
                         score             => $score,
                         allow_update      => $allow_update,
+                        threshold         => 1000,
                       )
                       or return $self->error( $admin->error );
-
-                    $admin->insert_feature_correspondence_if_gt(1000);
                 }
             }
         }
     }
 
-    $admin->insert_feature_correspondence_if_gt(0);
+    my $fc_id = $admin->feature_correspondence_create()
 
-    return 1;
+      return 1;
 }
 
 sub Print {

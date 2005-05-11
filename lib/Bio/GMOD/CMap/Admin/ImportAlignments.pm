@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::ImportAlignments;
 
 # vim: set ft=perl:
 
-# $Id: ImportAlignments.pm,v 1.2 2005-04-28 05:28:36 mwz444 Exp $
+# $Id: ImportAlignments.pm,v 1.3 2005-05-11 03:36:49 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ alignments from blast files.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Data::Dumper;
 use Bio::SearchIO;
@@ -51,7 +51,6 @@ sub import_alignments {
     my $min_identity = $args{'min_identity'} || 0;
     my $min_length   = $args{'min_length'}   || 0;
     my $format       = $args{'format'}       || 'blast';
-    my $db           = $self->db;
     $LOG_FH = $args{'log_fh'} || \*STDOUT;
     print $LOG_FH "Importing Alignment\n";
 
@@ -127,7 +126,7 @@ sub get_map_id {
     my $object     = $args{'object'};
     my $map_set_id = $args{'map_set_id'};
 
-    my $db = $self->db;
+    my $sql_object = $self->sql;
 
     my ( $map_name, $map_desc, $map_accession, $map_length );
 
@@ -146,7 +145,7 @@ sub get_map_id {
     else {
         return 0;
     }
-    if ( $map_name =~ /^\S+\|\S+/ and $map_desc) {
+    if ( $map_name =~ /^\S+\|\S+/ and $map_desc ) {
         $map_name = $map_desc;
     }
 
@@ -161,37 +160,12 @@ sub get_map_id {
 
     # Check for existance of map in cmap_map
 
-    my $sql_str = qq[
-        select map_id 
-        from   cmap_map
-        where  (stop_position-start_position+1=$map_length)
-           and (map_name = '$map_name'
-    ];
-    if ($map_accession) {
-        $sql_str .= " or accession_id = '$map_accession' ";
-    }
-    $sql_str .= ")";
-    my $map_id_results =
-      $db->selectall_arrayref( $sql_str, { Columns => {} }, () );
-
-    # Check for existance of map in cmap_attribute
-    unless ( $map_id_results and @$map_id_results ) {
-        $sql_str = qq[
-            select att.object_id as map_id 
-            from   cmap_map m,
-                   cmap_attribute att
-            where  (m.stop_position-m.start_position+1=$map_length)
-               and att.table_name = 'cmap_map'
-               and att.object_id = m.map_id
-               and (att.attribute_value = '$map_name'
-        ];
-        if ($map_accession) {
-            $sql_str .= " or att.attribute_value = '$map_accession' ";
-        }
-        $sql_str .= ")";
-        $map_id_results =
-          $db->selectall_arrayref( $sql_str, { Columns => {} }, () );
-    }
+    my $map_id_results = $sql_object->get_maps(
+        cmap_object => $self,
+        map_aid     => $map_accession,
+        map_name    => $map_name,
+        map_length  => $map_length,
+    );
 
     my $map_id;
     if ( $map_id_results and @$map_id_results ) {
@@ -201,7 +175,8 @@ sub get_map_id {
 
         # Map not found, creat it.
         print "Map \"$map_name\" not found.  Creating.\n";
-        $map_id = $self->{'admin'}->map_create(
+        $map_id = $sql_object->insert_map(
+            cmap_object    => $self,
             map_name       => $map_name,
             map_set_id     => $map_set_id,
             map_aid        => $map_accession,
@@ -230,7 +205,7 @@ sub get_feature_id {
         $direction = -1;
     }
 
-    my $db = $self->db;
+    my $sql_object = $self->sql;
 
     my $feature_key = $direction
       . $feature_type_aid . ":"
@@ -244,16 +219,13 @@ sub get_feature_id {
 
     # Check for existance of feature in cmap_feature
 
-    my $sql_str = qq[
-        select feature_id 
-        from   cmap_feature
-        where  start_position = $start
-           and stop_position  = $end
-           and feature_type_accession = '$feature_type_aid'
-           and direction = $direction
-    ];
-    my $feature_id_results =
-      $db->selectall_arrayref( $sql_str, { Columns => {} }, () );
+    my $feature_id_results = $sql_object->get_feature_details(
+        cmap_object       => $self,
+        feature_start     => $start,
+        feature_stop      => $end,
+        feature_type_aids => [$feature_type_aid],
+        direction         => $direction,
+    );
 
     if ( $feature_id_results and @$feature_id_results ) {
         $feature_id = $feature_id_results->[0]{'feature_id'};

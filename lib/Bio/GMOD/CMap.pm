@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.82 2005-04-25 22:22:30 mwz444 Exp $
+# $Id: CMap.pm,v 1.83 2005-05-11 03:36:47 mwz444 Exp $
 
 =head1 NAME
 
@@ -669,21 +669,15 @@ Given a table name and some objects, get the cross-references.
 =cut
 
     my ( $self, %args ) = @_;
-    my $table_name = $args{'table_name'} or return;
+    my $object_type = $args{'object_type'} or return;
     my $objects    = $args{'objects'};
-    my $db         = $self->db or return;
+    my $sql_object         = $self->sql or return;
 
     return unless @{ $objects || [] };
 
-    my $xrefs = $db->selectall_arrayref(
-        q[
-            select   object_id, display_order, xref_name, xref_url
-            from     cmap_xref
-            where    table_name=?
-            order by object_id, display_order, xref_name
-        ],
-        { Columns => {} },
-        ($table_name)
+    my $xrefs= $sql_object->get_xrefs(
+        cmap_object => $self,
+        object_type=>$object_type,
     );
 
     my ( %xref_specific, @xref_generic );
@@ -1079,33 +1073,6 @@ If a new Map is added, Levels 2,3 and 4 need to be purged.
 
 =cut
 
-# ----------------------------------------------------
-sub cache_array_results {
-
-    my ( $self, $cache_level, $sql, $attr, $args, $db, $select_type, $sub ) =
-      @_;
-    $cache_level = 1 unless $cache_level;
-    my $cache_name = "L" . $cache_level . "_cache";
-
-    unless ( $self->{$cache_name} ) {
-        $self->{$cache_name} = $self->init_cache($cache_level)
-            or return;
-    }
-
-    my $data;
-    my $cache_key = $sql . join( '-', @$args );
-    unless ( $self->{'disable_cache'}
-        or $data =
-        thaw( $self->{ $cache_name }->get($cache_key) ) )
-    {
-        $data = $db->$select_type( $sql, $attr, @$args );
-        if ( ref $sub eq 'CODE' ) {
-            $sub->( $data, $db );
-        }
-        $self->{ $cache_name }->set( $cache_key, freeze($data) );
-    }
-    return $data;
-}
 # ----------------------------------------------------
 sub get_cached_results {
     my $self        = shift;

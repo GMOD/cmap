@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache::AdminViewer;
 
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.81 2005-05-10 07:06:36 mwz444 Exp $
+# $Id: AdminViewer.pm,v 1.82 2005-05-11 03:36:50 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -36,7 +36,7 @@ $FEATURE_SHAPES = [
 ];
 $MAP_SHAPES = [qw( box dumbbell I-beam )];
 $WIDTHS     = [ 1 .. 10 ];
-$VERSION    = (qw$Revision: 1.81 $)[-1];
+$VERSION    = (qw$Revision: 1.82 $)[-1];
 
 use constant TEMPLATE => {
     admin_home                => 'admin_home.tmpl',
@@ -208,18 +208,11 @@ sub attribute_edit {
         $apr->param( 'return_action', "${object_type}_view" );
     }
 
-### object doesn't seem to be used
-    #    $sth = $db->prepare("select * from $table_name where $pk_name=?");
-    #    $sth->execute( $object_id );
-    #    my $object = $sth->fetchrow_hashref;
-
     return $self->process_template(
         TEMPLATE->{'attribute_edit'},
         {
-            apr       => $apr,
-            attribute => $attribute,
-
-            #            object      => $object,
+            apr         => $apr,
+            attribute   => $attribute,
             pk_name     => $pk_name,
             object_type => $object_type,
         }
@@ -1104,9 +1097,9 @@ sub feature_view {
     );
 
     my $correspondences = $sql_object->get_correspondence_details(
-        cmap_object => $self,
-        feature_id1 => $feature_id,
-         disregard_evidence_type => 1,
+        cmap_object             => $self,
+        feature_id1             => $feature_id,
+        disregard_evidence_type => 1,
     );
 
     for my $corr (@$correspondences) {
@@ -1139,6 +1132,7 @@ sub feature_search {
     my $page_no           = $apr->param('page_no') || 1;
     my @species_ids       = ( $apr->param('species_id') || () );
     my @feature_type_aids = ( $apr->param('feature_type_aid') || () );
+    my $sql_object => $self->sql;
 
     my @all_feature_type_aids =
       keys( %{ $self->config_data('feature_type') } );
@@ -1149,10 +1143,10 @@ sub feature_search {
     }
 
     my $params = {
-        apr                      => $apr,
-        species                  => $admin->species,
-        feature_type_aids        => \@all_feature_type_aids,
-        species_lookup           => { map { $_, 1 } @species_ids },
+        apr               => $apr,
+        species           => $sql_object->get_species( cmap_object => $self ),
+        feature_type_aids => \@all_feature_type_aids,
+        species_lookup    => { map { $_, 1 } @species_ids },
         feature_type_aid_lookup  => { map { $_, 1 } @feature_type_aids },
         feature_type_name_lookup => \%feature_type_name_lookup,
     };
@@ -1295,16 +1289,17 @@ sub feature_corr_insert {
 # ----------------------------------------------------
 sub feature_corr_edit {
     my $self                      = shift;
-    my $sql_object                        = $self->sql or return $self->error;
+    my $sql_object                = $self->sql or return $self->error;
     my $apr                       = $self->apr;
     my $feature_correspondence_id = $apr->param('feature_correspondence_id')
       or return $self->error('No feature correspondence id');
 
-    my $corrs = $sql_object->get_correspondences_simple(
-        cmap_object => $self,
+    my $corrs = $sql_object->get_feature_correspondences_simple(
+        cmap_object               => $self,
         feature_correspondence_id => $feature_correspondence_id,
     );
-    return $self->error("No correspondence for ID '$feature_correspondence_id,'")
+    return $self->error(
+        "No correspondence for ID '$feature_correspondence_id,'")
       unless ( $corrs and @$corrs );
     my $corr = $corr->[0];
 
@@ -1314,18 +1309,18 @@ sub feature_corr_edit {
 
 # ----------------------------------------------------
 sub feature_corr_update {
-    my $self     = shift;
-    my $sql_object       = $self->sql or return $self->error;
-    my $apr      = $self->apr;
+    my $self                      = shift;
+    my $sql_object                = $self->sql or return $self->error;
+    my $apr                       = $self->apr;
     my $feature_correspondence_id = $apr->param('feature_correspondence_id')
       or return $self->error('No feature correspondence id');
 
     $sql_object->update_feature_correspondence(
         cmap_object                => $self,
-        feature_correspondence_id => $feature_correspondence_id,
+        feature_correspondence_id  => $feature_correspondence_id,
         feature_correspondence_aid => $apr->param('feature_correspondence_aid'),
-        is_enabled => $apr->param('is_enabled'),
-    }
+        is_enabled                 => $apr->param('is_enabled'),
+    );
 
     return $self->redirect_home( ADMIN_HOME_URI
           . '?action=feature_corr_view;'
@@ -1377,7 +1372,7 @@ sub feature_corr_view {
     $corr->{'evidence'} = $sql_object->get_evidence(
         cmap_object               => $self,
         feature_correspondence_id => $feature_correspondence_id,
-        order_by => $order_by,
+        order_by                  => $order_by,
     );
 
     return $self->process_template(
@@ -1393,18 +1388,18 @@ sub feature_corr_view {
 # ----------------------------------------------------
 sub corr_evidence_create {
     my ( $self, %args ) = @_;
-    my $sql_object                        = $self->sql or return $self->error;
+    my $sql_object                = $self->sql or return $self->error;
     my $apr                       = $self->apr;
     my $feature_correspondence_id = $apr->param('feature_correspondence_id')
       or return $self->error('No feature correspondence id');
 
     my $correspondences = $sql_object->get_correspondence_details(
-        cmap_object => $self,
+        cmap_object               => $self,
         feature_correspondence_id => $feature_correspondence_id,
     );
     return $self->error(
         "No feature correspondence for ID '$feature_correspondence_id'")
-        unless (@$correspondences);
+      unless (@$correspondences);
     my $corr = $correspondences->[0];
 
     my @evidence_type_aids =
@@ -1433,12 +1428,12 @@ sub corr_evidence_edit {
       or die 'No correspondence evidence id';
 
     my $evidences = $sql_object->get_evidences(
-        cmap_object => $self,
+        cmap_object               => $self,
         feature_correspondence_id => $correspondence_evidence_id,
     );
     return $self->error(
         "No feature evidnece for ID '$correspondence_evidence_id'")
-        unless (@$evidences);
+      unless (@$evidences);
     my $evidence = $evidences->[0];
 
     my @evidence_type_aids =
@@ -1452,7 +1447,7 @@ sub corr_evidence_edit {
     return $self->process_template(
         TEMPLATE->{'corr_evidence_edit'},
         {
-            evidence           => $evidence,
+            evidence       => $evidence,
             evidence_types => $evidence_types,
             errors         => $args{'errors'},
         }
@@ -1617,11 +1612,11 @@ sub map_sets_view {
     }
 
     my $map_sets = $sql_object->get_map_sets(
-        cmap_object => $self,
+        cmap_object  => $self,
         map_type_aid => $map_type_aid,
-        species_id => $species_id,
-        is_enabled => $is_enabled,
-        order_by => $order_by,
+        species_id   => $species_id,
+        is_enabled   => $is_enabled,
+        order_by     => $order_by,
     );
 
     #
@@ -1637,9 +1632,7 @@ sub map_sets_view {
     );
     $map_sets = @$map_sets ? [ $pager->splice($map_sets) ] : [];
 
-    my $specie = $sql_object->get_species(
-        cmap_object => $self,
-    );
+    my $specie = $sql_object->get_species( cmap_object => $self, );
     my $map_types;
     my $index = 0;
     foreach my $map_type_aid ( keys( %{ $self->map_type_data() } ) ) {
@@ -1664,13 +1657,11 @@ sub map_sets_view {
 # ----------------------------------------------------
 sub map_set_create {
     my ( $self, %args ) = @_;
-    my $errors = $args{'errors'};
-    my $sql_object     = $self->sql or return $self->error;
-    my $apr    = $self->apr;
+    my $errors     = $args{'errors'};
+    my $sql_object = $self->sql or return $self->error;
+    my $apr        = $self->apr;
 
-    my $specie = $sql_object->get_species(
-        cmap_object => $self,
-    );
+    my $specie = $sql_object->get_species( cmap_object => $self, );
 
     return $self->error(
             'Please <a href="admin?action=species_create">create species</a> '
@@ -1708,7 +1699,7 @@ sub map_set_create {
 sub map_set_edit {
     my ( $self, %args ) = @_;
     my $errors     = $args{'errors'};
-    my $sql_object         = $self->sql;
+    my $sql_object = $self->sql;
     my $apr        = $self->apr;
     my $map_set_id = $apr->param('map_set_id') or die 'No map set ID';
 
@@ -1727,9 +1718,7 @@ sub map_set_edit {
         order_by    => $apr->param('att_order_by'),
     );
 
-    my $specie = $sql_object->get_species(
-        cmap_object => $self,
-    );
+    my $specie = $sql_object->get_species( cmap_object => $self, );
 
     my @map_type_aids = keys( %{ $self->config_data('map_type') } );
     my %map_type_name_lookup;
@@ -1786,7 +1775,7 @@ sub map_set_insert {
 # ----------------------------------------------------
 sub map_set_view {
     my $self       = shift;
-    my $sql_object         = $self->sql;
+    my $sql_object = $self->sql;
     my $apr        = $self->apr;
     my $map_set_id = $apr->param('map_set_id') or die 'No map set id';
     my $order_by   = $apr->param('order_by') || 'display_order,map_name';
@@ -1819,7 +1808,7 @@ sub map_set_view {
             map_set_id     => $map_set_id,
             count_features => 1,
         );
-    };
+      };
 
     #
     # Slice the results up into pages suitable for web viewing.
@@ -1848,12 +1837,12 @@ sub map_set_view {
 
 # ----------------------------------------------------
 sub map_set_update {
-    my $self                 = shift;
-    my $sql_object                   = $self->sql;
-    my $apr                  = $self->apr;
-    my @errors               = ();
-    my $map_set_id           = $apr->param('map_set_id') || 0;
-    my $published_on         = $apr->param('published_on') || 'today';
+    my $self         = shift;
+    my $sql_object   = $self->sql;
+    my $apr          = $self->apr;
+    my @errors       = ();
+    my $map_set_id   = $apr->param('map_set_id') || 0;
+    my $published_on = $apr->param('published_on') || 'today';
 
     if ($published_on) {
         {
@@ -1863,8 +1852,7 @@ sub map_set_update {
                 last;
               };
             my $t = localtime($pub_date);
-            $published_on =
-              $t->strftime( $sql_object->date_format );
+            $published_on = $t->strftime( $sql_object->date_format );
         }
     }
 
@@ -1891,7 +1879,7 @@ sub map_set_update {
           $self->config_data('map_type')->{$map_type_aid}{'map_units'},
         published_on => $published_on,
     );
-        
+
     return $self->redirect_home(
         ADMIN_HOME_URI . "?action=map_set_view;map_set_id=$map_set_id",
     );
@@ -2024,7 +2012,7 @@ sub species_create {
 # ----------------------------------------------------
 sub species_edit {
     my ( $self, %args ) = @_;
-    my $sql_object         = $self->sql;
+    my $sql_object = $self->sql;
     my $apr        = $self->apr;
     my $species_id = $apr->param('species_id') or die 'No species_id';
 
@@ -2035,7 +2023,6 @@ sub species_edit {
     return $self->error("No species for ID '$species_id'")
       unless ( $species_array and @$species_array );
     my $species = $species_array->[0];
-
 
     return $self->process_template(
         TEMPLATE->{'species_edit'},
@@ -2065,10 +2052,10 @@ sub species_insert {
 
 # ----------------------------------------------------
 sub species_update {
-    my $self        = shift;
-    my @errors      = ();
-    my $sql_object          = $self->sql;
-    my $apr         = $self->apr;
+    my $self       = shift;
+    my @errors     = ();
+    my $sql_object = $self->sql;
+    my $apr        = $self->apr;
     my $species_id = $apr->param('species_id')
       or push @errors, 'No species id';
 
@@ -2089,7 +2076,7 @@ sub species_update {
 # ----------------------------------------------------
 sub species_view {
     my $self       = shift;
-    my $sql_object         = $self->sql;
+    my $sql_object = $self->sql;
     my $sql_object = $self->sql;
     my $apr        = $self->apr;
     my $species_id = $apr->param('species_id') || 0;
@@ -2108,8 +2095,7 @@ sub species_view {
     if ($species_id) {
         my $species_array = $sql_object->get_species(
             cmap_object => $self,
-            species_id  => $species_id
-            order_by => $order_by,
+            species_id  => $species_id order_by => $order_by,
         );
         return $self->error("No species for ID '$species_id'")
           unless ( $species_array and @$species_array );
@@ -2135,8 +2121,8 @@ sub species_view {
     else {
         my $species = $sql_object->get_species(
             cmap_object => $self,
-            order_by => $order_by,
-        }
+            order_by    => $order_by,
+        );
 
         my $pager = Data::Pageset->new(
             {
@@ -2193,11 +2179,11 @@ sub xref_create {
 # ----------------------------------------------------
 sub xref_edit {
     my ( $self, %args ) = @_;
-    my $apr     = $self->apr;
-    my $xref_id = $apr->param('xref_id') or die 'No xref id';
-    my $admin   = $self->admin;
-    my $sql_object      = $self->sql or return $self->error;
-    my $xrefs   = $sql_object->get_xrefs(
+    my $apr        = $self->apr;
+    my $xref_id    = $apr->param('xref_id') or die 'No xref id';
+    my $admin      = $self->admin;
+    my $sql_object = $self->sql or return $self->error;
+    my $xrefs      = $sql_object->get_xrefs(
         cmap_object => $self,
         xref_id     => $entity_id,
     );
@@ -2310,7 +2296,7 @@ sub xref_update {
 # ----------------------------------------------------
 sub xrefs_view {
     my $self         = shift;
-    my $sql_object = $self->sql or return $self->error;
+    my $sql_object   = $self->sql or return $self->error;
     my $admin        = $self->admin;
     my $apr          = $self->apr;
     my $order_by     = $apr->param('order_by') || 'display_order';

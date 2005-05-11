@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.48 2005-04-25 17:14:08 mwz444 Exp $
+# $Id: MakeCorrespondences.pm,v 1.49 2005-05-11 03:36:50 mwz444 Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.48 $)[-1];
+$VERSION = (qw$Revision: 1.49 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -110,9 +110,10 @@ would match.
 =cut
 
     my ( $self, %args ) = @_;
+
     #my @map_set_ids            = @{ $args{'map_set_ids'}            || [] };
-    my @from_map_set_ids       = @{ $args{'from_map_set_ids'}            || [] };
-    my @to_map_set_ids         = @{ $args{'to_map_set_ids'}            || [] };
+    my @from_map_set_ids       = @{ $args{'from_map_set_ids'}       || [] };
+    my @to_map_set_ids         = @{ $args{'to_map_set_ids'}         || [] };
     my @skip_feature_type_aids = @{ $args{'skip_feature_type_aids'} || [] };
     my $evidence_type_aid      = $args{'evidence_type_aid'}
       or return 'No evidence type';
@@ -120,7 +121,7 @@ would match.
     my $name_regex   = $args{'name_regex'} || '';
     my $quiet        = $args{'quiet'};
     my $allow_update = $args{'allow_update'};
-    my $db           = $self->db;
+    my $sql_object   = $self->sql;
     my $admin        = Bio::GMOD::CMap::Admin->new(
         config      => $self->config,
         data_source => $self->data_source,
@@ -172,57 +173,26 @@ would match.
         }
     }
 
-    my $from_feature_sql = q[
-        select f.feature_id,
-               f.feature_name,
-               f.feature_type_accession as feature_type_aid
-        from   cmap_feature f,
-               cmap_map map,
-               cmap_map_set ms
-        where  f.map_id=map.map_id
-        and    map.map_set_id=ms.map_set_id
-    ];
+    print STDERR "Getting Starting Features\n";
+    my $from_features = $sql_object->get_features_for_correspondence_making(
+        cmap_object              => $self,
+        map_set_ids              => \@from_map_set_ids,
+        ignore_feature_type_aids => \@skip_feature_type_aids,
+    );
 
-    my $alias_sql = q[
-        select fa.feature_id,
-               fa.alias
-        from   cmap_feature f,
-               cmap_feature_alias fa,
-               cmap_map map,
-               cmap_map_set ms
-        where  f.feature_id=fa.feature_id
-        and    f.map_id=map.map_id
-        and    map.map_set_id=ms.map_set_id
-    ];
-    my $to_feature_sql = $from_feature_sql;
+    print STDERR "Getting Second Set of Features\n";
+    my $to_features = $sql_object->get_features_for_correspondence_making(
+        cmap_object              => $self,
+        map_set_ids              => \@to_map_set_ids,
+        ignore_feature_type_aids => \@skip_feature_type_aids,
+    );
 
-    if (@from_map_set_ids) {
-        for ( $from_feature_sql ) {
-            $_ .= 'and map.map_set_id in (' . join( ', ', @from_map_set_ids ) . ') ';
-        }
-    }
-    if (@to_map_set_ids) {
-        for ( $to_feature_sql  ) {
-            $_ .= 'and map.map_set_id in (' . join( ', ', @to_map_set_ids ) . ') ';
-        }
-    }
-    if (@from_map_set_ids or @to_map_set_ids) {
-        for ( $alias_sql ) {
-            $_ .= 'and map.map_set_id in (' . join( ', ', @from_map_set_ids,@to_map_set_ids ) . ') ';
-        }
-    }
-
-    if (@skip_feature_type_aids) {
-        for ( $from_feature_sql, $alias_sql, $to_feature_sql ) {
-            $_ .=
-              "and f.feature_type_accession not in ('"
-              . join( "', '", @skip_feature_type_aids ) . "')";
-        }
-    }
-    print STDERR "Getting Features\n";
-    my $from_features = $db->selectall_hashref( $from_feature_sql, 'feature_id' );
-    my $to_features   = $db->selectall_hashref( $to_feature_sql, 'feature_id' );
-    my $aliases    = $db->selectall_arrayref($alias_sql);
+    print STDERR "Getting Aliases\n";
+    my $aliases = $sql_object->get_feature_aliases(
+        cmap_object              => $self,
+        map_set_ids              => [ @from_map_set_ids, @to_map_set_ids ],
+        ignore_feature_type_aids => \@skip_feature_type_aids,
+    );
 
     print STDERR "Parsing Features\n";
     my %alias_lookup;
@@ -239,7 +209,7 @@ would match.
             if ( $name_regex and $name =~ /$name_regex/ ) {
                 $name = $1;
             }
-            push @{$from_name_to_ids{ lc $name }}, $f->{'feature_id'};
+            push @{ $from_name_to_ids{ lc $name } }, $f->{'feature_id'};
         }
     }
 
@@ -252,32 +222,21 @@ would match.
             if ( $name_regex and $name =~ /$name_regex/ ) {
                 $name = $1;
             }
-            push @{$to_name_to_ids{ lc $name }}, $f->{'feature_id'};
+            push @{ $to_name_to_ids{ lc $name } }, $f->{'feature_id'};
         }
     }
 
     my $corr;
     if ($allow_update) {
-        $corr = $db->selectall_hashref(
-            q[
-            select fc.feature_id1,
-                   fc.feature_id2,
-                   fc.feature_correspondence_id
-            from   cmap_feature_correspondence fc,
-                   cmap_correspondence_evidence ce
-            where  fc.feature_correspondence_id=ce.feature_correspondence_id
-            and    ce.evidence_type_accession=?
-                
-        ],
-            'feature_correspondence_id',
-            {},
-            ($evidence_type_aid)
+        $corr = $sql_object->get_correspondence_details(
+            cmap_object                 => $self,
+            included_evidence_type_aids => [$evidence_type_aid],
         );
     }
 
     my %corr = ();
     if ($allow_update) {
-        for my $c ( values %$corr ) {
+        for my $c (@$corr) {
             $corr{ $c->{'feature_id1'} }{ $c->{'feature_id2'} } =
               $c->{'feature_correspondence_id'};
 
@@ -288,17 +247,20 @@ would match.
     print STDERR "Inserting Features\n";
 
     for my $from_name ( keys %from_name_to_ids ) {
+
         #
         # Skip unless there is a matching name in %to_name_to_ids
         #
-        next unless ($to_name_to_ids{$from_name} and @{$to_name_to_ids{$from_name}});
+        next
+          unless ( $to_name_to_ids{$from_name}
+            and @{ $to_name_to_ids{$from_name} } );
 
         my %done;
-        for my $i ( 0 .. $#{$from_name_to_ids{$from_name}} ) {
+        for my $i ( 0 .. $#{ $from_name_to_ids{$from_name} } ) {
             my $fid1 = $from_name_to_ids{$from_name}->[$i];
             my $f1   = $from_features->{$fid1};
 
-            for my $j ( 0 .. $#{$to_name_to_ids{$from_name}} ) {
+            for my $j ( 0 .. $#{ $to_name_to_ids{$from_name} } ) {
                 my $fid2 = $to_name_to_ids{$from_name}->[$j];
                 next if $fid1 == $fid2;         # same feature
                 next if $done{$fid1}{$fid2};    # already processed
@@ -333,15 +295,15 @@ would match.
                     next;
                 }
                 else {
-                    my $fc_id = $admin->add_feature_correspondence_to_list(
+                    my $threshold = $allow_update ? 0 : 1000;
+                    my $fc_id = $admin->feature_correspondence_create(
                         feature_id1       => $f1->{'feature_id'},
                         feature_id2       => $f2->{'feature_id'},
                         evidence_type_aid => $evidence_type_aid,
                         allow_update      => $allow_update,
+                        threshold         => $threshold,
                       )
                       or return $self->error( $admin->error );
-
-                    $admin->insert_feature_correspondence_if_gt(1000);
 
                     if ($allow_update) {
                         $corr{$fid1}{$fid2} = $fc_id;
@@ -353,7 +315,7 @@ would match.
             }
         }
     }
-    $admin->insert_feature_correspondence_if_gt(0);
+    my $fc_id = $admin->feature_correspondence_create();
     $self->Print("Done.\n") unless $quiet;
 
     return 1;
