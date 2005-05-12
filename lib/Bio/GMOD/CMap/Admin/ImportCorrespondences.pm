@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 
 # vim: set ft=perl:
 
-# $Id: ImportCorrespondences.pm,v 1.31 2005-05-11 03:36:49 mwz444 Exp $
+# $Id: ImportCorrespondences.pm,v 1.32 2005-05-12 21:46:31 mwz444 Exp $
 
 =head1 NAME
 
@@ -51,13 +51,12 @@ feature names, a correspondence will be created.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.31 $)[-1];
+$VERSION = (qw$Revision: 1.32 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
 use Bio::GMOD::CMap::Constants;
-use Bio::GMOD::CMap::Utils qw[ next_number ];
 use Text::RecordParser;
 use base 'Bio::GMOD::CMap';
 use Regexp::Common;
@@ -132,6 +131,7 @@ which is slow.  Setting to 0 is recommended.
 
     my ( $self, %args ) = @_;
     my $fh = $args{'fh'} or return $self->error('No file handle');
+    my @map_set_ids = @{ $args{'map_set_ids'} || [] };
     my %map_set_ids = map { $_, 1 } @{ $args{'map_set_ids'} || [] };
     my $sql_object = $self->sql;
     $LOG_FH = $args{'log_fh'} || \*STDOUT;
@@ -218,11 +218,11 @@ which is slow.  Setting to 0 is recommended.
             }
 
             unless (@feature_ids) {
-                $feature_ids = @{
+                @feature_ids = @{
                     $sql_object->get_feature_details(
                         cmap_object  => $self,
                         feature_name => $upper_name,
-                        map_set_ids  => $map_set_ids,
+                        map_set_ids  => \@map_set_ids,
                     )
                   };
             }
@@ -310,9 +310,9 @@ which is slow.  Setting to 0 is recommended.
         }
     }
 
-    my $fc_id = $admin->feature_correspondence_create()
+    my $fc_id = $admin->feature_correspondence_create();
 
-      return 1;
+    return 1;
 }
 
 sub Print {

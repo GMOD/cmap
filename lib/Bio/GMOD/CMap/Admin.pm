@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.77 2005-05-11 03:36:48 mwz444 Exp $
+# $Id: Admin.pm,v 1.78 2005-05-12 21:46:29 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,14 +35,14 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.77 $)[-1];
+$VERSION = (qw$Revision: 1.78 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
 use Time::ParseDate;
 use Time::Piece;
 use Bio::GMOD::CMap;
-use Bio::GMOD::CMap::Utils qw[ next_number parse_words ];
+use Bio::GMOD::CMap::Utils qw[ parse_words ];
 use base 'Bio::GMOD::CMap';
 use Bio::GMOD::CMap::Constants;
 use Regexp::Common;
@@ -143,17 +143,18 @@ Nothing
     my ( $self, %args ) = @_;
     my $corr_evidence_id = $args{'correspondence_evidence_id'}
       or return $self->error('No correspondence evidence id');
+    my $sql_object = $self->sql;
 
-    $self->attribute_delete( 'correspondence_evidence', $corr_evidence_id );
-
-    my $sql_object = $self->sql or return;
     my $evidences = $sql_object->get_evidences(
         cmap_object                => $self,
         correspondence_evidence_id => $corr_evidence_id,
     );
     return $self->error('Invalid correspondence evidence id')
-      unless (@$evidences) my $feature_correspondence_id =
-      $evidence->[0]{'feature_correspondence_id'};
+      unless (@$evidences);
+    my $feature_correspondence_id =
+      $evidences->[0]{'feature_correspondence_id'};
+
+    $self->attribute_delete( 'correspondence_evidence', $corr_evidence_id );
 
     $sql_object->delete_evidence(
         cmap_object                => $self,
@@ -268,7 +269,7 @@ integrated with GBrowse and should not be used otherwise.
     }
 
     my $feature_id = $sql_object->insert_feature(
-        cmap_objcet      => $self,
+        cmap_object      => $self,
         map_id           => $map_id,
         feature_name     => $feature_name,
         feature_type_aid => $feature_type_aid,
@@ -396,20 +397,23 @@ Nothing
 
     my $sql_object = $self->sql or return;
 
-    my $features = $sql_object->get_features(
+    my $features = $sql_object->get_feature_details(
         cmap_object => $self,
         feature_id  => $feature_id,
     );
     return $self->error('Invalid feature id')
-      unless (@$features) my $map_id = $features->[0]{'map_id'};
+      unless (@$features);
+
+    my $map_id = $features->[0]{'map_id'};
 
     my $corrs = $sql_object->get_correspondence_details(
-        cmap_object => $self,
-        feature_id  => $feature_id,
+        cmap_object             => $self,
+        feature_id1             => $feature_id,
+        disregard_evidence_type => 1,
     );
     foreach my $corr (@$corrs) {
         $self->feature_correspondence_delete(
-            feature_correspondence_id => $corr->{'feature_correspondence_id'};
+            feature_correspondence_id => $corr->{'feature_correspondence_id'},
         );
     }
 
@@ -575,9 +579,10 @@ If not defined, the object_id will be assigned to it.
         # See if a correspondence exists already.
         #
         my $corrs = $sql_object->get_correspondence_details(
-            cmap_object => $self,
-            feature_id1 => $feature_id1,
-            feature_id2 => $feature_id2,
+            cmap_object             => $self,
+            feature_id1             => $feature_id1,
+            feature_id2             => $feature_id2,
+            disregard_evidence_type => 1,
         );
         if (@$corrs) {
             $feature_correspondence_id =
@@ -592,7 +597,7 @@ If not defined, the object_id will be assigned to it.
         #
 
         for ( my $i = 0 ; $i <= $#{$evidence} ; $i++ ) {
-            my $evidence_array = $sql_object->get_evidence(
+            my $evidence_array = $sql_object->get_evidences(
                 cmap_object               => $self,
                 feature_correspondence_id => $feature_correspondence_id,
                 evidence_type_aid => $evidence->[$i]{'evidence_type_aid'},
@@ -611,15 +616,14 @@ If not defined, the object_id will be assigned to it.
 
         # New Correspondence
 
-        my $feature_correspondence_id =
-          $sql_object->insert_feature_correspondence(
+        $feature_correspondence_id = $sql_object->insert_feature_correspondence(
             cmap_object => $self,
             feature_id1 => $feature_id1,
             feature_id2 => $feature_id2,
             is_enabled  => $is_enabled,
             evidence    => $evidence,
             threshold   => $threshold,
-          );
+        );
     }
 
     return $feature_correspondence_id;
@@ -670,12 +674,11 @@ Nothing
             duplicate_id => $dup->{'duplicate_id'},
         );
         if ( scalar(@$move_evidence) ) {
-            foreach my $evidence (@$move_evidence) {
+            foreach my $evidence_id (@$move_evidence) {
                 $sql_object->update_correspondence_evidence(
                     cmap_object                => $self,
-                    correspondence_evidence_id =>
-                      $evidence->{'correspondence_evidence_id'},
-                    feature_correspondence_id => $dup->{'original_id'},
+                    correspondence_evidence_id => $evidence_id,
+                    feature_correspondence_id  => $dup->{'original_id'},
                 );
             }
         }
@@ -785,7 +788,7 @@ Nothing
 =cut
 
     my ( $self, %args ) = @_;
-    my $feature_corr_id = $args{'feature_correspondence_id'}
+    my $feature_correspondence_id = $args{'feature_correspondence_id'}
       or return $self->error('No feature correspondence id');
 
     my $sql_object = $self->sql or return;
@@ -793,8 +796,6 @@ Nothing
         cmap_object               => $self,
         feature_correspondence_id => $feature_correspondence_id,
     );
-    return $self->error('Invalid correspondence evidence id')
-      unless (@$evidences);
 
     $sql_object->delete_evidence(
         cmap_object               => $self,
@@ -806,7 +807,8 @@ Nothing
         feature_correspondence_id => $feature_correspondence_id,
     );
 
-    $self->attribute_delete( 'feature_correspondence', $feature_corr_id );
+    $self->attribute_delete( 'feature_correspondence',
+        $feature_correspondence_id, );
 
     return 1;
 }
@@ -939,10 +941,11 @@ feature_name, species_common_name, map_set_short_name, map_name and start_positi
     my %features;
     for my $feature_name ( map { uc $_ } @feature_names ) {
 
+        my $feature_results;
         if ( $search_field eq 'feature_name' ) {
-            my $features = $sql_object->get_feature_details(
+            $feature_results = $sql_object->get_feature_details(
                 cmap_object       => $self,
-                map_id            => $map_id,
+                map_aid           => $map_aid,
                 feature_name      => $feature_name,
                 feature_type_aids => $feature_type_aids,
                 species_ids       => $species_ids,
@@ -950,18 +953,17 @@ feature_name, species_common_name, map_set_short_name, map_name and start_positi
             );
         }
         else {
-            my $features = $sql_object->get_feature_details(
+            $feature_results = $sql_object->get_feature_details(
                 cmap_object       => $self,
-                map_id            => $map_id,
+                map_aid           => $map_aid,
                 feature_aid       => $feature_name,
                 feature_type_aids => $feature_type_aids,
                 species_ids       => $species_ids,
                 aliases_get_rows  => 1,
             );
-
         }
 
-        foreach my $f (@$features) {
+        foreach my $f (@$feature_results) {
             $features{ $f->{'feature_id'} } = $f;
         }
     }
@@ -999,7 +1001,7 @@ feature_name, species_common_name, map_set_short_name, map_name and start_positi
         for my $f (@results) {
             $f->{'aliases'} = $sql_object->get_feature_aliases(
                 cmap_object => $self,
-                feature_id  => $feature_id,
+                feature_id  => $f->{'feature_id'},
             );
         }
     }
@@ -1063,7 +1065,7 @@ Array of feature names.
         feature_aid => $feature_aid,
     );
     return unless (@$features);
-    return $feature->[0]{'feature_name'};
+    return $features->[0]{'feature_name'};
 }
 
 # ----------------------------------------------------
@@ -1209,7 +1211,7 @@ End point of the map.
 
     my $sql_object = $self->sql or return $self->error;
     my $map_id = $sql_object->insert_map(
-        cmap_objcet    => $self,
+        cmap_object    => $self,
         map_aid        => $map_aid,
         map_set_id     => $map_set_id,
         map_name       => $map_name,
@@ -1267,7 +1269,9 @@ Nothing
         map_id      => $map_id,
     );
     return $self->error('Invalid map id')
-      unless (@$maps) my $map_set_id = $maps->[0]{'map_set_id'};
+      unless (@$maps);
+
+    my $map_set_id = $maps->[0]{'map_set_id'};
 
     my $features = $sql_object->get_features_simple(
         cmap_object => $self,
@@ -1411,9 +1415,8 @@ If not defined, the object_id will be assigned to it.
     my $is_relational_map =
       $self->map_type_data( $map_type_aid, 'is_relational_map' ) || 0;
 
-    my $sql_object = $self->sql or return $self->error;
-    my $map_set_id = $sql_object->insert_set_map(
-        cmap_objcet          => $self,
+    my $map_set_id = $sql_object->insert_map_set(
+        cmap_object          => $self,
         map_set_aid          => $map_set_aid,
         map_set_short_name   => $map_set_short_name,
         map_set_name         => $map_set_name,
@@ -1520,7 +1523,7 @@ Nothing
 =cut
 
     my ( $self, %args ) = @_;
-    my $sqp_object = $self->sql or return;
+    my $sql_object = $self->sql or return;
 
     my $new_records =
       $sql_object->reload_correspondence_matrix( cmap_object => $self, );
@@ -1584,6 +1587,7 @@ The name of the object being reference.
       or return $self->error('No table name');
     my @attributes = @{ $args{'attributes'} || [] } or return;
     my $overwrite = $args{'overwrite'} || 0;
+    my $sql_object = $self->sql or return;
 
     if ($overwrite) {
         $sql_object->delete_attribute(
@@ -1614,7 +1618,7 @@ The name of the object being reference.
             attribute_value => $attr_value,
         );
         $attribute_id = $attributes_array->[0]{'attribute_id'}
-          if (@$map_set_array);
+          if (@$attributes_array);
 
         if ($attribute_id) {
             $sql_object->update_attribute(
@@ -1700,6 +1704,7 @@ The name of the object being reference.
       or return $self->error('No object name');
     my @xrefs = @{ $args{'xrefs'} || [] } or return;
     my $overwrite = $args{'overwrite'} || 0;
+    my $sql_object = $self->sql or return;
 
     if ( $overwrite && $object_id ) {
         $sql_object->delete_xref(
@@ -1713,6 +1718,9 @@ The name of the object being reference.
         my $xref_id   = $xref->{'xref_id'} || 0;
         my $xref_name = $xref->{'name'}    || $xref->{'xref_name'};
         my $xref_url  = $xref->{'url'}     || $xref->{'xref_url'};
+        my $is_public =
+          defined( $xref->{'is_public'} ) ? $xref->{'is_public'} : 1;
+
         my $display_order = $xref->{'display_order'};
 
         next
@@ -1728,7 +1736,7 @@ The name of the object being reference.
             xref_name   => $xref_name,
             xref_url    => $xref_url,
         );
-        $xref_id = $xrefs_array->[0]{'xref_id'} if (@$map_set_array);
+        $xref_id = $xrefs_array->[0]{'xref_id'} if (@$xrefs_array);
 
         if ($xref_id) {
             $sql_object->update_xref(
@@ -1827,13 +1835,13 @@ If not defined, the object_id will be assigned to it.
     my $species_aid   = $args{'species_aid'};
 
     my $species_id = $sql_object->insert_species(
-        cmap_objcet         => $self,
+        cmap_object         => $self,
         species_aid         => $species_aid,
-        species_id          => $species_id,
         species_full_name   => $species_full_name,
         species_common_name => $species_common_name,
         display_order       => $display_order,
-    );
+      )
+      or return $sql_object->error;
 
     return $species_id;
 }
@@ -1967,6 +1975,7 @@ The name of the table being reference.
     my $xref_name = $args{'xref_name'} or push @missing, 'xref name';
     my $xref_url  = $args{'xref_url'}  or push @missing, 'xref URL';
     my $display_order = $args{'display_order'};
+    my $xref_id;
 
     if (@missing) {
         return $self->error(

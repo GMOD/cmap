@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache::AdminViewer;
 
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.82 2005-05-11 03:36:50 mwz444 Exp $
+# $Id: AdminViewer.pm,v 1.83 2005-05-12 21:46:31 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -36,9 +36,9 @@ $FEATURE_SHAPES = [
 ];
 $MAP_SHAPES = [qw( box dumbbell I-beam )];
 $WIDTHS     = [ 1 .. 10 ];
-$VERSION    = (qw$Revision: 1.82 $)[-1];
+$VERSION    = (qw$Revision: 1.83 $)[-1];
 
-use constant TEMPLATE => {
+use constant ADMIN_TEMPLATE => {
     admin_home                => 'admin_home.tmpl',
     attribute_create          => 'admin_attribute_create.tmpl',
     attribute_edit            => 'admin_attribute_edit.tmpl',
@@ -85,7 +85,7 @@ use constant TEMPLATE => {
     xrefs_view                => 'admin_xrefs_view.tmpl',
 };
 
-use constant XREF_OBJECTS => [
+use constant ADMIN_XREF_OBJECTS => [
     {
         object_type => 'feature',
         object_name => 'Feature',
@@ -118,7 +118,7 @@ use constant XREF_OBJECTS => [
     },
 ];
 
-my %XREF_OBJ_LOOKUP = map { $_->{'object_type'}, $_ } @{ +XREF_OBJECTS };
+my %XREF_OBJ_LOOKUP = map { $_->{'object_type'}, $_ } @{ +ADMIN_XREF_OBJECTS };
 
 # ----------------------------------------------------
 sub handler {
@@ -159,7 +159,7 @@ sub admin {
 sub admin_home {
     my $self = shift;
     my $apr  = $self->apr;
-    return $self->process_template( TEMPLATE->{'admin_home'},
+    return $self->process_template( ADMIN_TEMPLATE->{'admin_home'},
         { apr => $self->apr } );
 }
 
@@ -172,7 +172,7 @@ sub attribute_create {
     my $pk_name     = $object_type . '_id';
 
     return $self->process_template(
-        TEMPLATE->{'attribute_create'},
+        ADMIN_TEMPLATE->{'attribute_create'},
         {
             apr         => $apr,
             errors      => $args{'errors'},
@@ -200,8 +200,7 @@ sub attribute_edit {
 
     my $object_id   = $attribute->{'object_id'};
     my $object_type = $attribute->{'object_type'};
-    $object_type =~ s/^cmap_//;
-    my $pk_name = $object_type;
+    my $pk_name     = $object_type;
     $pk_name .= '_id';
 
     unless ( $apr->param('return_action') ) {
@@ -209,7 +208,7 @@ sub attribute_edit {
     }
 
     return $self->process_template(
-        TEMPLATE->{'attribute_edit'},
+        ADMIN_TEMPLATE->{'attribute_edit'},
         {
             apr         => $apr,
             attribute   => $attribute,
@@ -308,6 +307,7 @@ sub attribute_update {
 sub confirm_delete {
     my $self        = shift;
     my $apr         = $self->apr;
+    my $sql_object  = $self->sql;
     my $entity_type = $apr->param('entity_type') or die 'No entity type';
     my $entity_id   = $apr->param('entity_id') or die 'No entity id';
     my $entity_name = $apr->param('entity_name') || '';
@@ -324,7 +324,7 @@ sub confirm_delete {
     my $object_id = $entity_id;
 
     return $self->process_template(
-        TEMPLATE->{'confirm_delete'},
+        ADMIN_TEMPLATE->{'confirm_delete'},
         {
             apr           => $apr,
             return_action => $apr->param('return_action') || '',
@@ -392,7 +392,7 @@ sub colors_view {
     @colors = $pager->splice( \@colors );
 
     return $self->process_template(
-        TEMPLATE->{'colors_view'},
+        ADMIN_TEMPLATE->{'colors_view'},
         {
             apr    => $self->apr,
             colors => \@colors,
@@ -443,7 +443,7 @@ sub corr_evidence_type_view {
         "No evidence type accession '$incoming_evidence_type_aid'");
 
     return $self->process_template(
-        TEMPLATE->{'corr_evidence_type_view'},
+        ADMIN_TEMPLATE->{'corr_evidence_type_view'},
         { evidence_type => $evidence_type, }
     );
 }
@@ -479,7 +479,7 @@ sub corr_evidence_types_view {
       @$evidence_types ? [ $pager->splice($evidence_types) ] : [];
 
     return $self->process_template(
-        TEMPLATE->{'corr_evidence_types_view'},
+        ADMIN_TEMPLATE->{'corr_evidence_types_view'},
         {
             evidence_types => $evidence_types,
             pager          => $pager,
@@ -563,7 +563,7 @@ sub entity_delete {
     # Feature Alias
     #
     elsif ( $entity_type eq 'feature_alias' ) {
-        $sql_object->delete_feature_alias(
+        my $feature_id = $sql_object->delete_feature_alias(
             cmap_object      => $self,
             feature_alias_id => $entity_id,
         );
@@ -595,7 +595,7 @@ sub entity_delete {
     #
     # Cross-Reference
     #
-    elsif ( $entity_type eq 'cmap_xref' ) {
+    elsif ( $entity_type eq 'xref' ) {
         my $xrefs = $sql_object->get_xrefs(
             cmap_object => $self,
             xref_id     => $entity_id,
@@ -614,7 +614,7 @@ sub entity_delete {
 
         $sql_object->delete_xref(
             cmap_object => $self,
-            xref_id     => $xref_id,
+            xref_id     => $xref->{'xref_id'},
         );
     }
 
@@ -635,7 +635,7 @@ sub entity_delete {
 # ----------------------------------------------------
 sub error_template {
     my $self = shift;
-    return TEMPLATE->{'error'};
+    return ADMIN_TEMPLATE->{'error'};
 }
 
 # ----------------------------------------------------
@@ -653,7 +653,7 @@ sub map_create {
       unless ( $map_sets and @$map_sets );
     my $map_set = $map_sets->[0];
     return $self->process_template(
-        TEMPLATE->{'map_create'},
+        ADMIN_TEMPLATE->{'map_create'},
         {
             apr     => $apr,
             map_set => $map_set,
@@ -678,7 +678,7 @@ sub map_edit {
     my $map = $maps->[0];
 
     return $self->process_template(
-        TEMPLATE->{'map_edit'},
+        ADMIN_TEMPLATE->{'map_edit'},
         {
             map    => $map,
             errors => $errors,
@@ -783,7 +783,7 @@ sub map_view {
         $feature->{'no_correspondences'} =
           $sql_object->get_correspondence_count_for_feature(
             cmap_object => $self,
-            feature_id  => $feature_id,
+            feature_id  => $feature->{'feature_id'},
           );
     }
 
@@ -800,7 +800,7 @@ sub map_view {
     }
 
     return $self->process_template(
-        TEMPLATE->{'map_view'},
+        ADMIN_TEMPLATE->{'map_view'},
         {
             apr                      => $apr,
             map                      => $map,
@@ -847,7 +847,7 @@ sub feature_alias_create {
     );
 
     return $self->process_template(
-        TEMPLATE->{'feature_alias_create'},
+        ADMIN_TEMPLATE->{'feature_alias_create'},
         {
             apr     => $apr,
             feature => $feature,
@@ -859,6 +859,7 @@ sub feature_alias_create {
 # ----------------------------------------------------
 sub feature_alias_edit {
     my ( $self, %args ) = @_;
+    my $sql_object       = $self->sql;
     my $apr              = $self->apr;
     my $feature_alias_id = $apr->param('feature_alias_id')
       or die 'No feature alias id';
@@ -871,7 +872,7 @@ sub feature_alias_edit {
     my $alias = $aliases->[0];
 
     return $self->process_template(
-        TEMPLATE->{'feature_alias_edit'},
+        ADMIN_TEMPLATE->{'feature_alias_edit'},
         {
             apr    => $apr,
             alias  => $alias,
@@ -932,18 +933,18 @@ sub feature_alias_view {
 
     $alias->{'attributes'} = $sql_object->get_attributes(
         cmap_object => $self,
-        object_type => 'cmap_feature_alias',
+        object_type => 'feature_alias',
         object_id   => $feature_alias_id,
     );
 
     $alias->{'xrefs'} = $sql_object->get_xrefs(
         cmap_object => $self,
-        object_type => 'cmap_feature_alias',
+        object_type => 'feature_alias',
         object_id   => $feature_alias_id,
     );
 
     return $self->process_template(
-        TEMPLATE->{'feature_alias_view'},
+        ADMIN_TEMPLATE->{'feature_alias_view'},
         {
             apr   => $apr,
             alias => $alias,
@@ -972,7 +973,7 @@ sub feature_create {
           $self->config_data('feature_type')->{$ft_aid}{'feature_type'};
     }
     return $self->process_template(
-        TEMPLATE->{'feature_create'},
+        ADMIN_TEMPLATE->{'feature_create'},
         {
             apr                      => $apr,
             map                      => $map,
@@ -1006,7 +1007,7 @@ sub feature_edit {
           $self->config_data('feature_type')->{$ft_aid}{'feature_type'};
     }
     return $self->process_template(
-        TEMPLATE->{'feature_edit'},
+        ADMIN_TEMPLATE->{'feature_edit'},
         {
             feature                  => $feature,
             feature_type_aids        => \@feature_type_aids,
@@ -1103,7 +1104,7 @@ sub feature_view {
     );
 
     for my $corr (@$correspondences) {
-        $corr->{'evidence'} = $sql_object->get_evidence(
+        $corr->{'evidence'} = $sql_object->get_evidences(
             cmap_object               => $self,
             feature_correspondence_id => $corr->{'feature_correspondence_id'},
         );
@@ -1120,7 +1121,7 @@ sub feature_view {
 
     $feature->{'correspondences'} = $correspondences;
 
-    return $self->process_template( TEMPLATE->{'feature_view'},
+    return $self->process_template( ADMIN_TEMPLATE->{'feature_view'},
         { feature => $feature } );
 }
 
@@ -1171,7 +1172,8 @@ sub feature_search {
         $params->{'features'} = $result->{'results'};
     }
 
-    return $self->process_template( TEMPLATE->{'feature_search'}, $params );
+    return $self->process_template( ADMIN_TEMPLATE->{'feature_search'},
+        $params );
 }
 
 # ----------------------------------------------------
@@ -1225,7 +1227,7 @@ sub feature_corr_create {
     }
 
     return $self->process_template(
-        TEMPLATE->{'feature_corr_create'},
+        ADMIN_TEMPLATE->{'feature_corr_create'},
         {
             apr              => $apr,
             feature1         => $feature1,
@@ -1271,9 +1273,10 @@ sub feature_corr_insert {
     if ( $feature_correspondence_id < 0 ) {
         my $sql_object = $self->sql_object or return;
         my $feature_correspondences = $sql_object->get_correspondence_details(
-            cmap_object => $self,
-            feature_id1 => $feature_id1,
-            feature_id2 => $feature_id2,
+            cmap_object             => $self,
+            feature_id1             => $feature_id1,
+            feature_id2             => $feature_id2,
+            disregard_evidence_type => 1,
         );
         if (@$feature_correspondences) {
             $feature_correspondence_id =
@@ -1301,9 +1304,9 @@ sub feature_corr_edit {
     return $self->error(
         "No correspondence for ID '$feature_correspondence_id,'")
       unless ( $corrs and @$corrs );
-    my $corr = $corr->[0];
+    my $corr = $corrs->[0];
 
-    return $self->process_template( TEMPLATE->{'feature_corr_edit'},
+    return $self->process_template( ADMIN_TEMPLATE->{'feature_corr_edit'},
         { corr => $corr } );
 }
 
@@ -1369,14 +1372,14 @@ sub feature_corr_view {
     );
     $feature2 = $feature2->[0] if $feature2;
 
-    $corr->{'evidence'} = $sql_object->get_evidence(
+    $corr->{'evidence'} = $sql_object->get_evidences(
         cmap_object               => $self,
         feature_correspondence_id => $feature_correspondence_id,
         order_by                  => $order_by,
     );
 
     return $self->process_template(
-        TEMPLATE->{'feature_corr_view'},
+        ADMIN_TEMPLATE->{'feature_corr_view'},
         {
             corr     => $corr,
             feature1 => $feature1,
@@ -1396,6 +1399,7 @@ sub corr_evidence_create {
     my $correspondences = $sql_object->get_correspondence_details(
         cmap_object               => $self,
         feature_correspondence_id => $feature_correspondence_id,
+        disregard_evidence_type   => 1,
     );
     return $self->error(
         "No feature correspondence for ID '$feature_correspondence_id'")
@@ -1411,7 +1415,7 @@ sub corr_evidence_create {
     }
 
     return $self->process_template(
-        TEMPLATE->{'corr_evidence_create'},
+        ADMIN_TEMPLATE->{'corr_evidence_create'},
         {
             corr           => $corr,
             evidence_types => $evidence_types,
@@ -1423,6 +1427,7 @@ sub corr_evidence_create {
 # ----------------------------------------------------
 sub corr_evidence_edit {
     my ( $self, %args ) = @_;
+    my $sql_object                 = $self->sql;
     my $apr                        = $self->apr;
     my $correspondence_evidence_id = $apr->param('correspondence_evidence_id')
       or die 'No correspondence evidence id';
@@ -1445,7 +1450,7 @@ sub corr_evidence_edit {
     }
 
     return $self->process_template(
-        TEMPLATE->{'corr_evidence_edit'},
+        ADMIN_TEMPLATE->{'corr_evidence_edit'},
         {
             evidence       => $evidence,
             evidence_types => $evidence_types,
@@ -1488,14 +1493,15 @@ sub corr_evidence_update {
     my $correspondence_evidence_id = $apr->param('correspondence_evidence_id')
       or push @errors, 'No correspondence evidence id';
 
+    my $feature_correspondence_id = $apr->param('feature_correspondence_id');
     return $self->corr_evidence_edit( errors => \@errors ) if @errors;
 
     $sql_object->update_correspondence_evidence(
-        cmap_object                => $self,
-        correspondence_evidence_id => $correspondence_evidence_id,
-        evidence_type_aid          => $apr->param('evidence_type_aid'),
-        feature_correspondence_id  => $apr->param('feature_correspondence_id')
-          correspondence_evidence_aid =>
+        cmap_object                 => $self,
+        correspondence_evidence_id  => $correspondence_evidence_id,
+        evidence_type_aid           => $apr->param('evidence_type_aid'),
+        feature_correspondence_id   => $feature_correspondence_id,
+        correspondence_evidence_aid =>
           $apr->param('correspondence_evidence_aid'),
         score => $apr->param('score'),
         rank  => $apr->param('rank'),
@@ -1543,8 +1549,10 @@ sub feature_type_view {
       or return $self->error(
         "No feature type for accession '$incoming_feature_type_aid'");
 
-    return $self->process_template( TEMPLATE->{'feature_type_view'},
-        { feature_type => $feature_type, } );
+    return $self->process_template(
+        ADMIN_TEMPLATE->{'feature_type_view'},
+        { feature_type => $feature_type, }
+    );
 }
 
 # ----------------------------------------------------
@@ -1582,7 +1590,7 @@ sub feature_types_view {
     $feature_types = @$feature_types ? [ $pager->splice($feature_types) ] : [];
 
     return $self->process_template(
-        TEMPLATE->{'feature_types_view'},
+        ADMIN_TEMPLATE->{'feature_types_view'},
         {
             feature_types => $feature_types,
             pager         => $pager,
@@ -1643,7 +1651,7 @@ sub map_sets_view {
     }
 
     return $self->process_template(
-        TEMPLATE->{'map_sets_view'},
+        ADMIN_TEMPLATE->{'map_sets_view'},
         {
             apr       => $apr,
             specie    => $specie,
@@ -1670,7 +1678,6 @@ sub map_set_create {
 
     my @map_type_aids = keys( %{ $self->map_type_data() } );
 
-    print STDERR Dumper( \@map_type_aids ) . "\n";
     return $self->error( 'Please create map types in your configuration file '
           . 'before creating map sets.' )
       unless @map_type_aids;
@@ -1681,7 +1688,7 @@ sub map_set_create {
           $self->config_data('map_type')->{$ft_aid}{'map_type'};
     }
     return $self->process_template(
-        TEMPLATE->{'map_set_create'},
+        ADMIN_TEMPLATE->{'map_set_create'},
         {
             apr                  => $apr,
             errors               => $errors,
@@ -1731,7 +1738,7 @@ sub map_set_edit {
     }
 
     return $self->process_template(
-        TEMPLATE->{'map_set_edit'},
+        ADMIN_TEMPLATE->{'map_set_edit'},
         {
             map_set              => $map_set,
             specie               => $specie,
@@ -1826,7 +1833,7 @@ sub map_set_view {
     $apr->param( order_by => $order_by );
 
     return $self->process_template(
-        TEMPLATE->{'map_set_view'},
+        ADMIN_TEMPLATE->{'map_set_view'},
         {
             apr     => $apr,
             map_set => $map_set,
@@ -1842,6 +1849,8 @@ sub map_set_update {
     my $apr          = $self->apr;
     my @errors       = ();
     my $map_set_id   = $apr->param('map_set_id') || 0;
+    my $map_type_aid = $apr->param('map_type_aid');
+
     my $published_on = $apr->param('published_on') || 'today';
 
     if ($published_on) {
@@ -1858,8 +1867,6 @@ sub map_set_update {
 
     return $self->map_set_edit( errors => \@errors ) if @errors;
 
-    my $map_units =
-      $self->config_data('map_type')->{$map_type_aid}{'map_units'};
     $sql_object->update_map_set(
         cmap_object          => $self,
         map_set_id           => $map_set_id,
@@ -1867,7 +1874,7 @@ sub map_set_update {
         map_set_name         => $apr->param('map_set_name'),
         map_set_short_name   => $apr->param('map_set_short_name'),
         species_id           => $apr->param('species_id'),
-        map_type_aid         => $apr->param('map_type_aid'),
+        map_type_aid         => $map_type_aid,
         is_relational_map    => $apr->param('is_relational_map'),
         can_be_reference_map => $apr->param('can_be_reference_map'),
         is_enabled           => $apr->param('is_enabled'),
@@ -1934,7 +1941,7 @@ sub map_type_view {
       or
       return $self->error("No map type for accession '$incoming_map_type_aid'");
 
-    return $self->process_template( TEMPLATE->{'map_type_view'},
+    return $self->process_template( ADMIN_TEMPLATE->{'map_type_view'},
         { map_type => $map_type, } );
 }
 
@@ -1969,7 +1976,7 @@ sub map_types_view {
     $map_types = @$map_types ? [ $pager->splice($map_types) ] : [];
 
     return $self->process_template(
-        TEMPLATE->{'map_types_view'},
+        ADMIN_TEMPLATE->{'map_types_view'},
         {
             map_types => $map_types,
             pager     => $pager,
@@ -2001,7 +2008,7 @@ sub process_template {
 sub species_create {
     my ( $self, %args ) = @_;
     return $self->process_template(
-        TEMPLATE->{'species_create'},
+        ADMIN_TEMPLATE->{'species_create'},
         {
             apr    => $self->apr,
             errors => $args{'errors'},
@@ -2025,7 +2032,7 @@ sub species_edit {
     my $species = $species_array->[0];
 
     return $self->process_template(
-        TEMPLATE->{'species_edit'},
+        ADMIN_TEMPLATE->{'species_edit'},
         {
             species => $species,
             errors  => $args{'errors'},
@@ -2077,25 +2084,17 @@ sub species_update {
 sub species_view {
     my $self       = shift;
     my $sql_object = $self->sql;
-    my $sql_object = $self->sql;
     my $apr        = $self->apr;
     my $species_id = $apr->param('species_id') || 0;
     my $order_by   = $apr->param('order_by')
       || 'display_order,species_common_name';
     my $page_no = $apr->param('page_no') || 1;
-    my $sql     = q[
-        select   accession_id as species_aid, 
-                 species_id, 
-                 species_full_name, 
-                 species_common_name,
-                 display_order
-        from     cmap_species
-    ];
 
     if ($species_id) {
         my $species_array = $sql_object->get_species(
             cmap_object => $self,
-            species_id  => $species_id order_by => $order_by,
+            species_id  => $species_id,
+            order_by    => $order_by,
         );
         return $self->error("No species for ID '$species_id'")
           unless ( $species_array and @$species_array );
@@ -2115,7 +2114,7 @@ sub species_view {
             order_by    => $apr->param('att_order_by'),
         );
 
-        return $self->process_template( TEMPLATE->{'species_view_one'},
+        return $self->process_template( ADMIN_TEMPLATE->{'species_view_one'},
             { species => $species, } );
     }
     else {
@@ -2135,7 +2134,7 @@ sub species_view {
         $species = @$species ? [ $pager->splice($species) ] : [];
 
         return $self->process_template(
-            TEMPLATE->{'species_view'},
+            ADMIN_TEMPLATE->{'species_view'},
             {
                 species => $species,
                 pager   => $pager,
@@ -2151,6 +2150,7 @@ sub xref_create {
     my $object_type = $apr->param('object_type') || '';
     my $object_id   = $apr->param('object_id')   || 0;
     my %db_object;
+    my $sql_object = $self->sql;
 
     if ( $object_type && $object_id ) {
         $db_object{'name'} = $sql_object->get_object_name(
@@ -2159,16 +2159,16 @@ sub xref_create {
             object_type => $object_type,
         );
         my $obj = $XREF_OBJ_LOOKUP{$object_type};
-        $db_object->{'object_name'} = $obj->{'object_name'};
-        $db_object->{'object_type'} = $object_type;
+        $db_object{'object_name'} = $obj->{'object_name'};
+        $db_object{'object_type'} = $object_type;
     }
 
     return $self->process_template(
-        TEMPLATE->{'xref_create'},
+        ADMIN_TEMPLATE->{'xref_create'},
         {
             apr          => $self->apr,
             errors       => $args{'errors'},
-            xref_objects => XREF_OBJECTS,
+            xref_objects => ADMIN_XREF_OBJECTS,
             object_type  => $object_type,
             object_id    => $object_id,
             db_object    => \%db_object,
@@ -2185,7 +2185,7 @@ sub xref_edit {
     my $sql_object = $self->sql or return $self->error;
     my $xrefs      = $sql_object->get_xrefs(
         cmap_object => $self,
-        xref_id     => $entity_id,
+        xref_id     => $xref_id,
     );
     my $xref = $xrefs->[0];
     return $self->error("No database cross-reference for ID '$xref_id'")
@@ -2202,17 +2202,17 @@ sub xref_edit {
             object_type => $object_type,
         );
         my $obj = $XREF_OBJ_LOOKUP{$object_type};
-        $db_object->{'object_name'} = $obj->{'object_name'};
-        $db_object->{'object_type'} = $object_type;
+        $db_object{'object_name'} = $obj->{'object_name'};
+        $db_object{'object_type'} = $object_type;
     }
 
     return $self->process_template(
-        TEMPLATE->{'xref_edit'},
+        ADMIN_TEMPLATE->{'xref_edit'},
         {
             apr          => $self->apr,
             errors       => $args{'errors'},
             xref         => $xref,
-            xref_objects => XREF_OBJECTS,
+            xref_objects => ADMIN_XREF_OBJECTS,
             object_type  => $object_type,
             object_id    => $object_id,
             db_object    => \%db_object,
@@ -2344,12 +2344,12 @@ sub xrefs_view {
     }
 
     return $self->process_template(
-        TEMPLATE->{'xrefs_view'},
+        ADMIN_TEMPLATE->{'xrefs_view'},
         {
             apr        => $apr,
             xrefs      => $refs,
             pager      => $pager,
-            db_objects => XREF_OBJECTS,
+            db_objects => ADMIN_XREF_OBJECTS,
         }
     );
 }

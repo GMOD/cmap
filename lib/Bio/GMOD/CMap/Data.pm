@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.233 2005-05-11 03:36:48 mwz444 Exp $
+# $Id: Data.pm,v 1.234 2005-05-12 21:46:29 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.233 $)[-1];
+$VERSION = (qw$Revision: 1.234 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -115,7 +115,7 @@ sub correspondence_detail_data {
         );
         $feature2 = $feature2->[0] if $feature2;
 
-        $corr->{'evidence'} = $sql_object->get_evidence(
+        $corr->{'evidence'} = $sql_object->get_evidences(
             cmap_object               => $self,
             feature_correspondence_id => $corr->{'feature_correspondence_id'},
         );
@@ -829,8 +829,9 @@ sub get_feature_correspondences {
         $map_stop
       )
       = @_;
+    my $sql_object = $self->sql;
 
-    my $ref_correspondences = $self->sql->get_correspondences_by_maps(
+    my $ref_correspondences = $sql_object->get_correspondences_by_maps(
         cmap_object                 => $self,
         map_id                      => $map_id,
         ref_map_info                => $self->slot_info->{$slot_no},
@@ -1391,7 +1392,7 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
             );
             $ref_map_set_info->{'xrefs'} = $sql_object->get_xrefs(
                 cmap_object => $self,
-                object_type => 'cmap_map_set',
+                object_type => 'map_set',
                 object_id   => $ref_map_set_info->{'map_set_id'},
             );
         }
@@ -1682,11 +1683,11 @@ sub fill_out_maps {
     my @maps;
     for my $i ( 0 .. $#ordered_slot_nos ) {
         my $map;
-        my $slot_no     = $ordered_slot_nos[$i];
-        my $slot_info   = $self->slot_info->{$slot_no};
-        my $map_set_aid = my $map_sets = $sql_object->get_map_sets(
+        my $slot_no   = $ordered_slot_nos[$i];
+        my $slot_info = $self->slot_info->{$slot_no};
+        my $map_sets  = $sql_object->get_map_set_info_by_maps(
             cmap_object => $self,
-            map_set_aid => $slot_info->{'map_set_aid'},
+            map_ids     => [ keys(%$slot_info) ],
         );
         my %desc_by_species;
         foreach my $row (@$map_sets) {
@@ -1809,7 +1810,7 @@ Given a feature acc. id, find out all the details on it.
     for my $corr (@$correspondences) {
 
         # REPLACE 36 YYY
-        $corr->{'evidence'} = $sql_object->get_evidence(
+        $corr->{'evidence'} = $sql_object->get_evidences(
             cmap_object               => $self,
             feature_correspondence_id => $corr->{'feature_correspondence_id'},
         );

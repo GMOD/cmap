@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.105 2005-05-11 03:36:47 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.106 2005-05-12 21:46:28 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.105 $)[-1];
+$VERSION = (qw$Revision: 1.106 $)[-1];
 
 #
 # Get command-line options
@@ -532,15 +532,16 @@ sub delete_correspondences {
     return if $answer =~ /^[Nn]/;
 
     my %evidence_lookup = map { $_->[0], 1 } @evidence_types;
-    my $admin           = $self->admin;
-    my $log_fh          = $self->log_fh;
+    my @evidence_type_aids = map { $_->[0] } @evidence_types;
+    my $admin  = $self->admin;
+    my $log_fh = $self->log_fh;
 
     for my $map_set (@$map_sets) {
         my $map_set_id = $map_set->{'map_set_id'};
         my $corrs      = $sql_object->get_correspondence_details(
             cmap_object                 => $self,
-            included_evidence_type_aids => \@evidence_types,
-            map_set_id                  => $map_set_id2,
+            included_evidence_type_aids => \@evidence_type_aids,
+            map_set_id2                 => $map_set_id,
         );
 
         print $log_fh "Deleting correspondences for ",
@@ -553,7 +554,7 @@ sub delete_correspondences {
         # correspondence (which will remove all the evidence).
         #
         for my $corr (@$corrs) {
-            my $all_evidence = $sql_object->get_evidence(
+            my $all_evidence = $sql_object->get_evidences(
                 cmap_object               => $self,
                 feature_correspondence_id =>
                   $corr->{'feature_correspondence_id'},
@@ -622,7 +623,7 @@ sub delete_map_set {
 
     my $map_names;
     if (@map_ids) {
-        foreach $map_id (@map_ids) {
+        foreach my $map_id (@map_ids) {
             push @$map_names,
               $sql_object->get_object_name(
                 cmap_object => $self,
@@ -711,6 +712,7 @@ sub export_as_text {
     my $sql_object = $self->sql or die $self->error;
     my $log_fh     = $self->log_fh;
 
+    # Column Names
     my @col_names = qw(
       map_accession_id
       map_name
@@ -722,6 +724,24 @@ sub export_as_text {
       feature_start
       feature_stop
       feature_type_accession
+      feature_dbxref_name
+      feature_dbxref_url
+      is_landmark
+      feature_attributes
+    );
+
+    # Names of values returned that correspond to col_names
+    my @val_names = qw(
+      map_aid
+      map_name
+      map_start
+      map_stop
+      feature_aid
+      feature_name
+      feature_aliases
+      start_position
+      stop_position
+      feature_type_aid
       feature_dbxref_name
       feature_dbxref_url
       is_landmark
@@ -785,7 +805,13 @@ sub export_as_text {
     return if $answer =~ /^[Nn]/;
 
     my %exclude = map { $_, 1 } @exclude_fields;
-    @col_names = grep { !$exclude{$_} } @col_names;
+    for ( my $i = 0 ; $i <= $#col_names ; $i++ ) {
+        if ( $exclude{ $col_names[$i] } ) {
+            splice( @col_names, $i, 1 );
+            splice( @val_names, $i, 1 );
+            $i--;
+        }
+    }
 
     for my $map_set (@$map_sets) {
         my $map_set_id          = $map_set->{'map_set_id'};
@@ -829,7 +855,7 @@ sub export_as_text {
 
             my %alias_lookup = ();
             for my $a (@$aliases) {
-                push @{ $alias_lookup{ $a->[0] } }, $a->[1];
+                push @{ $alias_lookup{ $a->{'feature_id'} } }, $a->{'alias'};
             }
 
             for my $feature (@$features) {
@@ -843,7 +869,7 @@ sub export_as_text {
                     map { s/"/\\"/g ? qq["$_"] : $_ }
                       @{ $alias_lookup{ $feature->{'feature_id'} || [] } } );
 
-                print $fh join( OFS, map { $feature->{$_} } @col_names ), ORS;
+                print $fh join( OFS, map { $feature->{$_} } @val_names ), ORS;
             }
         }
 
@@ -1039,19 +1065,19 @@ sub export_objects {
         allow_all  => 1,
         data       => [
             {
-                object_type => 'cmap_map_set',
+                object_type => 'map_set',
                 object_name => 'Map Sets',
             },
             {
-                object_type => 'cmap_species',
+                object_type => 'species',
                 object_name => 'Species',
             },
             {
-                object_type => 'cmap_feature_correspondence',
+                object_type => 'feature_correspondence',
                 object_name => 'Feature Correspondence',
             },
             {
-                object_type => 'cmap_xref',
+                object_type => 'xref',
                 object_name => 'Cross-references',
             },
         ]
@@ -1238,7 +1264,6 @@ sub get_map_sets {
             @map_types = @{ [ [@map_types] ] };
         }
 
-        $species_sql .= 'order by species_common_name';
         my $map_set_species = $sql_object->get_map_sets(
             cmap_object   => $self,
             map_type_aids => \@map_types,
@@ -1268,7 +1293,7 @@ sub get_map_sets {
             data       => $map_set_species,
         );
 
-        if ( ref $species_ids ne 'ARRAY' ) {
+        if ( defined($species_ids) and ref $species_ids ne 'ARRAY' ) {
             $species_ids = [ $species_ids, ];
         }
 
@@ -1287,7 +1312,7 @@ sub get_map_sets {
             allow_mult => $allow_mult,
             data       => $ms_choices,
         );
-        if ( ref $map_set_ids ne 'ARRAY' ) {
+        if ( defined($map_set_ids) and ref $map_set_ids ne 'ARRAY' ) {
             $map_set_ids = [ $map_set_ids, ];
         }
 
@@ -1590,8 +1615,7 @@ sub import_correspondences {
         allow_mult => 1,
         data       => sort_selectall_arrayref(
             $sql_object->get_map_sets( cmap_object => $self, ),
-            species_common_name,
-            map_set_short_name
+            'species_common_name, map_set_short_name'
         ),
     );
 
@@ -2002,9 +2026,12 @@ sub make_name_correspondences {
         prompt  => 'Please select an evidence type',
         display => 'evidence_type',
         return  => 'evidence_type_aid,evidence_type',
-        data    => $self->fake_selectall_arrayref(
-            $self->evidence_type_data(),
-            'evidence_type_accession as evidence_type_aid',
+        data    => sort_selectall_arrayref(
+            $self->fake_selectall_arrayref(
+                $self->evidence_type_data(),
+                'evidence_type_accession as evidence_type_aid',
+                'evidence_type'
+            ),
             'evidence_type'
         ),
     );

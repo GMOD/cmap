@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Export;
 
 # vim: set ft=perl:
 
-# $Id: Export.pm,v 1.20 2005-05-11 03:36:49 mwz444 Exp $
+# $Id: Export.pm,v 1.21 2005-05-12 21:46:30 mwz444 Exp $
 
 =pod
 
@@ -29,7 +29,7 @@ of data out of CMap.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.20 $)[-1];
+$VERSION = (qw$Revision: 1.21 $)[-1];
 
 use Data::Dumper;
 use File::Spec::Functions;
@@ -88,7 +88,7 @@ File handle of the log file (defaults to STDOUT)
 
 =item - objects
 
-An arrayref of object names to be exported, such as "cmap_map_set"
+An arrayref of object names to be exported, such as "map_set"
 
 =back
 
@@ -111,23 +111,26 @@ An arrayref of object names to be exported, such as "cmap_map_set"
 
     my %dump;
     for my $object_type (@$objects) {
-        my $method = 'get_' . $object_type;
+        my $method = 'get_export_' . $object_type;
 
         if ( $self->can($method) ) {
             my $pretty = $object_type;
-            $pretty =~ s/^cmap_//;
             $pretty =~ s/_/ /g;
 
-            $self->Print("Dumping objects for type '$pretty.'\n");
+            $self->Print("Dumping objects for type '$pretty'.\n");
 
             my $objects = $self->$method(%args);
 
             if ( ref $objects eq 'ARRAY' ) {
-                push @{ $dump{$object_type} }, @$objects;
+
+                # preserve the "cmap_" format in the export file
+                push @{ $dump{ "cmap_" . $object_type } }, @$objects;
             }
             elsif ( ref $objects eq 'HASH' ) {
                 while ( my ( $k, $v ) = each %$objects ) {
-                    push @{ $dump{$k} }, @$v;
+
+                    # preserve the "cmap_" format in the export file
+                    push @{ $dump{ "cmap_" . $k } }, @$v;
                 }
             }
         }
@@ -233,11 +236,11 @@ get_attributes_and_xrefs
 }
 
 # ----------------------------------------------------
-sub get_cmap_feature_correspondence {
+sub get_export_feature_correspondence {
 
 =pod
 
-=head2 get_cmap_feature_correspondence
+=head2 get_export_feature_correspondence
 
 =head3 NOT For External Use
 
@@ -245,11 +248,11 @@ sub get_cmap_feature_correspondence {
 
 =item * Description
 
-get_cmap_feature_correspondence
+get_export_feature_correspondence
 
 =item * Usage
 
-    $exporter->get_cmap_feature_correspondence(
+    $exporter->get_export_feature_correspondence(
         feature_type_id => $feature_type_id,
     );
 
@@ -295,7 +298,7 @@ Feature correspondence
     );
     my %evidence_lookup = ();
     for my $e (@$evidence) {
-        $e->{'object_id'} = $row->{'correspondence_evidence_id'};
+        $e->{'object_id'} = $e->{'correspondence_evidence_id'};
         delete( $e->{'correspondence_evidence_id'} );
         push @{ $evidence_lookup{ $e->{'object_id'} } }, $e;
     }
@@ -309,11 +312,11 @@ Feature correspondence
 }
 
 # ----------------------------------------------------
-sub get_cmap_map_set {
+sub get_export_map_set {
 
 =pod
 
-=head2 get_cmap_map_set
+=head2 get_export_map_set
 
 =head3 NOT For External Use
 
@@ -321,11 +324,11 @@ sub get_cmap_map_set {
 
 =item * Description
 
-get_cmap_map_set
+get_export_map_set
 
 =item * Usage
 
-    $exporter->get_cmap_map_set(
+    $exporter->get_export_map_set(
         map_type_id => $map_type_id,
     );
 
@@ -427,24 +430,24 @@ hash with map set and species
     my @species;
     for my $species_id ( keys %species_ids ) {
         push @species,
-          @{ $self->get_cmap_species( species_id => $species_id ) };
+          @{ $self->get_export_species( species_id => $species_id ) };
     }
 
     return {
-        cmap_map_set => $map_sets,
-        cmap_species => \@species,
+        map_set => $map_sets,
+        species => \@species,
 
-        #cmap_map_type     => \@map_type,
-        #cmap_feature_type => \@feature_types,
+        #map_type     => \@map_type,
+        #feature_type => \@feature_types,
     };
 }
 
 # ----------------------------------------------------
-sub get_cmap_species {
+sub get_export_species {
 
 =pod
 
-=head2 get_cmap_species
+=head2 get_export_species
 
 =head3 NOT For External Use
 
@@ -452,11 +455,11 @@ sub get_cmap_species {
 
 =item * Description
 
-get_cmap_species
+get_export_species
 
 =item * Usage
 
-    $exporter->get_cmap_species(
+    $exporter->get_export_species(
         species_id => $species_id,
     );
 
@@ -498,11 +501,11 @@ Species object
 }
 
 # ----------------------------------------------------
-sub get_cmap_xref {
+sub get_export_xref {
 
 =pod    
 
-=head2 get_cmap_xref    
+=head2 get_export_xref    
 
 =head3 NOT For External Use
 
@@ -514,7 +517,7 @@ calls sql->get_generic_xrefs
 
 =item * Usage   
 
-    $exporter->get_cmap_xref();
+    $exporter->get_export_xref();
 
 =item * Returns 
 

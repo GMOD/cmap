@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Import;
 
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.69 2005-05-11 03:36:49 mwz444 Exp $
+# $Id: Import.pm,v 1.70 2005-05-12 21:46:31 mwz444 Exp $
 
 =pod
 
@@ -33,12 +33,11 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.69 $)[-1];
+$VERSION = (qw$Revision: 1.70 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Constants;
-use Bio::GMOD::CMap::Utils 'next_number';
 use Text::RecordParser;
 use Text::ParseWords 'parse_line';
 use XML::Simple;
@@ -278,7 +277,7 @@ appended to the list of xrefs.
         %$maps =
           map { uc $_->{'map_name'}, { map_id => $_->{'map_id'} } } @$map_info;
     }
-    my %map_aids      = map { $_->[2], $_->[0] } @$map_info;
+    my %map_aids      = map { $_->{'map_aid'}, $_->{'map_id'} } @$map_info;
     my %modified_maps = ();
 
     $self->Print(
@@ -297,7 +296,7 @@ appended to the list of xrefs.
 
             my $features = $sql_object->get_features_simple(
                 cmap_object => $self,
-                map_id = $map_id
+                map_id      => $map_id,
             );
 
             for (@$features) {
@@ -352,7 +351,10 @@ appended to the list of xrefs.
     my ( %feature_type_aids, %feature_ids, %map_info );
     my ( $last_map_name, $last_map_id ) = ( '', '' );
     my $feature_index = 0;
-    my ( @bulk_insert_aliases, @bulk_insert_atts, @bulk_insert_xrefs );
+    my (
+        @bulk_insert_aliases, @bulk_insert_atts,
+        @bulk_insert_xrefs,   @bulk_feature_names
+    );
     while ( my $record = $parser->fetchrow_hashref ) {
         for my $field_name ( $parser->field_list ) {
             my $field_attr = $COLUMNS{$field_name} or next;
@@ -540,7 +542,7 @@ appended to the list of xrefs.
             if ($feature_aid) {
                 my $features_array = $sql_object->get_features_simple(
                     cmap_object => $self,
-                    map_id = $map_id,
+                    map_id      => $map_id,
                 );
                 if (@$features_array) {
                     $feature_id = $features_array->[0]{'feature_id'};
@@ -553,8 +555,8 @@ appended to the list of xrefs.
             #
             if ( !$feature_id && !$feature_aid ) {
                 my $features_array = $sql_object->get_features_simple(
-                    cmap_object => $self,
-                    map_id = $map_id,
+                    cmap_object  => $self,
+                    map_id       => $map_id,
                     feature_name => $feature_name,
                 );
                 if (@$features_array) {
@@ -613,7 +615,7 @@ appended to the list of xrefs.
                     feature_id  => $feature_id,
                     alias       => $name,
                   )
-                  or warn $sql_object-- > error;
+                  or warn $sql_object->error;
             }
 
             if (@fattributes) {
@@ -657,15 +659,16 @@ appended to the list of xrefs.
             );
 
             push @bulk_insert_aliases, $aliases;
-            push @bulk_insert_atts,    \@fattributes push @bulk_insert_xrefs,
-              \@xrefs;
+            push @bulk_insert_atts,    \@fattributes;
+            push @bulk_insert_xrefs,   \@xrefs;
+            push @bulk_feature_names,  $feature_name;
 
             if ( defined($feature_id) ) {
                 my $base_feature_id = $feature_id - $feature_index;
                 for ( my $i = 0 ; $i <= $feature_index ; $i++ ) {
                     my $current_feature_id = $base_feature_id + $i;
                     for my $name ( @{ $bulk_insert_aliases[$i] } ) {
-                        next if $name eq $feature_name;
+                        next if $name eq $bulk_feature_names[$i];
                         $sql_object->insert_feature_alias(
                             cmap_object => $self,
                             feature_id  => $feature_id,
@@ -698,6 +701,7 @@ appended to the list of xrefs.
                 @bulk_insert_aliases = ();
                 @bulk_insert_atts    = ();
                 @bulk_insert_xrefs   = ();
+                @bulk_feature_names  = ();
             }
             else {
                 $feature_index++;
@@ -705,7 +709,7 @@ appended to the list of xrefs.
         }
 
     }
-    $feature_id = $sql_object->insert_feature(
+    my $feature_id = $sql_object->insert_feature(
         cmap_object => $self,
         threshold   => 0
     );
@@ -716,7 +720,7 @@ appended to the list of xrefs.
         for ( my $i = 0 ; $i <= $feature_index ; $i++ ) {
             my $current_feature_id = $base_feature_id + $i;
             for my $name ( @{ $bulk_insert_aliases[$i] } ) {
-                next if $name eq $feature_name;
+                next if $name eq $bulk_feature_names[$i];
                 $sql_object->insert_feature_alias(
                     cmap_object => $self,
                     feature_id  => $feature_id,
@@ -755,7 +759,7 @@ appended to the list of xrefs.
     # Go through and update all the maps.
     #
     for my $map ( values %map_info ) {
-        $map_id = $sql_object->update_map(
+        $sql_object->update_map(
             cmap_object    => $self,
             map_id         => $map->{'map_id'},
             map_aid        => $map->{'map_aid'},
@@ -1146,7 +1150,7 @@ File handle of the log file (default is STDOUT).
             object_type => 'feature_correspondence',
             object      => $fc,
           )
-          or return;
+          or return $self->error;
     }
 
     #
@@ -1206,7 +1210,7 @@ Imports an object.
 
     my ( $self, %args ) = @_;
     my $object_type         = $args{'object_type'};
-    my $object              = $args{'object'};
+    my $object              = $args{'object'} || {};
     my $lookup_accession_id =
       defined $args{'lookup_accession_id'}
       ? $args{'lookup_accession_id'}
@@ -1222,6 +1226,7 @@ Imports an object.
         $new_object_id = $sql_object->acc_id_to_internal_id(
             cmap_object => $self,
             acc_id      => $object->{'accession_id'},
+            object_type => $object_type,
         );
     }
 
@@ -1231,18 +1236,18 @@ Imports an object.
         $object->{$pk_name} = $new_object_id;
         $sql_object->$update_method(
             cmap_object => $self,
-            %object,
+            %$object,
           )
           or return $sql_object->error( $admin->error );
     }
     elsif ( !$new_object_id ) {
         $self->Print("Creating new data in $object_type\n");
         my $create_method = 'insert_' . $object_type;
-        $sql_object->$update_method(
+        $new_object_id = $sql_object->$create_method(
             cmap_object => $self,
-            %object,
+            %$object,
           )
-          or return $self->error( $admin->error );
+          or return $self->error( $sql_object->error );
     }
 
     $object->{"new_$pk_name"} = $new_object_id;

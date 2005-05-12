@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.49 2005-05-11 03:36:50 mwz444 Exp $
+# $Id: MakeCorrespondences.pm,v 1.50 2005-05-12 21:46:31 mwz444 Exp $
 
 =head1 NAME
 
@@ -32,11 +32,10 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.49 $)[-1];
+$VERSION = (qw$Revision: 1.50 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
-use Bio::GMOD::CMap::Utils qw[ next_number ];
 use base 'Bio::GMOD::CMap';
 use Data::Dumper;
 
@@ -173,31 +172,27 @@ would match.
         }
     }
 
-    print STDERR "Getting Starting Features\n";
     my $from_features = $sql_object->get_features_for_correspondence_making(
         cmap_object              => $self,
         map_set_ids              => \@from_map_set_ids,
         ignore_feature_type_aids => \@skip_feature_type_aids,
     );
 
-    print STDERR "Getting Second Set of Features\n";
     my $to_features = $sql_object->get_features_for_correspondence_making(
         cmap_object              => $self,
         map_set_ids              => \@to_map_set_ids,
         ignore_feature_type_aids => \@skip_feature_type_aids,
     );
 
-    print STDERR "Getting Aliases\n";
     my $aliases = $sql_object->get_feature_aliases(
         cmap_object              => $self,
         map_set_ids              => [ @from_map_set_ids, @to_map_set_ids ],
         ignore_feature_type_aids => \@skip_feature_type_aids,
     );
 
-    print STDERR "Parsing Features\n";
     my %alias_lookup;
     for my $a (@$aliases) {
-        push @{ $alias_lookup{ $a->[0] } }, $a->[1];
+        push @{ $alias_lookup{ $a->{'feature_id'} } }, $a->{'alias'};
     }
 
     my %from_name_to_ids = ();
@@ -244,7 +239,6 @@ would match.
               $c->{'feature_correspondence_id'};
         }
     }
-    print STDERR "Inserting Features\n";
 
     for my $from_name ( keys %from_name_to_ids ) {
 
@@ -302,10 +296,10 @@ would match.
                         evidence_type_aid => $evidence_type_aid,
                         allow_update      => $allow_update,
                         threshold         => $threshold,
-                      )
-                      or return $self->error( $admin->error );
+                    );
 
                     if ($allow_update) {
+                        return $self->error( $admin->error ) unless ($fc_id);
                         $corr{$fid1}{$fid2} = $fc_id;
                         $corr{$fid2}{$fid1} = $fc_id;
                     }
