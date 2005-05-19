@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache::AdminViewer;
 
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.83 2005-05-12 21:46:31 mwz444 Exp $
+# $Id: AdminViewer.pm,v 1.84 2005-05-19 18:45:42 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -36,7 +36,7 @@ $FEATURE_SHAPES = [
 ];
 $MAP_SHAPES = [qw( box dumbbell I-beam )];
 $WIDTHS     = [ 1 .. 10 ];
-$VERSION    = (qw$Revision: 1.83 $)[-1];
+$VERSION    = (qw$Revision: 1.84 $)[-1];
 
 use constant ADMIN_TEMPLATE => {
     admin_home                => 'admin_home.tmpl',
@@ -781,7 +781,7 @@ sub map_view {
 
     for my $feature ( @{ $map->{'features'} } ) {
         $feature->{'no_correspondences'} =
-          $sql_object->get_correspondence_count_for_feature(
+          $sql_object->get_feature_correspondence_count_for_feature(
             cmap_object => $self,
             feature_id  => $feature->{'feature_id'},
           );
@@ -841,7 +841,7 @@ sub feature_alias_create {
     my $apr        = $self->apr;
     my $feature_id = $apr->param('feature_id') or die 'No feature ID';
     my $sql_object = $self->sql;
-    my $feature    = $sql_object->get_feature_details(
+    my $feature    = $sql_object->get_features(
         cmap_object => $self,
         feature_id  => $feature_id,
     );
@@ -991,7 +991,7 @@ sub feature_edit {
     my $apr        = $self->apr;
     my $feature_id = $apr->param('feature_id') or die 'No feature id';
 
-    my $features = $sql_object->get_feature_details(
+    my $features = $sql_object->get_features(
         cmap_object => $self,
         feature_id  => $feature_id,
     );
@@ -1071,7 +1071,7 @@ sub feature_view {
     my $feature_id = $apr->param('feature_id') or die 'No feature id';
     my $order_by   = $apr->param('order_by') || '';
 
-    my $features = $sql_object->get_feature_details(
+    my $features = $sql_object->get_features(
         cmap_object => $self,
         feature_id  => $feature_id,
     );
@@ -1097,14 +1097,14 @@ sub feature_view {
         order_by    => $apr->param('att_order_by'),
     );
 
-    my $correspondences = $sql_object->get_correspondence_details(
+    my $correspondences = $sql_object->get_feature_correspondence_details(
         cmap_object             => $self,
         feature_id1             => $feature_id,
         disregard_evidence_type => 1,
     );
 
     for my $corr (@$correspondences) {
-        $corr->{'evidence'} = $sql_object->get_evidences(
+        $corr->{'evidence'} = $sql_object->get_correspondence_evidences(
             cmap_object               => $self,
             feature_correspondence_id => $corr->{'feature_correspondence_id'},
         );
@@ -1186,7 +1186,7 @@ sub feature_corr_create {
     my $feature2_name = $apr->param('feature2_name') || '';
     my $species_id    = $apr->param('species_id') || 0;
 
-    my $feature_array = $sql_object->get_feature_details(
+    my $feature_array = $sql_object->get_features(
         cmap_object => $self,
         feature_id  => $feature_id1,
     );
@@ -1196,7 +1196,7 @@ sub feature_corr_create {
 
     my $feature2;
     if ($feature_id2) {
-        $feature_array = $sql_object->get_feature_details(
+        $feature_array = $sql_object->get_features(
             cmap_object => $self,
             feature_id  => $feature_id2,
         );
@@ -1209,7 +1209,7 @@ sub feature_corr_create {
     if ($feature2_name) {
         $feature2_name =~ s/\*/%/g;
         $feature2_name =~ s/['"]//g;    #'
-        $feature2_choices = $sql_object->get_feature_details(
+        $feature2_choices = $sql_object->get_features(
             cmap_object  => $self,
             feature_name => $feature2_name,
             species_id   => $species_id,
@@ -1272,7 +1272,7 @@ sub feature_corr_insert {
 
     if ( $feature_correspondence_id < 0 ) {
         my $sql_object = $self->sql_object or return;
-        my $feature_correspondences = $sql_object->get_correspondence_details(
+        my $feature_correspondences = $sql_object->get_feature_correspondence_details(
             cmap_object             => $self,
             feature_id1             => $feature_id1,
             feature_id2             => $feature_id2,
@@ -1340,7 +1340,7 @@ sub feature_corr_view {
     my $feature_correspondence_id = $apr->param('feature_correspondence_id')
       or return $self->error('No feature correspondence id');
 
-    my $corr = $sql_object->get_correspondences(
+    my $corr = $sql_object->get_feature_correspondences(
         cmap_object               => $self,
         feature_correspondence_id => $feature_correspondence_id,
       )
@@ -1360,19 +1360,19 @@ sub feature_corr_view {
         order_by    => $apr->param('att_order_by'),
     );
 
-    my $feature1 = $sql_object->get_feature_details(
+    my $feature1 = $sql_object->get_features(
         cmap_object => $self,
         feature_id  => $corr->{'feature_id1'},
     );
     $feature1 = $feature1->[0] if $feature1;
 
-    my $feature2 = $sql_object->get_feature_details(
+    my $feature2 = $sql_object->get_features(
         cmap_object => $self,
         feature_id  => $corr->{'feature_id2'},
     );
     $feature2 = $feature2->[0] if $feature2;
 
-    $corr->{'evidence'} = $sql_object->get_evidences(
+    $corr->{'evidence'} = $sql_object->get_correspondence_evidences(
         cmap_object               => $self,
         feature_correspondence_id => $feature_correspondence_id,
         order_by                  => $order_by,
@@ -1396,7 +1396,7 @@ sub corr_evidence_create {
     my $feature_correspondence_id = $apr->param('feature_correspondence_id')
       or return $self->error('No feature correspondence id');
 
-    my $correspondences = $sql_object->get_correspondence_details(
+    my $correspondences = $sql_object->get_feature_correspondence_details(
         cmap_object               => $self,
         feature_correspondence_id => $feature_correspondence_id,
         disregard_evidence_type   => 1,
@@ -1432,7 +1432,7 @@ sub corr_evidence_edit {
     my $correspondence_evidence_id = $apr->param('correspondence_evidence_id')
       or die 'No correspondence evidence id';
 
-    my $evidences = $sql_object->get_evidences(
+    my $evidences = $sql_object->get_correspondence_evidences(
         cmap_object               => $self,
         feature_correspondence_id => $correspondence_evidence_id,
     );

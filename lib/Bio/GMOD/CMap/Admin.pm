@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.78 2005-05-12 21:46:29 mwz444 Exp $
+# $Id: Admin.pm,v 1.79 2005-05-19 18:45:34 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.78 $)[-1];
+$VERSION = (qw$Revision: 1.79 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -145,7 +145,7 @@ Nothing
       or return $self->error('No correspondence evidence id');
     my $sql_object = $self->sql;
 
-    my $evidences = $sql_object->get_evidences(
+    my $evidences = $sql_object->get_correspondence_evidences(
         cmap_object                => $self,
         correspondence_evidence_id => $corr_evidence_id,
     );
@@ -397,7 +397,7 @@ Nothing
 
     my $sql_object = $self->sql or return;
 
-    my $features = $sql_object->get_feature_details(
+    my $features = $sql_object->get_features(
         cmap_object => $self,
         feature_id  => $feature_id,
     );
@@ -406,7 +406,7 @@ Nothing
 
     my $map_id = $features->[0]{'map_id'};
 
-    my $corrs = $sql_object->get_correspondence_details(
+    my $corrs = $sql_object->get_feature_correspondence_details(
         cmap_object             => $self,
         feature_id1             => $feature_id,
         disregard_evidence_type => 1,
@@ -578,7 +578,7 @@ If not defined, the object_id will be assigned to it.
         #
         # See if a correspondence exists already.
         #
-        my $corrs = $sql_object->get_correspondence_details(
+        my $corrs = $sql_object->get_feature_correspondence_details(
             cmap_object             => $self,
             feature_id1             => $feature_id1,
             feature_id2             => $feature_id2,
@@ -597,7 +597,7 @@ If not defined, the object_id will be assigned to it.
         #
 
         for ( my $i = 0 ; $i <= $#{$evidence} ; $i++ ) {
-            my $evidence_array = $sql_object->get_evidences(
+            my $evidence_array = $sql_object->get_correspondence_evidences(
                 cmap_object               => $self,
                 feature_correspondence_id => $feature_correspondence_id,
                 evidence_type_aid => $evidence->[$i]{'evidence_type_aid'},
@@ -792,10 +792,6 @@ Nothing
       or return $self->error('No feature correspondence id');
 
     my $sql_object = $self->sql or return;
-    my $evidences = $sql_object->get_evidences(
-        cmap_object               => $self,
-        feature_correspondence_id => $feature_correspondence_id,
-    );
 
     $sql_object->delete_evidence(
         cmap_object               => $self,
@@ -943,7 +939,7 @@ feature_name, species_common_name, map_set_short_name, map_name and start_positi
 
         my $feature_results;
         if ( $search_field eq 'feature_name' ) {
-            $feature_results = $sql_object->get_feature_details(
+            $feature_results = $sql_object->get_features(
                 cmap_object       => $self,
                 map_aid           => $map_aid,
                 feature_name      => $feature_name,
@@ -953,7 +949,7 @@ feature_name, species_common_name, map_set_short_name, map_name and start_positi
             );
         }
         else {
-            $feature_results = $sql_object->get_feature_details(
+            $feature_results = $sql_object->get_features(
                 cmap_object       => $self,
                 map_aid           => $map_aid,
                 feature_aid       => $feature_name,

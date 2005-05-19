@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.234 2005-05-12 21:46:29 mwz444 Exp $
+# $Id: Data.pm,v 1.235 2005-05-19 18:45:36 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.234 $)[-1];
+$VERSION = (qw$Revision: 1.235 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -86,7 +86,7 @@ sub correspondence_detail_data {
         ( $corr, $feature1, $feature2 ) = @$array_ref;
     }
     else {
-        $corr = $sql_object->get_correspondences(
+        $corr = $sql_object->get_feature_correspondences(
             cmap_object                => $self,
             feature_correspondence_aid => $correspondence_aid,
           )
@@ -104,18 +104,18 @@ sub correspondence_detail_data {
             object_id   => $corr->{'feature_correspondence_id'},
         );
 
-        $feature1 = $sql_object->get_feature_details(
+        $feature1 = $sql_object->get_features(
             cmap_object => $self,
             feature_id  => $corr->{'feature_id1'},
         );
         $feature1 = $feature1->[0] if $feature1;
-        $feature2 = $sql_object->get_feature_details(
+        $feature2 = $sql_object->get_features(
             cmap_object => $self,
             feature_id  => $corr->{'feature_id2'},
         );
         $feature2 = $feature2->[0] if $feature2;
 
-        $corr->{'evidence'} = $sql_object->get_evidences(
+        $corr->{'evidence'} = $sql_object->get_correspondence_evidences(
             cmap_object               => $self,
             feature_correspondence_id => $corr->{'feature_correspondence_id'},
         );
@@ -210,13 +210,13 @@ Returns a string of tab-delimited data for either a map or map set.
 
         my $features;
         if ($map_aid) {
-            $features = $sql_object->get_feature_details(
+            $features = $sql_object->get_features(
                 cmap_object => $self,
                 map_id      => $map_id,
             );
         }
         else {
-            $features = $sql_object->get_feature_details(
+            $features = $sql_object->get_features(
                 cmap_object => $self,
                 map_set_id  => $map_set_id,
             );
@@ -831,7 +831,7 @@ sub get_feature_correspondences {
       = @_;
     my $sql_object = $self->sql;
 
-    my $ref_correspondences = $sql_object->get_correspondences_by_maps(
+    my $ref_correspondences = $sql_object->get_feature_correspondences_by_maps(
         cmap_object                 => $self,
         map_id                      => $map_id,
         ref_map_info                => $self->slot_info->{$slot_no},
@@ -889,7 +889,7 @@ sub get_intraslot_correspondences {
       )
       = @_;
 
-    my $ref_correspondences = $self->sql->get_correspondences_by_maps(
+    my $ref_correspondences = $self->sql->get_feature_correspondences_by_maps(
         cmap_object                 => $self,
         ref_map_info                => $self->slot_info->{$slot_no},
         included_evidence_type_aids => $included_evidence_type_aids,
@@ -1128,7 +1128,7 @@ Returns the data for the correspondence matrix.
     if ($link_map_set_aid) {
 
         # REPLACE 24 MAP_SET YYY
-        my $map_sets = $sql_object->get_just_map_sets(
+        my $map_sets = $sql_object->get_map_sets_simple(
             cmap_object => $self,
             map_set_aid => $link_map_set_aid,
         );
@@ -1785,7 +1785,7 @@ Given a feature acc. id, find out all the details on it.
     my $sql_object  = $self->sql           or return;
 
     # REPLACE 66 YYY
-    my $feature_array = $sql_object->get_feature_details(
+    my $feature_array = $sql_object->get_features(
         cmap_object => $self,
         feature_aid => $feature_aid,
     );
@@ -1801,7 +1801,7 @@ Given a feature acc. id, find out all the details on it.
     # REPLACE 35 ALIAS YYY
 
     # REPLACE 67 FCS YYY
-    my $correspondences = $sql_object->get_correspondence_details(
+    my $correspondences = $sql_object->get_feature_correspondence_details(
         cmap_object             => $self,
         feature_id              => $feature->{'feature_id'},
         disregard_evidence_type => 1,
@@ -1810,7 +1810,7 @@ Given a feature acc. id, find out all the details on it.
     for my $corr (@$correspondences) {
 
         # REPLACE 36 YYY
-        $corr->{'evidence'} = $sql_object->get_evidences(
+        $corr->{'evidence'} = $sql_object->get_correspondence_evidences(
             cmap_object               => $self,
             feature_correspondence_id => $corr->{'feature_correspondence_id'},
         );
@@ -1915,7 +1915,7 @@ Given a list of feature names, find any maps they occur on.
 
         # REPLACE 38 YYY
         # REPLACE 39 YYY
-        my $features = $sql_object->get_feature_details(
+        my $features = $sql_object->get_features(
             cmap_object       => $self,
             feature_name      => $feature_name,
             feature_type_aids => $incoming_feature_type_aids,
@@ -2405,7 +2405,7 @@ Returns the detail info for a map.
     # Get the reference map features.
     #
     # REPLACE 70 YYY
-    my $features = $sql_object->get_feature_details(
+    my $features = $sql_object->get_features(
         cmap_object       => $self,
         fmap_id           => $map_id,
         feature_type_aids =>
@@ -2473,7 +2473,7 @@ Returns the detail info for a map.
     for my $feature (@$features) {
 
         # REPLACE 71 FCS
-        my $positions = $sql_object->get_correspondence_details(
+        my $positions = $sql_object->get_feature_correspondence_details(
             cmap_object                 => $self,
             feature_id1                 => $feature->{'feature_id'},
             map_set_aid2                => $comparative_map_set_aid,
@@ -2758,7 +2758,7 @@ sub view_feature_on_map {
 
     # REPLACE 54 YYY
     my ( $map_set_aid, $map_aid, $feature_name );
-    my $return_object = $sql_object->get_feature_details(
+    my $return_object = $sql_object->get_features(
         cmap_object => $self,
         feature_aid => $feature_aid,
     );
@@ -2799,7 +2799,7 @@ sub count_correspondences {
     if ( defined $ref_slot_no or $show_intraslot_corr ) {
 
         # REPLACE 55 CORRCOUNTS YYY
-        $map_corr_counts = $sql_object->get_correspondence_count(
+        $map_corr_counts = $sql_object->get_feature_correspondence_count(
             cmap_object => $self,
             slot_info   => $self->slot_info->{$this_slot_no},
             slot_info2  => defined($ref_slot_no)

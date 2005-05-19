@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.50 2005-05-12 21:46:31 mwz444 Exp $
+# $Id: MakeCorrespondences.pm,v 1.51 2005-05-19 18:45:42 mwz444 Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.50 $)[-1];
+$VERSION = (qw$Revision: 1.51 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -223,7 +223,7 @@ would match.
 
     my $corr;
     if ($allow_update) {
-        $corr = $sql_object->get_correspondence_details(
+        $corr = $sql_object->get_feature_correspondence_details(
             cmap_object                 => $self,
             included_evidence_type_aids => [$evidence_type_aid],
         );

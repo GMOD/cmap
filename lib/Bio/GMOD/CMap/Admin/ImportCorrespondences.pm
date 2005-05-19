@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 
 # vim: set ft=perl:
 
-# $Id: ImportCorrespondences.pm,v 1.32 2005-05-12 21:46:31 mwz444 Exp $
+# $Id: ImportCorrespondences.pm,v 1.33 2005-05-19 18:45:41 mwz444 Exp $
 
 =head1 NAME
 
@@ -51,7 +51,7 @@ feature names, a correspondence will be created.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.32 $)[-1];
+$VERSION = (qw$Revision: 1.33 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -205,7 +205,7 @@ which is slow.  Setting to 0 is recommended.
             my @feature_ids;
 
             if ($feature_aid) {
-                my $features = $sql_object->get_feature_details(
+                my $features = $sql_object->get_features(
                     cmap_object => $self,
                     feature_aid => $feature_aid,
                 );
@@ -219,7 +219,7 @@ which is slow.  Setting to 0 is recommended.
 
             unless (@feature_ids) {
                 @feature_ids = @{
-                    $sql_object->get_feature_details(
+                    $sql_object->get_features(
                         cmap_object  => $self,
                         feature_name => $upper_name,
                         map_set_ids  => \@map_set_ids,

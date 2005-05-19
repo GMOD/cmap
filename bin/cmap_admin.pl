@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.106 2005-05-12 21:46:28 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.107 2005-05-19 18:45:33 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.106 $)[-1];
+$VERSION = (qw$Revision: 1.107 $)[-1];
 
 #
 # Get command-line options
@@ -538,7 +538,7 @@ sub delete_correspondences {
 
     for my $map_set (@$map_sets) {
         my $map_set_id = $map_set->{'map_set_id'};
-        my $corrs      = $sql_object->get_correspondence_details(
+        my $corrs      = $sql_object->get_feature_correspondence_details(
             cmap_object                 => $self,
             included_evidence_type_aids => \@evidence_type_aids,
             map_set_id2                 => $map_set_id,
@@ -554,7 +554,7 @@ sub delete_correspondences {
         # correspondence (which will remove all the evidence).
         #
         for my $corr (@$corrs) {
-            my $all_evidence = $sql_object->get_evidences(
+            my $all_evidence = $sql_object->get_correspondence_evidences(
                 cmap_object               => $self,
                 feature_correspondence_id =>
                   $corr->{'feature_correspondence_id'},
@@ -842,7 +842,7 @@ sub export_as_text {
         }
 
         for my $map (@$maps) {
-            my $features = $sql_object->get_feature_details(
+            my $features = $sql_object->get_features(
                 cmap_object       => $self,
                 feature_type_aids => $feature_types,
                 map_id            => $map->{'map_id'},

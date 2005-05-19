@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::ImportAlignments;
 
 # vim: set ft=perl:
 
-# $Id: ImportAlignments.pm,v 1.3 2005-05-11 03:36:49 mwz444 Exp $
+# $Id: ImportAlignments.pm,v 1.4 2005-05-19 18:45:41 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ alignments from blast files.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Data::Dumper;
 use Bio::SearchIO;
@@ -219,7 +219,7 @@ sub get_feature_id {
 
     # Check for existance of feature in cmap_feature
 
-    my $feature_id_results = $sql_object->get_feature_details(
+    my $feature_id_results = $sql_object->get_features(
         cmap_object       => $self,
         feature_start     => $start,
         feature_stop      => $end,
