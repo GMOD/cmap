@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Export;
 
 # vim: set ft=perl:
 
-# $Id: Export.pm,v 1.21 2005-05-12 21:46:30 mwz444 Exp $
+# $Id: Export.pm,v 1.22 2005-05-24 21:19:07 mwz444 Exp $
 
 =pod
 
@@ -29,7 +29,7 @@ of data out of CMap.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.21 $)[-1];
+$VERSION = (qw$Revision: 1.22 $)[-1];
 
 use Data::Dumper;
 use File::Spec::Functions;
@@ -117,7 +117,7 @@ An arrayref of object names to be exported, such as "map_set"
             my $pretty = $object_type;
             $pretty =~ s/_/ /g;
 
-            $self->Print("Dumping objects for type '$pretty'.\n");
+           # $self->Print("Dumping objects for type '$pretty'.\n");
 
             my $objects = $self->$method(%args);
 

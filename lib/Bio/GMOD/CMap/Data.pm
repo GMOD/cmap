@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.235 2005-05-19 18:45:36 mwz444 Exp $
+# $Id: Data.pm,v 1.236 2005-05-24 21:18:55 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.235 $)[-1];
+$VERSION = (qw$Revision: 1.236 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -183,7 +183,7 @@ Returns a string of tab-delimited data for either a map or map set.
 
     my $return;
     if ( $format eq 'XML' ) {
-        my $object = $map_set_aid ? 'cmap_map_set' : 'cmap_map';
+        my $object = $map_set_aid ? 'map_set' : 'map';
         my $exporter =
           Bio::GMOD::CMap::Admin::Export->new(
             data_source => $self->data_source )
@@ -2520,7 +2520,7 @@ Returns the detail info for a map.
 
             $distinct_positions{ $position->{'feature_id2'} } = $position;
             push @{ $evidence{ $position->{'feature_id2'} } },
-              $position->{'evidence_type2'};
+              $position->{'evidence_type'};
         }
 
         for my $position ( values %distinct_positions ) {
