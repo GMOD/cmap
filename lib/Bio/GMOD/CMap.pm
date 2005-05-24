@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.83 2005-05-11 03:36:47 mwz444 Exp $
+# $Id: CMap.pm,v 1.84 2005-05-24 15:52:36 mwz444 Exp $
 
 =head1 NAME
 
@@ -765,7 +765,7 @@ Given information about the link, creates a url to cmap_viewer.
     my $greater_evidence_type_aids  = $args{'greater_evidence_type_aids'};
     my $evidence_type_score         = $args{'evidence_type_score'};
     my $data_source                 = $args{'data_source'} or return;
-    my $url                         = $args{'url'};
+    my $url                         = $args{'url'} || '';
     $url .= '?' unless $url =~ /\?$/;
 
     ###Required Fields
@@ -827,13 +827,26 @@ Given information about the link, creates a url to cmap_viewer.
         my @ref_strs;
         foreach my $ref_map_aid ( keys(%$ref_map_aids) ) {
             if (   defined( $ref_map_aids->{$ref_map_aid}{'start'} )
-                or defined( $ref_map_aids->{$ref_map_aid}{'stop'} ) )
+                or defined( $ref_map_aids->{$ref_map_aid}{'stop'}
+                or $ref_map_aids->{$ref_map_aid}{'magnify'} ) )
             {
+                my $start =
+                  defined( $ref_map_aids->{$ref_map_aid}{'start'} )
+                  ? $ref_map_aids->{$ref_map_aid}{'start'} 
+                  : '';
+                my $stop =
+                  defined( $ref_map_aids->{$ref_map_aid}{'stop'} )
+                  ? $ref_map_aids->{$ref_map_aid}{'stop'}
+                  : '';
+                my $mag =
+                  defined( $ref_map_aids->{$ref_map_aid}{'magnify'} )
+                  ? $ref_map_aids->{$ref_map_aid}{'magnify'}
+                  : 1;
                 push @ref_strs,
                   $ref_map_aid . '['
-                  . $ref_map_aids->{$ref_map_aid}{'start'} . '*'
-                  . $ref_map_aids->{$ref_map_aid}{'stop'} . 'x'
-                  . $ref_map_aids->{$ref_map_aid}{'magnify'} . ']';
+                  . $start . '*'
+                  . $stop . 'x'
+                  . $mag . ']';
             }
             else {
                 push @ref_strs, $ref_map_aid;
