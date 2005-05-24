@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.80 2005-05-19 18:45:44 mwz444 Exp $
+# $Id: Generic.pm,v 1.81 2005-05-24 18:26:10 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.80 $)[-1];
+$VERSION = (qw$Revision: 1.81 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -8506,8 +8506,6 @@ this table in your db, it dummy up this method.
                          ms.map_set_short_name,
                          s.accession_id as species_aid,
                          s.species_common_name
-                from     cmap_feature f1,
-                         cmap_feature f2,
                 from     cmap_feature f1,
                          cmap_feature f2,
                          cmap_correspondence_lookup cl,
