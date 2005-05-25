@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.81 2005-05-24 18:26:10 mwz444 Exp $
+# $Id: Generic.pm,v 1.82 2005-05-25 19:22:20 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.81 $)[-1];
+$VERSION = (qw$Revision: 1.82 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -2726,6 +2726,7 @@ Not Caching because the calling method will do that.
         where    map.map_set_id=?
     ];
     if ($map_name) {
+        $map_name =~ s/\*/%/g;
         my $comparison = $map_name =~ m/%/ ? 'like' : '=';
         if ( $map_name ne '%' ) {
             $sql_str .= " and map.map_name $comparison '$map_name' ";
@@ -4040,14 +4041,18 @@ Not using cache because this query is quicker.
     }
 
     if ($map_name) {
-        $where_sql .= $where_sql ? " and " : " where ";
-        $where_sql .= " map.map_name='$map_name' ";
-        unless ($added_map_to_from) {
-            $from_sql  .= ", cmap_map map ";
-            $where_sql .= qq[
-                and map.map_id=f.map_id
-            ];
-            $added_map_to_from = 1;
+        $map_name =~ s/\*/%/g;
+        my $comparison = $map_name =~ m/%/ ? 'like' : '=';
+        if ( $map_name ne '%' ) {
+            $where_sql .= $where_sql ? " and " : " where ";
+            $where_sql .= " map.map_name $comparison '$map_name' ";
+            unless ($added_map_to_from) {
+                $from_sql  .= ", cmap_map map ";
+                $where_sql .= qq[
+                    and map.map_id=f.map_id
+                ];
+                $added_map_to_from = 1;
+            }
         }
     }
 
