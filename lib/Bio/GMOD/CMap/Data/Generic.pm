@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.82 2005-05-25 19:22:20 mwz444 Exp $
+# $Id: Generic.pm,v 1.83 2005-05-26 15:27:41 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.82 $)[-1];
+$VERSION = (qw$Revision: 1.83 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -3424,7 +3424,7 @@ Not using cache because this query is quicker.
         if ( $feature_name ne '%' ) {
             $feature_name = uc $feature_name;
             $where_sql .= $where_sql ? " and " : " where ";
-            $where_sql .= " upper(f.feature_name) $comparison '$feature_name' ";
+            $where_sql .= " upper(feature_name) $comparison '$feature_name' ";
         }
     }
     if ($feature_type_aid) {
@@ -4163,8 +4163,9 @@ Feature id
           if ($gclass);
     }
 
-    if (    scalar( @{ $self->{'insert_features'} } ) >= $threshold
-        and scalar( @{ $self->{'insert_features'} } ) )
+    if (    $self->{'insert_features'}
+        and scalar( @{ $self->{'insert_features'} } )
+        and scalar( @{ $self->{'insert_features'} } ) >= $threshold )
     {
         my $no_features     = scalar( @{ $self->{'insert_features'} } );
         my $base_feature_id = $self->next_number(
@@ -4643,6 +4644,20 @@ feature_alias_id
     my $feature_id  = $args{'feature_id'};
     my $alias       = $args{'alias'};
     my $db          = $cmap_object->db;
+
+    # Check if alias already inserted
+    my $sql_str = qq[
+        select feature_alias_id 
+        from cmap_feature_alias
+        where feature_id = $feature_id
+        and alias = '$alias'
+    ];
+
+    my $return_object = $db->selectall_arrayref( $sql_str );
+    if ($return_object and @$return_object) {
+        return -1;
+    }
+
     my $feature_alias_id = $self->next_number(
         cmap_object => $cmap_object,
         object_type => 'feature_alias',
