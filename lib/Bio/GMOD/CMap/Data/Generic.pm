@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.83 2005-05-26 15:27:41 mwz444 Exp $
+# $Id: Generic.pm,v 1.84 2005-05-27 14:05:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.83 $)[-1];
+$VERSION = (qw$Revision: 1.84 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -1479,8 +1479,6 @@ undefined to ignore that column.
 Set to 1 or 0 to select based on the is_enabled column.  Leave undefined to
 ignore that column.
 
-=item - Order by clause (order_by)
-
 =item - Boolean count_maps (count_maps)
 
 Add a map count to the return object
@@ -1532,7 +1530,6 @@ Array of Hashes:
     my $is_relational_map    = $args{'is_relational_map'};
     my $can_be_reference_map = $args{'can_be_reference_map'};
     my $is_enabled           = $args{'is_enabled'};
-    my $order_by             = $args{'order_by'};
     my $count_maps           = $args{'count_maps'};
     my $db                   = $cmap_object->db;
     my $map_type_data        = $cmap_object->map_type_data();
@@ -1628,9 +1625,6 @@ Array of Hashes:
                 s.species_full_name,
                 s.display_order,
         ];
-    }
-    if ($order_by) {
-        $order_by_sql = " order by $order_by ";
     }
 
     my $sql_str =
