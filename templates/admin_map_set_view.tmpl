@@ -3,7 +3,7 @@
 <a href="admin">Home</a> |
 <a href="admin?action=map_sets_view">View All Map Sets</a> |
 <a href="admin?action=map_set_edit;map_set_id=[% map_set.map_set_id %]">Edit</a> |
-<a href="admin?action=confirm_delete;entity_type=cmap_map_set;entity_id=[% map_set.map_set_id %]">Delete</a>
+<a href="admin?action=confirm_delete;entity_type=map_set;entity_id=[% map_set.map_set_id %]">Delete</a>
 [% IF map_set.can_be_reference_map %]
   | <a href="[% url %]/viewer?ref_map_set_aid=[% map_set.map_set_aid %]">View in CMap Viewer</a>
 [% END %]
@@ -166,7 +166,7 @@
                     <a href="admin?action=map_edit;map_id=[% map.map_id %]">Edit</a>
                 </td>
                 <td align="center">
-                    <a href="admin?action=confirm_delete;entity_type=cmap_map;entity_id=[% map.map_id %]">Delete</a>
+                    <a href="admin?action=confirm_delete;entity_type=map;entity_id=[% map.map_id %]">Delete</a>
                 </td>
             </tr>
             [% SET i=i+1 %]

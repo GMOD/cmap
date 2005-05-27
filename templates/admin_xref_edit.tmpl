@@ -1,7 +1,7 @@
 [% INCLUDE admin_header.tmpl title='Cross-References Edit' %]
 
 <a href="admin">Home</a> |
-<a href="admin?action=confirm_delete;entity_type=cmap_xref;entity_id=[% xref.xref_id %];entity_name=[% xref.xref_name | uri %]">Delete</a> |
+<a href="admin?action=confirm_delete;entity_type=xref;entity_id=[% xref.xref_id %];entity_name=[% xref.xref_name | uri %]">Delete</a> |
 <a href="admin?action=xrefs_view">View All Cross-References</a>
 <hr noshade>
 
@@ -23,7 +23,7 @@
                 </td>
                 <td>
                     <input type="hidden" name="return_action" value="[% apr.param('return_action') %]">
-                    <input type="hidden" name="object_name" value="[% object_name %]">
+                    <input type="hidden" name="object_type" value="[% object_type %]">
                     <input type="hidden" name="object_id" value="[% object_id %]">
                     [% db_object.name %] ([% db_object.object_name %]) 
                 </td>
@@ -34,10 +34,10 @@
                     Database Object:
                 </td>
                 <td>
-                    <select name="object_name">
+                    <select name="object_type">
                         <option value="">--Please Select--</option>
                         [% FOREACH o=xref_objects %]
-                            <option value="[% o.object_name %]"[% IF xref.object_name == o.object_name %] selected[% END %]>[% o.object_name %]</option>
+                            <option value="[% o.object_type %]"[% IF xref.object_type == o.object_type %] selected[% END %]>[% o.object_type %]</option>
                         [% END %]
                     </select>
                 </td>

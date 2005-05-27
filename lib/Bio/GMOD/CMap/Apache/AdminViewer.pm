@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache::AdminViewer;
 
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.84 2005-05-19 18:45:42 mwz444 Exp $
+# $Id: AdminViewer.pm,v 1.85 2005-05-27 19:02:18 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -36,7 +36,7 @@ $FEATURE_SHAPES = [
 ];
 $MAP_SHAPES = [qw( box dumbbell I-beam )];
 $WIDTHS     = [ 1 .. 10 ];
-$VERSION    = (qw$Revision: 1.84 $)[-1];
+$VERSION    = (qw$Revision: 1.85 $)[-1];
 
 use constant ADMIN_TEMPLATE => {
     admin_home                => 'admin_home.tmpl',
@@ -712,7 +712,7 @@ sub map_insert {
 # ----------------------------------------------------
 sub map_view {
     my $self             = shift;
-    my $sql_object       = $self->sql_object or return $self->error;
+    my $sql_object       = $self->sql or return $self->error;
     my $apr              = $self->apr;
     my $map_id           = $apr->param('map_id') or die 'No map id';
     my $order_by         = $apr->param('order_by') || 'start_position';
@@ -741,7 +741,7 @@ sub map_view {
         order_by    => $apr->param('att_order_by')
     );
 
-    my $features = $sql_object->get_feature_simple(
+    my $features = $sql_object->get_features_simple(
         cmap_object      => $self,
         map_id           => $map_id,
         feature_type_aid => $feature_type_aid,
@@ -769,7 +769,7 @@ sub map_view {
 
         my %aliases;
         for my $alias (@$aliases) {
-            push @{ $aliases{ $alias->[0] } }, $alias->[1];
+            push @{ $aliases{ $alias->{'feature_id'} } }, $alias->{'alias'};
         }
 
         for my $f (@$features) {
@@ -821,7 +821,7 @@ sub map_update {
       or push @errors, 'No map id';
     return $self->map_edit( errors => \@errors ) if @errors;
 
-    $sql_object->update_correspondence_evidence(
+    $sql_object->update_map(
         cmap_object    => $self,
         map_id         => $map_id,
         map_aid        => $apr->param('map_aid'),
@@ -841,10 +841,13 @@ sub feature_alias_create {
     my $apr        = $self->apr;
     my $feature_id = $apr->param('feature_id') or die 'No feature ID';
     my $sql_object = $self->sql;
-    my $feature    = $sql_object->get_features(
+    my $features   = $sql_object->get_features(
         cmap_object => $self,
         feature_id  => $feature_id,
     );
+    return $self->error("No feature for ID '$feature_id'")
+      unless ( $features and @$features );
+    my $feature = $features->[0];
 
     return $self->process_template(
         ADMIN_TEMPLATE->{'feature_alias_create'},
@@ -907,7 +910,7 @@ sub feature_alias_update {
     my $alias      = $apr->param('alias') or die 'No alias';
     my $sql_object = $self->sql;
 
-    $sql_object->update_correspondence_evidence(
+    $sql_object->update_feature_alias(
         cmap_object      => $self,
         feature_alias_id => $feature_alias_id,
         alias            => $apr->param('alias'),
@@ -1113,7 +1116,7 @@ sub feature_view {
             map { $_->{'alias'} } @{
                 $sql_object->get_feature_aliases(
                     cmap_object => $self,
-                    feature_id  => $corr->{'feature_id'},
+                    feature_id  => $corr->{'feature_id2'},
                 )
               }
         ];
@@ -1133,7 +1136,7 @@ sub feature_search {
     my $page_no           = $apr->param('page_no') || 1;
     my @species_ids       = ( $apr->param('species_id') || () );
     my @feature_type_aids = ( $apr->param('feature_type_aid') || () );
-    my $sql_object => $self->sql;
+    my $sql_object = $self->sql or die "SQL object not found\n";
 
     my @all_feature_type_aids =
       keys( %{ $self->config_data('feature_type') } );
@@ -1202,7 +1205,7 @@ sub feature_corr_create {
         );
         return $self->error("No feature for ID '$feature_id2'")
           unless ( $feature_array and @$feature_array );
-        my $feature2 = $feature_array->[0];
+        $feature2 = $feature_array->[0];
     }
 
     my $feature2_choices;
@@ -1222,8 +1225,10 @@ sub feature_corr_create {
       keys( %{ $self->config_data('evidence_type') } );
     my $evidence_types;
     foreach my $type_aid (@evidence_type_aids) {
-        push @$evidence_types, $self->evidence_type_data($type_aid)
+        my $et = $self->evidence_type_data($type_aid)
           or return $self->error("No evidence type accession '$type_aid'");
+        $et->{'evidence_type_aid'} = $type_aid;
+        push @$evidence_types, $et;
     }
 
     return $self->process_template(
@@ -1271,13 +1276,14 @@ sub feature_corr_insert {
     );
 
     if ( $feature_correspondence_id < 0 ) {
-        my $sql_object = $self->sql_object or return;
-        my $feature_correspondences = $sql_object->get_feature_correspondence_details(
+        my $sql_object = $self->sql or return;
+        my $feature_correspondences =
+          $sql_object->get_feature_correspondence_details(
             cmap_object             => $self,
             feature_id1             => $feature_id1,
             feature_id2             => $feature_id2,
             disregard_evidence_type => 1,
-        );
+          );
         if (@$feature_correspondences) {
             $feature_correspondence_id =
               $feature_correspondences->[0] {'feature_correspondence_id'};
@@ -1488,7 +1494,7 @@ sub corr_evidence_insert {
 sub corr_evidence_update {
     my $self                       = shift;
     my @errors                     = ();
-    my $sql_object                 = $self->sql_object or return $self->error;
+    my $sql_object                 = $self->sql or return $self->error;
     my $apr                        = $self->apr;
     my $correspondence_evidence_id = $apr->param('correspondence_evidence_id')
       or push @errors, 'No correspondence evidence id';
@@ -2068,7 +2074,7 @@ sub species_update {
 
     return $self->species_edit( errors => \@errors ) if @errors;
 
-    $sql_object->update_map_set(
+    $sql_object->update_species(
         cmap_object         => $self,
         species_id          => $species_id,
         species_aid         => $apr->param('species_aid'),

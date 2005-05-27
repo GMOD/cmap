@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.101 2005-05-24 21:19:07 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.102 2005-05-27 19:02:19 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.101 $)[-1];
+$VERSION = (qw$Revision: 1.102 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -575,7 +575,7 @@ sub handler {
         my ($map_aid) = keys %ref_maps;
         my $map_id = $self->sql->acc_id_to_internal_id(
             cmap_object => $self,
-            object_name => 'map',
+            object_type => 'map',
             acc_id      => $map_aid,
         );
 

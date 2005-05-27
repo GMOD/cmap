@@ -4,7 +4,7 @@
     <tr>
         <td align="left"><h2>[% title %]</h2></td>
         <td align="right">
-            <a href="admin?action=attribute_create;object_name=[% object_name %];object_id=[% object_id %];return_action=[% return_action %]">Add Attribute</a>
+            <a href="admin?action=attribute_create;object_type=[% object_type %];object_id=[% object_id %];return_action=[% return_action %]">Add Attribute</a>
         </td>
     </tr>
 </table>
@@ -37,7 +37,7 @@
                     <a href="admin?action=attribute_edit;attribute_id=[% att.attribute_id %];return_action=[% return_action %]">Edit</a>
                 </td>
                 <td align="center">
-                    <a href="admin?action=confirm_delete;entity_id=[% att.attribute_id %];entity_type=cmap_attribute;entity_name_field=attribute_name;return_action=[% return_action %]">Delete</a>
+                    <a href="admin?action=confirm_delete;entity_id=[% att.attribute_id %];entity_type=attribute;entity_name_field=attribute_name;return_action=[% return_action %]">Delete</a>
                 </td>
             </tr>
             [% SET i=i+1 %]

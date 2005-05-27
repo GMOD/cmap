@@ -1,7 +1,7 @@
 [% INCLUDE admin_header.tmpl title="Edit Correspondence Evidence &quot;$evidence.correspondence_evidence_aid&quot;" %]
 <a href="admin">Home</a> |
 <a href="admin?action=feature_corr_view;feature_correspondence_id=[% evidence.feature_correspondence_id %]">View Correspondence</a> |
-<a href="admin?action=confirm_delete;entity_type=cmap_correspondence_evidence;entity_name_field=correspondence_evidence_aid;entity_id=[% evidence.correspondence_evidence_id %]">Delete</a>
+<a href="admin?action=confirm_delete;entity_type=correspondence_evidence;entity_name_field=correspondence_evidence_aid;entity_id=[% evidence.correspondence_evidence_id %]">Delete</a>
 <hr noshade>
 
 [% IF errors.size %]

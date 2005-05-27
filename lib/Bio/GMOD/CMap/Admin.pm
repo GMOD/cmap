@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.79 2005-05-19 18:45:34 mwz444 Exp $
+# $Id: Admin.pm,v 1.80 2005-05-27 19:02:16 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.79 $)[-1];
+$VERSION = (qw$Revision: 1.80 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -257,7 +257,7 @@ integrated with GBrowse and should not be used otherwise.
     my $direction     = $args{'direction'} || 1;
     my $gclass        = $args{'gclass'};
     $gclass = undef unless ( $self->config_data('gbrowse_compatible') );
-    my $sql_object = $self->sql_object or return $self->error;
+    my $sql_object = $self->sql or return $self->error;
 
     my $default_rank =
       $self->feature_type_data( $feature_type_aid, 'default_rank' ) || 1;
@@ -345,7 +345,7 @@ Create an alias for a feature.  The alias is searchable.
     );
     return 1 if (@$feature_aliases);
 
-    my $feature_alias_id = $sql_object->insert_feature_aliases(
+    my $feature_alias_id = $sql_object->insert_feature_alias(
         cmap_object => $self,
         alias       => $alias,
         feature_id  => $feature_id,
@@ -926,7 +926,7 @@ feature_name, species_common_name, map_set_short_name, map_name and start_positi
     my $search_field      = $args{'search_field'}      || 'feature_name';
     my $order_by          = $args{'order_by'}
       || 'feature_name,species_common_name,map_set_short_name,map_name,start_position';
-    my $sql_object = $self->sql_object or return;
+    my $sql_object = $self->sql or return;
 
     #
     # "-1" is a reserved value meaning "all"

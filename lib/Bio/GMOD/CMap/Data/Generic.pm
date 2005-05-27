@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.84 2005-05-27 14:05:07 mwz444 Exp $
+# $Id: Generic.pm,v 1.85 2005-05-27 19:02:20 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.84 $)[-1];
+$VERSION = (qw$Revision: 1.85 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -73,6 +73,17 @@ This is a handy place to put lookup hashes for object type to table names.
 =cut
 
     my ( $self, $config ) = @_;
+    $self->{'NAME_FIELDS'} = {
+        cmap_attribute               => 'attribute_name',
+        cmap_correspondence_evidence => 'correspondence_evidence_id',
+        cmap_feature                 => 'feature_name',
+        cmap_feature_alias           => 'alias',
+        cmap_feature_correspondence  => 'feature_correspondence_id',
+        cmap_map                     => 'map_name',
+        cmap_map_set                 => 'map_set_short_name',
+        cmap_species                 => 'species_common_name',
+        cmap_xref                    => 'xref_name',
+    };
     $self->{'ID_FIELDS'} = {
         cmap_attribute               => 'attribute_id',
         cmap_correspondence_evidence => 'correspondence_evidence_id',
@@ -93,6 +104,7 @@ This is a handy place to put lookup hashes for object type to table names.
         map_set                 => 'cmap_map_set',
         species                 => 'cmap_species',
         xref                    => 'cmap_xref',
+        attribute               => 'cmap_attribute',
     };
     $self->{'OBJECT_TYPES'} = {
         cmap_correspondence_evidence => 'correspondence_evidence',
@@ -103,6 +115,7 @@ This is a handy place to put lookup hashes for object type to table names.
         cmap_map_set                 => 'map_set',
         cmap_species                 => 'species',
         cmap_xref                    => 'xref',
+        cmap_attribute               => 'attribute',
     };
 
     return $self;
@@ -319,7 +332,6 @@ Not using cache because this query is quicker.
       or return $self->error('No object type');
     my $object_id = $args{'object_id'} or return $self->error('No object id');
     my $order_by = $args{'order_by'};
-    my $object_name_field = $object_type . "_name";
     my $object_id_field   = $object_type . "_id";
 
     my $db = $cmap_object->db;
@@ -327,14 +339,18 @@ Not using cache because this query is quicker.
     my @identifiers = ();
 
     my $table_name = $self->{'TABLE_NAMES'}->{$object_type};
+    my $object_name_field = $self->{'NAME_FIELDS'}->{$table_name};
 
     my $sql_str = qq[
         select $object_name_field
         from   $table_name
         where  $object_id_field=$object_id
     ];
-    if ( !$order_by || $order_by eq 'display_order' ) {
-        $sql_str = 'display_order,attribute_name';
+    if ( $order_by eq 'display_order' ) {
+        $sql_str .= " order by display_order, $object_name_field ";
+    }
+    elsif($order_by){
+        $sql_str .= " order by $order_by ";
     }
 
     $return_object = $db->selectrow_array($sql_str);
@@ -2426,7 +2442,7 @@ Array of Hashes:
     }
 
     if ($count_features) {
-        $select_sql .= ", count(f.feature) as feature_count ";
+        $select_sql .= ", count(f.feature_id) as feature_count ";
         $from_sql   .= qq[
             left join   cmap_feature f
             on f.map_id=map.map_id
@@ -4723,7 +4739,7 @@ If you don't want CMap to update into your database, make this a dummy method.
         update cmap_feature_alias
     ];
     my $set_sql   = '';
-    my $where_sql = " where = ? ";    # ID
+    my $where_sql = " where feature_alias_id = ? ";    # ID
 
     if ($alias) {
         push @update_args, $alias;
@@ -4801,6 +4817,16 @@ If you don't want CMap to delete from your database, make this a dummy method.
         push @delete_args, $feature_id;
         $where_sql .= $where_sql ? " and " : " where ";
         $where_sql .= " feature_id = ? ";
+    }
+
+    unless($feature_id){
+
+        my $feature_id_sql = qq[
+            select feature_id
+            from   cmap_feature_alias
+            where feature_alias_id = $feature_alias_id
+        ];
+        $feature_id = $db->selectrow_array( $feature_id_sql, {}, () );
     }
 
     return unless ($where_sql);
@@ -7307,7 +7333,7 @@ Attribute id
         qq[
         insert into cmap_attribute
         (attribute_id,table_name,object_id,attribute_value,attribute_name,is_public,display_order )
-         values ( ?,?,?,?,?,?,?,? )
+         values ( ?,?,?,?,?,?,? )
         ],
         {},
         (@insert_args)
@@ -7798,11 +7824,6 @@ Xref id
     my $xref_url      = $args{'xref_url'};
     my $object_id     = $args{'object_id'};
     my $table_name    = $self->{'TABLE_NAMES'}->{$object_type};
-    my @insert_args   = (
-        $xref_id,  $table_name, $object_id,
-        $xref_url, $xref_name,  $display_order
-    );
-
     unless ( defined($display_order) ) {
         $display_order = $db->selectrow_array(
             q[
@@ -7816,12 +7837,17 @@ Xref id
         );
         $display_order++;
     }
+    my @insert_args   = (
+        $xref_id,  $table_name, $object_id,
+        $xref_url, $xref_name,  $display_order
+    );
+
 
     $db->do(
         qq[
         insert into cmap_xref
-        (xref_id,table_name,object_id,xref_url,xref_name,is_public,display_order )
-         values ( ?,?,?,?,?,?,?,? )
+        (xref_id,table_name,object_id,xref_url,xref_name,display_order )
+         values ( ?,?,?,?,?,? )
         ],
         {},
         (@insert_args)

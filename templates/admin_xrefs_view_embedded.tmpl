@@ -4,7 +4,7 @@
     <tr>
         <td><h2>[% title %]</h2></td>
         <td align="right">
-            <a href="admin?action=xref_create;object_name=[% object_name %];object_id=[% object_id %];return_action=[% return_action %];pk_name=[% pk_name %]">Add XRef</a>
+            <a href="admin?action=xref_create;object_type=[% object_type %];object_id=[% object_id %];return_action=[% return_action %];pk_name=[% pk_name %]">Add XRef</a>
         </td>
     </tr>
 </table>
@@ -33,7 +33,7 @@
                     <a href="admin?action=xref_edit;xref_id=[% xref.xref_id %];return_action=[% return_action %]">Edit</a>
                 </td>
                 <td align="center">
-                    <a href="admin?action=confirm_delete;entity_id=[% xref.xref_id %];entity_type=cmap_xref;entity_name_field=xref_name;return_action=[% return_action %]">Delete</a>
+                    <a href="admin?action=confirm_delete;entity_id=[% xref.xref_id %];entity_type=xref;entity_name_field=xref_name;return_action=[% return_action %]">Delete</a>
                 </td>
             </tr>
             [% SET i=i+1 %]

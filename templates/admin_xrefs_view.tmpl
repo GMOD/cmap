@@ -12,10 +12,10 @@
         </td>
         <td>
             <input type="hidden" name="action" value="xrefs_view">
-            <select name="object_name">
+            <select name="object_type">
                 <option value="">--None--</option>
                 [% FOREACH o=db_objects %]
-                    <option [% IF o.object_name==apr.param('object_name'); 'selected '; END %]value="[% o.object_name %]">[% o.object_name %]</option>
+                    <option [% IF o.object_type==apr.param('object_type'); 'selected '; END %]value="[% o.object_type %]">[% o.object_type %]</option>
                 [% END %]
             </select>
         </td>
@@ -41,25 +41,25 @@
     <table width="100%">
         <tr>
             <td colspan="7" align="center">
-                [% SET pager_url="admin?action=xrefs_view&object_name=${apr.param('object_name')}&generic_only=${apr.param('generic_only')}&order_by=${apr.param('order_by')}" %]
+                [% SET pager_url="admin?action=xrefs_view&object_type=${apr.param('object_type')}&generic_only=${apr.param('generic_only')}&order_by=${apr.param('order_by')}" %]
                 [% PROCESS pager.tmpl %]
             </td>
         </tr>
         <tr>
             <th>
-                <a href="admin?action=xrefs_view;object_name=[% apr.param('object_name') %];order_by=display_order;generic_only=[% apr.param('generic_only') %]">Display Order</a>
+                <a href="admin?action=xrefs_view;object_type=[% apr.param('object_type') %];order_by=display_order;generic_only=[% apr.param('generic_only') %]">Display Order</a>
             </th>
             <th>
-                <a href="admin?action=xrefs_view;object_name=[% apr.param('object_name') %];order_by=object_name;generic_only=[% apr.param('generic_only') %]">DB Object</a>
+                <a href="admin?action=xrefs_view;object_type=[% apr.param('object_type') %];order_by=object_type;generic_only=[% apr.param('generic_only') %]">DB Object</a>
             </th>
             <th>
-                <a href="admin?action=xrefs_view;object_name=[% apr.param('object_name') %];order_by=object_name;generic_only=[% apr.param('generic_only') %]">Object Name</a>
+                <a href="admin?action=xrefs_view;object_type=[% apr.param('object_type') %];order_by=object_type;generic_only=[% apr.param('generic_only') %]">Object Name</a>
             </th>
             <th>
-                <a href="admin?action=xrefs_view;object_name=[% apr.param('object_name') %];order_by=xref_name;generic_only=[% apr.param('generic_only') %]">Name</a>
+                <a href="admin?action=xrefs_view;object_type=[% apr.param('object_type') %];order_by=xref_name;generic_only=[% apr.param('generic_only') %]">Name</a>
             </th>
             <th>
-                <a href="admin?action=xrefs_view;object_name=[% apr.param('object_name') %];order_by=xref_url;generic_only=[% apr.param('generic_only') %]">URL</a>
+                <a href="admin?action=xrefs_view;object_type=[% apr.param('object_type') %];order_by=xref_url;generic_only=[% apr.param('generic_only') %]">URL</a>
             </th>
             <th colspan="2" align="center">&nbsp;</th>
         </tr>
@@ -76,7 +76,7 @@
                     <a href="admin?action=xref_edit;xref_id=[% ref.xref_id %]">Edit</a>
                 </td>
                 <td align="center">
-                    <a href="admin?action=confirm_delete;entity_type=cmap_xref;entity_id=[% ref.xref_id %];entity_name=[% ref.xref_name | uri%]">Delete</a>
+                    <a href="admin?action=confirm_delete;entity_type=xref;entity_id=[% ref.xref_id %];entity_name=[% ref.xref_name | uri%]">Delete</a>
                 </td>
             </tr>
             [% SET i=i+1 %]

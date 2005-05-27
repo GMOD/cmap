@@ -1,7 +1,7 @@
 [% INCLUDE admin_header.tmpl title="View Feature &quot;$feature.feature_name&quot;" %]
 
 <a href="admin">Home</a> |
-<a href="admin?action=confirm_delete;entity_type=cmap_feature;entity_id=[% feature.feature_id %];return_action=feature_view">Delete</a> |
+<a href="admin?action=confirm_delete;entity_type=feature;entity_id=[% feature.feature_id %];return_action=feature_view">Delete</a> |
 <a href="admin?action=feature_edit;feature_id=[% feature.feature_id %]">Edit</a>
 <hr noshade>
 
@@ -101,7 +101,7 @@
                      <a href="admin?action=feature_alias_edit;feature_alias_id=[% alias.feature_alias_id %]">Edit</a>
                 </td>
                 <td align="center">
-                    <a href="admin?action=confirm_delete;entity_type=cmap_feature_alias;entity_id=[% alias.feature_alias_id %];entity_name_field=alias">Delete</a>
+                    <a href="admin?action=confirm_delete;entity_type=feature_alias;entity_id=[% alias.feature_alias_id %];entity_name_field=alias">Delete</a>
                 </td>
             </tr>
             [% SET i=i+1 %]
@@ -173,7 +173,7 @@
                     <a href="admin?action=feature_corr_edit;feature_correspondence_id=[% fc.feature_correspondence_id %]">Edit</a>
                 </td>
                 <td align="center">
-                    <a href="admin?action=confirm_delete;entity_type=cmap_feature_correspondence;entity_name_field=feature_correspondence_aid;entity_id=[% fc.feature_correspondence_id %]">Delete</a>
+                    <a href="admin?action=confirm_delete;entity_type=feature_correspondence;entity_name_field=feature_correspondence_aid;entity_id=[% fc.feature_correspondence_id %]">Delete</a>
                 </td>
             </tr>
             [% SET i=i+1 %]

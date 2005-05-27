@@ -37,10 +37,10 @@
             <tr>
                 <td align="right">Evidence Type:</th>
                 <td>
-                    <select name="evidence_type">
+                    <select name="evidence_type_aid">
                         <option value="">--Please Select--</option>
                         [% FOREACH et=evidence_types %]
-                            <option value="[% et.evidence_type %]">[% et.evidence_type %] ([% et.rank %])</option>
+                            <option value="[% et.evidence_type_aid %]">[% et.evidence_type %] ([% et.rank %])</option>
                         [% END %]
                     </select>
                 </td>
@@ -122,7 +122,7 @@
                     [% f.feature_name %]
                 </td>
                 <td>
-                    <a href="admin?action=feature_corr_create;feature_id1=[% feature1.feature_id %];species_id=[% apr.param('species_id') %];feature_id2=[% f.feature_id %];feature2_name=[% apr.param('feature2_name') %]">Select</a>
+                    <a href="admin?action=feature_corr_create;feature_id1=[% feature1.feature_id %];species_id=[% apr.param('species_id') %];feature_id2=[% f.feature_id %]">Select</a>
                 </td>
             </tr>
             [% SET i=i+1 %]

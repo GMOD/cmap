@@ -1,7 +1,7 @@
 [% INCLUDE admin_header.tmpl title="View Map &quot;$map.map_name&quot;" %]
 
 <a href="admin">Home</a> |
-<a href="admin?action=confirm_delete;entity_type=cmap_map;entity_id=[% map.map_id %]">Delete</a> |
+<a href="admin?action=confirm_delete;entity_type=map;entity_id=[% map.map_id %]">Delete</a> |
 <a href="admin?action=map_edit;map_id=[% map.map_id %]">Edit</a>
 [% IF map.can_be_reference_map %]
   | <a href="/maps/viewer?reference_map_set_id=[% map.map_set_id %];reference_map_id=[% map.map_id %]">View in CMap Viewer</a>
@@ -170,7 +170,7 @@
                   <a href="admin?action=feature_edit;feature_id=[% f.feature_id %]">Edit</a>
                 </td>
                 <td>
-                  <a href="admin?action=confirm_delete;entity_type=cmap_feature;entity_id=[% f.feature_id %]">Delete</a>
+                  <a href="admin?action=confirm_delete;entity_type=feature;entity_id=[% f.feature_id %]">Delete</a>
                 </td>
             </tr>
             [% SET i=i+1 %]
