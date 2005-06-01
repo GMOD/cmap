@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::GBrowseLiason;
 
 # vim: set ft=perl:
 
-# $Id: GBrowseLiason.pm,v 1.8 2005-05-10 07:06:35 mwz444 Exp $
+# $Id: GBrowseLiason.pm,v 1.9 2005-06-01 16:24:26 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ GBrowse integration at the db level.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -88,8 +88,8 @@ sub prepare_data_for_gbrowse {
     my $map_set_sql = qq[
         select  ms.map_type_accession as map_type_aid,
                 map.map_id,
-                map.start_position,
-                map.stop_position,
+                map.map_start,
+                map.map_stop,
                 map.map_name
         from    cmap_map_set ms,
                 cmap_map map
@@ -128,8 +128,8 @@ sub prepare_data_for_gbrowse {
             $admin->feature_create(
                 map_id => $row->{'map_id'},
                 feature_name => $self->create_fref_name($row->{'map_name'}),
-                start_position => $row->{'start_position'},
-                stop_position => $row->{'stop_position'},
+                feature_start => $row->{'feature_start'},
+                feature_stop => $row->{'feature_stop'},
                 feature_type_aid => $ft_aid,
                 gclass => $map_class_lookup{$row->{'map_type_aid'}},
             );
@@ -242,15 +242,15 @@ sub copy_data_into_gbrowse {
         select  m.map_name,
                 f.feature_id,
                 f.feature_type_accession as feature_type_aid,
-                f.start_position,
-                f.stop_position,
+                f.feature_start,
+                f.feature_stop,
                 f.direction
         from    cmap_map m,
                 cmap_feature f
         LEFT JOIN fdata 
         on      fdata.feature_id = f.feature_id
-            and fdata.fstart = f.start_position
-            and fdata.fstop = f.stop_position
+            and fdata.fstart = f.feature_start
+            and fdata.fstop = f.feature_stop
         where   f.map_id=m.map_id
             and fdata.fid is NULL
             and m.map_set_id in ( 
@@ -267,16 +267,16 @@ sub copy_data_into_gbrowse {
                 ms.map_type_accession as map_type_aid,
                 f.feature_id,
                 f.feature_type_accession as feature_type_aid,
-                f.start_position,
-                f.stop_position,
+                f.feature_start,
+                f.feature_stop,
                 f.direction
         from    cmap_map m,
                 cmap_map_set ms,
                 cmap_feature f
         LEFT JOIN fdata 
         on      fdata.feature_id = f.feature_id
-            and fdata.fstart = f.start_position
-            and fdata.fstop = f.stop_position
+            and fdata.fstart = f.feature_start
+            and fdata.fstop = f.feature_stop
         where   f.map_id=m.map_id
             and ms.map_set_id=m.map_set_id
             and fdata.fid is NULL
@@ -299,8 +299,8 @@ sub copy_data_into_gbrowse {
     my $feature_results = $db->selectall_arrayref( $feature_sql, { Columns => {} }, );
     foreach my $row (@$feature_results){
         $fref       = $self->create_fref_name($row->{'map_name'});
-        $fstart     = $row->{'start_position'};
-        $fstop      = $row->{'stop_position'} ;
+        $fstart     = $row->{'feature_start'};
+        $fstop      = $row->{'feature_stop'} ;
         $fbin       = bin($fstart,$fstop,MIN_BIN);
         $ftypeid    = $ftypeid_lookup{$ftype_lookup{$row->{'feature_type_aid'}}};
         $fstrand    = ($row->{'feature_id'}>0) ? '+' : '-' ;
@@ -331,8 +331,8 @@ sub copy_data_into_gbrowse {
         }
         
         $fref       = $self->create_fref_name($row->{'map_name'});
-        $fstart     = $row->{'start_position'};
-        $fstop      = $row->{'stop_position'} ;
+        $fstart     = $row->{'feature_start'};
+        $fstop      = $row->{'feature_stop'} ;
         $fbin       = bin($fstart,$fstop,MIN_BIN);
         $ftypeid    = $ftypeid_lookup{$map_ftype_lookup{$row->{'map_type_aid'}}};
         $fstrand    = '+' ;
@@ -430,8 +430,8 @@ sub copy_data_into_cmap {
             $map_id = $admin->map_create(
                 map_name => $row->{'map_name'},
                 map_set_id => $map_set_id,
-                start_position => $row->{'map_start'},
-                stop_position => $row->{'map_stop'},
+                map_start => $row->{'map_start'},
+                map_stop => $row->{'map_stop'},
             );
         }
         $direction = 1;
@@ -448,8 +448,8 @@ sub copy_data_into_cmap {
                 map_id => $map_id,
                 feature_id => $row->{'feature_id'},
                 feature_name => $row->{'feature_name'},
-                start_position => $row->{'feature_start'},
-                stop_position => $row->{'feature_stop'},
+                feature_start => $row->{'feature_start'},
+                feature_stop => $row->{'feature_stop'},
                 feature_type_accession => $ft_aid,
                 direction => $direction,
         );

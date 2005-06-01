@@ -45,13 +45,13 @@
     <tr>
         <th align="right">Position:</th>
         <td>
-            [% feature1.start_position | commify %]
-            [% IF feature1.stop_position.defined AND feature1.stop_position > feature1.start_position %]- [% feature1.stop_position | commify %][% END %] [% feature1.map_units %]
+            [% feature1.feature_start | commify %]
+            [% IF feature1.feature_stop.defined AND feature1.feature_stop > feature1.feature_start %]- [% feature1.feature_stop | commify %][% END %] [% feature1.map_units %]
         </td>
         <td align="center"><b>[</b>&nbsp;<a href="map_details?ref_map_set_aid=[% feature1.map_set_aid %];ref_map_aids=[% feature1.map_aid %];highlight=[% feature1.feature_aid %]">View&nbsp;On&nbsp;Map</a>&nbsp;<b>]</b></td>
         <td>
-            [% feature2.start_position | commify %]
-            [% IF feature2.stop_position.defined AND feature2.stop_position > feature2.start_position %]- [% feature2.stop_position | commify %][% END %] [% feature2.map_units %]
+            [% feature2.feature_start | commify %]
+            [% IF feature2.feature_stop.defined AND feature2.feature_stop > feature2.feature_start %]- [% feature2.feature_stop | commify %][% END %] [% feature2.map_units %]
         </td>
         <td align="center"><b>[</b>&nbsp;<a href="map_details?ref_map_set_aid=[% feature2.map_set_aid %];ref_map_aids=[% feature2.map_aid %];highlight=[% feature2.feature_aid %]">View&nbsp;On&nbsp;Map</a>&nbsp;<b>]</b></td>
     </tr>

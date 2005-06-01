@@ -99,8 +99,8 @@
                 <td valign="top" align="center" rowspan="2"><a href="[% pager_url %]&order_by=cmap_count_per_raw">Related Maps<br>per unit</a></td>
                 <td valign="top" align="center" rowspan="2"><a href="[% pager_url %]&order_by=corr_count">Correspondences</a></td>
                 <td valign="top" align="center" rowspan="2"><a href="[% pager_url %]&order_by=corr_count_per_raw">Correspondences<br>per unit</a></td>
-                <td valign="top" align="center" rowspan="2"><a href="[% pager_url %]&order_by=start_position">Start</a></td>
-                <td valign="top" align="center" rowspan="2"><a href="[% pager_url %]&order_by=stop_position">Stop</a></td>
+                <td valign="top" align="center" rowspan="2"><a href="[% pager_url %]&order_by=map_start">Start</a></td>
+                <td valign="top" align="center" rowspan="2"><a href="[% pager_url %]&order_by=map_stop">Stop</a></td>
                 [% FOREACH feature_type_aid=form_data.feature_type_aids %]
                     <td colspan="2" align="center" valign="top">[% form_data.feature_types.$feature_type_aid.feature_type OR feature_type_aid %]</td>
                 [% END %]
@@ -121,8 +121,8 @@
                     <td>[% map_info.cmap_count_per %]</td>
                     <td>[% map_info.corr_count %]</td>
                     <td>[% map_info.corr_count_per %]</td>
-                    <td>[% map_info.start_position %]</td>
-                    <td>[% map_info.stop_position %]</td>
+                    <td>[% map_info.map_start %]</td>
+                    <td>[% map_info.map_stop %]</td>
                     [% FOREACH feature_type_aid=form_data.feature_type_aids %]
                         [% SET feature_type=form_data.feature_info.$map_id.$feature_type_aid %]
                         [% SET feature_type_total=feature_type.total %]

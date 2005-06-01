@@ -47,10 +47,10 @@ CREATE TABLE "cmap_correspondence_lookup" (
   "feature_id1" bigint DEFAULT NULL,
   "feature_id2" bigint DEFAULT NULL,
   "feature_correspondence_id" bigint DEFAULT NULL,
-  "start_position1" numeric(11,2) DEFAULT NULL,
-  "start_position2" numeric(11,2) DEFAULT NULL,
-  "stop_position1" numeric(11,2) DEFAULT NULL,
-  "stop_position2" numeric(11,2) DEFAULT NULL,
+  "feature_start1" numeric(11,2) DEFAULT NULL,
+  "feature_start2" numeric(11,2) DEFAULT NULL,
+  "feature_stop1" numeric(11,2) DEFAULT NULL,
+  "feature_stop2" numeric(11,2) DEFAULT NULL,
   "map_id1" bigint DEFAULT NULL,
   "map_id2" bigint DEFAULT NULL,
   "feature_type_accession1" character varying(20) DEFAULT NULL,
@@ -100,8 +100,8 @@ CREATE TABLE "cmap_feature" (
   "feature_type_accession" character varying(20) DEFAULT '0' NOT NULL,
   "feature_name" character varying(32) DEFAULT '' NOT NULL,
   "is_landmark" smallint DEFAULT '0' NOT NULL,
-  "start_position" numeric(11,2) DEFAULT '0.00' NOT NULL,
-  "stop_position" numeric(11,2) DEFAULT NULL,
+  "feature_start" numeric(11,2) DEFAULT '0.00' NOT NULL,
+  "feature_stop" numeric(11,2) DEFAULT NULL,
   "default_rank" bigint DEFAULT '1' NOT NULL,
   "direction" smallint DEFAULT '1' NOT NULL,
   PRIMARY KEY ("feature_id"),
@@ -112,7 +112,7 @@ CREATE INDEX "feature_name" on cmap_feature ("feature_name");
 
 CREATE INDEX "feature_id_map_id" on cmap_feature ("feature_id", "map_id");
 
-CREATE INDEX "feature_id_map_id_start" on cmap_feature ("feature_id", "map_id", "start_position");
+CREATE INDEX "feature_id_map_id_start" on cmap_feature ("feature_id", "map_id", "feature_start");
 
 CREATE INDEX "map_id" on cmap_feature ("map_id");
 
@@ -165,8 +165,8 @@ CREATE TABLE "cmap_map" (
   "map_set_id" bigint DEFAULT '0' NOT NULL,
   "map_name" character varying(32) DEFAULT '' NOT NULL,
   "display_order" bigint DEFAULT '1' NOT NULL,
-  "start_position" numeric(11,2) DEFAULT NULL,
-  "stop_position" numeric(11,2) DEFAULT NULL,
+  "map_start" numeric(11,2) DEFAULT NULL,
+  "map_stop" numeric(11,2) DEFAULT NULL,
   PRIMARY KEY ("map_id"),
   Constraint "accession_id5" UNIQUE ("accession_id"),
   Constraint "map_id2" UNIQUE ("map_id", "map_set_id", "map_name", "accession_id")

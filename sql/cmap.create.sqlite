@@ -39,10 +39,10 @@ CREATE TABLE cmap_correspondence_lookup (
   feature_id1 int(11) DEFAULT NULL,
   feature_id2 int(11) DEFAULT NULL,
   feature_correspondence_id int(11) DEFAULT NULL,
-  start_position1 double(11,2) DEFAULT NULL,
-  start_position2 double(11,2) DEFAULT NULL,
-  stop_position1 double(11,2) DEFAULT NULL,
-  stop_position2 double(11,2) DEFAULT NULL,
+  feature_start1 double(11,2) DEFAULT NULL,
+  feature_start2 double(11,2) DEFAULT NULL,
+  feature_stop1 double(11,2) DEFAULT NULL,
+  feature_stop2 double(11,2) DEFAULT NULL,
   map_id1 int(11) DEFAULT NULL,
   map_id2 int(11) DEFAULT NULL,
   feature_type_accession1 varchar(20) DEFAULT NULL,
@@ -76,8 +76,8 @@ CREATE TABLE cmap_feature (
   feature_type_accession varchar(20) NOT NULL DEFAULT '0',
   feature_name varchar(32) NOT NULL DEFAULT '',
   is_landmark tinyint(4) NOT NULL DEFAULT '0',
-  start_position double(11,2) NOT NULL DEFAULT '0.00',
-  stop_position double(11,2) DEFAULT NULL,
+  feature_start double(11,2) NOT NULL DEFAULT '0.00',
+  feature_stop double(11,2) DEFAULT NULL,
   default_rank int(11) NOT NULL DEFAULT '1',
   direction tinyint(4) NOT NULL DEFAULT '1'
 );
@@ -114,8 +114,8 @@ CREATE TABLE cmap_map (
   map_set_id int(11) NOT NULL DEFAULT '0',
   map_name varchar(32) NOT NULL DEFAULT '',
   display_order int(11) NOT NULL DEFAULT '1',
-  start_position double(11,2) DEFAULT NULL,
-  stop_position double(11,2) DEFAULT NULL
+  map_start double(11,2) DEFAULT NULL,
+  map_stop double(11,2) DEFAULT NULL
 );
 
 
@@ -187,7 +187,7 @@ CREATE INDEX cl_map_id1_map_id2_cmap_corres on cmap_correspondence_lookup (map_i
 CREATE INDEX cl_map_id2_map_id1_cmap_corres on cmap_correspondence_lookup (map_id2, map_id1);
 CREATE INDEX feature_name_cmap_feature on cmap_feature (feature_name);
 CREATE INDEX feature_id_map_id_cmap_feature on cmap_feature (feature_id, map_id);
-CREATE INDEX feature_id_map_id_start_cmap_f on cmap_feature (feature_id, map_id, start_position);
+CREATE INDEX feature_id_map_id_start_cmap_f on cmap_feature (feature_id, map_id, feature_start);
 CREATE INDEX map_id_cmap_feature on cmap_feature (map_id);
 CREATE INDEX map_id_feature_id_cmap_feature on cmap_feature (map_id, feature_id);
 CREATE INDEX feature_id_cmap_feature_alias on cmap_feature_alias (feature_id);

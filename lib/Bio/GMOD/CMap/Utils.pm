@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.47 2005-05-11 03:36:49 mwz444 Exp $
+# $Id: Utils.pm,v 1.48 2005-06-01 16:24:26 mwz444 Exp $
 
 =head1 NAME
 
@@ -29,7 +29,7 @@ use Bio::GMOD::CMap::Constants;
 use POSIX;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.47 $)[-1];
+$VERSION = (qw$Revision: 1.48 $)[-1];
 
 use base 'Exporter';
 
@@ -110,7 +110,7 @@ Basically, we just divide the total vertical pixel space available
 will fit.  For each of the keys of the "labels" hashref, we try to add
 as many labels as will fit.  As space becomes limited, we start taking an
 even sampling of the available labels.  Once we've selected all the labels
-that will fit, we sort them (if needed) by "start_position," figure out the
+that will fit, we sort them (if needed) by "feature_start," figure out the
 gaps to put b/w the labels, and then space them evenly from top to bottom
 using the gap interval.
 

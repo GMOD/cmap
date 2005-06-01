@@ -82,10 +82,10 @@
                     <a href="admin?action=feature_search;feature_name=[% fname %];map_aid=[% apr.param('map_aid') %];feature_type_aid=[% apr.param('feature_type_aid') %];search_field=[% apr.param('search_field') %];order_by=map_name">Map Name</a>
                 </th>
                 <th>
-                    <a href="admin?action=feature_search;feature_name=[% fname %];map_aid=[% apr.param('map_aid') %];feature_type_aid=[% apr.param('feature_type_aid') %];search_field=[% apr.param('search_field') %];order_by=start_position">Start</a>
+                    <a href="admin?action=feature_search;feature_name=[% fname %];map_aid=[% apr.param('map_aid') %];feature_type_aid=[% apr.param('feature_type_aid') %];search_field=[% apr.param('search_field') %];order_by=feature_start">Start</a>
                 </th>
                 <th>
-                    <a href="admin?action=feature_search;feature_name=[% fname %];map_aid=[% apr.param('map_aid') %];feature_type_aid=[% apr.param('feature_type_aid') %];search_field=[% apr.param('search_field') %];order_by=stop_position">Stop</a>
+                    <a href="admin?action=feature_search;feature_name=[% fname %];map_aid=[% apr.param('map_aid') %];feature_type_aid=[% apr.param('feature_type_aid') %];search_field=[% apr.param('search_field') %];order_by=feature_stop">Stop</a>
                 </th>
                 <th colspan="2">&nbsp;</th>
             </tr>
@@ -104,8 +104,8 @@
                     <td>
                         <a href="admin?action=map_view;map_id=[% f.map_id %]">[% f.map_name %]</a>
                     </td>
-                    <td align="right">[% f.start_position | commify %]</td>
-                    <td align="right">[% f.stop_position | commify %]</td>
+                    <td align="right">[% f.feature_start | commify %]</td>
+                    <td align="right">[% f.feature_stop | commify %]</td>
                     <td align="center">
                         <a href="admin?action=feature_view;feature_id=[% f.feature_id %]">View</a>
                     </td>

@@ -95,10 +95,10 @@
 <tr><td class="FieldCellName"><a name="cmap_correspondence_lookup-feature_id1">feature_id1</a></td> <td class="FieldCellType">int</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
 <tr><td class="FieldCellName"><a name="cmap_correspondence_lookup-feature_id2">feature_id2</a></td> <td class="FieldCellType">int</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
 <tr><td class="FieldCellName"><a name="cmap_correspondence_lookup-feature_correspondence_id">feature_correspondence_id</a></td> <td class="FieldCellType">int</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
-<tr><td class="FieldCellName"><a name="cmap_correspondence_lookup-start_position1">start_position1</a></td> <td class="FieldCellType">double</td> <td class="FieldCellSize">11,2</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
-<tr><td class="FieldCellName"><a name="cmap_correspondence_lookup-start_position2">start_position2</a></td> <td class="FieldCellType">double</td> <td class="FieldCellSize">11,2</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
-<tr><td class="FieldCellName"><a name="cmap_correspondence_lookup-stop_position1">stop_position1</a></td> <td class="FieldCellType">double</td> <td class="FieldCellSize">11,2</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
-<tr><td class="FieldCellName"><a name="cmap_correspondence_lookup-stop_position2">stop_position2</a></td> <td class="FieldCellType">double</td> <td class="FieldCellSize">11,2</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_correspondence_lookup-feature_start1">feature_start1</a></td> <td class="FieldCellType">double</td> <td class="FieldCellSize">11,2</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_correspondence_lookup-feature_start2">feature_start2</a></td> <td class="FieldCellType">double</td> <td class="FieldCellSize">11,2</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_correspondence_lookup-feature_stop1">feature_stop1</a></td> <td class="FieldCellType">double</td> <td class="FieldCellSize">11,2</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_correspondence_lookup-feature_stop2">feature_stop2</a></td> <td class="FieldCellType">double</td> <td class="FieldCellSize">11,2</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
 <tr><td class="FieldCellName"><a name="cmap_correspondence_lookup-map_id1">map_id1</a></td> <td class="FieldCellType">int</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
 <tr><td class="FieldCellName"><a name="cmap_correspondence_lookup-map_id2">map_id2</a></td> <td class="FieldCellType">int</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
 <tr><td class="FieldCellName"><a name="cmap_correspondence_lookup-feature_type_accession1">feature_type_accession1</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">20</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
@@ -144,8 +144,8 @@
 <tr><td class="FieldCellName"><a name="cmap_feature-feature_type_accession">feature_type_accession</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">20</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
 <tr><td class="FieldCellName"><a name="cmap_feature-feature_name">feature_name</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">32</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
 <tr><td class="FieldCellName"><a name="cmap_feature-is_landmark">is_landmark</a></td> <td class="FieldCellType">tinyint</td> <td class="FieldCellSize">4</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
-<tr><td class="FieldCellName"><a name="cmap_feature-start_position">start_position</a></td> <td class="FieldCellType">double</td> <td class="FieldCellSize">11,2</td> <td class="FieldCellDefault">0.00</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
-<tr><td class="FieldCellName"><a name="cmap_feature-stop_position">stop_position</a></td> <td class="FieldCellType">double</td> <td class="FieldCellSize">11,2</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_feature-feature_start">feature_start</a></td> <td class="FieldCellType">double</td> <td class="FieldCellSize">11,2</td> <td class="FieldCellDefault">0.00</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_feature-feature_stop">feature_stop</a></td> <td class="FieldCellType">double</td> <td class="FieldCellSize">11,2</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
 <tr><td class="FieldCellName"><a name="cmap_feature-default_rank">default_rank</a></td> <td class="FieldCellType">int</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">1</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
 <tr><td class="FieldCellName"><a name="cmap_feature-direction">direction</a></td> <td class="FieldCellType">tinyint</td> <td class="FieldCellSize">4</td> <td class="FieldCellDefault">1</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
 </table>
@@ -154,7 +154,7 @@
 <tr class="IndexRow"><th>Name</th> <th>Fields</th></tr>
 <tr class="IndexCell"><td>feature_name</td> <td>feature_name</td></tr>
 <tr class="IndexCell"><td>feature_id_map_id</td> <td>feature_id, map_id</td></tr>
-<tr class="IndexCell"><td>feature_id_map_id_start</td> <td>feature_id, map_id, start_position</td></tr>
+<tr class="IndexCell"><td>feature_id_map_id_start</td> <td>feature_id, map_id, feature_start</td></tr>
 <tr class="IndexCell"><td>map_id</td> <td>map_id</td></tr>
 <tr class="IndexCell"><td>map_id_feature_id</td> <td>map_id, feature_id</td></tr>
 </table>
@@ -206,8 +206,8 @@
 <tr><td class="FieldCellName"><a name="cmap_map-map_set_id">map_set_id</a></td> <td class="FieldCellType">int</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">0</td> <td class="FieldCellOther">UNIQUE, NOT NULL</td> <td class="FieldCellFK"></td></tr>
 <tr><td class="FieldCellName"><a name="cmap_map-map_name">map_name</a></td> <td class="FieldCellType">varchar</td> <td class="FieldCellSize">32</td> <td class="FieldCellDefault"></td> <td class="FieldCellOther">UNIQUE, NOT NULL</td> <td class="FieldCellFK"></td></tr>
 <tr><td class="FieldCellName"><a name="cmap_map-display_order">display_order</a></td> <td class="FieldCellType">int</td> <td class="FieldCellSize">11</td> <td class="FieldCellDefault">1</td> <td class="FieldCellOther">NOT NULL</td> <td class="FieldCellFK"></td></tr>
-<tr><td class="FieldCellName"><a name="cmap_map-start_position">start_position</a></td> <td class="FieldCellType">double</td> <td class="FieldCellSize">11,2</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
-<tr><td class="FieldCellName"><a name="cmap_map-stop_position">stop_position</a></td> <td class="FieldCellType">double</td> <td class="FieldCellSize">11,2</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map-map_start">map_start</a></td> <td class="FieldCellType">double</td> <td class="FieldCellSize">11,2</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
+<tr><td class="FieldCellName"><a name="cmap_map-map_stop">map_stop</a></td> <td class="FieldCellType">double</td> <td class="FieldCellSize">11,2</td> <td class="FieldCellDefault">NULL</td> <td class="FieldCellOther"></td> <td class="FieldCellFK"></td></tr>
 </table>
 <h3>Indices</h3>
 <table border="1">

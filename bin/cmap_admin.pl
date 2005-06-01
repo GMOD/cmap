@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.107 2005-05-19 18:45:33 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.108 2005-06-01 16:24:19 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.107 $)[-1];
+$VERSION = (qw$Revision: 1.108 $)[-1];
 
 #
 # Get command-line options
@@ -739,8 +739,8 @@ sub export_as_text {
       feature_aid
       feature_name
       feature_aliases
-      start_position
-      stop_position
+      feature_start
+      feature_stop
       feature_type_aid
       feature_dbxref_name
       feature_dbxref_url
@@ -859,8 +859,8 @@ sub export_as_text {
             }
 
             for my $feature (@$features) {
-                $feature->{'stop_position'} = undef
-                  if $feature->{'stop_position'} < $feature->{'start_position'};
+                $feature->{'feature_stop'} = undef
+                  if $feature->{'feature_stop'} < $feature->{'feature_start'};
 
                 $feature->{'feature_attributes'} = join( '; ',
                     @{ $attr_lookup{ $feature->{'feature_id'} } || [] } );

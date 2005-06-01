@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache::AdminViewer;
 
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.85 2005-05-27 19:02:18 mwz444 Exp $
+# $Id: AdminViewer.pm,v 1.86 2005-06-01 16:24:27 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -36,7 +36,7 @@ $FEATURE_SHAPES = [
 ];
 $MAP_SHAPES = [qw( box dumbbell I-beam )];
 $WIDTHS     = [ 1 .. 10 ];
-$VERSION    = (qw$Revision: 1.85 $)[-1];
+$VERSION    = (qw$Revision: 1.86 $)[-1];
 
 use constant ADMIN_TEMPLATE => {
     admin_home                => 'admin_home.tmpl',
@@ -696,11 +696,11 @@ sub map_insert {
         display_order => $apr->param('display_order') || 1,
         map_name      => $apr->param('map_name')      || '',
         map_set_id    => $apr->param('map_set_id')    || 0,
-        start_position => defined $apr->param('start_position')
-        ? $apr->param('start_position')
+        map_start => defined $apr->param('map_start')
+        ? $apr->param('map_start')
         : undef,
-        stop_position => defined $apr->param('stop_position')
-        ? $apr->param('stop_position')
+        map_stop => defined $apr->param('map_stop')
+        ? $apr->param('map_stop')
         : undef,
       )
       or return $self->map_create( errors => $admin->error );
@@ -715,7 +715,6 @@ sub map_view {
     my $sql_object       = $self->sql or return $self->error;
     my $apr              = $self->apr;
     my $map_id           = $apr->param('map_id') or die 'No map id';
-    my $order_by         = $apr->param('order_by') || 'start_position';
     my $feature_type_aid = $apr->param('feature_type_aid') || 0;
     my $page_no          = $apr->param('page_no') || 1;
 
@@ -746,6 +745,12 @@ sub map_view {
         map_id           => $map_id,
         feature_type_aid => $feature_type_aid,
     );
+    my $feature_type_data = $self->feature_type_data();
+    foreach my $row ( @{$features} ) {
+        $row->{'feature_type'} =
+          $feature_type_data->{ $row->{'feature_type_aid'} }{'feature_type'};
+    }
+
 
     #
     # Slice the results up into pages suitable for web viewing.
@@ -827,8 +832,8 @@ sub map_update {
         map_aid        => $apr->param('map_aid'),
         display_order  => $apr->param('display_order'),
         map_name       => $apr->param('map_name'),
-        start_position => $apr->param('start_position'),
-        stop_position  => $apr->param('stop_position'),
+        map_start => $apr->param('map_start'),
+        map_stop  => $apr->param('map_stop'),
     );
 
     return $self->redirect_home(
@@ -1031,8 +1036,9 @@ sub feature_insert {
         feature_name     => $apr->param('feature_name')     || '',
         feature_type_aid => $apr->param('feature_type_aid') || 0,
         is_landmark      => $apr->param('is_landmark')      || 0,
-        start_position   => $apr->param('start_position')   || 0,
-        stop_position    => $apr->param('stop_position')
+        direction        => $apr->param('direction')      || 0,
+        feature_start   => $apr->param('feature_start')   || 0,
+        feature_stop    => $apr->param('feature_stop')
       )
       or return $self->feature_create( errors => $admin->error );
 
@@ -1058,8 +1064,9 @@ sub feature_update {
         feature_name     => $apr->param('feature_name'),
         feature_type_aid => $apr->param('feature_type_aid'),
         is_landmark      => $apr->param('is_landmark'),
-        start_position   => $apr->param('start_position'),
-        stop_position    => $apr->param('stop_position'),
+        direction      => $apr->param('direction'),
+        feature_start   => $apr->param('feature_start'),
+        feature_stop    => $apr->param('feature_stop'),
     );
 
     return $self->redirect_home(

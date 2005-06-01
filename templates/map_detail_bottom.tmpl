@@ -23,11 +23,11 @@
     </tr>
     <tr>
         <th align="right">Map&nbsp;Start:</th>
-        <td>[% reference_map.start_position | commify %] [% reference_map.map_units %]</td>
+        <td>[% reference_map.map_start | commify %] [% reference_map.map_units %]</td>
     </tr>
     <tr>
         <th align="right">Map&nbsp;Stop:</th>
-        <td>[% IF reference_map.stop_position.defined %][% reference_map.stop_position | commify %][% ELSE %]NULL[% END %] [% reference_map.map_units %]</td>
+        <td>[% IF reference_map.map_stop.defined %][% reference_map.map_stop | commify %][% ELSE %]NULL[% END %] [% reference_map.map_units %]</td>
     </tr>
     [% IF feature_count_by_type.size %]
     <tr>
@@ -139,7 +139,7 @@
     <tr>
         <th><a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aids=[% apr.param('ref_map_aids') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% apr.param('comparative_maps') %];highlight=[% apr.param('highlight_uri') %];image_size=[% apr.param('image_size') %];font_size=[% apr.param('font_size') %];image_type=[% apr.param('image_type') %];label_features=[% apr.param('label_features') %];order=[% apr.param('order') %];order_by=feature_name;">Feature</a></th>
         <th><a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aids=[% apr.param('ref_map_aids') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% apr.param('comparative_maps') %];highlight=[% apr.param('highlight_uri') %];image_size=[% apr.param('image_size') %];font_size=[% apr.param('font_size') %];image_type=[% apr.param('image_type') %];label_features=[% apr.param('label_features') %];order=[% apr.param('order') %];order_by=feature_type_aid;">Type</a></th>
-        <th><a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aids=[% apr.param('ref_map_aids') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% apr.param('comparative_maps') %];highlight=[% apr.param('highlight_uri') %];image_size=[% apr.param('image_size') %];font_size=[% apr.param('font_size') %];image_type=[% apr.param('image_type') %];label_features=[% apr.param('label_features') %];order=[% apr.param('order') %];order_by=start_position;">Position</a> ([% reference_map.map_units %])</th>
+        <th><a href="map_details?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aids=[% apr.param('ref_map_aids') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% apr.param('comparative_maps') %];highlight=[% apr.param('highlight_uri') %];image_size=[% apr.param('image_size') %];font_size=[% apr.param('font_size') %];image_type=[% apr.param('image_type') %];label_features=[% apr.param('label_features') %];order=[% apr.param('order') %];order_by=map_start;">Position</a> ([% reference_map.map_units %])</th>
         <th>Map</th>
         <th>Feature</th>
         <th>Type</th>
@@ -157,7 +157,7 @@
             [% f.feature_type %]
         </td>
         <td [% IF f.no_positions>1 %] rowspan="[% f.no_positions %]"[% END %] align="right">
-            [% f.start_position | commify %] [% IF f.stop_position>f.start_position %]- [% f.stop_position | commify %][% END %]
+            [% f.feature_start | commify %] [% IF f.feature_stop>f.feature_start %]- [% f.feature_stop | commify %][% END %]
 
         </td>
 
@@ -176,7 +176,7 @@
                     [% p.feature_type2 %]
                 </td>
                 <td align="right">
-                    [% p.start_position2 | commify %] [% IF p.stop_position2>p.start_position2 %]- [% p.stop_position2 | commify %][% END %] ([% p.map_units2 %])
+                    [% p.feature_start2 | commify %] [% IF p.feature_stop2>p.feature_start2 %]- [% p.feature_stop2 | commify %][% END %] ([% p.map_units2 %])
                 </td>
                 <td>
                     [% p.evidence.join(', ') %]

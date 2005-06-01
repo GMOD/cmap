@@ -149,8 +149,8 @@ Table: cmap_map
 
   map_aid      (accession_id)
   map_name
-  start_position
-  stop_position
+  map_start
+  map_stop
   map_units
   map_set_aid  [cmap_map_set.accession_id]
   map_set_name [cmap_map_set.map_set_short_name]
@@ -168,8 +168,8 @@ Table: cmap_feature
   feature_type_accession
   feature_name
   is_landmark
-  start_position
-  stop_position
+  feature_start
+  feature_stop
   aliases          [cmap_feature_alias.alias] *
   correspondences  [cmap_feature_correspondence] *
   map_name         [cmap_map]

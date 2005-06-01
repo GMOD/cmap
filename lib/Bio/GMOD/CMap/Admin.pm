@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.80 2005-05-27 19:02:16 mwz444 Exp $
+# $Id: Admin.pm,v 1.81 2005-06-01 16:24:22 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.80 $)[-1];
+$VERSION = (qw$Revision: 1.81 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -185,8 +185,8 @@ Create a feature.
         map_id => $map_id,
         feature_name => $feature_name,
         feature_aid => $feature_aid,
-        start_position => $start_position,
-        stop_position => $stop_position,
+        feature_start => $feature_start,
+        feature_stop => $feature_stop,
         is_landmark => $is_landmark,
         feature_type_aid => $feature_type_aid,
         direction => $direction,
@@ -212,11 +212,11 @@ Identifier of the map that this is on.
 Identifier that is used to access this object.  Can be alpha-numeric.  
 If not defined, the object_id will be assigned to it.
 
-=item - start_position
+=item - feature_start
 
 Location on the map where this feature begins.
 
-=item - stop_position
+=item - feature_stop
 
 Location on the map where this feature ends. (not required)
 
@@ -250,9 +250,9 @@ integrated with GBrowse and should not be used otherwise.
       or push @missing, 'feature_name';
     my $feature_type_aid = $args{'feature_type_aid'}
       or push @missing, 'feature_type_aid';
-    my $start_position = $args{'start_position'};
-    push @missing, 'start' unless $start_position =~ /^$RE{'num'}{'real'}$/;
-    my $stop_position = $args{'stop_position'};
+    my $feature_start = $args{'feature_start'};
+    push @missing, 'start' unless $feature_start =~ /^$RE{'num'}{'real'}$/;
+    my $feature_stop = $args{'feature_stop'};
     my $is_landmark   = $args{'is_landmark'} || 0;
     my $direction     = $args{'direction'} || 1;
     my $gclass        = $args{'gclass'};
@@ -273,8 +273,8 @@ integrated with GBrowse and should not be used otherwise.
         map_id           => $map_id,
         feature_name     => $feature_name,
         feature_type_aid => $feature_type_aid,
-        start_position   => $start_position,
-        stop_position    => $stop_position,
+        feature_start   => $feature_start,
+        feature_stop    => $feature_stop,
         is_landmark      => $is_landmark,
         direction        => $direction,
         default_rank     => $default_rank,
@@ -897,7 +897,7 @@ Eather 'feature_name' or 'feature_accession'
 =item - order_by
 
 List of columns (in order) to order by. Options are
-feature_name, species_common_name, map_set_short_name, map_name and start_position.
+feature_name, species_common_name, map_set_short_name, map_name and feature_start.
 
 =item - map_aid
 
@@ -925,7 +925,7 @@ feature_name, species_common_name, map_set_short_name, map_name and start_positi
     my $feature_type_aids = $args{'feature_type_aids'} || [];
     my $search_field      = $args{'search_field'}      || 'feature_name';
     my $order_by          = $args{'order_by'}
-      || 'feature_name,species_common_name,map_set_short_name,map_name,start_position';
+      || 'feature_name,species_common_name,map_set_short_name,map_name,feature_start';
     my $sql_object = $self->sql or return;
 
     #
@@ -1137,8 +1137,8 @@ map_create
         map_name => $map_name,
         map_set_id => $map_set_id,
         map_aid => $map_aid,
-        start_position => $start_position,
-        stop_position => $stop_position,
+        map_start => $map_start,
+        map_stop => $map_stop,
         display_order => $display_order,
     );
 
@@ -1161,11 +1161,11 @@ Name of the map being created
 Identifier that is used to access this object.  Can be alpha-numeric.  
 If not defined, the object_id will be assigned to it.
 
-=item - start_position
+=item - map_start
 
 Begining point of the map.
 
-=item - stop_position
+=item - map_stop
 
 End point of the map.
 
@@ -1184,12 +1184,12 @@ End point of the map.
     my $map_name = $args{'map_name'};
     my $display_order = $args{'display_order'} || 1;
     push @missing, 'map name' unless defined $map_name && $map_name ne '';
-    my $start_position = $args{'start_position'};
+    my $map_start = $args{'map_start'};
     push @missing, 'start position'
-      unless defined $start_position && $start_position ne '';
-    my $stop_position = $args{'stop_position'};
+      unless defined $map_start && $map_start ne '';
+    my $map_stop = $args{'map_stop'};
     push @missing, 'stop position'
-      unless defined $stop_position && $stop_position ne '';
+      unless defined $map_stop && $map_stop ne '';
     my $map_aid = $args{'map_aid'};
 
     if (@missing) {
@@ -1197,12 +1197,12 @@ End point of the map.
             join( ', ', @missing ) );
     }
 
-    unless ( $start_position =~ /^$RE{'num'}{'real'}$/ ) {
-        return $self->error("Bad start position ($start_position)");
+    unless ( $map_start =~ /^$RE{'num'}{'real'}$/ ) {
+        return $self->error("Bad start position ($map_start)");
     }
 
-    unless ( $stop_position =~ /^$RE{'num'}{'real'}$/ ) {
-        return $self->error("Bad stop position ($stop_position)");
+    unless ( $map_stop =~ /^$RE{'num'}{'real'}$/ ) {
+        return $self->error("Bad stop position ($map_stop)");
     }
 
     my $sql_object = $self->sql or return $self->error;
@@ -1211,8 +1211,8 @@ End point of the map.
         map_aid        => $map_aid,
         map_set_id     => $map_set_id,
         map_name       => $map_name,
-        start_position => $start_position,
-        stop_position  => $stop_position,
+        map_start => $map_start,
+        map_stop  => $map_stop,
         display_order  => $display_order,
     );
 

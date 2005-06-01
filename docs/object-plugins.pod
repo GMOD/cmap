@@ -234,9 +234,9 @@ parentheses) and the hashref's fields you can use:
   species_aid
   species_common_name
   start
-  start_position
+  map_start
   stop
-  stop_position
+  map_stop
 
 =head2 Feature (feature)
 
@@ -260,8 +260,8 @@ parentheses) and the hashref's fields you can use:
   species_aid
   species_id
   species_common_name
-  start_position
-  stop_position
+  feature_start
+  feature_stop
 
 =head2 Feature Type (feature_type_info)
 

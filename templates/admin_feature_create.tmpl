@@ -73,7 +73,7 @@
             Start:
         </td>
         <td>
-            <input name="start_position" value="[% apr.param('start_position') %]">
+            <input name="feature_start" value="[% apr.param('feature_start') %]">
         </td>
     </tr>
 
@@ -82,7 +82,19 @@
             Stop <em>(opt.)</em>:
         </td>
         <td>
-            <input name="stop_position" value="[% apr.param('stop_position') %]">
+            <input name="feature_stop" value="[% apr.param('feature_stop') %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Direction:
+        </td>
+        <td>
+            <select name="direction">
+                <option value="1"[% IF apr.param('direction')>=0 %] selected[% END %]>Forward</option>
+                <option value="-1"[% IF apr.param('direction')<0 %] selected[% END %]>Reverse</option>
+            </select>
         </td>
     </tr>
 

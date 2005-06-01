@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.236 2005-05-24 21:18:55 mwz444 Exp $
+# $Id: Data.pm,v 1.237 2005-06-01 16:24:22 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.236 $)[-1];
+$VERSION = (qw$Revision: 1.237 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -229,8 +229,8 @@ Returns a string of tab-delimited data for either a map or map set.
               feature_stop feature_type_aid is_landmark
             ];
             my @col_names = qw[ map_aid map_name map_start map_stop
-              feature_aid feature_name feature_aliases start_position
-              stop_position feature_type_aid is_landmark
+              feature_aid feature_name feature_aliases feature_start
+              feature_stop feature_type_aid is_landmark
             ];
 
             $return = join( "\t", @col_headers ) . "\n";
@@ -251,8 +251,8 @@ Returns a string of tab-delimited data for either a map or map set.
             for my $f (@$features) {
                 $return .= join( "\t",
                     $f->{'feature_name'},     'CMap',
-                    $f->{'feature_type_aid'}, $f->{'start_position'},
-                    $f->{'stop_position'},    '.',
+                    $f->{'feature_type_aid'}, $f->{'feature_start'},
+                    $f->{'feature_stop'},     '.',
                     '.',                      '.',
                     $f->{'map_name'} )
                   . "\n";
@@ -515,20 +515,20 @@ sub slot_data {
                 and
                 defined( $slot_info->{$this_slot_no}{ $row->{'map_id'} }[0] )
                 and ( $slot_info->{$this_slot_no}{ $row->{'map_id'} }[0] >
-                    $row->{'start_position'} )
+                    $row->{'map_start'} )
               )
             {
-                $row->{'start_position'} =
+                $row->{'map_start'} =
                   $slot_info->{$this_slot_no}{ $row->{'map_id'} }[0];
             }
             if ( $slot_info->{$this_slot_no}{ $row->{'map_id'} }
                 and
                 defined( $slot_info->{$this_slot_no}{ $row->{'map_id'} }[1] )
-                and defined( $row->{'stop_position'} )
+                and defined( $row->{'map_stop'} )
                 and ( $slot_info->{$this_slot_no}{ $row->{'map_id'} }[1] ) <
-                $row->{'stop_position'} )
+                $row->{'map_stop'} )
             {
-                $row->{'stop_position'} =
+                $row->{'map_stop'} =
                   $slot_info->{$this_slot_no}{ $row->{'map_id'} }[1];
             }
         }
@@ -600,8 +600,8 @@ sub slot_data {
         for my $map (@maps) {
             my $map_start = $slot_info->{$this_slot_no}{ $map->{'map_id'} }[0];
             my $map_stop  = $slot_info->{$this_slot_no}{ $map->{'map_id'} }[1];
-            $map->{'start_position'} = $map_start if defined($map_start);
-            $map->{'stop_position'}  = $map_stop  if defined($map_stop);
+            $map->{'map_start'} = $map_start if defined($map_start);
+            $map->{'map_stop'}  = $map_stop  if defined($map_stop);
             $map->{'no_correspondences'} = $corr_lookup{ $map->{'map_id'} };
             if (   $min_correspondences
                 && defined $ref_slot_no
@@ -685,8 +685,8 @@ sub slot_data {
         for my $map (@maps) {
             my $map_start = $slot_info->{$this_slot_no}{ $map->{'map_id'} }[0];
             my $map_stop  = $slot_info->{$this_slot_no}{ $map->{'map_id'} }[1];
-            $map->{'start_position'} = $map_start if defined($map_start);
-            $map->{'stop_position'}  = $map_stop  if defined($map_stop);
+            $map->{'map_start'} = $map_start if defined($map_start);
+            $map->{'map_stop'}  = $map_stop  if defined($map_stop);
             $map->{'no_correspondences'} = $corr_lookup{ $map->{'map_id'} };
             if (   $min_correspondences
                 && defined $ref_slot_no
@@ -1297,11 +1297,11 @@ sub cmap_form_data {
     if ( @{ $self->sorted_map_ids(0) } ) {
         foreach my $map_id ( @{ $self->sorted_map_ids(0) } ) {
             my %temp_hash = (
-                'map_id'         => $map_id,
-                'map_aid'        => $ref_slot_data->{$map_id}{'map_aid'},
-                'map_name'       => $ref_slot_data->{$map_id}{'map_name'},
-                'start_position' => $self->slot_info->{0}{$map_id}[0],
-                'stop_position'  => $self->slot_info->{0}{$map_id}[1],
+                'map_id'    => $map_id,
+                'map_aid'   => $ref_slot_data->{$map_id}{'map_aid'},
+                'map_name'  => $ref_slot_data->{$map_id}{'map_name'},
+                'map_start' => $self->slot_info->{0}{$map_id}[0],
+                'map_stop'  => $self->slot_info->{0}{$map_id}[1],
             );
             push @ref_maps, \%temp_hash;
         }
@@ -1900,7 +1900,7 @@ Given a list of feature names, find any maps they occur on.
           } parse_words($feature_string)
     );
     my $order_by = $args{'order_by'}
-      || 'feature_name,species_common_name,map_set_name,map_name,start_position';
+      || 'feature_name,species_common_name,map_set_name,map_name,feature_start';
     my $search_field = $args{'search_field'}
       || $self->config_data('feature_search_field');
     $search_field = DEFAULT->{'feature_search_field'}
@@ -1932,7 +1932,7 @@ Given a list of feature names, find any maps they occur on.
     # Perform sort on accumulated results.
     #
     my @found_features = ();
-    if ( $order_by eq 'start_position' ) {
+    if ( $order_by eq 'feature_start' ) {
         @found_features =
           map  { $_->[1] }
           sort { $a->[0] <=> $b->[0] }
@@ -2334,7 +2334,7 @@ Returns the detail info for a map.
     my ( $self, %args ) = @_;
     my $map                       = $args{'ref_map'};
     my $highlight                 = $args{'highlight'} || '';
-    my $order_by                  = $args{'order_by'} || 'f.start_position';
+    my $order_by                  = $args{'order_by'} || 'f.feature_start';
     my $comparative_map_field     = $args{'comparative_map_field'} || '';
     my $comparative_map_field_aid = $args{'comparative_map_field_aid'} || '';
     my $page_size                 = $args{'page_size'} || 25;
@@ -2382,10 +2382,10 @@ Returns the detail info for a map.
     );
     my $reference_map = $maps->[0] if $maps;
 
-    $map_start = $reference_map->{'start_position'}
+    $map_start = $reference_map->{'map_start'}
       unless defined $map_start
       and $map_start =~ /^$RE{'num'}{'real'}$/;
-    $map_stop = $reference_map->{'stop_position'}
+    $map_stop = $reference_map->{'map_stop'}
       unless defined $map_stop
       and $map_stop =~ /^$RE{'num'}{'real'}$/;
     $reference_map->{'start'}      = $map_start;
@@ -2825,15 +2825,17 @@ sub count_correspondences {
             # Make the position values
             foreach my $row (@$map_corr_counts) {
                 $row->{'position1'} =
-                  defined( $row->{'stop_position1'} )
-                  ? ( ( $row->{'stop_position1'} - $row->{'start_position1'} ) /
-                      2 ) + $row->{'start_position1'}
-                  : $row->{'start_position1'};
+                  defined( $row->{'feature_stop1'} )
+                  ? (
+                    ( $row->{'feature_stop1'} - $row->{'feature_start1'} ) / 2 )
+                  + $row->{'feature_start1'}
+                  : $row->{'feature_start1'};
                 $row->{'position2'} =
-                  defined( $row->{'stop_position2'} )
-                  ? ( ( $row->{'stop_position2'} - $row->{'start_position2'} ) /
-                      2 ) + $row->{'start_position2'}
-                  : $row->{'start_position2'};
+                  defined( $row->{'feature_stop2'} )
+                  ? (
+                    ( $row->{'feature_stop2'} - $row->{'feature_start2'} ) / 2 )
+                  + $row->{'feature_start2'}
+                  : $row->{'feature_start2'};
                 if ( $row->{'map_id1'} == 55571 ) {
                 }
 
@@ -2994,9 +2996,9 @@ sub cmap_map_search_data {
     if ( $self->slot_info ) {
         foreach my $map_id ( keys( %{ $self->slot_info->{0} } ) ) {
             my %temp_hash = (
-                'map_id'         => $self->slot_info->{0}{$map_id}[0],
-                'start_position' => $self->slot_info->{0}{$map_id}[1],
-                'stop_position'  => $self->slot_info->{0}{$map_id}[2],
+                'map_id'    => $self->slot_info->{0}{$map_id}[0],
+                'map_start' => $self->slot_info->{0}{$map_id}[1],
+                'map_stop'  => $self->slot_info->{0}{$map_id}[2],
             );
             push @ref_maps, \%temp_hash;
         }
@@ -3092,8 +3094,8 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
                 ### Comp Map Count
                 my $raw_no = (
                     $map_info->{$map_id}{'cmap_count'} / (
-                        $map_info->{$map_id}{'stop_position'} -
-                          $map_info->{$map_id}{'start_position'}
+                        $map_info->{$map_id}{'map_stop'} -
+                          $map_info->{$map_id}{'map_start'}
                     )
                 );
                 $map_info->{$map_id}{'cmap_count_per'} =
@@ -3102,8 +3104,8 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
                 ### Correspondence Count
                 $raw_no = (
                     $map_info->{$map_id}{'corr_count'} / (
-                        $map_info->{$map_id}{'stop_position'} -
-                          $map_info->{$map_id}{'start_position'}
+                        $map_info->{$map_id}{'map_stop'} -
+                          $map_info->{$map_id}{'map_start'}
                     )
                 );
                 $map_info->{$map_id}{'corr_count_per'} =
@@ -3145,8 +3147,8 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_aid"]
             $feature_info->{ $row->{'map_id'} }{ $row->{'feature_type_aid'} }
               {'total'} = $row->{'feature_count'};
             my $devisor =
-              $map_info->{ $row->{'map_id'} }{'stop_position'} -
-              $map_info->{ $row->{'map_id'} }{'start_position'}
+              $map_info->{ $row->{'map_id'} }{'map_stop'} -
+              $map_info->{ $row->{'map_id'} }{'map_start'}
               || 1;
 
             my $raw_no = ( $row->{'feature_count'} / $devisor );
@@ -3362,10 +3364,10 @@ sub get_max_unit_size {
             my $map = $slots->{$slot_id}{$map_id};
             unless ($max_per_unit{ $map->{'map_units'} }
                 and $max_per_unit{ $map->{'map_units'} } >
-                ( $map->{'stop_position'} - $map->{'start_position'} ) )
+                ( $map->{'map_stop'} - $map->{'map_start'} ) )
             {
                 $max_per_unit{ $map->{'map_units'} } =
-                  $map->{'stop_position'} - $map->{'start_position'};
+                  $map->{'map_stop'} - $map->{'map_start'};
             }
         }
     }
@@ -3415,10 +3417,10 @@ sub get_ref_unit_size {
             # this map is bigger, set ref_for_unit
             if ( !$ref_for_unit{$map_unit}
                 or $ref_for_unit{$map_unit} <
-                $map->{'stop_position'} - $map->{'start_position'} )
+                $map->{'map_stop'} - $map->{'map_start'} )
             {
                 $ref_for_unit{$map_unit} =
-                  $map->{'stop_position'} - $map->{'start_position'};
+                  $map->{'map_stop'} - $map->{'map_start'};
             }
         }
     }

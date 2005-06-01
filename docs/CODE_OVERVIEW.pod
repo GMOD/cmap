@@ -4,7 +4,7 @@ CMap Code Overview
 
 =head1 VERSION
 
-$Revision: 1.7 $
+$Revision: 1.8 $
 
 CMap is a CGI application for viewing comparative and genetic maps.
 Written entirely in Perl, this application will run on many different
@@ -249,7 +249,7 @@ worse).
 When writing queries using multiple tables, a query uses table aliases, e.g.:
 
   select map.map_name,
-         f.start_position,
+         f.feature_start,
   from   cmap_map map,
          cmap_feature f
   where  upper(f.feature_name)=?

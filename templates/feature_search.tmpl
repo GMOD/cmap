@@ -83,7 +83,7 @@ Use &quot;*&quot; or &quot;%&quot; for wildcards.  To find features with spaces 
                 <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=species_common_name;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %];data_source=[% apr.param('data_source') %]">Species</a></th>
                 <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=map_set_name;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %];data_source=[% apr.param('data_source') %]">Map Set</a></th>
                 <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=map_name;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %];data_source=[% apr.param('data_source') %]">Map Name</a></th>
-                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=start_position;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %];data_source=[% apr.param('data_source') %]">Position</a></th>
+                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=feature_start;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %];data_source=[% apr.param('data_source') %]">Position</a></th>
                 <th>Aliases</th>
                 <th>&nbsp;</th>
                 <th>&nbsp;</th>
@@ -97,7 +97,7 @@ Use &quot;*&quot; or &quot;%&quot; for wildcards.  To find features with spaces 
                     <td><a href="map_set_info?map_set_aid=[% r.map_set_aid %]">[% r.map_set_name %]</a></td>
                     <td>[% r.map_name %]</td>
                     <td align="right">
-                        [% r.start_position | commify %][% IF r.stop_position.defined AND r.stop_position > r.start_position %]-[% r.stop_position | commify %][% END %] [% r.map_units %]
+                        [% r.feature_start | commify %][% IF r.feature_stop.defined AND r.feature_stop > r.feature_start %]-[% r.feature_stop | commify %][% END %] [% r.map_units %]
                     </td>
                     <td>[% r.aliases.join(', ') | truncate(30) %]</td>
                     <td align="center">

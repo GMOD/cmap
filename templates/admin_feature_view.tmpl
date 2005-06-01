@@ -57,7 +57,7 @@
             Start:
         </th>
         <td>
-            [% feature.start_position | commify %]
+            [% feature.feature_start | commify %]
         </td>
     </tr>
 
@@ -66,7 +66,16 @@
             Stop:
         </th>
         <td>
-            [% IF feature.stop_position.defined %][% feature.stop_position | commify %][% ELSE %]NULL[% END %]
+            [% IF feature.feature_stop.defined %][% feature.feature_stop | commify %][% ELSE %]NULL[% END %]
+        </td>
+    </tr>
+
+    <tr>
+        <th align="right">
+            Direction:
+        </th>
+        <td>
+            [% IF feature.direction.defined %][% feature.direction | commify %][% ELSE %]NULL[% END %]
         </td>
     </tr>
 </table>

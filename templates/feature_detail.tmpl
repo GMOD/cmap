@@ -57,14 +57,14 @@
 
     <tr>
         <th align="right">Start:</th>
-        <td colspan="2">[% feature.start_position | commify %] [% feature.map_units %]</td>
+        <td colspan="2">[% feature.feature_start | commify %] [% feature.map_units %]</td>
     </tr>
 
     <tr>
         <th align="right">Stop:</th>
         <td colspan="2">
-            [%- IF feature.stop_position.defined -%]
-                [% feature.stop_position | commify %] [% feature.map_units %]
+            [%- IF feature.feature_stop.defined -%]
+                [% feature.feature_stop | commify %] [% feature.map_units %]
             [%- ELSE -%]
                 &nbsp;
             [%- END -%]

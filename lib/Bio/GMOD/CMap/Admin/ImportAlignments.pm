@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::ImportAlignments;
 
 # vim: set ft=perl:
 
-# $Id: ImportAlignments.pm,v 1.4 2005-05-19 18:45:41 mwz444 Exp $
+# $Id: ImportAlignments.pm,v 1.5 2005-06-01 16:24:27 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ alignments from blast files.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Data::Dumper;
 use Bio::SearchIO;
@@ -176,12 +176,12 @@ sub get_map_id {
         # Map not found, creat it.
         print "Map \"$map_name\" not found.  Creating.\n";
         $map_id = $sql_object->insert_map(
-            cmap_object    => $self,
-            map_name       => $map_name,
-            map_set_id     => $map_set_id,
-            map_aid        => $map_accession,
-            start_position => '1',
-            stop_position  => $map_length,
+            cmap_object => $self,
+            map_name    => $map_name,
+            map_set_id  => $map_set_id,
+            map_aid     => $map_accession,
+            map_start   => '1',
+            map_stop    => $map_length,
         );
     }
     $self->{'maps'}->{$map_key} = $map_id;
@@ -237,8 +237,8 @@ sub get_feature_id {
         $feature_id = $self->{'admin'}->feature_create(
             map_id           => $map_id,
             feature_name     => $feature_name,
-            start_position   => $start,
-            stop_position    => $end,
+            feature_start    => $start,
+            feature_stop     => $end,
             is_landmark      => 0,
             feature_type_aid => $feature_type_aid,
             direction        => $direction,

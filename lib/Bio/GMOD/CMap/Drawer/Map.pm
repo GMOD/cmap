@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.157 2005-05-12 21:46:32 mwz444 Exp $
+# $Id: Map.pm,v 1.158 2005-06-01 16:24:32 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.157 $)[-1];
+$VERSION = (qw$Revision: 1.158 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -984,8 +984,8 @@ a hashref keyed on feature_id.
                     $_,
                     $_->{'drawing_lane'},
                     $_->{'drawing_priority'},
-                    defined $_->{'start_position'} ? $_->{'start_position'} : 0,
-                    defined $_->{'stop_position'}  ? $_->{'stop_position'}  : 0,
+                    defined $_->{'feature_start'} ? $_->{'feature_start'} : 0,
+                    defined $_->{'feature_stop'}  ? $_->{'feature_stop'}  : 0,
                 ]
             } values %{ $map->{'features'} }
           )
@@ -1303,8 +1303,8 @@ Variable Info:
               #my ( @north_labels, @south_labels );    # holds label coordinates
             my $lane_features = $features->{$lane};
             my $midpoint      =
-              ( $lane_features->[0]->{'start_position'} +
-                  $lane_features->[-1]->{'start_position'} ) / 2;
+              ( $lane_features->[0]->{'feature_start'} +
+                  $lane_features->[-1]->{'feature_start'} ) / 2;
             my $prev_label_y;    # the y value of previous label
             my @fcolumns = ();   # for feature east-to-west
 
@@ -1579,8 +1579,8 @@ Variable Info:
         $map_placement_data{$map_id}{'bounds'}[0]     += $offset;
         $map_placement_data{$map_id}{'bounds'}[2]     += $offset;
 
-        my $map_start = $self->start_position($map_id);
-        my $map_stop  = $self->stop_position($map_id);
+        my $map_start = $self->map_start($map_id);
+        my $map_stop  = $self->map_stop($map_id);
 
         $drawer->register_map_coords( $slot_no, $map_id, $map_start, $map_stop,
             @{ $map_placement_data{$map_id}{'map_coords'} },
@@ -1955,7 +1955,7 @@ sub get_map_height {
         and $drawer->{'data'}{'ref_unit_size'}{ $self->map_units($map_id) } )
     {
         $pixel_height =
-          ( $self->stop_position($map_id) - $self->start_position($map_id) ) *
+          ( $self->map_stop($map_id) - $self->map_start($map_id) ) *
           ( $drawer->pixel_height() /
               $drawer->{'data'}{'ref_unit_size'}{ $self->map_units($map_id) } );
 
@@ -2113,17 +2113,17 @@ sub place_map_y {
                         $ref_map_x1,
                         $ref_map_mid_y,
                         $ref_corr->{'no_corr'},
-                        ( $avg_mid - $self->start_position($map_id) ),
+                        ( $avg_mid - $self->map_start($map_id) ),
                         $evidence_type_aid,
                       ];
                 }
                 else {
                     my $this_agg_y1 =
                       ( $ref_corr->{'min_start1'} -
-                          $self->start_position($map_id) );
+                          $self->map_start($map_id) );
                     my $this_agg_y2 =
                       ( $ref_corr->{'max_start1'} -
-                          $self->start_position($map_id) );
+                          $self->map_start($map_id) );
                     ( $this_agg_y1, $this_agg_y2 ) =
                       ( $this_agg_y2, $this_agg_y1 )
                       if ($is_flipped);
@@ -2150,7 +2150,7 @@ sub place_map_y {
 
                     # This places the map in relation to the first reference map
                     my $map_unit_len = $self->map_length($map_id);
-                    my $map_start    = $self->start_position($map_id);
+                    my $map_start    = $self->map_start($map_id);
                     my $rstart       = sprintf( "%.2f",
                         ( $avg_mid - $map_start ) / $map_unit_len );
                     $min_ref_y = $ref_map_mid_y - ( $pixel_height * $rstart );
@@ -2547,7 +2547,7 @@ sub add_tick_marks {
     my $map_area_data     = $args{'map_area_data'};
     my $pixel_height      = $args{'pixel_height'};
     my $is_flipped        = $args{'is_flipped'};
-    my $map_start         = $self->start_position($map_id);
+    my $map_start         = $self->map_start($map_id);
     my $actual_map_length = $args{'actual_map_length'};
     my $map_length        = $args{'map_length'};
     my $map_width         = $self->map_width($map_id);
@@ -2809,7 +2809,7 @@ sub add_feature_to_map {
     my $font_width            = $reg_font->width;
     my $font_height           = $reg_font->height;
     my $default_feature_color = $drawer->config_data('feature_color');
-    my $map_start             = $self->start_position($map_id);
+    my $map_start             = $self->map_start($map_id);
     my $label_side            = $drawer->label_side($slot_no);
     my $feature_corr_color    =
       $drawer->config_data('feature_correspondence_color') || '';
@@ -2824,8 +2824,8 @@ sub add_feature_to_map {
 
     my $feature_shape = $feature->{'shape'} || LINE;
     my $shape_is_triangle = $feature_shape =~ /triangle$/;
-    my $fstart = $feature->{'start_position'} || 0;
-    my $fstop = $shape_is_triangle ? undef: $feature->{'stop_position'};
+    my $fstart = $feature->{'feature_start'} || 0;
+    my $fstop = $shape_is_triangle ? undef: $feature->{'feature_stop'};
     $fstop = undef if $fstop < $fstart;
 
     my $rstart = sprintf( "%.2f", ( $fstart - $map_start ) / $map_length );
@@ -2968,8 +2968,8 @@ sub add_feature_to_map {
                     coords => \@coords,
                     url    => 'viewer?',
                     alt    => 'Zoom: '
-                      . $feature->{'start_position'} . '-'
-                      . $feature->{'stop_position'}
+                      . $feature->{'feature_start'} . '-'
+                      . $feature->{'feature_stop'}
                   };
             }
             else {
@@ -3104,7 +3104,7 @@ sub collect_labels_to_display {
             feature_type   => $feature->{'feature_type'},
             has_corr       => $has_corr,
             feature_id     => $feature->{'feature_id'},
-            start_position => $feature->{'start_position'},
+            feature_start => $feature->{'feature_start'},
             shape          => $feature->{'shape'},
             column         => $feature->{'column'},
             url            => $url,
@@ -3366,7 +3366,7 @@ Returns the map's length (stop - start).
     my $self   = shift;
     my $map_id = shift or return;
 
-    return $self->stop_position($map_id) - $self->start_position($map_id);
+    return $self->map_stop($map_id) - $self->map_start($map_id);
 }
 
 # ----------------------------------------------------
@@ -3401,16 +3401,16 @@ Returns the entiry map's length.
 
     my $self = shift;
     my $map_id = shift or return;
-    return $self->real_stop_position($map_id) -
-      $self->real_start_position($map_id);
+    return $self->real_map_stop($map_id) -
+      $self->real_map_start($map_id);
 }
 
 # ----------------------------------------------------
-sub real_start_position {
+sub real_map_start {
 
 =pod
 
-=head2 real_start_position
+=head2 real_map_start
 
 Returns a map's start position.
 
@@ -3419,15 +3419,15 @@ Returns a map's start position.
     my $self   = shift;
     my $map_id = shift or return;
     my $map    = $self->map($map_id);
-    return $map->{'start_position'};
+    return $map->{'map_start'};
 }
 
 # ----------------------------------------------------
-sub real_stop_position {
+sub real_map_stop {
 
 =pod
 
-=head2 real_stop_position
+=head2 real_map_stop
 
 Returns a map's stop position.
 
@@ -3436,7 +3436,7 @@ Returns a map's stop position.
     my $self   = shift;
     my $map_id = shift or return;
     my $map    = $self->map($map_id);
-    return $map->{'stop_position'};
+    return $map->{'map_stop'};
 }
 
 # ----------------------------------------------------
@@ -3455,11 +3455,11 @@ Returns the slot number.
 }
 
 # ----------------------------------------------------
-sub start_position {
+sub map_start {
 
 =pod
 
-=head2 start_position
+=head2 map_start
 
 Returns a map's start position for the range selected.
 
@@ -3468,15 +3468,15 @@ Returns a map's start position for the range selected.
     my $self   = shift;
     my $map_id = shift or return;
     my $map    = $self->map($map_id);
-    return $map->{'start_position'};
+    return $map->{'map_start'};
 }
 
 # ----------------------------------------------------
-sub stop_position {
+sub map_stop {
 
 =pod
 
-=head2 stop_position
+=head2 map_stop
 
 Returns a map's stop position for the range selected.
 
@@ -3485,7 +3485,7 @@ Returns a map's stop position for the range selected.
     my $self   = shift;
     my $map_id = shift or return;
     my $map    = $self->map($map_id);
-    return $map->{'stop_position'};
+    return $map->{'map_stop'};
 }
 
 # ----------------------------------------------------
@@ -3506,7 +3506,7 @@ Returns the map's tick mark interval.
 
     unless ( defined $map->{'tick_mark_interval'} ) {
         my $map_length =
-          $self->stop_position($map_id) - $self->start_position($map_id);
+          $self->map_stop($map_id) - $self->map_start($map_id);
         my $map_scale = int( log( abs($map_length) ) / log(10) );
 
         #if (int(($map_length/(10**$map_scale))+.5)>=2){
@@ -3616,8 +3616,8 @@ Button options:
 
         unless (%this_map_info) {
             $this_map_info{ $self->map_aid($map_id) } = {
-                start => $self->start_position($map_id),
-                stop  => $self->stop_position($map_id),
+                start => $self->map_start($map_id),
+                stop  => $self->map_stop($map_id),
                 mag => $drawer->data_module->magnification( $slot_no, $map_id ),
             };
         }
@@ -3762,8 +3762,8 @@ Button options:
     if ( $requested_buttons{'new_view'} ) {
         unless (%this_map_info) {
             $this_map_info{ $self->map_aid($map_id) } = {
-                start => $self->start_position($map_id),
-                stop  => $self->stop_position($map_id),
+                start => $self->map_start($map_id),
+                stop  => $self->map_stop($map_id),
                 mag => $drawer->data_module->magnification( $slot_no, $map_id ),
             };
         }

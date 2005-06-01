@@ -140,10 +140,10 @@
             <th>
                 <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];order_by=map_name">Map Name</a>
             </th>
-            <th><a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];order_by=start_position">Start</a>
+            <th><a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];order_by=map_start">Start</a>
             </th>
             <th>
-                <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];order_by=stop_position">Stop</a>
+                <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];order_by=map_stop">Stop</a>
             </th>
             <th>
                 <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];order_by=no_features">No. Features</a>
@@ -156,8 +156,8 @@
                 <td>[% map.map_aid   %]</td>
                 <td>[% map.display_order  %]</td>
                 <td>[% map.map_name       %]</td>
-                <td align="right">[% map.start_position | commify %]</td>
-                <td align="right">[% map.stop_position  | commify %]</td>
+                <td align="right">[% map.map_start | commify %]</td>
+                <td align="right">[% map.map_stop  | commify %]</td>
                 <td align="right">[% map.no_features  %]</td>
                 <td align="center">
                     <a href="admin?action=map_view;map_id=[% map.map_id %]">View</a>

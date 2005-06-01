@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Import;
 
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.70 2005-05-12 21:46:31 mwz444 Exp $
+# $Id: Import.pm,v 1.71 2005-06-01 16:24:27 mwz444 Exp $
 
 =pod
 
@@ -33,7 +33,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.70 $)[-1];
+$VERSION = (qw$Revision: 1.71 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -436,13 +436,13 @@ appended to the list of xrefs.
             #
             unless ($map_id) {
                 $map_id = $sql_object->insert_map(
-                    cmap_object    => $self,
-                    map_aid        => $map_aid,
-                    map_set_id     => $map_set_id,
-                    map_name       => $map_name,
-                    start_position => $map_start,
-                    stop_position  => $map_stop,
-                    display_order  => $display_order,
+                    cmap_object   => $self,
+                    map_aid       => $map_aid,
+                    map_set_id    => $map_set_id,
+                    map_name      => $map_name,
+                    map_start     => $map_start,
+                    map_stop      => $map_stop,
+                    display_order => $display_order,
                 );
 
                 $self->Print("Created map $map_name ($map_id).\n");
@@ -450,13 +450,13 @@ appended to the list of xrefs.
                 $maps->{ uc $map_name }{'touched'} = 1;
                 $modified_maps{ ( uc $map_name, ) } = 1;
 
-                $map_info{$map_id}{'map_id'}         ||= $map_id;
-                $map_info{$map_id}{'map_set_id'}     ||= $map_set_id;
-                $map_info{$map_id}{'map_name'}       ||= $map_name;
-                $map_info{$map_id}{'start_position'} ||= $map_start;
-                $map_info{$map_id}{'stop_position'}  ||= $map_stop;
-                $map_info{$map_id}{'display_order'}  ||= $display_order;
-                $map_info{$map_id}{'map_aid'}        ||= $map_aid;
+                $map_info{$map_id}{'map_id'}        ||= $map_id;
+                $map_info{$map_id}{'map_set_id'}    ||= $map_set_id;
+                $map_info{$map_id}{'map_name'}      ||= $map_name;
+                $map_info{$map_id}{'map_start'}     ||= $map_start;
+                $map_info{$map_id}{'map_stop'}      ||= $map_stop;
+                $map_info{$map_id}{'display_order'} ||= $display_order;
+                $map_info{$map_id}{'map_aid'}       ||= $map_aid;
 
                 $last_map_id   = $map_id;
                 $last_map_name = $map_name;
@@ -574,8 +574,8 @@ appended to the list of xrefs.
                     map_id           => $map_id,
                     feature_type_aid => $feature_type_aid,
                     feature_name     => $feature_name,
-                    start_position   => $start,
-                    stop_position    => $stop,
+                    feature_start    => $start,
+                    feature_stop     => $stop,
                     is_landmark      => $is_landmark,
                     default_rank     => $default_rank,
                     direction        => $direction,
@@ -595,8 +595,8 @@ appended to the list of xrefs.
                     map_id           => $map_id,
                     feature_type_aid => $feature_type_aid,
                     feature_name     => $feature_name,
-                    start_position   => $start,
-                    stop_position    => $stop,
+                    feature_start    => $start,
+                    feature_stop     => $stop,
                     is_landmark      => $is_landmark,
                     default_rank     => $default_rank,
                     direction        => $direction,
@@ -650,8 +650,8 @@ appended to the list of xrefs.
                 map_id           => $map_id,
                 feature_type_aid => $feature_type_aid,
                 feature_name     => $feature_name,
-                start_position   => $start,
-                stop_position    => $stop,
+                feature_start    => $start,
+                feature_stop     => $stop,
                 is_landmark      => $is_landmark,
                 default_rank     => $default_rank,
                 direction        => $direction,
@@ -760,14 +760,14 @@ appended to the list of xrefs.
     #
     for my $map ( values %map_info ) {
         $sql_object->update_map(
-            cmap_object    => $self,
-            map_id         => $map->{'map_id'},
-            map_aid        => $map->{'map_aid'},
-            map_set_id     => $map->{'map_set_id'},
-            map_name       => $map->{'map_name'},
-            start_position => $map->{'start_position'},
-            stop_position  => $map->{'stop_position'},
-            display_order  => $map->{'display_order'},
+            cmap_object   => $self,
+            map_id        => $map->{'map_id'},
+            map_aid       => $map->{'map_aid'},
+            map_set_id    => $map->{'map_set_id'},
+            map_name      => $map->{'map_name'},
+            map_start     => $map->{'map_start'},
+            map_stop      => $map->{'map_stop'},
+            display_order => $map->{'display_order'},
         );
         $self->Print("Updated map $map->{'map_name'} ($map->{'map_id'}).\n");
     }
@@ -813,8 +813,8 @@ appended to the list of xrefs.
         );
         my ( $map_start, $map_stop );
         if (@$map_array) {
-            $map_start = $map_array->[0]{'start_position'};
-            $map_stop  = $map_array->[0]{'stop_position'};
+            $map_start = $map_array->[0]{'map_start'};
+            $map_stop  = $map_array->[0]{'map_stop'};
         }
 
         my ( $min_start, $max_start, $max_stop ) =
@@ -838,10 +838,10 @@ appended to the list of xrefs.
         $map_stop  = $max_stop  if $max_stop > $map_stop;
 
         $map_id = $sql_object->update_map(
-            cmap_object    => $self,
-            map_id         => $map_id,
-            start_position => $map_start,
-            stop_position  => $map_stop,
+            cmap_object => $self,
+            map_id      => $map_id,
+            map_start   => $map_start,
+            map_stop    => $map_stop,
         );
 
         $self->Print(

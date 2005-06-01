@@ -74,7 +74,7 @@
             Start:
         </td>
         <td>
-            <input name="start_position" value="[% feature.start_position %]">
+            <input name="feature_start" value="[% feature.feature_start %]">
         </td>
     </tr>
 
@@ -83,7 +83,19 @@
             Stop <em>(opt.)</em>:
         </td>
         <td>
-            <input name="stop_position" value="[% feature.stop_position %]">
+            <input name="feature_stop" value="[% feature.feature_stop %]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Direction:
+        </td>
+        <td>
+            <select name="direction">
+                <option value="1"[% IF feature.direction>=0; ' selected'; END %]">Forward</option>
+                <option value="-1"[% IF feature.direction<0; ' selected'; END %]">Reverse</option>
+            </select>
         </td>
     </tr>
 

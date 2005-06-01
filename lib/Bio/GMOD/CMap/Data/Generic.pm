@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.85 2005-05-27 19:02:20 mwz444 Exp $
+# $Id: Generic.pm,v 1.86 2005-06-01 16:24:28 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.85 $)[-1];
+$VERSION = (qw$Revision: 1.86 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -492,8 +492,8 @@ Array of Hashes:
                 feature_type_accession => STR,
                 feature_name           => STR,
                 is_landmark            => NUM,
-                start_position         => NUM,
-                stop_position          => NUM,
+                feature_start         => NUM,
+                feature_stop          => NUM,
                 default_rank           => NUM,
             }
         },
@@ -523,8 +523,8 @@ Array of Hashes:
                 map_set_id     => NUM,
                 map_name       => STR,
                 display_order  => NUM,
-                start_position => NUM,
-                stop_position  => NUM,
+                map_start => NUM,
+                map_stop  => NUM,
             }
         },
         {
@@ -685,10 +685,10 @@ original start and stop.
 
     my $sql_base = q[
       select distinct m.map_id,
-             m.start_position,
-             m.stop_position,
-             m.start_position,
-             m.stop_position,
+             m.map_start,
+             m.map_stop,
+             m.map_start,
+             m.map_stop,
              m.accession_id as map_set_aid
       from   cmap_map m
       ];
@@ -747,27 +747,27 @@ original start and stop.
                     and defined( $slot_info->{$m_id}->[1] ) )
                 {
                     $r_m_str .=
-                        " and (( cl.start_position2>="
+                        " and (( cl.feature_start2>="
                       . $slot_info->{$m_id}->[0]
-                      . " and cl.start_position2<="
+                      . " and cl.feature_start2<="
                       . $slot_info->{$m_id}->[1]
-                      . " ) or ( cl.stop_position2 is not null and "
-                      . "  cl.start_position2<="
+                      . " ) or ( cl.feature_stop2 is not null and "
+                      . "  cl.feature_start2<="
                       . $slot_info->{$m_id}->[0]
-                      . " and cl.stop_position2>="
+                      . " and cl.feature_stop2>="
                       . $slot_info->{$m_id}->[0] . " ))) ";
                 }
                 elsif ( defined( $slot_info->{$m_id}->[0] ) ) {
                     $r_m_str .=
-                        " and (( cl.start_position2>="
+                        " and (( cl.feature_start2>="
                       . $slot_info->{$m_id}->[0]
-                      . " ) or ( cl.stop_position2 is not null "
-                      . " and cl.stop_position2>="
+                      . " ) or ( cl.feature_stop2 is not null "
+                      . " and cl.feature_stop2>="
                       . $slot_info->{$m_id}->[0] . " ))) ";
                 }
                 elsif ( defined( $slot_info->{$m_id}->[1] ) ) {
                     $r_m_str .=
-                      " and cl.start_position2<="
+                      " and cl.feature_start2<="
                       . $slot_info->{$m_id}->[1] . ") ";
                 }
                 else {
@@ -842,29 +842,29 @@ original start and stop.
                     {
                         $aid_where .=
                             qq[ and ( not m.accession_id = '$map_aid'  ]
-                          . " or (( cl.start_position1>="
+                          . " or (( cl.feature_start1>="
                           . $maps->{$map_aid}{'start'}
-                          . " and cl.start_position1<="
+                          . " and cl.feature_start1<="
                           . $maps->{$map_aid}{'stop'}
-                          . " ) or ( cl.stop_position1 is not null and "
-                          . "  cl.start_position1<="
+                          . " ) or ( cl.feature_stop1 is not null and "
+                          . "  cl.feature_start1<="
                           . $maps->{$map_aid}{'start'}
-                          . " and cl.stop_position1>="
+                          . " and cl.feature_stop1>="
                           . $maps->{$map_aid}{'start'} . " ))) ";
                     }
                     elsif ( defined( $maps->{$map_aid}{'start'} ) ) {
                         $aid_where .=
                             qq[ and ( not m.accession_id = '$map_aid'  ]
-                          . " or (( cl.start_position1>="
+                          . " or (( cl.feature_start1>="
                           . $maps->{$map_aid}{'start'}
-                          . " ) or ( cl.stop_position1 is not null "
-                          . " and cl.stop_position1>="
+                          . " ) or ( cl.feature_stop1 is not null "
+                          . " and cl.feature_stop1>="
                           . $maps->{$map_aid}{'start'} . " ))) ";
                     }
                     elsif ( defined( $maps->{$map_aid}{'stop'} ) ) {
                         $aid_where .=
                             qq[ and ( not m.accession_id = '$map_aid'  ]
-                          . " or cl.start_position1<="
+                          . " or cl.feature_start1<="
                           . $maps->{$map_aid}{'stop'} . ") ";
                     }
                 }
@@ -872,10 +872,10 @@ original start and stop.
             if ($min_correspondences) {
                 $group_by_sql = q[ 
                     group by cl.map_id2,
-                             m.start_position,
-                             m.stop_position,
-                             m.start_position,
-                             m.stop_position,
+                             m.map_start,
+                             m.map_stop,
+                             m.map_start,
+                             m.map_stop,
                              m.accession_id
                     ];
                 $having =
@@ -919,7 +919,7 @@ original start and stop.
                             cmap_object         => $cmap_object,
                             feature_name        => $row->[1],
                             map_id              => $row->[0],
-                            start_position_only => 1,
+                            return_start => 1,
                           )
                           || undef;
                         $maps->{ $row->[5] }{'start'} = $row->[1];
@@ -937,7 +937,7 @@ original start and stop.
                             cmap_object         => $cmap_object,
                             feature_name        => $row->[2],
                             map_id              => $row->[0],
-                            start_position_only => 0,
+                            return_start => 0,
                           )
                           || undef;
                         $maps->{ $row->[5] }{'stop'} = $row->[2];
@@ -2318,8 +2318,8 @@ Array of Hashes:
     map_id,
     map_aid,
     map_name,
-    start_position,
-    stop_position,
+    map_start,
+    map_stop,
     display_order,
     map_set_id,
     map_set_aid,
@@ -2371,8 +2371,8 @@ Array of Hashes:
         select  map.map_id,
                 map.accession_id as map_aid,
                 map.map_name,
-                map.start_position,
-                map.stop_position,
+                map.map_start,
+                map.map_stop,
                 map.display_order,
                 ms.map_set_id,
                 ms.accession_id as map_set_aid,
@@ -2413,7 +2413,7 @@ Array of Hashes:
     }
     if ($map_length) {
         $where_sql .=
-          " and (map.stop_position - map.start_position + 1 = $map_length) ";
+          " and (map.map_stop - map.map_start + 1 = $map_length) ";
     }
 
     if ($map_set_id) {
@@ -2452,8 +2452,8 @@ Array of Hashes:
                 map.map_id,
                 map.accession_id,
                 map.map_name,
-                map.start_position,
-                map.stop_position,
+                map.map_start,
+                map.map_stop,
                 map.display_order,
                 ms.map_set_id,
                 ms.accession_id,
@@ -2540,8 +2540,8 @@ Array of Hashes:
     accession_id
     map_name
     display_order
-    start_position
-    stop_position
+    map_start
+    map_stop
     map_set_id
 
 =item * Cache Level (If Used): 2
@@ -2563,8 +2563,8 @@ Not using cache because this query is quicker.
                accession_id,
                map_name,
                display_order,
-               start_position,
-               stop_position,
+               map_start,
+               map_stop,
                map_set_id
         from   cmap_map
     ];
@@ -2694,8 +2694,8 @@ Array of Hashes:
   Keys:
     map_aid
     map_name
-    start_position
-    stop_position
+    map_start
+    map_stop
     map_id
     display_order
     cmap_count
@@ -2723,8 +2723,8 @@ Not Caching because the calling method will do that.
     my $sql_str = q[
         select  map.accession_id as map_aid,
                 map.map_name,
-                map.start_position,
-                map.stop_position,
+                map.map_start,
+                map.map_stop,
                 map.map_id,
                 map.display_order,
                 count(distinct(cl.map_id2)) as cmap_count,
@@ -2744,7 +2744,7 @@ Not Caching because the calling method will do that.
     }
     $sql_str .= q[
         group by map.accession_id,map.map_id, map.map_name,
-            map.start_position,map.stop_position,map.display_order
+            map.map_start,map.map_stop,map.display_order
     ];
     if ( $min_correspondence_maps and $min_correspondences ) {
         $sql_str .=
@@ -2800,9 +2800,9 @@ If you don't want CMap to insert into your database, make this a dummy method.
 
 =item - Display Order (display_order)
 
-=item - start_position (start_position)
+=item - map_start (map_start)
 
-=item - stop_position (stop_position)
+=item - map_stop (map_stop)
 
 =back
 
@@ -2820,8 +2820,11 @@ Map id
     my $map_set_id     = $args{'map_set_id'};
     my $map_name       = $args{'map_name'};
     my $display_order  = $args{'display_order'} || 1;
-    my $start_position = $args{'start_position'};
-    my $stop_position  = $args{'stop_position'};
+    my $map_start = $args{'map_start'};
+    my $map_stop  = $args{'map_stop'};
+    # Backwards compatibility
+    $map_start = $args{'start_position'} unless defined($map_start);
+    $map_stop  = $args{'stop_position'} unless defined($map_stop);
     my $db             = $cmap_object->db;
     my $map_id         =
       $self->next_number( cmap_object => $cmap_object, object_type => 'map', )
@@ -2829,13 +2832,13 @@ Map id
     $map_aid ||= $map_id;
     my @insert_args = (
         $map_id, $map_aid, $map_set_id, $map_name, $display_order,
-        $start_position, $stop_position
+        $map_start, $map_stop
     );
 
     $db->do(
         qq[
         insert into cmap_map
-        (map_id,accession_id,map_set_id,map_name,display_order,start_position,stop_position )
+        (map_id,accession_id,map_set_id,map_name,display_order,map_start,map_stop )
          values ( ?,?,?,?,?,?,? )
         ],
         {},
@@ -2884,9 +2887,9 @@ If you don't want CMap to update into your database, make this a dummy method.
 
 =item - Display Order (display_order)
 
-=item - start_position (start_position)
+=item - map_start (map_start)
 
-=item - stop_position (stop_position)
+=item - map_stop (map_stop)
 
 =back
 
@@ -2901,8 +2904,11 @@ If you don't want CMap to update into your database, make this a dummy method.
     my $map_set_id     = $args{'map_set_id'};
     my $map_name       = $args{'map_name'};
     my $display_order  = $args{'display_order'};
-    my $start_position = $args{'start_position'};
-    my $stop_position  = $args{'stop_position'};
+    my $map_start = $args{'map_start'};
+    my $map_stop  = $args{'map_stop'};
+    # Backwards compatibility
+    $map_start = $args{'start_position'} unless defined($map_start);
+    $map_stop  = $args{'stop_position'} unless defined($map_stop);
     my $db             = $cmap_object->db;
     my $return_object;
 
@@ -2933,15 +2939,15 @@ If you don't want CMap to update into your database, make this a dummy method.
         $set_sql .= $set_sql ? ", " : " set ";
         $set_sql .= " display_order = ? ";
     }
-    if ( defined($start_position) ) {
-        push @update_args, $start_position;
+    if ( defined($map_start) ) {
+        push @update_args, $map_start;
         $set_sql .= $set_sql ? ", " : " set ";
-        $set_sql .= " start_position = ? ";
+        $set_sql .= " map_start = ? ";
     }
-    if ( defined($stop_position) ) {
-        push @update_args, $stop_position;
+    if ( defined($map_stop) ) {
+        push @update_args, $map_stop;
         $set_sql .= $set_sql ? ", " : " set ";
-        $set_sql .= " stop_position = ? ";
+        $set_sql .= " map_stop = ? ";
     }
 
     push @update_args, $map_id;
@@ -3104,8 +3110,9 @@ Array of Hashes:
     feature_aid,
     feature_type_aid,
     feature_name,
-    start_position,
-    stop_position,
+    feature_start,
+    feature_stop,
+    direction,
     map_id,
     is_landmark,
     map_aid,
@@ -3170,14 +3177,15 @@ Not using cache because this query is quicker.
                 f.accession_id as feature_aid,
                 f.feature_type_accession as feature_type_aid,
                 f.feature_name,
-                f.start_position,
-                f.stop_position,
+                f.feature_start,
+                f.feature_stop,
+                f.direction,
                 f.map_id,
                 f.is_landmark,
                 map.accession_id as map_aid,
                 map.map_name,
-                map.start_position as map_start,
-                map.stop_position as map_stop,
+                map.map_start as map_start,
+                map.map_stop as map_stop,
                 ms.map_set_id,
                 ms.accession_id as map_set_aid,
                 ms.map_set_name,
@@ -3210,11 +3218,11 @@ Not using cache because this query is quicker.
 
     if ( defined($feature_start) ) {
         push @identifiers, $feature_start;
-        $where_sql .= " and f.start_position = ? ";
+        $where_sql .= " and f.feature_start = ? ";
     }
     if ( defined($feature_stop) ) {
         push @identifiers, $feature_stop;
-        $where_sql .= " and f.stop_position = ? ";
+        $where_sql .= " and f.feature_stop = ? ";
 
     }
     if ( defined($direction) ) {
@@ -3287,11 +3295,11 @@ Not using cache because this query is quicker.
         push @identifiers, ( $map_start, $map_stop, $map_start, $map_stop );
         $where_sql .= qq[
             and      (
-                ( f.start_position>=? and f.start_position<=? )
+                ( f.feature_start>=? and f.feature_start<=? )
                 or   (
-                    f.stop_position is not null and
-                    f.start_position<=? and
-                    f.stop_position>=?
+                    f.feature_stop is not null and
+                    f.feature_start<=? and
+                    f.feature_stop>=?
                 )
             )
         ];
@@ -3380,8 +3388,8 @@ Array of Hashes:
     accession_id
     feature_name
     is_landmark
-    start_position
-    stop_position
+    feature_start
+    feature_stop
     feature_type_aid
     default_rank
     direction
@@ -3408,8 +3416,8 @@ Not using cache because this query is quicker.
                accession_id,
                feature_name,
                is_landmark,
-               start_position,
-               stop_position,
+               feature_start,
+               feature_stop,
                feature_type_accession as feature_type_aid,
                default_rank,
                direction
@@ -3490,9 +3498,9 @@ Not using cache because this query is quicker.
 
     my ( $min_start, $max_start, $max_stop ) = $db->selectrow_array(
         q[
-            select   min(f.start_position),
-                     max(f.start_position),
-                     max(f.stop_position)
+            select   min(f.feature_start),
+                     max(f.feature_start),
+                     max(f.feature_stop)
             from     cmap_feature f
             where    f.map_id=?
             group by f.map_id
@@ -3660,8 +3668,8 @@ Array of Hashes:
     map_id,
     feature_name,
     is_landmark,
-    start_position,
-    stop_position,
+    feature_start,
+    feature_stop,
     feature_type_aid,
     direction,
     map_aid,
@@ -3703,8 +3711,8 @@ Array of Hashes:
                  f.map_id,
                  f.feature_name,
                  f.is_landmark,
-                 f.start_position,
-                 f.stop_position,
+                 f.feature_start,
+                 f.feature_stop,
                  f.feature_type_accession as feature_type_aid,
                  f.direction,
                  map.accession_id as map_aid,
@@ -3725,26 +3733,26 @@ Array of Hashes:
     if ( defined($map_start) and defined($map_stop) ) {
         $where_sql .= qq[
             and (
-                 ( f.start_position>=$map_start and
-                   f.start_position<=$map_stop )
+                 ( f.feature_start>=$map_start and
+                   f.feature_start<=$map_stop )
                  or (
-                   f.stop_position is not null and
-                   f.start_position<=$map_start and
-                   f.stop_position>=$map_start
+                   f.feature_stop is not null and
+                   f.feature_start<=$map_start and
+                   f.feature_stop>=$map_start
                  )
                 )
         ];
     }
     elsif ( defined($map_start) ) {
         $where_sql .=
-            " and (( f.start_position>="
+            " and (( f.feature_start>="
           . $map_start
-          . " ) or ( f.stop_position is not null and "
-          . " f.stop_position>="
+          . " ) or ( f.feature_stop is not null and "
+          . " f.feature_stop>="
           . $map_start . " ))";
     }
     elsif ( defined($map_stop) ) {
-        $where_sql .= " and f.start_position<=" . $map_stop . " ";
+        $where_sql .= " and f.feature_start<=" . $map_stop . " ";
     }
 
     # Create the query that doesn't get any of the correspondence
@@ -3992,31 +4000,31 @@ Not using cache because this query is quicker.
                 $restricted_sql .=
                     " or (f.map_id="
                   . $slot_map_id
-                  . " and (( f.start_position>="
+                  . " and (( f.feature_start>="
                   . $this_slot_info->{$slot_map_id}->[0]
-                  . " and f.start_position<="
+                  . " and f.feature_start<="
                   . $this_slot_info->{$slot_map_id}->[1]
-                  . " ) or ( f.stop_position is not null and "
-                  . "  f.start_position<="
+                  . " ) or ( f.feature_stop is not null and "
+                  . "  f.feature_start<="
                   . $this_slot_info->{$slot_map_id}->[0]
-                  . " and f.stop_position>="
+                  . " and f.feature_stop>="
                   . $this_slot_info->{$slot_map_id}->[0] . " )))";
             }
             elsif ( defined( $this_slot_info->{$slot_map_id}->[0] ) ) {
                 $restricted_sql .=
                     " or (f.map_id="
                   . $slot_map_id
-                  . " and (( f.start_position>="
+                  . " and (( f.feature_start>="
                   . $this_slot_info->{$slot_map_id}->[0]
-                  . " ) or ( f.stop_position is not null "
-                  . " and f.stop_position>="
+                  . " ) or ( f.feature_stop is not null "
+                  . " and f.feature_stop>="
                   . $this_slot_info->{$slot_map_id}->[0] . " )))";
             }
             elsif ( defined( $this_slot_info->{$slot_map_id}->[1] ) ) {
                 $restricted_sql .=
                     " or (f.map_id="
                   . $slot_map_id
-                  . " and f.start_position<="
+                  . " and f.feature_start<="
                   . $this_slot_info->{$slot_map_id}->[1] . ") ";
             }
             else {
@@ -4121,9 +4129,9 @@ If you don't want CMap to insert into your database, make this a dummy method.
 
 =item - is_landmark (is_landmark)
 
-=item - start_position (start_position)
+=item - feature_start (feature_start)
 
-=item - stop_position (stop_position)
+=item - feature_stop (feature_stop)
 
 =item - default_rank (default_rank)
 
@@ -4150,24 +4158,32 @@ Feature id
     my $feature_type_aid = $args{'feature_type_aid'};
     my $feature_name     = $args{'feature_name'};
     my $is_landmark      = $args{'is_landmark'};
-    my $start_position   = $args{'start_position'};
-    my $stop_position    = $args{'stop_position'};
+    my $feature_start   = $args{'feature_start'};
+    my $feature_stop    = $args{'feature_stop'};
+    # Backwards compatibility
+    $feature_start = $args{'start_position'} unless defined($feature_start);
+    $feature_stop  = $args{'stop_position'} unless defined($feature_stop);
     my $default_rank     = $args{'default_rank'};
-    my $direction        = $args{'direction'};
+    my $direction        = $args{'direction'} || 1;
     my $gclass           = $args{'gclass'};
     my $threshold        = $args{'threshold'} || 0;
     my $db               = $cmap_object->db;
 
     $gclass = undef unless ( $cmap_object->config_data('gbrowse_compatible') );
 
-    $stop_position = $start_position unless ( defined($stop_position) );
+    $feature_stop = $feature_start unless ( defined($feature_stop) and $feature_stop =~ /^$RE{'num'}{'real'}$/ );
+
+    if (defined($feature_stop) and defined($feature_start) and $feature_stop<$feature_start){
+        $direction = $direction * -1;
+        ($feature_stop,$feature_start) = ($feature_start,$feature_stop);
+    }
 
     if ($feature_type_aid) {
         push @{ $self->{'insert_features'} },
           [
             $feature_aid,   $map_id,       $feature_type_aid,
-            $feature_name,  $is_landmark,  $start_position,
-            $stop_position, $default_rank, $direction
+            $feature_name,  $is_landmark,  $feature_start,
+            $feature_stop, $default_rank, $direction
           ];
         push @{ $self->{'insert_features'}[-1] }, $gclass
           if ($gclass);
@@ -4196,8 +4212,8 @@ Feature id
                         feature_type_accession,
                         feature_name,
                         is_landmark,
-                        start_position,
-                        stop_position,
+                        feature_start,
+                        feature_stop,
                         default_rank,
                         direction,
                         gclass
@@ -4217,8 +4233,8 @@ Feature id
                         feature_type_accession,
                         feature_name,
                         is_landmark,
-                        start_position,
-                        stop_position,
+                        feature_start,
+                        feature_stop,
                         default_rank,
                         direction 
                      )
@@ -4278,9 +4294,9 @@ If you don't want CMap to update into your database, make this a dummy method.
 
 =item - is_landmark (is_landmark)
 
-=item - start_position (start_position)
+=item - feature_start (feature_start)
 
-=item - stop_position (stop_position)
+=item - feature_stop (feature_stop)
 
 =item - default_rank (default_rank)
 
@@ -4300,11 +4316,21 @@ If you don't want CMap to update into your database, make this a dummy method.
     my $feature_type_aid = $args{'feature_type_aid'};
     my $feature_name     = $args{'feature_name'};
     my $is_landmark      = $args{'is_landmark'};
-    my $start_position   = $args{'start_position'};
-    my $stop_position    = $args{'stop_position'};
+    my $feature_start   = $args{'feature_start'};
+    my $feature_stop    = $args{'feature_stop'};
+    # Backwards compatibility
+    $feature_start = $args{'start_position'} unless defined($feature_start);
+    $feature_stop  = $args{'stop_position'} unless defined($feature_stop);
     my $default_rank     = $args{'default_rank'};
     my $direction        = $args{'direction'};
     my $db               = $cmap_object->db;
+
+    $feature_stop = $feature_start unless ( defined($feature_stop) and $feature_stop =~ /^$RE{'num'}{'real'}$/ );
+
+    if (defined($feature_stop) and defined($feature_start) and $feature_stop<$feature_start){
+        $direction = $direction * -1;
+        ($feature_stop,$feature_start) = ($feature_start,$feature_stop);
+    }
 
     my @update_args = ();
     my $update_sql  = qq[
@@ -4338,15 +4364,15 @@ If you don't want CMap to update into your database, make this a dummy method.
         $set_sql .= $set_sql ? ", " : " set ";
         $set_sql .= " is_landmark = ? ";
     }
-    if ($start_position) {
-        push @update_args, $start_position;
+    if ($feature_start) {
+        push @update_args, $feature_start;
         $set_sql .= $set_sql ? ", " : " set ";
-        $set_sql .= " start_position = ? ";
+        $set_sql .= " feature_start = ? ";
     }
-    if ($stop_position) {
-        push @update_args, $stop_position;
+    if ($feature_stop) {
+        push @update_args, $feature_stop;
         $set_sql .= $set_sql ? ", " : " set ";
-        $set_sql .= " stop_position = ? ";
+        $set_sql .= " feature_stop = ? ";
     }
     if ($default_rank) {
         push @update_args, $default_rank;
@@ -4999,8 +5025,8 @@ Array of Hashes:
     feature_id2
     feature_aid1
     feature_aid2
-    start_position2
-    stop_position2
+    feature_start2
+    feature_stop2
     feature_type_aid2
     map_id2
     map_aid2
@@ -5057,8 +5083,8 @@ Not using cache because this query is quicker.
                  cl.feature_id2,
                  f1.accession_id as feature_aid1,
                  f2.accession_id as feature_aid2,
-                 cl.start_position2,
-                 cl.stop_position2,
+                 cl.feature_start2,
+                 cl.feature_stop2,
                  f2.feature_type_accession as feature_type_aid2,
                  map2.map_id as map_id2,
                  map2.accession_id as map_aid2,
@@ -5151,7 +5177,7 @@ Not using cache because this query is quicker.
     $sql_str .= q[
             order by s2.display_order, s2.species_common_name, 
             ms2.display_order, ms2.map_set_short_name, map2.display_order,
-            map2.map_name, f2.start_position, f2.feature_name
+            map2.map_name, f2.feature_start, f2.feature_name
     ];
 
     $return_object = $db->selectall_arrayref( $sql_str, { Columns => {} } );
@@ -5399,26 +5425,26 @@ Array of Hashes:
     if ( defined $map_start && defined $map_stop ) {
         $sql_str .= qq[
         and      (
-        ( cl.start_position2>=$map_start and 
-            cl.start_position2<=$map_stop )
+        ( cl.feature_start2>=$map_start and 
+            cl.feature_start2<=$map_stop )
           or   (
-            cl.stop_position2 is not null and
-            cl.start_position2<=$map_start and
-            cl.stop_position2>=$map_start
+            cl.feature_stop2 is not null and
+            cl.feature_start2<=$map_start and
+            cl.feature_stop2>=$map_start
             )
          )
          ];
     }
     elsif ( defined($map_start) ) {
         $sql_str .=
-            " and (( cl.start_position2>="
+            " and (( cl.feature_start2>="
           . $map_start
-          . " ) or ( cl.stop_position2 is not null and "
-          . " cl.stop_position2>="
+          . " ) or ( cl.feature_stop2 is not null and "
+          . " cl.feature_stop2>="
           . $map_start . " ))";
     }
     elsif ( defined($map_stop) ) {
-        $sql_str .= " and cl.start_position2<=" . $map_stop . " ";
+        $sql_str .= " and cl.feature_start2<=" . $map_stop . " ";
     }
 
     if (    $ref_map_info
@@ -5612,10 +5638,10 @@ If $cluster
     map_id1
     map_id2
     evidence_type_aid
-    start_position1
-    stop_position1
-    start_position2
-    stop_position2
+    feature_start1
+    feature_stop1
+    feature_start2
+    feature_stop2
 
 
 =item * Cache Level: 4 
@@ -5679,23 +5705,23 @@ If $cluster
     }
     if ($clustering) {
         $select_sql .=
-            ', cl.start_position1,cl.stop_position1,'
-          . 'cl.start_position2,cl.stop_position2';
+            ', cl.feature_start1,cl.feature_stop1,'
+          . 'cl.feature_start2,cl.feature_stop2';
         $group_by_sql = '';
     }
     else {
         $select_sql .= qq[
             , count(distinct cl.feature_correspondence_id) as no_corr, 
-            min(cl.start_position2) as min_start2, 
-            max(cl.start_position2) as max_start2, 
-            avg(((cl.stop_position2-cl.start_position2)/2)
-            +cl.start_position2) as avg_mid2, 
-            avg(cl.start_position2) as start_avg2,
-            avg(cl.start_position1) as start_avg1,
-            min(cl.start_position1) as min_start1, 
-            max(cl.start_position1) as max_start1 , 
-            avg(((cl.stop_position1-cl.start_position1)/2)
-            +cl.start_position1) as avg_mid1 
+            min(cl.feature_start2) as min_start2, 
+            max(cl.feature_start2) as max_start2, 
+            avg(((cl.feature_stop2-cl.feature_start2)/2)
+            +cl.feature_start2) as avg_mid2, 
+            avg(cl.feature_start2) as start_avg2,
+            avg(cl.feature_start1) as start_avg1,
+            min(cl.feature_start1) as min_start1, 
+            max(cl.feature_start1) as max_start1 , 
+            avg(((cl.feature_stop1-cl.feature_start1)/2)
+            +cl.feature_start1) as avg_mid1 
         ];
     }
 
@@ -5715,27 +5741,27 @@ If $cluster
             $restricted_sql_1 .=
                 " or (cl.map_id1="
               . $slot_map_id
-              . " and (( cl.start_position1>="
+              . " and (( cl.feature_start1>="
               . $this_start
-              . " and cl.start_position1<="
+              . " and cl.feature_start1<="
               . $this_stop
-              . " ) or ( cl.stop_position1 is not null and "
-              . "  cl.start_position1<="
+              . " ) or ( cl.feature_stop1 is not null and "
+              . "  cl.feature_start1<="
               . $this_start
-              . " and cl.stop_position1>="
+              . " and cl.feature_stop1>="
               . $this_start . " )))";
             if ($show_intraslot_corr) {
                 $restricted_sql_2 .=
                     " or (cl.map_id2="
                   . $slot_map_id
-                  . " and (( cl.start_position2>="
+                  . " and (( cl.feature_start2>="
                   . $this_start
-                  . " and cl.start_position2<="
+                  . " and cl.feature_start2<="
                   . $this_stop
-                  . " ) or ( cl.stop_position2 is not null and "
-                  . "  cl.start_position2<="
+                  . " ) or ( cl.feature_stop2 is not null and "
+                  . "  cl.feature_start2<="
                   . $this_start
-                  . " and cl.stop_position2>="
+                  . " and cl.feature_stop2>="
                   . $this_start . " )))";
             }
 
@@ -5744,19 +5770,19 @@ If $cluster
             $restricted_sql_1 .=
                 " or (cl.map_id1="
               . $slot_map_id
-              . " and (( cl.start_position1>="
+              . " and (( cl.feature_start1>="
               . $this_start
-              . " ) or ( cl.stop_position1 is not null "
-              . " and cl.stop_position1>="
+              . " ) or ( cl.feature_stop1 is not null "
+              . " and cl.feature_stop1>="
               . $this_start . " )))";
             if ($show_intraslot_corr) {
                 $restricted_sql_2 .=
                     " or (cl.map_id2="
                   . $slot_map_id
-                  . " and (( cl.start_position2>="
+                  . " and (( cl.feature_start2>="
                   . $this_start
-                  . " ) or ( cl.stop_position2 is not null "
-                  . " and cl.stop_position2>="
+                  . " ) or ( cl.feature_stop2 is not null "
+                  . " and cl.feature_stop2>="
                   . $this_start . " )))";
             }
         }
@@ -5764,13 +5790,13 @@ If $cluster
             $restricted_sql_1 .=
                 " or (cl.map_id1="
               . $slot_map_id
-              . " and cl.start_position1<="
+              . " and cl.feature_start1<="
               . $this_stop . ") ";
             if ($show_intraslot_corr) {
                 $restricted_sql_2 .=
                     " or (cl.map_id2="
                   . $slot_map_id
-                  . " and cl.start_position2<="
+                  . " and cl.feature_start2<="
                   . $this_stop . ") ";
             }
         }
@@ -5805,31 +5831,31 @@ If $cluster
                 $restricted_sql_2 .=
                     " or (cl.map_id2="
                   . $slot_map_id
-                  . " and (( cl.start_position2>="
+                  . " and (( cl.feature_start2>="
                   . $this_start
-                  . " and cl.start_position2<="
+                  . " and cl.feature_start2<="
                   . $this_stop
-                  . " ) or ( cl.stop_position2 is not null and "
-                  . "  cl.start_position2<="
+                  . " ) or ( cl.feature_stop2 is not null and "
+                  . "  cl.feature_start2<="
                   . $this_start
-                  . " and cl.stop_position2>="
+                  . " and cl.feature_stop2>="
                   . $this_start . " )))";
             }
             elsif ( defined($this_start) ) {
                 $restricted_sql_2 .=
                     " or (cl.map_id2="
                   . $slot_map_id
-                  . " and (( cl.start_position2>="
+                  . " and (( cl.feature_start2>="
                   . $this_start
-                  . " ) or ( cl.stop_position2 is not null "
-                  . " and cl.stop_position2>="
+                  . " ) or ( cl.feature_stop2 is not null "
+                  . " and cl.feature_stop2>="
                   . $this_start . " )))";
             }
             elsif ( defined($this_stop) ) {
                 $restricted_sql_2 .=
                     " or (cl.map_id2="
                   . $slot_map_id
-                  . " and cl.start_position2<="
+                  . " and cl.feature_start2<="
                   . $this_stop . ") ";
             }
             else {
@@ -6055,31 +6081,31 @@ If $include_map1_data also has
             $restricted_sql .=
                 " or (cl.map_id1="
               . $ref_map_id
-              . " and (( cl.start_position1>="
+              . " and (( cl.feature_start1>="
               . $ref_map_start
-              . " and cl.start_position1<="
+              . " and cl.feature_start1<="
               . $ref_map_stop
-              . " ) or ( cl.stop_position1 is not null and "
-              . "  cl.start_position1<="
+              . " ) or ( cl.feature_stop1 is not null and "
+              . "  cl.feature_start1<="
               . $ref_map_start
-              . " and cl.stop_position1>="
+              . " and cl.feature_stop1>="
               . $ref_map_start . " )))";
         }
         elsif ( defined($ref_map_start) ) {
             $restricted_sql .=
                 " or (cl.map_id1="
               . $ref_map_id
-              . " and (( cl.start_position1>="
+              . " and (( cl.feature_start1>="
               . $ref_map_start
-              . " ) or ( cl.stop_position1 is not null and "
-              . " cl.stop_position1>="
+              . " ) or ( cl.feature_stop1 is not null and "
+              . " cl.feature_stop1>="
               . $ref_map_start . " )))";
         }
         elsif ( defined($ref_map_stop) ) {
             $restricted_sql .=
                 " or (cl.map_id1="
               . $ref_map_id
-              . " and cl.start_position1<="
+              . " and cl.feature_start1<="
               . $ref_map_stop . ") ";
         }
         else {
@@ -6344,10 +6370,10 @@ Feature Correspondence id
                     feature_correspondence_id,
                     feature_id1,
                     feature_id2,
-                    start_position1,
-                    start_position2,
-                    stop_position1,
-                    stop_position2,
+                    feature_start1,
+                    feature_start2,
+                    feature_stop1,
+                    feature_stop2,
                     map_id1,
                     map_id2,
                     feature_type_accession1,
@@ -6400,10 +6426,10 @@ Feature Correspondence id
                 $corr_id,
                 $feature_id1,
                 $feature_id2,
-                $feature1->{'start_position'},
-                $feature2->{'start_position'},
-                $feature1->{'stop_position'},
-                $feature2->{'stop_position'},
+                $feature1->{'feature_start'},
+                $feature2->{'feature_start'},
+                $feature1->{'feature_stop'},
+                $feature2->{'feature_stop'},
                 $feature1->{'map_id'},
                 $feature2->{'map_id'},
                 $feature1->{'feature_type_aid'},
@@ -6414,10 +6440,10 @@ Feature Correspondence id
                 $corr_id,
                 $feature_id2,
                 $feature_id1,
-                $feature2->{'start_position'},
-                $feature1->{'start_position'},
-                $feature2->{'stop_position'},
-                $feature1->{'stop_position'},
+                $feature2->{'feature_start'},
+                $feature1->{'feature_start'},
+                $feature2->{'feature_stop'},
+                $feature1->{'feature_stop'},
                 $feature2->{'map_id'},
                 $feature1->{'map_id'},
                 $feature2->{'feature_type_aid'},
@@ -8868,7 +8894,7 @@ sub feature_name_to_position {    #ZZZ
 
 =item * Description
 
-Turn a feature name into a position.  If start_position_only is true, it
+Turn a feature name into a position.  If return_start is true, it
 returns the start.  If it is false, return a defined stop (or start if stop in
 undef).
 
@@ -8887,7 +8913,7 @@ still.
 
 =item - Map ID (map_id)
 
-=item - start_position_only (start_position_only)
+=item - return_start (return_start)
 
 =back
 
@@ -8907,7 +8933,7 @@ Not using cache because this query is quicker.
     my $cmap_object  = $args{'cmap_object'}  or return;
     my $feature_name = $args{'feature_name'} or return;
     my $map_id       = $args{'map_id'}       or return;
-    my $start_position_only = $args{'start_position_only'};
+    my $return_start = $args{'return_start'};
 
     # REPLACE 33 YYY
     # Using get_feature_detail is a little overkill
@@ -8923,10 +8949,10 @@ Not using cache because this query is quicker.
         return undef;
     }
 
-    my $start = $feature_array->[0]{'start_position'};
-    my $stop  = $feature_array->[0]{'stop_position'};
+    my $start = $feature_array->[0]{'feature_start'};
+    my $stop  = $feature_array->[0]{'feature_stop'};
 
-    return $start_position_only ? $start
+    return $return_start ? $start
       : defined $stop           ? $stop
       : $start;
 }

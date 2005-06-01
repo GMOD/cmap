@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.102 2005-05-27 19:02:19 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.103 2005-06-01 16:24:27 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.102 $)[-1];
+$VERSION = (qw$Revision: 1.103 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -26,9 +26,9 @@ use constant COLUMN_NAMES    => [
     qw[ species_accession_id species_common_name
       map_set_accession_id map_set_name
       map_accession_id map_name
-      feature_accession_id feature_name feature_type_accession start_position
-      stop_position alt_species_common_name alt_map_set_name alt_map_name
-      alt_feature_type alt_start_position alt_stop_position
+      feature_accession_id feature_name feature_type_accession feature_start
+      feature_stop alt_species_common_name alt_map_set_name alt_map_name
+      alt_feature_type alt_feature_start alt_feature_stop
       evidence
       ]
 ];
@@ -36,11 +36,11 @@ use constant MAP_FIELDS => [
     qw[ species_aid species_common_name map_set_aid map_set_short_name map_aid map_name ]
 ];
 use constant FEATURE_FIELDS => [
-    qw[ feature_aid feature_name feature_type_aid start_position stop_position ]
+    qw[ feature_aid feature_name feature_type_aid feature_start feature_stop ]
 ];
 use constant POSITION_FIELDS => [
     qw[ species_common_name2 map_set_short_name2 map_name2 feature_type_aid2
-      start_position2 stop_position2 evidence
+      feature_start2 feature_stop2 evidence
       ]
 ];
 
