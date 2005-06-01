@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache::AdminViewer;
 
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.86 2005-06-01 16:24:27 mwz444 Exp $
+# $Id: AdminViewer.pm,v 1.87 2005-06-01 18:19:57 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -36,7 +36,7 @@ $FEATURE_SHAPES = [
 ];
 $MAP_SHAPES = [qw( box dumbbell I-beam )];
 $WIDTHS     = [ 1 .. 10 ];
-$VERSION    = (qw$Revision: 1.86 $)[-1];
+$VERSION    = (qw$Revision: 1.87 $)[-1];
 
 use constant ADMIN_TEMPLATE => {
     admin_home                => 'admin_home.tmpl',
@@ -188,7 +188,6 @@ sub attribute_edit {
     my ( $self, %args ) = @_;
     my $apr          = $self->apr;
     my $sql_object   = $self->sql or return;
-    my $admin        = $self->admin or return;
     my $attribute_id = $apr->param('attribute_id')
       or die 'No feature attribute id';
 
@@ -251,6 +250,7 @@ sub attribute_insert {
         ],
       )
       or return $self->error( $admin->error );
+    $admin->purge_cache(1);
 
     return $self->redirect_home(
         ADMIN_HOME_URI . "?action=$ret_action;$pk_name=$object_id" );
@@ -299,6 +299,7 @@ sub attribute_update {
       )
       or return $self->error( $admin->error );
 
+    $admin->purge_cache(1);
     return $self->redirect_home(
         ADMIN_HOME_URI . "?action=$ret_action;$pk_name=$object_id" );
 }
@@ -508,6 +509,7 @@ sub entity_delete {
         $admin->map_set_delete( map_set_id => $entity_id )
           or return $self->error( $admin->error );
         $uri_args ||= '?action=map_sets_view';
+        $admin->purge_cache(1);
     }
 
     #
@@ -517,6 +519,7 @@ sub entity_delete {
         $admin->species_delete( species_id => $entity_id )
           or return $self->error( $admin->error );
         $uri_args ||= '?action=species_view';
+        $admin->purge_cache(1);
     }
 
     #
@@ -526,6 +529,7 @@ sub entity_delete {
         $admin->feature_correspondence_delete(
             feature_correspondence_id => $entity_id )
           or return $self->error( $admin->error );
+        $admin->purge_cache(4);
     }
 
     #
@@ -557,6 +561,7 @@ sub entity_delete {
         my $map_id = $admin->feature_delete( feature_id => $entity_id )
           or return $self->error( $admin->error );
         $uri_args ||= "?action=map_view;map_id=$map_id";
+        $admin->purge_cache(3);
     }
 
     #
@@ -577,6 +582,7 @@ sub entity_delete {
         my $map_set_id = $admin->map_delete( map_id => $entity_id )
           or return $self->error( $admin->error );
         $uri_args = "?action=map_set_view;map_set_id=$map_set_id";
+        $admin->purge_cache(2);
     }
 
     #
@@ -590,6 +596,7 @@ sub entity_delete {
 
         $uri_args =
 "?action=feature_corr_view;feature_correspondence_id=$feature_corr_id";
+        $admin->purge_cache(4);
     }
 
     #
@@ -705,6 +712,7 @@ sub map_insert {
       )
       or return $self->map_create( errors => $admin->error );
 
+        $admin->purge_cache(2);
     return $self->redirect_home(
         ADMIN_HOME_URI . "?action=map_view;map_id=$map_id" );
 }
@@ -901,6 +909,7 @@ sub feature_alias_insert {
         alias      => $apr->param('alias') || '',
       )
       or return $self->feature_alias_create( errors => [ $admin->error ] );
+    $admin->purge_cache(3);
 
     return $self->redirect_home(
         ADMIN_HOME_URI . "?action=feature_view;feature_id=$feature_id" );
@@ -1041,6 +1050,7 @@ sub feature_insert {
         feature_stop    => $apr->param('feature_stop')
       )
       or return $self->feature_create( errors => $admin->error );
+    $admin->purge_cache(3);
 
     return $self->redirect_home(
         ADMIN_HOME_URI . '?action=map_view;map_id=' . $apr->param('map_id') );
@@ -1281,6 +1291,7 @@ sub feature_corr_insert {
         feature_correspondence_aid => $feature_correspondence_aid,
         is_enabled                 => $is_enabled
     );
+    $admin->purge_cache(4);
 
     if ( $feature_correspondence_id < 0 ) {
         my $sql_object = $self->sql or return;
@@ -1787,6 +1798,7 @@ sub map_set_insert {
       )
       or return $self->map_set_create( errors => $admin->error );
 
+    $admin->purge_cache(1);
     return $self->redirect_home(
         ADMIN_HOME_URI . "?action=map_set_view;map_set_id=$map_set_id",
     );
@@ -2066,6 +2078,7 @@ sub species_insert {
         display_order       => $apr->param('display_order')       || '',
       )
       or return $self->species_create( errors => $admin->error );
+    $admin->purge_cache(1);
 
     return $self->redirect_home( ADMIN_HOME_URI . '?action=species_view' );
 }
@@ -2251,6 +2264,7 @@ sub xref_insert {
       )
       or return $self->xref_create( errors => $admin->error );
 
+    $admin->purge_cache(1);
     my $action =
          $return_action
       && $pk_name
@@ -2295,6 +2309,7 @@ sub xref_update {
       )
       or return $self->error( $admin->error );
 
+    $admin->purge_cache(1);
     my $pk_name  = $sql_object->pk_name($object_type);
     my $uri_args =
          $return_action
