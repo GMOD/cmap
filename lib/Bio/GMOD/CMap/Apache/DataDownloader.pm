@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::DataDownloader;
 # vim: set ft=perl:
 
-# $Id: DataDownloader.pm,v 1.2 2004-06-21 19:56:04 mwz444 Exp $
+# $Id: DataDownloader.pm,v 1.3 2005-06-03 22:20:00 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use base 'Bio::GMOD::CMap::Apache';
@@ -24,8 +24,8 @@ sub handler {
         my $page_no        = $apr->param('page_no') || 1;
         my $data_module    = $self->data_module;
         my $data           = $data_module->data_download(
-            map_set_aid    => $apr->param('map_set_aid') || '',
-            map_aid        => $apr->param('map_aid')     || '',
+            map_set_acc    => $apr->param('map_set_acc') || '',
+            map_acc        => $apr->param('map_acc')     || '',
             format         => $apr->param('format')      || '',
         ) or return $self->error( $data_module->error );
 

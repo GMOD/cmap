@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::FeatureSearch;
 # vim: set ft=perl:
 
-# $Id: FeatureSearch.pm,v 1.21 2004-08-07 01:35:54 mwz444 Exp $
+# $Id: FeatureSearch.pm,v 1.22 2005-06-03 22:20:00 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.21 $)[-1];
+$VERSION = (qw$Revision: 1.22 $)[-1];
 
 use Bio::GMOD::CMap::Data;
 use Data::Pageset;
@@ -23,8 +23,8 @@ sub handler {
     my $order_by          = $apr->param('order_by')     || '';
     my $page_no           = $apr->param('page_no')      ||  1;
     my $search_field      = $apr->param('search_field') || '';
-    my @species_aids      = ( $apr->param('species_aid')      );
-    my @feature_type_aids = ( $apr->param('feature_type_aid') );
+    my @species_accs      = ( $apr->param('species_acc')      );
+    my @feature_type_accs = ( $apr->param('feature_type_acc') );
 
     $self->data_source( $apr->param('data_source') ) or return;
 
@@ -36,36 +36,36 @@ sub handler {
     # Because I need a <select> element on the search form, I could
     # get the species and feature type acc. IDs as an array.  However,
     # if the user clicks on a link in the pager, then I have to look
-    # in the "*_aids" field, which is a comma-separated string of acc. IDs.
+    # in the "*_accs" field, which is a comma-separated string of acc. IDs.
     #
-    unless ( @species_aids ) {
-        @species_aids = split /,/, $apr->param('species_aids');
+    unless ( @species_accs ) {
+        @species_accs = split /,/, $apr->param('species_accs');
     }
 
-    unless ( @feature_type_aids ) {
-        @feature_type_aids = split /,/, $apr->param('feature_type_aids');
+    unless ( @feature_type_accs ) {
+        @feature_type_accs = split /,/, $apr->param('feature_type_accs');
     }
 
     #
     # "-1" is a reserved value meaning "All."
     #
-    @species_aids      = () if grep { /^-1$/ } @species_aids;
-    @feature_type_aids = () if grep { /^-1$/ } @feature_type_aids;
+    @species_accs      = () if grep { /^-1$/ } @species_accs;
+    @feature_type_accs = () if grep { /^-1$/ } @feature_type_accs;
 
     #
     # Set the parameters in the request object.
     #
     $apr->param( features               => $features                         );
-    $apr->param( species_aids           => join(',', @species_aids         ) );
-    $apr->param( feature_type_aids      => join(',', @feature_type_aids    ) );
+    $apr->param( species_accs           => join(',', @species_accs         ) );
+    $apr->param( feature_type_accs      => join(',', @feature_type_accs    ) );
 
     my $data              =  $self->data_module or return;
     my $results           =  $data->feature_search_data(
         features          => $features,
         order_by          => $order_by,
         search_field      => $search_field,
-        species_aids      => \@species_aids,
-        feature_type_aids => \@feature_type_aids,
+        species_accs      => \@species_accs,
+        feature_type_accs => \@feature_type_accs,
         page_size         => $PAGE_SIZE,
         page_no           => $page_no,
         pages_per_set     => $MAX_PAGES,
@@ -84,8 +84,8 @@ sub handler {
             species             => $results->{'species'},
             feature_types       => $results->{'feature_types'},
             search_results      => $results->{'data'},
-            species_lookup      => { map { $_, 1 } @species_aids      },
-            feature_type_aid_lookup => { map { $_, 1 } @feature_type_aids },
+            species_lookup      => { map { $_, 1 } @species_accs      },
+            feature_type_acc_lookup => { map { $_, 1 } @feature_type_accs },
             data_sources        => $self->data_sources,
             intro               => $INTRO,
         },

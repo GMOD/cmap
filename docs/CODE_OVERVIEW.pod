@@ -4,7 +4,7 @@ CMap Code Overview
 
 =head1 VERSION
 
-$Revision: 1.8 $
+$Revision: 1.9 $
 
 CMap is a CGI application for viewing comparative and genetic maps.
 Written entirely in Perl, this application will run on many different
@@ -206,18 +206,17 @@ their function:
 
 =item - Primary key: 
 
-The primary key of the table is always defined as the first field in
-the table (though the first field in a table is not always guaranteed
-to be the primary key). A table's primary key will be the name of the
-table minus the "cmap_" prefix and the token "_id." So, for example,
-the table "cmap_feature" has as its primary key "feature_id."
-Additionally, the primary key of a table will always be an ascending
-integer value (like MySQL's "auto_increment" field, only handled in
-Perl code so as to be portable to databases without such types of
-fields). This naming convention is never used for any other type of
-field except the "accession_id," so it is always obvious the type and
-purpose of any field ending in "_id": if it is the same name as the
-table, then it is a primary key, else it is a foreign key.
+The primary key of the table is always defined as the first field in the table
+(though the first field in a table is not always guaranteed to be the primary
+key). A table's primary key will be the name of the table minus the "cmap_"
+prefix and the token "_id." So, for example, the table "cmap_feature" has as
+its primary key "feature_id." Additionally, the primary key of a table will
+always be an ascending integer value (like MySQL's "auto_increment" field, only
+handled in Perl code so as to be portable to databases without such types of
+fields). This naming convention is never used for any other type of field
+except the "accession id", which is exampled by "feature_acc" . It is always
+obvious the type and purpose of any field ending in "_id": if it is the same
+name as the table, then it is a primary key, else it is a foreign key.
 
 =item - Boolean fields: 
 

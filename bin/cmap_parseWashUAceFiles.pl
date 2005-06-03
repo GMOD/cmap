@@ -61,7 +61,7 @@ foreach my $contig_name (keys %contig_data){
 print STDERR "afterall\n";
 
 ###Print lead line
-print "map_name\tfeature_name\tfeature_start\tfeature_stop\tfeature_type_accession\tfeature_direction\n";
+print "map_name\tfeature_name\tfeature_start\tfeature_stop\tfeature_type_acc\tfeature_direction\n";
 
 ###Print Clusters
 my $cluster_name;

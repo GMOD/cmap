@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.25 2005-05-04 21:38:20 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.26 2005-06-03 22:19:50 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.25 $)[-1];
+$VERSION = (qw$Revision: 1.26 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -308,7 +308,7 @@ use constant DEFAULT => {
     #
     # Where to see feature details.
     #
-    feature_details_url => 'feature?feature_aid=',
+    feature_details_url => 'feature?feature_acc=',
 
     #
     # Color of box around a highlighted feature.
@@ -337,7 +337,7 @@ use constant DEFAULT => {
 
     #
     # Which field to search if none specified.
-    # Choices: feature_name, feature_aid
+    # Choices: feature_name, feature_acc
     # Default: feature_name
     #
     feature_search_field => 'feature_name',
@@ -345,7 +345,7 @@ use constant DEFAULT => {
     #
     # Where to see feature type details.
     #
-    feature_type_details_url => 'feature_type_info?feature_type_aid=',
+    feature_type_details_url => 'feature_type_info?feature_type_acc=',
     
     #
     # The size of the map image.  Note that there are options on the
@@ -530,7 +530,7 @@ use constant VALID => {
     # 
     feature_search_field => {
         feature_name     => 1,
-        feature_aid      => 1,   
+        feature_acc      => 1,   
     },
 
     #

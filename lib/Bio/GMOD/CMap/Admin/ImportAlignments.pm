@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::ImportAlignments;
 
 # vim: set ft=perl:
 
-# $Id: ImportAlignments.pm,v 1.5 2005-06-01 16:24:27 mwz444 Exp $
+# $Id: ImportAlignments.pm,v 1.6 2005-06-03 22:19:59 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ alignments from blast files.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use Data::Dumper;
 use Bio::SearchIO;
@@ -44,10 +44,10 @@ sub import_alignments {
       or return $self->error('No map set');
     my $hit_map_set_id = $args{'hit_map_set_id'}
       || $query_map_set_id;
-    my $feature_type_aid = $args{'feature_type_aid'}
-      or return $self->error('No feature_type_aid');
-    my $evidence_type_aid = $args{'evidence_type_aid'}
-      or return $self->error('No evidence_type_aid');
+    my $feature_type_acc = $args{'feature_type_acc'}
+      or return $self->error('No feature_type_acc');
+    my $evidence_type_acc = $args{'evidence_type_acc'}
+      or return $self->error('No evidence_type_acc');
     my $min_identity = $args{'min_identity'} || 0;
     my $min_length   = $args{'min_length'}   || 0;
     my $format       = $args{'format'}       || 'blast';
@@ -86,7 +86,7 @@ sub import_alignments {
                         my @hit_range   = $hsp->range('hit');
 
                         my $query_feature_id = $self->get_feature_id(
-                            feature_type_aid => $feature_type_aid,
+                            feature_type_acc => $feature_type_acc,
                             map_id           => $query_map_id,
                             start            => $query_range[0],
                             end              => $query_range[1],
@@ -95,7 +95,7 @@ sub import_alignments {
                           or return $self->error(
                             "Unable to find or create feature for query \n");
                         my $hit_feature_id = $self->get_feature_id(
-                            feature_type_aid => $feature_type_aid,
+                            feature_type_acc => $feature_type_acc,
                             map_id           => $hit_map_id,
                             start            => $hit_range[0],
                             end              => $hit_range[1],
@@ -107,7 +107,7 @@ sub import_alignments {
                         $self->{'admin'}->feature_correspondence_create(
                             feature_id1       => $query_feature_id,
                             feature_id2       => $hit_feature_id,
-                            evidence_type_aid => $evidence_type_aid,
+                            evidence_type_acc => $evidence_type_acc,
                         );
                     }
                 }
@@ -128,19 +128,19 @@ sub get_map_id {
 
     my $sql_object = $self->sql;
 
-    my ( $map_name, $map_desc, $map_accession, $map_length );
+    my ( $map_name, $map_desc, $map_acc, $map_length );
 
     if ( ref($object) eq 'Bio::Search::Result::BlastResult' ) {
-        $map_name      = $object->query_name();
-        $map_desc      = $object->query_description();
-        $map_accession = $object->query_accession();
-        $map_length    = $object->query_length();
+        $map_name   = $object->query_name();
+        $map_desc   = $object->query_description();
+        $map_acc    = $object->query_accession();
+        $map_length = $object->query_length();
     }
     elsif ( ref($object) eq 'Bio::Search::Hit::BlastHit' ) {
-        $map_name      = $object->name();
-        $map_desc      = $object->description();
-        $map_accession = $object->accession();
-        $map_length    = $object->length();
+        $map_name   = $object->name();
+        $map_desc   = $object->description();
+        $map_acc    = $object->accession();
+        $map_length = $object->length();
     }
     else {
         return 0;
@@ -149,11 +149,11 @@ sub get_map_id {
         $map_name = $map_desc;
     }
 
-    $map_accession = '' unless defined($map_accession);
+    $map_acc = '' unless defined($map_acc);
 
     # Check if added before
     my $map_key =
-      $map_set_id . ":" . $map_name . ":" . $map_accession . ":" . $map_length;
+      $map_set_id . ":" . $map_name . ":" . $map_acc . ":" . $map_length;
     if ( $self->{'maps'}->{$map_key} ) {
         return $self->{'maps'}->{$map_key};
     }
@@ -162,7 +162,7 @@ sub get_map_id {
 
     my $map_id_results = $sql_object->get_maps(
         cmap_object => $self,
-        map_aid     => $map_accession,
+        map_acc     => $map_acc,
         map_name    => $map_name,
         map_length  => $map_length,
     );
@@ -179,7 +179,7 @@ sub get_map_id {
             cmap_object => $self,
             map_name    => $map_name,
             map_set_id  => $map_set_id,
-            map_aid     => $map_accession,
+            map_acc     => $map_acc,
             map_start   => '1',
             map_stop    => $map_length,
         );
@@ -194,7 +194,7 @@ sub get_map_id {
 # Return the map_id of the map.
 sub get_feature_id {
     my ( $self, %args ) = @_;
-    my $feature_type_aid = $args{'feature_type_aid'};
+    my $feature_type_acc = $args{'feature_type_acc'};
     my $map_id           = $args{'map_id'};
     my $start            = $args{'start'};
     my $end              = $args{'end'};
@@ -208,7 +208,7 @@ sub get_feature_id {
     my $sql_object = $self->sql;
 
     my $feature_key = $direction
-      . $feature_type_aid . ":"
+      . $feature_type_acc . ":"
       . $map_id . ":"
       . $start . ":"
       . $end;
@@ -223,7 +223,7 @@ sub get_feature_id {
         cmap_object       => $self,
         feature_start     => $start,
         feature_stop      => $end,
-        feature_type_aids => [$feature_type_aid],
+        feature_type_accs => [$feature_type_acc],
         direction         => $direction,
     );
 
@@ -240,7 +240,7 @@ sub get_feature_id {
             feature_start    => $start,
             feature_stop     => $end,
             is_landmark      => 0,
-            feature_type_aid => $feature_type_aid,
+            feature_type_acc => $feature_type_acc,
             direction        => $direction,
         );
     }

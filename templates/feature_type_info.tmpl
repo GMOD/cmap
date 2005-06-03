@@ -16,10 +16,10 @@
 <div align="center">
 <form method="GET" action="feature_type_info">
     Display:
-    <select name="feature_type_aid">
+    <select name="feature_type_acc">
         <option value="">--All Feature Types--</option>
         [% FOREACH ft=all_feature_types %]
-            <option value="[% ft.feature_type_aid %]"[% IF apr.param('feature_type_aid')==ft.feature_type_aid %] selected[% END %]>[% ft.feature_type %]</option>
+            <option value="[% ft.feature_type_acc %]"[% IF apr.param('feature_type_acc')==ft.feature_type_acc %] selected[% END %]>[% ft.feature_type %]</option>
         [% END %]
     </select>
     <input type="submit" value="Submit">
@@ -46,7 +46,7 @@
             </tr> 
             <tr>
                 <td align="right">Accession&nbsp;ID:</td>
-                <td>[% ft.feature_type_aid %]</td>
+                <td>[% ft.feature_type_acc %]</td>
             </tr> 
             <tr>
                 <td align="right">Color:</td>
@@ -87,7 +87,7 @@
             <tr>
                 <td>&nbsp;</td>
                 <td>
-                    <b>[</b>&nbsp;<a href="feature_search?features=*&feature_type_aid=[% ft.feature_type_aid %]">Search for All Features of This Type</a>&nbsp;<b>]</b>
+                    <b>[</b>&nbsp;<a href="feature_search?features=*&feature_type_acc=[% ft.feature_type_acc %]">Search for All Features of This Type</a>&nbsp;<b>]</b>
                 </td>
             </tr>
             <tr><td colspan="2">&nbsp;</td></tr>

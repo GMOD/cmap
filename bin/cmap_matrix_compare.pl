@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_matrix_compare.pl,v 1.10 2005-04-28 21:49:19 mwz444 Exp $
+# $Id: cmap_matrix_compare.pl,v 1.11 2005-06-03 22:19:47 mwz444 Exp $
 
 =head1 NAME
 
@@ -98,9 +98,9 @@ my $data = $cmap->data_module   or die $cmap->error;
 #
 my $map_sets = $db->selectall_hashref(
     q[
-        select   ms.accession_id as map_set_aid, 
+        select   ms.map_set_acc, 
                  ms.map_set_short_name,
-                 ms.can_be_reference_map,
+                 ms.is_relational_map,
                  s.species_common_name
         from     cmap_map_set ms,
                  cmap_species s
@@ -112,7 +112,7 @@ my $map_sets = $db->selectall_hashref(
                  ms.published_on desc,
                  ms.map_set_short_name
     ],
-    'map_set_aid',
+    'map_set_acc',
     { Columns => {} }
 );
 
@@ -126,9 +126,9 @@ my $matrix     = $matrix_raw->{'data'};
 # Match up the matrix data with the reference map sets.
 #
 for my $rec ( @$matrix ) {
-    next unless exists $map_sets->{ $rec->{'reference_map_set_aid'} };
+    next unless exists $map_sets->{ $rec->{'reference_map_set_acc'} };
     push @{ 
-        $map_sets->{ $rec->{'reference_map_set_aid'} }{'correspondences'} 
+        $map_sets->{ $rec->{'reference_map_set_acc'} }{'correspondences'} 
     }, $rec;
 }
 
@@ -193,7 +193,7 @@ sub compare {
         map  { [ $_->{'species_common_name'}, $_->{'map_set_short_name'}, $_ ] }
         values %$map_sets 
     ) {
-        next unless $ms->{'can_be_reference_map'};
+        next if $ms->{'is_relational_map'};
         my $map_set_name = join(
             '-', $ms->{'species_common_name'}, $ms->{'map_set_short_name'} 
         );
@@ -204,11 +204,11 @@ sub compare {
 
         my @corr;
         for my $rec ( @{ $ms->{'correspondences'} } ) {
-            my $link_ms_aid = $rec->{'link_map_set_aid'};
-            my $link_ms     = $map_sets->{ $link_ms_aid } or next;
+            my $link_ms_acc = $rec->{'link_map_set_acc'};
+            my $link_ms     = $map_sets->{ $link_ms_acc } or next;
             my $cur         = $rec->{'correspondences'};
-            my $old = $old_map_sets->{ $link_ms_aid }{'correspondence_lookup'}
-                { $ms->{'map_set_aid'} } || '-';
+            my $old = $old_map_sets->{ $link_ms_acc }{'correspondence_lookup'}
+                { $ms->{'map_set_acc'} } || '-';
 
             push @corr, [
                 $link_ms->{'species_common_name'},
@@ -248,7 +248,7 @@ sub show_current {
         map  { [ $_->{'species_common_name'}, $_->{'map_set_short_name'}, $_ ] }
         values %$map_sets 
     ) {
-        next unless $ms->{'can_be_reference_map'};
+        next if $ms->{'is_relational_map'};
         my $map_set_name = join(
             '-', $ms->{'species_common_name'}, $ms->{'map_set_short_name'} 
         );
@@ -257,7 +257,7 @@ sub show_current {
 
         my @corr;
         for my $rec ( @{ $ms->{'correspondences'} } ) {
-            my $link_ms = $map_sets->{ $rec->{'link_map_set_aid'} } or next;
+            my $link_ms = $map_sets->{ $rec->{'link_map_set_acc'} } or next;
             push @corr, [
                 $link_ms->{'species_common_name'}, 
                 $link_ms->{'map_set_short_name'},
@@ -300,7 +300,7 @@ sub store_data {
     #
     for my $ms ( values %$map_sets ) {
         my %corr = 
-            map { $_->{'link_map_set_aid'}, $_->{'correspondences'} }
+            map { $_->{'link_map_set_acc'}, $_->{'correspondences'} }
             @{ $ms->{'correspondences'} || [] };
         $ms->{'correspondence_lookup'} = \%corr;
     }

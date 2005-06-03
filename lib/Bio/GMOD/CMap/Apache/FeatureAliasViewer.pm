@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::FeatureAliasViewer;
 # vim: set ft=perl:
 
-# $Id: FeatureAliasViewer.pm,v 1.3 2005-03-10 18:30:09 mwz444 Exp $
+# $Id: FeatureAliasViewer.pm,v 1.4 2005-06-03 22:20:00 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Data;
@@ -21,7 +21,7 @@ sub handler {
     $self->data_source( $apr->param('data_source') ) or return;
     my $data_module    = $self->data_module;
     my $alias          = $data_module->feature_alias_detail_data(
-        feature_aid    => $apr->param('feature_aid')   || '',
+        feature_acc    => $apr->param('feature_acc')   || '',
         feature_alias  => $apr->param('feature_alias') || '',
     ) or return $self->error( $data_module->error );
 

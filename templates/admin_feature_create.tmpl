@@ -29,7 +29,7 @@
             Acc ID <em>(opt.)</em>:
         </td>
         <td>
-            <input name="feature_aid" value="[% apr.param('feature_aid') %]">
+            <input name="feature_acc" value="[% apr.param('feature_acc') %]">
         </td>
     </tr>
 
@@ -47,10 +47,10 @@
             Feature Type:
         </td>
         <td>
-            <select name="feature_type_aid">
+            <select name="feature_type_acc">
                 <option value="">--Please Select--</option>
-                [% FOREACH ft_aid=feature_type_aids %]
-                    <option value="[% ft_aid %]"[% IF ft_aid==apr.param('feature_type_aid') %] selected[% END %]>[% feature_type_name_lookup.${ft_aid} %]</option>
+                [% FOREACH ft_acc=feature_type_accs %]
+                    <option value="[% ft_acc %]"[% IF ft_acc==apr.param('feature_type_acc') %] selected[% END %]>[% feature_type_name_lookup.${ft_acc} %]</option>
                 [% END %]
             </select>
         </td>

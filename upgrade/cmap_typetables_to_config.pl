@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-# $Id: cmap_typetables_to_config.pl,v 1.4 2004-12-15 20:07:54 mwz444 Exp $
+# $Id: cmap_typetables_to_config.pl,v 1.5 2005-06-03 22:20:04 mwz444 Exp $
 
 =pod
 
@@ -102,7 +102,7 @@ for my $file (@configs) {
         { Columns => {} } );
     for my $row (@$ft) {
         print $fh "\n<feature_type " . $row->{'accession_id'} . ">";
-        print $fh "\nfeature_type_accession " . $row->{'accession_id'};
+        print $fh "\nfeature_type_acc " . $row->{'accession_id'};
         print $fh "\nfeature_type ";
         print $fh $row->{'feature_type'} if $row->{'feature_type'};
         print $fh "\ndefault_rank ";
@@ -170,7 +170,7 @@ EOF];
         { Columns => {} } );
     for my $row (@$et) {
         print $fh "\n<evidence_type " . $row->{'accession_id'} . ">";
-        print $fh "\nevidence_type_accession " . $row->{'accession_id'};
+        print $fh "\nevidence_type_acc " . $row->{'accession_id'};
         print $fh "\nevidence_type ";
         print $fh $row->{'evidence_type'} if $row->{'evidence_type'};
         print $fh "\nrank ";
@@ -227,7 +227,7 @@ EOF];
         { Columns => {} } );
     for my $row (@$mt) {
         print $fh "\n<map_type " . $row->{'accession_id'} . ">";
-        print $fh "\nmap_type_accession " . $row->{'accession_id'};
+        print $fh "\nmap_type_acc " . $row->{'accession_id'};
         print $fh "\nmap_type ";
         print $fh $row->{'map_type'} if $row->{'map_type'};
         print $fh "\nmap_units ";

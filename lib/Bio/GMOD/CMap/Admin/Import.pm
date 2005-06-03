@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Import;
 
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.71 2005-06-01 16:24:27 mwz444 Exp $
+# $Id: Import.pm,v 1.72 2005-06-03 22:19:59 mwz444 Exp $
 
 =pod
 
@@ -33,7 +33,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.71 $)[-1];
+$VERSION = (qw$Revision: 1.72 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -54,24 +54,24 @@ use constant RE_LOOKUP => {
 use vars '$LOG_FH';
 
 %COLUMNS = (
-    map_name               => { is_required => 1, datatype => 'string' },
-    map_accession_id       => { is_required => 0, datatype => 'string' },
-    map_display_order      => { is_required => 0, datatype => 'number' },
-    map_start              => { is_required => 0, datatype => 'number' },
-    map_stop               => { is_required => 0, datatype => 'number' },
-    feature_name           => { is_required => 1, datatype => 'string' },
-    feature_accession_id   => { is_required => 0, datatype => 'string' },
-    feature_alt_name       => { is_required => 0, datatype => 'string' },
-    feature_aliases        => { is_required => 0, datatype => 'string' },
-    feature_start          => { is_required => 1, datatype => 'number' },
-    feature_stop           => { is_required => 0, datatype => 'number' },
-    feature_direction      => { is_required => 0, datatype => 'number' },
-    feature_type_accession => { is_required => 1, datatype => 'string' },
-    feature_note           => { is_required => 0, datatype => 'string' },
-    is_landmark            => { is_required => 0, datatype => 'number' },
-    feature_dbxref_name    => { is_required => 0, datatype => 'string' },
-    feature_dbxref_url     => { is_required => 0, datatype => 'string' },
-    feature_attributes     => { is_required => 0, datatype => 'string' },
+    map_name            => { is_required => 1, datatype => 'string' },
+    map_acc             => { is_required => 0, datatype => 'string' },
+    map_display_order   => { is_required => 0, datatype => 'number' },
+    map_start           => { is_required => 0, datatype => 'number' },
+    map_stop            => { is_required => 0, datatype => 'number' },
+    feature_name        => { is_required => 1, datatype => 'string' },
+    feature_acc         => { is_required => 0, datatype => 'string' },
+    feature_alt_name    => { is_required => 0, datatype => 'string' },
+    feature_aliases     => { is_required => 0, datatype => 'string' },
+    feature_start       => { is_required => 1, datatype => 'number' },
+    feature_stop        => { is_required => 0, datatype => 'number' },
+    feature_direction   => { is_required => 0, datatype => 'number' },
+    feature_type_acc    => { is_required => 1, datatype => 'string' },
+    feature_note        => { is_required => 0, datatype => 'string' },
+    is_landmark         => { is_required => 0, datatype => 'number' },
+    feature_dbxref_name => { is_required => 0, datatype => 'string' },
+    feature_dbxref_url  => { is_required => 0, datatype => 'string' },
+    feature_attributes  => { is_required => 0, datatype => 'string' },
 );
 
 # ----------------------------------------------------
@@ -91,18 +91,18 @@ sub import_tab {
 Imports tab-delimited file with the following fields:
 
     map_name *
-    map_accession_id
+    map_acc
     map_display_order
     map_start
     map_stop
     feature_name *
     feature_alt_name +
-    feature_accession_id
+    feature_acc
     feature_aliases
     feature_start *
     feature_stop
     feature_direction
-    feature_type_accession *
+    feature_type_acc *
     feature_note +
     is_landmark
     feature_dbxref_name +
@@ -277,7 +277,7 @@ appended to the list of xrefs.
         %$maps =
           map { uc $_->{'map_name'}, { map_id => $_->{'map_id'} } } @$map_info;
     }
-    my %map_aids      = map { $_->{'map_aid'}, $_->{'map_id'} } @$map_info;
+    my %map_accs      = map { $_->{'map_acc'}, $_->{'map_id'} } @$map_info;
     my %modified_maps = ();
 
     $self->Print(
@@ -326,35 +326,15 @@ appended to the list of xrefs.
         sub { [ parse_line( ',', 0, shift() ) ] } );
     $parser->bind_header;
 
-### This is now done in validate_tab_file
- #    my %required =
- #      map { $_, 0 }
- #      grep { $COLUMNS{$_}{'is_required'} }
- #      keys %COLUMNS;
- #
- #    for my $column_name ( $parser->field_list ) {
- #        if ( exists $COLUMNS{$column_name} ) {
- #            $self->Print("Column '$column_name' OK.\n");
- #            $required{$column_name} = 1 if defined $required{$column_name};
- #        }
- #        else {
- #            return $self->error("Column name '$column_name' is not valid.");
- #        }
- #    }
- #
- #    if ( my @missing = grep { $required{$_} == 0 } keys %required ) {
- #        return $self->error(
- #            "Missing following required columns: " . join( ', ', @missing ) );
- #    }
-
     $self->Print("Parsing file...\n");
-    my ( %feature_type_aids, %feature_ids, %map_info );
+    my ( %feature_type_accs, %feature_ids, %map_info );
     my ( $last_map_name, $last_map_id ) = ( '', '' );
     my $feature_index = 0;
     my (
         @bulk_insert_aliases, @bulk_insert_atts,
         @bulk_insert_xrefs,   @bulk_feature_names
     );
+
     while ( my $record = $parser->fetchrow_hashref ) {
         for my $field_name ( $parser->field_list ) {
             my $field_attr = $COLUMNS{$field_name} or next;
@@ -387,14 +367,15 @@ appended to the list of xrefs.
             }
         }
 
-        my $feature_type_aid = $record->{'feature_type_accession'};
+        my $feature_type_acc = $record->{'feature_type_acc'};
 
         #
         # Not in the database, so ask to create it.
         #
-        unless ( $self->feature_type_data($feature_type_aid) ) {
+        unless ( $self->feature_type_data($feature_type_acc) ) {
             $self->Print(
-"Feature type accession '$feature_type_aid' doesn't exist.  After import, please add it to your configuration file.[<enter> to continue] "
+                "Feature type accession '$feature_type_acc' doesn't exist.  "
+                  . "After import, please add it to your configuration file.[<enter> to continue] "
             );
             chomp( my $answer = <STDIN> );
             exit;
@@ -404,9 +385,11 @@ appended to the list of xrefs.
         # Figure out the map id (or create it).
         #
         my ( $map_id, $map_name );
-        my $map_aid = $record->{'map_accession_id'} || '';
-        if ($map_aid) {
-            $map_name = $map_aids{$map_aid} || '';
+        my $map_acc = $record->{'map_acc'}
+          || $record->{'map_accession_id'}
+          || '';
+        if ($map_acc) {
+            $map_name = $map_accs{$map_acc} || '';
         }
 
         $map_name ||= $record->{'map_name'};
@@ -437,7 +420,7 @@ appended to the list of xrefs.
             unless ($map_id) {
                 $map_id = $sql_object->insert_map(
                     cmap_object   => $self,
-                    map_aid       => $map_aid,
+                    map_acc       => $map_acc,
                     map_set_id    => $map_set_id,
                     map_name      => $map_name,
                     map_start     => $map_start,
@@ -456,7 +439,7 @@ appended to the list of xrefs.
                 $map_info{$map_id}{'map_start'}     ||= $map_start;
                 $map_info{$map_id}{'map_stop'}      ||= $map_stop;
                 $map_info{$map_id}{'display_order'} ||= $display_order;
-                $map_info{$map_id}{'map_aid'}       ||= $map_aid;
+                $map_info{$map_id}{'map_acc'}       ||= $map_acc;
 
                 $last_map_id   = $map_id;
                 $last_map_name = $map_name;
@@ -468,7 +451,8 @@ appended to the list of xrefs.
         #
         my $feature_name = $record->{'feature_name'}
           or warn "feature name blank! ", Dumper($record), "\n";
-        my $feature_aid  = $record->{'feature_accession_id'};
+        my $feature_acc = $record->{'feature_acc'}
+          || $record->{'feature_accession_id'};
         my $aliases      = $record->{'feature_aliases'};
         my $attributes   = $record->{'feature_attributes'} || '';
         my $start        = $record->{'feature_start'};
@@ -476,7 +460,7 @@ appended to the list of xrefs.
         my $direction    = $record->{'feature_direction'} || 1;
         my $is_landmark  = $record->{'is_landmark'} || 0;
         my $default_rank = $record->{'default_rank'}
-          || $self->feature_type_data( $feature_type_aid, 'default_rank' );
+          || $self->feature_type_data( $feature_type_acc, 'default_rank' );
 
         #
         # Feature attributes
@@ -539,7 +523,7 @@ appended to the list of xrefs.
 
         my $feature_id = '';
         if ($allow_update) {
-            if ($feature_aid) {
+            if ($feature_acc) {
                 my $features_array = $sql_object->get_features_simple(
                     cmap_object => $self,
                     map_id      => $map_id,
@@ -553,7 +537,7 @@ appended to the list of xrefs.
             # If there's no accession ID, see if another feature
             # with the same name exists.
             #
-            if ( !$feature_id && !$feature_aid ) {
+            if ( !$feature_id && !$feature_acc ) {
                 my $features_array = $sql_object->get_features_simple(
                     cmap_object  => $self,
                     map_id       => $map_id,
@@ -570,9 +554,9 @@ appended to the list of xrefs.
                 $sql_object->update_feature(
                     cmap_object      => $self,
                     feature_id       => $feature_id,
-                    feature_aid      => $feature_aid,
+                    feature_acc      => $feature_acc,
                     map_id           => $map_id,
-                    feature_type_aid => $feature_type_aid,
+                    feature_type_acc => $feature_type_acc,
                     feature_name     => $feature_name,
                     feature_start    => $start,
                     feature_stop     => $stop,
@@ -591,9 +575,9 @@ appended to the list of xrefs.
                 #
                 $feature_id = $sql_object->insert_feature(
                     cmap_object      => $self,
-                    feature_aid      => $feature_aid,
+                    feature_acc      => $feature_acc,
                     map_id           => $map_id,
-                    feature_type_aid => $feature_type_aid,
+                    feature_type_acc => $feature_type_acc,
                     feature_name     => $feature_name,
                     feature_start    => $start,
                     feature_stop     => $stop,
@@ -605,7 +589,7 @@ appended to the list of xrefs.
 
             my $pos = join( '-', map { defined $_ ? $_ : () } $start, $stop );
             $self->Print(
-"$action $feature_type_aid '$feature_name' on map $map_name at $pos.\n"
+"$action $feature_type_acc '$feature_name' on map $map_name at $pos.\n"
             );
 
             for my $name (@$aliases) {
@@ -646,9 +630,9 @@ appended to the list of xrefs.
 
             $feature_id = $sql_object->insert_feature(
                 cmap_object      => $self,
-                feature_aid      => $feature_aid,
+                feature_acc      => $feature_acc,
                 map_id           => $map_id,
-                feature_type_aid => $feature_type_aid,
+                feature_type_acc => $feature_type_acc,
                 feature_name     => $feature_name,
                 feature_start    => $start,
                 feature_stop     => $stop,
@@ -762,7 +746,7 @@ appended to the list of xrefs.
         $sql_object->update_map(
             cmap_object   => $self,
             map_id        => $map->{'map_id'},
-            map_aid       => $map->{'map_aid'},
+            map_acc       => $map->{'map_acc'},
             map_set_id    => $map->{'map_set_id'},
             map_name      => $map->{'map_name'},
             map_start     => $map->{'map_start'},
@@ -873,18 +857,18 @@ Checks a tab-delimited file to make sure it can be imported using the following
 columns.
 
     map_name *
-    map_accession_id
+    map_acc
     map_display_order
     map_start
     map_stop
     feature_name *
     feature_alt_name +
-    feature_accession_id
+    feature_acc
     feature_aliases
     feature_start *
     feature_stop
     feature_direction
-    feature_type_accession *
+    feature_type_acc *
     feature_note +
     is_landmark
     feature_dbxref_name +
@@ -895,7 +879,7 @@ Fields with an asterisk are required.  Order of fields is not important.
 
 Fields with a plus sign are deprecated.
 
-If a feature_type_accession is found that is not in the config file, the user 
+If a feature_type_acc is found that is not in the config file, the user 
 will be alerted and this will return false.
 
 
@@ -974,18 +958,19 @@ File handle of the log file (default is STDOUT).
           . join( ', ', @missing );
     }
 
-    return 0 unless ( $required{'feature_type_accession'} );
+    return 0 unless ( $required{'feature_type_acc'} );
 
-    my (%feature_type_aids);
+    my (%feature_type_accs);
     while ( my $record = $parser->fetchrow_hashref ) {
-        $feature_type_aids{ $record->{'feature_type_accession'} } = 1;
+        $feature_type_accs{ $record->{'feature_type_acc'} } = 1;
     }
 
-    foreach my $ft_aid ( keys(%feature_type_aids) ) {
-        unless ( $self->feature_type_data($ft_aid) ) {
+    foreach my $ft_acc ( keys(%feature_type_accs) ) {
+        unless ( $self->feature_type_data($ft_acc) ) {
             $valid = 0;
             print $LOG_FH
-"You must define a feature type with the accession id, '$ft_aid'.\n";
+              "You must define a feature type with the accession id, '"
+              . $ft_acc . "'.\n";
         }
     }
 
@@ -1089,11 +1074,10 @@ File handle of the log file (default is STDOUT).
     #
     my %feature_ids;
     for my $ms ( @{ $import->{'cmap_map_set'} || [] } ) {
-        $self->Print(
-            "Importing map set '$ms->{map_set_name}' ($ms->{accession_id})\n");
+        $self->Print("Importing map set '$ms->{map_set_name}'\n");
 
         my $species      = $species{ $ms->{'species_id'} };
-        my $map_type_aid = $ms->{'map_type_accession'};
+        my $map_type_acc = $ms->{'map_type_acc'};
         $ms->{'species_id'} = $species->{'new_species_id'}
           or return $self->error('Cannot determine species id');
 
@@ -1128,10 +1112,10 @@ File handle of the log file (default is STDOUT).
                 for my $alias ( @{ $feature->{'feature_alias'} || [] } ) {
                     $alias->{'feature_id'} = $feature->{'new_feature_id'};
                     $self->import_object(
-                        overwrite           => $overwrite,
-                        object_type         => 'feature_alias',
-                        object              => $alias,
-                        lookup_accession_id => 0,
+                        overwrite   => $overwrite,
+                        object_type => 'feature_alias',
+                        object      => $alias,
+                        lookup_acc  => 0,
                       )
                       or return;
                 }
@@ -1158,9 +1142,9 @@ File handle of the log file (default is STDOUT).
     #
     for my $xref ( @{ $import->{'cmap_xref'} || [] } ) {
         $self->import_object(
-            object_type         => 'xref',
-            object              => $xref,
-            lookup_accession_id => 0,
+            object_type => 'xref',
+            object      => $xref,
+            lookup_acc  => 0,
           )
           or return;
     }
@@ -1209,11 +1193,11 @@ Imports an object.
 =cut
 
     my ( $self, %args ) = @_;
-    my $object_type         = $args{'object_type'};
-    my $object              = $args{'object'} || {};
-    my $lookup_accession_id =
-      defined $args{'lookup_accession_id'}
-      ? $args{'lookup_accession_id'}
+    my $object_type = $args{'object_type'};
+    my $object      = $args{'object'} || {};
+    my $lookup_acc  =
+      defined $args{'lookup_acc'}
+      ? $args{'lookup_acc'}
       : 1;
 
     my $sql_object = $self->sql;
@@ -1222,10 +1206,11 @@ Imports an object.
 
     my $new_object_id;
 
-    if ($lookup_accession_id) {
+    if ($lookup_acc) {
         $new_object_id = $sql_object->acc_id_to_internal_id(
             cmap_object => $self,
-            acc_id      => $object->{'accession_id'},
+            acc_id      => $object->{ $object_type . "_acc" }
+              || $object->{"accession_id"},
             object_type => $object_type,
         );
     }

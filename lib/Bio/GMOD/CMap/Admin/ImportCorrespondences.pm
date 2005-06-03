@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::ImportCorrespondences;
 
 # vim: set ft=perl:
 
-# $Id: ImportCorrespondences.pm,v 1.33 2005-05-19 18:45:41 mwz444 Exp $
+# $Id: ImportCorrespondences.pm,v 1.34 2005-06-03 22:19:59 mwz444 Exp $
 
 =head1 NAME
 
@@ -24,9 +24,9 @@ correspondences.  Currently, only one format is acceptable, a
 tab-delimited file containing the following fields:
 
     feature_name1 *
-    feature_accession_id1
+    feature_acc1
     feature_name2 *
-    feature_accession_id2
+    feature_acc2
     evidence *
     is_enabled
 
@@ -36,11 +36,11 @@ reciprocal records will be created for each correspondences ("A=B" and
 "B=A," etc.).  If the evidence doesn't exist, a prompt will ask to
 create it.
 
-The evidence should be specified as an evidence_type_accession.  An optional score can be included.  The score must be numerical but may be in scientific notation.  Only evidences with scores will be retrieved when using the "Less Than Score" or "Greater Than Score".  In other words, if a score is not specified, this correspondence will NEVER appear when a score cutoff is set.
+The evidence should be specified as an evidence_type_acc.  An optional score can be included.  The score must be numerical but may be in scientific notation.  Only evidences with scores will be retrieved when using the "Less Than Score" or "Greater Than Score".  In other words, if a score is not specified, this correspondence will NEVER appear when a score cutoff is set.
 
 The syntax for the evidence column is as follows
 
-    evidence_type_accession[:score]
+    evidence_type_acc[:score]
     examples: "name_based", "blast:1e-10", "hunch:92"
 
 B<Note:> If the accession IDs are not present, both the "feature_name"
@@ -51,7 +51,7 @@ feature names, a correspondence will be created.
 
 use strict;
 use vars qw( $VERSION %COLUMNS $LOG_FH );
-$VERSION = (qw$Revision: 1.33 $)[-1];
+$VERSION = (qw$Revision: 1.34 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -62,12 +62,12 @@ use base 'Bio::GMOD::CMap';
 use Regexp::Common;
 
 %COLUMNS = (
-    feature_name1         => { is_required => 1, datatype => 'string' },
-    feature_accession_id1 => { is_required => 0, datatype => 'string' },
-    feature_name2         => { is_required => 1, datatype => 'string' },
-    feature_accession_id2 => { is_required => 0, datatype => 'string' },
-    evidence              => { is_required => 1, datatype => 'string' },
-    is_enabled            => { is_required => 0, datatype => 'number' },
+    feature_name1 => { is_required => 1, datatype => 'string' },
+    feature_acc1  => { is_required => 0, datatype => 'string' },
+    feature_name2 => { is_required => 1, datatype => 'string' },
+    feature_acc2  => { is_required => 0, datatype => 'string' },
+    evidence      => { is_required => 1, datatype => 'string' },
+    is_enabled    => { is_required => 0, datatype => 'number' },
 );
 
 use constant FIELD_SEP => "\t";    # use tabs for field separator
@@ -170,7 +170,7 @@ which is slow.  Setting to 0 is recommended.
     ];
 
     $self->Print("Parsing file...\n");
-    my ( %feature_ids, %evidence_type_aids, $inserts, $total );
+    my ( %feature_ids, %evidence_type_accs, $inserts, $total );
   LINE:
     while ( my $record = $parser->fetchrow_hashref ) {
         for my $field_name ( $parser->field_list ) {
@@ -196,18 +196,21 @@ which is slow.  Setting to 0 is recommended.
 
         my ( @feature_ids1, @feature_ids2 );
         for my $i ( 1, 2 ) {
-            my $field_name     = "feature_name$i";
-            my $aid_field_name = "feature_accession_id$i";
-            my $feature_name   = $record->{$field_name} || '';
-            my $feature_aid    = $record->{$aid_field_name} || '';
-            next unless $feature_name || $feature_aid;
+            my $field_name            = "feature_name$i";
+            my $acc_field_name        = "feature_acc$i";
+            my $legacy_acc_field_name = "feature_accession_id$i";
+            my $feature_name          = $record->{$field_name} || '';
+            my $feature_acc           = $record->{$acc_field_name}
+              || $record->{$legacy_acc_field_name}
+              || '';
+            next unless $feature_name || $feature_acc;
             my $upper_name = uc $feature_name;
             my @feature_ids;
 
-            if ($feature_aid) {
+            if ($feature_acc) {
                 my $features = $sql_object->get_features(
                     cmap_object => $self,
-                    feature_aid => $feature_aid,
+                    feature_acc => $feature_acc,
                 );
                 push @feature_ids, $features->[0] if @$features;
             }
@@ -258,28 +261,30 @@ which is slow.  Setting to 0 is recommended.
 
         my @evidences = map { s/^\s+|\s+$//g; $_ }
           split /,/, $record->{'evidence'};
-        my @evidence_type_aids;
-        my $evidence_type_aid;
+        my @evidence_type_accs;
+        my $evidence_type_acc;
         my $score;
         for my $evidence (@evidences) {
             if ( $evidence =~ /(\S+):(\S+)/ ) {
-                $evidence_type_aid = $1;
+                $evidence_type_acc = $1;
                 $score             = $2;
             }
             else {
-                $evidence_type_aid = $evidence;
+                $evidence_type_acc = $evidence;
                 $score             = undef;
             }
 
-            unless ( $self->evidence_type_data($evidence_type_aid) ) {
-                $self->Print(
-"Evidence type accession '$evidence_type_aid' doesn't exist.  Please add it to your configuration file.[<enter> to continue] "
+            unless ( $self->evidence_type_data($evidence_type_acc) ) {
+                $self->Print( "Evidence type accession '"
+                      . $evidence_type_acc
+                      . "' doesn't exist.  "
+                      . "Please add it to your configuration file.[<enter> to continue] "
                 );
                 chomp( my $answer = <STDIN> );
                 return;
             }
 
-            push @evidence_type_aids, [ $evidence_type_aid, $score ];
+            push @evidence_type_accs, [ $evidence_type_acc, $score ];
         }
 
         my $is_enabled = $record->{'is_enabled'};
@@ -293,13 +298,13 @@ which is slow.  Setting to 0 is recommended.
                       || $map_set_ids{ $feature2->{'map_set_id'} };
                 }
 
-                for my $evidence_type_aid_list (@evidence_type_aids) {
-                    my ( $evidence_type_aid, $score ) =
-                      @$evidence_type_aid_list;
+                for my $evidence_type_acc_list (@evidence_type_accs) {
+                    my ( $evidence_type_acc, $score ) =
+                      @$evidence_type_acc_list;
                     my $fc_id = $admin->feature_correspondence_create(
                         feature_id1       => $feature1->{'feature_id'},
                         feature_id2       => $feature2->{'feature_id'},
-                        evidence_type_aid => $evidence_type_aid,
+                        evidence_type_acc => $evidence_type_acc,
                         score             => $score,
                         allow_update      => $allow_update,
                         threshold         => 1000,

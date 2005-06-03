@@ -4,7 +4,7 @@ package Bio::GMOD::CMap::Apache::MapSearch;
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -23,9 +23,9 @@ sub handler {
     # read session data.  Calls "show_form."
     #
     my ( $self, $apr ) = @_;
-    my $ref_species_aid         = $apr->param('ref_species_aid')         || '';
-    my $prev_ref_species_aid    = $apr->param('prev_ref_species_aid')    || '';
-    my $ref_map_set_aid         = $apr->param('ref_map_set_aid')         || '';
+    my $ref_species_acc         = $apr->param('ref_species_acc')         || '';
+    my $prev_ref_species_acc    = $apr->param('prev_ref_species_acc')    || '';
+    my $ref_map_set_acc         = $apr->param('ref_map_set_acc')         || '';
     my $min_correspondence_maps = $apr->param('min_correspondence_maps') ||  0;
     my $name_search             = $apr->param('name_search')             || '';
     my $order_by                = $apr->param('order_by')                || '';
@@ -34,10 +34,10 @@ sub handler {
     $INTRO ||= $self->config_data('map_viewer_intro', $self->data_source) || '';
 
     if ( 
-        $prev_ref_species_aid &&
-        ( $prev_ref_species_aid ne $ref_species_aid )
+        $prev_ref_species_acc &&
+        ( $prev_ref_species_acc ne $ref_species_acc )
     ) {
-        $ref_map_set_aid = '';
+        $ref_map_set_acc = '';
     }
 
     #
@@ -45,12 +45,12 @@ sub handler {
     # choice, splitting the string on commas) or from the POSTed
     # form <select>.
     #
-    my @ref_map_aids;
-    if ( $apr->param('ref_map_aid') ) {
-        @ref_map_aids = split( /,/, $apr->param('ref_map_aid') );
+    my @ref_map_accs;
+    if ( $apr->param('ref_map_acc') ) {
+        @ref_map_accs = split( /,/, $apr->param('ref_map_acc') );
     }
-    elsif ( $apr->param('ref_map_aids') ) {
-        @ref_map_aids = ( $apr->param('ref_map_aids') );
+    elsif ( $apr->param('ref_map_accs') ) {
+        @ref_map_accs = ( $apr->param('ref_map_accs') );
     }
 
     #
@@ -59,22 +59,22 @@ sub handler {
     $self->data_source( $apr->param('data_source') ) or return;
 
     my ( $ref_field, $ref_value );
-    if ( grep { /^-1$/ } @ref_map_aids ) {
-        $ref_field = 'map_set_aid';
-        $ref_value = $ref_map_set_aid;
+    if ( grep { /^-1$/ } @ref_map_accs ) {
+        $ref_field = 'map_set_acc';
+        $ref_value = $ref_map_set_acc;
     }
     else {
-        $ref_field = 'map_aid';
-        $ref_value = \@ref_map_aids;
+        $ref_field = 'map_acc';
+        $ref_value = \@ref_map_accs;
     }
 
     my %slots = (
         0 => {
             field       => $ref_field,
-            aid         => $ref_value,
+            acc         => $ref_value,
             start       => '',
             stop        => '',
-            map_set_aid => $ref_map_set_aid,
+            map_set_acc => $ref_map_set_acc,
         },
     );
 
@@ -85,7 +85,7 @@ sub handler {
     my $form_data = $data->cmap_map_search_data(
         slots                   => \%slots,
         min_correspondence_maps => $min_correspondence_maps,
-        ref_species_aid         => $ref_species_aid,
+        ref_species_acc         => $ref_species_acc,
         name_search             => $name_search,
         order_by                => $order_by,
         page_no                 => $page_no
@@ -95,8 +95,8 @@ sub handler {
     # The start and stop may have had to be moved as there
     # were too few or too many features in the selected region.
     #
-    $apr->param( ref_species_aid => $form_data->{'ref_species_aid'} );
-    $apr->param( ref_map_set_aid => $form_data->{'ref_map_set_aid'} );
+    $apr->param( ref_species_acc => $form_data->{'ref_species_acc'} );
+    $apr->param( ref_map_set_acc => $form_data->{'ref_map_set_acc'} );
 
     my $html;
     my $t = $self->template or return;

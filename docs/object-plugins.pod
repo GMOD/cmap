@@ -206,32 +206,31 @@ parentheses) and the hashref's fields you can use:
 
 =head2 Map Set (map_set_info)
 
-  can_be_reference_map
   species_common_name
   species_full_name
   is_relational_map
-  map_set_aid
+  map_set_acc
   map_set_id
   map_set_name
   map_type
-  map_type_aid
+  map_type_acc
   map_units
   object_id
   published_on
   map_set_short_name
-  species_aid
+  species_acc
   species_id
 
 =head2 Map (map_details)
 
-  map_aid
+  map_acc
   map_name
-  map_set_aid
+  map_set_acc
   map_set_name
-  map_type_aid
+  map_type_acc
   map_units
   object_id
-  species_aid
+  species_acc
   species_common_name
   start
   map_start
@@ -242,22 +241,22 @@ parentheses) and the hashref's fields you can use:
 
   aliases
   attributes
-  feature_aid
+  feature_acc
   feature_id
   feature_name
   feature_type
-  feature_type_aid
+  feature_type_acc
   is_landmark
-  map_aid
+  map_acc
   map_id
   map_name
-  map_set_aid
+  map_set_acc
   map_set_id
   map_set_name
-  map_type_aid
+  map_type_acc
   map_units
   object_id
-  species_aid
+  species_acc
   species_id
   species_common_name
   feature_start
@@ -267,7 +266,7 @@ parentheses) and the hashref's fields you can use:
 
   color
   feature_type
-  feature_type_aid
+  feature_type_acc
   shape
 
 =head2 Map Type (map_type_info)
@@ -276,7 +275,7 @@ parentheses) and the hashref's fields you can use:
   display_order
   is_relational_map
   map_type
-  map_type_aid
+  map_type_acc
   map_units
   shape
   width
@@ -284,7 +283,7 @@ parentheses) and the hashref's fields you can use:
 =head2 Evidence Type (evidence_type_info)
 
   evidence_type
-  evidence_type_aid
+  evidence_type_acc
   line_color
   rank
 
@@ -293,7 +292,7 @@ parentheses) and the hashref's fields you can use:
   species_common_name
   display_order
   species_full_name
-  species_aid
+  species_acc
   species_id
 
 =head1 Configuration File Tip

@@ -10,7 +10,7 @@
             </td>
         </tr>
         <tr>
-            <th><a href="admin?action=corr_evidence_types_view;order_by=evidence_type_aid">Acc. ID</a></th>
+            <th><a href="admin?action=corr_evidence_types_view;order_by=evidence_type_acc">Acc. ID</a></th>
             <th><a href="admin?action=corr_evidence_types_view;order_by=rank">Rank</a></th>
             <th><a href="admin?action=corr_evidence_types_view;order_by=evidence_type">Evidence Type</a></th>
             <th><a href="admin?action=corr_evidence_types_view;order_by=line_color">Line Color</a></th>
@@ -20,12 +20,12 @@
         [% SET i=0 %]
         [% FOREACH et=evidence_types %]
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
-                <td>[% et.evidence_type_aid %]</td>
+                <td>[% et.evidence_type_acc %]</td>
                 <td>[% et.rank %]</td>
                 <td>[% et.evidence_type %]</td>
                 <td>[% et.line_color %]</td>
                 <td align="center">
-                    <a href="admin?action=corr_evidence_type_view;evidence_type_aid=[% et.evidence_type_aid %]">View</a>
+                    <a href="admin?action=corr_evidence_type_view;evidence_type_acc=[% et.evidence_type_acc %]">View</a>
                 </td>
             </tr>
             [% SET i=i+1 %]

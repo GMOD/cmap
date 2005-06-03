@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.84 2005-05-24 15:52:36 mwz444 Exp $
+# $Id: CMap.pm,v 1.85 2005-06-03 22:19:49 mwz444 Exp $
 
 =head1 NAME
 
@@ -175,15 +175,15 @@ Return data from config about map type
 =cut
 
     my $self         = shift;
-    my $map_type_aid = shift;
+    my $map_type_acc = shift;
     my $attribute    = shift;
     my $config       = $self->config or return;
 
     if ($attribute) {
-        return $config->get_config('map_type')->{$map_type_aid}{$attribute};
+        return $config->get_config('map_type')->{$map_type_acc}{$attribute};
     }
-    elsif ($map_type_aid) {
-        return $config->get_config('map_type')->{$map_type_aid};
+    elsif ($map_type_acc) {
+        return $config->get_config('map_type')->{$map_type_acc};
     }
     else {
         return $config->get_config('map_type');
@@ -202,16 +202,16 @@ Return data from config about feature type
 =cut
 
     my $self             = shift;
-    my $feature_type_aid = shift;
+    my $feature_type_acc = shift;
     my $attribute        = shift;
     my $config           = $self->config or return;
 
     if ($attribute) {
-        return $config->get_config('feature_type')->{$feature_type_aid}
+        return $config->get_config('feature_type')->{$feature_type_acc}
           ->{$attribute};
     }
-    elsif ($feature_type_aid) {
-        return $config->get_config('feature_type')->{$feature_type_aid};
+    elsif ($feature_type_acc) {
+        return $config->get_config('feature_type')->{$feature_type_acc};
     }
     else {
         return $config->get_config('feature_type');
@@ -230,16 +230,16 @@ Return data from config about evidence type
 =cut
 
     my $self              = shift;
-    my $evidence_type_aid = shift;
+    my $evidence_type_acc = shift;
     my $attribute         = shift;
     my $config            = $self->config or return;
 
     if ($attribute) {
-        return $config->get_config('evidence_type')->{$evidence_type_aid}
+        return $config->get_config('evidence_type')->{$evidence_type_acc}
           ->{$attribute};
     }
-    elsif ($evidence_type_aid) {
-        return $config->get_config('evidence_type')->{$evidence_type_aid};
+    elsif ($evidence_type_acc) {
+        return $config->get_config('evidence_type')->{$evidence_type_acc};
     }
     else {
         $config->get_config('evidence_type');
@@ -730,10 +730,10 @@ Given information about the link, creates a url to cmap_viewer.
 =cut
 
     my ( $self, %args ) = @_;
-    my $prev_ref_species_aid        = $args{'prev_ref_species_aid'};
-    my $prev_ref_map_set_aid        = $args{'prev_ref_map_set_aid'};
-    my $ref_species_aid             = $args{'ref_species_aid'};
-    my $ref_map_set_aid             = $args{'ref_map_set_aid'};
+    my $prev_ref_species_acc        = $args{'prev_ref_species_acc'};
+    my $prev_ref_map_set_acc        = $args{'prev_ref_map_set_acc'};
+    my $ref_species_acc             = $args{'ref_species_acc'};
+    my $ref_map_set_acc             = $args{'ref_map_set_acc'};
     my $ref_map_start               = $args{'ref_map_start'};
     my $ref_map_stop                = $args{'ref_map_stop'};
     my $comparative_maps            = $args{'comparative_maps'};
@@ -754,22 +754,22 @@ Given information about the link, creates a url to cmap_viewer.
     my $magnify_all                 = $args{'magnify_all'};
     my $flip                        = $args{'flip'};
     my $min_correspondences         = $args{'min_correspondences'};
-    my $ref_map_aids                = $args{'ref_map_aids'};
-    my $feature_type_aids           = $args{'feature_type_aids'};
-    my $corr_only_feature_type_aids = $args{'corr_only_feature_type_aids'};
-    my $ignored_feature_type_aids   = $args{'ignored_feature_type_aids'};
+    my $ref_map_accs                = $args{'ref_map_accs'};
+    my $feature_type_accs           = $args{'feature_type_accs'};
+    my $corr_only_feature_type_accs = $args{'corr_only_feature_type_accs'};
+    my $ignored_feature_type_accs   = $args{'ignored_feature_type_accs'};
     my $url_feature_default_display = $args{'url_feature_default_display'};
-    my $included_evidence_type_aids = $args{'included_evidence_type_aids'};
-    my $ignored_evidence_type_aids  = $args{'ignored_evidence_type_aids'};
-    my $less_evidence_type_aids     = $args{'less_evidence_type_aids'};
-    my $greater_evidence_type_aids  = $args{'greater_evidence_type_aids'};
+    my $included_evidence_type_accs = $args{'included_evidence_type_accs'};
+    my $ignored_evidence_type_accs  = $args{'ignored_evidence_type_accs'};
+    my $less_evidence_type_accs     = $args{'less_evidence_type_accs'};
+    my $greater_evidence_type_accs  = $args{'greater_evidence_type_accs'};
     my $evidence_type_score         = $args{'evidence_type_score'};
     my $data_source                 = $args{'data_source'} or return;
     my $url                         = $args{'url'} || '';
     $url .= '?' unless $url =~ /\?$/;
 
     ###Required Fields
-    unless ( ( defined($ref_map_set_aid) or defined($ref_map_aids) )
+    unless ( ( defined($ref_map_set_acc) or defined($ref_map_accs) )
         and defined($data_source) )
     {
         return '';
@@ -777,14 +777,14 @@ Given information about the link, creates a url to cmap_viewer.
     $url .= "data_source=$data_source;";
 
     ### optional
-    $url .= "ref_map_set_aid=$ref_map_set_aid;"
-      if defined($ref_map_set_aid);
-    $url .= "ref_species_aid=$ref_species_aid;"
-      if defined($ref_species_aid);
-    $url .= "prev_ref_species_aid=$prev_ref_species_aid;"
-      if defined($prev_ref_species_aid);
-    $url .= "prev_ref_map_set_aid=$prev_ref_map_set_aid;"
-      if defined($prev_ref_map_set_aid);
+    $url .= "ref_map_set_acc=$ref_map_set_acc;"
+      if defined($ref_map_set_acc);
+    $url .= "ref_species_acc=$ref_species_acc;"
+      if defined($ref_species_acc);
+    $url .= "prev_ref_species_acc=$prev_ref_species_acc;"
+      if defined($prev_ref_species_acc);
+    $url .= "prev_ref_map_set_acc=$prev_ref_map_set_acc;"
+      if defined($prev_ref_map_set_acc);
     $url .= "ref_map_start=$ref_map_start;"
       if defined($ref_map_start);
     $url .= "ref_map_stop=$ref_map_stop;"
@@ -823,36 +823,36 @@ Given information about the link, creates a url to cmap_viewer.
       if defined($min_correspondences);
 
     #multi
-    if ( $ref_map_aids and %$ref_map_aids ) {
+    if ( $ref_map_accs and %$ref_map_accs ) {
         my @ref_strs;
-        foreach my $ref_map_aid ( keys(%$ref_map_aids) ) {
-            if (   defined( $ref_map_aids->{$ref_map_aid}{'start'} )
-                or defined( $ref_map_aids->{$ref_map_aid}{'stop'}
-                or $ref_map_aids->{$ref_map_aid}{'magnify'} ) )
+        foreach my $ref_map_acc ( keys(%$ref_map_accs) ) {
+            if (   defined( $ref_map_accs->{$ref_map_acc}{'start'} )
+                or defined( $ref_map_accs->{$ref_map_acc}{'stop'}
+                or $ref_map_accs->{$ref_map_acc}{'magnify'} ) )
             {
                 my $start =
-                  defined( $ref_map_aids->{$ref_map_aid}{'start'} )
-                  ? $ref_map_aids->{$ref_map_aid}{'start'} 
+                  defined( $ref_map_accs->{$ref_map_acc}{'start'} )
+                  ? $ref_map_accs->{$ref_map_acc}{'start'} 
                   : '';
                 my $stop =
-                  defined( $ref_map_aids->{$ref_map_aid}{'stop'} )
-                  ? $ref_map_aids->{$ref_map_aid}{'stop'}
+                  defined( $ref_map_accs->{$ref_map_acc}{'stop'} )
+                  ? $ref_map_accs->{$ref_map_acc}{'stop'}
                   : '';
                 my $mag =
-                  defined( $ref_map_aids->{$ref_map_aid}{'magnify'} )
-                  ? $ref_map_aids->{$ref_map_aid}{'magnify'}
+                  defined( $ref_map_accs->{$ref_map_acc}{'magnify'} )
+                  ? $ref_map_accs->{$ref_map_acc}{'magnify'}
                   : 1;
                 push @ref_strs,
-                  $ref_map_aid . '['
+                  $ref_map_acc . '['
                   . $start . '*'
                   . $stop . 'x'
                   . $mag . ']';
             }
             else {
-                push @ref_strs, $ref_map_aid;
+                push @ref_strs, $ref_map_acc;
             }
         }
-        $url .= "ref_map_aids=" . join( ',', @ref_strs ) . ";";
+        $url .= "ref_map_accs=" . join( ',', @ref_strs ) . ";";
     }
 
     if ( $comparative_maps and %$comparative_maps ) {
@@ -861,31 +861,31 @@ Given information about the link, creates a url to cmap_viewer.
             my $map = $comparative_maps->{$slot_no};
             for my $field (qw[ maps map_sets ]) {
                 next unless ( defined( $map->{$field} ) );
-                foreach my $aid ( keys %{ $map->{$field} } ) {
+                foreach my $acc ( keys %{ $map->{$field} } ) {
                     if ( $field eq 'maps' ) {
                         my $start =
-                          defined( $map->{$field}{$aid}{'start'} )
-                          ? $map->{$field}{$aid}{'start'}
+                          defined( $map->{$field}{$acc}{'start'} )
+                          ? $map->{$field}{$acc}{'start'}
                           : '';
                         my $stop =
-                          defined( $map->{$field}{$aid}{'stop'} )
-                          ? $map->{$field}{$aid}{'stop'}
+                          defined( $map->{$field}{$acc}{'stop'} )
+                          ? $map->{$field}{$acc}{'stop'}
                           : '';
                         my $mag =
-                          defined( $map->{$field}{$aid}{'mag'} )
-                          ? $map->{$field}{$aid}{'mag'}
+                          defined( $map->{$field}{$acc}{'mag'} )
+                          ? $map->{$field}{$acc}{'mag'}
                           : 1;
                         push @strs,
                           $slot_no
-                          . '%3dmap_aid%3d'
-                          . $aid . '['
+                          . '%3dmap_acc%3d'
+                          . $acc . '['
                           . $start . '*'
                           . $stop . 'x'
                           . $mag . ']';
 
                     }
                     else {
-                        push @strs, $slot_no . '%3dmap_set_aid%3d' . $aid;
+                        push @strs, $slot_no . '%3dmap_set_acc%3d' . $acc;
                     }
                 }
             }
@@ -894,31 +894,31 @@ Given information about the link, creates a url to cmap_viewer.
         $url .= "comparative_maps=" . join( ':', @strs ) . ";";
     }
 
-    foreach my $aid (@$feature_type_aids) {
-        $url .= "ft_" . $aid . "=2;";
+    foreach my $acc (@$feature_type_accs) {
+        $url .= "ft_" . $acc . "=2;";
     }
-    foreach my $aid (@$corr_only_feature_type_aids) {
-        $url .= "ft_" . $aid . "=1;";
+    foreach my $acc (@$corr_only_feature_type_accs) {
+        $url .= "ft_" . $acc . "=1;";
     }
-    foreach my $aid (@$ignored_feature_type_aids) {
-        $url .= "ft_" . $aid . "=0;";
+    foreach my $acc (@$ignored_feature_type_accs) {
+        $url .= "ft_" . $acc . "=0;";
     }
     $url .= "ft_DEFAULT=$url_feature_default_display;"
       if defined($url_feature_default_display);
-    foreach my $aid (@$included_evidence_type_aids) {
-        $url .= "et_" . $aid . "=1;";
+    foreach my $acc (@$included_evidence_type_accs) {
+        $url .= "et_" . $acc . "=1;";
     }
-    foreach my $aid (@$ignored_evidence_type_aids) {
-        $url .= "et_" . $aid . "=0;";
+    foreach my $acc (@$ignored_evidence_type_accs) {
+        $url .= "et_" . $acc . "=0;";
     }
-    foreach my $aid (@$less_evidence_type_aids) {
-        $url .= "et_" . $aid . "=2;";
+    foreach my $acc (@$less_evidence_type_accs) {
+        $url .= "et_" . $acc . "=2;";
     }
-    foreach my $aid (@$greater_evidence_type_aids) {
-        $url .= "et_" . $aid . "=3;";
+    foreach my $acc (@$greater_evidence_type_accs) {
+        $url .= "et_" . $acc . "=3;";
     }
-    foreach my $aid (keys(%$evidence_type_score)) {
-        $url .= "ets_" . $aid . "=".$evidence_type_score->{$aid}.";";
+    foreach my $acc (keys(%$evidence_type_score)) {
+        $url .= "ets_" . $acc . "=".$evidence_type_score->{$acc}.";";
     }
 
     return $url;

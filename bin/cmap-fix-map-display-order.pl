@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: cmap-fix-map-display-order.pl,v 1.2 2004-07-30 21:36:35 mwz444 Exp $
+# $Id: cmap-fix-map-display-order.pl,v 1.3 2005-06-03 22:19:46 mwz444 Exp $
 
 =head1 NAME
 
@@ -13,7 +13,7 @@ cmap-fix-map-display-order.pl - Fixes map display order for CMap
 Options:
 
   -d|--datasource=foo           CMap datasource
-  --ms-aids=msaid1[,msaid2...]  A list of map set accession IDs
+  --ms-accs=msacc1[,msacc2...]  A list of map set accession IDs
   -h|--help                     Show brief help and exit
   -v|--version                  Show version and exit
 
@@ -27,7 +27,7 @@ they will be sorted by the ASCII value of the names, so you'll have "1, 10,
 ctg2..." you probably want them sorted by the numerical part of the name.
 
 With no arguments, every map for every map set will be affected.  Limit to 
-just a subset of map sets by using the "ms-aids" argument.
+just a subset of map sets by using the "ms-accs" argument.
 
 =cut
 
@@ -41,14 +41,14 @@ use Pod::Usage;
 use File::Basename;
 
 use vars qw[ $VERSION ];
-$VERSION = sprintf "%d.%02d", q$Revision: 1.2 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%02d", q$Revision: 1.3 $ =~ /(\d+)\.(\d+)/;
 
-my ( $help, $show_version, $data_source, $ms_aids );
+my ( $help, $show_version, $data_source, $ms_accs );
 GetOptions(
     'h|help'         => \$help,
     'v|version'      => \$show_version,
     'd|datasource:s' => \$data_source,
-    'ms-aids:s'      => \$ms_aids,
+    'ms-accs:s'      => \$ms_accs,
 );
 pod2usage(2) if $help;
 
@@ -64,19 +64,19 @@ if ( $data_source ) {
 }
 my $db = $cmap->db;
 
-my @map_set_aids;
-if ( $ms_aids ) {
-    @map_set_aids = split( /,/, $ms_aids );
+my @map_set_accs;
+if ( $ms_accs ) {
+    @map_set_accs = split( /,/, $ms_accs );
 }
 else {
-    @map_set_aids = @{
-        $db->selectcol_arrayref( 'select accession_id from cmap_map_set' )
+    @map_set_accs = @{
+        $db->selectcol_arrayref( 'select map_set_acc from cmap_map_set' )
     };
 }
 
 print "OK to reset display order for maps in ",
     "following map sets from datasource '", $cmap->data_source, "'?\n",
-    join(', ', @map_set_aids), "\n[y/N] ";
+    join(', ', @map_set_accs), "\n[y/N] ";
 
 chomp( my $answer = <STDIN> );
 unless ( $answer =~ /^[yY]/ ) {
@@ -97,16 +97,16 @@ my %h  = (
     j  => 10,
 );
 
-for my $map_set_aid ( @map_set_aids ) {
+for my $map_set_acc ( @map_set_accs ) {
     my $maps = $db->selectall_arrayref(
         q[
             select map.map_id, map.map_name
             from   cmap_map map, cmap_map_set ms
             where  map.map_set_id=ms.map_set_id
-            and    ms.accession_id=?
+            and    ms.map_set_acc=?
         ],
         { Columns => {} },
-        ( $map_set_aid )
+        ( $map_set_acc )
     );
 
     for my $map ( @$maps ) {

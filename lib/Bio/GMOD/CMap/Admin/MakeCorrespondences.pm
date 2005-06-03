@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.51 2005-05-19 18:45:42 mwz444 Exp $
+# $Id: MakeCorrespondences.pm,v 1.52 2005-06-03 22:19:59 mwz444 Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.51 $)[-1];
+$VERSION = (qw$Revision: 1.52 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -60,7 +60,7 @@ This will create automated name-based correspondences.
         log_fh => $log_fh,
         allow_update => $allow_update,
         quiet => $quiet,
-        evidence_type_aid => $evidence_type_aid,
+        evidence_type_acc => $evidence_type_acc,
         name_regex => $name_regex,
     );
 
@@ -85,7 +85,7 @@ which is slow.  Setting to 0 is recommended.
 
 Run quietly if 1.
 
-=item - evidence_type_aid
+=item - evidence_type_acc
 
 The accession of an evidence type that is defined in the config file.
 The correspondences created will have this evidence type.
@@ -113,8 +113,8 @@ would match.
     #my @map_set_ids            = @{ $args{'map_set_ids'}            || [] };
     my @from_map_set_ids       = @{ $args{'from_map_set_ids'}       || [] };
     my @to_map_set_ids         = @{ $args{'to_map_set_ids'}         || [] };
-    my @skip_feature_type_aids = @{ $args{'skip_feature_type_aids'} || [] };
-    my $evidence_type_aid      = $args{'evidence_type_aid'}
+    my @skip_feature_type_accs = @{ $args{'skip_feature_type_accs'} || [] };
+    my $evidence_type_acc      = $args{'evidence_type_acc'}
       or return 'No evidence type';
     $LOG_FH = $args{'log_fh'} || \*STDOUT;
     my $name_regex   = $args{'name_regex'} || '';
@@ -134,13 +134,13 @@ would match.
     #
     my %add_name_correspondences;
     for my $line ( $self->config_data('add_name_correspondence') ) {
-        my @feature_type_aids = split /\s+/, $line;
+        my @feature_type_accs = split /\s+/, $line;
 
-        for my $i ( 0 .. $#feature_type_aids ) {
-            my $ft1 = $feature_type_aids[$i] or next;
+        for my $i ( 0 .. $#feature_type_accs ) {
+            my $ft1 = $feature_type_accs[$i] or next;
 
-            for my $j ( $i + 1 .. $#feature_type_aids ) {
-                my $ft2 = $feature_type_aids[$j];
+            for my $j ( $i + 1 .. $#feature_type_accs ) {
+                my $ft2 = $feature_type_accs[$j];
                 next if $ft1 eq $ft2;
 
                 $add_name_correspondences{$ft1}{$ft2} = 1;
@@ -175,19 +175,19 @@ would match.
     my $from_features = $sql_object->get_features_for_correspondence_making(
         cmap_object              => $self,
         map_set_ids              => \@from_map_set_ids,
-        ignore_feature_type_aids => \@skip_feature_type_aids,
+        ignore_feature_type_accs => \@skip_feature_type_accs,
     );
 
     my $to_features = $sql_object->get_features_for_correspondence_making(
         cmap_object              => $self,
         map_set_ids              => \@to_map_set_ids,
-        ignore_feature_type_aids => \@skip_feature_type_aids,
+        ignore_feature_type_accs => \@skip_feature_type_accs,
     );
 
     my $aliases = $sql_object->get_feature_aliases(
         cmap_object              => $self,
         map_set_ids              => [ @from_map_set_ids, @to_map_set_ids ],
-        ignore_feature_type_aids => \@skip_feature_type_aids,
+        ignore_feature_type_accs => \@skip_feature_type_accs,
     );
 
     my %alias_lookup;
@@ -225,7 +225,7 @@ would match.
     if ($allow_update) {
         $corr = $sql_object->get_feature_correspondence_details(
             cmap_object                 => $self,
-            included_evidence_type_aids => [$evidence_type_aid],
+            included_evidence_type_accs => [$evidence_type_acc],
         );
     }
 
@@ -265,12 +265,12 @@ would match.
                 # Check feature types.
                 #
                 unless (
-                    $f1->{'feature_type_aid'} == $f2->{'feature_type_aid'} )
+                    $f1->{'feature_type_acc'} == $f2->{'feature_type_acc'} )
                 {
                     next
                       unless
-                      $add_name_correspondences{ $f1->{'feature_type_aid'} }
-                      { $f2->{'feature_type_aid'} };
+                      $add_name_correspondences{ $f1->{'feature_type_acc'} }
+                      { $f2->{'feature_type_acc'} };
                 }
                 next
                   if $f1->{'feature_type_id'} == $f2->{'feature_type_id'}
@@ -293,7 +293,7 @@ would match.
                     my $fc_id = $admin->feature_correspondence_create(
                         feature_id1       => $f1->{'feature_id'},
                         feature_id2       => $f2->{'feature_id'},
-                        evidence_type_aid => $evidence_type_aid,
+                        evidence_type_acc => $evidence_type_acc,
                         allow_update      => $allow_update,
                         threshold         => $threshold,
                     );

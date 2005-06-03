@@ -17,10 +17,10 @@
 
 <form method="GET" action="map_type_info">
     Display:
-    <select name="map_type_aid">
+    <select name="map_type_acc">
         <option value="">--All Map Types--</option>
         [% FOREACH mt=all_map_types %]
-            <option value="[% mt.map_type_aid %]"[% IF apr.param('map_type_aid')==mt.map_type_aid %] selected[% END %]>[% mt.map_type %]</option>
+            <option value="[% mt.map_type_acc %]"[% IF apr.param('map_type_acc')==mt.map_type_acc %] selected[% END %]>[% mt.map_type %]</option>
         [% END %]
     </select>
     <input type="submit" value="Submit">
@@ -45,7 +45,7 @@
 
             <tr>
                 <td align="right" valign="top">Accession&nbsp;ID:</td>
-                <td>[% mt.map_type_aid %]</td>
+                <td>[% mt.map_type_acc %]</td>
             </tr>
 
             <tr>
@@ -98,7 +98,7 @@
             <tr>
                 <td>&nbsp;</td>
                 <td>
-                    <b>[</b>&nbsp;<a href="map_set_info?map_type_aid=[% mt.map_type_aid %]">Show All Map Sets Of This Map Type</a>&nbsp;<b>]</b>
+                    <b>[</b>&nbsp;<a href="map_set_info?map_type_acc=[% mt.map_type_acc %]">Show All Map Sets Of This Map Type</a>&nbsp;<b>]</b>
                 </td>
             </tr> 
             <tr><td colspan="2">&nbsp;</td></tr>

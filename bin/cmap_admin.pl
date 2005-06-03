@@ -1,14 +1,14 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.108 2005-06-01 16:24:19 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.109 2005-06-03 22:19:46 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.108 $)[-1];
+$VERSION = (qw$Revision: 1.109 $)[-1];
 
 #
 # Get command-line options
@@ -309,7 +309,7 @@ sub change_data_source {
 # ----------------------------------------------------
 sub create_species {
     my $self = shift;
-    print "Creating new map set.\n";
+    print "Creating new species.\n";
 
     print "Full Species Name (long): ";
     chomp( my $species_full_name = <STDIN> || 'New Species' );
@@ -319,7 +319,7 @@ sub create_species {
     $species_common_name ||= $species_full_name;
 
     print "Accession ID (optional): ";
-    chomp( my $species_aid = <STDIN> );
+    chomp( my $species_acc = <STDIN> );
 
     print "OK to create species '$species_full_name' in data source '",
       $self->data_source, "'?\n[Y/n] ";
@@ -328,7 +328,7 @@ sub create_species {
 
     my $admin = $self->admin;
     $admin->species_create(
-        species_aid         => $species_aid         || '',
+        species_acc         => $species_acc         || '',
         species_common_name => $species_common_name || '',
         species_full_name   => $species_full_name   || '',
       )
@@ -363,18 +363,17 @@ sub create_map_set {
         return;
     }
 
-    my ( $map_type_aid, $map_type ) = $self->show_menu(
+    my ( $map_type_acc, $map_type ) = $self->show_menu(
         title   => 'Available Map Types',
         prompt  => 'What type of map?',
         display => 'map_type',
-        return  => 'map_type_aid,map_type',
+        return  => 'map_type_acc,map_type',
         data    => $self->fake_selectall_arrayref(
-            $self->map_type_data(), 'map_type_accession as map_type_aid',
-            'map_type'
+            $self->map_type_data(), 'map_type_acc', 'map_type'
         )
     );
     die "No map types! Please use the config file to add some.\n"
-      unless $map_type_aid;
+      unless $map_type_acc;
 
     print "Map Study Name (long): ";
     chomp( my $map_set_name = <STDIN> || 'New map set' );
@@ -384,9 +383,9 @@ sub create_map_set {
     $map_set_short_name ||= $map_set_name;
 
     print "Accession ID (optional): ";
-    chomp( my $map_set_aid = <STDIN> );
+    chomp( my $map_set_acc = <STDIN> );
 
-    my $map_color = $self->map_type_data( $map_type_aid, 'color' )
+    my $map_color = $self->map_type_data( $map_type_acc, 'color' )
       || $self->config_data("map_color");
 
     $map_color = $self->show_question(
@@ -395,7 +394,7 @@ sub create_map_set {
         valid_hash => COLORS,
     );
 
-    my $map_shape = $self->map_type_data( $map_type_aid, 'shape' )
+    my $map_shape = $self->map_type_data( $map_type_acc, 'shape' )
       || 'box';
 
     $map_shape = $self->show_question(
@@ -404,18 +403,13 @@ sub create_map_set {
         valid_hash => VALID->{'map_shapes'},
     );
 
-    my $map_width = $self->map_type_data( $map_type_aid, 'width' )
+    my $map_width = $self->map_type_data( $map_type_acc, 'width' )
       || $self->config_data("map_width");
 
     $map_width = $self->show_question(
         question => 'What width should this map set be?',
         default  => $map_width,
     );
-
-    my $can_be_reference_map = 1;
-    print "Can the maps in this set be reference maps?[Y/n]";
-    chomp( my $answer = <STDIN> );
-    $can_be_reference_map = 0 if $answer =~ m/^[Nn]/;
 
     print "OK to create set '$map_set_name' in data source '",
       $self->data_source, "'?\n[Y/n] ";
@@ -424,15 +418,14 @@ sub create_map_set {
 
     my $admin      = $self->admin;
     my $map_set_id = $admin->map_set_create(
-        map_set_name         => $map_set_name,
-        map_set_short_name   => $map_set_short_name,
-        species_id           => $species_id,
-        map_type_aid         => $map_type_aid,
-        map_set_aid          => $map_set_aid,
-        can_be_reference_map => $can_be_reference_map,
-        shape                => $map_shape,
-        color                => $map_color,
-        width                => $map_width,
+        map_set_name       => $map_set_name,
+        map_set_short_name => $map_set_short_name,
+        species_id         => $species_id,
+        map_type_acc       => $map_type_acc,
+        map_set_acc        => $map_set_acc,
+        shape              => $map_shape,
+        color              => $map_color,
+        width              => $map_width,
       )
       or do {
         print "Error: ", $admin->error, "\n";
@@ -501,13 +494,12 @@ sub delete_correspondences {
         title      => 'Select Evidence Type (Optional)',
         prompt     => 'Select evidence types',
         display    => 'evidence_type',
-        return     => 'evidence_type_aid,evidence_type',
+        return     => 'evidence_type_acc,evidence_type',
         allow_null => 0,
         allow_mult => 1,
         allow_all  => 1,
         data       => $self->fake_selectall_arrayref(
-            $self->evidence_type_data(),
-            'evidence_type_accession as evidence_type_aid',
+            $self->evidence_type_data(), 'evidence_type_acc',
             'evidence_type'
         )
     );
@@ -532,7 +524,7 @@ sub delete_correspondences {
     return if $answer =~ /^[Nn]/;
 
     my %evidence_lookup = map { $_->[0], 1 } @evidence_types;
-    my @evidence_type_aids = map { $_->[0] } @evidence_types;
+    my @evidence_type_accs = map { $_->[0] } @evidence_types;
     my $admin  = $self->admin;
     my $log_fh = $self->log_fh;
 
@@ -540,7 +532,7 @@ sub delete_correspondences {
         my $map_set_id = $map_set->{'map_set_id'};
         my $corrs      = $sql_object->get_feature_correspondence_details(
             cmap_object                 => $self,
-            included_evidence_type_aids => \@evidence_type_aids,
+            included_evidence_type_accs => \@evidence_type_accs,
             map_set_id2                 => $map_set_id,
         );
 
@@ -563,7 +555,7 @@ sub delete_correspondences {
             my $no_evidence_deleted = 0;
             for my $evidence (@$all_evidence) {
                 next
-                  unless $evidence_lookup{ $evidence->{'evidence_type_aid'} };
+                  unless $evidence_lookup{ $evidence->{'evidence_type_acc'} };
                 $admin->correspondence_evidence_delete(
                     correspondence_evidence_id =>
                       $evidence->{'correspondence_evidence_id'} );
@@ -714,16 +706,16 @@ sub export_as_text {
 
     # Column Names
     my @col_names = qw(
-      map_accession_id
+      map_acc
       map_name
       map_start
       map_stop
-      feature_accession_id
+      feature_acc
       feature_name
       feature_aliases
       feature_start
       feature_stop
-      feature_type_accession
+      feature_type_acc
       feature_dbxref_name
       feature_dbxref_url
       is_landmark
@@ -732,16 +724,16 @@ sub export_as_text {
 
     # Names of values returned that correspond to col_names
     my @val_names = qw(
-      map_aid
+      map_acc
       map_name
       map_start
       map_stop
-      feature_aid
+      feature_acc
       feature_name
       feature_aliases
       feature_start
       feature_stop
-      feature_type_aid
+      feature_type_acc
       feature_dbxref_name
       feature_dbxref_url
       is_landmark
@@ -821,8 +813,8 @@ sub export_as_text {
         $file_name =~ tr/a-zA-Z0-9-/_/cs;
         $file_name = "$dir/$file_name.dat";
 
-        print $log_fh
-"Dumping '$species_common_name-$map_set_short_name' to '$file_name'\n";
+        print $log_fh "Dumping '$species_common_name-$map_set_short_name' "
+          . "to '$file_name'\n";
         open my $fh, ">$file_name" or die "Can't write to $file_name: $!\n";
         print $fh join( OFS, @col_names ), ORS;
 
@@ -838,13 +830,14 @@ sub export_as_text {
 
         my %attr_lookup = ();
         for my $a (@$attributes) {
-            push @{ $attr_lookup{ $a->[0] } }, qq[$a->[1]: "$a->[2]"];
+            push @{ $attr_lookup{ $a->{'object_id'} } },
+              qq[$a->{'attribute_name'}: "$a->{'attribute_value'}"];
         }
 
         for my $map (@$maps) {
             my $features = $sql_object->get_features(
                 cmap_object       => $self,
-                feature_type_aids => $feature_types,
+                feature_type_accs => $feature_types,
                 map_id            => $map->{'map_id'},
             );
 
@@ -1231,7 +1224,7 @@ sub get_map_sets {
         return unless @accessions;
         $map_sets = $sql_object->get_map_sets(
             cmap_object  => $self,
-            map_set_aids => \@accessions,
+            map_set_accs => \@accessions,
         );
         unless ( $map_sets and @$map_sets ) {
             print "Those map sets were not in the database!\n";
@@ -1255,7 +1248,7 @@ sub get_map_sets {
             title      => 'Restrict by Map Set by Map Types',
             prompt     => 'Limit map sets by which map types?',
             display    => 'map_type',
-            return     => 'map_type_aid,map_type',
+            return     => 'map_type_acc,map_type',
             allow_null => $allow_null,
             allow_mult => $allow_mult,
             data       => $map_type_results,
@@ -1266,7 +1259,7 @@ sub get_map_sets {
 
         my $map_set_species = $sql_object->get_map_sets(
             cmap_object   => $self,
-            map_type_aids => \@map_types,
+            map_type_accs => \@map_types,
         );
         die "No species! Please create.\n"
           unless @$map_set_species;
@@ -1299,7 +1292,7 @@ sub get_map_sets {
 
         my $ms_choices = $sql_object->get_map_sets(
             cmap_object   => $self,
-            map_type_aids => \@map_types,
+            map_type_accs => \@map_types,
             species_ids   => $species_ids,
         );
 
@@ -1347,11 +1340,9 @@ sub get_feature_types {
         );
     }
     else {
-        $ft_sql_data = $self->fake_selectall_arrayref(
-            $self->feature_type_data(),
-            'feature_type_accession as feature_type_aid',
-            'feature_type'
-        );
+        $ft_sql_data =
+          $self->fake_selectall_arrayref( $self->feature_type_data(),
+            'feature_type_acc', 'feature_type' );
     }
     $ft_sql_data = sort_selectall_arrayref( $ft_sql_data, 'feature_type' );
 
@@ -1359,7 +1350,7 @@ sub get_feature_types {
         title      => 'Restrict by Feature Types',
         prompt     => 'Limit export by feature types?',
         display    => 'feature_type',
-        return     => 'feature_type_aid,feature_type',
+        return     => 'feature_type_acc,feature_type',
         allow_null => 1,
         allow_mult => 1,
         data       => $ft_sql_data,
@@ -1720,13 +1711,12 @@ sub import_alignments {
 "Select the feature type that the newly created features will be assigned.\n"
           . "It is recommended that alignment features have their own feature type such as blast_alignment.",
         display    => 'feature_type',
-        return     => 'feature_type_aid,feature_type',
+        return     => 'feature_type_acc,feature_type',
         allow_null => 0,
         allow_mult => 0,
         data       => sort_selectall_arrayref(
             $self->fake_selectall_arrayref(
-                $self->feature_type_data(),
-                'feature_type_accession as feature_type_aid',
+                $self->feature_type_data(), 'feature_type_acc',
                 'feature_type'
             ),
             'feature_type'
@@ -1742,12 +1732,11 @@ sub import_alignments {
 "Select the evidence type that the newly created evidences will be assigned.\n"
           . "It is recommended that alignment evidences have their own evidence type such as blast_alignment.",
         display    => 'evidence_type',
-        return     => 'evidence_type_aid,evidence_type',
+        return     => 'evidence_type_acc,evidence_type',
         allow_null => 0,
         allow_mult => 0,
         data       => $self->fake_selectall_arrayref(
-            $self->evidence_type_data(),
-            'evidence_type_accession as evidence_type_aid',
+            $self->evidence_type_data(), 'evidence_type_acc',
             'evidence_type'
         ),
     );
@@ -1796,8 +1785,8 @@ sub import_alignments {
         file_name         => $file,
         query_map_set_id  => $query_map_sets->[0]{'map_set_id'},
         hit_map_set_id    => $hit_map_sets->[0]{'map_set_id'},
-        feature_type_aid  => $feature_type[0],
-        evidence_type_aid => $evidence_type[0],
+        feature_type_acc  => $feature_type[0],
+        evidence_type_acc => $evidence_type[0],
         format            => $format,
         log_fh            => $self->log_fh,
       )
@@ -1915,7 +1904,7 @@ sub import_tab_data {
         "  Species     : " . $map_set->{species_common_name},
         "  Map Type    : " . $map_set->{map_type},
         "  Map Set     : " . $map_set->{map_set_short_name},
-        "  Map Set Acc : " . $map_set->{map_set_aid},
+        "  Map Set Acc : " . $map_set->{map_set_acc},
         "  Overwrite   : " .     ( $overwrite    ? "Yes" : "No" ),
         "  Update Features : " . ( $allow_update ? "Yes" : "No" ),
         "[Y/n] " );
@@ -1932,7 +1921,7 @@ sub import_tab_data {
         $importer->import_tab(
             map_set_id   => $map_set->{'map_set_id'},
             fh           => $fh,
-            map_type_aid => $map_set->{'map_type_aid'},
+            map_type_acc => $map_set->{'map_type_acc'},
             log_fh       => $self->log_fh,
             overwrite    => $overwrite,
             allow_update => $allow_update,
@@ -2021,15 +2010,14 @@ sub make_name_correspondences {
     #
     # Get the evidence type id.
     #
-    my ( $evidence_type_aid, $evidence_type ) = $self->show_menu(
+    my ( $evidence_type_acc, $evidence_type ) = $self->show_menu(
         title   => 'Available evidence types',
         prompt  => 'Please select an evidence type',
         display => 'evidence_type',
-        return  => 'evidence_type_aid,evidence_type',
+        return  => 'evidence_type_acc,evidence_type',
         data    => sort_selectall_arrayref(
             $self->fake_selectall_arrayref(
-                $self->evidence_type_data(),
-                'evidence_type_accession as evidence_type_aid',
+                $self->evidence_type_data(), 'evidence_type_acc',
                 'evidence_type'
             ),
             'evidence_type'
@@ -2062,19 +2050,18 @@ sub make_name_correspondences {
         title      => 'Skip Feature Types (optional)',
         prompt     => 'Select any feature types to skip in check',
         display    => 'feature_type',
-        return     => 'feature_type_aid,feature_type',
+        return     => 'feature_type_acc,feature_type',
         allow_null => 1,
         allow_mult => 1,
         data       => sort_selectall_arrayref(
             $self->fake_selectall_arrayref(
-                $self->feature_type_data(),
-                'feature_type_accession as feature_type_aid',
+                $self->feature_type_data(), 'feature_type_acc',
                 'feature_type'
             ),
             'feature_type'
         ),
     );
-    my @skip_feature_type_aids = map { $_->[0] } @skip_features;
+    my @skip_feature_type_accs = map { $_->[0] } @skip_features;
     my $skip =
       @skip_features
       ? join( "\n     ", map { $_->[1] } @skip_features ) . "\n"
@@ -2107,14 +2094,14 @@ sub make_name_correspondences {
     my $from = join(
         "\n",
         map {
-"    $_->{species_common_name}-$_->{map_set_short_name} ($_->{map_set_aid})"
+"    $_->{species_common_name}-$_->{map_set_short_name} ($_->{map_set_acc})"
           } @{$from_map_sets}
     );
 
     my $to = join(
         "\n",
         map {
-"    $_->{species_common_name}-$_->{map_set_short_name} ($_->{map_set_aid})"
+"    $_->{species_common_name}-$_->{map_set_short_name} ($_->{map_set_acc})"
           } @{$to_map_sets}
     );
     print "Make name-based correspondences\n",
@@ -2135,10 +2122,10 @@ sub make_name_correspondences {
     my @to_map_set_ids   = map { $_->{map_set_id} } @$to_map_sets;
     my $time_start = new Benchmark;
     $corr_maker->make_name_correspondences(
-        evidence_type_aid      => $evidence_type_aid,
+        evidence_type_acc      => $evidence_type_acc,
         from_map_set_ids       => \@from_map_set_ids,
         to_map_set_ids         => \@to_map_set_ids,
-        skip_feature_type_aids => \@skip_feature_type_aids,
+        skip_feature_type_accs => \@skip_feature_type_accs,
         log_fh                 => $self->log_fh,
         quiet                  => $Quiet,
         name_regex             => $name_regex,
@@ -2198,12 +2185,12 @@ sub prepare_for_gbrowse {
     #
     my $feature_type_data = $self->feature_type_data();
     my $menu_options;
-    foreach my $ft_aid ( keys(%$feature_type_data) ) {
-        if ( $feature_type_data->{$ft_aid}->{'gbrowse_class'} ) {
+    foreach my $ft_acc ( keys(%$feature_type_data) ) {
+        if ( $feature_type_data->{$ft_acc}->{'gbrowse_class'} ) {
             push @$menu_options,
               {
-                feature_type => $feature_type_data->{$ft_aid}->{'feature_type'},
-                feature_type_aid => $ft_aid,
+                feature_type => $feature_type_data->{$ft_acc}->{'feature_type'},
+                feature_type_acc => $ft_acc,
               };
         }
     }
@@ -2220,7 +2207,7 @@ sub prepare_for_gbrowse {
           "Select the feature types that should be prepared for GBrowse data.\n"
           . "Only eligible feature type (that have a 'gbrowse_class' defined in their config) are displayed.",
         display    => 'feature_type',
-        return     => 'feature_type_aid,feature_type',
+        return     => 'feature_type_acc,feature_type',
         allow_null => 0,
         allow_mult => 1,
         data       => $menu_options,
@@ -2242,13 +2229,13 @@ sub prepare_for_gbrowse {
     return if $answer =~ /^[Nn]/;
 
     my @map_set_ids       = map { $_->{'map_set_id'} } @$map_sets;
-    my @feature_type_aids = map { $_->[0] } @feature_types;
+    my @feature_type_accs = map { $_->[0] } @feature_types;
     my $gbrowse_liason    =
       Bio::GMOD::CMap::Admin::GBrowseLiason->new(
         data_source => $self->data_source, );
     $gbrowse_liason->prepare_data_for_gbrowse(
         map_set_ids       => \@map_set_ids,
-        feature_type_aids => \@feature_type_aids,
+        feature_type_accs => \@feature_type_accs,
       )
       or do {
         print "Error: ", $gbrowse_liason->error, "\n";
@@ -2282,14 +2269,14 @@ sub copy_cmap_into_gbrowse {
     #
     my $feature_type_data = $self->feature_type_data();
     my $menu_options;
-    foreach my $ft_aid ( keys(%$feature_type_data) ) {
-        if (    $feature_type_data->{$ft_aid}->{'gbrowse_class'}
-            and $feature_type_data->{$ft_aid}->{'gbrowse_ftype'} )
+    foreach my $ft_acc ( keys(%$feature_type_data) ) {
+        if (    $feature_type_data->{$ft_acc}->{'gbrowse_class'}
+            and $feature_type_data->{$ft_acc}->{'gbrowse_ftype'} )
         {
             push @$menu_options,
               {
-                feature_type => $feature_type_data->{$ft_aid}->{'feature_type'},
-                feature_type_aid => $ft_aid,
+                feature_type => $feature_type_data->{$ft_acc}->{'feature_type'},
+                feature_type_acc => $ft_acc,
               };
         }
     }
@@ -2307,7 +2294,7 @@ sub copy_cmap_into_gbrowse {
           . "Only eligible feature types ('gbrowse_class' and 'gbrowse_ftype' defined in the config) are displayed.\n"
           . "Selecting none will select all.",
         display    => 'feature_type',
-        return     => 'feature_type_aid,feature_type',
+        return     => 'feature_type_acc,feature_type',
         allow_null => 1,
         allow_mult => 1,
         data       => $menu_options,
@@ -2334,13 +2321,13 @@ sub copy_cmap_into_gbrowse {
     return if $answer =~ /^[Nn]/;
 
     my @map_set_ids       = map { $_->{'map_set_id'} } @$map_sets;
-    my @feature_type_aids = map { $_->[0] } @feature_types;
+    my @feature_type_accs = map { $_->[0] } @feature_types;
     my $gbrowse_liason    =
       Bio::GMOD::CMap::Admin::GBrowseLiason->new(
         data_source => $self->data_source, );
     $gbrowse_liason->copy_data_into_gbrowse(
         map_set_ids       => \@map_set_ids,
-        feature_type_aids => \@feature_type_aids,
+        feature_type_accs => \@feature_type_accs,
       )
       or do {
         print "Error: ", $gbrowse_liason->error, "\n";

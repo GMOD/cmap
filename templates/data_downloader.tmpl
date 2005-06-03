@@ -10,8 +10,8 @@
 [%- url=apr.url -%]
 
 [%- 
-    SET object = apr.param('map_set_aid') ? 'Map Set' : 'Map';
-    SET field_name = apr.param('map_set_aid') ? 'map_set_aid' : 'map_aid' 
+    SET object = apr.param('map_set_acc') ? 'Map Set' : 'Map';
+    SET field_name = apr.param('map_set_acc') ? 'map_set_acc' : 'map_acc' 
 -%]
 <form action="[% url %]/download_data">
 <h1>Download Data</h1>
@@ -30,7 +30,7 @@
         <td>
             <input type="radio" name="format" value="tab" checked>CMap (tab-delimited)<br>
             <input type="radio" name="format" value="gff">GFF (tab-delimited)<br>
-            [%- IF field_name == 'map_set_aid' %]
+            [%- IF field_name == 'map_set_acc' %]
             <input type="radio" name="format" value="xml">CMap XML
             [% END -%]
         </td>

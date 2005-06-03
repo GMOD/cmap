@@ -42,10 +42,10 @@ INSERT INTO cmap_correspondence_lookup (feature_id1, feature_id2, feature_corres
 --
 
 
-INSERT INTO cmap_correspondence_matrix (reference_map_aid, reference_map_name, reference_map_set_aid, reference_species_aid, link_map_aid, link_map_name, link_map_set_aid, link_species_aid, no_correspondences) VALUES ('1','T1','MST1','1','3','T3','MST2','1',3);
-INSERT INTO cmap_correspondence_matrix (reference_map_aid, reference_map_name, reference_map_set_aid, reference_species_aid, link_map_aid, link_map_name, link_map_set_aid, link_species_aid, no_correspondences) VALUES ('1','T1','MST1','1','4','T4','MST2','1',2);
-INSERT INTO cmap_correspondence_matrix (reference_map_aid, reference_map_name, reference_map_set_aid, reference_species_aid, link_map_aid, link_map_name, link_map_set_aid, link_species_aid, no_correspondences) VALUES ('3','T3','MST2','1','1','T1','MST1','1',3);
-INSERT INTO cmap_correspondence_matrix (reference_map_aid, reference_map_name, reference_map_set_aid, reference_species_aid, link_map_aid, link_map_name, link_map_set_aid, link_species_aid, no_correspondences) VALUES ('4','T4','MST2','1','1','T1','MST1','1',2);
+INSERT INTO cmap_correspondence_matrix (reference_map_acc, reference_map_name, reference_map_set_acc, reference_species_acc, link_map_acc, link_map_name, link_map_set_acc, link_species_acc, no_correspondences) VALUES ('1','T1','MST1','1','3','T3','MST2','1',3);
+INSERT INTO cmap_correspondence_matrix (reference_map_acc, reference_map_name, reference_map_set_acc, reference_species_acc, link_map_acc, link_map_name, link_map_set_acc, link_species_acc, no_correspondences) VALUES ('1','T1','MST1','1','4','T4','MST2','1',2);
+INSERT INTO cmap_correspondence_matrix (reference_map_acc, reference_map_name, reference_map_set_acc, reference_species_acc, link_map_acc, link_map_name, link_map_set_acc, link_species_acc, no_correspondences) VALUES ('3','T3','MST2','1','1','T1','MST1','1',3);
+INSERT INTO cmap_correspondence_matrix (reference_map_acc, reference_map_name, reference_map_set_acc, reference_species_acc, link_map_acc, link_map_name, link_map_set_acc, link_species_acc, no_correspondences) VALUES ('4','T4','MST2','1','1','T1','MST1','1',2);
 
 --
 -- Dumping data for table `cmap_feature`

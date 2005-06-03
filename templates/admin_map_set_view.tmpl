@@ -4,8 +4,9 @@
 <a href="admin?action=map_sets_view">View All Map Sets</a> |
 <a href="admin?action=map_set_edit;map_set_id=[% map_set.map_set_id %]">Edit</a> |
 <a href="admin?action=confirm_delete;entity_type=map_set;entity_id=[% map_set.map_set_id %]">Delete</a>
-[% IF map_set.can_be_reference_map %]
-  | <a href="[% url %]/viewer?ref_map_set_aid=[% map_set.map_set_aid %]">View in CMap Viewer</a>
+
+[% UNLESS map_set.is_relational_map %]
+  | <a href="[% url %]/viewer?ref_map_set_acc=[% map_set.map_set_acc %]">View in CMap Viewer</a>
 [% END %]
 <hr noshade>
 
@@ -27,7 +28,7 @@
     <tr>
         <td align="right">Acc. ID:</td>
         <td>
-            [% map_set.map_set_aid %]
+            [% map_set.map_set_acc %]
         </td>
     </tr>
 
@@ -84,9 +85,9 @@
     </tr>
   
     <tr>
-        <td align="right">Can Be Reference Map:</td>
+        <td align="right">Is Relational_map:</td>
         <td>
-            [% IF map_set.can_be_reference_map %]Yes[% ELSE %]No[% END %]
+            [% IF map_set.is_relational_map %]Yes[% ELSE %]No[% END %]
         </td>
     </tr>
 </table>
@@ -132,7 +133,7 @@
         </tr>
         <tr>
             <th>
-                <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];order_by=accession_id">Acc. ID</a>
+                <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];order_by=map_set_acc">Acc. ID</a>
             </th>
             <th>
                 <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];order_by=display_order">Display Order</a>
@@ -153,7 +154,7 @@
         [% SET i=0 %]
         [% FOREACH map=map_set.maps %]
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
-                <td>[% map.map_aid   %]</td>
+                <td>[% map.map_acc   %]</td>
                 <td>[% map.display_order  %]</td>
                 <td>[% map.map_name       %]</td>
                 <td align="right">[% map.map_start | commify %]</td>

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::ManageLinks;
 
 # vim: set ft=perl:
 
-# $Id: ManageLinks.pm,v 1.8 2005-05-27 19:02:17 mwz444 Exp $
+# $Id: ManageLinks.pm,v 1.9 2005-06-03 22:19:59 mwz444 Exp $
 
 =pod
 
@@ -27,7 +27,7 @@ This module encapsulates the logic for handling imported links.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.8 $)[-1];
+$VERSION = (qw$Revision: 1.9 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -160,10 +160,10 @@ under and is displayed when the accessing the links.
             "Missing following required columns: " . join( ', ', @missing ) );
     }
 
-    my $map_set_aid = $sql_object->internal_id_to_acc_id(
+    my $map_set_acc = $sql_object->internal_id_to_acc_id(
         cmap_object => $self,
         object_type => 'map_set',
-        id      => $map_set_id,
+        id          => $map_set_id,
     );
 
     $self->Print("Parsing file...\n");
@@ -200,29 +200,28 @@ under and is displayed when the accessing the links.
             }
         }
 
-        my $map_aid   = $record->{'map_accession_id'};
+        my $map_acc   = $record->{'map_accession_id'} || $record->{'map_acc'};
         my $map_name  = $record->{'map_name'};
         my $map_start = $record->{'map_start'};
         my $map_stop  = $record->{'map_stop'};
         my $link_name = $record->{'link_name'};
 
-        unless ( defined($map_aid) ) {
-            return $self->error(
-                "Must specify a map_accession_id or a map_name\n" )
+        unless ( defined($map_acc) ) {
+            return $self->error("Must specify a map_acc or a map_name\n")
               unless ( defined($map_name) );
 
             my $temp_maps = $sql_object->get_maps(
                 cmap_object => $self,
-                map_set_id => $map_set_id,
-                map_name      => $map_name,
+                map_set_id  => $map_set_id,
+                map_name    => $map_name,
             );
-            
-            return $self->error( "$map_name was not in the dataset\n" )
+
+            return $self->error("$map_name was not in the dataset\n")
               unless ( $temp_maps and @$temp_maps );
-            $map_aid = $temp_maps->[0]{'map_aid'};
+            $map_acc = $temp_maps->[0]{'map_acc'};
         }
         unless ($link_name) {
-            $link_name = $map_name ? $map_name : "map_aid:$map_aid";
+            $link_name = $map_name ? $map_name : "map_acc:$map_acc";
             if (    defined($map_start)
                 and defined($map_stop)
                 and !( $map_start eq '' )
@@ -238,12 +237,12 @@ under and is displayed when the accessing the links.
             }
         }
 
-        my %ref_map_aids_hash;
-        $ref_map_aids_hash{$map_aid} = ();
+        my %ref_map_accs_hash;
+        $ref_map_accs_hash{$map_acc} = ();
         my %temp_hash = (
             link_name       => $link_name,
-            ref_map_set_aid => $map_set_aid,
-            ref_map_aids    => \%ref_map_aids_hash,
+            ref_map_set_acc => $map_set_acc,
+            ref_map_accs    => \%ref_map_accs_hash,
             ref_map_start   => $map_start,
             ref_map_stop    => $map_stop,
             data_source     => $self->data_source,

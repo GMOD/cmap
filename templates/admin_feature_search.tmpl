@@ -24,7 +24,7 @@
         <td valign="top">
             <select name="search_field">
                 <option value="feature_name"[% IF apr.param('search_field')=='feature_name' %] selected[% END %]>Feature Name</option>
-                <option value="feature_aid"[% IF apr.param('search_field')=='feature_aid' %] selected[% END %]>Feature Acc. ID</option>
+                <option value="feature_acc"[% IF apr.param('search_field')=='feature_acc' %] selected[% END %]>Feature Acc. ID</option>
             </select>
         </td>
         <td valign="top">
@@ -36,16 +36,16 @@
             </select>
         </td>
         <td valign="top">
-            [% feature_type_aids.unshift(-1); %]
+            [% feature_type_accs.unshift(-1); %]
             [% feature_type_name_lookup.-1 = '--All--';  %]
-            <select name="feature_type_aid" size="5" multiple>
-                [% FOREACH ft_aid=feature_type_aids %]
-                    <option value="[% ft_aid %]"[% IF feature_type_aid_lookup.${ft_aid} %] selected[% END %]>[% feature_type_name_lookup.${ft_aid} %]</option>
+            <select name="feature_type_acc" size="5" multiple>
+                [% FOREACH ft_acc=feature_type_accs %]
+                    <option value="[% ft_acc %]"[% IF feature_type_acc_lookup.${ft_acc} %] selected[% END %]>[% feature_type_name_lookup.${ft_acc} %]</option>
                 [% END %]
             </select>
         </td>
         <td valign="top">
-            <input name="map_aid" value="[% apr.param('map_aid') %]">
+            <input name="map_acc" value="[% apr.param('map_acc') %]">
         </td>
     </tr>
 </table>
@@ -57,35 +57,35 @@
         <table width="100%">
             <tr>
                 <td colspan="10" align="center">
-                    [% SET pager_url="admin?action=feature_search&feature_name=$fname&species_id=${apr.param('species_id')}&feature_type_aid=${apr.param('feature_type_aid')}&map_aid=${apr.param('map_aid')}&search_field=${apr.param('search_field')}&order_by=${apr.param('order_by')}" %]
+                    [% SET pager_url="admin?action=feature_search&feature_name=$fname&species_id=${apr.param('species_id')}&feature_type_acc=${apr.param('feature_type_acc')}&map_acc=${apr.param('map_acc')}&search_field=${apr.param('search_field')}&order_by=${apr.param('order_by')}" %]
                     [% PROCESS pager.tmpl %]
                 </td>
             </tr>
             <tr>
                 <th>
-                    <a href="admin?action=feature_search;feature_name=[% fname %];map_aid=[% apr.param('map_aid') %];feature_type_aid=[% apr.param('feature_type_aid') %];search_field=[% apr.param('search_field') %];order_by=feature_aid">Feature Acc. ID</a>
+                    <a href="admin?action=feature_search;feature_name=[% fname %];map_acc=[% apr.param('map_acc') %];feature_type_acc=[% apr.param('feature_type_acc') %];search_field=[% apr.param('search_field') %];order_by=feature_acc">Feature Acc. ID</a>
                 </th>
                 <th>
-                    <a href="admin?action=feature_search;feature_name=[% fname %];map_aid=[% apr.param('map_aid') %];feature_type_aid=[% apr.param('feature_type_aid') %];search_field=[% apr.param('search_field') %];order_by=feature_name">Feature Name</a>
+                    <a href="admin?action=feature_search;feature_name=[% fname %];map_acc=[% apr.param('map_acc') %];feature_type_acc=[% apr.param('feature_type_acc') %];search_field=[% apr.param('search_field') %];order_by=feature_name">Feature Name</a>
                 </th>
                 <th>Aliases</th>
                 <th>
-                    <a href="admin?action=feature_search;feature_name=[% fname %];map_aid=[% apr.param('map_aid') %];feature_type_aid=[% apr.param('feature_type_aid') %];search_field=[% apr.param('search_field') %];order_by=feature_type_aid">Feature Type</a>
+                    <a href="admin?action=feature_search;feature_name=[% fname %];map_acc=[% apr.param('map_acc') %];feature_type_acc=[% apr.param('feature_type_acc') %];search_field=[% apr.param('search_field') %];order_by=feature_type_acc">Feature Type</a>
                 </th>
                 <th>
-                    <a href="admin?action=feature_search;feature_name=[% fname %];map_aid=[% apr.param('map_aid') %];feature_type_aid=[% apr.param('feature_type_aid') %];search_field=[% apr.param('search_field') %];order_by=species_common_name">Species</a>
+                    <a href="admin?action=feature_search;feature_name=[% fname %];map_acc=[% apr.param('map_acc') %];feature_type_acc=[% apr.param('feature_type_acc') %];search_field=[% apr.param('search_field') %];order_by=species_common_name">Species</a>
                 </th>
                 <th>
-                    <a href="admin?action=feature_search;feature_name=[% fname %];map_aid=[% apr.param('map_aid') %];feature_type_aid=[% apr.param('feature_type_aid') %];search_field=[% apr.param('search_field') %];order_by=map_set_name">Map Set Name</a>
+                    <a href="admin?action=feature_search;feature_name=[% fname %];map_acc=[% apr.param('map_acc') %];feature_type_acc=[% apr.param('feature_type_acc') %];search_field=[% apr.param('search_field') %];order_by=map_set_name">Map Set Name</a>
                 </th>
                 <th>
-                    <a href="admin?action=feature_search;feature_name=[% fname %];map_aid=[% apr.param('map_aid') %];feature_type_aid=[% apr.param('feature_type_aid') %];search_field=[% apr.param('search_field') %];order_by=map_name">Map Name</a>
+                    <a href="admin?action=feature_search;feature_name=[% fname %];map_acc=[% apr.param('map_acc') %];feature_type_acc=[% apr.param('feature_type_acc') %];search_field=[% apr.param('search_field') %];order_by=map_name">Map Name</a>
                 </th>
                 <th>
-                    <a href="admin?action=feature_search;feature_name=[% fname %];map_aid=[% apr.param('map_aid') %];feature_type_aid=[% apr.param('feature_type_aid') %];search_field=[% apr.param('search_field') %];order_by=feature_start">Start</a>
+                    <a href="admin?action=feature_search;feature_name=[% fname %];map_acc=[% apr.param('map_acc') %];feature_type_acc=[% apr.param('feature_type_acc') %];search_field=[% apr.param('search_field') %];order_by=feature_start">Start</a>
                 </th>
                 <th>
-                    <a href="admin?action=feature_search;feature_name=[% fname %];map_aid=[% apr.param('map_aid') %];feature_type_aid=[% apr.param('feature_type_aid') %];search_field=[% apr.param('search_field') %];order_by=feature_stop">Stop</a>
+                    <a href="admin?action=feature_search;feature_name=[% fname %];map_acc=[% apr.param('map_acc') %];feature_type_acc=[% apr.param('feature_type_acc') %];search_field=[% apr.param('search_field') %];order_by=feature_stop">Stop</a>
                 </th>
                 <th colspan="2">&nbsp;</th>
             </tr>
@@ -93,7 +93,7 @@
             [% SET i=0 %]
             [% FOREACH f=features %]
                 <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
-                    <td>[% f.feature_aid %]</td>
+                    <td>[% f.feature_acc %]</td>
                     <td>[% f.feature_name %]</td>
                     <td>[% f.aliases.join(', ') | truncate(10) %]</td>
                     <td>[% f.feature_type %]</td>

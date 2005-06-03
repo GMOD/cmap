@@ -25,19 +25,19 @@
         </td>
 
         <td valign="top">
-            <select name="species_aid" size="5" multiple>
+            <select name="species_acc" size="5" multiple>
                 <option value="-1">--All Species--</option>
                 [% FOREACH s=species %]
-                    <option value="[% s.species_aid %]"[% IF species_lookup.${s.species_aid} %] selected[% END %]>[% s.species_common_name %]</option>
+                    <option value="[% s.species_acc %]"[% IF species_lookup.${s.species_acc} %] selected[% END %]>[% s.species_common_name %]</option>
                 [% END %]
             </select>
         </td>
 
         <td valign="top">
-            <select name="feature_type_aid" size="5" multiple>
+            <select name="feature_type_acc" size="5" multiple>
                 <option value="-1">--All Feature Types--</option>
                 [% FOREACH ft=feature_types %]
-                    <option value="[% ft.feature_type_aid %]"[% IF feature_type_aid_lookup.${ft.feature_type_aid} %] selected[% END %]>[% ft.feature_type %]</option>
+                    <option value="[% ft.feature_type_acc %]"[% IF feature_type_acc_lookup.${ft.feature_type_acc} %] selected[% END %]>[% ft.feature_type %]</option>
                 [% END %]
             </select>
         </td>
@@ -45,7 +45,7 @@
         <td valign="top">
             <select name="search_field">
                 <option value="feature_name"[% IF apr.param('search_field')=='name'; ' selected'; END %]>Name</option>
-                <option value="feature_aid"[% IF apr.param('search_field')=='feature_aid'; ' selected'; END %]>Feature Acc. ID</option>
+                <option value="feature_acc"[% IF apr.param('search_field')=='feature_acc'; ' selected'; END %]>Feature Acc. ID</option>
             </select>
         </td>
     </tr>
@@ -73,17 +73,17 @@ Use &quot;*&quot; or &quot;%&quot; for wildcards.  To find features with spaces 
         <table border="0" width="100%">
             <tr>
                 <td colspan="9" align="center">
-                    [% SET pager_url="$url/feature_search?features=${apr.param('features')}&order_by=${apr.param('order_by')}&search_field=${apr.param('search_field')}&species_aids=${apr.param('species_aids')}&feature_type_aids=${apr.param('feature_type_aids')}" %]
+                    [% SET pager_url="$url/feature_search?features=${apr.param('features')}&order_by=${apr.param('order_by')}&search_field=${apr.param('search_field')}&species_accs=${apr.param('species_accs')}&feature_type_accs=${apr.param('feature_type_accs')}" %]
                     [% PROCESS pager.tmpl %]
                 </td>
             </tr>
             <tr>
-                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=feature_name;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %];data_source=[% apr.param('data_source') %]">Feature Name</a></th>
-                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=feature_type;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %];data_source=[% apr.param('data_source') %]">Feature Type</a></th>
-                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=species_common_name;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %];data_source=[% apr.param('data_source') %]">Species</a></th>
-                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=map_set_name;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %];data_source=[% apr.param('data_source') %]">Map Set</a></th>
-                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=map_name;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %];data_source=[% apr.param('data_source') %]">Map Name</a></th>
-                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=feature_start;search_field=[% apr.param('search_field') %];species_aids=[% apr.param('species_aids') %];feature_type_aids=[% apr.param('feature_type_aids') %];data_source=[% apr.param('data_source') %]">Position</a></th>
+                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=feature_name;search_field=[% apr.param('search_field') %];species_accs=[% apr.param('species_accs') %];feature_type_accs=[% apr.param('feature_type_accs') %];data_source=[% apr.param('data_source') %]">Feature Name</a></th>
+                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=feature_type;search_field=[% apr.param('search_field') %];species_accs=[% apr.param('species_accs') %];feature_type_accs=[% apr.param('feature_type_accs') %];data_source=[% apr.param('data_source') %]">Feature Type</a></th>
+                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=species_common_name;search_field=[% apr.param('search_field') %];species_accs=[% apr.param('species_accs') %];feature_type_accs=[% apr.param('feature_type_accs') %];data_source=[% apr.param('data_source') %]">Species</a></th>
+                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=map_set_name;search_field=[% apr.param('search_field') %];species_accs=[% apr.param('species_accs') %];feature_type_accs=[% apr.param('feature_type_accs') %];data_source=[% apr.param('data_source') %]">Map Set</a></th>
+                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=map_name;search_field=[% apr.param('search_field') %];species_accs=[% apr.param('species_accs') %];feature_type_accs=[% apr.param('feature_type_accs') %];data_source=[% apr.param('data_source') %]">Map Name</a></th>
+                <th><a href="feature_search?features=[% apr.param('features') | uri %];order_by=feature_start;search_field=[% apr.param('search_field') %];species_accs=[% apr.param('species_accs') %];feature_type_accs=[% apr.param('feature_type_accs') %];data_source=[% apr.param('data_source') %]">Position</a></th>
                 <th>Aliases</th>
                 <th>&nbsp;</th>
                 <th>&nbsp;</th>
@@ -94,17 +94,17 @@ Use &quot;*&quot; or &quot;%&quot; for wildcards.  To find features with spaces 
                     <td>[% r.feature_name %]</td>
                     <td>[% r.feature_type %]</td>
                     <td>[% r.species_common_name %]</td>
-                    <td><a href="map_set_info?map_set_aid=[% r.map_set_aid %]">[% r.map_set_name %]</a></td>
+                    <td><a href="map_set_info?map_set_acc=[% r.map_set_acc %]">[% r.map_set_name %]</a></td>
                     <td>[% r.map_name %]</td>
                     <td align="right">
                         [% r.feature_start | commify %][% IF r.feature_stop.defined AND r.feature_stop > r.feature_start %]-[% r.feature_stop | commify %][% END %] [% r.map_units %]
                     </td>
                     <td>[% r.aliases.join(', ') | truncate(30) %]</td>
                     <td align="center">
-                        <b>[</b>&nbsp;<a href="[% url %]/map_details?ref_map_set_aid=[% r.map_set_aid %];ref_map_aids=[% r.map_aid %];highlight=&quot;[% r.feature_name %]&quot;;data_source=[% apr.param('data_source') %];label_features=landmarks;feature_type_[% r.feature_type_aid %]=2">View&nbsp;on&nbsp;Map</a>&nbsp;<b>]</b>
+                        <b>[</b>&nbsp;<a href="[% url %]/map_details?ref_map_set_acc=[% r.map_set_acc %];ref_map_accs=[% r.map_acc %];highlight=&quot;[% r.feature_name %]&quot;;data_source=[% apr.param('data_source') %];label_features=landmarks;feature_type_[% r.feature_type_acc %]=2">View&nbsp;on&nbsp;Map</a>&nbsp;<b>]</b>
                     </td>
                     <td align="center">
-                        <b>[</b>&nbsp;<a href="feature?feature_aid=[% r.feature_aid %];data_source=[% apr.param('data_source') %]">Feature&nbsp;Details</a><b>&nbsp;]</b>
+                        <b>[</b>&nbsp;<a href="feature?feature_acc=[% r.feature_acc %];data_source=[% apr.param('data_source') %]">Feature&nbsp;Details</a><b>&nbsp;]</b>
                     </td>
                 </tr>    
                 [% SET i=i+1 %]

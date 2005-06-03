@@ -21,11 +21,11 @@
 
         <td>
             [%- IF form_data.ref_species.size -%]
-                <select name="ref_species_aid" onChange="javascript:ref_map_set_form.submit()">
+                <select name="ref_species_acc" onChange="javascript:ref_map_set_form.submit()">
                 <option value="">--Select--</option>
-                [%- IF form_data.ref_species.size > 1; form_data.ref_species.unshift({ species_aid => -1, species_common_name => 'All Species' }); END -%]
+                [%- IF form_data.ref_species.size > 1; form_data.ref_species.unshift({ species_acc => -1, species_common_name => 'All Species' }); END -%]
                 [%- FOREACH s=form_data.ref_species -%]
-                    <option value="[% s.species_aid %]"[% IF s.species_aid==apr.param('ref_species_aid') OR form_data.ref_species.size==1; ' selected'; END %]>[% s.species_common_name %][% IF s.species_full_name %] ([% s.species_full_name %])[% END %]</option>
+                    <option value="[% s.species_acc %]"[% IF s.species_acc==apr.param('ref_species_acc') OR form_data.ref_species.size==1; ' selected'; END %]>[% s.species_common_name %][% IF s.species_full_name %] ([% s.species_full_name %])[% END %]</option>
                 [%- END -%]
                 </select>
             [%- ELSE -%]
@@ -33,7 +33,7 @@
             [%- END -%]
         </td>
         <td>
-            <input type="hidden" name="prev_species_aid" value="[% apr.param('ref_species_aid') %]">
+            <input type="hidden" name="prev_species_acc" value="[% apr.param('ref_species_acc') %]">
             <input type="submit" value="Change Species">
         </td>
     </tr>
@@ -45,10 +45,10 @@
             <td align="right">Ref. Set:</td>
 
             <td>
-                <select name="ref_map_set_aid">
+                <select name="ref_map_set_acc">
                     <option value="">--Select--</option>
                     [%- FOREACH ms=form_data.ref_map_sets -%]
-                        <option [% IF apr.param('ref_map_set_aid') == ms.map_set_aid OR form_data.ref_map_sets.size==1; ' selected'; END %] value="[% ms.map_set_aid %]">
+                        <option [% IF apr.param('ref_map_set_acc') == ms.map_set_acc OR form_data.ref_map_sets.size==1; ' selected'; END %] value="[% ms.map_set_acc %]">
                           [% ms.map_type %] : [% ms.species_common_name %] - [% ms.map_set_name %]
                         </option>
                     [%- END -%]
@@ -81,15 +81,15 @@
     [% END %]
 </table>
 
-[% IF apr.param('ref_map_set_aid') %]
+[% IF apr.param('ref_map_set_acc') %]
     <p>
     <hr>
     [% IF form_data.map_ids.size %]
         <table border="1">
             <tr>
-                [% SET colspan = 7 + ( form_data.feature_type_aids.size * 2 ) -%]
+                [% SET colspan = 7 + ( form_data.feature_type_accs.size * 2 ) -%]
                 <td colspan="[% colspan %]" align="center">
-                    [% SET pager_url="$url?ref_species_aid=${apr.param('ref_species_aid')}&ref_map_set_aid=${apr.param('ref_map_set_aid')}&min_correspondence_maps=${apr.param('min_correspondence_maps')}&name_search=${apr.param('name_search')}" %]
+                    [% SET pager_url="$url?ref_species_acc=${apr.param('ref_species_acc')}&ref_map_set_acc=${apr.param('ref_map_set_acc')}&min_correspondence_maps=${apr.param('min_correspondence_maps')}&name_search=${apr.param('name_search')}" %]
                     [% PROCESS pager.tmpl %]
                 </td>
             </tr>
@@ -101,12 +101,12 @@
                 <td valign="top" align="center" rowspan="2"><a href="[% pager_url %]&order_by=corr_count_per_raw">Correspondences<br>per unit</a></td>
                 <td valign="top" align="center" rowspan="2"><a href="[% pager_url %]&order_by=map_start">Start</a></td>
                 <td valign="top" align="center" rowspan="2"><a href="[% pager_url %]&order_by=map_stop">Stop</a></td>
-                [% FOREACH feature_type_aid=form_data.feature_type_aids %]
-                    <td colspan="2" align="center" valign="top">[% form_data.feature_types.$feature_type_aid.feature_type OR feature_type_aid %]</td>
+                [% FOREACH feature_type_acc=form_data.feature_type_accs %]
+                    <td colspan="2" align="center" valign="top">[% form_data.feature_types.$feature_type_acc.feature_type OR feature_type_acc %]</td>
                 [% END %]
             </tr>
             <tr>
-                [% FOREACH ft=form_data.feature_type_aids %]
+                [% FOREACH ft=form_data.feature_type_accs %]
                     <td valign="top" align="center"><a href="[% pager_url %]&order_by=feature_total_[% ft %]">total</a></td>
                     <td valign="top" align="center"><a href="[% pager_url %]&order_by=feature_per_[% ft %]">per unit</a></td>
                 [% END %]
@@ -115,7 +115,7 @@
                 [% SET map_info=form_data.map_info.$map_id %]
                 <tr>
                     <td>
-                        <a href="[% apr.url %]/viewer?ref_map_set_aid=[% apr.param('ref_map_set_aid') %]&ref_map_aids=[% map_info.map_aid %]&ref_species_aid=1&data_source=[% data_source %]">[% map_info.map_name | nbsp %]</a>&nbsp(<a href="[% apr.url %]/spider?map_aid=[% map_info.map_aid %]">spider</a>)</td>
+                        <a href="[% apr.url %]/viewer?ref_map_set_acc=[% apr.param('ref_map_set_acc') %]&ref_map_accs=[% map_info.map_acc %]&ref_species_acc=1&data_source=[% data_source %]">[% map_info.map_name | nbsp %]</a>&nbsp(<a href="[% apr.url %]/spider?map_acc=[% map_info.map_acc %]">spider</a>)</td>
                     </td>
                     <td>[% map_info.cmap_count %]</td>
                     <td>[% map_info.cmap_count_per %]</td>
@@ -123,8 +123,8 @@
                     <td>[% map_info.corr_count_per %]</td>
                     <td>[% map_info.map_start %]</td>
                     <td>[% map_info.map_stop %]</td>
-                    [% FOREACH feature_type_aid=form_data.feature_type_aids %]
-                        [% SET feature_type=form_data.feature_info.$map_id.$feature_type_aid %]
+                    [% FOREACH feature_type_acc=form_data.feature_type_accs %]
+                        [% SET feature_type=form_data.feature_info.$map_id.$feature_type_acc %]
                         [% SET feature_type_total=feature_type.total %]
                         [% SET feature_type_per=feature_type.per %]
                         <td>[% IF feature_type_total; %][% feature_type_total; %][% ELSE %][% '0' %][% END %]</td>

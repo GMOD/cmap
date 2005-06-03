@@ -12,7 +12,7 @@
             </td>
         </tr>
         <tr>
-          <th><a href="admin?action=species_view;order_by=accession_id">Acc. ID</a></th>
+          <th><a href="admin?action=species_view;order_by=species_acc">Acc. ID</a></th>
           <th><a href="admin?action=species_view;order_by=species_common_name">Common Name</a></th>
           <th><a href="admin?action=species_view;order_by=species_full_name">Full Name</a></th>
           <th><a href="admin?action=species_view;order_by=display_order">Display Order</a></th>
@@ -21,7 +21,7 @@
       [% SET i=0 %]
       [% FOREACH s=species %]
           <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
-              <td>[% s.species_aid %]</td>
+              <td>[% s.species_acc %]</td>
               <td>[% s.species_common_name %]</td>
               <td>[% s.species_full_name %]</td>
               <td>[% s.display_order %]</td>

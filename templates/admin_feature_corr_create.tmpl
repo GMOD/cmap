@@ -37,10 +37,10 @@
             <tr>
                 <td align="right">Evidence Type:</th>
                 <td>
-                    <select name="evidence_type_aid">
+                    <select name="evidence_type_acc">
                         <option value="">--Please Select--</option>
                         [% FOREACH et=evidence_types %]
-                            <option value="[% et.evidence_type_aid %]">[% et.evidence_type %] ([% et.rank %])</option>
+                            <option value="[% et.evidence_type_acc %]">[% et.evidence_type %] ([% et.rank %])</option>
                         [% END %]
                     </select>
                 </td>
@@ -49,7 +49,7 @@
             <tr>
                 <td align="right">Acc. ID (<em>opt.</em>):</th>
                 <td>
-                    <input name="feature_correspondence_aid" value="[% apr.param('feature_correspondence_aid') %]">
+                    <input name="feature_correspondence_acc" value="[% apr.param('feature_correspondence_acc') %]">
                 </td>
             </tr>
 

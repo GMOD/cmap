@@ -20,7 +20,7 @@
             Acc. ID </em>(opt.)</em>:
         </td>
         <td>
-            <input type="text" name="map_set_aid" value="[% map_set.map_set_aid %]" size="25" maxlength="20">
+            <input type="text" name="map_set_acc" value="[% map_set.map_set_acc %]" size="25" maxlength="20">
         </td>
     </tr>
   
@@ -64,12 +64,12 @@
             Map Type:
         </td>
         <td>
-            <select name="map_type_aid">
-                [% FOREACH mt_aid=map_type_aids %]
-                    <option value="[% mt_aid %]"
-                      [% IF mt_aid==map_set.map_type_aid%] selected [% END %]
+            <select name="map_type_acc">
+                [% FOREACH mt_acc=map_type_accs %]
+                    <option value="[% mt_acc %]"
+                      [% IF mt_acc==map_set.map_type_acc%] selected [% END %]
                     >
-                      [% map_type_name_lookup.${mt_aid} %] ( [% map_type_unit_lookup.${mt_aid} %] ) 
+                      [% map_type_name_lookup.${mt_acc} %] ( [% map_type_unit_lookup.${mt_acc} %] ) 
                     </option>
                 [% END %]
             </select>
@@ -110,18 +110,6 @@
         </td>
     </tr>
   
-    <tr>
-        <td align="right">
-            Can Be Reference Map:
-        </td>
-        <td>
-            <select name="can_be_reference_map"> 
-                <option value="0"[% IF map_set.can_be_reference_map==0 %] selected[% END %]>No</option>
-                <option value="1"[% IF map_set.can_be_reference_map==1 %] selected[% END %]>Yes</option>
-            </select>
-        </td>
-    </tr>
-
     <tr>
         <td align="right">
             Display Order:

@@ -48,7 +48,7 @@ my $main_output = IO::File->new("> ".$fpc_file.".cmap")
     or die "Couldn't open $fpc_file.edit for writing: $!\n";
 
 ###Print lead line
-print $main_output "map_name\tfeature_name\tfeature_start\tfeature_stop\tfeature_type_accession\n";
+print $main_output "map_name\tfeature_name\tfeature_start\tfeature_stop\tfeature_type_acc\n";
 
 
 ###Read in the FPC Data
@@ -85,7 +85,7 @@ if ($assembly_clone_file){
     ###  we can just print out the whole line. 
     my $assembly_output = IO::File->new("> ".$fpc_file.".assembly")
         or die "Couldn't open $fpc_file.assembly for writing: $!\n";
-    print $assembly_output "map_name\tfeature_name\tfeature_start\tfeature_stop\tfeature_type_accession\n";
+    print $assembly_output "map_name\tfeature_name\tfeature_start\tfeature_stop\tfeature_type_acc\n";
     open FILE_IN, $assembly_clone_file or die "couldn't open $assembly_clone_file.\n";
     while(<FILE_IN>){
         if($_=~/^\S+\t(\S+)\t\S+\t\S+\tclone/){

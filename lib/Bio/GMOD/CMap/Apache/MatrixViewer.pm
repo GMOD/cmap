@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MatrixViewer;
 # vim: set ft=perl:
 
-# $Id: MatrixViewer.pm,v 1.14 2005-01-05 03:04:25 mwz444 Exp $
+# $Id: MatrixViewer.pm,v 1.15 2005-06-03 22:20:00 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.14 $)[-1];
+$VERSION = (qw$Revision: 1.15 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use base 'Bio::GMOD::CMap::Apache';
@@ -18,35 +18,35 @@ sub handler {
     #
     my ( $self, $apr )   = @_;
     my $show_matrix      = $apr->param('show_matrix')      ||  0;
-    my $species_aid      = $apr->param('species_aid')      || '';
-    my $map_type_aid     = $apr->param('map_type_aid')     || '';
-    my $map_set_aid      = $apr->param('map_set_aid')      || '';
+    my $species_acc      = $apr->param('species_acc')      || '';
+    my $map_type_acc     = $apr->param('map_type_acc')     || '';
+    my $map_set_acc      = $apr->param('map_set_acc')      || '';
     my $map_name         = $apr->param('map_name')         || '';
-    my $link_map_set_aid = $apr->param('link_map_set_aid') || '';
-    my $prev_species_aid = $apr->param('prev_species_aid') || '';
-    my $prev_map_set_aid = $apr->param('prev_map_set_id')  || '';
+    my $link_map_set_acc = $apr->param('link_map_set_acc') || '';
+    my $prev_species_acc = $apr->param('prev_species_acc') || '';
+    my $prev_map_set_acc = $apr->param('prev_map_set_id')  || '';
     my $prev_map_name    = $apr->param('prev_map_name')    || '';
 
     $self->data_source( $apr->param('data_source') ) or return;
 
-    if ( $prev_species_aid && $species_aid != $prev_species_aid ) {
-        $map_set_aid = '';
+    if ( $prev_species_acc && $species_acc != $prev_species_acc ) {
+        $map_set_acc = '';
         $map_name    = '';
     }
 
     my $data_module      =  $self->data_module;
     my $data             =  $data_module->matrix_correspondence_data(
         show_matrix      => $show_matrix,
-        species_aid      => $species_aid,
-        map_type_aid     => $map_type_aid,
-        map_set_aid      => $map_set_aid,
+        species_acc      => $species_acc,
+        map_type_acc     => $map_type_acc,
+        map_set_acc      => $map_set_acc,
         map_name         => $map_name,
-        link_map_set_aid => $link_map_set_aid,
+        link_map_set_acc => $link_map_set_acc,
     ) or return $self->error( $data_module->error );
 
-    $apr->param( species_aid  => $data->{'species_aid'}  );
+    $apr->param( species_acc  => $data->{'species_acc'}  );
     $apr->param( map_type     => $data->{'map_type'} );
-    $apr->param( map_set_aid  => $data->{'map_set_aid'}  );
+    $apr->param( map_set_acc  => $data->{'map_set_acc'}  );
     $apr->param( map_name     => $data->{'map_name'}     );
 
     $INTRO ||= $self->config_data('matrix_intro') || '';

@@ -1,8 +1,8 @@
-[% INCLUDE admin_header.tmpl title="Edit Feature Correspondence &quot;$corr.feature_correspondence_aid&quot;" %]
+[% INCLUDE admin_header.tmpl title="Edit Feature Correspondence &quot;$corr.feature_correspondence_acc&quot;" %]
 
 <a href="admin">Home</a> |
 <a href="admin?action=feature_corr_view;feature_correspondence_id=[% corr.feature_correspondence_id %]">View Correspondence</a> |
-<a href="admin?action=confirm_delete;entity_type=feature_correspondence;entity_name_field=feature_correspondence_aid;entity_id=[% corr.feature_correspondence_id %]">Delete</a>
+<a href="admin?action=confirm_delete;entity_type=feature_correspondence;entity_name_field=feature_correspondence_acc;entity_id=[% corr.feature_correspondence_id %]">Delete</a>
 <hr noshade>
 
 <br>
@@ -10,7 +10,7 @@
 <table>
     <tr>
         <th align="right">Acc ID <em>(opt.)</em>:</th>
-        <td><input name="feature_correspondence_aid" value="[% corr.feature_correspondence_aid %]"></td>
+        <td><input name="feature_correspondence_acc" value="[% corr.feature_correspondence_acc %]"></td>
     </tr>
     <tr>
         <th align="right">Is Enabled:</th>

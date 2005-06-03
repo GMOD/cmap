@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.81 2005-06-01 16:24:22 mwz444 Exp $
+# $Id: Admin.pm,v 1.82 2005-06-03 22:19:49 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.81 $)[-1];
+$VERSION = (qw$Revision: 1.82 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -184,11 +184,11 @@ Create a feature.
     $admin->feature_create(
         map_id => $map_id,
         feature_name => $feature_name,
-        feature_aid => $feature_aid,
+        feature_acc => $feature_acc,
         feature_start => $feature_start,
         feature_stop => $feature_stop,
         is_landmark => $is_landmark,
-        feature_type_aid => $feature_type_aid,
+        feature_type_acc => $feature_type_acc,
         direction => $direction,
         #gclass => $gclass,
     );
@@ -207,7 +207,7 @@ Identifier of the map that this is on.
 
 =item - feature_name
 
-=item - feature_aid
+=item - feature_acc
 
 Identifier that is used to access this object.  Can be alpha-numeric.  
 If not defined, the object_id will be assigned to it.
@@ -224,7 +224,7 @@ Location on the map where this feature ends. (not required)
 
 Declares the feature to be a landmark.
 
-=item - feature_type_aid
+=item - feature_type_acc
 
 The accession id of a feature type that is defined in the config file.
 
@@ -246,21 +246,22 @@ integrated with GBrowse and should not be used otherwise.
     my ( $self, %args ) = @_;
     my @missing      = ();
     my $map_id       = $args{'map_id'} or push @missing, 'map_id';
+    my $feature_acc  = $args{'feature_acc'};
     my $feature_name = $args{'feature_name'}
       or push @missing, 'feature_name';
-    my $feature_type_aid = $args{'feature_type_aid'}
-      or push @missing, 'feature_type_aid';
+    my $feature_type_acc = $args{'feature_type_acc'}
+      or push @missing, 'feature_type_acc';
     my $feature_start = $args{'feature_start'};
     push @missing, 'start' unless $feature_start =~ /^$RE{'num'}{'real'}$/;
     my $feature_stop = $args{'feature_stop'};
-    my $is_landmark   = $args{'is_landmark'} || 0;
-    my $direction     = $args{'direction'} || 1;
-    my $gclass        = $args{'gclass'};
+    my $is_landmark  = $args{'is_landmark'} || 0;
+    my $direction    = $args{'direction'} || 1;
+    my $gclass       = $args{'gclass'};
     $gclass = undef unless ( $self->config_data('gbrowse_compatible') );
     my $sql_object = $self->sql or return $self->error;
 
     my $default_rank =
-      $self->feature_type_data( $feature_type_aid, 'default_rank' ) || 1;
+      $self->feature_type_data( $feature_type_acc, 'default_rank' ) || 1;
 
     if (@missing) {
         return $self->error(
@@ -272,9 +273,10 @@ integrated with GBrowse and should not be used otherwise.
         cmap_object      => $self,
         map_id           => $map_id,
         feature_name     => $feature_name,
-        feature_type_aid => $feature_type_aid,
-        feature_start   => $feature_start,
-        feature_stop    => $feature_stop,
+        feature_acc      => $feature_acc,
+        feature_type_acc => $feature_type_acc,
+        feature_start    => $feature_start,
+        feature_stop     => $feature_stop,
         is_landmark      => $is_landmark,
         direction        => $direction,
         default_rank     => $default_rank,
@@ -454,12 +456,12 @@ Requires feature_ids or feature accessions for both features.
     $admin->feature_correspondence_create(
         feature_id1 => $feature_id1,
         feature_id2 => $feature_id2,
-        feature_aid1 => $feature_aid1,
-        feature_aid2 => $feature_aid2,
+        feature_acc1 => $feature_acc1,
+        feature_acc2 => $feature_acc2,
         is_enabled => $is_enabled,
-        evidence_type_aid => $evidence_type_aid,
+        evidence_type_acc => $evidence_type_acc,
         correspondence_evidence => $correspondence_evidence,
-        feature_correspondence_aid => $feature_correspondence_aid,
+        feature_correspondence_acc => $feature_correspondence_acc,
     );
 
 =item * Returns
@@ -474,23 +476,23 @@ Correpondence ID
 
 =item - feature_id2
 
-=item - feature_aid1
+=item - feature_acc1
 
-=item - feature_aid2
+=item - feature_acc2
 
 =item - is_enabled
 
-=item - evidence_type_aid
+=item - evidence_type_acc
 
 The accession id of a evidence type that is defined in the config file.
 
 =item - correspondence_evidence
 
 List of evidence hashes that correspond to the evidence types that this 
-correspondence should have.  The hashes must have a "evidence_type_aid"
+correspondence should have.  The hashes must have a "evidence_type_acc"
 key.
 
-=item - feature_correspondence_aid
+=item - feature_correspondence_acc
 
 Identifier that is used to access this object.  Can be alpha-numeric.  
 If not defined, the object_id will be assigned to it.
@@ -504,18 +506,18 @@ If not defined, the object_id will be assigned to it.
     my ( $self, %args ) = @_;
     my $feature_id1                = $args{'feature_id1'};
     my $feature_id2                = $args{'feature_id2'};
-    my $feature_aid1               = $args{'feature_aid1'};
-    my $feature_aid2               = $args{'feature_aid2'};
-    my $evidence_type_aid          = $args{'evidence_type_aid'};
+    my $feature_acc1               = $args{'feature_acc1'};
+    my $feature_acc2               = $args{'feature_acc2'};
+    my $evidence_type_acc          = $args{'evidence_type_acc'};
     my $score                      = $args{'score'};
     my $evidence                   = $args{'correspondence_evidence'};
-    my $feature_correspondence_aid = $args{'feature_correspondence_aid'} || '';
+    my $feature_correspondence_acc = $args{'feature_correspondence_acc'} || '';
     my $is_enabled                 = $args{'is_enabled'};
     $is_enabled = 1 unless defined $is_enabled;
     my $threshold = $args{'threshold'} || 0;
     my $sql_object = $self->sql or return;
 
-    unless ( $feature_id1 or $feature_aid1 ) {
+    unless ( $feature_id1 or $feature_acc1 ) {
 
         # Flush the buffer;
         $sql_object->insert_feature_correspondence(
@@ -529,10 +531,10 @@ If not defined, the object_id will be assigned to it.
       ? $args{'allow_update'}
       : 1;
 
-    if ($evidence_type_aid) {
+    if ($evidence_type_acc) {
         push @$evidence,
           {
-            evidence_type_aid => $evidence_type_aid,
+            evidence_type_acc => $evidence_type_acc,
             score             => $score,
           };
     }
@@ -540,19 +542,19 @@ If not defined, the object_id will be assigned to it.
     #
     # See if we have only accession IDs and if we can find feature IDs.
     #
-    if ( !$feature_id1 && $feature_aid1 ) {
+    if ( !$feature_id1 && $feature_acc1 ) {
         $feature_id1 = $sql_object->acc_id_to_internal_id(
             cmap_object => $self,
             object_type => 'feature',
-            acc_id      => $feature_aid1,
+            acc_id      => $feature_acc1,
         );
     }
 
-    if ( !$feature_id2 && $feature_aid2 ) {
+    if ( !$feature_id2 && $feature_acc2 ) {
         $feature_id2 = $sql_object->acc_id_to_internal_id(
             cmap_object => $self,
             object_type => 'feature',
-            acc_id      => $feature_aid2,
+            acc_id      => $feature_acc2,
         );
     }
 
@@ -600,14 +602,14 @@ If not defined, the object_id will be assigned to it.
             my $evidence_array = $sql_object->get_correspondence_evidences(
                 cmap_object               => $self,
                 feature_correspondence_id => $feature_correspondence_id,
-                evidence_type_aid => $evidence->[$i]{'evidence_type_aid'},
+                evidence_type_acc => $evidence->[$i]{'evidence_type_acc'},
             );
             next if @$evidence_array;
 
             $sql_object->insert_correspondence_evidence(
                 cmap_object               => $self,
                 feature_correspondence_id => $feature_correspondence_id,
-                evidence_type_aid => $evidence->[$i]{'evidence_type_aid'},
+                evidence_type_acc => $evidence->[$i]{'evidence_type_acc'},
                 score             => $evidence->[$i]{'score'},
             );
         }
@@ -868,8 +870,8 @@ None of the fields are required.
         search_field => $search_field,
         species_ids => $species_ids,
         order_by => $order_by,
-        map_aid => $map_aid,
-        feature_type_aids => $feature_type_aids,
+        map_acc => $map_acc,
+        feature_type_accs => $feature_type_accs,
     );
 
 =item * Returns
@@ -890,7 +892,7 @@ A string with one or more feature names or accessions to search.
 
 =item - search_field
 
-Eather 'feature_name' or 'feature_accession'
+Eather 'feature_name' or 'feature_acc'
 
 =item - species_ids
 
@@ -899,9 +901,9 @@ Eather 'feature_name' or 'feature_accession'
 List of columns (in order) to order by. Options are
 feature_name, species_common_name, map_set_short_name, map_name and feature_start.
 
-=item - map_aid
+=item - map_acc
 
-=item - feature_type_aids
+=item - feature_type_accs
 
 =back
 
@@ -920,9 +922,9 @@ feature_name, species_common_name, map_set_short_name, map_name and feature_star
             uc $_ || ()        # uppercase what's left
           } parse_words( $args{'feature_name'} )
     );
-    my $map_aid           = $args{'map_aid'}           || '';
+    my $map_acc           = $args{'map_acc'}           || '';
     my $species_ids       = $args{'species_ids'}       || [];
-    my $feature_type_aids = $args{'feature_type_aids'} || [];
+    my $feature_type_accs = $args{'feature_type_accs'} || [];
     my $search_field      = $args{'search_field'}      || 'feature_name';
     my $order_by          = $args{'order_by'}
       || 'feature_name,species_common_name,map_set_short_name,map_name,feature_start';
@@ -932,7 +934,7 @@ feature_name, species_common_name, map_set_short_name, map_name and feature_star
     # "-1" is a reserved value meaning "all"
     #
     $species_ids       = [] if grep { /^-1$/ } @$species_ids;
-    $feature_type_aids = [] if grep { /^-1$/ } @$feature_type_aids;
+    $feature_type_accs = [] if grep { /^-1$/ } @$feature_type_accs;
 
     my %features;
     for my $feature_name ( map { uc $_ } @feature_names ) {
@@ -941,9 +943,9 @@ feature_name, species_common_name, map_set_short_name, map_name and feature_star
         if ( $search_field eq 'feature_name' ) {
             $feature_results = $sql_object->get_features(
                 cmap_object       => $self,
-                map_aid           => $map_aid,
+                map_acc           => $map_acc,
                 feature_name      => $feature_name,
-                feature_type_aids => $feature_type_aids,
+                feature_type_accs => $feature_type_accs,
                 species_ids       => $species_ids,
                 aliases_get_rows  => 1,
             );
@@ -951,9 +953,9 @@ feature_name, species_common_name, map_set_short_name, map_name and feature_star
         else {
             $feature_results = $sql_object->get_features(
                 cmap_object       => $self,
-                map_aid           => $map_aid,
-                feature_aid       => $feature_name,
-                feature_type_aids => $feature_type_aids,
+                map_acc           => $map_acc,
+                feature_acc       => $feature_name,
+                feature_type_accs => $feature_type_accs,
                 species_ids       => $species_ids,
                 aliases_get_rows  => 1,
             );
@@ -1027,7 +1029,7 @@ Find a feature's name by either its internal or accession ID.
 
     $admin->feature_name_by_id(
         feature_id => $feature_id,
-        feature_aid => $feature_aid,
+        feature_acc => $feature_acc,
     );
 
 =item * Returns
@@ -1040,7 +1042,7 @@ Array of feature names.
 
 =item - feature_id
 
-=item - feature_aid
+=item - feature_acc
 
 =back
 
@@ -1050,15 +1052,15 @@ Array of feature names.
 
     my ( $self, %args ) = @_;
     my $feature_id  = $args{'feature_id'}  || 0;
-    my $feature_aid = $args{'feature_aid'} || 0;
+    my $feature_acc = $args{'feature_acc'} || 0;
     $self->error('Need either feature id or accession id')
-      unless $feature_id || $feature_aid;
+      unless $feature_id || $feature_acc;
 
     my $sql_object = $self->sql or return;
     my $features = $sql_object->get_features_simple(
         cmap_object => $self,
         feature_id  => $feature_id,
-        feature_aid => $feature_aid,
+        feature_acc => $feature_acc,
     );
     return unless (@$features);
     return $features->[0]{'feature_name'};
@@ -1102,16 +1104,16 @@ Arrayref of hashes with feature_type data.
 =cut
 
     my ( $self, %args ) = @_;
-    my $order_by = $args{'order_by'} || 'feature_type_aid';
+    my $order_by = $args{'order_by'} || 'feature_type_acc';
 
-    my @feature_type_aids = keys( %{ $self->config_data('feature_type') } );
+    my @feature_type_accs = keys( %{ $self->config_data('feature_type') } );
     my $feature_types;
-    foreach my $type_aid ( sort { $a->{$order_by} cmp $b->{$order_by} }
-        @feature_type_aids )
+    foreach my $type_acc ( sort { $a->{$order_by} cmp $b->{$order_by} }
+        @feature_type_accs )
     {
         $feature_types->[ ++$#{$feature_types} ] =
-          $self->feature_type_data($type_aid)
-          or return $self->error("No feature type accession '$type_aid'");
+          $self->feature_type_data($type_acc)
+          or return $self->error("No feature type accession '$type_acc'");
     }
     return $feature_types;
 }
@@ -1136,7 +1138,7 @@ map_create
     $admin->map_create(
         map_name => $map_name,
         map_set_id => $map_set_id,
-        map_aid => $map_aid,
+        map_acc => $map_acc,
         map_start => $map_start,
         map_stop => $map_stop,
         display_order => $display_order,
@@ -1156,7 +1158,7 @@ Name of the map being created
 
 =item - map_set_id
 
-=item - map_aid
+=item - map_acc
 
 Identifier that is used to access this object.  Can be alpha-numeric.  
 If not defined, the object_id will be assigned to it.
@@ -1190,7 +1192,7 @@ End point of the map.
     my $map_stop = $args{'map_stop'};
     push @missing, 'stop position'
       unless defined $map_stop && $map_stop ne '';
-    my $map_aid = $args{'map_aid'};
+    my $map_acc = $args{'map_acc'};
 
     if (@missing) {
         return $self->error( 'Map create failed.  Missing required fields: ',
@@ -1207,13 +1209,13 @@ End point of the map.
 
     my $sql_object = $self->sql or return $self->error;
     my $map_id = $sql_object->insert_map(
-        cmap_object    => $self,
-        map_aid        => $map_aid,
-        map_set_id     => $map_set_id,
-        map_name       => $map_name,
-        map_start => $map_start,
-        map_stop  => $map_stop,
-        display_order  => $display_order,
+        cmap_object   => $self,
+        map_acc       => $map_acc,
+        map_set_id    => $map_set_id,
+        map_name      => $map_name,
+        map_start     => $map_start,
+        map_stop      => $map_stop,
+        display_order => $display_order,
     );
 
     return $map_id;
@@ -1307,10 +1309,10 @@ map_set_create
 
     $admin->map_set_create(
         map_set_name => $map_set_name,
-        map_set_aid => $map_set_aid,
-        map_type_aid => $map_type_aid,
+        map_set_acc => $map_set_acc,
+        map_type_acc => $map_type_acc,
         width => $width,
-        can_be_reference_map => $can_be_reference_map,
+        is_relational_map => $is_relational_map,
         published_on => $published_on,
         map_set_short_name => $map_set_short_name,
         display_order => $display_order,
@@ -1331,12 +1333,12 @@ Map Set ID
 
 Name of the map set being created
 
-=item - map_set_aid
+=item - map_set_acc
 
 Identifier that is used to access this object.  Can be alpha-numeric.  
 If not defined, the object_id will be assigned to it.
 
-=item - map_type_aid
+=item - map_type_acc
 
 The accession id of a map type that is defined in the config file.
 
@@ -1344,7 +1346,7 @@ The accession id of a map type that is defined in the config file.
 
 Pixel width of the map
 
-=item - can_be_reference_map
+=item - is_relational_map
 
 =item - published_on
 
@@ -1376,15 +1378,14 @@ If not defined, the object_id will be assigned to it.
       or push @missing, 'map_set_short_name';
     my $species_id = $args{'species_id'}
       or push @missing, 'species';
-    my $map_type_aid = $args{'map_type_aid'}
-      or push @missing, 'map_type_aid';
-    my $map_set_aid          = $args{'map_set_aid'}          || '';
-    my $display_order        = $args{'display_order'}        || 1;
-    my $can_be_reference_map = $args{'can_be_reference_map'} || 0;
-    my $shape                = $args{'shape'}                || '';
-    my $color                = $args{'color'}                || '';
-    my $width                = $args{'width'}                || 0;
-    my $published_on         = $args{'published_on'}         || 'today';
+    my $map_type_acc = $args{'map_type_acc'}
+      or push @missing, 'map_type_acc';
+    my $map_set_acc   = $args{'map_set_acc'}   || '';
+    my $display_order = $args{'display_order'} || 1;
+    my $shape         = $args{'shape'}         || '';
+    my $color         = $args{'color'}         || '';
+    my $width         = $args{'width'}         || 0;
+    my $published_on  = $args{'published_on'}  || 'today';
 
     if (@missing) {
         return $self->error(
@@ -1399,33 +1400,32 @@ If not defined, the object_id will be assigned to it.
         my $t = localtime($pub_date);
         $published_on = $t->strftime( $self->data_module->sql->date_format );
     }
-    my $map_units = $self->map_type_data( $map_type_aid, 'map_units' );
-         $color = $self->map_type_data( $map_type_aid, 'color' )
+    my $map_units = $self->map_type_data( $map_type_acc, 'map_units' );
+         $color = $self->map_type_data( $map_type_acc, 'color' )
       || $self->config_data("map_color")
       || DEFAULT->{'map_color'}
       || 'black';
-         $shape = $self->map_type_data( $map_type_aid, 'shape' )
+         $shape = $self->map_type_data( $map_type_acc, 'shape' )
       || $self->config_data("map_shape")
       || DEFAULT->{'map_shape'}
       || 'box';
     my $is_relational_map =
-      $self->map_type_data( $map_type_aid, 'is_relational_map' ) || 0;
+      $self->map_type_data( $map_type_acc, 'is_relational_map' ) || 0;
 
     my $map_set_id = $sql_object->insert_map_set(
-        cmap_object          => $self,
-        map_set_aid          => $map_set_aid,
-        map_set_short_name   => $map_set_short_name,
-        map_set_name         => $map_set_name,
-        species_id           => $species_id,
-        can_be_reference_map => $can_be_reference_map,
-        published_on         => $published_on,
-        map_type_aid         => $map_type_aid,
-        display_order        => $display_order,
-        shape                => $shape,
-        width                => $width,
-        color                => $color,
-        map_units            => $map_units,
-        is_relational_map    => $is_relational_map,
+        cmap_object        => $self,
+        map_set_acc        => $map_set_acc,
+        map_set_short_name => $map_set_short_name,
+        map_set_name       => $map_set_name,
+        species_id         => $species_id,
+        published_on       => $published_on,
+        map_type_acc       => $map_type_acc,
+        display_order      => $display_order,
+        shape              => $shape,
+        width              => $width,
+        color              => $color,
+        map_units          => $map_units,
+        is_relational_map  => $is_relational_map,
     );
 
     return $map_set_id;
@@ -1782,7 +1782,7 @@ species_create
         species_full_name => $species_full_name,
         species_common_name => $species_common_name,
         display_order => $display_order,
-        species_aid => $species_aid,
+        species_acc => $species_acc,
     );
 
 =item * Returns
@@ -1803,7 +1803,7 @@ Short name of the species, such as "Human".
 
 =item - display_order
 
-=item - species_aid
+=item - species_acc
 
 Identifier that is used to access this object.  Can be alpha-numeric.  
 If not defined, the object_id will be assigned to it.
@@ -1828,11 +1828,11 @@ If not defined, the object_id will be assigned to it.
     }
 
     my $display_order = $args{'display_order'} || 1;
-    my $species_aid   = $args{'species_aid'};
+    my $species_acc   = $args{'species_acc'};
 
     my $species_id = $sql_object->insert_species(
         cmap_object         => $self,
-        species_aid         => $species_aid,
+        species_acc         => $species_acc,
         species_full_name   => $species_full_name,
         species_common_name => $species_common_name,
         display_order       => $display_order,

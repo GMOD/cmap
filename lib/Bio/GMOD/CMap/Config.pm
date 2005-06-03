@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Config;
 
 # vim: set ft=perl:
 
-# $Id: Config.pm,v 1.10 2005-03-16 17:53:12 mwz444 Exp $
+# $Id: Config.pm,v 1.11 2005-06-03 22:19:50 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ use base 'Class::Base';
 # ----------------------------------------------------
 sub init {
     my ($self) = @_;
-    $self->set_config() or return self->error('No enabled config files');
+    $self->set_config() or return $self->error('No enabled config files');
     return $self;
 }
 
@@ -173,7 +173,7 @@ sub get_config_names {
 
 =head2 get_config_names
 
-Returns an array ref of the keys to self->{'config_data'}.
+Returns an array ref of the keys to $self->{'config_data'}.
 
 =cut
 
@@ -200,7 +200,7 @@ optionally you can specify a set of config data to read from.
     # If config not set, set it.
     #
     unless ( $self->{'current_config'} ) {
-        $self->set_config() or return self->error('No enabled config files');
+        $self->set_config() or return $self->error('No enabled config files');
     }
 
     return $self unless $option;

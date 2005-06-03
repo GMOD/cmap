@@ -1,4 +1,4 @@
-map_name	feature_name	feature_start	feature_stop	feature_type_accession
+map_name	feature_name	feature_start	feature_stop	feature_type_acc
 T1	T1.1	0	1000	contig
 T1	T1.2	1000	2000	contig
 T1	T1.3	2000	4000	contig

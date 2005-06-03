@@ -25,18 +25,18 @@
 
         <tr>
             <td>
-                <select name="species_aid">
+                <select name="species_acc">
                     <option value="-1">--All Species--</option>
                     [% FOREACH s=species %]
-                        <option value="[% s.species_aid %]"[% IF apr.param('species_aid')==s.species_aid %] selected[% END %]>[% s.species_common_name %]</option>
+                        <option value="[% s.species_acc %]"[% IF apr.param('species_acc')==s.species_acc %] selected[% END %]>[% s.species_common_name %]</option>
                     [% END %]
                 </select>
             </td>
             <td>
-                <select name="map_type_aid">
+                <select name="map_type_acc">
                     <option value="-1">--All Map Types--</option>
                     [% FOREACH mt=map_types %]
-                        <option value="[% mt.map_type_aid %]"[% IF apr.param('map_type_aid')==mt.map_type_aid %] selected[% END %]>[% mt.map_type %]</option>
+                        <option value="[% mt.map_type_acc %]"[% IF apr.param('map_type_acc')==mt.map_type_acc %] selected[% END %]>[% mt.map_type %]</option>
                     [% END %]
                 </select>
             </td>
@@ -57,7 +57,7 @@
     <table border="0">
         <tr>
             <td colspan="3" align="center">
-                [% SET pager_url="$url/map_set_info?species_aid=${apr.param('species_aid')}&map_type_aid=${apr.param('map_type_aid')}" %]
+                [% SET pager_url="$url/map_set_info?species_acc=${apr.param('species_acc')}&map_type_acc=${apr.param('map_type_acc')}" %]
                 [% PROCESS pager.tmpl %]
             </td>
         </tr>
@@ -65,31 +65,31 @@
             <tr class="colored">
                 <th align="right">Map&nbsp;Set&nbsp;Name:</th>
                 <td><b>[% ms.map_set_name %]</b></td>
-                <td align="center"><b>[</b>&nbsp;<a href="map_set_info?map_set_aid=[% ms.map_set_aid %]">Show Only This Set</a>&nbsp;<b>]</b></td>
+                <td align="center"><b>[</b>&nbsp;<a href="map_set_info?map_set_acc=[% ms.map_set_acc %]">Show Only This Set</a>&nbsp;<b>]</b></td>
             </tr> 
 
             <tr>
                 <th align="right">Abbreviated&nbsp;Name:</th>
                 <td>[% ms.map_set_short_name %]</td>
-                <td align="center"><b>[</b>&nbsp;<a href="download_data?map_set_aid=[% ms.map_set_aid %]">Download&nbsp;Map&nbsp;Set&nbsp;Data</a>&nbsp;<b>]</b></td>
+                <td align="center"><b>[</b>&nbsp;<a href="download_data?map_set_acc=[% ms.map_set_acc %]">Download&nbsp;Map&nbsp;Set&nbsp;Data</a>&nbsp;<b>]</b></td>
             </tr> 
 
             <tr>
                 <th align="right">Accession&nbsp;ID:</th>
-                <td>[% ms.map_set_aid %]</td>
-                <td align="center"><b>[</b>&nbsp;<a href="matrix?show_matrix=1&[% IF ms.is_relational_map %]link_map_set_aid=[% ms.map_set_aid %][% ELSE %]map_type_aid=[% ms.map_type_aid %]&species_aid=[% ms.species_aid %]&map_set_aid=[% ms.map_set_aid %][% END %]">View&nbsp;Map&nbsp;Set&nbsp;In&nbsp;Matrix</a>&nbsp;<b>]</b></td>
+                <td>[% ms.map_set_acc %]</td>
+                <td align="center"><b>[</b>&nbsp;<a href="matrix?show_matrix=1&[% IF ms.is_relational_map %]link_map_set_acc=[% ms.map_set_acc %][% ELSE %]map_type_acc=[% ms.map_type_acc %]&species_acc=[% ms.species_acc %]&map_set_acc=[% ms.map_set_acc %][% END %]">View&nbsp;Map&nbsp;Set&nbsp;In&nbsp;Matrix</a>&nbsp;<b>]</b></td>
             </tr>
 
             <tr>
                 <th align="right">Species:</th>
                 <td>[% ms.species_full_name %] ([% ms.species_common_name %])</td>
-                <td align="center"><b>[</b>&nbsp;<a href="species_info?species_aid=[% ms.species_aid %]">View Species Info</a>&nbsp;<b>]</b></td>
+                <td align="center"><b>[</b>&nbsp;<a href="species_info?species_acc=[% ms.species_acc %]">View Species Info</a>&nbsp;<b>]</b></td>
             </tr> 
 
             <tr>
                 <th align="right">Map&nbsp;Type:</th>
                 <td>[% ms.map_type %]</td>
-                <td align="center"><b>[</b>&nbsp;<a href="map_type_info?map_type_aid=[% ms.map_type_aid %]">View Map Type Info</a>&nbsp;<b>]</b></td>
+                <td align="center"><b>[</b>&nbsp;<a href="map_type_info?map_type_acc=[% ms.map_type_acc %]">View Map Type Info</a>&nbsp;<b>]</b></td>
             </tr> 
 
             <tr>
@@ -129,10 +129,10 @@
                             [%- FOREACH map=ms.maps -%]
                             <tr>
                                 <td>[% map.map_name %]</td>
-                                <td align="center"><b>[</b>&nbsp;<a href="viewer?ref_map_set_aid=[% ms.map_set_aid %];ref_map_aids=[% map.map_aid %]">Map Viewer</a>&nbsp;<b>]</b></td>
-                                <td align="center"><b>[</b>&nbsp;<a href="map_details?ref_map_set_aid=[% ms.map_set_aid %]&ref_map_aids=[% map.map_aid %]#details">Map Details</a>&nbsp;<b>]</b></td>
-                                <td align="center"><b>[</b>&nbsp;<a href="matrix?show_matrix=1&map_set_aid=[% ms.map_set_aid %]&map_name=[% map.map_name %]">Matrix Viewer</a>&nbsp;<b>]</b></td>
-                                <td align="center"><b>[</b>&nbsp;<a href="download_data?map_aid=[% map.map_aid %]">Download Map Data</a>&nbsp;<b>]</b></td>
+                                <td align="center"><b>[</b>&nbsp;<a href="viewer?ref_map_set_acc=[% ms.map_set_acc %];ref_map_accs=[% map.map_acc %]">Map Viewer</a>&nbsp;<b>]</b></td>
+                                <td align="center"><b>[</b>&nbsp;<a href="map_details?ref_map_set_acc=[% ms.map_set_acc %]&ref_map_accs=[% map.map_acc %]#details">Map Details</a>&nbsp;<b>]</b></td>
+                                <td align="center"><b>[</b>&nbsp;<a href="matrix?show_matrix=1&map_set_acc=[% ms.map_set_acc %]&map_name=[% map.map_name %]">Matrix Viewer</a>&nbsp;<b>]</b></td>
+                                <td align="center"><b>[</b>&nbsp;<a href="download_data?map_acc=[% map.map_acc %]">Download Map Data</a>&nbsp;<b>]</b></td>
                             </tr>
                             [%- END -%]
                         </table>
@@ -142,7 +142,7 @@
                     <tr>
                         <td>&nbsp;</td>
                         <td colspan="2" align="center">
-                            <b>[</b>&nbsp;<a href="viewer?ref_map_set_aid=[% ms.map_set_aid %]&ref_map_aids=-1">Display All Maps in Viewer</a>&nbsp;<b>]</b>
+                            <b>[</b>&nbsp;<a href="viewer?ref_map_set_acc=[% ms.map_set_acc %]&ref_map_accs=-1">Display All Maps in Viewer</a>&nbsp;<b>]</b>
                         </td>
                     </tr> 
                 [%- END -%]

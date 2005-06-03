@@ -1,11 +1,12 @@
 package Bio::GMOD::CMap::Apache::SpeciesViewer;
+
 # vim: set ft=perl:
 
-# $Id: SpeciesViewer.pm,v 1.6 2005-03-10 18:30:17 mwz444 Exp $
+# $Id: SpeciesViewer.pm,v 1.7 2005-06-03 22:20:00 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.6 $)[-1];
+$VERSION = (qw$Revision: 1.7 $)[-1];
 
 use Data::Pageset;
 use Bio::GMOD::CMap::Apache;
@@ -14,19 +15,20 @@ use base 'Bio::GMOD::CMap::Apache';
 use constant TEMPLATE => 'species_info.tmpl';
 
 sub handler {
+
     #
     # Make a jazz noise here...
     #
     my ( $self, $apr ) = @_;
     $self->data_source( $apr->param('data_source') ) or return;
 
-    my $page_no        = $apr->param('page_no') || 1;
-    my @species_aids   = split( /,/, $apr->param('species_aid') );
-    my $data_module    = $self->data_module;
-    my $data        = $data_module->species_viewer_data(
-        species_aids   => \@species_aids,
-    ) or return $self->error( $data_module->error );
-    my $species =$data->{'species'};
+    my $page_no = $apr->param('page_no') || 1;
+    my @species_accs = split( /,/, $apr->param('species_acc') );
+    my $data_module  = $self->data_module;
+    my $data         =
+      $data_module->species_viewer_data( species_accs => \@species_accs, )
+      or return $self->error( $data_module->error );
+    my $species = $data->{'species'};
 
     $PAGE_SIZE ||= $self->config_data('max_child_elements') || 0;
     $MAX_PAGES ||= $self->config_data('max_search_pages')   || 1;
@@ -34,23 +36,26 @@ sub handler {
     #
     # Slice the results up into pages suitable for web viewing.
     #
-    my $pager            =  Data::Pageset->new( {
-        total_entries    => scalar @$species,
-        entries_per_page => $PAGE_SIZE,
-        current_page     => $page_no,
-        pages_per_set    => $MAX_PAGES,
-    } );
-    $species = [ $pager->splice( $species ) ] if @$species;
+    my $pager = Data::Pageset->new(
+        {
+            total_entries    => scalar @$species,
+            entries_per_page => $PAGE_SIZE,
+            current_page     => $page_no,
+            pages_per_set    => $MAX_PAGES,
+        }
+    );
+    $species = [ $pager->splice($species) ] if @$species;
 
-    for my $s ( @$species ) {
+    for my $s (@$species) {
         $self->object_plugin( 'species_info', $s );
     }
 
     my $t = $self->template;
-    for my $s ( @$species ) {
+    for my $s (@$species) {
         for my $xref ( @{ $s->{'xrefs'} } ) {
-            next if $xref->{'object_id'} && 
-                $xref->{'object_id'} != $s->{'species_id'};
+            next
+              if $xref->{'object_id'}
+              && $xref->{'object_id'} != $s->{'species_id'};
             my $url;
             $t->process( \$xref->{'xref_url'}, { object => $s }, \$url );
             $xref->{'xref_url'} = $url;
@@ -60,9 +65,9 @@ sub handler {
     $INTRO ||= $self->config_data('species_info_intro') || '';
 
     my $html;
-    $t->process( 
-        TEMPLATE, 
-        { 
+    $t->process(
+        TEMPLATE,
+        {
             apr          => $apr,
             page         => $self->page,
             stylesheet   => $self->stylesheet,
@@ -72,8 +77,9 @@ sub handler {
             pager        => $pager,
             intro        => $INTRO,
         },
-        \$html 
-    ) or $html = $t->error;
+        \$html
+      )
+      or $html = $t->error;
 
     print $apr->header( -type => 'text/html', -cookie => $self->cookie ), $html;
     return 1;
@@ -121,3 +127,4 @@ This library is free software;  you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 =cut
+

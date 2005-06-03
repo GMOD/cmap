@@ -1,11 +1,12 @@
 package Bio::GMOD::CMap::Apache::CorrespondenceViewer;
+
 # vim: set ft=perl:
 
-# $Id: CorrespondenceViewer.pm,v 1.2 2004-02-10 22:50:09 kycl4rk Exp $
+# $Id: CorrespondenceViewer.pm,v 1.3 2005-06-03 22:20:00 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.2 $)[-1];
+$VERSION = (qw$Revision: 1.3 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Data;
@@ -14,32 +15,35 @@ use base 'Bio::GMOD::CMap::Apache';
 use constant TEMPLATE => 'correspondence_detail.tmpl';
 
 sub handler {
+
     #
     # Make a jazz noise here...
     #
-    my ( $self, $apr )     = @_;
-    my $correspondence_aid = $apr->param('correspondence_aid') 
-                             or die 'No accession id';
+    my ( $self, $apr ) = @_;
+    my $correspondence_acc = $apr->param('correspondence_acc')
+      or die 'No accession id';
     $self->data_source( $apr->param('data_source') ) or return;
-    my $data_module        = $self->data_module;
-    my $data               = $data_module->correspondence_detail_data(
-        correspondence_aid => $correspondence_aid
-    ) or return $self->error( $data_module->error );
+    my $data_module = $self->data_module;
+    my $data        =
+      $data_module->correspondence_detail_data(
+        correspondence_acc => $correspondence_acc )
+      or return $self->error( $data_module->error );
 
     my $t = $self->template or return;
     my $html;
-    $t->process( 
-        TEMPLATE, 
-        { 
+    $t->process(
+        TEMPLATE,
+        {
             apr        => $self->apr,
             corr       => $data->{'correspondence'},
             feature1   => $data->{'feature1'},
             feature2   => $data->{'feature2'},
             page       => $self->page,
             stylesheet => $self->stylesheet,
-        }, 
-        \$html 
-    ) or return $self->error( $t->error );
+        },
+        \$html
+      )
+      or return $self->error( $t->error );
 
     print $apr->header( -type => 'text/html', -cookie => $self->cookie ), $html;
     return 1;
@@ -89,3 +93,4 @@ This library is free software;  you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 =cut
+

@@ -77,7 +77,7 @@ Features of this class will be seen by GBrowse as the "map".  When CMap map
 data is converted into GBrowse, a feature with this class will be created that
 spans the whole length of the CMap map.
 
-=item * gbrowse_default_map_feature_type_aid
+=item * gbrowse_default_map_feature_type_acc
 
 This is the CMap feature type accession that the "map" feature will have in the
 cmap database.  This must also be definded as a feature type.
@@ -105,12 +105,12 @@ The following is an example of how that would look.
     gbrowse_default_map_class CMap_Map
 
     #
-    # The CMap feature_type_accession that a map "feature" will have.
+    # The CMap feature_type_acc that a map "feature" will have.
     #
-    gbrowse_default_map_feature_type_aid gbrowse_map
+    gbrowse_default_map_feature_type_acc gbrowse_map
 
     <feature_type gbrowse_map>
-        feature_type_accession gbrowse_map
+        feature_type_acc gbrowse_map
         feature_type GBrowse Map
         default_rank 10
         color
@@ -145,7 +145,7 @@ CMap db to the GBrowse db.  It is the GBrowse feature type "fmethod".
 
     Example:
     <feature_type read>
-        feature_type_accession read
+        feature_type_acc read
         feature_type Read
         default_rank 3
         shape out-triangle
@@ -169,7 +169,7 @@ used for the "map feature".
 
     Example:
     <map_type sequence>
-        map_type_accession sequence
+        map_type_acc sequence
         map_type Sequence
         map_units bp
         is_relational_map
@@ -195,14 +195,14 @@ in the following example.
 Also, remember to make the "reference class" the same as what was defined in
 the cmap config file. 
 
-If you are going to copy data from the GBrowse side of the db into the CMap side, you will also need to add a "cmap_feature_type_accession" value to each track that you want to be able to copy.  An example track would look like this:
+If you are going to copy data from the GBrowse side of the db into the CMap side, you will also need to add a "cmap_feature_type_acc" value to each track that you want to be able to copy.  An example track would look like this:
 
     [contig]
     feature      = contig
     glyph        = generic
     key          = Contig
     link         = sub {my $self = shift; return $self->cmap_viewer_link('GCMAP');}
-    cmap_feature_type_accession = contig
+    cmap_feature_type_acc = contig
 
 
 =head1 DATA
@@ -249,7 +249,7 @@ L<Modifying Feature Types> above).
 It also creates a feature for the whole map.  This feature will have the gclass
 that is defined in the config file as gbrowse_default_map_class and the cmap
 feature type that is defined in the config file as
-gbrowse_default_map_feature_type_aid.
+gbrowse_default_map_feature_type_acc.
 
 When this is done, the database will be ready for importing the GBrowse data.
 
@@ -316,7 +316,7 @@ in the following example.  Pay attention to the $url variable in the area_code
 string.
 
  <feature_type read>
- feature_type_accession read
+ feature_type_acc read
  feature_type Read
  default_rank 3
  shape span
@@ -325,9 +325,9 @@ string.
  gbrowse_class read
  gbrowse_ftype read
  area_code <<EOF
- $code=sprintf("onMouseOver=\"window.status='View %s in GBrowse';return true\"",$feature->{'feature_type_aid'});
+ $code=sprintf("onMouseOver=\"window.status='View %s in GBrowse';return true\"",$feature->{'feature_type_acc'});
  $alt = $feature->{'feature_name'};
- $url=sprintf("/cgi-bin/gbrowse/cmap?name=%s:%s",$self->feature_type_data($feature->{'feature_type_aid'},'gbrowse_ftype'),$feature->{'feature_name'});
+ $url=sprintf("/cgi-bin/gbrowse/cmap?name=%s:%s",$self->feature_type_data($feature->{'feature_type_acc'},'gbrowse_ftype'),$feature->{'feature_name'});
  EOF
  </feature_type>
 
@@ -337,7 +337,7 @@ variable can contain javascript, the $alt variable contains the string
 displayed on mouse over.  We are currently interested in the $url variable
 which contains the URL that the feature will refer to when clicked.
 
- $url=sprintf("/cgi-bin/gbrowse/cmap?name=%s:%s",$self->feature_type_data($feature->{'feature_type_aid'},'gbrowse_ftype'),$feature->{'feature_name'});
+ $url=sprintf("/cgi-bin/gbrowse/cmap?name=%s:%s",$self->feature_type_data($feature->{'feature_type_acc'},'gbrowse_ftype'),$feature->{'feature_name'});
 
 GBrowse needs two bits of information to find a feature, it's ftype and its
 name.  To get the name we look into the feature object that we have access to.
@@ -345,7 +345,7 @@ It is contained in $feature->{'feature_name'}.
 
 To get the ftype, we need to query the config.  We can do this by calling the
 'feature_type_data' method which takes the feature type accession
-($feature->{'feature_type_aid'}) and the key that your looking for
+($feature->{'feature_type_acc'}) and the key that your looking for
 ('gbrowse_ftype').  Although you could cheat and hard code the ftype, it would
 make it more difficult to copy and paste this bit of code.  Besides this is
 more fun.   

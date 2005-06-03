@@ -1,8 +1,8 @@
-[% INCLUDE admin_header.tmpl title="View Feature Correspondence &quot;$corr.feature_correspondence_aid&quot;" %]
+[% INCLUDE admin_header.tmpl title="View Feature Correspondence &quot;$corr.feature_correspondence_acc&quot;" %]
 
 <a href="admin">Home</a> |
 <a href="admin?action=feature_corr_edit;feature_correspondence_id=[% corr.feature_correspondence_id %]">Edit</a> |
-<a href="admin?action=confirm_delete;entity_type=feature_correspondence;entity_name_field=feature_correspondence_aid;entity_id=[% corr.feature_correspondence_id %]">Delete</a>
+<a href="admin?action=confirm_delete;entity_type=feature_correspondence;entity_name_field=feature_correspondence_acc;entity_id=[% corr.feature_correspondence_id %]">Delete</a>
 <hr noshade>
 
 <br>
@@ -75,7 +75,7 @@
 
     <tr>
         <th align="right">Acc ID:</th>
-        <td>[% corr.feature_correspondence_aid %]</td>
+        <td>[% corr.feature_correspondence_acc %]</td>
     </tr>
 
     <tr>
@@ -117,7 +117,7 @@
     <table width="100%">
         <tr>
             <th>
-                <a href="admin?action=feature_corr_view;feature_correspondence_id=[% corr.feature_correspondence_id %];order_by=accession_id">Acc. ID</a>
+                <a href="admin?action=feature_corr_view;feature_correspondence_id=[% corr.feature_correspondence_id %];order_by=feature_correspondence_acc">Acc. ID</a>
             </th>
             <th>
                 <a href="admin?action=feature_corr_view;feature_correspondence_id=[% corr.feature_correspondence_id %];order_by=evidence_type">Evidence Type</a>
@@ -134,7 +134,7 @@
         [% SET i=0 %]
         [% FOREACH e=corr.evidence %]
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
-                <td>[% e.correspondence_evidence_aid %]</td>
+                <td>[% e.correspondence_evidence_acc %]</td>
                 <td>[% e.evidence_type %]</td>
                 <td>[% e.rank %]</td>
                 <td>[% IF e.score.defined; e.score; ELSE; 'NULL'; END %]</td>
@@ -142,7 +142,7 @@
                     <a href="admin?action=corr_evidence_edit;correspondence_evidence_id=[% e.correspondence_evidence_id %]">Edit</a>
                 </td>
                 <td>
-                    <a href="admin?action=confirm_delete;entity_type=correspondence_evidence;entity_name_field=correspondence_evidence_aid;entity_id=[% e.correspondence_evidence_id %]">Delete</a>
+                    <a href="admin?action=confirm_delete;entity_type=correspondence_evidence;entity_name_field=correspondence_evidence_acc;entity_id=[% e.correspondence_evidence_id %]">Delete</a>
                 </td>
             </tr>
             [% SET i=i+1 %]

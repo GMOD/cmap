@@ -11,9 +11,9 @@ url=apr.url( '-full' => 1, '-path_info' => 1 ).replace('\/cmap.*', '/cmap');
 [%- IF intro -%]
 <p>[% intro %]</p>
 [%- END -%]
-[%- IF map_aid -%]
+[%- IF map_acc -%]
   <form name="spider_form">
-    Map Accession: <input type=text name=map_aid id=map_aid value=[% map_aid %]><br>
+    Map Accession: <input type=text name=map_acc id=map_acc value=[% map_acc %]><br>
     Degrees to Crawl:
     <select name=degrees_to_crawl id=degrees_to_crawl >
         <option value=0 [% IF degrees_to_crawl==0 %]selected[% END %]>0</option>

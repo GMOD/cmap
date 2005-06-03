@@ -1,4 +1,4 @@
-[% SET title="Correspondences Detail &quot;$corr.feature_correspondence_aid&quot;" %]
+[% SET title="Correspondences Detail &quot;$corr.feature_correspondence_acc&quot;" %]
 [% 
     INCLUDE header.tmpl 
     title='CMap - Correspondence Details'
@@ -16,9 +16,9 @@
     <tr>
         <th align="right">Feature Name:</th>
         <td>[% feature1.feature_name %]</td>
-        <td align="center"><b>[</b>&nbsp;<a href="feature?feature_aid=[% feature1.feature_aid %]">View&nbsp;Feature&nbsp;Details</a>&nbsp;<b>]</b></td>
+        <td align="center"><b>[</b>&nbsp;<a href="feature?feature_acc=[% feature1.feature_acc %]">View&nbsp;Feature&nbsp;Details</a>&nbsp;<b>]</b></td>
         <td>[% feature2.feature_name %]</td>
-        <td align="center"><b>[</b>&nbsp;<a href="feature?feature_aid=[% feature2.feature_aid %]">View&nbsp;Feature&nbsp;Details</a>&nbsp;<b>]</b></td>
+        <td align="center"><b>[</b>&nbsp;<a href="feature?feature_acc=[% feature2.feature_acc %]">View&nbsp;Feature&nbsp;Details</a>&nbsp;<b>]</b></td>
     </tr>
     <tr>
         <th align="right">Feature Aliases:</th>
@@ -34,13 +34,13 @@
             [% feature1.map_set_name %] -
             [% feature1.map_name %]
         </td>
-        <td align="center"><b>[</b>&nbsp;<a href="map_set_info?map_set_aid=[% feature1.map_set_aid %]">View&nbsp;Map&nbsp;Set</a>&nbsp;<b>]</b></td>
+        <td align="center"><b>[</b>&nbsp;<a href="map_set_info?map_set_acc=[% feature1.map_set_acc %]">View&nbsp;Map&nbsp;Set</a>&nbsp;<b>]</b></td>
         <td> 
             [% feature2.species_common_name %] -
             [% feature2.map_set_name %] -
             [% feature2.map_name %]
         </td>
-        <td align="center"><b>[</b>&nbsp;<a href="map_set_info?map_set_aid=[% feature2.map_set_aid %]">View&nbsp;Map&nbsp;Set</a>&nbsp;<b>]</b></td>
+        <td align="center"><b>[</b>&nbsp;<a href="map_set_info?map_set_acc=[% feature2.map_set_acc %]">View&nbsp;Map&nbsp;Set</a>&nbsp;<b>]</b></td>
     </tr>
     <tr>
         <th align="right">Position:</th>
@@ -48,19 +48,19 @@
             [% feature1.feature_start | commify %]
             [% IF feature1.feature_stop.defined AND feature1.feature_stop > feature1.feature_start %]- [% feature1.feature_stop | commify %][% END %] [% feature1.map_units %]
         </td>
-        <td align="center"><b>[</b>&nbsp;<a href="map_details?ref_map_set_aid=[% feature1.map_set_aid %];ref_map_aids=[% feature1.map_aid %];highlight=[% feature1.feature_aid %]">View&nbsp;On&nbsp;Map</a>&nbsp;<b>]</b></td>
+        <td align="center"><b>[</b>&nbsp;<a href="map_details?ref_map_set_acc=[% feature1.map_set_acc %];ref_map_accs=[% feature1.map_acc %];highlight=[% feature1.feature_acc %]">View&nbsp;On&nbsp;Map</a>&nbsp;<b>]</b></td>
         <td>
             [% feature2.feature_start | commify %]
             [% IF feature2.feature_stop.defined AND feature2.feature_stop > feature2.feature_start %]- [% feature2.feature_stop | commify %][% END %] [% feature2.map_units %]
         </td>
-        <td align="center"><b>[</b>&nbsp;<a href="map_details?ref_map_set_aid=[% feature2.map_set_aid %];ref_map_aids=[% feature2.map_aid %];highlight=[% feature2.feature_aid %]">View&nbsp;On&nbsp;Map</a>&nbsp;<b>]</b></td>
+        <td align="center"><b>[</b>&nbsp;<a href="map_details?ref_map_set_acc=[% feature2.map_set_acc %];ref_map_accs=[% feature2.map_acc %];highlight=[% feature2.feature_acc %]">View&nbsp;On&nbsp;Map</a>&nbsp;<b>]</b></td>
     </tr>
     <tr>
         <th align="right">Feature Type:</th>
         <td>[% feature1.feature_type %]</td>
-        <td align="center"><b>[</b>&nbsp;<a href="feature_type_info?feature_type_aid=[% feature1.feature_type_aid %]">View&nbsp;Feature&nbsp;Type&nbsp;Info</a>&nbsp;<b>]</b></td>
+        <td align="center"><b>[</b>&nbsp;<a href="feature_type_info?feature_type_acc=[% feature1.feature_type_acc %]">View&nbsp;Feature&nbsp;Type&nbsp;Info</a>&nbsp;<b>]</b></td>
         <td>[% feature2.feature_type %]</td>
-        <td align="center"><b>[</b>&nbsp;<a href="feature_type_info?feature_type_aid=[% feature2.feature_type_aid %]">View&nbsp;Feature&nbsp;Type&nbsp;Info</a>&nbsp;<b>]</b></td>
+        <td align="center"><b>[</b>&nbsp;<a href="feature_type_info?feature_type_acc=[% feature2.feature_type_acc %]">View&nbsp;Feature&nbsp;Type&nbsp;Info</a>&nbsp;<b>]</b></td>
     </tr>
 </table>
 
@@ -84,7 +84,7 @@
                 <td align="right">[% e.rank %]</td>
                 <td align="right">[% IF e.score.defined; e.score; ELSE; 'N/A'; END %]</td>
                 <td align="center">
-                    <b>[</b>&nbsp;<a href="evidence_type_info?evidence_type_aid=[% e.evidence_type_aid %]">View&nbsp;Evidence&nbsp;Type&nbsp;Info</a>&nbsp<b>]</b>
+                    <b>[</b>&nbsp;<a href="evidence_type_info?evidence_type_acc=[% e.evidence_type_acc %]">View&nbsp;Evidence&nbsp;Type&nbsp;Info</a>&nbsp<b>]</b>
                 </td>
                 </td>
             </tr>

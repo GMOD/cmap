@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.96 2005-04-29 13:20:12 mwz444 Exp $
+# $Id: Drawer.pm,v 1.97 2005-06-03 22:19:58 mwz444 Exp $
 
 =head1 NAME
 
@@ -77,7 +77,7 @@ If there are individually selected maps, this is the hash where they
 are stored.  The map accession ids are the keys and a hash (described 
 below) of info is the value.  Either 'maps' or 'map_sets' must be defined.
 
-    $slot->{$slot_number}{'maps'}{$map_aid} = (
+    $slot->{$slot_number}{'maps'}{$map_acc} = (
         'start' => $start || undef, # the start of the map to be displayed.  Can be undef.
         'stop'  => $stop  || undef, # the stop of the map to be displayed.  Can be undef.
         'mag'   => $mag   || undef, # the magnification of the map to be displayed.  Can be undef.
@@ -90,14 +90,14 @@ map set accession id as the key and undef as the value (this is saved
 for possible future developement).  Either 'maps' or 'map_sets' must 
 be defined.
 
-    $slot->{$slot_number}{'map_sets'}{$map_set_aid} = undef;
+    $slot->{$slot_number}{'map_sets'}{$map_set_acc} = undef;
 
-=item - $slot->{$slot_number}{'map_set_aid'}
+=item - $slot->{$slot_number}{'map_set_acc'}
 
 This is the accession of the map set that the slot holds.  There can
 be only one map set per slot and this is the map set accession.
 
-    $slot->{$slot_number}{'map_set_aid'} = $map_set_aid;
+    $slot->{$slot_number}{'map_set_acc'} = $map_set_acc;
 
 =back
 
@@ -117,7 +117,7 @@ A CGI object that is mostly used to create the URL.
 
 A string that denotes which maps are flipped.  The format is:
 
- $slot_no.'='.$map_aid
+ $slot_no.'='.$map_acc
 
 Multiple maps are separated by ':'.
 
@@ -259,7 +259,7 @@ Set to 1 stack the reference maps vertically.  Default is 0.
 =item * ref_map_order
 
 This is the string that dictates the order of the reference maps.  The format
-is the list of map_aids in order, separated by commas 
+is the list of map_accs in order, separated by commas 
 
 =item * comp_menu_order
 
@@ -275,7 +275,7 @@ on the number of correspondences).  'display_order' is the default.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.96 $)[-1];
+$VERSION = (qw$Revision: 1.97 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -297,7 +297,7 @@ my @INIT_PARAMS = qw[
   config data_source min_correspondences collapse_features cache_dir
   map_view data_module aggregate cluster_corr show_intraslot_corr clean_view
   magnify_all scale_maps stack_maps ref_map_order comp_menu_order
-  split_agg_ev 
+  split_agg_ev
 ];
 
 # ----------------------------------------------------
@@ -664,10 +664,10 @@ Gets/sets the comparative map.
 
     my $self = shift;
     if ( my $map = shift ) {
-        my ( $field, $aid ) = split( /=/, $map )
+        my ( $field, $acc ) = split( /=/, $map )
           or $self->error(qq[Invalid input to comparative map "$map"]);
         $self->{'comparative_map'}{'field'} = $field;
-        $self->{'comparative_map'}{'aid'}   = $aid;
+        $self->{'comparative_map'}{'acc'}   = $acc;
     }
 
     return $self->{'comparative_map'};
@@ -717,11 +717,11 @@ Gets/sets which maps to flip.
     my $self = shift;
     if ( my $arg = shift ) {
         for my $s ( split /:/, $arg ) {
-            my ( $slot_no, $map_aid ) = split /=/, $s or next;
+            my ( $slot_no, $map_acc ) = split /=/, $s or next;
             push @{ $self->{'flip'} },
               {
                 slot_no => $slot_no,
-                map_aid => $map_aid,
+                map_acc => $map_acc,
               };
         }
     }
@@ -848,7 +848,7 @@ Gets/sets which evidence type scores
     if ( my $arg = shift ) {
         $self->{'evidence_type_score'} = $arg;
     }
-    $self->{'evidence_type_score'} = {} 
+    $self->{'evidence_type_score'} = {}
       unless $self->{'evidence_type_score'};
 
     return $self->{'evidence_type_score'};
@@ -1170,7 +1170,7 @@ Lays out the image and writes it to the file system, set the "image_name."
                     $label_x + $font->width * length($label),
                     $ft_y + $font->height,
                 ],
-                url => $ft_details_url . $ft->{'feature_type_aid'},
+                url => $ft_details_url . $ft->{'feature_type_acc'},
                 alt => "Feature Type Details for $label",
               )
               unless $ft->{'correspondence_color'};
@@ -1203,7 +1203,7 @@ Lays out the image and writes it to the file system, set the "image_name."
                 $self->add_map_area(
                     coords =>
                       [ $x + 15, $max_y, $end, $max_y + $font->height, ],
-                    url => $et_details_url . $et->{'evidence_type_aid'},
+                    url => $et_details_url . $et->{'evidence_type_acc'},
                     alt => 'Evidence Type Details for '
                       . $et->{'evidence_type'},
                 );
@@ -1219,43 +1219,50 @@ Lays out the image and writes it to the file system, set the "image_name."
         $self->add_drawing( STRING, $font, $x, $max_y,
             'Aggregated Correspondences Colors:', 'black' );
         $max_y += $font->height + 10;
-        my $all_corr_colors   = $self->aggregated_correspondence_colors;
-        if ( $all_corr_colors and %$all_corr_colors ){
-            foreach my $evidence_type_aid (keys (%$all_corr_colors)){
-                my $corr_colors       = $all_corr_colors->{$evidence_type_aid};
-                my $default_color     
-                    = $self->default_aggregated_correspondence_color($evidence_type_aid);
+        my $all_corr_colors = $self->aggregated_correspondence_colors;
+        if ( $all_corr_colors and %$all_corr_colors ) {
+            foreach my $evidence_type_acc ( keys(%$all_corr_colors) ) {
+                my $corr_colors   = $all_corr_colors->{$evidence_type_acc};
+                my $default_color =
+                  $self->default_aggregated_correspondence_color(
+                    $evidence_type_acc);
                 my $last_bound;
-                if ( $evidence_type_aid ne DEFAULT->{'aggregated_type_substitute'} ){
+                if ( $evidence_type_acc ne
+                    DEFAULT->{'aggregated_type_substitute'} )
+                {
                     $self->add_drawing( STRING, $font, $x, $max_y,
-                        $self->evidence_type_data($evidence_type_aid, 'evidence_type') 
-                        , 'black' );
+                        $self->evidence_type_data(
+                            $evidence_type_acc, 'evidence_type'
+                        ),
+                        'black'
+                    );
                     $max_y += $font->height + 4;
                 }
-                elsif ( scalar ( keys ( %$all_corr_colors) ) > 1 ){
+                elsif ( scalar( keys(%$all_corr_colors) ) > 1 ) {
+
                     # These are the default colors.
                     # They are not needed if the types are defined.
                     next;
                 }
-                foreach my $color_bound ( 
-                    sort { $a <=> $b } grep { $_ } keys(%$corr_colors) 
-                ){
+                foreach my $color_bound ( sort { $a <=> $b }
+                    grep { $_ } keys(%$corr_colors) )
+                {
                     $self->add_drawing(
-                        STRING, $font, $x+15, $max_y,
+                        STRING, $font, $x + 15, $max_y,
                         $color_bound . ' or fewer correspondences',
                         $corr_colors->{$color_bound}
                     );
                     $max_y += $font->height + 4;
                     $last_bound = $color_bound;
                 }
-                $self->add_drawing( STRING, $font, $x+15, $max_y,
+                $self->add_drawing( STRING, $font, $x + 15, $max_y,
                     'More than ' . $last_bound . ' correspondences',
                     $default_color );
                 $max_y += $font->height + 6;
             }
         }
         else {
-            my $default_color     = $self->default_aggregated_correspondence_color;
+            my $default_color = $self->default_aggregated_correspondence_color;
             $self->add_drawing( STRING, $font, $x, $max_y,
                 'All Aggregated Correspondences',
                 $default_color );
@@ -1388,14 +1395,14 @@ necessary data for drawing.
         $self->{'data'} = $data->cmap_data(
             slots                       => $self->{'slots'},
             min_correspondences         => $self->min_correspondences,
-            included_feature_type_aids  => $self->included_feature_types,
-            corr_only_feature_type_aids => $self->corr_only_feature_types,
-            ignored_feature_type_aids   => $self->ignored_feature_types,
+            included_feature_type_accs  => $self->included_feature_types,
+            corr_only_feature_type_accs => $self->corr_only_feature_types,
+            ignored_feature_type_accs   => $self->ignored_feature_types,
             url_feature_default_display => $self->url_feature_default_display,
-            included_evidence_type_aids => $self->included_evidence_types,
-            ignored_evidence_type_aids  => $self->ignored_evidence_types,
-            less_evidence_type_aids     => $self->less_evidence_types,
-            greater_evidence_type_aids  => $self->greater_evidence_types,
+            included_evidence_type_accs => $self->included_evidence_types,
+            ignored_evidence_type_accs  => $self->ignored_evidence_types,
+            less_evidence_type_accs     => $self->less_evidence_types,
+            greater_evidence_type_accs  => $self->greater_evidence_types,
             evidence_type_score         => $self->evidence_type_score,
           )
           or return $self->error( $data->error );
@@ -1404,15 +1411,15 @@ necessary data for drawing.
 
         # Set the feature and evidence types for later use.
         $self->included_feature_types(
-            $self->{'data'}{'included_feature_type_aids'} );
+            $self->{'data'}{'included_feature_type_accs'} );
         $self->corr_only_feature_types(
-            $self->{'data'}{'corr_only_feature_type_aids'} );
+            $self->{'data'}{'corr_only_feature_type_accs'} );
         $self->ignored_feature_types(
-            $self->{'data'}{'ignored_feature_type_aids'} );
+            $self->{'data'}{'ignored_feature_type_accs'} );
         $self->included_evidence_types(
-            $self->{'data'}{'included_evidence_type_aids'} );
+            $self->{'data'}{'included_evidence_type_accs'} );
         $self->ignored_evidence_types(
-            $self->{'data'}{'ignored_evidence_type_aids'} );
+            $self->{'data'}{'ignored_evidence_type_accs'} );
     }
 
     return $self->{'data'};
@@ -2415,21 +2422,27 @@ that is defined in the main section.
 =cut
 
     my $self              = shift;
-    my $evidence_type_aid = shift;
+    my $evidence_type_acc = shift;
 
     return $self->{'corr_colors'}
-         unless ($evidence_type_aid);
+      unless ($evidence_type_acc);
 
-    unless ( $self->{'corr_colors'} and $self->{'corr_colors'}{$evidence_type_aid} ) {
-        unless ($self->{'corr_colors'}{$evidence_type_aid} =
-            $self->evidence_type_data( $evidence_type_aid, 'aggregated_correspondence_colors' )
-        ){
-          $self->{'corr_colors'}{$evidence_type_aid} = 
+    unless ($self->{'corr_colors'}
+        and $self->{'corr_colors'}{$evidence_type_acc} )
+    {
+        unless (
+            $self->{'corr_colors'}{$evidence_type_acc} =
+            $self->evidence_type_data(
+                $evidence_type_acc, 'aggregated_correspondence_colors'
+            )
+          )
+        {
+            $self->{'corr_colors'}{$evidence_type_acc} =
               $self->config_data('aggregated_correspondence_colors');
         }
     }
 
-    return $self->{'corr_colors'}{$evidence_type_aid};
+    return $self->{'corr_colors'}{$evidence_type_acc};
 }
 
 # ----------------------------------------------------
@@ -2444,26 +2457,28 @@ the value in Constants.pm for aggregated_correspondence_color.
 
 =cut
 
-    my $self = shift;
-    my $evidence_type_aid = shift;
+    my $self              = shift;
+    my $evidence_type_acc = shift;
 
-    $evidence_type_aid = DEFAULT->{'aggregated_type_substitute'}
-         unless ($evidence_type_aid);
+    $evidence_type_acc = DEFAULT->{'aggregated_type_substitute'}
+      unless ($evidence_type_acc);
 
-    unless ( $self->{'default_corr_color'} 
-        and $self->{'default_corr_color'}{$evidence_type_aid}
-    ) {
-        my $corr_colors = $self->aggregated_correspondence_colors($evidence_type_aid);
+    unless ($self->{'default_corr_color'}
+        and $self->{'default_corr_color'}{$evidence_type_acc} )
+    {
+        my $corr_colors =
+          $self->aggregated_correspondence_colors($evidence_type_acc);
         if ( $corr_colors and %$corr_colors ) {
-            $self->{'default_corr_color'}{$evidence_type_aid} = $corr_colors->{0};
+            $self->{'default_corr_color'}{$evidence_type_acc} =
+              $corr_colors->{0};
         }
-        unless ( $self->{'default_corr_color'}{$evidence_type_aid} ) {
-            $self->{'default_corr_color'}{$evidence_type_aid}
-                = DEFAULT->{'connecting_line_color'};
+        unless ( $self->{'default_corr_color'}{$evidence_type_acc} ) {
+            $self->{'default_corr_color'}{$evidence_type_acc} =
+              DEFAULT->{'connecting_line_color'};
         }
     }
 
-    return $self->{'default_corr_color'}{$evidence_type_aid};
+    return $self->{'default_corr_color'}{$evidence_type_acc};
 }
 
 # ----------------------------------------------------
@@ -2479,14 +2494,16 @@ return the correct line color for the aggregated correspondences.
 =cut
 
     my ( $self, %args ) = @_;
-    my $evidence_type_aid = $args{'evidence_type_aid'};
-    my $corr_no = $args{'corr_no'};
+    my $evidence_type_acc = $args{'evidence_type_acc'};
+    my $corr_no           = $args{'corr_no'};
 
-    my $corr_colors       = $self->aggregated_correspondence_colors($evidence_type_aid);
-    my $line_color        = $self->default_aggregated_correspondence_color($evidence_type_aid);
-    foreach my $color_bound ( 
-        sort { $a <=> $b } grep { $_ } keys(%$corr_colors) 
-    ){
+    my $corr_colors =
+      $self->aggregated_correspondence_colors($evidence_type_acc);
+    my $line_color =
+      $self->default_aggregated_correspondence_color($evidence_type_acc);
+    foreach
+      my $color_bound ( sort { $a <=> $b } grep { $_ } keys(%$corr_colors) )
+    {
         if ( $corr_no <= $color_bound ) {
             $line_color = $corr_colors->{$color_bound};
             last;
@@ -2507,10 +2524,10 @@ Creates default link parameters for CMap->create_viewer_link()
 =cut
 
     my ( $self, %args ) = @_;
-    my $prev_ref_species_aid        = $args{'prev_ref_species_aid'};
-    my $prev_ref_map_set_aid        = $args{'prev_ref_map_set_aid'};
-    my $ref_species_aid             = $args{'ref_species_aid'};
-    my $ref_map_set_aid             = $args{'ref_map_set_aid'};
+    my $prev_ref_species_acc        = $args{'prev_ref_species_acc'};
+    my $prev_ref_map_set_acc        = $args{'prev_ref_map_set_acc'};
+    my $ref_species_acc             = $args{'ref_species_acc'};
+    my $ref_map_set_acc             = $args{'ref_map_set_acc'};
     my $ref_map_start               = $args{'ref_map_start'};
     my $ref_map_stop                = $args{'ref_map_stop'};
     my $comparative_maps            = $args{'comparative_maps'};
@@ -2532,35 +2549,35 @@ Creates default link parameters for CMap->create_viewer_link()
     my $magnify_all                 = $args{'magnify_all'};
     my $flip                        = $args{'flip'};
     my $min_correspondences         = $args{'min_correspondences'};
-    my $ref_map_aids                = $args{'ref_map_aids'};
-    my $feature_type_aids           = $args{'feature_type_aids'};
-    my $corr_only_feature_type_aids = $args{'corr_only_feature_type_aids'};
-    my $ignored_feature_type_aids   = $args{'ignored_feature_type_aids'};
+    my $ref_map_accs                = $args{'ref_map_accs'};
+    my $feature_type_accs           = $args{'feature_type_accs'};
+    my $corr_only_feature_type_accs = $args{'corr_only_feature_type_accs'};
+    my $ignored_feature_type_accs   = $args{'ignored_feature_type_accs'};
     my $url_feature_default_display = $args{'url_feature_default_display'};
 
-    my $included_evidence_type_aids = $args{'included_evidence_type_aids'};
-    my $ignored_evidence_type_aids  = $args{'ignored_evidence_type_aids'};
-    my $less_evidence_type_aids     = $args{'less_evidence_type_aids'};
-    my $greater_evidence_type_aids  = $args{'greater_evidence_type_aids'};
+    my $included_evidence_type_accs = $args{'included_evidence_type_accs'};
+    my $ignored_evidence_type_accs  = $args{'ignored_evidence_type_accs'};
+    my $less_evidence_type_accs     = $args{'less_evidence_type_accs'};
+    my $greater_evidence_type_accs  = $args{'greater_evidence_type_accs'};
     my $evidence_type_score         = $args{'evidence_type_score'};
     my $data_source                 = $args{'data_source'};
     my $url                         = $args{'url'};
 
     ### Required Fields that Drawer can't figure out.
-    unless ( defined($ref_map_set_aid) ) {
+    unless ( defined($ref_map_set_acc) ) {
         return;
-        $ref_map_set_aid = undef;
+        $ref_map_set_acc = undef;
     }
 
     ### Optional fields for finer control
-    unless ( defined($prev_ref_species_aid) ) {
-        $prev_ref_species_aid = undef;
+    unless ( defined($prev_ref_species_acc) ) {
+        $prev_ref_species_acc = undef;
     }
-    unless ( defined($prev_ref_map_set_aid) ) {
-        $prev_ref_map_set_aid = undef;
+    unless ( defined($prev_ref_map_set_acc) ) {
+        $prev_ref_map_set_acc = undef;
     }
-    unless ( defined($ref_species_aid) ) {
-        $ref_species_aid = undef;
+    unless ( defined($ref_species_acc) ) {
+        $ref_species_acc = undef;
     }
     unless ( defined($ref_map_start) ) {
         $ref_map_start = undef;
@@ -2622,39 +2639,39 @@ Creates default link parameters for CMap->create_viewer_link()
     unless ( defined($flip) ) {
         my @flips;
         for my $rec ( @{ $self->flip } ) {
-            push @flips, $rec->{'slot_no'} . '%3d' . $rec->{'map_aid'};
+            push @flips, $rec->{'slot_no'} . '%3d' . $rec->{'map_acc'};
         }
         $flip = join( ":", @flips );
     }
     unless ( defined($min_correspondences) ) {
         $min_correspondences = $self->min_correspondences();
     }
-    unless ( defined($ref_map_aids) ) {
-        $ref_map_aids = $self->ref_map_aids();
+    unless ( defined($ref_map_accs) ) {
+        $ref_map_accs = $self->ref_map_accs();
     }
-    unless ( defined($feature_type_aids) ) {
-        $feature_type_aids = $self->included_feature_types();
+    unless ( defined($feature_type_accs) ) {
+        $feature_type_accs = $self->included_feature_types();
     }
-    unless ( defined($corr_only_feature_type_aids) ) {
-        $corr_only_feature_type_aids = $self->corr_only_feature_types();
+    unless ( defined($corr_only_feature_type_accs) ) {
+        $corr_only_feature_type_accs = $self->corr_only_feature_types();
     }
     unless ( defined($url_feature_default_display) ) {
         $url_feature_default_display = $self->url_feature_default_display();
     }
-    unless ( defined($ignored_feature_type_aids) ) {
-        $ignored_feature_type_aids = $self->ignored_feature_types();
+    unless ( defined($ignored_feature_type_accs) ) {
+        $ignored_feature_type_accs = $self->ignored_feature_types();
     }
-    unless ( defined($ignored_evidence_type_aids) ) {
-        $ignored_evidence_type_aids = $self->ignored_evidence_types();
+    unless ( defined($ignored_evidence_type_accs) ) {
+        $ignored_evidence_type_accs = $self->ignored_evidence_types();
     }
-    unless ( defined($included_evidence_type_aids) ) {
-        $included_evidence_type_aids = $self->included_evidence_types();
+    unless ( defined($included_evidence_type_accs) ) {
+        $included_evidence_type_accs = $self->included_evidence_types();
     }
-    unless ( defined($less_evidence_type_aids) ) {
-        $less_evidence_type_aids = $self->less_evidence_types();
+    unless ( defined($less_evidence_type_accs) ) {
+        $less_evidence_type_accs = $self->less_evidence_types();
     }
-    unless ( defined($greater_evidence_type_aids) ) {
-        $greater_evidence_type_aids = $self->greater_evidence_types();
+    unless ( defined($greater_evidence_type_accs) ) {
+        $greater_evidence_type_accs = $self->greater_evidence_types();
     }
     unless ( defined($evidence_type_score) ) {
         $evidence_type_score = $self->evidence_type_score();
@@ -2667,10 +2684,10 @@ Creates default link parameters for CMap->create_viewer_link()
     }
 
     return (
-        prev_ref_species_aid        => $prev_ref_species_aid,
-        prev_ref_map_set_aid        => $prev_ref_map_set_aid,
-        ref_species_aid             => $ref_species_aid,
-        ref_map_set_aid             => $ref_map_set_aid,
+        prev_ref_species_acc        => $prev_ref_species_acc,
+        prev_ref_map_set_acc        => $prev_ref_map_set_acc,
+        ref_species_acc             => $ref_species_acc,
+        ref_map_set_acc             => $ref_map_set_acc,
         ref_map_start               => $ref_map_start,
         ref_map_stop                => $ref_map_stop,
         comparative_maps            => $comparative_maps,
@@ -2692,21 +2709,20 @@ Creates default link parameters for CMap->create_viewer_link()
         magnify_all                 => $magnify_all,
         flip                        => $flip,
         min_correspondences         => $min_correspondences,
-        ref_map_aids                => $ref_map_aids,
-        feature_type_aids           => $feature_type_aids,
-        corr_only_feature_type_aids => $corr_only_feature_type_aids,
-        ignored_feature_type_aids   => $ignored_feature_type_aids,
+        ref_map_accs                => $ref_map_accs,
+        feature_type_accs           => $feature_type_accs,
+        corr_only_feature_type_accs => $corr_only_feature_type_accs,
+        ignored_feature_type_accs   => $ignored_feature_type_accs,
         url_feature_default_display => $url_feature_default_display,
-        ignored_evidence_type_aids  => $ignored_evidence_type_aids,
-        included_evidence_type_aids => $included_evidence_type_aids,
-        less_evidence_type_aids     => $less_evidence_type_aids,
-        greater_evidence_type_aids  => $greater_evidence_type_aids,
+        ignored_evidence_type_accs  => $ignored_evidence_type_accs,
+        included_evidence_type_accs => $included_evidence_type_accs,
+        less_evidence_type_accs     => $less_evidence_type_accs,
+        greater_evidence_type_accs  => $greater_evidence_type_accs,
         evidence_type_score         => $evidence_type_score,
         data_source                 => $data_source,
         url                         => $url,
     );
 }
-
 
 # ----------------------------------------------------
 # It is not all books that are as dull as their readers.

@@ -3,7 +3,7 @@
 <a href="admin">Home</a> |
 <a href="admin?action=confirm_delete;entity_type=map;entity_id=[% map.map_id %]">Delete</a> |
 <a href="admin?action=map_edit;map_id=[% map.map_id %]">Edit</a>
-[% IF map.can_be_reference_map %]
+[% IF NOT map.is_relational_map %]
   | <a href="/maps/viewer?reference_map_set_id=[% map.map_set_id %];reference_map_id=[% map.map_id %]">View in CMap Viewer</a>
 [% END %]
 
@@ -51,7 +51,7 @@
         <td align="right">
             Acc. ID:
         </td>
-        <td>[% map.map_aid OR '&nbsp;' %]</td>
+        <td>[% map.map_acc OR '&nbsp;' %]</td>
     </tr>
 
     <tr>
@@ -103,10 +103,10 @@
         <tr>
             <td align="left">
                 <form action="admin" method="get">
-                    <select name="feature_type_aid">
+                    <select name="feature_type_acc">
                         <option value="">--All--</option>
-                        [% FOREACH ft_aid=feature_type_aids %]
-                            <option value="[% ft_aid %]"[% IF ft_aid==apr.param('feature_type_aid') %] selected[% END %]>[% feature_type_name_lookup.${ft_aid} %]</option>
+                        [% FOREACH ft_acc=feature_type_accs %]
+                            <option value="[% ft_acc %]"[% IF ft_acc==apr.param('feature_type_acc') %] selected[% END %]>[% feature_type_name_lookup.${ft_acc} %]</option>
                         [% END %]
                     </select>
                     <input type="hidden" name="action"   value="map_view">
@@ -118,14 +118,14 @@
             <td align="right">
                 <form action="admin" method="get">
                     <input name="feature_name">
-                    <select name="feature_type_aid">
+                    <select name="feature_type_acc">
                         <option value="">--Any--</option>
                         [% FOREACH ft=feature_types %]
-                            <option value="[% ft_aid %]"[% IF ft_aid==apr.param('feature_type_aid') %] selected[% END %]>[% feature_type_name_lookup.${ft_aid} %]</option>
+                            <option value="[% ft_acc %]"[% IF ft_acc==apr.param('feature_type_acc') %] selected[% END %]>[% feature_type_name_lookup.${ft_acc} %]</option>
                         [% END %]
                     </select>
                     <input type="hidden" name="action" value="feature_search">
-                    <input type="hidden" name="map_aid" value="[% map.map_aid %]">
+                    <input type="hidden" name="map_acc" value="[% map.map_acc %]">
                     <input type="Submit" value="Search for Feature">*
                 </form>
             </td>
@@ -141,7 +141,7 @@
         </tr>
 
         <tr>
-            <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type=[% apr.param('feature_type') %];order_by=accession_id">Acc. ID</a></th>
+            <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type=[% apr.param('feature_type') %];order_by=feature_acc">Acc. ID</a></th>
             <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type=[% apr.param('feature_type') %];order_by=feature_name">Name</a></th>
             <th>Aliases</th>
             <th><a href="admin?action=map_view;map_id=[% map.map_id %];feature_type=[% apr.param('feature_type') %];order_by=feature_type">Type</a></th>
@@ -155,7 +155,7 @@
         [% SET i=0 %]
         [% FOREACH f=map.features %]
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
-                <td>[% f.accession_id   OR '&nbsp;' %]</td>
+                <td>[% f.feature_acc   OR '&nbsp;' %]</td>
                 <td>[% f.feature_name   OR '&nbsp;' %]</td>
                 <td>[% IF f.aliases.size %][% f.aliases.join(', ') | truncate(40) %][% ELSE; '&nbsp;'; END %]</td>
                 <td>[% f.feature_type   OR '&nbsp;' %]</td>

@@ -45,12 +45,12 @@ decide how exactly you want to populate the linker table.
 
 The "feature_to_cmap" table has 2 important columns that you will need
 to insert.  One is the "feature_id" of the Chado feature and the other
-is "cmap_feature_aid" which is the "accession_id" of a cmap feature.
+is "cmap_feature_acc" which is the "accession_id" of a cmap feature.
 
 Here is an example insert statement where the chado feature_id is '32' and the
 cmap accession id is 'EDEN1':
 
- insert into feature_to_cmap (feature_id, cmap_feature_aid) values (32,'EDEN1') 
+ insert into feature_to_cmap (feature_id, cmap_feature_acc) values (32,'EDEN1') 
 
 =head1 Linking a feature from GBrowse to CMap.
 

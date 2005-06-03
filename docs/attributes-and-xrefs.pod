@@ -94,7 +94,7 @@ map sets and from the "Sap Set" page, wanted to create a link to lookup
 the similar map sets.  The xref could look like this:
 
   Name: View Similar Map Sets
-  URL : /similar_map_sets/similar_map_sets?map_set_aid=[% object.accession %]
+  URL : /similar_map_sets/similar_map_sets?map_set_acc=[% object.map_set_acc %]
 
 A couple things to notice:
 
@@ -122,24 +122,21 @@ or whatever) as "object."  See the next section for field names.
 Following is a list the fields available for each object on the given
 page.  The default source table for the fields is given at the top.
 Any data that does not come from that table is specified either by
-"[table]" or "[table.column]."  In all cases a field ending in "_aid"
-refers to an "accession_id" field.  Because most every table contains
-a field called "accession_id," it is easiest to differentiate them as
-"species_aid" for "cmap_species.accesion_id." 
+"[table]" or "[table.column]." 
 
 =head2 Map Set Info (/cmap/map_set_info)
 
 Table: cmap_map_set
 
   map_set_id
-  map_set_aid          (accession_id)
+  map_set_acc
   map_set_name
   map_set_short_name
-  map_type_accession
+  map_type_acc
   species_id
-  can_be_reference_map
+  is_relational_map
   map_units
-  species_aid          [cmap_species.accession_id]
+  species_acc
   species_common_name          [cmap_species]
   species_full_name            [cmap_species]
 
@@ -147,14 +144,15 @@ Table: cmap_map_set
 
 Table: cmap_map
 
-  map_aid      (accession_id)
+  map_acc
   map_name
   map_start
   map_stop
   map_units
-  map_set_aid  [cmap_map_set.accession_id]
-  map_set_name [cmap_map_set.map_set_short_name]
-  species_aid  [cmap_species.accession_id]
+  map_set_acc
+  map_set_name
+  map_set_short_name
+  species_acc
   species_common_name [cmap_species.species_common_name]
 
 =head2 Feature Details (/cmap/feature)
@@ -162,10 +160,10 @@ Table: cmap_map
 Table: cmap_feature
 
   feature_id 
-  feature_aid      (accession_id)
+  feature_acc
   map_id
   map_set_id 
-  feature_type_accession
+  feature_type_acc
   feature_name
   is_landmark
   feature_start
@@ -173,19 +171,19 @@ Table: cmap_feature
   aliases          [cmap_feature_alias.alias] *
   correspondences  [cmap_feature_correspondence] *
   map_name         [cmap_map]
-  map_aid          [cmap_map.accession_id]
-  map_set_aid      [cmap_map_set.accession_id]
+  map_acc
+  map_set_acc
   map_set_name     [cmap_map_set.map_set_short_name ]
   species_id       [cmap_species]
   species_common_name     [cmap_species.species_common_name]
-  map_type_aid     [cmap_map.accession_id]
+  map_type_acc
   map_units        [cmap_map_set.map_units]
 
 =head2 Feature Type Info (/cmap/feature_type_info)
 
 Table: cmap_feature_type
 
-  feature_type_accession 
+  feature_type_acc 
   feature_type
   shape
   color
@@ -196,14 +194,14 @@ Table: cmap_feature_alias
 
   feature_alias_id
   alias
-  feature_aid  [cmap_feature.accession_id]
+  feature_acc
   feature_name [cmap_feature.feature_name]
 
 =head2 Map Type Info (/cmap/map_type_info)
 
 Table: cmap_map_type
 
-  map_type_accession
+  map_type_acc
   map_type
   map_units
   is_relational_map
@@ -216,7 +214,7 @@ Table: cmap_map_type
 
 Table: cmap_evidence_type
 
-  evidence_type_accession
+  evidence_type_acc
   evidence_type
   rank
   line_color
@@ -226,7 +224,7 @@ Table: cmap_evidence_type
 Table: cmap_species
 
   species_id
-  species_aid (accession_id)
+  species_acc
   species_common_name
   species_full_name
   display_order
@@ -236,7 +234,7 @@ Table: cmap_species
 Table: cmap_feature_correspondence
 
   feature_correspondence_id
-  accession_id
+  feature_correspondence_acc
   feature_id1
   feature_id2
   is_enabled
@@ -303,7 +301,7 @@ generated, one for each.
 You can do other simple checks inside the template to decide whether
 or not to make an xref.  Take this trivial example:
 
-  [% IF object.map_type_accession=='Genetic' %]http://www.genetic-maps.org/search=[% object.map_name %][% END %]
+  [% IF object.map_type_acc=='Genetic' %]http://www.genetic-maps.org/search=[% object.map_name %][% END %]
 
 This template checks to see if the object (probably a map) is of the
 type "Genetic."  If so, it creates a URL querying on the map's name;

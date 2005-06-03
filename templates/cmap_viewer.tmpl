@@ -151,14 +151,14 @@ function selectEvidenceRadio(val){
   }
 }
 
-function mod_map_info(slot_no, map_aid, start, stop,mag){
+function mod_map_info(slot_no, map_acc, start, stop,mag){
   if ( slot_no == 0){
     if (start!='' && start==stop){
       document.comparative_map_form.modified_ref_map.value='';
     }
     else{
       document.comparative_map_form.modified_ref_map.value
-        =map_aid+"["+start+"*"+stop+"x"+mag+"]";
+        =map_acc+"["+start+"*"+stop+"x"+mag+"]";
     }
   }
   else{
@@ -167,7 +167,7 @@ function mod_map_info(slot_no, map_aid, start, stop,mag){
     }
     else{
     document.comparative_map_form.modified_comp_map.value
-      =slot_no+"=map_aid="+map_aid+"["+start+"*"+stop+"x"+mag+"]";
+      =slot_no+"=map_acc="+map_acc+"["+start+"*"+stop+"x"+mag+"]";
     }
   }
 }
@@ -204,7 +204,7 @@ function changeCompMaps(sel,index,side){
           [%- ELSE -%]
             [%- SET not_first_map=1; -%] 
           [%- END -%]
-          new Array( '[%- map.map_name %] [[% map.no_correspondences %]]','[% map.map_aid -%]')
+          new Array( '[%- map.map_name %] [[% map.no_correspondences %]]','[% map.map_acc -%]')
         [% END -%]
         )
       [% END -%]
@@ -227,7 +227,7 @@ function changeCompMaps(sel,index,side){
           [%- ELSE -%]
             [%- SET not_first_map=1; -%] 
           [%- END -%]
-          new Array( '[%- map.map_name %] [[% map.no_correspondences %]]','[% map.map_aid -%]')
+          new Array( '[%- map.map_name %] [[% map.no_correspondences %]]','[% map.map_acc -%]')
         [% END -%]
         )
       [%- END -%]
@@ -352,16 +352,16 @@ function selectAllOptions(select){
   
             <td>
               [%- IF form_data.ref_species.size -%]
-                <select name="ref_species_aid" 
-                  onChange="window.document.ref_map_set_form.ref_map_set_aid.value='';">
+                <select name="ref_species_acc" 
+                  onChange="window.document.ref_map_set_form.ref_map_set_acc.value='';">
                 <option value="">--Select--</option>
                 [%- IF form_data.ref_species.size > 1; 
                   form_data.ref_species.unshift({ 
-                    species_aid => -1, 
+                    species_acc => -1, 
                     species_common_name => 'All Species' });
                 END -%]
                 [%- FOREACH s=form_data.ref_species -%]
-                  <option value="[% s.species_aid %]"[% IF s.species_aid==apr.param('ref_species_aid') OR form_data.ref_species.size==1; ' selected'; END %]>[% s.species_common_name %][% IF s.species_full_name %] ([% s.species_full_name %])[% END %]</option>
+                  <option value="[% s.species_acc %]"[% IF s.species_acc==apr.param('ref_species_acc') OR form_data.ref_species.size==1; ' selected'; END %]>[% s.species_common_name %][% IF s.species_full_name %] ([% s.species_full_name %])[% END %]</option>
                 [%- END -%]
                 </select>
               </td>
@@ -379,10 +379,10 @@ function selectAllOptions(select){
 
               <td>
                 [% SET last_map_type='' %]
-                <select name="ref_map_set_aid" >
+                <select name="ref_map_set_acc" >
                   <option value="">--Select--</option>
                   [%- FOREACH ms=form_data.ref_map_sets -%]
-                    <option [% IF apr.param('ref_map_set_aid') == ms.map_set_aid OR form_data.ref_map_sets.size==1; apr.param('ref_map_set_aid') = ms.map_set_aid; ' selected'; END %] value="[% ms.map_set_aid %]">
+                    <option [% IF apr.param('ref_map_set_acc') == ms.map_set_acc OR form_data.ref_map_sets.size==1; apr.param('ref_map_set_acc') = ms.map_set_acc; ' selected'; END %] value="[% ms.map_set_acc %]">
                       [% ms.map_type %] : [% ms.species_common_name %] - [% ms.map_set_name %]
                     </option>
                     [%- SET last_map_type=ms.map_type -%]
@@ -391,8 +391,8 @@ function selectAllOptions(select){
               </td>
               <td>
                 <input type="submit" value="Show Selected Set's Maps" name="sub">
-                <input type="hidden" name="prev_ref_species_aid" value="[% apr.param('ref_species_aid') %]">
-                <input type="hidden" name="prev_ref_map_set_aid" value="[% apr.param('ref_map_set_aid') %]">
+                <input type="hidden" name="prev_ref_species_acc" value="[% apr.param('ref_species_acc') %]">
+                <input type="hidden" name="prev_ref_map_set_acc" value="[% apr.param('ref_map_set_acc') %]">
                 <input type="hidden" name="highlight"      value="[% apr.param('highlight') %]">
                 <input type="hidden" name="image_size"       value="[% apr.param('image_size') %]">
                 <input type="hidden" name="image_type"       value="[% apr.param('image_type') %]">
@@ -402,7 +402,7 @@ function selectAllOptions(select){
           [% END %]
           </form>
           [% IF form_data.ref_maps %]
-            [% form_data.ref_maps.unshift({map_aid=>'-1',map_name=>'--All--'}) %]
+            [% form_data.ref_maps.unshift({map_acc=>'-1',map_name=>'--All--'}) %]
             <form name="ref_map_form">
               <input type="hidden" name="refMenu" id="refMenu" value="[% apr.param('refMenu') %]">
               <input type="hidden" name="compMenu" id="compMenu" value="[% apr.param('compMenu') %]">
@@ -412,16 +412,16 @@ function selectAllOptions(select){
                 <td valign="top" align="right">Ref. Map:</td>
       
                 <td valign="top">
-                  <select name="ref_map_aids" size="14" multiple
-                    [% IF apr.param('ref_map_aids') %]
-                      onchange="javascript:if(document.ref_map_form.ref_map_aids.value!=document.ref_map_form.prev_ref_map_aids.value){document.comparative_map_form.start.value='';document.comparative_map_form.end.value='';}">
+                  <select name="ref_map_accs" size="14" multiple
+                    [% IF apr.param('ref_map_accs') %]
+                      onchange="javascript:if(document.ref_map_form.ref_map_accs.value!=document.ref_map_form.prev_ref_map_accs.value){document.comparative_map_form.start.value='';document.comparative_map_form.end.value='';}">
                     [% ELSE %]
                         >
                     [% END %]
     
                     [% IF form_data.ref_maps.size %]
                       [% FOREACH m=form_data.ref_maps %]
-                        <option[% IF selected_maps.${m.map_aid} OR form_data.ref_maps.size==1; ' selected'; END %] value="[% m.map_aid %]">[% m.map_name %]</option>
+                        <option[% IF selected_maps.${m.map_acc} OR form_data.ref_maps.size==1; ' selected'; END %] value="[% m.map_acc %]">[% m.map_name %]</option>
                       [% END %]
                     [% ELSE %]
                       <option value="">--No Maps Available--</option>
@@ -431,10 +431,10 @@ function selectAllOptions(select){
                   <input type="submit" value="Change Maps" name="sub">
                 </td>
     
-                  <input type="hidden" name="prev_ref_species_aid" value="[% apr.param('ref_species_aid') %]">
-                  <input type="hidden" name="prev_ref_map_aids" value="[% apr.param('ref_map_aids') %]">
-                  <input type="hidden" name="ref_map_set_aid"  value="[% apr.param('ref_map_set_aid') %]">
-                  <input type="hidden" name="ref_species_aid"  value="[% apr.param('ref_species_aid') %]">
+                  <input type="hidden" name="prev_ref_species_acc" value="[% apr.param('ref_species_acc') %]">
+                  <input type="hidden" name="prev_ref_map_accs" value="[% apr.param('ref_map_accs') %]">
+                  <input type="hidden" name="ref_map_set_acc"  value="[% apr.param('ref_map_set_acc') %]">
+                  <input type="hidden" name="ref_species_acc"  value="[% apr.param('ref_species_acc') %]">
                   <input type="hidden" name="data_source"      value="[% data_source %]">
                   [% IF apr.param('comparative_map_field1') %]
                     <input type="hidden" name="comparative_map1" value="[% apr.param('comparative_map_field1') %]=[% apr.param('comparative_map_value1') %]">
@@ -449,7 +449,7 @@ function selectAllOptions(select){
       </div>
     </td>
   </tr>
-  [% IF apr.param('ref_map_aids') #OR form_data.ref_maps  %]
+  [% IF apr.param('ref_map_accs') #OR form_data.ref_maps  %]
     <form name="comparative_map_form" onSubmit="beforeSubmit()">
       <tr>
         <td align=left valign=top>
@@ -496,9 +496,9 @@ function selectAllOptions(select){
                   [% FOREACH map=form_data.map_info %]
                     [% SET cmaps=[] %]
                     [% FOREACH cmap=map.cmaps %]
-                      [% cmaps.push( "${cmap.slot_no}%3d${cmap.field}%3d${cmap.aid}" ) %]
+                      [% cmaps.push( "${cmap.slot_no}%3d${cmap.field}%3d${cmap.acc}" ) %]
                     [% END %]
-                    [% map.description %][% IF map.is_reference_map %]&nbsp;(Ref.)[% ELSE %]&nbsp;[&nbsp;<a href="viewer?ref_map_set_aid=[% apr.param('ref_map_set_aid') %];ref_map_aids=[% apr.param('ref_map_aids') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% cmaps.join('%3a') %];include_feature_types=[% feature_types %];included_evidence_types=[% evidence_types %];collapse_features=[% apr.param('collapse_features') %];image_type=[% apr.param('image_type') %];min_correspondences=[% apr.param('min_correspondences') %]">Delete</a>&nbsp;]&nbsp;[% END %]<br>
+                    [% map.description %][% IF map.is_reference_map %]&nbsp;(Ref.)[% ELSE %]&nbsp;[&nbsp;<a href="viewer?ref_map_set_acc=[% apr.param('ref_map_set_acc') %];ref_map_accs=[% apr.param('ref_map_accs') %];ref_map_start=[% apr.param('ref_map_start') %];ref_map_stop=[% apr.param('ref_map_stop') %];comparative_maps=[% cmaps.join('%3a') %];include_feature_types=[% feature_types %];included_evidence_types=[% evidence_types %];collapse_features=[% apr.param('collapse_features') %];image_type=[% apr.param('image_type') %];min_correspondences=[% apr.param('min_correspondences') %]">Delete</a>&nbsp;]&nbsp;[% END %]<br>
                   [% END %]
                 </td>
               </tr>
@@ -580,15 +580,15 @@ function selectAllOptions(select){
                     </tr>
                     [% FOREACH ft=form_data.feature_types %]
                       <tr>
-                        <td><a href="feature_type_info?feature_type_aid=[% ft.feature_type_aid %]">[% ft.feature_type %]</a></td>
+                        <td><a href="feature_type_info?feature_type_acc=[% ft.feature_type_acc %]">[% ft.feature_type %]</a></td>
                         <td>
-                          <input type="radio" name="ft_[% ft.feature_type_aid %]" value="0" [% IF (ignored_feature_types.${ft.feature_type_aid} OR (feature_default_display=='ignore' AND NOT included_features.${ft.feature_type_aid} AND NOT corr_only_feature_types.${ft.feature_type_aid})) ; ' checked'; END %]>
+                          <input type="radio" name="ft_[% ft.feature_type_acc %]" value="0" [% IF (ignored_feature_types.${ft.feature_type_acc} OR (feature_default_display=='ignore' AND NOT included_features.${ft.feature_type_acc} AND NOT corr_only_feature_types.${ft.feature_type_acc})) ; ' checked'; END %]>
                         </td>
                         <td>
-                          <input type="radio" name="ft_[% ft.feature_type_aid %]" value="1" [% IF (corr_only_feature_types.${ft.feature_type_aid} OR (feature_default_display=='corr_only' AND NOT included_features.${ft.feature_type_aid} AND NOT ignored_feature_types.${ft.feature_type_aid})); ' checked'; END %]>
+                          <input type="radio" name="ft_[% ft.feature_type_acc %]" value="1" [% IF (corr_only_feature_types.${ft.feature_type_acc} OR (feature_default_display=='corr_only' AND NOT included_features.${ft.feature_type_acc} AND NOT ignored_feature_types.${ft.feature_type_acc})); ' checked'; END %]>
                         </td>
                         <td>
-                          <input type="radio" name="ft_[% ft.feature_type_aid %]" value="2" [% IF (included_features.${ft.feature_type_aid} OR (feature_default_display=='display' AND NOT corr_only_feature_types.${ft.feature_type_aid} AND NOT ignored_feature_types.${ft.feature_type_aid})); ' checked'; END %]>
+                          <input type="radio" name="ft_[% ft.feature_type_acc %]" value="2" [% IF (included_features.${ft.feature_type_acc} OR (feature_default_display=='display' AND NOT corr_only_feature_types.${ft.feature_type_acc} AND NOT ignored_feature_types.${ft.feature_type_acc})); ' checked'; END %]>
                         </td>
                       </tr>
                     [% END %]
@@ -618,21 +618,21 @@ function selectAllOptions(select){
                       </tr>
                       [% FOREACH et=form_data.evidence_types %]
                         <tr>
-                          <td><a href="evidence_type_info?evidence_type_aid=[% et.evidence_type_aid %]">[% et.evidence_type %]</a></td>
+                          <td><a href="evidence_type_info?evidence_type_acc=[% et.evidence_type_acc %]">[% et.evidence_type %]</a></td>
                         <td>
-                          <input type="radio" name="evidence_type_[% et.evidence_type_aid %]" value="0" [% IF evidence_type_menu_select.${et.evidence_type_aid}==0; ' checked'; END %]>
+                          <input type="radio" name="evidence_type_[% et.evidence_type_acc %]" value="0" [% IF evidence_type_menu_select.${et.evidence_type_acc}==0; ' checked'; END %]>
                         </td>
                         <td>
-                          <input type="radio" name="evidence_type_[% et.evidence_type_aid %]" value="1" [% IF NOT evidence_type_menu_select.${et.evidence_type_aid}.defined or evidence_type_menu_select.${et.evidence_type_aid}==1; ' checked'; END %]>
+                          <input type="radio" name="evidence_type_[% et.evidence_type_acc %]" value="1" [% IF NOT evidence_type_menu_select.${et.evidence_type_acc}.defined or evidence_type_menu_select.${et.evidence_type_acc}==1; ' checked'; END %]>
                         </td>
                         <td>
-                          <input type="radio" name="evidence_type_[% et.evidence_type_aid %]" value="2" [% IF evidence_type_menu_select.${et.evidence_type_aid}==2; ' checked'; END %]>
+                          <input type="radio" name="evidence_type_[% et.evidence_type_acc %]" value="2" [% IF evidence_type_menu_select.${et.evidence_type_acc}==2; ' checked'; END %]>
                         </td>
                         <td>
-                          <input type="radio" name="evidence_type_[% et.evidence_type_aid %]" value="3" [% IF evidence_type_menu_select.${et.evidence_type_aid}==3; ' checked'; END %]>
+                          <input type="radio" name="evidence_type_[% et.evidence_type_acc %]" value="3" [% IF evidence_type_menu_select.${et.evidence_type_acc}==3; ' checked'; END %]>
                         </td>
                         <td>
-                            <input name="ets_[% et.evidence_type_aid %]" value="[% IF evidence_type_score.${et.evidence_type_aid}; evidence_type_score.${et.evidence_type_aid}; ELSE; '0'; END  %]"> </td>
+                            <input name="ets_[% et.evidence_type_acc %]" value="[% IF evidence_type_score.${et.evidence_type_acc}; evidence_type_score.${et.evidence_type_acc}; ELSE; '0'; END  %]"> </td>
                         </td>
                       </tr>
                     [% END %]
@@ -730,7 +730,7 @@ function selectAllOptions(select){
                         <td>
                           <select name="ori_ref_map_order" multiple size=5>
                           [%- FOREACH map=form_data.ordered_ref_maps -%]
-                            <option value='[% map.map_aid %]'>[% map.map_name %]</option>
+                            <option value='[% map.map_acc %]'>[% map.map_name %]</option>
                           [%- END -%]
                           </select>
                         </td>
@@ -875,10 +875,10 @@ function selectAllOptions(select){
               </tr>
               <tr>
                 <td colspan="4" align="center">
-                  <input type="hidden" name="ref_map_set_aid" value="[% apr.param('ref_map_set_aid') %]">
-                  <input type="hidden" name="ref_map_aids"   value="[% apr.param('ref_map_aids').join(',') %]">
+                  <input type="hidden" name="ref_map_set_acc" value="[% apr.param('ref_map_set_acc') %]">
+                  <input type="hidden" name="ref_map_accs"   value="[% apr.param('ref_map_accs').join(',') %]">
                   <input type="hidden" name="modified_ref_map"   value="">
-                  <input type="hidden" name="ref_species_aid"  value="[% apr.param('ref_species_aid') %]">
+                  <input type="hidden" name="ref_species_acc"  value="[% apr.param('ref_species_acc') %]">
                   <input type="hidden" name="comparative_maps" value="[% comparative_maps %]">
                   <input type="hidden" name="modified_comp_map"   value="">
                   <input type="hidden" name="flip"      value="[% apr.param('flip') %]">
@@ -931,7 +931,7 @@ function selectAllOptions(select){
       <td>
         [% form_data.ref_map_set_info.map_set_name %]
         ([% form_data.ref_map_set_info.map_set_short_name %])
-        <b>[</b>&nbsp;<a href="map_set_info?map_set_aid=[% form_data.ref_map_set_info.map_set_aid %]">View More Info</a>&nbsp;<b>]</b>
+        <b>[</b>&nbsp;<a href="map_set_info?map_set_acc=[% form_data.ref_map_set_info.map_set_acc %]">View More Info</a>&nbsp;<b>]</b>
       </td>
     </tr>
     <tr>
@@ -939,7 +939,7 @@ function selectAllOptions(select){
       <td>
         [% form_data.ref_map_set_info.species_common_name %]
         ([% form_data.ref_map_set_info.species_full_name %])
-        <b>[</b>&nbsp;<a href="species_info?species_aid=[% form_data.ref_map_set_info.species_aid %]">View More Info</a>&nbsp;<b>]</b>
+        <b>[</b>&nbsp;<a href="species_info?species_acc=[% form_data.ref_map_set_info.species_acc %]">View More Info</a>&nbsp;<b>]</b>
       </td>
     </tr>
     <tr>
@@ -947,7 +947,7 @@ function selectAllOptions(select){
       <td>
         [% form_data.ref_map_set_info.map_type %]
         ([% form_data.ref_map_set_info.map_units %])
-        <b>[</b>&nbsp;<a href="map_type_info?map_type_aid=[% form_data.ref_map_set_info.map_type_aid %]">View More Info</a>&nbsp;<b>]</b>
+        <b>[</b>&nbsp;<a href="map_type_info?map_type_acc=[% form_data.ref_map_set_info.map_type_acc %]">View More Info</a>&nbsp;<b>]</b>
       </td>
     </tr>
     [% FOREACH att=form_data.ref_map_set_info.attributes %]
@@ -980,7 +980,7 @@ function selectAllOptions(select){
   </table>
 [% END %]
 
-[% UNLESS apr.param('ref_map_aids') OR form_data.ref_map_set_info %]
+[% UNLESS apr.param('ref_map_accs') OR form_data.ref_map_set_info %]
   [% INCLUDE help_quick_start.tmpl %]
 [% END %]
 

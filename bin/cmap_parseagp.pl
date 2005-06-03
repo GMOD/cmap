@@ -42,7 +42,7 @@ my $main_output = IO::File->new("> ".$agp_file.".cmap")
     or die "Couldn't open $agp_file.cmap for writing: $!\n";
 
 ###Print lead line
-print $main_output "map_name\tfeature_name\tfeature_start\tfeature_stop\tfeature_type_accession\tfeature_direction\n";
+print $main_output "map_name\tfeature_name\tfeature_start\tfeature_stop\tfeature_type_acc\tfeature_direction\n";
 
 my $map_name_pos        = 0;
 my $start_pos           = 1;
@@ -56,7 +56,7 @@ my $N_gap_type_pos      = 6;
 my $component_stop_pos  = 7;
 my $N_linkage_pos       = 7;
 my $component_dir_pos   = 8;
-my $feature_type_aid;
+my $feature_type_acc;
 my $feature_name;
 my $feature_dir;
 my $line;
@@ -69,13 +69,13 @@ while(<FILE_IN>){
     @la=split(/\t/,$line);
     if ($la[$component_type_pos] eq 'N'){
         # This represents a gap
-        $feature_type_aid = ($la[$N_gap_type_pos] eq 'fragment')?
+        $feature_type_acc = ($la[$N_gap_type_pos] eq 'fragment')?
             "gap":  $la[$N_gap_type_pos]."_gap";
-        $feature_name = $feature_type_aid.":".$la[$start_pos]."-".$la[$stop_pos];
+        $feature_name = $feature_type_acc.":".$la[$start_pos]."-".$la[$stop_pos];
         $feature_dir  = 1;
     }
     else{
-        $feature_type_aid = 
+        $feature_type_acc = 
             ($la[$component_type_pos]=~/\s*F\s*/i)? 'finished_htg': 
             ($la[$component_type_pos]=~/\s*A\s*/i)? 'active_finishing': 
             ($la[$component_type_pos]=~/\s*D\s*/i)? 'draft_htg': 
@@ -84,7 +84,7 @@ while(<FILE_IN>){
             ($la[$component_type_pos]=~/\s*O\s*/i)? 'other_sequence': 
             ($la[$component_type_pos]=~/\s*W\s*/i)? 'wgs_contig': 
              '';
-        die "Component type: '$la[$component_type_pos]', not recognized\n" unless ($feature_type_aid);
+        die "Component type: '$la[$component_type_pos]', not recognized\n" unless ($feature_type_acc);
         $feature_name = $la[$component_id_pos];
         $feature_dir  = (!$la[$component_dir_pos] or $la[$component_dir_pos]=~/\+/) ? 1 : -1; 
     }
@@ -92,7 +92,7 @@ while(<FILE_IN>){
         . "$feature_name\t"
         . "$la[$start_pos]\t"
         . "$la[$stop_pos]\t"
-        . "$feature_type_aid\t"
+        . "$feature_type_acc\t"
         . "$feature_dir\n";
 }
 

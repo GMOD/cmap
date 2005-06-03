@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.158 2005-06-01 16:24:32 mwz444 Exp $
+# $Id: Map.pm,v 1.159 2005-06-03 22:20:01 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.158 $)[-1];
+$VERSION = (qw$Revision: 1.159 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -56,9 +56,9 @@ BEGIN {
     # Create automatic accessor methods.
     #
     my @AUTO_FIELDS = qw[
-      map_set_id map_set_aid map_type map_aid species_id
+      map_set_id map_set_acc map_type map_acc species_id
       map_id species_common_name map_units map_name map_set_name
-      map_type_id is_relational_map begin end species_aid map_type_aid
+      map_type_id is_relational_map begin end species_acc map_type_acc
     ];
 
     foreach my $sub_name (@AUTO_FIELDS) {
@@ -179,7 +179,7 @@ box.
     my ( $x1, $y1, $y2 ) = @{ $args{'coords'} || [] }
       or $self->error('No coordinates');
     my $map_id     = $args{'map_id'};
-    my $map_aid    = $self->map_aid($map_id);
+    my $map_acc    = $self->map_acc($map_id);
     my $is_flipped = $args{'is_flipped'};
     my $slot_no    = $args{'slot_no'};
     my $color      = $self->color($map_id);
@@ -203,7 +203,7 @@ box.
             drawing_data  => $drawing_data,
             is_flipped    => $is_flipped,
             map_id        => $map_id,
-            map_aid       => $map_aid,
+            map_acc       => $map_acc,
             slot_no       => $slot_no,
         );
     }
@@ -223,7 +223,7 @@ box.
             drawing_data  => $drawing_data,
             is_flipped    => $is_flipped,
             map_id        => $map_id,
-            map_aid       => $map_aid,
+            map_acc       => $map_acc,
             slot_no       => $slot_no,
         );
     }
@@ -269,7 +269,7 @@ bounds of the image.
     my $map_id     = $args{'map_id'};
     my $is_flipped = $args{'is_flipped'};
     my $slot_no    = $args{'slot_no'};
-    my $map_aid    = $self->map_aid($map_id);
+    my $map_acc    = $self->map_acc($map_id);
     my $color      = $self->color($map_id);
     my $width      = $self->map_width($map_id);
     my $x2         = $x1 + $width;
@@ -293,7 +293,7 @@ bounds of the image.
             drawing_data  => $drawing_data,
             is_flipped    => $is_flipped,
             map_id        => $map_id,
-            map_aid       => $map_aid,
+            map_acc       => $map_acc,
             slot_no       => $slot_no,
         );
     }
@@ -319,7 +319,7 @@ bounds of the image.
             drawing_data  => $drawing_data,
             is_flipped    => $is_flipped,
             map_id        => $map_id,
-            map_aid       => $map_aid,
+            map_acc       => $map_acc,
             slot_no       => $slot_no,
         );
     }
@@ -388,7 +388,7 @@ Draws the map as an "I-beam."  Return the bounds of the image.
     my $map_id     = $args{'map_id'};
     my $is_flipped = $args{'is_flipped'};
     my $slot_no    = $args{'slot_no'};
-    my $map_aid    = $self->map_aid($map_id);
+    my $map_acc    = $self->map_acc($map_id);
     my $color      = $self->color($map_id);
     my $width      = $self->map_width($map_id);
     my $x2         = $x1 + $width;
@@ -410,7 +410,7 @@ Draws the map as an "I-beam."  Return the bounds of the image.
             drawing_data  => $drawing_data,
             is_flipped    => $is_flipped,
             map_id        => $map_id,
-            map_aid       => $map_aid,
+            map_acc       => $map_acc,
             slot_no       => $slot_no,
         );
     }
@@ -433,7 +433,7 @@ Draws the map as an "I-beam."  Return the bounds of the image.
             drawing_data  => $drawing_data,
             is_flipped    => $is_flipped,
             map_id        => $map_id,
-            map_aid       => $map_aid,
+            map_acc       => $map_acc,
             slot_no       => $slot_no,
         );
     }
@@ -505,7 +505,7 @@ such as the units.
       : "''";
     my $x;
     my $code;
-    my $map_aid = $self->map_aid($map_id);
+    my $map_acc = $self->map_acc($map_id);
 
     unless ( $self->clean_view ) {
         ###Full size button if needed
@@ -517,7 +517,7 @@ such as the units.
             push @$drawing_data, [ STRING, $font, $x, $y, $full_str, 'grey' ];
             $code = qq[
                 onMouseOver="window.status='Make map original size';return true" 
-                onClick="mod_map_info($slot_no, '$map_aid', '', '',1);document.comparative_map_form.submit();"
+                onClick="mod_map_info($slot_no, '$map_acc', '', '',1);document.comparative_map_form.submit();"
                 ];
             push @$map_area_data,
               {
@@ -559,7 +559,7 @@ such as the units.
         push @$drawing_data, [ STRING, $font, $x, $y, $mag_minus_str, 'grey' ];
         $code = qq[
             onMouseOver="window.status='Magnify by $mag_minus_val times original size';return true" 
-            onClick="mod_map_info($slot_no,'$map_aid',$start_pos, $stop_pos,$mag_minus_val);document.comparative_map_form.submit();"
+            onClick="mod_map_info($slot_no,'$map_acc',$start_pos, $stop_pos,$mag_minus_val);document.comparative_map_form.submit();"
             ];
         push @$map_area_data,
           {
@@ -600,7 +600,7 @@ such as the units.
         push @$drawing_data, [ STRING, $font, $x, $y, $mag_plus_str, 'grey' ];
         $code = qq[
             onMouseOver="window.status='Magnify by $mag_plus_val times original size';return true" 
-            onClick="mod_map_info($slot_no,'$map_aid',$start_pos,$stop_pos,$mag_plus_val);document.comparative_map_form.submit();"
+            onClick="mod_map_info($slot_no,'$map_acc',$start_pos,$stop_pos,$mag_plus_val);document.comparative_map_form.submit();"
             ];
         push @$map_area_data,
           {
@@ -661,7 +661,7 @@ Draws the truncation arrows
     my $drawing_data  = $args{'drawing_data'};
     my $is_flipped    = $args{'is_flipped'};
     my $map_id        = $args{'map_id'};
-    my $map_aid       = $args{'map_aid'};
+    my $map_acc       = $args{'map_acc'};
     my $slot_no       = $args{'slot_no'};
 
     my $trunc_color      = 'grey';
@@ -732,7 +732,7 @@ Draws the truncation arrows
             'UP' );
         my $code = qq[ 
             onMouseOver="window.status='Scroll up';return true" 
-            onClick="mod_map_info($slot_no, '$map_aid', $scroll_start,$scroll_stop,$scroll_mag);
+            onClick="mod_map_info($slot_no, '$map_acc', $scroll_start,$scroll_stop,$scroll_mag);
             document.comparative_map_form.submit();"
             ];
         push @$map_area_data,
@@ -803,7 +803,7 @@ Draws the truncation arrows
             'DOWN' );
         my $code = qq[ 
             onMouseOver="window.status='Scroll down';return true" 
-            onClick="mod_map_info($slot_no, '$map_aid', $scroll_start,$scroll_stop,$scroll_mag);
+            onClick="mod_map_info($slot_no, '$map_acc', $scroll_start,$scroll_stop,$scroll_mag);
             document.comparative_map_form.submit();"
             ];
         push @$map_area_data,
@@ -969,6 +969,7 @@ a hashref keyed on feature_id.
     my $self   = shift;
     my $map_id = shift or return;
     my $map    = $self->map($map_id);
+print STDERR "FEATURES\n";
 
     unless ( defined $map->{'feature_store'} ) {
         for my $data (
@@ -995,6 +996,7 @@ a hashref keyed on feature_id.
         }
     }
 
+print STDERR Dumper($map->{'feature_store'})."\n";
     return $map->{'feature_store'};
 }
 
@@ -1102,8 +1104,8 @@ Variable Info:
         $slot_min_x,           # easternmost coord for the slot
         $slot_max_x,           # westernmost coord for the slot
         @map_titles,           # the titles to put above - for relational maps
-        $map_set_aid,          # the map set acc. ID - for relational maps
-        %feature_type_aids,    # the distinct feature type IDs
+        $map_set_acc,          # the map set acc. ID - for relational maps
+        %feature_type_accs,    # the distinct feature type IDs
     );
 
     #
@@ -1163,7 +1165,7 @@ Variable Info:
         #
         for my $rec ( @{ $drawer->flip } ) {
             if (    $rec->{'slot_no'} == $slot_no
-                and $rec->{'map_aid'} eq $self->map_aid($map_id) )
+                and $rec->{'map_acc'} eq $self->map_acc($map_id) )
             {
                 $is_flipped = 1;
                 $flipped_maps{$map_id} = 1;
@@ -1349,7 +1351,7 @@ Variable Info:
                     leftmostf         => $leftmostf,
                     rightmostf        => $rightmostf,
                     drawn_glyphs      => \%drawn_glyphs,
-                    feature_type_aids => \%feature_type_aids,
+                    feature_type_accs => \%feature_type_accs,
                   );
                 $self->collect_labels_to_display(
                     even_labels        => \%even_labels,
@@ -1363,7 +1365,7 @@ Variable Info:
                     color              => $color,
                     midpoint           => $midpoint,
                     label_y            => $label_y,
-                    feature_type_aids  => \%feature_type_aids,
+                    feature_type_accs  => \%feature_type_accs,
                     features_with_corr => \%features_with_corr,
                     map_base_y => $map_placement_data{$map_id}{'map_coords'}[1],
                 );
@@ -1431,7 +1433,7 @@ Variable Info:
                   grep { !/map_name/ }
                   reverse @config_map_titles;
             }
-            $map_set_aid = $self->map_set_aid($map_id);
+            $map_set_acc = $self->map_set_acc($map_id);
         }
         else {
             my @lines =
@@ -1606,7 +1608,7 @@ Variable Info:
                 my $map_coords = $map_placement_data{$map_id}{'map_coords'};
                 my $line_color = $drawer->aggregated_line_color(
                     corr_no           => $ref_connect->[2],
-                    evidence_type_aid => $ref_connect->[4],
+                    evidence_type_acc => $ref_connect->[4],
                 );
 
                 my $this_map_x =
@@ -1663,7 +1665,7 @@ Variable Info:
                 next unless defined($all_corrs);
                 my $drawing_offset = 0;
                 foreach my $corr (@$all_corrs) {
-                    my $evidence_type_aid = $corrs->{'evidence_type_aid'};
+                    my $evidence_type_acc = $corrs->{'evidence_type_acc'};
 
                     #
                     # Get the information about the map placement.
@@ -1794,7 +1796,7 @@ Variable Info:
                       : $map2_x + ( $line_cushion * 3 );
                     my $line_color = $drawer->aggregated_line_color(
                         corr_no           => $corr->{'no_corr'},
-                        evidence_type_aid => $evidence_type_aid,
+                        evidence_type_acc => $evidence_type_acc,
                     );
 
                     # add aggregate correspondences to ref_connections
@@ -1910,7 +1912,7 @@ Variable Info:
     #
     # Register the feature types we saw.
     #
-    $drawer->register_feature_type( keys %feature_type_aids );
+    $drawer->register_feature_type( keys %feature_type_accs );
 
     #
     # Background color
@@ -2037,7 +2039,7 @@ sub place_map_y {
             next unless defined($all_ref_corrs);
             my $drawing_offset = 0;
             foreach my $ref_corr (@$all_ref_corrs) {
-                my $evidence_type_aid = $ref_corr->{'evidence_type_aid'};
+                my $evidence_type_acc = $ref_corr->{'evidence_type_acc'};
 
                 #
                 # Get the information about the reference map.
@@ -2114,7 +2116,7 @@ sub place_map_y {
                         $ref_map_mid_y,
                         $ref_corr->{'no_corr'},
                         ( $avg_mid - $self->map_start($map_id) ),
-                        $evidence_type_aid,
+                        $evidence_type_acc,
                       ];
                 }
                 else {
@@ -2278,7 +2280,7 @@ sub offset_drawing_data {
 
 Add the topper to the map.
 
-The toppers are laid down starting from the top.  The map coords and the bottom
+The toppers are lacc down starting from the top.  The map coords and the bottom
 boundary are moved down at the end based on the height of the toppers.
 
 =cut
@@ -2344,7 +2346,7 @@ sub add_topper {
         my $url  = $buttons->[0]{'url'};
         my $alt  = $buttons->[0]{'alt'};
         my $code = '';
-        eval $self->map_type_data( $map->{'map_type_aid'}, 'area_code' );
+        eval $self->map_type_data( $map->{'map_type_acc'}, 'area_code' );
         push @{ $map_area_data->{$map_id} },
           {
             coords => \@topper_bounds,
@@ -2551,7 +2553,7 @@ sub add_tick_marks {
     my $actual_map_length = $args{'actual_map_length'};
     my $map_length        = $args{'map_length'};
     my $map_width         = $self->map_width($map_id);
-    my $map_aid           = $self->map_aid($map_id);
+    my $map_acc           = $self->map_acc($map_id);
 
     my $label_side = $drawer->label_side($slot_no);
     my $reg_font   = $drawer->regular_font
@@ -2731,11 +2733,11 @@ sub add_tick_marks {
 
             my $down_code = qq[ 
                 onMouseOver="window.status='crop down';return true" 
-                onClick="mod_map_info($slot_no, '$map_aid', $down_start_pos, $down_stop_pos,$magnification);document.comparative_map_form.submit();"
+                onClick="mod_map_info($slot_no, '$map_acc', $down_start_pos, $down_stop_pos,$magnification);document.comparative_map_form.submit();"
                 ];
             my $up_code = qq[
                 onMouseOver="window.status='crop up';return true" 
-                onClick="mod_map_info($slot_no, '$map_aid', $up_start_pos, $up_stop_pos,$magnification);document.comparative_map_form.submit();"
+                onClick="mod_map_info($slot_no, '$map_acc', $up_start_pos, $up_stop_pos,$magnification);document.comparative_map_form.submit();"
                 ];
             push @$map_area_data,
               {
@@ -2800,7 +2802,7 @@ sub add_feature_to_map {
     my $rightmostf        = $args{'rightmostf'};
     my $leftmostf         = $args{'leftmostf'};
     my $fcolumns          = $args{'fcolumns'};
-    my $feature_type_aids = $args{'feature_type_aids'};
+    my $feature_type_accs = $args{'feature_type_accs'};
     my $drawn_glyphs      = $args{'drawn_glyphs'};
 
     my $map_width = $self->map_width($map_id);
@@ -2908,7 +2910,7 @@ sub add_feature_to_map {
             my $column_index;
             if (
                 not $self->feature_type_data(
-                    $feature->{'feature_type_aid'},
+                    $feature->{'feature_type_acc'},
                     'glyph_overlap'
                 )
               )
@@ -2974,12 +2976,12 @@ sub add_feature_to_map {
             }
             else {
                 my $code = '';
-                my $url  = $feature_details_url . $feature->{'feature_aid'};
+                my $url  = $feature_details_url . $feature->{'feature_acc'};
                 my $alt  =
                     'Feature Details: '
                   . $feature->{'feature_name'} . ' ['
-                  . $feature->{'feature_aid'} . ']';
-                eval $self->feature_type_data( $feature->{'feature_type_aid'},
+                  . $feature->{'feature_acc'} . ']';
+                eval $self->feature_type_data( $feature->{'feature_type_acc'},
                     'area_code' );
                 push @$map_area_data,
                   {
@@ -2997,7 +2999,7 @@ sub add_feature_to_map {
         #
         # Register that we saw this type of feature.
         #
-        $feature_type_aids->{ $feature->{'feature_type_aid'} } = 1;
+        $feature_type_accs->{ $feature->{'feature_type_acc'} } = 1;
 
         ####
         my ( $left_side, $right_side );
@@ -3040,7 +3042,7 @@ sub collect_labels_to_display {
     my $slot_no            = $args{'slot_no'};
     my $show_labels        = $args{'show_labels'};
     my $midpoint           = $args{'midpoint'};
-    my $feature_type_aids  = $args{'feature_type_aids'};
+    my $feature_type_accs  = $args{'feature_type_accs'};
     my $features_with_corr = $args{'features_with_corr'};
     my $map_base_y         = $args{'map_base_y'},
 
@@ -3051,7 +3053,7 @@ sub collect_labels_to_display {
     my $is_highlighted = $drawer->highlight_feature(
         $feature->{'feature_name'},
         @{ $feature->{'aliases'} || [] },
-        $feature->{'feature_aid'},
+        $feature->{'feature_acc'},
     );
 
     if ($has_corr) {
@@ -3080,12 +3082,12 @@ sub collect_labels_to_display {
     {
 
         my $code = '';
-        my $url  = $feature_details_url . $feature->{'feature_aid'};
+        my $url  = $feature_details_url . $feature->{'feature_acc'};
         my $alt  =
             'Feature Details: '
           . $feature->{'feature_name'} . ' ['
-          . $feature->{'feature_aid'} . ']';
-        eval $self->feature_type_data( $feature->{'feature_type_aid'},
+          . $feature->{'feature_acc'} . ']';
+        eval $self->feature_type_data( $feature->{'feature_type_acc'},
             'area_code' );
         my $even_label_key =
             $is_highlighted ? 'highlights'
@@ -3582,7 +3584,7 @@ Button options:
     #
 
     my $ref_map           = $slots->{0} or next;
-    my $ref_map_aids_hash = $ref_map->{'maps'};
+    my $ref_map_accs_hash = $ref_map->{'maps'};
 
     #
     # Map Set Info
@@ -3591,8 +3593,8 @@ Button options:
         @map_buttons = (
             {
                 url => $map_set_info_url
-                  . '?map_set_aid='
-                  . $self->map_set_aid($map_id)
+                  . '?map_set_acc='
+                  . $self->map_set_acc($map_id)
                   . ';data_source='
                   . $drawer->data_source,
                 alt   => 'Map Set Info',
@@ -3615,7 +3617,7 @@ Button options:
         }
 
         unless (%this_map_info) {
-            $this_map_info{ $self->map_aid($map_id) } = {
+            $this_map_info{ $self->map_acc($map_id) } = {
                 start => $self->map_start($map_id),
                 stop  => $self->map_stop($map_id),
                 mag => $drawer->data_module->magnification( $slot_no, $map_id ),
@@ -3624,8 +3626,8 @@ Button options:
 
         my $details_url = $self->create_viewer_link(
             $drawer->create_link_params(
-                ref_map_set_aid  => $self->map_set_aid($map_id),
-                ref_map_aids     => \%this_map_info,
+                ref_map_set_acc  => $self->map_set_acc($map_id),
+                ref_map_accs     => \%this_map_info,
                 ref_map_order    => '',
                 comparative_maps => \%detail_maps,
                 url              => $map_details_url,
@@ -3649,8 +3651,8 @@ Button options:
           {
             label => 'M',
             url   => 'matrix?&show_matrix=1'
-              . '&link_map_set_aid='
-              . $self->map_set_aid($map_id),
+              . '&link_map_set_acc='
+              . $self->map_set_acc($map_id),
             alt => 'View In Matrix'
           };
     }
@@ -3658,12 +3660,12 @@ Button options:
         push @map_buttons,
           {
             label => 'M',
-            url   => 'matrix?map_type_aid='
-              . $self->map_type_aid($map_id)
-              . '&species_aid='
-              . $self->species_aid($map_id)
-              . '&map_set_aid='
-              . $self->map_set_aid($map_id)
+            url   => 'matrix?map_type_acc='
+              . $self->map_type_acc($map_id)
+              . '&species_acc='
+              . $self->species_acc($map_id)
+              . '&map_set_acc='
+              . $self->map_set_acc($map_id)
               . '&map_name='
               . $self->map_name($map_id)
               . '&show_matrix=1',
@@ -3693,8 +3695,8 @@ Button options:
             }
             my $delete_url = $self->create_viewer_link(
                 $drawer->create_link_params(
-                    ref_map_set_aid  => $slots->{'0'}{'map_set_aid'},
-                    ref_map_aids     => $ref_map_aids_hash,
+                    ref_map_set_acc  => $slots->{'0'}{'map_set_acc'},
+                    ref_map_accs     => $ref_map_accs_hash,
                     comparative_maps => \%delete_comparative_map_hash,
                     url              => $map_viewer_url,
                 )
@@ -3714,13 +3716,13 @@ Button options:
     #
     if ( $requested_buttons{'flip'} ) {
         my @flipping_flips;
-        my $acc_id = $self->map_aid($map_id);
+        my $acc_id = $self->map_acc($map_id);
         for my $rec ( @{ $drawer->flip } ) {
             unless ( $rec->{'slot_no'} == $slot_no
-                && $rec->{'map_aid'} eq $acc_id )
+                && $rec->{'map_acc'} eq $acc_id )
             {
                 push @flipping_flips,
-                  $rec->{'slot_no'} . '%3d' . $rec->{'map_aid'};
+                  $rec->{'slot_no'} . '%3d' . $rec->{'map_acc'};
             }
         }
         push @flipping_flips, "$slot_no%3d$acc_id" unless $is_flipped;
@@ -3734,8 +3736,8 @@ Button options:
 
         my $flip_url = $self->create_viewer_link(
             $drawer->create_link_params(
-                ref_map_set_aid  => $slots->{'0'}{'map_set_aid'},
-                ref_map_aids     => $ref_map_aids_hash,
+                ref_map_set_acc  => $slots->{'0'}{'map_set_acc'},
+                ref_map_accs     => $ref_map_accs_hash,
                 comparative_maps => \%flip_comparative_map_hash,
                 flip             => $flipping_flip_str,
                 url              => $map_viewer_url,
@@ -3761,7 +3763,7 @@ Button options:
     #
     if ( $requested_buttons{'new_view'} ) {
         unless (%this_map_info) {
-            $this_map_info{ $self->map_aid($map_id) } = {
+            $this_map_info{ $self->map_acc($map_id) } = {
                 start => $self->map_start($map_id),
                 stop  => $self->map_stop($map_id),
                 mag => $drawer->data_module->magnification( $slot_no, $map_id ),
@@ -3769,8 +3771,8 @@ Button options:
         }
         my $new_url = $self->create_viewer_link(
             $drawer->create_link_params(
-                ref_map_set_aid => $self->map_set_aid($map_id),
-                ref_map_aids    => \%this_map_info,
+                ref_map_set_acc => $self->map_set_acc($map_id),
+                ref_map_accs    => \%this_map_info,
                 ref_map_order   => '',
                 url             => $map_viewer_url,
             )

@@ -21,7 +21,7 @@
             Acc ID:
         </th>
         <td>
-            [% feature.feature_aid %]
+            [% feature.feature_acc %]
         </td>
     </tr>
 
@@ -165,7 +165,7 @@
         [% SET i=0 %]
         [% FOREACH fc=feature.correspondences %]
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
-                <td>[% fc.feature_correspondence_aid %]</td>
+                <td>[% fc.feature_correspondence_acc %]</td>
                 <td>
                     <a href="admin?action=map_view;map_id=[% fc.map_id2 %]">[% fc.species_common_name2 %]-[% fc.map_set_short_name2 %]-[% fc.map_name2 %]</a>
                 </td>
@@ -182,7 +182,7 @@
                     <a href="admin?action=feature_corr_edit;feature_correspondence_id=[% fc.feature_correspondence_id %]">Edit</a>
                 </td>
                 <td align="center">
-                    <a href="admin?action=confirm_delete;entity_type=feature_correspondence;entity_name_field=feature_correspondence_aid;entity_id=[% fc.feature_correspondence_id %]">Delete</a>
+                    <a href="admin?action=confirm_delete;entity_type=feature_correspondence;entity_name_field=feature_correspondence_acc;entity_id=[% fc.feature_correspondence_id %]">Delete</a>
                 </td>
             </tr>
             [% SET i=i+1 %]

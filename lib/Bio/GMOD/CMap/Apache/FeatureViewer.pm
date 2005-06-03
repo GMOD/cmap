@@ -1,11 +1,12 @@
 package Bio::GMOD::CMap::Apache::FeatureViewer;
+
 # vim: set ft=perl:
 
-# $Id: FeatureViewer.pm,v 1.12 2005-03-04 20:52:23 mwz444 Exp $
+# $Id: FeatureViewer.pm,v 1.13 2005-06-03 22:20:00 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.12 $)[-1];
+$VERSION = (qw$Revision: 1.13 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Data;
@@ -14,16 +15,17 @@ use base 'Bio::GMOD::CMap::Apache';
 use constant TEMPLATE => 'feature_detail.tmpl';
 
 sub handler {
+
     #
     # Make a jazz noise here...
     #
     my ( $self, $apr ) = @_;
-    my $feature_aid    = $apr->param('feature_aid') or die 'No accession id';
+    my $feature_acc = $apr->param('feature_acc') or die 'No accession id';
 
     $self->data_source( $apr->param('data_source') ) or return;
-    my $data           = $self->data_module;
-    my $feature        = $data->feature_detail_data(feature_aid=>$feature_aid)
-        or return $self->error( $data->error );
+    my $data = $self->data_module;
+    my $feature = $data->feature_detail_data( feature_acc => $feature_acc )
+      or return $self->error( $data->error );
 
     $self->object_plugin( 'feature', $feature );
 
@@ -32,16 +34,17 @@ sub handler {
     #
     my $t = $self->template or return;
     my $html;
-    $t->process( 
-        TEMPLATE, 
-        { 
+    $t->process(
+        TEMPLATE,
+        {
             apr        => $self->apr,
             feature    => $feature,
             page       => $self->page,
             stylesheet => $self->stylesheet,
-        }, 
-        \$html 
-    ) or return $self->error( $t->error );
+        },
+        \$html
+      )
+      or return $self->error( $t->error );
 
     print $apr->header( -type => 'text/html', -cookie => $self->cookie ), $html;
     return 1;
@@ -91,3 +94,4 @@ This library is free software;  you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 =cut
+
