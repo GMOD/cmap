@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.238 2005-06-03 22:19:50 mwz444 Exp $
+# $Id: Data.pm,v 1.239 2005-06-07 19:34:13 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.238 $)[-1];
+$VERSION = (qw$Revision: 1.239 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -1800,7 +1800,7 @@ Given a feature acc. id, find out all the details on it.
     # REPLACE 67 FCS YYY
     my $correspondences = $sql_object->get_feature_correspondence_details(
         cmap_object             => $self,
-        feature_id              => $feature->{'feature_id'},
+        feature_id1              => $feature->{'feature_id'},
         disregard_evidence_type => 1,
     );
 
