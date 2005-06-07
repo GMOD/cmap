@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.52 2005-06-03 22:19:59 mwz444 Exp $
+# $Id: MakeCorrespondences.pm,v 1.53 2005-06-07 19:33:20 mwz444 Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.52 $)[-1];
+$VERSION = (qw$Revision: 1.53 $)[-1];
 
 use Bio::GMOD::CMap;
 use Bio::GMOD::CMap::Admin;
@@ -240,6 +240,7 @@ would match.
         }
     }
 
+    my $count=0;
     for my $from_name ( keys %from_name_to_ids ) {
 
         #
@@ -289,6 +290,7 @@ would match.
                     next;
                 }
                 else {
+                    $count++;
                     my $threshold = $allow_update ? 0 : 1000;
                     my $fc_id = $admin->feature_correspondence_create(
                         feature_id1       => $f1->{'feature_id'},
@@ -310,6 +312,7 @@ would match.
         }
     }
     my $fc_id = $admin->feature_correspondence_create();
+    $self->Print("\nCreated $count correspondences (and evidences).\n\n") unless $quiet;
     $self->Print("Done.\n") unless $quiet;
 
     return 1;
