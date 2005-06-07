@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Config;
 
 # vim: set ft=perl:
 
-# $Id: Config.pm,v 1.11 2005-06-03 22:19:50 mwz444 Exp $
+# $Id: Config.pm,v 1.12 2005-06-07 20:08:50 mwz444 Exp $
 
 =head1 NAME
 
@@ -25,12 +25,14 @@ use Class::Base;
 use Config::General;
 use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
+use File::Spec::Functions;
 
 use base 'Class::Base';
 
 # ----------------------------------------------------
 sub init {
-    my ($self) = @_;
+    my ( $self, $config ) = @_;
+    $self->params( $config, 'config_dir' );
     $self->set_config() or return $self->error('No enabled config files');
     return $self;
 }
@@ -51,15 +53,16 @@ The conf dir and the global conf file are specified in Constants.pm
     my $self   = shift;
     my $suffix = 'conf';
     my $global = GLOBAL_CONFIG_FILE;
+    my $config_dir = $self->config_dir;
     my %config_data;
 
     #
     # Get files from directory (taken from Bio/Graphics/Browser.pm by lstein)
     #
-    die CONFIG_DIR . ": not a directory" unless -d CONFIG_DIR;
-    opendir( D, CONFIG_DIR ) or die "Couldn't open " . CONFIG_DIR . ": $!";
+    die "$config_dir is not a directory" unless -d $config_dir;
+    opendir( D, $config_dir ) or die "Couldn't open '$config_dir': $!";
     my @conf_files =
-      map { CONFIG_DIR . "/$_" } grep { /\.$suffix$/ } readdir(D);
+      map { catfile( $config_dir, $_ ) } grep { /\.$suffix$/ } readdir(D);
     close D;
 
     #
@@ -67,9 +70,7 @@ The conf dir and the global conf file are specified in Constants.pm
     # running under linux/glibc 2.2.1
     #
     unless (@conf_files) {
-
-        # use File::Spec::catfile here?
-        @conf_files = glob( CONFIG_DIR . "/*.$suffix" );
+        @conf_files = glob( $config_dir . "/*.$suffix" );
     }
 
     #
@@ -88,7 +89,7 @@ The conf dir and the global conf file are specified in Constants.pm
         else {
             my $db_name = $config{'database'}{'name'}
               || return $self->error(
-                qq[Config file "$conf_file" does not defined a db name] );
+                qq[Config file "$conf_file" does not defined a db name]);
             $config_data{$db_name} = \%config;
         }
     }
@@ -96,9 +97,9 @@ The conf dir and the global conf file are specified in Constants.pm
     #
     # Need a global and specific conf file
     #
-    return $self->error( 'No "global.conf" found in ' . CONFIG_DIR )
+    return $self->error( 'No "global.conf" found in ' . $config_dir )
       unless $self->{'global_config'};
-    return $self->error( 'No database conf files found in ' . CONFIG_DIR )
+    return $self->error( 'No database conf files found in ' . $config_dir )
       unless %config_data;
     $self->{'config_data'} = \%config_data;
 
@@ -178,8 +179,10 @@ Returns an array ref of the keys to $self->{'config_data'}.
 =cut
 
     my $self = shift;
-    return [ grep { $self->{'config_data'}{$_}{'is_enabled'} }
-          keys %{ $self->{'config_data'} } ];
+    return [
+        grep { $self->{'config_data'}{$_}{'is_enabled'} }
+          keys %{ $self->{'config_data'} }
+    ];
 }
 
 # ----------------------------------------------------
@@ -242,6 +245,22 @@ optionally you can specify a set of config data to read from.
     else {
         return wantarray ? () : '';
     }
+}
+
+# ----------------------------------------------------
+sub config_dir {
+=pod
+
+=head2 config_dir
+
+  $self->config_dir('/path/to/alt/conf');
+
+Allows an alternate location of config files.
+
+=cut
+
+    my $self = shift;
+    return $self->{'config_dir'} || CONFIG_DIR;
 }
 
 1;

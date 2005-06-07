@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache;
 
 # vim: set ft=perl:
 
-# $Id: Apache.pm,v 1.29 2005-04-22 00:38:37 kycl4rk Exp $
+# $Id: Apache.pm,v 1.30 2005-06-07 20:08:50 mwz444 Exp $
 
 =head1 NAME
 
@@ -47,7 +47,7 @@ this class will catch errors and display them correctly.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.29 $)[-1];
+$VERSION = (qw$Revision: 1.30 $)[-1];
 
 use CGI;
 use Apache::Htpasswd;
@@ -122,7 +122,7 @@ Initializes the object.
 =cut
 
     my ( $self, $config ) = @_;
-    $self->params( $config, 'apr' );
+    $self->params( $config, qw[ apr config_dir ] );
     $self->config();
     if ( my $apr = $self->apr ) {
         $self->data_source( $apr->param('data_source') );
@@ -143,6 +143,7 @@ the handler to the derived class's "handler" method.
 
 =cut
 
+    my %args      = @_;
     my $apr = CGI->new;
     my $path_info = $apr->path_info || '';
     if ($path_info) {
@@ -151,7 +152,7 @@ the handler to the derived class's "handler" method.
 
     $path_info = DEFAULT->{'path_info'} unless exists DISPATCH->{$path_info};
     my $class  = DISPATCH->{$path_info};
-    my $module = $class->new( apr => $apr );
+    my $module = $class->new( apr => $apr, %args );
     my $status;
 
     eval {
@@ -162,7 +163,8 @@ the handler to the derived class's "handler" method.
                 $class  = DISPATCH->{'login'};
                 $module = $class->new( 
                     apr          => $apr,
-                    redirect_url => $apr->url( -path => 1, -query => 1 )
+                    redirect_url => $apr->url( -path => 1, -query => 1 ),
+                    %args,
                 );
             }
         }

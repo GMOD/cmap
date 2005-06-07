@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.85 2005-06-03 22:19:49 mwz444 Exp $
+# $Id: CMap.pm,v 1.86 2005-06-07 20:08:50 mwz444 Exp $
 
 =head1 NAME
 
@@ -112,8 +112,9 @@ sub config {
         $self->{'config'} = $newConfig;
     }
     unless ( defined $self->{'config'} ) {
-        $self->{'config'} = Bio::GMOD::CMap::Config->new
-          or return Bio::GMOD::CMap::Config->error;
+        $self->{'config'} = Bio::GMOD::CMap::Config->new(
+            config_dir => $self->{'config_dir'}
+        ) or return Bio::GMOD::CMap::Config->error;
     }
 
     return $self->{'config'};

@@ -17,6 +17,9 @@ print OUT q[
 use strict;
 use Bio::GMOD::CMap::Apache;
 
+# To use a config directory other than the default,
+# call handler with the config_dir argument.
+# Bio::GMOD::CMap::Apache::handler( config_dir => '/path/to/cmap.conf' );
 eval { Bio::GMOD::CMap::Apache::handler(); };
 
 if ( my $err = $@ ) {
