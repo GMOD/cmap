@@ -52,7 +52,6 @@ my %attribute_def = (
     print_valididated_method => \&print_validated_array,
     print_corrections_method => \&print_corrected_array,
     element                  => {
-        only_defined_values      => 1,
         validation_method        => \&validate_hash,
         print_valididated_method => \&print_validated_hash,
         print_corrections_method => \&print_corrected_hash,
@@ -63,6 +62,14 @@ my %attribute_def = (
             },
             value => {
                 required => 1,
+                %generic_scalar_def,
+            },
+            is_public => {
+                no_report_if_missing => 1,
+                %generic_scalar_def,
+            },
+            display_order => {
+                no_report_if_missing => 1,
                 %generic_scalar_def,
             },
         },
@@ -99,7 +106,6 @@ my %config_defs = (
     },
     feature_default_display => { %generic_scalar_def, },
     disable_cache           => {
-        required => 1,
         %generic_scalar_def,
     },
     comp_menu_order           => { %generic_scalar_def, },
@@ -156,6 +162,7 @@ my %config_defs = (
             datasource => { %generic_scalar_def, required => 1, },
             user       => { %generic_scalar_def, required => 1, },
             password   => { %generic_scalar_def, required => 0, },
+            is_default   => { deprecated=>1,validation_method=>\&deprecated_value, },
         },
     },
     scalable => {
@@ -181,6 +188,7 @@ my %config_defs = (
         print_corrections_method => \&print_corrected_hash_with_acc,
         accession_name           => 'feature_type_acc',
         object                   => {
+            feature_type_accession   => { deprecated=>1,warning=>'Warning: feature_type_accession has been changed to feature_type_acc.',validation_method=>\&deprecated_value, },
             feature_type_acc   => { %generic_scalar_def, required => 1, },
             feature_type       => { %generic_scalar_def, required => 1, },
             color              => { %generic_scalar_def, },
@@ -217,6 +225,7 @@ my %config_defs = (
         print_corrections_method => \&print_corrected_hash_with_acc,
         accession_name           => 'map_type_acc',
         object                   => {
+            map_type_accession   => { deprecated=>1,warning=>'Warning: map_type_accession has been changed to map_type_acc.',validation_method=>\&deprecated_value, },
             map_type_acc => {
                 required => 1,
                 %generic_scalar_def,
@@ -264,6 +273,7 @@ my %config_defs = (
         print_corrections_method => \&print_corrected_hash_with_acc,
         accession_name           => 'evidence_type_acc',
         object                   => {
+            evidence_type_accession   => { deprecated=>1,warning=>'Warning: evidence_type_accession has been changed to evidence_type_acc.',validation_method=>\&deprecated_value, },
             evidence_type_acc => {
                 required => 1,
                 %generic_scalar_def,
@@ -362,14 +372,14 @@ foreach my $option_name ( sort keys %config ) {
             config_object => $config{$option_name}
         );
         $whole_valid = $whole_valid ? $valid : 0;
-        if ( $valid and $print_out_full ) {
+        if ( $valid and $print_out_full and not $def->{'deprecated'} ) {
             $def->{'print_valididated_method'}(
                 option_name   => $option_name,
                 def           => $def,
                 config_object => $config{$option_name}
             );
         }
-        elsif ( $print_out_full or ( !$valid and $print_corrections ) ) {
+        elsif ( $print_out_full or ( !$valid and $print_corrections ) and not $def->{'deprecated'}  ) {
             $def->{'print_corrections_method'}(
                 option_name   => $option_name,
                 def           => $def,
@@ -400,10 +410,10 @@ foreach my $option_name ( sort keys %config_defs ) {
     }
 }
 if ($whole_valid) {
-    print "\nYour Config file is valid.\n";
+    print "\nThe config file, $conf_file is valid.\n";
 }
 else {
-    print "\nYour Config file is INVALID.\n";
+    print "\nThe config file, $conf_file is INVALID.\n";
 }
 
 # -----------------------------------------------------
@@ -427,7 +437,7 @@ sub validate_scalar {
     }
     elsif ( ref($config_value) ne '' ) {
         $valid = 0;
-        print "$error_start $option_name is defined incorrectly.\n";
+        print "$error_start '$option_name' is defined incorrectly.\n";
     }
 
     # Check for a predifined set of valid values first
@@ -449,7 +459,7 @@ sub validate_scalar {
     }
     elsif ( $def->{'option_type'}
         and $def->{'option_type'} eq 'integer'
-        and $config_value !~ /^\d+$/ )
+        and $config_value !~ /^\d+$/ and $config_value ne '')
     {
         $valid = 0;
         print "$error_start '$config_value' is not an integer which is "
@@ -528,9 +538,12 @@ sub validate_hash {
         print "$error_start $option_name is missing.\n";
         return 0;
     }
+    elsif( !$config_object){
+        return 1;
+    }
     elsif ( ref($config_object) ne 'HASH' ) {
         $valid = 0;
-        print "$error_start $option_name is defined incorrectly\n";
+        print "$error_start '$option_name' is defined incorrectly\n";
         return 0;
     }
 
@@ -609,7 +622,7 @@ sub validate_hash_with_acc {
     }
     elsif ( ref($config_object) ne 'HASH' ) {
         $valid = 0;
-        print "$error_start $option_name is defined incorrectly\n";
+        print "$error_start '$option_name' is defined incorrectly\n";
         return 0;
     }
 
@@ -620,7 +633,7 @@ sub validate_hash_with_acc {
             next;
         }
         if ( $def->{'accession_name'} ) {
-            unless (
+            unless ( defined($config_object->{$acc}{ $def->{'accession_name'} } ) and 
                 $acc eq $config_object->{$acc}{ $def->{'accession_name'} } )
             {
                 $valid = 0;
@@ -634,7 +647,7 @@ sub validate_hash_with_acc {
                 option_name   => $option_name,
                 def           => $def,
                 config_object => $config_object->{$acc},
-                parent_name   => $option_name,
+                parent_name   => "$option_name $acc",
             )
           )
         {
@@ -739,6 +752,18 @@ sub print_corrected_array {
     my $def           = $args{'def'} || {};
     my $config_object = $args{'config_object'};
     my $option_name   = $args{'option_name'};
+
+    return 1;
+}
+sub deprecated_value {
+
+    my %args          = @_;
+    my $def           = $args{'def'} || {};
+    my $config_object = $args{'config_object'};
+    my $option_name   = $args{'option_name'};
+
+    my $warning = $def->{'warning'} || "Warning: $option_name has been deprecated";
+    print $warning."\n";
 
     return 1;
 }
