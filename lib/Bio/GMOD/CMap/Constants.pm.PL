@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.26 2005-06-03 22:19:50 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.27 2005-06-17 03:00:52 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.26 $)[-1];
+$VERSION = (qw$Revision: 1.27 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -265,6 +265,8 @@ use constant SHAPE_XY => {
 #
 use constant DEFAULT => {
     
+    aggregate_correspondences => 0,
+
     #
     # the value of the evidence type place holder
     # Default: DEFAULT_EVIDENCE
@@ -282,6 +284,10 @@ use constant DEFAULT => {
     #
     cmap_viewer_url => 'viewer',
 
+    collapse_features => 0,
+
+    comp_menu_order => 'display_order',
+
     #
     # The color of the line connecting things.
     # Default: lightblue
@@ -294,6 +300,9 @@ use constant DEFAULT => {
     #
     cookie_domain => '',
 
+    disable_cache => 0,
+
+    evidence_default_display => 'display',
     #
     # URL for evidence type info
     #
@@ -327,13 +336,15 @@ use constant DEFAULT => {
     # Leave undefined to use the feature's own color.
     # Default: green
     #
-    feature_correspondence_color => '',
+    feature_correspondence_color => 'green',
 
     #
     # The normal font size
     # Default: small
     #
     font_size => 'small',
+
+    feature_default_display => 'corr_only',
 
     #
     # Which field to search if none specified.
@@ -363,6 +374,8 @@ use constant DEFAULT => {
     # Default: png
     #
     image_type => 'png',
+
+    is_enabled => 1,
 
     #
     # What to show for feature labels on the maps.
@@ -402,6 +415,8 @@ use constant DEFAULT => {
     # Default: 20
     #
     min_map_pixel_height => 20,
+
+    min_tick_distance => 40,
 
     #
     # How to draw a map.
@@ -448,6 +463,8 @@ use constant DEFAULT => {
     #
     map_details_url => 'map_details',
 
+    scale_maps => 0,
+
     #
     # The colors of the slot background and border.
     # Values: COLORS
@@ -492,27 +509,34 @@ use constant PREFERENCE_FIELDS => [ qw(
     collapse_features
 ) ];
 
+use constant VALID_BOOLEAN => {
+    ''  => 1,
+    0   => 1,
+    1   => 1,
+};
+
 #
 # A list of valid options.
 #
 use constant VALID => {
+
     #
     # Font sizes
     #
-    font_size      => {
-        small      => 1,
-        medium     => 1,
-        large      => 1,
+    font_size => {
+        small  => 1,
+        medium => 1,
+        large  => 1,
     },
 
     #
     # Image types, this should match how you compiled libgd on your system.
     #
-    image_type  => { 
-        png     => 1, 
-        jpeg    => 1,
-        svg     => 1,
-        gif     => 1,
+    image_type => {
+        png  => 1,
+        jpeg => 1,
+        svg  => 1,
+        gif  => 1,
     },
 
     #
@@ -527,10 +551,10 @@ use constant VALID => {
 
     #
     # The fields allowed in the feature search.
-    # 
+    #
     feature_search_field => {
-        feature_name     => 1,
-        feature_acc      => 1,   
+        feature_name => 1,
+        feature_acc  => 1,
     },
 
     #
@@ -540,23 +564,18 @@ use constant VALID => {
     # and point your driver to it.  Use only lowercase for the keys.
     #
     sql_driver_module => {
-        generic       => 'Bio::GMOD::CMap::Data::Generic',
-        mysql         => 'Bio::GMOD::CMap::Data::MySQL',
-        oracle        => 'Bio::GMOD::CMap::Data::Oracle',
+        generic => 'Bio::GMOD::CMap::Data::Generic',
+        mysql   => 'Bio::GMOD::CMap::Data::MySQL',
+        oracle  => 'Bio::GMOD::CMap::Data::Oracle',
     },
 
     #
     # The GD shapes we can draw.
     #
     shape => {
-        ARC           , 1,
-        LINE          , 1,
-        FILL          , 1,
-        FILLED_RECT   , 1,
-        FILL_TO_BORDER, 1,
-        RECTANGLE     , 1,
-        STRING        , 1,
-        STRING_UP     , 1,
+        ARC,         1, LINE,           1, FILL,      1,
+        FILLED_RECT, 1, FILL_TO_BORDER, 1, RECTANGLE, 1,
+        STRING,      1, STRING_UP,      1,
     },
 
     #
@@ -567,13 +586,49 @@ use constant VALID => {
         landmarks => 1,
         none      => 1,
     },
+
     #
     # The choices of map shape
     #
-    map_shapes=>{
-      'box'      => 1,
+    map_shapes => {
+        'box'      => 1,
         'dumbbell' => 1,
         'I-beam'   => 1,
+    },
+    is_enabled                   => VALID_BOOLEAN,
+    disable_cache                => VALID_BOOLEAN,
+    collapse_features            => VALID_BOOLEAN,
+    scale_maps                   => VALID_BOOLEAN,
+    glyph_overlap                => VALID_BOOLEAN,
+    is_relational_map            => VALID_BOOLEAN,
+    background_color             => COLORS,
+    slot_background_color        => COLORS,
+    slot_border_color            => COLORS,
+    feature_color                => COLORS,
+    connecting_line_color        => COLORS,
+    feature_highlight_bg_color   => COLORS,
+    feature_highlight_fg_color   => COLORS,
+    feature_correspondence_color => COLORS,
+    map_color                    => COLORS,
+
+    feature_default_display => {
+        'corr_only' => 1,
+        'display'   => 1,
+        'ignore'    => 1,
+    },
+    comp_menu_order => {
+        'display_order' => 1,
+        'corrs'         => 1,
+    },
+    aggregate_correspondences => {
+        ''  => 1,
+        '0' => 1,
+        '1' => 1,
+        '2' => 1,
+    },
+    evidence_default_display => {
+        'ignore'  => 1,
+        'display' => 1,
     },
 
 };
