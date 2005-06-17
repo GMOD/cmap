@@ -1,27 +1,73 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.109 2005-06-03 22:19:46 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.110 2005-06-17 04:56:18 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
 use Getopt::Long;
+use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.109 $)[-1];
+$VERSION = (qw$Revision: 1.110 $)[-1];
 
 #
 # Get command-line options
 #
 my ( $show_help, $show_version, $no_log, $datasource, $Quiet );
+my ($ACTION);
+
+#create species values
+my ( $species_full_name, $species_common_name, $species_acc );
+
+#create map set values
+my ( $map_set_name, $map_set_short_name, $species_id, $map_type_acc, );
+my ( $map_set_acc,  $map_shape,          $map_color,  $map_width );
+
+#import file
+my ( $overwrite, $allow_update );
+
+#cache purging
+my ($cache_level);
+
+#import corrs
+my ($map_set_accs);
+
+#import alignment
+my ( $feature_type_acc, $evidence_type_acc, $from_map_set_acc, );
+my ( $to_map_set_acc,   $format, );
 
 GetOptions(
-    'h|help'         => \$show_help,       # Show help and exit
-    'v|version'      => \$show_version,    # Show version and exit
-    'no-log'         => \$no_log,          # Don't keep a log
-    'd|datasource=s' => \$datasource,      # Default data source
-    'q|quiet'        => \$Quiet,           # Only print necessities
-) or pod2usage(2);
+    'h|help'                => \$show_help,             # Show help and exit
+    'v|version'             => \$show_version,          # Show version and exit
+    'no-log'                => \$no_log,                # Don't keep a log
+    'd|datasource=s'        => \$datasource,            # Default data source
+    'q|quiet'               => \$Quiet,                 # Only print necessities
+    'a|action=s'            => \$ACTION,                # Command line action
+    'species_full_name=s'   => \$species_full_name,
+    'species_common_name=s' => \$species_common_name,
+    'species_acc=s'         => \$species_acc,
+    'map_set_name=s'        => \$map_set_name,
+    'map_set_short_name=s'  => \$map_set_short_name,
+    'species_id=s'          => \$species_id,
+    'map_type_acc=s'        => \$map_type_acc,
+    'feature_type_acc=s'    => \$feature_type_acc,
+    'evidence_type_acc=s'   => \$evidence_type_acc,
+    'map_set_acc=s'         => \$map_set_acc,
+    'map_set_accs=s'        => \$map_set_accs,
+    'from_map_set_acc=s'    => \$from_map_set_acc,
+    'to_map_set_acc=s'      => \$to_map_set_acc,
+    'map_shape=s'           => \$map_shape,
+    'map_color=s'           => \$map_color,
+    'map_width=s'           => \$map_width,
+    'overwrite=s'           => \$overwrite,
+    'allow_update=s'        => \$allow_update,
+    'cache_level=s'         => \$cache_level,
+    'format=s'              => \$format,
+
+  )
+  or pod2usage(2);
+my $file_str = join( ' ', @ARGV );
 
 pod2usage(0) if $show_help;
 if ($show_version) {
@@ -39,10 +85,86 @@ my $cli = Bio::GMOD::CMap::CLI::Admin->new(
     file       => shift,
 );
 
-while (1) {
-    my $action = $cli->show_greeting;
-    $cli->$action();
+my %command_line_actions = (
+    create_species                   => 1,
+    create_map_set                   => 1,
+    import_tab_data                  => 1,
+    import_correspondences           => 1,
+    import_alignments                => 1,
+    import_object_data               => 1,
+    purge_query_cache                => 1,
+    reload_correspondence_matrix     => 1,
+    delete_duplicate_correspondences => 1,
+);
+
+my $continue     = 1;
+my $command_line = 0;
+while ($continue) {
+    my $action;
+
+    # if action is defined in the command line, only do that then exit
+    if ($ACTION) {
+        $action       = $ACTION;
+        $continue     = 0;
+        $command_line = 1;
+        unless ( $command_line_actions{$action} ) {
+            print STDERR "\nERROR: '$action' is not a command line action.\n"
+              . "Please choose from the following:\n"
+              . join( "\n", sort keys %command_line_actions ) . "\n\n";
+            exit(0);
+        }
+    }
+    else {
+        $action = $cli->show_greeting;
+    }
+    die "Cannot do '$action'!" unless ( $cli->can($action) );
+
+    # Arguments are only used with command_line
+    $cli->$action(
+        command_line        => $command_line,
+        species_full_name   => $species_full_name,
+        species_common_name => $species_common_name,
+        species_acc         => $species_acc,
+        map_set_name        => $map_set_name,
+        map_set_short_name  => $map_set_short_name,
+        species_id          => $species_id,
+        species_acc         => $species_acc,
+        map_type_acc        => $map_type_acc,
+        feature_type_acc    => $feature_type_acc,
+        evidence_type_acc   => $evidence_type_acc,
+        map_set_acc         => $map_set_acc,
+        from_map_set_acc    => $from_map_set_acc,
+        to_map_set_acc      => $to_map_set_acc,
+        map_set_accs        => $map_set_accs,
+        map_shape           => $map_shape,
+        map_color           => $map_color,
+        map_width           => $map_width,
+        file_str            => $file_str,
+        overwrite           => $overwrite,
+        allow_update        => $allow_update,
+        cache_level         => $cache_level,
+        format              => $format,
+
+    );
 }
+
+# ./bin/cmap_admin.pl -d WashU -a create_species --species_full_name "Blah Blah" --species_common_name "Blah" --species_acc Blah
+
+# ./bin/cmap_admin.pl -d WashU -a create_map_set --species_acc Blah --map_set_name "MS20" --map_type_acc 2
+
+# ./bin/cmap_admin.pl -d WashU -a import_tab_data --map_set_acc 13 --overwrite 0 --allow_update 0 file1 file2
+
+# ./bin/cmap_admin.pl -d WashU -a purge_query_cache --cache_level 2;
+
+# ./bin/cmap_admin.pl -d WashU -a reload_correspondence_matrix
+
+# ./bin/cmap_admin.pl -d WashU -a delete_duplicate_correspondences
+
+# ./bin/cmap_admin.pl -d WashU -a import_correspondences --map_set_accs 'Blah 13' data/tabtest.corr
+
+#./bin/cmap_admin.pl -d WashU -a import_object_data cmap_export.xml
+
+#./bin/cmap_admin.pl -d WashU -a make_name_correspondences --evidence_type_acc Blah --from_map_set_accs "MS1 43 whatever" --to_map_set_accs "MS1 43 whatever" --skip_feature_type_accs "clone bac whatever2" --check_for_duplicate_data 0 --regex exact_match
 
 # ----------------------------------------------------
 package Bio::GMOD::CMap::CLI::Admin;
@@ -308,23 +430,44 @@ sub change_data_source {
 
 # ----------------------------------------------------
 sub create_species {
-    my $self = shift;
+
+    my ( $self, %args ) = @_;
+    my $command_line        = $args{'command_line'};
+    my $species_full_name   = $args{'species_full_name'};
+    my $species_common_name = $args{'species_common_name'}
+      || $species_full_name;
+    my $species_acc = $args{'species_acc'} || '';
     print "Creating new species.\n";
 
-    print "Full Species Name (long): ";
-    chomp( my $species_full_name = <STDIN> || 'New Species' );
+    if ($command_line) {
+        my @missing = ();
+        foreach my $required_arg (qw[species_full_name]) {
+            unless ( defined( $args{$required_arg} ) ) {
+                push @missing, $required_arg;
+            }
+        }
+        if (@missing) {
+            print STDERR "Missing the following arguments:\n";
+            print STDERR join( "\n", sort @missing ) . "\n";
+            exit(0);
+        }
+    }
+    else {
+        print "Full Species Name (long): ";
+        chomp( $species_full_name = <STDIN> || 'New Species' );
 
-    print "Common Name [$species_full_name]: ";
-    chomp( my $species_common_name = <STDIN> );
-    $species_common_name ||= $species_full_name;
+        print "Common Name [$species_full_name]: ";
+        chomp( $species_common_name = <STDIN> );
+        $species_common_name ||= $species_full_name;
 
-    print "Accession ID (optional): ";
-    chomp( my $species_acc = <STDIN> );
+        print "Accession ID (optional): ";
+        chomp( $species_acc = <STDIN> );
 
-    print "OK to create species '$species_full_name' in data source '",
-      $self->data_source, "'?\n[Y/n] ";
-    chomp( my $answer = <STDIN> );
-    return if $answer =~ m/^[Nn]/;
+        print "OK to create species '$species_full_name' in data source '",
+          $self->data_source, "'?\n[Y/n] ";
+        chomp( my $answer = <STDIN> );
+        return if $answer =~ m/^[Nn]/;
+    }
 
     my $admin = $self->admin;
     $admin->species_create(
@@ -340,81 +483,146 @@ sub create_species {
     my $log_fh = $self->log_fh;
     print $log_fh "Species $species_common_name created\n";
 
-    $self->purge_query_cache(1);
+    $self->purge_query_cache( cache_level => 1 );
 }
 
 # ----------------------------------------------------
 sub create_map_set {
-    my $self = shift;
-    my $sql_object = $self->sql or die $self->error;
+
+    my ( $self, %args ) = @_;
+    my $sql_object         = $self->sql or die $self->error;
+    my $command_line       = $args{'command_line'};
+    my $map_set_name       = $args{'map_set_name'};
+    my $map_set_short_name = $args{'map_set_short_name'};
+    my $species_id         = $args{'species_id'};
+    my $species_acc        = $args{'species_acc'};
+    my $map_type_acc       = $args{'map_type_acc'};
+    my $map_set_acc        = $args{'map_set_acc'};
+    my $map_shape          = $args{'map_shape'};
+    my $map_color          = $args{'map_color'};
+    my $map_width          = $args{'map_width'};
+
     print "Creating new map set.\n";
 
-    my $species_info = $self->show_menu(
-        title   => 'Available Species',
-        prompt  => 'What species?',
-        display => 'species_common_name',
-        return  => 'species_id,species_common_name',
-        data    => $sql_object->get_species( cmap_object => $self ),
-    );
-    my ( $species_id, $species_common_name ) = @$species_info;
+    if ($command_line) {
+        my @missing = ();
+        unless ( defined($map_set_name) ) {
+            push @missing, 'map_set_name';
+        }
+        unless ( defined($map_set_short_name) ) {
+            $map_set_short_name ||= $map_set_name;
+        }
+        if ($species_id) {
+            my $return = $sql_object->get_species(
+                cmap_object => $self,
+                species_id  => $species_id
+            );
+            unless ( defined($return) and %$return ) {
+                print STDERR "The species_id, '$species_id' is not valid.\n";
+                push @missing, 'species_id or species_acc';
+            }
+        }
+        elsif ($species_acc) {
+            $species_id = $sql_object->acc_id_to_internal_id(
+                cmap_object => $self,
+                acc_id      => $species_acc,
+                object_type => 'species'
+            );
+            unless ($species_id) {
+                print STDERR "The species_acc, '$species_acc' is not valid.\n";
+                push @missing, 'species_id or species_acc';
+            }
+        }
+        else {
+            push @missing, 'species_id or species_acc';
+        }
 
-    unless ($species_id) {
-        print "No species!  Please use cmap_admin.pl to create.\n";
-        return;
+        if ( defined($map_type_acc) ) {
+            unless ( $self->map_type_data($map_type_acc) ) {
+                print STDERR
+                  "The map_type_acc, '$map_type_acc' is not valid.\n";
+                push @missing, 'map_type_acc';
+            }
+        }
+        else {
+            push @missing, 'map_type_acc';
+        }
+
+        if (@missing) {
+            print STDERR "Missing the following arguments:\n";
+            print STDERR join( "\n", sort @missing ) . "\n";
+            exit(0);
+        }
     }
+    else {
+        my $species_info = $self->show_menu(
+            title   => 'Available Species',
+            prompt  => 'What species?',
+            display => 'species_common_name',
+            return  => 'species_id,species_common_name',
+            data    => $sql_object->get_species( cmap_object => $self ),
+        );
+        my $species_common_name;
+        ( $species_id, $species_common_name ) = @$species_info;
 
-    my ( $map_type_acc, $map_type ) = $self->show_menu(
-        title   => 'Available Map Types',
-        prompt  => 'What type of map?',
-        display => 'map_type',
-        return  => 'map_type_acc,map_type',
-        data    => $self->fake_selectall_arrayref(
-            $self->map_type_data(), 'map_type_acc', 'map_type'
-        )
-    );
-    die "No map types! Please use the config file to add some.\n"
-      unless $map_type_acc;
+        unless ($species_id) {
+            print "No species!  Please use cmap_admin.pl to create.\n";
+            return;
+        }
+        my $map_type;
+        ( $map_type_acc, $map_type ) = $self->show_menu(
+            title   => 'Available Map Types',
+            prompt  => 'What type of map?',
+            display => 'map_type',
+            return  => 'map_type_acc,map_type',
+            data    => $self->fake_selectall_arrayref(
+                $self->map_type_data(), 'map_type_acc', 'map_type'
+            )
+        );
+        die "No map types! Please use the config file to add some.\n"
+          unless $map_type_acc;
 
-    print "Map Study Name (long): ";
-    chomp( my $map_set_name = <STDIN> || 'New map set' );
+        print "Map Study Name (long): ";
+        chomp( $map_set_name = <STDIN> || 'New map set' );
 
-    print "Short Name [$map_set_name]: ";
-    chomp( my $map_set_short_name = <STDIN> );
-    $map_set_short_name ||= $map_set_name;
+        print "Short Name [$map_set_name]: ";
+        chomp( $map_set_short_name = <STDIN> );
+        $map_set_short_name ||= $map_set_name;
 
-    print "Accession ID (optional): ";
-    chomp( my $map_set_acc = <STDIN> );
+        print "Accession ID (optional): ";
+        chomp( $map_set_acc = <STDIN> );
 
-    my $map_color = $self->map_type_data( $map_type_acc, 'color' )
-      || $self->config_data("map_color");
+        $map_color = $self->map_type_data( $map_type_acc, 'color' )
+          || $self->config_data("map_color");
 
-    $map_color = $self->show_question(
-        question   => 'What color should this map set be?',
-        default    => $map_color,
-        valid_hash => COLORS,
-    );
+        $map_color = $self->show_question(
+            question   => 'What color should this map set be?',
+            default    => $map_color,
+            valid_hash => COLORS,
+        );
 
-    my $map_shape = $self->map_type_data( $map_type_acc, 'shape' )
-      || 'box';
+        $map_shape = $self->map_type_data( $map_type_acc, 'shape' )
+          || 'box';
 
-    $map_shape = $self->show_question(
-        question   => 'What shape should this map set be?',
-        default    => $map_shape,
-        valid_hash => VALID->{'map_shapes'},
-    );
+        $map_shape = $self->show_question(
+            question   => 'What shape should this map set be?',
+            default    => $map_shape,
+            valid_hash => VALID->{'map_shapes'},
+        );
 
-    my $map_width = $self->map_type_data( $map_type_acc, 'width' )
-      || $self->config_data("map_width");
+        $map_width = $self->map_type_data( $map_type_acc, 'width' )
+          || $self->config_data("map_width");
 
-    $map_width = $self->show_question(
-        question => 'What width should this map set be?',
-        default  => $map_width,
-    );
+        $map_width = $self->show_question(
+            question => 'What width should this map set be?',
+            default  => $map_width,
+        );
 
-    print "OK to create set '$map_set_name' in data source '",
-      $self->data_source, "'?\n[Y/n] ";
-    chomp( my $answer = <STDIN> );
-    return if $answer =~ m/^[Nn]/;
+        print "OK to create set '$map_set_name' in data source '",
+          $self->data_source, "'?\n[Y/n] ";
+        chomp( my $answer = <STDIN> );
+        return if $answer =~ m/^[Nn]/;
+    }
 
     my $admin      = $self->admin;
     my $map_set_id = $admin->map_set_create(
@@ -435,7 +643,7 @@ sub create_map_set {
     my $log_fh = $self->log_fh;
     print $log_fh "Map set $map_set_name created\n";
 
-    $self->purge_query_cache(1);
+    $self->purge_query_cache( cache_level => 1 );
 
 }
 
@@ -465,7 +673,7 @@ sub delete_data {
     );
 
     $self->$action();
-    $self->purge_query_cache(1);
+    $self->purge_query_cache( cache_level => 1 );
 }
 
 # ----------------------------------------------------
@@ -569,7 +777,7 @@ sub delete_correspondences {
             }
         }
     }
-    $self->purge_query_cache(1);
+    $self->purge_query_cache( cache_level => 1 );
 }
 
 # ----------------------------------------------------
@@ -659,7 +867,7 @@ sub delete_map_set {
         $admin->map_set_delete( map_set_id => $map_set_id )
           or return $self->error( $admin->error );
     }
-    $self->purge_query_cache(1);
+    $self->purge_query_cache( cache_level => 1 );
 }
 
 # ----------------------------------------------------
@@ -1140,6 +1348,7 @@ sub get_files {
     # Ask the user for files.
     #
     my ( $self, %args ) = @_;
+    my $file_str = $args{'file_str'} || '';
     my $allow_mult = defined $args{'allow_mult'} ? $args{'allow_mult'} : 1;
     my $prompt =
         defined $args{'prompt'} ? $args{'prompt'}
@@ -1148,12 +1357,10 @@ sub get_files {
     my $term = $self->term;
 
     ###New File Handling
-    my $file_str;
-    while (1) {
+    while ( $file_str !~ /\S/ ) {
         $file_str = $term->readline($prompt);
-        last if $file_str =~ /\S/;
+        return undef if $file_str =~ m/^[Qq]$/;
     }
-    return undef if $file_str =~ m/^[Qq]$/;
     $term->addhistory($file_str);
 
     my @file_strs = split( /\s+/, $file_str );
@@ -1566,83 +1773,126 @@ sub import_correspondences {
     #
     # Gathers the info to import feature correspondences.
     #
-    my $self       = shift;
-    my $sql_object = $self->sql or die $self->error;
-    my $file       = $self->file;
-    my $term       = $self->term;
+    my ( $self, %args ) = @_;
+    my $command_line = $args{'command_line'};
+    my $file_str     = $args{'file_str'};
+    my $map_set_accs = $args{'map_set_accs'};
+    my $sql_object   = $self->sql or die $self->error;
+    my $single_file  = $self->file;
+    my $term         = $self->term;
+    my $files;
+    my @map_set_ids;
 
-    #
-    # Make sure we have a file to parse.
-    #
-    if ($file) {
-        print "OK to use '$file'? [Y/n] ";
-        chomp( my $answer = <STDIN> );
-        $file = '' if $answer =~ m/^[Nn]/;
+    if ($command_line) {
+        my @missing = ();
+        if ($file_str) {
+            unless ( $files = $self->get_files( file_str => $file_str ) ) {
+                print STDERR "None of the files, '$file_str' succeded.\n";
+                push @missing, 'input file(s)';
+            }
+        }
+        else {
+            push @missing, 'input file(s)';
+        }
+        if ( defined($map_set_accs) ) {
+
+            # split on space or comma
+            my @map_set_accs = split /[,\s]+/, $map_set_accs;
+            my $map_sets;
+            if (@map_set_accs) {
+                $map_sets = $sql_object->get_map_sets(
+                    cmap_object  => $self,
+                    map_set_accs => \@map_set_accs,
+                );
+            }
+            unless ( @{ $map_sets || [] } ) {
+                print STDERR
+                  "Map set Accession(s), '$map_set_accs' is/are not valid.\n";
+                push @missing, 'map_set_accs';
+            }
+            @map_set_ids = map { $_->{'map_set_id'} } @$map_sets;
+        }
+        else {
+            push @missing, 'map_set_acc';
+        }
+        if (@missing) {
+            print STDERR "Missing the following arguments:\n";
+            print STDERR join( "\n", sort @missing ) . "\n";
+            exit(0);
+        }
     }
+    else {
 
-    while ( !-r $file || !-f _ ) {
-        print "Unable to read '$file' or not a regular file.\n" if $file;
-        $file = $term->readline('Where is the file? [q to quit] ');
-        $file =~ s/^\s*|\s*$//g;
-        return if $file =~ m/^[Qq]/;
-    }
+        #
+        # Make sure we have a file to parse.
+        #
+        if ($single_file) {
+            print "OK to use '$single_file'? [Y/n] ";
+            chomp( my $answer = <STDIN> );
+            $single_file = '' if $answer =~ m/^[Nn]/;
+        }
 
-    #
-    # Open the file.  If it's good, remember it.
-    #
-    my $fh = IO::File->new($file) or die "Can't read $file: $!";
-    $term->addhistory($file);
-    $self->file($file);
+        if ( -r $single_file and -f _ ) {
+            push @$files, $single_file;
+        }
+        else {
+            print "Unable to read '$single_file' or not a regular file.\n"
+              if $single_file;
+            $files = $self->get_files() or return;
+        }
 
-    #
-    # Get the map set.
-    #
-    my @map_sets = $self->show_menu(
-        title      => 'Restrict by Map Set (optional)',
-        prompt     => 'Please select a map set to restrict the search',
-        display    => 'species_common_name,map_set_short_name',
-        return     => 'map_set_id,species_common_name,map_set_short_name',
-        allow_null => 1,
-        allow_mult => 1,
-        data       => sort_selectall_arrayref(
-            $sql_object->get_map_sets( cmap_object => $self, ),
-            'species_common_name, map_set_short_name'
-        ),
-    );
+        #
+        # Get the map set.
+        #
+        my @map_sets = $self->show_menu(
+            title      => 'Restrict by Map Set (optional)',
+            prompt     => 'Please select a map set to restrict the search',
+            display    => 'species_common_name,map_set_short_name',
+            return     => 'map_set_id,species_common_name,map_set_short_name',
+            allow_null => 1,
+            allow_mult => 1,
+            data       => sort_selectall_arrayref(
+                $sql_object->get_map_sets( cmap_object => $self, ),
+                'species_common_name, map_set_short_name'
+            ),
+        );
 
-    my @map_set_ids = map { $_->[0] } @map_sets;
+        @map_set_ids = map { $_->[0] } @map_sets;
 
-    print join( "\n",
-        'OK to import?',
-        '  Data source   : ' . $self->data_source,
-        "  File          : $file",
-    );
-
-    if (@map_sets) {
         print join( "\n",
-            '',
-            '  From map sets :',
-            map { "    $_" } map { join( '-', $_->[1], $_->[2] ) } @map_sets );
+            'OK to import?',
+            '  Data source   : ' . $self->data_source,
+            "  File          : " . join( ", ", @$files ),
+        );
+
+        if (@map_sets) {
+            print join( "\n",
+                '',
+                '  From map sets :',
+                map { "    $_" }
+                  map { join( '-', $_->[1], $_->[2] ) } @map_sets );
+        }
+        print "\n[Y/n] ";
+
+        chomp( my $answer = <STDIN> );
+        return if $answer =~ /^[Nn]/;
     }
-    print "\n[Y/n] ";
 
-    chomp( my $answer = <STDIN> );
-    return if $answer =~ /^[Nn]/;
-
-    my $importer =
-      Bio::GMOD::CMap::Admin::ImportCorrespondences->new(
-        data_source => $self->data_source, );
-
-    $importer->import(
-        fh          => $fh,
-        map_set_ids => \@map_set_ids,
-        log_fh      => $self->log_fh,
-      )
-      or do {
-        print "Error: ", $importer->error, "\n";
-        return;
-      };
-    $self->purge_query_cache(4);
+    my $importer = Bio::GMOD::CMap::Admin::ImportCorrespondences->new( data_source => $self->data_source, );
+    foreach my $file (@$files) {
+        my $fh = IO::File->new($file) or die "Can't read $file: $!";
+        $self->file($file);
+        $importer->import(
+            fh          => $fh,
+            map_set_ids => \@map_set_ids,
+            log_fh      => $self->log_fh,
+          )
+          or do {
+            print "Error: ", $importer->error, "\n";
+            return;
+          };
+    }
+    $self->purge_query_cache( cache_level => 4 );
 }
 
 # ----------------------------------------------------
@@ -1651,102 +1901,20 @@ sub import_alignments {
     #
     # Gathers the info to import feature correspondences.
     #
-    my $self = shift;
-    my $file = $self->file;
-    my $term = $self->term;
-
-    #
-    # Make sure we have a file to parse.
-    #
-    if ($file) {
-        print "OK to use '$file'? [Y/n] ";
-        chomp( my $answer = <STDIN> );
-        $file = '' if $answer =~ m/^[Nn]/;
-    }
-
-    while ( !-r $file || !-f _ ) {
-        print "Unable to read '$file' or not a regular file.\n" if $file;
-        $file = $term->readline('Where is the file? [q to quit] ');
-        $file =~ s/^\s*|\s*$//g;
-        return if $file =~ m/^[Qq]/;
-    }
-
-    #
-    # If it's good, remember it.
-    #
-    $term->addhistory($file);
-    $self->file($file);
-
-    #
-    # Get the map set.
-    #
-    my $query_map_sets = $self->get_map_sets(
-        explanation => 'First you will select the map set of the Query',
-        allow_mult  => 0,
-        allow_null  => 0,
-      )
-      or return;
-    my $use_query_as_hit_answer =
-      $self->show_question( question =>
-          'Do you want to use the query map set as the Subject set? [y|N]', );
-    my $hit_map_sets;
-    if ( $use_query_as_hit_answer =~ /^y/ ) {
-        $hit_map_sets = $query_map_sets;
-    }
-    else {
-        $hit_map_sets = $self->get_map_sets(
-            explanation => 'Now you will select the subject map set',
-            allow_mult  => 0,
-            allow_null  => 0,
-          )
-          or return;
-    }
-
-    #
-    # Get the feature type
-    #
-    my @feature_type = $self->show_menu(
-        title  => 'Feature Type of the Hits',
-        prompt =>
-"Select the feature type that the newly created features will be assigned.\n"
-          . "It is recommended that alignment features have their own feature type such as blast_alignment.",
-        display    => 'feature_type',
-        return     => 'feature_type_acc,feature_type',
-        allow_null => 0,
-        allow_mult => 0,
-        data       => sort_selectall_arrayref(
-            $self->fake_selectall_arrayref(
-                $self->feature_type_data(), 'feature_type_acc',
-                'feature_type'
-            ),
-            'feature_type'
-        ),
-    );
-
-    #
-    # Get the evidence type
-    #
-    my @evidence_type = $self->show_menu(
-        title  => 'Evidence Type of the Hits',
-        prompt =>
-"Select the evidence type that the newly created evidences will be assigned.\n"
-          . "It is recommended that alignment evidences have their own evidence type such as blast_alignment.",
-        display    => 'evidence_type',
-        return     => 'evidence_type_acc,evidence_type',
-        allow_null => 0,
-        allow_mult => 0,
-        data       => $self->fake_selectall_arrayref(
-            $self->evidence_type_data(), 'evidence_type_acc',
-            'evidence_type'
-        ),
-    );
-
-    #
-    # Get the format of the alignment (BLAST...)
-    #
-    # SearchIO.pm from BioPerl has a list of available formats.
-    # Currently only BLAST is included because that is the only one
-    # that I have files to test.
+    my ( $self, %args ) = @_;
+    my $command_line      = $args{'command_line'};
+    my $file_str          = $args{'file_str'};
+    my $from_map_set_acc  = $args{'from_map_set_acc'};
+    my $to_map_set_acc    = $args{'to_map_set_acc'};
+    my $format            = $args{'format'};
+    my $feature_type_acc  = $args{'feature_type_acc'};
+    my $evidence_type_acc = $args{'evidence_type_acc'};
+    my $single_file       = $self->file;
+    my $term              = $self->term;
+    my $sql_object        = $self->sql;
+    my $files;
+    my $query_map_set_id;
+    my $hit_map_set_id;
 
     my $formats = [
         {
@@ -1754,47 +1922,233 @@ sub import_alignments {
             format  => 'blast'
         },
     ];
-    my $format = $self->show_menu(
-        title   => 'Alignment Format',
-        prompt  => 'What format is the alignment in?',
-        display => 'display',
-        return  => 'format',
-        data    => $formats,
-    );
 
-    print join( "\n",
-        'OK to import?',
-        '  Data source     : ' . $self->data_source,
-        "  File            : $file",
-        '  Query Map Set   : ' . $query_map_sets->[0]{'map_set_short_name'},
-        '  Subject Map Set : ' . $hit_map_sets->[0]{'map_set_short_name'},
-        '  Feature Type    : ' . $feature_type[1],
-        '  Evidence Type   : ' . $evidence_type[1],
-        '  Format          : ' . $format,
-    );
+    if ($command_line) {
+        my @missing = ();
+        if ($file_str) {
+            unless ( $files = $self->get_files( file_str => $file_str ) ) {
+                print STDERR "None of the files, '$file_str' succeded.\n";
+                push @missing, 'input file(s)';
+            }
+        }
+        else {
+            push @missing, 'input file(s)';
+        }
+        if ( defined($from_map_set_acc) ) {
+            $query_map_set_id = $sql_object->acc_id_to_internal_id(
+                cmap_object => $self,
+                acc_id      => $from_map_set_acc,
+                object_type => 'map_set'
+            );
+            unless ($query_map_set_id) {
+                print STDERR
+                  "Map set Accession, '$from_map_set_acc' is not valid.\n";
+                push @missing, 'from_map_set_acc';
+            }
+        }
+        else {
+            push @missing, 'from_map_set_acc';
+        }
+        if ( defined($to_map_set_acc) ) {
+            $query_map_set_id = $sql_object->acc_id_to_internal_id(
+                cmap_object => $self,
+                acc_id      => $to_map_set_acc,
+                object_type => 'map_set'
+            );
+            unless ($query_map_set_id) {
+                print STDERR
+                  "Map set Accession, '$to_map_set_acc' is not valid.\n";
+                push @missing, 'to_map_set_acc';
+            }
+        }
+        else {
+            push @missing, 'to_map_set_acc';
+        }
+        if ( defined($feature_type_acc) ) {
+            unless ( $self->feature_type_data($feature_type_acc) ) {
+                print STDERR
+                  "The feature_type_acc, '$feature_type_acc' is not valid.\n";
+                push @missing, 'feature_type_acc';
+            }
+        }
+        else {
+            push @missing, 'feature_type_acc';
+        }
+        if ( defined($evidence_type_acc) ) {
+            unless ( $self->evidence_type_data($evidence_type_acc) ) {
+                print STDERR
+                  "The evidence_type_acc, '$evidence_type_acc' is not valid.\n";
+                push @missing, 'evidence_type_acc';
+            }
+        }
+        else {
+            push @missing, 'evidence_type_acc';
+        }
+        if ($format) {
+            my $found = 0;
+            foreach my $item (@$formats) {
+                if ( $format eq $item->{'format'} ) {
+                    $found = 1;
+                }
+            }
+            unless ($found) {
+                print STDERR "The format, '$format' is not valid.\n";
+                push @missing, 'format';
+            }
+        }
+        else {
+            push @missing, 'evidence_type_acc';
+        }
+        if (@missing) {
+            print STDERR "Missing the following arguments:\n";
+            print STDERR join( "\n", sort @missing ) . "\n";
+            exit(0);
+        }
+    }
+    else {
 
-    print "\n[Y/n] ";
+        #
+        # Make sure we have a file to parse.
+        #
+        if ($single_file) {
+            print "OK to use '$single_file'? [Y/n] ";
+            chomp( my $answer = <STDIN> );
+            $single_file = '' if $answer =~ m/^[Nn]/;
+        }
 
-    chomp( my $answer = <STDIN> );
-    return if $answer =~ /^[Nn]/;
+        if ( -r $single_file and -f _ ) {
+            push @$files, $single_file;
+        }
+        else {
+            print "Unable to read '$single_file' or not a regular file.\n"
+              if $single_file;
+            $files = $self->get_files() or return;
+        }
+
+        #
+        # Get the map set.
+        #
+        my $query_map_sets = $self->get_map_sets(
+            explanation => 'First you will select the map set of the Query',
+            allow_mult  => 0,
+            allow_null  => 0,
+          )
+          or return;
+        my $use_query_as_hit_answer =
+          $self->show_question( question =>
+              'Do you want to use the query map set as the Subject set? [y|N]',
+          );
+        my $hit_map_sets;
+        if ( $use_query_as_hit_answer =~ /^y/ ) {
+            $hit_map_sets = $query_map_sets;
+        }
+        else {
+            $hit_map_sets = $self->get_map_sets(
+                explanation => 'Now you will select the subject map set',
+                allow_mult  => 0,
+                allow_null  => 0,
+              )
+              or return;
+        }
+
+        $query_map_set_id = $query_map_sets->[0]{'map_set_id'};
+        $hit_map_set_id   = $hit_map_sets->[0]{'map_set_id'};
+
+        #
+        # Get the feature type
+        #
+        my @feature_type = $self->show_menu(
+            title  => 'Feature Type of the Hits',
+            prompt => "Select the feature type that the newly "
+              . "created features will be assigned.\n"
+              . "It is recommended that alignment features have "
+              . "their own feature type such as blast_alignment.",
+            display    => 'feature_type',
+            return     => 'feature_type_acc,feature_type',
+            allow_null => 0,
+            allow_mult => 0,
+            data       => sort_selectall_arrayref(
+                $self->fake_selectall_arrayref(
+                    $self->feature_type_data(), 'feature_type_acc',
+                    'feature_type'
+                ),
+                'feature_type'
+            ),
+        );
+
+        #
+        # Get the evidence type
+        #
+        my @evidence_type = $self->show_menu(
+            title  => 'Evidence Type of the Hits',
+            prompt => "Select the evidence type that the newly created "
+              . "evidences will be assigned.\n"
+              . "It is recommended that alignment "
+              . "evidences have their own evidence type such as blast_alignment.",
+            display    => 'evidence_type',
+            return     => 'evidence_type_acc,evidence_type',
+            allow_null => 0,
+            allow_mult => 0,
+            data       => $self->fake_selectall_arrayref(
+                $self->evidence_type_data(), 'evidence_type_acc',
+                'evidence_type'
+            ),
+        );
+
+        $feature_type_acc    => $feature_type[0],
+          $evidence_type_acc => $evidence_type[0],
+
+          #
+          # Get the format of the alignment (BLAST...)
+          #
+          # SearchIO.pm from BioPerl has a list of available formats.
+          # Currently only BLAST is included because that is the only one
+          # that I have files to test.
+
+          $format = $self->show_menu(
+            title   => 'Alignment Format',
+            prompt  => 'What format is the alignment in?',
+            display => 'display',
+            return  => 'format',
+            data    => $formats,
+          );
+
+        print join( "\n",
+            'OK to import?',
+            '  Data source     : ' . $self->data_source,
+            "  File            : " . join( ", ", @$files ),
+            '  Query Map Set   : ' . $query_map_sets->[0]{'map_set_short_name'},
+            '  Subject Map Set : ' . $hit_map_sets->[0]{'map_set_short_name'},
+            '  Feature Type    : ' . $feature_type[1],
+            '  Evidence Type   : ' . $evidence_type[1],
+            '  Format          : ' . $format,
+        );
+
+        print "\n[Y/n] ";
+
+        chomp( my $answer = <STDIN> );
+        return if $answer =~ /^[Nn]/;
+    }
 
     my $importer =
       Bio::GMOD::CMap::Admin::ImportAlignments->new(
         data_source => $self->data_source, );
-    $importer->import_alignments(
-        file_name         => $file,
-        query_map_set_id  => $query_map_sets->[0]{'map_set_id'},
-        hit_map_set_id    => $hit_map_sets->[0]{'map_set_id'},
-        feature_type_acc  => $feature_type[0],
-        evidence_type_acc => $evidence_type[0],
-        format            => $format,
-        log_fh            => $self->log_fh,
-      )
-      or do {
-        print "Error: ", $importer->error, "\n";
-        return;
-      };
-    $self->purge_query_cache(2);
+    foreach my $file (@$files) {
+        $importer->import_alignments(
+            file_name         => $file,
+            query_map_set_id  => $query_map_set_id,
+            hit_map_set_id    => $hit_map_set_id,
+            feature_type_acc  => $feature_type_acc,
+            evidence_type_acc => $evidence_type_acc,
+            format            => $format,
+            log_fh            => $self->log_fh,
+          )
+          or do {
+            print "Error: ", $importer->error, "\n";
+            return;
+          };
+    }
+    $self->purge_query_cache( cache_level => 2 );
 }
 
 # ----------------------------------------------------
@@ -1812,7 +2166,7 @@ sub delete_duplicate_correspondences {
 
     $admin->delete_duplicate_correspondences();
 
-    $self->purge_query_cache(4);
+    $self->purge_query_cache( cache_level => 4 );
 }
 
 # ----------------------------------------------------
@@ -1852,20 +2206,20 @@ sub purge_query_cache_menu {
     );
     return unless $cache_level;
 
-    $self->purge_query_cache($cache_level);
+    $self->purge_query_cache( cache_level => $cache_level );
 }
 
 # ----------------------------------------------------
 sub purge_query_cache {
 
-    my $self        = shift;
-    my $cache_level = shift || 1;
+    my ( $self, %args ) = @_;
+    my $cache_level = $args{'cache_level'} || 1;
 
     my $admin = Bio::GMOD::CMap::Admin->new(
         config      => $self->config,
         data_source => $self->data_source,
     );
-    print "Purging cache\n";
+    print "Purging cache at level $cache_level.\n";
     $admin->purge_cache($cache_level);
     print "Cache Purged\n";
 }
@@ -1876,40 +2230,85 @@ sub import_tab_data {
     #
     # Imports simple (old) tab-delimited format
     #
-    my $self = shift;
+    my ( $self, %args ) = @_;
+    my $command_line = $args{'command_line'};
+    my $file_str     = $args{'file_str'};
+    my $map_set_acc  = $args{'map_set_acc'};
+    my $overwrite    = $args{'overwrite'} || 0;
+    my $allow_update = $args{'allow_update'} || 0;
+    my $sql_object   = $self->sql;
+    my ( $map_set, $files );
 
-    ###New File Handling
-    my $files = $self->get_files() or return;
+    if ($command_line) {
+        my @missing = ();
+        if ($file_str) {
+            unless ( $files = $self->get_files( file_str => $file_str ) ) {
+                print STDERR "None of the files, '$file_str' succeded.\n";
+                push @missing, 'input file(s)';
+            }
+        }
+        else {
+            push @missing, 'input file(s)';
+        }
+        if ( defined($map_set_acc) ) {
+            my $map_sets = $sql_object->get_map_sets(
+                cmap_object => $self,
+                map_set_acc => $map_set_acc,
+            );
+            unless ( @{ $map_sets || [] } ) {
+                print STDERR
+                  "Map set Accession, '$map_set_acc' is not valid.\n";
+                push @missing, 'map_set_acc';
+            }
+            $map_set = $map_sets->[0];
+        }
+        else {
+            push @missing, 'map_set_acc';
+        }
+        if (@missing) {
+            print STDERR "Missing the following arguments:\n";
+            print STDERR join( "\n", sort @missing ) . "\n";
+            exit(0);
+        }
+    }
+    else {
 
-    my $map_sets = $self->get_map_sets( allow_mult => 0, allow_null => 0 );
-    return unless @{ $map_sets || [] };
-    my $map_set = $map_sets->[0];
+        ###New File Handling
+        $files = $self->get_files() or return;
 
-    print "Remove data in map set not in import file? [y/N] ";
-    chomp( my $overwrite = <STDIN> );
-    $overwrite = ( $overwrite =~ /^[Yy]/ ) ? 1 : 0;
+        my $map_sets = $self->get_map_sets( allow_mult => 0, allow_null => 0 );
+        return unless @{ $map_sets || [] };
+        $map_set = $map_sets->[0];
 
-    print
-"\nNOTE: If yes to the following, features on the same map with the same name \nwill be treated as duplicates.  Be sure to select the default, 'NO', if that \nwill create problems for your data.\nCheck for duplicate data (slow)? [y/N]";
-    chomp( my $allow_update = <STDIN> );
-    $allow_update = ( $allow_update =~ /^[Yy]/ ) ? 1 : 0;
+        print "Remove data in map set not in import file? [y/N] ";
+        chomp( $overwrite = <STDIN> );
+        $overwrite = ( $overwrite =~ /^[Yy]/ ) ? 1 : 0;
 
-    #
-    # Confirm decisions.
-    #
-    print join( "\n",
-        'OK to import?',
-        '  Data source : ' . $self->data_source,
-        "  File        : " . join( ", ", @$files ),
-        "  Species     : " . $map_set->{species_common_name},
-        "  Map Type    : " . $map_set->{map_type},
-        "  Map Set     : " . $map_set->{map_set_short_name},
-        "  Map Set Acc : " . $map_set->{map_set_acc},
-        "  Overwrite   : " .     ( $overwrite    ? "Yes" : "No" ),
-        "  Update Features : " . ( $allow_update ? "Yes" : "No" ),
-        "[Y/n] " );
-    chomp( my $answer = <STDIN> );
-    return if $answer =~ /^[Nn]/;
+        print "\nNOTE: If yes to the following, features on the same map with "
+          . "the same name \nwill be treated as duplicates.  "
+          . "Be sure to select the default, 'NO', if that \n"
+          . "will create problems for your data.\n"
+          . "Check for duplicate data (slow)? [y/N]";
+        chomp( $allow_update = <STDIN> );
+        $allow_update = ( $allow_update =~ /^[Yy]/ ) ? 1 : 0;
+
+        #
+        # Confirm decisions.
+        #
+        print join( "\n",
+            'OK to import?',
+            '  Data source : ' . $self->data_source,
+            "  File        : " . join( ", ", @$files ),
+            "  Species     : " . $map_set->{species_common_name},
+            "  Map Type    : " . $map_set->{map_type},
+            "  Map Set     : " . $map_set->{map_set_short_name},
+            "  Map Set Acc : " . $map_set->{map_set_acc},
+            "  Overwrite   : " .     ( $overwrite    ? "Yes" : "No" ),
+            "  Update Features : " . ( $allow_update ? "Yes" : "No" ),
+            "[Y/n] " );
+        chomp( my $answer = <STDIN> );
+        return if $answer =~ /^[Nn]/;
+    }
 
     my $importer =
       Bio::GMOD::CMap::Admin::Import->new( data_source => $self->data_source, );
@@ -1937,7 +2336,7 @@ sub import_tab_data {
     print STDERR "import time: "
       . timestr( timediff( $time_end, $time_start ) ) . "\n";
 
-    $self->purge_query_cache(1);
+    $self->purge_query_cache( cache_level => 1 );
 }
 
 # ----------------------------------------------------
@@ -1946,61 +2345,84 @@ sub import_object_data {
     #
     # Gathers the info to import physical or genetic maps.
     #
-    my $self = shift;
-    my $term = $self->term;
-    my $file = $self->file;
+    my ( $self, %args ) = @_;
+    my $command_line = $args{'command_line'};
+    my $file_str     = $args{'file_str'};
+    my $overwrite    = $args{'overwrite'} || 0;
+    my $term         = $self->term;
+    my $single_file  = $self->file;
+    my $files;
 
-    #
-    # Make sure we have a file to parse.
-    #
-    if ($file) {
-        print "OK to use '$file'? [Y/n] ";
+    if ($command_line) {
+        my @missing = ();
+        if ($file_str) {
+            unless ( $files = $self->get_files( file_str => $file_str ) ) {
+                print STDERR "None of the files, '$file_str' succeded.\n";
+                push @missing, 'input file(s)';
+            }
+        }
+        else {
+            push @missing, 'input file(s)';
+        }
+        if (@missing) {
+            print STDERR "Missing the following arguments:\n";
+            print STDERR join( "\n", sort @missing ) . "\n";
+            exit(0);
+        }
+    }
+    else {
+
+        #
+        # Make sure we have a file to parse.
+        #
+        if ($single_file) {
+            print "OK to use '$single_file'? [Y/n] ";
+            chomp( my $answer = <STDIN> );
+            $single_file = '' if $answer =~ m/^[Nn]/;
+        }
+
+        if ( -r $single_file and -f _ ) {
+            push @$files, $single_file;
+        }
+        else {
+            print "Unable to read '$single_file' or not a regular file.\n"
+              if $single_file;
+            $files = $self->get_files() or return;
+        }
+
+        print "Overwrite any existing data? [y/N] ";
+        chomp( $overwrite = <STDIN> );
+        $overwrite = ( $overwrite =~ /^[Yy]/ ) ? 1 : 0;
+
+        #
+        # Confirm decisions.
+        #
+        print join( "\n",
+            'OK to import?',
+            '  Data source : ' . $self->data_source,
+            "  File        : ".join(', ',@$files),
+            "  Overwrite   : " . ( $overwrite ? "Yes" : "No" ),
+            "[Y/n] " );
         chomp( my $answer = <STDIN> );
-        $file = '' if $answer =~ m/^[Nn]/;
+        return if $answer =~ /^[Nn]/;
     }
-
-    while ( !-r $file || !-f _ ) {
-        print "Unable to read '$file' or not a regular file.\n" if $file;
-        $file = $term->readline('Where is the file? [q to quit] ');
-        $file =~ s/^\s*|\s*$//g;
-        return if $file =~ m/^[Qq]/;
-    }
-
-    #
-    # Open the file.  If it's good, remember it.
-    #
-    my $fh = IO::File->new($file) or die "Can't read $file: $!";
-    $term->addhistory($file);
-    $self->file($file);
-
-    print "Overwrite any existing data? [y/N] ";
-    chomp( my $overwrite = <STDIN> );
-    $overwrite = ( $overwrite =~ /^[Yy]/ ) ? 1 : 0;
-
-    #
-    # Confirm decisions.
-    #
-    print join( "\n",
-        'OK to import?',
-        '  Data source : ' . $self->data_source,
-        "  File        : $file",
-        "  Overwrite   : " . ( $overwrite ? "Yes" : "No" ),
-        "[Y/n] " );
-    chomp( my $answer = <STDIN> );
-    return if $answer =~ /^[Nn]/;
 
     my $importer =
       Bio::GMOD::CMap::Admin::Import->new( data_source => $self->data_source, );
-    $importer->import_objects(
-        fh        => $fh,
-        log_fh    => $self->log_fh,
-        overwrite => $overwrite,
-      )
-      or do {
-        print "Error: ", $importer->error, "\n";
-        return;
-      };
-    $self->purge_query_cache(1);
+    foreach my $file (@$files) {
+        my $fh = IO::File->new($file) or die "Can't read $file: $!";
+        $self->file($file);
+        $importer->import_objects(
+            fh        => $fh,
+            log_fh    => $self->log_fh,
+            overwrite => $overwrite,
+          )
+          or do {
+            print "Error: ", $importer->error, "\n";
+            return;
+          };
+    }
+    $self->purge_query_cache( cache_level => 1 );
 }
 
 # ----------------------------------------------------
@@ -2137,18 +2559,22 @@ sub make_name_correspondences {
     print STDERR "make correspondence time: "
       . timestr( timediff( $time_end, $time_start ) ) . "\n";
 
-    $self->purge_query_cache(4);
+    $self->purge_query_cache( cache_level => 4 );
     return 1;
 }
 
 # ----------------------------------------------------
 sub reload_correspondence_matrix {
-    my $self = shift;
 
-    print "OK to truncate table in data source '", $self->data_source,
-      "' and reload? [Y/n] ";
-    chomp( my $answer = <STDIN> );
-    return if $answer =~ m/^[Nn]/;
+    my ( $self, %args ) = @_;
+    my $command_line = $args{'command_line'};
+
+    unless ($command_line) {
+        print "OK to truncate table in data source '", $self->data_source,
+          "' and reload? [Y/n] ";
+        chomp( my $answer = <STDIN> );
+        return if $answer =~ m/^[Nn]/;
+    }
 
     my $admin = $self->admin;
     $admin->reload_correspondence_matrix or do {
@@ -2379,7 +2805,7 @@ sub copy_gbrowse_into_cmap {
         print "Error: ", $gbrowse_liason->error, "\n";
         return;
       };
-    $self->purge_query_cache(1);
+    $self->purge_query_cache( cache_level => 1 );
 }
 
 # ----------------------------------------------------
