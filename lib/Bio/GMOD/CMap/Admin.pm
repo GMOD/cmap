@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.82 2005-06-03 22:19:49 mwz444 Exp $
+# $Id: Admin.pm,v 1.83 2005-06-17 03:01:50 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.82 $)[-1];
+$VERSION = (qw$Revision: 1.83 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -1401,14 +1401,22 @@ If not defined, the object_id will be assigned to it.
         $published_on = $t->strftime( $self->data_module->sql->date_format );
     }
     my $map_units = $self->map_type_data( $map_type_acc, 'map_units' );
-         $color = $self->map_type_data( $map_type_acc, 'color' )
+
+         $color ||= $self->map_type_data( $map_type_acc, 'color' )
       || $self->config_data("map_color")
       || DEFAULT->{'map_color'}
       || 'black';
-         $shape = $self->map_type_data( $map_type_acc, 'shape' )
+
+         $shape ||= $self->map_type_data( $map_type_acc, 'shape' )
       || $self->config_data("map_shape")
       || DEFAULT->{'map_shape'}
       || 'box';
+
+         $width ||= $self->map_type_data( $map_type_acc, 'width' )
+      || $self->config_data("map_width")
+      || DEFAULT->{'map_width'}
+      || '0';
+
     my $is_relational_map =
       $self->map_type_data( $map_type_acc, 'is_relational_map' ) || 0;
 
