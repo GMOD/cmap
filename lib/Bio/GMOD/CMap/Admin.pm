@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.83 2005-06-17 03:01:50 mwz444 Exp $
+# $Id: Admin.pm,v 1.84 2005-06-17 04:58:37 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.83 $)[-1];
+$VERSION = (qw$Revision: 1.84 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -628,7 +628,7 @@ If not defined, the object_id will be assigned to it.
         );
     }
 
-    return $feature_correspondence_id;
+    return $feature_correspondence_id || -1;
 }
 
 # ----------------------------------------------------
