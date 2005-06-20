@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.110 2005-06-17 04:56:18 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.111 2005-06-20 03:36:19 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.110 $)[-1];
+$VERSION = (qw$Revision: 1.111 $)[-1];
 
 #
 # Get command-line options
@@ -37,6 +37,24 @@ my ($map_set_accs);
 my ( $feature_type_acc, $evidence_type_acc, $from_map_set_acc, );
 my ( $to_map_set_acc,   $format, );
 
+#export sql
+my ( $add_truncate, $export_file, $quote_escape, $tables, );
+
+#export text
+my ( $feature_type_accs, $exclude_fields, $directory, );
+
+#export text
+my ($export_objects);
+
+#delete map_set
+my ($map_accs);
+
+#delete corr
+my ( $evidence_type_accs, );
+
+#make name corr
+my ($from_map_set_accs, $to_map_set_accs, $skip_feature_type_accs,$name_regex);
+
 GetOptions(
     'h|help'                => \$show_help,             # Show help and exit
     'v|version'             => \$show_version,          # Show version and exit
@@ -47,16 +65,22 @@ GetOptions(
     'species_full_name=s'   => \$species_full_name,
     'species_common_name=s' => \$species_common_name,
     'species_acc=s'         => \$species_acc,
+    'species_id=s'          => \$species_id,
     'map_set_name=s'        => \$map_set_name,
     'map_set_short_name=s'  => \$map_set_short_name,
-    'species_id=s'          => \$species_id,
+    'map_accs=s'            => \$map_accs,
     'map_type_acc=s'        => \$map_type_acc,
     'feature_type_acc=s'    => \$feature_type_acc,
+    'feature_type_accs=s'   => \$feature_type_accs,
     'evidence_type_acc=s'   => \$evidence_type_acc,
+    'evidence_type_accs=s'  => \$evidence_type_accs,
+    'skip_feature_type_accs=s'   => \$skip_feature_type_accs,
     'map_set_acc=s'         => \$map_set_acc,
     'map_set_accs=s'        => \$map_set_accs,
     'from_map_set_acc=s'    => \$from_map_set_acc,
+    'from_map_set_accs=s'   => \$from_map_set_accs,
     'to_map_set_acc=s'      => \$to_map_set_acc,
+    'to_map_set_accs=s'     => \$to_map_set_accs,
     'map_shape=s'           => \$map_shape,
     'map_color=s'           => \$map_color,
     'map_width=s'           => \$map_width,
@@ -64,6 +88,14 @@ GetOptions(
     'allow_update=s'        => \$allow_update,
     'cache_level=s'         => \$cache_level,
     'format=s'              => \$format,
+    'add_truncate=s'        => \$add_truncate,
+    'export_file=s'         => \$export_file,
+    'export_objects=s'      => \$export_objects,
+    'tables=s'              => \$tables,
+    'quote_escape=s'        => \$quote_escape,
+    'exclude_fields=s'      => \$exclude_fields,
+    'directory=s'           => \$directory,
+    'name_regex=s'           => \$name_regex,
 
   )
   or pod2usage(2);
@@ -95,6 +127,12 @@ my %command_line_actions = (
     purge_query_cache                => 1,
     reload_correspondence_matrix     => 1,
     delete_duplicate_correspondences => 1,
+    export_as_sql                    => 1,
+    export_as_text                   => 1,
+    export_objects                   => 1,
+    delete_map_set                   => 1,
+    delete_correspondences           => 1,
+    make_name_correspondences        => 1,
 );
 
 my $continue     = 1;
@@ -131,10 +169,15 @@ while ($continue) {
         species_acc         => $species_acc,
         map_type_acc        => $map_type_acc,
         feature_type_acc    => $feature_type_acc,
+        feature_type_accs   => $feature_type_accs,
         evidence_type_acc   => $evidence_type_acc,
+        evidence_type_accs  => $evidence_type_accs,
+        skip_feature_type_accs   => $skip_feature_type_accs,
         map_set_acc         => $map_set_acc,
         from_map_set_acc    => $from_map_set_acc,
+        from_map_set_accs   => $from_map_set_accs,
         to_map_set_acc      => $to_map_set_acc,
+        to_map_set_accs     => $to_map_set_accs,
         map_set_accs        => $map_set_accs,
         map_shape           => $map_shape,
         map_color           => $map_color,
@@ -144,6 +187,15 @@ while ($continue) {
         allow_update        => $allow_update,
         cache_level         => $cache_level,
         format              => $format,
+        add_truncate        => $add_truncate,
+        export_file         => $export_file,
+        export_objects      => $export_objects,
+        tables              => $tables,
+        quote_escape        => $quote_escape,
+        exclude_fields      => $exclude_fields,
+        directory           => $directory,
+        name_regex           => $name_regex,
+        map_accs            => $map_accs,
 
     );
 }
@@ -162,9 +214,22 @@ while ($continue) {
 
 # ./bin/cmap_admin.pl -d WashU -a import_correspondences --map_set_accs 'Blah 13' data/tabtest.corr
 
-#./bin/cmap_admin.pl -d WashU -a import_object_data cmap_export.xml
+# ./bin/cmap_admin.pl -d WashU -a import_object_data cmap_export.xml
 
-#./bin/cmap_admin.pl -d WashU -a make_name_correspondences --evidence_type_acc Blah --from_map_set_accs "MS1 43 whatever" --to_map_set_accs "MS1 43 whatever" --skip_feature_type_accs "clone bac whatever2" --check_for_duplicate_data 0 --regex exact_match
+# ./bin/cmap_admin.pl -d WashU -a export_as_sql --export_file cmap_export.sql --quote_escape backslash --tables all
+
+# ./bin/cmap_admin.pl -d WashU -a export_as_text --species_acc Blah
+
+# ./bin/cmap_admin.pl -d WashU -a export_objects --species_acc Blah --export_objects "map_set species"
+
+# ./bin/cmap_admin.pl -d WashU -a delete_map_set --map_accs "28 26"
+
+# ./bin/cmap_admin.pl -d WashU -a delete_map_set --map_set_acc 13
+
+# ./bin/cmap_admin.pl -d WashU -a delete_correspondences --species_acc SP1 --evidence_type_accs all
+
+# ./bin/cmap_admin.pl -d WashU -a make_name_correspondences --evidence_type_acc ANB --from_map_set_accs "10 7 MS10 MS4 MS5 MS6 MS8" --to_map_set_accs "10 7 MS10 MS4 MS5 MS6 MS8" --skip_feature_type_accs "" --allow_update 0 --name_regex exact_match
+
 
 # ----------------------------------------------------
 package Bio::GMOD::CMap::CLI::Admin;
@@ -441,10 +506,8 @@ sub create_species {
 
     if ($command_line) {
         my @missing = ();
-        foreach my $required_arg (qw[species_full_name]) {
-            unless ( defined( $args{$required_arg} ) ) {
-                push @missing, $required_arg;
-            }
+        unless ( defined($species_full_name) ) {
+            push @missing, 'species_full_name';
         }
         if (@missing) {
             print STDERR "Missing the following arguments:\n";
@@ -682,59 +745,147 @@ sub delete_correspondences {
     #
     # Deletes a map set.
     #
-    my $self       = shift;
-    my $sql_object = $self->sql or die $self->error;
+    my ( $self, %args ) = @_;
+    my $command_line           = $args{'command_line'};
+    my $species_acc            = $args{'species_acc'};
+    my $map_set_accs           = $args{'map_set_accs'};
+    my $map_type_acc           = $args{'map_type_acc'};
+    my $evidence_type_accs_str = $args{'evidence_type_accs'};
+    my $sql_object             = $self->sql or die $self->error;
+    my $map_sets;
+    my @evidence_type_accs;
 
-    my $map_sets = $self->get_map_sets;
-    return unless @{ $map_sets || [] };
-    my @map_set_names;
-    if ( @{ $map_sets || [] } ) {
-        @map_set_names =
-          map {
-            join( '-', $_->{'species_common_name'}, $_->{'map_set_short_name'} )
-          } @$map_sets;
+    if ($command_line) {
+        my @missing = ();
+        if ( defined($map_set_accs) ) {
+
+            # split on space or comma
+            my @map_set_accs = split /[,\s]+/, $map_set_accs;
+            if (@map_set_accs) {
+                $map_sets = $sql_object->get_map_sets(
+                    cmap_object  => $self,
+                    map_set_accs => \@map_set_accs,
+                );
+            }
+            unless ( @{ $map_sets || [] } ) {
+                print STDERR
+                  "Map set Accession(s), '$map_set_accs' is/are not valid.\n";
+                push @missing, 'valid map_set_accs';
+            }
+        }
+        elsif ( defined($species_acc) or $map_type_acc ) {
+            my $species_id;
+            if ( defined($species_acc) ) {
+                $species_id = $sql_object->acc_id_to_internal_id(
+                    cmap_object => $self,
+                    acc_id      => $species_acc,
+                    object_type => 'species'
+                );
+                unless ($species_id) {
+                    print STDERR
+                      "The species_acc, '$species_acc' is not valid.\n";
+                    push @missing, 'valid species_acc';
+                }
+            }
+            if ($map_type_acc) {
+                unless ( $self->map_type_data($map_type_acc) ) {
+                    print STDERR "The map_type_acc, '$map_type_acc' "
+                      . "is not valid.\n";
+                    push @missing, 'valid map_type_acc';
+                }
+            }
+            $map_sets = $sql_object->get_map_sets(
+                cmap_object  => $self,
+                species_id   => $species_id,
+                map_type_acc => $map_type_acc,
+            );
+        }
+        else {
+            push @missing, 'map_set_accs or species_acc or map_type_acc';
+        }
+        if ( defined($evidence_type_accs_str) and $evidence_type_accs_str=~/all/i){
+            @evidence_type_accs = keys( %{ $self->evidence_type_data() } );
+        }
+        elsif ( defined($evidence_type_accs_str) ) {
+            @evidence_type_accs = split /[,\s]+/, $evidence_type_accs_str;
+            my $valid = 1;
+            foreach my $fta (@evidence_type_accs) {
+                unless ( $self->evidence_type_data($fta) ) {
+                    print STDERR
+                      "The evidence_type_acc, '$fta' is not valid.\n";
+                    $valid = 0;
+                }
+            }
+            unless ($valid) {
+                push @missing, 'valid evidence_type_acc';
+            }
+        }
+        if (@missing) {
+            print STDERR "Missing the following arguments:\n";
+            print STDERR join( "\n", sort @missing ) . "\n";
+            exit(0);
+        }
     }
     else {
-        @map_set_names = ('All');
+        $map_sets = $self->get_map_sets;
+        return unless @{ $map_sets || [] };
+        my @map_set_names;
+        if ( @{ $map_sets || [] } ) {
+            @map_set_names =
+              map {
+                join( '-',
+                    $_->{'species_common_name'},
+                    $_->{'map_set_short_name'} )
+              } @$map_sets;
+        }
+        else {
+            @map_set_names = ('All');
+        }
+
+        my @evidence_types = $self->show_menu(
+            title      => 'Select Evidence Type (Optional)',
+            prompt     => 'Select evidence types',
+            display    => 'evidence_type',
+            return     => 'evidence_type_acc,evidence_type',
+            allow_null => 0,
+            allow_mult => 1,
+            allow_all  => 1,
+            data       => $self->fake_selectall_arrayref(
+                $self->evidence_type_data(), 'evidence_type_acc',
+                'evidence_type'
+            )
+        );
+
+        #
+        # Confirm decisions.
+        #
+        print join( "\n",
+            'OK to delete feature correspondences?',
+            '  Data source          : ' . $self->data_source,
+        );
+        if (@$map_sets) {
+            print "\n  Map Set(s)           :\n",
+              join( "\n", map { "    $_" } @map_set_names );
+        }
+        if (@evidence_types) {
+            print "\n  Evidence Types       :\n",
+              join( "\n", map { "    $_->[1]" } @evidence_types );
+        }
+        @evidence_type_accs = map { $_->[0] } @evidence_types;
+        print "\n[Y/n] ";
+        chomp( my $answer = <STDIN> );
+        return if $answer =~ /^[Nn]/;
+
     }
 
-    my @evidence_types = $self->show_menu(
-        title      => 'Select Evidence Type (Optional)',
-        prompt     => 'Select evidence types',
-        display    => 'evidence_type',
-        return     => 'evidence_type_acc,evidence_type',
-        allow_null => 0,
-        allow_mult => 1,
-        allow_all  => 1,
-        data       => $self->fake_selectall_arrayref(
-            $self->evidence_type_data(), 'evidence_type_acc',
-            'evidence_type'
-        )
-    );
-
-    #
-    # Confirm decisions.
-    #
-    print join( "\n",
-        'OK to delete feature correspondences?',
-        '  Data source          : ' . $self->data_source,
-    );
-    if (@$map_sets) {
-        print "\n  Map Set(s)           :\n",
-          join( "\n", map { "    $_" } @map_set_names );
+    unless (@evidence_type_accs){
+        print "No evidence types selected.  Doing Nothing.\n";
+        return;
     }
-    if (@evidence_types) {
-        print "\n  Evidence Types       :\n",
-          join( "\n", map { "    $_->[1]" } @evidence_types );
-    }
-    print "\n[Y/n] ";
-    chomp( my $answer = <STDIN> );
-    return if $answer =~ /^[Nn]/;
-
-    my %evidence_lookup = map { $_->[0], 1 } @evidence_types;
-    my @evidence_type_accs = map { $_->[0] } @evidence_types;
-    my $admin  = $self->admin;
-    my $log_fh = $self->log_fh;
+    my %evidence_lookup = map { $_, 1 } @evidence_type_accs;
+    my $admin           = $self->admin;
+    my $log_fh          = $self->log_fh;
+    my $disregard_evidence=@evidence_type_accs ?0 :1;
 
     for my $map_set (@$map_sets) {
         my $map_set_id = $map_set->{'map_set_id'};
@@ -742,6 +893,7 @@ sub delete_correspondences {
             cmap_object                 => $self,
             included_evidence_type_accs => \@evidence_type_accs,
             map_set_id2                 => $map_set_id,
+            disregard_evidence_type     => $disregard_evidence,
         );
 
         print $log_fh "Deleting correspondences for ",
@@ -786,70 +938,124 @@ sub delete_map_set {
     #
     # Deletes a map set.
     #
-    my $self       = shift;
-    my $sql_object = $self->sql or die $self->error;
-
-    my $map_sets = $self->get_map_sets( allow_mult => 0, allow_null => 0 );
-    return unless @{ $map_sets || [] };
-    my $map_set    = $map_sets->[0];
-    my $map_set_id = $map_set->{'map_set_id'};
-
-    my $delete_what = $self->show_menu(
-        title   => 'Delete',
-        prompt  => 'How much to delete?',
-        display => 'display',
-        return  => 'value',
-        data    => [
-            { value => 'entire', display => 'Delete entire map set' },
-            { value => 'some',   display => 'Delete just some maps in it' }
-        ],
-    );
-
+    my ( $self, %args ) = @_;
+    my $command_line = $args{'command_line'};
+    my $map_set_acc  = $args{'map_set_acc'};
+    my $map_accs_str = $args{'map_accs'};
+    my $sql_object   = $self->sql or die $self->error;
+    my $map_set_id;
+    my $map_set;
     my @map_ids;
-    if ( $delete_what eq 'some' ) {
-        @map_ids = $self->show_menu(
-            title      => 'Restrict by Map (optional)',
-            prompt     => 'Select one or more maps',
-            display    => 'map_name',
-            return     => 'map_id',
-            allow_null => 1,
-            allow_mult => 1,
-            data       => data => $sql_object->get_maps(
-                cmap_object => $self,
-                map_set_id  => $map_set_id
-            ),
-        );
-    }
 
-    my $map_names;
-    if (@map_ids) {
-        foreach my $map_id (@map_ids) {
-            push @$map_names,
-              $sql_object->get_object_name(
+    if ($command_line) {
+        my @missing = ();
+        unless ( defined($map_set_acc) or defined($map_accs_str) ) {
+            push @missing, 'map_set_acc or map_accs';
+        }
+        if ( defined($map_accs_str) ) {
+            my @map_accs = split /[,\s]+/, $map_accs_str;
+            my $valid = 1;
+            foreach my $acc (@map_accs) {
+                my $map_id = $sql_object->acc_id_to_internal_id(
+                    cmap_object => $self,
+                    acc_id      => $acc,
+                    object_type => 'map'
+                );
+                if ($map_id) {
+                    push @map_ids, $map_id;
+                }
+                else {
+                    print STDERR "The map_accs, '$acc' is not valid.\n";
+                    $valid = 0;
+                }
+            }
+            unless ($valid) {
+                push @missing, 'valid map_accs';
+            }
+        }
+        elsif ( defined($map_set_acc) ) {
+            my $map_sets = $sql_object->get_map_sets(
                 cmap_object => $self,
-                object_id   => $map_id,
-                object_type => 'map',
-              );
+                map_set_acc => $map_set_acc,
+            );
+            if ( @{ $map_sets || [] } ) {
+                $map_set    = $map_sets->[0];
+                $map_set_id = $map_set->{'map_set_id'};
+            }
+            unless ($map_set_id) {
+                print STDERR
+                  "Map set Accession, '$map_set_acc' is not valid.\n";
+                push @missing, 'valid map_set_acc';
+            }
+        }
+        if (@missing) {
+            print STDERR "Missing the following arguments:\n";
+            print STDERR join( "\n", sort @missing ) . "\n";
+            exit(0);
         }
     }
+    else {
+        my $map_sets = $self->get_map_sets( allow_mult => 0, allow_null => 0 );
+        return unless @{ $map_sets || [] };
+        $map_set    = $map_sets->[0];
+        $map_set_id = $map_set->{'map_set_id'};
 
-    print join(
-        "\n",
-        map { $_ || () } 'OK to delete?',
-        '  Data source : ' . $self->data_source,
-        '  Map Set     : '
-          . $map_set->{'species_common_name'} . '-'
-          . $map_set->{'map_set_short_name'},
-        (
-            @{ $map_names || [] }
-            ? '  Maps        : ' . join( ', ', @$map_names )
-            : ''
-        ),
-        '[Y/n] ',
-    );
+        my $delete_what = $self->show_menu(
+            title   => 'Delete',
+            prompt  => 'How much to delete?',
+            display => 'display',
+            return  => 'value',
+            data    => [
+                { value => 'entire', display => 'Delete entire map set' },
+                { value => 'some',   display => 'Delete just some maps in it' }
+            ],
+        );
 
-    chomp( my $answer = <STDIN> );
-    return if $answer =~ /^[Nn]/;
+        if ( $delete_what eq 'some' ) {
+            @map_ids = $self->show_menu(
+                title      => 'Restrict by Map (optional)',
+                prompt     => 'Select one or more maps',
+                display    => 'map_name',
+                return     => 'map_id',
+                allow_null => 1,
+                allow_mult => 1,
+                data       => data => $sql_object->get_maps(
+                    cmap_object => $self,
+                    map_set_id  => $map_set_id
+                ),
+            );
+        }
+
+        my $map_names;
+        if (@map_ids) {
+            foreach my $map_id (@map_ids) {
+                push @$map_names,
+                  $sql_object->get_object_name(
+                    cmap_object => $self,
+                    object_id   => $map_id,
+                    object_type => 'map',
+                  );
+            }
+        }
+
+        print join(
+            "\n",
+            map { $_ || () } 'OK to delete?',
+            '  Data source : ' . $self->data_source,
+            '  Map Set     : '
+              . $map_set->{'species_common_name'} . '-'
+              . $map_set->{'map_set_short_name'},
+            (
+                @{ $map_names || [] }
+                ? '  Maps        : ' . join( ', ', @$map_names )
+                : ''
+            ),
+            '[Y/n] ',
+        );
+
+        chomp( my $answer = <STDIN> );
+        return if $answer =~ /^[Nn]/;
+    }
 
     my $admin  = $self->admin;
     my $log_fh = $self->log_fh;
@@ -908,9 +1114,22 @@ sub export_as_text {
     #
     # Exports data in tab-delimited import format.
     #
-    my $self       = shift;
+    my ( $self, %args ) = @_;
+    my $command_line          = $args{'command_line'};
+    my $species_acc           = $args{'species_acc'};
+    my $map_set_accs          = $args{'map_set_accs'};
+    my $map_type_acc          = $args{'map_type_acc'};
+    my $feature_type_accs_str = $args{'feature_type_accs'};
+    my $exclude_fields_str    = $args{'exclude_fields'};
+    my $dir_str               = $args{'directory'};
+    $dir_str = "." unless defined($dir_str);
+
     my $sql_object = $self->sql or die $self->error;
-    my $log_fh     = $self->log_fh;
+    my $log_fh = $self->log_fh;
+    my $map_sets;
+    my @feature_type_accs;
+    my @exclude_fields;
+    my $dir;
 
     # Column Names
     my @col_names = qw(
@@ -948,61 +1167,165 @@ sub export_as_text {
       feature_attributes
     );
 
-    my $map_sets      = $self->get_map_sets or return;
-    my $feature_types = $self->get_feature_types;
+    if ($command_line) {
+        my @missing = ();
 
-    my @exclude_fields = $self->show_menu(
-        title      => 'Select Fields to Exclude',
-        prompt     => 'Which fields do you want to EXCLUDE from export?',
-        display    => 'field_name',
-        return     => 'field_name',
-        allow_null => 1,
-        allow_mult => 1,
-        data       => [ map { { field_name => $_ } } @col_names ],
-    );
+        # if map_set_accs is defined, get those, otherwise rely on the species
+        # and map type.  Either or both of those can be undef.
+        if ( defined($map_set_accs) ) {
 
-    if ( @exclude_fields == @col_names ) {
-        print "\nError:  Can't exclude all the fields!\n";
-        return;
-    }
-
-    my $dir = _get_dir() or return;
-
-    my @map_set_names;
-    if ( @{ $map_sets || [] } ) {
-        @map_set_names =
-          map {
-            join( '-', $_->{'species_common_name'}, $_->{'map_set_short_name'} )
-          } @$map_sets;
+            # split on space or comma
+            my @map_set_accs = split /[,\s]+/, $map_set_accs;
+            if (@map_set_accs) {
+                $map_sets = $sql_object->get_map_sets(
+                    cmap_object  => $self,
+                    map_set_accs => \@map_set_accs,
+                );
+            }
+            unless ( @{ $map_sets || [] } ) {
+                print STDERR
+                  "Map set Accession(s), '$map_set_accs' is/are not valid.\n";
+                push @missing, 'valid map_set_accs';
+            }
+        }
+        else {
+            my $species_id;
+            if ( defined($species_acc) ) {
+                $species_id = $sql_object->acc_id_to_internal_id(
+                    cmap_object => $self,
+                    acc_id      => $species_acc,
+                    object_type => 'species'
+                );
+                unless ($species_id) {
+                    print STDERR
+                      "The species_acc, '$species_acc' is not valid.\n";
+                    push @missing, 'valid species_acc';
+                }
+            }
+            if ($map_type_acc) {
+                unless ( $self->map_type_data($map_type_acc) ) {
+                    print STDERR "The map_type_acc, '$map_type_acc' "
+                      . "is not valid.\n";
+                    push @missing, 'valid map_type_acc';
+                }
+            }
+            $map_sets = $sql_object->get_map_sets(
+                cmap_object  => $self,
+                species_id   => $species_id,
+                map_type_acc => $map_type_acc,
+            );
+        }
+        if ( defined($feature_type_accs_str) ) {
+            @feature_type_accs = split /[,\s]+/, $feature_type_accs_str;
+            my $valid = 1;
+            foreach my $fta (@feature_type_accs) {
+                unless ( $self->feature_type_data($fta) ) {
+                    print STDERR "The feature_type_acc, '$fta' is not valid.\n";
+                    $valid = 0;
+                }
+            }
+            unless ($valid) {
+                push @missing, 'valid feature_type_acc';
+            }
+        }
+        if ($exclude_fields_str) {
+            @exclude_fields = split /[,\s]+/, $exclude_fields_str;
+            my $valid = 1;
+            foreach my $ef (@exclude_fields) {
+                my $found = 0;
+                foreach my $column (@col_names) {
+                    if ( $ef eq $column ) {
+                        $found = 1;
+                        last;
+                    }
+                }
+                unless ($found) {
+                    print STDERR
+                      "The exclude_fields name '$ef' is not valid.\n";
+                    $valid = 0;
+                }
+            }
+            unless ($valid) {
+                exit(0);
+            }
+            if ( @exclude_fields == @col_names ) {
+                print "\nError:  Can't exclude all the fields!\n";
+                exit(0);
+            }
+        }
+        $dir = $self->_get_dir( dir_str => $dir_str ) or return;
+        unless ( defined($dir) ) {
+            push @missing, 'valid directory';
+        }
+        if (@missing) {
+            print STDERR "Missing the following arguments:\n";
+            print STDERR join( "\n", sort @missing ) . "\n";
+            exit(0);
+        }
     }
     else {
-        @map_set_names = ('All');
-    }
-    my $display_feature_types;
-    if (@$feature_types) {
-        $display_feature_types = $feature_types;
-    }
-    else {
-        $display_feature_types = [ [ 'All', 'All' ], ];
-    }
 
-    my $excluded_fields =
-      @exclude_fields ? join( ', ', @exclude_fields ) : 'None';
+        $map_sets = $self->get_map_sets or return;
+        my $feature_types_ref = $self->get_feature_types;
 
-    #
-    # Confirm decisions.
-    #
-    print join( "\n",
-        'OK to export?',
-        '  Data source     : ' . $self->data_source,
-        "  Map Sets        :\n" . join( "\n", map { "    $_" } @map_set_names ),
-        "  Feature Types   :\n"
-          . join( "\n", map { "    $_->[1]" } @$display_feature_types ),
-        "  Exclude Fields  : $excluded_fields",
-        "  Directory       : $dir",
-        "[Y/n] " );
-    chomp( my $answer = <STDIN> );
-    return if $answer =~ /^[Nn]/;
+        @exclude_fields = $self->show_menu(
+            title      => 'Select Fields to Exclude',
+            prompt     => 'Which fields do you want to EXCLUDE from export?',
+            display    => 'field_name',
+            return     => 'field_name',
+            allow_null => 1,
+            allow_mult => 1,
+            data       => [ map { { field_name => $_ } } @col_names ],
+        );
+
+        if ( @exclude_fields == @col_names ) {
+            print "\nError:  Can't exclude all the fields!\n";
+            return;
+        }
+
+        $dir = $self->_get_dir() or return;
+
+        my @map_set_names;
+        if ( @{ $map_sets || [] } ) {
+            @map_set_names =
+              map {
+                join( '-',
+                    $_->{'species_common_name'},
+                    $_->{'map_set_short_name'} )
+              } @$map_sets;
+        }
+        else {
+            @map_set_names = ('All');
+        }
+        my $display_feature_types;
+        if (@$feature_types_ref) {
+            $display_feature_types = $feature_types_ref;
+        }
+        else {
+            $display_feature_types = [ [ 'All', 'All' ], ];
+        }
+
+        @feature_type_accs = map { $_->[0] } @$feature_types_ref;
+
+        my $excluded_fields =
+          @exclude_fields ? join( ', ', @exclude_fields ) : 'None';
+
+        #
+        # Confirm decisions.
+        #
+        print join( "\n",
+            'OK to export?',
+            '  Data source     : ' . $self->data_source,
+            "  Map Sets        :\n"
+              . join( "\n", map { "    $_" } @map_set_names ),
+            "  Feature Types   :\n"
+              . join( "\n", map { "    $_->[1]" } @$display_feature_types ),
+            "  Exclude Fields  : $excluded_fields",
+            "  Directory       : $dir",
+            "[Y/n] " );
+        chomp( my $answer = <STDIN> );
+        return if $answer =~ /^[Nn]/;
+    }
 
     my %exclude = map { $_, 1 } @exclude_fields;
     for ( my $i = 0 ; $i <= $#col_names ; $i++ ) {
@@ -1045,7 +1368,7 @@ sub export_as_text {
         for my $map (@$maps) {
             my $features = $sql_object->get_features(
                 cmap_object       => $self,
-                feature_type_accs => $feature_types,
+                feature_type_accs => \@feature_type_accs,
                 map_id            => $map->{'map_id'},
             );
 
@@ -1084,91 +1407,172 @@ sub export_as_sql {
     #
     # Exports data as SQL INSERT statements.
     #
-    my $self       = shift;
-    my $sql_object = $self->sql or die $self->error;
-    my $db         = $self->db or die $self->error;
-    my $log_fh     = $self->log_fh;
+    my ( $self, %args ) = @_;
+    my $command_line = $args{'command_line'};
+    my $file         = $args{'export_file'};
+    my $add_truncate = $args{'add_truncate'};
+    $add_truncate = 1 unless ( defined($add_truncate) );
+    my $quote_escape    = $args{'quote_escape'};
+    my $dump_tables_str = $args{'tables'};
+    my @dump_tables;
 
+    my $sql_object = $self->sql or die $self->error;
+    my $db         = $self->db  or die $self->error;
+    my $log_fh = $self->log_fh;
+
+    my $quote_escape_options = [
+        { display => 'Doubled',   action => 'doubled' },
+        { display => 'Backslash', action => 'backslash' },
+    ];
     my @tables = @{ $sql_object->get_table_info() };
 
-    #
-    # Ask user what/how/where to dump.
-    #
-    my @dump_tables = $self->show_menu(
-        title     => 'Select Tables',
-        prompt    => 'Which tables do you want to export?',
-        display   => 'table_name',
-        return    => 'table_name',
-        allow_all => 1,
-        data      => [ map { { 'table_name', $_->{'name'} } } @tables ],
-    );
-
-    print "Add 'TRUNCATE TABLE' statements? [Y/n] ";
-    chomp( my $answer = <STDIN> );
-    $answer ||= 'y';
-    my $add_truncate = $answer =~ m/^[yY]/;
-
-    my $file;
-    for ( ; ; ) {
-        my $default = './cmap_dump.sql';
-        print "Where would you like to write the file?\n",
-          "['q' to quit, '$default' is default] ";
-        chomp( my $user_file = <STDIN> );
-        $user_file ||= $default;
-
-        if ( -d $user_file ) {
-            print "'$user_file' is a directory.  Please give me a file path.\n";
-            next;
+    if ($command_line) {
+        my @missing = ();
+        if ( defined($file) ) {
+            if ( -d $file ) {
+                print "'$file' is a directory.  Please give me a file path.\n";
+                push @missing, 'export_file';
+            }
+            elsif ( -e _ && not -w _ ) {
+                print "'$file' exists and you don't have "
+                  . "permissions to overwrite.\n";
+                push @missing, 'export_file';
+            }
         }
-        elsif ( -e _ && -r _ ) {
-            print "'$user_file' exists.  Overwrite? [Y/n] ";
-            chomp( my $overwrite = <STDIN> );
-            $overwrite ||= 'y';
-            if ( $overwrite =~ m/^[yY]/ ) {
+        else {
+            push @missing, 'export_file';
+        }
+        if ($quote_escape) {
+            my $found = 0;
+            foreach my $item (@$quote_escape_options) {
+                if ( $quote_escape eq $item->{'action'} ) {
+                    $found = 1;
+                }
+            }
+            unless ($found) {
+                print STDERR "The quote_escape, '$quote_escape' "
+                  . "is not valid.\n";
+                push @missing, 'quote_escape';
+            }
+        }
+        else {
+            push @missing, 'quote_escape';
+        }
+        if ($dump_tables_str) {
+            if ( $dump_tables_str =~ /^all$/i ) {
+                @dump_tables = map { $_->{'name'} } @tables;
+            }
+            else {
+                @dump_tables = split /[,\s]+/, $dump_tables_str;
+                my $valid = 1;
+                foreach my $dump_table (@dump_tables) {
+                    my $found = 0;
+                    foreach my $table (@tables) {
+                        if ( $dump_table eq $table->{'name'} ) {
+                            $found = 1;
+                            last;
+                        }
+                    }
+                    unless ($found) {
+                        print STDERR
+                          "The table name '$dump_table' is not valid.\n";
+                        $valid = 0;
+                    }
+                }
+                unless ($valid) {
+                    push @missing, 'tables';
+                }
+            }
+        }
+        else {
+            push @missing, 'tables';
+        }
+
+        if (@missing) {
+            print STDERR "Missing the following arguments:\n";
+            print STDERR join( "\n", sort @missing ) . "\n";
+            exit(0);
+        }
+    }
+    else {
+
+        #
+        # Ask user what/how/where to dump.
+        #
+        @dump_tables = $self->show_menu(
+            title     => 'Select Tables',
+            prompt    => 'Which tables do you want to export?',
+            display   => 'table_name',
+            return    => 'table_name',
+            allow_all => 1,
+            data      => [ map { { 'table_name', $_->{'name'} } } @tables ],
+        );
+
+        print "Add 'TRUNCATE TABLE' statements? [Y/n] ";
+        chomp( my $answer = <STDIN> );
+        $answer ||= 'y';
+        $add_truncate = $answer =~ m/^[yY]/;
+
+        for ( ; ; ) {
+            my $default = './cmap_dump.sql';
+            print "Where would you like to write the file?\n",
+              "['q' to quit, '$default' is default] ";
+            chomp( my $user_file = <STDIN> );
+            $user_file ||= $default;
+
+            if ( -d $user_file ) {
+                print
+                  "'$user_file' is a directory.  Please give me a file path.\n";
+                next;
+            }
+            elsif ( -e _ && -w _ ) {
+                print "'$user_file' exists.  Overwrite? [Y/n] ";
+                chomp( my $overwrite = <STDIN> );
+                $overwrite ||= 'y';
+                if ( $overwrite =~ m/^[yY]/ ) {
+                    $file = $user_file;
+                    last;
+                }
+                else {
+                    print "OK, I won't overwrite.  Try again.\n";
+                    next;
+                }
+            }
+            elsif ( -e _ ) {
+                print
+                  "'$user_file' exists & isn't writable by you.  Try again.\n";
+                next;
+            }
+            else {
                 $file = $user_file;
                 last;
             }
-            else {
-                print "OK, I won't overwrite.  Try again.\n";
-                next;
-            }
         }
-        elsif ( -e _ ) {
-            print "'$user_file' exists & isn't writable by you.  Try again.\n";
-            next;
-        }
-        else {
-            $file = $user_file;
-            last;
-        }
+
+        $quote_escape = $self->show_menu(
+            title  => 'Quote Style',
+            prompt => "How should embeded quotes be escaped?\n"
+              . 'Hint: Oracle and Sybase like [1], MySQL likes [2]',
+            display => 'display',
+            return  => 'action',
+            data    => $quote_escape_options,
+        );
+
+        #
+        # Confirm decisions.
+        #
+        print join( "\n",
+            'OK to export?',
+            '  Data source  : ' . $self->data_source,
+            '  Tables       : ' . join( ', ', @dump_tables ),
+            '  Add Truncate : ' . ( $add_truncate ? 'Yes' : 'No' ),
+            "  File         : $file",
+            "  Escape Quotes: $quote_escape",
+            "[Y/n] " );
+
+        chomp( $answer = <STDIN> );
+        return if $answer =~ /^[Nn]/;
     }
-
-    my $quote_escape = $self->show_menu(
-        title  => 'Quote Style',
-        prompt => "How should embeded quotes be escaped?\n"
-          . 'Hint: Oracle and Sybase like [1], MySQL likes [2]',
-        display => 'display',
-        return  => 'action',
-        data    => [
-            { display => 'Doubled',   action => 'doubled' },
-            { display => 'Backslash', action => 'backslash' },
-        ],
-    );
-
-    #
-    # Confirm decisions.
-    #
-    print join( "\n",
-        'OK to export?',
-        '  Data source  : ' . $self->data_source,
-        '  Tables       : ' . join( ', ', @dump_tables ),
-        '  Add Truncate : ' . ( $add_truncate ? 'Yes' : 'No' ),
-        "  File         : $file",
-        "  Escape Quotes: $quote_escape",
-        "[Y/n] " );
-
-    chomp( $answer = <STDIN> );
-    return if $answer =~ /^[Nn]/;
 
     print $log_fh "Making SQL dump of tables to '$file'\n";
     open my $fh, ">$file" or die "Can't write to '$file': $!\n";
@@ -1227,111 +1631,233 @@ sub export_objects {
     #
     # Exports serialized database objects.
     #
-    my $self = shift;
+    my ( $self, %args ) = @_;
+    my $command_line = $args{'command_line'};
+    my $species_acc  = $args{'species_acc'};
+    my $map_set_accs = $args{'map_set_accs'};
+    my $map_type_acc = $args{'map_type_acc'};
 
+    #my $feature_type_accs_str = $args{'feature_type_accs'};
+    my $object_str = $args{'export_objects'};
+    my $file_name  = $args{'export_file'} || 'cmap_export.xml';
+    my $dir_str    = $args{'directory'};
+    $dir_str = "." unless defined($dir_str);
+    my $sql_object = $self->sql;
     my $export_path;
-    for ( ; ; ) {
-        my $dir = _get_dir() or return;
+    my @db_objects;
+    my $map_sets;
 
-        print 'What file name [cmap_export.xml]? ';
-        chomp( my $file_name = <STDIN> );
-        $file_name ||= 'cmap_export.xml';
+    #my $feature_types
 
-        $export_path = catfile( $dir, $file_name );
+    my $object_options = [
+        {
+            object_type => 'map_set',
+            object_name => 'Map Sets',
+        },
+        {
+            object_type => 'species',
+            object_name => 'Species',
+        },
+        {
+            object_type => 'feature_correspondence',
+            object_name => 'Feature Correspondence',
+        },
+        {
+            object_type => 'xref',
+            object_name => 'Cross-references',
+        },
+    ];
 
-        if ( -e $export_path ) {
-            print "The file '$export_path' exists.  Overwrite? [Y/n] ";
-            chomp( my $answer = <STDIN> );
-            if ( $answer =~ /^[Nn]/ ) {
-                next;
+    if ($command_line) {
+        my @missing = ();
+
+        if ( !$object_str or $object_str =~ /^all$/i ) {
+            @db_objects = map { $_->{'object_type'} } @$object_options;
+        }
+        else {
+            @db_objects = split /[,\s]+/, $object_str;
+            my $valid = 1;
+            foreach my $ob (@db_objects) {
+                my $found = 0;
+                foreach my $option (@$object_options) {
+                    if ( $ob eq $option->{'object_type'} ) {
+                        $found = 1;
+                        last;
+                    }
+                }
+                unless ($found) {
+                    print STDERR
+                      "The export_objects name '$ob' is not valid.\n";
+                    $valid = 0;
+                }
             }
-            else {
-                last;
+            unless ($valid) {
+                exit(0);
             }
         }
 
-        last if $export_path;
+        # if map_set_accs is defined, get those, otherwise rely on the species
+        # and map type.  Either or both of those can be undef.
+        if ( grep { /map_set/ } @db_objects ) {
+            if ( defined($map_set_accs) ) {
+
+                # split on space or comma
+                my @map_set_accs = split /[,\s]+/, $map_set_accs;
+                if (@map_set_accs) {
+                    $map_sets = $sql_object->get_map_sets(
+                        cmap_object  => $self,
+                        map_set_accs => \@map_set_accs,
+                    );
+                }
+                unless ( @{ $map_sets || [] } ) {
+                    print STDERR
+"Map set Accession(s), '$map_set_accs' is/are not valid.\n";
+                    push @missing, 'valid map_set_accs';
+                }
+            }
+            else {
+                my $species_id;
+                if ( defined($species_acc) ) {
+                    $species_id = $sql_object->acc_id_to_internal_id(
+                        cmap_object => $self,
+                        acc_id      => $species_acc,
+                        object_type => 'species'
+                    );
+                    unless ($species_id) {
+                        print STDERR
+                          "The species_acc, '$species_acc' is not valid.\n";
+                        push @missing, 'valid species_acc';
+                    }
+                }
+                if ($map_type_acc) {
+                    unless ( $self->map_type_data($map_type_acc) ) {
+                        print STDERR "The map_type_acc, '$map_type_acc' "
+                          . "is not valid.\n";
+                        push @missing, 'valid map_type_acc';
+                    }
+                }
+                $map_sets = $sql_object->get_map_sets(
+                    cmap_object  => $self,
+                    species_id   => $species_id,
+                    map_type_acc => $map_type_acc,
+                );
+            }
+
+       #if ( defined($feature_type_accs_str) ) {
+       #    @feature_type_accs = split /[,\s]+/, $feature_type_accs_str;
+       #    my $valid = 1;
+       #    foreach my $fta (@feature_type_accs) {
+       #        unless ( $self->feature_type_data($fta) ) {
+       #            print STDERR "The feature_type_acc, '$fta' is not valid.\n";
+       #            $valid = 0;
+       #        }
+       #    }
+       #    unless ($valid) {
+       #        push @missing, 'valid feature_type_acc';
+       #    }
+       #}
+        }
+        my $dir = $self->_get_dir( dir_str => $dir_str ) or return;
+        unless ( defined($dir) ) {
+            push @missing, 'valid directory';
+        }
+        $export_path = catfile( $dir, $file_name );
+
+        if (@missing) {
+            print STDERR "Missing the following arguments:\n";
+            print STDERR join( "\n", sort @missing ) . "\n";
+            exit(0);
+        }
     }
+    else {
+        for ( ; ; ) {
+            my $dir = $self->_get_dir() or return;
 
-    #
-    # Which objects?
-    #
-    my @objects = $self->show_menu(
-        title      => 'Which objects?',
-        prompt     => 'Please select the objects you wish to export',
-        display    => 'object_name',
-        return     => 'object_type,object_name',
-        allow_null => 0,
-        allow_mult => 1,
-        allow_all  => 1,
-        data       => [
-            {
-                object_type => 'map_set',
-                object_name => 'Map Sets',
-            },
-            {
-                object_type => 'species',
-                object_name => 'Species',
-            },
-            {
-                object_type => 'feature_correspondence',
-                object_name => 'Feature Correspondence',
-            },
-            {
-                object_type => 'xref',
-                object_name => 'Cross-references',
-            },
-        ]
-    );
+            print 'What file name [cmap_export.xml]? ';
+            chomp( $file_name = <STDIN> );
+            $file_name ||= 'cmap_export.xml';
 
-    my @db_objects   = map { $_->[0] } @objects;
-    my @object_names = map { $_->[1] } @objects;
+            $export_path = catfile( $dir, $file_name );
 
-    my @confirm = (
-        '  Data source  : ' . $self->data_source,
-        '  Objects      : ' . join( ', ', @object_names ),
-        "  File name    : $export_path",
-    );
+            if ( -e $export_path ) {
+                print "The file '$export_path' exists.  Overwrite? [Y/n] ";
+                chomp( my $answer = <STDIN> );
+                if ( $answer =~ /^[Nn]/ ) {
+                    next;
+                }
+                else {
+                    last;
+                }
+            }
 
-    my ( $map_sets, $feature_types );
-    if ( grep { /map_set/ } @db_objects ) {
-        $map_sets = $self->get_map_sets or return;
-        $feature_types = $self->get_feature_types;
-        my @ft_names = map { $_->{'feature_type'} } @$feature_types;
-        my @map_set_names =
-          map {
-                $_->{'species_common_name'} . '-'
-              . $_->{'map_set_short_name'} . ' ('
-              . $_->{'map_type'} . ')'
-          } @$map_sets;
+            last if $export_path;
+        }
 
-        @map_set_names = ('All') unless @map_set_names;
-        @ft_names      = ('All') unless @ft_names;
+        #
+        # Which objects?
+        #
+        my @objects = $self->show_menu(
+            title      => 'Which objects?',
+            prompt     => 'Please select the objects you wish to export',
+            display    => 'object_name',
+            return     => 'object_type,object_name',
+            allow_null => 0,
+            allow_mult => 1,
+            allow_all  => 1,
+            data       => $object_options,
+        );
 
-        push @confirm,
-          (
-            "  Map Sets     :\n"
-              . join( "\n", map { "    $_" } @map_set_names ),
-            "  Feature Types:\n" . join( "\n", map { "    $_" } @ft_names ),
-          );
+        @db_objects = map { $_->[0] } @objects;
+        my @object_names = map { $_->[1] } @objects;
+
+        my @confirm = (
+            '  Data source  : ' . $self->data_source,
+            '  Objects      : ' . join( ', ', @object_names ),
+            "  File name    : $export_path",
+        );
+
+        if ( grep { /map_set/ } @db_objects ) {
+            $map_sets = $self->get_map_sets or return;
+
+            #$feature_types = $self->get_feature_types;
+            #my @ft_names = map { $_->{'feature_type'} } @$feature_types;
+            my @map_set_names =
+              map {
+                    $_->{'species_common_name'} . '-'
+                  . $_->{'map_set_short_name'} . ' ('
+                  . $_->{'map_type'} . ')'
+              } @$map_sets;
+
+            @map_set_names = ('All') unless @map_set_names;
+
+            #@ft_names      = ('All') unless @ft_names;
+
+            push @confirm, (
+                "  Map Sets     :\n"
+                  . join( "\n", map { "    $_" } @map_set_names ),
+
+            #   "  Feature Types:\n" . join( "\n", map { "    $_" } @ft_names ),
+            );
+        }
+
+        #
+        # Confirm decisions.
+        #
+        print join( "\n", 'OK to export?', @confirm, '[Y/n] ' );
+        chomp( my $answer = <STDIN> );
+        return if $answer =~ /^[Nn]/;
     }
-
-    #
-    # Confirm decisions.
-    #
-    print join( "\n", 'OK to export?', @confirm, '[Y/n] ' );
-    chomp( my $answer = <STDIN> );
-    return if $answer =~ /^[Nn]/;
 
     my $exporter =
       Bio::GMOD::CMap::Admin::Export->new( data_source => $self->data_source );
 
     $exporter->export(
-        objects       => \@db_objects,
-        output_path   => $export_path,
-        log_fh        => $self->log_fh,
-        map_sets      => $map_sets,
-        feature_types => $feature_types,
+        objects     => \@db_objects,
+        output_path => $export_path,
+        log_fh      => $self->log_fh,
+        map_sets    => $map_sets,
+
+        #feature_types => $feature_types, NOT USED
       )
       or do {
         print "Error: ", $exporter->error, "\n";
@@ -1878,7 +2404,9 @@ sub import_correspondences {
         return if $answer =~ /^[Nn]/;
     }
 
-    my $importer = Bio::GMOD::CMap::Admin::ImportCorrespondences->new( data_source => $self->data_source, );
+    my $importer =
+      Bio::GMOD::CMap::Admin::ImportCorrespondences->new(
+        data_source => $self->data_source, );
     foreach my $file (@$files) {
         my $fh = IO::File->new($file) or die "Can't read $file: $!";
         $self->file($file);
@@ -2400,7 +2928,7 @@ sub import_object_data {
         print join( "\n",
             'OK to import?',
             '  Data source : ' . $self->data_source,
-            "  File        : ".join(', ',@$files),
+            "  File        : " . join( ', ', @$files ),
             "  Overwrite   : " . ( $overwrite ? "Yes" : "No" ),
             "[Y/n] " );
         chomp( my $answer = <STDIN> );
@@ -2427,121 +2955,260 @@ sub import_object_data {
 
 # ----------------------------------------------------
 sub make_name_correspondences {
-    my $self = shift;
 
+    my ( $self, %args ) = @_;
+    my $command_line        = $args{'command_line'};
+    my $evidence_type_acc   = $args{'evidence_type_acc'};
+    my $from_map_set_accs   = $args{'from_map_set_accs'};
+    my $to_map_set_accs   = $args{'to_map_set_accs'};
+    my $skip_feature_type_accs_str = $args{'skip_feature_type_accs'};
+    my $allow_update = $args{'allow_update'} || 0;
+    my $name_regex_option   = $args{'name_regex'};
+    my $sql_object = $self->sql;
+
+    my @from_map_set_ids;
+    my @to_map_set_ids;
+    my @skip_feature_type_accs,
+    my $allow_update,
+    my $name_regex;
+    my $regex_options = [
+        {
+            regex_title => 'exact match only',
+            regex       => '',
+            option_name => 'exact_match',
+        },
+        {
+            regex_title => q[read pairs '(\S+)\.\w\d$'],
+            regex       => '(\S+)\.\w\d$',
+            option_name => 'read_pair',
+        },
+    ];
+
+    if ($command_line) {
+        my @missing = ();
+        if ( defined($evidence_type_acc) ) {
+            unless ( $self->evidence_type_data($evidence_type_acc) ) {
+                print STDERR
+                  "The evidence_type_acc, '$evidence_type_acc' is not valid.\n";
+                push @missing, 'evidence_type_acc';
+            }
+        }
+        else {
+            push @missing, 'evidence_type_acc';
+        }
+        if ( defined($skip_feature_type_accs_str) ) {
+            @skip_feature_type_accs = split /[,\s]+/, $skip_feature_type_accs_str;
+            my $valid = 1;
+            foreach my $fta (@skip_feature_type_accs) {
+                unless ( $self->feature_type_data($fta) ) {
+                    print STDERR "The skip_feature_type_acc, '$fta' is not valid.\n";
+                    $valid = 0;
+                }
+            }
+            unless ($valid) {
+                push @missing, 'valid feature_type_acc';
+            }
+        }
+        if ( defined($from_map_set_accs) ) {
+            # split on space or comma
+            my @from_map_set_accs = split /[,\s]+/, $from_map_set_accs;
+            if (@from_map_set_accs) {
+                my $valid = 1;
+                foreach my $acc (@from_map_set_accs){
+                    my $map_set_id = $sql_object->acc_id_to_internal_id(
+                        cmap_object => $self,
+                        acc_id      => $acc,
+                        object_type => 'map_set'
+                    );
+                    if($map_set_id) {
+                        push @from_map_set_ids, $map_set_id;
+                    }
+                    else{
+                        print STDERR
+                          "from map set accession, '$acc' is not valid.\n";
+                        $valid = 0;
+                    }
+                }
+                unless($valid){
+                    push @missing, 'valid from_map_set_accs';
+                }
+            }
+            else{
+                push @missing, 'valid from_map_set_accs';
+            }
+        }
+        else{
+            push @missing, 'from_map_set_accs';
+        }
+        if ( defined($to_map_set_accs) ) {
+            # split on space or comma
+            my @to_map_set_accs = split /[,\s]+/, $to_map_set_accs;
+            if (@to_map_set_accs) {
+                my $valid = 1;
+                foreach my $acc (@to_map_set_accs){
+                    my $map_set_id = $sql_object->acc_id_to_internal_id(
+                        cmap_object => $self,
+                        acc_id      => $acc,
+                        object_type => 'map_set'
+                    );
+                    if($map_set_id) {
+                        push @to_map_set_ids, $map_set_id;
+                    }
+                    else{
+                        print STDERR
+                          "to map set accession, '$acc' is not valid.\n";
+                        $valid = 0;
+                    }
+                }
+                unless($valid){
+                    push @missing, 'valid to_map_set_accs';
+                }
+            }
+            else{
+                push @missing, 'valid to_map_set_accs';
+            }
+        }
+        else{
+            push @missing, 'to_map_set_accs';
+        }
+        if ($name_regex_option){
+            my $found = 0;
+            foreach my $item (@$regex_options) {
+                if ( $name_regex_option eq $item->{'option_name'} ) {
+                    $found = 1;
+                    $name_regex = $item->{'regex'} ;
+                    last;
+                }
+            }
+            unless ($found) {
+                print STDERR
+                  "The name_regex '$name_regex_option' is not valid.\n";
+                push @missing, 'valid name_regex';
+            }
+        }
+        else{
+            $name_regex = '';
+        }
+        
+        if (@missing) {
+            print STDERR "Missing the following arguments:\n";
+            print STDERR join( "\n", sort @missing ) . "\n";
+            exit(0);
+        }
+    }
+    else {
     #
     # Get the evidence type id.
     #
-    my ( $evidence_type_acc, $evidence_type ) = $self->show_menu(
-        title   => 'Available evidence types',
-        prompt  => 'Please select an evidence type',
-        display => 'evidence_type',
-        return  => 'evidence_type_acc,evidence_type',
-        data    => sort_selectall_arrayref(
-            $self->fake_selectall_arrayref(
-                $self->evidence_type_data(), 'evidence_type_acc',
+        my $evidence_type;
+        ( $evidence_type_acc, $evidence_type ) = $self->show_menu(
+            title   => 'Available evidence types',
+            prompt  => 'Please select an evidence type',
+            display => 'evidence_type',
+            return  => 'evidence_type_acc,evidence_type',
+            data    => sort_selectall_arrayref(
+                $self->fake_selectall_arrayref(
+                    $self->evidence_type_data(), 'evidence_type_acc',
+                    'evidence_type'
+                ),
                 'evidence_type'
             ),
-            'evidence_type'
-        ),
-    );
-    die "No evidence types!  Please use the config file to create.\n"
-      unless $evidence_type;
+        );
+        die "No evidence types!  Please use the config file to create.\n"
+          unless $evidence_type;
 
-    my $from_map_sets =
-      $self->get_map_sets(
-        explanation => 'First you will select the starting map sets' )
-      or return;
-
-    my $use_from_as_target_answer =
-      $self->show_question( question =>
-          'Do you want to use the starting map sets as the target sets? [y|N]',
-      );
-    my $to_map_sets;
-    if ( $use_from_as_target_answer =~ /^y/ ) {
-        $to_map_sets = $from_map_sets;
-    }
-    else {
-        $to_map_sets =
+        my $from_map_sets =
           $self->get_map_sets(
-            explanation => 'Now you will select the target map sets' )
+            explanation => 'First you will select the starting map sets' )
           or return;
-    }
 
-    my @skip_features = $self->show_menu(
-        title      => 'Skip Feature Types (optional)',
-        prompt     => 'Select any feature types to skip in check',
-        display    => 'feature_type',
-        return     => 'feature_type_acc,feature_type',
-        allow_null => 1,
-        allow_mult => 1,
-        data       => sort_selectall_arrayref(
-            $self->fake_selectall_arrayref(
-                $self->feature_type_data(), 'feature_type_acc',
+        my $use_from_as_target_answer =
+          $self->show_question( question =>
+              'Do you want to use the starting map sets as the target sets? [y|N]',
+          );
+        my $to_map_sets;
+        if ( $use_from_as_target_answer =~ /^y/ ) {
+            $to_map_sets = $from_map_sets;
+        }
+        else {
+            $to_map_sets =
+              $self->get_map_sets(
+                explanation => 'Now you will select the target map sets' )
+              or return;
+        }
+
+        my @skip_features = $self->show_menu(
+            title      => 'Skip Feature Types (optional)',
+            prompt     => 'Select any feature types to skip in check',
+            display    => 'feature_type',
+            return     => 'feature_type_acc,feature_type',
+            allow_null => 1,
+            allow_mult => 1,
+            data       => sort_selectall_arrayref(
+                $self->fake_selectall_arrayref(
+                    $self->feature_type_data(), 'feature_type_acc',
+                    'feature_type'
+                ),
                 'feature_type'
             ),
-            'feature_type'
-        ),
-    );
-    my @skip_feature_type_accs = map { $_->[0] } @skip_features;
-    my $skip =
-      @skip_features
-      ? join( "\n     ", map { $_->[1] } @skip_features ) . "\n"
-      : '    None';
+        );
+        @skip_feature_type_accs = map { $_->[0] } @skip_features;
+        my $skip =
+          @skip_features
+          ? join( "\n     ", map { $_->[1] } @skip_features ) . "\n"
+          : '    None';
 
-    print "Check for duplicate data (slow)? [y/N] ";
-    chomp( my $allow_update = <STDIN> );
-    $allow_update = ( $allow_update =~ /^[Yy]/ ) ? 1 : 0;
+        print "Check for duplicate data (slow)? [y/N] ";
+        chomp( $allow_update = <STDIN> );
+        $allow_update = ( $allow_update =~ /^[Yy]/ ) ? 1 : 0;
 
-    my $name_regex = $self->show_menu(
-        title =>
-"Match Type\n(You can add your own match types by editing cmap_admin.pl)",
-        prompt     => "Select the match type that you desire",
-        display    => 'regex_title',
-        return     => 'regex',
-        allow_null => 0,
-        allow_mult => 0,
-        data       => [
-            {
-                regex_title => 'exact match only',
-                regex       => '',
-            },
-            {
-                regex_title => q[read pairs '(\S+)\.\w\d$'],
-                regex       => '(\S+)\.\w\d$',
-            },
-        ],
-    );
+        $name_regex = $self->show_menu(
+            title => "Match Type\n(You can add your own "
+              . "match types by editing cmap_admin.pl)",
+            prompt     => "Select the match type that you desire",
+            display    => 'regex_title',
+            return     => 'regex',
+            allow_null => 0,
+            allow_mult => 0,
+            data   => $regex_options,
+        );
 
-    my $from = join(
-        "\n",
-        map {
-"    $_->{species_common_name}-$_->{map_set_short_name} ($_->{map_set_acc})"
-          } @{$from_map_sets}
-    );
+        my $from = join(
+            "\n",
+            map {
+                    "    "
+                  . $_->{species_common_name} . "-"
+                  . $_->{map_set_short_name} . " ("
+                  . $_->{map_set_acc} . ")"
+              } @{$from_map_sets}
+        );
 
-    my $to = join(
-        "\n",
-        map {
-"    $_->{species_common_name}-$_->{map_set_short_name} ($_->{map_set_acc})"
-          } @{$to_map_sets}
-    );
-    print "Make name-based correspondences\n",
-      '  Data source   : ' . $self->data_source, "\n",
-      "  Evidence type : $evidence_type\n", "  From map sets :\n$from\n",
-      "  To map sets   :\n$to\n",           "  Skip features :\n$skip\n",
-      "  Check for dups  : " . ( $allow_update ? "yes" : "no" );
-    print "\nOK to make correspondences? [Y/n] ";
-    chomp( my $answer = <STDIN> );
-    return if $answer =~ m/^[Nn]/;
+        my $to = join(
+            "\n",
+            map {
+                    "    "
+                  . $_->{species_common_name} . "-"
+                  . $_->{map_set_short_name} . " ("
+                  . $_->{map_set_acc} . ")"
+              } @{$to_map_sets}
+        );
+        print "Make name-based correspondences\n",
+          '  Data source   : ' . $self->data_source, "\n",
+          "  Evidence type : $evidence_type\n", "  From map sets :\n$from\n",
+          "  To map sets   :\n$to\n",           "  Skip features :\n$skip\n",
+          "  Check for dups  : " . ( $allow_update ? "yes" : "no" );
+        print "\nOK to make correspondences? [Y/n] ";
+        chomp( my $answer = <STDIN> );
+        return if $answer =~ m/^[Nn]/;
+        @from_map_set_ids = map { $_->{map_set_id} } @$from_map_sets;
+        @to_map_set_ids   = map { $_->{map_set_id} } @$to_map_sets;
+    }
 
     my $corr_maker = Bio::GMOD::CMap::Admin::MakeCorrespondences->new(
         db          => $self->db,
         data_source => $self->data_source,
     );
 
-    my @from_map_set_ids = map { $_->{map_set_id} } @$from_map_sets;
-    my @to_map_set_ids   = map { $_->{map_set_id} } @$to_map_sets;
     my $time_start = new Benchmark;
     $corr_maker->make_name_correspondences(
         evidence_type_acc      => $evidence_type_acc,
@@ -2950,13 +3617,25 @@ sub _get_dir {
     #
     # Get a directory for writing files to.
     #
+    my ( $self, %args ) = @_;
+    my $dir_str = $args{'dir_str'};
     my $dir;
-    for ( ; ; ) {
-        print "\nTo which directory should I write the output files?\n",
-          "['q' to quit, current dir (.) is default] ";
-        chomp( my $answer = <STDIN> );
-        $answer ||= '.';
-        return if $answer =~ m/^[qQ]/;
+    my $fh = \*STDOUT;
+    $fh = \*STDERR if ($dir_str);
+    my $continue_loop = 1;
+    while ( not defined($dir) and $continue_loop ) {
+        my $answer;
+        if ($dir_str) {
+            $continue_loop = 0;
+            $answer        = $dir_str;
+        }
+        else {
+            print $fh "\nTo which directory should I write the output files?\n",
+              "['q' to quit, current dir (.) is default] ";
+            chomp( $answer = <STDIN> );
+            $answer ||= '.';
+            return if $answer =~ m/^[qQ]/;
+        }
 
         if ( -d $answer ) {
             if ( -w _ ) {
@@ -2964,22 +3643,25 @@ sub _get_dir {
                 last;
             }
             else {
-                print "\n'$answer' is not writable by you.\n\n";
+                print $fh "\n'$answer' is not writable by you.\n\n";
                 next;
             }
         }
         elsif ( -f $answer ) {
-            print "\n'$answer' is not a directory.  Please try again.\n\n";
+            print $fh "\n'$answer' is not a directory.  Please try again.\n\n";
             next;
         }
         else {
-            print "\n'$answer' does not exist.  Create? [Y/n] ";
-            chomp( my $response = <STDIN> );
+            my $response;
+            if ( not $dir_str ) {
+                print $fh "\n'$answer' does not exist.  Create? [Y/n] ";
+                chomp( $response = <STDIN> );
+            }
             $response ||= 'y';
             if ( $response =~ m/^[Yy]/ ) {
                 eval { mkpath( $answer, 0, 0711 ) };
                 if ( my $err = $@ ) {
-                    print "I couldn't make that directory: $err\n\n";
+                    print $fh "I couldn't make that directory: $err\n\n";
                     next;
                 }
                 else {
