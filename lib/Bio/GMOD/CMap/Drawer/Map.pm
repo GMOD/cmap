@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.159 2005-06-03 22:20:01 mwz444 Exp $
+# $Id: Map.pm,v 1.160 2005-06-21 19:25:15 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.159 $)[-1];
+$VERSION = (qw$Revision: 1.160 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -2375,7 +2375,7 @@ sub add_topper {
         is_flipped => $is_flipped,
         buttons    => [ 'map_detail', 'map_matrix', 'flip', 'new_view', ],
     );
-    if ( scalar(@$buttons) ) {
+    if ( $is_compressed and scalar(@$buttons) ) {
         my $button_y_buffer = 4;
         my $button_x_buffer = 6;
         my $button_height   =
