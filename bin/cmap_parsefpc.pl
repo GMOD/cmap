@@ -6,9 +6,11 @@ cmap_parcefpc.pl
 
 =head1 SYNOPSIS
 
-  cmap_parcefpc.pl [-a assembly_file] fpc_file
+  cmap_parcefpc.pl [-a assembly_file] [options] fpc_file
 
-
+  options:
+  -d|--delete_contig0 : Delete Contig0 which is where 
+                        the singletons are placed.
 
 =head1 OPTIONS
 
@@ -28,10 +30,11 @@ use IO::File;
 use Bio::MapIO;
 use Data::Dumper;
 
-my ( $help, $assembly_clone_file);
+my ( $help, $assembly_clone_file, $delete_contig0);
 GetOptions( 
     'h|help'   => \$help,
     'a|assembly=s'   => \$assembly_clone_file,
+    'd|delete_contig0'   => \$delete_contig0,
 );
 pod2usage if ($help or !@ARGV) ;
 
@@ -58,6 +61,7 @@ my $mapio = new Bio::MapIO(-format => "fpc",-file => $fpc_file,
 my $fpcmap = $mapio->next_map();
 my %fpc_clones;
 foreach my $contigid ($fpcmap->each_contigid()) {
+    next if (!$contigid and $delete_contig0);
     $contig_name="FPC_Contig$contigid";
     # Create the marker object of only the required markers
     my $contigobj = $fpcmap->get_contigobj($contigid);
