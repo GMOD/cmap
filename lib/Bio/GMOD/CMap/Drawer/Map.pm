@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.160 2005-06-21 19:25:15 mwz444 Exp $
+# $Id: Map.pm,v 1.161 2005-06-22 22:29:07 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.160 $)[-1];
+$VERSION = (qw$Revision: 1.161 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -822,30 +822,27 @@ Draws the truncation arrows
 }
 
 # ----------------------------------------------------
-sub draw_map_title {
+sub create_slot_title {
 
 =pod
 
-=head2 draw_map_title
+=head2 create_slot_title
 
-Draws the map title.
+Creates the slot title.
 
 =cut
 
     my $self       = shift;
     my %args       = @_;
-    my $min_y      = $args{'min_y'} || 0;
-    my $left_x     = $args{'left_x'} || 0;
-    my $right_x    = $args{'right_x'} || 0;
-    my $bound_side = $args{'bound_side'} || 0;
     my $lines      = $args{'lines'} || [];
     my $buttons    = $args{'buttons'} || [];
     my $font       = $args{'font'};
+    my $min_y      = 0;
+    my $left_x     = 0;
+    my $right_x    = 0;
     my $buffer     = 4;
-    my $bottom_buf = 5;
-    my $mid_x      = $left_x + ( ( $right_x - $left_x ) / 2 );
-    my $top_y      = $min_y - ( 2 * $bottom_buf ) -
-      ( ( scalar @$lines ) * ( $font->height + $buffer ) ) - 4;
+    my $mid_x      = 0;
+    my $top_y      = $min_y - ( ( scalar @$lines ) * ( $font->height + $buffer ) ) - 4;
     $top_y -= ( $font->height + $buffer ) if ( scalar @$buttons );
     my $leftmost  = $mid_x;
     my $rightmost = $mid_x;
@@ -913,36 +910,14 @@ Draws the map title.
         $rightmost += $buffer;
     }
 
-    my $offset = 0;
-    if ( $bound_side eq RIGHT ) {
-        if ( $right_x < $rightmost ) {
-            $offset = $right_x - $rightmost;
-        }
-    }
-    elsif ( $bound_side eq LEFT ) {
-        if ( $leftmost < $left_x ) {
-            $offset = $left_x - $leftmost;
-        }
-    }
-    if ($offset) {
-        $self->offset_drawing_data(
-            drawing_data => \@drawing_data,
-            offset       => $offset,
-        );
-        for ( my $i = 0 ; $i <= $#map_area_data ; $i++ ) {
-            $map_area_data[$i]{'coords'}[0] += $offset;
-            $map_area_data[$i]{'coords'}[2] += $offset;
-        }
-    }
-
     #
     # Enclose the whole area in black-edged white box.
     #
     my @bounds = (
-        $leftmost + $offset - $buffer,
+        $leftmost - $buffer,
         $top_y - $buffer,
-        $rightmost + $offset + $buffer,
-        $min_y - $bottom_buf,
+        $rightmost + $buffer,
+        $min_y + $buffer, 
     );
 
     push @drawing_data, [
@@ -951,7 +926,7 @@ Draws the map title.
 
     push @drawing_data, [ RECTANGLE, @bounds, 'black' ];
 
-    return ( \@bounds, \@drawing_data, \@map_area_data );
+    return ( bounds=>\@bounds, drawing_data=>\@drawing_data, map_area_data=>\@map_area_data );
 }
 
 # ----------------------------------------------------
@@ -969,7 +944,6 @@ a hashref keyed on feature_id.
     my $self   = shift;
     my $map_id = shift or return;
     my $map    = $self->map($map_id);
-print STDERR "FEATURES\n";
 
     unless ( defined $map->{'feature_store'} ) {
         for my $data (
@@ -996,7 +970,6 @@ print STDERR "FEATURES\n";
         }
     }
 
-print STDERR Dumper($map->{'feature_store'})."\n";
     return $map->{'feature_store'};
 }
 
@@ -1424,50 +1397,6 @@ Variable Info:
 
         my ($min_x);
 
-        #
-        # The map title(s).
-        #
-        if ($is_compressed) {
-            unless (@map_titles) {
-                push @map_titles, map { $self->$_($map_id) }
-                  grep { !/map_name/ }
-                  reverse @config_map_titles;
-            }
-            $map_set_acc = $self->map_set_acc($map_id);
-        }
-        else {
-            my @lines =
-              map { $self->$_($map_id) if ( $self->can($_) ) }
-              @config_map_titles;
-            my ( $bounds, $drawing_data, $map_data ) = $self->draw_map_title(
-                left_x  => $map_placement_data{$map_id}{'bounds'}[0],
-                right_x => $map_placement_data{$map_id}{'bounds'}[2],
-                min_y   => $map_placement_data{$map_id}{'bounds'}[1],
-                lines   => \@lines,
-                buttons => $self->create_buttons(
-                    map_id     => $map_id,
-                    drawer     => $drawer,
-                    slot_no    => $slot_no,
-                    is_flipped => $is_flipped,
-                    buttons    => [
-                        'map_set_info', 'map_detail',
-                        'map_matrix',   'delete',
-                        'flip',         'new_view',
-                    ],
-                ),
-                font => $reg_font,
-            );
-
-            $map_placement_data{$map_id}{'bounds'}[0] = $bounds->[0]
-              if ( $map_placement_data{$map_id}{'bounds'}[0] > $bounds->[0] );
-            $map_placement_data{$map_id}{'bounds'}[1] = $bounds->[1]
-              if ( $map_placement_data{$map_id}{'bounds'}[1] > $bounds->[1] );
-            $map_placement_data{$map_id}{'bounds'}[2] = $bounds->[2]
-              if ( $map_placement_data{$map_id}{'bounds'}[2] < $bounds->[2] );
-
-            push @{ $map_drawing_data{$map_id} }, @$drawing_data;
-            push @{ $map_area_data{$map_id} },    @$map_data;
-        }
         $slot_min_y = $map_placement_data{$map_id}{'bounds'}[1]
           if ( not defined $slot_max_y
             or $map_placement_data{$map_id}{'bounds'}[1] < $slot_min_y );
@@ -1557,15 +1486,15 @@ Variable Info:
         my $offset = $lane_base_x[ $map_lane{$map_id} ] -
           $map_placement_data{$map_id}{'bounds'}[0];
 
-        $self->offset_drawing_data(
+        $drawer->offset_drawing_data(
             drawing_data => $map_drawing_data{$map_id},
-            offset       => $offset,
+            offset_x       => $offset,
         );
         $drawer->add_drawing( @{ $map_drawing_data{$map_id} } );
-        for ( my $i = 0 ; $i <= $#{ $map_area_data{$map_id} } ; $i++ ) {
-            $map_area_data{$map_id}[$i]{'coords'}[0] += $offset;
-            $map_area_data{$map_id}[$i]{'coords'}[2] += $offset;
-        }
+        $drawer->offset_map_area_data(
+            map_area_data => $map_area_data{$map_id},
+            offset_x       => $offset,
+        );
         $drawer->add_map_area( @{ $map_area_data{$map_id} } );
         for my $key ( keys( %{ $features_with_corr_by_map_id{$map_id} } ) ) {
             $features_with_corr_by_map_id{$map_id}{$key}{'left'}[0]  += $offset;
@@ -1868,47 +1797,23 @@ Variable Info:
         }
     }
 
-    #
-    # Draw the map titles last for compressed maps,
-    # centered over all the maps.
-    #
-    if ($is_compressed) {
-        unless (@map_titles) {
-            push @map_titles, map { $self->$_( $map_ids[0] ) }
-              grep { !/map_name/ } @config_map_titles;
-        }
-
-        my $bound_side =
-          ( $slot_no < 0
-              || ( $slot_no == 0 && $drawer->label_side($slot_no) eq LEFT ) )
-          ? RIGHT
-          : LEFT;
-        my ( $bounds, $drawing_data, $map_data ) = $self->draw_map_title(
-            left_x     => $slot_min_x + $slot_buffer,
-            right_x    => $slot_max_x - $slot_buffer,
-            bound_side => $bound_side,
-            min_y      => $slot_min_y,
-            lines      => \@map_titles,
-            buttons    => $self->create_buttons(
-                map_id     => $map_ids[0],
-                drawer     => $drawer,
-                slot_no    => $slot_no,
-                is_flipped => $flipped_maps{ $map_ids[0] },
-                buttons    => [ 'map_set_info', 'set_matrix', 'delete', ],
+    ###Create the Slot Title Box
+    my @lines =
+      map { $self->$_($map_ids[0]) if ( $self->can($_) ) }
+      grep !/map_name/ , @config_map_titles;
+    $drawer->slot_title(
+        slot_no => $slot_no,
+        $self->create_slot_title(
+            lines   => \@lines,
+            buttons => $self->create_buttons(
+                map_id  => $map_ids[0],
+                drawer  => $drawer,
+                slot_no => $slot_no,
+                buttons => [ 'map_set_info', 'set_matrix', 'delete', ],
             ),
             font => $reg_font,
-        );
-
-        $slot_min_x = $bounds->[0] - $slot_buffer
-          if $bounds->[0] - $slot_buffer < $slot_min_x;
-        $slot_min_y = $bounds->[1] if $bounds->[1] < $slot_min_y;
-        $slot_max_x = $bounds->[2] + $slot_buffer
-          if $bounds->[2] + $slot_buffer > $slot_max_x;
-
-        $drawer->add_drawing(@$drawing_data);
-        $drawer->add_map_area(@$map_data);
-    }
-
+        )
+    );
     #
     # Register the feature types we saw.
     #
@@ -2234,48 +2139,6 @@ sub place_map_y {
 
 =pod
 
-=head2 offset_drawing_data
-
-Add the topper to the map.
-
-=cut
-
-sub offset_drawing_data {
-
-    my ( $self, %args ) = @_;
-    my $offset       = $args{'offset'};
-    my $drawing_data = $args{'drawing_data'};
-
-    for ( my $i = 0 ; $i <= $#{$drawing_data} ; $i++ ) {
-        if (   $drawing_data->[$i][0] eq STRING_UP
-            or $drawing_data->[$i][0] eq STRING )
-        {
-            $drawing_data->[$i][2] += $offset;
-        }
-        elsif ($drawing_data->[$i][0] eq FILL
-            or $drawing_data->[$i][0] eq ARC
-            or $drawing_data->[$i][0] eq FILL_TO_BORDER )
-        {
-            $drawing_data->[$i][1] += $offset;
-        }
-        elsif ($drawing_data->[$i][0] eq LINE
-            or $drawing_data->[$i][0] eq FILLED_RECT
-            or $drawing_data->[$i][0] eq RECTANGLE )
-        {
-            $drawing_data->[$i][1] += $offset;
-            $drawing_data->[$i][3] += $offset;
-        }
-        else {
-            die $drawing_data->[$i][0]
-              . " not caught in offset.  Inform developer\n";
-        }
-    }
-}
-
-# ----------------------------------------
-
-=pod
-
 =head2 add_topper
 
 Add the topper to the map.
@@ -2313,7 +2176,8 @@ sub add_topper {
     #
     # Indicate total number of features on the map.
     #
-    my @map_toppers = $is_compressed ? ($map_name) : ();
+    #my @map_toppers = $is_compressed ? ($map_name) : ();
+    my @map_toppers = ($map_name);
     push @map_toppers, "[$no_features]"
       if ( defined($no_features) and not $self->clean_view );
 
@@ -2375,7 +2239,7 @@ sub add_topper {
         is_flipped => $is_flipped,
         buttons    => [ 'map_detail', 'map_matrix', 'flip', 'new_view', ],
     );
-    if ( $is_compressed and scalar(@$buttons) ) {
+    if ( 1 or $is_compressed and scalar(@$buttons) ) {
         my $button_y_buffer = 4;
         my $button_x_buffer = 6;
         my $button_height   =

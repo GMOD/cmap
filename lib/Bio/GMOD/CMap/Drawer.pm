@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.97 2005-06-03 22:19:58 mwz444 Exp $
+# $Id: Drawer.pm,v 1.98 2005-06-22 22:29:06 mwz444 Exp $
 
 =head1 NAME
 
@@ -275,7 +275,7 @@ on the number of correspondences).  'display_order' is the default.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.97 $)[-1];
+$VERSION = (qw$Revision: 1.98 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -1080,6 +1080,40 @@ Lays out the image and writes it to the file system, set the "image_name."
             );
         }
     }
+    
+    # Add the slot title boxes
+    # First find out the height of the tallest title box
+    my $max_title_height=0;
+    for my $slot_no ( $self->slot_numbers ) {
+        my $title_data = $self->slot_title( slot_no => $slot_no );
+        my $height = $title_data->{'bounds'}[3]-$title_data->{'bounds'}[1];
+        $max_title_height = $height if ($max_title_height < $height );
+    }
+    my $title_top = $self->min_y - $max_title_height;
+    $self->min_y($title_top);
+    for my $slot_no ( $self->slot_numbers ) {
+        my ( $left, $right ) = $self->slot_sides( slot_no => $slot_no );
+        my $slot_center = (($right+$left)/2);
+        my $title_data = $self->slot_title( slot_no => $slot_no );
+        my $bounds = $title_data->{'bounds'};
+        my $map_area_data = $title_data->{'map_area_data'};
+        my $drawing_data = $title_data->{'drawing_data'};
+        my $title_center_x = (($bounds->[2]+$bounds->[0])/2);
+        my $offset_x = $slot_center-$title_center_x;
+        my $offset_y = $title_top - $bounds->[1];
+        $self->offset_drawing_data(
+            offset_x => $offset_x,
+            offset_y => $offset_y,
+            drawing_data => $drawing_data,
+        );
+        $self->add_drawing( @{ $drawing_data } );
+        $self->offset_map_area_data(
+            offset_x => $offset_x,
+            offset_y => $offset_y,
+            map_area_data => $map_area_data,
+        );
+        $self->add_map_area( @{ $map_area_data } );
+    }    
 
     #
     # Frame out the slots.
@@ -1088,7 +1122,7 @@ Lays out the image and writes it to the file system, set the "image_name."
     my $border_color = $self->config_data('slot_border_color');
     for my $slot_no ( $self->slot_numbers ) {
         my ( $left, $right ) = $self->slot_sides( slot_no => $slot_no );
-        my @slot_bounds = ( $left, $min_y, $right, $max_y, );
+        my @slot_bounds = ( $left, $self->min_y, $right, $max_y, );
 
         $self->add_drawing( FILLED_RECT, @slot_bounds, $bg_color,     -1 );
         $self->add_drawing( RECTANGLE,   @slot_bounds, $border_color, 10 );
@@ -2093,6 +2127,28 @@ Remembers the right and left bounds of a slot.
 }
 
 # ----------------------------------------------------
+sub slot_title {
+
+=pod
+
+=head2 slot_title
+
+Set and retrieve the slot title.
+
+=cut
+
+    my $self       = shift;
+    my %args       = @_;
+    my $slot_no    = $args{'slot_no'};
+    if ($args{'bounds'}){
+        $self->{'slot_title'}{$slot_no}{'bounds'}=$args{'bounds'};
+        $self->{'slot_title'}{$slot_no}{'drawing_data'}=$args{'drawing_data'};
+        $self->{'slot_title'}{$slot_no}{'map_area_data'}=$args{'map_area_data'};
+    }
+    return $self->{'slot_title'}{$slot_no};
+}
+
+# ----------------------------------------------------
 sub slots {
 
 =pod
@@ -2511,6 +2567,77 @@ return the correct line color for the aggregated correspondences.
     }
     return $line_color;
 }
+
+# ----------------------------------------
+
+=pod
+
+=head2 offset_drawing_data
+
+Add the topper to the map.
+
+=cut
+
+sub offset_drawing_data {
+
+    my ( $self, %args ) = @_;
+    my $offset_x       = $args{'offset_x'} || 0;
+    my $offset_y       = $args{'offset_y'} || 0;
+    my $drawing_data = $args{'drawing_data'};
+
+    for ( my $i = 0 ; $i <= $#{$drawing_data} ; $i++ ) {
+        if (   $drawing_data->[$i][0] eq STRING_UP
+            or $drawing_data->[$i][0] eq STRING )
+        {
+            $drawing_data->[$i][2] += $offset_x;
+            $drawing_data->[$i][3] += $offset_y;
+        }
+        elsif ($drawing_data->[$i][0] eq FILL
+            or $drawing_data->[$i][0] eq ARC
+            or $drawing_data->[$i][0] eq FILL_TO_BORDER )
+        {
+            $drawing_data->[$i][1] += $offset_x;
+            $drawing_data->[$i][2] += $offset_y;
+        }
+        elsif ($drawing_data->[$i][0] eq LINE
+            or $drawing_data->[$i][0] eq FILLED_RECT
+            or $drawing_data->[$i][0] eq RECTANGLE )
+        {
+            $drawing_data->[$i][1] += $offset_x;
+            $drawing_data->[$i][3] += $offset_x;
+            $drawing_data->[$i][2] += $offset_y;
+            $drawing_data->[$i][4] += $offset_y;
+        }
+        else {
+            die $drawing_data->[$i][0]
+              . " not caught in offset.  Inform developer\n";
+        }
+    }
+}
+
+# ----------------------------------------
+
+=pod
+
+=head2 offset_map_area_data
+
+=cut
+
+sub offset_map_area_data {
+
+    my ( $self, %args ) = @_;
+    my $offset_x       = $args{'offset_x'} || 0;
+    my $offset_y       = $args{'offset_y'} || 0;
+    my $map_area_data = $args{'map_area_data'};
+
+    for ( my $i = 0 ; $i <= $#{$map_area_data} ; $i++ ) {
+            $map_area_data->[$i]{'coords'}[0] += $offset_x;
+            $map_area_data->[$i]{'coords'}[2] += $offset_x;
+            $map_area_data->[$i]{'coords'}[1] += $offset_y;
+            $map_area_data->[$i]{'coords'}[3] += $offset_y;
+    }
+}
+
 
 # ----------------------------------------------------
 sub create_link_params {
