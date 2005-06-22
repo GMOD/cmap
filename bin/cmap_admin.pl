@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.112 2005-06-22 01:41:22 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.113 2005-06-22 15:14:34 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.112 $)[-1];
+$VERSION = (qw$Revision: 1.113 $)[-1];
 
 #
 # Get command-line options
@@ -84,10 +84,10 @@ GetOptions(
     'to_map_set_accs=s'     => \$to_map_set_accs,
     'map_shape=s'           => \$map_shape,
     'map_color=s'           => \$map_color,
-    'map_width=s'           => \$map_width,
+    'map_width=i'           => \$map_width,
     'overwrite'           => \$overwrite,
     'allow_update'        => \$allow_update,
-    'cache_level=s'         => \$cache_level,
+    'cache_level=i'         => \$cache_level,
     'format=s'              => \$format,
     'add_truncate'        => \$add_truncate,
     'export_file=s'         => \$export_file,
@@ -102,6 +102,7 @@ GetOptions(
   or pod2usage(2);
 my $file_str = join( ' ', @ARGV );
  
+pod2usage(-verbose=>1) if $show_info;
 pod2usage(0) if $show_help;
 if ($show_version) {
     print "$0 Version: $VERSION (CMap Version $Bio::GMOD::CMap::VERSION)\n";
@@ -3694,9 +3695,183 @@ cmap_admin.pl - command-line CMap administrative tool
   Options:
 
     -h|help          Display help message
+    -i|info          Display more options
     -v|version       Display version
     -d|--datasource  The default data source to use
     --no-log         Don't keep a log of actions
+    --action         Command line action. See --info for more information
+
+=head1 OPTIONS
+
+This script has command line actions that can be used for scripting.  This allows the user to skip the menu system.  The following are the allowed actions.
+
+=head2 create_species
+
+cmap_admin.pl [-d data_source] --action create_species --species_full_name "full name" [--species_common_name "common name"] [--species_acc "accession"]
+
+  Required:
+    --species_full_name : Full name of the species
+  Optional:
+    --species_common_name : Common name of the species
+    --species_acc : Accession ID for the species
+
+=head2 create_map_set
+
+cmap_admin.pl [-d data_source] --action  required_optionste_map_set --map_set_name "Map Set Name" (--species_id id OR --species_acc accession) --map_type_acc "Map_type_accession" [--map_set_short_name "Short Name"] [--map_set_acc accesssion] [--map_shape shape] [--map_color color] [--map_width integer]
+
+  Required:
+    --map_set_name
+    (
+        --species_id : ID for the species
+        or
+        --species_acc : Accession ID for the species
+    )
+    --map_type_acc
+  Optional:
+    --map_set_short_name : Short name 
+    --map_set_acc : Accession ID for the map set
+    --map_shape : Shape of the maps in this set
+    --map_color : Color of the maps in this set
+    --map_width : Width of the maps in this set
+
+=head2 delete_correspondences
+
+cmap_admin.pl [-d data_source] --action delete_correspondences (--map_set_accs "accession [, acc2...]" OR --map_type_acc accession OR --species_acc accession) [--evidence_type_accs "accession [, acc2...]"]
+
+  Required:
+    --map_set_accs : A comma (or space) separated list of map set accessions
+    or
+    --map_type_acc : Accession ID of for the map type
+    or
+    --species_acc : Accession ID for the species
+                                                                                
+  Optional:
+    --evidence_type_accs : A comma (or space) separated list of evidence type accessions to be deleted
+
+=head2 delete_maps
+
+cmap_admin.pl [-d data_source] --action delete_maps (--map_set_acc accession OR --map_accs "accession [, acc2...]")
+
+  Required:
+    --map_set_acc : Accession Id of a map set to be deleted
+    or
+    --map_accs :  A comma (or space) separated list of map accessions to be deleted
+
+=head2 export_as_text
+
+cmap_admin.pl [-d data_source] --action export_as_text (--map_set_accs "accession [, acc2...]" OR --map_type_acc accession OR --species_acc accession) [--feature_type_accs "accession [, acc2...]"] [--exclude_fields "field [, field2...]"] [--directory directory]
+
+  Required:
+    --map_set_accs : A comma (or space) separated list of map set accessions
+    or
+    --map_type_acc : Accession ID of for the map type
+    or
+    --species_acc : Accession ID for the species
+  Optional:
+    --feature_type_accs : A comma (or space) separated list of feature type accessions
+    --exclude_fields : List of table fields to exclude from output
+    --directory : Directory to place the output
+
+=head2 export_as_sql
+
+cmap_admin.pl [-d data_source] --action export_as_sql [--add_truncate] [--export_file file_name] [--quote_escape value] [--tables "table [, table2...]"] 
+        Optional:
+    --export_file : Name of the export file (default:./cmap_dump.sql)
+    --add_truncate : Include to add 'TRUNCATE TABLE' statements
+    --quote_escape : How embedded quotes are escaped
+                     'doubled' for Oracle
+                     'backslash' for MySQL
+    --tables : Tables to be exported.  (default: 'all')
+
+=head2 export_objects
+
+cmap_admin.pl [-d data_source] --action export_objects --export_objects "all"|"map_set" (--map_set_accs "accession [, acc2...]" OR --map_type_acc accession OR --species_acc accession) [--export_file file_name] [--directory directory]
+
+cmap_admin.pl [-d data_source] --action export_objects --export_objects "species"&|"feature_correspondence"&|"xref" [--export_file file_name] [--directory directory]
+
+  Required:
+    --export_objects : Objects to be exported
+                       Accepted options:
+                        all, map_set, species,
+                        feature_correspondence, xref
+  Required if exporting map_set (or all):
+    --map_set_accs : A comma (or space) separated list of map set accessions
+    or
+    --map_type_acc : Accession ID of for the map type
+    or
+    --species_acc : Accession ID for the species
+  Optional:
+    --export_file : Name of the output file (default: cmap_export.xml)
+    --directory : Directory where the output file goes (default: ./)
+
+=head2 import_correspondences
+
+cmap_admin.pl [-d data_source] --action  import_correspondences --map_set_accs "accession [, acc2...]" file1 [file2 ...]
+
+  Required:
+    --map_set_accs : A comma (or space) separated list of map set accessions
+
+=head2 import_alignments 
+
+cmap_admin.pl [-d data_source] --action import_alignments --from_map_set_acc accession --to_map_set_acc accession --format format --feature_type_acc accession --evidence_type_acc accession file1 [file2 ...]
+
+  Required:     --from_map_set_acc : Accession ID of the query
+    --to_map_set_acc : Accession ID of the subject
+    --format : Type of alingment file
+                Current formats: blast
+    --feature_type_acc : Accession ID of for the feature type 
+               of the feature that represents the alignment
+    --evidence_type_acc : Accession ID of for the evidence type of the alignment
+
+=head2 import_tab_data
+
+cmap_admin.pl [-d data_source] --action import_tab_data --map_set_acc accession [--overwrite] [--allow_update] file1 [file2 ...]
+
+  Required:
+    --map_set_acc : Accession Id of a map set for information to be inserted into
+  Optional:
+    --overwrite : Include to remove data in map set not in import file
+    --allow_update : Include to check for duplicate data (slow)
+
+=head2 import_object_data
+cmap_admin.pl [-d data_source] --action import_object_data [--overwrite] file1 [file2 ...]
+
+  Optional:
+    --overwrite : Include to remove data in map set not in import file
+
+=head2 make_name_correspondences
+
+cmap_admin.pl [-d data_source] --action make_name_correspondences --evidence_type_acc acc --from_map_set_accs "accession [, acc2...]" [--to_map_set_accs "accession [, acc2...]"] [--skip_feature_type_accs "accession [, acc2...]"] [--allow_update] [--name_regex name]
+
+  Required:
+    --evidence_type_acc : Accession ID of the evidence type to be created
+    --from_map_set_accs : A comma (or space) separated list of map set 
+        accessions that will be the starting point of the correspondences.
+  Optional:
+    --to_map_set_accs : A comma (or space) separated list of map set 
+        accessions that will be the destination of the correspondences.  
+        Only specify if different that from_map_set_accs.
+    --skip_feature_type_accs : A comma (or space) separated list of 
+        feature type accessions that should not be used
+    --allow_update : Include to check for duplicate data (slow)
+    --name_regex : The name of the regular expression to be used
+                    (default: exact_match)
+                    Options: exact_match, read_pair
+
+=head2 reload_correspondence_matrix
+
+cmap_admin.pl [-d data_source] --action reload_correspondence_matrix
+
+=head2 purge_query_cache
+
+cmap_admin.pl [-d data_source] --action purge_query_cache [--cache_level level]
+
+  Optional:
+    --cache_level : The level of the cache to be purged (default: 1)
+
+=head2 delete_duplicate_correspondences
+
+cmap_admin.pl [-d data_source] --action delete_duplicate_correspondences
 
 =head1 DESCRIPTION
 
