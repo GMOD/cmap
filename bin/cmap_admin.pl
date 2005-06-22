@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.111 2005-06-20 03:36:19 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.112 2005-06-22 01:41:22 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,12 +9,12 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.111 $)[-1];
+$VERSION = (qw$Revision: 1.112 $)[-1];
 
 #
 # Get command-line options
 #
-my ( $show_help, $show_version, $no_log, $datasource, $Quiet );
+my ( $show_help, $show_info, $show_version, $no_log, $datasource, $Quiet );
 my ($ACTION);
 
 #create species values
@@ -57,6 +57,7 @@ my ($from_map_set_accs, $to_map_set_accs, $skip_feature_type_accs,$name_regex);
 
 GetOptions(
     'h|help'                => \$show_help,             # Show help and exit
+    'i|info'                => \$show_info,             # Show help and exit
     'v|version'             => \$show_version,          # Show version and exit
     'no-log'                => \$no_log,                # Don't keep a log
     'd|datasource=s'        => \$datasource,            # Default data source
@@ -84,11 +85,11 @@ GetOptions(
     'map_shape=s'           => \$map_shape,
     'map_color=s'           => \$map_color,
     'map_width=s'           => \$map_width,
-    'overwrite=s'           => \$overwrite,
-    'allow_update=s'        => \$allow_update,
+    'overwrite'           => \$overwrite,
+    'allow_update'        => \$allow_update,
     'cache_level=s'         => \$cache_level,
     'format=s'              => \$format,
-    'add_truncate=s'        => \$add_truncate,
+    'add_truncate'        => \$add_truncate,
     'export_file=s'         => \$export_file,
     'export_objects=s'      => \$export_objects,
     'tables=s'              => \$tables,
@@ -100,7 +101,7 @@ GetOptions(
   )
   or pod2usage(2);
 my $file_str = join( ' ', @ARGV );
-
+ 
 pod2usage(0) if $show_help;
 if ($show_version) {
     print "$0 Version: $VERSION (CMap Version $Bio::GMOD::CMap::VERSION)\n";
@@ -130,7 +131,7 @@ my %command_line_actions = (
     export_as_sql                    => 1,
     export_as_text                   => 1,
     export_objects                   => 1,
-    delete_map_set                   => 1,
+    delete_maps                   => 1,
     delete_correspondences           => 1,
     make_name_correspondences        => 1,
 );
@@ -204,7 +205,7 @@ while ($continue) {
 
 # ./bin/cmap_admin.pl -d WashU -a create_map_set --species_acc Blah --map_set_name "MS20" --map_type_acc 2
 
-# ./bin/cmap_admin.pl -d WashU -a import_tab_data --map_set_acc 13 --overwrite 0 --allow_update 0 file1 file2
+# ./bin/cmap_admin.pl -d WashU -a import_tab_data --map_set_acc 13  file1 file2
 
 # ./bin/cmap_admin.pl -d WashU -a purge_query_cache --cache_level 2;
 
@@ -222,13 +223,13 @@ while ($continue) {
 
 # ./bin/cmap_admin.pl -d WashU -a export_objects --species_acc Blah --export_objects "map_set species"
 
-# ./bin/cmap_admin.pl -d WashU -a delete_map_set --map_accs "28 26"
+# ./bin/cmap_admin.pl -d WashU -a delete_maps --map_accs "28 26"
 
-# ./bin/cmap_admin.pl -d WashU -a delete_map_set --map_set_acc 13
+# ./bin/cmap_admin.pl -d WashU -a delete_maps --map_set_acc 13
 
 # ./bin/cmap_admin.pl -d WashU -a delete_correspondences --species_acc SP1 --evidence_type_accs all
 
-# ./bin/cmap_admin.pl -d WashU -a make_name_correspondences --evidence_type_acc ANB --from_map_set_accs "10 7 MS10 MS4 MS5 MS6 MS8" --to_map_set_accs "10 7 MS10 MS4 MS5 MS6 MS8" --skip_feature_type_accs "" --allow_update 0 --name_regex exact_match
+# ./bin/cmap_admin.pl -d WashU -a make_name_correspondences --evidence_type_acc ANB --from_map_set_accs "10 7 MS10 MS4 MS5 MS6 MS8" --to_map_set_accs "10 7 MS10 MS4 MS5 MS6 MS8" --skip_feature_type_accs "" --name_regex exact_match
 
 
 # ----------------------------------------------------
@@ -725,7 +726,7 @@ sub delete_data {
         return  => 'action',
         data    => [
             {
-                action  => 'delete_map_set',
+                action  => 'delete_maps',
                 display => 'Delete a map set (or maps within it)',
             },
             {
@@ -933,7 +934,7 @@ sub delete_correspondences {
 }
 
 # ----------------------------------------------------
-sub delete_map_set {
+sub delete_maps {
 
     #
     # Deletes a map set.
@@ -1214,6 +1215,11 @@ sub export_as_text {
                 species_id   => $species_id,
                 map_type_acc => $map_type_acc,
             );
+            unless ( @{ $map_sets || [] } ) {
+                print STDERR
+                  "No map set constraints given.\n";
+                push @missing, 'map_set_accs or species_acc or map_type_acc';
+            }
         }
         if ( defined($feature_type_accs_str) ) {
             @feature_type_accs = split /[,\s]+/, $feature_type_accs_str;
@@ -1415,6 +1421,7 @@ sub export_as_sql {
     my $quote_escape    = $args{'quote_escape'};
     my $dump_tables_str = $args{'tables'};
     my @dump_tables;
+    my $default_file = './cmap_dump.sql';
 
     my $sql_object = $self->sql or die $self->error;
     my $db         = $self->db  or die $self->error;
@@ -1440,7 +1447,7 @@ sub export_as_sql {
             }
         }
         else {
-            push @missing, 'export_file';
+            $file = $default_file;
         }
         if ($quote_escape) {
             my $found = 0;
@@ -1458,34 +1465,29 @@ sub export_as_sql {
         else {
             push @missing, 'quote_escape';
         }
-        if ($dump_tables_str) {
-            if ( $dump_tables_str =~ /^all$/i ) {
-                @dump_tables = map { $_->{'name'} } @tables;
-            }
-            else {
-                @dump_tables = split /[,\s]+/, $dump_tables_str;
-                my $valid = 1;
-                foreach my $dump_table (@dump_tables) {
-                    my $found = 0;
-                    foreach my $table (@tables) {
-                        if ( $dump_table eq $table->{'name'} ) {
-                            $found = 1;
-                            last;
-                        }
-                    }
-                    unless ($found) {
-                        print STDERR
-                          "The table name '$dump_table' is not valid.\n";
-                        $valid = 0;
-                    }
-                }
-                unless ($valid) {
-                    push @missing, 'tables';
-                }
-            }
+        if ( !$dump_tables_str or $dump_tables_str =~ /^all$/i ) {
+            @dump_tables = map { $_->{'name'} } @tables;
         }
         else {
-            push @missing, 'tables';
+            @dump_tables = split /[,\s]+/, $dump_tables_str;
+            my $valid = 1;
+            foreach my $dump_table (@dump_tables) {
+                my $found = 0;
+                foreach my $table (@tables) {
+                    if ( $dump_table eq $table->{'name'} ) {
+                        $found = 1;
+                        last;
+                    }
+                }
+                unless ($found) {
+                    print STDERR
+                      "The table name '$dump_table' is not valid.\n";
+                    $valid = 0;
+                }
+            }
+            unless ($valid) {
+                push @missing, 'tables';
+            }
         }
 
         if (@missing) {
@@ -1514,11 +1516,10 @@ sub export_as_sql {
         $add_truncate = $answer =~ m/^[yY]/;
 
         for ( ; ; ) {
-            my $default = './cmap_dump.sql';
             print "Where would you like to write the file?\n",
-              "['q' to quit, '$default' is default] ";
+              "['q' to quit, '$default_file' is default] ";
             chomp( my $user_file = <STDIN> );
-            $user_file ||= $default;
+            $user_file ||= $default_file;
 
             if ( -d $user_file ) {
                 print
@@ -3069,7 +3070,7 @@ sub make_name_correspondences {
             }
         }
         else{
-            push @missing, 'to_map_set_accs';
+            @to_map_set_ids = @from_map_set_ids;
         }
         if ($name_regex_option){
             my $found = 0;
