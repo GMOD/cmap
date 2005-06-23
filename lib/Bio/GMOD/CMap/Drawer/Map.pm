@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.162 2005-06-23 05:10:17 mwz444 Exp $
+# $Id: Map.pm,v 1.163 2005-06-23 05:33:50 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.162 $)[-1];
+$VERSION = (qw$Revision: 1.163 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -832,17 +832,18 @@ Creates the slot title.
 
 =cut
 
-    my $self       = shift;
-    my %args       = @_;
-    my $lines      = $args{'lines'} || [];
-    my $buttons    = $args{'buttons'} || [];
-    my $font       = $args{'font'};
-    my $min_y      = 0;
-    my $left_x     = 0;
-    my $right_x    = 0;
-    my $buffer     = 4;
-    my $mid_x      = 0;
-    my $top_y      = $min_y - ( ( scalar @$lines ) * ( $font->height + $buffer ) ) - 4;
+    my $self    = shift;
+    my %args    = @_;
+    my $lines   = $args{'lines'} || [];
+    my $buttons = $args{'buttons'} || [];
+    my $font    = $args{'font'};
+    my $min_y   = 0;
+    my $left_x  = 0;
+    my $right_x = 0;
+    my $buffer  = 4;
+    my $mid_x   = 0;
+    my $top_y   =
+      $min_y - ( ( scalar @$lines ) * ( $font->height + $buffer ) ) - 4;
     $top_y -= ( $font->height + $buffer ) if ( scalar @$buttons );
     my $leftmost  = $mid_x;
     my $rightmost = $mid_x;
@@ -917,7 +918,7 @@ Creates the slot title.
         $leftmost - $buffer,
         $top_y - $buffer,
         $rightmost + $buffer,
-        $min_y + $buffer, 
+        $min_y + $buffer,
     );
 
     push @drawing_data, [
@@ -926,7 +927,11 @@ Creates the slot title.
 
     push @drawing_data, [ RECTANGLE, @bounds, 'black' ];
 
-    return ( bounds=>\@bounds, drawing_data=>\@drawing_data, map_area_data=>\@map_area_data );
+    return (
+        bounds        => \@bounds,
+        drawing_data  => \@drawing_data,
+        map_area_data => \@map_area_data
+    );
 }
 
 # ----------------------------------------------------
@@ -1488,12 +1493,12 @@ Variable Info:
 
         $drawer->offset_drawing_data(
             drawing_data => $map_drawing_data{$map_id},
-            offset_x       => $offset,
+            offset_x     => $offset,
         );
         $drawer->add_drawing( @{ $map_drawing_data{$map_id} } );
         $drawer->offset_map_area_data(
             map_area_data => $map_area_data{$map_id},
-            offset_x       => $offset,
+            offset_x      => $offset,
         );
         $drawer->add_map_area( @{ $map_area_data{$map_id} } );
         for my $key ( keys( %{ $features_with_corr_by_map_id{$map_id} } ) ) {
@@ -1799,8 +1804,8 @@ Variable Info:
 
     ###Create the Slot Title Box
     my @lines =
-      map { $self->$_($map_ids[0]) if ( $self->can($_) ) }
-      grep !/map_name/ , @config_map_titles;
+      map { $self->$_( $map_ids[0] ) if ( $self->can($_) ) }
+      grep !/map_name/, @config_map_titles;
     $drawer->slot_title(
         slot_no => $slot_no,
         $self->create_slot_title(
@@ -1814,6 +1819,7 @@ Variable Info:
             font => $reg_font,
         )
     );
+
     #
     # Register the feature types we saw.
     #
@@ -2026,11 +2032,9 @@ sub place_map_y {
                 }
                 else {
                     my $this_agg_y1 =
-                      ( $ref_corr->{'min_start1'} -
-                          $self->map_start($map_id) );
+                      ( $ref_corr->{'min_start1'} - $self->map_start($map_id) );
                     my $this_agg_y2 =
-                      ( $ref_corr->{'max_start1'} -
-                          $self->map_start($map_id) );
+                      ( $ref_corr->{'max_start1'} - $self->map_start($map_id) );
                     ( $this_agg_y1, $this_agg_y2 ) =
                       ( $this_agg_y2, $this_agg_y1 )
                       if ($is_flipped);
@@ -2175,7 +2179,7 @@ sub add_topper {
     my $topper_height = 0;
 
     # The idea is to start at the bottom of the topper
-    # and work our way up.  This keeps the map from 
+    # and work our way up.  This keeps the map from
     # being nudged downward.
 
     #
@@ -2211,7 +2215,7 @@ sub add_topper {
         #
         $current_min_y -= $button_height;
         my $button_y = $current_min_y;
-        my $label_x = $base_x - $buttons_width / 2;
+        my $label_x  = $base_x - $buttons_width / 2;
 
         for my $button (@$buttons) {
             my $len  = $font_width * length( $button->{'label'} );
@@ -2242,6 +2246,7 @@ sub add_topper {
               };
         }
     }
+
     #
     # Indicate total number of features on the map.
     #
@@ -2251,16 +2256,13 @@ sub add_topper {
 
     # Add toppers.
 
-    for (my $i=$#map_toppers; $i>=0; $i-- ) {
+    for ( my $i = $#map_toppers ; $i >= 0 ; $i-- ) {
         my $topper = $map_toppers[$i];
         my $f_x1   = $mid_x - ( ( length($topper) * $font_width ) / 2 );
         my $f_x2   = $f_x1 + ( length($topper) * $font_width );
 
         $current_min_y -= ( $font_height + 4 );
         my $topper_y = $current_min_y;
-
-        $map_placement_data->{$map_id}{'bounds'}[1] = $topper_y
-          if ( $map_placement_data->{$map_id}{'bounds'}[1] > $topper_y );
 
         my @topper_bounds = (
             $f_x1, $topper_y, $f_x2,
@@ -2296,11 +2298,10 @@ sub add_topper {
           [ STRING, $reg_font, $f_x1, $topper_y, $topper, 'black' ];
     }
 
-
     # Move map down by the hight of the topper
     my $topper_offset = $base_y - $current_min_y;
 
-    $map_placement_data->{$map_id}{'bounds'}[1]     += $topper_offset;
+    $map_placement_data->{$map_id}{'bounds'}[1] -= $topper_offset;
 }
 
 # ----------------------------------------
@@ -2972,7 +2973,7 @@ sub collect_labels_to_display {
             feature_type   => $feature->{'feature_type'},
             has_corr       => $has_corr,
             feature_id     => $feature->{'feature_id'},
-            feature_start => $feature->{'feature_start'},
+            feature_start  => $feature->{'feature_start'},
             shape          => $feature->{'shape'},
             column         => $feature->{'column'},
             url            => $url,
@@ -3269,8 +3270,7 @@ Returns the entiry map's length.
 
     my $self = shift;
     my $map_id = shift or return;
-    return $self->real_map_stop($map_id) -
-      $self->real_map_start($map_id);
+    return $self->real_map_stop($map_id) - $self->real_map_start($map_id);
 }
 
 # ----------------------------------------------------
@@ -3373,9 +3373,8 @@ Returns the map's tick mark interval.
     my $map          = $self->map($map_id);
 
     unless ( defined $map->{'tick_mark_interval'} ) {
-        my $map_length =
-          $self->map_stop($map_id) - $self->map_start($map_id);
-        my $map_scale = int( log( abs($map_length) ) / log(10) );
+        my $map_length = $self->map_stop($map_id) - $self->map_start($map_id);
+        my $map_scale  = int( log( abs($map_length) ) / log(10) );
 
         #if (int(($map_length/(10**$map_scale))+.5)>=2){
         #    push @{$map->{'tick_mark_interval'}}, (10**$map_scale, $map_scale);
