@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.89 2005-06-24 14:24:59 mwz444 Exp $
+# $Id: Generic.pm,v 1.90 2005-06-24 15:10:21 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.89 $)[-1];
+$VERSION = (qw$Revision: 1.90 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -5532,11 +5532,10 @@ sub get_feature_correspondence_for_counting {    #ZZZ
 
 =item * Description
 
-This is a complicated little method.  It returns correspondence counts used
-when aggregating.  If $split_evidence_types then the evidence type accessions
-are used to split the counts, otherwise the
-DEFAULT->{'aggregated_type_substitute'} is used as a place holder.  If clustering, don't actually
-do the counts in the sql.
+This is a complicated little method.  It returns correspondence information
+used when aggregating.  If $split_evidence_types then the evidence type
+accessions are returned in order to split the counts, otherwise the
+DEFAULT->{'aggregated_type_substitute'} is used as a place holder. 
 
 =item * Adaptor Writing Info
 
@@ -5545,10 +5544,6 @@ There are two inputs that change the output.
 $split_evidence_types splits the results into the different evidence types,
 otherwise they are all grouped together (with a place holder value
 DEFAULT->{'aggregated_type_substitute'}).
-
-If $cluster is true, no counts are taken and the start and stops are returned
-for each correspondence.  This way the main code can handle clustering any way
-it wants.
 
 =item * Required Input
 
@@ -5580,8 +5575,6 @@ it wants.
 
 =over 4
 
-=item - clustering (clustering)
-
 =item - split_evidence_types (split_evidence_types)
 
 =item - show_intraslot_corr (show_intraslot_corr)
@@ -5608,26 +5601,6 @@ it wants.
 
 Array of Hashes:
 
-If Not $cluster
-
-  Keys:
-    map_id1
-    map_id2
-    evidence_type_acc
-    no_corr
-    min_start2
-    max_start2
-    avg_mid2
-    start_avg2
-    start_avg1
-    min_start1
-    max_start1
-    avg_mid1
-
-
-
-If $cluster
-
   Keys:
     map_id1
     map_id2
@@ -5646,7 +5619,6 @@ If $cluster
 
     my ( $self, %args ) = @_;
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
-    my $clustering = $args{'clustering'};
     my $split_evidence_types        = $args{'split_evidence_types'};
     my $show_intraslot_corr         = $args{'show_intraslot_corr'};
     my $slot_info                   = $args{'slot_info'} || {};
