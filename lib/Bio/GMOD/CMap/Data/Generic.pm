@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.88 2005-06-17 04:29:43 mwz444 Exp $
+# $Id: Generic.pm,v 1.89 2005-06-24 14:24:59 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.88 $)[-1];
+$VERSION = (qw$Revision: 1.89 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -2125,7 +2125,7 @@ to ignore that column.
         $set_sql .= $set_sql ? ", " : " set ";
         $set_sql .= " display_order = ? ";
     }
-    if (defined($is_enabled)) {
+    if ( defined($is_enabled) ) {
         push @update_args, $is_enabled;
         $set_sql .= $set_sql ? ", " : " set ";
         $set_sql .= " is_enabled = ? ";
@@ -2150,7 +2150,7 @@ to ignore that column.
         $set_sql .= $set_sql ? ", " : " set ";
         $set_sql .= " map_units = ? ";
     }
-    if (defined($is_relational_map)) {
+    if ( defined($is_relational_map) ) {
         push @update_args, $is_relational_map;
         $set_sql .= $set_sql ? ", " : " set ";
         $set_sql .= " is_relational_map = ? ";
@@ -4353,7 +4353,7 @@ If you don't want CMap to update into your database, make this a dummy method.
         $set_sql .= $set_sql ? ", " : " set ";
         $set_sql .= " feature_name = ? ";
     }
-    if (defined($is_landmark)) {
+    if ( defined($is_landmark) ) {
         push @update_args, $is_landmark;
         $set_sql .= $set_sql ? ", " : " set ";
         $set_sql .= " is_landmark = ? ";
@@ -5522,11 +5522,11 @@ Array of Hashes:
 }
 
 #-----------------------------------------------
-sub get_feature_correspondence_count {    #ZZZ
+sub get_feature_correspondence_for_counting {    #ZZZ
 
 =pod
 
-=head2 get_feature_correspondence_count()
+=head2 get_feature_correspondence_for_counting()
 
 =over 4
 
@@ -5666,7 +5666,11 @@ If $cluster
 
     my $select_sql = qq[
         select   cl.map_id1,
-                 cl.map_id2
+                 cl.map_id2,
+                 cl.feature_start1,
+                 cl.feature_stop1,
+                 cl.feature_start2,
+                 cl.feature_stop2
     ];
 
     my $from_sql = qq[
@@ -5683,8 +5687,8 @@ If $cluster
         and      cl.map_id1!=cl.map_id2
     ];
 
-    my $group_by_sql = qq[
-        group by cl.map_id1,
+    my $order_by_sql = qq[
+        order by cl.map_id1,
                  cl.map_id2,
                  ce.evidence_type_acc
     ];
@@ -5696,27 +5700,6 @@ If $cluster
         $select_sql .= ", '"
           . DEFAULT->{'aggregated_type_substitute'}
           . "' as evidence_type_acc \n ";
-    }
-    if ($clustering) {
-        $select_sql .=
-            ', cl.feature_start1,cl.feature_stop1,'
-          . 'cl.feature_start2,cl.feature_stop2';
-        $group_by_sql = '';
-    }
-    else {
-        $select_sql .= qq[
-            , count(distinct cl.feature_correspondence_id) as no_corr, 
-            min(cl.feature_start2) as min_start2, 
-            max(cl.feature_start2) as max_start2, 
-            avg(((cl.feature_stop2-cl.feature_start2)/2)
-            +cl.feature_start2) as avg_mid2, 
-            avg(cl.feature_start2) as start_avg2,
-            avg(cl.feature_start1) as start_avg1,
-            min(cl.feature_start1) as min_start1, 
-            max(cl.feature_start1) as max_start1 , 
-            avg(((cl.feature_stop1-cl.feature_start1)/2)
-            +cl.feature_start1) as avg_mid1 
-        ];
     }
 
     # Deal with slot_info
@@ -5895,7 +5878,7 @@ If $cluster
         return [];
     }
 
-    my $sql_str = $select_sql . $from_sql . $where_sql . $group_by_sql;
+    my $sql_str = $select_sql . $from_sql . $where_sql . $order_by_sql;
 
     unless ( $return_object = $cmap_object->get_cached_results( 4, $sql_str ) )
     {
@@ -6542,7 +6525,7 @@ If you don't want CMap to update into your database, make this a dummy method.
         $set_sql .= $set_sql ? ", " : " set ";
         $set_sql .= " feature_id2 = ? ";
     }
-    if (defined($is_enabled)) {
+    if ( defined($is_enabled) ) {
         push @update_args, $is_enabled;
         $set_sql .= $set_sql ? ", " : " set ";
         $set_sql .= " is_enabled = ? ";
@@ -7445,7 +7428,7 @@ If you don't want CMap to update into your database, make this a dummy method.
         $set_sql .= $set_sql ? ", " : " set ";
         $set_sql .= " display_order = ? ";
     }
-    if (defined($is_public)) {
+    if ( defined($is_public) ) {
         push @update_args, $is_public;
         $set_sql .= $set_sql ? ", " : " set ";
         $set_sql .= " is_public = ? ";

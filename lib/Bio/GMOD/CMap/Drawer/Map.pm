@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.163 2005-06-23 05:33:50 mwz444 Exp $
+# $Id: Map.pm,v 1.164 2005-06-24 14:25:01 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.163 $)[-1];
+$VERSION = (qw$Revision: 1.164 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1960,16 +1960,10 @@ sub place_map_y {
                     $ref_corr->{'map_id2'} );
 
                 # average of corr on ref map
-                my $ref_avg_mid =
-                  defined( $ref_corr->{'avg_mid2'} )
-                  ? $ref_corr->{'avg_mid2'}
-                  : $ref_corr->{'start_avg2'};
+                my $ref_avg_mid = $ref_corr->{'avg_mid2'};
 
                 # average of corr on current map
-                my $avg_mid =
-                  defined( $ref_corr->{'avg_mid1'} )
-                  ? $ref_corr->{'avg_mid1'}
-                  : $ref_corr->{'start_avg1'};
+                my $avg_mid = $ref_corr->{'avg_mid1'};
 
                 my $ref_map_pixel_len = $ref_pos->{'y2'} - $ref_pos->{'y1'};
                 my $ref_map_unit_len  =
@@ -1995,25 +1989,27 @@ sub place_map_y {
                   ? (
                     $ref_pos->{'y2'} - (
                         (
-                            $ref_corr->{'min_start2'} - $ref_pos->{'map_start2'}
+                            $ref_corr->{'min_position2'} -
+                              $ref_pos->{'map_start2'}
                         ) / $ref_map_unit_len
                       ) * $ref_map_pixel_len
                   )
                   : (
                     $ref_pos->{'y1'} + (
                         (
-                            $ref_corr->{'min_start2'} - $ref_pos->{'map_start2'}
+                            $ref_corr->{'min_position2'} -
+                              $ref_pos->{'map_start2'}
                         ) / $ref_map_unit_len
                       ) * $ref_map_pixel_len
                   );
                 my $ref_map_y2 =
                     $ref_pos->{'is_flipped'}
                   ? $ref_pos->{'y2'} +
-                  ( ( $ref_corr->{'max_start2'} - $ref_pos->{'map_start2'} ) /
-                      $ref_map_unit_len ) * $ref_map_pixel_len
+                  ( ( $ref_corr->{'max_position2'} - $ref_pos->{'map_start2'} )
+                    / $ref_map_unit_len ) * $ref_map_pixel_len
                   : $ref_pos->{'y1'} +
-                  ( ( $ref_corr->{'max_start2'} - $ref_pos->{'map_start2'} ) /
-                      $ref_map_unit_len ) * $ref_map_pixel_len;
+                  ( ( $ref_corr->{'max_position2'} - $ref_pos->{'map_start2'} )
+                    / $ref_map_unit_len ) * $ref_map_pixel_len;
 
                 my $ref_map_x1 = $ref_pos->{'x1'} + $drawing_offset;
 
@@ -2032,9 +2028,11 @@ sub place_map_y {
                 }
                 else {
                     my $this_agg_y1 =
-                      ( $ref_corr->{'min_start1'} - $self->map_start($map_id) );
+                      ( $ref_corr->{'min_position1'} - $self->map_start($map_id)
+                      );
                     my $this_agg_y2 =
-                      ( $ref_corr->{'max_start1'} - $self->map_start($map_id) );
+                      ( $ref_corr->{'max_position1'} - $self->map_start($map_id)
+                      );
                     ( $this_agg_y1, $this_agg_y2 ) =
                       ( $this_agg_y2, $this_agg_y1 )
                       if ($is_flipped);
