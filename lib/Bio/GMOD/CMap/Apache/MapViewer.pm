@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.104 2005-06-03 22:20:00 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.105 2005-06-27 20:50:42 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.104 $)[-1];
+$VERSION = (qw$Revision: 1.105 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -84,6 +84,10 @@ sub handler {
     my $min_correspondences   = $apr->param('min_correspondences') || 0;
     my $page_no               = $apr->param('page_no') || 1;
     my $action                = $apr->param('action') || 'view';
+    my $refMenu               = $apr->param('refMenu');
+    my $compMenu              = $apr->param('compMenu');
+    my $optionMenu            = $apr->param('optionMenu');
+    my $addOpMenu             = $apr->param('addOpMenu');
 
     # If this was submitted by a button, clear the modified map fields.
     # They are no longer needed.
@@ -452,6 +456,10 @@ sub handler {
             stack_maps                  => $self->stack_maps,
             ref_map_order               => $self->ref_map_order,
             comp_menu_order             => $self->comp_menu_order,
+            refMenu                     => $refMenu,
+            compMenu                    => $compMenu,
+            optionMenu                  => $optionMenu,
+            addOpMenu                   => $addOpMenu,
           )
           or return $self->error( Bio::GMOD::CMap::Drawer->error );
 

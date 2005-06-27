@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.98 2005-06-22 22:29:06 mwz444 Exp $
+# $Id: Drawer.pm,v 1.99 2005-06-27 20:50:36 mwz444 Exp $
 
 =head1 NAME
 
@@ -55,6 +55,10 @@ The base map drawing module.
         stack_maps => $stack_maps,
         ref_map_order => $ref_map_order,
         comp_menu_order => $comp_menu_order,
+        refMenu => $refMenu,
+        compMenu => $compMenu,
+        optionMenu => $optionMenu,
+        addOpMenu => $addOpMenu,
     );
 
 =head2 Fields
@@ -267,6 +271,22 @@ This is the string that dictates the order of the comparative maps in the menu.
 Options are 'display_order' (order on the map display_order) and 'corrs' (order
 on the number of correspondences).  'display_order' is the default.
 
+=item * refMenu
+
+This is set to 1 if the Reference Menu is displayed.
+
+=item * compMenu
+
+This is set to 1 if the Comparison Menu is displayed.
+
+=item * optionMenu
+
+This is set to 1 if the Options Menu is displayed.
+
+=item * addOpMenu
+
+This is set to 1 if the Additional Options Menu is displayed.
+
 =back
 
 =head1 METHODS
@@ -275,7 +295,7 @@ on the number of correspondences).  'display_order' is the default.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.98 $)[-1];
+$VERSION = (qw$Revision: 1.99 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -297,7 +317,7 @@ my @INIT_PARAMS = qw[
   config data_source min_correspondences collapse_features cache_dir
   map_view data_module aggregate cluster_corr show_intraslot_corr clean_view
   magnify_all scale_maps stack_maps ref_map_order comp_menu_order
-  split_agg_ev
+  split_agg_ev refMenu compMenu optionMenu addOpMenu
 ];
 
 # ----------------------------------------------------
@@ -1080,40 +1100,40 @@ Lays out the image and writes it to the file system, set the "image_name."
             );
         }
     }
-    
+
     # Add the slot title boxes
     # First find out the height of the tallest title box
-    my $max_title_height=0;
+    my $max_title_height = 0;
     for my $slot_no ( $self->slot_numbers ) {
         my $title_data = $self->slot_title( slot_no => $slot_no );
-        my $height = $title_data->{'bounds'}[3]-$title_data->{'bounds'}[1];
-        $max_title_height = $height if ($max_title_height < $height );
+        my $height = $title_data->{'bounds'}[3] - $title_data->{'bounds'}[1];
+        $max_title_height = $height if ( $max_title_height < $height );
     }
     my $title_top = $self->min_y - $max_title_height;
     $self->min_y($title_top);
     for my $slot_no ( $self->slot_numbers ) {
         my ( $left, $right ) = $self->slot_sides( slot_no => $slot_no );
-        my $slot_center = (($right+$left)/2);
-        my $title_data = $self->slot_title( slot_no => $slot_no );
-        my $bounds = $title_data->{'bounds'};
-        my $map_area_data = $title_data->{'map_area_data'};
-        my $drawing_data = $title_data->{'drawing_data'};
-        my $title_center_x = (($bounds->[2]+$bounds->[0])/2);
-        my $offset_x = $slot_center-$title_center_x;
-        my $offset_y = $title_top - $bounds->[1];
+        my $slot_center = ( ( $right + $left ) / 2 );
+        my $title_data     = $self->slot_title( slot_no => $slot_no );
+        my $bounds         = $title_data->{'bounds'};
+        my $map_area_data  = $title_data->{'map_area_data'};
+        my $drawing_data   = $title_data->{'drawing_data'};
+        my $title_center_x = ( ( $bounds->[2] + $bounds->[0] ) / 2 );
+        my $offset_x       = $slot_center - $title_center_x;
+        my $offset_y       = $title_top - $bounds->[1];
         $self->offset_drawing_data(
-            offset_x => $offset_x,
-            offset_y => $offset_y,
+            offset_x     => $offset_x,
+            offset_y     => $offset_y,
             drawing_data => $drawing_data,
         );
-        $self->add_drawing( @{ $drawing_data } );
+        $self->add_drawing( @{$drawing_data} );
         $self->offset_map_area_data(
-            offset_x => $offset_x,
-            offset_y => $offset_y,
+            offset_x      => $offset_x,
+            offset_y      => $offset_y,
             map_area_data => $map_area_data,
         );
-        $self->add_map_area( @{ $map_area_data } );
-    }    
+        $self->add_map_area( @{$map_area_data} );
+    }
 
     #
     # Frame out the slots.
@@ -1278,8 +1298,10 @@ Lays out the image and writes it to the file system, set the "image_name."
                     # They are not needed if the types are defined.
                     next;
                 }
-                foreach my $color_bound ( sort { $a <=> $b }
-                    grep { $_ } keys(%$corr_colors) )
+                foreach my $color_bound (
+                    sort { $a <=> $b }
+                    grep { $_ } keys(%$corr_colors)
+                  )
                 {
                     $self->add_drawing(
                         STRING, $font, $x + 15, $max_y,
@@ -2137,13 +2159,14 @@ Set and retrieve the slot title.
 
 =cut
 
-    my $self       = shift;
-    my %args       = @_;
-    my $slot_no    = $args{'slot_no'};
-    if ($args{'bounds'}){
-        $self->{'slot_title'}{$slot_no}{'bounds'}=$args{'bounds'};
-        $self->{'slot_title'}{$slot_no}{'drawing_data'}=$args{'drawing_data'};
-        $self->{'slot_title'}{$slot_no}{'map_area_data'}=$args{'map_area_data'};
+    my $self    = shift;
+    my %args    = @_;
+    my $slot_no = $args{'slot_no'};
+    if ( $args{'bounds'} ) {
+        $self->{'slot_title'}{$slot_no}{'bounds'}       = $args{'bounds'};
+        $self->{'slot_title'}{$slot_no}{'drawing_data'} = $args{'drawing_data'};
+        $self->{'slot_title'}{$slot_no}{'map_area_data'} =
+          $args{'map_area_data'};
     }
     return $self->{'slot_title'}{$slot_no};
 }
@@ -2581,8 +2604,8 @@ Add the topper to the map.
 sub offset_drawing_data {
 
     my ( $self, %args ) = @_;
-    my $offset_x       = $args{'offset_x'} || 0;
-    my $offset_y       = $args{'offset_y'} || 0;
+    my $offset_x = $args{'offset_x'} || 0;
+    my $offset_y = $args{'offset_y'} || 0;
     my $drawing_data = $args{'drawing_data'};
 
     for ( my $i = 0 ; $i <= $#{$drawing_data} ; $i++ ) {
@@ -2626,18 +2649,17 @@ sub offset_drawing_data {
 sub offset_map_area_data {
 
     my ( $self, %args ) = @_;
-    my $offset_x       = $args{'offset_x'} || 0;
-    my $offset_y       = $args{'offset_y'} || 0;
+    my $offset_x = $args{'offset_x'} || 0;
+    my $offset_y = $args{'offset_y'} || 0;
     my $map_area_data = $args{'map_area_data'};
 
     for ( my $i = 0 ; $i <= $#{$map_area_data} ; $i++ ) {
-            $map_area_data->[$i]{'coords'}[0] += $offset_x;
-            $map_area_data->[$i]{'coords'}[2] += $offset_x;
-            $map_area_data->[$i]{'coords'}[1] += $offset_y;
-            $map_area_data->[$i]{'coords'}[3] += $offset_y;
+        $map_area_data->[$i]{'coords'}[0] += $offset_x;
+        $map_area_data->[$i]{'coords'}[2] += $offset_x;
+        $map_area_data->[$i]{'coords'}[1] += $offset_y;
+        $map_area_data->[$i]{'coords'}[3] += $offset_y;
     }
 }
-
 
 # ----------------------------------------------------
 sub create_link_params {
@@ -2689,6 +2711,10 @@ Creates default link parameters for CMap->create_viewer_link()
     my $evidence_type_score         = $args{'evidence_type_score'};
     my $data_source                 = $args{'data_source'};
     my $url                         = $args{'url'};
+    my $refMenu                     = $args{'refMenu'};
+    my $compMenu                    = $args{'compMenu'};
+    my $optionMenu                  = $args{'optionMenu'};
+    my $addOpMenu                   = $args{'addOpMenu'};
 
     ### Required Fields that Drawer can't figure out.
     unless ( defined($ref_map_set_acc) ) {
@@ -2809,6 +2835,18 @@ Creates default link parameters for CMap->create_viewer_link()
     unless ( defined($url) ) {
         $url = '/viewer';
     }
+    unless ( defined($refMenu) ) {
+        $refMenu = $self->refMenu();
+    }
+    unless ( defined($compMenu) ) {
+        $compMenu = $self->compMenu();
+    }
+    unless ( defined($optionMenu) ) {
+        $optionMenu = $self->optionMenu();
+    }
+    unless ( defined($addOpMenu) ) {
+        $addOpMenu = $self->addOpMenu();
+    }
 
     return (
         prev_ref_species_acc        => $prev_ref_species_acc,
@@ -2848,6 +2886,10 @@ Creates default link parameters for CMap->create_viewer_link()
         evidence_type_score         => $evidence_type_score,
         data_source                 => $data_source,
         url                         => $url,
+        refMenu                     => $refMenu,
+        compMenu                    => $compMenu,
+        optionMenu                  => $optionMenu,
+        addOpMenu                   => $addOpMenu,
     );
 }
 

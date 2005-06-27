@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.86 2005-06-07 20:08:50 mwz444 Exp $
+# $Id: CMap.pm,v 1.87 2005-06-27 20:50:19 mwz444 Exp $
 
 =head1 NAME
 
@@ -112,9 +112,9 @@ sub config {
         $self->{'config'} = $newConfig;
     }
     unless ( defined $self->{'config'} ) {
-        $self->{'config'} = Bio::GMOD::CMap::Config->new(
-            config_dir => $self->{'config_dir'}
-        ) or return Bio::GMOD::CMap::Config->error;
+        $self->{'config'} =
+          Bio::GMOD::CMap::Config->new( config_dir => $self->{'config_dir'} )
+          or return Bio::GMOD::CMap::Config->error;
     }
 
     return $self->{'config'};
@@ -149,19 +149,19 @@ Allow for object plugin stuff.
 
     my ( $self, $obj_type, $object ) = @_;
     my $plugin_info = $self->config_data('object_plugin') or return;
-    my $xref_sub    = $plugin_info->{ $obj_type }         or return;
+    my $xref_sub    = $plugin_info->{$obj_type}           or return;
 
     if ( $xref_sub =~ /^\s*sub\s*{/ ) {
         $xref_sub = eval $xref_sub;
     }
     elsif ( $xref_sub =~ /\w+::\w+/ ) {
-        $xref_sub = \&{ $xref_sub };
+        $xref_sub = \&{$xref_sub};
     }
 
     return unless ref $xref_sub eq 'CODE';
 
     no strict 'refs';
-    $xref_sub->( $object );
+    $xref_sub->($object);
 }
 
 # ----------------------------------------------------
@@ -435,7 +435,7 @@ The default is 0.
     $self->{'cluster_corr'} = $val if defined $val;
     $self->{'cluster_corr'} = $self->config_data('cluster_correspondences') || 0
       unless defined $self->{'cluster_corr'};
-    $self->{'cluster_corr'} = 0 unless ($self->aggregate==3);
+    $self->{'cluster_corr'} = 0 unless ( $self->aggregate == 3 );
     return $self->{'cluster_corr'};
 }
 
@@ -482,8 +482,7 @@ The default is 1.
     my $self = shift;
     my $val  = shift;
     $self->{'split_agg_ev'} = $val if defined $val;
-    $self->{'split_agg_ev'} =
-      $self->config_data('split_agg_evespondences')
+    $self->{'split_agg_ev'} = $self->config_data('split_agg_evespondences')
       unless defined $self->{'split_agg_ev'};
     $self->{'split_agg_ev'} = 0
       unless defined $self->{'split_agg_ev'};
@@ -621,8 +620,8 @@ The default is ''.
     my $self = shift;
     my $val  = shift;
     $self->{'comp_menu_order'} = $val if defined $val;
-    $self->{'comp_menu_order'} = $self->config_data('comp_menu_order') || '' 
-        unless defined $self->{'comp_menu_order'};
+    $self->{'comp_menu_order'} = $self->config_data('comp_menu_order') || ''
+      unless defined $self->{'comp_menu_order'};
     return $self->{'comp_menu_order'};
 }
 
@@ -659,6 +658,90 @@ Returns a handle to the data module.
 }
 
 # ----------------------------------------------------
+sub refMenu {
+
+=pod
+                                                                                
+=head2 refMenu
+
+Returns the boolean refMenu variable.  This determines if the Reference Menu is
+displayed.
+
+The default is 0.
+
+=cut
+
+    my $self = shift;
+    my $val  = shift;
+    $self->{'refMenu'} = $val if defined $val;
+    $self->{'refMenu'} ||= 0;
+    return $self->{'refMenu'};
+}
+
+# ----------------------------------------------------
+sub compMenu {
+
+=pod
+                                                                                
+=head2 compMenu
+
+Returns the boolean compMenu variable.  This determines if the Comparison Menu
+is displayed.
+
+The default is 0.
+
+=cut
+
+    my $self = shift;
+    my $val  = shift;
+    $self->{'compMenu'} = $val if defined $val;
+    $self->{'compMenu'} ||= 0;
+    return $self->{'compMenu'};
+}
+
+# ----------------------------------------------------
+sub optionMenu {
+
+=pod
+                                                                                
+=head2 optionMenu
+
+Returns the boolean optionMenu variable.  This determines if the Options Menu
+is displayed.
+
+The default is 0.
+
+=cut
+
+    my $self = shift;
+    my $val  = shift;
+    $self->{'optionMenu'} = $val if defined $val;
+    $self->{'optionMenu'} ||= 0;
+    return $self->{'optionMenu'};
+}
+
+# ----------------------------------------------------
+sub addOpMenu {
+
+=pod
+                                                                                
+=head2 addOpMenu
+
+Returns the boolean addOpMenu variable.  This determines if the Additional
+Options Menu is displayed.
+
+The default is 0.
+
+=cut
+
+    my $self = shift;
+    my $val  = shift;
+    $self->{'addOpMenu'} = $val if defined $val;
+    $self->{'addOpMenu'} ||= 0;
+    return $self->{'addOpMenu'};
+}
+
+# ----------------------------------------------------
 sub get_multiple_xrefs {
 
 =pod
@@ -671,14 +754,14 @@ Given a table name and some objects, get the cross-references.
 
     my ( $self, %args ) = @_;
     my $object_type = $args{'object_type'} or return;
-    my $objects    = $args{'objects'};
-    my $sql_object         = $self->sql or return;
+    my $objects     = $args{'objects'};
+    my $sql_object  = $self->sql or return;
 
     return unless @{ $objects || [] };
 
-    my $xrefs= $sql_object->get_xrefs(
+    my $xrefs = $sql_object->get_xrefs(
         cmap_object => $self,
-        object_type=>$object_type,
+        object_type => $object_type,
     );
 
     my ( %xref_specific, @xref_generic );
@@ -766,6 +849,10 @@ Given information about the link, creates a url to cmap_viewer.
     my $greater_evidence_type_accs  = $args{'greater_evidence_type_accs'};
     my $evidence_type_score         = $args{'evidence_type_score'};
     my $data_source                 = $args{'data_source'} or return;
+    my $refMenu                     = $args{'refMenu'};
+    my $compMenu                    = $args{'compMenu'};
+    my $optionMenu                  = $args{'optionMenu'};
+    my $addOpMenu                   = $args{'addOpMenu'};
     my $url                         = $args{'url'} || '';
     $url .= '?' unless $url =~ /\?$/;
 
@@ -822,18 +909,30 @@ Given information about the link, creates a url to cmap_viewer.
       if defined($flip);
     $url .= "min_correspondences=$min_correspondences;"
       if defined($min_correspondences);
+    $url .= "refMenu=$refMenu;"
+      if defined($refMenu);
+    $url .= "compMenu=$compMenu;"
+      if defined($compMenu);
+    $url .= "optionMenu=$optionMenu;"
+      if defined($optionMenu);
+    $url .= "addOpMenu=$addOpMenu;"
+      if defined($addOpMenu);
 
     #multi
     if ( $ref_map_accs and %$ref_map_accs ) {
         my @ref_strs;
         foreach my $ref_map_acc ( keys(%$ref_map_accs) ) {
-            if (   defined( $ref_map_accs->{$ref_map_acc}{'start'} )
-                or defined( $ref_map_accs->{$ref_map_acc}{'stop'}
-                or $ref_map_accs->{$ref_map_acc}{'magnify'} ) )
+            if (
+                defined( $ref_map_accs->{$ref_map_acc}{'start'} )
+                or defined(
+                         $ref_map_accs->{$ref_map_acc}{'stop'}
+                      or $ref_map_accs->{$ref_map_acc}{'magnify'}
+                )
+              )
             {
                 my $start =
                   defined( $ref_map_accs->{$ref_map_acc}{'start'} )
-                  ? $ref_map_accs->{$ref_map_acc}{'start'} 
+                  ? $ref_map_accs->{$ref_map_acc}{'start'}
                   : '';
                 my $stop =
                   defined( $ref_map_accs->{$ref_map_acc}{'stop'} )
@@ -844,10 +943,7 @@ Given information about the link, creates a url to cmap_viewer.
                   ? $ref_map_accs->{$ref_map_acc}{'magnify'}
                   : 1;
                 push @ref_strs,
-                  $ref_map_acc . '['
-                  . $start . '*'
-                  . $stop . 'x'
-                  . $mag . ']';
+                  $ref_map_acc . '[' . $start . '*' . $stop . 'x' . $mag . ']';
             }
             else {
                 push @ref_strs, $ref_map_acc;
@@ -918,8 +1014,8 @@ Given information about the link, creates a url to cmap_viewer.
     foreach my $acc (@$greater_evidence_type_accs) {
         $url .= "et_" . $acc . "=3;";
     }
-    foreach my $acc (keys(%$evidence_type_score)) {
-        $url .= "ets_" . $acc . "=".$evidence_type_score->{$acc}.";";
+    foreach my $acc ( keys(%$evidence_type_score) ) {
+        $url .= "ets_" . $acc . "=" . $evidence_type_score->{$acc} . ";";
     }
 
     return $url;
@@ -1056,7 +1152,7 @@ Returns the correct SQL module driver for the RDBMS we're using.
 
         # IF YOU ARE GETTING A BIZZARE WARNING:
         # It might be that the $sql_module has errors in it
-        #  aren't being reported.  This might manifest as "$self->sql" 
+        #  aren't being reported.  This might manifest as "$self->sql"
         #  returning nothing or as "cannot find method new".
         $self->{'sql_module'} = $sql_module->new( config => $self->config );
     }
@@ -1095,11 +1191,12 @@ sub get_cached_results {
 
     $cache_level = 1 unless $cache_level;
     my $cache_name = "L" . $cache_level . "_cache";
-#print STDERR "GET: $cache_level $cache_name\n";
+
+    #print STDERR "GET: $cache_level $cache_name\n";
 
     unless ( $self->{$cache_name} ) {
         $self->{$cache_name} = $self->init_cache($cache_level)
-            or return;
+          or return;
     }
 
     # can only check for disabled cache after init_cache is called.
@@ -1116,11 +1213,12 @@ sub store_cached_results {
     my $object      = shift;
     $cache_level = 1 unless $cache_level;
     my $cache_name = "L" . $cache_level . "_cache";
-#print STDERR "STORE: $cache_level $cache_name\n";
+
+    #print STDERR "STORE: $cache_level $cache_name\n";
 
     unless ( $self->{$cache_name} ) {
         $self->{$cache_name} = $self->init_cache($cache_level)
-            or return;
+          or return;
     }
 
     # can only check for disabled cache after init_cache is called.
