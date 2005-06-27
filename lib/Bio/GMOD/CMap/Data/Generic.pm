@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.90 2005-06-24 15:10:21 mwz444 Exp $
+# $Id: Generic.pm,v 1.91 2005-06-27 20:53:52 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.90 $)[-1];
+$VERSION = (qw$Revision: 1.91 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -849,7 +849,7 @@ original start and stop.
                         and defined( $maps->{$map_acc}{'stop'} ) )
                     {
                         $acc_where .=
-                            qq[ and ( not m.map_acc = '$map_acc'  ]
+                            qq[ and ( not (m.map_acc = '$map_acc')  ]
                           . " or (( cl.feature_start1>="
                           . $maps->{$map_acc}{'start'}
                           . " and cl.feature_start1<="
@@ -862,7 +862,7 @@ original start and stop.
                     }
                     elsif ( defined( $maps->{$map_acc}{'start'} ) ) {
                         $acc_where .=
-                            qq[ and ( not m.map_acc = '$map_acc'  ]
+                            qq[ and ( not (m.map_acc = '$map_acc')  ]
                           . " or (( cl.feature_start1>="
                           . $maps->{$map_acc}{'start'}
                           . " ) or ( cl.feature_stop1 is not null "
@@ -871,7 +871,7 @@ original start and stop.
                     }
                     elsif ( defined( $maps->{$map_acc}{'stop'} ) ) {
                         $acc_where .=
-                            qq[ and ( not m.map_acc = '$map_acc'  ]
+                            qq[ and ( not (m.map_acc = '$map_acc')  ]
                           . " or cl.feature_start1<="
                           . $maps->{$map_acc}{'stop'} . ") ";
                     }
