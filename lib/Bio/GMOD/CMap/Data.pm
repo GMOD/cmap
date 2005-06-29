@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.240 2005-06-24 14:24:39 mwz444 Exp $
+# $Id: Data.pm,v 1.241 2005-06-29 20:20:31 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.240 $)[-1];
+$VERSION = (qw$Revision: 1.241 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -2352,7 +2352,7 @@ Returns the detail info for a map.
     my $greater_evidence_type_accs  = $args{'greater_evidence_types'};
     my $evidence_type_score         = $args{'evidence_type_score'};
 
-    my ( $comparative_map_acc, $comparative_map_set_acc );
+    my ( $pager, $comparative_map_acc, $comparative_map_set_acc );
     if ( $comparative_map_field eq 'map_set_acc' ) {
         $comparative_map_set_acc = $comparative_map_field_acc;
     }
@@ -2416,20 +2416,23 @@ Returns the detail info for a map.
         group_by_feature_type => 1,
     );
 
-    #
-    # Page the data here so as to reduce the calls below
-    # for the comparative map info.
-    #
-    my $pager = Data::Pageset->new(
-        {
-            total_entries    => scalar @$features,
-            entries_per_page => $page_size,
-            current_page     => $page_no,
-            pages_per_set    => $max_pages,
-        }
-    );
-    $features = [ $pager->splice($features) ]
-      if $page_data && @$features;
+    if ( !$comparative_map_field ) {
+
+        #
+        # Page the data here so as to reduce the calls below
+        # for the comparative map info.
+        #
+        $pager = Data::Pageset->new(
+            {
+                total_entries    => scalar @$features,
+                entries_per_page => $page_size,
+                current_page     => $page_no,
+                pages_per_set    => $max_pages,
+            }
+        );
+        $features = [ $pager->splice($features) ]
+          if $page_data && @$features;
+    }
 
     # REPLACE 48 ALIAS YYY
 
@@ -2464,7 +2467,8 @@ Returns the detail info for a map.
     # Find every other map position for the features on this map.
     #
     my %comparative_maps;
-    for my $feature (@$features) {
+    for ( my $i = 0 ; $i <= $#{$features} ; $i++ ) {
+        my $feature = $features->[$i];
 
         # REPLACE 71 FCS
         my $positions = $sql_object->get_feature_correspondence_details(
@@ -2477,6 +2481,11 @@ Returns the detail info for a map.
             greater_evidence_type_accs  => $greater_evidence_type_accs,
             evidence_type_score         => $evidence_type_score,
         );
+        if ( $comparative_map_field and not( $positions and @$positions ) ) {
+            splice( @$features, $i, 1 );
+            $i--;
+            next;
+        }
 
         my ( %distinct_positions, %evidence );
         for my $position (@$positions) {
@@ -2535,6 +2544,22 @@ Returns the detail info for a map.
                   $self->config_data('feature_highlight_bg_color');
             }
         }
+    }
+    if ($comparative_map_field) {
+
+#
+# Page the data here if the number of features could have been reduced after getting the comparative map info.
+#
+        $pager = Data::Pageset->new(
+            {
+                total_entries    => scalar @$features,
+                entries_per_page => $page_size,
+                current_page     => $page_no,
+                pages_per_set    => $max_pages,
+            }
+        );
+        $features = [ $pager->splice($features) ]
+          if $page_data && @$features;
     }
 
     my @comparative_maps;

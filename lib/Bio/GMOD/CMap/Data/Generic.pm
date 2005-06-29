@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.91 2005-06-27 20:53:52 mwz444 Exp $
+# $Id: Generic.pm,v 1.92 2005-06-29 20:20:39 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.91 $)[-1];
+$VERSION = (qw$Revision: 1.92 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -3270,7 +3270,7 @@ Not using cache because this query is quicker.
     }
 
     if ( defined($map_start) and defined($map_stop) ) {
-        push @identifiers, ( $map_start, $map_stop, $map_start, $map_stop );
+        push @identifiers, ( $map_start, $map_stop, $map_start, $map_start );
         $where_sql .= qq[
             and      (
                 ( f.feature_start>=? and f.feature_start<=? )
@@ -3290,6 +3290,7 @@ Not using cache because this query is quicker.
           " UNION " . $select_sql . $alias_from_sql . $alias_where_sql;
         push @identifiers, @identifiers;
     }
+print STDERR "$sql_str \n";
 
     $return_object =
       $db->selectall_arrayref( $sql_str, { Columns => {} }, @identifiers );
