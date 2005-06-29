@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.99 2005-06-27 20:50:36 mwz444 Exp $
+# $Id: Drawer.pm,v 1.100 2005-06-29 16:10:52 mwz444 Exp $
 
 =head1 NAME
 
@@ -55,6 +55,7 @@ The base map drawing module.
         stack_maps => $stack_maps,
         ref_map_order => $ref_map_order,
         comp_menu_order => $comp_menu_order,
+        omit_area_boxes => $omit_area_boxes,
         refMenu => $refMenu,
         compMenu => $compMenu,
         optionMenu => $optionMenu,
@@ -226,7 +227,7 @@ it has already been created.  Otherwise, Drawer will create it.
 
 Set to 1 to aggregate the correspondences with one line.
 
-Set to 3 to aggregate the correspondences with two lines.
+Set to 2 to aggregate the correspondences with two lines.
 
 Set to 3 to cluster the correspondences into groups based on the cluster_corr
 value.
@@ -271,6 +272,16 @@ This is the string that dictates the order of the comparative maps in the menu.
 Options are 'display_order' (order on the map display_order) and 'corrs' (order
 on the number of correspondences).  'display_order' is the default.
 
+=item * omit_area_boxes
+
+Omit or set to 0 to render all the area boxes.  This gives full functionality
+but can be a slow when there are a lot of features.
+
+Set to 1 to omit the feature area boxes.  This will speed up render time while
+leaving the navigation buttons intact.
+
+Set to 2 to omit all of the area boxes.  This will make a non-clickable image.
+
 =item * refMenu
 
 This is set to 1 if the Reference Menu is displayed.
@@ -295,7 +306,7 @@ This is set to 1 if the Additional Options Menu is displayed.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.99 $)[-1];
+$VERSION = (qw$Revision: 1.100 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -317,7 +328,7 @@ my @INIT_PARAMS = qw[
   config data_source min_correspondences collapse_features cache_dir
   map_view data_module aggregate cluster_corr show_intraslot_corr clean_view
   magnify_all scale_maps stack_maps ref_map_order comp_menu_order
-  split_agg_ev refMenu compMenu optionMenu addOpMenu
+  omit_area_boxes split_agg_ev refMenu compMenu optionMenu addOpMenu
 ];
 
 # ----------------------------------------------------
@@ -1012,9 +1023,10 @@ Lays out the image and writes it to the file system, set the "image_name."
     my $self = shift;
 
     my ( $min_y, $max_y, $min_x, $max_x );
-    my $corrs_aggregated = 0;
-    my $slots_capped_max = undef;
-    my $slots_capped_min = undef;
+    my $corrs_aggregated    = 0;
+    my $slots_capped_max    = undef;
+    my $slots_capped_min    = undef;
+    my $omit_all_area_boxes = ( $self->omit_area_boxes == 2 );
 
     for my $slot_no ( $self->slot_numbers ) {
 
@@ -1227,7 +1239,7 @@ Lays out the image and writes it to the file system, set the "image_name."
                 url => $ft_details_url . $ft->{'feature_type_acc'},
                 alt => "Feature Type Details for $label",
               )
-              unless $ft->{'correspondence_color'};
+              unless ( $omit_all_area_boxes or $ft->{'correspondence_color'} );
 
             my $furthest_x = $label_x + $font->width * length($label) + 5;
             $max_x = $furthest_x if $furthest_x > $max_x;
@@ -1260,7 +1272,8 @@ Lays out the image and writes it to the file system, set the "image_name."
                     url => $et_details_url . $et->{'evidence_type_acc'},
                     alt => 'Evidence Type Details for '
                       . $et->{'evidence_type'},
-                );
+                  )
+                  unless ($omit_all_area_boxes);
 
                 $max_y += $font->height + 5;
             }
@@ -1373,7 +1386,8 @@ Lays out the image and writes it to the file system, set the "image_name."
         ],
         url => CMAP_URL,
         alt => 'GMOD-CMap website',
-    );
+      )
+      unless ($omit_all_area_boxes);
 
     $max_y += $font->height + 5;
 

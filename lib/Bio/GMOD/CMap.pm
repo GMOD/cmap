@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.87 2005-06-27 20:50:19 mwz444 Exp $
+# $Id: CMap.pm,v 1.88 2005-06-29 16:10:51 mwz444 Exp $
 
 =head1 NAME
 
@@ -655,6 +655,39 @@ Returns a handle to the data module.
     }
 
     return $self->{'data_module'};
+}
+
+# ----------------------------------------------------
+sub omit_area_boxes {
+
+=pod
+                                                                                
+=head2 omit_area_boxes
+
+Returns the omit_area_boxes variable.  This determines 
+which area boxes are rendered.  
+
+0 renders all of the area boxes.  This gives the most functionality but can be
+slow if there are a lot of features.
+
+1 omits the feature area boxes but displays the navigation buttons.  This can
+speed things up while leaving navigation abilities
+
+2 omits all area boxes, leaving just an image.
+
+The default is 0.
+
+=cut
+
+    my $self = shift;
+    my $val  = shift;
+    $self->{'omit_area_boxes'} = $val if defined $val;
+    $self->{'omit_area_boxes'} = $self->config_data('omit_area_boxes') || 0
+      unless $self->{'omit_area_boxes'};
+    if ( $self->{'omit_area_boxes'} == 2 ) {
+        $self->clean_view(1);
+    }
+    return $self->{'omit_area_boxes'};
 }
 
 # ----------------------------------------------------

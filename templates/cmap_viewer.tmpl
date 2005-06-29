@@ -844,6 +844,12 @@ function selectAllOptions(select){
                 <td><input type="radio" name="clean_view" value="1"[% IF clean_view==1; ' checked'; END %]>yes</td>
               </tr>
               <tr>
+                <td align="left" valign="top">Clickable Image</td>
+                <td><input type="radio" name="omit_area_boxes" value="0"[% IF apr.param('omit_area_boxes')==0; ' checked'; END %]>Fully Functional</td>
+                <td><input type="radio" name="omit_area_boxes" value="1"[% IF apr.param('omit_area_boxes')==1; ' checked'; END %]>Omit Features</td>
+                <td><input type="radio" name="omit_area_boxes" value="2"[% IF apr.param('omit_area_boxes')==2; ' checked'; END %]>Omit All Buttons</td>
+              </tr>
+              <tr>
                 <td align="left" valign="top">View Intra-Slot Correspondences:</td>
                   [% IF apr.param('show_intraslot_corr')==1; show_intraslot_corr=1; ELSE; show_intraslot_corr=0; END %]
                 <td><input type="radio" name="show_intraslot_corr" value="0"

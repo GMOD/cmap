@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.164 2005-06-24 14:25:01 mwz444 Exp $
+# $Id: Map.pm,v 1.165 2005-06-29 16:10:53 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.164 $)[-1];
+$VERSION = (qw$Revision: 1.165 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -494,8 +494,9 @@ such as the units.
     my $x_mid         = $x1 + ( ( $x2 - $x1 ) / 2 );
     my $magnification =
       $drawer->data_module->magnification( $slot_no, $map_id );
-    my $slot_info = $drawer->data_module->slot_info->{$slot_no};
-    my $start_pos =
+    my $slot_info           = $drawer->data_module->slot_info->{$slot_no};
+    my $omit_all_area_boxes = ( $drawer->omit_area_boxes == 2 );
+    my $start_pos           =
       defined( $slot_info->{$map_id}->[0] )
       ? $slot_info->{$map_id}->[0]
       : "''";
@@ -529,7 +530,8 @@ such as the units.
                 url  => '#',
                 alt  => 'Make map original size',
                 code => $code,
-              };
+              }
+              unless ($omit_all_area_boxes);
             $y += $font->height + $buf;
             $bounds->[0] = $x
               if ( $bounds->[0] < $x );
@@ -571,7 +573,8 @@ such as the units.
             url  => '#',
             alt  => 'Magnification',
             code => $code,
-          };
+          }
+          unless ($omit_all_area_boxes);
         $bounds->[0] = $x
           if ( $bounds->[0] > $x );
         $bounds->[3] = $y + $font->height
@@ -593,7 +596,8 @@ such as the units.
             url  => '',
             alt  => 'Current Magnification: ' . $magnification . ' times',
             code => $code,
-          };
+          }
+          unless ($omit_all_area_boxes);
         $x += ( $font->width * length($mag_mid_str) );
 
         # Plus Side
@@ -612,7 +616,8 @@ such as the units.
             url  => '#',
             alt  => 'Magnification',
             code => $code,
-          };
+          }
+          unless ($omit_all_area_boxes);
         $bounds->[2] = $x + ( $font->width * length($mag_plus_str) )
           if ( $bounds->[2] < $x + ( $font->width * length($mag_plus_str) ) );
         $y += $font->height + $buf;
@@ -663,6 +668,8 @@ Draws the truncation arrows
     my $map_id        = $args{'map_id'};
     my $map_acc       = $args{'map_acc'};
     my $slot_no       = $args{'slot_no'};
+
+    my $omit_all_area_boxes = ( $drawer->omit_area_boxes == 2 );
 
     my $trunc_color      = 'grey';
     my $trunc_half_width = 6;
@@ -746,7 +753,8 @@ Draws the truncation arrows
             url  => '#',
             alt  => 'Scroll',
             code => $code,
-          };
+          }
+          unless ($omit_all_area_boxes);
     }
     else {
 
@@ -817,7 +825,8 @@ Draws the truncation arrows
             url  => '#',
             alt  => 'Scroll',
             code => $code,
-          };
+          }
+          unless ($omit_all_area_boxes);
     }
 }
 
@@ -837,6 +846,7 @@ Creates the slot title.
     my $lines   = $args{'lines'} || [];
     my $buttons = $args{'buttons'} || [];
     my $font    = $args{'font'};
+    my $drawer  = $args{'drawer'};
     my $min_y   = 0;
     my $left_x  = 0;
     my $right_x = 0;
@@ -845,8 +855,9 @@ Creates the slot title.
     my $top_y   =
       $min_y - ( ( scalar @$lines ) * ( $font->height + $buffer ) ) - 4;
     $top_y -= ( $font->height + $buffer ) if ( scalar @$buttons );
-    my $leftmost  = $mid_x;
-    my $rightmost = $mid_x;
+    my $leftmost            = $mid_x;
+    my $rightmost           = $mid_x;
+    my $omit_all_area_boxes = ( $drawer->omit_area_boxes == 2 );
 
     #
     # Place the titles.
@@ -901,7 +912,8 @@ Creates the slot title.
                 coords => \@area,
                 url    => $button->{'url'},
                 alt    => $button->{'alt'},
-              };
+              }
+              unless ($omit_all_area_boxes);
         }
 
         push @drawing_data,
@@ -1809,6 +1821,7 @@ Variable Info:
     $drawer->slot_title(
         slot_no => $slot_no,
         $self->create_slot_title(
+            drawer  => $drawer,
             lines   => \@lines,
             buttons => $self->create_buttons(
                 map_id  => $map_ids[0],
@@ -2167,8 +2180,9 @@ sub add_topper {
     my $map_name    = $self->map_name($map_id);
     my $reg_font    = $drawer->regular_font
       or return $self->error( $drawer->error );
-    my $font_width  = $reg_font->width;
-    my $font_height = $reg_font->height;
+    my $font_width          = $reg_font->width;
+    my $font_height         = $reg_font->height;
+    my $omit_all_area_boxes = ( $drawer->omit_area_boxes == 2 );
 
     my $base_x        = $map_placement_data->{$map_id}{'map_coords'}[0];
     my $base_y        = $map_placement_data->{$map_id}{'bounds'}[1];
@@ -2241,7 +2255,8 @@ sub add_topper {
                 coords => \@area,
                 url    => $button->{'url'},
                 alt    => $button->{'alt'},
-              };
+              }
+              unless ($omit_all_area_boxes);
         }
     }
 
@@ -2285,7 +2300,8 @@ sub add_topper {
             url    => $url,
             alt    => $alt,
             code   => $code,
-          };
+          }
+          unless ($omit_all_area_boxes);
 
         $map_placement_data->{$map_id}{'bounds'}[0] = $f_x1
           if ( $map_placement_data->{$map_id}{'bounds'}[0] > $f_x1 );
@@ -2322,7 +2338,8 @@ sub add_capped_mark {
     my $capped             = $args{'capped'};
     my $map_placement_data = $args{'map_placement_data'};
 
-    my $reg_font = $drawer->regular_font
+    my $omit_all_area_boxes = ( $drawer->omit_area_boxes == 2 );
+    my $reg_font            = $drawer->regular_font
       or return $self->error( $drawer->error );
     my $font_width  = $reg_font->width;
     my $font_height = $reg_font->height;
@@ -2343,7 +2360,8 @@ sub add_capped_mark {
             coords => [ $x1, $y1, $x2, $y2 ],
             url    => '',
             alt    => 'Size Capped',
-          };
+          }
+          unless ($omit_all_area_boxes);
         $map_placement_data->{$map_id}{'bounds'}[2] = $x2
           if ( $map_placement_data->{$map_id}{'bounds'}[2] < $x2 );
     }
@@ -2363,7 +2381,8 @@ sub add_capped_mark {
             coords => [ $x1, $y1, $x2, $y2 ],
             url    => '',
             alt    => 'Size Capped',
-          };
+          }
+          unless ($omit_all_area_boxes);
         $map_placement_data->{$map_id}{'bounds'}[2] = $x2
           if ( $map_placement_data->{$map_id}{'bounds'}[2] < $x2 );
     }
@@ -2420,8 +2439,9 @@ sub add_tick_marks {
     my $map_width         = $self->map_width($map_id);
     my $map_acc           = $self->map_acc($map_id);
 
-    my $label_side = $drawer->label_side($slot_no);
-    my $reg_font   = $drawer->regular_font
+    my $omit_all_area_boxes = ( $drawer->omit_area_boxes == 2 );
+    my $label_side          = $drawer->label_side($slot_no);
+    my $reg_font            = $drawer->regular_font
       or return $self->error( $drawer->error );
     my $font_width  = $reg_font->width;
     my $font_height = $reg_font->height;
@@ -2613,7 +2633,8 @@ sub add_tick_marks {
                 url  => '#',
                 alt  => 'Crop from here down',
                 code => $down_code,
-              };
+              }
+              unless ($omit_all_area_boxes);
             push @$map_area_data,
               {
                 coords => [
@@ -2623,7 +2644,8 @@ sub add_tick_marks {
                 url  => '#',
                 alt  => 'Crop from here up',
                 code => $up_code,
-              };
+              }
+              unless ($omit_all_area_boxes);
         }
         my $label_x =
             $label_side eq RIGHT
@@ -2669,6 +2691,7 @@ sub add_feature_to_map {
     my $fcolumns          = $args{'fcolumns'};
     my $feature_type_accs = $args{'feature_type_accs'};
     my $drawn_glyphs      = $args{'drawn_glyphs'};
+    my $omit_area_boxes   = $drawer->omit_area_boxes;
 
     my $map_width = $self->map_width($map_id);
     my $reg_font  = $drawer->regular_font
@@ -2829,32 +2852,34 @@ sub add_feature_to_map {
             else {
                 return $self->error("Can't draw shape '$feature_glyph'");
             }
-            if ( $feature->{'feature_type'} eq 'chunk' ) {
-                push @$map_area_data,
-                  {
-                    coords => \@coords,
-                    url    => 'viewer?',
-                    alt    => 'Zoom: '
-                      . $feature->{'feature_start'} . '-'
-                      . $feature->{'feature_stop'}
-                  };
-            }
-            else {
-                my $code = '';
-                my $url  = $feature_details_url . $feature->{'feature_acc'};
-                my $alt  =
-                    'Feature Details: '
-                  . $feature->{'feature_name'} . ' ['
-                  . $feature->{'feature_acc'} . ']';
-                eval $self->feature_type_data( $feature->{'feature_type_acc'},
-                    'area_code' );
-                push @$map_area_data,
-                  {
-                    coords => \@coords,
-                    url    => $url,
-                    alt    => $alt,
-                    code   => $code,
-                  };
+            unless ($omit_area_boxes) {
+                if ( $feature->{'feature_type'} eq 'chunk' ) {
+                    push @$map_area_data,
+                      {
+                        coords => \@coords,
+                        url    => 'viewer?',
+                        alt    => 'Zoom: '
+                          . $feature->{'feature_start'} . '-'
+                          . $feature->{'feature_stop'}
+                      };
+                }
+                else {
+                    my $code = '';
+                    my $url  = $feature_details_url . $feature->{'feature_acc'};
+                    my $alt  =
+                        'Feature Details: '
+                      . $feature->{'feature_name'} . ' ['
+                      . $feature->{'feature_acc'} . ']';
+                    eval $self->feature_type_data(
+                        $feature->{'feature_type_acc'}, 'area_code' );
+                    push @$map_area_data,
+                      {
+                        coords => \@coords,
+                        url    => $url,
+                        alt    => $alt,
+                        code   => $code,
+                      };
+                }
             }
 
         }
@@ -3010,8 +3035,9 @@ sub add_labels_to_map {
     my $min_y              = $args{'min_y'};
     my $pixel_height       = $args{'pixel_height'};
 
-    my $label_side = $drawer->label_side($slot_no);
-    my $reg_font   = $drawer->regular_font
+    my $omit_area_boxes = $drawer->omit_area_boxes();
+    my $label_side      = $drawer->label_side($slot_no);
+    my $reg_font        = $drawer->regular_font
       or return $self->error( $drawer->error );
     my $font_width         = $reg_font->width;
     my $font_height        = $reg_font->height;
@@ -3084,7 +3110,8 @@ sub add_labels_to_map {
             url    => $label->{'url'},
             alt    => $label->{'alt'},
             code   => $label->{'code'},
-          };
+          }
+          unless ($omit_area_boxes);
 
         $min_x    = $label_bounds[0] if $label_bounds[0] < $min_x;
         $top_y    = $label_bounds[1] if $label_bounds[1] < $top_y;
