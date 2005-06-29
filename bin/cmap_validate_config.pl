@@ -112,6 +112,7 @@ my %config_defs = (
     label_features            => { %generic_scalar_def, },
     collapse_features         => { %generic_scalar_def, },
     scale_maps                => { %generic_scalar_def, },
+    omit_area_boxes           => { %generic_scalar_def, },
     aggregate_correspondences => { %generic_scalar_def, },
     evidence_default_display  => { %generic_scalar_def, },
     font_size                 => { %generic_scalar_def, },

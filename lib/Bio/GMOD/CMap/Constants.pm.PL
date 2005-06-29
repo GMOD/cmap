@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.27 2005-06-17 03:00:52 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.28 2005-06-29 18:20:02 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.27 $)[-1];
+$VERSION = (qw$Revision: 1.28 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -453,6 +453,7 @@ use constant DEFAULT => {
     #
     max_web_timeout => 0,
 
+    omit_area_boxes => 0,
     #
     # The module to dispatch to when no path is given to "/cmap."
     #
@@ -621,6 +622,12 @@ use constant VALID => {
         'corrs'         => 1,
     },
     aggregate_correspondences => {
+        ''  => 1,
+        '0' => 1,
+        '1' => 1,
+        '2' => 1,
+    },
+    omit_area_boxes => {
         ''  => 1,
         '0' => 1,
         '1' => 1,

@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.12 $
+$Revision: 1.13 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -197,7 +197,9 @@ Since the directionality doesn't matter, this is the same as:
    </bp>
  </scale_conversion>
 
-There is no reason to define the conversion in both directions since only one factor will be used and it could create inconsistancies if one direction was different from the other.
+There is no reason to define the conversion in both directions since only one
+factor will be used and it could create inconsistancies if one direction was
+different from the other.
 
 Also, multiple conversions can be difined as in this (non-sensical) example.
 
@@ -211,7 +213,24 @@ Also, multiple conversions can be difined as in this (non-sensical) example.
    </cM>
  </scale_conversion>
 
-It is appropriate to describe all relationships as CMap won't neccessarily figure out the relationship between a band and a centimorgan transitively (but it might depending on the order of the map sets).  Therefor, to avoid inconsistancies, please make sure to define all relationships (and define them correctly).
+It is appropriate to describe all relationships as CMap won't neccessarily
+figure out the relationship between a band and a centimorgan transitively (but
+it might depending on the order of the map sets).  Therefor, to avoid
+inconsistancies, please make sure to define all relationships (and define them
+correctly).
+
+=item * omit_area_boxes [ default: 0 ]
+
+This determines which area boxes are rendered.  The area boxes create clickable
+areas on the image.  Rendering all the boxes gives the most functionality but
+can be slow if there are a lot of features.  The option to omit feature area
+boxes can help speed things up while leaving the navigation buttons.  There is
+also an option to ignore all of the area boxes, which is not recommended.
+
+ Values:
+    0 : render all of the area boxes
+    1 : omit the feature area boxes 
+    2 : omits all area boxes
 
 =item * disable_cache
 
@@ -1901,6 +1920,19 @@ Note: Both the ft_* format and the feature_type_* format to define the same
 feature type, CMap will appear to randomly decide which one to use.  So please
 be consistant and use ft_*.
 
+=item * omit_area_boxes [ default: 0 ]
+
+This determines which area boxes are rendered.  The area boxes create clickable
+areas on the image.  Rendering all the boxes gives the most functionality but
+can be slow if there are a lot of features.  The option to omit feature area
+boxes can help speed things up while leaving the navigation buttons.  There is
+also an option to ignore all of the area boxes, which is not recommended.
+
+ Values:
+    0 : render all of the area boxes
+    1 : omit the feature area boxes 
+    2 : omits all area boxes
+
 =back
 
 =head3 Menu Arguments
@@ -1952,7 +1984,9 @@ The "*" is replaced by the evidence type's accession (example: ets_blast=97).
 
 =item * magnify_all [ default: 1 ]
 
-This holds the multiplier to determine the height of all the maps.  For example, if magnify_all is 3 than all the maps are drawn 3 times taller.  This can be handy if you want to see more detail.
+This holds the multiplier to determine the height of all the maps.  For
+example, if magnify_all is 3 than all the maps are drawn 3 times taller.  This
+can be handy if you want to see more detail.
 
 Any individual map magnification is then added on top of this.
 
@@ -2029,7 +2063,8 @@ document them anyway.
 
 =item * flip
 
-This holds the accessions of maps that are flipped.  The format is "slot_number=map_aid".  Multiple maps are separated by a ":".
+This holds the accessions of maps that are flipped.  The format is
+"slot_number=map_aid".  Multiple maps are separated by a ":".
 
 Example: "1=map_A:-1=map_D:0=map_C:1=map_B"
 
@@ -2050,11 +2085,20 @@ See L<Map Accession Information Format> for details on the format.
 
 =item * sub
 
-The sub argument is part of a scheme to fix a javascript problem.  The problem was that when a javascript, area-box button (on the image) was clicked, it would modify some menu objects and submit.  Then if the user hit the back button, those menu objects would be the modified values, causing unexpected behavior.
+The sub argument is part of a scheme to fix a javascript problem.  The problem
+was that when a javascript, area-box button (on the image) was clicked, it
+would modify some menu objects and submit.  Then if the user hit the back
+button, those menu objects would be the modified values, causing unexpected
+behavior.
 
-To fix this, modified_ref_map and modified_comp_map were added.  When a javascript, area-box button is clicked, it modifies modified_ref_map or modified_comp_map instead of ref_map_aids or comparative_maps.  That way, those fields always keep their original values.
+To fix this, modified_ref_map and modified_comp_map were added.  When a
+javascript, area-box button is clicked, it modifies modified_ref_map or
+modified_comp_map instead of ref_map_aids or comparative_maps.  That way, those
+fields always keep their original values.
 
-To determine if the "modified" values should be used, CMap looks at the value of sub.  If there is NO value, then it assumes that it is a javascript link and uses the "modified" values preferentially over the regular values.
+To determine if the "modified" values should be used, CMap looks at the value
+of sub.  If there is NO value, then it assumes that it is a javascript link and
+uses the "modified" values preferentially over the regular values.
 
 =item * modified_ref_map
 
@@ -2101,7 +2145,8 @@ Values: feature_name, feature_type_aid, start_position
 
 =item * page_no [ default: 1 ]
 
-If there is enough data to be displayed on multiple pages, page_no dictates which page is diplayed.
+If there is enough data to be displayed on multiple pages, page_no dictates
+which page is diplayed.
 
 =item * comparative_map [ Optional ]
 
