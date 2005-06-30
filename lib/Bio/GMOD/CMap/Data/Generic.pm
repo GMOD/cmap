@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.92 2005-06-29 20:20:39 mwz444 Exp $
+# $Id: Generic.pm,v 1.93 2005-06-30 19:36:09 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.92 $)[-1];
+$VERSION = (qw$Revision: 1.93 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -918,7 +918,9 @@ original start and stop.
         # Add start and end values into slot_info
         if ( $maps and %{$maps} ) {
             foreach my $row (@$slot_results) {
-                if ( defined( $maps->{ $row->[5] }{'start'} ) ) {
+                if ( defined( $maps->{ $row->[5] }{'start'} )
+                    and $maps->{ $row->[5] }{'start'} != $row->[1] )
+                {
                     $row->[1] = $maps->{ $row->[5] }{'start'};
                     ### If start is a feature, get the positions
                     ### and store in both places.
@@ -936,7 +938,8 @@ original start and stop.
                 else {
                     $row->[1] = undef;
                 }
-                if ( defined( $maps->{ $row->[5] }{'stop'} ) ) {
+                if ( defined( $maps->{ $row->[5] }{'stop'} )  
+                    and $maps->{ $row->[5] }{'stop'} != $row->[2] ) {
                     $row->[2] = $maps->{ $row->[5] }{'stop'};
                     ### If stop is a feature, get the positions.
                     ### and store in both places.
@@ -3290,7 +3293,6 @@ Not using cache because this query is quicker.
           " UNION " . $select_sql . $alias_from_sql . $alias_where_sql;
         push @identifiers, @identifiers;
     }
-print STDERR "$sql_str \n";
 
     $return_object =
       $db->selectall_arrayref( $sql_str, { Columns => {} }, @identifiers );
