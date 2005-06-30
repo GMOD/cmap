@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.166 2005-06-30 19:37:23 mwz444 Exp $
+# $Id: Map.pm,v 1.167 2005-06-30 19:38:57 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.166 $)[-1];
+$VERSION = (qw$Revision: 1.167 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -178,15 +178,15 @@ box.
       or $self->error('No drawer');
     my ( $x1, $y1, $y2 ) = @{ $args{'coords'} || [] }
       or $self->error('No coordinates');
-    my $map_id     = $args{'map_id'};
-    my $map_acc    = $self->map_acc($map_id);
-    my $is_flipped = $args{'is_flipped'};
-    my $slot_no    = $args{'slot_no'};
-    my $color      = $self->color($map_id);
-    my $width      = $self->map_width($map_id);
-    my $x2         = $x1 + $width;
-    my $x_mid      = $x1 + ( $width / 2 );
-    my @coords     = ( $x1, $y1, $x2, $y2 );
+    my $map_id              = $args{'map_id'};
+    my $map_acc             = $self->map_acc($map_id);
+    my $is_flipped          = $args{'is_flipped'};
+    my $slot_no             = $args{'slot_no'};
+    my $color               = $self->color($map_id);
+    my $width               = $self->map_width($map_id);
+    my $x2                  = $x1 + $width;
+    my $x_mid               = $x1 + ( $width / 2 );
+    my @coords              = ( $x1, $y1, $x2, $y2 );
     my $omit_all_area_boxes = ( $drawer->omit_area_boxes >= 2 );
     $map_coords->[0] = $x1 if ( $map_coords->[0] > $x1 );
     $map_coords->[2] = $x2 if ( $map_coords->[2] < $x2 );
@@ -211,9 +211,9 @@ box.
 
     push @$drawing_data, [ FILLED_RECT, @$map_coords, $color ];
     push @$drawing_data, [ RECTANGLE,   @$map_coords, 'black' ];
-    unless ($omit_all_area_boxes){
-        my $map    = $self->map($map_id);
-        my $buttons         = $self->create_buttons(
+    unless ($omit_all_area_boxes) {
+        my $map     = $self->map($map_id);
+        my $buttons = $self->create_buttons(
             map_id     => $map_id,
             drawer     => $drawer,
             slot_no    => $slot_no,
@@ -224,12 +224,15 @@ box.
         my $alt  = $buttons->[0]{'alt'};
         my $code = '';
         eval $self->map_type_data( $map->{'map_type_acc'}, 'area_code' );
-        push @{ $map_area_data },
+        push @{$map_area_data},
           {
-            coords => [$map_coords->[0],$map_coords->[1],$map_coords->[2],$map_coords->[3]],
-            url    => $url,
-            alt    => $alt,
-            code   => $code,
+            coords => [
+                $map_coords->[0], $map_coords->[1],
+                $map_coords->[2], $map_coords->[3]
+            ],
+            url  => $url,
+            alt  => $alt,
+            code => $code,
           };
     }
 
@@ -288,15 +291,15 @@ bounds of the image.
       or $self->error('No drawer');
     my ( $x1, $y1, $y2 ) = @{ $args{'coords'} || [] }
       or $self->error('No coordinates');
-    my $map_id     = $args{'map_id'};
-    my $is_flipped = $args{'is_flipped'};
-    my $slot_no    = $args{'slot_no'};
-    my $map_acc    = $self->map_acc($map_id);
-    my $color      = $self->color($map_id);
-    my $width      = $self->map_width($map_id);
-    my $x2         = $x1 + $width;
-    my $mid_x      = $x1 + $width / 2;
-    my $arc_width  = $width + 6;
+    my $map_id              = $args{'map_id'};
+    my $is_flipped          = $args{'is_flipped'};
+    my $slot_no             = $args{'slot_no'};
+    my $map_acc             = $self->map_acc($map_id);
+    my $color               = $self->color($map_id);
+    my $width               = $self->map_width($map_id);
+    my $x2                  = $x1 + $width;
+    my $mid_x               = $x1 + $width / 2;
+    my $arc_width           = $width + 6;
     my $omit_all_area_boxes = ( $drawer->omit_area_boxes >= 2 );
 
     my $drew_bells = 0;
@@ -362,9 +365,9 @@ bounds of the image.
         $map_coords->[2], $map_coords->[3], $color
       ];
 
-    unless ($omit_all_area_boxes){
-        my $map    = $self->map($map_id);
-        my $buttons         = $self->create_buttons(
+    unless ($omit_all_area_boxes) {
+        my $map     = $self->map($map_id);
+        my $buttons = $self->create_buttons(
             map_id     => $map_id,
             drawer     => $drawer,
             slot_no    => $slot_no,
@@ -375,12 +378,15 @@ bounds of the image.
         my $alt  = $buttons->[0]{'alt'};
         my $code = '';
         eval $self->map_type_data( $map->{'map_type_acc'}, 'area_code' );
-        push @{ $map_area_data },
+        push @{$map_area_data},
           {
-            coords => [$map_coords->[0],$map_coords->[1],$map_coords->[2],$map_coords->[3]],
-            url    => $url,
-            alt    => $alt,
-            code   => $code,
+            coords => [
+                $map_coords->[0], $map_coords->[1],
+                $map_coords->[2], $map_coords->[3]
+            ],
+            url  => $url,
+            alt  => $alt,
+            code => $code,
           };
     }
 
@@ -430,15 +436,15 @@ Draws the map as an "I-beam."  Return the bounds of the image.
       or $self->error('No drawer');
     my ( $x1, $y1, $y2 ) = @{ $args{'coords'} || [] }
       or $self->error('No coordinates');
-    my $map_id     = $args{'map_id'};
-    my $is_flipped = $args{'is_flipped'};
-    my $slot_no    = $args{'slot_no'};
-    my $map_acc    = $self->map_acc($map_id);
+    my $map_id              = $args{'map_id'};
+    my $is_flipped          = $args{'is_flipped'};
+    my $slot_no             = $args{'slot_no'};
+    my $map_acc             = $self->map_acc($map_id);
     my $omit_all_area_boxes = ( $drawer->omit_area_boxes >= 2 );
-    my $color      = $self->color($map_id);
-    my $width      = $self->map_width($map_id);
-    my $x2         = $x1 + $width;
-    my $x          = $x1 + $width / 2;
+    my $color               = $self->color($map_id);
+    my $width               = $self->map_width($map_id);
+    my $x2                  = $x1 + $width;
+    my $x                   = $x1 + $width / 2;
 
     my @coords = ( $x1, $y1, $x2, $y2 );
     $map_coords->[0] = $x1 if ( $map_coords->[0] > $x1 );
@@ -492,9 +498,9 @@ Draws the map as an "I-beam."  Return the bounds of the image.
     }
     push @$drawing_data,
       [ LINE, $x, $map_coords->[1], $x, $map_coords->[3], $color ];
-    unless ($omit_all_area_boxes){
-        my $map    = $self->map($map_id);
-        my $buttons         = $self->create_buttons(
+    unless ($omit_all_area_boxes) {
+        my $map     = $self->map($map_id);
+        my $buttons = $self->create_buttons(
             map_id     => $map_id,
             drawer     => $drawer,
             slot_no    => $slot_no,
@@ -505,9 +511,9 @@ Draws the map as an "I-beam."  Return the bounds of the image.
         my $alt  = $buttons->[0]{'alt'};
         my $code = '';
         eval $self->map_type_data( $map->{'map_type_acc'}, 'area_code' );
-        push @{ $map_area_data },
+        push @{$map_area_data},
           {
-            coords => [$x,$map_coords->[1],$x,$map_coords->[3]],
+            coords => [ $x, $map_coords->[1], $x, $map_coords->[3] ],
             url    => $url,
             alt    => $alt,
             code   => $code,
@@ -2350,8 +2356,8 @@ sub add_topper {
         );
         my $map             = $self->map($map_id);
         my $map_details_url = DEFAULT->{'map_details_url'};
-        unless ($omit_all_area_boxes){
-            my $buttons         = $self->create_buttons(
+        unless ($omit_all_area_boxes) {
+            my $buttons = $self->create_buttons(
                 map_id     => $map_id,
                 drawer     => $drawer,
                 slot_no    => $slot_no,
@@ -2927,8 +2933,8 @@ sub add_feature_to_map {
                     'Feature Details: '
                   . $feature->{'feature_name'} . ' ['
                   . $feature->{'feature_acc'} . ']';
-                eval $self->feature_type_data(
-                    $feature->{'feature_type_acc'}, 'area_code' );
+                eval $self->feature_type_data( $feature->{'feature_type_acc'},
+                    'area_code' );
                 push @$map_area_data,
                   {
                     coords => \@coords,
