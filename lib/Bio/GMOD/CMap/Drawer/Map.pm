@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.165 2005-06-29 16:10:53 mwz444 Exp $
+# $Id: Map.pm,v 1.166 2005-06-30 19:37:23 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.165 $)[-1];
+$VERSION = (qw$Revision: 1.166 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -187,6 +187,7 @@ box.
     my $x2         = $x1 + $width;
     my $x_mid      = $x1 + ( $width / 2 );
     my @coords     = ( $x1, $y1, $x2, $y2 );
+    my $omit_all_area_boxes = ( $drawer->omit_area_boxes >= 2 );
     $map_coords->[0] = $x1 if ( $map_coords->[0] > $x1 );
     $map_coords->[2] = $x2 if ( $map_coords->[2] < $x2 );
 
@@ -210,6 +211,27 @@ box.
 
     push @$drawing_data, [ FILLED_RECT, @$map_coords, $color ];
     push @$drawing_data, [ RECTANGLE,   @$map_coords, 'black' ];
+    unless ($omit_all_area_boxes){
+        my $map    = $self->map($map_id);
+        my $buttons         = $self->create_buttons(
+            map_id     => $map_id,
+            drawer     => $drawer,
+            slot_no    => $slot_no,
+            is_flipped => $is_flipped,
+            buttons    => [ 'map_detail', ],
+        );
+        my $url  = $buttons->[0]{'url'};
+        my $alt  = $buttons->[0]{'alt'};
+        my $code = '';
+        eval $self->map_type_data( $map->{'map_type_acc'}, 'area_code' );
+        push @{ $map_area_data },
+          {
+            coords => [$map_coords->[0],$map_coords->[1],$map_coords->[2],$map_coords->[3]],
+            url    => $url,
+            alt    => $alt,
+            code   => $code,
+          };
+    }
 
     if (   ( $truncated >= 2 and not $is_flipped )
         or ( ( $truncated == 1 or $truncated == 3 ) and $is_flipped ) )
@@ -275,6 +297,7 @@ bounds of the image.
     my $x2         = $x1 + $width;
     my $mid_x      = $x1 + $width / 2;
     my $arc_width  = $width + 6;
+    my $omit_all_area_boxes = ( $drawer->omit_area_boxes >= 2 );
 
     my $drew_bells = 0;
     my @coords = ( $x1, $y1, $x2, $y2 );
@@ -339,6 +362,28 @@ bounds of the image.
         $map_coords->[2], $map_coords->[3], $color
       ];
 
+    unless ($omit_all_area_boxes){
+        my $map    = $self->map($map_id);
+        my $buttons         = $self->create_buttons(
+            map_id     => $map_id,
+            drawer     => $drawer,
+            slot_no    => $slot_no,
+            is_flipped => $is_flipped,
+            buttons    => [ 'map_detail', ],
+        );
+        my $url  = $buttons->[0]{'url'};
+        my $alt  = $buttons->[0]{'alt'};
+        my $code = '';
+        eval $self->map_type_data( $map->{'map_type_acc'}, 'area_code' );
+        push @{ $map_area_data },
+          {
+            coords => [$map_coords->[0],$map_coords->[1],$map_coords->[2],$map_coords->[3]],
+            url    => $url,
+            alt    => $alt,
+            code   => $code,
+          };
+    }
+
     if ( my $map_units = $args{'map_units'} ) {
         $self->draw_map_bottom(
             map_id        => $map_id,
@@ -389,6 +434,7 @@ Draws the map as an "I-beam."  Return the bounds of the image.
     my $is_flipped = $args{'is_flipped'};
     my $slot_no    = $args{'slot_no'};
     my $map_acc    = $self->map_acc($map_id);
+    my $omit_all_area_boxes = ( $drawer->omit_area_boxes >= 2 );
     my $color      = $self->color($map_id);
     my $width      = $self->map_width($map_id);
     my $x2         = $x1 + $width;
@@ -446,6 +492,27 @@ Draws the map as an "I-beam."  Return the bounds of the image.
     }
     push @$drawing_data,
       [ LINE, $x, $map_coords->[1], $x, $map_coords->[3], $color ];
+    unless ($omit_all_area_boxes){
+        my $map    = $self->map($map_id);
+        my $buttons         = $self->create_buttons(
+            map_id     => $map_id,
+            drawer     => $drawer,
+            slot_no    => $slot_no,
+            is_flipped => $is_flipped,
+            buttons    => [ 'map_detail', ],
+        );
+        my $url  = $buttons->[0]{'url'};
+        my $alt  = $buttons->[0]{'alt'};
+        my $code = '';
+        eval $self->map_type_data( $map->{'map_type_acc'}, 'area_code' );
+        push @{ $map_area_data },
+          {
+            coords => [$x,$map_coords->[1],$x,$map_coords->[3]],
+            url    => $url,
+            alt    => $alt,
+            code   => $code,
+          };
+    }
     if ( my $map_units = $args{'map_units'} ) {
         $self->draw_map_bottom(
             map_id        => $map_id,
@@ -495,7 +562,7 @@ such as the units.
     my $magnification =
       $drawer->data_module->magnification( $slot_no, $map_id );
     my $slot_info           = $drawer->data_module->slot_info->{$slot_no};
-    my $omit_all_area_boxes = ( $drawer->omit_area_boxes == 2 );
+    my $omit_all_area_boxes = ( $drawer->omit_area_boxes >= 2 );
     my $start_pos           =
       defined( $slot_info->{$map_id}->[0] )
       ? $slot_info->{$map_id}->[0]
@@ -669,7 +736,7 @@ Draws the truncation arrows
     my $map_acc       = $args{'map_acc'};
     my $slot_no       = $args{'slot_no'};
 
-    my $omit_all_area_boxes = ( $drawer->omit_area_boxes == 2 );
+    my $omit_all_area_boxes = ( $drawer->omit_area_boxes >= 2 );
 
     my $trunc_color      = 'grey';
     my $trunc_half_width = 6;
@@ -857,7 +924,7 @@ Creates the slot title.
     $top_y -= ( $font->height + $buffer ) if ( scalar @$buttons );
     my $leftmost            = $mid_x;
     my $rightmost           = $mid_x;
-    my $omit_all_area_boxes = ( $drawer->omit_area_boxes == 2 );
+    my $omit_all_area_boxes = ( $drawer->omit_area_boxes >= 2 );
 
     #
     # Place the titles.
@@ -2182,7 +2249,7 @@ sub add_topper {
       or return $self->error( $drawer->error );
     my $font_width          = $reg_font->width;
     my $font_height         = $reg_font->height;
-    my $omit_all_area_boxes = ( $drawer->omit_area_boxes == 2 );
+    my $omit_all_area_boxes = ( $drawer->omit_area_boxes >= 2 );
 
     my $base_x        = $map_placement_data->{$map_id}{'map_coords'}[0];
     my $base_y        = $map_placement_data->{$map_id}{'bounds'}[1];
@@ -2283,25 +2350,26 @@ sub add_topper {
         );
         my $map             = $self->map($map_id);
         my $map_details_url = DEFAULT->{'map_details_url'};
-        my $buttons         = $self->create_buttons(
-            map_id     => $map_id,
-            drawer     => $drawer,
-            slot_no    => $slot_no,
-            is_flipped => $is_flipped,
-            buttons    => [ 'map_detail', ],
-        );
-        my $url  = $buttons->[0]{'url'};
-        my $alt  = $buttons->[0]{'alt'};
-        my $code = '';
-        eval $self->map_type_data( $map->{'map_type_acc'}, 'area_code' );
-        push @{ $map_area_data->{$map_id} },
-          {
-            coords => \@topper_bounds,
-            url    => $url,
-            alt    => $alt,
-            code   => $code,
-          }
-          unless ($omit_all_area_boxes);
+        unless ($omit_all_area_boxes){
+            my $buttons         = $self->create_buttons(
+                map_id     => $map_id,
+                drawer     => $drawer,
+                slot_no    => $slot_no,
+                is_flipped => $is_flipped,
+                buttons    => [ 'map_detail', ],
+            );
+            my $url  = $buttons->[0]{'url'};
+            my $alt  = $buttons->[0]{'alt'};
+            my $code = '';
+            eval $self->map_type_data( $map->{'map_type_acc'}, 'area_code' );
+            push @{ $map_area_data->{$map_id} },
+              {
+                coords => \@topper_bounds,
+                url    => $url,
+                alt    => $alt,
+                code   => $code,
+              };
+        }
 
         $map_placement_data->{$map_id}{'bounds'}[0] = $f_x1
           if ( $map_placement_data->{$map_id}{'bounds'}[0] > $f_x1 );
@@ -2338,7 +2406,7 @@ sub add_capped_mark {
     my $capped             = $args{'capped'};
     my $map_placement_data = $args{'map_placement_data'};
 
-    my $omit_all_area_boxes = ( $drawer->omit_area_boxes == 2 );
+    my $omit_all_area_boxes = ( $drawer->omit_area_boxes >= 2 );
     my $reg_font            = $drawer->regular_font
       or return $self->error( $drawer->error );
     my $font_width  = $reg_font->width;
@@ -2439,7 +2507,7 @@ sub add_tick_marks {
     my $map_width         = $self->map_width($map_id);
     my $map_acc           = $self->map_acc($map_id);
 
-    my $omit_all_area_boxes = ( $drawer->omit_area_boxes == 2 );
+    my $omit_all_area_boxes = ( $drawer->omit_area_boxes >= 2 );
     my $label_side          = $drawer->label_side($slot_no);
     my $reg_font            = $drawer->regular_font
       or return $self->error( $drawer->error );
@@ -2853,33 +2921,21 @@ sub add_feature_to_map {
                 return $self->error("Can't draw shape '$feature_glyph'");
             }
             unless ($omit_area_boxes) {
-                if ( $feature->{'feature_type'} eq 'chunk' ) {
-                    push @$map_area_data,
-                      {
-                        coords => \@coords,
-                        url    => 'viewer?',
-                        alt    => 'Zoom: '
-                          . $feature->{'feature_start'} . '-'
-                          . $feature->{'feature_stop'}
-                      };
-                }
-                else {
-                    my $code = '';
-                    my $url  = $feature_details_url . $feature->{'feature_acc'};
-                    my $alt  =
-                        'Feature Details: '
-                      . $feature->{'feature_name'} . ' ['
-                      . $feature->{'feature_acc'} . ']';
-                    eval $self->feature_type_data(
-                        $feature->{'feature_type_acc'}, 'area_code' );
-                    push @$map_area_data,
-                      {
-                        coords => \@coords,
-                        url    => $url,
-                        alt    => $alt,
-                        code   => $code,
-                      };
-                }
+                my $code = '';
+                my $url  = $feature_details_url . $feature->{'feature_acc'};
+                my $alt  =
+                    'Feature Details: '
+                  . $feature->{'feature_name'} . ' ['
+                  . $feature->{'feature_acc'} . ']';
+                eval $self->feature_type_data(
+                    $feature->{'feature_type_acc'}, 'area_code' );
+                push @$map_area_data,
+                  {
+                    coords => \@coords,
+                    url    => $url,
+                    alt    => $alt,
+                    code   => $code,
+                  };
             }
 
         }
