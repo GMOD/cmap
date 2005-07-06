@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.100 2005-06-29 16:10:52 mwz444 Exp $
+# $Id: Drawer.pm,v 1.101 2005-07-06 18:37:58 mwz444 Exp $
 
 =head1 NAME
 
@@ -306,7 +306,7 @@ This is set to 1 if the Additional Options Menu is displayed.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.100 $)[-1];
+$VERSION = (qw$Revision: 1.101 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -1639,7 +1639,7 @@ to connect corresponding features on two maps.
     my $ref_slot_no = $self->reference_slot_no($slot_no);
     my $ref_side    = $slot_no > 0 ? RIGHT: LEFT;
     my $cur_side    = $slot_no > 0 ? LEFT: RIGHT;
-
+    return () unless ( $ref_slot_no or $ref_slot_no == 0 );
     my @return = ();
     for my $f1 ( keys %{ $self->{'feature_position'}{$slot_no} } ) {
         my $self_label_side = $self->label_side($slot_no);
@@ -1653,13 +1653,20 @@ to connect corresponding features on two maps.
               || [] }
           or next;
         for my $f2 ( $self->feature_correspondences($f1) ) {
-            my @same_map =
-              @{ $self->{'feature_position'}{$slot_no}{$f2}{$self_label_side}
-                  || [] };
+            my @same_map = ();
+            if ( $self->{'feature_position'}{$slot_no}{$f2} ) {
+                @same_map =
+                  @{ $self->{'feature_position'}{$slot_no}{$f2}
+                      {$self_label_side} || [] };
+            }
 
-            my @ref_pos =
-              @{ $self->{'feature_position'}{$ref_slot_no}{$f2}{$ref_side}
-                  || [] };
+            my @ref_pos = ();
+
+            if ( defined( $self->{'feature_position'}{$ref_slot_no}{$f2} ) ) {
+                @ref_pos =
+                  @{ $self->{'feature_position'}{$ref_slot_no}{$f2}{$ref_side}
+                      || [] };
+            }
 
             push @return,
               {
