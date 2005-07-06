@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.13 $
+$Revision: 1.14 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -245,6 +245,14 @@ is the classical order based on the maps display order and their names.
 Specifying 'corrs' orders the maps by the number of correspondences.
 
 Default: 'display_order'
+
+=item * corrs_to_map [ default: 0 ]
+
+This determines where the correspondence lines are terminated.
+
+ Values:
+    0 : Lines connect features
+    1 : Lines connect maps
 
 =back
 
@@ -2033,6 +2041,14 @@ only one reference map.
 
 The stop position of the reference map.  This will only be used if there is
 only one reference map.
+
+=item * corrs_to_map [ default: 0 ]
+
+This determines where the correspondence lines are terminated.
+
+ Values:
+    0 : Lines connect features
+    1 : Lines connect maps
 
 =back
 

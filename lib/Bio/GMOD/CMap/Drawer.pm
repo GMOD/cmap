@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.101 2005-07-06 18:37:58 mwz444 Exp $
+# $Id: Drawer.pm,v 1.102 2005-07-06 19:12:51 mwz444 Exp $
 
 =head1 NAME
 
@@ -50,6 +50,7 @@ The base map drawing module.
         show_intraslot_corr => $show_intraslot_corr,
         split_agg_ev => $split_agg_ev,
         clean_view => $clean_view,
+        corrs_to_map => $corrs_to_map,
         magnify_all => $magnify_all,
         scale_maps => $scale_maps,
         stack_maps => $stack_maps,
@@ -249,6 +250,10 @@ Set to 0 to aggregate them all together.
 
 Set to 1 to not have the control buttons displayed on the image.
 
+=item * corrs_to_map
+
+Set to 1 to have correspondence lines go to the map instead of the feature.
+
 =item * magnify_all
 
 Set to the magnification factor of the whole picture.  The default is 1.
@@ -306,7 +311,7 @@ This is set to 1 if the Additional Options Menu is displayed.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.101 $)[-1];
+$VERSION = (qw$Revision: 1.102 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -329,6 +334,7 @@ my @INIT_PARAMS = qw[
   map_view data_module aggregate cluster_corr show_intraslot_corr clean_view
   magnify_all scale_maps stack_maps ref_map_order comp_menu_order
   omit_area_boxes split_agg_ev refMenu compMenu optionMenu addOpMenu
+  corrs_to_map
 ];
 
 # ----------------------------------------------------
@@ -2716,6 +2722,7 @@ Creates default link parameters for CMap->create_viewer_link()
     my $show_intraslot_corr         = $args{'show_intraslot_corr'};
     my $split_agg_ev                = $args{'split_agg_ev'};
     my $clean_view                  = $args{'clean_view'};
+    my $corrs_to_map                  = $args{'corrs_to_map'};
     my $magnify_all                 = $args{'magnify_all'};
     my $flip                        = $args{'flip'};
     my $min_correspondences         = $args{'min_correspondences'};
@@ -2807,6 +2814,9 @@ Creates default link parameters for CMap->create_viewer_link()
     unless ( defined($clean_view) ) {
         $clean_view = $self->clean_view();
     }
+    unless ( defined($corrs_to_map) ) {
+        $corrs_to_map = $self->corrs_to_map();
+    }
     unless ( defined($magnify_all) ) {
         $magnify_all = $self->magnify_all();
     }
@@ -2892,6 +2902,7 @@ Creates default link parameters for CMap->create_viewer_link()
         show_intraslot_corr         => $show_intraslot_corr,
         split_agg_ev                => $split_agg_ev,
         clean_view                  => $clean_view,
+        corrs_to_map                => $corrs_to_map,
         magnify_all                 => $magnify_all,
         flip                        => $flip,
         min_correspondences         => $min_correspondences,

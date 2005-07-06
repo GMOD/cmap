@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.28 2005-06-29 18:20:02 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.29 2005-07-06 19:12:51 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.28 $)[-1];
+$VERSION = (qw$Revision: 1.29 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -293,6 +293,13 @@ use constant DEFAULT => {
     # Default: lightblue
     #
     connecting_line_color => 'lightblue',
+
+    #
+    # Determines if correspondence lines go to the feature or map
+    # Set to 1 to have them go to the map.
+    # Default: 0
+    #
+    corrs_to_map => 0,
 
     #
     # The domain of the cookies.
@@ -602,6 +609,7 @@ use constant VALID => {
     scale_maps                   => VALID_BOOLEAN,
     glyph_overlap                => VALID_BOOLEAN,
     is_relational_map            => VALID_BOOLEAN,
+    corrs_to_map                 => VALID_BOOLEAN,
     background_color             => COLORS,
     slot_background_color        => COLORS,
     slot_border_color            => COLORS,

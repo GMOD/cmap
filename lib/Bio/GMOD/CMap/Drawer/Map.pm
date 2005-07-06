@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.167 2005-06-30 19:38:57 mwz444 Exp $
+# $Id: Map.pm,v 1.168 2005-07-06 19:12:52 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.167 $)[-1];
+$VERSION = (qw$Revision: 1.168 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1571,6 +1571,7 @@ Variable Info:
         $slot_max_x = $lane_base_x[-1] + $lane_width[-1] + $slot_buffer;
     }
 
+    my $corrs_to_map = $drawer->corrs_to_map();
     # Offset all of the coords accordingly
     for my $map_id (@map_ids) {
         my $offset = $lane_base_x[ $map_lane{$map_id} ] -
@@ -1580,25 +1581,34 @@ Variable Info:
             drawing_data => $map_drawing_data{$map_id},
             offset_x     => $offset,
         );
-        $drawer->add_drawing( @{ $map_drawing_data{$map_id} } );
         $drawer->offset_map_area_data(
             map_area_data => $map_area_data{$map_id},
             offset_x      => $offset,
         );
-        $drawer->add_map_area( @{ $map_area_data{$map_id} } );
         for my $key ( keys( %{ $features_with_corr_by_map_id{$map_id} } ) ) {
             $features_with_corr_by_map_id{$map_id}{$key}{'left'}[0]  += $offset;
             $features_with_corr_by_map_id{$map_id}{$key}{'right'}[0] += $offset;
         }
 
-        # Register all the features that have correspondences.
-        $drawer->register_feature_position(%$_)
-          for values %{ $features_with_corr_by_map_id{$map_id} };
-
         $map_placement_data{$map_id}{'map_coords'}[0] += $offset;
         $map_placement_data{$map_id}{'map_coords'}[2] += $offset;
         $map_placement_data{$map_id}{'bounds'}[0]     += $offset;
         $map_placement_data{$map_id}{'bounds'}[2]     += $offset;
+
+        # If the corr lines are supposed to go to the map.
+        if ($corrs_to_map){
+            for my $key ( keys( %{ $features_with_corr_by_map_id{$map_id} } ) ) {
+                $features_with_corr_by_map_id{$map_id}{$key}{'left'}[0] = $map_placement_data{$map_id}{'map_coords'}[0];
+                $features_with_corr_by_map_id{$map_id}{$key}{'right'}[0] = $map_placement_data{$map_id}{'map_coords'}[2];
+            }
+        }
+
+        $drawer->add_drawing( @{ $map_drawing_data{$map_id} } );
+        $drawer->add_map_area( @{ $map_area_data{$map_id} } );
+
+        # Register all the features that have correspondences.
+        $drawer->register_feature_position(%$_)
+          for values %{ $features_with_corr_by_map_id{$map_id} };
 
         my $map_start = $self->map_start($map_id);
         my $map_stop  = $self->map_stop($map_id);

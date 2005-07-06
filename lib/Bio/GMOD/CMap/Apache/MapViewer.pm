@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.106 2005-06-29 16:10:53 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.107 2005-07-06 19:12:52 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.106 $)[-1];
+$VERSION = (qw$Revision: 1.107 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -74,6 +74,7 @@ sub handler {
     my $show_intraslot_corr   = $apr->param('show_intraslot_corr');
     my $split_agg_ev          = $apr->param('split_agg_ev');
     my $clean_view            = $apr->param('clean_view');
+    my $corrs_to_map          = $apr->param('corrs_to_map');
     my $magnify_all           = $apr->param('magnify_all');
     my $scale_maps            = $apr->param('scale_maps');
     my $stack_maps            = $apr->param('stack_maps');
@@ -457,6 +458,7 @@ sub handler {
             stack_maps                  => $self->stack_maps,
             ref_map_order               => $self->ref_map_order,
             comp_menu_order             => $self->comp_menu_order,
+            corrs_to_map                => $corrs_to_map,
             omit_area_boxes             => $omit_area_boxes,
             refMenu                     => $refMenu,
             compMenu                    => $compMenu,

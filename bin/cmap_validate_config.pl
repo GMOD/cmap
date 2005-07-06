@@ -114,6 +114,7 @@ my %config_defs = (
     scale_maps                => { %generic_scalar_def, },
     omit_area_boxes           => { %generic_scalar_def, },
     aggregate_correspondences => { %generic_scalar_def, },
+    corrs_to_map              => { %generic_scalar_def, },
     evidence_default_display  => { %generic_scalar_def, },
     font_size                 => { %generic_scalar_def, },
     image_size                => { %generic_scalar_def, },

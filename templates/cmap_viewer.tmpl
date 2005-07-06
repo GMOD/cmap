@@ -832,6 +832,12 @@ function selectAllOptions(select){
                 <td><input type="radio" name="scale_maps" value="1"[% IF scale_maps==1; ' checked'; END %]>Yes</td>
               </tr>
               <tr>
+                <td align="left" valign="top">Correspondence lines drawn to:</td>
+                  [% IF apr.param('corrs_to_map')==1; corrs_to_map=1; ELSE; corrs_to_map=0; END %]
+                <td><input type="radio" name="corrs_to_map" value="0"[% IF corrs_to_map==0; ' checked'; END %]>Feature</td>
+                <td><input type="radio" name="corrs_to_map" value="1"[% IF corrs_to_map==1; ' checked'; END %]>Map</td>
+              </tr>
+              <tr>
                 <td align="left" valign="top">Stack the Reference Maps:</td>
                 [% IF apr.param('stack_maps')==1; stack_maps=1; ELSE; stack_maps=0; END %]
                 <td><input type="radio" name="stack_maps" value="0"[% IF stack_maps==0; ' checked'; END %]>No</td>

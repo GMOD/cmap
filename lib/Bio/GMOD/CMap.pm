@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.88 2005-06-29 16:10:51 mwz444 Exp $
+# $Id: CMap.pm,v 1.89 2005-07-06 19:12:49 mwz444 Exp $
 
 =head1 NAME
 
@@ -499,7 +499,7 @@ sub clean_view {
 Returns the boolean clean_view variable.  This determines 
 if there will be control buttons on the map.
 
-The default is 1.
+The default is 0.
 
 =cut
 
@@ -511,6 +511,30 @@ The default is 1.
     $self->{'clean_view'} = 0
       unless defined $self->{'clean_view'};
     return $self->{'clean_view'};
+}
+
+# ----------------------------------------------------
+sub corrs_to_map {
+
+=pod
+                                                                                
+=head2 corrs_to_map
+
+Returns the boolean corrs_to_map variable.  If set to 1, the corr lines will be
+drawn to the maps instead of to the features.
+
+The default is 0.
+
+=cut
+
+    my $self = shift;
+    my $val  = shift;
+    $self->{'corrs_to_map'} = $val if defined $val;
+    $self->{'corrs_to_map'} = $self->config_data('corrs_to_map')
+      unless defined $self->{'corrs_to_map'};
+    $self->{'corrs_to_map'} = DEFAULT->{'corrs_to_map'}
+      unless defined $self->{'corrs_to_map'};
+    return $self->{'corrs_to_map'};
 }
 
 # ----------------------------------------------------
@@ -868,6 +892,7 @@ Given information about the link, creates a url to cmap_viewer.
     my $show_intraslot_corr         = $args{'show_intraslot_corr'};
     my $split_agg_ev                = $args{'split_agg_ev'};
     my $clean_view                  = $args{'clean_view'};
+    my $corrs_to_map                = $args{'corrs_to_map'};
     my $magnify_all                 = $args{'magnify_all'};
     my $flip                        = $args{'flip'};
     my $min_correspondences         = $args{'min_correspondences'};
@@ -936,6 +961,8 @@ Given information about the link, creates a url to cmap_viewer.
       if defined($split_agg_ev);
     $url .= "clean_view=$clean_view;"
       if defined($clean_view);
+    $url .= "corrs_to_map=$corrs_to_map;"
+      if defined($corrs_to_map);
     $url .= "magnify_all=$magnify_all;"
       if defined($magnify_all);
     $url .= "flip=$flip;"
