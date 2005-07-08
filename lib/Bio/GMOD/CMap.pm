@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.89 2005-07-06 19:12:49 mwz444 Exp $
+# $Id: CMap.pm,v 1.90 2005-07-08 21:02:24 mwz444 Exp $
 
 =head1 NAME
 
@@ -892,6 +892,7 @@ Given information about the link, creates a url to cmap_viewer.
     my $show_intraslot_corr         = $args{'show_intraslot_corr'};
     my $split_agg_ev                = $args{'split_agg_ev'};
     my $clean_view                  = $args{'clean_view'};
+    my $comp_menu_order             = $args{'comp_menu_order'};
     my $corrs_to_map                = $args{'corrs_to_map'};
     my $magnify_all                 = $args{'magnify_all'};
     my $flip                        = $args{'flip'};
@@ -961,6 +962,8 @@ Given information about the link, creates a url to cmap_viewer.
       if defined($split_agg_ev);
     $url .= "clean_view=$clean_view;"
       if defined($clean_view);
+    $url .= "comp_menu_order=$comp_menu_order;"
+      if defined($comp_menu_order);
     $url .= "corrs_to_map=$corrs_to_map;"
       if defined($corrs_to_map);
     $url .= "magnify_all=$magnify_all;"
