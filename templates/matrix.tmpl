@@ -60,6 +60,7 @@
 
     &nbsp;
     <input type="checkbox" name="use_colors" value="1"[% IF apr.param('use_colors'); ' checked'; END %]>Use Colors
+    <input type="checkbox" name="hide_empty_rows" value="1"[% IF apr.param('hide_empty_rows'); ' checked'; END %]>Hide Empty Rows
     <input type="hidden" name="show_matrix" value="1">
     <input type="hidden" name="link_map_set_acc" value="[% apr.param('link_map_set_acc') %]">
     <input type="hidden" name="prev_species_acc" value="[% apr.param('species_acc') %]">
@@ -125,7 +126,7 @@
                     <td colspan="3">&nbsp;</td>
                     [% FOREACH ms=top_row.map_sets %]
                         <td align="center">
-                            <a href="[% url %]/matrix?show_matrix=1;map_set_acc=[% apr.param('map_set_acc') %];species_acc=[% apr.param('species_acc') %];map_name=[% apr.param('map_name') %];link_map_set_acc=[% ms.map_set_acc %];use_colors=[% apr.param('use_colors') %]">[% ms.map_set_name %]</a>
+                            <a href="[% url %]/matrix?show_matrix=1;map_set_acc=[% apr.param('map_set_acc') %];species_acc=[% apr.param('species_acc') %];map_name=[% apr.param('map_name') %];link_map_set_acc=[% ms.map_set_acc %];use_colors=[% apr.param('use_colors') %];hide_empty_rows=[% apr.param('hide_empty_rows') %]">[% ms.map_set_name %]</a>
                         </td>
                     [% END %]
                     <td colspan="3">&nbsp;</td>
@@ -170,7 +171,7 @@
                                 <b>All</b>
                             [% END %]
                         [% ELSE %]
-                            <a href="[% url %]/matrix?show_matrix=1;species_acc=[% apr.param('species_acc') %];map_set_acc=[% ms.map_set_acc %];link_map_set_acc=[% apr.param('link_map_set_acc') %];use_colors=[% apr.param('use_colors') %]">[% ms.map_set_name | nbsp %]</a>
+                            <a href="[% url %]/matrix?show_matrix=1;species_acc=[% apr.param('species_acc') %];map_set_acc=[% ms.map_set_acc %];link_map_set_acc=[% apr.param('link_map_set_acc') %];use_colors=[% apr.param('use_colors') %];hide_empty_rows=[% apr.param('hide_empty_rows') %]">[% ms.map_set_name | nbsp %]</a>
                         [% END %]
                     </td>
 
@@ -207,7 +208,7 @@
                                 [% IF apr.param('map_set_acc') %]
                                     <a href="[% url %]/viewer?aggregate=1;ref_map_set_acc=[% ms.map_set_acc %];ref_map_accs=[% ms.map_acc %];comparative_maps=[% IF r.map_acc %]1%3dmap_acc%3d[% r.map_acc %][% ELSE %]1%3dmap_set_acc%3d[% r.map_set_acc %][% END %]">[% r.number %] [% IF r.map_count %]([% r.map_count %])[% END %]</a>
                                 [% ELSE %]
-                                    <a href="[% url %]/matrix?show_matrix=1;species_acc=[% apr.param('species_acc') %];map_name=[% apr.param('map_name') %];map_set_acc=[% ms.map_set_acc %];link_map_set_acc=[% r.map_set_acc %];use_colors=[% apr.param('use_colors') %]">[% r.number %] [% IF r.map_count %]([% r.map_count %])[% END %]</a>
+                                    <a href="[% url %]/matrix?show_matrix=1;species_acc=[% apr.param('species_acc') %];map_name=[% apr.param('map_name') %];map_set_acc=[% ms.map_set_acc %];link_map_set_acc=[% r.map_set_acc %];use_colors=[% apr.param('use_colors') %];hide_empty_rows=[% apr.param('hide_empty_rows') %]">[% r.number %] [% IF r.map_count %]([% r.map_count %])[% END %]</a>
                                 [% END %]
                             [% END %]
                         </td>
@@ -221,7 +222,7 @@
                                 <b>All</b>
                             [% END %]
                         [% ELSE %]
-                            <a href="[% url %]/matrix?show_matrix=1;species_acc=[% apr.param('species_acc') %];map_set_acc=[% ms.map_set_acc %];link_map_set_acc=[% apr.param('link_map_set_acc') %];use_colors=[% apr.param('use_colors') %]">[% ms.map_set_name | nbsp %]</a>
+                            <a href="[% url %]/matrix?show_matrix=1;species_acc=[% apr.param('species_acc') %];map_set_acc=[% ms.map_set_acc %];link_map_set_acc=[% apr.param('link_map_set_acc') %];use_colors=[% apr.param('use_colors') %];hide_empty_rows=[% apr.param('hide_empty_rows') %]">[% ms.map_set_name | nbsp %]</a>
                         [% END %]
                     </td>
 
@@ -274,7 +275,7 @@
                     <td colspan="3">&nbsp;</td>
                     [% FOREACH ms=top_row.map_sets %]
                         <td>
-                            <a href="[% url %]/matrix?show_matrix=1;map_set_acc=[% apr.param('map_set_acc') %];species_acc=[% apr.param('species_acc') %];map_name=[% apr.param('map_name') %];link_map_set_acc=[% ms.map_set_acc %];use_colors=[% apr.param('use_colors') %]">[% ms.map_set_name %]</a>
+                            <a href="[% url %]/matrix?show_matrix=1;map_set_acc=[% apr.param('map_set_acc') %];species_acc=[% apr.param('species_acc') %];map_name=[% apr.param('map_name') %];link_map_set_acc=[% ms.map_set_acc %];use_colors=[% apr.param('use_colors') %];hide_empty_rows=[% apr.param('hide_empty_rows') %]">[% ms.map_set_name %]</a>
                         </td>
                     [% END %]
                     <td colspan="3">&nbsp;</td>

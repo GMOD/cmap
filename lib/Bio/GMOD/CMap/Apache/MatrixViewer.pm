@@ -1,11 +1,11 @@
 package Bio::GMOD::CMap::Apache::MatrixViewer;
 # vim: set ft=perl:
 
-# $Id: MatrixViewer.pm,v 1.15 2005-06-03 22:20:00 mwz444 Exp $
+# $Id: MatrixViewer.pm,v 1.16 2005-07-13 17:53:04 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.15 $)[-1];
+$VERSION = (qw$Revision: 1.16 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use base 'Bio::GMOD::CMap::Apache';
@@ -22,6 +22,7 @@ sub handler {
     my $map_type_acc     = $apr->param('map_type_acc')     || '';
     my $map_set_acc      = $apr->param('map_set_acc')      || '';
     my $map_name         = $apr->param('map_name')         || '';
+    my $hide_empty_rows  = $apr->param('hide_empty_rows')  || '';
     my $link_map_set_acc = $apr->param('link_map_set_acc') || '';
     my $prev_species_acc = $apr->param('prev_species_acc') || '';
     my $prev_map_set_acc = $apr->param('prev_map_set_id')  || '';
@@ -41,6 +42,7 @@ sub handler {
         map_type_acc     => $map_type_acc,
         map_set_acc      => $map_set_acc,
         map_name         => $map_name,
+        hide_empty_rows  => $hide_empty_rows,
         link_map_set_acc => $link_map_set_acc,
     ) or return $self->error( $data_module->error );
 

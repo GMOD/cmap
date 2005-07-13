@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.241 2005-06-29 20:20:31 mwz444 Exp $
+# $Id: Data.pm,v 1.242 2005-07-13 17:53:01 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.241 $)[-1];
+$VERSION = (qw$Revision: 1.242 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -935,6 +935,7 @@ Returns the data for the correspondence matrix.
     my $map_type_acc     = $args{'map_type_acc'}     || '';
     my $map_set_acc      = $args{'map_set_acc'}      || '';
     my $map_name         = $args{'map_name'}         || '';
+    my $hide_empty_rows  = $args{'hide_empty_rows'}  || '';
     my $link_map_set_acc = $args{'link_map_set_acc'} || 0;
     my $sql_object = $self->sql or return;
 
@@ -1196,6 +1197,7 @@ Returns the data for the correspondence matrix.
     # Herein lies madness.
     #
     my ( @matrix, %no_ref_by_species_and_type, %no_ref_by_type );
+    my %empty_map_sets;
     for my $map_set (@reference_map_sets) {
         my $r_map_acc      = $map_set->{'map_acc'} || '';
         my $r_map_set_acc  = $map_set->{'map_set_acc'};
@@ -1206,9 +1208,7 @@ Returns the data for the correspondence matrix.
           : $map_name ? $r_map_set_acc
           : $r_map_acc || $r_map_set_acc;
 
-        $no_ref_by_type{$r_map_type_acc}++;
-        $no_ref_by_species_and_type{$r_species_acc}{$r_map_type_acc}++;
-
+        my $found_non_zero = 0;
         for my $comp_map_set (@all_map_sets) {
             my $comp_map_set_acc = $comp_map_set->{'map_set_acc'};
             my $comp_map_acc     = $comp_map_set->{'map_acc'} || '';
@@ -1223,6 +1223,8 @@ Returns the data for the correspondence matrix.
                 $map_count       = 'N/A';
             }
             else {
+                $found_non_zero ||=
+                  $lookup{$reference_acc}{$comparative_acc}[0];
                 $correspondences = $lookup{$reference_acc}{$comparative_acc}[0]
                   || 0;
                 $map_count = $lookup{$reference_acc}{$comparative_acc}[1] || 0;
@@ -1236,8 +1238,67 @@ Returns the data for the correspondence matrix.
                 map_count   => $map_count,
               };
         }
+        if ( $found_non_zero or !$hide_empty_rows ) {
+            push @matrix, $map_set;
+            $no_ref_by_type{$r_map_type_acc}++;
+            $no_ref_by_species_and_type{$r_species_acc}{$r_map_type_acc}++;
+        }
+        else {
+            $empty_map_sets{$r_map_set_acc} = 1;
+        }
+    }
 
-        push @matrix, $map_set;
+    if ($hide_empty_rows) {
+        my %found_column_value;
+        my $key_separator = " ";
+        for ( my $i = 0 ; $i <= $#matrix ; $i++ ) {
+            my $found_non_zero = 0;
+            foreach my $corr ( @{ $matrix[$i]->{'correspondences'} } ) {
+                if ( $corr->{'number'} ) {
+                    $found_column_value{ $corr->{'map_set_acc'}
+                          . $key_separator
+                          . $corr->{'map_acc'} } = 1;
+                }
+            }
+
+        }
+
+        # remove empty columns from @matrix
+        for ( my $i = 0 ; $i <= $#matrix ; $i++ ) {
+            for (
+                my $j = 0 ;
+                $j <= $#{ $matrix[$i]->{'correspondences'} } ;
+                $j++
+              )
+            {
+                unless (
+                    $found_column_value{
+                            $matrix[$i]->{'correspondences'}[$j]{'map_set_acc'}
+                          . $key_separator
+                          . $matrix[$i]->{'correspondences'}[$j]{'map_acc'}
+                    }
+                  )
+                {
+                    splice( @{ $matrix[$i]->{'correspondences'} }, $j, 1 );
+                    $j--;
+                }
+            }
+        }
+
+        # remove empty columns from $top_row
+        for ( my $i = 0 ; $i <= $#{ $top_row->{'map_sets'} } ; $i++ ) {
+            unless (
+                $found_column_value{
+                        $top_row->{'map_sets'}[$i]{'map_set_acc'}
+                      . $key_separator
+                      . ( $top_row->{'map_sets'}[$i]{'map_acc'} || '' )
+                }
+              )
+            {
+                splice( @{ $top_row->{'map_sets'} }, $i, 1 );
+                $i--;
+            }
+        }
     }
 
     my $matrix_data = {
