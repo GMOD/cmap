@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.242 2005-07-13 17:53:01 mwz444 Exp $
+# $Id: Data.pm,v 1.243 2005-07-14 03:37:23 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.242 $)[-1];
+$VERSION = (qw$Revision: 1.243 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -3070,9 +3070,9 @@ sub count_correspondences {
 
                 #xxx
                 my $map_start1     = $this_slot_info->{$current_map_id1}[0];
-                my $map_start2     = $this_slot_info->{$current_map_id2}[0];
+                my $map_start2     = $ref_slot_info->{$current_map_id2}[0];
                 my $map_stop1      = $this_slot_info->{$current_map_id1}[1];
-                my $map_stop2      = $this_slot_info->{$current_map_id2}[1];
+                my $map_stop2      = $ref_slot_info->{$current_map_id2}[1];
                 my $feature_start1 =
                   ( defined($map_start1)
                       and $map_start1 > $row->{'feature_start1'} )
