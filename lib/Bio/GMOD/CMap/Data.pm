@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.244 2005-07-14 19:07:47 mwz444 Exp $
+# $Id: Data.pm,v 1.245 2005-07-14 19:32:47 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.244 $)[-1];
+$VERSION = (qw$Revision: 1.245 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -3276,8 +3276,13 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_acc"]
             elsif ( $order_by eq "display_order" or !$order_by ) {
                 ###DEFAULT sort
                 @map_ids = sort {
-                    $map_info->{$a}{'display_order'} <=> $map_info->{$b}
-                      {'display_order'}
+                    return (
+                        $map_info->{$a}{'display_order'} <=> $map_info->{$b}
+                          {'display_order'} )
+                      if ( $map_info->{$a}{'display_order'} <=> $map_info->{$b}
+                        {'display_order'} );
+                    return ( $map_info->{$a}{'map_name'}
+                          cmp $map_info->{$b}{'map_name'} );
                 } @map_ids;
             }
             else {
