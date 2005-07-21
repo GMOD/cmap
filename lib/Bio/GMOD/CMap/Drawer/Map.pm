@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.168 2005-07-06 19:12:52 mwz444 Exp $
+# $Id: Map.pm,v 1.169 2005-07-21 19:58:27 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.168 $)[-1];
+$VERSION = (qw$Revision: 1.169 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -589,9 +589,13 @@ such as the units.
             my $full_str = "Reset Map";
             $x = $x_mid - ( ( $font->width * length($full_str) ) / 2 );
             push @$drawing_data, [ STRING, $font, $x, $y, $full_str, 'grey' ];
+            my $reset_url = $self->create_viewer_link(
+                $drawer->create_link_params(
+                    session_mod => "reset=$slot_no=$map_acc",
+                )
+            );
             $code = qq[
                 onMouseOver="window.status='Make map original size';return true" 
-                onClick="mod_map_info($slot_no, '$map_acc', '', '',1);document.comparative_map_form.submit();"
                 ];
             push @$map_area_data,
               {
@@ -600,7 +604,7 @@ such as the units.
                     $x + ( $font->width * length($full_str) ),
                     $y + $font->height,
                 ],
-                url  => '#',
+                url  => $reset_url,
                 alt  => 'Make map original size',
                 code => $code,
               }
@@ -631,10 +635,14 @@ such as the units.
         );
 
         # Minus side
+        my $mag_minus_url = $self->create_viewer_link(
+            $drawer->create_link_params(
+                session_mod      => "mag=$slot_no=$map_acc=$mag_minus_val",
+            )
+        );
         push @$drawing_data, [ STRING, $font, $x, $y, $mag_minus_str, 'grey' ];
         $code = qq[
             onMouseOver="window.status='Magnify by $mag_minus_val times original size';return true" 
-            onClick="mod_map_info($slot_no,'$map_acc',$start_pos, $stop_pos,$mag_minus_val);document.comparative_map_form.submit();"
             ];
         push @$map_area_data,
           {
@@ -643,7 +651,7 @@ such as the units.
                 $x + ( $font->width * length($mag_minus_str) ),
                 $y + $font->height
             ],
-            url  => '#',
+            url  => $mag_minus_url,
             alt  => 'Magnification',
             code => $code,
           }
@@ -674,10 +682,14 @@ such as the units.
         $x += ( $font->width * length($mag_mid_str) );
 
         # Plus Side
+        my $mag_plus_url = $self->create_viewer_link(
+            $drawer->create_link_params(
+                session_mod      => "mag=$slot_no=$map_acc=$mag_plus_val",
+            )
+        );
         push @$drawing_data, [ STRING, $font, $x, $y, $mag_plus_str, 'grey' ];
         $code = qq[
             onMouseOver="window.status='Magnify by $mag_plus_val times original size';return true" 
-            onClick="mod_map_info($slot_no,'$map_acc',$start_pos,$stop_pos,$mag_plus_val);document.comparative_map_form.submit();"
             ];
         push @$map_area_data,
           {
@@ -686,7 +698,7 @@ such as the units.
                 $x + ( $font->width * length($mag_plus_str) ),
                 $y + $font->height
             ],
-            url  => '#',
+            url  => $mag_plus_url,
             alt  => 'Magnification',
             code => $code,
           }
@@ -810,10 +822,14 @@ Draws the truncation arrows
         my ( $scroll_start, $scroll_stop, $scroll_mag ) =
           $drawer->data_module->scroll_data( $slot_no, $map_id, $is_flipped,
             'UP' );
+        my $scroll_up_url = $self->create_viewer_link(
+            $drawer->create_link_params(
+                session_mod => "start=$slot_no=$map_acc=$scroll_start:"
+                  . "stop=$slot_no=$map_acc=$scroll_stop",
+            )
+        );
         my $code = qq[ 
             onMouseOver="window.status='Scroll up';return true" 
-            onClick="mod_map_info($slot_no, '$map_acc', $scroll_start,$scroll_stop,$scroll_mag);
-            document.comparative_map_form.submit();"
             ];
         push @$map_area_data,
           {
@@ -823,7 +839,7 @@ Draws the truncation arrows
                 $x_mid + $trunc_half_width,
                 $y_base
             ],
-            url  => '#',
+            url  => $scroll_up_url,
             alt  => 'Scroll',
             code => $code,
           }
@@ -882,10 +898,14 @@ Draws the truncation arrows
         my ( $scroll_start, $scroll_stop, $scroll_mag ) =
           $drawer->data_module->scroll_data( $slot_no, $map_id, $is_flipped,
             'DOWN' );
+        my $scroll_down_url = $self->create_viewer_link(
+            $drawer->create_link_params(
+                session_mod => "start=$slot_no=$map_acc=$scroll_start:"
+                  . "stop=$slot_no=$map_acc=$scroll_stop",
+            )
+        );
         my $code = qq[ 
             onMouseOver="window.status='Scroll down';return true" 
-            onClick="mod_map_info($slot_no, '$map_acc', $scroll_start,$scroll_stop,$scroll_mag);
-            document.comparative_map_form.submit();"
             ];
         push @$map_area_data,
           {
@@ -895,7 +915,7 @@ Draws the truncation arrows
                 $x_mid + $trunc_half_width,
                 $y_base + $trunc_height
             ],
-            url  => '#',
+            url  => $scroll_down_url,
             alt  => 'Scroll',
             code => $code,
           }
@@ -2700,13 +2720,21 @@ sub add_tick_marks {
               ? $slot_info->{$map_id}->[4]
               : "'1'";
 
+            my $crop_down_url = $self->create_viewer_link(
+                $drawer->create_link_params(
+                    session_mod => "start=$slot_no=$map_acc=$down_start_pos",
+                )
+            );
+            my $crop_up_url = $self->create_viewer_link(
+                $drawer->create_link_params(
+                    session_mod => "stop=$slot_no=$map_acc=$up_stop_pos",
+                )
+            );
             my $down_code = qq[ 
                 onMouseOver="window.status='crop down';return true" 
-                onClick="mod_map_info($slot_no, '$map_acc', $down_start_pos, $down_stop_pos,$magnification);document.comparative_map_form.submit();"
                 ];
             my $up_code = qq[
                 onMouseOver="window.status='crop up';return true" 
-                onClick="mod_map_info($slot_no, '$map_acc', $up_start_pos, $up_stop_pos,$magnification);document.comparative_map_form.submit();"
                 ];
             push @$map_area_data,
               {
@@ -2714,7 +2742,7 @@ sub add_tick_marks {
                     $clip_arrow_x1, $clip_arrow_y1_down,
                     $clip_arrow_x2, $clip_arrow_y3_down
                 ],
-                url  => '#',
+                url  => $crop_down_url,
                 alt  => 'Crop from here down',
                 code => $down_code,
               }
@@ -2725,7 +2753,7 @@ sub add_tick_marks {
                     $clip_arrow_x1, $clip_arrow_y3_up,
                     $clip_arrow_x2, $clip_arrow_y1_up
                 ],
-                url  => '#',
+                url  => $crop_up_url,
                 alt  => 'Crop from here up',
                 code => $up_code,
               }
@@ -3593,6 +3621,7 @@ Button options:
                 ref_map_order    => '',
                 comparative_maps => \%detail_maps,
                 url              => $map_details_url,
+                new_session      => 1,
             )
         );
 
@@ -3641,26 +3670,10 @@ Button options:
     #
     if ( $requested_buttons{'delete'} ) {
         if ( $slot_no != 0 ) {
-            my @ordered_slot_nos =
-              sort { $a <=> $b } grep { $_ != 0 } keys %$slots;
-            my @cmap_nos;
-            if ( $slot_no < 0 ) {
-                push @cmap_nos, grep { $_ > $slot_no } @ordered_slot_nos;
-            }
-            else {
-                push @cmap_nos, grep { $_ < $slot_no } @ordered_slot_nos;
-            }
-            my %delete_comparative_map_hash;
-            foreach my $slot_no (@cmap_nos) {
-                next if ( $slot_no == 0 );
-                $delete_comparative_map_hash{$slot_no} = $slots->{$slot_no};
-            }
             my $delete_url = $self->create_viewer_link(
                 $drawer->create_link_params(
-                    ref_map_set_acc  => $slots->{'0'}{'map_set_acc'},
-                    ref_map_accs     => $ref_map_accs_hash,
-                    comparative_maps => \%delete_comparative_map_hash,
                     url              => $map_viewer_url,
+                    session_mod      => "del=$slot_no",
                 )
             );
 
@@ -3690,17 +3703,8 @@ Button options:
         push @flipping_flips, "$slot_no%3d$acc_id" unless $is_flipped;
         my $flipping_flip_str = join( ":", @flipping_flips );
 
-        my %flip_comparative_map_hash;
-        foreach my $slot_no ( keys(%$slots) ) {
-            next if ( $slot_no == 0 );
-            $flip_comparative_map_hash{$slot_no} = $slots->{$slot_no};
-        }
-
         my $flip_url = $self->create_viewer_link(
             $drawer->create_link_params(
-                ref_map_set_acc  => $slots->{'0'}{'map_set_acc'},
-                ref_map_accs     => $ref_map_accs_hash,
-                comparative_maps => \%flip_comparative_map_hash,
                 flip             => $flipping_flip_str,
                 url              => $map_viewer_url,
             )
@@ -3737,6 +3741,7 @@ Button options:
                 ref_map_accs    => \%this_map_info,
                 ref_map_order   => '',
                 url             => $map_viewer_url,
+                new_session     => 1,
             )
         );
 

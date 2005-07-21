@@ -887,6 +887,8 @@ function selectAllOptions(select){
               </tr>
               <tr>
                 <td colspan="4" align="center">
+                  <input type="hidden" name="session_id" value="[% apr.param('session_id') %]">
+                  <input type="hidden" name="step" value="[% apr.param('step') %]">
                   <input type="hidden" name="ref_map_set_acc" value="[% apr.param('ref_map_set_acc') %]">
                   <input type="hidden" name="ref_map_accs"   value="[% apr.param('ref_map_accs').join(',') %]">
                   <input type="hidden" name="modified_ref_map"   value="">

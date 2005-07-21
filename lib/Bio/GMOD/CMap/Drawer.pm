@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.102 2005-07-06 19:12:51 mwz444 Exp $
+# $Id: Drawer.pm,v 1.103 2005-07-21 19:58:26 mwz444 Exp $
 
 =head1 NAME
 
@@ -57,6 +57,8 @@ The base map drawing module.
         ref_map_order => $ref_map_order,
         comp_menu_order => $comp_menu_order,
         omit_area_boxes => $omit_area_boxes,
+        session_id => $session_id,
+        next_step => $next_step,
         refMenu => $refMenu,
         compMenu => $compMenu,
         optionMenu => $optionMenu,
@@ -287,6 +289,14 @@ leaving the navigation buttons intact.
 
 Set to 2 to omit all of the area boxes.  This will make a non-clickable image.
 
+=item * session_id
+
+The session id.
+
+=item * next_step
+
+The session step that the new urls should use.
+
 =item * refMenu
 
 This is set to 1 if the Reference Menu is displayed.
@@ -311,7 +321,7 @@ This is set to 1 if the Additional Options Menu is displayed.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.102 $)[-1];
+$VERSION = (qw$Revision: 1.103 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -334,7 +344,7 @@ my @INIT_PARAMS = qw[
   map_view data_module aggregate cluster_corr show_intraslot_corr clean_view
   magnify_all scale_maps stack_maps ref_map_order comp_menu_order
   omit_area_boxes split_agg_ev refMenu compMenu optionMenu addOpMenu
-  corrs_to_map
+  corrs_to_map session_id next_step
 ];
 
 # ----------------------------------------------------
@@ -2722,7 +2732,7 @@ Creates default link parameters for CMap->create_viewer_link()
     my $show_intraslot_corr         = $args{'show_intraslot_corr'};
     my $split_agg_ev                = $args{'split_agg_ev'};
     my $clean_view                  = $args{'clean_view'};
-    my $corrs_to_map                  = $args{'corrs_to_map'};
+    my $corrs_to_map                = $args{'corrs_to_map'};
     my $magnify_all                 = $args{'magnify_all'};
     my $flip                        = $args{'flip'};
     my $min_correspondences         = $args{'min_correspondences'};
@@ -2731,6 +2741,10 @@ Creates default link parameters for CMap->create_viewer_link()
     my $corr_only_feature_type_accs = $args{'corr_only_feature_type_accs'};
     my $ignored_feature_type_accs   = $args{'ignored_feature_type_accs'};
     my $url_feature_default_display = $args{'url_feature_default_display'};
+    my $session_id                  = $args{'session_id'};
+    my $next_step                   = $args{'next_step'};
+    my $session_mod                 = $args{'session_mod'};
+    my $new_session                 = $args{'new_session'};
 
     my $included_evidence_type_accs = $args{'included_evidence_type_accs'};
     my $ignored_evidence_type_accs  = $args{'ignored_evidence_type_accs'};
@@ -2744,13 +2758,18 @@ Creates default link parameters for CMap->create_viewer_link()
     my $optionMenu                  = $args{'optionMenu'};
     my $addOpMenu                   = $args{'addOpMenu'};
 
+    unless ( defined($session_id) ) {
+        $session_id = $self->session_id();
+    }
     ### Required Fields that Drawer can't figure out.
-    unless ( defined($ref_map_set_acc) ) {
+    unless ( $session_id or ( defined($ref_map_set_acc) and $new_session ) ) {
         return;
         $ref_map_set_acc = undef;
     }
 
     ### Optional fields for finer control
+    # I know that undeffing undefined variables is redundant
+    # But they are nice placeholders.
     unless ( defined($prev_ref_species_acc) ) {
         $prev_ref_species_acc = undef;
     }
@@ -2768,6 +2787,9 @@ Creates default link parameters for CMap->create_viewer_link()
     }
     unless ( defined($comparative_maps) ) {
         $comparative_maps = undef;
+    }
+    unless ( defined($ref_map_accs) ) {
+        $ref_map_accs = undef
     }
     unless ( defined($highlight) ) {
         $highlight = $self->highlight();
@@ -2830,9 +2852,6 @@ Creates default link parameters for CMap->create_viewer_link()
     unless ( defined($min_correspondences) ) {
         $min_correspondences = $self->min_correspondences();
     }
-    unless ( defined($ref_map_accs) ) {
-        $ref_map_accs = $self->ref_map_accs();
-    }
     unless ( defined($feature_type_accs) ) {
         $feature_type_accs = $self->included_feature_types();
     }
@@ -2864,7 +2883,13 @@ Creates default link parameters for CMap->create_viewer_link()
         $data_source = $self->data_source();
     }
     unless ( defined($url) ) {
-        $url = '/viewer';
+        $url = '?';
+    }
+    unless ( defined($session_id) ) {
+        $session_id = $self->session_id();
+    }
+    unless ( defined($next_step) ) {
+        $next_step = $self->next_step();
     }
     unless ( defined($refMenu) ) {
         $refMenu = $self->refMenu();
@@ -2918,10 +2943,14 @@ Creates default link parameters for CMap->create_viewer_link()
         evidence_type_score         => $evidence_type_score,
         data_source                 => $data_source,
         url                         => $url,
+        session_id                  => $session_id,
+        next_step                   => $next_step,
         refMenu                     => $refMenu,
         compMenu                    => $compMenu,
         optionMenu                  => $optionMenu,
         addOpMenu                   => $addOpMenu,
+        session_mod                 => $session_mod,
+        new_session                 => $new_session,
     );
 }
 

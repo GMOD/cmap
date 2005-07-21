@@ -2,19 +2,22 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.107 2005-07-06 19:12:52 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.108 2005-07-21 19:58:27 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.107 $)[-1];
+$VERSION = (qw$Revision: 1.108 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer;
 use Bio::GMOD::CMap::Data;
+use Bio::GMOD::CMap::Utils;
+use CGI::Session;
 use Template;
 use URI::Escape;
 use Regexp::Common;
+use Clone qw(clone);
 use Data::Dumper;
 
 use base 'Bio::GMOD::CMap::Apache';
@@ -90,6 +93,12 @@ sub handler {
     my $optionMenu            = $apr->param('optionMenu');
     my $addOpMenu             = $apr->param('addOpMenu');
     my $omit_area_boxes       = $apr->param('omit_area_boxes');
+    my $session_id            = $apr->param('session_id');
+    my $step                  = $apr->param('step') || 0;
+    my $session_mod           = $apr->param('session_mod') || '';
+
+    my (%slots,$next_step);
+    my $reusing_step = 0;
 
     # If this was submitted by a button, clear the modified map fields.
     # They are no longer needed.
@@ -305,85 +314,137 @@ sub handler {
         $ref_map_sets{$ref_map_set_acc} = ();
     }
 
-    my %slots = (
-        0 => {
-            map_set_acc => $ref_map_set_acc,
-            map_sets    => \%ref_map_sets,
-            maps        => \%ref_maps,
+    my ($session, $s_object);
+    if ($session_id) {
+
+        #handle the sessions
+        $session =
+          new CGI::Session( "driver:File", $session_id,
+            { Directory => '/tmp' } );
+        $s_object = $session->param('object');
+        if ( defined($s_object) ) {
+            unless ($step) {
+                $step = $#{$s_object} + 1;
+            }
+            my $prev_step = $step - 1;
+            $next_step = $step + 1;
+            my $step_hash;
+            if ($s_object->[$step] and $s_object->[$step]{'session_mod'} and  $s_object->[$step]{'session_mod'} eq $session_mod){
+                $step_hash = $s_object->[$step];
+                $reusing_step = 1;
+            }
+            else{
+                $step_hash = $s_object->[$prev_step];
+            }
+            if ( defined($step_hash) ) {
+                %slots = %{clone($step_hash->{'slots'})};
+                $ref_species_acc = $step_hash->{'ref_species_acc'};
+                $ref_map_set_acc = $step_hash->{'ref_map_set_acc'};
+
+                # Apply Session Modifications
+                modify_slots(\%slots,$session_mod) if (!$reusing_step);
+                @ref_map_accs = keys(%{$slots{0}->{'maps'}});
+                $apr->param( 'ref_map_accs', join( ":", @ref_map_accs ) );
+
+            }
+            else {
+                # invalid step
+                return $self->error( 'Invalid session step: '.$step );
+            }
         }
-    );
+        else {
+            # invalid session_id
+            return $self->error( 'Invalid session_id: '.$session_id );
+        }
+        $apr->param( 'comparative_maps', undef );
+    }
+    else{
+        $session =
+          new CGI::Session( "driver:File", undef, { Directory => '/tmp' } );
+        $session_id = $session->id();
+        $step=0;
+        $next_step = $step + 1;
+        $session->expire('+24h');
+        %slots = (
+            0 => {
+                map_set_acc => $ref_map_set_acc,
+                map_sets    => \%ref_map_sets,
+                maps        => \%ref_maps,
+            }
+        );
 
-    #
-    # Add in previous maps.
-    #
-    # Remove start and stop if they are the same
-    while ( $comparative_maps =~ s/(.+\[)(\d+)\*\2(\D.*)/$1*$3/ ) { }
+        #
+        # Add in previous maps.
+        #
+        # Remove start and stop if they are the same
+        while ( $comparative_maps =~ s/(.+\[)(\d+)\*\2(\D.*)/$1*$3/ ) { }
 
-    for my $cmap ( split( /:/, $comparative_maps ) ) {
-        my ( $slot_no, $field, $map_acc ) = split( /=/, $cmap ) or next;
-        my ( $start, $stop, $magnification );
-        foreach my $acc ( split /,/, $map_acc ) {
+        for my $cmap ( split( /:/, $comparative_maps ) ) {
+            my ( $slot_no, $field, $map_acc ) = split( /=/, $cmap ) or next;
+            my ( $start, $stop, $magnification );
+            foreach my $acc ( split /,/, $map_acc ) {
+                ( $acc, $start, $stop, $magnification, $highlight ) =
+                  parse_map_info( $acc, $highlight );
+                if ( $field eq 'map_acc' ) {
+                    $slots{$slot_no}{'maps'}{$acc} = {
+                        start => $start,
+                        stop  => $stop,
+                        mag   => $magnification,
+                    };
+                }
+                elsif ( $field eq 'map_set_acc' ) {
+                    unless ( defined( $slots{$slot_no}{'map_sets'}{$acc} ) ) {
+                        $slots{$slot_no}{'map_sets'}{$acc} = ();
+                    }
+                }
+            }
+        }
+
+        # Deal with modified comp map
+        # map info specified in this param trumps $comparative_maps info
+        if ( $apr->param('modified_comp_map') ) {
+            my $comp_map = $apr->param('modified_comp_map');
+
+            # remove duplicate start and end
+            while ( $comp_map =~ s/(.+\[)(\d+)\*\2(\D.*)/$1*$3/ ) { }
+            $apr->param( 'modified_comp_map', $comp_map );
+
+            my ( $slot_no, $field, $acc ) = split( /=/, $comp_map ) or next;
+            my ( $start, $stop, $magnification ) = ( undef, undef, 1 );
             ( $acc, $start, $stop, $magnification, $highlight ) =
               parse_map_info( $acc, $highlight );
             if ( $field eq 'map_acc' ) {
-                $slots{$slot_no}{'maps'}{$acc} = {
+                $slots{$slot_no}->{'maps'}{$acc} = {
                     start => $start,
                     stop  => $stop,
                     mag   => $magnification,
                 };
             }
             elsif ( $field eq 'map_set_acc' ) {
-                unless ( defined( $slots{$slot_no}{'map_sets'}{$acc} ) ) {
-                    $slots{$slot_no}{'map_sets'}{$acc} = ();
+                unless ( defined( $slots{$slot_no}->{'map_sets'}{$acc} ) ) {
+                    $slots{$slot_no}->{'map_sets'}{$acc} = ();
                 }
             }
-        }
-    }
 
-    # Deal with modified comp map
-    # map info specified in this param trumps $comparative_maps info
-    if ( $apr->param('modified_comp_map') ) {
-        my $comp_map = $apr->param('modified_comp_map');
-
-        # remove duplicate start and end
-        while ( $comp_map =~ s/(.+\[)(\d+)\*\2(\D.*)/$1*$3/ ) { }
-        $apr->param( 'modified_comp_map', $comp_map );
-
-        my ( $slot_no, $field, $acc ) = split( /=/, $comp_map ) or next;
-        my ( $start, $stop, $magnification ) = ( undef, undef, 1 );
-        ( $acc, $start, $stop, $magnification, $highlight ) =
-          parse_map_info( $acc, $highlight );
-        if ( $field eq 'map_acc' ) {
-            $slots{$slot_no}->{'maps'}{$acc} = {
-                start => $start,
-                stop  => $stop,
-                mag   => $magnification,
-            };
-        }
-        elsif ( $field eq 'map_set_acc' ) {
-            unless ( defined( $slots{$slot_no}->{'map_sets'}{$acc} ) ) {
-                $slots{$slot_no}->{'map_sets'}{$acc} = ();
+            # Add the modified version into the comparative_maps param
+            my @cmaps = split( /:/, $comparative_maps );
+            my $found = 0;
+            for ( my $i = 0 ; $i <= $#cmaps ; $i++ ) {
+                my ( $c_slot_no, $c_field, $c_acc ) = split( /=/, $cmaps[$i] )
+                  or next;
+                $acc =~ s/^(.*)\[.*/$1/;
+                if (    ( $c_slot_no eq $slot_no )
+                    and ( $c_field eq $field )
+                    and ( $c_acc   eq $acc ) )
+                {
+                    $cmaps[$i] = $comp_map;
+                    $found = 1;
+                    last;
+                }
             }
+            push @cmaps, $comp_map if ( !$found );
+            $apr->param( 'comparative_maps', join( ":", @cmaps ) );
         }
-
-        # Add the modified version into the comparative_maps param
-        my @cmaps = split( /:/, $comparative_maps );
-        my $found = 0;
-        for ( my $i = 0 ; $i <= $#cmaps ; $i++ ) {
-            my ( $c_slot_no, $c_field, $c_acc ) = split( /=/, $cmaps[$i] )
-              or next;
-            $acc =~ s/^(.*)\[.*/$1/;
-            if (    ( $c_slot_no eq $slot_no )
-                and ( $c_field eq $field )
-                and ( $c_acc   eq $acc ) )
-            {
-                $cmaps[$i] = $comp_map;
-                $found = 1;
-                last;
-            }
-        }
-        push @cmaps, $comp_map if ( !$found );
-        $apr->param( 'comparative_maps', join( ":", @cmaps ) );
     }
 
     my @slot_nos  = sort { $a <=> $b } keys %slots;
@@ -464,6 +525,8 @@ sub handler {
             compMenu                    => $compMenu,
             optionMenu                  => $optionMenu,
             addOpMenu                   => $addOpMenu,
+            session_id                  => $session_id,
+            next_step                   => $next_step,
           )
           or return $self->error( Bio::GMOD::CMap::Drawer->error );
 
@@ -547,6 +610,29 @@ sub handler {
         ( map { $_ => 2 } @less_evidence_types ),
         ( map { $_ => 3 } @greater_evidence_types )
     );
+
+    unless ($reusing_step){
+        my $step_object = {
+            slots           => \%slots,
+            ref_species_acc => $ref_species_acc,
+            ref_map_set_acc => $ref_map_set_acc,
+            session_mod     => $session_mod,
+        };
+        if ( $s_object and $step ) {
+            $s_object->[$step] = $step_object;
+            if ( $#{$s_object} > $step ) {
+                splice( @$s_object, $step + 1 );
+            }
+        }
+        else {
+            $s_object = [ $step_object ];
+        }
+        $session->param('object',$s_object);
+    }
+
+    $apr->param('session_id', $session_id);
+    $apr->param('step', $next_step);
+
     my $html;
     my $t = $self->template or return;
     $t->process(
@@ -738,6 +824,118 @@ sub parse_map_info {
     }
 
     return ( $acc, $start, $stop, $magnification, $highlight );
+}
+
+# ----------------------------------------------------
+sub modify_slots {
+
+    # Modify the slots object using a modification string
+    my $slots   = shift;
+    my $mod_str = shift;
+
+    my @mod_cmds = split(/:/, $mod_str);
+
+    foreach my $mod_cmd (@mod_cmds) {
+        my @mod_array = split( /=/, $mod_cmd );
+        next unless (@mod_array);
+
+        if ( $mod_array[0] eq 'start' ) {
+            next unless ( scalar(@mod_array) == 4 );
+            my $slot_no = $mod_array[1];
+            my $map_acc = $mod_array[2];
+            my $start   = $mod_array[3];
+            if ( $slots->{$slot_no} and $slots->{$slot_no}{'maps'}{$map_acc} ) {
+                $slots->{$slot_no}{'maps'}{$map_acc}{'start'} = $start;
+            }
+        }
+        elsif ( $mod_array[0] eq 'stop' ) {
+            next unless ( scalar(@mod_array) == 4 );
+            my $slot_no = $mod_array[1];
+            my $map_acc = $mod_array[2];
+            my $stop    = $mod_array[3];
+            if ( $slots->{$slot_no} and $slots->{$slot_no}{'maps'}{$map_acc} ) {
+                $slots->{$slot_no}{'maps'}{$map_acc}{'stop'} = $stop;
+            }
+        }
+        elsif ( $mod_array[0] eq 'mag' ) {
+            next unless ( scalar(@mod_array) == 4 );
+            my $slot_no = $mod_array[1];
+            my $map_acc = $mod_array[2];
+            my $mag     = $mod_array[3];
+            if ( $slots->{$slot_no} and $slots->{$slot_no}{'maps'}{$map_acc} ) {
+                $slots->{$slot_no}{'maps'}{$map_acc}{'mag'} = $mag;
+            }
+        }
+        elsif ( $mod_array[0] eq 'reset' ) {
+            next unless ( scalar(@mod_array) == 3 );
+            my $slot_no = $mod_array[1];
+            my $map_acc = $mod_array[2];
+            if ( $slots->{$slot_no} and $slots->{$slot_no}{'maps'}{$map_acc} ) {
+                $slots->{$slot_no}{'maps'}{$map_acc}{'start'} = undef;
+                $slots->{$slot_no}{'maps'}{$map_acc}{'stop'} = undef;
+                $slots->{$slot_no}{'maps'}{$map_acc}{'mag'} = 1;
+            }
+        }
+        elsif ( $mod_array[0] eq 'del' ) {
+            if ( scalar(@mod_array) == 3 ){
+                my $slot_no = $mod_array[1];
+                my $map_acc = $mod_array[2];
+                if ( $slots->{$slot_no} and $slots->{$slot_no}{'maps'}{$map_acc} ) {
+                    delete $slots->{$slot_no}{'maps'}{$map_acc};
+                }
+            }
+            elsif ( scalar(@mod_array) == 2 ){
+                my $slot_no = $mod_array[1];
+                if ( $slots->{$slot_no} ) {
+                    $slots->{$slot_no} = {};
+                }
+            }
+        }
+        elsif ( $mod_array[0] eq 'limit' ) {
+            next unless ( scalar(@mod_array) == 3 );
+            my $slot_no = $mod_array[1];
+            my $map_acc = $mod_array[2];
+            my $mag     = $mod_array[3];
+            if ( $slots->{$slot_no} and $slots->{$slot_no}{'maps'}{$map_acc} ) {
+                foreach
+                  my $other_map_acc ( keys( %{ $slots->{$slot_no}{'maps'} } ) )
+                {
+                    next if ( $other_map_acc eq $map_acc );
+                    delete $slots->{$slot_no}{'maps'}{$other_map_acc};
+                }
+            }
+        }
+    }
+
+    # If ever a slot has no maps, remove the slot.
+    my $delete_pos = 0;
+    my $delete_neg = 0;
+    foreach my $slot_no ( keys %{$slots} ) {
+    }
+    foreach my $slot_no ( sort orderOutFromZero keys %{$slots} ) {
+    }
+    foreach my $slot_no ( sort orderOutFromZero keys %{$slots} ) {
+        unless ( ($slots->{$slot_no}{'maps'} and %{$slots->{$slot_no}{'maps'}} )  
+            or ($slots->{$slot_no}{'mapsets'} and %{$slots->{$slot_no}{'map_sets'}} )  ) {
+            if ( $slot_no >= 0 ) {
+                $delete_pos = 1;
+            }
+            if ( $slot_no <= 0 ) {
+                $delete_neg = 1;
+            }
+        }
+        if ( $slot_no >= 0 and $delete_pos ) {
+            delete $slots->{$slot_no};
+        }
+        elsif ( $slot_no < 0 and $delete_neg ) {
+            delete $slots->{$slot_no};
+        }
+    }
+}
+
+sub orderOutFromZero {
+    ###Return the sort in this order (0,1,-1,-2,2,-3,3,)
+    return ( abs($a) cmp abs($b) );
 }
 
 1;

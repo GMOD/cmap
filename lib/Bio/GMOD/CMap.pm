@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.90 2005-07-08 21:02:24 mwz444 Exp $
+# $Id: CMap.pm,v 1.91 2005-07-21 19:58:25 mwz444 Exp $
 
 =head1 NAME
 
@@ -860,6 +860,45 @@ Given a table name and some objects, get the cross-references.
 }
 
 # ----------------------------------------------------
+sub session_id {
+
+=pod
+                                                                                
+=head2 session_id
+
+Sets and returns the session_id.
+
+The default is ''.
+
+=cut
+
+    my $self = shift;
+    my $val  = shift;
+    $self->{'session_id'} = $val if defined $val;
+    return $self->{'session_id'};
+}
+
+# ----------------------------------------------------
+sub next_step {
+
+=pod
+                                                                                
+=head2 next_step
+
+Sets and returns the session next_step.
+
+The default is ''.
+
+=cut
+
+    my $self = shift;
+    my $val  = shift;
+    $self->{'next_step'} = $val if defined $val;
+    return $self->{'next_step'};
+}
+
+
+# ----------------------------------------------------
 sub create_viewer_link {
 
 =pod
@@ -912,26 +951,116 @@ Given information about the link, creates a url to cmap_viewer.
     my $compMenu                    = $args{'compMenu'};
     my $optionMenu                  = $args{'optionMenu'};
     my $addOpMenu                   = $args{'addOpMenu'};
+    my $session_id                  = $args{'session_id'};
+    my $next_step                   = $args{'next_step'};
+    my $new_session                 = $args{'new_session'} || 0;
+    my $session_mod                 = $args{'session_mod'};
     my $url                         = $args{'url'} || '';
     $url .= '?' unless $url =~ /\?$/;
 
     ###Required Fields
-    unless ( ( defined($ref_map_set_acc) or defined($ref_map_accs) )
-        and defined($data_source) )
+    unless (
+        (
+               defined($ref_map_set_acc)
+            or defined($ref_map_accs)
+            or defined($session_id)
+        )
+        and defined($data_source)
+      )
     {
         return '';
     }
     $url .= "data_source=$data_source;";
 
+    if ( $session_id and !$new_session ){
+        $url .= "session_id=$session_id;";
+        $url .= "step=$next_step;"
+          if defined($next_step);
+        $url .= "session_mod=$session_mod;"
+          if defined($session_mod);
+    }
+    else{
+        $url .= "ref_map_set_acc=$ref_map_set_acc;"
+          if defined($ref_map_set_acc);
+        $url .= "ref_species_acc=$ref_species_acc;"
+          if defined($ref_species_acc);
+        $url .= "prev_ref_species_acc=$prev_ref_species_acc;"
+          if defined($prev_ref_species_acc);
+        $url .= "prev_ref_map_set_acc=$prev_ref_map_set_acc;"
+          if defined($prev_ref_map_set_acc);
+
+        if ( $ref_map_accs and %$ref_map_accs ) {
+            my @ref_strs;
+            foreach my $ref_map_acc ( keys(%$ref_map_accs) ) {
+                if (
+                    defined( $ref_map_accs->{$ref_map_acc}{'start'} )
+                    or defined(
+                             $ref_map_accs->{$ref_map_acc}{'stop'}
+                          or $ref_map_accs->{$ref_map_acc}{'magnify'}
+                    )
+                  )
+                {
+                    my $start =
+                      defined( $ref_map_accs->{$ref_map_acc}{'start'} )
+                      ? $ref_map_accs->{$ref_map_acc}{'start'}
+                      : '';
+                    my $stop =
+                      defined( $ref_map_accs->{$ref_map_acc}{'stop'} )
+                      ? $ref_map_accs->{$ref_map_acc}{'stop'}
+                      : '';
+                    my $mag =
+                      defined( $ref_map_accs->{$ref_map_acc}{'magnify'} )
+                      ? $ref_map_accs->{$ref_map_acc}{'magnify'}
+                      : 1;
+                    push @ref_strs,
+                      $ref_map_acc . '[' . $start . '*' . $stop . 'x' . $mag . ']';
+                }
+                else {
+                    push @ref_strs, $ref_map_acc;
+                }
+            }
+            $url .= "ref_map_accs=" . join( ',', @ref_strs ) . ";";
+        }
+        if ( $comparative_maps and %$comparative_maps ) {
+            my @strs;
+            foreach my $slot_no ( keys(%$comparative_maps) ) {
+                my $map = $comparative_maps->{$slot_no};
+                for my $field (qw[ maps map_sets ]) {
+                    next unless ( defined( $map->{$field} ) );
+                    foreach my $acc ( keys %{ $map->{$field} } ) {
+                        if ( $field eq 'maps' ) {
+                            my $start =
+                              defined( $map->{$field}{$acc}{'start'} )
+                              ? $map->{$field}{$acc}{'start'}
+                              : '';
+                            my $stop =
+                              defined( $map->{$field}{$acc}{'stop'} )
+                              ? $map->{$field}{$acc}{'stop'}
+                              : '';
+                            my $mag =
+                              defined( $map->{$field}{$acc}{'mag'} )
+                              ? $map->{$field}{$acc}{'mag'}
+                              : 1;
+                            push @strs,
+                              $slot_no
+                              . '%3dmap_acc%3d'
+                              . $acc . '['
+                              . $start . '*'
+                              . $stop . 'x'
+                              . $mag . ']';
+
+                        }
+                        else {
+                            push @strs, $slot_no . '%3dmap_set_acc%3d' . $acc;
+                        }
+                    }
+                }
+            }
+
+            $url .= "comparative_maps=" . join( ':', @strs ) . ";";
+        }
+    }
     ### optional
-    $url .= "ref_map_set_acc=$ref_map_set_acc;"
-      if defined($ref_map_set_acc);
-    $url .= "ref_species_acc=$ref_species_acc;"
-      if defined($ref_species_acc);
-    $url .= "prev_ref_species_acc=$prev_ref_species_acc;"
-      if defined($prev_ref_species_acc);
-    $url .= "prev_ref_map_set_acc=$prev_ref_map_set_acc;"
-      if defined($prev_ref_map_set_acc);
     $url .= "ref_map_start=$ref_map_start;"
       if defined($ref_map_start);
     $url .= "ref_map_stop=$ref_map_stop;"
@@ -982,77 +1111,7 @@ Given information about the link, creates a url to cmap_viewer.
       if defined($addOpMenu);
 
     #multi
-    if ( $ref_map_accs and %$ref_map_accs ) {
-        my @ref_strs;
-        foreach my $ref_map_acc ( keys(%$ref_map_accs) ) {
-            if (
-                defined( $ref_map_accs->{$ref_map_acc}{'start'} )
-                or defined(
-                         $ref_map_accs->{$ref_map_acc}{'stop'}
-                      or $ref_map_accs->{$ref_map_acc}{'magnify'}
-                )
-              )
-            {
-                my $start =
-                  defined( $ref_map_accs->{$ref_map_acc}{'start'} )
-                  ? $ref_map_accs->{$ref_map_acc}{'start'}
-                  : '';
-                my $stop =
-                  defined( $ref_map_accs->{$ref_map_acc}{'stop'} )
-                  ? $ref_map_accs->{$ref_map_acc}{'stop'}
-                  : '';
-                my $mag =
-                  defined( $ref_map_accs->{$ref_map_acc}{'magnify'} )
-                  ? $ref_map_accs->{$ref_map_acc}{'magnify'}
-                  : 1;
-                push @ref_strs,
-                  $ref_map_acc . '[' . $start . '*' . $stop . 'x' . $mag . ']';
-            }
-            else {
-                push @ref_strs, $ref_map_acc;
-            }
-        }
-        $url .= "ref_map_accs=" . join( ',', @ref_strs ) . ";";
-    }
 
-    if ( $comparative_maps and %$comparative_maps ) {
-        my @strs;
-        foreach my $slot_no ( keys(%$comparative_maps) ) {
-            my $map = $comparative_maps->{$slot_no};
-            for my $field (qw[ maps map_sets ]) {
-                next unless ( defined( $map->{$field} ) );
-                foreach my $acc ( keys %{ $map->{$field} } ) {
-                    if ( $field eq 'maps' ) {
-                        my $start =
-                          defined( $map->{$field}{$acc}{'start'} )
-                          ? $map->{$field}{$acc}{'start'}
-                          : '';
-                        my $stop =
-                          defined( $map->{$field}{$acc}{'stop'} )
-                          ? $map->{$field}{$acc}{'stop'}
-                          : '';
-                        my $mag =
-                          defined( $map->{$field}{$acc}{'mag'} )
-                          ? $map->{$field}{$acc}{'mag'}
-                          : 1;
-                        push @strs,
-                          $slot_no
-                          . '%3dmap_acc%3d'
-                          . $acc . '['
-                          . $start . '*'
-                          . $stop . 'x'
-                          . $mag . ']';
-
-                    }
-                    else {
-                        push @strs, $slot_no . '%3dmap_set_acc%3d' . $acc;
-                    }
-                }
-            }
-        }
-
-        $url .= "comparative_maps=" . join( ':', @strs ) . ";";
-    }
 
     foreach my $acc (@$feature_type_accs) {
         $url .= "ft_" . $acc . "=2;";
@@ -1081,6 +1140,7 @@ Given information about the link, creates a url to cmap_viewer.
         $url .= "ets_" . $acc . "=" . $evidence_type_score->{$acc} . ";";
     }
 
+#print S#TDERR "$url\n\n";
     return $url;
 }
 
@@ -1255,7 +1315,7 @@ sub get_cached_results {
     $cache_level = 1 unless $cache_level;
     my $cache_name = "L" . $cache_level . "_cache";
 
-    #print STDERR "GET: $cache_level $cache_name\n";
+    #print S#TDERR "GET: $cache_level $cache_name\n";
 
     unless ( $self->{$cache_name} ) {
         $self->{$cache_name} = $self->init_cache($cache_level)
@@ -1277,7 +1337,7 @@ sub store_cached_results {
     $cache_level = 1 unless $cache_level;
     my $cache_name = "L" . $cache_level . "_cache";
 
-    #print STDERR "STORE: $cache_level $cache_name\n";
+    #print S#TDERR "STORE: $cache_level $cache_name\n";
 
     unless ( $self->{$cache_name} ) {
         $self->{$cache_name} = $self->init_cache($cache_level)
