@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.103 2005-07-21 19:58:26 mwz444 Exp $
+# $Id: Drawer.pm,v 1.104 2005-07-26 17:34:46 mwz444 Exp $
 
 =head1 NAME
 
@@ -321,7 +321,7 @@ This is set to 1 if the Additional Options Menu is displayed.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.103 $)[-1];
+$VERSION = (qw$Revision: 1.104 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -1365,7 +1365,9 @@ Lays out the image and writes it to the file system, set the "image_name."
         [ 'i'  => 'Map Set Info' ],
         [ '?'  => 'Map Details' ],
         [ 'M'  => 'Matrix View' ],
-        [ 'X'  => 'Delete Map' ],
+        [ 'L'  => 'Limit to One Map' ],
+        [ 'X'  => 'Delete Map Set' ],
+        [ 'x'  => 'Delete Map' ],
         [ 'F'  => 'Flip Map' ],
         [ 'UF' => 'Unflip Map' ],
         [ 'N'  => 'New Map View' ],

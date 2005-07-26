@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.169 2005-07-21 19:58:27 mwz444 Exp $
+# $Id: Map.pm,v 1.170 2005-07-26 17:34:54 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.169 $)[-1];
+$VERSION = (qw$Revision: 1.170 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -637,7 +637,7 @@ such as the units.
         # Minus side
         my $mag_minus_url = $self->create_viewer_link(
             $drawer->create_link_params(
-                session_mod      => "mag=$slot_no=$map_acc=$mag_minus_val",
+                session_mod => "mag=$slot_no=$map_acc=$mag_minus_val",
             )
         );
         push @$drawing_data, [ STRING, $font, $x, $y, $mag_minus_str, 'grey' ];
@@ -684,7 +684,7 @@ such as the units.
         # Plus Side
         my $mag_plus_url = $self->create_viewer_link(
             $drawer->create_link_params(
-                session_mod      => "mag=$slot_no=$map_acc=$mag_plus_val",
+                session_mod => "mag=$slot_no=$map_acc=$mag_plus_val",
             )
         );
         push @$drawing_data, [ STRING, $font, $x, $y, $mag_plus_str, 'grey' ];
@@ -1592,6 +1592,7 @@ Variable Info:
     }
 
     my $corrs_to_map = $drawer->corrs_to_map();
+
     # Offset all of the coords accordingly
     for my $map_id (@map_ids) {
         my $offset = $lane_base_x[ $map_lane{$map_id} ] -
@@ -1616,10 +1617,13 @@ Variable Info:
         $map_placement_data{$map_id}{'bounds'}[2]     += $offset;
 
         # If the corr lines are supposed to go to the map.
-        if ($corrs_to_map){
-            for my $key ( keys( %{ $features_with_corr_by_map_id{$map_id} } ) ) {
-                $features_with_corr_by_map_id{$map_id}{$key}{'left'}[0] = $map_placement_data{$map_id}{'map_coords'}[0];
-                $features_with_corr_by_map_id{$map_id}{$key}{'right'}[0] = $map_placement_data{$map_id}{'map_coords'}[2];
+        if ($corrs_to_map) {
+            for my $key ( keys( %{ $features_with_corr_by_map_id{$map_id} } ) )
+            {
+                $features_with_corr_by_map_id{$map_id}{$key}{'left'}[0] =
+                  $map_placement_data{$map_id}{'map_coords'}[0];
+                $features_with_corr_by_map_id{$map_id}{$key}{'right'}[0] =
+                  $map_placement_data{$map_id}{'map_coords'}[2];
             }
         }
 
@@ -2306,7 +2310,10 @@ sub add_topper {
         drawer     => $drawer,
         slot_no    => $slot_no,
         is_flipped => $is_flipped,
-        buttons    => [ 'map_detail', 'map_matrix', 'flip', 'new_view', ],
+        buttons    => [
+            'map_detail', 'map_matrix', 'flip', 'new_view',
+            'map_limit',  'map_delete'
+        ],
     );
     if ( 1 or $is_compressed and scalar(@$buttons) ) {
         my $button_y_buffer = 4;
@@ -3531,6 +3538,8 @@ Button options:
  map_detail
  set_matrix
  map_matrix
+ map_delete
+ map_limit
  delete
  flip
  new_view
@@ -3665,15 +3674,15 @@ Button options:
     }
 
     #
-    # Delete button.
+    # Map Set Delete button.
     # will only create if not slot 0
     #
     if ( $requested_buttons{'delete'} ) {
         if ( $slot_no != 0 ) {
             my $delete_url = $self->create_viewer_link(
                 $drawer->create_link_params(
-                    url              => $map_viewer_url,
-                    session_mod      => "del=$slot_no",
+                    url         => $map_viewer_url,
+                    session_mod => "del=$slot_no",
                 )
             );
 
@@ -3681,7 +3690,53 @@ Button options:
               {
                 label => 'X',
                 url   => $delete_url,
+                alt   => 'Delete Map Set',
+              };
+        }
+    }
+
+    #
+    # Map Delete button.
+    # will only create if not slot 0
+    #
+    if ( $requested_buttons{'map_delete'} ) {
+        my $slot_info = $drawer->data_module->slot_info->{$slot_no};
+        if ( $slot_info and scalar( keys(%$slot_info) ) > 1 ) {
+            my $map_delete_url = $self->create_viewer_link(
+                $drawer->create_link_params(
+                    url         => $map_viewer_url,
+                    session_mod => "del=$slot_no=" . $self->map_acc($map_id),
+                )
+            );
+
+            push @map_buttons,
+              {
+                label => 'x',
+                url   => $map_delete_url,
                 alt   => 'Delete Map',
+              };
+        }
+    }
+
+    #
+    # Map Limit button.
+    # will only create if slot has more than one map in it
+    #
+    if ( $requested_buttons{'map_limit'} ) {
+        my $slot_info = $drawer->data_module->slot_info->{$slot_no};
+        if ( $slot_info and scalar( keys(%$slot_info) ) > 1 ) {
+            my $map_limit_url = $self->create_viewer_link(
+                $drawer->create_link_params(
+                    url         => $map_viewer_url,
+                    session_mod => "limit=$slot_no=" . $self->map_acc($map_id),
+                )
+            );
+
+            push @map_buttons,
+              {
+                label => 'L',
+                url   => $map_limit_url,
+                alt   => 'Limit to this Map',
               };
         }
     }
@@ -3705,8 +3760,8 @@ Button options:
 
         my $flip_url = $self->create_viewer_link(
             $drawer->create_link_params(
-                flip             => $flipping_flip_str,
-                url              => $map_viewer_url,
+                flip => $flipping_flip_str,
+                url  => $map_viewer_url,
             )
         );
 
