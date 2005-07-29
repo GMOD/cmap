@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.245 2005-07-14 19:32:47 mwz444 Exp $
+# $Id: Data.pm,v 1.246 2005-07-29 18:43:49 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.245 $)[-1];
+$VERSION = (qw$Revision: 1.246 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -264,7 +264,7 @@ sub cmap_data {
     #p#rint S#TDERR "cmap_data\n";
     my ( $self, %args ) = @_;
     my $slots                       = $args{'slots'};
-    my $min_correspondences         = $args{'min_correspondences'} || 0;
+    my $slots_min_corrs             = $args{'slots_min_corrs'} || {};
     my $included_feature_type_accs  = $args{'included_feature_type_accs'} || [];
     my $corr_only_feature_type_accs = $args{'corr_only_feature_type_accs'}
       || [];
@@ -341,8 +341,9 @@ sub cmap_data {
         $slots,                       $ignored_feature_type_accs,
         $included_evidence_type_accs, $less_evidence_type_accs,
         $greater_evidence_type_accs,  $evidence_type_score,
-        $min_correspondences,
+        $slots_min_corrs,
     );
+    $self->update_slots( $slots, $slots_min_corrs, );
 
     my @slot_nos         = keys %$slots;
     my @pos              = sort { $a <=> $b } grep { $_ >= 0 } @slot_nos;
@@ -357,16 +358,17 @@ sub cmap_data {
         my $ref_map = defined $ref_slot_no ? $slots->{$ref_slot_no} : undef;
 
         $data->{'slots'}{$slot_no} = $self->slot_data(
-            map                         => \$cur_map,                     # pass
-            feature_correspondences     => \%feature_correspondences,     # by
-            intraslot_correspondences   => \%intraslot_correspondences,   #
-            map_correspondences         => \%map_correspondences,         # ref
-            correspondence_evidence     => \%correspondence_evidence,     # "
-            feature_types               => \%feature_types,               # "
-            reference_map               => $ref_map,
-            slot_no                     => $slot_no,
-            ref_slot_no                 => $ref_slot_no,
-            min_correspondences         => $min_correspondences,
+            map                       => \$cur_map,                      # pass
+            feature_correspondences   => \%feature_correspondences,      # by
+            intraslot_correspondences => \%intraslot_correspondences,    #
+            map_correspondences       => \%map_correspondences,          # ref
+            correspondence_evidence   => \%correspondence_evidence,      # "
+            feature_types             => \%feature_types,                # "
+            reference_map             => $ref_map,
+            slot_no                   => $slot_no,
+            ref_slot_no               => $ref_slot_no,
+
+            #min_correspondences         => $min_correspondences,
             included_feature_type_accs  => $included_feature_type_accs,
             corr_only_feature_type_accs => $corr_only_feature_type_accs,
             ignored_feature_type_accs   => $ignored_feature_type_accs,
@@ -420,7 +422,7 @@ sub cmap_data {
     $data->{'ref_unit_size'} = $self->get_ref_unit_size( $data->{'slots'} );
     $data->{'feature_default_display'} = $feature_default_display;
 
-    return $data;
+    return ( $data, $slots );
 }
 
 # ----------------------------------------------------
@@ -437,9 +439,10 @@ sub slot_data {
 
     #print S#TDERR "slot_data\n";
     my ( $self, %args ) = @_;
-    my $this_slot_no                = $args{'slot_no'};
-    my $ref_slot_no                 = $args{'ref_slot_no'};
-    my $min_correspondences         = $args{'min_correspondences'} || 0;
+    my $this_slot_no = $args{'slot_no'};
+    my $ref_slot_no  = $args{'ref_slot_no'};
+
+    # my $min_correspondences         = $args{'min_correspondences'} || 0;
     my $included_feature_type_accs  = $args{'included_feature_type_accs'};
     my $included_evidence_type_accs = $args{'included_evidence_type_accs'};
     my $ignored_evidence_type_accs  = $args{'ignored_evidence_type_accs'};
@@ -585,13 +588,14 @@ sub slot_data {
             $map->{'map_start'} = $map_start if defined($map_start);
             $map->{'map_stop'}  = $map_stop  if defined($map_stop);
             $map->{'no_correspondences'} = $corr_lookup{ $map->{'map_id'} };
-            if (   $min_correspondences
-                && defined $ref_slot_no
-                && $map->{'no_correspondences'} < $min_correspondences )
-            {
-                delete $self->{'slot_info'}{$this_slot_no}{ $map->{'map_id'} };
-                next;
-            }
+
+#            if (   $min_correspondences
+#                && defined $ref_slot_no
+#                && $map->{'no_correspondences'} < $min_correspondences )
+#            {
+#                delete $self->{'slot_info'}{$this_slot_no}{ $map->{'map_id'} };
+#                next;
+#            }
             $map->{'no_features'} = $count_lookup{ $map->{'map_id'} };
 
             $map->{'features'} = $sql_object->slot_data_features(
@@ -667,13 +671,14 @@ sub slot_data {
             $map->{'map_start'} = $map_start if defined($map_start);
             $map->{'map_stop'}  = $map_stop  if defined($map_stop);
             $map->{'no_correspondences'} = $corr_lookup{ $map->{'map_id'} };
-            if (   $min_correspondences
-                && defined $ref_slot_no
-                && $map->{'no_correspondences'} < $min_correspondences )
-            {
-                delete $self->{'slot_info'}{$this_slot_no}{ $map->{'map_id'} };
-                next;
-            }
+
+#            if (   $min_correspondences
+#                && defined $ref_slot_no
+#                && $map->{'no_correspondences'} < $min_correspondences )
+#            {
+#                delete $self->{'slot_info'}{$this_slot_no}{ $map->{'map_id'} };
+#                next;
+#            }
             $map->{'no_features'} = $count_lookup{ $map->{'map_id'} };
 
             ###set $feature_correspondences and$correspondence_evidence
@@ -1303,7 +1308,7 @@ sub cmap_form_data {
     #p#rint S#TDERR "cmap_form_data\n";
     my ( $self, %args ) = @_;
     my $slots = $args{'slots'} or return;
-    my $min_correspondences         = $args{'min_correspondences'}     || 0;
+    my $menu_min_corrs              = $args{'menu_min_corrs'}          || 0;
     my $feature_type_accs           = $args{'included_feature_types'}  || [];
     my $ignored_feature_type_accs   = $args{'ignored_feature_types'}   || [];
     my $included_evidence_type_accs = $args{'included_evidence_types'} || [];
@@ -1419,7 +1424,7 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_acc"]
     my ( $comp_maps_right, $comp_maps_left );
     if ( $self->slot_info and @slot_nos ) {
         $comp_maps_right = $self->get_comparative_maps(
-            min_correspondences         => $min_correspondences,
+            min_correspondences         => $menu_min_corrs,
             feature_type_accs           => $feature_type_accs,
             ignored_feature_type_accs   => $ignored_feature_type_accs,
             included_evidence_type_accs => $included_evidence_type_accs,
@@ -1435,7 +1440,7 @@ qq[No maps exist for the ref. map set acc. id "$ref_map_set_acc"]
             $slot_nos[0] == $slot_nos[-1]
           ? $comp_maps_right
           : $self->get_comparative_maps(
-            min_correspondences         => $min_correspondences,
+            min_correspondences         => $menu_min_corrs,
             feature_type_accs           => $feature_type_accs,
             ignored_feature_type_accs   => $ignored_feature_type_accs,
             included_evidence_type_accs => $included_evidence_type_accs,
@@ -1524,7 +1529,6 @@ out which maps have relationships.
     #
     my %map_set_ids =
       map { $_->{'map_set_id2'}, 1 } @$feature_correspondences;
-
 
     my ( %map_sets, %comp_maps );
     for my $map_set_id ( keys %map_set_ids ) {
@@ -1689,7 +1693,6 @@ sub fill_out_maps {
     my ( $self, $slots ) = @_;
     my $sql_object = $self->sql or return;
     my @ordered_slot_nos = sort { $a <=> $b } keys %$slots;
-
 
     my @maps;
     for my $i ( 0 .. $#ordered_slot_nos ) {
@@ -2430,7 +2433,6 @@ Returns the detail info for a map.
         $features = [ $pager->splice($features) ]
           if $page_data && @$features;
     }
-
 
     #
     # Get all the feature types on all the maps.
@@ -3370,10 +3372,9 @@ sub cmap_spider_links {
     $map_accs_per_degree{0} = [ $map_acc, ];
 
     my $link = $self->create_viewer_link(
-        ref_map_accs        => \%seen_map_ids,
-        data_source         => $self->data_source,
-        url                 => $map_viewer_url,
-        min_correspondences => $min_corrs,
+        ref_map_accs => \%seen_map_ids,
+        data_source  => $self->data_source,
+        url          => $map_viewer_url,
     );
     push @links,
       {
@@ -3385,10 +3386,9 @@ sub cmap_spider_links {
         last unless ( defined( $map_accs_per_degree{ $i - 1 } ) );
 
         my $query_results = $sql_object->get_comparative_maps_with_count(
-            cmap_object         => $self,
-            map_accs            => $map_accs_per_degree{ $i - 1 },
-            ignore_map_accs     => [ keys(%seen_map_ids) ],
-            min_correspondences => $min_corrs,
+            cmap_object     => $self,
+            map_accs        => $map_accs_per_degree{ $i - 1 },
+            ignore_map_accs => [ keys(%seen_map_ids) ],
         );
 
         # Add results to data structures.
@@ -3408,11 +3408,10 @@ sub cmap_spider_links {
         }
 
         $link = $self->create_viewer_link(
-            ref_map_accs        => \%seen_map_ids,
-            data_source         => $self->data_source,
-            url                 => $map_viewer_url,
-            ref_map_order       => $map_order,
-            min_correspondences => $min_corrs,
+            ref_map_accs  => \%seen_map_ids,
+            data_source   => $self->data_source,
+            url           => $map_viewer_url,
+            ref_map_order => $map_order,
         );
         push @links,
           {
@@ -3983,6 +3982,70 @@ Sets and returns the sorted map ids for each slot
 }
 
 # ----------------------------------------------------
+sub update_slots {
+
+=pod
+                                                                                
+=head2 update_slots
+
+update the slots object to reflect the new data in slot_info
+
+
+Data Structures:
+  slot_info  =  {
+    slot_no  => {
+      map_id => [ current_start, current_stop, ori_start, ori_stop, magnification, map_acc ],
+    }
+  }
+
+  slots = {
+    slot_no => {
+        map_set_acc => $map_set_acc,
+        map_sets    => { $map_set_acc => () },
+        maps        => { $map_acc => {
+                start => $start,
+                stop  => $stop,
+                map   => $magnification,
+            }
+        }
+    }
+  }
+  
+=cut
+
+    my $self            = shift;
+    my $slots           = shift;
+    my $slots_min_corrs = shift;
+    my $slot_info       = $self->slot_info;
+
+    my %used_slot_nos;
+
+    # Repopulate the 'maps' object in $slots
+    foreach my $slot_no ( keys(%$slot_info) ) {
+        $used_slot_nos{$slot_no} = 1;
+        $slots->{$slot_no}{'maps'} = {};
+        foreach my $map_id ( keys( %{ $slot_info->{$slot_no} } ) ) {
+            my $map_info = $slot_info->{$slot_no}{$map_id};
+            $slots->{$slot_no}{'maps'}{ $map_info->[5] } = {
+                start => $map_info->[0],
+                stop  => $map_info->[1],
+                mag   => $map_info->[4],
+            };
+        }
+    }
+
+    # Remove any spare slots and update the min_corrs value
+    foreach my $slot_no ( keys(%$slots) ) {
+        unless ( $used_slot_nos{$slot_no} ) {
+            delete( $slots->{$slot_no} );
+            next;
+        }
+        $slots->{$slot_no}->{'min_corrs'} = $slots_min_corrs->{$slot_no}
+          if defined( $slots_min_corrs->{$slot_no} );
+    }
+}
+
+# ----------------------------------------------------
 sub slot_info {
 
 =pod
@@ -3996,7 +4059,7 @@ Creates and returns some map info for each slot.
 Data Structure:
   slot_info  =  {
     slot_no  => {
-      map_id => [ current_start, current_stop, ori_start, ori_stop, magnification ]
+      map_id => [ current_start, current_stop, ori_start, ori_stop, magnification, map_acc ]
     }
   }
 
@@ -4012,7 +4075,7 @@ original start and stop.
     my $less_evidence_type_accs     = shift;
     my $greater_evidence_type_accs  = shift;
     my $evidence_type_score         = shift;
-    my $min_correspondences         = shift;
+    my $slots_min_corrs             = shift;
     my $sql_object                  = $self->sql;
 
     # Return slot_info is not setting it.
@@ -4026,7 +4089,7 @@ original start and stop.
         less_evidence_type_accs     => $less_evidence_type_accs,
         greater_evidence_type_accs  => $greater_evidence_type_accs,
         evidence_type_score         => $evidence_type_score,
-        min_correspondences         => $min_correspondences,
+        slots_min_corrs             => $slots_min_corrs,
     );
 
     #print S#TDERR Dumper($self->{'slot_info'})."\n";

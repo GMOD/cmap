@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.91 2005-07-21 19:58:25 mwz444 Exp $
+# $Id: CMap.pm,v 1.92 2005-07-29 18:43:48 mwz444 Exp $
 
 =head1 NAME
 
@@ -897,7 +897,6 @@ The default is ''.
     return $self->{'next_step'};
 }
 
-
 # ----------------------------------------------------
 sub create_viewer_link {
 
@@ -935,7 +934,10 @@ Given information about the link, creates a url to cmap_viewer.
     my $corrs_to_map                = $args{'corrs_to_map'};
     my $magnify_all                 = $args{'magnify_all'};
     my $flip                        = $args{'flip'};
-    my $min_correspondences         = $args{'min_correspondences'};
+    my $left_min_corrs              = $args{'left_min_corrs'};
+    my $right_min_corrs             = $args{'right_min_corrs'};
+    my $general_min_corrs           = $args{'general_min_corrs'};
+    my $menu_min_corrs              = $args{'menu_min_corrs'};
     my $ref_map_accs                = $args{'ref_map_accs'};
     my $feature_type_accs           = $args{'feature_type_accs'};
     my $corr_only_feature_type_accs = $args{'corr_only_feature_type_accs'};
@@ -972,14 +974,14 @@ Given information about the link, creates a url to cmap_viewer.
     }
     $url .= "data_source=$data_source;";
 
-    if ( $session_id and !$new_session ){
+    if ( $session_id and !$new_session ) {
         $url .= "session_id=$session_id;";
         $url .= "step=$next_step;"
           if defined($next_step);
         $url .= "session_mod=$session_mod;"
           if defined($session_mod);
     }
-    else{
+    else {
         $url .= "ref_map_set_acc=$ref_map_set_acc;"
           if defined($ref_map_set_acc);
         $url .= "ref_species_acc=$ref_species_acc;"
@@ -1013,7 +1015,8 @@ Given information about the link, creates a url to cmap_viewer.
                       ? $ref_map_accs->{$ref_map_acc}{'magnify'}
                       : 1;
                     push @ref_strs,
-                      $ref_map_acc . '[' . $start . '*' . $stop . 'x' . $mag . ']';
+                      $ref_map_acc . '[' . $start . '*' . $stop . 'x' . $mag
+                      . ']';
                 }
                 else {
                     push @ref_strs, $ref_map_acc;
@@ -1099,8 +1102,14 @@ Given information about the link, creates a url to cmap_viewer.
       if defined($magnify_all);
     $url .= "flip=$flip;"
       if defined($flip);
-    $url .= "min_correspondences=$min_correspondences;"
-      if defined($min_correspondences);
+    $url .= "left_min_corrs=$left_min_corrs;"
+      if defined($left_min_corrs);
+    $url .= "right_min_corrs=$right_min_corrs;"
+      if defined($right_min_corrs);
+    $url .= "general_min_corrs=$general_min_corrs;"
+      if defined($general_min_corrs);
+    $url .= "menu_min_corrs=$menu_min_corrs;"
+      if defined($menu_min_corrs);
     $url .= "refMenu=$refMenu;"
       if defined($refMenu);
     $url .= "compMenu=$compMenu;"
@@ -1111,7 +1120,6 @@ Given information about the link, creates a url to cmap_viewer.
       if defined($addOpMenu);
 
     #multi
-
 
     foreach my $acc (@$feature_type_accs) {
         $url .= "ft_" . $acc . "=2;";
@@ -1140,7 +1148,7 @@ Given information about the link, creates a url to cmap_viewer.
         $url .= "ets_" . $acc . "=" . $evidence_type_score->{$acc} . ";";
     }
 
-#print S#TDERR "$url\n\n";
+    #print S#TDERR "$url\n\n";
     return $url;
 }
 

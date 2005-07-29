@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.93 2005-06-30 19:36:09 mwz444 Exp $
+# $Id: Generic.pm,v 1.94 2005-07-29 18:43:52 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.93 $)[-1];
+$VERSION = (qw$Revision: 1.94 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -630,7 +630,7 @@ It might be a good idea to follow the code follows.
     slot_no => {
         map_set_acc => $map_set_acc,
         map_sets    => { $map_set_acc => () },
-        maps        => { $map_id => {
+        maps        => { $map_acc => {
                 start => $start,
                 stop  => $stop,
                 map   => $magnification,
@@ -655,7 +655,7 @@ It might be a good idea to follow the code follows.
 
 =item - Feature Type Accessions to ignore (ignored_feature_type_accs)
 
-=item - Minimum number of correspondences (min_correspondences)
+=item - Hash that holds the minimum number of correspondences for each slot (slots_min_corrs)
 
 =back
 
@@ -664,7 +664,7 @@ It might be a good idea to follow the code follows.
  Data Structure:
   slot_info  =  {
     slot_no  => {
-      map_id => [ current_start, current_stop, ori_start, ori_stop, magnification ]
+      map_id => [ current_start, current_stop, ori_start, ori_stop, magnification, map_acc ]
     }
   }
 
@@ -686,12 +686,16 @@ original start and stop.
     my $less_evidence_type_accs    = $args{'less_evidence_type_accs'}    || [];
     my $greater_evidence_type_accs = $args{'greater_evidence_type_accs'} || [];
     my $evidence_type_score        = $args{'evidence_type_score'}        || {};
-    my $min_correspondences        = $args{'min_correspondences'};
+    my $slots_min_corrs            = $args{'slots_min_corrs'}            || {};
     my $db                         = $cmap_object->db;
     my $return_object              = {};
 
     # Return slot_info is not setting it.
     return {} unless ($slots);
+
+    my @num_sorted_slot_nos = sort { $a <=> $b } keys %{$slots};
+    my $left_slot_no        = $num_sorted_slot_nos[0];
+    my $right_slot_no       = $num_sorted_slot_nos[-1];
 
     my $sql_base = q[
       select distinct m.map_id,
@@ -707,17 +711,27 @@ original start and stop.
     my $sql_suffix;
     foreach my $slot_no ( sort orderOutFromZero keys %{$slots} ) {
         next unless ( $slots->{$slot_no} );
-        my $from         = ' ';
-        my $where        = '';
-        my $group_by_sql = '';
-        my $having       = '';
-        my $acc_where    = '';
-        my $sql_str      = '';
-        my $map_sets     = $slots->{$slot_no}{'map_sets'};
-        my $maps         = $slots->{$slot_no}{'maps'};
+        my $from                 = ' ';
+        my $where                = '';
+        my $group_by_sql         = '';
+        my $having               = '';
+        my $acc_where            = '';
+        my $sql_str              = '';
+        my $map_sets             = $slots->{$slot_no}{'map_sets'};
+        my $maps                 = $slots->{$slot_no}{'maps'};
+        my $ori_min_corrs        = $slots->{$slot_no}{'min_corrs'};
+        my $applied_min_corrs    = $ori_min_corrs;
+        my $new_min_corrs        = $slots_min_corrs->{$slot_no};
+        my $use_corr_restriction = 0;
 
         if ( $slot_no == 0 ) {
-            if ( $map_sets and %{$map_sets} ) {
+            if ( $maps and %{$maps} ) {
+
+                $acc_where .= ' or ' if ($acc_where);
+                $acc_where .=
+                  " m.map_acc in ('" . join( "','", keys( %{$maps} ) ) . "')";
+            }
+            elsif ( $map_sets and %{$map_sets} ) {
                 $from .= q[,
                   cmap_map_set ms ];
                 $where .= " m.map_set_id=ms.map_set_id ";
@@ -728,15 +742,34 @@ original start and stop.
                   . join( "' or ms.map_set_acc = '", keys( %{$map_sets} ) )
                   . "') ";
             }
-            if ( $maps and %{$maps} ) {
-
-                $acc_where .= ' or ' if ($acc_where);
-                $acc_where .=
-                  " m.map_acc in ('" . join( "','", keys( %{$maps} ) ) . "')";
-            }
         }
         else {
             my $slot_modifier = $slot_no > 0 ? -1 : 1;
+            my $corr_restrict;    # -1 if less restrictive, 1 if more, 0 if same
+            if ( not defined($new_min_corrs) ) {
+                $corr_restrict = 0;
+            }
+            elsif ( not $new_min_corrs ) {
+                if ( not $ori_min_corrs ) {
+                    $corr_restrict = 0;
+                }
+                else {
+                    $corr_restrict = -1;
+                }
+            }
+            elsif ( not $ori_min_corrs ) {
+                $corr_restrict = 1;
+            }
+            else {
+                $corr_restrict = ( $new_min_corrs <=> $ori_min_corrs );
+            }
+
+            if ($corr_restrict) {
+
+                # restriction has changed use new one
+                $applied_min_corrs = $new_min_corrs;
+            }
+
             $from .= q[,
               cmap_correspondence_lookup cl
               ];
@@ -829,7 +862,10 @@ original start and stop.
             }
 
             # Get Map Sets
-            if ( $map_sets and %{$map_sets} ) {
+            if (   ( $corr_restrict < 0 and $map_sets and %{$map_sets} )
+                or ( not( $maps and %{$maps} ) ) )
+            {
+                $use_corr_restriction = 1 if ($applied_min_corrs);
                 $from .= q[,
                   cmap_map_set ms ];
                 $where .= " and m.map_set_id=ms.map_set_id ";
@@ -840,7 +876,8 @@ original start and stop.
                   . join( "' or ms.map_set_acc = '", keys( %{$map_sets} ) )
                   . "')";
             }
-            if ( $maps and %{$maps} ) {
+            else {
+                $use_corr_restriction = 1 if ( $corr_restrict > 0 );
                 $acc_where .= ' or ' if ($acc_where);
                 $acc_where .=
                   " m.map_acc in ('" . join( "','", keys( %{$maps} ) ) . "')";
@@ -877,7 +914,7 @@ original start and stop.
                     }
                 }
             }
-            if ($min_correspondences) {
+            if ($use_corr_restriction) {
                 $group_by_sql = q[ 
                     group by cl.map_id2,
                              m.map_start,
@@ -888,7 +925,7 @@ original start and stop.
                     ];
                 $having =
                     " having count(cl.feature_correspondence_id) "
-                  . ">=$min_correspondences ";
+                  . ">=$applied_min_corrs ";
             }
         }
         if ($where) {
@@ -900,7 +937,7 @@ original start and stop.
         $sql_str = "$sql_base $from $where $group_by_sql $having\n";
 
         # The min_correspondences sql code doesn't play nice with distinct
-        if ( $min_correspondences and $slot_no != 0 ) {
+        if ($use_corr_restriction) {
             $sql_str =~ s/distinct//;
         }
 
@@ -938,8 +975,9 @@ original start and stop.
                 else {
                     $row->[1] = undef;
                 }
-                if ( defined( $maps->{ $row->[5] }{'stop'} )  
-                    and $maps->{ $row->[5] }{'stop'} != $row->[2] ) {
+                if ( defined( $maps->{ $row->[5] }{'stop'} )
+                    and $maps->{ $row->[5] }{'stop'} != $row->[2] )
+                {
                     $row->[2] = $maps->{ $row->[5] }{'stop'};
                     ### If stop is a feature, get the positions.
                     ### and store in both places.
@@ -989,8 +1027,10 @@ original start and stop.
                 $magnification = $maps->{ $row->[5] }{'mag'};
             }
 
-            $return_object->{$slot_no}{ $row->[0] } =
-              [ $row->[1], $row->[2], $row->[3], $row->[4], $magnification ];
+            $return_object->{$slot_no}{ $row->[0] } = [
+                $row->[1], $row->[2],      $row->[3],
+                $row->[4], $magnification, $row->[5]
+            ];
         }
     }
 

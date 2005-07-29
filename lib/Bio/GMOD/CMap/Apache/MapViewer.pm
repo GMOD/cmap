@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.108 2005-07-21 19:58:27 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.109 2005-07-29 18:43:51 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.108 $)[-1];
+$VERSION = (qw$Revision: 1.109 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -85,7 +85,6 @@ sub handler {
     my $ref_map_order         = $apr->param('ref_map_order');
     my $prev_ref_map_order    = $apr->param('prev_ref_map_order');
     my $flip                  = $apr->param('flip') || '';
-    my $min_correspondences   = $apr->param('min_correspondences') || 0;
     my $page_no               = $apr->param('page_no') || 1;
     my $action                = $apr->param('action') || 'view';
     my $refMenu               = $apr->param('refMenu');
@@ -96,8 +95,35 @@ sub handler {
     my $session_id            = $apr->param('session_id');
     my $step                  = $apr->param('step') || 0;
     my $session_mod           = $apr->param('session_mod') || '';
+    my $left_min_corrs        = $apr->param('left_min_corrs') || 0;
+    my $right_min_corrs       = $apr->param('right_min_corrs') || 0;
+    my $general_min_corrs     = $apr->param('general_min_corrs');
+    my $menu_min_corrs        = $apr->param('menu_min_corrs') || 0;
 
-    my (%slots,$next_step);
+    # Check for depricated min_correspondences value
+    # Basically general_min_corrs is a new way to address
+    # the min_correspondences legacy while keeping the option
+    # for this feature open in the future.
+    $general_min_corrs = $apr->param('min_correspondences')
+      unless defined($general_min_corrs);
+    my %slots_min_corrs;
+
+    if ($general_min_corrs) {
+        unless ( defined($left_min_corrs) ) {
+            $left_min_corrs = $general_min_corrs;
+            $apr->param( 'left_min_corrs', $left_min_corrs );
+        }
+        unless ( defined($right_min_corrs) ) {
+            $right_min_corrs = $general_min_corrs;
+            $apr->param( 'right_min_corrs', $right_min_corrs );
+            unless ( defined($menu_min_corrs) ) {
+                $menu_min_corrs = $general_min_corrs;
+                $apr->param( 'menu_min_corrs', $menu_min_corrs );
+            }
+        }
+    }
+
+    my ( %slots, $next_step );
     my $reusing_step = 0;
 
     # If this was submitted by a button, clear the modified map fields.
@@ -192,6 +218,7 @@ sub handler {
         }
     }
 
+    # Only included for legacy urls
     # Deal with modified ref map
     # map info specified in this param trumps 'ref_map_accs' info
     if ( $apr->param('modified_ref_map') ) {
@@ -287,20 +314,25 @@ sub handler {
         }
     }
 
-    my %included_corr_only_features = map { $_ => 1 } @corr_only_feature_types;
-    my %ignored_feature_types       = map { $_ => 1 } @ignored_feature_types;
+    my %included_corr_only_features =
+      map { $_ => 1 } @corr_only_feature_types;
+    my %ignored_feature_types = map { $_ => 1 } @ignored_feature_types;
 
     #
     # Set the data source.
     #
     $self->data_source( $apr->param('data_source') ) or return;
 
-    if ( $prev_ref_species_acc && $prev_ref_species_acc ne $ref_species_acc ) {
+    if (   $prev_ref_species_acc
+        && $prev_ref_species_acc ne $ref_species_acc )
+    {
         $ref_map_set_acc  = '';
         @ref_map_set_accs = ();
     }
 
-    if ( $prev_ref_map_set_acc && $prev_ref_map_set_acc ne $ref_map_set_acc ) {
+    if (   $prev_ref_map_set_acc
+        && $prev_ref_map_set_acc ne $ref_map_set_acc )
+    {
         @ref_map_accs          = ();
         @ref_map_set_accs      = ();
         $ref_map_start         = undef;
@@ -314,7 +346,7 @@ sub handler {
         $ref_map_sets{$ref_map_set_acc} = ();
     }
 
-    my ($session, $s_object);
+    my ( $session, $s_object );
     if ($session_id) {
 
         #handle the sessions
@@ -329,41 +361,45 @@ sub handler {
             my $prev_step = $step - 1;
             $next_step = $step + 1;
             my $step_hash;
-            if ($s_object->[$step] and $s_object->[$step]{'session_mod'} and  $s_object->[$step]{'session_mod'} eq $session_mod){
-                $step_hash = $s_object->[$step];
+            if (    $s_object->[$step]
+                and $s_object->[$step]{'session_mod'}
+                and $s_object->[$step]{'session_mod'} eq $session_mod )
+            {
+                $step_hash    = $s_object->[$step];
                 $reusing_step = 1;
             }
-            else{
+            else {
                 $step_hash = $s_object->[$prev_step];
             }
             if ( defined($step_hash) ) {
-                %slots = %{clone($step_hash->{'slots'})};
+                %slots           = %{ clone( $step_hash->{'slots'} ) };
                 $ref_species_acc = $step_hash->{'ref_species_acc'};
                 $ref_map_set_acc = $step_hash->{'ref_map_set_acc'};
 
                 # Apply Session Modifications
-                modify_slots(\%slots,$session_mod) if (!$reusing_step);
-                @ref_map_accs = keys(%{$slots{0}->{'maps'}});
+                modify_slots( \%slots, $session_mod ) if ( !$reusing_step );
+                @ref_map_accs = keys( %{ $slots{0}->{'maps'} } );
                 $apr->param( 'ref_map_accs', join( ":", @ref_map_accs ) );
 
             }
             else {
+
                 # invalid step
-                return $self->error( 'Invalid session step: '.$step );
+                return $self->error( 'Invalid session step: ' . $step );
             }
         }
         else {
+
             # invalid session_id
-            return $self->error( 'Invalid session_id: '.$session_id );
+            return $self->error( 'Invalid session_id: ' . $session_id );
         }
-        $apr->param( 'comparative_maps', undef );
     }
-    else{
+    else {
         $session =
           new CGI::Session( "driver:File", undef, { Directory => '/tmp' } );
         $session_id = $session->id();
-        $step=0;
-        $next_step = $step + 1;
+        $step       = 0;
+        $next_step  = $step + 1;
         $session->expire('+24h');
         %slots = (
             0 => {
@@ -430,7 +466,8 @@ sub handler {
             my @cmaps = split( /:/, $comparative_maps );
             my $found = 0;
             for ( my $i = 0 ; $i <= $#cmaps ; $i++ ) {
-                my ( $c_slot_no, $c_field, $c_acc ) = split( /=/, $cmaps[$i] )
+                my ( $c_slot_no, $c_field, $c_acc ) =
+                  split( /=/, $cmaps[$i] )
                   or next;
                 $acc =~ s/^(.*)\[.*/$1/;
                 if (    ( $c_slot_no eq $slot_no )
@@ -443,13 +480,22 @@ sub handler {
                 }
             }
             push @cmaps, $comp_map if ( !$found );
-            $apr->param( 'comparative_maps', join( ":", @cmaps ) );
         }
     }
 
+    # Build %slots_min_corrs
     my @slot_nos  = sort { $a <=> $b } keys %slots;
     my $max_right = $slot_nos[-1];
     my $max_left  = $slot_nos[0];
+    if ($general_min_corrs) {
+        foreach my $slot_no (@slot_nos) {
+            $slots_min_corrs{$slot_no} = $general_min_corrs;
+        }
+    }
+
+    # set the left and the right slots' min corr
+    $slots_min_corrs{$max_left}  = $left_min_corrs;
+    $slots_min_corrs{$max_right} = $right_min_corrs;
 
     #
     # Add in our next chosen maps.
@@ -457,26 +503,42 @@ sub handler {
     for my $side ( ( RIGHT, LEFT ) ) {
         my $slot_no = $side eq RIGHT ? $max_right + 1 : $max_left - 1;
         my $cmap =
-          $side eq RIGHT ? \@comparative_map_right : \@comparative_map_left;
+          $side eq RIGHT
+          ? \@comparative_map_right
+          : \@comparative_map_left;
         my $cmap_set_acc =
           $side eq RIGHT ? $comp_map_set_right : $comp_map_set_left;
-        if ( grep { /^-1$/ } @$cmap ) {
-            unless ( defined( $slots{$slot_no}->{'map_sets'}{$cmap_set_acc} ) )
-            {
-                $slots{$slot_no}->{'map_sets'}{$cmap_set_acc} = ();
+        if (@$cmap) {
+            if ( grep { /^-1$/ } @$cmap ) {
+                unless (
+                    defined( $slots{$slot_no}->{'map_sets'}{$cmap_set_acc} ) )
+                {
+                    $slots{$slot_no}->{'map_sets'}{$cmap_set_acc} = ();
+                }
             }
-        }
-        else {
-            foreach my $map_acc (@$cmap) {
-                my ( $start, $stop, $magnification );
-                ( $map_acc, $start, $stop, $magnification, $highlight ) =
-                  parse_map_info( $map_acc, $highlight );
+            else {
+                foreach my $map_acc (@$cmap) {
+                    my ( $start, $stop, $magnification );
+                    ( $map_acc, $start, $stop, $magnification, $highlight ) =
+                      parse_map_info( $map_acc, $highlight );
 
-                $slots{$slot_no}{'maps'}{$map_acc} = {
-                    start => $start,
-                    stop  => $stop,
-                    mag   => $magnification,
-                };
+                    $slots{$slot_no}{'maps'}{$map_acc} = {
+                        start => $start,
+                        stop  => $stop,
+                        mag   => $magnification,
+                    };
+                }
+            }
+
+            # Set this slots min corrs
+            $slots_min_corrs{$slot_no} = $menu_min_corrs;
+
+            # Change the left/right_min_corrs value for future links
+            if ( $slot_no < 0 ) {
+                $left_min_corrs = $menu_min_corrs;
+            }
+            else {
+                $right_min_corrs = $menu_min_corrs;
             }
         }
     }
@@ -497,7 +559,11 @@ sub handler {
             image_type                  => $image_type,
             label_features              => $label_features,
             collapse_features           => $collapse_features,
-            min_correspondences         => $min_correspondences,
+            left_min_corrs              => $left_min_corrs,
+            right_min_corrs             => $right_min_corrs,
+            general_min_corrs           => $general_min_corrs,
+            menu_min_corrs              => $menu_min_corrs,
+            slots_min_corrs             => \%slots_min_corrs,
             included_feature_types      => \@feature_types,
             corr_only_feature_types     => \@corr_only_feature_types,
             ignored_feature_types       => \@ignored_feature_types,
@@ -530,7 +596,9 @@ sub handler {
           )
           or return $self->error( Bio::GMOD::CMap::Drawer->error );
 
-        %slots      = %{ $drawer->{'slots'} };
+        %slots = %{ $drawer->{'slots'} };
+        $apr->param( 'left_min_corrs',  $drawer->left_min_corrs );
+        $apr->param( 'right_min_corrs', $drawer->right_min_corrs );
         $extra_code = $drawer->{'data'}->{'extra_code'};
         $extra_form = $drawer->{'data'}->{'extra_form'};
 
@@ -541,8 +609,9 @@ sub handler {
         @included_evidence_types     = @{ $drawer->included_evidence_types };
         @greater_evidence_types      = @{ $drawer->greater_evidence_types };
         @less_evidence_types         = @{ $drawer->less_evidence_types };
-        %included_corr_only_features = map { $_ => 1 } @corr_only_feature_types;
-        %ignored_feature_types       = map { $_ => 1 } @ignored_feature_types;
+        %included_corr_only_features =
+          map { $_ => 1 } @corr_only_feature_types;
+        %ignored_feature_types = map { $_ => 1 } @ignored_feature_types;
     }
 
     #
@@ -551,7 +620,7 @@ sub handler {
     my $data      = $self->data_module;
     my $form_data = $data->cmap_form_data(
         slots                   => \%slots,
-        min_correspondences     => $min_correspondences,
+        menu_min_corrs          => $menu_min_corrs,
         included_feature_types  => \@feature_types,
         ignored_feature_types   => \@ignored_feature_types,
         ignored_evidence_types  => \@ignored_evidence_types,
@@ -575,35 +644,6 @@ sub handler {
       [ sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} }
           @{ $self->data_module->get_all_feature_types } ];
 
-    #
-    # Wrap up our current comparative maps so we can store them on
-    # the next page the user sees.
-    #
-    my @comp_maps = ();
-    for my $slot_no ( grep { $_ != 0 } keys %slots ) {
-        foreach my $map_acc ( keys( %{ $slots{$slot_no}{'maps'} } ) ) {
-            my $map_str = join( '=', $slot_no, 'map_acc', $map_acc );
-            if (
-                   defined $slots{$slot_no}{'maps'}{$map_acc}{'start'}
-                or defined $slots{$slot_no}{'maps'}{$map_acc}{'stop'}
-                or ( defined $slots{$slot_no}{'maps'}{$map_acc}{'mag'}
-                    and $slots{$slot_no}{'maps'}{$map_acc}{'mag'} <=> 1 )
-              )
-            {
-                $map_str .= "["
-                  . $slots{$slot_no}{'maps'}{$map_acc}{'start'} . "*"
-                  . $slots{$slot_no}{'maps'}{$map_acc}{'stop'} . "x"
-                  . $slots{$slot_no}{'maps'}{$map_acc}{'mag'} . "]";
-            }
-            push @comp_maps, $map_str;
-        }
-
-        foreach my $map_acc ( keys( %{ $slots{$slot_no}{'map_sets'} } ) ) {
-            my $map_str = join( '=', $slot_no, 'map_set_acc', $map_acc );
-            push @comp_maps, $map_str;
-        }
-    }
-
     my %evidence_type_menu_select = (
         ( map { $_ => 0 } @ignored_evidence_types ),
         ( map { $_ => 1 } @included_evidence_types ),
@@ -611,7 +651,7 @@ sub handler {
         ( map { $_ => 3 } @greater_evidence_types )
     );
 
-    unless ($reusing_step){
+    unless ($reusing_step) {
         my $step_object = {
             slots           => \%slots,
             ref_species_acc => $ref_species_acc,
@@ -625,13 +665,13 @@ sub handler {
             }
         }
         else {
-            $s_object = [ $step_object ];
+            $s_object = [$step_object];
         }
-        $session->param('object',$s_object);
+        $session->param( 'object', $s_object );
     }
 
-    $apr->param('session_id', $session_id);
-    $apr->param('step', $next_step);
+    $apr->param( 'session_id', $session_id );
+    $apr->param( 'step',       $next_step );
 
     my $html;
     my $t = $self->template or return;
@@ -645,7 +685,6 @@ sub handler {
             intro             => $INTRO,
             data_source       => $self->data_source,
             data_sources      => $self->data_sources,
-            comparative_maps  => join( ':', @comp_maps ),
             title             => $self->config_data('cmap_title') || 'CMap',
             stylesheet        => $self->stylesheet,
             selected_maps     => { map { $_, 1 } @ref_map_accs },
@@ -775,8 +814,10 @@ sub handler {
     else {
 
         # Regular map viewing
-        print $apr->header( -type => 'text/html', -cookie => $self->cookie ),
-          $html;
+        print $apr->header(
+            -type   => 'text/html',
+            -cookie => $self->cookie
+        ), $html;
     }
 
     return 1;
@@ -833,7 +874,7 @@ sub modify_slots {
     my $slots   = shift;
     my $mod_str = shift;
 
-    my @mod_cmds = split(/:/, $mod_str);
+    my @mod_cmds = split( /:/, $mod_str );
 
     foreach my $mod_cmd (@mod_cmds) {
         my @mod_array = split( /=/, $mod_cmd );
@@ -844,7 +885,9 @@ sub modify_slots {
             my $slot_no = $mod_array[1];
             my $map_acc = $mod_array[2];
             my $start   = $mod_array[3];
-            if ( $slots->{$slot_no} and $slots->{$slot_no}{'maps'}{$map_acc} ) {
+            if (    $slots->{$slot_no}
+                and $slots->{$slot_no}{'maps'}{$map_acc} )
+            {
                 $slots->{$slot_no}{'maps'}{$map_acc}{'start'} = $start;
             }
         }
@@ -853,7 +896,9 @@ sub modify_slots {
             my $slot_no = $mod_array[1];
             my $map_acc = $mod_array[2];
             my $stop    = $mod_array[3];
-            if ( $slots->{$slot_no} and $slots->{$slot_no}{'maps'}{$map_acc} ) {
+            if (    $slots->{$slot_no}
+                and $slots->{$slot_no}{'maps'}{$map_acc} )
+            {
                 $slots->{$slot_no}{'maps'}{$map_acc}{'stop'} = $stop;
             }
         }
@@ -862,7 +907,9 @@ sub modify_slots {
             my $slot_no = $mod_array[1];
             my $map_acc = $mod_array[2];
             my $mag     = $mod_array[3];
-            if ( $slots->{$slot_no} and $slots->{$slot_no}{'maps'}{$map_acc} ) {
+            if (    $slots->{$slot_no}
+                and $slots->{$slot_no}{'maps'}{$map_acc} )
+            {
                 $slots->{$slot_no}{'maps'}{$map_acc}{'mag'} = $mag;
             }
         }
@@ -870,21 +917,30 @@ sub modify_slots {
             next unless ( scalar(@mod_array) == 3 );
             my $slot_no = $mod_array[1];
             my $map_acc = $mod_array[2];
-            if ( $slots->{$slot_no} and $slots->{$slot_no}{'maps'}{$map_acc} ) {
+            if (    $slots->{$slot_no}
+                and $slots->{$slot_no}{'maps'}{$map_acc} )
+            {
                 $slots->{$slot_no}{'maps'}{$map_acc}{'start'} = undef;
-                $slots->{$slot_no}{'maps'}{$map_acc}{'stop'} = undef;
-                $slots->{$slot_no}{'maps'}{$map_acc}{'mag'} = 1;
+                $slots->{$slot_no}{'maps'}{$map_acc}{'stop'}  = undef;
+                $slots->{$slot_no}{'maps'}{$map_acc}{'mag'}   = 1;
             }
         }
         elsif ( $mod_array[0] eq 'del' ) {
-            if ( scalar(@mod_array) == 3 ){
+            if ( scalar(@mod_array) == 3 ) {
                 my $slot_no = $mod_array[1];
                 my $map_acc = $mod_array[2];
-                if ( $slots->{$slot_no} and $slots->{$slot_no}{'maps'}{$map_acc} ) {
+                if (    $slots->{$slot_no}
+                    and $slots->{$slot_no}{'maps'}{$map_acc} )
+                {
                     delete $slots->{$slot_no}{'maps'}{$map_acc};
+
+                    # If deleting last map, remove the whole thing
+                    unless ( $slots->{$slot_no}{'maps'} ) {
+                        $slots->{$slot_no}{'map_sets'} = {};
+                    }
                 }
             }
-            elsif ( scalar(@mod_array) == 2 ){
+            elsif ( scalar(@mod_array) == 2 ) {
                 my $slot_no = $mod_array[1];
                 if ( $slots->{$slot_no} ) {
                     $slots->{$slot_no} = {};
@@ -896,7 +952,9 @@ sub modify_slots {
             my $slot_no = $mod_array[1];
             my $map_acc = $mod_array[2];
             my $mag     = $mod_array[3];
-            if ( $slots->{$slot_no} and $slots->{$slot_no}{'maps'}{$map_acc} ) {
+            if (    $slots->{$slot_no}
+                and $slots->{$slot_no}{'maps'}{$map_acc} )
+            {
                 foreach
                   my $other_map_acc ( keys( %{ $slots->{$slot_no}{'maps'} } ) )
                 {
@@ -915,8 +973,12 @@ sub modify_slots {
     foreach my $slot_no ( sort orderOutFromZero keys %{$slots} ) {
     }
     foreach my $slot_no ( sort orderOutFromZero keys %{$slots} ) {
-        unless ( ($slots->{$slot_no}{'maps'} and %{$slots->{$slot_no}{'maps'}} )  
-            or ($slots->{$slot_no}{'mapsets'} and %{$slots->{$slot_no}{'map_sets'}} )  ) {
+        unless (
+            ( $slots->{$slot_no}{'maps'} and %{ $slots->{$slot_no}{'maps'} } )
+            or ( $slots->{$slot_no}{'mapsets'}
+                and %{ $slots->{$slot_no}{'map_sets'} } )
+          )
+        {
             if ( $slot_no >= 0 ) {
                 $delete_pos = 1;
             }

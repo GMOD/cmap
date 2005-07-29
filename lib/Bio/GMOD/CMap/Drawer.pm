@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.104 2005-07-26 17:34:46 mwz444 Exp $
+# $Id: Drawer.pm,v 1.105 2005-07-29 18:43:50 mwz444 Exp $
 
 =head1 NAME
 
@@ -40,7 +40,11 @@ The base map drawing module.
         evidence_type_score     => $evidence_type_score,
         ignored_feature_types   => $ignored_feature_types,
         config => $config,
-        min_correspondences => $min_correspondences,
+        left_min_corrs => $left_min_corrs,
+        right_min_corrs => $right_min_corrs,
+        general_min_corrs => $general_min_corrs,
+        menu_min_corrs => $menu_min_corrs,
+        slots_min_corrs => $slots_min_corrs,
         collapse_features => $collapse_features,
         cache_dir => $cache_dir,
         map_view => $map_view,
@@ -204,9 +208,26 @@ A Bio::GMOD::CMap::Config object that can be passed to this module if
 it has already been created.  Otherwise, Drawer will create it from 
 the data_source.
 
-=item * min_correspondences
+=item * left_min_corrs
 
-The minimum number of correspondences.
+The minimum number of correspondences for the left most slot.
+
+=item * right_min_corrs
+
+The minimum number of correspondences for the right most slot.
+
+=item * general_min_corrs
+
+The minimum number of correspondences for the slots that aren't the right most
+or the left most.
+
+=item * menu_min_corrs
+
+The minimum number of correspondences for the menu
+
+=item * slots_min_corrs
+
+The data structure that holds the  minimum number of correspondences for each slot
 
 =item * collapse_features
 
@@ -321,7 +342,7 @@ This is set to 1 if the Additional Options Menu is displayed.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.104 $)[-1];
+$VERSION = (qw$Revision: 1.105 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -340,8 +361,10 @@ my @INIT_PARAMS = qw[
   url_feature_default_display
   included_evidence_types ignored_evidence_types ignored_feature_types
   less_evidence_types greater_evidence_types evidence_type_score
-  config data_source min_correspondences collapse_features cache_dir
-  map_view data_module aggregate cluster_corr show_intraslot_corr clean_view
+  config data_source left_min_corrs right_min_corrs
+  general_min_corrs menu_min_corrs slots_min_corrs
+  collapse_features cache_dir map_view data_module
+  aggregate cluster_corr show_intraslot_corr clean_view
   magnify_all scale_maps stack_maps ref_map_order comp_menu_order
   omit_area_boxes split_agg_ev refMenu compMenu optionMenu addOpMenu
   corrs_to_map session_id next_step
@@ -1480,9 +1503,9 @@ necessary data for drawing.
 
     unless ( $self->{'data'} ) {
         my $data = $self->data_module or return;
-        $self->{'data'} = $data->cmap_data(
+        ( $self->{'data'}, $self->{'slots'} ) = $data->cmap_data(
             slots                       => $self->{'slots'},
-            min_correspondences         => $self->min_correspondences,
+            slots_min_corrs             => $self->slots_min_corrs,
             included_feature_type_accs  => $self->included_feature_types,
             corr_only_feature_type_accs => $self->corr_only_feature_types,
             ignored_feature_type_accs   => $self->ignored_feature_types,
@@ -1496,6 +1519,8 @@ necessary data for drawing.
           or return $self->error( $data->error );
 
         return $self->error("Problem getting data") unless $self->{'data'};
+
+        $self->modify_min_corrs( $self->{'slots'} );
 
         # Set the feature and evidence types for later use.
         $self->included_feature_types(
@@ -2078,19 +2103,92 @@ Gets/sets whether we're looking at the regular viewer or details.
 }
 
 # ----------------------------------------------------
-sub min_correspondences {
+sub left_min_corrs {
 
 =pod
 
-=head2 min_correspondences
+=head2 left_min_corrs
 
-Gets/sets the minimum number of correspondences.
+Gets/sets the minimum number of correspondences for the left most slot.
 
 =cut
 
     my $self = shift;
-    $self->{'min_correspondences'} = shift if @_;
-    return $self->{'min_correspondences'} || 0;
+    $self->{'left_min_corrs'} = shift if @_;
+    return $self->{'left_min_corrs'} || 0;
+}
+
+# ----------------------------------------------------
+sub right_min_corrs {
+
+=pod
+
+=head2 right_min_corrs
+
+Gets/sets the minimum number of correspondences for the right most slot.
+
+=cut
+
+    my $self = shift;
+    $self->{'right_min_corrs'} = shift if @_;
+    return $self->{'right_min_corrs'} || 0;
+}
+
+# ----------------------------------------------------
+sub general_min_corrs {
+
+=pod
+
+=head2 general_min_corrs
+
+Gets/sets the minimum number of correspondences for the slots that are not the
+right most of the left most.
+
+Default: undef
+
+=cut
+
+    my $self = shift;
+    $self->{'general_min_corrs'} = shift if @_;
+    return $self->{'general_min_corrs'};
+}
+
+# ----------------------------------------------------
+sub menu_min_corrs {
+
+=pod
+
+=head2 menu_min_corrs
+
+Gets/sets the minimum number of correspondences for the slots that to be
+displayed in the menu.
+
+Default: undef
+
+=cut
+
+    my $self = shift;
+    $self->{'menu_min_corrs'} = shift if @_;
+    return $self->{'menu_min_corrs'};
+}
+
+# ----------------------------------------------------
+sub slots_min_corrs {
+
+=pod
+
+=head2 slots_min_corrs
+
+Gets/sets the object that holds the minimum number of correspondences for each
+slot.
+
+Default: undef
+
+=cut
+
+    my $self = shift;
+    $self->{'slots_min_corrs'} = shift if @_;
+    return $self->{'slots_min_corrs'};
 }
 
 # ----------------------------------------------------
@@ -2700,6 +2798,34 @@ sub offset_map_area_data {
     }
 }
 
+# -----------------------------------------
+sub modify_min_corrs {
+
+=pod
+
+=head2 modify_min_corrs
+
+Modify the left and right min_corrs to reflect the actual min corrs of the
+outer slots.  This is to mainly to change the values when a slot is deleted and
+the new outer slot has a different min_corrs value.
+
+=cut
+
+    my $self  = shift;
+    my $slots = shift;
+
+    # Modify the left and right min corrs
+    my @slot_nos  = sort { $a <=> $b } keys(%$slots);
+    my $max_right = $slot_nos[-1];
+    my $max_left  = $slot_nos[0];
+
+    $self->left_min_corrs( $slots->{$max_left}{'min_corrs'} || 0 )
+      if ($max_left);
+    $self->right_min_corrs( $slots->{$max_right}{'min_corrs'} || 0 )
+      if ($max_right);
+
+}
+
 # ----------------------------------------------------
 sub create_link_params {
 
@@ -2737,7 +2863,10 @@ Creates default link parameters for CMap->create_viewer_link()
     my $corrs_to_map                = $args{'corrs_to_map'};
     my $magnify_all                 = $args{'magnify_all'};
     my $flip                        = $args{'flip'};
-    my $min_correspondences         = $args{'min_correspondences'};
+    my $left_min_corrs              = $args{'left_min_corrs'};
+    my $right_min_corrs             = $args{'right_min_corrs'};
+    my $general_min_corrs           = $args{'general_min_corrs'};
+    my $menu_min_corrs              = $args{'menu_min_corrs'};
     my $ref_map_accs                = $args{'ref_map_accs'};
     my $feature_type_accs           = $args{'feature_type_accs'};
     my $corr_only_feature_type_accs = $args{'corr_only_feature_type_accs'};
@@ -2791,7 +2920,7 @@ Creates default link parameters for CMap->create_viewer_link()
         $comparative_maps = undef;
     }
     unless ( defined($ref_map_accs) ) {
-        $ref_map_accs = undef
+        $ref_map_accs = undef;
     }
     unless ( defined($highlight) ) {
         $highlight = $self->highlight();
@@ -2851,8 +2980,17 @@ Creates default link parameters for CMap->create_viewer_link()
         }
         $flip = join( ":", @flips );
     }
-    unless ( defined($min_correspondences) ) {
-        $min_correspondences = $self->min_correspondences();
+    unless ( defined($left_min_corrs) ) {
+        $left_min_corrs = $self->left_min_corrs();
+    }
+    unless ( defined($right_min_corrs) ) {
+        $right_min_corrs = $self->right_min_corrs();
+    }
+    unless ( defined($general_min_corrs) ) {
+        $general_min_corrs = $self->general_min_corrs();
+    }
+    unless ( defined($menu_min_corrs) ) {
+        $menu_min_corrs = $self->menu_min_corrs();
     }
     unless ( defined($feature_type_accs) ) {
         $feature_type_accs = $self->included_feature_types();
@@ -2932,7 +3070,10 @@ Creates default link parameters for CMap->create_viewer_link()
         corrs_to_map                => $corrs_to_map,
         magnify_all                 => $magnify_all,
         flip                        => $flip,
-        min_correspondences         => $min_correspondences,
+        left_min_corrs              => $left_min_corrs,
+        right_min_corrs             => $right_min_corrs,
+        general_min_corrs           => $general_min_corrs,
+        menu_min_corrs              => $menu_min_corrs,
         ref_map_accs                => $ref_map_accs,
         feature_type_accs           => $feature_type_accs,
         corr_only_feature_type_accs => $corr_only_feature_type_accs,
