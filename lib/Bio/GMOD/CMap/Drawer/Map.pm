@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.170 2005-07-26 17:34:54 mwz444 Exp $
+# $Id: Map.pm,v 1.171 2005-08-01 13:50:47 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.170 $)[-1];
+$VERSION = (qw$Revision: 1.171 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1705,219 +1705,236 @@ Variable Info:
         }
 
         # Draw intraslot aggregated corrs.
+        if ( $drawer->show_intraslot_corr ) {
 
-        # Use Correspondences to figure out where to put this vertically.
-        my ( $min_ref_y, $max_ref_y );
-        for ( my $i = 0 ; $i <= $#map_ids ; $i++ ) {
-            my @drawing_data = ();
-            my $map_id1      = $map_ids[$i];
-            my $corrs = $drawer->map_correspondences( $slot_no, $map_id1 );
-            for ( my $j = $i + 1 ; $j <= $#map_ids ; $j++ ) {
-                my $map_id2   = $map_ids[$j];
-                my $all_corrs = $corrs->{$map_id2};
-                next unless defined($all_corrs);
-                my $drawing_offset = 0;
-                foreach my $corr (@$all_corrs) {
-                    my $evidence_type_acc = $corrs->{'evidence_type_acc'};
+            # Use Correspondences to figure out where to put this vertically.
+            my ( $min_ref_y, $max_ref_y );
+            for ( my $i = 0 ; $i <= $#map_ids ; $i++ ) {
+                my @drawing_data = ();
+                my $map_id1      = $map_ids[$i];
+                my $corrs = $drawer->map_correspondences( $slot_no, $map_id1 );
+                for ( my $j = $i + 1 ; $j <= $#map_ids ; $j++ ) {
+                    my $map_id2   = $map_ids[$j];
+                    my $all_corrs = $corrs->{$map_id2};
+                    next unless defined($all_corrs);
+                    my $drawing_offset = 0;
+                    foreach my $corr (@$all_corrs) {
+                        my $evidence_type_acc = $corrs->{'evidence_type_acc'};
 
-                    #
-                    # Get the information about the map placement.
-                    #
-                    my $map1_pos =
-                      $drawer->reference_map_coords( $slot_no, $map_id1 );
-                    my $map2_pos =
-                      $drawer->reference_map_coords( $slot_no, $map_id2 );
+                        #
+                        # Get the information about the map placement.
+                        #
+                        my $map1_pos =
+                          $drawer->reference_map_coords( $slot_no, $map_id1 );
+                        my $map2_pos =
+                          $drawer->reference_map_coords( $slot_no, $map_id2 );
 
-                    # average of corr on map1
-                    my $avg_mid1 =
-                      defined( $corr->{'avg_mid1'} )
-                      ? $corr->{'avg_mid1'}
-                      : $corr->{'start_avg1'};
+                        # average of corr on map1
+                        my $avg_mid1 =
+                          defined( $corr->{'avg_mid1'} )
+                          ? $corr->{'avg_mid1'}
+                          : $corr->{'start_avg1'};
 
-                    # average of corr on map 2
-                    my $avg_mid2 =
-                      defined( $corr->{'avg_mid2'} )
-                      ? $corr->{'avg_mid2'}
-                      : $corr->{'start_avg2'};
+                        # average of corr on map 2
+                        my $avg_mid2 =
+                          defined( $corr->{'avg_mid2'} )
+                          ? $corr->{'avg_mid2'}
+                          : $corr->{'start_avg2'};
 
-                    my $map1_pixel_len = $map1_pos->{'y2'} - $map1_pos->{'y1'};
-                    my $map2_pixel_len = $map2_pos->{'y2'} - $map2_pos->{'y1'};
-                    my $map1_unit_len  =
-                      $map1_pos->{'map_stop'} - $map1_pos->{'map_start'};
-                    my $map2_unit_len =
-                      $map2_pos->{'map_stop'} - $map2_pos->{'map_start'};
+                        my $map1_pixel_len =
+                          $map1_pos->{'y2'} - $map1_pos->{'y1'};
+                        my $map2_pixel_len =
+                          $map2_pos->{'y2'} - $map2_pos->{'y1'};
+                        my $map1_unit_len =
+                          $map1_pos->{'map_stop'} - $map1_pos->{'map_start'};
+                        my $map2_unit_len =
+                          $map2_pos->{'map_stop'} - $map2_pos->{'map_start'};
 
-                    # Set the avg location of the corr on the ref map
-                    my $map1_mid_y =
-                      $map1_pos->{'is_flipped'}
-                      ? (
-                        $map1_pos->{'y2'} - (
-                            ( $avg_mid1 - $map1_pos->{'map_start'} ) /
-                              $map1_unit_len
-                          ) * $map1_pixel_len
-                      )
-                      : (
-                        $map1_pos->{'y1'} + (
-                            ( $avg_mid1 - $map1_pos->{'map_start'} ) /
-                              $map1_unit_len
-                          ) * $map1_pixel_len
-                      );
-                    my $map2_mid_y =
-                      $map2_pos->{'is_flipped'}
-                      ? (
-                        $map2_pos->{'y2'} - (
-                            ( $avg_mid2 - $map2_pos->{'map_start'} ) /
-                              $map2_unit_len
-                          ) * $map2_pixel_len
-                      )
-                      : (
-                        $map2_pos->{'y1'} + (
-                            ( $avg_mid2 - $map2_pos->{'map_start'} ) /
-                              $map2_unit_len
-                          ) * $map2_pixel_len
-                      );
-                    my $map1_y1 =
-                      $map1_pos->{'is_flipped'}
-                      ? (
-                        $map1_pos->{'y2'} - (
+                        # Set the avg location of the corr on the ref map
+                        my $map1_mid_y =
+                          $map1_pos->{'is_flipped'}
+                          ? (
+                            $map1_pos->{'y2'} - (
+                                ( $avg_mid1 - $map1_pos->{'map_start'} ) /
+                                  $map1_unit_len
+                              ) * $map1_pixel_len
+                          )
+                          : (
+                            $map1_pos->{'y1'} + (
+                                ( $avg_mid1 - $map1_pos->{'map_start'} ) /
+                                  $map1_unit_len
+                              ) * $map1_pixel_len
+                          );
+                        my $map2_mid_y =
+                          $map2_pos->{'is_flipped'}
+                          ? (
+                            $map2_pos->{'y2'} - (
+                                ( $avg_mid2 - $map2_pos->{'map_start'} ) /
+                                  $map2_unit_len
+                              ) * $map2_pixel_len
+                          )
+                          : (
+                            $map2_pos->{'y1'} + (
+                                ( $avg_mid2 - $map2_pos->{'map_start'} ) /
+                                  $map2_unit_len
+                              ) * $map2_pixel_len
+                          );
+                        my $map1_y1 =
+                          $map1_pos->{'is_flipped'}
+                          ? (
+                            $map1_pos->{'y2'} - (
+                                (
+                                    $corr->{'min_start1'} -
+                                      $map1_pos->{'map_start'}
+                                ) / $map1_unit_len
+                              ) * $map1_pixel_len
+                          )
+                          : (
+                            $map1_pos->{'y1'} + (
+                                (
+                                    $corr->{'min_start1'} -
+                                      $map1_pos->{'map_start'}
+                                ) / $map1_unit_len
+                              ) * $map1_pixel_len
+                          );
+                        my $map2_y1 =
+                          $map2_pos->{'is_flipped'}
+                          ? (
+                            $map2_pos->{'y2'} - (
+                                (
+                                    $corr->{'min_start2'} -
+                                      $map2_pos->{'map_start'}
+                                ) / $map2_unit_len
+                              ) * $map2_pixel_len
+                          )
+                          : (
+                            $map2_pos->{'y1'} + (
+                                (
+                                    $corr->{'min_start2'} -
+                                      $map2_pos->{'map_start'}
+                                ) / $map2_unit_len
+                              ) * $map2_pixel_len
+                          );
+                        my $map1_y2 =
+                          $map1_pos->{'is_flipped'}
+                          ? $map1_pos->{'y2'} + (
                             (
-                                $corr->{'min_start1'} - $map1_pos->{'map_start'}
+                                $corr->{'max_start1'} - $map1_pos->{'map_start'}
                             ) / $map1_unit_len
                           ) * $map1_pixel_len
-                      )
-                      : (
-                        $map1_pos->{'y1'} + (
+                          : $map1_pos->{'y1'} + (
                             (
-                                $corr->{'min_start1'} - $map1_pos->{'map_start'}
+                                $corr->{'max_start1'} - $map1_pos->{'map_start'}
                             ) / $map1_unit_len
-                          ) * $map1_pixel_len
-                      );
-                    my $map2_y1 =
-                      $map2_pos->{'is_flipped'}
-                      ? (
-                        $map2_pos->{'y2'} - (
+                          ) * $map1_pixel_len;
+
+                        my $map2_y2 =
+                          $map2_pos->{'is_flipped'}
+                          ? $map2_pos->{'y2'} + (
                             (
-                                $corr->{'min_start2'} - $map2_pos->{'map_start'}
+                                $corr->{'max_start2'} - $map2_pos->{'map_start'}
                             ) / $map2_unit_len
                           ) * $map2_pixel_len
-                      )
-                      : (
-                        $map2_pos->{'y1'} + (
+                          : $map2_pos->{'y1'} + (
                             (
-                                $corr->{'min_start2'} - $map2_pos->{'map_start'}
+                                $corr->{'max_start2'} - $map2_pos->{'map_start'}
                             ) / $map2_unit_len
-                          ) * $map2_pixel_len
-                      );
-                    my $map1_y2 =
-                        $map1_pos->{'is_flipped'}
-                      ? $map1_pos->{'y2'} +
-                      ( ( $corr->{'max_start1'} - $map1_pos->{'map_start'} ) /
-                          $map1_unit_len ) * $map1_pixel_len
-                      : $map1_pos->{'y1'} +
-                      ( ( $corr->{'max_start1'} - $map1_pos->{'map_start'} ) /
-                          $map1_unit_len ) * $map1_pixel_len;
+                          ) * $map2_pixel_len;
 
-                    my $map2_y2 =
-                        $map2_pos->{'is_flipped'}
-                      ? $map2_pos->{'y2'} +
-                      ( ( $corr->{'max_start2'} - $map2_pos->{'map_start'} ) /
-                          $map2_unit_len ) * $map2_pixel_len
-                      : $map2_pos->{'y1'} +
-                      ( ( $corr->{'max_start2'} - $map2_pos->{'map_start'} ) /
-                          $map2_unit_len ) * $map2_pixel_len;
+                        my $line_cushion = 10;
+                        my $map1_coords  =
+                          $map_placement_data{$map_id1}{'map_coords'};
+                        my $map2_coords =
+                          $map_placement_data{$map_id2}{'map_coords'};
+                        my $left_side = my $map1_x =
+                            $label_side eq LEFT
+                          ? $map1_coords->[0] - $drawing_offset
+                          : $map1_coords->[2] + $drawing_offset;
+                        my $map2_x =
+                            $label_side eq LEFT
+                          ? $map2_coords->[0]
+                          : $map2_coords->[2];
+                        my $map1_x2 =
+                            $label_side eq LEFT
+                          ? $map1_x - $line_cushion
+                          : $map1_x + $line_cushion;
+                        my $map2_x2 =
+                            $label_side eq LEFT
+                          ? $map2_x - ( $line_cushion * 3 )
+                          : $map2_x + ( $line_cushion * 3 );
+                        my $line_color = $drawer->aggregated_line_color(
+                            corr_no           => $corr->{'no_corr'},
+                            evidence_type_acc => $evidence_type_acc,
+                        );
 
-                    my $line_cushion = 10;
-                    my $map1_coords  =
-                      $map_placement_data{$map_id1}{'map_coords'};
-                    my $map2_coords =
-                      $map_placement_data{$map_id2}{'map_coords'};
-                    my $left_side = my $map1_x =
-                        $label_side eq LEFT
-                      ? $map1_coords->[0] - $drawing_offset
-                      : $map1_coords->[2] + $drawing_offset;
-                    my $map2_x =
-                        $label_side eq LEFT
-                      ? $map2_coords->[0]
-                      : $map2_coords->[2];
-                    my $map1_x2 =
-                        $label_side eq LEFT
-                      ? $map1_x - $line_cushion
-                      : $map1_x + $line_cushion;
-                    my $map2_x2 =
-                        $label_side eq LEFT
-                      ? $map2_x - ( $line_cushion * 3 )
-                      : $map2_x + ( $line_cushion * 3 );
-                    my $line_color = $drawer->aggregated_line_color(
-                        corr_no           => $corr->{'no_corr'},
-                        evidence_type_acc => $evidence_type_acc,
-                    );
+                        # add aggregate correspondences to ref_connections
+                        if ( $self->aggregate <=> 2 ) {
 
-                    # add aggregate correspondences to ref_connections
-                    if ( $self->aggregate <=> 2 ) {
+                            # Single line to avg corr
+                            push @drawing_data,
+                              [
+                                LINE,        $map1_x,
+                                $map1_mid_y, $map1_x2,
+                                $map1_mid_y, $line_color,
+                                0
+                              ];
+                            push @drawing_data,
+                              [
+                                LINE,        $map1_x2,
+                                $map1_mid_y, $map2_x2,
+                                $map2_mid_y, $line_color,
+                                0
+                              ];
+                            push @drawing_data,
+                              [
+                                LINE,        $map2_x2,
+                                $map2_mid_y, $map2_x,
+                                $map2_mid_y, $line_color,
+                                0
+                              ];
+                        }
+                        else {
 
-                        # Single line to avg corr
-                        push @drawing_data,
-                          [
-                            LINE,        $map1_x,
-                            $map1_mid_y, $map1_x2,
-                            $map1_mid_y, $line_color,
-                            0
-                          ];
-                        push @drawing_data,
-                          [
-                            LINE,        $map1_x2,
-                            $map1_mid_y, $map2_x2,
-                            $map2_mid_y, $line_color,
-                            0
-                          ];
-                        push @drawing_data,
-                          [
-                            LINE,        $map2_x2,
-                            $map2_mid_y, $map2_x,
-                            $map2_mid_y, $line_color,
-                            0
-                          ];
+                            # first of double line
+                            push @drawing_data,
+                              [
+                                LINE,     $map1_x,     $map1_y1, $map1_x2,
+                                $map1_y1, $line_color, 0
+                              ];
+                            push @drawing_data,
+                              [
+                                LINE,     $map1_x2,    $map1_y1, $map2_x2,
+                                $map2_y1, $line_color, 0
+                              ];
+                            push @drawing_data,
+                              [
+                                LINE,     $map2_x2,    $map2_y1, $map2_x,
+                                $map2_y1, $line_color, 0
+                              ];
+
+                            # Second line
+                            push @drawing_data,
+                              [
+                                LINE,     $map1_x,     $map1_y2, $map1_x2,
+                                $map1_y2, $line_color, 0
+                              ];
+                            push @drawing_data,
+                              [
+                                LINE,     $map1_x2,    $map1_y2, $map2_x2,
+                                $map2_y2, $line_color, 0
+                              ];
+                            push @drawing_data,
+                              [
+                                LINE,     $map2_x2,    $map2_y2, $map2_x,
+                                $map2_y2, $line_color, 0
+                              ];
+                        }
+                        $drawing_offset++;
                     }
-                    else {
-
-                        # first of double line
-                        push @drawing_data,
-                          [
-                            LINE,     $map1_x,     $map1_y1, $map1_x2,
-                            $map1_y1, $line_color, 0
-                          ];
-                        push @drawing_data,
-                          [
-                            LINE,     $map1_x2,    $map1_y1, $map2_x2,
-                            $map2_y1, $line_color, 0
-                          ];
-                        push @drawing_data,
-                          [
-                            LINE,     $map2_x2,    $map2_y1, $map2_x,
-                            $map2_y1, $line_color, 0
-                          ];
-
-                        # Second line
-                        push @drawing_data,
-                          [
-                            LINE,     $map1_x,     $map1_y2, $map1_x2,
-                            $map1_y2, $line_color, 0
-                          ];
-                        push @drawing_data,
-                          [
-                            LINE,     $map1_x2,    $map1_y2, $map2_x2,
-                            $map2_y2, $line_color, 0
-                          ];
-                        push @drawing_data,
-                          [
-                            LINE,     $map2_x2,    $map2_y2, $map2_x,
-                            $map2_y2, $line_color, 0
-                          ];
-                    }
-                    $drawing_offset++;
                 }
+                $drawer->add_drawing(@drawing_data)
+                  if ( scalar(@drawing_data) );
             }
-            $drawer->add_drawing(@drawing_data) if ( scalar(@drawing_data) );
         }
     }
 
