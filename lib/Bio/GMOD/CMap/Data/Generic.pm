@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.94 2005-07-29 18:43:52 mwz444 Exp $
+# $Id: Generic.pm,v 1.95 2005-08-01 15:53:11 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.94 $)[-1];
+$VERSION = (qw$Revision: 1.95 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -6013,6 +6013,7 @@ If $include_map1_data also has
 
     my $select_sql = qq[
         select   count(distinct cl.feature_correspondence_id) as no_corr,
+                 cl.map_id1,
                  cl.map_id2,
                  map2.map_acc as map_acc2,
                  map2.map_set_id as map_set_id2
@@ -6033,6 +6034,7 @@ If $include_map1_data also has
     ];
     my $group_by_sql = qq[
         group by cl.map_id2,
+                 cl.map_id1,
                  map2.map_acc,
                  map2.map_set_id 
     ];

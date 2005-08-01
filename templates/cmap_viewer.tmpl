@@ -183,7 +183,7 @@ function changeCompMaps(sel,index,side){
           [%- ELSE -%]
             [%- SET not_first_map=1; -%] 
           [%- END -%]
-          new Array( '[%- map.map_name %] [[% map.no_correspondences %]]','[% map.map_acc -%]')
+          new Array( '[%- map.map_name %] [[% map.no_correspondences %],[% map.max_no_correspondences %]]','[% map.map_acc -%]')
         [% END -%]
         )
       [% END -%]
@@ -206,7 +206,7 @@ function changeCompMaps(sel,index,side){
           [%- ELSE -%]
             [%- SET not_first_map=1; -%] 
           [%- END -%]
-          new Array( '[%- map.map_name %] [[% map.no_correspondences %]]','[% map.map_acc -%]')
+          new Array( '[%- map.map_name %] [[% map.no_correspondences %],[% map.no_correspondences %]]','[% map.map_acc -%]')
         [% END -%]
         )
       [%- END -%]
@@ -510,6 +510,11 @@ function selectAllOptions(select){
                       %]
                     </tr>
                   </table>
+                </td>
+              </tr>
+              <tr>
+                <td ColSpan=2>
+                  Format: Name [Total correspondences to slot, Max correspondences to single map]
                 </td>
               </tr>
             </table>

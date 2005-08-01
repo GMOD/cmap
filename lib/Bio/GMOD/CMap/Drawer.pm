@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.105 2005-07-29 18:43:50 mwz444 Exp $
+# $Id: Drawer.pm,v 1.106 2005-08-01 15:53:10 mwz444 Exp $
 
 =head1 NAME
 
@@ -342,7 +342,7 @@ This is set to 1 if the Additional Options Menu is displayed.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.105 $)[-1];
+$VERSION = (qw$Revision: 1.106 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -2819,10 +2819,8 @@ the new outer slot has a different min_corrs value.
     my $max_right = $slot_nos[-1];
     my $max_left  = $slot_nos[0];
 
-    $self->left_min_corrs( $slots->{$max_left}{'min_corrs'} || 0 )
-      if ($max_left);
-    $self->right_min_corrs( $slots->{$max_right}{'min_corrs'} || 0 )
-      if ($max_right);
+    $self->left_min_corrs( $slots->{$max_left}{'min_corrs'}   || 0 );
+    $self->right_min_corrs( $slots->{$max_right}{'min_corrs'} || 0 );
 
 }
 

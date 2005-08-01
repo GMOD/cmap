@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.109 2005-07-29 18:43:51 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.110 2005-08-01 15:53:11 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.109 $)[-1];
+$VERSION = (qw$Revision: 1.110 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -377,7 +377,19 @@ sub handler {
                 $ref_map_set_acc = $step_hash->{'ref_map_set_acc'};
 
                 # Apply Session Modifications
-                modify_slots( \%slots, $session_mod ) if ( !$reusing_step );
+                my ( $change_left_min_corrs, $change_right_min_corrs ) =
+                  modify_slots( \%slots, $session_mod )
+                  if ( !$reusing_step );
+
+                # if a slot was deleted, change the left/right_min_corrs
+                if ($change_left_min_corrs){
+                    my @slot_nos  = sort { $a <=> $b } keys %slots;
+                    $left_min_corrs = $slots{$slot_nos[0]}->{'min_corrs'};
+                }
+                if ($change_right_min_corrs){
+                    my @slot_nos  = sort { $a <=> $b } keys %slots;
+                    $right_min_corrs = $slots{$slot_nos[-1]}->{'min_corrs'};
+                }
                 @ref_map_accs = keys( %{ $slots{0}->{'maps'} } );
                 $apr->param( 'ref_map_accs', join( ":", @ref_map_accs ) );
 
@@ -871,8 +883,10 @@ sub parse_map_info {
 sub modify_slots {
 
     # Modify the slots object using a modification string
-    my $slots   = shift;
-    my $mod_str = shift;
+    my $slots                  = shift;
+    my $mod_str                = shift;
+    my $change_left_min_corrs  = 0;
+    my $change_right_min_corrs = 0;
 
     my @mod_cmds = split( /:/, $mod_str );
 
@@ -981,9 +995,11 @@ sub modify_slots {
         {
             if ( $slot_no >= 0 ) {
                 $delete_pos = 1;
+                $change_right_min_corrs = 1;
             }
             if ( $slot_no <= 0 ) {
                 $delete_neg = 1;
+                $change_left_min_corrs = 1;
             }
         }
         if ( $slot_no >= 0 and $delete_pos ) {
@@ -993,6 +1009,7 @@ sub modify_slots {
             delete $slots->{$slot_no};
         }
     }
+    return ($change_left_min_corrs, $change_right_min_corrs);
 }
 
 sub orderOutFromZero {

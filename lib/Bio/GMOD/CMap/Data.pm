@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.246 2005-07-29 18:43:49 mwz444 Exp $
+# $Id: Data.pm,v 1.247 2005-08-01 15:53:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.246 $)[-1];
+$VERSION = (qw$Revision: 1.247 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -1549,10 +1549,17 @@ out which maps have relationships.
         }
     }
     for my $fc (@$feature_correspondences) {
-        my $comp_map        = $comp_maps{ $fc->{'map_id2'} } or next;
-        my $ref_map_set_acc = $comp_map->{'map_set_acc'}     or next;
+        my $map_id2 = $fc->{'map_id2'};
+        next unless ( $comp_maps{$map_id2} );
 
-        $comp_map->{'no_correspondences'} = $fc->{'no_corr'};
+        $comp_maps{$map_id2}->{'no_correspondences'} += $fc->{'no_corr'};
+        $comp_maps{$map_id2}->{'max_no_correspondences'} = $fc->{'no_corr'}
+          if ( !$comp_maps{$map_id2}->{'max_no_correspondences'}
+            or $comp_maps{$map_id2}->{'max_no_correspondences'} <
+            $fc->{'no_corr'} );
+    }
+    for my $comp_map (values(%comp_maps)) {
+        my $ref_map_set_acc = $comp_map->{'map_set_acc'}     or next;
 
         push @{ $map_sets{$ref_map_set_acc}{'maps'} }, $comp_map;
     }
@@ -1597,7 +1604,7 @@ out which maps have relationships.
         for my $map ( sort $sort_sub @{ $map_set->{'maps'} || [] } ) {
             next
               if $min_correspondences
-              && $map->{'no_correspondences'} < $min_correspondences;
+              && $map->{'max_no_correspondences'} < $min_correspondences;
 
             $total_correspondences += $map->{'no_correspondences'};
             push @maps, $map if not $map_set->{'is_relational_map'};

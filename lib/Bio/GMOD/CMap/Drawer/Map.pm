@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.171 2005-08-01 13:50:47 mwz444 Exp $
+# $Id: Map.pm,v 1.172 2005-08-01 15:53:12 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.171 $)[-1];
+$VERSION = (qw$Revision: 1.172 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -2371,10 +2371,14 @@ sub add_topper {
               ],
               [ RECTANGLE, @area, 'grey' ],;
 
-            $map_placement_data->{$map_id}{'bounds'}[0] = $label_x
-              if ( $map_placement_data->{$map_id}{'bounds'}[0] > $label_x );
-            $map_placement_data->{$map_id}{'bounds'}[2] = $end
-              if ( $map_placement_data->{$map_id}{'bounds'}[2] < $end );
+            $map_placement_data->{$map_id}{'bounds'}[0] =
+              $label_x - ( $button_x_buffer / 2 )
+              if ( $map_placement_data->{$map_id}{'bounds'}[0] >
+                $label_x - ( $button_x_buffer / 2 ) );
+            $map_placement_data->{$map_id}{'bounds'}[2] =
+              $end + ( $button_x_buffer / 2 )
+              if ( $map_placement_data->{$map_id}{'bounds'}[2] <
+                $end + ( $button_x_buffer / 2 ) );
             $label_x += $len + $button_x_buffer;
 
             push @{ $map_area_data->{$map_id} },
