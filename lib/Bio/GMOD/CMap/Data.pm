@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.247 2005-08-01 15:53:07 mwz444 Exp $
+# $Id: Data.pm,v 1.248 2005-08-10 12:57:08 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.247 $)[-1];
+$VERSION = (qw$Revision: 1.248 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -279,9 +279,6 @@ sub cmap_data {
     my $pid                        = $$;
 
     # Fill the default array with any feature types not accounted for.
-    my $feature_default_display =
-      $self->feature_default_display($url_feature_default_display);
-
     my %found_feature_type;
     foreach
       my $ft ( @$included_feature_type_accs, @$corr_only_feature_type_accs,
@@ -294,6 +291,10 @@ sub cmap_data {
     foreach my $key ( keys(%$feature_type_data) ) {
         my $acc = $feature_type_data->{$key}{'feature_type_acc'};
         unless ( $found_feature_type{$acc} ) {
+            my $feature_default_display =
+              $self->feature_default_display( $url_feature_default_display,
+                $acc );
+
             if ( $feature_default_display eq 'corr_only' ) {
                 push @$corr_only_feature_type_accs, $acc;
             }
@@ -420,7 +421,8 @@ sub cmap_data {
     $data->{'extra_form'}                  = $extra_form;
     $data->{'max_unit_size'} = $self->get_max_unit_size( $data->{'slots'} );
     $data->{'ref_unit_size'} = $self->get_ref_unit_size( $data->{'slots'} );
-    $data->{'feature_default_display'} = $feature_default_display;
+    $data->{'feature_default_display'} =
+      $self->feature_default_display($url_feature_default_display);
 
     return ( $data, $slots );
 }
@@ -1558,8 +1560,8 @@ out which maps have relationships.
             or $comp_maps{$map_id2}->{'max_no_correspondences'} <
             $fc->{'no_corr'} );
     }
-    for my $comp_map (values(%comp_maps)) {
-        my $ref_map_set_acc = $comp_map->{'map_set_acc'}     or next;
+    for my $comp_map ( values(%comp_maps) ) {
+        my $ref_map_set_acc = $comp_map->{'map_set_acc'} or next;
 
         push @{ $map_sets{$ref_map_set_acc}{'maps'} }, $comp_map;
     }
@@ -3795,20 +3797,28 @@ Given the slot_no and map_id
 
     my $self                        = shift;
     my $url_feature_default_display = shift;
+    my $feature_type_acc            = shift;
 
-    if ( defined($url_feature_default_display) ) {
-        if ( $url_feature_default_display == 0 ) {
-            $self->{'feature_default_display'} = 'ignore';
-        }
-        elsif ( $url_feature_default_display == 1 ) {
-            $self->{'feature_default_display'} = 'corr_only';
-        }
-        elsif ( $url_feature_default_display == 2 ) {
-            $self->{'feature_default_display'} = 'display';
-        }
+    if ( $feature_type_acc
+        and my $return_val =
+        $self->feature_type_data( $feature_type_acc, 'feature_default_display' ) )
+    {
+        return $return_val;
     }
 
     unless ( $self->{'feature_default_display'} ) {
+        if ( defined($url_feature_default_display) ) {
+            if ( $url_feature_default_display == 0 ) {
+                $self->{'feature_default_display'} = 'ignore';
+            }
+            elsif ( $url_feature_default_display == 1 ) {
+                $self->{'feature_default_display'} = 'corr_only';
+            }
+            elsif ( $url_feature_default_display == 2 ) {
+                $self->{'feature_default_display'} = 'display';
+            }
+        }
+
         my $feature_default_display =
           $self->config_data('feature_default_display');
         $feature_default_display = lc($feature_default_display);

@@ -215,6 +215,7 @@ my %config_defs = (
             drawing_lane  => { %generic_scalar_def, option_type => 'integer', },
             drawing_priority =>
               { %generic_scalar_def, option_type => 'integer', },
+            feature_default_display => { %generic_scalar_def, },
             gbrowse_class => { %generic_scalar_def, },
             gbrowse_ftype => { %generic_scalar_def, },
         },

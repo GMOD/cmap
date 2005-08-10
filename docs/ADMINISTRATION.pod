@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.14 $
+$Revision: 1.15 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -534,6 +534,15 @@ gaps.
 A positive integer which determines the order in which feature types
 within the lane are drawn. The lower the number for the priority, the
 sooner the feature will be drawn in the lane.
+
+=item * Feature Default Display (feature_default_display)
+
+This allows you to choose default display options for individual feature types.
+
+ Values:
+    display:   Display all features of this type
+    corr_only: Display only features of this type with displayed correspondences
+    ignore:    Completely ignore features of this type.  
 
 =back
 
