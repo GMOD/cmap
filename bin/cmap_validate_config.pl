@@ -33,6 +33,13 @@ use Data::Dumper;
 
 my $conf_file = shift or die "Missing original 'cmap.conf' file\n";
 
+if ( $conf_file eq 'global.conf' ) {
+    print "This will not validate the global.conf file.  "
+      . "It only validates individual data_source config files.  "
+      . "Sorry.\n";
+    exit(0);
+}
+
 print "Parsing config file '$conf_file.'\n";
 
 my $conf = Config::General->new($conf_file)
@@ -104,10 +111,8 @@ my %config_defs = (
         required => 1,
         %generic_scalar_def,
     },
-    feature_default_display => { %generic_scalar_def, },
-    disable_cache           => {
-        %generic_scalar_def,
-    },
+    feature_default_display   => { %generic_scalar_def, },
+    disable_cache             => { %generic_scalar_def, },
     comp_menu_order           => { %generic_scalar_def, },
     label_features            => { %generic_scalar_def, },
     collapse_features         => { %generic_scalar_def, },
@@ -160,11 +165,13 @@ my %config_defs = (
         print_valididated_method => \&print_validated_hash,
         print_corrections_method => \&print_corrected_hash,
         object                   => {
-            name       => { %generic_scalar_def, required => 1, },
-            datasource => { %generic_scalar_def, required => 1, },
-            user       => { %generic_scalar_def, required => 1, },
-            password   => { %generic_scalar_def, required => 0, },
-            is_default   => { deprecated=>1,validation_method=>\&deprecated_value, },
+            name        => { %generic_scalar_def, required => 1, },
+            datasource  => { %generic_scalar_def, required => 1, },
+            user        => { %generic_scalar_def, required => 1, },
+            password    => { %generic_scalar_def, required => 0, },
+            passwd_file => { %generic_scalar_def, required => 0, },
+            is_default  =>
+              { deprecated => 1, validation_method => \&deprecated_value, },
         },
     },
     scalable => {
@@ -190,7 +197,12 @@ my %config_defs = (
         print_corrections_method => \&print_corrected_hash_with_acc,
         accession_name           => 'feature_type_acc',
         object                   => {
-            feature_type_accession   => { deprecated=>1,warning=>'Warning: feature_type_accession has been changed to feature_type_acc.',validation_method=>\&deprecated_value, },
+            feature_type_accession => {
+                deprecated => 1,
+                warning    =>
+'Warning: feature_type_accession has been changed to feature_type_acc.',
+                validation_method => \&deprecated_value,
+            },
             feature_type_acc   => { %generic_scalar_def, required => 1, },
             feature_type       => { %generic_scalar_def, required => 1, },
             color              => { %generic_scalar_def, },
@@ -216,8 +228,8 @@ my %config_defs = (
             drawing_priority =>
               { %generic_scalar_def, option_type => 'integer', },
             feature_default_display => { %generic_scalar_def, },
-            gbrowse_class => { %generic_scalar_def, },
-            gbrowse_ftype => { %generic_scalar_def, },
+            gbrowse_class           => { %generic_scalar_def, },
+            gbrowse_ftype           => { %generic_scalar_def, },
         },
     },
     map_type => {
@@ -228,7 +240,12 @@ my %config_defs = (
         print_corrections_method => \&print_corrected_hash_with_acc,
         accession_name           => 'map_type_acc',
         object                   => {
-            map_type_accession   => { deprecated=>1,warning=>'Warning: map_type_accession has been changed to map_type_acc.',validation_method=>\&deprecated_value, },
+            map_type_accession => {
+                deprecated => 1,
+                warning    =>
+'Warning: map_type_accession has been changed to map_type_acc.',
+                validation_method => \&deprecated_value,
+            },
             map_type_acc => {
                 required => 1,
                 %generic_scalar_def,
@@ -276,7 +293,12 @@ my %config_defs = (
         print_corrections_method => \&print_corrected_hash_with_acc,
         accession_name           => 'evidence_type_acc',
         object                   => {
-            evidence_type_accession   => { deprecated=>1,warning=>'Warning: evidence_type_accession has been changed to evidence_type_acc.',validation_method=>\&deprecated_value, },
+            evidence_type_accession => {
+                deprecated => 1,
+                warning    =>
+'Warning: evidence_type_accession has been changed to evidence_type_acc.',
+                validation_method => \&deprecated_value,
+            },
             evidence_type_acc => {
                 required => 1,
                 %generic_scalar_def,
@@ -343,18 +365,18 @@ my %config_defs = (
         validation_method        => \&validate_hash,
         print_valididated_method => \&print_validated_hash,
         print_corrections_method => \&print_corrected_hash,
-        object => {
-            map_set_info => { %generic_scalar_def, },
-            map_details => { %generic_scalar_def, },
-            feature => { %generic_scalar_def, },
-            feature_type_info => { %generic_scalar_def, },
-            map_type_info => { %generic_scalar_def, },
+        object                   => {
+            map_set_info       => { %generic_scalar_def, },
+            map_details        => { %generic_scalar_def, },
+            feature            => { %generic_scalar_def, },
+            feature_type_info  => { %generic_scalar_def, },
+            map_type_info      => { %generic_scalar_def, },
             evidence_type_info => { %generic_scalar_def, },
-            species_info => { %generic_scalar_def, },
+            species_info       => { %generic_scalar_def, },
 
         },
     },
-    page_object => {%generic_scalar_def, no_report_if_missing => 1},
+    page_object => { %generic_scalar_def, no_report_if_missing => 1 },
 );
 
 my $print_out_full    = 0;
@@ -362,8 +384,9 @@ my $print_corrections = 0;
 
 my %found;
 my $whole_valid = 1;
+
 # Check all the config options currently in the file.
-# (You can ignore the printing stuff,  
+# (You can ignore the printing stuff,
 #  as it is only partially implemented.)
 foreach my $option_name ( sort keys %config ) {
     $found{$option_name} = 1;
@@ -382,7 +405,9 @@ foreach my $option_name ( sort keys %config ) {
                 config_object => $config{$option_name}
             );
         }
-        elsif ( $print_out_full or ( !$valid and $print_corrections ) and not $def->{'deprecated'}  ) {
+        elsif ( $print_out_full
+            or ( !$valid and $print_corrections ) and not $def->{'deprecated'} )
+        {
             $def->{'print_corrections_method'}(
                 option_name   => $option_name,
                 def           => $def,
@@ -408,7 +433,8 @@ foreach my $option_name ( sort keys %config_defs ) {
             print "INVALID: Missing required entry $option_name\n";
         }
         else {
-            print "Missing optional entry for $option_name\n" unless $config_defs{$option_name}->{'no_report_if_missing'};
+            print "Missing optional entry for $option_name\n"
+              unless $config_defs{$option_name}->{'no_report_if_missing'};
         }
     }
 }
@@ -434,39 +460,49 @@ sub validate_scalar {
       ? "INVALID <$parent_name> option:"
       : "INVALID:";
 
-    if ( not defined($config_value) and $def->{'required'} ) {
+    if ( ( ( not defined($config_value) ) or $config_value eq '' )
+        and $def->{'required'} )
+    {
         $valid = 0;
         print "$error_start $option_name is not defined.\n";
     }
-    elsif ( ref($config_value) ne '' ) {
-        $valid = 0;
-        print "$error_start '$option_name' is defined incorrectly.\n";
-    }
+    elsif ( defined($config_value) and $config_value ne '' ) {
 
-    # Check for a predifined set of valid values first
-    elsif ( not $def->{'no_validation_hash'}
-        and $def->{'valid_values'}
-        and not $def->{'valid_values'}{$config_value} )
-    {
-        $valid = 0;
-        print "$error_start '$config_value' is not valid for $option_name.\n";
-    }
+        if ( defined($config_value) and ref($config_value) ne '' ) {
+            $valid = 0;
+            print "$error_start '$option_name' is defined as a "
+              . ref($config_value)
+              . " when it should be simple text.\n";
+        }
 
-    # Check for a set of valid values in Constants.pm
-    elsif ( not $def->{'no_validation_hash'}
-        and VALID->{$option_name}
-        and not VALID->{$option_name}{$config_value} )
-    {
-        $valid = 0;
-        print "$error_start '$config_value' is not valid for $option_name.\n";
-    }
-    elsif ( $def->{'option_type'}
-        and $def->{'option_type'} eq 'integer'
-        and $config_value !~ /^\d+$/ and $config_value ne '')
-    {
-        $valid = 0;
-        print "$error_start '$config_value' is not an integer which is "
-          . "required for $option_name.\n";
+        # Check for a predifined set of valid values first
+        elsif ( ( not $def->{'no_validation_hash'} )
+            and $def->{'valid_values'}
+            and not $def->{'valid_values'}{$config_value} )
+        {
+            $valid = 0;
+            print
+              "$error_start '$config_value' is not valid for $option_name.\n";
+        }
+
+        # Check for a set of valid values in Constants.pm
+        elsif ( not $def->{'no_validation_hash'}
+            and VALID->{$option_name}
+            and not VALID->{$option_name}{$config_value} )
+        {
+            $valid = 0;
+            print
+              "$error_start '$config_value' is not valid for $option_name.\n";
+        }
+        elsif ( $def->{'option_type'}
+            and $def->{'option_type'} eq 'integer'
+            and $config_value !~ /^\d+$/
+            and $config_value ne '' )
+        {
+            $valid = 0;
+            print "$error_start '$config_value' is not an integer which is "
+              . "required for $option_name.\n";
+        }
     }
 
     return $valid;
@@ -541,12 +577,14 @@ sub validate_hash {
         print "$error_start $option_name is missing.\n";
         return 0;
     }
-    elsif( !$config_object){
+    elsif ( !$config_object ) {
         return 1;
     }
     elsif ( ref($config_object) ne 'HASH' ) {
         $valid = 0;
-        print "$error_start '$option_name' is defined incorrectly\n";
+        print "$error_start '$option_name' is defined as a "
+          . ref($config_object)
+          . " when it should a hash.\n";
         return 0;
     }
 
@@ -625,19 +663,24 @@ sub validate_hash_with_acc {
     }
     elsif ( ref($config_object) ne 'HASH' ) {
         $valid = 0;
-        print "$error_start '$option_name' is defined incorrectly\n";
+        print "$error_start '$option_name' is defined as a "
+          . ref($config_object)
+          . " when it should a hash.\n";
         return 0;
     }
 
     foreach my $acc ( sort keys %$config_object ) {
         if ( ref($config_object) ne 'HASH' ) {
             $valid = 0;
-            print "$error_start <$option_name $acc> is defined incorrectly\n";
+            print "$error_start <$option_name $acc> is defined as a "
+              . ref($config_object)
+              . " when it should a hash.\n";
             next;
         }
         if ( $def->{'accession_name'} ) {
-            unless ( defined($config_object->{$acc}{ $def->{'accession_name'} } ) and 
-                $acc eq $config_object->{$acc}{ $def->{'accession_name'} } )
+            unless (
+                defined( $config_object->{$acc}{ $def->{'accession_name'} } )
+                and $acc eq $config_object->{$acc}{ $def->{'accession_name'} } )
             {
                 $valid = 0;
                 print "$error_start the "
@@ -655,8 +698,8 @@ sub validate_hash_with_acc {
           )
         {
             $valid = 0;
-            print
-"$error_start <$option_name $acc> is defined incorrectly (see above)\n\n";
+            print "$error_start <$option_name $acc> "
+              . "is defined incorrectly (see above)\n\n";
         }
 
     }
@@ -758,6 +801,7 @@ sub print_corrected_array {
 
     return 1;
 }
+
 sub deprecated_value {
 
     my %args          = @_;
@@ -765,8 +809,11 @@ sub deprecated_value {
     my $config_object = $args{'config_object'};
     my $option_name   = $args{'option_name'};
 
-    my $warning = $def->{'warning'} || "Warning: $option_name has been deprecated";
-    print $warning."\n";
+    if ( defined($config_object) ) {
+        my $warning = $def->{'warning'}
+          || "Warning: $option_name has been deprecated";
+        print $warning. "\n";
+    }
 
     return 1;
 }
