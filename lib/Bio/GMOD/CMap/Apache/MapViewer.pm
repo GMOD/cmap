@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.110 2005-08-01 15:53:11 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.111 2005-08-15 13:50:58 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.110 $)[-1];
+$VERSION = (qw$Revision: 1.111 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -412,7 +412,7 @@ sub handler {
         $session_id = $session->id();
         $step       = 0;
         $next_step  = $step + 1;
-        $session->expire('+24h');
+        $session->expire('+2w'); #expires in two weeks
         %slots = (
             0 => {
                 map_set_acc => $ref_map_set_acc,
