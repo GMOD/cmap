@@ -32,6 +32,7 @@ open FILE_OUT, ">".$file.".15";
 while(<FILE_IN>){
     my $line = $_;
     $line =~ s/_type_accession/_type_acc/;
+    $line =~ s/species_name/species_common_name/;
     print FILE_OUT $line;
 }
 
