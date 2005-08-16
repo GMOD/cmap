@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.172 2005-08-01 15:53:12 mwz444 Exp $
+# $Id: Map.pm,v 1.173 2005-08-16 18:50:32 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.172 $)[-1];
+$VERSION = (qw$Revision: 1.173 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -125,7 +125,7 @@ Return the base y coordinate.
 }
 
 # ----------------------------------------------------
-sub color {
+sub map_color {
 
 =pod
 
@@ -182,7 +182,7 @@ box.
     my $map_acc             = $self->map_acc($map_id);
     my $is_flipped          = $args{'is_flipped'};
     my $slot_no             = $args{'slot_no'};
-    my $color               = $self->color($map_id);
+    my $color               = $self->map_color($map_id);
     my $width               = $self->map_width($map_id);
     my $x2                  = $x1 + $width;
     my $x_mid               = $x1 + ( $width / 2 );
@@ -295,7 +295,7 @@ bounds of the image.
     my $is_flipped          = $args{'is_flipped'};
     my $slot_no             = $args{'slot_no'};
     my $map_acc             = $self->map_acc($map_id);
-    my $color               = $self->color($map_id);
+    my $color               = $self->map_color($map_id);
     my $width               = $self->map_width($map_id);
     my $x2                  = $x1 + $width;
     my $mid_x               = $x1 + $width / 2;
@@ -441,7 +441,7 @@ Draws the map as an "I-beam."  Return the bounds of the image.
     my $slot_no             = $args{'slot_no'};
     my $map_acc             = $self->map_acc($map_id);
     my $omit_all_area_boxes = ( $drawer->omit_area_boxes >= 2 );
-    my $color               = $self->color($map_id);
+    my $color               = $self->map_color($map_id);
     my $width               = $self->map_width($map_id);
     my $x2                  = $x1 + $width;
     my $x                   = $x1 + $width / 2;
@@ -1229,6 +1229,7 @@ Variable Info:
     my %features_with_corr_by_map_id;
     my %flipped_maps;
     my $last_map_id;
+
   MAP:
 
     for my $map_id (@map_ids) {
@@ -1382,9 +1383,10 @@ Variable Info:
         my ( $leftmostf, $rightmostf );    # furthest features
 
         my $map_base_x = $map_placement_data{$map_id}{'map_coords'}[0];
+        my $map_start  = $self->map_start($map_id);
 
         for my $lane ( sort { $a <=> $b } keys %$features ) {
-            my %even_labels;               # holds label coordinates
+            my %even_labels;    # holds label coordinates
               #my ( @north_labels, @south_labels );    # holds label coordinates
             my $lane_features = $features->{$lane};
             my $midpoint      =
@@ -1435,6 +1437,8 @@ Variable Info:
                     rightmostf        => $rightmostf,
                     drawn_glyphs      => \%drawn_glyphs,
                     feature_type_accs => \%feature_type_accs,
+                    map_start         => $map_start,
+                    map_width         => $map_width,
                   );
                 $self->collect_labels_to_display(
                     even_labels        => \%even_labels,
@@ -2831,30 +2835,16 @@ sub add_feature_to_map {
     my $fcolumns          = $args{'fcolumns'};
     my $feature_type_accs = $args{'feature_type_accs'};
     my $drawn_glyphs      = $args{'drawn_glyphs'};
-    my $omit_area_boxes   = $drawer->omit_area_boxes;
+    my $map_start         = $args{'map_start'};
+    my $map_width         = $args{'map_width'};
 
-    my $map_width = $self->map_width($map_id);
-    my $reg_font  = $drawer->regular_font
-      or return $self->error( $drawer->error );
-    my $font_width            = $reg_font->width;
-    my $font_height           = $reg_font->height;
-    my $default_feature_color = $drawer->config_data('feature_color');
-    my $map_start             = $self->map_start($map_id);
-    my $label_side            = $drawer->label_side($slot_no);
-    my $feature_corr_color    =
-      $drawer->config_data('feature_correspondence_color') || '';
-    my $collapse_features   = $drawer->collapse_features;
-    my $feature_details_url = DEFAULT->{'feature_details_url'};
+    # We are only going to do the things we must before
+    # we check to see if this has feature is to be collapsed.
+    my $collapse_features = $drawer->collapse_features;
 
-    # If the map isn't showing labeled features (e.g., it's a
-    # relational map and hasn't been expanded), then leave off
-    # drawing features that don't have correspondences.
-    #
-    my $has_corr = $drawer->has_correspondence( $feature->{'feature_id'} );
-
-    my $feature_shape = $feature->{'shape'} || LINE;
+    my $fstart        = $feature->{'feature_start'} || 0;
+    my $feature_shape = $feature->{'shape'}         || LINE;
     my $shape_is_triangle = $feature_shape =~ /triangle$/;
-    my $fstart = $feature->{'feature_start'} || 0;
     my $fstop = $shape_is_triangle ? undef: $feature->{'feature_stop'};
     $fstop = undef if $fstop < $fstart;
 
@@ -2868,8 +2858,7 @@ sub add_feature_to_map {
         $rstop = $rstop > 1 ? 1 : $rstop < 0 ? 0 : $rstop;
     }
 
-    my $tick_overhang = 2;
-    my $y_pos1        = $is_flipped
+    my $y_pos1 = $is_flipped
       ? $map_base_y + $pixel_height - ( $pixel_height * $rstart )
       : $map_base_y + ( $pixel_height * $rstart );
 
@@ -2878,34 +2867,26 @@ sub add_feature_to_map {
       ? $is_flipped
       ? $map_base_y + $pixel_height - ( $pixel_height * $rstop )
       : $map_base_y + ( $pixel_height * $rstop )
-      : undef;
+      : $y_pos1;
 
-    if ( $is_flipped && defined $y_pos2 ) {
-        ( $y_pos2, $y_pos1 ) = ( $y_pos1, $y_pos2 );
-    }
-    $y_pos2 = $y_pos1 unless defined $y_pos2 && $y_pos2 > $y_pos1;
-    my $color = $has_corr ? $feature_corr_color : '';
-    $color ||= $feature->{'color'}
-      || $default_feature_color;
-    my $label      = $feature->{'feature_name'};
-    my $tick_start = $base_x - $tick_overhang;
-    my $tick_stop  = $base_x + $map_width + $tick_overhang;
-
-    my $label_y;
-    my @coords = ();
     if ( $shape_is_triangle || $y_pos2 <= $y_pos1 ) {
-        $label_y               = $y_pos1 - $font_height / 2;
         $feature->{'midpoint'} = $fstart;
         $feature->{'mid_y'}    = $y_pos1;
     }
     else {
-        $label_y = ( $y_pos1 + ( $y_pos2 - $y_pos1 ) / 2 ) - $font_height / 2;
-
         $feature->{'midpoint'} =
           ( $fstop > $fstart ) ? ( $fstart + $fstop ) / 2 : $fstart;
-
         $feature->{'mid_y'} = ( $y_pos1 + $y_pos2 ) / 2;
     }
+
+    my $has_corr = $drawer->has_correspondence( $feature->{'feature_id'} );
+    my $color    = $has_corr
+      ? $drawer->config_data('feature_correspondence_color') || ''
+      : '';
+    $color ||= $feature->{'color'}
+      || $drawer->config_data('feature_color');
+    my @coords = ();
+    my $label_y;
 
     #
     # Here we try to reduce the redundant drawing of glyphs.
@@ -2913,17 +2894,39 @@ sub add_feature_to_map {
     # make sure to draw it so it will show up highlighted.
     #
     my $glyph_key =
-      int($y_pos1) . $feature_shape . int($y_pos2) . "_" . $has_corr;
+        int($y_pos1)
+      . $feature_shape
+      . int($y_pos2) . "_"
+      . $has_corr . "_"
+      . $feature->{'direction'};
     my $draw_this = 1;
-
-    #if ( $drawn_glyphs->{$glyph_key} and $collapse_features ) {
-    #    $draw_this = $has_corr ? 1 : 0;
-    #}
-    if ( $drawn_glyphs->{$glyph_key} and $collapse_features ) {
+    if ( $collapse_features and $drawn_glyphs->{$glyph_key} ) {
         $draw_this = 0;
     }
-
     if ($draw_this) {
+
+        my $omit_area_boxes = $drawer->omit_area_boxes;
+        my $reg_font        = $drawer->regular_font
+          or return $self->error( $drawer->error );
+        my $font_width          = $reg_font->width;
+        my $font_height         = $reg_font->height;
+        my $label_side          = $drawer->label_side($slot_no);
+        my $feature_details_url = DEFAULT->{'feature_details_url'};
+
+        my $label = $feature->{'feature_name'};
+
+        if ( $shape_is_triangle || $y_pos2 <= $y_pos1 ) {
+            $label_y = $y_pos1 - $font_height / 2;
+        }
+        else {
+            $label_y =
+              ( $y_pos1 + ( $y_pos2 - $y_pos1 ) / 2 ) - $font_height / 2;
+        }
+
+        my $tick_overhang = 2;
+        my $tick_start    = $base_x - $tick_overhang;
+        my $tick_stop     = $base_x + $map_width + $tick_overhang;
+
         my (@temp_drawing_data);
         if ( $feature_shape eq LINE ) {
             $y_pos1 = ( $y_pos1 + $y_pos2 ) / 2;
@@ -3167,10 +3170,8 @@ sub add_labels_to_map {
     my $label_side      = $drawer->label_side($slot_no);
     my $reg_font        = $drawer->regular_font
       or return $self->error( $drawer->error );
-    my $font_width         = $reg_font->width;
-    my $font_height        = $reg_font->height;
-    my $feature_corr_color =
-      $drawer->config_data('feature_correspondence_color') || '';
+    my $font_width                 = $reg_font->width;
+    my $font_height                = $reg_font->height;
     my $feature_highlight_fg_color =
       $drawer->config_data('feature_highlight_fg_color');
     my $feature_highlight_bg_color =
@@ -3202,10 +3203,7 @@ sub add_labels_to_map {
           ? $base_x + $label_offset
           : $base_x - ( $label_offset + $label_len );
         my $label_end = $label_x + $label_len;
-        my $color     =
-            $label->{'has_corr'}
-          ? $feature_corr_color || $label->{'color'}
-          : $label->{'color'};
+        my $color     = $label->{'color'};
 
         push @$drawing_data,
           [ STRING, $reg_font, $label_x, $label_y, $text, $color ];
