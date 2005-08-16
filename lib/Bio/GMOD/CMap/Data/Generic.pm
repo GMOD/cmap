@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.95 2005-08-01 15:53:11 mwz444 Exp $
+# $Id: Generic.pm,v 1.96 2005-08-16 16:13:50 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.95 $)[-1];
+$VERSION = (qw$Revision: 1.96 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -3700,7 +3700,6 @@ Array of Hashes:
     shape color
     drawing_lane,
     drawing_priority,
-    aliases - a list of aliases,
 
 =item * Cache Level: 4
 
@@ -3866,24 +3865,9 @@ Array of Hashes:
 
     unless ( $return_object = $self->get_cached_results( 4, $sql_str ) ) {
 
-        # Get feature aliases
-        my %aliases = ();
-
         $return_object =
           $db->selectall_hashref( $sql_str, 'feature_id', {}, () );
         return {} unless $return_object;
-
-        my @feature_ids = keys(%$return_object);
-        if (@feature_ids) {
-            my $aliases_array = $self->get_feature_aliases(
-                cmap_object => $cmap_object,
-                feature_ids => \@feature_ids,
-            );
-
-            for my $alias (@$aliases_array) {
-                push @{ $aliases{ $alias->{'feature_id'} } }, $alias->{'alias'};
-            }
-        }
 
         for my $feature_id ( keys %{$return_object} ) {
             my $ft =
@@ -3895,7 +3879,6 @@ Array of Hashes:
               drawing_lane drawing_priority
             ];
 
-            $return_object->{$feature_id}{'aliases'} = $aliases{$feature_id};
         }
 
         $self->store_cached_results( 4, $sql_str, $return_object );
