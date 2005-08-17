@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.173 2005-08-16 18:50:32 mwz444 Exp $
+# $Id: Map.pm,v 1.174 2005-08-17 03:02:07 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.173 $)[-1];
+$VERSION = (qw$Revision: 1.174 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1206,11 +1206,36 @@ Variable Info:
         $is_compressed ? 0
       : $label_features eq 'none' ? 0
       : 1;
-    my $show_ticks     = 1;                        #Always show ticks
-    my $show_map_title = $is_compressed ? 0 : 1;
-    my $show_map_units = $is_compressed ? 0 : 1;
+    my $show_ticks        = 1;                        #Always show ticks
+    my $show_map_title    = $is_compressed ? 0 : 1;
+    my $show_map_units    = $is_compressed ? 0 : 1;
+    my $slot_title_buffer = 2;
 
     my $base_x = $self->base_x;
+
+    # Create the Slot Title Box
+    # We do this first to make sure that the slot is wide enough
+    my @lines =
+      map { $self->$_( $map_ids[0] ) if ( $self->can($_) ) }
+      grep !/map_name/, @config_map_titles;
+    my %slot_title_info = $self->create_slot_title(
+        drawer  => $drawer,
+        lines   => \@lines,
+        buttons => $self->create_buttons(
+            map_id  => $map_ids[0],
+            drawer  => $drawer,
+            slot_no => $slot_no,
+            buttons => [ 'map_set_info', 'set_matrix', 'delete', ],
+        ),
+        font => $reg_font,
+    );
+    my $slot_title_width =
+      $slot_title_info{'bounds'}->[2] - $slot_title_info{'bounds'}->[0] +
+      ( $slot_title_buffer * 2 );
+    $drawer->slot_title(
+        slot_no => $slot_no,
+        %slot_title_info,
+    );
 
     #    $slot_no == 0 ? $self->base_x
     #  : $slot_no > 0  ? $self->base_x + $half_title_length + 10
@@ -1386,7 +1411,7 @@ Variable Info:
         my $map_start  = $self->map_start($map_id);
 
         for my $lane ( sort { $a <=> $b } keys %$features ) {
-            my %even_labels;    # holds label coordinates
+            my %even_labels;               # holds label coordinates
               #my ( @north_labels, @south_labels );    # holds label coordinates
             my $lane_features = $features->{$lane};
             my $midpoint      =
@@ -1582,6 +1607,8 @@ Variable Info:
         }
         $slot_max_x = $base_x;
         $slot_min_x = $lane_base_x[-1] - $slot_buffer;
+        $slot_min_x = $base_x - $slot_title_width
+          if ( $slot_min_x > ( $base_x - $slot_title_width ) );
     }
     else {
         $lane_base_x[0] = $base_x + $slot_buffer;
@@ -1593,6 +1620,8 @@ Variable Info:
         }
         $slot_min_x = $base_x;
         $slot_max_x = $lane_base_x[-1] + $lane_width[-1] + $slot_buffer;
+        $slot_max_x = ( $base_x + $slot_title_width )
+          if ( $slot_max_x < ( $base_x + $slot_title_width ) );
     }
 
     my $corrs_to_map = $drawer->corrs_to_map();
@@ -1941,25 +1970,6 @@ Variable Info:
             }
         }
     }
-
-    ###Create the Slot Title Box
-    my @lines =
-      map { $self->$_( $map_ids[0] ) if ( $self->can($_) ) }
-      grep !/map_name/, @config_map_titles;
-    $drawer->slot_title(
-        slot_no => $slot_no,
-        $self->create_slot_title(
-            drawer  => $drawer,
-            lines   => \@lines,
-            buttons => $self->create_buttons(
-                map_id  => $map_ids[0],
-                drawer  => $drawer,
-                slot_no => $slot_no,
-                buttons => [ 'map_set_info', 'set_matrix', 'delete', ],
-            ),
-            font => $reg_font,
-        )
-    );
 
     #
     # Register the feature types we saw.
