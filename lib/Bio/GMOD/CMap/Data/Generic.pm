@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.96 2005-08-16 16:13:50 mwz444 Exp $
+# $Id: Generic.pm,v 1.97 2005-08-17 03:30:48 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.96 $)[-1];
+$VERSION = (qw$Revision: 1.97 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -3663,7 +3663,7 @@ The way it works, is that it creates one sql query for those types that will alw
 List of feature type accs that will be displayed even if they don't have
 correspondences.
 
-=item - Ignored Feature Type Accessions (ingnored_feature_type_accs)
+=item - Ignored Feature Type Accessions (ignored_feature_type_accs)
 
 List of feature type accs that will not be displayed.
 
@@ -3715,7 +3715,7 @@ Array of Hashes:
     my $map_stop    = $args{'map_stop'};
     my $this_slot_no                = $args{'this_slot_no'};
     my $included_feature_type_accs  = $args{'included_feature_type_accs'} || [];
-    my $ignored_feature_type_accs   = $args{'ingnored_feature_type_accs'} || [];
+    my $ignored_feature_type_accs   = $args{'ignored_feature_type_accs'} || [];
     my $corr_only_feature_type_accs = $args{'corr_only_feature_type_accs'}
       || [];
     my $show_intraslot_corr = $args{'show_intraslot_corr'};
