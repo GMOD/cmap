@@ -95,7 +95,12 @@
                 <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
                     <td>[% f.feature_acc %]</td>
                     <td>[% f.feature_name %]</td>
-                    <td>[% f.aliases.join(', ') | truncate(10) %]</td>
+                    <td>[%- SET not_first=0 -%]
+                        [%- FOREACH a=f.aliases -%]
+                            [%- IF not_first %], [% ELSE %][% not_first=1 %][% END -%]
+                            [%- a.alias -%]
+                        [%- END -%]
+                    </td>
                     <td>[% f.feature_type %]</td>
                     <td>[% f.species_common_name %]</td>
                     <td>
