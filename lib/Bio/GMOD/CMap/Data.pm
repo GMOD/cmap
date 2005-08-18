@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.249 2005-08-18 16:06:11 mwz444 Exp $
+# $Id: Data.pm,v 1.250 2005-08-18 21:11:15 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.249 $)[-1];
+$VERSION = (qw$Revision: 1.250 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -1933,9 +1933,9 @@ Given a list of feature names, find any maps they occur on.
 
         my $features = $sql_object->get_features(
             cmap_object       => $self,
-            feature_name      => $feature_name,
             feature_type_accs => $incoming_feature_type_accs,
             species_accs      => $species_accs,
+            $search_field     => $feature_name,
             aliases_get_rows  => 1,
         );
 
