@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.97 2005-08-17 03:30:48 mwz444 Exp $
+# $Id: Generic.pm,v 1.98 2005-08-18 16:04:21 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.97 $)[-1];
+$VERSION = (qw$Revision: 1.98 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -3271,8 +3271,8 @@ Not using cache because this query is quicker.
         $where_sql .= " and f.feature_id = ? ";
     }
     elsif ($feature_acc) {
-        my $comparison = $feature_name =~ m/%/ ? 'like' : '=';
-        if ( $feature_name ne '%' ) {
+        my $comparison = $feature_acc =~ m/%/ ? 'like' : '=';
+        if ( $feature_acc ne '%' ) {
             push @identifiers, $feature_acc;
             $where_sql .= " and f.feature_acc $comparison ? ";
         }
