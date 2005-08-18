@@ -101,7 +101,7 @@ Use &quot;*&quot; or &quot;%&quot; for wildcards.  To find features with spaces 
                     </td>
                     <td>[% r.aliases.join(', ') | truncate(30) %]</td>
                     <td align="center">
-                        <b>[</b>&nbsp;<a href="[% url %]/map_details?ref_map_set_acc=[% r.map_set_acc %];ref_map_accs=[% r.map_acc %];highlight=&quot;[% r.feature_name %]&quot;;data_source=[% apr.param('data_source') %];label_features=landmarks;feature_type_[% r.feature_type_acc %]=2">View&nbsp;on&nbsp;Map</a>&nbsp;<b>]</b>
+                        <b>[</b>&nbsp;<a href="[% url %]/map_details?ref_map_set_acc=[% r.map_set_acc %];ref_map_accs=[% r.map_acc %];highlight=&quot;[% r.feature_acc %]&quot;;data_source=[% apr.param('data_source') %];label_features=landmarks;feature_type_[% r.feature_type_acc %]=2">View&nbsp;on&nbsp;Map</a>&nbsp;<b>]</b>
                     </td>
                     <td align="center">
                         <b>[</b>&nbsp;<a href="feature?feature_acc=[% r.feature_acc %];data_source=[% apr.param('data_source') %]">Feature&nbsp;Details</a><b>&nbsp;]</b>
