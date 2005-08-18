@@ -4,7 +4,7 @@ package Bio::GMOD::CMap::Apache::SpiderViewer;
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -23,7 +23,7 @@ sub handler {
     # read session data.  Calls "show_form."
     #
     my ( $self, $apr ) = @_;
-    my $map_acc          = $apr->param('map_acc')          || '';
+    my $map_acc = $apr->param('map_acc') || $apr->param('map_aid') || '';
     my $degrees_to_crawl = $apr->param('degrees_to_crawl') || 0;
     my $min_corrs        = $apr->param('min_corrs')        || 0;
 

@@ -1,11 +1,12 @@
 package Bio::GMOD::CMap::Apache::DataDownloader;
+
 # vim: set ft=perl:
 
-# $Id: DataDownloader.pm,v 1.3 2005-06-03 22:20:00 mwz444 Exp $
+# $Id: DataDownloader.pm,v 1.4 2005-08-18 16:02:33 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use base 'Bio::GMOD::CMap::Apache';
@@ -13,6 +14,7 @@ use base 'Bio::GMOD::CMap::Apache';
 use constant TEMPLATE => 'data_downloader.tmpl';
 
 sub handler {
+
     #
     # Make a jazz noise here...
     #
@@ -21,32 +23,36 @@ sub handler {
     if ( $apr->param('download') ) {
         $self->data_source( $apr->param('data_source') ) or return;
 
-        my $page_no        = $apr->param('page_no') || 1;
-        my $data_module    = $self->data_module;
-        my $data           = $data_module->data_download(
-            map_set_acc    => $apr->param('map_set_acc') || '',
-            map_acc        => $apr->param('map_acc')     || '',
-            format         => $apr->param('format')      || '',
-        ) or return $self->error( $data_module->error );
+        my $page_no     = $apr->param('page_no') || 1;
+        my $data_module = $self->data_module;
+        my $data        = $data_module->data_download(
+            map_set_acc => $apr->param('map_set_acc')
+              || $apr->param('map_set_aid')
+              || '',
+            map_acc => $apr->param('map_acc') || $apr->param('map_aid') || '',
+            format => $apr->param('format') || '',
+          )
+          or return $self->error( $data_module->error );
 
-        print $apr->header( -type => 'text/plain', -cookie => $self->cookie ), 
-            $data;
+        print $apr->header( -type => 'text/plain', -cookie => $self->cookie ),
+          $data;
     }
     else {
         my $html;
         my $t = $self->template;
-        $t->process( 
-            TEMPLATE, 
-            { 
+        $t->process(
+            TEMPLATE,
+            {
                 apr        => $apr,
                 page       => $self->page,
                 stylesheet => $self->stylesheet,
             },
-            \$html 
-        ) or $html = $t->error;
+            \$html
+          )
+          or $html = $t->error;
 
-        print $apr->header( -type => 'text/html', -cookie => $self->cookie ), 
-            $html;
+        print $apr->header( -type => 'text/html', -cookie => $self->cookie ),
+          $html;
 
     }
 
@@ -84,3 +90,4 @@ This library is free software;  you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 =cut
+

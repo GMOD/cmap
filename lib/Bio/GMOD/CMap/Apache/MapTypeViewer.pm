@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapTypeViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapTypeViewer.pm,v 1.7 2005-06-03 22:20:00 mwz444 Exp $
+# $Id: MapTypeViewer.pm,v 1.8 2005-08-18 16:02:33 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.7 $)[-1];
+$VERSION = (qw$Revision: 1.8 $)[-1];
 
 use Data::Pageset;
 use Bio::GMOD::CMap::Apache;
@@ -23,7 +23,8 @@ sub handler {
     $self->data_source( $apr->param('data_source') ) or return;
 
     my $page_no = $apr->param('page_no') || 1;
-    my @map_types = split( /,/, $apr->param('map_type_acc') );
+    my @map_types =
+      split( /,/, $apr->param('map_type_acc') || $apr->param('map_type_aid') );
     my $data_module = $self->data_module;
     my $data = $data_module->map_type_viewer_data( map_types => \@map_types, )
       or return $self->error( $data_module->error );

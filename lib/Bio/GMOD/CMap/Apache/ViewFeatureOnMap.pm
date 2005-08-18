@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::ViewFeatureOnMap;
 
 # vim: set ft=perl:
 
-# $Id: ViewFeatureOnMap.pm,v 1.12 2005-06-03 22:20:00 mwz444 Exp $
+# $Id: ViewFeatureOnMap.pm,v 1.13 2005-08-18 16:02:33 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.12 $)[-1];
+$VERSION = (qw$Revision: 1.13 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use base 'Bio::GMOD::CMap::Apache';
@@ -18,7 +18,9 @@ sub handler {
     #
     my ( $self, $apr ) = @_;
     $self->data_source( $apr->param('data_source') ) or return;
-    my $feature_acc  = $apr->param('feature_acc')  || '';
+    my $feature_acc = $apr->param('feature_acc')
+      || $apr->param('feature_aid')
+      || '';
     my $highlight_by = $apr->param('highlight_by') || '';
     my $data         = $self->data_module;
     my $url          = $apr->url;

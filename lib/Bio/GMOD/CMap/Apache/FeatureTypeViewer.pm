@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::FeatureTypeViewer;
 
 # vim: set ft=perl:
 
-# $Id: FeatureTypeViewer.pm,v 1.11 2005-06-03 22:20:00 mwz444 Exp $
+# $Id: FeatureTypeViewer.pm,v 1.12 2005-08-18 16:02:33 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.11 $)[-1];
+$VERSION = (qw$Revision: 1.12 $)[-1];
 
 use Data::Pageset;
 use Bio::GMOD::CMap::Apache;
@@ -25,7 +25,9 @@ sub handler {
     my $page_no = $apr->param('page_no') || 1;
     my @ft_accs =
       split( /,/,
-        $apr->param('feature_type_acc') || $apr->param('feature_type') );
+             $apr->param('feature_type_acc')
+          || $apr->param('feature_type_aid')
+          || $apr->param('feature_type') );
     my $data_module = $self->data_module;
     my $data        =
       $data_module->feature_type_info_data( feature_types => \@ft_accs, )

@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapSetViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapSetViewer.pm,v 1.20 2005-06-03 22:20:00 mwz444 Exp $
+# $Id: MapSetViewer.pm,v 1.21 2005-08-18 16:02:33 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.20 $)[-1];
+$VERSION = (qw$Revision: 1.21 $)[-1];
 
 use Data::Pageset;
 use Bio::GMOD::CMap::Apache;
@@ -23,12 +23,17 @@ sub handler {
     $self->data_source( $apr->param('data_source') ) or return;
 
     my $page_no = $apr->param('page_no') || 1;
-    my @map_set_accs = split( /,/, $apr->param('map_set_acc') );
-    my $data_module  = $self->data_module;
-    my $data         = $data_module->map_set_viewer_data(
+    my @map_set_accs =
+      split( /,/, $apr->param('map_set_acc') || $apr->param('map_set_aid') );
+    my $data_module = $self->data_module;
+    my $data        = $data_module->map_set_viewer_data(
         map_set_accs => \@map_set_accs,
-        species_acc  => $apr->param('species_acc') || '',
-        map_type_acc => $apr->param('map_type_acc') || '',
+        species_acc  => $apr->param('species_acc')
+          || $apr->param('species_aid')
+          || '',
+        map_type_acc => $apr->param('map_type_acc')
+          || $apr->param('map_type_aid')
+          || '',
       )
       or return $self->error( $data_module->error );
     my $map_sets = $data->{'map_sets'};

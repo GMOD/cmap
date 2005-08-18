@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::CorrespondenceViewer;
 
 # vim: set ft=perl:
 
-# $Id: CorrespondenceViewer.pm,v 1.3 2005-06-03 22:20:00 mwz444 Exp $
+# $Id: CorrespondenceViewer.pm,v 1.4 2005-08-18 16:02:33 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.3 $)[-1];
+$VERSION = (qw$Revision: 1.4 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Data;
@@ -21,6 +21,7 @@ sub handler {
     #
     my ( $self, $apr ) = @_;
     my $correspondence_acc = $apr->param('correspondence_acc')
+      || $apr->param('correspondence_aid')
       or die 'No accession id';
     $self->data_source( $apr->param('data_source') ) or return;
     my $data_module = $self->data_module;

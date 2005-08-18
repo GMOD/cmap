@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache::AdminViewer;
 
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.88 2005-06-03 22:20:00 mwz444 Exp $
+# $Id: AdminViewer.pm,v 1.89 2005-08-18 16:02:33 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -36,7 +36,7 @@ $FEATURE_SHAPES = [
 ];
 $MAP_SHAPES = [qw( box dumbbell I-beam )];
 $WIDTHS     = [ 1 .. 10 ];
-$VERSION    = (qw$Revision: 1.88 $)[-1];
+$VERSION    = (qw$Revision: 1.89 $)[-1];
 
 use constant ADMIN_TEMPLATE => {
     admin_home                => 'admin_home.tmpl',
@@ -436,7 +436,7 @@ sub corr_evidence_type_update {
 sub corr_evidence_type_view {
     my ( $self, %args ) = @_;
     my $apr                        = $self->apr;
-    my $incoming_evidence_type_acc = $apr->param('evidence_type_acc')
+    my $incoming_evidence_type_acc = $apr->param('evidence_type_acc') || $apr->param('evidence_type_aid')
       or return $self->error('No evidence type');
 
     my $evidence_type = $self->evidence_type_data($incoming_evidence_type_acc)
@@ -699,7 +699,7 @@ sub map_insert {
     my $admin  = $self->admin;
     my $apr    = $self->apr;
     my $map_id = $admin->map_create(
-        map_acc       => $apr->param('map_acc')       || '',
+        map_acc       => $apr->param('map_acc') || $apr->param('map_aid')       || '',
         display_order => $apr->param('display_order') || 1,
         map_name      => $apr->param('map_name')      || '',
         map_set_id    => $apr->param('map_set_id')    || 0,
@@ -721,7 +721,7 @@ sub map_view {
     my $sql_object       = $self->sql or return $self->error;
     my $apr              = $self->apr;
     my $map_id           = $apr->param('map_id') or die 'No map id';
-    my $feature_type_acc = $apr->param('feature_type_acc') || 0;
+    my $feature_type_acc = $apr->param('feature_type_acc') || $apr->param('feature_type_aid') || 0;
     my $page_no          = $apr->param('page_no') || 1;
 
     my $maps = $sql_object->get_maps(
@@ -835,7 +835,7 @@ sub map_update {
     $sql_object->update_map(
         cmap_object   => $self,
         map_id        => $map_id,
-        map_acc       => $apr->param('map_acc'),
+        map_acc       => $apr->param('map_acc') || $apr->param('map_aid'),
         display_order => $apr->param('display_order'),
         map_name      => $apr->param('map_name'),
         map_start     => $apr->param('map_start'),
@@ -1042,9 +1042,9 @@ sub feature_insert {
     my $apr        = $self->apr;
     my $feature_id = $admin->feature_create(
         map_id           => $apr->param('map_id')           || 0,
-        feature_acc      => $apr->param('feature_acc')      || '',
+        feature_acc      => $apr->param('feature_acc') || $apr->param('feature_aid')      || '',
         feature_name     => $apr->param('feature_name')     || '',
-        feature_type_acc => $apr->param('feature_type_acc') || 0,
+        feature_type_acc => $apr->param('feature_type_acc') || $apr->param('feature_type_aid') || 0,
         is_landmark      => $apr->param('is_landmark')      || 0,
         direction        => $apr->param('direction')        || 0,
         feature_start    => $apr->param('feature_start')    || 0,
@@ -1072,9 +1072,9 @@ sub feature_update {
     $sql_object->update_feature(
         cmap_object      => $self,
         feature_id       => $feature_id,
-        feature_acc      => $apr->param('feature_acc'),
+        feature_acc      => $apr->param('feature_acc') || $apr->param('feature_aid'),
         feature_name     => $apr->param('feature_name'),
-        feature_type_acc => $apr->param('feature_type_acc'),
+        feature_type_acc => $apr->param('feature_type_acc') || $apr->param('feature_type_aid'),
         is_landmark      => $apr->param('is_landmark'),
         direction        => $apr->param('direction'),
         feature_start    => $apr->param('feature_start'),
@@ -1155,7 +1155,7 @@ sub feature_search {
     my $admin             = $self->admin;
     my $page_no           = $apr->param('page_no') || 1;
     my @species_ids       = ( $apr->param('species_id') || () );
-    my @feature_type_accs = ( $apr->param('feature_type_acc') || () );
+    my @feature_type_accs = ( $apr->param('feature_type_acc') || $apr->param('feature_type_aid') || () );
     my $sql_object        = $self->sql or die "SQL object not found\n";
 
     my @all_feature_type_accs =
@@ -1182,7 +1182,7 @@ sub feature_search {
         my $result = $admin->feature_search(
             feature_name      => $feature_name,
             search_field      => $apr->param('search_field') || '',
-            map_acc           => $apr->param('map_acc') || 0,
+            map_acc           => $apr->param('map_acc') || $apr->param('map_aid') || 0,
             species_ids       => \@species_ids,
             feature_type_accs => \@feature_type_accs,
             order_by          => $apr->param('order_by') || '',
@@ -1275,10 +1275,10 @@ sub feature_corr_insert {
       or die 'No feature id1';
     my $feature_id2 = $apr->param('feature_id2')
       or die 'No feature id2';
-    my $feature_correspondence_acc = $apr->param('feature_correspondence_acc')
+    my $feature_correspondence_acc = $apr->param('feature_correspondence_acc') || $apr->param('feature_correspondence_aid')
       || '';
     my $is_enabled = $apr->param('is_enabled') || 0;
-    my $evidence_type_acc = $apr->param('evidence_type_acc')
+    my $evidence_type_acc = $apr->param('evidence_type_acc') || $apr->param('evidence_type_aid')
       or push @errors, 'Please select an evidence type';
 
     push @errors,
@@ -1349,7 +1349,7 @@ sub feature_corr_update {
     $sql_object->update_feature_correspondence(
         cmap_object                => $self,
         feature_correspondence_id  => $feature_correspondence_id,
-        feature_correspondence_acc => $apr->param('feature_correspondence_acc'),
+        feature_correspondence_acc => $apr->param('feature_correspondence_acc') || $apr->param('feature_correspondence_aid'),
         is_enabled                 => $apr->param('is_enabled'),
     );
 
@@ -1496,7 +1496,7 @@ sub corr_evidence_insert {
     my $apr                       = $self->apr;
     my $feature_correspondence_id = $apr->param('feature_correspondence_id')
       or push @errors, 'No feature correspondence id';
-    my $evidence_type_acc = $apr->param('evidence_type_acc')
+    my $evidence_type_acc = $apr->param('evidence_type_acc') || $apr->param('evidence_type_aid')
       or push @errors, 'No evidence type';
 
     $sql_object->insert_correspondence_evidence(
@@ -1504,7 +1504,7 @@ sub corr_evidence_insert {
         evidence_type_acc           => $evidence_type_acc,
         feature_correspondence_id   => $feature_correspondence_id,
         correspondence_evidence_acc =>
-          $apr->param('correspondence_evidence_acc'),
+          $apr->param('correspondence_evidence_acc') || $apr->param('correspondence_evidence_aid'),
         score => $apr->param('score'),
     );
 
@@ -1529,10 +1529,10 @@ sub corr_evidence_update {
     $sql_object->update_correspondence_evidence(
         cmap_object                 => $self,
         correspondence_evidence_id  => $correspondence_evidence_id,
-        evidence_type_acc           => $apr->param('evidence_type_acc'),
+        evidence_type_acc           => $apr->param('evidence_type_acc') || $apr->param('evidence_type_aid'),
         feature_correspondence_id   => $feature_correspondence_id,
         correspondence_evidence_acc =>
-          $apr->param('correspondence_evidence_acc'),
+          $apr->param('correspondence_evidence_acc') || $apr->param('correspondence_evidence_aid'),
         score => $apr->param('score'),
         rank  => $apr->param('rank'),
     );
@@ -1574,7 +1574,7 @@ sub feature_type_update {
 sub feature_type_view {
     my ( $self, %args ) = @_;
     my $apr                       = $self->apr;
-    my $incoming_feature_type_acc = $apr->param('feature_type_acc')
+    my $incoming_feature_type_acc = $apr->param('feature_type_acc') || $apr->param('feature_type_aid')
       or die 'No feature type id';
     my $feature_type = $self->feature_type_data($incoming_feature_type_acc)
       or return $self->error(
@@ -1634,7 +1634,7 @@ sub map_sets_view {
     my $self         = shift;
     my $sql_object   = $self->sql;
     my $apr          = $self->apr;
-    my $map_type_acc = $apr->param('map_type_acc') || '';
+    my $map_type_acc = $apr->param('map_type_acc') || $apr->param('map_type_aid') || '';
     my $species_id   = $apr->param('species_id') || '';
     my $is_enabled   = $apr->param('is_enabled');
     my $page_no      = $apr->param('page_no') || 1;
@@ -1793,8 +1793,8 @@ sub map_set_insert {
         map_set_name       => $apr->param('map_set_name')       || '',
         map_set_short_name => $apr->param('map_set_short_name') || '',
         species_id         => $apr->param('species_id')         || '',
-        map_type_acc       => $apr->param('map_type_acc')       || '',
-        map_set_acc        => $apr->param('map_set_acc')        || '',
+        map_type_acc       => $apr->param('map_type_acc') || $apr->param('map_type_aid')       || '',
+        map_set_acc        => $apr->param('map_set_acc') || $apr->param('map_set_aid')        || '',
         display_order      => $apr->param('display_order')      || 1,
         is_relational_map  => $apr->param('is_relational_map')  || 0,
         shape              => $apr->param('shape')              || '',
@@ -1880,7 +1880,7 @@ sub map_set_update {
     my $apr          = $self->apr;
     my @errors       = ();
     my $map_set_id   = $apr->param('map_set_id') || 0;
-    my $map_type_acc = $apr->param('map_type_acc');
+    my $map_type_acc = $apr->param('map_type_acc') || $apr->param('map_type_aid');
 
     my $published_on = $apr->param('published_on') || 'today';
 
@@ -1902,7 +1902,7 @@ sub map_set_update {
     $sql_object->update_map_set(
         cmap_object        => $self,
         map_set_id         => $map_set_id,
-        map_set_acc        => $apr->param('map_set_acc'),
+        map_set_acc        => $apr->param('map_set_acc') || $apr->param('map_set_aid'),
         map_set_name       => $apr->param('map_set_name'),
         map_set_short_name => $apr->param('map_set_short_name'),
         species_id         => $apr->param('species_id'),
@@ -1967,7 +1967,7 @@ sub map_type_update {
 sub map_type_view {
     my ( $self, %args ) = @_;
     my $apr                   = $self->apr;
-    my $incoming_map_type_acc = $apr->param('map_type_acc')
+    my $incoming_map_type_acc = $apr->param('map_type_acc') || $apr->param('map_type_aid')
       or die 'No map type ID';
     my $map_type = $self->map_type_data($incoming_map_type_acc)
       or
@@ -2079,7 +2079,7 @@ sub species_insert {
     my $admin = $self->admin;
 
     $admin->species_create(
-        species_acc         => $apr->param('species_acc')         || '',
+        species_acc         => $apr->param('species_acc') || $apr->param('species_aid')         || '',
         species_common_name => $apr->param('species_common_name') || '',
         species_full_name   => $apr->param('species_full_name')   || '',
         display_order       => $apr->param('display_order')       || '',
@@ -2105,7 +2105,7 @@ sub species_update {
     $sql_object->update_species(
         cmap_object         => $self,
         species_id          => $species_id,
-        species_acc         => $apr->param('species_acc'),
+        species_acc         => $apr->param('species_acc') || $apr->param('species_aid'),
         species_common_name => $apr->param('species_common_name'),
         species_full_name   => $apr->param('species_full_name'),
         display_order       => $apr->param('display_order'),

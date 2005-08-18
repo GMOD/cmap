@@ -1,11 +1,12 @@
 package Bio::GMOD::CMap::Apache::FeatureSearch;
+
 # vim: set ft=perl:
 
-# $Id: FeatureSearch.pm,v 1.22 2005-06-03 22:20:00 mwz444 Exp $
+# $Id: FeatureSearch.pm,v 1.23 2005-08-18 16:02:33 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $PAGE_SIZE $MAX_PAGES $INTRO );
-$VERSION = (qw$Revision: 1.22 $)[-1];
+$VERSION = (qw$Revision: 1.23 $)[-1];
 
 use Bio::GMOD::CMap::Data;
 use Data::Pageset;
@@ -15,21 +16,24 @@ use base 'Bio::GMOD::CMap::Apache';
 use constant TEMPLATE => 'feature_search.tmpl';
 
 sub handler {
+
     #
     # Make a jazz noise here...
     #
-    my ( $self, $apr )    = @_;
-    my $features          = $apr->param('features')     || '';
-    my $order_by          = $apr->param('order_by')     || '';
-    my $page_no           = $apr->param('page_no')      ||  1;
-    my $search_field      = $apr->param('search_field') || '';
-    my @species_accs      = ( $apr->param('species_acc')      );
-    my @feature_type_accs = ( $apr->param('feature_type_acc') );
+    my ( $self, $apr ) = @_;
+    my $features     = $apr->param('features')     || '';
+    my $order_by     = $apr->param('order_by')     || '';
+    my $page_no      = $apr->param('page_no')      || 1;
+    my $search_field = $apr->param('search_field') || '';
+    my @species_accs =
+      ( $apr->param('species_acc') || $apr->param('species_aid') );
+    my @feature_type_accs =
+      ( $apr->param('feature_type_acc') || $apr->param('feature_type_aid') );
 
     $self->data_source( $apr->param('data_source') ) or return;
 
-    $PAGE_SIZE ||= $self->config_data('max_child_elements')   ||  0;
-    $MAX_PAGES ||= $self->config_data('max_search_pages')     ||  1;
+    $PAGE_SIZE ||= $self->config_data('max_child_elements')   || 0;
+    $MAX_PAGES ||= $self->config_data('max_search_pages')     || 1;
     $INTRO     ||= $self->config_data('feature_search_intro') || '';
 
     #
@@ -38,11 +42,11 @@ sub handler {
     # if the user clicks on a link in the pager, then I have to look
     # in the "*_accs" field, which is a comma-separated string of acc. IDs.
     #
-    unless ( @species_accs ) {
+    unless (@species_accs) {
         @species_accs = split /,/, $apr->param('species_accs');
     }
 
-    unless ( @feature_type_accs ) {
+    unless (@feature_type_accs) {
         @feature_type_accs = split /,/, $apr->param('feature_type_accs');
     }
 
@@ -55,12 +59,12 @@ sub handler {
     #
     # Set the parameters in the request object.
     #
-    $apr->param( features               => $features                         );
-    $apr->param( species_accs           => join(',', @species_accs         ) );
-    $apr->param( feature_type_accs      => join(',', @feature_type_accs    ) );
+    $apr->param( features          => $features );
+    $apr->param( species_accs      => join( ',', @species_accs ) );
+    $apr->param( feature_type_accs => join( ',', @feature_type_accs ) );
 
-    my $data              =  $self->data_module or return;
-    my $results           =  $data->feature_search_data(
+    my $data = $self->data_module or return;
+    my $results = $data->feature_search_data(
         features          => $features,
         order_by          => $order_by,
         search_field      => $search_field,
@@ -70,28 +74,29 @@ sub handler {
         page_no           => $page_no,
         pages_per_set     => $MAX_PAGES,
         page_data         => 1,
-    ) or return $self->error( $data->error );
+      )
+      or return $self->error( $data->error );
 
     my $html;
     my $t = $self->template;
-    $t->process( 
-        TEMPLATE, 
-        { 
-            apr                 => $apr, 
-            page                => $self->page,
-            stylesheet          => $self->stylesheet,
-            pager               => $results->{'pager'},
-            species             => $results->{'species'},
-            feature_types       => $results->{'feature_types'},
-            search_results      => $results->{'data'},
-            species_lookup      => { map { $_, 1 } @species_accs      },
+    $t->process(
+        TEMPLATE,
+        {
+            apr                     => $apr,
+            page                    => $self->page,
+            stylesheet              => $self->stylesheet,
+            pager                   => $results->{'pager'},
+            species                 => $results->{'species'},
+            feature_types           => $results->{'feature_types'},
+            search_results          => $results->{'data'},
+            species_lookup          => { map { $_, 1 } @species_accs },
             feature_type_acc_lookup => { map { $_, 1 } @feature_type_accs },
-            data_sources        => $self->data_sources,
-            intro               => $INTRO,
+            data_sources            => $self->data_sources,
+            intro                   => $INTRO,
         },
-        \$html 
-    ) 
-    or $html = $t->error;
+        \$html
+      )
+      or $html = $t->error;
 
     print $apr->header( -type => 'text/html', -cookie => $self->cookie ), $html;
     return 1;
@@ -140,3 +145,4 @@ This library is free software;  you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 =cut
+

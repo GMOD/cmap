@@ -4,7 +4,7 @@ package Bio::GMOD::CMap::Apache::MapSearch;
 
 use strict;
 use vars qw( $VERSION $INTRO );
-$VERSION = (qw$Revision: 1.5 $)[-1];
+$VERSION = (qw$Revision: 1.6 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -23,20 +23,26 @@ sub handler {
     # read session data.  Calls "show_form."
     #
     my ( $self, $apr ) = @_;
-    my $ref_species_acc         = $apr->param('ref_species_acc')         || '';
-    my $prev_ref_species_acc    = $apr->param('prev_ref_species_acc')    || '';
-    my $ref_map_set_acc         = $apr->param('ref_map_set_acc')         || '';
-    my $min_correspondence_maps = $apr->param('min_correspondence_maps') ||  0;
+    my $ref_species_acc = $apr->param('ref_species_acc')
+      || $apr->param('ref_species_aid')
+      || '';
+    my $prev_ref_species_acc = $apr->param('prev_ref_species_acc')
+      || $apr->param('prev_ref_species_aid')
+      || '';
+    my $ref_map_set_acc = $apr->param('ref_map_set_acc')
+      || $apr->param('ref_map_set_aid')
+      || '';
+    my $min_correspondence_maps = $apr->param('min_correspondence_maps') || 0;
     my $name_search             = $apr->param('name_search')             || '';
     my $order_by                = $apr->param('order_by')                || '';
-    my $page_no                 = $apr->param('page_no')                 ||  1;
+    my $page_no                 = $apr->param('page_no')                 || 1;
 
-    $INTRO ||= $self->config_data('map_viewer_intro', $self->data_source) || '';
+    $INTRO ||= $self->config_data( 'map_viewer_intro', $self->data_source )
+      || '';
 
-    if ( 
-        $prev_ref_species_acc &&
-        ( $prev_ref_species_acc ne $ref_species_acc )
-    ) {
+    if ( $prev_ref_species_acc
+        && ( $prev_ref_species_acc ne $ref_species_acc ) )
+    {
         $ref_map_set_acc = '';
     }
 
@@ -46,8 +52,10 @@ sub handler {
     # form <select>.
     #
     my @ref_map_accs;
-    if ( $apr->param('ref_map_acc') ) {
-        @ref_map_accs = split( /,/, $apr->param('ref_map_acc') );
+    if ( $apr->param('ref_map_acc') || $apr->param('ref_map_aid') ) {
+        @ref_map_accs =
+          split( /,/,
+            $apr->param('ref_map_acc') || $apr->param('ref_map_aid') );
     }
     elsif ( $apr->param('ref_map_accs') ) {
         @ref_map_accs = ( $apr->param('ref_map_accs') );
@@ -89,7 +97,8 @@ sub handler {
         name_search             => $name_search,
         order_by                => $order_by,
         page_no                 => $page_no
-    ) or return $self->error( $data->error );
+      )
+      or return $self->error( $data->error );
 
     #
     # The start and stop may have had to be moved as there

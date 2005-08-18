@@ -1,11 +1,12 @@
 package Bio::GMOD::CMap::Apache::FeatureAliasViewer;
+
 # vim: set ft=perl:
 
-# $Id: FeatureAliasViewer.pm,v 1.4 2005-06-03 22:20:00 mwz444 Exp $
+# $Id: FeatureAliasViewer.pm,v 1.5 2005-08-18 16:02:33 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.4 $)[-1];
+$VERSION = (qw$Revision: 1.5 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Data;
@@ -14,31 +15,36 @@ use base 'Bio::GMOD::CMap::Apache';
 use constant TEMPLATE => 'feature_alias_detail.tmpl';
 
 sub handler {
+
     #
     # Make a jazz noise here...
     #
     my ( $self, $apr ) = @_;
     $self->data_source( $apr->param('data_source') ) or return;
-    my $data_module    = $self->data_module;
-    my $alias          = $data_module->feature_alias_detail_data(
-        feature_acc    => $apr->param('feature_acc')   || '',
-        feature_alias  => $apr->param('feature_alias') || '',
-    ) or return $self->error( $data_module->error );
+    my $data_module = $self->data_module;
+    my $alias       = $data_module->feature_alias_detail_data(
+        feature_acc => $apr->param('feature_acc')
+          || $apr->param('feature_aid')
+          || '',
+        feature_alias => $apr->param('feature_alias') || '',
+      )
+      or return $self->error( $data_module->error );
 
     $self->object_plugin( 'feature_alias', $alias );
 
     my $t = $self->template or return;
     my $html;
-    $t->process( 
-        TEMPLATE, 
-        { 
+    $t->process(
+        TEMPLATE,
+        {
             apr        => $self->apr,
             alias      => $alias,
             page       => $self->page,
             stylesheet => $self->stylesheet,
-        }, 
-        \$html 
-    ) or return $self->error( $t->error );
+        },
+        \$html
+      )
+      or return $self->error( $t->error );
 
     print $apr->header( -type => 'text/html', -cookie => $self->cookie ), $html;
     return 1;
@@ -88,3 +94,4 @@ This library is free software;  you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 =cut
+

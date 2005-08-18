@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.111 2005-08-15 13:50:58 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.112 2005-08-18 16:02:33 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.111 $)[-1];
+$VERSION = (qw$Revision: 1.112 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -55,13 +55,21 @@ sub handler {
     # read session data.  Calls "show_form."
     #
     my ( $self, $apr ) = @_;
-    my $prev_ref_species_acc = $apr->param('prev_ref_species_acc') || '';
-    my $prev_ref_map_set_acc = $apr->param('prev_ref_map_set_acc') || '';
-    my $ref_species_acc      = $apr->param('ref_species_acc')      || '';
-    my $ref_map_set_acc      = $apr->param('ref_map_set_acc')      || '';
-    my $ref_map_start        = $apr->param('ref_map_start');
-    my $ref_map_stop         = $apr->param('ref_map_stop');
-    my $comparative_maps     = $apr->param('comparative_maps')     || '';
+    my $prev_ref_species_acc = $apr->param('prev_ref_species_acc')
+      || $apr->param('prev_ref_species_aid')
+      || '';
+    my $prev_ref_map_set_acc = $apr->param('prev_ref_map_set_acc')
+      || $apr->param('prev_ref_map_set_aid')
+      || '';
+    my $ref_species_acc = $apr->param('ref_species_acc')
+      || $apr->param('ref_species_aid')
+      || '';
+    my $ref_map_set_acc = $apr->param('ref_map_set_acc')
+      || $apr->param('ref_map_set_aid')
+      || '';
+    my $ref_map_start         = $apr->param('ref_map_start');
+    my $ref_map_stop          = $apr->param('ref_map_stop');
+    my $comparative_maps      = $apr->param('comparative_maps') || '';
     my @comparative_map_right = $apr->param('comparative_map_right');
     my @comparative_map_left  = $apr->param('comparative_map_left');
     my $comp_map_set_right    = $apr->param('comp_map_set_right');
@@ -188,8 +196,9 @@ sub handler {
     #
     # Catch old argument, handle nicely.
     #
-    if ( $apr->param('ref_map_acc') ) {
-        push @ref_map_accs, $apr->param('ref_map_acc');
+    if ( $apr->param('ref_map_acc') || $apr->param('ref_map_aid') ) {
+        push @ref_map_accs,
+          $apr->param('ref_map_acc') || $apr->param('ref_map_aid');
     }
 
     my %ref_maps;
@@ -250,8 +259,10 @@ sub handler {
     }
 
     my @ref_map_set_accs = ();
-    if ( $apr->param('ref_map_set_acc') ) {
-        @ref_map_set_accs = split( /,/, $apr->param('ref_map_set_acc') );
+    if ( $apr->param('ref_map_set_acc') || $apr->param('ref_map_set_aid') ) {
+        @ref_map_set_accs =
+          split( /,/,
+            $apr->param('ref_map_set_acc') || $apr->param('ref_map_set_aid') );
     }
 
     my @feature_types;
@@ -382,13 +393,13 @@ sub handler {
                   if ( !$reusing_step );
 
                 # if a slot was deleted, change the left/right_min_corrs
-                if ($change_left_min_corrs){
-                    my @slot_nos  = sort { $a <=> $b } keys %slots;
-                    $left_min_corrs = $slots{$slot_nos[0]}->{'min_corrs'};
+                if ($change_left_min_corrs) {
+                    my @slot_nos = sort { $a <=> $b } keys %slots;
+                    $left_min_corrs = $slots{ $slot_nos[0] }->{'min_corrs'};
                 }
-                if ($change_right_min_corrs){
-                    my @slot_nos  = sort { $a <=> $b } keys %slots;
-                    $right_min_corrs = $slots{$slot_nos[-1]}->{'min_corrs'};
+                if ($change_right_min_corrs) {
+                    my @slot_nos = sort { $a <=> $b } keys %slots;
+                    $right_min_corrs = $slots{ $slot_nos[-1] }->{'min_corrs'};
                 }
                 @ref_map_accs = keys( %{ $slots{0}->{'maps'} } );
                 $apr->param( 'ref_map_accs', join( ":", @ref_map_accs ) );
@@ -412,7 +423,7 @@ sub handler {
         $session_id = $session->id();
         $step       = 0;
         $next_step  = $step + 1;
-        $session->expire('+2w'); #expires in two weeks
+        $session->expire('+2w');    #expires in two weeks
         %slots = (
             0 => {
                 map_set_acc => $ref_map_set_acc,
@@ -994,11 +1005,11 @@ sub modify_slots {
           )
         {
             if ( $slot_no >= 0 ) {
-                $delete_pos = 1;
+                $delete_pos             = 1;
                 $change_right_min_corrs = 1;
             }
             if ( $slot_no <= 0 ) {
-                $delete_neg = 1;
+                $delete_neg            = 1;
                 $change_left_min_corrs = 1;
             }
         }
@@ -1009,7 +1020,7 @@ sub modify_slots {
             delete $slots->{$slot_no};
         }
     }
-    return ($change_left_min_corrs, $change_right_min_corrs);
+    return ( $change_left_min_corrs, $change_right_min_corrs );
 }
 
 sub orderOutFromZero {
