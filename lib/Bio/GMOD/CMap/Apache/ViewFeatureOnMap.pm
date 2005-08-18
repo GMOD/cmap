@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::ViewFeatureOnMap;
 
 # vim: set ft=perl:
 
-# $Id: ViewFeatureOnMap.pm,v 1.13 2005-08-18 16:02:33 mwz444 Exp $
+# $Id: ViewFeatureOnMap.pm,v 1.14 2005-08-18 20:57:31 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.13 $)[-1];
+$VERSION = (qw$Revision: 1.14 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use base 'Bio::GMOD::CMap::Apache';
@@ -29,7 +29,7 @@ sub handler {
       $data->view_feature_on_map($feature_acc);
 
     my $highlight =
-      $highlight_by eq 'feature_acc' ? $feature_acc : $feature_name;
+      ($highlight_by eq 'feature_acc' or $highlight_by eq 'accession_id') ? $feature_acc : $feature_name;
 
     return $self->error("Can't find the feature accession ID '$feature_acc'")
       unless $ms_acc && $map_acc;
