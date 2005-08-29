@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.92 2005-07-29 18:43:48 mwz444 Exp $
+# $Id: CMap.pm,v 1.93 2005-08-29 14:18:04 mwz444 Exp $
 
 =head1 NAME
 
@@ -977,19 +977,19 @@ Given information about the link, creates a url to cmap_viewer.
     if ( $session_id and !$new_session ) {
         $url .= "session_id=$session_id;";
         $url .= "step=$next_step;"
-          if defined($next_step);
+          if (defined($next_step) and $next_step ne '');
         $url .= "session_mod=$session_mod;"
-          if defined($session_mod);
+          if (defined($session_mod) and $session_mod ne '');
     }
     else {
         $url .= "ref_map_set_acc=$ref_map_set_acc;"
-          if defined($ref_map_set_acc);
+          if (defined($ref_map_set_acc) and $ref_map_set_acc ne '');
         $url .= "ref_species_acc=$ref_species_acc;"
-          if defined($ref_species_acc);
+          if (defined($ref_species_acc) and $ref_species_acc ne '');
         $url .= "prev_ref_species_acc=$prev_ref_species_acc;"
-          if defined($prev_ref_species_acc);
+          if (defined($prev_ref_species_acc) and $prev_ref_species_acc ne '');
         $url .= "prev_ref_map_set_acc=$prev_ref_map_set_acc;"
-          if defined($prev_ref_map_set_acc);
+          if (defined($prev_ref_map_set_acc) and $prev_ref_map_set_acc ne '');
 
         if ( $ref_map_accs and %$ref_map_accs ) {
             my @ref_strs;
@@ -1065,59 +1065,59 @@ Given information about the link, creates a url to cmap_viewer.
     }
     ### optional
     $url .= "ref_map_start=$ref_map_start;"
-      if defined($ref_map_start);
+      if (defined($ref_map_start) and $ref_map_start ne '');
     $url .= "ref_map_stop=$ref_map_stop;"
-      if defined($ref_map_stop);
+      if (defined($ref_map_stop) and $ref_map_stop ne '');
     $url .= "highlight=" . uri_escape($highlight) . ";"
-      if defined($highlight);
+      if (defined($highlight) and $highlight ne '');
     $url .= "font_size=$font_size;"
-      if defined($font_size);
+      if (defined($font_size) and $font_size ne '');
     $url .= "image_size=$image_size;"
-      if defined($image_size);
+      if (defined($image_size) and $image_size ne '');
     $url .= "image_type=$image_type;"
-      if defined($image_type);
+      if (defined($image_type) and $image_type ne '');
     $url .= "label_features=$label_features;"
-      if defined($label_features);
+      if (defined($label_features) and $label_features ne '');
     $url .= "collapse_features=$collapse_features;"
-      if defined($collapse_features);
+      if (defined($collapse_features) and $collapse_features ne '');
     $url .= "cluster_corr=$cluster_corr;"
-      if defined($cluster_corr);
+      if (defined($cluster_corr) and $cluster_corr ne '');
     $url .= "aggregate=$aggregate;"
-      if defined($aggregate);
+      if (defined($aggregate) and $aggregate ne '');
     $url .= "scale_maps=$scale_maps;"
-      if defined($scale_maps);
+      if (defined($scale_maps) and $scale_maps ne '');
     $url .= "stack_maps=$stack_maps;"
-      if defined($stack_maps);
+      if (defined($stack_maps) and $stack_maps ne '');
     $url .= "ref_map_order=$ref_map_order;"
-      if defined($ref_map_order);
+      if (defined($ref_map_order) and $ref_map_order ne '');
     $url .= "split_agg_ev=$split_agg_ev;"
-      if defined($split_agg_ev);
+      if (defined($split_agg_ev) and $split_agg_ev ne '');
     $url .= "clean_view=$clean_view;"
-      if defined($clean_view);
+      if (defined($clean_view) and $clean_view ne '');
     $url .= "comp_menu_order=$comp_menu_order;"
-      if defined($comp_menu_order);
+      if (defined($comp_menu_order) and $comp_menu_order ne '');
     $url .= "corrs_to_map=$corrs_to_map;"
-      if defined($corrs_to_map);
+      if (defined($corrs_to_map) and $corrs_to_map ne '');
     $url .= "magnify_all=$magnify_all;"
-      if defined($magnify_all);
+      if (defined($magnify_all) and $magnify_all ne '');
     $url .= "flip=$flip;"
-      if defined($flip);
+      if (defined($flip) and $flip ne '');
     $url .= "left_min_corrs=$left_min_corrs;"
-      if defined($left_min_corrs);
+      if (defined($left_min_corrs) and $left_min_corrs ne '');
     $url .= "right_min_corrs=$right_min_corrs;"
-      if defined($right_min_corrs);
+      if (defined($right_min_corrs) and $right_min_corrs ne '');
     $url .= "general_min_corrs=$general_min_corrs;"
-      if defined($general_min_corrs);
+      if (defined($general_min_corrs) and $general_min_corrs ne '');
     $url .= "menu_min_corrs=$menu_min_corrs;"
-      if defined($menu_min_corrs);
+      if (defined($menu_min_corrs) and $menu_min_corrs ne '');
     $url .= "refMenu=$refMenu;"
-      if defined($refMenu);
+      if (defined($refMenu) and $refMenu ne '');
     $url .= "compMenu=$compMenu;"
-      if defined($compMenu);
+      if (defined($compMenu) and $compMenu ne '');
     $url .= "optionMenu=$optionMenu;"
-      if defined($optionMenu);
+      if (defined($optionMenu) and $optionMenu ne '');
     $url .= "addOpMenu=$addOpMenu;"
-      if defined($addOpMenu);
+      if (defined($addOpMenu) and $addOpMenu ne '');
 
     #multi
 
@@ -1131,7 +1131,7 @@ Given information about the link, creates a url to cmap_viewer.
         $url .= "ft_" . $acc . "=0;";
     }
     $url .= "ft_DEFAULT=$url_feature_default_display;"
-      if defined($url_feature_default_display);
+      if (defined($url_feature_default_display) and $url_feature_default_display ne '');
     foreach my $acc (@$included_evidence_type_accs) {
         $url .= "et_" . $acc . "=1;";
     }
