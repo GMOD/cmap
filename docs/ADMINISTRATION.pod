@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.15 $
+$Revision: 1.16 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -104,6 +104,14 @@ system mentioned earlier (that needs purging).
 
 Set the name of the database (named in its config file) that will 
 be used as the default.
+
+=item * max_img_dir_size [ default: 0 ]
+
+This is the maximum size (in bytes) the image cache
+directory will grow before CMap quits writing to it.  This is to keep CMap
+from filling your drive.
+
+Excluding or setting to 0 will ignore directory size.
 
 =back
 

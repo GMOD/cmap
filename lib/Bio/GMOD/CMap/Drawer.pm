@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.106 2005-08-01 15:53:10 mwz444 Exp $
+# $Id: Drawer.pm,v 1.107 2005-08-29 15:41:21 mwz444 Exp $
 
 =head1 NAME
 
@@ -342,7 +342,7 @@ This is set to 1 if the Additional Options Menu is displayed.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.106 $)[-1];
+$VERSION = (qw$Revision: 1.107 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -385,6 +385,19 @@ Initializes the drawing object.
 
     for my $param (@INIT_PARAMS) {
         $self->$param( $config->{$param} );
+    }
+
+    if ( $self->config_data('max_img_dir_size') ) {
+        my $cache_dir = $self->cache_dir or return;
+        my $size = 0;
+        foreach my $file ( glob("$cache_dir/*") ) {
+            next unless -f $file;
+            $size += -s $file;
+        }
+        if ( $size > $self->config_data('max_img_dir_size') ) {
+            return $self->error( "Error: Image directory '$cache_dir' filled.  "
+                  . " Please contact the site administrator for assistance." );
+        }
     }
 
     my $gd_class = $self->image_type eq 'svg' ? 'GD::SVG' : 'GD';
