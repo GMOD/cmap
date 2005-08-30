@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.113 2005-06-22 15:14:34 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.114 2005-08-30 16:49:49 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.113 $)[-1];
+$VERSION = (qw$Revision: 1.114 $)[-1];
 
 #
 # Get command-line options
@@ -1021,7 +1021,7 @@ sub delete_maps {
                 return     => 'map_id',
                 allow_null => 1,
                 allow_mult => 1,
-                data       => data => $sql_object->get_maps(
+                data       => $sql_object->get_maps(
                     cmap_object => $self,
                     map_set_id  => $map_set_id
                 ),
