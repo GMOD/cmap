@@ -1,4 +1,4 @@
-[% 
+[%- 
   INCLUDE header.tmpl 
   title=title
   cur_sec='map_viewer'
@@ -44,7 +44,7 @@ function startPage(){
   var divs=document.getElementsByTagName("DIV");
   for (var i=0; i < divs.length; i++){
     if (divs[i].id == "displayRefMenu"){
-        if ("[% apr.param('refMenu') %]" == "0"){
+        if ("[%- apr.param('refMenu') -%]" == "0"){
             divs[i].style.display='none';
         }
         else{
@@ -52,7 +52,7 @@ function startPage(){
         }
     }
     else if (divs[i].id == "hiddenRefMenu"){
-        if ("[% apr.param('refMenu') %]" == "0"){
+        if ("[%- apr.param('refMenu') -%]" == "0"){
             divs[i].style.display='block';
         }
         else{
@@ -60,7 +60,7 @@ function startPage(){
         }
     }
     else if (divs[i].id == "displayCompMenu"){
-        if ("[% apr.param('compMenu') %]" == "1"){
+        if ("[%- apr.param('compMenu') -%]" == "1"){
             divs[i].style.display='block';
         }
         else{
@@ -68,7 +68,7 @@ function startPage(){
         }
     }
     else if (divs[i].id == "hiddenCompMenu"){
-        if ("[% apr.param('compMenu') %]" == "1"){
+        if ("[%- apr.param('compMenu') -%]" == "1"){
             divs[i].style.display='none';
         }
         else{
@@ -76,7 +76,7 @@ function startPage(){
         }
     }
     else if (divs[i].id == "displayOptionMenu"){
-        if ("[% apr.param('optionMenu') %]" == "1"){
+        if ("[%- apr.param('optionMenu') -%]" == "1"){
             divs[i].style.display='block';
         }
         else{
@@ -84,7 +84,7 @@ function startPage(){
         }
     }
     else if (divs[i].id == "hiddenOptionMenu"){
-        if ("[% apr.param('optionMenu') %]" == "1"){
+        if ("[%- apr.param('optionMenu') -%]" == "1"){
             divs[i].style.display='none';
         }
         else{
@@ -92,7 +92,7 @@ function startPage(){
         }
     }
     else if (divs[i].id == "displayImageMenu"){
-        if ("[% apr.param('addOpMenu') %]" == "1"){
+        if ("[%- apr.param('addOpMenu') -%]" == "1"){
             divs[i].style.display='block';
         }
         else{
@@ -100,7 +100,7 @@ function startPage(){
         }
     }
     else if (divs[i].id == "hiddenImageMenu"){
-        if ("[% apr.param('addOpMenu') %]" == "1"){
+        if ("[%- apr.param('addOpMenu') -%]" == "1"){
             divs[i].style.display='none';
         }
         else{
@@ -168,7 +168,7 @@ function changeCompMaps(sel,index,side){
 
   if (side == 'Left'){
     dataArray=new Array(
-      [% SET not_first_map_set=0; -%]
+      [%- SET not_first_map_set=0; -%]
       [%- FOREACH ms=form_data.comparative_maps_left -%]
         [%- IF not_first_map_set -%]
           ,
@@ -177,21 +177,21 @@ function changeCompMaps(sel,index,side){
         [%- END -%]
         [%- SET not_first_map=0; -%]
         new Array( 
-        [% FOREACH map=ms.maps; -%]
+        [%- FOREACH map=ms.maps; -%]
           [%- IF not_first_map -%]
             ,
           [%- ELSE -%]
             [%- SET not_first_map=1; -%] 
           [%- END -%]
-          new Array( '[%- map.map_name %] [[% map.no_correspondences %],[% map.max_no_correspondences %]]','[% map.map_acc -%]')
-        [% END -%]
+          new Array( '[%- map.map_name -%] [[%- map.no_correspondences -%],[%- map.max_no_correspondences -%]]','[%- map.map_acc -%]')
+        [%- END -%]
         )
-      [% END -%]
+      [%- END -%]
     );
   }
   else{
     dataArray=new Array(
-      [% SET not_first_map_set=0; -%]
+      [%- SET not_first_map_set=0; -%]
       [%- FOREACH ms=form_data.comparative_maps_right -%]
         [%- IF not_first_map_set -%]
           ,
@@ -200,14 +200,14 @@ function changeCompMaps(sel,index,side){
         [%- END -%]
         [%- SET not_first_map=0; -%]
         new Array( 
-        [% FOREACH map=ms.maps; -%]
+        [%- FOREACH map=ms.maps; -%]
           [%- IF not_first_map -%]
             ,
           [%- ELSE -%]
             [%- SET not_first_map=1; -%] 
           [%- END -%]
-          new Array( '[%- map.map_name %] [[% map.no_correspondences %],[% map.no_correspondences %]]','[% map.map_acc -%]')
-        [% END -%]
+          new Array( '[%- map.map_name -%] [[%- map.no_correspondences -%],[%- map.no_correspondences -%]]','[%- map.map_acc -%]')
+        [%- END -%]
         )
       [%- END -%]
     );
@@ -276,25 +276,25 @@ function selectAllOptions(select){
 }
 </script>
 [%- IF extra_code -%]
-  [% extra_code %]
+  [%- extra_code -%]
 [%- END -%]
 
 [%- IF intro -%]
-<p>[% intro %]</p>
+<p>[%- intro -%]</p>
 [%- END -%]
 
 <table border="0"> 
   <tr>
-    [% IF drawer.image_name %]
+    [%- IF drawer.image_name -%]
       <td valign="top">
-        [% IF drawer.image_type=='svg' %]
-          <object type="image/svg+xml" data="/cmap/tmp/[% drawer.image_name %]" height="[% drawer.map_height %]" width="[% drawer.map_width %]"></object>
-        [% ELSE %]
-          <img src="/cmap/tmp/[% drawer.image_name %]" height="[% drawer.map_height %]" width="[% drawer.map_width %]" usemap="#zoom" border="0">
-        [% END %]
+        [%- IF drawer.image_type=='svg' -%]
+          <object type="image/svg+xml" data="/cmap/tmp/[%- drawer.image_name -%]" height="[%- drawer.map_height -%]" width="[%- drawer.map_width -%]"></object>
+        [%- ELSE -%]
+          <img src="/cmap/tmp/[%- drawer.image_name -%]" height="[%- drawer.map_height -%]" width="[%- drawer.map_width -%]" usemap="#zoom" border="0">
+        [%- END -%]
         <hr>
       </td>
-    [% END %]
+    [%- END -%]
   </tr>
   <tr>
     <td align="left" valign="top">
@@ -322,10 +322,10 @@ function selectAllOptions(select){
  
         <table border="0">
           <form name="ref_map_set_form">
-          <input type="hidden" name="refMenu" id="refMenu" value="[% apr.param('refMenu') %]">
-          <input type="hidden" name="compMenu" id="compMenu" value="[% apr.param('compMenu') %]">
-          <input type="hidden" name="optionMenu" id="optionMenu" value="[% apr.param('optionMenu') %]">
-          <input type="hidden" name="addOpMenu" id="addOpMenu" value="[% apr.param('addOpMenu') %]">
+          <input type="hidden" name="refMenu" id="refMenu" value="[%- apr.param('refMenu') -%]">
+          <input type="hidden" name="compMenu" id="compMenu" value="[%- apr.param('compMenu') -%]">
+          <input type="hidden" name="optionMenu" id="optionMenu" value="[%- apr.param('optionMenu') -%]">
+          <input type="hidden" name="addOpMenu" id="addOpMenu" value="[%- apr.param('addOpMenu') -%]">
           <tr>
             <td align="right">Ref. Species:</td>
   
@@ -340,7 +340,7 @@ function selectAllOptions(select){
                     species_common_name => 'All Species' });
                 END -%]
                 [%- FOREACH s=form_data.ref_species -%]
-                  <option value="[% s.species_acc %]"[% IF s.species_acc==apr.param('ref_species_acc') OR form_data.ref_species.size==1; ' selected'; END %]>[% s.species_common_name %][% IF s.species_full_name %] ([% s.species_full_name %])[% END %]</option>
+                  <option value="[%- s.species_acc -%]"[%- IF s.species_acc==apr.param('ref_species_acc') OR form_data.ref_species.size==1; ' selected'; END -%]>[%- s.species_common_name -%][%- IF s.species_full_name -%] ([%- s.species_full_name -%])[%- END -%]</option>
                 [%- END -%]
                 </select>
               </td>
@@ -352,17 +352,17 @@ function selectAllOptions(select){
             </td>
           </tr>
           
-          [% IF form_data.ref_map_sets.size %]
+          [%- IF form_data.ref_map_sets.size -%]
             <tr>
               <td align="right">Ref. Set:</td>
 
               <td>
-                [% SET last_map_type='' %]
+                [%- SET last_map_type='' -%]
                 <select name="ref_map_set_acc" >
                   <option value="">--Select--</option>
                   [%- FOREACH ms=form_data.ref_map_sets -%]
-                    <option [% IF apr.param('ref_map_set_acc') == ms.map_set_acc OR form_data.ref_map_sets.size==1; apr.param('ref_map_set_acc') = ms.map_set_acc; ' selected'; END %] value="[% ms.map_set_acc %]">
-                      [% ms.map_type %] : [% ms.species_common_name %] - [% ms.map_set_name %]
+                    <option [%- IF apr.param('ref_map_set_acc') == ms.map_set_acc OR form_data.ref_map_sets.size==1; apr.param('ref_map_set_acc') = ms.map_set_acc; ' selected'; END -%] value="[%- ms.map_set_acc -%]">
+                      [%- ms.map_type -%] : [%- ms.species_common_name -%] - [%- ms.map_set_name -%]
                     </option>
                     [%- SET last_map_type=ms.map_type -%]
                   [%- END -%]
@@ -370,67 +370,67 @@ function selectAllOptions(select){
               </td>
               <td>
                 <input type="submit" value="Show Selected Set's Maps" name="sub">
-                <input type="hidden" name="prev_ref_species_acc" value="[% apr.param('ref_species_acc') %]">
-                <input type="hidden" name="prev_ref_map_set_acc" value="[% apr.param('ref_map_set_acc') %]">
-                <input type="hidden" name="highlight"      value="[% apr.param('highlight') %]">
-                <input type="hidden" name="image_size"       value="[% apr.param('image_size') %]">
-                <input type="hidden" name="image_type"       value="[% apr.param('image_type') %]">
-                <input type="hidden" name="data_source"      value="[% data_source %]">
+                <input type="hidden" name="prev_ref_species_acc" value="[%- apr.param('ref_species_acc') -%]">
+                <input type="hidden" name="prev_ref_map_set_acc" value="[%- apr.param('ref_map_set_acc') -%]">
+                <input type="hidden" name="highlight"      value="[%- apr.param('highlight') -%]">
+                <input type="hidden" name="image_size"       value="[%- apr.param('image_size') -%]">
+                <input type="hidden" name="image_type"       value="[%- apr.param('image_type') -%]">
+                <input type="hidden" name="data_source"      value="[%- data_source -%]">
               </td>
             </tr>
-          [% END %]
+          [%- END -%]
           </form>
-          [% IF form_data.ref_maps %]
-            [% form_data.ref_maps.unshift({map_acc=>'-1',map_name=>'--All--'}) %]
+          [%- IF form_data.ref_maps -%]
+            [%- form_data.ref_maps.unshift({map_acc=>'-1',map_name=>'--All--'}) -%]
             <form name="ref_map_form">
-              <input type="hidden" name="refMenu" id="refMenu" value="[% apr.param('refMenu') %]">
-              <input type="hidden" name="compMenu" id="compMenu" value="[% apr.param('compMenu') %]">
-              <input type="hidden" name="optionMenu" id="optionMenu" value="[% apr.param('optionMenu') %]">
-              <input type="hidden" name="addOpMenu" id="addOpMenu" value="[% apr.param('addOpMenu') %]">
+              <input type="hidden" name="refMenu" id="refMenu" value="[%- apr.param('refMenu') -%]">
+              <input type="hidden" name="compMenu" id="compMenu" value="[%- apr.param('compMenu') -%]">
+              <input type="hidden" name="optionMenu" id="optionMenu" value="[%- apr.param('optionMenu') -%]">
+              <input type="hidden" name="addOpMenu" id="addOpMenu" value="[%- apr.param('addOpMenu') -%]">
               <tr>
                 <td valign="top" align="right">Ref. Map:</td>
       
                 <td valign="top">
                   <select name="ref_map_accs" size="14" multiple
-                    [% IF apr.param('ref_map_accs') %]
+                    [%- IF apr.param('ref_map_accs') -%]
                       onchange="javascript:if(document.ref_map_form.ref_map_accs.value!=document.ref_map_form.prev_ref_map_accs.value){document.comparative_map_form.start.value='';document.comparative_map_form.end.value='';}">
-                    [% ELSE %]
+                    [%- ELSE -%]
                         >
-                    [% END %]
+                    [%- END -%]
     
-                    [% IF form_data.ref_maps.size %]
-                      [% FOREACH m=form_data.ref_maps %]
-                        <option[% IF selected_maps.${m.map_acc} OR form_data.ref_maps.size==1; ' selected'; END %] value="[% m.map_acc %]">[% m.map_name %]</option>
-                      [% END %]
-                    [% ELSE %]
+                    [%- IF form_data.ref_maps.size -%]
+                      [%- FOREACH m=form_data.ref_maps -%]
+                        <option[%- IF selected_maps.${m.map_acc} OR form_data.ref_maps.size==1; ' selected'; END -%] value="[%- m.map_acc -%]">[%- m.map_name -%]</option>
+                      [%- END -%]
+                    [%- ELSE -%]
                       <option value="">--No Maps Available--</option>
-                    [% END %]
+                    [%- END -%]
                   </select>
                 <td valign="top">
                   <input type="submit" value="Change Maps" name="sub">
                 </td>
     
-                  <input type="hidden" name="prev_ref_species_acc" value="[% apr.param('ref_species_acc') %]">
-                  <input type="hidden" name="prev_ref_map_accs" value="[% apr.param('ref_map_accs') %]">
-                  <input type="hidden" name="ref_map_set_acc"  value="[% apr.param('ref_map_set_acc') %]">
-                  <input type="hidden" name="ref_species_acc"  value="[% apr.param('ref_species_acc') %]">
-                  <input type="hidden" name="data_source"      value="[% data_source %]">
+                  <input type="hidden" name="prev_ref_species_acc" value="[%- apr.param('ref_species_acc') -%]">
+                  <input type="hidden" name="prev_ref_map_accs" value="[%- apr.param('ref_map_accs') -%]">
+                  <input type="hidden" name="ref_map_set_acc"  value="[%- apr.param('ref_map_set_acc') -%]">
+                  <input type="hidden" name="ref_species_acc"  value="[%- apr.param('ref_species_acc') -%]">
+                  <input type="hidden" name="data_source"      value="[%- data_source -%]">
                 </td>
               </tr>
             </form>
-          [% END %]
+          [%- END -%]
         </table><hr>
       </div>
     </td>
   </tr>
-  [% IF apr.param('ref_map_accs') #OR form_data.ref_maps  %]
+  [%- IF apr.param('ref_map_accs') #OR form_data.ref_maps  -%]
     <form name="comparative_map_form" onSubmit="beforeSubmit()">
       <tr>
         <td align=left valign=top>
-          <input type="hidden" name="refMenu" id="refMenu" value="[% apr.param('refMenu') %]">
-          <input type="hidden" name="compMenu" id="compMenu" value="[% apr.param('compMenu') %]">
-          <input type="hidden" name="optionMenu" id="optionMenu" value="[% apr.param('optionMenu') %]">
-          <input type="hidden" name="addOpMenu" id="addOpMenu" value="[% apr.param('addOpMenu') %]">
+          <input type="hidden" name="refMenu" id="refMenu" value="[%- apr.param('refMenu') -%]">
+          <input type="hidden" name="compMenu" id="compMenu" value="[%- apr.param('compMenu') -%]">
+          <input type="hidden" name="optionMenu" id="optionMenu" value="[%- apr.param('optionMenu') -%]">
+          <input type="hidden" name="addOpMenu" id="addOpMenu" value="[%- apr.param('addOpMenu') -%]">
           <div id="hiddenCompMenu">
             <span  
               onclick="toggleDiv(document.getElementById('hiddenCompMenu'));
@@ -455,38 +455,38 @@ function selectAllOptions(select){
               <table border="0">
               <tr>
                 <td align="left" colspan=2>Ref Map Start:
-                  <input name="ref_map_start" value="[% apr.param('ref_map_start') %]">
+                  <input name="ref_map_start" value="[%- apr.param('ref_map_start') -%]">
                 </td>
               </tr>
               <tr>
                 <td align="left" colspan=2>Ref Map End:
-                  <input name="ref_map_stop" value="[% apr.param('ref_map_stop') %]">
+                  <input name="ref_map_stop" value="[%- apr.param('ref_map_stop') -%]">
                 </td>
               </tr>
 
               <tr>
                 <td align="left" valign="top">Current Map Sets:</td>
                 <td>
-                  [% FOREACH map=form_data.map_info %]
-                    [% SET cmaps=[] %]
-                    [% FOREACH cmap=map.cmaps %]
-                      [% cmaps.push( "${cmap.slot_no}%3d${cmap.field}%3d${cmap.acc}" ) %]
-                    [% END %]
-                    [% map.description %][% IF map.is_reference_map %]&nbsp;(Ref.) [% END %]<br>
-                  [% END %]
+                  [%- FOREACH map=form_data.map_info -%]
+                    [%- SET cmaps=[] -%]
+                    [%- FOREACH cmap=map.cmaps -%]
+                      [%- cmaps.push( "${cmap.slot_no}%3d${cmap.field}%3d${cmap.acc}" ) -%]
+                    [%- END -%]
+                    [%- map.description -%][%- IF map.is_reference_map -%]&nbsp;(Ref.) [%- END -%]<br>
+                  [%- END -%]
                 </td>
               </tr>
               <tr>
                 <td align="left" colspan=2>Min. No. Correspondences for Left Slot:
-                <input name="left_min_corrs" value="[% apr.param('left_min_corrs') %]"> </td>
+                <input name="left_min_corrs" value="[%- apr.param('left_min_corrs') -%]"> </td>
               </tr>
               <tr>
                 <td align="left" colspan=2>Min. No. Correspondences for right Slot:
-                <input name="right_min_corrs" value="[% apr.param('right_min_corrs') %]"> </td>
+                <input name="right_min_corrs" value="[%- apr.param('right_min_corrs') -%]"> </td>
               </tr>
               <tr>
                 <td align="left" colspan=2>Min. No. Correspondences for the menu:
-                <input name="menu_min_corrs" value="[% apr.param('menu_min_corrs') %]"> </td>
+                <input name="menu_min_corrs" value="[%- apr.param('menu_min_corrs') -%]"> </td>
               </tr>
             </table>
             <table>
@@ -494,20 +494,20 @@ function selectAllOptions(select){
                 <td align="right" valign="top">
                   <table border="0">
                     <tr>
-                      [% PROCESS 'cmap_viewer_comparative_map_select.tmpl'
+                      [%- PROCESS 'cmap_viewer_comparative_map_select.tmpl'
                         side="Left"
                         map_sets=form_data.comparative_maps_left
-                      %]
+                      -%]
                     </tr>
                   </table>
                 </td> 
                 <td align=left valign=top>
                   <table border=0>
                     <tr>
-                      [% PROCESS 'cmap_viewer_comparative_map_select.tmpl'
+                      [%- PROCESS 'cmap_viewer_comparative_map_select.tmpl'
                         side="Right"
                         map_sets=form_data.comparative_maps_right
-                      %]
+                      -%]
                     </tr>
                   </table>
                 </td>
@@ -549,7 +549,7 @@ function selectAllOptions(select){
             <table>
               <tr>
                 <td align="left">Highlight Features: 
-                  <input size=40 name="highlight" value="[% apr.param('highlight') | html %]">
+                  <input size=40 name="highlight" value="[%- apr.param('highlight') | html -%]">
                 </td>
               </tr>
               <tr>
@@ -557,7 +557,7 @@ function selectAllOptions(select){
               </tr>
               <tr>
                 <td colspan="2" align="left">
-                  <input type=hidden name="ft_DEFAULT" value='[% apr.param('ft_DEFAULT') %]'>
+                  <input type=hidden name="ft_DEFAULT" value='[%- apr.param('ft_DEFAULT') -%]'>
                   <table border="1">
                     <tr>
                       <td>Feature</td>
@@ -565,20 +565,20 @@ function selectAllOptions(select){
                       <td>Display if<br>Correspondence</td>
                       <td>Always Display</td>
                     </tr>
-                    [% FOREACH ft=form_data.feature_types %]
+                    [%- FOREACH ft=form_data.feature_types -%]
                       <tr>
-                        <td><a href="feature_type_info?feature_type_acc=[% ft.feature_type_acc %]">[% ft.feature_type %]</a></td>
+                        <td><a href="feature_type_info?feature_type_acc=[%- ft.feature_type_acc -%]">[%- ft.feature_type -%]</a></td>
                         <td>
-                          <input type="radio" name="ft_[% ft.feature_type_acc %]" value="0" [% IF (ignored_feature_types.${ft.feature_type_acc} OR (feature_default_display=='ignore' AND NOT included_features.${ft.feature_type_acc} AND NOT corr_only_feature_types.${ft.feature_type_acc})) ; ' checked'; END %]>
+                          <input type="radio" name="ft_[%- ft.feature_type_acc -%]" value="0" [%- IF (ignored_feature_types.${ft.feature_type_acc} OR (feature_default_display=='ignore' AND NOT included_features.${ft.feature_type_acc} AND NOT corr_only_feature_types.${ft.feature_type_acc})) ; ' checked'; END -%]>
                         </td>
                         <td>
-                          <input type="radio" name="ft_[% ft.feature_type_acc %]" value="1" [% IF (corr_only_feature_types.${ft.feature_type_acc} OR (feature_default_display=='corr_only' AND NOT included_features.${ft.feature_type_acc} AND NOT ignored_feature_types.${ft.feature_type_acc})); ' checked'; END %]>
+                          <input type="radio" name="ft_[%- ft.feature_type_acc -%]" value="1" [%- IF (corr_only_feature_types.${ft.feature_type_acc} OR (feature_default_display=='corr_only' AND NOT included_features.${ft.feature_type_acc} AND NOT ignored_feature_types.${ft.feature_type_acc})); ' checked'; END -%]>
                         </td>
                         <td>
-                          <input type="radio" name="ft_[% ft.feature_type_acc %]" value="2" [% IF (included_features.${ft.feature_type_acc} OR (feature_default_display=='display' AND NOT corr_only_feature_types.${ft.feature_type_acc} AND NOT ignored_feature_types.${ft.feature_type_acc})); ' checked'; END %]>
+                          <input type="radio" name="ft_[%- ft.feature_type_acc -%]" value="2" [%- IF (included_features.${ft.feature_type_acc} OR (feature_default_display=='display' AND NOT corr_only_feature_types.${ft.feature_type_acc} AND NOT ignored_feature_types.${ft.feature_type_acc})); ' checked'; END -%]>
                         </td>
                       </tr>
-                    [% END %]
+                    [%- END -%]
                     <tr>
                       <td>&nbsp;</td>
                       <td><input type="button" name="checkColumn" value="Check All" onClick="selectFeatureRadio(0)"></td>
@@ -593,7 +593,7 @@ function selectAllOptions(select){
               </tr>
               <tr>
                 <td>
-                  [% IF form_data.evidence_types.size %]
+                  [%- IF form_data.evidence_types.size -%]
                     <table border="1">
                       <tr>
                         <td>Evidence</td>
@@ -603,71 +603,71 @@ function selectAllOptions(select){
                         <td>Greater Than<br> Score</td>
                         <td>Score</td>
                       </tr>
-                      [% FOREACH et=form_data.evidence_types %]
+                      [%- FOREACH et=form_data.evidence_types -%]
                         <tr>
-                          <td><a href="evidence_type_info?evidence_type_acc=[% et.evidence_type_acc %]">[% et.evidence_type %]</a></td>
+                          <td><a href="evidence_type_info?evidence_type_acc=[%- et.evidence_type_acc -%]">[%- et.evidence_type -%]</a></td>
                         <td>
-                          <input type="radio" name="evidence_type_[% et.evidence_type_acc %]" value="0" [% IF evidence_type_menu_select.${et.evidence_type_acc}==0; ' checked'; END %]>
+                          <input type="radio" name="evidence_type_[%- et.evidence_type_acc -%]" value="0" [%- IF evidence_type_menu_select.${et.evidence_type_acc}==0; ' checked'; END -%]>
                         </td>
                         <td>
-                          <input type="radio" name="evidence_type_[% et.evidence_type_acc %]" value="1" [% IF NOT evidence_type_menu_select.${et.evidence_type_acc}.defined or evidence_type_menu_select.${et.evidence_type_acc}==1; ' checked'; END %]>
+                          <input type="radio" name="evidence_type_[%- et.evidence_type_acc -%]" value="1" [%- IF NOT evidence_type_menu_select.${et.evidence_type_acc}.defined or evidence_type_menu_select.${et.evidence_type_acc}==1; ' checked'; END -%]>
                         </td>
                         <td>
-                          <input type="radio" name="evidence_type_[% et.evidence_type_acc %]" value="2" [% IF evidence_type_menu_select.${et.evidence_type_acc}==2; ' checked'; END %]>
+                          <input type="radio" name="evidence_type_[%- et.evidence_type_acc -%]" value="2" [%- IF evidence_type_menu_select.${et.evidence_type_acc}==2; ' checked'; END -%]>
                         </td>
                         <td>
-                          <input type="radio" name="evidence_type_[% et.evidence_type_acc %]" value="3" [% IF evidence_type_menu_select.${et.evidence_type_acc}==3; ' checked'; END %]>
+                          <input type="radio" name="evidence_type_[%- et.evidence_type_acc -%]" value="3" [%- IF evidence_type_menu_select.${et.evidence_type_acc}==3; ' checked'; END -%]>
                         </td>
                         <td>
-                            <input name="ets_[% et.evidence_type_acc %]" value="[% IF evidence_type_score.${et.evidence_type_acc}; evidence_type_score.${et.evidence_type_acc}; ELSE; '0'; END  %]"> </td>
+                            <input name="ets_[%- et.evidence_type_acc -%]" value="[%- IF evidence_type_score.${et.evidence_type_acc}; evidence_type_score.${et.evidence_type_acc}; ELSE; '0'; END  -%]"> </td>
                         </td>
                       </tr>
-                    [% END %]
+                    [%- END -%]
                     <tr>
                       <td>&nbsp;</td>
                       <td><input type="button" name="checkColumn" value="Check All" onClick="selectEvidenceRadio(0)"></td>
                       <td><input type="button" name="checkColumn" value="Check All" onClick="selectEvidenceRadio(1)"></td>
                     </tr>
                   </table> 
-                  [% ELSE %]
+                  [%- ELSE -%]
                     There are no evidence types!
-                  [% END %]
+                  [%- END -%]
                 </td>
               </tr>
               <tr>
                 <td align="left" valign="top">Aggregate Correspondences:
-                  [% IF apr.param('aggregate')==1; aggregate=1; ELSE; aggregate=0; END %]
-                  [% IF apr.param('aggregate')==2; aggregate=2; END %]
-                  [% IF apr.param('aggregate')==3; aggregate=3; END %]
-                  <input type="radio" name="aggregate" value="0"[% IF aggregate==0; ' checked'; END %]>No
-                  <input type="radio" name="aggregate" value="1"[% IF aggregate==1; ' checked'; END %]>1 Line
-                  <input type="radio" name="aggregate" value="2"[% IF aggregate==2; ' checked'; END %]>2 Lines
-                  <input type="radio" name="aggregate" value="3"[% IF aggregate==3; ' checked'; END %]>Cluster
+                  [%- IF apr.param('aggregate')==1; aggregate=1; ELSE; aggregate=0; END -%]
+                  [%- IF apr.param('aggregate')==2; aggregate=2; END -%]
+                  [%- IF apr.param('aggregate')==3; aggregate=3; END -%]
+                  <input type="radio" name="aggregate" value="0"[%- IF aggregate==0; ' checked'; END -%]>No
+                  <input type="radio" name="aggregate" value="1"[%- IF aggregate==1; ' checked'; END -%]>1 Line
+                  <input type="radio" name="aggregate" value="2"[%- IF aggregate==2; ' checked'; END -%]>2 Lines
+                  <input type="radio" name="aggregate" value="3"[%- IF aggregate==3; ' checked'; END -%]>Cluster
                 </td>
               </tr>
               <tr>
                 <td align="left" valign="top">Number of Clusters (if clustering):
-                  [% IF apr.param('cluster_corr')==3; cluster_corr=3; ELSE; cluster_corr=2; END %]
-                  [% IF apr.param('cluster_corr')==4; cluster_corr=4; END %]
-                  <input type="radio" name="cluster_corr" value="2"[% IF cluster_corr==2; ' checked'; END %]>2
-                  <input type="radio" name="cluster_corr" value="3"[% IF cluster_corr==3; ' checked'; END %]>3
-                  <input type="radio" name="cluster_corr" value="4"[% IF cluster_corr==4; ' checked'; END %]>4
+                  [%- IF apr.param('cluster_corr')==3; cluster_corr=3; ELSE; cluster_corr=2; END -%]
+                  [%- IF apr.param('cluster_corr')==4; cluster_corr=4; END -%]
+                  <input type="radio" name="cluster_corr" value="2"[%- IF cluster_corr==2; ' checked'; END -%]>2
+                  <input type="radio" name="cluster_corr" value="3"[%- IF cluster_corr==3; ' checked'; END -%]>3
+                  <input type="radio" name="cluster_corr" value="4"[%- IF cluster_corr==4; ' checked'; END -%]>4
                 </td>
               </tr>
               <tr>
                 <td align="left" valign="top">Total Magnification: 
                   <select name="magnify_all" >
-                    <option value="0.125"[% IF 0.125==apr.param('magnify_all'); ' selected'; END %]>1/8</option>
-                    <option value="0.25"[% IF 0.25==apr.param('magnify_all'); ' selected'; END %]>1/4</option>
-                    <option value="0.5"[% IF 0.5==apr.param('magnify_all'); ' selected'; END %]>1/2</option>
-                    <option value="1"[% IF 1==apr.param('magnify_all') OR NOT apr.param('magnify_all'); ' selected'; 
-                                       END %]>Original Magnification</option>
-                    <option value="2"[% IF 2==apr.param('magnify_all'); ' selected'; END %]>2</option>
-                    <option value="3"[% IF 3==apr.param('magnify_all'); ' selected'; END %]>3</option>
-                    <option value="4"[% IF 4==apr.param('magnify_all'); ' selected'; END %]>4</option>
-                    <option value="5"[% IF 5==apr.param('magnify_all'); ' selected'; END %]>5</option>
-                    <option value="10"[% IF 10==apr.param('magnify_all'); ' selected'; END %]>10</option>
-                    <option value="20"[% IF 20==apr.param('magnify_all'); ' selected'; END %]>20</option>
+                    <option value="0.125"[%- IF 0.125==apr.param('magnify_all'); ' selected'; END -%]>1/8</option>
+                    <option value="0.25"[%- IF 0.25==apr.param('magnify_all'); ' selected'; END -%]>1/4</option>
+                    <option value="0.5"[%- IF 0.5==apr.param('magnify_all'); ' selected'; END -%]>1/2</option>
+                    <option value="1"[%- IF 1==apr.param('magnify_all') OR NOT apr.param('magnify_all'); ' selected'; 
+                                       END -%]>Original Magnification</option>
+                    <option value="2"[%- IF 2==apr.param('magnify_all'); ' selected'; END -%]>2</option>
+                    <option value="3"[%- IF 3==apr.param('magnify_all'); ' selected'; END -%]>3</option>
+                    <option value="4"[%- IF 4==apr.param('magnify_all'); ' selected'; END -%]>4</option>
+                    <option value="5"[%- IF 5==apr.param('magnify_all'); ' selected'; END -%]>5</option>
+                    <option value="10"[%- IF 10==apr.param('magnify_all'); ' selected'; END -%]>10</option>
+                    <option value="20"[%- IF 20==apr.param('magnify_all'); ' selected'; END -%]>20</option>
                   </select>
                 </td>
               </tr>
@@ -717,7 +717,7 @@ function selectAllOptions(select){
                         <td>
                           <select name="ori_ref_map_order" multiple size=5>
                           [%- FOREACH map=form_data.ordered_ref_maps -%]
-                            <option value='[% map.map_acc %]'>[% map.map_name %]</option>
+                            <option value='[%- map.map_acc -%]'>[%- map.map_name -%]</option>
                           [%- END -%]
                           </select>
                         </td>
@@ -728,7 +728,7 @@ function selectAllOptions(select){
                         <td>
                           <textarea name=ref_map_order_display rows=1 disabled=1></textarea>
                           <input type=hidden name=ref_map_order>
-                          <input type=hidden name=prev_ref_map_order value="[% prev_ref_map_order %]">
+                          <input type=hidden name=prev_ref_map_order value="[%- prev_ref_map_order -%]">
                         </td>
                       </tr>
                       <tr>
@@ -743,16 +743,16 @@ function selectAllOptions(select){
               <tr>
                 <td align="left" valign="top">Image Size:</td>
                 <td>
-                  <input type="radio" name="image_size" value="tiny"[% IF apr.param('image_size') == 'tiny'; ' checked'; END %]>Tiny
+                  <input type="radio" name="image_size" value="tiny"[%- IF apr.param('image_size') == 'tiny'; ' checked'; END -%]>Tiny
                 </td>
                 <td>
-                  <input type="radio" name="image_size" value="small"[% IF apr.param('image_size') == 'small'; ' checked'; END %]>Small
+                  <input type="radio" name="image_size" value="small"[%- IF apr.param('image_size') == 'small'; ' checked'; END -%]>Small
                 </td>
                 <td>
-                  <input type="radio" name="image_size" value="medium"[% IF apr.param('image_size') == 'medium'; ' checked'; END %]>Medium
+                  <input type="radio" name="image_size" value="medium"[%- IF apr.param('image_size') == 'medium'; ' checked'; END -%]>Medium
                 </td>
                 <td>
-                  <input type="radio" name="image_size" value="large"[% IF apr.param('image_size') == 'large'; ' checked'; END %]>Large
+                  <input type="radio" name="image_size" value="large"[%- IF apr.param('image_size') == 'large'; ' checked'; END -%]>Large
                 </td>
               </tr>
           
@@ -760,13 +760,13 @@ function selectAllOptions(select){
                 <td align="left" valign="top">Font Size:</td>
   
                 <td>
-                  <input type="radio" name="font_size" value="small"[% IF apr.param('font_size') == 'small'; ' checked'; END %]>Small
+                  <input type="radio" name="font_size" value="small"[%- IF apr.param('font_size') == 'small'; ' checked'; END -%]>Small
                 </td>
                 <td>
-                  <input type="radio" name="font_size" value="medium"[% IF apr.param('font_size') == 'medium'; ' checked'; END %]>Medium
+                  <input type="radio" name="font_size" value="medium"[%- IF apr.param('font_size') == 'medium'; ' checked'; END -%]>Medium
                 </td>
                 <td>
-                  <input type="radio" name="font_size" value="large"[% IF apr.param('font_size') == 'large'; ' checked'; END %]>Large
+                  <input type="radio" name="font_size" value="large"[%- IF apr.param('font_size') == 'large'; ' checked'; END -%]>Large
                 </td>
               </tr>
             
@@ -774,16 +774,16 @@ function selectAllOptions(select){
                 <td align="left" valign="top">Image Type:</td>
   
                 <td>
-                  <input type="radio" name="image_type" value="png"[% IF apr.param('image_type') == 'png'; ' checked'; END %]>PNG
+                  <input type="radio" name="image_type" value="png"[%- IF apr.param('image_type') == 'png'; ' checked'; END -%]>PNG
                 </td>
                 <td>
-                  <input type="radio" name="image_type" value="jpeg"[% IF apr.param('image_type') == 'jpeg'; ' checked'; END %]>JPEG
+                  <input type="radio" name="image_type" value="jpeg"[%- IF apr.param('image_type') == 'jpeg'; ' checked'; END -%]>JPEG
                 </td>
                 <td>
-                  <input type="radio" name="image_type" value="gif"[% IF apr.param('image_type') == 'gif'; ' checked'; END %]>GIF
+                  <input type="radio" name="image_type" value="gif"[%- IF apr.param('image_type') == 'gif'; ' checked'; END -%]>GIF
                 </td>
                 <td>
-                  <input type="radio" name="image_type" value="svg"[% IF apr.param('image_type') == 'svg'; ' checked'; END %]>SVG *
+                  <input type="radio" name="image_type" value="svg"[%- IF apr.param('image_type') == 'svg'; ' checked'; END -%]>SVG *
                 </td>
               </tr>
   
@@ -791,13 +791,13 @@ function selectAllOptions(select){
                 <td align="left" valign="top">Show Labels:</td>
 
                 <td>
-                  <input type="radio" name="label_features" value="none"[% IF apr.param('label_features')=='none'; ' checked'; END %]>None
+                  <input type="radio" name="label_features" value="none"[%- IF apr.param('label_features')=='none'; ' checked'; END -%]>None
                 </td>
                 <td>
-                  <input type="radio" name="label_features" value="landmarks"[% IF apr.param('label_features')=='landmarks'; ' checked'; END %]>Landmarks
+                  <input type="radio" name="label_features" value="landmarks"[%- IF apr.param('label_features')=='landmarks'; ' checked'; END -%]>Landmarks
                 </td>
                 <td>
-                  <input type="radio" name="label_features" value="all"[% IF apr.param('label_features')=='all'; ' checked'; END %]>All
+                  <input type="radio" name="label_features" value="all"[%- IF apr.param('label_features')=='all'; ' checked'; END -%]>All
                 </td>
               </tr>
   
@@ -805,66 +805,66 @@ function selectAllOptions(select){
                 <td align="Left" valign="top">Collapse Overlapping <br>Features:</td>
   
                 <td>
-                  [% IF apr.param('collapse_features')==1; collapse=1; ELSE; collapse=0; END %]
-                  <input type="radio" name="collapse_features" value="0"[% IF collapse==0; ' checked'; END %]>No
+                  [%- IF apr.param('collapse_features')==1; collapse=1; ELSE; collapse=0; END -%]
+                  <input type="radio" name="collapse_features" value="0"[%- IF collapse==0; ' checked'; END -%]>No
                 </td>
                 <td>
-                  <input type="radio" name="collapse_features" value="1"[% IF collapse==1; ' checked'; END %]>Yes
+                  <input type="radio" name="collapse_features" value="1"[%- IF collapse==1; ' checked'; END -%]>Yes
                 </td>
               </tr>
               <tr>
                 <td align="left" valign="top">Draw Maps Using <br>Same Scale:</td>
-                [% IF apr.param('scale_maps')==0; scale_maps=0; ELSE; scale_maps=1; END %]
-                <td><input type="radio" name="scale_maps" value="0"[% IF scale_maps==0; ' checked'; END %]>No</td>
-                <td><input type="radio" name="scale_maps" value="1"[% IF scale_maps==1; ' checked'; END %]>Yes</td>
+                [%- IF apr.param('scale_maps')==0; scale_maps=0; ELSE; scale_maps=1; END -%]
+                <td><input type="radio" name="scale_maps" value="0"[%- IF scale_maps==0; ' checked'; END -%]>No</td>
+                <td><input type="radio" name="scale_maps" value="1"[%- IF scale_maps==1; ' checked'; END -%]>Yes</td>
               </tr>
               <tr>
                 <td align="left" valign="top">Correspondence lines drawn to:</td>
-                  [% IF apr.param('corrs_to_map')==1; corrs_to_map=1; ELSE; corrs_to_map=0; END %]
-                <td><input type="radio" name="corrs_to_map" value="0"[% IF corrs_to_map==0; ' checked'; END %]>Feature</td>
-                <td><input type="radio" name="corrs_to_map" value="1"[% IF corrs_to_map==1; ' checked'; END %]>Map</td>
+                  [%- IF apr.param('corrs_to_map')==1; corrs_to_map=1; ELSE; corrs_to_map=0; END -%]
+                <td><input type="radio" name="corrs_to_map" value="0"[%- IF corrs_to_map==0; ' checked'; END -%]>Feature</td>
+                <td><input type="radio" name="corrs_to_map" value="1"[%- IF corrs_to_map==1; ' checked'; END -%]>Map</td>
               </tr>
               <tr>
                 <td align="left" valign="top">Stack the Reference Maps:</td>
-                [% IF apr.param('stack_maps')==1; stack_maps=1; ELSE; stack_maps=0; END %]
-                <td><input type="radio" name="stack_maps" value="0"[% IF stack_maps==0; ' checked'; END %]>No</td>
-                <td><input type="radio" name="stack_maps" value="1"[% IF stack_maps==1; ' checked'; END %]>Yes</td>
+                [%- IF apr.param('stack_maps')==1; stack_maps=1; ELSE; stack_maps=0; END -%]
+                <td><input type="radio" name="stack_maps" value="0"[%- IF stack_maps==0; ' checked'; END -%]>No</td>
+                <td><input type="radio" name="stack_maps" value="1"[%- IF stack_maps==1; ' checked'; END -%]>Yes</td>
               </tr>
               <tr>
                 <td align="left" valign="top">Clean View (no navigation buttons):</td>
-                  [% IF apr.param('clean_view')==1; clean_view=1; ELSE; clean_view=0; END %]
-                <td><input type="radio" name="clean_view" value="0"[% IF clean_view==0; ' checked'; END %]>No</td>
-                <td><input type="radio" name="clean_view" value="1"[% IF clean_view==1; ' checked'; END %]>yes</td>
+                  [%- IF apr.param('clean_view')==1; clean_view=1; ELSE; clean_view=0; END -%]
+                <td><input type="radio" name="clean_view" value="0"[%- IF clean_view==0; ' checked'; END -%]>No</td>
+                <td><input type="radio" name="clean_view" value="1"[%- IF clean_view==1; ' checked'; END -%]>yes</td>
               </tr>
               <tr>
                 <td align="left" valign="top">Clickable Image</td>
-                <td><input type="radio" name="omit_area_boxes" value="0"[% IF apr.param('omit_area_boxes')==0; ' checked'; END %]>Fully Functional</td>
-                <td><input type="radio" name="omit_area_boxes" value="1"[% IF apr.param('omit_area_boxes')==1; ' checked'; END %]>Omit Features</td>
-                <td><input type="radio" name="omit_area_boxes" value="2"[% IF apr.param('omit_area_boxes')==2; ' checked'; END %]>Omit All Buttons</td>
+                <td><input type="radio" name="omit_area_boxes" value="0"[%- IF apr.param('omit_area_boxes')==0; ' checked'; END -%]>Fully Functional</td>
+                <td><input type="radio" name="omit_area_boxes" value="1"[%- IF apr.param('omit_area_boxes')==1; ' checked'; END -%]>Omit Features</td>
+                <td><input type="radio" name="omit_area_boxes" value="2"[%- IF apr.param('omit_area_boxes')==2; ' checked'; END -%]>Omit All Buttons</td>
               </tr>
               <tr>
                 <td align="left" valign="top">View Intra-Slot Correspondences:</td>
-                  [% IF apr.param('show_intraslot_corr')==1; show_intraslot_corr=1; ELSE; show_intraslot_corr=0; END %]
+                  [%- IF apr.param('show_intraslot_corr')==1; show_intraslot_corr=1; ELSE; show_intraslot_corr=0; END -%]
                 <td><input type="radio" name="show_intraslot_corr" value="0"
-                  [% IF show_intraslot_corr==0; ' checked'; END %]>No</td>
+                  [%- IF show_intraslot_corr==0; ' checked'; END -%]>No</td>
                 <td><input type="radio" name="show_intraslot_corr" value="1"
-                  [% IF show_intraslot_corr==1; ' checked'; END %]>yes</td>
+                  [%- IF show_intraslot_corr==1; ' checked'; END -%]>yes</td>
               </tr>
               <tr>
                 <td align="left" valign="top">Aggregate evidence types separately:</td>
-                  [% IF apr.param('split_agg_ev')==1; split_agg_ev=1; ELSE; split_agg_ev=0; END %]
+                  [%- IF apr.param('split_agg_ev')==1; split_agg_ev=1; ELSE; split_agg_ev=0; END -%]
                 <td><input type="radio" name="split_agg_ev" value="0"
-                  [% IF split_agg_ev==0; ' checked'; END %]>No</td>
+                  [%- IF split_agg_ev==0; ' checked'; END -%]>No</td>
                 <td><input type="radio" name="split_agg_ev" value="1"
-                  [% IF split_agg_ev==1; ' checked'; END %]>yes</td>
+                  [%- IF split_agg_ev==1; ' checked'; END -%]>yes</td>
               </tr>
               <tr>
                 <td align="left" valign="top">Menu Order of Comparative Maps:</td>
-                  [% IF apr.param('comp_menu_order')=="corrs"; comp_menu_order="corrs"; ELSE; comp_menu_order="display_order"; END %]
+                  [%- IF apr.param('comp_menu_order')=="corrs"; comp_menu_order="corrs"; ELSE; comp_menu_order="display_order"; END -%]
                 <td><input type="radio" name="comp_menu_order" value="display_order"
-                  [% IF comp_menu_order=="display_order"; ' checked'; END %]>Display Order(default)</td>
+                  [%- IF comp_menu_order=="display_order"; ' checked'; END -%]>Display Order(default)</td>
                 <td><input type="radio" name="comp_menu_order" value="corrs"
-                  [% IF comp_menu_order=="corrs"; ' checked'; END %]>Number of <br> Correspondences</td>
+                  [%- IF comp_menu_order=="corrs"; ' checked'; END -%]>Number of <br> Correspondences</td>
               </tr>
               <tr>
                 <td colspan=4>
@@ -874,13 +874,13 @@ function selectAllOptions(select){
               </tr>
               <tr>
                 <td colspan="4" align="center">
-                  <input type="hidden" name="session_id" value="[% apr.param('session_id') %]">
-                  <input type="hidden" name="step" value="[% apr.param('step') %]">
-                  <input type="hidden" name="ref_map_set_acc" value="[% apr.param('ref_map_set_acc') %]">
-                  <input type="hidden" name="ref_map_accs"   value="[% apr.param('ref_map_accs').join(',') %]">
-                  <input type="hidden" name="ref_species_acc"  value="[% apr.param('ref_species_acc') %]">
-                  <input type="hidden" name="flip"      value="[% apr.param('flip') %]">
-                  <input type="hidden" name="data_source"      value="[% data_source %]">
+                  <input type="hidden" name="session_id" value="[%- apr.param('session_id') -%]">
+                  <input type="hidden" name="step" value="[%- apr.param('step') -%]">
+                  <input type="hidden" name="ref_map_set_acc" value="[%- apr.param('ref_map_set_acc') -%]">
+                  <input type="hidden" name="ref_map_accs"   value="[%- apr.param('ref_map_accs').join(',') -%]">
+                  <input type="hidden" name="ref_species_acc"  value="[%- apr.param('ref_species_acc') -%]">
+                  <input type="hidden" name="flip"      value="[%- apr.param('flip') -%]">
+                  <input type="hidden" name="data_source"      value="[%- data_source -%]">
                   <br>
                   <em><b>*</b>SVG output for high-resolution 
                   printing only (no hyperlinks).</em>
@@ -889,7 +889,7 @@ function selectAllOptions(select){
             </table>
           </div>
           [%- IF extra_form -%]
-            [% extra_form %]
+            [%- extra_form -%]
           [%- END -%]
         </td>
       </tr>
@@ -900,25 +900,25 @@ function selectAllOptions(select){
         </td>
       </tr>
     </form>
-  [% ELSE %]
+  [%- ELSE -%]
     <form name="comparative_map_form">
-      <input type="hidden" name="refMenu" id="refMenu" value="[% apr.param('refMenu') %]">
-      <input type="hidden" name="compMenu" id="compMenu" value="[% apr.param('compMenu') %]">
-      <input type="hidden" name="optionMenu" id="optionMenu" value="[% apr.param('optionMenu') %]">
-      <input type="hidden" name="addOpMenu" id="addOpMenu" value="[% apr.param('addOpMenu') %]">
+      <input type="hidden" name="refMenu" id="refMenu" value="[%- apr.param('refMenu') -%]">
+      <input type="hidden" name="compMenu" id="compMenu" value="[%- apr.param('compMenu') -%]">
+      <input type="hidden" name="optionMenu" id="optionMenu" value="[%- apr.param('optionMenu') -%]">
+      <input type="hidden" name="addOpMenu" id="addOpMenu" value="[%- apr.param('addOpMenu') -%]">
     </form>
-  [% END %]    
+  [%- END -%]    
 </table>
 
-[% IF drawer AND drawer.image_type!='svg' %]
+[%- IF drawer AND drawer.image_type!='svg' -%]
   <map name="zoom">
-  [% FOREACH area=drawer.image_map_data -%]
-    <area [% area.code %] coords="[% area.coords.join(',') %]" [% IF area.url %]href="[% area.url %]" [% END %]title="[% area.alt %]">
-  [% END -%]
+  [%- FOREACH area=drawer.image_map_data -%]
+    <area [%- area.code -%] coords="[%- area.coords.join(',') -%]" [%- IF area.url -%]href="[%- area.url -%]" [%- END -%]title="[%- area.alt -%]">
+  [%- END -%]
   </map>
-[% END -%]
+[%- END -%]
 
-[% IF form_data.ref_map_set_info %]
+[%- IF form_data.ref_map_set_info -%]
   <hr>
   <table width="700">
     <tr>
@@ -927,59 +927,59 @@ function selectAllOptions(select){
     <tr>
       <th align="right" valign="top">Map&nbsp;Set:</th>
       <td>
-        [% form_data.ref_map_set_info.map_set_name %]
-        ([% form_data.ref_map_set_info.map_set_short_name %])
-        <b>[</b>&nbsp;<a href="map_set_info?map_set_acc=[% form_data.ref_map_set_info.map_set_acc %]">View More Info</a>&nbsp;<b>]</b>
+        [%- form_data.ref_map_set_info.map_set_name -%]
+        ([%- form_data.ref_map_set_info.map_set_short_name -%])
+        <b>[</b>&nbsp;<a href="map_set_info?map_set_acc=[%- form_data.ref_map_set_info.map_set_acc -%]">View More Info</a>&nbsp;<b>]</b>
       </td>
     </tr>
     <tr>
       <th align="right" valign="top">Species:</th>
       <td>
-        [% form_data.ref_map_set_info.species_common_name %]
-        ([% form_data.ref_map_set_info.species_full_name %])
-        <b>[</b>&nbsp;<a href="species_info?species_acc=[% form_data.ref_map_set_info.species_acc %]">View More Info</a>&nbsp;<b>]</b>
+        [%- form_data.ref_map_set_info.species_common_name -%]
+        ([%- form_data.ref_map_set_info.species_full_name -%])
+        <b>[</b>&nbsp;<a href="species_info?species_acc=[%- form_data.ref_map_set_info.species_acc -%]">View More Info</a>&nbsp;<b>]</b>
       </td>
     </tr>
     <tr>
       <th align="right" valign="top">Map&nbsp;Type:</th>
       <td>
-        [% form_data.ref_map_set_info.map_type %]
-        ([% form_data.ref_map_set_info.map_units %])
-        <b>[</b>&nbsp;<a href="map_type_info?map_type_acc=[% form_data.ref_map_set_info.map_type_acc %]">View More Info</a>&nbsp;<b>]</b>
+        [%- form_data.ref_map_set_info.map_type -%]
+        ([%- form_data.ref_map_set_info.map_units -%])
+        <b>[</b>&nbsp;<a href="map_type_info?map_type_acc=[%- form_data.ref_map_set_info.map_type_acc -%]">View More Info</a>&nbsp;<b>]</b>
       </td>
     </tr>
-    [% FOREACH att=form_data.ref_map_set_info.attributes %]
-      [% NEXT UNLESS att.is_public %]
+    [%- FOREACH att=form_data.ref_map_set_info.attributes -%]
+      [%- NEXT UNLESS att.is_public -%]
       <tr>
         <th align="right" valign="top">
-          [% att.attribute_name | nbsp %]:
+          [%- att.attribute_name | nbsp -%]:
         </th>
         <td>
           [%- IF att.attribute_value.match('^http://') -%]
-            <a href="[% att.attribute_value %]">[% att.attribute_value %]</a>
+            <a href="[%- att.attribute_value -%]">[%- att.attribute_value -%]</a>
           [%- ELSE -%]
-            [% att.attribute_value %]
+            [%- att.attribute_value -%]
           [%- END -%]
         </td>
       </tr>
-    [% END %]
-    [% IF form_data.ref_map_set_info.xrefs.size %]
+    [%- END -%]
+    [%- IF form_data.ref_map_set_info.xrefs.size -%]
       <tr>
         <th align="right" valign="top">Cross-references:</th>
         <td>
           <ul>
-          [% FOREACH xref=form_data.ref_map_set_info.xrefs %]
-            <li><a href="[% xref.xref_url %]">[% xref.xref_name %]</a></li>
-          [% END %]
+          [%- FOREACH xref=form_data.ref_map_set_info.xrefs -%]
+            <li><a href="[%- xref.xref_url -%]">[%- xref.xref_name -%]</a></li>
+          [%- END -%]
           </ul>
         </td>
       </tr>
-    [% END %]
+    [%- END -%]
   </table>
-[% END %]
+[%- END -%]
 
-[% UNLESS apr.param('ref_map_accs') OR form_data.ref_map_set_info %]
-  [% INCLUDE help_quick_start.tmpl %]
-[% END %]
+[%- UNLESS apr.param('ref_map_accs') OR form_data.ref_map_set_info -%]
+  [%- INCLUDE help_quick_start.tmpl -%]
+[%- END -%]
 
-[% UNLESS no_footer; INCLUDE footer.tmpl; END %]
+[%- UNLESS no_footer; INCLUDE footer.tmpl; END -%]

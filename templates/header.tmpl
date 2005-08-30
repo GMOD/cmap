@@ -87,11 +87,11 @@
          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
 <head>
-<title>[% title %]</title>
+<title>[%- title -%]</title>
 </head>
-[% IF stylesheet %]<link rel="stylesheet" href="[% stylesheet %]" type="text/css">[% END %]
+[%- IF stylesheet -%]<link rel="stylesheet" href="[%- stylesheet -%]" type="text/css">[%- END -%]
 
-[% body = page.start_body OR '<body>' %]
+[%- body = page.start_body OR '<body>' -%]
 [%- IF body_addendum;
     body.replace('^<body', "<body $body_addendum ");
 ELSE;
@@ -101,17 +101,17 @@ END -%]
 <table width="100%">
     <tr>
         <td align="left">
-            [% IF page %]<img src="/images/icons/grain_icon.jpg" alt="grain_icon" height="16" width="16">[% END %]
-            [% links.join( ' | ' ) %]
+            [%- IF page -%]<img src="/images/icons/grain_icon.jpg" alt="grain_icon" height="16" width="16">[%- END -%]
+            [%- links.join( ' | ' ) -%]
         </td>
         <td align="right">
             [%- IF data_sources.size > 1 -%]
                 <form>
                     <input type="submit" name="submit" value="Data Source:">
                     <select name="data_source">
-                        [% FOREACH db=data_sources %]
-                            <option value="[% db.name %]"[% IF db.is_current; ' selected'; END %]>[% db.name %]</option>
-                        [% END %]
+                        [%- FOREACH db=data_sources -%]
+                            <option value="[%- db.name -%]"[%- IF db.is_current; ' selected'; END -%]>[%- db.name -%]</option>
+                        [%- END -%]
                     </select>
                 </form>
             [%- ELSE -%]
