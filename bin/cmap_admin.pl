@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.116 2005-08-30 21:26:55 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.117 2005-08-30 21:56:19 kycl4rk Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.116 $)[-1];
+$VERSION = (qw$Revision: 1.117 $)[-1];
 
 #
 # Get command-line options
@@ -241,6 +241,7 @@ use File::Path;
 use File::Spec::Functions;
 use IO::File;
 use IO::Tee;
+use IO::Prompt;
 use Data::Dumper;
 use Term::ReadLine;
 use Bio::GMOD::CMap;
@@ -2623,8 +2624,8 @@ sub import_alignments {
             ),
         );
 
-        $feature_type_acc    => $feature_type[0],
-          $evidence_type_acc => $evidence_type[0],
+#        $feature_type_acc  => $feature_type[0],
+#        $evidence_type_acc => $evidence_type[0],
 
           #
           # Get the format of the alignment (BLAST...)
@@ -2812,13 +2813,19 @@ sub import_tab_data {
         chomp( $overwrite = <STDIN> );
         $overwrite = ( $overwrite =~ /^[Yy]/ ) ? 1 : 0;
 
-        print "\nNOTE: If yes to the following, features on the same map with "
-          . "the same name \nwill be treated as duplicates.  "
-          . "Be sure to select the default, 'NO', if that \n"
-          . "will create problems for your data.\n"
-          . "Check for duplicate data (slow)? [y/N]";
-        chomp( $allow_update = <STDIN> );
-        $allow_update = ( $allow_update =~ /^[Yy]/ ) ? 1 : 0;
+        print join( "\n",
+            'It looks like you are updating an existing map set.  If you ',
+            'like, I can see if feature accessions from your input file ',
+            'are already present in the database and update the existing ',
+            'features.  Otherwise, I will simply insert all your new data ',
+            'without checking.  This will go much faster, but may cause ',
+            'problems if your input file has feature accessions already ',
+            'present in the database.',
+            '',
+        );
+
+        $allow_update
+            = prompt( 'Check for duplicate data (slow)?', -yn, -d => 'Y' );
 
         #
         # Confirm decisions.
@@ -2969,7 +2976,6 @@ sub make_name_correspondences {
     my @from_map_set_ids;
     my @to_map_set_ids;
     my @skip_feature_type_accs,
-    my $allow_update,
     my $name_regex;
     my $regex_options = [
         {
