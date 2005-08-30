@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.99 2005-08-30 17:16:20 mwz444 Exp $
+# $Id: Generic.pm,v 1.100 2005-08-30 18:48:13 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.99 $)[-1];
+$VERSION = (qw$Revision: 1.100 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -1653,7 +1653,7 @@ Array of Hashes:
     if ( defined($is_relational_map) ) {
         $where_sql .= " and ms.is_relational_map = $is_relational_map ";
     }
-    if ( defined($is_enabled) and $is_enabled =~/\d/ ) {
+    if ( defined($is_enabled) and $is_enabled =~ /\d/ ) {
         $where_sql .= " and ms.is_enabled = $is_enabled ";
     }
     if ($count_maps) {
@@ -4592,6 +4592,7 @@ Not using cache because this query is quicker.
     my $where_sql = qq[
             where   fa.feature_id=f.feature_id
     ];
+    my @feature_ids_sql_list;
 
     # add the were clause for each possible identifier
     if ($feature_alias_id) {
@@ -4599,8 +4600,22 @@ Not using cache because this query is quicker.
         $where_sql .= " and fa.feature_alias_id = ? ";
     }
     elsif (@$feature_ids) {
-        $where_sql .=
-          " and f.feature_id in (" . join( ",", sort @$feature_ids ) . ") ";
+        my $group_size = 1000;
+        my $i;
+        for (
+            $i = 0 ;
+            $i + $group_size < $#{$feature_ids} ;
+            $i += $group_size + 1
+          )
+        {
+            push @feature_ids_sql_list,
+              " and f.feature_id in ("
+              . join( ",", sort @{$feature_ids}[ $i .. ( $group_size + $i ) ] )
+              . ") ";
+        }
+        push @feature_ids_sql_list,
+          " and f.feature_id in ("
+          . join( ",", sort @{$feature_ids}[ $i .. $#{$feature_ids} ] ) . ") ";
     }
     elsif ($feature_id) {
         push @identifiers, $feature_id;
@@ -4644,14 +4659,27 @@ Not using cache because this query is quicker.
           " and f.feature_type_acc not in ('"
           . join( "','", sort @$ignore_feature_type_accs ) . "') ";
     }
-
-    my $sql_str = $select_sql . $from_sql . $where_sql;
-    $sql_str .= qq[
+    my $order_by_sql = qq[
             order by alias
     ];
 
-    $return_object =
-      $db->selectall_arrayref( $sql_str, { Columns => {} }, @identifiers );
+    my $sql_str;
+
+    if (@feature_ids_sql_list) {
+        foreach my $f_id_sql (@feature_ids_sql_list) {
+            $sql_str =
+              $select_sql . $from_sql . $where_sql . $f_id_sql . $order_by_sql;
+            my $tmp_return_object =
+              $db->selectall_arrayref( $sql_str, { Columns => {} },
+                @identifiers );
+            push @$return_object, @$tmp_return_object;
+        }
+    }
+    else {
+        $sql_str       = $select_sql . $from_sql . $where_sql . $order_by_sql;
+        $return_object =
+          $db->selectall_arrayref( $sql_str, { Columns => {} }, @identifiers );
+    }
 
     return $return_object;
 }
