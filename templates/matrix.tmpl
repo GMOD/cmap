@@ -1,14 +1,14 @@
-[% 
+[%- 
     INCLUDE header.tmpl 
     title='CMap - Feature Correspondence Matrix'
     cur_sec='matrix'
     help_anchor='matrix'
-%]
+-%]
 
-<h1>[% title %]</h1>
+<h1>[%- title -%]</h1>
 
 [%- IF intro -%]
-<p>[% intro %]</p>
+<p>[%- intro -%]</p>
 [%- END -%]
 [%- url=apr.url -%]
 
@@ -21,31 +21,31 @@
 [%- SET hide_empty_rows_str = '' -%]
 [%- IF apr.param('hide_empty_rows'); hide_empty_rows_str = 'hide_empty_rows=1;'; END -%]
 
-[% UNLESS apr.param('show_matrix') %]
+[%- UNLESS apr.param('show_matrix') -%]
     <p>
     <em>
     Please use the form below to display the matrix.  Note that not choosing
     any restrictions may result in a very large table.
     </em>
     </p>
-[% END %]
+[%- END -%]
 <form>
     Restrict Reference Sets By:
 
     <select name="map_type_acc">
         <option value="">--All Map Types--</option>
-        [% FOREACH mt=map_types %]
-            <option [% IF mt.map_type_acc==apr.param('map_type_acc'); 'selected'; END %] value="[% mt.map_type_acc %]">[% mt.map_type %]</option>
-        [% END %]
+        [%- FOREACH mt=map_types -%]
+            <option [%- IF mt.map_type_acc==apr.param('map_type_acc'); 'selected'; END -%] value="[%- mt.map_type_acc -%]">[%- mt.map_type -%]</option>
+        [%- END -%]
     </select>
 
     &nbsp;
 
     <select name="species_acc">
         <option value="">--All Species--</option>
-        [% FOREACH s=species %]
-            <option [% IF s.species_acc==apr.param('species_acc'); 'selected'; END %] value="[% s.species_acc %]">[% s.species_common_name %]</option>
-        [% END %]
+        [%- FOREACH s=species -%]
+            <option [%- IF s.species_acc==apr.param('species_acc'); 'selected'; END -%] value="[%- s.species_acc -%]">[%- s.species_common_name -%]</option>
+        [%- END -%]
     </select>
 
 
@@ -53,139 +53,139 @@
 
     <select name="map_set_acc">
         <option value="">--All Map Sets--</option>
-        [% FOREACH ms=map_sets %]
-            <option [% IF ms.map_set_acc==apr.param('map_set_acc'); 'selected'; END %] value="[% ms.map_set_acc %]">[% ms.map_type %]-[% ms.species_common_name %]-[% ms.map_set_name %]</option>
-        [% END %]
+        [%- FOREACH ms=map_sets -%]
+            <option [%- IF ms.map_set_acc==apr.param('map_set_acc'); 'selected'; END -%] value="[%- ms.map_set_acc -%]">[%- ms.map_type -%]-[%- ms.species_common_name -%]-[%- ms.map_set_name -%]</option>
+        [%- END -%]
     </select>
 
     &nbsp;
 
     <select name="map_name">
         <option value="">--All Maps--</option>
-        [% FOREACH map=maps %]
-            <option [% IF map.map_name==apr.param('map_name'); 'selected'; END %] value="[% map.map_name %]">[% map.map_name %]</option>
-        [% END %]
+        [%- FOREACH map=maps -%]
+            <option [%- IF map.map_name==apr.param('map_name'); 'selected'; END -%] value="[%- map.map_name -%]">[%- map.map_name -%]</option>
+        [%- END -%]
     </select>
 
     &nbsp;
-    <input type="checkbox" name="use_colors" value="1"[% IF apr.param('use_colors'); ' checked'; END %]>Use Colors
-    <input type="checkbox" name="hide_empty_rows" value="1"[% IF apr.param('hide_empty_rows'); ' checked'; END %]>Hide Empty Rows
+    <input type="checkbox" name="use_colors" value="1"[%- IF apr.param('use_colors'); ' checked'; END -%]>Use Colors
+    <input type="checkbox" name="hide_empty_rows" value="1"[%- IF apr.param('hide_empty_rows'); ' checked'; END -%]>Hide Empty Rows
     <input type="hidden" name="show_matrix" value="1">
-    <input type="hidden" name="link_map_set_acc" value="[% apr.param('link_map_set_acc') %]">
-    <input type="hidden" name="prev_species_acc" value="[% apr.param('species_acc') %]">
-    <input type="hidden" name="prev_map_set_acc" value="[% apr.param('map_set_acc') %]">
-    <input type="hidden" name="prev_map_name"    value="[% apr.param('map_name') %]">
+    <input type="hidden" name="link_map_set_acc" value="[%- apr.param('link_map_set_acc') -%]">
+    <input type="hidden" name="prev_species_acc" value="[%- apr.param('species_acc') -%]">
+    <input type="hidden" name="prev_map_set_acc" value="[%- apr.param('map_set_acc') -%]">
+    <input type="hidden" name="prev_map_name"    value="[%- apr.param('map_name') -%]">
     <input type="submit" value="Submit">
 </form>
 
-[% IF apr.param('show_matrix') %]
-    [% IF matrix.data.size %]
+[%- IF apr.param('show_matrix') -%]
+    [%- IF matrix.data.size -%]
         <table border="1">
             <tr>
                 <th colspan="3" rowspan="2">Reference Set</th>
-                [% SET no_by_type=top_row.no_by_type %]
-                [% SET last_map_type_acc=0 %]
+                [%- SET no_by_type=top_row.no_by_type -%]
+                [%- SET last_map_type_acc=0 -%]
 
-                [% FOREACH ms=top_row.map_sets %]
-                    [% SET map_type_acc=ms.map_type_acc %]
-                    [% NEXT IF map_type_acc==last_map_type_acc %]
-                    [% SET colspan=no_by_type.$map_type_acc %]
-                    <th colspan="[% colspan %]">[% ms.map_type %]</th>
-                    [% SET last_map_type_acc=map_type_acc %]
-                [% END %]
+                [%- FOREACH ms=top_row.map_sets -%]
+                    [%- SET map_type_acc=ms.map_type_acc -%]
+                    [%- NEXT IF map_type_acc==last_map_type_acc -%]
+                    [%- SET colspan=no_by_type.$map_type_acc -%]
+                    <th colspan="[%- colspan -%]">[%- ms.map_type -%]</th>
+                    [%- SET last_map_type_acc=map_type_acc -%]
+                [%- END -%]
                 <th colspan="3" rowspan="2">Reference Set</th>
             </tr>
             <tr>
-                [% SET no_by_type_and_species=top_row.no_by_type_and_species %]
-                [% SET last_map_type_acc=0 %]
-                [% SET last_species_acc=0 %]
+                [%- SET no_by_type_and_species=top_row.no_by_type_and_species -%]
+                [%- SET last_map_type_acc=0 -%]
+                [%- SET last_species_acc=0 -%]
 
-                [% FOREACH ms=top_row.map_sets %]
-                    [% SET species_acc=ms.species_acc %]
-                    [% SET map_type_acc=ms.map_type_acc %]
+                [%- FOREACH ms=top_row.map_sets -%]
+                    [%- SET species_acc=ms.species_acc -%]
+                    [%- SET map_type_acc=ms.map_type_acc -%]
 
-                    [% NEXT IF species_acc==last_species_acc && map_type_acc==last_map_type_acc %]
+                    [%- NEXT IF species_acc==last_species_acc && map_type_acc==last_map_type_acc -%]
 
-                    [% SET colspan=no_by_type_and_species.$map_type_acc.$species_acc %]
-                    <th colspan="[% colspan %]">[% ms.species_common_name %]</th>
-                    [% SET last_map_type_acc=map_type_acc %]
-                    [% SET last_species_acc=species_acc %]
-                [% END %]
+                    [%- SET colspan=no_by_type_and_species.$map_type_acc.$species_acc -%]
+                    <th colspan="[%- colspan -%]">[%- ms.species_common_name -%]</th>
+                    [%- SET last_map_type_acc=map_type_acc -%]
+                    [%- SET last_species_acc=species_acc -%]
+                [%- END -%]
             </tr>
 
-            [% IF apr.param('link_map_set_acc') %]
+            [%- IF apr.param('link_map_set_acc') -%]
                 <tr>
                     <td colspan="3">&nbsp;</td>
-                    <th colspan="[% top_row.map_sets.size %]">[% top_row.map_sets.0.map_set_name %]</th>
+                    <th colspan="[%- top_row.map_sets.size -%]">[%- top_row.map_sets.0.map_set_name -%]</th>
                     <td colspan="3">&nbsp;</td>
                 </tr>
 
                 <tr>
                     <td colspan="3">&nbsp;</td>
-                    [% FOREACH map=top_row.map_sets %]
+                    [%- FOREACH map=top_row.map_sets -%]
                         <th>
-                            [% map.map_name %]
+                            [%- map.map_name -%]
                         </th>
-                    [% END %]
+                    [%- END -%]
                     <td colspan="3">&nbsp;</td>
                 </tr>
 
-            [% ELSE %]
+            [%- ELSE -%]
                 <tr>
                     <td colspan="3">&nbsp;</td>
-                    [% FOREACH ms=top_row.map_sets %]
+                    [%- FOREACH ms=top_row.map_sets -%]
                         <td align="center">
-                            <a href="[% url %]/matrix?show_matrix=1;map_set_acc=[% apr.param('map_set_acc') %];[% species_acc_str %][% map_name_str %]link_map_set_acc=[% ms.map_set_acc %];[% use_colors_str %][% hide_empty_rows_str %]">[% ms.map_set_name %]</a>
+                            <a href="[%- url -%]/matrix?show_matrix=1;map_set_acc=[%- apr.param('map_set_acc') -%];[%- species_acc_str -%][%- map_name_str -%]link_map_set_acc=[%- ms.map_set_acc -%];[%- use_colors_str -%][%- hide_empty_rows_str -%]">[%- ms.map_set_name -%]</a>
                         </td>
-                    [% END %]
+                    [%- END -%]
                     <td colspan="3">&nbsp;</td>
                 </tr>
-            [% END %]
+            [%- END -%]
 
-            [% SET i=0 %]
-            [% SET last_map_type_acc=0 %]
-            [% SET last_species_acc=0 %]
-            [% SET no_ref_by_type=matrix.no_by_type %]
-            [% SET no_ref_by_species_and_type=matrix.no_by_species_and_type %]
-            [% FOREACH ms=matrix.data %]
+            [%- SET i=0 -%]
+            [%- SET last_map_type_acc=0 -%]
+            [%- SET last_species_acc=0 -%]
+            [%- SET no_ref_by_type=matrix.no_by_type -%]
+            [%- SET no_ref_by_species_and_type=matrix.no_by_species_and_type -%]
+            [%- FOREACH ms=matrix.data -%]
                 <tr>
-                    [% SET map_type_acc=ms.map_type_acc %]
-                    [% SET species_acc=ms.species_acc %]
-                    [% IF last_map_type_acc AND last_map_type_acc != ms.map_type_acc %]
-                        [% SET last_species_acc=0 %]
-                    [% END %]
+                    [%- SET map_type_acc=ms.map_type_acc -%]
+                    [%- SET species_acc=ms.species_acc -%]
+                    [%- IF last_map_type_acc AND last_map_type_acc != ms.map_type_acc -%]
+                        [%- SET last_species_acc=0 -%]
+                    [%- END -%]
 
-                    [% UNLESS ms.map_type_acc==last_map_type_acc %]
-                        [% SET rowspan=no_ref_by_type.$map_type_acc %]
-                        <th[% IF rowspan > 1 %] rowspan="[% rowspan %]"[% END %]>
-                            [% ms.map_type %]
+                    [%- UNLESS ms.map_type_acc==last_map_type_acc -%]
+                        [%- SET rowspan=no_ref_by_type.$map_type_acc -%]
+                        <th[%- IF rowspan > 1 -%] rowspan="[%- rowspan -%]"[%- END -%]>
+                            [%- ms.map_type -%]
                         </th>
-                    [% END %]
+                    [%- END -%]
 
-                    [% UNLESS ms.species_acc==last_species_acc %]
-                        [% SET rowspan=no_ref_by_species_and_type.$species_acc.$map_type_acc %]
-                        <th[% IF rowspan > 1 %] rowspan="[% rowspan %]"[% END %]>
-                            [% ms.species_common_name %]
-                            [% IF apr.param('map_set_acc') %]
-                                <br>[% ms.map_set_name | nbsp %]
-                            [% END %]
+                    [%- UNLESS ms.species_acc==last_species_acc -%]
+                        [%- SET rowspan=no_ref_by_species_and_type.$species_acc.$map_type_acc -%]
+                        <th[%- IF rowspan > 1 -%] rowspan="[%- rowspan -%]"[%- END -%]>
+                            [%- ms.species_common_name -%]
+                            [%- IF apr.param('map_set_acc') -%]
+                                <br>[%- ms.map_set_name | nbsp -%]
+                            [%- END -%]
                         </th>
-                    [% END %]
+                    [%- END -%]
 
-                    <td class="[% IF i % 2 == 0 %]colored[% ELSE %]monotonic[% END %]">
-                        [% IF apr.param('map_set_acc') %]
-                            [% IF ms.map_name %]
-                                <b>[% ms.map_name | nbsp %]</b>
-                            [% ELSE %]
+                    <td class="[%- IF i % 2 == 0 -%]colored[%- ELSE -%]monotonic[%- END -%]">
+                        [%- IF apr.param('map_set_acc') -%]
+                            [%- IF ms.map_name -%]
+                                <b>[%- ms.map_name | nbsp -%]</b>
+                            [%- ELSE -%]
                                 <b>All</b>
-                            [% END %]
-                        [% ELSE %]
-                            <a href="[% url %]/matrix?show_matrix=1;[% species_acc_str %]map_set_acc=[% ms.map_set_acc %];link_map_set_acc=[% apr.param('link_map_set_acc') %];[% use_colors_str %];[% hide_empty_rows_str %]">[% ms.map_set_name | nbsp %]</a>
-                        [% END %]
+                            [%- END -%]
+                        [%- ELSE -%]
+                            <a href="[%- url -%]/matrix?show_matrix=1;[%- species_acc_str -%]map_set_acc=[%- ms.map_set_acc -%];link_map_set_acc=[%- apr.param('link_map_set_acc') -%];[%- use_colors_str -%][%- hide_empty_rows_str -%]">[%- ms.map_set_name | nbsp -%]</a>
+                        [%- END -%]
                     </td>
 
-                    [% FOREACH r=ms.correspondences %]
-                        [% 
+                    [%- FOREACH r=ms.correspondences -%]
+                        [%- 
                             IF apr.param('use_colors');
                                 IF r.number=='N/A' OR r.number==0;
                                     SET bgcolor='FFFFFF'; # white
@@ -208,96 +208,96 @@
                                 SET attr="class=$class"; 
                             END 
                         -%]
-                        <td align="center" [% attr%]>
-                            [% IF r.number=='N/A' %]
-                                [% r.number %]
-                            [% ELSIF r.number==0 %]
+                        <td align="center" [%- attr%]>
+                            [%- IF r.number=='N/A' -%]
+                                [%- r.number -%]
+                            [%- ELSIF r.number==0 -%]
                                 -
-                            [% ELSE %]
-                                [% IF apr.param('map_set_acc') %]
-                                    <a href="[% url %]/viewer?aggregate=1;ref_map_set_acc=[% ms.map_set_acc %];ref_map_accs=[% ms.map_acc %];comparative_maps=[% IF r.map_acc %]1%3dmap_acc%3d[% r.map_acc %][% ELSE %]1%3dmap_set_acc%3d[% r.map_set_acc %][% END %]">[% r.number %] [% IF r.map_count %]([% r.map_count %])[% END %]</a>
-                                [% ELSE %]
-                                    <a href="[% url %]/matrix?show_matrix=1;[% species_acc_str %][% map_name_str %]map_set_acc=[% ms.map_set_acc %];link_map_set_acc=[% r.map_set_acc %];[% use_colors_str %][% hide_empty_rows_str %]">[% r.number %] [% IF r.map_count %]([% r.map_count %])[% END %]</a>
-                                [% END %]
-                            [% END %]
+                            [%- ELSE -%]
+                                [%- IF apr.param('map_set_acc') -%]
+                                    <a href="[%- url -%]/viewer?aggregate=1;ref_map_set_acc=[%- ms.map_set_acc -%];ref_map_accs=[%- ms.map_acc -%];comparative_maps=[%- IF r.map_acc -%]1%3dmap_acc%3d[%- r.map_acc -%][%- ELSE -%]1%3dmap_set_acc%3d[%- r.map_set_acc -%][%- END -%]">[%- r.number -%] [%- IF r.map_count -%]([%- r.map_count -%])[%- END -%]</a>
+                                [%- ELSE -%]
+                                    <a href="[%- url -%]/matrix?show_matrix=1;[%- species_acc_str -%][%- map_name_str -%]map_set_acc=[%- ms.map_set_acc -%];link_map_set_acc=[%- r.map_set_acc -%];[%- use_colors_str -%][%- hide_empty_rows_str -%]">[%- r.number -%] [%- IF r.map_count -%]([%- r.map_count -%])[%- END -%]</a>
+                                [%- END -%]
+                            [%- END -%]
                         </td>
-                    [% END %]
+                    [%- END -%]
 
-                    <td class="[% IF i % 2 == 0 %]colored[% ELSE %]monotonic[% END %]">
-                        [% IF apr.param('map_set_acc') %]
-                            [% IF ms.map_name %]
-                                <b>[% ms.map_name %]</b>
-                            [% ELSE %]
+                    <td class="[%- IF i % 2 == 0 -%]colored[%- ELSE -%]monotonic[%- END -%]">
+                        [%- IF apr.param('map_set_acc') -%]
+                            [%- IF ms.map_name -%]
+                                <b>[%- ms.map_name -%]</b>
+                            [%- ELSE -%]
                                 <b>All</b>
-                            [% END %]
-                        [% ELSE %]
-                            <a href="[% url %]/matrix?show_matrix=1;[% species_acc_str %]map_set_acc=[% ms.map_set_acc %];link_map_set_acc=[% apr.param('link_map_set_acc') %];[% use_colors_str %][% hide_empty_rows_str %]">[% ms.map_set_name | nbsp %]</a>
-                        [% END %]
+                            [%- END -%]
+                        [%- ELSE -%]
+                            <a href="[%- url -%]/matrix?show_matrix=1;[%- species_acc_str -%]map_set_acc=[%- ms.map_set_acc -%];link_map_set_acc=[%- apr.param('link_map_set_acc') -%];[%- use_colors_str -%][%- hide_empty_rows_str -%]">[%- ms.map_set_name | nbsp -%]</a>
+                        [%- END -%]
                     </td>
 
-                    [% UNLESS ms.species_acc==last_species_acc %]
-                        [% SET rowspan=no_ref_by_species_and_type.$species_acc.$map_type_acc %]
-                        <th[% IF rowspan > 1 %] rowspan="[% rowspan %]"[% END %]>
-                            [% ms.species_common_name %]
-                            [% IF apr.param('map_set_acc') %]
-                                <br>[% ms.map_set_name | nbsp %]
-                            [% END %]
+                    [%- UNLESS ms.species_acc==last_species_acc -%]
+                        [%- SET rowspan=no_ref_by_species_and_type.$species_acc.$map_type_acc -%]
+                        <th[%- IF rowspan > 1 -%] rowspan="[%- rowspan -%]"[%- END -%]>
+                            [%- ms.species_common_name -%]
+                            [%- IF apr.param('map_set_acc') -%]
+                                <br>[%- ms.map_set_name | nbsp -%]
+                            [%- END -%]
                         </th>
-                    [% END %]
+                    [%- END -%]
 
-                    [% UNLESS ms.map_type_acc==last_map_type_acc %]
-                        [% SET rowspan=no_ref_by_type.$map_type_acc %]
-                        <th[% IF rowspan > 1 %] rowspan="[% rowspan %]"[% END %]>
-                            [% ms.map_type %]
+                    [%- UNLESS ms.map_type_acc==last_map_type_acc -%]
+                        [%- SET rowspan=no_ref_by_type.$map_type_acc -%]
+                        <th[%- IF rowspan > 1 -%] rowspan="[%- rowspan -%]"[%- END -%]>
+                            [%- ms.map_type -%]
                         </th>
-                    [% END %]
+                    [%- END -%]
 
-                    [% SET last_map_type_acc=ms.map_type_acc %]
-                    [% SET last_species_acc=ms.species_acc %]
+                    [%- SET last_map_type_acc=ms.map_type_acc -%]
+                    [%- SET last_species_acc=ms.species_acc -%]
                 </tr>
-                [% SET i = i + 1 %]
-            [% END %]
+                [%- SET i = i + 1 -%]
+            [%- END -%]
 
-            [% IF apr.param('link_map_set_acc') %]
-                [% SET no_columns=0 %]
-                [% SET map_set_name="" %]
+            [%- IF apr.param('link_map_set_acc') -%]
+                [%- SET no_columns=0 -%]
+                [%- SET map_set_name="" -%]
                 <tr>
                     <td colspan="3">&nbsp;</td>
-                    [% FOREACH map=top_row.map_sets %]
+                    [%- FOREACH map=top_row.map_sets -%]
                         <th>
-                            [% map.map_name %]
+                            [-% map.map_name -%]
                         </th>
-                        [% SET no_columns=no_columns+1 %]
-                        [% SET map_set_name=map.map_set_name %]
-                    [% END %]
+                        [%- SET no_columns=no_columns+1 -%]
+                        [%- SET map_set_name=map.map_set_name -%]
+                    [%- END -%]
                     <td colspan="3">&nbsp;</td>
                 </tr>
 
                 <tr>
                     <td colspan="3">&nbsp;</td>
-                    <th colspan="[% no_columns %]">[% map_set_name %]</th>
+                    <th colspan="[%- no_columns -%]">[%- map_set_name -%]</th>
                     <td colspan="3">&nbsp;</td>
                 </tr>
 
-            [% ELSE %]
+            [%- ELSE -%]
                 <tr>
                     <td colspan="3">&nbsp;</td>
-                    [% FOREACH ms=top_row.map_sets %]
+                    [%- FOREACH ms=top_row.map_sets -%]
                         <td>
-                            <a href="[% url %]/matrix?show_matrix=1;map_set_acc=[% apr.param('map_set_acc') %];[% species_acc_str %][% map_name_str %]link_map_set_acc=[% ms.map_set_acc %];[% use_colors_str %][% hide_empty_rows_str %]">[% ms.map_set_name %]</a>
+                            <a href="[%- url -%]/matrix?show_matrix=1;map_set_acc=[%- apr.param('map_set_acc') -%];[%- species_acc_str -%][%- map_name_str -%]link_map_set_acc=[%- ms.map_set_acc -%];[%- use_colors_str -%][%- hide_empty_rows_str -%]">[%- ms.map_set_name -%]</a>
                         </td>
-                    [% END %]
+                    [%- END -%]
                     <td colspan="3">&nbsp;</td>
                 </tr>
-            [% END %]
+            [%- END -%]
         </table>
 Legend: Correspondences (Corresponding Maps)
 
-    [% ELSE %]
+    [%- ELSE -%]
 
         No correspondences for those criteria.
 
-    [% END %]
-[% END %]
+    [%- END -%]
+[%- END -%]
 
-[% INCLUDE footer.tmpl %]
+[%- INCLUDE footer.tmpl -%]
