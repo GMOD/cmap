@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.107 2005-08-29 15:41:21 mwz444 Exp $
+# $Id: Drawer.pm,v 1.108 2005-08-30 19:08:09 mwz444 Exp $
 
 =head1 NAME
 
@@ -342,7 +342,7 @@ This is set to 1 if the Additional Options Menu is displayed.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.107 $)[-1];
+$VERSION = (qw$Revision: 1.108 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -352,6 +352,7 @@ use Bio::GMOD::CMap::Drawer::Glyph;
 use File::Basename;
 use File::Temp 'tempfile';
 use File::Path;
+use Filesys::Df;
 use Data::Dumper;
 use base 'Bio::GMOD::CMap';
 
@@ -387,6 +388,19 @@ Initializes the drawing object.
         $self->$param( $config->{$param} );
     }
 
+    # Check to make sure the image dir isn't too full.
+    if ( $self->config_data('max_img_dir_fullness') ) {
+        my $cache_dir = $self->cache_dir or return;
+        my $ref = df($cache_dir);
+        if ( $ref->{'per'} > $self->config_data('max_img_dir_fullness') ) {
+            return $self->error( "Error: Image directory '$cache_dir' is "
+                  . $ref->{'per'}
+                  . '% filled.  The maximum allowed is '
+                  . $self->config_data('max_img_dir_fullness')
+                  . ' % filled . '
+                  . " Please contact the site administrator for assistance." );
+        }
+    }
     if ( $self->config_data('max_img_dir_size') ) {
         my $cache_dir = $self->cache_dir or return;
         my $size = 0;
@@ -1493,7 +1507,8 @@ Lays out the image and writes it to the file system, set the "image_name."
     my $cache_dir = $self->cache_dir or return;
     my ( $fh, $filename ) = tempfile( 'X' x 9, DIR => $cache_dir );
     my $image_type = $self->image_type;
-    print $fh $img->$image_type();
+    print $fh $img->$image_type()
+      || warn "CMap image write failed: $!";
     $fh->close;
     $self->image_name($filename);
 

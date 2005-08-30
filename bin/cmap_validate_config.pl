@@ -379,10 +379,11 @@ my %config_defs = (
     page_object => { %generic_scalar_def, no_report_if_missing => 1 },
 );
 my %global_config_defs = (
-    template_dir     => { %generic_scalar_def, required    => 1, },
-    cache_dir        => { %generic_scalar_def, required    => 1, },
-    default_db       => { %generic_scalar_def, required    => 1, },
-    max_img_dir_size => { %generic_scalar_def, option_type => 'integer', },
+    template_dir         => { %generic_scalar_def, required    => 1, },
+    cache_dir            => { %generic_scalar_def, required    => 1, },
+    default_db           => { %generic_scalar_def, required    => 1, },
+    max_img_dir_size     => { %generic_scalar_def, option_type => 'integer', },
+    max_img_dir_fullness => { %generic_scalar_def, option_type => 'integer', },
 );
 
 my $print_out_full    = 0;

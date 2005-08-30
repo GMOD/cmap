@@ -52,4 +52,23 @@ cache_dir $cache_dir
 # Default: CMAP
 # 
 default_db CMAP
+
+#
+# max_img_dir_fullness 
+# This is the maximum percent the image cache directory will fill before CMap
+# quits writing to it.  This is to keep CMap from filling your drive.  
+# Default: 0
+#
+max_img_dir_fullness 0
+
+#
+# max_img_dir_size 
+# Using this option may slow down your requests by as much as 0.4 seconds.
+# This is the maximum size (in bytes) the image cache directory will grow
+# before CMap quits writing to it.  This is to keep CMap from filling your
+# drive.
+# Default: 0
+#
+max_img_dir_size 0
+
 !GROK!THIS!
