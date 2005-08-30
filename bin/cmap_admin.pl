@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.115 2005-08-30 20:54:02 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.116 2005-08-30 21:26:55 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.115 $)[-1];
+$VERSION = (qw$Revision: 1.116 $)[-1];
 
 #
 # Get command-line options
@@ -1979,7 +1979,7 @@ sub get_map_sets {
         $map_type_results =
           sort_selectall_arrayref( $map_type_results, 'map_type' );
 
-        my @map_types = $self->show_menu(
+        my $map_types = $self->show_menu(
             title      => 'Restrict by Map Set by Map Types',
             prompt     => 'Limit map sets by which map types?',
             display    => 'map_type',
@@ -1988,10 +1988,11 @@ sub get_map_sets {
             allow_mult => $allow_mult,
             data       => $map_type_results,
         );
+        $map_types = [ $map_types ] unless (ref($map_types) eq 'ARRAY' );
 
         my $map_set_species = $sql_object->get_map_sets(
             cmap_object   => $self,
-            map_type_accs => \@map_types,
+            map_type_accs => $map_types,
         );
         die "No species! Please create.\n"
           unless @$map_set_species;
@@ -2024,7 +2025,7 @@ sub get_map_sets {
 
         my $ms_choices = $sql_object->get_map_sets(
             cmap_object   => $self,
-            map_type_accs => \@map_types,
+            map_type_accs => $map_types,
             species_ids   => $species_ids,
         );
 
