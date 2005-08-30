@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.98 2005-08-18 16:04:21 mwz444 Exp $
+# $Id: Generic.pm,v 1.99 2005-08-30 17:16:20 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.98 $)[-1];
+$VERSION = (qw$Revision: 1.99 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -1653,7 +1653,7 @@ Array of Hashes:
     if ( defined($is_relational_map) ) {
         $where_sql .= " and ms.is_relational_map = $is_relational_map ";
     }
-    if ( defined($is_enabled) ) {
+    if ( defined($is_enabled) and $is_enabled =~/\d/ ) {
         $where_sql .= " and ms.is_enabled = $is_enabled ";
     }
     if ($count_maps) {
@@ -1678,7 +1678,7 @@ Array of Hashes:
                 s.species_acc,
                 s.species_common_name,
                 s.species_full_name,
-                s.display_order,
+                s.display_order
         ];
     }
 
