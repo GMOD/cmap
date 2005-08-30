@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.100 2005-08-30 18:48:13 mwz444 Exp $
+# $Id: Generic.pm,v 1.101 2005-08-30 20:54:02 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.100 $)[-1];
+$VERSION = (qw$Revision: 1.101 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -1588,6 +1588,7 @@ Array of Hashes:
     my $map_set_acc  = $args{'map_set_acc'};
     my $map_set_accs = $args{'map_set_accs'} || [];
     my $map_type_acc = $args{'map_type_acc'};
+    my $map_type_accs = $args{'map_type_accs'} || [];
     my $is_relational_map = $args{'is_relational_map'};
     my $is_enabled        = $args{'is_enabled'};
     my $count_maps        = $args{'count_maps'};
@@ -1649,6 +1650,10 @@ Array of Hashes:
     }
     if ($map_type_acc) {
         $where_sql .= " and ms.map_type_acc = '$map_type_acc' ";
+    }
+    elsif (@$map_type_accs) {
+        $where_sql .= " and ms.map_type_acc in ('"
+          . join( "','", sort @$map_type_accs ) . "') ";
     }
     if ( defined($is_relational_map) ) {
         $where_sql .= " and ms.is_relational_map = $is_relational_map ";

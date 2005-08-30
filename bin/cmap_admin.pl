@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.114 2005-08-30 16:49:49 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.115 2005-08-30 20:54:02 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.114 $)[-1];
+$VERSION = (qw$Revision: 1.115 $)[-1];
 
 #
 # Get command-line options
@@ -1983,14 +1983,11 @@ sub get_map_sets {
             title      => 'Restrict by Map Set by Map Types',
             prompt     => 'Limit map sets by which map types?',
             display    => 'map_type',
-            return     => 'map_type_acc,map_type',
+            return     => 'map_type_acc',
             allow_null => $allow_null,
             allow_mult => $allow_mult,
             data       => $map_type_results,
         );
-        if ( @map_types and ref $map_types[0] ne 'ARRAY' ) {
-            @map_types = @{ [ [@map_types] ] };
-        }
 
         my $map_set_species = $sql_object->get_map_sets(
             cmap_object   => $self,
