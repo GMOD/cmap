@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Import;
 
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.72 2005-06-03 22:19:59 mwz444 Exp $
+# $Id: Import.pm,v 1.73 2005-08-30 20:19:29 mwz444 Exp $
 
 =pod
 
@@ -33,7 +33,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.72 $)[-1];
+$VERSION = (qw$Revision: 1.73 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -277,7 +277,7 @@ appended to the list of xrefs.
         %$maps =
           map { uc $_->{'map_name'}, { map_id => $_->{'map_id'} } } @$map_info;
     }
-    my %map_accs      = map { $_->{'map_acc'}, $_->{'map_id'} } @$map_info;
+    my %map_accs      = map { $_->{'map_acc'}, $_->{'map_name'} } @$map_info;
     my %modified_maps = ();
 
     $self->Print(
@@ -393,7 +393,7 @@ appended to the list of xrefs.
         }
 
         $map_name ||= $record->{'map_name'};
-        if ( $map_name eq $last_map_name ) {
+        if ( ( $map_name eq $last_map_name ) && $last_map_id ) {
             $map_id = $last_map_id;
         }
         else {
@@ -527,6 +527,7 @@ appended to the list of xrefs.
                 my $features_array = $sql_object->get_features_simple(
                     cmap_object => $self,
                     map_id      => $map_id,
+                    feature_acc => $feature_acc,
                 );
                 if (@$features_array) {
                     $feature_id = $features_array->[0]{'feature_id'};
@@ -691,8 +692,8 @@ appended to the list of xrefs.
                 $feature_index++;
             }
         }
-
     }
+
     my $feature_id = $sql_object->insert_feature(
         cmap_object => $self,
         threshold   => 0
