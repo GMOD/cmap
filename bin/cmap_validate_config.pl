@@ -384,6 +384,9 @@ my %global_config_defs = (
     default_db           => { %generic_scalar_def, required    => 1, },
     max_img_dir_size     => { %generic_scalar_def, option_type => 'integer', },
     max_img_dir_fullness => { %generic_scalar_def, option_type => 'integer', },
+    purge_img_dir_when_full =>
+      { %generic_scalar_def, option_type => 'integer', },
+    file_age_to_purge => { %generic_scalar_def, option_type => 'integer', },
 );
 
 my $print_out_full    = 0;

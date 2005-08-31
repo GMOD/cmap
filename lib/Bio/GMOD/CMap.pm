@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.93 2005-08-29 14:18:04 mwz444 Exp $
+# $Id: CMap.pm,v 1.94 2005-08-31 21:54:47 mwz444 Exp $
 
 =head1 NAME
 
@@ -40,6 +40,7 @@ use Bio::GMOD::CMap::Config;
 use URI::Escape;
 use DBI;
 use File::Path;
+use Filesys::Df;
 use Storable qw(freeze thaw);
 use Template;
 
@@ -1289,6 +1290,94 @@ Returns the correct SQL module driver for the RDBMS we're using.
     }
 
     return $self->{'sql_module'};
+}
+
+# ----------------------------------------------------
+sub check_img_dir_fullness {
+
+=pod
+
+=head2 check_img_dir_fullness
+
+Check the image directories fullness (as a percent).  Compare it to the
+max_img_dir_fullness in the conf dir.  If it is full, return 1.
+
+=cut
+
+
+    my $self      = shift;
+    return 0 unless ($self->config_data('max_img_dir_fullness'));
+
+    my $cache_dir = $self->cache_dir or return;
+    my $ref = df($cache_dir);
+    if ( $ref->{'per'} > $self->config_data('max_img_dir_fullness') ) {
+        return 1;
+    }
+
+    return 0;
+}
+
+# ----------------------------------------------------
+sub check_img_dir_size {
+
+=pod
+
+=head2 check_img_dir_size
+
+Check the image directories size (as a percent).  Compare it to the
+max_img_dir_size in the conf dir.  If it is full, return 1.
+
+=cut
+
+
+    my $self      = shift;
+    return 0 unless ($self->config_data('max_img_dir_size'));
+
+    my $cache_dir = $self->cache_dir or return;
+    my $size = 0;
+    foreach my $file ( glob("$cache_dir/*") ) {
+        next unless -f $file;
+        $size += -s $file;
+    }
+    if ( $size > $self->config_data('max_img_dir_size') ) {
+        return 1;
+    }
+
+    return 0;
+}
+
+# ----------------------------------------------------
+sub clear_img_dir {
+
+=pod
+
+=head2 clear_img_dir
+
+Clears the image directory of files.  (It will not touch directories.)
+
+=cut
+
+    my $self      = shift;
+    my $cache_dir = $self->cache_dir or return;
+
+    return 0 unless ( $self->config_data('purge_img_dir_when_full') );
+
+    my $delete_age = $self->config_data('file_age_to_purge');
+
+    unless ( defined($delete_age) and $delete_age =~ /^\d+$/ ) {
+        if ( $delete_age =~ /\d+/ ) {
+            $self->warn( "file_age_to_purge not correctly defined.  "
+                  . "Using the default" );
+        }
+        $delete_age = DEFAULT->{'file_age_to_purge'} || 300;
+    }
+    my $time_now = time;
+    foreach my $file ( glob("$cache_dir/*") ) {
+        my @stat_results = stat $file;
+        my $diff_time    = $time_now - $stat_results[8];
+        unlink $file if ( -f $file and $diff_time >= $delete_age );
+    }
+    return 1;
 }
 
 ###########################################

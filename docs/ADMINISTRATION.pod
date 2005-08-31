@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.17 $
+$Revision: 1.18 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -119,6 +119,21 @@ is the maximum size (in bytes) the image cache directory will grow before CMap
 quits writing to it.  This is to keep CMap from filling your drive.
 
 Excluding or setting to 0 will ignore directory size.
+
+=item * purge_img_dir_when_full [ default: 0 ]
+
+Allow CMap to purge the image directory when it is full.
+
+Excluding or setting to 0 will prevent CMap from attempting to purge the image
+directory.
+
+=item * file_age_to_purge [ default: 300 ]
+
+The age (in seconds) of an image file that an image has to be to be purged.  
+
+The default is set to five minutes so that any http requests accessing current
+images will have a chance to get them.  Setting to 0 may cause problems with
+concurrent requests.
 
 =back
 

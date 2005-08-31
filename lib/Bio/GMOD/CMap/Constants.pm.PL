@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.30 2005-07-14 15:35:00 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.31 2005-08-31 21:54:48 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.30 $)[-1];
+$VERSION = (qw$Revision: 1.31 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -364,6 +364,13 @@ use constant DEFAULT => {
     # Where to see feature type details.
     #
     feature_type_details_url => 'feature_type_info?feature_type_acc=',
+
+    # 
+    # The age of an image file needs to be (in seconds) before it can be
+    # purged.
+    # Default: 300
+    #
+    file_age_to_purge => 300,
     
     #
     # The size of the map image.  Note that there are options on the
@@ -461,6 +468,7 @@ use constant DEFAULT => {
     max_web_timeout => 0,
 
     omit_area_boxes => 0,
+
     #
     # The module to dispatch to when no path is given to "/cmap."
     #
@@ -644,7 +652,7 @@ use constant VALID => {
         '1' => 1,
         '2' => 1,
     },
-    omit_area_boxes => {
+    omit_area_boxes              => {
         ''  => 1,
         '0' => 1,
         '1' => 1,

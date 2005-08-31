@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.108 2005-08-30 19:08:09 mwz444 Exp $
+# $Id: Drawer.pm,v 1.109 2005-08-31 21:54:48 mwz444 Exp $
 
 =head1 NAME
 
@@ -342,7 +342,7 @@ This is set to 1 if the Additional Options Menu is displayed.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.108 $)[-1];
+$VERSION = (qw$Revision: 1.109 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -352,7 +352,6 @@ use Bio::GMOD::CMap::Drawer::Glyph;
 use File::Basename;
 use File::Temp 'tempfile';
 use File::Path;
-use Filesys::Df;
 use Data::Dumper;
 use base 'Bio::GMOD::CMap';
 
@@ -389,27 +388,51 @@ Initializes the drawing object.
     }
 
     # Check to make sure the image dir isn't too full.
-    if ( $self->config_data('max_img_dir_fullness') ) {
-        my $cache_dir = $self->cache_dir or return;
-        my $ref = df($cache_dir);
-        if ( $ref->{'per'} > $self->config_data('max_img_dir_fullness') ) {
-            return $self->error( "Error: Image directory '$cache_dir' is "
-                  . $ref->{'per'}
-                  . '% filled.  The maximum allowed is '
+    if ( $self->check_img_dir_fullness() ) {
+        if ( $self->clear_img_dir() ) {
+            if ( $self->check_img_dir_fullness() ) {
+                return $self->error( "Error: Image directory '"
+                      . $self->cache_dir . "' is "
+                      . 'filled.  The maximum allowed is '
+                      . $self->config_data('max_img_dir_fullness')
+                      . '% filled . '
+                      . " CMap was unable to purge enough space."
+                      . " Please contact the site administrator for assistance."
+                );
+            }
+        }
+        else {
+            return $self->error( "Error: Image directory '"
+                  . $self->cache_dir . "' is "
+                  . 'filled.  The maximum allowed is '
                   . $self->config_data('max_img_dir_fullness')
-                  . ' % filled . '
+                  . '% filled . '
+                  . " CMap is not set to automatically purge this directory."
                   . " Please contact the site administrator for assistance." );
         }
     }
-    if ( $self->config_data('max_img_dir_size') ) {
-        my $cache_dir = $self->cache_dir or return;
-        my $size = 0;
-        foreach my $file ( glob("$cache_dir/*") ) {
-            next unless -f $file;
-            $size += -s $file;
+    if ( $self->check_img_dir_size() ) {
+        if ( $self->clear_img_dir() ) {
+            if ( $self->check_img_dir_size() ) {
+                return $self->error( "Error: Image directory '"
+                      . $self->cache_dir
+                      . "' filled.  "
+                      . " The maximum size the directory can grow is "
+                      . $self->config_data('max_img_dir_size')
+                      . " bytes. "
+                      . " CMap was unable to purge enough space."
+                      . " Please contact the site administrator for assistance."
+                );
+            }
         }
-        if ( $size > $self->config_data('max_img_dir_size') ) {
-            return $self->error( "Error: Image directory '$cache_dir' filled.  "
+        else {
+            return $self->error( "Error: Image directory '"
+                  . $self->cache_dir
+                  . "' filled.  "
+                  . " The maximum size the directory can grow is "
+                  . $self->config_data('max_img_dir_size')
+                  . " bytes. "
+                  . " CMap is not set to automatically purge this directory."
                   . " Please contact the site administrator for assistance." );
         }
     }
@@ -1508,7 +1531,7 @@ Lays out the image and writes it to the file system, set the "image_name."
     my ( $fh, $filename ) = tempfile( 'X' x 9, DIR => $cache_dir );
     my $image_type = $self->image_type;
     print $fh $img->$image_type()
-      || warn "CMap image write failed: $!";
+      || $self->warn("CMap image write failed: $!");
     $fh->close;
     $self->image_name($filename);
 
