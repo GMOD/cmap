@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.117 2005-08-30 21:56:19 kycl4rk Exp $
+# $Id: cmap_admin.pl,v 1.118 2005-08-31 00:23:24 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.117 $)[-1];
+$VERSION = (qw$Revision: 1.118 $)[-1];
 
 #
 # Get command-line options
@@ -53,7 +53,8 @@ my ($map_accs);
 my ( $evidence_type_accs, );
 
 #make name corr
-my ($from_map_set_accs, $to_map_set_accs, $skip_feature_type_accs,$name_regex);
+my ( $from_map_set_accs, $to_map_set_accs, $skip_feature_type_accs,
+    $name_regex );
 
 GetOptions(
     'h|help'                => \$show_help,             # Show help and exit
@@ -75,34 +76,34 @@ GetOptions(
     'feature_type_accs=s'   => \$feature_type_accs,
     'evidence_type_acc=s'   => \$evidence_type_acc,
     'evidence_type_accs=s'  => \$evidence_type_accs,
-    'skip_feature_type_accs=s'   => \$skip_feature_type_accs,
-    'map_set_acc=s'         => \$map_set_acc,
-    'map_set_accs=s'        => \$map_set_accs,
-    'from_map_set_acc=s'    => \$from_map_set_acc,
-    'from_map_set_accs=s'   => \$from_map_set_accs,
-    'to_map_set_acc=s'      => \$to_map_set_acc,
-    'to_map_set_accs=s'     => \$to_map_set_accs,
-    'map_shape=s'           => \$map_shape,
-    'map_color=s'           => \$map_color,
-    'map_width=i'           => \$map_width,
-    'overwrite'           => \$overwrite,
-    'allow_update'        => \$allow_update,
-    'cache_level=i'         => \$cache_level,
-    'format=s'              => \$format,
-    'add_truncate'        => \$add_truncate,
-    'export_file=s'         => \$export_file,
-    'export_objects=s'      => \$export_objects,
-    'tables=s'              => \$tables,
-    'quote_escape=s'        => \$quote_escape,
-    'exclude_fields=s'      => \$exclude_fields,
-    'directory=s'           => \$directory,
-    'name_regex=s'           => \$name_regex,
+    'skip_feature_type_accs=s' => \$skip_feature_type_accs,
+    'map_set_acc=s'            => \$map_set_acc,
+    'map_set_accs=s'           => \$map_set_accs,
+    'from_map_set_acc=s'       => \$from_map_set_acc,
+    'from_map_set_accs=s'      => \$from_map_set_accs,
+    'to_map_set_acc=s'         => \$to_map_set_acc,
+    'to_map_set_accs=s'        => \$to_map_set_accs,
+    'map_shape=s'              => \$map_shape,
+    'map_color=s'              => \$map_color,
+    'map_width=i'              => \$map_width,
+    'overwrite'                => \$overwrite,
+    'allow_update'             => \$allow_update,
+    'cache_level=i'            => \$cache_level,
+    'format=s'                 => \$format,
+    'add_truncate'             => \$add_truncate,
+    'export_file=s'            => \$export_file,
+    'export_objects=s'         => \$export_objects,
+    'tables=s'                 => \$tables,
+    'quote_escape=s'           => \$quote_escape,
+    'exclude_fields=s'         => \$exclude_fields,
+    'directory=s'              => \$directory,
+    'name_regex=s'             => \$name_regex,
 
   )
   or pod2usage(2);
 my $file_str = join( ' ', @ARGV );
- 
-pod2usage(-verbose=>1) if $show_info;
+
+pod2usage( -verbose => 1 ) if $show_info;
 pod2usage(0) if $show_help;
 if ($show_version) {
     print "$0 Version: $VERSION (CMap Version $Bio::GMOD::CMap::VERSION)\n";
@@ -132,7 +133,7 @@ my %command_line_actions = (
     export_as_sql                    => 1,
     export_as_text                   => 1,
     export_objects                   => 1,
-    delete_maps                   => 1,
+    delete_maps                      => 1,
     delete_correspondences           => 1,
     make_name_correspondences        => 1,
 );
@@ -161,43 +162,43 @@ while ($continue) {
 
     # Arguments are only used with command_line
     $cli->$action(
-        command_line        => $command_line,
-        species_full_name   => $species_full_name,
-        species_common_name => $species_common_name,
-        species_acc         => $species_acc,
-        map_set_name        => $map_set_name,
-        map_set_short_name  => $map_set_short_name,
-        species_id          => $species_id,
-        species_acc         => $species_acc,
-        map_type_acc        => $map_type_acc,
-        feature_type_acc    => $feature_type_acc,
-        feature_type_accs   => $feature_type_accs,
-        evidence_type_acc   => $evidence_type_acc,
-        evidence_type_accs  => $evidence_type_accs,
-        skip_feature_type_accs   => $skip_feature_type_accs,
-        map_set_acc         => $map_set_acc,
-        from_map_set_acc    => $from_map_set_acc,
-        from_map_set_accs   => $from_map_set_accs,
-        to_map_set_acc      => $to_map_set_acc,
-        to_map_set_accs     => $to_map_set_accs,
-        map_set_accs        => $map_set_accs,
-        map_shape           => $map_shape,
-        map_color           => $map_color,
-        map_width           => $map_width,
-        file_str            => $file_str,
-        overwrite           => $overwrite,
-        allow_update        => $allow_update,
-        cache_level         => $cache_level,
-        format              => $format,
-        add_truncate        => $add_truncate,
-        export_file         => $export_file,
-        export_objects      => $export_objects,
-        tables              => $tables,
-        quote_escape        => $quote_escape,
-        exclude_fields      => $exclude_fields,
-        directory           => $directory,
-        name_regex           => $name_regex,
-        map_accs            => $map_accs,
+        command_line           => $command_line,
+        species_full_name      => $species_full_name,
+        species_common_name    => $species_common_name,
+        species_acc            => $species_acc,
+        map_set_name           => $map_set_name,
+        map_set_short_name     => $map_set_short_name,
+        species_id             => $species_id,
+        species_acc            => $species_acc,
+        map_type_acc           => $map_type_acc,
+        feature_type_acc       => $feature_type_acc,
+        feature_type_accs      => $feature_type_accs,
+        evidence_type_acc      => $evidence_type_acc,
+        evidence_type_accs     => $evidence_type_accs,
+        skip_feature_type_accs => $skip_feature_type_accs,
+        map_set_acc            => $map_set_acc,
+        from_map_set_acc       => $from_map_set_acc,
+        from_map_set_accs      => $from_map_set_accs,
+        to_map_set_acc         => $to_map_set_acc,
+        to_map_set_accs        => $to_map_set_accs,
+        map_set_accs           => $map_set_accs,
+        map_shape              => $map_shape,
+        map_color              => $map_color,
+        map_width              => $map_width,
+        file_str               => $file_str,
+        overwrite              => $overwrite,
+        allow_update           => $allow_update,
+        cache_level            => $cache_level,
+        format                 => $format,
+        add_truncate           => $add_truncate,
+        export_file            => $export_file,
+        export_objects         => $export_objects,
+        tables                 => $tables,
+        quote_escape           => $quote_escape,
+        exclude_fields         => $exclude_fields,
+        directory              => $directory,
+        name_regex             => $name_regex,
+        map_accs               => $map_accs,
 
     );
 }
@@ -231,7 +232,6 @@ while ($continue) {
 # ./bin/cmap_admin.pl -d WashU -a delete_correspondences --species_acc SP1 --evidence_type_accs all
 
 # ./bin/cmap_admin.pl -d WashU -a make_name_correspondences --evidence_type_acc ANB --from_map_set_accs "10 7 MS10 MS4 MS5 MS6 MS8" --to_map_set_accs "10 7 MS10 MS4 MS5 MS6 MS8" --skip_feature_type_accs "" --name_regex exact_match
-
 
 # ----------------------------------------------------
 package Bio::GMOD::CMap::CLI::Admin;
@@ -806,7 +806,9 @@ sub delete_correspondences {
         else {
             push @missing, 'map_set_accs or species_acc or map_type_acc';
         }
-        if ( defined($evidence_type_accs_str) and $evidence_type_accs_str=~/all/i){
+        if ( defined($evidence_type_accs_str)
+            and $evidence_type_accs_str =~ /all/i )
+        {
             @evidence_type_accs = keys( %{ $self->evidence_type_data() } );
         }
         elsif ( defined($evidence_type_accs_str) ) {
@@ -881,14 +883,14 @@ sub delete_correspondences {
 
     }
 
-    unless (@evidence_type_accs){
+    unless (@evidence_type_accs) {
         print "No evidence types selected.  Doing Nothing.\n";
         return;
     }
-    my %evidence_lookup = map { $_, 1 } @evidence_type_accs;
-    my $admin           = $self->admin;
-    my $log_fh          = $self->log_fh;
-    my $disregard_evidence=@evidence_type_accs ?0 :1;
+    my %evidence_lookup    = map { $_, 1 } @evidence_type_accs;
+    my $admin              = $self->admin;
+    my $log_fh             = $self->log_fh;
+    my $disregard_evidence = @evidence_type_accs ? 0 : 1;
 
     for my $map_set (@$map_sets) {
         my $map_set_id = $map_set->{'map_set_id'};
@@ -1218,8 +1220,7 @@ sub export_as_text {
                 map_type_acc => $map_type_acc,
             );
             unless ( @{ $map_sets || [] } ) {
-                print STDERR
-                  "No map set constraints given.\n";
+                print STDERR "No map set constraints given.\n";
                 push @missing, 'map_set_accs or species_acc or map_type_acc';
             }
         }
@@ -1482,8 +1483,7 @@ sub export_as_sql {
                     }
                 }
                 unless ($found) {
-                    print STDERR
-                      "The table name '$dump_table' is not valid.\n";
+                    print STDERR "The table name '$dump_table' is not valid.\n";
                     $valid = 0;
                 }
             }
@@ -1989,7 +1989,7 @@ sub get_map_sets {
             allow_mult => $allow_mult,
             data       => $map_type_results,
         );
-        $map_types = [ $map_types ] unless (ref($map_types) eq 'ARRAY' );
+        $map_types = [$map_types] unless ( ref($map_types) eq 'ARRAY' );
 
         my $map_set_species = $sql_object->get_map_sets(
             cmap_object   => $self,
@@ -2624,23 +2624,23 @@ sub import_alignments {
             ),
         );
 
-#        $feature_type_acc  => $feature_type[0],
-#        $evidence_type_acc => $evidence_type[0],
+        $feature_type_acc  = $feature_type[0];
+        $evidence_type_acc = $evidence_type[0];
 
-          #
-          # Get the format of the alignment (BLAST...)
-          #
-          # SearchIO.pm from BioPerl has a list of available formats.
-          # Currently only BLAST is included because that is the only one
-          # that I have files to test.
+        #
+        # Get the format of the alignment (BLAST...)
+        #
+        # SearchIO.pm from BioPerl has a list of available formats.
+        # Currently only BLAST is included because that is the only one
+        # that I have files to test.
 
-          $format = $self->show_menu(
+        $format = $self->show_menu(
             title   => 'Alignment Format',
             prompt  => 'What format is the alignment in?',
             display => 'display',
             return  => 'format',
             data    => $formats,
-          );
+        );
 
         print join( "\n",
             'OK to import?',
@@ -2824,8 +2824,8 @@ sub import_tab_data {
             '',
         );
 
-        $allow_update
-            = prompt( 'Check for duplicate data (slow)?', -yn, -d => 'Y' );
+        $allow_update =
+          prompt( 'Check for duplicate data (slow)?', -yn, -d => 'Y' );
 
         #
         # Confirm decisions.
@@ -2964,19 +2964,18 @@ sub import_object_data {
 sub make_name_correspondences {
 
     my ( $self, %args ) = @_;
-    my $command_line        = $args{'command_line'};
-    my $evidence_type_acc   = $args{'evidence_type_acc'};
-    my $from_map_set_accs   = $args{'from_map_set_accs'};
-    my $to_map_set_accs   = $args{'to_map_set_accs'};
+    my $command_line               = $args{'command_line'};
+    my $evidence_type_acc          = $args{'evidence_type_acc'};
+    my $from_map_set_accs          = $args{'from_map_set_accs'};
+    my $to_map_set_accs            = $args{'to_map_set_accs'};
     my $skip_feature_type_accs_str = $args{'skip_feature_type_accs'};
-    my $allow_update = $args{'allow_update'} || 0;
-    my $name_regex_option   = $args{'name_regex'};
-    my $sql_object = $self->sql;
+    my $allow_update               = $args{'allow_update'} || 0;
+    my $name_regex_option          = $args{'name_regex'};
+    my $sql_object                 = $self->sql;
 
     my @from_map_set_ids;
     my @to_map_set_ids;
-    my @skip_feature_type_accs,
-    my $name_regex;
+    my @skip_feature_type_accs, my $name_regex;
     my $regex_options = [
         {
             regex_title => 'exact match only',
@@ -3003,11 +3002,13 @@ sub make_name_correspondences {
             push @missing, 'evidence_type_acc';
         }
         if ( defined($skip_feature_type_accs_str) ) {
-            @skip_feature_type_accs = split /[,\s]+/, $skip_feature_type_accs_str;
+            @skip_feature_type_accs = split /[,\s]+/,
+              $skip_feature_type_accs_str;
             my $valid = 1;
             foreach my $fta (@skip_feature_type_accs) {
                 unless ( $self->feature_type_data($fta) ) {
-                    print STDERR "The skip_feature_type_acc, '$fta' is not valid.\n";
+                    print STDERR
+                      "The skip_feature_type_acc, '$fta' is not valid.\n";
                     $valid = 0;
                 }
             }
@@ -3016,73 +3017,75 @@ sub make_name_correspondences {
             }
         }
         if ( defined($from_map_set_accs) ) {
+
             # split on space or comma
             my @from_map_set_accs = split /[,\s]+/, $from_map_set_accs;
             if (@from_map_set_accs) {
                 my $valid = 1;
-                foreach my $acc (@from_map_set_accs){
+                foreach my $acc (@from_map_set_accs) {
                     my $map_set_id = $sql_object->acc_id_to_internal_id(
                         cmap_object => $self,
                         acc_id      => $acc,
                         object_type => 'map_set'
                     );
-                    if($map_set_id) {
+                    if ($map_set_id) {
                         push @from_map_set_ids, $map_set_id;
                     }
-                    else{
+                    else {
                         print STDERR
                           "from map set accession, '$acc' is not valid.\n";
                         $valid = 0;
                     }
                 }
-                unless($valid){
+                unless ($valid) {
                     push @missing, 'valid from_map_set_accs';
                 }
             }
-            else{
+            else {
                 push @missing, 'valid from_map_set_accs';
             }
         }
-        else{
+        else {
             push @missing, 'from_map_set_accs';
         }
         if ( defined($to_map_set_accs) ) {
+
             # split on space or comma
             my @to_map_set_accs = split /[,\s]+/, $to_map_set_accs;
             if (@to_map_set_accs) {
                 my $valid = 1;
-                foreach my $acc (@to_map_set_accs){
+                foreach my $acc (@to_map_set_accs) {
                     my $map_set_id = $sql_object->acc_id_to_internal_id(
                         cmap_object => $self,
                         acc_id      => $acc,
                         object_type => 'map_set'
                     );
-                    if($map_set_id) {
+                    if ($map_set_id) {
                         push @to_map_set_ids, $map_set_id;
                     }
-                    else{
+                    else {
                         print STDERR
                           "to map set accession, '$acc' is not valid.\n";
                         $valid = 0;
                     }
                 }
-                unless($valid){
+                unless ($valid) {
                     push @missing, 'valid to_map_set_accs';
                 }
             }
-            else{
+            else {
                 push @missing, 'valid to_map_set_accs';
             }
         }
-        else{
+        else {
             @to_map_set_ids = @from_map_set_ids;
         }
-        if ($name_regex_option){
+        if ($name_regex_option) {
             my $found = 0;
             foreach my $item (@$regex_options) {
                 if ( $name_regex_option eq $item->{'option_name'} ) {
-                    $found = 1;
-                    $name_regex = $item->{'regex'} ;
+                    $found      = 1;
+                    $name_regex = $item->{'regex'};
                     last;
                 }
             }
@@ -3092,10 +3095,10 @@ sub make_name_correspondences {
                 push @missing, 'valid name_regex';
             }
         }
-        else{
+        else {
             $name_regex = '';
         }
-        
+
         if (@missing) {
             print STDERR "Missing the following arguments:\n";
             print STDERR join( "\n", sort @missing ) . "\n";
@@ -3103,9 +3106,10 @@ sub make_name_correspondences {
         }
     }
     else {
-    #
-    # Get the evidence type id.
-    #
+
+        #
+        # Get the evidence type id.
+        #
         my $evidence_type;
         ( $evidence_type_acc, $evidence_type ) = $self->show_menu(
             title   => 'Available evidence types',
@@ -3130,7 +3134,7 @@ sub make_name_correspondences {
 
         my $use_from_as_target_answer =
           $self->show_question( question =>
-              'Do you want to use the starting map sets as the target sets? [y|N]',
+'Do you want to use the starting map sets as the target sets? [y|N]',
           );
         my $to_map_sets;
         if ( $use_from_as_target_answer =~ /^y/ ) {
@@ -3176,7 +3180,7 @@ sub make_name_correspondences {
             return     => 'regex',
             allow_null => 0,
             allow_mult => 0,
-            data   => $regex_options,
+            data       => $regex_options,
         );
 
         my $from = join(
