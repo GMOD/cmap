@@ -1,14 +1,14 @@
-map_name	feature_name	feature_start	feature_stop	feature_type_acc
-T1	T1.1	0	1000	contig
-T1	T1.2	1000	2000	contig
-T1	T1.3	2000	4000	contig
-T1	R1.g1	0	500	read
-T1	R2.g1	450	1000	read
-T1	R3.g1	1000	2000	read
-T1	R4.g1	2000	2300	read
-T1	R5.b1	2200	2700	read
-T1	R6.b1	2650	3300	read
-T1	R7.g1	3100	4000	read
-T2	T2.1	0	1000	contig
-T2	R10.g1	0	500	read
-T2	R11.g1	500	1000	read
+map_name	feature_name	feature_start	feature_stop	feature_type_acc	feature_aliases
+T1	T1.1	0	1000	contig	T1.A,T1.AA
+T1	T1.2	1000	2000	contig	T1.2,T1.B
+T1	T1.3	2000	4000	contig	T1.C
+T1	R1.g1	0	500	read	
+T1	R2.g1	450	1000	read	
+T1	R3.g1	1000	2000	read	
+T1	R4.g1	2000	2300	read	
+T1	R5.b1	2200	2700	read	
+T1	R6.b1	2650	3300	read	
+T1	R7.g1	3100	4000	read	
+T2	T2.1	0	1000	contig	T2.A
+T2	R10.g1	0	500	read	
+T2	R11.g1	500	1000	read	
