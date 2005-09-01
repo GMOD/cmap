@@ -1,10 +1,11 @@
 [% INCLUDE admin_header.tmpl title="View Map &quot;$map.map_name&quot;" %]
 
+[%- url=apr.url %]
 <a href="admin">Home</a> |
 <a href="admin?action=confirm_delete;entity_type=map;entity_id=[% map.map_id %]">Delete</a> |
 <a href="admin?action=map_edit;map_id=[% map.map_id %]">Edit</a>
 [% IF NOT map.is_relational_map %]
-  | <a href="/maps/viewer?reference_map_set_id=[% map.map_set_id %];reference_map_id=[% map.map_id %]">View in CMap Viewer</a>
+  | <a href="[% url %]/viewer?reference_map_set_id=[% map.map_set_id %];reference_map_id=[% map.map_id %]">View in CMap Viewer</a>
 [% END %]
 
 <table>
