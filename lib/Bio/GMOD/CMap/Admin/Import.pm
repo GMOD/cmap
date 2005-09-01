@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Import;
 
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.73 2005-08-30 20:19:29 mwz444 Exp $
+# $Id: Import.pm,v 1.74 2005-09-01 18:05:30 mwz444 Exp $
 
 =pod
 
@@ -33,7 +33,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.73 $)[-1];
+$VERSION = (qw$Revision: 1.74 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -708,7 +708,7 @@ appended to the list of xrefs.
                 next if $name eq $bulk_feature_names[$i];
                 $sql_object->insert_feature_alias(
                     cmap_object => $self,
-                    feature_id  => $feature_id,
+                    feature_id  => $current_feature_id,
                     alias       => $name,
                   )
                   or warn $sql_object->error;
@@ -716,7 +716,7 @@ appended to the list of xrefs.
 
             if ( @{ $bulk_insert_atts[$i] } ) {
                 $admin->set_attributes(
-                    object_id   => $feature_id,
+                    object_id   => $current_feature_id,
                     object_type => 'feature',
                     attributes  => $bulk_insert_atts[$i],
                     overwrite   => $overwrite,
@@ -726,7 +726,7 @@ appended to the list of xrefs.
 
             if ( @{ $bulk_insert_xrefs[$i] } ) {
                 $admin->set_xrefs(
-                    object_id   => $feature_id,
+                    object_id   => $current_feature_id,
                     object_type => 'feature',
                     overwrite   => $overwrite,
                     xrefs       => $bulk_insert_xrefs[$i],
