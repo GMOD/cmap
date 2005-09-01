@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.118 2005-08-31 00:23:24 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.119 2005-09-01 18:00:28 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.118 $)[-1];
+$VERSION = (qw$Revision: 1.119 $)[-1];
 
 #
 # Get command-line options
@@ -2826,6 +2826,7 @@ sub import_tab_data {
 
         $allow_update =
           prompt( 'Check for duplicate data (slow)?', -yn, -d => 'Y' );
+        $allow_update = ( $allow_update =~ /^[Yy]/ ) ? 1 : 0;
 
         #
         # Confirm decisions.
