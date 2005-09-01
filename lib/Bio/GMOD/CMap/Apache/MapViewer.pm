@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.112 2005-08-18 16:02:33 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.113 2005-09-01 21:28:24 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.112 $)[-1];
+$VERSION = (qw$Revision: 1.113 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -180,8 +180,8 @@ sub handler {
     # form <select>.
     #
     my @ref_map_accs;
-    if ( $apr->param('ref_map_accs') ) {
-        foreach my $acc ( $apr->param('ref_map_accs') ) {
+    if ( $apr->param('ref_map_accs') or $apr->param('ref_map_aids') ) {
+        foreach my $acc ( $apr->param('ref_map_accs'),$apr->param('ref_map_aids') ) {
 
             # Remove start and stop if they are the same
             while ( $acc =~ s/(.+\[)(\d+)\*\2(\D.*)/$1*$3/ ) { }
@@ -444,14 +444,14 @@ sub handler {
             foreach my $acc ( split /,/, $map_acc ) {
                 ( $acc, $start, $stop, $magnification, $highlight ) =
                   parse_map_info( $acc, $highlight );
-                if ( $field eq 'map_acc' ) {
+                if ( $field eq 'map_acc' or $field eq 'map_aid' ) {
                     $slots{$slot_no}{'maps'}{$acc} = {
                         start => $start,
                         stop  => $stop,
                         mag   => $magnification,
                     };
                 }
-                elsif ( $field eq 'map_set_acc' ) {
+                elsif ( $field eq 'map_set_acc' or $field eq 'map_set_aid') {
                     unless ( defined( $slots{$slot_no}{'map_sets'}{$acc} ) ) {
                         $slots{$slot_no}{'map_sets'}{$acc} = ();
                     }
@@ -472,14 +472,14 @@ sub handler {
             my ( $start, $stop, $magnification ) = ( undef, undef, 1 );
             ( $acc, $start, $stop, $magnification, $highlight ) =
               parse_map_info( $acc, $highlight );
-            if ( $field eq 'map_acc' ) {
+            if ( $field eq 'map_acc' or $field eq 'map_aid' ) {
                 $slots{$slot_no}->{'maps'}{$acc} = {
                     start => $start,
                     stop  => $stop,
                     mag   => $magnification,
                 };
             }
-            elsif ( $field eq 'map_set_acc' ) {
+            elsif ( $field eq 'map_set_acc' or $field eq 'map_set_aid') {
                 unless ( defined( $slots{$slot_no}->{'map_sets'}{$acc} ) ) {
                     $slots{$slot_no}->{'map_sets'}{$acc} = ();
                 }
