@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::ViewFeatureOnMap;
 
 # vim: set ft=perl:
 
-# $Id: ViewFeatureOnMap.pm,v 1.14 2005-08-18 20:57:31 mwz444 Exp $
+# $Id: ViewFeatureOnMap.pm,v 1.15 2005-09-02 16:13:12 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.14 $)[-1];
+$VERSION = (qw$Revision: 1.15 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use base 'Bio::GMOD::CMap::Apache';
@@ -36,7 +36,9 @@ sub handler {
 
     print $apr->redirect(
             "$url/viewer?ref_map_set_acc=$ms_acc&label_features=all"
-          . qq[&ref_map_accs=$map_acc&highlight="$highlight"] );
+          . qq[&ref_map_accs=$map_acc&highlight="$highlight"]
+          . '&data_source='
+          . $apr->param('data_source') );
 
     return 1;
 }
