@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.101 2005-08-30 20:54:02 mwz444 Exp $
+# $Id: Generic.pm,v 1.102 2005-09-02 03:21:01 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.101 $)[-1];
+$VERSION = (qw$Revision: 1.102 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -1579,15 +1579,15 @@ Array of Hashes:
 =cut
 
     my ( $self, %args ) = @_;
-    my $cmap_object  = $args{'cmap_object'} or die "No CMap Object included";
-    my $species_id   = $args{'species_id'};
-    my $species_ids  = $args{'species_ids'} || [];
-    my $species_acc  = $args{'species_acc'};
-    my $map_set_id   = $args{'map_set_id'};
-    my $map_set_ids  = $args{'map_set_ids'} || [];
-    my $map_set_acc  = $args{'map_set_acc'};
-    my $map_set_accs = $args{'map_set_accs'} || [];
-    my $map_type_acc = $args{'map_type_acc'};
+    my $cmap_object   = $args{'cmap_object'} or die "No CMap Object included";
+    my $species_id    = $args{'species_id'};
+    my $species_ids   = $args{'species_ids'} || [];
+    my $species_acc   = $args{'species_acc'};
+    my $map_set_id    = $args{'map_set_id'};
+    my $map_set_ids   = $args{'map_set_ids'} || [];
+    my $map_set_acc   = $args{'map_set_acc'};
+    my $map_set_accs  = $args{'map_set_accs'} || [];
+    my $map_type_acc  = $args{'map_type_acc'};
     my $map_type_accs = $args{'map_type_accs'} || [];
     my $is_relational_map = $args{'is_relational_map'};
     my $is_enabled        = $args{'is_enabled'};
@@ -1652,7 +1652,8 @@ Array of Hashes:
         $where_sql .= " and ms.map_type_acc = '$map_type_acc' ";
     }
     elsif (@$map_type_accs) {
-        $where_sql .= " and ms.map_type_acc in ('"
+        $where_sql .=
+          " and ms.map_type_acc in ('"
           . join( "','", sort @$map_type_accs ) . "') ";
     }
     if ( defined($is_relational_map) ) {
@@ -3127,6 +3128,10 @@ return only features that overlap that region.
 Value that dictates if aliases that match get there own rows.  This is mostly
 usefull for feature_name searches.
 
+=item - Don't get aliases (ignore_aliases)
+
+Value that dictates if aliases are ignored.  The default is to get aliases.
+
 =back
 
 =item * Output
@@ -3137,6 +3142,7 @@ Array of Hashes:
     feature_id,
     feature_acc,
     feature_type_acc,
+    feature_type,
     feature_name,
     feature_start,
     feature_stop,
@@ -3153,13 +3159,15 @@ Array of Hashes:
     map_set_short_name,
     is_relational_map,
     map_type_acc,
+    map_type,
     map_units,
     species_id,
     species_acc
     species_common_name,
     feature_type,
     default_rank,
-    aliases - a list of aliases (Unless $aliases_get_rows is specified),
+    aliases - a list of aliases (Unless $aliases_get_rows 
+                or $ignore_aliases are specified),
 
 
 =item * Cache Level (If Used): 3
@@ -3190,11 +3198,13 @@ Not using cache because this query is quicker.
     my $species_ids       = $args{'species_ids'} || [];
     my $species_accs      = $args{'species_accs'} || [];
     my $aliases_get_rows  = $args{'aliases_get_rows'} || 0;
+    my $ignore_aliases    = $args{'ignore_aliases'} || 0;
 
     $aliases_get_rows = 0 if ( $feature_name eq '%' );
 
     my $db                = $cmap_object->db;
     my $feature_type_data = $cmap_object->feature_type_data();
+    my $map_type_data     = $cmap_object->map_type_data();
     my $return_object;
     my %alias_lookup;
 
@@ -3342,7 +3352,7 @@ Not using cache because this query is quicker.
     $return_object =
       $db->selectall_arrayref( $sql_str, { Columns => {} }, @identifiers );
 
-    if ( !$aliases_get_rows ) {
+    if ( !$aliases_get_rows and !$ignore_aliases ) {
         my @feature_ids = map { $_->{'feature_id'} } @$return_object;
         my $aliases = $self->get_feature_aliases(
             cmap_object => $cmap_object,
@@ -3358,11 +3368,15 @@ Not using cache because this query is quicker.
     foreach my $row ( @{$return_object} ) {
         $row->{'feature_type'} =
           $feature_type_data->{ $row->{'feature_type_acc'} }{'feature_type'};
+        $row->{'map_type'} =
+          $map_type_data->{ $row->{'map_type_acc'} }{'map_type'};
         $row->{'default_rank'} =
           $feature_type_data->{ $row->{'feature_type_acc'} }{'default_rank'};
 
         #add Aliases
-        $row->{'aliases'} = $alias_lookup{ $row->{'feature_id'} } || [];
+        if ( !$ignore_aliases ) {
+            $row->{'aliases'} = $alias_lookup{ $row->{'feature_id'} } || [];
+        }
     }
     return $return_object;
 }
