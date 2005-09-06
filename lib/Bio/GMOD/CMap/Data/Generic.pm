@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.103 2005-09-02 14:14:41 mwz444 Exp $
+# $Id: Generic.pm,v 1.104 2005-09-06 15:58:10 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.103 $)[-1];
+$VERSION = (qw$Revision: 1.104 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -2554,6 +2554,8 @@ get_maps() provides and doesn't involve any table joins.
 
 =item - Map ID (map_id)
 
+=item - Map Accession ID (map_acc)
+
 =item - Map Set ID (map_set_id)
 
 =back
@@ -2582,6 +2584,7 @@ Not using cache because this query is quicker.
     my ( $self, %args ) = @_;
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $map_id      = $args{'map_id'};
+    my $map_acc     = $args{'map_acc'};
     my $map_set_id  = $args{'map_set_id'};
     my $db          = $cmap_object->db;
     my $return_object;
@@ -2600,6 +2603,10 @@ Not using cache because this query is quicker.
     if ($map_id) {
         $where_sql .= $where_sql ? " and " : " where ";
         $where_sql .= " map_id = $map_id ";
+    }
+    elsif ($map_acc) {
+        $where_sql .= $where_sql ? " and " : " where ";
+        $where_sql .= " map_acc = '$map_acc' ";
     }
     elsif ($map_set_id) {
         $where_sql .= $where_sql ? " and " : " where ";
