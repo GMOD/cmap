@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.250 2005-08-18 21:11:15 mwz444 Exp $
+# $Id: Data.pm,v 1.251 2005-09-07 18:53:45 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.250 $)[-1];
+$VERSION = (qw$Revision: 1.251 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -1268,6 +1268,11 @@ Returns the data for the correspondence matrix.
                 }
               )
             {
+                my $map_type_acc = $top_row->{'map_sets'}[$i]{'map_type_acc'};
+                my $species_acc  = $top_row->{'map_sets'}[$i]{'species_acc'};
+                $top_row->{'no_by_type'}{$map_type_acc}--;
+                $top_row->{'no_by_type_and_species'}{$map_type_acc}
+                  {$species_acc}--;
                 splice( @{ $top_row->{'map_sets'} }, $i, 1 );
                 $i--;
             }
@@ -1812,7 +1817,7 @@ Given a feature acc. id, find out all the details on it.
         feature_acc => $feature_acc,
     );
     my $feature = $feature_array->[0];
-    return undef unless (defined($feature) and %$feature);
+    return undef unless ( defined($feature) and %$feature );
 
     $feature->{'object_id'}  = $feature->{'feature_id'};
     $feature->{'attributes'} = $self->sql->get_attributes(
@@ -3800,9 +3805,12 @@ Given the slot_no and map_id
     my $url_feature_default_display = shift;
     my $feature_type_acc            = shift;
 
-    if ( $feature_type_acc
-        and my $return_val =
-        $self->feature_type_data( $feature_type_acc, 'feature_default_display' ) )
+    if (
+        $feature_type_acc
+        and my $return_val = $self->feature_type_data(
+            $feature_type_acc, 'feature_default_display'
+        )
+      )
     {
         return $return_val;
     }
