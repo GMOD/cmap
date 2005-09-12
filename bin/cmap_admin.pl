@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.119 2005-09-01 18:00:28 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.120 2005-09-12 17:18:54 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.119 $)[-1];
+$VERSION = (qw$Revision: 1.120 $)[-1];
 
 #
 # Get command-line options
@@ -1981,12 +1981,13 @@ sub get_map_sets {
           sort_selectall_arrayref( $map_type_results, 'map_type' );
 
         my $map_types = $self->show_menu(
-            title      => 'Restrict by Map Set by Map Types',
+            title      => 'Select Map Types',
             prompt     => 'Limit map sets by which map types?',
             display    => 'map_type',
             return     => 'map_type_acc',
-            allow_null => $allow_null,
+            allow_null => 0,
             allow_mult => $allow_mult,
+            allow_all  => 1,
             data       => $map_type_results,
         );
         $map_types = [$map_types] unless ( ref($map_types) eq 'ARRAY' );
@@ -2015,8 +2016,9 @@ sub get_map_sets {
             prompt     => 'Limit by which species?',
             display    => 'species_common_name',
             return     => 'species_id',
-            allow_null => $allow_null,
+            allow_null => 0,
             allow_mult => $allow_mult,
+            allow_all  => 1,
             data       => $map_set_species,
         );
 
