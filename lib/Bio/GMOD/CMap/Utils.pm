@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.49 2005-08-19 17:14:52 mwz444 Exp $
+# $Id: Utils.pm,v 1.50 2005-09-15 20:27:00 mwz444 Exp $
 
 =head1 NAME
 
@@ -29,7 +29,7 @@ use Bio::GMOD::CMap::Constants;
 use POSIX;
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.49 $)[-1];
+$VERSION = (qw$Revision: 1.50 $)[-1];
 
 use base 'Exporter';
 
@@ -180,7 +180,7 @@ Special thanks to Noel Yap for suggesting this strategy.
         @accepted =
           map { $_->[0] }
           sort { $a->[1] <=> $b->[1] || $b->[2] <=> $a->[2] }
-          map { [ $_, $_->{'target'}, $_->{'column'} ] } @accepted;
+          map { [ $_, $_->{'target'}, $_->{'feature'}{'column'} ] } @accepted;
 
         my $bin_size  = 2;
         my $half_font = $font_height / 2;
@@ -365,7 +365,7 @@ Special thanks to Noel Yap for suggesting this strategy.
         @accepted =
           map { $_->[0] }
           sort { $a->[1] <=> $b->[1] || $a->[2] <=> $b->[2] }
-          map { [ $_, $_->{'target'}, $_->{'column'} ] } @accepted;
+          map { [ $_, $_->{'target'}, $_->{'feature'}{'column'} ] } @accepted;
 
         my $gap = $map_height / ( $no_accepted - 1 );
         my $i = 0;
@@ -765,11 +765,11 @@ example: 10000 becomes 10K
     my $num_str;
 
     # the "''." is to fix a rounding error in perl
-    my $scale = $num ? int( '' . ( log( abs($num) ) / log(10) ) ) : 0;
+    my $scale          = $num ? int( '' . ( log( abs($num) ) / log(10) ) ) : 0;
     my $rounding_power = $scale - $sig_digits + 1;
     my $rounded_temp   = int( ( $num / ( 10**$rounding_power ) ) + .5 );
-    my $printable_num  = $rounded_temp /
-      ( 10**( ( $scale - ( $scale % 3 ) ) - $rounding_power ) );
+    my $printable_num  =
+      $rounded_temp / ( 10**( ( $scale - ( $scale % 3 ) ) - $rounding_power ) );
     my $unit = calculate_units( 10**( $scale - ( $scale % 3 ) ) );
     $num_str = $printable_num . " " . $unit;
 

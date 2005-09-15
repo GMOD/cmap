@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.175 2005-08-19 17:14:52 mwz444 Exp $
+# $Id: Map.pm,v 1.176 2005-09-15 20:27:00 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.175 $)[-1];
+$VERSION = (qw$Revision: 1.176 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1069,8 +1069,8 @@ a hashref keyed on feature_id.
                     $_,
                     $_->{'drawing_lane'},
                     $_->{'drawing_priority'},
-                    defined $_->{'feature_start'} ? $_->{'feature_start'} : 0,
-                    defined $_->{'feature_stop'}  ? $_->{'feature_stop'}  : 0,
+                    ( $_->{'feature_start'} || 0 ),
+                    ( $_->{'feature_stop'}  || 0 ),
                 ]
             } values %{ $map->{'features'} }
           )
@@ -1437,15 +1437,33 @@ Variable Info:
                   : $lane->{'furthest'} - ( $map_width + 4 )
                   : $map_base_x;
             }
+
+            # If the labels aren't going to fit, don't deal with the ones
+            # that are on collapsed features.
+            my $label_collapsed_features = 1;
+            my $magic_label_height_ratio = 3;
+            if (
+                $drawer->label_features eq 'none'
+                or
+                ( ( $pixel_height * $magic_label_height_ratio ) / $font_height )
+                < ( scalar(@$lane_features) )
+              )
+            {
+                $label_collapsed_features = 0;
+            }
             my %drawn_glyphs;
             for my $feature (@$lane_features) {
                 ########################################
                 my $coords;
                 my $color;
                 my $label_y;
+                my $glyph_drawn = 0;
 
-                ( $leftmostf, $rightmostf, $coords, $color, $label_y ) =
-                  $self->add_feature_to_map(
+                (
+                    $leftmostf, $rightmostf, $coords,
+                    $color,     $label_y,    $glyph_drawn
+                  )
+                  = $self->add_feature_to_map(
                     base_x     => $map_base_x,
                     map_base_y => $map_placement_data{$map_id}{'map_coords'}[1],
                     drawer     => $drawer,
@@ -1465,22 +1483,25 @@ Variable Info:
                     map_start         => $map_start,
                     map_width         => $map_width,
                   );
-                $self->collect_labels_to_display(
-                    even_labels        => \%even_labels,
-                    map_id             => $map_id,
-                    slot_no            => $slot_no,
-                    is_flipped         => $is_flipped,
-                    show_labels        => $show_labels,
-                    drawer             => $drawer,
-                    feature            => $feature,
-                    coords             => $coords,
-                    color              => $color,
-                    midpoint           => $midpoint,
-                    label_y            => $label_y,
-                    feature_type_accs  => \%feature_type_accs,
-                    features_with_corr => \%features_with_corr,
-                    map_base_y => $map_placement_data{$map_id}{'map_coords'}[1],
-                );
+                if ( $label_collapsed_features or $glyph_drawn ) {
+                    $self->collect_labels_to_display(
+                        even_labels        => \%even_labels,
+                        map_id             => $map_id,
+                        slot_no            => $slot_no,
+                        is_flipped         => $is_flipped,
+                        show_labels        => $show_labels,
+                        drawer             => $drawer,
+                        feature            => $feature,
+                        coords             => $coords,
+                        color              => $color,
+                        midpoint           => $midpoint,
+                        label_y            => $label_y,
+                        feature_type_accs  => \%feature_type_accs,
+                        features_with_corr => \%features_with_corr,
+                        map_base_y         =>
+                          $map_placement_data{$map_id}{'map_coords'}[1],
+                    );
+                }
                 ########################################
             }
 
@@ -2914,8 +2935,10 @@ sub add_feature_to_map {
     if ( $collapse_features and $drawn_glyphs->{$glyph_key} ) {
         $draw_this = 0;
     }
-    if ($draw_this) {
 
+    # save this value for export
+    my $glyph_drawn = $draw_this;
+    if ($draw_this) {
         my $omit_area_boxes = $drawer->omit_area_boxes;
         my $reg_font        = $drawer->regular_font
           or return $self->error( $drawer->error );
@@ -3052,7 +3075,8 @@ sub add_feature_to_map {
         @coords  = @{ $drawn_glyphs->{$glyph_key}->[0] };
         $label_y = $drawn_glyphs->{$glyph_key}->[1];
     }
-    return ( $leftmostf, $rightmostf, \@coords, $color, $label_y );
+    return ( $leftmostf, $rightmostf, \@coords, $color, $label_y,
+        $glyph_drawn );
 }
 
 # ----------------------------------------------------
@@ -3080,7 +3104,6 @@ sub collect_labels_to_display {
 
       my $label = $feature->{'feature_name'};
     my $has_corr = $drawer->has_correspondence( $feature->{'feature_id'} );
-    my $feature_details_url = DEFAULT->{'feature_details_url'};
 
     my $is_highlighted = $drawer->highlight_feature(
         $feature->{'feature_name'},
@@ -3113,37 +3136,20 @@ sub collect_labels_to_display {
       )
     {
 
-        my $code = '';
-        my $url  = $feature_details_url . $feature->{'feature_acc'};
-        my $alt  =
-            'Feature Details: '
-          . $feature->{'feature_name'} . ' ['
-          . $feature->{'feature_acc'} . ']';
-        eval $self->feature_type_data( $feature->{'feature_type_acc'},
-            'area_code' );
         my $even_label_key =
             $is_highlighted ? 'highlights'
           : $has_corr       ? 'correspondences'
           : 'normal';
         push @{ $even_labels->{$even_label_key} },
           {
-            priority       => $feature->{'drawing_priority'},
+            feature        => $feature,
             text           => $label,
             target         => $label_y,
             map_base_y     => $map_base_y,
             color          => $color,
             is_highlighted => $is_highlighted,
             feature_coords => $coords,
-            feature_mid_y  => $feature->{'mid_y'},
-            feature_type   => $feature->{'feature_type'},
             has_corr       => $has_corr,
-            feature_id     => $feature->{'feature_id'},
-            feature_start  => $feature->{'feature_start'},
-            shape          => $feature->{'shape'},
-            column         => $feature->{'column'},
-            url            => $url,
-            alt            => $alt,
-            code           => $code,
           };
     }
 
@@ -3187,6 +3193,7 @@ sub add_labels_to_map {
       $drawer->config_data('feature_highlight_fg_color');
     my $feature_highlight_bg_color =
       $drawer->config_data('feature_highlight_bg_color');
+    my $feature_details_url = DEFAULT->{'feature_details_url'};
 
     #my @accepted_labels;    # the labels we keep
     my $buffer = 2;    # the space between things
@@ -3207,6 +3214,7 @@ sub add_labels_to_map {
 
     for my $label (@$accepted_labels) {
         my $text      = $label->{'text'};
+        my $feature   = $label->{'feature'};
         my $label_y   = $label->{'y'};
         my $label_len = $font_width * length($text);
         my $label_x   =
@@ -3241,12 +3249,20 @@ sub add_labels_to_map {
               [ FILLED_RECT, @label_bounds, $feature_highlight_bg_color, 0 ];
         }
 
+        my $code = '';
+        my $url  = $feature_details_url . $feature->{'feature_acc'};
+        my $alt  =
+            'Feature Details: '
+          . $feature->{'feature_name'} . ' ['
+          . $feature->{'feature_acc'} . ']';
+        eval $self->feature_type_data( $feature->{'feature_type_acc'},
+            'area_code' );
         push @$map_area_data,
           {
             coords => \@label_bounds,
-            url    => $label->{'url'},
-            alt    => $label->{'alt'},
-            code   => $label->{'code'},
+            url    => $url,
+            alt    => $alt,
+            code   => $code,
           }
           unless ($omit_area_boxes);
 
@@ -3267,7 +3283,7 @@ sub add_labels_to_map {
 
         my $label_connect_y1 =
             $label_side eq RIGHT
-          ? $label->{'feature_mid_y'}
+          ? $feature->{'mid_y'}
           : $label_y + $font_height / 2;
 
         my $label_connect_x2 =
@@ -3278,12 +3294,12 @@ sub add_labels_to_map {
         my $label_connect_y2 =
             $label_side eq RIGHT
           ? $label_y + $font_height / 2
-          : $label->{'feature_mid_y'};
+          : $feature->{'mid_y'};
 
         #
         # Back the connection off.
         #
-        if ( $label->{'shape'} eq LINE ) {
+        if ( $feature->{'shape'} eq LINE ) {
             if ( $label_side eq RIGHT ) {
                 $label_connect_x1 += $buffer;
             }
@@ -3303,9 +3319,9 @@ sub add_labels_to_map {
         # or left connection points for linking up to
         # corresponding features.
         #
-        if ( defined $features_with_corr->{ $label->{'feature_id'} } ) {
+        if ( defined $features_with_corr->{ $feature->{'feature_id'} } ) {
             if ( $label_side eq RIGHT ) {
-                $features_with_corr->{ $label->{'feature_id'} }{'right'} = [
+                $features_with_corr->{ $feature->{'feature_id'} }{'right'} = [
                     $label_bounds[2],
                     (
                         $label_bounds[1] +
@@ -3314,7 +3330,7 @@ sub add_labels_to_map {
                 ];
             }
             else {
-                $features_with_corr->{ $label->{'feature_id'} }{'left'} = [
+                $features_with_corr->{ $feature->{'feature_id'} }{'left'} = [
                     $label_bounds[0],
                     (
                         $label_bounds[1] +
