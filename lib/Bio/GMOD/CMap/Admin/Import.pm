@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Import;
 
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.76 2005-09-09 15:44:07 mwz444 Exp $
+# $Id: Import.pm,v 1.77 2005-09-15 22:10:49 kycl4rk Exp $
 
 =pod
 
@@ -33,7 +33,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.76 $)[-1];
+$VERSION = (qw$Revision: 1.77 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -1060,13 +1060,14 @@ File handle of the log file (default is STDOUT).
     #
     my %species;
     for my $species ( @{ $import->{'cmap_species'} || [] } ) {
+        my $species_id = $species->{'object_id'} || $species->{'species_id'};
+
         $self->import_object(
             overwrite   => $overwrite,
             object_type => 'species',
             object      => $species,
           )
           or return;
-        my $species_id = $species->{'object_id'} || $species->{'species_id'};
 
         $species{ $species_id } = $species;
     }
@@ -1076,6 +1077,7 @@ File handle of the log file (default is STDOUT).
     #
     my %feature_ids;
     for my $ms ( @{ $import->{'cmap_map_set'} || [] } ) {
+
         $self->Print("Importing map set '$ms->{map_set_name}'\n");
 
         my $species      = $species{ $ms->{'species_id'} };
@@ -1109,8 +1111,7 @@ File handle of the log file (default is STDOUT).
                   or return;
                 my $feature_id = $feature->{'object_id'} || $feature->{'feature_id'};
 
-                $feature_ids{ $feature->{'object_id'} } =
-                  $feature->{'new_feature_id'};
+                $feature_ids{ $feature_id } = $feature->{'new_feature_id'};
 
                 for my $alias ( @{ $feature->{'feature_alias'} || [] } ) {
                     $alias->{'feature_id'} = $feature->{'new_feature_id'};

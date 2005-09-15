@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Export;
 
 # vim: set ft=perl:
 
-# $Id: Export.pm,v 1.23 2005-06-03 22:19:59 mwz444 Exp $
+# $Id: Export.pm,v 1.24 2005-09-15 22:10:29 kycl4rk Exp $
 
 =pod
 
@@ -29,7 +29,7 @@ of data out of CMap.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.23 $)[-1];
+$VERSION = (qw$Revision: 1.24 $)[-1];
 
 use Data::Dumper;
 use File::Spec::Functions;
@@ -200,17 +200,20 @@ get_attributes_and_xrefs
 
 =cut
 
-    my ( $self, $object_type, $objects ) = @_;
+    my $self        = shift;
+    my $object_type = shift;
+    my @objects     = ref $_[0] eq 'ARRAY' ? @{ $_[0] } : @_;
+    my $pk_name     = $self->sql->pk_name( $object_type );
 
-    my $attributes = $self->sql->get_attributes(
+    my $attributes  = $self->sql->get_attributes(
         cmap_object => $self,
-        object      => $object_type,
-    );
+        object_type => $object_type,
+    ) or return $self->error;
 
     my $xrefs = $self->sql->get_xrefs(
         cmap_object => $self,
-        object      => $object_type,
-    );
+        object_type => $object_type,
+    ) or return $self->error;
 
     my %attr_lookup;
     for my $a (@$attributes) {
@@ -219,16 +222,17 @@ get_attributes_and_xrefs
 
     my %xref_lookup;
     for my $x (@$xrefs) {
+        next unless $x->{'object_id'};
         push @{ $xref_lookup{ $x->{'object_id'} } }, $x;
     }
 
-    for my $o (@$objects) {
-        if ( defined $attr_lookup{ $o->{'object_id'} } ) {
-            $o->{'attribute'} = $attr_lookup{ $o->{'object_id'} };
+    for my $o (@objects) {
+        if ( defined $attr_lookup{ $o->{ $pk_name } } ) {
+            $o->{'attribute'} = $attr_lookup{ $o->{ $pk_name } };
         }
 
-        if ( defined $xref_lookup{ $o->{'object_id'} } ) {
-            $o->{'xref'} = $xref_lookup{ $o->{'object_id'} };
+        if ( defined $xref_lookup{ $o->{ $pk_name } } ) {
+            $o->{'xref'} = $xref_lookup{ $o->{ $pk_name } };
         }
     }
 
@@ -404,7 +408,7 @@ hash with map set and species
     }
 
     unless ( $args{'no_attributes'} ) {
-        $self->get_attributes_and_xrefs( '_map_set', $map_sets );
+        $self->get_attributes_and_xrefs( 'map_set', $map_sets );
     }
 
     my @species;
