@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.94 2005-08-31 21:54:47 mwz444 Exp $
+# $Id: CMap.pm,v 1.95 2005-09-15 20:29:46 mwz444 Exp $
 
 =head1 NAME
 
@@ -399,7 +399,7 @@ Returns a database handle.  This is the only way into the database.
 sub aggregate {
 
 =pod
-                                                                                
+
 =head2 aggregate
 
 Returns the boolean aggregate variable.  This determines 
@@ -421,7 +421,7 @@ The default is 1.
 sub cluster_corr {
 
 =pod
-                                                                                
+
 =head2 cluster_corr
 
 Returns the number of clusters that the correspondences should be broken into.
@@ -444,7 +444,7 @@ The default is 0.
 sub show_intraslot_corr {
 
 =pod
-                                                                                
+
 =head2 show_intraslot_corr
 
 Returns the boolean show_intraslot_corr variable.  This determines 
@@ -469,7 +469,7 @@ The default is 1.
 sub split_agg_ev {
 
 =pod
-                                                                                
+
 =head2 split_agg_ev
 
 Returns the boolean split_agg_ev variable.  This determines 
@@ -494,7 +494,7 @@ The default is 1.
 sub clean_view {
 
 =pod
-                                                                                
+
 =head2 clean_view
 
 Returns the boolean clean_view variable.  This determines 
@@ -518,7 +518,7 @@ The default is 0.
 sub corrs_to_map {
 
 =pod
-                                                                                
+
 =head2 corrs_to_map
 
 Returns the boolean corrs_to_map variable.  If set to 1, the corr lines will be
@@ -542,7 +542,7 @@ The default is 0.
 sub magnify_all {
 
 =pod
-                                                                                
+
 =head2 magnify_all
 
 Returns the boolean magnify_all variable.  This determines 
@@ -565,7 +565,7 @@ The default is 1.
 sub scale_maps {
 
 =pod
-                                                                                
+
 =head2 scale_maps
 
 Returns the boolean scale_maps variable.  This determines 
@@ -586,10 +586,74 @@ The default is 1.
 }
 
 # ----------------------------------------------------
+sub ignore_image_map_sanity {
+
+=pod
+
+=head2 ignore_image_map_sanity
+
+A sanity check on the size of the image map (number of objects) is performed
+unless this is selected.
+
+Default: 0
+
+=cut
+
+    my $self = shift;
+    my $val  = shift;
+    $self->{'ignore_image_map_sanity'} = $val if defined $val;
+    $self->{'ignore_image_map_sanity'} =
+      $self->config_data('ignore_image_map_sanity')
+      unless defined $self->{'ignore_image_map_sanity'};
+    $self->{'ignore_image_map_sanity'} = 0
+      unless defined $self->{'ignore_image_map_sanity'};
+    return $self->{'ignore_image_map_sanity'};
+}
+
+# ----------------------------------------------------
+sub url_feature_default_display {
+
+=pod
+
+=head2 url_feature_default_display
+
+Gets/sets which the url_feature_default_display
+
+=cut
+
+    my $self = shift;
+    my $arg  = shift;
+
+    if ( defined($arg) ) {
+        if ( $arg =~ /^\d$/ ) {
+            $self->{'url_feature_default_display'} = $arg;
+        }
+        else {
+            $self->{'url_feature_default_display'} = undef;
+        }
+    }
+    elsif ( not defined( $self->{'url_feature_default_display'} ) ) {
+        my $config_feature_default_display =
+          $self->config_data('feature_default_display');
+        if ( $config_feature_default_display eq 'display' ) {
+            $self->{'url_feature_default_display'} = 2;
+        }
+        elsif ( $config_feature_default_display eq 'corr_only' ) {
+            $self->{'url_feature_default_display'} = 1;
+        }
+        elsif ( $config_feature_default_display eq 'ignore' ) {
+            $self->{'url_feature_default_display'} = 0;
+        }
+    }
+
+    return $self->{'url_feature_default_display'};
+}
+
+# ----------------------------------------------------
 sub stack_maps {
 
 =pod
-                                                                                
+
 =head2 stack_maps
 
 Returns the boolean stack_maps variable.  This determines 
@@ -613,7 +677,7 @@ The default is 0.
 sub ref_map_order {
 
 =pod
-                                                                                
+
 =head2 ref_map_order
 
 Returns the string that describes the order of the ref maps. 
@@ -633,7 +697,7 @@ The default is ''.
 sub comp_menu_order {
 
 =pod
-                                                                                
+
 =head2 comp_menu_order
 
 Returns the string that determins how the comparison map menu is ordered. 
@@ -686,11 +750,11 @@ Returns a handle to the data module.
 sub omit_area_boxes {
 
 =pod
-                                                                                
+
 =head2 omit_area_boxes
 
 Returns the omit_area_boxes variable.  This determines 
-which area boxes are rendered.  
+which area boxes are rendered.
 
 0 renders all of the area boxes.  This gives the most functionality but can be
 slow if there are a lot of features.
@@ -719,7 +783,7 @@ The default is 0.
 sub refMenu {
 
 =pod
-                                                                                
+
 =head2 refMenu
 
 Returns the boolean refMenu variable.  This determines if the Reference Menu is
@@ -740,7 +804,7 @@ The default is 0.
 sub compMenu {
 
 =pod
-                                                                                
+
 =head2 compMenu
 
 Returns the boolean compMenu variable.  This determines if the Comparison Menu
@@ -761,7 +825,7 @@ The default is 0.
 sub optionMenu {
 
 =pod
-                                                                                
+
 =head2 optionMenu
 
 Returns the boolean optionMenu variable.  This determines if the Options Menu
@@ -782,7 +846,7 @@ The default is 0.
 sub addOpMenu {
 
 =pod
-                                                                                
+
 =head2 addOpMenu
 
 Returns the boolean addOpMenu variable.  This determines if the Additional
@@ -864,7 +928,7 @@ Given a table name and some objects, get the cross-references.
 sub session_id {
 
 =pod
-                                                                                
+
 =head2 session_id
 
 Sets and returns the session_id.
@@ -883,7 +947,7 @@ The default is ''.
 sub next_step {
 
 =pod
-                                                                                
+
 =head2 next_step
 
 Sets and returns the session next_step.
@@ -934,6 +998,7 @@ Given information about the link, creates a url to cmap_viewer.
     my $comp_menu_order             = $args{'comp_menu_order'};
     my $corrs_to_map                = $args{'corrs_to_map'};
     my $magnify_all                 = $args{'magnify_all'};
+    my $ignore_image_map_sanity     = $args{'ignore_image_map_sanity'};
     my $flip                        = $args{'flip'};
     my $left_min_corrs              = $args{'left_min_corrs'};
     my $right_min_corrs             = $args{'right_min_corrs'};
@@ -978,19 +1043,19 @@ Given information about the link, creates a url to cmap_viewer.
     if ( $session_id and !$new_session ) {
         $url .= "session_id=$session_id;";
         $url .= "step=$next_step;"
-          if (defined($next_step) and $next_step ne '');
+          if ( defined($next_step) and $next_step ne '' );
         $url .= "session_mod=$session_mod;"
-          if (defined($session_mod) and $session_mod ne '');
+          if ( defined($session_mod) and $session_mod ne '' );
     }
     else {
         $url .= "ref_map_set_acc=$ref_map_set_acc;"
-          if (defined($ref_map_set_acc) and $ref_map_set_acc ne '');
+          if ( defined($ref_map_set_acc) and $ref_map_set_acc ne '' );
         $url .= "ref_species_acc=$ref_species_acc;"
-          if (defined($ref_species_acc) and $ref_species_acc ne '');
+          if ( defined($ref_species_acc) and $ref_species_acc ne '' );
         $url .= "prev_ref_species_acc=$prev_ref_species_acc;"
-          if (defined($prev_ref_species_acc) and $prev_ref_species_acc ne '');
+          if ( defined($prev_ref_species_acc) and $prev_ref_species_acc ne '' );
         $url .= "prev_ref_map_set_acc=$prev_ref_map_set_acc;"
-          if (defined($prev_ref_map_set_acc) and $prev_ref_map_set_acc ne '');
+          if ( defined($prev_ref_map_set_acc) and $prev_ref_map_set_acc ne '' );
 
         if ( $ref_map_accs and %$ref_map_accs ) {
             my @ref_strs;
@@ -1066,73 +1131,100 @@ Given information about the link, creates a url to cmap_viewer.
     }
     ### optional
     $url .= "ref_map_start=$ref_map_start;"
-      if (defined($ref_map_start) and $ref_map_start ne '');
+      if ( defined($ref_map_start) and $ref_map_start ne '' );
     $url .= "ref_map_stop=$ref_map_stop;"
-      if (defined($ref_map_stop) and $ref_map_stop ne '');
+      if ( defined($ref_map_stop) and $ref_map_stop ne '' );
     $url .= "highlight=" . uri_escape($highlight) . ";"
-      if (defined($highlight) and $highlight ne '');
+      if ( defined($highlight) and $highlight ne '' );
     $url .= "font_size=$font_size;"
-      if (defined($font_size) and $font_size ne '');
+      if ( defined($font_size) and $font_size ne '' );
     $url .= "image_size=$image_size;"
-      if (defined($image_size) and $image_size ne '');
+      if ( defined($image_size) and $image_size ne '' );
     $url .= "image_type=$image_type;"
-      if (defined($image_type) and $image_type ne '');
+      if ( defined($image_type) and $image_type ne '' );
     $url .= "label_features=$label_features;"
-      if (defined($label_features) and $label_features ne '');
+      if ( defined($label_features) and $label_features ne '' );
     $url .= "collapse_features=$collapse_features;"
-      if (defined($collapse_features) and $collapse_features ne '');
+      if ( defined($collapse_features) and $collapse_features ne '' );
     $url .= "cluster_corr=$cluster_corr;"
-      if (defined($cluster_corr) and $cluster_corr ne '');
+      if ( defined($cluster_corr) and $cluster_corr ne '' );
     $url .= "aggregate=$aggregate;"
-      if (defined($aggregate) and $aggregate ne '');
+      if ( defined($aggregate) and $aggregate ne '' );
     $url .= "scale_maps=$scale_maps;"
-      if (defined($scale_maps) and $scale_maps ne '');
+      if ( defined($scale_maps) and $scale_maps ne '' );
     $url .= "stack_maps=$stack_maps;"
-      if (defined($stack_maps) and $stack_maps ne '');
+      if ( defined($stack_maps) and $stack_maps ne '' );
     $url .= "ref_map_order=$ref_map_order;"
-      if (defined($ref_map_order) and $ref_map_order ne '');
+      if ( defined($ref_map_order) and $ref_map_order ne '' );
     $url .= "split_agg_ev=$split_agg_ev;"
-      if (defined($split_agg_ev) and $split_agg_ev ne '');
+      if ( defined($split_agg_ev) and $split_agg_ev ne '' );
     $url .= "clean_view=$clean_view;"
-      if (defined($clean_view) and $clean_view ne '');
+      if ( defined($clean_view) and $clean_view ne '' );
     $url .= "comp_menu_order=$comp_menu_order;"
-      if (defined($comp_menu_order) and $comp_menu_order ne '');
+      if ( defined($comp_menu_order) and $comp_menu_order ne '' );
     $url .= "corrs_to_map=$corrs_to_map;"
-      if (defined($corrs_to_map) and $corrs_to_map ne '');
+      if ( defined($corrs_to_map) and $corrs_to_map ne '' );
     $url .= "magnify_all=$magnify_all;"
-      if (defined($magnify_all) and $magnify_all ne '');
+      if ( defined($magnify_all) and $magnify_all ne '' );
+    $url .= "ignore_image_map_sanity=$ignore_image_map_sanity;"
+      if $ignore_image_map_sanity;
     $url .= "flip=$flip;"
-      if (defined($flip) and $flip ne '');
+      if ( defined($flip) and $flip ne '' );
     $url .= "left_min_corrs=$left_min_corrs;"
-      if (defined($left_min_corrs) and $left_min_corrs ne '');
+      if ( defined($left_min_corrs) and $left_min_corrs ne '' );
     $url .= "right_min_corrs=$right_min_corrs;"
-      if (defined($right_min_corrs) and $right_min_corrs ne '');
+      if ( defined($right_min_corrs) and $right_min_corrs ne '' );
     $url .= "general_min_corrs=$general_min_corrs;"
-      if (defined($general_min_corrs) and $general_min_corrs ne '');
+      if ( defined($general_min_corrs) and $general_min_corrs ne '' );
     $url .= "menu_min_corrs=$menu_min_corrs;"
-      if (defined($menu_min_corrs) and $menu_min_corrs ne '');
+      if ( defined($menu_min_corrs) and $menu_min_corrs ne '' );
     $url .= "refMenu=$refMenu;"
-      if (defined($refMenu) and $refMenu ne '');
+      if ( defined($refMenu) and $refMenu ne '' );
     $url .= "compMenu=$compMenu;"
-      if (defined($compMenu) and $compMenu ne '');
+      if ( defined($compMenu) and $compMenu ne '' );
     $url .= "optionMenu=$optionMenu;"
-      if (defined($optionMenu) and $optionMenu ne '');
+      if ( defined($optionMenu) and $optionMenu ne '' );
     $url .= "addOpMenu=$addOpMenu;"
-      if (defined($addOpMenu) and $addOpMenu ne '');
+      if ( defined($addOpMenu) and $addOpMenu ne '' );
 
     #multi
 
-    foreach my $acc (@$feature_type_accs) {
-        $url .= "ft_" . $acc . "=2;";
+    #Don't print the feature types if they are already the default
+    my $config_feature_default_display =
+      $self->config_data('feature_default_display');
+    my $combined_feature_default_display = -1;
+    if ( defined($url_feature_default_display) ) {
+        $combined_feature_default_display = $url_feature_default_display;
     }
-    foreach my $acc (@$corr_only_feature_type_accs) {
-        $url .= "ft_" . $acc . "=1;";
+    elsif ( defined($config_feature_default_display)
+        and $config_feature_default_display ne '' )
+    {
+        $combined_feature_default_display = 2
+          if ( $config_feature_default_display eq 'display' );
+        $combined_feature_default_display = 1
+          if ( $config_feature_default_display eq 'corr_only' );
+        $combined_feature_default_display = 0
+          if ( $config_feature_default_display eq 'ignore' );
     }
-    foreach my $acc (@$ignored_feature_type_accs) {
-        $url .= "ft_" . $acc . "=0;";
+
+    unless ( $combined_feature_default_display == 2 ) {
+        foreach my $acc (@$feature_type_accs) {
+            $url .= "ft_" . $acc . "=2;";
+        }
+    }
+    unless ( $combined_feature_default_display == 1 ) {
+        foreach my $acc (@$corr_only_feature_type_accs) {
+            $url .= "ft_" . $acc . "=1;";
+        }
+    }
+    unless ( $combined_feature_default_display == 0 ) {
+        foreach my $acc (@$ignored_feature_type_accs) {
+            $url .= "ft_" . $acc . "=0;";
+        }
     }
     $url .= "ft_DEFAULT=$url_feature_default_display;"
-      if (defined($url_feature_default_display) and $url_feature_default_display ne '');
+      if ( defined($url_feature_default_display)
+        and $url_feature_default_display ne '' );
     foreach my $acc (@$included_evidence_type_accs) {
         $url .= "et_" . $acc . "=1;";
     }
@@ -1304,9 +1396,8 @@ max_img_dir_fullness in the conf dir.  If it is full, return 1.
 
 =cut
 
-
-    my $self      = shift;
-    return 0 unless ($self->config_data('max_img_dir_fullness'));
+    my $self = shift;
+    return 0 unless ( $self->config_data('max_img_dir_fullness') );
 
     my $cache_dir = $self->cache_dir or return;
     my $ref = df($cache_dir);
@@ -1329,9 +1420,8 @@ max_img_dir_size in the conf dir.  If it is full, return 1.
 
 =cut
 
-
-    my $self      = shift;
-    return 0 unless ($self->config_data('max_img_dir_size'));
+    my $self = shift;
+    return 0 unless ( $self->config_data('max_img_dir_size') );
 
     my $cache_dir = $self->cache_dir or return;
     my $size = 0;
@@ -1383,14 +1473,14 @@ Clears the image directory of files.  (It will not touch directories.)
 ###########################################
 
 =pod
-                                                                                
+
 =head2 Query Caching
-                                                                                
+
 Query results (and subsequent manipulations) are cached 
 in a Cache::FileCache file.
 
 There are four levels of caching.  This is so that if some part of 
-the database is changed, the whole chache does not have to be purged.  
+the database is changed, the whole chache does not have to be purged.
 Only the cache level and the levels above it need to be cached.
 
 Level 1: Species or Map Sets.

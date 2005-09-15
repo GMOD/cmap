@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.113 2005-09-01 21:28:24 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.114 2005-09-15 20:29:46 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.113 $)[-1];
+$VERSION = (qw$Revision: 1.114 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -67,46 +67,47 @@ sub handler {
     my $ref_map_set_acc = $apr->param('ref_map_set_acc')
       || $apr->param('ref_map_set_aid')
       || '';
-    my $ref_map_start         = $apr->param('ref_map_start');
-    my $ref_map_stop          = $apr->param('ref_map_stop');
-    my $comparative_maps      = $apr->param('comparative_maps') || '';
-    my @comparative_map_right = $apr->param('comparative_map_right');
-    my @comparative_map_left  = $apr->param('comparative_map_left');
-    my $comp_map_set_right    = $apr->param('comp_map_set_right');
-    my $comp_map_set_left     = $apr->param('comp_map_set_left');
-    my $highlight             = $apr->param('highlight') || '';
-    my $font_size             = $apr->param('font_size') || '';
-    my $image_size            = $apr->param('image_size') || '';
-    my $image_type            = $apr->param('image_type') || '';
-    my $label_features        = $apr->param('label_features') || '';
-    my $collapse_features     = $apr->param('collapse_features');
-    my $aggregate             = $apr->param('aggregate');
-    my $cluster_corr          = $apr->param('cluster_corr');
-    my $show_intraslot_corr   = $apr->param('show_intraslot_corr');
-    my $split_agg_ev          = $apr->param('split_agg_ev');
-    my $clean_view            = $apr->param('clean_view');
-    my $corrs_to_map          = $apr->param('corrs_to_map');
-    my $magnify_all           = $apr->param('magnify_all');
-    my $scale_maps            = $apr->param('scale_maps');
-    my $stack_maps            = $apr->param('stack_maps');
-    my $comp_menu_order       = $apr->param('comp_menu_order');
-    my $ref_map_order         = $apr->param('ref_map_order');
-    my $prev_ref_map_order    = $apr->param('prev_ref_map_order');
-    my $flip                  = $apr->param('flip') || '';
-    my $page_no               = $apr->param('page_no') || 1;
-    my $action                = $apr->param('action') || 'view';
-    my $refMenu               = $apr->param('refMenu');
-    my $compMenu              = $apr->param('compMenu');
-    my $optionMenu            = $apr->param('optionMenu');
-    my $addOpMenu             = $apr->param('addOpMenu');
-    my $omit_area_boxes       = $apr->param('omit_area_boxes');
-    my $session_id            = $apr->param('session_id');
-    my $step                  = $apr->param('step') || 0;
-    my $session_mod           = $apr->param('session_mod') || '';
-    my $left_min_corrs        = $apr->param('left_min_corrs') || 0;
-    my $right_min_corrs       = $apr->param('right_min_corrs') || 0;
-    my $general_min_corrs     = $apr->param('general_min_corrs');
-    my $menu_min_corrs        = $apr->param('menu_min_corrs') || 0;
+    my $ref_map_start           = $apr->param('ref_map_start');
+    my $ref_map_stop            = $apr->param('ref_map_stop');
+    my $comparative_maps        = $apr->param('comparative_maps') || '';
+    my @comparative_map_right   = $apr->param('comparative_map_right');
+    my @comparative_map_left    = $apr->param('comparative_map_left');
+    my $comp_map_set_right      = $apr->param('comp_map_set_right');
+    my $comp_map_set_left       = $apr->param('comp_map_set_left');
+    my $highlight               = $apr->param('highlight') || '';
+    my $font_size               = $apr->param('font_size') || '';
+    my $image_size              = $apr->param('image_size') || '';
+    my $image_type              = $apr->param('image_type') || '';
+    my $label_features          = $apr->param('label_features') || '';
+    my $collapse_features       = $apr->param('collapse_features');
+    my $aggregate               = $apr->param('aggregate');
+    my $cluster_corr            = $apr->param('cluster_corr');
+    my $show_intraslot_corr     = $apr->param('show_intraslot_corr');
+    my $split_agg_ev            = $apr->param('split_agg_ev');
+    my $clean_view              = $apr->param('clean_view');
+    my $corrs_to_map            = $apr->param('corrs_to_map');
+    my $magnify_all             = $apr->param('magnify_all');
+    my $ignore_image_map_sanity = $apr->param('ignore_image_map_sanity');
+    my $scale_maps              = $apr->param('scale_maps');
+    my $stack_maps              = $apr->param('stack_maps');
+    my $comp_menu_order         = $apr->param('comp_menu_order');
+    my $ref_map_order           = $apr->param('ref_map_order');
+    my $prev_ref_map_order      = $apr->param('prev_ref_map_order');
+    my $flip                    = $apr->param('flip') || '';
+    my $page_no                 = $apr->param('page_no') || 1;
+    my $action                  = $apr->param('action') || 'view';
+    my $refMenu                 = $apr->param('refMenu');
+    my $compMenu                = $apr->param('compMenu');
+    my $optionMenu              = $apr->param('optionMenu');
+    my $addOpMenu               = $apr->param('addOpMenu');
+    my $omit_area_boxes         = $apr->param('omit_area_boxes');
+    my $session_id              = $apr->param('session_id');
+    my $step                    = $apr->param('step') || 0;
+    my $session_mod             = $apr->param('session_mod') || '';
+    my $left_min_corrs          = $apr->param('left_min_corrs') || 0;
+    my $right_min_corrs         = $apr->param('right_min_corrs') || 0;
+    my $general_min_corrs       = $apr->param('general_min_corrs');
+    my $menu_min_corrs          = $apr->param('menu_min_corrs') || 0;
 
     # Check for depricated min_correspondences value
     # Basically general_min_corrs is a new way to address
@@ -181,7 +182,9 @@ sub handler {
     #
     my @ref_map_accs;
     if ( $apr->param('ref_map_accs') or $apr->param('ref_map_aids') ) {
-        foreach my $acc ( $apr->param('ref_map_accs'),$apr->param('ref_map_aids') ) {
+        foreach
+          my $acc ( $apr->param('ref_map_accs'), $apr->param('ref_map_aids') )
+        {
 
             # Remove start and stop if they are the same
             while ( $acc =~ s/(.+\[)(\d+)\*\2(\D.*)/$1*$3/ ) { }
@@ -282,13 +285,9 @@ sub handler {
             if ( $ft eq 'DEFAULT' ) {
                 if ( $val =~ /^\d$/ ) {
                     $url_feature_default_display = $val;
-                    $apr->param( 'ft_DEFAULT',           $val );
-                    $apr->param( 'feature_type_DEFAULT', undef );
                 }
                 else {
                     $url_feature_default_display = undef;
-                    $apr->param( 'ft_DEFAULT',           undef );
-                    $apr->param( 'feature_type_DEFAULT', undef );
                 }
                 next;
             }
@@ -324,6 +323,12 @@ sub handler {
             $evidence_type_score{$et} = $val;
         }
     }
+
+    # Set the UFDD or get the default UFDD in none is supplied
+    $url_feature_default_display =
+      $self->url_feature_default_display($url_feature_default_display);
+    $apr->param( 'ft_DEFAULT',           $url_feature_default_display );
+    $apr->param( 'feature_type_DEFAULT', undef );
 
     my %included_corr_only_features =
       map { $_ => 1 } @corr_only_feature_types;
@@ -451,7 +456,7 @@ sub handler {
                         mag   => $magnification,
                     };
                 }
-                elsif ( $field eq 'map_set_acc' or $field eq 'map_set_aid') {
+                elsif ( $field eq 'map_set_acc' or $field eq 'map_set_aid' ) {
                     unless ( defined( $slots{$slot_no}{'map_sets'}{$acc} ) ) {
                         $slots{$slot_no}{'map_sets'}{$acc} = ();
                     }
@@ -479,7 +484,7 @@ sub handler {
                     mag   => $magnification,
                 };
             }
-            elsif ( $field eq 'map_set_acc' or $field eq 'map_set_aid') {
+            elsif ( $field eq 'map_set_acc' or $field eq 'map_set_aid' ) {
                 unless ( defined( $slots{$slot_no}->{'map_sets'}{$acc} ) ) {
                     $slots{$slot_no}->{'map_sets'}{$acc} = ();
                 }
@@ -604,6 +609,7 @@ sub handler {
             split_agg_ev                => $self->split_agg_ev,
             clean_view                  => $self->clean_view,
             magnify_all                 => $self->magnify_all,
+            ignore_image_map_sanity     => $ignore_image_map_sanity,
             scale_maps                  => $self->scale_maps,
             stack_maps                  => $self->stack_maps,
             ref_map_order               => $self->ref_map_order,

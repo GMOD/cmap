@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.31 2005-08-31 21:54:48 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.32 2005-09-15 20:29:46 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.31 $)[-1];
+$VERSION = (qw$Revision: 1.32 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -454,6 +454,13 @@ use constant DEFAULT => {
     # (like in search results).
     #
     max_child_elements => 25,
+
+    #
+    # The maximum number of area boxes that CMap will print before it drops
+    # them all.  This can save a browser from crashing
+    # Default: 20000
+    #
+    max_image_map_objects => 20000,
 
     #
     # How many pages of results to show in searches.

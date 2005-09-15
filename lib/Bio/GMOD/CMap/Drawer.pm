@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.109 2005-08-31 21:54:48 mwz444 Exp $
+# $Id: Drawer.pm,v 1.110 2005-09-15 20:29:46 mwz444 Exp $
 
 =head1 NAME
 
@@ -342,7 +342,7 @@ This is set to 1 if the Additional Options Menu is displayed.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.109 $)[-1];
+$VERSION = (qw$Revision: 1.110 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -367,7 +367,7 @@ my @INIT_PARAMS = qw[
   aggregate cluster_corr show_intraslot_corr clean_view
   magnify_all scale_maps stack_maps ref_map_order comp_menu_order
   omit_area_boxes split_agg_ev refMenu compMenu optionMenu addOpMenu
-  corrs_to_map session_id next_step
+  corrs_to_map session_id next_step ignore_image_map_sanity
 ];
 
 # ----------------------------------------------------
@@ -878,7 +878,8 @@ Gets/sets which evidence type (accession IDs) to include.
     my $self = shift;
 
     if ( my $arg = shift ) {
-        push @{ $self->{'included_evidence_types'} }, @$arg;
+        $arg = [$arg] unless ( ref($arg) eq 'ARRAY' );
+        $self->{'included_evidence_types'} = $arg;
     }
     $self->{'included_evidence_types'} = []
       unless $self->{'included_evidence_types'};
@@ -900,7 +901,8 @@ Gets/sets which evidence type (accession IDs) to ignore.
     my $self = shift;
 
     if ( my $arg = shift ) {
-        push @{ $self->{'ignored_evidence_types'} }, @$arg;
+        $arg = [$arg] unless ( ref($arg) eq 'ARRAY' );
+        $self->{'ignored_evidence_types'} = $arg;
     }
     $self->{'ignored_evidence_types'} = []
       unless $self->{'ignored_evidence_types'};
@@ -922,7 +924,8 @@ Gets/sets which evidence type (accession IDs) to measure against the scores.
     my $self = shift;
 
     if ( my $arg = shift ) {
-        push @{ $self->{'less_evidence_types'} }, @$arg;
+        $arg = [$arg] unless ( ref($arg) eq 'ARRAY' );
+        $self->{'less_evidence_types'} = $arg;
     }
     $self->{'less_evidence_types'} = []
       unless $self->{'less_evidence_types'};
@@ -944,7 +947,8 @@ Gets/sets which evidence type (accession IDs) to measure against the scores.
     my $self = shift;
 
     if ( my $arg = shift ) {
-        push @{ $self->{'greater_evidence_types'} }, @$arg;
+        $arg = [$arg] unless ( ref($arg) eq 'ARRAY' );
+        $self->{'greater_evidence_types'} = $arg;
     }
     $self->{'greater_evidence_types'} = []
       unless $self->{'greater_evidence_types'};
@@ -988,7 +992,8 @@ Gets/sets which feature type (accession IDs) to include.
     my $self = shift;
 
     if ( my $arg = shift ) {
-        push @{ $self->{'included_feature_types'} }, @$arg;
+        $arg = [$arg] unless ( ref($arg) eq 'ARRAY' );
+        $self->{'included_feature_types'} = $arg;
     }
     $self->{'included_feature_types'} = []
       unless $self->{'included_feature_types'};
@@ -1010,38 +1015,13 @@ Gets/sets which feature type (accession IDs) to corr_only.
     my $self = shift;
 
     if ( my $arg = shift ) {
-        push @{ $self->{'corr_only_feature_types'} }, @$arg;
+        $arg = [$arg] unless ( ref($arg) eq 'ARRAY' );
+        $self->{'corr_only_feature_types'} = $arg;
     }
     $self->{'corr_only_feature_types'} = []
       unless $self->{'corr_only_feature_types'};
 
     return $self->{'corr_only_feature_types'};
-}
-
-# ----------------------------------------------------
-sub url_feature_default_display {
-
-=pod
-                                                                                
-=head2 url_feature_default_display
-                                                                                
-Gets/sets which the url_feature_default_display
-                                                                                
-=cut
-
-    my $self = shift;
-    my $arg  = shift;
-
-    if ( defined($arg) ) {
-        if ( $arg =~ /^\d$/ ) {
-            $self->{'url_feature_default_display'} = $arg;
-        }
-        else {
-            $self->{'url_feature_default_display'} = undef;
-        }
-    }
-
-    return $self->{'url_feature_default_display'};
 }
 
 # ----------------------------------------------------
@@ -1058,7 +1038,8 @@ Gets/sets which feature type (accession IDs) to ignore.
     my $self = shift;
 
     if ( my $arg = shift ) {
-        push @{ $self->{'ignored_feature_types'} }, @$arg;
+        $arg = [$arg] unless ( ref($arg) eq 'ARRAY' );
+        $self->{'ignored_feature_types'} = $arg;
     }
     $self->{'ignored_feature_types'} = []
       unless $self->{'ignored_feature_types'};
@@ -1488,6 +1469,25 @@ Lays out the image and writes it to the file system, set the "image_name."
     $self->add_drawing( RECTANGLE,   @bounds, $border_color, -1 );
 
     $self->max_x($max_x);
+
+    # Do the sanity check for area boxes
+    unless ( $self->ignore_image_map_sanity ) {
+        my $max_boxes                    = DEFAULT->{'max_image_map_objects'};
+        my $config_max_image_map_objects =
+          $self->config_data('max_image_map_objects');
+        if ( defined($config_max_image_map_objects)
+            and $config_max_image_map_objects =~ /^[\d,]+$/ )
+        {
+            $max_boxes = $config_max_image_map_objects;
+        }
+
+        if ( scalar( $self->image_map_data ) > $max_boxes ) {
+            $self->{'image_map_data'} = ();
+            $self->message(
+'WARNING:  There were too many clickable objects on this image to render in a timely manor and may break some browsers.  It is recommended that you limit the display of features in the Options Menu.  <BR>If you wish to ignore this and render the image buttons, you can select "Ignore Image Map Sanity Check" in the Additional Options Menu.'
+            );
+        }
+    }
 
     #
     # Move all the coordinates to positive numbers.
@@ -2911,6 +2911,7 @@ Creates default link parameters for CMap->create_viewer_link()
     my $clean_view                  = $args{'clean_view'};
     my $corrs_to_map                = $args{'corrs_to_map'};
     my $magnify_all                 = $args{'magnify_all'};
+    my $ignore_image_map_sanity     = $args{'ignore_image_map_sanity'};
     my $flip                        = $args{'flip'};
     my $left_min_corrs              = $args{'left_min_corrs'};
     my $right_min_corrs             = $args{'right_min_corrs'};
@@ -3022,6 +3023,9 @@ Creates default link parameters for CMap->create_viewer_link()
     unless ( defined($magnify_all) ) {
         $magnify_all = $self->magnify_all();
     }
+    unless ( defined($ignore_image_map_sanity) ) {
+        $ignore_image_map_sanity = $self->ignore_image_map_sanity();
+    }
     unless ( defined($flip) ) {
         my @flips;
         for my $rec ( @{ $self->flip } ) {
@@ -3118,6 +3122,7 @@ Creates default link parameters for CMap->create_viewer_link()
         clean_view                  => $clean_view,
         corrs_to_map                => $corrs_to_map,
         magnify_all                 => $magnify_all,
+        ignore_image_map_sanity     => $ignore_image_map_sanity,
         flip                        => $flip,
         left_min_corrs              => $left_min_corrs,
         right_min_corrs             => $right_min_corrs,
@@ -3145,6 +3150,29 @@ Creates default link parameters for CMap->create_viewer_link()
         new_session                 => $new_session,
     );
 }
+
+# ----------------------------------------------------
+sub message {
+
+=pod
+
+=head2 message
+
+Message to be printed out on top of the image.
+
+=cut
+
+    my $self = shift;
+    my $msg  = shift;
+
+    if ($msg) {
+        $self->{'message'} = $msg;
+    }
+
+    return $self->{'message'};
+}
+
+1;
 
 # ----------------------------------------------------
 # It is not all books that are as dull as their readers.

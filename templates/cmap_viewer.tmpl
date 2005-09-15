@@ -284,6 +284,13 @@ function selectAllOptions(select){
 [%- END -%]
 
 <table border="0"> 
+  [% IF drawer.message %]
+    <tr>
+      <td valign="top">
+        <h1>[% drawer.message %]</h1>
+      </td>
+    </tr>
+  [% END %]
   <tr>
     [%- IF drawer.image_name -%]
       <td valign="top">
@@ -518,6 +525,7 @@ function selectAllOptions(select){
                 </td>
               </tr>
             </table>
+            hint: To save time, select the desired options before redrawing the map.<br>
             <input type="submit" value="Redraw Map" name="sub">
             <input type="reset"  value="Reset"><hr>
           </div>
@@ -557,7 +565,6 @@ function selectAllOptions(select){
               </tr>
               <tr>
                 <td colspan="2" align="left">
-                  <input type=hidden name="ft_DEFAULT" value='[%- apr.param('ft_DEFAULT') -%]'>
                   <table border="1">
                     <tr>
                       <td>Feature</td>
@@ -579,6 +586,18 @@ function selectAllOptions(select){
                         </td>
                       </tr>
                     [%- END -%]
+                      <tr>
+                        <td>Default</td>
+                        <td>
+                          <input type="radio" name="ft_DEFAULT" value="0" [% IF apr.param('ft_DEFAULT')=='0'; ' checked'; END %]>
+                        </td>
+                        <td>
+                          <input type="radio" name="ft_DEFAULT" value="1" [% IF apr.param('ft_DEFAULT')=='1'; ' checked'; END %]>
+                        </td>
+                        <td>
+                          <input type="radio" name="ft_DEFAULT" value="2" [% IF apr.param('ft_DEFAULT')=='2'; ' checked'; END %]>
+                        </td>
+                      </tr>
                     <tr>
                       <td>&nbsp;</td>
                       <td><input type="button" name="checkColumn" value="Check All" onClick="selectFeatureRadio(0)"></td>
@@ -865,6 +884,12 @@ function selectAllOptions(select){
                   [%- IF comp_menu_order=="display_order"; ' checked'; END -%]>Display Order(default)</td>
                 <td><input type="radio" name="comp_menu_order" value="corrs"
                   [%- IF comp_menu_order=="corrs"; ' checked'; END -%]>Number of <br> Correspondences</td>
+              </tr>
+              <tr>
+                <td align="left" valign="top">Ignore Image Map <BR>Sanity Check:</td>
+                [% IF apr.param('ignore_image_map_sanity')==1; ignore_image_map_sanity=1; ELSE; ignore_image_map_sanity=0; END %]
+                <td><input type="radio" name="ignore_image_map_sanity" value="0"[% IF ignore_image_map_sanity==0; ' checked'; END %]>No</td>
+                <td><input type="radio" name="ignore_image_map_sanity" value="1"[% IF ignore_image_map_sanity==1; ' checked'; END %]>Yes</td>
               </tr>
               <tr>
                 <td colspan=4>
