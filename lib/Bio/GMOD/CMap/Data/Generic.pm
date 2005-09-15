@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.105 2005-09-09 15:44:07 mwz444 Exp $
+# $Id: Generic.pm,v 1.106 2005-09-15 22:09:47 kycl4rk Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.105 $)[-1];
+$VERSION = (qw$Revision: 1.106 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -4592,7 +4592,7 @@ Not using cache because this query is quicker.
 
     my ( $self, %args ) = @_;
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
-    my $feature_id = $args{'feature_id'};
+    my $feature_id               = $args{'feature_id'};
     my $feature_alias_id         = $args{'feature_alias_id'};
     my $feature_ids              = $args{'feature_ids'} || [];
     my $feature_acc              = $args{'feature_acc'};
@@ -4758,34 +4758,34 @@ feature_alias_id
     my $db          = $cmap_object->db;
 
     # Check if alias already inserted
-    my $sql_str = qq[
-        select feature_alias_id 
-        from cmap_feature_alias
-        where feature_id = $feature_id
-        and alias = '$alias'
-    ];
-
-    my $return_object = $db->selectall_arrayref($sql_str);
-    if ( $return_object and @$return_object ) {
-        return -1;
-    }
-
-    my $feature_alias_id = $self->next_number(
-        cmap_object => $cmap_object,
-        object_type => 'feature_alias',
-      )
-      or return $self->error('No next number for feature_alias ');
-    my @insert_args = ( $feature_alias_id, $feature_id, $alias );
-
-    $db->do(
+    my $feature_alias_id = $db->selectrow_array(
         qq[
-        insert into cmap_feature_alias
-        (feature_alias_id,feature_id,alias )
-         values ( ?,?,? )
+            select feature_alias_id 
+            from   cmap_feature_alias
+            where  feature_id=?
+            and    alias=?
         ],
         {},
-        (@insert_args)
+        ( $feature_id, $alias )
     );
+
+    if ( !$feature_alias_id ) {
+        $feature_alias_id = $self->next_number(
+            cmap_object => $cmap_object,
+            object_type => 'feature_alias',
+        ) or return $self->error('No next number for feature_alias ');
+
+        $db->do(
+            qq[
+                insert 
+                into   cmap_feature_alias 
+                       (feature_alias_id,feature_id,alias )
+                values ( ?,?,? )
+            ],
+            {},
+            ( $feature_alias_id, $feature_id, $alias )
+        );
+    }
 
     return $feature_alias_id;
 }
@@ -7234,7 +7234,8 @@ Not using cache because this query is quicker.
 
     my ( $self, %args ) = @_;
     my $cmap_object     = $args{'cmap_object'} or die "No CMap Object included";
-    my $object_type     = $args{'object_type'};
+    my $object_type     = $args{'object_type'} or return 
+                          $self->error('No object type');
     my $attribute_id    = $args{'attribute_id'};
     my $is_public       = $args{'is_public'};
     my $attribute_name  = $args{'attribute_name'};
