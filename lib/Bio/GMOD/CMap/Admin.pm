@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.84 2005-06-17 04:58:37 mwz444 Exp $
+# $Id: Admin.pm,v 1.85 2005-09-15 22:08:34 kycl4rk Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.84 $)[-1];
+$VERSION = (qw$Revision: 1.85 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -1585,13 +1585,13 @@ The name of the object being reference.
 =cut
 
     my ( $self, %args ) = @_;
-    my $object_id = $args{'object_id'}
-      or return $self->error('No object id');
-    my $object_type = $args{'object_type'}
-      or return $self->error('No table name');
-    my @attributes = @{ $args{'attributes'} || [] } or return;
-    my $overwrite = $args{'overwrite'} || 0;
-    my $sql_object = $self->sql or return;
+    my $object_id       = $args{'object_id'} or 
+                          return $self->error('No object id');
+    my $object_type     = $args{'object_type'}
+                          or return $self->error('No table name');
+    my @attributes      = @{ $args{'attributes'} || [] } or return;
+    my $overwrite       = $args{'overwrite'} || 0;
+    my $sql_object      = $self->sql or return;
 
     if ($overwrite) {
         $sql_object->delete_attribute(
@@ -1602,8 +1602,7 @@ The name of the object being reference.
     }
 
     for my $attr (@attributes) {
-        my $attribute_id = $attr->{'attribute_id'} || 0;
-        my $attr_name    = $attr->{'name'}         || $attr->{'attribute_name'};
+        my $attr_name     = $attr->{'name'}  || $attr->{'attribute_name'};
         my $attr_value    = $attr->{'value'} || $attr->{'attribute_value'};
         my $is_public     = $attr->{'is_public'};
         my $display_order = $attr->{'display_order'};
@@ -1621,8 +1620,11 @@ The name of the object being reference.
             attribute_name  => $attr_name,
             attribute_value => $attr_value,
         );
-        $attribute_id = $attributes_array->[0]{'attribute_id'}
-          if (@$attributes_array);
+
+        my $attribute_id;
+        if ( @$attributes_array == 1 ) {
+            $attribute_id = $attributes_array->[0]{'attribute_id'};
+        }
 
         if ($attribute_id) {
             $sql_object->update_attribute(
@@ -1719,7 +1721,6 @@ The name of the object being reference.
     }
 
     for my $xref (@xrefs) {
-        my $xref_id   = $xref->{'xref_id'} || 0;
         my $xref_name = $xref->{'name'}    || $xref->{'xref_name'};
         my $xref_url  = $xref->{'url'}     || $xref->{'xref_url'};
         my $is_public =
@@ -1740,7 +1741,11 @@ The name of the object being reference.
             xref_name   => $xref_name,
             xref_url    => $xref_url,
         );
-        $xref_id = $xrefs_array->[0]{'xref_id'} if (@$xrefs_array);
+
+        my $xref_id;
+        if ( @$xrefs_array == 1 ) {
+            $xref_id = $xrefs_array->[0]{'xref_id'} 
+        }
 
         if ($xref_id) {
             $sql_object->update_xref(
