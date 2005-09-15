@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache;
 
 # vim: set ft=perl:
 
-# $Id: Apache.pm,v 1.30 2005-06-07 20:08:50 mwz444 Exp $
+# $Id: Apache.pm,v 1.31 2005-09-15 22:07:11 kycl4rk Exp $
 
 =head1 NAME
 
@@ -47,7 +47,7 @@ this class will catch errors and display them correctly.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.30 $)[-1];
+$VERSION = (qw$Revision: 1.31 $)[-1];
 
 use CGI;
 use Apache::Htpasswd;
@@ -304,7 +304,8 @@ it, and this method will never return anything.
     my $self = shift;
 
     unless ( defined $self->{'page'} ) {
-        if ( my $page_object = $self->config_data('page_object') ) {
+        my $page_object = $self->config_data('page_object');
+        if ( $page_object && $ENV{'MOD_PERL'} ) {
             eval "require Apache";
             unless ($@) {
                 my $r = Apache->request;
