@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.106 2005-09-15 22:09:47 kycl4rk Exp $
+# $Id: Generic.pm,v 1.107 2005-09-16 03:29:42 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.106 $)[-1];
+$VERSION = (qw$Revision: 1.107 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -4665,22 +4665,23 @@ Not using cache because this query is quicker.
     if ($map_id) {
         push @identifiers, $map_id;
         $from_sql  .= ", cmap_map map ";
-        $where_sql .= " and map.map_id = ? ";
+        $where_sql .= " and map.map_id = f.map_id and map.map_id = ? ";
     }
     elsif ($map_acc) {
         push @identifiers, $map_acc;
         $from_sql  .= ", cmap_map map ";
-        $where_sql .= " and map.map_acc = ? ";
+        $where_sql .= " and map.map_id = f.map_id and map.map_acc = ? ";
     }
     elsif ($map_set_id) {
         push @identifiers, $map_set_id;
         $from_sql  .= ", cmap_map map ";
-        $where_sql .= " and map.map_set_id = ? ";
+        $where_sql .= " and map.map_id = f.map_id and map.map_set_id = ? ";
     }
     elsif (@$map_set_ids) {
         $from_sql  .= ", cmap_map map ";
-        $where_sql .=
-          " and map.map_set_id in (" . join( ",", sort @$map_set_ids ) . ") ";
+        $where_sql .= " and map.map_id = f.map_id "
+            . " and map.map_set_id in ("
+            . join( ",", sort @$map_set_ids ) . ") ";
     }
     if (@$ignore_feature_type_accs) {
         $where_sql .=
