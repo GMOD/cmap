@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.120 2005-09-12 17:18:54 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.121 2005-09-16 03:27:37 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.120 $)[-1];
+$VERSION = (qw$Revision: 1.121 $)[-1];
 
 #
 # Get command-line options
@@ -2033,11 +2033,12 @@ sub get_map_sets {
         );
 
         my $map_set_ids = $self->show_menu(
-            title      => 'Restrict by Map Sets',
-            prompt     => 'Limit by which map sets?',
+            title      => 'Select Map Sets',
+            prompt     => 'Which map sets?',
             display    => 'map_type,species_common_name,map_set_short_name',
             return     => 'map_set_id',
             allow_null => $allow_null,
+            allow_all  => 1,
             allow_mult => $allow_mult,
             data       => $ms_choices,
         );
@@ -2045,14 +2046,16 @@ sub get_map_sets {
             $map_set_ids = [ $map_set_ids, ];
         }
 
-        $map_sets = $sql_object->get_map_sets(
-            cmap_object => $self,
-            map_set_ids => $map_set_ids,
-            species_ids => $species_ids,
-        );
-        $map_sets =
-          sort_selectall_arrayref( $map_sets,
-            'species_common_name, map_set_short_name' );
+        if ($map_set_ids and @$map_set_ids){
+            $map_sets = $sql_object->get_map_sets(
+                cmap_object => $self,
+                map_set_ids => $map_set_ids,
+                species_ids => $species_ids,
+            );
+            $map_sets =
+              sort_selectall_arrayref( $map_sets,
+                'species_common_name, map_set_short_name' );
+        }
 
     }
     return $map_sets;
@@ -3144,10 +3147,11 @@ sub make_name_correspondences {
             $to_map_sets = $from_map_sets;
         }
         else {
-            $to_map_sets =
-              $self->get_map_sets(
-                explanation => 'Now you will select the target map sets' )
-              or return;
+            $to_map_sets = $self->get_map_sets(
+                explanation => 'Now you will select the target map sets',
+                allow_null  => 0,
+                )
+                or return;
         }
 
         my @skip_features = $self->show_menu(
