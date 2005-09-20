@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.176 2005-09-15 20:27:00 mwz444 Exp $
+# $Id: Map.pm,v 1.177 2005-09-20 05:51:14 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.176 $)[-1];
+$VERSION = (qw$Revision: 1.177 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1056,27 +1056,23 @@ a hashref keyed on feature_id.
     my $map    = $self->map($map_id);
 
     unless ( defined $map->{'feature_store'} ) {
-        for my $data (
-            map  { $_->[0] }
-            sort {
-                     $a->[1] <=> $b->[1]
-                  || $a->[2] <=> $b->[2]
-                  || $a->[3] <=> $b->[3]
-                  || $a->[4] <=> $b->[4]
-            }
-            map {
-                [
-                    $_,
-                    $_->{'drawing_lane'},
-                    $_->{'drawing_priority'},
-                    ( $_->{'feature_start'} || 0 ),
-                    ( $_->{'feature_stop'}  || 0 ),
-                ]
-            } values %{ $map->{'features'} }
-          )
-        {
 
-            push @{ $map->{'feature_store'}{ $data->{'drawing_lane'} } }, $data;
+        # The features are already sorted by start and stop.
+        # All we need to do now is break them apart by lane and priority
+        my %sorting_hash;
+        for my $row ( @{ $map->{'features'} } ) {
+            push @{ $sorting_hash{ $row->{'drawing_lane'} }
+                  ->{ $row->{'drawing_priority'} } }, $row;
+        }
+        foreach my $lane ( sort { $a <=> $b } keys(%sorting_hash) ) {
+            foreach my $priority (
+                sort { $a <=> $b }
+                keys( %{ $sorting_hash{$lane} } )
+              )
+            {
+                push @{ $map->{'feature_store'}{$lane} },
+                  @{ $sorting_hash{$lane}->{$priority} };
+            }
         }
     }
 

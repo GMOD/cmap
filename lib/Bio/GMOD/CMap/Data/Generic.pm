@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.107 2005-09-16 03:29:42 mwz444 Exp $
+# $Id: Generic.pm,v 1.108 2005-09-20 05:51:14 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.107 $)[-1];
+$VERSION = (qw$Revision: 1.108 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -3891,22 +3891,20 @@ Array of Hashes:
         return {};
     }
 
+    # Add order to help sorting later
+    $sql_str .= " order by feature_start, feature_stop";
+
+
     unless ( $return_object = $self->get_cached_results( 4, $sql_str ) ) {
 
-        $return_object =
-          $db->selectall_hashref( $sql_str, 'feature_id', {}, () );
+        $return_object = $db->selectall_arrayref( $sql_str, { Columns => {} } );
         return {} unless $return_object;
 
-        for my $feature_id ( keys %{$return_object} ) {
-            my $ft =
-              $feature_type_data->{ $return_object->{$feature_id}
-                  {'feature_type_acc'} };
-
-            $return_object->{$feature_id}{$_} = $ft->{$_} for qw[
+        foreach my $row ( @{$return_object} ) {
+            $row->{$_} = $feature_type_data->{ $row->{'feature_type_acc'} }{$_} for qw[
               feature_type default_rank shape color
               drawing_lane drawing_priority
             ];
-
         }
 
         $self->store_cached_results( 4, $sql_str, $return_object );
