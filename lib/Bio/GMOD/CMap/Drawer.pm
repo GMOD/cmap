@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.110 2005-09-15 20:29:46 mwz444 Exp $
+# $Id: Drawer.pm,v 1.111 2005-09-21 14:54:07 kycl4rk Exp $
 
 =head1 NAME
 
@@ -342,7 +342,7 @@ This is set to 1 if the Additional Options Menu is displayed.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.110 $)[-1];
+$VERSION = (qw$Revision: 1.111 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -1484,7 +1484,7 @@ Lays out the image and writes it to the file system, set the "image_name."
         if ( scalar( $self->image_map_data ) > $max_boxes ) {
             $self->{'image_map_data'} = ();
             $self->message(
-'WARNING:  There were too many clickable objects on this image to render in a timely manor and may break some browsers.  It is recommended that you limit the display of features in the Options Menu.  <BR>If you wish to ignore this and render the image buttons, you can select "Ignore Image Map Sanity Check" in the Additional Options Menu.'
+'WARNING:  There were too many clickable objects on this image to render in a timely manner and may break some browsers.  It is recommended that you limit the display of features in the Options Menu.  <BR>If you wish to ignore this and render the image buttons, you can select "Ignore Image Map Sanity Check" in the Additional Options Menu.'
             );
         }
     }
