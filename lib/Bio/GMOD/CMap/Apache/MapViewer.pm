@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.114 2005-09-15 20:29:46 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.115 2005-09-21 14:11:31 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.114 $)[-1];
+$VERSION = (qw$Revision: 1.115 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -213,21 +213,6 @@ sub handler {
           parse_map_info( $ref_map_acc, $highlight );
         $ref_maps{$ref_map_acc} =
           { start => $start, stop => $stop, mag => $magnification };
-    }
-
-    if ( scalar @ref_map_accs == 1 ) {
-        unless ( $ref_map_accs[0] == '-1' ) {
-            if ( defined $ref_map_start
-                and not defined( $ref_maps{ $ref_map_accs[0] }{'start'} ) )
-            {
-                $ref_maps{ $ref_map_accs[0] }{'start'} = $ref_map_start;
-            }
-            if ( defined $ref_map_stop
-                and not defined( $ref_maps{ $ref_map_accs[0] }{'stop'} ) )
-            {
-                $ref_maps{ $ref_map_accs[0] }{'stop'} = $ref_map_stop;
-            }
-        }
     }
 
     # Only included for legacy urls
@@ -510,6 +495,24 @@ sub handler {
             push @cmaps, $comp_map if ( !$found );
         }
     }
+
+    # If ref_map_start/stop are defined and there is only one ref map
+    # use those values and then wipe them from the params. 
+    if (    scalar keys( %{ $slots{0}->{'maps'} } ) == 1
+        and scalar(@ref_map_accs) == 1 )
+    {
+        ( $ref_map_start, $ref_map_stop ) = ( $ref_map_stop, $ref_map_start )
+          if (  defined($ref_map_start)
+            and defined($ref_map_stop)
+            and $ref_map_start > $ref_map_stop );
+        if ( defined $ref_map_start ) {
+            $slots{0}->{'maps'}{ $ref_map_accs[0] }{'start'} = $ref_map_start;
+        }
+        if ( defined $ref_map_stop ) {
+            $slots{0}->{'maps'}{ $ref_map_accs[0] }{'stop'} = $ref_map_stop;
+        }
+    }
+    $apr->delete('ref_map_start','ref_map_stop', );
 
     # Build %slots_min_corrs
     my @slot_nos  = sort { $a <=> $b } keys %slots;
