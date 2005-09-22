@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.121 2005-09-16 03:27:37 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.122 2005-09-22 03:15:46 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.121 $)[-1];
+$VERSION = (qw$Revision: 1.122 $)[-1];
 
 #
 # Get command-line options
@@ -893,44 +893,58 @@ sub delete_correspondences {
     my $disregard_evidence = @evidence_type_accs ? 0 : 1;
 
     for my $map_set (@$map_sets) {
-        my $map_set_id = $map_set->{'map_set_id'};
-        my $corrs      = $sql_object->get_feature_correspondence_details(
-            cmap_object                 => $self,
-            included_evidence_type_accs => \@evidence_type_accs,
-            map_set_id2                 => $map_set_id,
-            disregard_evidence_type     => $disregard_evidence,
-        );
-
         print $log_fh "Deleting correspondences for ",
           $map_set->{'species_common_name'}, '-',
           $map_set->{'map_set_short_name'},  "\n";
+        my $map_set_acc = $map_set->{'map_set_acc'};
+        my $maps        = $sql_object->get_maps_from_map_set(
+            cmap_object => $self,
+            map_set_acc => $map_set_acc,
+          )
+          if ($map_set_acc);
 
-        #
-        # If there is more evidence supporting the correspondence,
-        # then just remove the evidence, otherwise remove the
-        # correspondence (which will remove all the evidence).
-        #
-        for my $corr (@$corrs) {
-            my $all_evidence = $sql_object->get_correspondence_evidences(
-                cmap_object               => $self,
-                feature_correspondence_id =>
-                  $corr->{'feature_correspondence_id'},
+        next unless ( $maps and @$maps );
+
+        foreach my $map (@$maps) {
+            my $map_acc = $map->{'map_acc'};
+            next unless ($map_acc);
+            my $corrs = $sql_object->get_feature_correspondence_details(
+                cmap_object                 => $self,
+                included_evidence_type_accs => \@evidence_type_accs,
+                map_acc2                    => $map_acc,
+                disregard_evidence_type     => $disregard_evidence,
             );
+            print $log_fh "Deleting correspondences for ", $map->{'map_name'},
+              "\n";
 
-            my $no_evidence_deleted = 0;
-            for my $evidence (@$all_evidence) {
-                next
-                  unless $evidence_lookup{ $evidence->{'evidence_type_acc'} };
-                $admin->correspondence_evidence_delete(
-                    correspondence_evidence_id =>
-                      $evidence->{'correspondence_evidence_id'} );
-                $no_evidence_deleted++;
-            }
-
-            if ( $no_evidence_deleted == scalar @$all_evidence ) {
-                $admin->feature_correspondence_delete(
+            #
+            # If there is more evidence supporting the correspondence,
+            # then just remove the evidence, otherwise remove the
+            # correspondence (which will remove all the evidence).
+            #
+            for my $corr (@$corrs) {
+                my $all_evidence = $sql_object->get_correspondence_evidences(
+                    cmap_object               => $self,
                     feature_correspondence_id =>
-                      $corr->{'feature_correspondence_id'} );
+                      $corr->{'feature_correspondence_id'},
+                );
+
+                my $no_evidence_deleted = 0;
+                for my $evidence (@$all_evidence) {
+                    next
+                      unless
+                      $evidence_lookup{ $evidence->{'evidence_type_acc'} };
+                    $admin->correspondence_evidence_delete(
+                        correspondence_evidence_id =>
+                          $evidence->{'correspondence_evidence_id'} );
+                    $no_evidence_deleted++;
+                }
+
+                if ( $no_evidence_deleted == scalar @$all_evidence ) {
+                    $admin->feature_correspondence_delete(
+                        feature_correspondence_id =>
+                          $corr->{'feature_correspondence_id'} );
+                }
             }
         }
     }
