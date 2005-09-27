@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.115 2005-09-21 14:11:31 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.116 2005-09-27 16:02:27 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.115 $)[-1];
+$VERSION = (qw$Revision: 1.116 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -505,10 +505,10 @@ sub handler {
           if (  defined($ref_map_start)
             and defined($ref_map_stop)
             and $ref_map_start > $ref_map_stop );
-        if ( defined $ref_map_start ) {
+        if ( defined($ref_map_start) and $ref_map_start ne '' ) {
             $slots{0}->{'maps'}{ $ref_map_accs[0] }{'start'} = $ref_map_start;
         }
-        if ( defined $ref_map_stop ) {
+        if ( defined($ref_map_stop) and $ref_map_stop ne '' ) {
             $slots{0}->{'maps'}{ $ref_map_accs[0] }{'stop'} = $ref_map_stop;
         }
     }
