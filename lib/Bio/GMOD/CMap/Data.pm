@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.251 2005-09-07 18:53:45 mwz444 Exp $
+# $Id: Data.pm,v 1.252 2005-09-28 16:30:55 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.251 $)[-1];
+$VERSION = (qw$Revision: 1.252 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -3810,6 +3810,7 @@ Given the slot_no and map_id
         and my $return_val = $self->feature_type_data(
             $feature_type_acc, 'feature_default_display'
         )
+        and not defined($url_feature_default_display)
       )
     {
         return $return_val;
