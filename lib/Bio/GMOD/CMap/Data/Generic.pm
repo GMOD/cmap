@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.108 2005-09-20 05:51:14 mwz444 Exp $
+# $Id: Generic.pm,v 1.109 2005-09-28 16:25:30 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.108 $)[-1];
+$VERSION = (qw$Revision: 1.109 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -3778,29 +3778,16 @@ Array of Hashes:
     ];
 
     # Handle Map Start and Stop
-    if ( defined($map_start) and defined($map_stop) ) {
-        $where_sql .= qq[
-            and (
-                 ( f.feature_start>=$map_start and
-                   f.feature_start<=$map_stop )
-                 or (
-                   f.feature_stop is not null and
-                   f.feature_start<=$map_start and
-                   f.feature_stop>=$map_start
-                 )
-                )
-        ];
-    }
-    elsif ( defined($map_start) ) {
-        $where_sql .=
-            " and (( f.feature_start>="
-          . $map_start
-          . " ) or ( f.feature_stop is not null and "
-          . " f.feature_stop>="
-          . $map_start . " ))";
-    }
-    elsif ( defined($map_stop) ) {
-        $where_sql .= " and f.feature_start<=" . $map_stop . " ";
+    if (
+        my $start_stop_sql = $self->write_start_stop_sql(
+            map_start    => $map_start,
+            map_stop     => $map_stop,
+            start_column => 'f.feature_start',
+            stop_column  => 'f.feature_stop',
+        )
+      )
+    {
+        $where_sql .= " and $start_stop_sql ";
     }
 
     # Create the query that doesn't get any of the correspondence
@@ -3829,11 +3816,9 @@ Array of Hashes:
       )
     {
         $with_corr_sql = $select_sql . $from_sql . q[,
-                  cmap_feature f2,
                   cmap_correspondence_lookup cl
                   ] . $where_sql . q[
                   and cl.feature_id1=f.feature_id
-                  and cl.feature_id2=f2.feature_id
                   and cl.map_id1!=cl.map_id2
                 ];
         if (   @$included_feature_type_accs
@@ -3843,25 +3828,22 @@ Array of Hashes:
               " and f.feature_type_acc in ('"
               . join( "','", sort @$corr_only_feature_type_accs ) . "') ";
         }
-        $with_corr_sql .= " and f2.map_id in ("
-          . join(
-            ",",
-            (
-                $slot_info->{ $this_slot_no + 1 } ? sort
-                  keys( %{ $slot_info->{ $this_slot_no + 1 } } )
-                : ()
-            ),
-            (
-                $slot_info->{ $this_slot_no - 1 } ?
-                  keys( %{ $slot_info->{ $this_slot_no - 1 } } )
-                : ()
-            ),
-            (
-                $show_intraslot_corr ? keys( %{ $slot_info->{$this_slot_no} } )
-                : ()
-            ),
-          )
-          . ")";
+        $with_corr_sql .= $self->write_start_stop_sql_from_slot_info(
+            slot_info_obj => {
+                $slot_info->{ $this_slot_no + 1 }
+                ? %{ $slot_info->{ $this_slot_no + 1 } }
+                : (),
+                $slot_info->{ $this_slot_no - 1 }
+                ? %{ $slot_info->{ $this_slot_no - 1 } }
+                : (),
+                ( $show_intraslot_corr && $slot_info->{$this_slot_no} )
+                ? %{ $slot_info->{$this_slot_no} }
+                : (),
+            },
+            map_id_column => 'cl.map_id2',
+            start_column  => 'cl.feature_start2',
+            stop_column   => 'cl.feature_stop2',
+        );
     }
 
     #
@@ -3894,14 +3876,14 @@ Array of Hashes:
     # Add order to help sorting later
     $sql_str .= " order by feature_start, feature_stop";
 
-
     unless ( $return_object = $self->get_cached_results( 4, $sql_str ) ) {
 
         $return_object = $db->selectall_arrayref( $sql_str, { Columns => {} } );
         return {} unless $return_object;
 
         foreach my $row ( @{$return_object} ) {
-            $row->{$_} = $feature_type_data->{ $row->{'feature_type_acc'} }{$_} for qw[
+            $row->{$_} = $feature_type_data->{ $row->{'feature_type_acc'} }{$_}
+              for qw[
               feature_type default_rank shape color
               drawing_lane drawing_priority
             ];
@@ -4590,7 +4572,7 @@ Not using cache because this query is quicker.
 
     my ( $self, %args ) = @_;
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
-    my $feature_id               = $args{'feature_id'};
+    my $feature_id = $args{'feature_id'};
     my $feature_alias_id         = $args{'feature_alias_id'};
     my $feature_ids              = $args{'feature_ids'} || [];
     my $feature_acc              = $args{'feature_acc'};
@@ -4677,9 +4659,10 @@ Not using cache because this query is quicker.
     }
     elsif (@$map_set_ids) {
         $from_sql  .= ", cmap_map map ";
-        $where_sql .= " and map.map_id = f.map_id "
-            . " and map.map_set_id in ("
-            . join( ",", sort @$map_set_ids ) . ") ";
+        $where_sql .=
+            " and map.map_id = f.map_id "
+          . " and map.map_set_id in ("
+          . join( ",", sort @$map_set_ids ) . ") ";
     }
     if (@$ignore_feature_type_accs) {
         $where_sql .=
@@ -4772,7 +4755,8 @@ feature_alias_id
         $feature_alias_id = $self->next_number(
             cmap_object => $cmap_object,
             object_type => 'feature_alias',
-        ) or return $self->error('No next number for feature_alias ');
+          )
+          or return $self->error('No next number for feature_alias ');
 
         $db->do(
             qq[
@@ -5456,7 +5440,7 @@ Array of Hashes:
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
 
     my $map_id                      = $args{'map_id'};
-    my $ref_map_info                = $args{'ref_map_info'};
+    my $ref_map_info                = $args{'ref_map_info'} || {};
     my $map_start                   = $args{'map_start'};
     my $map_stop                    = $args{'map_stop'};
     my $included_evidence_type_accs = $args{'included_evidence_type_accs'}
@@ -5466,6 +5450,7 @@ Array of Hashes:
     my $evidence_type_score        = $args{'evidence_type_score'}        || {};
     my $feature_type_accs          = $args{'feature_type_accs'}          || [];
     my $intraslot                  = $args{'intraslot'};
+    my @identifiers                = ();
 
     unless ( $map_id or $intraslot ) {
         return $self->error(
@@ -5495,43 +5480,36 @@ Array of Hashes:
         $sql_str .= q[
             and      f2.map_id=?
         ];
+        push @identifiers, $map_id;
     }
 
-    if ( defined $map_start && defined $map_stop ) {
-        $sql_str .= qq[
-        and      (
-        ( cl.feature_start2>=$map_start and 
-            cl.feature_start2<=$map_stop )
-          or   (
-            cl.feature_stop2 is not null and
-            cl.feature_start2<=$map_start and
-            cl.feature_stop2>=$map_start
-            )
-         )
-         ];
-    }
-    elsif ( defined($map_start) ) {
-        $sql_str .=
-            " and (( cl.feature_start2>="
-          . $map_start
-          . " ) or ( cl.feature_stop2 is not null and "
-          . " cl.feature_stop2>="
-          . $map_start . " ))";
-    }
-    elsif ( defined($map_stop) ) {
-        $sql_str .= " and cl.feature_start2<=" . $map_stop . " ";
-    }
-
-    if (    $ref_map_info
-        and %$ref_map_info )
+    if (
+        my $start_stop_sql = $self->write_start_stop_sql(
+            map_start    => $map_start,
+            map_stop     => $map_stop,
+            start_column => 'cl.feature_start2',
+            stop_column  => 'cl.feature_stop2',
+        )
+      )
     {
-        $sql_str .=
-          " and cl.map_id1 in (" . join( ",", sort keys(%$ref_map_info) ) . ")";
+        $sql_str .= " and $start_stop_sql ";
+    }
+
+    if (%$ref_map_info) {
+        $sql_str .= $self->write_start_stop_sql_from_slot_info(
+            slot_info_obj => $ref_map_info,
+            map_id_column => 'cl.map_id1',
+            start_column  => 'cl.feature_start1',
+            stop_column   => 'cl.feature_stop1',
+        );
 
         if ($intraslot) {
-            $sql_str .=
-              " and cl.map_id2 in ("
-              . join( ",", sort keys(%$ref_map_info) ) . ")";
+            $sql_str .= $self->write_start_stop_sql_from_slot_info(
+                slot_info_obj => $ref_map_info,
+                map_id_column => 'cl.map_id2',
+                start_column  => 'cl.feature_start2',
+                stop_column   => 'cl.feature_stop2',
+            );
 
             # We don't want intramap corrs
             $sql_str .= ' and cl.map_id1 < cl.map_id2 ';
@@ -5574,16 +5552,18 @@ Array of Hashes:
     }
 
     unless ( $return_object =
-        $self->get_cached_results( 4, $sql_str . $map_id ) )
+        $self->get_cached_results( 4, $sql_str . join( ',', @identifiers ) ) )
     {
 
         if ($intraslot) {
             $return_object =
-              $db->selectall_arrayref( $sql_str, { Columns => {} }, () );
+              $db->selectall_arrayref( $sql_str, { Columns => {} },
+                @identifiers );
         }
         else {
             $return_object =
-              $db->selectall_arrayref( $sql_str, { Columns => {} }, ($map_id) );
+              $db->selectall_arrayref( $sql_str, { Columns => {} },
+                @identifiers );
         }
 
         foreach my $row ( @{$return_object} ) {
@@ -7232,9 +7212,9 @@ Not using cache because this query is quicker.
 =cut
 
     my ( $self, %args ) = @_;
-    my $cmap_object     = $args{'cmap_object'} or die "No CMap Object included";
-    my $object_type     = $args{'object_type'} or return 
-                          $self->error('No object type');
+    my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
+    my $object_type = $args{'object_type'}
+      or return $self->error('No object type');
     my $attribute_id    = $args{'attribute_id'};
     my $is_public       = $args{'is_public'};
     my $attribute_name  = $args{'attribute_name'};
@@ -9018,6 +8998,152 @@ This is probably going to be useful for any adaptor
 =cut
 
     return ( abs($a) cmp abs($b) );
+}
+
+#-----------------------------------------------
+sub write_start_stop_sql_from_slot_info {    #ZZZ
+
+=pod
+
+=head2 write_start_stop_sql_from_slot_info()
+
+=over 4
+
+=item * Description
+
+This is a helper function to write start and stop queries given the slot_info
+object.
+
+=item * Adaptor Writing Info
+
+=item * Input
+
+=over 4
+
+=item -
+
+=back
+
+=item * Output
+
+String that has the sql in it.
+
+=item * Cache Level (If Used): 
+
+Not using cache because this query is quicker.
+
+=back
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $slot_info_obj = $args{'slot_info_obj'} or return '';
+    my $map_id_column = $args{'map_id_column'}
+      or return $self->error(
+        'No map_id column supplied for write_start_stop_sql()');
+    my $start_column = $args{'start_column'}
+      or return $self->error(
+        'No start column supplied for write_start_stop_sql()');
+    my $stop_column = $args{'stop_column'}
+      or
+      return $self->error('No stop column supplied for write_start_stop_sql()');
+    my $sql_str = "";
+
+    my @map_id_strs;
+    my $tmp_map_id_str;
+    for my $map_id ( sort keys(%$slot_info_obj) ) {
+        $tmp_map_id_str = " $map_id_column = $map_id ";
+        if (
+            my $start_stop_sql = $self->write_start_stop_sql(
+                map_start    => $slot_info_obj->{$map_id}[0],
+                map_stop     => $slot_info_obj->{$map_id}[1],
+                start_column => $start_column,
+                stop_column  => $stop_column,
+            )
+          )
+        {
+            $tmp_map_id_str .= " and $start_stop_sql ";
+        }
+        push @map_id_strs, " ( $tmp_map_id_str ) ";
+    }
+    if (@map_id_strs) {
+        $sql_str .= " and ( " . join( ' or ', @map_id_strs ) . " ) ";
+    }
+    return $sql_str;
+}
+
+#-----------------------------------------------
+sub write_start_stop_sql {    #ZZZ
+
+=pod
+
+=head2 write_start_stop_sql()
+
+=over 4
+
+=item * Description
+
+This is a helper function to write the sql that makes sure the map start and
+stop of a corr are inside the displayed map area.
+
+=item * Adaptor Writing Info
+
+=item * Input
+
+=over 4
+
+=item -
+
+=back
+
+=item * Output
+
+String that has the sql in it.
+
+=item * Cache Level (If Used): 
+
+Not using cache because this query is quicker.
+
+=back
+
+=cut
+
+    my ( $self, %args ) = @_;
+    my $map_start    = $args{'map_start'};
+    my $map_stop     = $args{'map_stop'};
+    my $start_column = $args{'start_column'}
+      or return $self->error(
+        'No start column supplied for write_start_stop_sql()');
+    my $stop_column = $args{'stop_column'}
+      or
+      return $self->error('No stop column supplied for write_start_stop_sql()');
+    my $sql_str = "";
+
+    if ( defined $map_start && defined $map_stop ) {
+        $sql_str .= qq[
+        (
+        ( $start_column>=$map_start and 
+            $start_column<=$map_stop )
+          or   (
+            $stop_column is not null and
+            $start_column<=$map_start and
+            $stop_column>=$map_start
+            )
+         )
+         ];
+    }
+    elsif ( defined($map_start) ) {
+        $sql_str .=
+            " (( $start_column>="
+          . $map_start
+          . " ) or ( $stop_column is not null and "
+          . " $stop_column>="
+          . $map_start . " ))";
+    }
+    elsif ( defined($map_stop) ) {
+        $sql_str .= " $start_column<=" . $map_stop . " ";
+    }
+    return $sql_str;
 }
 
 =pod
