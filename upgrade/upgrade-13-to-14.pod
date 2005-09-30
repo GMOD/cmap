@@ -1,0 +1,99 @@
+# vim: tw=70:
+
+=pod
+
+=head1 NAME
+
+upgrade-13-to-14.pod
+
+=head1 SYNOPSIS
+
+Where we discuss updating your CMap's version 0.13 to 0.14.
+
+=head1 INTRODUCTION
+
+Congratulations on your decision to upgrade from CMap version 0.13 to
+0.14.  This guide will take you through how to modify your database
+(and the data inside).  
+
+Version 0.14 is simply a bug fix release with some minor features
+added.
+
+Please make sure you back up both your database and you config files.
+While this process has been tested, it is best not to take any
+chances.
+
+=head1 INSTALLING VERSION 0.14
+
+Then run the build commands as you normally would 
+
+ $ perl Build.PL
+ $ ./Build
+ $ su
+ # ./Build install
+
+Make sure the new template files have been added by doing a 
+
+ # cp -f templates/*.tmpl /usr/local/apache/templates/cmap/
+
+=head1 DATABASE UPDATE
+
+The database update isn't required and is only useful if you plan on
+using the score for the correspondence evidences.
+
+This is basically a fix for MySQL's truncating the score value.  When
+inserting e-scores, such as '1e-27', into the score column, it was
+being returned as '0'.  
+
+If you use another RDBMS the problem may not exist.  Please test for
+this and then convert the sql provided to suit your RDBMS.
+
+To make the change to your database, please do the following:
+
+=over 4
+
+=item * 
+
+Either back up your database or create a new database to work on,
+e.g., for MySQL:
+
+  $ mysqldump cmap13 > cmap13.sql
+  $ mysqladmin create cmap14
+  $ mysql cmap14 < cmap14.sql
+
+And then work on the "cmap14" database.
+
+=item * 
+
+Execute "cmap_13_to_cmap_14.sql" on your database.  This modifies your
+data in place, which is why it is essential that you back up your data
+in case anything happens during the upgrade process.  
+
+With MySQL the command looks something like this:
+
+  $ mysql -uroot -p cmap14 < cmap_13_to_cmap_14.sql
+
+Now your database should have some new column definition for the score
+field in cmap_correspondence_evidence.
+
+=back
+
+=head1 CONFIGURATION FILE UPDATE
+
+The config files did not change between version 0.13 and 0.14
+
+=head1 CONCLUSION
+
+That should do it for the databases and the configuration.  If you
+have any troubles email the CMap developer's list:
+
+  gmod-cmap@lists.sourceforge.net
+
+Please see the CMap home page (http://www.gmod.org/cmap/index.shtml)
+for other information and patches.
+
+=head1 AUTHOR
+
+Ben Faga E<lt>faga@cshl.eduE<gt>.
+
+=cut
