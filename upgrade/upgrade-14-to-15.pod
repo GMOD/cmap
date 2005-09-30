@@ -1,0 +1,142 @@
+# vim: tw=70:
+
+=pod
+
+=head1 NAME
+
+upgrade-14-to-15.pod
+
+=head1 SYNOPSIS
+
+Where we discuss updating your database and config files from CMap's
+version 0.14 to 0.15.
+
+=head1 INTRODUCTION
+
+Congratulations on your decision to upgrade from CMap version 0.14 to
+0.15.  This guide will take you through how to modify your database
+(and the data inside) as well as converting you configuration files.
+
+Please make sure you back up both your database and you config files.
+While this process has been tested, it is best not to take any
+chances.
+
+=head1 INSTALLING VERSION 0.15
+
+Then run the build commands as you normally would 
+
+ $ perl Build.PL
+ $ ./Build
+ $ su
+ # ./Build install
+
+Make sure the new template files have been added by doing a 
+
+ # cp -f templates/*.tmpl /usr/local/apache/templates/cmap/
+
+=head1 DATABASE UPDATE
+
+To make the necessary changes to your database, please do the
+following:
+
+=over 4
+
+=item * 
+
+Either back up your database or create a new database to work on,
+e.g., for MySQL:
+
+  $ mysqldump cmap14 > cmap15.sql
+  $ mysqladmin create cmap15
+  $ mysql cmap15 < cmap15.sql
+
+And then work on the "cmap15" database.
+
+=item * 
+
+Execute "cmap_14_to_cmap_15.sql" on your database.  This modifies your
+data in place, which is why it is essential that you back up your data
+in case anything happens during the upgrade process.  
+
+With MySQL the command looks something like this:
+
+  $ mysql -uroot -p CMAP < cmap_14_to_cmap_15.sql
+
+Now your database should have some new columns that are filled with
+data.
+
+=back
+
+=head1 CONFIGURATION FILE UPDATE
+
+To use your old config files with CMap version 0.15, you will need to
+make some changes.
+ 
+There is now a config file validator for the individual datasource
+config files, validate_import_file.pl.  It is located in the bin
+directory.  Simply run it on your config files and it will tell you if
+it is valid and what is wrong if it is invalid, as well as list
+possible options that you could be using.
+
+To change to modify your current v0.14 config, please do the following:
+
+=over 4
+
+=item *
+
+Go into your configuration directory:
+
+  $ cd /usr/local/apache/conf/cmap.conf/
+
+=item *
+
+Back up your old config files (although you should have done this
+before you got to this point).
+
+  $ cp data_source1.conf data_source1.v0.14
+
+=item *
+
+Run upgrade_config_14_to_15.pl on the old config file.
+
+  $ /usr/local/src/cmap/upgrade/upgrade_config_14_to_15.pl data_source1.conf
+
+This will create a new file with a '.15' suffix.  Move that file over
+the original (which you backed up, right?).
+
+  $ mv data_source1.conf.15 data_source1.conf
+
+=item *
+
+Run the config file validator on the new config file and fix any
+problems that it tells you about.
+
+  $ /usr/local/src/cmap/bin/validate_import_file.pl data_source1.conf
+
+Be sure to check the output of this to see if there are any options
+that you want to be using but aren't.  There are several new options.
+Explanations of the options are in docs/Administration.pod.
+
+=item *
+
+Check the example global config file, conf/global.conf, for new
+options that you may want to use.  There are at least 5 new options
+for this file.
+
+=back
+
+=head1 CONCLUSION
+
+That should do it for the databases and the configuration.  If you
+have any troubles email the CMap developer's list:
+
+  gmod-cmap@lists.sourceforge.net
+
+Please see the CMap home page (http://www.gmod.org/cmap/index.shtml)
+for other information and patches.
+
+=head1 AUTHOR
+
+Ben Faga E<lt>faga@cshl.eduE<gt>.
+
+=cut
