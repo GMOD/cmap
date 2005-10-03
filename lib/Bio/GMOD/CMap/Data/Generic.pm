@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.110 2005-10-03 14:34:01 mwz444 Exp $
+# $Id: Generic.pm,v 1.111 2005-10-03 20:58:21 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.110 $)[-1];
+$VERSION = (qw$Revision: 1.111 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -3754,7 +3754,8 @@ Array of Hashes:
     my $sql_str;
 
     my $select_sql = qq[
-        select   f.feature_id,
+        select   distinct  
+                 f.feature_id,
                  f.feature_acc,
                  f.map_id,
                  f.feature_name,
