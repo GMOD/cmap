@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.109 2005-09-28 16:25:30 mwz444 Exp $
+# $Id: Generic.pm,v 1.110 2005-10-03 14:34:01 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.109 $)[-1];
+$VERSION = (qw$Revision: 1.110 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -3862,7 +3862,7 @@ Array of Hashes:
         }
         else {
             ###Return nothing because there are no maps to correspond with
-            return {};
+            return [];
         }
     }
     elsif (@$included_feature_type_accs) {
@@ -3870,7 +3870,7 @@ Array of Hashes:
     }
     else {
         ###Return nothing because all features are ignored
-        return {};
+        return [];
     }
 
     # Add order to help sorting later
