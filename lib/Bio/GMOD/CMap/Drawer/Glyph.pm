@@ -24,19 +24,40 @@ use Bio::GMOD::CMap::Constants;
 use Regexp::Common;
 require Class::Base;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.10 $)[-1];
+$VERSION = (qw$Revision: 1.11 $)[-1];
 
 use base 'Class::Base';
+
+use constant GLYPHS_THAT_CAN_OVERLAP => {
+    read_depth => 1,
+    banding    => 1,
+};
+
+# -----------------------------------
+sub allow_glyph_overlap {
+
+=pod
+
+=head2 allow_glyph_overlap
+
+Boolean that returns whether or not this glyph is allowed to overlap.
+
+=cut
+
+    my ($self, $glyph_name) = @_;
+
+    return GLYPHS_THAT_CAN_OVERLAP->{$glyph_name};
+}
 
 # ------------------------------------
 sub line {
 
 =pod
-                                                                                
+
 =head2
-                                                                                
-                                                                                
-                                                                                
+
+
+
 =cut
 
     my ( $self, %args ) = @_;
@@ -61,11 +82,11 @@ sub line {
 sub span {
 
 =pod
-                                                                                
+
 =head2
-                                                                                
-                                                                                
-                                                                                
+
+
+
 =cut
 
     my ( $self, %args ) = @_;
@@ -130,10 +151,10 @@ sub direction_arrow {
 sub up_arrow {
 
 =pod
-                                                                                
+
 =head2
-                                                                                
-                                                                                
+
+
 =cut
 
     my ( $self, %args ) = @_;
@@ -163,11 +184,11 @@ sub up_arrow {
 sub down_arrow {
 
 =pod
-                                                                                
+
 =head2
-                                                                                
-                                                                                
-                                                                                
+
+
+
 =cut
 
     my ( $self, %args ) = @_;
@@ -197,11 +218,11 @@ sub down_arrow {
 sub right_facing_arrow {
 
 =pod
-                                                                                
+
 =head2
-                                                                                
-                                                                                
-                                                                                
+
+
+
 =cut
 
     my ( $self, %args ) = @_;
@@ -242,11 +263,11 @@ sub right_facing_arrow {
 sub double_arrow {
 
 =pod
-                                                                                
+
 =head2
-                                                                                
-                                                                                
-                                                                                
+
+
+
 =cut
 
     my ( $self, %args ) = @_;
@@ -281,11 +302,11 @@ sub double_arrow {
 sub dumbbell {
 
 =pod
-                                                                                
+
 =head2
-                                                                                
-                                                                                
-                                                                                
+
+
+
 =cut
 
     my ( $self, %args ) = @_;
@@ -324,11 +345,11 @@ sub dumbbell {
 sub box {
 
 =pod
-                                                                                
+
 =head2
-                                                                                
-                                                                                
-                                                                                
+
+
+
 =cut
 
     my ( $self, %args ) = @_;
@@ -352,11 +373,11 @@ sub box {
 sub filled_box {
 
 =pod
-                                                                                
+
 =head2
-                                                                                
-                                                                                
-                                                                                
+
+
+
 =cut
 
     my ( $self, %args ) = @_;
@@ -394,11 +415,11 @@ sub filled_box {
 sub banding {
 
 =pod
-                                                                                
+
 =head2
-                                                                                
-                                                                                
-                                                                                
+
+
+
 =cut
 
     my ( $self, %args ) = @_;
@@ -407,7 +428,7 @@ sub banding {
     my $x_pos1       = $args{'x_pos1'};
     my $y_pos1       = $args{'y_pos1'};
     my $y_pos2       = $args{'y_pos2'};
-    my $color1       = $args{'color'};
+    my $color1       = $args{'color'} || 'red';
 	my $name         = $args{'name'};
 	my $calling_obj  = $args{'calling_obj'};
     my $label_side   = $args{'label_side'} || RIGHT;
@@ -465,11 +486,11 @@ sub out_triangle {
 sub right_facing_triangle {
 
 =pod
-                                                                                
+
 =head2
-                                                                                
-                                                                                
-                                                                                
+
+
+
 =cut
 
     my ( $self, %args ) = @_;
@@ -519,8 +540,8 @@ sub left_facing_triangle {
 
 =pod
                                                                                 =head2 
-                                                                                
-                                                                                
+
+
 =cut
 
     my ( $self, %args ) = @_;
@@ -573,11 +594,11 @@ sub left_facing_triangle {
 sub read_depth {
 
 =pod
-                                                                                
+
 =head2
-                                                                                
-                                                                                
-                                                                                
+
+
+
 =cut
 
     my ( $self, %args ) = @_;

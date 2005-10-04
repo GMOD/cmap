@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.177 2005-09-20 05:51:14 mwz444 Exp $
+# $Id: Map.pm,v 1.178 2005-10-04 05:32:31 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.177 $)[-1];
+$VERSION = (qw$Revision: 1.178 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -2969,38 +2969,32 @@ sub add_feature_to_map {
 
             my $buffer = 2;
             my $column_index;
-            if (
-                not $self->feature_type_data(
-                    $feature->{'feature_type_acc'},
-                    'glyph_overlap'
-                )
-              )
-            {
-                $column_index = simple_column_distribution(
-                    low  => $y_pos1 - $map_base_y,
-                    high => $y_pos2 - $map_base_y,
-                    ,
-                    columns    => $fcolumns,
-                    map_height => $pixel_height,
-                    buffer     => $buffer,
-                );
-            }
-            else {
-                $column_index = 0;
-            }
-
-            $feature->{'column'} = $column_index;
-            my $offset       = ( $column_index + 1 ) * 7;
-            my $vert_line_x1 = $label_side eq RIGHT ? $tick_start : $tick_stop;
-            my $vert_line_x2 =
-                $label_side eq RIGHT
-              ? $tick_stop + $offset
-              : $tick_start - $offset;
-
             my $glyph         = Bio::GMOD::CMap::Drawer::Glyph->new();
             my $feature_glyph = $feature_shape;
             $feature_glyph =~ s/-/_/g;
             if ( $glyph->can($feature_glyph) ) {
+                if ( not $glyph->allow_glyph_overlap($feature_glyph) ) {
+                    $column_index = simple_column_distribution(
+                        low  => $y_pos1 - $map_base_y,
+                        high => $y_pos2 - $map_base_y,
+                        ,
+                        columns    => $fcolumns,
+                        map_height => $pixel_height,
+                        buffer     => $buffer,
+                    );
+                }
+                else {
+                    $column_index = 0;
+                }
+
+                $feature->{'column'} = $column_index;
+                my $offset       = ( $column_index + 1 ) * 7;
+                my $vert_line_x1 = $label_side eq RIGHT ? $tick_start : $tick_stop;
+                my $vert_line_x2 =
+                    $label_side eq RIGHT
+                  ? $tick_stop + $offset
+                  : $tick_start - $offset;
+
                 ###DEBUGING
                 #push @temp_drawing_data,
                 #[ LINE, $vert_line_x1, $y_pos1,
@@ -3021,26 +3015,26 @@ sub add_feature_to_map {
                         calling_obj  => $self,
                     )
                   };
+                unless ($omit_area_boxes) {
+                    my $code = '';
+                    my $url  = $feature_details_url . $feature->{'feature_acc'};
+                    my $alt  =
+                        'Feature Details: '
+                      . $feature->{'feature_name'} . ' ['
+                      . $feature->{'feature_acc'} . ']';
+                    eval $self->feature_type_data( $feature->{'feature_type_acc'},
+                        'area_code' );
+                    push @$map_area_data,
+                      {
+                        coords => \@coords,
+                        url    => $url,
+                        alt    => $alt,
+                        code   => $code,
+                      };
+                }
             }
             else {
                 return $self->error("Can't draw shape '$feature_glyph'");
-            }
-            unless ($omit_area_boxes) {
-                my $code = '';
-                my $url  = $feature_details_url . $feature->{'feature_acc'};
-                my $alt  =
-                    'Feature Details: '
-                  . $feature->{'feature_name'} . ' ['
-                  . $feature->{'feature_acc'} . ']';
-                eval $self->feature_type_data( $feature->{'feature_type_acc'},
-                    'area_code' );
-                push @$map_area_data,
-                  {
-                    coords => \@coords,
-                    url    => $url,
-                    alt    => $alt,
-                    code   => $code,
-                  };
             }
 
         }
