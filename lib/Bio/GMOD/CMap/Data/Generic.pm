@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.112 2005-10-04 13:52:05 mwz444 Exp $
+# $Id: Generic.pm,v 1.113 2005-10-04 13:57:54 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.112 $)[-1];
+$VERSION = (qw$Revision: 1.113 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -7283,8 +7283,6 @@ Not using cache because this query is quicker.
 
     $sql_str .= $where_sql . $order_by_sql;
 
-print STDERR "$sql_str\n";
-print STDERR Dumper(\@identifiers)."\n";
     $return_object =
       $db->selectall_arrayref( $sql_str, { Columns => {} }, @identifiers );
 
