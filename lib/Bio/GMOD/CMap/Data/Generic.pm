@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.111 2005-10-03 20:58:21 mwz444 Exp $
+# $Id: Generic.pm,v 1.112 2005-10-04 13:52:05 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.111 $)[-1];
+$VERSION = (qw$Revision: 1.112 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -7214,8 +7214,7 @@ Not using cache because this query is quicker.
 
     my ( $self, %args ) = @_;
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
-    my $object_type = $args{'object_type'}
-      or return $self->error('No object type');
+    my $object_type = $args{'object_type'};
     my $attribute_id    = $args{'attribute_id'};
     my $is_public       = $args{'is_public'};
     my $attribute_name  = $args{'attribute_name'};
@@ -7226,6 +7225,9 @@ Not using cache because this query is quicker.
     my $db              = $cmap_object->db;
     my $return_object;
     my @identifiers = ();
+    unless ($object_type || $attribute_id) {
+        return $self->error('No object type or attribute_id');
+    }
 
     my $table_name = $self->{'TABLE_NAMES'}->{$object_type};
     if ( !$order_by || $order_by eq 'display_order' ) {
@@ -7281,6 +7283,8 @@ Not using cache because this query is quicker.
 
     $sql_str .= $where_sql . $order_by_sql;
 
+print STDERR "$sql_str\n";
+print STDERR Dumper(\@identifiers)."\n";
     $return_object =
       $db->selectall_arrayref( $sql_str, { Columns => {} }, @identifiers );
 
