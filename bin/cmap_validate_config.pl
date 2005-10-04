@@ -222,7 +222,11 @@ my %config_defs = (
             attribute     => \%attribute_def,
             xref          => \%xref_def,
             shape         => { %generic_scalar_def, no_validation_hash => 1, },
-            glyph_overlap => { %generic_scalar_def, },
+            glyph_overlap => {
+                deprecated => 1,
+                warning    => 'Warning: glyph_overlap is no longer used.',
+                validation_method => \&deprecated_value,
+                },
             default_rank  => { %generic_scalar_def, option_type => 'integer', },
             drawing_lane  => { %generic_scalar_def, option_type => 'integer', },
             drawing_priority =>

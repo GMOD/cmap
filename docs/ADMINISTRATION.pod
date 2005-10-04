@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.18 $
+$Revision: 1.19 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -523,23 +523,19 @@ filled-in rectangle (trimmed in black).
 =item - banding: 
 
 A spanning feature where consecutive banding features alternate in 
-color between black and the chosen color.  For best use set the
-glyph_overlap to 1.
+color between black and the chosen color.
 
 =item - read-depth: 
 
 A spanning feature where the name of the feature dictates how far 
 from the base position a line is drawn.  The name MUST be a number.
-This will create a line graph type of glyph.  Set the glyph_overlap 
-to 1.
+This will create a line graph type of glyph.  
 
 =back
 
 =item * glyph_overlap; 
 
-When set to 1 it forces all glyphs of this feature_type into the same
-drawing lane, allowing for overlaps.  This is important for the 
-banding and read-depth glyphs. 
+This option was completely unnecessary and has been removed from use.
 
 =item * Drawing Lane: 
 

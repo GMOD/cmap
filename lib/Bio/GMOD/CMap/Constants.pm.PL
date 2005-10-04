@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.32 2005-09-15 20:29:46 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.33 2005-10-04 05:37:56 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.32 $)[-1];
+$VERSION = (qw$Revision: 1.33 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -631,7 +631,6 @@ use constant VALID => {
     disable_cache                => VALID_BOOLEAN,
     collapse_features            => VALID_BOOLEAN,
     scale_maps                   => VALID_BOOLEAN,
-    glyph_overlap                => VALID_BOOLEAN,
     is_relational_map            => VALID_BOOLEAN,
     corrs_to_map                 => VALID_BOOLEAN,
     background_color             => COLORS,
