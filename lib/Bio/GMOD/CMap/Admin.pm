@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.85 2005-09-15 22:08:34 kycl4rk Exp $
+# $Id: Admin.pm,v 1.86 2005-10-04 13:53:26 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.85 $)[-1];
+$VERSION = (qw$Revision: 1.86 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -1602,6 +1602,7 @@ The name of the object being reference.
     }
 
     for my $attr (@attributes) {
+        my $attr_id       = $attr->{'attribute_id'};
         my $attr_name     = $attr->{'name'}  || $attr->{'attribute_name'};
         my $attr_value    = $attr->{'value'} || $attr->{'attribute_value'};
         my $is_public     = $attr->{'is_public'};
@@ -1613,23 +1614,10 @@ The name of the object being reference.
           && defined $attr_value
           && $attr_value ne '';
 
-        my $attributes_array = $sql_object->get_attributes(
-            cmap_object     => $self,
-            object_id       => $object_id,
-            object_type     => $object_type,
-            attribute_name  => $attr_name,
-            attribute_value => $attr_value,
-        );
-
-        my $attribute_id;
-        if ( @$attributes_array == 1 ) {
-            $attribute_id = $attributes_array->[0]{'attribute_id'};
-        }
-
-        if ($attribute_id) {
+        if ($attr_id) {
             $sql_object->update_attribute(
                 cmap_object     => $self,
-                attribute_id    => $attribute_id,
+                attribute_id    => $attr_id,
                 object_id       => $object_id,
                 object_type     => $object_type,
                 attribute_name  => $attr_name,
@@ -1640,7 +1628,7 @@ The name of the object being reference.
         }
         else {
             $is_public = 1 unless defined $is_public;
-            $attribute_id = $sql_object->insert_attribute(
+            $attr_id = $sql_object->insert_attribute(
                 cmap_object     => $self,
                 object_id       => $object_id,
                 object_type     => $object_type,
@@ -1721,6 +1709,7 @@ The name of the object being reference.
     }
 
     for my $xref (@xrefs) {
+        my $xref_id   = $xref->{'xref_id'};
         my $xref_name = $xref->{'name'}    || $xref->{'xref_name'};
         my $xref_url  = $xref->{'url'}     || $xref->{'xref_url'};
         my $is_public =
@@ -1733,19 +1722,6 @@ The name of the object being reference.
           && $xref_name ne ''
           && defined $xref_url
           && $xref_url ne '';
-
-        my $xrefs_array = $sql_object->get_xrefs(
-            cmap_object => $self,
-            object_id   => $object_id,
-            object_type => $object_type,
-            xref_name   => $xref_name,
-            xref_url    => $xref_url,
-        );
-
-        my $xref_id;
-        if ( @$xrefs_array == 1 ) {
-            $xref_id = $xrefs_array->[0]{'xref_id'} 
-        }
 
         if ($xref_id) {
             $sql_object->update_xref(
