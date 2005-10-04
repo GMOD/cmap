@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.253 2005-10-04 05:00:19 mwz444 Exp $
+# $Id: Data.pm,v 1.254 2005-10-04 06:17:00 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.253 $)[-1];
+$VERSION = (qw$Revision: 1.254 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -3799,7 +3799,7 @@ sub feature_default_display {
 
 =head2 feature_default_display
 
-Given the slot_no and map_id
+
 
 =cut
 
@@ -3807,17 +3807,20 @@ Given the slot_no and map_id
     my $url_feature_default_display = shift;
     my $feature_type_acc            = shift;
 
-    if (
-        $feature_type_acc
-        and my $return_val = $self->feature_type_data(
-            $feature_type_acc, 'feature_default_display'
+    # Try to get the default for a specific feature type first.
+    if ($feature_type_acc
+        and (
+            my $return_val = $self->feature_type_data(
+                $feature_type_acc, 'feature_default_display'
+            )
         )
         and not defined($url_feature_default_display)
-      )
+        )
     {
         return $return_val;
     }
 
+    # If needed use url value
     unless ( $self->{'feature_default_display'} ) {
         if ( defined($url_feature_default_display) ) {
             if ( $url_feature_default_display == 0 ) {
@@ -3830,10 +3833,12 @@ Given the slot_no and map_id
                 $self->{'feature_default_display'} = 'display';
             }
         }
+    }
 
-        my $feature_default_display =
-          $self->config_data('feature_default_display');
-        $feature_default_display = lc($feature_default_display);
+    # If needed use default value
+    unless ( $self->{'feature_default_display'} ) {
+        my $feature_default_display
+            = lc( $self->config_data('feature_default_display') );
         unless ( $feature_default_display eq 'corr_only'
             or $feature_default_display eq 'ignore' )
         {
