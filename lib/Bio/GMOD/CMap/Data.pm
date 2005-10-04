@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.252 2005-09-28 16:30:55 mwz444 Exp $
+# $Id: Data.pm,v 1.253 2005-10-04 05:00:19 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.252 $)[-1];
+$VERSION = (qw$Revision: 1.253 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -1817,7 +1817,9 @@ Given a feature acc. id, find out all the details on it.
         feature_acc => $feature_acc,
     );
     my $feature = $feature_array->[0];
-    return undef unless ( defined($feature) and %$feature );
+    return $self->error(
+        "Feature acc: $feature_acc, is not a valid feature accession.")
+        unless ( defined($feature) and %$feature );
 
     $feature->{'object_id'}  = $feature->{'feature_id'};
     $feature->{'attributes'} = $self->sql->get_attributes(

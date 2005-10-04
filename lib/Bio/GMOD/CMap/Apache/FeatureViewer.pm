@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::FeatureViewer;
 
 # vim: set ft=perl:
 
-# $Id: FeatureViewer.pm,v 1.14 2005-08-18 16:02:33 mwz444 Exp $
+# $Id: FeatureViewer.pm,v 1.15 2005-10-04 05:00:20 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.14 $)[-1];
+$VERSION = (qw$Revision: 1.15 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Data;
@@ -24,7 +24,7 @@ sub handler {
     my $feature_acc = $apr->param('feature_acc') || $apr->param('feature_aid')
       or die 'No accession id';
 
-    $self->data_source( $apr->param('data_source') ) or return;
+    $self->data_source( $apr->param('data_source') ) or return $self->error();
     my $data = $self->data_module;
     my $feature = $data->feature_detail_data( feature_acc => $feature_acc )
       or return $self->error( $data->error );
