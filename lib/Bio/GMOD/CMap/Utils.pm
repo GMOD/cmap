@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.50 2005-09-15 20:27:00 mwz444 Exp $
+# $Id: Utils.pm,v 1.51 2005-10-07 15:41:19 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,24 +26,30 @@ use Algorithm::Numerical::Sample 'sample';
 use Bit::Vector;
 use Data::Dumper;
 use Bio::GMOD::CMap::Constants;
+use Regexp::Common;
+use CGI::Session;
+use Storable qw( freeze thaw );
 use POSIX;
+use Clone qw(clone);
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.50 $)[-1];
+$VERSION = (qw$Revision: 1.51 $)[-1];
 
 use base 'Exporter';
 
 my @subs = qw[
-  commify
-  presentable_number
-  presentable_number_per
-  extract_numbers
-  even_label_distribution
-  label_distribution
-  parse_words
-  simple_column_distribution
-  fake_selectall_arrayref
-  sort_selectall_arrayref
+    commify
+    presentable_number
+    presentable_number_per
+    extract_numbers
+    even_label_distribution
+    label_distribution
+    parse_words
+    simple_column_distribution
+    fake_selectall_arrayref
+    sort_selectall_arrayref
+    parse_url
+    create_session_step
 ];
 @EXPORT_OK = @subs;
 @EXPORT    = @subs;
@@ -125,7 +131,7 @@ Special thanks to Noel Yap for suggesting this strategy.
     my $start_y     = $args{'start_y'} || 0;
     my $font_height = $args{'font_height'} || 0;
     $font_height += $buffer;
-    my @accepted = @{ $labels->{'highlights'} || [] };    # take all highlights
+    my @accepted = @{ $labels->{'highlights'} || [] };   # take all highlights
     my $no_added = @accepted ? 1 : 0;
 
     for my $priority (qw/ correspondences normal /) {
@@ -143,7 +149,7 @@ Special thanks to Noel Yap for suggesting this strategy.
         if ( $no_present > $no_possible ) {
             my $skip_val = int( $no_present / $no_possible );
             if ( $skip_val > 1 ) {
-                for ( my $i = 0 ; $i < $no_present ; $i += $skip_val ) {
+                for ( my $i = 0; $i < $no_present; $i += $skip_val ) {
                     push @accepted, $labels->{$priority}[$i];
                 }
             }
@@ -178,9 +184,10 @@ Special thanks to Noel Yap for suggesting this strategy.
     #
     elsif ( $no_accepted > 1 && $no_accepted <= ( $no_possible * .5 ) ) {
         @accepted =
-          map { $_->[0] }
-          sort { $a->[1] <=> $b->[1] || $b->[2] <=> $a->[2] }
-          map { [ $_, $_->{'target'}, $_->{'feature'}{'column'} ] } @accepted;
+            map { $_->[0] }
+            sort { $a->[1] <=> $b->[1] || $b->[2] <=> $a->[2] }
+            map { [ $_, $_->{'target'}, $_->{'feature'}{'column'} ] }
+            @accepted;
 
         my $bin_size  = 2;
         my $half_font = $font_height / 2;
@@ -190,10 +197,10 @@ Special thanks to Noel Yap for suggesting this strategy.
         my $i = 1;
         for my $label (@accepted) {
             my $target  = $label->{'target'};
-            my $low_bin =
-              sprintf( "%d", ( $target - $start_y - $half_font ) / $bin_size );
-            my $high_bin =
-              sprintf( "%d", ( $target - $start_y + $half_font ) / $bin_size );
+            my $low_bin = sprintf( "%d",
+                ( $target - $start_y - $half_font ) / $bin_size );
+            my $high_bin = sprintf( "%d",
+                ( $target - $start_y + $half_font ) / $bin_size );
 
             if ( $low_bin < 0 ) {
                 my $diff = 0 - $low_bin;
@@ -207,8 +214,8 @@ Special thanks to Noel Yap for suggesting this strategy.
                 ( $lmin, $lmax ) = $bins->Interval_Scan_dec( $low_bin - 1 );
 
                 if ( $lmin > 1 && $lmax == $low_bin - 1 ) {
-                    ( $next_lmin, $next_lmax ) =
-                      $bins->Interval_Scan_dec( $lmin - 1 );
+                    ( $next_lmin, $next_lmax )
+                        = $bins->Interval_Scan_dec( $lmin - 1 );
                 }
             }
 
@@ -273,10 +280,10 @@ Special thanks to Noel Yap for suggesting this strategy.
             my $below_open = $gap_below >= $bins_occupied;
             my $above_open = $gap_above >= $bins_occupied;
             my $closer_gap =
-              $diff_to_gap_below == $diff_to_gap_above ? 'neither'
-              : defined $diff_to_gap_below
-              && ( $diff_to_gap_below < $diff_to_gap_above ) ? 'below'
-              : 'above';
+                $diff_to_gap_below == $diff_to_gap_above ? 'neither'
+                : defined $diff_to_gap_below
+                && ( $diff_to_gap_below < $diff_to_gap_above ) ? 'below'
+                : 'above';
 
             my $diff = 0;
             if ( !defined $hmin ) {
@@ -286,7 +293,7 @@ Special thanks to Noel Yap for suggesting this strategy.
                 $below_open
                 && ( $closer_gap =~ /^(neither|below)$/
                     || !$above_open )
-              )
+                )
             {
                 $low_bin  -= $diff_to_gap_below;
                 $high_bin -= $diff_to_gap_below;
@@ -325,9 +332,9 @@ Special thanks to Noel Yap for suggesting this strategy.
         while ( !$ok ) {
             $ok       = 1;
             @accepted =
-              map  { $_->[0] }
-              sort { $a->[1] <=> $b->[1] }
-              map  { [ $_, $_->{'y'} ] } @accepted;
+                map  { $_->[0] }
+                sort { $a->[1] <=> $b->[1] }
+                map  { [ $_, $_->{'y'} ] } @accepted;
 
             my $last_target = $accepted[0]->{'target'};
             $i = 0;
@@ -342,8 +349,8 @@ Special thanks to Noel Yap for suggesting this strategy.
                     while ($this->{'target'} > $next->{'target'}
                         && $this->{'y'} < $next->{'y'} )
                     {
-                        ( $this->{'y'}, $next->{'y'} ) =
-                          ( $next->{'y'}, $this->{'y'} );
+                        ( $this->{'y'}, $next->{'y'} )
+                            = ( $next->{'y'}, $this->{'y'} );
                         $next = $accepted[ ++$j ];
                     }
                 }
@@ -363,9 +370,10 @@ Special thanks to Noel Yap for suggesting this strategy.
         # Figure the gap to evenly space the labels in the space.
         #
         @accepted =
-          map { $_->[0] }
-          sort { $a->[1] <=> $b->[1] || $a->[2] <=> $b->[2] }
-          map { [ $_, $_->{'target'}, $_->{'feature'}{'column'} ] } @accepted;
+            map { $_->[0] }
+            sort { $a->[1] <=> $b->[1] || $a->[2] <=> $b->[2] }
+            map { [ $_, $_->{'target'}, $_->{'feature'}{'column'} ] }
+            @accepted;
 
         my $gap = $map_height / ( $no_accepted - 1 );
         my $i = 0;
@@ -407,12 +415,13 @@ label can be inserted.
         my $bottom = $target + $row_height;
         my $ok = 1;    # assume innocent until proven guilty
 
-      SEGMENT:
+    SEGMENT:
         for my $i ( 0 .. $#used ) {
             my $segment = $used[$i] or next;
             my ( $north, $south ) = @$segment;
-            next if $south + $buffer <= $top;     # segment is above our target.
-            next if $north - $buffer >= $bottom;  # segment is below our target.
+            next if $south + $buffer <= $top;   # segment is above our target.
+            next
+                if $north - $buffer >= $bottom; # segment is below our target.
 
             #
             # If there's some overlap, see if it will fit above or below.
@@ -428,13 +437,13 @@ label can be inserted.
                 my $prev_segment = $i > 0      ? $used[ $i - 1 ] : undef;
                 my $next_segment = $i < $#used ? $used[ $i + 1 ] : undef;
                 my $ftop         =
-                  $direction eq NORTH
-                  ? defined $next_segment->[1] ? $next_segment->[1] : undef
-                  : $south;
+                    $direction eq NORTH
+                    ? defined $next_segment->[1] ? $next_segment->[1] : undef
+                    : $south;
                 my $fbottom =
-                    $direction eq NORTH ? $north
-                  : defined $next_segment->[0] ? $next_segment->[0]
-                  : undef;
+                      $direction eq NORTH ? $north
+                    : defined $next_segment->[0] ? $next_segment->[0]
+                    : undef;
 
                 #
                 # Check if we can fit the label into the frame.
@@ -450,9 +459,9 @@ label can be inserted.
                 # See if moving the label to the frame would move it too far.
                 #
                 my $diff =
-                    $direction eq NORTH
-                  ? $fbottom - $bottom - $buffer
-                  : $ftop - $top + $buffer;
+                      $direction eq NORTH
+                    ? $fbottom - $bottom - $buffer
+                    : $ftop - $top + $buffer;
                 if ( ( abs $diff > $max_distance ) && $can_skip ) {
                     next SEGMENT;
                 }
@@ -461,16 +470,14 @@ label can be inserted.
                 #
                 # See if it will fit.  Same as two above?
                 #
-                if (
-                    (
-                           defined $ftop
+                if ((      defined $ftop
                         && defined $fbottom
                         && $top - $buffer >= $ftop
                         && $bottom + $buffer <= $fbottom
                     )
                     || ( defined $ftop    && $top - $buffer >= $ftop )
                     || ( defined $fbottom && $bottom + $buffer <= $fbottom )
-                  )
+                    )
                 {
                     $ok = 1;
                     last;
@@ -557,14 +564,14 @@ sub parse_words {
         }
         elsif ( $nextspace < $nextquote ) {
             push @words, split /[,\s+]/,
-              substr( $string, $pos, $nextspace - $pos );
+                substr( $string, $pos, $nextspace - $pos );
             $pos = $nextspace + 1;
         }
         elsif ( $nextspace == $length && $nextquote == $length ) {
 
             # End of the line
             push @words, map { s/^\s+|\s+$//g; $_ }
-              split /,/, substr( $string, $pos, $nextspace - $pos );
+                split /,/, substr( $string, $pos, $nextspace - $pos );
             $pos = $nextspace;
         }
         else {
@@ -589,13 +596,13 @@ Assumes that items will fit into just one column.
 =cut 
 
 sub simple_column_distribution {
-    my %args       = @_;
-    my $columns    = $args{'columns'} || []; # arrayref of columns on horizontal
-    my $map_height = $args{'map_height'};    # in pixels
-    my $low        = $args{'low'};           # lowest pixel value occuppied
-    my $high       = $args{'high'};          # highest pixel value occuppied
-    my $buffer     = $args{'buffer'} || 2;   # min pixel distance b/w items
-    my $selected;                            # the column number returned
+    my %args = @_;
+    my $columns = $args{'columns'} || [];    # arrayref of columns on horizontal
+    my $map_height = $args{'map_height'};     # in pixels
+    my $low        = $args{'low'};            # lowest pixel value occuppied
+    my $high       = $args{'high'};           # highest pixel value occuppied
+    my $buffer     = $args{'buffer'} || 2;    # min pixel distance b/w items
+    my $selected;                             # the column number returned
 
     $map_height = int($map_height);
     $low        = int($low);
@@ -666,11 +673,11 @@ the DBI selectall_arrayref()
     }
     for my $key ( keys(%$hashref) ) {
         %{ $return_array[$i] } =
-          map { $column_name{$_} => $hashref->{$key}->{$_} } @columns;
+            map { $column_name{$_} => $hashref->{$key}->{$_} } @columns;
         $i++;
     }
     @return_array =
-      sort { $a->{ $columns[0] } cmp $b->{ $columns[0] } } @return_array;
+        sort { $a->{ $columns[0] } cmp $b->{ $columns[0] } } @return_array;
     return \@return_array;
 }
 
@@ -690,7 +697,7 @@ sub sort_selectall_arrayref {
     my $arrayref = shift;
     my @columns  = @_;
     my @return   = sort {
-        for ( my $i = 0 ; $i < $#columns ; $i++ )
+        for ( my $i = 0; $i < $#columns; $i++ )
         {
             my $col = $columns[$i];
             my $dir = 1;
@@ -765,11 +772,11 @@ example: 10000 becomes 10K
     my $num_str;
 
     # the "''." is to fix a rounding error in perl
-    my $scale          = $num ? int( '' . ( log( abs($num) ) / log(10) ) ) : 0;
+    my $scale = $num ? int( '' . ( log( abs($num) ) / log(10) ) ) : 0;
     my $rounding_power = $scale - $sig_digits + 1;
     my $rounded_temp   = int( ( $num / ( 10**$rounding_power ) ) + .5 );
-    my $printable_num  =
-      $rounded_temp / ( 10**( ( $scale - ( $scale % 3 ) ) - $rounding_power ) );
+    my $printable_num  = $rounded_temp /
+        ( 10**( ( $scale - ( $scale % 3 ) ) - $rounding_power ) );
     my $unit = calculate_units( 10**( $scale - ( $scale % 3 ) ) );
     $num_str = $printable_num . " " . $unit;
 
@@ -802,9 +809,921 @@ example: .001 becomes "1/K"
 
     my $unit = calculate_units( 10**( -1 * $denom_power ) );
     $num_str = $unit
-      ? $printable_num . "/" . $unit
-      : $printable_num . "/unit";
+        ? $printable_num . "/" . $unit
+        : $printable_num . "/unit";
     return $num_str;
+}
+
+# ----------------------------------------------------
+sub _parse_map_info {
+
+    # parses the map info
+    my $acc       = shift;
+    my $highlight = shift;
+
+    my ( $start, $stop, $magnification ) = ( undef, undef, 1 );
+
+    # following matches map_id[1*200] and map_id[1*200x2]
+    if ( $acc =~ m/^(.+)\[(.*)\*(.*?)(?:x([\d\.]*)|)\]$/ ) {
+        $acc = $1;
+        ( $start, $stop ) = ( $2, $3 );
+        $magnification = $4 if $4;
+        ( $start, $stop ) = ( undef, undef ) if ( $start == $stop );
+        $start = undef unless ( $start =~ /\S/ );
+        $stop  = undef unless ( $stop  =~ /\S/ );
+        my $start_stop_feature = 0;
+        my @highlight_array;
+        push @highlight_array, $highlight if $highlight;
+
+        if ( $start !~ /^$RE{'num'}{'real'}$/ ) {
+            push @highlight_array, $start if $start;
+            $start_stop_feature = 1;
+        }
+
+        if ( $stop !~ /^$RE{'num'}{'real'}$/ ) {
+            push @highlight_array, $stop if $stop;
+            $start_stop_feature = 1;
+        }
+        $highlight = join( ',', @highlight_array );
+
+        if (    !$start_stop_feature
+            and defined($start)
+            and defined($stop)
+            and $stop < $start )
+        {
+            ( $start, $stop ) = ( $stop, $start );
+        }
+    }
+
+    return ( $acc, $start, $stop, $magnification, $highlight );
+}
+
+# ----------------------------------------------------
+sub _modify_slots {
+
+    # Modify the slots object using a modification string
+    my $slots                  = shift;
+    my $mod_str                = shift;
+    my $change_left_min_corrs  = 0;
+    my $change_right_min_corrs = 0;
+
+    my @mod_cmds = split( /:/, $mod_str );
+
+    foreach my $mod_cmd (@mod_cmds) {
+        my @mod_array = split( /=/, $mod_cmd );
+        next unless (@mod_array);
+
+        if ( $mod_array[0] eq 'start' ) {
+            next unless ( scalar(@mod_array) == 4 );
+            my $slot_no = $mod_array[1];
+            my $map_acc = $mod_array[2];
+            my $start   = $mod_array[3];
+            if (    $slots->{$slot_no}
+                and $slots->{$slot_no}{'maps'}{$map_acc} )
+            {
+                $slots->{$slot_no}{'maps'}{$map_acc}{'start'} = $start;
+            }
+        }
+        elsif ( $mod_array[0] eq 'stop' ) {
+            next unless ( scalar(@mod_array) == 4 );
+            my $slot_no = $mod_array[1];
+            my $map_acc = $mod_array[2];
+            my $stop    = $mod_array[3];
+            if (    $slots->{$slot_no}
+                and $slots->{$slot_no}{'maps'}{$map_acc} )
+            {
+                $slots->{$slot_no}{'maps'}{$map_acc}{'stop'} = $stop;
+            }
+        }
+        elsif ( $mod_array[0] eq 'mag' ) {
+            next unless ( scalar(@mod_array) == 4 );
+            my $slot_no = $mod_array[1];
+            my $map_acc = $mod_array[2];
+            my $mag     = $mod_array[3];
+            if (    $slots->{$slot_no}
+                and $slots->{$slot_no}{'maps'}{$map_acc} )
+            {
+                $slots->{$slot_no}{'maps'}{$map_acc}{'mag'} = $mag;
+            }
+        }
+        elsif ( $mod_array[0] eq 'reset' ) {
+            next unless ( scalar(@mod_array) == 3 );
+            my $slot_no = $mod_array[1];
+            my $map_acc = $mod_array[2];
+            if (    $slots->{$slot_no}
+                and $slots->{$slot_no}{'maps'}{$map_acc} )
+            {
+                $slots->{$slot_no}{'maps'}{$map_acc}{'start'} = undef;
+                $slots->{$slot_no}{'maps'}{$map_acc}{'stop'}  = undef;
+                $slots->{$slot_no}{'maps'}{$map_acc}{'mag'}   = 1;
+            }
+        }
+        elsif ( $mod_array[0] eq 'del' ) {
+            if ( scalar(@mod_array) == 3 ) {
+                my $slot_no = $mod_array[1];
+                my $map_acc = $mod_array[2];
+                if (    $slots->{$slot_no}
+                    and $slots->{$slot_no}{'maps'}{$map_acc} )
+                {
+                    delete $slots->{$slot_no}{'maps'}{$map_acc};
+
+                    # If deleting last map, remove the whole thing
+                    unless ( $slots->{$slot_no}{'maps'} ) {
+                        $slots->{$slot_no}{'map_sets'} = {};
+                    }
+                }
+            }
+            elsif ( scalar(@mod_array) == 2 ) {
+                my $slot_no = $mod_array[1];
+                if ( $slots->{$slot_no} ) {
+                    $slots->{$slot_no} = {};
+                }
+            }
+        }
+        elsif ( $mod_array[0] eq 'limit' ) {
+            next unless ( scalar(@mod_array) == 3 );
+            my $slot_no = $mod_array[1];
+            my $map_acc = $mod_array[2];
+            my $mag     = $mod_array[3];
+            if (    $slots->{$slot_no}
+                and $slots->{$slot_no}{'maps'}{$map_acc} )
+            {
+                foreach my $other_map_acc (
+                    keys( %{ $slots->{$slot_no}{'maps'} } ) )
+                {
+                    next if ( $other_map_acc eq $map_acc );
+                    delete $slots->{$slot_no}{'maps'}{$other_map_acc};
+                }
+            }
+        }
+    }
+
+    # If ever a slot has no maps, remove the slot.
+    my $delete_pos = 0;
+    my $delete_neg = 0;
+    foreach my $slot_no ( keys %{$slots} ) {
+    }
+    foreach my $slot_no ( sort _order_out_from_zero keys %{$slots} ) {
+    }
+    foreach my $slot_no ( sort _order_out_from_zero keys %{$slots} ) {
+        unless (
+            (   $slots->{$slot_no}{'maps'} and %{ $slots->{$slot_no}{'maps'} }
+            )
+            or ( $slots->{$slot_no}{'mapsets'}
+                and %{ $slots->{$slot_no}{'map_sets'} } )
+            )
+        {
+            if ( $slot_no >= 0 ) {
+                $delete_pos             = 1;
+                $change_right_min_corrs = 1;
+            }
+            if ( $slot_no <= 0 ) {
+                $delete_neg            = 1;
+                $change_left_min_corrs = 1;
+            }
+        }
+        if ( $slot_no >= 0 and $delete_pos ) {
+            delete $slots->{$slot_no};
+        }
+        elsif ( $slot_no < 0 and $delete_neg ) {
+            delete $slots->{$slot_no};
+        }
+    }
+    return ( $change_left_min_corrs, $change_right_min_corrs );
+}
+
+# ----------------------------------------------------
+sub _parse_session_step {
+
+    # Modify the slots object using a modification string
+    my %args                   = @_;
+    my $session_step           = $args{'session_step'};
+    my $apr                    = $args{'apr'};
+    my $slots_ref              = $args{'slots_ref'};
+    my $parsed_url_options_ref = $args{'parsed_url_options_ref'};
+    my $ref_map_accs_ref       = $args{'ref_map_accs_ref'};
+
+    # Clone slots so we don't clobber the old session step
+    %{$slots_ref} = %{ clone( $session_step->{'slots'} ) };
+    $parsed_url_options_ref->{'ref_species_acc'}
+        = $session_step->{'ref_species_acc'};
+    $parsed_url_options_ref->{'ref_map_set_acc'}
+        = $session_step->{'ref_map_set_acc'};
+
+    # Apply Session Modifications
+    my ( $change_left_min_corrs, $change_right_min_corrs )
+        = _modify_slots( $slots_ref,
+        $parsed_url_options_ref->{'session_mod'} )
+        if ( !$parsed_url_options_ref->{'reusing_step'} );
+
+    # if a slot was deleted, change the left/right_min_corrs
+    if ($change_left_min_corrs) {
+        my @slot_nos = sort { $a <=> $b } keys %$slots_ref;
+        $parsed_url_options_ref->{'left_min_corrs'}
+            = $slots_ref->{ $slot_nos[0] }->{'min_corrs'};
+    }
+    if ($change_right_min_corrs) {
+        my @slot_nos = sort { $a <=> $b } keys %$slots_ref;
+        $parsed_url_options_ref->{'right_min_corrs'}
+            = $slots_ref->{ $slot_nos[-1] }->{'min_corrs'};
+    }
+    @$ref_map_accs_ref = keys( %{ $slots_ref->{0}->{'maps'} } );
+    $apr->param( 'ref_map_accs', join( ":", @{ $ref_map_accs_ref || () } ) );
+
+    return 1;
+}
+
+sub _order_out_from_zero {
+    ###Return the sort in this order (0,1,-1,-2,2,-3,3,)
+    return ( abs($a) cmp abs($b) );
+}
+
+# ----------------------------------------------------
+sub parse_url {
+
+    my ( $self, $apr, $calling_cmap_object ) = @_;
+
+    my %parsed_url_options;
+
+    my $prev_ref_species_acc = $apr->param('prev_ref_species_acc')
+        || $apr->param('prev_ref_species_aid')
+        || '';
+    my $prev_ref_map_set_acc = $apr->param('prev_ref_map_set_acc')
+        || $apr->param('prev_ref_map_set_aid')
+        || '';
+    $parsed_url_options{'ref_species_acc'} = $apr->param('ref_species_acc')
+        || $apr->param('ref_species_aid')
+        || '';
+    $parsed_url_options{'ref_map_set_acc'} = $apr->param('ref_map_set_acc')
+        || $apr->param('ref_map_set_aid')
+        || '';
+    my $ref_map_start         = $apr->param('ref_map_start');
+    my $ref_map_stop          = $apr->param('ref_map_stop');
+    my $comparative_maps      = $apr->param('comparative_maps') || '';
+    my @comparative_map_right = $apr->param('comparative_map_right');
+    my @comparative_map_left  = $apr->param('comparative_map_left');
+    my $comp_map_set_right    = $apr->param('comp_map_set_right');
+    my $comp_map_set_left     = $apr->param('comp_map_set_left');
+    $parsed_url_options{'url_for_saving'}
+        = $apr->url( -path_info => 1, -query => 1 );
+    $parsed_url_options{'highlight'}  = $apr->param('highlight')  || '';
+    $parsed_url_options{'font_size'}  = $apr->param('font_size')  || '';
+    $parsed_url_options{'image_size'} = $apr->param('image_size') || '';
+    $parsed_url_options{'image_type'} = $apr->param('image_type') || '';
+    $parsed_url_options{'label_features'} = $apr->param('label_features')
+        || '';
+    $parsed_url_options{'collapse_features'}
+        = $apr->param('collapse_features');
+    my $aggregate           = $apr->param('aggregate');
+    my $cluster_corr        = $apr->param('cluster_corr');
+    my $show_intraslot_corr = $apr->param('show_intraslot_corr');
+    my $split_agg_ev        = $apr->param('split_agg_ev');
+    my $clean_view          = $apr->param('clean_view');
+    $parsed_url_options{'corrs_to_map'} = $apr->param('corrs_to_map');
+    my $magnify_all = $apr->param('magnify_all');
+    $parsed_url_options{'ignore_image_map_sanity'}
+        = $apr->param('ignore_image_map_sanity');
+    my $scale_maps         = $apr->param('scale_maps');
+    my $stack_maps         = $apr->param('stack_maps');
+    my $comp_menu_order    = $apr->param('comp_menu_order');
+    my $ref_map_order      = $apr->param('ref_map_order');
+    my $prev_ref_map_order = $apr->param('prev_ref_map_order');
+    $parsed_url_options{'user_name'} = $apr->param('user_name') || '';
+    $parsed_url_options{'flip'}      = $apr->param('flip')      || '';
+    $parsed_url_options{'page_no'}   = $apr->param('page_no')   || 1;
+    $parsed_url_options{'action'}    = $apr->param('action')    || 'view';
+    $parsed_url_options{'refMenu'}   = $apr->param('refMenu');
+    $parsed_url_options{'compMenu'}  = $apr->param('compMenu');
+    $parsed_url_options{'optionMenu'}      = $apr->param('optionMenu');
+    $parsed_url_options{'addOpMenu'}       = $apr->param('addOpMenu');
+    $parsed_url_options{'omit_area_boxes'} = $apr->param('omit_area_boxes');
+    $parsed_url_options{'session_id'}      = $apr->param('session_id');
+    $parsed_url_options{'saved_link_id'}   = $apr->param('saved_link_id');
+    $parsed_url_options{'step'}            = $apr->param('step') || 0;
+    $parsed_url_options{'session_mod'}     = $apr->param('session_mod') || '';
+    $parsed_url_options{'left_min_corrs'}  = $apr->param('left_min_corrs')
+        || 0;
+    $parsed_url_options{'right_min_corrs'} = $apr->param('right_min_corrs')
+        || 0;
+    $parsed_url_options{'general_min_corrs'}
+        = $apr->param('general_min_corrs');
+    $parsed_url_options{'menu_min_corrs'} = $apr->param('menu_min_corrs')
+        || 0;
+
+    # Check for depricated min_correspondences value
+    # Basically general_min_corrs is a new way to address
+    # the min_correspondences legacy while keeping the option
+    # for this feature open in the future.
+    $parsed_url_options{'general_min_corrs'}
+        = $apr->param('min_correspondences')
+        unless defined( $parsed_url_options{'general_min_corrs'} );
+    my %slots_min_corrs;
+
+    if ( $parsed_url_options{'general_min_corrs'} ) {
+        unless ( defined( $parsed_url_options{'left_min_corrs'} ) ) {
+            $parsed_url_options{'left_min_corrs'}
+                = $parsed_url_options{'general_min_corrs'};
+            $apr->param( 'left_min_corrs',
+                $parsed_url_options{'left_min_corrs'} );
+        }
+        unless ( defined( $parsed_url_options{'right_min_corrs'} ) ) {
+            $parsed_url_options{'right_min_corrs'}
+                = $parsed_url_options{'general_min_corrs'};
+            $apr->param( 'right_min_corrs',
+                $parsed_url_options{'right_min_corrs'} );
+            unless ( defined( $parsed_url_options{'menu_min_corrs'} ) ) {
+                $parsed_url_options{'menu_min_corrs'}
+                    = $parsed_url_options{'general_min_corrs'};
+                $apr->param( 'menu_min_corrs',
+                    $parsed_url_options{'menu_min_corrs'} );
+            }
+        }
+    }
+
+    my %slots;
+    $parsed_url_options{'reusing_step'} = 0;
+
+    # If this was submitted by a button, clear the modified map fields.
+    # They are no longer needed.
+    if ( $apr->param('sub') ) {
+        $apr->param( 'modified_ref_map',  '' );
+        $apr->param( 'modified_comp_map', '' );
+    }
+
+    $parsed_url_options{'path_info'} = $apr->path_info || '';
+    if ( $parsed_url_options{'path_info'} ) {
+        $parsed_url_options{'path_info'}
+            =~ s{^/(cmap/)?}{};    # kill superfluous stuff
+    }
+
+    $parsed_url_options{'collapse_features'}
+        = $calling_cmap_object->config_data('collapse_features')
+        unless ( defined( $parsed_url_options{'collapse_features'} ) );
+
+    # reset the params only if you want the code to be able to change them.
+    # otherwise, simply initialize the avalue.
+    $apr->param( 'aggregate', $calling_cmap_object->aggregate($aggregate) );
+    $calling_cmap_object->cluster_corr($cluster_corr);
+    $apr->param( 'show_intraslot_corr',
+        $calling_cmap_object->show_intraslot_corr($show_intraslot_corr) );
+    $apr->param( 'split_agg_ev',
+        $calling_cmap_object->split_agg_ev($split_agg_ev) );
+    $apr->param( 'clean_view',
+        $calling_cmap_object->clean_view($clean_view) );
+    $apr->param( 'magnify_all',
+        $calling_cmap_object->magnify_all($magnify_all) );
+    $apr->param( 'scale_maps',
+        $calling_cmap_object->scale_maps($scale_maps) );
+    $apr->param( 'stack_maps',
+        $calling_cmap_object->stack_maps($stack_maps) );
+    $apr->param( 'comp_menu_order',
+        $calling_cmap_object->comp_menu_order($comp_menu_order) );
+
+    if ($ref_map_order) {
+        $calling_cmap_object->ref_map_order($ref_map_order);
+    }
+    else {
+
+        #use the previous order if new order is not defined.
+        $calling_cmap_object->ref_map_order($prev_ref_map_order);
+    }
+
+    #
+    # Take the feature types either from the query string (first
+    # choice, splitting the string on commas) or from the POSTed
+    # form <select>.
+    #
+    my @ref_map_accs;
+    if ( $apr->param('ref_map_accs') or $apr->param('ref_map_aids') ) {
+        foreach my $acc ( $apr->param('ref_map_accs'),
+            $apr->param('ref_map_aids') )
+        {
+
+            # Remove start and stop if they are the same
+            while ( $acc =~ s/(.+\[)(\d+)\*\2(\D.*)/$1*$3/ ) { }
+            push @ref_map_accs, split( /[:,]/, $acc );
+        }
+    }
+
+    if ( scalar(@ref_map_accs) ) {
+        $apr->param( 'ref_map_accs', join( ":", @ref_map_accs ) );
+    }
+
+    #
+    # Catch old argument, handle nicely.
+    #
+    if ( $apr->param('ref_map_acc') || $apr->param('ref_map_aid') ) {
+        push @ref_map_accs,
+            $apr->param('ref_map_acc') || $apr->param('ref_map_aid');
+    }
+
+    my %ref_maps;
+    my %ref_map_sets = ();
+    foreach my $ref_map_acc (@ref_map_accs) {
+        next if $ref_map_acc == -1;
+        my ( $start, $stop, $magnification ) = ( undef, undef, 1 );
+        (   $ref_map_acc, $start, $stop, $magnification,
+            $parsed_url_options{'highlight'}
+            )
+            = _parse_map_info( $ref_map_acc,
+            $parsed_url_options{'highlight'} );
+        $ref_maps{$ref_map_acc}
+            = { start => $start, stop => $stop, mag => $magnification };
+    }
+
+    # Only included for legacy urls
+    # Deal with modified ref map
+    # map info specified in this param trumps 'ref_map_accs' info
+    if ( $apr->param('modified_ref_map') ) {
+        my $ref_map_acc = $apr->param('modified_ref_map');
+
+        # remove duplicate start and end
+        while ( $ref_map_acc =~ s/(.+\[)(\d+)\*\2(\D.*)/$1*$3/ ) { }
+        $apr->param( 'modified_ref_map', $ref_map_acc );
+
+        my ( $start, $stop, $magnification ) = ( undef, undef, 1 );
+        (   $ref_map_acc, $start, $stop, $magnification,
+            $parsed_url_options{'highlight'}
+            )
+            = _parse_map_info( $ref_map_acc,
+            $parsed_url_options{'highlight'} );
+        $ref_maps{$ref_map_acc}
+            = { start => $start, stop => $stop, mag => $magnification };
+
+        # Add the modified version into the comparative_maps param
+        my $found = 0;
+        for ( my $i = 0; $i <= $#ref_map_accs; $i++ ) {
+            my $old_map_acc = $ref_map_accs[$i];
+            $old_map_acc =~ s/^(.*)\[.*/$1/;
+            if ( $old_map_acc eq $ref_map_acc ) {
+                $ref_map_accs[$i] = $apr->param('modified_ref_map');
+                $found = 1;
+                last;
+            }
+        }
+        push @ref_map_accs, $apr->param('modified_ref_map') if !$found;
+        $apr->param( 'ref_map_accs', join( ":", @ref_map_accs ) );
+    }
+
+    my @ref_map_set_accs = ();
+    if ( $apr->param('ref_map_set_acc') || $apr->param('ref_map_set_aid') ) {
+        @ref_map_set_accs =
+            split( /,/,
+                   $apr->param('ref_map_set_acc')
+                || $apr->param('ref_map_set_aid') );
+    }
+
+    (   $parsed_url_options{'comparative_map_field'},
+        $parsed_url_options{'comparative_map_field_acc'}
+        )
+        = split( /=/, $apr->param('comparative_map') );
+
+    my @feature_types;
+    $parsed_url_options{'url_feature_default_display'} = undef;
+    my @corr_only_feature_types;
+    my @ignored_feature_types;
+    my @included_evidence_types;
+    my @ignored_evidence_types;
+    my @less_evidence_types;
+    my @greater_evidence_types;
+    my %evidence_type_score;
+
+    foreach my $param ( $apr->param ) {
+        if ( $param =~ /^ft_(\S+)/ or $param =~ /^feature_type_(\S+)/ ) {
+            my $ft  = $1;
+            my $val = $apr->param($param);
+            if ( $ft eq 'DEFAULT' ) {
+                if ( $val =~ /^\d$/ ) {
+                    $parsed_url_options{'url_feature_default_display'} = $val;
+                }
+                else {
+                    $parsed_url_options{'url_feature_default_display'}
+                        = undef;
+                }
+                next;
+            }
+            if ( $val == 0 ) {
+                push @ignored_feature_types, $ft;
+            }
+            elsif ( $val == 1 ) {
+                push @corr_only_feature_types, $ft;
+            }
+            elsif ( $val == 2 ) {
+                push @feature_types, $ft;
+            }
+        }
+        elsif ( $param =~ /^et_(\S+)/ or $param =~ /^evidence_type_(\S+)/ ) {
+            my $et  = $1;
+            my $val = $apr->param($param);
+            if ( $val == 0 ) {
+                push @ignored_evidence_types, $et;
+            }
+            elsif ( $val == 1 ) {
+                push @included_evidence_types, $et;
+            }
+            elsif ( $val == 2 ) {
+                push @less_evidence_types, $et;
+            }
+            elsif ( $val == 3 ) {
+                push @greater_evidence_types, $et;
+            }
+        }
+        if ( $param =~ /^ets_(\S+)/ ) {
+            my $et  = $1;
+            my $val = $apr->param($param);
+            $evidence_type_score{$et} = $val;
+        }
+    }
+
+    # Set the UFDD or get the default UFDD in none is supplied
+    $parsed_url_options{'url_feature_default_display'}
+        = $calling_cmap_object->url_feature_default_display(
+        $parsed_url_options{'url_feature_default_display'} );
+    $apr->param( 'ft_DEFAULT',
+        $parsed_url_options{'url_feature_default_display'} );
+    $apr->param( 'feature_type_DEFAULT', undef );
+
+    #
+    # Set the data source.
+    #
+    $calling_cmap_object->data_source( $apr->param('data_source') ) or return;
+
+    if (   $prev_ref_species_acc
+        && $prev_ref_species_acc ne $parsed_url_options{'ref_species_acc'} )
+    {
+        $parsed_url_options{'ref_map_set_acc'} = '';
+        @ref_map_set_accs = ();
+    }
+
+    if (   $prev_ref_map_set_acc
+        && $prev_ref_map_set_acc ne $parsed_url_options{'ref_map_set_acc'} )
+    {
+        @ref_map_accs          = ();
+        @ref_map_set_accs      = ();
+        $ref_map_start         = undef;
+        $ref_map_stop          = undef;
+        $comparative_maps      = undef;
+        @comparative_map_right = ();
+        @comparative_map_left  = ();
+    }
+
+    if ( grep {/^-1$/} @ref_map_accs ) {
+        $ref_map_sets{ $parsed_url_options{'ref_map_set_acc'} } = ();
+    }
+
+    # if a session id is given, get the session, otherwise
+    # create a new session.
+    my $session_supplied = 0;
+    if ( $parsed_url_options{'session_id'} ) {
+        $session_supplied = 1;
+
+        #handle the sessions
+        $parsed_url_options{'session'} = new CGI::Session(
+            "driver:File",
+            $parsed_url_options{'session_id'},
+            { Directory => '/tmp' }
+        );
+        unless ( $parsed_url_options{'session_data_object'}
+            = $parsed_url_options{'session'}->param('object') )
+        {
+
+            # invalid session_id
+            $calling_cmap_object->error(
+                'Invalid session_id: ' . $parsed_url_options{'session_id'} );
+            return ();
+        }
+    }
+    else {
+        $parsed_url_options{'session'}
+            = new CGI::Session( "driver:File", undef,
+            { Directory => '/tmp' } );
+        $parsed_url_options{'session_id'}
+            = $parsed_url_options{'session'}->id();
+        $parsed_url_options{'step'}      = 0;
+        $parsed_url_options{'next_step'} = $parsed_url_options{'step'} + 1;
+        $parsed_url_options{'session'}->expire('+2w');   #expires in two weeks
+    }
+
+    if ( defined( $parsed_url_options{'session_data_object'} ) ) {
+        unless ( $parsed_url_options{'step'} ) {
+            $parsed_url_options{'step'}
+                = $#{ $parsed_url_options{'session_data_object'} } + 1;
+        }
+        my $prev_step = $parsed_url_options{'step'} - 1;
+        $parsed_url_options{'next_step'} = $parsed_url_options{'step'} + 1;
+        my $step_hash;
+        if ( $parsed_url_options{'session_data_object'}
+            ->[ $parsed_url_options{'step'} ]
+            and $parsed_url_options{'session_data_object'}
+            ->[ $parsed_url_options{'step'} ]{'session_mod'}
+            and $parsed_url_options{'session_data_object'}
+            ->[ $parsed_url_options{'step'} ]{'session_mod'} eq
+            $parsed_url_options{'session_mod'} )
+        {
+            $step_hash = $parsed_url_options{'session_data_object'}
+                ->[ $parsed_url_options{'step'} ];
+            $parsed_url_options{'reusing_step'} = 1;
+        }
+        else {
+            $step_hash
+                = $parsed_url_options{'session_data_object'}->[$prev_step];
+        }
+        if ( defined($step_hash) ) {
+            _parse_session_step(
+                session_step           => $step_hash,
+                apr                    => $apr,
+                slots_ref              => \%slots,
+                parsed_url_options_ref => \%parsed_url_options,
+                ref_map_accs_ref       => \@ref_map_accs,
+                )
+                or return $calling_cmap_object->error();
+
+        }
+        else {
+
+            # invalid step
+            $calling_cmap_object->error(
+                'Invalid session step: ' . $parsed_url_options{'step'} );
+            return ();
+        }
+    }
+    elsif ( $parsed_url_options{'saved_link_id'} ) {
+
+        # Get the saved link from the db
+        my $saved_links = $calling_cmap_object->sql->get_saved_links(
+            cmap_object   => $calling_cmap_object,
+            saved_link_id => $parsed_url_options{'saved_link_id'},
+        );
+        my $saved_link;
+        if ( @{ $saved_links || [] } ) {
+            $saved_link = $saved_links->[0];
+        }
+        else {
+            return $calling_cmap_object->error(
+                "Invalid Saved Link ID: $parsed_url_options{'saved_link_id'}\n"
+            );
+        }
+
+        # Extract the session step
+        my $session_step = $saved_link->{'session_step_object'}
+            or return $calling_cmap_object->error(
+            "Saved Link ID, $parsed_url_options{'saved_link_id'}, does not have a valid session object.\n"
+            );
+        $session_step = thaw($session_step);
+
+        _parse_session_step(
+            session_step           => $session_step,
+            apr                    => $apr,
+            slots_ref              => \%slots,
+            parsed_url_options_ref => \%parsed_url_options,
+            ref_map_accs_ref       => \@ref_map_accs,
+            )
+            or return $calling_cmap_object->error();
+
+    }
+    else {
+
+        %slots = (
+            0 => {
+                map_set_acc => $parsed_url_options{'ref_map_set_acc'},
+                map_sets    => \%ref_map_sets,
+                maps        => \%ref_maps,
+            }
+        );
+
+        #
+        # Add in previous maps.
+        #
+        # Remove start and stop if they are the same
+        while ( $comparative_maps =~ s/(.+\[)(\d+)\*\2(\D.*)/$1*$3/ ) { }
+
+        for my $cmap ( split( /:/, $comparative_maps ) ) {
+            my ( $slot_no, $field, $map_acc ) = split( /=/, $cmap ) or next;
+            my ( $start, $stop, $magnification );
+            foreach my $acc ( split /,/, $map_acc ) {
+                (   $acc, $start, $stop, $magnification,
+                    $parsed_url_options{'highlight'}
+                    )
+                    = _parse_map_info( $acc,
+                    $parsed_url_options{'highlight'} );
+                if ( $field eq 'map_acc' or $field eq 'map_aid' ) {
+                    $slots{$slot_no}{'maps'}{$acc} = {
+                        start => $start,
+                        stop  => $stop,
+                        mag   => $magnification,
+                    };
+                }
+                elsif ( $field eq 'map_set_acc' or $field eq 'map_set_aid' ) {
+                    unless ( defined( $slots{$slot_no}{'map_sets'}{$acc} ) ) {
+                        $slots{$slot_no}{'map_sets'}{$acc} = ();
+                    }
+                }
+            }
+        }
+
+        # Deal with modified comp map
+        # map info specified in this param trumps $comparative_maps info
+        if ( $apr->param('modified_comp_map') ) {
+            my $comp_map = $apr->param('modified_comp_map');
+
+            # remove duplicate start and end
+            while ( $comp_map =~ s/(.+\[)(\d+)\*\2(\D.*)/$1*$3/ ) { }
+            $apr->param( 'modified_comp_map', $comp_map );
+
+            my ( $slot_no, $field, $acc ) = split( /=/, $comp_map ) or next;
+            my ( $start, $stop, $magnification ) = ( undef, undef, 1 );
+            (   $acc, $start, $stop, $magnification,
+                $parsed_url_options{'highlight'}
+                )
+                = _parse_map_info( $acc, $parsed_url_options{'highlight'} );
+            if ( $field eq 'map_acc' or $field eq 'map_aid' ) {
+                $slots{$slot_no}->{'maps'}{$acc} = {
+                    start => $start,
+                    stop  => $stop,
+                    mag   => $magnification,
+                };
+            }
+            elsif ( $field eq 'map_set_acc' or $field eq 'map_set_aid' ) {
+                unless ( defined( $slots{$slot_no}->{'map_sets'}{$acc} ) ) {
+                    $slots{$slot_no}->{'map_sets'}{$acc} = ();
+                }
+            }
+
+            # Add the modified version into the comparative_maps param
+            my @cmaps = split( /:/, $comparative_maps );
+            my $found = 0;
+            for ( my $i = 0; $i <= $#cmaps; $i++ ) {
+                my ( $c_slot_no, $c_field, $c_acc ) =
+                    split( /=/, $cmaps[$i] )
+                    or next;
+                $acc =~ s/^(.*)\[.*/$1/;
+                if (    ( $c_slot_no eq $slot_no )
+                    and ( $c_field eq $field )
+                    and ( $c_acc   eq $acc ) )
+                {
+                    $cmaps[$i] = $comp_map;
+                    $found = 1;
+                    last;
+                }
+            }
+            push @cmaps, $comp_map if ( !$found );
+        }
+    }
+
+    # If ref_map_start/stop are defined and there is only one ref map
+    # use those values and then wipe them from the params.
+    if (    scalar keys( %{ $slots{0}->{'maps'} } ) == 1
+        and scalar(@ref_map_accs) == 1 )
+    {
+        ( $ref_map_start, $ref_map_stop ) = ( $ref_map_stop, $ref_map_start )
+            if (defined($ref_map_start)
+            and defined($ref_map_stop)
+            and $ref_map_start > $ref_map_stop );
+        if ( defined($ref_map_start) and $ref_map_start ne '' ) {
+            $slots{0}->{'maps'}{ $ref_map_accs[0] }{'start'} = $ref_map_start;
+        }
+        if ( defined($ref_map_stop) and $ref_map_stop ne '' ) {
+            $slots{0}->{'maps'}{ $ref_map_accs[0] }{'stop'} = $ref_map_stop;
+        }
+    }
+    $apr->delete( 'ref_map_start', 'ref_map_stop', );
+
+    # Build %slots_min_corrs
+    my @slot_nos  = sort { $a <=> $b } keys %slots;
+    my $max_right = $slot_nos[-1];
+    my $max_left  = $slot_nos[0];
+    if ( $parsed_url_options{'general_min_corrs'} ) {
+        foreach my $slot_no (@slot_nos) {
+            $slots_min_corrs{$slot_no}
+                = $parsed_url_options{'general_min_corrs'};
+        }
+    }
+
+    # set the left and the right slots' min corr
+    $slots_min_corrs{$max_left}  = $parsed_url_options{'left_min_corrs'};
+    $slots_min_corrs{$max_right} = $parsed_url_options{'right_min_corrs'};
+
+    #
+    # Add in our next chosen maps.
+    #
+    for my $side ( ( RIGHT, LEFT ) ) {
+        my $slot_no = $side eq RIGHT ? $max_right + 1 : $max_left - 1;
+        my $cmap =
+            $side eq RIGHT
+            ? \@comparative_map_right
+            : \@comparative_map_left;
+        my $cmap_set_acc
+            = $side eq RIGHT ? $comp_map_set_right : $comp_map_set_left;
+        if (@$cmap) {
+            if ( grep {/^-1$/} @$cmap ) {
+                unless (
+                    defined( $slots{$slot_no}->{'map_sets'}{$cmap_set_acc} ) )
+                {
+                    $slots{$slot_no}->{'map_sets'}{$cmap_set_acc} = ();
+                }
+            }
+            else {
+                foreach my $map_acc (@$cmap) {
+                    my ( $start, $stop, $magnification );
+                    (   $map_acc, $start, $stop, $magnification,
+                        $parsed_url_options{'highlight'}
+                        )
+                        = _parse_map_info( $map_acc,
+                        $parsed_url_options{'highlight'} );
+
+                    $slots{$slot_no}{'maps'}{$map_acc} = {
+                        start => $start,
+                        stop  => $stop,
+                        mag   => $magnification,
+                    };
+                }
+            }
+
+            # Set this slots min corrs
+            $slots_min_corrs{$slot_no}
+                = $parsed_url_options{'menu_min_corrs'};
+
+            # Change the left/right_min_corrs value for future links
+            if ( $slot_no < 0 ) {
+                $parsed_url_options{'left_min_corrs'}
+                    = $parsed_url_options{'menu_min_corrs'};
+            }
+            else {
+                $parsed_url_options{'right_min_corrs'}
+                    = $parsed_url_options{'menu_min_corrs'};
+            }
+        }
+    }
+    $parsed_url_options{'slots'}           = \%slots;
+    $parsed_url_options{'slots_min_corrs'} = \%slots_min_corrs;
+    $parsed_url_options{'feature_types'}   = \@feature_types;
+    $parsed_url_options{'corr_only_feature_types'}
+        = \@corr_only_feature_types;
+    $parsed_url_options{'ignored_feature_types'}  = \@ignored_feature_types;
+    $parsed_url_options{'ignored_evidence_types'} = \@ignored_evidence_types;
+    $parsed_url_options{'included_evidence_types'}
+        = \@included_evidence_types;
+    $parsed_url_options{'less_evidence_types'}    = \@less_evidence_types;
+    $parsed_url_options{'greater_evidence_types'} = \@greater_evidence_types;
+    $parsed_url_options{'evidence_type_score'}    = \%evidence_type_score;
+    $parsed_url_options{'ref_map_accs'}           = \@ref_map_accs;
+    $parsed_url_options{'ref_maps'}               = \%ref_maps;
+
+    $parsed_url_options{'data_source'}  = $calling_cmap_object->data_source;
+    $parsed_url_options{'config'}       = $calling_cmap_object->config;
+    $parsed_url_options{'data_module'}  = $calling_cmap_object->data_module;
+    $parsed_url_options{'aggregate'}    = $calling_cmap_object->aggregate;
+    $parsed_url_options{'cluster_corr'} = $calling_cmap_object->cluster_corr;
+    $parsed_url_options{'show_intraslot_corr'}
+        = $calling_cmap_object->show_intraslot_corr;
+    $parsed_url_options{'split_agg_ev'} = $calling_cmap_object->split_agg_ev;
+    $parsed_url_options{'clean_view'}   = $calling_cmap_object->clean_view;
+    $parsed_url_options{'magnify_all'}  = $calling_cmap_object->magnify_all;
+    $parsed_url_options{'scale_maps'}   = $calling_cmap_object->scale_maps;
+    $parsed_url_options{'stack_maps'}   = $calling_cmap_object->stack_maps;
+    $parsed_url_options{'ref_map_order'}
+        = $calling_cmap_object->ref_map_order;
+    $parsed_url_options{'comp_menu_order'}
+        = $calling_cmap_object->comp_menu_order;
+
+    return %parsed_url_options;
+}
+
+# ----------------------------------------------------
+# Creates a session step and adds it to the session data object
+# which is stored int the parsed_url_options ref.
+# Returns the step object.
+sub create_session_step {
+
+    my ( $self, $parsed_url_options_ref, ) = @_;
+    my $step_object = {
+        slots           => $parsed_url_options_ref->{'slots'},
+        ref_species_acc => $parsed_url_options_ref->{'ref_species_acc'},
+        ref_map_set_acc => $parsed_url_options_ref->{'ref_map_set_acc'},
+        session_mod     => $parsed_url_options_ref->{'session_mod'},
+    };
+    if (    $parsed_url_options_ref->{'session_data_object'}
+        and $parsed_url_options_ref->{'step'} )
+    {
+        $parsed_url_options_ref->{'session_data_object'}
+            ->[ $parsed_url_options_ref->{'step'} ] = $step_object;
+        if ( $#{ $parsed_url_options_ref->{'session_data_object'} }
+            > $parsed_url_options_ref->{'step'} )
+        {
+            splice( @{ $parsed_url_options_ref->{'session_data_object'} },
+                $parsed_url_options_ref->{'step'} + 1 );
+        }
+    }
+    else {
+        $parsed_url_options_ref->{'session_data_object'} = [$step_object];
+    }
+
+    if ( defined $parsed_url_options_ref->{'session'} ) {
+        $parsed_url_options_ref->{'session'}->param( 'object',
+            $parsed_url_options_ref->{'session_data_object'} );
+    }
+
+    return $step_object;
 }
 
 1;

@@ -291,18 +291,30 @@ function selectAllOptions(select){
       </td>
     </tr>
   [% END %]
-  <tr>
-    [%- IF drawer.image_name -%]
+  [%- IF drawer.image_name -%]
+    <tr>
       <td valign="top">
         [%- IF drawer.image_type=='svg' -%]
           <object type="image/svg+xml" data="/cmap/tmp/[%- drawer.image_name -%]" height="[%- drawer.map_height -%]" width="[%- drawer.map_width -%]"></object>
         [%- ELSE -%]
           <img src="/cmap/tmp/[%- drawer.image_name -%]" height="[%- drawer.map_height -%]" width="[%- drawer.map_width -%]" usemap="#zoom" border="0">
         [%- END -%]
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <form name="save_link_form" action="saved_link" method=POST>
+          <input type="hidden" name="url_to_save" id="url_to_save" value="[%- url_for_saving -%]">
+          <input type="hidden" name="data_source" id="data_source" value="[%- data_source -%]">
+          <input type="hidden" name="action"     value="saved_link_create">
+          <input type="submit" value="Save Link*" name="save_link">
+        </form>
+          *Bookmarks for this page will fail after this session expires.  
+           Use the "Save Link" button to create a permanent link
         <hr>
       </td>
-    [%- END -%]
-  </tr>
+    </tr>
+  [%- END -%]
   <tr>
     <td align="left" valign="top">
       <div id="hiddenRefMenu">

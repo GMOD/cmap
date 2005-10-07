@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.33 2005-10-04 05:37:56 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.34 2005-10-07 15:41:19 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.33 $)[-1];
+$VERSION = (qw$Revision: 1.34 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -511,6 +511,11 @@ use constant DEFAULT => {
     #
     # What to name the cookie containing user preferences.
     #
+    user_name => 'Unknown User', 
+
+    #
+    # What to name the cookie containing user preferences.
+    #
     user_pref_cookie_name => 'CMAP_USER_PREF', 
 };
 
@@ -539,6 +544,7 @@ use constant PREFERENCE_FIELDS => [ qw(
     show_intraslot_corr
     split_agg_ev
     comp_menu_order
+    user_name
 ) ];
 
 use constant VALID_BOOLEAN => {

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.95 2005-09-15 20:29:46 mwz444 Exp $
+# $Id: CMap.pm,v 1.96 2005-10-07 15:41:19 mwz444 Exp $
 
 =head1 NAME
 
@@ -78,7 +78,7 @@ Returns the cache directory.
         }
 
         my $cache_dir = $config->get_config('cache_dir')
-          or return $self->error(
+            or return $self->error(
             'No cache directory defined in "' . GLOBAL_CONFIG_FILE . '"' );
 
         unless ( -d $cache_dir ) {
@@ -113,9 +113,9 @@ sub config {
         $self->{'config'} = $newConfig;
     }
     unless ( defined $self->{'config'} ) {
-        $self->{'config'} =
-          Bio::GMOD::CMap::Config->new( config_dir => $self->{'config_dir'} )
-          or return Bio::GMOD::CMap::Config->error;
+        $self->{'config'} = Bio::GMOD::CMap::Config->new(
+            config_dir => $self->{'config_dir'} )
+            or return Bio::GMOD::CMap::Config->error;
     }
 
     return $self->{'config'};
@@ -210,7 +210,7 @@ Return data from config about feature type
 
     if ($attribute) {
         return $config->get_config('feature_type')->{$feature_type_acc}
-          ->{$attribute};
+            ->{$attribute};
     }
     elsif ($feature_type_acc) {
         return $config->get_config('feature_type')->{$feature_type_acc};
@@ -238,7 +238,7 @@ Return data from config about evidence type
 
     if ($attribute) {
         return $config->get_config('evidence_type')->{$evidence_type_acc}
-          ->{$attribute};
+            ->{$attribute};
     }
     elsif ($evidence_type_acc) {
         return $config->get_config('evidence_type')->{$evidence_type_acc};
@@ -269,7 +269,7 @@ Basically a front for set_config()
     #
     if ($arg) {
         $config->set_config($arg)
-          or return $self->error(
+            or return $self->error(
             "Couldn't set data source to '$arg': " . $config->error );
         $self->{'data_source'} = $config->get_config('database')->{'name'};
         if ( defined $self->{'db'} ) {
@@ -325,8 +325,8 @@ Returns all the data souces defined in the configuration files.
 
         die "No database defined as default\n" unless ($ok);
 
-        $self->{'data_sources'} =
-          [ sort { $a->{'name'} cmp $b->{'name'} } @data_sources_result ];
+        $self->{'data_sources'}
+            = [ sort { $a->{'name'} cmp $b->{'name'} } @data_sources_result ];
 
     }
 
@@ -356,21 +356,22 @@ Returns a database handle.  This is the only way into the database.
 
     unless ( defined $self->{'db'} ) {
         my $config = $config->get_config('database')
-          or return $self->error('No database configuration options defined');
+            or
+            return $self->error('No database configuration options defined');
 
         unless ( ref $config eq 'HASH' ) {
             return $self->error( 'DB config not a hash.  '
-                  . 'You may have more than one "database" specified in the config file'
+                    . 'You may have more than one "database" specified in the config file'
             );
         }
 
         return $self->error("Couldn't determine database info")
-          unless defined $config;
+            unless defined $config;
 
         my $datasource = $config->{'datasource'}
-          or $self->error('No database source defined');
+            or $self->error('No database source defined');
         my $user = $config->{'user'}
-          or $self->error('No database user defined');
+            or $self->error('No database user defined');
         my $password = $config->{'password'} || '';
         my $options = {
             AutoCommit       => 1,
@@ -381,8 +382,8 @@ Returns a database handle.  This is the only way into the database.
         };
 
         eval {
-            $self->{'db'} =
-              DBI->connect( $datasource, $user, $password, $options );
+            $self->{'db'}
+                = DBI->connect( $datasource, $user, $password, $options );
         };
 
         if ( $@ || !defined $self->{'db'} ) {
@@ -412,8 +413,9 @@ The default is 1.
     my $self = shift;
     my $val  = shift;
     $self->{'aggregate'} = $val if defined $val;
-    $self->{'aggregate'} = $self->config_data('aggregate_correspondences') || 1
-      unless defined $self->{'aggregate'};
+    $self->{'aggregate'} = $self->config_data('aggregate_correspondences')
+        || 1
+        unless defined $self->{'aggregate'};
     return $self->{'aggregate'};
 }
 
@@ -434,8 +436,9 @@ The default is 0.
     my $self = shift;
     my $val  = shift;
     $self->{'cluster_corr'} = $val if defined $val;
-    $self->{'cluster_corr'} = $self->config_data('cluster_correspondences') || 0
-      unless defined $self->{'cluster_corr'};
+    $self->{'cluster_corr'} = $self->config_data('cluster_correspondences')
+        || 0
+        unless defined $self->{'cluster_corr'};
     $self->{'cluster_corr'} = 0 unless ( $self->aggregate == 3 );
     return $self->{'cluster_corr'};
 }
@@ -457,11 +460,11 @@ The default is 1.
     my $self = shift;
     my $val  = shift;
     $self->{'show_intraslot_corr'} = $val if defined $val;
-    $self->{'show_intraslot_corr'} =
-      $self->config_data('show_intraslot_correspondences')
-      unless defined $self->{'show_intraslot_corr'};
+    $self->{'show_intraslot_corr'}
+        = $self->config_data('show_intraslot_correspondences')
+        unless defined $self->{'show_intraslot_corr'};
     $self->{'show_intraslot_corr'} = 0
-      unless defined $self->{'show_intraslot_corr'};
+        unless defined $self->{'show_intraslot_corr'};
     return $self->{'show_intraslot_corr'};
 }
 
@@ -484,9 +487,9 @@ The default is 1.
     my $val  = shift;
     $self->{'split_agg_ev'} = $val if defined $val;
     $self->{'split_agg_ev'} = $self->config_data('split_agg_evespondences')
-      unless defined $self->{'split_agg_ev'};
+        unless defined $self->{'split_agg_ev'};
     $self->{'split_agg_ev'} = 0
-      unless defined $self->{'split_agg_ev'};
+        unless defined $self->{'split_agg_ev'};
     return $self->{'split_agg_ev'};
 }
 
@@ -508,9 +511,9 @@ The default is 0.
     my $val  = shift;
     $self->{'clean_view'} = $val if defined $val;
     $self->{'clean_view'} = $self->config_data('clean_view')
-      unless defined $self->{'clean_view'};
+        unless defined $self->{'clean_view'};
     $self->{'clean_view'} = 0
-      unless defined $self->{'clean_view'};
+        unless defined $self->{'clean_view'};
     return $self->{'clean_view'};
 }
 
@@ -532,9 +535,9 @@ The default is 0.
     my $val  = shift;
     $self->{'corrs_to_map'} = $val if defined $val;
     $self->{'corrs_to_map'} = $self->config_data('corrs_to_map')
-      unless defined $self->{'corrs_to_map'};
+        unless defined $self->{'corrs_to_map'};
     $self->{'corrs_to_map'} = DEFAULT->{'corrs_to_map'}
-      unless defined $self->{'corrs_to_map'};
+        unless defined $self->{'corrs_to_map'};
     return $self->{'corrs_to_map'};
 }
 
@@ -579,9 +582,9 @@ The default is 1.
     my $val  = shift;
     $self->{'scale_maps'} = $val if defined $val;
     $self->{'scale_maps'} = $self->config_data('scale_maps')
-      unless defined $self->{'scale_maps'};
+        unless defined $self->{'scale_maps'};
     $self->{'scale_maps'} = 1
-      unless defined $self->{'scale_maps'};
+        unless defined $self->{'scale_maps'};
     return $self->{'scale_maps'};
 }
 
@@ -602,11 +605,11 @@ Default: 0
     my $self = shift;
     my $val  = shift;
     $self->{'ignore_image_map_sanity'} = $val if defined $val;
-    $self->{'ignore_image_map_sanity'} =
-      $self->config_data('ignore_image_map_sanity')
-      unless defined $self->{'ignore_image_map_sanity'};
+    $self->{'ignore_image_map_sanity'}
+        = $self->config_data('ignore_image_map_sanity')
+        unless defined $self->{'ignore_image_map_sanity'};
     $self->{'ignore_image_map_sanity'} = 0
-      unless defined $self->{'ignore_image_map_sanity'};
+        unless defined $self->{'ignore_image_map_sanity'};
     return $self->{'ignore_image_map_sanity'};
 }
 
@@ -633,8 +636,8 @@ Gets/sets which the url_feature_default_display
         }
     }
     elsif ( not defined( $self->{'url_feature_default_display'} ) ) {
-        my $config_feature_default_display =
-          $self->config_data('feature_default_display');
+        my $config_feature_default_display
+            = $self->config_data('feature_default_display');
         if ( $config_feature_default_display eq 'display' ) {
             $self->{'url_feature_default_display'} = 2;
         }
@@ -667,9 +670,9 @@ The default is 0.
     my $val  = shift;
     $self->{'stack_maps'} = $val if defined $val;
     $self->{'stack_maps'} = $self->config_data('stack_maps')
-      unless defined $self->{'stack_maps'};
+        unless defined $self->{'stack_maps'};
     $self->{'stack_maps'} = 0
-      unless defined $self->{'stack_maps'};
+        unless defined $self->{'stack_maps'};
     return $self->{'stack_maps'};
 }
 
@@ -710,7 +713,7 @@ The default is ''.
     my $val  = shift;
     $self->{'comp_menu_order'} = $val if defined $val;
     $self->{'comp_menu_order'} = $self->config_data('comp_menu_order') || ''
-      unless defined $self->{'comp_menu_order'};
+        unless defined $self->{'comp_menu_order'};
     return $self->{'comp_menu_order'};
 }
 
@@ -739,8 +742,8 @@ Returns a handle to the data module.
             split_agg_ev        => $self->split_agg_ev,
             ref_map_order       => $self->ref_map_order,
             comp_menu_order     => $self->comp_menu_order,
-          )
-          or $self->error( Bio::GMOD::CMap::Data->error );
+            )
+            or $self->error( Bio::GMOD::CMap::Data->error );
     }
 
     return $self->{'data_module'};
@@ -772,7 +775,7 @@ The default is 0.
     my $val  = shift;
     $self->{'omit_area_boxes'} = $val if defined $val;
     $self->{'omit_area_boxes'} = $self->config_data('omit_area_boxes') || 0
-      unless $self->{'omit_area_boxes'};
+        unless $self->{'omit_area_boxes'};
     if ( $self->{'omit_area_boxes'} == 2 ) {
         $self->clean_view(1);
     }
@@ -902,7 +905,8 @@ Given a table name and some objects, get the cross-references.
             my $attr_val  = $attr->{'attribute_value'}   or next;
             my $attr_name = lc $attr->{'attribute_name'} or next;
             $attr_name =~ tr/ /_/s;
-            push @{ $o->{'attribute'}{$attr_name} }, $attr->{'attribute_value'};
+            push @{ $o->{'attribute'}{$attr_name} },
+                $attr->{'attribute_value'};
         }
 
         my @xrefs = @{ $xref_specific{ $o->{'object_id'} } || [] };
@@ -914,10 +918,10 @@ Given a table name and some objects, get the cross-references.
             $t->process( \$xref->{'xref_url'}, { object => $o }, \$url );
 
             push @processed,
-              {
+                {
                 xref_name => $xref->{'xref_name'},
                 xref_url  => $_,
-              } for map { $_ || () } split /\s+/, $url;
+                } for map { $_ || () } split /\s+/, $url;
         }
 
         $o->{'xrefs'} = \@processed;
@@ -1023,66 +1027,68 @@ Given information about the link, creates a url to cmap_viewer.
     my $next_step                   = $args{'next_step'};
     my $new_session                 = $args{'new_session'} || 0;
     my $session_mod                 = $args{'session_mod'};
+    my $skip_map_info               = $args{'skip_map_info'} || 0;
     my $url                         = $args{'url'} || '';
     $url .= '?' unless $url =~ /\?$/;
 
     ###Required Fields
     unless (
-        (
-               defined($ref_map_set_acc)
+        (      defined($ref_map_set_acc)
             or defined($ref_map_accs)
             or defined($session_id)
+            or $skip_map_info
         )
         and defined($data_source)
-      )
+        )
     {
         return '';
     }
     $url .= "data_source=$data_source;";
 
-    if ( $session_id and !$new_session ) {
+    if ( $session_id and !$new_session and !$skip_map_info ) {
         $url .= "session_id=$session_id;";
         $url .= "step=$next_step;"
-          if ( defined($next_step) and $next_step ne '' );
+            if ( defined($next_step) and $next_step ne '' );
         $url .= "session_mod=$session_mod;"
-          if ( defined($session_mod) and $session_mod ne '' );
+            if ( defined($session_mod) and $session_mod ne '' );
     }
-    else {
+    elsif ( !$skip_map_info ) {
         $url .= "ref_map_set_acc=$ref_map_set_acc;"
-          if ( defined($ref_map_set_acc) and $ref_map_set_acc ne '' );
+            if ( defined($ref_map_set_acc) and $ref_map_set_acc ne '' );
         $url .= "ref_species_acc=$ref_species_acc;"
-          if ( defined($ref_species_acc) and $ref_species_acc ne '' );
+            if ( defined($ref_species_acc) and $ref_species_acc ne '' );
         $url .= "prev_ref_species_acc=$prev_ref_species_acc;"
-          if ( defined($prev_ref_species_acc) and $prev_ref_species_acc ne '' );
+            if ( defined($prev_ref_species_acc)
+            and $prev_ref_species_acc ne '' );
         $url .= "prev_ref_map_set_acc=$prev_ref_map_set_acc;"
-          if ( defined($prev_ref_map_set_acc) and $prev_ref_map_set_acc ne '' );
+            if ( defined($prev_ref_map_set_acc)
+            and $prev_ref_map_set_acc ne '' );
 
         if ( $ref_map_accs and %$ref_map_accs ) {
             my @ref_strs;
             foreach my $ref_map_acc ( keys(%$ref_map_accs) ) {
-                if (
-                    defined( $ref_map_accs->{$ref_map_acc}{'start'} )
+                if (defined( $ref_map_accs->{$ref_map_acc}{'start'} )
                     or defined(
-                             $ref_map_accs->{$ref_map_acc}{'stop'}
-                          or $ref_map_accs->{$ref_map_acc}{'magnify'}
+                               $ref_map_accs->{$ref_map_acc}{'stop'}
+                            or $ref_map_accs->{$ref_map_acc}{'magnify'}
                     )
-                  )
+                    )
                 {
                     my $start =
-                      defined( $ref_map_accs->{$ref_map_acc}{'start'} )
-                      ? $ref_map_accs->{$ref_map_acc}{'start'}
-                      : '';
+                        defined( $ref_map_accs->{$ref_map_acc}{'start'} )
+                        ? $ref_map_accs->{$ref_map_acc}{'start'}
+                        : '';
                     my $stop =
-                      defined( $ref_map_accs->{$ref_map_acc}{'stop'} )
-                      ? $ref_map_accs->{$ref_map_acc}{'stop'}
-                      : '';
+                        defined( $ref_map_accs->{$ref_map_acc}{'stop'} )
+                        ? $ref_map_accs->{$ref_map_acc}{'stop'}
+                        : '';
                     my $mag =
-                      defined( $ref_map_accs->{$ref_map_acc}{'magnify'} )
-                      ? $ref_map_accs->{$ref_map_acc}{'magnify'}
-                      : 1;
+                        defined( $ref_map_accs->{$ref_map_acc}{'magnify'} )
+                        ? $ref_map_accs->{$ref_map_acc}{'magnify'}
+                        : 1;
                     push @ref_strs,
-                      $ref_map_acc . '[' . $start . '*' . $stop . 'x' . $mag
-                      . ']';
+                        $ref_map_acc . '[' . $start . '*' . $stop . 'x' . $mag
+                        . ']';
                 }
                 else {
                     push @ref_strs, $ref_map_acc;
@@ -1099,24 +1105,24 @@ Given information about the link, creates a url to cmap_viewer.
                     foreach my $acc ( keys %{ $map->{$field} } ) {
                         if ( $field eq 'maps' ) {
                             my $start =
-                              defined( $map->{$field}{$acc}{'start'} )
-                              ? $map->{$field}{$acc}{'start'}
-                              : '';
+                                defined( $map->{$field}{$acc}{'start'} )
+                                ? $map->{$field}{$acc}{'start'}
+                                : '';
                             my $stop =
-                              defined( $map->{$field}{$acc}{'stop'} )
-                              ? $map->{$field}{$acc}{'stop'}
-                              : '';
+                                defined( $map->{$field}{$acc}{'stop'} )
+                                ? $map->{$field}{$acc}{'stop'}
+                                : '';
                             my $mag =
-                              defined( $map->{$field}{$acc}{'mag'} )
-                              ? $map->{$field}{$acc}{'mag'}
-                              : 1;
+                                defined( $map->{$field}{$acc}{'mag'} )
+                                ? $map->{$field}{$acc}{'mag'}
+                                : 1;
                             push @strs,
-                              $slot_no
-                              . '%3dmap_acc%3d'
-                              . $acc . '['
-                              . $start . '*'
-                              . $stop . 'x'
-                              . $mag . ']';
+                                $slot_no
+                                . '%3dmap_acc%3d'
+                                . $acc . '['
+                                . $start . '*'
+                                . $stop . 'x'
+                                . $mag . ']';
 
                         }
                         else {
@@ -1131,67 +1137,67 @@ Given information about the link, creates a url to cmap_viewer.
     }
     ### optional
     $url .= "ref_map_start=$ref_map_start;"
-      if ( defined($ref_map_start) and $ref_map_start ne '' );
+        if ( defined($ref_map_start) and $ref_map_start ne '' );
     $url .= "ref_map_stop=$ref_map_stop;"
-      if ( defined($ref_map_stop) and $ref_map_stop ne '' );
+        if ( defined($ref_map_stop) and $ref_map_stop ne '' );
     $url .= "highlight=" . uri_escape($highlight) . ";"
-      if ( defined($highlight) and $highlight ne '' );
+        if ( defined($highlight) and $highlight ne '' );
     $url .= "font_size=$font_size;"
-      if ( defined($font_size) and $font_size ne '' );
+        if ( defined($font_size) and $font_size ne '' );
     $url .= "image_size=$image_size;"
-      if ( defined($image_size) and $image_size ne '' );
+        if ( defined($image_size) and $image_size ne '' );
     $url .= "image_type=$image_type;"
-      if ( defined($image_type) and $image_type ne '' );
+        if ( defined($image_type) and $image_type ne '' );
     $url .= "label_features=$label_features;"
-      if ( defined($label_features) and $label_features ne '' );
+        if ( defined($label_features) and $label_features ne '' );
     $url .= "collapse_features=$collapse_features;"
-      if ( defined($collapse_features) and $collapse_features ne '' );
+        if ( defined($collapse_features) and $collapse_features ne '' );
     $url .= "cluster_corr=$cluster_corr;"
-      if ( defined($cluster_corr) and $cluster_corr ne '' );
+        if ( defined($cluster_corr) and $cluster_corr ne '' );
     $url .= "aggregate=$aggregate;"
-      if ( defined($aggregate) and $aggregate ne '' );
+        if ( defined($aggregate) and $aggregate ne '' );
     $url .= "scale_maps=$scale_maps;"
-      if ( defined($scale_maps) and $scale_maps ne '' );
+        if ( defined($scale_maps) and $scale_maps ne '' );
     $url .= "stack_maps=$stack_maps;"
-      if ( defined($stack_maps) and $stack_maps ne '' );
+        if ( defined($stack_maps) and $stack_maps ne '' );
     $url .= "ref_map_order=$ref_map_order;"
-      if ( defined($ref_map_order) and $ref_map_order ne '' );
+        if ( defined($ref_map_order) and $ref_map_order ne '' );
     $url .= "split_agg_ev=$split_agg_ev;"
-      if ( defined($split_agg_ev) and $split_agg_ev ne '' );
+        if ( defined($split_agg_ev) and $split_agg_ev ne '' );
     $url .= "clean_view=$clean_view;"
-      if ( defined($clean_view) and $clean_view ne '' );
+        if ( defined($clean_view) and $clean_view ne '' );
     $url .= "comp_menu_order=$comp_menu_order;"
-      if ( defined($comp_menu_order) and $comp_menu_order ne '' );
+        if ( defined($comp_menu_order) and $comp_menu_order ne '' );
     $url .= "corrs_to_map=$corrs_to_map;"
-      if ( defined($corrs_to_map) and $corrs_to_map ne '' );
+        if ( defined($corrs_to_map) and $corrs_to_map ne '' );
     $url .= "magnify_all=$magnify_all;"
-      if ( defined($magnify_all) and $magnify_all ne '' );
+        if ( defined($magnify_all) and $magnify_all ne '' );
     $url .= "ignore_image_map_sanity=$ignore_image_map_sanity;"
-      if $ignore_image_map_sanity;
+        if $ignore_image_map_sanity;
     $url .= "flip=$flip;"
-      if ( defined($flip) and $flip ne '' );
+        if ( defined($flip) and $flip ne '' );
     $url .= "left_min_corrs=$left_min_corrs;"
-      if ( defined($left_min_corrs) and $left_min_corrs ne '' );
+        if ( defined($left_min_corrs) and $left_min_corrs ne '' );
     $url .= "right_min_corrs=$right_min_corrs;"
-      if ( defined($right_min_corrs) and $right_min_corrs ne '' );
+        if ( defined($right_min_corrs) and $right_min_corrs ne '' );
     $url .= "general_min_corrs=$general_min_corrs;"
-      if ( defined($general_min_corrs) and $general_min_corrs ne '' );
+        if ( defined($general_min_corrs) and $general_min_corrs ne '' );
     $url .= "menu_min_corrs=$menu_min_corrs;"
-      if ( defined($menu_min_corrs) and $menu_min_corrs ne '' );
+        if ( defined($menu_min_corrs) and $menu_min_corrs ne '' );
     $url .= "refMenu=$refMenu;"
-      if ( defined($refMenu) and $refMenu ne '' );
+        if ( defined($refMenu) and $refMenu ne '' );
     $url .= "compMenu=$compMenu;"
-      if ( defined($compMenu) and $compMenu ne '' );
+        if ( defined($compMenu) and $compMenu ne '' );
     $url .= "optionMenu=$optionMenu;"
-      if ( defined($optionMenu) and $optionMenu ne '' );
+        if ( defined($optionMenu) and $optionMenu ne '' );
     $url .= "addOpMenu=$addOpMenu;"
-      if ( defined($addOpMenu) and $addOpMenu ne '' );
+        if ( defined($addOpMenu) and $addOpMenu ne '' );
 
     #multi
 
     #Don't print the feature types if they are already the default
-    my $config_feature_default_display =
-      $self->config_data('feature_default_display');
+    my $config_feature_default_display
+        = $self->config_data('feature_default_display');
     my $combined_feature_default_display = -1;
     if ( defined($url_feature_default_display) ) {
         $combined_feature_default_display = $url_feature_default_display;
@@ -1200,11 +1206,11 @@ Given information about the link, creates a url to cmap_viewer.
         and $config_feature_default_display ne '' )
     {
         $combined_feature_default_display = 2
-          if ( $config_feature_default_display eq 'display' );
+            if ( $config_feature_default_display eq 'display' );
         $combined_feature_default_display = 1
-          if ( $config_feature_default_display eq 'corr_only' );
+            if ( $config_feature_default_display eq 'corr_only' );
         $combined_feature_default_display = 0
-          if ( $config_feature_default_display eq 'ignore' );
+            if ( $config_feature_default_display eq 'ignore' );
     }
 
     unless ( $combined_feature_default_display == 2 ) {
@@ -1223,7 +1229,7 @@ Given information about the link, creates a url to cmap_viewer.
         }
     }
     $url .= "ft_DEFAULT=$url_feature_default_display;"
-      if ( defined($url_feature_default_display)
+        if ( defined($url_feature_default_display)
         and $url_feature_default_display ne '' );
     foreach my $acc (@$included_evidence_type_accs) {
         $url .= "et_" . $acc . "=1;";
@@ -1241,7 +1247,6 @@ Given information about the link, creates a url to cmap_viewer.
         $url .= "ets_" . $acc . "=" . $evidence_type_score->{$acc} . ";";
     }
 
-    #print S#TDERR "$url\n\n";
     return $url;
 }
 
@@ -1275,7 +1280,7 @@ This is a consistant way of naming the cache levels.
     my $level = shift;
     return $self->ERROR(
         "Cache Level: $level should not be higher than " . CACHE_LEVELS )
-      unless ( $level <= CACHE_LEVELS );
+        unless ( $level <= CACHE_LEVELS );
     return $self->config_data('database')->{'name'} . "_L" . $level;
 }
 
@@ -1312,10 +1317,11 @@ Returns a Template Toolkit object.
     unless ( $self->{'template'} ) {
         my $cache_dir = $self->cache_dir or return;
         my $template_dir = $config->get_config('template_dir')
-          or return $self->error(
+            or return $self->error(
             'No template directory defined in "' . GLOBAL_CONFIG_FILE . '"' );
-        return $self->error("Template directory '$template_dir' doesn't exist")
-          unless -d $template_dir;
+        return $self->error(
+            "Template directory '$template_dir' doesn't exist")
+            unless -d $template_dir;
 
         $self->{'template'} = Template->new(
             COMPILE_EXT  => '.ttc',
@@ -1326,8 +1332,8 @@ Returns a Template Toolkit object.
                 nbsp => sub { my $s = shift; $s =~ s{\s+}{\&nbsp;}g; $s },
                 commify => \&Bio::GMOD::CMap::Utils::commify,
             },
-          )
-          or $self->error(
+            )
+            or $self->error(
             "Couldn't create Template object: " . Template->error() );
     }
 
@@ -1367,11 +1373,11 @@ Returns the correct SQL module driver for the RDBMS we're using.
         my $db = $self->db or return;
         $db_driver = lc $db->{'Driver'}->{'Name'} || '';
         $db_driver = DEFAULT->{'sql_driver_module'}
-          unless VALID->{'sql_driver_module'}{$db_driver};
+            unless VALID->{'sql_driver_module'}{$db_driver};
         my $sql_module = VALID->{'sql_driver_module'}{$db_driver};
 
         eval "require $sql_module"
-          or return $self->error(
+            or return $self->error(
             qq[Unable to require SQL module "$sql_module": $@]);
 
         # IF YOU ARE GETTING A BIZZARE WARNING:
@@ -1457,7 +1463,7 @@ Clears the image directory of files.  (It will not touch directories.)
     unless ( defined($delete_age) and $delete_age =~ /^\d+$/ ) {
         if ( $delete_age =~ /\d+/ ) {
             $self->warn( "file_age_to_purge not correctly defined.  "
-                  . "Using the default" );
+                    . "Using the default" );
         }
         $delete_age = DEFAULT->{'file_age_to_purge'} || 300;
     }
@@ -1506,7 +1512,7 @@ sub get_cached_results {
 
     unless ( $self->{$cache_name} ) {
         $self->{$cache_name} = $self->init_cache($cache_level)
-          or return;
+            or return;
     }
 
     # can only check for disabled cache after init_cache is called.
@@ -1528,7 +1534,7 @@ sub store_cached_results {
 
     unless ( $self->{$cache_name} ) {
         $self->{$cache_name} = $self->init_cache($cache_level)
-          or return;
+            or return;
     }
 
     # can only check for disabled cache after init_cache is called.

@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.111 2005-09-21 14:54:07 kycl4rk Exp $
+# $Id: Drawer.pm,v 1.112 2005-10-07 15:41:19 mwz444 Exp $
 
 =head1 NAME
 
@@ -342,7 +342,7 @@ This is set to 1 if the Additional Options Menu is displayed.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.111 $)[-1];
+$VERSION = (qw$Revision: 1.112 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -356,18 +356,18 @@ use Data::Dumper;
 use base 'Bio::GMOD::CMap';
 
 my @INIT_PARAMS = qw[
-  apr flip slots highlight font_size image_size image_type
-  label_features included_feature_types corr_only_feature_types
-  url_feature_default_display
-  included_evidence_types ignored_evidence_types ignored_feature_types
-  less_evidence_types greater_evidence_types evidence_type_score
-  config data_source left_min_corrs right_min_corrs
-  general_min_corrs menu_min_corrs slots_min_corrs
-  collapse_features cache_dir map_view data_module
-  aggregate cluster_corr show_intraslot_corr clean_view
-  magnify_all scale_maps stack_maps ref_map_order comp_menu_order
-  omit_area_boxes split_agg_ev refMenu compMenu optionMenu addOpMenu
-  corrs_to_map session_id next_step ignore_image_map_sanity
+    apr flip slots highlight font_size image_size image_type
+    label_features included_feature_types corr_only_feature_types
+    url_feature_default_display
+    included_evidence_types ignored_evidence_types ignored_feature_types
+    less_evidence_types greater_evidence_types evidence_type_score
+    config data_source left_min_corrs right_min_corrs
+    general_min_corrs menu_min_corrs slots_min_corrs
+    collapse_features cache_dir map_view data_module
+    aggregate cluster_corr show_intraslot_corr clean_view
+    magnify_all scale_maps stack_maps ref_map_order comp_menu_order
+    omit_area_boxes split_agg_ev refMenu compMenu optionMenu addOpMenu
+    corrs_to_map session_id next_step ignore_image_map_sanity
 ];
 
 # ----------------------------------------------------
@@ -392,48 +392,50 @@ Initializes the drawing object.
         if ( $self->clear_img_dir() ) {
             if ( $self->check_img_dir_fullness() ) {
                 return $self->error( "Error: Image directory '"
-                      . $self->cache_dir . "' is "
-                      . 'filled.  The maximum allowed is '
-                      . $self->config_data('max_img_dir_fullness')
-                      . '% filled . '
-                      . " CMap was unable to purge enough space."
-                      . " Please contact the site administrator for assistance."
+                        . $self->cache_dir . "' is "
+                        . 'filled.  The maximum allowed is '
+                        . $self->config_data('max_img_dir_fullness')
+                        . '% filled . '
+                        . " CMap was unable to purge enough space."
+                        . " Please contact the site administrator for assistance."
                 );
             }
         }
         else {
             return $self->error( "Error: Image directory '"
-                  . $self->cache_dir . "' is "
-                  . 'filled.  The maximum allowed is '
-                  . $self->config_data('max_img_dir_fullness')
-                  . '% filled . '
-                  . " CMap is not set to automatically purge this directory."
-                  . " Please contact the site administrator for assistance." );
+                    . $self->cache_dir . "' is "
+                    . 'filled.  The maximum allowed is '
+                    . $self->config_data('max_img_dir_fullness')
+                    . '% filled . '
+                    . " CMap is not set to automatically purge this directory."
+                    . " Please contact the site administrator for assistance."
+            );
         }
     }
     if ( $self->check_img_dir_size() ) {
         if ( $self->clear_img_dir() ) {
             if ( $self->check_img_dir_size() ) {
                 return $self->error( "Error: Image directory '"
-                      . $self->cache_dir
-                      . "' filled.  "
-                      . " The maximum size the directory can grow is "
-                      . $self->config_data('max_img_dir_size')
-                      . " bytes. "
-                      . " CMap was unable to purge enough space."
-                      . " Please contact the site administrator for assistance."
+                        . $self->cache_dir
+                        . "' filled.  "
+                        . " The maximum size the directory can grow is "
+                        . $self->config_data('max_img_dir_size')
+                        . " bytes. "
+                        . " CMap was unable to purge enough space."
+                        . " Please contact the site administrator for assistance."
                 );
             }
         }
         else {
             return $self->error( "Error: Image directory '"
-                  . $self->cache_dir
-                  . "' filled.  "
-                  . " The maximum size the directory can grow is "
-                  . $self->config_data('max_img_dir_size')
-                  . " bytes. "
-                  . " CMap is not set to automatically purge this directory."
-                  . " Please contact the site administrator for assistance." );
+                    . $self->cache_dir
+                    . "' filled.  "
+                    . " The maximum size the directory can grow is "
+                    . $self->config_data('max_img_dir_size')
+                    . " bytes. "
+                    . " CMap is not set to automatically purge this directory."
+                    . " Please contact the site administrator for assistance."
+            );
         }
     }
 
@@ -514,7 +516,7 @@ so that it's positive.
     for my $rec (
         map { @{ $self->{'drawing_data'}{$_} } }
         keys %{ $self->{'drawing_data'} }
-      )
+        )
     {
         my $shape = $rec->[0];
         for my $y_field ( @{ SHAPE_XY->{$shape}{'y'} } ) {
@@ -541,7 +543,7 @@ so that it's positive.
             my @coords = @{ $rec->{'coords'} || [] } or next;
             $coords[$_] += $y_shift for ( 1, 3 );
             $coords[$_] += $x_shift for ( 0, 2 );
-            $rec->{'coords'} = [ map { int } @coords ];
+            $rec->{'coords'} = [ map {int} @coords ];
         }
     }
 
@@ -564,8 +566,10 @@ Draws a line from one point to another.
 
 =cut
 
-    my ( $self, $x1, $y1, $x2, $y2, $color, $same_map, $label_side, $line_type )
-      = @_;
+    my ($self,  $x1,       $y1,         $x2, $y2,
+        $color, $same_map, $label_side, $line_type
+        )
+        = @_;
     my $layer = 0;      # bottom-most layer of image
     my @lines = ();
     my $line  = LINE;
@@ -581,77 +585,81 @@ Draws a line from one point to another.
         elsif ($same_map) {
             if ( $label_side eq RIGHT ) {
                 push @lines,
-                  [
+                    [
                     $line, $x1, $y1, $x1 + $extention_length,
                     $y1, $color, $layer
-                  ];
+                    ];
                 push @lines,
-                  [
-                    $line,                   $x1 + $extention_length, $y1,
-                    $x2 + $extention_length, $y2,                     $color,
+                    [
+                    $line, $x1 + $extention_length,
+                    $y1,   $x2 + $extention_length,
+                    $y2,   $color,
                     $layer
-                  ];
+                    ];
                 push @lines,
-                  [
+                    [
                     $line, $x2 + $extention_length,
                     $y2, $x2, $y2, $color, $layer
-                  ];
+                    ];
             }
             else {
                 push @lines,
-                  [
+                    [
                     $line, $x1, $y1, $x1 - $extention_length,
                     $y1, $color, $layer
-                  ];
+                    ];
                 push @lines,
-                  [
-                    $line,                   $x1 - $extention_length, $y1,
-                    $x2 - $extention_length, $y2,                     $color,
+                    [
+                    $line, $x1 - $extention_length,
+                    $y1,   $x2 - $extention_length,
+                    $y2,   $color,
                     $layer
-                  ];
+                    ];
                 push @lines,
-                  [
+                    [
                     $line, $x2 - $extention_length,
                     $y2, $x2, $y2, $color, $layer
-                  ];
+                    ];
             }
         }
         else {
             if ( $x1 < $x2 ) {
                 push @lines,
-                  [
+                    [
                     $line, $x1, $y1, $x1 + $extention_length,
                     $y1, $color, $layer
-                  ];
+                    ];
                 push @lines,
-                  [
-                    $line,                   $x1 + $extention_length, $y1,
-                    $x2 - $extention_length, $y2,                     $color,
+                    [
+                    $line, $x1 + $extention_length,
+                    $y1,   $x2 - $extention_length,
+                    $y2,   $color,
                     $layer
-                  ];
+                    ];
                 push @lines,
-                  [
+                    [
                     $line, $x2 - $extention_length,
                     $y2, $x2, $y2, $color, $layer
-                  ];
+                    ];
             }
             else {
                 push @lines,
-                  [
+                    [
                     $line, $x1, $y1, $x1 - $extention_length,
                     $y1, $color, $layer
-                  ];
+                    ];
                 push @lines,
-                  [
-                    $line,                   $x1 - $extention_length, $y1,
-                    $x2 + $extention_length, $y2,                     $color,
+                    [
+                    $line, $x1 - $extention_length,
+                    $y1,   $x2 + $extention_length,
+                    $y2,   $color,
                     $layer
-                  ];
+                    ];
                 push @lines,
-                  [
+                    [
                     $line, $x2 + $extention_length,
                     $y2, $x2, $y2, $color, $layer
-                  ];
+                    ];
             }
         }
     }
@@ -709,7 +717,7 @@ Accepts a list of attributes to describe how to draw an object.
             my $font   = $attr[1];
             my $string = $attr[4];
             push @x,
-              $attr[ $x_locations[0] ] + ( $font->width * length($string) );
+                $attr[ $x_locations[0] ] + ( $font->width * length($string) );
             push @y, $attr[ $y_locations[0] ] - $font->height;
         }
         elsif ( $shape eq STRING_UP ) {
@@ -785,7 +793,7 @@ Gets/sets the comparative map.
     my $self = shift;
     if ( my $map = shift ) {
         my ( $field, $acc ) = split( /=/, $map )
-          or $self->error(qq[Invalid input to comparative map "$map"]);
+            or $self->error(qq[Invalid input to comparative map "$map"]);
         $self->{'comparative_map'}{'field'} = $field;
         $self->{'comparative_map'}{'acc'}   = $acc;
     }
@@ -839,10 +847,10 @@ Gets/sets which maps to flip.
         for my $s ( split /:/, $arg ) {
             my ( $slot_no, $map_acc ) = split /=/, $s or next;
             push @{ $self->{'flip'} },
-              {
+                {
                 slot_no => $slot_no,
                 map_acc => $map_acc,
-              };
+                };
         }
     }
 
@@ -882,7 +890,7 @@ Gets/sets which evidence type (accession IDs) to include.
         $self->{'included_evidence_types'} = $arg;
     }
     $self->{'included_evidence_types'} = []
-      unless $self->{'included_evidence_types'};
+        unless $self->{'included_evidence_types'};
 
     return $self->{'included_evidence_types'};
 }
@@ -905,7 +913,7 @@ Gets/sets which evidence type (accession IDs) to ignore.
         $self->{'ignored_evidence_types'} = $arg;
     }
     $self->{'ignored_evidence_types'} = []
-      unless $self->{'ignored_evidence_types'};
+        unless $self->{'ignored_evidence_types'};
 
     return $self->{'ignored_evidence_types'};
 }
@@ -928,7 +936,7 @@ Gets/sets which evidence type (accession IDs) to measure against the scores.
         $self->{'less_evidence_types'} = $arg;
     }
     $self->{'less_evidence_types'} = []
-      unless $self->{'less_evidence_types'};
+        unless $self->{'less_evidence_types'};
 
     return $self->{'less_evidence_types'};
 }
@@ -951,7 +959,7 @@ Gets/sets which evidence type (accession IDs) to measure against the scores.
         $self->{'greater_evidence_types'} = $arg;
     }
     $self->{'greater_evidence_types'} = []
-      unless $self->{'greater_evidence_types'};
+        unless $self->{'greater_evidence_types'};
 
     return $self->{'greater_evidence_types'};
 }
@@ -973,7 +981,7 @@ Gets/sets which evidence type scores
         $self->{'evidence_type_score'} = $arg;
     }
     $self->{'evidence_type_score'} = {}
-      unless $self->{'evidence_type_score'};
+        unless $self->{'evidence_type_score'};
 
     return $self->{'evidence_type_score'};
 }
@@ -996,7 +1004,7 @@ Gets/sets which feature type (accession IDs) to include.
         $self->{'included_feature_types'} = $arg;
     }
     $self->{'included_feature_types'} = []
-      unless $self->{'included_feature_types'};
+        unless $self->{'included_feature_types'};
 
     return $self->{'included_feature_types'};
 }
@@ -1019,7 +1027,7 @@ Gets/sets which feature type (accession IDs) to corr_only.
         $self->{'corr_only_feature_types'} = $arg;
     }
     $self->{'corr_only_feature_types'} = []
-      unless $self->{'corr_only_feature_types'};
+        unless $self->{'corr_only_feature_types'};
 
     return $self->{'corr_only_feature_types'};
 }
@@ -1042,7 +1050,7 @@ Gets/sets which feature type (accession IDs) to ignore.
         $self->{'ignored_feature_types'} = $arg;
     }
     $self->{'ignored_feature_types'} = []
-      unless $self->{'ignored_feature_types'};
+        unless $self->{'ignored_feature_types'};
 
     return $self->{'ignored_feature_types'};
 }
@@ -1075,8 +1083,8 @@ Returns the drawing data.
 
     my $self = shift;
     return map { @{ $self->{'drawing_data'}{$_} } }
-      sort     { $a <=> $b }
-      keys %{ $self->{'drawing_data'} };
+        sort   { $a <=> $b }
+        keys %{ $self->{'drawing_data'} };
 }
 
 # ----------------------------------------------------
@@ -1102,8 +1110,12 @@ Lays out the image and writes it to the file system, set the "image_name."
 
         # If there is nothing in one of the slots, don't show any slots
         #  after it.  That is the purpose of the slots_capped variables.
-        next if ( defined($slots_capped_max) and $slots_capped_max < $slot_no );
-        next if ( defined($slots_capped_min) and $slots_capped_min > $slot_no );
+        next
+            if ( defined($slots_capped_max)
+            and $slots_capped_max < $slot_no );
+        next
+            if ( defined($slots_capped_min)
+            and $slots_capped_min > $slot_no );
         my $data = $self->slot_data($slot_no) or return;
         unless (%$data) {
             if ( $slot_no > 0 ) {
@@ -1132,11 +1144,11 @@ Lays out the image and writes it to the file system, set the "image_name."
             magnify_all => $self->magnify_all,
             scale_maps  => $self->scale_maps,
             stack_maps  => $self->stack_maps,
-          )
-          or return $self->error( Bio::GMOD::CMap::Drawer::Map->error );
+            )
+            or return $self->error( Bio::GMOD::CMap::Drawer::Map->error );
 
         my ( $bounds, $corrs_aggregated_tmp ) = $map->layout
-          or return $self->error( $map->error );
+            or return $self->error( $map->error );
         $corrs_aggregated = $corrs_aggregated_tmp if $corrs_aggregated_tmp;
         $min_x = $bounds->[0] unless defined $min_x;
         $min_y = $bounds->[1] unless defined $min_y;
@@ -1174,7 +1186,7 @@ Lays out the image and writes it to the file system, set the "image_name."
                 $self->add_connection(
                     @positions,
                     $evidence_info->{'line_color'}
-                      || $self->config_data('connecting_line_color'),
+                        || $self->config_data('connecting_line_color'),
                     $position_set->{'same_map'}   || 0,
                     $position_set->{'label_side'} || '',
                     $position_set->{'line_type'},
@@ -1248,18 +1260,19 @@ Lays out the image and writes it to the file system, set the "image_name."
         my $end = $x + $font->width * length($string);
         $max_x = $end if $end > $max_x;
 
-        my $corr_color     = $self->config_data('feature_correspondence_color');
+        my $corr_color = $self->config_data('feature_correspondence_color');
         my $ft_details_url = $self->config_data('feature_type_details_url');
         my $et_details_url = $self->config_data('evidence_type_details_url');
 
         if ( $corr_color && $self->correspondences_exist ) {
             push @feature_types,
-              {
+                {
                 shape        => '',
                 color        => $corr_color,
-                feature_type => "Features in $corr_color have correspondences",
+                feature_type =>
+                    "Features in $corr_color have correspondences",
                 correspondence_color => 1,
-              };
+                };
         }
 
         for my $ft (@feature_types) {
@@ -1308,8 +1321,9 @@ Lays out the image and writes it to the file system, set the "image_name."
                 ],
                 url => $ft_details_url . $ft->{'feature_type_acc'},
                 alt => "Feature Type Details for $label",
-              )
-              unless ( $omit_all_area_boxes or $ft->{'correspondence_color'} );
+                )
+                unless ( $omit_all_area_boxes
+                or $ft->{'correspondence_color'} );
 
             my $furthest_x = $label_x + $font->width * length($label) + 5;
             $max_x = $furthest_x if $furthest_x > $max_x;
@@ -1326,9 +1340,10 @@ Lays out the image and writes it to the file system, set the "image_name."
 
             for my $et (@evidence_types) {
                 my $color = $et->{'line_color'}
-                  || $self->config_data('connecting_line_color');
-                my $string =
-                  ucfirst($color) . ' line denotes ' . $et->{'evidence_type'};
+                    || $self->config_data('connecting_line_color');
+                my $string = ucfirst($color)
+                    . ' line denotes '
+                    . $et->{'evidence_type'};
 
                 $self->add_drawing( STRING, $font, $x + 15, $max_y, $string,
                     $color );
@@ -1338,12 +1353,12 @@ Lays out the image and writes it to the file system, set the "image_name."
 
                 $self->add_map_area(
                     coords =>
-                      [ $x + 15, $max_y, $end, $max_y + $font->height, ],
+                        [ $x + 15, $max_y, $end, $max_y + $font->height, ],
                     url => $et_details_url . $et->{'evidence_type_acc'},
                     alt => 'Evidence Type Details for '
-                      . $et->{'evidence_type'},
-                  )
-                  unless ($omit_all_area_boxes);
+                        . $et->{'evidence_type'},
+                    )
+                    unless ($omit_all_area_boxes);
 
                 $max_y += $font->height + 5;
             }
@@ -1359,9 +1374,9 @@ Lays out the image and writes it to the file system, set the "image_name."
         my $all_corr_colors = $self->aggregated_correspondence_colors;
         if ( $all_corr_colors and %$all_corr_colors ) {
             foreach my $evidence_type_acc ( keys(%$all_corr_colors) ) {
-                my $corr_colors   = $all_corr_colors->{$evidence_type_acc};
-                my $default_color =
-                  $self->default_aggregated_correspondence_color(
+                my $corr_colors = $all_corr_colors->{$evidence_type_acc};
+                my $default_color
+                    = $self->default_aggregated_correspondence_color(
                     $evidence_type_acc);
                 my $last_bound;
                 if ( $evidence_type_acc ne
@@ -1383,11 +1398,14 @@ Lays out the image and writes it to the file system, set the "image_name."
                 }
                 foreach my $color_bound (
                     sort { $a <=> $b }
-                    grep { $_ } keys(%$corr_colors)
-                  )
+                    grep {$_} keys(%$corr_colors)
+                    )
                 {
                     $self->add_drawing(
-                        STRING, $font, $x + 15, $max_y,
+                        STRING,
+                        $font,
+                        $x + 15,
+                        $max_y,
                         $color_bound . ' or fewer correspondences',
                         $corr_colors->{$color_bound}
                     );
@@ -1401,7 +1419,8 @@ Lays out the image and writes it to the file system, set the "image_name."
             }
         }
         else {
-            my $default_color = $self->default_aggregated_correspondence_color;
+            my $default_color
+                = $self->default_aggregated_correspondence_color;
             $self->add_drawing( STRING, $font, $x, $max_y,
                 'All Aggregated Correspondences',
                 $default_color );
@@ -1453,13 +1472,14 @@ Lays out the image and writes it to the file system, set the "image_name."
     $self->add_drawing( STRING, $font, $wm_x, $wm_y, $watermark, 'grey' );
     $self->add_map_area(
         coords => [
-            $wm_x,                                     $wm_y,
-            $wm_x + $font->width * length($watermark), $wm_y + $font->height
+            $wm_x, $wm_y,
+            $wm_x + $font->width * length($watermark),
+            $wm_y + $font->height
         ],
         url => CMAP_URL,
         alt => 'GMOD-CMap website',
-      )
-      unless ($omit_all_area_boxes);
+        )
+        unless ($omit_all_area_boxes);
 
     $max_y += $font->height + 5;
 
@@ -1472,9 +1492,9 @@ Lays out the image and writes it to the file system, set the "image_name."
 
     # Do the sanity check for area boxes
     unless ( $self->ignore_image_map_sanity ) {
-        my $max_boxes                    = DEFAULT->{'max_image_map_objects'};
-        my $config_max_image_map_objects =
-          $self->config_data('max_image_map_objects');
+        my $max_boxes = DEFAULT->{'max_image_map_objects'};
+        my $config_max_image_map_objects
+            = $self->config_data('max_image_map_objects');
         if ( defined($config_max_image_map_objects)
             and $config_max_image_map_objects =~ /^[\d,]+$/ )
         {
@@ -1484,7 +1504,7 @@ Lays out the image and writes it to the file system, set the "image_name."
         if ( scalar( $self->image_map_data ) > $max_boxes ) {
             $self->{'image_map_data'} = ();
             $self->message(
-'WARNING:  There were too many clickable objects on this image to render in a timely manner and may break some browsers.  It is recommended that you limit the display of features in the Options Menu.  <BR>If you wish to ignore this and render the image buttons, you can select "Ignore Image Map Sanity Check" in the Additional Options Menu.'
+                'WARNING:  There were too many clickable objects on this image to render in a timely manner and may break some browsers.  It is recommended that you limit the display of features in the Options Menu.  <BR>If you wish to ignore this and render the image buttons, you can select "Ignore Image Map Sanity Check" in the Additional Options Menu.'
             );
         }
     }
@@ -1500,10 +1520,10 @@ Lays out the image and writes it to the file system, set the "image_name."
     my $img_class = $self->image_class;
     my $img       = $img_class->new( $width, $height );
     my %colors    =
-      map {
+        map {
         $_, $img->colorAllocate( map { hex $_ } @{ +COLORS->{$_} } )
-      }
-      keys %{ +COLORS };
+        }
+        keys %{ +COLORS };
     $img->interlaced('true');
     $img->filledRectangle( 0, 0, $width, $height,
         $colors{ $self->config_data('background_color') } );
@@ -1531,7 +1551,7 @@ Lays out the image and writes it to the file system, set the "image_name."
     my ( $fh, $filename ) = tempfile( 'X' x 9, DIR => $cache_dir );
     my $image_type = $self->image_type;
     print $fh $img->$image_type()
-      || $self->warn("CMap image write failed: $!");
+        || $self->warn("CMap image write failed: $!");
     $fh->close;
     $self->image_name($filename);
 
@@ -1566,8 +1586,8 @@ necessary data for drawing.
             less_evidence_type_accs     => $self->less_evidence_types,
             greater_evidence_type_accs  => $self->greater_evidence_types,
             evidence_type_score         => $self->evidence_type_score,
-          )
-          or return $self->error( $data->error );
+            )
+            or return $self->error( $data->error );
 
         return $self->error("Problem getting data") unless $self->{'data'};
 
@@ -1603,12 +1623,12 @@ Returns a distinct list of all the correspondence evidence types seen.
     my $self = shift;
     unless ( $self->{'correspondence_evidence_seen'} ) {
         my %types =
-          map { $_->{'evidence_type'}, $_ }
-          values %{ $self->{'data'}{'correspondence_evidence'} };
+            map { $_->{'evidence_type'}, $_ }
+            values %{ $self->{'data'}{'correspondence_evidence'} };
 
         $self->{'correspondence_evidence_seen'} = [
             map { $types{$_} }
-              sort keys %types
+                sort keys %types
         ];
     }
 
@@ -1627,12 +1647,12 @@ Given a feature correspondence ID, returns supporting evidence.
 =cut
 
     my ( $self, $fid1, $fid2 ) = @_;
-    my $feature_correspondence_id =
-      $self->{'data'}{'correspondences'}{$fid1}{$fid2}
-      or return;
+    my $feature_correspondence_id
+        = $self->{'data'}{'correspondences'}{$fid1}{$fid2}
+        or return;
 
     return $self->{'data'}{'correspondence_evidence'}
-      {$feature_correspondence_id};
+        {$feature_correspondence_id};
 }
 
 # ----------------------------------------------------
@@ -1647,12 +1667,12 @@ Given two feature ids, returns supporting evidence.
 =cut
 
     my ( $self, $fid1, $fid2 ) = @_;
-    my $intraslot_correspondence_id =
-      $self->{'data'}{'intraslot_correspondences'}{$fid1}{$fid2}
-      or return;
+    my $intraslot_correspondence_id
+        = $self->{'data'}{'intraslot_correspondences'}{$fid1}{$fid2}
+        or return;
 
     return $self->{'data'}{'intraslot_correspondence_evidence'}
-      {$intraslot_correspondence_id};
+        {$intraslot_correspondence_id};
 }
 
 # ----------------------------------------------------
@@ -1668,12 +1688,12 @@ Returns all the feature types seen on the maps.
 
     my $self = shift;
     unless ( $self->{'feature_types'} ) {
-        $self->{'feature_types'} =
-          [ values %{ $self->{'data'}{'feature_types'} || {} } ];
+        $self->{'feature_types'}
+            = [ values %{ $self->{'data'}{'feature_types'} || {} } ];
     }
 
     return sort { lc $a->{'feature_type'} cmp lc $b->{'feature_type'} }
-      map { $_->{'seen'} ? $_ : () } @{ $self->{'feature_types'} || [] };
+        map { $_->{'seen'} ? $_ : () } @{ $self->{'feature_types'} || [] };
 }
 
 # ----------------------------------------------------
@@ -1692,8 +1712,8 @@ Returns the correspondences for a given feature id.
     return unless @feature_ids;
 
     return
-      map { keys %{ $self->{'data'}{'correspondences'}{$_} || {} } }
-      @feature_ids;
+        map { keys %{ $self->{'data'}{'correspondences'}{$_} || {} } }
+        @feature_ids;
 }
 
 # ----------------------------------------------------
@@ -1711,9 +1731,9 @@ Returns the correspondences for a given feature id.
     my @feature_ids = ref $_[0] eq 'ARRAY' ? @{ shift() } : ( shift() );
     return unless @feature_ids;
 
-    return
-      map { keys %{ $self->{'data'}{'intraslot_correspondences'}{$_} || {} } }
-      @feature_ids;
+    return map {
+        keys %{ $self->{'data'}{'intraslot_correspondences'}{$_} || {} }
+    } @feature_ids;
 }
 
 # ----------------------------------------------------
@@ -1738,78 +1758,75 @@ to connect corresponding features on two maps.
     for my $f1 ( keys %{ $self->{'feature_position'}{$slot_no} } ) {
         my $self_label_side = $self->label_side($slot_no);
 
-        my @f1_pos =
-          @{ $self->{'feature_position'}{$slot_no}{$f1}{$cur_side} || [] }
-          or next;
+        my @f1_pos
+            = @{ $self->{'feature_position'}{$slot_no}{$f1}{$cur_side} || [] }
+            or next;
 
-        my @f1_self_pos =
-          @{ $self->{'feature_position'}{$slot_no}{$f1}{$self_label_side}
-              || [] }
-          or next;
+        my @f1_self_pos
+            = @{ $self->{'feature_position'}{$slot_no}{$f1}{$self_label_side}
+                || [] }
+            or next;
         for my $f2 ( $self->feature_correspondences($f1) ) {
             my @same_map = ();
             if ( $self->{'feature_position'}{$slot_no}{$f2} ) {
-                @same_map =
-                  @{ $self->{'feature_position'}{$slot_no}{$f2}
-                      {$self_label_side} || [] };
+                @same_map = @{ $self->{'feature_position'}{$slot_no}{$f2}
+                        {$self_label_side} || [] };
             }
 
             my @ref_pos = ();
 
             if ( defined( $self->{'feature_position'}{$ref_slot_no}{$f2} ) ) {
-                @ref_pos =
-                  @{ $self->{'feature_position'}{$ref_slot_no}{$f2}{$ref_side}
-                      || [] };
+                @ref_pos = @{ $self->{'feature_position'}{$ref_slot_no}{$f2}
+                        {$ref_side} || [] };
             }
 
             push @return,
-              {
+                {
                 feature_id1 => $f1,
                 feature_id2 => $f2,
                 positions   => [ @f1_self_pos, @same_map ],
                 same_map    => 1,
                 label_side  => $self->label_side($slot_no),
                 line_type   => 'direct',
-              }
-              if @same_map;
+                }
+                if @same_map;
 
             push @return,
-              {
+                {
                 feature_id1 => $f1,
                 feature_id2 => $f2,
                 positions   => [ @f1_pos, @ref_pos ],
                 line_type   => 'direct',
-              }
-              if @ref_pos;
+                }
+                if @ref_pos;
         }
         for my $f2 ( $self->intraslot_correspondences($f1) ) {
-            my @same_map =
-              @{ $self->{'feature_position'}{$slot_no}{$f2}{$self_label_side}
-                  || [] };
+            my @same_map = @{ $self->{'feature_position'}{$slot_no}{$f2}
+                    {$self_label_side} || [] };
 
-            my @ref_pos =
-              @{ $self->{'feature_position'}{$ref_slot_no}{$f2}{$ref_side}
-                  || [] };
+            my @ref_pos
+                = @{ $self->{'feature_position'}{$ref_slot_no}{$f2}{$ref_side}
+                    || [] };
 
             push @return,
-              {
+                {
                 feature_id1 => $f1,
                 feature_id2 => $f2,
                 positions   => [ @f1_self_pos, @same_map ],
                 same_map    => 1,
                 label_side  => $self->label_side($slot_no),
                 line_type   => 'indirect',
-              }
-              if @same_map;
+                }
+                if @same_map;
 
             push @return,
-              {
+                {
                 feature_id1 => $f1,
                 feature_id2 => $f2,
                 positions   => [ @f1_pos, @ref_pos ],
                 line_type   => 'indirect',
-              }
-              if @ref_pos;
+                }
+                if @ref_pos;
         }
     }
 
@@ -1836,7 +1853,7 @@ Returns the font size.
 
     unless ( $self->{'font_size'} ) {
         $self->{'font_size'} = $self->config_data('font_size')
-          || DEFAULT->{'font_size'};
+            || DEFAULT->{'font_size'};
     }
 
     return $self->{'font_size'};
@@ -1856,7 +1873,7 @@ Returns whether or not a feature has a correspondence.
     my $self = shift;
     my $feature_id = shift or return;
     return defined $self->{'data'}{'correspondences'}{$feature_id}
-      || defined $self->{'data'}{'intraslot_correspondences'}{$feature_id};
+        || defined $self->{'data'}{'intraslot_correspondences'}{$feature_id};
 }
 
 # ----------------------------------------------------
@@ -1895,8 +1912,8 @@ Gets/sets the string of highlighted features.
             #
             # Remove leading and trailing whitespace, convert to uppercase.
             #
-            $self->{'highlight_hash'} =
-              { map { s/^\s+|\s+$//g; ( uc $_, 1 ) } parse_words($highlight) };
+            $self->{'highlight_hash'} = { map { s/^\s+|\s+$//g; ( uc $_, 1 ) }
+                    parse_words($highlight) };
         }
         else {
 
@@ -1983,7 +2000,7 @@ Returns the set image size.
 
     unless ( defined $self->{'image_size'} ) {
         $self->{'image_size'} = $self->config_data('image_size')
-          || DEFAULT->{'image_size'};
+            || DEFAULT->{'image_size'};
     }
 
     return $self->{'image_size'};
@@ -2009,7 +2026,7 @@ Gets/sets the current image type.
 
     unless ( defined $self->{'image_type'} ) {
         $self->{'image_type'} = $self->config_data('image_type')
-          || DEFAULT->{'image_type'};
+            || DEFAULT->{'image_type'};
     }
 
     return $self->{'image_type'};
@@ -2030,7 +2047,7 @@ Gets/sets the current image name.
 
     if ( my $path = shift ) {
         return $self->error(qq[Unable to read image file "$path"])
-          unless -r $path;
+            unless -r $path;
         my $image_name = basename($path);
         $self->{'image_name'} = $image_name;
     }
@@ -2257,7 +2274,7 @@ Gets/sets whether to show feature labels.
 
     if ( my $arg = shift ) {
         $self->error(qq[Show feature labels input "$arg" invalid])
-          unless VALID->{'label_features'}{$arg};
+            unless VALID->{'label_features'}{$arg};
         $self->{'label_features'} = $arg;
     }
 
@@ -2305,8 +2322,8 @@ Returns the data for one or all slots.
 
     if ( defined( my $slot_no = shift ) ) {
         return exists $data->{'slots'}{$slot_no}
-          ? $data->{'slots'}{$slot_no}
-          : undef;
+            ? $data->{'slots'}{$slot_no}
+            : undef;
     }
     else {
         return $data->{'slots'};
@@ -2351,10 +2368,11 @@ Set and retrieve the slot title.
     my %args    = @_;
     my $slot_no = $args{'slot_no'};
     if ( $args{'bounds'} ) {
-        $self->{'slot_title'}{$slot_no}{'bounds'}       = $args{'bounds'};
-        $self->{'slot_title'}{$slot_no}{'drawing_data'} = $args{'drawing_data'};
-        $self->{'slot_title'}{$slot_no}{'map_area_data'} =
-          $args{'map_area_data'};
+        $self->{'slot_title'}{$slot_no}{'bounds'} = $args{'bounds'};
+        $self->{'slot_title'}{$slot_no}{'drawing_data'}
+            = $args{'drawing_data'};
+        $self->{'slot_title'}{$slot_no}{'map_area_data'}
+            = $args{'map_area_data'};
     }
     return $self->{'slot_title'}{$slot_no};
 }
@@ -2475,7 +2493,7 @@ Returns the pixel height of the image based upon the requested "image_size."
     unless ( $self->{'pixel_height'} ) {
         my $image_size = $self->image_size;
         $self->{'pixel_height'} = VALID->{'image_size'}{$image_size}
-          or $self->error("Can't figure out pixel height");
+            or $self->error("Can't figure out pixel height");
     }
 
     return $self->{'pixel_height'};
@@ -2496,9 +2514,9 @@ Returns the reference slot number for a given slot number.
     return unless defined $slot_no;
 
     my $ref_slot_no =
-        $slot_no > 0 ? $slot_no - 1
-      : $slot_no < 0 ? $slot_no + 1
-      : undef;
+          $slot_no > 0 ? $slot_no - 1
+        : $slot_no < 0 ? $slot_no + 1
+        : undef;
     return undef unless defined $ref_slot_no;
 
     my $slot_data = $self->slot_data;
@@ -2555,11 +2573,10 @@ Returns the font for the "regular" stuff (feature labels, map names, etc.).
 
 =cut
 
-    my (
-        $self, $slot_no, $map_id, $start, $stop,
+    my ($self, $slot_no, $map_id, $start, $stop,
         $x1,   $y1,      $x2,     $y2,    $is_flipped
-      )
-      = @_;
+        )
+        = @_;
     $self->{'map_coords'}{$slot_no}{$map_id} = {
         map_start  => $start,
         map_stop   => $stop,
@@ -2620,7 +2637,7 @@ Returns the font for the "regular" stuff (feature labels, map names, etc.).
 
         if ( my $font = $methods{$font_size} ) {
             $self->{'regular_font'} = $font_pkg->$font()
-              or return $self->error(
+                or return $self->error(
                 "Error creating font with package '$font_pkg'");
         }
         else {
@@ -2653,8 +2670,8 @@ Returns the "tick_y" positions of the features IDs in a given slot.
     my @return = ();
     for my $feature_id (@$feature_ids) {
         push @return,
-          $self->{'feature_position'}{$slot_no}{$feature_id}{'tick_y'}
-          || ();
+            $self->{'feature_position'}{$slot_no}{$feature_id}{'tick_y'}
+            || ();
     }
 
     return @return;
@@ -2692,20 +2709,20 @@ that is defined in the main section.
     my $evidence_type_acc = shift;
 
     return $self->{'corr_colors'}
-      unless ($evidence_type_acc);
+        unless ($evidence_type_acc);
 
     unless ($self->{'corr_colors'}
         and $self->{'corr_colors'}{$evidence_type_acc} )
     {
         unless (
-            $self->{'corr_colors'}{$evidence_type_acc} =
-            $self->evidence_type_data(
+            $self->{'corr_colors'}{$evidence_type_acc}
+            = $self->evidence_type_data(
                 $evidence_type_acc, 'aggregated_correspondence_colors'
             )
-          )
+            )
         {
-            $self->{'corr_colors'}{$evidence_type_acc} =
-              $self->config_data('aggregated_correspondence_colors');
+            $self->{'corr_colors'}{$evidence_type_acc}
+                = $self->config_data('aggregated_correspondence_colors');
         }
     }
 
@@ -2728,20 +2745,20 @@ the value in Constants.pm for aggregated_correspondence_color.
     my $evidence_type_acc = shift;
 
     $evidence_type_acc = DEFAULT->{'aggregated_type_substitute'}
-      unless ($evidence_type_acc);
+        unless ($evidence_type_acc);
 
     unless ($self->{'default_corr_color'}
         and $self->{'default_corr_color'}{$evidence_type_acc} )
     {
-        my $corr_colors =
-          $self->aggregated_correspondence_colors($evidence_type_acc);
+        my $corr_colors
+            = $self->aggregated_correspondence_colors($evidence_type_acc);
         if ( $corr_colors and %$corr_colors ) {
-            $self->{'default_corr_color'}{$evidence_type_acc} =
-              $corr_colors->{0};
+            $self->{'default_corr_color'}{$evidence_type_acc}
+                = $corr_colors->{0};
         }
         unless ( $self->{'default_corr_color'}{$evidence_type_acc} ) {
-            $self->{'default_corr_color'}{$evidence_type_acc} =
-              DEFAULT->{'connecting_line_color'};
+            $self->{'default_corr_color'}{$evidence_type_acc}
+                = DEFAULT->{'connecting_line_color'};
         }
     }
 
@@ -2764,12 +2781,12 @@ return the correct line color for the aggregated correspondences.
     my $evidence_type_acc = $args{'evidence_type_acc'};
     my $corr_no           = $args{'corr_no'};
 
-    my $corr_colors =
-      $self->aggregated_correspondence_colors($evidence_type_acc);
-    my $line_color =
-      $self->default_aggregated_correspondence_color($evidence_type_acc);
+    my $corr_colors
+        = $self->aggregated_correspondence_colors($evidence_type_acc);
+    my $line_color
+        = $self->default_aggregated_correspondence_color($evidence_type_acc);
     foreach
-      my $color_bound ( sort { $a <=> $b } grep { $_ } keys(%$corr_colors) )
+        my $color_bound ( sort { $a <=> $b } grep {$_} keys(%$corr_colors) )
     {
         if ( $corr_no <= $color_bound ) {
             $line_color = $corr_colors->{$color_bound};
@@ -2796,7 +2813,7 @@ sub offset_drawing_data {
     my $offset_y = $args{'offset_y'} || 0;
     my $drawing_data = $args{'drawing_data'};
 
-    for ( my $i = 0 ; $i <= $#{$drawing_data} ; $i++ ) {
+    for ( my $i = 0; $i <= $#{$drawing_data}; $i++ ) {
         if (   $drawing_data->[$i][0] eq STRING_UP
             or $drawing_data->[$i][0] eq STRING )
         {
@@ -2821,7 +2838,7 @@ sub offset_drawing_data {
         }
         else {
             die $drawing_data->[$i][0]
-              . " not caught in offset.  Inform developer\n";
+                . " not caught in offset.  Inform developer\n";
         }
     }
 }
@@ -2841,7 +2858,7 @@ sub offset_map_area_data {
     my $offset_y = $args{'offset_y'} || 0;
     my $map_area_data = $args{'map_area_data'};
 
-    for ( my $i = 0 ; $i <= $#{$map_area_data} ; $i++ ) {
+    for ( my $i = 0; $i <= $#{$map_area_data}; $i++ ) {
         $map_area_data->[$i]{'coords'}[0] += $offset_x;
         $map_area_data->[$i]{'coords'}[2] += $offset_x;
         $map_area_data->[$i]{'coords'}[1] += $offset_y;
@@ -2938,14 +2955,35 @@ Creates default link parameters for CMap->create_viewer_link()
     my $compMenu                    = $args{'compMenu'};
     my $optionMenu                  = $args{'optionMenu'};
     my $addOpMenu                   = $args{'addOpMenu'};
+    my $skip_map_info               = $args{'skip_map_info'};
+    my $create_legacy_url           = $args{'create_legacy_url'};
+
+    my $slots = $self->slots();
 
     unless ( defined($session_id) ) {
         $session_id = $self->session_id();
     }
     ### Required Fields that Drawer can't figure out.
-    unless ( $session_id or ( defined($ref_map_set_acc) and $new_session ) ) {
+    unless ( $skip_map_info
+        or $create_legacy_url
+        or $session_id
+        or ( defined($ref_map_set_acc) and $new_session ) )
+    {
         return;
-        $ref_map_set_acc = undef;
+    }
+
+    # Only create this info if we are creating a full legacy url
+    # that doesn't use sessions.
+    if ($create_legacy_url) {
+        unless ( defined($comparative_maps) ) {
+            for my $slot_no ( keys %{$slots} ) {
+                next unless ($slot_no);
+                $comparative_maps->{$slot_no} = $slots->{$slot_no};
+            }
+        }
+        unless ( defined($ref_map_accs) ) {
+            $ref_map_accs = $slots->{0}{'maps'};
+        }
     }
 
     ### Optional fields for finer control
@@ -2965,12 +3003,6 @@ Creates default link parameters for CMap->create_viewer_link()
     }
     unless ( defined($ref_map_stop) ) {
         $ref_map_stop = undef;
-    }
-    unless ( defined($comparative_maps) ) {
-        $comparative_maps = undef;
-    }
-    unless ( defined($ref_map_accs) ) {
-        $ref_map_accs = undef;
     }
     unless ( defined($highlight) ) {
         $highlight = $self->highlight();
@@ -3148,6 +3180,7 @@ Creates default link parameters for CMap->create_viewer_link()
         addOpMenu                   => $addOpMenu,
         session_mod                 => $session_mod,
         new_session                 => $new_session,
+        skip_map_info               => $skip_map_info,
     );
 }
 

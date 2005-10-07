@@ -1,0 +1,79 @@
+[%- INCLUDE header.tmpl title="Edit Saved Link" -%]
+<hr>
+<form action="saved_link" method="post">
+<table>
+    <tr>
+        <td align="right">
+            Saved Link ID:
+        </td>
+        <td>
+            [%- saved_link.saved_link_id -%]
+            <input type=hidden name="saved_link_id" value="[%- saved_link.saved_link_id -%]">
+        </td>
+    </tr>
+    <tr>
+        <td align="right">
+            User Name:
+        </td>
+        <td>
+            <input name="user_name" value="[%- saved_link.user_name -%]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+             Link Comment:
+        </td>
+        <td>
+            <input size=40 name="link_comment" value="[%- saved_link.link_comment -%]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Saved On:
+        </td>
+        <td>
+            [%- saved_link.saved_on -%]
+            <input type=hidden name="saved_on" value="[%- saved_link.saved_on -%]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Permanent URL:
+        </td>
+        <td>
+            <a href="[%- saved_link.saved_url -%]">Permanent URL</a>
+            <input type=hidden name="saved_url" value="[%- saved_link.saved_url -%]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Legacy URL:
+        </td>
+        <td>
+            <a href="[%- saved_link.legacy_url -%]">Large, legacy URL</a>
+            <input type=hidden name="legacy_url" value="[%- saved_link.legacy_url -%]">
+        </td>
+    </tr>
+
+
+
+    <tr>
+        <td align="center" colspan="2">
+            <input type=hidden name="url_to_return_to" value="[%- url_to_return_to -%]">
+            <input type="hidden" name="action"     value="saved_link_update">
+            <input type="reset"  value="Reset">
+            <input type="submit" value="Save Changes">
+        </td>
+    </tr>
+</table>
+</form>
+
+<center>
+    <a href="[%- url_to_return_to -%]">Return</a>
+</center>
+
+[%- INCLUDE admin_footer.tmpl -%]

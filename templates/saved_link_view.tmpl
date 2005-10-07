@@ -1,0 +1,75 @@
+[%- INCLUDE header.tmpl title="View Saved Link" -%]
+<hr>
+<table>
+    <tr>
+        <td align="right">
+            Saved Link ID:
+        </td>
+        <td>
+            [%- saved_link.saved_link_id -%]
+        </td>
+    </tr>
+    <tr>
+        <td align="right">
+            User Name:
+        </td>
+        <td>
+            [%- saved_link.user_name -%]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+             Link Comment:
+        </td>
+        <td>
+            [%- saved_link.link_comment -%]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Saved On:
+        </td>
+        <td>
+            [%- saved_link.saved_on -%]
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Permanent URL:
+        </td>
+        <td>
+            <a href="[%- saved_link.saved_url -%]">Permanent URL</a>
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Legacy URL:
+        </td>
+        <td>
+            <a href="[%- saved_link.legacy_url -%]">Large, legacy URL</a>
+        </td>
+    </tr>
+
+
+
+    <tr>
+        <td align="center" colspan="2">
+            <form action=saved_link>
+            <input type=hidden name="url_to_return_to" value="[%- url_to_return_to -%]">
+            <input type=hidden name="saved_link_id" value="[%- saved_link.saved_link_id -%]">
+            <input type="hidden" name="action"     value="saved_link_edit">
+            <input type="submit" value="Edit">
+            </form>
+        </td>
+    </tr>
+</table>
+
+<center>
+    <a href="[%- url_to_return_to -%]">Return</a>
+</center>
+
+[%- INCLUDE admin_footer.tmpl -%]

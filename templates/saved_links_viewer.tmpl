@@ -1,0 +1,78 @@
+[% SET title='Saved Links' %]
+[% 
+    INCLUDE header.tmpl 
+    title='CMap - Saved Links'
+    cur_sec='saved_links_viewer'
+    help_anchor='saved_links'
+%]
+
+<h1>[% title %]</h1>
+
+[%- IF intro -%]
+<p>[% intro %]</p>
+[%- END -%]
+[%- url=apr.url -%]
+
+<div align="center">
+
+<form method="GET" action="saved_link">
+    Display:
+    <select name="selected_user_name">
+        <option value="">--Select a User Name--</option>
+        [% FOREACH user_name_count=user_name_counts %]
+            <option value="[% user_name_count.user_name %]"[% IF apr.param('selected_user_name')==user_name_count.user_name %] selected[% END %]>[% user_name_count.user_name %] ([%- user_name_count.link_count -%])</option>
+        [% END %]
+    </select>
+    <input type="hidden" name="action" id="action" value="saved_links_viewer">
+    <input type="submit" value="Submit">
+</form>
+
+<p>
+[% IF saved_links.size %]
+    <table>
+        <tr>
+            <td colspan="1" align="center">
+                [% SET pager_url="$url/saved_link?" %]
+                [% PROCESS pager.tmpl %]
+            </td>
+        </tr>
+        <tr>
+          <td>
+            <table border=1>
+              <tr>
+                <td>Saved Link ID</td>
+                <td>User Name</td>
+                <td>Date Saved</td>
+                <td>Comment</td>
+                <td>Permanent Link</td>
+                <td>Legacy Link</td>
+                <td>Actions</td>
+              <tr>
+              [% FOREACH saved_link=saved_links %]
+                <tr class="colored">
+                    <td align="right" valign="top">[% saved_link.saved_link_id %]</td>
+                    <td align="right" valign="top">[% saved_link.user_name %]</td>
+                    <td align="right" valign="top">[% saved_link.saved_on %]</td>
+                    <td align="right" valign="top">[% saved_link.link_comment %]</td>
+                    <td align="right" valign="top"><a href="[% saved_link.saved_url %]">Permanent Link</a></td>
+                    <td align="right" valign="top"><a href="[% saved_link.legacy_url %]">Legacy Link</a></td>
+                    <td align="right" valign="top" NOWRAP>
+                      <a href="saved_link?action=saved_link_view;saved_link_id=[%- saved_link.saved_link_id -%];url_to_return_to=[%- current_url -%]">view</a>,
+                      <a href="saved_link?action=saved_link_edit;saved_link_id=[%- saved_link.saved_link_id -%];url_to_return_to=[%- current_url -%]">edit</a>&nbsp
+                    </td>
+                </tr> 
+
+              [% END %]
+            </table>
+          <td>
+        </tr>
+    </table>
+[% END %]
+</div>
+
+<br>
+<br>
+<br>
+<br>
+<br>
+[% INCLUDE footer.tmpl %]
