@@ -45,3 +45,19 @@ CREATE INDEX cmap_map_set_idx ON cmap_map_set (display_order,is_enabled,is_relat
 
 ALTER TABLE cmap_map_set DROP can_be_reference_map;
 
+--
+-- Table structure for table `cmap_saved_link`
+--
+
+CREATE TABLE cmap_saved_link (
+  saved_link_id int(11) NOT NULL default '0',
+  saved_on date default NULL,
+  session_step_object text NOT NULL,
+  saved_url text NOT NULL,
+  legacy_url  text NOT NULL,
+  link_comment varchar(200) default '',
+  user_name varchar(40) NOT NULL default '',
+  PRIMARY KEY  (saved_link_id),
+  KEY user_name (user_name)
+) TYPE=MyISAM;
+
