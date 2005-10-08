@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.254 2005-10-04 06:17:00 mwz444 Exp $
+# $Id: Data.pm,v 1.255 2005-10-08 15:32:31 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.254 $)[-1];
+$VERSION = (qw$Revision: 1.255 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -343,7 +343,7 @@ sub cmap_data {
         $included_evidence_type_accs, $less_evidence_type_accs,
         $greater_evidence_type_accs,  $evidence_type_score,
         $slots_min_corrs,
-    );
+    ) or return;
     $self->update_slots( $slots, $slots_min_corrs, );
 
     my @slot_nos         = keys %$slots;
@@ -4124,7 +4124,7 @@ original start and stop.
         greater_evidence_type_accs  => $greater_evidence_type_accs,
         evidence_type_score         => $evidence_type_score,
         slots_min_corrs             => $slots_min_corrs,
-    );
+    ) or return $self->error($sql_object->error());
 
     #print S#TDERR Dumper($self->{'slot_info'})."\n";
     return $self->{'slot_info'};

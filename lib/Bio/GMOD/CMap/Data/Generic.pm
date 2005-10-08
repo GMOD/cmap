@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.114 2005-10-07 15:41:19 mwz444 Exp $
+# $Id: Generic.pm,v 1.115 2005-10-08 15:32:31 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.114 $)[-1];
+$VERSION = (qw$Revision: 1.115 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -939,6 +939,11 @@ original start and stop.
             $slot_results = $db->selectall_arrayref( $sql_str, {}, () );
             $cmap_object->store_cached_results( 4, $sql_str, $slot_results );
         }
+        return $self->error( 'Reference Maps not in database.  '
+                . 'Please check to make sure that you are using valid map/map_set accessions'
+            )
+            unless ( @$slot_results or $slot_no );
+
 
         # Add start and end values into slot_info
         if ( $maps and %{$maps} ) {

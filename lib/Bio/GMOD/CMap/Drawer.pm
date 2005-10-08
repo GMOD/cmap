@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.112 2005-10-07 15:41:19 mwz444 Exp $
+# $Id: Drawer.pm,v 1.113 2005-10-08 15:32:31 mwz444 Exp $
 
 =head1 NAME
 
@@ -342,7 +342,7 @@ This is set to 1 if the Additional Options Menu is displayed.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.112 $)[-1];
+$VERSION = (qw$Revision: 1.113 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -445,7 +445,7 @@ Initializes the drawing object.
 
     return $self->error(@$) if @$;
 
-    $self->data;
+    $self->data or return;
     $self->draw or return;
 
     return $self;
@@ -1116,7 +1116,8 @@ Lays out the image and writes it to the file system, set the "image_name."
         next
             if ( defined($slots_capped_min)
             and $slots_capped_min > $slot_no );
-        my $data = $self->slot_data($slot_no) or return;
+        my $data = $self->slot_data($slot_no)
+            or return $self->error("No Data For Slot $slot_no\n");
         unless (%$data) {
             if ( $slot_no > 0 ) {
                 $slots_capped_max = $slot_no;
