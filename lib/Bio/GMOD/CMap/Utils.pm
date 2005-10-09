@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.51 2005-10-07 15:41:19 mwz444 Exp $
+# $Id: Utils.pm,v 1.52 2005-10-09 17:06:36 mwz444 Exp $
 
 =head1 NAME
 
@@ -33,7 +33,7 @@ use POSIX;
 use Clone qw(clone);
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.51 $)[-1];
+$VERSION = (qw$Revision: 1.52 $)[-1];
 
 use base 'Exporter';
 
@@ -1205,16 +1205,16 @@ sub parse_url {
         }
     }
 
-    if ( scalar(@ref_map_accs) ) {
-        $apr->param( 'ref_map_accs', join( ":", @ref_map_accs ) );
-    }
-
     #
     # Catch old argument, handle nicely.
     #
     if ( $apr->param('ref_map_acc') || $apr->param('ref_map_aid') ) {
         push @ref_map_accs,
             $apr->param('ref_map_acc') || $apr->param('ref_map_aid');
+    }
+
+    if ( scalar(@ref_map_accs) ) {
+        $apr->param( 'ref_map_accs', join( ":", @ref_map_accs ) );
     }
 
     my %ref_maps;
@@ -1278,7 +1278,7 @@ sub parse_url {
         )
         = split( /=/, $apr->param('comparative_map') );
 
-    my @feature_types;
+    my @included_feature_types;
     $parsed_url_options{'url_feature_default_display'} = undef;
     my @corr_only_feature_types;
     my @ignored_feature_types;
@@ -1309,7 +1309,7 @@ sub parse_url {
                 push @corr_only_feature_types, $ft;
             }
             elsif ( $val == 2 ) {
-                push @feature_types, $ft;
+                push @included_feature_types, $ft;
             }
         }
         elsif ( $param =~ /^et_(\S+)/ or $param =~ /^evidence_type_(\S+)/ ) {
@@ -1656,7 +1656,7 @@ sub parse_url {
     }
     $parsed_url_options{'slots'}           = \%slots;
     $parsed_url_options{'slots_min_corrs'} = \%slots_min_corrs;
-    $parsed_url_options{'feature_types'}   = \@feature_types;
+    $parsed_url_options{'included_feature_types'}   = \@included_feature_types;
     $parsed_url_options{'corr_only_feature_types'}
         = \@corr_only_feature_types;
     $parsed_url_options{'ignored_feature_types'}  = \@ignored_feature_types;
