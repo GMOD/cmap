@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.178 2005-10-04 05:32:31 mwz444 Exp $
+# $Id: Map.pm,v 1.179 2005-10-11 04:25:42 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.178 $)[-1];
+$VERSION = (qw$Revision: 1.179 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -2897,6 +2897,11 @@ sub add_feature_to_map {
       : $map_base_y + ( $pixel_height * $rstop )
       : $y_pos1;
 
+    if ( $is_flipped && defined $y_pos2 ) {
+        ( $y_pos2, $y_pos1 ) = ( $y_pos1, $y_pos2 );
+    }
+    $y_pos2 = $y_pos1 unless defined $y_pos2 && $y_pos2 > $y_pos1;
+
     if ( $shape_is_triangle || $y_pos2 <= $y_pos1 ) {
         $feature->{'midpoint'} = $fstart;
         $feature->{'mid_y'}    = $y_pos1;
@@ -2974,9 +2979,11 @@ sub add_feature_to_map {
             $feature_glyph =~ s/-/_/g;
             if ( $glyph->can($feature_glyph) ) {
                 if ( not $glyph->allow_glyph_overlap($feature_glyph) ) {
+                    my $adjusted_low = $y_pos1 - $map_base_y;
+                    my $adjusted_high = $y_pos2 - $map_base_y;
                     $column_index = simple_column_distribution(
-                        low  => $y_pos1 - $map_base_y,
-                        high => $y_pos2 - $map_base_y,
+                        low  => $adjusted_low,
+                        high => $adjusted_high,
                         ,
                         columns    => $fcolumns,
                         map_height => $pixel_height,
