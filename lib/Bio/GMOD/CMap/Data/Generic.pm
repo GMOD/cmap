@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.115 2005-10-08 15:32:31 mwz444 Exp $
+# $Id: Generic.pm,v 1.116 2005-10-13 15:34:34 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.115 $)[-1];
+$VERSION = (qw$Revision: 1.116 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -7765,6 +7765,7 @@ Your database may have a different way of handling references to the generic obj
 Array of Hashes:
 
   Keys:
+    xref_id,
     object_type,
     display_order,
     xref_name,
@@ -7786,7 +7787,8 @@ Not using cache because this query is quicker.
     my $return_object;
 
     my $sql_str = qq[
-        select table_name,
+        select xref_id,
+               table_name,
                display_order,
                xref_name,
                xref_url
