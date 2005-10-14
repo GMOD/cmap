@@ -220,12 +220,15 @@ CREATE TABLE cmap_xref (
 CREATE TABLE cmap_saved_link (
   saved_link_id int(11) NOT NULL default '0',
   saved_on date default NULL,
+  last_access date default NULL,
   session_step_object text NOT NULL,
   saved_url text NOT NULL,
   legacy_url  text NOT NULL,
+  link_title varchar(50) default '',
   link_comment varchar(200) default '',
-  user_name varchar(40) NOT NULL default '',
+  link_group varchar(40) NOT NULL default '',
+  hidden  tinyint(4) NOT NULL default '0',
   PRIMARY KEY  (saved_link_id),
-  KEY user_name (user_name)
+  KEY link_group (link_group)
 ) TYPE=MyISAM;
 

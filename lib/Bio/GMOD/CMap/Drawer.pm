@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.113 2005-10-08 15:32:31 mwz444 Exp $
+# $Id: Drawer.pm,v 1.114 2005-10-14 20:05:22 mwz444 Exp $
 
 =head1 NAME
 
@@ -67,6 +67,7 @@ The base map drawing module.
         compMenu => $compMenu,
         optionMenu => $optionMenu,
         addOpMenu => $addOpMenu,
+        skip_drawing => $skip_draweing,
     );
 
 =head2 Fields
@@ -334,6 +335,10 @@ This is set to 1 if the Options Menu is displayed.
 
 This is set to 1 if the Additional Options Menu is displayed.
 
+=item * skip_drawing
+
+This is set to 1 if you don't want the drawer to actually do the drawing 
+
 =back
 
 =head1 METHODS
@@ -342,7 +347,7 @@ This is set to 1 if the Additional Options Menu is displayed.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.113 $)[-1];
+$VERSION = (qw$Revision: 1.114 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -367,7 +372,7 @@ my @INIT_PARAMS = qw[
     aggregate cluster_corr show_intraslot_corr clean_view
     magnify_all scale_maps stack_maps ref_map_order comp_menu_order
     omit_area_boxes split_agg_ev refMenu compMenu optionMenu addOpMenu
-    corrs_to_map session_id next_step ignore_image_map_sanity
+    corrs_to_map session_id next_step ignore_image_map_sanity skip_drawing
 ];
 
 # ----------------------------------------------------
@@ -387,66 +392,70 @@ Initializes the drawing object.
         $self->$param( $config->{$param} );
     }
 
-    # Check to make sure the image dir isn't too full.
-    if ( $self->check_img_dir_fullness() ) {
-        if ( $self->clear_img_dir() ) {
-            if ( $self->check_img_dir_fullness() ) {
+    $self->data or return;
+
+    unless ( $self->skip_drawing() ) {
+
+        # Check to make sure the image dir isn't too full.
+        if ( $self->check_img_dir_fullness() ) {
+            if ( $self->clear_img_dir() ) {
+                if ( $self->check_img_dir_fullness() ) {
+                    return $self->error( "Error: Image directory '"
+                            . $self->cache_dir . "' is "
+                            . 'filled.  The maximum allowed is '
+                            . $self->config_data('max_img_dir_fullness')
+                            . '% filled . '
+                            . " CMap was unable to purge enough space."
+                            . " Please contact the site administrator for assistance."
+                    );
+                }
+            }
+            else {
                 return $self->error( "Error: Image directory '"
                         . $self->cache_dir . "' is "
                         . 'filled.  The maximum allowed is '
                         . $self->config_data('max_img_dir_fullness')
                         . '% filled . '
-                        . " CMap was unable to purge enough space."
+                        . " CMap is not set to automatically purge this directory."
                         . " Please contact the site administrator for assistance."
                 );
             }
         }
-        else {
-            return $self->error( "Error: Image directory '"
-                    . $self->cache_dir . "' is "
-                    . 'filled.  The maximum allowed is '
-                    . $self->config_data('max_img_dir_fullness')
-                    . '% filled . '
-                    . " CMap is not set to automatically purge this directory."
-                    . " Please contact the site administrator for assistance."
-            );
-        }
-    }
-    if ( $self->check_img_dir_size() ) {
-        if ( $self->clear_img_dir() ) {
-            if ( $self->check_img_dir_size() ) {
+        if ( $self->check_img_dir_size() ) {
+            if ( $self->clear_img_dir() ) {
+                if ( $self->check_img_dir_size() ) {
+                    return $self->error( "Error: Image directory '"
+                            . $self->cache_dir
+                            . "' filled.  "
+                            . " The maximum size the directory can grow is "
+                            . $self->config_data('max_img_dir_size')
+                            . " bytes. "
+                            . " CMap was unable to purge enough space."
+                            . " Please contact the site administrator for assistance."
+                    );
+                }
+            }
+            else {
                 return $self->error( "Error: Image directory '"
                         . $self->cache_dir
                         . "' filled.  "
                         . " The maximum size the directory can grow is "
                         . $self->config_data('max_img_dir_size')
                         . " bytes. "
-                        . " CMap was unable to purge enough space."
+                        . " CMap is not set to automatically purge this directory."
                         . " Please contact the site administrator for assistance."
                 );
             }
         }
-        else {
-            return $self->error( "Error: Image directory '"
-                    . $self->cache_dir
-                    . "' filled.  "
-                    . " The maximum size the directory can grow is "
-                    . $self->config_data('max_img_dir_size')
-                    . " bytes. "
-                    . " CMap is not set to automatically purge this directory."
-                    . " Please contact the site administrator for assistance."
-            );
-        }
+
+        my $gd_class = $self->image_type eq 'svg' ? 'GD::SVG' : 'GD';
+
+        eval "use $gd_class";
+
+        return $self->error(@$) if @$;
+
+        $self->draw or return;
     }
-
-    my $gd_class = $self->image_type eq 'svg' ? 'GD::SVG' : 'GD';
-
-    eval "use $gd_class";
-
-    return $self->error(@$) if @$;
-
-    $self->data or return;
-    $self->draw or return;
 
     return $self;
 }
@@ -484,6 +493,22 @@ Returns the Apache::Request object.
     my $self = shift;
     $self->{'apr'} = shift if @_;
     return $self->{'apr'} || undef;
+}
+
+# ----------------------------------------------------
+sub skip_drawing {
+
+=pod
+
+=head2 skip_drawing
+
+Returns the Apache::Request object.
+
+=cut
+
+    my $self = shift;
+    $self->{'skip_drawing'} = shift if @_;
+    return $self->{'skip_drawing'} || undef;
 }
 
 # ----------------------------------------------------

@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.122 2005-09-22 03:15:46 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.123 2005-10-14 20:05:21 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.122 $)[-1];
+$VERSION = (qw$Revision: 1.123 $)[-1];
 
 #
 # Get command-line options
@@ -36,6 +36,9 @@ my ($map_set_accs);
 #import alignment
 my ( $feature_type_acc, $evidence_type_acc, $from_map_set_acc, );
 my ( $to_map_set_acc,   $format, );
+
+#import links
+my ($link_group);
 
 #export sql
 my ( $add_truncate, $export_file, $quote_escape, $tables, );
@@ -98,6 +101,7 @@ GetOptions(
     'exclude_fields=s'         => \$exclude_fields,
     'directory=s'              => \$directory,
     'name_regex=s'             => \$name_regex,
+    'link_group=s'             => \$link_group,
 
   )
   or pod2usage(2);
@@ -127,6 +131,7 @@ my %command_line_actions = (
     import_correspondences           => 1,
     import_alignments                => 1,
     import_object_data               => 1,
+    import_links                     => 1,
     purge_query_cache                => 1,
     reload_correspondence_matrix     => 1,
     delete_duplicate_correspondences => 1,
@@ -199,6 +204,7 @@ while ($continue) {
         directory              => $directory,
         name_regex             => $name_regex,
         map_accs               => $map_accs,
+        link_group             => $link_group,
 
     );
 }
@@ -208,6 +214,8 @@ while ($continue) {
 # ./bin/cmap_admin.pl -d WashU -a create_map_set --species_acc Blah --map_set_name "MS20" --map_type_acc 2
 
 # ./bin/cmap_admin.pl -d WashU -a import_tab_data --map_set_acc 13  file1 file2
+
+# ./bin/cmap_admin.pl -d WashU -a import_links --link_group 'Team 1'  file1 file2
 
 # ./bin/cmap_admin.pl -d WashU -a purge_query_cache --cache_level 2;
 
@@ -255,6 +263,7 @@ use Bio::GMOD::CMap::Admin::MakeCorrespondences();
 use Bio::GMOD::CMap::Admin::ImportCorrespondences();
 use Bio::GMOD::CMap::Admin::ImportAlignments();
 use Bio::GMOD::CMap::Admin::ManageLinks();
+use Bio::GMOD::CMap::Admin::SavedLink;
 use Benchmark;
 
 use base 'Bio::GMOD::CMap';
@@ -437,8 +446,8 @@ sub show_greeting {
             display => 'Purge the cache to view new data'
         },
         {
-            action  => 'manage_links',
-            display => 'Manage imported links'
+            action  => 'import_links',
+            display => 'Import links'
         },
     ];
 
@@ -2184,77 +2193,70 @@ sub import_links {
     # Imports links in simple tab-delimited format
     #
     my ( $self, %args ) = @_;
+    my $file_str   = $args{'file_str'};
+    my $link_group = $args{'link_group'};
     my $sql_object = $self->sql or die $self->error;
 
-    #
-    # Get the species.
-    #
-    my ( $species_id, $species_common_name ) = $self->show_menu(
-        title   => "Available Species",
-        prompt  => 'Please select a species',
-        display => 'species_common_name',
-        return  => 'species_id,species_common_name',
-        data    => $sql_object->get_species( cmap_object => $self ),
-    );
-    do { print "No species to select from.\n"; return } unless $species_id;
+    my $files;
+    if ($command_line) {
+        # Check for any missing and required fields
+        my @missing = ();
+        if ($file_str) {
+            unless ( $files = $self->get_files( file_str => $file_str ) ) {
+                print STDERR "None of the files, '$file_str' succeded.\n";
+                push @missing, 'input file(s)';
+            }
+        }
+        else {
+            push @missing, 'input file(s)';
+        }
+        if (@missing) {
+            print STDERR "Missing the following arguments:\n";
+            print STDERR join( "\n", sort @missing ) . "\n";
+            exit(0);
+        }
+    }
+    else {
 
-    #
-    # Get the map set.
-    #
-    my ( $map_set_id, $map_set_name ) = $self->show_menu(
-        title   => "Available Map Sets (for $species_common_name)",
-        prompt  => 'Please select a map set',
-        display => 'map_set_name',
-        return  => 'map_set_id,map_set_name',
-        data    => $sql_object->get_map_sets(
-            cmap_object => $self,
-            species_id  => $species_id
-        ),
-    );
-    do { print "There are no map sets!\n"; return }
-      unless $map_set_id;
+        print "Importing Saved Links\n";
+        ###New File Handling
+        $files = $self->get_files() or return;
 
-    ###New File Handling
-    my $files = $self->get_files() or return;
+        $link_group = $self->show_question(
+            question => "What should this link group be named?\n"
+                . '(This selection will be overwridden if the '
+                . 'group is defined in the file)'
+                . "\n",
+            allow_null => 1,
+            default    => DEFAULT->{'link_group'},
+        );
 
-    my $link_set_name = $self->show_question(
-        question => 'What should this link set be named (default='
-          . $files->[0] . ')?',
-        default => $files->[0],
-    );
-    $link_set_name = "map set $map_set_id:" . $link_set_name;
-
-    #
-    # Confirm decisions.
-    #
-    print join( "\n",
-        'OK to import?',
-        '  Data source     : ' . $self->data_source,
-        "  File            : " . join( ", ", @$files ),
-        "  Species         : $species_common_name",
-        "  Map Study       : $map_set_name",
-        "  Link Set        : $link_set_name",
-        "[Y/n] " );
-    chomp( my $answer = <STDIN> );
-    return if $answer =~ /^[Nn]/;
+        #
+        # Confirm decisions.
+        #
+        print join( "\n",
+            'OK to import?',
+            '  Data source     : ' . $self->data_source,
+            '  File            : ' . join( ", ", @$files ),
+            "  Link Group      : $link_group",
+            "[Y/n] " );
+        chomp( my $answer = <STDIN> );
+        return if $answer =~ /^[Nn]/;
+    }
 
     my $link_manager =
-      Bio::GMOD::CMap::Admin::ManageLinks->new(
+      Bio::GMOD::CMap::Admin::SavedLink->new(
         data_source => $self->data_source, );
 
     foreach my $file (@$files) {
-        my $fh = IO::File->new($file) or die "Can't read $file: $!";
-        $link_manager->import_links(
-            map_set_id    => $map_set_id,
-            fh            => $fh,
-            link_set_name => $link_set_name,
-            log_fh        => $self->log_fh,
-            name_space    => $self->get_link_name_space,
-          )
-          or do {
+        $link_manager->read_saved_links_file(
+            file_name  => $file,
+            link_group => $link_group,
+            )
+            or do {
             print "Error: ", $link_manager->error, "\n";
             return;
-          };
+            };
     }
 }
 
@@ -3508,6 +3510,7 @@ sub copy_gbrowse_into_cmap {
 
 # ----------------------------------------------------
 sub show_question {
+    my $self   = shift;
     my %args         = @_;
     my $question     = $args{'question'} or return;
     my $default      = $args{'default'};

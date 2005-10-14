@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.53 2005-10-14 18:14:57 kycl4rk Exp $
+# $Id: Utils.pm,v 1.54 2005-10-14 20:05:22 mwz444 Exp $
 
 =head1 NAME
 
@@ -33,7 +33,7 @@ use POSIX;
 use Clone qw(clone);
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.53 $)[-1];
+$VERSION = (qw$Revision: 1.54 $)[-1];
 
 use base 'Exporter';
 
@@ -1099,14 +1099,14 @@ sub parse_url {
     my $comp_menu_order    = $apr->param('comp_menu_order');
     my $ref_map_order      = $apr->param('ref_map_order');
     my $prev_ref_map_order = $apr->param('prev_ref_map_order');
-    $parsed_url_options{'user_name'} = $apr->param('user_name') || '';
-    $parsed_url_options{'flip'}      = $apr->param('flip')      || '';
-    $parsed_url_options{'page_no'}   = $apr->param('page_no')   || 1;
-    $parsed_url_options{'action'}    = $apr->param('action')    || 'view';
-    $parsed_url_options{'refMenu'}   = $apr->param('refMenu');
-    $parsed_url_options{'compMenu'}  = $apr->param('compMenu');
-    $parsed_url_options{'optionMenu'}      = $apr->param('optionMenu');
-    $parsed_url_options{'addOpMenu'}       = $apr->param('addOpMenu');
+    $parsed_url_options{'link_group'} = $apr->param('link_group') || '';
+    $parsed_url_options{'flip'}       = $apr->param('flip')       || '';
+    $parsed_url_options{'page_no'}    = $apr->param('page_no')    || 1;
+    $parsed_url_options{'action'}     = $apr->param('action')     || 'view';
+    $parsed_url_options{'refMenu'}    = $apr->param('refMenu');
+    $parsed_url_options{'compMenu'}   = $apr->param('compMenu');
+    $parsed_url_options{'optionMenu'} = $apr->param('optionMenu');
+    $parsed_url_options{'addOpMenu'}  = $apr->param('addOpMenu');
     $parsed_url_options{'omit_area_boxes'} = $apr->param('omit_area_boxes');
     $parsed_url_options{'session_id'}      = $apr->param('session_id');
     $parsed_url_options{'saved_link_id'}   = $apr->param('saved_link_id');
@@ -1665,9 +1665,9 @@ sub parse_url {
             }
         }
     }
-    $parsed_url_options{'slots'}           = \%slots;
-    $parsed_url_options{'slots_min_corrs'} = \%slots_min_corrs;
-    $parsed_url_options{'included_feature_types'}   = \@included_feature_types;
+    $parsed_url_options{'slots'}                  = \%slots;
+    $parsed_url_options{'slots_min_corrs'}        = \%slots_min_corrs;
+    $parsed_url_options{'included_feature_types'} = \@included_feature_types;
     $parsed_url_options{'corr_only_feature_types'}
         = \@corr_only_feature_types;
     $parsed_url_options{'ignored_feature_types'}  = \@ignored_feature_types;

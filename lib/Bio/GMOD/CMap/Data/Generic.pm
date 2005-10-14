@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.116 2005-10-13 15:34:34 mwz444 Exp $
+# $Id: Generic.pm,v 1.117 2005-10-14 20:05:22 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.116 $)[-1];
+$VERSION = (qw$Revision: 1.117 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -943,7 +943,6 @@ original start and stop.
                 . 'Please check to make sure that you are using valid map/map_set accessions'
             )
             unless ( @$slot_results or $slot_no );
-
 
         # Add start and end values into slot_info
         if ( $maps and %{$maps} ) {
@@ -8864,7 +8863,7 @@ Not using cache because this query is quicker.
     my $session_step_object = $args{'session_step_object'};
     my $saved_url           = $args{'saved_url'};
     my $legacy_url          = $args{'legacy_url'};
-    my $user_name           = $args{'user_name'};
+    my $link_group          = $args{'link_group'};
     my $link_comment        = $args{'link_comment'};
     my $db                  = $cmap_object->db;
     my $return_object;
@@ -8875,7 +8874,7 @@ Not using cache because this query is quicker.
                session_step_object,
                saved_url,
                legacy_url,
-               user_name,
+               link_group,
                link_comment
         from cmap_saved_link
     ];
@@ -8884,7 +8883,7 @@ Not using cache because this query is quicker.
 
     for my $column (
         qw[ saved_link_id saved_on session_step_object
-        saved_url legacy_url user_name link_comment ]
+        saved_url legacy_url link_group link_comment ]
         )
     {
 
@@ -8905,11 +8904,11 @@ Not using cache because this query is quicker.
 }
 
 #-----------------------------------------------
-sub get_saved_link_user_names {
+sub get_saved_link_groups {
 
 =pod
 
-=head2 get_saved_link_user_names()
+=head2 get_saved_link_link_groups()
 
 =over 4
 
@@ -8947,14 +8946,14 @@ Not using cache because this query is quicker.
     my $session_step_object = $args{'session_step_object'};
     my $saved_url           = $args{'saved_url'};
     my $legacy_url          = $args{'legacy_url'};
-    my $user_name           = $args{'user_name'};
+    my $link_group          = $args{'link_group'};
     my $link_comment        = $args{'link_comment'};
     my $db                  = $cmap_object->db;
     my $return_object;
 
     my $sql_str = q[
         select 
-               user_name,
+               link_group,
                count(saved_link_id) as link_count
         from cmap_saved_link
     ];
@@ -8963,7 +8962,7 @@ Not using cache because this query is quicker.
 
     for my $column (
         qw[ saved_link_id saved_on session_step_object
-        saved_url legacy_url user_name link_comment ]
+        saved_url legacy_url link_group link_comment ]
         )
     {
 
@@ -8976,7 +8975,7 @@ Not using cache because this query is quicker.
     if (@where_list) {
         $sql_str .= ' where ' . join " and ", @where_list;
     }
-    $sql_str .= ' group by user_name order by user_name ';
+    $sql_str .= ' group by link_group order by link_group ';
 
     $return_object = $db->selectall_arrayref( $sql_str, { Columns => {} },
         @identifiers );
@@ -9027,10 +9026,13 @@ id
     my $session_step_object = $args{'session_step_object'};
     my $saved_url           = $args{'saved_url'};
     my $legacy_url          = $args{'legacy_url'};
-    my $user_name           = $args{'user_name'};
+    my $link_group          = $args{'link_group'};
     my $link_comment        = $args{'link_comment'};
+    my $link_title          = $args{'link_title'};
+    my $hidden              = $args{'hidden'} || 0;
     my $time                = localtime();
     my $saved_on            = $time->strftime( $self->date_format );
+    my $last_access         = $saved_on;
     my $saved_link_id       = $self->next_number(
         cmap_object => $cmap_object,
         object_type => 'saved_link',
@@ -9039,15 +9041,22 @@ id
     $saved_url .= "saved_link_id=$saved_link_id;";
 
     my @insert_args = (
-        $saved_link_id, $saved_on, $session_step_object, $saved_url,
-        $legacy_url, $link_comment, $user_name
+        $saved_link_id,       $saved_on,     $last_access,
+        $session_step_object, $saved_url,    $legacy_url,
+        $link_title,          $link_comment, $link_group,
+        $hidden,
     );
 
     $db->do(
         qq[
         insert into cmap_saved_link
-        (saved_link_id, saved_on, session_step_object, saved_url, legacy_url, link_comment, user_name  )
-         values ( ?,?,?,?,?,?,? )
+        (saved_link_id,  saved_on,     last_access,   session_step_object, 
+         saved_url,      legacy_url,   link_title,    link_comment,
+         link_group,     hidden  )
+         values 
+        ( ?,             ?,            ?,             ?, 
+          ?,             ?,            ?,             ?,
+          ?,             ? )
         ],
         {},
         (@insert_args)
@@ -9091,7 +9100,9 @@ Given the id and some attributes to modify, updates.
     my $session_step_object = $args{'session_step_object'};
     my $saved_url           = $args{'saved_url'};
     my $legacy_url          = $args{'legacy_url'};
-    my $user_name           = $args{'user_name'};
+    my $link_group          = $args{'link_group'};
+    my $link_title          = $args{'link_title'};
+    my $hidden              = $args{'hidden'};
     my $link_comment        = $args{'link_comment'};
     my $db                  = $cmap_object->db;
 
@@ -9101,6 +9112,12 @@ Given the id and some attributes to modify, updates.
     ];
     my $set_sql   = '';
     my $where_sql = " where saved_link_id = ? ";    # ID
+
+    my $time                = localtime();
+    my $last_access = $time->strftime( $self->date_format );
+    push @update_args, $last_access;
+    $set_sql .= $set_sql ? ", " : " set ";
+    $set_sql .= " session_step_object = ? ";
 
     if ($session_step_object) {
         push @update_args, $session_step_object;
@@ -9117,15 +9134,25 @@ Given the id and some attributes to modify, updates.
         $set_sql .= $set_sql ? ", " : " set ";
         $set_sql .= " legacy_url = ? ";
     }
-    if ($user_name) {
-        push @update_args, $user_name;
+    if ($link_group) {
+        push @update_args, $link_group;
         $set_sql .= $set_sql ? ", " : " set ";
-        $set_sql .= " user_name = ? ";
+        $set_sql .= " link_group = ? ";
+    }
+    if ($link_title) {
+        push @update_args, $link_title;
+        $set_sql .= $set_sql ? ", " : " set ";
+        $set_sql .= " link_title = ? ";
     }
     if ($link_comment) {
         push @update_args, $link_comment;
         $set_sql .= $set_sql ? ", " : " set ";
         $set_sql .= " link_comment = ? ";
+    }
+    if ( defined $hidden ) {
+        push @update_args, $hidden;
+        $set_sql .= $set_sql ? ", " : " set ";
+        $set_sql .= " hidden = ? ";
     }
 
     push @update_args, $saved_link_id;

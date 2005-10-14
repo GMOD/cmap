@@ -1,8 +1,8 @@
-package Bio::GMOD::CMap::Apache::SavedLink;
+package Bio::GMOD::CMap::Apache::SavedLinkViewer;
 
 # vim: set ft=perl:
 
-# $Id: SavedLink.pm,v 1.1 2005-10-07 15:41:19 mwz444 Exp $
+# $Id: SavedLinkViewer.pm,v 1.1 2005-10-14 20:05:22 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -11,6 +11,7 @@ use Time::ParseDate;
 
 use CGI;
 use Bio::GMOD::CMap::Apache;
+use Bio::GMOD::CMap::Admin::SavedLink;
 use Bio::GMOD::CMap::Constants;
 use Storable qw(freeze thaw);
 
@@ -45,20 +46,20 @@ sub saved_links_viewer {
     my $sql_object = $self->sql or return;
 
     my $page_no            = $apr->param('page_no') || 1;
-    my $selected_user_name = $apr->param('selected_user_name');
+    my $selected_link_group = $apr->param('selected_link_group');
 
-    # Create hash of user_names
-    my $user_name_counts_ref
-        = $sql_object->get_saved_link_user_names( cmap_object => $self, );
+    # Create hash of link_groups
+    my $link_group_counts_ref
+        = $sql_object->get_saved_link_groups( cmap_object => $self, );
 
     my $pager;
     my $saved_links_ref;
-    if ($selected_user_name) {
+    if ($selected_link_group) {
 
         # Get the Saved links
         $saved_links_ref = $sql_object->get_saved_links(
             cmap_object => $self,
-            user_name   => $selected_user_name,
+            link_group   => $selected_link_group,
         );
 
         # Slice the results up into pages suitable for web viewing.
@@ -87,7 +88,7 @@ sub saved_links_viewer {
             stylesheet       => $self->stylesheet,
             data_sources     => $self->data_sources,
             saved_links      => $saved_links_ref,
-            user_name_counts => $user_name_counts_ref,
+            link_group_counts => $link_group_counts_ref,
             pager            => $pager,
             intro            => $INTRO,
         },
@@ -137,65 +138,27 @@ sub saved_link_create {
     my $current_apr = $self->apr;
     my $url_to_save = $current_apr->param('url_to_save')
         or die 'No url to save';
-    my $saved_link_id;
 
     my $apr_to_save = new CGI($url_to_save)
         or return $self->error("URL did not parse correctly.  $url_to_save");
 
     # GET USERNAME FROM COOKIE
-    my $user_name = $current_apr->param('user_name')
-        || DEFAULT->{'user_name'};
+    my $link_group = $current_apr->param('link_group')
+        || DEFAULT->{'link_group'};
 
     # Use the url to create the parameters to pass to drawer.
     my %parsed_url_options
         = Bio::GMOD::CMap::Utils->parse_url( $apr_to_save, $self )
         or return $self->error();
 
-    # Remove the session info to get keep create_session_step from overwriting
-    delete $parsed_url_options{'session'};
-    delete $parsed_url_options{'session_id'};
-    delete $parsed_url_options{'step'};
 
-    # Create the drawer object to use it's link creation abilities
-    my $drawer = Bio::GMOD::CMap::Drawer->new(
-        apr => $apr_to_save,
-        %parsed_url_options,
-        )
-        or return $self->error( Bio::GMOD::CMap::Drawer->error );
-
-    # Drawer went through some work (inadvertantly), we may as well take
-    # advantage of that.
-    $parsed_url_options{'slots'} = $drawer->{'slots'};
-
-    # Created the URLs.
-    # Not the saved_link_id will be added to the saved url in the insert call
-    #my $url_front = $apr_to_save->url(-path_info =>1);
-    my ($url_front) = $url_to_save =~ m/(.+?)\?/;
-    my $saved_url = $url_front
-        . $self->create_viewer_link(
-        $drawer->create_link_params( skip_map_info => 1, ) );
-    my $legacy_url = $url_front . $self->create_viewer_link(
-        $drawer->create_link_params(
-            new_session       => 1,
-            create_legacy_url => 1,
-            ref_map_set_acc   => $parsed_url_options{'ref_map_set_acc'},
-
-           #        ref_map_accs => $parsed_url_options{'slots'}->{0}{'maps'},
-        )
-    );
-
-    # Get the session Step object that will be stored in the db.
-    my $session_step_object
-        = Bio::GMOD::CMap::Utils->create_session_step( \%parsed_url_options )
-        or return $self->error('Problem creating the new session step.');
-
-    $saved_link_id = $self->sql->insert_saved_link(
-        cmap_object         => $self,
-        saved_url           => $saved_url,
-        legacy_url          => $legacy_url,
-        session_step_object => freeze($session_step_object),
-        user_name           => $user_name,
-    );
+    my ($link_front) = ($url_to_save =~ m/.+\/(.+?)\?/);
+    my $saved_link_admin = Bio::GMOD::CMap::Admin::SavedLink->new;
+    my $saved_link_id = $saved_link_admin->create_saved_link(
+        link_group => $link_group,
+        link_front => $link_front,
+        parsed_options_ref => \%parsed_url_options,
+        );
 
     # After creating the link,
     # send everything over to saved_link_edit to handle
@@ -250,7 +213,7 @@ sub saved_link_update {
     $self->sql->update_saved_link(
         cmap_object   => $self,
         saved_link_id => $saved_link_id,
-        user_name     => $apr->param('user_name'),
+        link_group     => $apr->param('link_group'),
         link_comment  => $apr->param('link_comment'),
     );
 
@@ -259,6 +222,65 @@ sub saved_link_update {
 #    return $apr->redirect( SAVED_LINK_URI
 #            . "?action=saved_link_edit;saved_link_id=$saved_link_id;url_to_return_to=$url_to_return_to"
 #    );
+}
+
+sub admin_create_saved_link {
+    my ( $self, %args ) = @_;
+    my $apr_to_save = $args{'apr_to_save'};
+    my $link_group = $args{'link_group'};
+    my $link_front = $args{'link_front'};
+    
+    # Use the url to create the parameters to pass to drawer.
+    my %parsed_url_options
+        = Bio::GMOD::CMap::Utils->parse_url( $apr_to_save, $self )
+        or return $self->error();
+
+    # Remove the session info to get keep create_session_step from overwriting
+    delete $parsed_url_options{'session'};
+    delete $parsed_url_options{'session_id'};
+    delete $parsed_url_options{'step'};
+
+    # Create the drawer object to use it's link creation abilities
+    my $drawer = Bio::GMOD::CMap::Drawer->new(
+        apr => $apr_to_save,
+        %parsed_url_options,
+        )
+        or return $self->error( Bio::GMOD::CMap::Drawer->error );
+
+    # Drawer went through some work (inadvertantly), we may as well take
+    # advantage of that.
+    $parsed_url_options{'slots'} = $drawer->{'slots'};
+
+    # Created the URLs.
+    # Not the saved_link_id will be added to the saved url in the insert call
+    #my $url_front = $apr_to_save->url(-path_info =>1);
+    my $saved_url = $link_front
+        . $self->create_viewer_link(
+        $drawer->create_link_params( skip_map_info => 1, ) );
+    my $legacy_url = $link_front . $self->create_viewer_link(
+        $drawer->create_link_params(
+            new_session       => 1,
+            create_legacy_url => 1,
+            ref_map_set_acc   => $parsed_url_options{'ref_map_set_acc'},
+
+           #        ref_map_accs => $parsed_url_options{'slots'}->{0}{'maps'},
+        )
+    );
+
+    # Get the session Step object that will be stored in the db.
+    my $session_step_object
+        = Bio::GMOD::CMap::Utils->create_session_step( \%parsed_url_options )
+        or return $self->error('Problem creating the new session step.');
+
+    my $saved_link_id = $self->sql->insert_saved_link(
+        cmap_object         => $self,
+        saved_url           => $saved_url,
+        legacy_url          => $legacy_url,
+        session_step_object => freeze($session_step_object),
+        link_group           => $link_group,
+    );
+    return $saved_link_id;
+
 }
 
 1;
@@ -270,7 +292,7 @@ sub saved_link_update {
 
 =head1 NAME
 
-Bio::GMOD::CMap::Apache::SavedLink - 
+Bio::GMOD::CMap::Apache::SavedLinkViewer - 
 
 =head1 SYNOPSIS
 

@@ -17,10 +17,10 @@
 
 <form method="GET" action="saved_link">
     Display:
-    <select name="selected_user_name">
+    <select name="selected_link_group">
         <option value="">--Select a User Name--</option>
-        [% FOREACH user_name_count=user_name_counts %]
-            <option value="[% user_name_count.user_name %]"[% IF apr.param('selected_user_name')==user_name_count.user_name %] selected[% END %]>[% user_name_count.user_name %] ([%- user_name_count.link_count -%])</option>
+        [% FOREACH link_group_count=link_group_counts %]
+            <option value="[% link_group_count.link_group %]"[% IF apr.param('selected_link_group')==link_group_count.link_group %] selected[% END %]>[% link_group_count.link_group %] ([%- link_group_count.link_count -%])</option>
         [% END %]
     </select>
     <input type="hidden" name="action" id="action" value="saved_links_viewer">
@@ -51,7 +51,7 @@
               [% FOREACH saved_link=saved_links %]
                 <tr class="colored">
                     <td align="right" valign="top">[% saved_link.saved_link_id %]</td>
-                    <td align="right" valign="top">[% saved_link.user_name %]</td>
+                    <td align="right" valign="top">[% saved_link.link_group %]</td>
                     <td align="right" valign="top">[% saved_link.saved_on %]</td>
                     <td align="right" valign="top">[% saved_link.link_comment %]</td>
                     <td align="right" valign="top"><a href="[% saved_link.saved_url %]">Permanent Link</a></td>
