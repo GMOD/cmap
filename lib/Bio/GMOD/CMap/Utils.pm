@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.52 2005-10-09 17:06:36 mwz444 Exp $
+# $Id: Utils.pm,v 1.53 2005-10-14 18:14:57 kycl4rk Exp $
 
 =head1 NAME
 
@@ -33,7 +33,7 @@ use POSIX;
 use Clone qw(clone);
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.52 $)[-1];
+$VERSION = (qw$Revision: 1.53 $)[-1];
 
 use base 'Exporter';
 
@@ -608,12 +608,23 @@ sub simple_column_distribution {
     $low        = int($low);
     $high       = int($high);
 
+    if ( $low > $high ) {
+        ( $low, $high ) = ( $high, $low );
+    }
+
     #
     # Calculate the effect of the buffer.
     #
     my ( $scan_low, $scan_high ) = ( $low, $high );
-    $scan_low -= $buffer if $low - $buffer >= 0;
-    $scan_high += $buffer if $high + $buffer <= $map_height;
+
+    if ( $low - $buffer >= 0 ) {
+        $scan_low -= $buffer;
+    }
+
+    if ( $high + $buffer <= $map_height ) {
+        $scan_high += $buffer;
+    }
+
     $map_height += $buffer;
 
     if ( scalar @$columns == 0 ) {
