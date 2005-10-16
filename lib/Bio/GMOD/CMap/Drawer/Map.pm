@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.180 2005-10-14 20:05:22 mwz444 Exp $
+# $Id: Map.pm,v 1.181 2005-10-16 03:11:14 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.180 $)[-1];
+$VERSION = (qw$Revision: 1.181 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1728,7 +1728,8 @@ MAP:
                       $label_side eq RIGHT
                     ? $map_coords->[0] - 4
                     : $map_coords->[2] + 4;
-                my $this_map_x2 = $label_side eq RIGHT
+                my $this_map_x2 =
+                      $label_side eq RIGHT
                     ? $map_coords->[0]
                     : $map_coords->[2];
                 my $this_map_y =
@@ -2767,34 +2768,20 @@ sub add_tick_marks {
                 ];
             my $down_command = $is_flipped ? '1' : '0';
             my $up_command   = $is_flipped ? '0' : '1';
-            my ($up_start_pos,   $up_stop_pos,
-                $down_start_pos, $down_stop_pos
-            );
             my $slot_info = $drawer->data_module->slot_info->{$slot_no};
-            if ($is_flipped) {
-                $up_start_pos   = $tick_pos;
-                $down_stop_pos  = $tick_pos;
-                $down_start_pos =
-                    defined( $slot_info->{$map_id}->[0] )
-                    ? $slot_info->{$map_id}->[0]
-                    : "''";
-                $up_stop_pos =
-                    defined( $slot_info->{$map_id}->[1] )
-                    ? $slot_info->{$map_id}->[1]
-                    : "''";
 
+            # The crop buttons just need to have the value of the current
+            # $tick_pos.  All they do then is specify if that value is
+            # the start or stop.  This is reversed for a flipped map.
+            my ( $up_session_mod_str, $down_session_mod_str );
+            my $session_mod_info_str = "=$slot_no=$map_acc=$tick_pos";
+            if ($is_flipped) {
+                $up_session_mod_str   = 'start' . $session_mod_info_str;
+                $down_session_mod_str = 'stop' . $session_mod_info_str;
             }
             else {
-                $up_stop_pos    = $tick_pos;
-                $down_start_pos = $tick_pos;
-                $up_start_pos   =
-                    defined( $slot_info->{$map_id}->[0] )
-                    ? $slot_info->{$map_id}->[0]
-                    : "''";
-                $down_stop_pos =
-                    defined( $slot_info->{$map_id}->[1] )
-                    ? $slot_info->{$map_id}->[1]
-                    : "''";
+                $up_session_mod_str   = 'stop' . $session_mod_info_str;
+                $down_session_mod_str = 'start' . $session_mod_info_str;
             }
             my $magnification =
                 defined( $slot_info->{$map_id}->[4] )
@@ -2803,12 +2790,12 @@ sub add_tick_marks {
 
             my $crop_down_url = $self->create_viewer_link(
                 $drawer->create_link_params(
-                    session_mod => "start=$slot_no=$map_acc=$down_start_pos",
+                    session_mod => $down_session_mod_str,
                 )
             );
             my $crop_up_url = $self->create_viewer_link(
                 $drawer->create_link_params(
-                    session_mod => "stop=$slot_no=$map_acc=$up_stop_pos",
+                    session_mod => $up_session_mod_str,
                 )
             );
             my $down_code = qq[ 
