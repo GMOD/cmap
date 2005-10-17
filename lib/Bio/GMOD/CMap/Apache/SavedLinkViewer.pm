@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache::SavedLinkViewer;
 
 # vim: set ft=perl:
 
-# $Id: SavedLinkViewer.pm,v 1.2 2005-10-17 15:48:09 mwz444 Exp $
+# $Id: SavedLinkViewer.pm,v 1.3 2005-10-17 18:04:00 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -163,7 +163,8 @@ sub saved_link_create {
 
 
     my ($link_front) = ($url_to_save =~ m/.+\/(.+?)\?/);
-    my $saved_link_admin = Bio::GMOD::CMap::Admin::SavedLink->new;
+    my $saved_link_admin = Bio::GMOD::CMap::Admin::SavedLink->new(
+        data_source => $self->data_source() );
     my $saved_link_id = $saved_link_admin->create_saved_link(
         link_group => $link_group,
         link_front => $link_front,
