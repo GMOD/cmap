@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.117 2005-10-14 20:05:22 mwz444 Exp $
+# $Id: Generic.pm,v 1.118 2005-10-17 02:21:07 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.117 $)[-1];
+$VERSION = (qw$Revision: 1.118 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -9041,10 +9041,9 @@ id
     $saved_url .= "saved_link_id=$saved_link_id;";
 
     my @insert_args = (
-        $saved_link_id,       $saved_on,     $last_access,
-        $session_step_object, $saved_url,    $legacy_url,
-        $link_title,          $link_comment, $link_group,
-        $hidden,
+        $saved_link_id, $saved_on,     $last_access, $session_step_object, 
+        $saved_url,     $legacy_url,   $link_title,  $link_comment, 
+        $link_group,    $hidden,
     );
 
     $db->do(
@@ -9117,7 +9116,7 @@ Given the id and some attributes to modify, updates.
     my $last_access = $time->strftime( $self->date_format );
     push @update_args, $last_access;
     $set_sql .= $set_sql ? ", " : " set ";
-    $set_sql .= " session_step_object = ? ";
+    $set_sql .= " last_access = ? ";
 
     if ($session_step_object) {
         push @update_args, $session_step_object;
