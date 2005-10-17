@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache::SavedLinkViewer;
 
 # vim: set ft=perl:
 
-# $Id: SavedLinkViewer.pm,v 1.1 2005-10-14 20:05:22 mwz444 Exp $
+# $Id: SavedLinkViewer.pm,v 1.2 2005-10-17 15:48:09 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -122,14 +122,24 @@ sub saved_link_view {
             "Failed getting saved link with id $saved_link_id\n");
     }
 
+    my $html;
     my $t = $self->template or return;
-    return $t->process(
+    $t->process(
         VIEW_TEMPLATE,
         {   apr              => $apr,
+            current_url      => $apr->url( -path_info => 1, -query => 1 ),
+            page             => $self->page,
+            stylesheet       => $self->stylesheet,
+            data_sources     => $self->data_sources,
             saved_link       => $saved_link,
             url_to_return_to => $url_to_return_to,
-        }
-    );
+        },
+        \$html
+        )
+        or $html = $t->error;
+    print $apr->header( -type => 'text/html', -cookie => $self->cookie ),
+        $html;
+    return 1;
 }
 
 # ----------------------------------------------------
@@ -191,14 +201,24 @@ sub saved_link_edit {
             "Failed getting saved link with id $saved_link_id\n");
     }
 
+    my $html;
     my $t = $self->template or return;
-    return $t->process(
+    $t->process(
         EDIT_TEMPLATE,
         {   apr              => $apr,
+            current_url      => $apr->url( -path_info => 1, -query => 1 ),
+            page             => $self->page,
+            stylesheet       => $self->stylesheet,
+            data_sources     => $self->data_sources,
             saved_link       => $saved_link,
             url_to_return_to => $url_to_return_to,
-        }
-    );
+        },
+        \$html
+        )
+        or $html = $t->error;
+    print $apr->header( -type => 'text/html', -cookie => $self->cookie ),
+        $html;
+    return 1;
 }
 
 # ----------------------------------------------------
