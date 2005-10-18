@@ -471,6 +471,8 @@ function selectAllOptions(select){
             >
               <img src="/cmap/minus.png">&nbsp;<b>Hide Comparison Menu</b>
             </span>
+              <input type="submit" value="Redraw Map" name="sub">
+              <input type="reset"  value="Reset">
               <table border="0">
               <tr>
                 <td align="left" colspan=2>Ref Map Start:
@@ -539,7 +541,17 @@ function selectAllOptions(select){
             </table>
             hint: To save time, select the desired options before redrawing the map.<br>
             <input type="submit" value="Redraw Map" name="sub">
-            <input type="reset"  value="Reset"><hr>
+            <input type="reset"  value="Reset">
+            <span  
+              onclick="setMenuObjects(
+              window.document.ref_map_set_form.compMenu,
+              window.document.comparative_map_form.compMenu,
+              toggleDiv(document.getElementById('displayCompMenu')));
+              toggleDiv(document.getElementById('hiddenCompMenu'));"
+            >
+              <b>(Hide Comparison Menu)</b>
+            </span>
+            <hr>
           </div>
         </td>
       </tr>
@@ -566,6 +578,8 @@ function selectAllOptions(select){
             >
               <img src="/cmap/minus.png">&nbsp;<b>Hide Options Menu</b>
             </span>
+            <input type="submit" value="Redraw Map" name="sub">
+            <input type="reset"  value="Reset">
             <table>
               <tr>
                 <td align="left">Highlight Features: 
@@ -703,9 +717,18 @@ function selectAllOptions(select){
                 </td>
               </tr>
               <tr>
-                <td><hr>
+                <td>
                   <input type="submit" value="Redraw Map" name="sub">
                   <input type="reset"  value="Reset">
+                    <span  
+                      onclick="setMenuObjects(
+                      window.document.ref_map_set_form.optionMenu,
+                      window.document.comparative_map_form.optionMenu,
+                      toggleDiv(document.getElementById('displayOptionMenu')));
+                      toggleDiv(document.getElementById('hiddenOptionMenu'));"
+                    >
+                      <b>(Hide Options Menu)</b>
+                    </span>
                 </td>
               </tr>
             </table><hr>
@@ -735,6 +758,8 @@ function selectAllOptions(select){
             >
               <img src="/cmap/minus.png">&nbsp;<b>Hide Additional Options Menu</b>
             </span>
+            <input type="submit" value="Redraw Map" name="sub">
+            <input type="reset"  value="Reset">
 
             <table border="0">
               [%- IF form_data.ordered_ref_maps.size > 1; -%]
@@ -905,8 +930,15 @@ function selectAllOptions(select){
               </tr>
               <tr>
                 <td colspan=4>
-                  <input type="submit" value="Redraw Map" name="sub">
-                  <input type="reset"  value="Reset">
+                  <span  
+                    onclick="setMenuObjects(
+                    window.document.ref_map_set_form.addOpMenu,
+                    window.document.comparative_map_form.addOpMenu,
+                    toggleDiv(document.getElementById('displayImageMenu')));
+                    toggleDiv(document.getElementById('hiddenImageMenu'));"
+                  >
+                    <b>(Hide Additional Options Menu)</b>
+                  </span>
                 </td>
               </tr>
               <tr>
