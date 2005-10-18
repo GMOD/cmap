@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.181 2005-10-16 03:11:14 mwz444 Exp $
+# $Id: Map.pm,v 1.182 2005-10-18 18:28:03 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.181 $)[-1];
+$VERSION = (qw$Revision: 1.182 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -2498,10 +2498,20 @@ sub add_topper {
             [ STRING, $reg_font, $f_x1, $topper_y, $topper, 'black' ];
     }
 
-    # Move map down by the hight of the topper
+    # Move map down by the height of the topper
     my $topper_offset = $base_y - $current_min_y;
-
-    $map_placement_data->{$map_id}{'bounds'}[1] -= $topper_offset;
+    $drawer->offset_drawing_data(
+        offset_y     => $topper_offset,
+        drawing_data => $map_drawing_data->{$map_id},
+    );
+    $drawer->offset_map_area_data(
+        offset_y      => $topper_offset,
+        map_area_data => $map_area_data->{$map_id},
+    );
+    $map_placement_data->{$map_id}{'map_coords'}[1] += $topper_offset;
+    $map_placement_data->{$map_id}{'map_coords'}[3] += $topper_offset;
+    $map_placement_data->{$map_id}{'bounds'}[1] += $topper_offset;
+    $map_placement_data->{$map_id}{'bounds'}[3] += $topper_offset;
 }
 
 # ----------------------------------------
