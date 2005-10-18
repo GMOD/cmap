@@ -13,10 +13,19 @@
     </tr>
     <tr>
         <td align="right">
-            User Name:
+            Group Name:
         </td>
         <td>
             <input name="link_group" value="[%- saved_link.link_group -%]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+             Link Title:
+        </td>
+        <td>
+            <input size=40 name="link_title" value="[%- saved_link.link_title -%]">
         </td>
     </tr>
 
@@ -31,11 +40,28 @@
 
     <tr>
         <td align="right">
+             Hidden:
+        </td>
+        <td>
+            <input type="checkbox" name="hidden" value=1 [%- IF saved_link.hidden -%]checked[%- END -%]>
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
             Saved On:
         </td>
         <td>
             [%- saved_link.saved_on -%]
-            <input type=hidden name="saved_on" value="[%- saved_link.saved_on -%]">
+        </td>
+    </tr>
+
+    <tr>
+        <td align="right">
+            Last Accessed On:
+        </td>
+        <td>
+            [%- saved_link.last_access -%]
         </td>
     </tr>
 
@@ -45,7 +71,6 @@
         </td>
         <td>
             <a href="[%- saved_link.saved_url -%]">Permanent URL</a>
-            <input type=hidden name="saved_url" value="[%- saved_link.saved_url -%]">
         </td>
     </tr>
 
@@ -55,7 +80,6 @@
         </td>
         <td>
             <a href="[%- saved_link.legacy_url -%]">Large, legacy URL</a>
-            <input type=hidden name="legacy_url" value="[%- saved_link.legacy_url -%]">
         </td>
     </tr>
 

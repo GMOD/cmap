@@ -23,6 +23,7 @@
             <option value="[% link_group_count.link_group %]"[% IF apr.param('selected_link_group')==link_group_count.link_group %] selected[% END %]>[% link_group_count.link_group %] ([%- link_group_count.link_count -%])</option>
         [% END %]
     </select>
+    Display Hidden Links <input type="checkbox" name="display_hidden" id="display_hidden" value="1" [%- IF apr.param('display_hidden') -%]checked[%- END -%]>
     <input type="hidden" name="action" id="action" value="saved_links_viewer">
     <input type="submit" value="Submit">
 </form>
@@ -41,8 +42,10 @@
             <table border=1>
               <tr>
                 <td>Saved Link ID</td>
-                <td>User Name</td>
+                <td>Group Name</td>
+                <td>Link Title</td>
                 <td>Date Saved</td>
+                <td>Last Access</td>
                 <td>Comment</td>
                 <td>Permanent Link</td>
                 <td>Legacy Link</td>
@@ -52,7 +55,9 @@
                 <tr class="colored">
                     <td align="right" valign="top">[% saved_link.saved_link_id %]</td>
                     <td align="right" valign="top">[% saved_link.link_group %]</td>
+                    <td align="right" valign="top">[% saved_link.link_title %]</td>
                     <td align="right" valign="top">[% saved_link.saved_on %]</td>
+                    <td align="right" valign="top">[% saved_link.last_access %]</td>
                     <td align="right" valign="top">[% saved_link.link_comment %]</td>
                     <td align="right" valign="top"><a href="[% saved_link.saved_url %]">Permanent Link</a></td>
                     <td align="right" valign="top"><a href="[% saved_link.legacy_url %]">Legacy Link</a></td>

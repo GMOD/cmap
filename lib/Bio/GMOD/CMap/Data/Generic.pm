@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.118 2005-10-17 02:21:07 mwz444 Exp $
+# $Id: Generic.pm,v 1.119 2005-10-18 20:47:05 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.118 $)[-1];
+$VERSION = (qw$Revision: 1.119 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -8865,17 +8865,23 @@ Not using cache because this query is quicker.
     my $legacy_url          = $args{'legacy_url'};
     my $link_group          = $args{'link_group'};
     my $link_comment        = $args{'link_comment'};
+    my $link_title          = $args{'link_title'};
+    my $last_access         = $args{'last_access'};
+    my $hidden              = $args{'hidden'};
     my $db                  = $cmap_object->db;
     my $return_object;
 
     my $sql_str = q[
         select saved_link_id,
                saved_on,
+               last_access,
                session_step_object,
                saved_url,
                legacy_url,
                link_group,
-               link_comment
+               link_title,
+               link_comment,
+               hidden
         from cmap_saved_link
     ];
     my @where_list;
@@ -8883,11 +8889,12 @@ Not using cache because this query is quicker.
 
     for my $column (
         qw[ saved_link_id saved_on session_step_object
-        saved_url legacy_url link_group link_comment ]
+        saved_url legacy_url link_group link_comment 
+        link_title last_access hidden]
         )
     {
 
-        if ( $args{$column} ) {
+        if ( defined( $args{$column} ) ) {
             push @identifiers, $args{$column};
             push @where_list,  " $column = ? ";
         }
@@ -8899,6 +8906,15 @@ Not using cache because this query is quicker.
 
     $return_object = $db->selectall_arrayref( $sql_str, { Columns => {} },
         @identifiers );
+
+    # if saved link was gotten by id, use update_saved_link to
+    # update the last_accessed field.
+    if ( $args{'saved_link_id'} and @{ $return_object || [] } ) {
+        $self->update_saved_link(
+            cmap_object   => $cmap_object,
+            saved_link_id => $args{'saved_link_id'},
+        );
+    }
 
     return $return_object;
 }
@@ -9041,9 +9057,10 @@ id
     $saved_url .= "saved_link_id=$saved_link_id;";
 
     my @insert_args = (
-        $saved_link_id, $saved_on,     $last_access, $session_step_object, 
-        $saved_url,     $legacy_url,   $link_title,  $link_comment, 
-        $link_group,    $hidden,
+        $saved_link_id,       $saved_on,     $last_access,
+        $session_step_object, $saved_url,    $legacy_url,
+        $link_title,          $link_comment, $link_group,
+        $hidden,
     );
 
     $db->do(
@@ -9112,7 +9129,7 @@ Given the id and some attributes to modify, updates.
     my $set_sql   = '';
     my $where_sql = " where saved_link_id = ? ";    # ID
 
-    my $time                = localtime();
+    my $time        = localtime();
     my $last_access = $time->strftime( $self->date_format );
     push @update_args, $last_access;
     $set_sql .= $set_sql ? ", " : " set ";
