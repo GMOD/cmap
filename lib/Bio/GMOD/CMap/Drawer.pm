@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.114 2005-10-14 20:05:22 mwz444 Exp $
+# $Id: Drawer.pm,v 1.115 2005-10-18 16:08:20 mwz444 Exp $
 
 =head1 NAME
 
@@ -347,7 +347,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.114 $)[-1];
+$VERSION = (qw$Revision: 1.115 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -2947,6 +2947,7 @@ Creates default link parameters for CMap->create_viewer_link()
     my $cluster_corr                = $args{'cluster_corr'};
     my $scale_maps                  = $args{'scale_maps'};
     my $stack_maps                  = $args{'stack_maps'};
+    my $omit_area_boxes             = $args{'omit_area_boxes'};
     my $ref_map_order               = $args{'ref_map_order'};
     my $comp_menu_order             = $args{'comp_menu_order'};
     my $show_intraslot_corr         = $args{'show_intraslot_corr'};
@@ -3059,6 +3060,9 @@ Creates default link parameters for CMap->create_viewer_link()
     }
     unless ( defined($stack_maps) ) {
         $stack_maps = $self->stack_maps();
+    }
+    unless ( defined($omit_area_boxes) ) {
+        $omit_area_boxes = $self->omit_area_boxes();
     }
     unless ( defined($comp_menu_order) ) {
         $comp_menu_order = $self->comp_menu_order();
@@ -3173,6 +3177,7 @@ Creates default link parameters for CMap->create_viewer_link()
         cluster_corr                => $cluster_corr,
         scale_maps                  => $scale_maps,
         stack_maps                  => $stack_maps,
+        omit_area_boxes             => $omit_area_boxes,
         ref_map_order               => $ref_map_order,
         comp_menu_order             => $comp_menu_order,
         show_intraslot_corr         => $show_intraslot_corr,

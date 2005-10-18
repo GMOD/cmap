@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.54 2005-10-14 20:05:22 mwz444 Exp $
+# $Id: Utils.pm,v 1.55 2005-10-18 16:08:20 mwz444 Exp $
 
 =head1 NAME
 
@@ -33,7 +33,7 @@ use POSIX;
 use Clone qw(clone);
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.54 $)[-1];
+$VERSION = (qw$Revision: 1.55 $)[-1];
 
 use base 'Exporter';
 
@@ -1099,6 +1099,7 @@ sub parse_url {
     my $comp_menu_order    = $apr->param('comp_menu_order');
     my $ref_map_order      = $apr->param('ref_map_order');
     my $prev_ref_map_order = $apr->param('prev_ref_map_order');
+    my $omit_area_boxes    = $apr->param('omit_area_boxes');
     $parsed_url_options{'link_group'} = $apr->param('link_group') || '';
     $parsed_url_options{'flip'}       = $apr->param('flip')       || '';
     $parsed_url_options{'page_no'}    = $apr->param('page_no')    || 1;
@@ -1107,12 +1108,11 @@ sub parse_url {
     $parsed_url_options{'compMenu'}   = $apr->param('compMenu');
     $parsed_url_options{'optionMenu'} = $apr->param('optionMenu');
     $parsed_url_options{'addOpMenu'}  = $apr->param('addOpMenu');
-    $parsed_url_options{'omit_area_boxes'} = $apr->param('omit_area_boxes');
-    $parsed_url_options{'session_id'}      = $apr->param('session_id');
-    $parsed_url_options{'saved_link_id'}   = $apr->param('saved_link_id');
-    $parsed_url_options{'step'}            = $apr->param('step') || 0;
-    $parsed_url_options{'session_mod'}     = $apr->param('session_mod') || '';
-    $parsed_url_options{'left_min_corrs'}  = $apr->param('left_min_corrs')
+    $parsed_url_options{'session_id'} = $apr->param('session_id');
+    $parsed_url_options{'saved_link_id'}  = $apr->param('saved_link_id');
+    $parsed_url_options{'step'}           = $apr->param('step') || 0;
+    $parsed_url_options{'session_mod'}    = $apr->param('session_mod') || '';
+    $parsed_url_options{'left_min_corrs'} = $apr->param('left_min_corrs')
         || 0;
     $parsed_url_options{'right_min_corrs'} = $apr->param('right_min_corrs')
         || 0;
@@ -1187,6 +1187,8 @@ sub parse_url {
         $calling_cmap_object->scale_maps($scale_maps) );
     $apr->param( 'stack_maps',
         $calling_cmap_object->stack_maps($stack_maps) );
+    $apr->param( 'omit_area_boxes',
+        $calling_cmap_object->omit_area_boxes($omit_area_boxes) );
     $apr->param( 'comp_menu_order',
         $calling_cmap_object->comp_menu_order($comp_menu_order) );
 
@@ -1692,6 +1694,8 @@ sub parse_url {
     $parsed_url_options{'magnify_all'}  = $calling_cmap_object->magnify_all;
     $parsed_url_options{'scale_maps'}   = $calling_cmap_object->scale_maps;
     $parsed_url_options{'stack_maps'}   = $calling_cmap_object->stack_maps;
+    $parsed_url_options{'omit_area_boxes'}
+        = $calling_cmap_object->omit_area_boxes;
     $parsed_url_options{'ref_map_order'}
         = $calling_cmap_object->ref_map_order;
     $parsed_url_options{'comp_menu_order'}
