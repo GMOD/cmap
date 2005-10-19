@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.119 2005-10-18 20:47:05 mwz444 Exp $
+# $Id: Generic.pm,v 1.120 2005-10-19 15:38:44 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.119 $)[-1];
+$VERSION = (qw$Revision: 1.120 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -1563,7 +1563,7 @@ Array of Hashes:
     map_type,
     map_type_display_order,
     epoch_published_on,
-    map_count (Only if $map_count is specified)
+    map_count (Only if $count_maps is specified)
 
 =item * Cache Level : 1
 

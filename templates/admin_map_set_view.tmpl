@@ -147,7 +147,7 @@
                 <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];order_by=map_stop">Stop</a>
             </th>
             <th>
-                <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];order_by=no_features">No. Features</a>
+                <a href="admin?action=map_set_view;map_set_id=[% map_set.map_set_id %];order_by=feature_count">No. Features</a>
             </th>
             <th colspan="3">&nbsp;</th>
         </tr>
@@ -159,7 +159,7 @@
                 <td>[% map.map_name       %]</td>
                 <td align="right">[% map.map_start | commify %]</td>
                 <td align="right">[% map.map_stop  | commify %]</td>
-                <td align="right">[% map.no_features  %]</td>
+                <td align="right">[% map.feature_count  %]</td>
                 <td align="center">
                     <a href="admin?action=map_view;map_id=[% map.map_id %]">View</a>
                 </td>
