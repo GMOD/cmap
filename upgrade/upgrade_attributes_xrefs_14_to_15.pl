@@ -199,6 +199,9 @@ SEGMENT:
         if ( $segment =~ s/\.full_name/.species_full_name/g ) {
             $string_modified = 1;
         }
+        if ( $segment =~ s/\.alias(\W|$)/$1/g ) {
+            $string_modified = 1;
+        }
 
         # ambiguous words
         my $found_ambiguous_word  = 0;
