@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.120 2005-10-19 15:38:44 mwz444 Exp $
+# $Id: Generic.pm,v 1.121 2005-10-20 14:07:34 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.120 $)[-1];
+$VERSION = (qw$Revision: 1.121 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -7221,13 +7221,16 @@ Not using cache because this query is quicker.
     my $get_all         = $args{'get_all'} || 0;
     my $db              = $cmap_object->db;
     my $return_object;
+    my $table_name;
     my @identifiers = ();
 
-    unless ( $object_type || $attribute_id ) {
+    unless ( $object_type || $attribute_id || $get_all ) {
         return $self->error('No object type or attribute_id');
     }
 
-    my $table_name = $self->{'TABLE_NAMES'}->{$object_type};
+    if ($object_type){
+        $table_name = $self->{'TABLE_NAMES'}->{$object_type};
+    }
     if ( !$order_by || $order_by eq 'display_order' ) {
         $order_by = 'display_order,attribute_name';
     }
@@ -7451,7 +7454,10 @@ If you don't want CMap to update into your database, make this a dummy method.
     my $object_id       = $args{'object_id'};
     my $db              = $cmap_object->db;
 
-    my $table_name = $self->{'TABLE_NAMES'}->{$object_type};
+    my $table_name;
+    if ($object_type){
+        $table_name = $self->{'TABLE_NAMES'}->{$object_type};
+    }
 
     my @update_args = ();
     my $update_sql  = qq[
@@ -7662,7 +7668,10 @@ Not using cache because this query is quicker.
     my $return_object;
     my @identifiers = ();
 
-    my $table_name = $self->{'TABLE_NAMES'}->{$object_type};
+    my $table_name;
+    if ($object_type){
+        $table_name = $self->{'TABLE_NAMES'}->{$object_type};
+    }
     if ( !$order_by || $order_by eq 'display_order' ) {
         $order_by = 'display_order,xref_name';
     }
@@ -7969,7 +7978,10 @@ If you don't want CMap to update into your database, make this a dummy method.
     my $is_public     = $args{'is_public'};
     my $db            = $cmap_object->db;
 
-    my $table_name = $self->{'TABLE_NAMES'}->{$object_type};
+    my $table_name;
+    if ($object_type){
+        $table_name = $self->{'TABLE_NAMES'}->{$object_type};
+    }
 
     my @update_args = ();
     my $update_sql  = qq[
