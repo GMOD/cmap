@@ -70,7 +70,9 @@ my $attributes = $sql_object->get_attributes(
 
 if ( @{ $attributes || [] } ) {
     for my $attribute ( @{ $attributes || [] } ) {
-        print STDERR 'Considering attribute value:'
+        print STDERR 'Considering attribute id: '
+            . $attribute->{'attribute_id'}
+            . ' with value:'
             . $attribute->{'attribute_value'} . "\n"
             if ($verbose);
         my $new_value = _update_variables_in_string(
@@ -113,7 +115,10 @@ my $xrefs = $sql_object->get_xrefs(
 
 if ( @{ $xrefs || [] } ) {
     for my $xref ( @{ $xrefs || [] } ) {
-        print STDERR 'Considering xref url:' . $xref->{'xref_url'} . "\n"
+        print STDERR 'Considering xref id: '
+            . $xref->{'xref_id'}
+            . ' with value:'
+            . $xref->{'xref_url'} . "\n"
             if ($verbose);
         my $new_url = _update_variables_in_string(
             string      => $xref->{'xref_url'},
