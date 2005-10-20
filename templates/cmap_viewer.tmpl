@@ -426,9 +426,31 @@ function selectAllOptions(select){
                     [%- END -%]
                   </select>
                 <td valign="top">
-                  <input type="submit" value="Change Maps" name="sub">
+                  <input type="submit" value="Draw Maps" name="sub">
                 </td>
-    
+              </tr>
+                <td valign="top" align="right" >Handle features:<br>
+                </td>
+                <td>
+                <table border=1></tr>
+                  <tr>
+                    <td valign=center> Use Normal Defaults</td>
+                    <td valign=center> <input type="radio" name="ft_FRONT_PAGE_DEFAULT" value="" checked > </td>
+                  </tr>
+                  <tr>
+                    <td valign=center> Ignore All Features</td>
+                    <td valign=center> <input type="radio" name="ft_FRONT_PAGE_DEFAULT" value="0" > </td>
+                  </tr>
+                  <tr>
+                    <td valign=center> Display Features <br>With Correspondences</td>
+                    <td valign=center> <input type="radio" name="ft_FRONT_PAGE_DEFAULT" value="1" > </td>
+                  </tr>
+                  <tr>
+                    <td valign=center> Display All Features</td>
+                    <td valign=center> <input type="radio" name="ft_FRONT_PAGE_DEFAULT" value="2" > </td>
+                  </tr>
+                </table>
+                <td>
                   <input type="hidden" name="prev_ref_species_acc" value="[%- apr.param('ref_species_acc') -%]">
                   <input type="hidden" name="prev_ref_map_accs" value="[%- apr.param('ref_map_accs') -%]">
                   <input type="hidden" name="ref_map_set_acc"  value="[%- apr.param('ref_map_set_acc') -%]">

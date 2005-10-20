@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.55 2005-10-18 16:08:20 mwz444 Exp $
+# $Id: Utils.pm,v 1.56 2005-10-20 21:25:26 mwz444 Exp $
 
 =head1 NAME
 
@@ -33,7 +33,7 @@ use POSIX;
 use Clone qw(clone);
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.55 $)[-1];
+$VERSION = (qw$Revision: 1.56 $)[-1];
 
 use base 'Exporter';
 
@@ -1305,6 +1305,18 @@ sub parse_url {
         if ( $param =~ /^ft_(\S+)/ or $param =~ /^feature_type_(\S+)/ ) {
             my $ft  = $1;
             my $val = $apr->param($param);
+
+            # Handle the "default" specified on the initial selection page
+            # write value to url_feature_default_display so that it acts
+            # like the ft_DEFAULT
+            if ( $ft eq 'FRONT_PAGE_DEFAULT' ) {
+                if ( $val =~ /^\d$/ ) {
+                    $parsed_url_options{'url_feature_default_display'} = $val;
+                }
+                next;
+            }
+
+            # This dictates how unspecified feature types are treated
             if ( $ft eq 'DEFAULT' ) {
                 if ( $val =~ /^\d$/ ) {
                     $parsed_url_options{'url_feature_default_display'} = $val;
@@ -1354,7 +1366,8 @@ sub parse_url {
         $parsed_url_options{'url_feature_default_display'} );
     $apr->param( 'ft_DEFAULT',
         $parsed_url_options{'url_feature_default_display'} );
-    $apr->param( 'feature_type_DEFAULT', undef );
+    $apr->param( 'feature_type_DEFAULT',  undef );
+    $apr->param( 'ft_FRONT_PAGE_DEFAULT', undef );
 
     #
     # Set the data source.
