@@ -2,12 +2,12 @@
 
 =head1 NAME
 
-upgrade_attributes_xrefs_14_to_15.pl - Check and modify any attributes or xrefs in
-the database that refer to an obsolete variable name.
+upgrade_attributes_xrefs_14_to_15.pl - Check and modify any attributes or xrefs
+in the database that refer to an obsolete variable name.
 
 =head1 SYNOPSIS
 
-upgrade_attributes_xrefs_14_to_15.pl
+upgrade_attributes_xrefs_14_to_15.pl -d data_source [-v] [-q] [-c] > output
 
 Use this to check if a tab delimited file will import correctly.
 
@@ -21,10 +21,16 @@ Options:
 
 =head1 DESCRIPTION
 
-Use this to check if there are attributes in the db that need to be modified to
-work with the version 0.15 code. 
+Use this to check if there are attributes or xrefs in the db that need to be
+modified to work with the version 0.15 code. 
 
-Using the --commit flag will cause the script to implement the required changes.
+When not committing, this will output the ids of each attribute or xref that
+needs modification along with the suggested new value.  Use of a decremented
+variable will result in a warning msg.
+
+Using the --commit flag will cause the script to implement the required
+changes.  Use of a decremented variable will result in a warning msg and will
+NOT be changed.
 
 =cut
 
@@ -69,7 +75,9 @@ if ( @{ $attributes || [] } ) {
             if ($verbose);
         my $new_value = _update_variables_in_string(
             string      => $attribute->{'attribute_value'},
-            object_type => $attribute->{'object_type'}
+            object_type => $attribute->{'object_type'},
+            object_id   => $attribute->{'attribute_id'},
+            record_type => 'attribute',
         );
         if ($new_value) {
             if ($commit_changes) {
@@ -109,7 +117,9 @@ if ( @{ $xrefs || [] } ) {
             if ($verbose);
         my $new_url = _update_variables_in_string(
             string      => $xref->{'xref_url'},
-            object_type => $xref->{'object_type'}
+            object_type => $xref->{'object_type'},
+            object_id   => $xref->{'xref_id'},
+            record_type => 'xref',
         );
         if ($new_url) {
             if ($commit_changes) {
@@ -141,6 +151,8 @@ sub _update_variables_in_string {
     my %args                  = @_;
     my $string_to_deconstruct = $args{'string'};
     my $object_type           = $args{'object_type'};
+    my $object_id             = $args{'object_id'} || q{};
+    my $record_type           = $args{'record_type'} || q{};
     my $reconstructed_value;
 
     my @string_segments    = split( /(\[%|%])/, $string_to_deconstruct );
@@ -220,7 +232,7 @@ SEGMENT:
             = ( 'can_be_reference_map' => 'is_relational_map', );
         for my $word (keys %obsolete_words){
             if ($segment=~/$word/){
-                print qq[ WARNING: "$word" has been deprecated.  ];
+                print qq[ WARNING: $record_type with id $object_id has depricated variable, "$word".  ];
                 if ($obsolete_words{$word}){
                     print qq[ Please see "$obsolete_words{$word}" to possibly replace the functionality.];
                 }
