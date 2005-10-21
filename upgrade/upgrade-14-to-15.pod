@@ -65,6 +65,48 @@ With MySQL the command looks something like this:
 Now your database should have some new columns that are filled with
 data.
 
+=item * 
+
+If your database has xrefs and attributes that make use of the CMap
+objects (as described in attributes-and-xrefs.pod), then you will need
+to run the upgrade_attributes_xrefs_14_to_15.pl script to update them
+to the new nomenclature.
+
+This script has two modes.  One will tell you if changes need to be
+made and the other will actually make the changes.
+
+=over 4
+
+=item - Check the database
+
+Check the database for any changes that need to be made.
+
+  $ upgrade_attributes_xrefs_14_to_15.pl -d data_source > needed_changes_file
+
+The data_source value specifies the data_source value to be used as
+found in the individual config files.
+
+The STDOUT output is tab delimited and it gives the type (attribute or
+xref), the ID and the upgraded value.
+
+If a deprecated value is used, it will print a warning in the STDOUT
+output as well.
+
+=item - Make the changes
+
+To commit the suggested changes call it again with the commit flag.
+
+  $ upgrade_attributes_xrefs_14_to_15.pl -d data_source -c > changes_file
+
+For each changed value, this will print the ID, the previous value and
+the new value.  You can print this to a file (as above) and save it in
+case anything goes wrong.
+
+=back
+
+With that done, the xrefs and attributes should work the same way as
+they did before the upgrade.
+
 =back
 
 =head1 CONFIGURATION FILE UPDATE
