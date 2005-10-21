@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.121 2005-10-20 14:07:34 mwz444 Exp $
+# $Id: Generic.pm,v 1.122 2005-10-21 20:29:17 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.121 $)[-1];
+$VERSION = (qw$Revision: 1.122 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -724,7 +724,7 @@ original start and stop.
 
                 $acc_where .= ' or ' if ($acc_where);
                 $acc_where .= " m.map_acc in ('"
-                    . join( "','", keys( %{$maps} ) ) . "')";
+                    . join( "','", sort keys( %{$maps} ) ) . "')";
             }
             elsif ( $map_sets and %{$map_sets} ) {
                 $from .= q[,
@@ -733,7 +733,7 @@ original start and stop.
 
                 #Map set acc
                 $acc_where .= " (ms.map_set_acc = '"
-                    . join( "' or ms.map_set_acc = '", keys( %{$map_sets} ) )
+                    . join( "' or ms.map_set_acc = '", sort keys( %{$map_sets} ) )
                     . "') ";
             }
         }
@@ -777,7 +777,7 @@ original start and stop.
             my $ref_slot_id  = $slot_no + $slot_modifier;
             my $slot_info    = $return_object->{$ref_slot_id};
             next unless $slot_info;
-            foreach my $m_id ( keys( %{ $return_object->{$ref_slot_id} } ) ) {
+            foreach my $m_id ( sort keys( %{ $return_object->{$ref_slot_id} } ) ) {
                 my $r_m_str = " (cl.map_id2 = $m_id ";
                 if (    defined( $slot_info->{$m_id}->[0] )
                     and defined( $slot_info->{$m_id}->[1] ) )
@@ -815,7 +815,7 @@ original start and stop.
             if ( $ignored_feature_type_accs and @$ignored_feature_type_accs )
             {
                 $where .= " and cl.feature_type_acc1 not in ('"
-                    . join( "','", @$ignored_feature_type_accs ) . "') ";
+                    . join( "','", sort @$ignored_feature_type_accs ) . "') ";
             }
 
             if (   @$included_evidence_type_accs
@@ -830,15 +830,15 @@ original start and stop.
                 if (@$included_evidence_type_accs) {
                     push @join_array,
                         " ce.evidence_type_acc in ('"
-                        . join( "','", @$included_evidence_type_accs ) . "')";
+                        . join( "','", sort @$included_evidence_type_accs ) . "')";
                 }
-                foreach my $et_acc (@$less_evidence_type_accs) {
+                foreach my $et_acc (sort @$less_evidence_type_accs) {
                     push @join_array,
                         " ( ce.evidence_type_acc = '$et_acc' "
                         . " and ce.score <= "
                         . $evidence_type_score->{$et_acc} . " ) ";
                 }
-                foreach my $et_acc (@$greater_evidence_type_accs) {
+                foreach my $et_acc (sort @$greater_evidence_type_accs) {
                     push @join_array,
                         " ( ce.evidence_type_acc = '$et_acc' "
                         . " and ce.score >= "
@@ -862,14 +862,14 @@ original start and stop.
 
                 #Map set acc
                 $acc_where .= "(ms.map_set_acc = '"
-                    . join( "' or ms.map_set_acc = '", keys( %{$map_sets} ) )
+                    . join( "' or ms.map_set_acc = '", sort keys( %{$map_sets} ) )
                     . "')";
             }
             else {
                 $use_corr_restriction = 1 if ( $corr_restrict > 0 );
                 $acc_where .= ' or ' if ($acc_where);
                 $acc_where .= " m.map_acc in ('"
-                    . join( "','", keys( %{$maps} ) ) . "')";
+                    . join( "','", sort keys( %{$maps} ) ) . "')";
                 foreach my $map_acc ( keys %{$maps} ) {
                     if (    defined( $maps->{$map_acc}{'start'} )
                         and defined( $maps->{$map_acc}{'stop'} ) )
@@ -5749,7 +5749,7 @@ Array of Hashes:
     my $restricted_sql_1     = '';
     my $unrestricted_sql_2   = '';
     my $restricted_sql_2     = '';
-    foreach my $slot_map_id ( keys( %{$slot_info} ) ) {
+    foreach my $slot_map_id ( sort keys( %{$slot_info} ) ) {
         my $this_start = $slot_info->{$slot_map_id}->[0];
         my $this_stop  = $slot_info->{$slot_map_id}->[1];
 
@@ -5818,10 +5818,10 @@ Array of Hashes:
     }
     if (@unrestricted_map_ids) {
         $unrestricted_sql_1 .= " or cl.map_id1 in ("
-            . join( ',', @unrestricted_map_ids ) . ") ";
+            . join( ',', sort @unrestricted_map_ids ) . ") ";
         if ($show_intraslot_corr) {
             $unrestricted_sql_2 .= " or cl.map_id2 in ("
-                . join( ',', @unrestricted_map_ids ) . ") ";
+                . join( ',', sort @unrestricted_map_ids ) . ") ";
         }
     }
     my $combined_sql = $restricted_sql_1 . $unrestricted_sql_1;
@@ -5832,7 +5832,7 @@ Array of Hashes:
 
         # Include reference slot maps
         @unrestricted_map_ids = ();
-        foreach my $slot_map_id ( keys( %{$slot_info2} ) ) {
+        foreach my $slot_map_id ( sort keys( %{$slot_info2} ) ) {
             my $this_start = $slot_info2->{$slot_map_id}->[0];
             my $this_stop  = $slot_info2->{$slot_map_id}->[1];
 
@@ -5873,7 +5873,7 @@ Array of Hashes:
         }
         if (@unrestricted_map_ids) {
             $unrestricted_sql_2 .= " or cl.map_id2 in ("
-                . join( ',', @unrestricted_map_ids ) . ") ";
+                . join( ',', sort @unrestricted_map_ids ) . ") ";
         }
     }
     $combined_sql = $restricted_sql_2 . $unrestricted_sql_2;
@@ -5888,15 +5888,15 @@ Array of Hashes:
         if (@$included_evidence_type_accs) {
             push @join_array,
                 " ce.evidence_type_acc in ('"
-                . join( "','", @$included_evidence_type_accs ) . "')";
+                . join( "','", sort @$included_evidence_type_accs ) . "')";
         }
-        foreach my $et_acc (@$less_evidence_type_accs) {
+        foreach my $et_acc (sort @$less_evidence_type_accs) {
             push @join_array,
                 " ( ce.evidence_type_acc = '$et_acc' "
                 . " and ce.score <= "
                 . $evidence_type_score->{$et_acc} . " ) ";
         }
-        foreach my $et_acc (@$greater_evidence_type_accs) {
+        foreach my $et_acc (sort @$greater_evidence_type_accs) {
             push @join_array,
                 " ( ce.evidence_type_acc = '$et_acc' "
                 . " and ce.score >= "
@@ -6085,7 +6085,7 @@ If $include_map1_data also has
     my @unrestricted_map_ids;
     my $restricted_sql   = '';
     my $unrestricted_sql = '';
-    foreach my $ref_map_id ( keys( %{$slot_info} ) ) {
+    foreach my $ref_map_id ( sort keys( %{$slot_info} ) ) {
         my $ref_map_start = $slot_info->{$ref_map_id}[0];
         my $ref_map_stop  = $slot_info->{$ref_map_id}[1];
         if ( defined($ref_map_start) and defined($ref_map_stop) ) {
@@ -6122,7 +6122,7 @@ If $include_map1_data also has
     }
     if (@unrestricted_map_ids) {
         $unrestricted_sql = " or cl.map_id1 in ("
-            . join( ',', @unrestricted_map_ids ) . ") ";
+            . join( ',', sort @unrestricted_map_ids ) . ") ";
     }
     my $from_restriction = $restricted_sql . $unrestricted_sql;
     $from_restriction =~ s/^\s+or//;
@@ -6141,15 +6141,15 @@ If $include_map1_data also has
         if (@$included_evidence_type_accs) {
             push @join_array,
                 " ce.evidence_type_acc in ('"
-                . join( "','", @$included_evidence_type_accs ) . "')";
+                . join( "','", sort @$included_evidence_type_accs ) . "')";
         }
-        foreach my $et_acc (@$less_evidence_type_accs) {
+        foreach my $et_acc (sort @$less_evidence_type_accs) {
             push @join_array,
                 " ( ce.evidence_type_acc = '$et_acc' "
                 . " and ce.score <= "
                 . $evidence_type_score->{$et_acc} . " ) ";
         }
-        foreach my $et_acc (@$greater_evidence_type_accs) {
+        foreach my $et_acc (sort @$greater_evidence_type_accs) {
             push @join_array,
                 " ( ce.evidence_type_acc = '$et_acc' "
                 . " and ce.score >= "
@@ -6165,7 +6165,7 @@ If $include_map1_data also has
 
     if (@$ignored_feature_type_accs) {
         $where_sql .= " and cl.feature_type_acc2 not in ('"
-            . join( "','", @$ignored_feature_type_accs ) . "') ";
+            . join( "','", sort @$ignored_feature_type_accs ) . "') ";
     }
 
     if ($min_correspondences) {
