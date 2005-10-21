@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.97 2005-10-18 16:08:20 mwz444 Exp $
+# $Id: CMap.pm,v 1.98 2005-10-21 20:39:30 mwz444 Exp $
 
 =head1 NAME
 
@@ -37,6 +37,8 @@ use Config::General;
 use Bio::GMOD::CMap::Data;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Config;
+
+use Cache::SizeAwareFileCache;
 use URI::Escape;
 use DBI;
 use File::Path;
@@ -1486,7 +1488,7 @@ Clears the image directory of files.  (It will not touch directories.)
 =head2 Query Caching
 
 Query results (and subsequent manipulations) are cached 
-in a Cache::FileCache file.
+in a Cache::SizeAwareFileCache file.
 
 There are four levels of caching.  This is so that if some part of 
 the database is changed, the whole chache does not have to be purged.
@@ -1556,11 +1558,44 @@ sub init_cache {
     my $namespace = $self->cache_level_name($cache_level);
     return unless ($namespace);
 
-    my %cache_params = ( 'namespace' => $namespace, );
+    my %cache_params = (
+        'namespace'          => $namespace,
+        'default_expires_in' => 1_209_600,    # 2 weeks
+    );
 
-    my $cache = new Cache::FileCache( \%cache_params );
+    my $cache = new Cache::SizeAwareFileCache( \%cache_params );
 
     return $cache;
+}
+
+sub control_cache_size {
+
+    my $self = shift;
+
+    my $cache_limit;
+    if ( defined $self->config_data('max_query_cache_size')
+        and $self->config_data('max_query_cache_size') ne q{} )
+    {
+        $cache_limit = $self->config_data('max_query_cache_size') + 0;
+    }
+    else {
+        $cache_limit = DEFAULT->{'max_query_cache_size'} || 0;
+    }
+
+    # return unless cache_limit is a positive number
+    return unless ( $cache_limit > 0 );
+
+    for my $cache_level (1..4){
+        my $cache_name = "L" . $cache_level . "_cache";
+    unless ( $self->{$cache_name} ) {
+        $self->{$cache_name} = $self->init_cache($cache_level)
+            or next;
+    }
+        $self->{$cache_name}->purge();
+        $self->{$cache_name}->limit_size($cache_limit);
+
+    }
+    return;
 }
 
 1;

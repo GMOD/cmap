@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.35 2005-10-14 20:05:22 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.36 2005-10-21 20:39:30 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.35 $)[-1];
+$VERSION = (qw$Revision: 1.36 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -461,6 +461,12 @@ use constant DEFAULT => {
     # Default: 20000
     #
     max_image_map_objects => 20000,
+
+    #
+    # How large the size limit should be for the query cache
+    # in bytes.  The value 0 will cause the size to not be limited.
+    # Default:
+    max_query_cache_size => 26214400, # 25Mb
 
     #
     # How many pages of results to show in searches.
