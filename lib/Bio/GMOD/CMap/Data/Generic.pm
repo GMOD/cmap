@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.122 2005-10-21 20:29:17 mwz444 Exp $
+# $Id: Generic.pm,v 1.123 2005-10-23 05:03:33 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,12 +31,13 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.122 $)[-1];
+$VERSION = (qw$Revision: 1.123 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
 use Regexp::Common;
 use Time::Piece;
+use Params::Validate qw(:all);
 use Bio::GMOD::CMap::Utils;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap;
@@ -203,12 +204,20 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object => 1,
+        object_type => 1,
+        acc_id      => 1,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $object_type = $args{'object_type'}
         or return $self->error('No object name');
     my $acc_id = $args{'acc_id'} or return $self->error('No accession id');
-    my $table_name = $self->{'TABLE_NAMES'}->{$object_type};
+    my $table_name = $self->{'TABLE_NAMES'}->{$object_type} if $object_type;
     my $id_field   = $self->{'ID_FIELDS'}->{$table_name};
     my $acc_field  = $self->{'ACC_FIELDS'}->{$table_name};
 
@@ -269,12 +278,20 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object => 1,
+        object_type => 1,
+        acc_id      => 1,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $object_type = $args{'object_type'}
         or return $self->error('No object name');
-    my $id         = $args{'id'} or return $self->error('No id');
-    my $table_name = $self->{'TABLE_NAMES'}->{$object_type};
+    my $id = $args{'id'} or return $self->error('No id');
+    my $table_name = $self->{'TABLE_NAMES'}->{$object_type} if $object_type;
     my $id_field   = $self->{'ID_FIELDS'}->{$table_name};
     my $acc_field  = $self->{'ACC_FIELDS'}->{$table_name};
 
@@ -343,7 +360,16 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object => 1,
+        object_type => 1,
+        object_id   => 1,
+        order_by    => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $object_type = $args{'object_type'}
         or return $self->error('No object type');
@@ -355,7 +381,7 @@ Not using cache because this query is quicker.
     my $return_object;
     my @identifiers = ();
 
-    my $table_name        = $self->{'TABLE_NAMES'}->{$object_type};
+    my $table_name = $self->{'TABLE_NAMES'}->{$object_type} if $object_type;
     my $object_name_field = $self->{'NAME_FIELDS'}->{$table_name};
 
     my $sql_str = qq[
@@ -452,7 +478,7 @@ Array of Hashes:
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self   = shift;
     my @tables = (
         {   name   => 'cmap_attribute',
             fields => {
@@ -671,7 +697,20 @@ original start and stop.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object                 => 1,
+        slots                       => 1,
+        included_evidence_type_accs => 0,
+        ignored_feature_type_accs   => 0,
+        less_evidence_type_accs     => 0,
+        greater_evidence_type_accs  => 0,
+        evidence_type_score         => 0,
+        slots_min_corrs             => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $slots = $args{'slots'} || {};
     my $ignored_feature_type_accs = $args{'ignored_feature_type_accs'} || [];
@@ -685,7 +724,7 @@ original start and stop.
     my $db                  = $cmap_object->db;
     my $return_object       = {};
 
-    # Return slot_info is not setting it.
+    # Return.  slot_info is not setting it.
     return {} unless ($slots);
 
     my @num_sorted_slot_nos = sort { $a <=> $b } keys %{$slots};
@@ -733,7 +772,8 @@ original start and stop.
 
                 #Map set acc
                 $acc_where .= " (ms.map_set_acc = '"
-                    . join( "' or ms.map_set_acc = '", sort keys( %{$map_sets} ) )
+                    . join( "' or ms.map_set_acc = '",
+                    sort keys( %{$map_sets} ) )
                     . "') ";
             }
         }
@@ -777,7 +817,9 @@ original start and stop.
             my $ref_slot_id  = $slot_no + $slot_modifier;
             my $slot_info    = $return_object->{$ref_slot_id};
             next unless $slot_info;
-            foreach my $m_id ( sort keys( %{ $return_object->{$ref_slot_id} } ) ) {
+            foreach
+                my $m_id ( sort keys( %{ $return_object->{$ref_slot_id} } ) )
+            {
                 my $r_m_str = " (cl.map_id2 = $m_id ";
                 if (    defined( $slot_info->{$m_id}->[0] )
                     and defined( $slot_info->{$m_id}->[1] ) )
@@ -830,15 +872,16 @@ original start and stop.
                 if (@$included_evidence_type_accs) {
                     push @join_array,
                         " ce.evidence_type_acc in ('"
-                        . join( "','", sort @$included_evidence_type_accs ) . "')";
+                        . join( "','", sort @$included_evidence_type_accs )
+                        . "')";
                 }
-                foreach my $et_acc (sort @$less_evidence_type_accs) {
+                foreach my $et_acc ( sort @$less_evidence_type_accs ) {
                     push @join_array,
                         " ( ce.evidence_type_acc = '$et_acc' "
                         . " and ce.score <= "
                         . $evidence_type_score->{$et_acc} . " ) ";
                 }
-                foreach my $et_acc (sort @$greater_evidence_type_accs) {
+                foreach my $et_acc ( sort @$greater_evidence_type_accs ) {
                     push @join_array,
                         " ( ce.evidence_type_acc = '$et_acc' "
                         . " and ce.score >= "
@@ -862,7 +905,8 @@ original start and stop.
 
                 #Map set acc
                 $acc_where .= "(ms.map_set_acc = '"
-                    . join( "' or ms.map_set_acc = '", sort keys( %{$map_sets} ) )
+                    . join( "' or ms.map_set_acc = '",
+                    sort keys( %{$map_sets} ) )
                     . "')";
             }
             else {
@@ -1119,7 +1163,17 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object       => 1,
+        species_id        => 0,
+        species_accs      => 0,
+        is_relational_map => 0,
+        is_enabled        => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object  = $args{'cmap_object'} or die "No CMap Object included";
     my $species_id   = $args{'species_id'};
     my $species_accs = $args{'species_accs'} || [];
@@ -1225,7 +1279,14 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object => 1,
+        map_set_acc => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $map_set_acc = $args{'map_set_acc'};
     my $db          = $cmap_object->db;
@@ -1296,7 +1357,18 @@ Species id
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object         => 1,
+        species_acc         => 0,
+        accession_id        => 0,
+        species_common_name => 0,
+        species_full_name   => 0,
+        display_order       => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $species_acc         = $args{'species_acc'} || $args{'accession_id'};
     my $species_common_name = $args{'species_common_name'};
@@ -1372,7 +1444,20 @@ If you don't want CMap to update into your database, make this a dummy method.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object         => 1,
+        species_id          => 0,
+        object_id           => 0,
+        species_acc         => 0,
+        accession_id        => 0,
+        species_common_name => 0,
+        species_full_name   => 0,
+        display_order       => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $species_id = $args{'species_id'} || $args{'object_id'} or return;
     my $species_acc = $args{'species_acc'} || $args{'accession_id'};
@@ -1451,7 +1536,14 @@ If you don't want CMap to delete from your database, make this a dummy method.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object => 1,
+        species_id  => 1,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $db          = $cmap_object->db;
     my $species_id  = $args{'species_id'}
@@ -1462,13 +1554,14 @@ If you don't want CMap to delete from your database, make this a dummy method.
     ];
     my $where_sql = '';
 
+    return unless ($species_id);
+
     if ($species_id) {
         push @delete_args, $species_id;
         $where_sql .= $where_sql ? " and " : " where ";
         $where_sql .= " species_id = ? ";
     }
 
-    return unless ($where_sql);
     $delete_sql .= $where_sql;
     $db->do( $delete_sql, {}, (@delete_args) );
 
@@ -1571,7 +1664,25 @@ Array of Hashes:
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object       => 1,
+        species_id        => 0,
+        species_ids       => 0,
+        species_acc       => 0,
+        map_set_id        => 0,
+        map_set_ids       => 0,
+        map_set_acc       => 0,
+        map_set_accs      => 0,
+        map_type_acc      => 0,
+        map_type_accs     => 0,
+        is_relational_map => 0,
+        is_enabled        => 0,
+        count_maps        => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object   = $args{'cmap_object'} or die "No CMap Object included";
     my $species_id    = $args{'species_id'};
     my $species_ids   = $args{'species_ids'} || [];
@@ -1789,7 +1900,20 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object       => 1,
+        map_set_id        => 0,
+        map_set_ids       => 0,
+        map_set_acc       => 0,
+        map_set_accs      => 0,
+        map_type_acc      => 0,
+        is_relational_map => 0,
+        is_enabled        => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object  = $args{'cmap_object'} or die "No CMap Object included";
     my $map_set_id   = $args{'map_set_id'};
     my $map_set_ids  = $args{'map_set_ids'} || [];
@@ -1910,7 +2034,14 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object => 1,
+        map_ids     => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $map_ids = $args{'map_ids'} || [];
     my $db = $cmap_object->db;
@@ -1998,7 +2129,29 @@ Map Set id
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object        => 1,
+        map_set_acc        => 0,
+        accession_id       => 0,
+        map_set_name       => 0,
+        map_set_short_name => 0,
+        map_type_acc       => 0,
+        map_type_aid       => 0,
+        map_type_accession => 0,
+        species_id         => 0,
+        published_on       => 0,
+        display_order      => 0,
+        is_enabled         => 0,
+        shape              => 0,
+        width              => 0,
+        color              => 0,
+        map_units          => 0,
+        is_relational_map  => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $map_set_acc        = $args{'map_set_acc'} || $args{'accession_id'};
     my $map_set_name       = $args{'map_set_name'};
@@ -2110,10 +2263,35 @@ to ignore that column.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object        => 1,
+        map_set_id         => 0,
+        object_id          => 0,
+        map_set_acc        => 0,
+        accession_id       => 0,
+        map_set_name       => 0,
+        map_set_short_name => 0,
+        map_type_acc       => 0,
+        map_type_aid       => 0,
+        map_type_accession => 0,
+        species_id         => 0,
+        published_on       => 0,
+        display_order      => 0,
+        is_enabled         => 0,
+        shape              => 0,
+        width              => 0,
+        color              => 0,
+        map_units          => 0,
+        is_relational_map  => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
-    my $map_set_id = $args{'map_set_id'} || $args{'object_id'} or return;
-    my $map_set_acc = $args{'map_set_acc'} || $args{'accession_id'};
+    my $map_set_id = $args{'map_set_id'} || $args{'object_id'}
+        or return $self->error("No object id for update_map_sets");
+    my $map_set_acc        = $args{'map_set_acc'} || $args{'accession_id'};
     my $map_set_name       = $args{'map_set_name'};
     my $map_set_short_name = $args{'map_set_short_name'};
     my $map_type_acc       = $args{'map_type_acc'}
@@ -2245,7 +2423,14 @@ If you don't want CMap to delete from your database, make this a dummy method.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object => 1,
+        map_set_id  => 1,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $db          = $cmap_object->db;
     my $map_set_id  = $args{'map_set_id'}
@@ -2256,13 +2441,14 @@ If you don't want CMap to delete from your database, make this a dummy method.
     ];
     my $where_sql = '';
 
+    return unless ($map_set_id);
+
     if ($map_set_id) {
         push @delete_args, $map_set_id;
         $where_sql .= $where_sql ? " and " : " where ";
         $where_sql .= " map_set_id = ? ";
     }
 
-    return unless ($where_sql);
     $delete_sql .= $where_sql;
     $db->do( $delete_sql, {}, (@delete_args) );
 
@@ -2374,7 +2560,25 @@ Array of Hashes:
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object       => 1,
+        map_id            => 0,
+        map_ids           => 0,
+        map_set_id        => 0,
+        map_set_acc       => 0,
+        map_set_accs      => 0,
+        map_name          => 0,
+        map_length        => 0,
+        map_type_acc      => 0,
+        species_acc       => 0,
+        is_relational_map => 0,
+        is_enabled        => 0,
+        count_features    => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object  = $args{'cmap_object'} or die "No CMap Object included";
     my $map_id       = $args{'map_id'};
     my $map_ids      = $args{'map_ids'} || [];
@@ -2585,7 +2789,16 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object => 1,
+        map_id      => 0,
+        map_acc     => 0,
+        map_set_id  => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $map_id      = $args{'map_id'};
     my $map_acc     = $args{'map_acc'};
@@ -2665,7 +2878,14 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object => 1,
+        map_set_acc => 1,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $map_set_acc = $args{'map_set_acc'};
     my $db          = $cmap_object->db;
@@ -2747,7 +2967,17 @@ Not Caching because the calling method will do that.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object             => 1,
+        map_set_id              => 1,
+        map_name                => 0,
+        min_correspondence_maps => 0,
+        min_correspondences     => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $map_set_id = $args{'map_set_id'}
         or die "No Map Set Id passed to map search";
@@ -2851,7 +3081,22 @@ Map id
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object    => 1,
+        map_acc        => 0,
+        accession_id   => 0,
+        map_set_id     => 0,
+        map_name       => 0,
+        display_order  => 0,
+        map_start      => 0,
+        map_stop       => 0,
+        start_position => 0,
+        stop_position  => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $map_acc       = $args{'map_acc'} || $args{'accession_id'};
     my $map_set_id    = $args{'map_set_id'};
@@ -2937,7 +3182,24 @@ If you don't want CMap to update into your database, make this a dummy method.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object    => 1,
+        map_id         => 0,
+        object_id      => 0,
+        map_acc        => 0,
+        accession_id   => 0,
+        map_set_id     => 0,
+        map_name       => 0,
+        display_order  => 0,
+        map_start      => 0,
+        map_stop       => 0,
+        start_position => 0,
+        stop_position  => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $map_id = $args{'map_id'} || $args{'object_id'} or return;
     my $map_acc = $args{'map_acc'} || $args{'accession_id'};
@@ -3033,7 +3295,14 @@ If you don't want CMap to delete from your database, make this a dummy method.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object => 1,
+        map_id      => 1,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $db          = $cmap_object->db;
     my $map_id      = $args{'map_id'}
@@ -3044,13 +3313,14 @@ If you don't want CMap to delete from your database, make this a dummy method.
     ];
     my $where_sql = '';
 
+    return unless ($map_id);
+
     if ($map_id) {
         push @delete_args, $map_id;
         $where_sql .= $where_sql ? " and " : " where ";
         $where_sql .= " map_id = ? ";
     }
 
-    return unless ($where_sql);
     $delete_sql .= $where_sql;
     $db->do( $delete_sql, {}, (@delete_args) );
 
@@ -3190,7 +3460,30 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object       => 1,
+        feature_id        => 0,
+        feature_acc       => 0,
+        feature_name      => 0,
+        map_id            => 0,
+        map_acc           => 0,
+        map_set_id        => 0,
+        map_set_ids       => 0,
+        feature_start     => 0,
+        feature_stop      => 0,
+        direction         => 0,
+        map_start         => 0,
+        map_stop          => 0,
+        feature_type_accs => 0,
+        species_id        => 0,
+        species_ids       => 0,
+        species_accs      => 0,
+        aliases_get_rows  => 0,
+        ignore_aliases    => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
 
     my $cmap_object   = $args{'cmap_object'} or die "No CMap Object included";
     my $feature_id    = $args{'feature_id'};
@@ -3453,7 +3746,18 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object      => 1,
+        map_id           => 0,
+        feature_id       => 0,
+        feature_acc      => 0,
+        feature_name     => 0,
+        feature_type_acc => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object  = $args{'cmap_object'} or die "No CMap Object included";
     my $map_id       = $args{'map_id'};
     my $feature_id   = $args{'feature_id'};
@@ -3542,7 +3846,14 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object => 1,
+        map_id      => 1,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $map_id      = $args{'map_id'};
     my $db          = $cmap_object->db;
@@ -3611,7 +3922,15 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object              => 1,
+        map_set_ids              => 0,
+        ignore_feature_type_accs => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $map_set_ids              = $args{'map_set_ids'}              || [];
     my $ignore_feature_type_accs = $args{'ignore_feature_type_accs'} || [];
@@ -3736,7 +4055,22 @@ Array of Hashes:
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object                 => 1,
+        slot_info                   => 1,
+        this_slot_no                => 1,
+        map_id                      => 0,
+        map_start                   => 0,
+        map_stop                    => 0,
+        included_feature_type_accs  => 0,
+        ignored_feature_type_accs   => 0,
+        corr_only_feature_type_accs => 0,
+        show_intraslot_corr         => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $slot_info   = $args{'slot_info'}   or die "no slot info supplied.";
     my $map_id      = $args{'map_id'};
@@ -3961,7 +4295,20 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object           => 1,
+        group_by_map_id       => 0,
+        group_by_feature_type => 0,
+        this_slot_info        => 0,
+        map_ids               => 0,
+        map_id                => 0,
+        map_name              => 0,
+        map_set_id            => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $group_by_map_id       = $args{'group_by_map_id'};
     my $group_by_feature_type = $args{'group_by_feature_type'};
@@ -4163,7 +4510,29 @@ Feature id
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object            => 1,
+        feature_acc            => 0,
+        accession_id           => 0,
+        map_id                 => 0,
+        feature_type_acc       => 0,
+        feature_type_aid       => 0,
+        feature_type_accession => 0,
+        feature_name           => 0,
+        is_landmark            => 0,
+        feature_start          => 0,
+        feature_stop           => 0,
+        start_position         => 0,
+        stop_position          => 0,
+        default_rank           => 0,
+        direction              => 0,
+        gclass                 => 0,
+        threshold              => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $feature_acc      = $args{'feature_acc'} || $args{'accession_id'};
     my $map_id           = $args{'map_id'};
@@ -4329,7 +4698,29 @@ If you don't want CMap to update into your database, make this a dummy method.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object            => 1,
+        feature_id             => 0,
+        object_id              => 0,
+        feature_acc            => 0,
+        accession_id           => 0,
+        map_id                 => 0,
+        feature_type_acc       => 0,
+        feature_type_aid       => 0,
+        feature_type_accession => 0,
+        feature_name           => 0,
+        is_landmark            => 0,
+        feature_start          => 0,
+        feature_stop           => 0,
+        start_position         => 0,
+        stop_position          => 0,
+        default_rank           => 0,
+        direction              => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $feature_id  = $args{'feature_id'}  || $args{'object_id'} or return;
     my $feature_acc = $args{'feature_acc'} || $args{'accession_id'};
@@ -4464,7 +4855,15 @@ If you don't want CMap to delete from your database, make this a dummy method.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object => 1,
+        feature_id  => 0,
+        map_id      => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $db          = $cmap_object->db;
     my $feature_id  = $args{'feature_id'};
@@ -4474,6 +4873,8 @@ If you don't want CMap to delete from your database, make this a dummy method.
         delete from cmap_feature
     ];
     my $where_sql = '';
+
+    return unless ( $feature_id or $map_id );
 
     if ($feature_id) {
         push @delete_args, $feature_id;
@@ -4486,7 +4887,6 @@ If you don't want CMap to delete from your database, make this a dummy method.
         $where_sql .= " map_id = ? ";
     }
 
-    return unless ($where_sql);
     $delete_sql .= $where_sql;
     $db->do( $delete_sql, {}, (@delete_args) );
 
@@ -4571,7 +4971,23 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object              => 1,
+        feature_id               => 0,
+        feature_alias_id         => 0,
+        feature_ids              => 0,
+        feature_acc              => 0,
+        alias                    => 0,
+        map_id                   => 0,
+        map_acc                  => 0,
+        map_set_id               => 0,
+        map_set_ids              => 0,
+        ignore_feature_type_accs => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $feature_id = $args{'feature_id'};
     my $feature_alias_id         = $args{'feature_alias_id'};
@@ -4736,7 +5152,15 @@ feature_alias_id
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object => 1,
+        feature_id  => 1,
+        alias       => 1,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $feature_id  = $args{'feature_id'};
     my $alias       = $args{'alias'};
@@ -4815,7 +5239,16 @@ If you don't want CMap to update into your database, make this a dummy method.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object      => 1,
+        feature_alias_id => 0,
+        object_id        => 0,
+        alias            => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $feature_alias_id = $args{'feature_alias_id'} || $args{'object_id'}
         or return;
@@ -4885,7 +5318,15 @@ If you don't want CMap to delete from your database, make this a dummy method.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object      => 1,
+        feature_alias_id => 0,
+        feature_id       => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $db = $cmap_object->db;
     my $feature_alias_id = $args{'feature_alias_id'};
@@ -4895,6 +5336,8 @@ If you don't want CMap to delete from your database, make this a dummy method.
         delete from cmap_feature_alias
     ];
     my $where_sql = '';
+
+    return unless ( $feature_alias_id or $feature_id );
 
     if ($feature_alias_id) {
         push @delete_args, $feature_alias_id;
@@ -4907,6 +5350,7 @@ If you don't want CMap to delete from your database, make this a dummy method.
         $where_sql .= " feature_id = ? ";
     }
 
+ # If only feature_alias_id was supplied, get feature_id so it can be returned
     unless ($feature_id) {
 
         my $feature_id_sql = qq[
@@ -4917,7 +5361,6 @@ If you don't want CMap to delete from your database, make this a dummy method.
         $feature_id = $db->selectrow_array( $feature_id_sql, {}, () );
     }
 
-    return unless ($where_sql);
     $delete_sql .= $where_sql;
     $db->do( $delete_sql, {}, (@delete_args) );
 
@@ -4982,7 +5425,15 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object                => 1,
+        feature_correspondence_id  => 0,
+        feature_correspondence_acc => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $feature_correspondence_id  = $args{'feature_correspondence_id'};
     my $feature_correspondence_acc = $args{'feature_correspondence_acc'};
@@ -5000,6 +5451,9 @@ Not using cache because this query is quicker.
       where 
     ];
 
+    return {}
+        unless ( $feature_correspondence_id or $feature_correspondence_acc );
+
     if ($feature_correspondence_id) {
         push @identifiers, $feature_correspondence_id;
         $sql_str .= " feature_correspondence_id = ? ";
@@ -5007,9 +5461,6 @@ Not using cache because this query is quicker.
     elsif ($feature_correspondence_acc) {
         push @identifiers, $feature_correspondence_acc;
         $sql_str .= " feature_correspondence_acc = ? ";
-    }
-    else {
-        return {};
     }
 
     $return_object = $db->selectrow_hashref( $sql_str, {}, @identifiers )
@@ -5119,7 +5570,24 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object                 => 1,
+        feature_correspondence_id   => 0,
+        feature_id1                 => 0,
+        feature_id2                 => 0,
+        map_set_id2                 => 0,
+        map_set_acc2                => 0,
+        map_acc2                    => 0,
+        included_evidence_type_accs => 0,
+        less_evidence_type_accs     => 0,
+        greater_evidence_type_accs  => 0,
+        evidence_type_score         => 0,
+        disregard_evidence_type     => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $feature_correspondence_id   = $args{'feature_correspondence_id'};
     my $feature_id1                 = $args{'feature_id1'};
@@ -5310,7 +5778,16 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object               => 1,
+        feature_correspondence_id => 0,
+        map_set_ids1              => 0,
+        map_set_ids2              => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $feature_correspondence_id = $args{'feature_correspondence_id'};
     my $map_set_ids1              = $args{'map_set_ids1'} || [];
@@ -5441,7 +5918,23 @@ Array of Hashes:
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object                 => 1,
+        ref_map_info                => 1,
+        map_id                      => 0,
+        map_start                   => 0,
+        map_stop                    => 0,
+        included_evidence_type_accs => 0,
+        less_evidence_type_accs     => 0,
+        greater_evidence_type_accs  => 0,
+        evidence_type_score         => 0,
+        feature_type_accs           => 0,
+        intraslot                   => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
 
     my $map_id                      = $args{'map_id'};
@@ -5685,7 +6178,25 @@ Array of Hashes:
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object                 => 1,
+        slot_info                   => 1,
+        slot_info2                  => 1,
+        split_evidence_types        => 0,
+        show_intraslot_corr         => 0,
+        map_accs                    => 0,
+        ignore_map_accs             => 0,
+        included_evidence_type_accs => 0,
+        ignored_evidence_type_accs  => 0,
+        less_evidence_type_accs     => 0,
+        greater_evidence_type_accs  => 0,
+        evidence_type_score         => 0,
+        ignored_feature_type_accs   => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $split_evidence_types        = $args{'split_evidence_types'};
     my $show_intraslot_corr         = $args{'show_intraslot_corr'};
@@ -5890,13 +6401,13 @@ Array of Hashes:
                 " ce.evidence_type_acc in ('"
                 . join( "','", sort @$included_evidence_type_accs ) . "')";
         }
-        foreach my $et_acc (sort @$less_evidence_type_accs) {
+        foreach my $et_acc ( sort @$less_evidence_type_accs ) {
             push @join_array,
                 " ( ce.evidence_type_acc = '$et_acc' "
                 . " and ce.score <= "
                 . $evidence_type_score->{$et_acc} . " ) ";
         }
-        foreach my $et_acc (sort @$greater_evidence_type_accs) {
+        foreach my $et_acc ( sort @$greater_evidence_type_accs ) {
             push @join_array,
                 " ( ce.evidence_type_acc = '$et_acc' "
                 . " and ce.score >= "
@@ -6009,7 +6520,24 @@ If $include_map1_data also has
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object                 => 1,
+        min_correspondences         => 0,
+        slot_info                   => 0,
+        map_accs                    => 0,
+        ignore_map_accs             => 0,
+        included_evidence_type_accs => 0,
+        ignored_evidence_type_accs  => 0,
+        less_evidence_type_accs     => 0,
+        greater_evidence_type_accs  => 0,
+        evidence_type_score         => 0,
+        ignored_feature_type_accs   => 0,
+        include_map1_data           => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $min_correspondences         = $args{'min_correspondences'};
     my $slot_info                   = $args{'slot_info'} || {};
@@ -6143,13 +6671,13 @@ If $include_map1_data also has
                 " ce.evidence_type_acc in ('"
                 . join( "','", sort @$included_evidence_type_accs ) . "')";
         }
-        foreach my $et_acc (sort @$less_evidence_type_accs) {
+        foreach my $et_acc ( sort @$less_evidence_type_accs ) {
             push @join_array,
                 " ( ce.evidence_type_acc = '$et_acc' "
                 . " and ce.score <= "
                 . $evidence_type_score->{$et_acc} . " ) ";
         }
-        foreach my $et_acc (sort @$greater_evidence_type_accs) {
+        foreach my $et_acc ( sort @$greater_evidence_type_accs ) {
             push @join_array,
                 " ( ce.evidence_type_acc = '$et_acc' "
                 . " and ce.score >= "
@@ -6223,7 +6751,14 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object => 1,
+        feature_id  => 1,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $feature_id  = $args{'feature_id'}  or die "No feature id given";
     my $db          = $cmap_object->db;
@@ -6298,7 +6833,27 @@ Feature Correspondence id
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object                => 1,
+        feature_id1                => 0,
+        feature_id2                => 0,
+        feature_acc1               => 0,
+        feature_acc2               => 0,
+        is_enabled                 => 0,
+        evidence_type_acc          => 0,
+        evidence_type_aid          => 0,
+        evidence_type_accession    => 0,
+        evidence                   => 0,
+        correspondence_evidence    => 0,
+        feature_correspondence_acc => 0,
+        accession_id               => 0,
+        score                      => 0,
+        threshold                  => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object  = $args{'cmap_object'} or die "No CMap Object included";
     my $feature_id1  = $args{'feature_id1'};
     my $feature_id2  = $args{'feature_id2'};
@@ -6523,7 +7078,20 @@ If you don't want CMap to update into your database, make this a dummy method.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object                => 1,
+        feature_correspondence_id  => 0,
+        object_id                  => 0,
+        feature_correspondence_acc => 0,
+        accession_id               => 0,
+        is_enabled                 => 0,
+        feature_id1                => 0,
+        feature_id2                => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $feature_correspondence_id = $args{'feature_correspondence_id'}
         || $args{'object_id'}
@@ -6613,7 +7181,15 @@ If you don't want CMap to delete from your database, make this a dummy method.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object               => 1,
+        feature_correspondence_id => 0,
+        feature_id                => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $db = $cmap_object->db;
     my $feature_correspondence_id = $args{'feature_correspondence_id'};
@@ -6628,6 +7204,7 @@ If you don't want CMap to delete from your database, make this a dummy method.
     my $where_sql_fc = '';
     my $where_sql_cl = '';
 
+    return unless ( $feature_correspondence_id or $feature_id );
     if ($feature_correspondence_id) {
         push @delete_args, $feature_correspondence_id;
         $where_sql_fc .= $where_sql_fc ? " and " : " where ";
@@ -6644,7 +7221,6 @@ If you don't want CMap to delete from your database, make this a dummy method.
         $where_sql_cl .= " ( feature_id1 = ? or feature_id2 = ?) ";
     }
 
-    return unless ($where_sql_fc);
     $delete_sql_fc .= $where_sql_fc;
     $delete_sql_cl .= $where_sql_cl;
     $db->do( $delete_sql_fc, {}, (@delete_args) );
@@ -6717,7 +7293,17 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object                => 1,
+        feature_correspondence_id  => 0,
+        correspondence_evidence_id => 0,
+        evidence_type_acc          => 0,
+        order_by                   => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $feature_correspondence_id  = $args{'feature_correspondence_id'};
     my $correspondence_evidence_id = $args{'correspondence_evidence_id'};
@@ -6823,7 +7409,14 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object => 1,
+        map_set_ids => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $map_set_ids        = $args{'map_set_ids'} || [];
     my $db                 = $cmap_object->db;
@@ -6909,7 +7502,20 @@ Correspondence Evidence id
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object                 => 1,
+        evidence_type_acc           => 0,
+        evidence_type_aid           => 0,
+        evidence_type_accession     => 0,
+        score                       => 0,
+        correspondence_evidence_acc => 0,
+        accession_id                => 0,
+        feature_correspondence_id   => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or return;
     my $evidence_type_acc = $args{'evidence_type_acc'}
         || $args{'evidence_type_aid'}
@@ -7000,7 +7606,23 @@ If you don't want CMap to update into your database, make this a dummy method.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object                 => 1,
+        correspondence_evidence_id  => 0,
+        object_id                   => 0,
+        evidence_type_acc           => 0,
+        evidence_type_aid           => 0,
+        evidence_type_accession     => 0,
+        score                       => 0,
+        rank                        => 0,
+        correspondence_evidence_acc => 0,
+        accession_id                => 0,
+        feature_correspondence_id   => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $correspondence_evidence_id = $args{'correspondence_evidence_id'}
         || $args{'object_id'}
@@ -7100,7 +7722,15 @@ If you don't want CMap to delete from your database, make this a dummy method.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object                => 1,
+        correspondence_evidence_id => 0,
+        feature_correspondence_id  => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $db = $cmap_object->db;
     my $correspondence_evidence_id = $args{'correspondence_evidence_id'};
@@ -7110,6 +7740,9 @@ If you don't want CMap to delete from your database, make this a dummy method.
         delete from cmap_correspondence_evidence
     ];
     my $where_sql = '';
+
+    return
+        unless ( $correspondence_evidence_id or $feature_correspondence_id );
 
     if ($correspondence_evidence_id) {
         push @delete_args, $correspondence_evidence_id;
@@ -7122,7 +7755,6 @@ If you don't want CMap to delete from your database, make this a dummy method.
         $where_sql .= " feature_correspondence_id = ? ";
     }
 
-    return unless ($where_sql);
     $delete_sql .= $where_sql;
     $db->do( $delete_sql, {}, (@delete_args) );
 
@@ -7209,7 +7841,21 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object     => 1,
+        object_type     => 0,
+        attribute_id    => 0,
+        is_public       => 0,
+        attribute_name  => 0,
+        attribute_value => 0,
+        object_id       => 0,
+        order_by        => 0,
+        get_all         => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object  = $args{'cmap_object'} or die "No CMap Object included";
     my $object_type  = $args{'object_type'};
     my $attribute_id = $args{'attribute_id'};
@@ -7228,7 +7874,7 @@ Not using cache because this query is quicker.
         return $self->error('No object type or attribute_id');
     }
 
-    if ($object_type){
+    if ($object_type) {
         $table_name = $self->{'TABLE_NAMES'}->{$object_type};
     }
     if ( !$order_by || $order_by eq 'display_order' ) {
@@ -7345,7 +7991,19 @@ Attribute id
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object     => 1,
+        display_order   => 0,
+        object_type     => 0,
+        is_public       => 0,
+        attribute_name  => 0,
+        attribute_value => 0,
+        object_id       => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object  = $args{'cmap_object'} or die "No CMap Object included";
     my $db           = $cmap_object->db;
     my $attribute_id = $self->next_number(
@@ -7359,8 +8017,8 @@ Attribute id
     my $attribute_name  = $args{'attribute_name'};
     my $attribute_value = $args{'attribute_value'};
     my $object_id       = $args{'object_id'};
-    my $table_name      = $self->{'TABLE_NAMES'}->{$object_type};
-    my @insert_args     = (
+    my $table_name  = $self->{'TABLE_NAMES'}->{$object_type} if $object_type;
+    my @insert_args = (
         $attribute_id, $table_name, $object_id, $attribute_value,
         $attribute_name, $is_public, $display_order
     );
@@ -7443,7 +8101,20 @@ If you don't want CMap to update into your database, make this a dummy method.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object     => 1,
+        attribute_id    => 1,
+        display_order   => 0,
+        object_type     => 0,
+        is_public       => 0,
+        attribute_name  => 0,
+        attribute_value => 0,
+        object_id       => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object  = $args{'cmap_object'}  or return;
     my $attribute_id = $args{'attribute_id'} or return;
     my $display_order   = $args{'display_order'};
@@ -7455,7 +8126,7 @@ If you don't want CMap to update into your database, make this a dummy method.
     my $db              = $cmap_object->db;
 
     my $table_name;
-    if ($object_type){
+    if ($object_type) {
         $table_name = $self->{'TABLE_NAMES'}->{$object_type};
     }
 
@@ -7551,18 +8222,29 @@ If you don't want CMap to delete from your database, make this a dummy method.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object  => 1,
+        attribute_id => 0,
+        object_type  => 0,
+        object_id    => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object  = $args{'cmap_object'} or die "No CMap Object included";
     my $db           = $cmap_object->db;
     my $attribute_id = $args{'attribute_id'};
     my $object_type  = $args{'object_type'};
     my $object_id    = $args{'object_id'};
-    my $table_name   = $self->{'TABLE_NAMES'}->{$object_type};
+    my $table_name   = $self->{'TABLE_NAMES'}->{$object_type} if $object_type;
     my @delete_args  = ();
     my $delete_sql   = qq[
         delete from cmap_attribute
     ];
     my $where_sql = '';
+
+    return unless ( $object_id or $table_name or $attribute_id );
 
     if ($object_id) {
         push @delete_args, $object_id;
@@ -7580,7 +8262,6 @@ If you don't want CMap to delete from your database, make this a dummy method.
         $where_sql .= " attribute_id = ? ";
     }
 
-    return unless ($where_sql);
     $delete_sql .= $where_sql;
     $db->do( $delete_sql, {}, (@delete_args) );
 
@@ -7656,7 +8337,19 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object => 1,
+        object_type => 0,
+        xref_id     => 0,
+        xref_name   => 0,
+        xref_url    => 0,
+        object_id   => 0,
+        order_by    => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $object_type = $args{'object_type'};
     my $xref_id     = $args{'xref_id'};
@@ -7669,7 +8362,7 @@ Not using cache because this query is quicker.
     my @identifiers = ();
 
     my $table_name;
-    if ($object_type){
+    if ($object_type) {
         $table_name = $self->{'TABLE_NAMES'}->{$object_type};
     }
     if ( !$order_by || $order_by eq 'display_order' ) {
@@ -7787,7 +8480,15 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object => 1,
+        object_type => 0,
+        order_by    => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $object_type = $args{'object_type'};
     my $order_by    = $args{'order_by'};
@@ -7870,7 +8571,18 @@ Xref id
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object   => 1,
+        display_order => 0,
+        object_type   => 0,
+        xref_name     => 0,
+        xref_url      => 0,
+        object_id     => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $db          = $cmap_object->db;
     my $xref_id     = $self->next_number(
@@ -7883,7 +8595,7 @@ Xref id
     my $xref_name     = $args{'xref_name'};
     my $xref_url      = $args{'xref_url'};
     my $object_id     = $args{'object_id'};
-    my $table_name    = $self->{'TABLE_NAMES'}->{$object_type};
+    my $table_name = $self->{'TABLE_NAMES'}->{$object_type} if $object_type;
 
     unless ( defined($display_order) ) {
         $display_order = $db->selectrow_array(
@@ -7967,7 +8679,20 @@ If you don't want CMap to update into your database, make this a dummy method.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object   => 1,
+        xref_id       => 1,
+        display_order => 0,
+        object_type   => 0,
+        xref_name     => 0,
+        xref_url      => 0,
+        object_id     => 0,
+        is_public     => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $xref_id     = $args{'xref_id'}     or return;
     my $display_order = $args{'display_order'};
@@ -7979,7 +8704,7 @@ If you don't want CMap to update into your database, make this a dummy method.
     my $db            = $cmap_object->db;
 
     my $table_name;
-    if ($object_type){
+    if ($object_type) {
         $table_name = $self->{'TABLE_NAMES'}->{$object_type};
     }
 
@@ -8075,18 +8800,29 @@ If you don't want CMap to delete from your database, make this a dummy method.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object => 1,
+        xref_id     => 0,
+        object_type => 0,
+        object_id   => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $db          = $cmap_object->db;
     my $xref_id     = $args{'xref_id'};
     my $object_type = $args{'object_type'};
     my $object_id   = $args{'object_id'};
-    my $table_name  = $self->{'TABLE_NAMES'}->{$object_type};
+    my $table_name  = $self->{'TABLE_NAMES'}->{$object_type} if $object_type;
     my @delete_args = ();
     my $delete_sql  = qq[
         delete from cmap_xref
     ];
     my $where_sql = '';
+
+    return unless ( $object_id or $table_name or $xref_id );
 
     if ($object_id) {
         push @delete_args, $object_id;
@@ -8104,7 +8840,6 @@ If you don't want CMap to delete from your database, make this a dummy method.
         $where_sql .= " xref_id = ? ";
     }
 
-    return unless ($where_sql);
     $delete_sql .= $where_sql;
     $db->do( $delete_sql, {}, (@delete_args) );
 
@@ -8166,7 +8901,16 @@ Array of Hashes:
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object                => 1,
+        map_ids                    => 0,
+        map_set_ids                => 0,
+        included_feature_type_accs => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $map_ids     = $args{'map_ids'}     || [];
     my $map_set_ids = $args{'map_set_ids'} || [];
@@ -8275,7 +9019,15 @@ Array of Hashes:
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object       => 1,
+        is_relational_map => 0,
+        is_enabled        => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $is_relational_map = $args{'is_relational_map'};
     my $is_enabled        = $args{'is_enabled'};
@@ -8349,7 +9101,14 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object => 1,
+        map_set_acc => 1,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $map_set_acc = $args{'map_set_acc'};
     my $db          = $cmap_object->db;
@@ -8450,7 +9209,17 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object      => 1,
+        species_acc      => 0,
+        map_name         => 0,
+        map_set_acc      => 0,
+        link_map_set_acc => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $species_acc = $args{'species_acc'};
     my $map_name    = $args{'map_name'};
@@ -8550,7 +9319,11 @@ this table in your db, it dummy up this method.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self = shift;
+    my %validation_params = ( cmap_object => 1, );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $db          = $cmap_object->db;
 
@@ -8753,7 +9526,11 @@ Array of Hashes:
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self = shift;
+    my %validation_params = ( cmap_object => 1, );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $db          = $cmap_object->db;
 
@@ -8811,7 +9588,15 @@ Array of correspondence_evidence_ids
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object  => 1,
+        original_id  => 1,
+        duplicate_id => 1,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object  = $args{'cmap_object'} or die "No CMap Object included";
     my $original_id  = $args{'original_id'};
     my $duplicate_id = $args{'duplicate_id'};
@@ -8869,18 +9654,24 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object         => 1,
+        saved_link_id       => 0,
+        session_step_object => 0,
+        saved_url           => 0,
+        legacy_url          => 0,
+        link_group          => 0,
+        link_comment        => 0,
+        link_title          => 0,
+        last_access         => 0,
+        hidden              => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
-    my $saved_link_id = $args{'saved_link_id'};
-    my $session_step_object = $args{'session_step_object'};
-    my $saved_url           = $args{'saved_url'};
-    my $legacy_url          = $args{'legacy_url'};
-    my $link_group          = $args{'link_group'};
-    my $link_comment        = $args{'link_comment'};
-    my $link_title          = $args{'link_title'};
-    my $last_access         = $args{'last_access'};
-    my $hidden              = $args{'hidden'};
-    my $db                  = $cmap_object->db;
+    my $db = $cmap_object->db;
     my $return_object;
 
     my $sql_str = q[
@@ -8901,7 +9692,7 @@ Not using cache because this query is quicker.
 
     for my $column (
         qw[ saved_link_id saved_on session_step_object
-        saved_url legacy_url link_group link_comment 
+        saved_url legacy_url link_group link_comment
         link_title last_access hidden]
         )
     {
@@ -8968,15 +9759,24 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object         => 1,
+        saved_link_id       => 0,
+        session_step_object => 0,
+        saved_url           => 0,
+        legacy_url          => 0,
+        link_group          => 0,
+        link_comment        => 0,
+        link_title          => 0,
+        last_access         => 0,
+        hidden              => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
-    my $saved_link_id = $args{'saved_link_id'};
-    my $session_step_object = $args{'session_step_object'};
-    my $saved_url           = $args{'saved_url'};
-    my $legacy_url          = $args{'legacy_url'};
-    my $link_group          = $args{'link_group'};
-    my $link_comment        = $args{'link_comment'};
-    my $db                  = $cmap_object->db;
+    my $db = $cmap_object->db;
     my $return_object;
 
     my $sql_str = q[
@@ -8990,11 +9790,12 @@ Not using cache because this query is quicker.
 
     for my $column (
         qw[ saved_link_id saved_on session_step_object
-        saved_url legacy_url link_group link_comment ]
+        saved_url legacy_url link_group link_comment
+        link_title last_access hidden]
         )
     {
 
-        if ( $args{$column} ) {
+        if ( defined( $args{$column} ) ) {
             push @identifiers, $args{$column};
             push @where_list,  " $column = ? ";
         }
@@ -9048,7 +9849,22 @@ id
 
 =cut
 
-    my ( $self, %args ) = @_;
+    #xxx
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object         => 1,
+        session_step_object => 0,
+        saved_url           => 0,
+        legacy_url          => 0,
+        link_group          => 0,
+        link_comment        => 0,
+        link_title          => 0,
+        last_access         => 0,
+        hidden              => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $db = $cmap_object->db;
     my $session_step_object = $args{'session_step_object'};
@@ -9057,11 +9873,15 @@ id
     my $link_group          = $args{'link_group'};
     my $link_comment        = $args{'link_comment'};
     my $link_title          = $args{'link_title'};
+    my $last_access         = $args{'last_access'};
     my $hidden              = $args{'hidden'} || 0;
     my $time                = localtime();
     my $saved_on            = $time->strftime( $self->date_format );
-    my $last_access         = $saved_on;
-    my $saved_link_id       = $self->next_number(
+    unless ( defined $last_access ) {
+        $last_access = $saved_on;
+    }
+
+    my $saved_link_id = $self->next_number(
         cmap_object => $cmap_object,
         object_type => 'saved_link',
         )
@@ -9122,68 +9942,51 @@ Given the id and some attributes to modify, updates.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object         => 1,
+        saved_link_id       => 1,
+        session_step_object => 0,
+        saved_url           => 0,
+        legacy_url          => 0,
+        link_group          => 0,
+        link_comment        => 0,
+        link_title          => 0,
+        hidden              => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
-    my $saved_link_id       = $args{'saved_link_id'} or return;
-    my $session_step_object = $args{'session_step_object'};
-    my $saved_url           = $args{'saved_url'};
-    my $legacy_url          = $args{'legacy_url'};
-    my $link_group          = $args{'link_group'};
-    my $link_title          = $args{'link_title'};
-    my $hidden              = $args{'hidden'};
-    my $link_comment        = $args{'link_comment'};
-    my $db                  = $cmap_object->db;
+    my $db          = $cmap_object->db;
 
     my @update_args = ();
     my $update_sql  = qq[
         update cmap_saved_link
     ];
-    my $set_sql   = '';
+    my @set_list;
     my $where_sql = " where saved_link_id = ? ";    # ID
 
-    my $time        = localtime();
-    my $last_access = $time->strftime( $self->date_format );
-    push @update_args, $last_access;
-    $set_sql .= $set_sql ? ", " : " set ";
-    $set_sql .= " last_access = ? ";
+    my $time = localtime();
+    $args{'last_access'} = $time->strftime( $self->date_format );
 
-    if ($session_step_object) {
-        push @update_args, $session_step_object;
-        $set_sql .= $set_sql ? ", " : " set ";
-        $set_sql .= " session_step_object = ? ";
-    }
-    if ($saved_url) {
-        push @update_args, $saved_url;
-        $set_sql .= $set_sql ? ", " : " set ";
-        $set_sql .= " saved_url = ? ";
-    }
-    if ($legacy_url) {
-        push @update_args, $legacy_url;
-        $set_sql .= $set_sql ? ", " : " set ";
-        $set_sql .= " legacy_url = ? ";
-    }
-    if ($link_group) {
-        push @update_args, $link_group;
-        $set_sql .= $set_sql ? ", " : " set ";
-        $set_sql .= " link_group = ? ";
-    }
-    if ($link_title) {
-        push @update_args, $link_title;
-        $set_sql .= $set_sql ? ", " : " set ";
-        $set_sql .= " link_title = ? ";
-    }
-    if ($link_comment) {
-        push @update_args, $link_comment;
-        $set_sql .= $set_sql ? ", " : " set ";
-        $set_sql .= " link_comment = ? ";
-    }
-    if ( defined $hidden ) {
-        push @update_args, $hidden;
-        $set_sql .= $set_sql ? ", " : " set ";
-        $set_sql .= " hidden = ? ";
+    for my $column (
+        qw[ session_step_object
+        saved_url legacy_url link_group link_comment
+        link_title last_access hidden]
+        )
+    {
+        if ( defined( $args{$column} ) ) {
+            push @update_args, $args{$column};
+            push @set_list,    " $column = ? ";
+        }
     }
 
-    push @update_args, $saved_link_id;
+    return unless @set_list;    # nothing to update
+
+    my $set_sql = ' set ' . join( q{,}, @set_list ) . ' ';
+
+    push @update_args, $args{'saved_link_id'};
 
     my $sql_str = $update_sql . $set_sql . $where_sql;
     $db->do( $sql_str, {}, @update_args );
@@ -9229,13 +10032,21 @@ that db has auto incrementing.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object => 1,
+        object_type => 1,
+        requested   => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $db          = $cmap_object->db     or return;
     my $object_type = $args{'object_type'} or return;
     my $no_requested = $args{'requested'} || 1;
     my $id_field     = $self->pk_name($object_type);
-    my $table_name   = $self->{'TABLE_NAMES'}->{$object_type};
+    my $table_name   = $self->{'TABLE_NAMES'}->{$object_type} if $object_type;
 
     my $next_number = $db->selectrow_array(
         q[
@@ -9324,7 +10135,16 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object  => 1,
+        feature_name => 1,
+        map_id       => 1,
+        return_start => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object  = $args{'cmap_object'}  or return;
     my $feature_name = $args{'feature_name'} or return;
     my $map_id       = $args{'map_id'}       or return;
@@ -9412,7 +10232,16 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        slot_info_obj => 1,
+        map_id_column => 1,
+        start_column  => 1,
+        stop_column   => 1,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $slot_info_obj = $args{'slot_info_obj'} or return '';
     my $map_id_column = $args{'map_id_column'}
         or return $self->error(
@@ -9483,7 +10312,16 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        start_column => 1,
+        stop_column  => 1,
+        map_start    => 0,
+        map_stop     => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $map_start    = $args{'map_start'};
     my $map_stop     = $args{'map_stop'};
     my $start_column = $args{'start_column'}
@@ -9563,9 +10401,16 @@ Not using cache because this query is quicker.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object => 1,
+        x           => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
-    my $x           = $args{''};
+    my $x           = $args{'x'};
     my $db          = $cmap_object->db;
     my $return_object;
 
@@ -9609,7 +10454,14 @@ id
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object => 1,
+        yy_acc      => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $db          = $cmap_object->db;
     my $yy_id       = $self->next_number(
@@ -9662,7 +10514,16 @@ Given the id and some attributes to modify, updates.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    #xxx
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object => 1,
+        _id         => 0,
+        x           => 0,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $_id         = $args{'_id'}         or return;
     my $x           = $args{'x'};
@@ -9723,7 +10584,14 @@ If you don't want CMap to delete from your database, make this a dummy method.
 
 =cut
 
-    my ( $self, %args ) = @_;
+    my $self              = shift;
+    my %validation_params = (
+        cmap_object => 1,
+        yy_id       => 1,
+    );
+    validate( @_, \%validation_params );
+    my %args = @_;
+
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $db          = $cmap_object->db;
     my $yy_id       = $args{'yy_id'}
@@ -9734,13 +10602,13 @@ If you don't want CMap to delete from your database, make this a dummy method.
     ];
     my $where_sql = '';
 
+    return unless ($yy_id);
     if ($yy_id) {
         push @delete_args, $yy_id;
         $where_sql .= $where_sql ? " and " : " where ";
         $where_sql .= " yy_id = ? ";
     }
 
-    return unless ($where_sql);
     $delete_sql .= $where_sql;
     $db->do( $delete_sql, {}, (@delete_args) );
 
