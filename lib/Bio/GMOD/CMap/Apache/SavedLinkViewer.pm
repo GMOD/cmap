@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache::SavedLinkViewer;
 
 # vim: set ft=perl:
 
-# $Id: SavedLinkViewer.pm,v 1.5 2005-10-19 15:35:56 mwz444 Exp $
+# $Id: SavedLinkViewer.pm,v 1.6 2005-10-24 15:05:30 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -242,7 +242,7 @@ sub saved_link_update {
         link_group    => $apr->param('link_group'),
         link_title    => $apr->param('link_title'),
         link_comment  => $apr->param('link_comment'),
-        hidden        => $apr->param('hidden'),
+        hidden        => $apr->param('hidden') || 0,
     );
 
     return $self->saved_link_edit();
