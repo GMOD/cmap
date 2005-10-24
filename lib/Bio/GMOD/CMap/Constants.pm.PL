@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.36 2005-10-21 20:39:30 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.37 2005-10-24 17:09:11 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.36 $)[-1];
+$VERSION = (qw$Revision: 1.37 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -465,7 +465,7 @@ use constant DEFAULT => {
     #
     # How large the size limit should be for the query cache
     # in bytes.  The value 0 will cause the size to not be limited.
-    # Default:
+    # Default: 26214400
     max_query_cache_size => 26214400, # 25Mb
 
     #

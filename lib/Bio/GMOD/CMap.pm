@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.98 2005-10-21 20:39:30 mwz444 Exp $
+# $Id: CMap.pm,v 1.99 2005-10-24 17:09:11 mwz444 Exp $
 
 =head1 NAME
 
@@ -1585,12 +1585,13 @@ sub control_cache_size {
     # return unless cache_limit is a positive number
     return unless ( $cache_limit > 0 );
 
-    for my $cache_level (1..4){
+CACHE_LEVEL:
+    for my $cache_level ( 1 .. 4 ) {
         my $cache_name = "L" . $cache_level . "_cache";
-    unless ( $self->{$cache_name} ) {
-        $self->{$cache_name} = $self->init_cache($cache_level)
-            or next;
-    }
+        unless ( $self->{$cache_name} ) {
+            $self->{$cache_name} = $self->init_cache($cache_level)
+                or next CACHE_LEVEL;
+        }
         $self->{$cache_name}->purge();
         $self->{$cache_name}->limit_size($cache_limit);
 
