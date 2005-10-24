@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.256 2005-10-14 20:05:22 mwz444 Exp $
+# $Id: Data.pm,v 1.257 2005-10-24 20:03:54 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.256 $)[-1];
+$VERSION = (qw$Revision: 1.257 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -2848,7 +2848,6 @@ sub count_correspondences {
             cmap_object                 => $self,
             slot_info                   => $this_slot_info,
             slot_info2                  => $ref_slot_info,
-            clustering                  => $cluster_no,
             split_evidence_types        => $self->split_agg_ev,
             show_intraslot_corr         => $show_intraslot_corr,
             included_evidence_type_accs => $included_evidence_type_accs,
