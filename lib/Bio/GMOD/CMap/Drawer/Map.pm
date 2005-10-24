@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.182 2005-10-18 18:28:03 mwz444 Exp $
+# $Id: Map.pm,v 1.183 2005-10-24 21:04:29 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.182 $)[-1];
+$VERSION = (qw$Revision: 1.183 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1456,6 +1456,12 @@ MAP:
                 my $label_y;
                 my $has_corr
                     = $drawer->has_correspondence( $feature->{'feature_id'} );
+                my $is_highlighted = $drawer->highlight_feature(
+                    $feature->{'feature_name'},
+                    @{ $feature->{'aliases'} || [] },
+                    $feature->{'feature_acc'},
+                );
+
                 my $glyph_drawn = 0;
 
                 (   $leftmostf, $rightmostf, $coords,
@@ -1482,6 +1488,7 @@ MAP:
                     map_start         => $map_start,
                     map_width         => $map_width,
                     has_corr          => $has_corr,
+                    is_highlighted    => $is_highlighted,
                     );
                 $self->add_to_features_with_corr(
                     coords             => $coords,
@@ -1494,14 +1501,15 @@ MAP:
 
                 if ( $label_collapsed_features or $glyph_drawn ) {
                     $self->collect_labels_to_display(
-                        color       => $color,
-                        coords      => $coords,
-                        drawer      => $drawer,
-                        even_labels => \%even_labels,
-                        feature     => $feature,
-                        has_corr    => $has_corr,
-                        label_y     => $label_y,
-                        map_base_y  =>
+                        color          => $color,
+                        coords         => $coords,
+                        drawer         => $drawer,
+                        even_labels    => \%even_labels,
+                        feature        => $feature,
+                        has_corr       => $has_corr,
+                        is_highlighted => $is_highlighted,
+                        label_y        => $label_y,
+                        map_base_y     =>
                             $map_placement_data{$map_id}{'map_coords'}[1],
                         show_labels => $show_labels,
                     );
@@ -2887,6 +2895,8 @@ sub add_feature_to_map {
     my $drawn_glyphs      = $args{'drawn_glyphs'};
     my $map_start         = $args{'map_start'};
     my $map_width         = $args{'map_width'};
+    my $has_corr          = $args{'has_corr'};
+    my $is_highlighted    = $args{'is_highlighted'};
 
     # We are only going to do the things we must before
     # we check to see if this has feature is to be collapsed.
@@ -2934,7 +2944,6 @@ sub add_feature_to_map {
         $feature->{'mid_y'} = ( $y_pos1 + $y_pos2 ) / 2;
     }
 
-    my $has_corr = $drawer->has_correspondence( $feature->{'feature_id'} );
     my $color    = $has_corr
         ? $drawer->config_data('feature_correspondence_color') || ''
         : '';
@@ -2950,9 +2959,10 @@ sub add_feature_to_map {
     #
     my $glyph_key = int($y_pos1)
         . $feature_shape
-        . int($y_pos2) . "_"
-        . $has_corr . "_"
-        . $feature->{'direction'};
+        . int($y_pos2) . '_'
+        . $has_corr . '_'
+        . $feature->{'direction'} . '_'
+        . $is_highlighted;
     my $draw_this = 1;
     if ( $collapse_features and $drawn_glyphs->{$glyph_key} ) {
         $draw_this = 0;
@@ -3128,23 +3138,18 @@ sub collect_labels_to_display {
 
     my ( $self, %args ) = @_;
 
-    my $color       = $args{'color'};
-    my $coords      = $args{'coords'};
-    my $drawer      = $args{'drawer'};
-    my $even_labels = $args{'even_labels'};
-    my $feature     = $args{'feature'};
-    my $has_corr    = $args{'has_corr'};
-    my $label_y     = $args{'label_y'};
-    my $map_base_y  = $args{'map_base_y'};
-    my $show_labels = $args{'show_labels'};
+    my $color          = $args{'color'};
+    my $coords         = $args{'coords'};
+    my $drawer         = $args{'drawer'};
+    my $even_labels    = $args{'even_labels'};
+    my $feature        = $args{'feature'};
+    my $has_corr       = $args{'has_corr'};
+    my $is_highlighted = $args{'is_highlighted'};
+    my $label_y        = $args{'label_y'};
+    my $map_base_y     = $args{'map_base_y'};
+    my $show_labels    = $args{'show_labels'};
 
     my $label = $feature->{'feature_name'};
-
-    my $is_highlighted = $drawer->highlight_feature(
-        $feature->{'feature_name'},
-        @{ $feature->{'aliases'} || [] },
-        $feature->{'feature_acc'},
-    );
 
     if ($show_labels
         && (   $has_corr
