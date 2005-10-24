@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache::SavedLinkViewer;
 
 # vim: set ft=perl:
 
-# $Id: SavedLinkViewer.pm,v 1.6 2005-10-24 15:05:30 mwz444 Exp $
+# $Id: SavedLinkViewer.pm,v 1.7 2005-10-24 21:08:36 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -48,14 +48,16 @@ sub saved_links_viewer {
     my $page_no             = $apr->param('page_no') || 1;
     my $selected_link_group = $apr->param('selected_link_group');
 
-    # Create hash of link_groups
-    my $link_group_counts_ref
-        = $sql_object->get_saved_link_groups( cmap_object => $self, );
-
     # This is the value to see if we return hidden links
     # When it is undef, it will return all links but
     # when it is "0" it will return only non-hidden ones.
     my $hidden = $apr->param('display_hidden') ? undef: 0;
+
+    # Create hash of link_groups
+    my $link_group_counts_ref = $sql_object->get_saved_link_groups(
+        cmap_object => $self,
+        hidden      => $hidden,
+    );
 
     my $pager;
     my $saved_links_ref;
