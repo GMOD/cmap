@@ -17,25 +17,25 @@ ALTER TABLE cmap_correspondence_lookup CHANGE COLUMN stop_position1 feature_stop
 ALTER TABLE cmap_correspondence_lookup CHANGE COLUMN stop_position2 feature_stop2 double(11,2) default NULL;
 
 
-ALTER TABLE cmap_correspondence_evidence CHANGE COLUMN accession_id correspondence_evidence_acc varchar(20) NOT NULL default '';
-ALTER TABLE cmap_correspondence_evidence CHANGE COLUMN evidence_type_accession evidence_type_acc varchar(20) NOT NULL default '0';
+ALTER TABLE cmap_correspondence_evidence CHANGE COLUMN accession_id correspondence_evidence_acc varchar(30) NOT NULL default '';
+ALTER TABLE cmap_correspondence_evidence CHANGE COLUMN evidence_type_accession evidence_type_acc varchar(30) NOT NULL default '0';
 
-ALTER TABLE cmap_correspondence_lookup CHANGE COLUMN feature_type_accession1 feature_type_acc1 varchar(20) default NULL;
-ALTER TABLE cmap_correspondence_lookup CHANGE COLUMN feature_type_accession2 feature_type_acc2 varchar(20) default NULL;
+ALTER TABLE cmap_correspondence_lookup CHANGE COLUMN feature_type_accession1 feature_type_acc1 varchar(30) default NULL;
+ALTER TABLE cmap_correspondence_lookup CHANGE COLUMN feature_type_accession2 feature_type_acc2 varchar(30) default NULL;
 
-ALTER TABLE cmap_correspondence_matrix CHANGE COLUMN reference_map_aid reference_map_acc varchar(20) NOT NULL default '0';
-ALTER TABLE cmap_correspondence_matrix CHANGE COLUMN reference_map_set_aid reference_map_set_acc varchar(20) NOT NULL default '0';
-ALTER TABLE cmap_correspondence_matrix CHANGE COLUMN reference_species_aid reference_species_acc varchar(20) NOT NULL default '0';
-ALTER TABLE cmap_correspondence_matrix CHANGE COLUMN link_map_aid link_map_acc varchar(20) default NULL;
-ALTER TABLE cmap_correspondence_matrix CHANGE COLUMN link_map_set_aid link_map_set_acc varchar(20) NOT NULL default '0';
-ALTER TABLE cmap_correspondence_matrix CHANGE COLUMN link_species_aid link_species_acc varchar(20) NOT NULL default '0';
-ALTER TABLE cmap_feature CHANGE COLUMN accession_id feature_acc varchar(20) NOT NULL default '' ;
-ALTER TABLE cmap_feature CHANGE COLUMN feature_type_accession feature_type_acc varchar(20) NOT NULL default '0';
-ALTER TABLE cmap_feature_correspondence CHANGE COLUMN accession_id feature_correspondence_acc varchar(20) NOT NULL default '' ;
-ALTER TABLE cmap_map CHANGE COLUMN accession_id map_acc varchar(20) NOT NULL default '' ;
-ALTER TABLE cmap_map_set CHANGE COLUMN accession_id map_set_acc varchar(20) NOT NULL default '' ;
-ALTER TABLE cmap_map_set CHANGE COLUMN map_type_accession map_type_acc varchar(20) NOT NULL default '0' ;
-ALTER TABLE cmap_species CHANGE COLUMN accession_id species_acc varchar(20) NOT NULL default '' ;
+ALTER TABLE cmap_correspondence_matrix CHANGE COLUMN reference_map_aid reference_map_acc varchar(30) NOT NULL default '0';
+ALTER TABLE cmap_correspondence_matrix CHANGE COLUMN reference_map_set_aid reference_map_set_acc varchar(30) NOT NULL default '0';
+ALTER TABLE cmap_correspondence_matrix CHANGE COLUMN reference_species_aid reference_species_acc varchar(30) NOT NULL default '0';
+ALTER TABLE cmap_correspondence_matrix CHANGE COLUMN link_map_aid link_map_acc varchar(30) default NULL;
+ALTER TABLE cmap_correspondence_matrix CHANGE COLUMN link_map_set_aid link_map_set_acc varchar(30) NOT NULL default '0';
+ALTER TABLE cmap_correspondence_matrix CHANGE COLUMN link_species_aid link_species_acc varchar(30) NOT NULL default '0';
+ALTER TABLE cmap_feature CHANGE COLUMN accession_id feature_acc varchar(30) NOT NULL default '' ;
+ALTER TABLE cmap_feature CHANGE COLUMN feature_type_accession feature_type_acc varchar(30) NOT NULL default '0';
+ALTER TABLE cmap_feature_correspondence CHANGE COLUMN accession_id feature_correspondence_acc varchar(30) NOT NULL default '' ;
+ALTER TABLE cmap_map CHANGE COLUMN accession_id map_acc varchar(30) NOT NULL default '' ;
+ALTER TABLE cmap_map_set CHANGE COLUMN accession_id map_set_acc varchar(30) NOT NULL default '' ;
+ALTER TABLE cmap_map_set CHANGE COLUMN map_type_accession map_type_acc varchar(30) NOT NULL default '0' ;
+ALTER TABLE cmap_species CHANGE COLUMN accession_id species_acc varchar(30) NOT NULL default '' ;
 
 DROP INDEX acc_id_species_id on cmap_species;
 CREATE INDEX acc_id_species_id ON cmap_species (species_acc,species_id);
