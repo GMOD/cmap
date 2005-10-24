@@ -113,7 +113,7 @@ they did before the upgrade.
 
 To use your old config files with CMap version 0.15, you will need to
 make some changes.
- 
+
 There is now a config file validator for the individual datasource
 config files, validate_import_file.pl.  It is located in the bin
 directory.  Simply run it on your config files and it will tell you if
@@ -167,10 +167,31 @@ for this file.
 
 =back
 
+=head1 LIMIT QUERY CACHE SIZE
+
+Starting with version 0.15, CMap uses a SizeAwareFileCache system for
+caching queries.  This means that you can set up a cron job that will
+limit the disk space taken up by file cache.
+
+Simply, run cmap_reduce_cache_size.pl regularily to limit the growth
+of the query cache files.
+
+  $ cmap_reduce_cache_size.pl
+
+This script cycles through each CMap data_source and (using the
+Cache::SizeAwareFileCache functionality) reduces the size of the query
+cache to the value given as 'max_query_cache_size' in the config file.
+
+If 'max_query_cache_size' is not set, it will use the default value in
+Bio::GMOD::CMap::Constants.
+
+It is suggested that this script is run periodically as a cron job.
+
+
 =head1 CONCLUSION
 
-That should do it for the databases and the configuration.  If you
-have any troubles email the CMap developer's list:
+That should do it for the upgrade process.  If you have any troubles
+email the CMap developer's list:
 
   gmod-cmap@lists.sourceforge.net
 
