@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.19 $
+$Revision: 1.20 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -134,6 +134,11 @@ The age (in seconds) of an image file that an image has to be to be purged.
 The default is set to five minutes so that any http requests accessing current
 images will have a chance to get them.  Setting to 0 may cause problems with
 concurrent requests.
+
+=item * max_query_cache_size [ default: 26214400 ]
+
+How large the size limit should be for the query cache in bytes.  The value 0
+will cause the size to not be limited.  This is used in the cmap_reduce_cache_size.pl (L<REDUCING QUERY CACHE SIZE>) script
 
 =back
 
@@ -1009,6 +1014,10 @@ It is recommended that any included files be named with a ".cfg"
 extension.  Do no name it with a ".conf" extension, otherwise it 
 will be read as a separate config file.
 
+=head2 VALIDATING CONFIGURATION FILES
+
+You can use the cmap_validate_config.pl (L<VALIDATE CONFIG FILES>) to test your individual config files (not global.conf yet) and make sure that they are valid.  This can save you a lot of headaches dealing with configuration problems.  See the secion on L<VALIDATE CONFIG FILES> for more information.
+
 =head1 WEB-ADMIN TOOL
 
 The home page for the web-based CMap administration tool has links for
@@ -1857,6 +1866,48 @@ directory '/tmp'.  When this directory is wiped, the links go away.  In future
 versions of CMap this will change, but for now, you are warned.
 
 =back
+
+=head1 REDUCING QUERY CACHE SIZE
+
+cmap_reduce_cache_size.pl
+
+cmap_reduce_cache_size.pl will help limit the growth of the query cache files.
+
+This script cycles through each CMap data_source and (using the
+Cache::SizeAwareFileCache functionality) reduces the size of the query cache to
+the value given as 'max_query_cache_size' in the config file.
+                                                                                                                             
+It first removes any expired entries and then if it is still over the limit, it
+moves to last accessed entries.
+                                                                                                                             
+If 'max_query_cache_size' is not set, it will use the default value in
+Bio::GMOD::CMap::Constants.
+                                                                                                                             
+It is suggested that this script is run periodically as a cron job.
+
+=head1 VALIDATE CONFIG FILES
+
+cmap_validate_config.pl
+
+This script will test a config file to determine if it is valid or not.  It
+currenly only tests the individual data_source files and not the global.conf.
+
+Run it on individual config files.
+
+  $ validate_cmap_config.pl config_file.conf
+
+The last line of the output is most important.
+
+  The config file, config_file.conf is valid.
+  or
+  The config file, config_file.conf is INVALID.
+
+You can read through the output to find out why it is invalid, if that is the
+case.
+
+The script will also output options that are missing but not required to let
+you know what other options you can add.  It will also tell you if you are
+using any deprecated options.
 
 =head1 cmap_matrix_compare.pl
 
