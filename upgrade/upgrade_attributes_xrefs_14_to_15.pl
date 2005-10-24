@@ -85,6 +85,8 @@ if ( @{ $attributes || [] } ) {
             if ($commit_changes) {
                 print "Changing attribute id "
                     . $attribute->{'attribute_id'}
+                    . 'from:'
+                    . $attribute->{'attribute_value'}
                     . " to: $new_value\n";
                 $sql_object->update_attribute(
                     cmap_object     => $cmap_object,
@@ -130,6 +132,8 @@ if ( @{ $xrefs || [] } ) {
             if ($commit_changes) {
                 print "Changing xref id "
                     . $xref->{'xref_id'}
+                    . 'from:'
+                    . $xref->{'xref_value'}
                     . " to: $new_url\n";
                 $sql_object->update_xref(
                     cmap_object => $cmap_object,
