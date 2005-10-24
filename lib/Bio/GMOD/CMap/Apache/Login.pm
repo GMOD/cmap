@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::Login;
 
 # vim: set ft=perl:
 
-# $Id: Login.pm,v 1.1 2005-04-16 01:35:48 kycl4rk Exp $
+# $Id: Login.pm,v 1.2 2005-10-24 18:41:28 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.1 $)[-1];
+$VERSION = (qw$Revision: 1.2 $)[-1];
 
 use strict;
 use Digest::MD5 'md5';
@@ -50,7 +50,7 @@ sub handler {
                         -value   => join(':', 
                             $user, $ds, md5( $user . $ds . $sekrit ) 
                         ),
-                        -expires => '+30m',
+                        -expires => '+24h',
                         -domain  => $self->config_data('cookie_domain') || '',
                         -path    => '/'
                     );
