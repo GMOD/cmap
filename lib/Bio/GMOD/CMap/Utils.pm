@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.56 2005-10-20 21:25:26 mwz444 Exp $
+# $Id: Utils.pm,v 1.57 2005-10-25 20:19:29 mwz444 Exp $
 
 =head1 NAME
 
@@ -33,7 +33,7 @@ use POSIX;
 use Clone qw(clone);
 require Exporter;
 use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.56 $)[-1];
+$VERSION = (qw$Revision: 1.57 $)[-1];
 
 use base 'Exporter';
 
@@ -754,15 +754,15 @@ sub sort_selectall_arrayref {
 # Modified slightly
 sub calculate_units {
     my ($length) = @_;
-    return 'G' if $length >= 1e9;
-    return 'M' if $length >= 1e6;
-    return 'K' if $length >= 1e3;
-    return ''  if $length >= 1;
-    return 'c' if $length >= 1e-2;
-    return 'm' if $length >= 1e-3;
-    return 'u' if $length >= 1e-6;
-    return 'n' if $length >= 1e-9;
-    return 'p';
+    return q{G} if $length >= 1e9;
+    return q{M} if $length >= 1e6;
+    return q{K} if $length >= 1e3;
+    return q{}  if $length >= 1;
+    return q{c} if $length >= 1e-2;
+    return q{m} if $length >= 1e-3;
+    return q{u} if $length >= 1e-6;
+    return q{n} if $length >= 1e-9;
+    return q{p};
 }
 
 # ----------------------------------------------------
@@ -782,8 +782,8 @@ example: 10000 becomes 10K
     return unless defined($num);
     my $num_str;
 
-    # the "''." is to fix a rounding error in perl
-    my $scale = $num ? int( '' . ( log( abs($num) ) / log(10) ) ) : 0;
+    # the "q{}." is to fix a rounding error in perl
+    my $scale = $num ? int( q{} . ( log( abs($num) ) / log(10) ) ) : 0;
     my $rounding_power = $scale - $sig_digits + 1;
     my $rounded_temp   = int( ( $num / ( 10**$rounding_power ) ) + .5 );
     my $printable_num  = $rounded_temp /
@@ -811,8 +811,8 @@ example: .001 becomes "1/K"
 
     return "0/unit" unless $num;
 
-    # the "''." is to fix a rounding error in perl
-    my $scale = $num ? int( '' . ( log( abs($num) ) / log(10) ) ) : 0;
+    # the "q{}." is to fix a rounding error in perl
+    my $scale = $num ? int( q{} . ( log( abs($num) ) / log(10) ) ) : 0;
     my $denom_power = $scale - ( $scale % 3 );
 
     my $printable_num = $num ? $num / ( 10**$denom_power ) : 0;
@@ -1056,70 +1056,69 @@ sub parse_url {
 
     my %parsed_url_options;
 
-    my $prev_ref_species_acc = $apr->param('prev_ref_species_acc')
+    # Special params (backwards compat and other)
+    $parsed_url_options{'prev_ref_species_acc'}
+        = $apr->param('prev_ref_species_acc')
         || $apr->param('prev_ref_species_aid')
-        || '';
-    my $prev_ref_map_set_acc = $apr->param('prev_ref_map_set_acc')
+        || q{};
+    $parsed_url_options{'prev_ref_map_set_acc'}
+        = $apr->param('prev_ref_map_set_acc')
         || $apr->param('prev_ref_map_set_aid')
-        || '';
+        || q{};
     $parsed_url_options{'ref_species_acc'} = $apr->param('ref_species_acc')
         || $apr->param('ref_species_aid')
-        || '';
+        || q{};
     $parsed_url_options{'ref_map_set_acc'} = $apr->param('ref_map_set_acc')
         || $apr->param('ref_map_set_aid')
-        || '';
-    my $ref_map_start         = $apr->param('ref_map_start');
-    my $ref_map_stop          = $apr->param('ref_map_stop');
-    my $comparative_maps      = $apr->param('comparative_maps') || '';
-    my @comparative_map_right = $apr->param('comparative_map_right');
-    my @comparative_map_left  = $apr->param('comparative_map_left');
-    my $comp_map_set_right    = $apr->param('comp_map_set_right');
-    my $comp_map_set_left     = $apr->param('comp_map_set_left');
+        || q{};
+    @{ $parsed_url_options{'comparative_map_right'} }
+        = $apr->param('comparative_map_right');
+    @{ $parsed_url_options{'comparative_map_left'} }
+        = $apr->param('comparative_map_left');
     $parsed_url_options{'url_for_saving'}
         = $apr->url( -path_info => 1, -query => 1 );
-    $parsed_url_options{'highlight'}  = $apr->param('highlight')  || '';
-    $parsed_url_options{'font_size'}  = $apr->param('font_size')  || '';
-    $parsed_url_options{'image_size'} = $apr->param('image_size') || '';
-    $parsed_url_options{'image_type'} = $apr->param('image_type') || '';
-    $parsed_url_options{'label_features'} = $apr->param('label_features')
-        || '';
-    $parsed_url_options{'collapse_features'}
-        = $apr->param('collapse_features');
-    my $aggregate           = $apr->param('aggregate');
-    my $cluster_corr        = $apr->param('cluster_corr');
-    my $show_intraslot_corr = $apr->param('show_intraslot_corr');
-    my $split_agg_ev        = $apr->param('split_agg_ev');
-    my $clean_view          = $apr->param('clean_view');
-    $parsed_url_options{'corrs_to_map'} = $apr->param('corrs_to_map');
-    my $magnify_all = $apr->param('magnify_all');
-    $parsed_url_options{'ignore_image_map_sanity'}
-        = $apr->param('ignore_image_map_sanity');
-    my $scale_maps         = $apr->param('scale_maps');
-    my $stack_maps         = $apr->param('stack_maps');
-    my $comp_menu_order    = $apr->param('comp_menu_order');
-    my $ref_map_order      = $apr->param('ref_map_order');
-    my $prev_ref_map_order = $apr->param('prev_ref_map_order');
-    my $omit_area_boxes    = $apr->param('omit_area_boxes');
-    $parsed_url_options{'link_group'} = $apr->param('link_group') || '';
-    $parsed_url_options{'flip'}       = $apr->param('flip')       || '';
-    $parsed_url_options{'page_no'}    = $apr->param('page_no')    || 1;
-    $parsed_url_options{'action'}     = $apr->param('action')     || 'view';
-    $parsed_url_options{'refMenu'}    = $apr->param('refMenu');
-    $parsed_url_options{'compMenu'}   = $apr->param('compMenu');
-    $parsed_url_options{'optionMenu'} = $apr->param('optionMenu');
-    $parsed_url_options{'addOpMenu'}  = $apr->param('addOpMenu');
-    $parsed_url_options{'session_id'} = $apr->param('session_id');
-    $parsed_url_options{'saved_link_id'}  = $apr->param('saved_link_id');
-    $parsed_url_options{'step'}           = $apr->param('step') || 0;
-    $parsed_url_options{'session_mod'}    = $apr->param('session_mod') || '';
-    $parsed_url_options{'left_min_corrs'} = $apr->param('left_min_corrs')
-        || 0;
-    $parsed_url_options{'right_min_corrs'} = $apr->param('right_min_corrs')
-        || 0;
-    $parsed_url_options{'general_min_corrs'}
-        = $apr->param('general_min_corrs');
-    $parsed_url_options{'menu_min_corrs'} = $apr->param('menu_min_corrs')
-        || 0;
+
+    # Deal with parameters that when "false" default to something
+    my %default_param_of = (
+        'comparative_maps' => q{},
+        'highlight'        => q{},
+        'font_size'        => q{},
+        'image_size'       => q{},
+        'image_type'       => q{},
+        'label_features'   => q{},
+        'link_group'       => q{},
+        'flip'             => q{},
+        'session_mod'      => q{},
+        'page_no'          => 1,
+        'action'           => 'view',
+        'step'             => 0,
+        'left_min_corrs'   => 0,
+        'right_min_corrs'  => 0,
+        'menu_min_corrs'   => 0,
+    );
+    for my $param ( keys %default_param_of ) {
+        $parsed_url_options{$param} = $apr->param($param)
+            || $default_param_of{$param};
+    }
+
+    # Deal with parameters that don't default to anything
+    # These are important for when 0 is a valid value
+    for my $param (
+        qw [
+        ref_map_start            ref_map_stop        comp_map_set_right
+        comp_map_set_left        collapse_features   aggregate
+        cluster_corr             show_intraslot_corr split_agg_ev
+        clean_view               corrs_to_map        magnify_all
+        ignore_image_map_sanity  scale_maps          stack_maps
+        comp_menu_order          ref_map_order       prev_ref_map_order
+        omit_area_boxes          refMenu             compMenu
+        optionMenu               addOpMenu           session_id
+        saved_link_id            general_min_corrs
+        ]
+        )
+    {
+        $parsed_url_options{$param} = $apr->param($param);
+    }
 
     # Check for depricated min_correspondences value
     # Basically general_min_corrs is a new way to address
@@ -1157,11 +1156,11 @@ sub parse_url {
     # If this was submitted by a button, clear the modified map fields.
     # They are no longer needed.
     if ( $apr->param('sub') ) {
-        $apr->param( 'modified_ref_map',  '' );
-        $apr->param( 'modified_comp_map', '' );
+        $apr->param( 'modified_ref_map',  q{} );
+        $apr->param( 'modified_comp_map', q{} );
     }
 
-    $parsed_url_options{'path_info'} = $apr->path_info || '';
+    $parsed_url_options{'path_info'} = $apr->path_info || q{};
     if ( $parsed_url_options{'path_info'} ) {
         $parsed_url_options{'path_info'}
             =~ s{^/(cmap/)?}{};    # kill superfluous stuff
@@ -1173,32 +1172,27 @@ sub parse_url {
 
     # reset the params only if you want the code to be able to change them.
     # otherwise, simply initialize the avalue.
-    $apr->param( 'aggregate', $calling_cmap_object->aggregate($aggregate) );
-    $calling_cmap_object->cluster_corr($cluster_corr);
-    $apr->param( 'show_intraslot_corr',
-        $calling_cmap_object->show_intraslot_corr($show_intraslot_corr) );
-    $apr->param( 'split_agg_ev',
-        $calling_cmap_object->split_agg_ev($split_agg_ev) );
-    $apr->param( 'clean_view',
-        $calling_cmap_object->clean_view($clean_view) );
-    $apr->param( 'magnify_all',
-        $calling_cmap_object->magnify_all($magnify_all) );
-    $apr->param( 'scale_maps',
-        $calling_cmap_object->scale_maps($scale_maps) );
-    $apr->param( 'stack_maps',
-        $calling_cmap_object->stack_maps($stack_maps) );
-    $apr->param( 'omit_area_boxes',
-        $calling_cmap_object->omit_area_boxes($omit_area_boxes) );
-    $apr->param( 'comp_menu_order',
-        $calling_cmap_object->comp_menu_order($comp_menu_order) );
+    for my $param (
+        qw[ aggregate       cluster_corr show_intraslot_corr
+        split_agg_ev    clean_view   magnify_all
+        scale_maps      stack_maps   omit_area_boxes
+        comp_menu_order ]
+        )
+    {
+        $parsed_url_options{$param}
+            = $calling_cmap_object->$param( $parsed_url_options{$param} );
+        $apr->param( $param, $parsed_url_options{$param} );
+    }
 
-    if ($ref_map_order) {
-        $calling_cmap_object->ref_map_order($ref_map_order);
+    if ( $parsed_url_options{'ref_map_order'} ) {
+        $calling_cmap_object->ref_map_order(
+            $parsed_url_options{'ref_map_order'} );
     }
     else {
 
         #use the previous order if new order is not defined.
-        $calling_cmap_object->ref_map_order($prev_ref_map_order);
+        $calling_cmap_object->ref_map_order(
+            $parsed_url_options{'prev_ref_map_order'} );
     }
 
     #
@@ -1374,23 +1368,25 @@ sub parse_url {
     #
     $calling_cmap_object->data_source( $apr->param('data_source') ) or return;
 
-    if (   $prev_ref_species_acc
-        && $prev_ref_species_acc ne $parsed_url_options{'ref_species_acc'} )
+    if (   $parsed_url_options{'prev_ref_species_acc'}
+        && $parsed_url_options{'prev_ref_species_acc'} ne
+        $parsed_url_options{'ref_species_acc'} )
     {
-        $parsed_url_options{'ref_map_set_acc'} = '';
+        $parsed_url_options{'ref_map_set_acc'} = q{};
         @ref_map_set_accs = ();
     }
 
-    if (   $prev_ref_map_set_acc
-        && $prev_ref_map_set_acc ne $parsed_url_options{'ref_map_set_acc'} )
+    if (   $parsed_url_options{'prev_ref_map_set_acc'}
+        && $parsed_url_options{'prev_ref_map_set_acc'} ne
+        $parsed_url_options{'ref_map_set_acc'} )
     {
-        @ref_map_accs          = ();
-        @ref_map_set_accs      = ();
-        $ref_map_start         = undef;
-        $ref_map_stop          = undef;
-        $comparative_maps      = undef;
-        @comparative_map_right = ();
-        @comparative_map_left  = ();
+        @ref_map_accs                                = ();
+        @ref_map_set_accs                            = ();
+        $parsed_url_options{'ref_map_start'}         = undef;
+        $parsed_url_options{'ref_map_stop'}          = undef;
+        $parsed_url_options{'comparative_maps'}      = undef;
+        $parsed_url_options{'comparative_map_right'} = {};
+        $parsed_url_options{'comparative_map_left'}  = {};
     }
 
     if ( grep {/^-1$/} @ref_map_accs ) {
@@ -1521,9 +1517,13 @@ sub parse_url {
         # Add in previous maps.
         #
         # Remove start and stop if they are the same
-        while ( $comparative_maps =~ s/(.+\[)(\d+)\*\2(\D.*)/$1*$3/ ) { }
+        while ( $parsed_url_options{'comparative_maps'}
+            =~ s/(.+\[)(\d+)\*\2(\D.*)/$1*$3/ )
+        {
+        }
 
-        for my $cmap ( split( /:/, $comparative_maps ) ) {
+        for my $cmap ( split( /:/, $parsed_url_options{'comparative_maps'} ) )
+        {
             my ( $slot_no, $field, $map_acc ) = split( /=/, $cmap ) or next;
             my ( $start, $stop, $magnification );
             foreach my $acc ( split /,/, $map_acc ) {
@@ -1548,7 +1548,7 @@ sub parse_url {
         }
 
         # Deal with modified comp map
-        # map info specified in this param trumps $comparative_maps info
+        # map info specified in this param trumps comparative_maps info
         if ( $apr->param('modified_comp_map') ) {
             my $comp_map = $apr->param('modified_comp_map');
 
@@ -1576,7 +1576,7 @@ sub parse_url {
             }
 
             # Add the modified version into the comparative_maps param
-            my @cmaps = split( /:/, $comparative_maps );
+            my @cmaps = split( /:/, $parsed_url_options{'comparative_maps'} );
             my $found = 0;
             for ( my $i = 0; $i <= $#cmaps; $i++ ) {
                 my ( $c_slot_no, $c_field, $c_acc ) =
@@ -1601,15 +1601,28 @@ sub parse_url {
     if (    scalar keys( %{ $slots{0}->{'maps'} } ) == 1
         and scalar(@ref_map_accs) == 1 )
     {
-        ( $ref_map_start, $ref_map_stop ) = ( $ref_map_stop, $ref_map_start )
-            if (defined($ref_map_start)
-            and defined($ref_map_stop)
-            and $ref_map_start > $ref_map_stop );
-        if ( defined($ref_map_start) and $ref_map_start ne '' ) {
-            $slots{0}->{'maps'}{ $ref_map_accs[0] }{'start'} = $ref_map_start;
+        (   $parsed_url_options{'ref_map_start'},
+            $parsed_url_options{'ref_map_stop'}
+            )
+            = (
+            $parsed_url_options{'ref_map_stop'},
+            $parsed_url_options{'ref_map_start'}
+            )
+            if (defined( $parsed_url_options{'ref_map_start'} )
+            and defined( $parsed_url_options{'ref_map_stop'} )
+            and $parsed_url_options{'ref_map_start'}
+            > $parsed_url_options{'ref_map_stop'} );
+        if ( defined( $parsed_url_options{'ref_map_start'} )
+            and $parsed_url_options{'ref_map_start'} ne q{} )
+        {
+            $slots{0}->{'maps'}{ $ref_map_accs[0] }{'start'}
+                = $parsed_url_options{'ref_map_start'};
         }
-        if ( defined($ref_map_stop) and $ref_map_stop ne '' ) {
-            $slots{0}->{'maps'}{ $ref_map_accs[0] }{'stop'} = $ref_map_stop;
+        if ( defined( $parsed_url_options{'ref_map_stop'} )
+            and $parsed_url_options{'ref_map_stop'} ne q{} )
+        {
+            $slots{0}->{'maps'}{ $ref_map_accs[0] }{'stop'}
+                = $parsed_url_options{'ref_map_stop'};
         }
     }
     $apr->delete( 'ref_map_start', 'ref_map_stop', );
@@ -1635,11 +1648,13 @@ sub parse_url {
     for my $side ( ( RIGHT, LEFT ) ) {
         my $slot_no = $side eq RIGHT ? $max_right + 1 : $max_left - 1;
         my $cmap =
-            $side eq RIGHT
-            ? \@comparative_map_right
-            : \@comparative_map_left;
-        my $cmap_set_acc
-            = $side eq RIGHT ? $comp_map_set_right : $comp_map_set_left;
+              $side eq RIGHT
+            ? $parsed_url_options{'comparative_map_right'}
+            : $parsed_url_options{'comparative_map_left'};
+        my $cmap_set_acc =
+              $side eq RIGHT
+            ? $parsed_url_options{'comp_map_set_right'}
+            : $parsed_url_options{'comp_map_set_left'};
         if (@$cmap) {
             if ( grep {/^-1$/} @$cmap ) {
                 unless (
@@ -1695,24 +1710,11 @@ sub parse_url {
     $parsed_url_options{'ref_map_accs'}           = \@ref_map_accs;
     $parsed_url_options{'ref_maps'}               = \%ref_maps;
 
-    $parsed_url_options{'data_source'}  = $calling_cmap_object->data_source;
-    $parsed_url_options{'config'}       = $calling_cmap_object->config;
-    $parsed_url_options{'data_module'}  = $calling_cmap_object->data_module;
-    $parsed_url_options{'aggregate'}    = $calling_cmap_object->aggregate;
-    $parsed_url_options{'cluster_corr'} = $calling_cmap_object->cluster_corr;
-    $parsed_url_options{'show_intraslot_corr'}
-        = $calling_cmap_object->show_intraslot_corr;
-    $parsed_url_options{'split_agg_ev'} = $calling_cmap_object->split_agg_ev;
-    $parsed_url_options{'clean_view'}   = $calling_cmap_object->clean_view;
-    $parsed_url_options{'magnify_all'}  = $calling_cmap_object->magnify_all;
-    $parsed_url_options{'scale_maps'}   = $calling_cmap_object->scale_maps;
-    $parsed_url_options{'stack_maps'}   = $calling_cmap_object->stack_maps;
-    $parsed_url_options{'omit_area_boxes'}
-        = $calling_cmap_object->omit_area_boxes;
+    $parsed_url_options{'data_source'} = $calling_cmap_object->data_source;
+    $parsed_url_options{'config'}      = $calling_cmap_object->config;
+    $parsed_url_options{'data_module'} = $calling_cmap_object->data_module;
     $parsed_url_options{'ref_map_order'}
         = $calling_cmap_object->ref_map_order;
-    $parsed_url_options{'comp_menu_order'}
-        = $calling_cmap_object->comp_menu_order;
 
     return %parsed_url_options;
 }
