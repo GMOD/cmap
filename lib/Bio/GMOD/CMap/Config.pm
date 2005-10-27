@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Config;
 
 # vim: set ft=perl:
 
-# $Id: Config.pm,v 1.12 2005-06-07 20:08:50 mwz444 Exp $
+# $Id: Config.pm,v 1.13 2005-10-27 18:02:29 mwz444 Exp $
 
 =head1 NAME
 
@@ -103,7 +103,6 @@ The conf dir and the global conf file are specified in Constants.pm
       unless %config_data;
     $self->{'config_data'} = \%config_data;
 
-    #print STDERR "Read Config Files\n";
     return 1;
 }
 
