@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.183 2005-10-24 21:04:29 mwz444 Exp $
+# $Id: Map.pm,v 1.184 2005-10-27 18:01:04 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.183 $)[-1];
+$VERSION = (qw$Revision: 1.184 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -590,9 +590,8 @@ such as the units.
             $x = $x_mid - ( ( $font->width * length($full_str) ) / 2 );
             push @$drawing_data, [ STRING, $font, $x, $y, $full_str, 'grey' ];
             my $reset_url = $self->create_viewer_link(
-                $drawer->create_link_params(
-                    session_mod => "reset=$slot_no=$map_acc",
-                )
+                $drawer->create_minimal_link_params(),
+                session_mod => "reset=$slot_no=$map_acc",
             );
             $code = qq[
                 onMouseOver="window.status='Make map original size';return true" 
@@ -636,10 +635,8 @@ such as the units.
 
         # Minus side
         my $mag_minus_url = $self->create_viewer_link(
-            $drawer->create_link_params(
-                session_mod => "mag=$slot_no=$map_acc=$mag_minus_val",
-            )
-        );
+            $drawer->create_minimal_link_params(),
+            session_mod => "mag=$slot_no=$map_acc=$mag_minus_val", );
         push @$drawing_data,
             [ STRING, $font, $x, $y, $mag_minus_str, 'grey' ];
         $code = qq[
@@ -684,10 +681,8 @@ such as the units.
 
         # Plus Side
         my $mag_plus_url = $self->create_viewer_link(
-            $drawer->create_link_params(
-                session_mod => "mag=$slot_no=$map_acc=$mag_plus_val",
-            )
-        );
+            $drawer->create_minimal_link_params(),
+            session_mod => "mag=$slot_no=$map_acc=$mag_plus_val", );
         push @$drawing_data, [ STRING, $font, $x, $y, $mag_plus_str, 'grey' ];
         $code = qq[
             onMouseOver="window.status='Magnify by $mag_plus_val times original size';return true" 
@@ -825,10 +820,9 @@ Draws the truncation arrows
             = $drawer->data_module->scroll_data( $slot_no, $map_id,
             $is_flipped, 'UP' );
         my $scroll_up_url = $self->create_viewer_link(
-            $drawer->create_link_params(
-                session_mod => "start=$slot_no=$map_acc=$scroll_start:"
-                    . "stop=$slot_no=$map_acc=$scroll_stop",
-            )
+            $drawer->create_minimal_link_params(),
+            session_mod => "start=$slot_no=$map_acc=$scroll_start:"
+                . "stop=$slot_no=$map_acc=$scroll_stop",
         );
         my $code = qq[ 
             onMouseOver="window.status='Scroll up';return true" 
@@ -901,10 +895,9 @@ Draws the truncation arrows
             = $drawer->data_module->scroll_data( $slot_no, $map_id,
             $is_flipped, 'DOWN' );
         my $scroll_down_url = $self->create_viewer_link(
-            $drawer->create_link_params(
-                session_mod => "start=$slot_no=$map_acc=$scroll_start:"
-                    . "stop=$slot_no=$map_acc=$scroll_stop",
-            )
+            $drawer->create_minimal_link_params(),
+            session_mod => "start=$slot_no=$map_acc=$scroll_start:"
+                . "stop=$slot_no=$map_acc=$scroll_stop",
         );
         my $code = qq[ 
             onMouseOver="window.status='Scroll down';return true" 
@@ -2518,8 +2511,8 @@ sub add_topper {
     );
     $map_placement_data->{$map_id}{'map_coords'}[1] += $topper_offset;
     $map_placement_data->{$map_id}{'map_coords'}[3] += $topper_offset;
-    $map_placement_data->{$map_id}{'bounds'}[1] += $topper_offset;
-    $map_placement_data->{$map_id}{'bounds'}[3] += $topper_offset;
+    $map_placement_data->{$map_id}{'bounds'}[1]     += $topper_offset;
+    $map_placement_data->{$map_id}{'bounds'}[3]     += $topper_offset;
 }
 
 # ----------------------------------------
@@ -2807,14 +2800,12 @@ sub add_tick_marks {
                 : "'1'";
 
             my $crop_down_url = $self->create_viewer_link(
-                $drawer->create_link_params(
-                    session_mod => $down_session_mod_str,
-                )
+                $drawer->create_minimal_link_params(),
+                session_mod => $down_session_mod_str,
             );
             my $crop_up_url = $self->create_viewer_link(
-                $drawer->create_link_params(
-                    session_mod => $up_session_mod_str,
-                )
+                $drawer->create_minimal_link_params(),
+                session_mod => $up_session_mod_str,
             );
             my $down_code = qq[ 
                 onMouseOver="window.status='crop down';return true" 
@@ -2944,7 +2935,7 @@ sub add_feature_to_map {
         $feature->{'mid_y'} = ( $y_pos1 + $y_pos2 ) / 2;
     }
 
-    my $color    = $has_corr
+    my $color = $has_corr
         ? $drawer->config_data('feature_correspondence_color') || ''
         : '';
     $color ||= $feature->{'color'}
@@ -3693,14 +3684,13 @@ Button options:
         }
 
         my $details_url = $self->create_viewer_link(
-            $drawer->create_link_params(
-                ref_map_set_acc  => $self->map_set_acc($map_id),
-                ref_map_accs     => \%this_map_info,
-                ref_map_order    => '',
-                comparative_maps => \%detail_maps,
-                url              => $map_details_url,
-                new_session      => 1,
-            )
+            $drawer->create_minimal_link_params(),
+            ref_map_set_acc  => $self->map_set_acc($map_id),
+            ref_map_accs     => \%this_map_info,
+            ref_map_order    => '',
+            comparative_maps => \%detail_maps,
+            url              => $map_details_url,
+            new_session      => 1,
         );
 
         push @map_buttons,
@@ -3749,10 +3739,9 @@ Button options:
     if ( $requested_buttons{'delete'} ) {
         if ( $slot_no != 0 ) {
             my $delete_url = $self->create_viewer_link(
-                $drawer->create_link_params(
-                    url         => $map_viewer_url,
-                    session_mod => "del=$slot_no",
-                )
+                $drawer->create_minimal_link_params(),
+                url         => $map_viewer_url,
+                session_mod => "del=$slot_no",
             );
 
             push @map_buttons,
@@ -3772,10 +3761,9 @@ Button options:
         my $slot_info = $drawer->data_module->slot_info->{$slot_no};
         if ( $slot_info and scalar( keys(%$slot_info) ) > 1 ) {
             my $map_delete_url = $self->create_viewer_link(
-                $drawer->create_link_params(
-                    url         => $map_viewer_url,
-                    session_mod => "del=$slot_no=" . $self->map_acc($map_id),
-                )
+                $drawer->create_minimal_link_params(),
+                url         => $map_viewer_url,
+                session_mod => "del=$slot_no=" . $self->map_acc($map_id),
             );
 
             push @map_buttons,
@@ -3795,11 +3783,9 @@ Button options:
         my $slot_info = $drawer->data_module->slot_info->{$slot_no};
         if ( $slot_info and scalar( keys(%$slot_info) ) > 1 ) {
             my $map_limit_url = $self->create_viewer_link(
-                $drawer->create_link_params(
-                    url         => $map_viewer_url,
-                    session_mod => "limit=$slot_no="
-                        . $self->map_acc($map_id),
-                )
+                $drawer->create_minimal_link_params(),
+                url         => $map_viewer_url,
+                session_mod => "limit=$slot_no=" . $self->map_acc($map_id),
             );
 
             push @map_buttons,
@@ -3829,10 +3815,9 @@ Button options:
         my $flipping_flip_str = join( ":", @flipping_flips );
 
         my $flip_url = $self->create_viewer_link(
-            $drawer->create_link_params(
-                flip => $flipping_flip_str,
-                url  => $map_viewer_url,
-            )
+            $drawer->create_minimal_link_params(),
+            flip => $flipping_flip_str,
+            url  => $map_viewer_url,
         );
 
         my $flip_label = 'F';
@@ -3861,14 +3846,14 @@ Button options:
                     $drawer->data_module->magnification( $slot_no, $map_id ),
             };
         }
+
         my $new_url = $self->create_viewer_link(
-            $drawer->create_link_params(
-                ref_map_set_acc => $self->map_set_acc($map_id),
-                ref_map_accs    => \%this_map_info,
-                ref_map_order   => '',
-                url             => $map_viewer_url,
-                new_session     => 1,
-            )
+            $drawer->create_minimal_link_params(),
+            ref_map_set_acc => $self->map_set_acc($map_id),
+            ref_map_accs    => \%this_map_info,
+            ref_map_order   => '',
+            url             => $map_viewer_url,
+            new_session     => 1,
         );
 
         push @map_buttons,

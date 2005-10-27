@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.57 2005-10-25 20:19:29 mwz444 Exp $
+# $Id: Utils.pm,v 1.58 2005-10-27 18:01:03 mwz444 Exp $
 
 =head1 NAME
 
@@ -32,8 +32,45 @@ use Storable qw( freeze thaw );
 use POSIX;
 use Clone qw(clone);
 require Exporter;
-use vars qw( $VERSION @EXPORT @EXPORT_OK );
-$VERSION = (qw$Revision: 1.57 $)[-1];
+use vars
+    qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
+$VERSION = (qw$Revision: 1.58 $)[-1];
+
+@SESSION_PARAMS = qw[
+    prev_ref_species_acc    prev_ref_map_set_acc  ref_species_acc
+    ref_map_set_acc         comparative_map_right comparative_map_left
+    comparative_maps        highlight             font_size
+    image_size              image_type            label_features
+    link_group              flip                  session_mod
+    page_no                 action                step
+    left_min_corrs          right_min_corrs       menu_min_corrs
+    ref_map_start           ref_map_stop          comp_map_set_right
+    comp_map_set_left       collapse_features     aggregate
+    cluster_corr            show_intraslot_corr   split_agg_ev
+    clean_view              corrs_to_map          magnify_all
+    ignore_image_map_sanity scale_maps            stack_maps
+    comp_menu_order         ref_map_order         prev_ref_map_order
+    omit_area_boxes         refMenu               compMenu
+    optionMenu              addOpMenu             session_id
+    saved_link_id           general_min_corrs     url_for_saving
+];
+%SESSION_PARAM_DEFAULT_OF = (
+    'comparative_maps' => q{},
+    'highlight'        => q{},
+    'font_size'        => q{},
+    'image_size'       => q{},
+    'image_type'       => q{},
+    'label_features'   => q{},
+    'link_group'       => q{},
+    'flip'             => q{},
+    'session_mod'      => q{},
+    'page_no'          => 1,
+    'action'           => 'view',
+    'step'             => 0,
+    'left_min_corrs'   => 0,
+    'right_min_corrs'  => 0,
+    'menu_min_corrs'   => 0,
+);
 
 use base 'Exporter';
 
@@ -1014,14 +1051,22 @@ sub _parse_session_step {
     my $parsed_url_options_ref = $args{'parsed_url_options_ref'};
     my $ref_map_accs_ref       = $args{'ref_map_accs_ref'};
 
+    # if this was submitted through a button
+    # then use all of the menu parameters
+    # otherwise check against the session
+    unless ( $apr->param('sub') ) {
+        for my $param (@SESSION_PARAMS) {
+            unless ( defined( $parsed_url_options_ref->{$param} ) ) {
+                $parsed_url_options_ref->{$param} = $session_step->{$param};
+                $apr->param( $param, $session_step->{$param} );
+            }
+        }
+    }
+
     # Clone slots so we don't clobber the old session step
     %{$slots_ref} = %{ clone( $session_step->{'slots'} ) };
-    $parsed_url_options_ref->{'ref_species_acc'}
-        = $session_step->{'ref_species_acc'};
-    $parsed_url_options_ref->{'ref_map_set_acc'}
-        = $session_step->{'ref_map_set_acc'};
 
-    # Apply Session Modifications
+    # Apply Session Modifications to slots_ref
     my ( $change_left_min_corrs, $change_right_min_corrs )
         = _modify_slots( $slots_ref,
         $parsed_url_options_ref->{'session_mod'} )
@@ -1050,13 +1095,14 @@ sub _order_out_from_zero {
 }
 
 # ----------------------------------------------------
-sub parse_url {
+sub _get_options_from_url {
 
-    my ( $self, $apr, $calling_cmap_object ) = @_;
+    my %args = @_;
+    my $apr  = $args{'apr'};
 
     my %parsed_url_options;
 
-    # Special params (backwards compat and other)
+    # First deal with special params (backwards compat and other)
     $parsed_url_options{'prev_ref_species_acc'}
         = $apr->param('prev_ref_species_acc')
         || $apr->param('prev_ref_species_aid')
@@ -1078,33 +1124,15 @@ sub parse_url {
     $parsed_url_options{'url_for_saving'}
         = $apr->url( -path_info => 1, -query => 1 );
 
-    # Deal with parameters that when "false" default to something
-    my %default_param_of = (
-        'comparative_maps' => q{},
-        'highlight'        => q{},
-        'font_size'        => q{},
-        'image_size'       => q{},
-        'image_type'       => q{},
-        'label_features'   => q{},
-        'link_group'       => q{},
-        'flip'             => q{},
-        'session_mod'      => q{},
-        'page_no'          => 1,
-        'action'           => 'view',
-        'step'             => 0,
-        'left_min_corrs'   => 0,
-        'right_min_corrs'  => 0,
-        'menu_min_corrs'   => 0,
-    );
-    for my $param ( keys %default_param_of ) {
-        $parsed_url_options{$param} = $apr->param($param)
-            || $default_param_of{$param};
-    }
-
     # Deal with parameters that don't default to anything
     # These are important for when 0 is a valid value
     for my $param (
         qw [
+        comparative_maps         highlight           font_size
+        image_size               image_type          label_features
+        link_group               flip                session_mod
+        page_no                  action              step
+        left_min_corrs           right_min_corrs     menu_min_corrs
         ref_map_start            ref_map_stop        comp_map_set_right
         comp_map_set_left        collapse_features   aggregate
         cluster_corr             show_intraslot_corr split_agg_ev
@@ -1127,7 +1155,6 @@ sub parse_url {
     $parsed_url_options{'general_min_corrs'}
         = $apr->param('min_correspondences')
         unless defined( $parsed_url_options{'general_min_corrs'} );
-    my %slots_min_corrs;
 
     if ( $parsed_url_options{'general_min_corrs'} ) {
         unless ( defined( $parsed_url_options{'left_min_corrs'} ) ) {
@@ -1150,55 +1177,52 @@ sub parse_url {
         }
     }
 
-    my %slots;
-    $parsed_url_options{'reusing_step'} = 0;
-
-    # If this was submitted by a button, clear the modified map fields.
-    # They are no longer needed.
-    if ( $apr->param('sub') ) {
-        $apr->param( 'modified_ref_map',  q{} );
-        $apr->param( 'modified_comp_map', q{} );
-    }
-
     $parsed_url_options{'path_info'} = $apr->path_info || q{};
     if ( $parsed_url_options{'path_info'} ) {
         $parsed_url_options{'path_info'}
             =~ s{^/(cmap/)?}{};    # kill superfluous stuff
     }
 
-    $parsed_url_options{'collapse_features'}
-        = $calling_cmap_object->config_data('collapse_features')
-        unless ( defined( $parsed_url_options{'collapse_features'} ) );
-
-    # reset the params only if you want the code to be able to change them.
-    # otherwise, simply initialize the avalue.
-    for my $param (
-        qw[ aggregate       cluster_corr show_intraslot_corr
-        split_agg_ev    clean_view   magnify_all
-        scale_maps      stack_maps   omit_area_boxes
-        comp_menu_order ]
+    (   $parsed_url_options{'comparative_map_field'},
+        $parsed_url_options{'comparative_map_field_acc'}
         )
-    {
-        $parsed_url_options{$param}
-            = $calling_cmap_object->$param( $parsed_url_options{$param} );
-        $apr->param( $param, $parsed_url_options{$param} );
+        = split( /=/, $apr->param('comparative_map') );
+
+    return %parsed_url_options;
+}
+
+# ----------------------------------------------------
+sub _default_params_if_needed {
+
+    my $parsed_url_options_ref = shift;
+
+    # cycle through the parameters with defaults
+    # replace undefined values
+    for my $param ( keys %SESSION_PARAM_DEFAULT_OF ) {
+        unless ( defined $parsed_url_options_ref->{$param} ) {
+            $parsed_url_options_ref->{$param}
+                = $SESSION_PARAM_DEFAULT_OF{$param};
+        }
     }
 
-    if ( $parsed_url_options{'ref_map_order'} ) {
-        $calling_cmap_object->ref_map_order(
-            $parsed_url_options{'ref_map_order'} );
-    }
-    else {
+    return;
+}
 
-        #use the previous order if new order is not defined.
-        $calling_cmap_object->ref_map_order(
-            $parsed_url_options{'prev_ref_map_order'} );
-    }
+# ----------------------------------------------------
+sub parse_url {
 
+    my ( $self, $apr, $calling_cmap_object ) = @_;
+
+    #xxx Parse Params
+    # Parse the options
+    my %parsed_url_options = _get_options_from_url( apr => $apr );
+
+    my %slots;
+    $parsed_url_options{'reusing_step'} = 0;
+
+    #xxx Create @ref_map_accs
     #
-    # Take the feature types either from the query string (first
-    # choice, splitting the string on commas) or from the POSTed
-    # form <select>.
+    # Create @ref_map_accs
     #
     my @ref_map_accs;
     if ( $apr->param('ref_map_accs') or $apr->param('ref_map_aids') ) {
@@ -1224,6 +1248,8 @@ sub parse_url {
         $apr->param( 'ref_map_accs', join( ":", @ref_map_accs ) );
     }
 
+    #xxx Building %ref_maps Uses 'highlight' and @ref_map_accs
+    # Build %ref_maps
     my %ref_maps;
     my %ref_map_sets = ();
     foreach my $ref_map_acc (@ref_map_accs) {
@@ -1238,6 +1264,7 @@ sub parse_url {
             = { start => $start, stop => $stop, mag => $magnification };
     }
 
+    #xxx Legacy ref_maps stuff Uses 'highlight' and @ref_map_accs
     # Only included for legacy urls
     # Deal with modified ref map
     # map info specified in this param trumps 'ref_map_accs' info
@@ -1272,127 +1299,7 @@ sub parse_url {
         $apr->param( 'ref_map_accs', join( ":", @ref_map_accs ) );
     }
 
-    my @ref_map_set_accs = ();
-    if ( $apr->param('ref_map_set_acc') || $apr->param('ref_map_set_aid') ) {
-        @ref_map_set_accs =
-            split( /,/,
-                   $apr->param('ref_map_set_acc')
-                || $apr->param('ref_map_set_aid') );
-    }
-
-    (   $parsed_url_options{'comparative_map_field'},
-        $parsed_url_options{'comparative_map_field_acc'}
-        )
-        = split( /=/, $apr->param('comparative_map') );
-
-    my @included_feature_types;
-    $parsed_url_options{'url_feature_default_display'} = undef;
-    my @corr_only_feature_types;
-    my @ignored_feature_types;
-    my @included_evidence_types;
-    my @ignored_evidence_types;
-    my @less_evidence_types;
-    my @greater_evidence_types;
-    my %evidence_type_score;
-
-    foreach my $param ( $apr->param ) {
-        if ( $param =~ /^ft_(\S+)/ or $param =~ /^feature_type_(\S+)/ ) {
-            my $ft  = $1;
-            my $val = $apr->param($param);
-
-            # Handle the "default" specified on the initial selection page
-            # write value to url_feature_default_display so that it acts
-            # like the ft_DEFAULT
-            if ( $ft eq 'FRONT_PAGE_DEFAULT' ) {
-                if ( $val =~ /^\d$/ ) {
-                    $parsed_url_options{'url_feature_default_display'} = $val;
-                }
-                next;
-            }
-
-            # This dictates how unspecified feature types are treated
-            if ( $ft eq 'DEFAULT' ) {
-                if ( $val =~ /^\d$/ ) {
-                    $parsed_url_options{'url_feature_default_display'} = $val;
-                }
-                else {
-                    $parsed_url_options{'url_feature_default_display'}
-                        = undef;
-                }
-                next;
-            }
-            if ( $val == 0 ) {
-                push @ignored_feature_types, $ft;
-            }
-            elsif ( $val == 1 ) {
-                push @corr_only_feature_types, $ft;
-            }
-            elsif ( $val == 2 ) {
-                push @included_feature_types, $ft;
-            }
-        }
-        elsif ( $param =~ /^et_(\S+)/ or $param =~ /^evidence_type_(\S+)/ ) {
-            my $et  = $1;
-            my $val = $apr->param($param);
-            if ( $val == 0 ) {
-                push @ignored_evidence_types, $et;
-            }
-            elsif ( $val == 1 ) {
-                push @included_evidence_types, $et;
-            }
-            elsif ( $val == 2 ) {
-                push @less_evidence_types, $et;
-            }
-            elsif ( $val == 3 ) {
-                push @greater_evidence_types, $et;
-            }
-        }
-        if ( $param =~ /^ets_(\S+)/ ) {
-            my $et  = $1;
-            my $val = $apr->param($param);
-            $evidence_type_score{$et} = $val;
-        }
-    }
-
-    # Set the UFDD or get the default UFDD in none is supplied
-    $parsed_url_options{'url_feature_default_display'}
-        = $calling_cmap_object->url_feature_default_display(
-        $parsed_url_options{'url_feature_default_display'} );
-    $apr->param( 'ft_DEFAULT',
-        $parsed_url_options{'url_feature_default_display'} );
-    $apr->param( 'feature_type_DEFAULT',  undef );
-    $apr->param( 'ft_FRONT_PAGE_DEFAULT', undef );
-
-    #
-    # Set the data source.
-    #
-    $calling_cmap_object->data_source( $apr->param('data_source') ) or return;
-
-    if (   $parsed_url_options{'prev_ref_species_acc'}
-        && $parsed_url_options{'prev_ref_species_acc'} ne
-        $parsed_url_options{'ref_species_acc'} )
-    {
-        $parsed_url_options{'ref_map_set_acc'} = q{};
-        @ref_map_set_accs = ();
-    }
-
-    if (   $parsed_url_options{'prev_ref_map_set_acc'}
-        && $parsed_url_options{'prev_ref_map_set_acc'} ne
-        $parsed_url_options{'ref_map_set_acc'} )
-    {
-        @ref_map_accs                                = ();
-        @ref_map_set_accs                            = ();
-        $parsed_url_options{'ref_map_start'}         = undef;
-        $parsed_url_options{'ref_map_stop'}          = undef;
-        $parsed_url_options{'comparative_maps'}      = undef;
-        $parsed_url_options{'comparative_map_right'} = {};
-        $parsed_url_options{'comparative_map_left'}  = {};
-    }
-
-    if ( grep {/^-1$/} @ref_map_accs ) {
-        $ref_map_sets{ $parsed_url_options{'ref_map_set_acc'} } = ();
-    }
-
+    #xxx Create or get session
     # if a session id is given, get the session, otherwise
     # create a new session.
     my $session_supplied = 0;
@@ -1426,6 +1333,7 @@ sub parse_url {
         $parsed_url_options{'session'}->expire('+2w');   #expires in two weeks
     }
 
+    #xxx Deal with saved session
     if ( defined( $parsed_url_options{'session_data_object'} ) ) {
         unless ( $parsed_url_options{'step'} ) {
             $parsed_url_options{'step'}
@@ -1444,7 +1352,10 @@ sub parse_url {
         {
             $step_hash = $parsed_url_options{'session_data_object'}
                 ->[ $parsed_url_options{'step'} ];
-            $parsed_url_options{'reusing_step'} = 1;
+            $parsed_url_options{'reusing_step'} = 0;    #1;
+
+            #xxx
+            #xyx
         }
         else {
             $step_hash
@@ -1469,6 +1380,8 @@ sub parse_url {
             return ();
         }
     }
+
+    #xxx deal with saved_link_id
     elsif ( $parsed_url_options{'saved_link_id'} ) {
 
         # Get the saved link from the db
@@ -1501,9 +1414,32 @@ sub parse_url {
             ref_map_accs_ref       => \@ref_map_accs,
             )
             or return $calling_cmap_object->error();
-
     }
-    else {
+
+#xxx Now find any params that need defaults but weren't in the url or the session object
+# Now find any params that need defaults but weren't in the url or the
+# session object
+    _default_params_if_needed( \%parsed_url_options );
+
+    #xxx Run some params through methods and use the new values
+    # reset the params only if you want the code to be able to change them.
+    # otherwise, simply initialize the avalue.
+    for my $param (
+        qw[ aggregate       cluster_corr show_intraslot_corr
+        split_agg_ev    clean_view   magnify_all
+        scale_maps      stack_maps   omit_area_boxes
+        comp_menu_order ]
+        )
+    {
+        $parsed_url_options{$param}
+            = $calling_cmap_object->$param( $parsed_url_options{$param} );
+        $apr->param( $param, $parsed_url_options{$param} );
+    }
+
+    #xxx deal with straight url
+    # If %slots was not found with a session or a saved link
+    # then create it from the url
+    unless (%slots) {
 
         %slots = (
             0 => {
@@ -1596,6 +1532,150 @@ sub parse_url {
         }
     }
 
+    #xxx Clear modified_* if need be
+    # If this was submitted by a button, clear the modified map fields.
+    # They are no longer needed.
+    if ( $apr->param('sub') ) {
+        $apr->param( 'modified_ref_map',  q{} );
+        $apr->param( 'modified_comp_map', q{} );
+    }
+
+    #xxx Get collapse_features unless it's defined
+    $parsed_url_options{'collapse_features'}
+        = $calling_cmap_object->config_data('collapse_features')
+        unless ( defined( $parsed_url_options{'collapse_features'} ) );
+
+    #xxx Handle ref_map_order
+    # figure out the ref_map_order
+    if ( $parsed_url_options{'ref_map_order'} ) {
+        $calling_cmap_object->ref_map_order(
+            $parsed_url_options{'ref_map_order'} );
+    }
+    else {
+
+        #use the previous order if new order is not defined.
+        $calling_cmap_object->ref_map_order(
+            $parsed_url_options{'prev_ref_map_order'} );
+    }
+
+    #xxx Get feature type and evidence type info
+    # THIS NEEDS TO BE PUT INTO SESSION
+    # Get feature type and evidence type info
+    $parsed_url_options{'included_feature_types'}      = [];
+    $parsed_url_options{'url_feature_default_display'} = undef;
+    $parsed_url_options{'corr_only_feature_types'}     = [];
+    $parsed_url_options{'ignored_feature_types'}       = [];
+    $parsed_url_options{'included_evidence_types'}     = [];
+    $parsed_url_options{'ignored_evidence_types'}      = [];
+    $parsed_url_options{'less_evidence_types'}         = [];
+    $parsed_url_options{'greater_evidence_types'}      = [];
+    $parsed_url_options{'evidence_type_score'}         = {};
+
+    foreach my $param ( $apr->param ) {
+        if ( $param =~ /^ft_(\S+)/ or $param =~ /^feature_type_(\S+)/ ) {
+            my $ft  = $1;
+            my $val = $apr->param($param);
+
+            # Handle the "default" specified on the initial selection page
+            # write value to url_feature_default_display so that it acts
+            # like the ft_DEFAULT
+            if ( $ft eq 'FRONT_PAGE_DEFAULT' ) {
+                if ( $val =~ /^\d$/ ) {
+                    $parsed_url_options{'url_feature_default_display'} = $val;
+                }
+                next;
+            }
+
+            # This dictates how unspecified feature types are treated
+            if ( $ft eq 'DEFAULT' ) {
+                if ( $val =~ /^\d$/ ) {
+                    $parsed_url_options{'url_feature_default_display'} = $val;
+                }
+                else {
+                    $parsed_url_options{'url_feature_default_display'}
+                        = undef;
+                }
+                next;
+            }
+            if ( $val == 0 ) {
+                push @{ $parsed_url_options{'ignored_feature_types'} }, $ft;
+            }
+            elsif ( $val == 1 ) {
+                push @{ $parsed_url_options{'corr_only_feature_types'} }, $ft;
+            }
+            elsif ( $val == 2 ) {
+                push @{ $parsed_url_options{'included_feature_types'} }, $ft;
+            }
+        }
+        elsif ( $param =~ /^et_(\S+)/ or $param =~ /^evidence_type_(\S+)/ ) {
+            my $et  = $1;
+            my $val = $apr->param($param);
+            if ( $val == 0 ) {
+                push @{ $parsed_url_options{'ignored_evidence_types'} }, $et;
+            }
+            elsif ( $val == 1 ) {
+                push @{ $parsed_url_options{'included_evidence_types'} }, $et;
+            }
+            elsif ( $val == 2 ) {
+                push @{ $parsed_url_options{'less_evidence_types'} }, $et;
+            }
+            elsif ( $val == 3 ) {
+                push @{ $parsed_url_options{'greater_evidence_types'} }, $et;
+            }
+        }
+        if ( $param =~ /^ets_(\S+)/ ) {
+            my $et  = $1;
+            my $val = $apr->param($param);
+            $parsed_url_options{'evidence_type_score'}->{$et} = $val;
+        }
+    }
+
+    # Set the UFDD or get the default UFDD in none is supplied
+    $parsed_url_options{'url_feature_default_display'}
+        = $calling_cmap_object->url_feature_default_display(
+        $parsed_url_options{'url_feature_default_display'} );
+    $apr->param( 'ft_DEFAULT',
+        $parsed_url_options{'url_feature_default_display'} );
+    $apr->param( 'feature_type_DEFAULT',  undef );
+    $apr->param( 'ft_FRONT_PAGE_DEFAULT', undef );
+
+    #xxx Set the data source
+    #
+    # Set the data source.
+    #
+    $calling_cmap_object->data_source( $apr->param('data_source') ) or return;
+
+    #xxx check for different species/map set
+    # If the ref species is different than before, then we need to start fresh
+    if (   $parsed_url_options{'prev_ref_species_acc'}
+        && $parsed_url_options{'prev_ref_species_acc'} ne
+        $parsed_url_options{'ref_species_acc'} )
+    {
+        $parsed_url_options{'ref_map_set_acc'} = q{};
+    }
+
+    # If the ref map_set is different than before, then we also need to start
+    # fresh
+    if (   $parsed_url_options{'prev_ref_map_set_acc'}
+        && $parsed_url_options{'prev_ref_map_set_acc'} ne
+        $parsed_url_options{'ref_map_set_acc'} )
+    {
+        @ref_map_accs                                = ();
+        $parsed_url_options{'ref_map_start'}         = undef;
+        $parsed_url_options{'ref_map_stop'}          = undef;
+        $parsed_url_options{'comparative_maps'}      = undef;
+        $parsed_url_options{'comparative_map_right'} = {};
+        $parsed_url_options{'comparative_map_left'}  = {};
+    }
+
+    #xxx "All selected
+    # If "All" was selected (signified by '-1') then create the ref_map_set
+    # reference
+    if ( grep {/^-1$/} @ref_map_accs ) {
+        $ref_map_sets{ $parsed_url_options{'ref_map_set_acc'} } = ();
+    }
+
+    #xxx ref_map_start/stop
     # If ref_map_start/stop are defined and there is only one ref map
     # use those values and then wipe them from the params.
     if (    scalar keys( %{ $slots{0}->{'maps'} } ) == 1
@@ -1627,7 +1707,9 @@ sub parse_url {
     }
     $apr->delete( 'ref_map_start', 'ref_map_stop', );
 
+    #xxx Build %slots_min_corrs
     # Build %slots_min_corrs
+    my %slots_min_corrs;
     my @slot_nos  = sort { $a <=> $b } keys %slots;
     my $max_right = $slot_nos[-1];
     my $max_left  = $slot_nos[0];
@@ -1642,6 +1724,7 @@ sub parse_url {
     $slots_min_corrs{$max_left}  = $parsed_url_options{'left_min_corrs'};
     $slots_min_corrs{$max_right} = $parsed_url_options{'right_min_corrs'};
 
+    #xxx Add in our next chosen maps.
     #
     # Add in our next chosen maps.
     #
@@ -1695,20 +1778,12 @@ sub parse_url {
             }
         }
     }
-    $parsed_url_options{'slots'}                  = \%slots;
-    $parsed_url_options{'slots_min_corrs'}        = \%slots_min_corrs;
-    $parsed_url_options{'included_feature_types'} = \@included_feature_types;
-    $parsed_url_options{'corr_only_feature_types'}
-        = \@corr_only_feature_types;
-    $parsed_url_options{'ignored_feature_types'}  = \@ignored_feature_types;
-    $parsed_url_options{'ignored_evidence_types'} = \@ignored_evidence_types;
-    $parsed_url_options{'included_evidence_types'}
-        = \@included_evidence_types;
-    $parsed_url_options{'less_evidence_types'}    = \@less_evidence_types;
-    $parsed_url_options{'greater_evidence_types'} = \@greater_evidence_types;
-    $parsed_url_options{'evidence_type_score'}    = \%evidence_type_score;
-    $parsed_url_options{'ref_map_accs'}           = \@ref_map_accs;
-    $parsed_url_options{'ref_maps'}               = \%ref_maps;
+
+    #xxx other stuff
+    $parsed_url_options{'slots'}           = \%slots;
+    $parsed_url_options{'slots_min_corrs'} = \%slots_min_corrs;
+    $parsed_url_options{'ref_map_accs'}    = \@ref_map_accs;
+    $parsed_url_options{'ref_maps'}        = \%ref_maps;
 
     $parsed_url_options{'data_source'} = $calling_cmap_object->data_source;
     $parsed_url_options{'config'}      = $calling_cmap_object->config;
@@ -1732,6 +1807,11 @@ sub create_session_step {
         ref_map_set_acc => $parsed_url_options_ref->{'ref_map_set_acc'},
         session_mod     => $parsed_url_options_ref->{'session_mod'},
     };
+
+    for my $param (@SESSION_PARAMS) {
+        $step_object->{$param} = $parsed_url_options_ref->{$param},;
+    }
+
     if (    $parsed_url_options_ref->{'session_data_object'}
         and $parsed_url_options_ref->{'step'} )
     {

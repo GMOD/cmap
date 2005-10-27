@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.99 2005-10-24 17:09:11 mwz444 Exp $
+# $Id: CMap.pm,v 1.100 2005-10-27 18:01:02 mwz444 Exp $
 
 =head1 NAME
 
@@ -1021,7 +1021,7 @@ Given information about the link, creates a url to cmap_viewer.
     my $less_evidence_type_accs     = $args{'less_evidence_type_accs'};
     my $greater_evidence_type_accs  = $args{'greater_evidence_type_accs'};
     my $evidence_type_score         = $args{'evidence_type_score'};
-    my $data_source                 = $args{'data_source'} or return;
+    my $data_source                 = $args{'data_source'};
     my $refMenu                     = $args{'refMenu'};
     my $compMenu                    = $args{'compMenu'};
     my $optionMenu                  = $args{'optionMenu'};
@@ -1033,7 +1033,10 @@ Given information about the link, creates a url to cmap_viewer.
     my $skip_map_info               = $args{'skip_map_info'} || 0;
     my $url                         = $args{'url'} || '';
     $url .= '?' unless $url =~ /\?$/;
+    my $cmap_viewer_link_debug = $args{'cmap_viewer_link_debug'};
 
+    #print S#TDERR "\n" if ($cmap_viewer_link_debug);
+    #print S#TDERR Dumper()."\n" if ($cmap_viewer_link_debug);
     ###Required Fields
     unless (
         (      defined($ref_map_set_acc)

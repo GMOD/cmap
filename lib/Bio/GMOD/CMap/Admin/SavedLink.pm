@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::SavedLink;
 
 # vim: set ft=perl:
 
-# $Id: SavedLink.pm,v 1.1 2005-10-14 20:05:22 mwz444 Exp $
+# $Id: SavedLink.pm,v 1.2 2005-10-27 18:01:03 mwz444 Exp $
 
 use strict;
 use warnings;
@@ -29,6 +29,7 @@ sub create_saved_link {
     delete $parsed_options_ref->{'session'};
     delete $parsed_options_ref->{'session_id'};
     delete $parsed_options_ref->{'step'};
+    delete $parsed_options_ref->{'next_step'};
 
     # Create the drawer object to use it's link creation abilities
     my $drawer = Bio::GMOD::CMap::Drawer->new(
@@ -43,16 +44,18 @@ sub create_saved_link {
 
     # Created the URLs.
     # Not the saved_link_id will be added to the saved url in the insert call
-    my $saved_url = $link_front
-        . $self->create_viewer_link(
-        $drawer->create_link_params( skip_map_info => 1, ) );
-    my $legacy_url = $link_front . $self->create_viewer_link(
+    my $saved_url = $link_front;
+    $saved_url .= $self->create_viewer_link(
+        $drawer->create_minimal_link_params(),
+        cmap_viewer_link_debug => 1,
+        skip_map_info          => 1
+    );
+    my $legacy_url = $link_front;
+    $legacy_url .= $self->create_viewer_link(
         $drawer->create_link_params(
             new_session       => 1,
             create_legacy_url => 1,
             ref_map_set_acc   => $parsed_options_ref->{'ref_map_set_acc'},
-
-         #        ref_map_accs => $parsed_options_ref->{'slots'}->{0}{'maps'},
         )
     );
 

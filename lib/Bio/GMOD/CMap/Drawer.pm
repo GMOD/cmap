@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.115 2005-10-18 16:08:20 mwz444 Exp $
+# $Id: Drawer.pm,v 1.116 2005-10-27 18:01:03 mwz444 Exp $
 
 =head1 NAME
 
@@ -347,7 +347,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.115 $)[-1];
+$VERSION = (qw$Revision: 1.116 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -2916,6 +2916,26 @@ the new outer slot has a different min_corrs value.
     $self->left_min_corrs( $slots->{$max_left}{'min_corrs'}   || 0 );
     $self->right_min_corrs( $slots->{$max_right}{'min_corrs'} || 0 );
 
+}
+
+sub create_minimal_link_params {
+
+=pod
+
+=head2 create_minimal_link_params
+
+Creates only the link parameters for CMap->create_viewer_link() that are
+absolutely needed.
+
+=cut
+
+    my ( $self, %args ) = @_;
+
+    return (
+        session_id  => $self->session_id(),
+        data_source => $self->data_source(),
+        next_step   => $self->next_step(),
+    );
 }
 
 # ----------------------------------------------------
