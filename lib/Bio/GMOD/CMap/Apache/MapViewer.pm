@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.117 2005-10-07 15:41:19 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.118 2005-10-28 03:31:01 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.117 $)[-1];
+$VERSION = (qw$Revision: 1.118 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -195,11 +195,11 @@ sub handler {
         or $html = $t->error;
 
     if ( $parsed_url_options{'path_info'} eq 'map_details'
-        and scalar( keys %{ $parsed_url_options{'ref_maps'} } ) == 1 )
+        and scalar( keys %{ $parsed_url_options{'slots'}{0} } ) == 1 )
     {
         $PAGE_SIZE ||= $self->config_data('max_child_elements') || 0;
         $MAX_PAGES ||= $self->config_data('max_search_pages')   || 1;
-        my ($map_acc) = keys %{ $parsed_url_options{'ref_maps'} };
+        my ($map_acc) = keys %{ $parsed_url_options{'slots'}{0} };
         my $map_id = $self->sql->acc_id_to_internal_id(
             cmap_object => $self,
             object_type => 'map',
