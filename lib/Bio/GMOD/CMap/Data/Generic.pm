@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.123 2005-10-23 05:03:33 mwz444 Exp $
+# $Id: Generic.pm,v 1.124 2005-10-29 22:12:08 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.123 $)[-1];
+$VERSION = (qw$Revision: 1.124 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -6493,6 +6493,8 @@ map (map1).
 
 =item - Boolean value include_map1_data (include_map1_data)
 
+=item - Boolean value, restrict results to the same set (intraslot_only) 
+
 If information about the starting map is desired, set include_map1_data to
 true.
 
@@ -6534,6 +6536,7 @@ If $include_map1_data also has
         evidence_type_score         => 0,
         ignored_feature_type_accs   => 0,
         include_map1_data           => 0,
+        intraslot_only              => 0,
     );
     validate( @_, \%validation_params );
     my %args = @_;
@@ -6554,6 +6557,7 @@ If $include_map1_data also has
     my $ignored_feature_type_accs = $args{'ignored_feature_type_accs'} || [];
     my $include_map1_data         = $args{'include_map1_data'};
     $include_map1_data = 1 unless ( defined $include_map1_data );
+    my $intraslot_only = $args{'intraslot_only'} || 0;
 
     my $db = $cmap_object->db;
     my $return_object;
@@ -6588,7 +6592,7 @@ If $include_map1_data also has
 
     if ($include_map1_data) {
         $select_sql .= qq[
-                 cl.map_id1,
+                 ,
                  map1.map_acc as map_acc1,
                  map1.map_set_id as map_set_id1
         ];
@@ -6598,6 +6602,10 @@ If $include_map1_data also has
                  map1.map_set_id
         ];
     }
+    if ($intraslot_only) {
+        $where_sql .= " and map1.map_set_id = map2.map_set_id ";
+    }
+
     my $having_sql = '';
 
     if (@$map_accs) {

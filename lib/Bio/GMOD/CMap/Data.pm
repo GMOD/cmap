@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.258 2005-10-25 05:24:58 mwz444 Exp $
+# $Id: Data.pm,v 1.259 2005-10-29 22:12:08 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.258 $)[-1];
+$VERSION = (qw$Revision: 1.259 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -3429,6 +3429,7 @@ sub cmap_spider_links {
             cmap_object     => $self,
             map_accs        => $map_accs_per_degree{ $i - 1 },
             ignore_map_accs => [ keys(%seen_map_ids) ],
+            intraslot_only  => 1,
         );
 
         # Add results to data structures.
