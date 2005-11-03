@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.259 2005-10-29 22:12:08 mwz444 Exp $
+# $Id: Data.pm,v 1.260 2005-11-03 21:06:47 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.259 $)[-1];
+$VERSION = (qw$Revision: 1.260 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -2841,7 +2841,7 @@ sub count_correspondences {
     # Query for the counts of correspondences.
     #
     my $map_corrs_for_counting = [];
-    if ( defined $ref_slot_no or $show_intraslot_corr ) {
+    if ( defined $ref_slot_no ) {
 
         $map_corrs_for_counting
             = $sql_object->get_feature_correspondence_for_counting(
