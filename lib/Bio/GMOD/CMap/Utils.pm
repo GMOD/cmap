@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.61 2005-11-03 16:12:25 mwz444 Exp $
+# $Id: Utils.pm,v 1.62 2005-11-03 20:27:36 mwz444 Exp $
 
 =head1 NAME
 
@@ -34,12 +34,11 @@ use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.61 $)[-1];
+$VERSION = (qw$Revision: 1.62 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
     ref_species_acc          ref_map_set_acc
-    comparative_map_right    comparative_map_left
     comparative_maps         highlight
     font_size                image_size
     image_type               label_features
@@ -48,8 +47,7 @@ $VERSION = (qw$Revision: 1.61 $)[-1];
     action                   step
     left_min_corrs           right_min_corrs
     menu_min_corrs           ref_map_start
-    ref_map_stop             comp_map_set_right
-    comp_map_set_left        collapse_features
+    ref_map_stop             collapse_features
     aggregate                cluster_corr
     show_intraslot_corr      split_agg_ev
     clean_view               corrs_to_map
@@ -67,6 +65,11 @@ $VERSION = (qw$Revision: 1.61 $)[-1];
     less_evidence_types      greater_evidence_types
     evidence_type_score
 ];
+
+# Not saving these because they should be stored in slots by now.
+#    comparative_map_right    comparative_map_left
+#    comp_map_set_right       comp_map_set_left
+
 %SESSION_PARAM_DEFAULT_OF = (
     'comparative_maps' => q{},
     'highlight'        => q{},
@@ -1407,16 +1410,17 @@ sub parse_url {
         my $prev_step = $parsed_url_options{'step'} - 1;
         $parsed_url_options{'next_step'} = $parsed_url_options{'step'} + 1;
         my $step_hash;
+
+        # Check to see if we can just reuse an old session.
+        # When debugging it is usefull to add " and 0" to this if statement
+        # to stop it from reusing old sessions.
         if ( $parsed_url_options{'session_data_object'}
             ->[ $parsed_url_options{'step'} ]
             and $parsed_url_options{'session_data_object'}
             ->[ $parsed_url_options{'step'} ]{'session_mod'}
             and $parsed_url_options{'session_data_object'}
             ->[ $parsed_url_options{'step'} ]{'session_mod'} eq
-            $parsed_url_options{'session_mod'}
-            and 0 )
-
-            #xyx
+            $parsed_url_options{'session_mod'} )
         {
             $step_hash = $parsed_url_options{'session_data_object'}
                 ->[ $parsed_url_options{'step'} ];
