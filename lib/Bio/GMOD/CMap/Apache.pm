@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache;
 
 # vim: set ft=perl:
 
-# $Id: Apache.pm,v 1.33 2005-10-14 20:05:22 mwz444 Exp $
+# $Id: Apache.pm,v 1.34 2005-11-03 16:12:25 mwz444 Exp $
 
 =head1 NAME
 
@@ -47,7 +47,7 @@ this class will catch errors and display them correctly.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.33 $)[-1];
+$VERSION = (qw$Revision: 1.34 $)[-1];
 
 use CGI;
 use Apache::Htpasswd;
@@ -146,24 +146,25 @@ the handler to the derived class's "handler" method.
 =cut
 
     my %args      = @_;
-    my $apr = CGI->new;
+    my $apr       = CGI->new;
     my $path_info = $apr->path_info || '';
     if ($path_info) {
         $path_info =~ s{^/(cmap/)?}{};    # kill superfluous stuff
     }
 
     $path_info = DEFAULT->{'path_info'} unless exists DISPATCH->{$path_info};
-    my $class  = DISPATCH->{$path_info};
+    my $class = DISPATCH->{$path_info};
     my $module = $class->new( apr => $apr, %args );
     my $status;
 
     eval {
-        $module->handle_cookie;
+        $module->read_cookie;
+        $module->write_cookie;
 
         unless ( $path_info =~ /^(login|admin)$/ ) {
             unless ( $module->check_datasource_credentials ) {
                 $class  = DISPATCH->{'login'};
-                $module = $class->new( 
+                $module = $class->new(
                     apr          => $apr,
                     redirect_url => $apr->url( -path => 1, -query => 1 ),
                     %args,
@@ -171,7 +172,7 @@ the handler to the derived class's "handler" method.
             }
         }
 
-        $status = $module->handler( $apr );
+        $status = $module->handler($apr);
     };
 
     if ( my $e = $@ || $module->error ) {
@@ -181,16 +182,15 @@ the handler to the derived class's "handler" method.
             {
                 $t->process(
                     $module->error_template,
-                    {
-                        error        => $e,
+                    {   error        => $e,
                         apr          => $module->apr,
                         page         => $module->page,
                         stylesheet   => $module->stylesheet,
                         data_sources => $module->data_sources,
                     },
                     \$html
-                  )
-                  or $html = $e . '<br>' . $t->error;
+                    )
+                    or $html = $e . '<br>' . $t->error;
             }
             else {
                 $html = $e;
@@ -231,19 +231,19 @@ See if we need to prompt for user/pass for the given datasource.
 
     my $self    = shift;
     my $apr     = $self->apr;
-    my $ds      = $self->data_source($apr->param('data_source')) or return;
+    my $ds      = $self->data_source( $apr->param('data_source') ) or return;
     my $config  = $self->config or return;
     my $db_conf = $config->get_config('database');
 
     if ( my $passwd_file = $db_conf->{'passwd_file'} ) {
         if ( my $cookie = $apr->cookie('CMAP_LOGIN') ) {
-            my $sekrit  = 'r1ce1sn2c3';
+            my $sekrit = 'r1ce1sn2c3';
             my ( $user, $ds2, $auth ) = split( /:/, $cookie );
-            return $ds eq $ds2 &&
-                md5( $user . $ds . $sekrit ) eq $auth;
+            return $ds                          eq $ds2
+                && md5( $user . $ds . $sekrit ) eq $auth;
         }
         else {
-            return 0;    
+            return 0;
         }
     }
     else {
@@ -312,7 +312,7 @@ it, and this method will never return anything.
             unless ($@) {
                 my $r = Apache->request;
                 $self->{'page'} = $page_object->new($r)
-                  or return $self->error(
+                    or return $self->error(
                     qq[Error creating page object ("$page_object")]);
             }
         }
@@ -345,15 +345,14 @@ Return any defined stylesheet.
 }
 
 # ----------------------------------------------------
-sub handle_cookie {
+sub read_cookie {
 
 =pod
 
-=head2 handle_cookie
+=head2 read_cookie
 
 Get the current preferences and any existing cookie.  Always take
-current settings over cookie settings.  End by always setting
-cookie with current settings.
+current settings over cookie settings.  
 
 =cut
 
@@ -375,19 +374,51 @@ cookie with current settings.
     }
 
     #
+    # This updates the preferences with whatever is in the latest request from
+    # the user.  If the preference isn't defined in this request, then we'll
+    # leave whatever's there.  If nothing is defined, then we'll set it with
+    # the default value.
+    #
+    # If this references a session or a saved link, then that will have the
+    # information in it, so we don't want to use a cookie.
+    unless ( $apr->param('session_id') and $apr->param('saved_link_id') ) {
+        for my $pref (@preference_fields) {
+            my $value =
+                  defined $apr->param($pref)  ? $apr->param($pref)
+                : defined $preferences{$pref} ? $preferences{$pref}
+                : $self->config_data($pref) || '';
+
+            $apr->param( $pref, $value );
+        }
+    }
+
+    return 1;
+}
+
+# ----------------------------------------------------
+sub write_cookie {
+
+=pod
+
+=head2 write_cookie
+
+End by always setting cookie with current settings.
+
+=cut
+
+    my $self              = shift;
+    my $apr               = $self->apr;
+    my @preference_fields = @{ +PREFERENCE_FIELDS };
+    my $cookie_name       = $self->config_data('user_pref_cookie_name') || '';
+    my %preferences       = ();
+
+    #
     # This updates the preferences with whatever is in the latest
-    # request from the user.  If the preference isn't defined in this
-    # request, then we'll leave whatever's there.  If nothing is
-    # defined, then we'll set it with the default value.
+    # request from the user.
     #
     for my $pref (@preference_fields) {
-        my $value =
-            defined $apr->param($pref)  ? $apr->param($pref)
-          : defined $preferences{$pref} ? $preferences{$pref}
-          : $self->config_data($pref) || '';
-
-        $apr->param( $pref, $value );
-        $preferences{$pref} = $value;
+        next unless ( defined $apr->param($pref) );
+        $preferences{$pref} = $apr->param($pref);
     }
 
     #

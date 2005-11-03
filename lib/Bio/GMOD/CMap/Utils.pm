@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.60 2005-10-28 13:54:40 mwz444 Exp $
+# $Id: Utils.pm,v 1.61 2005-11-03 16:12:25 mwz444 Exp $
 
 =head1 NAME
 
@@ -34,7 +34,7 @@ use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.60 $)[-1];
+$VERSION = (qw$Revision: 1.61 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
@@ -1064,12 +1064,14 @@ sub _parse_session_step {
     my $parsed_url_options_ref = $args{'parsed_url_options_ref'};
     my $ref_map_accs_ref       = $args{'ref_map_accs_ref'};
 
+    my %param_specified = map { $_ => 1 } $apr->param();
+
     # if this was submitted through a button
     # then use all of the menu parameters
     # otherwise check against the session
     unless ( $apr->param('sub') ) {
         for my $param (@SESSION_PARAMS) {
-            unless ( defined( $parsed_url_options_ref->{$param} ) ) {
+            unless ( $param_specified{$param} ) {
                 $parsed_url_options_ref->{$param} = $session_step->{$param};
                 $apr->param( $param, $session_step->{$param} )
                     if ( ref $session_step->{$param} eq '' );

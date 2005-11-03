@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.118 2005-10-28 03:31:01 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.119 2005-11-03 16:12:25 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.118 $)[-1];
+$VERSION = (qw$Revision: 1.119 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -300,6 +300,9 @@ sub handler {
                 )
                 or $detail_html = $t->error;
 
+           # This has to re-write the cookie because the data may have changed
+           # since Apache.pm wrote it.
+            $self->write_cookie;
             print $apr->header(
                 -type   => 'text/html',
                 -cookie => $self->cookie
@@ -308,6 +311,10 @@ sub handler {
         }
     }
     else {
+
+        # This has to re-write the cookie because the data may have changed
+        # since Apache.pm wrote it.
+        $self->write_cookie;
 
         # Regular map viewing
         print $apr->header(

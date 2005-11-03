@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.37 2005-10-24 17:09:11 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.38 2005-11-03 16:12:25 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.37 $)[-1];
+$VERSION = (qw$Revision: 1.38 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -533,6 +533,9 @@ use constant NUMBER_RE => qr{^\-?\d+(?:\.\d+)?$};
 #
 # The fields to remember between requests and sessions.
 #
+# We're leaving out "collapse_feature", "clear_view" and
+# "ignore_image_map_sanity" because it would be best if they were reset each
+# time.
 use constant PREFERENCE_FIELDS => [ qw(
     highlight
     image_size
@@ -540,7 +543,6 @@ use constant PREFERENCE_FIELDS => [ qw(
     image_type  
     label_features
     data_source
-    collapse_features
     ref_species_acc
     aggregate
     cluster_corr
@@ -551,7 +553,9 @@ use constant PREFERENCE_FIELDS => [ qw(
     split_agg_ev
     comp_menu_order
     link_group
+    omit_area_boxes
 ) ];
+
 
 use constant VALID_BOOLEAN => {
     ''  => 1,
