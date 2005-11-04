@@ -2,18 +2,17 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.119 2005-11-03 16:12:25 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.120 2005-11-04 20:51:44 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.119 $)[-1];
+$VERSION = (qw$Revision: 1.120 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
 use Bio::GMOD::CMap::Drawer;
 use Bio::GMOD::CMap::Data;
 use Bio::GMOD::CMap::Utils;
-use CGI::Session;
 use Template;
 use URI::Escape;
 use Data::Dumper;
