@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.62 2005-11-03 20:27:36 mwz444 Exp $
+# $Id: Utils.pm,v 1.63 2005-11-04 20:55:27 mwz444 Exp $
 
 =head1 NAME
 
@@ -34,7 +34,7 @@ use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.62 $)[-1];
+$VERSION = (qw$Revision: 1.63 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
@@ -1339,6 +1339,8 @@ sub _get_or_create_session {
     my %args                   = @_;
     my $parsed_url_options_ref = $args{'parsed_url_options_ref'};
     my $calling_cmap_object    = $args{'calling_cmap_object'};
+    my $session_dir = $calling_cmap_object->config_data('session_dir')
+        || DEFAULT->{'session_dir'};
 
     if ( $parsed_url_options_ref->{'session_id'} ) {
 
@@ -1346,7 +1348,7 @@ sub _get_or_create_session {
         $parsed_url_options_ref->{'session'} = new CGI::Session(
             "driver:File",
             $parsed_url_options_ref->{'session_id'},
-            { Directory => '/tmp' }
+            { Directory => $session_dir }
         );
         unless ( $parsed_url_options_ref->{'session_data_object'}
             = $parsed_url_options_ref->{'session'}->param('object') )
@@ -1361,7 +1363,7 @@ sub _get_or_create_session {
     else {
         $parsed_url_options_ref->{'session'}
             = new CGI::Session( "driver:File", undef,
-            { Directory => '/tmp' } );
+            { Directory => $session_dir } );
         $parsed_url_options_ref->{'session_id'}
             = $parsed_url_options_ref->{'session'}->id();
         $parsed_url_options_ref->{'step'} = 0;

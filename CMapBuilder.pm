@@ -86,6 +86,15 @@ sub ACTION_install {
         warn "Can't create image cache dir $cache_dir: $@\n" if $@;
     }
 
+    #
+    # Make the temp dir for the sessions
+    #
+    my $session_dir = $self->notes('SESSIONS');
+    unless ( -d $session_dir ) {
+        eval { mkpath( $session_dir, 0, 0777 ) };
+        warn "Can't create image session dir $session_dir: $@\n" if $@;
+    }
+
     $self->SUPER::ACTION_install;
 
     chomp( my $host = `hostname` || 'localhost' );

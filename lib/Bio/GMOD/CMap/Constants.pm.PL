@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.38 2005-11-03 16:12:25 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.39 2005-11-04 20:55:27 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.38 $)[-1];
+$VERSION = (qw$Revision: 1.39 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -433,6 +433,11 @@ use constant DEFAULT => {
     min_tick_distance => 40,
 
     #
+    # Where to see more on a map type.
+    #
+    map_details_url => 'map_details',
+
+    #
     # How to draw a map.
     #
     map_shape => 'box',
@@ -487,12 +492,12 @@ use constant DEFAULT => {
     #
     path_info => 'index',
 
-    #
-    # Where to see more on a map type.
-    #
-    map_details_url => 'map_details',
-
     scale_maps => 0,
+
+    # 
+    # The directory where session files are stored
+    #
+    session_dir => '/tmp',
 
     #
     # The colors of the slot background and border.

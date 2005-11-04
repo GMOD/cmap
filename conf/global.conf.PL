@@ -5,15 +5,15 @@ use CMapBuilder;
 use Cwd;
 use File::Basename qw(&basename &dirname);
 
-
-my $builder      = CMapBuilder->current;
-my $template_dir = $builder->notes('TEMPLATES');
-my $cache_dir    = $builder->notes('CACHE');
+my $builder         = CMapBuilder->current;
+my $template_dir    = $builder->notes('TEMPLATES');
+my $cache_dir       = $builder->notes('CACHE');
+my $session_dir     = $builder->notes('SESSIONS');
 
 my $origdir = cwd;
 chdir dirname($0);
 my $file;
-($file = basename($0)) =~ s/\.PL$//;
+( $file = basename($0) ) =~ s/\.PL$//;
 open OUT, ">$file" or die "Can't write file '$file': $!\n";
 print "Extracting $file (with variable substitutions)\n";
 print OUT<<"!GROK!THIS!";
@@ -34,7 +34,7 @@ print OUT<<"!GROK!THIS!";
 template_dir $template_dir
 
 #   
-# An absolute path to the directory where images are written I would
+# An absolute path to the directory where images are written.  I would
 # also suggest you purge this directory for old images so you don't
 # fill up your disk.  Here's a simple cron job you can put in your
 # root's crontab (all on one line, of course):
@@ -45,6 +45,13 @@ template_dir $template_dir
 # Default: /usr/local/apache/htdocs/cmap/tmp
 #
 cache_dir $cache_dir
+
+#   
+# An absolute path to the directory where session files are written.  
+#
+# Default: /usr/local/apache/htdocs/cmap/tmp
+#
+session_dir $session_dir
 
 #
 # Which database should be the default

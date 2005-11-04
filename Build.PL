@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.50 2005-10-23 05:03:32 mwz444 Exp $
+# $Id: Build.PL,v 1.51 2005-11-04 20:55:27 mwz444 Exp $
 
 use strict;
 use CMapBuilder;
@@ -10,7 +10,15 @@ if ( $@ =~ /Can't locate/ ) {
     exit(0);
 }
 
-my @ARGS = qw[ PREFIX CONF CGIBIN TEMPLATES HTDOCS CACHE ];
+my @OPTION_LIST = qw[
+    CONF
+    CGIBIN
+    TEMPLATES
+    HTDOCS
+    CACHE
+    SESSIONS
+];
+my @ARGS = qw[ PREFIX ], @OPTION_LIST;
 my %ARGS = (
     PREFIX => {
         desc    => 'A directory prefix for all install arguments',
@@ -36,6 +44,10 @@ my %ARGS = (
         desc    => 'Location for temporary image files',
         default => catdir('tmp'),
     },
+    SESSIONS => {
+        desc    => 'Location for session files',
+        default => catdir('tmp', 'sessions'),
+    },
 );
 
 my $OPTIONS = join( '|', @ARGS );
@@ -52,12 +64,13 @@ my $USAGE = join(
                 "%10s: %-s\n\t\t(default: %s%s)\n",
                 $_,
                 $ARGS{$_}{'desc'},
-                $_   eq 'PREFIX' ? ''
-                : $_ eq 'CACHE'  ? '$PREFIX + $HTDOCS + '
+                $_ eq 'PREFIX' ? ''
+                : ( $_ eq 'CACHE' or $_ eq 'SESSIONS' )
+                ? '$PREFIX + $HTDOCS + '
                 : '$PREFIX + ',
                 $ARGS{$_}{'default'}
-              )
-          } @ARGS
+                )
+            } @ARGS
     ),
     "e.g., 'perl Build.PL PREFIX=/usr/local/apache'",
     '',
@@ -117,12 +130,15 @@ if ( !%OPTIONS ) {
 # Make sure we have usable options.
 #
 if ( $OPTIONS{'PREFIX'} ) {
-    for my $option (qw[ CONF CGIBIN TEMPLATES CACHE HTDOCS ]) {
-        $OPTIONS{$option} ||=
-          $option eq 'CACHE'
-          ? catdir( $OPTIONS{'HTDOCS'} || $ARGS{'HTDOCS'}{'default'},
-            $ARGS{'CACHE'}{'default'} )
-          : $ARGS{$option}{'default'};
+    for my $option (@OPTION_LIST) {
+        if ( $option eq 'CACHE' or $option eq 'SESSIONS' ) {
+            $OPTIONS{$option}
+                ||= catdir( $OPTIONS{'HTDOCS'} || $ARGS{'HTDOCS'}{'default'},
+                $ARGS{$option}{'default'} );
+        }
+        else {
+            $OPTIONS{$option} ||= $ARGS{$option}{'default'};
+        }
 
         #
         # Now add the default prefix
@@ -132,15 +148,18 @@ if ( $OPTIONS{'PREFIX'} ) {
 }
 else {
     my $prefix = $ARGS{'PREFIX'}{'default'};
-    for my $option (qw[ CONF TEMPLATES CGIBIN HTDOCS CACHE ]) {
-        $OPTIONS{$option} ||=
-          $option eq 'CACHE'
-          ? catdir(
-            $prefix,
-            $ARGS{'HTDOCS'}{'default'},
-            $ARGS{$option}{'default'}
-          )
-          : catdir( $ARGS{'PREFIX'}{'default'}, $ARGS{$option}{'default'} );
+    for my $option (@OPTION_LIST) {
+        if ( $option eq 'CACHE' or $option eq 'SESSIONS' ) {
+            $OPTIONS{$option} ||= catdir(
+                $prefix,
+                $ARGS{'HTDOCS'}{'default'},
+                $ARGS{$option}{'default'}
+            );
+        }
+        else {
+            $OPTIONS{$option} ||= catdir( $ARGS{'PREFIX'}{'default'},
+                $ARGS{$option}{'default'} );
+        }
     }
 }
 
@@ -148,7 +167,7 @@ print "The following options will be used to install CMap:\n", join(
     "\n", '',
     (
         map { sprintf( "%10s: %-s", $_, $OPTIONS{$_} ) }
-          qw[ CONF CGIBIN TEMPLATES HTDOCS CACHE ]
+         @OPTION_LIST
     ),
     '',
     ''
@@ -159,7 +178,7 @@ print "The following options will be used to install CMap:\n", join(
 # Write out our current config options.
 #
 open F, ">$install_conf" or warn "Can't write '$install_conf': $!\n";
-print F "$_=$OPTIONS{$_}\n" for qw[ CONF CGIBIN TEMPLATES HTDOCS CACHE ];
+print F "$_=$OPTIONS{$_}\n" for @OPTION_LIST;
 close F;
 
 #
@@ -214,7 +233,7 @@ my $builder = CMapBuilder->new(
 );
 
 $builder->notes( $_, $OPTIONS{$_} )
-  for qw[ CONF CGIBIN TEMPLATES HTDOCS CACHE ];
+  for @OPTION_LIST;
 
 my $tarball = $builder->dist_dir . '.tar.gz';
 
