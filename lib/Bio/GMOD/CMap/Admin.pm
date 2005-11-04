@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin;
 
 # vim: set ft=perl:
 
-# $Id: Admin.pm,v 1.86 2005-10-04 13:53:26 mwz444 Exp $
+# $Id: Admin.pm,v 1.87 2005-11-04 20:50:35 mwz444 Exp $
 
 =head1 NAME
 
@@ -35,7 +35,7 @@ shared by my "cmap_admin.pl" script.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.86 $)[-1];
+$VERSION = (qw$Revision: 1.87 $)[-1];
 
 use Data::Dumper;
 use Data::Pageset;
@@ -747,7 +747,7 @@ If a new Map is added, Levels 2,3 and 4 need to be purged.
           or return $self->ERROR(
             "Cache Level: $i should not be higher than " . CACHE_LEVELS );
         my %params = ( 'namespace' => $namespace, );
-        my $cache = new Cache::FileCache( \%params );
+        my $cache = new Cache::SizeAwareFileCache( \%params );
         $cache->clear;
     }
 }
