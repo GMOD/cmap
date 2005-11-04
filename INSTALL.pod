@@ -8,7 +8,7 @@ CMap Install
 
 =head1 VERSION
 
-$Revision: 1.14 $
+$Revision: 1.15 $
 
 =head1 QUICK START
 
@@ -412,6 +412,15 @@ Execute "perl Build.PL -h" to read a brief help message on what they
 are and how you can specify your choices.  Reasonable defaults are
 provided for all the options if you have no strong feelings about
 where to install things.
+
+To change the directories where components are installed from the
+default locations, specify them in the "./Build install" command by
+using the "install_path" option.  You can change the location of the
+Perl modules (lib), the scripts (script), the documentation (libdoc)
+and others.  (See the documentation for Module::Build for further
+details).
+
+  # ./Build install --install_path lib=/new/path/
 
 During the build process, several important steps will be taken:
 
