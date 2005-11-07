@@ -110,10 +110,10 @@ CREATE TABLE cmap_attribute (
 
 CREATE TABLE cmap_correspondence_evidence (
   correspondence_evidence_id int(11) NOT NULL default '0',
-  correspondence_evidence_acc varchar(20) NOT NULL default '',
+  correspondence_evidence_acc varchar(30) NOT NULL default '',
   feature_correspondence_id int(11) NOT NULL default '0',
-  evidence_type_acc varchar(20) NOT NULL default '0',
-  score double(8,2) default NULL,
+  evidence_type_acc varchar(30) NOT NULL default '0',
+  score double default NULL,
   rank int(11) NOT NULL default '0',
   PRIMARY KEY  (correspondence_evidence_id),
   UNIQUE KEY correspondence_evidence_acc (correspondence_evidence_acc),
@@ -134,8 +134,8 @@ CREATE TABLE cmap_correspondence_lookup (
   feature_stop2 double(11,2) default NULL,
   map_id1 int(11) default NULL,
   map_id2 int(11) default NULL,
-  feature_type_acc1 varchar(20) default NULL,
-  feature_type_acc2 varchar(20) default NULL,
+  feature_type_acc1 varchar(30) default NULL,
+  feature_type_acc2 varchar(30) default NULL,
   KEY feature_id1 (feature_id1),
   KEY corr_id (feature_correspondence_id),
   KEY cl_map_id1 (map_id1),
@@ -149,14 +149,14 @@ CREATE TABLE cmap_correspondence_lookup (
 --
 
 CREATE TABLE cmap_correspondence_matrix (
-  reference_map_acc varchar(20) NOT NULL default '0',
+  reference_map_acc varchar(30) NOT NULL default '0',
   reference_map_name varchar(32) NOT NULL default '',
-  reference_map_set_acc varchar(20) NOT NULL default '0',
-  reference_species_acc varchar(20) NOT NULL default '0',
-  link_map_acc varchar(20) default NULL,
+  reference_map_set_acc varchar(30) NOT NULL default '0',
+  reference_species_acc varchar(30) NOT NULL default '0',
+  link_map_acc varchar(30) default NULL,
   link_map_name varchar(32) default NULL,
-  link_map_set_acc varchar(20) NOT NULL default '0',
-  link_species_acc varchar(20) NOT NULL default '0',
+  link_map_set_acc varchar(30) NOT NULL default '0',
+  link_species_acc varchar(30) NOT NULL default '0',
   no_correspondences int(11) NOT NULL default '0'
 ) TYPE=MyISAM;
 
@@ -166,9 +166,9 @@ CREATE TABLE cmap_correspondence_matrix (
 
 CREATE TABLE cmap_feature (
   feature_id int(11) NOT NULL default '0',
-  feature_acc varchar(20) NOT NULL default '',
-  map_id int(11) default NULL,
-  feature_type_acc varchar(20) NOT NULL default '0',
+  feature_acc varchar(30) NOT NULL default '',
+  map_id int(11) NOT NULL default '0',
+  feature_type_acc varchar(30) NOT NULL default '0',
   feature_name varchar(32) NOT NULL default '',
   is_landmark tinyint(4) NOT NULL default '0',
   feature_start double(11,2) NOT NULL default '0.00',
@@ -206,7 +206,7 @@ CREATE TABLE cmap_feature_alias (
 
 CREATE TABLE cmap_feature_correspondence (
   feature_correspondence_id int(11) NOT NULL default '0',
-  feature_correspondence_acc varchar(20) NOT NULL default '',
+  feature_correspondence_acc varchar(30) NOT NULL default '',
   feature_id1 int(11) NOT NULL default '0',
   feature_id2 int(11) NOT NULL default '0',
   is_enabled tinyint(4) NOT NULL default '1',
@@ -222,7 +222,7 @@ CREATE TABLE cmap_feature_correspondence (
 
 CREATE TABLE cmap_map (
   map_id int(11) NOT NULL default '0',
-  map_acc varchar(20) NOT NULL default '',
+  map_acc varchar(30) NOT NULL default '',
   map_set_id int(11) NOT NULL default '0',
   map_name varchar(32) NOT NULL default '',
   display_order int(11) NOT NULL default '1',
@@ -240,10 +240,10 @@ CREATE TABLE cmap_map (
 
 CREATE TABLE cmap_map_set (
   map_set_id int(11) NOT NULL default '0',
-  map_set_acc varchar(20) NOT NULL default '',
+  map_set_acc varchar(30) NOT NULL default '',
   map_set_name varchar(64) NOT NULL default '',
   map_set_short_name varchar(30) NOT NULL default '',
-  map_type_acc varchar(20) NOT NULL default '0',
+  map_type_acc varchar(30) NOT NULL default '0',
   species_id int(11) NOT NULL default '0',
   published_on date default NULL,
   display_order int(11) NOT NULL default '1',
@@ -275,12 +275,13 @@ CREATE TABLE cmap_next_number (
 
 CREATE TABLE cmap_species (
   species_id int(11) NOT NULL default '0',
-  species_acc varchar(20) NOT NULL default '',
+  species_acc varchar(30) NOT NULL default '',
   species_common_name varchar(64) NOT NULL default '',
   species_full_name varchar(64) NOT NULL default '',
   display_order int(11) NOT NULL default '1',
   PRIMARY KEY  (species_id),
-  KEY acc_id_species_id (species_acc,species_id)
+  UNIQUE KEY species_acc (species_acc),
+  KEY acc_id_species_id (species_acc, species_id)
 ) TYPE=MyISAM;
 
 --
@@ -296,5 +297,24 @@ CREATE TABLE cmap_xref (
   xref_url text NOT NULL,
   PRIMARY KEY  (xref_id),
   KEY table_name (table_name,object_id,display_order)
+) TYPE=MyISAM;
+
+--
+-- Table structure for table `cmap_saved_link`
+--
+
+CREATE TABLE cmap_saved_link (
+  saved_link_id int(11) NOT NULL default '0',
+  saved_on date default NULL,
+  last_access date default NULL,
+  session_step_object text NOT NULL,
+  saved_url text NOT NULL,
+  legacy_url  text NOT NULL,
+  link_title varchar(50) default '',
+  link_comment varchar(200) default '',
+  link_group varchar(40) NOT NULL default '',
+  hidden  tinyint(4) NOT NULL default '0',
+  PRIMARY KEY  (saved_link_id),
+  KEY link_group (link_group)
 ) TYPE=MyISAM;
 
