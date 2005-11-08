@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.260 2005-11-03 21:06:47 mwz444 Exp $
+# $Id: Data.pm,v 1.261 2005-11-08 17:07:45 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.260 $)[-1];
+$VERSION = (qw$Revision: 1.261 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -1637,6 +1637,7 @@ out which maps have relationships.
             map_type            => $map_set->{'map_type'},
             species_common_name => $map_set->{'species_common_name'},
             map_set_name        => $map_set->{'map_set_name'},
+            map_set_short_name  => $map_set->{'map_set_short_name'},
             map_set_acc         => $map_set->{'map_set_acc'},
             no_correspondences  => $total_correspondences,
             maps                => \@maps,
