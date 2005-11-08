@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.63 2005-11-04 20:55:27 mwz444 Exp $
+# $Id: Utils.pm,v 1.64 2005-11-08 20:26:47 mwz444 Exp $
 
 =head1 NAME
 
@@ -34,7 +34,7 @@ use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.63 $)[-1];
+$VERSION = (qw$Revision: 1.64 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
@@ -1710,8 +1710,8 @@ sub parse_url {
         $parsed_url_options{'ref_map_start'}         = undef;
         $parsed_url_options{'ref_map_stop'}          = undef;
         $parsed_url_options{'comparative_maps'}      = undef;
-        $parsed_url_options{'comparative_map_right'} = {};
-        $parsed_url_options{'comparative_map_left'}  = {};
+        $parsed_url_options{'comparative_map_right'} = [];
+        $parsed_url_options{'comparative_map_left'}  = [];
     }
 
     # If ref_map_start/stop are defined and there is only one ref map
@@ -1774,7 +1774,7 @@ sub parse_url {
               $side eq RIGHT
             ? $parsed_url_options{'comp_map_set_right'}
             : $parsed_url_options{'comp_map_set_left'};
-        if (@$cmap) {
+        if (@{$cmap || []}) {
             if ( grep {/^-1$/} @$cmap ) {
                 unless (
                     defined( $slots{$slot_no}->{'map_sets'}{$cmap_set_acc} ) )
