@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.116 2005-10-27 18:01:03 mwz444 Exp $
+# $Id: Drawer.pm,v 1.117 2005-11-09 15:29:41 mwz444 Exp $
 
 =head1 NAME
 
@@ -347,7 +347,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.116 $)[-1];
+$VERSION = (qw$Revision: 1.117 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -2347,12 +2347,12 @@ Returns the data for one or all slots.
     my $data = $self->data;
 
     if ( defined( my $slot_no = shift ) ) {
-        return exists $data->{'slots'}{$slot_no}
-            ? $data->{'slots'}{$slot_no}
+        return exists $data->{'slot_data'}{$slot_no}
+            ? $data->{'slot_data'}{$slot_no}
             : undef;
     }
     else {
-        return $data->{'slots'};
+        return $data->{'slot_data'};
     }
 }
 

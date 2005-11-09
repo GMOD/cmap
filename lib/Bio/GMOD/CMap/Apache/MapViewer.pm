@@ -2,11 +2,11 @@ package Bio::GMOD::CMap::Apache::MapViewer;
 
 # vim: set ft=perl:
 
-# $Id: MapViewer.pm,v 1.120 2005-11-04 20:51:44 mwz444 Exp $
+# $Id: MapViewer.pm,v 1.121 2005-11-09 15:29:41 mwz444 Exp $
 
 use strict;
 use vars qw( $VERSION $INTRO $PAGE_SIZE $MAX_PAGES);
-$VERSION = (qw$Revision: 1.120 $)[-1];
+$VERSION = (qw$Revision: 1.121 $)[-1];
 
 use Bio::GMOD::CMap::Apache;
 use Bio::GMOD::CMap::Constants;
@@ -121,7 +121,7 @@ sub handler {
         evidence_type_score => $parsed_url_options{'evidence_type_score'},
         ref_species_acc     => $parsed_url_options{'ref_species_acc'},
         ref_map_set_acc     => $parsed_url_options{'ref_map_set_acc'},
-        ref_slot_data       => $drawer->{'data'}->{'slots'}{0},
+        ref_slot_data       => $drawer->{'data'}->{'slot_data'}{0},
         )
         or return $self->error( $data->error );
 
@@ -194,19 +194,14 @@ sub handler {
         or $html = $t->error;
 
     if ( $parsed_url_options{'path_info'} eq 'map_details'
-        and scalar( keys %{ $parsed_url_options{'slots'}{0} } ) == 1 )
+        and scalar( keys %{ $drawer->{'data'}{'slot_data'}{0}} ) == 1 )
     {
         $PAGE_SIZE ||= $self->config_data('max_child_elements') || 0;
         $MAX_PAGES ||= $self->config_data('max_search_pages')   || 1;
-        my ($map_acc) = keys %{ $parsed_url_options{'slots'}{0} };
-        my $map_id = $self->sql->acc_id_to_internal_id(
-            cmap_object => $self,
-            object_type => 'map',
-            acc_id      => $map_acc,
-        );
+        my ($map_id) = keys %{ $drawer->{'data'}{'slot_data'}{0} };
 
         my $detail_data = $data->map_detail_data(
-            ref_map                 => $drawer->{'data'}{'slots'}{0}{$map_id},
+            ref_map                 => $drawer->{'data'}{'slot_data'}{0}{$map_id},
             map_id                  => $map_id,
             highlight               => $parsed_url_options{'highlight'},
             included_feature_types  => $parsed_url_options{'feature_types'},
@@ -269,9 +264,9 @@ sub handler {
         }
         else {
             my @map_ids = map { $_ || () }
-                keys %{ $drawer->{'data'}{'slots'}{'0'} };
+                keys %{ $drawer->{'data'}{'slot_data'}{'0'} };
             my $ref_map_id = shift @map_ids;
-            my $ref_map    = $drawer->{'data'}{'slots'}{'0'}{$ref_map_id};
+            my $ref_map    = $drawer->{'data'}{'slot_data'}{'0'}{$ref_map_id};
             $apr->param( 'ref_map_start', $ref_map->{'start'} );
             $apr->param( 'ref_map_stop',  $ref_map->{'stop'} );
 

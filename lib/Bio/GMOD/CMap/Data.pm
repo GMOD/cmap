@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.261 2005-11-08 17:07:45 mwz444 Exp $
+# $Id: Data.pm,v 1.262 2005-11-09 15:29:40 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.261 $)[-1];
+$VERSION = (qw$Revision: 1.262 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -360,7 +360,7 @@ sub cmap_data {
             : $slot_no + 1;
         my $ref_map = defined $ref_slot_no ? $slots->{$ref_slot_no} : undef;
 
-        $data->{'slots'}{$slot_no} = $self->slot_data(
+        $data->{'slot_data'}{$slot_no} = $self->slot_data(
             map                       => \$cur_map,                     # pass
             feature_correspondences   => \%feature_correspondences,     # by
             intraslot_correspondences => \%intraslot_correspondences,   #
@@ -386,7 +386,7 @@ sub cmap_data {
             or last;
 
         #Set the map order for this slot
-        $self->sorted_map_ids( $slot_no, $data->{'slots'}{$slot_no} );
+        $self->sorted_map_ids( $slot_no, $data->{'slot_data'}{$slot_no} );
 
     }
     ###Get the extra javascript that goes along with the feature_types.
@@ -421,8 +421,8 @@ sub cmap_data {
     $data->{'evidence_type_score'}         = $evidence_type_score;
     $data->{'extra_code'}                  = $extra_code;
     $data->{'extra_form'}                  = $extra_form;
-    $data->{'max_unit_size'} = $self->get_max_unit_size( $data->{'slots'} );
-    $data->{'ref_unit_size'} = $self->get_ref_unit_size( $data->{'slots'} );
+    $data->{'max_unit_size'} = $self->get_max_unit_size( $data->{'slot_data'} );
+    $data->{'ref_unit_size'} = $self->get_ref_unit_size( $data->{'slot_data'} );
     $data->{'feature_default_display'}
         = $self->feature_default_display($url_feature_default_display);
 
