@@ -916,7 +916,7 @@ function selectAllOptions(select){
               </tr>
               <tr>
                 <td align="left" valign="top">Clickable Image</td>
-                <td><input type="radio" name="omit_area_boxes" value="0"[%- IF apr.param('omit_area_boxes')==0; ' checked'; END -%]>Fully Functional</td>
+                <td><input type="radio" name="omit_area_boxes" value="0"[%- IF apr.param('omit_area_boxes')==0; ' checked'; END -%]>Default</td>
                 <td><input type="radio" name="omit_area_boxes" value="1"[%- IF apr.param('omit_area_boxes')==1; ' checked'; END -%]>Omit Features</td>
                 <td><input type="radio" name="omit_area_boxes" value="2"[%- IF apr.param('omit_area_boxes')==2; ' checked'; END -%]>Omit All Buttons</td>
               </tr>
@@ -940,7 +940,7 @@ function selectAllOptions(select){
                 <td align="left" valign="top">Menu Order of Comparative Maps:</td>
                   [%- IF apr.param('comp_menu_order')=="corrs"; comp_menu_order="corrs"; ELSE; comp_menu_order="display_order"; END -%]
                 <td><input type="radio" name="comp_menu_order" value="display_order"
-                  [%- IF comp_menu_order=="display_order"; ' checked'; END -%]>Display Order(default)</td>
+                  [%- IF comp_menu_order=="display_order"; ' checked'; END -%]>Predefined<br>Order</td>
                 <td><input type="radio" name="comp_menu_order" value="corrs"
                   [%- IF comp_menu_order=="corrs"; ' checked'; END -%]>Number of <br> Correspondences</td>
               </tr>
