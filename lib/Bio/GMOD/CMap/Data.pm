@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.262 2005-11-09 15:29:40 mwz444 Exp $
+# $Id: Data.pm,v 1.263 2005-11-09 23:49:21 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.262 $)[-1];
+$VERSION = (qw$Revision: 1.263 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -1630,7 +1630,7 @@ out which maps have relationships.
         }
 
         next unless $total_correspondences;
-        next if !@maps;
+        next if (!@maps and not $map_set->{'is_relational_map'});
 
         push @sorted_map_sets,
             {
