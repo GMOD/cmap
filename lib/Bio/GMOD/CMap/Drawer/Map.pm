@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.186 2005-11-09 22:30:26 mwz444 Exp $
+# $Id: Map.pm,v 1.187 2005-11-09 23:50:45 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.186 $)[-1];
+$VERSION = (qw$Revision: 1.187 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -2149,6 +2149,8 @@ sub place_map_y {
 
             my $all_ref_corrs = $ref_corrs->{$ref_map_id};
             next unless defined($all_ref_corrs);
+
+            # help offset the lines when aggregating multiple evidence types
             my $drawing_offset = 0;
             foreach my $ref_corr (@$all_ref_corrs) {
 
@@ -2193,14 +2195,14 @@ sub place_map_y {
                     ? (
                     $ref_pos->{'y2'} - (
                         (   $ref_corr->{'min_position2'}
-                                - $ref_pos->{'map_start2'}
+                                - $ref_pos->{'map_start'}
                         ) / $ref_map_unit_len
                         ) * $ref_map_pixel_len
                     )
                     : (
                     $ref_pos->{'y1'} + (
                         (   $ref_corr->{'min_position2'}
-                                - $ref_pos->{'map_start2'}
+                                - $ref_pos->{'map_start'}
                         ) / $ref_map_unit_len
                         ) * $ref_map_pixel_len
                     );
@@ -2208,16 +2210,19 @@ sub place_map_y {
                     $ref_pos->{'is_flipped'}
                     ? $ref_pos->{'y2'} + (
                     (   $ref_corr->{'max_position2'}
-                            - $ref_pos->{'map_start2'}
+                            - $ref_pos->{'map_start'}
                     ) / $ref_map_unit_len
                     ) * $ref_map_pixel_len
                     : $ref_pos->{'y1'} + (
                     (   $ref_corr->{'max_position2'}
-                            - $ref_pos->{'map_start2'}
+                            - $ref_pos->{'map_start'}
                     ) / $ref_map_unit_len
                     ) * $ref_map_pixel_len;
 
-                my $ref_map_x1 = $ref_pos->{'x1'} + $drawing_offset;
+                my $ref_map_x =
+                      ( $slot_no > 0 )
+                    ? ( $ref_pos->{'x2'} + $drawing_offset )
+                    : ( $ref_pos->{'x1'} - $drawing_offset );
 
                 # add aggregate correspondences to ref_connections
                 if ( $self->aggregate <=> 2 ) {
@@ -2225,7 +2230,7 @@ sub place_map_y {
                     # Single line to avg corr
                     push @{ $map_aggregate_corr->{$map_id} },
                         [
-                        $ref_map_x1,
+                        $ref_map_x,
                         $ref_map_mid_y,
                         $ref_corr->{'no_corr'},
                         ( $avg_mid - $self->map_start($map_id) ),
@@ -2247,12 +2252,12 @@ sub place_map_y {
                     # V showing span of corrs
                     push @{ $map_aggregate_corr->{$map_id} },
                         [
-                        $ref_map_x1,            $ref_map_y1,
+                        $ref_map_x,            $ref_map_y1,
                         $ref_corr->{'no_corr'}, $this_agg_y1
                         ];
                     push @{ $map_aggregate_corr->{$map_id} },
                         [
-                        $ref_map_x1,            $ref_map_y2,
+                        $ref_map_x,            $ref_map_y2,
                         $ref_corr->{'no_corr'}, $this_agg_y2
                         ];
                 }
