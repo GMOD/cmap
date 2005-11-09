@@ -6,6 +6,12 @@ ALTER TABLE cmap_map CHANGE COLUMN start_position map_start double(11,2) default
 ALTER TABLE cmap_map CHANGE COLUMN stop_position map_stop double(11,2) default NULL;
 
 update cmap_feature set stop_position = start_position where isNull(stop_position);
+update cmap_correspondence_lookup set stop_position1 = start_position1 where isNull(stop_position1);
+update cmap_correspondence_lookup set stop_position2 = start_position2 where isNull(stop_position2);
+--If you've already changed the column names.
+--update cmap_correspondence_lookup set feature_stop1 = feature_start1 where isNull(feature_stop1);
+--update cmap_correspondence_lookup set feature_stop2 = feature_start2 where isNull(feature_stop2);
+
 ALTER TABLE cmap_feature CHANGE COLUMN start_position feature_start double(11,2) NOT NULL default '0.00';
 ALTER TABLE cmap_feature CHANGE COLUMN stop_position feature_stop double(11,2) NOT NULL;
 DROP INDEX feature_id_map_id_start on cmap_feature;
@@ -43,7 +49,7 @@ CREATE INDEX acc_id_species_id ON cmap_species (species_acc,species_id);
 DROP INDEX cmap_map_set_idx on cmap_map_set;
 CREATE INDEX cmap_map_set_idx ON cmap_map_set (display_order,is_enabled,is_relational_map,map_set_short_name,published_on,species_id);
 
-ALTER TABLE cmap_map_set DROP can_be_reference_map;
+--ALTER TABLE cmap_map_set DROP can_be_reference_map;
 
 --
 -- Table structure for table `cmap_saved_link`
