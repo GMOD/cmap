@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.64 2005-11-08 20:26:47 mwz444 Exp $
+# $Id: Utils.pm,v 1.65 2005-11-09 17:13:10 mwz444 Exp $
 
 =head1 NAME
 
@@ -34,7 +34,7 @@ use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.64 $)[-1];
+$VERSION = (qw$Revision: 1.65 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
@@ -44,7 +44,7 @@ $VERSION = (qw$Revision: 1.64 $)[-1];
     image_type               label_features
     link_group               flip
     session_mod              page_no
-    action                   step
+    action                   
     left_min_corrs           right_min_corrs
     menu_min_corrs           ref_map_start
     ref_map_stop             collapse_features
@@ -57,7 +57,6 @@ $VERSION = (qw$Revision: 1.64 $)[-1];
     prev_ref_map_order       omit_area_boxes
     refMenu                  compMenu
     optionMenu               addOpMenu
-    session_id               saved_link_id
     general_min_corrs        url_for_saving
     included_feature_types   url_feature_default_display
     corr_only_feature_types  ignored_feature_types
@@ -69,6 +68,9 @@ $VERSION = (qw$Revision: 1.64 $)[-1];
 # Not saving these because they should be stored in slots by now.
 #    comparative_map_right    comparative_map_left
 #    comp_map_set_right       comp_map_set_left
+# Not saving because it is unneccessary
+#    session_id               saved_link_id 
+#    step
 
 %SESSION_PARAM_DEFAULT_OF = (
     'comparative_maps' => q{},
