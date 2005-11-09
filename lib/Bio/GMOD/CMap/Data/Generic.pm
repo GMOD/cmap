@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.124 2005-10-29 22:12:08 mwz444 Exp $
+# $Id: Generic.pm,v 1.125 2005-11-09 20:06:42 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.124 $)[-1];
+$VERSION = (qw$Revision: 1.125 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -4209,7 +4209,7 @@ Array of Hashes:
     # Add order to help sorting later
     $sql_str .= " order by feature_start, feature_stop";
 
-    unless ( $return_object = $self->get_cached_results( 4, $sql_str ) ) {
+    unless ( $return_object = $cmap_object->get_cached_results( 4, $sql_str ) ) {
 
         $return_object
             = $db->selectall_arrayref( $sql_str, { Columns => {} } );
@@ -4224,7 +4224,7 @@ Array of Hashes:
             ];
         }
 
-        $self->store_cached_results( 4, $sql_str, $return_object );
+        $cmap_object->store_cached_results( 4, $sql_str, $return_object );
     }
 
     return $return_object;
@@ -4434,7 +4434,7 @@ Not using cache because this query is quicker.
 
     my $sql_str = $select_sql . $from_sql . $where_sql . $group_by_sql;
 
-    unless ( $return_object = $self->get_cached_results( 3, $sql_str ) ) {
+    unless ( $return_object = $cmap_object->get_cached_results( 3, $sql_str ) ) {
         $return_object
             = $db->selectall_arrayref( $sql_str, { Columns => {} } );
 
@@ -4447,7 +4447,7 @@ Not using cache because this query is quicker.
             }
         }
 
-        $self->store_cached_results( 3, $sql_str, $return_object );
+        $cmap_object->store_cached_results( 3, $sql_str, $return_object );
     }
 
     return $return_object;
@@ -6049,7 +6049,7 @@ Array of Hashes:
     }
 
     unless ( $return_object
-        = $self->get_cached_results( 4, $sql_str . join( ',', @identifiers ) )
+        = $cmap_object->get_cached_results( 4, $sql_str . join( ',', @identifiers ) )
         )
     {
 
@@ -6076,7 +6076,7 @@ Array of Hashes:
                 = $evidence_type_data->{ $row->{'evidence_type_acc'} }
                 {'evidence_type'};
         }
-        $self->store_cached_results( 4, $sql_str . $map_id, $return_object );
+        $cmap_object->store_cached_results( 4, $sql_str . $map_id, $return_object );
     }
 
     return $return_object;
@@ -6428,7 +6428,7 @@ Array of Hashes:
     {
         $return_object
             = $db->selectall_arrayref( $sql_str, { Columns => {} }, );
-        $self->store_cached_results( 4, $sql_str, $return_object );
+        $cmap_object->store_cached_results( 4, $sql_str, $return_object );
     }
 
     return $return_object;
@@ -6718,7 +6718,7 @@ If $include_map1_data also has
     {
         $return_object
             = $db->selectall_arrayref( $sql_str, { Columns => {} }, );
-        $self->store_cached_results( 4, $sql_str, $return_object );
+        $cmap_object->store_cached_results( 4, $sql_str, $return_object );
     }
 
     return $return_object;
@@ -8955,7 +8955,7 @@ Array of Hashes:
 
     $sql_str .= $where_sql;
 
-    unless ( $return_object = $self->get_cached_results( 3, $sql_str ) ) {
+    unless ( $return_object = $cmap_object->get_cached_results( 3, $sql_str ) ) {
         $return_object
             = $db->selectall_arrayref( $sql_str, { Columns => {} }, () );
         foreach my $row (@$return_object) {
@@ -8967,7 +8967,7 @@ Array of Hashes:
             $row->{'color'}
                 = $feature_type_data->{ $row->{'feature_type_acc'} }{'color'};
         }
-        $self->store_cached_results( 3, $sql_str, $return_object );
+        $cmap_object->store_cached_results( 3, $sql_str, $return_object );
     }
 
     return $return_object;
