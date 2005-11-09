@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.185 2005-11-03 21:06:48 mwz444 Exp $
+# $Id: Map.pm,v 1.186 2005-11-09 22:30:26 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.185 $)[-1];
+$VERSION = (qw$Revision: 1.186 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -1585,6 +1585,7 @@ MAP:
         } @map_ids
         )
     {
+        # Decide which lane this map should be in
         if (    ( not $self->stack_maps() )
             and $ref_map_order_hash
             and $ref_map_order_hash->{$map_id} )
@@ -1606,18 +1607,27 @@ MAP:
                 $map_lane{$map_id} = 0;
             }
         }
+        # If it doesn't fit in any of the others, make new lane
         $map_lane{$map_id} = scalar @map_columns
             unless defined $map_lane{$map_id};
+
+        # This map is now the lowest value in the lane
+        # change the map_columns value appropriately 
         $map_columns[ $map_lane{$map_id} ]
             = $map_placement_data{$map_id}{'bounds'}[3] + $y_buffer;
 
-        $lane_width[ $map_lane{$map_id} ]
-            = $map_placement_data{$map_id}{'bounds'}[2]
-            - $map_placement_data{$map_id}{'bounds'}[0]
-            if ( not defined( $lane_width[ $map_lane{$map_id} ] )
-            or $lane_width[ $map_lane{$map_id} ]
-            < $map_placement_data{$map_id}{'bounds'}[2]
-            - $map_placement_data{$map_id}{'bounds'}[0] );
+        # Set the lane width if this map is wider than any previous
+        if (not defined( $lane_width[ $map_lane{$map_id} ] )
+            or $lane_width[ $map_lane{$map_id} ] < (
+                $map_placement_data{$map_id}{'bounds'}[2]
+                    - $map_placement_data{$map_id}{'bounds'}[0]
+            )
+            )
+        {
+            $lane_width[ $map_lane{$map_id} ]
+                = $map_placement_data{$map_id}{'bounds'}[2]
+                - $map_placement_data{$map_id}{'bounds'}[0];
+        }
     }
 
     my @lane_base_x;
@@ -2515,7 +2525,6 @@ sub add_topper {
     );
     $map_placement_data->{$map_id}{'map_coords'}[1] += $topper_offset;
     $map_placement_data->{$map_id}{'map_coords'}[3] += $topper_offset;
-    $map_placement_data->{$map_id}{'bounds'}[1]     += $topper_offset;
     $map_placement_data->{$map_id}{'bounds'}[3]     += $topper_offset;
 }
 
