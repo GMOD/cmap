@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.189 2005-11-10 05:22:57 mwz444 Exp $
+# $Id: Map.pm,v 1.190 2005-11-10 15:45:26 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.189 $)[-1];
+$VERSION = (qw$Revision: 1.190 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -3841,7 +3841,7 @@ Button options:
             }
         }
         push @flipping_flips, "$slot_no%3d$acc_id" unless $is_flipped;
-        my $flipping_flip_str = join( ":", @flipping_flips );
+        my $flipping_flip_str = q{} . join( ":", @flipping_flips );
 
         my $flip_url = $self->create_viewer_link(
             $drawer->create_minimal_link_params(),

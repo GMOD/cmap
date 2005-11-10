@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.100 2005-10-27 18:01:02 mwz444 Exp $
+# $Id: CMap.pm,v 1.101 2005-11-10 15:45:26 mwz444 Exp $
 
 =head1 NAME
 
@@ -1183,7 +1183,7 @@ Given information about the link, creates a url to cmap_viewer.
     $url .= "ignore_image_map_sanity=$ignore_image_map_sanity;"
         if $ignore_image_map_sanity;
     $url .= "flip=$flip;"
-        if ( defined($flip) and $flip ne '' );
+        if ( defined($flip) );
     $url .= "left_min_corrs=$left_min_corrs;"
         if ( defined($left_min_corrs) and $left_min_corrs ne '' );
     $url .= "right_min_corrs=$right_min_corrs;"
