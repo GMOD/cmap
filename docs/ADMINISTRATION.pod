@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.20 $
+$Revision: 1.21 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -18,7 +18,8 @@ The "cmap_admin.pl" program is used for all long-running processes that
 aren't practical to address over the HTTP protocol.  It employs a 
 "wizard"-like approach to accomplishing various tasks by asking the 
 curator a series of questions and performing the desired action using 
-the answers provided.  
+the answers provided.  cmap_admin.pl can also be driven via command 
+line arguments. 
 
 The web admin tool is meant to provide a point-and-click interface for 
 performing the more mundane administrative tasks or for viewing the 
@@ -100,6 +101,10 @@ Automatically set to the path of the directory that contains the
 temporary image files.  This has no relation to the query caching 
 system mentioned earlier (that needs purging).
 
+=item * session_dir
+
+An absolute path to the directory where session files are written.
+
 =item * default_db
 
 Set the name of the database (named in its config file) that will 
@@ -134,6 +139,11 @@ The age (in seconds) of an image file that an image has to be to be purged.
 The default is set to five minutes so that any http requests accessing current
 images will have a chance to get them.  Setting to 0 may cause problems with
 concurrent requests.
+
+=item * max_image_map_objects [ default: 20000 ]
+
+The maximum number of area boxes that CMap will print before it drops them all.
+This can save a browser from crashing.  No commas allowed.
 
 =item * max_query_cache_size [ default: 26214400 ]
 

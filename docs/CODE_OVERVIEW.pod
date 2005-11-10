@@ -4,7 +4,7 @@ CMap Code Overview
 
 =head1 VERSION
 
-$Revision: 1.9 $
+$Revision: 1.10 $
 
 CMap is a CGI application for viewing comparative and genetic maps.
 Written entirely in Perl, this application will run on many different
@@ -324,7 +324,9 @@ distance is 50 miles and that there is a coffee shop on exit 3, a map
 says that it is some measure of distance long and that some "feature"
 can be found at some location.
 
-=item * cmap_map_cache: 
+=item * cmap_map_cache (depricated): 
+
+This table has been removed.
 
 This is a "permanent temp" table used only to speed up the web
 queries.  It is used to remember which maps occur in each of the
@@ -420,6 +422,12 @@ needing such. It's basically a simple workaround for MySQL's
 "serial" type, etc. By implementing this in Perl, I don't have to
 worry how (or even "if") a particular RDBMS supports a "one-up" field.
 
+=item * cmap_saved_link: 
+
+This table stores the stored links.  The session_step_object contains 
+a frozen (freeze() in Storable.pm) object that holds the session 
+information.
+
 =back
 
 =head1 TIPS
@@ -442,6 +450,7 @@ Bio::GMOD::CMap modules.  Here's an example:
 
 =head1 AUTHOR
 
-Ken Y. Clark, kclark@cshl.org
+Ken Y. Clark, kclark@cshl.edu
+Ben Faga, faga@cshl.edu
 
-Copyright (c) 2002-4 Cold Spring Harbor Laboratory
+Copyright (c) 2002-5 Cold Spring Harbor Laboratory
