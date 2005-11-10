@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.65 2005-11-09 17:13:10 mwz444 Exp $
+# $Id: Utils.pm,v 1.66 2005-11-10 17:59:05 mwz444 Exp $
 
 =head1 NAME
 
@@ -34,7 +34,7 @@ use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.65 $)[-1];
+$VERSION = (qw$Revision: 1.66 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
@@ -1693,6 +1693,7 @@ sub parse_url {
     # Set the data source.
     #
     $calling_cmap_object->data_source( $apr->param('data_source') ) or return;
+    $apr->param('data_source', $calling_cmap_object->data_source);
 
     # If the ref species is different than before, then we need to start fresh
     if (   $parsed_url_options{'prev_ref_species_acc'}

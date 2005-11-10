@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache;
 
 # vim: set ft=perl:
 
-# $Id: Apache.pm,v 1.35 2005-11-10 00:48:44 mwz444 Exp $
+# $Id: Apache.pm,v 1.36 2005-11-10 17:59:05 mwz444 Exp $
 
 =head1 NAME
 
@@ -47,7 +47,7 @@ this class will catch errors and display them correctly.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.35 $)[-1];
+$VERSION = (qw$Revision: 1.36 $)[-1];
 
 use CGI;
 use Apache::Htpasswd;
@@ -356,11 +356,12 @@ current settings over cookie settings.
 
 =cut
 
-    my $self              = shift;
-    my $apr               = $self->apr;
-    my @preference_fields = @{ +PREFERENCE_FIELDS };
-    my $cookie_name       = $self->config_data('user_pref_cookie_name') || '';
-    my %preferences       = ();
+    my $self                  = shift;
+    my $apr                   = $self->apr;
+    my @preference_fields     = @{ +PREFERENCE_FIELDS };
+    my @req_preference_fields = @{ +REQUIRED_PREFERENCE_FIELDS };
+    my $cookie_name = $self->config_data('user_pref_cookie_name') || '';
+    my %preferences = ();
 
     #
     # Fetch and read the cookie.
@@ -391,6 +392,13 @@ current settings over cookie settings.
             $apr->param( $pref, $value );
         }
     }
+    for my $req_pref (@req_preference_fields){ 
+        my $value = defined $apr->param($req_pref)  ? $apr->param($req_pref)
+            : defined $preferences{$req_pref} ? $preferences{$req_pref}
+            : $self->config_data($req_pref) || '';
+
+        $apr->param( $req_pref, $value );
+    }
 
     return 1;
 }
@@ -409,6 +417,7 @@ End by always setting cookie with current settings.
     my $self              = shift;
     my $apr               = $self->apr;
     my @preference_fields = @{ +PREFERENCE_FIELDS };
+    my @req_preference_fields = @{ +REQUIRED_PREFERENCE_FIELDS };
     my $cookie_name       = $self->config_data('user_pref_cookie_name') || '';
     my %preferences       = ();
 
@@ -416,7 +425,7 @@ End by always setting cookie with current settings.
     # This updates the preferences with whatever is in the latest
     # request from the user.
     #
-    for my $pref (@preference_fields) {
+    for my $pref (@preference_fields,@req_preference_fields) {
         next unless ( defined $apr->param($pref) );
         $preferences{$pref} = $apr->param($pref);
     }
@@ -426,7 +435,7 @@ End by always setting cookie with current settings.
     #
     my $cookie_domain = $self->config_data('cookie_domain') || '';
     my $cookie_value = join( RECORD_SEP,
-        map { join( FIELD_SEP, $_, $preferences{$_} ) } @preference_fields );
+        map { join( FIELD_SEP, $_, $preferences{$_} ) } @preference_fields,@req_preference_fields );
 
     $self->cookie(
         $apr->cookie(

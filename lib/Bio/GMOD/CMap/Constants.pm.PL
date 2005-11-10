@@ -19,13 +19,13 @@ print OUT<<'NOGROK';
 package Bio::GMOD::CMap::Constants;
 # vim: set ft=perl:
 
-# $Id: Constants.pm.PL,v 1.39 2005-11-04 20:55:27 mwz444 Exp $
+# $Id: Constants.pm.PL,v 1.40 2005-11-10 17:59:05 mwz444 Exp $
 
 use strict;
 use base qw( Exporter );
 use vars qw( @EXPORT $VERSION );
 require Exporter;
-$VERSION = (qw$Revision: 1.39 $)[-1];
+$VERSION = (qw$Revision: 1.40 $)[-1];
 
 @EXPORT = qw[ 
     ARC
@@ -44,6 +44,7 @@ $VERSION = (qw$Revision: 1.39 $)[-1];
     NUMBER_RE
     NORTH
     PREFERENCE_FIELDS
+    REQUIRED_PREFERENCE_FIELDS
     RECTANGLE
     RIGHT
     SHAPE_XY
@@ -547,7 +548,6 @@ use constant PREFERENCE_FIELDS => [ qw(
     font_size
     image_type  
     label_features
-    data_source
     ref_species_acc
     aggregate
     cluster_corr
@@ -559,6 +559,11 @@ use constant PREFERENCE_FIELDS => [ qw(
     comp_menu_order
     link_group
     omit_area_boxes
+) ];
+#
+# The fields that need to be remembered between requests
+use constant REQUIRED_PREFERENCE_FIELDS => [ qw(
+    data_source
 ) ];
 
 
