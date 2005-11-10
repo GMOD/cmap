@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache;
 
 # vim: set ft=perl:
 
-# $Id: Apache.pm,v 1.34 2005-11-03 16:12:25 mwz444 Exp $
+# $Id: Apache.pm,v 1.35 2005-11-10 00:48:44 mwz444 Exp $
 
 =head1 NAME
 
@@ -47,7 +47,7 @@ this class will catch errors and display them correctly.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.34 $)[-1];
+$VERSION = (qw$Revision: 1.35 $)[-1];
 
 use CGI;
 use Apache::Htpasswd;
@@ -381,7 +381,7 @@ current settings over cookie settings.
     #
     # If this references a session or a saved link, then that will have the
     # information in it, so we don't want to use a cookie.
-    unless ( $apr->param('session_id') and $apr->param('saved_link_id') ) {
+    unless ( $apr->param('session_id') or $apr->param('saved_link_id') ) {
         for my $pref (@preference_fields) {
             my $value =
                   defined $apr->param($pref)  ? $apr->param($pref)
