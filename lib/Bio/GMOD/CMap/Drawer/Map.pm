@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.187 2005-11-09 23:50:45 mwz444 Exp $
+# $Id: Map.pm,v 1.188 2005-11-10 00:00:24 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.187 $)[-1];
+$VERSION = (qw$Revision: 1.188 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -2253,12 +2253,14 @@ sub place_map_y {
                     push @{ $map_aggregate_corr->{$map_id} },
                         [
                         $ref_map_x,            $ref_map_y1,
-                        $ref_corr->{'no_corr'}, $this_agg_y1
+                        $ref_corr->{'no_corr'}, $this_agg_y1,
+                        $evidence_type_acc,
                         ];
                     push @{ $map_aggregate_corr->{$map_id} },
                         [
                         $ref_map_x,            $ref_map_y2,
-                        $ref_corr->{'no_corr'}, $this_agg_y2
+                        $ref_corr->{'no_corr'}, $this_agg_y2,
+                        $evidence_type_acc,
                         ];
                 }
 
