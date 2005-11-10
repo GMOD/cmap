@@ -58,6 +58,8 @@
 
 <hr>
 <h2 id="options">Map Viewer Options</h2>
+
+<h3 id="ref_menu">Reference Menu</h3>
 <dl>
   <dt>Ref. Set</dt>
   <dd>
@@ -76,20 +78,67 @@
     becomes available.  Choosing a reference map allows other
     options to become available.
   </dd>
+</dl>
+<h3 id="comp_menu">Comparison Menu</h3>
+<dl>
   <dt>Start</dt>
   <dd>
     Enter a position to begin drawing the map.  By default, the
-    actual start position of the map is used.  Use this in
-    conjuction with the &quot;End&quot; option below to zoom in to
-    a particular region of the map.
+    actual start position of the map is used.
+    This is only used if there is only one reference map.
   </dd>
   <dt>End</dt>
   <dd>
     Enter a position at which map drawing shall stop.  By default,
-    is the actual end position of the map is used.  Use this in
-    conjuction with the &quot;Start&quot; option above to zoom in
-    to a particular region of the map.
+    is the actual end position of the map is used.
+    This is only used if there is only one reference map.
   </dd>
+  <dt>Current Maps</dt>
+  <dd>
+    From top to bottom, lists the names of the maps currently
+    being displayed from left to right.  
+    The main reference map is denoted with &quot;(Ref.)&quot; and
+    cannot be deleted.
+  </dd>
+  <dt>Min. No. Correspondences for Left Slot</dt>
+  <dd>
+    This option only affects the slot that is currently the left slot.  
+    Indicate an integer value of the minimum number of correspondences
+    that a map must have to another map in order to be displayed.
+  </dd>
+  <dt>Min. No. Correspondences for Right Slot</dt>
+  <dd>
+    This option only affects the slot that is currently the right slot.  
+    Indicate an integer value of the minimum number of correspondences
+    that a map must have to another map in order to be displayed.
+  </dd>
+  <dt>Min. No. Correspondences for Menu</dt>
+  <dd>
+    This option only affects the slots that are added next.  
+    Indicate an integer value of the minimum number of correspondences
+    that a map must have to another map in order to be displayed.
+  </dd>
+  <dt>Comp. Maps (Right)</dt>
+  <dd>
+    Select a comparative map to add to the right of the map
+    display.  First select the map set.  Then select one or all of the maps.  
+    Only maps which have some correspondence to the
+    rightmost map are listed.  The number of correspondences is
+    shown in square brackets.  <br> [See also &quot;Comp. Map
+    (Left)&quot;.]
+  </dd>
+  <dt>Comp. Maps (Left)</dt>
+  <dd>
+    Select a comparative map to add to the left of the map
+    display.  First select the map set.  Then select one or all of the maps.
+    Only maps which have some correspondence to the
+    leftmost map are listed.  The number of correspondences is
+    shown in square brackets.  <br> [See also &quot;Comp. Map
+    (Right)&quot;.]
+  </dd>
+</dl>
+<h3 id="opt_menu">Options Menu</h3>
+<dl>
   <dt>Highlight</dt>
   <dd>
     Enter features to highlight on the map.  Separate multiple
@@ -97,30 +146,39 @@
     that has spaces in its name, then enclose the feature name in double
     quotes.
   </dd>
-  <dt>Comp. Map (Right)</dt>
+  <dt>Feature Types</dt>
   <dd>
-    Select a comparative map to add to the right of the map
-    display.  Only maps which have some correspondence to the
-    rightmost map are listed.  The number of correspondences is
-    shown in square brackets.  <br> [See also &quot;Comp. Map
-    (Left)&quot;.]
+    Selecte how each feature types will be handled.  Choose to ignore, 
+    display or display only those features that have correspondences 
+    displayed.  The "Default" value tells CMap how to handle feature 
+    types that are not on the current maps but may be on comparative maps.
   </dd>
-  <dt>Current Maps</dt>
+  <dt>Include Correspondence Types</dt>
   <dd>
-    From top to bottom, lists the names of the maps currently
-    being displayed from left to right.  To remove a map
-    (including those exterior to it), click on &quot;Delete&quot;.
-    The main reference map is denoted with &quot;(Ref.)&quot; and
-    cannot be deleted.
+    Selecte how each correspondence type will be handled.  Choose to ignore, 
+    use or use only those correspondences that have a score greater than or 
+    less than the specified score.
   </dd>
-  <dt>Comp. Map (Left)</dt>
+  <dt>Aggregate Correspondences</dt>
   <dd>
-    Select a comparative map to add to the left of the map
-    display.  Only maps which have some correspondence to the
-    leftmost map are listed.  The number of correspondences is
-    shown in square brackets.  <br> [See also &quot;Comp. Map
-    (Right)&quot;.]
+    Choose to draw all of the correspondences individually or 
+    draw all the correspondenses between each map as one line (the average
+    location on each map), two lines (the span of locations on each map), 
+    in clusters.
   </dd>
+  <dt>Number of Clusters</dt>
+  <dd>
+    If Aggregate Correspondences is set to "cluster", specify the number of 
+    clusters each map will have.
+  </dd>
+  <dt>Total Magnification</dt>
+  <dd>
+    Draw the map taller by this multiple of magnification.  This will affect 
+    all the maps, including individually magnified maps. 
+  </dd>
+</dl>
+<h3 id="add_menu">Additional Options Menu</h3>
+<dl>
   <dt>Image Size</dt>
   <dd>
     Select the desired size of the image.
@@ -154,36 +212,55 @@
     Allows you to collapse spanning features of the same type which 
     occupy the exact same coordinates as other features.
   </dd>
-  <dt>Min. No. Correspondences</dt>
-  <dd>
-    Indicate an integer values of the minimum number of correspondences
-    that a map must have to another map in order to be displayed.
-  </dd>
-  <dt>Include Feature Types</dt>
-  <dd>
-    Show only the selected feature types.  Multiple types may be
-    selected (Ctrl-Click on most systems).
-  </dd>
-  <dt>Include Correspondence Types</dt>
-  <dd>
-    Show only the selected correspondence types.  Multiple types
-    may be selected (Ctrl-Click on most systems).
-  </dd>
   <dt>Aggregate Correspondences</dt>
   <dd>
     Draw all the correspondenses between each map as one line (the average
     location on each map) or two lines (the span of locations on each map).
-  </dd>
-  <dt>Total Magnification</dt>
-  <dd>
-    Draw the map taller by this multiple of magnification.  This will affect 
-    all the maps, including individually magnified maps. 
   </dd>
   <dt>Draw Maps to Scale</dt>
   <dd>
     Draw the maps that have the same base units to scale with respect to 
     each other.  The base units must be defined as scalable in the config
     file.
+  </dd>
+  <dt>Correspondence lines drawn to</dt>
+  <dd>
+    Have the individual correspondence lines drawn to either the feature or
+    the map.
+  </dd>
+  <dt>Stack the Reference Maps</dt>
+  <dd>
+    If there are multiple reference maps, you can choose to have them side 
+    by side or stacked vertically.
+  </dd>
+  <dt>Clickable Image</dt>
+  <dd>
+    To increase render time for views that display a lot of features, you can
+    choose not to have clickable features (which leaves the navigation buttons 
+    intact) or to remove all clickable elements from the image.
+  </dd>
+  <dt>View Intra-slot Correspondences</dt>
+  <dd>
+    If correspondences have been created between maps in the same map set, you 
+    can select this to display them.
+  </dd>
+  <dt>Aggregate Evidence Types Separately</dt>
+  <dd>
+    When aggregating correspondences, correspondences with different evidence 
+    types can be separated.
+  </dd>
+  <dt>Menu Order of Comparative Maps</dt>
+  <dd>
+    Order the maps in the comparative map menu by their predefined order 
+    (specified in the database) or by the number of correspondences.
+  </dd>
+  <dt>Ignore Image Map Sanity Check</dt>
+  <dd>
+    If an image has an insane number of clickable elements on it this can cause
+    a browser (IE) to crash and increases transmission and render time.  When a 
+    threshold of the number of elements on an image is crossed (the number 
+    defined in the config file), CMap will disable all clickable elements and 
+    print a warning.  The user can ignore this warning (at the user's peril).
   </dd>
 </dl>
 
@@ -200,8 +277,11 @@
         &quot;relational&quot; maps, click directly on the map glyph
         for this action)
     </li>
-    <li><b>X</b>: Delete the map from the viewer</li>
+    <li><b>X</b>: Delete the map set from the viewer</li>
+    <li><b>x</b>: Delete the map from the viewer</li>
+    <li><b>L</b>: Limit this slot on only this map</li>
     <li><b>F</b>: Flip the map</li>
+    <li><b>UF</b>: Unflip the map</li>
     <li><b>M</b>: View the Matrix for this map.</li>
     <li><b>N</b>: Create a new map viewer with the map as the reference
     </li>

@@ -1,0 +1,68 @@
+[% 
+    INCLUDE header.tmpl 
+    title='Saved Links Help'
+    cur_sec='help'
+    help_anchor=''
+%]
+
+[% INCLUDE help_header.tmpl cur_sec='saved_links' %]
+
+<h2 id="concepts">Saved Link Concepts</h2>
+
+<h3 id="link_group">Link Group</h3>
+<p> 
+  Links are organized and accessed by link group.  This can be anything the
+  user wants.  Some suggestions are some combination of user, project, department
+  or date.
+</p>
+
+<h3 id="permanent_link">Permanent Link</h3> 
+<p> 
+  This link has the session information stored in the server's database 
+  which makes it stable to use for bookmarking and for sharing.
+</p>
+
+<h3 id="legacy_link">Legacy Link</h3> 
+<p> 
+  This link uses the legacy link parameters.  The advantage of this link 
+  is that it will be stable across different servers (with the same data).  
+  The disadvantages are that it can get longer than a browser (IE) can 
+  handle.  It also cannot handle the complex options such as minimum 
+  correspondences (which can be different for each map set added in the 
+  image).
+</p>
+
+<h3 id="hidden">Hidden</h3> 
+<p> 
+  When there are a lot of saved links, the saved link viewer page might get 
+  cluttered.  Hidding a link makes it invisible to the saved link viewer 
+  (unless specifically looking for hidden links) but is still in the 
+  database so that it can be accessed (via bookmark or other system).
+</p>
+
+<hr>
+
+<h2 id="creating_links">Creating Saved Link</h2>
+
+<h3 id="saving_links">Saving Links</h3> 
+<p>
+  <ul>
+  <li>
+    Links can be created using the "Save Link" button on the map viewer page.
+  </li>
+  </ul>
+</p>
+
+<h3 id="importing_links">Importing Links</h3> 
+<p>
+  <ul>
+  <li>
+    Links can be imported from xml file using the cmap_admin.pl script on the server.
+  </li>
+  <li>
+    Ask you administrator to view the ADMINISTRATION document if you wish 
+    to utilize this feature.
+  </li>
+  </ul>
+</p>
+[% INCLUDE footer.tmpl %]
