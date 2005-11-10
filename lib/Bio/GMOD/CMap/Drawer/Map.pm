@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer::Map;
 
 # vim: set ft=perl:
 
-# $Id: Map.pm,v 1.188 2005-11-10 00:00:24 mwz444 Exp $
+# $Id: Map.pm,v 1.189 2005-11-10 05:22:57 mwz444 Exp $
 
 =pod
 
@@ -25,7 +25,7 @@ You'll never directly use this module.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.188 $)[-1];
+$VERSION = (qw$Revision: 1.189 $)[-1];
 
 use URI::Escape;
 use Data::Dumper;
@@ -2407,7 +2407,7 @@ sub add_topper {
             'map_limit',  'map_delete'
         ],
     );
-    if ( 1 or $is_compressed and scalar(@$buttons) ) {
+    if ( scalar(@$buttons) ) {
         my $button_y_buffer = 4;
         my $button_x_buffer = 6;
         my $button_height   =
@@ -2520,19 +2520,28 @@ sub add_topper {
             [ STRING, $reg_font, $f_x1, $topper_y, $topper, 'black' ];
     }
 
-    # Move map down by the height of the topper
-    my $topper_offset = $base_y - $current_min_y;
-    $drawer->offset_drawing_data(
-        offset_y     => $topper_offset,
-        drawing_data => $map_drawing_data->{$map_id},
-    );
-    $drawer->offset_map_area_data(
-        offset_y      => $topper_offset,
-        map_area_data => $map_area_data->{$map_id},
-    );
-    $map_placement_data->{$map_id}{'map_coords'}[1] += $topper_offset;
-    $map_placement_data->{$map_id}{'map_coords'}[3] += $topper_offset;
-    $map_placement_data->{$map_id}{'bounds'}[3]     += $topper_offset;
+    # If this is the reference slot, move map down by the height of the topper
+    # because the reference maps can be moved about vertically.  This makes
+    # sure that if they are stacked vertically, the topper doesn't cause an
+    # overlap (and make the maps off set).
+    if ($slot_no == 0){
+        my $topper_offset = 1 + $base_y - $current_min_y ;
+        $drawer->offset_drawing_data(
+            offset_y     => $topper_offset,
+            drawing_data => $map_drawing_data->{$map_id},
+        );
+        $drawer->offset_map_area_data(
+            offset_y      => $topper_offset,
+            map_area_data => $map_area_data->{$map_id},
+        );
+        $map_placement_data->{$map_id}{'map_coords'}[1] += $topper_offset;
+        $map_placement_data->{$map_id}{'map_coords'}[3] += $topper_offset;
+    }
+    else{
+        # Other slots, just need their top reset
+        $map_placement_data->{$map_id}{'bounds'}[1] = $current_min_y
+            if ( $map_placement_data->{$map_id}{'bounds'}[1] > $current_min_y );
+    }
 }
 
 # ----------------------------------------
