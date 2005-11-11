@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::SavedLink;
 
 # vim: set ft=perl:
 
-# $Id: SavedLink.pm,v 1.2 2005-10-27 18:01:03 mwz444 Exp $
+# $Id: SavedLink.pm,v 1.3 2005-11-11 21:46:14 mwz444 Exp $
 
 use strict;
 use warnings;
@@ -87,6 +87,7 @@ sub read_saved_links_file {
 
 VIEW:
     for my $view_params ( stag_find( $stag_object, 'cmap_view' ) ) {
+        next VIEW unless $view_params;
         my %parsed_options;
 
         # get title
@@ -105,6 +106,11 @@ VIEW:
             }
             $slots->{$slot_num} = _create_slot($slot_params);
         }
+        unless ($slots->{0}) {
+            print STDERR qq[No reference slot (slot 0) defined.\n];
+            next VIEW;
+        }
+
         $parsed_options{'slots'} = $slots;
 
         my $options_params = $view_params->get('menu_options');
@@ -133,7 +139,7 @@ sub _create_slot {
 
     my %slot;
 
-    $slot{'map_set_acc'} = $slot_params->sget('map_set_acc');
+    $slot{'map_set_acc'} = $slot_params->find('map_set_acc');
 
     # Get Maps info
     for my $map_params ( $slot_params->get('map') ) {
