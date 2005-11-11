@@ -1,0 +1,64 @@
+<cmap_views>
+ <cmap_view>
+
+  <group>Demo</group>
+  <title>Test1</title>
+  <comment>Here is a comment</comment>
+
+  <slot number="0">
+   <map>
+    <map_acc>1</map_acc>
+    <map_start>600</map_start>
+    <map_stop>2400</map_stop>
+    <map_magnification>1</map_magnification>
+   </map>
+  </slot>
+
+  <slot number="1">
+   <map>
+    <map_acc>5</map_acc>
+    <map_start>700</map_start>
+   </map>
+   <map>
+    <map_acc>6</map_acc>
+    <map_start>700</map_start>
+   </map>
+  </slot>
+
+  <menu_options>
+    <ft_DEFAULT>1</ft_DEFAULT>
+    <image_size>small</image_size>
+    <omit_area_boxes>1</omit_area_boxes>
+  </menu_options>
+
+ </cmap_view>
+
+ <cmap_view>
+
+  <group>Demo</group>
+  <title>Test2</title>
+  <comment>Here is another comment</comment>
+
+  <slot number="0">
+   <map>
+    <map_acc>1</map_acc>
+    <map_start>600</map_start>
+    <map_stop>2400</map_stop>
+    <map_magnification>1</map_magnification>
+   </map>
+  </slot>
+
+  <slot number="1">
+   <map_set>
+    <map_set_acc>2</map_set_acc>
+   </map_set>
+  </slot>
+
+  <menu_options>
+    <ft_DEFAULT>1</ft_DEFAULT>
+    <image_size>large</image_size>
+    <omit_area_boxes>0</omit_area_boxes>
+  </menu_options>
+
+ </cmap_view>
+</cmap_views>
