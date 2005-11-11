@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.126 2005-11-11 21:44:24 mwz444 Exp $
+# $Id: Generic.pm,v 1.127 2005-11-11 22:00:34 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.126 $)[-1];
+$VERSION = (qw$Revision: 1.127 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -206,9 +206,10 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
-        object_type => 1,
-        acc_id      => 1,
+        cmap_object   => 1,
+        no_validation => 0,
+        object_type   => 1,
+        acc_id        => 1,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -280,9 +281,10 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
-        object_type => 1,
-        acc_id      => 1,
+        cmap_object   => 1,
+        no_validation => 0,
+        object_type   => 1,
+        acc_id        => 1,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -362,10 +364,11 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
-        object_type => 1,
-        object_id   => 1,
-        order_by    => 0,
+        cmap_object   => 1,
+        no_validation => 0,
+        object_type   => 1,
+        object_id     => 1,
+        order_by      => 0,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -699,7 +702,8 @@ original start and stop.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object                 => 1,
+        no_validation               => 0,
         slots                       => 1,
         included_evidence_type_accs => 0,
         ignored_feature_type_accs   => 0,
@@ -1165,7 +1169,8 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object       => 1,
+        no_validation     => 0,
         species_id        => 0,
         species_accs      => 0,
         is_relational_map => 0,
@@ -1281,8 +1286,9 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
-        map_set_acc => 0,
+        cmap_object   => 1,
+        no_validation => 0,
+        map_set_acc   => 0,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -1359,7 +1365,8 @@ Species id
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object         => 1,
+        no_validation       => 0,
         species_acc         => 0,
         accession_id        => 0,
         species_common_name => 0,
@@ -1446,7 +1453,8 @@ If you don't want CMap to update into your database, make this a dummy method.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object         => 1,
+        no_validation       => 0,
         species_id          => 0,
         object_id           => 0,
         species_acc         => 0,
@@ -1538,8 +1546,9 @@ If you don't want CMap to delete from your database, make this a dummy method.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
-        species_id  => 1,
+        cmap_object   => 1,
+        no_validation => 0,
+        species_id    => 1,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -1666,7 +1675,8 @@ Array of Hashes:
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object       => 1,
+        no_validation     => 0,
         species_id        => 0,
         species_ids       => 0,
         species_acc       => 0,
@@ -1902,7 +1912,8 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object       => 1,
+        no_validation     => 0,
         map_set_id        => 0,
         map_set_ids       => 0,
         map_set_acc       => 0,
@@ -2036,8 +2047,9 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
-        map_ids     => 0,
+        cmap_object   => 1,
+        no_validation => 0,
+        map_ids       => 0,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -2131,7 +2143,8 @@ Map Set id
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object        => 1,
+        no_validation      => 0,
         map_set_acc        => 0,
         accession_id       => 0,
         map_set_name       => 0,
@@ -2265,7 +2278,8 @@ to ignore that column.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object        => 1,
+        no_validation      => 0,
         map_set_id         => 0,
         object_id          => 0,
         map_set_acc        => 0,
@@ -2425,8 +2439,9 @@ If you don't want CMap to delete from your database, make this a dummy method.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
-        map_set_id  => 1,
+        cmap_object   => 1,
+        no_validation => 0,
+        map_set_id    => 1,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -2562,7 +2577,8 @@ Array of Hashes:
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object       => 1,
+        no_validation     => 0,
         map_id            => 0,
         map_ids           => 0,
         map_set_id        => 0,
@@ -2791,10 +2807,11 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
-        map_id      => 0,
-        map_acc     => 0,
-        map_set_id  => 0,
+        cmap_object   => 1,
+        no_validation => 0,
+        map_id        => 0,
+        map_acc       => 0,
+        map_set_id    => 0,
     );
     validate( @_, \%validation_params );
     my %args = @_;
@@ -2881,8 +2898,9 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
-        map_set_acc => 1,
+        cmap_object   => 1,
+        no_validation => 0,
+        map_set_acc   => 1,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -2970,7 +2988,8 @@ Not Caching because the calling method will do that.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object             => 1,
+        no_validation           => 0,
         map_set_id              => 1,
         map_name                => 0,
         min_correspondence_maps => 0,
@@ -3084,7 +3103,8 @@ Map id
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object    => 1,
+        no_validation  => 0,
         map_acc        => 0,
         accession_id   => 0,
         map_set_id     => 0,
@@ -3185,7 +3205,8 @@ If you don't want CMap to update into your database, make this a dummy method.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object    => 1,
+        no_validation  => 0,
         map_id         => 0,
         object_id      => 0,
         map_acc        => 0,
@@ -3298,8 +3319,9 @@ If you don't want CMap to delete from your database, make this a dummy method.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
-        map_id      => 1,
+        cmap_object   => 1,
+        no_validation => 0,
+        map_id        => 1,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -3463,7 +3485,8 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object       => 1,
+        no_validation     => 0,
         feature_id        => 0,
         feature_acc       => 0,
         feature_name      => 0,
@@ -3749,7 +3772,8 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object      => 1,
+        no_validation    => 0,
         map_id           => 0,
         feature_id       => 0,
         feature_acc      => 0,
@@ -3849,8 +3873,9 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
-        map_id      => 1,
+        cmap_object   => 1,
+        no_validation => 0,
+        map_id        => 1,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -3925,7 +3950,8 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object              => 1,
+        no_validation            => 0,
         map_set_ids              => 0,
         ignore_feature_type_accs => 0,
     );
@@ -4058,7 +4084,8 @@ Array of Hashes:
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object                 => 1,
+        no_validation               => 0,
         slot_info                   => 1,
         this_slot_no                => 1,
         map_id                      => 0,
@@ -4210,7 +4237,9 @@ Array of Hashes:
     # Add order to help sorting later
     $sql_str .= " order by feature_start, feature_stop";
 
-    unless ( $return_object = $cmap_object->get_cached_results( 4, $sql_str ) ) {
+    unless ( $return_object
+        = $cmap_object->get_cached_results( 4, $sql_str ) )
+    {
 
         $return_object
             = $db->selectall_arrayref( $sql_str, { Columns => {} } );
@@ -4298,7 +4327,8 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object           => 1,
+        no_validation         => 0,
         group_by_map_id       => 0,
         group_by_feature_type => 0,
         this_slot_info        => 0,
@@ -4435,7 +4465,9 @@ Not using cache because this query is quicker.
 
     my $sql_str = $select_sql . $from_sql . $where_sql . $group_by_sql;
 
-    unless ( $return_object = $cmap_object->get_cached_results( 3, $sql_str ) ) {
+    unless ( $return_object
+        = $cmap_object->get_cached_results( 3, $sql_str ) )
+    {
         $return_object
             = $db->selectall_arrayref( $sql_str, { Columns => {} } );
 
@@ -4513,7 +4545,8 @@ Feature id
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object            => 1,
+        no_validation          => 0,
         feature_acc            => 0,
         accession_id           => 0,
         map_id                 => 0,
@@ -4701,7 +4734,8 @@ If you don't want CMap to update into your database, make this a dummy method.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object            => 1,
+        no_validation          => 0,
         feature_id             => 0,
         object_id              => 0,
         feature_acc            => 0,
@@ -4858,9 +4892,10 @@ If you don't want CMap to delete from your database, make this a dummy method.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
-        feature_id  => 0,
-        map_id      => 0,
+        cmap_object   => 1,
+        no_validation => 0,
+        feature_id    => 0,
+        map_id        => 0,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -4974,7 +5009,8 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object              => 1,
+        no_validation            => 0,
         feature_id               => 0,
         feature_alias_id         => 0,
         feature_ids              => 0,
@@ -5155,9 +5191,10 @@ feature_alias_id
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
-        feature_id  => 1,
-        alias       => 1,
+        cmap_object   => 1,
+        no_validation => 0,
+        feature_id    => 1,
+        alias         => 1,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -5242,7 +5279,8 @@ If you don't want CMap to update into your database, make this a dummy method.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object      => 1,
+        no_validation    => 0,
         feature_alias_id => 0,
         object_id        => 0,
         alias            => 0,
@@ -5321,7 +5359,8 @@ If you don't want CMap to delete from your database, make this a dummy method.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object      => 1,
+        no_validation    => 0,
         feature_alias_id => 0,
         feature_id       => 0,
     );
@@ -5428,7 +5467,8 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object                => 1,
+        no_validation              => 0,
         feature_correspondence_id  => 0,
         feature_correspondence_acc => 0,
     );
@@ -5573,7 +5613,8 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object                 => 1,
+        no_validation               => 0,
         feature_correspondence_id   => 0,
         feature_id1                 => 0,
         feature_id2                 => 0,
@@ -5781,7 +5822,8 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object               => 1,
+        no_validation             => 0,
         feature_correspondence_id => 0,
         map_set_ids1              => 0,
         map_set_ids2              => 0,
@@ -5921,7 +5963,8 @@ Array of Hashes:
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object                 => 1,
+        no_validation               => 0,
         ref_map_info                => 1,
         map_id                      => 0,
         map_start                   => 0,
@@ -6049,8 +6092,10 @@ Array of Hashes:
             . join( "','", sort @$feature_type_accs ) . "')";
     }
 
-    unless ( $return_object
-        = $cmap_object->get_cached_results( 4, $sql_str . join( ',', @identifiers ) )
+    unless (
+        $return_object = $cmap_object->get_cached_results(
+            4, $sql_str . join( ',', @identifiers )
+        )
         )
     {
 
@@ -6077,7 +6122,8 @@ Array of Hashes:
                 = $evidence_type_data->{ $row->{'evidence_type_acc'} }
                 {'evidence_type'};
         }
-        $cmap_object->store_cached_results( 4, $sql_str . $map_id, $return_object );
+        $cmap_object->store_cached_results( 4, $sql_str . $map_id,
+            $return_object );
     }
 
     return $return_object;
@@ -6181,7 +6227,8 @@ Array of Hashes:
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object                 => 1,
+        no_validation               => 0,
         slot_info                   => 1,
         slot_info2                  => 1,
         split_evidence_types        => 0,
@@ -6525,7 +6572,8 @@ If $include_map1_data also has
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object                 => 1,
+        no_validation               => 0,
         min_correspondences         => 0,
         slot_info                   => 0,
         map_accs                    => 0,
@@ -6762,8 +6810,9 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
-        feature_id  => 1,
+        cmap_object   => 1,
+        no_validation => 0,
+        feature_id    => 1,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -6844,7 +6893,8 @@ Feature Correspondence id
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object                => 1,
+        no_validation              => 0,
         feature_id1                => 0,
         feature_id2                => 0,
         feature_acc1               => 0,
@@ -7089,7 +7139,8 @@ If you don't want CMap to update into your database, make this a dummy method.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object                => 1,
+        no_validation              => 0,
         feature_correspondence_id  => 0,
         object_id                  => 0,
         feature_correspondence_acc => 0,
@@ -7192,7 +7243,8 @@ If you don't want CMap to delete from your database, make this a dummy method.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object               => 1,
+        no_validation             => 0,
         feature_correspondence_id => 0,
         feature_id                => 0,
     );
@@ -7304,7 +7356,8 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object                => 1,
+        no_validation              => 0,
         feature_correspondence_id  => 0,
         correspondence_evidence_id => 0,
         evidence_type_acc          => 0,
@@ -7420,8 +7473,9 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
-        map_set_ids => 0,
+        cmap_object   => 1,
+        no_validation => 0,
+        map_set_ids   => 0,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -7513,7 +7567,8 @@ Correspondence Evidence id
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object                 => 1,
+        no_validation               => 0,
         evidence_type_acc           => 0,
         evidence_type_aid           => 0,
         evidence_type_accession     => 0,
@@ -7617,7 +7672,8 @@ If you don't want CMap to update into your database, make this a dummy method.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object                 => 1,
+        no_validation               => 0,
         correspondence_evidence_id  => 0,
         object_id                   => 0,
         evidence_type_acc           => 0,
@@ -7733,7 +7789,8 @@ If you don't want CMap to delete from your database, make this a dummy method.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object                => 1,
+        no_validation              => 0,
         correspondence_evidence_id => 0,
         feature_correspondence_id  => 0,
     );
@@ -7852,7 +7909,8 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object     => 1,
+        no_validation   => 0,
         object_type     => 0,
         attribute_id    => 0,
         is_public       => 0,
@@ -8002,7 +8060,8 @@ Attribute id
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object     => 1,
+        no_validation   => 0,
         display_order   => 0,
         object_type     => 0,
         is_public       => 0,
@@ -8112,7 +8171,8 @@ If you don't want CMap to update into your database, make this a dummy method.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object     => 1,
+        no_validation   => 0,
         attribute_id    => 1,
         display_order   => 0,
         object_type     => 0,
@@ -8233,10 +8293,11 @@ If you don't want CMap to delete from your database, make this a dummy method.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
-        attribute_id => 0,
-        object_type  => 0,
-        object_id    => 0,
+        cmap_object   => 1,
+        no_validation => 0,
+        attribute_id  => 0,
+        object_type   => 0,
+        object_id     => 0,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -8348,13 +8409,14 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
-        object_type => 0,
-        xref_id     => 0,
-        xref_name   => 0,
-        xref_url    => 0,
-        object_id   => 0,
-        order_by    => 0,
+        cmap_object   => 1,
+        no_validation => 0,
+        object_type   => 0,
+        xref_id       => 0,
+        xref_name     => 0,
+        xref_url      => 0,
+        object_id     => 0,
+        order_by      => 0,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -8491,9 +8553,10 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
-        object_type => 0,
-        order_by    => 0,
+        cmap_object   => 1,
+        no_validation => 0,
+        object_type   => 0,
+        order_by      => 0,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -8582,7 +8645,8 @@ Xref id
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object   => 1,
+        no_validation => 0,
         display_order => 0,
         object_type   => 0,
         xref_name     => 0,
@@ -8690,7 +8754,8 @@ If you don't want CMap to update into your database, make this a dummy method.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object   => 1,
+        no_validation => 0,
         xref_id       => 1,
         display_order => 0,
         object_type   => 0,
@@ -8811,10 +8876,11 @@ If you don't want CMap to delete from your database, make this a dummy method.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
-        xref_id     => 0,
-        object_type => 0,
-        object_id   => 0,
+        cmap_object   => 1,
+        no_validation => 0,
+        xref_id       => 0,
+        object_type   => 0,
+        object_id     => 0,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -8912,7 +8978,8 @@ Array of Hashes:
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object                => 1,
+        no_validation              => 0,
         map_ids                    => 0,
         map_set_ids                => 0,
         included_feature_type_accs => 0,
@@ -8956,7 +9023,9 @@ Array of Hashes:
 
     $sql_str .= $where_sql;
 
-    unless ( $return_object = $cmap_object->get_cached_results( 3, $sql_str ) ) {
+    unless ( $return_object
+        = $cmap_object->get_cached_results( 3, $sql_str ) )
+    {
         $return_object
             = $db->selectall_arrayref( $sql_str, { Columns => {} }, () );
         foreach my $row (@$return_object) {
@@ -9030,7 +9099,8 @@ Array of Hashes:
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object       => 1,
+        no_validation     => 0,
         is_relational_map => 0,
         is_enabled        => 0,
     );
@@ -9112,8 +9182,9 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
-        map_set_acc => 1,
+        cmap_object   => 1,
+        no_validation => 0,
+        map_set_acc   => 1,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -9220,7 +9291,8 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object      => 1,
+        no_validation    => 0,
         species_acc      => 0,
         map_name         => 0,
         map_set_acc      => 0,
@@ -9328,9 +9400,9 @@ this table in your db, it dummy up this method.
 
 =cut
 
-    my $self = shift;
+    my $self              = shift;
     my %validation_params = ( cmap_object => 1, no_validation => 0, );
-    my %args = @_;
+    my %args              = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
 
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
@@ -9535,9 +9607,9 @@ Array of Hashes:
 
 =cut
 
-    my $self = shift;
+    my $self              = shift;
     my %validation_params = ( cmap_object => 1, no_validation => 0, );
-    my %args = @_;
+    my %args              = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
 
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
@@ -9599,9 +9671,10 @@ Array of correspondence_evidence_ids
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
-        original_id  => 1,
-        duplicate_id => 1,
+        cmap_object   => 1,
+        no_validation => 0,
+        original_id   => 1,
+        duplicate_id  => 1,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -9665,7 +9738,8 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object         => 1,
+        no_validation       => 0,
         saved_link_id       => 0,
         session_step_object => 0,
         saved_url           => 0,
@@ -9770,7 +9844,8 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object         => 1,
+        no_validation       => 0,
         saved_link_id       => 0,
         session_step_object => 0,
         saved_url           => 0,
@@ -9861,7 +9936,8 @@ id
     #xxx
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object         => 1,
+        no_validation       => 0,
         session_step_object => 0,
         saved_url           => 0,
         legacy_url          => 0,
@@ -9953,7 +10029,8 @@ Given the id and some attributes to modify, updates.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
+        cmap_object         => 1,
+        no_validation       => 0,
         saved_link_id       => 1,
         session_step_object => 0,
         saved_url           => 0,
@@ -10043,9 +10120,10 @@ that db has auto incrementing.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
-        object_type => 1,
-        requested   => 0,
+        cmap_object   => 1,
+        no_validation => 0,
+        object_type   => 1,
+        requested     => 0,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -10146,10 +10224,11 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
-        feature_name => 1,
-        map_id       => 1,
-        return_start => 0,
+        cmap_object   => 1,
+        no_validation => 0,
+        feature_name  => 1,
+        map_id        => 1,
+        return_start  => 0,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -10325,10 +10404,10 @@ Not using cache because this query is quicker.
     my $self              = shift;
     my %validation_params = (
         no_validation => 0,
-        start_column => 1,
-        stop_column  => 1,
-        map_start    => 0,
-        map_stop     => 0,
+        start_column  => 1,
+        stop_column   => 1,
+        map_start     => 0,
+        map_stop      => 0,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -10414,8 +10493,9 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
-        x           => 0,
+        cmap_object   => 1,
+        no_validation => 0,
+        x             => 0,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -10467,8 +10547,9 @@ id
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
-        yy_acc      => 0,
+        cmap_object   => 1,
+        no_validation => 0,
+        yy_acc        => 0,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -10528,9 +10609,10 @@ Given the id and some attributes to modify, updates.
     #xxx
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
-        _id         => 0,
-        x           => 0,
+        cmap_object   => 1,
+        no_validation => 0,
+        _id           => 0,
+        x             => 0,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -10597,8 +10679,9 @@ If you don't want CMap to delete from your database, make this a dummy method.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object => 1, no_validation => 0,
-        yy_id       => 1,
+        cmap_object   => 1,
+        no_validation => 0,
+        yy_id         => 1,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
