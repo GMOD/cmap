@@ -4,7 +4,7 @@ CMap Administration and Data Curation
 
 =head1 VERSION
 
-$Revision: 1.22 $
+$Revision: 1.23 $
 
 This document is intended to help you understand how to use the data
 curation tools provided with CMap.  There are three tools you will use:
@@ -1873,8 +1873,11 @@ If duplicate correspondences may have been added, this will remove them.
 This option is where to import links that will show up in 
 the "Saved Links" section of CMap.  The import takes an xml file.
 
-An example file is supplied, data/sample_saved_links.xml.  Here are the main
-elements of the xml file.
+An example file is supplied, data/sample_saved_links.xml.  You will need to
+change the accessions (*_acc) to reflect your database even if you used the
+test data (since the test data doesn't specify accessions).
+
+Here are the main elements of the xml file.
 
 =over 4
 
