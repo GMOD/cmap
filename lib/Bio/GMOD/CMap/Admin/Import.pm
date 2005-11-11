@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::Import;
 
 # vim: set ft=perl:
 
-# $Id: Import.pm,v 1.77 2005-09-15 22:10:49 kycl4rk Exp $
+# $Id: Import.pm,v 1.78 2005-11-11 21:44:24 mwz444 Exp $
 
 =pod
 
@@ -33,7 +33,7 @@ of maps into the database.
 
 use strict;
 use vars qw( $VERSION %DISPATCH %COLUMNS );
-$VERSION = (qw$Revision: 1.77 $)[-1];
+$VERSION = (qw$Revision: 1.78 $)[-1];
 
 use Data::Dumper;
 use Bio::GMOD::CMap;
@@ -1234,6 +1234,7 @@ Imports an object.
         my $create_method = 'insert_' . $object_type;
         $new_object_id = $sql_object->$create_method(
             cmap_object => $self,
+            no_validation =>1,
             %$object,
           )
           or return $self->error( $sql_object->error );
