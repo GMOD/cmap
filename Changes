@@ -2,12 +2,33 @@
 
 0.15    2005-01-05
 
+-   Server side sessions are used to store the information about what is being 
+    viewed.  This dramatically reduces URL size and allows more complex 
+    operations.  However, sessions expire, making bookmarks volatile.
+-   Added a feature to save links permanently.  By clicking the "Save Link" 
+    button, a new permanent URL is created for the user to bookmark.  Saved 
+    links can also be browsed.
+-   "Saved Links" can also be imported via cmap_admin.pl using an XML file.
+-   The "Import Links" code has been completely replaced by "Saved Links" 
+    code.  The "Import Links" code created links that were easily deleted by 
+    the system and didn't have a very robust import format.
+-   A "Hide Empty Rows" option was added to the matrix.
+-   Speed increases to help with larger data sources.
+-   Allow individual "Minimum number of Corrs" value for each slot.
+-   Added a "default" feature type display value for features that may be on 
+    new comparison maps.
+-   Added a cluster correspondence option.
+-   Each slot only has one title box, with slot specific buttons in it.
+-   Each map has it's own set of buttons on the image.
+-   Allow individual maps in slot to be deleted using the button labeled "x".
+-   Allow the maps in a slot to be limited to an individual map using the 
+    button labeled "L".
 -   Allow individual maps in slot to be flipped.  The flip button for flipped
     maps is labeled "UF" for un-flip. 
 -   Allow maps of different base units to be scaled using a conversion factor
     specified in the config file.
 -   A "clean view" is now offered that does not have the navigation buttons on
-    the picture.  This is to make the image more apealling for publishing.
+    the picture.  This is to make the image more appealing for publishing.
 -   Reference maps can be stacked vertically or placed in multiple rows.
 -   The order of the reference maps can be specified.
 -   Intra-slot correspondences can be displayed.
@@ -15,7 +36,11 @@
     related to other maps in its map set.  The spider crawls the intra-slot
     correspondences to a selected depth.  It returns an image with a row of maps
     for each level.
--   Individual control buttons for each map in a slot have been created.
+-   Option to draw correspondence lines to either the features or the maps.
+-   Option to turn off some or all of the clickable elements on the image to 
+    save bandwidth and render time.
+-   Sanity check for the number of clickable elements on an image.
+-   All database queries have been moved to a single module.
 
 0.14    2005-04-14
 
@@ -68,7 +93,7 @@
     or average features per base unit.
 -   Added "link viewer" to allow the creation of CMap URLs from imported
     map location data.
--   Added instructions for how to integrage CMap with GBrowse using the 
+-   Added instructions for how to integrate CMap with GBrowse using the 
     Chado database schema.
 
 0.12    2004-07-29
