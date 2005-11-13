@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.123 2005-10-14 20:05:21 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.124 2005-11-13 02:19:30 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.123 $)[-1];
+$VERSION = (qw$Revision: 1.124 $)[-1];
 
 #
 # Get command-line options
@@ -815,8 +815,8 @@ sub delete_correspondences {
         else {
             push @missing, 'map_set_accs or species_acc or map_type_acc';
         }
-        if ( defined($evidence_type_accs_str)
-            and $evidence_type_accs_str =~ /all/i )
+        if ( not $evidence_type_accs_str
+            or $evidence_type_accs_str =~ /all/i )
         {
             @evidence_type_accs = keys( %{ $self->evidence_type_data() } );
         }
