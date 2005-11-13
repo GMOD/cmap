@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.127 2005-11-11 22:00:34 mwz444 Exp $
+# $Id: Generic.pm,v 1.128 2005-11-13 02:20:49 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.127 $)[-1];
+$VERSION = (qw$Revision: 1.128 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -3745,6 +3745,8 @@ get_features() provides and doesn't involve any table joins.
 
 =item - Feature Type Accession (feature_type_acc)
 
+=item - List of Feature Type Accession to ignore (ignore_feature_type_accs)
+
 =back
 
 =item * Output
@@ -3772,13 +3774,14 @@ Not using cache because this query is quicker.
 
     my $self              = shift;
     my %validation_params = (
-        cmap_object      => 1,
-        no_validation    => 0,
-        map_id           => 0,
-        feature_id       => 0,
-        feature_acc      => 0,
-        feature_name     => 0,
-        feature_type_acc => 0,
+        cmap_object              => 1,
+        no_validation            => 0,
+        map_id                   => 0,
+        feature_id               => 0,
+        feature_acc              => 0,
+        feature_name             => 0,
+        feature_type_acc         => 0,
+        ignore_feature_type_accs => 0,
     );
     my %args = @_;
     validate( @_, \%validation_params ) unless $args{'no_validation'};
@@ -3788,8 +3791,9 @@ Not using cache because this query is quicker.
     my $feature_id   = $args{'feature_id'};
     my $feature_acc  = $args{'feature_acc'};
     my $feature_name = $args{'feature_name'};
-    my $feature_type_acc = $args{'feature_type_acc'};
-    my $db               = $cmap_object->db;
+    my $feature_type_acc         = $args{'feature_type_acc'};
+    my $ignore_feature_type_accs = $args{'ignore_feature_type_accs'} || [];
+    my $db                       = $cmap_object->db;
     my $return_object;
     my $sql_str = qq[
          select feature_id,
@@ -3828,6 +3832,10 @@ Not using cache because this query is quicker.
     if ($feature_type_acc) {
         $where_sql .= $where_sql ? " and " : " where ";
         $where_sql .= " feature_type_acc = '$feature_type_acc' ";
+    }
+    if (@$ignore_feature_type_accs) {
+        $where_sql .= " and feature_type_acc not in ('"
+            . join( "','", sort @$ignore_feature_type_accs ) . "') ";
     }
 
     $sql_str .= $where_sql;
@@ -4996,7 +5004,8 @@ Array of Hashes:
     alias,
     feature_id,
     feature_acc,
-    feature_name
+    feature_name,
+    feature_type_acc
 
 
 =item * Cache Level (Not Used): 3
@@ -5045,7 +5054,8 @@ Not using cache because this query is quicker.
                     fa.alias,
                     f.feature_id,
                     f.feature_acc,
-                    f.feature_name
+                    f.feature_name,
+                    f.feature_type_acc
     ];
     my $from_sql = qq[
             from    cmap_feature_alias fa,
@@ -5549,13 +5559,17 @@ If disregard_evidence_type is not true AND no evidence type info is given, retur
 
 =item - map_set_acc2 (map_set_acc2)
 
+=item - map_id1 (map_id1)
+
+=item - map_id2 (map_id2)
+
 =item - map_acc2 (map_acc2)
 
 =item - disregard_evidence_type (disregard_evidence_type)
 
 =back
 
-=item * Required if disregard_evidence_type is true
+=item * Some of the following Required unless disregard_evidence_type is true
 
 =over 4
 
@@ -5620,6 +5634,8 @@ Not using cache because this query is quicker.
         feature_id2                 => 0,
         map_set_id2                 => 0,
         map_set_acc2                => 0,
+        map_id1                     => 0,
+        map_id2                     => 0,
         map_acc2                    => 0,
         included_evidence_type_accs => 0,
         less_evidence_type_accs     => 0,
@@ -5636,6 +5652,8 @@ Not using cache because this query is quicker.
     my $feature_id2                 = $args{'feature_id2'};
     my $map_set_id2                 = $args{'map_set_id2'};
     my $map_set_acc2                = $args{'map_set_acc2'};
+    my $map_id1                     = $args{'map_id1'};
+    my $map_id2                     = $args{'map_id2'};
     my $map_acc2                    = $args{'map_acc2'};
     my $included_evidence_type_accs = $args{'included_evidence_type_accs'}
         || [];
@@ -5705,11 +5723,18 @@ Not using cache because this query is quicker.
         $sql_str .= " and cl.feature_id2=$feature_id2 ";
     }
 
+    if ($map_id1) {
+        $sql_str .= " and cl.map_id1='" . $map_id1 . "' ";
+    }
+
     if ($map_set_id2) {
         $sql_str .= " and map2.map_set_id='" . $map_set_id2 . "' ";
     }
     elsif ($map_set_acc2) {
         $sql_str .= " and ms2.map_set_acc='" . $map_set_acc2 . "' ";
+    }
+    elsif ($map_id2) {
+        $sql_str .= " and cl.map_id2='" . $map_id2 . "' ";
     }
     elsif ($map_acc2) {
         $sql_str .= " and map2.map_acc='" . $map_acc2 . "' ";
@@ -9933,7 +9958,6 @@ id
 
 =cut
 
-    #xxx
     my $self              = shift;
     my %validation_params = (
         cmap_object         => 1,
@@ -10606,7 +10630,6 @@ Given the id and some attributes to modify, updates.
 
 =cut
 
-    #xxx
     my $self              = shift;
     my %validation_params = (
         cmap_object   => 1,

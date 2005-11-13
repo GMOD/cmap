@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.54 2005-10-17 16:05:51 kycl4rk Exp $
+# $Id: MakeCorrespondences.pm,v 1.55 2005-11-13 02:20:49 mwz444 Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.54 $)[-1];
+$VERSION = (qw$Revision: 1.55 $)[-1];
 
 use Data::Dumper;
 use File::Spec::Functions;
@@ -126,7 +126,6 @@ would match.
     my $allow_update           = $args{'allow_update'};
     my $sql_object             = $self->sql;
     my $config                 = $self->config;
-    my $db                     = $self->db;
     my $admin                  = Bio::GMOD::CMap::Admin->new(
         config                 => $config,
         data_source            => $self->data_source,
@@ -189,12 +188,12 @@ would match.
 
     my @from_map_ids;
     for my $from_ms_id ( @from_map_set_ids ) {
-        push @from_map_ids, get_map_ids( $db, $from_ms_id );
+        push @from_map_ids, $self->_get_map_ids( $from_ms_id );
     }
 
     my @to_map_ids;
     for my $to_ms_id ( @to_map_set_ids ) {
-        push @to_map_ids, get_map_ids( $db, $to_ms_id );
+        push @to_map_ids, $self->_get_map_ids( $to_ms_id );
     }
 
     my %processed_map_pair;
@@ -204,8 +203,7 @@ would match.
     for my $from_map_id ( @from_map_ids ) {
         $num_checked_maps++;
         $self->Print("Getting features for map id $from_map_id\n");
-        my $from_features = get_features({
-            db                   => $db,
+        my $from_features = $self->_get_features({
             map_id               => $from_map_id,
             ignore_feature_types => \@skip_feature_type_accs,
             name_regex           => $name_regex,
@@ -232,8 +230,7 @@ would match.
 
             $self->Print("Getting features for map id $to_map_id\n");
 
-            my $to_features = get_features({
-                db                   => $db,
+            my $to_features = $self->_get_features({
                 map_id               => $to_map_id,
                 ignore_feature_types => \@skip_feature_type_accs,
                 name_regex           => $name_regex,
@@ -252,8 +249,8 @@ would match.
                 : ( $to_features  , $from_features )
             ;
 
-            my $corr = get_correspondences( 
-                $db, $from_map_id, $to_map_id, $evidence_type_acc
+            my $corr = $self->_get_correspondences( 
+                $from_map_id, $to_map_id, $evidence_type_acc
             );
 
             my %done;
@@ -305,14 +302,13 @@ would match.
                             feature_id1       => $fid1,
                             feature_id2       => $fid2,
                             evidence_type_acc => $evidence_type_acc,
-                            allow_update      => 1,
+                            allow_update      => $allow_update,
                             threshold         => 0,
                         );
 
                         $self->Print(
-                            "New corr ($fc_id): $fname ($fid1) => $fid2\n"
+                            "Corr ($fc_id): $fname ($fid1) => $fid2\n"
                         );
-
                         $num_new_corr++;
                     }
                 }
@@ -398,103 +394,79 @@ sub make_feature_sql {
 }
 
 # ----------------------------------------------------
-sub get_correspondences {
-    my ( $db, $map_id1, $map_id2, $evidence_type_acc ) = @_;
+sub _get_correspondences {
+    my ( $self, $map_id1, $map_id2, $evidence_type_acc ) = @_;
 
-    my $corr = $db->selectall_arrayref(
-        q[
-            select cl.feature_id1, cl.feature_id2
-            from   cmap_correspondence_evidence ce,
-                   cmap_correspondence_lookup cl
-            where  cl.map_id1=?
-            and    cl.map_id2=?
-            and    cl.feature_correspondence_id=ce.feature_correspondence_id
-            and    ce.evidence_type_acc=?
-        ],
-        {},
-        ( $map_id1, $map_id2, $evidence_type_acc )
+    my $sql_object = $self->sql();
+    my $corr       = $sql_object->get_feature_correspondence_details(
+        cmap_object                 => $self,
+        map_id1                     => $map_id1,
+        map_id2                     => $map_id2,
+        included_evidence_type_accs => [ $evidence_type_acc, ],
     );
 
     my %correspondences;
-    for my $c ( @$corr ) {
-        $correspondences{ $c->[0] }{ $c->[1] } = 1;
-        $correspondences{ $c->[1] }{ $c->[0] } = 1;
+    for my $c (@$corr) {
+        $correspondences{ $c->{'feature_id1'} }{ $c->{'feature_id2'} } = 1;
+        $correspondences{ $c->{'feature_id2'} }{ $c->{'feature_id1'} } = 1;
     }
 
     return \%correspondences;
 }
 
 # ----------------------------------------------------
-sub get_map_ids {
-    my ( $db, $map_set_id ) = @_;
+sub _get_map_ids {
+    my ( $self, $map_set_id ) = @_;
 
-    return @{ $db->selectcol_arrayref(
-        q[
-            select map_id
-            from   cmap_map
-            where  map_set_id=?
-        ],
-        {},
-        ( $map_set_id )
-    ) };
+    my $sql_object = $self->sql();
+    my $maps       = $sql_object->get_maps_simple(
+        cmap_object => $self,
+        map_set_id  => $map_set_id,
+    );
+    my @map_ids = map { $_->{'map_id'} } @{ $maps || [] };
+    return @map_ids;
 }
 
 # ----------------------------------------------------
-sub get_features {
+sub _get_features {
+    my $self                 = shift;
     my $args                 = shift;
-    my $db                   = $args->{'db'};
-    my $map_id               = $args->{'map_id'}               || [];
+    my $map_id               = $args->{'map_id'} || [];
     my $ignore_feature_types = $args->{'ignore_feature_types'} || [];
     my $name_regex           = $args->{'name_regex'};
     my $temp_dir             = $args->{'temp_dir'};
     my $cache                = catfile( $temp_dir, $map_id );
 
     if ( -e $cache ) {
-        return retrieve( $cache );
+        return retrieve($cache);
     }
 
-    my $skip_regex = @$ignore_feature_types 
-        ? qr/join( '|', @$ignore_feature_types )/o 
-        : undef;
-
-    my $sth = $db->prepare(
-        q[
-            select f.feature_id,
-                   f.feature_name,
-                   f.feature_type_acc
-            from   cmap_feature f
-            where  f.map_id=?
-            union
-            select fa.feature_id,
-                   fa.alias as feature_name,
-                   f.feature_type_acc
-            from   cmap_feature_alias fa,
-                   cmap_feature f
-            where  fa.feature_id=f.feature_id
-            and    f.map_id=?
-        ]
+    my $sql_object = $self->sql();
+    my $features   = $sql_object->get_features_simple(
+        cmap_object              => $self,
+        map_id                   => $map_id,
+        ignore_feature_type_accs => $ignore_feature_types,
     );
-    $sth->execute( $map_id, $map_id );
+    my $aliases = $sql_object->get_feature_aliases(
+        cmap_object              => $self,
+        map_id                   => $map_id,
+        ignore_feature_type_accs => $ignore_feature_types,
+    );
 
-    my %features;
-    FEATURE:
-    while ( my $f = $sth->fetchrow_hashref ) {
-        if ( $skip_regex && $f->{'feature_type_acc'} =~ $skip_regex ) {
-            next FEATURE;
+    my %return_features;
+FEATURE:
+    for my $feature ( @{ $features || [] }, @{ $aliases || [] } ) {
+        if ( $name_regex && $feature->{'feature_name'} =~ $name_regex ) {
+            $feature->{'feature_name'} = $1;
         }
 
-        if ( $name_regex && $f->{'feature_name'} =~ $name_regex ) {
-            $f->{'feature_name'} = $1;
-        }
-
-        push @{ $features{ lc $f->{'feature_name'} } }, [
-            $f->{'feature_id'}, $f->{'feature_type_acc'}
-        ];
+        push @{ $return_features{ lc $feature->{'feature_name'} } },
+            [ $feature->{'feature_id'}, $feature->{'feature_type_acc'} ];
     }
 
-    store \%features, $cache;
+    store \%return_features, $cache;
 
-    return \%features;
+    return \%return_features;
 }
 
 1;
