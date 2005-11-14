@@ -194,7 +194,7 @@ sub ACTION_build_html {
             [ 'CMap Home'      => '' ],
             [ 'Maps'           => '/cgi-bin/cmap/viewer?changeMenu=1' ],
             [ 'Map Search'     => '/cgi-bin/cmap/map_search' ],
-            [ 'Feature Search'         => '/cgi-bin/cmap/feature_search' ],
+            [ 'Feature Search' => '/cgi-bin/cmap/feature_search' ],
             [ 'Matrix'         => '/cgi-bin/cmap/matrix' ],
             [ 'Map Sets'       => '/cgi-bin/cmap/map_set_info' ],
             [ 'Feature Types'  => '/cgi-bin/cmap/feature_type_info' ],
@@ -222,9 +222,41 @@ sub ACTION_build_html {
               . 'for this intro page.'
         ),
         $q->p(
-                "At the top you'll see a sample navigation bar you may wish "
-              . 'to keep on this page as it links to the major CMap sections.'
+                'Start using CMap with one of the following options.'
         ),
+        $q->ul(
+            $q->li(
+                $q->a( { -href => '/cgi-bin/cmap/viewer?changeMenu=1' },
+                    'Maps' )
+                    . " - Use a menu to select your starting maps\n"
+            ),
+            $q->li(
+                $q->a(
+                    { -href => '/cgi-bin/cmap/map_search' }, 'Map Search'
+                    )
+                    . " - If the map set is quite large, the Map Search page can be quicker than sorting through menus.\n"
+            ),
+            $q->li(
+                $q->a( { -href => '/cgi-bin/cmap/feature_search' },
+                    'Feature Search' )
+                    . " - Search for a specific feature and display it on a map.\n"
+            ),
+            $q->li(
+                $q->a( { -href => '/cgi-bin/cmap/matrix' }, 'Matrix' )
+                    . " - View a table of the number of correspondences between pairs of map sets and maps.\n"
+            ),
+            $q->li(
+                $q->a( { -href => '/cgi-bin/cmap/saved_link' },
+                    'Saved Links' )
+                    . " - View pages previously saved or imported.\n"
+            ),
+            ),
+        $q->p(
+            'For an introduction to the basic consepts of CMap, please see the '
+                . $q->a( { -href => '/cgi-bin/cmap/help' }, 'help pages' )
+                . ' or the '
+                . $q->a( { -href => '/cmap/tutorial' }, 'tutorial' )
+                . ".\n" ),
         $q->p(
             'We would appreciate you would include an acknowlegement of CMap '
               . 'on this page, e.g.:'
@@ -277,7 +309,7 @@ sub ACTION_html {
         }
 
         if ( $file =~ m{htdocs/index\.html$} && -e $to ) {
-            next if $self->y_n( "'$to' exists.  Overwrite?", 'n' );
+            next unless $self->y_n( "'$to' exists.  Overwrite?", 'n' );
         }
 
         $self->copy_if_modified(
