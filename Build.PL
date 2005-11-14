@@ -1,4 +1,4 @@
-# $Id: Build.PL,v 1.51 2005-11-04 20:55:27 mwz444 Exp $
+# $Id: Build.PL,v 1.52 2005-11-14 05:28:49 mwz444 Exp $
 
 use strict;
 use CMapBuilder;
@@ -212,6 +212,7 @@ my $builder = CMapBuilder->new(
         'DBI'                          => 1.20,
         'File::Temp'                   => 0,
         'Filesys::Df'                  => 0,
+        'IO::Prompt'                   => 0,
         'IO::Tee'                      => 0,
         'GD'                           => 2.11,
         'GD::SVG'                      => 0.25,
