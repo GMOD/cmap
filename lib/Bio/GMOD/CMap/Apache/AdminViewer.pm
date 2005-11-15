@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache::AdminViewer;
 
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.90 2005-10-19 15:38:44 mwz444 Exp $
+# $Id: AdminViewer.pm,v 1.91 2005-11-15 21:11:25 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -36,7 +36,7 @@ $FEATURE_SHAPES = [
 ];
 $MAP_SHAPES = [qw( box dumbbell I-beam )];
 $WIDTHS     = [ 1 .. 10 ];
-$VERSION    = (qw$Revision: 1.90 $)[-1];
+$VERSION    = (qw$Revision: 1.91 $)[-1];
 
 use constant ADMIN_TEMPLATE => {
     admin_home                => 'admin_home.tmpl',
@@ -717,6 +717,7 @@ sub map_view {
         || $apr->param('feature_type_aid')
         || 0;
     my $page_no = $apr->param('page_no') || 1;
+    my $att_order_by = $apr->param('att_order_by') || q{};
 
     my $maps = $sql_object->get_maps(
         cmap_object => $self,
@@ -730,23 +731,23 @@ sub map_view {
         cmap_object => $self,
         object_type => 'map',
         object_id   => $map_id,
-        order_by    => $apr->param('att_order_by')
+        order_by    => $att_order_by
     );
 
     # Sort object using the Utils method sort_selectall_arrayref
     $map->{'attributes'} = sort_selectall_arrayref( $map->{'attributes'},
-        $self->_split_order_by_for_sort( $apr->param('att_order_by') ) );
+        $self->_split_order_by_for_sort( $att_order_by ) );
 
     $map->{'xrefs'} = $sql_object->get_xrefs(
         cmap_object => $self,
         object_type => 'map',
         object_id   => $map_id,
-        order_by    => $apr->param('att_order_by')
+        order_by    => $att_order_by
     );
 
     # Sort object using the Utils method sort_selectall_arrayref
     $map->{'xrefs'} = sort_selectall_arrayref( $map->{'xrefs'},
-        $self->_split_order_by_for_sort( $apr->param('att_order_by') ) );
+        $self->_split_order_by_for_sort( $att_order_by ) );
 
     my $features = $sql_object->get_features_simple(
         cmap_object      => $self,
@@ -1096,6 +1097,7 @@ sub feature_view {
     my $apr        = $self->apr;
     my $feature_id = $apr->param('feature_id') or die 'No feature id';
     my $order_by   = $apr->param('order_by') || '';
+    my $att_order_by = $apr->param('att_order_by') || q{};
 
     my $features = $sql_object->get_features(
         cmap_object => $self,
@@ -1113,24 +1115,24 @@ sub feature_view {
         cmap_object => $self,
         object_type => 'feature',
         object_id   => $feature_id,
-        order_by    => $apr->param('att_order_by'),
+        order_by    => $att_order_by,
     );
 
     # Sort object using the Utils method sort_selectall_arrayref
     $feature->{'attributes'}
         = sort_selectall_arrayref( $feature->{'attributes'},
-        $self->_split_order_by_for_sort( $apr->param('att_order_by') ) );
+        $self->_split_order_by_for_sort( $att_order_by ) );
 
     $feature->{'xrefs'} = $sql_object->get_xrefs(
         cmap_object => $self,
         object_type => 'feature',
         object_id   => $feature_id,
-        order_by    => $apr->param('att_order_by'),
+        order_by    => $att_order_by,
     );
 
     # Sort object using the Utils method sort_selectall_arrayref
     $feature->{'xrefs'} = sort_selectall_arrayref( $feature->{'xrefs'},
-        $self->_split_order_by_for_sort( $apr->param('att_order_by') ) );
+        $self->_split_order_by_for_sort( $att_order_by ) );
 
     my $correspondences = $sql_object->get_feature_correspondence_details(
         cmap_object             => $self,
@@ -1387,6 +1389,7 @@ sub feature_corr_view {
         || 'evidence_type_acc';
     my $feature_correspondence_id = $apr->param('feature_correspondence_id')
         or return $self->error('No feature correspondence id');
+    my $att_order_by = $apr->param('att_order_by') || q{};
 
     my $corr = $sql_object->get_feature_correspondences(
         cmap_object               => $self,
@@ -1398,23 +1401,23 @@ sub feature_corr_view {
         cmap_object => $self,
         object_type => 'feature_correspondence',
         object_id   => $feature_correspondence_id,
-        order_by    => $apr->param('att_order_by'),
+        order_by    => $att_order_by,
     );
 
     # Sort object using the Utils method sort_selectall_arrayref
     $corr->{'attributes'} = sort_selectall_arrayref( $corr->{'attributes'},
-        $self->_split_order_by_for_sort( $apr->param('att_order_by') ) );
+        $self->_split_order_by_for_sort( $att_order_by ) );
 
     $corr->{'xrefs'} = $sql_object->get_xrefs(
         cmap_object => $self,
         object_type => 'feature_correspondence',
         object_id   => $feature_correspondence_id,
-        order_by    => $apr->param('att_order_by'),
+        order_by    => $att_order_by,
     );
 
     # Sort object using the Utils method sort_selectall_arrayref
     $corr->{'xrefs'} = sort_selectall_arrayref( $corr->{'xrefs'},
-        $self->_split_order_by_for_sort( $apr->param('att_order_by') ) );
+        $self->_split_order_by_for_sort( $att_order_by ) );
 
     my $feature1 = $sql_object->get_features(
         cmap_object => $self,
@@ -1779,6 +1782,7 @@ sub map_set_edit {
     my $sql_object = $self->sql;
     my $apr        = $self->apr;
     my $map_set_id = $apr->param('map_set_id') or die 'No map set ID';
+    my $att_order_by = $apr->param('att_order_by') || q{};
 
     my $map_sets = $sql_object->get_map_sets(
         cmap_object => $self,
@@ -1792,13 +1796,13 @@ sub map_set_edit {
         cmap_object => $self,
         object_type => 'map_set',
         object_id   => $map_set_id,
-        order_by    => $apr->param('att_order_by'),
+        order_by    => $att_order_by,
     );
 
     # Sort object using the Utils method sort_selectall_arrayref
     $map_set->{'attributes'}
         = sort_selectall_arrayref( $map_set->{'attributes'},
-        $self->_split_order_by_for_sort( $apr->param('att_order_by') ) );
+        $self->_split_order_by_for_sort( $att_order_by ) );
 
     my $specie = $sql_object->get_species( cmap_object => $self, );
 
@@ -1865,6 +1869,7 @@ sub map_set_view {
     my $map_set_id = $apr->param('map_set_id') or die 'No map set id';
     my $order_by   = $apr->param('order_by') || 'display_order,map_name';
     my $page_no    = $apr->param('page_no') || 1;
+    my $att_order_by = $apr->param('att_order_by') || q{};
 
     my $map_sets = $sql_object->get_map_sets(
         cmap_object => $self,
@@ -1878,24 +1883,24 @@ sub map_set_view {
         cmap_object => $self,
         object_type => 'map_set',
         object_id   => $map_set_id,
-        order_by    => $apr->param('att_order_by'),
+        order_by    => $att_order_by||'',
     );
 
     # Sort object using the Utils method sort_selectall_arrayref
     $map_set->{'attributes'}
         = sort_selectall_arrayref( $map_set->{'attributes'},
-        $self->_split_order_by_for_sort( $apr->param('att_order_by') ) );
+        $self->_split_order_by_for_sort( $att_order_by ) );
 
     $map_set->{'xrefs'} = $sql_object->get_xrefs(
         cmap_object => $self,
         object_type => 'map_set',
         object_id   => $map_set_id,
-        order_by    => $apr->param('att_order_by'),
+        order_by    => $att_order_by||'',
     );
 
     # Sort object using the Utils method sort_selectall_arrayref
     $map_set->{'xrefs'} = sort_selectall_arrayref( $map_set->{'xrefs'},
-        $self->_split_order_by_for_sort( $apr->param('att_order_by') ) );
+        $self->_split_order_by_for_sort( $att_order_by ) );
 
     my $maps = $sql_object->get_maps(
         cmap_object    => $self,
@@ -2187,6 +2192,7 @@ sub species_view {
     my $order_by   = $apr->param('order_by')
         || 'display_order,species_common_name';
     my $page_no = $apr->param('page_no') || 1;
+    my $att_order_by = $apr->param('att_order_by') || q{};
 
     if ($species_id) {
         my $species_array = $sql_object->get_species(
@@ -2202,24 +2208,24 @@ sub species_view {
             cmap_object => $self,
             object_type => 'species',
             object_id   => $species_id,
-            order_by    => $apr->param('att_order_by'),
+            order_by    => $att_order_by,
         );
 
         # Sort object using the Utils method sort_selectall_arrayref
         $species->{'attributes'}
             = sort_selectall_arrayref( $species->{'attributes'},
-            $self->_split_order_by_for_sort( $apr->param('att_order_by') ) );
+            $self->_split_order_by_for_sort( $att_order_by ) );
 
         $species->{'xrefs'} = $sql_object->get_xrefs(
             cmap_object => $self,
             object_type => 'species',
             object_id   => $species_id,
-            order_by    => $apr->param('att_order_by'),
+            order_by    => $att_order_by,
         );
 
         # Sort object using the Utils method sort_selectall_arrayref
         $species->{'xrefs'} = sort_selectall_arrayref( $species->{'xrefs'},
-            $self->_split_order_by_for_sort( $apr->param('att_order_by') ) );
+            $self->_split_order_by_for_sort( $att_order_by ) );
 
         return $self->process_template( ADMIN_TEMPLATE->{'species_view_one'},
             { species => $species, } );
