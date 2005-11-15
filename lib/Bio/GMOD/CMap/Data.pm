@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.263 2005-11-09 23:49:21 mwz444 Exp $
+# $Id: Data.pm,v 1.264 2005-11-15 21:49:53 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.263 $)[-1];
+$VERSION = (qw$Revision: 1.264 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -4029,7 +4029,7 @@ Sets and returns the sorted map ids for each slot
             @map_ids =
                 map  { $_->[0] }
                 sort { $b->[1] <=> $a->[1] }
-                map  { [ $_, $self->{'maps'}{$_}{'no_correspondences'} ] }
+                map  { [ $_, $slot_data->{$_}{'no_correspondences'} ] }
                 @map_ids;
         }
         $self->{'sorted_map_ids'}{$slot_no} = \@map_ids;
