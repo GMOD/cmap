@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.128 2005-11-13 02:20:49 mwz444 Exp $
+# $Id: Generic.pm,v 1.129 2005-11-16 19:36:59 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.128 $)[-1];
+$VERSION = (qw$Revision: 1.129 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -1377,10 +1377,10 @@ Species id
     validate( @_, \%validation_params ) unless $args{'no_validation'};
 
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
-    my $species_acc         = $args{'species_acc'} || $args{'accession_id'};
-    my $species_common_name = $args{'species_common_name'};
-    my $species_full_name   = $args{'species_full_name'};
-    my $display_order       = $args{'display_order'};
+    my $species_acc = $args{'species_acc'} || $args{'accession_id'};
+    my $species_common_name = $args{'species_common_name'} || q{};
+    my $species_full_name   = $args{'species_full_name'}   || q{};
+    my $display_order       = $args{'display_order'}       || 1;
     my $db                  = $cmap_object->db;
     my $species_id          = $self->next_number(
         cmap_object => $cmap_object,
@@ -2166,10 +2166,10 @@ Map Set id
     validate( @_, \%validation_params ) unless $args{'no_validation'};
 
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
-    my $map_set_acc        = $args{'map_set_acc'} || $args{'accession_id'};
-    my $map_set_name       = $args{'map_set_name'};
-    my $map_set_short_name = $args{'map_set_short_name'};
-    my $map_type_acc       = $args{'map_type_acc'}
+    my $map_set_acc  = $args{'map_set_acc'}  || $args{'accession_id'};
+    my $map_set_name = $args{'map_set_name'} || q{};
+    my $map_set_short_name = $args{'map_set_short_name'} || q{};
+    my $map_type_acc = $args{'map_type_acc'}
         || $args{'map_type_aid'}
         || $args{'map_type_accession'};
     my $species_id    = $args{'species_id'};
@@ -2180,7 +2180,7 @@ Map Set id
     my $shape             = $args{'shape'};
     my $width             = $args{'width'};
     my $color             = $args{'color'};
-    my $map_units         = $args{'map_units'};
+    my $map_units         = $args{'map_units'} || q{};
     my $is_relational_map = $args{'is_relational_map'} || 0;
     my $db                = $cmap_object->db;
     my $map_set_id        = $self->next_number(
@@ -3121,7 +3121,7 @@ Map id
     my $cmap_object = $args{'cmap_object'} or die "No CMap Object included";
     my $map_acc       = $args{'map_acc'} || $args{'accession_id'};
     my $map_set_id    = $args{'map_set_id'};
-    my $map_name      = $args{'map_name'};
+    my $map_name      = $args{'map_name'} || q{};
     my $display_order = $args{'display_order'} || 1;
     my $map_start     = $args{'map_start'};
     my $map_stop      = $args{'map_stop'};
@@ -4581,18 +4581,19 @@ Feature id
     my $feature_type_acc = $args{'feature_type_acc'}
         || $args{'feature_type_aid'}
         || $args{'feature_type_accession'};
-    my $feature_name  = $args{'feature_name'};
-    my $is_landmark   = $args{'is_landmark'} || 0;
-    my $feature_start = $args{'feature_start'};
+    my $feature_name  = $args{'feature_name'}  || q{};
+    my $is_landmark   = $args{'is_landmark'}   || 0;
+    my $feature_start = $args{'feature_start'} || 0;
     my $feature_stop  = $args{'feature_stop'};
 
     # Backwards compatibility
     $feature_start = $args{'start_position'} unless defined($feature_start);
     $feature_stop  = $args{'stop_position'}  unless defined($feature_stop);
-    my $default_rank = $args{'default_rank'};
-    my $direction    = $args{'direction'} || 1;
+    $feature_stop  = $feature_start          unless defined($feature_stop);
+    my $default_rank = $args{'default_rank'} || 1;
+    my $direction    = $args{'direction'}    || 1;
     my $gclass       = $args{'gclass'};
-    my $threshold    = $args{'threshold'} || 0;
+    my $threshold    = $args{'threshold'}    || 0;
     my $db           = $cmap_object->db;
 
     $gclass = undef
@@ -8104,11 +8105,11 @@ Attribute id
         object_type => 'attribute',
         )
         or return $self->error('No next number for attribute ');
-    my $display_order   = $args{'display_order'};
+    my $display_order   = $args{'display_order'} || 1;
     my $object_type     = $args{'object_type'};
-    my $is_public       = $args{'is_public'};
-    my $attribute_name  = $args{'attribute_name'};
-    my $attribute_value = $args{'attribute_value'};
+    my $is_public       = $args{'is_public'} || 1;
+    my $attribute_name  = $args{'attribute_name'} || q{};
+    my $attribute_value = $args{'attribute_value'} || q{};
     my $object_id       = $args{'object_id'};
     my $table_name  = $self->{'TABLE_NAMES'}->{$object_type} if $object_type;
     my @insert_args = (
@@ -8688,10 +8689,10 @@ Xref id
         object_type => 'xref',
         )
         or return $self->error('No next number for xref ');
-    my $display_order = $args{'display_order'};
+    my $display_order = $args{'display_order'} || 1;
     my $object_type   = $args{'object_type'};
-    my $xref_name     = $args{'xref_name'};
-    my $xref_url      = $args{'xref_url'};
+    my $xref_name     = $args{'xref_name'} || q{};
+    my $xref_url      = $args{'xref_url'} || q{};
     my $object_id     = $args{'object_id'};
     my $table_name = $self->{'TABLE_NAMES'}->{$object_type} if $object_type;
 
