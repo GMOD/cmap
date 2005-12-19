@@ -1,0 +1,11 @@
+Chado integration is something we've been looking toward for CMap for a while.  We have proposed 2 different ways to acheive this.
+
+Chado integration:
+  
+  The chado_integration.pod file ("perldoc chado_integration.pod") tells you how to run a CMap schema along side the Chado schema.  It provide a linker table to join information between the two schemas.
+
+Chado synchronization (recommended):
+
+  The newer (but less mature) approach is to populate the cmap directly from the chado db.  In this approach, the CMap install doesn't even have to be in the same database as chado or even use the same RDBMS (I store my CMap data in a MySQL db).  
+
+  See the information in the chado_synchronize folder for further information.
