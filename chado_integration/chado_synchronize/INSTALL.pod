@@ -1,0 +1,125 @@
+=head1 INTRODUCTION
+
+I'm glad you've decided to synchronize your Chado data with CMap.  This
+document will help you get started
+
+=head1 POSTGRES REQUIREMENTS
+
+Postgres 8.0+ with Perl support is required to use the Perl triggers.  You will need to upgrade your install of Postgres if your version does not meet the requirements.
+
+=head2 UPGRADING POSTGRES
+
+When upgrading, first see the upgrade secion of postgres INSTALL doc.  
+
+Here is what I had to do:
+
+=over 4
+
+=item - Dumped old posgres db
+
+  $ pg_dumpall > outputfile
+=item - kill current posgres
+
+=item - Install Postgres 8.0+ with Perl
+
+use the  --with-perl flag during config
+
+  $ ./configure --with-perl
+  $ make
+  $ make install
+  $ su - postgres
+  $ /usr/local/pgsql/bin/initdb -D /usr/local/pgsql/data
+  $ /usr/local/pgsql/bin/pg_ctl -D /usr/local/pgsql/data -l /usr/local/pgsql/logfile start
+
+=item - Add the old data back 
+
+  $ /usr/local/pgsql/bin/psql -d postgres -f outputfile
+
+=head1 Add "untrusted" perl to the db
+  $ createlang plperlu template1
+  $ createlang plperlu dbname
+
+=back
+
+=head1 Add new tables to chado.  
+ 
+These tables give the concept of a feature set (featureset) and links it to
+feature (feature_featureset) and dbxref (featureset_dbxref).  It also adds a
+linker table from featureloc to dbxref (featureloc_dbxref).
+
+    $ psql test2 < chado_integration/chado_synchronize/chado_sync_tables.sql
+
+=head1 Create featureset. 
+
+In order for this whole thing to work, the featureset table needs to be
+populated.  Someday, a script might help you out with this but for now you will
+have to do this by hand.
+
+The concept of a featureset is the same as a map set in CMap.  Basically, maps
+(sequence assemblies, chromosomes or whatever you want to make a map) are
+grouped into sets.  For example, sequence assembies from the same assembly run
+would all be in the same set to differenciate from other assembly runs.  
+
+=head2 featureset constraints
+
+All maps in a set must be of the same type.
+
+All maps in a set must be from the same organism. 
+
+Maps must only belong to one featureset otherwise there will possibly be
+inconsistencies.
+
+=head2 Example populating featureset:
+
+ insert into featureset (name,uniquename,feature_type_id,organism_id) 
+  (
+    select distinct 
+        o.abbreviation||'_'||cvt.name,
+        o.abbreviation||'_'||cvt.name,
+        f.type_id,
+        f.organism_id
+    from feature f, organism o, cvterm cvt 
+    where   f.type_id = cvt.cvterm_id
+        and f.organism_id = o.organism_id
+        and cvt.name = 'chromosome_arm'
+  );
+
+=head1 Add "maps" into featureset. 
+
+Each "map" is connected to it's featureset by feature_featureset.
+
+=head2 Example populating feature_featureset
+
+This example is not very complex.  For instance it does not take into account
+various versions of data but you can use it as a starting point.
+
+  insert into feature_featureset 
+    select fs.featureset_id, f.feature_id 
+    from featureset fs, feature f 
+    where f.type_id = fs.feature_type_id;
+
+=head1 Insert new CMap map_types and feature_types
+
+You will need to insert new map types and feature types into the CMap config
+file.  The accessions for these types should be the cvterm "name" but with
+spaces replaced by "_".
+
+=head1 Run cmap_syncronize_chado.pl
+
+This script will look at the featuresets that you've inserted and insert the
+data into CMap.  
+
+You will have several options.  The most import is the feature types to look
+at.  If you select to many, it may take a long time.
+
+  $ chado_integration/chado_synchronize/cmap_syncronize_chado.pl --chado_datasource datasource -u sql_username [-p sql_password] --cmap_datasource cmap_datasource
+
+
+=head1 Future stuff
+
+In the relatively near future, there will be triggers to install that will
+update CMap everytime chado is updated.
+
+=head1 AUTHOR
+
+Ben Faga E<lt>faga@cshl.orgE<gt>
