@@ -6,5 +6,7 @@ cmap_syncronize_chado.pl
 
  - Have an option to list possible new types to add to CMap config file
 
+ - Add correspondences.
+
 Create triggers.
 

@@ -1,13 +1,13 @@
-=head1 INTRODUCTION
+=head1 Introduction
 
 I'm glad you've decided to synchronize your Chado data with CMap.  This
 document will help you get started
 
-=head1 POSTGRES REQUIREMENTS
+=head1 Postgres Requirements
 
 Postgres 8.0+ with Perl support is required to use the Perl triggers.  You will need to upgrade your install of Postgres if your version does not meet the requirements.
 
-=head2 UPGRADING POSTGRES
+=head2 Upgrading Postgres
 
 When upgrading, first see the upgrade secion of postgres INSTALL doc.  
 
@@ -114,6 +114,10 @@ at.  If you select to many, it may take a long time.
 
   $ chado_integration/chado_synchronize/cmap_syncronize_chado.pl --chado_datasource datasource -u sql_username [-p sql_password] --cmap_datasource cmap_datasource
 
+=head1 Create Correspondences
+
+You will now need to use cmap_admin.pm to create correspondences between the
+newly created features.
 
 =head1 Future stuff
 
