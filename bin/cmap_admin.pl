@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 # vim: set ft=perl:
 
-# $Id: cmap_admin.pl,v 1.124 2005-11-13 02:19:30 mwz444 Exp $
+# $Id: cmap_admin.pl,v 1.125 2006-01-04 21:49:12 mwz444 Exp $
 
 use strict;
 use Pod::Usage;
@@ -9,7 +9,7 @@ use Getopt::Long;
 use Data::Dumper;
 
 use vars qw[ $VERSION ];
-$VERSION = (qw$Revision: 1.124 $)[-1];
+$VERSION = (qw$Revision: 1.125 $)[-1];
 
 #
 # Get command-line options
@@ -249,7 +249,6 @@ use File::Path;
 use File::Spec::Functions;
 use IO::File;
 use IO::Tee;
-use IO::Prompt;
 use Data::Dumper;
 use Term::ReadLine;
 use Bio::GMOD::CMap;
@@ -2843,10 +2842,9 @@ sub import_tab_data {
             'problems if your input file has feature accessions already ',
             'present in the database.',
             '',
+            "Check for duplicate data (slow)? [y/N]",
         );
-
-        $allow_update =
-          prompt( 'Check for duplicate data (slow)?', -yn, -d => 'Y' );
+        chomp( $allow_update = <STDIN> );
         $allow_update = ( $allow_update =~ /^[Yy]/ ) ? 1 : 0;
 
         #
@@ -3584,12 +3582,8 @@ sub show_menu {
             print "\n$prompt";
             chomp( my $answer = <STDIN> );
 
-            if ( $args{'allow_null'} && $answer == 0 ) {
+            if ( $args{'allow_null'} && !$answer ) {
                 $result = undef;
-                last;
-            }
-            elsif ( $args{'allow_all'} && $answer == $i ) {
-                $result = [ map { $lookup{$_} } 1 .. $i - 1 ];
                 last;
             }
             elsif ( $args{'allow_all'} || $args{'allow_mult'} ) {
@@ -3606,6 +3600,11 @@ sub show_menu {
 
                   # split on space or comma
                   split /[,\s]+/, $answer;
+
+                if ( $args{'allow_all'} && grep {$_ == $i} keys %numbers ) {
+                    $result = [ map { $lookup{$_} } 1 .. $i - 1 ];
+                    last;
+                }
 
                 $result = [
                     map { $_ || () }    # parse out nulls
