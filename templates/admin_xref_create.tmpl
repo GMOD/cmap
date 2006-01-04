@@ -15,7 +15,7 @@
 
 <form action="admin" method="POST">
     <table>
-        [% IF db_object %]
+        [% IF db_object AND db_object.object_name %]
             <tr>
                 <td align="right">
                     Database Object:

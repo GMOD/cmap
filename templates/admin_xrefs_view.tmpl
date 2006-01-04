@@ -68,7 +68,7 @@
         [% FOREACH ref=xrefs %]
             <tr bgcolor="[% IF i % 2 == 0 %]lightgrey[% ELSE %]white[% END %]">
                 <td>[% ref.display_order %]</td>
-                <td>[% ref.db_object_name %]</td>
+                <td>[% ref.object_type %]</td>
                 <td>[% ref.actual_object_name %]</td>
                 <td>[% ref.xref_name %]</td>
                 <td>[% ref.xref_url | truncate(40) %]</td>

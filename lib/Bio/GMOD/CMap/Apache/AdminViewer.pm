@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Apache::AdminViewer;
 
 # vim: set ft=perl:
 
-# $Id: AdminViewer.pm,v 1.91 2005-11-15 21:11:25 mwz444 Exp $
+# $Id: AdminViewer.pm,v 1.92 2006-01-04 19:19:10 mwz444 Exp $
 
 use strict;
 use Data::Dumper;
@@ -36,7 +36,7 @@ $FEATURE_SHAPES = [
 ];
 $MAP_SHAPES = [qw( box dumbbell I-beam )];
 $WIDTHS     = [ 1 .. 10 ];
-$VERSION    = (qw$Revision: 1.91 $)[-1];
+$VERSION    = (qw$Revision: 1.92 $)[-1];
 
 use constant ADMIN_TEMPLATE => {
     admin_home                => 'admin_home.tmpl',
@@ -2233,7 +2233,6 @@ sub species_view {
     else {
         my $species = $sql_object->get_species(
             cmap_object => $self,
-            order_by    => $order_by,
         );
 
         # Sort object using the Utils method sort_selectall_arrayref
@@ -2422,14 +2421,12 @@ sub xrefs_view {
         $refs = $sql_object->get_generic_xrefs(
             cmap_object => $self,
             object_type => $object_type,
-            order_by    => $order_by
         );
     }
     else {
         $refs = $sql_object->get_xrefs(
             cmap_object => $self,
             object_type => $object_type,
-            order_by    => $order_by
         );
     }
 
