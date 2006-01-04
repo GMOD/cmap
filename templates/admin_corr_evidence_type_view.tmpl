@@ -24,22 +24,7 @@
     </tr>
 </table>
 
-[% 
-    INCLUDE admin_attributes_view.tmpl 
-    attributes=evidence_type.attributes 
-    pk_name='evidence_type'
-    object_id=evidence_type.evidence_type
-    object_type='evidence_type'
-    return_action='corr_evidence_type_view'
-%]
-
-[% 
-    INCLUDE admin_xrefs_view_embedded.tmpl 
-    xrefs=evidence_type.xrefs 
-    pk_name='evidence_type'
-    object_id=evidence_type.evidence_type
-    object_type='evidence_type'
-    return_action='corr_evidence_type_view'
-%]
+<hr>
+Note: Attributes and Cross References for map types are maintained in the configuration file.
 
 [% INCLUDE admin_footer.tmpl %]

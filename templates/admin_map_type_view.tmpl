@@ -61,22 +61,7 @@
     </tr>
 </table>
 
-[% 
-    INCLUDE admin_attributes_view.tmpl 
-    attributes=map_type.attributes 
-    return_action='map_type_view'
-    pk_name='map_type'
-    object_id=map_type.map_type
-    object_type='map_type'
-%]
-
-[% 
-    INCLUDE admin_xrefs_view_embedded.tmpl 
-    xrefs=map_type.xrefs 
-    return_action='map_type_view'
-    pk_name='map_type'
-    object_id=map_type.map_type
-    object_type='map_type'
-%]
+<hr>
+Note: Attributes and Cross References for map types are maintained in the configuration file.
 
 [% INCLUDE admin_footer.tmpl %]

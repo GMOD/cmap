@@ -54,22 +54,7 @@
     </tr>
 </table>
 
-[% 
-    INCLUDE admin_attributes_view.tmpl 
-    attributes=feature_type.attributes 
-    return_action='feature_type_view'
-    pk_name='feature_type'
-    object_id=feature_type.feature_type
-    object_type='feature_type'
-%]
-
-[% 
-    INCLUDE admin_xrefs_view_embedded.tmpl 
-    xrefs=feature_type.xrefs 
-    return_action='feature_type_view'
-    pk_name='feature_type'
-    object_id=feature_type.feature_type
-    object_type='feature_type'
-%]
+<hr>
+Note: Attributes and Cross References for feature types are maintained in the configuration file.
 
 [% INCLUDE admin_footer.tmpl %]
