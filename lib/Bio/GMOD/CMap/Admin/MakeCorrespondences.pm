@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Admin::MakeCorrespondences;
 
 # vim: set ft=perl:
 
-# $Id: MakeCorrespondences.pm,v 1.55 2005-11-13 02:20:49 mwz444 Exp $
+# $Id: MakeCorrespondences.pm,v 1.56 2006-01-12 20:27:31 mwz444 Exp $
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ correspondence evidences.
 
 use strict;
 use vars qw( $VERSION $LOG_FH );
-$VERSION = (qw$Revision: 1.55 $)[-1];
+$VERSION = (qw$Revision: 1.56 $)[-1];
 
 use Data::Dumper;
 use File::Spec::Functions;
@@ -456,11 +456,12 @@ sub _get_features {
     my %return_features;
 FEATURE:
     for my $feature ( @{ $features || [] }, @{ $aliases || [] } ) {
-        if ( $name_regex && $feature->{'feature_name'} =~ $name_regex ) {
-            $feature->{'feature_name'} = $1;
+        my $name = $feature->{'alias'} || $feature->{'feature_name'};
+        if ( $name_regex && $name =~ $name_regex ) {
+            $name = $1;
         }
 
-        push @{ $return_features{ lc $feature->{'feature_name'} } },
+        push @{ $return_features{ lc $name } },
             [ $feature->{'feature_id'}, $feature->{'feature_type_acc'} ];
     }
 
