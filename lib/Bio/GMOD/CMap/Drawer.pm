@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.117 2005-11-09 15:29:41 mwz444 Exp $
+# $Id: Drawer.pm,v 1.118 2006-01-12 20:26:51 mwz444 Exp $
 
 =head1 NAME
 
@@ -347,7 +347,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.117 $)[-1];
+$VERSION = (qw$Revision: 1.118 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -1779,7 +1779,12 @@ to connect corresponding features on two maps.
     my $ref_slot_no = $self->reference_slot_no($slot_no);
     my $ref_side    = $slot_no > 0 ? RIGHT: LEFT;
     my $cur_side    = $slot_no > 0 ? LEFT: RIGHT;
-    return () unless ( $ref_slot_no or $ref_slot_no == 0 );
+
+    #return unles ref slot no is is defined and not ""
+    unless ( defined($ref_slot_no) and ( $ref_slot_no or $ref_slot_no == 0 ) )
+    {
+        return ();
+    }
     my @return = ();
     for my $f1 ( keys %{ $self->{'feature_position'}{$slot_no} } ) {
         my $self_label_side = $self->label_side($slot_no);

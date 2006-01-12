@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.66 2005-11-10 17:59:05 mwz444 Exp $
+# $Id: Utils.pm,v 1.67 2006-01-12 20:27:12 mwz444 Exp $
 
 =head1 NAME
 
@@ -34,7 +34,7 @@ use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.66 $)[-1];
+$VERSION = (qw$Revision: 1.67 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
@@ -268,7 +268,7 @@ Special thanks to Noel Yap for suggesting this strategy.
             if ( $low_bin > 0 ) {
                 ( $lmin, $lmax ) = $bins->Interval_Scan_dec( $low_bin - 1 );
 
-                if ( $lmin > 1 && $lmax == $low_bin - 1 ) {
+                if ( $lmin && $lmin > 1 && $lmax == $low_bin - 1 ) {
                     ( $next_lmin, $next_lmax )
                         = $bins->Interval_Scan_dec( $lmin - 1 );
                 }
@@ -1027,10 +1027,6 @@ sub _modify_slots {
     # If ever a slot has no maps, remove the slot.
     my $delete_pos = 0;
     my $delete_neg = 0;
-    foreach my $slot_no ( keys %{$slots} ) {
-    }
-    foreach my $slot_no ( sort _order_out_from_zero keys %{$slots} ) {
-    }
     foreach my $slot_no ( sort _order_out_from_zero keys %{$slots} ) {
         unless (
             (   $slots->{$slot_no}{'maps'} and %{ $slots->{$slot_no}{'maps'} }
