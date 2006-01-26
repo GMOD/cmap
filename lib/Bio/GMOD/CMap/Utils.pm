@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Utils;
 
 # vim: set ft=perl:
 
-# $Id: Utils.pm,v 1.67 2006-01-12 20:27:12 mwz444 Exp $
+# $Id: Utils.pm,v 1.68 2006-01-26 15:31:06 mwz444 Exp $
 
 =head1 NAME
 
@@ -34,7 +34,7 @@ use Clone qw(clone);
 require Exporter;
 use vars
     qw( $VERSION @EXPORT @EXPORT_OK @SESSION_PARAMS %SESSION_PARAM_DEFAULT_OF);
-$VERSION = (qw$Revision: 1.67 $)[-1];
+$VERSION = (qw$Revision: 1.68 $)[-1];
 
 @SESSION_PARAMS = qw[
     prev_ref_species_acc     prev_ref_map_set_acc
@@ -1228,6 +1228,10 @@ sub _get_options_from_url {
                 if ( $val =~ /^\d$/ ) {
                     $parsed_url_options{'url_feature_default_display'} = $val;
                 }
+                else {
+                    $parsed_url_options{'url_feature_default_display'}
+                        = undef;
+                }
                 next;
             }
 
@@ -1490,11 +1494,12 @@ sub parse_url {
     _default_params_if_needed( \%parsed_url_options );
 
     # Set the UFDD or get the default UFDD in none is supplied
-    $parsed_url_options{'url_feature_default_display'}
-        = $calling_cmap_object->url_feature_default_display(
-        $parsed_url_options{'url_feature_default_display'} );
-    $apr->param( 'ft_DEFAULT',
-        $parsed_url_options{'url_feature_default_display'} );
+    $apr->param(
+        'ft_DEFAULT',
+        $calling_cmap_object->url_feature_default_display(
+            $parsed_url_options{'url_feature_default_display'}
+        )
+    );
     $apr->param( 'feature_type_DEFAULT',  undef );
     $apr->param( 'ft_FRONT_PAGE_DEFAULT', undef );
 
@@ -1673,9 +1678,14 @@ sub parse_url {
     }
 
     # Get collapse_features unless it's defined
-    $parsed_url_options{'collapse_features'}
-        = $calling_cmap_object->config_data('collapse_features')
-        unless ( defined( $parsed_url_options{'collapse_features'} ) );
+    unless ( defined( $parsed_url_options{'collapse_features'} )
+        and $parsed_url_options{'collapse_features'} ne q{} )
+    {
+        $parsed_url_options{'collapse_features'}
+            = $calling_cmap_object->config_data('collapse_features');
+        $apr->param( 'collapse_features',
+            $parsed_url_options{'collapse_features'} );
+    }
 
     # figure out the ref_map_order
     #use the previous order if new order is not defined.
