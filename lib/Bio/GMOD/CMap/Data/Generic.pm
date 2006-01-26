@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.130 2006-01-04 21:47:54 mwz444 Exp $
+# $Id: Generic.pm,v 1.131 2006-01-26 15:29:05 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.130 $)[-1];
+$VERSION = (qw$Revision: 1.131 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -6143,7 +6143,8 @@ Array of Hashes:
                 {'rank'};
             $row->{'line_color'}
                 = $evidence_type_data->{ $row->{'evidence_type_acc'} }
-                {'line_color'}
+                {'color'}
+                || $cmap_object->config_data('connecting_line_color')
                 || DEFAULT->{'connecting_line_color'};
             $row->{'evidence_type'}
                 = $evidence_type_data->{ $row->{'evidence_type_acc'} }
@@ -6638,6 +6639,11 @@ If $include_map1_data also has
     my $db = $cmap_object->db;
     my $return_object;
 
+    # variable to include the map1 table if needed
+    my $use_map1_table = 0;
+    my $map1_from_sql  = ', cmap_map map1';
+    my $map1_where_sql = ' and map1.map_id=cl.map_id1 ';
+
     my $select_sql = qq[
         select   count(distinct cl.feature_correspondence_id) as no_corr,
                  cl.map_id1,
@@ -6647,16 +6653,10 @@ If $include_map1_data also has
     ];
     my $from_sql = qq[
         from     cmap_correspondence_lookup cl,
-                 cmap_feature_correspondence fc,
-                 cmap_map map1,
                  cmap_map map2
     ];
     my $where_sql = qq[
-        where    cl.feature_correspondence_id=
-                 fc.feature_correspondence_id
-        and      fc.is_enabled=1
-        and      cl.map_id1!=cl.map_id2
-        and      map1.map_id=cl.map_id1
+        where    cl.map_id1!=cl.map_id2
         and      map2.map_id=cl.map_id2
     ];
     my $group_by_sql = qq[
@@ -6667,6 +6667,7 @@ If $include_map1_data also has
     ];
 
     if ($include_map1_data) {
+        $use_map1_table = 1;
         $select_sql .= qq[
                  ,
                  map1.map_acc as map_acc1,
@@ -6679,12 +6680,14 @@ If $include_map1_data also has
         ];
     }
     if ($intraslot_only) {
+        $use_map1_table = 1;
         $where_sql .= " and map1.map_set_id = map2.map_set_id ";
     }
 
     my $having_sql = '';
 
     if (@$map_accs) {
+        $use_map1_table = 1;
         $where_sql .= " and map1.map_acc in ('"
             . join( "','", sort @{$map_accs} ) . "') \n";
     }
@@ -6741,11 +6744,12 @@ If $include_map1_data also has
     $where_sql .= " and (" . $from_restriction . ")"
         if $from_restriction;
 
-    if (   @$included_evidence_type_accs
+    if (   ( @$ignored_evidence_type_accs and @$included_evidence_type_accs )
         or @$less_evidence_type_accs
         or @$greater_evidence_type_accs )
     {
-        $from_sql  .= ', cmap_correspondence_evidence ce';
+        $from_sql .= q[, cmap_feature_correspondence fc
+                        , cmap_correspondence_evidence ce];
         $where_sql .= q[
             and fc.feature_correspondence_id=ce.feature_correspondence_id
             and  ( ];
@@ -6784,6 +6788,11 @@ If $include_map1_data also has
         $having_sql .= qq[
               having count(cl.feature_correspondence_id)>$min_correspondences
             ];
+    }
+
+    if ($use_map1_table) {
+        $where_sql .= $map1_where_sql;
+        $from_sql  .= $map1_from_sql;
     }
 
     my $sql_str
