@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Drawer;
 
 # vim: set ft=perl:
 
-# $Id: Drawer.pm,v 1.118 2006-01-12 20:26:51 mwz444 Exp $
+# $Id: Drawer.pm,v 1.119 2006-02-05 04:17:59 mwz444 Exp $
 
 =head1 NAME
 
@@ -67,7 +67,7 @@ The base map drawing module.
         compMenu => $compMenu,
         optionMenu => $optionMenu,
         addOpMenu => $addOpMenu,
-        skip_drawing => $skip_draweing,
+        skip_drawing => $skip_drawing,
     );
 
 =head2 Fields
@@ -347,7 +347,7 @@ This is set to 1 if you don't want the drawer to actually do the drawing
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.118 $)[-1];
+$VERSION = (qw$Revision: 1.119 $)[-1];
 
 use Bio::GMOD::CMap::Utils 'parse_words';
 use Bio::GMOD::CMap::Constants;
@@ -388,9 +388,7 @@ Initializes the drawing object.
 
     my ( $self, $config ) = @_;
 
-    for my $param (@INIT_PARAMS) {
-        $self->$param( $config->{$param} );
-    }
+    $self->initialize_params($config);
 
     $self->data or return;
 
@@ -458,6 +456,25 @@ Initializes the drawing object.
     }
 
     return $self;
+}
+
+# ----------------------------------------------------
+sub initialize_params {
+
+=pod
+
+=head2 init
+
+Initializes the passed parameters.
+
+=cut
+
+    my ( $self, $config ) = @_;
+
+    for my $param (@INIT_PARAMS) {
+        $self->$param( $config->{$param} );
+    }
+
 }
 
 # ----------------------------------------
@@ -1540,6 +1557,23 @@ Lays out the image and writes it to the file system, set the "image_name."
     #
     $self->adjust_frame;
 
+    $self->draw_image();
+
+    return $self;
+}
+
+# ----------------------------------------------------
+sub draw_image {
+
+=pod
+
+=head2 draw_image
+
+Do the actual drawing.
+
+=cut
+    my $self      = shift;
+
     my @data      = $self->drawing_data;
     my $height    = $self->map_height;
     my $width     = $self->map_width;
@@ -1581,7 +1615,7 @@ Lays out the image and writes it to the file system, set the "image_name."
     $fh->close;
     $self->image_name($filename);
 
-    return $self;
+    return;
 }
 
 # ----------------------------------------------------
@@ -1955,7 +1989,7 @@ Gets/sets the string of highlighted features.
         }
     }
 
-    return unless $self->{'highlight_hash'};
+    return 0 unless $self->{'highlight_hash'};
 
     for my $id (@ids) {
         return 1 if exists $self->{'highlight_hash'}{ uc $id };

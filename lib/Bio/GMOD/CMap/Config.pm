@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Config;
 
 # vim: set ft=perl:
 
-# $Id: Config.pm,v 1.13 2005-10-27 18:02:29 mwz444 Exp $
+# $Id: Config.pm,v 1.14 2006-02-05 04:17:58 mwz444 Exp $
 
 =head1 NAME
 
@@ -33,7 +33,7 @@ use base 'Class::Base';
 sub init {
     my ( $self, $config ) = @_;
     $self->params( $config, 'config_dir' );
-    $self->set_config() or return $self->error('No enabled config files');
+    $self->set_config() or return $self->error();
     return $self;
 }
 
@@ -90,6 +90,9 @@ The conf dir and the global conf file are specified in Constants.pm
             my $db_name = $config{'database'}{'name'}
               || return $self->error(
                 qq[Config file "$conf_file" does not defined a db name]);
+            if ($config_data{$db_name}){
+                return $self->error(qq[Two config files share the "$db_name" name.]);
+            } 
             $config_data{$db_name} = \%config;
         }
     }
@@ -163,7 +166,8 @@ Sets the active config data.
     }
 
     return 1 if ( $self->{'current_config'} );
-    return 0;
+
+    return $self->error('No enabled config files');
 }
 
 # ----------------------------------------------------
@@ -202,7 +206,7 @@ optionally you can specify a set of config data to read from.
     # If config not set, set it.
     #
     unless ( $self->{'current_config'} ) {
-        $self->set_config() or return $self->error('No enabled config files');
+        $self->set_config() or return $self->error();
     }
 
     return $self unless $option;

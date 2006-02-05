@@ -400,7 +400,7 @@ function selectAllOptions(select){
           [%- END -%]
           </form>
           [%- IF form_data.ref_maps -%]
-            [%- form_data.ref_maps.unshift({map_acc=>'-1',map_name=>'--All--'}) -%]
+            [%- form_data.ref_maps.unshift({map_acc=>'-1',map_name=>'- -All-'}) -%]
             <form name="ref_map_form">
               <input type="hidden" name="refMenu" id="refMenu" value="[%- apr.param('refMenu') -%]">
               <input type="hidden" name="compMenu" id="compMenu" value="[%- apr.param('compMenu') -%]">
@@ -419,7 +419,7 @@ function selectAllOptions(select){
     
                     [%- IF form_data.ref_maps.size -%]
                       [%- FOREACH m=form_data.ref_maps -%]
-                        <option[%- IF selected_maps.${m.map_acc} OR form_data.ref_maps.size==1; ' selected'; END -%] value="[%- m.map_acc -%]">[%- m.map_name -%]</option>
+                        <option[%- IF selected_maps.${m.map_acc} OR form_data.ref_maps.size==1; ' selected'; END -%] value="[%- m.map_acc -%]">[% m.map_name %] [% m.map_start %]-[% m.map_stop -%]</option>
                       [%- END -%]
                     [%- ELSE -%]
                       <option value="">--No Maps Available--</option>
@@ -429,8 +429,21 @@ function selectAllOptions(select){
                   <input type="submit" value="Draw Maps" name="sub">
                 </td>
               </tr>
-                <td valign="top" align="right" >Handle features:<br>
+              <tr>
+                <td valign="top" align="right" >Ref Map Start:<br>
+                <td>
+                  <input name="ref_map_start" value="[%- apr.param('ref_map_start') -%]">
                 </td>
+              </tr>
+              <tr>
+                <td valign="top" align="right" >Ref Map End:<br>
+                <td>
+                  <input name="ref_map_stop" value="[%- apr.param('ref_map_stop') -%]">
+                </td>
+              </tr>
+              <tr>
+            <td valign="top" align="right" >Handle features:<br>
+            </td>
                 <td>
                 <table border=1></tr>
                   <tr>

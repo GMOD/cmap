@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data::Generic;
 
 # vim: set ft=perl:
 
-# $Id: Generic.pm,v 1.131 2006-01-26 15:29:05 mwz444 Exp $
+# $Id: Generic.pm,v 1.132 2006-02-05 04:17:59 mwz444 Exp $
 
 =head1 NAME
 
@@ -31,7 +31,7 @@ drop into the derived class and override a method.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.131 $)[-1];
+$VERSION = (qw$Revision: 1.132 $)[-1];
 
 use Data::Dumper;    # really just for debugging
 use Time::ParseDate;
@@ -2155,6 +2155,7 @@ Map Set id
         species_id         => 0,
         published_on       => 0,
         display_order      => 0,
+        map_set_display_order      => 0,
         is_enabled         => 0,
         shape              => 0,
         width              => 0,
@@ -2174,7 +2175,9 @@ Map Set id
         || $args{'map_type_accession'};
     my $species_id    = $args{'species_id'};
     my $published_on  = $args{'published_on'};
-    my $display_order = $args{'display_order'} || 1;
+    my $display_order = $args{'display_order'};
+    $display_order    = $args{'map_set_display_order'} unless defined($display_order);
+    $display_order    = 1 unless defined($display_order);
     my $is_enabled    = $args{'is_enabled'};
     $is_enabled = 1 unless ( defined($is_enabled) );
     my $shape             = $args{'shape'};
@@ -2292,6 +2295,7 @@ to ignore that column.
         species_id         => 0,
         published_on       => 0,
         display_order      => 0,
+        map_set_display_order => 0,
         is_enabled         => 0,
         shape              => 0,
         width              => 0,
@@ -2314,6 +2318,7 @@ to ignore that column.
     my $species_id        = $args{'species_id'};
     my $published_on      = $args{'published_on'};
     my $display_order     = $args{'display_order'};
+    $display_order        = $args{'map_set_display_order'} unless defined($display_order);
     my $is_enabled        = $args{'is_enabled'};
     my $shape             = $args{'shape'};
     my $width             = $args{'width'};
@@ -2505,6 +2510,8 @@ Get information on map sets including map set and species info.
 
 =item - List of Map IDs (map_ids)
 
+=item - List of Map Accessions (map_accs)
+
 =item - Map Set ID (map_set_id)
 
 =item - Map Set Accession (map_set_acc)
@@ -2581,6 +2588,7 @@ Array of Hashes:
         no_validation     => 0,
         map_id            => 0,
         map_ids           => 0,
+        map_accs          => 0,
         map_set_id        => 0,
         map_set_acc       => 0,
         map_set_accs      => 0,
@@ -2598,6 +2606,7 @@ Array of Hashes:
     my $cmap_object  = $args{'cmap_object'} or die "No CMap Object included";
     my $map_id       = $args{'map_id'};
     my $map_ids      = $args{'map_ids'} || [];
+    my $map_accs     = $args{'map_accs'} || [];
     my $map_set_id   = $args{'map_set_id'};
     my $map_set_acc  = $args{'map_set_acc'};
     my $map_set_accs = $args{'map_set_accs'} || [];
@@ -2653,6 +2662,10 @@ Array of Hashes:
     elsif (@$map_ids) {
         $where_sql
             .= " and map.map_id in (" . join( ',', sort @$map_ids ) . ") ";
+    }
+    elsif (@$map_accs) {
+        $where_sql
+            .= " and map.map_acc in ('" . join( q{','}, sort @$map_accs ) . "') ";
     }
     if ($map_name) {
         $where_sql .= " and map.map_name='$map_name' ";
@@ -2888,6 +2901,8 @@ Array of Hashes:
     map_acc
     map_id
     map_name
+    map_start
+    map_stop
 
 =item * Cache Level (If Used): 2
 
@@ -2914,7 +2929,9 @@ Not using cache because this query is quicker.
     my $sql_str = q[
         select   map.map_acc,
                  map.map_id,
-                 map.map_name
+                 map.map_name,
+                 map.map_start,
+                 map.map_stop
         from     cmap_map map,
                  cmap_map_set ms
         where    map.map_set_id=ms.map_set_id

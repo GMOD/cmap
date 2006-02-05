@@ -2,7 +2,7 @@ package Bio::GMOD::CMap;
 
 # vim: set ft=perl:
 
-# $Id: CMap.pm,v 1.101 2005-11-10 15:45:26 mwz444 Exp $
+# $Id: CMap.pm,v 1.102 2006-02-05 04:17:58 mwz444 Exp $
 
 =head1 NAME
 
@@ -56,12 +56,22 @@ sub init {
     return $self;
 }
 
+###########################################
+
+=pod
+
+=head2 Accessor Methods
+
+These are methods that create and store variables.
+
+=cut
+
 # ----------------------------------------------------
 sub cache_dir {
 
 =pod
 
-=head2 cache_dir
+=head3 cache_dir
 
 Returns the cache directory.
 
@@ -101,7 +111,7 @@ Returns the cache directory.
 
 =pod
 
-=head2 config
+=head3 config
 
 Returns configuration object.
 
@@ -128,7 +138,7 @@ sub config_data {
 
 =pod
 
-=head2 config_data
+=head3 config_data
 
 Access configuration.
 
@@ -144,7 +154,7 @@ sub object_plugin {
 
 =pod
 
-=head2 object_plugin
+=head3 object_plugin
 
 Allow for object plugin stuff.
 
@@ -172,7 +182,7 @@ sub map_type_data {
 
 =pod
 
-=head2 map_type_data
+=head3 map_type_data
 
 Return data from config about map type 
 
@@ -199,7 +209,7 @@ sub feature_type_data {
 
 =pod
 
-=head2 feature_type_data
+=head3 feature_type_data
 
 Return data from config about feature type 
 
@@ -227,7 +237,7 @@ sub evidence_type_data {
 
 =pod
 
-=head2 evidence_type_data
+=head3 evidence_type_data
 
 Return data from config about evidence type 
 
@@ -255,7 +265,7 @@ sub data_source {
 
 =pod
 
-=head2 data_source
+=head3 data_source
 
 Basically a front for set_config()
 
@@ -294,7 +304,7 @@ sub data_sources {
 
 =pod
 
-=head2 data_sources
+=head3 data_sources
 
 Returns all the data souces defined in the configuration files.
 
@@ -345,7 +355,7 @@ sub db {
 
 =pod
 
-=head2 db
+=head3 db
 
 Returns a database handle.  This is the only way into the database.
 
@@ -403,7 +413,7 @@ sub aggregate {
 
 =pod
 
-=head2 aggregate
+=head3 aggregate
 
 Returns the boolean aggregate variable.  This determines 
 if the correspondences are aggregated or individually depicted.
@@ -426,7 +436,7 @@ sub cluster_corr {
 
 =pod
 
-=head2 cluster_corr
+=head3 cluster_corr
 
 Returns the number of clusters that the correspondences should be broken into.
 It will return 0 if not clustering.
@@ -450,7 +460,7 @@ sub show_intraslot_corr {
 
 =pod
 
-=head2 show_intraslot_corr
+=head3 show_intraslot_corr
 
 Returns the boolean show_intraslot_corr variable.  This determines 
 if the intraslot correspondences are displayed.
@@ -475,7 +485,7 @@ sub split_agg_ev {
 
 =pod
 
-=head2 split_agg_ev
+=head3 split_agg_ev
 
 Returns the boolean split_agg_ev variable.  This determines 
 if the correspondences of different evidence types will be 
@@ -500,7 +510,7 @@ sub clean_view {
 
 =pod
 
-=head2 clean_view
+=head3 clean_view
 
 Returns the boolean clean_view variable.  This determines 
 if there will be control buttons on the map.
@@ -524,7 +534,7 @@ sub corrs_to_map {
 
 =pod
 
-=head2 corrs_to_map
+=head3 corrs_to_map
 
 Returns the boolean corrs_to_map variable.  If set to 1, the corr lines will be
 drawn to the maps instead of to the features.
@@ -548,7 +558,7 @@ sub magnify_all {
 
 =pod
 
-=head2 magnify_all
+=head3 magnify_all
 
 Returns the boolean magnify_all variable.  This determines 
 the value that the whole image is magnified by.
@@ -571,7 +581,7 @@ sub scale_maps {
 
 =pod
 
-=head2 scale_maps
+=head3 scale_maps
 
 Returns the boolean scale_maps variable.  This determines 
 if the maps are drawn to scale 
@@ -595,7 +605,7 @@ sub ignore_image_map_sanity {
 
 =pod
 
-=head2 ignore_image_map_sanity
+=head3 ignore_image_map_sanity
 
 A sanity check on the size of the image map (number of objects) is performed
 unless this is selected.
@@ -620,7 +630,7 @@ sub url_feature_default_display {
 
 =pod
 
-=head2 url_feature_default_display
+=head3 url_feature_default_display
 
 Gets/sets which the url_feature_default_display
 
@@ -637,19 +647,6 @@ Gets/sets which the url_feature_default_display
             $self->{'url_feature_default_display'} = undef;
         }
     }
-    elsif ( not defined( $self->{'url_feature_default_display'} ) ) {
-        my $config_feature_default_display
-            = $self->config_data('feature_default_display');
-        if ( $config_feature_default_display eq 'display' ) {
-            $self->{'url_feature_default_display'} = 2;
-        }
-        elsif ( $config_feature_default_display eq 'corr_only' ) {
-            $self->{'url_feature_default_display'} = 1;
-        }
-        elsif ( $config_feature_default_display eq 'ignore' ) {
-            $self->{'url_feature_default_display'} = 0;
-        }
-    }
 
     return $self->{'url_feature_default_display'};
 }
@@ -659,7 +656,7 @@ sub stack_maps {
 
 =pod
 
-=head2 stack_maps
+=head3 stack_maps
 
 Returns the boolean stack_maps variable.  This determines 
 if the reference maps are staced vertically.
@@ -683,7 +680,7 @@ sub ref_map_order {
 
 =pod
 
-=head2 ref_map_order
+=head3 ref_map_order
 
 Returns the string that describes the order of the ref maps. 
 
@@ -703,7 +700,7 @@ sub comp_menu_order {
 
 =pod
 
-=head2 comp_menu_order
+=head3 comp_menu_order
 
 Returns the string that determins how the comparison map menu is ordered. 
 
@@ -724,7 +721,7 @@ sub data_module {
 
 =pod
 
-=head2 data
+=head3 data
 
 Returns a handle to the data module.
 
@@ -756,7 +753,7 @@ sub omit_area_boxes {
 
 =pod
 
-=head2 omit_area_boxes
+=head3 omit_area_boxes
 
 Returns the omit_area_boxes variable.  This determines 
 which area boxes are rendered.
@@ -789,7 +786,7 @@ sub refMenu {
 
 =pod
 
-=head2 refMenu
+=head3 refMenu
 
 Returns the boolean refMenu variable.  This determines if the Reference Menu is
 displayed.
@@ -810,7 +807,7 @@ sub compMenu {
 
 =pod
 
-=head2 compMenu
+=head3 compMenu
 
 Returns the boolean compMenu variable.  This determines if the Comparison Menu
 is displayed.
@@ -831,7 +828,7 @@ sub optionMenu {
 
 =pod
 
-=head2 optionMenu
+=head3 optionMenu
 
 Returns the boolean optionMenu variable.  This determines if the Options Menu
 is displayed.
@@ -852,7 +849,7 @@ sub addOpMenu {
 
 =pod
 
-=head2 addOpMenu
+=head3 addOpMenu
 
 Returns the boolean addOpMenu variable.  This determines if the Additional
 Options Menu is displayed.
@@ -873,7 +870,7 @@ sub get_multiple_xrefs {
 
 =pod
 
-=head2 get_multiple_xrefs
+=head3 get_multiple_xrefs
 
 Given a table name and some objects, get the cross-references.
 
@@ -935,7 +932,7 @@ sub session_id {
 
 =pod
 
-=head2 session_id
+=head3 session_id
 
 Sets and returns the session_id.
 
@@ -954,7 +951,7 @@ sub next_step {
 
 =pod
 
-=head2 next_step
+=head3 next_step
 
 Sets and returns the session next_step.
 
@@ -969,11 +966,247 @@ The default is ''.
 }
 
 # ----------------------------------------------------
+sub get_link_name_space {
+
+=pod
+
+=head3 get_link_name_space
+
+This is a consistant way of naming the link name space
+
+=cut
+
+    my $self = shift;
+    return 'imported_links_' . $self->data_source;
+}
+
+# ----------------------------------------------------
+sub cache_level_name {
+
+=pod
+
+=head3 cache_level_name
+
+This is a consistant way of naming the cache levels. 
+
+=cut
+
+    my $self  = shift;
+    my $level = shift;
+    return $self->ERROR(
+        "Cache Level: $level should not be higher than " . CACHE_LEVELS )
+        unless ( $level <= CACHE_LEVELS );
+    return $self->config_data('database')->{'name'} . "_L" . $level;
+}
+
+# ----------------------------------------------------
+sub template {
+
+=pod
+
+=head3 template
+
+Returns a Template Toolkit object.
+
+=cut
+
+    my $self   = shift;
+    my $config = $self->config or return;
+
+    unless ( $self->{'template'} ) {
+        my $cache_dir = $self->cache_dir or return;
+        my $template_dir = $config->get_config('template_dir')
+            or return $self->error(
+            'No template directory defined in "' . GLOBAL_CONFIG_FILE . '"' );
+        return $self->error(
+            "Template directory '$template_dir' doesn't exist")
+            unless -d $template_dir;
+
+        $self->{'template'} = Template->new(
+            COMPILE_EXT  => '.ttc',
+            COMPILE_DIR  => $cache_dir,
+            INCLUDE_PATH => $template_dir,
+            FILTERS      => {
+                dump => sub { Dumper( shift() ) },
+                nbsp => sub { my $s = shift; $s =~ s{\s+}{\&nbsp;}g; $s },
+                commify => \&Bio::GMOD::CMap::Utils::commify,
+            },
+            )
+            or $self->error(
+            "Couldn't create Template object: " . Template->error() );
+    }
+
+    return $self->{'template'};
+}
+
+# ----------------------------------------------------
+sub sql {
+
+=pod
+
+=head3 sql
+
+Returns the correct SQL module driver for the RDBMS we're using.
+
+=cut
+
+    my $self      = shift;
+    my $db_driver = lc shift;
+
+    unless ( defined $self->{'sql_module'} ) {
+        my $db = $self->db or return;
+        $db_driver = lc $db->{'Driver'}->{'Name'} || '';
+        $db_driver = DEFAULT->{'sql_driver_module'}
+            unless VALID->{'sql_driver_module'}{$db_driver};
+        my $sql_module = VALID->{'sql_driver_module'}{$db_driver};
+
+        eval "require $sql_module"
+            or return $self->error(
+            qq[Unable to require SQL module "$sql_module": $@]);
+
+        # IF YOU ARE GETTING A BIZZARE WARNING:
+        # It might be that the $sql_module has errors in it
+        #  aren't being reported.  This might manifest as "$self->sql"
+        #  returning nothing or as "cannot find method new".
+        $self->{'sql_module'} = $sql_module->new( config => $self->config );
+    }
+
+    return $self->{'sql_module'};
+}
+
+# ----------------------------------------------------
+sub check_img_dir_fullness {
+
+=pod
+
+=head3 check_img_dir_fullness
+
+Check the image directories fullness (as a percent).  Compare it to the
+max_img_dir_fullness in the conf dir.  If it is full, return 1.
+
+=cut
+
+    my $self = shift;
+    return 0 unless ( $self->config_data('max_img_dir_fullness') );
+
+    my $cache_dir = $self->cache_dir or return;
+    my $ref = df($cache_dir);
+    if ( $ref->{'per'} > $self->config_data('max_img_dir_fullness') ) {
+        return 1;
+    }
+
+    return 0;
+}
+
+# ----------------------------------------------------
+sub check_img_dir_size {
+
+=pod
+
+=head3 check_img_dir_size
+
+Check the image directories size (as a percent).  Compare it to the
+max_img_dir_size in the conf dir.  If it is full, return 1.
+
+=cut
+
+    my $self = shift;
+    return 0 unless ( $self->config_data('max_img_dir_size') );
+
+    my $cache_dir = $self->cache_dir or return;
+    my $size = 0;
+    foreach my $file ( glob("$cache_dir/*") ) {
+        next unless -f $file;
+        $size += -s $file;
+    }
+    if ( $size > $self->config_data('max_img_dir_size') ) {
+        return 1;
+    }
+
+    return 0;
+}
+
+# ----------------------------------------------------
+sub clear_img_dir {
+
+=pod
+
+=head3 clear_img_dir
+
+Clears the image directory of files.  (It will not touch directories.)
+
+=cut
+
+    my $self      = shift;
+    my $cache_dir = $self->cache_dir or return;
+
+    return 0 unless ( $self->config_data('purge_img_dir_when_full') );
+
+    my $delete_age = $self->config_data('file_age_to_purge');
+
+    unless ( defined($delete_age) and $delete_age =~ /^\d+$/ ) {
+        if ( $delete_age =~ /\d+/ ) {
+            $self->warn( "file_age_to_purge not correctly defined.  "
+                    . "Using the default" );
+        }
+        $delete_age = DEFAULT->{'file_age_to_purge'} || 300;
+    }
+    my $time_now = time;
+    foreach my $file ( glob("$cache_dir/*") ) {
+        my @stat_results = stat $file;
+        my $diff_time    = $time_now - $stat_results[8];
+        unlink $file if ( -f $file and $diff_time >= $delete_age );
+    }
+    return 1;
+}
+
+###########################################
+
+=pod
+
+=head2 Other Methods
+
+Methods that do things tother than store variables.
+
+=cut
+
+# ----------------------------------------------------
+sub DESTROY {
+
+=pod
+
+=head3 DESTROY
+
+Object clean-up when destroyed by Perl.
+
+=cut
+
+    my $self = shift;
+    $self->db->disconnect if defined $self->{'db'};
+    return 1;
+}
+
+# ----------------------------------------------------
+sub warn {
+
+=pod
+
+=head3 warn
+
+Provides a simple way to print messages to STDERR.
+
+=cut
+
+    my $self = shift;
+    print STDERR @_;
+}
+
+# ----------------------------------------------------
 sub create_viewer_link {
 
 =pod
 
-=head2 create_viewer_link
+=head3 create_viewer_link
 
 Given information about the link, creates a url to cmap_viewer.
 
@@ -1256,232 +1489,6 @@ Given information about the link, creates a url to cmap_viewer.
     }
 
     return $url;
-}
-
-# ----------------------------------------------------
-sub get_link_name_space {
-
-=pod
-
-=head2 get_link_name_space
-
-This is a consistant way of naming the link name space
-
-=cut
-
-    my $self = shift;
-    return 'imported_links_' . $self->data_source;
-}
-
-# ----------------------------------------------------
-sub cache_level_name {
-
-=pod
-
-=head2 cache_level_name
-
-This is a consistant way of naming the cache levels. 
-
-=cut
-
-    my $self  = shift;
-    my $level = shift;
-    return $self->ERROR(
-        "Cache Level: $level should not be higher than " . CACHE_LEVELS )
-        unless ( $level <= CACHE_LEVELS );
-    return $self->config_data('database')->{'name'} . "_L" . $level;
-}
-
-# ----------------------------------------------------
-sub DESTROY {
-
-=pod
-
-=head2 DESTROY
-
-Object clean-up when destroyed by Perl.
-
-=cut
-
-    my $self = shift;
-    $self->db->disconnect if defined $self->{'db'};
-    return 1;
-}
-
-# ----------------------------------------------------
-sub template {
-
-=pod
-
-=head2 template
-
-Returns a Template Toolkit object.
-
-=cut
-
-    my $self   = shift;
-    my $config = $self->config or return;
-
-    unless ( $self->{'template'} ) {
-        my $cache_dir = $self->cache_dir or return;
-        my $template_dir = $config->get_config('template_dir')
-            or return $self->error(
-            'No template directory defined in "' . GLOBAL_CONFIG_FILE . '"' );
-        return $self->error(
-            "Template directory '$template_dir' doesn't exist")
-            unless -d $template_dir;
-
-        $self->{'template'} = Template->new(
-            COMPILE_EXT  => '.ttc',
-            COMPILE_DIR  => $cache_dir,
-            INCLUDE_PATH => $template_dir,
-            FILTERS      => {
-                dump => sub { Dumper( shift() ) },
-                nbsp => sub { my $s = shift; $s =~ s{\s+}{\&nbsp;}g; $s },
-                commify => \&Bio::GMOD::CMap::Utils::commify,
-            },
-            )
-            or $self->error(
-            "Couldn't create Template object: " . Template->error() );
-    }
-
-    return $self->{'template'};
-}
-
-# ----------------------------------------------------
-sub warn {
-
-=pod
-
-=head2 warn
-
-Provides a simple way to print messages to STDERR.
-
-=cut
-
-    my $self = shift;
-    print STDERR @_;
-}
-
-# ----------------------------------------------------
-sub sql {
-
-=pod
-
-=head2 sql
-
-Returns the correct SQL module driver for the RDBMS we're using.
-
-=cut
-
-    my $self      = shift;
-    my $db_driver = lc shift;
-
-    unless ( defined $self->{'sql_module'} ) {
-        my $db = $self->db or return;
-        $db_driver = lc $db->{'Driver'}->{'Name'} || '';
-        $db_driver = DEFAULT->{'sql_driver_module'}
-            unless VALID->{'sql_driver_module'}{$db_driver};
-        my $sql_module = VALID->{'sql_driver_module'}{$db_driver};
-
-        eval "require $sql_module"
-            or return $self->error(
-            qq[Unable to require SQL module "$sql_module": $@]);
-
-        # IF YOU ARE GETTING A BIZZARE WARNING:
-        # It might be that the $sql_module has errors in it
-        #  aren't being reported.  This might manifest as "$self->sql"
-        #  returning nothing or as "cannot find method new".
-        $self->{'sql_module'} = $sql_module->new( config => $self->config );
-    }
-
-    return $self->{'sql_module'};
-}
-
-# ----------------------------------------------------
-sub check_img_dir_fullness {
-
-=pod
-
-=head2 check_img_dir_fullness
-
-Check the image directories fullness (as a percent).  Compare it to the
-max_img_dir_fullness in the conf dir.  If it is full, return 1.
-
-=cut
-
-    my $self = shift;
-    return 0 unless ( $self->config_data('max_img_dir_fullness') );
-
-    my $cache_dir = $self->cache_dir or return;
-    my $ref = df($cache_dir);
-    if ( $ref->{'per'} > $self->config_data('max_img_dir_fullness') ) {
-        return 1;
-    }
-
-    return 0;
-}
-
-# ----------------------------------------------------
-sub check_img_dir_size {
-
-=pod
-
-=head2 check_img_dir_size
-
-Check the image directories size (as a percent).  Compare it to the
-max_img_dir_size in the conf dir.  If it is full, return 1.
-
-=cut
-
-    my $self = shift;
-    return 0 unless ( $self->config_data('max_img_dir_size') );
-
-    my $cache_dir = $self->cache_dir or return;
-    my $size = 0;
-    foreach my $file ( glob("$cache_dir/*") ) {
-        next unless -f $file;
-        $size += -s $file;
-    }
-    if ( $size > $self->config_data('max_img_dir_size') ) {
-        return 1;
-    }
-
-    return 0;
-}
-
-# ----------------------------------------------------
-sub clear_img_dir {
-
-=pod
-
-=head2 clear_img_dir
-
-Clears the image directory of files.  (It will not touch directories.)
-
-=cut
-
-    my $self      = shift;
-    my $cache_dir = $self->cache_dir or return;
-
-    return 0 unless ( $self->config_data('purge_img_dir_when_full') );
-
-    my $delete_age = $self->config_data('file_age_to_purge');
-
-    unless ( defined($delete_age) and $delete_age =~ /^\d+$/ ) {
-        if ( $delete_age =~ /\d+/ ) {
-            $self->warn( "file_age_to_purge not correctly defined.  "
-                    . "Using the default" );
-        }
-        $delete_age = DEFAULT->{'file_age_to_purge'} || 300;
-    }
-    my $time_now = time;
-    foreach my $file ( glob("$cache_dir/*") ) {
-        my @stat_results = stat $file;
-        my $diff_time    = $time_now - $stat_results[8];
-        unlink $file if ( -f $file and $diff_time >= $delete_age );
-    }
-    return 1;
 }
 
 ###########################################

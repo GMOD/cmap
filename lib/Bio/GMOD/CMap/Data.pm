@@ -2,7 +2,7 @@ package Bio::GMOD::CMap::Data;
 
 # vim: set ft=perl:
 
-# $Id: Data.pm,v 1.264 2005-11-15 21:49:53 mwz444 Exp $
+# $Id: Data.pm,v 1.265 2006-02-05 04:17:58 mwz444 Exp $
 
 =head1 NAME
 
@@ -26,7 +26,7 @@ work with anything, and customize it in subclasses.
 
 use strict;
 use vars qw( $VERSION );
-$VERSION = (qw$Revision: 1.264 $)[-1];
+$VERSION = (qw$Revision: 1.265 $)[-1];
 
 use Data::Dumper;
 use Date::Format;
@@ -281,58 +281,16 @@ sub cmap_data {
     my $evidence_type_score = $args{'evidence_type_score'} || {};
     my $pid                 = $$;
 
-    # Fill the default array with any feature types not accounted for.
-    my %found_feature_type;
-    foreach
-        my $ft ( @$included_feature_type_accs, @$corr_only_feature_type_accs,
-        @$ignored_feature_type_accs )
-    {
-        $found_feature_type{$ft} = 1;
-    }
-    my $feature_type_data = $self->feature_type_data();
-
-    foreach my $key ( keys(%$feature_type_data) ) {
-        my $acc = $feature_type_data->{$key}{'feature_type_acc'};
-        unless ( $found_feature_type{$acc} ) {
-            my $feature_default_display = $self->feature_default_display(
-                $url_feature_default_display, $acc );
-
-            if ( $feature_default_display eq 'corr_only' ) {
-                push @$corr_only_feature_type_accs, $acc;
-            }
-            elsif ( $feature_default_display eq 'ignore' ) {
-                push @$ignored_feature_type_accs, $acc;
-            }
-            else {
-                push @$included_feature_type_accs, $acc;
-            }
-        }
-    }
-
-    # Fill the default array with any evidence types not accounted for.
-    my $evidence_default_display = $self->evidence_default_display;
-
-    my %found_evidence_type;
-    foreach my $et (
-        @$included_evidence_type_accs, @$ignored_evidence_type_accs,
-        @$less_evidence_type_accs,     @$greater_evidence_type_accs,
-        )
-    {
-        $found_evidence_type{$et} = 1;
-    }
-    my $evidence_type_data = $self->evidence_type_data();
-
-    foreach my $key ( keys(%$evidence_type_data) ) {
-        my $acc = $evidence_type_data->{$key}{'evidence_type_acc'};
-        unless ( $found_evidence_type{$acc} ) {
-            if ( $evidence_default_display eq 'ignore' ) {
-                push @$ignored_evidence_type_accs, $acc;
-            }
-            else {
-                push @$included_evidence_type_accs, $acc;
-            }
-        }
-    }
+    $self->fill_type_arrays(
+        included_feature_type_accs  => $included_feature_type_accs,
+        corr_only_feature_type_accs => $corr_only_feature_type_accs,
+        ignored_feature_type_accs   => $ignored_feature_type_accs,
+        url_feature_default_display => $url_feature_default_display,
+        ignored_evidence_type_accs  => $ignored_evidence_type_accs,
+        included_evidence_type_accs => $included_evidence_type_accs,
+        less_evidence_type_accs     => $less_evidence_type_accs,
+        greater_evidence_type_accs  => $greater_evidence_type_accs,
+    );
 
     my ($data,                      %feature_correspondences,
         %intraslot_correspondences, %map_correspondences,
@@ -3989,6 +3947,87 @@ in the order.  returns -1, 0 or 1 as cmp does.
     }
     else {
         return 1;
+    }
+}
+
+# ----------------------------------------------------
+=pod
+
+=head2 fill_type_arrays
+
+Organizes the data for drawing comparative maps.
+
+=cut
+
+sub fill_type_arrays {
+
+    #p#rint S#TDERR "cmap_data\n";
+    my ( $self, %args ) = @_;
+    my $included_feature_type_accs = $args{'included_feature_type_accs'}
+        || [];
+    my $corr_only_feature_type_accs = $args{'corr_only_feature_type_accs'}
+        || [];
+    my $ignored_feature_type_accs = $args{'ignored_feature_type_accs'} || [];
+    my $url_feature_default_display = $args{'url_feature_default_display'};
+    my $ignored_evidence_type_accs  = $args{'ignored_evidence_type_accs'}
+        || [];
+    my $included_evidence_type_accs = $args{'included_evidence_type_accs'}
+        || [];
+    my $less_evidence_type_accs = $args{'less_evidence_type_accs'} || [];
+    my $greater_evidence_type_accs = $args{'greater_evidence_type_accs'}
+        || [];
+
+    # Fill the default array with any feature types not accounted for.
+    my %found_feature_type;
+    foreach
+        my $ft ( @$included_feature_type_accs, @$corr_only_feature_type_accs,
+        @$ignored_feature_type_accs )
+    {
+        $found_feature_type{$ft} = 1;
+    }
+    my $feature_type_data = $self->feature_type_data();
+
+    foreach my $key ( keys(%$feature_type_data) ) {
+        my $acc = $feature_type_data->{$key}{'feature_type_acc'};
+        unless ( $found_feature_type{$acc} ) {
+            my $feature_default_display = $self->feature_default_display(
+                $url_feature_default_display, $acc );
+
+            if ( $feature_default_display eq 'corr_only' ) {
+                push @$corr_only_feature_type_accs, $acc;
+            }
+            elsif ( $feature_default_display eq 'ignore' ) {
+                push @$ignored_feature_type_accs, $acc;
+            }
+            else {
+                push @$included_feature_type_accs, $acc;
+            }
+        }
+    }
+
+    # Fill the default array with any evidence types not accounted for.
+    my $evidence_default_display = $self->evidence_default_display;
+
+    my %found_evidence_type;
+    foreach my $et (
+        @$included_evidence_type_accs, @$ignored_evidence_type_accs,
+        @$less_evidence_type_accs,     @$greater_evidence_type_accs,
+        )
+    {
+        $found_evidence_type{$et} = 1;
+    }
+    my $evidence_type_data = $self->evidence_type_data();
+
+    foreach my $key ( keys(%$evidence_type_data) ) {
+        my $acc = $evidence_type_data->{$key}{'evidence_type_acc'};
+        unless ( $found_evidence_type{$acc} ) {
+            if ( $evidence_default_display eq 'ignore' ) {
+                push @$ignored_evidence_type_accs, $acc;
+            }
+            else {
+                push @$included_evidence_type_accs, $acc;
+            }
+        }
     }
 }
 
